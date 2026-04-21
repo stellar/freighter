@@ -9,6 +9,7 @@ import { APPLICATION_STATE as ApplicationState } from "@shared/constants/applica
 import { DiscoverData } from "@shared/api/types";
 import * as ApiInternal from "@shared/api/internal";
 import * as Navigate from "popup/helpers/navigate";
+import { toast } from "sonner";
 import { Wrapper, mockAccounts } from "../../__testHelpers__";
 import { Discover } from "../Discover";
 
@@ -414,6 +415,84 @@ describe("Discover", () => {
           screen.getByTestId("discover-section-dapps"),
         ).toBeInTheDocument();
       });
+    });
+  });
+
+  describe("error toasts", () => {
+    it("notifies the user when openTab fails", async () => {
+      openTabSpy.mockRejectedValueOnce(new Error("tab creation blocked"));
+      const toastCustomSpy = jest
+        .spyOn(toast, "custom")
+        .mockImplementation(() => "toast-id");
+
+      renderDiscover();
+
+      await waitFor(() => {
+        expect(
+          screen.getByTestId("discover-section-dapps"),
+        ).toBeInTheDocument();
+      });
+
+      const openButtons = screen.getAllByTestId("protocol-row-open");
+      await userEvent.click(openButtons[0]);
+
+      await waitFor(() => {
+        expect(toastCustomSpy).toHaveBeenCalledTimes(1);
+      });
+
+      const toastElement = (
+        toastCustomSpy.mock.calls[0][0] as () => React.ReactElement<{
+          title: string;
+          children: string;
+        }>
+      )();
+      expect(toastElement.props.title).toBe("Couldn’t open this dApp");
+      expect(toastElement.props.children).toBe("Please try again later.");
+    });
+
+    it("notifies the user when clearing recents fails", async () => {
+      jest
+        .spyOn(ApiInternal, "getRecentProtocols")
+        .mockResolvedValue([
+          { websiteUrl: "https://blend.capital", lastAccessed: Date.now() },
+        ]);
+      jest
+        .spyOn(ApiInternal, "clearRecentProtocols")
+        .mockRejectedValueOnce(new Error("storage write failed"));
+      const toastCustomSpy = jest
+        .spyOn(toast, "custom")
+        .mockImplementation(() => "toast-id");
+
+      renderDiscover();
+
+      await waitFor(() => {
+        expect(
+          screen.getByTestId("discover-section-recent"),
+        ).toBeInTheDocument();
+      });
+
+      await userEvent.click(
+        screen.getByTestId("discover-section-expand-recent"),
+      );
+      await waitFor(() => {
+        expect(screen.getByTestId("expanded-recent-menu")).toBeInTheDocument();
+      });
+
+      await userEvent.click(screen.getByTestId("expanded-recent-menu"));
+      await userEvent.click(screen.getByTestId("clear-recents-button"));
+
+      await waitFor(() => {
+        expect(toastCustomSpy).toHaveBeenCalledTimes(1);
+      });
+
+      const toastElement = (
+        toastCustomSpy.mock.calls[0][0] as () => React.ReactElement<{
+          title: string;
+          children: string;
+        }>
+      )();
+      expect(toastElement.props.title).toBe("Couldn’t clear recent dApps");
+      expect(toastElement.props.children).toBe("Please try again later.");
     });
   });
 });
