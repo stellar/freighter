@@ -410,6 +410,27 @@ export interface DismissMobileAppBannerMessage extends BaseMessage {
   type: SERVICE_TYPES.DISMISS_MOBILE_APP_BANNER;
 }
 
+export interface GetRecentProtocolsMessage extends BaseMessage {
+  type: SERVICE_TYPES.GET_RECENT_PROTOCOLS;
+}
+
+export interface AddRecentProtocolMessage extends BaseMessage {
+  type: SERVICE_TYPES.ADD_RECENT_PROTOCOL;
+  websiteUrl: string;
+}
+
+export interface ClearRecentProtocolsMessage extends BaseMessage {
+  type: SERVICE_TYPES.CLEAR_RECENT_PROTOCOLS;
+}
+
+export interface GetDiscoverWelcomeSeenMessage extends BaseMessage {
+  type: SERVICE_TYPES.GET_DISCOVER_WELCOME_SEEN;
+}
+
+export interface DismissDiscoverWelcomeMessage extends BaseMessage {
+  type: SERVICE_TYPES.DISMISS_DISCOVER_WELCOME;
+}
+
 export interface GetBlockaidDebugOverrideMessage extends BaseMessage {
   type: SERVICE_TYPES.GET_BLOCKAID_DEBUG_OVERRIDE;
 }
@@ -514,6 +535,11 @@ export type ServiceMessageRequest =
   | GetHiddenAssetsMessage
   | GetMobileAppBannerDismissedMessage
   | DismissMobileAppBannerMessage
+  | GetRecentProtocolsMessage
+  | AddRecentProtocolMessage
+  | ClearRecentProtocolsMessage
+  | GetDiscoverWelcomeSeenMessage
+  | DismissDiscoverWelcomeMessage
   | GetBlockaidDebugOverrideMessage
   | AddCollectibleMessage
   | GetCollectiblesMessage
