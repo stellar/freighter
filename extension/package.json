@@ -1,13 +1,13 @@
 {
   "name": "extension",
-  "version": "5.38.2",
+  "version": "5.39.0",
   "license": "Apache-2.0",
   "prettier": "../.prettierrc.yaml",
   "scripts": {
     "setup": "yarn install && yarn allow-scripts",
     "build": "webpack --config webpack.extension.js",
     "build:experimental": "yarn build --env EXPERIMENTAL=true",
-    "build:production": "yarn build --env PRODUCTION",
+    "build:production": "yarn build --env PRODUCTION BUILD_TYPE=\"production\"",
     "build:translations": "yarn build --env TRANSLATIONS=true",
     "start": "webpack-dev-server --config webpack.dev.js",
     "start:experimental": "yarn start --env EXPERIMENTAL=true",
@@ -15,6 +15,8 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
+    "@amplitude/analytics-browser": "^2.37.0",
+    "@amplitude/experiment-js-client": "^1.20.3",
     "@ledgerhq/hw-app-str": "7.2.0",
     "@ledgerhq/hw-transport-webhid": "6.30.6",
     "@radix-ui/react-dialog": "1.1.15",
@@ -82,8 +84,8 @@
     "sonner": "2.0.7",
     "soroswap-router-sdk": "1.4.6",
     "stellar-hd-wallet": "1.0.2",
-    "stellar-sdk": "npm:@stellar/stellar-sdk@14.4.3",
-    "stellar-sdk-next": "npm:@stellar/stellar-sdk@14.4.3",
+    "stellar-sdk": "npm:@stellar/stellar-sdk@15.0.1",
+    "stellar-sdk-next": "npm:@stellar/stellar-sdk@15.0.1",
     "svg-url-loader": "8.0.0",
     "tailwindcss": "4.1.18",
     "tsconfig-paths-webpack-plugin": "4.2.0",
