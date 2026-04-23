@@ -12,7 +12,7 @@ import { AccountBalances } from "helpers/hooks/useGetBalances";
 import { getCanonicalFromAsset } from "helpers/stellar";
 import { isSorobanIssuer } from "popup/helpers/account";
 import { formatTokenAmount } from "popup/helpers/soroban";
-import { isAssetSuspicious } from "popup/helpers/blockaid";
+import { useIsAssetSuspicious } from "popup/helpers/blockaid";
 import { formatAmount, roundUsdValue } from "popup/helpers/formatters";
 
 import {
@@ -198,6 +198,7 @@ export const AccountAssets = ({
   const [assetIcons, setAssetIcons] = useState(inputAssetIcons);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const [hasIconFetchRetried, setHasIconFetchRetried] = useState(false);
+  const isAssetSuspicious = useIsAssetSuspicious();
   const [selectedAsset, setSelectedAsset] = useState<string>("");
 
   useEffect(() => {
@@ -289,7 +290,11 @@ export const AccountAssets = ({
             : rb.total.toFixed();
 
         return (
-          <Sheet open={selectedAsset === canonicalAsset} key={canonicalAsset}>
+          <Sheet
+            open={selectedAsset === canonicalAsset}
+            onOpenChange={(open) => !open && setSelectedAsset("")}
+            key={canonicalAsset}
+          >
             <div
               data-testid="account-assets-item"
               className={`AccountAssets__asset ${

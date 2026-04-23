@@ -10,6 +10,12 @@ import "jest-localstorage-mock";
 import "jsdom-global";
 import { TextEncoder, TextDecoder } from "util";
 
+global.ResizeObserver = class ResizeObserver {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+};
+
 // make a JSDOM thing so we can fuck with mount
 const jsdom = new JSDOM("<!doctype html><html><body></body></html>");
 const { window } = jsdom;
@@ -24,6 +30,11 @@ global.TextEncoder = TextEncoder;
 // @ts-expect-error
 global.TextDecoder = TextDecoder;
 global.__PACKAGE_VERSION__ = "5.0.0";
+global.AMPLITUDE_KEY = "test-amplitude-key";
+global.SENTRY_KEY = "test-sentry-key";
+global.APP_VERSION = "5.0.0";
+global.BUILD_TYPE = "development";
+global.AMPLITUDE_EXPERIMENT_DEPLOYMENT_KEY = "test-experiment-key";
 
 Object.defineProperty(global.self, "crypto", {
   value: {
@@ -32,13 +43,63 @@ Object.defineProperty(global.self, "crypto", {
   },
 });
 
+Object.defineProperty(window, "matchMedia", {
+  writable: true,
+  value: jest.fn().mockImplementation((query: string) => ({
+    matches: false,
+    media: query,
+    addEventListener: jest.fn(),
+    removeEventListener: jest.fn(),
+  })),
+});
+
+Object.defineProperty(global, "matchMedia", {
+  writable: true,
+  value: jest.fn().mockImplementation((query: string) => ({
+    matches: false,
+    media: query,
+    addEventListener: jest.fn(),
+    removeEventListener: jest.fn(),
+  })),
+});
+
 process.env.INDEXER_URL = "http://localhost:3002/api/v1";
 process.env.INDEXER_V2_URL = "http://localhost:3003/api/v1";
+
+jest.mock("@amplitude/analytics-browser", () => ({
+  init: jest.fn(),
+  track: jest.fn(),
+  setUserId: jest.fn(),
+  setOptOut: jest.fn(),
+  identify: jest.fn(),
+  Identify: jest.fn().mockImplementation(() => ({ set: jest.fn() })),
+}));
 
 jest.mock("helpers/metrics", () => ({
   registerHandler: () => {},
   emitMetric: () => {},
+  initAmplitude: () => {},
+  metricsMiddleware: jest.fn(
+    () => () => (next: any) => (action: any) => next(action),
+  ),
   storeBalanceMetricData: () => {},
+  storeAccountMetricsData: () => {},
+  getAnalyticsDebugInfo: () => ({
+    hasInitialized: false,
+    hasAmplitudeKey: false,
+    userId: null,
+    isSendingToAmplitude: false,
+  }),
+  getDebugInfoSnapshot: () => ({
+    hasInitialized: false,
+    hasAmplitudeKey: false,
+    userId: null,
+    isSendingToAmplitude: false,
+  }),
+  subscribeToDebugInfo: () => () => {},
+  getRecentEvents: () => [],
+  clearRecentEvents: () => {},
+  subscribeToDebugEvents: () => () => {},
 }));
 
 jest.mock("popup/App", () => ({

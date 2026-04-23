@@ -1,7 +1,7 @@
-import { expect, test, expectPageToHaveScreenshot } from "./test-fixtures";
-import { TEST_TOKEN_ADDRESS } from "./helpers/test-token";
-import { loginToTestAccount } from "./helpers/login";
-import { allowDapp } from "./helpers/allowDapp";
+import { expect, test, expectPageToHaveScreenshot } from "../test-fixtures";
+import { TEST_TOKEN_ADDRESS } from "../helpers/test-token";
+import { loginToTestAccount, switchToMainnet } from "../helpers/login";
+import { allowDapp } from "../helpers/dAppSessionHelper";
 import {
   stubAccountBalances,
   stubAccountHistory,
@@ -9,7 +9,7 @@ import {
   stubScanDapp,
   stubTokenDetails,
   stubTokenPrices,
-} from "./helpers/stubs";
+} from "../helpers/stubs";
 
 const TX_TO_SIGN =
   "AAAAAgAAAADLvQoIbFw9k0tgjZoOrLTuJJY9kHFYp/YAEAlt/xirbAAAAGQAAAfjAAAOpQAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAQAAAABngBTmbmUycqG2cAMHcomSR80dRzGtKzxM6gb3yySD5AAAAAAAAAAAAvrwgAAAAAAAAAAA";
@@ -21,6 +21,11 @@ const AUTH_ENTRY_TO_SIGN =
 
 const SIGNED_AUTH_ENTRY =
   '"pUMQKvSlK72f3XmJmZbLLV05SPn9e8k/9m9RQOW2GDmpUZ/fS5ZWDsAF3rJulGg8AVL21FlUr+nRFcF+rLOiAw=="';
+
+// A valid HashIdPreimage XDR of type ENVELOPE_TYPE_OP_ID (6), NOT sorobanAuthorization.
+// Used to test the second validation catch in SignAuthEntry (wrong preimage variant).
+const NON_SOROBAN_AUTH_ENTRY =
+  "AAAABgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAA==";
 
 const MSG_TO_SIGN = "Hello, World!";
 const SIGNED_MSG =
@@ -45,18 +50,14 @@ const JSON_MSG_TO_SIGN = JSON.stringify({
 const JSON_SIGNED_MSG =
   '\"42IH7/mvkAT+ltbEG8oEPhVBzP7hb6NU+P+WZP3j1AIMdbwuFPrzBuRFRvLjXdXl5lDmC7aL0zrZIUrfrMXHDw==\"';
 
+const isIntegrationMode = process.env.IS_INTEGRATION_MODE === "true";
+
 test("should sign transaction when allowed", async ({
   page,
   extensionId,
   context,
 }) => {
-  await stubTokenDetails(page);
-  await stubAccountBalances(page);
-  await stubAccountHistory(page);
-  await stubTokenPrices(page);
-  await stubScanDapp(context);
-
-  await loginToTestAccount({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
   await allowDapp({ page });
 
   // open a second tab and go to docs playground
@@ -76,8 +77,97 @@ test("should sign transaction when allowed", async ({
   await pageTwo.getByText("Sign Transaction XDR").click();
 
   const txPopup = await txPopupPromise;
+  await stubAccountBalances(txPopup);
+  // Stub scan-tx with detailed asset diffs
+  await txPopup.route("**/scan-tx", async (route) => {
+    await route.fulfill({
+      json: {
+        data: {
+          simulation: {
+            status: "Success",
+            assets_diffs: {
+              GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY: [
+                {
+                  asset: {
+                    type: "NATIVE",
+                    code: "XLM",
+                  },
+                  in: null,
+                  out: {
+                    usd_price: 0,
+                    summary: "Sent 5 XLM",
+                    value: 5,
+                    raw_value: 50000000,
+                  },
+                  asset_type: "NATIVE",
+                },
+              ],
+              GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF: [
+                {
+                  asset: {
+                    type: "NATIVE",
+                    code: "XLM",
+                  },
+                  in: {
+                    usd_price: 0,
+                    summary: "Received 5 XLM",
+                    value: 5,
+                    raw_value: 50000000,
+                  },
+                  out: null,
+                  asset_type: "NATIVE",
+                },
+              ],
+            },
+            exposures: {},
+            assets_ownership_diff: {},
+            address_details: [],
+            account_summary: {
+              account_assets_diffs: [
+                {
+                  asset: {
+                    type: "NATIVE",
+                    code: "XLM",
+                  },
+                  in: null,
+                  out: {
+                    usd_price: 0,
+                    summary: "Sent 5 XLM",
+                    value: 5,
+                    raw_value: 50000000,
+                  },
+                  asset_type: "NATIVE",
+                },
+              ],
+              account_exposures: [],
+              account_ownerships_diff: [],
+              total_usd_diff: {
+                in: 0,
+                out: 0,
+                total: 0,
+              },
+              total_usd_exposure: {},
+            },
+            transaction_actions: null,
+          },
+          validation: {
+            status: "Success",
+            result_type: "Benign",
+            description: "",
+            reason: "",
+            classification: "",
+            features: [],
+          },
+          request_id: "9e460857-734b-405e-9e1f-86e656def1dd",
+        },
+        error: null,
+      },
+    });
+  });
 
   await expect(txPopup.getByText("Confirm Transaction")).toBeVisible();
+  await expect(txPopup.getByText("Network")).toBeVisible();
+  await expect(txPopup.getByText("Test Net")).toBeVisible();
 
   await expect(txPopup.getByText("GDF3…ZEFY")).toBeVisible();
 
@@ -96,13 +186,7 @@ test.skip("should sign transaction for a specific account when allowed", async (
   extensionId,
   context,
 }) => {
-  await stubTokenDetails(page);
-  await stubAccountBalances(page);
-  await stubAccountHistory(page);
-  await stubTokenPrices(page);
-  await stubScanDapp(context);
-
-  await loginToTestAccount({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context });
   await allowDapp({ page });
 
   // open a second tab and go to docs playground
@@ -138,8 +222,9 @@ test.skip("should sign transaction for a specific account when allowed", async (
 test("should not sign transaction when not allowed", async ({
   page,
   extensionId,
+  context,
 }) => {
-  await loginToTestAccount({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context });
 
   // open a second tab and go to docs playground
   const pageTwo = await page.context().newPage();
@@ -158,6 +243,7 @@ test("should not sign transaction when not allowed", async ({
   await pageTwo.getByText("Sign Transaction XDR").click();
 
   const txPopup = await txPopupPromise;
+  await stubAccountBalances(txPopup);
 
   await expect(
     txPopup.getByText(
@@ -182,7 +268,7 @@ test("should sign correct transactions when Freighter receives multiple requests
   await stubTokenPrices(page);
   await stubScanDapp(context);
 
-  await loginToTestAccount({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context });
   await allowDapp({ page });
 
   // open a second tab and go to docs playground
@@ -202,6 +288,93 @@ test("should sign correct transactions when Freighter receives multiple requests
   await pageTwo.getByText("Sign Transaction XDR").click();
 
   const txPopup = await txPopupPromise;
+  await stubAccountBalances(txPopup);
+  // Stub scan-tx with detailed asset diffs
+  await txPopup.route("**/scan-tx", async (route) => {
+    await route.fulfill({
+      json: {
+        data: {
+          simulation: {
+            status: "Success",
+            assets_diffs: {
+              GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY: [
+                {
+                  asset: {
+                    type: "NATIVE",
+                    code: "XLM",
+                  },
+                  in: null,
+                  out: {
+                    usd_price: 0,
+                    summary: "Sent 5 XLM",
+                    value: 5,
+                    raw_value: 50000000,
+                  },
+                  asset_type: "NATIVE",
+                },
+              ],
+              GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF: [
+                {
+                  asset: {
+                    type: "NATIVE",
+                    code: "XLM",
+                  },
+                  in: {
+                    usd_price: 0,
+                    summary: "Received 5 XLM",
+                    value: 5,
+                    raw_value: 50000000,
+                  },
+                  out: null,
+                  asset_type: "NATIVE",
+                },
+              ],
+            },
+            exposures: {},
+            assets_ownership_diff: {},
+            address_details: [],
+            account_summary: {
+              account_assets_diffs: [
+                {
+                  asset: {
+                    type: "NATIVE",
+                    code: "XLM",
+                  },
+                  in: null,
+                  out: {
+                    usd_price: 0,
+                    summary: "Sent 5 XLM",
+                    value: 5,
+                    raw_value: 50000000,
+                  },
+                  asset_type: "NATIVE",
+                },
+              ],
+              account_exposures: [],
+              account_ownerships_diff: [],
+              total_usd_diff: {
+                in: 0,
+                out: 0,
+                total: 0,
+              },
+              total_usd_exposure: {},
+            },
+            transaction_actions: null,
+          },
+          validation: {
+            status: "Success",
+            result_type: "Benign",
+            description: "",
+            reason: "",
+            classification: "",
+            features: [],
+          },
+          request_id: "9e460857-734b-405e-9e1f-86e656def1dd",
+        },
+        error: null,
+      },
+    });
+  });
 
   await expect(txPopup.getByText("Confirm Transaction")).toBeVisible();
 
@@ -244,13 +417,7 @@ test("should sign auth entry when allowed", async ({
   extensionId,
   context,
 }) => {
-  await stubTokenDetails(page);
-  await stubAccountBalances(page);
-  await stubAccountHistory(page);
-  await stubTokenPrices(page);
-  await stubScanDapp(context);
-
-  await loginToTestAccount({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
   await allowDapp({ page });
 
   // open a second tab and go to docs playground
@@ -274,6 +441,8 @@ test("should sign auth entry when allowed", async ({
   const popup = await popupPromise;
 
   await expect(popup.getByText("Confirm Authorization").first()).toBeVisible();
+  await expect(popup.getByText("Network")).toBeVisible();
+  await expect(popup.getByText("Test Net")).toBeVisible();
   await expectPageToHaveScreenshot({
     page: popup,
     screenshot: "sign-auth-entry.png",
@@ -292,13 +461,7 @@ test("should not sign auth entry when not allowed", async ({
   extensionId,
   context,
 }) => {
-  await stubTokenDetails(page);
-  await stubAccountBalances(page);
-  await stubAccountHistory(page);
-  await stubTokenPrices(page);
-  await stubScanDapp(context);
-
-  await loginToTestAccount({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
 
   // open a second tab and go to docs playground
   const pageTwo = await page.context().newPage();
@@ -328,13 +491,7 @@ test("should sign auth entry for a selected account when allowed", async ({
   extensionId,
   context,
 }) => {
-  await stubTokenDetails(page);
-  await stubAccountBalances(page);
-  await stubAccountHistory(page);
-  await stubTokenPrices(page);
-  await stubScanDapp(context);
-
-  await loginToTestAccount({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
 
   await allowDapp({ page });
 
@@ -342,8 +499,8 @@ test("should sign auth entry for a selected account when allowed", async ({
   const pageTwo = await page.context().newPage();
   await pageTwo.waitForLoadState();
 
-  page.getByTestId("account-view-account-name").click();
-  page.getByText("Account 2").click();
+  await page.getByTestId("account-view-account-name").click();
+  await page.getByText("Account 2").click();
   await expect(page.getByTestId("account-header")).toBeVisible();
   await allowDapp({ page });
 
@@ -359,9 +516,10 @@ test("should sign auth entry for a selected account when allowed", async ({
     .getByRole("textbox")
     .nth(2)
     .fill("GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY");
-  await pageTwo.getByText("Sign Authorization Entry XDR").click();
 
   const popupPromise = page.context().waitForEvent("page");
+  await pageTwo.getByText("Sign Authorization Entry XDR").click();
+
   const popup = await popupPromise;
 
   await expect(popup.getByText("Confirm Authorization").first()).toBeVisible();
@@ -381,13 +539,7 @@ test("should sign message string when allowed", async ({
   extensionId,
   context,
 }) => {
-  await stubTokenDetails(page);
-  await stubAccountBalances(page);
-  await stubAccountHistory(page);
-  await stubTokenPrices(page);
-  await stubScanDapp(context);
-
-  await loginToTestAccount({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
   await allowDapp({ page });
 
   // open a second tab and go to docs playground
@@ -407,6 +559,8 @@ test("should sign message string when allowed", async ({
   const popup = await popupPromise;
 
   await expect(popup.getByText(MSG_TO_SIGN)).toBeVisible();
+  await expect(popup.getByText("Network")).toBeVisible();
+  await expect(popup.getByText("Test Net")).toBeVisible();
   await expectPageToHaveScreenshot({
     page: popup,
     screenshot: "sign-message.png",
@@ -425,13 +579,7 @@ test("should sign message long string when allowed", async ({
   extensionId,
   context,
 }) => {
-  await stubTokenDetails(page);
-  await stubAccountBalances(page);
-  await stubAccountHistory(page);
-  await stubTokenPrices(page);
-  await stubScanDapp(context);
-
-  await loginToTestAccount({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context });
   await allowDapp({ page });
 
   // open a second tab and go to docs playground
@@ -475,7 +623,7 @@ test("should sign correct message when Freighter receives multiple requests", as
   await stubTokenPrices(page);
   await stubScanDapp(context);
 
-  await loginToTestAccount({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
   await allowDapp({ page });
 
   // open a second tab and go to docs playground
@@ -528,13 +676,7 @@ test("should sign message json when allowed", async ({
   extensionId,
   context,
 }) => {
-  await stubTokenDetails(page);
-  await stubAccountBalances(page);
-  await stubAccountHistory(page);
-  await stubTokenPrices(page);
-  await stubScanDapp(context);
-
-  await loginToTestAccount({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
   await allowDapp({ page });
 
   // open a second tab and go to docs playground
@@ -582,21 +724,15 @@ test("should sign message for a specific account when allowed", async ({
   extensionId,
   context,
 }) => {
-  await stubTokenDetails(page);
-  await stubAccountBalances(page);
-  await stubAccountHistory(page);
-  await stubTokenPrices(page);
-  await stubScanDapp(context);
-
-  await loginToTestAccount({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
   await allowDapp({ page });
 
   // open a second tab and go to docs playground
   const pageTwo = await page.context().newPage();
   await pageTwo.waitForLoadState();
 
-  page.getByTestId("account-view-account-name").click();
-  page.getByText("Account 2").click();
+  await page.getByTestId("account-view-account-name").click();
+  await page.getByText("Account 2").click();
   await expect(page.getByTestId("account-header")).toBeVisible();
   await allowDapp({ page });
 
@@ -610,9 +746,10 @@ test("should sign message for a specific account when allowed", async ({
     .getByRole("textbox")
     .nth(2)
     .fill("GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY");
-  await pageTwo.getByText("Sign Message").click();
 
   const popupPromise = page.context().waitForEvent("page");
+  await pageTwo.getByText("Sign Message").click();
+
   const popup = await popupPromise;
 
   await expect(popup.getByText("Sign message")).toBeVisible();
@@ -632,12 +769,7 @@ test("should not sign message when not allowed", async ({
   extensionId,
   context,
 }) => {
-  await stubTokenDetails(page);
-  await stubAccountBalances(page);
-  await stubAccountHistory(page);
-  await stubTokenPrices(page);
-  await stubScanDapp(context);
-  await loginToTestAccount({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
 
   // open a second tab and go to docs playground
   const pageTwo = await page.context().newPage();
@@ -662,14 +794,9 @@ test("should add token when allowed", async ({
   extensionId,
   context,
 }) => {
-  await stubTokenDetails(context);
-  await stubAccountBalances(page);
-  await stubAccountHistory(page);
-  await stubTokenPrices(page);
-  await stubScanDapp(context);
   await stubIsSac(context);
 
-  await loginToTestAccount({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
   await allowDapp({ page });
 
   // open a second tab and go to docs playground
@@ -704,14 +831,11 @@ test("should not add token when not allowed", async ({
   extensionId,
   context,
 }) => {
-  await stubTokenDetails(context);
-  await stubAccountBalances(page);
-  await stubAccountHistory(page);
-  await stubTokenPrices(page);
-  await stubScanDapp(context);
-  await stubIsSac(context);
+  if (!isIntegrationMode) {
+    await stubIsSac(context);
+  }
 
-  await loginToTestAccount({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
 
   // open a second tab and go to docs playground
   const pageTwo = await page.context().newPage();
@@ -745,13 +869,7 @@ test("should get public key when logged out", async ({
   extensionId,
   context,
 }) => {
-  await stubTokenDetails(page);
-  await stubAccountBalances(page);
-  await stubAccountHistory(page);
-  await stubTokenPrices(page);
-  await stubScanDapp(context);
-
-  await loginToTestAccount({ page, extensionId });
+  await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
   await page.getByTestId("account-options-dropdown").click();
   await page.getByText("Settings").click();
   await page.getByText("Log Out").click();
@@ -777,4 +895,182 @@ test("should get public key when logged out", async ({
   await expect(pageTwo.getByRole("textbox").first()).toHaveValue(
     "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
   );
+});
+
+// ── Network validation tests ──────────────────────────────────────────────────
+
+test("should show network mismatch warning when signing auth entry for wrong network", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
+  // Switch to MainNet so the wallet's expected networkId is the MainNet hash,
+  // while AUTH_ENTRY_TO_SIGN embeds the TestNet networkId.
+  await switchToMainnet(page);
+  await allowDapp({ page });
+
+  const pageTwo = await page.context().newPage();
+  await pageTwo.waitForLoadState();
+
+  const popupPromise = page.context().waitForEvent("page");
+  await pageTwo.goto(
+    "https://docs.freighter.app/docs/playground/signAuthEntry",
+  );
+  await pageTwo.getByRole("textbox").first().fill(AUTH_ENTRY_TO_SIGN);
+  await pageTwo
+    .getByRole("textbox")
+    .nth(1)
+    .fill("Test SDF Network ; September 2015");
+  await pageTwo
+    .getByText("Sign Authorization Entry XDR")
+    .click({ force: true });
+
+  const popup = await popupPromise;
+
+  await expect(
+    popup.getByText(/The authorization entry is for Test Net/),
+  ).toBeVisible();
+  await expect(
+    popup.getByText(
+      "Signing this authorization is not possible at the moment.",
+    ),
+  ).toBeVisible();
+});
+
+test("should show invalid entry warning when auth entry XDR cannot be parsed", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
+  await allowDapp({ page });
+
+  const pageTwo = await page.context().newPage();
+  await pageTwo.waitForLoadState();
+
+  const popupPromise = page.context().waitForEvent("page");
+  await pageTwo.goto(
+    "https://docs.freighter.app/docs/playground/signAuthEntry",
+  );
+  // TX_TO_SIGN is a TransactionEnvelope XDR — it will fail to parse as HashIdPreimage
+  await pageTwo.getByRole("textbox").first().fill(TX_TO_SIGN);
+  await pageTwo
+    .getByRole("textbox")
+    .nth(1)
+    .fill("Test SDF Network ; September 2015");
+  await pageTwo
+    .getByText("Sign Authorization Entry XDR")
+    .click({ force: true });
+
+  const popup = await popupPromise;
+
+  await expect(popup.getByText("Invalid Authorization Entry")).toBeVisible();
+  await expect(
+    popup.getByText("The authorization entry XDR could not be parsed."),
+  ).toBeVisible();
+});
+
+test("should show invalid entry warning when auth entry is not a Soroban authorization", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
+  await allowDapp({ page });
+
+  const pageTwo = await page.context().newPage();
+  await pageTwo.waitForLoadState();
+
+  const popupPromise = page.context().waitForEvent("page");
+  await pageTwo.goto(
+    "https://docs.freighter.app/docs/playground/signAuthEntry",
+  );
+  // NON_SOROBAN_AUTH_ENTRY is a valid HashIdPreimage of type OP_ID (6), not sorobanAuthorization
+  await pageTwo.getByRole("textbox").first().fill(NON_SOROBAN_AUTH_ENTRY);
+  await pageTwo
+    .getByRole("textbox")
+    .nth(1)
+    .fill("Test SDF Network ; September 2015");
+  await pageTwo
+    .getByText("Sign Authorization Entry XDR")
+    .click({ force: true });
+
+  const popup = await popupPromise;
+
+  await expect(popup.getByText("Invalid Authorization Entry")).toBeVisible();
+  await expect(
+    popup.getByText(
+      "The authorization entry is malformed or contains invalid data.",
+    ),
+  ).toBeVisible();
+});
+
+test("should show network warning when signing message with mismatched network passphrase", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
+  await allowDapp({ page });
+
+  const pageTwo = await page.context().newPage();
+  await pageTwo.waitForLoadState();
+
+  const popupPromise = page.context().waitForEvent("page");
+  await pageTwo.goto("https://docs.freighter.app/docs/playground/signMessage");
+  await pageTwo.getByRole("textbox").first().fill(MSG_TO_SIGN);
+  // Wallet is on TestNet; provide MainNet passphrase to trigger network mismatch
+  await pageTwo
+    .getByRole("textbox")
+    .nth(1)
+    .fill("Public Global Stellar Network ; September 2015");
+  await pageTwo.getByText("Sign message").click();
+
+  const popup = await popupPromise;
+
+  await expect(
+    popup.getByText("The requester expects you to sign this message on"),
+  ).toBeVisible();
+  // Should show "Main Net" (the mapped network name) instead of the raw passphrase
+  await expect(popup.getByText(/Main Net/)).toBeVisible();
+  await expect(
+    popup.getByText("Signing this message is not possible at the moment."),
+  ).toBeVisible();
+});
+
+test("should show network mismatch warning when signing transaction for wrong network", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
+  await allowDapp({ page });
+
+  const pageTwo = await page.context().newPage();
+  await pageTwo.waitForLoadState();
+
+  const popupPromise = page.context().waitForEvent("page");
+  await pageTwo.goto(
+    "https://docs.freighter.app/docs/playground/signTransaction",
+  );
+  await pageTwo.getByRole("textbox").first().fill(TX_TO_SIGN);
+  // Wallet is on TestNet; provide MainNet passphrase to trigger the mismatch check
+  await pageTwo
+    .getByRole("textbox")
+    .nth(1)
+    .fill("Public Global Stellar Network ; September 2015");
+  await pageTwo.getByText("Sign Transaction XDR").click();
+
+  const txPopup = await popupPromise;
+  await stubAccountBalances(txPopup);
+  await txPopup.route("**/scan-tx", async (route) => {
+    await route.fulfill({
+      json: { data: null, error: null },
+    });
+  });
+
+  await expect(txPopup.getByText(/trying to sign is on/)).toBeVisible();
+  // Should show "Main Net" (the mapped network name) instead of the raw passphrase
+  await expect(txPopup.getByText(/Main Net/)).toBeVisible();
 });

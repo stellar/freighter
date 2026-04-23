@@ -58,6 +58,8 @@ import {
   HorizonOperation,
   UserNotification,
   CollectibleContract,
+  DiscoverData,
+  RecentProtocolEntry,
 } from "./types";
 import {
   AccountBalancesInterface,
@@ -71,6 +73,7 @@ import {
   NETWORKS,
 } from "../constants/stellar";
 import { SERVICE_TYPES } from "../constants/services";
+import { isDev } from "../helpers/dev";
 import { SorobanRpcNotSupportedError } from "../constants/errors";
 import { APPLICATION_STATE } from "../constants/applicationState";
 import { WalletType } from "../constants/hardwareWallet";
@@ -620,7 +623,7 @@ export const getTokenPrices = async (tokens: string[]) => {
   return parsedResponse.data;
 };
 
-export const getDiscoverData = async () => {
+export const getDiscoverData = async (): Promise<DiscoverData> => {
   const url = new URL(`${INDEXER_V2_URL}/protocols`);
   const response = await fetch(url.href);
   const parsedResponse = (await response.json()) as {
@@ -632,6 +635,8 @@ export const getDiscoverData = async () => {
         website_url: string;
         tags: string[];
         is_blacklisted: boolean;
+        background_url?: string;
+        is_trending: boolean;
       }[];
     };
   };
@@ -651,6 +656,8 @@ export const getDiscoverData = async () => {
     websiteUrl: entry.website_url,
     tags: entry.tags,
     isBlacklisted: entry.is_blacklisted,
+    backgroundUrl: entry.background_url,
+    isTrending: entry.is_trending,
   }));
 };
 
@@ -1610,11 +1617,13 @@ export const saveSettings = async ({
   isDataSharingAllowed,
   isMemoValidationEnabled,
   isHideDustEnabled,
+  isOpenSidebarByDefault,
 }: {
   activePublicKey: string;
   isDataSharingAllowed: boolean;
   isMemoValidationEnabled: boolean;
   isHideDustEnabled: boolean;
+  isOpenSidebarByDefault: boolean;
 }): Promise<Settings & IndexerSettings> => {
   let response = {
     allowList: DEFAULT_ALLOW_LIST,
@@ -1628,6 +1637,7 @@ export const saveSettings = async ({
     isSorobanPublicEnabled: false,
     isNonSSLEnabled: false,
     isHideDustEnabled: true,
+    isOpenSidebarByDefault: false,
     error: "",
     hiddenAssets: {},
   };
@@ -1638,6 +1648,7 @@ export const saveSettings = async ({
       isDataSharingAllowed,
       isMemoValidationEnabled,
       isHideDustEnabled,
+      isOpenSidebarByDefault,
       type: SERVICE_TYPES.SAVE_SETTINGS,
     });
   } catch (e) {
@@ -1685,6 +1696,44 @@ export const saveExperimentalFeatures = async ({
   }
 
   return response;
+};
+
+export const getBlockaidOverrideState = async (): Promise<string | null> => {
+  // Only allow override state in dev mode
+  if (!isDev) {
+    return null;
+  }
+
+  const response = await sendMessageToBackground({
+    activePublicKey: null,
+    type: SERVICE_TYPES.GET_BLOCKAID_DEBUG_OVERRIDE,
+  });
+
+  if (response.error) {
+    return null;
+  }
+
+  return response.overriddenBlockaidResponse ?? null;
+};
+
+export const saveBlockaidOverrideState = async ({
+  overriddenBlockaidResponse,
+}: {
+  overriddenBlockaidResponse: string | null;
+}): Promise<{ overriddenBlockaidResponse: string | null }> => {
+  const response = await sendMessageToBackground({
+    activePublicKey: null,
+    overriddenBlockaidResponse,
+    type: SERVICE_TYPES.SAVE_BLOCKAID_DEBUG_OVERRIDE,
+  });
+
+  if (response.error) {
+    throw new Error(response.error);
+  }
+
+  return {
+    overriddenBlockaidResponse: response.overriddenBlockaidResponse ?? null,
+  };
 };
 
 export const changeNetwork = async ({
@@ -2132,14 +2181,12 @@ export const simulateTokenTransfer = async (args: {
       destination: string;
       amount: number;
     };
-    network_url: string;
     network_passphrase: string;
   } = {
     address,
     pub_key: publicKey,
     memo: memo || "", // Backend requires memo as string, use empty string if undefined
     params,
-    network_url: networkDetails.sorobanRpcUrl!,
     network_passphrase: networkDetails.networkPassphrase,
   };
 
@@ -2170,9 +2217,6 @@ export const simulateTransaction = async (args: {
     },
     body: JSON.stringify({
       xdr,
-
-      network_url: networkDetails.sorobanRpcUrl,
-
       network_passphrase: networkDetails.networkPassphrase,
     }),
   };
@@ -2309,4 +2353,149 @@ export const getCollectibles = async ({
   }
 
   return response;
+};
+
+export const changeCollectibleVisibility = async ({
+  collectibleKey,
+  collectibleVisibility,
+  activePublicKey,
+}: {
+  collectibleKey: string;
+  collectibleVisibility: AssetVisibility;
+  activePublicKey: string;
+}) => {
+  const response = await sendMessageToBackground({
+    type: SERVICE_TYPES.CHANGE_COLLECTIBLE_VISIBILITY,
+    collectibleVisibility: {
+      collectible: collectibleKey,
+      visibility: collectibleVisibility,
+    },
+    activePublicKey,
+  });
+
+  return {
+    hiddenCollectibles: response?.hiddenCollectibles || {},
+    error: response?.error || "",
+  };
+};
+
+export const getHiddenCollectibles = async ({
+  activePublicKey,
+}: {
+  activePublicKey: string;
+}) => {
+  const response = await sendMessageToBackground({
+    type: SERVICE_TYPES.GET_HIDDEN_COLLECTIBLES,
+    activePublicKey,
+  });
+
+  return {
+    hiddenCollectibles: response?.hiddenCollectibles || {},
+    error: response?.error || "",
+  };
+};
+
+export const markQueueActive = async ({
+  uuid,
+  isActive,
+}: {
+  uuid: string;
+  isActive: boolean;
+}): Promise<void> => {
+  try {
+    await sendMessageToBackground({
+      activePublicKey: null,
+      uuid,
+      isActive,
+      type: SERVICE_TYPES.MARK_QUEUE_ACTIVE,
+    });
+  } catch (e) {
+    console.error(e);
+  }
+};
+
+export const rejectSigningRequest = async ({
+  uuid,
+}: {
+  uuid: string;
+}): Promise<void> => {
+  try {
+    await sendMessageToBackground({
+      activePublicKey: null,
+      uuid,
+      type: SERVICE_TYPES.REJECT_SIGNING_REQUEST,
+    });
+  } catch (e) {
+    console.error(e);
+  }
+};
+
+export const getRecentProtocols = async (): Promise<RecentProtocolEntry[]> => {
+  const { recentProtocols, error } = await sendMessageToBackground({
+    activePublicKey: null,
+    type: SERVICE_TYPES.GET_RECENT_PROTOCOLS,
+  });
+
+  if (error) {
+    return [];
+  }
+
+  return recentProtocols || [];
+};
+
+export const addRecentProtocol = async (
+  websiteUrl: string,
+): Promise<RecentProtocolEntry[]> => {
+  const { recentProtocols, error } = await sendMessageToBackground({
+    activePublicKey: null,
+    websiteUrl,
+    type: SERVICE_TYPES.ADD_RECENT_PROTOCOL,
+  });
+
+  if (error) {
+    throw new Error(error);
+  }
+
+  return recentProtocols || [];
+};
+
+export const clearRecentProtocols = async (): Promise<
+  RecentProtocolEntry[]
+> => {
+  const { recentProtocols, error } = await sendMessageToBackground({
+    activePublicKey: null,
+    type: SERVICE_TYPES.CLEAR_RECENT_PROTOCOLS,
+  });
+
+  if (error) {
+    throw new Error(error);
+  }
+
+  return recentProtocols || [];
+};
+
+export const getHasSeenDiscoverWelcome = async (): Promise<boolean> => {
+  const { hasSeenDiscoverWelcome, error } = await sendMessageToBackground({
+    activePublicKey: null,
+    type: SERVICE_TYPES.GET_DISCOVER_WELCOME_SEEN,
+  });
+
+  if (error) {
+    throw new Error(error);
+  }
+
+  return !!hasSeenDiscoverWelcome;
+};
+
+export const dismissDiscoverWelcome = async (): Promise<boolean> => {
+  const { hasSeenDiscoverWelcome, error } = await sendMessageToBackground({
+    activePublicKey: null,
+    type: SERVICE_TYPES.DISMISS_DISCOVER_WELCOME,
+  });
+
+  if (error) {
+    throw new Error(error);
+  }
+
+  return !!hasSeenDiscoverWelcome;
 };

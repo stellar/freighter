@@ -16,7 +16,7 @@
 
   --fullscreen--max-width: 1100px;
 
-  --back--button-dimension: 1.25rem;
+  --back--button-dimension: 1.5rem;
   --back--button-z-index: 2;
 
   --dropdown-animation: 0.3s ease-out;
@@ -25,6 +25,16 @@
 
   --z-index-tooltip: 20;
   --z-index-modal: 30;
+  --z-index-maintenance-screen: 100;
+}
+
+html,
+body {
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 body {
@@ -81,7 +91,7 @@ a {
 
 // TODO: fix in SDS
 .Notification {
-  border-radius: 0.25rem;
+  border-radius: 0.5rem;
 }
 
 // TODO: Update in SDS

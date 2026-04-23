@@ -380,7 +380,7 @@ export const Wallets = () => {
       <SubviewHeader
         title={t("Wallets")}
         customBackAction={() => navigateTo(ROUTES.account, navigate)}
-        customBackIcon={<Icon.XClose />}
+        customBackIcon={<Icon.X />}
       />
       <View.Content
         hasNoTopPadding
