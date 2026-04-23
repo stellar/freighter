@@ -3,6 +3,8 @@ import {
   initExtensionMessageListener,
   initInstalledListener,
   initAlarmListener,
+  initSidebarBehavior,
+  initSidebarConnectionListener,
 } from "background";
 
 function main() {
@@ -10,6 +12,8 @@ function main() {
   initExtensionMessageListener();
   initInstalledListener();
   initAlarmListener();
+  initSidebarBehavior();
+  initSidebarConnectionListener();
 }
 
 main();

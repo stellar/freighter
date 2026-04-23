@@ -29,6 +29,7 @@ import {
 import { useScanTx } from "popup/helpers/blockaid";
 import { BlockAidScanTxResult } from "@shared/api/types";
 import { horizonGetBestPath } from "popup/helpers/horizonGetBestPath";
+import { isContractId } from "popup/helpers/soroban";
 import { formatAmount, roundUsdValue } from "popup/helpers/formatters";
 import { AppDispatch } from "popup/App";
 
@@ -36,6 +37,32 @@ const scanUrlstub = "internal";
 
 export const ERROR_TO_DISPLAY = {
   NO_PATH_FOUND: "No path found for swap.",
+  CUSTOM_TOKEN_NOT_SUPPORTED: "Swapping custom tokens is not supported yet.",
+};
+
+const UNKNOWN_ERROR_DISPLAY =
+  "We had an issue retrieving your transaction details. Please try again.";
+
+export const getSwapErrorMessage = (
+  error: unknown,
+  sourceAsset: { issuer: string },
+  destAsset: { issuer: string },
+): string => {
+  // Surface known error messages first, regardless of asset type
+  const errorStr =
+    error instanceof Error
+      ? error.message
+      : typeof error === "string"
+        ? error
+        : null;
+  if (errorStr && Object.values(ERROR_TO_DISPLAY).includes(errorStr)) {
+    return errorStr;
+  }
+  // For unrecognized errors involving contract-ID assets, show a specific message
+  if (isContractId(sourceAsset.issuer) || isContractId(destAsset.issuer)) {
+    return ERROR_TO_DISPLAY.CUSTOM_TOKEN_NOT_SUPPORTED;
+  }
+  return UNKNOWN_ERROR_DISPLAY;
 };
 
 interface SimulationParams {
@@ -232,22 +259,8 @@ function useSimulateTxData({
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });
       return payload;
     } catch (error) {
-      const unknownErrorDisplay =
-        "We had an issue retrieving your transaction details. Please try again.";
-      let payload: string;
-
-      if (error instanceof Error) {
-        // If the error message matches one of our known display errors, use it
-        payload = Object.values(ERROR_TO_DISPLAY).includes(error.message)
-          ? error.message
-          : unknownErrorDisplay;
-      } else if (typeof error === "string") {
-        payload = Object.values(ERROR_TO_DISPLAY).includes(error)
-          ? error
-          : unknownErrorDisplay;
-      } else {
-        payload = unknownErrorDisplay;
-      }
+      const { sourceAsset, destAsset } = simParams;
+      const payload = getSwapErrorMessage(error, sourceAsset, destAsset);
 
       dispatch({ type: "FETCH_DATA_ERROR", payload });
       return error;
