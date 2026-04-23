@@ -10,23 +10,31 @@ import { getSdk, isPlaywright } from "@shared/helpers/stellar";
 import {
   BlobQueue,
   ResponseQueue,
+  SignBlobMessage,
   SignBlobResponse,
 } from "@shared/api/types/message-request";
 import { encodeSep53Message } from "helpers/stellar";
 
 export const signBlob = async ({
-  apiVersion,
+  request,
   localStore,
   sessionStore,
   blobQueue,
   responseQueue,
 }: {
-  apiVersion?: string;
+  request: SignBlobMessage;
   localStore: DataStorageAccess;
   sessionStore: Store;
   blobQueue: BlobQueue;
   responseQueue: ResponseQueue<SignBlobResponse>;
 }) => {
+  const { uuid, apiVersion } = request;
+
+  if (!uuid) {
+    captureException("signBlob: missing uuid in request");
+    return { error: "Transaction not found" };
+  }
+
   const keyId = (await localStore.getItem(KEY_ID)) || "";
   let privateKey = "";
 
@@ -46,25 +54,35 @@ export const signBlob = async ({
 
   if (privateKey.length) {
     const sourceKeys = Sdk.Keypair.fromSecret(privateKey);
-    const blob = blobQueue.pop();
+    const queueIndex = blobQueue.findIndex((item) => item.uuid === uuid);
+    const blobQueueItem =
+      queueIndex !== -1 ? blobQueue.splice(queueIndex, 1)[0] : undefined;
+    const blob = blobQueueItem?.blob;
 
-    let response = null;
-
-    if (blob) {
-      const supportsSep53 =
-        (apiVersion && semver.gte(apiVersion, "5.0.0")) || isPlaywright;
-      const signPayload = supportsSep53
-        ? encodeSep53Message(blob.message)
-        : Buffer.from(blob.message, "base64");
-      response = sourceKeys.sign(signPayload);
+    if (!blob) {
+      captureException(`signBlob: no blob found in queue for uuid ${uuid}`);
+      return { error: "Transaction not found" };
     }
 
-    const blobResponse = responseQueue.pop();
+    const supportsSep53 =
+      (apiVersion && semver.gte(apiVersion, "5.0.0")) || isPlaywright;
+    const signPayload = supportsSep53
+      ? encodeSep53Message(blob.message)
+      : Buffer.from(blob.message, "base64");
+    const response = sourceKeys.sign(signPayload);
 
-    if (typeof blobResponse === "function") {
-      blobResponse(response, sourceKeys.publicKey());
+    const responseIndex = responseQueue.findIndex((item) => item.uuid === uuid);
+    const blobResponse =
+      responseIndex !== -1
+        ? responseQueue.splice(responseIndex, 1)[0]
+        : undefined;
+
+    if (blobResponse && typeof blobResponse.response === "function") {
+      blobResponse.response(response, sourceKeys.publicKey());
       return {};
     }
+
+    captureException(`signBlob: no matching response found for uuid ${uuid}`);
   }
 
   return { error: "Session timed out" };

@@ -1,6 +1,6 @@
 import React from "react";
-import { render, waitFor, screen } from "@testing-library/react";
-import { Address, Keypair, Operation, xdr } from "stellar-sdk";
+import { render, waitFor, screen, cleanup } from "@testing-library/react";
+import { Address, Keypair, Operation, StrKey, xdr } from "stellar-sdk";
 
 import { mockAccounts, TEST_PUBLIC_KEY, Wrapper } from "popup/__testHelpers__";
 import { KeyValueInvokeHostFn } from "../signTransaction/Operations/KeyVal";
@@ -146,6 +146,105 @@ describe("Operations KeyVal", () => {
         "[data-testid='OperationKeyVal__value']",
       );
       expect(execTypeValue).toHaveTextContent("contractExecutableStellarAsset");
+    });
+
+    describe("invoke contract - Contract ID truncation", () => {
+      const CONTRACT =
+        "CA3D5KRYM6CB7OWQ6TWYRR3Z4T7GNZLKERYNZGGA5SOAOPIFY6YQGAXE";
+      let matchMediaListeners: Array<(e: { matches: boolean }) => void>;
+      let currentMatches: boolean;
+
+      function mockMatchMedia(matches: boolean) {
+        currentMatches = matches;
+        matchMediaListeners = [];
+        Object.defineProperty(window, "matchMedia", {
+          writable: true,
+          value: jest.fn().mockImplementation((query: string) => ({
+            matches: currentMatches,
+            media: query,
+            addEventListener: jest.fn(
+              (_event: string, handler: (e: { matches: boolean }) => void) => {
+                matchMediaListeners.push(handler);
+              },
+            ),
+            removeEventListener: jest.fn(),
+          })),
+        });
+      }
+
+      function buildInvokeContractOp() {
+        const func = xdr.HostFunction.hostFunctionTypeInvokeContract(
+          new xdr.InvokeContractArgs({
+            contractAddress: xdr.ScAddress.scAddressTypeContract(
+              StrKey.decodeContract(CONTRACT) as any,
+            ),
+            functionName: Buffer.from("transfer"),
+            args: [],
+          }),
+        );
+        return { func } as Operation.InvokeHostFunction;
+      }
+
+      afterEach(() => {
+        cleanup();
+      });
+
+      it("truncates the Contract ID on narrow screens", async () => {
+        mockMatchMedia(false);
+        const op = buildInvokeContractOp();
+        render(<KeyValueInvokeHostFn op={op} />);
+        await waitFor(() => screen.getAllByTestId("OperationKeyVal"));
+
+        const contractIdLabel = screen.getByText("Contract ID");
+        const contractIdValue = contractIdLabel.parentNode?.querySelector(
+          "[data-testid='OperationKeyVal__value']",
+        );
+        expect(contractIdValue).toHaveTextContent("CA3D…GAXE");
+        expect(contractIdValue).not.toHaveTextContent(CONTRACT);
+      });
+
+      it("shows the full Contract ID on wide screens", async () => {
+        mockMatchMedia(true);
+        const op = buildInvokeContractOp();
+        render(<KeyValueInvokeHostFn op={op} />);
+        await waitFor(() => screen.getAllByTestId("OperationKeyVal"));
+
+        const contractIdLabel = screen.getByText("Contract ID");
+        const contractIdValue = contractIdLabel.parentNode?.querySelector(
+          "[data-testid='OperationKeyVal__value']",
+        );
+        expect(contractIdValue).toHaveTextContent(CONTRACT);
+      });
+
+      it("applies the expanded class only on wide screens", async () => {
+        mockMatchMedia(true);
+        const op = buildInvokeContractOp();
+        render(<KeyValueInvokeHostFn op={op} />);
+        await waitFor(() => screen.getAllByTestId("OperationKeyVal"));
+
+        const contractIdLabel = screen.getByText("Contract ID");
+        const contractIdValue = contractIdLabel.parentNode?.querySelector(
+          "[data-testid='OperationKeyVal__value']",
+        );
+        expect(contractIdValue?.className).toContain(
+          "Operations__pair--value-expanded",
+        );
+      });
+
+      it("does not apply the expanded class on narrow screens", async () => {
+        mockMatchMedia(false);
+        const op = buildInvokeContractOp();
+        render(<KeyValueInvokeHostFn op={op} />);
+        await waitFor(() => screen.getAllByTestId("OperationKeyVal"));
+
+        const contractIdLabel = screen.getByText("Contract ID");
+        const contractIdValue = contractIdLabel.parentNode?.querySelector(
+          "[data-testid='OperationKeyVal__value']",
+        );
+        expect(contractIdValue?.className).not.toContain(
+          "Operations__pair--value-expanded",
+        );
+      });
     });
   });
 });

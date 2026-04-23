@@ -12,17 +12,16 @@ describe("useValidateTransactionMemo", () => {
   });
   it("should validate transaction memo if memo required accounts are found", async () => {
     const txBuilderSpy = jest.spyOn(StellarSdk.TransactionBuilder, "fromXDR");
-    jest.spyOn(ApiInternal, "getMemoRequiredAccounts").mockImplementation(
-      () =>
-        Promise.resolve({
-          memoRequiredAccounts: [
-            {
-              address: "G123",
-              tags: ["memo-required"],
-            },
-          ],
-        }) as any,
-    );
+    jest.spyOn(ApiInternal, "getMemoRequiredAccounts").mockResolvedValue({
+      memoRequiredAccounts: [
+        {
+          address: "G123",
+          tags: ["memo-required"],
+        },
+      ],
+    } as unknown as Awaited<
+      ReturnType<typeof ApiInternal.getMemoRequiredAccounts>
+    >);
 
     const preloadedState = {
       auth: {
@@ -63,12 +62,11 @@ describe("useValidateTransactionMemo", () => {
   });
   it("should not validate transaction memo if memo required accounts are not found", async () => {
     const txBuilderSpy = jest.spyOn(StellarSdk.TransactionBuilder, "fromXDR");
-    jest.spyOn(ApiInternal, "getMemoRequiredAccounts").mockImplementation(
-      () =>
-        Promise.resolve({
-          memoRequiredAccounts: [],
-        }) as any,
-    );
+    jest
+      .spyOn(ApiInternal, "getMemoRequiredAccounts")
+      .mockResolvedValue({ memoRequiredAccounts: [] } as unknown as Awaited<
+        ReturnType<typeof ApiInternal.getMemoRequiredAccounts>
+      >);
 
     const preloadedState = {
       auth: {

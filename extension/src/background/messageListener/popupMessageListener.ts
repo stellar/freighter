@@ -1,8 +1,12 @@
+import browser from "webextension-polyfill";
 import { Store } from "redux";
 import {
   ResponseQueue,
   ServiceMessageRequest,
   TransactionQueue,
+  BlobQueue,
+  EntryQueue,
+  TokenQueue,
   SignTransactionResponse,
   SignBlobResponse,
   SignAuthEntryResponse,
@@ -12,13 +16,19 @@ import {
   RejectAccessResponse,
   RejectTransactionResponse,
   SignedHwPayloadResponse,
+  MarkQueueActiveMessage,
+  OpenSidebarMessage,
 } from "@shared/api/types/message-request";
 import { SERVICE_TYPES } from "@shared/constants/services";
 import { DataStorageAccess } from "background/helpers/dataStorageAccess";
 import { KeyManager } from "@stellar/typescript-wallet-sdk-km";
 import { SessionTimer } from "background/helpers/session";
 import { publicKeySelector } from "background/ducks/session";
-import { EntryToSign, MessageToSign, TokenToAdd } from "helpers/urls";
+import {
+  startQueueCleanup,
+  activeQueueUuids,
+  sidebarQueueUuids,
+} from "background/helpers/queueCleanup";
 
 import { fundAccount } from "./handlers/fundAccount";
 import { createAccount } from "./handlers/createAccount";
@@ -46,6 +56,7 @@ import { signTransaction } from "./handlers/signTransaction";
 import { signBlob } from "./handlers/signBlob";
 import { signAuthEntry } from "./handlers/signAuthEntry";
 import { rejectTransaction } from "./handlers/rejectTransaction";
+import { rejectSigningRequest } from "./handlers/rejectSigningRequest";
 import { signFreighterTransaction } from "./handlers/signFreighterTransaction";
 import { addRecentAddress } from "./handlers/addRecentAddress";
 import { loadRecentAddresses } from "./handlers/loadRecentAddresses";
@@ -76,10 +87,29 @@ import { getHiddenAssets } from "./handlers/getHiddenAssets";
 import { getMobileAppBannerDismissed } from "./handlers/getMobileAppBannerDismissed";
 import { dismissMobileAppBanner } from "./handlers/dismissMobileAppBanner";
 import { loadBackendSettings } from "./handlers/loadBackendSettings";
+import { saveBlockaidOverrideState } from "./handlers/saveDebugOverride";
+import { getBlockaidOverrideState } from "./handlers/getDebugOverride";
 import { addCollectible } from "./handlers/addCollectible";
 import { getCollectibles } from "./handlers/getCollectibles";
+import { changeCollectibleVisibility } from "./handlers/changeCollectibleVisibility";
+import { getHiddenCollectibles } from "./handlers/getHiddenCollectibles";
+import { getRecentProtocols } from "./handlers/getRecentProtocols";
+import { addRecentProtocol } from "./handlers/addRecentProtocol";
+import { clearRecentProtocols } from "./handlers/clearRecentProtocols";
+import { getDiscoverWelcomeSeen } from "./handlers/getDiscoverWelcomeSeen";
+import { dismissDiscoverWelcome } from "./handlers/dismissDiscoverWelcome";
 
 const numOfPublicKeysToCheck = 5;
+
+let sidebarWindowId: number | null = null;
+
+export const getSidebarWindowId = (): number | null => sidebarWindowId;
+export const setSidebarWindowId = (id: number) => {
+  sidebarWindowId = id;
+};
+export const clearSidebarWindowId = () => {
+  sidebarWindowId = null;
+};
 
 export const responseQueue: ResponseQueue<
   | RequestAccessResponse
@@ -93,9 +123,18 @@ export const responseQueue: ResponseQueue<
   | SignedHwPayloadResponse
 > = [];
 export const transactionQueue: TransactionQueue = [];
-export const tokenQueue: TokenToAdd[] = [];
-export const blobQueue: MessageToSign[] = [];
-export const authEntryQueue: EntryToSign[] = [];
+export const tokenQueue: TokenQueue = [];
+export const blobQueue: BlobQueue = [];
+export const authEntryQueue: EntryQueue = [];
+
+// Start periodic cleanup of expired queue items
+startQueueCleanup({
+  responseQueue,
+  transactionQueue,
+  tokenQueue,
+  blobQueue,
+  authEntryQueue,
+});
 
 export const popupMessageListener = (
   request: ServiceMessageRequest,
@@ -103,9 +142,16 @@ export const popupMessageListener = (
   localStore: DataStorageAccess,
   keyManager: KeyManager,
   sessionTimer: SessionTimer,
+  sender: { tab?: unknown; id?: string },
 ) => {
   const currentState = sessionStore.getState();
   const publicKey = publicKeySelector(currentState);
+
+  // Content scripts (dapp pages) always carry sender.tab; extension pages do not.
+  // Also verify the message originates from this extension (sender.id matches),
+  // guarding against other extensions calling popupMessageListener handlers.
+  const isFromExtensionPage =
+    !sender.tab && (!sender.id || sender.id === browser?.runtime?.id);
 
   if (
     request.activePublicKey &&
@@ -257,6 +303,7 @@ export const popupMessageListener = (
     }
     case SERVICE_TYPES.REJECT_ACCESS: {
       return rejectAccess({
+        request,
         responseQueue,
       });
     }
@@ -268,6 +315,7 @@ export const popupMessageListener = (
     }
     case SERVICE_TYPES.ADD_TOKEN: {
       return addToken({
+        request,
         localStore,
         sessionStore,
         tokenQueue,
@@ -276,6 +324,7 @@ export const popupMessageListener = (
     }
     case SERVICE_TYPES.SIGN_TRANSACTION: {
       return signTransaction({
+        request,
         localStore,
         sessionStore,
         responseQueue,
@@ -284,7 +333,7 @@ export const popupMessageListener = (
     }
     case SERVICE_TYPES.SIGN_BLOB: {
       return signBlob({
-        apiVersion: request.apiVersion,
+        request,
         localStore,
         sessionStore,
         responseQueue,
@@ -293,6 +342,7 @@ export const popupMessageListener = (
     }
     case SERVICE_TYPES.SIGN_AUTH_ENTRY: {
       return signAuthEntry({
+        request,
         localStore,
         sessionStore,
         responseQueue,
@@ -301,8 +351,20 @@ export const popupMessageListener = (
     }
     case SERVICE_TYPES.REJECT_TRANSACTION: {
       return rejectTransaction({
+        request,
         responseQueue,
         transactionQueue,
+      });
+    }
+    case SERVICE_TYPES.REJECT_SIGNING_REQUEST: {
+      if (!isFromExtensionPage) return { error: "Unauthorized" };
+      return rejectSigningRequest({
+        request,
+        responseQueue,
+        transactionQueue,
+        blobQueue,
+        authEntryQueue,
+        tokenQueue,
       });
     }
     case SERVICE_TYPES.SIGN_FREIGHTER_TRANSACTION: {
@@ -366,7 +428,13 @@ export const popupMessageListener = (
       });
     }
     case SERVICE_TYPES.LOAD_BACKEND_SETTINGS: {
-      return loadBackendSettings();
+      return loadBackendSettings({ localStore });
+    }
+    case SERVICE_TYPES.SAVE_BLOCKAID_DEBUG_OVERRIDE: {
+      return saveBlockaidOverrideState({
+        request,
+        localStore,
+      });
     }
     case SERVICE_TYPES.GET_CACHED_ASSET_ICON_LIST: {
       return getCachedAssetIconList({
@@ -484,6 +552,11 @@ export const popupMessageListener = (
         localStore,
       });
     }
+    case SERVICE_TYPES.GET_BLOCKAID_DEBUG_OVERRIDE: {
+      return getBlockaidOverrideState({
+        localStore,
+      });
+    }
     case SERVICE_TYPES.ADD_COLLECTIBLE: {
       return addCollectible({
         request,
@@ -495,6 +568,60 @@ export const popupMessageListener = (
         request,
         localStore,
       });
+    }
+    case SERVICE_TYPES.CHANGE_COLLECTIBLE_VISIBILITY: {
+      return changeCollectibleVisibility({
+        request,
+        localStore,
+      });
+    }
+    case SERVICE_TYPES.GET_HIDDEN_COLLECTIBLES: {
+      return getHiddenCollectibles({
+        localStore,
+      });
+    }
+    case SERVICE_TYPES.GET_RECENT_PROTOCOLS: {
+      return getRecentProtocols({ localStore });
+    }
+    case SERVICE_TYPES.ADD_RECENT_PROTOCOL: {
+      return addRecentProtocol({ request, localStore });
+    }
+    case SERVICE_TYPES.CLEAR_RECENT_PROTOCOLS: {
+      return clearRecentProtocols({ localStore });
+    }
+    case SERVICE_TYPES.GET_DISCOVER_WELCOME_SEEN: {
+      return getDiscoverWelcomeSeen({ localStore });
+    }
+    case SERVICE_TYPES.DISMISS_DISCOVER_WELCOME: {
+      return dismissDiscoverWelcome({ localStore });
+    }
+    case SERVICE_TYPES.MARK_QUEUE_ACTIVE: {
+      const { uuid, isActive } = request as MarkQueueActiveMessage;
+      if (isActive) {
+        activeQueueUuids.add(uuid);
+        // sidebarQueueUuids is populated at routing time in
+        // openSigningWindow, not here — this avoids missing requests
+        // that are behind the ConfirmSidebarRequest interstitial.
+      } else {
+        activeQueueUuids.delete(uuid);
+        sidebarQueueUuids.delete(uuid);
+      }
+      return {};
+    }
+
+    case SERVICE_TYPES.OPEN_SIDEBAR: {
+      if (!isFromExtensionPage) return { error: "Unauthorized" };
+      const { windowId } = request as OpenSidebarMessage;
+      if (typeof windowId !== "number") return { error: "Invalid windowId" };
+      return (async () => {
+        await chrome.sidePanel
+          .setOptions({ path: "index.html?mode=sidebar", enabled: true })
+          .catch((e) => console.error("Failed to set sidebar options:", e));
+        await chrome.sidePanel
+          .open({ windowId })
+          .catch((e) => console.error("Failed to open sidebar:", e));
+        return {};
+      })();
     }
 
     default:

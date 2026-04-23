@@ -15,6 +15,7 @@ import {
   initialState as transactionSubmissionInitialState,
 } from "popup/ducks/transactionSubmission";
 import { reducer as tokenPaymentSimulation } from "popup/ducks/token-payment";
+import { reducer as remoteConfig } from "popup/ducks/remoteConfig";
 import { WalletType } from "@shared/constants/hardwareWallet";
 import { Account } from "@shared/api/types";
 
@@ -30,6 +31,7 @@ const rootReducer = combineReducers({
   transactionSubmission,
   tokenPaymentSimulation,
   cache,
+  remoteConfig,
 });
 
 export const makeDummyStore = (state: any) =>

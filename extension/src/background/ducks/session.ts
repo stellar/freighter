@@ -54,7 +54,6 @@ export interface SessionState {
 const initialState: InitialState = {
   publicKey: "",
   hashKey: {
-    iv: "",
     key: "",
   },
   allAccounts: [] as Account[],
@@ -69,7 +68,7 @@ interface UiData {
 
 interface AppData {
   privateKey?: string;
-  hashKey?: { key: string; iv: string };
+  hashKey?: { key: string };
   password?: string;
 }
 
@@ -82,7 +81,6 @@ export const sessionSlice = createSlice({
     setActiveHashKey: (state, action: { payload: AppData }) => {
       const {
         hashKey = {
-          iv: "",
           key: "",
         },
       } = action.payload;
@@ -106,7 +104,6 @@ export const sessionSlice = createSlice({
     timeoutAccountAccess: (state) => ({
       ...state,
       hashKey: {
-        iv: "",
         key: "",
       },
       password: "",

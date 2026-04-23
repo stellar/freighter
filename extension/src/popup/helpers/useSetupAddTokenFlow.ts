@@ -19,6 +19,7 @@ type Params = {
   addToken: typeof addToken;
   assetCode: string;
   assetIssuer: string;
+  uuid: string;
 };
 
 type Response = {
@@ -35,6 +36,7 @@ export const useSetupAddTokenFlow = ({
   addToken: addTokenFn,
   assetCode,
   assetIssuer,
+  uuid,
 }: Params): Response => {
   const [isConfirming, setIsConfirming] = useState(false);
   const [isPasswordRequired, setIsPasswordRequired] = useState(false);
@@ -46,13 +48,13 @@ export const useSetupAddTokenFlow = ({
 
   const rejectAndClose = () => {
     emitMetric(METRIC_NAMES.tokenRejectApi);
-    dispatch(rejectTokenFn());
+    dispatch(rejectTokenFn({ uuid }));
     window.close();
   };
 
   const addTokenAndClose = async () => {
     const addTokenDispatch = async () => {
-      await dispatch(addTokenFn());
+      await dispatch(addTokenFn({ uuid }));
     };
 
     try {

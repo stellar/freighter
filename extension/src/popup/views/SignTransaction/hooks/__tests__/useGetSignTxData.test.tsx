@@ -299,4 +299,57 @@ describe("useGetSignTxData", () => {
     });
     expect(result.current.state.state).toBe<RequestState>(RequestState.SUCCESS);
   });
+
+  it("handles balance fetch failure gracefully and returns success with undefined balances", async () => {
+    jest.spyOn(GetBalancesHooks, "useGetBalances").mockReturnValue({
+      fetchData: () => Promise.reject(new Error("Failed to fetch balances")),
+      state: {
+        state: RequestState.IDLE,
+        data: null,
+        error: null,
+      },
+    } as ReturnType<typeof GetBalancesHooks.useGetBalances>);
+
+    jest.spyOn(BlockaidHelpers, "useScanTx").mockReturnValue({
+      data: null,
+      error: null,
+      isLoading: false,
+      setLoading: jest.fn(),
+      scanTx: () =>
+        Promise.resolve({
+          simulation: null,
+          validation: null,
+          request_id: "1",
+        }),
+    } as ReturnType<typeof BlockaidHelpers.useScanTx>);
+
+    const { result } = renderHook(
+      () =>
+        useGetSignTxData(
+          {
+            xdr: setOptionsTx,
+            url: "https://example.com",
+          },
+          {
+            showHidden: false,
+            includeIcons: false,
+          },
+          "G123",
+        ),
+      { wrapper: Wrapper(store) },
+    );
+
+    await act(async () => {
+      await result.current.fetchData();
+    });
+
+    // Should still succeed but with null balances
+    expect(result.current.state.state).toBe<RequestState>(RequestState.SUCCESS);
+    expect(
+      (result.current.state.data as { balances: unknown })?.balances,
+    ).toBeNull();
+    expect((result.current.state.data as { type: string })?.type).toBe(
+      AppDataType.RESOLVED,
+    );
+  });
 });

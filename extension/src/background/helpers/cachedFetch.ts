@@ -27,6 +27,9 @@ export const cachedFetch = async (url: string, storageKey: string) => {
   if (cachedDate < sevenDaysAgo) {
     try {
       const res = await fetch(url);
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`);
+      }
       directoryLookup = await res.json();
 
       await localStore.setItem(storageKey, directoryLookup);

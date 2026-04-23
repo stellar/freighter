@@ -5,6 +5,7 @@
 }
 
 .AccountView {
+  height: 100%;
   &__account-details {
     display: flex;
     flex-direction: column;
@@ -37,7 +38,7 @@
   }
 
   &__fullscreen {
-    margin-top: 1.5rem;
+    margin-top: pxToRem(24) pxToRem(24) 0;
   }
 
   &__fetch-fail {
@@ -89,5 +90,11 @@
     overflow-y: visible;
     padding-top: var(--View-inset-padding-top);
     padding-bottom: 1.5rem;
+  }
+
+  &__discover-sheet {
+    background: var(--sds-clr-gray-01);
+    height: 100%;
+    width: 100%;
   }
 }

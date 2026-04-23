@@ -63,6 +63,10 @@
         align-items: center;
         text-align: right;
 
+        &.Operations__pair--value-expanded {
+          flex: auto;
+        }
+
         .Operations__pair--value-text {
           display: block;
           overflow: hidden;

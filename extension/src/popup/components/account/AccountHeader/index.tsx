@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, NavLink } from "react-router-dom";
 import { createPortal } from "react-dom";
+import browser from "webextension-polyfill";
 
 import { Icon, Text, NavButton, CopyText } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
@@ -11,7 +12,7 @@ import { ROUTES } from "popup/constants/routes";
 import { LoadingBackground } from "popup/basics/LoadingBackground";
 import { View } from "popup/basics/layout/View";
 import { isActiveNetwork } from "helpers/stellar";
-import { navigateTo, openTab } from "popup/helpers/navigate";
+import { navigateTo, openTab, openSidebar } from "popup/helpers/navigate";
 import { newTabHref } from "helpers/urls";
 import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
 import { PunycodedDomain } from "popup/components/PunycodedDomain";
@@ -26,6 +27,7 @@ import { NetworkIcon } from "popup/components/manageNetwork/NetworkIcon";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { MobileAppBanner } from "popup/components/account/MobileAppBanner";
 import { AccountTabs } from "popup/components/account/AccountTabs";
+import { MaintenanceBanner } from "popup/components/MaintenanceBanner";
 
 import "./styles.scss";
 
@@ -40,6 +42,9 @@ interface AccountHeaderProps {
   }) => Promise<void>;
   publicKey: string;
   roundedTotalBalanceUsd: string;
+  refreshHiddenCollectibles: () => Promise<void>;
+  isCollectibleHidden: (collectionAddress: string, tokenId: string) => boolean;
+  onDiscoverClick: () => void;
 }
 
 export const AccountHeader = ({
@@ -50,6 +55,9 @@ export const AccountHeader = ({
   onClickRow,
   publicKey,
   roundedTotalBalanceUsd,
+  refreshHiddenCollectibles,
+  isCollectibleHidden,
+  onDiscoverClick,
 }: AccountHeaderProps) => {
   const { t } = useTranslation();
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
@@ -89,6 +97,7 @@ export const AccountHeader = ({
     <>
       <View.AppHeader
         isAccountHeader
+        topContent={<MaintenanceBanner />}
         leftContent={
           <div data-testid="AccountHeader__icon-btn">
             <div className="AccountHeader__icon-btn__left">
@@ -175,6 +184,22 @@ export const AccountHeader = ({
                         <Icon.Lock01 />
                       </div>
                     </div>
+                    {(typeof globalThis.chrome?.sidePanel?.open ===
+                      "function" ||
+                      typeof (browser as any)?.sidebarAction?.open ===
+                        "function") && (
+                      <div
+                        className="AccountHeader__options__item"
+                        onClick={() => openSidebar()}
+                      >
+                        <Text as="div" size="sm" weight="medium">
+                          {t("Sidebar mode")}
+                        </Text>
+                        <div className="AccountHeader__options__item__icon">
+                          <Icon.LayoutRight />
+                        </div>
+                      </div>
+                    )}
                     <div
                       className="AccountHeader__options__item"
                       onClick={() => openTab(newTabHref(ROUTES.account))}
@@ -302,8 +327,9 @@ export const AccountHeader = ({
         }
         rightContent={
           <div
+            data-testid="account-header-discover-button"
             className="AccountHeader__right-button AccountHeader__right-button--with-label"
-            onClick={() => navigateTo(ROUTES.discover, navigate)}
+            onClick={onDiscoverClick}
           >
             <Icon.Compass03 /> {t("Discover")}
           </div>
@@ -399,7 +425,10 @@ export const AccountHeader = ({
                 : null}
             </div>
           </div>
-          <AccountTabs />
+          <AccountTabs
+            refreshHiddenCollectibles={refreshHiddenCollectibles}
+            isCollectibleHidden={isCollectibleHidden}
+          />
         </View.Inset>
       </View.AppHeader>
     </>
