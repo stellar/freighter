@@ -290,7 +290,11 @@ export const AccountAssets = ({
             : rb.total.toFixed();
 
         return (
-          <Sheet open={selectedAsset === canonicalAsset} key={canonicalAsset}>
+          <Sheet
+            open={selectedAsset === canonicalAsset}
+            onOpenChange={(open) => !open && setSelectedAsset("")}
+            key={canonicalAsset}
+          >
             <div
               data-testid="account-assets-item"
               className={`AccountAssets__asset ${

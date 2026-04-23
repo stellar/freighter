@@ -28,8 +28,7 @@ test("View failed transaction", async ({ page, extensionId, context }) => {
     {
       amount: "0.0010000",
       asset_code: "USDC",
-      asset_issuer:
-        "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
+      asset_issuer: "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
       asset_type: "credit_alphanum4",
       created_at: "2025-03-21T22:28:46Z",
       from: "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
@@ -61,7 +60,7 @@ test("View failed transaction", async ({ page, extensionId, context }) => {
             ? input
             : input instanceof URL
               ? input.href
-              : input.url ?? "";
+              : (input.url ?? "");
         if (urlStr.includes("/account-history/")) {
           return Promise.resolve(
             new Response(JSON.stringify(data), {
