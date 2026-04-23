@@ -30,26 +30,33 @@ const makeResponse = ({
   ok = true,
   status = 200,
   statusText = "OK",
+  url = "https://example.com/metadata.json",
   contentLength = null,
   reader = null,
   text = "",
+  bodyCancel = jest.fn().mockResolvedValue(undefined),
 }: {
   ok?: boolean;
   status?: number;
   statusText?: string;
+  url?: string;
   contentLength?: string | null;
   reader?: FakeReader | null;
   text?: string;
+  bodyCancel?: jest.Mock;
 } = {}): Response =>
   ({
     ok,
     status,
     statusText,
+    url,
     headers: {
       get: (name: string) =>
         name.toLowerCase() === "content-length" ? contentLength : null,
     },
-    body: reader ? { getReader: () => reader } : undefined,
+    body: reader
+      ? { getReader: () => reader, cancel: bodyCancel }
+      : { cancel: bodyCancel },
     text: jest.fn().mockResolvedValue(text),
   }) as unknown as Response;
 
@@ -173,6 +180,53 @@ describe("fetchMetadataJson", () => {
       ).rejects.toThrow(/404/);
     });
 
+    it("cancels the response body on a non-OK status", async () => {
+      const bodyCancel = jest.fn().mockResolvedValue(undefined);
+      (global.fetch as jest.Mock).mockResolvedValue(
+        makeResponse({
+          ok: false,
+          status: 500,
+          statusText: "Server Error",
+          bodyCancel,
+        }),
+      );
+
+      await expect(
+        fetchMetadataJson("https://example.com/err.json"),
+      ).rejects.toThrow();
+      expect(bodyCancel).toHaveBeenCalled();
+    });
+
+    it("rejects when the final response.url has a non-https scheme (redirect bypass)", async () => {
+      const bodyCancel = jest.fn().mockResolvedValue(undefined);
+      (global.fetch as jest.Mock).mockResolvedValue(
+        makeResponse({
+          url: "http://evil.example.com/metadata.json",
+          reader: makeReader([encode('{"name":"x"}')]),
+          bodyCancel,
+        }),
+      );
+
+      await expect(
+        fetchMetadataJson("https://example.com/metadata.json"),
+      ).rejects.toThrow(/non-https/);
+      expect(bodyCancel).toHaveBeenCalled();
+    });
+
+    it("accepts https→https redirects", async () => {
+      (global.fetch as jest.Mock).mockResolvedValue(
+        makeResponse({
+          url: "https://cdn.example.com/metadata.json",
+          reader: makeReader([encode('{"name":"ok"}')]),
+        }),
+      );
+
+      const result = await fetchMetadataJson<{ name: string }>(
+        "https://example.com/metadata.json",
+      );
+      expect(result).toEqual({ name: "ok" });
+    });
+
     it("parses valid JSON from streamed body", async () => {
       const body = '{"name":"Test NFT","image":"https://example.com/img.png"}';
       (global.fetch as jest.Mock).mockResolvedValue(
@@ -226,6 +280,22 @@ describe("fetchMetadataJson", () => {
       await expect(
         fetchMetadataJson("https://example.com/huge.json"),
       ).rejects.toThrow(/too large/i);
+    });
+
+    it("cancels the response body when Content-Length pre-check rejects", async () => {
+      const bodyCancel = jest.fn().mockResolvedValue(undefined);
+      (global.fetch as jest.Mock).mockResolvedValue(
+        makeResponse({
+          contentLength: String(MAX_METADATA_BYTES + 1),
+          reader: makeReader([encode("{}")]),
+          bodyCancel,
+        }),
+      );
+
+      await expect(
+        fetchMetadataJson("https://example.com/huge.json"),
+      ).rejects.toThrow();
+      expect(bodyCancel).toHaveBeenCalled();
     });
 
     it("accepts when Content-Length equals MAX_METADATA_BYTES", async () => {
