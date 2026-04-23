@@ -1,6 +1,7 @@
 import { SERVICE_TYPES } from "@shared/constants/services";
 import {
   TokenQueue,
+  TokenQueueItem,
   ResponseQueue,
   AddTokenResponse,
   AddTokenMessage,
@@ -42,14 +43,18 @@ const mockSessionStore = {
   }),
 } as any;
 
-const makeTokenData = (
+const makeTokenQueueItem = (
   uuid: string,
   contractId: string = MOCK_CONTRACT_ID,
-) => ({
-  domain: "example.com",
-  url: "https://example.com",
-  contractId,
+): TokenQueueItem => ({
+  token: {
+    domain: "example.com",
+    url: "https://example.com",
+    contractId,
+    uuid,
+  },
   uuid,
+  createdAt: Date.now(),
 });
 
 describe("addToken handler", () => {
@@ -71,11 +76,15 @@ describe("addToken handler", () => {
 
   it("finds the correct token by uuid and adds it", async () => {
     tokenQueue.push(
-      makeTokenData("uuid-1"),
-      makeTokenData("uuid-2"),
-      makeTokenData("uuid-3"),
+      makeTokenQueueItem("uuid-1"),
+      makeTokenQueueItem("uuid-2"),
+      makeTokenQueueItem("uuid-3"),
     );
-    responseQueue.push({ response: mockResponseFn, uuid: "uuid-2" });
+    responseQueue.push({
+      response: mockResponseFn,
+      uuid: "uuid-2",
+      createdAt: Date.now(),
+    });
 
     const request: AddTokenMessage = {
       type: SERVICE_TYPES.ADD_TOKEN,
@@ -97,8 +106,12 @@ describe("addToken handler", () => {
   });
 
   it("throws error when uuid is not found in queue", async () => {
-    tokenQueue.push(makeTokenData("uuid-1"));
-    responseQueue.push({ response: mockResponseFn, uuid: "uuid-1" });
+    tokenQueue.push(makeTokenQueueItem("uuid-1"));
+    responseQueue.push({
+      response: mockResponseFn,
+      uuid: "uuid-1",
+      createdAt: Date.now(),
+    });
 
     const request: AddTokenMessage = {
       type: SERVICE_TYPES.ADD_TOKEN,
@@ -121,8 +134,12 @@ describe("addToken handler", () => {
   });
 
   it("returns error when uuid is undefined", async () => {
-    tokenQueue.push(makeTokenData("uuid-1"));
-    responseQueue.push({ response: mockResponseFn, uuid: "uuid-1" });
+    tokenQueue.push(makeTokenQueueItem("uuid-1"));
+    responseQueue.push({
+      response: mockResponseFn,
+      uuid: "uuid-1",
+      createdAt: Date.now(),
+    });
 
     const request = {
       type: SERVICE_TYPES.ADD_TOKEN,
@@ -142,11 +159,15 @@ describe("addToken handler", () => {
 
   it("removes only the matched item from a multi-item queue", async () => {
     tokenQueue.push(
-      makeTokenData("aaa"),
-      makeTokenData("bbb"),
-      makeTokenData("ccc"),
+      makeTokenQueueItem("aaa"),
+      makeTokenQueueItem("bbb"),
+      makeTokenQueueItem("ccc"),
     );
-    responseQueue.push({ response: mockResponseFn, uuid: "bbb" });
+    responseQueue.push({
+      response: mockResponseFn,
+      uuid: "bbb",
+      createdAt: Date.now(),
+    });
 
     const request: AddTokenMessage = {
       type: SERVICE_TYPES.ADD_TOKEN,
@@ -169,12 +190,20 @@ describe("addToken handler", () => {
 
   it("throws error when contractId is missing", async () => {
     tokenQueue.push({
-      domain: "example.com",
-      url: "https://example.com",
-      contractId: "",
+      token: {
+        domain: "example.com",
+        url: "https://example.com",
+        contractId: "",
+        uuid: "uuid-1",
+      },
       uuid: "uuid-1",
+      createdAt: Date.now(),
     });
-    responseQueue.push({ response: mockResponseFn, uuid: "uuid-1" });
+    responseQueue.push({
+      response: mockResponseFn,
+      uuid: "uuid-1",
+      createdAt: Date.now(),
+    });
 
     const request: AddTokenMessage = {
       type: SERVICE_TYPES.ADD_TOKEN,
@@ -202,8 +231,12 @@ describe("addToken handler", () => {
       }),
     } as any;
 
-    tokenQueue.push(makeTokenData("uuid-1"));
-    responseQueue.push({ response: mockResponseFn, uuid: "uuid-1" });
+    tokenQueue.push(makeTokenQueueItem("uuid-1"));
+    responseQueue.push({
+      response: mockResponseFn,
+      uuid: "uuid-1",
+      createdAt: Date.now(),
+    });
 
     const request: AddTokenMessage = {
       type: SERVICE_TYPES.ADD_TOKEN,
@@ -228,8 +261,12 @@ describe("addToken handler", () => {
       error: "Failed to subscribe to token details",
     });
 
-    tokenQueue.push(makeTokenData("uuid-1"));
-    responseQueue.push({ response: mockResponseFn, uuid: "uuid-1" });
+    tokenQueue.push(makeTokenQueueItem("uuid-1"));
+    responseQueue.push({
+      response: mockResponseFn,
+      uuid: "uuid-1",
+      createdAt: Date.now(),
+    });
 
     const request: AddTokenMessage = {
       type: SERVICE_TYPES.ADD_TOKEN,

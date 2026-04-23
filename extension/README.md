@@ -125,6 +125,83 @@ localhost:9000/#/integration-test
 
 Errors, if any, will be in the console logs.
 
+### Blockaid Debug Override (Development Only)
+
+When developing or testing Blockaid security warnings, you can override the Blockaid scan results to simulate different security states. This feature is only available in development mode.
+
+**Steps:**
+
+1. Build the extension in development mode:
+
+   ```
+   yarn build
+   ```
+
+2. Start the dev server:
+
+   ```
+   yarn start
+   ```
+
+3. Navigate to the Debug page:
+
+   ```
+   localhost:9000/#/debug
+   ```
+
+4. In the "Blockaid Response Override" section, click one of the security level buttons:
+
+   - **Safe**: Simulates a safe transaction (no warnings)
+   - **Suspicious**: Simulates a suspicious transaction (warning banner)
+   - **Malicious**: Simulates a malicious transaction (error banner)
+   - **Unable to Scan**: Simulates an unable-to-scan state (warning banner)
+
+5. The override will persist across page reloads and will affect all Blockaid scans until you click "Clear Override".
+
+**Important Notes:**
+
+- The override state is stored in local storage and only works in development builds. Production builds will ignore any override state.
+- **Error messages/details are only injected for "Unable to Scan" overrides.** When overriding to "Malicious" or "Suspicious", the warning banners will appear, but the expanded detail view may show a blank list of rows. This is because the backend will not return actual malicious/suspicious threat data - it only returns real scan results. The override only forces the security level classification, not the detailed threat information.
+
+### Analytics Debug Panel (Development Only)
+
+The Debug page (`/#/debug`) includes an **Analytics Debug** section that shows real-time Amplitude event activity. This is useful for verifying that screen-view and interaction metrics fire correctly during development.
+
+**What it shows:**
+
+- **Initialized** — Whether the Amplitude SDK has been initialized.
+- **API Key** — Whether an `AMPLITUDE_KEY` is configured (does not reveal the key).
+- **User ID** — The anonymous metrics user ID stored in local storage.
+- **Sending to Amplitude** — `Yes` only when the SDK is initialized, an API key is set, and the user has data sharing enabled.
+- **Recent Events** — A scrollable list of the last 50 events with timestamps and expandable property payloads.
+
+**How events are stored:**
+
+- Events are persisted to `localStorage`, so they are **shared across all extension tabs** and survive page refreshes.
+- Events are automatically flushed after **10 minutes** (TTL). Stale entries are filtered out on every read.
+- Debug events are only recorded in development builds (`isDev`). Production builds never write to this buffer.
+- Events are recorded regardless of the data-sharing preference, so you can test metrics in dev even with data sharing disabled.
+
+**Testing events:**
+
+1. Set up your `.env` with an `AMPLITUDE_KEY` (optional — events are logged to the debug panel even without a key):
+
+   ```
+   AMPLITUDE_KEY=your_key_here
+   ```
+
+2. Start the dev server:
+
+   ```
+   yarn start
+   ```
+
+3. Navigate around the extension (e.g., open Send, Swap, Settings). Each screen transition emits a `loaded screen: *` event.
+
+4. Open the Debug page at `localhost:9000/#/debug` to see the captured events.
+
+5. Click **Clear** to reset the event list.
+
 ## Project Setup
 
 This app has 3 main components that are named using extension nomenclature. All

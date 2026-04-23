@@ -37,16 +37,16 @@ export const addToken = async ({
 
   if (publicKey.length) {
     const tokenIndex = tokenQueue.findIndex((item) => item.uuid === uuid);
-    const tokenInfo =
+    const tokenQueueItem =
       tokenIndex !== -1 ? tokenQueue.splice(tokenIndex, 1)[0] : undefined;
 
-    if (!tokenInfo?.contractId) {
+    if (!tokenQueueItem?.token?.contractId) {
       throw Error("Missing contract id");
     }
 
     const response = await addTokenWithContractId({
       args: {
-        contractId: tokenInfo.contractId,
+        contractId: tokenQueueItem.token.contractId,
         network: networkDetails.network,
         publicKey,
       },
