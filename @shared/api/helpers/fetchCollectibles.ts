@@ -51,7 +51,9 @@ export const fetchCollectibleMetadata = async (tokenUri: string) => {
 
     return metadata;
   } catch (e) {
-    // helper rejects on any failure; the UI expects a null return here.
+    // Do not capture to Sentry — third-party metadata hosts fail often and
+    // we can't fix them. The helper rejects on any failure and the UI
+    // expects null here.
     return null;
   }
 };
