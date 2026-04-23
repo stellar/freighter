@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
+import { PASSPHRASE_TO_NETWORK_NAME } from "@shared/constants/stellar";
 import { Navigate, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { useTranslation, Trans } from "react-i18next";
@@ -261,7 +262,21 @@ export const SignTransaction = () => {
     });
   }
 
-  const { networkName, networkPassphrase } = signTxState.data?.networkDetails!;
+  // Handle potential missing networkDetails
+  if (!signTxState.data?.networkDetails) {
+    return (
+      <WarningMessage
+        variant={WarningMessageVariant.warning}
+        handleCloseClick={() => window.close()}
+        isActive
+        header={t("Unable to load network details")}
+      >
+        <p>{t("Please try again.")}</p>
+      </WarningMessage>
+    );
+  }
+
+  const { networkName, networkPassphrase } = signTxState.data.networkDetails;
 
   const scanResult = signTxState.data?.scanResult;
   const isUnableToScan = shouldTreatAsUnableToScan(scanResult);
@@ -299,7 +314,8 @@ export const SignTransaction = () => {
       >
         <p>
           {`${t("The transaction you’re trying to sign is on")} `}
-          {_networkPassphrase}.
+          {PASSPHRASE_TO_NETWORK_NAME[_networkPassphrase] ?? _networkPassphrase}
+          .
         </p>
         <p>{t("Signing this transaction is not possible at the moment.")}</p>
       </WarningMessage>
@@ -448,6 +464,15 @@ export const SignTransaction = () => {
                     </div>
                     <div className="SignTransaction__Metadata__Value">
                       <KeyIdenticon publicKey={publicKey} />
+                    </div>
+                  </div>
+                  <div className="SignTransaction__Metadata__Row">
+                    <div className="SignTransaction__Metadata__Label">
+                      <Icon.Globe02 />
+                      <span>{t("Network")}</span>
+                    </div>
+                    <div className="SignTransaction__Metadata__Value">
+                      <span>{networkName}</span>
                     </div>
                   </div>
                   <div className="SignTransaction__Metadata__Row">
@@ -649,40 +674,61 @@ interface AssetDiffsProps {
 
 const AssetDiffs = ({ assetDiffs, icons }: AssetDiffsProps) => {
   const renderAssetDiffs = (diff: BlockaidAssetDiff) => {
-    switch (diff.asset_type) {
-      // NOTE:
-      // Blockaid does not populate custom tokens in asset diffs
-      // If the begin to do this, we will need to add a lookup for token details
-      // When asset diffs include tokens not in the users balance.
-      case "NATIVE":
-      case "ASSET":
-      default: {
-        const code = "code" in diff.asset ? diff.asset.code! : "";
-        const issuer = "issuer" in diff.asset ? diff.asset.issuer! : "";
-        return (
-          <div className="SignTransaction__AssetDiffRow">
-            <div className="SignTransaction__AssetDiffRow__Asset">
-              <AssetIcon
-                assetIcons={code !== "XLM" ? icons : {}}
-                code={code}
-                issuerKey={issuer}
-              />
-              {code}
-            </div>
-            {diff.in && (
-              <div className="SignTransaction__AssetDiffRow__Amount Credit">
-                {`+${formatTokenAmount(new BigNumber(diff.in.raw_value), CLASSIC_ASSET_DECIMALS)}`}
-              </div>
-            )}
-            {diff.out && (
-              <div className="SignTransaction__AssetDiffRow__Amount Debit">
-                {`-${formatTokenAmount(new BigNumber(diff.out.raw_value), CLASSIC_ASSET_DECIMALS)}`}
-              </div>
-            )}
-          </div>
-        );
-      }
+    const asset = diff.asset as Record<string, unknown>;
+    const code =
+      typeof asset.symbol === "string"
+        ? asset.symbol
+        : typeof asset.code === "string"
+          ? asset.code
+          : null;
+    const issuer =
+      diff.asset_type === "NATIVE"
+        ? ""
+        : typeof asset.issuer === "string"
+          ? asset.issuer
+          : typeof asset.address === "string"
+            ? asset.address
+            : null;
+
+    if (code === null || issuer === null) {
+      return null;
     }
+
+    const rawDecimals = asset.decimals;
+    if (
+      rawDecimals !== undefined &&
+      (typeof rawDecimals !== "number" ||
+        !Number.isFinite(rawDecimals) ||
+        !Number.isInteger(rawDecimals) ||
+        rawDecimals < 0)
+    ) {
+      return null;
+    }
+    const decimals =
+      (rawDecimals as number | undefined) ?? CLASSIC_ASSET_DECIMALS;
+
+    return (
+      <div className="SignTransaction__AssetDiffRow">
+        <div className="SignTransaction__AssetDiffRow__Asset">
+          <AssetIcon
+            assetIcons={code !== "XLM" ? icons : {}}
+            code={code}
+            issuerKey={issuer}
+          />
+          {code}
+        </div>
+        {diff.in && (
+          <div className="SignTransaction__AssetDiffRow__Amount Credit">
+            {`+${formatTokenAmount(new BigNumber(diff.in.raw_value), decimals)}`}
+          </div>
+        )}
+        {diff.out && (
+          <div className="SignTransaction__AssetDiffRow__Amount Debit">
+            {`-${formatTokenAmount(new BigNumber(diff.out.raw_value), decimals)}`}
+          </div>
+        )}
+      </div>
+    );
   };
   return (
     <div className="SignTransaction__AssetDiffs">

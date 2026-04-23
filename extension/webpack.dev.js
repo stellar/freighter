@@ -31,7 +31,7 @@ if (missingVars.length > 0) {
   process.exit(1);
 }
 
-const devConfig = {
+const devConfig = (env = {}) => ({
   mode: "development",
   devtool: "cheap-source-map",
   devServer: {
@@ -49,6 +49,19 @@ const devConfig = {
     ),
     new Dotenv(),
   ],
-};
+});
 
-module.exports = (env) => merge(devConfig, commonConfig(env));
+// Merge AMPLITUDE_KEY from .env into the env object passed to commonConfig,
+// so its DefinePlugin handles the value without conflicts.
+module.exports = (env = {}) => {
+  const mergedEnv = {
+    ...env,
+    AMPLITUDE_KEY: env.AMPLITUDE_KEY || process.env.AMPLITUDE_KEY || "",
+    AMPLITUDE_EXPERIMENT_DEPLOYMENT_KEY:
+      env.AMPLITUDE_EXPERIMENT_DEPLOYMENT_KEY ||
+      process.env.AMPLITUDE_EXPERIMENT_DEPLOYMENT_KEY ||
+      "",
+    BUILD_TYPE: "development",
+  };
+  return merge(devConfig(mergedEnv), commonConfig(mergedEnv));
+};
