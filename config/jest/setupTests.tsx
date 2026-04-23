@@ -30,6 +30,11 @@ global.TextEncoder = TextEncoder;
 // @ts-expect-error
 global.TextDecoder = TextDecoder;
 global.__PACKAGE_VERSION__ = "5.0.0";
+global.AMPLITUDE_KEY = "test-amplitude-key";
+global.SENTRY_KEY = "test-sentry-key";
+global.APP_VERSION = "5.0.0";
+global.BUILD_TYPE = "development";
+global.AMPLITUDE_EXPERIMENT_DEPLOYMENT_KEY = "test-experiment-key";
 
 Object.defineProperty(global.self, "crypto", {
   value: {
@@ -61,10 +66,40 @@ Object.defineProperty(global, "matchMedia", {
 process.env.INDEXER_URL = "http://localhost:3002/api/v1";
 process.env.INDEXER_V2_URL = "http://localhost:3003/api/v1";
 
+jest.mock("@amplitude/analytics-browser", () => ({
+  init: jest.fn(),
+  track: jest.fn(),
+  setUserId: jest.fn(),
+  setOptOut: jest.fn(),
+  identify: jest.fn(),
+  Identify: jest.fn().mockImplementation(() => ({ set: jest.fn() })),
+}));
+
 jest.mock("helpers/metrics", () => ({
   registerHandler: () => {},
   emitMetric: () => {},
+  initAmplitude: () => {},
+  metricsMiddleware: jest.fn(
+    () => () => (next: any) => (action: any) => next(action),
+  ),
   storeBalanceMetricData: () => {},
+  storeAccountMetricsData: () => {},
+  getAnalyticsDebugInfo: () => ({
+    hasInitialized: false,
+    hasAmplitudeKey: false,
+    userId: null,
+    isSendingToAmplitude: false,
+  }),
+  getDebugInfoSnapshot: () => ({
+    hasInitialized: false,
+    hasAmplitudeKey: false,
+    userId: null,
+    isSendingToAmplitude: false,
+  }),
+  subscribeToDebugInfo: () => () => {},
+  getRecentEvents: () => [],
+  clearRecentEvents: () => {},
+  subscribeToDebugEvents: () => () => {},
 }));
 
 jest.mock("popup/App", () => ({

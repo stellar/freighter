@@ -58,6 +58,8 @@ import {
   HorizonOperation,
   UserNotification,
   CollectibleContract,
+  DiscoverData,
+  RecentProtocolEntry,
 } from "./types";
 import {
   AccountBalancesInterface,
@@ -621,7 +623,7 @@ export const getTokenPrices = async (tokens: string[]) => {
   return parsedResponse.data;
 };
 
-export const getDiscoverData = async () => {
+export const getDiscoverData = async (): Promise<DiscoverData> => {
   const url = new URL(`${INDEXER_V2_URL}/protocols`);
   const response = await fetch(url.href);
   const parsedResponse = (await response.json()) as {
@@ -633,6 +635,8 @@ export const getDiscoverData = async () => {
         website_url: string;
         tags: string[];
         is_blacklisted: boolean;
+        background_url?: string;
+        is_trending: boolean;
       }[];
     };
   };
@@ -652,6 +656,8 @@ export const getDiscoverData = async () => {
     websiteUrl: entry.website_url,
     tags: entry.tags,
     isBlacklisted: entry.is_blacklisted,
+    backgroundUrl: entry.background_url,
+    isTrending: entry.is_trending,
   }));
 };
 
@@ -1611,11 +1617,13 @@ export const saveSettings = async ({
   isDataSharingAllowed,
   isMemoValidationEnabled,
   isHideDustEnabled,
+  isOpenSidebarByDefault,
 }: {
   activePublicKey: string;
   isDataSharingAllowed: boolean;
   isMemoValidationEnabled: boolean;
   isHideDustEnabled: boolean;
+  isOpenSidebarByDefault: boolean;
 }): Promise<Settings & IndexerSettings> => {
   let response = {
     allowList: DEFAULT_ALLOW_LIST,
@@ -1629,6 +1637,7 @@ export const saveSettings = async ({
     isSorobanPublicEnabled: false,
     isNonSSLEnabled: false,
     isHideDustEnabled: true,
+    isOpenSidebarByDefault: false,
     error: "",
     hiddenAssets: {},
   };
@@ -1639,6 +1648,7 @@ export const saveSettings = async ({
       isDataSharingAllowed,
       isMemoValidationEnabled,
       isHideDustEnabled,
+      isOpenSidebarByDefault,
       type: SERVICE_TYPES.SAVE_SETTINGS,
     });
   } catch (e) {
@@ -2402,4 +2412,90 @@ export const markQueueActive = async ({
   } catch (e) {
     console.error(e);
   }
+};
+
+export const rejectSigningRequest = async ({
+  uuid,
+}: {
+  uuid: string;
+}): Promise<void> => {
+  try {
+    await sendMessageToBackground({
+      activePublicKey: null,
+      uuid,
+      type: SERVICE_TYPES.REJECT_SIGNING_REQUEST,
+    });
+  } catch (e) {
+    console.error(e);
+  }
+};
+
+export const getRecentProtocols = async (): Promise<RecentProtocolEntry[]> => {
+  const { recentProtocols, error } = await sendMessageToBackground({
+    activePublicKey: null,
+    type: SERVICE_TYPES.GET_RECENT_PROTOCOLS,
+  });
+
+  if (error) {
+    return [];
+  }
+
+  return recentProtocols || [];
+};
+
+export const addRecentProtocol = async (
+  websiteUrl: string,
+): Promise<RecentProtocolEntry[]> => {
+  const { recentProtocols, error } = await sendMessageToBackground({
+    activePublicKey: null,
+    websiteUrl,
+    type: SERVICE_TYPES.ADD_RECENT_PROTOCOL,
+  });
+
+  if (error) {
+    throw new Error(error);
+  }
+
+  return recentProtocols || [];
+};
+
+export const clearRecentProtocols = async (): Promise<
+  RecentProtocolEntry[]
+> => {
+  const { recentProtocols, error } = await sendMessageToBackground({
+    activePublicKey: null,
+    type: SERVICE_TYPES.CLEAR_RECENT_PROTOCOLS,
+  });
+
+  if (error) {
+    throw new Error(error);
+  }
+
+  return recentProtocols || [];
+};
+
+export const getHasSeenDiscoverWelcome = async (): Promise<boolean> => {
+  const { hasSeenDiscoverWelcome, error } = await sendMessageToBackground({
+    activePublicKey: null,
+    type: SERVICE_TYPES.GET_DISCOVER_WELCOME_SEEN,
+  });
+
+  if (error) {
+    throw new Error(error);
+  }
+
+  return !!hasSeenDiscoverWelcome;
+};
+
+export const dismissDiscoverWelcome = async (): Promise<boolean> => {
+  const { hasSeenDiscoverWelcome, error } = await sendMessageToBackground({
+    activePublicKey: null,
+    type: SERVICE_TYPES.DISMISS_DISCOVER_WELCOME,
+  });
+
+  if (error) {
+    throw new Error(error);
+  }
+
+  return !!hasSeenDiscoverWelcome;
 };
