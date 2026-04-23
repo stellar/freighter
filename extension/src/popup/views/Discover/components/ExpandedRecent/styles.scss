@@ -1,0 +1,52 @@
+@use "../../../../styles/utils.scss" as *;
+
+.ExpandedRecent {
+  &__list {
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(24);
+  }
+
+  &__menu-trigger {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: var(--sds-clr-gray-12);
+    padding: pxToRem(4);
+
+    svg {
+      width: pxToRem(20);
+      height: pxToRem(20);
+    }
+  }
+
+  &__dropdown {
+    width: pxToRem(180);
+    background: var(--sds-clr-gray-01);
+    border: 1px solid var(--sds-clr-gray-06);
+    border-radius: pxToRem(6);
+    box-shadow: 0 pxToRem(10) pxToRem(20) pxToRem(-10)
+      rgba(var(--color-shadow-rgb), 0.1);
+    padding: pxToRem(4);
+    z-index: 100;
+  }
+
+  &__dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: pxToRem(8);
+    padding: pxToRem(6) pxToRem(8);
+    cursor: pointer;
+    border-radius: pxToRem(4);
+    color: var(--sds-clr-red-09);
+
+    svg {
+      width: pxToRem(16);
+      height: pxToRem(16);
+    }
+
+    &:hover {
+      background: var(--sds-clr-gray-03);
+    }
+  }
+}
