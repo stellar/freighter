@@ -213,6 +213,22 @@ describe("fetchMetadataJson", () => {
       expect(bodyCancel).toHaveBeenCalled();
     });
 
+    it("rejects when the final response.url cannot be parsed (fail closed)", async () => {
+      const bodyCancel = jest.fn().mockResolvedValue(undefined);
+      (global.fetch as jest.Mock).mockResolvedValue(
+        makeResponse({
+          url: "not a url",
+          reader: makeReader([encode('{"name":"x"}')]),
+          bodyCancel,
+        }),
+      );
+
+      await expect(
+        fetchMetadataJson("https://example.com/metadata.json"),
+      ).rejects.toThrow(/could not parse final response\.url/);
+      expect(bodyCancel).toHaveBeenCalled();
+    });
+
     it("accepts https→https redirects", async () => {
       (global.fetch as jest.Mock).mockResolvedValue(
         makeResponse({

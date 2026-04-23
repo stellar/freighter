@@ -22,6 +22,8 @@ export const METADATA_FETCH_TIMEOUT_MS = 5000;
  *    (including `http`) are rejected before any network call.
  * 2. After the fetch resolves the final `response.url` is re-checked so a
  *    server that 3xx-redirects to a non-https scheme cannot bypass step 1.
+ *    If `response.url` is present but cannot be parsed we fail closed — we
+ *    can't confirm the scheme, so we can't confirm we weren't redirected.
  * 3. A 5-second AbortController-backed timeout bounds how long we wait.
  * 4. `Content-Length` is pre-checked — if the server advertises a body larger
  *    than MAX_METADATA_BYTES the request fails fast.
@@ -70,7 +72,9 @@ export const fetchMetadataJson = async <T>(url: string): Promise<T> => {
 
     // Validate the *final* URL (after any redirects) is still https. The
     // input-URL check alone can be bypassed by a server that 3xx-redirects
-    // to a non-https scheme, which fetch follows by default.
+    // to a non-https scheme, which fetch follows by default. Fail closed if
+    // we can't parse response.url — we can't confirm the scheme, so we
+    // can't confirm we weren't redirected away.
     if (response.url) {
       let finalProtocol: string | null = null;
       try {
@@ -78,10 +82,12 @@ export const fetchMetadataJson = async <T>(url: string): Promise<T> => {
       } catch {
         finalProtocol = null;
       }
-      if (finalProtocol !== null && finalProtocol !== "https:") {
+      if (finalProtocol !== "https:") {
         await response.body?.cancel?.().catch(() => {});
         throw new Error(
-          "fetchMetadataJson: redirect landed on a non-https scheme",
+          finalProtocol === null
+            ? "fetchMetadataJson: could not parse final response.url"
+            : "fetchMetadataJson: redirect landed on a non-https scheme",
         );
       }
     }
