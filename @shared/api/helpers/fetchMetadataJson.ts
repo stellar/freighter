@@ -19,7 +19,7 @@ export const METADATA_FETCH_TIMEOUT_MS = 5000;
  * Behavior:
  * 1. URL scheme is restricted to `https:` (parsed via `new URL`, so the
  *    check is case-insensitive and rejects malformed URLs). Other schemes
- *    (including cleartext `http`) are rejected before any network call.
+ *    (including `http`) are rejected before any network call.
  * 2. A 5-second AbortController-backed timeout bounds how long we wait.
  * 3. `Content-Length` is pre-checked — if the server advertises a body larger
  *    than MAX_METADATA_BYTES the request fails fast.
