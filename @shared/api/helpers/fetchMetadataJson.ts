@@ -49,7 +49,7 @@ export const fetchMetadataJson = async <T>(url: string): Promise<T> => {
 
   if (parsedUrl.protocol !== "https:") {
     throw new Error(
-      "fetchMetadataJson: url scheme must be https — got a different scheme",
+      `fetchMetadataJson: url scheme must be https (got ${parsedUrl.protocol})`,
     );
   }
 
@@ -90,15 +90,13 @@ export const fetchMetadataJson = async <T>(url: string): Promise<T> => {
       const chunks: Uint8Array[] = [];
       let totalBytes = 0;
       let done = false;
-      // Sequential reads are inherent to streaming — we cannot parallelize.
-
       while (!done) {
         const chunk = await reader.read();
         done = chunk.done;
         if (chunk.value) {
           totalBytes += chunk.value.byteLength;
           if (totalBytes > MAX_METADATA_BYTES) {
-            await reader.cancel();
+            await reader.cancel().catch(() => {});
             throw new Error(
               `fetchMetadataJson: response too large (>${MAX_METADATA_BYTES} bytes)`,
             );
