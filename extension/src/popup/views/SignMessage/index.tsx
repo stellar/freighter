@@ -42,6 +42,7 @@ import { publicKeySelector } from "popup/ducks/accountServices";
 import { reRouteOnboarding } from "popup/helpers/route";
 import { getSiteFavicon } from "popup/helpers/getSiteFavicon";
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
+import { PASSPHRASE_TO_NETWORK_NAME } from "@shared/constants/stellar";
 import {
   ATTACK_TO_DISPLAY,
   getSiteSecurityStates,
@@ -165,8 +166,7 @@ export const SignMessage = () => {
         header={`${t("Freighter is set to")} ${networkName}`}
       >
         <p>
-          {`${t("The requester expects you to sign this message on")} `}
-          {blobNetworkPassphrase}.
+          {`${t("The requester expects you to sign this message on")} ${PASSPHRASE_TO_NETWORK_NAME[blobNetworkPassphrase] ?? blobNetworkPassphrase}.`}
         </p>
         <p>{t("Signing this message is not possible at the moment.")}</p>
       </WarningMessage>
@@ -272,6 +272,15 @@ export const SignMessage = () => {
                     </div>
                     <div className="SignMessage__Metadata__Value">
                       <KeyIdenticon publicKey={publicKey} />
+                    </div>
+                  </div>
+                  <div className="SignMessage__Metadata__Row">
+                    <div className="SignMessage__Metadata__Label">
+                      <Icon.Globe02 />
+                      <span>{t("Network")}</span>
+                    </div>
+                    <div className="SignMessage__Metadata__Value">
+                      <span>{networkName}</span>
                     </div>
                   </div>
                 </div>

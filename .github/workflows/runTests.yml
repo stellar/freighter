@@ -3,59 +3,22 @@ env:
   INDEXER_URL: ${{ secrets.INDEXER_URL }}
   INDEXER_V2_URL: ${{ secrets.INDEXER_V2_BETA_URL }}
 on: [pull_request]
+permissions:
+  contents: read
 concurrency:
-  group: ${{ github.workflow }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 jobs:
   test-ci:
     name: test
     timeout-minutes: 45
     runs-on: macos-latest-xlarge
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          fetch-depth: 0
-      - name: Check and update release branch version
-        run: |
-          BRANCH_NAME="${{ github.head_ref }}"
-
-          # Check if this is a release branch
-          if [[ $BRANCH_NAME =~ ^release/([0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
-            RELEASE_VERSION="${BASH_REMATCH[1]}"
-            echo "Detected release branch with version: $RELEASE_VERSION"
-
-            # Get current version from package.json
-            CURRENT_VERSION=$(grep -o '"version": "[^"]*"' extension/package.json | head -1 | sed 's/"version": "\(.*\)"/\1/')
-            echo "Current version in files: $CURRENT_VERSION"
-
-            # Compare versions
-            if [ "$CURRENT_VERSION" != "$RELEASE_VERSION" ]; then
-              echo "Version mismatch detected. Updating to $RELEASE_VERSION..."
-
-              # Make update-version.sh executable if not already
-              chmod +x update-version.sh
-
-              # Run the version update script
-              ./update-version.sh "$RELEASE_VERSION"
-
-              # Configure git
-              git config --local user.email "action@github.com"
-              git config --local user.name "GitHub Action"
-
-              # Commit and push changes
-              git add extension/package.json extension/public/static/manifest/v3.json
-              git commit -m "chore: bump version to $RELEASE_VERSION"
-              git push
-
-              echo "Version updated and committed successfully"
-            else
-              echo "Version already matches release branch version"
-            fi
-          else
-            echo "Not a release branch, skipping version check"
-          fi
+          fetch-depth: 1
       - run: corepack enable
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6
         with:
           node-version: 22
       - run: yarn
@@ -64,10 +27,8 @@ jobs:
       - run: yarn build:freighter-api
       - run: yarn build:extension
       - run: yarn test:ci
-      - run:
-          ${{ github.base_ref == 'master' && 'IS_INTEGRATION_MODE=true' || '' }}
-          yarn test:e2e
-      - uses: actions/upload-artifact@v5
+      - run: yarn test:e2e
+      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
         if: ${{ !cancelled() }}
         with:
           name: playwright-report

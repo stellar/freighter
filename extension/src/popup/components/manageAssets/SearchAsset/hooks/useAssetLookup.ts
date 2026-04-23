@@ -29,7 +29,15 @@ import { AppDispatch, store } from "popup/App";
 interface AssetRecord {
   asset: string;
   domain?: string;
-  tomlInfo?: { image: string };
+  code?: string;
+  token_name?: string;
+  decimals?: number;
+  tomlInfo?: {
+    image?: string;
+    code?: string;
+    issuer?: string;
+    name?: string;
+  };
 }
 
 interface AssetLookupDetails {
@@ -86,7 +94,7 @@ const useAssetLookup = () => {
 
       const chunk = assetRows.slice(i, i + MAX_ASSETS_TO_SCAN);
       chunk.forEach((record) => {
-        if (record.code && record.issuer) {
+        if (record.code && record.issuer && !isContractId(record.issuer)) {
           url.searchParams.append(
             "asset_ids",
             `${record.code}-${record.issuer}`,
@@ -257,7 +265,8 @@ const useAssetLookup = () => {
 
   /*
    * Fetches data from Stellar Expert for the given asset.
-   * It returns an array of ManageAssetCurrency objects.
+   * Returns an array of ManageAssetCurrency objects for both classic
+   * ({code}-{issuer}) and contract ID results.
    *
    * @param {string} asset - The asset to look up.
    * @returns {Promise<ManageAssetCurrency[]>}
@@ -282,13 +291,27 @@ const useAssetLookup = () => {
       throw new Error("Failed to fetch Stellar Expert data");
     });
 
-    return resJson._embedded.records.map((record: AssetRecord) => ({
-      code: record.asset.split("-")[0],
-      issuer: record.asset.split("-")[1],
-      domain: record.domain,
-      image: record.tomlInfo?.image,
-      isSuspicious: false,
-    }));
+    return resJson._embedded.records.map((record: AssetRecord) => {
+      if (isContractId(record.asset)) {
+        return {
+          code: record.code || record.tomlInfo?.code || "",
+          issuer: record.asset,
+          contract: record.asset,
+          domain: record.domain ?? null,
+          image: record.tomlInfo?.image,
+          name: record.token_name || record.tomlInfo?.name,
+          decimals: record.decimals,
+          isSuspicious: false,
+        };
+      }
+      return {
+        code: record.asset.split("-")[0],
+        issuer: record.asset.split("-")[1],
+        domain: record.domain ?? null,
+        image: record.tomlInfo?.image,
+        isSuspicious: false,
+      };
+    });
   };
 
   /*
