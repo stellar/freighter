@@ -169,6 +169,7 @@ export const DisplayBackupPhrase = () => {
                     type="password"
                     name="password"
                     placeholder={t("Enter your password")}
+                    autoFocus
                   />
                 </View.Content>
                 <View.Footer>

@@ -1,0 +1,81 @@
+@use "../../../../styles/utils.scss" as *;
+
+.TrendingCarousel {
+  &__label {
+    margin-bottom: pxToRem(12);
+  }
+
+  &__scroll-container {
+    display: flex;
+    gap: pxToRem(16);
+    overflow-x: auto;
+    scroll-behavior: smooth;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+    margin-left: calc(-1 * var(--popup--side-padding));
+    margin-right: calc(-1 * var(--popup--side-padding));
+    padding-left: var(--popup--side-padding);
+    padding-right: var(--popup--side-padding);
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+
+  &__card {
+    min-width: pxToRem(288);
+    height: pxToRem(162);
+    border-radius: pxToRem(12);
+    background-color: var(--sds-clr-gray-03);
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    flex-shrink: 0;
+
+    &__bg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    &__placeholder {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--sds-clr-gray-11);
+
+      svg {
+        width: pxToRem(40);
+        height: pxToRem(40);
+      }
+    }
+
+    &__gradient {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        180deg,
+        transparent 40%,
+        var(--sds-clr-gray-03) 100%
+      );
+    }
+
+    &__content {
+      position: absolute;
+      bottom: pxToRem(12);
+      left: pxToRem(12);
+      right: pxToRem(12);
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+
+    &__tag {
+      color: var(--sds-clr-gray-11);
+    }
+  }
+}

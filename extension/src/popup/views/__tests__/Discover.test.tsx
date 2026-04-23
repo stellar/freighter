@@ -1,40 +1,72 @@
 import React from "react";
 import { render, waitFor, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import {
   DEFAULT_NETWORKS,
   MAINNET_NETWORK_DETAILS,
 } from "@shared/constants/stellar";
 import { APPLICATION_STATE as ApplicationState } from "@shared/constants/applicationState";
-import { ROUTES } from "popup/constants/routes";
+import { DiscoverData } from "@shared/api/types";
 import * as ApiInternal from "@shared/api/internal";
+import * as Navigate from "popup/helpers/navigate";
+import { toast } from "sonner";
 import { Wrapper, mockAccounts } from "../../__testHelpers__";
 import { Discover } from "../Discover";
 
-describe("Discover view", () => {
-  it("displays Discover protocols with links that are not blacklisted", async () => {
-    jest.spyOn(ApiInternal, "getDiscoverData").mockImplementation(() =>
-      Promise.resolve([
-        {
-          description: "description text",
-          name: "Foo",
-          iconUrl: "https://example.com/icon.png",
-          websiteUrl: "https://foo.com",
-          tags: ["tag1", "tag2"],
-          isBlacklisted: false,
-        },
-        {
-          description: "description text",
-          name: "Baz",
-          iconUrl: "https://example.com/icon.png",
-          websiteUrl: "https://baz.com",
-          tags: ["tag1", "tag2"],
-          isBlacklisted: true,
-        },
-      ]),
-    );
+const mockProtocols: DiscoverData = [
+  {
+    description: "A lending protocol",
+    name: "Blend",
+    iconUrl: "https://example.com/blend.png",
+    websiteUrl: "https://blend.capital",
+    tags: ["Lending", "DeFi"],
+    isBlacklisted: false,
+    backgroundUrl: "https://example.com/blend-bg.png",
+    isTrending: true,
+  },
+  {
+    description: "An exchange",
+    name: "Soroswap",
+    iconUrl: "https://example.com/soroswap.png",
+    websiteUrl: "https://soroswap.finance",
+    tags: ["Exchange"],
+    isBlacklisted: false,
+    isTrending: false,
+  },
+  {
+    description: "Blacklisted protocol",
+    name: "BadProtocol",
+    iconUrl: "https://example.com/bad.png",
+    websiteUrl: "https://bad.com",
+    tags: ["Scam"],
+    isBlacklisted: true,
+    isTrending: false,
+  },
+];
+
+describe("Discover", () => {
+  let openTabSpy: jest.SpyInstance;
+
+  beforeEach(() => {
+    jest.spyOn(ApiInternal, "getDiscoverData").mockResolvedValue(mockProtocols);
+    jest.spyOn(ApiInternal, "getRecentProtocols").mockResolvedValue([]);
+    jest.spyOn(ApiInternal, "addRecentProtocol").mockResolvedValue([]);
+    jest.spyOn(ApiInternal, "clearRecentProtocols").mockResolvedValue([]);
+    jest
+      .spyOn(ApiInternal, "getHasSeenDiscoverWelcome")
+      .mockResolvedValue(false);
+    jest.spyOn(ApiInternal, "dismissDiscoverWelcome").mockResolvedValue(true);
+    openTabSpy = jest.spyOn(Navigate, "openTab").mockResolvedValue({} as any);
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  const renderDiscover = () =>
     render(
       <Wrapper
-        routes={[ROUTES.discover]}
+        routes={["/"]}
         state={{
           auth: {
             error: null,
@@ -48,22 +80,419 @@ describe("Discover view", () => {
           },
         }}
       >
-        <Discover />
+        <Discover onClose={jest.fn()} />
       </Wrapper>,
     );
 
-    await waitFor(() => {
-      expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
-        "Discover",
-      );
-    });
-    const protocolLinks = screen.queryAllByTestId("discover-row");
+  describe("rendering", () => {
+    it("displays trending protocols in the carousel", async () => {
+      renderDiscover();
 
-    expect(protocolLinks).toHaveLength(1);
-    expect(protocolLinks[0]).toHaveTextContent("Foo");
-    expect(screen.getByTestId("discover-row-button")).toHaveAttribute(
-      "href",
-      "https://foo.com",
-    );
+      await waitFor(() => {
+        expect(screen.getByTestId("trending-carousel")).toBeInTheDocument();
+      });
+
+      const trendingCards = screen.getAllByTestId("trending-card");
+      expect(trendingCards).toHaveLength(1);
+      expect(trendingCards[0]).toHaveTextContent("Blend");
+    });
+
+    it("displays dApps section with non-blacklisted protocols", async () => {
+      renderDiscover();
+
+      await waitFor(() => {
+        expect(
+          screen.getByTestId("discover-section-dapps"),
+        ).toBeInTheDocument();
+      });
+
+      const protocolRows = screen.getAllByTestId("protocol-row");
+      // Blend + Soroswap (BadProtocol is blacklisted)
+      expect(protocolRows).toHaveLength(2);
+      expect(protocolRows[0]).toHaveTextContent("Blend");
+      expect(protocolRows[1]).toHaveTextContent("Soroswap");
+    });
+
+    it("hides recent section when no recent protocols exist", async () => {
+      renderDiscover();
+
+      await waitFor(() => {
+        expect(
+          screen.getByTestId("discover-section-dapps"),
+        ).toBeInTheDocument();
+      });
+
+      expect(
+        screen.queryByTestId("discover-section-recent"),
+      ).not.toBeInTheDocument();
+    });
+
+    it("shows recent section when recent protocols exist", async () => {
+      jest
+        .spyOn(ApiInternal, "getRecentProtocols")
+        .mockResolvedValue([
+          { websiteUrl: "https://blend.capital", lastAccessed: Date.now() },
+        ]);
+
+      renderDiscover();
+
+      await waitFor(() => {
+        expect(
+          screen.getByTestId("discover-section-recent"),
+        ).toBeInTheDocument();
+      });
+    });
+
+    it("filters blacklisted protocols from trending carousel", async () => {
+      renderDiscover();
+
+      await waitFor(() => {
+        expect(screen.getByTestId("trending-carousel")).toBeInTheDocument();
+      });
+
+      const trendingCards = screen.getAllByTestId("trending-card");
+      trendingCards.forEach((card) => {
+        expect(card).not.toHaveTextContent("BadProtocol");
+      });
+    });
+  });
+
+  describe("error state", () => {
+    it("shows error screen with retry when API fails", async () => {
+      jest
+        .spyOn(ApiInternal, "getDiscoverData")
+        .mockRejectedValue(new Error("Network error"));
+
+      renderDiscover();
+
+      await waitFor(() => {
+        expect(screen.getByTestId("discover-error")).toBeInTheDocument();
+      });
+
+      expect(screen.getByText("Unable to fetch protocols")).toBeInTheDocument();
+    });
+
+    it("retries fetching data when Refresh is clicked", async () => {
+      const getDiscoverSpy = jest
+        .spyOn(ApiInternal, "getDiscoverData")
+        .mockRejectedValueOnce(new Error("Network error"))
+        .mockResolvedValueOnce(mockProtocols);
+
+      renderDiscover();
+
+      await waitFor(() => {
+        expect(screen.getByTestId("discover-error")).toBeInTheDocument();
+      });
+
+      await userEvent.click(screen.getByTestId("discover-error-retry"));
+
+      await waitFor(() => {
+        expect(screen.getByTestId("trending-carousel")).toBeInTheDocument();
+      });
+
+      expect(getDiscoverSpy).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe("open protocol", () => {
+    it("saves to recents before opening a new tab", async () => {
+      renderDiscover();
+
+      await waitFor(() => {
+        expect(
+          screen.getByTestId("discover-section-dapps"),
+        ).toBeInTheDocument();
+      });
+
+      const openButtons = screen.getAllByTestId("protocol-row-open");
+      await userEvent.click(openButtons[0]);
+
+      expect(ApiInternal.addRecentProtocol).toHaveBeenCalledWith(
+        "https://blend.capital",
+      );
+      expect(openTabSpy).toHaveBeenCalledWith("https://blend.capital");
+
+      // Verify order: addRecentProtocol called before openTab
+      const addCall = (ApiInternal.addRecentProtocol as jest.Mock).mock
+        .invocationCallOrder[0];
+      const openCall = openTabSpy.mock.invocationCallOrder[0];
+      expect(addCall).toBeLessThan(openCall);
+    });
+
+    it("blocks protocols with non-https URLs", async () => {
+      jest.spyOn(ApiInternal, "getDiscoverData").mockResolvedValue([
+        {
+          description: "Malicious protocol",
+          name: "Evil",
+          iconUrl: "https://example.com/evil.png",
+          websiteUrl: "javascript:alert(1)",
+          tags: ["Scam"],
+          isBlacklisted: false,
+          isTrending: false,
+        },
+      ]);
+
+      renderDiscover();
+
+      await waitFor(() => {
+        expect(
+          screen.getByTestId("discover-section-dapps"),
+        ).toBeInTheDocument();
+      });
+
+      const openButtons = screen.getAllByTestId("protocol-row-open");
+      await userEvent.click(openButtons[0]);
+
+      expect(ApiInternal.addRecentProtocol).not.toHaveBeenCalled();
+      expect(openTabSpy).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("protocol details panel", () => {
+    it("opens details panel when clicking a protocol row", async () => {
+      renderDiscover();
+
+      await waitFor(() => {
+        expect(
+          screen.getByTestId("discover-section-dapps"),
+        ).toBeInTheDocument();
+      });
+
+      const protocolRows = screen.getAllByTestId("protocol-row");
+      await userEvent.click(protocolRows[0]);
+
+      await waitFor(() => {
+        expect(
+          screen.getByTestId("protocol-details-panel"),
+        ).toBeInTheDocument();
+      });
+
+      const panel = screen.getByTestId("protocol-details-panel");
+      expect(panel).toHaveTextContent("blend.capital");
+      expect(panel).toHaveTextContent("Lending");
+      expect(panel).toHaveTextContent("DeFi");
+      expect(panel).toHaveTextContent("A lending protocol");
+    });
+  });
+
+  describe("welcome modal", () => {
+    it("shows welcome modal on first visit", async () => {
+      jest
+        .spyOn(ApiInternal, "getHasSeenDiscoverWelcome")
+        .mockResolvedValue(false);
+
+      renderDiscover();
+
+      await waitFor(() => {
+        expect(screen.getByText("Welcome to Discover!")).toBeInTheDocument();
+      });
+    });
+
+    it("hides welcome modal when already dismissed", async () => {
+      jest
+        .spyOn(ApiInternal, "getHasSeenDiscoverWelcome")
+        .mockResolvedValue(true);
+
+      renderDiscover();
+
+      await waitFor(() => {
+        expect(
+          screen.getByTestId("discover-section-dapps"),
+        ).toBeInTheDocument();
+      });
+
+      expect(
+        screen.queryByText("Welcome to Discover!"),
+      ).not.toBeInTheDocument();
+    });
+
+    it("dismisses welcome modal and persists to storage", async () => {
+      jest
+        .spyOn(ApiInternal, "getHasSeenDiscoverWelcome")
+        .mockResolvedValue(false);
+
+      renderDiscover();
+
+      await waitFor(() => {
+        expect(screen.getByText("Welcome to Discover!")).toBeInTheDocument();
+      });
+
+      const dismissButton = screen.getByTestId("discover-welcome-dismiss");
+      await userEvent.click(dismissButton);
+
+      expect(
+        screen.queryByText("Welcome to Discover!"),
+      ).not.toBeInTheDocument();
+      expect(ApiInternal.dismissDiscoverWelcome).toHaveBeenCalled();
+    });
+  });
+
+  describe("sub-view navigation", () => {
+    it("navigates to expanded dApps view", async () => {
+      renderDiscover();
+
+      await waitFor(() => {
+        expect(
+          screen.getByTestId("discover-section-dapps"),
+        ).toBeInTheDocument();
+      });
+
+      const expandButton = screen.getByTestId("discover-section-expand-dapps");
+      await userEvent.click(expandButton);
+
+      await waitFor(() => {
+        expect(screen.getByText("dApps")).toBeInTheDocument();
+      });
+
+      // Should show all non-blacklisted protocols
+      const rows = screen.getAllByTestId("protocol-row");
+      expect(rows).toHaveLength(2);
+    });
+
+    it("navigates to expanded recent view and back", async () => {
+      jest
+        .spyOn(ApiInternal, "getRecentProtocols")
+        .mockResolvedValue([
+          { websiteUrl: "https://blend.capital", lastAccessed: Date.now() },
+        ]);
+
+      renderDiscover();
+
+      await waitFor(() => {
+        expect(
+          screen.getByTestId("discover-section-recent"),
+        ).toBeInTheDocument();
+      });
+
+      const expandButton = screen.getByTestId("discover-section-expand-recent");
+      await userEvent.click(expandButton);
+
+      await waitFor(() => {
+        expect(screen.getByText("Recent")).toBeInTheDocument();
+        expect(screen.getByTestId("expanded-recent-menu")).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe("clear recents", () => {
+    it("clears recent protocols and returns to main view", async () => {
+      jest
+        .spyOn(ApiInternal, "getRecentProtocols")
+        .mockResolvedValueOnce([
+          { websiteUrl: "https://blend.capital", lastAccessed: Date.now() },
+        ])
+        // After clear, return empty
+        .mockResolvedValue([]);
+
+      renderDiscover();
+
+      await waitFor(() => {
+        expect(
+          screen.getByTestId("discover-section-recent"),
+        ).toBeInTheDocument();
+      });
+
+      // Navigate to expanded recent
+      const expandButton = screen.getByTestId("discover-section-expand-recent");
+      await userEvent.click(expandButton);
+
+      await waitFor(() => {
+        expect(screen.getByTestId("expanded-recent-menu")).toBeInTheDocument();
+      });
+
+      // Open menu and clear
+      const menuTrigger = screen.getByTestId("expanded-recent-menu");
+      await userEvent.click(menuTrigger);
+
+      const clearButton = screen.getByTestId("clear-recents-button");
+      await userEvent.click(clearButton);
+
+      expect(ApiInternal.clearRecentProtocols).toHaveBeenCalled();
+
+      // Should return to main view
+      await waitFor(() => {
+        expect(
+          screen.getByTestId("discover-section-dapps"),
+        ).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe("error toasts", () => {
+    it("notifies the user when openTab fails", async () => {
+      openTabSpy.mockRejectedValueOnce(new Error("tab creation blocked"));
+      const toastCustomSpy = jest
+        .spyOn(toast, "custom")
+        .mockImplementation(() => "toast-id");
+
+      renderDiscover();
+
+      await waitFor(() => {
+        expect(
+          screen.getByTestId("discover-section-dapps"),
+        ).toBeInTheDocument();
+      });
+
+      const openButtons = screen.getAllByTestId("protocol-row-open");
+      await userEvent.click(openButtons[0]);
+
+      await waitFor(() => {
+        expect(toastCustomSpy).toHaveBeenCalledTimes(1);
+      });
+
+      const toastElement = (
+        toastCustomSpy.mock.calls[0][0] as () => React.ReactElement<{
+          title: string;
+          children: string;
+        }>
+      )();
+      expect(toastElement.props.title).toBe("Couldn’t open this dApp");
+      expect(toastElement.props.children).toBe("Please try again later.");
+    });
+
+    it("notifies the user when clearing recents fails", async () => {
+      jest
+        .spyOn(ApiInternal, "getRecentProtocols")
+        .mockResolvedValue([
+          { websiteUrl: "https://blend.capital", lastAccessed: Date.now() },
+        ]);
+      jest
+        .spyOn(ApiInternal, "clearRecentProtocols")
+        .mockRejectedValueOnce(new Error("storage write failed"));
+      const toastCustomSpy = jest
+        .spyOn(toast, "custom")
+        .mockImplementation(() => "toast-id");
+
+      renderDiscover();
+
+      await waitFor(() => {
+        expect(
+          screen.getByTestId("discover-section-recent"),
+        ).toBeInTheDocument();
+      });
+
+      await userEvent.click(
+        screen.getByTestId("discover-section-expand-recent"),
+      );
+      await waitFor(() => {
+        expect(screen.getByTestId("expanded-recent-menu")).toBeInTheDocument();
+      });
+
+      await userEvent.click(screen.getByTestId("expanded-recent-menu"));
+      await userEvent.click(screen.getByTestId("clear-recents-button"));
+
+      await waitFor(() => {
+        expect(toastCustomSpy).toHaveBeenCalledTimes(1);
+      });
+
+      const toastElement = (
+        toastCustomSpy.mock.calls[0][0] as () => React.ReactElement<{
+          title: string;
+          children: string;
+        }>
+      )();
+      expect(toastElement.props.title).toBe("Couldn’t clear recent dApps");
+      expect(toastElement.props.children).toBe("Please try again later.");
+    });
   });
 });

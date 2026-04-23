@@ -93,7 +93,7 @@ export const ChooseAsset = ({
       <SubviewHeader
         title={t("Your assets")}
         customBackIcon={
-          !domainState.data?.isManagingAssets ? <Icon.XClose /> : undefined
+          !domainState.data?.isManagingAssets ? <Icon.X /> : undefined
         }
         customBackAction={goBack}
         rightButton={

@@ -48,6 +48,7 @@ describe("Create account message listener", () => {
       mockDataStorage,
       mockKeyManager,
       testAlarm,
+      { id: "fake-extension-id" },
     )) as Awaited<ReturnType<typeof createAccount>>;
 
     const { session } = mockSessionStore.getState();
@@ -57,7 +58,7 @@ describe("Create account message listener", () => {
     const tempStoreId = await mockDataStorage.getItem(TEMPORARY_STORE_ID);
 
     expect(response.hasPrivateKey).toBeTruthy();
-    expect(session.hashKey?.iv).not.toBeUndefined();
+    expect(session.hashKey?.key).toBeTruthy();
     expect(keyIdList.length).toBe(1);
     expect(keyId).toBeDefined();
     expect(applicationState).toBe(APPLICATION_STATE.PASSWORD_CREATED);
@@ -74,6 +75,7 @@ describe("Create account message listener", () => {
       mockDataStorage,
       mockKeyManager,
       testAlarm,
+      { id: "fake-extension-id" },
     )) as Awaited<ReturnType<typeof createAccount>>;
     const keyId = await mockDataStorage.getItem(KEY_ID);
 
@@ -87,6 +89,7 @@ describe("Create account message listener", () => {
       mockDataStorage,
       mockKeyManager,
       testAlarm,
+      { id: "fake-extension-id" },
     )) as Awaited<ReturnType<typeof createAccount>>;
     const secondKeyId = await mockDataStorage.getItem(KEY_ID);
     const keyIdList = await mockDataStorage.getItem(KEY_ID_LIST);
@@ -109,6 +112,7 @@ describe("Create account message listener", () => {
       mockDataStorage,
       mockKeyManager,
       testAlarm,
+      { id: "fake-extension-id" },
     )) as Awaited<ReturnType<typeof createAccount>>;
     const keyId = await mockDataStorage.getItem(KEY_ID);
 
@@ -122,6 +126,7 @@ describe("Create account message listener", () => {
       mockDataStorage,
       mockKeyManager,
       testAlarm,
+      { id: "fake-extension-id" },
     )) as Awaited<ReturnType<typeof createAccount>>;
     const secondKeyId = await mockDataStorage.getItem(KEY_ID);
     const keyIdList = await mockDataStorage.getItem(KEY_ID_LIST);

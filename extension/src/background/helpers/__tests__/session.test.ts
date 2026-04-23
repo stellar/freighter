@@ -9,16 +9,16 @@ describe("session", () => {
     const password = "password";
     const privateKey = "privateKey";
 
-    const { key, iv } = await deriveKeyFromString(password);
+    const { key } = await deriveKeyFromString(password);
 
     const encryptedPrivateKey = await encryptHashString({
       str: privateKey,
-      keyObject: { key, iv },
+      keyObject: { key },
     });
 
     const decryptedPrivateKey = await decryptHashString({
       hash: encryptedPrivateKey,
-      keyObject: { key, iv },
+      keyObject: { key },
     });
 
     expect(decryptedPrivateKey).toEqual(privateKey);
@@ -28,37 +28,60 @@ describe("session", () => {
       "passwordpasswordpasswordpasswordpasswordpassworw21w1w1@@@@dpasswordpasswordpasswordpcxassad@@@@asswordpasswordpasswordpasswordpassword";
     const privateKey = "privateKeyprivateKeyprivateKeyprivateKey";
 
-    const { key, iv } = await deriveKeyFromString(password);
+    const { key } = await deriveKeyFromString(password);
 
     const encryptedPrivateKey = await encryptHashString({
       str: privateKey,
-      keyObject: { key, iv },
+      keyObject: { key },
     });
 
     const decryptedPrivateKey = await decryptHashString({
       hash: encryptedPrivateKey,
-      keyObject: { key, iv },
+      keyObject: { key },
     });
 
     expect(decryptedPrivateKey).toEqual(privateKey);
   });
   it("should be able to encrypt and decrypt an empty string", async () => {
-    // this is an edge case and should never happen, but want to make sure this does not throw an error
     const password = "";
     const privateKey = "";
 
-    const { key, iv } = await deriveKeyFromString(password);
+    const { key } = await deriveKeyFromString(password);
 
     const encryptedPrivateKey = await encryptHashString({
       str: privateKey,
-      keyObject: { key, iv },
+      keyObject: { key },
     });
 
     const decryptedPrivateKey = await decryptHashString({
       hash: encryptedPrivateKey,
-      keyObject: { key, iv },
+      keyObject: { key },
     });
 
     expect(decryptedPrivateKey).toEqual(privateKey);
+  });
+  it("should produce different ciphertexts for the same plaintext", async () => {
+    const password = "password";
+    const privateKey = "privateKey";
+
+    const { key } = await deriveKeyFromString(password);
+
+    const encrypted1 = await encryptHashString({
+      str: privateKey,
+      keyObject: { key },
+    });
+
+    const encrypted2 = await encryptHashString({
+      str: privateKey,
+      keyObject: { key },
+    });
+
+    const bytes1 = new Uint8Array(encrypted1);
+    const bytes2 = new Uint8Array(encrypted2);
+    const areEqual =
+      bytes1.length === bytes2.length &&
+      bytes1.every((val, i) => val === bytes2[i]);
+
+    expect(areEqual).toBe(false);
   });
 });

@@ -35,12 +35,14 @@ export const HardwareSign = ({
   onSubmit,
   isInternal = false,
   onCancel,
+  uuid,
 }: {
   walletType: ConfigurableWalletType;
   isSignSorobanAuthorization?: boolean;
   onSubmit?: () => void;
   isInternal?: boolean;
   onCancel?: () => void;
+  uuid?: string;
 }) => {
   const dispatch = useDispatch<AppDispatch>();
   const { t } = useTranslation();
@@ -101,10 +103,10 @@ export const HardwareSign = ({
               preparedTransaction: res.payload,
             }),
           );
-        } else {
+        } else if (uuid) {
           // right now there are only two cases after signing,
           // submitting to network or handling in background script
-          await handleSignedHwPayload({ signedPayload: res.payload });
+          await handleSignedHwPayload({ signedPayload: res.payload, uuid });
         }
         closeOverlay();
         if (onSubmit) {
@@ -146,7 +148,7 @@ export const HardwareSign = ({
               onCancel();
             }
           }}
-          customBackIcon={<Icon.XClose />}
+          customBackIcon={<Icon.X />}
           title={t("Connect {walletType}", { walletType })}
         />
         <div className="HardwareSign__content">
@@ -197,7 +199,7 @@ export const HardwareSign = ({
       <div className="HardwareSign__wrapper" ref={hardwareConnectRef}>
         <SubviewHeader
           customBackAction={closeOverlay}
-          customBackIcon={<Icon.XClose />}
+          customBackIcon={<Icon.X />}
           title={t("Connect {walletType}", { walletType })}
         />
         <div className="HardwareSign__content">
