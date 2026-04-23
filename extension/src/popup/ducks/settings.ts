@@ -58,6 +58,7 @@ const settingsInitialState: Settings = {
   networksList: DEFAULT_NETWORKS,
   isMemoValidationEnabled: true,
   isHideDustEnabled: true,
+  isOpenSidebarByDefault: false,
   error: "",
 };
 
@@ -124,12 +125,18 @@ export const saveSettings = createAsyncThunk<
     isDataSharingAllowed: boolean;
     isMemoValidationEnabled: boolean;
     isHideDustEnabled: boolean;
+    isOpenSidebarByDefault: boolean;
   },
   { rejectValue: ErrorMessage; state: AppState }
 >(
   "settings/saveSettings",
   async (
-    { isDataSharingAllowed, isMemoValidationEnabled, isHideDustEnabled },
+    {
+      isDataSharingAllowed,
+      isMemoValidationEnabled,
+      isHideDustEnabled,
+      isOpenSidebarByDefault,
+    },
     { getState, rejectWithValue },
   ) => {
     let res = {
@@ -139,6 +146,7 @@ export const saveSettings = createAsyncThunk<
       userNotification: { enabled: false, message: "" },
       settingsState: SettingsState.IDLE,
       isHideDustEnabled: true,
+      isOpenSidebarByDefault: false,
     };
     const activePublicKey = publicKeySelector(getState());
 
@@ -148,6 +156,7 @@ export const saveSettings = createAsyncThunk<
         isDataSharingAllowed,
         isMemoValidationEnabled,
         isHideDustEnabled,
+        isOpenSidebarByDefault,
       });
     } catch (e) {
       console.error(e);
@@ -365,6 +374,7 @@ const settingsSlice = createSlice({
         assetsLists,
         isNonSSLEnabled,
         isHideDustEnabled,
+        isOpenSidebarByDefault,
       } = payload;
       state.allowList = allowList;
       state.isDataSharingAllowed = isDataSharingAllowed;
@@ -376,6 +386,7 @@ const settingsSlice = createSlice({
       state.assetsLists = assetsLists;
       state.isNonSSLEnabled = isNonSSLEnabled;
       state.isHideDustEnabled = isHideDustEnabled;
+      state.isOpenSidebarByDefault = isOpenSidebarByDefault;
       state.overriddenBlockaidResponse =
         payload.overriddenBlockaidResponse ?? null;
       state.settingsState = SettingsState.SUCCESS;
@@ -424,9 +435,11 @@ const settingsSlice = createSlice({
         isRpcHealthy,
         isSorobanPublicEnabled,
         isHideDustEnabled,
+        isOpenSidebarByDefault,
         overriddenBlockaidResponse,
       } = (action?.payload as typeof action.payload & {
         overriddenBlockaidResponse?: string | null;
+        isOpenSidebarByDefault?: boolean;
       }) || {
         ...initialState,
       };
@@ -440,6 +453,7 @@ const settingsSlice = createSlice({
         isRpcHealthy,
         isSorobanPublicEnabled,
         isHideDustEnabled,
+        isOpenSidebarByDefault: isOpenSidebarByDefault ?? false,
         overriddenBlockaidResponse: overriddenBlockaidResponse ?? null,
       };
     });
@@ -680,4 +694,9 @@ export const isNonSSLEnabledSelector = createSelector(
 export const overriddenBlockaidResponseSelector = createSelector(
   settingsSelector,
   (settings) => settings.overriddenBlockaidResponse,
+);
+
+export const isOpenSidebarByDefaultSelector = createSelector(
+  settingsSelector,
+  (settings) => settings.isOpenSidebarByDefault,
 );

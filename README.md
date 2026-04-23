@@ -45,8 +45,9 @@ Before starting the dev server, you need to configure the backend URLs. Create a
 file `extension/.env` with the following variables:
 
 ```
-INDEXER_URL=https://freighter-backend-prd.stellar.org/api/v1
-INDEXER_V2_URL=https://freighter-backend-v2-prd.stellar.org/api/v1
+INDEXER_URL=your_backend_v1_prod_url_here
+INDEXER_V2_URL=your_backend_v2_prod_url_here
+
 ```
 
 These URLs point to the production Freighter backend. For more details on

@@ -44,6 +44,7 @@ const prodConfig = (
     PRODUCTION: false,
     TRANSLATIONS: false,
     AMPLITUDE_KEY: "",
+    AMPLITUDE_EXPERIMENT_DEPLOYMENT_KEY: "",
     SENTRY_KEY: "",
   },
 ) =>
@@ -66,8 +67,6 @@ const prodConfig = (
     plugins: [
       new webpack.DefinePlugin({
         DEV_SERVER: false,
-        AMPLITUDE_KEY: JSON.stringify(env.AMPLITUDE_KEY),
-        SENTRY_KEY: JSON.stringify(env.SENTRY_KEY),
         DEV_EXTENSION: !env.PRODUCTION,
       }),
       ...(env.TRANSLATIONS
@@ -110,4 +109,9 @@ const prodConfig = (
     },
   });
 
-module.exports = (env) => merge(prodConfig(env), commonConfig(env));
+module.exports = (env = {}) => {
+  const mergedEnv = {
+    ...env,
+  };
+  return merge(prodConfig(mergedEnv), commonConfig(mergedEnv));
+};

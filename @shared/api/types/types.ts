@@ -110,6 +110,7 @@ export interface Response {
   recommendedFee: string;
   isNonSSLEnabled: boolean;
   isHideDustEnabled: boolean;
+  isOpenSidebarByDefault: boolean;
   activePublicKey: string;
   isAccountMismatch: boolean;
   assetVisibility: {
@@ -126,6 +127,8 @@ export interface Response {
   isDismissed: boolean;
   collectiblesList: CollectibleContract[];
   overriddenBlockaidResponse: string | null;
+  recentProtocols: RecentProtocolEntry[];
+  hasSeenDiscoverWelcome: boolean;
 }
 
 export interface MemoRequiredAccount {
@@ -185,6 +188,7 @@ export interface Preferences {
   isMemoValidationEnabled: boolean;
   networksList: NetworkDetails[];
   isHideDustEnabled: boolean;
+  isOpenSidebarByDefault: boolean;
   error: string;
 }
 
@@ -396,14 +400,23 @@ export interface ApiTokenPrices {
   [key: string]: ApiTokenPrice | null;
 }
 
-export type DiscoverData = {
+export interface ProtocolEntry {
   description: string;
   iconUrl: string;
   name: string;
   websiteUrl: string;
   tags: string[];
   isBlacklisted: boolean;
-}[];
+  backgroundUrl?: string;
+  isTrending: boolean;
+}
+
+export interface RecentProtocolEntry {
+  websiteUrl: string;
+  lastAccessed: number;
+}
+
+export type DiscoverData = ProtocolEntry[];
 
 export interface LedgerKeyAccount {
   account_id: string;
