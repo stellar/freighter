@@ -20,20 +20,26 @@ export const METADATA_FETCH_TIMEOUT_MS = 5000;
  * 1. URL scheme is restricted to `https:` (parsed via `new URL`, so the
  *    check is case-insensitive and rejects malformed URLs). Other schemes
  *    (including `http`) are rejected before any network call.
- * 2. A 5-second AbortController-backed timeout bounds how long we wait.
- * 3. `Content-Length` is pre-checked — if the server advertises a body larger
+ * 2. After the fetch resolves the final `response.url` is re-checked so a
+ *    server that 3xx-redirects to a non-https scheme cannot bypass step 1.
+ * 3. A 5-second AbortController-backed timeout bounds how long we wait.
+ * 4. `Content-Length` is pre-checked — if the server advertises a body larger
  *    than MAX_METADATA_BYTES the request fails fast.
- * 4. The body is read via `response.body.getReader()` with a byte counter;
+ * 5. The body is read via `response.body.getReader()` with a byte counter;
  *    if accumulated bytes exceed MAX_METADATA_BYTES the reader is cancelled
  *    and the call fails. This keeps memory bounded even when
  *    `Content-Length` is absent or inaccurate.
- * 5. If `response.body.getReader` is unavailable in the current runtime, the
+ * 6. If `response.body.getReader` is unavailable in the current runtime, the
  *    helper falls back to `response.text()` followed by a byte-length check.
  *    In that fallback the body is fully buffered before the size check runs,
  *    so the only up-front bounds are the Content-Length pre-check (when the
  *    server advertises it) and the AbortController timeout; the post-download
  *    check is a secondary gate. All modern browser runtimes expose
  *    `getReader`, so the fallback path is rare in practice.
+ *
+ * On any early-exit failure (redirect to non-https, non-OK status, oversized
+ * Content-Length) the response body is cancelled before throwing so streaming
+ * implementations don't continue downloading into a discarded response.
  */
 export const fetchMetadataJson = async <T>(url: string): Promise<T> => {
   if (!url || typeof url !== "string") {
@@ -62,7 +68,26 @@ export const fetchMetadataJson = async <T>(url: string): Promise<T> => {
   try {
     const response = await fetch(url, { signal: controller.signal });
 
+    // Validate the *final* URL (after any redirects) is still https. The
+    // input-URL check alone can be bypassed by a server that 3xx-redirects
+    // to a non-https scheme, which fetch follows by default.
+    if (response.url) {
+      let finalProtocol: string | null = null;
+      try {
+        finalProtocol = new URL(response.url).protocol;
+      } catch {
+        finalProtocol = null;
+      }
+      if (finalProtocol !== null && finalProtocol !== "https:") {
+        await response.body?.cancel?.().catch(() => {});
+        throw new Error(
+          "fetchMetadataJson: redirect landed on a non-https scheme",
+        );
+      }
+    }
+
     if (!response.ok) {
+      await response.body?.cancel?.().catch(() => {});
       throw new Error(
         `fetchMetadataJson: request failed with ${response.status} ${response.statusText}`,
       );
@@ -75,6 +100,7 @@ export const fetchMetadataJson = async <T>(url: string): Promise<T> => {
         Number.isFinite(contentLength) &&
         contentLength > MAX_METADATA_BYTES
       ) {
+        await response.body?.cancel?.().catch(() => {});
         throw new Error(
           `fetchMetadataJson: response too large (${contentLength} bytes, max ${MAX_METADATA_BYTES})`,
         );
