@@ -38,6 +38,7 @@ import {
   MemoRequiredLabel,
 } from "popup/components/WarningMessages";
 import { CopyValue } from "popup/components/CopyValue";
+import { trackSendFeeBreakdownOpened } from "popup/metrics/send";
 import { FeesPane } from "popup/components/InternalTransaction/FeesPane";
 import { ActionButtons } from "./components/ActionButtons";
 import { SendAsset, SendDestination } from "./components";
@@ -377,7 +378,10 @@ export const ReviewTx = ({
             <button
               className="ReviewTx__Details__Row__FeesInfoBtn"
               data-testid="review-tx-fee-info-btn"
-              onClick={() => setActivePaneIndex(paneConfig.feesIndex)}
+              onClick={() => {
+                trackSendFeeBreakdownOpened("review");
+                setActivePaneIndex(paneConfig.feesIndex);
+              }}
               aria-label={t("Fee breakdown")}
             >
               <Icon.InfoCircle />

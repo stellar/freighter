@@ -17,6 +17,7 @@ import {
 } from "helpers/stellar";
 import { NetworkCongestion } from "popup/helpers/useNetworkFees";
 import { emitMetric } from "helpers/metrics";
+import { trackSendFeeBreakdownOpened } from "popup/metrics/send";
 import { useRunAfterUpdate } from "popup/helpers/useRunAfterUpdate";
 import {
   getAssetDecimals,
@@ -945,6 +946,7 @@ export const SendAmount = ({
                 setDraftFeeForDisplay(null);
               }}
               onShowFeesInfo={(currentDraftFee) => {
+                trackSendFeeBreakdownOpened("settings");
                 const inclusionFee =
                   currentDraftFee ||
                   (lastInclusionFeeRef.current ?? recommendedFee);
