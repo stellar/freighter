@@ -969,8 +969,9 @@ export const SendAmount = ({
                 dispatch(saveManualTransactionFee(fee));
                 setIsEditingSettings(false);
                 setDraftFeeForDisplay(null);
-                // Regenerate transaction XDR with new fee (now reads fee from Redux state inside fetchData)
-                await fetchSimulationData();
+                if (destination) {
+                  await fetchSimulationData();
+                }
               }}
             />
           </div>

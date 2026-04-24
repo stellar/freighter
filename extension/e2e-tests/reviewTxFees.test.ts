@@ -503,13 +503,11 @@ test("Custom fee resets to default when re-entering send flow from home screen",
     "0.00001",
   );
 
-  // ── FeesPane (simulation triggered by gear click) shows default total ─────
+  // ── FeesPane shows base fee — no destination means no simulation ─────────
   await page.getByTestId("edit-settings-fees-info-btn").click();
   await expect(page.getByTestId("review-tx-fees-pane")).toBeVisible();
-  // Once simulation settles, total = base(0.00001) + resource(0.0093238) = 0.0093338
   await expect(page.getByTestId("review-tx-total-fee")).toHaveText(
-    "0.0093338 XLM",
-    { timeout: 10000 },
+    "0.00001 XLM",
   );
 });
 
