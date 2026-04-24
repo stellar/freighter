@@ -22,7 +22,6 @@ import {
   stroopToXlm,
   xlmToStroop,
 } from "helpers/stellar";
-import { isSorobanIssuer } from "@shared/helpers/stellar";
 import { computeDestMinWithSlippage } from "helpers/transaction";
 import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 import { getBaseAccount } from "popup/helpers/account";
@@ -88,8 +87,9 @@ const CREATE_ACCOUNT_MIN_XLM = new BigNumber(1);
  * contract invocation and don't touch the classic account ledger, so an
  * unfunded destination is not a failure condition for them.
  *
- * Canonical asset ids encode the distinction: SACs normalize to their
- * underlying classic G-issuer, while pure Soroban tokens use a C-issuer.
+ * Asset ids encode the distinction: SACs normalize to their underlying
+ * classic G-issuer, while pure Soroban custom tokens use a contract
+ * (C-address) issuer.
  */
 export const getExpectedToFailReason = ({
   isDestinationFunded,
@@ -108,7 +108,7 @@ export const getExpectedToFailReason = ({
 
   if (assetCanonical !== "native") {
     const [, issuer] = assetCanonical.split(":");
-    if (issuer && isSorobanIssuer(issuer)) {
+    if (issuer && isContractId(issuer)) {
       return null;
     }
     return t("Blockaid unfunded destination");

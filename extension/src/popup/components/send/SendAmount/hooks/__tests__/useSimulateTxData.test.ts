@@ -99,6 +99,21 @@ describe("getExpectedToFailReason", () => {
         }),
       ).toBeNull();
     });
+
+    it("does NOT skip the warning for non-C issuers that aren't classic G-addresses (e.g. liquidity pool share canonicals)", () => {
+      // Guards against the skip widening beyond contract-id issuers. A
+      // looser check like `!issuer.startsWith("G")` would incorrectly
+      // swallow the warning for "<poolId>:lp" and anything else non-G.
+      expect(
+        getExpectedToFailReason({
+          isDestinationFunded: false,
+          assetCanonical:
+            "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef:lp",
+          amount: "10",
+          t,
+        }),
+      ).toBe("Blockaid unfunded destination");
+    });
   });
 
   describe("destination is unfunded, native XLM", () => {
