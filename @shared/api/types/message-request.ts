@@ -281,6 +281,7 @@ export interface SaveSettingsMessage extends BaseMessage {
   isHideDustEnabled: boolean;
   isMemoValidationEnabled: boolean;
   isDataSharingAllowed: boolean;
+  isOpenSidebarByDefault: boolean;
 }
 
 export interface SaveExperimentalFeaturesMessage extends BaseMessage {
@@ -409,6 +410,27 @@ export interface DismissMobileAppBannerMessage extends BaseMessage {
   type: SERVICE_TYPES.DISMISS_MOBILE_APP_BANNER;
 }
 
+export interface GetRecentProtocolsMessage extends BaseMessage {
+  type: SERVICE_TYPES.GET_RECENT_PROTOCOLS;
+}
+
+export interface AddRecentProtocolMessage extends BaseMessage {
+  type: SERVICE_TYPES.ADD_RECENT_PROTOCOL;
+  websiteUrl: string;
+}
+
+export interface ClearRecentProtocolsMessage extends BaseMessage {
+  type: SERVICE_TYPES.CLEAR_RECENT_PROTOCOLS;
+}
+
+export interface GetDiscoverWelcomeSeenMessage extends BaseMessage {
+  type: SERVICE_TYPES.GET_DISCOVER_WELCOME_SEEN;
+}
+
+export interface DismissDiscoverWelcomeMessage extends BaseMessage {
+  type: SERVICE_TYPES.DISMISS_DISCOVER_WELCOME;
+}
+
 export interface GetBlockaidDebugOverrideMessage extends BaseMessage {
   type: SERVICE_TYPES.GET_BLOCKAID_DEBUG_OVERRIDE;
 }
@@ -442,6 +464,16 @@ export interface MarkQueueActiveMessage extends BaseMessage {
   type: SERVICE_TYPES.MARK_QUEUE_ACTIVE;
   uuid: string;
   isActive: boolean;
+}
+
+export interface OpenSidebarMessage extends BaseMessage {
+  type: SERVICE_TYPES.OPEN_SIDEBAR;
+  windowId: number;
+}
+
+export interface RejectSigningRequestMessage extends BaseMessage {
+  type: SERVICE_TYPES.REJECT_SIGNING_REQUEST;
+  uuid: string;
 }
 
 export type ServiceMessageRequest =
@@ -503,9 +535,16 @@ export type ServiceMessageRequest =
   | GetHiddenAssetsMessage
   | GetMobileAppBannerDismissedMessage
   | DismissMobileAppBannerMessage
+  | GetRecentProtocolsMessage
+  | AddRecentProtocolMessage
+  | ClearRecentProtocolsMessage
+  | GetDiscoverWelcomeSeenMessage
+  | DismissDiscoverWelcomeMessage
   | GetBlockaidDebugOverrideMessage
   | AddCollectibleMessage
   | GetCollectiblesMessage
   | ChangeCollectibleVisibilityMessage
   | GetHiddenCollectiblesMessage
-  | MarkQueueActiveMessage;
+  | MarkQueueActiveMessage
+  | OpenSidebarMessage
+  | RejectSigningRequestMessage;

@@ -1,0 +1,24 @@
+@use "../../../../styles/utils.scss" as *;
+
+.DiscoverSection {
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: pxToRem(4);
+    cursor: pointer;
+    margin-bottom: pxToRem(24);
+    color: var(--sds-clr-gray-12);
+
+    svg {
+      width: pxToRem(16);
+      height: pxToRem(16);
+      color: var(--sds-clr-gray-11);
+    }
+  }
+
+  &__list {
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(24);
+  }
+}

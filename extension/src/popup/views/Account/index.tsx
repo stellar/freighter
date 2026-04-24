@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useContext } from "react";
+import React, { useEffect, useRef, useContext, useState } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { Notification } from "@stellar/design-system";
@@ -40,6 +40,14 @@ import {
 } from "./hooks/useGetIcons";
 import { AccountTabsContext, TabsList } from "./contexts/activeTabContext";
 
+import {
+  Sheet,
+  SheetContent,
+  ScreenReaderOnly,
+  SheetTitle,
+} from "popup/basics/shadcn/Sheet";
+import { Discover } from "popup/views/Discover";
+
 import "popup/metrics/authServices";
 import "./styles.scss";
 
@@ -50,6 +58,7 @@ export const Account = () => {
   const { userNotification } = useSelector(settingsSelector);
   const currentAccountName = useSelector(accountNameSelector);
   const { activeTab } = useContext(AccountTabsContext);
+  const [isDiscoverOpen, setIsDiscoverOpen] = useState(false);
 
   const isFullscreenModeEnabled = isFullscreenMode();
   const {
@@ -204,6 +213,7 @@ export const Account = () => {
         isFunded={!!resolvedData?.balances?.isFunded}
         refreshHiddenCollectibles={refreshHiddenCollectibles}
         isCollectibleHidden={isCollectibleHidden}
+        onDiscoverClick={() => setIsDiscoverOpen(true)}
       />
       <View.Content hasNoPadding>
         <div className="AccountView" data-testid="account-view">
@@ -300,6 +310,22 @@ export const Account = () => {
             />
           </View.Footer>
         )}
+      <Sheet
+        open={isDiscoverOpen}
+        onOpenChange={(open) => !open && setIsDiscoverOpen(false)}
+      >
+        <SheetContent
+          onOpenAutoFocus={(e) => e.preventDefault()}
+          aria-describedby={undefined}
+          side="bottom"
+          className="AccountView__discover-sheet"
+        >
+          <ScreenReaderOnly>
+            <SheetTitle>{t("Discover")}</SheetTitle>
+          </ScreenReaderOnly>
+          <Discover onClose={() => setIsDiscoverOpen(false)} />
+        </SheetContent>
+      </Sheet>
     </>
   );
 };

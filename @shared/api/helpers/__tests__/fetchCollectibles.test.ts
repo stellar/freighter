@@ -1,8 +1,19 @@
 import { fetchCollectibles } from "../fetchCollectibles";
+import { fetchMetadataJson } from "../fetchMetadataJson";
 import { TESTNET_NETWORK_DETAILS } from "@shared/constants/stellar";
 import { INDEXER_V2_URL } from "@shared/constants/mercury";
 
+jest.mock("../fetchMetadataJson", () => ({
+  fetchMetadataJson: jest.fn(),
+}));
+
+const mockedFetchMetadataJson = fetchMetadataJson as jest.Mock;
+
 describe("fetchCollectibles", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
   it("should return collectibles", async () => {
     const metadata = {
       name: "Collectible Name",
@@ -16,6 +27,9 @@ describe("fetchCollectibles", () => {
         },
       ],
     };
+
+    mockedFetchMetadataJson.mockResolvedValue(metadata);
+
     // @ts-ignore
     jest.spyOn(global, "fetch").mockImplementation((url: any) => {
       if (url.toString() === `${INDEXER_V2_URL}/collectibles?network=TESTNET`) {
@@ -58,10 +72,7 @@ describe("fetchCollectibles", () => {
             }),
         });
       }
-      return Promise.resolve({
-        ok: true,
-        json: () => Promise.resolve(metadata),
-      });
+      return Promise.reject(new Error(`unexpected fetch: ${url}`));
     });
 
     const collectibles = await fetchCollectibles({
@@ -128,8 +139,20 @@ describe("fetchCollectibles", () => {
         },
       },
     ]);
+
+    expect(mockedFetchMetadataJson).toHaveBeenCalledWith(
+      "https://nftcalendar.io/token/1",
+    );
+    expect(mockedFetchMetadataJson).toHaveBeenCalledWith(
+      "https://nftcalendar.io/token/2",
+    );
   });
+
   it("should return collectibles for owner with no metadata", async () => {
+    mockedFetchMetadataJson.mockRejectedValue(
+      new Error("metadata unavailable"),
+    );
+
     // @ts-ignore
     jest.spyOn(global, "fetch").mockImplementation((url: any) => {
       if (url.toString() === `${INDEXER_V2_URL}/collectibles?network=TESTNET`) {
@@ -158,11 +181,9 @@ describe("fetchCollectibles", () => {
             }),
         });
       }
-      return Promise.resolve({
-        ok: false,
-        json: () => Promise.resolve({}),
-      });
+      return Promise.reject(new Error(`unexpected fetch: ${url}`));
     });
+
     const collectibles = await fetchCollectibles({
       publicKey: "G1",
       contracts: [{ id: "C1", token_ids: ["1"] }],

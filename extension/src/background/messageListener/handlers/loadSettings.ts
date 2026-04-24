@@ -12,7 +12,10 @@ import {
   getOverriddenBlockaidResponse,
 } from "background/helpers/account";
 import { DataStorageAccess } from "background/helpers/dataStorageAccess";
-import { DATA_SHARING_ID } from "constants/localStorageTypes";
+import {
+  DATA_SHARING_ID,
+  IS_OPEN_SIDEBAR_BY_DEFAULT_ID,
+} from "constants/localStorageTypes";
 import { getHiddenAssets } from "../helpers/get-hidden-assets";
 
 export const loadSettings = async ({
@@ -28,6 +31,9 @@ export const loadSettings = async ({
   const assetsLists = await getAssetsLists({ localStore });
   const isNonSSLEnabled = await getIsNonSSLEnabled({ localStore });
   const isHideDustEnabled = await getIsHideDustEnabled({ localStore });
+  const isOpenSidebarByDefault =
+    ((await localStore.getItem(IS_OPEN_SIDEBAR_BY_DEFAULT_ID)) as boolean) ??
+    false;
   const { hiddenAssets } = await getHiddenAssets({ localStore });
   const overriddenBlockaidResponse = await getOverriddenBlockaidResponse({
     localStore,
@@ -46,6 +52,7 @@ export const loadSettings = async ({
     assetsLists,
     isNonSSLEnabled,
     isHideDustEnabled,
+    isOpenSidebarByDefault,
     hiddenAssets,
     overriddenBlockaidResponse,
   };
