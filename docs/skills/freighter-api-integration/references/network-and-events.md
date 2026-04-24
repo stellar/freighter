@@ -52,8 +52,10 @@ watcher.stop();
 
 **Key details:**
 
-- The callback **fires once on start** with the current state, and then only
-  when `address`, `network`, or `networkPassphrase` changes — not on every poll.
+- The callback fires when `address`, `network`, or `networkPassphrase` changes.
+  It does **not** fire on the first poll when values match the initial empty
+  state (e.g. wallet not connected). On error it fires on every poll tick while
+  the error condition persists, not just once.
 - `watcher.watch(cb)` returns `{ error? }` synchronously. A successful start
   resolves to `{}`. On Node/SSR it returns `{ error: FreighterApiNodeError }`
   immediately.

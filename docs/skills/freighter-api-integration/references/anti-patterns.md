@@ -70,10 +70,13 @@ setInterval(async () => setAddr((await getAddress()).address), 1000);
 ```
 
 ```ts
-// Do
-const watcher = new WatchWalletChanges();
-watcher.watch(({ address }) => setAddr(address));
-useEffect(() => () => watcher.stop(), []);
+// Do — create and stop inside useEffect; check the synchronous error return
+useEffect(() => {
+  const watcher = new WatchWalletChanges();
+  const { error } = watcher.watch(({ address }) => setAddr(address));
+  if (error) console.warn("WatchWalletChanges failed (SSR?)", error);
+  return () => watcher.stop();
+}, []);
 ```
 
 `WatchWalletChanges` only fires the callback on actual change. Your `setState`

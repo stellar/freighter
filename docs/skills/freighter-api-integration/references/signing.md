@@ -26,13 +26,12 @@ const signedTx = TransactionBuilder.fromXDR(signedTxXdr, networkPassphrase);
 | `networkPassphrase` | `string` | Bind the signature to a specific network (prevents replay) |
 | `address`           | `string` | Require the user to sign with this specific account        |
 
-Prefer `networkPassphrase`. Older user-facing docs also describe a `network`
-enum option (`"PUBLIC"`, `"TESTNET"`, ...) that Freighter maps to a passphrase
-via `js-stellar-sdk`, and — per those docs — it takes precedence over
-`networkPassphrase` when both are passed. The current TypeScript typings in
-`@stellar/freighter-api` only declare `networkPassphrase` and `address`, so
-`network` is not a first-class API anymore. Pass `networkPassphrase` and you
-avoid the ambiguity entirely.
+Always use `networkPassphrase`. Older docs describe a `network` enum option
+(`"PUBLIC"`, `"TESTNET"`, ...), but it has been removed from the SDK's transport
+layer: `@shared/api/external.ts` declares `let network` locally and never
+assigns it from `opts`, so it is always `undefined` in the message sent to the
+extension. Passing `network` at runtime has no effect regardless of TypeScript
+types. Use `networkPassphrase` exclusively.
 
 **Passing a stale `networkPassphrase`** is one of the most common bugs. If the
 user's wallet is on testnet and you pass `Networks.PUBLIC`, Freighter rejects
@@ -76,9 +75,10 @@ Returns `{ signedAuthEntry: string | null, signerAddress }`. Like `signMessage`,
 auto-requests access if needed.
 
 ```ts
+// expectedAddress must be obtained before this call, e.g. from getAddress()
 const { signedAuthEntry, signerAddress, error } = await signAuthEntry(
   authEntry.toXDR("base64"),
-  { networkPassphrase: Networks.PUBLIC, address: signerAddress },
+  { networkPassphrase: Networks.PUBLIC, address: expectedAddress },
 );
 ```
 
