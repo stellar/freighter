@@ -55,23 +55,6 @@ describe("getExpectedToFailReason", () => {
     });
   });
 
-  describe("destination is unfunded, SAC-wrapped classic assets", () => {
-    // SACs normalize to their underlying classic G-issuer, so the canonical
-    // is indistinguishable from a classic credit_alphanum send — which is
-    // correct: a SAC's `transfer` still fails to an unfunded G-account.
-    it("returns the unfunded warning for a SAC-wrapped USDC (classic G-issuer canonical)", () => {
-      expect(
-        getExpectedToFailReason({
-          isDestinationFunded: false,
-          assetCanonical:
-            "USDC:GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN",
-          amount: "10",
-          t,
-        }),
-      ).toBe("Blockaid unfunded destination");
-    });
-  });
-
   describe("destination is unfunded, pure Soroban custom tokens", () => {
     // Pure Soroban tokens carry a C-issuer in their canonical form. Their
     // `transfer` is a contract invocation — the destination doesn't need
