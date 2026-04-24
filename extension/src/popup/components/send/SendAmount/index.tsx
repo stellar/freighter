@@ -579,10 +579,13 @@ export const SendAmount = ({
                   variant="tertiary"
                   onClick={() => {
                     setIsEditingSettings(true);
-                    // For Soroban tokens, trigger simulation immediately so fee
-                    // input and FeesPane both reflect the correct simulated amounts
+                    // For Soroban tokens with a destination, trigger simulation
+                    // immediately so fee input and FeesPane reflect correct amounts.
+                    // Without a destination simulation would fail — skip it and let
+                    // FeesPane show the base fee (matching mobile behaviour).
                     if (
                       (isToken || isCollectible) &&
+                      destination &&
                       simulationState.state !== RequestState.SUCCESS &&
                       simulationState.state !== RequestState.LOADING
                     ) {

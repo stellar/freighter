@@ -1,5 +1,5 @@
 import React from "react";
-import { Icon, Notification } from "@stellar/design-system";
+import { Icon } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
 import { RequestState, type State } from "constants/request";
@@ -88,14 +88,6 @@ export const FeesPane = ({
           </span>
         </div>
       </div>
-      {isError && (
-        <Notification
-          variant="error"
-          title={t("Failed to simulate transaction")}
-        >
-          {simulationState.error}
-        </Notification>
-      )}
       <div
         className="FeesPane__Description"
         data-testid="review-tx-fees-description"

@@ -136,33 +136,6 @@ describe("FeesPane", () => {
       );
       expect(screen.getByTestId("review-tx-total-fee")).toHaveTextContent("—");
     });
-
-    it("shows error notification with simulation error message", () => {
-      render(
-        <FeesPane
-          fee={BASE_FEE}
-          simulationState={errorState}
-          isSoroban
-          onClose={mockOnClose}
-        />,
-      );
-      expect(screen.getByText("Failed to simulate transaction")).toBeTruthy();
-      expect(
-        screen.getByText("Simulation failed: contract error"),
-      ).toBeTruthy();
-    });
-
-    it("does not show error notification on success", () => {
-      render(
-        <FeesPane
-          fee={BASE_FEE}
-          simulationState={successState}
-          isSoroban
-          onClose={mockOnClose}
-        />,
-      );
-      expect(screen.queryByText("Failed to simulate transaction")).toBeNull();
-    });
   });
 
   describe("Classic (isSoroban=false)", () => {

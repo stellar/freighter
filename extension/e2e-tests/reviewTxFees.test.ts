@@ -237,19 +237,17 @@ test("Custom token without destination — full fee lifecycle in EditSettings an
     "0.00001",
   );
 
-  // ── Open FeesPane — simulation is triggered by the gear click ─────────────
-  // The stub responds even without a destination; wait for it to settle
+  // ── Open FeesPane — no destination so simulation does NOT fire ───────────
+  // FeesPane shows the base fee as inclusion/total and "-" for resource,
+  // matching mobile behaviour (no error, no simulated amounts).
   await page.getByTestId("edit-settings-fees-info-btn").click();
   await expect(page.getByTestId("review-tx-fees-pane")).toBeVisible();
   await expect(page.getByTestId("review-tx-inclusion-fee")).toHaveText(
     "0.00001 XLM",
-    { timeout: 10000 },
   );
-  await expect(page.getByTestId("review-tx-resource-fee")).toHaveText(
-    "0.0093238 XLM",
-  );
+  await expect(page.getByTestId("review-tx-resource-fee")).toHaveText("-");
   await expect(page.getByTestId("review-tx-total-fee")).toHaveText(
-    "0.0093338 XLM",
+    "0.00001 XLM",
   );
   await expect(page.getByTestId("review-tx-fees-description")).toContainText(
     "Soroban",
@@ -266,14 +264,14 @@ test("Custom token without destination — full fee lifecycle in EditSettings an
     "0.00005",
   );
 
-  // ── Open FeesPane again — must reflect the draft fee + resource ───────────
+  // ── Open FeesPane again — draft fee reflected, resource still "-" ─────────
   await page.getByTestId("edit-settings-fees-info-btn").click();
   await expect(page.getByTestId("review-tx-fees-pane")).toBeVisible();
-  // Total = draft(0.00005) + resource(0.0093238) = 0.0093738
+  // No simulation data: total = draft inclusion fee only
   await expect(page.getByTestId("review-tx-total-fee")).toHaveText(
-    "0.0093738 XLM",
-    { timeout: 5000 },
+    "0.00005 XLM",
   );
+  await expect(page.getByTestId("review-tx-resource-fee")).toHaveText("-");
 
   // ── Close FeesPane → draft still in the input ─────────────────────────────
   await page.getByTestId("review-tx-fees-close-btn").click();
@@ -285,10 +283,9 @@ test("Custom token without destination — full fee lifecycle in EditSettings an
   // ── Save the custom fee ───────────────────────────────────────────────────
   await page.getByRole("button", { name: "Save" }).click();
   await expect(page.getByText("Inclusion Fee")).not.toBeVisible();
-  // Re-simulation with baseFee=0.00005 → total = 0.0093738
+  // No destination → no simulation → fee display shows the saved inclusion fee
   await expect(page.getByTestId("send-amount-fee-display")).toHaveText(
-    "0.0093738 XLM",
-    { timeout: 10000 },
+    "0.00005 XLM",
   );
 
   // ── Reopen Edit Settings — must show saved fee, not the base default ───────
@@ -298,18 +295,16 @@ test("Custom token without destination — full fee lifecycle in EditSettings an
     "0.00005",
   );
 
-  // ── Open FeesPane from re-opened settings — must still show saved fee ──────
+  // ── Open FeesPane from re-opened settings — saved fee reflected ────────────
+  // Still no destination, so resource stays "-" and total = inclusion fee only.
   await page.getByTestId("edit-settings-fees-info-btn").click();
   await expect(page.getByTestId("review-tx-fees-pane")).toBeVisible();
   await expect(page.getByTestId("review-tx-inclusion-fee")).toHaveText(
     "0.00005 XLM",
-    { timeout: 10000 },
   );
-  await expect(page.getByTestId("review-tx-resource-fee")).toHaveText(
-    "0.0093238 XLM",
-  );
+  await expect(page.getByTestId("review-tx-resource-fee")).toHaveText("-");
   await expect(page.getByTestId("review-tx-total-fee")).toHaveText(
-    "0.0093738 XLM",
+    "0.00005 XLM",
   );
   await expect(page.getByTestId("review-tx-fees-description")).toContainText(
     "Soroban",
