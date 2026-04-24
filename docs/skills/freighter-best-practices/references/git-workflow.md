@@ -54,17 +54,21 @@ Both must pass before merging.
 Releases are managed by the `newRelease.yml` GitHub Actions workflow:
 
 1. Manual dispatch with `appVersion` parameter (e.g., `5.12.0`)
-2. Workflow creates a release branch and version tag
-3. Bumps `package.json` version and `manifest.json` version
-4. Creates a GitHub release with changelog
+2. Workflow creates a `release` (or `emergency-release`) branch and a `v{X.Y.Z}`
+   version branch
+3. Bumps `package.json` version and `manifest.json` version on the version
+   branch
+4. Opens a PR from `v{X.Y.Z}` into the release branch
+5. Later, `submitProduction.yml` creates the plain semver git tag (`X.Y.Z`) and
+   GitHub release during store submission
 
 ## Release Branches
 
-| Branch              | Purpose                                                      |
-| ------------------- | ------------------------------------------------------------ |
-| `release`           | Auto-created by the release workflow for the current release |
-| `emergency-release` | Hotfix branch for critical production issues                 |
-| `v{X.Y.Z}`          | Version tag branches for historical reference                |
+| Branch              | Purpose                                                       |
+| ------------------- | ------------------------------------------------------------- |
+| `release`           | Auto-created by the release workflow for the current release  |
+| `emergency-release` | Hotfix branch created when releasing from an older tag        |
+| `v{X.Y.Z}`          | Version branch created by `newRelease.yml` for the release PR |
 
 ## Submission Workflows
 

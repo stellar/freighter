@@ -13,7 +13,7 @@ dApp (web page)
   v
 Content Script (extension/src/contentScript/)
   |
-  | chrome.runtime.sendMessage (EXTERNAL_SERVICE_TYPES)
+  | browser.runtime.sendMessage (EXTERNAL_SERVICE_TYPES)
   v
 Background Service Worker (extension/src/background/)
   ^                    |
@@ -21,12 +21,12 @@ Background Service Worker (extension/src/background/)
   |                    v
   |                 Approval Popup
   |                    |
-  | chrome.runtime.sendMessage (response)
+  | browser.runtime.sendMessage (response)
   |
   v
 Popup (extension/src/popup/)
   |
-  | sendMessageToBackground() --> chrome.runtime.sendMessage (SERVICE_TYPES)
+  | sendMessageToBackground() --> browser.runtime.sendMessage (SERVICE_TYPES)
   v
 Background Service Worker
 ```

@@ -63,11 +63,11 @@ time. Any variable declared outside a function will be reset.
 **Use `chrome.storage.session`** for ephemeral data or
 **`chrome.storage.local`** for persistent data.
 
-## 5. Direct chrome.runtime.sendMessage from Popup
+## 5. Direct browser.runtime.sendMessage from Popup
 
 ```typescript
 // WRONG: bypasses the shared API layer
-chrome.runtime.sendMessage({ type: SERVICE_TYPES.GET_DATA });
+browser.runtime.sendMessage({ type: SERVICE_TYPES.GET_DATA });
 ```
 
 Always use the `sendMessageToBackground()` wrapper from `@shared/api/internal`:
@@ -78,7 +78,9 @@ import { sendMessageToBackground } from "@shared/api/internal";
 await sendMessageToBackground({ type: SERVICE_TYPES.GET_DATA });
 ```
 
-The wrapper provides consistent typing, response parsing, and error handling.
+Prefer `browser.*` APIs from `webextension-polyfill` for cross-browser
+functionality. In popup code, still route through the shared helper instead of
+calling the runtime directly.
 
 ## 6. Hardcoded URL Paths in Navigation
 

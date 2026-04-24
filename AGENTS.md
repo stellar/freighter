@@ -97,11 +97,11 @@ freighter/
 Three runtime contexts communicate exclusively via message passing:
 
 1. **Popup** — React UI, dispatches to background via
-   `chrome.runtime.sendMessage`
+   `sendMessageToBackground()` (which wraps `browser.runtime.sendMessage`)
 2. **Background** — service worker, processes messages, never directly touches
    the DOM
 3. **Content Script** — injected per tab, relays between `window.postMessage`
-   and background
+   and the background via `browser.runtime.sendMessage`
 
 Dev server URLs:
 

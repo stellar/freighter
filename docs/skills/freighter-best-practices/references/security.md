@@ -72,7 +72,7 @@ The content script acts as a gatekeeper between the page and the extension:
   processed
 - Validates the message type against `EXTERNAL_SERVICE_TYPES` enum
 - Only valid messages are forwarded to the background via
-  `chrome.runtime.sendMessage`
+  `browser.runtime.sendMessage`
 - All other messages are silently dropped
 
 ## Content Security Policy
@@ -81,7 +81,8 @@ Manifest V3 enforces strict CSP by default:
 
 - No inline scripts (`script-src 'self'`)
 - No `eval()` or dynamic code generation
-- Minimal permissions: only `storage` and `alarms` are declared in the manifest
+- Minimal permissions: the manifest currently declares `storage`, `alarms`, and
+  `sidePanel`
 
 ## Blockaid Integration
 

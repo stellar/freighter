@@ -11,8 +11,8 @@ and capabilities:
   icon
 - **Lifetime:** created when opened, destroyed when closed -- no persistent
   state in memory
-- Communicates with the background via `chrome.runtime.sendMessage` (wrapped by
-  `sendMessageToBackground()`)
+- Communicates with the background via `sendMessageToBackground()` (which wraps
+  `browser.runtime.sendMessage`)
 - Served from `localhost:9000` during development (hot reload)
 
 ### Background Service Worker (`extension/src/background/`)
@@ -32,7 +32,7 @@ and capabilities:
 - **Lifetime:** per tab, lives as long as the tab
 - Bridges dApp requests from the page to the background: listens for
   `window.postMessage` from the page, forwards valid messages via
-  `chrome.runtime.sendMessage`
+  `browser.runtime.sendMessage`
 - Filters messages by source (`EXTERNAL_MSG_REQUEST`) and only forwards valid
   `EXTERNAL_SERVICE_TYPES`
 

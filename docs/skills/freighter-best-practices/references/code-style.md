@@ -29,8 +29,8 @@ Flat config (`eslint.config.js`) with:
 
 ## Import Ordering
 
-External packages first, then internal modules. Convention only — no ESLint
-`import/order` rule enforces it:
+External packages first, then internal modules. This is a team convention only;
+no ESLint `import/order` rule enforces it. Keep imports organized like this:
 
 ```typescript
 // 1. External packages (react, redux, i18next, design system)
