@@ -308,8 +308,14 @@ export const SendAmount = ({
     } else if (!transactionFee) {
       dispatch(saveTransactionFee(fee));
     }
-    await fetchSimulationData();
-    setIsReviewingTx(true);
+    const simResult = await fetchSimulationData();
+    // fetchSimulationData returns the SimulateTxData payload on success and
+    // the caught Error on failure. Only open the review modal when the
+    // simulation succeeded — on failure the fee display shows the error
+    // state and the user can retry.
+    if (!(simResult instanceof Error)) {
+      setIsReviewingTx(true);
+    }
   };
 
   const validate = (values: { amount: string }) => {
@@ -543,7 +549,8 @@ export const SendAmount = ({
                 </span>
                 <span data-testid="send-amount-fee-display">
                   {(isToken || isCollectible) &&
-                  simulationState.state === RequestState.LOADING
+                  (simulationState.state === RequestState.LOADING ||
+                    simulationState.state === RequestState.ERROR)
                     ? t("Calculating...")
                     : inputType === "crypto"
                       ? `${fee} ${t("XLM")}`
@@ -590,7 +597,11 @@ export const SendAmount = ({
             {isCollectible ? (
               <Button
                 size="lg"
-                disabled={!destination || isMuxedAddressWithoutMemoSupport}
+                disabled={
+                  !destination ||
+                  isMuxedAddressWithoutMemoSupport ||
+                  simulationState.state === RequestState.ERROR
+                }
                 isLoading={simulationState.state === RequestState.LOADING}
                 data-testid="send-collectible-btn-continue"
                 isFullWidth
@@ -610,7 +621,9 @@ export const SendAmount = ({
                   (inputType === "fiat" &&
                     new BigNumber(formik.values.amountUsd).isZero()) ||
                   isAmountTooHigh ||
-                  isMuxedAddressWithoutMemoSupport
+                  isMuxedAddressWithoutMemoSupport ||
+                  ((isToken || isCollectible) &&
+                    simulationState.state === RequestState.ERROR)
                 }
                 isLoading={simulationState.state === RequestState.LOADING}
                 data-testid="send-amount-btn-continue"

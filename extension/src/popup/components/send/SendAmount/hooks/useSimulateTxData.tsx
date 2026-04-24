@@ -33,7 +33,7 @@ import {
   parseTokenAmount,
 } from "popup/helpers/soroban";
 import { simulateTokenTransfer } from "@shared/api/internal";
-import { BlockAidScanTxResult } from "@shared/api/types";
+import type { BlockAidScanTxResult } from "@shared/api/types";
 import { getAssetSacAddress } from "@shared/helpers/soroban/token";
 import {
   saveSimulation,

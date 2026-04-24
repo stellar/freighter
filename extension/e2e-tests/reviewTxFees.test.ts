@@ -821,3 +821,122 @@ test("Re-simulation on destination change shows correct inclusion fee in EditSet
     "0.00001",
   );
 });
+
+// FeesPane pre-simulation state: Soroban rows are always present; resource shows
+// "-" before simulation data arrives, total shows base fee (not "Calculating...").
+// Uses a delayed simulation stub so the test can observe the initial state.
+test("FeesPane shows inclusion/resource rows immediately for Soroban — resource is '-' before simulation completes", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  test.slow();
+
+  let resolveSimulation!: () => void;
+  const simulationBlocked = new Promise<void>((resolve) => {
+    resolveSimulation = resolve;
+  });
+
+  const stubOverrides = async () => {
+    await stubAccountBalancesE2e(page);
+    // Override the token-transfer simulation to block until we explicitly resolve
+    await page.route("**/simulate-token-transfer", async (route) => {
+      if (route.request().method() !== "POST") {
+        await route.continue();
+        return;
+      }
+      // Wait until the test gives the signal to respond
+      await simulationBlocked;
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ error: "blocked" }),
+      });
+    });
+  };
+  await stubContractSpec(page, TEST_TOKEN_ADDRESS, true);
+
+  await loginToTestAccount({ page, extensionId, context, stubOverrides });
+
+  // Navigate to token send (no destination set)
+  await page.getByText("E2E").click();
+  await page.getByTestId("asset-detail-send-button").click();
+  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+
+  // Open EditSettings — this triggers simulation (which is blocked)
+  await page.getByTestId("send-amount-btn-fee").click();
+  await expect(page.getByText("Inclusion Fee")).toBeVisible();
+
+  // Open FeesPane — simulation has not yet completed
+  await page.getByTestId("edit-settings-fees-info-btn").click();
+  await expect(page.getByTestId("review-tx-fees-pane")).toBeVisible();
+
+  // Both Soroban rows must be present immediately (always-show behavior)
+  await expect(page.getByTestId("review-tx-inclusion-fee")).toBeVisible();
+  await expect(page.getByTestId("review-tx-resource-fee")).toBeVisible();
+
+  // Before simulation: inclusion = base fee, resource = "-", total = base fee
+  await expect(page.getByTestId("review-tx-inclusion-fee")).toHaveText(
+    "0.00001 XLM",
+  );
+  await expect(page.getByTestId("review-tx-resource-fee")).toHaveText("-");
+  await expect(page.getByTestId("review-tx-total-fee")).toHaveText(
+    "0.00001 XLM",
+  );
+
+  // Unblock simulation (returns an error — state stays as-is, no update)
+  resolveSimulation();
+});
+
+// Simulation failure: when the backend returns a non-2xx response the FeesPane
+// must show "—" for all three Soroban fee rows and the Continue button must be
+// disabled so the user cannot proceed with stale fee data.
+test("FeesPane shows — for all fee rows when simulation fails", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  test.slow();
+
+  const stubOverrides = async () => {
+    await stubAccountBalancesE2e(page);
+    // Override token-transfer simulation to return a server error
+    await page.route("**/simulate-token-transfer", async (route) => {
+      if (route.request().method() !== "POST") {
+        await route.continue();
+        return;
+      }
+      await route.fulfill({ status: 500 });
+    });
+  };
+  await stubContractSpec(page, TEST_TOKEN_ADDRESS, true);
+
+  await loginToTestAccount({ page, extensionId, context, stubOverrides });
+
+  // Navigate to token send and set a destination to trigger auto-simulation
+  await page.getByText("E2E").click();
+  await page.getByTestId("asset-detail-send-button").click();
+  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+  await page.getByTestId("send-amount-amount-input").fill("0.1");
+
+  await page.getByTestId("address-tile").click();
+  await page.getByTestId("send-to-input").fill(FUNDED_DESTINATION);
+  await page.getByText("Continue").click();
+
+  // Wait for the simulation to fail — the Continue button becomes disabled
+  const continueButton = page.getByTestId("send-amount-btn-continue");
+  await expect(continueButton).toBeDisabled({ timeout: 10000 });
+
+  // Open EditSettings → FeesPane to inspect the error state
+  await page.getByTestId("send-amount-btn-fee").click();
+  await expect(page.getByText("Inclusion Fee")).toBeVisible();
+  await page.getByTestId("edit-settings-fees-info-btn").click();
+  await expect(page.getByTestId("review-tx-fees-pane")).toBeVisible();
+
+  // All three fee rows must show "—" on simulation error
+  await expect(page.getByTestId("review-tx-inclusion-fee")).toHaveText("—", {
+    timeout: 10000,
+  });
+  await expect(page.getByTestId("review-tx-resource-fee")).toHaveText("—");
+  await expect(page.getByTestId("review-tx-total-fee")).toHaveText("—");
+});

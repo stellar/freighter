@@ -1,8 +1,8 @@
 import React from "react";
-import { Icon } from "@stellar/design-system";
+import { Icon, Notification } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
-import { RequestState, State } from "constants/request";
+import { RequestState, type State } from "constants/request";
 import { SimulateTxData } from "types/transactions";
 
 import "./styles.scss";
@@ -22,9 +22,7 @@ export const FeesPane = ({
 }: FeesPaneProps) => {
   const { t } = useTranslation();
 
-  const isLoading =
-    simulationState.state === RequestState.IDLE ||
-    simulationState.state === RequestState.LOADING;
+  const isError = simulationState.state === RequestState.ERROR;
 
   return (
     <div className="FeesPane" data-testid="review-tx-fees-pane">
@@ -46,7 +44,7 @@ export const FeesPane = ({
         <span>{t("Fees")}</span>
       </div>
       <div className="FeesPane__Card">
-        {!isLoading && simulationState.data?.inclusionFee && (
+        {isSoroban && (
           <div className="FeesPane__Card__Row">
             <span className="FeesPane__Card__Row__Label">
               {t("Inclusion Fee")}
@@ -55,11 +53,13 @@ export const FeesPane = ({
               className="FeesPane__Card__Row__Value"
               data-testid="review-tx-inclusion-fee"
             >
-              {simulationState.data.inclusionFee} XLM
+              {isError
+                ? "—"
+                : `${simulationState.data?.inclusionFee ?? fee} XLM`}
             </span>
           </div>
         )}
-        {!isLoading && simulationState.data?.resourceFee && (
+        {isSoroban && (
           <div className="FeesPane__Card__Row">
             <span className="FeesPane__Card__Row__Label">
               {t("Resource Fee")}
@@ -68,7 +68,11 @@ export const FeesPane = ({
               className="FeesPane__Card__Row__Value"
               data-testid="review-tx-resource-fee"
             >
-              {simulationState.data.resourceFee} XLM
+              {isError
+                ? "—"
+                : simulationState.data?.resourceFee
+                  ? `${simulationState.data.resourceFee} XLM`
+                  : "-"}
             </span>
           </div>
         )}
@@ -80,10 +84,18 @@ export const FeesPane = ({
             className="FeesPane__Card__Row__Value FeesPane__Card__Row__Value--total"
             data-testid="review-tx-total-fee"
           >
-            {isLoading ? t("Calculating...") : `${fee} XLM`}
+            {isError ? "—" : `${fee} XLM`}
           </span>
         </div>
       </div>
+      {isError && (
+        <Notification
+          variant="error"
+          title={t("Failed to simulate transaction")}
+        >
+          {simulationState.error}
+        </Notification>
+      )}
       <div
         className="FeesPane__Description"
         data-testid="review-tx-fees-description"
