@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, NavLink } from "react-router-dom";
 import { createPortal } from "react-dom";
+import browser from "webextension-polyfill";
 
 import { Icon, Text, NavButton, CopyText } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
@@ -11,7 +12,7 @@ import { ROUTES } from "popup/constants/routes";
 import { LoadingBackground } from "popup/basics/LoadingBackground";
 import { View } from "popup/basics/layout/View";
 import { isActiveNetwork } from "helpers/stellar";
-import { navigateTo, openTab } from "popup/helpers/navigate";
+import { navigateTo, openTab, openSidebar } from "popup/helpers/navigate";
 import { newTabHref } from "helpers/urls";
 import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
 import { PunycodedDomain } from "popup/components/PunycodedDomain";
@@ -43,6 +44,7 @@ interface AccountHeaderProps {
   roundedTotalBalanceUsd: string;
   refreshHiddenCollectibles: () => Promise<void>;
   isCollectibleHidden: (collectionAddress: string, tokenId: string) => boolean;
+  onDiscoverClick: () => void;
 }
 
 export const AccountHeader = ({
@@ -55,6 +57,7 @@ export const AccountHeader = ({
   roundedTotalBalanceUsd,
   refreshHiddenCollectibles,
   isCollectibleHidden,
+  onDiscoverClick,
 }: AccountHeaderProps) => {
   const { t } = useTranslation();
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
@@ -181,6 +184,22 @@ export const AccountHeader = ({
                         <Icon.Lock01 />
                       </div>
                     </div>
+                    {(typeof globalThis.chrome?.sidePanel?.open ===
+                      "function" ||
+                      typeof (browser as any)?.sidebarAction?.open ===
+                        "function") && (
+                      <div
+                        className="AccountHeader__options__item"
+                        onClick={() => openSidebar()}
+                      >
+                        <Text as="div" size="sm" weight="medium">
+                          {t("Sidebar mode")}
+                        </Text>
+                        <div className="AccountHeader__options__item__icon">
+                          <Icon.LayoutRight />
+                        </div>
+                      </div>
+                    )}
                     <div
                       className="AccountHeader__options__item"
                       onClick={() => openTab(newTabHref(ROUTES.account))}
@@ -308,8 +327,9 @@ export const AccountHeader = ({
         }
         rightContent={
           <div
+            data-testid="account-header-discover-button"
             className="AccountHeader__right-button AccountHeader__right-button--with-label"
-            onClick={() => navigateTo(ROUTES.discover, navigate)}
+            onClick={onDiscoverClick}
           >
             <Icon.Compass03 /> {t("Discover")}
           </div>
