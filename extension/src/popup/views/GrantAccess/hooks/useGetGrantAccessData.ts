@@ -1,4 +1,5 @@
 import { useReducer } from "react";
+import { useSelector } from "react-redux";
 
 import { initialState, isError, reducer } from "../../../../helpers/request";
 import {
@@ -7,6 +8,7 @@ import {
   useGetAppData,
 } from "../../../../helpers/hooks/useGetAppData";
 import { useAsyncSiteScan } from "../../../../popup/helpers/blockaid";
+import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { BlockAidScanSiteResult } from "@shared/api/types";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
@@ -28,8 +30,10 @@ function useGetGrantAccessData(url: string) {
     initialState,
   );
   const { fetchData: fetchAppData } = useGetAppData();
+  const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const { scanSite } = useAsyncSiteScan<GrantAccessData>(
     url,
+    networkDetails.networkPassphrase,
     dispatch,
     (payload, scanData) => ({ ...payload, scanData }),
   );

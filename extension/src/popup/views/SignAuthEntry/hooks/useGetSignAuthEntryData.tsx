@@ -9,11 +9,12 @@ import {
 import { NetworkDetails } from "@shared/constants/stellar";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import { makeAccountActive } from "popup/ducks/accountServices";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { Account, BlockAidScanSiteResult } from "@shared/api/types";
 import { AppDispatch } from "popup/App";
 import { signFlowAccountSelector } from "popup/helpers/account";
 import { useAsyncSiteScan } from "../../../../popup/helpers/blockaid";
+import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { getBlockaidOverrideState } from "@shared/api/internal";
 
 interface ResolvedData {
@@ -32,16 +33,24 @@ interface ResolvedData {
 
 type SignAuthEntryData = ResolvedData | NeedsReRoute;
 
-function useGetSignAuthEntryData(accountToSign?: string, url?: string) {
+function useGetSignAuthEntryData(
+  accountToSign?: string,
+  url?: string,
+  requestNetworkPassphrase?: string,
+) {
   const [state, dispatch] = useReducer(
     reducer<SignAuthEntryData, unknown>,
     initialState,
   );
   const reduxDispatch = useDispatch<AppDispatch>();
 
+  const reduxNetworkDetails = useSelector(settingsNetworkDetailsSelector);
+  const resolvedNetworkPassphrase =
+    requestNetworkPassphrase ?? reduxNetworkDetails.networkPassphrase;
   const { fetchData: fetchAppData } = useGetAppData();
   const { scanSite } = useAsyncSiteScan<SignAuthEntryData>(
     url,
+    resolvedNetworkPassphrase,
     dispatch,
     (payload, scanData) => ({ ...payload, scanData }),
   );

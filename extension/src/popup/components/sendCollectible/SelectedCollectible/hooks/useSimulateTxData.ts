@@ -156,7 +156,7 @@ function useSimulateTxData({
       payload.scanResult = await scanTx(
         payload.transactionXdr,
         scanUrlstub,
-        networkDetails,
+        networkDetails.networkPassphrase,
       );
 
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });

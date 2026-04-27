@@ -65,6 +65,7 @@ export const SignAuthEntry = () => {
   const { state: signAuthEntryData, fetchData } = useGetSignAuthEntryData(
     accountToSign,
     params.url,
+    params.networkPassphrase,
   );
   const {
     isConfirming,

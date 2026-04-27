@@ -266,12 +266,14 @@ const BlockaidFeedbackFormSchema = YupObject().shape({
 interface BlockaidFeedbackFormProps {
   address?: string;
   requestId?: string;
+  networkPassphrase?: string;
   setIsFeedbackActive: (isActive: boolean) => void;
 }
 
 const BlockaidFeedbackForm = ({
   address,
   requestId,
+  networkPassphrase,
   setIsFeedbackActive,
 }: BlockaidFeedbackFormProps) => {
   const { t } = useTranslation();
@@ -284,6 +286,8 @@ const BlockaidFeedbackForm = ({
         details: values.details,
         requestId,
         event: values.transactionIssue,
+        networkPassphrase:
+          networkPassphrase ?? networkDetails.networkPassphrase,
       });
     } else if (address) {
       await reportAssetWarning({
@@ -416,10 +420,12 @@ export const BlockaidByLine = ({
   handleClick,
   requestId,
   address,
+  networkPassphrase,
 }: {
   handleClick?: () => void;
   requestId?: string;
   address?: string;
+  networkPassphrase?: string;
 }) => {
   const { t } = useTranslation();
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
@@ -475,6 +481,7 @@ export const BlockaidByLine = ({
             requestId={requestId}
             setIsFeedbackActive={setIsFeedbackActive}
             address={address}
+            networkPassphrase={networkPassphrase}
           />,
           document.querySelector("#modal-root")!,
         )}
@@ -1000,6 +1007,11 @@ interface BlockAidScanExpandedProps {
   scanResult: BlockAidScanTxResult | BlockAidScanAssetResult | null | undefined;
   onClose?: () => void;
   isAssetScan?: boolean;
+  /**
+   * The transaction's asserted network passphrase. Used to gate
+   * `report-transaction-warning` to mainnet only. Optional for asset scans.
+   */
+  networkPassphrase?: string;
 }
 
 interface WarningInfo {
@@ -1153,6 +1165,7 @@ export const BlockAidScanExpanded = ({
   scanResult,
   onClose,
   isAssetScan: isAssetScanProp,
+  networkPassphrase,
 }: BlockAidScanExpandedProps) => {
   const { t } = useTranslation();
   const shouldTreatTxAsUnableToScan = useShouldTreatTxAsUnableToScan();
@@ -1238,7 +1251,11 @@ export const BlockAidScanExpanded = ({
             <span>{warning.text}</span>
           </div>
         ))}
-        <BlockaidByLine address={""} requestId={requestId} />
+        <BlockaidByLine
+          address={""}
+          requestId={requestId}
+          networkPassphrase={networkPassphrase}
+        />
       </div>
     </div>
   );

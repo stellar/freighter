@@ -78,9 +78,12 @@ function useGetBalances(options: {
     isMainnet: boolean,
     networkDetails: NetworkDetails,
     useCache = false,
-    shouldSkipScan = false,
+    shouldSkipScan?: boolean,
   ): Promise<AccountBalances | Error> => {
     dispatch({ type: "FETCH_DATA_START" });
+    // Default skip-scan to true for any non-pubnet network so the indexer's
+    // server-side asset scan doesn't run for testnet/futurenet/custom loads.
+    const resolvedShouldSkipScan = shouldSkipScan ?? !isMainnet;
     try {
       const cachedBalanceData =
         cachedBalances[networkDetails.network]?.[publicKey];
@@ -93,7 +96,7 @@ function useGetBalances(options: {
               publicKey,
               networkDetails,
               isMainnet,
-              shouldSkipScan,
+              resolvedShouldSkipScan,
             );
 
       const payload = {

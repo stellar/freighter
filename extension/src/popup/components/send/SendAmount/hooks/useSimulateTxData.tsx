@@ -598,7 +598,11 @@ function useSimulateTxData({
         const xdr = transaction.build().toXDR();
         payload.transactionXdr = xdr;
         payload.scanResult = applyExpectedToFailReason({
-          scanResult: await scanTx(xdr, scanUrlstub, networkDetails),
+          scanResult: await scanTx(
+            xdr,
+            scanUrlstub,
+            networkDetails.networkPassphrase,
+          ),
           expectedToFailReason,
         });
       }
@@ -609,7 +613,7 @@ function useSimulateTxData({
           scanResult: await scanTx(
             payload.transactionXdr,
             scanUrlstub,
-            networkDetails,
+            networkDetails.networkPassphrase,
           ),
           expectedToFailReason,
         });

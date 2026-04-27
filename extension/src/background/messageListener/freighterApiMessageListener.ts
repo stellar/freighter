@@ -28,10 +28,7 @@ import {
   EXTERNAL_SERVICE_TYPES,
   SIDEBAR_NAVIGATE,
 } from "@shared/constants/services";
-import {
-  MAINNET_NETWORK_DETAILS,
-  NetworkDetails,
-} from "@shared/constants/stellar";
+import { NetworkDetails } from "@shared/constants/stellar";
 import { getSdk } from "@shared/helpers/stellar";
 
 import { MessageResponder } from "background/types";
@@ -273,8 +270,10 @@ export const freighterApiMessageListener = (
       const { contractId, networkPassphrase: reqNetworkPassphrase } =
         request as ExternalRequestToken;
 
+      const { networkPassphrase: currentNetworkPassphrase } =
+        await getNetworkDetails({ localStore });
       const networkPassphrase =
-        reqNetworkPassphrase || MAINNET_NETWORK_DETAILS.networkPassphrase;
+        reqNetworkPassphrase || currentNetworkPassphrase;
 
       const { tab, url: tabUrl = "" } = sender;
       const domain = getUrlHostname(tabUrl);
@@ -355,20 +354,29 @@ export const freighterApiMessageListener = (
         address: addressToSign,
       } = request as ExternalRequestTx;
 
-      const network =
-        _network === null || !_network
-          ? MAINNET_NETWORK_DETAILS.network
-          : _network;
-
       const isMainnet = await getIsMainnet({ localStore });
-      const { networkUrl, networkPassphrase: currentNetworkPassphrase } =
-        await getNetworkDetails({ localStore });
+      const {
+        network: currentNetwork,
+        networkUrl,
+        networkPassphrase: currentNetworkPassphrase,
+      } = await getNetworkDetails({ localStore });
+
+      // Fall back to the user's configured network when the dApp omits it.
+      // Using MAINNET as the default would cause a non-mainnet user's tx to
+      // be parsed against PUBLIC and rejected by the popup mismatch UI.
+      const network = _network || currentNetwork;
+
       const Sdk = getSdk(currentNetworkPassphrase);
       const { tab, url: tabUrl = "" } = sender;
 
+      const resolvedPassphrase =
+        networkPassphrase ||
+        (Sdk.Networks as Record<string, string>)[network] ||
+        currentNetworkPassphrase;
+
       const transaction = Sdk.TransactionBuilder.fromXDR(
         transactionXdr,
-        networkPassphrase || Sdk.Networks[network as keyof typeof Sdk.Networks],
+        resolvedPassphrase,
       );
 
       const directoryLookupJson = await cachedFetch(
@@ -418,10 +426,7 @@ export const freighterApiMessageListener = (
         });
       }
 
-      const server = stellarSdkServer(
-        networkUrl,
-        networkPassphrase || transaction.networkPassphrase,
-      );
+      const server = stellarSdkServer(networkUrl, resolvedPassphrase);
 
       try {
         await server.checkMemoRequired(transaction as StellarSdk.Transaction);
@@ -515,6 +520,10 @@ export const freighterApiMessageListener = (
       const { apiVersion, blob, accountToSign, address, networkPassphrase } =
         request as ExternalRequestBlob;
 
+      const { networkPassphrase: currentNetworkPassphrase } =
+        await getNetworkDetails({ localStore });
+      const resolvedPassphrase = networkPassphrase || currentNetworkPassphrase;
+
       const { tab, url: tabUrl = "" } = sender;
       const domain = getUrlHostname(tabUrl);
       const punycodedDomain = getPunycodedDomain(domain);
@@ -528,7 +537,7 @@ export const freighterApiMessageListener = (
         message: blob,
         url: tabUrl,
         accountToSign: accountToSign || address,
-        networkPassphrase,
+        networkPassphrase: resolvedPassphrase,
         uuid,
       };
 
@@ -609,6 +618,10 @@ export const freighterApiMessageListener = (
         networkPassphrase,
       } = request as ExternalRequestAuthEntry;
 
+      const { networkPassphrase: currentNetworkPassphrase } =
+        await getNetworkDetails({ localStore });
+      const resolvedPassphrase = networkPassphrase || currentNetworkPassphrase;
+
       const { tab, url: tabUrl = "" } = sender;
       const domain = getUrlHostname(tabUrl);
       const punycodedDomain = getPunycodedDomain(domain);
@@ -621,7 +634,7 @@ export const freighterApiMessageListener = (
         tab,
         domain: punycodedDomain,
         url: tabUrl,
-        networkPassphrase,
+        networkPassphrase: resolvedPassphrase,
         uuid,
       };
 

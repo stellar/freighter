@@ -30,7 +30,10 @@ import { getIconUrlFromIssuer } from "@shared/api/helpers/getIconUrlFromIssuer";
 import { getIconFromTokenLists } from "@shared/api/helpers/getIconFromTokenList";
 import { isContractId } from "popup/helpers/soroban";
 import { getCombinedAssetListData } from "@shared/api/helpers/token-list";
-import { settingsSelector } from "popup/ducks/settings";
+import {
+  settingsSelector,
+  settingsNetworkDetailsSelector,
+} from "popup/ducks/settings";
 import { TransactionBuilder } from "stellar-sdk";
 import { AssetListResponse } from "@shared/constants/soroban/asset-list";
 
@@ -48,6 +51,12 @@ export interface ResolvedData {
   };
   applicationState: APPLICATION_STATE;
   networkDetails: NetworkDetails;
+  /**
+   * The transaction's asserted network passphrase (from the dApp request /
+   * parsed XDR), with a fallback to the user's selected network. Used by
+   * Blockaid scan gating and warning-reporting flows.
+   */
+  txNetworkPassphrase: string;
   icons: AssetIcons;
 }
 
@@ -57,6 +66,7 @@ function useGetSignTxData(
   scanOptions: {
     xdr: string;
     url: string;
+    networkPassphrase?: string;
   },
   balanceOptions: {
     showHidden: boolean;
@@ -76,10 +86,14 @@ function useGetSignTxData(
   const cachedIcons = useSelector(iconsSelector);
   const cachedTokenLists = useSelector(tokensListsSelector);
   const { assetsLists } = useSelector(settingsSelector);
+  const reduxNetworkDetails = useSelector(settingsNetworkDetailsSelector);
+  const txNetworkPassphrase =
+    scanOptions.networkPassphrase ?? reduxNetworkDetails.networkPassphrase;
   const { scanTx } = useScanTx();
   const blockaidOverrideState = useBlockaidOverrideState() ?? null;
   const { scanSite } = useAsyncSiteScan<SignTxData>(
     domain,
+    txNetworkPassphrase,
     dispatch,
     (payload, scanData) => {
       // Type guard to ensure we're working with ResolvedData
@@ -158,7 +172,7 @@ function useGetSignTxData(
       const scanResult = await scanTx(
         scanOptions.xdr,
         scanOptions.url,
-        networkDetails,
+        txNetworkPassphrase,
       );
 
       const firstRenderPayload = {
@@ -170,6 +184,7 @@ function useGetSignTxData(
         publicKey,
         applicationState: appData.account.applicationState,
         networkDetails: appData.settings.networkDetails,
+        txNetworkPassphrase,
         signFlowState: {
           allAccounts,
           accountNotFound,
@@ -306,6 +321,7 @@ function useGetSignTxData(
         publicKey,
         applicationState: appData.account.applicationState,
         networkDetails: appData.settings.networkDetails,
+        txNetworkPassphrase,
         icons,
         signFlowState: {
           allAccounts,

@@ -243,7 +243,11 @@ function useSimulateTxData({
       );
       const xdr = transaction.build().toXDR();
       payload.transactionXdr = xdr;
-      payload.scanResult = await scanTx(xdr, scanUrlstub, networkDetails);
+      payload.scanResult = await scanTx(
+        xdr,
+        scanUrlstub,
+        networkDetails.networkPassphrase,
+      );
       reduxDispatch(
         saveSimulation({
           preparedTransaction: xdr,

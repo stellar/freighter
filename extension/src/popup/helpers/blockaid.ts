@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
 import * as Sentry from "@sentry/browser";
 import { useSelector } from "react-redux";
+import { Networks } from "stellar-sdk";
 
 import { INDEXER_URL } from "@shared/constants/mercury";
-import { NetworkDetails } from "@shared/constants/stellar";
-import { isCustomNetwork } from "@shared/helpers/stellar";
+import { NetworkDetails, NETWORKS } from "@shared/constants/stellar";
 import {
   BlockAidScanAssetResult,
   BlockAidScanSiteResult,
@@ -22,6 +22,18 @@ import { isDev } from "@shared/helpers/dev";
 import { SecurityLevel } from "popup/constants/blockaid";
 import { fetchJson } from "./fetch";
 import { Action } from "constants/request";
+
+/**
+ * Returns true when `passphrase` is exactly the public-network passphrase.
+ *
+ * Use this to gate any Blockaid call that depends on the *transaction's
+ * asserted* network rather than the user's currently selected Freighter
+ * network. Callers must pass a non-undefined passphrase; the gate runs as
+ * the very first statement of each scan helper so that no network request
+ * is made on non-pubnet passphrases.
+ */
+export const isPubnetPassphrase = (passphrase: string | undefined | null) =>
+  passphrase === Networks.PUBLIC;
 
 export const ATTACK_TO_DISPLAY = {
   signature_farming:
@@ -46,8 +58,13 @@ export const useScanSite = () => {
   const [error, setError] = useState(null as string | null);
   const [isLoading, setLoading] = useState(true);
 
-  const scanSite = async (url: string) => {
+  const scanSite = async (url: string, networkPassphrase: string) => {
     setLoading(true);
+    if (!isPubnetPassphrase(networkPassphrase)) {
+      // Site scans are only supported on the public network.
+      setLoading(false);
+      return null;
+    }
     try {
       const res = await fetch(
         `${INDEXER_URL}/scan-dapp?url=${encodeURIComponent(url)}`,
@@ -90,15 +107,15 @@ export const useScanTx = () => {
   const scanTx = async (
     xdr: string,
     url: string,
-    networkDetails: NetworkDetails,
+    txNetworkPassphrase: string,
   ) => {
     setLoading(true);
+    if (!isPubnetPassphrase(txNetworkPassphrase)) {
+      // Transaction scans are only supported on the public network.
+      setLoading(false);
+      return null;
+    }
     try {
-      if (isCustomNetwork(networkDetails)) {
-        setError("Scanning transactions is not supported on custom networks");
-        setLoading(false);
-        return null;
-      }
       const options = {
         method: "POST",
         headers: {
@@ -107,7 +124,7 @@ export const useScanTx = () => {
         body: JSON.stringify({
           url: encodeURIComponent(url),
           tx_xdr: xdr,
-          network: networkDetails.network,
+          network: NETWORKS.PUBLIC,
         }),
       };
 
@@ -520,6 +537,7 @@ export const getSiteSecurityStates = (
  */
 export const useAsyncSiteScan = <T>(
   domain: string | undefined,
+  networkPassphrase: string | undefined,
   dispatch: (action: Action<T, unknown>) => void,
   updatePayload: (payload: T, scanData: BlockAidScanSiteResult | null) => T,
 ) => {
@@ -530,9 +548,15 @@ export const useAsyncSiteScan = <T>(
       if (!domain) {
         return;
       }
+      if (!isPubnetPassphrase(networkPassphrase)) {
+        // Site scans are only supported on the public network.
+        const updatedPayload = updatePayload(currentPayload, null);
+        dispatch({ type: "FETCH_DATA_SUCCESS", payload: updatedPayload });
+        return;
+      }
 
       // Scan asynchronously without blocking
-      scanSiteFn(domain)
+      scanSiteFn(domain, networkPassphrase as string)
         .then((scanResult) => {
           const updatedPayload = updatePayload(currentPayload, scanResult);
           dispatch({ type: "FETCH_DATA_SUCCESS", payload: updatedPayload });
@@ -544,7 +568,7 @@ export const useAsyncSiteScan = <T>(
           dispatch({ type: "FETCH_DATA_SUCCESS", payload: updatedPayload });
         });
     },
-    [domain, dispatch, updatePayload, scanSiteFn],
+    [domain, networkPassphrase, dispatch, updatePayload, scanSiteFn],
   );
 
   return { scanSite };
@@ -561,8 +585,12 @@ export const useAsyncSiteScan = <T>(
  * @param updatePayload - Optional function to customize how the payload is updated with scan data (defaults to setting scanData field)
  */
 export const fetchSiteScanData = async <T>(
-  scanSiteFn: (url: string) => Promise<BlockAidScanSiteResult | null>,
+  scanSiteFn: (
+    url: string,
+    networkPassphrase: string,
+  ) => Promise<BlockAidScanSiteResult | null>,
   url: string | undefined,
+  networkPassphrase: string | undefined,
   initialPayload: T,
   dispatch: (action: Action<T, unknown>) => void,
   updatePayload?: (payload: T, scanData: BlockAidScanSiteResult | null) => T,
@@ -571,19 +599,32 @@ export const fetchSiteScanData = async <T>(
     return;
   }
 
+  const buildPayload = (scanData: BlockAidScanSiteResult | null) =>
+    updatePayload
+      ? updatePayload(initialPayload, scanData)
+      : ({ ...initialPayload, scanData } as T);
+
+  if (!isPubnetPassphrase(networkPassphrase)) {
+    dispatch({
+      type: "FETCH_DATA_SUCCESS",
+      payload: buildPayload(null),
+    });
+    return;
+  }
+
   try {
-    const scanResult = await scanSiteFn(url);
-    const updatedPayload = updatePayload
-      ? updatePayload(initialPayload, scanResult)
-      : ({ ...initialPayload, scanData: scanResult } as T);
-    dispatch({ type: "FETCH_DATA_SUCCESS", payload: updatedPayload });
+    const scanResult = await scanSiteFn(url, networkPassphrase as string);
+    dispatch({
+      type: "FETCH_DATA_SUCCESS",
+      payload: buildPayload(scanResult),
+    });
   } catch (error) {
     console.error("Failed to scan site:", error);
     Sentry.captureException(`Failed to call scan site: ${error}`);
-    const updatedPayload = updatePayload
-      ? updatePayload(initialPayload, null)
-      : ({ ...initialPayload, scanData: null } as T);
-    dispatch({ type: "FETCH_DATA_SUCCESS", payload: updatedPayload });
+    dispatch({
+      type: "FETCH_DATA_SUCCESS",
+      payload: buildPayload(null),
+    });
   }
 };
 
@@ -662,13 +703,19 @@ interface ReportTransactionWarningParams {
   details: string;
   requestId: string;
   event: string;
+  networkPassphrase: string;
 }
 
 export const reportTransactionWarning = async ({
   details,
   requestId,
   event,
+  networkPassphrase,
 }: ReportTransactionWarningParams) => {
+  if (!isPubnetPassphrase(networkPassphrase)) {
+    // Reporting transaction warnings is only supported on the public network.
+    return {} as ReportTransactionWarningResponse;
+  }
   try {
     const res = await fetchJson<ReportTransactionWarningResponse>(
       `${INDEXER_URL}/report-transaction-warning?details=${encodeURIComponent(

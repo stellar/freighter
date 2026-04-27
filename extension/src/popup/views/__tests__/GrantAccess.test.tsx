@@ -178,7 +178,7 @@ describe("Grant Access view", () => {
             allAccounts: mockAccounts,
           },
           settings: {
-            networkDetails: TESTNET_NETWORK_DETAILS,
+            networkDetails: MAINNET_NETWORK_DETAILS,
             networksList: DEFAULT_NETWORKS,
           },
         }}
@@ -217,7 +217,7 @@ describe("Grant Access view", () => {
             allAccounts: mockAccounts,
           },
           settings: {
-            networkDetails: TESTNET_NETWORK_DETAILS,
+            networkDetails: MAINNET_NETWORK_DETAILS,
             networksList: DEFAULT_NETWORKS,
           },
         }}

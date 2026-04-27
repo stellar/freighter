@@ -394,6 +394,7 @@ export const ReviewTx = ({
       onClose={() => {
         setActivePaneIndex(paneConfig.reviewIndex);
       }}
+      networkPassphrase={networkDetails.networkPassphrase}
     />
   );
 

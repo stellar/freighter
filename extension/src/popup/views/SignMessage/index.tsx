@@ -82,6 +82,7 @@ export const SignMessage = () => {
   const { state: signMessageState, fetchData } = useGetSignMessageData(
     accountToSign,
     url,
+    blobNetworkPassphrase,
   );
   const {
     isConfirming,

@@ -120,6 +120,7 @@ export const SignTransaction = () => {
     {
       xdr: transactionXdr,
       url,
+      networkPassphrase: _networkPassphrase as string | undefined,
     },
     {
       showHidden: false,
@@ -512,6 +513,7 @@ export const SignTransaction = () => {
             <BlockAidScanExpanded
               scanResult={scanResult}
               onClose={() => setActivePaneIndex(0)}
+              networkPassphrase={_networkPassphrase as string | undefined}
             />,
             <div className="SignTransaction__Body">
               <div className="SignTransaction__Body__Wrapper">
