@@ -1,5 +1,5 @@
 import { test, expect } from "./test-fixtures";
-import { loginToTestAccount } from "./helpers/login";
+import { loginToTestAccount, switchToMainnet } from "./helpers/login";
 import {
   openGrantAccessPopup,
   openSignMessagePopup,
@@ -119,6 +119,9 @@ test.describe("BlockAid Scan - Malicious States", () => {
         await stubScanTxMalicious(page);
       },
     });
+
+    // Blockaid tx scans are gated to mainnet only
+    await switchToMainnet(page);
 
     await page.getByTestId("nav-link-send").click();
     await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
@@ -265,6 +268,9 @@ test.describe("BlockAid Scan - Malicious States", () => {
       },
     });
 
+    // Blockaid tx scans are gated to mainnet only
+    await switchToMainnet(page);
+
     await page.getByTestId("nav-link-swap").click();
     await expect(page.getByTestId("AppHeaderPageTitle")).toContainText("Swap");
 
@@ -341,6 +347,9 @@ test.describe("BlockAid Scan - Malicious States", () => {
         );
       },
     });
+
+    // Blockaid tx scans are gated to mainnet only
+    await switchToMainnet(page);
 
     // Go to send payment to an M-address (requires memo)
     await page.getByTestId("nav-link-send").click();
