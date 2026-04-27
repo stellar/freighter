@@ -380,12 +380,13 @@ test("Custom token with recipient — full fee lifecycle in EditSettings and Fee
     "0.00005",
   );
 
-  // ── Open FeesPane again — total must use draft + resource ─────────────────
+  // ── Open FeesPane again — total reflects simulation, not unsaved draft ───────
   await page.getByTestId("edit-settings-fees-info-btn").click();
   await expect(page.getByTestId("review-tx-fees-pane")).toBeVisible();
-  // Total = draft(0.00005) + resource(0.0093238) = 0.0093738
+  // FeesPane shows the simulated total (inclusion 0.00001 + resource 0.0093238);
+  // the draft 0.00005 is not yet saved so it does not affect the displayed total.
   await expect(page.getByTestId("review-tx-total-fee")).toHaveText(
-    "0.0093738 XLM",
+    "0.0093338 XLM",
   );
 
   // ── Close FeesPane → draft still in the input ─────────────────────────────
