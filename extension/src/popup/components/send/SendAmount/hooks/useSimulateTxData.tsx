@@ -615,7 +615,7 @@ function useSimulateTxData({
         payload:
           "We had an issue retrieving your transaction details. Please try again.",
       });
-      return error;
+      return error instanceof Error ? error : new Error(String(error));
     }
   };
 

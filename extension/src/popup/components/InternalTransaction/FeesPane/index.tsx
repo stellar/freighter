@@ -1,4 +1,5 @@
 import React from "react";
+import BigNumber from "bignumber.js";
 import { Icon } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
@@ -23,6 +24,15 @@ export const FeesPane = ({
   const { t } = useTranslation();
 
   const isError = simulationState.state === RequestState.ERROR;
+
+  // Derive the total from live simulation data when available so the Total
+  // Fee row stays accurate if a simulation completes while the pane is open.
+  const liveTotal =
+    isSoroban && !isError && simulationState.data?.inclusionFee
+      ? new BigNumber(simulationState.data.inclusionFee)
+          .plus(simulationState.data.resourceFee ?? "0")
+          .toFixed()
+      : fee;
 
   return (
     <div className="FeesPane" data-testid="review-tx-fees-pane">
@@ -84,7 +94,7 @@ export const FeesPane = ({
             className="FeesPane__Card__Row__Value FeesPane__Card__Row__Value--total"
             data-testid="review-tx-total-fee"
           >
-            {isError ? "—" : `${fee} XLM`}
+            {isError ? "—" : `${liveTotal} XLM`}
           </span>
         </div>
       </div>

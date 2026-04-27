@@ -104,7 +104,7 @@ export const SendAmount = ({
   goToChooseDest: () => void;
   goToChooseAsset: () => void;
   simulationState: State<SimulateTxData, string>;
-  fetchSimulationData: () => Promise<unknown>;
+  fetchSimulationData: () => Promise<SimulateTxData | Error>;
   networkCongestion: NetworkCongestion;
   recommendedFee: string;
 }) => {
@@ -133,12 +133,14 @@ export const SendAmount = ({
   // EditSettings input never jumps back to the total fee while LOADING
   // (the request reducer sets data: null on FETCH_DATA_START).
   const lastInclusionFeeRef = useRef<string | null>(null);
-  if (
-    simulationState.state === RequestState.SUCCESS &&
-    simulationState.data?.inclusionFee
-  ) {
-    lastInclusionFeeRef.current = simulationState.data.inclusionFee;
-  }
+  useEffect(() => {
+    if (
+      simulationState.state === RequestState.SUCCESS &&
+      simulationState.data?.inclusionFee
+    ) {
+      lastInclusionFeeRef.current = simulationState.data.inclusionFee;
+    }
+  }, [simulationState.state, simulationState.data?.inclusionFee]);
 
   // Tracks the fee the user explicitly saved via EditSettings this session.
   // Once set, re-simulations no longer overwrite the displayed inclusion fee,
@@ -314,6 +316,10 @@ export const SendAmount = ({
     // the caught Error on failure. Only open the review modal when the
     // simulation succeeded — on failure the fee display shows the error
     // state and the user can retry.
+    // Note: for Soroban, fetchSimulationData internally dispatches
+    // saveTransactionFee again with the simulated total fee. The dispatch
+    // above resets to the inclusion fee so the simulation starts from a clean
+    // base; the one inside fetchSimulationData overwrites it with the result.
     if (!(simResult instanceof Error)) {
       setIsReviewingTx(true);
     }
@@ -380,8 +386,9 @@ export const SendAmount = ({
   // Soroban: re-simulate whenever destination or asset changes (and on first
   // mount if both are ready). simulationDataRef tracks what was last simulated so
   // we detect genuine changes without watching simulationState.data.
-  // simulationState.state is included so that if a change arrives while a
-  // simulation is already in-flight, we retry once it finishes.
+  // simulationState.state is also a dependency so that if a change arrives while
+  // a simulation is already in-flight, we re-evaluate once it settles and trigger
+  // a new simulation if the inputs have since diverged.
   useEffect(() => {
     if (!(isToken || isCollectible)) return;
     if (!destination) return;

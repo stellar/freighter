@@ -12,6 +12,7 @@ jest.mock("react-i18next", () => ({
 const BASE_FEE = "0.00001";
 const INCLUSION_FEE = "0.00001";
 const RESOURCE_FEE = "0.0093238";
+const TOTAL_FEE = "0.0093338"; // INCLUSION_FEE + RESOURCE_FEE
 
 const idleState: State<SimulateTxData, string> = {
   state: RequestState.IDLE,
@@ -79,7 +80,7 @@ describe("FeesPane", () => {
         `${RESOURCE_FEE} XLM`,
       );
       expect(screen.getByTestId("review-tx-total-fee")).toHaveTextContent(
-        `${BASE_FEE} XLM`,
+        `${TOTAL_FEE} XLM`,
       );
     });
   });

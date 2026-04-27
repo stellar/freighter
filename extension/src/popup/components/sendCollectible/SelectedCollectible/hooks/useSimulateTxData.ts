@@ -176,7 +176,7 @@ function useSimulateTxData({
       captureException(
         `error simulating collectible transaction: ${JSON.stringify(error)}`,
       );
-      return error;
+      return error instanceof Error ? error : new Error(String(error));
     }
   };
 
