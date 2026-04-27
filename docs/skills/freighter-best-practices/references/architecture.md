@@ -22,7 +22,7 @@ and capabilities:
 - **Lifetime:** ephemeral -- Chrome may terminate it at any time after
   inactivity. All state must be persisted to `chrome.storage`
 - Listens for messages from the popup and content scripts via
-  `chrome.runtime.onMessage`
+  `browser.runtime.onMessage`
 - Uses `chrome.storage.session` for decrypted keys (memory-only, cleared on
   session end) and `chrome.storage.local` for the encrypted vault
 
