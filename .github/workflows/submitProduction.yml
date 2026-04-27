@@ -2,6 +2,9 @@ name: Production Deployment
 env:
   INDEXER_URL: ${{ secrets.INDEXER_URL }}
   INDEXER_V2_URL: ${{ secrets.INDEXER_V2_URL }}
+  SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+  SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+  SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
   HUSKY: 0
 on:
   workflow_dispatch:

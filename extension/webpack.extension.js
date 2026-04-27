@@ -7,6 +7,7 @@ const dotenv = require("dotenv");
 const { sentryWebpackPlugin } = require("@sentry/webpack-plugin");
 const SpeedMeasurePlugin = require("speed-measure-webpack-plugin");
 const TerserPlugin = require("terser-webpack-plugin");
+const packageJson = require("./package.json");
 
 // Load .env file and validate required variables (skip in CI - secrets are handled separately)
 dotenv.config();
@@ -97,9 +98,12 @@ const prodConfig = (
         : []),
       new Dotenv({ systemvars: true }),
       sentryWebpackPlugin({
-        org: env.SENTRY_ORG,
-        project: env.SENTRY_PROJECT,
-        authToken: env.SENTRY_KEY,
+        org: process.env.SENTRY_ORG,
+        project: process.env.SENTRY_PROJECT,
+        authToken: process.env.SENTRY_AUTH_TOKEN,
+        release: {
+          name: packageJson.version,
+        },
       }),
     ],
     // This if to fine tune logged output. Since this is an extension, not a
