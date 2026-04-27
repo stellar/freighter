@@ -1,6 +1,6 @@
 import React from "react";
 import BigNumber from "bignumber.js";
-import { Icon } from "@stellar/design-system";
+import { Heading, Icon, Text } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
 import { RequestState, type State } from "constants/request";
@@ -50,31 +50,35 @@ export const FeesPane = ({
           <Icon.X />
         </button>
       </div>
-      <div className="FeesPane__Title">
-        <span>{t("Fees")}</span>
-      </div>
+      <Heading as="h2" size="md" addlClassName="FeesPane__Title">
+        {t("Fees")}
+      </Heading>
       <div className="FeesPane__Card">
         {isSoroban && (
           <div className="FeesPane__Card__Row">
-            <span className="FeesPane__Card__Row__Label">
+            <Text as="span" size="sm" className="FeesPane__Card__Row__Label">
               {t("Inclusion Fee")}
-            </span>
-            <span
+            </Text>
+            <Text
+              as="span"
+              size="sm"
               className="FeesPane__Card__Row__Value"
               data-testid="review-tx-inclusion-fee"
             >
               {isError
                 ? "—"
                 : `${simulationState.data?.inclusionFee ?? fee} XLM`}
-            </span>
+            </Text>
           </div>
         )}
         {isSoroban && (
           <div className="FeesPane__Card__Row">
-            <span className="FeesPane__Card__Row__Label">
+            <Text as="span" size="sm" className="FeesPane__Card__Row__Label">
               {t("Resource Fee")}
-            </span>
-            <span
+            </Text>
+            <Text
+              as="span"
+              size="sm"
               className="FeesPane__Card__Row__Value"
               data-testid="review-tx-resource-fee"
             >
@@ -83,29 +87,37 @@ export const FeesPane = ({
                 : simulationState.data?.resourceFee
                   ? `${simulationState.data.resourceFee} XLM`
                   : "-"}
-            </span>
+            </Text>
           </div>
         )}
         <div className="FeesPane__Card__Row">
-          <span className="FeesPane__Card__Row__Label FeesPane__Card__Row__Label--total">
+          <Text
+            as="span"
+            size="sm"
+            className="FeesPane__Card__Row__Label FeesPane__Card__Row__Label--total"
+          >
             {t("Total Fee")}
-          </span>
-          <span
+          </Text>
+          <Text
+            as="span"
+            size="sm"
             className="FeesPane__Card__Row__Value FeesPane__Card__Row__Value--total"
             data-testid="review-tx-total-fee"
           >
             {isError ? "—" : `${liveTotal} XLM`}
-          </span>
+          </Text>
         </div>
       </div>
-      <div
+      <Text
+        as="div"
+        size="sm"
         className="FeesPane__Description"
         data-testid="review-tx-fees-description"
       >
         {isSoroban
           ? t("Fees description soroban")
           : t("Fees description classic")}
-      </div>
+      </Text>
     </div>
   );
 };

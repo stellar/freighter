@@ -61,7 +61,7 @@ import { SelectedCollectible } from "popup/components/sendCollectible/SelectedCo
 
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { useGetSendAmountData } from "./hooks/useSendAmountData";
-import { SimulateTxData } from "./hooks/useSimulateTxData";
+import { SimulateTxData, SimulateResult } from "./hooks/useSimulateTxData";
 import { InputWidthContext } from "popup/views/Send/contexts/inputWidthContext";
 import { SlideupModal } from "popup/components/SlideupModal";
 import { MemoEditingContext } from "popup/constants/send-payment";
@@ -104,7 +104,7 @@ export const SendAmount = ({
   goToChooseDest: () => void;
   goToChooseAsset: () => void;
   simulationState: State<SimulateTxData, string>;
-  fetchSimulationData: () => Promise<SimulateTxData | Error>;
+  fetchSimulationData: () => Promise<SimulateResult>;
   networkCongestion: NetworkCongestion;
   recommendedFee: string;
 }) => {
@@ -312,15 +312,13 @@ export const SendAmount = ({
       dispatch(saveTransactionFee(fee));
     }
     const simResult = await fetchSimulationData();
-    // fetchSimulationData returns the SimulateTxData payload on success and
-    // the caught Error on failure. Only open the review modal when the
-    // simulation succeeded — on failure the fee display shows the error
-    // state and the user can retry.
+    // Only open the review modal on success — on failure the fee display shows
+    // the error state and the user can retry.
     // Note: for Soroban, fetchSimulationData internally dispatches
     // saveTransactionFee again with the simulated total fee. The dispatch
     // above resets to the inclusion fee so the simulation starts from a clean
     // base; the one inside fetchSimulationData overwrites it with the result.
-    if (!(simResult instanceof Error)) {
+    if (simResult.ok) {
       setIsReviewingTx(true);
     }
   };

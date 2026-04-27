@@ -20,7 +20,7 @@ import {
 } from "popup/ducks/transactionSubmission";
 import { AppDispatch, AppState } from "popup/App";
 import { useScanTx } from "popup/helpers/blockaid";
-import { SimulateTxData } from "types/transactions";
+import { SimulateTxData, SimulateResult } from "types/transactions";
 
 export type { SimulateTxData };
 
@@ -166,17 +166,15 @@ function useSimulateTxData({
       );
 
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });
-      return payload;
+      return { ok: true, data: payload } as SimulateResult;
     } catch (error) {
-      dispatch({
-        type: "FETCH_DATA_ERROR",
-        payload:
-          "We had an issue retrieving your transaction details. Please try again.",
-      });
+      const errorMessage =
+        "We had an issue retrieving your transaction details. Please try again.";
+      dispatch({ type: "FETCH_DATA_ERROR", payload: errorMessage });
       captureException(
         `error simulating collectible transaction: ${JSON.stringify(error)}`,
       );
-      return error instanceof Error ? error : new Error(String(error));
+      return { ok: false, error: errorMessage } as SimulateResult;
     }
   };
 

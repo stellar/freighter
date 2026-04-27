@@ -13,6 +13,10 @@ export interface SimulateTxData {
   resourceFee?: string;
 }
 
+export type SimulateResult =
+  | { ok: true; data: SimulateTxData }
+  | { ok: false; error: string };
+
 export interface TransactionInfo {
   url: string;
   tab: any;

@@ -50,8 +50,6 @@
     display: flex;
     align-items: center;
     width: 100%;
-    font-size: pxToRem(18px);
-    font-weight: var(--font-weight-medium);
   }
 
   &__Card {
@@ -72,7 +70,6 @@
       }
 
       &__Label {
-        font-size: pxToRem(14px);
         font-weight: var(--font-weight-medium);
         color: var(--sds-clr-gray-11);
 
@@ -82,7 +79,6 @@
       }
 
       &__Value {
-        font-size: pxToRem(14px);
         font-weight: var(--font-weight-medium);
         color: var(--sds-clr-gray-12);
 
@@ -95,7 +91,6 @@
 
   &__Description {
     color: var(--sds-clr-gray-11);
-    font-size: pxToRem(14px);
     line-height: pxToRem(20px);
   }
 }

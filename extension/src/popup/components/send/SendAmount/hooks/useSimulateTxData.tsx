@@ -48,9 +48,9 @@ import {
   checkIsMuxedSupported,
   determineMuxedDestination,
 } from "helpers/muxedAddress";
-import { SimulateTxData } from "types/transactions";
+import { SimulateTxData, SimulateResult } from "types/transactions";
 
-export type { SimulateTxData };
+export type { SimulateTxData, SimulateResult };
 
 interface SimClassic {
   type: "classic";
@@ -608,14 +608,12 @@ function useSimulateTxData({
       }
 
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });
-      return payload;
+      return { ok: true, data: payload } as SimulateResult;
     } catch (error) {
-      dispatch({
-        type: "FETCH_DATA_ERROR",
-        payload:
-          "We had an issue retrieving your transaction details. Please try again.",
-      });
-      return error instanceof Error ? error : new Error(String(error));
+      const errorMessage =
+        "We had an issue retrieving your transaction details. Please try again.";
+      dispatch({ type: "FETCH_DATA_ERROR", payload: errorMessage });
+      return { ok: false, error: errorMessage } as SimulateResult;
     }
   };
 
