@@ -102,7 +102,7 @@ const prodConfig = (
         project: process.env.SENTRY_PROJECT,
         authToken: process.env.SENTRY_AUTH_TOKEN,
         release: {
-          name: packageJson.version,
+          name: `freighter@${packageJson.version}`,
         },
       }),
     ],
