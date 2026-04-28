@@ -18,11 +18,10 @@ import {
   BlockAidScanTxResult,
 } from "@shared/api/types";
 
-import { isMainnet, isTestnet } from "helpers/stellar";
-
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { LoadingBackground } from "popup/basics/LoadingBackground";
 import {
+  isBlockaidEnabled,
   reportAssetWarning,
   reportTransactionWarning,
   useBlockaidOverrideState,
@@ -284,6 +283,7 @@ const BlockaidFeedbackForm = ({
         details: values.details,
         requestId,
         event: values.transactionIssue,
+        networkDetails,
       });
     } else if (address) {
       await reportAssetWarning({
@@ -453,7 +453,7 @@ export const BlockaidByLine = ({
           <span>{t("Blockaid")}</span>
         </Text>
       </div>
-      {isMainnet(networkDetails) || isTestnet(networkDetails) ? (
+      {isBlockaidEnabled(networkDetails) ? (
         <Text
           as="span"
           size="sm"

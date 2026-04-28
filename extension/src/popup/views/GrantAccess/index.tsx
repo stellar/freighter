@@ -117,6 +117,7 @@ export const GrantAccess = () => {
   const { isMalicious, isUnableToScan } = getSiteSecurityStates(
     scanData,
     blockaidOverrideState,
+    networkDetails,
   );
 
   const shouldShowWarning = isMalicious || isUnableToScan;

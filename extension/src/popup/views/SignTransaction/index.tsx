@@ -153,13 +153,21 @@ export const SignTransaction = () => {
     signTxState.data?.type === AppDataType.RESOLVED
       ? signTxState.data.blockaidOverrideState
       : null;
+  const signTxNetworkDetails =
+    signTxState.data?.type === AppDataType.RESOLVED
+      ? signTxState.data.networkDetails
+      : null;
 
   // Determine site security states with override support
   const {
     isMalicious: isSiteMalicious,
     isSuspicious: isSiteSuspicious,
     isUnableToScan: isSiteUnableToScan,
-  } = getSiteSecurityStates(siteScanData, blockaidOverrideState);
+  } = getSiteSecurityStates(
+    siteScanData,
+    blockaidOverrideState,
+    signTxNetworkDetails,
+  );
 
   const shouldShowSiteWarning =
     isSiteMalicious || isSiteSuspicious || isSiteUnableToScan;
