@@ -278,7 +278,16 @@ describe("Grant Access view", () => {
     ).toBeDefined();
   });
   it("suppresses Blockaid site warnings on custom networks (Mainnet-only feature)", async () => {
-    const fetchSpy = jest.spyOn(global, "fetch");
+    // Stub `fetch` to a benign success so that, if the network gate ever
+    // regresses and a `/scan-dapp` (or any other) call leaks through, the
+    // test doesn't attempt a real network request and become flaky in CI.
+    // The assertion below still verifies no `/scan-dapp` call was made.
+    const fetchSpy = jest
+      .spyOn(global, "fetch")
+      .mockResolvedValue({
+        ok: true,
+        json: async () => ({}),
+      } as Response);
     render(
       <Wrapper
         routes={[ROUTES.welcome]}

@@ -497,10 +497,27 @@ export const isBlockaidWarning = (resultType: string) =>
   resultType === "Warning" || resultType === "Spam";
 
 /**
- * Determines site security states from scan data and override state
- * @param scanData - The site scan result from Blockaid
- * @param blockaidOverrideState - Override state for dev mode (takes precedence)
- * @returns Object with isMalicious, isSuspicious, and isUnableToScan flags
+ * Determines site security states from scan data and override state.
+ *
+ * Precedence (high → low): dev override > network gate > scan data.
+ *
+ * - When a dev override is set (and `isDev`), the override drives the
+ *   returned flags directly — useful for exercising UI states locally
+ *   without a real Blockaid result.
+ * - Otherwise, when `networkDetails` is null (not yet resolved) or the
+ *   active network is one where Blockaid is not applicable
+ *   (`!isBlockaidEnabled(...)`, e.g. testnet/futurenet/custom), all flags
+ *   are returned `false` so the caller renders no Blockaid-driven UI
+ *   (no malicious/suspicious banner, no "unable to scan" affordance).
+ * - Otherwise, the scan data drives the flags.
+ *
+ * @param scanData - The site scan result from Blockaid (undefined while a
+ *                   scan is in flight, null when the scan failed).
+ * @param blockaidOverrideState - Override state for dev mode (takes precedence).
+ * @param networkDetails - The active network. Pass null if it has not
+ *                         resolved yet; off-mainnet networks short-circuit
+ *                         to all-clear flags.
+ * @returns Object with isMalicious, isSuspicious, and isUnableToScan flags.
  */
 export const getSiteSecurityStates = (
   scanData: BlockAidScanSiteResult | null | undefined,
