@@ -7,6 +7,7 @@ import {
 } from "../types";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { INDEXER_V2_URL } from "@shared/constants/mercury";
+import { fetchMetadataJson } from "./fetchMetadataJson";
 
 /**
  * Fetches metadata for a collectible from its token URI.
@@ -26,11 +27,7 @@ export const fetchCollectibleMetadata = async (tokenUri: string) => {
   };
 
   try {
-    const response = await fetch(tokenUri);
-    if (!response.ok) {
-      return null;
-    }
-    const data = (await response.json()) as CollectibleMetadataResponse;
+    const data = await fetchMetadataJson<CollectibleMetadataResponse>(tokenUri);
 
     if (!data) {
       return null;
@@ -54,8 +51,9 @@ export const fetchCollectibleMetadata = async (tokenUri: string) => {
 
     return metadata;
   } catch (e) {
-    // we don't want to capture exceptions here because it's likely that some metadata
-    // will not be found and that is out of our control
+    // Do not capture to Sentry — third-party metadata hosts fail often and
+    // we can't fix them. The helper rejects on any failure and the UI
+    // expects null here.
     return null;
   }
 };

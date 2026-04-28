@@ -7,13 +7,17 @@ on:
   workflow_dispatch:
     inputs:
       ref_name:
-        description: A git commit/hash/tag (optional, defaults to the selected branch or tag)
+        description:
+          A git commit/hash/tag (optional, defaults to the selected branch or
+          tag)
         type: string
         default: ""
 jobs:
   bump-version:
     name: Bump Package Version and Submit Extension
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - if: ${{ env.INDEXER_URL == '' }}
         run: |
@@ -25,10 +29,27 @@ jobs:
           echo "Missing INDEXER_V2_URL"
           gh run cancel ${{ github.run_id }}
           gh run watch ${{ github.run_id }}
+      - if: ${{ secrets.SENTRY_ORG == '' }}
+        run: |
+          echo "Missing SENTRY_ORG"
+          gh run cancel ${{ github.run_id }}
+          gh run watch ${{ github.run_id }}
+      - if: ${{ secrets.SENTRY_PROJECT == '' }}
+        run: |
+          echo "Missing SENTRY_PROJECT"
+          gh run cancel ${{ github.run_id }}
+          gh run watch ${{ github.run_id }}
+      - if: ${{ secrets.SENTRY_AUTH_TOKEN == '' }}
+        run: |
+          echo "Missing SENTRY_AUTH_TOKEN"
+          gh run cancel ${{ github.run_id }}
+          gh run watch ${{ github.run_id }}
       - name: Checkout code
         uses: actions/checkout@v6
         with:
-          ref: ${{ github.event.inputs.ref_name != '' && github.event.inputs.ref_name || github.ref_name }}
+          ref:
+            ${{ github.event.inputs.ref_name != '' &&
+            github.event.inputs.ref_name || github.ref_name }}
       - name: Get checkout SHA
         id: checkout_sha
         run: echo "sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
@@ -46,12 +67,31 @@ jobs:
           node-version: 22
       - run: >
           yarn && yarn build:freighter-api && yarn build:extension:production
-          --env AMPLITUDE_KEY="${{ secrets.AMPLITUDE_KEY }}" SENTRY_KEY="${{
+          --env AMPLITUDE_KEY="${{ secrets.AMPLITUDE_KEY }}"
+          AMPLITUDE_EXPERIMENT_DEPLOYMENT_KEY="${{
+          secrets.AMPLITUDE_EXPERIMENT_DEPLOYMENT_KEY }}" SENTRY_KEY="${{
           secrets.SENTRY_KEY }}" BUILD_TYPE="production"
+        env:
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
       - name: Install zip
         uses: montudor/action-zip@0852c26906e00f8a315c704958823928d8018b28 #v1.0.0
-      - name: Create git tag
-        run: git tag ${{ steps.package_version.outputs.version }}
+      - name: Create and push git tag
+        run: |
+          TAG="${{ steps.package_version.outputs.version }}"
+          SHA="${{ steps.checkout_sha.outputs.sha }}"
+          EXISTING=$(git ls-remote origin "refs/tags/$TAG" | awk '{print $1}')
+          if [ -n "$EXISTING" ]; then
+            if [ "$EXISTING" != "$SHA" ]; then
+              echo "ERROR: Tag $TAG already exists pointing to $EXISTING, expected $SHA"
+              exit 1
+            fi
+            echo "Tag $TAG already exists and points to the correct SHA, skipping"
+          else
+            git tag "$TAG" "$SHA"
+            git push origin "$TAG"
+          fi
       - name: Create GitHub Release
         id: create_release
         uses: actions/create-release@v1
