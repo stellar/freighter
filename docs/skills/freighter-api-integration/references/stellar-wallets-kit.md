@@ -45,8 +45,9 @@ const kit = new StellarWalletsKit({
 await kit.openModal({
   onWalletSelected: async (option) => {
     kit.setWallet(option.id);
-    const { address } = await kit.getAddress();
-    setAccount(address);
+    const result = await kit.getAddress();
+    if (result.error) return handleError(result.error);
+    setAccount(result.address);
   },
 });
 ```
@@ -56,7 +57,9 @@ skip the modal and set the wallet directly:
 
 ```ts
 kit.setWallet(FREIGHTER_ID);
-const { address } = await kit.getAddress();
+const result = await kit.getAddress();
+if (result.error) return handleError(result.error);
+const { address } = result;
 ```
 
 ## Signing through SWK
@@ -78,17 +81,27 @@ especially matching the `networkPassphrase` to the wallet's active network.
 
 ## Pitfalls specific to SWK
 
-- **Do not install `@stellar/freighter-api` alongside SWK in the same app
-  without a reason.** You will duplicate code and can end up with two different
-  SDK versions. Pick one and stick with it.
+- **Prefer not installing `@stellar/freighter-api` alongside SWK.** You will
+  duplicate code and can end up with two different SDK versions. If SWK does not
+  yet expose a feature you need, you can install `@stellar/freighter-api`
+  alongside SWK for that specific method — but pin both to compatible versions
+  and track the SWK release notes to consolidate once SWK catches up.
 - **SWK's `signTransaction` return is awaited**, unlike some older
   wallet-abstraction libraries. No `.then(resolve, reject)` dance needed.
+- **SWK may throw on user rejection** instead of resolving to `{ error }`,
+  depending on the SWK version and method. Unlike the direct SDK (which never
+  throws for wallet-side failures), SWK wraps modules inconsistently. Always
+  wrap SWK calls in `try/catch` in addition to checking the `error` field on the
+  resolved value.
 - **`kit.setWallet(id)` is synchronous**, but every method you call on the kit
   afterwards targets that wallet. Remember to call `setWallet` again if you let
   the user switch wallets mid-session.
 - **Version skew.** SWK lags behind new Freighter features (for example, a new
-  option added to `signTransaction` may not be exposed by SWK for a release). If
-  you need a feature immediately, fall back to the direct SDK for that one call.
+  option added to `signTransaction` may not be exposed by SWK for a release). To
+  detect skew, check what version of `@stellar/freighter-api` SWK depends on via
+  its `node_modules/@creit.tech/stellar-wallets-kit/package.json`. If you need a
+  feature not yet in SWK, install `@stellar/freighter-api` alongside and call
+  that method directly (see the pitfall above for version pinning guidance).
 
 ## Further reading
 

@@ -118,8 +118,10 @@ if (signerAddress !== expectedAddress) {
 }
 ```
 
-Passing `opts.address` also tells Freighter to reject the sign if the user has a
-different active account.
+Using `opts.address` tells Freighter to reject mismatches at the extension level
+before signing. The explicit `signerAddress` check above is a
+belt-and-suspenders guard for cases where the expected address is not known at
+sign time and `opts.address` cannot be passed.
 
 ## Calling SDK methods from the server
 
@@ -140,6 +142,11 @@ A connected address is not a login session. The user can revoke access, lock the
 wallet, or switch accounts. Treat the Freighter address as ephemeral UI state —
 re-derive it on every relevant action, and use `WatchWalletChanges` to keep it
 fresh.
+
+Do not use the wallet address as a server-side authentication credential. A
+compromised or substituted extension could return a different address, granting
+session rights to the wrong account. Server-side auth should rely on a signed
+challenge (sign-in-with-Stellar or equivalent), not on the raw address.
 
 ## Assuming `signMessage` returns a `Buffer`
 

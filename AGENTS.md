@@ -151,17 +151,18 @@ yarn build:extension          # Build must succeed (catches type errors)
 
 Read the relevant file when working in that area:
 
-| Concern              | Entry Point                                                         | When to Read                                             |
-| -------------------- | ------------------------------------------------------------------- | -------------------------------------------------------- |
-| Code Style           | `docs/skills/freighter-best-practices/references/code-style.md`     | Writing or reviewing any code                            |
-| Architecture         | `docs/skills/freighter-best-practices/references/architecture.md`   | Adding features, understanding context/message flow      |
-| Security             | `docs/skills/freighter-best-practices/references/security.md`       | Touching keys, messages, storage, or dApp interactions   |
-| Testing              | `docs/skills/freighter-best-practices/references/testing.md`        | Writing or fixing tests                                  |
-| Performance          | `docs/skills/freighter-best-practices/references/performance.md`    | Optimizing renders, bundle size, or load times           |
-| Error Handling       | `docs/skills/freighter-best-practices/references/error-handling.md` | Adding error states, catch blocks, or user-facing errors |
-| Internationalization | `docs/skills/freighter-best-practices/references/i18n.md`           | Adding or modifying user-facing strings                  |
-| Messaging            | `docs/skills/freighter-best-practices/references/messaging.md`      | Adding popup/background/content script communication     |
-| Git & PR Workflow    | `docs/skills/freighter-best-practices/references/git-workflow.md`   | Branching, committing, opening PRs, CI                   |
-| Dependencies         | `docs/skills/freighter-best-practices/references/dependencies.md`   | Adding, updating, or auditing packages                   |
-| Anti-Patterns        | `docs/skills/freighter-best-practices/references/anti-patterns.md`  | Code review, avoiding common mistakes                    |
-| Troubleshooting      | `docs/docs/troubleshooting-guide.md`                                | Build failures, setup issues, known bugs and gotchas     |
+| Concern              | Entry Point                                                         | When to Read                                                                               |
+| -------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| Code Style           | `docs/skills/freighter-best-practices/references/code-style.md`     | Writing or reviewing any code                                                              |
+| Architecture         | `docs/skills/freighter-best-practices/references/architecture.md`   | Adding features, understanding context/message flow                                        |
+| Security             | `docs/skills/freighter-best-practices/references/security.md`       | Touching keys, messages, storage, or dApp interactions                                     |
+| Testing              | `docs/skills/freighter-best-practices/references/testing.md`        | Writing or fixing tests                                                                    |
+| Performance          | `docs/skills/freighter-best-practices/references/performance.md`    | Optimizing renders, bundle size, or load times                                             |
+| Error Handling       | `docs/skills/freighter-best-practices/references/error-handling.md` | Adding error states, catch blocks, or user-facing errors                                   |
+| Internationalization | `docs/skills/freighter-best-practices/references/i18n.md`           | Adding or modifying user-facing strings                                                    |
+| Messaging            | `docs/skills/freighter-best-practices/references/messaging.md`      | Adding popup/background/content script communication                                       |
+| Git & PR Workflow    | `docs/skills/freighter-best-practices/references/git-workflow.md`   | Branching, committing, opening PRs, CI                                                     |
+| Dependencies         | `docs/skills/freighter-best-practices/references/dependencies.md`   | Adding, updating, or auditing packages                                                     |
+| Anti-Patterns        | `docs/skills/freighter-best-practices/references/anti-patterns.md`  | Code review, avoiding common mistakes                                                      |
+| Troubleshooting      | `docs/docs/troubleshooting-guide.md`                                | Build failures, setup issues, known bugs and gotchas                                       |
+| dApp API Integration | `docs/skills/freighter-api-integration/SKILL.md`                    | Writing or reviewing dApp code that uses `@stellar/freighter-api` or `stellar-wallets-kit` |

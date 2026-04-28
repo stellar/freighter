@@ -53,9 +53,16 @@ watcher.stop();
 **Key details:**
 
 - The callback fires when `address`, `network`, or `networkPassphrase` changes.
-  It does **not** fire on the first poll when values match the initial empty
-  state (e.g. wallet not connected). On error it fires on every poll tick while
-  the error condition persists, not just once.
+  On the first poll, the callback fires only if the wallet is already connected
+  (values are non-empty and differ from the initial `""` state). If the wallet
+  is not yet connected, no callback fires until a connection is established.
+- **Dual-callback on first error tick.** The SDK's `fetchInfo` does not `return`
+  after the error callback, so execution falls through to the change-detection
+  block. On the first poll tick where an error occurs after a successful
+  connection, TWO callbacks fire: first with `{ error }`, then immediately with
+  `{ address: "", network: "", networkPassphrase: "" }` and no `error` field
+  (because the address changed from non-empty to `""`). Guard your handler
+  against the empty-address change callback as well as the explicit error.
 - `watcher.watch(cb)` returns `{ error? }` synchronously. A successful start
   resolves to `{}`. On Node/SSR it returns `{ error: FreighterApiNodeError }`
   immediately.
@@ -72,13 +79,24 @@ import { useEffect, useState } from "react";
 import { WatchWalletChanges } from "@stellar/freighter-api";
 
 export function useFreighterWallet() {
-  const [state, setState] = useState({ address: "", network: "" });
+  const [state, setState] = useState<{
+    address: string;
+    network: string;
+    error: string | null;
+  }>({ address: "", network: "", error: null });
 
   useEffect(() => {
     const watcher = new WatchWalletChanges();
     watcher.watch(({ address, network, error }) => {
-      if (error) return;
-      setState({ address, network });
+      if (error) {
+        setState((prev) => ({ ...prev, error: error.message }));
+        return;
+      }
+      // Guard against the empty-address "change" callback that fires alongside
+      // the error callback on the first error tick (SDK does not return after
+      // calling the error callback, so change detection also runs).
+      if (!address) return;
+      setState({ address, network, error: null });
     });
     return () => watcher.stop();
   }, []);
@@ -93,9 +111,10 @@ export function useFreighterWallet() {
   channel to the background service worker on every tick. Sub-second polling
   creates noticeable overhead and achieves nothing — humans do not switch
   accounts that fast.
-- **Do not assume the first callback is the "connected" event.** The first
-  callback just reports current state, which might be an empty address if the
-  user has not allowed the origin. Gate your UI on `address` being non-empty.
+- **Do not assume a callback means the user is connected.** The callback only
+  fires on the first poll if the wallet is already connected. If no callback
+  fires, the user is not yet connected — show a "Connect" button rather than a
+  loading spinner. Always gate your UI on `address` being non-empty.
 - **Do not rely on the watcher to prompt for access.** If the user has not
   allowed the origin, the watcher's callback just fires with an error. Run the
   connection flow first (see `references/connection-flow.md`).

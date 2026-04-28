@@ -72,6 +72,38 @@ async function connect() {
 - **Do not skip `isAllowed()` before `getAddress()`.** Calling `getAddress()`
   when the origin is not allowed returns an error, not a popup. Users will not
   see a prompt — your UI will just show an error and they will not know why.
-- **`requestAccess()` is idempotent for already-allowed origins.** If the origin
-  is already allowed, it returns the address without opening a popup, so it is
-  safe to call from a "Connect" button even if the user is already connected.
+- **`requestAccess()` skips the popup for already-allowed origins when the
+  wallet is unlocked.** If the origin is allowed AND the wallet is unlocked, it
+  returns the address immediately. If the wallet is locked, a popup opens to
+  prompt the user to unlock — even for previously-allowed origins. This is
+  expected behavior, not an error.
+- **Do not call `getAddress()` more than once per user action.** Cache the last
+  known address in component state and re-fetch only when `WatchWalletChanges`
+  reports a change. Excessive extension calls add latency and can queue up
+  requests against the extension service worker.
+
+## `addToken({ contractId })`
+
+Prompts the user to add a Soroban-asset contract to their Freighter asset list.
+
+```ts
+import { addToken } from "@stellar/freighter-api";
+
+const result = await addToken({
+  contractId: "CBIELTK6YBZJU5UP2WWQEQ4YKX64VPD9AKHF4C673OPKXQM2TQEP7LB",
+  networkPassphrase: networkPassphrase, // read from getNetwork() first
+});
+if (result.error) return handleError(result.error);
+// result.isTokenAdded is true if the user confirmed
+```
+
+**Key details:**
+
+- Requires the origin to be allowed first. Run the connection flow before
+  calling `addToken` — if the origin is not allowed, it returns an error rather
+  than prompting for access.
+- `contractId` must be a valid Soroban contract address (C... address).
+- The user can decline — `error` will be set with a declined code (`-4`). Always
+  check `error` before assuming the token was added.
+- `networkPassphrase` should always be read from `getNetwork()` rather than
+  hardcoded, so the token is added to the correct network context.

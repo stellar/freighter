@@ -58,6 +58,19 @@ Freighter-side failures — **always check `error` before using the result**.
 | `addToken({ contractId })`   | Prompt the user to track a Soroban-asset contract.                |
 | `WatchWalletChanges`         | Polling watcher for account / network changes.                    |
 
+## Getting started
+
+New integration? Read in this order:
+
+1. `references/connection-flow.md` — establish connection and get the active
+   address
+2. `references/signing.md` — sign your first transaction
+3. `references/error-handling.md` — handle errors and SSR safely before going to
+   production
+
+If you are supporting multiple wallets, start with
+`references/stellar-wallets-kit.md` instead of step 1.
+
 ## Reference Guide
 
 | Concern                  | File                              | When to Read                                            |

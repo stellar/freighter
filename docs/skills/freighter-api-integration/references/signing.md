@@ -8,10 +8,12 @@ and never throw for user rejections — you must check `error`.
 Signs a Stellar transaction XDR.
 
 ```ts
+// Always read the passphrase from Freighter — never hardcode Networks.PUBLIC/TESTNET.
+const { networkPassphrase } = await getNetwork();
 const { signedTxXdr, signerAddress, error } = await signTransaction(
   tx.toXDR(),
   {
-    networkPassphrase: Networks.PUBLIC, // or Networks.TESTNET
+    networkPassphrase,
     address: "GABC...", // optional: pin to a specific account
   },
 );
@@ -50,14 +52,27 @@ version:**
 - **Freighter v3.x:** `signedMessage: Buffer | null`
 - **Freighter v4.x:** `signedMessage: string | null`
 
-Handle both:
+**Options:**
+
+| Key                 | Type     | Purpose                                             |
+| ------------------- | -------- | --------------------------------------------------- |
+| `networkPassphrase` | `string` | Bind the signature to a specific network            |
+| `address`           | `string` | Require the user to sign with this specific account |
+
+Handle both return shapes and verify the signer:
 
 ```ts
+const { networkPassphrase } = await getNetwork();
+const expectedAddress = "GABC..."; // obtained from getAddress() earlier
 const { signedMessage, signerAddress, error } = await signMessage(
   "Hello, Stellar",
-  { networkPassphrase: Networks.PUBLIC },
+  { networkPassphrase, address: expectedAddress },
 );
 if (error || !signedMessage) throw new Error(error?.message ?? "no signature");
+// Verify signer even when opts.address is set — belt-and-suspenders.
+if (signerAddress !== expectedAddress) {
+  throw new Error("Signer does not match expected account.");
+}
 
 const signatureBytes =
   typeof signedMessage === "string"
@@ -75,15 +90,26 @@ Returns `{ signedAuthEntry: string | null, signerAddress }`. Like `signMessage`,
 auto-requests access if needed.
 
 ```ts
+// Always read networkPassphrase from Freighter — never hardcode Networks.PUBLIC/TESTNET.
+const { networkPassphrase } = await getNetwork();
 // expectedAddress must be obtained before this call, e.g. from getAddress()
 const { signedAuthEntry, signerAddress, error } = await signAuthEntry(
   authEntry.toXDR("base64"),
-  { networkPassphrase: Networks.PUBLIC, address: expectedAddress },
+  { networkPassphrase, address: expectedAddress },
 );
+if (error) throw new Error(error.message);
+// Verify signer even when opts.address is set — the user may have switched accounts.
+if (signerAddress !== expectedAddress) {
+  throw new Error("Signer does not match expected account.");
+}
 ```
 
 ## After signing
 
+- **Check `error` before using `signedTxXdr`.** If `error` is set, `signedTxXdr`
+  is an empty string — submitting it produces a malformed transaction. Always
+  guard `if (result.error) return handleError(result.error)` before reading the
+  signed output.
 - **`signerAddress` is the source of truth.** The user may have switched
   accounts between the time your app read `getAddress()` and the time they
   confirmed the popup. Verify `signerAddress` matches the account you built the
