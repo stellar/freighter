@@ -376,6 +376,7 @@ export const ReviewTx = ({
             data-testid="review-tx-fee"
           >
             <button
+              type="button"
               className="ReviewTx__Details__Row__FeesInfoBtn"
               data-testid="review-tx-fee-info-btn"
               onClick={() => {

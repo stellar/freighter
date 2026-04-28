@@ -312,13 +312,16 @@ export const SendAmount = ({
       dispatch(saveTransactionFee(fee));
     }
     const simResult = await fetchSimulationData();
-    // Only open the review modal on success — on failure the fee display shows
-    // the error state and the user can retry.
+    // For Soroban, only open the review modal on success — on failure the fee
+    // display shows the error state and the user can retry.
+    // For classic sends, always proceed to review: ReviewTx already handles the
+    // error UI for RequestState.ERROR, so blocking navigation would leave the
+    // user with no feedback path.
     // Note: for Soroban, fetchSimulationData internally dispatches
     // saveTransactionFee again with the simulated total fee. The dispatch
     // above resets to the inclusion fee so the simulation starts from a clean
     // base; the one inside fetchSimulationData overwrites it with the result.
-    if (simResult.ok) {
+    if (simResult.ok || (!isToken && !isCollectible)) {
       setIsReviewingTx(true);
     }
   };
@@ -555,8 +558,7 @@ export const SendAmount = ({
                 </span>
                 <span data-testid="send-amount-fee-display">
                   {(isToken || isCollectible) &&
-                  (simulationState.state === RequestState.LOADING ||
-                    simulationState.state === RequestState.ERROR)
+                  simulationState.state === RequestState.LOADING
                     ? t("Calculating...")
                     : inputType === "crypto"
                       ? `${fee} ${t("XLM")}`
