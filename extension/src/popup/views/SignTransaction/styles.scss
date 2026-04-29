@@ -243,6 +243,10 @@
       align-items: center;
       width: 100%;
 
+      &--memo > * {
+        min-width: 0;
+      }
+
       &:not(:last-child) {
         margin-bottom: pxToRem(12px);
         padding-bottom: pxToRem(12px);
@@ -275,6 +279,15 @@
           color: var(--sds-clr-gray-09);
         }
       }
+    }
+
+    &__Memo {
+      display: block;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      text-align: right;
     }
   }
 

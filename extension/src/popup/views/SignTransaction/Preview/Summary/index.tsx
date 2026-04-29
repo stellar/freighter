@@ -54,11 +54,21 @@ export const Summary = (props: SummaryProps) => {
         <div className="TxInfoBlock__title">
           <p>{t("Memo")}</p>
         </div>
-        <p className="TxInfoBlock__value">
-          {props.memo && props.memo.value
-            ? `${props.memo.value} (${getMemoLabel(props.memo.type)})`
-            : `${t("None")} (${getMemoLabel("none")})`}
-        </p>
+        <span className="TxInfoBlock__value TxInfoBlock__value--memo">
+          <span
+            className="TxInfoBlock__memo"
+            title={
+              props.memo && props.memo.value && props.memo.value.trim()
+                ? props.memo.value
+                : undefined
+            }
+          >
+            {props.memo && props.memo.value
+              ? props.memo.value
+              : t("None")}
+          </span>
+          {` (${getMemoLabel(props.memo ? props.memo.type : "none")})`}
+        </span>
       </div>
       <div className="TxInfoBlock">
         <div className="TxInfoBlock__title">

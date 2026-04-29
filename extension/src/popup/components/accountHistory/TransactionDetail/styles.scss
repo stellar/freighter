@@ -305,6 +305,19 @@
           margin-right: pxToRem(6px);
         }
       }
+
+      &--memo > * {
+        min-width: 0;
+      }
+
+      &__memo {
+        display: block;
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        text-align: right;
+      }
     }
   }
 

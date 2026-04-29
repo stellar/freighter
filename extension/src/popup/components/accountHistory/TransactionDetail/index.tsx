@@ -378,12 +378,17 @@ export const TransactionDetail = ({
         </div>
         {/* Hide memo row when memo is disabled (e.g., for all M addresses) */}
         {!isMemoDisabled && (
-          <div className="Metadata">
+          <div className="Metadata Metadata--memo">
             <div className="Metadata__label">
               <Icon.File02 />
               {t("Memo")}
             </div>
-            <div className="Metadata__value">{memo || t("None")}</div>
+            <div
+              className="Metadata__value Metadata__memo"
+              title={memo && memo.trim() ? memo : undefined}
+            >
+              {memo || t("None")}
+            </div>
           </div>
         )}
       </div>

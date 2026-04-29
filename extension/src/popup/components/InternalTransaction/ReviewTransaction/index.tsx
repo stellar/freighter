@@ -347,7 +347,7 @@ export const ReviewTx = ({
       <div className="ReviewTx__Details">
         {/* Hide memo row when memo is disabled (e.g., for all M addresses) */}
         {!isMemoDisabled && (
-          <div className="ReviewTx__Details__Row">
+          <div className="ReviewTx__Details__Row ReviewTx__Details__Row--memo">
             <div className="ReviewTx__Details__Row__Title">
               <Icon.File02 />
               {t("Memo")}
@@ -356,7 +356,12 @@ export const ReviewTx = ({
               className="ReviewTx__Details__Row__Value"
               data-testid="review-tx-memo"
             >
-              {memo || t("None")}
+              <div
+                className="ReviewTx__Memo"
+                title={memo && memo.trim() ? memo : undefined}
+              >
+                {memo || t("None")}
+              </div>
             </div>
           </div>
         )}
