@@ -50,8 +50,8 @@ INDEXER_V2_URL=your_backend_v2_prod_url_here
 
 ```
 
-These URLs should point to your deployment of Freighter backend. For more details on
-backend configuration, see
+These URLs should point to your deployment of Freighter backend. For more
+details on backend configuration, see
 [extension/README.md](extension/README.md#configure-the-backend).
 
 ## Starting a dev environment

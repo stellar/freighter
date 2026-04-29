@@ -1,15 +1,24 @@
 @use "../../../styles/utils.scss" as *;
 
 .AccountHeaderModal {
-  overflow: hidden;
   position: absolute;
   left: 0;
   top: 0;
   z-index: calc(var(--z-index-tooltip) + 1);
-  transition: max-height var(--dropdown-animation);
 
-  // default max-height on page load
-  max-height: 0;
+  /* Fade animation */
+  opacity: 0;
+  transform: scale(0.95);
+  pointer-events: none;
+  transition:
+    opacity 0.15s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+
+  &--open {
+    opacity: 1;
+    transform: scale(1);
+    pointer-events: auto;
+  }
 
   &__content {
     background: var(--sds-clr-gray-01);
@@ -17,5 +26,6 @@
     border: 1px solid var(--sds-clr-gray-06);
     max-height: calc(100vh - 1rem);
     padding: pxToRem(4px);
+    overflow: auto;
   }
 }

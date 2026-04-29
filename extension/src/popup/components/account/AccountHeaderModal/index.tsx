@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React from "react";
 
 import "./styles.scss";
 
@@ -14,26 +14,13 @@ export const AccountHeaderModal = ({
   isDropdownOpen,
   icon,
   className,
-}: AccountHeaderModalProps) => {
-  const dropdownRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (dropdownRef.current != null) {
-      dropdownRef.current.style.maxHeight = isDropdownOpen
-        ? `calc(100vh - 1rem)`
-        : "0";
-    }
-  }, [isDropdownOpen]);
-
-  return (
-    <>
-      {icon}
-      <div
-        ref={dropdownRef}
-        className={`AccountHeaderModal ${className || ""}`}
-      >
-        <div className="AccountHeaderModal__content">{children}</div>
-      </div>
-    </>
-  );
-};
+}: AccountHeaderModalProps) => (
+  <>
+    {icon}
+    <div
+      className={`AccountHeaderModal ${isDropdownOpen ? "AccountHeaderModal--open" : ""} ${className || ""}`}
+    >
+      <div className="AccountHeaderModal__content">{children}</div>
+    </div>
+  </>
+);
