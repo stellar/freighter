@@ -4,6 +4,8 @@ import { LoadingBackground } from "popup/basics/LoadingBackground";
 
 import "./styles.scss";
 
+export const SLIDEUP_MODAL_TRANSITION_MS = 200;
+
 interface SlideupModalProps {
   children: React.ReactElement;
   isModalOpen: boolean;
@@ -70,10 +72,9 @@ export const SlideupModal = ({
       <LoadingBackground
         onClick={() => {
           setIsOpen(false);
-          // our dismiss transition is 150ms long
           setTimeout(() => {
             setIsModalOpen(false);
-          }, 150);
+          }, SLIDEUP_MODAL_TRANSITION_MS);
         }}
         isActive={isOpen}
         isFullScreen={hasBackdrop}

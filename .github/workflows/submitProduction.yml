@@ -29,6 +29,21 @@ jobs:
           echo "Missing INDEXER_V2_URL"
           gh run cancel ${{ github.run_id }}
           gh run watch ${{ github.run_id }}
+      - if: ${{ secrets.SENTRY_ORG == '' }}
+        run: |
+          echo "Missing SENTRY_ORG"
+          gh run cancel ${{ github.run_id }}
+          gh run watch ${{ github.run_id }}
+      - if: ${{ secrets.SENTRY_PROJECT == '' }}
+        run: |
+          echo "Missing SENTRY_PROJECT"
+          gh run cancel ${{ github.run_id }}
+          gh run watch ${{ github.run_id }}
+      - if: ${{ secrets.SENTRY_AUTH_TOKEN == '' }}
+        run: |
+          echo "Missing SENTRY_AUTH_TOKEN"
+          gh run cancel ${{ github.run_id }}
+          gh run watch ${{ github.run_id }}
       - name: Checkout code
         uses: actions/checkout@v6
         with:
@@ -52,8 +67,14 @@ jobs:
           node-version: 22
       - run: >
           yarn && yarn build:freighter-api && yarn build:extension:production
-          --env AMPLITUDE_KEY="${{ secrets.AMPLITUDE_KEY }}" SENTRY_KEY="${{
+          --env AMPLITUDE_KEY="${{ secrets.AMPLITUDE_KEY }}"
+          AMPLITUDE_EXPERIMENT_DEPLOYMENT_KEY="${{
+          secrets.AMPLITUDE_EXPERIMENT_DEPLOYMENT_KEY }}" SENTRY_KEY="${{
           secrets.SENTRY_KEY }}" BUILD_TYPE="production"
+        env:
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
       - name: Install zip
         uses: montudor/action-zip@0852c26906e00f8a315c704958823928d8018b28 #v1.0.0
       - name: Create and push git tag
