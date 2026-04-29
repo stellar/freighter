@@ -86,7 +86,7 @@ export const FeesPane = ({
                 ? "—"
                 : simulationState.data?.resourceFee
                   ? `${simulationState.data.resourceFee} XLM`
-                  : "-"}
+                  : t("None")}
             </Text>
           </div>
         )}

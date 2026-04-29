@@ -238,14 +238,14 @@ test("Custom token without destination — full fee lifecycle in EditSettings an
   );
 
   // ── Open FeesPane — no destination so simulation does NOT fire ───────────
-  // FeesPane shows the base fee as inclusion/total and "-" for resource,
+  // FeesPane shows the base fee as inclusion/total and "None" for resource,
   // matching mobile behaviour (no error, no simulated amounts).
   await page.getByTestId("edit-settings-fees-info-btn").click();
   await expect(page.getByTestId("review-tx-fees-pane")).toBeVisible();
   await expect(page.getByTestId("review-tx-inclusion-fee")).toHaveText(
     "0.00001 XLM",
   );
-  await expect(page.getByTestId("review-tx-resource-fee")).toHaveText("-");
+  await expect(page.getByTestId("review-tx-resource-fee")).toHaveText("None");
   await expect(page.getByTestId("review-tx-total-fee")).toHaveText(
     "0.00001 XLM",
   );
@@ -264,14 +264,14 @@ test("Custom token without destination — full fee lifecycle in EditSettings an
     "0.00005",
   );
 
-  // ── Open FeesPane again — draft fee reflected, resource still "-" ─────────
+  // ── Open FeesPane again — draft fee reflected, resource still "None" ──────
   await page.getByTestId("edit-settings-fees-info-btn").click();
   await expect(page.getByTestId("review-tx-fees-pane")).toBeVisible();
   // No simulation data: total = draft inclusion fee only
   await expect(page.getByTestId("review-tx-total-fee")).toHaveText(
     "0.00005 XLM",
   );
-  await expect(page.getByTestId("review-tx-resource-fee")).toHaveText("-");
+  await expect(page.getByTestId("review-tx-resource-fee")).toHaveText("None");
 
   // ── Close FeesPane → draft still in the input ─────────────────────────────
   await page.getByTestId("review-tx-fees-close-btn").click();
@@ -296,13 +296,13 @@ test("Custom token without destination — full fee lifecycle in EditSettings an
   );
 
   // ── Open FeesPane from re-opened settings — saved fee reflected ────────────
-  // Still no destination, so resource stays "-" and total = inclusion fee only.
+  // Still no destination, so resource stays "None" and total = inclusion fee only.
   await page.getByTestId("edit-settings-fees-info-btn").click();
   await expect(page.getByTestId("review-tx-fees-pane")).toBeVisible();
   await expect(page.getByTestId("review-tx-inclusion-fee")).toHaveText(
     "0.00005 XLM",
   );
-  await expect(page.getByTestId("review-tx-resource-fee")).toHaveText("-");
+  await expect(page.getByTestId("review-tx-resource-fee")).toHaveText("None");
   await expect(page.getByTestId("review-tx-total-fee")).toHaveText(
     "0.00005 XLM",
   );
@@ -869,11 +869,11 @@ test("FeesPane shows inclusion/resource rows immediately for Soroban — resourc
   await expect(page.getByTestId("review-tx-inclusion-fee")).toBeVisible();
   await expect(page.getByTestId("review-tx-resource-fee")).toBeVisible();
 
-  // Before simulation: inclusion = base fee, resource = "-", total = base fee
+  // Before simulation: inclusion = base fee, resource = "None", total = base fee
   await expect(page.getByTestId("review-tx-inclusion-fee")).toHaveText(
     "0.00001 XLM",
   );
-  await expect(page.getByTestId("review-tx-resource-fee")).toHaveText("-");
+  await expect(page.getByTestId("review-tx-resource-fee")).toHaveText("None");
   await expect(page.getByTestId("review-tx-total-fee")).toHaveText(
     "0.00001 XLM",
   );

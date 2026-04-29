@@ -104,7 +104,7 @@ describe("FeesPane", () => {
       );
     });
 
-    it("shows - for resource fee while simulation is in progress", () => {
+    it("shows None for resource fee while simulation is in progress", () => {
       render(
         <FeesPane
           fee={BASE_FEE}
@@ -114,7 +114,7 @@ describe("FeesPane", () => {
         />,
       );
       expect(screen.getByTestId("review-tx-resource-fee")).toHaveTextContent(
-        "-",
+        "None",
       );
     });
   });
