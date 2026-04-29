@@ -1,9 +1,10 @@
 import { useReducer } from "react";
-import { Federation } from "stellar-sdk";
+import { Federation, StrKey } from "stellar-sdk";
 import { FormikErrors } from "formik";
 import debounce from "lodash/debounce";
 import * as Sentry from "@sentry/browser";
 import i18n from "popup/helpers/localizationConfig";
+import { FederationMemoType } from "popup/helpers/federationMemo";
 
 import { initialState, isError, reducer } from "helpers/request";
 import { AccountBalances, useGetBalances } from "helpers/hooks/useGetBalances";
@@ -25,6 +26,8 @@ interface ResolvedSendToData {
   destinationBalances?: AccountBalances;
   validatedAddress: string;
   fedAddress: string;
+  federationMemo: string;
+  federationMemoType: FederationMemoType | "";
   applicationState: APPLICATION_STATE;
   publicKey: string;
   networkDetails: NetworkDetails;
@@ -36,11 +39,31 @@ export const getAddressFromInput = async (userInput: string) => {
   if (isFederationAddress(userInput)) {
     try {
       const fedResp = await Federation.Server.resolve(userInput);
+
+      if (!StrKey.isValidEd25519PublicKey(fedResp.account_id)) {
+        throw new Error(
+          i18n.t("Federation server returned an invalid address"),
+        );
+      }
+
+      const rawMemoType = fedResp.memo_type ?? "";
+      const memoType = (Object.values(FederationMemoType) as string[]).includes(
+        rawMemoType,
+      )
+        ? (rawMemoType as FederationMemoType)
+        : ("" as const);
+      const memo = fedResp.memo != null ? String(fedResp.memo) : "";
+
       return {
         validatedAddress: fedResp.account_id,
         fedAddress: userInput,
+        federationMemo: memo,
+        federationMemoType: memoType,
       };
     } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
       Sentry.captureException(`Failed to fetch toml for ${userInput}`);
       throw new Error(i18n.t("Failed to resolve federated address"));
     }
@@ -49,6 +72,8 @@ export const getAddressFromInput = async (userInput: string) => {
   return {
     validatedAddress: userInput,
     fedAddress: "",
+    federationMemo: "",
+    federationMemoType: "" as const,
   };
 };
 
@@ -72,8 +97,12 @@ function useSendToData() {
       _isMainnet: boolean,
     ) => {
       try {
-        const { validatedAddress, fedAddress } =
-          await getAddressFromInput(userInput);
+        const {
+          validatedAddress,
+          fedAddress,
+          federationMemo,
+          federationMemoType,
+        } = await getAddressFromInput(userInput);
 
         const { recentAddresses } = await loadRecentAddresses({
           activePublicKey: publicKey,
@@ -84,6 +113,8 @@ function useSendToData() {
           recentAddresses,
           validatedAddress,
           fedAddress,
+          federationMemo,
+          federationMemoType,
           applicationState,
           publicKey,
           networkDetails,
@@ -142,6 +173,8 @@ function useSendToData() {
         recentAddresses: [],
         validatedAddress: "",
         fedAddress: "",
+        federationMemo: "",
+        federationMemoType: "",
         applicationState,
         publicKey,
         networkDetails,
@@ -168,6 +201,8 @@ function useSendToData() {
       recentAddresses,
       validatedAddress: "",
       fedAddress: "",
+      federationMemo: "",
+      federationMemoType: "",
       applicationState,
       publicKey,
       networkDetails,

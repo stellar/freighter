@@ -215,6 +215,7 @@
   "Failed to simulate transaction": "Failed to simulate transaction",
   "failed to submit transaction": "failed to submit transaction",
   "Failed!": "Failed!",
+  "Federation server returned an invalid address": "Federation server returned an invalid address",
   "Fee": "Fee",
   "Feedback": "Feedback",
   "Feedback?": "Feedback?",

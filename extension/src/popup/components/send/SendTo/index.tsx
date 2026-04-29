@@ -32,8 +32,11 @@ import {
   saveDestination,
   saveDestinationAsset,
   saveFederationAddress,
+  saveMemo,
+  saveMemoType,
   transactionDataSelector,
 } from "popup/ducks/transactionSubmission";
+import { FederationMemoType } from "popup/helpers/federationMemo";
 
 import { RequestState } from "constants/request";
 import { useSendToData, getAddressFromInput } from "./hooks/useSendToData";
@@ -116,10 +119,16 @@ export const SendTo = ({
   const handleContinue = (
     validatedDestination: string,
     validatedFedAdress?: string,
+    federationMemo?: string,
+    federationMemoType?: FederationMemoType | "",
   ) => {
     dispatch(saveDestination(validatedDestination));
     dispatch(saveDestinationAsset(""));
     dispatch(saveFederationAddress(validatedFedAdress || ""));
+    if (federationMemo !== undefined) {
+      dispatch(saveMemo(federationMemo));
+      dispatch(saveMemoType(federationMemoType || ""));
+    }
     goToNext();
   };
 
@@ -133,6 +142,8 @@ export const SendTo = ({
         handleContinue(
           sendDataState.data.validatedAddress,
           sendDataState.data.fedAddress,
+          sendDataState.data.federationMemo,
+          sendDataState.data.federationMemoType,
         );
       }
     },
@@ -257,6 +268,8 @@ export const SendTo = ({
                               handleContinue(
                                 addressFromInput.validatedAddress,
                                 addressFromInput.fedAddress,
+                                addressFromInput.federationMemo,
+                                addressFromInput.federationMemoType,
                               );
                             }}
                             className="SendTo__subheading-identicon"

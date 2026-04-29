@@ -6,6 +6,7 @@ import {
   stubAccountBalancesWithUnfundedDestination,
   stubAccountBalancesWithUSDC,
   stubContractSpec,
+  stubFederationWithMemo,
   stubScanTxWithUnfundedWarning,
   stubScanTxWithUnfundedNonNativeWarning,
   stubScanTx,
@@ -1013,11 +1014,119 @@ test("Send XLM payment from Asset Detail", async ({
   await expect(page.getByTestId("SubmitAction")).toBeEnabled();
 });
 
-// Reset environment variables before each memo-related test
-// This ensures IS_PLAYWRIGHT is set for memo validation bypass
-test.beforeEach(async ({ page }) => {
-  await page.evaluate(() => {
-    // Ensure IS_PLAYWRIGHT is set for memo validation bypass
-    (window as any).IS_PLAYWRIGHT = "true";
+// --- Federation address memo tests (SEP-0002) ---
+// These tests stub the federation server endpoint that is already intercepted by
+// the default stubAllExternalApis setup. stubFederationWithMemo overrides that
+// stub to inject memo / memo_type fields in the federation response.
+//
+// Navigation flow for the Send screen:
+//   nav-link-send  →  SendAmount (send-amount-amount-input)
+//   address-tile   →  SendTo     (send-to-input)
+//   Continue       →  SendAmount (send-amount-btn-memo)
+
+// The default federation stub (stubFederation) resolves "freighter.pb*lobstr.co"
+// to GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF without a memo.
+// We use the same address so the stellar.toml stub (pointing to lobstr.co) works.
+const FEDERATION_ADDRESS = "freighter.pb*lobstr.co";
+
+test("Federation address with text memo pre-populates memo field", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  test.slow();
+
+  const stubOverrides = async () => {
+    await stubFederationWithMemo(page, {
+      stellar_address: FEDERATION_ADDRESS,
+      account_id: "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF",
+      memo: "payment-ref-42",
+      memo_type: "text",
+    });
+  };
+
+  await loginToTestAccount({ page, extensionId, context, stubOverrides });
+
+  await page.getByTestId("nav-link-send").click({ force: true });
+  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+
+  await page.getByTestId("address-tile").click();
+  await page.getByTestId("send-to-input").fill(FEDERATION_ADDRESS);
+
+  await expect(page.getByTestId("send-to-btn-continue")).toBeVisible({
+    timeout: 10000,
   });
+  await page.getByTestId("send-to-btn-continue").click({ force: true });
+
+  // Back on SendAmount — open the memo editor and verify it's pre-populated
+  await expect(page.getByTestId("send-amount-btn-memo")).toBeVisible({
+    timeout: 10000,
+  });
+  await page.getByTestId("send-amount-btn-memo").click();
+  await expect(page.getByTestId("edit-memo-input")).toHaveValue(
+    "payment-ref-42",
+  );
+});
+
+test("Federation address with id memo pre-populates memo field", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  test.slow();
+
+  const stubOverrides = async () => {
+    await stubFederationWithMemo(page, {
+      stellar_address: FEDERATION_ADDRESS,
+      account_id: "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF",
+      memo: "12345",
+      memo_type: "id",
+    });
+  };
+
+  await loginToTestAccount({ page, extensionId, context, stubOverrides });
+
+  await page.getByTestId("nav-link-send").click({ force: true });
+  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+
+  await page.getByTestId("address-tile").click();
+  await page.getByTestId("send-to-input").fill(FEDERATION_ADDRESS);
+
+  await expect(page.getByTestId("send-to-btn-continue")).toBeVisible({
+    timeout: 10000,
+  });
+  await page.getByTestId("send-to-btn-continue").click({ force: true });
+
+  await expect(page.getByTestId("send-amount-btn-memo")).toBeVisible({
+    timeout: 10000,
+  });
+  await page.getByTestId("send-amount-btn-memo").click();
+  await expect(page.getByTestId("edit-memo-input")).toHaveValue("12345");
+});
+
+test("Federation address with invalid account_id shows error notification", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  test.slow();
+
+  const stubOverrides = async () => {
+    await stubFederationWithMemo(page, {
+      account_id: "not-a-valid-stellar-key",
+    });
+  };
+
+  await loginToTestAccount({ page, extensionId, context, stubOverrides });
+
+  await page.getByTestId("nav-link-send").click({ force: true });
+  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+
+  await page.getByTestId("address-tile").click();
+  await page.getByTestId("send-to-input").fill(FEDERATION_ADDRESS);
+
+  // The error notification should appear with the validation message
+  await expect(
+    page.getByText("Federation server returned an invalid address"),
+  ).toBeVisible({ timeout: 10000 });
 });

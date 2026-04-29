@@ -8,7 +8,6 @@ import {
   Asset,
   BASE_FEE,
   extractBaseAddress,
-  Memo,
   Networks,
   Operation,
   TransactionBuilder,
@@ -44,6 +43,7 @@ import { findAddressBalance } from "popup/helpers/balance";
 import { AppDispatch, AppState } from "popup/App";
 import { useScanTx } from "popup/helpers/blockaid";
 import { cleanAmount } from "popup/helpers/formatters";
+import { buildMemoFromFederation } from "popup/helpers/federationMemo";
 import {
   checkIsMuxedSupported,
   determineMuxedDestination,
@@ -234,6 +234,7 @@ const getBuiltTx = async (
   transactionTimeout: number,
   networkDetails: NetworkDetails,
   memo?: string,
+  memoType?: string,
 ) => {
   const {
     sourceAsset,
@@ -274,7 +275,7 @@ const getBuiltTx = async (
       .setTimeout(transactionTimeout);
 
     if (memo) {
-      transaction.addMemo(Memo.text(memo));
+      transaction.addMemo(buildMemoFromFederation(memo, memoType ?? ""));
     }
 
     return transaction;
@@ -407,7 +408,7 @@ function useSimulateTxData({
   const { t } = useTranslation();
   const reduxDispatch = useDispatch<AppDispatch>();
   const store = useStore();
-  const { asset, amount, transactionFee, memo } = useSelector(
+  const { asset, amount, transactionFee, memo, memoType } = useSelector(
     transactionDataSelector,
   );
 
@@ -434,6 +435,7 @@ function useSimulateTxData({
         store.getState() as AppState,
       );
       const currentMemo = currentTransactionData.memo || memo;
+      const currentMemoType = currentTransactionData.memoType || memoType;
       const currentAmount = currentTransactionData.amount || amount;
       const currentAsset = currentTransactionData.asset || asset;
       const currentTransactionFee =
@@ -594,6 +596,7 @@ function useSimulateTxData({
           transactionTimeout,
           networkDetails,
           memoToUse,
+          currentMemoType,
         );
         const xdr = transaction.build().toXDR();
         payload.transactionXdr = xdr;
