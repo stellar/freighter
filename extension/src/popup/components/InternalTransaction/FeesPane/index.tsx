@@ -50,7 +50,7 @@ export const FeesPane = ({
           <Icon.X />
         </button>
       </div>
-      <Heading as="h2" size="md" addlClassName="FeesPane__Title">
+      <Heading as="h2" size="sm" addlClassName="FeesPane__Title">
         {t("Fees")}
       </Heading>
       <div className="FeesPane__Card">

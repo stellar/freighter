@@ -105,7 +105,8 @@ describe("internalApi", () => {
         memo: "memo",
         params: {
           publicKey: "GBRPYHIL2C2FCU5RNBJQ3WXZH4E2LQ7H5GIPQKNORRACV4W6F6C4P4W5",
-          destination: "GDQP2KPQGKIHYJGXNUIYOMHARUARCA6JYB6CYH6ZJQ4Q25PDBLQZKK7L",
+          destination:
+            "GDQP2KPQGKIHYJGXNUIYOMHARUARCA6JYB6CYH6ZJQ4Q25PDBLQZKK7L",
           amount: 1,
         },
         networkDetails: TESTNET_NETWORK_DETAILS,
@@ -117,10 +118,8 @@ describe("internalApi", () => {
         expect.objectContaining({
           method: "POST",
           body: JSON.stringify({
-            address:
-              "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM",
-            pub_key:
-              "GBRPYHIL2C2FCU5RNBJQ3WXZH4E2LQ7H5GIPQKNORRACV4W6F6C4P4W5",
+            address: "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM",
+            pub_key: "GBRPYHIL2C2FCU5RNBJQ3WXZH4E2LQ7H5GIPQKNORRACV4W6F6C4P4W5",
             memo: "memo",
             fee: "100",
             params: {
