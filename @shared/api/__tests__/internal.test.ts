@@ -5,6 +5,7 @@ import * as internalApi from "../internal";
 describe("internalApi", () => {
   afterEach(() => {
     jest.clearAllMocks();
+    jest.restoreAllMocks();
   });
   describe("getAssetDomains", () => {
     it("should return a list of domains from a list of issuers", async () => {
@@ -85,6 +86,54 @@ describe("internalApi", () => {
       });
       expect(getLedgerKeyAccountsSpy).not.toHaveBeenCalled();
       expect(assetDomains).toEqual({});
+    });
+  });
+
+  describe("simulateTokenTransfer", () => {
+    it("includes the fee in stroops in the indexer request body", async () => {
+      const fetchSpy = jest.spyOn(global, "fetch").mockResolvedValue({
+        ok: true,
+        json: jest.fn().mockResolvedValue({
+          preparedTransaction: "prepared-xdr",
+          simulationResponse: { minResourceFee: "100" },
+        }),
+      } as unknown as Response);
+
+      await internalApi.simulateTokenTransfer({
+        address: "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM",
+        publicKey: "GBRPYHIL2C2FCU5RNBJQ3WXZH4E2LQ7H5GIPQKNORRACV4W6F6C4P4W5",
+        memo: "memo",
+        params: {
+          publicKey: "GBRPYHIL2C2FCU5RNBJQ3WXZH4E2LQ7H5GIPQKNORRACV4W6F6C4P4W5",
+          destination: "GDQP2KPQGKIHYJGXNUIYOMHARUARCA6JYB6CYH6ZJQ4Q25PDBLQZKK7L",
+          amount: 1,
+        },
+        networkDetails: TESTNET_NETWORK_DETAILS,
+        transactionFee: "0.00001",
+      });
+
+      expect(fetchSpy).toHaveBeenCalledWith(
+        expect.stringContaining("/simulate-token-transfer"),
+        expect.objectContaining({
+          method: "POST",
+          body: JSON.stringify({
+            address:
+              "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM",
+            pub_key:
+              "GBRPYHIL2C2FCU5RNBJQ3WXZH4E2LQ7H5GIPQKNORRACV4W6F6C4P4W5",
+            memo: "memo",
+            fee: "100",
+            params: {
+              publicKey:
+                "GBRPYHIL2C2FCU5RNBJQ3WXZH4E2LQ7H5GIPQKNORRACV4W6F6C4P4W5",
+              destination:
+                "GDQP2KPQGKIHYJGXNUIYOMHARUARCA6JYB6CYH6ZJQ4Q25PDBLQZKK7L",
+              amount: 1,
+            },
+            network_passphrase: TESTNET_NETWORK_DETAILS.networkPassphrase,
+          }),
+        }),
+      );
     });
   });
 });

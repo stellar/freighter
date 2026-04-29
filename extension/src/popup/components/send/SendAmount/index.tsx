@@ -164,6 +164,10 @@ export const SendAmount = ({
   const [draftFeeForDisplay, setDraftFeeForDisplay] = React.useState<
     string | null
   >(null);
+  const feeForFeesPane =
+    draftFeeForDisplay !== null && draftFeeForDisplay.trim()
+      ? draftFeeForDisplay
+      : editSettingsFee;
 
   const { state: sendAmountData, fetchData } = useGetSendAmountData(
     {
@@ -192,9 +196,6 @@ export const SendAmount = ({
   const [isEditingMemo, setIsEditingMemo] = React.useState(false);
   const [isEditingSettings, setIsEditingSettings] = React.useState(false);
   const [isShowingFeesPane, setIsShowingFeesPane] = React.useState(false);
-  // Holds the fee value shown in FeesPane's total row. Updated to reflect the
-  // user's current draft inclusion fee before the pane opens.
-  const [feesPaneTotal, setFeesPaneTotal] = React.useState(fee);
   const [isReviewingTx, setIsReviewingTx] = React.useState(false);
   const [contractSupportsMuxed, setContractSupportsMuxed] = React.useState<
     boolean | null
@@ -525,8 +526,10 @@ export const SendAmount = ({
     // token), so any manually-saved fee from the prior asset should not carry
     // over.  Clear it here before navigating so post-remount the fee is derived
     // freshly from the new asset's simulation.
+    dispatch(saveTransactionFee(""));
     dispatch(saveManualTransactionFee(null));
     hasManuallySetFeeRef.current = null;
+    lastInclusionFeeRef.current = null;
     goToChooseAsset();
   };
 
@@ -558,11 +561,14 @@ export const SendAmount = ({
                 </span>
                 <span data-testid="send-amount-fee-display">
                   {(isToken || isCollectible) &&
-                  simulationState.state === RequestState.LOADING
-                    ? t("Calculating...")
-                    : inputType === "crypto"
-                      ? `${fee} ${t("XLM")}`
-                      : recommendedFeeUsd}
+                  simulationState.state === RequestState.ERROR
+                    ? t("Fee unavailable")
+                    : (isToken || isCollectible) &&
+                        simulationState.state === RequestState.LOADING
+                      ? t("Calculating...")
+                      : inputType === "crypto"
+                        ? `${fee} ${t("XLM")}`
+                        : recommendedFeeUsd}
                 </span>
               </div>
               <div className="SendAmount__settings-options">
@@ -606,48 +612,72 @@ export const SendAmount = ({
               </div>
             </div>
             {isCollectible ? (
-              <Button
-                size="lg"
-                disabled={
-                  !destination ||
-                  isMuxedAddressWithoutMemoSupport ||
-                  simulationState.state === RequestState.ERROR
-                }
-                isLoading={simulationState.state === RequestState.LOADING}
-                data-testid="send-collectible-btn-continue"
-                isFullWidth
-                isRounded
-                variant="secondary"
-                onClick={handleContinue}
-              >
-                {t("Review Send")}
-              </Button>
+              <>
+                {(isToken || isCollectible) &&
+                simulationState.state === RequestState.ERROR ? (
+                  <Notification
+                    variant="error"
+                    icon={<Icon.AlertCircle />}
+                    title={t("Failed to fetch your transaction details")}
+                  >
+                    {simulationState.error}
+                  </Notification>
+                ) : null}
+                <Button
+                  size="lg"
+                  disabled={
+                    !destination ||
+                    isMuxedAddressWithoutMemoSupport ||
+                    simulationState.state === RequestState.ERROR
+                  }
+                  isLoading={simulationState.state === RequestState.LOADING}
+                  data-testid="send-collectible-btn-continue"
+                  isFullWidth
+                  isRounded
+                  variant="secondary"
+                  onClick={handleContinue}
+                >
+                  {t("Review Send")}
+                </Button>
+              </>
             ) : (
-              <Button
-                size="lg"
-                disabled={
-                  !destination ||
-                  (inputType === "crypto" &&
-                    new BigNumber(formik.values.amount).isZero()) ||
-                  (inputType === "fiat" &&
-                    new BigNumber(formik.values.amountUsd).isZero()) ||
-                  isAmountTooHigh ||
-                  isMuxedAddressWithoutMemoSupport ||
-                  ((isToken || isCollectible) &&
-                    simulationState.state === RequestState.ERROR)
-                }
-                isLoading={simulationState.state === RequestState.LOADING}
-                data-testid="send-amount-btn-continue"
-                isFullWidth
-                isRounded
-                variant="secondary"
-                onClick={(e) => {
-                  e.preventDefault();
-                  formik.submitForm();
-                }}
-              >
-                {t("Review Send")}
-              </Button>
+              <>
+                {(isToken || isCollectible) &&
+                simulationState.state === RequestState.ERROR ? (
+                  <Notification
+                    variant="error"
+                    icon={<Icon.AlertCircle />}
+                    title={t("Failed to fetch your transaction details")}
+                  >
+                    {simulationState.error}
+                  </Notification>
+                ) : null}
+                <Button
+                  size="lg"
+                  disabled={
+                    !destination ||
+                    (inputType === "crypto" &&
+                      new BigNumber(formik.values.amount).isZero()) ||
+                    (inputType === "fiat" &&
+                      new BigNumber(formik.values.amountUsd).isZero()) ||
+                    isAmountTooHigh ||
+                    isMuxedAddressWithoutMemoSupport ||
+                    ((isToken || isCollectible) &&
+                      simulationState.state === RequestState.ERROR)
+                  }
+                  isLoading={simulationState.state === RequestState.LOADING}
+                  data-testid="send-amount-btn-continue"
+                  isFullWidth
+                  isRounded
+                  variant="secondary"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    formik.submitForm();
+                  }}
+                >
+                  {t("Review Send")}
+                </Button>
+              </>
             )}
           </div>
         }
@@ -941,6 +971,7 @@ export const SendAmount = ({
           <div className="EditMemoWrapper">
             <EditSettings
               fee={draftFeeForDisplay ?? editSettingsFee}
+              defaultFee={editSettingsFee}
               title={t("Send Settings")}
               timeout={transactionData.transactionTimeout}
               congestion={networkCongestion}
@@ -954,15 +985,7 @@ export const SendAmount = ({
               }}
               onShowFeesInfo={(currentDraftFee) => {
                 trackSendFeeBreakdownOpened("settings");
-                const inclusionFee =
-                  currentDraftFee ||
-                  (lastInclusionFeeRef.current ?? recommendedFee);
-                setFeesPaneTotal(
-                  buildFeesPaneTotal(
-                    inclusionFee,
-                    simulationState.data?.resourceFee,
-                  ),
-                );
+                setDraftFeeForDisplay(currentDraftFee);
                 setIsShowingFeesPane(true);
               }}
               onSubmit={async ({
@@ -972,10 +995,11 @@ export const SendAmount = ({
                 fee: string;
                 timeout: number;
               }) => {
-                dispatch(saveTransactionFee(fee));
+                const nextFee = fee.trim() || editSettingsFee;
+                dispatch(saveTransactionFee(nextFee));
                 dispatch(saveTransactionTimeout(timeout));
-                hasManuallySetFeeRef.current = fee;
-                dispatch(saveManualTransactionFee(fee));
+                hasManuallySetFeeRef.current = nextFee;
+                dispatch(saveManualTransactionFee(nextFee));
                 setIsEditingSettings(false);
                 setDraftFeeForDisplay(null);
                 if (destination) {
@@ -1004,7 +1028,12 @@ export const SendAmount = ({
           <View.Inset>
             <div className="SendAmount__FeesPane">
               <FeesPane
-                fee={feesPaneTotal}
+                fee={buildFeesPaneTotal(
+                  feeForFeesPane,
+                  simulationState.state === RequestState.ERROR
+                    ? undefined
+                    : simulationState.data?.resourceFee,
+                )}
                 simulationState={simulationState}
                 isSoroban={isToken || isCollectible}
                 onClose={() => {
