@@ -48,8 +48,9 @@ import { ROUTES } from "popup/constants/routes";
 import { navigateTo } from "popup/helpers/navigate";
 ```
 
-Note: `@shared/*` and `@stellar/*` are INTERNAL packages despite the `@` prefix.
-Group them with internal imports.
+Note: `@shared/*` packages are internal despite the `@` prefix -- group them
+with internal imports. `@stellar/design-system` is an external package; treat it
+like `react` or `react-redux`.
 
 ## Enum Conventions
 

@@ -6,8 +6,12 @@ Freighter is a non-custodial wallet. Private keys never leave the device.
 
 - **Encrypted vault:** stored in `chrome.storage.local`, encrypted with the
   user's password
-- **Decrypted keys:** held only in `chrome.storage.session` (memory-only,
-  cleared when the browser session ends)
+- **Encrypted temporary key material:** stored in `browser.storage.local` under
+  `TEMPORARY_STORE_ID` via `storeEncryptedTemporaryData`
+- **Derived hash key:** held in Redux session state, persisted to
+  `browser.storage.session` when the session store is enabled
+- **Decrypted private keys:** produced on demand during signing and never
+  written to any storage layer
 - **Keys exist only in the background context** -- the popup and content scripts
   never have access to raw key material
 
@@ -18,7 +22,8 @@ signing flow:
 
 1. Popup builds an unsigned transaction (XDR)
 2. Popup sends XDR to background via `sendMessageToBackground()`
-3. Background decrypts the key from session storage, signs the XDR
+3. Background derives the private key on demand (using the hash key from session
+   state), signs the XDR
 4. Background returns the signed XDR to the popup
 5. Popup submits the signed transaction to the network
 
@@ -108,6 +113,6 @@ Manifest V3 enforces strict CSP by default:
   validation against the enum
 - **Non-null assertions on key material:** `privateKey!` can mask missing keys
   -- always handle the undefined case explicitly
-- **Storing secrets in local storage:** `chrome.storage.local` persists across
-  sessions and is not memory-only. Use `chrome.storage.session` for decrypted
-  material
+- **Storing decrypted key material:** never write decrypted private keys or
+  mnemonics to any storage. Produce decrypted key material on demand and keep it
+  only in memory during the signing operation

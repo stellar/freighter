@@ -23,8 +23,10 @@ and capabilities:
   inactivity. All state must be persisted to `chrome.storage`
 - Listens for messages from the popup and content scripts via
   `browser.runtime.onMessage`
-- Uses `chrome.storage.session` for decrypted keys (memory-only, cleared on
-  session end) and `chrome.storage.local` for the encrypted vault
+- Uses `browser.storage.session` to persist the Redux store (including the
+  derived hash key) and `browser.storage.local` for the encrypted vault and
+  encrypted temporary key material. Decrypted private keys are never written to
+  storage -- they are produced on demand during signing.
 
 ### Content Script (`extension/src/contentScript/`)
 
