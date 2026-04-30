@@ -817,9 +817,9 @@ test("Re-simulation on destination change shows correct inclusion fee in EditSet
 });
 
 // FeesPane pre-simulation state: Soroban rows are always present; resource shows
-// "-" before simulation data arrives, total shows base fee (not "Calculating...").
+// "None" before simulation data arrives, total shows base fee (not "Calculating...").
 // Uses a delayed simulation stub so the test can observe the initial state.
-test("FeesPane shows inclusion/resource rows immediately for Soroban — resource is '-' before simulation completes", async ({
+test("FeesPane shows inclusion/resource rows immediately for Soroban — resource is 'None' before simulation completes", async ({
   page,
   extensionId,
   context,
@@ -933,4 +933,56 @@ test("FeesPane shows — for all fee rows when simulation fails", async ({
   });
   await expect(page.getByTestId("review-tx-resource-fee")).toHaveText("—");
   await expect(page.getByTestId("review-tx-total-fee")).toHaveText("—");
+});
+
+// Regression: after saving a custom Soroban fee, the Default button must reset
+// to the network recommendation (not to the user's saved custom fee).
+test("Send settings Default button resets to recommended fee after saving custom fee", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  test.slow();
+
+  const stubOverrides = async () => {
+    await stubAccountBalancesE2e(page);
+  };
+  await stubContractSpec(page, TEST_TOKEN_ADDRESS, true);
+
+  await loginToTestAccount({ page, extensionId, context, stubOverrides });
+
+  // Navigate to token send and trigger Soroban simulation
+  await page.getByText("E2E").click();
+  await page.getByTestId("asset-detail-send-button").click();
+  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+  await page.getByTestId("send-amount-amount-input").fill("0.1");
+
+  await page.getByTestId("address-tile").click();
+  await page.getByTestId("send-to-input").fill(FUNDED_DESTINATION);
+  await page.getByText("Continue").click();
+
+  // Wait for initial simulated total fee display
+  await expect(page.getByTestId("send-amount-fee-display")).toHaveText(
+    "0.0093338 XLM",
+    { timeout: 10000 },
+  );
+
+  // Save a custom inclusion fee
+  await page.getByTestId("send-amount-btn-fee").click();
+  await expect(page.getByText("Inclusion Fee")).toBeVisible();
+  await page.getByTestId("edit-tx-settings-fee-input").fill("0.00005");
+  await page.getByRole("button", { name: "Save" }).click();
+  await expect(page.getByText("Inclusion Fee")).not.toBeVisible();
+
+  // Re-open settings and verify manual fee is loaded
+  await page.getByTestId("send-amount-btn-fee").click();
+  await expect(page.getByTestId("edit-tx-settings-fee-input")).toHaveValue(
+    "0.00005",
+  );
+
+  // Default must now reset to recommended base fee, not to saved custom fee
+  await page.getByRole("button", { name: "Default" }).first().click();
+  await expect(page.getByTestId("edit-tx-settings-fee-input")).toHaveValue(
+    "0.00001",
+  );
 });

@@ -120,6 +120,17 @@ export const getExpectedToFailReason = ({
   return null;
 };
 
+export const getCurrentTransactionFee = ({
+  currentTransactionFee,
+  fallbackTransactionFee,
+}: {
+  currentTransactionFee?: string;
+  fallbackTransactionFee?: string;
+}) =>
+  currentTransactionFee ||
+  fallbackTransactionFee ||
+  stroopToXlm(BASE_FEE).toString();
+
 const applyExpectedToFailReason = ({
   scanResult,
   expectedToFailReason,
@@ -436,8 +447,10 @@ function useSimulateTxData({
       const currentMemo = currentTransactionData.memo || memo;
       const currentAmount = currentTransactionData.amount || amount;
       const currentAsset = currentTransactionData.asset || asset;
-      const currentTransactionFee =
-        currentTransactionData.transactionFee || transactionFee;
+      const currentTransactionFee = getCurrentTransactionFee({
+        currentTransactionFee: currentTransactionData.transactionFee,
+        fallbackTransactionFee: transactionFee,
+      });
       // Derive asset objects directly from fresh Redux state so the XDR and
       // expectedToFailReason logic always use the same asset values.
       const freshSourceAsset = getAssetFromCanonical(currentAsset);

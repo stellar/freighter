@@ -971,7 +971,7 @@ export const SendAmount = ({
           <div className="EditMemoWrapper">
             <EditSettings
               fee={draftFeeForDisplay ?? editSettingsFee}
-              defaultFee={editSettingsFee}
+              defaultFee={recommendedFee}
               title={t("Send Settings")}
               timeout={transactionData.transactionTimeout}
               congestion={networkCongestion}
