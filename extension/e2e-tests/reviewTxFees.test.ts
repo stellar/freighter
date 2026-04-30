@@ -1,3 +1,4 @@
+import { type Page } from "@playwright/test";
 import { loginToTestAccount } from "./helpers/login";
 import {
   stubAccountBalancesE2e,
@@ -128,6 +129,76 @@ test("Fee breakdown pane shows only total fee for classic XLM send", async ({
   await page.getByTestId("review-tx-fees-close-btn").click();
   await expect(page.getByTestId("review-tx-fees-pane")).not.toBeVisible();
   await expect(page.getByText("You are sending").first()).toBeVisible();
+});
+
+// Regression: collectible hook used `currentTransactionData.transactionFee || transactionFee`
+// which evaluates to "" on first mount (Redux initial state).  xlmToStroop("") returns 0 so
+// the transaction was built with fee=0 stroops instead of BASE_FEE (100 stroops).
+// getCurrentTransactionFee now provides the BASE_FEE fallback — this test verifies the
+// simulation completes and the fee display is correct from the very first mount.
+test("Collectible simulation falls back to BASE_FEE on first mount when Redux transactionFee is unset", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  test.slow();
+
+  let simulateTxCallCount = 0;
+  const stubOverrides = async () => {
+    await page.route("**/simulate-tx", async (route) => {
+      if (route.request().method() !== "POST") {
+        await route.continue();
+        return;
+      }
+      simulateTxCallCount += 1;
+      await route.fulfill({
+        json: {
+          preparedTransaction:
+            "AAAAAgAAAABngBTmbmUycqG2cAMHcomSR80dRzGtKzxM6gb3yySD5AACQ3sCjnUGAAABkQAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAGAAAAAAAAAABp4YjrCeaVIvf6/Qjtqbnv4gmHScnZ/YgfjDVWV8aKUEAAAAIdHJhbnNmZXIAAAADAAAAEgAAAAAAAAAAZ4AU5m5lMnKhtnADB3KJkkfNHUcxrSs8TOoG98skg+QAAAASAAAAAAAAAABVZkfzT8IUCc68cala6hWfNx8vR5j+La0nQf3V+7AGYwAAAAMAAAACAAAAAQAAAAAAAAAAAAAAAaeGI6wnmlSL3+v0I7am57+IJh0nJ2f2IH4w1VlfGilBAAAACHRyYW5zZmVyAAAAAwAAABIAAAAAAAAAAGeAFOZuZTJyobZwAwdyiZJHzR1HMa0rPEzqBvfLJIPkAAAAEgAAAAAAAAAAVWZH80/CFAnOvHGpWuoVnzcfL0eY/i2tJ0H91fuwBmMAAAADAAAAAgAAAAA=",
+          simulationResponse: { minResourceFee: "100" },
+        },
+      });
+    });
+  };
+
+  await stubContractSpec(
+    page,
+    "CCTYMI5ME6NFJC675P2CHNVG467YQJQ5E4TWP5RAPYYNKWK7DIUUDENN",
+    true,
+  );
+  await loginToTestAccount({ page, extensionId, context, stubOverrides });
+
+  await page.getByTestId("nav-link-send").click({ force: true });
+  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+
+  // Confirm Redux transactionFee is still the empty-string default
+  await expect(page.getByTestId("send-amount-fee-display")).toHaveText(
+    "0.00001 XLM",
+  );
+
+  // Select a collectible — Redux transactionFee remains ""
+  await page.getByTestId("send-amount-edit-dest-asset").click();
+  await page.getByTestId("account-tab-collectibles").click();
+  await page.getByText("Stellar Frog 1").click();
+  await expect(page.getByTestId("SelectedCollectible")).toBeVisible();
+
+  // Set destination — triggers first-mount simulation with transactionFee=""
+  await page.getByTestId("address-tile").click();
+  await page
+    .getByTestId("send-to-input")
+    .fill("GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF");
+  await page.getByText("Continue").click({ force: true });
+
+  // Simulation must complete: Continue button becomes enabled and fee shows
+  // baseFee(0.00001) + resourceFee(0.00001) = 0.00002 XLM
+  const continueButton = page.getByTestId("send-collectible-btn-continue");
+  await expect(continueButton).toBeEnabled({ timeout: 10000 });
+  await expect(page.getByTestId("send-amount-fee-display")).toHaveText(
+    "0.00002 XLM",
+  );
+
+  // The simulation endpoint must have been called at least once
+  expect(simulateTxCallCount).toBeGreaterThan(0);
 });
 
 // Collectible send (Soroban): stubSimulateSendCollectible returns minResourceFee "100" stroops
@@ -981,6 +1052,177 @@ test("Send settings Default button resets to recommended fee after saving custom
   );
 
   // Default must now reset to recommended base fee, not to saved custom fee
+  await page.getByRole("button", { name: "Default" }).first().click();
+  await expect(page.getByTestId("edit-tx-settings-fee-input")).toHaveValue(
+    "0.00001",
+  );
+});
+
+// ── Collectible fee lifecycle tests ───────────────────────────────────────────
+//
+// stubSimulateSendCollectible returns minResourceFee "100" stroops = 0.00001 XLM.
+// baseFee (BASE_FEE) = 0.00001 XLM.  Total after simulation = 0.00002 XLM.
+// Custom fee 0.00005 XLM → total after re-simulation = 0.00005 + 0.00001 = 0.00006 XLM.
+
+const COLLECTIBLE_CONTRACT =
+  "CCTYMI5ME6NFJC675P2CHNVG467YQJQ5E4TWP5RAPYYNKWK7DIUUDENN";
+
+// Helper: navigate from the home screen to the SelectedCollectible screen.
+// Assumes stubSimulateSendCollectible and stubContractSpec are already set up.
+async function navigateToCollectibleSend(page: Page) {
+  await page.getByTestId("nav-link-send").click({ force: true });
+  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+  await page.getByTestId("send-amount-edit-dest-asset").click();
+  await page.getByTestId("account-tab-collectibles").click();
+  await page.getByText("Stellar Frog 1").click();
+  await expect(page.getByTestId("SelectedCollectible")).toBeVisible();
+}
+
+// Collectible: manually set fee before destination carries through to simulation.
+// The user sets a custom inclusion fee while on the SelectedCollectible screen
+// (no destination yet), then sets a destination — the simulation should fire
+// using the saved custom fee, not BASE_FEE.
+test("Collectible — manually set fee before destination is used in simulation", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  test.slow();
+
+  const stubOverrides = async () => {
+    await stubSimulateSendCollectible(page);
+  };
+  await stubContractSpec(page, COLLECTIBLE_CONTRACT, true);
+  await loginToTestAccount({ page, extensionId, context, stubOverrides });
+
+  await navigateToCollectibleSend(page);
+
+  // Set a custom fee before providing a destination
+  await page.getByTestId("send-amount-btn-fee").click();
+  await expect(page.getByText("Inclusion Fee")).toBeVisible();
+  await expect(page.getByTestId("edit-tx-settings-fee-input")).toHaveValue(
+    "0.00001",
+  );
+  await page.getByTestId("edit-tx-settings-fee-input").fill("0.00005");
+  await page.getByRole("button", { name: "Save" }).click();
+  await expect(page.getByText("Inclusion Fee")).not.toBeVisible();
+  await expect(page.getByTestId("send-amount-fee-display")).toHaveText(
+    "0.00005 XLM",
+  );
+
+  // Set destination — simulation fires with saved custom fee
+  await page.getByTestId("address-tile").click();
+  await page.getByTestId("send-to-input").fill(FUNDED_DESTINATION);
+  await page.getByText("Continue").click({ force: true });
+
+  // Re-simulation uses baseFee=0.00005 → total = 0.00005 + 0.00001 = 0.00006
+  const continueButton = page.getByTestId("send-collectible-btn-continue");
+  await expect(continueButton).toBeEnabled({ timeout: 10000 });
+  await expect(page.getByTestId("send-amount-fee-display")).toHaveText(
+    "0.00006 XLM",
+  );
+
+  // EditSettings must reflect the saved inclusion fee, not the total
+  await page.getByTestId("send-amount-btn-fee").click();
+  await expect(page.getByText("Inclusion Fee")).toBeVisible();
+  await expect(page.getByTestId("edit-tx-settings-fee-input")).toHaveValue(
+    "0.00005",
+  );
+});
+
+// Collectible: changing the inclusion fee after simulation triggers re-simulation.
+test("Collectible — manually set fee after simulation triggers re-simulation", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  test.slow();
+
+  const stubOverrides = async () => {
+    await stubSimulateSendCollectible(page);
+  };
+  await stubContractSpec(page, COLLECTIBLE_CONTRACT, true);
+  await loginToTestAccount({ page, extensionId, context, stubOverrides });
+
+  await navigateToCollectibleSend(page);
+
+  // Set destination — auto-simulation fires with BASE_FEE
+  await page.getByTestId("address-tile").click();
+  await page.getByTestId("send-to-input").fill(FUNDED_DESTINATION);
+  await page.getByText("Continue").click({ force: true });
+
+  const continueButton = page.getByTestId("send-collectible-btn-continue");
+  await expect(continueButton).toBeEnabled({ timeout: 10000 });
+  await expect(page.getByTestId("send-amount-fee-display")).toHaveText(
+    "0.00002 XLM",
+  );
+
+  // Change the inclusion fee
+  await page.getByTestId("send-amount-btn-fee").click();
+  await expect(page.getByText("Inclusion Fee")).toBeVisible();
+  await expect(page.getByTestId("edit-tx-settings-fee-input")).toHaveValue(
+    "0.00001",
+  );
+  await page.getByTestId("edit-tx-settings-fee-input").fill("0.00005");
+  await page.getByRole("button", { name: "Save" }).click();
+  await expect(page.getByText("Inclusion Fee")).not.toBeVisible();
+
+  // Re-simulation uses baseFee=0.00005 → total = 0.00005 + 0.00001 = 0.00006
+  await expect(page.getByTestId("send-amount-fee-display")).toHaveText(
+    "0.00006 XLM",
+    { timeout: 10000 },
+  );
+
+  // Reopen settings — saved fee survives re-simulation
+  await page.getByTestId("send-amount-btn-fee").click();
+  await expect(page.getByText("Inclusion Fee")).toBeVisible();
+  await expect(page.getByTestId("edit-tx-settings-fee-input")).toHaveValue(
+    "0.00005",
+  );
+});
+
+// Collectible: Default button in EditSettings resets to BASE_FEE after a custom
+// fee was saved, not to the previously saved custom value.
+test("Collectible — Default button resets to recommended fee after saving custom fee", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  test.slow();
+
+  const stubOverrides = async () => {
+    await stubSimulateSendCollectible(page);
+  };
+  await stubContractSpec(page, COLLECTIBLE_CONTRACT, true);
+  await loginToTestAccount({ page, extensionId, context, stubOverrides });
+
+  await navigateToCollectibleSend(page);
+
+  // Set destination and wait for simulation
+  await page.getByTestId("address-tile").click();
+  await page.getByTestId("send-to-input").fill(FUNDED_DESTINATION);
+  await page.getByText("Continue").click({ force: true });
+
+  const continueButton = page.getByTestId("send-collectible-btn-continue");
+  await expect(continueButton).toBeEnabled({ timeout: 10000 });
+  await expect(page.getByTestId("send-amount-fee-display")).toHaveText(
+    "0.00002 XLM",
+  );
+
+  // Save a custom fee
+  await page.getByTestId("send-amount-btn-fee").click();
+  await expect(page.getByText("Inclusion Fee")).toBeVisible();
+  await page.getByTestId("edit-tx-settings-fee-input").fill("0.00005");
+  await page.getByRole("button", { name: "Save" }).click();
+  await expect(page.getByText("Inclusion Fee")).not.toBeVisible();
+
+  // Reopen settings — verify custom fee is loaded
+  await page.getByTestId("send-amount-btn-fee").click();
+  await expect(page.getByTestId("edit-tx-settings-fee-input")).toHaveValue(
+    "0.00005",
+  );
+
+  // Default must reset to recommended base fee, not to the saved custom fee
   await page.getByRole("button", { name: "Default" }).first().click();
   await expect(page.getByTestId("edit-tx-settings-fee-input")).toHaveValue(
     "0.00001",

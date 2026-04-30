@@ -8,6 +8,7 @@ import { initialState, reducer } from "helpers/request";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { stroopToXlm } from "helpers/stellar";
 import { getBaseAccount } from "popup/helpers/account";
+import { getCurrentTransactionFee } from "popup/components/send/SendAmount/hooks/useSimulateTxData";
 import {
   CLASSIC_ASSET_DECIMALS,
   formatTokenAmount,
@@ -106,8 +107,10 @@ function useSimulateTxData({
       const currentTransactionData = transactionDataSelector(
         store.getState() as AppState,
       );
-      const currentTransactionFee =
-        currentTransactionData.transactionFee || transactionFee;
+      const currentTransactionFee = getCurrentTransactionFee({
+        currentTransactionFee: currentTransactionData.transactionFee,
+        fallbackTransactionFee: transactionFee,
+      });
 
       const payload = { transactionXdr: "" } as SimulateTxData;
       let destinationAccount = await getBaseAccount(destination);
