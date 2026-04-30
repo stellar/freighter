@@ -164,3 +164,4 @@ Read the relevant file when working in that area:
 | Git & PR Workflow    | `docs/skills/freighter-best-practices/references/git-workflow.md`   | Branching, committing, opening PRs, CI                   |
 | Dependencies         | `docs/skills/freighter-best-practices/references/dependencies.md`   | Adding, updating, or auditing packages                   |
 | Anti-Patterns        | `docs/skills/freighter-best-practices/references/anti-patterns.md`  | Code review, avoiding common mistakes                    |
+| Troubleshooting      | `docs/docs/troubleshooting-guide.md`                                | Build failures, setup issues, known bugs and gotchas     |
