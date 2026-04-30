@@ -1,10 +1,9 @@
 ---
 id: troubleshooting-guide
 title: Troubleshooting Guide
-slug: /troubleshooting-guide
 ---
 
-_Last updated: 2026-04-08_
+_Last updated: 2026-04-30_
 
 Common issues and solutions when developing the Freighter browser extension.
 

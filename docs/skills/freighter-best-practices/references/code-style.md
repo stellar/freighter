@@ -48,9 +48,10 @@ import { ROUTES } from "popup/constants/routes";
 import { navigateTo } from "popup/helpers/navigate";
 ```
 
-Note: `@shared/*` packages are internal despite the `@` prefix -- group them
-with internal imports. `@stellar/design-system` is an external package; treat it
-like `react` or `react-redux`.
+Note: `@shared/*` packages (e.g. `@shared/api`, `@shared/constants`) are
+workspace-internal — treat them like `popup/*` imports, not third-party
+packages. `@stellar/design-system` is a published external package; group it
+with `react` and `react-redux`, not with `@shared/*`.
 
 ## Enum Conventions
 
@@ -173,7 +174,7 @@ shared messages.
 
 ### Storage Keys
 
-All `chrome.storage` keys must use constants from
+All `browser.storage` keys must use constants from
 `extension/src/constants/localStorageTypes.ts` — never hardcoded strings.
 
 ### Action Type Strings

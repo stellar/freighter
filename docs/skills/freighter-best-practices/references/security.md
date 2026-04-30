@@ -4,7 +4,7 @@
 
 Freighter is a non-custodial wallet. Private keys never leave the device.
 
-- **Encrypted vault:** stored in `chrome.storage.local`, encrypted with the
+- **Encrypted vault:** stored in `browser.storage.local`, encrypted with the
   user's password
 - **Encrypted temporary key material:** stored in `browser.storage.local` under
   `TEMPORARY_STORE_ID` via `storeEncryptedTemporaryData`

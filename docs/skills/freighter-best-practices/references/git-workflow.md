@@ -76,5 +76,4 @@ Separate workflows handle submission to each distribution channel:
 
 - **Chrome Web Store** -- uploads the extension to the Chrome Web Store
 - **Firefox AMO** -- submits to Firefox Add-ons
-- **Safari** -- builds and submits the Safari version
 - **npm** -- publishes `@stellar/freighter-api` to the npm registry

@@ -1,8 +1,8 @@
 # Freighter
 
-> Non-custodial Stellar wallet browser extension for Chrome, Firefox, and
-> Safari. Monorepo: extension, client SDK (`@stellar/freighter-api`), shared
-> utilities, and Docusaurus docs site.
+> Non-custodial Stellar wallet browser extension for Chrome and Firefox.
+> Monorepo: extension, client SDK (`@stellar/freighter-api`), shared utilities,
+> and Docusaurus docs site.
 
 ## Glossary
 
@@ -69,8 +69,8 @@ yarn test:e2e                      # Playwright e2e
 Create `extension/.env`:
 
 ```env
-INDEXER_URL=https://freighter-backend-prd.stellar.org/api/v1
-INDEXER_V2_URL=https://freighter-backend-v2.stellar.org/api/v1
+INDEXER_URL=your_backend_v1_prod_url_here
+INDEXER_V2_URL=your_backend_v2_prod_url_here
 ```
 
 ## Repository Structure
@@ -122,7 +122,7 @@ Do not modify these without fully understanding the security implications:
 - `extension/src/contentScript/` — postMessage attack surface from dApps
 - `extension/public/static/manifest/` — extension permissions and CSP
 - `@shared/constants/` — network endpoints, key derivation parameters
-- Any code touching `chrome.storage` or key material
+- Any code touching `browser.storage` or key material
 
 ## Known Complexity / Gotchas
 
@@ -136,7 +136,7 @@ Do not modify these without fully understanding the security implications:
 - **Soroswap** swap logic lives in `popup/helpers/sorobanSwap.ts` — three
   chained async calls; debug with logs before refactoring.
 - **Store submissions** use separate CI workflows per platform (Chrome, Firefox,
-  Safari, npm).
+  npm).
 - **AI test agents** live in `.github/agents/` — don't delete or rename without
   updating the workflows.
 

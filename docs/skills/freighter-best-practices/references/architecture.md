@@ -20,7 +20,7 @@ and capabilities:
 - A Manifest V3 service worker that handles all privileged operations (key
   management, signing, storage)
 - **Lifetime:** ephemeral -- Chrome may terminate it at any time after
-  inactivity. All state must be persisted to `chrome.storage`
+  inactivity. All state must be persisted to `browser.storage`
 - Listens for messages from the popup and content scripts via
   `browser.runtime.onMessage`
 - Uses `browser.storage.session` to persist the Redux store (including the
@@ -150,11 +150,11 @@ use `useReducer`.
 The background service worker persists the Redux store to survive ephemeral
 restarts:
 
-1. Store is saved to `chrome.storage.session` on every change via
+1. Store is saved to `browser.storage.session` on every change via
    `store.subscribe(() => saveStore(store.getState()))`
-2. On startup, the store is hydrated from `chrome.storage.session` using
+2. On startup, the store is hydrated from `browser.storage.session` using
    `REDUX_STORE_KEY`
-3. Firefox fallback: uses `chrome.storage.local` where session storage is
+3. Firefox fallback: uses `browser.storage.local` where session storage is
    unavailable
 
 ## Component Patterns

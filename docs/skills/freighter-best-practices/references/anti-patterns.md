@@ -60,8 +60,8 @@ export const handler = () => {
 MV3 service workers are ephemeral. Chrome can terminate and restart them at any
 time. Any variable declared outside a function will be reset.
 
-**Use `chrome.storage.session`** for ephemeral data or
-**`chrome.storage.local`** for persistent data.
+**Use `browser.storage.session`** for ephemeral data or
+**`browser.storage.local`** for persistent data.
 
 ## 5. Direct browser.runtime.sendMessage from Popup
 
