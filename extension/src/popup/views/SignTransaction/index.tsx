@@ -79,6 +79,7 @@ import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
 import { MultiPaneSlider } from "popup/components/SlidingPaneSwitcher";
 
 import { AuthEntries } from "popup/components/AuthEntry";
+import { TruncatedMemo } from "popup/components/TruncatedMemo";
 import { Summary } from "./Preview/Summary";
 import { Details } from "./Preview/Details";
 
@@ -492,20 +493,10 @@ export const SignTransaction = () => {
                       <span>{t("Memo")}</span>
                     </div>
                     <div className="SignTransaction__Metadata__Value">
-                      <div
+                      <TruncatedMemo
+                        memo={decodedMemo ? decodedMemo.value : undefined}
                         className="SignTransaction__Metadata__Memo"
-                        title={
-                          decodedMemo &&
-                          decodedMemo.value &&
-                          decodedMemo.value.trim()
-                            ? decodedMemo.value
-                            : undefined
-                        }
-                      >
-                        {decodedMemo && decodedMemo.value
-                          ? decodedMemo.value
-                          : t("None")}
-                      </div>
+                      />
                     </div>
                   </div>
                 </div>

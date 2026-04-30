@@ -50,7 +50,7 @@ describe("SignTransaction/Preview/Summary memo display", () => {
     expect(wrapper).not.toHaveAttribute("title");
   });
 
-  it("omits the title attribute when memo is whitespace-only", () => {
+  it("includes the title attribute even when memo is whitespace-only (preserves user input)", () => {
     render(
       <Summary {...baseProps} memo={{ value: "   ", type: "text" }} />,
     );
@@ -59,6 +59,31 @@ describe("SignTransaction/Preview/Summary memo display", () => {
       .getByTestId("MemoBlock")
       .querySelector(".TxInfoBlock__memo");
     expect(wrapper).not.toBeNull();
-    expect(wrapper).not.toHaveAttribute("title");
+    expect(wrapper).toHaveAttribute("title", "   ");
+  });
+
+  it("renders MEMO_NONE label when memo value is empty even if type is set", () => {
+    render(
+      <Summary {...baseProps} memo={{ value: "", type: "text" }} />,
+    );
+
+    const memoBlock = screen.getByTestId("MemoBlock");
+    expect(memoBlock.textContent).toContain("None");
+    expect(memoBlock.textContent).toContain("MEMO_NONE");
+    expect(memoBlock.textContent).not.toContain("MEMO_TEXT");
+  });
+
+  it("renders the type-label suffix in a non-shrinking sibling element", () => {
+    render(
+      <Summary
+        {...baseProps}
+        memo={{ value: "a".repeat(120), type: "text" }}
+      />,
+    );
+
+    const memoBlock = screen.getByTestId("MemoBlock");
+    const memoType = memoBlock.querySelector(".TxInfoBlock__memoType");
+    expect(memoType).not.toBeNull();
+    expect(memoType).toHaveTextContent("MEMO_TEXT");
   });
 });

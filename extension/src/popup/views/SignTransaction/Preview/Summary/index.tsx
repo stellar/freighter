@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 
 import { stroopToXlm } from "helpers/stellar";
 import { CopyValue } from "popup/components/CopyValue";
+import { TruncatedMemo } from "popup/components/TruncatedMemo";
 
 import "./styles.scss";
 
@@ -55,19 +56,16 @@ export const Summary = (props: SummaryProps) => {
           <p>{t("Memo")}</p>
         </div>
         <span className="TxInfoBlock__value TxInfoBlock__value--memo">
-          <span
+          <TruncatedMemo
+            inline
+            memo={props.memo ? props.memo.value : undefined}
             className="TxInfoBlock__memo"
-            title={
-              props.memo && props.memo.value && props.memo.value.trim()
-                ? props.memo.value
-                : undefined
-            }
-          >
-            {props.memo && props.memo.value
-              ? props.memo.value
-              : t("None")}
+          />
+          <span className="TxInfoBlock__memoType">
+            {` (${getMemoLabel(
+              props.memo && props.memo.value ? props.memo.type : "none",
+            )})`}
           </span>
-          {` (${getMemoLabel(props.memo ? props.memo.type : "none")})`}
         </span>
       </div>
       <div className="TxInfoBlock">

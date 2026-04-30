@@ -38,6 +38,7 @@ import {
   MemoRequiredLabel,
 } from "popup/components/WarningMessages";
 import { CopyValue } from "popup/components/CopyValue";
+import { TruncatedMemo } from "popup/components/TruncatedMemo";
 import { ActionButtons } from "./components/ActionButtons";
 import { SendAsset, SendDestination } from "./components";
 
@@ -356,12 +357,7 @@ export const ReviewTx = ({
               className="ReviewTx__Details__Row__Value"
               data-testid="review-tx-memo"
             >
-              <div
-                className="ReviewTx__Memo"
-                title={memo && memo.trim() ? memo : undefined}
-              >
-                {memo || t("None")}
-              </div>
+              <TruncatedMemo memo={memo} className="ReviewTx__Memo" />
             </div>
           </div>
         )}

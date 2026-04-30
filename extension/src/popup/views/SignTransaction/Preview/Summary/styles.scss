@@ -52,12 +52,12 @@
       }
     }
     &__memo {
-      display: inline-block;
-      max-width: 100%;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      flex: 0 1 auto;
+      min-width: 0;
+    }
+    &__memoType {
+      flex: 0 0 auto;
       white-space: nowrap;
-      vertical-align: bottom;
     }
   }
 }
