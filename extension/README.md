@@ -9,13 +9,19 @@ This project builds a web extension
 You will need to add a backend for Freighter to connect to. You can configure
 this by adding an `.env` file at the path `extension/.env`.
 
-Inside this file, you can configure a backend by setting a value for the global
-variable `INDEXER_URL`. For example, to connect to the production backend, in
-your `.env` file, you can add the line
-`INDEXER_URL=https://freighter-backend-prd.stellar.org/api/v1`.
+Inside this file, set the following variables pointing to your own running
+backend instances:
 
-To connect to a local instance of the backend, just swap out the value in
-`INDEXER_URL`.
+```
+INDEXER_URL=<your freighter-backend V1 URL>
+INDEXER_V2_URL=<your freighter-backend V2 URL>
+```
+
+To run the backends locally, clone and follow the setup instructions in
+[stellar/freighter-backend](https://github.com/stellar/freighter-backend) (V1)
+and
+[stellar/freighter-backend-v2](https://github.com/stellar/freighter-backend-v2)
+(V2).
 
 ### Build the extension and install it on your machine
 
