@@ -5,6 +5,8 @@
     border-radius: pxToRem(24px);
     margin-bottom: pxToRem(12px);
     overflow: hidden;
+    width: 100%;
+    aspect-ratio: 1 / 1;
 
     img {
       width: 100%;
