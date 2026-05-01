@@ -154,8 +154,9 @@ restarts:
    `store.subscribe(() => saveStore(store.getState()))`
 2. On startup, the store is hydrated from `browser.storage.session` using
    `REDUX_STORE_KEY`
-3. Firefox fallback: uses `browser.storage.local` where session storage is
-   unavailable
+3. `SESSION_STORAGE_ENABLED = true` in `helpers/dataStorage.ts` — both Chrome
+   and Firefox now use session storage. The legacy `browser.storage.local`
+   fallback branch in `buildStore()` is currently unreachable.
 
 ## Component Patterns
 

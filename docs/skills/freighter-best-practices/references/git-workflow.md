@@ -72,8 +72,11 @@ Releases are managed by the `newRelease.yml` GitHub Actions workflow:
 
 ## Submission Workflows
 
-Separate workflows handle submission to each distribution channel:
+Submission workflows by channel:
 
-- **Chrome Web Store** -- uploads the extension to the Chrome Web Store
-- **Firefox AMO** -- submits to Firefox Add-ons
-- **npm** -- publishes `@stellar/freighter-api` to the npm registry
+- **`submitProduction.yml`** -- single workflow that handles both Chrome Web
+  Store upload and Firefox AMO submission in the same job, then creates the
+  semver git tag and GitHub release
+- **`submitBeta.yml`** -- beta/preview submission
+- **npm** -- `deployFreighterApiProduction.yml` publishes
+  `@stellar/freighter-api` to the npm registry

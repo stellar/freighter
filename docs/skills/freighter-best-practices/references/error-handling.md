@@ -37,11 +37,11 @@ Background message handlers must never throw. Always return structured response
 objects:
 
 ```typescript
-// CORRECT: return result or error objects
+// CORRECT: return domain fields directly (no { result: ... } wrapper)
 export const handleGetBalance = async (publicKey: string) => {
   try {
     const balance = await fetchBalance(publicKey);
-    return { result: balance };
+    return { balance };
   } catch (error) {
     captureException(error);
     return { error: "Failed to fetch balance" };

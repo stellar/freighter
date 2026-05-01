@@ -419,7 +419,8 @@ fetchBalance(publicKey).then(data => { ... }).catch(e => { ... });
 ```
 
 `try/catch` wraps whole functions (60%) or specific operations (40%).
-`Promise.allSettled` preferred over `Promise.all` for robustness.
+`Promise.all` is the dominant pattern. Prefer `Promise.allSettled` when you need
+partial results and failures should not short-circuit the batch.
 
 ## Type Assertions and Generics
 

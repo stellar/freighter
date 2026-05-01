@@ -70,12 +70,16 @@ time. Any variable declared outside a function will be reset.
 browser.runtime.sendMessage({ type: SERVICE_TYPES.GET_DATA });
 ```
 
-Always use the `sendMessageToBackground()` wrapper from `@shared/api/internal`:
+Always use the `sendMessageToBackground()` wrapper from
+`@shared/api/helpers/extensionMessaging`:
 
 ```typescript
 // CORRECT
-import { sendMessageToBackground } from "@shared/api/internal";
-await sendMessageToBackground({ type: SERVICE_TYPES.GET_DATA });
+import { sendMessageToBackground } from "@shared/api/helpers/extensionMessaging";
+await sendMessageToBackground({
+  activePublicKey: null,
+  type: SERVICE_TYPES.GET_DATA,
+});
 ```
 
 Prefer `browser.*` APIs from `webextension-polyfill` for cross-browser

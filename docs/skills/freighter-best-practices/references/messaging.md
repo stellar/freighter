@@ -85,13 +85,14 @@ case SERVICE_TYPES.GET_NEW_DATA:
 
 ### Step 4: Send from the Popup
 
-Use `sendMessageToBackground()` from `@shared/api/internal`:
+Use `sendMessageToBackground()` from `@shared/api/helpers/extensionMessaging`:
 
 ```typescript
-import { sendMessageToBackground } from "@shared/api/internal";
+import { sendMessageToBackground } from "@shared/api/helpers/extensionMessaging";
 import { SERVICE_TYPES } from "@shared/constants/services";
 
 const response = await sendMessageToBackground({
+  activePublicKey: publicKey, // required field; use null if not authenticated
   type: SERVICE_TYPES.GET_NEW_DATA,
   params: {
     /* ... */
