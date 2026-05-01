@@ -55,8 +55,8 @@ export const handleGetBalance = async (publicKey: string) => {
 };
 ```
 
-Use `captureException()` from Sentry for unexpected errors that should be
-tracked.
+Use `captureException()` from `@sentry/browser` for unexpected errors that
+should be tracked.
 
 ## ErrorBoundary
 
@@ -85,14 +85,19 @@ user-facing messages.
 
 ## Error Type Hierarchy
 
-- **`FreighterApiDeclinedError`** -- thrown when the user declines a dApp
-  request (signing, access). This is an expected error, not a bug.
-- **`ErrorMessage` type** -- `{ errorMessage: string }` used as the payload for
-  thunk rejections via `rejectWithValue`.
+- **`FreighterApiDeclinedError`** -- a plain object constant
+  (`{ code: -4, message: "..." }`) returned as a response value when the user
+  declines a dApp request. Not a thrown exception — check for its presence as a
+  return value.
+- **`ErrorMessage` type** --
+  `{ errorMessage: string; response?: HorizonApi.ErrorResponseData.TransactionFailed }`
+  used as the payload for thunk rejections via `rejectWithValue`. The optional
+  `response` field carries raw Horizon error details.
 
 ## Sentry Integration
 
-- `captureException()` for unexpected errors in handlers and async operations
+- `captureException()` from `@sentry/browser` for unexpected errors in handlers
+  and async operations
 - Error boundaries catch and report render crashes automatically
 - Do not call `captureException()` for expected errors (user cancellation,
   invalid input)
