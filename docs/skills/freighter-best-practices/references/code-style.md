@@ -72,11 +72,11 @@ All enums use **string values** — no numeric enums in the codebase:
 ```typescript
 // SCREAMING_SNAKE enum with SCREAMING_SNAKE values
 export enum SERVICE_TYPES {
-  GET_ACCOUNT_HISTORY = "GET_ACCOUNT_HISTORY",
   LOAD_SETTINGS = "LOAD_SETTINGS",
+  LOAD_ACCOUNT = "LOAD_ACCOUNT",
 }
 
-// PascalCase enum with PascalCase values
+// PascalCase enum with SCREAMING_SNAKE string values
 export enum ActionStatus {
   IDLE = "IDLE",
   PENDING = "PENDING",
@@ -91,8 +91,8 @@ export enum WalletType {
 
 // SCREAMING_SNAKE enum with kebab-case values (for CSS/URL identifiers)
 export enum STEPS {
-  SELECT_ASSET = "select-asset",
-  SET_AMOUNT = "set-amount",
+  AMOUNT = "set-amount",
+  DESTINATION = "set-destination",
 }
 ```
 
@@ -459,10 +459,10 @@ in 71 files).
 110 SCSS files using BEM naming with kebab-case:
 
 ```scss
-.AccountDetail {
+.AssetDetail {
   &__wrapper { ... }
   &__balance-info { ... }
-  &__action-button { ... }
+  &__actions { ... }
 }
 ```
 

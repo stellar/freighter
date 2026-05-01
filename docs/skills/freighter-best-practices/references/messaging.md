@@ -162,8 +162,8 @@ return {
 
 The `sendMessageToBackground()` function is the only approved way to send
 messages from the popup to the background. It is defined in
-`@shared/api/helpers/extensionMessaging.ts` and re-exported from
-`@shared/api/internal.ts`:
+`@shared/api/helpers/extensionMessaging.ts`. Import it directly from that path —
+it is not re-exported from `@shared/api/internal.ts`:
 
 - Wraps `browser.runtime.sendMessage` with proper typing
 - Handles response parsing and error extraction

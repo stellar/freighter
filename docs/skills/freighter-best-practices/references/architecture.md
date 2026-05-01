@@ -64,8 +64,8 @@ navigation (account data, settings, cache):
 - **`createAsyncThunk`** for all async operations (API calls, background
   messages)
 - **`createSlice`** for reducers with immer-based immutable updates
-- **`createSelector`** (reselect) for memoized derived state -- never compute
-  inline in components
+- **`createSelector`** (reselect) for non-trivial derived state -- prefer over
+  inline computation; simple primitives don't need a selector
 - **`ActionStatus` enum** tracks async lifecycle: `IDLE`, `PENDING`, `ERROR`,
   `SUCCESS`
 
@@ -134,7 +134,7 @@ const useGetScreenData = () => {
     dispatch({ type: "FETCH_DATA_START" });
     fetchData()
       .then((data) => dispatch({ type: "FETCH_DATA_SUCCESS", payload: data }))
-      .catch(() => dispatch({ type: "FETCH_DATA_ERROR" }));
+      .catch((error) => dispatch({ type: "FETCH_DATA_ERROR", payload: error }));
   }, []);
 
   return state;
@@ -163,8 +163,9 @@ restarts:
 - **Functional components only** -- no class components except `ErrorBoundary`
 - **View/hook separation** -- complex components split into a view (JSX) and a
   hook (logic)
-- **`memo()`** for component memoization. `lodash/isEqual` is available in the
-  codebase for deep comparisons where needed
+- **`memo()`** for list-rendered or hot-path components. `lodash/isEqual` is
+  available for deep comparisons. Current adoption is low — don't add to
+  existing components without a measured reason; see performance.md
 
 ## Cache Duck
 
