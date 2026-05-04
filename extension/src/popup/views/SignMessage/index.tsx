@@ -190,11 +190,16 @@ export const SignMessage = () => {
     signMessageState.data?.type === AppDataType.RESOLVED
       ? signMessageState.data.blockaidOverrideState
       : null;
+  const networkDetails =
+    signMessageState.data?.type === AppDataType.RESOLVED
+      ? signMessageState.data.networkDetails
+      : null;
 
   // Determine security states with override support
   const { isMalicious, isSuspicious, isUnableToScan } = getSiteSecurityStates(
     scanData,
     blockaidOverrideState,
+    networkDetails,
   );
 
   const shouldShowWarning = isMalicious || isSuspicious || isUnableToScan;

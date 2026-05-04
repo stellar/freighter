@@ -10,6 +10,8 @@ import { FormRows } from "popup/basics/Forms";
 import { ROUTES } from "popup/constants/routes";
 import { isMainnet, isTestnet } from "helpers/stellar";
 
+import { isBlockaidEnabled as isBlockaidEnabledForNetwork } from "popup/helpers/blockaid";
+
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { View } from "popup/basics/layout/View";
 
@@ -88,7 +90,7 @@ export const SearchAsset = () => {
           publicKey,
           isAllowListVerificationEnabled,
           asset,
-          isBlockaidEnabled: isMainnet(networkDetails),
+          isBlockaidEnabled: isBlockaidEnabledForNetwork(networkDetails),
           networkDetails,
         });
       },
