@@ -1,10 +1,9 @@
 ---
 id: troubleshooting-guide
 title: Troubleshooting Guide
-slug: /troubleshooting-guide
 ---
 
-_Last updated: 2026-04-08_
+_Last updated: 2026-04-30_
 
 Common issues and solutions when developing the Freighter browser extension.
 
@@ -41,14 +40,21 @@ nvm use
 > created that file, it has no effect — create `~/.config/husky/init.sh`
 > instead.
 
+Also verify the pre-commit script is executable:
+
+```bash
+ls -la .husky/pre-commit    # Should show -rwxr-xr-x
+chmod +x .husky/pre-commit  # Fix if not executable
+```
+
 ### IDE and ESLint plugins not loading
 
 **Symptom:** ESLint errors are not shown in the editor, or the IDE reports
 "ESLint server failed to start" / "No ESLint configuration found".
 
 > **Note:** The pre-commit hook runs `pretty-quick` (formatting) and
-> `addTranslations.sh` — it does **not** run ESLint. ESLint runs in CI and in
-> your editor only. If ESLint is not catching errors, the issue is with your IDE
+> `addTranslations.sh` — it does **not** run ESLint. ESLint only runs in your
+> editor. If ESLint is not catching errors, the issue is with your IDE
 > extension, not Husky.
 
 **Solution:** Ensure the ESLint IDE extension is installed and configured:
@@ -64,11 +70,6 @@ nvm use
    picks up the project config before relying on IDE integration:
    ```bash
    npx eslint extension/src/popup/App.tsx
-   ```
-4. **Verify Husky's pre-commit script is executable:**
-   ```bash
-   ls -la .husky/pre-commit    # Should show -rwxr-xr-x
-   chmod +x .husky/pre-commit  # Fix if not executable
    ```
 
 ### Yarn workspaces resolution errors
