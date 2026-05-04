@@ -263,22 +263,16 @@ export const SendTo = ({
                           <button
                             data-testid="recent-address-button"
                             onClick={async () => {
-                              try {
-                                const addressFromInput =
-                                  await getAddressFromInput(address);
-                                emitMetric(
-                                  METRIC_NAMES.sendPaymentRecentAddress,
-                                );
-                                await fetchData(address, {});
-                                handleContinue(
-                                  addressFromInput.validatedAddress,
-                                  addressFromInput.fedAddress,
-                                  addressFromInput.federationMemo,
-                                  addressFromInput.federationMemoType,
-                                );
-                              } catch (_e) {
-                                await fetchData(address, {});
-                              }
+                              const addressFromInput =
+                                await getAddressFromInput(address);
+                              emitMetric(METRIC_NAMES.sendPaymentRecentAddress);
+                              await fetchData(address, {});
+                              handleContinue(
+                                addressFromInput.validatedAddress,
+                                addressFromInput.fedAddress,
+                                addressFromInput.federationMemo,
+                                addressFromInput.federationMemoType,
+                              );
                             }}
                             className="SendTo__subheading-identicon"
                           >
