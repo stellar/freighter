@@ -46,19 +46,24 @@ async function connect() {
 import { WatchWalletChanges } from "@stellar/freighter-api";
 
 useEffect(() => {
-  const watcher = new WatchWalletChanges();
-  watcher.watch(({ address, network, networkPassphrase, error }) => {
-    if (error) return; // user locked wallet or revoked access
-    if (!address) return; // empty-address tick that follows an error tick
-    setActiveAccount(address);
-    setActiveNetwork({ network, networkPassphrase });
-  });
+  const watcher = new WatchWalletChanges(3000); // interval in ms, default 3000
+  const { error } = watcher.watch(
+    ({ address, network, networkPassphrase, error }) => {
+      if (error) return; // user locked wallet or revoked access
+      if (!address) return; // empty-address tick that follows an error tick
+      setActiveAccount(address);
+      setActiveNetwork({ network, networkPassphrase });
+    },
+  );
+  if (error) console.warn("WatchWalletChanges failed (SSR?)", error);
   return () => watcher.stop(); // required — watcher is a polling loop
 }, []);
 ```
 
 - `watcher.stop()` is required on unmount. Omitting it leaks timers and keeps
   messaging the extension.
+- `watch()` returns `{ error? }` synchronously — on SSR it returns
+  `{ error: FreighterApiNodeError }` immediately without starting the loop.
 - Do not set the polling interval below 1000ms.
 - One watcher per app is enough — share it via context rather than creating
   multiple.
@@ -88,9 +93,54 @@ const signedTx = TransactionBuilder.fromXDR(
 - If `error` is set, `signedTxXdr` is an empty string — always guard before
   using it.
 - `signTransaction` does not auto-request access; run the connection flow first.
-- `signMessage` and `signAuthEntry` accept the same
-  `{ networkPassphrase, address }` options and auto-request access if not yet
-  allowed.
+
+## Signing Messages
+
+```ts
+import { signMessage } from "@stellar/freighter-api";
+
+const result = await signMessage("hello", {
+  networkPassphrase,
+  address: expectedAddress,
+});
+if (result.error) return handleError(result.error);
+// SDK v3 returns Buffer | null; v4 returns base64 string | null.
+const signedMessage =
+  typeof result.signedMessage === "string"
+    ? Buffer.from(result.signedMessage, "base64")
+    : result.signedMessage;
+```
+
+- `signMessage` auto-requests access if not yet allowed.
+- Verify `result.signerAddress === expectedAddress` if account pinning matters.
+
+## Signing Auth Entries (Soroban)
+
+```ts
+import { signAuthEntry } from "@stellar/freighter-api";
+
+const result = await signAuthEntry(authEntryXdr, {
+  networkPassphrase,
+  address: expectedAddress,
+});
+if (result.error) return handleError(result.error);
+// result.signedAuthEntry is XDR string | null
+```
+
+- `signAuthEntry` auto-requests access if not yet allowed.
+
+## Adding a Token
+
+```ts
+import { addToken } from "@stellar/freighter-api";
+
+const result = await addToken({
+  contractId: "C...", // Soroban token contract address
+  networkPassphrase, // optional; defaults to active network
+});
+if (result.error) return handleError(result.error);
+// result.contractId echoes back the added contract
+```
 
 ## Network Details (for RPC endpoints)
 
@@ -143,3 +193,8 @@ Every method resolves to
 
 In SSR / Node, every method returns `{ error: { code: -1 } }` immediately — safe
 to import but gate calls with `"use client"` or inside `useEffect`.
+
+```ts
+import { isBrowser } from "@stellar/freighter-api";
+if (!isBrowser) return; // guard SSR paths manually if needed
+```
