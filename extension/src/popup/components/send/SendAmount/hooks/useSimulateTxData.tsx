@@ -120,17 +120,6 @@ export const getExpectedToFailReason = ({
   return null;
 };
 
-export const getCurrentTransactionFee = ({
-  currentTransactionFee,
-  fallbackTransactionFee,
-}: {
-  currentTransactionFee?: string;
-  fallbackTransactionFee?: string;
-}) =>
-  currentTransactionFee ||
-  fallbackTransactionFee ||
-  stroopToXlm(BASE_FEE).toString();
-
 const applyExpectedToFailReason = ({
   scanResult,
   expectedToFailReason,

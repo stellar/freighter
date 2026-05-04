@@ -8,7 +8,7 @@ import { initialState, reducer } from "helpers/request";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { stroopToXlm } from "helpers/stellar";
 import { getBaseAccount } from "popup/helpers/account";
-import { getCurrentTransactionFee } from "popup/components/send/SendAmount/hooks/useSimulateTxData";
+import { getCurrentTransactionFee } from "popup/helpers/fees";
 import {
   CLASSIC_ASSET_DECIMALS,
   formatTokenAmount,
