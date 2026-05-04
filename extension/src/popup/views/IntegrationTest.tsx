@@ -347,6 +347,7 @@ export const IntegrationTest = () => {
         isDataSharingAllowed: true,
         isMemoValidationEnabled: true,
         isHideDustEnabled: true,
+        isOpenSidebarByDefault: false,
       });
       runAsserts("saveSettings", () => {
         assertEq(res.networkDetails, FUTURENET_NETWORK_DETAILS);

@@ -42,6 +42,12 @@ export const findAssetBalance = (
         balance.token.type === "native",
     ) as Exclude<AssetType, SorobanAsset | LiquidityPoolShareAsset> | undefined;
   }
+  if (isContractId(asset.issuer)) {
+    return balances.find(
+      (balance) =>
+        "contractId" in balance && balance.contractId === asset.issuer,
+    ) as Exclude<AssetType, LiquidityPoolShareAsset> | undefined;
+  }
   return balances.find((balance) => {
     const balanceIssuer =
       "token" in balance && "issuer" in balance.token

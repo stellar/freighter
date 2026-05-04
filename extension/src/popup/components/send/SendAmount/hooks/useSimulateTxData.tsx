@@ -79,8 +79,19 @@ const CREATE_ACCOUNT_MIN_XLM = new BigNumber(1);
 /**
  * Returns the translated user-facing reason why a transaction is expected to fail,
  * or null if no expected failure.
+ *
+ * The unfunded-destination warning only applies to sends that use classic
+ * Stellar account semantics: native XLM, credit_alphanum assets, and
+ * Stellar Asset Contracts (SACs) wrapping those — all of which require a
+ * funded classic destination. Pure Soroban custom tokens transfer via
+ * contract invocation and don't touch the classic account ledger, so an
+ * unfunded destination is not a failure condition for them.
+ *
+ * Asset ids encode the distinction: SACs normalize to their underlying
+ * classic G-issuer, while pure Soroban custom tokens use a contract
+ * (C-address) issuer.
  */
-const getExpectedToFailReason = ({
+export const getExpectedToFailReason = ({
   isDestinationFunded,
   assetCanonical,
   amount,
@@ -96,6 +107,10 @@ const getExpectedToFailReason = ({
   }
 
   if (assetCanonical !== "native") {
+    const [, issuer] = assetCanonical.split(":");
+    if (issuer && isContractId(issuer)) {
+      return null;
+    }
     return t("Blockaid unfunded destination");
   }
 
