@@ -215,7 +215,7 @@
   "Failed to simulate transaction": "Falha ao simular transação",
   "failed to submit transaction": "falha ao enviar transação",
   "Failed!": "Falhou!",
-  "Federation server returned an invalid address": "Federation server returned an invalid address",
+  "Federation server returned an invalid address": "O servidor de federação retornou um endereço inválido",
   "Fee": "Taxa",
   "Feedback": "Feedback",
   "Feedback?": "Feedback?",

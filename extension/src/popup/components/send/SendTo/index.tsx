@@ -36,7 +36,7 @@ import {
   saveMemoType,
   transactionDataSelector,
 } from "popup/ducks/transactionSubmission";
-import { FederationMemoType } from "popup/helpers/federationMemo";
+import type { FederationMemoType } from "popup/helpers/federationMemo";
 
 import { RequestState } from "constants/request";
 import { useSendToData, getAddressFromInput } from "./hooks/useSendToData";
@@ -125,7 +125,7 @@ export const SendTo = ({
     dispatch(saveDestination(validatedDestination));
     dispatch(saveDestinationAsset(""));
     dispatch(saveFederationAddress(validatedFedAdress || ""));
-    if (federationMemo !== undefined) {
+    if (validatedFedAdress && federationMemo !== undefined) {
       dispatch(saveMemo(federationMemo));
       dispatch(saveMemoType(federationMemoType || ""));
     }
@@ -261,16 +261,22 @@ export const SendTo = ({
                           <button
                             data-testid="recent-address-button"
                             onClick={async () => {
-                              const addressFromInput =
-                                await getAddressFromInput(address);
-                              emitMetric(METRIC_NAMES.sendPaymentRecentAddress);
-                              await fetchData(address, {});
-                              handleContinue(
-                                addressFromInput.validatedAddress,
-                                addressFromInput.fedAddress,
-                                addressFromInput.federationMemo,
-                                addressFromInput.federationMemoType,
-                              );
+                              try {
+                                const addressFromInput =
+                                  await getAddressFromInput(address);
+                                emitMetric(
+                                  METRIC_NAMES.sendPaymentRecentAddress,
+                                );
+                                await fetchData(address, {});
+                                handleContinue(
+                                  addressFromInput.validatedAddress,
+                                  addressFromInput.fedAddress,
+                                  addressFromInput.federationMemo,
+                                  addressFromInput.federationMemoType,
+                                );
+                              } catch (_e) {
+                                fetchData(address, {});
+                              }
                             }}
                             className="SendTo__subheading-identicon"
                           >

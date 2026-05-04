@@ -37,7 +37,7 @@ import {
   getSoroswapTokens as getSoroswapTokensService,
 } from "popup/helpers/sorobanSwap";
 import { hardwareSign, hardwareSignAuth } from "popup/helpers/hardwareConnect";
-import { FederationMemoType } from "popup/helpers/federationMemo";
+import type { FederationMemoType } from "popup/helpers/federationMemo";
 import { AppState } from "popup/App";
 import { publicKeySelector } from "./accountServices";
 
