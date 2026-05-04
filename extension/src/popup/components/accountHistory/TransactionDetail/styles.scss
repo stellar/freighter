@@ -305,6 +305,14 @@
           margin-right: pxToRem(6px);
         }
       }
+
+      &--memo > * {
+        min-width: 0;
+      }
+
+      &__memo {
+        text-align: right;
+      }
     }
   }
 

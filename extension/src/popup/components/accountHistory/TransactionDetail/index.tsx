@@ -9,6 +9,7 @@ import { emitMetric } from "helpers/metrics";
 import { openTab } from "popup/helpers/navigate";
 import { stroopToXlm } from "helpers/stellar";
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
+import { TruncatedMemo } from "popup/components/TruncatedMemo";
 
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 
@@ -378,12 +379,15 @@ export const TransactionDetail = ({
         </div>
         {/* Hide memo row when memo is disabled (e.g., for all M addresses) */}
         {!isMemoDisabled && (
-          <div className="Metadata">
+          <div className="Metadata Metadata--memo">
             <div className="Metadata__label">
               <Icon.File02 />
               {t("Memo")}
             </div>
-            <div className="Metadata__value">{memo || t("None")}</div>
+            <TruncatedMemo
+              memo={memo}
+              className="Metadata__value Metadata__memo"
+            />
           </div>
         )}
       </div>
