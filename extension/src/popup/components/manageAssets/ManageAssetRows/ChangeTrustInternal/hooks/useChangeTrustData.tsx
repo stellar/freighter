@@ -103,6 +103,7 @@ function useGetChangeTrustData({
         payload.isAssetUnableToScan = shouldTreatAssetAsUnableToScan(
           scannedAsset,
           blockaidOverrideState,
+          networkDetails,
         );
         // unable-to-scan takes precedence — never mark both at once
         payload.isAssetSuspicious =
