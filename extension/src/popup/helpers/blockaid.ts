@@ -21,6 +21,7 @@ import {
 import { isDev } from "@shared/helpers/dev";
 import { SecurityLevel } from "popup/constants/blockaid";
 import { fetchJson } from "./fetch";
+import { captureFetchError } from "./captureFetchError";
 import { Action } from "constants/request";
 
 export const ATTACK_TO_DISPLAY = {
@@ -49,26 +50,18 @@ export const useScanSite = () => {
   const scanSite = async (url: string) => {
     setLoading(true);
     try {
-      const res = await fetch(
-        `${INDEXER_URL}/scan-dapp?url=${encodeURIComponent(url)}`,
-      );
-      const response = (await res.json()) as {
+      const response = await fetchJson<{
         data: BlockAidScanSiteResult;
         error: string | null;
-      };
+      }>(`${INDEXER_URL}/scan-dapp?url=${encodeURIComponent(url)}`);
 
-      if (!res.ok) {
-        setError(response.error || "Failed to scan site");
-        setLoading(false);
-        return null;
-      }
       setData(response.data);
       emitMetric(METRIC_NAMES.blockaidDomainScan);
       setLoading(false);
       return response.data;
     } catch (err) {
       setError("Failed to scan site");
-      Sentry.captureException(err);
+      captureFetchError(err);
       setLoading(false);
       return null;
     }
@@ -129,9 +122,7 @@ export const useScanTx = () => {
       return response.data;
     } catch (err) {
       setError("Failed to scan transaction");
-      Sentry.captureException(
-        err instanceof Error ? err : new Error("Failed to scan transaction"),
-      );
+      captureFetchError(err);
       setLoading(false);
     }
     return null;
@@ -185,32 +176,28 @@ export const scanAsset = async (
       /* Scanning assets is only supported on Mainnet */
       return null;
     }
-    const res = await fetch(
+    const response = await fetchJson<ScanAssetResponse>(
       `${INDEXER_URL}/scan-asset?address=${encodeURIComponent(address)}`,
-      {
-        signal,
-      },
+      { signal },
     );
-    const response = (await res.json()) as ScanAssetResponse;
 
-    if (!res.ok || response.error) {
-      Sentry.captureException(response.error || "Failed to scan asset");
+    if (response.error) {
+      Sentry.captureException(
+        new Error(response.error || "Failed to scan asset"),
+      );
       emitMetric(METRIC_NAMES.blockaidAssetScanFailed);
-      // Return null to indicate unable to scan
       return null;
     }
 
     emitMetric(METRIC_NAMES.blockaidAssetScan);
     if (!response.data) {
-      // Return null to indicate unable to scan
       return null;
     }
     return response.data;
   } catch (err) {
     console.error("Failed to scan asset");
-    Sentry.captureException(err);
+    captureFetchError(err);
   }
-  // Return null to indicate unable to scan
   return null;
 };
 
@@ -539,7 +526,7 @@ export const useAsyncSiteScan = <T>(
         })
         .catch((error) => {
           console.error("Failed to scan site:", error);
-          Sentry.captureException(`Failed to call scan site: ${error}`);
+          captureFetchError(error);
           const updatedPayload = updatePayload(currentPayload, null);
           dispatch({ type: "FETCH_DATA_SUCCESS", payload: updatedPayload });
         });
@@ -579,7 +566,7 @@ export const fetchSiteScanData = async <T>(
     dispatch({ type: "FETCH_DATA_SUCCESS", payload: updatedPayload });
   } catch (error) {
     console.error("Failed to scan site:", error);
-    Sentry.captureException(`Failed to call scan site: ${error}`);
+    captureFetchError(error);
     const updatedPayload = updatePayload
       ? updatePayload(initialPayload, null)
       : ({ ...initialPayload, scanData: null } as T);
@@ -601,11 +588,14 @@ export const scanAssetBulk = async (
     addressList.forEach((address) => {
       url.searchParams.append("asset_ids", address);
     });
-    const response = await fetch(url.href, { signal });
-    const resJson = (await response.json()) as ScanAssetBulkResponse;
+    const resJson = await fetchJson<ScanAssetBulkResponse>(url.href, {
+      signal,
+    });
 
-    if (!response.ok || resJson.error) {
-      Sentry.captureException(resJson.error || "Failed to bulk scan assets");
+    if (resJson.error) {
+      Sentry.captureException(
+        new Error(resJson.error || "Failed to bulk scan assets"),
+      );
     }
 
     emitMetric(METRIC_NAMES.blockaidAssetScan);
@@ -615,7 +605,7 @@ export const scanAssetBulk = async (
     return resJson.data;
   } catch (err) {
     console.error("Failed to bulk scan asset");
-    Sentry.captureException(err);
+    captureFetchError(err);
   }
   return null;
 };
@@ -643,7 +633,9 @@ export const reportAssetWarning = async ({
     );
 
     if (res.error) {
-      Sentry.captureException(res.error || "Failed to report asset warning");
+      Sentry.captureException(
+        new Error(res.error || "Failed to report asset warning"),
+      );
     }
 
     emitMetric(METRIC_NAMES.blockaidAssetScan);
@@ -653,7 +645,7 @@ export const reportAssetWarning = async ({
     return res.data;
   } catch (err) {
     console.error("Failed to report asset warning");
-    Sentry.captureException(err);
+    captureFetchError(err);
   }
   return {} as ReportAssetWarningResponse;
 };
@@ -678,7 +670,7 @@ export const reportTransactionWarning = async ({
 
     if (res.error) {
       Sentry.captureException(
-        res.error || "Failed to report transaction warning",
+        new Error(res.error || "Failed to report transaction warning"),
       );
     }
 
@@ -689,7 +681,7 @@ export const reportTransactionWarning = async ({
     return res.data;
   } catch (err) {
     console.error("Failed to report transaction warning");
-    Sentry.captureException(err);
+    captureFetchError(err);
   }
   return {} as ReportTransactionWarningResponse;
 };
