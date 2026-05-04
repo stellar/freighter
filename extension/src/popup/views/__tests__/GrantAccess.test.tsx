@@ -178,7 +178,7 @@ describe("Grant Access view", () => {
             allAccounts: mockAccounts,
           },
           settings: {
-            networkDetails: TESTNET_NETWORK_DETAILS,
+            networkDetails: MAINNET_NETWORK_DETAILS,
             networksList: DEFAULT_NETWORKS,
           },
         }}
@@ -217,7 +217,7 @@ describe("Grant Access view", () => {
             allAccounts: mockAccounts,
           },
           settings: {
-            networkDetails: TESTNET_NETWORK_DETAILS,
+            networkDetails: MAINNET_NETWORK_DETAILS,
             networksList: DEFAULT_NETWORKS,
           },
         }}
@@ -277,7 +277,17 @@ describe("Grant Access view", () => {
       screen.getByTestId("grant-access-connect-anyway-button"),
     ).toBeDefined();
   });
-  it("shows unable to scan label when on custom network", async () => {
+  it("suppresses Blockaid site warnings on custom networks (Mainnet-only feature)", async () => {
+    // Stub `fetch` to a benign success so that, if the network gate ever
+    // regresses and a `/scan-dapp` (or any other) call leaks through, the
+    // test doesn't attempt a real network request and become flaky in CI.
+    // The assertion below still verifies no `/scan-dapp` call was made.
+    const fetchSpy = jest
+      .spyOn(global, "fetch")
+      .mockResolvedValue({
+        ok: true,
+        json: async () => ({}),
+      } as Response);
     render(
       <Wrapper
         routes={[ROUTES.welcome]}
@@ -314,12 +324,16 @@ describe("Grant Access view", () => {
 
     await waitFor(() => screen.getByTestId("grant-access-view"));
     expect(screen.getByTestId("grant-access-view")).toBeDefined();
-    await waitFor(() =>
-      expect(screen.getByTestId("blockaid-unable-to-scan-label")).toBeDefined(),
-    );
+    // No Blockaid label should be rendered, and the dapp scan endpoint should
+    // never be called on a non-Mainnet network.
+    expect(screen.queryByTestId("blockaid-unable-to-scan-label")).toBeNull();
+    expect(screen.queryByTestId("blockaid-malicious-label")).toBeNull();
+    expect(screen.queryByTestId("blockaid-miss-label")).toBeNull();
     expect(
-      screen.getByTestId("grant-access-connect-anyway-button"),
-    ).toBeDefined();
+      fetchSpy.mock.calls.some(
+        ([url]) => typeof url === "string" && url.includes("/scan-dapp"),
+      ),
+    ).toBe(false);
   });
   it("shows unable to scan label when scan site API returns an error", async () => {
     jest.spyOn(global, "fetch").mockImplementation(() =>

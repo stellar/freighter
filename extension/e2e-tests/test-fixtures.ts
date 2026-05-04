@@ -27,6 +27,15 @@ export const test = base.extend<{
       ],
     });
 
+    // Mark every page (including popups opened by the extension) as a
+    // Playwright test environment. Some helpers — e.g. the Blockaid mainnet
+    // gate in `popup/helpers/blockaid.ts` — rely on this flag to opt back
+    // into behavior that's otherwise mainnet-only, so it must apply to
+    // popup windows too, not just the main `page` fixture.
+    await context.addInitScript(() => {
+      (window as unknown as { IS_PLAYWRIGHT?: string }).IS_PLAYWRIGHT = "true";
+    });
+
     await use(context);
     await context.close();
   },
