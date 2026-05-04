@@ -1,7 +1,5 @@
 # Performance -- Freighter Extension
 
-Based on analysis of 224 component files. Current performance score: **5.9/10**.
-
 ## CRITICAL: Complete Implementations First
 
 **Performance patterns are optimizations WITHIN complete implementations, not
@@ -44,36 +42,23 @@ export const Dashboard = ({ title }: DashboardProps) => {
 
 **Never produce only selectors when a component is requested.**
 
-## React.memo -- CRITICAL GAP
+## React.memo
 
-Only **1 memo() usage** in the entire popup codebase (`AccountAssets/AssetIcon`
-with custom `shouldAssetIconSkipUpdate` comparator). This is a critical
-performance gap.
-
-**RULE: Components rendered in lists or receiving frequently-changing parent
-props MUST use `React.memo()`.**
-
-Components that should be memoized:
-
-- All list item components (TokenList items, AssetRows, OperationsKeyVal)
-- AccountTabs, AccountHeader sub-components
-- ManageAssetRows children
+**RULE: For new components rendered in lists or hot paths, prefer
+`React.memo()`.** The codebase currently has low memo() adoption — this is a
+known gap, not the established pattern. Don't refactor existing components to
+add memo() unless you are already touching them or there is a measured
+performance problem.
 
 ```typescript
-// REQUIRED for list-rendered components
+// Good pattern for list-rendered components
 export const AssetRow = memo(
   ({ asset, onSelect }: AssetRowProps) => { ... },
   (prev, next) => isEqual(prev.asset, next.asset),
 );
 ```
 
-## useMemo -- 13 occurrences across 7 files (GOOD)
-
-Currently used for:
-
-- Conditional computations (muxed checks, contract validation)
-- Debounced function creation
-- Object creation in dependencies
+## useMemo
 
 **RULE: Wrap in useMemo when:**
 
@@ -94,18 +79,19 @@ const formattedBalances = useMemo(
 const isMainnet = network === NETWORKS.PUBLIC;
 ```
 
-## useCallback -- 15 occurrences across 9 files (MODERATE)
+## useCallback
 
-**RULE: ANY callback passed as a prop MUST be wrapped in useCallback.**
+**RULE: Callbacks passed as props should be wrapped in useCallback** to avoid
+causing unnecessary re-renders in memoized children.
 
 ```typescript
-// REQUIRED — passed to child component
+// Good — passed to child component
 const handleSelect = useCallback(
   (asset: Asset) => { dispatch(selectAsset(asset)); },
   [dispatch],
 );
 
-// CRITICAL ANTI-PATTERN — 130 inline arrows found in codebase
+// Anti-pattern — inline arrow recreates the function on every render
 // WRONG:
 <AssetList onClick={() => handleClick(asset)} />
 
@@ -114,19 +100,12 @@ const onClick = useCallback(() => handleClick(asset), [asset]);
 <AssetList onClick={onClick} />
 ```
 
-**High-priority files needing useCallback refactoring:**
+## Inline Functions in JSX
 
-- `AccountAssets/index.tsx` — 10+ inline handlers
-- `ManageAssetRows/ChangeTrustInternal/index.tsx` — 10 inline handlers
-- `AccountHeader/index.tsx` — 10+ inline handlers
+Inline arrow functions inside `.map()` or list renders create a new function
+reference on every render, defeating memoization.
 
-## Inline Functions in JSX -- CRITICAL (130 occurrences)
-
-**130 inline arrow functions** across 54 files. **15 inline style objects**
-across 8 files.
-
-**RULE: Never create inline functions inside .map() or list renders. Extract to
-useCallback.**
+**RULE: Extract callbacks used in list renders to useCallback.**
 
 ```typescript
 // WRONG — creates new function per render per item
@@ -144,13 +123,11 @@ const handleRowClick = useCallback((canonical: string) => {
 ))}
 ```
 
-## Selector Memoization -- createSelector in 4 files (GOOD)
+## Selector Memoization
 
-`createSelector` from reselect is used in `remoteConfig.ts`, `settings.ts`,
-`cache.ts`, `accountServices.ts`. 161 `useSelector` calls across 81 files.
-
-**RULE: All derived/computed state MUST use `createSelector`. Never compute
-inline in components.**
+**RULE: For non-trivial derived state, prefer `createSelector` over inline
+computation in components.** Simple primitive derivations (e.g.
+`const isMainnet = network === NETWORKS.PUBLIC`) don't need a selector.
 
 ```typescript
 // CORRECT — memoized selector
@@ -163,9 +140,7 @@ export const selectFormattedBalances = createSelector(
 const formatted = balances.map((b) => formatBalance(b, network));
 ```
 
-## useEffect Dependencies -- 48 eslint-disable-next-line
-
-48 `react-hooks/exhaustive-deps` suppressions across the codebase.
+## useEffect Dependencies
 
 **RULE: Every eslint-disable for exhaustive-deps MUST have a comment explaining
 WHY.**
@@ -184,9 +159,7 @@ useEffect(() => {
 }, [publicKey]);
 ```
 
-## Code Splitting -- 0 React.lazy (MISSED OPPORTUNITY)
-
-No `React.lazy` or `Suspense` usage.
+## Code Splitting
 
 **RULE: Lazy-load components not needed on initial render:**
 
@@ -203,20 +176,13 @@ const Debug = React.lazy(() => import("popup/views/Debug"));
 </Suspense>
 ```
 
-## Context Usage -- EXCELLENT (3 contexts only)
+## Context Usage
 
-Only 3 React contexts exist (`InputWidthContext`, `AccountTabsContext`, `View`).
-All hold simple primitive values. Do not add more contexts for data state — use
-Redux.
+Only a small number of React contexts exist (`InputWidthContext`,
+`AccountTabsContext`, `View`). All hold simple primitive values. Do not add more
+contexts for data state — use Redux.
 
-## Key Props -- 4 index-as-key anti-patterns
-
-4 files use array index as key. Fix these:
-
-- `GrantAccess/index.tsx`
-- `SignMessage/index.tsx`
-- `TransactionDetail/index.tsx`
-- `ConfirmMnemonicPhrase/index.tsx`
+## Key Props
 
 **RULE: Use stable unique identifiers as keys, not array indices.**
 
@@ -229,13 +195,3 @@ state:
   step tracking)
 - Use Redux dispatch for global state changes (account data, network state,
   transaction results)
-
-## Performance Priority Actions
-
-| Priority | Action                                            | Impact                       |
-| -------- | ------------------------------------------------- | ---------------------------- |
-| **P0**   | Add React.memo() to list item components          | 30-40% fewer re-renders      |
-| **P0**   | Convert 130 inline arrow functions to useCallback | Stabilize reference equality |
-| **P1**   | Add React.lazy for debug/modal views              | Reduce initial bundle        |
-| **P1**   | Document all 48 exhaustive-deps suppressions      | Prevent future bugs          |
-| **P2**   | Add useMemo for computed values in map() renders  | Prevent recomputation        |

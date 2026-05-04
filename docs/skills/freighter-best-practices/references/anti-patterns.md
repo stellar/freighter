@@ -60,25 +60,31 @@ export const handler = () => {
 MV3 service workers are ephemeral. Chrome can terminate and restart them at any
 time. Any variable declared outside a function will be reset.
 
-**Use `chrome.storage.session`** for ephemeral data or
-**`chrome.storage.local`** for persistent data.
+**Use `browser.storage.session`** for ephemeral data or
+**`browser.storage.local`** for persistent data.
 
-## 5. Direct chrome.runtime.sendMessage from Popup
+## 5. Direct browser.runtime.sendMessage from Popup
 
 ```typescript
 // WRONG: bypasses the shared API layer
-chrome.runtime.sendMessage({ type: SERVICE_TYPES.GET_DATA });
+browser.runtime.sendMessage({ type: SERVICE_TYPES.GET_DATA });
 ```
 
-Always use the `sendMessageToBackground()` wrapper from `@shared/api/internal`:
+Always use the `sendMessageToBackground()` wrapper from
+`@shared/api/helpers/extensionMessaging`:
 
 ```typescript
 // CORRECT
-import { sendMessageToBackground } from "@shared/api/internal";
-await sendMessageToBackground({ type: SERVICE_TYPES.GET_DATA });
+import { sendMessageToBackground } from "@shared/api/helpers/extensionMessaging";
+await sendMessageToBackground({
+  activePublicKey: null,
+  type: SERVICE_TYPES.GET_DATA,
+});
 ```
 
-The wrapper provides consistent typing, response parsing, and error handling.
+Prefer `browser.*` APIs from `webextension-polyfill` for cross-browser
+functionality. In popup code, still route through the shared helper instead of
+calling the runtime directly.
 
 ## 6. Hardcoded URL Paths in Navigation
 
@@ -91,7 +97,7 @@ Use the `ROUTES` enum and `navigateTo()` helper:
 
 ```typescript
 // CORRECT
-navigateTo(ROUTES.sendPayment);
+navigateTo(ROUTES.sendPayment, navigate);
 ```
 
 ## 7. Inline Object/Function Creation in JSX Props

@@ -29,8 +29,8 @@ Flat config (`eslint.config.js`) with:
 
 ## Import Ordering
 
-External packages first, then internal modules. Convention only — no ESLint
-`import/order` rule enforces it:
+External packages first, then internal modules. This is a team convention only;
+no ESLint `import/order` rule enforces it. Keep imports organized like this:
 
 ```typescript
 // 1. External packages (react, redux, i18next, design system)
@@ -40,7 +40,7 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@stellar/design-system";
 
 // 2. Internal @shared/* packages
-import { sendMessageToBackground } from "@shared/api/internal";
+import { sendMessageToBackground } from "@shared/api/helpers/extensionMessaging";
 import { SERVICE_TYPES } from "@shared/constants/services";
 
 // 3. Internal popup/* modules
@@ -48,8 +48,10 @@ import { ROUTES } from "popup/constants/routes";
 import { navigateTo } from "popup/helpers/navigate";
 ```
 
-Note: `@shared/*` and `@stellar/*` are INTERNAL packages despite the `@` prefix.
-Group them with internal imports.
+Note: `@shared/*` packages (e.g. `@shared/api`, `@shared/constants`) are
+workspace-internal — treat them like `popup/*` imports, not third-party
+packages. `@stellar/design-system` is a published external package; group it
+with `react` and `react-redux`, not with `@shared/*`.
 
 ## Enum Conventions
 
@@ -70,11 +72,11 @@ All enums use **string values** — no numeric enums in the codebase:
 ```typescript
 // SCREAMING_SNAKE enum with SCREAMING_SNAKE values
 export enum SERVICE_TYPES {
-  GET_ACCOUNT_HISTORY = "GET_ACCOUNT_HISTORY",
   LOAD_SETTINGS = "LOAD_SETTINGS",
+  LOAD_ACCOUNT = "LOAD_ACCOUNT",
 }
 
-// PascalCase enum with PascalCase values
+// PascalCase enum with SCREAMING_SNAKE string values
 export enum ActionStatus {
   IDLE = "IDLE",
   PENDING = "PENDING",
@@ -89,8 +91,8 @@ export enum WalletType {
 
 // SCREAMING_SNAKE enum with kebab-case values (for CSS/URL identifiers)
 export enum STEPS {
-  SELECT_ASSET = "select-asset",
-  SET_AMOUNT = "set-amount",
+  AMOUNT = "set-amount",
+  DESTINATION = "set-destination",
 }
 ```
 
@@ -172,7 +174,7 @@ shared messages.
 
 ### Storage Keys
 
-All `chrome.storage` keys must use constants from
+All `browser.storage` keys must use constants from
 `extension/src/constants/localStorageTypes.ts` — never hardcoded strings.
 
 ### Action Type Strings
@@ -417,7 +419,8 @@ fetchBalance(publicKey).then(data => { ... }).catch(e => { ... });
 ```
 
 `try/catch` wraps whole functions (60%) or specific operations (40%).
-`Promise.allSettled` preferred over `Promise.all` for robustness.
+`Promise.all` is the dominant pattern. Prefer `Promise.allSettled` when you need
+partial results and failures should not short-circuit the batch.
 
 ## Type Assertions and Generics
 
@@ -456,10 +459,10 @@ in 71 files).
 110 SCSS files using BEM naming with kebab-case:
 
 ```scss
-.AccountDetail {
+.AssetDetail {
   &__wrapper { ... }
   &__balance-info { ... }
-  &__action-button { ... }
+  &__actions { ... }
 }
 ```
 

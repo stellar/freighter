@@ -13,7 +13,7 @@ dApp (web page)
   v
 Content Script (extension/src/contentScript/)
   |
-  | chrome.runtime.sendMessage (EXTERNAL_SERVICE_TYPES)
+  | browser.runtime.sendMessage (EXTERNAL_SERVICE_TYPES)
   v
 Background Service Worker (extension/src/background/)
   ^                    |
@@ -21,12 +21,12 @@ Background Service Worker (extension/src/background/)
   |                    v
   |                 Approval Popup
   |                    |
-  | chrome.runtime.sendMessage (response)
+  | browser.runtime.sendMessage (response)
   |
   v
 Popup (extension/src/popup/)
   |
-  | sendMessageToBackground() --> chrome.runtime.sendMessage (SERVICE_TYPES)
+  | sendMessageToBackground() --> browser.runtime.sendMessage (SERVICE_TYPES)
   v
 Background Service Worker
 ```
@@ -85,13 +85,14 @@ case SERVICE_TYPES.GET_NEW_DATA:
 
 ### Step 4: Send from the Popup
 
-Use `sendMessageToBackground()` from `@shared/api/internal`:
+Use `sendMessageToBackground()` from `@shared/api/helpers/extensionMessaging`:
 
 ```typescript
-import { sendMessageToBackground } from "@shared/api/internal";
+import { sendMessageToBackground } from "@shared/api/helpers/extensionMessaging";
 import { SERVICE_TYPES } from "@shared/constants/services";
 
 const response = await sendMessageToBackground({
+  activePublicKey: publicKey, // required field; use null if not authenticated
   type: SERVICE_TYPES.GET_NEW_DATA,
   params: {
     /* ... */
@@ -161,8 +162,8 @@ return {
 
 The `sendMessageToBackground()` function is the only approved way to send
 messages from the popup to the background. It is defined in
-`@shared/api/helpers/extensionMessaging.ts` and re-exported from
-`@shared/api/internal.ts`:
+`@shared/api/helpers/extensionMessaging.ts`. Import it directly from that path —
+it is not re-exported from `@shared/api/internal.ts`:
 
 - Wraps `browser.runtime.sendMessage` with proper typing
 - Handles response parsing and error extraction
