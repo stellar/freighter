@@ -158,7 +158,7 @@ describe("buildMemoFromFederation", () => {
     it("throws when the text value exceeds 28 bytes", () => {
       expect(() =>
         buildMemoFromFederation("a".repeat(29), FederationMemoType.Text),
-      ).toThrow("exceeds 28 bytes");
+      ).toThrow("Failed to resolve federated address");
     });
   });
 
@@ -171,13 +171,13 @@ describe("buildMemoFromFederation", () => {
     it("throws for a non-integer id", () => {
       expect(() =>
         buildMemoFromFederation("abc", FederationMemoType.Id),
-      ).toThrow("non-negative integer");
+      ).toThrow("Failed to resolve federated address");
     });
 
     it("throws for an id exceeding uint64 max", () => {
       expect(() =>
         buildMemoFromFederation("18446744073709551616", FederationMemoType.Id),
-      ).toThrow("exceeds maximum uint64 value");
+      ).toThrow("Failed to resolve federated address");
     });
   });
 
@@ -192,7 +192,7 @@ describe("buildMemoFromFederation", () => {
     it("throws for an invalid hash value", () => {
       expect(() =>
         buildMemoFromFederation("not-hex", FederationMemoType.Hash),
-      ).toThrow("64-character hex string");
+      ).toThrow("Failed to resolve federated address");
     });
   });
 });

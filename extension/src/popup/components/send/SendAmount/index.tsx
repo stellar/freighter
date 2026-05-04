@@ -749,6 +749,7 @@ export const SendAmount = ({
           <div className="EditMemoWrapper">
             <EditMemo
               memo={transactionData.memo || ""}
+              memoType={transactionData.memoType}
               onClose={() => {
                 setIsEditingMemo(false);
                 // Reopen review sheet if user came from review flow
