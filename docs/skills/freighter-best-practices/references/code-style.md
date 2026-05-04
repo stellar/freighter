@@ -40,7 +40,7 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@stellar/design-system";
 
 // 2. Internal @shared/* packages
-import { sendMessageToBackground } from "@shared/api/internal";
+import { sendMessageToBackground } from "@shared/api/helpers/extensionMessaging";
 import { SERVICE_TYPES } from "@shared/constants/services";
 
 // 3. Internal popup/* modules

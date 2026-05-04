@@ -53,7 +53,7 @@ the workspaces configuration:
 In code, import directly:
 
 ```typescript
-import { sendMessageToBackground } from "@shared/api/internal";
+import { sendMessageToBackground } from "@shared/api/helpers/extensionMessaging";
 import { SERVICE_TYPES } from "@shared/constants/services";
 ```
 
