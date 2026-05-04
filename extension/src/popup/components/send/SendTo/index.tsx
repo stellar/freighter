@@ -128,6 +128,8 @@ export const SendTo = ({
     if (validatedFedAdress && federationMemo !== undefined) {
       dispatch(saveMemo(federationMemo));
       dispatch(saveMemoType(federationMemoType || ""));
+    } else {
+      dispatch(saveMemoType(""));
     }
     goToNext();
   };
@@ -275,7 +277,7 @@ export const SendTo = ({
                                   addressFromInput.federationMemoType,
                                 );
                               } catch (_e) {
-                                fetchData(address, {});
+                                await fetchData(address, {});
                               }
                             }}
                             className="SendTo__subheading-identicon"

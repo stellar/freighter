@@ -85,17 +85,18 @@ export const buildMemoFromFederation = (
 ): Memo => {
   try {
     validateFederationMemo(memo, memoType);
+
+    switch (memoType) {
+      case FederationMemoType.Id:
+        return Memo.id(memo);
+      case FederationMemoType.Hash:
+        return Memo.hash(memo);
+      default:
+        return Memo.text(memo);
+    }
   } catch (err) {
+    // capture sentry specific message, but throw a generic error for users
     Sentry.captureException(err);
     throw new Error(i18n.t("Failed to resolve federated address"));
-  }
-
-  switch (memoType) {
-    case FederationMemoType.Id:
-      return Memo.id(memo);
-    case FederationMemoType.Hash:
-      return Memo.hash(memo);
-    default:
-      return Memo.text(memo);
   }
 };

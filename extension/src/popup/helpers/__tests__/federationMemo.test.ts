@@ -5,6 +5,8 @@ import {
   FederationMemoType,
 } from "../federationMemo";
 
+jest.mock("@sentry/browser", () => ({ captureException: jest.fn() }));
+
 // --- validateFederationMemo ---
 
 describe("validateFederationMemo", () => {
