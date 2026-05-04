@@ -49,6 +49,7 @@ import {
   determineMuxedDestination,
 } from "helpers/muxedAddress";
 import { SimulateTxData, SimulateResult } from "types/transactions";
+import { getCurrentTransactionFee } from "popup/helpers/fees";
 
 export type { SimulateTxData, SimulateResult };
 
