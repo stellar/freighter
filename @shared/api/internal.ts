@@ -2176,6 +2176,7 @@ export const simulateTokenTransfer = async (args: {
     address: string;
     pub_key: string;
     memo: string;
+    fee: string;
     params: {
       publicKey: string;
       destination: string;
@@ -2186,6 +2187,7 @@ export const simulateTokenTransfer = async (args: {
     address,
     pub_key: publicKey,
     memo: memo || "", // Backend requires memo as string, use empty string if undefined
+    fee: xlmToStroop(transactionFee).toFixed(),
     params,
     network_passphrase: networkDetails.networkPassphrase,
   };

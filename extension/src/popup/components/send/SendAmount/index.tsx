@@ -17,6 +17,7 @@ import {
 } from "helpers/stellar";
 import { NetworkCongestion } from "popup/helpers/useNetworkFees";
 import { emitMetric } from "helpers/metrics";
+import { trackSendFeeBreakdownOpened } from "popup/metrics/send";
 import { useRunAfterUpdate } from "popup/helpers/useRunAfterUpdate";
 import {
   getAssetDecimals,
@@ -38,6 +39,7 @@ import {
   saveMemo,
   saveMemoType,
   saveTransactionFee,
+  saveManualTransactionFee,
   saveTransactionTimeout,
   saveAmountUsd,
 } from "popup/ducks/transactionSubmission";
@@ -52,6 +54,7 @@ import { AMOUNT_ERROR, InputType } from "helpers/transaction";
 import { reRouteOnboarding } from "popup/helpers/route";
 import { AssetIcon } from "popup/components/account/AccountAssets";
 import { EditSettings } from "popup/components/InternalTransaction/EditSettings";
+import { FeesPane } from "popup/components/InternalTransaction/FeesPane";
 import { EditMemo } from "popup/components/InternalTransaction/EditMemo";
 import { ReviewTx } from "popup/components/InternalTransaction/ReviewTransaction";
 import { AddressTile } from "popup/components/send/AddressTile";
@@ -59,7 +62,7 @@ import { SelectedCollectible } from "popup/components/sendCollectible/SelectedCo
 
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { useGetSendAmountData } from "./hooks/useSendAmountData";
-import { SimulateTxData } from "./hooks/useSimulateTxData";
+import { SimulateTxData, SimulateResult } from "./hooks/useSimulateTxData";
 import { InputWidthContext } from "popup/views/Send/contexts/inputWidthContext";
 import { SlideupModal } from "popup/components/SlideupModal";
 import { MemoEditingContext } from "popup/constants/send-payment";
@@ -73,6 +76,19 @@ import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import "../styles.scss";
 
 const DEFAULT_INPUT_WIDTH = 25;
+
+// Returns the value to show in FeesPane's total row given the user's current
+// draft inclusion fee and the simulated resource fee.  For classic (no
+// resource fee) the inclusion fee IS the total.
+function buildFeesPaneTotal(
+  inclusionFee: string,
+  resourceFee: string | undefined,
+): string {
+  if (!resourceFee) {
+    return inclusionFee;
+  }
+  return new BigNumber(inclusionFee).plus(resourceFee).toFixed();
+}
 
 export const SendAmount = ({
   goBack,
@@ -89,7 +105,7 @@ export const SendAmount = ({
   goToChooseDest: () => void;
   goToChooseAsset: () => void;
   simulationState: State<SimulateTxData, string>;
-  fetchSimulationData: () => Promise<unknown>;
+  fetchSimulationData: () => Promise<SimulateResult>;
   networkCongestion: NetworkCongestion;
   recommendedFee: string;
 }) => {
@@ -110,8 +126,49 @@ export const SendAmount = ({
     transactionFee,
     isCollectible,
     collectibleData,
+    manualTransactionFee,
   } = transactionData;
   const fee = transactionFee || recommendedFee;
+
+  // Persist the last-known inclusion fee across re-simulations so the
+  // EditSettings input never jumps back to the total fee while LOADING
+  // (the request reducer sets data: null on FETCH_DATA_START).
+  const lastInclusionFeeRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (
+      simulationState.state === RequestState.SUCCESS &&
+      simulationState.data?.inclusionFee
+    ) {
+      lastInclusionFeeRef.current = simulationState.data.inclusionFee;
+    }
+  }, [simulationState.state, simulationState.data?.inclusionFee]);
+
+  // Tracks the fee the user explicitly saved via EditSettings this session.
+  // Once set, re-simulations no longer overwrite the displayed inclusion fee,
+  // mirroring the mobile hasManuallyChanged pattern.
+  // Initialized from Redux so the value survives SendAmount unmount/remount
+  // (e.g. when the user navigates to pick a recipient address and returns).
+  const hasManuallySetFeeRef = useRef<string | null>(manualTransactionFee);
+
+  // For Soroban: prefer the user's manually-saved fee, then the last simulated
+  // inclusion fee (base fee only).  For classic: use the current total fee.
+  const editSettingsFee =
+    isToken || isCollectible
+      ? (hasManuallySetFeeRef.current ??
+        lastInclusionFeeRef.current ??
+        recommendedFee)
+      : fee;
+
+  // Holds the fee the user has typed but not yet saved.  Survives the
+  // EditSettings unmount that occurs when the fees pane opens so that the
+  // input re-initialises to the draft value on return.
+  const [draftFeeForDisplay, setDraftFeeForDisplay] = React.useState<
+    string | null
+  >(null);
+  const feeForFeesPane =
+    draftFeeForDisplay !== null && draftFeeForDisplay.trim()
+      ? draftFeeForDisplay
+      : editSettingsFee;
 
   const { state: sendAmountData, fetchData } = useGetSendAmountData(
     {
@@ -132,10 +189,14 @@ export const SendAmount = ({
 
   const cryptoInputRef = useRef<HTMLInputElement>(null);
   const usdInputRef = useRef<HTMLInputElement>(null);
+  // Tracks the dest+asset pair that simulation was last triggered for, so we
+  // can detect changes and re-simulate without watching simulationState.data.
+  const simulationDataRef = useRef({ destination: "", asset: "" });
 
   const [inputType, setInputType] = useState<InputType>("crypto");
   const [isEditingMemo, setIsEditingMemo] = React.useState(false);
   const [isEditingSettings, setIsEditingSettings] = React.useState(false);
+  const [isShowingFeesPane, setIsShowingFeesPane] = React.useState(false);
   const [isReviewingTx, setIsReviewingTx] = React.useState(false);
   const [contractSupportsMuxed, setContractSupportsMuxed] = React.useState<
     boolean | null
@@ -236,11 +297,35 @@ export const SendAmount = ({
   };
 
   const handleContinue = async () => {
-    if (!transactionFee) {
+    if (isToken || isCollectible) {
+      // Reset to the inclusion fee before re-simulating. After a prior
+      // simulation, saveTransactionFee stored the TOTAL (inclusion + resource).
+      // Without this reset that total would be used as baseFee on the next run,
+      // inflating both inclusionFee and recommendedFee.  Prefer any fee the
+      // user explicitly saved via EditSettings over the simulated base fee.
+      dispatch(
+        saveTransactionFee(
+          hasManuallySetFeeRef.current ??
+            lastInclusionFeeRef.current ??
+            recommendedFee,
+        ),
+      );
+    } else if (!transactionFee) {
       dispatch(saveTransactionFee(fee));
     }
-    await fetchSimulationData();
-    setIsReviewingTx(true);
+    const simResult = await fetchSimulationData();
+    // For Soroban, only open the review modal on success — on failure the fee
+    // display shows the error state and the user can retry.
+    // For classic sends, always proceed to review: ReviewTx already handles the
+    // error UI for RequestState.ERROR, so blocking navigation would leave the
+    // user with no feedback path.
+    // Note: for Soroban, fetchSimulationData internally dispatches
+    // saveTransactionFee again with the simulated total fee. The dispatch
+    // above resets to the inclusion fee so the simulation starts from a clean
+    // base; the one inside fetchSimulationData overwrites it with the result.
+    if (simResult.ok || (!isToken && !isCollectible)) {
+      setIsReviewingTx(true);
+    }
   };
 
   const validate = (values: { amount: string }) => {
@@ -300,6 +385,40 @@ export const SendAmount = ({
     getData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Soroban: re-simulate whenever destination or asset changes (and on first
+  // mount if both are ready). simulationDataRef tracks what was last simulated so
+  // we detect genuine changes without watching simulationState.data.
+  // simulationState.state is also a dependency so that if a change arrives while
+  // a simulation is already in-flight, we re-evaluate once it settles and trigger
+  // a new simulation if the inputs have since diverged.
+  useEffect(() => {
+    if (!(isToken || isCollectible)) return;
+    if (!destination) return;
+    // Don't stack concurrent simulations.
+    if (simulationState.state === RequestState.LOADING) return;
+
+    const destChanged = simulationDataRef.current.destination !== destination;
+    const assetChanged = simulationDataRef.current.asset !== asset;
+
+    if (destChanged || assetChanged) {
+      // Reset to inclusion fee before re-simulating so total fee from a prior
+      // simulation isn't used as baseFee (which would inflate the result).
+      // Prefer the user's manually-saved fee if present.
+      if (isToken || isCollectible) {
+        dispatch(
+          saveTransactionFee(
+            hasManuallySetFeeRef.current ??
+              lastInclusionFeeRef.current ??
+              recommendedFee,
+          ),
+        );
+      }
+      simulationDataRef.current = { destination, asset };
+      fetchSimulationData();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [destination, asset, isToken, isCollectible, simulationState.state]);
 
   const getAmountFontSize = () => {
     const length = formik.values.amount.length;
@@ -394,12 +513,24 @@ export const SendAmount = ({
     dispatch(saveIsToken(false));
     dispatch(saveAmount("0"));
     dispatch(saveAmountUsd("0.00"));
+    // Clear any manually-saved fee so the next send session always starts from
+    // the simulated base fee rather than a stale override.
+    dispatch(saveTransactionFee(""));
+    dispatch(saveManualTransactionFee(null));
     goBack();
     if (isCollectible) {
       goToChooseAssetAction();
     }
   };
   const goToChooseAssetAction = () => {
+    // Changing the asset may switch between Soroban and classic (or a different
+    // token), so any manually-saved fee from the prior asset should not carry
+    // over.  Clear it here before navigating so post-remount the fee is derived
+    // freshly from the new asset's simulation.
+    dispatch(saveTransactionFee(""));
+    dispatch(saveManualTransactionFee(null));
+    hasManuallySetFeeRef.current = null;
+    lastInclusionFeeRef.current = null;
     goToChooseAsset();
   };
 
@@ -430,9 +561,15 @@ export const SendAmount = ({
                   {t("Fee")}:
                 </span>
                 <span data-testid="send-amount-fee-display">
-                  {inputType === "crypto"
-                    ? `${fee} ${t("XLM")}`
-                    : recommendedFeeUsd}
+                  {(isToken || isCollectible) &&
+                  simulationState.state === RequestState.ERROR
+                    ? t("Fee unavailable")
+                    : (isToken || isCollectible) &&
+                        simulationState.state === RequestState.LOADING
+                      ? t("Calculating...")
+                      : inputType === "crypto"
+                        ? `${fee} ${t("XLM")}`
+                        : recommendedFeeUsd}
                 </span>
               </div>
               <div className="SendAmount__settings-options">
@@ -455,49 +592,93 @@ export const SendAmount = ({
                   size="md"
                   isRounded
                   variant="tertiary"
-                  onClick={() => setIsEditingSettings(true)}
+                  onClick={() => {
+                    setIsEditingSettings(true);
+                    // For Soroban tokens with a destination, trigger simulation
+                    // immediately so fee input and FeesPane reflect correct amounts.
+                    // Without a destination simulation would fail — skip it and let
+                    // FeesPane show the base fee (matching mobile behaviour).
+                    if (
+                      (isToken || isCollectible) &&
+                      destination &&
+                      simulationState.state !== RequestState.SUCCESS &&
+                      simulationState.state !== RequestState.LOADING
+                    ) {
+                      fetchSimulationData();
+                    }
+                  }}
                 >
                   <Icon.Settings01 />
                 </Button>
               </div>
             </div>
             {isCollectible ? (
-              <Button
-                size="lg"
-                disabled={!destination || isMuxedAddressWithoutMemoSupport}
-                isLoading={false}
-                data-testid="send-collectible-btn-continue"
-                isFullWidth
-                isRounded
-                variant="secondary"
-                onClick={handleContinue}
-              >
-                {t("Review Send")}
-              </Button>
+              <>
+                {(isToken || isCollectible) &&
+                simulationState.state === RequestState.ERROR ? (
+                  <Notification
+                    variant="error"
+                    icon={<Icon.AlertCircle />}
+                    title={t("Failed to fetch your transaction details")}
+                  >
+                    {simulationState.error}
+                  </Notification>
+                ) : null}
+                <Button
+                  size="lg"
+                  disabled={
+                    !destination ||
+                    isMuxedAddressWithoutMemoSupport ||
+                    simulationState.state === RequestState.ERROR
+                  }
+                  isLoading={simulationState.state === RequestState.LOADING}
+                  data-testid="send-collectible-btn-continue"
+                  isFullWidth
+                  isRounded
+                  variant="secondary"
+                  onClick={handleContinue}
+                >
+                  {t("Review Send")}
+                </Button>
+              </>
             ) : (
-              <Button
-                size="lg"
-                disabled={
-                  !destination ||
-                  (inputType === "crypto" &&
-                    new BigNumber(formik.values.amount).isZero()) ||
-                  (inputType === "fiat" &&
-                    new BigNumber(formik.values.amountUsd).isZero()) ||
-                  isAmountTooHigh ||
-                  isMuxedAddressWithoutMemoSupport
-                }
-                isLoading={simulationState.state === RequestState.LOADING}
-                data-testid="send-amount-btn-continue"
-                isFullWidth
-                isRounded
-                variant="secondary"
-                onClick={(e) => {
-                  e.preventDefault();
-                  formik.submitForm();
-                }}
-              >
-                {t("Review Send")}
-              </Button>
+              <>
+                {(isToken || isCollectible) &&
+                simulationState.state === RequestState.ERROR ? (
+                  <Notification
+                    variant="error"
+                    icon={<Icon.AlertCircle />}
+                    title={t("Failed to fetch your transaction details")}
+                  >
+                    {simulationState.error}
+                  </Notification>
+                ) : null}
+                <Button
+                  size="lg"
+                  disabled={
+                    !destination ||
+                    (inputType === "crypto" &&
+                      new BigNumber(formik.values.amount).isZero()) ||
+                    (inputType === "fiat" &&
+                      new BigNumber(formik.values.amountUsd).isZero()) ||
+                    isAmountTooHigh ||
+                    isMuxedAddressWithoutMemoSupport ||
+                    ((isToken || isCollectible) &&
+                      simulationState.state === RequestState.ERROR)
+                  }
+                  isLoading={simulationState.state === RequestState.LOADING}
+                  data-testid="send-amount-btn-continue"
+                  isFullWidth
+                  isRounded
+                  variant="secondary"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    formik.submitForm();
+                  }}
+                >
+                  {t("Review Send")}
+                </Button>
+              </>
             )}
           </div>
         }
@@ -788,15 +969,28 @@ export const SendAmount = ({
           />
         </>
       ) : null}
-      {isEditingSettings ? (
+      {isEditingSettings && !isShowingFeesPane ? (
         <>
           <div className="EditMemoWrapper">
             <EditSettings
-              fee={fee}
+              fee={draftFeeForDisplay ?? editSettingsFee}
+              defaultFee={recommendedFee}
               title={t("Send Settings")}
               timeout={transactionData.transactionTimeout}
               congestion={networkCongestion}
-              onClose={() => setIsEditingSettings(false)}
+              isSoroban={isToken || isCollectible}
+              onFeeChange={(v) => {
+                setDraftFeeForDisplay(v);
+              }}
+              onClose={() => {
+                setIsEditingSettings(false);
+                setDraftFeeForDisplay(null);
+              }}
+              onShowFeesInfo={(currentDraftFee) => {
+                trackSendFeeBreakdownOpened("settings");
+                setDraftFeeForDisplay(currentDraftFee);
+                setIsShowingFeesPane(true);
+              }}
               onSubmit={async ({
                 fee,
                 timeout,
@@ -804,19 +998,55 @@ export const SendAmount = ({
                 fee: string;
                 timeout: number;
               }) => {
-                dispatch(saveTransactionFee(fee));
+                const nextFee = fee.trim() || editSettingsFee;
+                dispatch(saveTransactionFee(nextFee));
                 dispatch(saveTransactionTimeout(timeout));
+                hasManuallySetFeeRef.current = nextFee;
+                dispatch(saveManualTransactionFee(nextFee));
                 setIsEditingSettings(false);
-                // Regenerate transaction XDR with new fee (now reads fee from Redux state inside fetchData)
-                await fetchSimulationData();
+                setDraftFeeForDisplay(null);
+                if (destination) {
+                  await fetchSimulationData();
+                }
               }}
             />
           </div>
           <LoadingBackground
-            onClick={() => setIsEditingSettings(false)}
+            onClick={() => {
+              setIsEditingSettings(false);
+              setDraftFeeForDisplay(null);
+            }}
             isActive={isEditingSettings}
           />
         </>
+      ) : null}
+      {isShowingFeesPane ? (
+        <SlideupModal
+          setIsModalOpen={() => {
+            setIsShowingFeesPane(false);
+            setIsEditingSettings(true);
+          }}
+          isModalOpen={isShowingFeesPane}
+        >
+          <View.Inset>
+            <div className="SendAmount__FeesPane">
+              <FeesPane
+                fee={buildFeesPaneTotal(
+                  feeForFeesPane,
+                  simulationState.state === RequestState.ERROR
+                    ? undefined
+                    : simulationState.data?.resourceFee,
+                )}
+                simulationState={simulationState}
+                isSoroban={isToken || isCollectible}
+                onClose={() => {
+                  setIsShowingFeesPane(false);
+                  setIsEditingSettings(true);
+                }}
+              />
+            </div>
+          </View.Inset>
+        </SlideupModal>
       ) : null}
       <SlideupModal
         setIsModalOpen={() => setIsReviewingTx(false)}
