@@ -1,5 +1,10 @@
 # Architecture -- Freighter Extension
 
+Freighter uses the WebExtensions API (`browser.*` namespace) for full
+cross-browser support in Chrome, Firefox, and Edge. Never use Chrome-specific
+APIs (`chrome.*`) — always use the standardized `browser.runtime`,
+`browser.storage`, and related APIs.
+
 ## Three Runtime Contexts
 
 Freighter runs code in three isolated contexts, each with different lifetimes
