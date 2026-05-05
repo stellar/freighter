@@ -597,6 +597,7 @@ export const SwapAmount = ({
           <div className="SlippageWrapper">
             <EditSettings
               fee={fee}
+              defaultFee={recommendedFee}
               title={t("Swap Settings")}
               timeout={transactionData.transactionTimeout}
               congestion={networkCongestion}
