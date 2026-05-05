@@ -57,6 +57,7 @@ export const METRIC_NAMES = {
 
   sendPaymentRecentAddress: "send payment: recent address",
   sendPaymentSetMax: "send payment: set max",
+  sendPaymentFeeBreakdownOpened: "send payment: fee breakdown opened",
   sendPaymentTypePayment: "send payment: selected type payment",
   sendPaymentTypePathPayment: "send payment: selected type path payment",
   sendPaymentSuccess: "send payment: payment success",
