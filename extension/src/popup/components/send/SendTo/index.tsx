@@ -32,8 +32,7 @@ import {
   saveDestination,
   saveDestinationAsset,
   saveFederationAddress,
-  saveMemo,
-  saveMemoType,
+  saveMemoAndType,
   transactionDataSelector,
 } from "popup/ducks/transactionSubmission";
 import type { FederationMemoType } from "popup/helpers/federationMemo";
@@ -126,11 +125,14 @@ export const SendTo = ({
     dispatch(saveDestinationAsset(""));
     dispatch(saveFederationAddress(validatedFedAdress || ""));
     if (validatedFedAdress && federationMemo !== undefined) {
-      dispatch(saveMemo(federationMemo));
-      dispatch(saveMemoType(federationMemoType || ""));
+      dispatch(
+        saveMemoAndType({
+          memo: federationMemo,
+          memoType: federationMemoType || "",
+        }),
+      );
     } else {
-      dispatch(saveMemo(""));
-      dispatch(saveMemoType(""));
+      dispatch(saveMemoAndType({ memo: "", memoType: "" }));
     }
     goToNext();
   };

@@ -566,11 +566,17 @@ const transactionSubmissionSlice = createSlice({
     saveTransactionTimeout: (state, action) => {
       state.transactionData.transactionTimeout = action.payload;
     },
-    saveMemo: (state, action) => {
-      state.transactionData.memo = action.payload;
-    },
-    saveMemoType: (state, action) => {
-      state.transactionData.memoType = action.payload;
+    saveMemoAndType: (
+      state,
+      action: {
+        payload: {
+          memo: string;
+          memoType?: FederationMemoType | "";
+        };
+      },
+    ) => {
+      state.transactionData.memo = action.payload.memo;
+      state.transactionData.memoType = action.payload.memoType ?? "";
     },
     saveDestinationAsset: (state, action) => {
       state.transactionData.destinationAsset = action.payload;
@@ -762,8 +768,7 @@ export const {
   saveTransactionFee,
   saveManualTransactionFee,
   saveTransactionTimeout,
-  saveMemo,
-  saveMemoType,
+  saveMemoAndType,
   saveDestinationAsset,
   saveDestinationIcon,
   saveIsSoroswap,

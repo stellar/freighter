@@ -36,8 +36,7 @@ import {
   saveAmount,
   saveAsset,
   saveIsToken,
-  saveMemo,
-  saveMemoType,
+  saveMemoAndType,
   saveTransactionFee,
   saveManualTransactionFee,
   saveTransactionTimeout,
@@ -941,8 +940,7 @@ export const SendAmount = ({
                 setMemoEditingContext(null);
               }}
               onSubmit={async ({ memo }: { memo: string }) => {
-                dispatch(saveMemo(memo));
-                dispatch(saveMemoType(""));
+                dispatch(saveMemoAndType({ memo, memoType: "" }));
                 setIsEditingMemo(false);
                 // Regenerate transaction XDR with new memo (now reads memo from Redux state inside fetchData)
                 await fetchSimulationData();
