@@ -129,6 +129,7 @@ export const SendTo = ({
       dispatch(saveMemo(federationMemo));
       dispatch(saveMemoType(federationMemoType || ""));
     } else {
+      dispatch(saveMemo(""));
       dispatch(saveMemoType(""));
     }
     goToNext();

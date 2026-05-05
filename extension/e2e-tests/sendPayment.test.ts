@@ -1130,3 +1130,117 @@ test("Federation address with invalid account_id shows error notification", asyn
     page.getByText("Federation server returned an invalid address"),
   ).toBeVisible({ timeout: 10000 });
 });
+
+test("Switching from federation address to regular address clears memo", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  test.slow();
+
+  const federationAccountId =
+    "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF";
+
+  const stubOverrides = async () => {
+    await stubAccountBalancesE2e(page);
+    await stubFederationWithMemo(page, {
+      account_id: federationAccountId,
+      memo: "test-memo-123",
+      memo_type: "text",
+      stellar_address: FEDERATION_ADDRESS,
+    });
+  };
+
+  await loginToTestAccount({ page, extensionId, context, stubOverrides });
+
+  // Scenario 1: Federation address with memo
+  await page.getByTestId("nav-link-send").click({ force: true });
+  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+
+  await page.getByTestId("address-tile").click();
+  await expect(page.getByTestId("send-to-input")).toBeVisible();
+
+  await page.getByTestId("send-to-input").fill(FEDERATION_ADDRESS);
+  await expect(page.getByTestId("send-to-btn-continue")).toBeVisible({
+    timeout: 10000,
+  });
+  await page.getByTestId("send-to-btn-continue").click({ force: true });
+
+  // Verify memo is set from federation
+  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible({
+    timeout: 10000,
+  });
+  await page.getByTestId("send-amount-btn-memo").click();
+  await expect(page.getByTestId("edit-memo-input")).toHaveValue(
+    "test-memo-123",
+  );
+
+  // Save and close memo modal by pressing Enter
+  await page.getByTestId("edit-memo-input").press("Enter");
+  await expect(page.getByTestId("send-to-input")).not.toBeVisible();
+
+  // Now switch to regular address from the send amount screen
+  await page.getByTestId("address-tile").click();
+  await expect(page.getByTestId("send-to-input")).toBeVisible();
+
+  // Clear and use regular address
+  await page.getByTestId("send-to-input").clear();
+  await page.getByTestId("send-to-input").fill(FUNDED_DESTINATION);
+
+  await expect(page.getByTestId("send-to-btn-continue")).toBeVisible({
+    timeout: 10000,
+  });
+  await page.getByTestId("send-to-btn-continue").click({ force: true });
+
+  // Verify memo is cleared for regular address
+  await expect(page.getByTestId("send-amount-btn-memo")).toBeVisible({
+    timeout: 10000,
+  });
+  await page.getByTestId("send-amount-btn-memo").click();
+  await expect(page.getByTestId("edit-memo-input")).toHaveValue("");
+});
+
+test("Federation address with hash memo type prepopulates memo", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  test.slow();
+
+  const federationAccountId =
+    "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF";
+  const hashMemo =
+    "93a4c1c4144c9fcadce34ce7a487a5c5bca44f3c2fc8f9e8b8e4d8a4c8e4f8b7";
+
+  const stubOverrides = async () => {
+    await stubAccountBalancesE2e(page);
+    await stubFederationWithMemo(page, {
+      account_id: federationAccountId,
+      memo: hashMemo,
+      memo_type: "hash",
+      stellar_address: FEDERATION_ADDRESS,
+    });
+  };
+
+  await loginToTestAccount({ page, extensionId, context, stubOverrides });
+
+  await page.getByTestId("nav-link-send").click({ force: true });
+  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+
+  await page.getByTestId("address-tile").click();
+  await expect(page.getByTestId("send-to-input")).toBeVisible();
+
+  await page.getByTestId("send-to-input").fill(FEDERATION_ADDRESS);
+
+  await expect(page.getByTestId("send-to-btn-continue")).toBeVisible({
+    timeout: 10000,
+  });
+  await page.getByTestId("send-to-btn-continue").click({ force: true });
+
+  // Verify memo type is set to hash and memo value matches
+  await expect(page.getByTestId("send-amount-btn-memo")).toBeVisible({
+    timeout: 10000,
+  });
+  await page.getByTestId("send-amount-btn-memo").click();
+  await expect(page.getByTestId("edit-memo-input")).toHaveValue(hashMemo);
+});
