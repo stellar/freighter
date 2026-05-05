@@ -8,8 +8,9 @@ Common mistakes to watch for during code review and development.
 // eslint-disable-next-line react-hooks/exhaustive-deps
 ```
 
-Found ~50 times in the codebase. This indicates tight coupling between hooks and
-external state, or an intentional override of the dependency array.
+This indicates tight coupling between hooks and external state, or an
+intentional override of the dependency array. When encountered during code
+review, investigate why the suppression is needed.
 
 **For new code:** fix the dependency array instead of suppressing the warning.
 Refactor the hook to accept stable references, or use `useCallback`/`useMemo` to

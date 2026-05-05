@@ -98,8 +98,7 @@ export enum STEPS {
 
 ### const enum vs enum
 
-Never use `const enum` — all 37+ enums in the codebase are standard runtime
-enums.
+Never use `const enum` — all enums in the codebase are standard runtime enums.
 
 ### Prefer Enums Over Union Type Aliases
 
@@ -122,12 +121,12 @@ enum SwapStatus {
 }
 ```
 
-The codebase has ~4 remaining union types that should be enums (`InputType`,
+The codebase has a few remaining union types that should be enums (`InputType`,
 `AssetVisibility`, `NotificationType`, `PillType`). Don't add more.
 
 ## Type vs Interface
 
-Follow this pattern (observed in ~200+ type definitions):
+Follow this pattern consistently across the codebase:
 
 | Use             | When                                         | Example                                                                                                           |
 | --------------- | -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
@@ -186,14 +185,15 @@ should always use `createSlice` (which auto-generates them).
 
 ## Function Style
 
-Arrow functions dominate (~85%). Function declarations are used rarely:
+Arrow functions are the standard. Function declarations are acceptable for
+complex utilities:
 
 ```typescript
-// STANDARD — arrow function export (85% of codebase)
+// STANDARD — arrow function export
 export const getAccountBalances = async (publicKey: string) => { ... };
 export const useNetworkFees = () => { ... };
 
-// ACCEPTABLE — function declaration for complex utilities (15% of codebase)
+// ACCEPTABLE — function declaration for complex utilities
 export function cleanupQueue(responseQueue: ResponseQueue) { ... }
 ```
 
@@ -282,13 +282,13 @@ current hook.
 
 ## Destructuring Patterns
 
-Inline parameter destructuring is the dominant pattern (75% of components):
+Inline parameter destructuring is preferred:
 
 ```typescript
-// PREFERRED — inline destructuring (75%)
+// PREFERRED — inline destructuring
 const AccountCard = ({ balance, network, onSelect }: AccountCardProps) => { ... };
 
-// ACCEPTABLE — separate destructuring (25%)
+// ACCEPTABLE — separate destructuring
 const AccountCard = (props: AccountCardProps) => {
   const { balance, network } = props;
 };
@@ -304,7 +304,7 @@ const { balances, status } = useSelector(accountBalancesSelector);
 const balances = useSelector((state) => state.accountBalances.balances);
 ```
 
-Renaming during destructuring (~12% of destructuring operations):
+Renaming during destructuring is occasionally useful:
 
 ```typescript
 const { data: balanceData, error: fetchError } = response;
@@ -312,17 +312,17 @@ const { data: balanceData, error: fetchError } = response;
 
 ## Optional Chaining and Nullish Coalescing
 
-The codebase uses `&&` (659 occurrences) more than `?.` (405 occurrences). Both
-are acceptable:
+Both optional chaining (`?.`) and logical AND (`&&`) are acceptable — pick
+whichever reads better:
 
 ```typescript
 // Both patterns used — pick whichever reads better
-const name = account?.name; // optional chaining (405 occurrences)
-const name = account && account.name; // logical AND (659 occurrences)
+const name = account?.name; // optional chaining
+const name = account && account.name; // logical AND
 ```
 
-`??` (nullish coalescing) is underutilized (41 occurrences vs `||`). Prefer `??`
-for new code when you need to preserve `0` or `""`:
+Prefer `??` (nullish coalescing) for new code when you need to preserve `0` or
+`""`:
 
 ```typescript
 // PREFERRED for new code
@@ -334,26 +334,27 @@ const timeout = config.timeout || DEFAULT_TIMEOUT;
 
 ## Export Patterns
 
-Named exports dominate (95-97%). Default exports are rare (~17 occurrences):
+Named exports are the standard. Default exports are rare (mostly layout
+components):
 
 ```typescript
-// STANDARD — named export (97%)
+// STANDARD — named export
 export const AccountHeader = () => { ... };
 export const getBalance = async () => { ... };
 
-// RARE — default export (3%, mostly layout components)
+// RARE — default export (mostly layout components)
 export default View;
 ```
 
-Barrel files (index.ts re-exports) exist but are not heavily used (~15-20
-instances). Most imports go directly to source files.
+Barrel files (index.ts re-exports) are used sparingly. Most imports go directly
+to source files.
 
 ## Component Prop Types
 
-Separate Props interface is preferred (60%) over inline (40%):
+Separate Props interface is preferred for complex props:
 
 ```typescript
-// PREFERRED — separate interface (60%)
+// PREFERRED — separate interface
 interface AccountCardProps {
   balance: Balance;
   network: string;
@@ -361,12 +362,11 @@ interface AccountCardProps {
 }
 const AccountCard = ({ balance, network, onSelect }: AccountCardProps) => { ... };
 
-// ACCEPTABLE — inline for simple props (40%)
+// ACCEPTABLE — inline for simple props
 const Loading = ({ size }: { size: number }) => { ... };
 ```
 
-Do NOT use `React.FC<Props>` — only 17 occurrences remain (legacy). Use plain
-typed params:
+Do NOT use `React.FC<Props>` (legacy). Use plain typed params:
 
 ```typescript
 // WRONG — legacy pattern
@@ -378,10 +378,10 @@ const MyComponent = ({ title }: Props) => { ... };
 
 ## Conditional Rendering
 
-`&&` pattern dominates for conditional rendering (169 files):
+`&&` pattern is most common for conditional rendering:
 
 ```typescript
-// MOST COMMON — logical AND
+// STANDARD — logical AND
 {isLoading && <Loading />}
 {error && <ErrorMessage text={error} />}
 
@@ -389,7 +389,7 @@ const MyComponent = ({ title }: Props) => { ... };
 {isLoading ? <Loading /> : <AccountList items={accounts} />}
 ```
 
-Early returns for loading/error states (~15-20 files):
+Early returns for loading/error states are also used:
 
 ```typescript
 if (!data) return <Loading />;
@@ -399,16 +399,14 @@ return <AccountList items={data} />;
 
 ## Array/Object Operations
 
-- `.map()` preferred over `.forEach()` (1.3:1 ratio, 162 vs 124 occurrences)
-- Spread `{ ...obj }` overwhelmingly preferred over `Object.assign` (554
-  occurrences vs <2%)
-- `.reduce()` is rare (<10 files) — prefer `.map()` + `.filter()` chains
-- Template literals are near-universal (99%+) — never use string concatenation
+- `.map()` is preferred over `.forEach()`
+- Spread `{ ...obj }` is overwhelmingly preferred over `Object.assign`
+- `.reduce()` is rare — prefer `.map()` + `.filter()` chains
+- Template literals are standard — never use string concatenation
 
 ## Async Patterns
 
-`async/await` is the universal pattern (>97%). `.then().catch()` is legacy
-(<3%):
+`async/await` is the standard. `.then().catch()` is legacy:
 
 ```typescript
 // STANDARD
@@ -418,9 +416,9 @@ const data = await fetchBalance(publicKey);
 fetchBalance(publicKey).then(data => { ... }).catch(e => { ... });
 ```
 
-`try/catch` wraps whole functions (60%) or specific operations (40%).
-`Promise.all` is the dominant pattern. Prefer `Promise.allSettled` when you need
-partial results and failures should not short-circuit the batch.
+`try/catch` wraps whole functions or specific operations. `Promise.all` is
+commonly used. Prefer `Promise.allSettled` when you need partial results and
+failures should not short-circuit the batch.
 
 ## Type Assertions and Generics
 
@@ -434,29 +432,26 @@ const payload = <ErrorMessage>action.payload; // WRONG in TSX
 Prefer descriptive generic names over single letters:
 
 ```typescript
-// PREFERRED (50+ files)
+// PREFERRED
 function fetchData<TResponse>(url: string): Promise<TResponse> { ... }
 
-// ACCEPTABLE for simple generics (15 files)
+// ACCEPTABLE for simple generics
 function identity<T>(value: T): T { ... }
 ```
 
-Common utility types in use: `Pick<>` (30 files), `Omit<>` (40 files),
-`Partial<>` (30 files), `Record<>` (15 files), `keyof`/`typeof` (167 occurrences
-in 71 files).
+Common utility types in use: `Pick<>`, `Omit<>`, `Partial<>`, `Record<>`,
+`keyof`, and `typeof`.
 
 ## TypeScript Strictness
 
-- `any` exists in ~330 occurrences (mostly test files). Avoid in production
-  code. Use `unknown` instead.
-- `unknown` has low adoption (41 occurrences) — prefer it over `any` for new
-  code
-- `as unknown as Type` double-cast: only 13 occurrences (acceptable in tests
-  only)
+- `any` exists in the codebase (mostly test files). Avoid in production code.
+  Use `unknown` instead.
+- Prefer `unknown` over `any` for new code
+- Double-cast `as unknown as Type` is acceptable in tests only
 
 ## CSS/SCSS Patterns
 
-110 SCSS files using BEM naming with kebab-case:
+SCSS files use BEM naming with kebab-case:
 
 ```scss
 .AssetDetail {
@@ -472,9 +467,8 @@ from `styles/utils.scss`. Never use raw pixel values or hardcoded colors.
 ## Test File Patterns
 
 - File naming: always `.test.ts` / `.test.tsx` (never `.spec.ts`)
-- Structure: `describe("feature")` + `it("should...")` (universal — 922 test
-  cases across 95 files)
-- Setup: `beforeEach` in 88 of 95 test files (93%)
+- Structure: `describe("feature")` + `it("should...")` (universal standard)
+- Setup: Use `beforeEach` to initialize test state
 - Assertions: `expect().toBe()` for primitives, `expect().toEqual()` for objects
 
 ## Comments
