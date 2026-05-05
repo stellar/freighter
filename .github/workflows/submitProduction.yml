@@ -106,12 +106,12 @@ jobs:
           target_commitish: ${{ steps.checkout_sha.outputs.sha }}
       - name: Build for Firefox
         id: web-ext-build
-        uses: kewisch/action-web-ext@fe10addf5d5e5ba6b78ffde720dd488a27d10e8c #v1
+        uses: kewisch/action-web-ext@84a13bb9e1b6108c43788ba091c41ca1dba6ad45 #v2.0
         with:
           cmd: build
           source: ./extension/build
       - name: Submit extension to Firefox
-        uses: kewisch/action-web-ext@fe10addf5d5e5ba6b78ffde720dd488a27d10e8c #v1
+        uses: kewisch/action-web-ext@84a13bb9e1b6108c43788ba091c41ca1dba6ad45 #v2.0
         with:
           cmd: sign
           source: ${{ steps.web-ext-build.outputs.target }}
@@ -128,7 +128,7 @@ jobs:
         run: zip -qq -r ./build_chrome.zip *
         working-directory: ./extension/build
       - name: Submit extension to Chrome
-        uses: mnao305/chrome-extension-upload@4008e29e13c144d0f6725462cbd49b7c291b4928 #v5.0.0
+        uses: mnao305/chrome-extension-upload@fdfe79400af990f5145a319e834aee64907ccff4 #v6.0.0
         with:
           file-path: ./extension/build/build_chrome.zip
           extension-id: "bcacfldlkkdogcmkkibnjlakofdplcbk"
