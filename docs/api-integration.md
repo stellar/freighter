@@ -42,9 +42,31 @@ async function connect() {
 
 ## Watching for Account / Network Changes
 
-```tsx
-import { WatchWalletChanges } from "@stellar/freighter-api";
+Before starting a watcher, complete the three-stage init:
 
+```ts
+import {
+  isConnected,
+  isAllowed,
+  requestAccess,
+  WatchWalletChanges,
+} from "@stellar/freighter-api";
+
+// Three-stage init: establish baseline state before watching
+const connected = await isConnected();
+if (connected.error || !connected.isConnected) {
+  return handleError("Please install Freighter.");
+}
+
+const allowed = await isAllowed();
+if (allowed.error) return handleError(allowed.error.message);
+
+if (!allowed.isAllowed) {
+  const access = await requestAccess();
+  if (access.error) return handleError(access.error.message);
+}
+
+// Now start the watcher with baseline state established
 useEffect(() => {
   const watcher = new WatchWalletChanges(3000); // interval in ms, default 3000
   const { error } = watcher.watch(
@@ -73,7 +95,8 @@ useEffect(() => {
 ```ts
 import { getNetwork, signTransaction } from "@stellar/freighter-api";
 
-// Read passphrase from Freighter right before signing — never hardcode Networks.PUBLIC.
+// Read passphrase dynamically from Freighter. Only hardcode a network if your
+// dapp exclusively operates on that network; otherwise users cannot switch networks.
 const { networkPassphrase } = await getNetwork();
 const result = await signTransaction(tx.toXDR(), {
   networkPassphrase,
@@ -104,6 +127,13 @@ const result = await signMessage("hello", {
   address: expectedAddress,
 });
 if (result.error) return handleError(result.error);
+// Verify signer — critical for authentication flows where account identity matters.
+if (result.signerAddress !== expectedAddress) {
+  return handleError({
+    code: 0,
+    message: "Signer does not match expected address.",
+  });
+}
 // SDK v3 returns Buffer | null; v4 returns base64 string | null.
 const signedMessage =
   typeof result.signedMessage === "string"
@@ -112,7 +142,8 @@ const signedMessage =
 ```
 
 - `signMessage` auto-requests access if not yet allowed.
-- Verify `result.signerAddress === expectedAddress` if account pinning matters.
+- Always verify `result.signerAddress === expectedAddress` — mismatch means the
+  wrong account signed, granting session rights to the wrong identity.
 
 ## Signing Auth Entries (Soroban)
 
@@ -124,6 +155,10 @@ const result = await signAuthEntry(authEntryXdr, {
   address: expectedAddress,
 });
 if (result.error) return handleError(result.error);
+// Verify signer — mismatch would authoryou uize a contract action for the wrong account.
+if (result.signerAddress !== expectedAddress) {
+  return handleError({ code: 0, message: "Signer does not match source." });
+}
 // result.signedAuthEntry is XDR string | null
 ```
 
@@ -173,13 +208,18 @@ const kit = new StellarWalletsKit({
 
 kit.setWallet(FREIGHTER_ID);
 const { address, error } = await kit.getAddress();
+if (error) return handleError(error);
+// address is now the connected account
 ```
 
 - Wrap all SWK calls in `try/catch` — unlike the direct SDK, SWK may throw on
   user rejection.
 - `WalletNetwork` enum values are passphrase strings
   (`WalletNetwork.PUBLIC === "Public Global Stellar Network ; September 2015"`).
-- Do not install `@stellar/freighter-api` alongside SWK — it is already bundled.
+- If SWK does not yet expose a feature you need, you can install
+  `@stellar/freighter-api` alongside SWK for that method — pin both to
+  compatible versions and consolidate once SWK catches up. Check SWK's
+  `package.json` for its pinned `freighter-api` version to ensure compatibility.
 
 ## Error Handling
 
