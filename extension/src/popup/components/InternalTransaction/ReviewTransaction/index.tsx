@@ -21,7 +21,7 @@ import {
   checkIsMuxedSupported,
   getMemoDisabledState,
 } from "helpers/muxedAddress";
-import { SimulateTxData } from "popup/components/send/SendAmount/hooks/useSimulateTxData";
+import { SimulateTxData } from "types/transactions";
 import { View } from "popup/basics/layout/View";
 import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
 import { hardwareWalletTypeSelector } from "popup/ducks/accountServices";
@@ -38,6 +38,8 @@ import {
   MemoRequiredLabel,
 } from "popup/components/WarningMessages";
 import { CopyValue } from "popup/components/CopyValue";
+import { trackSendFeeBreakdownOpened } from "popup/metrics/send";
+import { FeesPane } from "popup/components/InternalTransaction/FeesPane";
 import { ActionButtons } from "./components/ActionButtons";
 import { SendAsset, SendDestination } from "./components";
 
@@ -180,8 +182,8 @@ export const ReviewTx = ({
 
   /**
    * Pane state machine:
-   * - With Blockaid warning: [Review, Memo, Blockaid] - Blockaid accessible via banner click
-   * - No warning: [Review, Memo]
+   * - No warning: [Review (0), Memo (1), Fees (2)]
+   * - With Blockaid warning: [Review (0), Memo (1), Blockaid (2), Fees (3)] - Blockaid accessible via banner click
    */
   const paneConfig = React.useMemo(
     () =>
@@ -190,11 +192,13 @@ export const ReviewTx = ({
             blockaidIndex: null,
             reviewIndex: 0,
             memoIndex: 1,
+            feesIndex: 2,
           }
         : {
             blockaidIndex: 2,
             reviewIndex: 0,
             memoIndex: 1,
+            feesIndex: 3,
           },
     [shouldShowTxWarning],
   );
@@ -202,6 +206,8 @@ export const ReviewTx = ({
   const isOnBlockaidPane =
     paneConfig.blockaidIndex !== null &&
     activePaneIndex === paneConfig.blockaidIndex;
+
+  const isOnFeesPane = activePaneIndex === paneConfig.feesIndex;
 
   // Extract contract ID for custom tokens or collectibles
   const contractId = React.useMemo(
@@ -369,6 +375,18 @@ export const ReviewTx = ({
             className="ReviewTx__Details__Row__Value"
             data-testid="review-tx-fee"
           >
+            <button
+              type="button"
+              className="ReviewTx__Details__Row__FeesInfoBtn"
+              data-testid="review-tx-fee-info-btn"
+              onClick={() => {
+                trackSendFeeBreakdownOpened("review");
+                setActivePaneIndex(paneConfig.feesIndex);
+              }}
+              aria-label={t("Fee breakdown")}
+            >
+              <Icon.InfoCircle />
+            </button>
             {fee} XLM
           </div>
         </div>
@@ -428,12 +446,21 @@ export const ReviewTx = ({
     </div>
   );
 
+  const feesPane = (
+    <FeesPane
+      fee={fee}
+      simulationState={simulationState}
+      isSoroban={isToken || isCollectible}
+      onClose={() => setActivePaneIndex(paneConfig.reviewIndex)}
+    />
+  );
+
   // Build panes in order (no hooks on JSX)
   const panes: React.ReactNode[] = [];
   if (shouldShowTxWarning) {
-    panes.push(reviewPane, memoPane, blockaidPane);
+    panes.push(reviewPane, memoPane, blockaidPane, feesPane);
   } else {
-    panes.push(reviewPane, memoPane);
+    panes.push(reviewPane, memoPane, feesPane);
   }
 
   return (
@@ -447,25 +474,27 @@ export const ReviewTx = ({
       ) : (
         <div className="ReviewTx">
           <MultiPaneSlider activeIndex={activePaneIndex} panes={panes} />
-          <div className="ReviewTx__Actions">
-            <ActionButtons
-              isOnBlockaidPane={isOnBlockaidPane}
-              isMalicious={isMalicious}
-              isRequiredMemoMissing={isRequiredMemoMissing}
-              isValidatingMemo={isValidatingMemo}
-              onAddMemo={onAddMemo}
-              shouldShowTxWarning={shouldShowTxWarning}
-              onCancel={onCancel}
-              onConfirmTx={onConfirmTx}
-              paneConfig={paneConfig}
-              isSubmitDisabled={isSubmitDisabled}
-              dstAsset={dstAsset}
-              dest={dest}
-              asset={asset}
-              truncatedDest={truncatedDest}
-              setActivePaneIndex={setActivePaneIndex}
-            />
-          </div>
+          {!isOnFeesPane && (
+            <div className="ReviewTx__Actions">
+              <ActionButtons
+                isOnBlockaidPane={isOnBlockaidPane}
+                isMalicious={isMalicious}
+                isRequiredMemoMissing={isRequiredMemoMissing}
+                isValidatingMemo={isValidatingMemo}
+                onAddMemo={onAddMemo}
+                shouldShowTxWarning={shouldShowTxWarning}
+                onCancel={onCancel}
+                onConfirmTx={onConfirmTx}
+                paneConfig={paneConfig}
+                isSubmitDisabled={isSubmitDisabled}
+                dstAsset={dstAsset}
+                dest={dest}
+                asset={asset}
+                truncatedDest={truncatedDest}
+                setActivePaneIndex={setActivePaneIndex}
+              />
+            </div>
+          )}
         </div>
       )}
     </View.Content>
