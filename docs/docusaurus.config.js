@@ -6,6 +6,7 @@ module.exports = {
   favicon: "./images/logo.png",
   organizationName: "@stellar",
   projectName: "freighterDocs",
+
   themeConfig: {
     navbar: {
       title: "Freighter Documentation",
@@ -20,8 +21,13 @@ module.exports = {
           label: "GitHub",
           position: "left",
         },
+        {
+          type: "search",
+          position: "right",
+        },
       ],
     },
+
     footer: {
       links: [
         {
@@ -36,19 +42,30 @@ module.exports = {
       ],
     },
   },
+
   presets: [
     [
       "@docusaurus/preset-classic",
       {
         docs: {
-          // It is recommended to set document id as docs home page (`docs/` path).
           sidebarPath: require.resolve("./sidebars.js"),
-          // Please change this to your repo.
           editUrl: "https://github.com/stellar/lyra/tree/master/docs/",
         },
         theme: {
           customCss: require.resolve("./src/css/custom.css"),
         },
+      },
+    ],
+  ],
+
+  // SEARCH PLUGIN (FINAL)
+  plugins: [
+    [
+      require.resolve("@easyops-cn/docusaurus-search-local"),
+      {
+        hashed: true,
+        language: ["en"],
+        highlightSearchTermsOnTargetPage: true,
       },
     ],
   ],
