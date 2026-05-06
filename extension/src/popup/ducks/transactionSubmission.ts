@@ -443,6 +443,10 @@ interface TransactionData {
     name: string;
     image: string;
   };
+  // Fee the user explicitly saved via EditSettings this session.
+  // Persisted in Redux so it survives SendAmount unmount/remount (e.g. when
+  // the user navigates to pick a recipient and returns).
+  manualTransactionFee: string | null;
 }
 
 interface HardwareWalletData {
@@ -508,6 +512,7 @@ export const initialState: InitialState = {
     isMergeSelected: false,
     balancesToMigrate: [] as BalanceToMigrate[],
     isSoroswap: false,
+    manualTransactionFee: null,
   },
   transactionSimulation: {
     response: null,
@@ -551,6 +556,9 @@ const transactionSubmissionSlice = createSlice({
     },
     saveTransactionFee: (state, action) => {
       state.transactionData.transactionFee = action.payload;
+    },
+    saveManualTransactionFee: (state, action) => {
+      state.transactionData.manualTransactionFee = action.payload;
     },
     saveTransactionTimeout: (state, action) => {
       state.transactionData.transactionTimeout = action.payload;
@@ -746,6 +754,7 @@ export const {
   saveAmountUsd,
   saveAsset,
   saveTransactionFee,
+  saveManualTransactionFee,
   saveTransactionTimeout,
   saveMemo,
   saveDestinationAsset,

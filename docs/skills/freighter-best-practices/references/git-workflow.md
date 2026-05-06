@@ -49,6 +49,15 @@ Two workflows run automatically on every PR:
 
 Both must pass before merging.
 
+## Release Branches
+
+Freighter uses release branches to manage versioned releases:
+
+| Branch              | Purpose                                                        |
+| ------------------- | -------------------------------------------------------------- |
+| `release`           | Active release branch created by the release workflow          |
+| `emergency-release` | Hotfix branch for releasing critical fixes from older versions |
+
 ## Release Process
 
 Releases are managed by the `newRelease.yml` GitHub Actions workflow:
@@ -61,14 +70,6 @@ Releases are managed by the `newRelease.yml` GitHub Actions workflow:
 4. Opens a PR from `v{X.Y.Z}` into the release branch
 5. Later, `submitProduction.yml` creates the plain semver git tag (`X.Y.Z`) and
    GitHub release during store submission
-
-## Release Branches
-
-| Branch              | Purpose                                                       |
-| ------------------- | ------------------------------------------------------------- |
-| `release`           | Auto-created by the release workflow for the current release  |
-| `emergency-release` | Hotfix branch created when releasing from an older tag        |
-| `v{X.Y.Z}`          | Version branch created by `newRelease.yml` for the release PR |
 
 ## Submission Workflows
 

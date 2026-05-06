@@ -33,7 +33,7 @@ import {
   parseTokenAmount,
 } from "popup/helpers/soroban";
 import { simulateTokenTransfer } from "@shared/api/internal";
-import { BlockAidScanTxResult } from "@shared/api/types";
+import type { BlockAidScanTxResult } from "@shared/api/types";
 import { getAssetSacAddress } from "@shared/helpers/soroban/token";
 import {
   saveSimulation,
@@ -48,6 +48,10 @@ import {
   checkIsMuxedSupported,
   determineMuxedDestination,
 } from "helpers/muxedAddress";
+import { SimulateTxData, SimulateResult } from "types/transactions";
+import { getCurrentTransactionFee } from "popup/helpers/fees";
+
+export type { SimulateTxData, SimulateResult };
 
 interface SimClassic {
   type: "classic";
@@ -67,11 +71,6 @@ interface SimClassic {
 interface SimSoroban {
   type: "soroban";
   xdr: string;
-}
-
-export interface SimulateTxData {
-  transactionXdr: string;
-  scanResult?: BlockAidScanTxResult | null;
 }
 
 const CREATE_ACCOUNT_MIN_XLM = new BigNumber(1);
@@ -356,6 +355,8 @@ const simulateTx = async ({
       return {
         payload: response,
         recommendedFee: baseFee.plus(new BigNumber(minResourceFee)).toString(),
+        inclusionFee: baseFee.toString(),
+        resourceFee: minResourceFee,
       };
     }
 
@@ -436,8 +437,10 @@ function useSimulateTxData({
       const currentMemo = currentTransactionData.memo || memo;
       const currentAmount = currentTransactionData.amount || amount;
       const currentAsset = currentTransactionData.asset || asset;
-      const currentTransactionFee =
-        currentTransactionData.transactionFee || transactionFee;
+      const currentTransactionFee = getCurrentTransactionFee({
+        currentTransactionFee: currentTransactionData.transactionFee,
+        fallbackTransactionFee: transactionFee,
+      });
       // Derive asset objects directly from fresh Redux state so the XDR and
       // expectedToFailReason logic always use the same asset values.
       const freshSourceAsset = getAssetFromCanonical(currentAsset);
@@ -560,6 +563,13 @@ function useSimulateTxData({
         }),
       );
 
+      if (simResponse.inclusionFee !== undefined) {
+        payload.inclusionFee = simResponse.inclusionFee;
+      }
+      if (simResponse.resourceFee !== undefined) {
+        payload.resourceFee = simResponse.resourceFee;
+      }
+
       const scanUrlstub = "internal";
       if (simParams.type === "classic") {
         const {
@@ -616,14 +626,12 @@ function useSimulateTxData({
       }
 
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });
-      return payload;
+      return { ok: true, data: payload } as SimulateResult;
     } catch (error) {
-      dispatch({
-        type: "FETCH_DATA_ERROR",
-        payload:
-          "We had an issue retrieving your transaction details. Please try again.",
-      });
-      return error;
+      const errorMessage =
+        "We had an issue retrieving your transaction details. Please try again.";
+      dispatch({ type: "FETCH_DATA_ERROR", payload: errorMessage });
+      return { ok: false, error: errorMessage } as SimulateResult;
     }
   };
 
