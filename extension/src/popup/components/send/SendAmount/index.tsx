@@ -36,7 +36,7 @@ import {
   saveAmount,
   saveAsset,
   saveIsToken,
-  saveMemo,
+  saveMemoAndType,
   saveTransactionFee,
   saveManualTransactionFee,
   saveTransactionTimeout,
@@ -930,6 +930,7 @@ export const SendAmount = ({
           <div className="EditMemoWrapper">
             <EditMemo
               memo={transactionData.memo || ""}
+              memoType={transactionData.memoType}
               onClose={() => {
                 setIsEditingMemo(false);
                 // Reopen review sheet if user came from review flow
@@ -939,7 +940,7 @@ export const SendAmount = ({
                 setMemoEditingContext(null);
               }}
               onSubmit={async ({ memo }: { memo: string }) => {
-                dispatch(saveMemo(memo));
+                dispatch(saveMemoAndType({ memo, memoType: "" }));
                 setIsEditingMemo(false);
                 // Regenerate transaction XDR with new memo (now reads memo from Redux state inside fetchData)
                 await fetchSimulationData();

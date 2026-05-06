@@ -37,6 +37,7 @@ import {
   getSoroswapTokens as getSoroswapTokensService,
 } from "popup/helpers/sorobanSwap";
 import { hardwareSign, hardwareSignAuth } from "popup/helpers/hardwareConnect";
+import type { FederationMemoType } from "popup/helpers/federationMemo";
 import { AppState } from "popup/App";
 import { publicKeySelector } from "./accountServices";
 
@@ -425,6 +426,7 @@ interface TransactionData {
   transactionFee: string;
   transactionTimeout: number;
   memo?: string;
+  memoType?: FederationMemoType | "";
   destinationAsset: string;
   destinationDecimals?: number;
   destinationAmount: string;
@@ -495,6 +497,7 @@ export const initialState: InitialState = {
     transactionFee: "",
     transactionTimeout: 180,
     memo: "",
+    memoType: "",
     destinationAsset: "",
     destinationAmount: "",
     destinationIcon: "",
@@ -563,8 +566,17 @@ const transactionSubmissionSlice = createSlice({
     saveTransactionTimeout: (state, action) => {
       state.transactionData.transactionTimeout = action.payload;
     },
-    saveMemo: (state, action) => {
-      state.transactionData.memo = action.payload;
+    saveMemoAndType: (
+      state,
+      action: {
+        payload: {
+          memo: string;
+          memoType?: FederationMemoType | "";
+        };
+      },
+    ) => {
+      state.transactionData.memo = action.payload.memo;
+      state.transactionData.memoType = action.payload.memoType ?? "";
     },
     saveDestinationAsset: (state, action) => {
       state.transactionData.destinationAsset = action.payload;
@@ -756,7 +768,7 @@ export const {
   saveTransactionFee,
   saveManualTransactionFee,
   saveTransactionTimeout,
-  saveMemo,
+  saveMemoAndType,
   saveDestinationAsset,
   saveDestinationIcon,
   saveIsSoroswap,
