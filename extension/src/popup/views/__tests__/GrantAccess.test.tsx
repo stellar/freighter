@@ -162,6 +162,7 @@ describe("Grant Access view", () => {
     jest.spyOn(global, "fetch").mockImplementation(() =>
       Promise.resolve({
         ok: true,
+        headers: { get: () => "application/json" },
         json: async () => ({ data: { status: "miss" }, error: null }),
       } as any),
     );
@@ -198,6 +199,7 @@ describe("Grant Access view", () => {
     jest.spyOn(global, "fetch").mockImplementation(() =>
       Promise.resolve({
         ok: true,
+        headers: { get: () => "application/json" },
         json: async () => ({
           data: { status: "hit", is_malicious: true },
           error: null,
@@ -234,18 +236,11 @@ describe("Grant Access view", () => {
   });
 
   it("shows unable to scan label when scan site returns an error on Mainnet", async () => {
-    jest.spyOn(blockAidHelpers, "useScanSite").mockImplementation(() => {
-      return {
-        error: null,
-        isLoading: false,
-        data: {
-          is_malicious: true,
-        } as BlockAidScanSiteResult,
-        scanSite: (_url: string) => {
-          throw new Error("Failed to scan site");
-        },
-      };
-    });
+    jest
+      .spyOn(global, "fetch")
+      .mockImplementation(() =>
+        Promise.reject(new Error("Failed to scan site")),
+      );
 
     render(
       <Wrapper
@@ -282,12 +277,10 @@ describe("Grant Access view", () => {
     // regresses and a `/scan-dapp` (or any other) call leaks through, the
     // test doesn't attempt a real network request and become flaky in CI.
     // The assertion below still verifies no `/scan-dapp` call was made.
-    const fetchSpy = jest
-      .spyOn(global, "fetch")
-      .mockResolvedValue({
-        ok: true,
-        json: async () => ({}),
-      } as Response);
+    const fetchSpy = jest.spyOn(global, "fetch").mockResolvedValue({
+      ok: true,
+      json: async () => ({}),
+    } as Response);
     render(
       <Wrapper
         routes={[ROUTES.welcome]}
