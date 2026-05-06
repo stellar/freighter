@@ -279,6 +279,8 @@ describe("Grant Access view", () => {
     // The assertion below still verifies no `/scan-dapp` call was made.
     const fetchSpy = jest.spyOn(global, "fetch").mockResolvedValue({
       ok: true,
+      status: 200,
+      headers: new Headers({ "content-type": "application/json" }),
       json: async () => ({}),
     } as Response);
     render(
