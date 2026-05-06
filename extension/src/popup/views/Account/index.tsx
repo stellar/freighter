@@ -25,7 +25,7 @@ import { NotFundedMessage } from "popup/components/account/NotFundedMessage";
 import { formatAmount, roundUsdValue } from "popup/helpers/formatters";
 
 import { newTabHref } from "helpers/urls";
-import { getTotalUsd } from "popup/helpers/balance";
+import { getTotalUsd, sortBalancesByValue } from "popup/helpers/balance";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { reRouteOnboarding } from "popup/helpers/route";
 import { AppDataType } from "helpers/hooks/useGetAppData";
@@ -180,6 +180,10 @@ export const Account = () => {
   const tokenPrices = resolvedData?.tokenPrices || {};
   const balances = resolvedData?.balances.balances!;
   const totalBalanceUsd = getTotalUsd(tokenPrices, balances);
+  const sortedBalances = sortBalancesByValue(
+    balances,
+    resolvedData?.tokenPrices,
+  );
   const roundedTotalBalanceUsd =
     !hasError &&
     isMainnet(resolvedData!.networkDetails) &&
@@ -276,7 +280,10 @@ export const Account = () => {
                   data-testid="account-assets"
                 >
                   <AccountAssets
-                    balances={resolvedData.balances}
+                    balances={{
+                      ...resolvedData.balances,
+                      balances: sortedBalances,
+                    }}
                     historyData={historyData.data}
                     assetPrices={tokenPrices}
                     assetIcons={resolvedIcons}
