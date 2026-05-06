@@ -62,14 +62,14 @@ Freighter uses release branches to manage versioned releases:
 
 Releases are managed by the `newRelease.yml` GitHub Actions workflow:
 
-1. Manual dispatch triggers the workflow with `appVersion` parameter (e.g.,
-   `5.12.0`)
-2. Workflow creates a `release` (or `emergency-release`) branch
-3. Bumps `package.json` version and `manifest.json` version on the release
+1. Manual dispatch with `appVersion` parameter (e.g., `5.12.0`)
+2. Workflow creates a `release` (or `emergency-release`) branch and a `v{X.Y.Z}`
+   version branch
+3. Bumps `package.json` version and `manifest.json` version on the version
    branch
-4. Opens a PR into the release branch for version updates
-5. After merge, `submitProduction.yml` publishes to stores and creates the
-   GitHub release
+4. Opens a PR from `v{X.Y.Z}` into the release branch
+5. Later, `submitProduction.yml` creates the plain semver git tag (`X.Y.Z`) and
+   GitHub release during store submission
 
 ## Submission Workflows
 
