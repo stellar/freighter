@@ -219,6 +219,10 @@ describe("getBalanceCanonicalKey", () => {
     total: new BigNumber("100"),
   };
   const SOROBAN = {
+    token: {
+      code: "DT",
+      issuer: { key: "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC" },
+    },
     contractId: "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC",
     total: new BigNumber("1"),
   };
@@ -238,21 +242,31 @@ describe("getBalanceCanonicalKey", () => {
     expect(getBalanceCanonicalKey(NATIVE)).toBe("native");
   });
 
-  it("namespaces Soroban contract IDs with a 'soroban:' prefix", () => {
+  it("returns CODE:CONTRACT_ID for Soroban balances (consistent with getCanonicalFromAsset)", () => {
     expect(getBalanceCanonicalKey(SOROBAN)).toBe(
-      "soroban:CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC",
+      "DT:CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC",
     );
   });
 
-  it("namespaces liquidity pool ids with an 'lp:' prefix", () => {
+  it("uses the LP_IDENTIFIER ':lp' suffix for liquidity pool shares", () => {
     expect(getBalanceCanonicalKey(LP)).toBe(
-      "lp:a468d41d8e9b8f3c7209651608b74b7db7ac9952dcae0cdf24871d1d9c7b0088",
+      "a468d41d8e9b8f3c7209651608b74b7db7ac9952dcae0cdf24871d1d9c7b0088:lp",
     );
   });
 
-  it("returns distinct keys for classic and Soroban balances of the same code", () => {
+  it("returns distinct keys for classic and Soroban balances even when the code matches", () => {
+    const SOROBAN_USDC = {
+      token: {
+        code: "USDC",
+        issuer: {
+          key: "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC",
+        },
+      },
+      contractId: "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC",
+      total: new BigNumber("1"),
+    };
     expect(getBalanceCanonicalKey(CLASSIC_USDC)).not.toBe(
-      getBalanceCanonicalKey(SOROBAN),
+      getBalanceCanonicalKey(SOROBAN_USDC),
     );
   });
 });

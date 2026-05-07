@@ -17,6 +17,7 @@ import {
 } from "@shared/api/types/account-balance";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { getAssetSacAddress } from "@shared/helpers/soroban/token";
+import { LP_IDENTIFIER } from "./account";
 import { isContractId } from "./soroban";
 
 export const isClassicBalance = (balance: AssetType): balance is ClassicAsset =>
@@ -201,12 +202,16 @@ export const getPriceDeltaColor = (delta: BigNumber) => {
  * that needs to track balance identity across re-fetches (e.g.
  * `useStableSortedBalances`).
  *
- * Classic / native balances key off the canonical `CODE:ISSUER` form;
- * Soroban tokens key off their contract ID; LP shares key off the LP id.
+ * Uses the same conventions as the rest of the codebase:
+ * - LP shares: `<poolId>:lp` (the established `LP_IDENTIFIER` suffix).
+ * - Native, classic, and Soroban tokens: `getCanonicalFromAsset(code,
+ *   issuer.key)`. For Soroban balances, `issuer.key` is the contract ID,
+ *   so this produces `CODE:CONTRACT_ID` consistent with what the price
+ *   map, `getAssetFromCanonical`, and the swap/send `prices[asset]`
+ *   lookups all use.
  */
 export const getBalanceCanonicalKey = (b: AssetType): string => {
-  if ("contractId" in b) return `soroban:${b.contractId}`;
-  if ("liquidityPoolId" in b) return `lp:${b.liquidityPoolId}`;
+  if ("liquidityPoolId" in b) return `${b.liquidityPoolId}${LP_IDENTIFIER}`;
   if ("token" in b) {
     return getCanonicalFromAsset(
       b.token.code,
