@@ -25,7 +25,7 @@ import { NotFundedMessage } from "popup/components/account/NotFundedMessage";
 import { formatAmount, roundUsdValue } from "popup/helpers/formatters";
 
 import { newTabHref } from "helpers/urls";
-import { getTotalUsd, sortBalancesByValue } from "popup/helpers/balance";
+import { getTotalUsd } from "popup/helpers/balance";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { reRouteOnboarding } from "popup/helpers/route";
 import { AppDataType } from "helpers/hooks/useGetAppData";
@@ -38,6 +38,7 @@ import {
   useGetIcons,
   RequestState as IconsRequestState,
 } from "./hooks/useGetIcons";
+import { useStableSortedBalances } from "./hooks/useStableSortedBalances";
 import { AccountTabsContext, TabsList } from "./contexts/activeTabContext";
 
 import {
@@ -112,6 +113,20 @@ export const Account = () => {
       ? accountData.data?.isScanAppended
       : false;
 
+  // Derive `balances` and `tokenPrices` *before* the early returns below
+  // so that `useStableSortedBalances` is called unconditionally on every
+  // render (Rules of Hooks). When `accountData` is in `RequestState.ERROR`
+  // its reducer sets `data: null`, so `accountBalances` is null and we
+  // pass an empty list — the helpers below stay safe and the error UI
+  // farther down can still render.
+  const balances = accountBalances?.balances ?? [];
+  const tokenPrices =
+    accountData.state === RequestState.SUCCESS &&
+    accountData.data.type === AppDataType.RESOLVED
+      ? accountData.data?.tokenPrices
+      : undefined;
+  const sortedBalances = useStableSortedBalances(balances, tokenPrices);
+
   useEffect(() => {
     const getData = async () => {
       if (accountBalances && !isScanAppended) {
@@ -177,13 +192,7 @@ export const Account = () => {
       ? iconsData?.data?.icons
       : {};
 
-  const tokenPrices = resolvedData?.tokenPrices || {};
-  const balances = resolvedData?.balances.balances!;
-  const totalBalanceUsd = getTotalUsd(tokenPrices, balances);
-  const sortedBalances = sortBalancesByValue(
-    balances,
-    resolvedData?.tokenPrices,
-  );
+  const totalBalanceUsd = getTotalUsd(tokenPrices ?? {}, balances);
   const roundedTotalBalanceUsd =
     !hasError &&
     isMainnet(resolvedData!.networkDetails) &&
@@ -285,7 +294,7 @@ export const Account = () => {
                       balances: sortedBalances,
                     }}
                     historyData={historyData.data}
-                    assetPrices={tokenPrices}
+                    assetPrices={tokenPrices ?? {}}
                     assetIcons={resolvedIcons}
                   />
                 </div>

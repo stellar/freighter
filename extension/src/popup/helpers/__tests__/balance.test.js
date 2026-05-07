@@ -3,7 +3,7 @@ import BigNumber from "bignumber.js";
 import { TESTNET_NETWORK_DETAILS } from "@shared/constants/stellar";
 import { defaultBlockaidScanAssetResult } from "@shared/helpers/stellar";
 
-import { getBalanceByKey, findAssetBalance, sortBalancesByValue } from "../balance";
+import { getBalanceByKey, findAssetBalance, sortBalancesByValue, getBalanceCanonicalKey } from "../balance";
 
 const CONTRACT_ID = "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC";
 const TOKEN_BALANCE_KEY = `DT:${CONTRACT_ID}`;
@@ -203,5 +203,56 @@ describe("sortBalancesByValue", () => {
     const snapshot = [...input];
     sortBalancesByValue(input, fullPrices);
     expect(input).toEqual(snapshot);
+  });
+});
+
+describe("getBalanceCanonicalKey", () => {
+  const NATIVE = {
+    token: { type: "native", code: "XLM" },
+    total: new BigNumber("50"),
+  };
+  const CLASSIC_USDC = {
+    token: {
+      code: "USDC",
+      issuer: { key: "GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM" },
+    },
+    total: new BigNumber("100"),
+  };
+  const SOROBAN = {
+    contractId: "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC",
+    total: new BigNumber("1"),
+  };
+  const LP = {
+    liquidityPoolId:
+      "a468d41d8e9b8f3c7209651608b74b7db7ac9952dcae0cdf24871d1d9c7b0088",
+    total: new BigNumber(10),
+  };
+
+  it("returns the canonical CODE:ISSUER form for classic balances", () => {
+    expect(getBalanceCanonicalKey(CLASSIC_USDC)).toBe(
+      "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
+    );
+  });
+
+  it("returns 'native' for the native XLM balance", () => {
+    expect(getBalanceCanonicalKey(NATIVE)).toBe("native");
+  });
+
+  it("namespaces Soroban contract IDs with a 'soroban:' prefix", () => {
+    expect(getBalanceCanonicalKey(SOROBAN)).toBe(
+      "soroban:CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC",
+    );
+  });
+
+  it("namespaces liquidity pool ids with an 'lp:' prefix", () => {
+    expect(getBalanceCanonicalKey(LP)).toBe(
+      "lp:a468d41d8e9b8f3c7209651608b74b7db7ac9952dcae0cdf24871d1d9c7b0088",
+    );
+  });
+
+  it("returns distinct keys for classic and Soroban balances of the same code", () => {
+    expect(getBalanceCanonicalKey(CLASSIC_USDC)).not.toBe(
+      getBalanceCanonicalKey(SOROBAN),
+    );
   });
 });

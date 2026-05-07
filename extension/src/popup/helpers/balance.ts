@@ -196,6 +196,27 @@ export const getPriceDeltaColor = (delta: BigNumber) => {
 };
 
 /**
+ * Returns a stable identity key for a balance. Two balances refer to the
+ * same on-chain asset iff they share this key. Used by display logic
+ * that needs to track balance identity across re-fetches (e.g.
+ * `useStableSortedBalances`).
+ *
+ * Classic / native balances key off the canonical `CODE:ISSUER` form;
+ * Soroban tokens key off their contract ID; LP shares key off the LP id.
+ */
+export const getBalanceCanonicalKey = (b: AssetType): string => {
+  if ("contractId" in b) return `soroban:${b.contractId}`;
+  if ("liquidityPoolId" in b) return `lp:${b.liquidityPoolId}`;
+  if ("token" in b) {
+    return getCanonicalFromAsset(
+      b.token.code,
+      "issuer" in b.token ? b.token.issuer.key : undefined,
+    );
+  }
+  return "";
+};
+
+/**
  * Re-orders balances for display by descending USD value.
  *
  * Only native + classic G-issuer assets receive prices from the indexer
@@ -216,10 +237,7 @@ export const sortBalancesByValue = (
 
   const usdValueOf = (b: AssetType): BigNumber | null => {
     if (!("token" in b)) return null;
-    const canonical = getCanonicalFromAsset(
-      b.token.code,
-      "issuer" in b.token ? b.token.issuer.key : undefined,
-    );
+    const canonical = getBalanceCanonicalKey(b);
     const priceStr = prices[canonical]?.currentPrice;
     if (priceStr === undefined || priceStr === null || priceStr === "") {
       return null;

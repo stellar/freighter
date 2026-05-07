@@ -1019,9 +1019,9 @@ describe("Account view", () => {
       .spyOn(ApiInternal, "getAccountBalances")
       .mockImplementation(() => Promise.resolve(mockBalances));
 
-    jest.spyOn(ApiInternal, "getTokenPrices").mockImplementation(() => {
-      throw new Error("Failed to fetch prices");
-    });
+    jest
+      .spyOn(ApiInternal, "getTokenPrices")
+      .mockRejectedValueOnce(new Error("Failed to fetch prices"));
 
     render(
       <Wrapper
@@ -1090,9 +1090,25 @@ describe("Account view", () => {
     jest
       .spyOn(ApiInternal, "getAccountBalances")
       .mockImplementation(() => Promise.resolve(mockBalances));
+    // The production indexer (`getTokenPrices` in `@shared/api/internal.ts`)
+    // filters out contract-ID issuers via `isContractId(asset.issuer)`, so
+    // `DT` (which has a `C…` issuer in `mockBalances`) cannot be priced in
+    // real usage. Price the classic G-issuer assets instead — `USDC`
+    // (large value) and native `XLM` — so the ordering scenario under test
+    // matches what users actually see.
+    const realisticPrices = {
+      ["USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM"]: {
+        currentPrice: "1.00",
+        percentagePriceChange24h: "0",
+      },
+      native: {
+        currentPrice: "0.27633884304166495",
+        percentagePriceChange24h: "1.09899728516430811",
+      },
+    };
     jest
       .spyOn(ApiInternal, "getTokenPrices")
-      .mockImplementation(() => Promise.resolve(mockPrices));
+      .mockImplementation(() => Promise.resolve(realisticPrices));
 
     render(
       <Wrapper
@@ -1114,15 +1130,16 @@ describe("Account view", () => {
       </Wrapper>,
     );
 
-    // mockBalances: DT (Soroban-style canonical, total 1e9, price ~0.000834
-    // → ~$834,463), USDC (total 100, no price entry), native XLM (total 50,
-    // price ~0.276 → ~$13.81). Expected order: DT, XLM, USDC (unpriced last).
+    // mockBalances + realisticPrices: USDC (100 * $1 = $100), XLM
+    // (50 * ~$0.276 = ~$13.81), DT (unpriced — contract-ID issuer is
+    // filtered out by the production pricing API). Expected order:
+    // USDC, XLM, DT (unpriced last).
     await waitFor(() => {
       const assetNodes = screen.getAllByTestId("account-assets-item");
       expect(assetNodes.length).toEqual(3);
-      expect(assetNodes[0]).toHaveTextContent("DT");
+      expect(assetNodes[0]).toHaveTextContent("USDC");
       expect(assetNodes[1]).toHaveTextContent("XLM");
-      expect(assetNodes[2]).toHaveTextContent("USDC");
+      expect(assetNodes[2]).toHaveTextContent("DT");
     });
   });
 
@@ -1155,9 +1172,9 @@ describe("Account view", () => {
     jest
       .spyOn(ApiInternal, "getAccountBalances")
       .mockImplementation(() => Promise.resolve(mockBalances));
-    jest.spyOn(ApiInternal, "getTokenPrices").mockImplementation(() => {
-      throw new Error("Failed to fetch prices");
-    });
+    jest
+      .spyOn(ApiInternal, "getTokenPrices")
+      .mockRejectedValueOnce(new Error("Failed to fetch prices"));
 
     render(
       <Wrapper
