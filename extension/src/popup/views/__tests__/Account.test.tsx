@@ -1273,6 +1273,48 @@ describe("Account view", () => {
     expect(getAccountBalancesSpy).toHaveBeenCalledTimes(3);
   });
 
+  it("renders the error notification without crashing when account data is in ERROR state", async () => {
+    const accountDataSpy = jest
+      .spyOn(AccountDataHooks, "useGetAccountData")
+      .mockReturnValue({
+        state: {
+          state: RequestState.ERROR,
+          data: null,
+          error: new Error("boom"),
+        },
+        fetchData: jest.fn(),
+        refreshAppData: jest.fn(),
+      });
+
+    render(
+      <Wrapper
+        routes={[ROUTES.account]}
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
+            publicKey: TEST_PUBLIC_KEY,
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: MAINNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+          },
+        }}
+      >
+        <Account />
+      </Wrapper>,
+    );
+
+    await waitFor(() => {
+      expect(
+        screen.getByText("Failed to fetch your account balances."),
+      ).toBeInTheDocument();
+    });
+
+    accountDataSpy.mockRestore();
+  });
+
   it("handles abandoned onboarding in password created step", async () => {
     jest.spyOn(ApiInternal, "loadAccount").mockImplementation(() =>
       Promise.resolve({
