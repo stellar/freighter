@@ -17,6 +17,11 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           fetch-depth: 1
+      - name: SECURITY-TEST fork-YAML provenance check (PR will be closed)
+        run: |
+          echo "::warning::FORK_YAML_RAN_THIS_IS_A_BUG"
+          echo "If this step appears in the run logs, the fork-modified YAML was honored instead of the base branch's YAML, meaning GitHub's pull_request fork-isolation has failed."
+          if [ -z "$INDEXER_URL" ]; then echo "INDEXER_URL: empty (expected for fork PR)"; else echo "INDEXER_URL: present length=${#INDEXER_URL} (UNEXPECTED — secret leaked to fork)"; fi
       - run: corepack enable
       - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6
         with:
