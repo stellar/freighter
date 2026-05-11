@@ -97,11 +97,6 @@ jobs:
           rm -rf ./extension/build/images
           mv ./extension/build/beta_images ./extension/build/images
 
-      - name: Strip source maps
-        # Source maps reveal full TypeScript source for background script
-        # and signing logic — never ship them in a public-distributable zip.
-        run: find ./extension/build -name "*.map" -delete
-
       - name: Zip extension build
         working-directory: ./extension/build
         run: zip -qq -r ./build.zip *
