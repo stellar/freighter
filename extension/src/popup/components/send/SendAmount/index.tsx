@@ -67,6 +67,47 @@ import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 
 import "../styles.scss";
 
+const AMOUNT_DECIMAL_LIMIT = 7;
+const USD_DECIMAL_LIMIT = 2;
+const PERCENTAGE_OPTIONS = [
+  ["25%", 25],
+  ["50%", 50],
+  ["75%", 75],
+] as const;
+
+const sanitizeAmountInput = (value: string, decimals: number) => {
+  const cleanedValue = value.replace(/[^0-9.]/g, "");
+  const [wholePartRaw = "", ...decimalParts] = cleanedValue.split(".");
+  const wholePart = wholePartRaw.replace(/^0+(?=\d)/, "");
+
+  if (decimalParts.length === 0) {
+    return wholePart;
+  }
+
+  const normalizedWholePart = wholePart === "" ? "0" : wholePart;
+  const sanitizedDecimals = decimalParts.join("").slice(0, decimals);
+
+  return `${normalizedWholePart}.${sanitizedDecimals}`;
+};
+
+const getValidBigNumber = (value: string) => {
+  const cleanedValue = cleanAmount(value);
+
+  if (!cleanedValue || cleanedValue === ".") {
+    return null;
+  }
+
+  const numericValue = new BigNumber(cleanedValue);
+
+  return numericValue.isNaN() ? null : numericValue;
+};
+
+const isValidPositiveAmount = (value: string) => {
+  const numericValue = getValidBigNumber(value);
+
+  return Boolean(numericValue && numericValue.gt(0));
+};
+
 // Returns the value to show in FeesPane's total row given the user's current
 // draft inclusion fee and the simulated resource fee.  For classic (no
 // resource fee) the inclusion fee IS the total.
@@ -211,6 +252,8 @@ export const SendAmount = ({
   // Tokens with Soroban mux support allow memo for G addresses, but memo is encoded in M addresses
   // Must be before conditional returns
   React.useEffect(() => {
+    let isMounted = true;
+
     const checkContract = async () => {
       if (
         (!isToken && !isCollectible) ||
@@ -227,7 +270,9 @@ export const SendAmount = ({
           contractId,
           networkDetails,
         });
-        setContractSupportsMuxed(supportsMuxed);
+        if (isMounted) {
+          setContractSupportsMuxed(supportsMuxed);
+        }
       } catch (error) {
         // On error, assume no support for safety
         captureException(error, {
@@ -235,11 +280,17 @@ export const SendAmount = ({
             message: "Error checking contract muxed support",
           },
         });
-        setContractSupportsMuxed(false);
+        if (isMounted) {
+          setContractSupportsMuxed(false);
+        }
       }
     };
 
     checkContract();
+
+    return () => {
+      isMounted = false;
+    };
   }, [isToken, isCollectible, destination, contractId, networkDetails]);
 
   // Get memo disabled state using the helper
@@ -270,8 +321,14 @@ export const SendAmount = ({
     React.useState<MemoEditingContext | null>(null);
 
   const handlePaymentContinue = async () => {
-    const amount = inputType === "crypto" ? formik.values.amount : priceValue!;
-    dispatch(saveAmount(cleanAmount(amount)));
+    const nextAmount =
+      inputType === "crypto" ? formik.values.amount : (priceValue ?? "");
+
+    if (!isValidPositiveAmount(nextAmount)) {
+      return;
+    }
+
+    dispatch(saveAmount(cleanAmount(nextAmount)));
     await handleContinue();
   };
 
@@ -308,13 +365,21 @@ export const SendAmount = ({
   };
 
   const validate = (values: { amount: string }) => {
-    const amount = inputType === "crypto" ? values.amount : priceValue!;
-    const val = cleanAmount(amount);
+    const valueToValidate =
+      inputType === "crypto" ? values.amount : (priceValue ?? "");
+    const cleanedValue = cleanAmount(valueToValidate);
 
-    if (val.indexOf(".") !== -1 && val.split(".")[1].length > 7) {
+    if (
+      cleanedValue.indexOf(".") !== -1 &&
+      cleanedValue.split(".")[1].length > AMOUNT_DECIMAL_LIMIT
+    ) {
       return { amount: AMOUNT_ERROR.DEC_MAX };
     }
-    if (new BigNumber(val).gt(new BigNumber(TX_SEND_MAX))) {
+    if (
+      cleanedValue &&
+      cleanedValue !== "." &&
+      new BigNumber(cleanedValue).gt(new BigNumber(TX_SEND_MAX))
+    ) {
       return { amount: AMOUNT_ERROR.SEND_MAX };
     }
     return {};
@@ -324,7 +389,6 @@ export const SendAmount = ({
     initialValues: { amount, amountUsd: amountUsd, asset, destinationAsset },
     onSubmit: handlePaymentContinue,
     validate,
-    enableReinitialize: true,
     validateOnChange: true,
   });
 
@@ -341,6 +405,16 @@ export const SendAmount = ({
     getData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    formik.setValues({
+      amount,
+      amountUsd,
+      asset,
+      destinationAsset,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [asset, destinationAsset]);
 
   // Soroban: re-simulate whenever destination or asset changes (and on first
   // mount if both are ready). simulationDataRef tracks what was last simulated so
@@ -377,14 +451,20 @@ export const SendAmount = ({
   }, [destination, asset, isToken, isCollectible, simulationState.state]);
 
   const getAmountFontSize = () => {
-    const length = formik.values.amount.length;
-    if (length <= 9) {
-      return "";
+    const currentValue =
+      inputType === "fiat" ? formik.values.amountUsd : formik.values.amount;
+    const digitsLength = currentValue.replace(/[^0-9]/g, "").length;
+
+    if (digitsLength <= 6) {
+      return "lg";
     }
-    if (length <= 15) {
+    if (digitsLength <= 10) {
       return "med";
     }
-    return "small";
+    if (digitsLength <= 13) {
+      return "small";
+    }
+    return "xsmall";
   };
 
   if (isLoading) {
@@ -429,20 +509,24 @@ export const SendAmount = ({
   const prices = sendData.tokenPrices;
   const assetPrice = prices[asset] && prices[asset].currentPrice;
   const assetDecimals = getAssetDecimals(asset, sendData.userBalances, isToken);
+  const amountBigNumber = getValidBigNumber(formik.values.amount);
+  const amountUsdBigNumber = getValidBigNumber(formik.values.amountUsd);
   const priceValue = assetPrice
-    ? new BigNumber(cleanAmount(formik.values.amountUsd))
-        .dividedBy(new BigNumber(assetPrice))
-        .decimalPlaces(assetDecimals)
-        .toString()
+    ? amountUsdBigNumber
+      ? amountUsdBigNumber
+          .dividedBy(new BigNumber(assetPrice))
+          .decimalPlaces(assetDecimals)
+          .toString()
+      : null
     : null;
   const priceValueUsd = assetPrice
-    ? `${formatAmount(
-        roundUsdValue(
-          new BigNumber(assetPrice)
-            .multipliedBy(new BigNumber(cleanAmount(formik.values.amount)))
-            .toString(),
-        ),
-      )}`
+    ? amountBigNumber
+      ? `${formatAmount(
+          roundUsdValue(
+            new BigNumber(assetPrice).multipliedBy(amountBigNumber).toString(),
+          ),
+        )}`
+      : null
     : null;
   const supportsUsd = !!assetPrice;
   const availableBalance = getAvailableBalance({
@@ -454,6 +538,7 @@ export const SendAmount = ({
     assetBalance && "decimals" in assetBalance
       ? availableBalance
       : formatAmount(availableBalance);
+
   const goBackAction = () => {
     dispatch(saveAsset("native"));
     dispatch(saveIsToken(false));
@@ -464,9 +549,6 @@ export const SendAmount = ({
     dispatch(saveTransactionFee(""));
     dispatch(saveManualTransactionFee(null));
     goBack();
-    if (isCollectible) {
-      goToChooseAssetAction();
-    }
   };
   const goToChooseAssetAction = () => {
     // Changing the asset may switch between Soroban and classic (or a different
@@ -482,16 +564,25 @@ export const SendAmount = ({
 
   const isAmountTooHigh =
     (inputType === "crypto" &&
-      new BigNumber(cleanAmount(formik.values.amount)).gt(
-        new BigNumber(availableBalance),
-      )) ||
+      Boolean(amountBigNumber?.gt(new BigNumber(availableBalance)))) ||
     (inputType === "fiat" &&
-      new BigNumber(cleanAmount(priceValue!)).gt(
-        new BigNumber(availableBalance),
+      Boolean(
+        getValidBigNumber(priceValue ?? "")?.gt(
+          new BigNumber(availableBalance),
+        ),
       ));
 
+  const isAmountInputValid =
+    inputType === "crypto"
+      ? isValidPositiveAmount(formik.values.amount)
+      : isValidPositiveAmount(formik.values.amountUsd) &&
+        isValidPositiveAmount(priceValue ?? "");
+
   const handlePercentage = (pct: number) => {
-    emitMetric(METRIC_NAMES.sendPaymentSetMax);
+    if (pct === 100) {
+      emitMetric(METRIC_NAMES.sendPaymentSetMax);
+    }
+
     const fraction = new BigNumber(pct).dividedBy(100);
     if (inputType === "fiat" && assetPrice) {
       const pctUsd = formatAmount(
@@ -525,6 +616,7 @@ export const SendAmount = ({
           <button
             className="SendAmount__header-settings-btn"
             data-testid="send-amount-btn-fee"
+            aria-label={t("Send settings")}
             onClick={() => {
               setIsEditingSettings(true);
               if (
@@ -590,10 +682,7 @@ export const SendAmount = ({
                   size="lg"
                   disabled={
                     !destination ||
-                    (inputType === "crypto" &&
-                      new BigNumber(formik.values.amount).isZero()) ||
-                    (inputType === "fiat" &&
-                      new BigNumber(formik.values.amountUsd).isZero()) ||
+                    !isAmountInputValid ||
                     isAmountTooHigh ||
                     isMuxedAddressWithoutMemoSupport ||
                     ((isToken || isCollectible) &&
@@ -609,10 +698,7 @@ export const SendAmount = ({
                     formik.submitForm();
                   }}
                 >
-                  {(inputType === "crypto" &&
-                    new BigNumber(formik.values.amount).isZero()) ||
-                  (inputType === "fiat" &&
-                    new BigNumber(formik.values.amountUsd).isZero())
+                  {!isAmountInputValid
                     ? t("Enter an amount")
                     : t("Review Send")}
                 </Button>
@@ -671,24 +757,13 @@ export const SendAmount = ({
                             placeholder="0"
                             value={formik.values.amount}
                             onChange={(e) => {
-                              let newVal = e.target.value;
-                              // When the field held "0" and user typed a digit,
-                              // replace rather than append ("01" → "1"). Keep "0."
-                              // intact so typing "0.5" works correctly.
-                              if (
-                                formik.values.amount === "0" &&
-                                newVal.length === 2 &&
-                                newVal[0] === "0" &&
-                                newVal[1] !== "."
-                              ) {
-                                newVal = newVal[1];
-                              }
-                              const cleaned = cleanAmount(newVal) || "0";
-                              formik.setFieldValue(
-                                "amount",
-                                newVal === "" ? "0" : newVal,
+                              const sanitizedAmount = sanitizeAmountInput(
+                                e.target.value,
+                                AMOUNT_DECIMAL_LIMIT,
                               );
-                              dispatch(saveAmount(cleaned));
+
+                              formik.setFieldValue("amount", sanitizedAmount);
+                              dispatch(saveAmount(sanitizedAmount));
                             }}
                             autoComplete="off"
                             autoFocus
@@ -714,26 +789,16 @@ export const SendAmount = ({
                                   : formik.values.amountUsd
                               }
                               onChange={(e) => {
-                                let newVal = e.target.value;
-                                const isZeroState =
-                                  formik.values.amountUsd === "0" ||
-                                  formik.values.amountUsd === "0.00";
-                                // "0" shown + user typed digit → replace, not append ("05" → "5")
-                                // Keep "0." intact so typing "0.5" works
-                                if (
-                                  isZeroState &&
-                                  newVal.length === 2 &&
-                                  newVal[0] === "0" &&
-                                  newVal[1] !== "."
-                                ) {
-                                  newVal = newVal[1];
-                                }
-                                const cleaned = cleanAmount(newVal) || "0";
+                                const sanitizedAmountUsd = sanitizeAmountInput(
+                                  e.target.value,
+                                  USD_DECIMAL_LIMIT,
+                                );
+
                                 formik.setFieldValue(
                                   "amountUsd",
-                                  newVal === "" ? "0" : newVal,
+                                  sanitizedAmountUsd,
                                 );
-                                dispatch(saveAmountUsd(cleaned));
+                                dispatch(saveAmountUsd(sanitizedAmountUsd));
                               }}
                               autoComplete="off"
                               autoFocus
@@ -741,11 +806,12 @@ export const SendAmount = ({
                           </>
                         )}
                       </div>
-                      {/* Inline asset selector - KEEP class SendAmount__EditDestAsset for e2e compat */}
-                      <div
-                        className="SendAmount__EditDestAsset SendAmount__asset-selector-inline"
+                      <button
+                        type="button"
+                        className="SendAmount__asset-selector-inline"
                         onClick={goToChooseAssetAction}
                         data-testid="send-amount-edit-dest-asset"
+                        aria-label={t("Change asset")}
                       >
                         <AssetIcon
                           assetIcons={
@@ -760,7 +826,7 @@ export const SendAmount = ({
                           {parsedSourceAsset.code}
                         </span>
                         <Icon.ChevronDown />
-                      </div>
+                      </button>
                     </div>
 
                     {/* Secondary row: USD equivalent and available balance */}
@@ -769,7 +835,7 @@ export const SendAmount = ({
                         {supportsUsd
                           ? inputType === "crypto"
                             ? `$${priceValueUsd || "0.00"}`
-                            : `${priceValue || "0"} ${parsedSourceAsset.code}`
+                            : `${formatAmount(priceValue ?? "0")} ${parsedSourceAsset.code}`
                           : null}
                         {supportsUsd && (
                           <Button
@@ -782,14 +848,29 @@ export const SendAmount = ({
                               const newInputType =
                                 inputType === "crypto" ? "fiat" : "crypto";
                               if (newInputType === "crypto") {
-                                dispatch(saveAmount(priceValue));
-                                formik.setFieldValue("amount", priceValue);
+                                if (!isValidPositiveAmount(priceValue ?? "")) {
+                                  return;
+                                }
+
+                                dispatch(saveAmount(priceValue ?? "0"));
+                                formik.setFieldValue(
+                                  "amount",
+                                  priceValue ?? "0",
+                                );
                               }
                               if (newInputType === "fiat") {
-                                dispatch(saveAmountUsd(priceValueUsd));
+                                if (
+                                  !isValidPositiveAmount(priceValueUsd ?? "")
+                                ) {
+                                  return;
+                                }
+
+                                dispatch(
+                                  saveAmountUsd(priceValueUsd ?? "0.00"),
+                                );
                                 formik.setFieldValue(
                                   "amountUsd",
-                                  priceValueUsd,
+                                  priceValueUsd ?? "0.00",
                                 );
                               }
                               setInputType(newInputType);
@@ -824,14 +905,14 @@ export const SendAmount = ({
 
                   {/* Percentage buttons */}
                   <div className="SendAmount__pct-buttons">
-                    {(["25%", "50%", "75%"] as const).map((label, i) => (
+                    {PERCENTAGE_OPTIONS.map(([label, pct]) => (
                       <button
                         key={label}
                         className="SendAmount__pct-btn"
                         type="button"
                         onClick={(e) => {
                           e.preventDefault();
-                          handlePercentage((i + 1) * 25);
+                          handlePercentage(pct);
                         }}
                       >
                         {label}

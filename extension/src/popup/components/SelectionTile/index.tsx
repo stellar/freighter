@@ -7,6 +7,7 @@ interface SelectionTileProps {
   icon: React.ReactNode;
   primaryText: string;
   secondaryText?: string;
+  title?: string;
   onClick: () => void;
   isEmpty?: boolean;
   shouldUseIconWrapper?: boolean;
@@ -17,6 +18,7 @@ export const SelectionTile = ({
   icon,
   primaryText,
   secondaryText,
+  title,
   onClick,
   isEmpty = false,
   shouldUseIconWrapper = true,
@@ -27,6 +29,7 @@ export const SelectionTile = ({
       className={`SelectionTile ${isEmpty ? "SelectionTile--empty" : ""}`}
       onClick={onClick}
       data-testid={testId}
+      title={title}
     >
       <div className="SelectionTile__content">
         {shouldUseIconWrapper ? (

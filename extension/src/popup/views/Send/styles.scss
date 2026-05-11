@@ -5,10 +5,19 @@
 // Using a subtle offset + opacity so the animation feels natural in a small
 // popup window rather than a full-screen slide.
 
+.Send {
+  position: relative;
+  height: 100%;
+}
+
 .Send__step {
   height: 100%;
   display: flex;
   flex-direction: column;
+}
+
+.Send__step--hidden {
+  display: none;
 }
 
 .Send__step--from-bottom {
@@ -51,14 +60,6 @@
   // no animation — step reappears instantly behind the dismissing overlay
 }
 
-.Send__step--exit-to-bottom {
-  animation: sendStepExitToBottom 0.22s ease-in forwards;
-  pointer-events: none;
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-}
-
 @keyframes sendStepFromLeft {
   from {
     opacity: 0;
@@ -68,17 +69,5 @@
   to {
     opacity: 1;
     transform: translateX(0);
-  }
-}
-
-@keyframes sendStepExitToBottom {
-  from {
-    opacity: 1;
-    transform: translateY(0);
-  }
-
-  to {
-    opacity: 0;
-    transform: translateY(14px);
   }
 }

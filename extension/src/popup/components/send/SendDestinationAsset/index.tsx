@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { useDispatch } from "react-redux";
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { Icon, Loader, Notification } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
@@ -13,6 +13,8 @@ import {
   saveIsToken,
   saveIsCollectible,
   saveCollectibleData,
+  saveManualTransactionFee,
+  saveTransactionFee,
 } from "popup/ducks/transactionSubmission";
 import { View } from "popup/basics/layout/View";
 import { TokenList } from "popup/components/InternalTransaction/TokenList";
@@ -29,16 +31,17 @@ import "./styles.scss";
 interface SendDestinationAssetProps {
   goBack: () => void;
   goToNext: () => void;
-  returnToAmount?: boolean;
+  showCloseIcon?: boolean;
 }
 
 export const SendDestinationAsset = ({
   goBack,
   goToNext,
-  returnToAmount = false,
+  showCloseIcon = false,
 }: SendDestinationAssetProps) => {
   const { t } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
+  const location = useLocation();
   const { state: destAssetDataState, fetchData } = useGetDestAssetData({
     showHidden: false,
     includeIcons: true,
@@ -105,6 +108,8 @@ export const SendDestinationAsset = ({
   const resetAmountForm = () => {
     dispatch(saveAmount("0"));
     dispatch(saveAmountUsd("0.00"));
+    dispatch(saveTransactionFee(""));
+    dispatch(saveManualTransactionFee(null));
   };
 
   return (
@@ -113,7 +118,7 @@ export const SendDestinationAsset = ({
         title={<span>{t("Send")}</span>}
         hasBackButton
         customBackAction={goBack}
-        {...(!returnToAmount && { customBackIcon: <Icon.X /> })}
+        {...(showCloseIcon && { customBackIcon: <Icon.X /> })}
       />
       <View.Content hasNoTopPadding>
         <div className="SendDestinationAsset">

@@ -40,6 +40,7 @@ export const AddressTile = ({
               : truncatedPublicKey(address)
             : undefined
         }
+        title={address}
         onClick={onClick}
         testId="address-tile"
       />

@@ -616,13 +616,13 @@ test.fixme("Send SAC to C address", async ({ page, extensionId, context }) => {
   });
   await page.getByText("Done").click({ force: true });
 
-  // send SAC to C address
+  // send SAC to C address — follow new linear flow: token picker → destination → amount
   await page.getByTestId("nav-link-send").click({ force: true });
+  // Step 1: token picker — select USDC
+  await page.getByTestId("Select-assets-row-USDC").click({ force: true });
+  // Step 2: destination
   await page.getByTestId("send-to-input").fill(TEST_TOKEN_ADDRESS);
   await page.getByText("Continue").click({ force: true });
-
-  await page.getByTestId("send-amount-asset-select").click({ force: true });
-  await page.getByTestId("Select-assets-row-USDC").click({ force: true });
 
   await expect(page.getByText("Send USDC")).toBeVisible();
 
@@ -717,7 +717,7 @@ test("SendPayment resets amount when user selects new asset", async ({
   await expect(page.getByTestId("send-amount-amount-input")).toHaveValue("50");
 
   // Change token via the token tile on the AMOUNT screen
-  await page.locator(".SendAmount__EditDestAsset").click();
+  await page.getByTestId("send-amount-edit-dest-asset").click();
   await page.getByText("USDC").first().click({ force: true });
 
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
@@ -750,7 +750,7 @@ test("SendPayment resets state when navigating back to account", async ({
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
 
   // Change to USDC and enter amount
-  await page.locator(".SendAmount__EditDestAsset").click();
+  await page.getByTestId("send-amount-edit-dest-asset").click();
   await page.getByText("USDC").first().click({ force: true });
   await page.getByTestId("send-amount-amount-input").fill("100");
 
@@ -771,7 +771,9 @@ test("SendPayment resets state when navigating back to account", async ({
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
   await expect(page.getByTestId("send-amount-amount-input")).toHaveValue("0");
   // Verify XLM is selected (not USDC from the previous session)
-  await expect(page.locator(".SendAmount__EditDestAsset")).toContainText("XLM");
+  await expect(page.getByTestId("send-amount-edit-dest-asset")).toContainText(
+    "XLM",
+  );
 });
 
 test("Swap persists amount when navigating to choose source asset", async ({
@@ -993,7 +995,7 @@ test("Send flow change token from amount screen dismisses back", async ({
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
 
   // Click token tile to change asset — token picker slides in from bottom
-  await page.locator(".SendAmount__EditDestAsset").click();
+  await page.getByTestId("send-amount-edit-dest-asset").click();
   // Should now show token list (no tabs, inline list)
   await expect(page.getByTestId("token-list")).toBeVisible();
 
@@ -1053,12 +1055,6 @@ test("Send token payment from Asset Detail", async ({
   await page.getByTestId("send-amount-amount-input").fill("0.123");
   await expect(page.getByTestId("send-amount-amount-input")).toHaveValue(
     "0.123",
-  );
-
-  // confirm that input width stays proportional to amount length
-  await expect(page.getByTestId("send-amount-amount-input")).toHaveCSS(
-    "width",
-    "102px",
   );
 
   const reviewSendButton = page.getByTestId("send-amount-btn-continue");

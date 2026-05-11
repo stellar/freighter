@@ -551,7 +551,7 @@ test("Send custom token without Soroban mux support to G address disables memo",
   });
 
   // Select custom token
-  await page.locator(".SendAmount__EditDestAsset").click();
+  await page.getByTestId("send-amount-edit-dest-asset").click();
   await page
     .getByTestId(`SendRow-E2E:${TEST_TOKEN_ADDRESS}`)
     .click({ force: true });
@@ -635,7 +635,7 @@ test("Send custom token without Soroban mux support to M address is disabled", a
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
 
   // Select custom token
-  await page.locator(".SendAmount__EditDestAsset").click();
+  await page.getByTestId("send-amount-edit-dest-asset").click();
   await page
     .getByTestId(`SendRow-E2E:${TEST_TOKEN_ADDRESS}`)
     .click({ force: true });
@@ -685,7 +685,7 @@ test("Send custom token with Soroban mux support to G address allows memo", asyn
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
 
   // Select custom token
-  await page.locator(".SendAmount__EditDestAsset").click();
+  await page.getByTestId("send-amount-edit-dest-asset").click();
   await page
     .getByTestId(`SendRow-E2E:${TEST_TOKEN_ADDRESS}`)
     .click({ force: true });
@@ -749,7 +749,7 @@ test("Send custom token with Soroban mux support to M address disables memo", as
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
 
   // Select custom token
-  await page.locator(".SendAmount__EditDestAsset").click();
+  await page.getByTestId("send-amount-edit-dest-asset").click();
   await page
     .getByTestId(`SendRow-E2E:${TEST_TOKEN_ADDRESS}`)
     .click({ force: true });

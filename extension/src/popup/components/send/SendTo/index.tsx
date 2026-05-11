@@ -119,7 +119,7 @@ export const SendTo = ({
   const allAccounts = useSelector(allAccountsSelector);
   const activePublicKey = useSelector(publicKeySelector);
   const { state: sendDataState, fetchData } = useSendToData();
-  const otherAccounts = allAccounts.filter(
+  const otherAccounts = (allAccounts ?? []).filter(
     ({ publicKey }) => publicKey !== activePublicKey,
   );
 
@@ -294,7 +294,8 @@ export const SendTo = ({
                             <li key={account.publicKey}>
                               <button
                                 data-testid="my-account-button"
-                                onClick={() => {
+                                onClick={async () => {
+                                  await fetchData(account.publicKey, {});
                                   handleContinue(
                                     account.publicKey,
                                     undefined,
@@ -329,7 +330,7 @@ export const SendTo = ({
                         )}
                       <div className="SendTo__subheading">
                         <Icon.SearchLg />
-                        Suggestions
+                        {t("Suggestions")}
                       </div>
                       <div
                         className="SendTo__subheading-identicon"

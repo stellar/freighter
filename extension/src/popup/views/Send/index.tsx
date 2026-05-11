@@ -30,11 +30,11 @@ import { RequestState } from "constants/request";
 import { View } from "popup/basics/layout/View";
 
 import { useSendQueryParams } from "./hooks/useSendQueryParams";
-import { InputWidthProvider } from "./contexts/inputWidthContext";
 
 import "./styles.scss";
 
 const SEND_METRIC_BY_STEP: Partial<Record<STEPS, string>> = {
+  [STEPS.SELECT_SOURCE_ASSET]: METRIC_NAMES.sendPaymentSelectAsset,
   [STEPS.AMOUNT]: METRIC_NAMES.sendPaymentAmount,
   [STEPS.PAYMENT_CONFIRM]: METRIC_NAMES.sendPaymentConfirm,
   [STEPS.DESTINATION]: METRIC_NAMES.sendPaymentRecentAddress,
@@ -116,52 +116,49 @@ export const Send = () => {
 
   const location = useLocation();
 
-  // Determine the first step: if an asset or collectible was pre-selected via
-  // query params (e.g. from AssetDetail), skip the token picker and land on
-  // the destination step. Otherwise start at the token picker.
-  const initialStep = React.useMemo((): STEPS => {
-    const params = new URLSearchParams(location.search);
-    return params.has("asset") || params.has("collection_address")
-      ? STEPS.DESTINATION
-      : STEPS.SELECT_SOURCE_ASSET;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const initialStepRef = useRef<STEPS>(
+    (() => {
+      const params = new URLSearchParams(location.search);
+      return params.has("asset") || params.has("collection_address")
+        ? STEPS.DESTINATION
+        : STEPS.SELECT_SOURCE_ASSET;
+    })(),
+  );
 
-  const [activeStep, setActiveStep] = useState(initialStep);
-  const [exitingStep, setExitingStep] = useState<STEPS | null>(null);
+  const [activeStep, setActiveStep] = useState(initialStepRef.current);
+  const [prevStep, setPrevStep] = useState(initialStepRef.current);
+  const [visitedSteps, setVisitedSteps] = useState<Record<STEPS, boolean>>({
+    [initialStepRef.current]: true,
+  } as Record<STEPS, boolean>);
 
   const initialAnim =
-    initialStep === STEPS.SELECT_SOURCE_ASSET ? "from-bottom" : "from-right";
+    initialStepRef.current === STEPS.SELECT_SOURCE_ASSET
+      ? "from-bottom"
+      : "from-right";
   const [enterAnim, setEnterAnim] = useState<
     "from-bottom" | "from-right" | "from-left" | "static"
   >(initialAnim);
 
-  // Tracks the step we came from so back-navigation knows where to return.
-  const prevStepRef = useRef<STEPS>(initialStep);
   const lastEmittedStep = useRef<STEPS | null>(null);
 
   const goToStep = (
     next: STEPS,
     anim: "from-bottom" | "from-right" | "from-left" | "dismiss",
   ) => {
-    prevStepRef.current = activeStep;
-
-    if (anim === "dismiss") {
-      // Capture the current step as an exiting overlay, switch the active step
-      // immediately. The timeout only clears the overlay once its CSS animation
-      // has finished (220 ms matches the keyframe duration).
-      setExitingStep(activeStep);
-      setEnterAnim("static");
-      setActiveStep(next);
-      setTimeout(() => {
-        setExitingStep(null);
-      }, 220);
-      return;
-    }
-
-    setEnterAnim(anim);
+    setPrevStep(activeStep);
+    setEnterAnim(anim === "dismiss" ? "from-bottom" : anim);
+    setVisitedSteps((currentSteps) => ({
+      ...currentSteps,
+      [next]: true,
+    }));
     setActiveStep(next);
   };
+
+  useEffect(() => {
+    if (initialStepRef.current === STEPS.SELECT_SOURCE_ASSET) {
+      dispatch(resetSubmission());
+    }
+  }, [dispatch]);
 
   // Emit a screen-view metric only once per step transition.
   useEffect(() => {
@@ -202,7 +199,7 @@ export const Send = () => {
                 title={t("Failed to simulate transaction")}
               >
                 {t(
-                  "An unknown error has occured while simulating this transaction.",
+                  "An unknown error has occurred while simulating this transaction.",
                 )}
               </Notification>
             </View.Content>
@@ -220,15 +217,15 @@ export const Send = () => {
         return (
           <SendAmount
             goBack={() => {
-              dispatch(resetSubmission());
               if (isCollectible) {
+                dispatch(resetSubmission());
                 navigateTo(
                   ROUTES.sendPayment,
                   navigate,
                   `?tab=${TabsList.COLLECTIBLES}`,
                 );
               } else {
-                navigateTo(ROUTES.account, navigate);
+                goToStep(STEPS.SELECT_SOURCE_ASSET, "from-left");
               }
             }}
             goToNext={() => goToStep(STEPS.PAYMENT_CONFIRM, "from-bottom")}
@@ -257,7 +254,7 @@ export const Send = () => {
               navigateTo(ROUTES.account, navigate);
             }}
             goToNext={() => goToStep(STEPS.DESTINATION, "from-right")}
-            returnToAmount={false}
+            showCloseIcon
           />
         );
       }
@@ -266,19 +263,18 @@ export const Send = () => {
           <SendDestinationAsset
             goBack={() => goToStep(STEPS.AMOUNT, "dismiss")}
             goToNext={() => goToStep(STEPS.AMOUNT, "dismiss")}
-            returnToAmount={true}
           />
         );
       }
       default:
       case STEPS.DESTINATION: {
-        const fromAmount = prevStepRef.current === STEPS.AMOUNT;
+        const fromAmount = prevStep === STEPS.AMOUNT;
         return (
           <SendTo
             goBack={() => {
               if (fromAmount) {
                 goToStep(STEPS.AMOUNT, "dismiss");
-              } else if (prevStepRef.current === STEPS.SELECT_SOURCE_ASSET) {
+              } else if (prevStep === STEPS.SELECT_SOURCE_ASSET) {
                 goToStep(STEPS.SELECT_SOURCE_ASSET, "from-left");
               } else {
                 dispatch(resetSubmission());
@@ -295,17 +291,26 @@ export const Send = () => {
   };
 
   return (
-    <InputWidthProvider>
-      {/* Incoming step renders behind the exiting overlay */}
-      <div key={activeStep} className={`Send__step Send__step--${enterAnim}`}>
-        {renderStep(activeStep)}
-      </div>
-      {/* Exiting overlay: plays exit-to-bottom, then unmounts */}
-      {exitingStep !== null && (
-        <div className="Send__step Send__step--exit-to-bottom">
-          {renderStep(exitingStep)}
-        </div>
-      )}
-    </InputWidthProvider>
+    <div className="Send">
+      {(Object.values(STEPS) as STEPS[]).map((step) => {
+        if (!visitedSteps[step]) {
+          return null;
+        }
+
+        const isActive = activeStep === step;
+
+        return (
+          <div
+            key={step}
+            className={`Send__step ${
+              isActive ? `Send__step--${enterAnim}` : "Send__step--hidden"
+            }`}
+            aria-hidden={!isActive}
+          >
+            {renderStep(step)}
+          </div>
+        );
+      })}
+    </div>
   );
 };

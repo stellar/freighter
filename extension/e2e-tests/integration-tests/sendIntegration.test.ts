@@ -412,7 +412,7 @@ test("Send token payment to C address", async ({
 
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
 
-  await page.locator(".SendAmount__EditDestAsset").click();
+  await page.getByTestId("send-amount-edit-dest-asset").click();
 
   await page.getByText("E2E").click();
 
