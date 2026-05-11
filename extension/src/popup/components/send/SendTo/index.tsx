@@ -29,9 +29,14 @@ import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { STELLAR_DOCS_CREATE_ACCOUNT_URL } from "popup/constants/externalLinks";
 import { View } from "popup/basics/layout/View";
 import {
+  allAccountsSelector,
+  publicKeySelector,
+} from "popup/ducks/accountServices";
+import {
   saveDestination,
   saveDestinationAsset,
   saveFederationAddress,
+  saveRecipientName,
   transactionDataSelector,
 } from "popup/ducks/transactionSubmission";
 
@@ -111,15 +116,22 @@ export const SendTo = ({
   const { destination, federationAddress } = useSelector(
     transactionDataSelector,
   );
+  const allAccounts = useSelector(allAccountsSelector);
+  const activePublicKey = useSelector(publicKeySelector);
   const { state: sendDataState, fetchData } = useSendToData();
+  const otherAccounts = allAccounts.filter(
+    ({ publicKey }) => publicKey !== activePublicKey,
+  );
 
   const handleContinue = (
     validatedDestination: string,
     validatedFedAdress?: string,
+    recipientName = "",
   ) => {
     dispatch(saveDestination(validatedDestination));
     dispatch(saveDestinationAsset(""));
     dispatch(saveFederationAddress(validatedFedAdress || ""));
+    dispatch(saveRecipientName(recipientName));
     goToNext();
   };
 
@@ -199,11 +211,7 @@ export const SendTo = ({
 
   return (
     <React.Fragment>
-      <SubviewHeader
-        title={t("Send")}
-        customBackAction={goBack}
-        customBackIcon={<Icon.X />}
-      />
+      <SubviewHeader title={t("Send to")} customBackAction={goBack} />
       <View.Content hasTopInput>
         <FormRows>
           <Input
@@ -274,6 +282,42 @@ export const SendTo = ({
                       ))}
                     </ul>
                   </div>
+                  {otherAccounts.length > 0 && (
+                    <>
+                      <div className="SendTo__subheading">
+                        <Icon.UserCircle />
+                        {t("My Accounts")}
+                      </div>
+                      <div className="SendTo__simplebar">
+                        <ul className="SendTo__recent-accts-ul">
+                          {otherAccounts.map((account) => (
+                            <li key={account.publicKey}>
+                              <button
+                                data-testid="my-account-button"
+                                onClick={() => {
+                                  handleContinue(
+                                    account.publicKey,
+                                    undefined,
+                                    account.name || "",
+                                  );
+                                }}
+                                className="SendTo__subheading-identicon"
+                              >
+                                <div className="SendTo__subheading-identicon__identicon">
+                                  <IdenticonImg publicKey={account.publicKey} />
+                                </div>
+                                <span>
+                                  {account.name
+                                    ? `${account.name} (${truncatedPublicKey(account.publicKey)})`
+                                    : truncatedPublicKey(account.publicKey)}
+                                </span>
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </>
+                  )}
                 </>
               ) : (
                 <div>

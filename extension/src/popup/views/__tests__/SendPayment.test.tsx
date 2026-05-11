@@ -10,6 +10,9 @@ import {
 import * as ApiInternal from "@shared/api/internal";
 import * as UseNetworkFees from "popup/helpers/useNetworkFees";
 import * as BlockaidHelpers from "popup/helpers/blockaid";
+import * as UseGetCollectibles from "helpers/hooks/useGetCollectibles";
+import * as ExtensionMessaging from "@shared/api/helpers/extensionMessaging";
+import * as TokenList from "@shared/api/helpers/token-list";
 import {
   TESTNET_NETWORK_DETAILS,
   DEFAULT_NETWORKS,
@@ -49,6 +52,26 @@ jest.spyOn(ApiInternal, "getHiddenAssets").mockImplementation(() => {
 jest.spyOn(ApiInternal, "getAssetIcons").mockImplementation(() => {
   return Promise.resolve({});
 });
+
+jest.spyOn(ApiInternal, "getTokenPrices").mockImplementation(() => {
+  return Promise.resolve({});
+});
+
+jest.spyOn(UseGetCollectibles, "useGetCollectibles").mockImplementation(
+  () =>
+    ({
+      state: { collections: [] },
+      fetchData: () => Promise.resolve({ collections: [] }),
+    }) as any,
+);
+
+jest
+  .spyOn(ExtensionMessaging, "sendMessageToBackground")
+  .mockImplementation(() => Promise.resolve({} as any));
+
+jest
+  .spyOn(TokenList, "getCombinedAssetListData")
+  .mockImplementation(() => Promise.resolve([]));
 
 jest.spyOn(ApiInternal, "signFreighterTransaction").mockImplementation(() => {
   return Promise.resolve({
@@ -125,7 +148,7 @@ jest.mock("react-router-dom", () => {
 
 const publicKey = "GA4UFF2WJM7KHHG4R5D5D2MZQ6FWMDOSVITVF7C5OLD5NFP6RBBW2FGV";
 
-describe.skip("Send", () => {
+describe("Send", () => {
   beforeEach(() => {
     jest.spyOn(BlockaidHelpers, "useScanTx").mockImplementation(() => {
       return {
@@ -149,7 +172,7 @@ describe.skip("Send", () => {
           auth: {
             error: null,
             hasPrivateKey: true,
-            applicationState: ApplicationState.PASSWORD_CREATED,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
             publicKey,
             allAccounts: mockAccounts,
           },
@@ -168,15 +191,50 @@ describe.skip("Send", () => {
       </Wrapper>,
     );
     await waitFor(() => {
-      expect(screen.getByTestId("send-amount-amount-input")).toBeDefined();
+      expect(screen.getByTestId("token-list")).toBeDefined();
+      expect(screen.queryByTestId("send-amount-amount-input")).toBeNull();
     });
   });
 
-  it("sending native asset on Mainnet works", async () => {
+  it("starts on the token picker step when no asset is pre-selected", async () => {
+    render(
+      <Wrapper
+        routes={[ROUTES.sendPayment]}
+        state={{
+          auth: {
+            error: null,
+            hasPrivateKey: true,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
+            publicKey,
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: MAINNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+          },
+          transactionSubmission: {
+            ...transactionSubmissionInitialState,
+            accountBalances: mockBalances,
+          },
+          tokenPaymentSimulation: tokenPaymentActions.initialState,
+        }}
+      >
+        <Send />
+      </Wrapper>,
+    );
+    await waitFor(() => {
+      expect(screen.getByTestId("token-list")).toBeDefined();
+    });
+    expect(screen.queryByTestId("send-amount-amount-input")).toBeNull();
+  });
+
+  // TODO: Rewrite in follow-up task covering e2e tests.
+  // These tests assume AMOUNT is the initial step, which is no longer the case.
+  it.skip("sending native asset on Mainnet works", async () => {
     await testPaymentFlow("native", true, false);
   });
 
-  it("sending non-native asset on Mainnet with Blockaid validation and asset warnings", async () => {
+  it.skip("sending non-native asset on Mainnet with Blockaid validation and asset warnings", async () => {
     jest.spyOn(BlockAidHelpers, "scanAsset").mockImplementation(() =>
       Promise.resolve({
         address: "",
@@ -200,7 +258,7 @@ describe.skip("Send", () => {
     );
   });
 
-  it("sending non-native asset on Mainnet with Blockaid simulation error", async () => {
+  it.skip("sending non-native asset on Mainnet with Blockaid simulation error", async () => {
     jest.spyOn(BlockaidHelpers, "useScanTx").mockImplementation(() => {
       const scanTxResult = {
         simulation: {
@@ -238,11 +296,11 @@ describe.skip("Send", () => {
     );
   });
 
-  it("sending native asset on Testnet works", async () => {
+  it.skip("sending native asset on Testnet works", async () => {
     await testPaymentFlow("native", false, false);
   });
 
-  it("sending non-native asset on Testnet works", async () => {
+  it.skip("sending non-native asset on Testnet works", async () => {
     await testPaymentFlow(
       "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
       false,
@@ -250,7 +308,7 @@ describe.skip("Send", () => {
     );
   });
 
-  it("pre-populates destination from query params", async () => {
+  it.skip("pre-populates destination from query params", async () => {
     const testDestination =
       "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF";
     render(
@@ -285,7 +343,7 @@ describe.skip("Send", () => {
     });
   });
 
-  it("pre-populates asset from query params", async () => {
+  it.skip("pre-populates asset from query params", async () => {
     const testAsset =
       "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM";
     render(
@@ -324,7 +382,7 @@ describe.skip("Send", () => {
     });
   });
 
-  it("ignores invalid destination query param - malformed public key", async () => {
+  it.skip("ignores invalid destination query param - malformed public key", async () => {
     const invalidDestination = "INVALID_PUBLIC_KEY_123";
     render(
       <Wrapper
@@ -359,7 +417,7 @@ describe.skip("Send", () => {
     });
   });
 
-  it("ignores invalid destination query param - empty string", async () => {
+  it.skip("ignores invalid destination query param - empty string", async () => {
     render(
       <Wrapper
         routes={[`${ROUTES.sendPayment}?destination=`]}
@@ -393,7 +451,7 @@ describe.skip("Send", () => {
     });
   });
 
-  it("ignores invalid asset query param - malformed canonical format", async () => {
+  it.skip("ignores invalid asset query param - malformed canonical format", async () => {
     const invalidAsset = "INVALID_FORMAT";
     render(
       <Wrapper
@@ -428,7 +486,7 @@ describe.skip("Send", () => {
     });
   });
 
-  it("ignores invalid asset query param - missing issuer", async () => {
+  it.skip("ignores invalid asset query param - missing issuer", async () => {
     const invalidAsset = "CODE:";
     render(
       <Wrapper
@@ -463,7 +521,7 @@ describe.skip("Send", () => {
     });
   });
 
-  it("ignores invalid asset query param - no colon divider", async () => {
+  it.skip("ignores invalid asset query param - no colon divider", async () => {
     const invalidAsset = "NODIVIDER";
     render(
       <Wrapper
@@ -498,7 +556,7 @@ describe.skip("Send", () => {
     });
   });
 
-  it("handles valid destination but invalid asset - uses default asset", async () => {
+  it.skip("handles valid destination but invalid asset - uses default asset", async () => {
     const validDestination =
       "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF";
     const invalidAsset = "MALFORMED";
@@ -539,7 +597,7 @@ describe.skip("Send", () => {
     });
   });
 
-  it("disables continue button when destination is not set", async () => {
+  it.skip("disables continue button when destination is not set", async () => {
     render(
       <Wrapper
         routes={[ROUTES.sendPayment]}
@@ -582,7 +640,9 @@ describe.skip("Send", () => {
     });
   });
 
-  describe("Memo Editing Context", () => {
+  // TODO: Rewrite in follow-up task covering e2e tests.
+  // These tests assume AMOUNT is the initial step, which is no longer the case.
+  describe.skip("Memo Editing Context", () => {
     it("should NOT reopen review modal when submitting memo from SendPayment page", async () => {
       render(
         <Wrapper

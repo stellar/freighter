@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useLayoutEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Navigate, useLocation } from "react-router-dom";
 import BigNumber from "bignumber.js";
@@ -10,15 +10,10 @@ import { LoadingBackground } from "popup/basics/LoadingBackground";
 import { View } from "popup/basics/layout/View";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { AppDispatch } from "popup/App";
-import {
-  getAssetFromCanonical,
-  isMainnet,
-  isMuxedAccount,
-} from "helpers/stellar";
+import { getAssetFromCanonical, isMuxedAccount } from "helpers/stellar";
 import { NetworkCongestion } from "popup/helpers/useNetworkFees";
 import { emitMetric } from "helpers/metrics";
 import { trackSendFeeBreakdownOpened } from "popup/metrics/send";
-import { useRunAfterUpdate } from "popup/helpers/useRunAfterUpdate";
 import {
   getAssetDecimals,
   getAvailableBalance,
@@ -28,7 +23,6 @@ import { SubviewHeader } from "popup/components/SubviewHeader";
 import {
   cleanAmount,
   formatAmount,
-  formatAmountPreserveCursor,
   roundUsdValue,
 } from "popup/helpers/formatters";
 import {
@@ -62,7 +56,6 @@ import { SelectedCollectible } from "popup/components/sendCollectible/SelectedCo
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { useGetSendAmountData } from "./hooks/useSendAmountData";
 import { SimulateTxData, SimulateResult } from "./hooks/useSimulateTxData";
-import { InputWidthContext } from "popup/views/Send/contexts/inputWidthContext";
 import { SlideupModal } from "popup/components/SlideupModal";
 import { MemoEditingContext } from "popup/constants/send-payment";
 import {
@@ -73,8 +66,6 @@ import { captureException } from "@sentry/browser";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 
 import "../styles.scss";
-
-const DEFAULT_INPUT_WIDTH = 25;
 
 // Returns the value to show in FeesPane's total row given the user's current
 // draft inclusion fee and the simulated resource fee.  For classic (no
@@ -111,7 +102,6 @@ export const SendAmount = ({
   const { t } = useTranslation();
   const location = useLocation();
   const dispatch = useDispatch<AppDispatch>();
-  const runAfterUpdate = useRunAfterUpdate();
   const { transactionData } = useSelector(transactionSubmissionSelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const {
@@ -121,6 +111,7 @@ export const SendAmount = ({
     destination,
     destinationAsset,
     federationAddress,
+    recipientName,
     isToken,
     transactionFee,
     isCollectible,
@@ -176,18 +167,7 @@ export const SendAmount = ({
     },
     destination,
   );
-  const cryptoSpanRef = useRef<HTMLSpanElement>(null);
 
-  const fiatSpanRef = useRef<HTMLSpanElement>(null);
-  const {
-    inputWidthCrypto,
-    setInputWidthCrypto,
-    inputWidthFiat,
-    setInputWidthFiat,
-  } = React.useContext(InputWidthContext);
-
-  const cryptoInputRef = useRef<HTMLInputElement>(null);
-  const usdInputRef = useRef<HTMLInputElement>(null);
   // Tracks the dest+asset pair that simulation was last triggered for, so we
   // can detect changes and re-simulate without watching simulationState.data.
   const simulationDataRef = useRef({ destination: "", asset: "" });
@@ -348,34 +328,11 @@ export const SendAmount = ({
     validateOnChange: true,
   });
 
-  useLayoutEffect(() => {
-    if (cryptoSpanRef.current) {
-      setInputWidthCrypto(cryptoSpanRef.current.offsetWidth + 2);
-    }
-  }, [formik.values.amount, setInputWidthCrypto]);
-  useLayoutEffect(() => {
-    if (fiatSpanRef.current) {
-      setInputWidthFiat(fiatSpanRef.current.offsetWidth + 4);
-    }
-  }, [formik.values.amountUsd, setInputWidthFiat]);
-
   const srcAsset = getAssetFromCanonical(asset);
   const parsedSourceAsset = getAssetFromCanonical(formik.values.asset);
   const isLoading =
     sendAmountData.state === RequestState.IDLE ||
     sendAmountData.state === RequestState.LOADING;
-
-  useEffect(() => {
-    if (cryptoInputRef.current) {
-      cryptoInputRef.current.focus();
-      cryptoInputRef.current.select();
-    }
-
-    if (usdInputRef.current) {
-      usdInputRef.current.focus();
-      usdInputRef.current.select();
-    }
-  }, []);
 
   useEffect(() => {
     const getData = async () => {
@@ -471,7 +428,6 @@ export const SendAmount = ({
       : getBalanceByAsset(srcAsset, sendData.userBalances.balances);
   const prices = sendData.tokenPrices;
   const assetPrice = prices[asset] && prices[asset].currentPrice;
-  const xlmPrice = prices["native"]?.currentPrice;
   const assetDecimals = getAssetDecimals(asset, sendData.userBalances, isToken);
   const priceValue = assetPrice
     ? new BigNumber(cleanAmount(formik.values.amountUsd))
@@ -488,15 +444,7 @@ export const SendAmount = ({
         ),
       )}`
     : null;
-  const recommendedFeeUsd = xlmPrice
-    ? `$${formatAmount(
-        roundUsdValue(
-          new BigNumber(xlmPrice).multipliedBy(new BigNumber(fee)).toString(),
-        ),
-      )}`
-    : null;
-  const supportsUsd =
-    isMainnet(sendAmountData.data?.networkDetails!) && assetPrice;
+  const supportsUsd = !!assetPrice;
   const availableBalance = getAvailableBalance({
     assetCanonical: asset,
     balances: sendData.userBalances.balances,
@@ -506,7 +454,6 @@ export const SendAmount = ({
     assetBalance && "decimals" in assetBalance
       ? availableBalance
       : formatAmount(availableBalance);
-  const srcTitle = srcAsset.code;
   const goBackAction = () => {
     dispatch(saveAsset("native"));
     dispatch(saveIsToken(false));
@@ -543,74 +490,61 @@ export const SendAmount = ({
         new BigNumber(availableBalance),
       ));
 
+  const handlePercentage = (pct: number) => {
+    emitMetric(METRIC_NAMES.sendPaymentSetMax);
+    const fraction = new BigNumber(pct).dividedBy(100);
+    if (inputType === "fiat" && assetPrice) {
+      const pctUsd = formatAmount(
+        roundUsdValue(
+          new BigNumber(assetPrice)
+            .multipliedBy(new BigNumber(cleanAmount(availableBalance)))
+            .multipliedBy(fraction)
+            .toString(),
+        ),
+      );
+      formik.setFieldValue("amountUsd", pctUsd);
+      dispatch(saveAmountUsd(pctUsd));
+    } else {
+      const pctAmount = new BigNumber(cleanAmount(availableBalance))
+        .multipliedBy(fraction)
+        .decimalPlaces(assetDecimals)
+        .toString();
+      formik.setFieldValue("amount", pctAmount);
+      dispatch(saveAmount(pctAmount));
+    }
+  };
+
   return (
     <React.Fragment>
       <SubviewHeader
         title={<span>{t("Send")}</span>}
         hasBackButton
         customBackAction={goBackAction}
+        customBackIcon={<Icon.X />}
+        rightButton={
+          <button
+            className="SendAmount__header-settings-btn"
+            data-testid="send-amount-btn-fee"
+            onClick={() => {
+              setIsEditingSettings(true);
+              if (
+                (isToken || isCollectible) &&
+                destination &&
+                simulationState.state !== RequestState.SUCCESS &&
+                simulationState.state !== RequestState.LOADING
+              ) {
+                fetchSimulationData();
+              }
+            }}
+          >
+            <Icon.Settings01 />
+          </button>
+        }
       />
       <View.Content
         hasNoTopPadding={isCollectible}
         contentFooter={
           <div className="SendAmount__btn-continue">
-            <div className="SendAmount__settings-row">
-              <div className="SendAmount__settings-fee-display">
-                <span className="SendAmount__settings-fee-display__label">
-                  {t("Fee")}:
-                </span>
-                <span data-testid="send-amount-fee-display">
-                  {(isToken || isCollectible) &&
-                  simulationState.state === RequestState.ERROR
-                    ? t("Fee unavailable")
-                    : (isToken || isCollectible) &&
-                        simulationState.state === RequestState.LOADING
-                      ? t("Calculating...")
-                      : inputType === "crypto"
-                        ? `${fee} ${t("XLM")}`
-                        : recommendedFeeUsd}
-                </span>
-              </div>
-              <div className="SendAmount__settings-options">
-                <Button
-                  data-testid="send-amount-btn-memo"
-                  size="md"
-                  isRounded
-                  variant="tertiary"
-                  onClick={() => {
-                    setMemoEditingContext(MemoEditingContext.SendPayment);
-                    setIsEditingMemo(true);
-                  }}
-                  icon={<Icon.File02 />}
-                  iconPosition="left"
-                >
-                  {t("Memo")}
-                </Button>
-                <Button
-                  data-testid="send-amount-btn-fee"
-                  size="md"
-                  isRounded
-                  variant="tertiary"
-                  onClick={() => {
-                    setIsEditingSettings(true);
-                    // For Soroban tokens with a destination, trigger simulation
-                    // immediately so fee input and FeesPane reflect correct amounts.
-                    // Without a destination simulation would fail — skip it and let
-                    // FeesPane show the base fee (matching mobile behaviour).
-                    if (
-                      (isToken || isCollectible) &&
-                      destination &&
-                      simulationState.state !== RequestState.SUCCESS &&
-                      simulationState.state !== RequestState.LOADING
-                    ) {
-                      fetchSimulationData();
-                    }
-                  }}
-                >
-                  <Icon.Settings01 />
-                </Button>
-              </div>
-            </div>
             {isCollectible ? (
               <>
                 {(isToken || isCollectible) &&
@@ -675,7 +609,12 @@ export const SendAmount = ({
                     formik.submitForm();
                   }}
                 >
-                  {t("Review Send")}
+                  {(inputType === "crypto" &&
+                    new BigNumber(formik.values.amount).isZero()) ||
+                  (inputType === "fiat" &&
+                    new BigNumber(formik.values.amountUsd).isZero())
+                    ? t("Enter an amount")
+                    : t("Review Send")}
                 </Button>
               </>
             )}
@@ -704,221 +643,193 @@ export const SendAmount = ({
             ) : (
               <form>
                 <div className="SendAmount__simplebar__content">
-                  <div className="SendAmount__amount-row">
-                    <div className="SendAmount__amount-input-container">
-                      {inputType === "crypto" && (
-                        <>
-                          <span
-                            ref={cryptoSpanRef}
-                            className={`SendAmount__input-amount SendAmount__${getAmountFontSize()}`}
-                            style={{
-                              position: "absolute",
-                              visibility: "hidden",
-                              whiteSpace: "pre",
-                            }}
-                          >
-                            {formik.values.amount || "0"}
-                          </span>
-                          <input
-                            ref={cryptoInputRef}
-                            className={`SendAmount__input-amount SendAmount__${getAmountFontSize()}`}
-                            style={{
-                              width: `${inputWidthCrypto || DEFAULT_INPUT_WIDTH}px`,
-                            }}
-                            data-testid="send-amount-amount-input"
-                            name="amount"
-                            type="text"
-                            placeholder="0"
-                            value={formik.values.amount}
-                            onChange={(e) => {
-                              const input = e.target;
-                              const { amount: newAmount, newCursor } =
-                                formatAmountPreserveCursor(
-                                  e.target.value,
-                                  formik.values.amount,
-                                  getAssetDecimals(
-                                    asset,
-                                    sendData.userBalances,
-                                    isToken,
-                                  ),
-                                  e.target.selectionStart || 1,
-                                );
-                              formik.setFieldValue("amount", newAmount);
-                              dispatch(saveAmount(newAmount));
-                              runAfterUpdate(() => {
-                                input.selectionStart = newCursor;
-                                input.selectionEnd = newCursor;
-                              });
-                            }}
-                            autoFocus
-                            autoComplete="off"
-                          />
-                          <div
-                            className={`SendAmount__amount-label SendAmount__${getAmountFontSize()}`}
-                          >
-                            {parsedSourceAsset.code}
-                          </div>
-                        </>
-                      )}
-                      {inputType === "fiat" && (
-                        <>
-                          <div
-                            className={`SendAmount__amount-label-usd SendAmount__${getAmountFontSize()}`}
-                          >
-                            $
-                          </div>
-                          <span
-                            ref={fiatSpanRef}
-                            className={`SendAmount__input-amount SendAmount__${getAmountFontSize()}`}
-                            style={{
-                              position: "absolute",
-                              visibility: "hidden",
-                              whiteSpace: "pre",
-                            }}
-                          >
-                            {formik.values.amountUsd || "0"}
-                          </span>
-                          <input
-                            ref={usdInputRef}
-                            className={`SendAmount__input-amount SendAmount__${getAmountFontSize()}`}
-                            style={{
-                              width: `${inputWidthFiat || DEFAULT_INPUT_WIDTH}px`,
-                            }}
-                            data-testid="send-amount-amount-input"
-                            name="amountUsd"
-                            type="text"
-                            value={formik.values.amountUsd}
-                            onChange={(e) => {
-                              const input = e.target;
-                              const { amount: newAmount, newCursor } =
-                                formatAmountPreserveCursor(
-                                  e.target.value,
-                                  formik.values.amountUsd,
-                                  2,
-                                  e.target.selectionStart || 1,
-                                );
-                              formik.setFieldValue("amountUsd", newAmount);
-                              dispatch(saveAmountUsd(newAmount));
-                              runAfterUpdate(() => {
-                                input.selectionStart = newCursor;
-                                input.selectionEnd = newCursor;
-                              });
-                            }}
-                            autoFocus
-                            autoComplete="off"
-                          />
-                        </>
-                      )}
-                    </div>
-                  </div>
-                  {supportsUsd && (
-                    <div className="SendAmount__amount-price">
-                      {inputType === "crypto"
-                        ? `$${priceValueUsd}`
-                        : `${priceValue} ${parsedSourceAsset.code}`}
-                      <Button
-                        size="md"
-                        type="button"
-                        isRounded
-                        variant="tertiary"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          const newInputType =
-                            inputType === "crypto" ? "fiat" : "crypto";
-                          if (newInputType === "crypto") {
-                            dispatch(saveAmount(priceValue));
-                            formik.setFieldValue("amount", priceValue);
-                          }
-                          if (newInputType === "fiat") {
-                            dispatch(saveAmountUsd(priceValueUsd));
-                            formik.setFieldValue("amountUsd", priceValueUsd);
-                          }
-                          setInputType(newInputType);
-                        }}
-                      >
-                        <Icon.RefreshCw03 />
-                      </Button>
-                    </div>
-                  )}
-                  <div className="SendAmount__invalid-state">
-                    {isAmountTooHigh && (
-                      <>
-                        <Icon.AlertCircle />
-                        <span>
-                          {t(
-                            "You don’t have enough {{asset}} in your account",
-                            {
-                              asset: parsedSourceAsset.code,
-                            },
-                          )}
-                        </span>
-                      </>
-                    )}
-                  </div>
-                  <div className="SendAmount__btn-set-max">
-                    <Button
-                      size="md"
-                      type="button"
-                      variant="tertiary"
-                      isRounded
-                      onClick={(e) => {
-                        e.preventDefault();
-                        emitMetric(METRIC_NAMES.sendPaymentSetMax);
-                        if (inputType === "fiat") {
-                          const availableUsd = formatAmount(
-                            roundUsdValue(
-                              new BigNumber(assetPrice!)
-                                .multipliedBy(
-                                  new BigNumber(cleanAmount(availableBalance)),
-                                )
-                                .toString(),
-                            ),
-                          );
-                          formik.setFieldValue("amountUsd", availableUsd);
-                          dispatch(saveAmountUsd(availableUsd));
-                        } else {
-                          formik.setFieldValue("amount", availableBalance);
-                          dispatch(saveAmount(availableBalance));
-                        }
-                      }}
-                      data-testid="SendAmountSetMax"
-                    >
-                      {t("Set Max")}
-                    </Button>
-                  </div>
-                  <div
-                    className="SendAmount__EditDestAsset"
-                    onClick={goToChooseAssetAction}
-                    data-testid="send-amount-edit-dest-asset"
-                  >
-                    <div className="SendAmount__EditDestAsset__title">
-                      <AssetIcon
-                        assetIcons={
-                          asset !== "native" ? { [asset]: assetIcon } : {}
-                        }
-                        code={srcAsset.code}
-                        issuerKey={srcAsset.issuer}
-                        icon={assetIcon}
-                        isSuspicious={false}
-                      />
-                      <div className="SendAmount__EditDestAsset__asset-title">
-                        <div className="SendAmount__EditDestAsset__asset-heading">
-                          {srcTitle}
-                        </div>
-                        <div className="SendAmount__EditDestAsset__asset-total">
-                          {displayTotal}
-                        </div>
-                      </div>
-                    </div>
-                    <Button isRounded size="sm" variant="tertiary">
-                      <Icon.ChevronRight />
-                    </Button>
-                  </div>
+                  {/* Recipient at TOP */}
                   <AddressTile
                     address={destination}
                     federationAddress={federationAddress}
+                    recipientName={recipientName}
                     onClick={goToChooseDest}
                   />
+
+                  {/* Amount card: matches mobile's rounded card container */}
+                  <div className="SendAmount__amount-card">
+                    {/* Sending label */}
+                    <div className="SendAmount__sending-label">
+                      {t("Sending")}
+                    </div>
+
+                    {/* Amount row: input + inline asset selector */}
+                    <div className="SendAmount__amount-row">
+                      <div className="SendAmount__amount-input-container">
+                        {inputType === "crypto" && (
+                          <input
+                            className={`SendAmount__input-amount SendAmount__${getAmountFontSize()}`}
+                            data-testid="send-amount-amount-input"
+                            name="amount"
+                            type="text"
+                            inputMode="decimal"
+                            placeholder="0"
+                            value={
+                              formik.values.amount === "0"
+                                ? ""
+                                : formik.values.amount
+                            }
+                            onChange={(e) => {
+                              const newVal = e.target.value;
+                              const cleaned = cleanAmount(newVal) || "0";
+                              formik.setFieldValue(
+                                "amount",
+                                newVal === "" ? "0" : newVal,
+                              );
+                              dispatch(saveAmount(cleaned));
+                            }}
+                            autoComplete="off"
+                            autoFocus
+                          />
+                        )}
+                        {inputType === "fiat" && (
+                          <>
+                            <div
+                              className={`SendAmount__amount-label-usd SendAmount__${getAmountFontSize()}`}
+                            >
+                              $
+                            </div>
+                            <input
+                              className={`SendAmount__input-amount SendAmount__${getAmountFontSize()}`}
+                              data-testid="send-amount-amount-input"
+                              name="amountUsd"
+                              type="text"
+                              inputMode="decimal"
+                              placeholder="0"
+                              value={
+                                formik.values.amountUsd === "0" ||
+                                formik.values.amountUsd === "0.00"
+                                  ? ""
+                                  : formik.values.amountUsd
+                              }
+                              onChange={(e) => {
+                                const newVal = e.target.value;
+                                const cleaned = cleanAmount(newVal) || "0";
+                                formik.setFieldValue(
+                                  "amountUsd",
+                                  newVal === "" ? "0" : newVal,
+                                );
+                                dispatch(saveAmountUsd(cleaned));
+                              }}
+                              autoComplete="off"
+                              autoFocus
+                            />
+                          </>
+                        )}
+                      </div>
+                      {/* Inline asset selector - KEEP class SendAmount__EditDestAsset for e2e compat */}
+                      <div
+                        className="SendAmount__EditDestAsset SendAmount__asset-selector-inline"
+                        onClick={goToChooseAssetAction}
+                        data-testid="send-amount-edit-dest-asset"
+                      >
+                        <AssetIcon
+                          assetIcons={
+                            asset !== "native" ? { [asset]: assetIcon } : {}
+                          }
+                          code={srcAsset.code}
+                          issuerKey={srcAsset.issuer}
+                          icon={assetIcon}
+                          isSuspicious={false}
+                        />
+                        <span className="SendAmount__asset-code">
+                          {parsedSourceAsset.code}
+                        </span>
+                        <Icon.ChevronDown />
+                      </div>
+                    </div>
+
+                    {/* Secondary row: USD equivalent and available balance */}
+                    <div className="SendAmount__balance-row">
+                      <div className="SendAmount__amount-price">
+                        {supportsUsd
+                          ? inputType === "crypto"
+                            ? `$${priceValueUsd || "0.00"}`
+                            : `${priceValue || "0"} ${parsedSourceAsset.code}`
+                          : null}
+                        {supportsUsd && (
+                          <Button
+                            size="md"
+                            type="button"
+                            isRounded
+                            variant="tertiary"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              const newInputType =
+                                inputType === "crypto" ? "fiat" : "crypto";
+                              if (newInputType === "crypto") {
+                                dispatch(saveAmount(priceValue));
+                                formik.setFieldValue("amount", priceValue);
+                              }
+                              if (newInputType === "fiat") {
+                                dispatch(saveAmountUsd(priceValueUsd));
+                                formik.setFieldValue(
+                                  "amountUsd",
+                                  priceValueUsd,
+                                );
+                              }
+                              setInputType(newInputType);
+                            }}
+                          >
+                            <Icon.RefreshCw03 />
+                          </Button>
+                        )}
+                      </div>
+                      <div className="SendAmount__available-balance">
+                        {displayTotal} {parsedSourceAsset.code}
+                      </div>
+                    </div>
+
+                    {/* Error state */}
+                    <div className="SendAmount__invalid-state">
+                      {isAmountTooHigh && (
+                        <>
+                          <Icon.AlertCircle />
+                          <span>
+                            {t(
+                              "You don't have enough {{asset}} in your account",
+                              {
+                                asset: parsedSourceAsset.code,
+                              },
+                            )}
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Percentage buttons */}
+                  <div className="SendAmount__pct-buttons">
+                    {(["25%", "50%", "75%"] as const).map((label, i) => (
+                      <button
+                        key={label}
+                        className="SendAmount__pct-btn"
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          handlePercentage((i + 1) * 25);
+                        }}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                    <button
+                      className="SendAmount__pct-btn"
+                      type="button"
+                      data-testid="SendAmountSetMax"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handlePercentage(100);
+                      }}
+                    >
+                      {t("Max")}
+                    </button>
+                  </div>
                 </div>
               </form>
             )}

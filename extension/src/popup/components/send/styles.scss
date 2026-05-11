@@ -83,14 +83,19 @@
 
   &__amount-row {
     display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: pxToRem(8px);
     position: relative;
   }
 
   &__amount-input-container {
-    width: 100%;
+    flex: 1;
+    min-width: 0;
     display: flex;
-    justify-content: center;
+    justify-content: flex-start;
     align-items: center;
+    overflow: hidden;
   }
 
   &__amount-label {
@@ -118,10 +123,11 @@
     font-weight: var(--font-weight-light);
     background: none;
     border: none;
-    text-align: right;
+    text-align: left;
     background-color: transparent;
     outline: none;
-    transition: opacity 0.15s ease-in-out;
+    min-width: 0;
+    width: 100%;
 
     &__full-height {
       margin-top: 2rem;
@@ -216,11 +222,10 @@
 
   &__amount-price {
     display: flex;
-    justify-content: center;
+    justify-content: flex-start;
     align-items: center;
-    margin-top: pxToRem(12px);
     color: var(--sds-clr-gray-11);
-    font-size: pxToRem(18px);
+    font-size: pxToRem(14px);
 
     .Button {
       border: 0;
@@ -234,8 +239,8 @@
   &__invalid-state {
     display: flex;
     justify-content: center;
-    height: pxToRem(20px);
-    margin: 2rem 0;
+    min-height: pxToRem(20px);
+    margin-top: pxToRem(8px);
     color: var(--sds-clr-red-09);
     font-size: pxToRem(14px);
 
@@ -246,6 +251,99 @@
 
   &__FeesPane {
     padding: pxToRem(32px) 0;
+  }
+
+  &__amount-card {
+    background-color: var(--sds-clr-gray-03);
+    border-radius: pxToRem(16px);
+    padding: pxToRem(12px) pxToRem(16px);
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    margin-top: pxToRem(8px);
+    margin-bottom: pxToRem(8px);
+  }
+
+  &__sending-label {
+    font-size: pxToRem(12px);
+    color: var(--sds-clr-gray-11);
+    margin-bottom: pxToRem(4px);
+  }
+
+  &__asset-selector-inline {
+    display: flex;
+    align-items: center;
+    gap: pxToRem(6px);
+    cursor: pointer;
+    padding: pxToRem(6px) pxToRem(8px);
+    border-radius: pxToRem(8px);
+    background-color: var(--sds-clr-gray-04);
+    white-space: nowrap;
+    flex-shrink: 0;
+    margin-bottom: 0;
+
+    svg:last-child {
+      width: pxToRem(14px);
+      height: pxToRem(14px);
+    }
+  }
+
+  &__asset-code {
+    font-size: pxToRem(16px);
+    font-weight: var(--font-weight-medium);
+  }
+
+  &__balance-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: pxToRem(6px);
+  }
+
+  &__available-balance {
+    font-size: pxToRem(13px);
+    color: var(--sds-clr-gray-11);
+  }
+
+  &__pct-buttons {
+    display: flex;
+    gap: pxToRem(8px);
+    margin-bottom: pxToRem(16px);
+  }
+
+  &__pct-btn {
+    flex: 1;
+    padding: pxToRem(8px) 0;
+    border: 1px solid var(--sds-clr-gray-06);
+    border-radius: pxToRem(20px);
+    background: none;
+    color: var(--sds-clr-gray-12);
+    font-size: pxToRem(13px);
+    cursor: pointer;
+
+    &:hover {
+      background-color: var(--sds-clr-gray-03);
+    }
+
+    &:active {
+      background-color: var(--sds-clr-gray-04);
+    }
+  }
+
+  &__header-settings-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--sds-clr-gray-12);
+    padding: pxToRem(4px);
+
+    svg {
+      width: pxToRem(20px);
+      height: pxToRem(20px);
+    }
   }
 }
 

@@ -1,0 +1,84 @@
+// Step transition animations for the Send flow.
+//
+// Steps that are presented modally (X close button) slide up from below.
+// Steps that are pushed forward (back arrow) slide in from the right.
+// Using a subtle offset + opacity so the animation feels natural in a small
+// popup window rather than a full-screen slide.
+
+.Send__step {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.Send__step--from-bottom {
+  animation: sendStepFromBottom 0.22s ease-out;
+}
+
+.Send__step--from-right {
+  animation: sendStepFromRight 0.22s ease-out;
+}
+
+@keyframes sendStepFromBottom {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes sendStepFromRight {
+  from {
+    opacity: 0;
+    transform: translateX(14px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.Send__step--from-left {
+  animation: sendStepFromLeft 0.22s ease-out;
+}
+
+.Send__step--static {
+  // no animation — step reappears instantly behind the dismissing overlay
+}
+
+.Send__step--exit-to-bottom {
+  animation: sendStepExitToBottom 0.22s ease-in forwards;
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+@keyframes sendStepFromLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-14px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes sendStepExitToBottom {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  to {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+}

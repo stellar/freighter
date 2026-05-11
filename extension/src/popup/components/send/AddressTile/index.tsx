@@ -11,12 +11,14 @@ import "./styles.scss";
 interface AddressTileProps {
   address: string;
   federationAddress?: string;
+  recipientName?: string;
   onClick: () => void;
 }
 
 export const AddressTile = ({
   address,
   federationAddress,
+  recipientName,
   onClick,
 }: AddressTileProps) => {
   const { t } = useTranslation();
@@ -26,9 +28,17 @@ export const AddressTile = ({
       <SelectionTile
         icon={<IdenticonImg publicKey={address} />}
         primaryText={
-          federationAddress
+          recipientName ||
+          (federationAddress
             ? truncatedFedAddress(federationAddress)
-            : truncatedPublicKey(address)
+            : truncatedPublicKey(address))
+        }
+        secondaryText={
+          recipientName
+            ? federationAddress
+              ? truncatedFedAddress(federationAddress)
+              : truncatedPublicKey(address)
+            : undefined
         }
         onClick={onClick}
         testId="address-tile"

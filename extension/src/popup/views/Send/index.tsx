@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { Notification } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
@@ -31,6 +31,8 @@ import { View } from "popup/basics/layout/View";
 
 import { useSendQueryParams } from "./hooks/useSendQueryParams";
 import { InputWidthProvider } from "./contexts/inputWidthContext";
+
+import "./styles.scss";
 
 const SEND_METRIC_BY_STEP: Partial<Record<STEPS, string>> = {
   [STEPS.AMOUNT]: METRIC_NAMES.sendPaymentAmount,
@@ -112,8 +114,54 @@ export const Send = () => {
       networkDetails,
     });
 
-  const [activeStep, setActiveStep] = useState(STEPS.AMOUNT);
+  const location = useLocation();
+
+  // Determine the first step: if an asset or collectible was pre-selected via
+  // query params (e.g. from AssetDetail), skip the token picker and land on
+  // the destination step. Otherwise start at the token picker.
+  const initialStep = React.useMemo((): STEPS => {
+    const params = new URLSearchParams(location.search);
+    return params.has("asset") || params.has("collection_address")
+      ? STEPS.DESTINATION
+      : STEPS.SELECT_SOURCE_ASSET;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const [activeStep, setActiveStep] = useState(initialStep);
+  const [exitingStep, setExitingStep] = useState<STEPS | null>(null);
+
+  const initialAnim =
+    initialStep === STEPS.SELECT_SOURCE_ASSET ? "from-bottom" : "from-right";
+  const [enterAnim, setEnterAnim] = useState<
+    "from-bottom" | "from-right" | "from-left" | "static"
+  >(initialAnim);
+
+  // Tracks the step we came from so back-navigation knows where to return.
+  const prevStepRef = useRef<STEPS>(initialStep);
   const lastEmittedStep = useRef<STEPS | null>(null);
+
+  const goToStep = (
+    next: STEPS,
+    anim: "from-bottom" | "from-right" | "from-left" | "dismiss",
+  ) => {
+    prevStepRef.current = activeStep;
+
+    if (anim === "dismiss") {
+      // Capture the current step as an exiting overlay, switch the active step
+      // immediately. The timeout only clears the overlay once its CSS animation
+      // has finished (220 ms matches the keyframe duration).
+      setExitingStep(activeStep);
+      setEnterAnim("static");
+      setActiveStep(next);
+      setTimeout(() => {
+        setExitingStep(null);
+      }, 220);
+      return;
+    }
+
+    setEnterAnim(anim);
+    setActiveStep(next);
+  };
 
   // Emit a screen-view metric only once per step transition.
   useEffect(() => {
@@ -164,7 +212,7 @@ export const Send = () => {
         return (
           <TransactionConfirm
             xdr={xdr}
-            goBack={() => setActiveStep(STEPS.AMOUNT)}
+            goBack={() => goToStep(STEPS.AMOUNT, "dismiss")}
           />
         );
       }
@@ -183,9 +231,11 @@ export const Send = () => {
                 navigateTo(ROUTES.account, navigate);
               }
             }}
-            goToNext={() => setActiveStep(STEPS.PAYMENT_CONFIRM)}
-            goToChooseDest={() => setActiveStep(STEPS.DESTINATION)}
-            goToChooseAsset={() => setActiveStep(STEPS.SET_DESTINATION_ASSET)}
+            goToNext={() => goToStep(STEPS.PAYMENT_CONFIRM, "from-bottom")}
+            goToChooseDest={() => goToStep(STEPS.DESTINATION, "from-bottom")}
+            goToChooseAsset={() =>
+              goToStep(STEPS.SET_DESTINATION_ASSET, "from-bottom")
+            }
             fetchSimulationData={
               isCollectible ? fetchCollectibleData : fetchPaymentData
             }
@@ -199,25 +249,63 @@ export const Send = () => {
           />
         );
       }
+      case STEPS.SELECT_SOURCE_ASSET: {
+        return (
+          <SendDestinationAsset
+            goBack={() => {
+              dispatch(resetSubmission());
+              navigateTo(ROUTES.account, navigate);
+            }}
+            goToNext={() => goToStep(STEPS.DESTINATION, "from-right")}
+            returnToAmount={false}
+          />
+        );
+      }
       case STEPS.SET_DESTINATION_ASSET: {
         return (
           <SendDestinationAsset
-            goBack={() => setActiveStep(STEPS.AMOUNT)}
-            goToNext={() => setActiveStep(STEPS.AMOUNT)}
+            goBack={() => goToStep(STEPS.AMOUNT, "dismiss")}
+            goToNext={() => goToStep(STEPS.AMOUNT, "dismiss")}
+            returnToAmount={true}
           />
         );
       }
       default:
       case STEPS.DESTINATION: {
+        const fromAmount = prevStepRef.current === STEPS.AMOUNT;
         return (
           <SendTo
-            goBack={() => setActiveStep(STEPS.AMOUNT)}
-            goToNext={() => setActiveStep(STEPS.AMOUNT)}
+            goBack={() => {
+              if (fromAmount) {
+                goToStep(STEPS.AMOUNT, "dismiss");
+              } else if (prevStepRef.current === STEPS.SELECT_SOURCE_ASSET) {
+                goToStep(STEPS.SELECT_SOURCE_ASSET, "from-left");
+              } else {
+                dispatch(resetSubmission());
+                navigateTo(ROUTES.account, navigate);
+              }
+            }}
+            goToNext={() =>
+              goToStep(STEPS.AMOUNT, fromAmount ? "dismiss" : "from-bottom")
+            }
           />
         );
       }
     }
   };
 
-  return <InputWidthProvider>{renderStep(activeStep)}</InputWidthProvider>;
+  return (
+    <InputWidthProvider>
+      {/* Incoming step renders behind the exiting overlay */}
+      <div key={activeStep} className={`Send__step Send__step--${enterAnim}`}>
+        {renderStep(activeStep)}
+      </div>
+      {/* Exiting overlay: plays exit-to-bottom, then unmounts */}
+      {exitingStep !== null && (
+        <div className="Send__step Send__step--exit-to-bottom">
+          {renderStep(exitingStep)}
+        </div>
+      )}
+    </InputWidthProvider>
+  );
 };
