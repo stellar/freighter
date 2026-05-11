@@ -116,7 +116,7 @@ jobs:
           URL=$(gh release create "pr-preview-${PR_NUMBER}" \
             ./extension/build/build.zip \
             --title "PR Preview #${PR_NUMBER}" \
-            --notes "Internal preview for PR #${PR_NUMBER}. SDF collaborators only — non-collaborators get 404. Do not install with real funds. Auto-deleted on PR close." \
+            --notes "Internal preview for PR #${PR_NUMBER}. SDF collaborators only — non-collaborators get 404. This code is still under review — use caution with real funds. Auto-deleted on PR close." \
             --draft)
           echo "url=${URL}" >> "$GITHUB_OUTPUT"
 
