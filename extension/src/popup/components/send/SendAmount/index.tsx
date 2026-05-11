@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useLayoutEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Navigate, useLocation } from "react-router-dom";
 import BigNumber from "bignumber.js";
@@ -14,6 +14,7 @@ import { getAssetFromCanonical, isMuxedAccount } from "helpers/stellar";
 import { NetworkCongestion } from "popup/helpers/useNetworkFees";
 import { emitMetric } from "helpers/metrics";
 import { trackSendFeeBreakdownOpened } from "popup/metrics/send";
+import { useRunAfterUpdate } from "popup/helpers/useRunAfterUpdate";
 import {
   getAssetDecimals,
   getAvailableBalance,
@@ -23,6 +24,7 @@ import { SubviewHeader } from "popup/components/SubviewHeader";
 import {
   cleanAmount,
   formatAmount,
+  formatAmountPreserveCursor,
   roundUsdValue,
 } from "popup/helpers/formatters";
 import {
@@ -58,6 +60,7 @@ import { useGetSendAmountData } from "./hooks/useSendAmountData";
 import { SimulateTxData, SimulateResult } from "./hooks/useSimulateTxData";
 import { SlideupModal } from "popup/components/SlideupModal";
 import { MemoEditingContext } from "popup/constants/send-payment";
+import { InputWidthContext } from "popup/views/Send/contexts/inputWidthContext";
 import {
   checkIsMuxedSupported,
   getMemoDisabledState,
@@ -67,28 +70,12 @@ import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 
 import "../styles.scss";
 
-const AMOUNT_DECIMAL_LIMIT = 7;
-const USD_DECIMAL_LIMIT = 2;
+const DEFAULT_INPUT_WIDTH = 25;
 const PERCENTAGE_OPTIONS = [
   ["25%", 25],
   ["50%", 50],
   ["75%", 75],
 ] as const;
-
-const sanitizeAmountInput = (value: string, decimals: number) => {
-  const cleanedValue = value.replace(/[^0-9.]/g, "");
-  const [wholePartRaw = "", ...decimalParts] = cleanedValue.split(".");
-  const wholePart = wholePartRaw.replace(/^0+(?=\d)/, "");
-
-  if (decimalParts.length === 0) {
-    return wholePart;
-  }
-
-  const normalizedWholePart = wholePart === "" ? "0" : wholePart;
-  const sanitizedDecimals = decimalParts.join("").slice(0, decimals);
-
-  return `${normalizedWholePart}.${sanitizedDecimals}`;
-};
 
 const getValidBigNumber = (value: string) => {
   const cleanedValue = cleanAmount(value);
@@ -212,6 +199,18 @@ export const SendAmount = ({
   // Tracks the dest+asset pair that simulation was last triggered for, so we
   // can detect changes and re-simulate without watching simulationState.data.
   const simulationDataRef = useRef({ destination: "", asset: "" });
+
+  const cryptoSpanRef = useRef<HTMLSpanElement>(null);
+  const fiatSpanRef = useRef<HTMLSpanElement>(null);
+  const cryptoInputRef = useRef<HTMLInputElement>(null);
+  const usdInputRef = useRef<HTMLInputElement>(null);
+  const runAfterUpdate = useRunAfterUpdate();
+  const {
+    inputWidthCrypto,
+    setInputWidthCrypto,
+    inputWidthFiat,
+    setInputWidthFiat,
+  } = React.useContext(InputWidthContext);
 
   const [inputType, setInputType] = useState<InputType>("crypto");
   const [isEditingMemo, setIsEditingMemo] = React.useState(false);
@@ -371,7 +370,7 @@ export const SendAmount = ({
 
     if (
       cleanedValue.indexOf(".") !== -1 &&
-      cleanedValue.split(".")[1].length > AMOUNT_DECIMAL_LIMIT
+      cleanedValue.split(".")[1].length > 7
     ) {
       return { amount: AMOUNT_ERROR.DEC_MAX };
     }
@@ -389,8 +388,21 @@ export const SendAmount = ({
     initialValues: { amount, amountUsd: amountUsd, asset, destinationAsset },
     onSubmit: handlePaymentContinue,
     validate,
+    enableReinitialize: true,
     validateOnChange: true,
   });
+
+  useLayoutEffect(() => {
+    if (cryptoSpanRef.current) {
+      setInputWidthCrypto(cryptoSpanRef.current.offsetWidth + 2);
+    }
+  }, [formik.values.amount, setInputWidthCrypto]);
+
+  useLayoutEffect(() => {
+    if (fiatSpanRef.current) {
+      setInputWidthFiat(fiatSpanRef.current.offsetWidth + 4);
+    }
+  }, [formik.values.amountUsd, setInputWidthFiat]);
 
   const srcAsset = getAssetFromCanonical(asset);
   const parsedSourceAsset = getAssetFromCanonical(formik.values.asset);
@@ -748,26 +760,53 @@ export const SendAmount = ({
                     <div className="SendAmount__amount-row">
                       <div className="SendAmount__amount-input-container">
                         {inputType === "crypto" && (
-                          <input
-                            className={`SendAmount__input-amount SendAmount__${getAmountFontSize()}`}
-                            data-testid="send-amount-amount-input"
-                            name="amount"
-                            type="text"
-                            inputMode="decimal"
-                            placeholder="0"
-                            value={formik.values.amount}
-                            onChange={(e) => {
-                              const sanitizedAmount = sanitizeAmountInput(
-                                e.target.value,
-                                AMOUNT_DECIMAL_LIMIT,
-                              );
-
-                              formik.setFieldValue("amount", sanitizedAmount);
-                              dispatch(saveAmount(sanitizedAmount));
-                            }}
-                            autoComplete="off"
-                            autoFocus
-                          />
+                          <>
+                            <span
+                              ref={cryptoSpanRef}
+                              className={`SendAmount__input-amount SendAmount__${getAmountFontSize()}`}
+                              style={{
+                                position: "absolute",
+                                visibility: "hidden",
+                                whiteSpace: "pre",
+                              }}
+                            >
+                              {formik.values.amount || "0"}
+                            </span>
+                            <input
+                              ref={cryptoInputRef}
+                              className={`SendAmount__input-amount SendAmount__${getAmountFontSize()}`}
+                              style={{
+                                width: `${inputWidthCrypto || DEFAULT_INPUT_WIDTH}px`,
+                              }}
+                              data-testid="send-amount-amount-input"
+                              name="amount"
+                              type="text"
+                              placeholder="0"
+                              value={formik.values.amount}
+                              onChange={(e) => {
+                                const input = e.target;
+                                const { amount: newAmount, newCursor } =
+                                  formatAmountPreserveCursor(
+                                    e.target.value,
+                                    formik.values.amount,
+                                    getAssetDecimals(
+                                      asset,
+                                      sendData.userBalances,
+                                      isToken,
+                                    ),
+                                    e.target.selectionStart || 1,
+                                  );
+                                formik.setFieldValue("amount", newAmount);
+                                dispatch(saveAmount(newAmount));
+                                runAfterUpdate(() => {
+                                  input.selectionStart = newCursor;
+                                  input.selectionEnd = newCursor;
+                                });
+                              }}
+                              autoFocus
+                              autoComplete="off"
+                            />
+                          </>
                         )}
                         {inputType === "fiat" && (
                           <>
@@ -776,32 +815,45 @@ export const SendAmount = ({
                             >
                               $
                             </div>
-                            <input
+                            <span
+                              ref={fiatSpanRef}
                               className={`SendAmount__input-amount SendAmount__${getAmountFontSize()}`}
+                              style={{
+                                position: "absolute",
+                                visibility: "hidden",
+                                whiteSpace: "pre",
+                              }}
+                            >
+                              {formik.values.amountUsd || "0"}
+                            </span>
+                            <input
+                              ref={usdInputRef}
+                              className={`SendAmount__input-amount SendAmount__${getAmountFontSize()}`}
+                              style={{
+                                width: `${inputWidthFiat || DEFAULT_INPUT_WIDTH}px`,
+                              }}
                               data-testid="send-amount-amount-input"
                               name="amountUsd"
                               type="text"
-                              inputMode="decimal"
-                              placeholder="0"
-                              value={
-                                formik.values.amountUsd === "0.00"
-                                  ? "0"
-                                  : formik.values.amountUsd
-                              }
+                              value={formik.values.amountUsd}
                               onChange={(e) => {
-                                const sanitizedAmountUsd = sanitizeAmountInput(
-                                  e.target.value,
-                                  USD_DECIMAL_LIMIT,
-                                );
-
-                                formik.setFieldValue(
-                                  "amountUsd",
-                                  sanitizedAmountUsd,
-                                );
-                                dispatch(saveAmountUsd(sanitizedAmountUsd));
+                                const input = e.target;
+                                const { amount: newAmount, newCursor } =
+                                  formatAmountPreserveCursor(
+                                    e.target.value,
+                                    formik.values.amountUsd,
+                                    2,
+                                    e.target.selectionStart || 1,
+                                  );
+                                formik.setFieldValue("amountUsd", newAmount);
+                                dispatch(saveAmountUsd(newAmount));
+                                runAfterUpdate(() => {
+                                  input.selectionStart = newCursor;
+                                  input.selectionEnd = newCursor;
+                                });
                               }}
-                              autoComplete="off"
                               autoFocus
+                              autoComplete="off"
                             />
                           </>
                         )}
@@ -848,30 +900,14 @@ export const SendAmount = ({
                               const newInputType =
                                 inputType === "crypto" ? "fiat" : "crypto";
                               if (newInputType === "crypto") {
-                                if (!isValidPositiveAmount(priceValue ?? "")) {
-                                  return;
-                                }
-
-                                dispatch(saveAmount(priceValue ?? "0"));
-                                formik.setFieldValue(
-                                  "amount",
-                                  priceValue ?? "0",
-                                );
+                                const converted = priceValue ?? "0";
+                                dispatch(saveAmount(converted));
+                                formik.setFieldValue("amount", converted);
                               }
                               if (newInputType === "fiat") {
-                                if (
-                                  !isValidPositiveAmount(priceValueUsd ?? "")
-                                ) {
-                                  return;
-                                }
-
-                                dispatch(
-                                  saveAmountUsd(priceValueUsd ?? "0.00"),
-                                );
-                                formik.setFieldValue(
-                                  "amountUsd",
-                                  priceValueUsd ?? "0.00",
-                                );
+                                const converted = priceValueUsd ?? "0.00";
+                                dispatch(saveAmountUsd(converted));
+                                formik.setFieldValue("amountUsd", converted);
                               }
                               setInputType(newInputType);
                             }}
@@ -886,21 +922,19 @@ export const SendAmount = ({
                     </div>
 
                     {/* Error state */}
-                    <div className="SendAmount__invalid-state">
-                      {isAmountTooHigh && (
-                        <>
-                          <Icon.AlertCircle />
-                          <span>
-                            {t(
-                              "You don't have enough {{asset}} in your account",
-                              {
-                                asset: parsedSourceAsset.code,
-                              },
-                            )}
-                          </span>
-                        </>
-                      )}
-                    </div>
+                    {isAmountTooHigh && (
+                      <div className="SendAmount__invalid-state">
+                        <Icon.AlertCircle />
+                        <span>
+                          {t(
+                            "You don't have enough {{asset}} in your account",
+                            {
+                              asset: parsedSourceAsset.code,
+                            },
+                          )}
+                        </span>
+                      </div>
+                    )}
                   </div>
 
                   {/* Percentage buttons */}

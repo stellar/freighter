@@ -30,6 +30,7 @@ import { RequestState } from "constants/request";
 import { View } from "popup/basics/layout/View";
 
 import { useSendQueryParams } from "./hooks/useSendQueryParams";
+import { InputWidthProvider } from "./contexts/inputWidthContext";
 
 import "./styles.scss";
 
@@ -307,7 +308,7 @@ export const Send = () => {
             }`}
             aria-hidden={!isActive}
           >
-            {renderStep(step)}
+            <InputWidthProvider>{renderStep(step)}</InputWidthProvider>
           </div>
         );
       })}
