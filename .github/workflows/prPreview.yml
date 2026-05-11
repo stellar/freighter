@@ -35,7 +35,7 @@ jobs:
     # Skip fork PRs (defense-in-depth — platform also withholds secrets/token).
     # Skip non-org-member authors (catches outside-collaborator-with-write
     # edge case; org members are MEMBER, repo admins are OWNER).
-    if: |
+    if: >-
       github.event.action != 'closed' &&
       github.event.pull_request.head.repo.full_name == github.repository &&
       contains(fromJSON('["MEMBER", "OWNER"]'), github.event.pull_request.author_association)
