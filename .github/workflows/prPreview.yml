@@ -141,7 +141,7 @@ jobs:
           1. Download and unzip the asset
           2. Open chrome://extensions, enable Developer Mode, click Load Unpacked, select the unzipped folder
 
-          **Important:** use a fresh browser profile with no real keys imported. This is an unsigned, unsupported preview build that is automatically deleted when this PR is closed.
+          **Important:** this code is still under review and may contain bugs that haven't been caught yet. Use caution before signing transactions with real funds — consider testing with a testnet wallet instead. The draft release is automatically deleted when this PR is closed.
           EOF
           )
 
