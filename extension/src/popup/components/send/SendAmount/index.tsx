@@ -669,13 +669,20 @@ export const SendAmount = ({
                             type="text"
                             inputMode="decimal"
                             placeholder="0"
-                            value={
-                              formik.values.amount === "0"
-                                ? ""
-                                : formik.values.amount
-                            }
+                            value={formik.values.amount}
                             onChange={(e) => {
-                              const newVal = e.target.value;
+                              let newVal = e.target.value;
+                              // When the field held "0" and user typed a digit,
+                              // replace rather than append ("01" → "1"). Keep "0."
+                              // intact so typing "0.5" works correctly.
+                              if (
+                                formik.values.amount === "0" &&
+                                newVal.length === 2 &&
+                                newVal[0] === "0" &&
+                                newVal[1] !== "."
+                              ) {
+                                newVal = newVal[1];
+                              }
                               const cleaned = cleanAmount(newVal) || "0";
                               formik.setFieldValue(
                                 "amount",
@@ -702,13 +709,25 @@ export const SendAmount = ({
                               inputMode="decimal"
                               placeholder="0"
                               value={
-                                formik.values.amountUsd === "0" ||
                                 formik.values.amountUsd === "0.00"
-                                  ? ""
+                                  ? "0"
                                   : formik.values.amountUsd
                               }
                               onChange={(e) => {
-                                const newVal = e.target.value;
+                                let newVal = e.target.value;
+                                const isZeroState =
+                                  formik.values.amountUsd === "0" ||
+                                  formik.values.amountUsd === "0.00";
+                                // "0" shown + user typed digit → replace, not append ("05" → "5")
+                                // Keep "0." intact so typing "0.5" works
+                                if (
+                                  isZeroState &&
+                                  newVal.length === 2 &&
+                                  newVal[0] === "0" &&
+                                  newVal[1] !== "."
+                                ) {
+                                  newVal = newVal[1];
+                                }
                                 const cleaned = cleanAmount(newVal) || "0";
                                 formik.setFieldValue(
                                   "amountUsd",

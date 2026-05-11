@@ -721,7 +721,7 @@ test("SendPayment resets amount when user selects new asset", async ({
   await page.getByText("USDC").first().click({ force: true });
 
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
-  await expect(page.getByTestId("send-amount-amount-input")).toHaveValue("");
+  await expect(page.getByTestId("send-amount-amount-input")).toHaveValue("0");
 });
 
 test("SendPayment resets state when navigating back to account", async ({
@@ -769,7 +769,7 @@ test("SendPayment resets state when navigating back to account", async ({
     .fill("GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF");
   await page.getByText("Continue").click({ force: true });
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
-  await expect(page.getByTestId("send-amount-amount-input")).toHaveValue("");
+  await expect(page.getByTestId("send-amount-amount-input")).toHaveValue("0");
   // Verify XLM is selected (not USDC from the previous session)
   await expect(page.locator(".SendAmount__EditDestAsset")).toContainText("XLM");
 });
