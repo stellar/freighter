@@ -31,14 +31,18 @@ permissions: {}
 jobs:
   build-and-release:
     name: Build and Release PR Preview
-    # Skip on close (handled by cleanup-release).
-    # Skip fork PRs (defense-in-depth — platform also withholds secrets/token).
-    # Skip non-org-member authors (catches outside-collaborator-with-write
-    # edge case; org members are MEMBER, repo admins are OWNER).
+    # Two-layer gate evaluated BEFORE any secret is injected:
+    #   1. Skip on PR close (handled by cleanup-release job)
+    #   2. Reject fork PRs (defense-in-depth — platform also withholds secrets/token)
+    # NOTE: we don't gate on author_association because the field in the
+    # webhook event payload only reflects PUBLIC org membership; SDF members
+    # with private memberships show as CONTRIBUTOR, which would lock them
+    # out. Non-SDF gating is handled by the org-level "Require approval
+    # for outside collaborators" setting plus the platform-level fork-PR
+    # secret-withholding.
     if: >-
       github.event.action != 'closed' &&
-      github.event.pull_request.head.repo.full_name == github.repository &&
-      contains(fromJSON('["MEMBER", "OWNER"]'), github.event.pull_request.author_association)
+      github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     permissions:
       contents: write       # release create/delete + tag operations
