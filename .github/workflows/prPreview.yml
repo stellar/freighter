@@ -1,0 +1,177 @@
+# ----------------------------------------------------------------------
+# SECURITY INVARIANT — read before editing.
+#
+# Do NOT add any of these triggers without a strict author-association
+# gate at the very first job step:
+#   issue_comment, pull_request_target, pull_request_review,
+#   pull_request_review_comment, workflow_run
+# These triggers run with FULL repo secrets and a writable GITHUB_TOKEN
+# even when activity originates from a fork PR. Combined with checkout-
+# of-PR-head + execute-code-from-PR (which any build inherently does),
+# they enable Remote Code Execution by anyone who can comment on a PR
+# or open one.
+#
+# Background: the PR Preview design and a pre-rollout security review
+# explicitly forbid these triggers. See the design doc Security section.
+# ----------------------------------------------------------------------
+name: PR Preview
+
+env:
+  INDEXER_URL: ${{ secrets.INDEXER_URL }}
+  INDEXER_V2_URL: ${{ secrets.INDEXER_V2_BETA_URL }}
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+
+# Default for all jobs is no permissions; each job opts in to the
+# narrowest scope it needs below.
+permissions: {}
+
+jobs:
+  build-and-release:
+    name: Build and Release PR Preview
+    # Skip on close (handled by cleanup-release).
+    # Skip fork PRs (defense-in-depth — platform also withholds secrets/token).
+    # Skip non-org-member authors (catches outside-collaborator-with-write
+    # edge case; org members are MEMBER, repo admins are OWNER).
+    if: |
+      github.event.action != 'closed' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      contains(fromJSON('["MEMBER", "OWNER"]'), github.event.pull_request.author_association)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write       # release create/delete + tag operations
+      pull-requests: write  # sticky preview-link comment on the PR
+    concurrency:
+      group: pr-preview-build-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
+    steps:
+      - name: Validate required secrets
+        if: ${{ env.INDEXER_URL == '' || env.INDEXER_V2_URL == '' }}
+        run: |
+          echo "::error::INDEXER_URL or INDEXER_V2_URL is empty. Verify repo Secrets are configured."
+          exit 1
+
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Assert manifest has no top-level `key` field
+        run: |
+          if jq -e 'has("key")' ./extension/public/static/manifest/v3.json > /dev/null; then
+            echo "::error::manifest/v3.json contains a top-level 'key' field. Preview installs would share a Chromium extension ID with Web Store Freighter, leaking storage."
+            exit 1
+          fi
+
+      - name: Rewrite preview manifest identity (Chromium + Firefox)
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          PREVIEW_NAME="Freighter PR Preview ${PR_NUMBER}"
+          PREVIEW_VERSION_NAME="pr-preview-${PR_NUMBER}"
+          PREVIEW_GECKO_ID="freighter-pr-preview-${PR_NUMBER}@stellar.org"
+
+          jq --arg name "$PREVIEW_NAME" --arg vn "$PREVIEW_VERSION_NAME" \
+             '.name = $name | .version_name = $vn' \
+             ./extension/public/static/manifest/v3.json > /tmp/v3.json
+          mv /tmp/v3.json ./extension/public/static/manifest/v3.json
+
+          jq --arg name "$PREVIEW_NAME" --arg vn "$PREVIEW_VERSION_NAME" --arg gid "$PREVIEW_GECKO_ID" \
+             '.name = $name | .version_name = $vn | .browser_specific_settings.gecko.id = $gid' \
+             ./extension/public/static/manifest/v2.json > /tmp/v2.json
+          mv /tmp/v2.json ./extension/public/static/manifest/v2.json
+
+      - name: Setup Node
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6
+        with:
+          node-version: 22
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install + build extension (production)
+        run: yarn && yarn build:freighter-api && yarn build:extension:production
+
+      - name: Use BETA icons
+        run: |
+          rm -rf ./extension/build/images
+          mv ./extension/build/beta_images ./extension/build/images
+
+      - name: Strip source maps
+        # Source maps reveal full TypeScript source for background script
+        # and signing logic — never ship them in a public-distributable zip.
+        run: find ./extension/build -name "*.map" -delete
+
+      - name: Zip extension build
+        working-directory: ./extension/build
+        run: zip -qq -r ./build.zip *
+
+      - name: Delete existing preview release (idempotent)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: gh release delete "pr-preview-${PR_NUMBER}" --yes --cleanup-tag || true
+
+      - name: Create draft preview release
+        id: release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          URL=$(gh release create "pr-preview-${PR_NUMBER}" \
+            ./extension/build/build.zip \
+            --title "PR Preview #${PR_NUMBER}" \
+            --notes "Internal preview for PR #${PR_NUMBER}. SDF collaborators only — non-collaborators get 404. Do not install with real funds. Auto-deleted on PR close." \
+            --draft)
+          echo "url=${URL}" >> "$GITHUB_OUTPUT"
+
+      - name: Post/update sticky PR comment with preview link
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          RELEASE_URL: ${{ steps.release.outputs.url }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          MARKER="<!-- pr-preview-comment -->"
+          BODY=$(cat <<EOF
+          $MARKER
+          ### Freighter PR Preview
+
+          **Download:** [pr-preview-${PR_NUMBER}.zip]($RELEASE_URL)
+          **Visibility:** SDF collaborators only — non-SDF GitHub users get 404 on this URL.
+          **Commit:** $PR_HEAD_SHA
+
+          **How to install (Chromium):**
+          1. Download and unzip the asset
+          2. Open chrome://extensions, enable Developer Mode, click Load Unpacked, select the unzipped folder
+
+          **Important:** use a fresh browser profile with no real keys imported. This is an unsigned, unsupported preview build that is automatically deleted when this PR is closed.
+          EOF
+          )
+
+          EXISTING=$(gh api "repos/${GH_REPO}/issues/${PR_NUMBER}/comments" \
+            --jq ".[] | select(.body | startswith(\"${MARKER}\")) | .id" | head -1)
+          if [ -n "$EXISTING" ]; then
+            gh api -X PATCH "repos/${GH_REPO}/issues/comments/${EXISTING}" -f body="$BODY"
+          else
+            gh pr comment "${PR_NUMBER}" --body "$BODY"
+          fi
+
+  cleanup-release:
+    name: Cleanup PR Preview Release
+    if: github.event.action == 'closed' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    concurrency:
+      group: pr-preview-cleanup-${{ github.event.pull_request.number }}
+      # Don't cancel cleanup runs — they need to complete to remove the draft.
+      cancel-in-progress: false
+    steps:
+      - name: Delete draft release and tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: gh release delete "pr-preview-${PR_NUMBER}" --yes --cleanup-tag || true
