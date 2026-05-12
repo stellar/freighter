@@ -116,11 +116,32 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
         run: |
+          NOTES=$(cat <<EOF
+          Internal preview build for PR [#${PR_NUMBER}](${PR_URL}). SDF collaborators only — non-SDF GitHub users get 404 on this page. Auto-deleted when the PR is closed.
+
+          **Commit:** ${PR_HEAD_SHA}
+          **Backend:** staging
+
+          ### How to install (Chromium)
+
+          1. Download \`build.zip\` from the Assets section below and unzip it
+          2. Open \`chrome://extensions\` in Chrome, Edge, or Brave
+          3. Enable Developer Mode (toggle in the top-right)
+          4. Click "Load Unpacked" and select the unzipped folder
+          5. The extension installs as "Freighter PR Preview #${PR_NUMBER}" with beta icons
+
+          ### Important
+
+          This code is still under review and may contain bugs that haven't been caught yet. **Use caution before signing transactions with real funds** — consider testing with a testnet wallet instead.
+          EOF
+          )
           URL=$(gh release create "pr-preview-${PR_NUMBER}" \
             ./extension/build/build.zip \
             --title "PR Preview #${PR_NUMBER}" \
-            --notes "Internal preview for PR #${PR_NUMBER}. SDF collaborators only — non-collaborators get 404. This code is still under review — use caution with real funds. Auto-deleted on PR close." \
+            --notes "${NOTES}" \
             --draft)
           echo "url=${URL}" >> "$GITHUB_OUTPUT"
 
@@ -130,24 +151,9 @@ jobs:
           GH_REPO: ${{ github.repository }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           RELEASE_URL: ${{ steps.release.outputs.url }}
-          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           MARKER="<!-- pr-preview-comment -->"
-          BODY=$(cat <<EOF
-          $MARKER
-          ### Freighter PR Preview
-
-          **Download:** [pr-preview-${PR_NUMBER}.zip]($RELEASE_URL)
-          **Visibility:** SDF collaborators only — non-SDF GitHub users get 404 on this URL.
-          **Commit:** $PR_HEAD_SHA
-
-          **How to install (Chromium):**
-          1. Download and unzip the asset
-          2. Open chrome://extensions, enable Developer Mode, click Load Unpacked, select the unzipped folder
-
-          **Important:** this code is still under review and may contain bugs that haven't been caught yet. Use caution before signing transactions with real funds — consider testing with a testnet wallet instead. The draft release is automatically deleted when this PR is closed.
-          EOF
-          )
+          BODY="${MARKER}"$'\n'"PR Preview build is ready: ${RELEASE_URL} (SDF collaborators only — install instructions in the release description)"
 
           EXISTING=$(gh api "repos/${GH_REPO}/issues/${PR_NUMBER}/comments" \
             --jq ".[] | select(.body | startswith(\"${MARKER}\")) | .id" | head -1)
