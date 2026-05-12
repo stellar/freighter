@@ -854,6 +854,7 @@ export const SendAmount = ({
                               }}
                               autoFocus
                               autoComplete="off"
+                              onFocus={(e) => e.target.select()}
                             />
                           </>
                         )}
@@ -905,7 +906,8 @@ export const SendAmount = ({
                                 formik.setFieldValue("amount", converted);
                               }
                               if (newInputType === "fiat") {
-                                const converted = priceValueUsd ?? "0.00";
+                                const raw = priceValueUsd ?? "0";
+                                const converted = raw === "0.00" ? "0" : raw;
                                 dispatch(saveAmountUsd(converted));
                                 formik.setFieldValue("amountUsd", converted);
                               }
