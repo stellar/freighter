@@ -1,5 +1,6 @@
 import { getExpectedToFailReason } from "../useSimulateTxData";
 
+const G_DEST = "GA4UFF2WJM7KHHG4R5D5D2MZQ6FWMDOSVITVF7C5OLD5NFP6RBBW2FGV";
 const t = (key: string) => key;
 
 describe("getExpectedToFailReason", () => {
@@ -11,6 +12,8 @@ describe("getExpectedToFailReason", () => {
           assetCanonical:
             "USDC:GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN",
           amount: "10",
+          destination: G_DEST,
+          isCollectible: false,
           t,
         }),
       ).toBeNull();
@@ -23,6 +26,8 @@ describe("getExpectedToFailReason", () => {
           assetCanonical:
             "USDC:GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN",
           amount: "10",
+          destination: G_DEST,
+          isCollectible: false,
           t,
         }),
       ).toBeNull();
@@ -37,6 +42,8 @@ describe("getExpectedToFailReason", () => {
           assetCanonical:
             "USDC:GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN",
           amount: "10",
+          destination: G_DEST,
+          isCollectible: false,
           t,
         }),
       ).toBe("Blockaid unfunded destination");
@@ -49,6 +56,8 @@ describe("getExpectedToFailReason", () => {
           assetCanonical:
             "LONGCODE12:GDMTVHLWJTHSUDMZVVMXXH6VJHA2ZV3HNG5LYNAZ6RTWB7GISM6PGTUV",
           amount: "10",
+          destination: G_DEST,
+          isCollectible: false,
           t,
         }),
       ).toBe("Blockaid unfunded destination");
@@ -66,6 +75,8 @@ describe("getExpectedToFailReason", () => {
           assetCanonical:
             "PBT:CAZXRTOKNUQ2JQQF3NCRU7GYMDJNZ2NMQN6IGN4FCT5DWPODMPVEXSND",
           amount: "10",
+          destination: G_DEST,
+          isCollectible: false,
           t,
         }),
       ).toBeNull();
@@ -78,6 +89,8 @@ describe("getExpectedToFailReason", () => {
           assetCanonical:
             "PBT:CAZXRTOKNUQ2JQQF3NCRU7GYMDJNZ2NMQN6IGN4FCT5DWPODMPVEXSND",
           amount: "0",
+          destination: G_DEST,
+          isCollectible: false,
           t,
         }),
       ).toBeNull();
@@ -93,6 +106,8 @@ describe("getExpectedToFailReason", () => {
           assetCanonical:
             "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef:lp",
           amount: "10",
+          destination: G_DEST,
+          isCollectible: false,
           t,
         }),
       ).toBe("Blockaid unfunded destination");
@@ -106,6 +121,8 @@ describe("getExpectedToFailReason", () => {
           isDestinationFunded: false,
           assetCanonical: "native",
           amount: "0.5",
+          destination: G_DEST,
+          isCollectible: false,
           t,
         }),
       ).toBe("Blockaid unfunded destination native");
@@ -117,6 +134,8 @@ describe("getExpectedToFailReason", () => {
           isDestinationFunded: false,
           assetCanonical: "native",
           amount: "1",
+          destination: G_DEST,
+          isCollectible: false,
           t,
         }),
       ).toBeNull();
@@ -128,6 +147,8 @@ describe("getExpectedToFailReason", () => {
           isDestinationFunded: false,
           assetCanonical: "native",
           amount: "5",
+          destination: G_DEST,
+          isCollectible: false,
           t,
         }),
       ).toBeNull();
@@ -139,9 +160,47 @@ describe("getExpectedToFailReason", () => {
           isDestinationFunded: false,
           assetCanonical: "native",
           amount: "",
+          destination: G_DEST,
+          isCollectible: false,
           t,
         }),
       ).toBe("Blockaid unfunded destination native");
+    });
+  });
+
+  describe("destination is unfunded, collectibles", () => {
+    it("returns null when isCollectible is true regardless of asset", () => {
+      // Collectibles transfer via contract invocation; the destination
+      // never needs to be a funded classic account.
+      expect(
+        getExpectedToFailReason({
+          isDestinationFunded: false,
+          assetCanonical: "native",
+          destination: G_DEST,
+          isCollectible: true,
+          amount: "10",
+          t,
+        }),
+      ).toBeNull();
+    });
+  });
+
+  describe("destination is unfunded, contract destination", () => {
+    it("returns null when destination is a contract address", () => {
+      // Contract destinations have no classic account; the warning rule
+      // does not apply regardless of the asset being sent.
+      expect(
+        getExpectedToFailReason({
+          isDestinationFunded: false,
+          assetCanonical:
+            "USDC:GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN",
+          destination:
+            "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC",
+          isCollectible: false,
+          amount: "10",
+          t,
+        }),
+      ).toBeNull();
     });
   });
 });
