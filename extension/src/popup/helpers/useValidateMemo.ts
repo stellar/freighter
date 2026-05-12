@@ -5,7 +5,6 @@ import { FederationMemoType } from "popup/helpers/federationMemo";
 
 const MAX_MEMO_BYTES = 28;
 const MAX_UINT64 = BigInt("18446744073709551615");
-const HEX_32_BYTES_RE = /^[0-9a-fA-F]{64}$/;
 
 const getByteLength = (str: string): number =>
   new TextEncoder().encode(str).length;
@@ -22,9 +21,9 @@ export const useValidateMemo = (memo: string, memoType?: string) => {
 
     if (memoType === FederationMemoType.Hash) {
       setError(
-        HEX_32_BYTES_RE.test(memo)
+        Buffer.from(memo, "base64").length === 32
           ? null
-          : t("Memo hash must be a 64-character hex string"),
+          : t("Memo hash must be a base64-encoded 32-byte value"),
       );
       return;
     }

@@ -353,7 +353,7 @@
   "Medium": "Média",
   "Medium Threshold": "Limite Médio",
   "Memo": "Memo",
-  "Memo hash must be a 64-character hex string": "O hash do memo deve ser uma string hexadecimal de 64 caracteres",
+  "Memo hash must be a base64-encoded 32-byte value": "O hash do memo deve ser um valor de 32 bytes codificado em base64",
   "Memo ID exceeds maximum uint64 value": "O ID do memo excede o valor máximo uint64",
   "Memo ID must be a non-negative integer": "O ID do memo deve ser um número inteiro não negativo",
   "Memo is disabled for this transaction": "Memo está desabilitado para esta transação",

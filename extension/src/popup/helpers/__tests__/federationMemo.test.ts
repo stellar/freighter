@@ -93,37 +93,36 @@ describe("validateFederationMemo", () => {
   });
 
   describe("hash memo", () => {
-    const VALID_64_HEX = "a".repeat(64);
+    // 32 zero-bytes encoded as base64 (43 chars + 1 padding '=')
+    const VALID_B64 = "A".repeat(43) + "=";
 
-    it("accepts a 64-character hex string", () => {
+    it("accepts a valid base64-encoded 32-byte hash", () => {
       expect(() =>
-        validateFederationMemo(VALID_64_HEX, FederationMemoType.Hash),
+        validateFederationMemo(VALID_B64, FederationMemoType.Hash),
       ).not.toThrow();
     });
 
-    it("accepts mixed-case hex", () => {
-      const mixed = "aAbBcCdDeEfF" + "0".repeat(52);
+    it("rejects a string that decodes to fewer than 32 bytes", () => {
       expect(() =>
-        validateFederationMemo(mixed, FederationMemoType.Hash),
-      ).not.toThrow();
+        validateFederationMemo("AAAA", FederationMemoType.Hash),
+      ).toThrow("base64-encoded 32-byte value");
     });
 
-    it("rejects a hex string that is too short", () => {
+    it("rejects a string that decodes to more than 32 bytes", () => {
+      // 33 zero-bytes in base64 = 44 chars + padding
+      const tooLong = "A".repeat(44) + "==";
       expect(() =>
-        validateFederationMemo("a".repeat(63), FederationMemoType.Hash),
-      ).toThrow("64-character hex string");
+        validateFederationMemo(tooLong, FederationMemoType.Hash),
+      ).toThrow("base64-encoded 32-byte value");
     });
 
-    it("rejects a hex string that is too long", () => {
+    it("rejects a non-base64 string of the wrong length", () => {
       expect(() =>
-        validateFederationMemo("a".repeat(65), FederationMemoType.Hash),
-      ).toThrow("64-character hex string");
-    });
-
-    it("rejects non-hex characters", () => {
-      expect(() =>
-        validateFederationMemo("z".repeat(64), FederationMemoType.Hash),
-      ).toThrow("64-character hex string");
+        validateFederationMemo(
+          "not-valid-base64-string!!!",
+          FederationMemoType.Hash,
+        ),
+      ).toThrow("base64-encoded 32-byte value");
     });
   });
 
@@ -184,16 +183,17 @@ describe("buildMemoFromFederation", () => {
   });
 
   describe("hash memo", () => {
-    const VALID_HEX = "deadbeef".repeat(8); // 64 hex chars
+    // 32 zero-bytes encoded as base64 per SEP-0002
+    const VALID_B64 = "A".repeat(43) + "=";
 
     it("returns Memo.hash for type 'hash'", () => {
-      const memo = buildMemoFromFederation(VALID_HEX, FederationMemoType.Hash);
-      expect(memo).toEqual(Memo.hash(VALID_HEX));
+      const memo = buildMemoFromFederation(VALID_B64, FederationMemoType.Hash);
+      expect(memo).toEqual(Memo.hash(Buffer.from(VALID_B64, "base64")));
     });
 
     it("throws for an invalid hash value", () => {
       expect(() =>
-        buildMemoFromFederation("not-hex", FederationMemoType.Hash),
+        buildMemoFromFederation("not-valid", FederationMemoType.Hash),
       ).toThrow("Failed to resolve federated address");
     });
   });

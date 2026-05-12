@@ -17,9 +17,6 @@ const FEDERATION_MEMO_TEXT_MAX_BYTES = 28;
 // Max value of a 64-bit unsigned integer
 const MAX_UINT64 = BigInt("18446744073709551615");
 
-// 32-byte value expressed as a 64-character lowercase/uppercase hex string
-const HEX_32_BYTES_RE = /^[0-9a-fA-F]{64}$/;
-
 /**
  * Validates a federation memo value against the constraints for its SEP-0002
  * memo type. Throws a descriptive `Error` if the value is invalid. These
@@ -58,9 +55,10 @@ export const validateFederationMemo = (
     }
 
     case FederationMemoType.Hash: {
-      if (!HEX_32_BYTES_RE.test(memo)) {
+      // SEP-0002 specifies hash memos as base64-encoded 32-byte values
+      if (Buffer.from(memo, "base64").length !== 32) {
         throw new Error(
-          "Federation memo hash must be a 64-character hex string (32 bytes)",
+          "Federation memo hash must be a base64-encoded 32-byte value",
         );
       }
       break;
@@ -90,7 +88,7 @@ export const buildMemoFromFederation = (
       case FederationMemoType.Id:
         return Memo.id(memo);
       case FederationMemoType.Hash:
-        return Memo.hash(memo);
+        return Memo.hash(Buffer.from(memo, "base64"));
       default:
         return Memo.text(memo);
     }

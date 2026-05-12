@@ -1209,8 +1209,8 @@ test("Federation address with hash memo type prepopulates memo", async ({
 
   const federationAccountId =
     "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF";
-  const hashMemo =
-    "93a4c1c4144c9fcadce34ce7a487a5c5bca44f3c2fc8f9e8b8e4d8a4c8e4f8b7";
+  // SEP-0002 specifies hash memos as base64-encoded 32-byte values
+  const hashMemo = "A".repeat(43) + "=";
 
   const stubOverrides = async () => {
     await stubAccountBalancesE2e(page);
