@@ -17,6 +17,7 @@ import {
 } from "@shared/api/types/account-balance";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { getAssetSacAddress } from "@shared/helpers/soroban/token";
+import { LP_IDENTIFIER } from "./account";
 import { isContractId } from "./soroban";
 
 export const isClassicBalance = (balance: AssetType): balance is ClassicAsset =>
@@ -193,6 +194,72 @@ export const getPriceDeltaColor = (delta: BigNumber) => {
     return "positive";
   }
   return "";
+};
+
+/**
+ * Returns a stable identity key for a balance. Two balances refer to the
+ * same on-chain asset iff they share this key. Used by display logic
+ * that needs to track balance identity across re-fetches (e.g.
+ * `useStableSortedBalances`).
+ *
+ * Uses the same conventions as the rest of the codebase:
+ * - LP shares: `<poolId>:lp` (the established `LP_IDENTIFIER` suffix).
+ * - Native, classic, and Soroban tokens: `getCanonicalFromAsset(code,
+ *   issuer.key)`. For Soroban balances, `issuer.key` is the contract ID,
+ *   so this produces `CODE:CONTRACT_ID` consistent with what the price
+ *   map, `getAssetFromCanonical`, and the swap/send `prices[asset]`
+ *   lookups all use.
+ */
+export const getBalanceCanonicalKey = (b: AssetType): string => {
+  if ("liquidityPoolId" in b) return `${b.liquidityPoolId}${LP_IDENTIFIER}`;
+  if ("token" in b) {
+    return getCanonicalFromAsset(
+      b.token.code,
+      "issuer" in b.token ? b.token.issuer.key : undefined,
+    );
+  }
+  return "";
+};
+
+/**
+ * Re-orders balances for display by descending USD value.
+ *
+ * Only native + classic G-issuer assets receive prices from the indexer
+ * (Soroban, custom tokens, and LP shares are filtered out upstream — see
+ * `getTokenPrices` in `@shared/api/internal.ts`). Unpriced balances keep
+ * the relative order produced by `sortBalances` and sort below all
+ * priced balances. A `currentPrice` of `"0"` is a valid USD value and
+ * keeps the asset in the priced group; a malformed `currentPrice` is
+ * treated as unpriced.
+ */
+export const sortBalancesByValue = (
+  balances: AssetType[],
+  prices: ApiTokenPrices | null | undefined,
+): AssetType[] => {
+  if (!prices || Object.keys(prices).length === 0) {
+    return balances;
+  }
+
+  const usdValueOf = (b: AssetType): BigNumber | null => {
+    if (!("token" in b)) return null;
+    const canonical = getBalanceCanonicalKey(b);
+    const priceStr = prices[canonical]?.currentPrice;
+    if (priceStr === undefined || priceStr === null || priceStr === "") {
+      return null;
+    }
+    const value = new BigNumber(priceStr).multipliedBy(b.total);
+    return value.isFinite() ? value : null;
+  };
+
+  return balances
+    .map((b, i) => ({ b, i, v: usdValueOf(b) }))
+    .sort((a, z) => {
+      if (a.v && z.v) return z.v.comparedTo(a.v) || a.i - z.i;
+      if (a.v) return -1;
+      if (z.v) return 1;
+      return a.i - z.i;
+    })
+    .map((x) => x.b);
 };
 
 export const getTotalUsd = (prices: ApiTokenPrices, balances: AssetType[]) => {

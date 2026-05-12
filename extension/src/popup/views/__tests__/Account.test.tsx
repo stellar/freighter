@@ -1019,9 +1019,9 @@ describe("Account view", () => {
       .spyOn(ApiInternal, "getAccountBalances")
       .mockImplementation(() => Promise.resolve(mockBalances));
 
-    jest.spyOn(ApiInternal, "getTokenPrices").mockImplementation(() => {
-      throw new Error("Failed to fetch prices");
-    });
+    jest
+      .spyOn(ApiInternal, "getTokenPrices")
+      .mockRejectedValueOnce(new Error("Failed to fetch prices"));
 
     render(
       <Wrapper
@@ -1058,6 +1058,152 @@ describe("Account view", () => {
       expect(
         screen.queryByTestId("account-view-total-balance"),
       ).toBeEmptyDOMElement();
+    });
+  });
+
+  it("orders balances by USD value descending when prices are available", async () => {
+    jest.spyOn(ApiInternal, "loadSettings").mockImplementation(() =>
+      Promise.resolve({
+        networkDetails: MAINNET_NETWORK_DETAILS,
+        networksList: DEFAULT_NETWORKS,
+        hiddenAssets: {},
+        allowList: ApiInternal.DEFAULT_ALLOW_LIST,
+        error: "",
+        isDataSharingAllowed: false,
+        isMemoValidationEnabled: false,
+        isHideDustEnabled: true,
+        isOpenSidebarByDefault: false,
+        settingsState: SettingsState.SUCCESS,
+        isSorobanPublicEnabled: false,
+        isRpcHealthy: true,
+        userNotification: {
+          enabled: false,
+          message: "",
+        },
+        isExperimentalModeEnabled: false,
+        isHashSigningEnabled: false,
+        isNonSSLEnabled: false,
+        experimentalFeaturesState: SettingsState.SUCCESS,
+        assetsLists: DEFAULT_ASSETS_LISTS,
+      }),
+    );
+    jest
+      .spyOn(ApiInternal, "getAccountBalances")
+      .mockImplementation(() => Promise.resolve(mockBalances));
+    // The production indexer (`getTokenPrices` in `@shared/api/internal.ts`)
+    // filters out contract-ID issuers via `isContractId(asset.issuer)`, so
+    // `DT` (which has a `C…` issuer in `mockBalances`) cannot be priced in
+    // real usage. Price the classic G-issuer assets instead — `USDC`
+    // (large value) and native `XLM` — so the ordering scenario under test
+    // matches what users actually see.
+    const realisticPrices = {
+      ["USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM"]: {
+        currentPrice: "1.00",
+        percentagePriceChange24h: "0",
+      },
+      native: {
+        currentPrice: "0.27633884304166495",
+        percentagePriceChange24h: "1.09899728516430811",
+      },
+    };
+    jest
+      .spyOn(ApiInternal, "getTokenPrices")
+      .mockImplementation(() => Promise.resolve(realisticPrices));
+
+    render(
+      <Wrapper
+        routes={[ROUTES.account]}
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
+            publicKey: "G1",
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: MAINNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+          },
+        }}
+      >
+        <Account />
+      </Wrapper>,
+    );
+
+    // mockBalances + realisticPrices: USDC (100 * $1 = $100), XLM
+    // (50 * ~$0.276 = ~$13.81), DT (unpriced — contract-ID issuer is
+    // filtered out by the production pricing API). Expected order:
+    // USDC, XLM, DT (unpriced last).
+    await waitFor(() => {
+      const assetNodes = screen.getAllByTestId("account-assets-item");
+      expect(assetNodes.length).toEqual(3);
+      expect(assetNodes[0]).toHaveTextContent("USDC");
+      expect(assetNodes[1]).toHaveTextContent("XLM");
+      expect(assetNodes[2]).toHaveTextContent("DT");
+    });
+  });
+
+  it("preserves the default balance order when token prices fail to load", async () => {
+    jest.spyOn(ApiInternal, "loadSettings").mockImplementation(() =>
+      Promise.resolve({
+        networkDetails: MAINNET_NETWORK_DETAILS,
+        networksList: DEFAULT_NETWORKS,
+        hiddenAssets: {},
+        allowList: ApiInternal.DEFAULT_ALLOW_LIST,
+        error: "",
+        isDataSharingAllowed: false,
+        isMemoValidationEnabled: false,
+        isHideDustEnabled: true,
+        isOpenSidebarByDefault: false,
+        settingsState: SettingsState.SUCCESS,
+        isSorobanPublicEnabled: false,
+        isRpcHealthy: true,
+        userNotification: {
+          enabled: false,
+          message: "",
+        },
+        isExperimentalModeEnabled: false,
+        isHashSigningEnabled: false,
+        isNonSSLEnabled: false,
+        experimentalFeaturesState: SettingsState.SUCCESS,
+        assetsLists: DEFAULT_ASSETS_LISTS,
+      }),
+    );
+    jest
+      .spyOn(ApiInternal, "getAccountBalances")
+      .mockImplementation(() => Promise.resolve(mockBalances));
+    jest
+      .spyOn(ApiInternal, "getTokenPrices")
+      .mockRejectedValueOnce(new Error("Failed to fetch prices"));
+
+    render(
+      <Wrapper
+        routes={[ROUTES.account]}
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
+            publicKey: "G1",
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: MAINNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+          },
+        }}
+      >
+        <Account />
+      </Wrapper>,
+    );
+
+    // With no prices, sortBalancesByValue is a no-op; the existing
+    // sortBalances output is XLM (native unshifted to top), then DT, USDC.
+    await waitFor(() => {
+      const assetNodes = screen.getAllByTestId("account-assets-item");
+      expect(assetNodes.length).toEqual(3);
+      expect(assetNodes[0]).toHaveTextContent("XLM");
+      expect(assetNodes[1]).toHaveTextContent("DT");
+      expect(assetNodes[2]).toHaveTextContent("USDC");
     });
   });
 
@@ -1125,6 +1271,48 @@ describe("Account view", () => {
     // Fast-forward 30 seconds
     jest.advanceTimersByTime(30000);
     expect(getAccountBalancesSpy).toHaveBeenCalledTimes(3);
+  });
+
+  it("renders the error notification without crashing when account data is in ERROR state", async () => {
+    const accountDataSpy = jest
+      .spyOn(AccountDataHooks, "useGetAccountData")
+      .mockReturnValue({
+        state: {
+          state: RequestState.ERROR,
+          data: null,
+          error: new Error("boom"),
+        },
+        fetchData: jest.fn(),
+        refreshAppData: jest.fn(),
+      });
+
+    render(
+      <Wrapper
+        routes={[ROUTES.account]}
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
+            publicKey: TEST_PUBLIC_KEY,
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: MAINNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+          },
+        }}
+      >
+        <Account />
+      </Wrapper>,
+    );
+
+    await waitFor(() => {
+      expect(
+        screen.getByText("Failed to fetch your account balances."),
+      ).toBeInTheDocument();
+    });
+
+    accountDataSpy.mockRestore();
   });
 
   it("handles abandoned onboarding in password created step", async () => {

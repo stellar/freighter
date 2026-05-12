@@ -38,6 +38,7 @@ import {
   useGetIcons,
   RequestState as IconsRequestState,
 } from "./hooks/useGetIcons";
+import { useStableSortedBalances } from "./hooks/useStableSortedBalances";
 import { AccountTabsContext, TabsList } from "./contexts/activeTabContext";
 
 import {
@@ -112,6 +113,20 @@ export const Account = () => {
       ? accountData.data?.isScanAppended
       : false;
 
+  // Derive `balances` and `tokenPrices` *before* the early returns below
+  // so that `useStableSortedBalances` is called unconditionally on every
+  // render (Rules of Hooks). When `accountData` is in `RequestState.ERROR`
+  // its reducer sets `data: null`, so `accountBalances` is null and we
+  // pass an empty list — the helpers below stay safe and the error UI
+  // farther down can still render.
+  const balances = accountBalances?.balances ?? [];
+  const tokenPrices =
+    accountData.state === RequestState.SUCCESS &&
+    accountData.data.type === AppDataType.RESOLVED
+      ? accountData.data?.tokenPrices
+      : undefined;
+  const sortedBalances = useStableSortedBalances(balances, tokenPrices);
+
   useEffect(() => {
     const getData = async () => {
       if (accountBalances && !isScanAppended) {
@@ -177,9 +192,7 @@ export const Account = () => {
       ? iconsData?.data?.icons
       : {};
 
-  const tokenPrices = resolvedData?.tokenPrices || {};
-  const balances = resolvedData?.balances.balances!;
-  const totalBalanceUsd = getTotalUsd(tokenPrices, balances);
+  const totalBalanceUsd = getTotalUsd(tokenPrices ?? {}, balances);
   const roundedTotalBalanceUsd =
     !hasError &&
     isMainnet(resolvedData!.networkDetails) &&
@@ -276,9 +289,12 @@ export const Account = () => {
                   data-testid="account-assets"
                 >
                   <AccountAssets
-                    balances={resolvedData.balances}
+                    balances={{
+                      ...resolvedData.balances,
+                      balances: sortedBalances,
+                    }}
                     historyData={historyData.data}
-                    assetPrices={tokenPrices}
+                    assetPrices={tokenPrices ?? {}}
                     assetIcons={resolvedIcons}
                   />
                 </div>
