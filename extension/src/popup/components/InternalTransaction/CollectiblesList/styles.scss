@@ -19,6 +19,37 @@
     gap: pxToRem(24px);
   }
 
+  &__collection-group {
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(8px);
+  }
+
+  &__section-header {
+    display: flex;
+    align-items: center;
+    gap: pxToRem(12px);
+
+    &__name {
+      font-size: pxToRem(14px);
+      line-height: pxToRem(20px);
+      color: var(--sds-clr-gray-11);
+      white-space: nowrap;
+    }
+
+    &__divider {
+      flex: 1;
+      height: pxToRem(1px);
+      background-color: var(--sds-clr-gray-06);
+    }
+
+    &__count {
+      font-size: pxToRem(14px);
+      line-height: pxToRem(20px);
+      color: var(--sds-clr-gray-11);
+    }
+  }
+
   &__collection {
     display: flex;
     align-items: center;
@@ -41,21 +72,6 @@
     &__title {
       font-size: pxToRem(14px);
       line-height: pxToRem(20px);
-    }
-
-    &__token-id {
-      border-radius: pxToRem(100px);
-      background-color: var(--sds-clr-gray-03);
-      border: 1px solid var(--sds-clr-gray-06);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-left: auto;
-      font-size: pxToRem(12px);
-      line-height: pxToRem(18px);
-      font-weight: var(--sds-fw-heavy);
-      color: var(--sds-clr-gray-11);
-      padding: pxToRem(2px) pxToRem(6px);
     }
   }
 }
