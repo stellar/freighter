@@ -119,7 +119,10 @@ jobs:
           PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           PR_URL: ${{ github.event.pull_request.html_url }}
         run: |
-          NOTES=$(cat <<EOF
+          # Write notes to a file rather than $(cat <<EOF) because bash's
+          # command-substitution parser tokenizes single quotes inside the
+          # heredoc body, breaking on apostrophes in prose.
+          cat > /tmp/release-notes.md <<EOF
           Internal preview build for PR [#${PR_NUMBER}](${PR_URL}). SDF collaborators only — non-SDF GitHub users get 404 on this page. Auto-deleted when the PR is closed.
 
           **Commit:** ${PR_HEAD_SHA}
@@ -135,13 +138,12 @@ jobs:
 
           ### Important
 
-          This code is still under review and may contain bugs that haven't been caught yet. **Use caution before signing transactions with real funds** — consider testing with a testnet wallet instead.
+          This code is still under review and may contain bugs that have not been caught yet. **Use caution before signing transactions with real funds** — consider testing with a testnet wallet instead.
           EOF
-          )
           URL=$(gh release create "pr-preview-${PR_NUMBER}" \
             ./extension/build/build.zip \
             --title "PR Preview #${PR_NUMBER}" \
-            --notes "${NOTES}" \
+            --notes-file /tmp/release-notes.md \
             --draft)
           echo "url=${URL}" >> "$GITHUB_OUTPUT"
 
