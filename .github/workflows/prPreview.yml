@@ -16,10 +16,6 @@
 # ----------------------------------------------------------------------
 name: PR Preview
 
-env:
-  INDEXER_URL: ${{ secrets.INDEXER_URL }}
-  INDEXER_V2_URL: ${{ secrets.INDEXER_V2_BETA_URL }}
-
 on:
   pull_request:
     types: [opened, synchronize, reopened, closed]
@@ -27,6 +23,17 @@ on:
 # Default for all jobs is no permissions; each job opts in to the
 # narrowest scope it needs below.
 permissions: {}
+
+# Single concurrency group across build and cleanup. When a PR closes
+# mid-build, the close-event cleanup job cancels the still-running
+# build (cancel-in-progress: true) so the build can't finish and
+# create an orphaned release after the cleanup has already deleted
+# whatever was there. The next build's "Delete existing preview
+# release" step is idempotent, so a cancelled cleanup leaves no
+# permanent half-state.
+concurrency:
+  group: pr-preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 
 jobs:
   build-and-release:
@@ -47,9 +54,11 @@ jobs:
     permissions:
       contents: write       # release create/delete + tag operations
       pull-requests: write  # sticky preview-link comment on the PR
-    concurrency:
-      group: pr-preview-build-${{ github.event.pull_request.number }}
-      cancel-in-progress: true
+    env:
+      # Secrets injected at job level (not workflow level) so a future job
+      # added without the same fork-guard if: doesn't inherit them.
+      INDEXER_URL: ${{ secrets.INDEXER_URL }}
+      INDEXER_V2_URL: ${{ secrets.INDEXER_V2_BETA_URL }}
     steps:
       - name: Validate required secrets
         if: ${{ env.INDEXER_URL == '' || env.INDEXER_V2_URL == '' }}
@@ -71,7 +80,7 @@ jobs:
         env:
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
-          PREVIEW_NAME="Freighter PR Preview ${PR_NUMBER}"
+          PREVIEW_NAME="Freighter PR Preview #${PR_NUMBER}"
           PREVIEW_VERSION_NAME="pr-preview-${PR_NUMBER}"
           PREVIEW_GECKO_ID="freighter-pr-preview-${PR_NUMBER}@stellar.org"
 
@@ -140,11 +149,18 @@ jobs:
 
           This code is still under review and may contain bugs that have not been caught yet. **Use caution before signing transactions with real funds** — consider testing with a testnet wallet instead.
           EOF
-          URL=$(gh release create "pr-preview-${PR_NUMBER}" \
+          # Don't capture stdout from `gh release create` — it can include
+          # progress/status lines, not just the URL. Query the URL with a
+          # dedicated `gh release view --json url` call instead.
+          # Pass --target so if the draft is ever manually published, the
+          # resulting git tag points at the PR's HEAD commit, not master.
+          gh release create "pr-preview-${PR_NUMBER}" \
             ./extension/build/build.zip \
             --title "PR Preview #${PR_NUMBER}" \
             --notes-file /tmp/release-notes.md \
-            --draft)
+            --target "${PR_HEAD_SHA}" \
+            --draft > /dev/null
+          URL=$(gh release view "pr-preview-${PR_NUMBER}" --json url --jq '.url')
           echo "url=${URL}" >> "$GITHUB_OUTPUT"
 
       - name: Post/update sticky PR comment with preview link
@@ -157,7 +173,10 @@ jobs:
           MARKER="<!-- pr-preview-comment -->"
           BODY="${MARKER}"$'\n'"PR Preview build is ready: ${RELEASE_URL} (SDF collaborators only — install instructions in the release description)"
 
-          EXISTING=$(gh api "repos/${GH_REPO}/issues/${PR_NUMBER}/comments" \
+          # --paginate so this works on PRs with >30 comments (default page
+          # size). Without it, the marker comment can fall off a later page
+          # and we'd post a duplicate instead of editing in place.
+          EXISTING=$(gh api --paginate "repos/${GH_REPO}/issues/${PR_NUMBER}/comments" \
             --jq ".[] | select(.body | startswith(\"${MARKER}\")) | .id" | head -1)
           if [ -n "$EXISTING" ]; then
             gh api -X PATCH "repos/${GH_REPO}/issues/comments/${EXISTING}" -f body="$BODY"
@@ -171,10 +190,10 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-    concurrency:
-      group: pr-preview-cleanup-${{ github.event.pull_request.number }}
-      # Don't cancel cleanup runs — they need to complete to remove the draft.
-      cancel-in-progress: false
+    # Shares the workflow-level concurrency group with the build job so a
+    # close-event cancels any in-flight build before deleting the release —
+    # prevents the build from finishing AFTER cleanup and re-creating an
+    # orphaned release.
     steps:
       - name: Delete draft release and tag
         env:
