@@ -77,14 +77,37 @@ const PERCENTAGE_OPTIONS = [
   ["75%", 75],
 ] as const;
 
+const normalizeNumericString = (value: string) => {
+  const cleaned = cleanAmount(value);
+  let hasDecimal = false;
+  let normalized = "";
+
+  for (const char of cleaned) {
+    if (char === ".") {
+      if (hasDecimal) {
+        continue;
+      }
+      hasDecimal = true;
+    }
+    normalized += char;
+  }
+
+  return normalized;
+};
+
 const getValidBigNumber = (value: string) => {
-  const cleanedValue = cleanAmount(value);
+  const cleanedValue = normalizeNumericString(value);
 
   if (!cleanedValue || cleanedValue === ".") {
     return null;
   }
 
-  const numericValue = new BigNumber(cleanedValue);
+  let numericValue: BigNumber;
+  try {
+    numericValue = new BigNumber(cleanedValue);
+  } catch {
+    return null;
+  }
 
   return numericValue.isNaN() ? null : numericValue;
 };
@@ -330,7 +353,7 @@ export const SendAmount = ({
       return;
     }
 
-    dispatch(saveAmount(cleanAmount(nextAmount)));
+    dispatch(saveAmount(normalizeNumericString(nextAmount)));
     await handleContinue();
   };
 
@@ -369,7 +392,7 @@ export const SendAmount = ({
   const validate = (values: { amount: string }) => {
     const valueToValidate =
       inputType === "crypto" ? values.amount : effectiveTokenAmount;
-    const cleanedValue = cleanAmount(valueToValidate);
+    const cleanedValue = normalizeNumericString(valueToValidate);
 
     if (
       cleanedValue.indexOf(".") !== -1 &&
@@ -545,7 +568,7 @@ export const SendAmount = ({
     : null;
   const effectiveTokenAmount =
     inputType === "fiat" && editedInputType === "crypto"
-      ? cleanAmount(formik.values.amount)
+      ? normalizeNumericString(formik.values.amount)
       : (priceValue ?? "");
   const supportsUsd = !!assetPrice;
   const availableBalance = getAvailableBalance({

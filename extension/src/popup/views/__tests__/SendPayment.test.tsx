@@ -29,7 +29,6 @@ import * as RouteHelpers from "popup/helpers/route";
 import * as ValidateMemoModule from "popup/helpers/useValidateTransactionMemo";
 import * as tokenPaymentActions from "popup/ducks/token-payment";
 import * as GetIconHelper from "@shared/api/helpers/getIconUrlFromIssuer";
-import * as BlockAidHelpers from "popup/helpers/blockaid";
 import { WalletType } from "@shared/constants/hardwareWallet";
 
 jest.mock("lodash/debounce", () => jest.fn((fn) => fn));
@@ -242,7 +241,7 @@ describe("Send", () => {
   });
 
   it("sending non-native asset on Mainnet with Blockaid validation and asset warnings", async () => {
-    jest.spyOn(BlockAidHelpers, "scanAsset").mockImplementation(() =>
+    jest.spyOn(BlockaidHelpers, "scanAsset").mockImplementation(() =>
       Promise.resolve({
         address: "",
         chain: "stellar",

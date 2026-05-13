@@ -3,7 +3,6 @@ import { useDispatch, useSelector } from "react-redux";
 import { Asset, StrKey } from "stellar-sdk";
 import { useFormik } from "formik";
 import BigNumber from "bignumber.js";
-import debounce from "lodash/debounce";
 import {
   Button,
   Input,
@@ -54,6 +53,25 @@ import "../styles.scss";
 
 const baseReserve = new BigNumber(1);
 const MAX_VISIBLE_RECENT_ADDRESSES = 10;
+
+type ResolvedSuggestionData = {
+  type: AppDataType.RESOLVED;
+  validatedAddress: string;
+  fedAddress: string;
+  destinationBalances?: { isFunded: boolean };
+  recentAddresses: string[];
+};
+
+const isResolvedSuggestionData = (
+  data: unknown,
+): data is ResolvedSuggestionData =>
+  Boolean(
+    data &&
+      typeof data === "object" &&
+      "type" in data &&
+      (data as { type?: AppDataType }).type === AppDataType.RESOLVED &&
+      "validatedAddress" in data,
+  );
 
 export const shouldAccountDoesntExistWarning = (
   isFunded: boolean,
@@ -179,46 +197,26 @@ export const SendTo = ({
   };
 
   useEffect(() => {
-    const debouncedSetDestination = debounce((nextDestination: string) => {
-      setDebouncedDestination(nextDestination);
-    }, 400);
-
-    debouncedSetDestination(formik.values.destination);
-
-    return () => {
-      debouncedSetDestination.cancel();
-    };
-  }, [formik.values.destination]);
-
-  useEffect(() => {
-    const debouncedGetData = debounce(async () => {
+    const timeoutId = setTimeout(async () => {
+      setDebouncedDestination(formik.values.destination);
       const errors = await formik.validateForm(formik.values);
-      await fetchData(debouncedDestination, errors);
+      await fetchData(formik.values.destination, errors);
     }, 400);
 
-    if (formik.values.destination !== debouncedDestination) {
-      return () => {
-        debouncedGetData.cancel();
-      };
-    }
-
-    debouncedGetData();
-
     return () => {
-      debouncedGetData.cancel();
+      clearTimeout(timeoutId);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedDestination, formik.values.destination]);
+  }, [formik.values.destination]);
 
   const hasError = sendDataState.state === RequestState.ERROR;
   const isLoading =
     sendDataState.state === RequestState.IDLE ||
     sendDataState.state === RequestState.LOADING;
   const isSearchSettled = formik.values.destination === debouncedDestination;
-  const resolvedSendData =
-    sendDataState.data && sendDataState.data.type === AppDataType.RESOLVED
-      ? sendDataState.data
-      : null;
+  const resolvedSendData = isResolvedSuggestionData(sendDataState.data)
+    ? sendDataState.data
+    : null;
   const visibleRecentAddresses = resolvedSendData
     ? resolvedSendData.recentAddresses.slice(0, MAX_VISIBLE_RECENT_ADDRESSES)
     : [];
@@ -281,31 +279,38 @@ export const SendTo = ({
             <div>
               {debouncedDestination !== "" && isSearchSettled && (
                 <div>
-                  {formik.isValid ? (
+                  {formik.isValid && resolvedSendData ? (
                     <>
-                      {sendDataState.data.destinationBalances &&
-                        !sendDataState.data.destinationBalances.isFunded && (
+                      {resolvedSendData.destinationBalances &&
+                        !resolvedSendData.destinationBalances.isFunded && (
                           <AccountDoesntExistWarning />
                         )}
                       <div className="SendTo__subheading">
                         <Icon.SearchLg />
                         {t("Suggestions")}
                       </div>
-                      <div
+                      <button
+                        type="button"
                         className="SendTo__subheading-identicon"
-                        data-testid="send-to-identicon"
+                        data-testid="send-to-suggestion-button"
+                        onClick={() => {
+                          handleContinue(
+                            resolvedSendData.validatedAddress,
+                            resolvedSendData.fedAddress,
+                          );
+                        }}
                       >
                         <div className="SendTo__subheading-identicon__identicon">
                           <IdenticonImg
-                            publicKey={sendDataState.data.validatedAddress}
+                            publicKey={resolvedSendData.validatedAddress}
                           />
                         </div>
                         <span>
                           {truncatedPublicKey(
-                            sendDataState.data.validatedAddress,
+                            resolvedSendData.validatedAddress,
                           )}
                         </span>
-                      </div>
+                      </button>
                     </>
                   ) : (
                     <InvalidAddressWarning />

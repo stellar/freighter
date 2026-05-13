@@ -48,10 +48,11 @@ export const CollectiblesList = ({
         if (!collection.collection) return null;
         const items = collection.collection.collectibles;
         const collectionName = items[0]?.collectionName || "";
+        const collectionAddress = collection.collection.address;
 
         return (
           <div
-            key={`${collectionName}-group`}
+            key={`${collectionAddress}-group`}
             className="CollectiblesList__collection-group"
           >
             <div className="CollectiblesList__section-header">

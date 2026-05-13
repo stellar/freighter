@@ -90,7 +90,7 @@ function useSubmitTxData({
 
       if (submitFreighterTransaction.fulfilled.match(submitResp)) {
         if (!isSwap) {
-          const isSelfOwnedDestination = allAccounts.some(
+          const isSelfOwnedDestination = (allAccounts ?? []).some(
             (account) => account.publicKey === destination,
           );
 

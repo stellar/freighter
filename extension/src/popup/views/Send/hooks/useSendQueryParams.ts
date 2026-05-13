@@ -102,20 +102,20 @@ export function useSendQueryParams() {
         dispatch(saveIsCollectible(false));
         dispatch(saveIsToken(isContractId(asset.issuer)));
       } catch {
-        // Invalid asset param, ignore and use default
+        // Invalid asset param: keep current asset/flags when already selected.
         if (!transactionData.asset) {
           dispatch(saveAsset("native"));
+          dispatch(saveIsCollectible(false));
+          dispatch(saveIsToken(false));
         }
+      }
+    } else {
+      // No asset param: keep current asset/flags when already selected.
+      if (!transactionData.asset) {
+        dispatch(saveAsset("native"));
         dispatch(saveIsCollectible(false));
         dispatch(saveIsToken(false));
       }
-    } else {
-      // Set default asset to native if not already set
-      if (!transactionData.asset) {
-        dispatch(saveAsset("native"));
-      }
-      dispatch(saveIsCollectible(false));
-      dispatch(saveIsToken(false));
     }
   }, [
     dispatch,
