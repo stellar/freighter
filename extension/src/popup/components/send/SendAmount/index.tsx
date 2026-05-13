@@ -220,6 +220,9 @@ export const SendAmount = ({
   const [contractSupportsMuxed, setContractSupportsMuxed] = React.useState<
     boolean | null
   >(null);
+  // Mirror mobile behavior: preserve the amount from the field the user
+  // actually edited; only convert when switching away from that source field.
+  const [editedInputType, setEditedInputType] = useState<InputType>("crypto");
 
   // Get contract ID for custom tokens - must be before conditional returns
   const contractId = React.useMemo(
@@ -321,7 +324,7 @@ export const SendAmount = ({
 
   const handlePaymentContinue = async () => {
     const nextAmount =
-      inputType === "crypto" ? formik.values.amount : (priceValue ?? "");
+      inputType === "crypto" ? formik.values.amount : effectiveTokenAmount;
 
     if (!isValidPositiveAmount(nextAmount)) {
       return;
@@ -365,7 +368,7 @@ export const SendAmount = ({
 
   const validate = (values: { amount: string }) => {
     const valueToValidate =
-      inputType === "crypto" ? values.amount : (priceValue ?? "");
+      inputType === "crypto" ? values.amount : effectiveTokenAmount;
     const cleanedValue = cleanAmount(valueToValidate);
 
     if (
@@ -540,6 +543,10 @@ export const SendAmount = ({
         )}`
       : null
     : null;
+  const effectiveTokenAmount =
+    inputType === "fiat" && editedInputType === "crypto"
+      ? formik.values.amount
+      : (priceValue ?? "");
   const supportsUsd = !!assetPrice;
   const availableBalance = getAvailableBalance({
     assetCanonical: asset,
@@ -579,7 +586,7 @@ export const SendAmount = ({
       Boolean(amountBigNumber?.gt(new BigNumber(availableBalance)))) ||
     (inputType === "fiat" &&
       Boolean(
-        getValidBigNumber(priceValue ?? "")?.gt(
+        getValidBigNumber(effectiveTokenAmount)?.gt(
           new BigNumber(availableBalance),
         ),
       ));
@@ -588,7 +595,7 @@ export const SendAmount = ({
     inputType === "crypto"
       ? isValidPositiveAmount(formik.values.amount)
       : isValidPositiveAmount(formik.values.amountUsd) &&
-        isValidPositiveAmount(priceValue ?? "");
+        isValidPositiveAmount(effectiveTokenAmount);
 
   const handlePercentage = (pct: number) => {
     if (pct === 100) {
@@ -607,6 +614,7 @@ export const SendAmount = ({
       );
       formik.setFieldValue("amountUsd", pctUsd);
       dispatch(saveAmountUsd(pctUsd));
+      setEditedInputType("fiat");
     } else {
       const pctAmount = new BigNumber(cleanAmount(availableBalance))
         .multipliedBy(fraction)
@@ -614,6 +622,7 @@ export const SendAmount = ({
         .toString();
       formik.setFieldValue("amount", pctAmount);
       dispatch(saveAmount(pctAmount));
+      setEditedInputType("crypto");
     }
   };
 
@@ -798,6 +807,7 @@ export const SendAmount = ({
                                   );
                                 formik.setFieldValue("amount", newAmount);
                                 dispatch(saveAmount(newAmount));
+                                setEditedInputType("crypto");
                                 runAfterUpdate(() => {
                                   input.selectionStart = newCursor;
                                   input.selectionEnd = newCursor;
@@ -847,6 +857,7 @@ export const SendAmount = ({
                                   );
                                 formik.setFieldValue("amountUsd", newAmount);
                                 dispatch(saveAmountUsd(newAmount));
+                                setEditedInputType("fiat");
                                 runAfterUpdate(() => {
                                   input.selectionStart = newCursor;
                                   input.selectionEnd = newCursor;
@@ -888,7 +899,7 @@ export const SendAmount = ({
                         {supportsUsd
                           ? inputType === "crypto"
                             ? `$${priceValueUsd || "0.00"}`
-                            : `${formatAmount(priceValue ?? "0")} ${parsedSourceAsset.code}`
+                            : `${formatAmount(effectiveTokenAmount || "0")} ${parsedSourceAsset.code}`
                           : null}
                         {supportsUsd && (
                           <Button
@@ -901,12 +912,22 @@ export const SendAmount = ({
                               const newInputType =
                                 inputType === "crypto" ? "fiat" : "crypto";
                               if (newInputType === "crypto") {
-                                const converted = priceValue ?? "0";
+                                // If crypto was the last edited field, keep the exact
+                                // typed token amount. Otherwise convert from fiat.
+                                const converted =
+                                  editedInputType === "crypto"
+                                    ? formik.values.amount || "0"
+                                    : (priceValue ?? "0");
                                 dispatch(saveAmount(converted));
                                 formik.setFieldValue("amount", converted);
                               }
                               if (newInputType === "fiat") {
-                                const raw = priceValueUsd ?? "0";
+                                // If fiat was the last edited field, keep the exact
+                                // typed fiat amount. Otherwise convert from token.
+                                const raw =
+                                  editedInputType === "fiat"
+                                    ? formik.values.amountUsd || "0"
+                                    : (priceValueUsd ?? "0");
                                 const converted = raw === "0.00" ? "0" : raw;
                                 dispatch(saveAmountUsd(converted));
                                 formik.setFieldValue("amountUsd", converted);
