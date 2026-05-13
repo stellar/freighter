@@ -394,7 +394,9 @@ describe("Send", () => {
       target: { value: publicKey },
     });
     await waitFor(() => {
-      expect(screen.getByTestId("send-to-identicon")).toBeInTheDocument();
+      expect(
+        screen.getByTestId("send-to-suggestion-button"),
+      ).toBeInTheDocument();
       expect(screen.getByTestId("send-to-btn-continue")).toBeEnabled();
     });
     fireEvent.click(screen.getByTestId("send-to-btn-continue"));

@@ -488,6 +488,22 @@ export const SendAmount = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [destination, asset, isToken, isCollectible, simulationState.state]);
 
+  // If the user was in fiat mode and current asset no longer has a USD price,
+  // force back to crypto mode so the input is still operable.
+  useEffect(() => {
+    if (
+      inputType === "fiat" &&
+      sendAmountData.state === RequestState.SUCCESS &&
+      sendAmountData.data?.type === AppDataType.RESOLVED
+    ) {
+      const currentAssetPrice =
+        sendAmountData.data.tokenPrices?.[asset]?.currentPrice;
+      if (!currentAssetPrice) {
+        setInputType("crypto");
+      }
+    }
+  }, [inputType, sendAmountData.state, sendAmountData.data, asset]);
+
   const getAmountFontSize = () => {
     const currentValue =
       inputType === "fiat" ? formik.values.amountUsd : formik.values.amount;
@@ -571,6 +587,7 @@ export const SendAmount = ({
       ? normalizeNumericString(formik.values.amount)
       : (priceValue ?? "");
   const supportsUsd = !!assetPrice;
+
   const availableBalance = getAvailableBalance({
     assetCanonical: asset,
     balances: sendData.userBalances.balances,
@@ -973,7 +990,7 @@ export const SendAmount = ({
                         <Icon.AlertCircle />
                         <span>
                           {t(
-                            "You don't have enough {{asset}} in your account",
+                            "You don’t have enough {{asset}} in your account",
                             {
                               asset: parsedSourceAsset.code,
                             },
