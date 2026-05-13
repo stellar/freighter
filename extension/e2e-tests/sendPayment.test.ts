@@ -1,6 +1,6 @@
 import { test, expect } from "./test-fixtures";
-import { Page } from "@playwright/test";
-import { login, loginToTestAccount } from "./helpers/login";
+import { BrowserContext, Page } from "@playwright/test";
+import { login, loginToTestAccount, switchToMainnet } from "./helpers/login";
 import { TEST_TOKEN_ADDRESS } from "./helpers/test-token";
 import {
   stubAccountBalancesE2e,
@@ -21,6 +21,47 @@ const FUNDED_DESTINATION =
 
 function visibleTokenList(page: Page) {
   return page.locator('[data-testid="token-list"]:visible').first();
+}
+
+async function stubSendTokenPrices(context: BrowserContext) {
+  await context.route("**/token-prices", async (route) => {
+    const request = route.request();
+    let tokenIds = [] as string[];
+
+    if (request.method() === "POST") {
+      try {
+        const body = await request.postDataJSON();
+        tokenIds = body.tokens || [];
+      } catch {
+        tokenIds = [];
+      }
+    }
+
+    const data: Record<
+      string,
+      { currentPrice: string; percentagePriceChange24h: string }
+    > = {
+      native: {
+        currentPrice: "0.4079853099738737",
+        percentagePriceChange24h: "1.022345803068746424",
+      },
+      "USDC:GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5": {
+        currentPrice: "1.0000000000000000",
+        percentagePriceChange24h: "0.0000000000000000",
+      },
+    };
+
+    for (const id of tokenIds) {
+      if (!data[id]) {
+        data[id] = {
+          currentPrice: "0.4079853099738737",
+          percentagePriceChange24h: "1.022345803068746424",
+        };
+      }
+    }
+
+    await route.fulfill({ json: { data } });
+  });
 }
 
 async function clickVisibleBackButton(page: Page) {
@@ -1011,6 +1052,7 @@ test("Send flow change token from amount screen dismisses back", async ({
     await stubAccountBalancesWithUSDC(page);
   };
   await loginToTestAccount({ page, extensionId, context, stubOverrides });
+  await switchToMainnet(page);
 
   // Navigate to AMOUNT screen
   await page.getByTestId("nav-link-send").click({ force: true });
@@ -1404,57 +1446,14 @@ test("Send workflow: 25% amount is preserved across fiat toggle and review", asy
   context,
 }) => {
   test.slow();
+  await stubSendTokenPrices(context);
   const stubOverrides = async () => {
     await stubAccountBalancesWithUSDC(page);
   };
   await loginToTestAccount({ page, extensionId, context, stubOverrides });
-
-  await page.route("**/token-prices", async (route) => {
-    const request = route.request();
-    let tokenIds = [] as string[];
-    if (request.method() === "POST") {
-      try {
-        const body = await request.postDataJSON();
-        tokenIds = body.tokens || [];
-      } catch {
-        tokenIds = [];
-      }
-    }
-
-    const data: Record<
-      string,
-      { currentPrice: string; percentagePriceChange24h: string }
-    > = {
-      native: {
-        currentPrice: "0.4079853099738737",
-        percentagePriceChange24h: "1.022345803068746424",
-      },
-      "USDC:GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5": {
-        currentPrice: "1.0000000000000000",
-        percentagePriceChange24h: "0.0000000000000000",
-      },
-    };
-
-    for (const id of tokenIds) {
-      data[id] = {
-        currentPrice: "0.4079853099738737",
-        percentagePriceChange24h: "1.022345803068746424",
-      };
-    }
-
-    await route.fulfill({ json: { data } });
-  });
+  await switchToMainnet(page);
 
   await goToTokenAmountStepFromHomeSend(page);
-
-  await page.getByTestId("send-amount-edit-dest-asset").click();
-  await visibleTokenList(page)
-    .getByText("USDC", { exact: true })
-    .first()
-    .click({ force: true });
-  await expect(page.getByTestId("send-amount-edit-dest-asset")).toContainText(
-    "USDC",
-  );
 
   // Set amount via percentage button and capture exact value shown in token mode.
   await page.getByRole("button", { name: "25%" }).click({ force: true });
@@ -1465,10 +1464,7 @@ test("Send workflow: 25% amount is preserved across fiat toggle and review", asy
 
   // Toggle to fiat and back to token.
   const toggleButton = page.locator(".SendAmount__amount-price button").first();
-  test.skip(
-    (await toggleButton.count()) === 0,
-    "Fiat toggle unavailable in current network/test harness",
-  );
+  await expect(toggleButton).toHaveCount(1, { timeout: 15000 });
   await expect(toggleButton).toBeVisible({ timeout: 10000 });
   await toggleButton.click({ force: true });
   await page.waitForTimeout(500);
@@ -1485,7 +1481,7 @@ test("Send workflow: 25% amount is preserved across fiat toggle and review", asy
 
   await expect(page.getByText("You are sending")).toBeVisible();
   await expect(page.getByTestId("review-tx-send-amount")).toContainText(
-    `${amountBeforeToggle.replace(/,/g, "")} USDC`,
+    `${amountBeforeToggle.replace(/,/g, "")} XLM`,
   );
 });
 
@@ -1495,57 +1491,14 @@ test("Send workflow: typed token amount is preserved across fiat toggle and revi
   context,
 }) => {
   test.slow();
+  await stubSendTokenPrices(context);
   const stubOverrides = async () => {
     await stubAccountBalancesWithUSDC(page);
   };
   await loginToTestAccount({ page, extensionId, context, stubOverrides });
-
-  await page.route("**/token-prices", async (route) => {
-    const request = route.request();
-    let tokenIds = [] as string[];
-    if (request.method() === "POST") {
-      try {
-        const body = await request.postDataJSON();
-        tokenIds = body.tokens || [];
-      } catch {
-        tokenIds = [];
-      }
-    }
-
-    const data: Record<
-      string,
-      { currentPrice: string; percentagePriceChange24h: string }
-    > = {
-      native: {
-        currentPrice: "0.4079853099738737",
-        percentagePriceChange24h: "1.022345803068746424",
-      },
-      "USDC:GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5": {
-        currentPrice: "1.0000000000000000",
-        percentagePriceChange24h: "0.0000000000000000",
-      },
-    };
-
-    for (const id of tokenIds) {
-      data[id] = {
-        currentPrice: "0.4079853099738737",
-        percentagePriceChange24h: "1.022345803068746424",
-      };
-    }
-
-    await route.fulfill({ json: { data } });
-  });
+  await switchToMainnet(page);
 
   await goToTokenAmountStepFromHomeSend(page);
-
-  await page.getByTestId("send-amount-edit-dest-asset").click();
-  await visibleTokenList(page)
-    .getByText("USDC", { exact: true })
-    .first()
-    .click({ force: true });
-  await expect(page.getByTestId("send-amount-edit-dest-asset")).toContainText(
-    "USDC",
-  );
 
   const amountInput = page.getByTestId("send-amount-amount-input");
   await expect(amountInput).toBeVisible();
@@ -1555,10 +1508,7 @@ test("Send workflow: typed token amount is preserved across fiat toggle and revi
 
   // Toggle to fiat and back.
   const toggleButton = page.locator(".SendAmount__amount-price button").first();
-  test.skip(
-    (await toggleButton.count()) === 0,
-    "Fiat toggle unavailable in current network/test harness",
-  );
+  await expect(toggleButton).toHaveCount(1, { timeout: 15000 });
   await expect(toggleButton).toBeVisible({ timeout: 10000 });
   await toggleButton.click({ force: true });
   await page.waitForTimeout(500);
@@ -1575,7 +1525,7 @@ test("Send workflow: typed token amount is preserved across fiat toggle and revi
 
   await expect(page.getByText("You are sending")).toBeVisible();
   await expect(page.getByTestId("review-tx-send-amount")).toContainText(
-    "11 USDC",
+    "11 XLM",
   );
   await expect(page.getByTestId("SubmitAction")).toBeVisible({
     timeout: 15000,
