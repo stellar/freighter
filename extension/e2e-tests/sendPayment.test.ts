@@ -1398,50 +1398,185 @@ test("Send workflow: input handling with amounts, formatting, and value boundari
   await expect(page.getByText("You are sending")).toBeVisible();
 });
 
-test("Send workflow: crypto and fiat modes with multi-step navigation", async ({
+test("Send workflow: 25% amount is preserved across fiat toggle and review", async ({
   page,
   extensionId,
   context,
 }) => {
   test.slow();
-  await loginToTestAccount({ page, extensionId, context });
+  const stubOverrides = async () => {
+    await stubAccountBalancesWithUSDC(page);
+  };
+  await loginToTestAccount({ page, extensionId, context, stubOverrides });
+
+  await page.route("**/token-prices", async (route) => {
+    const request = route.request();
+    let tokenIds = [] as string[];
+    if (request.method() === "POST") {
+      try {
+        const body = await request.postDataJSON();
+        tokenIds = body.tokens || [];
+      } catch {
+        tokenIds = [];
+      }
+    }
+
+    const data: Record<
+      string,
+      { currentPrice: string; percentagePriceChange24h: string }
+    > = {
+      native: {
+        currentPrice: "0.4079853099738737",
+        percentagePriceChange24h: "1.022345803068746424",
+      },
+      "USDC:GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5": {
+        currentPrice: "1.0000000000000000",
+        percentagePriceChange24h: "0.0000000000000000",
+      },
+    };
+
+    for (const id of tokenIds) {
+      data[id] = {
+        currentPrice: "0.4079853099738737",
+        percentagePriceChange24h: "1.022345803068746424",
+      };
+    }
+
+    await route.fulfill({ json: { data } });
+  });
 
   await goToTokenAmountStepFromHomeSend(page);
 
-  // Enter amount in crypto mode
-  await page.getByTestId("send-amount-amount-input").fill("50");
-  await expect(page.getByTestId("send-amount-amount-input")).toHaveValue("50");
+  await page.getByTestId("send-amount-edit-dest-asset").click();
+  await visibleTokenList(page)
+    .getByText("USDC", { exact: true })
+    .first()
+    .click({ force: true });
+  await expect(page.getByTestId("send-amount-edit-dest-asset")).toContainText(
+    "USDC",
+  );
 
-  // Toggle to fiat mode if available
-  const toggleButton = page.getByTestId("send-amount-fiat-toggle");
-  if (await toggleButton.isVisible()) {
-    await toggleButton.click();
-    await page.waitForTimeout(1000);
+  // Set amount via percentage button and capture exact value shown in token mode.
+  await page.getByRole("button", { name: "25%" }).click({ force: true });
+  const amountInput = page.getByTestId("send-amount-amount-input");
+  await expect(amountInput).toBeVisible();
+  const amountBeforeToggle = await amountInput.inputValue();
+  await expect(amountBeforeToggle).not.toBe("0");
 
-    // Verify fiat equivalent is calculated
-    const fiatInput = page.getByTestId("send-amount-fiat-input");
-    if (await fiatInput.isVisible()) {
-      const fiatValue = await fiatInput.inputValue();
-      await expect(fiatValue).not.toBe("");
-    }
+  // Toggle to fiat and back to token.
+  const toggleButton = page.locator(".SendAmount__amount-price button").first();
+  test.skip(
+    (await toggleButton.count()) === 0,
+    "Fiat toggle unavailable in current network/test harness",
+  );
+  await expect(toggleButton).toBeVisible({ timeout: 10000 });
+  await toggleButton.click({ force: true });
+  await page.waitForTimeout(500);
+  await toggleButton.click({ force: true });
+  await page.waitForTimeout(500);
 
-    // Toggle back to crypto
-    await toggleButton.click();
-    await page.waitForTimeout(500);
+  // Exact token input should remain unchanged.
+  await expect(amountInput).toHaveValue(amountBeforeToggle);
 
-    // Crypto value preserved
-    const cryptoValue = await page
-      .getByTestId("send-amount-amount-input")
-      .inputValue();
-    await expect(parseFloat(cryptoValue)).toBeGreaterThan(0);
-  }
-
-  // Proceed to review
+  // Review modal should use the same exact token value.
   const continueBtn = page.getByTestId("send-amount-btn-continue");
   await expect(continueBtn).toBeEnabled({ timeout: 10000 });
   await continueBtn.click({ force: true });
 
   await expect(page.getByText("You are sending")).toBeVisible();
+  await expect(page.getByTestId("review-tx-send-amount")).toContainText(
+    `${amountBeforeToggle.replace(/,/g, "")} USDC`,
+  );
+});
+
+test("Send workflow: typed token amount is preserved across fiat toggle and review", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  test.slow();
+  const stubOverrides = async () => {
+    await stubAccountBalancesWithUSDC(page);
+  };
+  await loginToTestAccount({ page, extensionId, context, stubOverrides });
+
+  await page.route("**/token-prices", async (route) => {
+    const request = route.request();
+    let tokenIds = [] as string[];
+    if (request.method() === "POST") {
+      try {
+        const body = await request.postDataJSON();
+        tokenIds = body.tokens || [];
+      } catch {
+        tokenIds = [];
+      }
+    }
+
+    const data: Record<
+      string,
+      { currentPrice: string; percentagePriceChange24h: string }
+    > = {
+      native: {
+        currentPrice: "0.4079853099738737",
+        percentagePriceChange24h: "1.022345803068746424",
+      },
+      "USDC:GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5": {
+        currentPrice: "1.0000000000000000",
+        percentagePriceChange24h: "0.0000000000000000",
+      },
+    };
+
+    for (const id of tokenIds) {
+      data[id] = {
+        currentPrice: "0.4079853099738737",
+        percentagePriceChange24h: "1.022345803068746424",
+      };
+    }
+
+    await route.fulfill({ json: { data } });
+  });
+
+  await goToTokenAmountStepFromHomeSend(page);
+
+  await page.getByTestId("send-amount-edit-dest-asset").click();
+  await visibleTokenList(page)
+    .getByText("USDC", { exact: true })
+    .first()
+    .click({ force: true });
+  await expect(page.getByTestId("send-amount-edit-dest-asset")).toContainText(
+    "USDC",
+  );
+
+  const amountInput = page.getByTestId("send-amount-amount-input");
+  await expect(amountInput).toBeVisible();
+
+  await amountInput.fill("11");
+  await expect(amountInput).toHaveValue("11");
+
+  // Toggle to fiat and back.
+  const toggleButton = page.locator(".SendAmount__amount-price button").first();
+  test.skip(
+    (await toggleButton.count()) === 0,
+    "Fiat toggle unavailable in current network/test harness",
+  );
+  await expect(toggleButton).toBeVisible({ timeout: 10000 });
+  await toggleButton.click({ force: true });
+  await page.waitForTimeout(500);
+  await toggleButton.click({ force: true });
+  await page.waitForTimeout(500);
+
+  // Exact typed token amount should be preserved.
+  await expect(amountInput).toHaveValue("11");
+
+  // Review modal should receive the preserved exact token amount.
+  const continueBtn = page.getByTestId("send-amount-btn-continue");
+  await expect(continueBtn).toBeEnabled({ timeout: 10000 });
+  await continueBtn.click({ force: true });
+
+  await expect(page.getByText("You are sending")).toBeVisible();
+  await expect(page.getByTestId("review-tx-send-amount")).toContainText(
+    "11 USDC",
+  );
   await expect(page.getByTestId("SubmitAction")).toBeVisible({
     timeout: 15000,
   });

@@ -545,7 +545,7 @@ export const SendAmount = ({
     : null;
   const effectiveTokenAmount =
     inputType === "fiat" && editedInputType === "crypto"
-      ? formik.values.amount
+      ? cleanAmount(formik.values.amount)
       : (priceValue ?? "");
   const supportsUsd = !!assetPrice;
   const availableBalance = getAvailableBalance({

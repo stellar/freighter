@@ -24,6 +24,12 @@ export const SelectionTile = ({
   shouldUseIconWrapper = true,
   testId,
 }: SelectionTileProps) => {
+  const handleChevronClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onClick();
+  };
+
   return (
     <div
       className={`SelectionTile ${isEmpty ? "SelectionTile--empty" : ""}`}
@@ -44,7 +50,13 @@ export const SelectionTile = ({
           )}
         </div>
       </div>
-      <Button isRounded size="sm" variant="tertiary">
+      <Button
+        isRounded
+        size="sm"
+        variant="tertiary"
+        type="button"
+        onClick={handleChevronClick}
+      >
         <Icon.ChevronRight />
       </Button>
     </div>
