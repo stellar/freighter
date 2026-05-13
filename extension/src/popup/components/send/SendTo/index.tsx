@@ -52,6 +52,7 @@ import { reRouteOnboarding } from "popup/helpers/route";
 import "../styles.scss";
 
 const baseReserve = new BigNumber(1);
+const MAX_VISIBLE_RECENT_ADDRESSES = 10;
 
 export const shouldAccountDoesntExistWarning = (
   isFunded: boolean,
@@ -186,6 +187,13 @@ export const SendTo = ({
   const isLoading =
     sendDataState.state === RequestState.IDLE ||
     sendDataState.state === RequestState.LOADING;
+  const resolvedSendData =
+    sendDataState.data && sendDataState.data.type === AppDataType.RESOLVED
+      ? sendDataState.data
+      : null;
+  const visibleRecentAddresses = resolvedSendData
+    ? resolvedSendData.recentAddresses.slice(0, MAX_VISIBLE_RECENT_ADDRESSES)
+    : [];
 
   if (sendDataState.data?.type === AppDataType.REROUTE) {
     if (sendDataState.data.shouldOpenTab) {
@@ -245,7 +253,7 @@ export const SendTo = ({
             <div>
               {formik.values.destination === "" ? (
                 <>
-                  {sendDataState.data.recentAddresses.length > 0 && (
+                  {visibleRecentAddresses.length > 0 && (
                     <div className="SendTo__subheading">
                       <Icon.Clock />
                       {t("Recents")}
@@ -253,7 +261,7 @@ export const SendTo = ({
                   )}
                   <div className="SendTo__simplebar">
                     <ul className="SendTo__recent-accts-ul">
-                      {sendDataState.data.recentAddresses.map((address) => (
+                      {visibleRecentAddresses.map((address) => (
                         <li key={address}>
                           <button
                             data-testid="recent-address-button"
@@ -347,88 +355,6 @@ export const SendTo = ({
                           )}
                         </span>
                       </div>
-                      {sendDataState.data.recentAddresses.length > 0 && (
-                        <>
-                          <div className="SendTo__subheading">
-                            <Icon.Clock />
-                            {t("Recents")}
-                          </div>
-                          <div className="SendTo__simplebar">
-                            <ul className="SendTo__recent-accts-ul">
-                              {sendDataState.data.recentAddresses.map(
-                                (address) => (
-                                  <li key={address}>
-                                    <button
-                                      data-testid="recent-address-button"
-                                      onClick={async () => {
-                                        const addressFromInput =
-                                          await getAddressFromInput(address);
-                                        emitMetric(
-                                          METRIC_NAMES.sendPaymentRecentAddress,
-                                        );
-                                        await fetchData(address, {});
-                                        handleContinue(
-                                          addressFromInput.validatedAddress,
-                                          addressFromInput.fedAddress,
-                                        );
-                                      }}
-                                      className="SendTo__subheading-identicon"
-                                    >
-                                      <div className="SendTo__subheading-identicon__identicon">
-                                        <IdenticonImg publicKey={address} />
-                                      </div>
-                                      <span>
-                                        {isFederationAddress(address)
-                                          ? address
-                                          : truncatedPublicKey(address)}
-                                      </span>
-                                    </button>
-                                  </li>
-                                ),
-                              )}
-                            </ul>
-                          </div>
-                        </>
-                      )}
-                      {otherAccounts.length > 0 && (
-                        <>
-                          <div className="SendTo__subheading">
-                            <Icon.UserCircle />
-                            {t("My Accounts")}
-                          </div>
-                          <div className="SendTo__simplebar">
-                            <ul className="SendTo__recent-accts-ul">
-                              {otherAccounts.map((account) => (
-                                <li key={account.publicKey}>
-                                  <button
-                                    data-testid="my-account-button"
-                                    onClick={async () => {
-                                      await fetchData(account.publicKey, {});
-                                      handleContinue(
-                                        account.publicKey,
-                                        undefined,
-                                        account.name || "",
-                                      );
-                                    }}
-                                    className="SendTo__subheading-identicon"
-                                  >
-                                    <div className="SendTo__subheading-identicon__identicon">
-                                      <IdenticonImg
-                                        publicKey={account.publicKey}
-                                      />
-                                    </div>
-                                    <span>
-                                      {account.name
-                                        ? `${account.name} (${truncatedPublicKey(account.publicKey)})`
-                                        : truncatedPublicKey(account.publicKey)}
-                                    </span>
-                                  </button>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        </>
-                      )}
                     </>
                   ) : (
                     <InvalidAddressWarning />

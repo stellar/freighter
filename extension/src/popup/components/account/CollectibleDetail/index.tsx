@@ -94,7 +94,7 @@ export const CollectibleDetail = ({
 
   const handleSendCollectible = () => {
     // add the collectible data to the query params. They will be used to pre-populate the collectible data in the send flow.
-    const queryParams = `?collection_address=${encodeURIComponent(selectedCollectible.collectionAddress)}&collectible_token_id=${encodeURIComponent(selectedCollectible.tokenId)}`;
+    const queryParams = `?collection_address=${encodeURIComponent(selectedCollectible.collectionAddress)}&collectible_token_id=${encodeURIComponent(selectedCollectible.tokenId)}&return_to=collectible_detail&return_collection_address=${encodeURIComponent(selectedCollectible.collectionAddress)}&return_collectible_token_id=${encodeURIComponent(selectedCollectible.tokenId)}`;
 
     navigateTo(ROUTES.sendPayment, navigate, queryParams);
   };

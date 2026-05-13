@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Icon } from "@stellar/design-system";
+import { useLocation, useNavigate } from "react-router-dom";
 
 import { Collection } from "@shared/api/types/types";
 import {
@@ -9,6 +10,7 @@ import {
   SheetContent,
   SheetTitle,
 } from "popup/basics/shadcn/Sheet";
+import { ROUTES } from "popup/constants/routes";
 import { CollectibleDetail, SelectedCollectible } from "../CollectibleDetail";
 import { CollectibleInfoImage } from "../CollectibleInfo";
 
@@ -25,10 +27,48 @@ const CollectionsList = ({
   isCollectibleHidden: (collectionAddress: string, tokenId: string) => boolean;
   onCloseCollectible: () => void;
 }) => {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [detailData, setDetailData] = useState<SelectedCollectible | null>(
     null,
   );
+
+  const clearCollectibleDetailQueryParams = () => {
+    const params = new URLSearchParams(location.search);
+    if (!params.has("collection_detail") && !params.has("return_to")) {
+      return;
+    }
+
+    params.delete("collection_detail");
+    params.delete("collectible_token_id");
+    params.delete("return_to");
+    params.delete("return_asset");
+    params.delete("return_collection_address");
+    params.delete("return_collectible_token_id");
+
+    navigate(
+      {
+        pathname: ROUTES.account,
+        search: params.toString() ? `?${params.toString()}` : "",
+      },
+      { replace: true },
+    );
+  };
+
+  React.useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const collectionAddress = params.get("collection_detail");
+    const tokenId = params.get("collectible_token_id");
+
+    if (collectionAddress && tokenId) {
+      setDetailData({
+        collectionAddress,
+        tokenId,
+      });
+      setIsDetailOpen(true);
+    }
+  }, [location.search]);
 
   const handleOpenCollectible = (collectible: SelectedCollectible) => {
     setDetailData(collectible);
@@ -37,6 +77,7 @@ const CollectionsList = ({
 
   const handleCloseCollectible = () => {
     setIsDetailOpen(false);
+    clearCollectibleDetailQueryParams();
     onCloseCollectible();
   };
 

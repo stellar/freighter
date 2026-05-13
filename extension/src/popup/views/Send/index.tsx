@@ -116,6 +116,43 @@ export const Send = () => {
     });
 
   const location = useLocation();
+  const sendParams = new URLSearchParams(location.search);
+  const returnTo = sendParams.get("return_to");
+  const returnAsset = sendParams.get("return_asset");
+  const returnCollectionAddress = sendParams.get("return_collection_address");
+  const returnCollectibleTokenId = sendParams.get(
+    "return_collectible_token_id",
+  );
+
+  const closeSendFlow = () => {
+    dispatch(resetSubmission());
+
+    if (returnTo === "asset_detail" && returnAsset) {
+      navigateTo(
+        ROUTES.account,
+        navigate,
+        `?tab=${TabsList.TOKENS}&asset_detail=${encodeURIComponent(returnAsset)}`,
+      );
+      return;
+    }
+
+    if (
+      returnTo === "collectible_detail" &&
+      returnCollectionAddress &&
+      returnCollectibleTokenId
+    ) {
+      navigateTo(
+        ROUTES.account,
+        navigate,
+        `?tab=${TabsList.COLLECTIBLES}&collection_detail=${encodeURIComponent(
+          returnCollectionAddress,
+        )}&collectible_token_id=${encodeURIComponent(returnCollectibleTokenId)}`,
+      );
+      return;
+    }
+
+    navigateTo(ROUTES.account, navigate);
+  };
 
   const initialStepRef = useRef<STEPS>(
     (() => {
@@ -156,9 +193,7 @@ export const Send = () => {
   };
 
   useEffect(() => {
-    if (initialStepRef.current === STEPS.SELECT_SOURCE_ASSET) {
-      dispatch(resetSubmission());
-    }
+    dispatch(resetSubmission());
   }, [dispatch]);
 
   // Emit a screen-view metric only once per step transition.
@@ -218,16 +253,7 @@ export const Send = () => {
         return (
           <SendAmount
             goBack={() => {
-              if (isCollectible) {
-                dispatch(resetSubmission());
-                navigateTo(
-                  ROUTES.sendPayment,
-                  navigate,
-                  `?tab=${TabsList.COLLECTIBLES}`,
-                );
-              } else {
-                goToStep(STEPS.SELECT_SOURCE_ASSET, "from-left");
-              }
+              closeSendFlow();
             }}
             goToNext={() => goToStep(STEPS.PAYMENT_CONFIRM, "from-bottom")}
             goToChooseDest={() => goToStep(STEPS.DESTINATION, "from-bottom")}
@@ -278,8 +304,7 @@ export const Send = () => {
               } else if (prevStep === STEPS.SELECT_SOURCE_ASSET) {
                 goToStep(STEPS.SELECT_SOURCE_ASSET, "from-left");
               } else {
-                dispatch(resetSubmission());
-                navigateTo(ROUTES.account, navigate);
+                closeSendFlow();
               }
             }}
             goToNext={() =>

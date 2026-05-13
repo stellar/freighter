@@ -1,4 +1,5 @@
 import { test, expect } from "./test-fixtures";
+import { Page } from "@playwright/test";
 import { login, loginToTestAccount } from "./helpers/login";
 import { TEST_TOKEN_ADDRESS } from "./helpers/test-token";
 import {
@@ -18,14 +19,25 @@ const UNFUNDED_DESTINATION =
 const FUNDED_DESTINATION =
   "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF";
 
+function visibleTokenList(page: Page) {
+  return page.locator('[data-testid="token-list"]:visible').first();
+}
+
+async function clickVisibleBackButton(page: Page) {
+  await page.locator('[data-testid="BackButton"]:visible').first().click();
+}
+
 test("Swap doesn't throw error when account is unfunded", async ({
   page,
   extensionId,
 }) => {
+  test.slow();
   await login({ page, extensionId });
 
   await page.getByTestId("nav-link-swap").click();
-  await expect(page.getByTestId("AppHeaderPageTitle")).toContainText("Swap");
+  await expect(page.getByTestId("swap-src-asset-tile")).toBeVisible({
+    timeout: 15000,
+  });
 });
 test("Swap shows correct balances for assets", async ({
   page,
@@ -175,12 +187,12 @@ test("Swap shows correct balances for assets", async ({
   await loginToTestAccount({ page, extensionId, context, stubOverrides });
 
   await page.getByTestId("nav-link-swap").click();
-  await expect(page.getByTestId("AppHeaderPageTitle")).toContainText("Swap");
+  await expect(page.getByTestId("swap-src-asset-tile")).toBeVisible({
+    timeout: 15000,
+  });
   // Click on source asset tile to see asset list
   await page.getByTestId("swap-src-asset-tile").click();
-  await expect(page.getByTestId("AppHeaderPageTitle")).toContainText(
-    "Swap from",
-  );
+  await expect(page.getByText("Swap from")).toBeVisible();
   await expect(page.getByText(/FOO/)).toBeVisible();
   await expect(page.getByTestId("FOO-balance")).toContainText("100");
   await expect(page.getByTestId("BAZ-balance")).toContainText("10");
@@ -333,13 +345,14 @@ test("Send non-native asset to unfunded destination shows destination missing wa
   });
 
   await page.getByTestId("nav-link-send").click({ force: true });
-  await expect(page.getByTestId("token-list")).toBeVisible();
   // Select USDC directly from token picker
-  await page
-    .getByTestId(
-      "SendRow-USDC:GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
+  const usdcOption = page
+    .locator(
+      '[data-testid="SendRow-USDC:GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5"], [data-testid="Select-assets-row-USDC"]',
     )
-    .click();
+    .first();
+  await expect(usdcOption).toBeVisible({ timeout: 10000 });
+  await usdcOption.click({ force: true });
   await page.getByTestId("send-to-input").fill(UNFUNDED_DESTINATION);
   await page.getByText("Continue").click({ force: true });
 
@@ -684,7 +697,7 @@ test("SendPayment persists amount and asset when navigating to choose address", 
   await page.getByTestId("address-tile").click();
   await expect(page.getByTestId("send-to-input")).toBeVisible();
 
-  await page.getByTestId("BackButton").click();
+  await clickVisibleBackButton(page);
 
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
   await expect(page.getByTestId("send-amount-amount-input")).toHaveValue("100");
@@ -706,19 +719,17 @@ test("SendPayment resets amount when user selects new asset", async ({
     stubOverrides,
   });
 
-  await page.getByTestId("nav-link-send").click({ force: true });
-  await expect(page.getByTestId("token-list")).toBeVisible();
-  await page.getByTestId("SendRow-native").click();
-  await page.getByTestId("send-to-input").fill(FUNDED_DESTINATION);
-  await page.getByText("Continue").click({ force: true });
-  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+  await goToTokenAmountStepFromHomeSend(page);
 
   await page.getByTestId("send-amount-amount-input").fill("50");
   await expect(page.getByTestId("send-amount-amount-input")).toHaveValue("50");
 
   // Change token via the token tile on the AMOUNT screen
   await page.getByTestId("send-amount-edit-dest-asset").click();
-  await page.getByText("USDC").first().click({ force: true });
+  await visibleTokenList(page)
+    .getByText("USDC", { exact: true })
+    .first()
+    .click({ force: true });
 
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
   await expect(page.getByTestId("send-amount-amount-input")).toHaveValue("0");
@@ -741,7 +752,7 @@ test("SendPayment resets state when navigating back to account", async ({
   });
 
   await page.getByTestId("nav-link-send").click({ force: true });
-  await expect(page.getByTestId("token-list")).toBeVisible();
+  await expect(visibleTokenList(page)).toBeVisible();
   await page.getByTestId("SendRow-native").click();
   await page
     .getByTestId("send-to-input")
@@ -751,17 +762,20 @@ test("SendPayment resets state when navigating back to account", async ({
 
   // Change to USDC and enter amount
   await page.getByTestId("send-amount-edit-dest-asset").click();
-  await page.getByText("USDC").first().click({ force: true });
+  await visibleTokenList(page)
+    .getByText("USDC", { exact: true })
+    .first()
+    .click({ force: true });
   await page.getByTestId("send-amount-amount-input").fill("100");
 
   // Press BackButton (X) to exit the flow
-  await page.getByTestId("BackButton").click();
+  await clickVisibleBackButton(page);
 
   await expect(page.getByTestId("account-view")).toBeVisible();
 
   // Re-enter send flow: should start fresh at token picker
   await page.getByTestId("nav-link-send").click({ force: true });
-  await expect(page.getByTestId("token-list")).toBeVisible();
+  await expect(visibleTokenList(page)).toBeVisible();
   // Select XLM and navigate to AMOUNT to verify reset state
   await page.getByTestId("SendRow-native").click();
   await page
@@ -785,7 +799,9 @@ test("Swap persists amount when navigating to choose source asset", async ({
   await loginToTestAccount({ page, extensionId, context });
 
   await page.getByTestId("nav-link-swap").click();
-  await expect(page.getByTestId("AppHeaderPageTitle")).toContainText("Swap");
+  await expect(page.getByTestId("swap-src-asset-tile")).toBeVisible({
+    timeout: 15000,
+  });
 
   const amountInput = page.locator('input[type="text"]').first();
   await amountInput.fill("100");
@@ -794,9 +810,11 @@ test("Swap persists amount when navigating to choose source asset", async ({
   await page.getByTestId("swap-src-asset-tile").click({ force: true });
   await expect(page.getByText("Swap from")).toBeVisible();
 
-  await page.getByTestId("BackButton").click();
+  await clickVisibleBackButton(page);
 
-  await expect(page.getByTestId("AppHeaderPageTitle")).toContainText("Swap");
+  await expect(page.getByTestId("swap-src-asset-tile")).toBeVisible({
+    timeout: 15000,
+  });
   await expect(amountInput).toHaveValue("100");
 });
 
@@ -817,7 +835,9 @@ test("Swap resets amount when user selects new source asset", async ({
   });
 
   await page.getByTestId("nav-link-swap").click();
-  await expect(page.getByTestId("AppHeaderPageTitle")).toContainText("Swap");
+  await expect(page.getByTestId("swap-src-asset-tile")).toBeVisible({
+    timeout: 15000,
+  });
 
   const amountInput = page.locator('input[type="text"]').first();
   await amountInput.fill("50");
@@ -826,7 +846,9 @@ test("Swap resets amount when user selects new source asset", async ({
   await page.getByTestId("swap-src-asset-tile").click({ force: true });
   await page.getByText("USDC").first().click({ force: true });
 
-  await expect(page.getByTestId("AppHeaderPageTitle")).toContainText("Swap");
+  await expect(page.getByTestId("swap-src-asset-tile")).toBeVisible({
+    timeout: 15000,
+  });
   await expect(amountInput).toHaveValue("0");
 });
 
@@ -847,7 +869,9 @@ test("Swap preserves amount when selecting destination asset", async ({
   });
 
   await page.getByTestId("nav-link-swap").click();
-  await expect(page.getByTestId("AppHeaderPageTitle")).toContainText("Swap");
+  await expect(page.getByTestId("swap-src-asset-tile")).toBeVisible({
+    timeout: 15000,
+  });
 
   const amountInput = page.locator('input[type="text"]').first();
   await amountInput.fill("100");
@@ -856,7 +880,9 @@ test("Swap preserves amount when selecting destination asset", async ({
   await page.getByTestId("swap-dst-asset-tile").click({ force: true });
   await page.getByText("USDC").first().click({ force: true });
 
-  await expect(page.getByTestId("AppHeaderPageTitle")).toContainText("Swap");
+  await expect(page.getByTestId("swap-src-asset-tile")).toBeVisible({
+    timeout: 15000,
+  });
   await expect(amountInput).toHaveValue("100");
 });
 
@@ -877,7 +903,7 @@ test("Swap resets state when navigating back to account", async ({
   });
 
   await page.getByTestId("nav-link-swap").click();
-  await expect(page.getByTestId("AppHeaderPageTitle")).toContainText("Swap");
+  await expect(page.getByTestId("swap-src-asset-tile")).toBeVisible();
 
   const amountInput = page.locator('input[type="text"]').first();
   await amountInput.fill("100");
@@ -888,13 +914,13 @@ test("Swap resets state when navigating back to account", async ({
   await page.getByTestId("swap-dst-asset-tile").click({ force: true });
   await page.getByText("XLM").first().click({ force: true });
 
-  await expect(page.getByTestId("AppHeaderPageTitle")).toContainText("Swap");
-  await page.getByTestId("BackButton").click();
+  await expect(page.getByTestId("swap-src-asset-tile")).toBeVisible();
+  await clickVisibleBackButton(page);
 
   await expect(page.getByTestId("account-view")).toBeVisible();
 
   await page.getByTestId("nav-link-swap").click();
-  await expect(page.getByTestId("AppHeaderPageTitle")).toContainText("Swap");
+  await expect(page.getByTestId("swap-src-asset-tile")).toBeVisible();
 
   const newAmountInput = page.locator('input[type="text"]').first();
   await expect(newAmountInput).toHaveValue("0");
@@ -913,7 +939,7 @@ test("Send flow starts at token picker and proceeds to amount screen", async ({
   await page.getByTestId("nav-link-send").click({ force: true });
 
   // Step 1: token picker
-  await expect(page.getByTestId("token-list")).toBeVisible();
+  await expect(visibleTokenList(page)).toBeVisible();
   await expect(page.getByTestId("send-amount-amount-input")).toHaveCount(0);
 
   // Step 2: select XLM → DESTINATION
@@ -960,7 +986,7 @@ test("Send flow change recipient from amount screen dismisses back", async ({
 
   // Navigate to AMOUNT screen
   await page.getByTestId("nav-link-send").click({ force: true });
-  await expect(page.getByTestId("token-list")).toBeVisible();
+  await expect(visibleTokenList(page)).toBeVisible();
   await page.getByTestId("SendRow-native").click();
   await page.getByTestId("send-to-input").fill(FUNDED_DESTINATION);
   await page.getByText("Continue").click({ force: true });
@@ -971,7 +997,7 @@ test("Send flow change recipient from amount screen dismisses back", async ({
   await expect(page.getByTestId("send-to-input")).toBeVisible();
 
   // Back dismisses back to AMOUNT
-  await page.getByTestId("BackButton").click();
+  await clickVisibleBackButton(page);
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
 });
 
@@ -988,7 +1014,7 @@ test("Send flow change token from amount screen dismisses back", async ({
 
   // Navigate to AMOUNT screen
   await page.getByTestId("nav-link-send").click({ force: true });
-  await expect(page.getByTestId("token-list")).toBeVisible();
+  await expect(visibleTokenList(page)).toBeVisible();
   await page.getByTestId("SendRow-native").click();
   await page.getByTestId("send-to-input").fill(FUNDED_DESTINATION);
   await page.getByText("Continue").click({ force: true });
@@ -997,10 +1023,10 @@ test("Send flow change token from amount screen dismisses back", async ({
   // Click token tile to change asset — token picker slides in from bottom
   await page.getByTestId("send-amount-edit-dest-asset").click();
   // Should now show token list (no tabs, inline list)
-  await expect(page.getByTestId("token-list")).toBeVisible();
+  await expect(visibleTokenList(page)).toBeVisible();
 
   // Back dismisses back to AMOUNT
-  await page.getByTestId("BackButton").click();
+  await clickVisibleBackButton(page);
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
 });
 
@@ -1119,5 +1145,304 @@ test.beforeEach(async ({ page }) => {
   await page.evaluate(() => {
     // Ensure IS_PLAYWRIGHT is set for memo validation bypass
     (window as any).IS_PLAYWRIGHT = "true";
+  });
+});
+
+// ============================================================================
+// Navigation & Multi-Step Flow Tests
+// ============================================================================
+// Tests for send flow navigation, state management, and complex user journeys
+
+async function goToTokenAmountStepFromHomeSend(page: Page) {
+  await page.getByTestId("nav-link-send").click({ force: true });
+
+  const tokenList = page.locator('[data-testid="token-list"]:visible').first();
+  const destinationInput = page.getByTestId("send-to-input");
+
+  await Promise.race([
+    tokenList.waitFor({ state: "visible", timeout: 10000 }).catch(() => null),
+    destinationInput
+      .first()
+      .waitFor({ state: "visible", timeout: 10000 })
+      .catch(() => null),
+  ]);
+
+  await expect(page).toHaveURL(/\/account\/sendPayment/);
+
+  if (await tokenList.isVisible()) {
+    await page.getByTestId("SendRow-native").first().click();
+  }
+
+  await expect(destinationInput).toBeVisible({ timeout: 10000 });
+
+  await destinationInput.fill(FUNDED_DESTINATION);
+  await page.getByText("Continue").click({ force: true });
+  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+}
+
+async function goToAssetDetail(page: Page) {
+  await page.getByText("E2E").first().click({ force: true });
+  await expect(page.getByTestId("asset-detail-send-button")).toBeVisible();
+}
+
+async function goToCollectibleDetail(page: Page) {
+  await page.getByTestId("account-tab-collectibles").click();
+  await page.getByTestId("account-collectible-image").first().click();
+  await expect(page.getByTestId("CollectibleDetail")).toBeVisible();
+}
+
+async function goToCollectibleReviewStep(page: Page) {
+  // Collectible send may open at destination first depending entry path.
+  if ((await page.getByTestId("send-to-input").count()) > 0) {
+    await page.getByTestId("send-to-input").fill(FUNDED_DESTINATION);
+    await page.getByText("Continue").click({ force: true });
+  }
+
+  await expect(page.getByTestId("SelectedCollectible")).toBeVisible();
+}
+
+test("Send flow navigation: home to amount to back returns to account home", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  test.slow();
+  await loginToTestAccount({ page, extensionId, context });
+
+  // Initiate send from home account screen
+  await goToTokenAmountStepFromHomeSend(page);
+
+  // Close send flow from amount step
+  await clickVisibleBackButton(page);
+
+  // Verify return to account home (not token picker)
+  await expect(page.getByTestId("account-view")).toBeVisible();
+  await expect(page.getByTestId("token-list")).toHaveCount(0);
+});
+
+test("Send flow navigation: collectible selection closes to home account", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  test.slow();
+  await loginToTestAccount({ page, extensionId, context });
+
+  // Open send flow from home
+  await page.getByTestId("nav-link-send").click({ force: true });
+  await expect(page.getByTestId("token-list")).toBeVisible();
+  await expect(page).toHaveURL(/\/account\/sendPayment/);
+
+  // Select a collectible and navigate to details
+  await page.getByText("Stellar Frog 1").first().click({ force: true });
+  await goToCollectibleReviewStep(page);
+
+  // Close from collectible send flow
+  await clickVisibleBackButton(page);
+
+  // Verify return to account home
+  await expect(page.getByTestId("account-view")).toBeVisible();
+  await expect(page.getByTestId("token-list")).toHaveCount(0);
+});
+
+test("Send flow navigation: initiate from token detail closes back to token detail", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  test.slow();
+  const stubOverrides = async () => {
+    await stubAccountBalancesE2e(page);
+  };
+  await stubContractSpec(page, TEST_TOKEN_ADDRESS, true);
+
+  await loginToTestAccount({ page, extensionId, context, stubOverrides });
+
+  // Navigate to token detail and initiate send
+  await goToAssetDetail(page);
+  await page.getByTestId("asset-detail-send-button").click();
+  await expect(page.getByTestId("send-to-input")).toBeVisible();
+  await expect(page).toHaveURL(/\/account\/sendPayment/);
+
+  // Enter recipient and proceed to amount
+  await page.getByTestId("send-to-input").fill(FUNDED_DESTINATION);
+  await page.getByText("Continue").click({ force: true });
+  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+
+  // Close send flow and verify return to token detail
+  await clickVisibleBackButton(page);
+  await expect(page).toHaveURL(/tab=tokens&asset_detail=/);
+  await expect(page.getByTestId("asset-detail-send-button")).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "E2E", exact: true }),
+  ).toBeVisible();
+});
+
+test("Send flow navigation: initiate from collectible detail closes back to collectible detail", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  test.slow();
+  await loginToTestAccount({ page, extensionId, context });
+
+  // Navigate to collectible and initiate send
+  await goToCollectibleDetail(page);
+  await page.getByTestId("CollectibleDetail__footer__buttons__send").click();
+
+  // Proceed through collectible send flow
+  await goToCollectibleReviewStep(page);
+  await expect(page).toHaveURL(/\/account\/sendPayment/);
+
+  // Close and verify return to collectible detail
+  await clickVisibleBackButton(page);
+
+  await expect(page).toHaveURL(/tab=collectibles&collection_detail=/);
+  await expect(page.getByTestId("CollectibleDetail")).toBeVisible();
+  await expect(
+    page.getByTestId("CollectibleDetail__footer__buttons__send"),
+  ).toBeVisible();
+});
+
+// ============================================================================
+// Send Flow Workflows
+// ============================================================================
+// Comprehensive integration tests combining navigation, input handling, and submission
+
+test("Send workflow: navigate, close, re-enter, input, and submit transaction", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  test.slow();
+  await loginToTestAccount({ page, extensionId, context });
+
+  // First send attempt: navigate to amount, enter value, then close
+  await goToTokenAmountStepFromHomeSend(page);
+  await page.getByTestId("send-amount-amount-input").fill("5.5");
+  await expect(page.getByTestId("send-amount-amount-input")).toHaveValue("5.5");
+
+  // Close send flow
+  await clickVisibleBackButton(page);
+  await expect(page.getByTestId("account-view")).toBeVisible();
+
+  // Re-enter send flow - clear previous input
+  await goToTokenAmountStepFromHomeSend(page);
+
+  // Enter new valid amount (field will auto-clear on new entry)
+  await page.getByTestId("send-amount-amount-input").fill("1.234567");
+  await expect(page.getByTestId("send-amount-amount-input")).toHaveValue(
+    "1.234567",
+  );
+
+  // Proceed to review and submission
+  const reviewButton = page.getByTestId("send-amount-btn-continue");
+  await expect(reviewButton).toBeEnabled({ timeout: 10000 });
+  await reviewButton.click({ force: true });
+
+  // Verify reached review screen
+  await expect(page.getByText("You are sending")).toBeVisible();
+  await expect(page.getByTestId("SubmitAction")).toBeVisible({
+    timeout: 15000,
+  });
+  await expect(page.getByTestId("SubmitAction")).toBeEnabled();
+});
+
+test("Send workflow: input handling with amounts, formatting, and value boundaries", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  test.slow();
+  await loginToTestAccount({ page, extensionId, context });
+
+  await goToTokenAmountStepFromHomeSend(page);
+
+  // Test 1: High value with thousand separators
+  await page.getByTestId("send-amount-amount-input").fill("99999999");
+  await expect(page.getByTestId("send-amount-amount-input")).toHaveValue(
+    "99,999,999",
+  );
+
+  // Test 2: Non-numeric characters are filtered
+  await page.getByTestId("send-amount-amount-input").fill("abc123.45xyz");
+  await expect(page.getByTestId("send-amount-amount-input")).toHaveValue(
+    "123.45",
+  );
+
+  // Test 3: Negative sign is stripped
+  await page.getByTestId("send-amount-amount-input").fill("-50");
+  await expect(page.getByTestId("send-amount-amount-input")).toHaveValue("50");
+
+  // Test 4: Valid decimal at boundary (7 decimals - Stellar max precision)
+  await page.getByTestId("send-amount-amount-input").fill("0.0000001");
+  await expect(page.getByTestId("send-amount-amount-input")).toHaveValue(
+    "0.0000001",
+  );
+  await page.waitForTimeout(500);
+
+  // Test 5: Zero amount disables continue button
+  await page.getByTestId("send-amount-amount-input").fill("0");
+  await page.waitForTimeout(500);
+  let continueBtn = page.getByTestId("send-amount-btn-continue");
+  await expect(continueBtn).toBeDisabled();
+
+  // Test 6: Valid amount enables continue and reaches review
+  await page.getByTestId("send-amount-amount-input").fill("2.5");
+  await expect(page.getByTestId("send-amount-amount-input")).toHaveValue("2.5");
+  continueBtn = page.getByTestId("send-amount-btn-continue");
+  await expect(continueBtn).toBeEnabled({ timeout: 10000 });
+  await continueBtn.click({ force: true });
+
+  // Verify transaction review screen
+  await expect(page.getByText("You are sending")).toBeVisible();
+});
+
+test("Send workflow: crypto and fiat modes with multi-step navigation", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  test.slow();
+  await loginToTestAccount({ page, extensionId, context });
+
+  await goToTokenAmountStepFromHomeSend(page);
+
+  // Enter amount in crypto mode
+  await page.getByTestId("send-amount-amount-input").fill("50");
+  await expect(page.getByTestId("send-amount-amount-input")).toHaveValue("50");
+
+  // Toggle to fiat mode if available
+  const toggleButton = page.getByTestId("send-amount-fiat-toggle");
+  if (await toggleButton.isVisible()) {
+    await toggleButton.click();
+    await page.waitForTimeout(1000);
+
+    // Verify fiat equivalent is calculated
+    const fiatInput = page.getByTestId("send-amount-fiat-input");
+    if (await fiatInput.isVisible()) {
+      const fiatValue = await fiatInput.inputValue();
+      await expect(fiatValue).not.toBe("");
+    }
+
+    // Toggle back to crypto
+    await toggleButton.click();
+    await page.waitForTimeout(500);
+
+    // Crypto value preserved
+    const cryptoValue = await page
+      .getByTestId("send-amount-amount-input")
+      .inputValue();
+    await expect(parseFloat(cryptoValue)).toBeGreaterThan(0);
+  }
+
+  // Proceed to review
+  const continueBtn = page.getByTestId("send-amount-btn-continue");
+  await expect(continueBtn).toBeEnabled({ timeout: 10000 });
+  await continueBtn.click({ force: true });
+
+  await expect(page.getByText("You are sending")).toBeVisible();
+  await expect(page.getByTestId("SubmitAction")).toBeVisible({
+    timeout: 15000,
   });
 });

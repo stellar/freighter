@@ -10,6 +10,7 @@ import {
   saveFederationAddress,
   saveIsCollectible,
   saveIsToken,
+  transactionSubmissionSelector,
 } from "popup/ducks/transactionSubmission";
 import { collectionsSelector } from "popup/ducks/cache";
 import { isContractId } from "popup/helpers/soroban";
@@ -48,6 +49,7 @@ export function useSendQueryParams() {
   const collectibleData = useSelector(collectionsSelector);
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
+  const { transactionData } = useSelector(transactionSubmissionSelector);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -66,6 +68,7 @@ export function useSendQueryParams() {
 
       if (foundCollectible) {
         dispatch(saveIsCollectible(true));
+        dispatch(saveIsToken(false));
         dispatch(
           saveCollectibleData({
             collectionAddress: collectionAddressParam,
@@ -96,16 +99,30 @@ export function useSendQueryParams() {
       try {
         const asset = getAssetFromCanonical(assetParam);
         dispatch(saveAsset(assetParam));
+        dispatch(saveIsCollectible(false));
         dispatch(saveIsToken(isContractId(asset.issuer)));
       } catch {
         // Invalid asset param, ignore and use default
-        dispatch(saveAsset("native"));
+        if (!transactionData.asset) {
+          dispatch(saveAsset("native"));
+        }
+        dispatch(saveIsCollectible(false));
         dispatch(saveIsToken(false));
       }
     } else {
       // Set default asset to native if not already set
-      dispatch(saveAsset("native"));
+      if (!transactionData.asset) {
+        dispatch(saveAsset("native"));
+      }
+      dispatch(saveIsCollectible(false));
       dispatch(saveIsToken(false));
     }
-  }, [dispatch, location.search, collectibleData, networkDetails, publicKey]);
+  }, [
+    dispatch,
+    location.search,
+    collectibleData,
+    networkDetails,
+    publicKey,
+    transactionData.asset,
+  ]);
 }
