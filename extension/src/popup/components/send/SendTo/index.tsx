@@ -1,8 +1,9 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Asset, StrKey } from "stellar-sdk";
 import { useFormik } from "formik";
 import BigNumber from "bignumber.js";
+import debounce from "lodash/debounce";
 import {
   Button,
   Input,
@@ -120,6 +121,9 @@ export const SendTo = ({
   const allAccounts = useSelector(allAccountsSelector);
   const activePublicKey = useSelector(publicKeySelector);
   const { state: sendDataState, fetchData } = useSendToData();
+  const [debouncedDestination, setDebouncedDestination] = useState(
+    federationAddress || destination || "",
+  );
   const otherAccounts = (allAccounts ?? []).filter(
     ({ publicKey }) => publicKey !== activePublicKey,
   );
@@ -175,18 +179,42 @@ export const SendTo = ({
   };
 
   useEffect(() => {
-    const getData = async () => {
-      const errors = await formik.validateForm();
-      await fetchData(formik.values.destination, errors);
+    const debouncedSetDestination = debounce((nextDestination: string) => {
+      setDebouncedDestination(nextDestination);
+    }, 400);
+
+    debouncedSetDestination(formik.values.destination);
+
+    return () => {
+      debouncedSetDestination.cancel();
     };
-    getData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formik.values.destination]);
+
+  useEffect(() => {
+    const debouncedGetData = debounce(async () => {
+      const errors = await formik.validateForm(formik.values);
+      await fetchData(debouncedDestination, errors);
+    }, 400);
+
+    if (formik.values.destination !== debouncedDestination) {
+      return () => {
+        debouncedGetData.cancel();
+      };
+    }
+
+    debouncedGetData();
+
+    return () => {
+      debouncedGetData.cancel();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedDestination, formik.values.destination]);
 
   const hasError = sendDataState.state === RequestState.ERROR;
   const isLoading =
     sendDataState.state === RequestState.IDLE ||
     sendDataState.state === RequestState.LOADING;
+  const isSearchSettled = formik.values.destination === debouncedDestination;
   const resolvedSendData =
     sendDataState.data && sendDataState.data.type === AppDataType.RESOLVED
       ? sendDataState.data
@@ -251,84 +279,7 @@ export const SendTo = ({
             />
           ) : (
             <div>
-              {formik.values.destination === "" ? (
-                <>
-                  {visibleRecentAddresses.length > 0 && (
-                    <div className="SendTo__subheading">
-                      <Icon.Clock />
-                      {t("Recents")}
-                    </div>
-                  )}
-                  <div className="SendTo__simplebar">
-                    <ul className="SendTo__recent-accts-ul">
-                      {visibleRecentAddresses.map((address) => (
-                        <li key={address}>
-                          <button
-                            data-testid="recent-address-button"
-                            onClick={async () => {
-                              const addressFromInput =
-                                await getAddressFromInput(address);
-                              emitMetric(METRIC_NAMES.sendPaymentRecentAddress);
-                              await fetchData(address, {});
-                              handleContinue(
-                                addressFromInput.validatedAddress,
-                                addressFromInput.fedAddress,
-                              );
-                            }}
-                            className="SendTo__subheading-identicon"
-                          >
-                            <div className="SendTo__subheading-identicon__identicon">
-                              <IdenticonImg publicKey={address} />
-                            </div>
-                            <span>
-                              {isFederationAddress(address)
-                                ? address
-                                : truncatedPublicKey(address)}
-                            </span>
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                  {otherAccounts.length > 0 && (
-                    <>
-                      <div className="SendTo__subheading">
-                        <Icon.UserCircle />
-                        {t("My Accounts")}
-                      </div>
-                      <div className="SendTo__simplebar">
-                        <ul className="SendTo__recent-accts-ul">
-                          {otherAccounts.map((account) => (
-                            <li key={account.publicKey}>
-                              <button
-                                data-testid="my-account-button"
-                                onClick={async () => {
-                                  await fetchData(account.publicKey, {});
-                                  handleContinue(
-                                    account.publicKey,
-                                    undefined,
-                                    account.name || "",
-                                  );
-                                }}
-                                className="SendTo__subheading-identicon"
-                              >
-                                <div className="SendTo__subheading-identicon__identicon">
-                                  <IdenticonImg publicKey={account.publicKey} />
-                                </div>
-                                <span>
-                                  {account.name
-                                    ? `${account.name} (${truncatedPublicKey(account.publicKey)})`
-                                    : truncatedPublicKey(account.publicKey)}
-                                </span>
-                              </button>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    </>
-                  )}
-                </>
-              ) : (
+              {debouncedDestination !== "" && isSearchSettled && (
                 <div>
                   {formik.isValid ? (
                     <>
@@ -360,6 +311,80 @@ export const SendTo = ({
                     <InvalidAddressWarning />
                   )}
                 </div>
+              )}
+              {visibleRecentAddresses.length > 0 && (
+                <div className="SendTo__subheading">
+                  <Icon.Clock />
+                  {t("Recents")}
+                </div>
+              )}
+              <div className="SendTo__simplebar">
+                <ul className="SendTo__recent-accts-ul">
+                  {visibleRecentAddresses.map((address) => (
+                    <li key={address}>
+                      <button
+                        data-testid="recent-address-button"
+                        onClick={async () => {
+                          const addressFromInput =
+                            await getAddressFromInput(address);
+                          emitMetric(METRIC_NAMES.sendPaymentRecentAddress);
+                          await fetchData(address, {});
+                          handleContinue(
+                            addressFromInput.validatedAddress,
+                            addressFromInput.fedAddress,
+                          );
+                        }}
+                        className="SendTo__subheading-identicon"
+                      >
+                        <div className="SendTo__subheading-identicon__identicon">
+                          <IdenticonImg publicKey={address} />
+                        </div>
+                        <span>
+                          {isFederationAddress(address)
+                            ? address
+                            : truncatedPublicKey(address)}
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              {otherAccounts.length > 0 && (
+                <>
+                  <div className="SendTo__subheading">
+                    <Icon.UserCircle />
+                    {t("My Accounts")}
+                  </div>
+                  <div className="SendTo__simplebar">
+                    <ul className="SendTo__recent-accts-ul">
+                      {otherAccounts.map((account) => (
+                        <li key={account.publicKey}>
+                          <button
+                            data-testid="my-account-button"
+                            onClick={async () => {
+                              await fetchData(account.publicKey, {});
+                              handleContinue(
+                                account.publicKey,
+                                undefined,
+                                account.name || "",
+                              );
+                            }}
+                            className="SendTo__subheading-identicon"
+                          >
+                            <div className="SendTo__subheading-identicon__identicon">
+                              <IdenticonImg publicKey={account.publicKey} />
+                            </div>
+                            <span>
+                              {account.name
+                                ? `${account.name} (${truncatedPublicKey(account.publicKey)})`
+                                : truncatedPublicKey(account.publicKey)}
+                            </span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </>
               )}
             </div>
           )}
