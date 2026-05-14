@@ -56,10 +56,6 @@
   animation: sendStepFromLeft 0.22s ease-out;
 }
 
-.Send__step--static {
-  // no animation — step reappears instantly behind the dismissing overlay
-}
-
 @keyframes sendStepFromLeft {
   from {
     opacity: 0;
@@ -69,5 +65,13 @@
   to {
     opacity: 1;
     transform: translateX(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .Send__step--from-bottom,
+  .Send__step--from-right,
+  .Send__step--from-left {
+    animation: none;
   }
 }

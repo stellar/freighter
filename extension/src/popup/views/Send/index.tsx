@@ -38,7 +38,7 @@ const SEND_METRIC_BY_STEP: Partial<Record<STEPS, string>> = {
   [STEPS.SELECT_SOURCE_ASSET]: METRIC_NAMES.sendPaymentSelectAsset,
   [STEPS.AMOUNT]: METRIC_NAMES.sendPaymentAmount,
   [STEPS.PAYMENT_CONFIRM]: METRIC_NAMES.sendPaymentConfirm,
-  [STEPS.DESTINATION]: METRIC_NAMES.sendPaymentRecentAddress,
+  [STEPS.DESTINATION]: METRIC_NAMES.sendPaymentTo,
 };
 
 /*
@@ -80,7 +80,7 @@ export const Send = () => {
     isToken || isSoroswap || isContractId(destination)
       ? {
           type: "soroban" as const,
-          xdr: transactionSimulation.preparedTransaction!,
+          xdr: transactionSimulation.preparedTransaction ?? "",
         }
       : {
           type: "classic" as const,
@@ -124,10 +124,15 @@ export const Send = () => {
     "return_collectible_token_id",
   );
 
+  const RETURN_TO = {
+    ASSET_DETAIL: "asset_detail",
+    COLLECTIBLE_DETAIL: "collectible_detail",
+  } as const;
+
   const closeSendFlow = () => {
     dispatch(resetSubmission());
 
-    if (returnTo === "asset_detail" && returnAsset) {
+    if (returnTo === RETURN_TO.ASSET_DETAIL && returnAsset) {
       navigateTo(
         ROUTES.account,
         navigate,
@@ -137,7 +142,7 @@ export const Send = () => {
     }
 
     if (
-      returnTo === "collectible_detail" &&
+      returnTo === RETURN_TO.COLLECTIBLE_DETAIL &&
       returnCollectionAddress &&
       returnCollectibleTokenId
     ) {
@@ -154,27 +159,21 @@ export const Send = () => {
     navigateTo(ROUTES.account, navigate);
   };
 
-  const initialStepRef = useRef<STEPS>(
-    (() => {
-      const params = new URLSearchParams(location.search);
-      return params.has("asset") || params.has("collection_address")
-        ? STEPS.DESTINATION
-        : STEPS.SELECT_SOURCE_ASSET;
-    })(),
+  // Lazy initializer: only parses the search string once on mount.
+  const [activeStep, setActiveStep] = useState<STEPS>(() => {
+    return sendParams.has("asset") || sendParams.has("collection_address")
+      ? STEPS.DESTINATION
+      : STEPS.SELECT_SOURCE_ASSET;
+  });
+  const [prevStep, setPrevStep] = useState<STEPS>(activeStep);
+  const [visitedSteps, setVisitedSteps] = useState<Record<STEPS, boolean>>(
+    () => ({ [activeStep]: true }) as Record<STEPS, boolean>,
   );
 
-  const [activeStep, setActiveStep] = useState(initialStepRef.current);
-  const [prevStep, setPrevStep] = useState(initialStepRef.current);
-  const [visitedSteps, setVisitedSteps] = useState<Record<STEPS, boolean>>({
-    [initialStepRef.current]: true,
-  } as Record<STEPS, boolean>);
-
-  const initialAnim =
-    initialStepRef.current === STEPS.SELECT_SOURCE_ASSET
-      ? "from-bottom"
-      : "from-right";
+  const initialAnim: "from-bottom" | "from-right" =
+    activeStep === STEPS.SELECT_SOURCE_ASSET ? "from-bottom" : "from-right";
   const [enterAnim, setEnterAnim] = useState<
-    "from-bottom" | "from-right" | "from-left" | "static"
+    "from-bottom" | "from-right" | "from-left"
   >(initialAnim);
 
   const lastEmittedStep = useRef<STEPS | null>(null);
@@ -256,7 +255,7 @@ export const Send = () => {
               closeSendFlow();
             }}
             goToNext={() => goToStep(STEPS.PAYMENT_CONFIRM, "from-bottom")}
-            goToChooseDest={() => goToStep(STEPS.DESTINATION, "from-bottom")}
+            goToChooseDest={() => goToStep(STEPS.DESTINATION, "from-left")}
             goToChooseAsset={() =>
               goToStep(STEPS.SET_DESTINATION_ASSET, "from-bottom")
             }
@@ -276,10 +275,7 @@ export const Send = () => {
       case STEPS.SELECT_SOURCE_ASSET: {
         return (
           <SendDestinationAsset
-            goBack={() => {
-              dispatch(resetSubmission());
-              navigateTo(ROUTES.account, navigate);
-            }}
+            goBack={() => closeSendFlow()}
             goToNext={() => goToStep(STEPS.DESTINATION, "from-right")}
             showCloseIcon
           />
@@ -308,7 +304,7 @@ export const Send = () => {
               }
             }}
             goToNext={() =>
-              goToStep(STEPS.AMOUNT, fromAmount ? "dismiss" : "from-bottom")
+              goToStep(STEPS.AMOUNT, fromAmount ? "dismiss" : "from-right")
             }
           />
         );

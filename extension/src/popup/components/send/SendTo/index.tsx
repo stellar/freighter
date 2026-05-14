@@ -53,6 +53,7 @@ import "../styles.scss";
 
 const baseReserve = new BigNumber(1);
 const MAX_VISIBLE_RECENT_ADDRESSES = 10;
+const DESTINATION_DEBOUNCE_MS = 400;
 
 type ResolvedSuggestionData = {
   type: AppDataType.RESOLVED;
@@ -163,7 +164,7 @@ export const SendTo = ({
     onSubmit: () => {
       if (
         sendDataState.state === RequestState.SUCCESS &&
-        sendDataState.data.type == AppDataType.RESOLVED
+        sendDataState.data.type === AppDataType.RESOLVED
       ) {
         handleContinue(
           sendDataState.data.validatedAddress,
@@ -201,11 +202,13 @@ export const SendTo = ({
       setDebouncedDestination(formik.values.destination);
       const errors = await formik.validateForm(formik.values);
       await fetchData(formik.values.destination, errors);
-    }, 400);
+    }, DESTINATION_DEBOUNCE_MS);
 
     return () => {
       clearTimeout(timeoutId);
     };
+    // fetchData and formik.validateForm are stable refs — omitting intentionally
+    // to avoid re-triggering the debounce when only those refs change identity.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formik.values.destination]);
 
@@ -328,6 +331,7 @@ export const SendTo = ({
                   {visibleRecentAddresses.map((address) => (
                     <li key={address}>
                       <button
+                        type="button"
                         data-testid="recent-address-button"
                         onClick={async () => {
                           const addressFromInput =
@@ -365,6 +369,7 @@ export const SendTo = ({
                       {otherAccounts.map((account) => (
                         <li key={account.publicKey}>
                           <button
+                            type="button"
                             data-testid="my-account-button"
                             onClick={async () => {
                               await fetchData(account.publicKey, {});

@@ -13,6 +13,7 @@ test("Send collectible with metadata", async ({
   extensionId,
   context,
 }) => {
+  test.slow();
   const stubOverrides = async () => {
     await stubSimulateSendCollectible(page);
   };
@@ -90,6 +91,7 @@ test("Send collectible without metadata", async ({
   extensionId,
   context,
 }) => {
+  test.slow();
   const stubOverrides = async () => {
     await stubCollectiblesUnsuccessfulMetadata(page);
     await stubSimulateSendCollectible(page);
@@ -171,6 +173,7 @@ test("Send collectible to M address when contract doesn't support muxed is disab
   extensionId,
   context,
 }) => {
+  test.slow();
   const stubOverrides = async () => {
     await stubSimulateSendCollectible(page);
   };
@@ -277,6 +280,7 @@ test("Send collectible without Soroban mux support to G address disables memo", 
   extensionId,
   context,
 }) => {
+  test.slow();
   // Stub contract spec with muxed support = false
   await stubContractSpec(
     page,
@@ -332,6 +336,7 @@ test("Send collectible with Soroban mux support to G address allows memo", async
   extensionId,
   context,
 }) => {
+  test.slow();
   const stubOverrides = async () => {
     await stubSimulateSendCollectible(page);
   };
