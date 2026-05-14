@@ -169,7 +169,19 @@ test("Send XLM payments to recent federated addresses", async ({
   await expect(page.getByTestId("token-list")).toBeVisible();
   await page.getByTestId("SendRow-native").click();
 
+  // Recents should be visible on the send-to screen before typing anything.
   await expect(page.getByText("Recents")).toBeVisible();
+
+  // Recents should remain visible while the user is typing.
+  await page.getByTestId("send-to-input").fill("freighter.pb*lobstr.co");
+  await expect(page.getByText("Recents")).toBeVisible();
+
+  // Recents should remain visible once a suggestion resolves.
+  await expect(page.getByTestId("send-to-suggestion-button")).toBeVisible();
+  await expect(page.getByText("Recents")).toBeVisible();
+
+  // Clear the input and use the recent address directly.
+  await page.getByTestId("send-to-input").fill("");
 
   await page.getByTestId("recent-address-button").click();
 
