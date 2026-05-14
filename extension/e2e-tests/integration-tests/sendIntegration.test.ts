@@ -46,9 +46,8 @@ test("Send persists inputs and submits to network", async ({
   });
   await page.getByTestId("nav-link-send").click({ force: true });
 
-  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
-
-  await page.getByTestId("address-tile").click();
+  await expect(page.getByTestId("token-list")).toBeVisible();
+  await page.getByTestId("SendRow-native").click();
 
   await page
     .getByTestId("send-to-input")
@@ -137,12 +136,11 @@ test("Send XLM payments to recent federated addresses", async ({
   await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
   await page.getByTestId("nav-link-send").click({ force: true });
 
-  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
-
-  await page.getByTestId("address-tile").click();
+  await expect(page.getByTestId("token-list")).toBeVisible();
+  await page.getByTestId("SendRow-native").click();
 
   await page.getByTestId("send-to-input").fill("freighter.pb*lobstr.co");
-  await expect(page.getByTestId("send-to-identicon")).toBeVisible();
+  await expect(page.getByTestId("send-to-suggestion-button")).toBeVisible();
   await page.getByText("Continue").click({ force: true });
 
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
@@ -168,10 +166,8 @@ test("Send XLM payments to recent federated addresses", async ({
   await page.getByText("Done").click();
   await page.getByTestId("nav-link-send").click();
 
-  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
-  await expect(page.getByText("Send to")).toBeVisible();
-
-  await page.getByTestId("address-tile").click();
+  await expect(page.getByTestId("token-list")).toBeVisible();
+  await page.getByTestId("SendRow-native").click();
 
   await expect(page.getByText("Recents")).toBeVisible();
 
@@ -215,9 +211,8 @@ test("Send XLM payment to C address", async ({
 
   await page.getByTestId("nav-link-send").click({ force: true });
 
-  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
-
-  await page.getByTestId("address-tile").click();
+  await expect(page.getByTestId("token-list")).toBeVisible();
+  await page.getByTestId("SendRow-native").click();
 
   await page.getByTestId("send-to-input").fill(TEST_TOKEN_ADDRESS);
   await page.getByText("Continue").click({ force: true });
@@ -259,9 +254,8 @@ test("Send XLM payment to M address", async ({
 
   await page.getByTestId("nav-link-send").click({ force: true });
 
-  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
-
-  await page.getByTestId("address-tile").click();
+  await expect(page.getByTestId("token-list")).toBeVisible();
+  await page.getByTestId("SendRow-native").click();
 
   await page.getByTestId("send-to-input").fill(TEST_M_ADDRESS);
   await page.getByText("Continue").click();
@@ -403,9 +397,8 @@ test("Send token payment to C address", async ({
   }
 
   await page.getByTestId("nav-link-send").click({ force: true });
-  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
-
-  await page.getByTestId("address-tile").click();
+  await expect(page.getByTestId("token-list")).toBeVisible();
+  await page.getByTestId("SendRow-native").click();
 
   await page.getByTestId("send-to-input").fill(TEST_TOKEN_ADDRESS);
   await page.getByText("Continue").click({ force: true });
@@ -414,11 +407,19 @@ test("Send token payment to C address", async ({
 
   await page.getByTestId("send-amount-edit-dest-asset").click();
 
-  await page.getByText("E2E").click();
+  await page
+    .locator(".Send__step:not(.Send__step--hidden)")
+    .getByText("E2E")
+    .click();
 
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
   await page.getByTestId("send-amount-amount-input").fill(".001");
-  await page.getByText("Review Send").click({ force: true });
+
+  // Wait for auto-simulation to complete before clicking Review Send.
+  // handleContinue returns early if simulationState.state === LOADING.
+  const reviewSendButton = page.getByTestId("send-amount-btn-continue");
+  await expect(reviewSendButton).toBeEnabled({ timeout: 30000 });
+  await reviewSendButton.click();
 
   await expect(page.getByText("You are sending")).toBeVisible({
     timeout: 60000,

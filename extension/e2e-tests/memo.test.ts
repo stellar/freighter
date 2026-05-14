@@ -31,9 +31,8 @@ test("Send payment shows memo required warning when destination requires memo", 
   await loginToTestAccount({ page, extensionId, context });
   await page.getByTestId("nav-link-send").click({ force: true });
 
-  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
-
-  await page.getByTestId("address-tile").click();
+  await expect(page.getByTestId("token-list")).toBeVisible();
+  await page.getByTestId("SendRow-native").click();
   await page.getByTestId("send-to-input").fill(MEMO_REQUIRED_ADDRESS);
   await page.getByText("Continue").click();
 
@@ -69,9 +68,8 @@ test("Send payment allows submission after adding memo to memo-required address"
   await loginToTestAccount({ page, extensionId, context });
   await page.getByTestId("nav-link-send").click({ force: true });
 
-  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
-
-  await page.getByTestId("address-tile").click();
+  await expect(page.getByTestId("token-list")).toBeVisible();
+  await page.getByTestId("SendRow-native").click();
   await page.getByTestId("send-to-input").fill(MEMO_REQUIRED_ADDRESS);
   await page.getByText("Continue").click();
 
@@ -135,9 +133,8 @@ test("Send payment returns to review modal after adding memo from review flow", 
   await loginToTestAccount({ page, extensionId, context });
   await page.getByTestId("nav-link-send").click({ force: true });
 
-  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
-
-  await page.getByTestId("address-tile").click();
+  await expect(page.getByTestId("token-list")).toBeVisible();
+  await page.getByTestId("SendRow-native").click();
   await page.getByTestId("send-to-input").fill(MEMO_REQUIRED_ADDRESS);
   await page.getByText("Continue").click();
 
@@ -190,9 +187,8 @@ test("Send payment returns to review modal after cancelling memo editor from rev
   await loginToTestAccount({ page, extensionId, context });
   await page.getByTestId("nav-link-send").click({ force: true });
 
-  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
-
-  await page.getByTestId("address-tile").click();
+  await expect(page.getByTestId("token-list")).toBeVisible();
+  await page.getByTestId("SendRow-native").click();
   await page.getByTestId("send-to-input").fill(MEMO_REQUIRED_ADDRESS);
   await page.getByText("Continue").click();
 
@@ -243,9 +239,8 @@ test("Send payment shows memo value directly when memo is added before review", 
   await loginToTestAccount({ page, extensionId, context });
   await page.getByTestId("nav-link-send").click({ force: true });
 
-  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
-
-  await page.getByTestId("address-tile").click();
+  await expect(page.getByTestId("token-list")).toBeVisible();
+  await page.getByTestId("SendRow-native").click();
   await page.getByTestId("send-to-input").fill(MEMO_REQUIRED_ADDRESS);
   await page.getByText("Continue").click();
 
@@ -321,10 +316,10 @@ test("Send payment shows Add Memo when switching from non-memo-required to memo-
   await loginToTestAccount({ page, extensionId, context });
   await page.getByTestId("nav-link-send").click({ force: true });
 
-  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+  await expect(page.getByTestId("token-list")).toBeVisible();
+  await page.getByTestId("SendRow-native").click();
 
   // First, set a non-memo-required address
-  await page.getByTestId("address-tile").click();
   await page.getByTestId("send-to-input").fill(NON_MEMO_REQUIRED_ADDRESS);
   await page.getByText("Continue").click();
 
@@ -388,9 +383,8 @@ test("Send payment shows Add Memo after cancelling review and returning to memo-
   await loginToTestAccount({ page, extensionId, context });
   await page.getByTestId("nav-link-send").click({ force: true });
 
-  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
-
-  await page.getByTestId("address-tile").click();
+  await expect(page.getByTestId("token-list")).toBeVisible();
+  await page.getByTestId("SendRow-native").click();
   await page.getByTestId("send-to-input").fill(MEMO_REQUIRED_ADDRESS);
   await page.getByText("Continue").click();
 
@@ -463,11 +457,11 @@ test("Send classic token to G address allows memo", async ({
   await loginToTestAccount({ page, extensionId, context });
   await page.getByTestId("nav-link-send").click({ force: true });
 
-  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+  await expect(page.getByTestId("token-list")).toBeVisible();
+  await page.getByTestId("SendRow-native").click();
 
   const G_ADDRESS = "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF";
 
-  await page.getByTestId("address-tile").click();
   await page.getByTestId("send-to-input").fill(G_ADDRESS);
   await page.getByText("Continue").click();
 
@@ -504,9 +498,9 @@ test("Send classic token to M address doesn't allow memo", async ({
   await loginToTestAccount({ page, extensionId, context });
   await page.getByTestId("nav-link-send").click({ force: true });
 
-  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+  await expect(page.getByTestId("token-list")).toBeVisible();
+  await page.getByTestId("SendRow-native").click();
 
-  await page.getByTestId("address-tile").click();
   await page.getByTestId("send-to-input").fill(TEST_M_ADDRESS);
   await page.getByText("Continue").click();
 
@@ -536,13 +530,11 @@ test("Send custom token without Soroban mux support to G address disables memo",
   await loginToTestAccount({ page, extensionId, context, stubOverrides });
   await page.getByTestId("nav-link-send").click({ force: true });
 
-  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible({
-    timeout: 30000,
-  });
+  await expect(page.getByTestId("token-list")).toBeVisible();
+  await page.getByTestId("SendRow-native").click();
 
   const G_ADDRESS = "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF";
 
-  await page.getByTestId("address-tile").click();
   await page.getByTestId("send-to-input").fill(G_ADDRESS);
   await page.getByText("Continue").click();
 
@@ -553,6 +545,7 @@ test("Send custom token without Soroban mux support to G address disables memo",
   // Select custom token
   await page.getByTestId("send-amount-edit-dest-asset").click();
   await page
+    .locator(".Send__step:not(.Send__step--hidden)")
     .getByTestId(`SendRow-E2E:${TEST_TOKEN_ADDRESS}`)
     .click({ force: true });
 
@@ -626,9 +619,9 @@ test("Send custom token without Soroban mux support to M address is disabled", a
   await loginToTestAccount({ page, extensionId, context, stubOverrides });
   await page.getByTestId("nav-link-send").click({ force: true });
 
-  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+  await expect(page.getByTestId("token-list")).toBeVisible();
+  await page.getByTestId("SendRow-native").click();
 
-  await page.getByTestId("address-tile").click();
   await page.getByTestId("send-to-input").fill(TEST_M_ADDRESS);
   await page.getByText("Continue").click();
 
@@ -637,6 +630,7 @@ test("Send custom token without Soroban mux support to M address is disabled", a
   // Select custom token
   await page.getByTestId("send-amount-edit-dest-asset").click();
   await page
+    .locator(".Send__step:not(.Send__step--hidden)")
     .getByTestId(`SendRow-E2E:${TEST_TOKEN_ADDRESS}`)
     .click({ force: true });
 
@@ -674,11 +668,11 @@ test("Send custom token with Soroban mux support to G address allows memo", asyn
   await loginToTestAccount({ page, extensionId, context, stubOverrides });
   await page.getByTestId("nav-link-send").click({ force: true });
 
-  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+  await expect(page.getByTestId("token-list")).toBeVisible();
+  await page.getByTestId("SendRow-native").click();
 
   const G_ADDRESS = "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF";
 
-  await page.getByTestId("address-tile").click();
   await page.getByTestId("send-to-input").fill(G_ADDRESS);
   await page.getByText("Continue").click();
 
@@ -687,6 +681,7 @@ test("Send custom token with Soroban mux support to G address allows memo", asyn
   // Select custom token
   await page.getByTestId("send-amount-edit-dest-asset").click();
   await page
+    .locator(".Send__step:not(.Send__step--hidden)")
     .getByTestId(`SendRow-E2E:${TEST_TOKEN_ADDRESS}`)
     .click({ force: true });
 
@@ -740,9 +735,9 @@ test("Send custom token with Soroban mux support to M address disables memo", as
   await loginToTestAccount({ page, extensionId, context, stubOverrides });
   await page.getByTestId("nav-link-send").click({ force: true });
 
-  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+  await expect(page.getByTestId("token-list")).toBeVisible();
+  await page.getByTestId("SendRow-native").click();
 
-  await page.getByTestId("address-tile").click();
   await page.getByTestId("send-to-input").fill(TEST_M_ADDRESS);
   await page.getByText("Continue").click();
 
@@ -751,6 +746,7 @@ test("Send custom token with Soroban mux support to M address disables memo", as
   // Select custom token
   await page.getByTestId("send-amount-edit-dest-asset").click();
   await page
+    .locator(".Send__step:not(.Send__step--hidden)")
     .getByTestId(`SendRow-E2E:${TEST_TOKEN_ADDRESS}`)
     .click({ force: true });
 

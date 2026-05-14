@@ -128,6 +128,22 @@
   &__btn-continue {
     display: flex;
     flex-direction: column;
+    gap: pxToRem(12px);
+  }
+
+  &__settings-row {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: pxToRem(8px);
+  }
+
+  &__settings-fee-display {
+    display: flex;
+    align-items: center;
+    gap: pxToRem(4px);
+    font-size: pxToRem(14px);
   }
 
   &__amount-price {
@@ -260,15 +276,14 @@
     }
   }
 
-  &__header-settings-btn {
-    background: none;
-    border: none;
+  &__settings-btn {
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
     color: var(--sds-clr-gray-12);
     padding: pxToRem(4px);
+    margin-left: pxToRem(8px);
 
     svg {
       width: pxToRem(20px);

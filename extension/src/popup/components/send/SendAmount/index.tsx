@@ -673,31 +673,63 @@ export const SendAmount = ({
         hasBackButton
         customBackAction={goBackAction}
         customBackIcon={<Icon.X />}
-        rightButton={
-          <button
-            className="SendAmount__header-settings-btn"
-            data-testid="send-amount-btn-fee"
-            aria-label={t("Send settings")}
-            onClick={() => {
-              setIsEditingSettings(true);
-              if (
-                (isToken || isCollectible) &&
-                destination &&
-                simulationState.state !== RequestState.SUCCESS &&
-                simulationState.state !== RequestState.LOADING
-              ) {
-                fetchSimulationData();
-              }
-            }}
-          >
-            <Icon.Settings01 />
-          </button>
-        }
       />
       <View.Content
         hasNoTopPadding={isCollectible}
         contentFooter={
           <div className="SendAmount__btn-continue">
+            <div className="SendAmount__settings-row">
+              <div className="SendAmount__settings-fee-display">
+                <span className="SendAmount__settings-fee-display__label">
+                  {t("Fee")}:
+                </span>
+                <span data-testid="send-amount-fee-display">
+                  {(isToken || isCollectible) &&
+                  simulationState.state === RequestState.ERROR
+                    ? t("Fee unavailable")
+                    : (isToken || isCollectible) &&
+                        simulationState.state === RequestState.LOADING
+                      ? t("Calculating...")
+                      : `${fee} ${t("XLM")}`}
+                </span>
+              </div>
+              <div className="SendAmount__settings-row">
+                <Button
+                  data-testid="send-amount-btn-memo"
+                  size="md"
+                  isRounded
+                  variant="tertiary"
+                  onClick={() => {
+                    setMemoEditingContext(MemoEditingContext.SendPayment);
+                    setIsEditingMemo(true);
+                  }}
+                  icon={<Icon.File02 />}
+                  iconPosition="left"
+                >
+                  {t("Memo")}
+                </Button>
+                <Button
+                  data-testid="send-amount-btn-fee"
+                  size="md"
+                  isRounded
+                  variant="tertiary"
+                  aria-label={t("Send settings")}
+                  onClick={() => {
+                    setIsEditingSettings(true);
+                    if (
+                      (isToken || isCollectible) &&
+                      destination &&
+                      simulationState.state !== RequestState.SUCCESS &&
+                      simulationState.state !== RequestState.LOADING
+                    ) {
+                      fetchSimulationData();
+                    }
+                  }}
+                >
+                  <Icon.Settings01 />
+                </Button>
+              </div>
+            </div>
             {isCollectible ? (
               <>
                 {(isToken || isCollectible) &&
