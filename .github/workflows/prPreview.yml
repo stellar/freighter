@@ -58,16 +58,15 @@ jobs:
       # Secrets injected at job level (not workflow level) so a future job
       # added without the same fork-guard if: doesn't inherit them.
       #
-      # Both INDEXER_URL and INDEXER_V2_URL point at PROD freighter-backend.
-      # Previously V2 used the BETA URL, but the BETA v1 ingress is not
-      # publicly resolvable (no public DNS entry — confirmed against the
-      # kube manifests). Pointing both at prod keeps previews reachable
-      # without VPN, at the cost of read-only prod backend traffic. The
-      # backend is a read-side indexer (balances, assets, history); the
-      # wallet submits txs directly to Horizon/RPC, so the choice of
-      # backend here doesn't affect write paths.
+      # V1: PROD. V1 staging/beta does not have a public DNS entry — the
+      #   only v1 stg ingress is kube-internal and would require sshuttle.
+      # V2: BETA. V2 beta is publicly reachable and is the right target
+      #   for preview-stage testing.
+      # freighter-backend is a read-side indexer (balances, assets,
+      # history); the wallet submits txs directly to Horizon/RPC, so the
+      # backend choice here doesn't affect write paths.
       INDEXER_URL: ${{ secrets.INDEXER_URL }}
-      INDEXER_V2_URL: ${{ secrets.INDEXER_V2_URL }}
+      INDEXER_V2_URL: ${{ secrets.INDEXER_V2_BETA_URL }}
     steps:
       - name: Validate required secrets
         if: ${{ env.INDEXER_URL == '' || env.INDEXER_V2_URL == '' }}
@@ -144,7 +143,7 @@ jobs:
           Internal preview build for PR [#${PR_NUMBER}](${PR_URL}). SDF collaborators only — non-SDF GitHub users get 404 on this page. Auto-deleted when the PR is closed.
 
           **Commit:** ${PR_HEAD_SHA}
-          **Backend:** production (read-only indexer; wallet writes go direct to Horizon/RPC)
+          **Backend:** V1 production, V2 beta (read-only indexer; wallet writes go direct to Horizon/RPC)
 
           ### How to install (Chromium)
 
