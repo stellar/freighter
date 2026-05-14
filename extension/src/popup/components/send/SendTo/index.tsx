@@ -420,7 +420,10 @@ export const SendTo = ({
         </div>
       </View.Content>
       <View.Footer>
-        {!isLoading && formik.values.destination && formik.isValid ? (
+        {!isLoading &&
+        isSearchSettled &&
+        formik.values.destination &&
+        formik.isValid ? (
           <Button
             size="lg"
             isFullWidth

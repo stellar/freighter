@@ -351,7 +351,9 @@ test("Send payment shows Add Memo when switching from non-memo-required to memo-
   await page.getByTestId("address-tile").click();
   await page.getByTestId("send-to-input").clear();
   await page.getByTestId("send-to-input").fill(MEMO_REQUIRED_ADDRESS);
-  await page.getByText("Continue").click();
+  // Click the suggestion button rather than Continue — it only appears after the
+  // debounce settles and the new fetch resolves, confirming the address is saved.
+  await page.getByTestId("send-to-suggestion-button").click();
 
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
   // Make sure amount is still 1 XLM after switching addresses
