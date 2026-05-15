@@ -36,6 +36,7 @@ import {
   mockPrices,
   TEST_CANONICAL,
   TEST_PUBLIC_KEY,
+  TEST_USDC_CANONICAL,
 } from "../../__testHelpers__";
 import { Account } from "../Account";
 import { ROUTES } from "popup/constants/routes";
@@ -974,18 +975,30 @@ describe("Account view", () => {
     await waitFor(async () => {
       const assetNodes = screen.getAllByTestId("account-assets-item");
       expect(assetNodes.length).toEqual(3);
+      // Classic G-issuer asset (USDC) carries the priced-row assertion;
+      // production `getTokenPrices` only returns prices for these.
       expect(
-        screen.getByTestId(`asset-amount-${TEST_CANONICAL}`),
-      ).toHaveTextContent("$834,463.67");
+        screen.getByTestId(`asset-amount-${TEST_USDC_CANONICAL}`),
+      ).toHaveTextContent("$100.00");
       expect(
-        screen.getByTestId(`asset-price-delta-${TEST_CANONICAL}`),
-      ).toHaveTextContent("3.97%");
+        screen.getByTestId(`asset-price-delta-${TEST_USDC_CANONICAL}`),
+      ).toHaveTextContent("0.50%");
       expect(screen.getByTestId(`asset-amount-native`)).toHaveTextContent(
         "$13.81",
       );
       expect(screen.getByTestId(`asset-price-delta-native`)).toHaveTextContent(
         "1.09%",
       );
+      // Contract-ID issuers are filtered out by production `getTokenPrices`
+      // (`@shared/api/internal.ts` → `isContractId`), so DT can never carry
+      // an indexer price. The row still renders, but with no USD amount
+      // node and a "--" delta.
+      expect(
+        screen.queryByTestId(`asset-amount-${TEST_CANONICAL}`),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.getByTestId(`asset-price-delta-${TEST_CANONICAL}`),
+      ).toHaveTextContent("--");
     });
   });
 
@@ -1046,12 +1059,23 @@ describe("Account view", () => {
     await waitFor(async () => {
       const assetNodes = screen.getAllByTestId("account-assets-item");
       expect(assetNodes.length).toEqual(3);
+      // When prices are unavailable, no row renders a USD `asset-amount-*`
+      // node and every row's delta reads "--".
       expect(
         screen.queryByTestId(`asset-amount-${TEST_CANONICAL}`),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByTestId(`asset-amount-${TEST_USDC_CANONICAL}`),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByTestId("asset-amount-native"),
       ).not.toBeInTheDocument();
       expect(screen.getByTestId("asset-price-delta-native")).toHaveTextContent(
         "--",
       );
+      expect(
+        screen.getByTestId(`asset-price-delta-${TEST_USDC_CANONICAL}`),
+      ).toHaveTextContent("--");
       expect(
         screen.getByTestId(`asset-price-delta-${TEST_CANONICAL}`),
       ).toHaveTextContent("--");
@@ -1238,9 +1262,9 @@ describe("Account view", () => {
       .spyOn(ApiInternal, "getAccountBalances")
       .mockImplementation(() => Promise.resolve(mockBalances));
 
-    jest.spyOn(ApiInternal, "getTokenPrices").mockImplementation(() => {
-      throw new Error("Failed to fetch prices");
-    });
+    jest
+      .spyOn(ApiInternal, "getTokenPrices")
+      .mockRejectedValueOnce(new Error("Failed to fetch prices"));
 
     render(
       <Wrapper
