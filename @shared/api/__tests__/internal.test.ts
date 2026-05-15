@@ -135,4 +135,42 @@ describe("internalApi", () => {
       );
     });
   });
+
+  describe("getTokenPrices request payload filtering", () => {
+    const mockFetchOk = () =>
+      jest.spyOn(global, "fetch").mockResolvedValue({
+        ok: true,
+        json: jest.fn().mockResolvedValue({ data: {} }),
+      } as unknown as Response);
+
+    it("excludes contract-ID issuers from the indexer request", async () => {
+      const fetchSpy = mockFetchOk();
+
+      await internalApi.getTokenPrices([
+        "native",
+        "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
+        "DT:CCXVDIGMR6WTXZQX2OEVD6YM6AYCYPXPQ7YYH6OZMRS7U6VD3AVHNGBJ",
+      ]);
+
+      const requestInit = fetchSpy.mock.calls[0][1] as RequestInit;
+      const body = JSON.parse(requestInit.body as string);
+      expect(body.tokens).toEqual([
+        "native",
+        "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
+      ]);
+    });
+
+    it("excludes liquidity-pool IDs from the indexer request", async () => {
+      const fetchSpy = mockFetchOk();
+
+      await internalApi.getTokenPrices([
+        "native",
+        "abc123:lp",
+      ]);
+
+      const requestInit = fetchSpy.mock.calls[0][1] as RequestInit;
+      const body = JSON.parse(requestInit.body as string);
+      expect(body.tokens).toEqual(["native"]);
+    });
+  });
 });
