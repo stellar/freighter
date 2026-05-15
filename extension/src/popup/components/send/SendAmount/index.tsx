@@ -434,7 +434,19 @@ export const SendAmount = ({
     return <Loading />;
   }
 
-  const hasError = sendAmountData.state === RequestState.ERROR;
+  if (sendAmountData.state === RequestState.ERROR) {
+    return (
+      <div
+        className="SendAmount__fetch-fail"
+        data-testid="send-amount-fetch-fail"
+      >
+        <Notification variant="error" title={t("Failed to load send data.")}>
+          {t("Your send data could not be fetched at this time.")}
+        </Notification>
+      </div>
+    );
+  }
+
   if (sendAmountData.data?.type === AppDataType.REROUTE) {
     if (sendAmountData.data.shouldOpenTab) {
       openTab(newTabHref(sendAmountData.data.routeTarget));
@@ -449,15 +461,15 @@ export const SendAmount = ({
     );
   }
 
-  if (!hasError) {
-    reRouteOnboarding({
-      type: sendAmountData.data.type,
-      applicationState: sendAmountData.data.applicationState,
-      state: sendAmountData.state,
-    });
-  }
+  const data = sendAmountData.data;
 
-  const sendData = sendAmountData.data!;
+  reRouteOnboarding({
+    type: data.type,
+    applicationState: data.applicationState,
+    state: sendAmountData.state,
+  });
+
+  const sendData = data;
   const assetIcon = sendData.icons[asset];
 
   // Use getBalanceByKey for tokens (contract ID), getBalanceByAsset for classic assets
@@ -495,8 +507,7 @@ export const SendAmount = ({
         ),
       )}`
     : null;
-  const supportsUsd =
-    isMainnet(sendAmountData.data?.networkDetails!) && assetPrice;
+  const supportsUsd = isMainnet(data.networkDetails) && assetPrice;
   const availableBalance = getAvailableBalance({
     assetCanonical: asset,
     balances: sendData.userBalances.balances,
@@ -1053,7 +1064,7 @@ export const SendAmount = ({
           <ReviewTx
             assetIcon={assetIcon}
             fee={fee}
-            networkDetails={sendAmountData.data?.networkDetails!}
+            networkDetails={data.networkDetails}
             onCancel={() => setIsReviewingTx(false)}
             onConfirm={goToNext}
             onAddMemo={() => {
