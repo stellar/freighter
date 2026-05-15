@@ -76,8 +76,15 @@ jobs:
 
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          # Default leaves a GITHUB_TOKEN auth header in .git/config for the
+          # rest of the job. With contents:write granted, any subsequent
+          # code execution (yarn lifecycle scripts, build scripts) could
+          # `git push` using those persisted creds. `gh` uses GH_TOKEN env
+          # separately so disabling this doesn't affect the release flow.
+          persist-credentials: false
 
-      - name: Assert manifest has no top-level `key` field
+      - name: Assert source manifest has no top-level `key` field
         run: |
           if jq -e 'has("key")' ./extension/public/static/manifest/v3.json > /dev/null; then
             echo "::error::manifest/v3.json contains a top-level 'key' field. Preview installs would share a Chromium extension ID with Web Store Freighter, leaking storage."
@@ -118,6 +125,17 @@ jobs:
           rm -rf ./extension/build/images
           mv ./extension/build/beta_images ./extension/build/images
 
+      - name: Assert built manifest has no top-level `key` field
+        # The source-manifest assertion above catches a hand-edited `key`,
+        # but a webpack plugin / postinstall script / transitive dep could
+        # still inject one into the built output. Re-check post-build,
+        # pre-zip, so the shipping artifact is what we asserted on.
+        run: |
+          if jq -e 'has("key")' ./extension/build/manifest.json > /dev/null; then
+            echo "::error::Built manifest.json contains a top-level 'key' field. The build pipeline injected an extension-ID-fixing key after the source assertion; preview install would collide with Web Store Freighter."
+            exit 1
+          fi
+
       - name: Zip extension build
         working-directory: ./extension/build
         run: zip -qq -r ./build.zip *
@@ -126,7 +144,13 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
-        run: gh release delete "pr-preview-${PR_NUMBER}" --yes --cleanup-tag || true
+        # Check-then-delete instead of `|| true`. `|| true` would also
+        # swallow transient API errors (network, 422 tag-conflict) and let
+        # the subsequent `gh release create` silently reuse a stale tag.
+        run: |
+          if gh release view "pr-preview-${PR_NUMBER}" > /dev/null 2>&1; then
+            gh release delete "pr-preview-${PR_NUMBER}" --yes --cleanup-tag
+          fi
 
       - name: Create draft preview release
         id: release
@@ -160,13 +184,18 @@ jobs:
           # Don't capture stdout from `gh release create` — it can include
           # progress/status lines, not just the URL. Query the URL with a
           # dedicated `gh release view --json url` call instead.
-          # Pass --target so if the draft is ever manually published, the
-          # resulting git tag points at the PR's HEAD commit, not master.
+          #
+          # No --target: if the draft is ever manually published, the tag
+          # falls back to master HEAD (reviewed code) rather than the PR's
+          # HEAD commit (unreviewed). Dropping the targeted-tag property
+          # closes a one-click escalation path where any account that can
+          # click "Publish release" on a draft mints an official-looking
+          # release containing arbitrary PR-head code; branch-protection
+          # rules do not extend to release publication.
           gh release create "pr-preview-${PR_NUMBER}" \
             ./extension/build/build.zip \
             --title "PR Preview #${PR_NUMBER}" \
             --notes-file /tmp/release-notes.md \
-            --target "${PR_HEAD_SHA}" \
             --draft > /dev/null
           URL=$(gh release view "pr-preview-${PR_NUMBER}" --json url --jq '.url')
           echo "url=${URL}" >> "$GITHUB_OUTPUT"
@@ -208,4 +237,10 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
-        run: gh release delete "pr-preview-${PR_NUMBER}" --yes --cleanup-tag || true
+        # Skip silently if the release doesn't exist (race with a cancelled
+        # build), but fail loudly on any other delete error rather than
+        # masking it with `|| true`.
+        run: |
+          if gh release view "pr-preview-${PR_NUMBER}" > /dev/null 2>&1; then
+            gh release delete "pr-preview-${PR_NUMBER}" --yes --cleanup-tag
+          fi
