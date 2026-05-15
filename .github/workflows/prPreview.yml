@@ -149,7 +149,15 @@ jobs:
         # the subsequent `gh release create` silently reuse a stale tag.
         run: |
           if gh release view "pr-preview-${PR_NUMBER}" > /dev/null 2>&1; then
-            gh release delete "pr-preview-${PR_NUMBER}" --yes --cleanup-tag
+            # `--cleanup-tag` 422s on draft releases because drafts don't
+            # create the git tag until publish. Branch on isDraft so we
+            # only ask for tag-cleanup when there is actually a tag.
+            IS_DRAFT=$(gh release view "pr-preview-${PR_NUMBER}" --json isDraft --jq '.isDraft')
+            if [ "$IS_DRAFT" = "true" ]; then
+              gh release delete "pr-preview-${PR_NUMBER}" --yes
+            else
+              gh release delete "pr-preview-${PR_NUMBER}" --yes --cleanup-tag
+            fi
           fi
 
       - name: Create draft preview release
@@ -242,5 +250,13 @@ jobs:
         # masking it with `|| true`.
         run: |
           if gh release view "pr-preview-${PR_NUMBER}" > /dev/null 2>&1; then
-            gh release delete "pr-preview-${PR_NUMBER}" --yes --cleanup-tag
+            # `--cleanup-tag` 422s on draft releases because drafts don't
+            # create the git tag until publish. Branch on isDraft so we
+            # only ask for tag-cleanup when there is actually a tag.
+            IS_DRAFT=$(gh release view "pr-preview-${PR_NUMBER}" --json isDraft --jq '.isDraft')
+            if [ "$IS_DRAFT" = "true" ]; then
+              gh release delete "pr-preview-${PR_NUMBER}" --yes
+            else
+              gh release delete "pr-preview-${PR_NUMBER}" --yes --cleanup-tag
+            fi
           fi
