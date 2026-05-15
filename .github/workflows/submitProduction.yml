@@ -2,6 +2,9 @@ name: Production Deployment
 env:
   INDEXER_URL: ${{ secrets.INDEXER_URL }}
   INDEXER_V2_URL: ${{ secrets.INDEXER_V2_URL }}
+  SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+  SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+  SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
   HUSKY: 0
 on:
   workflow_dispatch:
@@ -29,17 +32,17 @@ jobs:
           echo "Missing INDEXER_V2_URL"
           gh run cancel ${{ github.run_id }}
           gh run watch ${{ github.run_id }}
-      - if: ${{ secrets.SENTRY_ORG == '' }}
+      - if: ${{ env.SENTRY_ORG == '' }}
         run: |
           echo "Missing SENTRY_ORG"
           gh run cancel ${{ github.run_id }}
           gh run watch ${{ github.run_id }}
-      - if: ${{ secrets.SENTRY_PROJECT == '' }}
+      - if: ${{ env.SENTRY_PROJECT == '' }}
         run: |
           echo "Missing SENTRY_PROJECT"
           gh run cancel ${{ github.run_id }}
           gh run watch ${{ github.run_id }}
-      - if: ${{ secrets.SENTRY_AUTH_TOKEN == '' }}
+      - if: ${{ env.SENTRY_AUTH_TOKEN == '' }}
         run: |
           echo "Missing SENTRY_AUTH_TOKEN"
           gh run cancel ${{ github.run_id }}
