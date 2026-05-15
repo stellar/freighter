@@ -1,4 +1,4 @@
-import { isContractId } from "popup/helpers/soroban";
+import { isContractId } from "@shared/api/helpers/soroban";
 
 /**
  * Returns true when the "destination is unfunded" warning rule applies to
