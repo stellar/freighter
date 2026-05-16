@@ -24,7 +24,7 @@ import {
 import { signOut } from "popup/ducks/accountServices";
 import { AccountHeaderModal } from "popup/components/account/AccountHeaderModal";
 import { NetworkIcon } from "popup/components/manageNetwork/NetworkIcon";
-import { NetworkDetails } from "@shared/constants/stellar";
+import { NetworkDetails, NETWORK_NAMES } from "@shared/constants/stellar";
 import { MobileAppBanner } from "popup/components/account/MobileAppBanner";
 import { AccountTabs } from "popup/components/account/AccountTabs";
 import { MaintenanceBanner } from "popup/components/MaintenanceBanner";
@@ -46,6 +46,19 @@ interface AccountHeaderProps {
   isCollectibleHidden: (collectionAddress: string, tokenId: string) => boolean;
   onDiscoverClick: () => void;
 }
+
+const getNetworkDisplayName = (networkName: string) => {
+  switch (networkName) {
+    case NETWORK_NAMES.PUBNET:
+      return "Mainnet";
+    case NETWORK_NAMES.TESTNET:
+      return "Testnet";
+    case NETWORK_NAMES.FUTURENET:
+      return "Futurenet";
+    default:
+      return networkName;
+  }
+};
 
 export const AccountHeader = ({
   allowList,
@@ -262,7 +275,7 @@ export const AccountHeader = ({
                           >
                             <NetworkIcon index={i} />
                             <div className="AccountHeader__network-copy">
-                              {n.networkName}
+                              {getNetworkDisplayName(n.networkName)}
                             </div>
                             {isActiveNetwork(n, networkDetails) ? (
                               <div className="AccountHeader__network-selector__check">
