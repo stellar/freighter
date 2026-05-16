@@ -24,7 +24,7 @@ import {
 import { signOut } from "popup/ducks/accountServices";
 import { AccountHeaderModal } from "popup/components/account/AccountHeaderModal";
 import { NetworkIcon } from "popup/components/manageNetwork/NetworkIcon";
-import { NetworkDetails } from "@shared/constants/stellar";
+import { NetworkDetails, NETWORK_NAMES } from "@shared/constants/stellar";
 import { MobileAppBanner } from "popup/components/account/MobileAppBanner";
 import { AccountTabs } from "popup/components/account/AccountTabs";
 import { MaintenanceBanner } from "popup/components/MaintenanceBanner";
@@ -49,10 +49,12 @@ interface AccountHeaderProps {
 
 const getNetworkDisplayName = (networkName: string) => {
   switch (networkName) {
-    case "Main Net":
+    case NETWORK_NAMES.PUBNET:
       return "Mainnet";
-    case "Test Net":
+    case NETWORK_NAMES.TESTNET:
       return "Testnet";
+    case NETWORK_NAMES.FUTURENET:
+      return "Futurenet";
     default:
       return networkName;
   }
