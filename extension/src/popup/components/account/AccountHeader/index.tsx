@@ -47,6 +47,17 @@ interface AccountHeaderProps {
   onDiscoverClick: () => void;
 }
 
+const getNetworkDisplayName = (networkName: string) => {
+  switch (networkName) {
+    case "Main Net":
+      return "Mainnet";
+    case "Test Net":
+      return "Testnet";
+    default:
+      return networkName;
+  }
+};
+
 export const AccountHeader = ({
   allowList,
   currentAccountName,
@@ -262,7 +273,7 @@ export const AccountHeader = ({
                           >
                             <NetworkIcon index={i} />
                             <div className="AccountHeader__network-copy">
-                              {n.networkName}
+                              {getNetworkDisplayName(n.networkName)}
                             </div>
                             {isActiveNetwork(n, networkDetails) ? (
                               <div className="AccountHeader__network-selector__check">
