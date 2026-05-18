@@ -13,10 +13,7 @@ describe("ChooseAsset RequestState.ERROR", () => {
 
   it("renders the fetch-fail notification without throwing on RequestState.ERROR", () => {
     jest
-      .spyOn(
-        UseGetAssetDomainsWithBalances,
-        "useGetAssetDomainsWithBalances",
-      )
+      .spyOn(UseGetAssetDomainsWithBalances, "useGetAssetDomainsWithBalances")
       .mockReturnValue({
         state: {
           state: RequestState.ERROR,
