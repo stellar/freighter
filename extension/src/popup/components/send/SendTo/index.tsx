@@ -1,8 +1,7 @@
 import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Asset, StrKey } from "stellar-sdk";
+import { StrKey } from "stellar-sdk";
 import { useFormik } from "formik";
-import BigNumber from "bignumber.js";
 import {
   Button,
   Input,
@@ -25,6 +24,7 @@ import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
 import { FormRows } from "popup/basics/Forms";
 import { emitMetric } from "helpers/metrics";
 import { isContractId } from "popup/helpers/soroban";
+import { shouldShowAccountDoesntExistWarning } from "popup/helpers/sendWarnings";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { STELLAR_DOCS_CREATE_ACCOUNT_URL } from "popup/constants/externalLinks";
 import { View } from "popup/basics/layout/View";
@@ -47,17 +47,6 @@ import { AppDataType } from "helpers/hooks/useGetAppData";
 import { reRouteOnboarding } from "popup/helpers/route";
 
 import "../styles.scss";
-
-const baseReserve = new BigNumber(1);
-
-export const shouldAccountDoesntExistWarning = (
-  isFunded: boolean,
-  assetID: string,
-  amount: string,
-) =>
-  !isFunded &&
-  (new BigNumber(amount).lt(baseReserve) ||
-    assetID !== Asset.native().toString());
 
 export const AccountDoesntExistWarning = () => {
   const { t } = useTranslation();
@@ -110,7 +99,7 @@ export const SendTo = ({
   const { t } = useTranslation();
   const location = useLocation();
   const dispatch: AppDispatch = useDispatch<AppDispatch>();
-  const { destination, federationAddress } = useSelector(
+  const { destination, federationAddress, asset, isCollectible } = useSelector(
     transactionDataSelector,
   );
   const { state: sendDataState, fetchData } = useSendToData();
@@ -297,10 +286,13 @@ export const SendTo = ({
                 <div>
                   {formik.isValid ? (
                     <>
-                      {sendDataState.data.destinationBalances &&
-                        !sendDataState.data.destinationBalances.isFunded && (
-                          <AccountDoesntExistWarning />
-                        )}
+                      {shouldShowAccountDoesntExistWarning({
+                        assetCanonical: asset,
+                        destination: sendDataState.data.validatedAddress,
+                        isCollectible,
+                        isFunded:
+                          sendDataState.data.destinationBalances?.isFunded,
+                      }) && <AccountDoesntExistWarning />}
                       <div className="SendTo__subheading">
                         <Icon.SearchLg />
                         Suggestions

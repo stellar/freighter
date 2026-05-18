@@ -44,6 +44,7 @@ import { AppDispatch, AppState } from "popup/App";
 import { useScanTx } from "popup/helpers/blockaid";
 import { cleanAmount } from "popup/helpers/formatters";
 import { buildMemoFromFederation } from "popup/helpers/federationMemo";
+import { shouldCheckUnfundedDestinationWarning } from "popup/helpers/sendWarnings";
 import {
   checkIsMuxedSupported,
   determineMuxedDestination,
@@ -76,28 +77,28 @@ interface SimSoroban {
 const CREATE_ACCOUNT_MIN_XLM = new BigNumber(1);
 
 /**
- * Returns the translated user-facing reason why a transaction is expected to fail,
- * or null if no expected failure.
+ * Returns the translated user-facing reason why a transaction is expected
+ * to fail, or null if no expected failure.
  *
- * The unfunded-destination warning only applies to sends that use classic
- * Stellar account semantics: native XLM, credit_alphanum assets, and
- * Stellar Asset Contracts (SACs) wrapping those — all of which require a
- * funded classic destination. Pure Soroban custom tokens transfer via
- * contract invocation and don't touch the classic account ledger, so an
- * unfunded destination is not a failure condition for them.
- *
- * Asset ids encode the distinction: SACs normalize to their underlying
- * classic G-issuer, while pure Soroban custom tokens use a contract
- * (C-address) issuer.
+ * The unfunded-destination warning rule (qualitative gate) is delegated to
+ * `shouldCheckUnfundedDestinationWarning` in `popup/helpers/sendWarnings.ts`
+ * so the same rule fires on both the Search-address screen
+ * (`SendTo/index.tsx`) and here on Review. This branch overlays the
+ * native ≥ 1 XLM create-account quantitative check, which only matters
+ * once the amount is finalized.
  */
 export const getExpectedToFailReason = ({
   isDestinationFunded,
   assetCanonical,
+  destination,
+  isCollectible,
   amount,
   t,
 }: {
   isDestinationFunded?: boolean;
   assetCanonical: string;
+  destination: string;
+  isCollectible: boolean;
   amount: string;
   t: (key: string) => string;
 }) => {
@@ -105,11 +106,17 @@ export const getExpectedToFailReason = ({
     return null;
   }
 
+  if (
+    !shouldCheckUnfundedDestinationWarning({
+      assetCanonical,
+      destination,
+      isCollectible,
+    })
+  ) {
+    return null;
+  }
+
   if (assetCanonical !== "native") {
-    const [, issuer] = assetCanonical.split(":");
-    if (issuer && isContractId(issuer)) {
-      return null;
-    }
     return t("Blockaid unfunded destination");
   }
 
@@ -409,9 +416,8 @@ function useSimulateTxData({
   const { t } = useTranslation();
   const reduxDispatch = useDispatch<AppDispatch>();
   const store = useStore();
-  const { asset, amount, transactionFee, memo, memoType } = useSelector(
-    transactionDataSelector,
-  );
+  const { asset, amount, transactionFee, memo, memoType, isCollectible } =
+    useSelector(transactionDataSelector);
 
   const { scanTx } = useScanTx();
   const [state, dispatch] = useReducer(
@@ -477,6 +483,8 @@ function useSimulateTxData({
       const expectedToFailReason = getExpectedToFailReason({
         isDestinationFunded: destBalancesResult.isFunded ?? undefined,
         assetCanonical: currentAsset,
+        destination,
+        isCollectible,
         amount: currentAmount,
         t,
       });
