@@ -10,7 +10,11 @@ import { LoadingBackground } from "popup/basics/LoadingBackground";
 import { View } from "popup/basics/layout/View";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { AppDispatch } from "popup/App";
-import { getAssetFromCanonical, isMuxedAccount } from "helpers/stellar";
+import {
+  getAssetFromCanonical,
+  isMainnet,
+  isMuxedAccount,
+} from "helpers/stellar";
 import { NetworkCongestion } from "popup/helpers/useNetworkFees";
 import { emitMetric } from "helpers/metrics";
 import { trackSendFeeBreakdownOpened } from "popup/metrics/send";
@@ -35,7 +39,7 @@ import {
   saveAmount,
   saveAsset,
   saveIsToken,
-  saveMemo,
+  saveMemoAndType,
   saveTransactionFee,
   saveManualTransactionFee,
   saveTransactionTimeout,
@@ -487,7 +491,19 @@ export const SendAmount = ({
     return <Loading />;
   }
 
-  const hasError = sendAmountData.state === RequestState.ERROR;
+  if (sendAmountData.state === RequestState.ERROR) {
+    return (
+      <div
+        className="SendAmount__fetch-fail"
+        data-testid="send-amount-fetch-fail"
+      >
+        <Notification variant="error" title={t("Failed to load send data.")}>
+          {t("Your send data could not be fetched at this time.")}
+        </Notification>
+      </div>
+    );
+  }
+
   if (sendAmountData.data?.type === AppDataType.REROUTE) {
     if (sendAmountData.data.shouldOpenTab) {
       openTab(newTabHref(sendAmountData.data.routeTarget));
@@ -502,15 +518,15 @@ export const SendAmount = ({
     );
   }
 
-  if (!hasError) {
-    reRouteOnboarding({
-      type: sendAmountData.data.type,
-      applicationState: sendAmountData.data.applicationState,
-      state: sendAmountData.state,
-    });
-  }
+  const data = sendAmountData.data;
 
-  const sendData = sendAmountData.data!;
+  reRouteOnboarding({
+    type: data.type,
+    applicationState: data.applicationState,
+    state: sendAmountData.state,
+  });
+
+  const sendData = data;
   const assetIcon = sendData.icons[asset];
 
   // Use getBalanceByKey for tokens (contract ID), getBalanceByAsset for classic assets
@@ -548,7 +564,7 @@ export const SendAmount = ({
     inputType === "fiat" && editedInputType === "crypto"
       ? normalizeNumericString(formik.values.amount)
       : (priceValue ?? "");
-  const supportsUsd = !!assetPrice;
+  const supportsUsd = isMainnet(data.networkDetails) && Boolean(assetPrice);
 
   const availableBalance = getAvailableBalance({
     assetCanonical: asset,
@@ -1032,6 +1048,7 @@ export const SendAmount = ({
           <div className="EditMemoWrapper">
             <EditMemo
               memo={transactionData.memo || ""}
+              memoType={transactionData.memoType}
               onClose={() => {
                 setIsEditingMemo(false);
                 // Reopen review sheet if user came from review flow
@@ -1041,7 +1058,7 @@ export const SendAmount = ({
                 setMemoEditingContext(null);
               }}
               onSubmit={async ({ memo }: { memo: string }) => {
-                dispatch(saveMemo(memo));
+                dispatch(saveMemoAndType({ memo, memoType: "" }));
                 setIsEditingMemo(false);
                 // Regenerate transaction XDR with new memo (now reads memo from Redux state inside fetchData)
                 await fetchSimulationData();
@@ -1155,7 +1172,7 @@ export const SendAmount = ({
           <ReviewTx
             assetIcon={assetIcon}
             fee={fee}
-            networkDetails={sendAmountData.data?.networkDetails!}
+            networkDetails={data.networkDetails}
             onCancel={() => setIsReviewingTx(false)}
             onConfirm={goToNext}
             onAddMemo={() => {

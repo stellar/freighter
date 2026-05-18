@@ -231,6 +231,26 @@ export const stubFederation = async (page: Page) => {
   });
 };
 
+/**
+ * Overrides the default federation stub to return a custom response.
+ * Useful for testing SEP-0002 memo fields. Must be called inside stubOverrides
+ * after loginToTestAccount has already registered the default routes.
+ */
+export const stubFederationWithMemo = async (
+  page: Page,
+  response: {
+    account_id: string;
+    memo?: string;
+    memo_type?: string;
+    stellar_address?: string;
+  },
+) => {
+  await page.unroute("**/federation**");
+  await page.route("**/federation**", async (route) => {
+    await route.fulfill({ json: response });
+  });
+};
+
 export const stubDefaultAccountBalances = async (page: Page) => {
   await page.route("**/account-balances/**", async (route) => {
     const json = {

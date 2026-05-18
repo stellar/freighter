@@ -1,8 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Asset, StrKey } from "stellar-sdk";
+import { StrKey } from "stellar-sdk";
 import { useFormik } from "formik";
-import BigNumber from "bignumber.js";
 import {
   Button,
   Input,
@@ -25,6 +24,7 @@ import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
 import { FormRows } from "popup/basics/Forms";
 import { emitMetric } from "helpers/metrics";
 import { isContractId } from "popup/helpers/soroban";
+import { shouldShowAccountDoesntExistWarning } from "popup/helpers/sendWarnings";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { STELLAR_DOCS_CREATE_ACCOUNT_URL } from "popup/constants/externalLinks";
 import { View } from "popup/basics/layout/View";
@@ -36,9 +36,11 @@ import {
   saveDestination,
   saveDestinationAsset,
   saveFederationAddress,
+  saveMemoAndType,
   saveRecipientName,
   transactionDataSelector,
 } from "popup/ducks/transactionSubmission";
+import type { FederationMemoType } from "popup/helpers/federationMemo";
 
 import { RequestState } from "constants/request";
 import { useSendToData, getAddressFromInput } from "./hooks/useSendToData";
@@ -51,7 +53,6 @@ import { reRouteOnboarding } from "popup/helpers/route";
 
 import "../styles.scss";
 
-const baseReserve = new BigNumber(1);
 const MAX_VISIBLE_RECENT_ADDRESSES = 10;
 const DESTINATION_DEBOUNCE_MS = 400;
 
@@ -59,6 +60,8 @@ type ResolvedSuggestionData = {
   type: AppDataType.RESOLVED;
   validatedAddress: string;
   fedAddress: string;
+  federationMemo: string;
+  federationMemoType: FederationMemoType | "";
   destinationBalances?: { isFunded: boolean };
   recentAddresses: string[];
 };
@@ -73,15 +76,6 @@ const isResolvedSuggestionData = (
       (data as { type?: AppDataType }).type === AppDataType.RESOLVED &&
       "validatedAddress" in data,
   );
-
-export const shouldAccountDoesntExistWarning = (
-  isFunded: boolean,
-  assetID: string,
-  amount: string,
-) =>
-  !isFunded &&
-  (new BigNumber(amount).lt(baseReserve) ||
-    assetID !== Asset.native().toString());
 
 export const AccountDoesntExistWarning = () => {
   const { t } = useTranslation();
@@ -134,7 +128,7 @@ export const SendTo = ({
   const { t } = useTranslation();
   const location = useLocation();
   const dispatch: AppDispatch = useDispatch<AppDispatch>();
-  const { destination, federationAddress } = useSelector(
+  const { destination, federationAddress, asset, isCollectible } = useSelector(
     transactionDataSelector,
   );
   const allAccounts = useSelector(allAccountsSelector);
@@ -150,12 +144,30 @@ export const SendTo = ({
   const handleContinue = (
     validatedDestination: string,
     validatedFedAdress?: string,
-    recipientName = "",
+    {
+      recipientName = "",
+      federationMemo,
+      federationMemoType,
+    }: {
+      recipientName?: string;
+      federationMemo?: string;
+      federationMemoType?: FederationMemoType | "";
+    } = {},
   ) => {
     dispatch(saveDestination(validatedDestination));
     dispatch(saveDestinationAsset(""));
     dispatch(saveFederationAddress(validatedFedAdress || ""));
     dispatch(saveRecipientName(recipientName));
+    if (validatedFedAdress && federationMemo !== undefined) {
+      dispatch(
+        saveMemoAndType({
+          memo: federationMemo,
+          memoType: federationMemoType || "",
+        }),
+      );
+    } else {
+      dispatch(saveMemoAndType({ memo: "", memoType: "" }));
+    }
     goToNext();
   };
 
@@ -169,6 +181,10 @@ export const SendTo = ({
         handleContinue(
           sendDataState.data.validatedAddress,
           sendDataState.data.fedAddress,
+          {
+            federationMemo: sendDataState.data.federationMemo,
+            federationMemoType: sendDataState.data.federationMemoType,
+          },
         );
       }
     },
@@ -305,10 +321,12 @@ export const SendTo = ({
               <div>
                 {formik.isValid && resolvedSendData ? (
                   <>
-                    {resolvedSendData.destinationBalances &&
-                      !resolvedSendData.destinationBalances.isFunded && (
-                        <AccountDoesntExistWarning />
-                      )}
+                    {shouldShowAccountDoesntExistWarning({
+                      assetCanonical: asset,
+                      destination: resolvedSendData.validatedAddress,
+                      isCollectible,
+                      isFunded: resolvedSendData.destinationBalances?.isFunded,
+                    }) && <AccountDoesntExistWarning />}
                     <div className="SendTo__subheading">
                       <Icon.SearchLg />
                       {t("Suggestions")}
@@ -321,6 +339,11 @@ export const SendTo = ({
                         handleContinue(
                           resolvedSendData.validatedAddress,
                           resolvedSendData.fedAddress,
+                          {
+                            federationMemo: resolvedSendData.federationMemo,
+                            federationMemoType:
+                              resolvedSendData.federationMemoType,
+                          },
                         );
                       }}
                     >
@@ -362,6 +385,11 @@ export const SendTo = ({
                       handleContinue(
                         addressFromInput.validatedAddress,
                         addressFromInput.fedAddress,
+                        {
+                          federationMemo: addressFromInput.federationMemo,
+                          federationMemoType:
+                            addressFromInput.federationMemoType,
+                        },
                       );
                     }}
                     className="SendTo__subheading-identicon"
@@ -394,11 +422,9 @@ export const SendTo = ({
                         data-testid="my-account-button"
                         onClick={async () => {
                           await fetchData(account.publicKey, {});
-                          handleContinue(
-                            account.publicKey,
-                            undefined,
-                            account.name || "",
-                          );
+                          handleContinue(account.publicKey, undefined, {
+                            recipientName: account.name || "",
+                          });
                         }}
                         className="SendTo__subheading-identicon"
                       >

@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
-import { Loader } from "@stellar/design-system";
+import { Loader, Notification } from "@stellar/design-system";
 
 import { View } from "popup/basics/layout/View";
 import { SubviewHeader } from "popup/components/SubviewHeader";
@@ -59,7 +59,19 @@ export const AssetVisibility = () => {
     domainState.state === RequestState.IDLE ||
     domainState.state === RequestState.LOADING;
 
-  const hasError = domainState.state === RequestState.ERROR;
+  if (domainState.state === RequestState.ERROR) {
+    return (
+      <div
+        className="ToggleAsset__fetch-fail"
+        data-testid="asset-visibility-fetch-fail"
+      >
+        <Notification variant="error" title={t("Failed to load assets.")}>
+          {t("Your assets could not be fetched at this time.")}
+        </Notification>
+      </div>
+    );
+  }
+
   if (domainState.data?.type === AppDataType.REROUTE) {
     if (domainState.data.shouldOpenTab) {
       openTab(newTabHref(domainState.data.routeTarget));
@@ -74,21 +86,21 @@ export const AssetVisibility = () => {
     );
   }
 
-  if (!isLoading && !hasError) {
+  const data = domainState.data;
+
+  if (!isLoading && data) {
     reRouteOnboarding({
-      type: domainState.data.type,
-      applicationState: domainState.data?.applicationState,
+      type: data.type,
+      applicationState: data.applicationState,
       state: domainState.state,
     });
   }
-
-  const data = domainState.data;
 
   return (
     <>
       <SubviewHeader customBackAction={goBack} title={t("Toggle Assets")} />
       <View.Content hasNoTopPadding>
-        {isLoading ? (
+        {isLoading || !data ? (
           <div className="ToggleAsset__loader">
             <Loader size="2rem" />
           </div>
@@ -96,15 +108,13 @@ export const AssetVisibility = () => {
           <div className="ToggleAsset__wrapper">
             <div
               className={`ToggleAsset__assets${
-                domainState.data?.isManagingAssets && isSorobanSuported
-                  ? "--short"
-                  : ""
+                data.isManagingAssets && isSorobanSuported ? "--short" : ""
               }`}
               ref={ManageAssetRowsWrapperRef}
             >
               <ToggleAssetRows
-                assetRows={domainState.data!.domains}
-                hiddenAssets={domainState.data!.hiddenAssets}
+                assetRows={data.domains}
+                hiddenAssets={data.hiddenAssets}
                 changeAssetVisibility={async ({
                   issuer,
                   visibility,
@@ -115,7 +125,7 @@ export const AssetVisibility = () => {
                   return await changeAssetVisibility({
                     issuer,
                     visibility,
-                    publicKey: data!.publicKey,
+                    publicKey: data.publicKey,
                   });
                 }}
               />

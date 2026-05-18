@@ -11,6 +11,14 @@
   flex-direction: column;
   height: 100%;
 
+  &__fetch-fail {
+    padding: pxToRem(16px);
+  }
+
+  &__subtitle {
+    text-align: center;
+  }
+
   &__content {
     display: flex;
     flex-direction: column;

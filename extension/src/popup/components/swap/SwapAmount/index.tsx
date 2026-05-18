@@ -5,7 +5,13 @@ import { useTranslation } from "react-i18next";
 import { Form, Field, FieldProps, Formik, useFormik } from "formik";
 import BigNumber from "bignumber.js";
 import { object as YupObject, number as YupNumber } from "yup";
-import { Button, Card, Icon, Input } from "@stellar/design-system";
+import {
+  Button,
+  Card,
+  Icon,
+  Input,
+  Notification,
+} from "@stellar/design-system";
 
 import { View } from "popup/basics/layout/View";
 import { SubviewHeader } from "popup/components/SubviewHeader";
@@ -215,7 +221,19 @@ export const SwapAmount = ({
     return <Loading />;
   }
 
-  const hasError = swapAmountData.state === RequestState.ERROR;
+  if (swapAmountData.state === RequestState.ERROR) {
+    return (
+      <div
+        className="SwapAsset__fetch-fail"
+        data-testid="swap-amount-fetch-fail"
+      >
+        <Notification variant="error" title={t("Failed to load swap data.")}>
+          {t("Your swap data could not be fetched at this time.")}
+        </Notification>
+      </div>
+    );
+  }
+
   if (swapAmountData.data?.type === AppDataType.REROUTE) {
     if (swapAmountData.data.shouldOpenTab) {
       openTab(newTabHref(swapAmountData.data.routeTarget));
@@ -230,15 +248,15 @@ export const SwapAmount = ({
     );
   }
 
-  if (!hasError) {
-    reRouteOnboarding({
-      type: swapAmountData.data.type,
-      applicationState: swapAmountData.data.applicationState,
-      state: swapAmountData.state,
-    });
-  }
+  const data = swapAmountData.data;
 
-  const sendData = swapAmountData.data!;
+  reRouteOnboarding({
+    type: data.type,
+    applicationState: data.applicationState,
+    state: swapAmountData.state,
+  });
+
+  const sendData = data;
   const assetIcon = sendData.icons[asset];
   const dstAssetIcon = sendData.icons[destinationAsset];
   const dstAssetBalance = dstAsset
@@ -271,8 +289,7 @@ export const SwapAmount = ({
         ),
       )}`
     : null;
-  const supportsUsd =
-    isMainnet(swapAmountData.data?.networkDetails!) && assetPrice;
+  const supportsUsd = isMainnet(data.networkDetails) && assetPrice;
   const availableBalance = getAvailableBalance({
     assetCanonical: asset,
     balances: sendData.userBalances.balances,
