@@ -163,10 +163,7 @@ describe("internalApi", () => {
     it("excludes liquidity-pool IDs from the indexer request", async () => {
       const fetchSpy = mockFetchOk();
 
-      await internalApi.getTokenPrices([
-        "native",
-        "abc123:lp",
-      ]);
+      await internalApi.getTokenPrices(["native", "abc123:lp"]);
 
       const requestInit = fetchSpy.mock.calls[0][1] as RequestInit;
       const body = JSON.parse(requestInit.body as string);

@@ -29,16 +29,14 @@ describe("SwapAmount RequestState.ERROR", () => {
   });
 
   it("renders the fetch-fail notification without throwing on RequestState.ERROR", () => {
-    jest
-      .spyOn(UseGetSwapAmountData, "useGetSwapAmountData")
-      .mockReturnValue({
-        state: {
-          state: RequestState.ERROR,
-          data: null,
-          error: new Error("boom"),
-        },
-        fetchData: jest.fn().mockResolvedValue(undefined),
-      } as any);
+    jest.spyOn(UseGetSwapAmountData, "useGetSwapAmountData").mockReturnValue({
+      state: {
+        state: RequestState.ERROR,
+        data: null,
+        error: new Error("boom"),
+      },
+      fetchData: jest.fn().mockResolvedValue(undefined),
+    } as any);
 
     render(
       <Wrapper state={{}} routes={["/"]}>
@@ -53,8 +51,6 @@ describe("SwapAmount RequestState.ERROR", () => {
       </Wrapper>,
     );
 
-    expect(
-      screen.getByTestId("swap-amount-fetch-fail"),
-    ).toBeInTheDocument();
+    expect(screen.getByTestId("swap-amount-fetch-fail")).toBeInTheDocument();
   });
 });
