@@ -1,8 +1,50 @@
+import BigNumber from "bignumber.js";
 import { truncatedPublicKey } from "helpers/stellar";
 import { CLASSIC_ASSET_DECIMALS } from "./soroban";
 
 // remove non digits and decimal
 export const cleanAmount = (s: string) => s.replace(/[^0-9.]/g, "");
+
+export const normalizeNumericString = (value: string) => {
+  const cleaned = cleanAmount(value);
+  let hasDecimal = false;
+  let normalized = "";
+
+  for (const char of cleaned) {
+    if (char === ".") {
+      if (hasDecimal) {
+        continue;
+      }
+      hasDecimal = true;
+    }
+    normalized += char;
+  }
+
+  return normalized;
+};
+
+export const getValidBigNumber = (value: string): BigNumber | null => {
+  const cleanedValue = normalizeNumericString(value);
+
+  if (!cleanedValue || cleanedValue === ".") {
+    return null;
+  }
+
+  let numericValue: BigNumber;
+  try {
+    numericValue = new BigNumber(cleanedValue);
+  } catch {
+    return null;
+  }
+
+  return numericValue.isNaN() ? null : numericValue;
+};
+
+export const isValidPositiveAmount = (value: string) => {
+  const numericValue = getValidBigNumber(value);
+
+  return Boolean(numericValue && numericValue.gt(0));
+};
 
 // This assumes the specific formatting being done is Intl.NumberFormat of decimal type,
 // other formats may not work out of the box

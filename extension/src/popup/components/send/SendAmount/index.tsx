@@ -25,6 +25,9 @@ import {
   cleanAmount,
   formatAmount,
   formatAmountPreserveCursor,
+  getValidBigNumber,
+  isValidPositiveAmount,
+  normalizeNumericString,
   roundUsdValue,
 } from "popup/helpers/formatters";
 import {
@@ -76,47 +79,6 @@ const PERCENTAGE_OPTIONS = [
   ["50%", 50],
   ["75%", 75],
 ] as const;
-
-const normalizeNumericString = (value: string) => {
-  const cleaned = cleanAmount(value);
-  let hasDecimal = false;
-  let normalized = "";
-
-  for (const char of cleaned) {
-    if (char === ".") {
-      if (hasDecimal) {
-        continue;
-      }
-      hasDecimal = true;
-    }
-    normalized += char;
-  }
-
-  return normalized;
-};
-
-const getValidBigNumber = (value: string) => {
-  const cleanedValue = normalizeNumericString(value);
-
-  if (!cleanedValue || cleanedValue === ".") {
-    return null;
-  }
-
-  let numericValue: BigNumber;
-  try {
-    numericValue = new BigNumber(cleanedValue);
-  } catch {
-    return null;
-  }
-
-  return numericValue.isNaN() ? null : numericValue;
-};
-
-const isValidPositiveAmount = (value: string) => {
-  const numericValue = getValidBigNumber(value);
-
-  return Boolean(numericValue && numericValue.gt(0));
-};
 
 // Returns the value to show in FeesPane's total row given the user's current
 // draft inclusion fee and the simulated resource fee.  For classic (no

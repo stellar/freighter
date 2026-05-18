@@ -286,7 +286,6 @@ test("Custom token without destination — full fee lifecycle in EditSettings an
   // Simulation fires on destination set — wait for the simulated total
   await expect(page.getByTestId("send-amount-fee-display")).toHaveText(
     "0.0093338 XLM",
-    { timeout: 10000 },
   );
 
   // ── Open Edit Settings ──────────────────────────────────────────────────────
@@ -348,7 +347,6 @@ test("Custom token without destination — full fee lifecycle in EditSettings an
   // Re-simulation runs with baseFee=0.00005 → total = 0.00005 + 0.0093238 = 0.0093738
   await expect(page.getByTestId("send-amount-fee-display")).toHaveText(
     "0.0093738 XLM",
-    { timeout: 10000 },
   );
 
   // ── Reopen Edit Settings — must show saved fee, not the base default ───────
@@ -572,7 +570,6 @@ test("Custom fee resets to default when re-entering send flow from home screen",
   // Total = 0.00001 + 0.0093238 = 0.0093338 (not the previous 0.0093738).
   await expect(page.getByTestId("send-amount-fee-display")).toHaveText(
     "0.0093338 XLM",
-    { timeout: 10000 },
   );
 
   // ── EditSettings must show the default inclusion fee, not the saved "0.00005" ─

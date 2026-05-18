@@ -642,7 +642,6 @@ test("Loads collectibles data with successful metadata", async ({
   extensionId,
   context,
 }) => {
-  test.slow();
   const stubOverrides = async () => {
     await stubCollectibles(page, true);
   };

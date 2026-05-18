@@ -72,12 +72,11 @@ test("Swap doesn't throw error when account is unfunded", async ({
   page,
   extensionId,
 }) => {
-  test.slow();
   await login({ page, extensionId });
 
   await page.getByTestId("nav-link-swap").click();
   await expect(page.getByTestId("swap-src-asset-tile")).toBeVisible({
-    timeout: 15000,
+    timeout: 10000,
   });
 });
 test("Swap shows correct balances for assets", async ({
