@@ -1,0 +1,262 @@
+# ----------------------------------------------------------------------
+# SECURITY INVARIANT — read before editing.
+#
+# Do NOT add any of these triggers without a strict author-association
+# gate at the very first job step:
+#   issue_comment, pull_request_target, pull_request_review,
+#   pull_request_review_comment, workflow_run
+# These triggers run with FULL repo secrets and a writable GITHUB_TOKEN
+# even when activity originates from a fork PR. Combined with checkout-
+# of-PR-head + execute-code-from-PR (which any build inherently does),
+# they enable Remote Code Execution by anyone who can comment on a PR
+# or open one.
+#
+# Background: the PR Preview design and a pre-rollout security review
+# explicitly forbid these triggers. See the design doc Security section.
+# ----------------------------------------------------------------------
+name: PR Preview
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+
+# Default for all jobs is no permissions; each job opts in to the
+# narrowest scope it needs below.
+permissions: {}
+
+# Single concurrency group across build and cleanup. When a PR closes
+# mid-build, the close-event cleanup job cancels the still-running
+# build (cancel-in-progress: true) so the build can't finish and
+# create an orphaned release after the cleanup has already deleted
+# whatever was there. The next build's "Delete existing preview
+# release" step is idempotent, so a cancelled cleanup leaves no
+# permanent half-state.
+concurrency:
+  group: pr-preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-release:
+    name: Build and Release PR Preview
+    # Two-layer gate evaluated BEFORE any secret is injected:
+    #   1. Skip on PR close (handled by cleanup-release job)
+    #   2. Reject fork PRs (defense-in-depth — platform also withholds secrets/token)
+    # NOTE: we don't gate on author_association because the field in the
+    # webhook event payload only reflects PUBLIC org membership; SDF members
+    # with private memberships show as CONTRIBUTOR, which would lock them
+    # out. Non-SDF gating is handled by the org-level "Require approval
+    # for outside collaborators" setting plus the platform-level fork-PR
+    # secret-withholding.
+    if: >-
+      github.event.action != 'closed' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write       # release create/delete + tag operations
+      pull-requests: write  # sticky preview-link comment on the PR
+    env:
+      # Secrets injected at job level (not workflow level) so a future job
+      # added without the same fork-guard if: doesn't inherit them.
+      #
+      # V1: PROD. V1 staging/beta does not have a public DNS entry — the
+      #   only v1 stg ingress is kube-internal and would require sshuttle.
+      # V2: BETA. V2 beta is publicly reachable and is the right target
+      #   for preview-stage testing.
+      # freighter-backend is a read-side indexer (balances, assets,
+      # history); the wallet submits txs directly to Horizon/RPC, so the
+      # backend choice here doesn't affect write paths.
+      INDEXER_URL: ${{ secrets.INDEXER_URL }}
+      INDEXER_V2_URL: ${{ secrets.INDEXER_V2_BETA_URL }}
+    steps:
+      - name: Validate required secrets
+        if: ${{ env.INDEXER_URL == '' || env.INDEXER_V2_URL == '' }}
+        run: |
+          echo "::error::INDEXER_URL or INDEXER_V2_URL is empty. Verify repo Secrets are configured."
+          exit 1
+
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          # Default leaves a GITHUB_TOKEN auth header in .git/config for the
+          # rest of the job. With contents:write granted, any subsequent
+          # code execution (yarn lifecycle scripts, build scripts) could
+          # `git push` using those persisted creds. `gh` uses GH_TOKEN env
+          # separately so disabling this doesn't affect the release flow.
+          persist-credentials: false
+
+      - name: Assert source manifest has no top-level `key` field
+        run: |
+          if jq -e 'has("key")' ./extension/public/static/manifest/v3.json > /dev/null; then
+            echo "::error::manifest/v3.json contains a top-level 'key' field. Preview installs would share a Chromium extension ID with Web Store Freighter, leaking storage."
+            exit 1
+          fi
+
+      - name: Rewrite preview manifest identity (Chromium + Firefox)
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          PREVIEW_NAME="Freighter PR Preview #${PR_NUMBER}"
+          PREVIEW_VERSION_NAME="pr-preview-${PR_NUMBER}"
+          PREVIEW_GECKO_ID="freighter-pr-preview-${PR_NUMBER}@stellar.org"
+
+          jq --arg name "$PREVIEW_NAME" --arg vn "$PREVIEW_VERSION_NAME" \
+             '.name = $name | .version_name = $vn' \
+             ./extension/public/static/manifest/v3.json > /tmp/v3.json
+          mv /tmp/v3.json ./extension/public/static/manifest/v3.json
+
+          jq --arg name "$PREVIEW_NAME" --arg vn "$PREVIEW_VERSION_NAME" --arg gid "$PREVIEW_GECKO_ID" \
+             '.name = $name | .version_name = $vn | .browser_specific_settings.gecko.id = $gid' \
+             ./extension/public/static/manifest/v2.json > /tmp/v2.json
+          mv /tmp/v2.json ./extension/public/static/manifest/v2.json
+
+      - name: Setup Node
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6
+        with:
+          node-version: 22
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install + build extension (production)
+        run: yarn && yarn build:freighter-api && yarn build:extension:production
+
+      - name: Use BETA icons
+        run: |
+          rm -rf ./extension/build/images
+          mv ./extension/build/beta_images ./extension/build/images
+
+      - name: Assert built manifest has no top-level `key` field
+        # The source-manifest assertion above catches a hand-edited `key`,
+        # but a webpack plugin / postinstall script / transitive dep could
+        # still inject one into the built output. Re-check post-build,
+        # pre-zip, so the shipping artifact is what we asserted on.
+        run: |
+          if jq -e 'has("key")' ./extension/build/manifest.json > /dev/null; then
+            echo "::error::Built manifest.json contains a top-level 'key' field. The build pipeline injected an extension-ID-fixing key after the source assertion; preview install would collide with Web Store Freighter."
+            exit 1
+          fi
+
+      - name: Zip extension build
+        working-directory: ./extension/build
+        run: zip -qq -r ./build.zip *
+
+      - name: Delete existing preview release (idempotent)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        # Check-then-delete instead of `|| true`. `|| true` would also
+        # swallow transient API errors (network, 422 tag-conflict) and let
+        # the subsequent `gh release create` silently reuse a stale tag.
+        run: |
+          if gh release view "pr-preview-${PR_NUMBER}" > /dev/null 2>&1; then
+            # `--cleanup-tag` 422s on draft releases because drafts don't
+            # create the git tag until publish. Branch on isDraft so we
+            # only ask for tag-cleanup when there is actually a tag.
+            IS_DRAFT=$(gh release view "pr-preview-${PR_NUMBER}" --json isDraft --jq '.isDraft')
+            if [ "$IS_DRAFT" = "true" ]; then
+              gh release delete "pr-preview-${PR_NUMBER}" --yes
+            else
+              gh release delete "pr-preview-${PR_NUMBER}" --yes --cleanup-tag
+            fi
+          fi
+
+      - name: Create draft preview release
+        id: release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: |
+          # Write notes to a file rather than $(cat <<EOF) because bash's
+          # command-substitution parser tokenizes single quotes inside the
+          # heredoc body, breaking on apostrophes in prose.
+          cat > /tmp/release-notes.md <<EOF
+          Internal preview build for PR [#${PR_NUMBER}](${PR_URL}). SDF collaborators only — non-SDF GitHub users get 404 on this page. Auto-deleted when the PR is closed.
+
+          **Commit:** ${PR_HEAD_SHA}
+          **Backend:** V1 production, V2 beta (read-only indexer; wallet writes go direct to Horizon/RPC)
+
+          ### How to install (Chromium)
+
+          1. Download \`build.zip\` from the Assets section below and unzip it
+          2. Open \`chrome://extensions\` in Chrome, Edge, or Brave
+          3. Enable Developer Mode (toggle in the top-right)
+          4. Click "Load Unpacked" and select the unzipped folder
+          5. The extension installs as "Freighter PR Preview #${PR_NUMBER}" with beta icons
+
+          ### Important
+
+          This code is still under review and may contain bugs that have not been caught yet. **Use caution before signing transactions with real funds** — consider testing with a testnet wallet instead.
+          EOF
+          # Don't capture stdout from `gh release create` — it can include
+          # progress/status lines, not just the URL. Query the URL with a
+          # dedicated `gh release view --json url` call instead.
+          #
+          # No --target: if the draft is ever manually published, the tag
+          # falls back to master HEAD (reviewed code) rather than the PR's
+          # HEAD commit (unreviewed). Dropping the targeted-tag property
+          # closes a one-click escalation path where any account that can
+          # click "Publish release" on a draft mints an official-looking
+          # release containing arbitrary PR-head code; branch-protection
+          # rules do not extend to release publication.
+          gh release create "pr-preview-${PR_NUMBER}" \
+            ./extension/build/build.zip \
+            --title "PR Preview #${PR_NUMBER}" \
+            --notes-file /tmp/release-notes.md \
+            --draft > /dev/null
+          URL=$(gh release view "pr-preview-${PR_NUMBER}" --json url --jq '.url')
+          echo "url=${URL}" >> "$GITHUB_OUTPUT"
+
+      - name: Post/update sticky PR comment with preview link
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          RELEASE_URL: ${{ steps.release.outputs.url }}
+        run: |
+          MARKER="<!-- pr-preview-comment -->"
+          BODY="${MARKER}"$'\n'"PR Preview build is ready: ${RELEASE_URL} (SDF collaborators only — install instructions in the release description)"
+
+          # --paginate so this works on PRs with >30 comments (default page
+          # size). Without it, the marker comment can fall off a later page
+          # and we'd post a duplicate instead of editing in place.
+          EXISTING=$(gh api --paginate "repos/${GH_REPO}/issues/${PR_NUMBER}/comments" \
+            --jq ".[] | select(.body | startswith(\"${MARKER}\")) | .id" | head -1)
+          if [ -n "$EXISTING" ]; then
+            gh api -X PATCH "repos/${GH_REPO}/issues/comments/${EXISTING}" -f body="$BODY"
+          else
+            gh pr comment "${PR_NUMBER}" --body "$BODY"
+          fi
+
+  cleanup-release:
+    name: Cleanup PR Preview Release
+    if: github.event.action == 'closed' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    # Shares the workflow-level concurrency group with the build job so a
+    # close-event cancels any in-flight build before deleting the release —
+    # prevents the build from finishing AFTER cleanup and re-creating an
+    # orphaned release.
+    steps:
+      - name: Delete draft release and tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        # Skip silently if the release doesn't exist (race with a cancelled
+        # build), but fail loudly on any other delete error rather than
+        # masking it with `|| true`.
+        run: |
+          if gh release view "pr-preview-${PR_NUMBER}" > /dev/null 2>&1; then
+            # `--cleanup-tag` 422s on draft releases because drafts don't
+            # create the git tag until publish. Branch on isDraft so we
+            # only ask for tag-cleanup when there is actually a tag.
+            IS_DRAFT=$(gh release view "pr-preview-${PR_NUMBER}" --json isDraft --jq '.isDraft')
+            if [ "$IS_DRAFT" = "true" ]; then
+              gh release delete "pr-preview-${PR_NUMBER}" --yes
+            else
+              gh release delete "pr-preview-${PR_NUMBER}" --yes --cleanup-tag
+            fi
+          fi
