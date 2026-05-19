@@ -564,7 +564,7 @@ export const SendAmount = ({
     inputType === "fiat" && editedInputType === "crypto"
       ? normalizeNumericString(formik.values.amount)
       : (priceValue ?? "");
-  const supportsUsd = isMainnet(data.networkDetails) && Boolean(assetPrice);
+  const supportsUsd = isMainnet(data.networkDetails) && assetPrice;
 
   const availableBalance = getAvailableBalance({
     assetCanonical: asset,
@@ -945,13 +945,11 @@ export const SendAmount = ({
 
                     {/* Secondary row: USD equivalent and available balance */}
                     <div className="SendAmount__balance-row">
-                      <div className="SendAmount__amount-price">
-                        {supportsUsd
-                          ? inputType === "crypto"
+                      {supportsUsd && (
+                        <div className="SendAmount__amount-price">
+                          {inputType === "crypto"
                             ? `$${priceValueUsd || "0.00"}`
-                            : `${formatAmount(effectiveTokenAmount || "0")} ${parsedSourceAsset.code}`
-                          : null}
-                        {supportsUsd && (
+                            : `${formatAmount(effectiveTokenAmount || "0")} ${parsedSourceAsset.code}`}
                           <Button
                             size="md"
                             type="button"
@@ -987,8 +985,8 @@ export const SendAmount = ({
                           >
                             <Icon.RefreshCw03 />
                           </Button>
-                        )}
-                      </div>
+                        </div>
+                      )}
                       <div className="SendAmount__available-balance">
                         {displayTotal} {parsedSourceAsset.code}
                       </div>

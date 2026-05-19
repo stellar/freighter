@@ -5,7 +5,6 @@ import { useFormik } from "formik";
 import {
   Button,
   Input,
-  Loader,
   Link,
   Notification,
   Icon,
@@ -19,6 +18,7 @@ import {
 } from "helpers/stellar";
 
 import { AppDispatch } from "popup/App";
+import { Loading } from "popup/components/Loading";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
 import { FormRows } from "popup/basics/Forms";
@@ -252,13 +252,18 @@ export const SendTo = ({
     cachedRecentAddressesRef.current = resolvedSendData.recentAddresses;
   }
 
-  // Only replace the whole suggestions area with a spinner on the very first load.
+  // Show a full-screen loader on the very first fetch so Recents / My Accounts
+  // don't render until the data is ready (avoids a layout shift / reflow flash).
   const isInitialLoad = isLoading && !hasLoadedOnceRef.current;
 
   const visibleRecentAddresses = cachedRecentAddressesRef.current.slice(
     0,
     MAX_VISIBLE_RECENT_ADDRESSES,
   );
+
+  if (isInitialLoad) {
+    return <Loading />;
+  }
 
   if (sendDataState.data?.type === AppDataType.REROUTE) {
     if (sendDataState.data.shouldOpenTab) {
@@ -301,12 +306,7 @@ export const SendTo = ({
         </FormRows>
         <div className="SendTo__address-wrapper" data-testid="send-to-view">
           {/* Suggestions area — gated on fetch state */}
-          {isInitialLoad ? (
-            <div className="SendTo__loader">
-              <Loader />
-            </div>
-          ) : sendDataState.error ||
-            sendDataState.state === RequestState.ERROR ? (
+          {sendDataState.error || sendDataState.state === RequestState.ERROR ? (
             <Notification
               variant="error"
               title={

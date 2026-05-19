@@ -1072,6 +1072,60 @@ test("Send flow change token from amount screen dismisses back", async ({
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
 });
 
+// Regression: useSendQueryParams used to include transactionData.asset in its
+// dependency array, so picking a new asset re-ran the effect, re-read the
+// stale `?asset=` from the URL, and dispatched saveAsset() — reverting the
+// user's pick back to the original asset that was set by Token Details.
+test("Send flow from token detail allows changing the pre-selected asset", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  const stubOverrides = async () => {
+    await stubAccountBalancesWithUSDC(page);
+  };
+  await loginToTestAccount({ page, extensionId, context, stubOverrides });
+  await switchToMainnet(page);
+
+  // Enter Send via XLM token detail → ?asset=native pre-selects XLM and the
+  // flow lands directly on DESTINATION. Click the asset-code text inside the
+  // first account-assets-item row to open the asset detail sheet.
+  await page
+    .getByTestId("account-assets-item")
+    .filter({ hasText: "XLM" })
+    .first()
+    .click();
+  await page.getByTestId("asset-detail-send-button").click();
+  await expect(page.getByTestId("send-to-input")).toBeVisible({
+    timeout: 10000,
+  });
+
+  // Continue → AMOUNT screen with XLM selected.
+  await page.getByTestId("send-to-input").fill(FUNDED_DESTINATION);
+  await page.getByText("Continue").click({ force: true });
+  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+  await expect(page.getByTestId("send-amount-edit-dest-asset")).toContainText(
+    "XLM",
+  );
+
+  // Open the token picker and pick USDC.
+  await page.getByTestId("send-amount-edit-dest-asset").click();
+  await expect(visibleTokenList(page)).toBeVisible();
+  await visibleTokenList(page)
+    .getByText("USDC", { exact: true })
+    .first()
+    .click({ force: true });
+
+  // The asset selector must reflect USDC (not the pre-selected XLM).
+  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+  await expect(page.getByTestId("send-amount-edit-dest-asset")).toContainText(
+    "USDC",
+  );
+  await expect(
+    page.getByTestId("send-amount-edit-dest-asset"),
+  ).not.toContainText("XLM");
+});
+
 test.afterAll(async ({ page, extensionId, context }) => {
   if (
     test.info().status !== test.info().expectedStatus &&

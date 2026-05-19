@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useLocation } from "react-router-dom";
 import { StrKey } from "stellar-sdk";
@@ -50,6 +50,12 @@ export function useSendQueryParams() {
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const { transactionData } = useSelector(transactionSubmissionSelector);
+
+  // Read transactionData.asset via a ref so the hook reacts only to URL
+  // changes — not to subsequent in-flow asset picks (which would otherwise
+  // re-dispatch the URL param and revert the user's selection).
+  const currentAssetRef = useRef(transactionData.asset);
+  currentAssetRef.current = transactionData.asset;
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -103,7 +109,7 @@ export function useSendQueryParams() {
         dispatch(saveIsToken(isContractId(asset.issuer)));
       } catch {
         // Invalid asset param: keep current asset/flags when already selected.
-        if (!transactionData.asset) {
+        if (!currentAssetRef.current) {
           dispatch(saveAsset("native"));
           dispatch(saveIsCollectible(false));
           dispatch(saveIsToken(false));
@@ -111,18 +117,12 @@ export function useSendQueryParams() {
       }
     } else {
       // No asset param: keep current asset/flags when already selected.
-      if (!transactionData.asset) {
+      if (!currentAssetRef.current) {
         dispatch(saveAsset("native"));
         dispatch(saveIsCollectible(false));
         dispatch(saveIsToken(false));
       }
     }
-  }, [
-    dispatch,
-    location.search,
-    collectibleData,
-    networkDetails,
-    publicKey,
-    transactionData.asset,
-  ]);
+    // currentAssetRef intentionally excluded — see ref comment above.
+  }, [dispatch, location.search, collectibleData, networkDetails, publicKey]);
 }
