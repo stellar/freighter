@@ -39,6 +39,7 @@ export const TokenList = ({
       className={classnames("TokenList__Assets", {
         "TokenList__Assets--no-header": !isShowingHeader,
       })}
+      data-testid="token-list"
     >
       {!tokens.length ? (
         <div className="TokenList__Assets__empty">

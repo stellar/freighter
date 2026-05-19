@@ -1,4 +1,5 @@
 export enum STEPS {
+  SELECT_SOURCE_ASSET = "select-source-asset",
   AMOUNT = "set-amount",
   DESTINATION = "set-destination",
   PAYMENT_CONFIRM = "payment-confirmation",

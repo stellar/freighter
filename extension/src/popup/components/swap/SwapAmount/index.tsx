@@ -390,7 +390,7 @@ export const SwapAmount = ({
                       <>
                         <span
                           ref={setCryptoSpan}
-                          className={`SendAmount__input-amount SendAmount__${getAmountFontSize()}`}
+                          className={`SwapAsset__input-amount SwapAsset__${getAmountFontSize()}`}
                           style={{
                             position: "absolute",
                             visibility: "hidden",
@@ -449,7 +449,7 @@ export const SwapAmount = ({
                         </div>
                         <span
                           ref={setFiatSpan}
-                          className={`SendAmount__input-amount SendAmount__${getAmountFontSize()}`}
+                          className={`SwapAsset__input-amount SwapAsset__${getAmountFontSize()}`}
                           style={{
                             position: "absolute",
                             visibility: "hidden",
