@@ -53,7 +53,9 @@ import {
 } from "@stellar/typescript-wallet-sdk-km";
 import { BrowserStorageConfigParams } from "@stellar/typescript-wallet-sdk-km/lib/Plugins/BrowserStorageFacade";
 
-const sessionTimer = new SessionTimer();
+const sessionTimer = new SessionTimer(
+  dataStorageAccess(browserLocalStorage),
+);
 
 export const initContentScriptMessageListener = () => {
   browser?.runtime?.onMessage?.addListener((message) => {

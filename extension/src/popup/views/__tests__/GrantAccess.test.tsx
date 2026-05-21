@@ -18,6 +18,7 @@ import * as urlHelpers from "../../../helpers/urls";
 import { ROUTES } from "popup/constants/routes";
 import * as ApiInternal from "@shared/api/internal";
 import { DEFAULT_ASSETS_LISTS } from "@shared/constants/soroban/asset-list";
+import { DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES } from "@shared/constants/autoLock";
 import { CUSTOM_NETWORK } from "@shared/helpers/stellar";
 
 const mockLoadAccount = () =>
@@ -53,6 +54,7 @@ const mockLoadSettings = () =>
     isNonSSLEnabled: false,
     experimentalFeaturesState: SettingsState.SUCCESS,
     assetsLists: DEFAULT_ASSETS_LISTS,
+    autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
   });
 
 describe("Grant Access view", () => {

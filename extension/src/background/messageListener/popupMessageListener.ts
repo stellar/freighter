@@ -64,6 +64,7 @@ import { loadLastUsedAccount } from "./handlers/loadLastAccountUsed";
 import { signOut } from "./handlers/signOut";
 import { saveAllowList } from "./handlers/saveAllowList";
 import { saveSettings } from "./handlers/saveSettings";
+import { userActivity } from "./handlers/userActivity";
 import { saveExperimentalFeatures } from "./handlers/saveExperimentalFeatures";
 import { loadSettings } from "./handlers/loadSettings";
 import { getCachedAssetIconList } from "./handlers/getCachedAssetIconList";
@@ -311,6 +312,7 @@ export const popupMessageListener = (
       return handleSignedHwPayload({
         request,
         responseQueue,
+        sessionTimer,
       });
     }
     case SERVICE_TYPES.ADD_TOKEN: {
@@ -401,6 +403,7 @@ export const popupMessageListener = (
       return signOut({
         localStore,
         sessionStore,
+        sessionTimer,
       });
     }
     case SERVICE_TYPES.SAVE_ALLOWLIST: {
@@ -414,6 +417,8 @@ export const popupMessageListener = (
       return saveSettings({
         request,
         localStore,
+        sessionStore,
+        sessionTimer,
       });
     }
     case SERVICE_TYPES.SAVE_EXPERIMENTAL_FEATURES: {
@@ -622,6 +627,11 @@ export const popupMessageListener = (
           .catch((e) => console.error("Failed to open sidebar:", e));
         return {};
       })();
+    }
+
+    case SERVICE_TYPES.USER_ACTIVITY: {
+      if (!isFromExtensionPage) return { error: "Unauthorized" };
+      return userActivity({ sessionStore, sessionTimer, localStore });
     }
 
     default:

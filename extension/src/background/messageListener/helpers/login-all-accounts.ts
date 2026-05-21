@@ -135,5 +135,5 @@ export const loginToAllAccounts = async (
   }
 
   // start the timer now that we have active private key
-  sessionTimer.startSession();
+  await sessionTimer.startSession();
 };

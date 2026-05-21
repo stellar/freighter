@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { Notification, Toggle } from "@stellar/design-system";
+import { Notification, Select, Toggle } from "@stellar/design-system";
 import { Field, Form, Formik } from "formik";
 import { useDispatch } from "react-redux";
 import { useTranslation } from "react-i18next";
@@ -16,8 +16,24 @@ import { openTab } from "popup/helpers/navigate";
 import { newTabHref } from "helpers/urls";
 import { Navigate, useLocation } from "react-router-dom";
 import { reRouteOnboarding } from "popup/helpers/route";
+import {
+  AutoLockTimeoutMinutes,
+  DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
+  VALID_AUTO_LOCK_TIMEOUT_MINUTES,
+  coerceAutoLockTimeoutMinutes,
+} from "@shared/constants/autoLock";
 
 import "./styles.scss";
+
+const formatTimeoutLabel = (
+  minutes: AutoLockTimeoutMinutes,
+  t: (key: string, opts?: Record<string, unknown>) => string,
+) => {
+  if (minutes >= 60) {
+    return t("{{count}} hour", { count: minutes / 60 });
+  }
+  return t("{{count}} minute", { count: minutes });
+};
 
 export const Preferences = () => {
   const { t } = useTranslation();
@@ -30,6 +46,7 @@ export const Preferences = () => {
     isDataSharingAllowedValue: boolean;
     isHideDustEnabledValue: boolean;
     isOpenSidebarByDefaultValue: boolean;
+    autoLockTimeoutMinutesValue: AutoLockTimeoutMinutes;
   }
 
   const handleSubmit = async (formValue: SettingValues) => {
@@ -38,6 +55,7 @@ export const Preferences = () => {
       isDataSharingAllowedValue,
       isHideDustEnabledValue,
       isOpenSidebarByDefaultValue,
+      autoLockTimeoutMinutesValue,
     } = formValue;
 
     await dispatch(
@@ -46,6 +64,10 @@ export const Preferences = () => {
         isDataSharingAllowed: isDataSharingAllowedValue,
         isHideDustEnabled: isHideDustEnabledValue,
         isOpenSidebarByDefault: isOpenSidebarByDefaultValue,
+        autoLockTimeoutMinutes: coerceAutoLockTimeoutMinutes(
+          // Form values from <select> arrive as strings; normalize.
+          Number(autoLockTimeoutMinutesValue),
+        ),
       }),
     );
   };
@@ -103,6 +125,7 @@ export const Preferences = () => {
     isDataSharingAllowed,
     isHideDustEnabled,
     isOpenSidebarByDefault,
+    autoLockTimeoutMinutes,
   } = state.data.settings;
 
   const initialValues: SettingValues = {
@@ -110,6 +133,9 @@ export const Preferences = () => {
     isDataSharingAllowedValue: isDataSharingAllowed,
     isHideDustEnabledValue: isHideDustEnabled,
     isOpenSidebarByDefaultValue: isOpenSidebarByDefault ?? false,
+    autoLockTimeoutMinutesValue: coerceAutoLockTimeoutMinutes(
+      autoLockTimeoutMinutes ?? DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
+    ),
   };
 
   return (
@@ -202,6 +228,34 @@ export const Preferences = () => {
                   </span>
                 </div>
               )}
+
+              <div className="Preferences--section">
+                <div className="Preferences--section--title">
+                  <span>{t("Auto-lock after")}</span>
+                  <div
+                    className="Preferences--select"
+                    data-testid="autoLockTimeoutMinutesValue"
+                  >
+                    <Field
+                      as={Select}
+                      fieldSize="sm"
+                      id="autoLockTimeoutMinutesValue"
+                      name="autoLockTimeoutMinutesValue"
+                    >
+                      {VALID_AUTO_LOCK_TIMEOUT_MINUTES.map((minutes) => (
+                        <option key={minutes} value={minutes}>
+                          {formatTimeoutLabel(minutes, t)}
+                        </option>
+                      ))}
+                    </Field>
+                  </div>
+                </div>
+                <span className="Preferences--section--subtitle">
+                  {t(
+                    "Lock your wallet after this much time without interaction",
+                  )}
+                </span>
+              </div>
             </Form>
           </div>
         </View.Content>

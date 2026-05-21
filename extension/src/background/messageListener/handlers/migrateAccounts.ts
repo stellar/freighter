@@ -235,7 +235,7 @@ export const migrateAccounts = async ({
 
     await clearSession({ localStore, sessionStore });
 
-    sessionTimer.startSession();
+    await sessionTimer.startSession();
     const hashKey = await deriveKeyFromString(password);
     await storeEncryptedTemporaryData({
       localStore,

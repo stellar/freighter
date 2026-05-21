@@ -570,6 +570,9 @@ const authSlice = createSlice({
     clearApiError(state) {
       state.error = "";
     },
+    lockAccount(state) {
+      state.hasPrivateKey = false;
+    },
     setConnectingWalletType(state, action) {
       state.connectingWalletType = action.payload;
     },
@@ -990,6 +993,7 @@ export const {
   saveAccount,
   saveAccountError,
   saveApplicationState,
+  lockAccount,
 } = authSlice.actions;
 
 export { reducer };

@@ -28,6 +28,10 @@ import {
   AssetsLists,
   DEFAULT_ASSETS_LISTS,
 } from "@shared/constants/soroban/asset-list";
+import {
+  AutoLockTimeoutMinutes,
+  DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
+} from "@shared/constants/autoLock";
 
 import {
   AllowList,
@@ -36,7 +40,7 @@ import {
   SettingsState,
   ExperimentalFeatures,
 } from "@shared/api/types";
-import { publicKeySelector } from "popup/ducks/accountServices";
+import { lockAccount, publicKeySelector } from "popup/ducks/accountServices";
 import { AppState } from "popup/App";
 
 import { isMainnet } from "helpers/stellar";
@@ -59,6 +63,8 @@ const settingsInitialState: Settings = {
   isMemoValidationEnabled: true,
   isHideDustEnabled: true,
   isOpenSidebarByDefault: false,
+  autoLockTimeoutMinutes:
+    DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES as AutoLockTimeoutMinutes,
   error: "",
 };
 
@@ -120,12 +126,13 @@ export const saveAllowList = createAsyncThunk<
 );
 
 export const saveSettings = createAsyncThunk<
-  Settings & IndexerSettings,
+  Settings & IndexerSettings & { wasLocked?: boolean },
   {
     isDataSharingAllowed: boolean;
     isMemoValidationEnabled: boolean;
     isHideDustEnabled: boolean;
     isOpenSidebarByDefault: boolean;
+    autoLockTimeoutMinutes: AutoLockTimeoutMinutes;
   },
   { rejectValue: ErrorMessage; state: AppState }
 >(
@@ -136,10 +143,11 @@ export const saveSettings = createAsyncThunk<
       isMemoValidationEnabled,
       isHideDustEnabled,
       isOpenSidebarByDefault,
+      autoLockTimeoutMinutes,
     },
-    { getState, rejectWithValue },
+    { dispatch, getState, rejectWithValue },
   ) => {
-    let res = {
+    let res: Settings & IndexerSettings & { wasLocked?: boolean } = {
       ...settingsInitialState,
       isSorobanPublicEnabled: false,
       isRpcHealthy: false,
@@ -147,6 +155,7 @@ export const saveSettings = createAsyncThunk<
       settingsState: SettingsState.IDLE,
       isHideDustEnabled: true,
       isOpenSidebarByDefault: false,
+      wasLocked: false,
     };
     const activePublicKey = publicKeySelector(getState());
 
@@ -157,6 +166,7 @@ export const saveSettings = createAsyncThunk<
         isMemoValidationEnabled,
         isHideDustEnabled,
         isOpenSidebarByDefault,
+        autoLockTimeoutMinutes,
       });
     } catch (e) {
       console.error(e);
@@ -164,6 +174,15 @@ export const saveSettings = createAsyncThunk<
       return rejectWithValue({
         errorMessage: message,
       });
+    }
+
+    // When the background locks the session because the shortened
+    // timeout has already elapsed, flip the popup's auth slice
+    // immediately rather than waiting for the next `useGetAppData`
+    // poll — otherwise the user briefly sees an unlocked UI after
+    // saving.
+    if (res.wasLocked) {
+      dispatch(lockAccount());
     }
 
     return res;
@@ -375,6 +394,7 @@ const settingsSlice = createSlice({
         isNonSSLEnabled,
         isHideDustEnabled,
         isOpenSidebarByDefault,
+        autoLockTimeoutMinutes,
       } = payload;
       state.allowList = allowList;
       state.isDataSharingAllowed = isDataSharingAllowed;
@@ -387,6 +407,8 @@ const settingsSlice = createSlice({
       state.isNonSSLEnabled = isNonSSLEnabled;
       state.isHideDustEnabled = isHideDustEnabled;
       state.isOpenSidebarByDefault = isOpenSidebarByDefault;
+      state.autoLockTimeoutMinutes =
+        autoLockTimeoutMinutes ?? DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES;
       state.overriddenBlockaidResponse =
         payload.overriddenBlockaidResponse ?? null;
       state.settingsState = SettingsState.SUCCESS;
@@ -436,10 +458,12 @@ const settingsSlice = createSlice({
         isSorobanPublicEnabled,
         isHideDustEnabled,
         isOpenSidebarByDefault,
+        autoLockTimeoutMinutes,
         overriddenBlockaidResponse,
       } = (action?.payload as typeof action.payload & {
         overriddenBlockaidResponse?: string | null;
         isOpenSidebarByDefault?: boolean;
+        autoLockTimeoutMinutes?: AutoLockTimeoutMinutes;
       }) || {
         ...initialState,
       };
@@ -454,6 +478,8 @@ const settingsSlice = createSlice({
         isSorobanPublicEnabled,
         isHideDustEnabled,
         isOpenSidebarByDefault: isOpenSidebarByDefault ?? false,
+        autoLockTimeoutMinutes:
+          autoLockTimeoutMinutes ?? DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
         overriddenBlockaidResponse: overriddenBlockaidResponse ?? null,
       };
     });
@@ -699,4 +725,10 @@ export const overriddenBlockaidResponseSelector = createSelector(
 export const isOpenSidebarByDefaultSelector = createSelector(
   settingsSelector,
   (settings) => settings.isOpenSidebarByDefault,
+);
+
+export const autoLockTimeoutMinutesSelector = createSelector(
+  settingsSelector,
+  (settings): AutoLockTimeoutMinutes =>
+    settings.autoLockTimeoutMinutes ?? DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
 );

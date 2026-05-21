@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { Networks } from "stellar-sdk";
 import { useTranslation } from "react-i18next";
 
+import { DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES } from "@shared/constants/autoLock";
+
 import {
   createAccount,
   changeNetwork,
@@ -348,6 +350,7 @@ export const IntegrationTest = () => {
         isMemoValidationEnabled: true,
         isHideDustEnabled: true,
         isOpenSidebarByDefault: false,
+        autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
       });
       runAsserts("saveSettings", () => {
         assertEq(res.networkDetails, FUTURENET_NETWORK_DETAILS);

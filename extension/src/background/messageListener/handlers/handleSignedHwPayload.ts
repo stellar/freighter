@@ -5,14 +5,25 @@ import {
 } from "@shared/api/types/message-request";
 import { captureException } from "@sentry/browser";
 
-export const handleSignedHwPayload = ({
+import { SessionTimer } from "background/helpers/session";
+
+export const handleSignedHwPayload = async ({
   request,
   responseQueue,
+  sessionTimer,
 }: {
   request: HandleSignedHWPayloadMessage;
   responseQueue: ResponseQueue<SignedHwPayloadResponse>;
+  sessionTimer: SessionTimer;
 }) => {
   const { signedPayload, uuid } = request;
+
+  // A user just completed a hardware-wallet signature — that is a real
+  // user action, so extend the idle session. Without this the popup
+  // ping is the only path that refreshes the alarm, and a slow HW
+  // signing flow could outlast the timeout while the user is actively
+  // working.
+  await sessionTimer.resetSession();
 
   if (!uuid) {
     captureException("handleSignedHwPayload: missing uuid in request");

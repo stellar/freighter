@@ -14,6 +14,10 @@ import {
 import BigNumber from "bignumber.js";
 import { INDEXER_URL, INDEXER_V2_URL } from "@shared/constants/mercury";
 import {
+  AutoLockTimeoutMinutes,
+  DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
+} from "@shared/constants/autoLock";
+import {
   AssetListResponse,
   AssetsListItem,
   AssetsLists,
@@ -1618,13 +1622,15 @@ export const saveSettings = async ({
   isMemoValidationEnabled,
   isHideDustEnabled,
   isOpenSidebarByDefault,
+  autoLockTimeoutMinutes,
 }: {
   activePublicKey: string;
   isDataSharingAllowed: boolean;
   isMemoValidationEnabled: boolean;
   isHideDustEnabled: boolean;
   isOpenSidebarByDefault: boolean;
-}): Promise<Settings & IndexerSettings> => {
+  autoLockTimeoutMinutes: AutoLockTimeoutMinutes;
+}): Promise<Settings & IndexerSettings & { wasLocked?: boolean }> => {
   let response = {
     allowList: DEFAULT_ALLOW_LIST,
     isDataSharingAllowed: false,
@@ -1638,19 +1644,22 @@ export const saveSettings = async ({
     isNonSSLEnabled: false,
     isHideDustEnabled: true,
     isOpenSidebarByDefault: false,
+    autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
     error: "",
     hiddenAssets: {},
+    wasLocked: false,
   };
 
   try {
-    response = await sendMessageToBackground({
+    response = (await sendMessageToBackground({
       activePublicKey,
       isDataSharingAllowed,
       isMemoValidationEnabled,
       isHideDustEnabled,
       isOpenSidebarByDefault,
+      autoLockTimeoutMinutes,
       type: SERVICE_TYPES.SAVE_SETTINGS,
-    });
+    })) as unknown as typeof response;
   } catch (e) {
     console.error(e);
   }
@@ -1866,7 +1875,11 @@ export const loadSettings = (): Promise<
   sendMessageToBackground({
     activePublicKey: null,
     type: SERVICE_TYPES.LOAD_SETTINGS,
-  });
+  }) as unknown as Promise<
+    Settings &
+      IndexerSettings &
+      ExperimentalFeatures & { assetsLists: AssetsLists }
+  >;
 
 export const loadBackendSettings = async (): Promise<{
   isSorobanPublicEnabled: boolean;

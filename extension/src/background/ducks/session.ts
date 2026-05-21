@@ -58,6 +58,7 @@ const initialState: InitialState = {
   },
   allAccounts: [] as Account[],
   migratedMnemonicPhrase: "",
+  isHardwareWalletLocked: false,
 };
 
 interface UiData {
@@ -70,6 +71,12 @@ interface AppData {
   privateKey?: string;
   hashKey?: { key: string };
   password?: string;
+  // True once the idle auto-lock alarm fires on a hardware-wallet-active
+  // session. Hot-wallet (mnemonic) sessions are gated by `hashKey`
+  // instead, which `timeoutAccountAccess` already clears. HW sessions
+  // need a dedicated flag because `getIsHardwareWalletActive` is stored
+  // in `localStore` and is not cleared by the lock path.
+  isHardwareWalletLocked?: boolean;
 }
 
 export const sessionSlice = createSlice({
@@ -107,6 +114,19 @@ export const sessionSlice = createSlice({
         key: "",
       },
       password: "",
+    }),
+    // Idle auto-lock for hardware-wallet sessions. `timeoutAccountAccess`
+    // clears the hot-wallet `hashKey`, but hardware-wallet "unlocked"
+    // state is read off `localStore.isHardwareWalletActive` and is
+    // unaffected by that — so without this flag, the idle alarm firing
+    // on an HW-only session would be a silent no-op.
+    lockHardwareWallet: (state) => ({
+      ...state,
+      isHardwareWalletLocked: true,
+    }),
+    unlockHardwareWallet: (state) => ({
+      ...state,
+      isHardwareWalletLocked: false,
     }),
     updateAccountName: (
       state,
@@ -155,6 +175,8 @@ export const {
     logOut,
     setActiveHashKey,
     timeoutAccountAccess,
+    lockHardwareWallet,
+    unlockHardwareWallet,
     setMigratedMnemonicPhrase,
     updateAccountName,
   },
@@ -178,8 +200,16 @@ export const buildHasPrivateKeySelector = (localStore: DataStorageAccess) =>
     const isHardwareWalletActive = await getIsHardwareWalletActive({
       localStore,
     });
-    return isHardwareWalletActive || !!session?.hashKey?.key;
+    if (isHardwareWalletActive && !session?.isHardwareWalletLocked) {
+      return true;
+    }
+    return !!session?.hashKey?.key;
   });
+
+export const isHardwareWalletLockedSelector = createSelector(
+  sessionSelector,
+  (session) => !!session?.isHardwareWalletLocked,
+);
 
 export const hashKeySelector = createSelector(
   sessionSelector,

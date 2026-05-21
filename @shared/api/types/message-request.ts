@@ -11,6 +11,7 @@ import {
   CollectibleKey,
 } from "./types";
 import { AssetsListItem } from "@shared/constants/soroban/asset-list";
+import { AutoLockTimeoutMinutes } from "@shared/constants/autoLock";
 
 export interface TokenToAdd {
   domain: string;
@@ -282,6 +283,11 @@ export interface SaveSettingsMessage extends BaseMessage {
   isMemoValidationEnabled: boolean;
   isDataSharingAllowed: boolean;
   isOpenSidebarByDefault: boolean;
+  autoLockTimeoutMinutes: AutoLockTimeoutMinutes;
+}
+
+export interface UserActivityMessage extends BaseMessage {
+  type: SERVICE_TYPES.USER_ACTIVITY;
 }
 
 export interface SaveExperimentalFeaturesMessage extends BaseMessage {
@@ -547,4 +553,5 @@ export type ServiceMessageRequest =
   | GetHiddenCollectiblesMessage
   | MarkQueueActiveMessage
   | OpenSidebarMessage
-  | RejectSigningRequestMessage;
+  | RejectSigningRequestMessage
+  | UserActivityMessage;
