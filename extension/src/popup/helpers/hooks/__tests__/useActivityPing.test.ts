@@ -30,7 +30,7 @@ describe("useActivityPing", () => {
     expect(sendMessageToBackground).toHaveBeenCalledTimes(1);
     expect(sendMessageToBackground).toHaveBeenCalledWith({
       type: SERVICE_TYPES.USER_ACTIVITY,
-      activePublicKey: null,
+      activePublicKey: "",
     });
   });
 
@@ -65,11 +65,9 @@ describe("useActivityPing", () => {
     unmount();
 
     for (const eventName of activityEvents) {
-      expect(addSpy).toHaveBeenCalledWith(
-        eventName,
-        expect.any(Function),
-        { passive: true },
-      );
+      expect(addSpy).toHaveBeenCalledWith(eventName, expect.any(Function), {
+        passive: true,
+      });
       expect(removeSpy).toHaveBeenCalledWith(eventName, expect.any(Function));
     }
 

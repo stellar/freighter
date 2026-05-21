@@ -35,7 +35,14 @@ export const useActivityPing = (isUnlocked: boolean) => {
       lastPingAt = now;
       void sendMessageToBackground({
         type: SERVICE_TYPES.USER_ACTIVITY,
-        activePublicKey: null,
+        // `USER_ACTIVITY` is account-agnostic — the background only
+        // cares that *some* extension page is active, not which key is
+        // selected. Send an empty string (rather than null) to match
+        // `BaseMessage`'s `activePublicKey: string` typing; the
+        // background's mismatch check (`if (request.activePublicKey
+        // && …)`) treats empty-string as "skip the check", same as
+        // the previous null.
+        activePublicKey: "",
       });
     };
 

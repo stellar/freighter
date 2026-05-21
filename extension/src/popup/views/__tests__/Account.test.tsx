@@ -890,7 +890,7 @@ describe("Account view", () => {
         isNonSSLEnabled: false,
         experimentalFeaturesState: SettingsState.SUCCESS,
         assetsLists: DEFAULT_ASSETS_LISTS,
-    autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
+        autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
       }),
     );
 
@@ -945,7 +945,7 @@ describe("Account view", () => {
         isNonSSLEnabled: false,
         experimentalFeaturesState: SettingsState.SUCCESS,
         assetsLists: DEFAULT_ASSETS_LISTS,
-    autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
+        autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
       }),
     );
     jest
@@ -1030,7 +1030,7 @@ describe("Account view", () => {
         isNonSSLEnabled: false,
         experimentalFeaturesState: SettingsState.SUCCESS,
         assetsLists: DEFAULT_ASSETS_LISTS,
-    autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
+        autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
       }),
     );
     jest
@@ -1114,7 +1114,7 @@ describe("Account view", () => {
         isNonSSLEnabled: false,
         experimentalFeaturesState: SettingsState.SUCCESS,
         assetsLists: DEFAULT_ASSETS_LISTS,
-    autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
+        autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
       }),
     );
     jest
@@ -1197,7 +1197,7 @@ describe("Account view", () => {
         isNonSSLEnabled: false,
         experimentalFeaturesState: SettingsState.SUCCESS,
         assetsLists: DEFAULT_ASSETS_LISTS,
-    autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
+        autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
       }),
     );
     jest
@@ -1263,7 +1263,7 @@ describe("Account view", () => {
         isNonSSLEnabled: false,
         experimentalFeaturesState: SettingsState.SUCCESS,
         assetsLists: DEFAULT_ASSETS_LISTS,
-    autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
+        autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
       }),
     );
     const getAccountBalancesSpy = jest

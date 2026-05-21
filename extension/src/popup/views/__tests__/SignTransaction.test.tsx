@@ -346,7 +346,7 @@ describe("SignTransactions", () => {
         isNonSSLEnabled: false,
         experimentalFeaturesState: SettingsState.SUCCESS,
         assetsLists: DEFAULT_ASSETS_LISTS,
-    autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
+        autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
       }),
     );
 
@@ -463,7 +463,7 @@ describe("SignTransactions", () => {
         isNonSSLEnabled: false,
         experimentalFeaturesState: SettingsState.SUCCESS,
         assetsLists: DEFAULT_ASSETS_LISTS,
-    autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
+        autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
       }),
     );
     const transaction = TransactionBuilder.fromXDR(
@@ -603,7 +603,7 @@ describe("SignTransactions", () => {
         isNonSSLEnabled: false,
         experimentalFeaturesState: SettingsState.SUCCESS,
         assetsLists: DEFAULT_ASSETS_LISTS,
-    autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
+        autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
       }),
     );
 
@@ -718,7 +718,7 @@ describe("SignTransactions", () => {
         isNonSSLEnabled: false,
         experimentalFeaturesState: SettingsState.SUCCESS,
         assetsLists: DEFAULT_ASSETS_LISTS,
-    autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
+        autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
       }),
     );
     const transaction = TransactionBuilder.fromXDR(
@@ -841,7 +841,7 @@ describe("SignTransactions", () => {
         isNonSSLEnabled: false,
         experimentalFeaturesState: SettingsState.SUCCESS,
         assetsLists: DEFAULT_ASSETS_LISTS,
-    autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
+        autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
       }),
     );
     const transaction = TransactionBuilder.fromXDR(
@@ -964,7 +964,7 @@ describe("SignTransactions", () => {
         isNonSSLEnabled: false,
         experimentalFeaturesState: SettingsState.SUCCESS,
         assetsLists: DEFAULT_ASSETS_LISTS,
-    autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
+        autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
       }),
     );
     const transaction = TransactionBuilder.fromXDR(
@@ -1081,7 +1081,7 @@ describe("SignTransactions", () => {
         isNonSSLEnabled: false,
         experimentalFeaturesState: SettingsState.SUCCESS,
         assetsLists: DEFAULT_ASSETS_LISTS,
-    autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
+        autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
       }),
     );
     const transaction = TransactionBuilder.fromXDR(
@@ -1204,7 +1204,7 @@ describe("SignTransactions", () => {
         isNonSSLEnabled: false,
         experimentalFeaturesState: SettingsState.SUCCESS,
         assetsLists: DEFAULT_ASSETS_LISTS,
-    autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
+        autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
       }),
     );
 
@@ -1344,7 +1344,7 @@ describe("SignTransactions", () => {
         isNonSSLEnabled: false,
         experimentalFeaturesState: SettingsState.SUCCESS,
         assetsLists: DEFAULT_ASSETS_LISTS,
-    autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
+        autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
       }),
     );
     const transaction = TransactionBuilder.fromXDR(
@@ -1519,7 +1519,7 @@ describe("SignTransactions", () => {
         isNonSSLEnabled: false,
         experimentalFeaturesState: SettingsState.SUCCESS,
         assetsLists: DEFAULT_ASSETS_LISTS,
-    autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
+        autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
       }),
     );
     const transaction = TransactionBuilder.fromXDR(
@@ -1686,7 +1686,7 @@ describe("SignTransactions", () => {
         isNonSSLEnabled: false,
         experimentalFeaturesState: SettingsState.SUCCESS,
         assetsLists: DEFAULT_ASSETS_LISTS,
-    autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
+        autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
       }),
     );
     const transaction = TransactionBuilder.fromXDR(

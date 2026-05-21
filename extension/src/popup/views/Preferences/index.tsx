@@ -25,14 +25,29 @@ import {
 
 import "./styles.scss";
 
+// Build a human-readable label for a timeout preset. We construct an
+// English fallback in JS first and hand it to `t()` as `defaultValue`,
+// so that — even when an i18n key is missing (common in dev or partial
+// locales) — the rendered label is grammatically correct (e.g. "1
+// minute" / "5 minutes" rather than "1 minute" / "5 minute"). Locales
+// remain free to override by providing the matching keys.
 const formatTimeoutLabel = (
   minutes: AutoLockTimeoutMinutes,
   t: (key: string, opts?: Record<string, unknown>) => string,
 ) => {
   if (minutes >= 60) {
-    return t("{{count}} hour", { count: minutes / 60 });
+    const hours = minutes / 60;
+    const fallback = hours === 1 ? "1 hour" : `${hours} hours`;
+    return t("autoLockTimeout.hours", {
+      count: hours,
+      defaultValue: fallback,
+    });
   }
-  return t("{{count}} minute", { count: minutes });
+  const fallback = minutes === 1 ? "1 minute" : `${minutes} minutes`;
+  return t("autoLockTimeout.minutes", {
+    count: minutes,
+    defaultValue: fallback,
+  });
 };
 
 export const Preferences = () => {
@@ -46,7 +61,9 @@ export const Preferences = () => {
     isDataSharingAllowedValue: boolean;
     isHideDustEnabledValue: boolean;
     isOpenSidebarByDefaultValue: boolean;
-    autoLockTimeoutMinutesValue: AutoLockTimeoutMinutes;
+    // Formik/`<select>` deliver this as a string at runtime. Keep the
+    // field type honest and convert it explicitly in `handleSubmit`.
+    autoLockTimeoutMinutesValue: string;
   }
 
   const handleSubmit = async (formValue: SettingValues) => {
@@ -65,7 +82,6 @@ export const Preferences = () => {
         isHideDustEnabled: isHideDustEnabledValue,
         isOpenSidebarByDefault: isOpenSidebarByDefaultValue,
         autoLockTimeoutMinutes: coerceAutoLockTimeoutMinutes(
-          // Form values from <select> arrive as strings; normalize.
           Number(autoLockTimeoutMinutesValue),
         ),
       }),
@@ -133,8 +149,10 @@ export const Preferences = () => {
     isDataSharingAllowedValue: isDataSharingAllowed,
     isHideDustEnabledValue: isHideDustEnabled,
     isOpenSidebarByDefaultValue: isOpenSidebarByDefault ?? false,
-    autoLockTimeoutMinutesValue: coerceAutoLockTimeoutMinutes(
-      autoLockTimeoutMinutes ?? DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
+    autoLockTimeoutMinutesValue: String(
+      coerceAutoLockTimeoutMinutes(
+        autoLockTimeoutMinutes ?? DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
+      ),
     ),
   };
 

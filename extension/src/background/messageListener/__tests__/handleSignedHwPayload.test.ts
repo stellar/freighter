@@ -59,7 +59,9 @@ describe("handleSignedHwPayload", () => {
     let state = { session: sessionSlice.reducer(undefined, { type: "init" }) };
     expect(isHardwareWalletLockedSelector(state)).toBe(false);
 
-    state = { session: sessionSlice.reducer(state.session, lockHardwareWallet()) };
+    state = {
+      session: sessionSlice.reducer(state.session, lockHardwareWallet()),
+    };
     expect(isHardwareWalletLockedSelector(state)).toBe(true);
 
     state = {

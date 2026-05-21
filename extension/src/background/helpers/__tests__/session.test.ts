@@ -104,7 +104,8 @@ describe("SessionTimer", () => {
   const makeLocalStore = (stored: unknown) =>
     ({
       getItem: jest.fn().mockImplementation((key: string) => {
-        if (key === AUTO_LOCK_TIMEOUT_MINUTES_ID) return Promise.resolve(stored);
+        if (key === AUTO_LOCK_TIMEOUT_MINUTES_ID)
+          return Promise.resolve(stored);
         return Promise.resolve(null);
       }),
       setItem: jest.fn(),
@@ -145,10 +146,7 @@ describe("SessionTimer", () => {
 
   it("re-reads the persisted timeout on every reset", async () => {
     const localStore = {
-      getItem: jest
-        .fn()
-        .mockResolvedValueOnce(15)
-        .mockResolvedValueOnce(60),
+      getItem: jest.fn().mockResolvedValueOnce(15).mockResolvedValueOnce(60),
       setItem: jest.fn(),
       remove: jest.fn(),
     } as any;
