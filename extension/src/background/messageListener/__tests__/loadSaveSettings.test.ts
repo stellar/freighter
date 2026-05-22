@@ -262,7 +262,14 @@ describe("saveSettings autoLockTimeoutMinutes", () => {
     // timeout should restart the idle clock with the new value rather
     // than synthesizing an immediate lock — even when the new threshold
     // is already smaller than the elapsed idle time of the in-flight
-    // alarm.
+    // alarm. Set up `alarmsGet` to return an alarm whose remaining time
+    // (1 min) is much less than the new 5 min timeout, i.e. elapsed
+    // idle (59 min) ≫ new timeout (5 min). The previous implementation
+    // would have detected this and locked immediately; the current
+    // implementation must simply rearm.
+    alarmsGet.mockResolvedValue({
+      scheduledTime: Date.now() + 1 * 60_000,
+    });
     const localStore = makeLocalStore(60);
     const sessionTimer = makeSessionTimer();
     const sessionStore = {
