@@ -1630,7 +1630,7 @@ export const saveSettings = async ({
   isHideDustEnabled: boolean;
   isOpenSidebarByDefault: boolean;
   autoLockTimeoutMinutes: AutoLockTimeoutMinutes;
-}): Promise<Settings & IndexerSettings & { wasLocked?: boolean }> => {
+}): Promise<Settings & IndexerSettings> => {
   let response = {
     allowList: DEFAULT_ALLOW_LIST,
     isDataSharingAllowed: false,
@@ -1647,7 +1647,6 @@ export const saveSettings = async ({
     autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
     error: "",
     hiddenAssets: {},
-    wasLocked: false,
   };
 
   try {

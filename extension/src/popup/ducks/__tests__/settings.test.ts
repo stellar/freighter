@@ -11,7 +11,7 @@ jest.mock("@shared/api/internal", () => ({
   saveSettings: jest.fn(),
 }));
 
-const makeSettingsResponse = (wasLocked?: boolean) => ({
+const makeSettingsResponse = () => ({
   allowList: {},
   isDataSharingAllowed: true,
   isMemoValidationEnabled: true,
@@ -29,7 +29,6 @@ const makeSettingsResponse = (wasLocked?: boolean) => ({
   isSorobanPublicEnabled: false,
   settingsState: SettingsState.SUCCESS,
   userNotification: { enabled: false, message: "" },
-  wasLocked,
 });
 
 const makeStore = () =>
@@ -65,28 +64,15 @@ describe("settings saveSettings thunk", () => {
     (saveSettingsService as jest.Mock).mockReset();
   });
 
-  it("dispatches lockAccount when the background reports an immediate lock", async () => {
-    (saveSettingsService as jest.Mock).mockResolvedValue(
-      makeSettingsResponse(true),
-    );
+  it("leaves the popup auth state untouched after a successful save", async () => {
+    // Background no longer reports an immediate-lock back to the popup —
+    // saving settings is treated as user activity and the timer is
+    // simply rearmed. The auth slice should remain unlocked.
+    (saveSettingsService as jest.Mock).mockResolvedValue(makeSettingsResponse());
     const store = makeStore();
 
     await store.dispatch(saveSettings(request) as any);
 
-    expect(store.getState().auth.hasPrivateKey).toBe(false);
+    expect(store.getState().auth.hasPrivateKey).toBe(true);
   });
-
-  it.each([false, undefined])(
-    "does not lock the popup auth state when wasLocked is %s",
-    async (wasLocked) => {
-      (saveSettingsService as jest.Mock).mockResolvedValue(
-        makeSettingsResponse(wasLocked),
-      );
-      const store = makeStore();
-
-      await store.dispatch(saveSettings(request) as any);
-
-      expect(store.getState().auth.hasPrivateKey).toBe(true);
-    },
-  );
 });

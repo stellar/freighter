@@ -226,7 +226,6 @@ describe("saveSettings autoLockTimeoutMinutes", () => {
   });
 
   it("persists a valid timeout and reschedules when unlocked", async () => {
-    alarmsGet.mockResolvedValue(undefined);
     const localStore = makeLocalStore(30);
     const sessionTimer = makeSessionTimer();
 
@@ -243,11 +242,10 @@ describe("saveSettings autoLockTimeoutMinutes", () => {
     );
     expect(sessionTimer.resetSession).toHaveBeenCalledTimes(1);
     expect((result as any).autoLockTimeoutMinutes).toBe(30);
-    expect((result as any).wasLocked).toBe(false);
+    expect((result as any).wasLocked).toBeUndefined();
   });
 
   it("does not reschedule the timer when the wallet is locked", async () => {
-    alarmsGet.mockResolvedValue(undefined);
     const sessionTimer = makeSessionTimer();
     await saveSettings({
       request: { ...baseRequest, autoLockTimeoutMinutes: 5 } as any,
@@ -256,15 +254,15 @@ describe("saveSettings autoLockTimeoutMinutes", () => {
       sessionTimer,
     });
     expect(sessionTimer.resetSession).not.toHaveBeenCalled();
+    expect(sessionTimer.stopSession).not.toHaveBeenCalled();
   });
 
-  it("locks immediately when the new timeout has already elapsed", async () => {
-    // Previously 60 min, alarm was scheduled to fire in 10 min → 50 min
-    // already elapsed. User shrinks the timeout to 30 min — that
-    // threshold has already passed, so we lock now rather than rearm.
-    alarmsGet.mockResolvedValue({
-      scheduledTime: Date.now() + 10 * 60_000,
-    });
+  it("rearms (rather than locking) when the user shortens the timeout", async () => {
+    // Saving settings is itself a user action, so shortening the
+    // timeout should restart the idle clock with the new value rather
+    // than synthesizing an immediate lock — even when the new threshold
+    // is already smaller than the elapsed idle time of the in-flight
+    // alarm.
     const localStore = makeLocalStore(60);
     const sessionTimer = makeSessionTimer();
     const sessionStore = {
@@ -273,38 +271,16 @@ describe("saveSettings autoLockTimeoutMinutes", () => {
     } as any;
 
     const result = await saveSettings({
-      request: { ...baseRequest, autoLockTimeoutMinutes: 30 } as any,
+      request: { ...baseRequest, autoLockTimeoutMinutes: 5 } as any,
       localStore,
       sessionStore,
       sessionTimer,
     });
 
-    expect(sessionTimer.stopSession).toHaveBeenCalledTimes(1);
-    expect(sessionTimer.resetSession).not.toHaveBeenCalled();
-    expect(sessionStore.dispatch).toHaveBeenCalled();
-    expect((result as any).wasLocked).toBe(true);
-  });
-
-  it("rearms when the new timeout still has time remaining", async () => {
-    // Previously 60 min, alarm scheduled to fire in 50 min → 10 min
-    // already elapsed. User shrinks to 30 min — still within budget,
-    // so we just rearm at +30.
-    alarmsGet.mockResolvedValue({
-      scheduledTime: Date.now() + 50 * 60_000,
-    });
-    const localStore = makeLocalStore(60);
-    const sessionTimer = makeSessionTimer();
-
-    const result = await saveSettings({
-      request: { ...baseRequest, autoLockTimeoutMinutes: 30 } as any,
-      localStore,
-      sessionStore: makeSessionStore("k"),
-      sessionTimer,
-    });
-
     expect(sessionTimer.resetSession).toHaveBeenCalledTimes(1);
     expect(sessionTimer.stopSession).not.toHaveBeenCalled();
-    expect((result as any).wasLocked).toBe(false);
+    expect(sessionStore.dispatch).not.toHaveBeenCalled();
+    expect((result as any).wasLocked).toBeUndefined();
   });
 });
 

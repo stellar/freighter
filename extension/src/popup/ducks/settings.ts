@@ -40,7 +40,7 @@ import {
   SettingsState,
   ExperimentalFeatures,
 } from "@shared/api/types";
-import { lockAccount, publicKeySelector } from "popup/ducks/accountServices";
+import { publicKeySelector } from "popup/ducks/accountServices";
 import { AppState } from "popup/App";
 
 import { isMainnet } from "helpers/stellar";
@@ -126,7 +126,7 @@ export const saveAllowList = createAsyncThunk<
 );
 
 export const saveSettings = createAsyncThunk<
-  Settings & IndexerSettings & { wasLocked?: boolean },
+  Settings & IndexerSettings,
   {
     isDataSharingAllowed: boolean;
     isMemoValidationEnabled: boolean;
@@ -145,9 +145,9 @@ export const saveSettings = createAsyncThunk<
       isOpenSidebarByDefault,
       autoLockTimeoutMinutes,
     },
-    { dispatch, getState, rejectWithValue },
+    { getState, rejectWithValue },
   ) => {
-    let res: Settings & IndexerSettings & { wasLocked?: boolean } = {
+    let res: Settings & IndexerSettings = {
       ...settingsInitialState,
       isSorobanPublicEnabled: false,
       isRpcHealthy: false,
@@ -155,7 +155,6 @@ export const saveSettings = createAsyncThunk<
       settingsState: SettingsState.IDLE,
       isHideDustEnabled: true,
       isOpenSidebarByDefault: false,
-      wasLocked: false,
     };
     const activePublicKey = publicKeySelector(getState());
 
@@ -174,15 +173,6 @@ export const saveSettings = createAsyncThunk<
       return rejectWithValue({
         errorMessage: message,
       });
-    }
-
-    // When the background locks the session because the shortened
-    // timeout has already elapsed, flip the popup's auth slice
-    // immediately rather than waiting for the next `useGetAppData`
-    // poll — otherwise the user briefly sees an unlocked UI after
-    // saving.
-    if (res.wasLocked) {
-      dispatch(lockAccount());
     }
 
     return res;

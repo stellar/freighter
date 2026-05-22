@@ -631,7 +631,7 @@ export const popupMessageListener = (
 
     case SERVICE_TYPES.USER_ACTIVITY: {
       if (!isFromExtensionPage) return { error: "Unauthorized" };
-      return userActivity({ sessionStore, sessionTimer, localStore });
+      return userActivity({ sessionTimer });
     }
 
     default:
