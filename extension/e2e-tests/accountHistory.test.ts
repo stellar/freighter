@@ -4,6 +4,7 @@ import { TEST_M_ADDRESS } from "./helpers/test-token";
 import {
   stubAccountBalances,
   stubAccountBalancesWithUSDC,
+  stubAccountHistoryWith,
   stubTokenDetails,
 } from "./helpers/stubs";
 import {
@@ -51,36 +52,7 @@ test("View failed transaction", async ({ page, extensionId, context }) => {
   ];
 
   const stubOverrides = async () => {
-    // Use addInitScript to patch window.fetch directly in the extension page.
-    // Playwright's route interception (context.route/page.route) does not reliably
-    // intercept fetch requests made from Chrome extension popup pages in CI headless mode.
-    // addInitScript injects code before page scripts run and is guaranteed to work.
-    await page.addInitScript((data: object[]) => {
-      const origFetch = window.fetch.bind(window);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (window as any).fetch = function (input: any, init: any) {
-        const urlStr: string =
-          typeof input === "string"
-            ? input
-            : input instanceof URL
-              ? input.href
-              : (input.url ?? "");
-        if (urlStr.includes("/account-history/")) {
-          return Promise.resolve(
-            new Response(JSON.stringify(data), {
-              status: 200,
-              headers: { "Content-Type": "application/json" },
-            }),
-          );
-        }
-        return origFetch(input, init);
-      };
-    }, mockAccountHistoryData);
-
-    // Also register context.route as a network-level fallback
-    await context.route("*/**/account-history/*", async (route) => {
-      await route.fulfill({ json: mockAccountHistoryData });
-    });
+    await stubAccountHistoryWith(page, context, mockAccountHistoryData);
   };
 
   await loginToTestAccount({ page, extensionId, context, stubOverrides });
@@ -174,49 +146,26 @@ test("Orders failed transactions by date alongside successful ones", async ({
 
   const stubOverrides = async () => {
     await stubAccountBalancesWithUSDC(page);
-    await page.addInitScript((data: object[]) => {
-      const origFetch = window.fetch.bind(window);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (window as any).fetch = function (input: any, init: any) {
-        const urlStr: string =
-          typeof input === "string"
-            ? input
-            : input instanceof URL
-              ? input.href
-              : (input.url ?? "");
-        if (urlStr.includes("/account-history/")) {
-          return Promise.resolve(
-            new Response(JSON.stringify(data), {
-              status: 200,
-              headers: { "Content-Type": "application/json" },
-            }),
-          );
-        }
-        return origFetch(input, init);
-      };
-    }, mockAccountHistoryData);
-
-    await context.route("*/**/account-history/*", async (route) => {
-      await route.fulfill({ json: mockAccountHistoryData });
-    });
+    await stubAccountHistoryWith(page, context, mockAccountHistoryData);
   };
 
   await loginToTestAccount({ page, extensionId, context, stubOverrides });
   await page.getByTestId("nav-link-account-history").click();
 
-  const dateCells = page.getByTestId("history-item-amount-component");
-  await expect(dateCells.first()).toBeVisible({ timeout: 30000 });
-  await expect(dateCells).toHaveCount(3);
+  // The amount component contains both the formatted amount and the date.
+  const historyAmountCells = page.getByTestId("history-item-amount-component");
+  await expect(historyAmountCells.first()).toBeVisible({ timeout: 30000 });
+  await expect(historyAmountCells).toHaveCount(3);
 
   // Items should be ordered by created_at desc regardless of the order returned
   // by the API — a more recent failed transaction must still appear at the top.
-  await expect(dateCells.nth(0)).toContainText("Mar 26");
-  await expect(dateCells.nth(1)).toContainText("Mar 25");
-  await expect(dateCells.nth(2)).toContainText("Mar 10");
+  await expect(historyAmountCells.nth(0)).toContainText("Mar 26");
+  await expect(historyAmountCells.nth(1)).toContainText("Mar 25");
+  await expect(historyAmountCells.nth(2)).toContainText("Mar 10");
 
-  const labels = page.getByTestId("history-item-label");
-  await expect(labels.nth(0)).toHaveText("Transaction Failed");
-  await expect(labels.nth(2)).toHaveText("Transaction Failed");
+  const historyItemLabels = page.getByTestId("history-item-label");
+  await expect(historyItemLabels.nth(0)).toHaveText("Transaction Failed");
+  await expect(historyItemLabels.nth(2)).toHaveText("Transaction Failed");
 
   // Now verify the same ordering inside the asset (USDC) detail view.
   await page.getByTestId("BackButton").click();
@@ -232,17 +181,18 @@ test("Orders failed transactions by date alongside successful ones", async ({
   });
 
   const assetDetailList = page.getByTestId("AssetDetail__list");
-  const assetDateCells = assetDetailList.getByTestId(
+  const assetHistoryAmountCells = assetDetailList.getByTestId(
     "history-item-amount-component",
   );
-  await expect(assetDateCells).toHaveCount(3);
-  await expect(assetDateCells.nth(0)).toContainText("Mar 26");
-  await expect(assetDateCells.nth(1)).toContainText("Mar 25");
-  await expect(assetDateCells.nth(2)).toContainText("Mar 10");
+  await expect(assetHistoryAmountCells).toHaveCount(3);
+  await expect(assetHistoryAmountCells.nth(0)).toContainText("Mar 26");
+  await expect(assetHistoryAmountCells.nth(1)).toContainText("Mar 25");
+  await expect(assetHistoryAmountCells.nth(2)).toContainText("Mar 10");
 
-  const assetLabels = assetDetailList.getByTestId("history-item-label");
-  await expect(assetLabels.nth(0)).toHaveText("Transaction Failed");
-  await expect(assetLabels.nth(2)).toHaveText("Transaction Failed");
+  const assetHistoryItemLabels =
+    assetDetailList.getByTestId("history-item-label");
+  await expect(assetHistoryItemLabels.nth(0)).toHaveText("Transaction Failed");
+  await expect(assetHistoryItemLabels.nth(2)).toHaveText("Transaction Failed");
 });
 
 test("Hide create claimable balance spam", async ({

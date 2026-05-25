@@ -33,10 +33,10 @@ function useGetHistory() {
           : await getAccountHistory(publicKey, networkDetails);
       // Backends can return failed and successful operations in separate
       // groupings, so sort by created_at desc to guarantee chronological order.
-      const data = [...fetched].sort(
-        (a, b) =>
-          new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-      );
+      const data = fetched
+        .map((op) => ({ op, ts: Date.parse(op.created_at) }))
+        .sort((a, b) => b.ts - a.ts)
+        .map(({ op }) => op);
       dispatch({ type: "FETCH_DATA_SUCCESS", payload: data });
       reduxDispatch(
         saveHistoryForAccount({ publicKey, history: data, networkDetails }),
