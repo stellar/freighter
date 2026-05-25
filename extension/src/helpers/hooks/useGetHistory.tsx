@@ -27,10 +27,16 @@ function useGetHistory() {
     try {
       const cachedHistoryData =
         cachedHistory[networkDetails.network]?.[publicKey];
-      const data =
+      const fetched =
         useCache && cachedHistoryData
           ? cachedHistoryData
           : await getAccountHistory(publicKey, networkDetails);
+      // Backends can return failed and successful operations in separate
+      // groupings, so sort by created_at desc to guarantee chronological order.
+      const data = [...fetched].sort(
+        (a, b) =>
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+      );
       dispatch({ type: "FETCH_DATA_SUCCESS", payload: data });
       reduxDispatch(
         saveHistoryForAccount({ publicKey, history: data, networkDetails }),

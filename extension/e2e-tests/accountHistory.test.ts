@@ -1,7 +1,11 @@
 import { test, expect, expectPageToHaveScreenshot } from "./test-fixtures";
 import { loginToTestAccount } from "./helpers/login";
 import { TEST_M_ADDRESS } from "./helpers/test-token";
-import { stubAccountBalances, stubTokenDetails } from "./helpers/stubs";
+import {
+  stubAccountBalances,
+  stubAccountBalancesWithUSDC,
+  stubTokenDetails,
+} from "./helpers/stubs";
 import {
   TransactionBuilder,
   Operation,
@@ -99,6 +103,148 @@ test("View failed transaction", async ({ page, extensionId, context }) => {
     screenshot: "failed-transaction.png",
   });
 });
+test("Orders failed transactions by date alongside successful ones", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  // The backend can return failed and successful operations in separate
+  // groupings. Interleave failed and successful transactions out of order to
+  // verify the client re-sorts by created_at desc and that a more recent failed
+  // transaction still appears at the top.
+  const mockAccountHistoryData = [
+    {
+      amount: "0.0010000",
+      asset_code: "USDC",
+      asset_issuer: "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
+      asset_type: "credit_alphanum4",
+      created_at: "2025-03-10T22:28:46Z",
+      from: "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
+      id: "164007621169100",
+      paging_token: "164007621169100",
+      source_account:
+        "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
+      to: "GCKUVXILBNYS4FDNWCGCYSJBY2PBQ4KAW2M5CODRVJPUFM62IJFH67J2",
+      transaction_attr: {},
+      transaction_hash:
+        "111101028de9ddf40a1c24461a6a9c0415d60a39255c35eccad0b52ac1e700a5",
+      transaction_successful: false,
+      type: "payment",
+      type_i: 1,
+    },
+    {
+      amount: "1.0000000",
+      asset_code: "USDC",
+      asset_issuer: "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
+      asset_type: "credit_alphanum4",
+      created_at: "2025-03-25T22:28:46Z",
+      from: "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
+      id: "164007621169200",
+      paging_token: "164007621169200",
+      source_account:
+        "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
+      to: "GCKUVXILBNYS4FDNWCGCYSJBY2PBQ4KAW2M5CODRVJPUFM62IJFH67J2",
+      transaction_attr: {},
+      transaction_hash:
+        "222201028de9ddf40a1c24461a6a9c0415d60a39255c35eccad0b52ac1e700a5",
+      transaction_successful: true,
+      type: "payment",
+      type_i: 1,
+    },
+    {
+      amount: "0.0050000",
+      asset_code: "USDC",
+      asset_issuer: "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
+      asset_type: "credit_alphanum4",
+      created_at: "2025-03-26T22:28:46Z",
+      from: "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
+      id: "164007621169300",
+      paging_token: "164007621169300",
+      source_account:
+        "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
+      to: "GCKUVXILBNYS4FDNWCGCYSJBY2PBQ4KAW2M5CODRVJPUFM62IJFH67J2",
+      transaction_attr: {},
+      transaction_hash:
+        "333301028de9ddf40a1c24461a6a9c0415d60a39255c35eccad0b52ac1e700a5",
+      transaction_successful: false,
+      type: "payment",
+      type_i: 1,
+    },
+  ];
+
+  const stubOverrides = async () => {
+    await stubAccountBalancesWithUSDC(page);
+    await page.addInitScript((data: object[]) => {
+      const origFetch = window.fetch.bind(window);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (window as any).fetch = function (input: any, init: any) {
+        const urlStr: string =
+          typeof input === "string"
+            ? input
+            : input instanceof URL
+              ? input.href
+              : (input.url ?? "");
+        if (urlStr.includes("/account-history/")) {
+          return Promise.resolve(
+            new Response(JSON.stringify(data), {
+              status: 200,
+              headers: { "Content-Type": "application/json" },
+            }),
+          );
+        }
+        return origFetch(input, init);
+      };
+    }, mockAccountHistoryData);
+
+    await context.route("*/**/account-history/*", async (route) => {
+      await route.fulfill({ json: mockAccountHistoryData });
+    });
+  };
+
+  await loginToTestAccount({ page, extensionId, context, stubOverrides });
+  await page.getByTestId("nav-link-account-history").click();
+
+  const dateCells = page.getByTestId("history-item-amount-component");
+  await expect(dateCells.first()).toBeVisible({ timeout: 30000 });
+  await expect(dateCells).toHaveCount(3);
+
+  // Items should be ordered by created_at desc regardless of the order returned
+  // by the API — a more recent failed transaction must still appear at the top.
+  await expect(dateCells.nth(0)).toContainText("Mar 26");
+  await expect(dateCells.nth(1)).toContainText("Mar 25");
+  await expect(dateCells.nth(2)).toContainText("Mar 10");
+
+  const labels = page.getByTestId("history-item-label");
+  await expect(labels.nth(0)).toHaveText("Transaction Failed");
+  await expect(labels.nth(2)).toHaveText("Transaction Failed");
+
+  // Now verify the same ordering inside the asset (USDC) detail view.
+  await page.getByTestId("BackButton").click();
+  await expect(page.getByTestId("account-view")).toBeVisible({
+    timeout: 10000,
+  });
+  await page
+    .getByTestId("account-assets-item")
+    .filter({ hasText: "USDC" })
+    .click();
+  await expect(page.getByTestId("AssetDetail__list")).toBeVisible({
+    timeout: 10000,
+  });
+
+  const assetDetailList = page.getByTestId("AssetDetail__list");
+  const assetDateCells = assetDetailList.getByTestId(
+    "history-item-amount-component",
+  );
+  await expect(assetDateCells).toHaveCount(3);
+  await expect(assetDateCells.nth(0)).toContainText("Mar 26");
+  await expect(assetDateCells.nth(1)).toContainText("Mar 25");
+  await expect(assetDateCells.nth(2)).toContainText("Mar 10");
+
+  const assetLabels = assetDetailList.getByTestId("history-item-label");
+  await expect(assetLabels.nth(0)).toHaveText("Transaction Failed");
+  await expect(assetLabels.nth(2)).toHaveText("Transaction Failed");
+});
+
 test("Hide create claimable balance spam", async ({
   page,
   extensionId,
