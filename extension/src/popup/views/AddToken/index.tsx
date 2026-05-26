@@ -11,12 +11,14 @@ import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Navigate, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
-import { StellarToml } from "stellar-sdk";
+import { StellarToml, StrKey } from "stellar-sdk";
 
 import { BlockAidScanAssetResult } from "@shared/api/types";
 import { getIconUrlFromIssuer } from "@shared/api/helpers/getIconUrlFromIssuer";
+import { BASE_RESERVE } from "@shared/constants/stellar";
 
 import { newTabHref, parsedSearchParam, TokenToAdd } from "helpers/urls";
+import { truncatedPublicKey } from "helpers/stellar";
 
 import { rejectToken, addToken } from "popup/ducks/access";
 import { isNonSSLEnabledSelector } from "popup/ducks/settings";
@@ -35,6 +37,7 @@ import { VerifyAccount } from "popup/views/VerifyAccount";
 import { View } from "popup/basics/layout/View";
 import { ManageAssetCurrency } from "popup/components/manageAssets/ManageAssetRows";
 import { useTokenLookup } from "popup/helpers/useTokenLookup";
+import { useNetworkFees } from "popup/helpers/useNetworkFees";
 import { isContractId } from "popup/helpers/soroban";
 import {
   scanAsset,
@@ -97,6 +100,14 @@ export const AddToken = () => {
   const assetIssuer = assetCurrency?.issuer || "";
   const assetName = assetTomlName || assetCurrency?.name?.split(":")[0];
   const assetDomain = assetCurrency?.domain || "";
+
+  // SAC (Stellar Asset Contract) tokens wrap a classic asset; approving will
+  // sign and submit a changeTrust op. Pure Soroban tokens (contract-id issuer)
+  // only register for display and never touch the chain.
+  const isSacTrustline =
+    !!assetIssuer && StrKey.isValidEd25519PublicKey(assetIssuer);
+
+  const { recommendedFee } = useNetworkFees();
 
   const isLoading =
     isSearching || assetIcon === undefined || assetTomlName === undefined;
@@ -427,9 +438,13 @@ export const AddToken = () => {
                 )}
 
                 <div className="AddToken__Description">
-                  {t(
-                    "Allow token to be displayed and used with this wallet address",
-                  )}
+                  {isSacTrustline
+                    ? t(
+                        "Approving will submit a Stellar transaction that opens a trustline to this asset's issuer. This will modify your Stellar account, lock a reserve, and charge a network fee.",
+                      )
+                    : t(
+                        "Allow token to be displayed and used with this wallet address",
+                      )}
                 </div>
                 <div className="AddToken__Metadata">
                   <div className="AddToken__Metadata__Row">
@@ -441,6 +456,46 @@ export const AddToken = () => {
                       <KeyIdenticon publicKey={state.data.account.publicKey} />
                     </div>
                   </div>
+                  {isSacTrustline && (
+                    <>
+                      <div
+                        className="AddToken__Metadata__Row"
+                        data-testid="add-token-issuer-row"
+                      >
+                        <div className="AddToken__Metadata__Label">
+                          <Icon.User01 />
+                          <span>{t("Issuer")}</span>
+                        </div>
+                        <div className="AddToken__Metadata__Value">
+                          {truncatedPublicKey(assetIssuer)}
+                        </div>
+                      </div>
+                      <div
+                        className="AddToken__Metadata__Row"
+                        data-testid="add-token-reserve-row"
+                      >
+                        <div className="AddToken__Metadata__Label">
+                          <Icon.Lock01 />
+                          <span>{t("Account reserve")}</span>
+                        </div>
+                        <div className="AddToken__Metadata__Value">
+                          {BASE_RESERVE} XLM
+                        </div>
+                      </div>
+                      <div
+                        className="AddToken__Metadata__Row"
+                        data-testid="add-token-fee-row"
+                      >
+                        <div className="AddToken__Metadata__Label">
+                          <Icon.Coins03 />
+                          <span>{t("Network fee")}</span>
+                        </div>
+                        <div className="AddToken__Metadata__Value">
+                          {recommendedFee} XLM
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>,
               blockaidData ? (
