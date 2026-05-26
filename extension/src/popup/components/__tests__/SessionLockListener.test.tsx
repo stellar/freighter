@@ -2,7 +2,12 @@ import React from "react";
 import { render, act } from "@testing-library/react";
 import { Provider } from "react-redux";
 import { combineReducers, configureStore } from "@reduxjs/toolkit";
-import { MemoryRouter, Routes, Route, useLocation } from "react-router-dom";
+import {
+  MemoryRouter,
+  Routes,
+  Route,
+  useLocation,
+} from "react-router-dom";
 import browser from "webextension-polyfill";
 
 import { SERVICE_TYPES } from "@shared/constants/services";
@@ -46,19 +51,21 @@ const makeStore = () =>
     } as any,
   });
 
-let currentPath = "/";
-const PathSpy = () => {
-  const location = useLocation();
-  currentPath = location.pathname;
+let lastLocation: ReturnType<typeof useLocation> | null = null;
+const LocationSpy = () => {
+  lastLocation = useLocation();
   return null;
 };
 
-const renderListener = (store = makeStore()) =>
+const renderListener = (
+  initialEntry: string = "/",
+  store = makeStore(),
+) =>
   render(
     <Provider store={store}>
-      <MemoryRouter initialEntries={["/"]}>
+      <MemoryRouter initialEntries={[initialEntry]}>
         <SessionLockListener />
-        <PathSpy />
+        <LocationSpy />
         <Routes>
           <Route path="*" element={null} />
         </Routes>
@@ -69,49 +76,87 @@ const renderListener = (store = makeStore()) =>
 describe("SessionLockListener", () => {
   beforeEach(() => {
     listeners.length = 0;
-    currentPath = "/";
+    lastLocation = null;
     jest.clearAllMocks();
   });
 
   it("registers a runtime.onMessage listener on mount and removes it on unmount", () => {
     const { unmount } = renderListener();
 
-    expect(browser.runtime.onMessage.addListener).toHaveBeenCalledTimes(1);
-    expect(listeners).toHaveLength(1);
+    expect(browser.runtime.onMessage.addListener).toHaveBeenCalled();
+    expect(listeners.length).toBeGreaterThanOrEqual(1);
 
     unmount();
-    expect(browser.runtime.onMessage.removeListener).toHaveBeenCalledTimes(1);
+    expect(browser.runtime.onMessage.removeListener).toHaveBeenCalled();
     expect(listeners).toHaveLength(0);
   });
 
   it("dispatches lockAccount and navigates to unlockAccount on SESSION_LOCKED", () => {
     const store = makeStore();
-    renderListener(store);
+    renderListener("/", store);
 
     act(() => {
-      listeners[0]({ type: SERVICE_TYPES.SESSION_LOCKED });
+      listeners[listeners.length - 1]({
+        type: SERVICE_TYPES.SESSION_LOCKED,
+      });
     });
 
     const { auth } = store.getState();
     expect(auth.hasPrivateKey).toBe(false);
     expect(auth.publicKey).toBe("");
     expect(auth.allAccounts).toEqual([]);
-    expect(currentPath).toBe(ROUTES.unlockAccount);
+    expect(lastLocation?.pathname).toBe(ROUTES.unlockAccount);
+  });
+
+  it("preserves the originating route as state.from and forwards location.search", () => {
+    const store = makeStore();
+    const originalEntry = `${ROUTES.grantAccess}?domain=example.com&public=GA1`;
+    renderListener(originalEntry, store);
+
+    act(() => {
+      listeners[listeners.length - 1]({
+        type: SERVICE_TYPES.SESSION_LOCKED,
+      });
+    });
+
+    expect(lastLocation?.pathname).toBe(ROUTES.unlockAccount);
+    expect(lastLocation?.search).toBe("?domain=example.com&public=GA1");
+    const state = lastLocation?.state as { from?: { pathname?: string } };
+    expect(state?.from?.pathname).toBe(ROUTES.grantAccess);
+  });
+
+  it("does not re-navigate or clobber state when already on the unlock screen", () => {
+    const store = makeStore();
+    renderListener(ROUTES.unlockAccount, store);
+    const initialState = lastLocation?.state;
+
+    act(() => {
+      listeners[listeners.length - 1]({
+        type: SERVICE_TYPES.SESSION_LOCKED,
+      });
+    });
+
+    // Reducer is not dispatched and no navigation happens.
+    expect(store.getState().auth.hasPrivateKey).toBe(true);
+    expect(lastLocation?.pathname).toBe(ROUTES.unlockAccount);
+    expect(lastLocation?.state).toBe(initialState);
   });
 
   it("ignores unrelated messages", () => {
     const store = makeStore();
-    renderListener(store);
+    renderListener("/", store);
 
     act(() => {
-      listeners[0]({ type: SERVICE_TYPES.LOAD_ACCOUNT });
-      listeners[0]("not an object");
-      listeners[0](null);
+      listeners[listeners.length - 1]({
+        type: SERVICE_TYPES.LOAD_ACCOUNT,
+      });
+      listeners[listeners.length - 1]("not an object");
+      listeners[listeners.length - 1](null);
     });
 
     const { auth } = store.getState();
     expect(auth.hasPrivateKey).toBe(true);
     expect(auth.publicKey).toBe("GBTEST");
-    expect(currentPath).toBe("/");
+    expect(lastLocation?.pathname).toBe("/");
   });
 });

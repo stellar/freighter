@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useDispatch } from "react-redux";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import browser from "webextension-polyfill";
 
 import { SERVICE_TYPES } from "@shared/constants/services";
@@ -13,22 +13,36 @@ import { lockAccount } from "popup/ducks/accountServices";
  * unlock screen immediately, instead of leaving stale account/asset
  * views on screen until the next data refetch.
  *
- * Mounted inside `<HashRouter>` so it can use `useNavigate`. Every
- * Freighter UI surface (popup, sidebar, standalone signing window,
- * grant-access window) renders the same `<App>` → `<Router>` tree, so
- * one mount covers all of them.
+ * Mounted inside `<HashRouter>` so it can use `useNavigate` /
+ * `useLocation`. Every Freighter UI surface (popup, sidebar, standalone
+ * signing window, grant-access window) renders the same `<App>` →
+ * `<Router>` tree, so one mount covers all of them.
+ *
+ * When navigating to the unlock screen we preserve the current
+ * `location` (as `state.from`) and `location.search`, mirroring the
+ * pattern used by `<SignTransaction>` / `<GrantAccess>` reroutes. After
+ * a successful unlock, `<UnlockAccount>` reads `state.from.pathname` +
+ * `location.search` and returns the user to the interrupted flow
+ * (e.g. `/grant-access?...`, `/sign-transaction?...`) rather than
+ * stranding them on the default account page.
  */
 export const SessionLockListener = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     const handler = (message: unknown) => {
       if (typeof message !== "object" || message === null) return undefined;
       const { type } = message as { type?: unknown };
       if (type !== SERVICE_TYPES.SESSION_LOCKED) return undefined;
+      // Already on the unlock screen — nothing to do. Avoids clobbering
+      // an existing `state.from` set by an earlier reroute.
+      if (location.pathname === ROUTES.unlockAccount) return undefined;
       dispatch(lockAccount());
-      navigate(ROUTES.unlockAccount);
+      navigate(`${ROUTES.unlockAccount}${location.search}`, {
+        state: { from: location },
+      });
       return undefined;
     };
 
@@ -36,7 +50,7 @@ export const SessionLockListener = () => {
     return () => {
       browser.runtime.onMessage.removeListener(handler);
     };
-  }, [dispatch, navigate]);
+  }, [dispatch, navigate, location]);
 
   return null;
 };
