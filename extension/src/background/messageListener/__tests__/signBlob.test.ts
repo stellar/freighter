@@ -243,4 +243,93 @@ describe("signBlob handler", () => {
 
     expect(result).toEqual({ error: "Session timed out" });
   });
+
+  it("applies SEP-53 framing when apiVersion is legacy (3.0.0)", async () => {
+    const stellarHelpers = require("helpers/stellar");
+    blobQueue.push(makeBlobData("uuid-1"));
+    responseQueue.push({
+      response: mockResponseFn,
+      uuid: "uuid-1",
+      createdAt: Date.now(),
+    });
+
+    const request: SignBlobMessage = {
+      type: SERVICE_TYPES.SIGN_BLOB,
+      activePublicKey: MOCK_PUBLIC_KEY,
+      uuid: "uuid-1",
+      apiVersion: "3.0.0",
+    };
+
+    await signBlob({
+      request,
+      localStore: mockLocalStore,
+      sessionStore: mockSessionStore,
+      blobQueue,
+      responseQueue,
+    });
+
+    expect(stellarHelpers.encodeSep53Message).toHaveBeenCalledWith(
+      btoa("test-message"),
+    );
+    expect(mockResponseFn).toHaveBeenCalled();
+  });
+
+  it("applies SEP-53 framing when apiVersion is missing", async () => {
+    const stellarHelpers = require("helpers/stellar");
+    blobQueue.push(makeBlobData("uuid-1"));
+    responseQueue.push({
+      response: mockResponseFn,
+      uuid: "uuid-1",
+      createdAt: Date.now(),
+    });
+
+    const request: SignBlobMessage = {
+      type: SERVICE_TYPES.SIGN_BLOB,
+      activePublicKey: MOCK_PUBLIC_KEY,
+      uuid: "uuid-1",
+    };
+
+    await signBlob({
+      request,
+      localStore: mockLocalStore,
+      sessionStore: mockSessionStore,
+      blobQueue,
+      responseQueue,
+    });
+
+    expect(stellarHelpers.encodeSep53Message).toHaveBeenCalledWith(
+      btoa("test-message"),
+    );
+    expect(mockResponseFn).toHaveBeenCalled();
+  });
+
+  it("applies SEP-53 framing when apiVersion is current (5.0.0)", async () => {
+    const stellarHelpers = require("helpers/stellar");
+    blobQueue.push(makeBlobData("uuid-1"));
+    responseQueue.push({
+      response: mockResponseFn,
+      uuid: "uuid-1",
+      createdAt: Date.now(),
+    });
+
+    const request: SignBlobMessage = {
+      type: SERVICE_TYPES.SIGN_BLOB,
+      activePublicKey: MOCK_PUBLIC_KEY,
+      uuid: "uuid-1",
+      apiVersion: "5.0.0",
+    };
+
+    await signBlob({
+      request,
+      localStore: mockLocalStore,
+      sessionStore: mockSessionStore,
+      blobQueue,
+      responseQueue,
+    });
+
+    expect(stellarHelpers.encodeSep53Message).toHaveBeenCalledWith(
+      btoa("test-message"),
+    );
+    expect(mockResponseFn).toHaveBeenCalled();
+  });
 });
