@@ -248,6 +248,18 @@
         padding-bottom: pxToRem(12px);
         border-bottom: 1px solid var(--sds-clr-gray-06);
       }
+
+      &--memo {
+        gap: pxToRem(12px);
+
+        > * {
+          min-width: 0;
+        }
+
+        .SignTransaction__Metadata__Label {
+          flex: 0 0 auto;
+        }
+      }
     }
 
     &__Label {
@@ -260,7 +272,24 @@
       }
     }
 
+    &__Memo {
+      display: block;
+      width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      text-align: right;
+    }
+
     &__Value {
+      &--memo {
+        min-width: 0;
+        flex: 1 1 0;
+        max-width: 60%;
+        overflow: hidden;
+        text-align: right;
+      }
+
       .CopyValue {
         max-width: pxToRem(120px);
 

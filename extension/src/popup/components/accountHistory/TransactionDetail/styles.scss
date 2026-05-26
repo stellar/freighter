@@ -286,7 +286,36 @@
         margin-bottom: 0;
       }
 
+      &--memo {
+        gap: pxToRem(12px);
+
+        > * {
+          min-width: 0;
+        }
+
+        .Metadata__label {
+          flex: 0 0 auto;
+        }
+      }
+
+      &__memo {
+        display: block;
+        width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        text-align: right;
+      }
+
       &__value {
+        &--memo {
+          min-width: 0;
+          flex: 1 1 0;
+          max-width: 60%;
+          overflow: hidden;
+          text-align: right;
+        }
+
         &.failed {
           color: var(--sds-clr-red-11);
         }

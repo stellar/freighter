@@ -38,6 +38,7 @@ import {
   MemoRequiredLabel,
 } from "popup/components/WarningMessages";
 import { CopyValue } from "popup/components/CopyValue";
+import { TruncatedMemo } from "popup/components/TruncatedMemo";
 import { trackSendFeeBreakdownOpened } from "popup/metrics/send";
 import { FeesPane } from "popup/components/InternalTransaction/FeesPane";
 import { ActionButtons } from "./components/ActionButtons";
@@ -353,16 +354,17 @@ export const ReviewTx = ({
       <div className="ReviewTx__Details">
         {/* Hide memo row when memo is disabled (e.g., for all M addresses) */}
         {!isMemoDisabled && (
-          <div className="ReviewTx__Details__Row">
+          <div className="ReviewTx__Details__Row ReviewTx__Details__Row--memo">
             <div className="ReviewTx__Details__Row__Title">
               <Icon.File02 />
               {t("Memo")}
             </div>
-            <div
-              className="ReviewTx__Details__Row__Value"
-              data-testid="review-tx-memo"
-            >
-              {memo || t("None")}
+            <div className="ReviewTx__Details__Row__Value ReviewTx__Details__Row__Value--memo">
+              <TruncatedMemo
+                memo={memo}
+                className="ReviewTx__Memo"
+                data-testid="review-tx-memo"
+              />
             </div>
           </div>
         )}
