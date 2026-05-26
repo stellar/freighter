@@ -58,7 +58,7 @@ const makeBlobData = (uuid: string) => ({
   blob: {
     apiVersion: "5.0.0",
     domain: "example.com",
-    message: btoa("test-message"),
+    message: "test-message",
     url: "https://example.com",
     uuid,
   } as any,
@@ -269,7 +269,7 @@ describe("signBlob handler", () => {
     });
 
     expect(stellarHelpers.encodeSep53Message).toHaveBeenCalledWith(
-      btoa("test-message"),
+      "test-message",
     );
     expect(mockResponseFn).toHaveBeenCalled();
   });
@@ -298,7 +298,7 @@ describe("signBlob handler", () => {
     });
 
     expect(stellarHelpers.encodeSep53Message).toHaveBeenCalledWith(
-      btoa("test-message"),
+      "test-message",
     );
     expect(mockResponseFn).toHaveBeenCalled();
   });
@@ -328,7 +328,7 @@ describe("signBlob handler", () => {
     });
 
     expect(stellarHelpers.encodeSep53Message).toHaveBeenCalledWith(
-      btoa("test-message"),
+      "test-message",
     );
     expect(mockResponseFn).toHaveBeenCalled();
   });
