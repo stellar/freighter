@@ -66,6 +66,7 @@ import { ConfirmSidebarRequest } from "popup/views/ConfirmSidebarRequest";
 import { DEV_SERVER } from "@shared/constants/services";
 import { isSidebarMode } from "popup/helpers/isSidebarMode";
 import { SidebarSigningListener } from "popup/components/SidebarSigningListener";
+import { SessionLockListener } from "popup/components/SessionLockListener";
 import { SettingsState } from "@shared/api/types";
 
 import { SignMessage } from "./views/SignMessage";
@@ -173,6 +174,7 @@ const Layout = () => {
 export const Router = () => (
   <HashRouter>
     <RouteListener />
+    <SessionLockListener />
     {isSidebarMode() && <SidebarSigningListener />}
     <Routes>
       <Route path="/" element={<Layout />}>
