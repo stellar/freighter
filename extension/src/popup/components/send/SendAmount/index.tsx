@@ -943,7 +943,12 @@ export const SendAmount = ({
                       </button>
                     </div>
 
-                    {/* Secondary row: USD equivalent and available balance */}
+                    {/* Secondary row: USD equivalent and available balance.
+                        Lets flex-wrap stack the two cells onto separate rows
+                        when the row is too narrow (popup) to fit both,
+                        and keeps them side-by-side when there's room
+                        (fullscreen). The wrap behavior is driven by
+                        flex-wrap in styles.scss — see __balance-row. */}
                     <div className="SendAmount__balance-row">
                       {supportsUsd && (
                         <div className="SendAmount__amount-price">
@@ -960,8 +965,9 @@ export const SendAmount = ({
                               const newInputType =
                                 inputType === "crypto" ? "fiat" : "crypto";
                               if (newInputType === "crypto") {
-                                // If crypto was the last edited field, keep the exact
-                                // typed token amount. Otherwise convert from fiat.
+                                // If crypto was the last edited field, keep
+                                // the exact typed token amount. Otherwise
+                                // convert from fiat.
                                 const converted =
                                   editedInputType === "crypto"
                                     ? formik.values.amount || "0"
@@ -970,8 +976,9 @@ export const SendAmount = ({
                                 formik.setFieldValue("amount", converted);
                               }
                               if (newInputType === "fiat") {
-                                // If fiat was the last edited field, keep the exact
-                                // typed fiat amount. Otherwise convert from token.
+                                // If fiat was the last edited field, keep
+                                // the exact typed fiat amount. Otherwise
+                                // convert from token.
                                 const raw =
                                   editedInputType === "fiat"
                                     ? formik.values.amountUsd || "0"

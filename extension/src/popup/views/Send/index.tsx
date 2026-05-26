@@ -35,7 +35,7 @@ import { InputWidthProvider } from "./contexts/inputWidthContext";
 import "./styles.scss";
 
 const SEND_METRIC_BY_STEP: Partial<Record<STEPS, string>> = {
-  [STEPS.SELECT_SOURCE_ASSET]: METRIC_NAMES.sendPaymentSelectAsset,
+  [STEPS.SET_SOURCE_ASSET]: METRIC_NAMES.sendPaymentSelectAsset,
   [STEPS.AMOUNT]: METRIC_NAMES.sendPaymentAmount,
   [STEPS.PAYMENT_CONFIRM]: METRIC_NAMES.sendPaymentConfirm,
   [STEPS.DESTINATION]: METRIC_NAMES.sendPaymentTo,
@@ -163,7 +163,7 @@ export const Send = () => {
   const [activeStep, setActiveStep] = useState<STEPS>(() => {
     return sendParams.has("asset") || sendParams.has("collection_address")
       ? STEPS.DESTINATION
-      : STEPS.SELECT_SOURCE_ASSET;
+      : STEPS.SET_SOURCE_ASSET;
   });
   const [prevStep, setPrevStep] = useState<STEPS>(activeStep);
   const [visitedSteps, setVisitedSteps] = useState<Record<STEPS, boolean>>(
@@ -171,7 +171,7 @@ export const Send = () => {
   );
 
   const initialAnim: "from-bottom" | "from-right" =
-    activeStep === STEPS.SELECT_SOURCE_ASSET ? "from-bottom" : "from-right";
+    activeStep === STEPS.SET_SOURCE_ASSET ? "from-bottom" : "from-right";
   const [enterAnim, setEnterAnim] = useState<
     "from-bottom" | "from-right" | "from-left"
   >(initialAnim);
@@ -272,7 +272,7 @@ export const Send = () => {
           />
         );
       }
-      case STEPS.SELECT_SOURCE_ASSET: {
+      case STEPS.SET_SOURCE_ASSET: {
         return (
           <SendDestinationAsset
             goBack={() => closeSendFlow()}
@@ -297,8 +297,8 @@ export const Send = () => {
             goBack={() => {
               if (fromAmount) {
                 goToStep(STEPS.AMOUNT, "dismiss");
-              } else if (prevStep === STEPS.SELECT_SOURCE_ASSET) {
-                goToStep(STEPS.SELECT_SOURCE_ASSET, "from-left");
+              } else if (prevStep === STEPS.SET_SOURCE_ASSET) {
+                goToStep(STEPS.SET_SOURCE_ASSET, "from-left");
               } else {
                 closeSendFlow();
               }

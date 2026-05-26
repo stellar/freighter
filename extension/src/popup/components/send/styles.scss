@@ -160,6 +160,8 @@
     align-items: center;
     color: var(--sds-clr-gray-11);
     font-size: pxToRem(14px);
+    flex: 0 0 auto;
+    white-space: nowrap;
 
     .Button {
       border: 0;
@@ -167,6 +169,7 @@
       width: 14px;
       height: 14px;
       margin-left: pxToRem(6px);
+      flex-shrink: 0;
     }
   }
 
@@ -250,6 +253,7 @@
     flex-wrap: wrap;
     justify-content: space-between;
     align-items: center;
+    column-gap: pxToRem(8px);
     row-gap: pxToRem(2px);
     margin-top: pxToRem(6px);
   }
@@ -257,6 +261,8 @@
   &__available-balance {
     font-size: pxToRem(13px);
     color: var(--sds-clr-gray-11);
+    flex: 0 0 auto;
+    white-space: nowrap;
   }
 
   &__pct-buttons {
