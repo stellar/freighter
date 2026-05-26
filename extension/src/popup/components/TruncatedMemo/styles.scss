@@ -4,4 +4,12 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+
+  // `text-overflow: ellipsis` requires a block-level formatting context.
+  // When rendered as a `<span>` (inline mode) we need to switch to
+  // `inline-block` so ellipsis can take effect outside of a flex parent.
+  &--inline {
+    display: inline-block;
+    vertical-align: bottom;
+  }
 }

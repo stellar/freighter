@@ -34,13 +34,21 @@ export const TruncatedMemo = ({
   const hasMemo = !!memo;
   const fullMemo = hasMemo ? (memo as string) : "";
   const fallbackText = fallback ?? t("None");
+  const shouldEllipsize =
+    hasMemo && typeof maxChars === "number" && maxChars > 0;
   const displayValue = hasMemo
-    ? maxChars
-      ? ellipsize(fullMemo, maxChars)
+    ? shouldEllipsize
+      ? ellipsize(fullMemo, maxChars as number)
       : fullMemo
     : fallbackText;
   const Tag = inline ? "span" : "div";
-  const classes = ["TruncatedMemo", className].filter(Boolean).join(" ");
+  const classes = [
+    "TruncatedMemo",
+    inline ? "TruncatedMemo--inline" : null,
+    className,
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   return (
     <Tag

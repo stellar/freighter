@@ -273,11 +273,10 @@
     }
 
     &__Memo {
-      display: block;
+      // Truncation (overflow/ellipsis/nowrap) is owned by `.TruncatedMemo`;
+      // this selector only adds the layout-specific tweaks needed in this
+      // metadata row.
       width: 100%;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
       text-align: right;
     }
 
