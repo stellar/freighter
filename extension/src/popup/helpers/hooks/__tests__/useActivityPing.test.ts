@@ -88,45 +88,20 @@ describe("useActivityPing", () => {
         expect.anything(),
       );
     }
-    // The mount ping still fires regardless of `isUnlocked` (the
-    // background is the authoritative gate); only event-driven pings
-    // are suppressed.
-    expect(sendMessageToBackground).toHaveBeenCalledTimes(1);
+    expect(sendMessageToBackground).not.toHaveBeenCalled();
 
     addSpy.mockRestore();
   });
 
-  it("sends a USER_ACTIVITY ping on mount when unlocked", () => {
+  it("does not ping on mount (only user input resets the timer)", () => {
     renderHook(() => useActivityPing(true));
 
-    expect(sendMessageToBackground).toHaveBeenCalledTimes(1);
-    expect(sendMessageToBackground).toHaveBeenCalledWith({
-      type: SERVICE_TYPES.USER_ACTIVITY,
-      activePublicKey: "",
-    });
+    expect(sendMessageToBackground).not.toHaveBeenCalled();
   });
 
-  it("throttles event-driven pings against the mount ping", () => {
-    renderHook(() => useActivityPing(true));
-
-    // Mount ping has already fired at t=10_000; event within the
-    // throttle window is suppressed.
-    window.dispatchEvent(new MouseEvent("mousedown"));
-    expect(sendMessageToBackground).toHaveBeenCalledTimes(1);
-
-    // Past the throttle window, events resume firing.
-    jest.setSystemTime(15_000);
-    window.dispatchEvent(new MouseEvent("mousedown"));
-    expect(sendMessageToBackground).toHaveBeenCalledTimes(2);
-  });
-
-  it("still pings on mount when locked (background is the authoritative gate)", () => {
+  it("does not ping on mount when locked", () => {
     renderHook(() => useActivityPing(false));
 
-    expect(sendMessageToBackground).toHaveBeenCalledTimes(1);
-    expect(sendMessageToBackground).toHaveBeenCalledWith({
-      type: SERVICE_TYPES.USER_ACTIVITY,
-      activePublicKey: "",
-    });
+    expect(sendMessageToBackground).not.toHaveBeenCalled();
   });
 });

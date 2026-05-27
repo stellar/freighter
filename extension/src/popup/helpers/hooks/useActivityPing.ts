@@ -37,33 +37,21 @@ const sendPing = () => {
  * event in each `PING_THROTTLE_MS` window — accurate to ~8 % on the
  * 1-minute preset and effectively noise at higher presets.
  *
- * Also pings once on mount of every Freighter surface (popup, sidebar,
- * fullscreen), unconditionally. Opening a Freighter UI is itself a
- * user-initiated action, and the background-side `userActivity`
- * handler is the authoritative gate that decides whether the wallet
- * is actually unlocked before rearming the alarm — so the popup
- * doesn't need to second-guess its own redux state, which can lag
- * behind the background (e.g. before `loadAccount` has hydrated
- * `hasPrivateKey`). Without firing on mount, a user whose dApp opens
- * a new popup mid-session can be locked out mid-flow because the new
- * surface's redux store hasn't caught up to the background's session
- * state in time to satisfy the previous `isUnlocked` gate.
+ * Deliberately does NOT ping on mount. A surface mount is not by
+ * itself proof of user presence — dApp-spawned signing popups, for
+ * example, can be triggered programmatically while the user is away.
+ * Pinging on mount would let a malicious dApp prolong the session
+ * indefinitely by spamming sign requests. This matches MetaMask and
+ * Phantom: only direct user input inside the wallet UI resets the
+ * idle timer.
  */
 export const useActivityPing = (isUnlocked: boolean) => {
-  // Mount ping: fire-and-forget, exactly once per surface mount,
-  // regardless of the popup-side `isUnlocked` signal. The background
-  // gates whether to actually rearm the alarm on the authoritative
-  // session state.
-  useEffect(() => {
-    sendPing();
-  }, []);
-
   // Event-driven pings: only while unlocked. No-op when locked so
   // stray scrolls/clicks on the unlock screen don't generate traffic.
   useEffect(() => {
     if (!isUnlocked) return undefined;
 
-    let lastPingAt = Date.now();
+    let lastPingAt = 0;
     const handler = () => {
       const now = Date.now();
       if (now - lastPingAt < PING_THROTTLE_MS) return;
