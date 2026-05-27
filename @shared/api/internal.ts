@@ -1864,14 +1864,14 @@ export const loadSettings = (): Promise<
     IndexerSettings &
     ExperimentalFeatures & { assetsLists: AssetsLists }
 > =>
-  sendMessageToBackground({
-    activePublicKey: null,
-    type: SERVICE_TYPES.LOAD_SETTINGS,
-  }) as unknown as Promise<
+  sendMessageToBackground<
     Settings &
       IndexerSettings &
       ExperimentalFeatures & { assetsLists: AssetsLists }
-  >;
+  >({
+    activePublicKey: null,
+    type: SERVICE_TYPES.LOAD_SETTINGS,
+  });
 
 export const loadBackendSettings = async (): Promise<{
   isSorobanPublicEnabled: boolean;
