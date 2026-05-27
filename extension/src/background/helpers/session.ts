@@ -50,6 +50,11 @@ export class SessionTimer {
    */
   async resetSession() {
     const delayInMinutes = await this.getTimeoutMinutes();
+    // eslint-disable-next-line no-console
+    console.warn("[auto-lock] SessionTimer.resetSession", {
+      ts: Date.now(),
+      delayInMinutes,
+    });
     await browser?.alarms.create(SESSION_ALARM_NAME, { delayInMinutes });
   }
 

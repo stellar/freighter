@@ -18,7 +18,9 @@ const ACTIVITY_EVENTS = [
 ] as const;
 
 const sendPing = () => {
-  void sendMessageToBackground({
+  // eslint-disable-next-line no-console
+  console.warn("[auto-lock] popup sendPing called", { ts: Date.now() });
+  sendMessageToBackground({
     type: SERVICE_TYPES.USER_ACTIVITY,
     // `USER_ACTIVITY` is account-agnostic — the background only cares
     // that *some* extension page is active, not which key is selected.
@@ -27,7 +29,15 @@ const sendPing = () => {
     // check (`if (request.activePublicKey && …)`) treats empty-string
     // as "skip the check", same as the previous null.
     activePublicKey: "",
-  });
+  })
+    .then((res) => {
+      // eslint-disable-next-line no-console
+      console.warn("[auto-lock] popup sendPing response", res);
+    })
+    .catch((e) => {
+      // eslint-disable-next-line no-console
+      console.warn("[auto-lock] popup sendPing error", e);
+    });
 };
 
 /**
