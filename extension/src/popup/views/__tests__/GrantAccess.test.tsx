@@ -101,6 +101,7 @@ describe("Grant Access view", () => {
             applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
             publicKey:
               "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF",
+            hasPrivateKey: true,
             allAccounts: mockAccounts,
           },
           settings: {
@@ -143,6 +144,7 @@ describe("Grant Access view", () => {
             applicationState: ApplicationState.PASSWORD_CREATED,
             publicKey:
               "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF",
+            hasPrivateKey: true,
             allAccounts: mockAccounts,
           },
           settings: {
@@ -178,6 +180,7 @@ describe("Grant Access view", () => {
             applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
             publicKey:
               "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF",
+            hasPrivateKey: true,
             allAccounts: mockAccounts,
           },
           settings: {
@@ -218,6 +221,7 @@ describe("Grant Access view", () => {
             applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
             publicKey:
               "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF",
+            hasPrivateKey: true,
             allAccounts: mockAccounts,
           },
           settings: {
@@ -253,6 +257,7 @@ describe("Grant Access view", () => {
             applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
             publicKey:
               "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF",
+            hasPrivateKey: true,
             allAccounts: mockAccounts,
           },
           settings: {
@@ -294,6 +299,7 @@ describe("Grant Access view", () => {
             applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
             publicKey:
               "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF",
+            hasPrivateKey: true,
             allAccounts: mockAccounts,
           },
           settings: {
@@ -349,6 +355,7 @@ describe("Grant Access view", () => {
             applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
             publicKey:
               "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF",
+            hasPrivateKey: true,
             allAccounts: mockAccounts,
           },
           settings: {

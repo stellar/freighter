@@ -55,7 +55,11 @@ function useGetAppData() {
     dispatch({ type: "FETCH_DATA_START" });
     reduxDispatch(saveApplicationState(APPLICATION_STATE.APPLICATION_LOADING));
     try {
-      if (useCache && currentAccount.publicKey) {
+      if (
+        useCache &&
+        currentAccount.publicKey &&
+        currentAccount.hasPrivateKey
+      ) {
         const payload = {
           type: "resolved",
           account: currentAccount,

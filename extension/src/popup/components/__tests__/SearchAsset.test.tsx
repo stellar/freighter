@@ -32,6 +32,7 @@ describe("SearchAsset", () => {
             error: null,
             applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
             publicKey: "G1",
+            hasPrivateKey: true,
             allAccounts: mockAccounts,
           },
           settings: {
@@ -112,6 +113,7 @@ describe("SearchAsset", () => {
             error: null,
             applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
             publicKey: "G1",
+            hasPrivateKey: true,
             allAccounts: mockAccounts,
             balances: mockBalances,
           },

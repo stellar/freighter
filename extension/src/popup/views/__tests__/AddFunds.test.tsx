@@ -86,6 +86,7 @@ describe("AddFunds view", () => {
             error: null,
             applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
             publicKey: "G1",
+            hasPrivateKey: true,
             allAccounts: mockAccounts,
           },
           settings: {
@@ -118,6 +119,7 @@ describe("AddFunds view", () => {
             error: null,
             applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
             publicKey: "G1",
+            hasPrivateKey: true,
             allAccounts: mockAccounts,
           },
           settings: {
