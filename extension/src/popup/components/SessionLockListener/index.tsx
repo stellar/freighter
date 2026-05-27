@@ -33,9 +33,34 @@ export const SessionLockListener = () => {
   const location = useLocation();
 
   useEffect(() => {
-    const handler = async (message: unknown) => {
+    // IMPORTANT: this handler must be a *synchronous* function. Every
+    // Freighter UI surface (popup, sidebar, fullscreen) registers a
+    // `runtime.onMessage` listener, and `browser.runtime.sendMessage`
+    // broadcasts to every extension context except the sender. If this
+    // handler were `async`, it would always return a Promise — which
+    // Chrome interprets as "this listener will produce the response" —
+    // and could win the race against the background's own handler for
+    // any unrelated request (e.g. `LOAD_ACCOUNT`,
+    // `GET_IS_ACCOUNT_MISMATCH`) sent by another surface. The sender
+    // would then receive `undefined` from this listener instead of the
+    // real background payload, surfacing as crashes like
+    // "Cannot read properties of null (reading 'publicKey')".
+    //
+    // To stay out of the response slot for unrelated messages we
+    // return `undefined` synchronously below. For our two broadcast
+    // types we still don't claim the response slot (the background's
+    // broadcast doesn't await any reply); the SESSION_UNLOCKED
+    // `loadAccount` round-trip runs as a fire-and-forget side effect.
+    const handler = (message: unknown) => {
       if (typeof message !== "object" || message === null) return undefined;
       const { type } = message as { type?: unknown };
+      if (
+        type !== SERVICE_TYPES.SESSION_LOCKED &&
+        type !== SERVICE_TYPES.SESSION_UNLOCKED
+      ) {
+        return undefined;
+      }
+
       if (type === SERVICE_TYPES.SESSION_LOCKED) {
         // Already on the unlock screen — nothing to do. Avoids clobbering
         // an existing `state.from` set by an earlier reroute.
@@ -46,16 +71,17 @@ export const SessionLockListener = () => {
         });
         return undefined;
       }
-      if (type !== SERVICE_TYPES.SESSION_UNLOCKED) return undefined;
 
-      const account = await loadAccount();
-      dispatch(saveAccount(account));
-      if (
-        location.pathname === ROUTES.unlockAccount ||
-        location.pathname === ROUTES.verifyAccount
-      ) {
-        navigate(ROUTES.account, { replace: true });
-      }
+      void (async () => {
+        const account = await loadAccount();
+        dispatch(saveAccount(account));
+        if (
+          location.pathname === ROUTES.unlockAccount ||
+          location.pathname === ROUTES.verifyAccount
+        ) {
+          navigate(ROUTES.account, { replace: true });
+        }
+      })();
       return undefined;
     };
 

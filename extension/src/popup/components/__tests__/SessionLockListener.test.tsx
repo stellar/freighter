@@ -94,6 +94,9 @@ const emitMessage = async (message: unknown) => {
   });
 };
 
+const callListenerSync = (message: unknown) =>
+  listeners[listeners.length - 1](message);
+
 describe("SessionLockListener", () => {
   beforeEach(() => {
     listeners.length = 0;
@@ -201,5 +204,38 @@ describe("SessionLockListener", () => {
     expect(auth.hasPrivateKey).toBe(true);
     expect(auth.publicKey).toBe("GBTEST");
     expect(lastLocation?.pathname).toBe("/");
+  });
+
+  // Regression: when multiple Freighter surfaces are open, the background
+  // and every popup-side SessionLockListener share `runtime.onMessage`.
+  // Returning a Promise (e.g. from an `async` handler) tells Chrome
+  // "this listener will respond" and can win the race against the
+  // background handler for unrelated requests, leaking `undefined` to
+  // the sender. The handler must therefore return `undefined`
+  // synchronously for messages it does not own.
+  it("returns undefined synchronously for unrelated messages so it does not claim the response slot", () => {
+    renderListener();
+
+    expect(callListenerSync({ type: SERVICE_TYPES.LOAD_ACCOUNT })).toBeUndefined();
+    expect(
+      callListenerSync({ type: SERVICE_TYPES.GET_IS_ACCOUNT_MISMATCH }),
+    ).toBeUndefined();
+    expect(callListenerSync("not an object")).toBeUndefined();
+    expect(callListenerSync(null)).toBeUndefined();
+  });
+
+  it("returns undefined synchronously for SESSION_LOCKED / SESSION_UNLOCKED too (background broadcast doesn't await a reply)", () => {
+    renderListener("/", makeStore());
+
+    let lockedResult: unknown;
+    let unlockedResult: unknown;
+    act(() => {
+      lockedResult = callListenerSync({ type: SERVICE_TYPES.SESSION_LOCKED });
+      unlockedResult = callListenerSync({
+        type: SERVICE_TYPES.SESSION_UNLOCKED,
+      });
+    });
+    expect(lockedResult).toBeUndefined();
+    expect(unlockedResult).toBeUndefined();
   });
 });
