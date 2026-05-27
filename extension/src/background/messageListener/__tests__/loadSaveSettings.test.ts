@@ -3,6 +3,7 @@ import { saveSettings } from "../handlers/saveSettings";
 import {
   AUTO_LOCK_TIMEOUT_MINUTES_ID,
   IS_OPEN_SIDEBAR_BY_DEFAULT_ID,
+  TEMPORARY_STORE_ID,
 } from "constants/localStorageTypes";
 import { DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES } from "@shared/constants/autoLock";
 import browser from "webextension-polyfill";
@@ -183,13 +184,21 @@ describe("saveSettings autoLockTimeoutMinutes", () => {
       stopSession: jest.fn().mockResolvedValue(undefined),
     }) as any;
 
-  const makeLocalStore = (storedTimeout: number | null = 15) =>
+  const makeLocalStore = (
+    storedTimeout: number | null = 15,
+    hasTempStore: boolean = true,
+  ) =>
     ({
       getItem: jest.fn().mockImplementation((key: string) => {
         if (key === AUTO_LOCK_TIMEOUT_MINUTES_ID)
           return Promise.resolve(storedTimeout);
         if (key === IS_OPEN_SIDEBAR_BY_DEFAULT_ID)
           return Promise.resolve(false);
+        if (key === TEMPORARY_STORE_ID) {
+          return Promise.resolve(
+            hasTempStore ? { "key-id-0": "encrypted-blob" } : null,
+          );
+        }
         return Promise.resolve(null);
       }),
       setItem: jest.fn().mockResolvedValue(undefined),
@@ -249,7 +258,7 @@ describe("saveSettings autoLockTimeoutMinutes", () => {
     const sessionTimer = makeSessionTimer();
     await saveSettings({
       request: { ...baseRequest, autoLockTimeoutMinutes: 5 } as any,
-      localStore: makeLocalStore(5),
+      localStore: makeLocalStore(5, false),
       sessionStore: makeSessionStore(null),
       sessionTimer,
     });

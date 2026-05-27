@@ -10,6 +10,7 @@ import {
   subscribeAccount as internalSubscribeAccount,
 } from "background/helpers/account";
 import { DataStorageAccess } from "background/helpers/dataStorageAccess";
+import { TEMPORARY_STORE_ID } from "constants/localStorageTypes";
 
 export const logIn = createAsyncThunk<
   UiData,
@@ -203,7 +204,11 @@ export const buildHasPrivateKeySelector = (localStore: DataStorageAccess) =>
     if (isHardwareWalletActive && !session?.isHardwareWalletLocked) {
       return true;
     }
-    return !!session?.hashKey?.key;
+    if (!session?.hashKey?.key) {
+      return false;
+    }
+    const temporaryStore = await localStore.getItem(TEMPORARY_STORE_ID);
+    return !!temporaryStore && Object.keys(temporaryStore).length > 0;
   });
 
 export const isHardwareWalletLockedSelector = createSelector(

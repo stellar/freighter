@@ -21,6 +21,7 @@ import {
   storeActiveHashKey,
   storeEncryptedTemporaryData,
 } from "background/helpers/session";
+import { flushSessionStore } from "background/store";
 import {
   allAccountsSelector,
   logIn,
@@ -28,6 +29,8 @@ import {
 } from "background/ducks/session";
 import { getStoredAccounts } from "./get-stored-accounts";
 import { captureException } from "@sentry/browser";
+import { SERVICE_TYPES } from "@shared/constants/services";
+import { broadcastSessionState } from "./broadcast-session-state";
 
 /* Retrive and store encrypted data for all existing accounts */
 export const loginToAllAccounts = async (
@@ -136,4 +139,6 @@ export const loginToAllAccounts = async (
 
   // start the timer now that we have active private key
   await sessionTimer.startSession();
+  await flushSessionStore(sessionStore);
+  await broadcastSessionState(SERVICE_TYPES.SESSION_UNLOCKED);
 };

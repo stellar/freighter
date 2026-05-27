@@ -3,9 +3,10 @@ import { useDispatch } from "react-redux";
 import { useLocation, useNavigate } from "react-router-dom";
 import browser from "webextension-polyfill";
 
+import { loadAccount } from "@shared/api/internal";
 import { SERVICE_TYPES } from "@shared/constants/services";
 import { ROUTES } from "popup/constants/routes";
-import { lockAccount } from "popup/ducks/accountServices";
+import { lockAccount, saveAccount } from "popup/ducks/accountServices";
 
 /**
  * Listens for the background's `SESSION_LOCKED` broadcast (fired when
@@ -32,17 +33,29 @@ export const SessionLockListener = () => {
   const location = useLocation();
 
   useEffect(() => {
-    const handler = (message: unknown) => {
+    const handler = async (message: unknown) => {
       if (typeof message !== "object" || message === null) return undefined;
       const { type } = message as { type?: unknown };
-      if (type !== SERVICE_TYPES.SESSION_LOCKED) return undefined;
-      // Already on the unlock screen — nothing to do. Avoids clobbering
-      // an existing `state.from` set by an earlier reroute.
-      if (location.pathname === ROUTES.unlockAccount) return undefined;
-      dispatch(lockAccount());
-      navigate(`${ROUTES.unlockAccount}${location.search}`, {
-        state: { from: location },
-      });
+      if (type === SERVICE_TYPES.SESSION_LOCKED) {
+        // Already on the unlock screen — nothing to do. Avoids clobbering
+        // an existing `state.from` set by an earlier reroute.
+        if (location.pathname === ROUTES.unlockAccount) return undefined;
+        dispatch(lockAccount());
+        navigate(`${ROUTES.unlockAccount}${location.search}`, {
+          state: { from: location },
+        });
+        return undefined;
+      }
+      if (type !== SERVICE_TYPES.SESSION_UNLOCKED) return undefined;
+
+      const account = await loadAccount();
+      dispatch(saveAccount(account));
+      if (
+        location.pathname === ROUTES.unlockAccount ||
+        location.pathname === ROUTES.verifyAccount
+      ) {
+        navigate(ROUTES.account, { replace: true });
+      }
       return undefined;
     };
 

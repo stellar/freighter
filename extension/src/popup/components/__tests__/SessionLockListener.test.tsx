@@ -10,14 +10,16 @@ import {
 } from "react-router-dom";
 import browser from "webextension-polyfill";
 
+import { loadAccount } from "@shared/api/internal";
 import { SERVICE_TYPES } from "@shared/constants/services";
 import { ROUTES } from "popup/constants/routes";
 import { reducer as authReducer } from "popup/ducks/accountServices";
 import { SessionLockListener } from "../SessionLockListener";
 
-type RuntimeHandler = (message: unknown) => void;
+type RuntimeHandler = (message: unknown) => void | Promise<void>;
 
 const listeners: RuntimeHandler[] = [];
+const mockLoadAccount = loadAccount as jest.MockedFunction<typeof loadAccount>;
 
 jest.mock("webextension-polyfill", () => ({
   runtime: {
@@ -29,6 +31,10 @@ jest.mock("webextension-polyfill", () => ({
       }),
     },
   },
+}));
+
+jest.mock("@shared/api/internal", () => ({
+  loadAccount: jest.fn(),
 }));
 
 const makeStore = () =>
@@ -50,6 +56,15 @@ const makeStore = () =>
       },
     } as any,
   });
+
+const loadedAccount = {
+  allAccounts: [{ publicKey: "GBUPDATED" } as any],
+  applicationState: "MNEMONIC_PHRASE_CONFIRMED",
+  bipPath: "m/44'/148'/1'",
+  hasPrivateKey: true,
+  publicKey: "GBUPDATED",
+  tokenIdList: ["token2"],
+} as Awaited<ReturnType<typeof loadAccount>>;
 
 let lastLocation: ReturnType<typeof useLocation> | null = null;
 const LocationSpy = () => {
@@ -73,11 +88,18 @@ const renderListener = (
     </Provider>,
   );
 
+const emitMessage = async (message: unknown) => {
+  await act(async () => {
+    await listeners[listeners.length - 1](message);
+  });
+};
+
 describe("SessionLockListener", () => {
   beforeEach(() => {
     listeners.length = 0;
     lastLocation = null;
     jest.clearAllMocks();
+    mockLoadAccount.mockResolvedValue(loadedAccount);
   });
 
   it("registers a runtime.onMessage listener on mount and removes it on unmount", () => {
@@ -91,15 +113,11 @@ describe("SessionLockListener", () => {
     expect(listeners).toHaveLength(0);
   });
 
-  it("dispatches lockAccount and navigates to unlockAccount on SESSION_LOCKED", () => {
+  it("dispatches lockAccount and navigates to unlockAccount on SESSION_LOCKED", async () => {
     const store = makeStore();
     renderListener("/", store);
 
-    act(() => {
-      listeners[listeners.length - 1]({
-        type: SERVICE_TYPES.SESSION_LOCKED,
-      });
-    });
+    await emitMessage({ type: SERVICE_TYPES.SESSION_LOCKED });
 
     const { auth } = store.getState();
     expect(auth.hasPrivateKey).toBe(false);
@@ -108,16 +126,12 @@ describe("SessionLockListener", () => {
     expect(lastLocation?.pathname).toBe(ROUTES.unlockAccount);
   });
 
-  it("preserves the originating route as state.from and forwards location.search", () => {
+  it("preserves the originating route as state.from and forwards location.search", async () => {
     const store = makeStore();
     const originalEntry = `${ROUTES.grantAccess}?domain=example.com&public=GA1`;
     renderListener(originalEntry, store);
 
-    act(() => {
-      listeners[listeners.length - 1]({
-        type: SERVICE_TYPES.SESSION_LOCKED,
-      });
-    });
+    await emitMessage({ type: SERVICE_TYPES.SESSION_LOCKED });
 
     expect(lastLocation?.pathname).toBe(ROUTES.unlockAccount);
     expect(lastLocation?.search).toBe("?domain=example.com&public=GA1");
@@ -125,16 +139,12 @@ describe("SessionLockListener", () => {
     expect(state?.from?.pathname).toBe(ROUTES.grantAccess);
   });
 
-  it("does not re-navigate or clobber state when already on the unlock screen", () => {
+  it("does not re-navigate or clobber state when already on the unlock screen", async () => {
     const store = makeStore();
     renderListener(ROUTES.unlockAccount, store);
     const initialState = lastLocation?.state;
 
-    act(() => {
-      listeners[listeners.length - 1]({
-        type: SERVICE_TYPES.SESSION_LOCKED,
-      });
-    });
+    await emitMessage({ type: SERVICE_TYPES.SESSION_LOCKED });
 
     // Reducer is not dispatched and no navigation happens.
     expect(store.getState().auth.hasPrivateKey).toBe(true);
@@ -142,17 +152,50 @@ describe("SessionLockListener", () => {
     expect(lastLocation?.state).toBe(initialState);
   });
 
-  it("ignores unrelated messages", () => {
+  it("loads and saves account data on SESSION_UNLOCKED", async () => {
     const store = makeStore();
     renderListener("/", store);
 
-    act(() => {
-      listeners[listeners.length - 1]({
-        type: SERVICE_TYPES.LOAD_ACCOUNT,
-      });
-      listeners[listeners.length - 1]("not an object");
-      listeners[listeners.length - 1](null);
-    });
+    await emitMessage({ type: SERVICE_TYPES.SESSION_UNLOCKED });
+
+    expect(mockLoadAccount).toHaveBeenCalledTimes(1);
+    const { auth } = store.getState();
+    expect(auth.hasPrivateKey).toBe(true);
+    expect(auth.publicKey).toBe("GBUPDATED");
+    expect(auth.allAccounts).toEqual([{ publicKey: "GBUPDATED" }]);
+  });
+
+  it("navigates to account from unlockAccount on SESSION_UNLOCKED", async () => {
+    renderListener(ROUTES.unlockAccount);
+
+    await emitMessage({ type: SERVICE_TYPES.SESSION_UNLOCKED });
+
+    expect(lastLocation?.pathname).toBe(ROUTES.account);
+  });
+
+  it("navigates to account from verifyAccount on SESSION_UNLOCKED", async () => {
+    renderListener(ROUTES.verifyAccount);
+
+    await emitMessage({ type: SERVICE_TYPES.SESSION_UNLOCKED });
+
+    expect(lastLocation?.pathname).toBe(ROUTES.account);
+  });
+
+  it("does not navigate from a non-lock route on SESSION_UNLOCKED", async () => {
+    renderListener(ROUTES.settings);
+
+    await emitMessage({ type: SERVICE_TYPES.SESSION_UNLOCKED });
+
+    expect(lastLocation?.pathname).toBe(ROUTES.settings);
+  });
+
+  it("ignores unrelated messages", async () => {
+    const store = makeStore();
+    renderListener("/", store);
+
+    await emitMessage({ type: SERVICE_TYPES.LOAD_ACCOUNT });
+    await emitMessage("not an object");
+    await emitMessage(null);
 
     const { auth } = store.getState();
     expect(auth.hasPrivateKey).toBe(true);

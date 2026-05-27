@@ -8,6 +8,7 @@ import {
   timeoutAccountAccess,
   lockHardwareWallet,
 } from "../ducks/session";
+import { flushSessionStore } from "../store";
 import { DataStorageAccess } from "./dataStorageAccess";
 import {
   AUTO_LOCK_TIMEOUT_MINUTES_ID,
@@ -310,5 +311,6 @@ export const clearSession = async ({
   // `localStore.isHardwareWalletActive` and is unaffected — so without
   // this dispatch the idle alarm would be a no-op on HW-only sessions.
   sessionStore.dispatch(lockHardwareWallet());
+  await flushSessionStore(sessionStore);
   await localStore.remove(TEMPORARY_STORE_ID);
 };

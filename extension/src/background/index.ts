@@ -29,6 +29,7 @@ import {
   SIDEBAR_DISCONNECT_DEBOUNCE_MS,
 } from "./helpers/queueCleanup";
 import { removeUuidFromAllQueues } from "./messageListener/handlers/rejectSigningRequest";
+import { broadcastSessionState } from "./messageListener/helpers/broadcast-session-state";
 import {
   SESSION_ALARM_NAME,
   SessionTimer,
@@ -231,20 +232,7 @@ export const initAlarmListener = () => {
 
     if (name === SESSION_ALARM_NAME) {
       await clearSession({ sessionStore, localStore });
-      // Broadcast to every open extension UI (popup, sidebar, standalone
-      // signing/grant-access windows) that the wallet just auto-locked, so
-      // they can flip to the unlock screen instead of leaving stale,
-      // privilege-suggestive views (Account, Assets, History) on screen
-      // until the next data refetch. `runtime.sendMessage` only reaches
-      // extension contexts other than the sender; when no UI is open it
-      // rejects with "Could not establish connection", which is harmless.
-      try {
-        await browser.runtime.sendMessage({
-          type: SERVICE_TYPES.SESSION_LOCKED,
-        });
-      } catch {
-        // No receivers — nothing to do.
-      }
+      await broadcastSessionState(SERVICE_TYPES.SESSION_LOCKED);
     }
   });
 };
