@@ -44,14 +44,6 @@ export const userActivity = async ({
   const isHwActive = await getIsHardwareWalletActive({ localStore });
   const hwUnlocked = isHwActive && !isHardwareWalletLockedSelector(state);
 
-  // eslint-disable-next-line no-console
-  console.warn("[auto-lock] BG userActivity received", {
-    ts: Date.now(),
-    hotUnlocked,
-    hwUnlocked,
-    isHwActive,
-  });
-
   if (!hotUnlocked && !hwUnlocked) {
     return { ok: false };
   }

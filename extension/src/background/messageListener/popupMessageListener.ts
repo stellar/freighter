@@ -143,16 +143,28 @@ export const popupMessageListener = (
   localStore: DataStorageAccess,
   keyManager: KeyManager,
   sessionTimer: SessionTimer,
-  sender: { tab?: unknown; id?: string },
+  sender: { tab?: unknown; id?: string; url?: string },
 ) => {
   const currentState = sessionStore.getState();
   const publicKey = publicKeySelector(currentState);
 
-  // Content scripts (dapp pages) always carry sender.tab; extension pages do not.
-  // Also verify the message originates from this extension (sender.id matches),
-  // guarding against other extensions calling popupMessageListener handlers.
+  // Content scripts (dapp pages) carry `sender.tab` with a non-extension
+  // `sender.url`. Extension pages may also carry `sender.tab` when they
+  // live in their own tab/window (e.g. dApp-spawned signing popups
+  // created via `browser.windows.create`, fullscreen mode); those still
+  // have an extension-origin `sender.url`. So the right check is:
+  // `sender.id` matches our extension AND either there is no tab
+  // (browser-action popup, sidepanel) OR the URL is on our extension
+  // origin (popup window, options page, fullscreen).
+  const extensionOrigin = browser?.runtime?.getURL?.("") ?? "";
+  const isFromOwnExtension =
+    !sender.id || sender.id === browser?.runtime?.id;
+  const isExtensionUrl =
+    !!extensionOrigin &&
+    typeof sender.url === "string" &&
+    sender.url.startsWith(extensionOrigin);
   const isFromExtensionPage =
-    !sender.tab && (!sender.id || sender.id === browser?.runtime?.id);
+    isFromOwnExtension && (!sender.tab || isExtensionUrl);
 
   if (
     request.activePublicKey &&

@@ -227,8 +227,6 @@ export const initSidebarBehavior = async () => {
 
 export const initAlarmListener = () => {
   browser?.alarms?.onAlarm.addListener(async ({ name }: { name: string }) => {
-    // eslint-disable-next-line no-console
-    console.warn("[auto-lock] alarm fired", { ts: Date.now(), name });
     const sessionStore = await buildStore();
     const localStore = dataStorageAccess(browserLocalStorage);
 
