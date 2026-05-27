@@ -168,20 +168,12 @@ describe("SessionLockListener", () => {
     expect(auth.allAccounts).toEqual([{ publicKey: "GBUPDATED" }]);
   });
 
-  it("navigates to account from unlockAccount on SESSION_UNLOCKED", async () => {
+  it("does not navigate from any route on SESSION_UNLOCKED (unlock views navigate themselves via redux state)", async () => {
     renderListener(ROUTES.unlockAccount);
 
     await emitMessage({ type: SERVICE_TYPES.SESSION_UNLOCKED });
 
-    expect(lastLocation?.pathname).toBe(ROUTES.account);
-  });
-
-  it("navigates to account from verifyAccount on SESSION_UNLOCKED", async () => {
-    renderListener(ROUTES.verifyAccount);
-
-    await emitMessage({ type: SERVICE_TYPES.SESSION_UNLOCKED });
-
-    expect(lastLocation?.pathname).toBe(ROUTES.account);
+    expect(lastLocation?.pathname).toBe(ROUTES.unlockAccount);
   });
 
   it("does not navigate from a non-lock route on SESSION_UNLOCKED", async () => {

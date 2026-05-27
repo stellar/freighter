@@ -72,15 +72,20 @@ export const SessionLockListener = () => {
         return undefined;
       }
 
+      // SESSION_UNLOCKED. Refresh this surface's auth state so passive
+      // surfaces (e.g. sidebar parked on /unlock-account) reflect the
+      // unlocked wallet. We deliberately do NOT navigate here:
+      // `runtime.sendMessage` is broadcast by the background to every
+      // extension context including the popup that *initiated* the
+      // unlock via `confirmPassword`, so navigating from this listener
+      // would race the unlock view's own post-submit navigation (and
+      // in the grant-access flow would land the user on /account
+      // instead of /grant-access). The unlock screens watch
+      // `hasPrivateKey` and navigate themselves once auth state
+      // flips, which covers both the active and passive surfaces.
       void (async () => {
         const account = await loadAccount();
         dispatch(saveAccount(account));
-        if (
-          location.pathname === ROUTES.unlockAccount ||
-          location.pathname === ROUTES.verifyAccount
-        ) {
-          navigate(ROUTES.account, { replace: true });
-        }
       })();
       return undefined;
     };
