@@ -1,6 +1,7 @@
 import { Store } from "redux";
 
 import { SaveSettingsMessage } from "@shared/api/types/message-request";
+import { SaveSettingsResponse } from "@shared/api/types/types";
 import { coerceAutoLockTimeoutMinutes } from "@shared/constants/autoLock";
 import {
   getAllowList,
@@ -35,7 +36,7 @@ export const saveSettings = async ({
   localStore: DataStorageAccess;
   sessionStore: Store;
   sessionTimer: SessionTimer;
-}) => {
+}): Promise<SaveSettingsResponse> => {
   const {
     isDataSharingAllowed,
     isMemoValidationEnabled,

@@ -210,6 +210,7 @@ export const popupMessageListener = (
         request,
         localStore,
         sessionStore,
+        sessionTimer,
       });
     }
     case SERVICE_TYPES.MAKE_ACCOUNT_ACTIVE: {

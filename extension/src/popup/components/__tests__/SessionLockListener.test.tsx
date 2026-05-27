@@ -142,15 +142,18 @@ describe("SessionLockListener", () => {
     expect(state?.from?.pathname).toBe(ROUTES.grantAccess);
   });
 
-  it("does not re-navigate or clobber state when already on the unlock screen", async () => {
+  it("dispatches lockAccount but does NOT re-navigate when already on the unlock screen", async () => {
     const store = makeStore();
     renderListener(ROUTES.unlockAccount, store);
     const initialState = lastLocation?.state;
 
     await emitMessage({ type: SERVICE_TYPES.SESSION_LOCKED });
 
-    // Reducer is not dispatched and no navigation happens.
-    expect(store.getState().auth.hasPrivateKey).toBe(true);
+    // Redux is still flipped to locked so passive surfaces and any
+    // mounted <ActivityTracker> see the correct auth state — only the
+    // navigate is suppressed (to avoid clobbering an existing
+    // `state.from` set by an earlier reroute).
+    expect(store.getState().auth.hasPrivateKey).toBe(false);
     expect(lastLocation?.pathname).toBe(ROUTES.unlockAccount);
     expect(lastLocation?.state).toBe(initialState);
   });
@@ -196,6 +199,45 @@ describe("SessionLockListener", () => {
     expect(auth.hasPrivateKey).toBe(true);
     expect(auth.publicKey).toBe("GBTEST");
     expect(lastLocation?.pathname).toBe("/");
+  });
+
+  // Regression: a flaky background or a transient MV3 service-worker
+  // restart can make `loadAccount()` resolve with `undefined`.
+  // Dispatching that into `saveAccount` previously hit the
+  // destructuring reducer and threw `TypeError: Cannot destructure
+  // property 'hasPrivateKey' of 'undefined'`, crashing the surface.
+  it("treats an undefined loadAccount result as a no-op on SESSION_UNLOCKED", async () => {
+    const store = makeStore();
+    mockLoadAccount.mockResolvedValueOnce(
+      undefined as unknown as Awaited<ReturnType<typeof loadAccount>>,
+    );
+    renderListener("/", store);
+
+    await emitMessage({ type: SERVICE_TYPES.SESSION_UNLOCKED });
+
+    const { auth } = store.getState();
+    // State is unchanged from the preloaded value — no crash, no
+    // partial application of the response.
+    expect(auth.publicKey).toBe("GBTEST");
+    expect(auth.hasPrivateKey).toBe(true);
+  });
+
+  // Regression: an uncaught rejection inside the fire-and-forget
+  // SESSION_UNLOCKED handler became an unhandled promise rejection
+  // that could crash the surface in production.
+  it("does not throw when loadAccount rejects on SESSION_UNLOCKED", async () => {
+    const store = makeStore();
+    const consoleSpy = jest
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+    mockLoadAccount.mockRejectedValueOnce(new Error("network down"));
+    renderListener("/", store);
+
+    await expect(
+      emitMessage({ type: SERVICE_TYPES.SESSION_UNLOCKED }),
+    ).resolves.not.toThrow();
+    expect(store.getState().auth.publicKey).toBe("GBTEST");
+    consoleSpy.mockRestore();
   });
 
   // Regression: when multiple Freighter surfaces are open, the background

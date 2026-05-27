@@ -1,7 +1,11 @@
 import { Store } from "redux";
 import { SERVICE_TYPES } from "@shared/constants/services";
 
-import { logOut, publicKeySelector } from "background/ducks/session";
+import {
+  lockHardwareWallet,
+  logOut,
+  publicKeySelector,
+} from "background/ducks/session";
 import { DataStorageAccess } from "background/helpers/dataStorageAccess";
 import { SessionTimer } from "background/helpers/session";
 import { broadcastSessionState } from "../helpers/broadcast-session-state";
@@ -27,6 +31,14 @@ export const signOut = async ({
   // state and emit a duplicate SESSION_LOCKED broadcast.
   await sessionTimer.stopSession();
   sessionStore.dispatch(logOut());
+  // `logOut` resets session state to `initialState`, which sets
+  // `isHardwareWalletLocked: false`. The KEY_ID (`hw:…` prefix) is
+  // intentionally not cleared on sign-out (so the HW account can be
+  // re-unlocked without re-importing), which means
+  // `getIsHardwareWalletActive` still reports `true`. Without this
+  // dispatch, `buildHasPrivateKeySelector`'s HW branch would report
+  // the wallet UNLOCKED for HW users immediately after sign-out.
+  sessionStore.dispatch(lockHardwareWallet());
   await flushSessionStore(sessionStore);
   await localStore.remove(TEMPORARY_STORE_ID);
   await broadcastSessionState(SERVICE_TYPES.SESSION_LOCKED);

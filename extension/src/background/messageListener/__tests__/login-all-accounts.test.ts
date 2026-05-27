@@ -113,4 +113,80 @@ describe("loginToAllAccounts", () => {
       mockFlushSessionStore.mock.invocationCallOrder[0],
     ).toBeLessThan(mockBroadcastSessionState.mock.invocationCallOrder[0]);
   });
+
+  // Regression: the two catch blocks call `clearSession()` (which wipes
+  // hashKey, sets `isHardwareWalletLocked=true`, removes
+  // TEMPORARY_STORE_ID), but previously did not return/throw. Execution
+  // continued to the unconditional `startSession()` + `flushSessionStore()`
+  // + `broadcastSessionState(SESSION_UNLOCKED)` at the bottom, telling
+  // every Freighter surface the wallet was unlocked even though it had
+  // just been cleared. Both catches must rethrow so the caller knows the
+  // unlock failed and the unlock broadcast does not fire.
+  it("rethrows and does not broadcast SESSION_UNLOCKED when storing the active mnemonic fails", async () => {
+    mockStoreEncryptedTemporaryData.mockReset();
+    mockStoreEncryptedTemporaryData.mockRejectedValueOnce(
+      new Error("storage offline"),
+    );
+
+    const localStore = {
+      getItem: jest.fn().mockResolvedValue(""),
+      remove: jest.fn().mockResolvedValue(undefined),
+    } as any;
+    const sessionStore = {
+      dispatch: jest.fn().mockResolvedValue(undefined),
+      getState: jest
+        .fn()
+        .mockReturnValue({ session: { publicKey: "", allAccounts: [] } }),
+    } as any;
+    const sessionTimer = {
+      startSession: jest.fn().mockResolvedValue(undefined),
+    } as any;
+
+    await expect(
+      loginToAllAccounts(
+        "password",
+        localStore,
+        sessionStore,
+        {} as any,
+        sessionTimer,
+      ),
+    ).rejects.toThrow("storage offline");
+
+    expect(mockClearSession).toHaveBeenCalledTimes(1);
+    expect(sessionTimer.startSession).not.toHaveBeenCalled();
+    expect(mockBroadcastSessionState).not.toHaveBeenCalled();
+  });
+
+  it("rethrows and does not broadcast SESSION_UNLOCKED when storing the active hash key fails", async () => {
+    mockStoreActiveHashKey.mockReset();
+    mockStoreActiveHashKey.mockRejectedValueOnce(new Error("hash key write"));
+
+    const localStore = {
+      getItem: jest.fn().mockResolvedValue(""),
+      remove: jest.fn().mockResolvedValue(undefined),
+    } as any;
+    const sessionStore = {
+      dispatch: jest.fn().mockResolvedValue(undefined),
+      getState: jest
+        .fn()
+        .mockReturnValue({ session: { publicKey: "", allAccounts: [] } }),
+    } as any;
+    const sessionTimer = {
+      startSession: jest.fn().mockResolvedValue(undefined),
+    } as any;
+
+    await expect(
+      loginToAllAccounts(
+        "password",
+        localStore,
+        sessionStore,
+        {} as any,
+        sessionTimer,
+      ),
+    ).rejects.toThrow("hash key write");
+
+    expect(mockClearSession).toHaveBeenCalledTimes(1);
+    expect(sessionTimer.startSession).not.toHaveBeenCalled();
+    expect(mockBroadcastSessionState).not.toHaveBeenCalled();
+  });
 });

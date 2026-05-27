@@ -98,6 +98,11 @@ export const loginToAllAccounts = async (
     captureException(
       `Error storing encrypted temporary data: ${JSON.stringify(e)}`,
     );
+    // Rethrow so we don't fall through to startSession() +
+    // broadcastSessionState(SESSION_UNLOCKED) below, which would tell
+    // every Freighter surface the wallet is unlocked even though
+    // clearSession() just wiped it.
+    throw e;
   }
 
   for (let i = 0; i < keyIdList.length; i += 1) {
@@ -135,6 +140,10 @@ export const loginToAllAccounts = async (
   } catch (e) {
     await clearSession({ localStore, sessionStore });
     captureException(`Error storing active hash key: ${JSON.stringify(e)}`);
+    // Rethrow so we don't fall through to startSession() +
+    // broadcastSessionState(SESSION_UNLOCKED) below — the session was
+    // just cleared and the wallet must not be reported as unlocked.
+    throw e;
   }
 
   // start the timer now that we have active private key

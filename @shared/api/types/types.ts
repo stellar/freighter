@@ -222,6 +222,20 @@ export interface IndexerSettings {
   userNotification: UserNotification;
 }
 
+export type SaveSettingsResponse = {
+  allowList: AllowList;
+  isDataSharingAllowed: boolean;
+  isMemoValidationEnabled: boolean;
+  networkDetails: NetworkDetails;
+  networksList: NetworkDetails[];
+  isRpcHealthy: boolean;
+  isSorobanPublicEnabled: boolean;
+  isNonSSLEnabled: boolean;
+  isHideDustEnabled: boolean;
+  isOpenSidebarByDefault: boolean;
+  autoLockTimeoutMinutes: AutoLockTimeoutMinutes;
+};
+
 export type Settings = {
   allowList: AllowList;
   networkDetails: NetworkDetails;

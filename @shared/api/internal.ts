@@ -64,6 +64,7 @@ import {
   CollectibleContract,
   DiscoverData,
   RecentProtocolEntry,
+  SaveSettingsResponse,
 } from "./types";
 import {
   AccountBalancesInterface,
@@ -1630,27 +1631,23 @@ export const saveSettings = async ({
   isHideDustEnabled: boolean;
   isOpenSidebarByDefault: boolean;
   autoLockTimeoutMinutes: AutoLockTimeoutMinutes;
-}): Promise<Settings & IndexerSettings> => {
-  let response = {
+}): Promise<SaveSettingsResponse> => {
+  let response: SaveSettingsResponse = {
     allowList: DEFAULT_ALLOW_LIST,
     isDataSharingAllowed: false,
     networkDetails: MAINNET_NETWORK_DETAILS,
     networksList: DEFAULT_NETWORKS,
     isMemoValidationEnabled: true,
     isRpcHealthy: false,
-    userNotification: { enabled: false, message: "" },
-    settingsState: SettingsState.IDLE,
     isSorobanPublicEnabled: false,
     isNonSSLEnabled: false,
     isHideDustEnabled: true,
     isOpenSidebarByDefault: false,
     autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
-    error: "",
-    hiddenAssets: {},
   };
 
   try {
-    response = (await sendMessageToBackground({
+    response = await sendMessageToBackground<SaveSettingsResponse>({
       activePublicKey,
       isDataSharingAllowed,
       isMemoValidationEnabled,
@@ -1658,13 +1655,9 @@ export const saveSettings = async ({
       isOpenSidebarByDefault,
       autoLockTimeoutMinutes,
       type: SERVICE_TYPES.SAVE_SETTINGS,
-    })) as unknown as typeof response;
+    });
   } catch (e) {
     console.error(e);
-  }
-
-  if (response.error) {
-    throw new Error(response.error);
   }
 
   return response;

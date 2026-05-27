@@ -1,5 +1,6 @@
 import { SERVICE_TYPES } from "@shared/constants/services";
 
+import { lockHardwareWallet, logOut } from "background/ducks/session";
 import { signOut } from "../handlers/signOut";
 
 const mockFlushSessionStore = jest.fn().mockResolvedValue(undefined);
@@ -58,5 +59,48 @@ describe("signOut handler", () => {
     expect(
       localStore.remove.mock.invocationCallOrder[0],
     ).toBeLessThan(mockBroadcastSessionState.mock.invocationCallOrder[0]);
+  });
+
+  // Regression: `logOut` resets session state to `initialState`, which
+  // sets `isHardwareWalletLocked: false`. `KEY_ID` (`hw:…` prefix) is
+  // intentionally not cleared on sign-out, so
+  // `getIsHardwareWalletActive` still returns `true` afterwards — which
+  // means `buildHasPrivateKeySelector`'s HW branch would falsely
+  // report the wallet UNLOCKED for HW users after an explicit
+  // sign-out. The handler must also dispatch `lockHardwareWallet()`.
+  it("dispatches lockHardwareWallet alongside logOut so HW sessions are locked on sign-out", async () => {
+    const localStore = {
+      getItem: jest.fn().mockResolvedValue("MNEMONIC_PHRASE_CONFIRMED"),
+      remove: jest.fn().mockResolvedValue(undefined),
+    } as any;
+    const sessionStore = {
+      dispatch: jest.fn(),
+      getState: jest.fn().mockReturnValue({
+        session: { publicKey: "" },
+      }),
+    } as any;
+    const sessionTimer = {
+      stopSession: jest.fn().mockResolvedValue(undefined),
+    } as any;
+
+    await signOut({ localStore, sessionStore, sessionTimer });
+
+    const dispatched = sessionStore.dispatch.mock.calls.map(
+      (c: unknown[]) => c[0],
+    );
+    expect(dispatched).toEqual(
+      expect.arrayContaining([logOut(), lockHardwareWallet()]),
+    );
+    // lockHardwareWallet must run *after* logOut so logOut's
+    // initialState reset (which sets isHardwareWalletLocked: false)
+    // does not undo the HW-lock flag.
+    const logOutIdx = dispatched.findIndex(
+      (a: { type?: string }) => a?.type === logOut.type,
+    );
+    const lockHwIdx = dispatched.findIndex(
+      (a: { type?: string }) => a?.type === lockHardwareWallet.type,
+    );
+    expect(logOutIdx).toBeGreaterThanOrEqual(0);
+    expect(lockHwIdx).toBeGreaterThan(logOutIdx);
   });
 });

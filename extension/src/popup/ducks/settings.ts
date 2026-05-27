@@ -39,6 +39,7 @@ import {
   IndexerSettings,
   SettingsState,
   ExperimentalFeatures,
+  SaveSettingsResponse,
 } from "@shared/api/types";
 import { publicKeySelector } from "popup/ducks/accountServices";
 import { AppState } from "popup/App";
@@ -126,7 +127,7 @@ export const saveAllowList = createAsyncThunk<
 );
 
 export const saveSettings = createAsyncThunk<
-  Settings & IndexerSettings,
+  SaveSettingsResponse,
   {
     isDataSharingAllowed: boolean;
     isMemoValidationEnabled: boolean;
@@ -147,14 +148,18 @@ export const saveSettings = createAsyncThunk<
     },
     { getState, rejectWithValue },
   ) => {
-    let res: Settings & IndexerSettings = {
-      ...settingsInitialState,
-      isSorobanPublicEnabled: false,
+    let res: SaveSettingsResponse = {
+      allowList: DEFAULT_ALLOW_LIST,
+      isDataSharingAllowed: false,
+      isMemoValidationEnabled: false,
+      networkDetails: settingsInitialState.networkDetails,
+      networksList: settingsInitialState.networksList,
       isRpcHealthy: false,
-      userNotification: { enabled: false, message: "" },
-      settingsState: SettingsState.IDLE,
+      isSorobanPublicEnabled: false,
+      isNonSSLEnabled: false,
       isHideDustEnabled: true,
       isOpenSidebarByDefault: false,
+      autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
     };
     const activePublicKey = publicKeySelector(getState());
 
@@ -449,12 +454,7 @@ const settingsSlice = createSlice({
         isHideDustEnabled,
         isOpenSidebarByDefault,
         autoLockTimeoutMinutes,
-        overriddenBlockaidResponse,
-      } = (action?.payload as typeof action.payload & {
-        overriddenBlockaidResponse?: string | null;
-        isOpenSidebarByDefault?: boolean;
-        autoLockTimeoutMinutes?: AutoLockTimeoutMinutes;
-      }) || {
+      } = action?.payload || {
         ...initialState,
       };
 
@@ -470,7 +470,6 @@ const settingsSlice = createSlice({
         isOpenSidebarByDefault: isOpenSidebarByDefault ?? false,
         autoLockTimeoutMinutes:
           autoLockTimeoutMinutes ?? DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
-        overriddenBlockaidResponse: overriddenBlockaidResponse ?? null,
       };
     });
     builder.addCase(saveExperimentalFeatures.pending, (state) => ({

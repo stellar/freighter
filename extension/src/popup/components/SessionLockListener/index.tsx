@@ -74,10 +74,18 @@ export const SessionLockListener = () => {
       const currentLocation = locationRef.current;
 
       if (type === SERVICE_TYPES.SESSION_LOCKED) {
-        // Already on the unlock screen — nothing to do. Avoids clobbering
-        // an existing `state.from` set by an earlier reroute.
-        if (currentLocation.pathname === ROUTES.unlockAccount) return undefined;
+        // Always flip the popup's redux to locked state — even if we're
+        // already on /unlock-account. Without this dispatch the surface
+        // keeps `hasPrivateKey: true` in redux while the background
+        // session is locked, and `<ActivityTracker>` continues sending
+        // `USER_ACTIVITY` pings (which are no-ops once the background
+        // is locked, but still wasted IPC and a misleading signal).
         dispatch(lockAccount());
+        // Skip the navigate only when we're already on the unlock
+        // screen. That avoids clobbering an existing `state.from` set
+        // by an earlier reroute (e.g. a sign-transaction flow that
+        // already rerouted here and stored the original destination).
+        if (currentLocation.pathname === ROUTES.unlockAccount) return undefined;
         navigate(`${ROUTES.unlockAccount}${currentLocation.search}`, {
           state: { from: currentLocation },
         });
@@ -96,8 +104,23 @@ export const SessionLockListener = () => {
       // `hasPrivateKey` and navigate themselves once auth state
       // flips, which covers both the active and passive surfaces.
       void (async () => {
-        const account = await loadAccount();
-        dispatch(saveAccount(account));
+        try {
+          const account = await loadAccount();
+          // Guard against a missing/undefined background response. MV3
+          // service-worker restarts and transient handler errors can
+          // resolve `loadAccount()` to `undefined`; dispatching that
+          // into `saveAccount` hits the destructuring reducer and
+          // throws `TypeError: Cannot destructure property
+          // 'hasPrivateKey' of 'undefined'`. Treat as a no-op — the
+          // next genuine auth event will refresh the surface.
+          if (!account) return;
+          dispatch(saveAccount(account));
+        } catch (e) {
+          // An uncaught rejection here becomes an unhandled promise
+          // rejection that crashes the surface. Log and drop — the
+          // background remains the source of truth.
+          console.error("SessionLockListener: loadAccount failed", e);
+        }
       })();
       return undefined;
     };
