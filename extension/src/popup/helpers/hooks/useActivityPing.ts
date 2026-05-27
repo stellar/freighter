@@ -23,16 +23,19 @@ const ACTIVITY_EVENTS = [
  * Uses a leading-edge throttle so a single ping fires on the first
  * event in each `PING_THROTTLE_MS` window — accurate to ~8 % on the
  * 1-minute preset and effectively noise at higher presets.
+ *
+ * Also pings once on mount, so opening a new Freighter surface (popup,
+ * sidebar, fullscreen) while the wallet is unlocked itself counts as
+ * activity. This prevents the wallet from auto-locking mid-flow when a
+ * dApp triggers a new popup near the end of the idle window.
  */
 export const useActivityPing = (isUnlocked: boolean) => {
   useEffect(() => {
     if (!isUnlocked) return undefined;
 
     let lastPingAt = 0;
-    const handler = () => {
-      const now = Date.now();
-      if (now - lastPingAt < PING_THROTTLE_MS) return;
-      lastPingAt = now;
+    const ping = () => {
+      lastPingAt = Date.now();
       void sendMessageToBackground({
         type: SERVICE_TYPES.USER_ACTIVITY,
         // `USER_ACTIVITY` is account-agnostic — the background only
@@ -44,6 +47,20 @@ export const useActivityPing = (isUnlocked: boolean) => {
         // the previous null.
         activePublicKey: "",
       });
+    };
+
+    // Ping once on mount so opening a fresh Freighter surface (popup,
+    // sidebar, fullscreen) while the wallet is unlocked counts as
+    // activity and rearms the idle alarm. Without this, a user who
+    // triggers a dApp flow that opens a new popup near the end of the
+    // idle window can be locked out mid-flow before they ever interact
+    // with the new surface.
+    ping();
+
+    const handler = () => {
+      const now = Date.now();
+      if (now - lastPingAt < PING_THROTTLE_MS) return;
+      ping();
     };
 
     for (const evt of ACTIVITY_EVENTS) {
