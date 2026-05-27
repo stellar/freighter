@@ -17,6 +17,19 @@ const ACTIVITY_EVENTS = [
   "wheel",
 ] as const;
 
+const sendPing = () => {
+  void sendMessageToBackground({
+    type: SERVICE_TYPES.USER_ACTIVITY,
+    // `USER_ACTIVITY` is account-agnostic — the background only cares
+    // that *some* extension page is active, not which key is selected.
+    // Send an empty string (rather than null) to match `BaseMessage`'s
+    // `activePublicKey: string` typing; the background's mismatch
+    // check (`if (request.activePublicKey && …)`) treats empty-string
+    // as "skip the check", same as the previous null.
+    activePublicKey: "",
+  });
+};
+
 /**
  * Ping the background with USER_ACTIVITY messages whenever the user
  * interacts with the extension page, while the wallet is unlocked.
@@ -24,43 +37,38 @@ const ACTIVITY_EVENTS = [
  * event in each `PING_THROTTLE_MS` window — accurate to ~8 % on the
  * 1-minute preset and effectively noise at higher presets.
  *
- * Also pings once on mount, so opening a new Freighter surface (popup,
- * sidebar, fullscreen) while the wallet is unlocked itself counts as
- * activity. This prevents the wallet from auto-locking mid-flow when a
- * dApp triggers a new popup near the end of the idle window.
+ * Also pings once on mount of every Freighter surface (popup, sidebar,
+ * fullscreen), unconditionally. Opening a Freighter UI is itself a
+ * user-initiated action, and the background-side `userActivity`
+ * handler is the authoritative gate that decides whether the wallet
+ * is actually unlocked before rearming the alarm — so the popup
+ * doesn't need to second-guess its own redux state, which can lag
+ * behind the background (e.g. before `loadAccount` has hydrated
+ * `hasPrivateKey`). Without firing on mount, a user whose dApp opens
+ * a new popup mid-session can be locked out mid-flow because the new
+ * surface's redux store hasn't caught up to the background's session
+ * state in time to satisfy the previous `isUnlocked` gate.
  */
 export const useActivityPing = (isUnlocked: boolean) => {
+  // Mount ping: fire-and-forget, exactly once per surface mount,
+  // regardless of the popup-side `isUnlocked` signal. The background
+  // gates whether to actually rearm the alarm on the authoritative
+  // session state.
+  useEffect(() => {
+    sendPing();
+  }, []);
+
+  // Event-driven pings: only while unlocked. No-op when locked so
+  // stray scrolls/clicks on the unlock screen don't generate traffic.
   useEffect(() => {
     if (!isUnlocked) return undefined;
 
-    let lastPingAt = 0;
-    const ping = () => {
-      lastPingAt = Date.now();
-      void sendMessageToBackground({
-        type: SERVICE_TYPES.USER_ACTIVITY,
-        // `USER_ACTIVITY` is account-agnostic — the background only
-        // cares that *some* extension page is active, not which key is
-        // selected. Send an empty string (rather than null) to match
-        // `BaseMessage`'s `activePublicKey: string` typing; the
-        // background's mismatch check (`if (request.activePublicKey
-        // && …)`) treats empty-string as "skip the check", same as
-        // the previous null.
-        activePublicKey: "",
-      });
-    };
-
-    // Ping once on mount so opening a fresh Freighter surface (popup,
-    // sidebar, fullscreen) while the wallet is unlocked counts as
-    // activity and rearms the idle alarm. Without this, a user who
-    // triggers a dApp flow that opens a new popup near the end of the
-    // idle window can be locked out mid-flow before they ever interact
-    // with the new surface.
-    ping();
-
+    let lastPingAt = Date.now();
     const handler = () => {
       const now = Date.now();
       if (now - lastPingAt < PING_THROTTLE_MS) return;
-      ping();
+      lastPingAt = now;
+      sendPing();
     };
 
     for (const evt of ACTIVITY_EVENTS) {

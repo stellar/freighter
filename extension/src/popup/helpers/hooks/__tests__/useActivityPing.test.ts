@@ -88,7 +88,10 @@ describe("useActivityPing", () => {
         expect.anything(),
       );
     }
-    expect(sendMessageToBackground).not.toHaveBeenCalled();
+    // The mount ping still fires regardless of `isUnlocked` (the
+    // background is the authoritative gate); only event-driven pings
+    // are suppressed.
+    expect(sendMessageToBackground).toHaveBeenCalledTimes(1);
 
     addSpy.mockRestore();
   });
@@ -117,9 +120,13 @@ describe("useActivityPing", () => {
     expect(sendMessageToBackground).toHaveBeenCalledTimes(2);
   });
 
-  it("does not ping on mount when locked", () => {
+  it("still pings on mount when locked (background is the authoritative gate)", () => {
     renderHook(() => useActivityPing(false));
 
-    expect(sendMessageToBackground).not.toHaveBeenCalled();
+    expect(sendMessageToBackground).toHaveBeenCalledTimes(1);
+    expect(sendMessageToBackground).toHaveBeenCalledWith({
+      type: SERVICE_TYPES.USER_ACTIVITY,
+      activePublicKey: "",
+    });
   });
 });

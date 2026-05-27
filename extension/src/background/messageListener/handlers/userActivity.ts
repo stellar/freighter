@@ -1,26 +1,53 @@
+import { Store } from "redux";
+
+import { getIsHardwareWalletActive } from "background/helpers/account";
+import { DataStorageAccess } from "background/helpers/dataStorageAccess";
 import { SessionTimer } from "background/helpers/session";
+import {
+  hashKeySelector,
+  isHardwareWalletLockedSelector,
+  SessionState,
+} from "background/ducks/session";
 
 /**
  * Handle a USER_ACTIVITY ping from an extension page.
  *
- * Rearms the idle auto-lock alarm by delegating to
- * `sessionTimer.resetSession()`. The popup-side `useActivityPing` hook
- * only attaches event listeners while the wallet is unlocked, and
- * `popupMessageListener` gates this message behind `isFromExtensionPage`
- * so dApp content scripts cannot reach it — so a ping arriving here is
- * already proof of genuine user activity in an unlocked extension page.
+ * Pings come from two sources inside `useActivityPing`:
+ *  1. An unconditional mount ping fired by every Freighter surface
+ *     (popup, sidebar, fullscreen) as it loads.
+ *  2. Throttled user-input events while the popup believes the wallet
+ *     is unlocked.
  *
- * In the unlikely race where the wallet locks between the user's input
- * and the popup tearing down its listeners, an extra `resetSession()`
- * just (re)schedules an alarm that will fire on a locked session and
- * be a no-op when `clearSession` runs against state that's already
- * cleared.
+ * Either way, the popup-side `isUnlocked` is a delayed reflection of
+ * the background's session state (it depends on `loadAccount` having
+ * dispatched `saveAccount` into the popup's redux store). The
+ * background is the source of truth, so this handler authoritatively
+ * checks whether the wallet is currently unlocked before rearming the
+ * idle alarm. A ping that arrives on a locked wallet is dropped: there
+ * is no live session to extend.
+ *
+ * Unlocked = either a hot-wallet session (`hashKey` is set) or an
+ * active hardware-wallet session that has not been idle-locked.
  */
 export const userActivity = async ({
   sessionTimer,
+  sessionStore,
+  localStore,
 }: {
   sessionTimer: SessionTimer;
+  sessionStore: Store;
+  localStore: DataStorageAccess;
 }) => {
+  const state = sessionStore.getState() as SessionState;
+  const hashKey = hashKeySelector(state);
+  const hotUnlocked = !!hashKey?.key;
+  const isHwActive = await getIsHardwareWalletActive({ localStore });
+  const hwUnlocked = isHwActive && !isHardwareWalletLockedSelector(state);
+
+  if (!hotUnlocked && !hwUnlocked) {
+    return { ok: false };
+  }
+
   await sessionTimer.resetSession();
   return { ok: true };
 };
