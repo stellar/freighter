@@ -19,7 +19,7 @@ describe("signOut handler", () => {
     jest.clearAllMocks();
   });
 
-  it("flushes the session store before clearing temporary storage and broadcasting the lock", async () => {
+  it("stops the alarm before mutating session state and broadcasts the lock", async () => {
     const localStore = {
       getItem: jest.fn().mockResolvedValue("MNEMONIC_PHRASE_CONFIRMED"),
       remove: jest.fn().mockResolvedValue(undefined),
@@ -36,16 +36,27 @@ describe("signOut handler", () => {
 
     await signOut({ localStore, sessionStore, sessionTimer });
 
+    expect(sessionTimer.stopSession).toHaveBeenCalledTimes(1);
     expect(mockFlushSessionStore).toHaveBeenCalledWith(sessionStore);
     expect(localStore.remove).toHaveBeenCalledTimes(1);
     expect(mockBroadcastSessionState).toHaveBeenCalledWith(
       SERVICE_TYPES.SESSION_LOCKED,
     );
+
+    // stopSession must run before any state mutation so a pending
+    // alarm can't fire `clearSession` (and emit a duplicate
+    // SESSION_LOCKED broadcast) between the dispatch and the clear.
+    expect(
+      sessionTimer.stopSession.mock.invocationCallOrder[0],
+    ).toBeLessThan(sessionStore.dispatch.mock.invocationCallOrder[0]);
+    expect(
+      sessionStore.dispatch.mock.invocationCallOrder[0],
+    ).toBeLessThan(mockFlushSessionStore.mock.invocationCallOrder[0]);
     expect(
       mockFlushSessionStore.mock.invocationCallOrder[0],
     ).toBeLessThan(localStore.remove.mock.invocationCallOrder[0]);
     expect(
-      mockBroadcastSessionState.mock.invocationCallOrder[0],
-    ).toBeGreaterThan(mockFlushSessionStore.mock.invocationCallOrder[0]);
+      localStore.remove.mock.invocationCallOrder[0],
+    ).toBeLessThan(mockBroadcastSessionState.mock.invocationCallOrder[0]);
   });
 });

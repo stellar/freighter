@@ -12,19 +12,21 @@ import {
 /**
  * Handle a USER_ACTIVITY ping from an extension page.
  *
- * Pings come from two sources inside `useActivityPing`:
- *  1. An unconditional mount ping fired by every Freighter surface
- *     (popup, sidebar, fullscreen) as it loads.
- *  2. Throttled user-input events while the popup believes the wallet
- *     is unlocked.
+ * Pings originate from `useActivityPing`, which fires (throttled to
+ * one per 5 s) on direct user input — `mousedown`, `keydown`,
+ * `touchstart`, `wheel` — inside any Freighter surface (popup,
+ * sidebar, standalone signing window, grant-access window). Surface
+ * mounts deliberately do NOT ping: a dApp-spawned signing popup is
+ * programmatic, not proof of user presence, and a mount-ping would
+ * let a malicious dApp keep the session alive indefinitely.
  *
- * Either way, the popup-side `isUnlocked` is a delayed reflection of
+ * The popup-side `isUnlocked` it gates on is a delayed reflection of
  * the background's session state (it depends on `loadAccount` having
  * dispatched `saveAccount` into the popup's redux store). The
  * background is the source of truth, so this handler authoritatively
- * checks whether the wallet is currently unlocked before rearming the
- * idle alarm. A ping that arrives on a locked wallet is dropped: there
- * is no live session to extend.
+ * re-checks whether the wallet is currently unlocked before rearming
+ * the idle alarm. A ping that arrives on a locked wallet is dropped:
+ * there is no live session to extend.
  *
  * Unlocked = either a hot-wallet session (`hashKey` is set) or an
  * active hardware-wallet session that has not been idle-locked.

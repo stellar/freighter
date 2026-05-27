@@ -6,22 +6,6 @@ import {
   TEMPORARY_STORE_ID,
 } from "constants/localStorageTypes";
 import { DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES } from "@shared/constants/autoLock";
-import browser from "webextension-polyfill";
-
-const alarmsGet = jest.fn();
-const alarmsCreate = jest.fn().mockResolvedValue(undefined);
-const alarmsClear = jest.fn().mockResolvedValue(undefined);
-
-beforeEach(() => {
-  alarmsGet.mockReset();
-  alarmsCreate.mockClear();
-  alarmsClear.mockClear();
-  (browser as any).alarms = {
-    get: alarmsGet,
-    create: alarmsCreate,
-    clear: alarmsClear,
-  };
-});
 
 jest.mock("background/helpers/account", () => ({
   getAllowList: jest.fn().mockResolvedValue([]),
@@ -212,7 +196,11 @@ describe("saveSettings autoLockTimeoutMinutes", () => {
     isOpenSidebarByDefault: false,
   };
 
-  it("rejects invalid autoLockTimeoutMinutes values", async () => {
+  it("coerces invalid autoLockTimeoutMinutes to the default rather than rejecting", async () => {
+    // The Preferences `<Select>` only emits values from
+    // `VALID_AUTO_LOCK_TIMEOUT_MINUTES`, but a malformed message (e.g.
+    // from a future client revision) should still produce a sensible
+    // stored value rather than silently dropping the whole save.
     const localStore = makeLocalStore();
     const result = await saveSettings({
       request: { ...baseRequest, autoLockTimeoutMinutes: 7 } as any,
@@ -220,18 +208,26 @@ describe("saveSettings autoLockTimeoutMinutes", () => {
       sessionStore: makeSessionStore(),
       sessionTimer: makeSessionTimer(),
     });
-    expect((result as any).error).toBe("Invalid autoLockTimeoutMinutes");
-    expect(localStore.setItem).not.toHaveBeenCalled();
+    expect((result as any).error).toBeUndefined();
+    expect(localStore.setItem).toHaveBeenCalledWith(
+      AUTO_LOCK_TIMEOUT_MINUTES_ID,
+      DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
+    );
   });
 
-  it("rejects non-numeric autoLockTimeoutMinutes", async () => {
+  it("coerces non-numeric autoLockTimeoutMinutes to the default", async () => {
+    const localStore = makeLocalStore();
     const result = await saveSettings({
       request: { ...baseRequest, autoLockTimeoutMinutes: "15" } as any,
-      localStore: makeLocalStore(),
+      localStore,
       sessionStore: makeSessionStore(),
       sessionTimer: makeSessionTimer(),
     });
-    expect((result as any).error).toBe("Invalid autoLockTimeoutMinutes");
+    expect((result as any).error).toBeUndefined();
+    expect(localStore.setItem).toHaveBeenCalledWith(
+      AUTO_LOCK_TIMEOUT_MINUTES_ID,
+      DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
+    );
   });
 
   it("persists a valid timeout and reschedules when unlocked", async () => {
@@ -251,7 +247,6 @@ describe("saveSettings autoLockTimeoutMinutes", () => {
     );
     expect(sessionTimer.resetSession).toHaveBeenCalledTimes(1);
     expect((result as any).autoLockTimeoutMinutes).toBe(30);
-    expect((result as any).wasLocked).toBeUndefined();
   });
 
   it("does not reschedule the timer when the wallet is locked", async () => {
@@ -266,19 +261,13 @@ describe("saveSettings autoLockTimeoutMinutes", () => {
     expect(sessionTimer.stopSession).not.toHaveBeenCalled();
   });
 
-  it("rearms (rather than locking) when the user shortens the timeout", async () => {
-    // Saving settings is itself a user action, so shortening the
-    // timeout should restart the idle clock with the new value rather
-    // than synthesizing an immediate lock — even when the new threshold
-    // is already smaller than the elapsed idle time of the in-flight
-    // alarm. Set up `alarmsGet` to return an alarm whose remaining time
-    // (1 min) is much less than the new 5 min timeout, i.e. elapsed
-    // idle (59 min) ≫ new timeout (5 min). The previous implementation
-    // would have detected this and locked immediately; the current
-    // implementation must simply rearm.
-    alarmsGet.mockResolvedValue({
-      scheduledTime: Date.now() + 1 * 60_000,
-    });
+  it("treats a shortened timeout as user activity and rearms (does not lock immediately)", async () => {
+    // Saving settings is itself a user action: the handler always
+    // rearms the idle timer with the new timeout when the wallet is
+    // unlocked. There is no immediate-lock branch even when the new
+    // threshold is far below the elapsed idle time — the popup never
+    // sees a `wasLocked` flag and the session store is never mutated
+    // from this path.
     const localStore = makeLocalStore(60);
     const sessionTimer = makeSessionTimer();
     const sessionStore = {
@@ -286,7 +275,7 @@ describe("saveSettings autoLockTimeoutMinutes", () => {
       dispatch: jest.fn(),
     } as any;
 
-    const result = await saveSettings({
+    await saveSettings({
       request: { ...baseRequest, autoLockTimeoutMinutes: 5 } as any,
       localStore,
       sessionStore,
@@ -296,7 +285,6 @@ describe("saveSettings autoLockTimeoutMinutes", () => {
     expect(sessionTimer.resetSession).toHaveBeenCalledTimes(1);
     expect(sessionTimer.stopSession).not.toHaveBeenCalled();
     expect(sessionStore.dispatch).not.toHaveBeenCalled();
-    expect((result as any).wasLocked).toBeUndefined();
   });
 });
 

@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useDispatch } from "react-redux";
 import { useLocation, useNavigate } from "react-router-dom";
 import browser from "webextension-polyfill";
@@ -32,6 +32,16 @@ export const SessionLockListener = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // Mirror `location` into a ref so the `runtime.onMessage` listener
+  // can read the latest value without being a dependency of the
+  // effect that registers it. Without this the listener would be
+  // re-registered on every navigation — functionally fine (the
+  // cleanup unregisters first), but unnecessary churn on a hot path.
+  const locationRef = useRef(location);
+  useEffect(() => {
+    locationRef.current = location;
+  }, [location]);
+
   useEffect(() => {
     // IMPORTANT: this handler must be a *synchronous* function. Every
     // Freighter UI surface (popup, sidebar, fullscreen) registers a
@@ -61,13 +71,15 @@ export const SessionLockListener = () => {
         return undefined;
       }
 
+      const currentLocation = locationRef.current;
+
       if (type === SERVICE_TYPES.SESSION_LOCKED) {
         // Already on the unlock screen — nothing to do. Avoids clobbering
         // an existing `state.from` set by an earlier reroute.
-        if (location.pathname === ROUTES.unlockAccount) return undefined;
+        if (currentLocation.pathname === ROUTES.unlockAccount) return undefined;
         dispatch(lockAccount());
-        navigate(`${ROUTES.unlockAccount}${location.search}`, {
-          state: { from: location },
+        navigate(`${ROUTES.unlockAccount}${currentLocation.search}`, {
+          state: { from: currentLocation },
         });
         return undefined;
       }
@@ -94,7 +106,7 @@ export const SessionLockListener = () => {
     return () => {
       browser.runtime.onMessage.removeListener(handler);
     };
-  }, [dispatch, navigate, location]);
+  }, [dispatch, navigate]);
 
   return null;
 };

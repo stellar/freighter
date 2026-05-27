@@ -20,12 +20,15 @@ export const signOut = async ({
   sessionStore: Store;
   sessionTimer: SessionTimer;
 }) => {
+  // Cancel any pending auto-lock alarm FIRST — the wallet is being
+  // locked explicitly, so the idle timer no longer needs to fire.
+  // Clearing before mutating state eliminates the race window where
+  // a pending alarm could fire `clearSession` on already-cleared
+  // state and emit a duplicate SESSION_LOCKED broadcast.
+  await sessionTimer.stopSession();
   sessionStore.dispatch(logOut());
   await flushSessionStore(sessionStore);
   await localStore.remove(TEMPORARY_STORE_ID);
-  // Cancel any pending auto-lock alarm — the wallet is being locked
-  // explicitly, so the idle timer no longer needs to fire.
-  await sessionTimer.stopSession();
   await broadcastSessionState(SERVICE_TYPES.SESSION_LOCKED);
 
   return {

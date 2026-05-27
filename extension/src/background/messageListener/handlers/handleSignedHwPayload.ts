@@ -18,13 +18,6 @@ export const handleSignedHwPayload = async ({
 }) => {
   const { signedPayload, uuid } = request;
 
-  // A user just completed a hardware-wallet signature — that is a real
-  // user action, so extend the idle session. Without this the popup
-  // ping is the only path that refreshes the alarm, and a slow HW
-  // signing flow could outlast the timeout while the user is actively
-  // working.
-  await sessionTimer.resetSession();
-
   if (!uuid) {
     captureException("handleSignedHwPayload: missing uuid in request");
     return { error: "Transaction not found" };
@@ -40,6 +33,12 @@ export const handleSignedHwPayload = async ({
     transactionResponse &&
     typeof transactionResponse.response === "function"
   ) {
+    // A user just completed a hardware-wallet signature — that is a
+    // real user action, so extend the idle session. We only rearm on
+    // the success branch; a malformed request or a missing queue
+    // entry is never a legitimate signal of user presence and must
+    // not be allowed to extend the deadline.
+    await sessionTimer.resetSession();
     transactionResponse.response(signedPayload);
     return {};
   }

@@ -42,7 +42,7 @@ describe("handleSignedHwPayload", () => {
     expect(responseQueue).toEqual([]);
   });
 
-  it("still records user activity before returning an error for a missing uuid", async () => {
+  it("does NOT extend the idle alarm when the uuid is missing", async () => {
     const sessionTimer = makeSessionTimer();
 
     const result = await handleSignedHwPayload({
@@ -51,8 +51,23 @@ describe("handleSignedHwPayload", () => {
       sessionTimer,
     });
 
-    expect(sessionTimer.resetSession).toHaveBeenCalledTimes(1);
+    // A malformed request is never a legitimate signal of user
+    // presence — only the success branch rearms the idle timer.
+    expect(sessionTimer.resetSession).not.toHaveBeenCalled();
     expect(result).toEqual({ error: "Transaction not found" });
+  });
+
+  it("does NOT extend the idle alarm when no queue entry matches", async () => {
+    const sessionTimer = makeSessionTimer();
+
+    const result = await handleSignedHwPayload({
+      request: { uuid: "uuid-missing", signedPayload: "signed-xdr" } as any,
+      responseQueue: [{ uuid: "uuid-other", response: jest.fn() }] as any,
+      sessionTimer,
+    });
+
+    expect(sessionTimer.resetSession).not.toHaveBeenCalled();
+    expect(result).toEqual({ error: "Session timed out" });
   });
 
   it("tracks hardware-wallet lock and unlock state transitions", () => {

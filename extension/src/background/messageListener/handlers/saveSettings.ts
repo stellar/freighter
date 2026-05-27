@@ -1,10 +1,7 @@
 import { Store } from "redux";
 
 import { SaveSettingsMessage } from "@shared/api/types/message-request";
-import {
-  coerceAutoLockTimeoutMinutes,
-  isValidAutoLockTimeoutMinutes,
-} from "@shared/constants/autoLock";
+import { coerceAutoLockTimeoutMinutes } from "@shared/constants/autoLock";
 import {
   getAllowList,
   getFeatureFlags,
@@ -47,9 +44,16 @@ export const saveSettings = async ({
     autoLockTimeoutMinutes,
   } = request;
 
-  if (!isValidAutoLockTimeoutMinutes(autoLockTimeoutMinutes)) {
-    return { error: "Invalid autoLockTimeoutMinutes" };
-  }
+  // `autoLockTimeoutMinutes` originates from the Preferences `<Select>`,
+  // whose options are populated from `VALID_AUTO_LOCK_TIMEOUT_MINUTES`
+  // and coerced through `coerceAutoLockTimeoutMinutes` before dispatch.
+  // We coerce again here as defence-in-depth: a malformed value (e.g.
+  // from a future client revision or a corrupted message) is clamped to
+  // the default rather than rejected, since the response type has no
+  // error variant the popup could surface to the user.
+  const safeAutoLockTimeoutMinutes = coerceAutoLockTimeoutMinutes(
+    autoLockTimeoutMinutes,
+  );
 
   await localStore.setItem(DATA_SHARING_ID, isDataSharingAllowed);
   await localStore.setItem(IS_VALIDATING_MEMO_ID, isMemoValidationEnabled);
@@ -60,7 +64,7 @@ export const saveSettings = async ({
   );
   await localStore.setItem(
     AUTO_LOCK_TIMEOUT_MINUTES_ID,
-    autoLockTimeoutMinutes,
+    safeAutoLockTimeoutMinutes,
   );
 
   // Saving settings is itself a user action, so it counts as activity:
