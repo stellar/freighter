@@ -84,6 +84,12 @@ const PERCENTAGE_OPTIONS = [
   ["75%", 75],
 ] as const;
 
+const AVAILABLE_BALANCE_FONT_SIZES = [
+  { maxLen: 28, sizePx: 14 },
+  { maxLen: 42, sizePx: 12 },
+  { maxLen: Infinity, sizePx: 11 },
+] as const;
+
 // Returns the value to show in FeesPane's total row given the user's current
 // draft inclusion fee and the simulated resource fee.  For classic (no
 // resource fee) the inclusion fee IS the total.
@@ -576,6 +582,11 @@ export const SendAmount = ({
       ? availableBalance
       : formatAmount(availableBalance);
 
+  const availableBalanceText = `${displayTotal} ${parsedSourceAsset.code} ${t("available")}`;
+  const availableBalanceFontSize = AVAILABLE_BALANCE_FONT_SIZES.find(
+    ({ maxLen }) => availableBalanceText.length <= maxLen,
+  )!.sizePx;
+
   const goBackAction = () => {
     dispatch(saveAsset("native"));
     dispatch(saveIsToken(false));
@@ -810,9 +821,15 @@ export const SendAmount = ({
 
                   {/* Amount card: matches mobile's rounded card container */}
                   <div className="SendAmount__amount-card">
-                    {/* Sending label */}
+                    {/* Sending label + available balance */}
                     <div className="SendAmount__sending-label">
-                      {t("Sending")}
+                      <span>{t("Sending")}</span>
+                      <span
+                        className="SendAmount__available-balance"
+                        style={{ fontSize: `${availableBalanceFontSize}px` }}
+                      >
+                        {availableBalanceText}
+                      </span>
                     </div>
 
                     {/* Amount row: input + inline asset selector */}
@@ -943,14 +960,9 @@ export const SendAmount = ({
                       </button>
                     </div>
 
-                    {/* Secondary row: USD equivalent and available balance.
-                        Lets flex-wrap stack the two cells onto separate rows
-                        when the row is too narrow (popup) to fit both,
-                        and keeps them side-by-side when there's room
-                        (fullscreen). The wrap behavior is driven by
-                        flex-wrap in styles.scss — see __balance-row. */}
-                    <div className="SendAmount__balance-row">
-                      {supportsUsd && (
+                    {/* Secondary row: USD equivalent + swap toggle */}
+                    {supportsUsd && (
+                      <div className="SendAmount__balance-row">
                         <div className="SendAmount__amount-price">
                           {inputType === "crypto"
                             ? `$${priceValueUsd || "0.00"}`
@@ -993,11 +1005,8 @@ export const SendAmount = ({
                             <Icon.RefreshCw03 />
                           </Button>
                         </div>
-                      )}
-                      <div className="SendAmount__available-balance">
-                        {displayTotal} {parsedSourceAsset.code}
                       </div>
-                    </div>
+                    )}
 
                     {/* Error state */}
                     {isAmountTooHigh && (
