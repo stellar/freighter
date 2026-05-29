@@ -31,12 +31,12 @@ function useGetHistory() {
         useCache && cachedHistoryData
           ? cachedHistoryData
           : await getAccountHistory(publicKey, networkDetails);
-      // Backends can return failed and successful operations in separate
-      // groupings, so sort by created_at desc to guarantee chronological order.
-      const data = fetched
-        .map((op) => ({ op, ts: Date.parse(op.created_at) }))
-        .sort((a, b) => b.ts - a.ts)
-        .map(({ op }) => op);
+      // Defensive: guarantee desc order regardless of upstream behavior.
+      // The section reducer in useGetHistoryData.tsx requires sorted input.
+      const data = [...fetched].sort(
+        (a, b) =>
+          (Date.parse(b.created_at) || 0) - (Date.parse(a.created_at) || 0),
+      );
       dispatch({ type: "FETCH_DATA_SUCCESS", payload: data });
       reduxDispatch(
         saveHistoryForAccount({ publicKey, history: data, networkDetails }),
