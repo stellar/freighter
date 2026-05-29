@@ -6,7 +6,9 @@
  * signing windows, grant-access windows). Any user interaction inside
  * an extension page resets the timer.
  */
-export const VALID_AUTO_LOCK_TIMEOUT_MINUTES = [1, 5, 15, 30, 60] as const;
+export const VALID_AUTO_LOCK_TIMEOUT_MINUTES = [
+  1, 5, 15, 30, 60, 240, 1440,
+] as const;
 
 export type AutoLockTimeoutMinutes =
   (typeof VALID_AUTO_LOCK_TIMEOUT_MINUTES)[number];
@@ -25,3 +27,29 @@ export const coerceAutoLockTimeoutMinutes = (
   isValidAutoLockTimeoutMinutes(value)
     ? value
     : DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES;
+
+/**
+ * Build a human-readable label for a timeout preset. The English fallback is
+ * constructed in JS and passed to `t()` as `defaultValue`, so even when an
+ * i18n key is missing (common in dev or partial locales) the rendered label is
+ * grammatically correct (e.g. "1 minute" / "5 minutes"). Locales can override
+ * by providing the matching keys.
+ */
+export const formatTimeoutLabel = (
+  minutes: AutoLockTimeoutMinutes,
+  t: (key: string, opts?: Record<string, unknown>) => string,
+): string => {
+  if (minutes >= 60) {
+    const hours = minutes / 60;
+    const fallback = hours === 1 ? "1 hour" : `${hours} hours`;
+    return t("autoLockTimeout.hours", {
+      count: hours,
+      defaultValue: fallback,
+    });
+  }
+  const fallback = minutes === 1 ? "1 minute" : `${minutes} minutes`;
+  return t("autoLockTimeout.minutes", {
+    count: minutes,
+    defaultValue: fallback,
+  });
+};

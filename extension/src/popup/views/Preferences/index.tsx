@@ -1,12 +1,15 @@
 import React, { useEffect } from "react";
-import { Notification, Select, Toggle } from "@stellar/design-system";
+import { Notification, Toggle } from "@stellar/design-system";
 import { Field, Form, Formik } from "formik";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 
 import { View } from "popup/basics/layout/View";
 import { AppDispatch } from "popup/App";
-import { saveSettings } from "popup/ducks/settings";
+import {
+  autoLockTimeoutMinutesSelector,
+  saveSettings,
+} from "popup/ducks/settings";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { AutoSaveFields } from "popup/components/AutoSave";
 import { AppDataType, useGetAppData } from "helpers/hooks/useGetAppData";
@@ -16,54 +19,21 @@ import { openTab } from "popup/helpers/navigate";
 import { newTabHref } from "helpers/urls";
 import { Navigate, useLocation } from "react-router-dom";
 import { reRouteOnboarding } from "popup/helpers/route";
-import {
-  AutoLockTimeoutMinutes,
-  DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
-  VALID_AUTO_LOCK_TIMEOUT_MINUTES,
-  coerceAutoLockTimeoutMinutes,
-} from "@shared/constants/autoLock";
 
 import "./styles.scss";
-
-// Build a human-readable label for a timeout preset. We construct an
-// English fallback in JS first and hand it to `t()` as `defaultValue`,
-// so that — even when an i18n key is missing (common in dev or partial
-// locales) — the rendered label is grammatically correct (e.g. "1
-// minute" / "5 minutes" rather than "1 minute" / "5 minute"). Locales
-// remain free to override by providing the matching keys.
-const formatTimeoutLabel = (
-  minutes: AutoLockTimeoutMinutes,
-  t: (key: string, opts?: Record<string, unknown>) => string,
-) => {
-  if (minutes >= 60) {
-    const hours = minutes / 60;
-    const fallback = hours === 1 ? "1 hour" : `${hours} hours`;
-    return t("autoLockTimeout.hours", {
-      count: hours,
-      defaultValue: fallback,
-    });
-  }
-  const fallback = minutes === 1 ? "1 minute" : `${minutes} minutes`;
-  return t("autoLockTimeout.minutes", {
-    count: minutes,
-    defaultValue: fallback,
-  });
-};
 
 export const Preferences = () => {
   const { t } = useTranslation();
   const location = useLocation();
   const dispatch = useDispatch<AppDispatch>();
   const { state, fetchData } = useGetAppData();
+  const autoLockTimeoutMinutes = useSelector(autoLockTimeoutMinutesSelector);
 
   interface SettingValues {
     isValidatingMemoValue: boolean;
     isDataSharingAllowedValue: boolean;
     isHideDustEnabledValue: boolean;
     isOpenSidebarByDefaultValue: boolean;
-    // Formik/`<select>` deliver this as a string at runtime. Keep the
-    // field type honest and convert it explicitly in `handleSubmit`.
-    autoLockTimeoutMinutesValue: string;
   }
 
   const handleSubmit = async (formValue: SettingValues) => {
@@ -72,7 +42,6 @@ export const Preferences = () => {
       isDataSharingAllowedValue,
       isHideDustEnabledValue,
       isOpenSidebarByDefaultValue,
-      autoLockTimeoutMinutesValue,
     } = formValue;
 
     await dispatch(
@@ -81,9 +50,7 @@ export const Preferences = () => {
         isDataSharingAllowed: isDataSharingAllowedValue,
         isHideDustEnabled: isHideDustEnabledValue,
         isOpenSidebarByDefault: isOpenSidebarByDefaultValue,
-        autoLockTimeoutMinutes: coerceAutoLockTimeoutMinutes(
-          Number(autoLockTimeoutMinutesValue),
-        ),
+        autoLockTimeoutMinutes,
       }),
     );
   };
@@ -141,7 +108,6 @@ export const Preferences = () => {
     isDataSharingAllowed,
     isHideDustEnabled,
     isOpenSidebarByDefault,
-    autoLockTimeoutMinutes,
   } = state.data.settings;
 
   const initialValues: SettingValues = {
@@ -149,11 +115,6 @@ export const Preferences = () => {
     isDataSharingAllowedValue: isDataSharingAllowed,
     isHideDustEnabledValue: isHideDustEnabled,
     isOpenSidebarByDefaultValue: isOpenSidebarByDefault ?? false,
-    autoLockTimeoutMinutesValue: String(
-      coerceAutoLockTimeoutMinutes(
-        autoLockTimeoutMinutes ?? DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
-      ),
-    ),
   };
 
   return (
@@ -246,34 +207,6 @@ export const Preferences = () => {
                   </span>
                 </div>
               )}
-
-              <div className="Preferences--section">
-                <div className="Preferences--section--title">
-                  <span>{t("Auto-lock after")}</span>
-                  <div
-                    className="Preferences--select"
-                    data-testid="autoLockTimeoutMinutesValue"
-                  >
-                    <Field
-                      as={Select}
-                      fieldSize="sm"
-                      id="autoLockTimeoutMinutesValue"
-                      name="autoLockTimeoutMinutesValue"
-                    >
-                      {VALID_AUTO_LOCK_TIMEOUT_MINUTES.map((minutes) => (
-                        <option key={minutes} value={minutes}>
-                          {formatTimeoutLabel(minutes, t)}
-                        </option>
-                      ))}
-                    </Field>
-                  </div>
-                </div>
-                <span className="Preferences--section--subtitle">
-                  {t(
-                    "Lock your wallet after this much time without interaction",
-                  )}
-                </span>
-              </div>
             </Form>
           </div>
         </View.Content>

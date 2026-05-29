@@ -50,6 +50,7 @@ import { Settings } from "popup/views/Settings";
 import { Preferences } from "popup/views/Preferences";
 import { Security } from "popup/views/Security";
 import { AdvancedSettings } from "popup/views/AdvancedSettings";
+import { AutoLockTimer } from "popup/views/AutoLockTimer";
 import { About } from "popup/views/About";
 import { Send } from "popup/views/Send";
 import { ManageAssets } from "popup/views/ManageAssets";
@@ -293,6 +294,10 @@ export const Router = () => (
         <Route
           path={ROUTES.advancedSettings}
           element={<AdvancedSettings />}
+        ></Route>
+        <Route
+          path={ROUTES.autoLockTimer}
+          element={<AutoLockTimer />}
         ></Route>
         <Route path={ROUTES.addFunds} element={<AddFunds />} />
         <Route path={ROUTES.wallets} element={<Wallets />} />
