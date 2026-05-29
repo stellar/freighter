@@ -892,6 +892,45 @@ export const stubAccountBalancesWithUSDC = async (page: Page) => {
   });
 };
 
+/**
+ * Stubs the `/account-history/` endpoint with the provided records using both
+ * an in-page `window.fetch` override (via `addInitScript`) and a
+ * `context.route` network fallback. Playwright's route interception alone does
+ * not reliably catch fetch requests made from Chrome extension popup pages in
+ * CI headless mode; the init script guarantees the response.
+ */
+export const stubAccountHistoryWith = async (
+  page: Page,
+  context: BrowserContext,
+  records: object[],
+) => {
+  await page.addInitScript((data: object[]) => {
+    const origFetch = window.fetch.bind(window);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (window as any).fetch = function (input: any, init: any) {
+      const urlStr: string =
+        typeof input === "string"
+          ? input
+          : input instanceof URL
+            ? input.href
+            : (input.url ?? "");
+      if (urlStr.includes("/account-history/")) {
+        return Promise.resolve(
+          new Response(JSON.stringify(data), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          }),
+        );
+      }
+      return origFetch(input, init);
+    };
+  }, records);
+
+  await context.route("*/**/account-history/*", async (route) => {
+    await route.fulfill({ json: records });
+  });
+};
+
 export const stubAccountHistory = async (context: BrowserContext) => {
   await context.route("**/account-history/**", async (route) => {
     const json = [
