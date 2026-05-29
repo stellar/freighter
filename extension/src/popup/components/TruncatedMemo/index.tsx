@@ -5,42 +5,21 @@ import "./styles.scss";
 
 interface TruncatedMemoProps {
   memo?: string | null;
-  fallback?: string;
   inline?: boolean;
-  /**
-   * Optional character limit. When set, memos longer than `maxChars` are
-   * pre-truncated with an ellipsis before being handed to CSS. Useful in
-   * tight popup layouts where the value cell shares its row with a fixed
-   * suffix (e.g. a memo-type tag) and CSS-only ellipsis would still let
-   * the value push past its share.
-   */
-  maxChars?: number;
   className?: string;
   "data-testid"?: string;
 }
 
-const ellipsize = (value: string, maxChars: number) =>
-  value.length > maxChars ? `${value.slice(0, maxChars).trimEnd()}…` : value;
-
 export const TruncatedMemo = ({
   memo,
-  fallback,
   inline = false,
-  maxChars,
   className,
   "data-testid": dataTestId,
 }: TruncatedMemoProps) => {
   const { t } = useTranslation();
   const hasMemo = !!memo;
   const fullMemo = hasMemo ? (memo as string) : "";
-  const fallbackText = fallback ?? t("None");
-  const shouldEllipsize =
-    hasMemo && typeof maxChars === "number" && maxChars > 0;
-  const displayValue = hasMemo
-    ? shouldEllipsize
-      ? ellipsize(fullMemo, maxChars as number)
-      : fullMemo
-    : fallbackText;
+  const displayValue = hasMemo ? fullMemo : t("None");
   const Tag = inline ? "span" : "div";
   const classes = [
     "TruncatedMemo",

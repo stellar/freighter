@@ -299,11 +299,7 @@
       }
 
       &__memo {
-        // Truncation (overflow/ellipsis/nowrap) is owned by `.TruncatedMemo`;
-        // this selector only adds the layout-specific tweaks needed in this
-        // metadata row.
         width: 100%;
-        text-align: right;
       }
 
       &__value {
@@ -311,7 +307,6 @@
           min-width: 0;
           flex: 1 1 0;
           max-width: 60%;
-          overflow: hidden;
           text-align: right;
         }
 

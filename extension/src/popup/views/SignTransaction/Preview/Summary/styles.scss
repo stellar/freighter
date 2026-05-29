@@ -25,7 +25,7 @@
     &__value {
       color: var(
         --sds-clr-gray-12
-      ) !important; //sds rule does not allow changing colors on p tags
+      ) !important; //needed to override SDS color rules
 
       &--memo {
         display: inline-flex;
