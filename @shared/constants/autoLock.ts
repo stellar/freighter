@@ -7,13 +7,13 @@
  * an extension page resets the timer.
  */
 export const VALID_AUTO_LOCK_TIMEOUT_MINUTES = [
-  1, 5, 15, 30, 60, 240, 1440,
+  1, 5, 15, 30, 60, 360, 720, 1440,
 ] as const;
 
 export type AutoLockTimeoutMinutes =
   (typeof VALID_AUTO_LOCK_TIMEOUT_MINUTES)[number];
 
-export const DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES: AutoLockTimeoutMinutes = 15;
+export const DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES: AutoLockTimeoutMinutes = 720;
 
 export const isValidAutoLockTimeoutMinutes = (
   value: unknown,
