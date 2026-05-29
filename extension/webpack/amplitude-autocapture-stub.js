@@ -3,11 +3,14 @@
  *
  * `@amplitude/analytics-browser` statically imports this plugin, which in turn
  * pulls in Amplitude's "visual tagging" and "background capture" features.
- * Those features call `loadScriptOnce(...)` to fetch remotely-hosted scripts
- * from `cdn.amplitude.com` at runtime:
+ * Those features fetch remotely-hosted scripts from Amplitude's CDN at runtime
+ * (the "visual-tagging-selector" and "background-capture" libs).
  *
- *   - https://cdn.amplitude.com/libs/visual-tagging-selector-1.0.0-alpha.js.gz
- *   - https://cdn.amplitude.com/libs/background-capture-1.0.0-alpha.2.js.gz
+ * NOTE: the blocked CDN URLs are deliberately NOT written out literally here.
+ * The production build emits source maps with `sourcesContent`, and the store
+ * submission zips the build dir recursively — so any literal blocked URL in
+ * this comment could ride into the shipped artifact via the .map files and
+ * re-trigger the very store rejection this stub exists to fix.
  *
  * We initialize Amplitude with `autocapture: false` (see helpers/metrics.ts), so
  * none of this code ever executes. But `autocapture: false` is only a runtime
