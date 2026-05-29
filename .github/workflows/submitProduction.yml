@@ -29,21 +29,20 @@ jobs:
           echo "Missing INDEXER_V2_URL"
           gh run cancel ${{ github.run_id }}
           gh run watch ${{ github.run_id }}
-      - if: ${{ secrets.SENTRY_ORG == '' }}
+      - name: Validate Sentry secrets
+        env:
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
         run: |
-          echo "Missing SENTRY_ORG"
-          gh run cancel ${{ github.run_id }}
-          gh run watch ${{ github.run_id }}
-      - if: ${{ secrets.SENTRY_PROJECT == '' }}
-        run: |
-          echo "Missing SENTRY_PROJECT"
-          gh run cancel ${{ github.run_id }}
-          gh run watch ${{ github.run_id }}
-      - if: ${{ secrets.SENTRY_AUTH_TOKEN == '' }}
-        run: |
-          echo "Missing SENTRY_AUTH_TOKEN"
-          gh run cancel ${{ github.run_id }}
-          gh run watch ${{ github.run_id }}
+          missing=()
+          [ -z "$SENTRY_ORG" ] && missing+=("SENTRY_ORG")
+          [ -z "$SENTRY_PROJECT" ] && missing+=("SENTRY_PROJECT")
+          [ -z "$SENTRY_AUTH_TOKEN" ] && missing+=("SENTRY_AUTH_TOKEN")
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "Missing secrets: ${missing[*]}"
+            exit 1
+          fi
       - name: Checkout code
         uses: actions/checkout@v6
         with:
