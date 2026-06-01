@@ -456,6 +456,18 @@ export const AddToken = () => {
                       <KeyIdenticon publicKey={state.data.account.publicKey} />
                     </div>
                   </div>
+                  <div
+                    className="AddToken__Metadata__Row"
+                    data-testid="add-token-contract-row"
+                  >
+                    <div className="AddToken__Metadata__Label">
+                      <Icon.CodeCircle01 />
+                      <span>{t("Contract")}</span>
+                    </div>
+                    <div className="AddToken__Metadata__Value">
+                      {truncatedPublicKey(contractId)}
+                    </div>
+                  </div>
                   {isSacTrustline && (
                     <>
                       <div
