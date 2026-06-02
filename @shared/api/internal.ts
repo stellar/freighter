@@ -1647,7 +1647,9 @@ export const saveSettings = async ({
   };
 
   try {
-    response = await sendMessageToBackground<SaveSettingsResponse>({
+    const raw = await sendMessageToBackground<
+      SaveSettingsResponse | { error: string }
+    >({
       activePublicKey,
       isDataSharingAllowed,
       isMemoValidationEnabled,
@@ -1656,6 +1658,12 @@ export const saveSettings = async ({
       autoLockTimeoutMinutes,
       type: SERVICE_TYPES.SAVE_SETTINGS,
     });
+
+    if ("error" in raw && raw.error) {
+      throw new Error(raw.error);
+    }
+
+    response = raw as SaveSettingsResponse;
   } catch (e) {
     console.error(e);
   }
