@@ -20,7 +20,9 @@ export const openGrantAccessPopup = async ({
   const popup = await popupPromise;
   if (autoConnect) {
     await popup.getByRole("button", { name: "Connect" }).click();
-    await expect(docsPage.getByRole("textbox").first()).toHaveValue("true");
+    await expect(docsPage.locator("#result-setAllowed")).toContainText(
+      "isAllowed: true",
+    );
   }
   return popup;
 };
