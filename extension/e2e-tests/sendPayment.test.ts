@@ -1473,11 +1473,11 @@ async function goToCollectibleDetail(page: Page) {
 }
 
 async function goToCollectibleReviewStep(page: Page) {
-  // Collectible send may open at destination first depending entry path.
-  if ((await page.getByTestId("send-to-input").count()) > 0) {
-    await page.getByTestId("send-to-input").fill(FUNDED_DESTINATION);
-    await page.getByText("Continue").click({ force: true });
-  }
+  await page
+    .locator('[data-testid="send-to-input"]:visible')
+    .first()
+    .fill(FUNDED_DESTINATION);
+  await page.getByText("Continue").click({ force: true });
 
   await expect(page.getByTestId("SelectedCollectible")).toBeVisible();
 }
@@ -1507,15 +1507,18 @@ test("Send flow navigation: collectible selection closes to home account", async
   context,
 }) => {
   test.slow();
+  await stubContractSpec(
+    page,
+    "CCTYMI5ME6NFJC675P2CHNVG467YQJQ5E4TWP5RAPYYNKWK7DIUUDENN",
+    true,
+  );
   await loginToTestAccount({ page, extensionId, context });
 
-  // Open send flow from home
   await page.getByTestId("nav-link-send").click({ force: true });
   await expect(page.getByTestId("token-list")).toBeVisible();
   await expect(page).toHaveURL(/\/account\/sendPayment/);
 
-  // Select a collectible and navigate to details
-  await page.getByText("Stellar Frog 1").first().click({ force: true });
+  await page.getByText("Stellar Frog 1").click();
   await goToCollectibleReviewStep(page);
 
   // Close from collectible send flow
@@ -1565,9 +1568,13 @@ test("Send flow navigation: initiate from collectible detail closes back to coll
   context,
 }) => {
   test.slow();
+  await stubContractSpec(
+    page,
+    "CCTYMI5ME6NFJC675P2CHNVG467YQJQ5E4TWP5RAPYYNKWK7DIUUDENN",
+    true,
+  );
   await loginToTestAccount({ page, extensionId, context });
 
-  // Navigate to collectible and initiate send
   await goToCollectibleDetail(page);
   await page.getByTestId("CollectibleDetail__footer__buttons__send").click();
 
