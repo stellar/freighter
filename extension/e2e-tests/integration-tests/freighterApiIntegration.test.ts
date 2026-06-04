@@ -67,7 +67,7 @@ test("should sign transaction when allowed", async ({
   const txPopupPromise = page.context().waitForEvent("page");
 
   await pageTwo.goto(
-    "https://docs.freighter.app/docs/playground/signTransaction",
+    "https://play.freighter.app/#/extension/playground/signTransaction",
   );
   await pageTwo.getByRole("textbox").first().fill(TX_TO_SIGN);
   await pageTwo
@@ -199,7 +199,7 @@ test.skip("should sign transaction for a specific account when allowed", async (
   await allowDapp({ page });
 
   await pageTwo.goto(
-    "https://docs.freighter.app/docs/playground/signTransaction",
+    "https://play.freighter.app/#/extension/playground/signTransaction",
   );
   await pageTwo.getByRole("textbox").first().fill(TX_TO_SIGN);
   await pageTwo
@@ -233,7 +233,7 @@ test("should not sign transaction when not allowed", async ({
   const txPopupPromise = page.context().waitForEvent("page");
 
   await pageTwo.goto(
-    "https://docs.freighter.app/docs/playground/signTransaction",
+    "https://play.freighter.app/#/extension/playground/signTransaction",
   );
   await pageTwo.getByRole("textbox").first().fill(TX_TO_SIGN);
   await pageTwo
@@ -247,7 +247,7 @@ test("should not sign transaction when not allowed", async ({
 
   await expect(
     txPopup.getByText(
-      "docs.freighter.app is not currently connected to Freighter",
+      "play.freighter.app is not currently connected to Freighter",
     ),
   ).toBeVisible();
   await expect(txPopup.getByTestId("sign-transaction-sign")).toBeDisabled();
@@ -278,7 +278,7 @@ test("should sign correct transactions when Freighter receives multiple requests
   const txPopupPromise = page.context().waitForEvent("page");
 
   await pageTwo.goto(
-    "https://docs.freighter.app/docs/playground/signTransaction",
+    "https://play.freighter.app/#/extension/playground/signTransaction",
   );
   await pageTwo.getByRole("textbox").first().fill(TX_TO_SIGN);
   await pageTwo
@@ -389,7 +389,7 @@ test("should sign correct transactions when Freighter receives multiple requests
 
   const txPopupPromise2 = page.context().waitForEvent("page");
   await pageThree.goto(
-    "https://docs.freighter.app/docs/playground/signTransaction",
+    "https://play.freighter.app/#/extension/playground/signTransaction",
   );
   await pageThree
     .getByRole("textbox")
@@ -427,7 +427,7 @@ test("should sign auth entry when allowed", async ({
 
   const popupPromise = page.context().waitForEvent("page");
   await pageTwo.goto(
-    "https://docs.freighter.app/docs/playground/signAuthEntry",
+    "https://play.freighter.app/#/extension/playground/signAuthEntry",
   );
   await pageTwo.getByRole("textbox").first().fill(AUTH_ENTRY_TO_SIGN);
   await pageTwo
@@ -470,7 +470,7 @@ test("should not sign auth entry when not allowed", async ({
 
   const popupPromise = page.context().waitForEvent("page");
   await pageTwo.goto(
-    "https://docs.freighter.app/docs/playground/signAuthEntry",
+    "https://play.freighter.app/#/extension/playground/signAuthEntry",
   );
   await pageTwo.getByRole("textbox").first().fill(AUTH_ENTRY_TO_SIGN);
   await pageTwo
@@ -505,7 +505,7 @@ test("should sign auth entry for a selected account when allowed", async ({
   await allowDapp({ page });
 
   await pageTwo.goto(
-    "https://docs.freighter.app/docs/playground/signAuthEntry",
+    "https://play.freighter.app/#/extension/playground/signAuthEntry",
   );
   await pageTwo.getByRole("textbox").first().fill(AUTH_ENTRY_TO_SIGN);
   await pageTwo
@@ -548,7 +548,9 @@ test("should sign message string when allowed", async ({
   await pageTwo.waitForLoadState();
 
   const popupPromise = page.context().waitForEvent("page");
-  await pageTwo.goto("https://docs.freighter.app/docs/playground/signMessage");
+  await pageTwo.goto(
+    "https://play.freighter.app/#/extension/playground/signMessage",
+  );
   await pageTwo.getByRole("textbox").first().fill(MSG_TO_SIGN);
   await pageTwo
     .getByRole("textbox")
@@ -588,7 +590,9 @@ test("should sign message long string when allowed", async ({
   await pageTwo.waitForLoadState();
 
   const popupPromise = page.context().waitForEvent("page");
-  await pageTwo.goto("https://docs.freighter.app/docs/playground/signMessage");
+  await pageTwo.goto(
+    "https://play.freighter.app/#/extension/playground/signMessage",
+  );
   await pageTwo.getByRole("textbox").first().fill(LONG_MSG_TO_SIGN);
   await pageTwo
     .getByRole("textbox")
@@ -632,7 +636,9 @@ test("should sign correct message when Freighter receives multiple requests", as
   await pageTwo.waitForLoadState();
 
   const popupPromise = page.context().waitForEvent("page");
-  await pageTwo.goto("https://docs.freighter.app/docs/playground/signMessage");
+  await pageTwo.goto(
+    "https://play.freighter.app/#/extension/playground/signMessage",
+  );
   await pageTwo.getByRole("textbox").first().fill(MSG_TO_SIGN);
   await pageTwo
     .getByRole("textbox")
@@ -653,7 +659,7 @@ test("should sign correct message when Freighter receives multiple requests", as
 
   const popupPromise2 = page.context().waitForEvent("page");
   await pageThree.goto(
-    "https://docs.freighter.app/docs/playground/signMessage",
+    "https://play.freighter.app/#/extension/playground/signMessage",
   );
   await pageThree.getByRole("textbox").first().fill("new message");
   await pageThree
@@ -685,7 +691,9 @@ test("should sign message json when allowed", async ({
   await pageTwo.waitForLoadState();
 
   const popupPromise = page.context().waitForEvent("page");
-  await pageTwo.goto("https://docs.freighter.app/docs/playground/signMessage");
+  await pageTwo.goto(
+    "https://play.freighter.app/#/extension/playground/signMessage",
+  );
   await pageTwo.getByRole("textbox").first().fill(JSON_MSG_TO_SIGN);
   await pageTwo
     .getByRole("textbox")
@@ -736,7 +744,9 @@ test("should sign message for a specific account when allowed", async ({
   await expect(page.getByTestId("account-header")).toBeVisible();
   await allowDapp({ page });
 
-  await pageTwo.goto("https://docs.freighter.app/docs/playground/signMessage");
+  await pageTwo.goto(
+    "https://play.freighter.app/#/extension/playground/signMessage",
+  );
   await pageTwo.getByRole("textbox").first().fill(MSG_TO_SIGN);
   await pageTwo
     .getByRole("textbox")
@@ -776,7 +786,9 @@ test("should not sign message when not allowed", async ({
   await pageTwo.waitForLoadState();
 
   const popupPromise = page.context().waitForEvent("page");
-  await pageTwo.goto("https://docs.freighter.app/docs/playground/signMessage");
+  await pageTwo.goto(
+    "https://play.freighter.app/#/extension/playground/signMessage",
+  );
   await pageTwo.getByRole("textbox").first().fill(MSG_TO_SIGN);
   await pageTwo
     .getByRole("textbox")
@@ -804,7 +816,9 @@ test("should add token when allowed", async ({
   await pageTwo.waitForLoadState();
 
   const popupPromise = page.context().waitForEvent("page");
-  await pageTwo.goto("https://docs.freighter.app/docs/playground/addToken");
+  await pageTwo.goto(
+    "https://play.freighter.app/#/extension/playground/addToken",
+  );
   await pageTwo.getByRole("textbox").first().fill(TEST_TOKEN_ADDRESS);
   await pageTwo
     .getByRole("textbox")
@@ -842,7 +856,9 @@ test("should not add token when not allowed", async ({
   await pageTwo.waitForLoadState();
 
   const popupPromise = page.context().waitForEvent("page");
-  await pageTwo.goto("https://docs.freighter.app/docs/playground/addToken");
+  await pageTwo.goto(
+    "https://play.freighter.app/#/extension/playground/addToken",
+  );
   await pageTwo.getByRole("textbox").first().fill(TEST_TOKEN_ADDRESS);
   await pageTwo
     .getByRole("textbox")
@@ -854,7 +870,7 @@ test("should not add token when not allowed", async ({
 
   await expect(
     popup.getByText(
-      "docs.freighter.app is not currently connected to Freighter",
+      "play.freighter.app is not currently connected to Freighter",
     ),
   ).toBeVisible();
   await expect(popup.getByTestId("add-token-approve")).toBeDisabled();
@@ -881,7 +897,7 @@ test("should get public key when logged out", async ({
 
   const popupPromise = page.context().waitForEvent("page");
   await pageTwo.goto(
-    "https://docs.freighter.app/docs/playground/requestAccess",
+    "https://play.freighter.app/#/extension/playground/requestAccess",
   );
   await pageTwo.getByText("Request Access").click();
 
@@ -915,7 +931,7 @@ test("should show network mismatch warning when signing auth entry for wrong net
 
   const popupPromise = page.context().waitForEvent("page");
   await pageTwo.goto(
-    "https://docs.freighter.app/docs/playground/signAuthEntry",
+    "https://play.freighter.app/#/extension/playground/signAuthEntry",
   );
   await pageTwo.getByRole("textbox").first().fill(AUTH_ENTRY_TO_SIGN);
   await pageTwo
@@ -951,7 +967,7 @@ test("should show invalid entry warning when auth entry XDR cannot be parsed", a
 
   const popupPromise = page.context().waitForEvent("page");
   await pageTwo.goto(
-    "https://docs.freighter.app/docs/playground/signAuthEntry",
+    "https://play.freighter.app/#/extension/playground/signAuthEntry",
   );
   // TX_TO_SIGN is a TransactionEnvelope XDR — it will fail to parse as HashIdPreimage
   await pageTwo.getByRole("textbox").first().fill(TX_TO_SIGN);
@@ -984,7 +1000,7 @@ test("should show invalid entry warning when auth entry is not a Soroban authori
 
   const popupPromise = page.context().waitForEvent("page");
   await pageTwo.goto(
-    "https://docs.freighter.app/docs/playground/signAuthEntry",
+    "https://play.freighter.app/#/extension/playground/signAuthEntry",
   );
   // NON_SOROBAN_AUTH_ENTRY is a valid HashIdPreimage of type OP_ID (6), not sorobanAuthorization
   await pageTwo.getByRole("textbox").first().fill(NON_SOROBAN_AUTH_ENTRY);
@@ -1018,7 +1034,9 @@ test("should show network warning when signing message with mismatched network p
   await pageTwo.waitForLoadState();
 
   const popupPromise = page.context().waitForEvent("page");
-  await pageTwo.goto("https://docs.freighter.app/docs/playground/signMessage");
+  await pageTwo.goto(
+    "https://play.freighter.app/#/extension/playground/signMessage",
+  );
   await pageTwo.getByRole("textbox").first().fill(MSG_TO_SIGN);
   // Wallet is on TestNet; provide MainNet passphrase to trigger network mismatch
   await pageTwo
@@ -1052,7 +1070,7 @@ test("should show network mismatch warning when signing transaction for wrong ne
 
   const popupPromise = page.context().waitForEvent("page");
   await pageTwo.goto(
-    "https://docs.freighter.app/docs/playground/signTransaction",
+    "https://play.freighter.app/#/extension/playground/signTransaction",
   );
   await pageTwo.getByRole("textbox").first().fill(TX_TO_SIGN);
   // Wallet is on TestNet; provide MainNet passphrase to trigger the mismatch check
