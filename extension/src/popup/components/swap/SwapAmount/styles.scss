@@ -109,12 +109,20 @@
     }
   }
 
-  &__small {
-    font-size: 1.6rem;
+  &__lg {
+    font-size: 2.5rem;
   }
 
   &__med {
     font-size: 1.875rem;
+  }
+
+  &__small {
+    font-size: 1.6rem;
+  }
+
+  &__xsmall {
+    font-size: 1.3rem;
   }
 
   &__row {

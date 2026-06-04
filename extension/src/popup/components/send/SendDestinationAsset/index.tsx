@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { useDispatch } from "react-redux";
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { Icon, Loader, Notification } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
@@ -13,6 +13,8 @@ import {
   saveIsToken,
   saveIsCollectible,
   saveCollectibleData,
+  saveManualTransactionFee,
+  saveTransactionFee,
 } from "popup/ducks/transactionSubmission";
 import { View } from "popup/basics/layout/View";
 import { TokenList } from "popup/components/InternalTransaction/TokenList";
@@ -22,9 +24,6 @@ import { AppDataType } from "helpers/hooks/useGetAppData";
 import { openTab } from "popup/helpers/navigate";
 import { newTabHref } from "helpers/urls";
 import { reRouteOnboarding } from "popup/helpers/route";
-import { TabButtons } from "popup/components/account/AccountTabs";
-import { useActiveTab } from "popup/components/account/AccountTabs/hooks/useActiveTab";
-import { TabsList } from "popup/views/Account/contexts/activeTabContext";
 import { useGetDestAssetData } from "./hooks/useGetDestAssetData";
 
 import "./styles.scss";
@@ -32,20 +31,21 @@ import "./styles.scss";
 interface SendDestinationAssetProps {
   goBack: () => void;
   goToNext: () => void;
+  showCloseIcon?: boolean;
 }
 
 export const SendDestinationAsset = ({
   goBack,
   goToNext,
+  showCloseIcon = false,
 }: SendDestinationAssetProps) => {
   const { t } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
+  const location = useLocation();
   const { state: destAssetDataState, fetchData } = useGetDestAssetData({
     showHidden: false,
     includeIcons: true,
   });
-  const { activeTab } = useActiveTab();
-
   const isLoading =
     destAssetDataState.state === RequestState.IDLE ||
     destAssetDataState.state === RequestState.LOADING;
@@ -105,12 +105,11 @@ export const SendDestinationAsset = ({
   const tokenPrices = destAssetDataState.data.tokenPrices || {};
   const balances = destAssetDataState.data.balances;
 
-  const isTokensTab = activeTab === TabsList.TOKENS;
-  const isCollectiblesTab = activeTab === TabsList.COLLECTIBLES;
-
   const resetAmountForm = () => {
     dispatch(saveAmount("0"));
     dispatch(saveAmountUsd("0.00"));
+    dispatch(saveTransactionFee(""));
+    dispatch(saveManualTransactionFee(null));
   };
 
   return (
@@ -119,53 +118,53 @@ export const SendDestinationAsset = ({
         title={<span>{t("Send")}</span>}
         hasBackButton
         customBackAction={goBack}
-        customBackIcon={<Icon.X />}
+        {...(showCloseIcon && { customBackIcon: <Icon.X /> })}
       />
       <View.Content hasNoTopPadding>
         <div className="SendDestinationAsset">
-          <div className="SendDestinationAsset__tab-buttons">
-            <TabButtons isIncludingIcons />
-          </div>
-          {isTokensTab && (
-            <TokenList
-              tokens={balances.balances}
-              hiddenAssets={[]}
-              icons={icons}
-              tokenPrices={tokenPrices}
-              onClickAsset={(canonical, isContract) => {
-                dispatch(saveIsCollectible(false));
-                dispatch(saveAsset(canonical));
-                dispatch(saveIsToken(isContract));
-                resetAmountForm();
-                goToNext();
-              }}
-              isShowingHeader={false}
-            />
-          )}
-          {isCollectiblesTab && (
-            <CollectiblesList
-              collectibles={destAssetDataState.data.collectibles}
-              onClickCollectible={({
-                collectionAddress,
-                tokenId,
-                name,
-                collectionName,
-                image,
-              }) => {
-                dispatch(saveIsCollectible(true));
-                dispatch(
-                  saveCollectibleData({
-                    collectionAddress,
-                    tokenId: Number(tokenId),
-                    name,
-                    collectionName,
-                    image,
-                  }),
-                );
-                resetAmountForm();
-                goToNext();
-              }}
-            />
+          <TokenList
+            tokens={balances.balances}
+            hiddenAssets={[]}
+            icons={icons}
+            tokenPrices={tokenPrices}
+            onClickAsset={(canonical, isContract) => {
+              dispatch(saveIsCollectible(false));
+              dispatch(saveAsset(canonical));
+              dispatch(saveIsToken(isContract));
+              resetAmountForm();
+              goToNext();
+            }}
+            isShowingHeader={false}
+          />
+          {destAssetDataState.data.collectibles.collections.length > 0 && (
+            <div className="SendDestinationAsset__collectibles-section">
+              <div className="SendDestinationAsset__collectibles-heading">
+                {t("Collectibles")}
+              </div>
+              <CollectiblesList
+                collectibles={destAssetDataState.data.collectibles}
+                onClickCollectible={({
+                  collectionAddress,
+                  tokenId,
+                  name,
+                  collectionName,
+                  image,
+                }) => {
+                  dispatch(saveIsCollectible(true));
+                  dispatch(
+                    saveCollectibleData({
+                      collectionAddress,
+                      tokenId: Number(tokenId),
+                      name,
+                      collectionName,
+                      image,
+                    }),
+                  );
+                  resetAmountForm();
+                  goToNext();
+                }}
+              />
+            </div>
           )}
         </div>
       </View.Content>

@@ -10,8 +10,10 @@ test("View Allow List selector", async ({ page, extensionId, context }) => {
   await pageTwo.waitForLoadState();
 
   const popupPromise = page.context().waitForEvent("page");
-  await pageTwo.goto("https://docs.freighter.app/docs/playground/setAllowed");
-  await pageTwo.getByText("Set Allowed Status").click();
+  await pageTwo.goto(
+    "https://play.freighter.app/#/extension/playground/setAllowed",
+  );
+  await pageTwo.getByText("Set Allowed").click();
 
   const popup = await popupPromise;
 
@@ -32,7 +34,7 @@ test("View Allow List selector", async ({ page, extensionId, context }) => {
   const title = page.getByTestId("AppHeaderPageTitle");
   await expect(title).toBeVisible();
   await expect(title).toHaveText("Connected apps");
-  await expect(page.getByText("docs.freighter.app")).toBeVisible();
+  await expect(page.getByText("play.freighter.app")).toBeVisible();
 
   await expectPageToHaveScreenshot({
     page,

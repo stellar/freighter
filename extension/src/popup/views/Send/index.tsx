@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { Notification } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
@@ -32,10 +32,13 @@ import { View } from "popup/basics/layout/View";
 import { useSendQueryParams } from "./hooks/useSendQueryParams";
 import { InputWidthProvider } from "./contexts/inputWidthContext";
 
+import "./styles.scss";
+
 const SEND_METRIC_BY_STEP: Partial<Record<STEPS, string>> = {
+  [STEPS.SET_SOURCE_ASSET]: METRIC_NAMES.sendPaymentSelectAsset,
   [STEPS.AMOUNT]: METRIC_NAMES.sendPaymentAmount,
   [STEPS.PAYMENT_CONFIRM]: METRIC_NAMES.sendPaymentConfirm,
-  [STEPS.DESTINATION]: METRIC_NAMES.sendPaymentRecentAddress,
+  [STEPS.DESTINATION]: METRIC_NAMES.sendPaymentTo,
 };
 
 /*
@@ -77,7 +80,7 @@ export const Send = () => {
     isToken || isSoroswap || isContractId(destination)
       ? {
           type: "soroban" as const,
-          xdr: transactionSimulation.preparedTransaction!,
+          xdr: transactionSimulation.preparedTransaction ?? "",
         }
       : {
           type: "classic" as const,
@@ -112,8 +115,85 @@ export const Send = () => {
       networkDetails,
     });
 
-  const [activeStep, setActiveStep] = useState(STEPS.AMOUNT);
+  const location = useLocation();
+  const sendParams = new URLSearchParams(location.search);
+  const returnTo = sendParams.get("return_to");
+  const returnAsset = sendParams.get("return_asset");
+  const returnCollectionAddress = sendParams.get("return_collection_address");
+  const returnCollectibleTokenId = sendParams.get(
+    "return_collectible_token_id",
+  );
+
+  const RETURN_TO = {
+    ASSET_DETAIL: "asset_detail",
+    COLLECTIBLE_DETAIL: "collectible_detail",
+  } as const;
+
+  const closeSendFlow = () => {
+    dispatch(resetSubmission());
+
+    if (returnTo === RETURN_TO.ASSET_DETAIL && returnAsset) {
+      navigateTo(
+        ROUTES.account,
+        navigate,
+        `?tab=${TabsList.TOKENS}&asset_detail=${encodeURIComponent(returnAsset)}`,
+      );
+      return;
+    }
+
+    if (
+      returnTo === RETURN_TO.COLLECTIBLE_DETAIL &&
+      returnCollectionAddress &&
+      returnCollectibleTokenId
+    ) {
+      navigateTo(
+        ROUTES.account,
+        navigate,
+        `?tab=${TabsList.COLLECTIBLES}&collection_detail=${encodeURIComponent(
+          returnCollectionAddress,
+        )}&collectible_token_id=${encodeURIComponent(returnCollectibleTokenId)}`,
+      );
+      return;
+    }
+
+    navigateTo(ROUTES.account, navigate);
+  };
+
+  // Lazy initializer: only parses the search string once on mount.
+  const [activeStep, setActiveStep] = useState<STEPS>(() => {
+    return sendParams.has("asset") || sendParams.has("collection_address")
+      ? STEPS.DESTINATION
+      : STEPS.SET_SOURCE_ASSET;
+  });
+  const [prevStep, setPrevStep] = useState<STEPS>(activeStep);
+  const [visitedSteps, setVisitedSteps] = useState<Record<STEPS, boolean>>(
+    () => ({ [activeStep]: true }) as Record<STEPS, boolean>,
+  );
+
+  const initialAnim: "from-bottom" | "from-right" =
+    activeStep === STEPS.SET_SOURCE_ASSET ? "from-bottom" : "from-right";
+  const [enterAnim, setEnterAnim] = useState<
+    "from-bottom" | "from-right" | "from-left"
+  >(initialAnim);
+
   const lastEmittedStep = useRef<STEPS | null>(null);
+
+  const goToStep = (
+    next: STEPS,
+    anim: "from-bottom" | "from-right" | "from-left" | "dismiss",
+  ) => {
+    setPrevStep(activeStep);
+    setEnterAnim(anim === "dismiss" ? "from-bottom" : anim);
+    setVisitedSteps((currentSteps) => ({
+      ...currentSteps,
+      [next]: true,
+    }));
+    setActiveStep(next);
+  };
+
+  useEffect(() => {
+    dispatch(resetSubmission());
+  }, [dispatch]);
 
   // Emit a screen-view metric only once per step transition.
   useEffect(() => {
@@ -154,7 +234,7 @@ export const Send = () => {
                 title={t("Failed to simulate transaction")}
               >
                 {t(
-                  "An unknown error has occured while simulating this transaction.",
+                  "An unknown error has occurred while simulating this transaction.",
                 )}
               </Notification>
             </View.Content>
@@ -164,7 +244,7 @@ export const Send = () => {
         return (
           <TransactionConfirm
             xdr={xdr}
-            goBack={() => setActiveStep(STEPS.AMOUNT)}
+            goBack={() => goToStep(STEPS.AMOUNT, "dismiss")}
           />
         );
       }
@@ -172,20 +252,13 @@ export const Send = () => {
         return (
           <SendAmount
             goBack={() => {
-              dispatch(resetSubmission());
-              if (isCollectible) {
-                navigateTo(
-                  ROUTES.sendPayment,
-                  navigate,
-                  `?tab=${TabsList.COLLECTIBLES}`,
-                );
-              } else {
-                navigateTo(ROUTES.account, navigate);
-              }
+              closeSendFlow();
             }}
-            goToNext={() => setActiveStep(STEPS.PAYMENT_CONFIRM)}
-            goToChooseDest={() => setActiveStep(STEPS.DESTINATION)}
-            goToChooseAsset={() => setActiveStep(STEPS.SET_DESTINATION_ASSET)}
+            goToNext={() => goToStep(STEPS.PAYMENT_CONFIRM, "from-bottom")}
+            goToChooseDest={() => goToStep(STEPS.DESTINATION, "from-left")}
+            goToChooseAsset={() =>
+              goToStep(STEPS.SET_DESTINATION_ASSET, "from-bottom")
+            }
             fetchSimulationData={
               isCollectible ? fetchCollectibleData : fetchPaymentData
             }
@@ -199,25 +272,67 @@ export const Send = () => {
           />
         );
       }
+      case STEPS.SET_SOURCE_ASSET: {
+        return (
+          <SendDestinationAsset
+            goBack={() => closeSendFlow()}
+            goToNext={() => goToStep(STEPS.DESTINATION, "from-right")}
+            showCloseIcon
+          />
+        );
+      }
       case STEPS.SET_DESTINATION_ASSET: {
         return (
           <SendDestinationAsset
-            goBack={() => setActiveStep(STEPS.AMOUNT)}
-            goToNext={() => setActiveStep(STEPS.AMOUNT)}
+            goBack={() => goToStep(STEPS.AMOUNT, "dismiss")}
+            goToNext={() => goToStep(STEPS.AMOUNT, "dismiss")}
           />
         );
       }
       default:
       case STEPS.DESTINATION: {
+        const fromAmount = prevStep === STEPS.AMOUNT;
         return (
           <SendTo
-            goBack={() => setActiveStep(STEPS.AMOUNT)}
-            goToNext={() => setActiveStep(STEPS.AMOUNT)}
+            goBack={() => {
+              if (fromAmount) {
+                goToStep(STEPS.AMOUNT, "dismiss");
+              } else if (prevStep === STEPS.SET_SOURCE_ASSET) {
+                goToStep(STEPS.SET_SOURCE_ASSET, "from-left");
+              } else {
+                closeSendFlow();
+              }
+            }}
+            goToNext={() =>
+              goToStep(STEPS.AMOUNT, fromAmount ? "dismiss" : "from-right")
+            }
           />
         );
       }
     }
   };
 
-  return <InputWidthProvider>{renderStep(activeStep)}</InputWidthProvider>;
+  return (
+    <div className="Send">
+      {(Object.values(STEPS) as STEPS[]).map((step) => {
+        if (!visitedSteps[step]) {
+          return null;
+        }
+
+        const isActive = activeStep === step;
+
+        return (
+          <div
+            key={step}
+            className={`Send__step ${
+              isActive ? `Send__step--${enterAnim}` : "Send__step--hidden"
+            }`}
+            aria-hidden={!isActive}
+          >
+            <InputWidthProvider>{renderStep(step)}</InputWidthProvider>
+          </div>
+        );
+      })}
+    </div>
+  );
 };

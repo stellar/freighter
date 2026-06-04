@@ -760,6 +760,12 @@ test("Loads collectibles data with successful metadata", async ({
 
   // test that the send button navigates to the send payment page
   await page.getByTestId("CollectibleDetail__footer__buttons__send").click();
+  // Send flow starts at the destination step when launched from a collectible.
+  await expect(page.getByTestId("send-to-input")).toBeVisible();
+  await page
+    .getByTestId("send-to-input")
+    .fill("GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF");
+  await page.getByText("Continue").click();
   await expect(page.getByTestId("SelectedCollectible")).toBeVisible();
   await expect(
     page.getByTestId("SelectedCollectible__base-info__row__name__value"),

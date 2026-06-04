@@ -7,6 +7,7 @@ interface SelectionTileProps {
   icon: React.ReactNode;
   primaryText: string;
   secondaryText?: string;
+  title?: string;
   onClick: () => void;
   isEmpty?: boolean;
   shouldUseIconWrapper?: boolean;
@@ -17,16 +18,24 @@ export const SelectionTile = ({
   icon,
   primaryText,
   secondaryText,
+  title,
   onClick,
   isEmpty = false,
   shouldUseIconWrapper = true,
   testId,
 }: SelectionTileProps) => {
+  const handleChevronClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onClick();
+  };
+
   return (
     <div
       className={`SelectionTile ${isEmpty ? "SelectionTile--empty" : ""}`}
       onClick={onClick}
       data-testid={testId}
+      title={title}
     >
       <div className="SelectionTile__content">
         {shouldUseIconWrapper ? (
@@ -41,7 +50,13 @@ export const SelectionTile = ({
           )}
         </div>
       </div>
-      <Button isRounded size="sm" variant="tertiary">
+      <Button
+        isRounded
+        size="sm"
+        variant="tertiary"
+        type="button"
+        onClick={handleChevronClick}
+      >
         <Icon.ChevronRight />
       </Button>
     </div>
