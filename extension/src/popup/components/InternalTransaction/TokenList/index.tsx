@@ -11,6 +11,7 @@ import { getCanonicalFromAsset } from "helpers/stellar";
 import { ApiTokenPrices, AssetIcons } from "@shared/api/types";
 import { getAvailableBalance } from "popup/helpers/soroban";
 import { formatAmount, roundUsdValue } from "popup/helpers/formatters";
+import { sortBalancesByValue } from "popup/helpers/balance";
 import { AssetIcon } from "popup/components/account/AccountAssets";
 import { title } from "helpers/transaction";
 
@@ -34,6 +35,7 @@ export const TokenList = ({
   isShowingHeader,
 }: TokenListProps) => {
   const { t } = useTranslation();
+  const sortedTokens = sortBalancesByValue(tokens, tokenPrices);
   return (
     <div
       className={classnames("TokenList__Assets", {
@@ -41,7 +43,7 @@ export const TokenList = ({
       })}
       data-testid="token-list"
     >
-      {!tokens.length ? (
+      {!sortedTokens.length ? (
         <div className="TokenList__Assets__empty">
           {`${t("You have no assets added.")} ${t("Get started by adding an asset.")}`}
         </div>
@@ -50,7 +52,7 @@ export const TokenList = ({
           {isShowingHeader && (
             <div className="TokenList__Assets__Header">{t("Your Tokens")}</div>
           )}
-          {tokens
+          {sortedTokens
             .filter(
               (
                 balance,
