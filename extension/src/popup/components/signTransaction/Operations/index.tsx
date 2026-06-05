@@ -118,15 +118,24 @@ export const Operations = ({
   };
 
   // Account flags are a bitmask, so a combined value (e.g. REVOCABLE |
-  // CLAWBACK = 10) is not a key in AuthorizationMapToDisplay. Decode each set
-  // bit individually so combined flags are never rendered as a blank value.
+  // CLAWBACK = 10) is not a key in AuthorizationMapToDisplay. Decode each known
+  // bit individually so combined flags are never rendered as a blank value, and
+  // surface any remaining (unrecognized) bits so a future protocol flag isn't
+  // silently hidden when combined with a known one.
   const decodeAuthorizationFlags = (bits: number) => {
-    const labels = Object.entries(AuthorizationMapToDisplay)
-      .filter(([bit]) => (bits & Number(bit)) !== 0)
-      .map(([, label]) => t(label));
-    return labels.length
-      ? labels.join(", ")
-      : t("Unknown ({{bits}})", { bits });
+    const labels: string[] = [];
+    let remaining = bits;
+    Object.entries(AuthorizationMapToDisplay).forEach(([bit, label]) => {
+      const value = Number(bit);
+      if ((bits & value) !== 0) {
+        labels.push(t(label));
+        remaining &= ~value;
+      }
+    });
+    if (remaining !== 0) {
+      labels.push(t("Unknown ({{bits}})", { bits: remaining }));
+    }
+    return labels.join(", ");
   };
 
   const RenderOpByType = ({ op }: { op: Operation }) => {

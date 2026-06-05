@@ -144,6 +144,16 @@ describe("Operations — setOptions field visibility", () => {
     );
   });
 
+  it("FLAGS: a known bit combined with an unrecognized bit surfaces both", () => {
+    // REQUIRED (1) | future-bit (16) = 17 — the unknown bit must not be hidden.
+    renderOps(decodeSetOptions({ setFlags: 17 as any }));
+
+    // The mocked t() does not interpolate, so {{bits}} stays literal here.
+    expect(rowValue("Set Flags")).toBe(
+      "Authorization Required, Unknown ({{bits}})",
+    );
+  });
+
   it("FLAGS: a combined clearFlags bitmask decodes every set bit", () => {
     // REQUIRED (1) | REVOCABLE (2) = 3
     renderOps(decodeSetOptions({ clearFlags: 3 as any }));
