@@ -123,7 +123,7 @@ export const Operations = ({
   const decodeAuthorizationFlags = (bits: number) => {
     const labels = Object.entries(AuthorizationMapToDisplay)
       .filter(([bit]) => (bits & Number(bit)) !== 0)
-      .map(([, label]) => label);
+      .map(([, label]) => t(label));
     return labels.length
       ? labels.join(", ")
       : t("Unknown ({{bits}})", { bits });
