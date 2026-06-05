@@ -63,7 +63,7 @@ const MasterKeyDisableWarning = () => {
           label={t(
             "This transaction disables your account's master key. You may permanently lose access to this account unless another signer with sufficient weight is added.",
           )}
-          altText="Warning"
+          altText={t("Warning")}
           icon={<Icon.InfoCircle />}
           variant="error"
         />
