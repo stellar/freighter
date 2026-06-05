@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import BigNumber from "bignumber.js";
 import classnames from "classnames";
@@ -35,7 +35,10 @@ export const TokenList = ({
   isShowingHeader,
 }: TokenListProps) => {
   const { t } = useTranslation();
-  const sortedTokens = sortBalancesByValue(tokens, tokenPrices);
+  const sortedTokens = useMemo(
+    () => sortBalancesByValue(tokens, tokenPrices),
+    [tokens, tokenPrices],
+  );
   return (
     <div
       className={classnames("TokenList__Assets", {
