@@ -55,20 +55,21 @@ const MemoRequiredWarning = ({
 const MasterKeyDisableWarning = () => {
   const { t } = useTranslation();
 
+  // Rendered as a full-width banner (not a KeyValueList row) so the message
+  // wraps instead of being truncated in the right-aligned value column.
   return (
-    <KeyValueList
-      operationKey=""
-      operationValue={
-        <IconButton
-          label={t(
-            "This transaction disables your account's master key. You may permanently lose access to this account unless another signer with sufficient weight is added.",
-          )}
-          altText={t("Warning")}
-          icon={<Icon.InfoCircle />}
-          variant="error"
-        />
-      }
-    />
+    <div
+      className="Operations__warning"
+      data-testid="MasterKeyDisableWarning"
+      role="alert"
+    >
+      <Icon.AlertTriangle aria-hidden="true" />
+      <span>
+        {t(
+          "This transaction disables your account's master key. You may permanently lose access to this account unless another signer with sufficient weight is added.",
+        )}
+      </span>
+    </div>
   );
 };
 
