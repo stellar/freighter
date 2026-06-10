@@ -1,9 +1,8 @@
 # Socket reachability scan for freighter.
+# For general Socket reachability documentation, see https://docs.socket.dev/docs/full-application-reachability
 # Multi-eco: Node (yarn — yarn.lock + many sub-packages) + Ruby (Gemfile at root).
 #
-# Schedule: Sat 09:36 UTC weekly. The 129-repo fleet is
-# spread across Sat 00:00 – Mon 03:12 UTC with 24-minute spacing to avoid
-# Socket API rate limiting. Use workflow_dispatch to run on demand.
+# Schedule: Sat 09:36 UTC weekly. Use workflow_dispatch to run on demand.
 #
 # ============================================================================
 # Socket scan — reading the job status. (The scan step below produces this: an
@@ -33,6 +32,12 @@ on:
 
 permissions:
   contents: read
+
+env:
+  # Force JS-based GitHub actions (actions/checkout, actions/setup-*, etc.) to
+  # use Node 24 instead of the soon-to-be-deprecated Node 20. Safe to remove
+  # after 2026-06-16 (when Node 24 becomes the default and this becomes a no-op).
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   socket-scan:
