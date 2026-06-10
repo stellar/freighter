@@ -16,6 +16,13 @@ global.ResizeObserver = class ResizeObserver {
   disconnect() {}
 };
 
+// stellar-sdk v16 hashes/signs via @noble/hashes v2, which strictly rejects
+// anything that is not `instanceof Uint8Array`. `jsdom-global` swaps the global
+// Uint8Array for jsdom's, so Node Buffers (which extend Node's Uint8Array) fail
+// that check. Restore the Node Uint8Array (the constructor Buffer extends) so
+// hashing accepts Buffers in tests.
+global.Uint8Array = Object.getPrototypeOf(Buffer.prototype).constructor;
+
 // make a JSDOM thing so we can fuck with mount
 const jsdom = new JSDOM("<!doctype html><html><body></body></html>");
 const { window } = jsdom;

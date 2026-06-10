@@ -2,7 +2,6 @@ import { useReducer } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import BigNumber from "bignumber.js";
 import {
-  Account,
   Asset,
   BASE_FEE,
   Memo,
@@ -105,7 +104,7 @@ const getBuiltTx = async (
     networkDetails.networkUrl,
     networkDetails.networkPassphrase,
   );
-  const sourceAccount: Account = await server.loadAccount(publicKey);
+  const sourceAccount = await server.loadAccount(publicKey);
 
   const operation = getOperation(
     sourceAsset,

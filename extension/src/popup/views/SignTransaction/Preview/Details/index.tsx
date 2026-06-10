@@ -1,5 +1,5 @@
 import React from "react";
-import { Operation } from "stellar-sdk";
+import { OperationRecord } from "stellar-sdk";
 
 import { Operations } from "popup/components/signTransaction/Operations";
 import { FlaggedKeys } from "types/transactions";
@@ -7,7 +7,7 @@ import { FlaggedKeys } from "types/transactions";
 import "./styles.scss";
 
 interface DetailsProps {
-  operations: Operation[];
+  operations: OperationRecord[];
   flaggedKeys: FlaggedKeys;
   isMemoRequired: boolean;
 }

@@ -4,7 +4,6 @@ import { useDispatch, useSelector, useStore } from "react-redux";
 import BigNumber from "bignumber.js";
 import { captureException } from "@sentry/browser";
 import {
-  Account,
   Asset,
   BASE_FEE,
   extractBaseAddress,
@@ -236,7 +235,7 @@ const getBuiltTx = async (
     networkDetails.networkUrl,
     networkDetails.networkPassphrase,
   );
-  const sourceAccount: Account = await server.loadAccount(publicKey);
+  const sourceAccount = await server.loadAccount(publicKey);
   try {
     const operation = getOperation(
       sourceAsset,
