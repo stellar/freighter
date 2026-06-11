@@ -79,6 +79,7 @@ jest.mock("helpers/metrics", () => ({
   registerHandler: () => {},
   emitMetric: () => {},
   initAmplitude: () => {},
+  getUserId: () => "test-user-id",
   metricsMiddleware: jest.fn(
     () => () => (next: any) => (action: any) => next(action),
   ),
