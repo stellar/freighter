@@ -976,7 +976,7 @@ test("should block signing an auth entry bound to a different account", async ({
 
   const popupPromise = page.context().waitForEvent("page");
   await pageTwo.goto(
-    "https://docs.freighter.app/docs/playground/signAuthEntry",
+    "https://play.freighter.app/#/extension/playground/signAuthEntry",
   );
   await pageTwo.getByRole("textbox").first().fill(V2_AUTH_ENTRY_WRONG_ADDRESS);
   await pageTwo
