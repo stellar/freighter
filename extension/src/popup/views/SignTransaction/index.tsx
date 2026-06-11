@@ -78,6 +78,7 @@ import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
 import { MultiPaneSlider } from "popup/components/SlidingPaneSwitcher";
 
 import { AuthEntries } from "popup/components/AuthEntry";
+import { TruncatedMemo } from "popup/components/TruncatedMemo";
 import { Summary } from "./Preview/Summary";
 import { Details } from "./Preview/Details";
 
@@ -152,13 +153,21 @@ export const SignTransaction = () => {
     signTxState.data?.type === AppDataType.RESOLVED
       ? signTxState.data.blockaidOverrideState
       : null;
+  const signTxNetworkDetails =
+    signTxState.data?.type === AppDataType.RESOLVED
+      ? signTxState.data.networkDetails
+      : null;
 
   // Determine site security states with override support
   const {
     isMalicious: isSiteMalicious,
     isSuspicious: isSiteSuspicious,
     isUnableToScan: isSiteUnableToScan,
-  } = getSiteSecurityStates(siteScanData, blockaidOverrideState);
+  } = getSiteSecurityStates(
+    siteScanData,
+    blockaidOverrideState,
+    signTxNetworkDetails,
+  );
 
   const shouldShowSiteWarning =
     isSiteMalicious || isSiteSuspicious || isSiteUnableToScan;
@@ -485,17 +494,16 @@ export const SignTransaction = () => {
                       </span>
                     </div>
                   </div>
-                  <div className="SignTransaction__Metadata__Row">
+                  <div className="SignTransaction__Metadata__Row SignTransaction__Metadata__Row--memo">
                     <div className="SignTransaction__Metadata__Label">
                       <Icon.File02 />
                       <span>{t("Memo")}</span>
                     </div>
-                    <div className="SignTransaction__Metadata__Value">
-                      <span>
-                        {decodedMemo && decodedMemo.value
-                          ? decodedMemo.value
-                          : t("None")}
-                      </span>
+                    <div className="SignTransaction__Metadata__Value SignTransaction__Metadata__Value--memo">
+                      <TruncatedMemo
+                        memo={decodedMemo && decodedMemo.value}
+                        className="SignTransaction__Metadata__Memo"
+                      />
                     </div>
                   </div>
                 </div>

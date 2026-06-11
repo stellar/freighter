@@ -27,10 +27,16 @@ function useGetHistory() {
     try {
       const cachedHistoryData =
         cachedHistory[networkDetails.network]?.[publicKey];
-      const data =
+      const fetched =
         useCache && cachedHistoryData
           ? cachedHistoryData
           : await getAccountHistory(publicKey, networkDetails);
+      // Defensive: guarantee desc order regardless of upstream behavior.
+      // The section reducer in useGetHistoryData.tsx requires sorted input.
+      const data = [...fetched].sort(
+        (a, b) =>
+          (Date.parse(b.created_at) || 0) - (Date.parse(a.created_at) || 0),
+      );
       dispatch({ type: "FETCH_DATA_SUCCESS", payload: data });
       reduxDispatch(
         saveHistoryForAccount({ publicKey, history: data, networkDetails }),

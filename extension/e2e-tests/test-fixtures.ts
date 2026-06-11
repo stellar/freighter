@@ -14,9 +14,11 @@ export const test = base.extend<{
   extensionId: string;
   page: Page;
   language: string;
+  viewportSize: { width: number; height: number } | null;
 }>({
+  viewportSize: null,
   language: "en",
-  context: async ({}, use) => {
+  context: async ({ viewportSize }, use) => {
     const pathToExtension = path.join(__dirname, "../build");
     const context = await chromium.launchPersistentContext("", {
       headless: false,
@@ -25,6 +27,16 @@ export const test = base.extend<{
         `--disable-extensions-except=${pathToExtension}`,
         `--load-extension=${pathToExtension}`,
       ],
+      ...(viewportSize ? { viewport: viewportSize } : {}),
+    });
+
+    // Mark every page (including popups opened by the extension) as a
+    // Playwright test environment. Some helpers — e.g. the Blockaid mainnet
+    // gate in `popup/helpers/blockaid.ts` — rely on this flag to opt back
+    // into behavior that's otherwise mainnet-only, so it must apply to
+    // popup windows too, not just the main `page` fixture.
+    await context.addInitScript(() => {
+      (window as unknown as { IS_PLAYWRIGHT?: string }).IS_PLAYWRIGHT = "true";
     });
 
     await use(context);

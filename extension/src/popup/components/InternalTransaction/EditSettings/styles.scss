@@ -28,6 +28,31 @@
     }
   }
 
+  &__fee-label {
+    display: inline-flex;
+    align-items: center;
+    gap: pxToRem(4px);
+  }
+
+  &__fee-info-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    color: var(--sds-clr-gray-09);
+
+    svg {
+      width: pxToRem(14px);
+      height: pxToRem(14px);
+    }
+
+    &:hover {
+      color: var(--sds-clr-gray-12);
+    }
+  }
+
   &__actions {
     display: flex;
     margin-top: pxToRem(32px);

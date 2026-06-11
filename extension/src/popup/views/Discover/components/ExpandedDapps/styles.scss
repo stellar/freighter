@@ -1,0 +1,9 @@
+@use "../../../../styles/utils.scss" as *;
+
+.ExpandedDapps {
+  &__list {
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(24);
+  }
+}

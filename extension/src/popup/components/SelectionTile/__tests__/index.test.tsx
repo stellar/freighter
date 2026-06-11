@@ -39,6 +39,19 @@ describe("SelectionTile", () => {
       fireEvent.click(screen.getByText("Primary Text"));
       expect(mockOnClick).toHaveBeenCalledTimes(1);
     });
+
+    it("calls onClick when chevron button is clicked", () => {
+      render(
+        <SelectionTile
+          icon={<div>Icon</div>}
+          primaryText="Primary Text"
+          onClick={mockOnClick}
+        />,
+      );
+
+      fireEvent.click(screen.getByRole("button"));
+      expect(mockOnClick).toHaveBeenCalledTimes(1);
+    });
   });
 
   describe("without secondary text", () => {

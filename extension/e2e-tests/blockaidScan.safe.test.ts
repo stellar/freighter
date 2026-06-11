@@ -126,9 +126,8 @@ test.describe("BlockAid Scan - Safe States (No Override)", () => {
     });
 
     await page.getByTestId("nav-link-send").click();
-    await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
-
-    await page.getByTestId("address-tile").click();
+    await expect(page.getByTestId("token-list")).toBeVisible();
+    await page.getByTestId("SendRow-native").click();
     await page
       .getByTestId("send-to-input")
       .fill("GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF");

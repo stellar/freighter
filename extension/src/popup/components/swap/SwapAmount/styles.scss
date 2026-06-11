@@ -5,6 +5,10 @@
   flex-direction: column;
   height: 100%;
 
+  &__fetch-fail {
+    padding: pxToRem(16px);
+  }
+
   &__subtitle {
     text-align: center;
   }
@@ -105,12 +109,20 @@
     }
   }
 
-  &__small {
-    font-size: 1.6rem;
+  &__lg {
+    font-size: 2.5rem;
   }
 
   &__med {
     font-size: 1.875rem;
+  }
+
+  &__small {
+    font-size: 1.6rem;
+  }
+
+  &__xsmall {
+    font-size: 1.3rem;
   }
 
   &__row {

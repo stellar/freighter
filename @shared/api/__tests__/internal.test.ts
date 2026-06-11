@@ -5,6 +5,7 @@ import * as internalApi from "../internal";
 describe("internalApi", () => {
   afterEach(() => {
     jest.clearAllMocks();
+    jest.restoreAllMocks();
   });
   describe("getAssetDomains", () => {
     it("should return a list of domains from a list of issuers", async () => {
@@ -85,6 +86,88 @@ describe("internalApi", () => {
       });
       expect(getLedgerKeyAccountsSpy).not.toHaveBeenCalled();
       expect(assetDomains).toEqual({});
+    });
+  });
+
+  describe("simulateTokenTransfer", () => {
+    it("includes the fee in stroops in the indexer request body", async () => {
+      const fetchSpy = jest.spyOn(global, "fetch").mockResolvedValue({
+        ok: true,
+        json: jest.fn().mockResolvedValue({
+          preparedTransaction: "prepared-xdr",
+          simulationResponse: { minResourceFee: "100" },
+        }),
+      } as unknown as Response);
+
+      await internalApi.simulateTokenTransfer({
+        address: "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM",
+        publicKey: "GBRPYHIL2C2FCU5RNBJQ3WXZH4E2LQ7H5GIPQKNORRACV4W6F6C4P4W5",
+        memo: "memo",
+        params: {
+          publicKey: "GBRPYHIL2C2FCU5RNBJQ3WXZH4E2LQ7H5GIPQKNORRACV4W6F6C4P4W5",
+          destination:
+            "GDQP2KPQGKIHYJGXNUIYOMHARUARCA6JYB6CYH6ZJQ4Q25PDBLQZKK7L",
+          amount: 1,
+        },
+        networkDetails: TESTNET_NETWORK_DETAILS,
+        transactionFee: "0.00001",
+      });
+
+      expect(fetchSpy).toHaveBeenCalledWith(
+        expect.stringContaining("/simulate-token-transfer"),
+        expect.objectContaining({
+          method: "POST",
+          body: JSON.stringify({
+            address: "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM",
+            pub_key: "GBRPYHIL2C2FCU5RNBJQ3WXZH4E2LQ7H5GIPQKNORRACV4W6F6C4P4W5",
+            memo: "memo",
+            fee: "100",
+            params: {
+              publicKey:
+                "GBRPYHIL2C2FCU5RNBJQ3WXZH4E2LQ7H5GIPQKNORRACV4W6F6C4P4W5",
+              destination:
+                "GDQP2KPQGKIHYJGXNUIYOMHARUARCA6JYB6CYH6ZJQ4Q25PDBLQZKK7L",
+              amount: 1,
+            },
+            network_passphrase: TESTNET_NETWORK_DETAILS.networkPassphrase,
+          }),
+        }),
+      );
+    });
+  });
+
+  describe("getTokenPrices request payload filtering", () => {
+    const mockFetchOk = () =>
+      jest.spyOn(global, "fetch").mockResolvedValue({
+        ok: true,
+        json: jest.fn().mockResolvedValue({ data: {} }),
+      } as unknown as Response);
+
+    it("excludes contract-ID issuers from the indexer request", async () => {
+      const fetchSpy = mockFetchOk();
+
+      await internalApi.getTokenPrices([
+        "native",
+        "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
+        "DT:CCXVDIGMR6WTXZQX2OEVD6YM6AYCYPXPQ7YYH6OZMRS7U6VD3AVHNGBJ",
+      ]);
+
+      const requestInit = fetchSpy.mock.calls[0][1] as RequestInit;
+      const body = JSON.parse(requestInit.body as string);
+      expect(body.tokens).toEqual([
+        "native",
+        "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
+      ]);
+    });
+
+    it("excludes liquidity-pool IDs from the indexer request", async () => {
+      const fetchSpy = mockFetchOk();
+
+      await internalApi.getTokenPrices(["native", "abc123:lp"]);
+
+      const requestInit = fetchSpy.mock.calls[0][1] as RequestInit;
+      const body = JSON.parse(requestInit.body as string);
+      expect(body.tokens).toEqual(["native"]);
     });
   });
 });

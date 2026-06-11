@@ -1,12 +1,11 @@
 import { Store } from "redux";
-import semver from "semver";
 import { captureException } from "@sentry/browser";
 
 import { DataStorageAccess } from "background/helpers/dataStorageAccess";
 import { getEncryptedTemporaryData } from "background/helpers/session";
 import { KEY_ID } from "constants/localStorageTypes";
 import { getNetworkDetails } from "background/helpers/account";
-import { getSdk, isPlaywright } from "@shared/helpers/stellar";
+import { getSdk } from "@shared/helpers/stellar";
 import {
   BlobQueue,
   ResponseQueue,
@@ -28,7 +27,7 @@ export const signBlob = async ({
   blobQueue: BlobQueue;
   responseQueue: ResponseQueue<SignBlobResponse>;
 }) => {
-  const { uuid, apiVersion } = request;
+  const { uuid } = request;
 
   if (!uuid) {
     captureException("signBlob: missing uuid in request");
@@ -64,11 +63,7 @@ export const signBlob = async ({
       return { error: "Transaction not found" };
     }
 
-    const supportsSep53 =
-      (apiVersion && semver.gte(apiVersion, "5.0.0")) || isPlaywright;
-    const signPayload = supportsSep53
-      ? encodeSep53Message(blob.message)
-      : Buffer.from(blob.message, "base64");
+    const signPayload = encodeSep53Message(blob.message);
     const response = sourceKeys.sign(signPayload);
 
     const responseIndex = responseQueue.findIndex((item) => item.uuid === uuid);

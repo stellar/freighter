@@ -13,12 +13,16 @@ export const openGrantAccessPopup = async ({
   const docsPage = await page.context().newPage();
   await docsPage.waitForLoadState();
   const popupPromise = page.context().waitForEvent("page");
-  await docsPage.goto("https://docs.freighter.app/docs/playground/setAllowed");
-  await docsPage.getByText("Set Allowed Status").click();
+  await docsPage.goto(
+    "https://play.freighter.app/#/extension/playground/setAllowed",
+  );
+  await docsPage.getByText("Set Allowed").click();
   const popup = await popupPromise;
   if (autoConnect) {
     await popup.getByRole("button", { name: "Connect" }).click();
-    await expect(docsPage.getByRole("textbox").first()).toHaveValue("true");
+    await expect(docsPage.locator("#result-setAllowed")).toContainText(
+      "isAllowed: true",
+    );
   }
   return popup;
 };
@@ -36,7 +40,9 @@ export const openSignMessagePopup = async ({ page }: { page: Page }) => {
   // The first popup will be the connection request (dapp not yet connected)
   const connectionPopupPromise = page.context().waitForEvent("page");
 
-  await newPage.goto("https://docs.freighter.app/docs/playground/signMessage");
+  await newPage.goto(
+    "https://play.freighter.app/#/extension/playground/signMessage",
+  );
   await newPage.getByRole("textbox").first().fill("Test message");
   await newPage
     .getByRole("textbox")

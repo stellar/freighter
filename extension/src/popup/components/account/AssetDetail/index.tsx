@@ -407,7 +407,7 @@ export const AssetDetail = ({
                 isRounded
                 isFullWidth
                 onClick={() => {
-                  const queryParams = `?asset=${encodeURIComponent(selectedAsset)}`;
+                  const queryParams = `?asset=${encodeURIComponent(selectedAsset)}&return_to=asset_detail&return_asset=${encodeURIComponent(selectedAsset)}`;
                   navigateTo(ROUTES.sendPayment, navigate, queryParams);
                 }}
               >

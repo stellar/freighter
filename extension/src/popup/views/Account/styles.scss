@@ -91,4 +91,10 @@
     padding-top: var(--View-inset-padding-top);
     padding-bottom: 1.5rem;
   }
+
+  &__discover-sheet {
+    background: var(--sds-clr-gray-01);
+    height: 100%;
+    width: 100%;
+  }
 }

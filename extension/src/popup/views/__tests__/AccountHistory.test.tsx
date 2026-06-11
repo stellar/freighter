@@ -215,7 +215,7 @@ describe("AccountHistory", () => {
             networkDetails: TESTNET_NETWORK_DETAILS,
             networksList: DEFAULT_NETWORKS,
             isHideDustEnabled: true,
-    isOpenSidebarByDefault: false,
+            isOpenSidebarByDefault: false,
           },
         }}
       >

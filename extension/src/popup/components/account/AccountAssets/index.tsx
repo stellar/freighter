@@ -1,5 +1,6 @@
 import React, { useEffect, useState, memo } from "react";
 import { useSelector } from "react-redux";
+import { useLocation, useNavigate } from "react-router-dom";
 import isEmpty from "lodash/isEmpty";
 import { Asset, Horizon } from "stellar-sdk";
 import BigNumber from "bignumber.js";
@@ -30,6 +31,7 @@ import ImageMissingIcon from "popup/assets/image-missing.svg?react";
 import IconSoroban from "popup/assets/icon-soroban.svg?react";
 import { getPriceDeltaColor } from "popup/helpers/balance";
 import { AccountHistoryData } from "popup/views/Account/hooks/useGetAccountHistoryData";
+import { ROUTES } from "popup/constants/routes";
 
 import "./styles.scss";
 import { AssetDetail } from "../AssetDetail";
@@ -195,15 +197,47 @@ export const AccountAssets = ({
   assetPrices,
   historyData,
 }: AccountAssetsProps) => {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [assetIcons, setAssetIcons] = useState(inputAssetIcons);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const [hasIconFetchRetried, setHasIconFetchRetried] = useState(false);
   const isAssetSuspicious = useIsAssetSuspicious();
   const [selectedAsset, setSelectedAsset] = useState<string>("");
 
+  const clearAssetDetailQueryParams = () => {
+    const params = new URLSearchParams(location.search);
+    if (!params.has("asset_detail") && !params.has("return_to")) {
+      return;
+    }
+
+    params.delete("asset_detail");
+    params.delete("return_to");
+    params.delete("return_asset");
+    params.delete("return_collection_address");
+    params.delete("return_collectible_token_id");
+
+    navigate(
+      {
+        pathname: ROUTES.account,
+        search: params.toString() ? `?${params.toString()}` : "",
+      },
+      { replace: true },
+    );
+  };
+
   useEffect(() => {
     setAssetIcons(inputAssetIcons);
   }, [inputAssetIcons]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const assetDetail = params.get("asset_detail");
+
+    if (assetDetail) {
+      setSelectedAsset(assetDetail);
+    }
+  }, [location.search]);
 
   const retryAssetIconFetch = async ({
     key,
@@ -290,7 +324,16 @@ export const AccountAssets = ({
             : rb.total.toFixed();
 
         return (
-          <Sheet open={selectedAsset === canonicalAsset} key={canonicalAsset}>
+          <Sheet
+            open={selectedAsset === canonicalAsset}
+            onOpenChange={(open) => {
+              if (!open) {
+                setSelectedAsset("");
+                clearAssetDetailQueryParams();
+              }
+            }}
+            key={canonicalAsset}
+          >
             <div
               data-testid="account-assets-item"
               className={`AccountAssets__asset ${
@@ -378,7 +421,10 @@ export const AccountAssets = ({
                 accountBalances={balances}
                 historyData={historyData}
                 selectedAsset={canonicalAsset}
-                handleClose={() => setSelectedAsset("")}
+                handleClose={() => {
+                  setSelectedAsset("");
+                  clearAssetDetailQueryParams();
+                }}
               />
             </SheetContent>
           </Sheet>

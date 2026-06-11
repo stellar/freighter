@@ -5,15 +5,24 @@ import {
   isAssetUnableToScan,
   isTxUnableToScan,
   shouldTreatTxAsUnableToScan,
+  shouldTreatAssetAsUnableToScan,
   isTxSuspicious,
   useIsTxSuspicious,
   useShouldTreatTxAsUnableToScan,
+  isBlockaidEnabled,
+  getSiteSecurityStates,
 } from "../blockaid";
 import { SecurityLevel } from "popup/constants/blockaid";
 import {
   BlockAidScanAssetResult,
+  BlockAidScanSiteResult,
   BlockAidScanTxResult,
 } from "@shared/api/types";
+import {
+  MAINNET_NETWORK_DETAILS,
+  TESTNET_NETWORK_DETAILS,
+  FUTURENET_NETWORK_DETAILS,
+} from "@shared/constants/stellar";
 import { makeDummyStore } from "popup/__testHelpers__";
 
 // Mock process.env to control dev mode
@@ -79,6 +88,7 @@ describe("BlockAid Helper Functions", () => {
         shouldTreatTxAsUnableToScan(
           { simulation: {} } as BlockAidScanTxResult,
           SecurityLevel.UNABLE_TO_SCAN,
+          MAINNET_NETWORK_DETAILS,
         ),
       ).toBe(true);
     });
@@ -88,12 +98,15 @@ describe("BlockAid Helper Functions", () => {
         shouldTreatTxAsUnableToScan(
           { simulation: {} } as BlockAidScanTxResult,
           SecurityLevel.SAFE,
+          MAINNET_NETWORK_DETAILS,
         ),
       ).toBe(false);
     });
 
     it("should return true when blockaidData is unable to scan (no override)", () => {
-      expect(shouldTreatTxAsUnableToScan(null, null)).toBe(true);
+      expect(
+        shouldTreatTxAsUnableToScan(null, null, MAINNET_NETWORK_DETAILS),
+      ).toBe(true);
     });
 
     it("should return false when blockaidData is valid (no override)", () => {
@@ -101,8 +114,32 @@ describe("BlockAid Helper Functions", () => {
         shouldTreatTxAsUnableToScan(
           { simulation: {} } as BlockAidScanTxResult,
           null,
+          MAINNET_NETWORK_DETAILS,
         ),
       ).toBe(false);
+    });
+
+    it("should return false on non-mainnet networks even when scan data is missing", () => {
+      // Network gate trips before the missing-scan-data branch, so the UI
+      // does not show an "unable to scan" warning off mainnet.
+      expect(
+        shouldTreatTxAsUnableToScan(null, null, TESTNET_NETWORK_DETAILS),
+      ).toBe(false);
+      expect(
+        shouldTreatTxAsUnableToScan(null, null, FUTURENET_NETWORK_DETAILS),
+      ).toBe(false);
+    });
+
+    it("should respect dev override above the network gate", () => {
+      // Even on testnet, an explicit dev UNABLE_TO_SCAN override still
+      // forces the unable-to-scan UI so devs can exercise the path.
+      expect(
+        shouldTreatTxAsUnableToScan(
+          null,
+          SecurityLevel.UNABLE_TO_SCAN,
+          TESTNET_NETWORK_DETAILS,
+        ),
+      ).toBe(true);
     });
 
     it("should ignore debug override in production mode", () => {
@@ -117,6 +154,7 @@ describe("BlockAid Helper Functions", () => {
         testFn(
           { simulation: {} } as BlockAidScanTxResult,
           SecurityLevel.UNABLE_TO_SCAN,
+          MAINNET_NETWORK_DETAILS,
         ),
       ).toBe(false);
     });
@@ -255,6 +293,7 @@ describe("BlockAid Helper Functions", () => {
       const store = makeDummyStore({
         settings: {
           overriddenBlockaidResponse: SecurityLevel.SUSPICIOUS,
+          networkDetails: MAINNET_NETWORK_DETAILS,
         },
       });
 
@@ -301,6 +340,7 @@ describe("BlockAid Helper Functions", () => {
       const store = makeDummyStore({
         settings: {
           overriddenBlockaidResponse: SecurityLevel.UNABLE_TO_SCAN,
+          networkDetails: MAINNET_NETWORK_DETAILS,
         },
       });
 
@@ -329,8 +369,153 @@ describe("BlockAid Helper Functions", () => {
         testFn(
           { simulation: {} } as BlockAidScanTxResult,
           SecurityLevel.UNABLE_TO_SCAN,
+          MAINNET_NETWORK_DETAILS,
         ),
       ).toBe(false);
+    });
+  });
+
+  describe("isBlockaidEnabled", () => {
+    afterEach(() => {
+      delete (window as unknown as { IS_PLAYWRIGHT?: string }).IS_PLAYWRIGHT;
+    });
+
+    it("returns true on mainnet", () => {
+      expect(isBlockaidEnabled(MAINNET_NETWORK_DETAILS)).toBe(true);
+    });
+
+    it("returns false on testnet and futurenet by default", () => {
+      expect(isBlockaidEnabled(TESTNET_NETWORK_DETAILS)).toBe(false);
+      expect(isBlockaidEnabled(FUTURENET_NETWORK_DETAILS)).toBe(false);
+    });
+
+    it("returns true on testnet when running under Playwright", () => {
+      (window as unknown as { IS_PLAYWRIGHT?: string }).IS_PLAYWRIGHT = "true";
+      expect(isBlockaidEnabled(TESTNET_NETWORK_DETAILS)).toBe(true);
+    });
+  });
+
+  describe("shouldTreatAssetAsUnableToScan precedence", () => {
+    beforeEach(() => {
+      process.env.DEV_EXTENSION = "true";
+    });
+
+    it("returns false on testnet without an override (network gate)", () => {
+      expect(
+        shouldTreatAssetAsUnableToScan(null, null, TESTNET_NETWORK_DETAILS),
+      ).toBe(false);
+    });
+
+    it("respects dev override above the network gate", () => {
+      expect(
+        shouldTreatAssetAsUnableToScan(
+          null,
+          SecurityLevel.UNABLE_TO_SCAN,
+          TESTNET_NETWORK_DETAILS,
+        ),
+      ).toBe(true);
+    });
+
+    it("falls through to scan-data when override is benign and on mainnet", () => {
+      expect(
+        shouldTreatAssetAsUnableToScan(null, null, MAINNET_NETWORK_DETAILS),
+      ).toBe(true);
+    });
+  });
+
+  describe("getSiteSecurityStates network gate", () => {
+    it("returns all-false when networkDetails is null", () => {
+      expect(getSiteSecurityStates(undefined, null, null)).toEqual({
+        isMalicious: false,
+        isSuspicious: false,
+        isUnableToScan: false,
+      });
+    });
+
+    it("returns all-false on testnet without an override", () => {
+      expect(
+        getSiteSecurityStates(null, null, TESTNET_NETWORK_DETAILS),
+      ).toEqual({
+        isMalicious: false,
+        isSuspicious: false,
+        isUnableToScan: false,
+      });
+    });
+
+    it("dev override wins over the network gate", () => {
+      process.env.DEV_EXTENSION = "true";
+      jest.resetModules();
+      jest.doMock("@shared/helpers/dev", () => ({ isDev: true }));
+      const { getSiteSecurityStates: testFn } = require("../blockaid");
+      expect(
+        testFn(null, SecurityLevel.MALICIOUS, TESTNET_NETWORK_DETAILS),
+      ).toEqual({
+        isMalicious: true,
+        isSuspicious: false,
+        isUnableToScan: false,
+      });
+    });
+
+    it("uses scan data on mainnet", () => {
+      const scanData = {
+        status: "hit",
+        is_malicious: true,
+      } as unknown as BlockAidScanSiteResult;
+      expect(
+        getSiteSecurityStates(scanData, null, MAINNET_NETWORK_DETAILS),
+      ).toEqual({
+        isMalicious: true,
+        isSuspicious: false,
+        isUnableToScan: false,
+      });
+    });
+  });
+
+  describe("network-call gating (no fetch off mainnet)", () => {
+    let fetchSpy: jest.SpyInstance;
+
+    beforeEach(() => {
+      fetchSpy = jest
+        .spyOn(global, "fetch")
+        .mockResolvedValue(new Response("{}", { status: 200 }));
+    });
+
+    afterEach(() => {
+      fetchSpy.mockRestore();
+      delete (window as unknown as { IS_PLAYWRIGHT?: string }).IS_PLAYWRIGHT;
+    });
+
+    it("scanAssetBulk does not fetch off mainnet", async () => {
+      jest.resetModules();
+      const { scanAssetBulk } = require("../blockaid");
+      const result = await scanAssetBulk(["FOO-G..."], TESTNET_NETWORK_DETAILS);
+      expect(result).toBeNull();
+      expect(fetchSpy).not.toHaveBeenCalled();
+    });
+
+    it("reportAssetWarning does not fetch off mainnet", async () => {
+      jest.resetModules();
+      const { reportAssetWarning } = require("../blockaid");
+      const result = await reportAssetWarning({
+        address: "FOO-G...",
+        details: "x",
+        networkDetails: TESTNET_NETWORK_DETAILS,
+      });
+      expect(result).toEqual({});
+      expect(fetchSpy).not.toHaveBeenCalled();
+    });
+
+    it("reportTransactionWarning does not fetch off mainnet", async () => {
+      jest.resetModules();
+      const { reportTransactionWarning } = require("../blockaid");
+      const result = await reportTransactionWarning({
+        details: "x",
+        requestId: "r",
+        event: "e",
+        networkDetails: TESTNET_NETWORK_DETAILS,
+      });
+      expect(result).toEqual({});
+      expect(fetchSpy).not.toHaveBeenCalled();
     });
   });
 });

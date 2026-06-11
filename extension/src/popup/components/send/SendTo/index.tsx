@@ -1,12 +1,10 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Asset, StrKey } from "stellar-sdk";
+import { StrKey } from "stellar-sdk";
 import { useFormik } from "formik";
-import BigNumber from "bignumber.js";
 import {
   Button,
   Input,
-  Loader,
   Link,
   Notification,
   Icon,
@@ -20,20 +18,29 @@ import {
 } from "helpers/stellar";
 
 import { AppDispatch } from "popup/App";
+import { Loading } from "popup/components/Loading";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
 import { FormRows } from "popup/basics/Forms";
 import { emitMetric } from "helpers/metrics";
 import { isContractId } from "popup/helpers/soroban";
+import { shouldShowAccountDoesntExistWarning } from "popup/helpers/sendWarnings";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { STELLAR_DOCS_CREATE_ACCOUNT_URL } from "popup/constants/externalLinks";
 import { View } from "popup/basics/layout/View";
 import {
+  allAccountsSelector,
+  publicKeySelector,
+} from "popup/ducks/accountServices";
+import {
   saveDestination,
   saveDestinationAsset,
   saveFederationAddress,
+  saveMemoAndType,
+  saveRecipientName,
   transactionDataSelector,
 } from "popup/ducks/transactionSubmission";
+import type { FederationMemoType } from "popup/helpers/federationMemo";
 
 import { RequestState } from "constants/request";
 import { useSendToData, getAddressFromInput } from "./hooks/useSendToData";
@@ -46,16 +53,29 @@ import { reRouteOnboarding } from "popup/helpers/route";
 
 import "../styles.scss";
 
-const baseReserve = new BigNumber(1);
+const MAX_VISIBLE_RECENT_ADDRESSES = 10;
+const DESTINATION_DEBOUNCE_MS = 400;
 
-export const shouldAccountDoesntExistWarning = (
-  isFunded: boolean,
-  assetID: string,
-  amount: string,
-) =>
-  !isFunded &&
-  (new BigNumber(amount).lt(baseReserve) ||
-    assetID !== Asset.native().toString());
+type ResolvedSuggestionData = {
+  type: AppDataType.RESOLVED;
+  validatedAddress: string;
+  fedAddress: string;
+  federationMemo: string;
+  federationMemoType: FederationMemoType | "";
+  destinationBalances?: { isFunded: boolean };
+  recentAddresses: string[];
+};
+
+const isResolvedSuggestionData = (
+  data: unknown,
+): data is ResolvedSuggestionData =>
+  Boolean(
+    data &&
+      typeof data === "object" &&
+      "type" in data &&
+      (data as { type?: AppDataType }).type === AppDataType.RESOLVED &&
+      "validatedAddress" in data,
+  );
 
 export const AccountDoesntExistWarning = () => {
   const { t } = useTranslation();
@@ -108,18 +128,46 @@ export const SendTo = ({
   const { t } = useTranslation();
   const location = useLocation();
   const dispatch: AppDispatch = useDispatch<AppDispatch>();
-  const { destination, federationAddress } = useSelector(
+  const { destination, federationAddress, asset, isCollectible } = useSelector(
     transactionDataSelector,
   );
+  const allAccounts = useSelector(allAccountsSelector);
+  const activePublicKey = useSelector(publicKeySelector);
   const { state: sendDataState, fetchData } = useSendToData();
+  const [debouncedDestination, setDebouncedDestination] = useState(
+    federationAddress || destination || "",
+  );
+  const otherAccounts = (allAccounts ?? []).filter(
+    ({ publicKey }) => publicKey !== activePublicKey,
+  );
 
   const handleContinue = (
     validatedDestination: string,
     validatedFedAdress?: string,
+    {
+      recipientName = "",
+      federationMemo,
+      federationMemoType,
+    }: {
+      recipientName?: string;
+      federationMemo?: string;
+      federationMemoType?: FederationMemoType | "";
+    } = {},
   ) => {
     dispatch(saveDestination(validatedDestination));
     dispatch(saveDestinationAsset(""));
     dispatch(saveFederationAddress(validatedFedAdress || ""));
+    dispatch(saveRecipientName(recipientName));
+    if (validatedFedAdress && federationMemo !== undefined) {
+      dispatch(
+        saveMemoAndType({
+          memo: federationMemo,
+          memoType: federationMemoType || "",
+        }),
+      );
+    } else {
+      dispatch(saveMemoAndType({ memo: "", memoType: "" }));
+    }
     goToNext();
   };
 
@@ -128,11 +176,15 @@ export const SendTo = ({
     onSubmit: () => {
       if (
         sendDataState.state === RequestState.SUCCESS &&
-        sendDataState.data.type == AppDataType.RESOLVED
+        sendDataState.data.type === AppDataType.RESOLVED
       ) {
         handleContinue(
           sendDataState.data.validatedAddress,
           sendDataState.data.fedAddress,
+          {
+            federationMemo: sendDataState.data.federationMemo,
+            federationMemoType: sendDataState.data.federationMemoType,
+          },
         );
       }
     },
@@ -162,11 +214,17 @@ export const SendTo = ({
   };
 
   useEffect(() => {
-    const getData = async () => {
-      const errors = await formik.validateForm();
+    const timeoutId = setTimeout(async () => {
+      setDebouncedDestination(formik.values.destination);
+      const errors = await formik.validateForm(formik.values);
       await fetchData(formik.values.destination, errors);
+    }, DESTINATION_DEBOUNCE_MS);
+
+    return () => {
+      clearTimeout(timeoutId);
     };
-    getData();
+    // fetchData and formik.validateForm are stable refs — omitting intentionally
+    // to avoid re-triggering the debounce when only those refs change identity.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formik.values.destination]);
 
@@ -174,6 +232,38 @@ export const SendTo = ({
   const isLoading =
     sendDataState.state === RequestState.IDLE ||
     sendDataState.state === RequestState.LOADING;
+  const isFetching = sendDataState.state === RequestState.LOADING;
+  const isSearchSettled = formik.values.destination === debouncedDestination;
+  const resolvedSendData = isResolvedSuggestionData(sendDataState.data)
+    ? sendDataState.data
+    : null;
+
+  // Track whether any successful fetch has completed (used for initial spinner).
+  const hasLoadedOnceRef = useRef(false);
+  if (resolvedSendData) {
+    hasLoadedOnceRef.current = true;
+  }
+
+  // Cache recent addresses independently — only update when the fetch returns
+  // real data. The validation-error path returns recentAddresses: [] which must
+  // not clear a previously populated list.
+  const cachedRecentAddressesRef = useRef<string[]>([]);
+  if (resolvedSendData?.recentAddresses.length) {
+    cachedRecentAddressesRef.current = resolvedSendData.recentAddresses;
+  }
+
+  // Show a full-screen loader on the very first fetch so Recents / My Accounts
+  // don't render until the data is ready (avoids a layout shift / reflow flash).
+  const isInitialLoad = isLoading && !hasLoadedOnceRef.current;
+
+  const visibleRecentAddresses = cachedRecentAddressesRef.current.slice(
+    0,
+    MAX_VISIBLE_RECENT_ADDRESSES,
+  );
+
+  if (isInitialLoad) {
+    return <Loading />;
+  }
 
   if (sendDataState.data?.type === AppDataType.REROUTE) {
     if (sendDataState.data.shouldOpenTab) {
@@ -199,11 +289,7 @@ export const SendTo = ({
 
   return (
     <React.Fragment>
-      <SubviewHeader
-        title={t("Send")}
-        customBackAction={goBack}
-        customBackIcon={<Icon.X />}
-      />
+      <SubviewHeader title={t("Send to")} customBackAction={goBack} />
       <View.Content hasTopInput>
         <FormRows>
           <Input
@@ -219,12 +305,8 @@ export const SendTo = ({
           />
         </FormRows>
         <div className="SendTo__address-wrapper" data-testid="send-to-view">
-          {isLoading ? (
-            <div className="SendTo__loader">
-              <Loader />
-            </div>
-          ) : sendDataState.error ||
-            sendDataState.state === RequestState.ERROR ? (
+          {/* Suggestions area — gated on fetch state */}
+          {sendDataState.error || sendDataState.state === RequestState.ERROR ? (
             <Notification
               variant="error"
               title={
@@ -234,86 +316,140 @@ export const SendTo = ({
               }
             />
           ) : (
-            <div>
-              {formik.values.destination === "" ? (
-                <>
-                  {sendDataState.data.recentAddresses.length > 0 && (
+            debouncedDestination !== "" &&
+            isSearchSettled && (
+              <div>
+                {formik.isValid && resolvedSendData ? (
+                  <>
+                    {shouldShowAccountDoesntExistWarning({
+                      assetCanonical: asset,
+                      destination: resolvedSendData.validatedAddress,
+                      isCollectible,
+                      isFunded: resolvedSendData.destinationBalances?.isFunded,
+                    }) && <AccountDoesntExistWarning />}
                     <div className="SendTo__subheading">
-                      <Icon.Clock />
-                      {t("Recents")}
+                      <Icon.SearchLg />
+                      {t("Suggestions")}
                     </div>
-                  )}
-                  <div className="SendTo__simplebar">
-                    <ul className="SendTo__recent-accts-ul">
-                      {sendDataState.data.recentAddresses.map((address) => (
-                        <li key={address}>
-                          <button
-                            data-testid="recent-address-button"
-                            onClick={async () => {
-                              const addressFromInput =
-                                await getAddressFromInput(address);
-                              emitMetric(METRIC_NAMES.sendPaymentRecentAddress);
-                              await fetchData(address, {});
-                              handleContinue(
-                                addressFromInput.validatedAddress,
-                                addressFromInput.fedAddress,
-                              );
-                            }}
-                            className="SendTo__subheading-identicon"
-                          >
-                            <div className="SendTo__subheading-identicon__identicon">
-                              <IdenticonImg publicKey={address} />
-                            </div>
-                            <span>
-                              {isFederationAddress(address)
-                                ? address
-                                : truncatedPublicKey(address)}
-                            </span>
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </>
-              ) : (
-                <div>
-                  {formik.isValid ? (
-                    <>
-                      {sendDataState.data.destinationBalances &&
-                        !sendDataState.data.destinationBalances.isFunded && (
-                          <AccountDoesntExistWarning />
-                        )}
-                      <div className="SendTo__subheading">
-                        <Icon.SearchLg />
-                        Suggestions
+                    <button
+                      type="button"
+                      className="SendTo__subheading-identicon"
+                      data-testid="send-to-suggestion-button"
+                      onClick={() => {
+                        handleContinue(
+                          resolvedSendData.validatedAddress,
+                          resolvedSendData.fedAddress,
+                          {
+                            federationMemo: resolvedSendData.federationMemo,
+                            federationMemoType:
+                              resolvedSendData.federationMemoType,
+                          },
+                        );
+                      }}
+                    >
+                      <div className="SendTo__subheading-identicon__identicon">
+                        <IdenticonImg
+                          publicKey={resolvedSendData.validatedAddress}
+                        />
                       </div>
-                      <div
+                      <span>
+                        {truncatedPublicKey(resolvedSendData.validatedAddress)}
+                      </span>
+                    </button>
+                  </>
+                ) : isFetching ? null : (
+                  <InvalidAddressWarning />
+                )}
+              </div>
+            )
+          )}
+          {/* Recents and My Accounts are always visible */}
+          {visibleRecentAddresses.length > 0 && (
+            <div className="SendTo__subheading">
+              <Icon.Clock />
+              {t("Recents")}
+            </div>
+          )}
+          <div className="SendTo__simplebar">
+            <ul className="SendTo__recent-accts-ul">
+              {visibleRecentAddresses.map((address) => (
+                <li key={address}>
+                  <button
+                    type="button"
+                    data-testid="recent-address-button"
+                    onClick={async () => {
+                      const addressFromInput =
+                        await getAddressFromInput(address);
+                      emitMetric(METRIC_NAMES.sendPaymentRecentAddress);
+                      await fetchData(address, {});
+                      handleContinue(
+                        addressFromInput.validatedAddress,
+                        addressFromInput.fedAddress,
+                        {
+                          federationMemo: addressFromInput.federationMemo,
+                          federationMemoType:
+                            addressFromInput.federationMemoType,
+                        },
+                      );
+                    }}
+                    className="SendTo__subheading-identicon"
+                  >
+                    <div className="SendTo__subheading-identicon__identicon">
+                      <IdenticonImg publicKey={address} />
+                    </div>
+                    <span>
+                      {isFederationAddress(address)
+                        ? address
+                        : truncatedPublicKey(address)}
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+          {otherAccounts.length > 0 && (
+            <>
+              <div className="SendTo__subheading">
+                <Icon.UserCircle />
+                {t("My Accounts")}
+              </div>
+              <div className="SendTo__simplebar">
+                <ul className="SendTo__recent-accts-ul">
+                  {otherAccounts.map((account) => (
+                    <li key={account.publicKey}>
+                      <button
+                        type="button"
+                        data-testid="my-account-button"
+                        onClick={async () => {
+                          await fetchData(account.publicKey, {});
+                          handleContinue(account.publicKey, undefined, {
+                            recipientName: account.name || "",
+                          });
+                        }}
                         className="SendTo__subheading-identicon"
-                        data-testid="send-to-identicon"
                       >
                         <div className="SendTo__subheading-identicon__identicon">
-                          <IdenticonImg
-                            publicKey={sendDataState.data.validatedAddress}
-                          />
+                          <IdenticonImg publicKey={account.publicKey} />
                         </div>
                         <span>
-                          {truncatedPublicKey(
-                            sendDataState.data.validatedAddress,
-                          )}
+                          {account.name
+                            ? `${account.name} (${truncatedPublicKey(account.publicKey)})`
+                            : truncatedPublicKey(account.publicKey)}
                         </span>
-                      </div>
-                    </>
-                  ) : (
-                    <InvalidAddressWarning />
-                  )}
-                </div>
-              )}
-            </div>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </>
           )}
         </div>
       </View.Content>
       <View.Footer>
-        {!isLoading && formik.values.destination && formik.isValid ? (
+        {!isLoading &&
+        isSearchSettled &&
+        formik.values.destination &&
+        formik.isValid ? (
           <Button
             size="lg"
             isFullWidth

@@ -37,6 +37,7 @@ import {
   getSoroswapTokens as getSoroswapTokensService,
 } from "popup/helpers/sorobanSwap";
 import { hardwareSign, hardwareSignAuth } from "popup/helpers/hardwareConnect";
+import type { FederationMemoType } from "popup/helpers/federationMemo";
 import { AppState } from "popup/App";
 import { publicKeySelector } from "./accountServices";
 
@@ -421,10 +422,12 @@ interface TransactionData {
   asset: string;
   decimals?: number;
   destination: string;
+  recipientName: string;
   federationAddress: string;
   transactionFee: string;
   transactionTimeout: number;
   memo?: string;
+  memoType?: FederationMemoType | "";
   destinationAsset: string;
   destinationDecimals?: number;
   destinationAmount: string;
@@ -443,6 +446,10 @@ interface TransactionData {
     name: string;
     image: string;
   };
+  // Fee the user explicitly saved via EditSettings this session.
+  // Persisted in Redux so it survives SendAmount unmount/remount (e.g. when
+  // the user navigates to pick a recipient and returns).
+  manualTransactionFee: string | null;
 }
 
 interface HardwareWalletData {
@@ -487,10 +494,12 @@ export const initialState: InitialState = {
     amountUsd: "0.00",
     asset: "native",
     destination: "",
+    recipientName: "",
     federationAddress: "",
     transactionFee: "",
     transactionTimeout: 180,
     memo: "",
+    memoType: "",
     destinationAsset: "",
     destinationAmount: "",
     destinationIcon: "",
@@ -508,6 +517,7 @@ export const initialState: InitialState = {
     isMergeSelected: false,
     balancesToMigrate: [] as BalanceToMigrate[],
     isSoroswap: false,
+    manualTransactionFee: null,
   },
   transactionSimulation: {
     response: null,
@@ -537,6 +547,9 @@ const transactionSubmissionSlice = createSlice({
     saveDestination: (state, action) => {
       state.transactionData.destination = action.payload;
     },
+    saveRecipientName: (state, action) => {
+      state.transactionData.recipientName = action.payload;
+    },
     saveFederationAddress: (state, action) => {
       state.transactionData.federationAddress = action.payload;
     },
@@ -552,11 +565,23 @@ const transactionSubmissionSlice = createSlice({
     saveTransactionFee: (state, action) => {
       state.transactionData.transactionFee = action.payload;
     },
+    saveManualTransactionFee: (state, action) => {
+      state.transactionData.manualTransactionFee = action.payload;
+    },
     saveTransactionTimeout: (state, action) => {
       state.transactionData.transactionTimeout = action.payload;
     },
-    saveMemo: (state, action) => {
-      state.transactionData.memo = action.payload;
+    saveMemoAndType: (
+      state,
+      action: {
+        payload: {
+          memo: string;
+          memoType?: FederationMemoType | "";
+        };
+      },
+    ) => {
+      state.transactionData.memo = action.payload.memo;
+      state.transactionData.memoType = action.payload.memoType ?? "";
     },
     saveDestinationAsset: (state, action) => {
       state.transactionData.destinationAsset = action.payload;
@@ -741,13 +766,15 @@ export const {
   resetSubmission,
   resetSubmitStatus,
   saveDestination,
+  saveRecipientName,
   saveFederationAddress,
   saveAmount,
   saveAmountUsd,
   saveAsset,
   saveTransactionFee,
+  saveManualTransactionFee,
   saveTransactionTimeout,
-  saveMemo,
+  saveMemoAndType,
   saveDestinationAsset,
   saveDestinationIcon,
   saveIsSoroswap,

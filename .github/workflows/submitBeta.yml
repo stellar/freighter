@@ -15,7 +15,7 @@ on:
         required: true
       ref_name:
         description:
-          A git ref to checkout (branch/tag/sha). Defaults to release/<release>
+          A git ref to checkout (branch/tag/sha). Defaults to v<release>
         type: string
         default: ""
 jobs:
@@ -36,7 +36,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
         with:
-          ref: ${{ github.event.inputs.ref_name != '' && github.event.inputs.ref_name || format('release/{0}', github.event.inputs.release) }}
+          ref:
+            ${{ github.event.inputs.ref_name != '' &&
+            github.event.inputs.ref_name || format('v{0}',
+            github.event.inputs.release) }}
       - name: Get checkout SHA
         id: checkout_sha
         run: echo "sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
