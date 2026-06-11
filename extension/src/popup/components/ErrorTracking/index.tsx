@@ -2,6 +2,7 @@ import { useSelector } from "react-redux";
 import * as Sentry from "@sentry/browser";
 
 import { SENTRY_KEY } from "constants/env";
+import { getUserId } from "helpers/metrics";
 import { settingsDataSharingSelector } from "popup/ducks/settings";
 import { scrubPathGkey } from "popup/helpers/formatters";
 import { INDEXER_URL } from "@shared/constants/mercury";
@@ -45,6 +46,13 @@ export const ErrorTracking = () => {
         return event;
       },
     });
+
+    // Attach a stable anonymous user ID so Sentry can report "users
+    // affected" counts. Reuses the same persisted random ID as Amplitude
+    // (helpers/metrics getUserId) so user counts stay aligned across the two.
+    // No PII / wallet address — just an opaque per-install identifier.
+    // Mirrors freighter-mobile's Sentry.setUser in src/components/App.tsx.
+    Sentry.setUser({ id: getUserId() });
   }
 
   if (!isDataSharingAllowed) {
