@@ -163,7 +163,9 @@ export const SignAuthEntry = () => {
         >
           <p>
             {entryNetworkName
-              ? `${t("The authorization entry is for")} ${entryNetworkName}.`
+              ? t("The authorization entry is for {{network}}.", {
+                  network: entryNetworkName,
+                })
               : t(
                   "The authorization entry is for a different network than the one you are connected to.",
                 )}
@@ -208,7 +210,9 @@ export const SignAuthEntry = () => {
         header={t("Freighter is set to a different account")}
       >
         <p>
-          {`${t("This authorization is for")} ${truncateString(boundAddress)}.`}
+          {t("This authorization is for {{address}}.", {
+            address: truncateString(boundAddress),
+          })}
         </p>
         <p>{t("Signing this authorization is not possible at the moment.")}</p>
       </WarningMessage>
