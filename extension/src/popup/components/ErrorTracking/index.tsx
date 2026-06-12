@@ -2,6 +2,7 @@ import { useSelector } from "react-redux";
 import * as Sentry from "@sentry/browser";
 
 import { SENTRY_KEY } from "constants/env";
+import { getUserId } from "helpers/metrics";
 import { settingsDataSharingSelector } from "popup/ducks/settings";
 import { scrubPathGkey } from "popup/helpers/formatters";
 import { INDEXER_URL } from "@shared/constants/mercury";
@@ -45,14 +46,25 @@ export const ErrorTracking = () => {
         return event;
       },
     });
+
+    // Attach a stable anonymous user ID so Sentry can report "users
+    // affected" counts. Reuses the same persisted random ID as Amplitude
+    // (helpers/metrics getUserId) so user counts stay aligned across the two.
+    // No PII / wallet address — just an opaque per-install identifier.
+    // Mirrors freighter-mobile's Sentry.setUser in src/components/App.tsx.
+    Sentry.setUser({ id: getUserId() });
   }
 
   if (!isDataSharingAllowed) {
-    /* 
-    Note: Sentry.close does not completely disable calls to Sentry. Sentry will still report, but with a completely anonymized payload. 
+    /*
+    Note: Sentry.close does not completely disable calls to Sentry. Sentry will still report, but with a completely anonymized payload.
     When you refresh/reopen the app after disabling tracking, it will not initialize Sentry, thus disabling *all* calls to Sentry
     */
 
+    // Clear the per-install user id before closing. Sentry.close may still
+    // report (anonymized) until the next refresh; without this, those reports
+    // would keep the user id attached and defeat the anonymization.
+    Sentry.setUser(null);
     Sentry.close(500);
   }
 
