@@ -52,6 +52,27 @@ const MemoRequiredWarning = ({
   ) : null;
 };
 
+const MasterKeyDisableWarning = () => {
+  const { t } = useTranslation();
+
+  // Rendered as a full-width banner (not a KeyValueList row) so the message
+  // wraps instead of being truncated in the right-aligned value column.
+  return (
+    <div
+      className="Operations__warning"
+      data-testid="MasterKeyDisableWarning"
+      role="alert"
+    >
+      <Icon.AlertTriangle aria-hidden="true" />
+      <span>
+        {t(
+          "This transaction disables your account's master key. You may permanently lose access to this account unless another signer with sufficient weight is added.",
+        )}
+      </span>
+    </div>
+  );
+};
+
 const DestinationWarning = ({
   destination,
   flaggedKeys,
@@ -94,6 +115,27 @@ export const Operations = ({
     "4": "Authorization Immutable",
 
     "8": "Authorization Clawback Enabled",
+  };
+
+  // Account flags are a bitmask, so a combined value (e.g. REVOCABLE |
+  // CLAWBACK = 10) is not a key in AuthorizationMapToDisplay. Decode each known
+  // bit individually so combined flags are never rendered as a blank value, and
+  // surface any remaining (unrecognized) bits so a future protocol flag isn't
+  // silently hidden when combined with a known one.
+  const decodeAuthorizationFlags = (bits: number) => {
+    const labels: string[] = [];
+    let remaining = bits;
+    Object.entries(AuthorizationMapToDisplay).forEach(([bit, label]) => {
+      const value = Number(bit);
+      if ((bits & value) !== 0) {
+        labels.push(t(label));
+        remaining &= ~value;
+      }
+    });
+    if (remaining !== 0) {
+      labels.push(t("Unknown ({{bits}})", { bits: remaining }));
+    }
+    return labels.join(", ");
   };
 
   const RenderOpByType = ({ op }: { op: Operation }) => {
@@ -337,48 +379,49 @@ export const Operations = ({
                 operationValue={inflationDest}
               />
             )}
-            {homeDomain && (
+            {homeDomain !== undefined && (
               <KeyValueList
                 operationKey={t("Home Domain")}
-                operationValue={homeDomain}
+                operationValue={
+                  homeDomain === "" ? t("(clearing home domain)") : homeDomain
+                }
               />
             )}
-            {highThreshold && (
+            {highThreshold !== undefined && (
               <KeyValueList
                 operationKey={t("High Threshold")}
-                operationValue={highThreshold?.toString()}
+                operationValue={highThreshold.toString()}
               />
             )}
-            {medThreshold && (
+            {medThreshold !== undefined && (
               <KeyValueList
                 operationKey={t("Medium Threshold")}
-                operationValue={medThreshold?.toString()}
+                operationValue={medThreshold.toString()}
               />
             )}
-            {lowThreshold && (
+            {lowThreshold !== undefined && (
               <KeyValueList
                 operationKey={t("Low Threshold")}
-                operationValue={lowThreshold?.toString()}
+                operationValue={lowThreshold.toString()}
               />
             )}
-            {masterWeight && (
+            {masterWeight !== undefined && (
               <KeyValueList
                 operationKey={t("Master Weight")}
-                operationValue={masterWeight?.toString()}
+                operationValue={masterWeight.toString()}
               />
             )}
-            {setFlags && (
+            {masterWeight === 0 && <MasterKeyDisableWarning />}
+            {setFlags !== undefined && (
               <KeyValueList
                 operationKey={t("Set Flags")}
-                operationValue={AuthorizationMapToDisplay[setFlags?.toString()]}
+                operationValue={decodeAuthorizationFlags(setFlags)}
               />
             )}
-            {clearFlags && (
+            {clearFlags !== undefined && (
               <KeyValueList
                 operationKey={t("Clear Flags")}
-                operationValue={
-                  AuthorizationMapToDisplay[clearFlags.toString()]
-                }
+                operationValue={decodeAuthorizationFlags(clearFlags)}
               />
             )}
           </>
@@ -435,15 +478,19 @@ export const Operations = ({
 
       case "manageData": {
         const { name, value } = op;
+        // A null/undefined value means the data entry is being deleted; an
+        // empty value decodes to a zero-length buffer. Always render the row so
+        // a deletion is never silently hidden from the approval screen.
+        const isDeletingEntry = value === undefined || value === null;
         return (
           <>
             <KeyValueList operationKey={t("Name")} operationValue={name} />
-            {value && (
-              <KeyValueList
-                operationKey={t("Value")}
-                operationValue={value?.toString()}
-              />
-            )}
+            <KeyValueList
+              operationKey={t("Value")}
+              operationValue={
+                isDeletingEntry ? t("(deleting entry)") : value.toString()
+              }
+            />
           </>
         );
       }
@@ -537,22 +584,34 @@ export const Operations = ({
               operationKey={t("Asset Code")}
               operationValue={asset.code}
             />
-            {flags.authorized && (
+            {/*
+              A flag present in the decoded `flags` object is being changed:
+              `true` enables it, `false` *clears* it. Use a presence check so a
+              cleared flag is never hidden, and render the value explicitly — a
+              raw boolean is not rendered by React.
+            */}
+            {flags.authorized !== undefined && (
               <KeyValueList
                 operationKey={t(FLAG_TYPES.authorized)}
-                operationValue={flags.authorized}
+                operationValue={flags.authorized ? t("Enabled") : t("Disabled")}
               />
             )}
-            {flags.authorizedToMaintainLiabilities && (
+            {flags.authorizedToMaintainLiabilities !== undefined && (
               <KeyValueList
                 operationKey={t(FLAG_TYPES.authorizedToMaintainLiabilities)}
-                operationValue={flags.authorizedToMaintainLiabilities}
+                operationValue={
+                  flags.authorizedToMaintainLiabilities
+                    ? t("Enabled")
+                    : t("Disabled")
+                }
               />
             )}
-            {flags.clawbackEnabled && (
+            {flags.clawbackEnabled !== undefined && (
               <KeyValueList
                 operationKey={t(FLAG_TYPES.clawbackEnabled)}
-                operationValue={flags.clawbackEnabled}
+                operationValue={
+                  flags.clawbackEnabled ? t("Enabled") : t("Disabled")
+                }
               />
             )}
           </>
