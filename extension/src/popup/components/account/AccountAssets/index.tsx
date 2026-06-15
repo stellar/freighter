@@ -51,7 +51,7 @@ export const SorobanTokenIcon = ({ noMargin }: { noMargin?: boolean }) => (
 interface AssetIconProps {
   assetIcons: AssetIcons;
   code: string;
-  issuerKey: string;
+  issuerKey?: string;
   retryAssetIconFetch?: (arg: { key: string; code: string }) => void;
   isLPShare?: boolean;
   isSorobanToken?: boolean;
@@ -157,7 +157,7 @@ export const AssetIcon = memo(
           src={isXlm ? StellarLogo : imgSrc}
           onError={() => {
             if (retryAssetIconFetch) {
-              retryAssetIconFetch({ key: issuerKey, code });
+              retryAssetIconFetch({ key: issuerKey ?? "", code });
             }
             // we tried to load an image path but it failed, so show the broken image icon here
             setHasError(true);

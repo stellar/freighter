@@ -9,7 +9,6 @@ import {
   nativeToScVal,
   Operation,
   Signer,
-  SignerKeyOptions,
   StrKey,
   xdr,
 } from "stellar-sdk";
@@ -230,8 +229,8 @@ export const KeyValueLine = ({
         operationKey={t("Asset Issuer")}
         operationValue={
           <CopyValue
-            value={line.issuer}
-            displayValue={truncateString(line.issuer)}
+            value={line.issuer ?? ""}
+            displayValue={truncateString(line.issuer ?? "")}
           />
         }
       />{" "}
@@ -348,11 +347,7 @@ export const KeyValueClaimants = ({ claimants }: { claimants: Claimant[] }) => {
   );
 };
 
-export const KeyValueSignerKeyOptions = ({
-  signer,
-}: {
-  signer: SignerKeyOptions;
-}) => {
+export const KeyValueSignerKeyOptions = ({ signer }: { signer: Signer }) => {
   const { t } = useTranslation();
 
   if ("ed25519PublicKey" in signer) {
@@ -368,7 +363,7 @@ export const KeyValueSignerKeyOptions = ({
     return (
       <KeyValueList
         operationKey={t("Signer Sha256 Hash")}
-        operationValue={signer.sha256Hash}
+        operationValue={formattedBuffer(signer.sha256Hash)}
       />
     );
   }
@@ -377,7 +372,7 @@ export const KeyValueSignerKeyOptions = ({
     return (
       <KeyValueList
         operationKey={t("Pre Auth Transaction")}
-        operationValue={signer.preAuthTx}
+        operationValue={formattedBuffer(signer.preAuthTx)}
       />
     );
   }
