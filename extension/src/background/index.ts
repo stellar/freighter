@@ -29,6 +29,7 @@ import {
   SIDEBAR_DISCONNECT_DEBOUNCE_MS,
 } from "./helpers/queueCleanup";
 import { removeUuidFromAllQueues } from "./messageListener/handlers/rejectSigningRequest";
+import { broadcastSessionState } from "./messageListener/helpers/broadcast-session-state";
 import {
   SESSION_ALARM_NAME,
   SessionTimer,
@@ -53,7 +54,7 @@ import {
 } from "@stellar/typescript-wallet-sdk-km";
 import { BrowserStorageConfigParams } from "@stellar/typescript-wallet-sdk-km/lib/Plugins/BrowserStorageFacade";
 
-const sessionTimer = new SessionTimer();
+const sessionTimer = new SessionTimer(dataStorageAccess(browserLocalStorage));
 
 export const initContentScriptMessageListener = () => {
   browser?.runtime?.onMessage?.addListener((message) => {
@@ -231,6 +232,7 @@ export const initAlarmListener = () => {
 
     if (name === SESSION_ALARM_NAME) {
       await clearSession({ sessionStore, localStore });
+      await broadcastSessionState(SERVICE_TYPES.SESSION_LOCKED);
     }
   });
 };

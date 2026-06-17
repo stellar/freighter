@@ -66,6 +66,7 @@ describe("useGetWalletsData", () => {
   const preloadedState = {
     auth: {
       publicKey: TEST_PUBLIC_KEY,
+      hasPrivateKey: true,
       allAccounts: mockAccounts,
       applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
     },
@@ -113,6 +114,7 @@ describe("useGetWalletsData", () => {
     const mainnetPreloadedState = {
       auth: {
         publicKey: "G1",
+        hasPrivateKey: true,
         allAccounts: [{ publicKey: "G1" }],
         applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
       },
@@ -166,6 +168,7 @@ describe("useGetWalletsData", () => {
     const mainnetPreloadedState = {
       auth: {
         publicKey: "G1",
+        hasPrivateKey: true,
         allAccounts: [
           { publicKey: "G1" },
           { publicKey: "G2" },

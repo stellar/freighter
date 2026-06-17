@@ -20,6 +20,7 @@ import {
 } from "@shared/constants/stellar";
 import { SettingsState } from "@shared/api/types";
 import { DEFAULT_ASSETS_LISTS } from "@shared/constants/soroban/asset-list";
+import { DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES } from "@shared/constants/autoLock";
 import * as UseIsDomainAllowed from "popup/helpers/useIsDomainListedAllowed";
 import * as SignTxDataHooks from "../SignTransaction/hooks/useGetSignTxData";
 import { RequestState } from "constants/request";
@@ -88,6 +89,7 @@ jest.spyOn(ApiInternal, "loadSettings").mockImplementation(() =>
     isNonSSLEnabled: false,
     experimentalFeaturesState: SettingsState.SUCCESS,
     assetsLists: DEFAULT_ASSETS_LISTS,
+    autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
   }),
 );
 
@@ -337,6 +339,7 @@ describe("SignTransactions", () => {
         isNonSSLEnabled: false,
         experimentalFeaturesState: SettingsState.SUCCESS,
         assetsLists: DEFAULT_ASSETS_LISTS,
+        autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
       }),
     );
 
@@ -453,6 +456,7 @@ describe("SignTransactions", () => {
         isNonSSLEnabled: false,
         experimentalFeaturesState: SettingsState.SUCCESS,
         assetsLists: DEFAULT_ASSETS_LISTS,
+        autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
       }),
     );
     const transaction = TransactionBuilder.fromXDR(
@@ -592,6 +596,7 @@ describe("SignTransactions", () => {
         isNonSSLEnabled: false,
         experimentalFeaturesState: SettingsState.SUCCESS,
         assetsLists: DEFAULT_ASSETS_LISTS,
+        autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
       }),
     );
 
@@ -706,6 +711,7 @@ describe("SignTransactions", () => {
         isNonSSLEnabled: false,
         experimentalFeaturesState: SettingsState.SUCCESS,
         assetsLists: DEFAULT_ASSETS_LISTS,
+        autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
       }),
     );
     const transaction = TransactionBuilder.fromXDR(
@@ -828,6 +834,7 @@ describe("SignTransactions", () => {
         isNonSSLEnabled: false,
         experimentalFeaturesState: SettingsState.SUCCESS,
         assetsLists: DEFAULT_ASSETS_LISTS,
+        autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
       }),
     );
     const transaction = TransactionBuilder.fromXDR(
@@ -950,6 +957,7 @@ describe("SignTransactions", () => {
         isNonSSLEnabled: false,
         experimentalFeaturesState: SettingsState.SUCCESS,
         assetsLists: DEFAULT_ASSETS_LISTS,
+        autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
       }),
     );
     const transaction = TransactionBuilder.fromXDR(
@@ -1066,6 +1074,7 @@ describe("SignTransactions", () => {
         isNonSSLEnabled: false,
         experimentalFeaturesState: SettingsState.SUCCESS,
         assetsLists: DEFAULT_ASSETS_LISTS,
+        autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
       }),
     );
     const transaction = TransactionBuilder.fromXDR(
@@ -1188,6 +1197,7 @@ describe("SignTransactions", () => {
         isNonSSLEnabled: false,
         experimentalFeaturesState: SettingsState.SUCCESS,
         assetsLists: DEFAULT_ASSETS_LISTS,
+        autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
       }),
     );
 
@@ -1327,6 +1337,7 @@ describe("SignTransactions", () => {
         isNonSSLEnabled: false,
         experimentalFeaturesState: SettingsState.SUCCESS,
         assetsLists: DEFAULT_ASSETS_LISTS,
+        autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
       }),
     );
     const transaction = TransactionBuilder.fromXDR(
@@ -1501,6 +1512,7 @@ describe("SignTransactions", () => {
         isNonSSLEnabled: false,
         experimentalFeaturesState: SettingsState.SUCCESS,
         assetsLists: DEFAULT_ASSETS_LISTS,
+        autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
       }),
     );
     const transaction = TransactionBuilder.fromXDR(
@@ -1667,6 +1679,7 @@ describe("SignTransactions", () => {
         isNonSSLEnabled: false,
         experimentalFeaturesState: SettingsState.SUCCESS,
         assetsLists: DEFAULT_ASSETS_LISTS,
+        autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
       }),
     );
     const transaction = TransactionBuilder.fromXDR(

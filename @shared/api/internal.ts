@@ -14,6 +14,10 @@ import {
 import BigNumber from "bignumber.js";
 import { INDEXER_URL, INDEXER_V2_URL } from "@shared/constants/mercury";
 import {
+  AutoLockTimeoutMinutes,
+  DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
+} from "@shared/constants/autoLock";
+import {
   AssetListResponse,
   AssetsListItem,
   AssetsLists,
@@ -60,6 +64,7 @@ import {
   CollectibleContract,
   DiscoverData,
   RecentProtocolEntry,
+  SaveSettingsResponse,
 } from "./types";
 import {
   AccountBalancesInterface,
@@ -1618,45 +1623,49 @@ export const saveSettings = async ({
   isMemoValidationEnabled,
   isHideDustEnabled,
   isOpenSidebarByDefault,
+  autoLockTimeoutMinutes,
 }: {
   activePublicKey: string;
   isDataSharingAllowed: boolean;
   isMemoValidationEnabled: boolean;
   isHideDustEnabled: boolean;
   isOpenSidebarByDefault: boolean;
-}): Promise<Settings & IndexerSettings> => {
-  let response = {
+  autoLockTimeoutMinutes: AutoLockTimeoutMinutes;
+}): Promise<SaveSettingsResponse> => {
+  let response: SaveSettingsResponse = {
     allowList: DEFAULT_ALLOW_LIST,
     isDataSharingAllowed: false,
     networkDetails: MAINNET_NETWORK_DETAILS,
     networksList: DEFAULT_NETWORKS,
     isMemoValidationEnabled: true,
     isRpcHealthy: false,
-    userNotification: { enabled: false, message: "" },
-    settingsState: SettingsState.IDLE,
     isSorobanPublicEnabled: false,
     isNonSSLEnabled: false,
     isHideDustEnabled: true,
     isOpenSidebarByDefault: false,
-    error: "",
-    hiddenAssets: {},
+    autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
   };
 
   try {
-    response = await sendMessageToBackground({
+    const raw = await sendMessageToBackground<
+      SaveSettingsResponse | { error: string }
+    >({
       activePublicKey,
       isDataSharingAllowed,
       isMemoValidationEnabled,
       isHideDustEnabled,
       isOpenSidebarByDefault,
+      autoLockTimeoutMinutes,
       type: SERVICE_TYPES.SAVE_SETTINGS,
     });
+
+    if ("error" in raw && raw.error) {
+      throw new Error(raw.error);
+    }
+
+    response = raw as SaveSettingsResponse;
   } catch (e) {
     console.error(e);
-  }
-
-  if (response.error) {
-    throw new Error(response.error);
   }
 
   return response;
@@ -1863,7 +1872,11 @@ export const loadSettings = (): Promise<
     IndexerSettings &
     ExperimentalFeatures & { assetsLists: AssetsLists }
 > =>
-  sendMessageToBackground({
+  sendMessageToBackground<
+    Settings &
+      IndexerSettings &
+      ExperimentalFeatures & { assetsLists: AssetsLists }
+  >({
     activePublicKey: null,
     type: SERVICE_TYPES.LOAD_SETTINGS,
   });

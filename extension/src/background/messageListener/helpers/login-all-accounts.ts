@@ -21,6 +21,7 @@ import {
   storeActiveHashKey,
   storeEncryptedTemporaryData,
 } from "background/helpers/session";
+import { flushSessionStore } from "background/store";
 import {
   allAccountsSelector,
   logIn,
@@ -28,6 +29,8 @@ import {
 } from "background/ducks/session";
 import { getStoredAccounts } from "./get-stored-accounts";
 import { captureException } from "@sentry/browser";
+import { SERVICE_TYPES } from "@shared/constants/services";
+import { broadcastSessionState } from "./broadcast-session-state";
 
 /* Retrive and store encrypted data for all existing accounts */
 export const loginToAllAccounts = async (
@@ -95,6 +98,11 @@ export const loginToAllAccounts = async (
     captureException(
       `Error storing encrypted temporary data: ${JSON.stringify(e)}`,
     );
+    // Rethrow so we don't fall through to startSession() +
+    // broadcastSessionState(SESSION_UNLOCKED) below, which would tell
+    // every Freighter surface the wallet is unlocked even though
+    // clearSession() just wiped it.
+    throw e;
   }
 
   for (let i = 0; i < keyIdList.length; i += 1) {
@@ -132,8 +140,14 @@ export const loginToAllAccounts = async (
   } catch (e) {
     await clearSession({ localStore, sessionStore });
     captureException(`Error storing active hash key: ${JSON.stringify(e)}`);
+    // Rethrow so we don't fall through to startSession() +
+    // broadcastSessionState(SESSION_UNLOCKED) below — the session was
+    // just cleared and the wallet must not be reported as unlocked.
+    throw e;
   }
 
   // start the timer now that we have active private key
-  sessionTimer.startSession();
+  await sessionTimer.startSession();
+  await flushSessionStore(sessionStore);
+  await broadcastSessionState(SERVICE_TYPES.SESSION_UNLOCKED);
 };
