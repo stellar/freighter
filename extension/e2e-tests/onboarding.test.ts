@@ -102,6 +102,9 @@ test("Import 12 word wallet", async ({ page }) => {
   await expect(
     page.getByText("Import wallet from recovery phrase"),
   ).toBeVisible();
+  await expect(
+    page.getByText("You can also paste the phrase in the first box."),
+  ).toBeVisible();
 
   for (let i = 1; i <= TEST_MNEMONIC_12_WORDS.length; i++) {
     await page
@@ -139,6 +142,9 @@ test("Import 12 word wallet by pasting", async ({ page, context }) => {
 
   await expect(
     page.getByText("Import wallet from recovery phrase"),
+  ).toBeVisible();
+  await expect(
+    page.getByText("You can also paste the phrase in the first box."),
   ).toBeVisible();
 
   await page.evaluate((argMnemonic) => {
@@ -182,6 +188,9 @@ test("Import 24 word wallet", async ({ page }) => {
 
   await expect(
     page.getByText("Import wallet from recovery phrase"),
+  ).toBeVisible();
+  await expect(
+    page.getByText("You can also paste the phrase in the first box."),
   ).toBeVisible();
   await page.locator(".RecoverAccount__phrase-toggle > label").click();
 
@@ -249,6 +258,9 @@ test("Import 24 word wallet by pasting", async ({ page, context }) => {
 
   await expect(
     page.getByText("Import wallet from recovery phrase"),
+  ).toBeVisible();
+  await expect(
+    page.getByText("You can also paste the phrase in the first box."),
   ).toBeVisible();
 
   await page.evaluate(() =>
@@ -493,6 +505,9 @@ test("Logout and import new account", async ({
 
   await expect(
     newPage.getByText("Import wallet from recovery phrase"),
+  ).toBeVisible();
+  await expect(
+    newPage.getByText("You can also paste the phrase in the first box."),
   ).toBeVisible();
 
   const TEST_WORDS = generateMnemonic({ entropyBits: 128 }).split(" ");

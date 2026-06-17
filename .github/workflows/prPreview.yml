@@ -52,8 +52,8 @@ jobs:
       github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     permissions:
-      contents: write       # release create/delete + tag operations
-      pull-requests: write  # sticky preview-link comment on the PR
+      contents: write # release create/delete + tag operations
+      pull-requests: write # sticky preview-link comment on the PR
     env:
       # Secrets injected at job level (not workflow level) so a future job
       # added without the same fork-guard if: doesn't inherit them.
@@ -231,7 +231,9 @@ jobs:
 
   cleanup-release:
     name: Cleanup PR Preview Release
-    if: github.event.action == 'closed' && github.event.pull_request.head.repo.full_name == github.repository
+    if:
+      github.event.action == 'closed' &&
+      github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     permissions:
       contents: write

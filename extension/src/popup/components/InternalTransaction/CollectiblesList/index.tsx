@@ -12,7 +12,7 @@ import { getUserCollections } from "popup/helpers/collectibles";
 
 import "./styles.scss";
 
-/* UI for displaying a vertical list of clickable collectibles */
+/* UI for displaying a vertical list of clickable collectibles grouped by collection */
 
 export const CollectiblesList = ({
   collectibles,
@@ -42,47 +42,61 @@ export const CollectiblesList = ({
     );
   }
 
-  const flattenedCollections = userCollectibles.flatMap((collection) => {
-    if (collection.collection) {
-      return collection.collection.collectibles;
-    }
-    return [];
-  });
-
   return (
     <div className="CollectiblesList__collections">
-      {flattenedCollections.map((collection) => {
-        const title =
-          collection.metadata?.name || `${collection.collectionName}`;
+      {userCollectibles.map((collection) => {
+        if (!collection.collection) return null;
+        const items = collection.collection.collectibles;
+        const collectionName = items[0]?.collectionName || "";
+        const collectionAddress = collection.collection.address;
 
         return (
           <div
-            className="CollectiblesList__collection"
-            key={`${collection.collectionAddress}-${collection.tokenId}`}
-            onClick={() =>
-              onClickCollectible({
-                collectionName: collection.collectionName,
-                collectionAddress: collection.collectionAddress,
-                tokenId: collection.tokenId,
-                name: getCollectibleName(
-                  collection.metadata?.name,
-                  collection.tokenId,
-                ),
-                image: collection.metadata?.image || "",
-              })
-            }
+            key={`${collectionAddress}-group`}
+            className="CollectiblesList__collection-group"
           >
-            <div className="CollectiblesList__collection__image">
-              <CollectibleInfoImage
-                image={collection.metadata?.image}
-                name={title}
-                isSmall
-              />
+            <div className="CollectiblesList__section-header">
+              <span className="CollectiblesList__section-header__name">
+                {collectionName}
+              </span>
+              <div className="CollectiblesList__section-header__divider" />
+              <span className="CollectiblesList__section-header__count">
+                {items.length}
+              </span>
             </div>
-            <div className="CollectiblesList__collection__title">{title}</div>
-            <div className="CollectiblesList__collection__token-id">
-              #{collection.tokenId}
-            </div>
+            {items.map((collectible) => {
+              const title =
+                collectible.metadata?.name || collectible.collectionName;
+              return (
+                <div
+                  className="CollectiblesList__collection"
+                  key={`${collectible.collectionAddress}-${collectible.tokenId}`}
+                  onClick={() =>
+                    onClickCollectible({
+                      collectionName: collectible.collectionName,
+                      collectionAddress: collectible.collectionAddress,
+                      tokenId: collectible.tokenId,
+                      name: getCollectibleName(
+                        collectible.metadata?.name,
+                        collectible.tokenId,
+                      ),
+                      image: collectible.metadata?.image || "",
+                    })
+                  }
+                >
+                  <div className="CollectiblesList__collection__image">
+                    <CollectibleInfoImage
+                      image={collectible.metadata?.image}
+                      name={title}
+                      isSmall
+                    />
+                  </div>
+                  <div className="CollectiblesList__collection__title">
+                    {title}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         );
       })}

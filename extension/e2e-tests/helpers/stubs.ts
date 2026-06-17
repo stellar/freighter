@@ -351,7 +351,7 @@ export const stubScanDapp = async (context: BrowserContext) => {
     const json = {
       data: {
         status: "hit",
-        url: "https://docs.freighter.app/docs/playground/setallowed/",
+        url: "https://play.freighter.app/#/extension/playground/setAllowed",
         scan_start_time: "2025-07-04T08:58:59.350000",
         scan_end_time: "2025-07-04T09:02:37.766000",
         malicious_score: 0,
@@ -392,7 +392,7 @@ export const stubScanDappMalicious = async (context: BrowserContext) => {
     const json = {
       data: {
         status: "hit",
-        url: "https://docs.freighter.app/docs/playground/setallowed/",
+        url: "https://play.freighter.app/#/extension/playground/setAllowed",
         scan_start_time: "2025-07-04T08:58:59.350000",
         scan_end_time: "2025-07-04T09:02:37.766000",
         malicious_score: 0.95,
@@ -889,6 +889,45 @@ export const stubAccountBalancesWithUSDC = async (page: Page) => {
       },
     };
     await route.fulfill({ json });
+  });
+};
+
+/**
+ * Stubs the `/account-history/` endpoint with the provided records using both
+ * an in-page `window.fetch` override (via `addInitScript`) and a
+ * `context.route` network fallback. Playwright's route interception alone does
+ * not reliably catch fetch requests made from Chrome extension popup pages in
+ * CI headless mode; the init script guarantees the response.
+ */
+export const stubAccountHistoryWith = async (
+  page: Page,
+  context: BrowserContext,
+  records: object[],
+) => {
+  await page.addInitScript((data: object[]) => {
+    const origFetch = window.fetch.bind(window);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (window as any).fetch = function (input: any, init: any) {
+      const urlStr: string =
+        typeof input === "string"
+          ? input
+          : input instanceof URL
+            ? input.href
+            : (input.url ?? "");
+      if (urlStr.includes("/account-history/")) {
+        return Promise.resolve(
+          new Response(JSON.stringify(data), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          }),
+        );
+      }
+      return origFetch(input, init);
+    };
+  }, records);
+
+  await context.route("*/**/account-history/*", async (route) => {
+    await route.fulfill({ json: records });
   });
 };
 

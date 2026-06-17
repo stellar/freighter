@@ -111,7 +111,10 @@ const AMPLITUDE_FLUSH_INTERVAL_MS = 500;
 
 /** Mirrors mobile's `generateRandomUserId` — a numeric decimal string. */
 const generateRandomUserId = (): string =>
-  Math.random().toString().split(".")[1];
+  // Math.random() can yield values < 1e-6 (exponential notation, e.g. "4e-7")
+  // or exactly 0 ("0"), where `split(".")[1]` is undefined. Fall back to "0"
+  // so we never persist or hand Sentry/Amplitude an undefined user id.
+  Math.random().toString().split(".")[1] ?? "0";
 
 /** Session-level cache, mirrors mobile's module-level `sessionUserId` fallback. */
 let sessionUserId: string | null = null;
@@ -122,7 +125,7 @@ let sessionUserId: string | null = null;
  * - Reads from localStorage under key `"metrics_user_id"`
  * - Falls back to a session-only ID if storage is unavailable
  */
-const getUserId = (): string => {
+export const getUserId = (): string => {
   try {
     const stored = localStorage.getItem(METRICS_USER_ID);
     if (stored) {

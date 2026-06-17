@@ -9,7 +9,7 @@ interface AssetTileProps {
   asset: {
     code: string;
     canonical: string;
-    issuer: string;
+    issuer?: string;
   } | null;
   assetIcon: string | null;
   balance?: string;

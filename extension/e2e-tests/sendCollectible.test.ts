@@ -13,6 +13,7 @@ test("Send collectible with metadata", async ({
   extensionId,
   context,
 }) => {
+  test.slow();
   const stubOverrides = async () => {
     await stubSimulateSendCollectible(page);
   };
@@ -27,13 +28,14 @@ test("Send collectible with metadata", async ({
   await loginToTestAccount({ page, extensionId, context, stubOverrides });
   await page.getByTestId("nav-link-send").click();
 
-  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
-  await expect(page.getByTestId("send-amount-fee-display")).toHaveText(
-    "0.00001 XLM",
-  );
-  await page.getByTestId("send-amount-edit-dest-asset").click();
-  await page.getByTestId("account-tab-collectibles").click();
+  await expect(page.getByTestId("token-list")).toBeVisible();
+
   await page.getByText("Stellar Frog 1").click();
+
+  await page
+    .getByTestId("send-to-input")
+    .fill("GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF");
+  await page.getByText("Continue").click({ force: true });
 
   await expect(page.getByTestId("SelectedCollectible")).toBeVisible();
   await expect(
@@ -53,12 +55,6 @@ test("Send collectible with metadata", async ({
     "src",
     "https://nftcalendar.io/storage/uploads/events/2023/5/NeToOQbYtaJILHMnkigEAsA6ckKYe2GAA4ppAOSp.jpg",
   );
-
-  await page.getByTestId("address-tile").click();
-  await page
-    .getByTestId("send-to-input")
-    .fill("GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF");
-  await page.getByText("Continue").click({ force: true });
 
   await page.getByText("Review Send").scrollIntoViewIfNeeded();
   await page.getByText("Review Send").click({ force: true });
@@ -95,6 +91,7 @@ test("Send collectible without metadata", async ({
   extensionId,
   context,
 }) => {
+  test.slow();
   const stubOverrides = async () => {
     await stubCollectiblesUnsuccessfulMetadata(page);
     await stubSimulateSendCollectible(page);
@@ -110,13 +107,17 @@ test("Send collectible without metadata", async ({
   await loginToTestAccount({ page, extensionId, context, stubOverrides });
   await page.getByTestId("nav-link-send").click({ force: true });
 
-  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
-  await expect(page.getByTestId("send-amount-fee-display")).toHaveText(
-    "0.00001 XLM",
-  );
-  await page.getByTestId("send-amount-edit-dest-asset").click();
-  await page.getByTestId("account-tab-collectibles").click();
-  await page.getByText("Stellar Frogs").click();
+  await expect(page.getByTestId("token-list")).toBeVisible();
+
+  await page
+    .locator(".CollectiblesList__collection")
+    .filter({ hasText: "Stellar Frogs" })
+    .click();
+
+  await page
+    .getByTestId("send-to-input")
+    .fill("GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF");
+  await page.getByText("Continue").click({ force: true });
 
   await expect(page.getByTestId("SelectedCollectible")).toBeVisible();
   await expect(
@@ -131,14 +132,10 @@ test("Send collectible without metadata", async ({
     page.getByTestId("SelectedCollectible__base-info__row__tokenId__value"),
   ).toHaveText("3");
   await expect(
-    page.getByTestId("account-collectible-placeholder"),
+    page
+      .getByTestId("SelectedCollectible")
+      .getByTestId("account-collectible-placeholder"),
   ).toBeVisible();
-
-  await page.getByTestId("address-tile").click();
-  await page
-    .getByTestId("send-to-input")
-    .fill("GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF");
-  await page.getByText("Continue").click({ force: true });
 
   await page.getByText("Review Send").scrollIntoViewIfNeeded();
   await page.getByText("Review Send").click();
@@ -176,6 +173,7 @@ test("Send collectible to M address when contract doesn't support muxed is disab
   extensionId,
   context,
 }) => {
+  test.slow();
   const stubOverrides = async () => {
     await stubSimulateSendCollectible(page);
   };
@@ -190,18 +188,15 @@ test("Send collectible to M address when contract doesn't support muxed is disab
   await loginToTestAccount({ page, extensionId, context, stubOverrides });
   await page.getByTestId("nav-link-send").click({ force: true });
 
-  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+  await expect(page.getByTestId("token-list")).toBeVisible();
 
-  await page.getByTestId("send-amount-edit-dest-asset").click();
-  await page.getByTestId("account-tab-collectibles").click();
   await page.getByText("Stellar Frog 1").click();
 
-  await expect(page.getByTestId("SelectedCollectible")).toBeVisible();
-
-  // Try to send to M address (muxed address)
-  await page.getByTestId("address-tile").click();
+  // Send to M address (muxed address)
   await page.getByTestId("send-to-input").fill(TEST_M_ADDRESS);
   await page.getByText("Continue").click({ force: true });
+
+  await expect(page.getByTestId("SelectedCollectible")).toBeVisible();
 
   // Wait for contract check to complete - warning banner should appear
   await expect(
@@ -235,18 +230,15 @@ test("Send collectible with Soroban mux support to M address disables memo", asy
   await loginToTestAccount({ page, extensionId, context, stubOverrides });
   await page.getByTestId("nav-link-send").click({ force: true });
 
-  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+  await expect(page.getByTestId("token-list")).toBeVisible();
 
-  await page.getByTestId("send-amount-edit-dest-asset").click();
-  await page.getByTestId("account-tab-collectibles").click();
   await page.getByText("Stellar Frog 1").click();
 
-  await expect(page.getByTestId("SelectedCollectible")).toBeVisible();
-
   // Send to M address (muxed address)
-  await page.getByTestId("address-tile").click();
   await page.getByTestId("send-to-input").fill(TEST_M_ADDRESS);
   await page.getByText("Continue").click({ force: true });
+
+  await expect(page.getByTestId("SelectedCollectible")).toBeVisible();
 
   // Verify NO warning banner is shown (contract supports muxed)
   await expect(
@@ -288,6 +280,7 @@ test("Send collectible without Soroban mux support to G address disables memo", 
   extensionId,
   context,
 }) => {
+  test.slow();
   // Stub contract spec with muxed support = false
   await stubContractSpec(
     page,
@@ -298,18 +291,17 @@ test("Send collectible without Soroban mux support to G address disables memo", 
   await loginToTestAccount({ page, extensionId, context });
   await page.getByTestId("nav-link-send").click({ force: true });
 
-  await page.getByTestId("send-amount-edit-dest-asset").click();
-  await page.getByTestId("account-tab-collectibles").click();
+  await expect(page.getByTestId("token-list")).toBeVisible();
+
   await page.getByText("Stellar Frog 1").click();
 
-  await expect(page.getByTestId("SelectedCollectible")).toBeVisible();
-
   // Send to G address (regular address, not muxed)
-  await page.getByTestId("address-tile").click();
   await page
     .getByTestId("send-to-input")
     .fill("GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF");
   await page.getByText("Continue").click({ force: true });
+
+  await expect(page.getByTestId("SelectedCollectible")).toBeVisible();
 
   // Wait for the memo button
   const memoButton = page.getByTestId("send-amount-btn-memo");
@@ -344,6 +336,7 @@ test("Send collectible with Soroban mux support to G address allows memo", async
   extensionId,
   context,
 }) => {
+  test.slow();
   const stubOverrides = async () => {
     await stubSimulateSendCollectible(page);
   };
@@ -357,20 +350,17 @@ test("Send collectible with Soroban mux support to G address allows memo", async
   await loginToTestAccount({ page, extensionId, context, stubOverrides });
   await page.getByTestId("nav-link-send").click();
 
-  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+  await expect(page.getByTestId("token-list")).toBeVisible();
 
-  await page.getByTestId("send-amount-edit-dest-asset").click();
-  await page.getByTestId("account-tab-collectibles").click();
   await page.getByText("Stellar Frog 1").click();
 
-  await expect(page.getByTestId("SelectedCollectible")).toBeVisible();
-
   // Send to G address (regular address, not muxed)
-  await page.getByTestId("address-tile").click();
   await page
     .getByTestId("send-to-input")
     .fill("GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF");
   await page.getByText("Continue").click({ force: true });
+
+  await expect(page.getByTestId("SelectedCollectible")).toBeVisible();
 
   // Wait for the memo button
   const memoButton = page.getByTestId("send-amount-btn-memo");

@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useLocation } from "react-router-dom";
 import { StrKey } from "stellar-sdk";
@@ -46,74 +46,83 @@ const findCollectibleData = ({
 export function useSendQueryParams() {
   const location = useLocation();
   const dispatch = useDispatch();
-  const submission = useSelector(transactionSubmissionSelector);
   const collectibleData = useSelector(collectionsSelector);
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
+  const { transactionData } = useSelector(transactionSubmissionSelector);
 
-  const { asset: srcAsset } = submission.transactionData;
+  // Read transactionData.asset via a ref so the hook reacts only to URL
+  // changes — not to subsequent in-flow asset picks (which would otherwise
+  // re-dispatch the URL param and revert the user's selection).
+  const currentAssetRef = useRef(transactionData.asset);
+  currentAssetRef.current = transactionData.asset;
 
-  useEffect(
-    () => {
-      const params = new URLSearchParams(location.search);
-      const destinationParam = params.get("destination");
-      const assetParam = params.get("asset");
-      const collectionAddressParam = params.get("collection_address");
-      const collectibleTokenIdParam = params.get("collectible_token_id");
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const destinationParam = params.get("destination");
+    const assetParam = params.get("asset");
+    const collectionAddressParam = params.get("collection_address");
+    const collectibleTokenIdParam = params.get("collectible_token_id");
 
-      if (collectionAddressParam && collectibleTokenIdParam) {
-        const foundCollectible = findCollectibleData({
-          collectionAddress: collectionAddressParam,
-          tokenId: collectibleTokenIdParam,
-          collections:
-            collectibleData?.[networkDetails.network]?.[publicKey] || [],
-        });
+    if (collectionAddressParam && collectibleTokenIdParam) {
+      const foundCollectible = findCollectibleData({
+        collectionAddress: collectionAddressParam,
+        tokenId: collectibleTokenIdParam,
+        collections:
+          collectibleData?.[networkDetails.network]?.[publicKey] || [],
+      });
 
-        if (foundCollectible) {
-          dispatch(saveIsCollectible(true));
-          dispatch(
-            saveCollectibleData({
-              collectionAddress: collectionAddressParam,
-              tokenId: Number(collectibleTokenIdParam),
-              name: foundCollectible?.metadata?.name || "",
-              collectionName: foundCollectible?.collectionName || "",
-              image: foundCollectible?.metadata?.image || "",
-            }),
-          );
-          return; // stop the execution of the hook as we are dealing with a collectible, not a token
+      if (foundCollectible) {
+        dispatch(saveIsCollectible(true));
+        dispatch(saveIsToken(false));
+        dispatch(
+          saveCollectibleData({
+            collectionAddress: collectionAddressParam,
+            tokenId: Number(collectibleTokenIdParam),
+            name: foundCollectible?.metadata?.name || "",
+            collectionName: foundCollectible?.collectionName || "",
+            image: foundCollectible?.metadata?.image || "",
+          }),
+        );
+        return; // stop the execution of the hook as we are dealing with a collectible, not a token
+      }
+    }
+
+    // Pre-populate destination if provided and valid
+    if (destinationParam) {
+      const isValidDestination =
+        StrKey.isValidEd25519PublicKey(destinationParam) ||
+        isContractId(destinationParam);
+
+      if (isValidDestination) {
+        dispatch(saveDestination(destinationParam));
+        dispatch(saveFederationAddress("")); // Reset federation address
+      }
+    }
+
+    // Pre-populate asset if provided and valid, otherwise default to native
+    if (assetParam) {
+      try {
+        const asset = getAssetFromCanonical(assetParam);
+        dispatch(saveAsset(assetParam));
+        dispatch(saveIsCollectible(false));
+        dispatch(saveIsToken(isContractId(asset.issuer)));
+      } catch {
+        // Invalid asset param: keep current asset/flags when already selected.
+        if (!currentAssetRef.current) {
+          dispatch(saveAsset("native"));
+          dispatch(saveIsCollectible(false));
+          dispatch(saveIsToken(false));
         }
       }
-
-      // Pre-populate destination if provided and valid
-      if (destinationParam) {
-        const isValidDestination =
-          StrKey.isValidEd25519PublicKey(destinationParam) ||
-          isContractId(destinationParam);
-
-        if (isValidDestination) {
-          dispatch(saveDestination(destinationParam));
-          dispatch(saveFederationAddress("")); // Reset federation address
-        }
-      }
-
-      // Pre-populate asset if provided and valid, otherwise default to native
-      if (assetParam) {
-        try {
-          const asset = getAssetFromCanonical(assetParam);
-          dispatch(saveAsset(assetParam));
-          dispatch(saveIsToken(isContractId(asset.issuer)));
-        } catch {
-          // Invalid asset param, ignore and use default
-          if (!srcAsset) {
-            dispatch(saveAsset("native"));
-          }
-        }
-      } else if (!srcAsset) {
-        // Set default asset to native if not already set
+    } else {
+      // No asset param: keep current asset/flags when already selected.
+      if (!currentAssetRef.current) {
         dispatch(saveAsset("native"));
+        dispatch(saveIsCollectible(false));
+        dispatch(saveIsToken(false));
       }
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [dispatch, location.search, collectibleData, networkDetails, publicKey],
-  );
+    }
+    // currentAssetRef intentionally excluded — see ref comment above.
+  }, [dispatch, location.search, collectibleData, networkDetails, publicKey]);
 }

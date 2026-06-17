@@ -2,8 +2,6 @@ import BigNumber from "bignumber.js";
 import {
   Address,
   Asset,
-  Memo,
-  MemoType,
   Operation,
   StrKey,
   Transaction,
@@ -456,9 +454,11 @@ export const getAttrsFromSorobanHorizonOp = (
   const txEnvelope = TransactionBuilder.fromXDR(
     operation.transaction_attr.envelope_xdr as string,
     networkDetails.networkPassphrase,
-  ) as Transaction<Memo<MemoType>, Operation.InvokeHostFunction[]>;
+  ) as Transaction;
 
-  const invokeHostFn = txEnvelope.operations[0]; // only one op per tx in Soroban right now
+  // only one op per tx in Soroban right now; isSorobanOp above guarantees it
+  // is an invokeHostFunction operation
+  const invokeHostFn = txEnvelope.operations[0] as Operation.InvokeHostFunction;
 
   return getInvocationArgsFromInvokeHostFn(invokeHostFn);
 };
@@ -474,9 +474,8 @@ export function buildInvocationTree(root: xdr.SorobanAuthorizedInvocation) {
   const output = {} as InvocationTree;
   const inner = fn.value();
 
-  switch (fn.switch().value) {
-    // sorobanAuthorizedFunctionTypeContractFn
-    case 0: {
+  switch (fn.switch().name) {
+    case "sorobanAuthorizedFunctionTypeContractFn": {
       const _inner = inner as xdr.InvokeContractArgs;
       output.type = "execute";
       output.args = {
@@ -487,9 +486,11 @@ export function buildInvocationTree(root: xdr.SorobanAuthorizedInvocation) {
       break;
     }
 
-    // sorobanAuthorizedFunctionTypeCreateContractHostFn
-    case 2:
-    case 1: {
+    case "sorobanAuthorizedFunctionTypeCreateContractHostFn":
+    case "sorobanAuthorizedFunctionTypeCreateContractV2HostFn": {
+      const isCreateV2 =
+        fn.switch().name ===
+        "sorobanAuthorizedFunctionTypeCreateContractV2HostFn";
       const _inner = inner as xdr.CreateContractArgs | xdr.CreateContractArgsV2;
       output.type = "create";
       output.args = {} as {
@@ -497,29 +498,21 @@ export function buildInvocationTree(root: xdr.SorobanAuthorizedInvocation) {
         wasm: any;
       };
 
-      // If the executable is a WASM, the preimage MUST be an address. If it's a
-      // token, the preimage MUST be an asset. This is a cheeky way to check
-      // that, because wasm=0, token=1 and address=0, asset=1 in the XDR switch
-      // values.
-      //
-      // The first part may not be true in V2, but we'd need to update this code
-      // anyway so it can still be an error.
       const [exec, preimage] = [
         _inner.executable(),
         _inner.contractIdPreimage(),
       ];
-      if (!!exec.switch().value !== !!preimage.switch().value) {
-        throw new Error(
-          `creation function appears invalid: ${JSON.stringify(
-            inner,
-          )} (should be wasm+address or token+asset)`,
-        );
-      }
 
-      switch (exec.switch().value) {
-        // contractExecutableWasm
-        case 0: {
-          /** @type {xdr.ContractIdPreimageFromAddress} */
+      switch (exec.switch().name) {
+        case "contractExecutableWasm": {
+          // A WASM executable must be paired with an address preimage.
+          if (preimage.switch().name !== "contractIdPreimageFromAddress") {
+            throw new Error(
+              `creation function appears invalid: ${JSON.stringify(
+                inner,
+              )} (should be wasm+address or token+asset)`,
+            );
+          }
           const details = preimage.fromAddress();
 
           output.args.type = "wasm";
@@ -528,26 +521,32 @@ export function buildInvocationTree(root: xdr.SorobanAuthorizedInvocation) {
             hash: exec.wasmHash().toString("hex"),
             address: Address.fromScAddress(details.address()).toString(),
           };
-          // create contract V2
-          if (fn.switch().value === 2) {
+          if (isCreateV2) {
             const v2Args = _inner as xdr.CreateContractArgsV2;
             output.args.constructorArgs = v2Args.constructorArgs();
           }
           break;
         }
 
-        // contractExecutableStellarAsset
-        case 1:
+        case "contractExecutableStellarAsset": {
+          // A SAC executable must be paired with an asset preimage.
+          if (preimage.switch().name !== "contractIdPreimageFromAsset") {
+            throw new Error(
+              `creation function appears invalid: ${JSON.stringify(
+                inner,
+              )} (should be wasm+address or token+asset)`,
+            );
+          }
           output.args.type = "sac";
           output.args.asset = Asset.fromOperation(
             preimage.fromAsset(),
           ).toString();
-          // create contract V2
-          if (fn.switch().value === 2) {
+          if (isCreateV2) {
             const v2Args = _inner as xdr.CreateContractArgsV2;
             output.args.constructorArgs = v2Args.constructorArgs();
           }
           break;
+        }
 
         default:
           throw new Error(`unknown creation type: ${JSON.stringify(exec)}`);
@@ -648,6 +647,82 @@ export const scValByType = (scVal: xdr.ScVal) => {
   }
 };
 
+/**
+ * Extracts the Soroban authorization payload struct from a HashIdPreimage a
+ * dApp has asked us to sign. Both arms expose `networkId()` and
+ * `invocation()`; the CAP-71 (protocol 27) address-bound arm
+ * (ENVELOPE_TYPE_SOROBAN_AUTHORIZATION_WITH_ADDRESS) additionally exposes
+ * `address()` — narrow with
+ * `instanceof xdr.HashIdPreimageSorobanAuthorizationWithAddress`.
+ *
+ * @throws if the preimage is not a Soroban authorization envelope
+ */
+export function parseAuthEntryPreimage(
+  preimage: xdr.HashIdPreimage,
+):
+  | xdr.HashIdPreimageSorobanAuthorization
+  | xdr.HashIdPreimageSorobanAuthorizationWithAddress {
+  switch (preimage.switch()) {
+    case xdr.EnvelopeType.envelopeTypeSorobanAuthorization():
+      return preimage.sorobanAuthorization();
+
+    // CAP-71 (protocol 27): same payload plus the SCAddress the signature
+    // is bound to
+    case xdr.EnvelopeType.envelopeTypeSorobanAuthorizationWithAddress():
+      return preimage.sorobanAuthorizationWithAddress();
+
+    default:
+      throw new Error(
+        `unsupported authorization envelope type: ${preimage.switch().name}`,
+      );
+  }
+}
+
+/**
+ * Extracts the address credentials carried by any address-based Soroban
+ * credential, regardless of which credential type variant is used.
+ *
+ * This unifies access across SOROBAN_CREDENTIALS_ADDRESS,
+ * SOROBAN_CREDENTIALS_ADDRESS_V2 and
+ * SOROBAN_CREDENTIALS_ADDRESS_WITH_DELEGATES (CAP-71 / protocol 27).
+ *
+ * Mirror of the SDK-internal helper of the same name (js-stellar-sdk
+ * src/base/auth.ts) — delete this in favor of the upstream export if it is
+ * ever made public.
+ *
+ * @returns the inner address credentials, or null for source-account
+ *    credentials (which carry no address payload)
+ */
+export function getAddressCredentials(
+  credentials: xdr.SorobanCredentials,
+): xdr.SorobanAddressCredentials | null {
+  switch (credentials.switch().value) {
+    case xdr.SorobanCredentialsType.sorobanCredentialsAddress().value:
+      return credentials.address();
+    case xdr.SorobanCredentialsType.sorobanCredentialsAddressV2().value:
+      return credentials.addressV2();
+    case xdr.SorobanCredentialsType.sorobanCredentialsAddressWithDelegates()
+      .value:
+      return credentials.addressWithDelegates().addressCredentials();
+    default:
+      return null;
+  }
+}
+
+/**
+ * Returns the address whose authorization a SorobanAuthorizationEntry's
+ * credentials represent (as a display string), or undefined for
+ * source-account credentials.
+ */
+export function getAuthEntryBoundAddress(
+  entry: xdr.SorobanAuthorizationEntry,
+): string | undefined {
+  const addressCredentials = getAddressCredentials(entry.credentials());
+  return addressCredentials
+    ? Address.fromScAddress(addressCredentials.address()).toString()
+    : undefined;
+}
+
 export function getInvocationDetails(
   invocation: xdr.SorobanAuthorizedInvocation,
 ) {
@@ -697,9 +772,8 @@ export function getInvocationArgs(
 ): InvocationArgs | undefined {
   const fn = invocation.function();
 
-  switch (fn.switch().value) {
-    // sorobanAuthorizedFunctionTypeContractFn
-    case 0: {
+  switch (fn.switch().name) {
+    case "sorobanAuthorizedFunctionTypeContractFn": {
       const _invocation = fn.contractFn();
       const contractId = addressToString(_invocation.contractAddress());
       const fnName = _invocation.functionName().toString();
@@ -707,22 +781,21 @@ export function getInvocationArgs(
       return { fnName, contractId, args, type: "invoke" };
     }
 
-    // sorobanAuthorizedFunctionTypeCreateContractV2HostFn
-    // sorobanAuthorizedFunctionTypeCreateContractHostFn
-    case 2:
-    case 1: {
-      const _invocation =
-        fn.switch().value === 2
-          ? fn.createContractV2HostFn()
-          : fn.createContractHostFn();
+    case "sorobanAuthorizedFunctionTypeCreateContractHostFn":
+    case "sorobanAuthorizedFunctionTypeCreateContractV2HostFn": {
+      const isCreateV2 =
+        fn.switch().name ===
+        "sorobanAuthorizedFunctionTypeCreateContractV2HostFn";
+      const _invocation = isCreateV2
+        ? fn.createContractV2HostFn()
+        : fn.createContractHostFn();
       const [exec, preimage] = [
         _invocation.executable(),
         _invocation.contractIdPreimage(),
       ];
 
-      switch (exec.switch().value) {
-        // contractExecutableWasm
-        case 0: {
+      switch (exec.switch().name) {
+        case "contractExecutableWasm": {
           const details = preimage.fromAddress();
 
           const contractDetails = {
@@ -732,7 +805,7 @@ export function getInvocationArgs(
             address: Address.fromScAddress(details.address()).toString(),
           } as FnArgsCreateWasm;
 
-          if (fn.switch().value === 2) {
+          if (isCreateV2) {
             contractDetails.args = (
               _invocation as xdr.CreateContractArgsV2
             ).constructorArgs();
@@ -741,14 +814,13 @@ export function getInvocationArgs(
           return contractDetails;
         }
 
-        // contractExecutableStellarAsset
-        case 1: {
+        case "contractExecutableStellarAsset": {
           const sacDetails = {
             type: "sac",
             asset: Asset.fromOperation(preimage.fromAsset()).toString(),
           } as FnArgsCreateSac;
 
-          if (fn.switch().value === 2) {
+          if (isCreateV2) {
             sacDetails.args = (
               _invocation as xdr.CreateContractArgsV2
             ).constructorArgs();
