@@ -21,9 +21,15 @@ import { METRIC_NAMES } from "popup/constants/metricsNames";
 
 type AppThunk<Arg = void> = AsyncThunk<void, Arg, { state: AppState }>;
 
-export function useSetupSigningFlow<Arg = void>(
+// The only payload shape this hook ever dispatches to signFn.
+interface SigningPayload {
+  uuid: string;
+  apiVersion?: string;
+}
+
+export function useSetupSigningFlow(
   reject: typeof rejectTransaction,
-  signFn: AppThunk<Arg>,
+  signFn: AppThunk<SigningPayload>,
   transactionXdr: string,
   uuid: string,
   apiVersion?: string,
@@ -54,7 +60,7 @@ export function useSetupSigningFlow<Arg = void>(
       );
       setStartedHwSign(true);
     } else {
-      await dispatch(signFn({ apiVersion, uuid } as Arg & undefined));
+      await dispatch(signFn({ apiVersion, uuid }));
       await emitMetric(METRIC_NAMES.approveSign);
       window.close();
     }
