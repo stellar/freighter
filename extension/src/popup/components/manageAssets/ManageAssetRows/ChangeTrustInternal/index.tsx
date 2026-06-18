@@ -313,7 +313,9 @@ export const ChangeTrustInternal = ({
               memo={{ value: memo, type: "text" }}
               xdr={xdrDefined}
               operationNames={operations.map(
-                (op) => OPERATION_TYPES[op.type] || op.type,
+                (op) =>
+                  OPERATION_TYPES[op.type as keyof typeof OPERATION_TYPES] ||
+                  op.type,
               )}
             />
           </div>

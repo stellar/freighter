@@ -34,6 +34,7 @@ export const METRIC_NAMES = {
   viewAbout: "loaded screen: about",
   viewManageAssetsLists: "loaded screen: manage assets lists",
   viewAdvancedSettings: "loaded screen: advanced settings",
+  viewAutoLockTimer: "loaded screen: auto-lock timer",
 
   viewSendPayment: "loaded screen: send payment",
   sendPaymentTo: "loaded screen: send payment to",
@@ -56,6 +57,7 @@ export const METRIC_NAMES = {
     "loaded screen: account migration migration complete",
 
   sendPaymentRecentAddress: "send payment: recent address",
+  sendPaymentSelectAsset: "loaded screen: send payment select asset",
   sendPaymentSetMax: "send payment: set max",
   sendPaymentFeeBreakdownOpened: "send payment: fee breakdown opened",
   sendPaymentTypePayment: "send payment: selected type payment",

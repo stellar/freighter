@@ -26,7 +26,7 @@ export const getManageAssetXDR = async ({
   memo?: string;
 }) => {
   const changeParams = addTrustline ? {} : { limit: "0" };
-  const sourceAccount: StellarSdk.Account = await server.loadAccount(publicKey);
+  const sourceAccount = await server.loadAccount(publicKey);
 
   const Sdk = getSdk(networkDetails.networkPassphrase);
 

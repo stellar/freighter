@@ -3,14 +3,7 @@ import { render, waitFor, screen } from "@testing-library/react";
 import * as createStellarIdenticon from "helpers/stellarIdenticon";
 import { useLocation } from "react-router-dom";
 import BigNumber from "bignumber.js";
-import {
-  Memo,
-  MemoType,
-  Networks,
-  Operation,
-  Transaction,
-  TransactionBuilder,
-} from "stellar-sdk";
+import { Networks, Transaction, TransactionBuilder } from "stellar-sdk";
 
 import * as Stellar from "helpers/stellar";
 import * as ApiInternal from "@shared/api/internal";
@@ -27,6 +20,7 @@ import {
 } from "@shared/constants/stellar";
 import { SettingsState } from "@shared/api/types";
 import { DEFAULT_ASSETS_LISTS } from "@shared/constants/soroban/asset-list";
+import { DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES } from "@shared/constants/autoLock";
 import * as UseIsDomainAllowed from "popup/helpers/useIsDomainListedAllowed";
 import * as SignTxDataHooks from "../SignTransaction/hooks/useGetSignTxData";
 import { RequestState } from "constants/request";
@@ -95,6 +89,7 @@ jest.spyOn(ApiInternal, "loadSettings").mockImplementation(() =>
     isNonSSLEnabled: false,
     experimentalFeaturesState: SettingsState.SUCCESS,
     assetsLists: DEFAULT_ASSETS_LISTS,
+    autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
   }),
 );
 
@@ -344,13 +339,14 @@ describe("SignTransactions", () => {
         isNonSSLEnabled: false,
         experimentalFeaturesState: SettingsState.SUCCESS,
         assetsLists: DEFAULT_ASSETS_LISTS,
+        autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
       }),
     );
 
     const transaction = TransactionBuilder.fromXDR(
       transactions.classic,
       Networks.PUBLIC,
-    ) as Transaction<Memo<MemoType>, Operation.InvokeHostFunction[]>;
+    ) as Transaction;
     const op = transaction.operations[0];
     jest.spyOn(Stellar, "getTransactionInfo").mockImplementation(() => ({
       ...mockTransactionInfo,
@@ -460,12 +456,13 @@ describe("SignTransactions", () => {
         isNonSSLEnabled: false,
         experimentalFeaturesState: SettingsState.SUCCESS,
         assetsLists: DEFAULT_ASSETS_LISTS,
+        autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
       }),
     );
     const transaction = TransactionBuilder.fromXDR(
       transactions.classic,
       Networks.TESTNET,
-    ) as Transaction<Memo<MemoType>, Operation.InvokeHostFunction[]>;
+    ) as Transaction;
     const op = transaction.operations[0];
     jest.spyOn(Stellar, "getTransactionInfo").mockImplementation(() => ({
       ...mockTransactionInfo,
@@ -599,13 +596,14 @@ describe("SignTransactions", () => {
         isNonSSLEnabled: false,
         experimentalFeaturesState: SettingsState.SUCCESS,
         assetsLists: DEFAULT_ASSETS_LISTS,
+        autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
       }),
     );
 
     const transaction = TransactionBuilder.fromXDR(
       transactions.classic,
       Networks.PUBLIC,
-    ) as Transaction<Memo<MemoType>, Operation.InvokeHostFunction[]>;
+    ) as Transaction;
     const op = transaction.operations[0];
     jest.spyOn(Stellar, "getTransactionInfo").mockImplementation(() => ({
       ...mockTransactionInfo,
@@ -713,12 +711,13 @@ describe("SignTransactions", () => {
         isNonSSLEnabled: false,
         experimentalFeaturesState: SettingsState.SUCCESS,
         assetsLists: DEFAULT_ASSETS_LISTS,
+        autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
       }),
     );
     const transaction = TransactionBuilder.fromXDR(
       transactions.classic,
       Networks.TESTNET,
-    ) as Transaction<Memo<MemoType>, Operation.InvokeHostFunction[]>;
+    ) as Transaction;
     const op = transaction.operations[0];
     jest.spyOn(Stellar, "getTransactionInfo").mockImplementation(() => ({
       ...mockTransactionInfo,
@@ -835,12 +834,13 @@ describe("SignTransactions", () => {
         isNonSSLEnabled: false,
         experimentalFeaturesState: SettingsState.SUCCESS,
         assetsLists: DEFAULT_ASSETS_LISTS,
+        autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
       }),
     );
     const transaction = TransactionBuilder.fromXDR(
       transactions.classic,
       Networks.TESTNET,
-    ) as Transaction<Memo<MemoType>, Operation.InvokeHostFunction[]>;
+    ) as Transaction;
     const op = transaction.operations[0];
     jest.spyOn(Stellar, "getTransactionInfo").mockImplementation(() => ({
       ...mockTransactionInfo,
@@ -957,12 +957,13 @@ describe("SignTransactions", () => {
         isNonSSLEnabled: false,
         experimentalFeaturesState: SettingsState.SUCCESS,
         assetsLists: DEFAULT_ASSETS_LISTS,
+        autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
       }),
     );
     const transaction = TransactionBuilder.fromXDR(
       transactions.classic,
       Networks.TESTNET,
-    ) as Transaction<Memo<MemoType>, Operation.InvokeHostFunction[]>;
+    ) as Transaction;
     const op = transaction.operations[0];
     jest.spyOn(Stellar, "getTransactionInfo").mockImplementation(() => ({
       ...mockTransactionInfo,
@@ -1073,12 +1074,13 @@ describe("SignTransactions", () => {
         isNonSSLEnabled: false,
         experimentalFeaturesState: SettingsState.SUCCESS,
         assetsLists: DEFAULT_ASSETS_LISTS,
+        autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
       }),
     );
     const transaction = TransactionBuilder.fromXDR(
       transactions.classic,
       Networks.TESTNET,
-    ) as Transaction<Memo<MemoType>, Operation.InvokeHostFunction[]>;
+    ) as Transaction;
     const op = transaction.operations[0];
     jest.spyOn(Stellar, "getTransactionInfo").mockImplementation(() => ({
       ...mockTransactionInfo,
@@ -1195,13 +1197,14 @@ describe("SignTransactions", () => {
         isNonSSLEnabled: false,
         experimentalFeaturesState: SettingsState.SUCCESS,
         assetsLists: DEFAULT_ASSETS_LISTS,
+        autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
       }),
     );
 
     const transaction = TransactionBuilder.fromXDR(
       transactions.classic,
       Networks.PUBLIC,
-    ) as Transaction<Memo<MemoType>, Operation.InvokeHostFunction[]>;
+    ) as Transaction;
     const op = transaction.operations[0];
     jest.spyOn(Stellar, "getTransactionInfo").mockImplementation(() => ({
       ...mockTransactionInfo,
@@ -1334,12 +1337,13 @@ describe("SignTransactions", () => {
         isNonSSLEnabled: false,
         experimentalFeaturesState: SettingsState.SUCCESS,
         assetsLists: DEFAULT_ASSETS_LISTS,
+        autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
       }),
     );
     const transaction = TransactionBuilder.fromXDR(
       transactions.classic,
       Networks.TESTNET,
-    ) as Transaction<Memo<MemoType>, Operation.InvokeHostFunction[]>;
+    ) as Transaction;
     const op = transaction.operations[0];
     jest.spyOn(Stellar, "getTransactionInfo").mockImplementation(() => ({
       ...mockTransactionInfo,
@@ -1508,12 +1512,13 @@ describe("SignTransactions", () => {
         isNonSSLEnabled: false,
         experimentalFeaturesState: SettingsState.SUCCESS,
         assetsLists: DEFAULT_ASSETS_LISTS,
+        autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
       }),
     );
     const transaction = TransactionBuilder.fromXDR(
       transactions.classic,
       Networks.TESTNET,
-    ) as Transaction<Memo<MemoType>, Operation.InvokeHostFunction[]>;
+    ) as Transaction;
     const op = transaction.operations[0];
     jest.spyOn(Stellar, "getTransactionInfo").mockImplementation(() => ({
       ...mockTransactionInfo,
@@ -1674,12 +1679,13 @@ describe("SignTransactions", () => {
         isNonSSLEnabled: false,
         experimentalFeaturesState: SettingsState.SUCCESS,
         assetsLists: DEFAULT_ASSETS_LISTS,
+        autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
       }),
     );
     const transaction = TransactionBuilder.fromXDR(
       transactions.classic,
       Networks.TESTNET,
-    ) as Transaction<Memo<MemoType>, Operation.InvokeHostFunction[]>;
+    ) as Transaction;
     const op = transaction.operations[0];
     jest.spyOn(Stellar, "getTransactionInfo").mockImplementation(() => ({
       ...mockTransactionInfo,

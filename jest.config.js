@@ -1,4 +1,18 @@
-const esModules = ["@stellar/design-system", "stellar-hd-wallet"];
+// Packages shipped as ESM that Jest must transform (babel) rather than skip.
+// stellar-sdk v16 is ESM-first and re-exports ESM-only deps (@noble/*, js-xdr).
+const esModules = [
+  "@stellar/design-system",
+  "stellar-hd-wallet",
+  "stellar-sdk",
+  "@stellar/stellar-base",
+  "@stellar/js-xdr",
+  "@noble/hashes",
+  "@noble/curves",
+  "@noble/ed25519",
+  "eventsource",
+  "uint8array-extras",
+  "feaxios",
+];
 
 const jsdomTests = {
   rootDir: __dirname,

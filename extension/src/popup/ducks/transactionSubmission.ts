@@ -422,6 +422,7 @@ interface TransactionData {
   asset: string;
   decimals?: number;
   destination: string;
+  recipientName: string;
   federationAddress: string;
   transactionFee: string;
   transactionTimeout: number;
@@ -493,6 +494,7 @@ export const initialState: InitialState = {
     amountUsd: "0.00",
     asset: "native",
     destination: "",
+    recipientName: "",
     federationAddress: "",
     transactionFee: "",
     transactionTimeout: 180,
@@ -544,6 +546,9 @@ const transactionSubmissionSlice = createSlice({
     },
     saveDestination: (state, action) => {
       state.transactionData.destination = action.payload;
+    },
+    saveRecipientName: (state, action) => {
+      state.transactionData.recipientName = action.payload;
     },
     saveFederationAddress: (state, action) => {
       state.transactionData.federationAddress = action.payload;
@@ -761,6 +766,7 @@ export const {
   resetSubmission,
   resetSubmitStatus,
   saveDestination,
+  saveRecipientName,
   saveFederationAddress,
   saveAmount,
   saveAmountUsd,

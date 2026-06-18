@@ -17,6 +17,7 @@ import { emitMetric } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { getAssetFromCanonical, isMainnet } from "helpers/stellar";
 import { AssetIcons } from "@shared/api/types";
+import { allAccountsSelector } from "popup/ducks/accountServices";
 
 interface SubmitTxData {
   status: "success" | "error";
@@ -41,6 +42,7 @@ function useSubmitTxData({
     initialState,
   );
   const submission = useSelector(transactionSubmissionSelector);
+  const allAccounts = useSelector(allAccountsSelector);
   const { fetchData: fetchBalances } = useGetBalances({
     showHidden: false,
     includeIcons: false,
@@ -88,9 +90,15 @@ function useSubmitTxData({
 
       if (submitFreighterTransaction.fulfilled.match(submitResp)) {
         if (!isSwap) {
-          await reduxDispatch(
-            addRecentAddress({ address: federationAddress || destination }),
+          const isSelfOwnedDestination = (allAccounts ?? []).some(
+            (account) => account.publicKey === destination,
           );
+
+          if (!isSelfOwnedDestination) {
+            await reduxDispatch(
+              addRecentAddress({ address: federationAddress || destination }),
+            );
+          }
         }
         emitMetric(METRIC_NAMES.sendPaymentSuccess, {
           sourceAsset: sourceAsset.code,

@@ -25,7 +25,14 @@
     &__value {
       color: var(
         --sds-clr-gray-12
-      ) !important; //sds rule does not allwo changing colors on p tags
+      ) !important; //needed to override SDS color rules
+
+      &--memo {
+        display: inline-flex;
+        align-items: baseline;
+        min-width: 0;
+        max-width: 60%;
+      }
 
       .CopyValue {
         max-width: pxToRem(120px);
@@ -41,6 +48,17 @@
           color: var(--sds-clr-gray-09);
         }
       }
+    }
+
+    &__memo {
+      flex: 0 1 auto;
+      min-width: 0;
+    }
+
+    &__memoType {
+      flex: 0 0 auto;
+      white-space: nowrap;
+      margin-left: pxToRem(4px);
     }
   }
 }
