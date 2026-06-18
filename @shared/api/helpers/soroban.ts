@@ -585,7 +585,10 @@ export const getIsTokenSpec = async (contractId: string, serverUrl: string) => {
   return isTokenSpec(spec);
 };
 
-export const isContractId = (contractId: string) => {
+export const isContractId = (contractId?: string) => {
+  if (!contractId) {
+    return false;
+  }
   try {
     StrKey.decodeContract(contractId);
     return true;

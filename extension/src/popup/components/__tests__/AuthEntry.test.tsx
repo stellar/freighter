@@ -73,7 +73,7 @@ describe("AuthEntry", () => {
           },
         }}
       >
-        <AuthEntries invocations={[authorizedInvocation]} />
+        <AuthEntries entries={[{ invocation: authorizedInvocation }]} />
       </Wrapper>,
     );
     await waitFor(() => screen.getAllByTestId("AuthEntryContainer"));
@@ -130,7 +130,7 @@ describe("AuthEntry", () => {
           },
         }}
       >
-        <AuthEntries invocations={[authorizedInvocation]} />
+        <AuthEntries entries={[{ invocation: authorizedInvocation }]} />
       </Wrapper>,
     );
     await waitFor(() => screen.getAllByTestId("AuthEntryContainer"));
@@ -195,7 +195,7 @@ describe("AuthEntry", () => {
           },
         }}
       >
-        <AuthEntries invocations={[authorizedInvocation]} />
+        <AuthEntries entries={[{ invocation: authorizedInvocation }]} />
       </Wrapper>,
     );
     await waitFor(() => screen.getAllByTestId("AuthEntryContainer"));

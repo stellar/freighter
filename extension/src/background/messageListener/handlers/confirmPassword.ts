@@ -20,6 +20,7 @@ import {
   allAccountsSelector,
   buildHasPrivateKeySelector,
   publicKeySelector,
+  unlockHardwareWallet,
 } from "background/ducks/session";
 
 export const confirmPassword = async ({
@@ -65,6 +66,11 @@ export const confirmPassword = async ({
   } catch (e) {
     return { error: "Incorrect password" };
   }
+
+  // A successful password unlock also restores hardware-wallet access
+  // for mixed-account installs — match today's behavior, where any
+  // valid password unlock returns the user to a fully unlocked state.
+  sessionStore.dispatch(unlockHardwareWallet());
 
   const hasPrivateKeySelector = buildHasPrivateKeySelector(localStore);
   return {
