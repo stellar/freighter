@@ -54,7 +54,7 @@ export function useSetupSigningFlow<Arg = void>(
       );
       setStartedHwSign(true);
     } else {
-      await dispatch(signFn({ apiVersion, uuid } as Arg));
+      await dispatch(signFn({ apiVersion, uuid } as Arg & undefined));
       await emitMetric(METRIC_NAMES.approveSign);
       window.close();
     }
