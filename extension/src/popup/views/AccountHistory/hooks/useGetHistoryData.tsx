@@ -28,7 +28,11 @@ import {
   NeedsReRoute,
   useGetAppData,
 } from "helpers/hooks/useGetAppData";
-import { getCanonicalFromAsset, isMainnet } from "helpers/stellar";
+import {
+  getBaseAccount,
+  getCanonicalFromAsset,
+  isMainnet,
+} from "helpers/stellar";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import {
   AssetIcons,
@@ -285,6 +289,16 @@ export const getActionIconByType = (iconType: string) => {
 };
 
 /**
+ * Resolve a possibly-muxed (M...) address to its base (G...) account for
+ * ownership checks. Horizon and Soroban surface muxed destinations as the
+ * M-address, but the active account is always the base G-address, so every
+ * "is this mine?" comparison must run on the base account. Non-muxed values
+ * (G.../C... addresses, empty) pass through unchanged. (#2841)
+ */
+const toBaseAccount = (address?: string): string =>
+  address ? (getBaseAccount(address) ?? address) : "";
+
+/**
  * Extracts the actual destination address from transaction XDR
  * This is needed because Horizon API returns base G address for M addresses
  */
@@ -436,8 +450,13 @@ const processAssetBalanceChanges = async (
   const results: AssetDiffSummary[] = [];
 
   for (const change of operation.asset_balance_changes) {
-    // Filter to only changes involving this public key
-    if (change.from !== publicKey && change.to !== publicKey) {
+    // Filter to only changes involving this public key. Compare on the base
+    // account so changes addressed to a muxed (M...) form of this account are
+    // still recognized as ours.
+    if (
+      toBaseAccount(change.from) !== publicKey &&
+      toBaseAccount(change.to) !== publicKey
+    ) {
       continue;
     }
 
@@ -453,8 +472,9 @@ const processAssetBalanceChanges = async (
       assetIssuer = change.asset_issuer || null;
     }
 
-    // Determine if this is a credit (receiving) or debit (sending)
-    const isCredit = change.to === publicKey;
+    // Determine if this is a credit (receiving) or debit (sending). Compare on
+    // the base account so a credit to a muxed (M...) destination is detected.
+    const isCredit = toBaseAccount(change.to) === publicKey;
     // Destination is the counterparty (from for credits, to for debits)
     const destination = isCredit ? change.from : change.to;
 
@@ -679,11 +699,18 @@ export const getRowDataByOpType = async (
   }
 
   if (isPayment) {
+    // `destination` is the DISPLAY value and intentionally prefers the muxed
+    // (M...) address. Ownership, however, must be decided on the base (G...)
+    // account: Horizon resolves a muxed destination to its base account in `to`
+    // and exposes the M-address separately in `to_muxed`, and an M-address can
+    // never equal the base-G `publicKey`. (#2841)
     const destination = to_muxed || to || "";
     const sender = from || "";
 
     // default to Sent if a payment to self
-    const isReceiving = destination === publicKey && sender !== publicKey;
+    const isReceiving =
+      toBaseAccount(destination) === publicKey &&
+      toBaseAccount(sender) !== publicKey;
     const paymentDifference = isReceiving ? "+" : "-";
     const nonLabelAmount = formatAmount(new BigNumber(amount!).toString());
     const formattedAmount = `${paymentDifference}${nonLabelAmount} ${destAssetCode}`;
@@ -782,7 +809,7 @@ export const getRowDataByOpType = async (
     }
 
     if (attrs.fnName === SorobanTokenInterface.mint) {
-      const isReceiving = attrs.to === publicKey;
+      const isReceiving = toBaseAccount(attrs.to) === publicKey;
       const assetBalance = getBalanceByKey(
         attrs.contractId,
         balances,
@@ -830,7 +857,8 @@ export const getRowDataByOpType = async (
       );
 
       const isReceiving =
-        actualDestination === publicKey && attrs.from !== publicKey;
+        toBaseAccount(actualDestination) === publicKey &&
+        toBaseAccount(attrs.from) !== publicKey;
 
       // if the amount is present, we can surmise this is a token transfer
       if (attrs.amount) {

@@ -400,17 +400,11 @@ export const freighterApiMessageListener = (
                 "destination" in operation &&
                 address === operation.destination
               ) {
-                let collectedTags = [...tags];
-
-                /* if the user has opted out of validation, remove applicable tags */
-                if (!isValidatingMemo) {
-                  collectedTags = collectedTags.filter(
-                    (tag) => tag !== TRANSACTION_WARNING.memoRequired,
-                  );
-                }
+                // This block only runs when memo validation is enabled (see the
+                // enclosing `if (isValidatingMemo)`), so collect the tags as-is.
                 flaggedKeys[operation.destination] = {
                   ...flaggedKeys[operation.destination],
-                  tags: collectedTags,
+                  tags: [...tags],
                 };
               }
             },
