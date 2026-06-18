@@ -28,7 +28,11 @@ import {
   NeedsReRoute,
   useGetAppData,
 } from "helpers/hooks/useGetAppData";
-import { getCanonicalFromAsset, isMainnet } from "helpers/stellar";
+import {
+  getCanonicalFromAsset,
+  isMainnet,
+  isSameAccount,
+} from "helpers/stellar";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import {
   AssetIcons,
@@ -436,8 +440,12 @@ const processAssetBalanceChanges = async (
   const results: AssetDiffSummary[] = [];
 
   for (const change of operation.asset_balance_changes) {
-    // Filter to only changes involving this public key
-    if (change.from !== publicKey && change.to !== publicKey) {
+    // Filter to only changes involving this public key.
+    // isSameAccount resolves muxed (M...) counterparties to their base account.
+    if (
+      !isSameAccount(change.from, publicKey) &&
+      !isSameAccount(change.to, publicKey)
+    ) {
       continue;
     }
 
@@ -454,7 +462,7 @@ const processAssetBalanceChanges = async (
     }
 
     // Determine if this is a credit (receiving) or debit (sending)
-    const isCredit = change.to === publicKey;
+    const isCredit = isSameAccount(change.to, publicKey);
     // Destination is the counterparty (from for credits, to for debits)
     const destination = isCredit ? change.from : change.to;
 
@@ -506,7 +514,9 @@ const processAssetBalanceChanges = async (
       amount: trimTrailingZeros(change.amount),
       isCredit,
       destination:
-        destination && destination !== publicKey ? destination : undefined,
+        destination && !isSameAccount(destination, publicKey)
+          ? destination
+          : undefined,
       icon,
     });
   }
@@ -682,8 +692,12 @@ export const getRowDataByOpType = async (
     const destination = to_muxed || to || "";
     const sender = from || "";
 
-    // default to Sent if a payment to self
-    const isReceiving = destination === publicKey && sender !== publicKey;
+    // default to Sent if a payment to self.
+    // isSameAccount resolves muxed (M...) addresses to their base (G...) account,
+    // so payments received to the user's muxed address aren't misclassified as sent.
+    const isReceiving =
+      isSameAccount(destination, publicKey) &&
+      !isSameAccount(sender, publicKey);
     const paymentDifference = isReceiving ? "+" : "-";
     const nonLabelAmount = formatAmount(new BigNumber(amount!).toString());
     const formattedAmount = `${paymentDifference}${nonLabelAmount} ${destAssetCode}`;
@@ -782,7 +796,7 @@ export const getRowDataByOpType = async (
     }
 
     if (attrs.fnName === SorobanTokenInterface.mint) {
-      const isReceiving = attrs.to === publicKey;
+      const isReceiving = isSameAccount(attrs.to, publicKey);
       const assetBalance = getBalanceByKey(
         attrs.contractId,
         balances,
@@ -830,7 +844,8 @@ export const getRowDataByOpType = async (
       );
 
       const isReceiving =
-        actualDestination === publicKey && attrs.from !== publicKey;
+        isSameAccount(actualDestination, publicKey) &&
+        !isSameAccount(attrs.from, publicKey);
 
       // if the amount is present, we can surmise this is a token transfer
       if (attrs.amount) {
