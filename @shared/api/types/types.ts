@@ -13,6 +13,7 @@ import {
   AssetsLists,
   AssetsListItem,
 } from "../../constants/soroban/asset-list";
+import { AutoLockTimeoutMinutes } from "../../constants/autoLock";
 
 export enum ActionStatus {
   IDLE = "IDLE",
@@ -189,6 +190,7 @@ export interface Preferences {
   networksList: NetworkDetails[];
   isHideDustEnabled: boolean;
   isOpenSidebarByDefault: boolean;
+  autoLockTimeoutMinutes: AutoLockTimeoutMinutes;
   error: string;
 }
 
@@ -219,6 +221,20 @@ export interface IndexerSettings {
   isRpcHealthy: boolean;
   userNotification: UserNotification;
 }
+
+export type SaveSettingsResponse = {
+  allowList: AllowList;
+  isDataSharingAllowed: boolean;
+  isMemoValidationEnabled: boolean;
+  networkDetails: NetworkDetails;
+  networksList: NetworkDetails[];
+  isRpcHealthy: boolean;
+  isSorobanPublicEnabled: boolean;
+  isNonSSLEnabled: boolean;
+  isHideDustEnabled: boolean;
+  isOpenSidebarByDefault: boolean;
+  autoLockTimeoutMinutes: AutoLockTimeoutMinutes;
+};
 
 export type Settings = {
   allowList: AllowList;

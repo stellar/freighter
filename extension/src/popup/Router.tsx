@@ -50,6 +50,7 @@ import { Settings } from "popup/views/Settings";
 import { Preferences } from "popup/views/Preferences";
 import { Security } from "popup/views/Security";
 import { AdvancedSettings } from "popup/views/AdvancedSettings";
+import { AutoLockTimer } from "popup/views/AutoLockTimer";
 import { About } from "popup/views/About";
 import { Send } from "popup/views/Send";
 import { ManageAssets } from "popup/views/ManageAssets";
@@ -66,6 +67,7 @@ import { ConfirmSidebarRequest } from "popup/views/ConfirmSidebarRequest";
 import { DEV_SERVER } from "@shared/constants/services";
 import { isSidebarMode } from "popup/helpers/isSidebarMode";
 import { SidebarSigningListener } from "popup/components/SidebarSigningListener";
+import { SessionLockListener } from "popup/components/SessionLockListener";
 import { SettingsState } from "@shared/api/types";
 
 import { SignMessage } from "./views/SignMessage";
@@ -173,6 +175,7 @@ const Layout = () => {
 export const Router = () => (
   <HashRouter>
     <RouteListener />
+    <SessionLockListener />
     {isSidebarMode() && <SidebarSigningListener />}
     <Routes>
       <Route path="/" element={<Layout />}>
@@ -291,6 +294,10 @@ export const Router = () => (
         <Route
           path={ROUTES.advancedSettings}
           element={<AdvancedSettings />}
+        ></Route>
+        <Route
+          path={ROUTES.autoLockTimer}
+          element={<AutoLockTimer />}
         ></Route>
         <Route path={ROUTES.addFunds} element={<AddFunds />} />
         <Route path={ROUTES.wallets} element={<Wallets />} />

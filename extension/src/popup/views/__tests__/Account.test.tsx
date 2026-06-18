@@ -41,6 +41,7 @@ import {
 import { Account } from "../Account";
 import { ROUTES } from "popup/constants/routes";
 import { DEFAULT_ASSETS_LISTS } from "@shared/constants/soroban/asset-list";
+import { DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES } from "@shared/constants/autoLock";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import * as AccountDataHooks from "../../views/Account/hooks/useGetAccountData";
 import { RequestState } from "helpers/hooks/fetchHookInterface";
@@ -242,6 +243,7 @@ jest.spyOn(ApiInternal, "loadSettings").mockImplementation(() =>
     isNonSSLEnabled: false,
     experimentalFeaturesState: SettingsState.SUCCESS,
     assetsLists: DEFAULT_ASSETS_LISTS,
+    autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
   }),
 );
 
@@ -888,6 +890,7 @@ describe("Account view", () => {
         isNonSSLEnabled: false,
         experimentalFeaturesState: SettingsState.SUCCESS,
         assetsLists: DEFAULT_ASSETS_LISTS,
+        autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
       }),
     );
 
@@ -942,6 +945,7 @@ describe("Account view", () => {
         isNonSSLEnabled: false,
         experimentalFeaturesState: SettingsState.SUCCESS,
         assetsLists: DEFAULT_ASSETS_LISTS,
+        autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
       }),
     );
     jest
@@ -1026,6 +1030,7 @@ describe("Account view", () => {
         isNonSSLEnabled: false,
         experimentalFeaturesState: SettingsState.SUCCESS,
         assetsLists: DEFAULT_ASSETS_LISTS,
+        autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
       }),
     );
     jest
@@ -1109,6 +1114,7 @@ describe("Account view", () => {
         isNonSSLEnabled: false,
         experimentalFeaturesState: SettingsState.SUCCESS,
         assetsLists: DEFAULT_ASSETS_LISTS,
+        autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
       }),
     );
     jest
@@ -1191,6 +1197,7 @@ describe("Account view", () => {
         isNonSSLEnabled: false,
         experimentalFeaturesState: SettingsState.SUCCESS,
         assetsLists: DEFAULT_ASSETS_LISTS,
+        autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
       }),
     );
     jest
@@ -1256,6 +1263,7 @@ describe("Account view", () => {
         isNonSSLEnabled: false,
         experimentalFeaturesState: SettingsState.SUCCESS,
         assetsLists: DEFAULT_ASSETS_LISTS,
+        autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
       }),
     );
     const getAccountBalancesSpy = jest
