@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Button, Icon, Loader, Notification } from "@stellar/design-system";
 import { BASE_FEE, Transaction, TransactionBuilder } from "stellar-sdk";
 
-import { NetworkDetails } from "@shared/constants/stellar";
+import { BASE_RESERVE, NetworkDetails } from "@shared/constants/stellar";
 import { RequestState } from "constants/request";
 import {
   getCanonicalFromAsset,
@@ -53,6 +53,8 @@ interface ChangeTrustInternalProps {
   publicKey: string;
   addTrustline: boolean;
   onCancel: () => void;
+  onSuccess?: () => void;
+  showSacDisclosure?: boolean;
 }
 
 export const ChangeTrustInternal = ({
@@ -61,6 +63,8 @@ export const ChangeTrustInternal = ({
   publicKey,
   networkDetails,
   onCancel,
+  onSuccess,
+  showSacDisclosure = false,
 }: ChangeTrustInternalProps) => {
   const activeOptionsRef = useRef<HTMLDivElement>(null);
   const [activePaneIndex, setActivePaneIndex] = useState(0);
@@ -104,6 +108,24 @@ export const ChangeTrustInternal = ({
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [activeOptionsRef]);
+
+  useEffect(() => {
+    // `recommendedFee` from useNetworkFees starts as BASE_FEE (raw stroops,
+    // e.g. "100") and only becomes an XLM-denominated value after its internal
+    // feeStats fetch resolves. `fee` is XLM-denominated, so only seed it once
+    // the fetched XLM value has arrived (recommendedFee !== BASE_FEE).
+    // The `fee === baseFeeStroops` guard makes this a one-shot seed that does
+    // not clobber a user-adjusted fee. If the fetch fails, recommendedFee
+    // stays BASE_FEE and `fee` keeps the safe baseFeeStroops default.
+    if (
+      showSacDisclosure &&
+      recommendedFee !== BASE_FEE &&
+      fee === baseFeeStroops
+    ) {
+      setFee(recommendedFee);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showSacDisclosure, recommendedFee]);
 
   if (
     state.state === RequestState.LOADING ||
@@ -275,6 +297,34 @@ export const ChangeTrustInternal = ({
               <span>{`${fee} XLM`}</span>
             </div>
           </div>
+          {showSacDisclosure && (
+            <>
+              <div
+                className="ChangeTrustInternal__Metadata__Row"
+                data-testid="ChangeTrustInternal__Metadata__Row__Issuer"
+              >
+                <div className="ChangeTrustInternal__Metadata__Label">
+                  <Icon.User01 />
+                  <span>{t("Issuer")}</span>
+                </div>
+                <div className="ChangeTrustInternal__Metadata__Value">
+                  <KeyIdenticon publicKey={asset.issuer} />
+                </div>
+              </div>
+              <div
+                className="ChangeTrustInternal__Metadata__Row"
+                data-testid="ChangeTrustInternal__Metadata__Row__Reserve"
+              >
+                <div className="ChangeTrustInternal__Metadata__Label">
+                  <Icon.Lock01 />
+                  <span>{t("Account reserve")}</span>
+                </div>
+                <div className="ChangeTrustInternal__Metadata__Value">
+                  <span>{`${BASE_RESERVE} XLM`}</span>
+                </div>
+              </div>
+            </>
+          )}
         </div>
         <div
           className="ChangeTrustInternal__TransactionDetailsBtn"
@@ -518,7 +568,7 @@ export const ChangeTrustInternal = ({
             icons={icons}
             fee={fee}
             goBack={() => setActiveBodyContent(ActiveBodyContent.details)}
-            onSuccess={onCancel}
+            onSuccess={onSuccess ?? onCancel}
           />
         )}
       </div>

@@ -651,6 +651,42 @@ export const stubIsSac = async (page: Page | BrowserContext) => {
   });
 };
 
+/**
+ * SAC variant of stubIsSac — returns isSacContract: true so the AddToken view
+ * routes through the ChangeTrustInternal review instead of silently resolving.
+ * Use together with stubSacTokenDetails so token-details returns a "CODE:G…"
+ * name that satisfies StrKey.isValidEd25519PublicKey(assetIssuer).
+ */
+export const stubIsSacTrue = async (page: Page | BrowserContext) => {
+  await page.route("**/is-sac-contract**", async (route) => {
+    const json = {
+      isSacContract: true,
+    };
+    await route.fulfill({ json });
+  });
+};
+
+// The G-address used across the e2e suite as the SAC issuer.
+export const SAC_ISSUER =
+  "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY";
+
+/**
+ * Stubs token-details so the SAC token's name is "E2E:<SAC_ISSUER>".
+ * useTokenLookup splits on ":" to extract the issuer, and AddToken checks
+ * StrKey.isValidEd25519PublicKey(assetIssuer) to gate the SAC review branch.
+ */
+export const stubSacTokenDetails = async (page: Page | BrowserContext) => {
+  await page.route("**/token-details/**", async (route) => {
+    await route.fulfill({
+      json: {
+        name: `E2E:${SAC_ISSUER}`,
+        decimals: 7,
+        symbol: "E2E",
+      },
+    });
+  });
+};
+
 export const stubTokenDetails = async (page: Page | BrowserContext) => {
   await page.route("**/token-details/**", async (route) => {
     const url = route.request().url();

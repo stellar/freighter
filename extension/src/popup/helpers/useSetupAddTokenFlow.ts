@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { StrKey } from "stellar-sdk";
 
 import { emitMetric } from "helpers/metrics";
 
@@ -11,8 +10,6 @@ import {
   confirmPassword,
   hasPrivateKeySelector,
 } from "popup/ducks/accountServices";
-
-import { useChangeTrustline } from "./useChangeTrustline";
 
 type Params = {
   rejectToken: typeof rejectToken;
@@ -34,8 +31,8 @@ type Response = {
 export const useSetupAddTokenFlow = ({
   rejectToken: rejectTokenFn,
   addToken: addTokenFn,
-  assetCode,
-  assetIssuer,
+  assetCode: _assetCode,
+  assetIssuer: _assetIssuer,
   uuid,
 }: Params): Response => {
   const [isConfirming, setIsConfirming] = useState(false);
@@ -44,8 +41,6 @@ export const useSetupAddTokenFlow = ({
   const dispatch: AppDispatch = useDispatch();
   const hasPrivateKey = useSelector(hasPrivateKeySelector);
 
-  const { changeTrustline } = useChangeTrustline({ assetCode, assetIssuer });
-
   const rejectAndClose = () => {
     emitMetric(METRIC_NAMES.tokenRejectApi);
     dispatch(rejectTokenFn({ uuid }));
@@ -53,22 +48,13 @@ export const useSetupAddTokenFlow = ({
   };
 
   const addTokenAndClose = async () => {
-    const addTokenDispatch = async () => {
-      await dispatch(addTokenFn({ uuid }));
-    };
-
     try {
-      if (StrKey.isValidEd25519PublicKey(assetIssuer)) {
-        await changeTrustline(true, addTokenDispatch);
-      } else {
-        await addTokenDispatch();
-      }
+      await dispatch(addTokenFn({ uuid }));
       await emitMetric(METRIC_NAMES.tokenAddedApi);
     } catch (e) {
       console.error(e);
       await emitMetric(METRIC_NAMES.tokenFailedApi);
     }
-
     window.close();
   };
 

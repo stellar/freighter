@@ -10,8 +10,13 @@ import {
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Navigate, useLocation } from "react-router-dom";
-import { useSelector } from "react-redux";
-import { StellarToml } from "stellar-sdk";
+import { useSelector, useDispatch } from "react-redux";
+import { StellarToml, StrKey } from "stellar-sdk";
+
+import { AppDispatch } from "popup/App";
+import { METRIC_NAMES } from "popup/constants/metricsNames";
+import { emitMetric } from "helpers/metrics";
+import { ChangeTrustInternal } from "popup/components/manageAssets/ManageAssetRows/ChangeTrustInternal";
 
 import { BlockAidScanAssetResult } from "@shared/api/types";
 import { getIconUrlFromIssuer } from "@shared/api/helpers/getIconUrlFromIssuer";
@@ -100,6 +105,16 @@ export const AddToken = () => {
 
   const isLoading =
     isSearching || assetIcon === undefined || assetTomlName === undefined;
+
+  const dispatch: AppDispatch = useDispatch();
+  const [showTrustlineReview, setShowTrustlineReview] = useState(false);
+  const isSac = StrKey.isValidEd25519PublicKey(assetIssuer);
+
+  const handleSacSuccess = async () => {
+    await dispatch(addToken({ uuid }));
+    await emitMetric(METRIC_NAMES.tokenAddedApi);
+    window.close();
+  };
 
   const {
     isConfirming,
@@ -344,6 +359,26 @@ export const AddToken = () => {
     );
   }
 
+  if (showTrustlineReview && isSac && assetCurrency) {
+    return (
+      <ChangeTrustInternal
+        asset={{
+          code: assetCode,
+          issuer: assetIssuer,
+          image: assetIcon || null,
+          domain: assetDomain || null,
+          contract: assetCurrency.contract,
+        }}
+        addTrustline
+        publicKey={state.data.account.publicKey}
+        networkDetails={state.data.settings.networkDetails}
+        onCancel={() => setShowTrustlineReview(false)}
+        onSuccess={handleSacSuccess}
+        showSacDisclosure
+      />
+    );
+  }
+
   return (
     <React.Fragment>
       <View.Content hasNoBottomPadding>
@@ -475,7 +510,9 @@ export const AddToken = () => {
           size="lg"
           variant={isMaliciousAsset ? "error" : "secondary"}
           isLoading={isConfirming}
-          onClick={() => handleApprove()}
+          onClick={() =>
+            isSac ? setShowTrustlineReview(true) : handleApprove()
+          }
         >
           {t("Confirm")}
         </Button>

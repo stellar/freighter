@@ -3,10 +3,18 @@ import { TEST_TOKEN_ADDRESS } from "../helpers/test-token";
 import { loginToTestAccount, switchToMainnet } from "../helpers/login";
 import { allowDapp } from "../helpers/dAppSessionHelper";
 import {
+  SAC_ISSUER,
   stubAccountBalances,
   stubAccountHistory,
+  stubBackendSubmitTx,
+  stubFeeStats,
+  stubHorizonAccounts,
   stubIsSac,
+  stubIsSacTrue,
+  stubSacTokenDetails,
+  stubScanAssetSafe,
   stubScanDapp,
+  stubScanTx,
   stubTokenDetails,
   stubTokenPrices,
 } from "../helpers/stubs";
@@ -844,6 +852,144 @@ test("should add token when allowed", async ({
   await expect(pageTwo.locator("#result-addToken")).toContainText(
     "Token added:",
   );
+});
+
+// The cryptographically-derived SAC contract for E2E:SAC_ISSUER on testnet.
+// new Asset("E2E", SAC_ISSUER).contractId("Test SDF Network ; September 2015")
+// Using this contract (not TEST_TOKEN_ADDRESS) is required so that
+// isAssetSac() in useGetChangeTrustData verifies correctly and builds the XDR.
+const SAC_CONTRACT_ID =
+  "CAMGWOMKYNKCWGHXTU6A7OYW3O6O4UFMHSMQDSIA2WSD6M6U6GSAJASN";
+
+// SAC token test: skipped in integration mode — the stubs needed to classify
+// SAC_CONTRACT_ID as a SAC must be injected before the popup opens, which
+// requires the window.fetch addInitScript approach described below. In
+// integration mode all stubs are bypassed and the real backend is used, but
+// the test account does not have a live SAC on testnet.
+test("should open the Change Trust review and add a SAC token when allowed", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  test.skip(
+    isIntegrationMode,
+    "SAC stub injection via addInitScript is not compatible with integration mode",
+  );
+
+  // Playwright's context.route() / page.route() does not reliably intercept
+  // fetch calls made by Chrome extension popup pages in headless mode because
+  // those pages run in an isolated extension process. We therefore override
+  // window.fetch via context.addInitScript(), which is guaranteed to run before
+  // ANY page script on every new page — including the popup opened by
+  // browser.windows.create(). This is the same technique used in
+  // stubAccountHistoryWith (page level) applied at context level.
+  //
+  // Endpoints overridden:
+  //   is-sac-contract → { isSacContract: true }
+  //   token-details   → { name: "E2E:<SAC_ISSUER>", symbol: "E2E", decimals: 7 }
+  //
+  // Effect on the AddToken flow:
+  //   useTokenLookup receives isSacContract=true → sets issuer to the G-address
+  //   → StrKey.isValidEd25519PublicKey(issuer) = true → isSac = true
+  //   → Confirm click calls setShowTrustlineReview(true) instead of handleApprove()
+  //   → ChangeTrustInternal renders, isAssetSac verifies SAC_CONTRACT_ID, builds XDR
+  await context.addInitScript(
+    ({ sacIssuer }: { sacIssuer: string }) => {
+      const origFetch = (window as Window & typeof globalThis).fetch.bind(
+        window,
+      );
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (window as any).fetch = function (input: any, init: any) {
+        const url: string =
+          typeof input === "string"
+            ? input
+            : input instanceof URL
+              ? input.href
+              : (input?.url ?? "");
+        if (url.includes("/is-sac-contract/")) {
+          return Promise.resolve(
+            new Response(JSON.stringify({ isSacContract: true }), {
+              status: 200,
+              headers: { "Content-Type": "application/json" },
+            }),
+          );
+        }
+        if (url.includes("/token-details/")) {
+          return Promise.resolve(
+            new Response(
+              JSON.stringify({
+                name: `E2E:${sacIssuer}`,
+                symbol: "E2E",
+                decimals: 7,
+              }),
+              {
+                status: 200,
+                headers: { "Content-Type": "application/json" },
+              },
+            ),
+          );
+        }
+        return origFetch(input, init);
+      };
+    },
+    { sacIssuer: SAC_ISSUER },
+  );
+
+  // context.route() as belt-and-suspenders (intercepted when CDP cooperates)
+  await stubIsSacTrue(context);
+  await stubSacTokenDetails(context);
+
+  await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
+  await allowDapp({ page });
+
+  // Open a second tab pointing at the addToken playground.
+  const pageTwo = await page.context().newPage();
+  await pageTwo.waitForLoadState();
+
+  const popupPromise = page.context().waitForEvent("page");
+  await pageTwo.goto(
+    "https://play.freighter.app/#/extension/playground/addToken",
+  );
+  // Use the cryptographically-derived SAC contract ID, not TEST_TOKEN_ADDRESS.
+  // AddToken passes this contractId to useTokenLookup and then to ChangeTrustInternal;
+  // isAssetSac() verifies it against Asset("E2E", SAC_ISSUER).contractId(passphrase).
+  await pageTwo.getByRole("textbox").first().fill(SAC_CONTRACT_ID);
+  await pageTwo
+    .getByRole("textbox")
+    .nth(1)
+    .fill("Test SDF Network ; September 2015");
+  await pageTwo.getByText("Add Token").click();
+
+  const popup = await popupPromise;
+
+  // Belt-and-suspenders page-level stubs on the popup for requests fired after
+  // the popup is captured (ChangeTrust data-loading phase).
+  await stubIsSacTrue(popup);
+  await stubSacTokenDetails(popup);
+  await stubFeeStats(popup);
+  await stubHorizonAccounts(popup);
+  await stubScanAssetSafe(popup);
+  await stubScanTx(popup);
+  await stubBackendSubmitTx(popup);
+  await stubAccountBalances(popup);
+
+  // Wait for the token lookup to resolve (the Confirm button is hidden while
+  // isLoading) then click. For a SAC token the click calls
+  // setShowTrustlineReview(true) instead of handleApprove().
+  await popup.getByTestId("add-token-approve").click();
+
+  // ── Assert the ChangeTrustInternal review is shown ──────────────────────────
+  await expect(popup.getByTestId("ChangeTrustInternal__Body")).toBeVisible({
+    timeout: 15000,
+  });
+  await expect(popup.getByText("Add Trustline")).toBeVisible();
+  // SAC-specific disclosure rows rendered only when showSacDisclosure is true
+  await expect(
+    popup.getByTestId("ChangeTrustInternal__Metadata__Row__Issuer"),
+  ).toBeVisible();
+  await expect(
+    popup.getByTestId("ChangeTrustInternal__Metadata__Row__Reserve"),
+  ).toContainText("0.5 XLM");
 });
 
 test("should not add token when not allowed", async ({
