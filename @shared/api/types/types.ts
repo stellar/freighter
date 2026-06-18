@@ -13,6 +13,7 @@ import {
   AssetsLists,
   AssetsListItem,
 } from "../../constants/soroban/asset-list";
+import { AutoLockTimeoutMinutes } from "../../constants/autoLock";
 
 export enum ActionStatus {
   IDLE = "IDLE",
@@ -127,6 +128,8 @@ export interface Response {
   isDismissed: boolean;
   collectiblesList: CollectibleContract[];
   overriddenBlockaidResponse: string | null;
+  recentProtocols: RecentProtocolEntry[];
+  hasSeenDiscoverWelcome: boolean;
 }
 
 export interface MemoRequiredAccount {
@@ -187,6 +190,7 @@ export interface Preferences {
   networksList: NetworkDetails[];
   isHideDustEnabled: boolean;
   isOpenSidebarByDefault: boolean;
+  autoLockTimeoutMinutes: AutoLockTimeoutMinutes;
   error: string;
 }
 
@@ -217,6 +221,20 @@ export interface IndexerSettings {
   isRpcHealthy: boolean;
   userNotification: UserNotification;
 }
+
+export type SaveSettingsResponse = {
+  allowList: AllowList;
+  isDataSharingAllowed: boolean;
+  isMemoValidationEnabled: boolean;
+  networkDetails: NetworkDetails;
+  networksList: NetworkDetails[];
+  isRpcHealthy: boolean;
+  isSorobanPublicEnabled: boolean;
+  isNonSSLEnabled: boolean;
+  isHideDustEnabled: boolean;
+  isOpenSidebarByDefault: boolean;
+  autoLockTimeoutMinutes: AutoLockTimeoutMinutes;
+};
 
 export type Settings = {
   allowList: AllowList;
@@ -398,14 +416,23 @@ export interface ApiTokenPrices {
   [key: string]: ApiTokenPrice | null;
 }
 
-export type DiscoverData = {
+export interface ProtocolEntry {
   description: string;
   iconUrl: string;
   name: string;
   websiteUrl: string;
   tags: string[];
   isBlacklisted: boolean;
-}[];
+  backgroundUrl?: string;
+  isTrending: boolean;
+}
+
+export interface RecentProtocolEntry {
+  websiteUrl: string;
+  lastAccessed: number;
+}
+
+export type DiscoverData = ProtocolEntry[];
 
 export interface LedgerKeyAccount {
   account_id: string;

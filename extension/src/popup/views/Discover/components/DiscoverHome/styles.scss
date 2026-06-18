@@ -1,0 +1,23 @@
+@use "../../../../styles/utils.scss" as *;
+
+.DiscoverHome {
+  &__sections {
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(32);
+  }
+
+  &__footer {
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(8);
+    border-radius: pxToRem(16);
+    background-color: var(--sds-clr-gray-02);
+    padding: pxToRem(16);
+    margin-top: pxToRem(32);
+
+    &__copy {
+      color: var(--sds-clr-gray-11);
+    }
+  }
+}

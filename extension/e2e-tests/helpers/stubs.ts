@@ -231,6 +231,26 @@ export const stubFederation = async (page: Page) => {
   });
 };
 
+/**
+ * Overrides the default federation stub to return a custom response.
+ * Useful for testing SEP-0002 memo fields. Must be called inside stubOverrides
+ * after loginToTestAccount has already registered the default routes.
+ */
+export const stubFederationWithMemo = async (
+  page: Page,
+  response: {
+    account_id: string;
+    memo?: string;
+    memo_type?: string;
+    stellar_address?: string;
+  },
+) => {
+  await page.unroute("**/federation**");
+  await page.route("**/federation**", async (route) => {
+    await route.fulfill({ json: response });
+  });
+};
+
 export const stubDefaultAccountBalances = async (page: Page) => {
   await page.route("**/account-balances/**", async (route) => {
     const json = {
@@ -331,7 +351,7 @@ export const stubScanDapp = async (context: BrowserContext) => {
     const json = {
       data: {
         status: "hit",
-        url: "https://docs.freighter.app/docs/playground/setallowed/",
+        url: "https://play.freighter.app/#/extension/playground/setAllowed",
         scan_start_time: "2025-07-04T08:58:59.350000",
         scan_end_time: "2025-07-04T09:02:37.766000",
         malicious_score: 0,
@@ -372,7 +392,7 @@ export const stubScanDappMalicious = async (context: BrowserContext) => {
     const json = {
       data: {
         status: "hit",
-        url: "https://docs.freighter.app/docs/playground/setallowed/",
+        url: "https://play.freighter.app/#/extension/playground/setAllowed",
         scan_start_time: "2025-07-04T08:58:59.350000",
         scan_end_time: "2025-07-04T09:02:37.766000",
         malicious_score: 0.95,
@@ -872,6 +892,45 @@ export const stubAccountBalancesWithUSDC = async (page: Page) => {
   });
 };
 
+/**
+ * Stubs the `/account-history/` endpoint with the provided records using both
+ * an in-page `window.fetch` override (via `addInitScript`) and a
+ * `context.route` network fallback. Playwright's route interception alone does
+ * not reliably catch fetch requests made from Chrome extension popup pages in
+ * CI headless mode; the init script guarantees the response.
+ */
+export const stubAccountHistoryWith = async (
+  page: Page,
+  context: BrowserContext,
+  records: object[],
+) => {
+  await page.addInitScript((data: object[]) => {
+    const origFetch = window.fetch.bind(window);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (window as any).fetch = function (input: any, init: any) {
+      const urlStr: string =
+        typeof input === "string"
+          ? input
+          : input instanceof URL
+            ? input.href
+            : (input.url ?? "");
+      if (urlStr.includes("/account-history/")) {
+        return Promise.resolve(
+          new Response(JSON.stringify(data), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          }),
+        );
+      }
+      return origFetch(input, init);
+    };
+  }, records);
+
+  await context.route("*/**/account-history/*", async (route) => {
+    await route.fulfill({ json: records });
+  });
+};
+
 export const stubAccountHistory = async (context: BrowserContext) => {
   await context.route("**/account-history/**", async (route) => {
     const json = [
@@ -1263,6 +1322,126 @@ export const stubCollectiblesUnsuccessfulMetadata = async (page: Page) => {
       },
     };
     await route.fulfill({ json });
+  });
+};
+
+export const DISCOVER_PROTOCOLS_STUB = {
+  data: {
+    protocols: [
+      // 3 trending, not blacklisted
+      {
+        name: "Aquarius",
+        description: "Trade assets on the Stellar network",
+        icon_url: "https://example.test/aqua-icon.png",
+        website_url: "https://aqua.example.test",
+        background_url: "https://example.test/aqua-bg.png",
+        tags: ["dex"],
+        is_blacklisted: false,
+        is_trending: true,
+      },
+      {
+        name: "StellarTerm",
+        description: "Intuitive trading client for Stellar",
+        icon_url: "https://example.test/stellarterm-icon.png",
+        website_url: "https://stellarterm.example.test",
+        background_url: "https://example.test/stellarterm-bg.png",
+        tags: ["dex", "wallet"],
+        is_blacklisted: false,
+        is_trending: true,
+      },
+      {
+        name: "Lumenswap",
+        description: "Swap assets on Stellar",
+        icon_url: "https://example.test/lumenswap-icon.png",
+        website_url: "https://lumenswap.example.test",
+        background_url: "https://example.test/lumenswap-bg.png",
+        tags: ["dex"],
+        is_blacklisted: false,
+        is_trending: true,
+      },
+      // 4 non-trending, not blacklisted
+      {
+        name: "SorobanDomains",
+        description: "Decentralized name service on Soroban",
+        icon_url: "https://example.test/domains-icon.png",
+        website_url: "https://domains.example.test",
+        tags: ["tools"],
+        is_blacklisted: false,
+        is_trending: false,
+      },
+      {
+        name: "Blend",
+        description: "Lending protocol on Stellar",
+        icon_url: "https://example.test/blend-icon.png",
+        website_url: "https://blend.example.test",
+        tags: ["defi", "lending"],
+        is_blacklisted: false,
+        is_trending: false,
+      },
+      {
+        name: "Phoenix",
+        description: "Phoenix DEX on Soroban",
+        icon_url: "https://example.test/phoenix-icon.png",
+        website_url: "https://phoenix.example.test",
+        tags: ["dex"],
+        is_blacklisted: false,
+        is_trending: false,
+      },
+      {
+        name: "Soroswap",
+        description: "Automated market maker on Soroban",
+        icon_url: "https://example.test/soroswap-icon.png",
+        website_url: "https://soroswap.example.test",
+        tags: ["dex", "defi"],
+        is_blacklisted: false,
+        is_trending: false,
+      },
+      // 2 blacklisted — must never appear in the UI
+      {
+        name: "BlacklistedTrending",
+        description: "Should not appear even though trending flag is true",
+        icon_url: "https://example.test/bad1-icon.png",
+        website_url: "https://bad-trending.example.test",
+        tags: [],
+        is_blacklisted: true,
+        is_trending: true,
+      },
+      {
+        name: "BlacklistedDapp",
+        description: "Should not appear in the dapps list",
+        icon_url: "https://example.test/bad2-icon.png",
+        website_url: "https://bad-dapp.example.test",
+        tags: [],
+        is_blacklisted: true,
+        is_trending: false,
+      },
+    ],
+  },
+};
+
+export const stubDiscoverProtocols = async (
+  page: Page,
+  payload: typeof DISCOVER_PROTOCOLS_STUB = DISCOVER_PROTOCOLS_STUB,
+) => {
+  await page.route("**/protocols", async (route) => {
+    await route.fulfill({ json: payload });
+  });
+};
+
+/**
+ * Overrides the Discover protocols stub to return an error status.
+ * Call this AFTER loginToTestAccount (which runs stubAllExternalApis and
+ * registers the default 200 stub) so this route handler takes precedence.
+ */
+export const stubDiscoverProtocolsError = async (
+  page: Page,
+  status: number = 500,
+) => {
+  await page.route("**/protocols", async (route) => {
+    await route.fulfill({
+      status,
+      json: { error: "Simulated protocols fetch error" },
+    });
   });
 };
 
@@ -2737,6 +2916,9 @@ export const stubAllExternalApis = async (
 
   // Collectibles
   await stubCollectibles(page);
+
+  // Discover protocols
+  await stubDiscoverProtocols(page);
 
   // Mercury/History endpoints
   // Note: Tests that need account history should call stubAccountHistory() instead

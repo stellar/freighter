@@ -129,9 +129,8 @@ test.describe("BlockAid Scan - Unable to Scan States", () => {
 
     // Navigate to send payment
     await page.getByTestId("nav-link-send").click();
-    await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
-
-    await page.getByTestId("address-tile").click();
+    await expect(page.getByTestId("token-list")).toBeVisible();
+    await page.getByTestId("SendRow-native").click();
     // Use a valid test address
     await page
       .getByTestId("send-to-input")
@@ -368,9 +367,8 @@ test.describe("BlockAid Scan - Unable to Scan States", () => {
 
     // Go to send payment to an M-address (requires memo)
     await page.getByTestId("nav-link-send").click();
-    await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
-
-    await page.getByTestId("address-tile").click();
+    await expect(page.getByTestId("token-list")).toBeVisible();
+    await page.getByTestId("SendRow-native").click();
     await page
       .getByTestId("send-to-input")
       .fill("GA6SXIZIKLJHCZI2KEOBEUUOFMM4JUPPM2UTWX6STAWT25JWIEUFIMFF");

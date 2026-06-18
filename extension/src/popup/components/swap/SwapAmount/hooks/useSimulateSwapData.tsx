@@ -2,7 +2,6 @@ import { useReducer } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import BigNumber from "bignumber.js";
 import {
-  Account,
   Asset,
   BASE_FEE,
   Memo,
@@ -45,8 +44,8 @@ const UNKNOWN_ERROR_DISPLAY =
 
 export const getSwapErrorMessage = (
   error: unknown,
-  sourceAsset: { issuer: string },
-  destAsset: { issuer: string },
+  sourceAsset: { issuer?: string },
+  destAsset: { issuer?: string },
 ): string => {
   // Surface known error messages first, regardless of asset type
   const errorStr =
@@ -132,7 +131,7 @@ const getBuiltTx = async (
     networkDetails.networkUrl,
     networkDetails.networkPassphrase,
   );
-  const sourceAccount: Account = await server.loadAccount(publicKey);
+  const sourceAccount = await server.loadAccount(publicKey);
 
   const operation = getOperation(
     sourceAsset,

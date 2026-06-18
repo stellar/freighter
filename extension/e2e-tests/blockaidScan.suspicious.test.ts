@@ -109,9 +109,8 @@ test.describe("BlockAid Scan - Suspicious States", () => {
     });
 
     await page.getByTestId("nav-link-send").click();
-    await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
-
-    await page.getByTestId("address-tile").click();
+    await expect(page.getByTestId("token-list")).toBeVisible();
+    await page.getByTestId("SendRow-native").click();
     await page
       .getByTestId("send-to-input")
       .fill("GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF");
@@ -323,9 +322,8 @@ test.describe("BlockAid Scan - Suspicious States", () => {
 
     // Go to send payment to an M-address (requires memo)
     await page.getByTestId("nav-link-send").click();
-    await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
-
-    await page.getByTestId("address-tile").click();
+    await expect(page.getByTestId("token-list")).toBeVisible();
+    await page.getByTestId("SendRow-native").click();
     await page
       .getByTestId("send-to-input")
       .fill("GA6SXIZIKLJHCZI2KEOBEUUOFMM4JUPPM2UTWX6STAWT25JWIEUFIMFF");

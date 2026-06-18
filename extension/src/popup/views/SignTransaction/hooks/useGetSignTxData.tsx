@@ -181,7 +181,7 @@ function useGetSignTxData(
       dispatch({ type: "FETCH_DATA_SUCCESS", payload: firstRenderPayload });
 
       // Fetch site scan data asynchronously without blocking UI
-      scanSite(firstRenderPayload);
+      scanSite(firstRenderPayload, networkDetails);
 
       // Add all icons needed for tx assets
       const icons = {} as { [code: string]: string };
@@ -265,7 +265,7 @@ function useGetSignTxData(
               icons[canonical] = cachedIcon;
             } else {
               let icon = await getIconUrlFromIssuer({
-                key: issuer,
+                key: issuer ?? "",
                 code,
                 networkDetails,
               });

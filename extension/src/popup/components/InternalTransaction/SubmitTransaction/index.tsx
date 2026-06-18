@@ -69,6 +69,7 @@ export const SendingTransaction = ({
       amount,
       asset,
       destination,
+      recipientName,
       destinationAsset,
       destinationAmount,
     },
@@ -79,6 +80,8 @@ export const SendingTransaction = ({
   const dstAsset = destinationAsset
     ? getAssetFromCanonical(destinationAsset)
     : null;
+  const destinationDisplayLabel =
+    recipientName || truncatedPublicKey(destination);
 
   const { state: submissionState, fetchData } = useSubmitTxData({
     publicKey,
@@ -303,7 +306,7 @@ export const SendingTransaction = ({
                           {`${t("to")} `}
                         </span>
                         <span className="SendingTransaction__Summary__Description__Label">
-                          {truncatedPublicKey(destination)}
+                          {destinationDisplayLabel}
                         </span>
                       </>
                     )}
@@ -335,7 +338,7 @@ export const SendingTransaction = ({
                           className="SendingTransaction__Summary__Description__Label"
                           data-testid="sending-transaction-summary-description-label-destination-address"
                         >
-                          {truncatedPublicKey(destination)}
+                          {destinationDisplayLabel}
                         </span>
                       </>
                     )}

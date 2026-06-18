@@ -31,7 +31,7 @@ jest.mock("@shared/api/internal", () => ({
       currentPrice: "1",
       percentagePriceChange24h: ".5",
     },
-    "DT:CCXVDIGMR6WTXZQX2OEVD6YM6AYCYPXPQ7YYH6OZMRS7U6VD3AVHNGBJ": {
+    "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM": {
       currentPrice: "2",
       percentagePriceChange24h: ".25",
     },
@@ -66,6 +66,7 @@ describe("useGetWalletsData", () => {
   const preloadedState = {
     auth: {
       publicKey: TEST_PUBLIC_KEY,
+      hasPrivateKey: true,
       allAccounts: mockAccounts,
       applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
     },
@@ -113,6 +114,7 @@ describe("useGetWalletsData", () => {
     const mainnetPreloadedState = {
       auth: {
         publicKey: "G1",
+        hasPrivateKey: true,
         allAccounts: [{ publicKey: "G1" }],
         applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
       },
@@ -152,7 +154,7 @@ describe("useGetWalletsData", () => {
     expect(result.current.state.state).toBe<RequestState>(RequestState.SUCCESS);
     expect(result.current.state.data).toEqual({
       accountValue: {
-        G1: "$50.00",
+        G1: "$250.00",
       },
       publicKey: "G1",
       allAccounts: [{ publicKey: "G1" }],
@@ -166,6 +168,7 @@ describe("useGetWalletsData", () => {
     const mainnetPreloadedState = {
       auth: {
         publicKey: "G1",
+        hasPrivateKey: true,
         allAccounts: [
           { publicKey: "G1" },
           { publicKey: "G2" },
@@ -225,13 +228,13 @@ describe("useGetWalletsData", () => {
     ]);
     expect(result.current.state.data).toEqual({
       accountValue: {
-        G1: "$50.00",
-        G2: "$50.00",
-        G3: "$50.00",
-        G4: "$50.00",
-        G5: "$50.00",
-        G6: "$50.00",
-        G7: "$50.00",
+        G1: "$250.00",
+        G2: "$250.00",
+        G3: "$250.00",
+        G4: "$250.00",
+        G5: "$250.00",
+        G6: "$250.00",
+        G7: "$250.00",
       },
       publicKey: "G1",
       allAccounts: [

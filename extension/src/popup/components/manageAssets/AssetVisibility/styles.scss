@@ -1,6 +1,12 @@
+@use "../../../styles/utils.scss" as *;
+
 .ToggleAsset {
   &__close-btn {
     color: var(--sds-clr-gray-10);
+  }
+
+  &__fetch-fail {
+    padding: pxToRem(16px);
   }
 
   &__hide-btn {

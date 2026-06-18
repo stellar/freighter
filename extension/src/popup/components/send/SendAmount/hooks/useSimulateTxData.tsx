@@ -4,11 +4,9 @@ import { useDispatch, useSelector, useStore } from "react-redux";
 import BigNumber from "bignumber.js";
 import { captureException } from "@sentry/browser";
 import {
-  Account,
   Asset,
   BASE_FEE,
   extractBaseAddress,
-  Memo,
   Networks,
   Operation,
   TransactionBuilder,
@@ -33,7 +31,7 @@ import {
   parseTokenAmount,
 } from "popup/helpers/soroban";
 import { simulateTokenTransfer } from "@shared/api/internal";
-import { BlockAidScanTxResult } from "@shared/api/types";
+import type { BlockAidScanTxResult } from "@shared/api/types";
 import { getAssetSacAddress } from "@shared/helpers/soroban/token";
 import {
   saveSimulation,
@@ -44,10 +42,16 @@ import { findAddressBalance } from "popup/helpers/balance";
 import { AppDispatch, AppState } from "popup/App";
 import { useScanTx } from "popup/helpers/blockaid";
 import { cleanAmount } from "popup/helpers/formatters";
+import { buildMemoFromFederation } from "popup/helpers/federationMemo";
+import { shouldCheckUnfundedDestinationWarning } from "popup/helpers/sendWarnings";
 import {
   checkIsMuxedSupported,
   determineMuxedDestination,
 } from "helpers/muxedAddress";
+import { SimulateTxData, SimulateResult } from "types/transactions";
+import { getCurrentTransactionFee } from "popup/helpers/fees";
+
+export type { SimulateTxData, SimulateResult };
 
 interface SimClassic {
   type: "classic";
@@ -69,29 +73,45 @@ interface SimSoroban {
   xdr: string;
 }
 
-export interface SimulateTxData {
-  transactionXdr: string;
-  scanResult?: BlockAidScanTxResult | null;
-}
-
 const CREATE_ACCOUNT_MIN_XLM = new BigNumber(1);
 
 /**
- * Returns the translated user-facing reason why a transaction is expected to fail,
- * or null if no expected failure.
+ * Returns the translated user-facing reason why a transaction is expected
+ * to fail, or null if no expected failure.
+ *
+ * The unfunded-destination warning rule (qualitative gate) is delegated to
+ * `shouldCheckUnfundedDestinationWarning` in `popup/helpers/sendWarnings.ts`
+ * so the same rule fires on both the Search-address screen
+ * (`SendTo/index.tsx`) and here on Review. This branch overlays the
+ * native ≥ 1 XLM create-account quantitative check, which only matters
+ * once the amount is finalized.
  */
-const getExpectedToFailReason = ({
+export const getExpectedToFailReason = ({
   isDestinationFunded,
   assetCanonical,
+  destination,
+  isCollectible,
   amount,
   t,
 }: {
   isDestinationFunded?: boolean;
   assetCanonical: string;
+  destination: string;
+  isCollectible: boolean;
   amount: string;
   t: (key: string) => string;
 }) => {
   if (isDestinationFunded !== false) {
+    return null;
+  }
+
+  if (
+    !shouldCheckUnfundedDestinationWarning({
+      assetCanonical,
+      destination,
+      isCollectible,
+    })
+  ) {
     return null;
   }
 
@@ -219,6 +239,7 @@ const getBuiltTx = async (
   transactionTimeout: number,
   networkDetails: NetworkDetails,
   memo?: string,
+  memoType?: string,
 ) => {
   const {
     sourceAsset,
@@ -236,7 +257,7 @@ const getBuiltTx = async (
     networkDetails.networkUrl,
     networkDetails.networkPassphrase,
   );
-  const sourceAccount: Account = await server.loadAccount(publicKey);
+  const sourceAccount = await server.loadAccount(publicKey);
   try {
     const operation = getOperation(
       sourceAsset,
@@ -259,7 +280,7 @@ const getBuiltTx = async (
       .setTimeout(transactionTimeout);
 
     if (memo) {
-      transaction.addMemo(Memo.text(memo));
+      transaction.addMemo(buildMemoFromFederation(memo, memoType ?? ""));
     }
 
     return transaction;
@@ -341,6 +362,8 @@ const simulateTx = async ({
       return {
         payload: response,
         recommendedFee: baseFee.plus(new BigNumber(minResourceFee)).toString(),
+        inclusionFee: baseFee.toString(),
+        resourceFee: minResourceFee,
       };
     }
 
@@ -392,9 +415,8 @@ function useSimulateTxData({
   const { t } = useTranslation();
   const reduxDispatch = useDispatch<AppDispatch>();
   const store = useStore();
-  const { asset, amount, transactionFee, memo } = useSelector(
-    transactionDataSelector,
-  );
+  const { asset, amount, transactionFee, memo, memoType, isCollectible } =
+    useSelector(transactionDataSelector);
 
   const { scanTx } = useScanTx();
   const [state, dispatch] = useReducer(
@@ -419,10 +441,13 @@ function useSimulateTxData({
         store.getState() as AppState,
       );
       const currentMemo = currentTransactionData.memo || memo;
+      const currentMemoType = currentTransactionData.memoType || memoType;
       const currentAmount = currentTransactionData.amount || amount;
       const currentAsset = currentTransactionData.asset || asset;
-      const currentTransactionFee =
-        currentTransactionData.transactionFee || transactionFee;
+      const currentTransactionFee = getCurrentTransactionFee({
+        currentTransactionFee: currentTransactionData.transactionFee,
+        fallbackTransactionFee: transactionFee,
+      });
       // Derive asset objects directly from fresh Redux state so the XDR and
       // expectedToFailReason logic always use the same asset values.
       const freshSourceAsset = getAssetFromCanonical(currentAsset);
@@ -457,6 +482,8 @@ function useSimulateTxData({
       const expectedToFailReason = getExpectedToFailReason({
         isDestinationFunded: destBalancesResult.isFunded ?? undefined,
         assetCanonical: currentAsset,
+        destination,
+        isCollectible,
         amount: currentAmount,
         t,
       });
@@ -545,6 +572,13 @@ function useSimulateTxData({
         }),
       );
 
+      if (simResponse.inclusionFee !== undefined) {
+        payload.inclusionFee = simResponse.inclusionFee;
+      }
+      if (simResponse.resourceFee !== undefined) {
+        payload.resourceFee = simResponse.resourceFee;
+      }
+
       const scanUrlstub = "internal";
       if (simParams.type === "classic") {
         const {
@@ -579,6 +613,7 @@ function useSimulateTxData({
           transactionTimeout,
           networkDetails,
           memoToUse,
+          currentMemoType,
         );
         const xdr = transaction.build().toXDR();
         payload.transactionXdr = xdr;
@@ -601,14 +636,12 @@ function useSimulateTxData({
       }
 
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });
-      return payload;
+      return { ok: true, data: payload } as SimulateResult;
     } catch (error) {
-      dispatch({
-        type: "FETCH_DATA_ERROR",
-        payload:
-          "We had an issue retrieving your transaction details. Please try again.",
-      });
-      return error;
+      const errorMessage =
+        "We had an issue retrieving your transaction details. Please try again.";
+      dispatch({ type: "FETCH_DATA_ERROR", payload: errorMessage });
+      return { ok: false, error: errorMessage } as SimulateResult;
     }
   };
 

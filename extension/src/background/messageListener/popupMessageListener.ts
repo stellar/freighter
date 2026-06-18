@@ -64,6 +64,7 @@ import { loadLastUsedAccount } from "./handlers/loadLastAccountUsed";
 import { signOut } from "./handlers/signOut";
 import { saveAllowList } from "./handlers/saveAllowList";
 import { saveSettings } from "./handlers/saveSettings";
+import { userActivity } from "./handlers/userActivity";
 import { saveExperimentalFeatures } from "./handlers/saveExperimentalFeatures";
 import { loadSettings } from "./handlers/loadSettings";
 import { getCachedAssetIconList } from "./handlers/getCachedAssetIconList";
@@ -93,6 +94,11 @@ import { addCollectible } from "./handlers/addCollectible";
 import { getCollectibles } from "./handlers/getCollectibles";
 import { changeCollectibleVisibility } from "./handlers/changeCollectibleVisibility";
 import { getHiddenCollectibles } from "./handlers/getHiddenCollectibles";
+import { getRecentProtocols } from "./handlers/getRecentProtocols";
+import { addRecentProtocol } from "./handlers/addRecentProtocol";
+import { clearRecentProtocols } from "./handlers/clearRecentProtocols";
+import { getDiscoverWelcomeSeen } from "./handlers/getDiscoverWelcomeSeen";
+import { dismissDiscoverWelcome } from "./handlers/dismissDiscoverWelcome";
 
 const numOfPublicKeysToCheck = 5;
 
@@ -137,16 +143,28 @@ export const popupMessageListener = (
   localStore: DataStorageAccess,
   keyManager: KeyManager,
   sessionTimer: SessionTimer,
-  sender: { tab?: unknown; id?: string },
+  sender: { tab?: unknown; id?: string; url?: string },
 ) => {
   const currentState = sessionStore.getState();
   const publicKey = publicKeySelector(currentState);
 
-  // Content scripts (dapp pages) always carry sender.tab; extension pages do not.
-  // Also verify the message originates from this extension (sender.id matches),
-  // guarding against other extensions calling popupMessageListener handlers.
+  // Content scripts (dapp pages) carry `sender.tab` with a non-extension
+  // `sender.url`. Extension pages may also carry `sender.tab` when they
+  // live in their own tab/window (e.g. dApp-spawned signing popups
+  // created via `browser.windows.create`, fullscreen mode); those still
+  // have an extension-origin `sender.url`. So the right check is:
+  // `sender.id` matches our extension AND either there is no tab
+  // (browser-action popup, sidepanel) OR the URL is on our extension
+  // origin (popup window, options page, fullscreen).
+  const extensionOrigin = browser?.runtime?.getURL?.("") ?? "";
+  const isFromOwnExtension =
+    !sender.id || sender.id === browser?.runtime?.id;
+  const isExtensionUrl =
+    !!extensionOrigin &&
+    typeof sender.url === "string" &&
+    sender.url.startsWith(extensionOrigin);
   const isFromExtensionPage =
-    !sender.tab && (!sender.id || sender.id === browser?.runtime?.id);
+    isFromOwnExtension && (!sender.tab || isExtensionUrl);
 
   if (
     request.activePublicKey &&
@@ -192,6 +210,7 @@ export const popupMessageListener = (
         request,
         localStore,
         sessionStore,
+        sessionTimer,
       });
     }
     case SERVICE_TYPES.MAKE_ACCOUNT_ACTIVE: {
@@ -306,6 +325,7 @@ export const popupMessageListener = (
       return handleSignedHwPayload({
         request,
         responseQueue,
+        sessionTimer,
       });
     }
     case SERVICE_TYPES.ADD_TOKEN: {
@@ -396,6 +416,7 @@ export const popupMessageListener = (
       return signOut({
         localStore,
         sessionStore,
+        sessionTimer,
       });
     }
     case SERVICE_TYPES.SAVE_ALLOWLIST: {
@@ -409,6 +430,8 @@ export const popupMessageListener = (
       return saveSettings({
         request,
         localStore,
+        sessionStore,
+        sessionTimer,
       });
     }
     case SERVICE_TYPES.SAVE_EXPERIMENTAL_FEATURES: {
@@ -575,6 +598,21 @@ export const popupMessageListener = (
         localStore,
       });
     }
+    case SERVICE_TYPES.GET_RECENT_PROTOCOLS: {
+      return getRecentProtocols({ localStore });
+    }
+    case SERVICE_TYPES.ADD_RECENT_PROTOCOL: {
+      return addRecentProtocol({ request, localStore });
+    }
+    case SERVICE_TYPES.CLEAR_RECENT_PROTOCOLS: {
+      return clearRecentProtocols({ localStore });
+    }
+    case SERVICE_TYPES.GET_DISCOVER_WELCOME_SEEN: {
+      return getDiscoverWelcomeSeen({ localStore });
+    }
+    case SERVICE_TYPES.DISMISS_DISCOVER_WELCOME: {
+      return dismissDiscoverWelcome({ localStore });
+    }
     case SERVICE_TYPES.MARK_QUEUE_ACTIVE: {
       const { uuid, isActive } = request as MarkQueueActiveMessage;
       if (isActive) {
@@ -602,6 +640,11 @@ export const popupMessageListener = (
           .catch((e) => console.error("Failed to open sidebar:", e));
         return {};
       })();
+    }
+
+    case SERVICE_TYPES.USER_ACTIVITY: {
+      if (!isFromExtensionPage) return { error: "Unauthorized" };
+      return userActivity({ sessionTimer, sessionStore, localStore });
     }
 
     default:

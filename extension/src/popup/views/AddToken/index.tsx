@@ -158,7 +158,11 @@ export const AddToken = () => {
         scannedAsset &&
         (isAssetSuspicious(scannedAsset, overrideState) ||
           isAssetMalicious(scannedAsset, overrideState) ||
-          shouldTreatAssetAsUnableToScan(scannedAsset, overrideState))
+          shouldTreatAssetAsUnableToScan(
+            scannedAsset,
+            overrideState,
+            networkDetails,
+          ))
       ) {
         setBlockaidData(scannedAsset);
         setIsMaliciousAsset(isAssetMalicious(scannedAsset, overrideState));

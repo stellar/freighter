@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import { Icon, IconButton } from "@stellar/design-system";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
-import { Operation, xdr } from "stellar-sdk";
+import { OperationRecord, Signer, xdr } from "stellar-sdk";
 
 import {
   FLAG_TYPES,
@@ -78,11 +78,11 @@ const DestinationWarning = ({
 export const Operations = ({
   flaggedKeys,
   isMemoRequired,
-  operations = [] as Operation[],
+  operations = [] as OperationRecord[],
 }: {
   flaggedKeys: FlaggedKeys;
   isMemoRequired: boolean;
-  operations: Operation[];
+  operations: OperationRecord[];
 }) => {
   const { t } = useTranslation();
 
@@ -96,7 +96,7 @@ export const Operations = ({
     "8": "Authorization Clawback Enabled",
   };
 
-  const RenderOpByType = ({ op }: { op: Operation }) => {
+  const RenderOpByType = ({ op }: { op: OperationRecord }) => {
     const networkDetails = useSelector(settingsNetworkDetailsSelector);
 
     useEffect(() => {
@@ -330,7 +330,11 @@ export const Operations = ({
         } = op;
         return (
           <>
-            {signer && <KeyValueSigner signer={signer} />}
+            {signer && (
+              // v16 types the parsed setOptions signer as the builder opts
+              // type; at runtime it is a parsed Signer (Buffer-backed fields).
+              <KeyValueSigner signer={signer as unknown as Signer} />
+            )}
             {inflationDest && (
               <KeyValueWithPublicKey
                 operationKey={t("Inflation Destination")}
@@ -626,12 +630,8 @@ export const Operations = ({
       case "restoreFootprint":
       case "inflation":
       default: {
-        // OperationType is missing some types
-        // Issue: https://github.com/stellar/js-stellar-base/issues/728
-        const type = op.type as string;
-        if (type === "revokeTrustlineSponsorship") {
-          const _op = op as unknown as Operation.RevokeTrustlineSponsorship;
-          const { account, asset } = _op;
+        if (op.type === "revokeTrustlineSponsorship") {
+          const { account, asset } = op;
           return (
             <>
               <KeyValueWithPublicKey
@@ -653,9 +653,8 @@ export const Operations = ({
             </>
           );
         }
-        if (type === "revokeAccountSponsorship") {
-          const _op = op as unknown as Operation.RevokeAccountSponsorship;
-          const { account } = _op;
+        if (op.type === "revokeAccountSponsorship") {
+          const { account } = op;
           return (
             <KeyValueWithPublicKey
               operationKey={t("Account")}
@@ -663,9 +662,8 @@ export const Operations = ({
             />
           );
         }
-        if (type === "revokeOfferSponsorship") {
-          const _op = op as unknown as Operation.RevokeOfferSponsorship;
-          const { seller, offerId } = _op;
+        if (op.type === "revokeOfferSponsorship") {
+          const { seller, offerId } = op;
           return (
             <>
               <KeyValueWithPublicKey
@@ -679,9 +677,8 @@ export const Operations = ({
             </>
           );
         }
-        if (type === "revokeDataSponsorship") {
-          const _op = op as unknown as Operation.RevokeDataSponsorship;
-          const { account, name } = _op;
+        if (op.type === "revokeDataSponsorship") {
+          const { account, name } = op;
           return (
             <>
               <KeyValueWithPublicKey
@@ -692,10 +689,8 @@ export const Operations = ({
             </>
           );
         }
-        if (type === "revokeClaimableBalanceSponsorship") {
-          const _op =
-            op as unknown as Operation.RevokeClaimableBalanceSponsorship;
-          const { balanceId } = _op;
+        if (op.type === "revokeClaimableBalanceSponsorship") {
+          const { balanceId } = op;
           return (
             <KeyValueList
               operationKey={t("Balance ID")}
@@ -703,12 +698,11 @@ export const Operations = ({
             />
           );
         }
-        if (type === "revokeSignerSponsorship") {
-          const _op = op as unknown as Operation.RevokeSignerSponsorship;
-          const { account, signer } = _op;
+        if (op.type === "revokeSignerSponsorship") {
+          const { account, signer } = op;
           return (
             <>
-              <KeyValueSignerKeyOptions signer={signer} />
+              <KeyValueSignerKeyOptions signer={signer as unknown as Signer} />
               <KeyValueWithPublicKey
                 operationKey={t("Account")}
                 operationValue={account}
@@ -721,7 +715,7 @@ export const Operations = ({
     }
   };
 
-  const RenderOpArgsByType = ({ op }: { op: Operation }) => {
+  const RenderOpArgsByType = ({ op }: { op: OperationRecord }) => {
     const networkDetails = useSelector(settingsNetworkDetailsSelector);
 
     useEffect(() => {
@@ -853,7 +847,9 @@ export const Operations = ({
           >
             <div className="Operations--header">
               <Icon.Cube02 />
-              <span>{OPERATION_TYPES[type] || type}</span>
+              <span>
+                {OPERATION_TYPES[type as keyof typeof OPERATION_TYPES] || type}
+              </span>
             </div>
             <div className="Operations--item">
               {sourceVal && (

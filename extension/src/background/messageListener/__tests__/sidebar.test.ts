@@ -18,6 +18,19 @@ const mockOpen = jest.fn().mockResolvedValue(undefined);
   runtime: { getURL: (path: string) => `chrome-extension://fake-id${path}` },
 };
 
+// `webextension-polyfill` is mocked to undefined globally; provide a
+// minimal shim here so the `isFromExtensionPage` check can compute
+// `browser.runtime.getURL("")` and recognize extension-origin URLs.
+jest.mock("webextension-polyfill", () => ({
+  __esModule: true,
+  default: {
+    runtime: {
+      id: "fake-id",
+      getURL: (path: string) => `chrome-extension://fake-id${path}`,
+    },
+  },
+}));
+
 const mockSessionStore = {
   getState: jest.fn().mockReturnValue({ session: { publicKey: "" } }),
 } as any;
@@ -72,6 +85,28 @@ describe("sidebar message handlers", () => {
         enabled: true,
       });
       expect(mockOpen).toHaveBeenCalledWith({ windowId: 42 });
+    });
+
+    it("opens the sidebar when sender is an extension-origin tab (e.g. windows.create popup)", async () => {
+      // dApp-spawned signing popups created via browser.windows.create
+      // are full tabs and DO have sender.tab — but their sender.url is
+      // on the extension origin, distinguishing them from content scripts.
+      const extensionTabSender = {
+        tab: { id: 5 },
+        url: "chrome-extension://fake-id/index.html#/sign-transaction?foo=bar",
+        id: "fake-id",
+      };
+      const result = await popupMessageListener(
+        request as any,
+        mockSessionStore,
+        mockLocalStore,
+        mockKeyManager,
+        mockSessionTimer,
+        extensionTabSender,
+      );
+      expect(result).toEqual({});
+      expect(mockSetOptions).toHaveBeenCalled();
+      expect(mockOpen).toHaveBeenCalled();
     });
 
     it("opens the sidebar when sender is from this extension", async () => {

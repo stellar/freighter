@@ -18,6 +18,7 @@ import {
   saveAsset,
   saveCollectibleData,
   saveIsCollectible,
+  saveIsToken,
   saveFederationAddress,
 } from "popup/ducks/transactionSubmission";
 import { initialState as transactionSubmissionInitialState } from "popup/ducks/transactionSubmission";
@@ -125,6 +126,7 @@ describe("useSendQueryParams", () => {
       const { dispatchSpy } = renderHookWithStore();
 
       expect(dispatchSpy).toHaveBeenCalledWith(saveIsCollectible(true));
+      expect(dispatchSpy).toHaveBeenCalledWith(saveIsToken(false));
       expect(dispatchSpy).toHaveBeenCalledWith(
         saveCollectibleData({
           collectionAddress,
@@ -304,6 +306,7 @@ describe("useSendQueryParams", () => {
       const { dispatchSpy } = renderHookWithStore();
 
       expect(dispatchSpy).toHaveBeenCalledWith(saveAsset(validAsset));
+      expect(dispatchSpy).toHaveBeenCalledWith(saveIsCollectible(false));
     });
 
     it("should default to native when asset param is invalid and srcAsset is not set", () => {
@@ -332,6 +335,7 @@ describe("useSendQueryParams", () => {
       const { dispatchSpy } = renderHookWithStore(state as any);
 
       expect(dispatchSpy).toHaveBeenCalledWith(saveAsset("native"));
+      expect(dispatchSpy).toHaveBeenCalledWith(saveIsCollectible(false));
     });
 
     it("should default to native when asset param is missing and srcAsset is not set", () => {
@@ -354,6 +358,7 @@ describe("useSendQueryParams", () => {
       const { dispatchSpy } = renderHookWithStore(state as any);
 
       expect(dispatchSpy).toHaveBeenCalledWith(saveAsset("native"));
+      expect(dispatchSpy).toHaveBeenCalledWith(saveIsCollectible(false));
     });
 
     it("should not override existing asset when invalid asset param is provided", () => {

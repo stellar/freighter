@@ -14,6 +14,10 @@ import {
 import BigNumber from "bignumber.js";
 import { INDEXER_URL, INDEXER_V2_URL } from "@shared/constants/mercury";
 import {
+  AutoLockTimeoutMinutes,
+  DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
+} from "@shared/constants/autoLock";
+import {
   AssetListResponse,
   AssetsListItem,
   AssetsLists,
@@ -58,6 +62,9 @@ import {
   HorizonOperation,
   UserNotification,
   CollectibleContract,
+  DiscoverData,
+  RecentProtocolEntry,
+  SaveSettingsResponse,
 } from "./types";
 import {
   AccountBalancesInterface,
@@ -621,7 +628,7 @@ export const getTokenPrices = async (tokens: string[]) => {
   return parsedResponse.data;
 };
 
-export const getDiscoverData = async () => {
+export const getDiscoverData = async (): Promise<DiscoverData> => {
   const url = new URL(`${INDEXER_V2_URL}/protocols`);
   const response = await fetch(url.href);
   const parsedResponse = (await response.json()) as {
@@ -633,6 +640,8 @@ export const getDiscoverData = async () => {
         website_url: string;
         tags: string[];
         is_blacklisted: boolean;
+        background_url?: string;
+        is_trending: boolean;
       }[];
     };
   };
@@ -652,6 +661,8 @@ export const getDiscoverData = async () => {
     websiteUrl: entry.website_url,
     tags: entry.tags,
     isBlacklisted: entry.is_blacklisted,
+    backgroundUrl: entry.background_url,
+    isTrending: entry.is_trending,
   }));
 };
 
@@ -1612,45 +1623,49 @@ export const saveSettings = async ({
   isMemoValidationEnabled,
   isHideDustEnabled,
   isOpenSidebarByDefault,
+  autoLockTimeoutMinutes,
 }: {
   activePublicKey: string;
   isDataSharingAllowed: boolean;
   isMemoValidationEnabled: boolean;
   isHideDustEnabled: boolean;
   isOpenSidebarByDefault: boolean;
-}): Promise<Settings & IndexerSettings> => {
-  let response = {
+  autoLockTimeoutMinutes: AutoLockTimeoutMinutes;
+}): Promise<SaveSettingsResponse> => {
+  let response: SaveSettingsResponse = {
     allowList: DEFAULT_ALLOW_LIST,
     isDataSharingAllowed: false,
     networkDetails: MAINNET_NETWORK_DETAILS,
     networksList: DEFAULT_NETWORKS,
     isMemoValidationEnabled: true,
     isRpcHealthy: false,
-    userNotification: { enabled: false, message: "" },
-    settingsState: SettingsState.IDLE,
     isSorobanPublicEnabled: false,
     isNonSSLEnabled: false,
     isHideDustEnabled: true,
     isOpenSidebarByDefault: false,
-    error: "",
-    hiddenAssets: {},
+    autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
   };
 
   try {
-    response = await sendMessageToBackground({
+    const raw = await sendMessageToBackground<
+      SaveSettingsResponse | { error: string }
+    >({
       activePublicKey,
       isDataSharingAllowed,
       isMemoValidationEnabled,
       isHideDustEnabled,
       isOpenSidebarByDefault,
+      autoLockTimeoutMinutes,
       type: SERVICE_TYPES.SAVE_SETTINGS,
     });
+
+    if ("error" in raw && raw.error) {
+      throw new Error(raw.error);
+    }
+
+    response = raw as SaveSettingsResponse;
   } catch (e) {
     console.error(e);
-  }
-
-  if (response.error) {
-    throw new Error(response.error);
   }
 
   return response;
@@ -1857,7 +1872,11 @@ export const loadSettings = (): Promise<
     IndexerSettings &
     ExperimentalFeatures & { assetsLists: AssetsLists }
 > =>
-  sendMessageToBackground({
+  sendMessageToBackground<
+    Settings &
+      IndexerSettings &
+      ExperimentalFeatures & { assetsLists: AssetsLists }
+  >({
     activePublicKey: null,
     type: SERVICE_TYPES.LOAD_SETTINGS,
   });
@@ -2170,6 +2189,7 @@ export const simulateTokenTransfer = async (args: {
     address: string;
     pub_key: string;
     memo: string;
+    fee: string;
     params: {
       publicKey: string;
       destination: string;
@@ -2180,6 +2200,7 @@ export const simulateTokenTransfer = async (args: {
     address,
     pub_key: publicKey,
     memo: memo || "", // Backend requires memo as string, use empty string if undefined
+    fee: xlmToStroop(transactionFee).toFixed(),
     params,
     network_passphrase: networkDetails.networkPassphrase,
   };
@@ -2422,4 +2443,74 @@ export const rejectSigningRequest = async ({
   } catch (e) {
     console.error(e);
   }
+};
+
+export const getRecentProtocols = async (): Promise<RecentProtocolEntry[]> => {
+  const { recentProtocols, error } = await sendMessageToBackground({
+    activePublicKey: null,
+    type: SERVICE_TYPES.GET_RECENT_PROTOCOLS,
+  });
+
+  if (error) {
+    return [];
+  }
+
+  return recentProtocols || [];
+};
+
+export const addRecentProtocol = async (
+  websiteUrl: string,
+): Promise<RecentProtocolEntry[]> => {
+  const { recentProtocols, error } = await sendMessageToBackground({
+    activePublicKey: null,
+    websiteUrl,
+    type: SERVICE_TYPES.ADD_RECENT_PROTOCOL,
+  });
+
+  if (error) {
+    throw new Error(error);
+  }
+
+  return recentProtocols || [];
+};
+
+export const clearRecentProtocols = async (): Promise<
+  RecentProtocolEntry[]
+> => {
+  const { recentProtocols, error } = await sendMessageToBackground({
+    activePublicKey: null,
+    type: SERVICE_TYPES.CLEAR_RECENT_PROTOCOLS,
+  });
+
+  if (error) {
+    throw new Error(error);
+  }
+
+  return recentProtocols || [];
+};
+
+export const getHasSeenDiscoverWelcome = async (): Promise<boolean> => {
+  const { hasSeenDiscoverWelcome, error } = await sendMessageToBackground({
+    activePublicKey: null,
+    type: SERVICE_TYPES.GET_DISCOVER_WELCOME_SEEN,
+  });
+
+  if (error) {
+    throw new Error(error);
+  }
+
+  return !!hasSeenDiscoverWelcome;
+};
+
+export const dismissDiscoverWelcome = async (): Promise<boolean> => {
+  const { hasSeenDiscoverWelcome, error } = await sendMessageToBackground({
+    activePublicKey: null,
+    type: SERVICE_TYPES.DISMISS_DISCOVER_WELCOME,
+  });
+
+  if (error) {
+    throw new Error(error);
+  }
+
+  return !!hasSeenDiscoverWelcome;
 };

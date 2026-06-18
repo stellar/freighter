@@ -28,6 +28,7 @@ import { AccountHistory } from "../AccountHistory";
 import { ROUTES } from "popup/constants/routes";
 import { SettingsState } from "@shared/api/types";
 import { DEFAULT_ASSETS_LISTS } from "@shared/constants/soroban/asset-list";
+import { DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES } from "@shared/constants/autoLock";
 import * as ExtensionMessaging from "@shared/api/helpers/extensionMessaging";
 import * as GetIconFromTokenList from "@shared/api/helpers/getIconFromTokenList";
 import { AssetListResponse } from "@shared/constants/soroban/asset-list";
@@ -103,6 +104,7 @@ jest.spyOn(ApiInternal, "loadSettings").mockImplementation(() =>
     isNonSSLEnabled: false,
     experimentalFeaturesState: SettingsState.SUCCESS,
     assetsLists: DEFAULT_ASSETS_LISTS,
+    autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
   }),
 );
 
@@ -215,7 +217,7 @@ describe("AccountHistory", () => {
             networkDetails: TESTNET_NETWORK_DETAILS,
             networksList: DEFAULT_NETWORKS,
             isHideDustEnabled: true,
-    isOpenSidebarByDefault: false,
+            isOpenSidebarByDefault: false,
           },
         }}
       >

@@ -6,26 +6,66 @@ import {
   hashKeySelector,
   SessionState,
   timeoutAccountAccess,
+  lockHardwareWallet,
 } from "../ducks/session";
+import { flushSessionStore } from "../store";
 import { DataStorageAccess } from "./dataStorageAccess";
-import { TEMPORARY_STORE_ID } from "../../constants/localStorageTypes";
+import {
+  AUTO_LOCK_TIMEOUT_MINUTES_ID,
+  TEMPORARY_STORE_ID,
+} from "../../constants/localStorageTypes";
+import {
+  AutoLockTimeoutMinutes,
+  coerceAutoLockTimeoutMinutes,
+} from "@shared/constants/autoLock";
 import { encode, decode } from "./base64-arraybuffer";
 
-// 24 hours
-const SESSION_LENGTH = 60 * 24;
 export const SESSION_ALARM_NAME = "session-timer";
 
+/**
+ * Idle-based auto-lock timer.
+ *
+ * The browser session is locked after a configurable number of minutes
+ * of user inactivity. Any genuine user interaction in an extension page
+ * pings the background, which calls `resetSession()` to rearm the alarm
+ * at `now + configured timeout`. The alarm is implemented as a named
+ * `browser.alarms` entry, so creating it with the same name replaces
+ * any in-flight deadline atomically — no separate clear step needed.
+ */
 export class SessionTimer {
-  duration = 1000 * 60 * SESSION_LENGTH;
-  runningTimeout: null | ReturnType<typeof setTimeout> = null;
-  constructor(duration?: number) {
-    this.duration = duration || this.duration;
+  private readonly localStore: DataStorageAccess;
+
+  constructor(localStore: DataStorageAccess) {
+    this.localStore = localStore;
   }
 
-  startSession() {
-    browser?.alarms.create(SESSION_ALARM_NAME, {
-      delayInMinutes: SESSION_LENGTH,
-    });
+  private async getTimeoutMinutes(): Promise<AutoLockTimeoutMinutes> {
+    const stored = await this.localStore.getItem(AUTO_LOCK_TIMEOUT_MINUTES_ID);
+    return coerceAutoLockTimeoutMinutes(stored);
+  }
+
+  /**
+   * (Re)arm the auto-lock alarm. Reads the persisted timeout on every
+   * call so that settings changes take effect immediately.
+   */
+  async resetSession() {
+    const delayInMinutes = await this.getTimeoutMinutes();
+    await browser?.alarms.create(SESSION_ALARM_NAME, { delayInMinutes });
+  }
+
+  /**
+   * Alias kept so unlock paths can read naturally
+   * (`sessionTimer.startSession()`).
+   */
+  async startSession() {
+    await this.resetSession();
+  }
+
+  /**
+   * Cancel any pending auto-lock alarm. Used by explicit sign-out.
+   */
+  async stopSession() {
+    await browser?.alarms.clear(SESSION_ALARM_NAME);
   }
 }
 
@@ -266,5 +306,11 @@ export const clearSession = async ({
   sessionStore,
 }: ClearSession) => {
   sessionStore.dispatch(timeoutAccountAccess());
+  // Locks hardware-wallet sessions too. `timeoutAccountAccess` clears
+  // the hot-wallet hashKey, but HW unlocked-state is read from
+  // `localStore.isHardwareWalletActive` and is unaffected — so without
+  // this dispatch the idle alarm would be a no-op on HW-only sessions.
+  sessionStore.dispatch(lockHardwareWallet());
+  await flushSessionStore(sessionStore);
   await localStore.remove(TEMPORARY_STORE_ID);
 };

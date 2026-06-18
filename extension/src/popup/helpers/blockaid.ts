@@ -4,7 +4,6 @@ import { useSelector } from "react-redux";
 
 import { INDEXER_URL } from "@shared/constants/mercury";
 import { NetworkDetails } from "@shared/constants/stellar";
-import { isCustomNetwork } from "@shared/helpers/stellar";
 import {
   BlockAidScanAssetResult,
   BlockAidScanSiteResult,
@@ -21,7 +20,22 @@ import {
 import { isDev } from "@shared/helpers/dev";
 import { SecurityLevel } from "popup/constants/blockaid";
 import { fetchJson } from "./fetch";
+import { captureFetchError } from "./captureFetchError";
 import { Action } from "constants/request";
+
+const isPlaywrightTestEnv = () =>
+  typeof window !== "undefined" &&
+  (window as unknown as { IS_PLAYWRIGHT?: string }).IS_PLAYWRIGHT === "true";
+
+/**
+ * Single source of truth for whether Blockaid scanning is applicable on
+ * the active network. Blockaid only meaningfully supports Stellar mainnet,
+ * so we suppress all client-side scanning, reporting, and "unable to scan"
+ * UI on every other network. The IS_PLAYWRIGHT carve-out lets e2e tests
+ * exercise the scan code paths against testnet fixtures.
+ */
+export const isBlockaidEnabled = (networkDetails: NetworkDetails) =>
+  isMainnet(networkDetails) || isPlaywrightTestEnv();
 
 export const ATTACK_TO_DISPLAY = {
   signature_farming:
@@ -46,29 +60,26 @@ export const useScanSite = () => {
   const [error, setError] = useState(null as string | null);
   const [isLoading, setLoading] = useState(true);
 
-  const scanSite = async (url: string) => {
+  const scanSite = async (url: string, networkDetails: NetworkDetails) => {
     setLoading(true);
     try {
-      const res = await fetch(
-        `${INDEXER_URL}/scan-dapp?url=${encodeURIComponent(url)}`,
-      );
-      const response = (await res.json()) as {
-        data: BlockAidScanSiteResult;
-        error: string | null;
-      };
-
-      if (!res.ok) {
-        setError(response.error || "Failed to scan site");
+      if (!isBlockaidEnabled(networkDetails)) {
+        // Blockaid only supports mainnet; treat off-mainnet as a no-op.
         setLoading(false);
         return null;
       }
+      const response = await fetchJson<{
+        data: BlockAidScanSiteResult;
+        error: string | null;
+      }>(`${INDEXER_URL}/scan-dapp?url=${encodeURIComponent(url)}`);
+
       setData(response.data);
       emitMetric(METRIC_NAMES.blockaidDomainScan);
       setLoading(false);
       return response.data;
     } catch (err) {
       setError("Failed to scan site");
-      Sentry.captureException(err);
+      captureFetchError(err);
       setLoading(false);
       return null;
     }
@@ -94,8 +105,8 @@ export const useScanTx = () => {
   ) => {
     setLoading(true);
     try {
-      if (isCustomNetwork(networkDetails)) {
-        setError("Scanning transactions is not supported on custom networks");
+      if (!isBlockaidEnabled(networkDetails)) {
+        setError("Scanning transactions is not supported on this network");
         setLoading(false);
         return null;
       }
@@ -129,9 +140,7 @@ export const useScanTx = () => {
       return response.data;
     } catch (err) {
       setError("Failed to scan transaction");
-      Sentry.captureException(
-        err instanceof Error ? err : new Error("Failed to scan transaction"),
-      );
+      captureFetchError(err);
       setLoading(false);
     }
     return null;
@@ -178,39 +187,32 @@ export const scanAsset = async (
   signal?: AbortSignal,
 ): Promise<BlockAidScanAssetResult | null> => {
   try {
-    // Allow scanning in test environment (Playwright) even on testnet for e2e testing
-    const isTestEnv =
-      typeof window !== "undefined" && (window as any).IS_PLAYWRIGHT === "true";
-    if (!isMainnet(networkDetails) && !isTestEnv) {
+    if (!isBlockaidEnabled(networkDetails)) {
       /* Scanning assets is only supported on Mainnet */
       return null;
     }
-    const res = await fetch(
+    const response = await fetchJson<ScanAssetResponse>(
       `${INDEXER_URL}/scan-asset?address=${encodeURIComponent(address)}`,
-      {
-        signal,
-      },
+      { signal },
     );
-    const response = (await res.json()) as ScanAssetResponse;
 
-    if (!res.ok || response.error) {
-      Sentry.captureException(response.error || "Failed to scan asset");
+    if (response.error) {
+      Sentry.captureException(
+        new Error(response.error || "Failed to scan asset"),
+      );
       emitMetric(METRIC_NAMES.blockaidAssetScanFailed);
-      // Return null to indicate unable to scan
       return null;
     }
 
     emitMetric(METRIC_NAMES.blockaidAssetScan);
     if (!response.data) {
-      // Return null to indicate unable to scan
       return null;
     }
     return response.data;
   } catch (err) {
     console.error("Failed to scan asset");
-    Sentry.captureException(err);
+    captureFetchError(err);
   }
-  // Return null to indicate unable to scan
   return null;
 };
 
@@ -301,10 +303,15 @@ export const useIsTxSuspicious = () => {
  */
 export const useShouldTreatAssetAsUnableToScan = () => {
   const blockaidOverrideState = useBlockaidOverrideState();
+  const networkDetails = useSelector(settingsNetworkDetailsSelector);
   return useCallback(
     (blockaidData?: BlockAidScanAssetResult | null) =>
-      shouldTreatAssetAsUnableToScan(blockaidData, blockaidOverrideState),
-    [blockaidOverrideState],
+      shouldTreatAssetAsUnableToScan(
+        blockaidData,
+        blockaidOverrideState,
+        networkDetails,
+      ),
+    [blockaidOverrideState, networkDetails],
   );
 };
 
@@ -314,10 +321,15 @@ export const useShouldTreatAssetAsUnableToScan = () => {
  */
 export const useShouldTreatTxAsUnableToScan = () => {
   const blockaidOverrideState = useBlockaidOverrideState();
+  const networkDetails = useSelector(settingsNetworkDetailsSelector);
   return useCallback(
     (blockaidData?: BlockAidScanTxResult | null) =>
-      shouldTreatTxAsUnableToScan(blockaidData, blockaidOverrideState),
-    [blockaidOverrideState],
+      shouldTreatTxAsUnableToScan(
+        blockaidData,
+        blockaidOverrideState,
+        networkDetails,
+      ),
+    [blockaidOverrideState, networkDetails],
   );
 };
 
@@ -379,26 +391,36 @@ const getSuspiciousFromBlockaidOverrideState = (
 
 /**
  * Checks if asset should be treated as unable to scan based on blockaid override state
+ * Precedence: dev override > network gate > scan data.
  */
 export const shouldTreatAssetAsUnableToScan = (
-  blockaidData?: BlockAidScanAssetResult | null,
-  blockaidOverrideState?: string | null,
+  blockaidData: BlockAidScanAssetResult | null | undefined,
+  blockaidOverrideState: string | null | undefined,
+  networkDetails: NetworkDetails,
 ): boolean => {
   if (isDev && blockaidOverrideState === SecurityLevel.UNABLE_TO_SCAN) {
     return true;
+  }
+  if (!isBlockaidEnabled(networkDetails)) {
+    return false;
   }
   return isAssetUnableToScan(blockaidData);
 };
 
 /**
  * Checks if transaction should be treated as unable to scan based on blockaid override state
+ * Precedence: dev override > network gate > scan data.
  */
 export const shouldTreatTxAsUnableToScan = (
-  blockaidData?: BlockAidScanTxResult | null,
-  blockaidOverrideState?: string | null,
+  blockaidData: BlockAidScanTxResult | null | undefined,
+  blockaidOverrideState: string | null | undefined,
+  networkDetails: NetworkDetails,
 ): boolean => {
   if (isDev && blockaidOverrideState === SecurityLevel.UNABLE_TO_SCAN) {
     return true;
+  }
+  if (!isBlockaidEnabled(networkDetails)) {
+    return false;
   }
   return isTxUnableToScan(blockaidData);
 };
@@ -462,14 +484,32 @@ export const isBlockaidWarning = (resultType: string) =>
   resultType === "Warning" || resultType === "Spam";
 
 /**
- * Determines site security states from scan data and override state
- * @param scanData - The site scan result from Blockaid
- * @param blockaidOverrideState - Override state for dev mode (takes precedence)
- * @returns Object with isMalicious, isSuspicious, and isUnableToScan flags
+ * Determines site security states from scan data and override state.
+ *
+ * Precedence (high → low): dev override > network gate > scan data.
+ *
+ * - When a dev override is set (and `isDev`), the override drives the
+ *   returned flags directly — useful for exercising UI states locally
+ *   without a real Blockaid result.
+ * - Otherwise, when `networkDetails` is null (not yet resolved) or the
+ *   active network is one where Blockaid is not applicable
+ *   (`!isBlockaidEnabled(...)`, e.g. testnet/futurenet/custom), all flags
+ *   are returned `false` so the caller renders no Blockaid-driven UI
+ *   (no malicious/suspicious banner, no "unable to scan" affordance).
+ * - Otherwise, the scan data drives the flags.
+ *
+ * @param scanData - The site scan result from Blockaid (undefined while a
+ *                   scan is in flight, null when the scan failed).
+ * @param blockaidOverrideState - Override state for dev mode (takes precedence).
+ * @param networkDetails - The active network. Pass null if it has not
+ *                         resolved yet; off-mainnet networks short-circuit
+ *                         to all-clear flags.
+ * @returns Object with isMalicious, isSuspicious, and isUnableToScan flags.
  */
 export const getSiteSecurityStates = (
   scanData: BlockAidScanSiteResult | null | undefined,
   blockaidOverrideState: string | null | undefined,
+  networkDetails: NetworkDetails | null,
 ): {
   isMalicious: boolean;
   isSuspicious: boolean;
@@ -481,6 +521,17 @@ export const getSiteSecurityStates = (
       isMalicious: blockaidOverrideState === SecurityLevel.MALICIOUS,
       isSuspicious: blockaidOverrideState === SecurityLevel.SUSPICIOUS,
       isUnableToScan: blockaidOverrideState === SecurityLevel.UNABLE_TO_SCAN,
+    };
+  }
+
+  // Network gate: when Blockaid is not applicable on the active network
+  // (or networkDetails has not resolved yet), suppress all security UI.
+  // This matches the "scan in-flight" branch below so UI stays neutral.
+  if (!networkDetails || !isBlockaidEnabled(networkDetails)) {
+    return {
+      isMalicious: false,
+      isSuspicious: false,
+      isUnableToScan: false,
     };
   }
 
@@ -526,20 +577,20 @@ export const useAsyncSiteScan = <T>(
   const { scanSite: scanSiteFn } = useScanSite();
 
   const scanSite = useCallback(
-    async (currentPayload: T) => {
+    async (currentPayload: T, networkDetails: NetworkDetails) => {
       if (!domain) {
         return;
       }
 
       // Scan asynchronously without blocking
-      scanSiteFn(domain)
+      scanSiteFn(domain, networkDetails)
         .then((scanResult) => {
           const updatedPayload = updatePayload(currentPayload, scanResult);
           dispatch({ type: "FETCH_DATA_SUCCESS", payload: updatedPayload });
         })
         .catch((error) => {
           console.error("Failed to scan site:", error);
-          Sentry.captureException(`Failed to call scan site: ${error}`);
+          captureFetchError(error);
           const updatedPayload = updatePayload(currentPayload, null);
           dispatch({ type: "FETCH_DATA_SUCCESS", payload: updatedPayload });
         });
@@ -579,7 +630,7 @@ export const fetchSiteScanData = async <T>(
     dispatch({ type: "FETCH_DATA_SUCCESS", payload: updatedPayload });
   } catch (error) {
     console.error("Failed to scan site:", error);
-    Sentry.captureException(`Failed to call scan site: ${error}`);
+    captureFetchError(error);
     const updatedPayload = updatePayload
       ? updatePayload(initialPayload, null)
       : ({ ...initialPayload, scanData: null } as T);
@@ -593,7 +644,7 @@ export const scanAssetBulk = async (
   signal?: AbortSignal,
 ): Promise<BlockAidBulkScanAssetResult | null> => {
   try {
-    if (!isMainnet(networkDetails)) {
+    if (!isBlockaidEnabled(networkDetails)) {
       /* Scanning assets is only supported on Mainnet */
       return null;
     }
@@ -601,11 +652,14 @@ export const scanAssetBulk = async (
     addressList.forEach((address) => {
       url.searchParams.append("asset_ids", address);
     });
-    const response = await fetch(url.href, { signal });
-    const resJson = (await response.json()) as ScanAssetBulkResponse;
+    const resJson = await fetchJson<ScanAssetBulkResponse>(url.href, {
+      signal,
+    });
 
-    if (!response.ok || resJson.error) {
-      Sentry.captureException(resJson.error || "Failed to bulk scan assets");
+    if (resJson.error) {
+      Sentry.captureException(
+        new Error(resJson.error || "Failed to bulk scan assets"),
+      );
     }
 
     emitMetric(METRIC_NAMES.blockaidAssetScan);
@@ -615,7 +669,7 @@ export const scanAssetBulk = async (
     return resJson.data;
   } catch (err) {
     console.error("Failed to bulk scan asset");
-    Sentry.captureException(err);
+    captureFetchError(err);
   }
   return null;
 };
@@ -632,7 +686,7 @@ export const reportAssetWarning = async ({
   networkDetails,
 }: ReportAssetWarningParams) => {
   try {
-    if (!isMainnet(networkDetails)) {
+    if (!isBlockaidEnabled(networkDetails)) {
       /* Reporting assets is only supported on Mainnet */
       return {} as ReportAssetWarningResponse;
     }
@@ -643,7 +697,9 @@ export const reportAssetWarning = async ({
     );
 
     if (res.error) {
-      Sentry.captureException(res.error || "Failed to report asset warning");
+      Sentry.captureException(
+        new Error(res.error || "Failed to report asset warning"),
+      );
     }
 
     emitMetric(METRIC_NAMES.blockaidAssetScan);
@@ -653,7 +709,7 @@ export const reportAssetWarning = async ({
     return res.data;
   } catch (err) {
     console.error("Failed to report asset warning");
-    Sentry.captureException(err);
+    captureFetchError(err);
   }
   return {} as ReportAssetWarningResponse;
 };
@@ -662,14 +718,20 @@ interface ReportTransactionWarningParams {
   details: string;
   requestId: string;
   event: string;
+  networkDetails: NetworkDetails;
 }
 
 export const reportTransactionWarning = async ({
   details,
   requestId,
   event,
+  networkDetails,
 }: ReportTransactionWarningParams) => {
   try {
+    if (!isBlockaidEnabled(networkDetails)) {
+      /* Reporting transaction warnings is only supported on Mainnet */
+      return {} as ReportTransactionWarningResponse;
+    }
     const res = await fetchJson<ReportTransactionWarningResponse>(
       `${INDEXER_URL}/report-transaction-warning?details=${encodeURIComponent(
         details,
@@ -678,7 +740,7 @@ export const reportTransactionWarning = async ({
 
     if (res.error) {
       Sentry.captureException(
-        res.error || "Failed to report transaction warning",
+        new Error(res.error || "Failed to report transaction warning"),
       );
     }
 
@@ -689,7 +751,7 @@ export const reportTransactionWarning = async ({
     return res.data;
   } catch (err) {
     console.error("Failed to report transaction warning");
-    Sentry.captureException(err);
+    captureFetchError(err);
   }
   return {} as ReportTransactionWarningResponse;
 };

@@ -34,6 +34,7 @@ export const METRIC_NAMES = {
   viewAbout: "loaded screen: about",
   viewManageAssetsLists: "loaded screen: manage assets lists",
   viewAdvancedSettings: "loaded screen: advanced settings",
+  viewAutoLockTimer: "loaded screen: auto-lock timer",
 
   viewSendPayment: "loaded screen: send payment",
   sendPaymentTo: "loaded screen: send payment to",
@@ -56,7 +57,9 @@ export const METRIC_NAMES = {
     "loaded screen: account migration migration complete",
 
   sendPaymentRecentAddress: "send payment: recent address",
+  sendPaymentSelectAsset: "loaded screen: send payment select asset",
   sendPaymentSetMax: "send payment: set max",
+  sendPaymentFeeBreakdownOpened: "send payment: fee breakdown opened",
   sendPaymentTypePayment: "send payment: selected type payment",
   sendPaymentTypePathPayment: "send payment: selected type path payment",
   sendPaymentSuccess: "send payment: payment success",
@@ -88,7 +91,12 @@ export const METRIC_NAMES = {
   viewEditNetwork: "loaded screen: edit network",
   viewNetworkSettings: "loaded screen: network settings",
   viewAddFunds: "loaded screen: add fund",
-  discover: "loaded screen: discover",
+
+  viewDiscover: "loaded screen: discover",
+  discoverProtocolOpened: "discover: protocol opened",
+  discoverProtocolDetailsViewed: "discover: protocol details viewed",
+  discoverProtocolOpenedFromDetails: "discover: protocol opened from details",
+  discoverWelcomeModalViewed: "discover: welcome modal viewed",
 
   manageAssetAddAsset: "manage asset: add asset",
   manageAssetAddToken: "manage asset: add token",

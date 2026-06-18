@@ -60,7 +60,7 @@ function useGetGrantAccessData(url: string) {
       dispatch({ type: "FETCH_DATA_SUCCESS", payload: initialPayload });
 
       // Fetch scan data asynchronously without blocking UI
-      scanSite(initialPayload);
+      scanSite(initialPayload, appData.settings.networkDetails);
 
       return initialPayload;
     } catch (error) {

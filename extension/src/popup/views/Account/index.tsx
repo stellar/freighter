@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useContext } from "react";
+import React, { useEffect, useRef, useContext, useState } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { Notification } from "@stellar/design-system";
@@ -38,7 +38,16 @@ import {
   useGetIcons,
   RequestState as IconsRequestState,
 } from "./hooks/useGetIcons";
+import { useStableSortedBalances } from "./hooks/useStableSortedBalances";
 import { AccountTabsContext, TabsList } from "./contexts/activeTabContext";
+
+import {
+  Sheet,
+  SheetContent,
+  ScreenReaderOnly,
+  SheetTitle,
+} from "popup/basics/shadcn/Sheet";
+import { Discover } from "popup/views/Discover";
 
 import "popup/metrics/authServices";
 import "./styles.scss";
@@ -50,6 +59,7 @@ export const Account = () => {
   const { userNotification } = useSelector(settingsSelector);
   const currentAccountName = useSelector(accountNameSelector);
   const { activeTab } = useContext(AccountTabsContext);
+  const [isDiscoverOpen, setIsDiscoverOpen] = useState(false);
 
   const isFullscreenModeEnabled = isFullscreenMode();
   const {
@@ -102,6 +112,20 @@ export const Account = () => {
     accountData.data.type === AppDataType.RESOLVED
       ? accountData.data?.isScanAppended
       : false;
+
+  // Derive `balances` and `tokenPrices` *before* the early returns below
+  // so that `useStableSortedBalances` is called unconditionally on every
+  // render (Rules of Hooks). When `accountData` is in `RequestState.ERROR`
+  // its reducer sets `data: null`, so `accountBalances` is null and we
+  // pass an empty list — the helpers below stay safe and the error UI
+  // farther down can still render.
+  const balances = accountBalances?.balances ?? [];
+  const tokenPrices =
+    accountData.state === RequestState.SUCCESS &&
+    accountData.data.type === AppDataType.RESOLVED
+      ? accountData.data?.tokenPrices
+      : undefined;
+  const sortedBalances = useStableSortedBalances(balances, tokenPrices);
 
   useEffect(() => {
     const getData = async () => {
@@ -168,9 +192,7 @@ export const Account = () => {
       ? iconsData?.data?.icons
       : {};
 
-  const tokenPrices = resolvedData?.tokenPrices || {};
-  const balances = resolvedData?.balances.balances!;
-  const totalBalanceUsd = getTotalUsd(tokenPrices, balances);
+  const totalBalanceUsd = getTotalUsd(tokenPrices ?? {}, balances);
   const roundedTotalBalanceUsd =
     !hasError &&
     isMainnet(resolvedData!.networkDetails) &&
@@ -204,6 +226,7 @@ export const Account = () => {
         isFunded={!!resolvedData?.balances?.isFunded}
         refreshHiddenCollectibles={refreshHiddenCollectibles}
         isCollectibleHidden={isCollectibleHidden}
+        onDiscoverClick={() => setIsDiscoverOpen(true)}
       />
       <View.Content hasNoPadding>
         <div className="AccountView" data-testid="account-view">
@@ -266,9 +289,12 @@ export const Account = () => {
                   data-testid="account-assets"
                 >
                   <AccountAssets
-                    balances={resolvedData.balances}
+                    balances={{
+                      ...resolvedData.balances,
+                      balances: sortedBalances,
+                    }}
                     historyData={historyData.data}
-                    assetPrices={tokenPrices}
+                    assetPrices={tokenPrices ?? {}}
                     assetIcons={resolvedIcons}
                   />
                 </div>
@@ -300,6 +326,22 @@ export const Account = () => {
             />
           </View.Footer>
         )}
+      <Sheet
+        open={isDiscoverOpen}
+        onOpenChange={(open) => !open && setIsDiscoverOpen(false)}
+      >
+        <SheetContent
+          onOpenAutoFocus={(e) => e.preventDefault()}
+          aria-describedby={undefined}
+          side="bottom"
+          className="AccountView__discover-sheet"
+        >
+          <ScreenReaderOnly>
+            <SheetTitle>{t("Discover")}</SheetTitle>
+          </ScreenReaderOnly>
+          <Discover onClose={() => setIsDiscoverOpen(false)} />
+        </SheetContent>
+      </Sheet>
     </>
   );
 };

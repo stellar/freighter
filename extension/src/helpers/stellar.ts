@@ -82,7 +82,7 @@ export const getTransactionInfo = (search: string) => {
 };
 
 export function isAsset(
-  value: Asset | { code: string; issuer: string },
+  value: Asset | { code: string; issuer?: string },
 ): value is Asset {
   return (value as Asset).getIssuer !== undefined;
 }

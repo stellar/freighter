@@ -47,7 +47,7 @@ describe("Create account message listener", () => {
       mockSessionStore,
       mockDataStorage,
       mockKeyManager,
-      testAlarm,
+      testAlarm as any,
       { id: "fake-extension-id" },
     )) as Awaited<ReturnType<typeof createAccount>>;
 
@@ -74,7 +74,7 @@ describe("Create account message listener", () => {
       mockSessionStore,
       mockDataStorage,
       mockKeyManager,
-      testAlarm,
+      testAlarm as any,
       { id: "fake-extension-id" },
     )) as Awaited<ReturnType<typeof createAccount>>;
     const keyId = await mockDataStorage.getItem(KEY_ID);
@@ -88,7 +88,7 @@ describe("Create account message listener", () => {
       mockSessionStore,
       mockDataStorage,
       mockKeyManager,
-      testAlarm,
+      testAlarm as any,
       { id: "fake-extension-id" },
     )) as Awaited<ReturnType<typeof createAccount>>;
     const secondKeyId = await mockDataStorage.getItem(KEY_ID);
@@ -111,7 +111,7 @@ describe("Create account message listener", () => {
       mockSessionStore,
       mockDataStorage,
       mockKeyManager,
-      testAlarm,
+      testAlarm as any,
       { id: "fake-extension-id" },
     )) as Awaited<ReturnType<typeof createAccount>>;
     const keyId = await mockDataStorage.getItem(KEY_ID);
@@ -125,7 +125,7 @@ describe("Create account message listener", () => {
       mockSessionStore,
       mockDataStorage,
       mockKeyManager,
-      testAlarm,
+      testAlarm as any,
       { id: "fake-extension-id" },
     )) as Awaited<ReturnType<typeof createAccount>>;
     const secondKeyId = await mockDataStorage.getItem(KEY_ID);

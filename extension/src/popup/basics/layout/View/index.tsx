@@ -90,7 +90,8 @@ const ViewAppHeader: React.FC<ViewAppHeaderProps> = ({
           <div className="View__header__box View__header__box--center">
             <Text
               as="h2"
-              size="md"
+              size="sm"
+              weight="medium"
               role="heading"
               aria-level={2}
               data-testid="AppHeaderPageTitle"
