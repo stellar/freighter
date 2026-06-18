@@ -23,6 +23,10 @@ updates:
         applies-to: version-updates
         update-types:
           - "major"
+      security:
+        applies-to: security-updates
+        patterns:
+          - "*"
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
@@ -33,4 +37,7 @@ updates:
     groups:
       all-actions:
         applies-to: version-updates
+        patterns: ["*"]
+      actions-security:
+        applies-to: security-updates
         patterns: ["*"]
