@@ -697,6 +697,104 @@ test.describe("Asset Diffs in Transaction History", () => {
     await expect(creditValue).toContainText("XLM");
   });
 
+  test("Marks a Soroban self-transfer (own base G... -> own muxed M...) as Sent, not Received", async ({
+    page,
+    extensionId,
+    context,
+  }) => {
+    // MDF32...LVH4 is a muxed (M...) form of TEST_ACCOUNT (GDF32...ZEFY).
+    // A transfer from the base account to one of its own muxed addresses is a
+    // self-transfer and must stay Sent (debit), even though `to` resolves to
+    // this wallet. Regression guard for processAssetBalanceChanges.
+    const TEST_ACCOUNT_MUXED =
+      "MDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWYAAAAAAAAAAAFLVH4";
+
+    await stubAccountBalances(page);
+    await stubTokenDetails(page);
+
+    // A valid (non-contract) envelope so getAttrsFromSorobanHorizonOp parses it
+    // and returns null instead of throwing; the asset_balance_changes drive the
+    // credit/debit classification under test.
+    const sourceKeypair = Keypair.fromSecret(
+      "SBPQUZ6G4FZNWFHKUWC5BEYWF6R52E3SEP7R3GWYSM2XTKGF5LNTWW4R",
+    );
+    const sourceAccount = {
+      accountId: () => sourceKeypair.publicKey(),
+      sequenceNumber: () => "376114581078717",
+      incrementSequenceNumber: () => {},
+    };
+    const envelopeXdr = new TransactionBuilder(sourceAccount as any, {
+      fee: "100",
+      networkPassphrase: Networks.TESTNET,
+    })
+      .addOperation(
+        Operation.payment({
+          destination: TEST_ACCOUNT,
+          asset: Asset.native(),
+          amount: "1.0000000",
+        }),
+      )
+      .setTimeout(30)
+      .build()
+      .toXDR();
+
+    const stubOverrides = async () => {
+      await context.route("*/**/account-history/*", async (route) => {
+        const json = [
+          {
+            amount: "100.0000000",
+            asset_type: "native",
+            created_at: "2025-03-21T22:28:46Z",
+            from: TEST_ACCOUNT,
+            id: "100000000010",
+            paging_token: "100000000010",
+            source_account: TEST_ACCOUNT,
+            to: TEST_ACCOUNT_MUXED,
+            transaction_hash:
+              "self1234def456ghi789jkl012mno345pqr678stu901vwx234yz567890",
+            transaction_successful: true,
+            type: "invoke_host_function",
+            type_i: 24,
+            asset_balance_changes: [
+              {
+                asset_type: "native",
+                from: TEST_ACCOUNT,
+                to: TEST_ACCOUNT_MUXED,
+                amount: "100.0000000",
+              },
+            ],
+            transaction_attr: {
+              hash: "self1234def456ghi789jkl012mno345pqr678stu901vwx234yz567890",
+              memo: null,
+              fee_charged: "100",
+              operation_count: 1,
+              envelope_xdr: envelopeXdr,
+            },
+          },
+        ];
+        await route.fulfill({ json });
+      });
+    };
+
+    await loginToTestAccount({ page, extensionId, context, stubOverrides });
+    await page.getByTestId("nav-link-account-history").click();
+
+    const amountCell = page
+      .getByTestId("history-item-amount-component")
+      .first();
+    await expect(amountCell).toBeVisible({ timeout: 10000 });
+
+    // The self-transfer must show a negative (debit) amount, not a credit.
+    await expect(amountCell).toContainText("-100");
+    await expect(amountCell).toHaveClass(/debit/);
+    await expect(amountCell).not.toContainText("+");
+
+    // The transaction detail must label it Sent, never Received.
+    await page.getByTestId("history-item").first().click();
+    await expect(page.locator(".AssetDiff__label.debit")).toContainText("Sent");
+    await expect(page.locator(".AssetDiff__label.credit")).toHaveCount(0);
+  });
+
   test("Display both credit and debit for swap operation", async ({
     page,
     extensionId,

@@ -461,8 +461,13 @@ const processAssetBalanceChanges = async (
       assetIssuer = change.asset_issuer || null;
     }
 
-    // Determine if this is a credit (receiving) or debit (sending)
-    const isCredit = isSameAccount(change.to, publicKey);
+    // Determine if this is a credit (receiving) or debit (sending).
+    // Require the sender not to be this wallet so a self-transfer (e.g. base
+    // G... -> own M... address) stays a debit, matching the classic payment and
+    // Soroban transfer paths which default self-transfers to Sent.
+    const isCredit =
+      isSameAccount(change.to, publicKey) &&
+      !isSameAccount(change.from, publicKey);
     // Destination is the counterparty (from for credits, to for debits)
     const destination = isCredit ? change.from : change.to;
 
