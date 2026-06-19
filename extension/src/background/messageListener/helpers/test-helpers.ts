@@ -63,6 +63,10 @@ const mockStorageApi = {
     }
   }),
 
+  getBytesInUse: jest.fn(async () => 0),
+
+  getKeys: jest.fn(async () => Object.keys(mockStore)),
+
   // Just enough to satisfy the type
   onChanged: {
     addListener: jest.fn(),
