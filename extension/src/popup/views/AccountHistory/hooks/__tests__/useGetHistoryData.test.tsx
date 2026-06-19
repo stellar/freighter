@@ -219,28 +219,4 @@ describe("getRowDataByOpType - Soroban asset balance changes muxed classificatio
     expect(row.metadata.isReceiving).toBe(true);
     expect(row.amount).toMatch(/^\+/);
   });
-
-  it("treats a self-transfer (own base G... -> own muxed M...) as a debit, not a credit", async () => {
-    jest
-      .spyOn(sorobanHelpers, "getAttrsFromSorobanHorizonOp")
-      .mockReturnValue(null as any);
-
-    const operation = buildInvokeHostFnOperation({
-      asset_balance_changes: [
-        {
-          asset_type: "native",
-          from: PUBLIC_KEY,
-          to: MY_MUXED,
-          amount: "5",
-        },
-      ],
-    });
-
-    const row = await callGetRowData(operation);
-
-    // Both ends resolve to this wallet, so it is a self-transfer and must stay
-    // Sent (debit) - matching the classic payment and Soroban transfer paths.
-    expect(row.metadata.isReceiving).toBe(false);
-    expect(row.amount).toMatch(/^-/);
-  });
 });

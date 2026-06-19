@@ -259,6 +259,39 @@ test("Send doesn't throw error when account is unfunded", async ({
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
 });
 
+test("Blocks sending to your own account (base G... and muxed M...)", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  test.slow();
+  // The logged-in test account and one of its muxed (M...) forms.
+  const OWN_BASE = "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY";
+  const OWN_MUXED =
+    "MDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWYAAAAAAAAAAAFLVH4";
+
+  await loginToTestAccount({ page, extensionId, context });
+  await page.getByTestId("nav-link-send").click({ force: true });
+
+  await expect(page.getByTestId("token-list")).toBeVisible();
+  await page.getByTestId("SendRow-native").click();
+
+  // Sending to your own base (G...) address is blocked.
+  await page.getByTestId("send-to-input").fill(OWN_BASE);
+  await expect(page.getByText("You cannot send to yourself")).toBeVisible({
+    timeout: 10000,
+  });
+  await expect(page.getByTestId("send-to-btn-continue")).toHaveCount(0);
+  await expect(page.getByTestId("send-amount-amount-input")).toHaveCount(0);
+
+  // Sending to one of your own muxed (M...) addresses is also blocked.
+  await page.getByTestId("send-to-input").fill(OWN_MUXED);
+  await expect(page.getByText("You cannot send to yourself")).toBeVisible({
+    timeout: 10000,
+  });
+  await expect(page.getByTestId("send-to-btn-continue")).toHaveCount(0);
+});
+
 test("Send XLM below minimum to unfunded destination shows warning", async ({
   page,
   extensionId,
