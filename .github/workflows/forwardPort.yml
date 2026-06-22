@@ -5,6 +5,9 @@ name: Forward-port emergency-release to master
 # them — which has been silently forgotten before, regressing master. This
 # workflow opens (and reuses) a standing PR to port those commits forward so the
 # port can't be forgotten. It is a no-op when master already has everything.
+#
+# The port branch keeps master's version files so the release's patch-version
+# bump does not ride the port into master.
 
 on:
   push:
@@ -12,7 +15,7 @@ on:
       - emergency-release
 
 permissions:
-  contents: read
+  contents: write
   pull-requests: write
 
 jobs:
@@ -38,6 +41,27 @@ jobs:
             echo "$COUNT commit(s) on emergency-release not yet on master."
           fi
 
+      - name: Build forward-port branch (excluding the release version bump)
+        if: steps.check.outputs.count != '0'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # Start from the emergency-release tip...
+          git checkout -B auto/forward-port-emergency-release HEAD
+
+          # ...but restore master's version files so the release's patch-version
+          # bump (package.json + manifest v3.json) does NOT get ported into
+          # master, where it would conflict or wrongly set master's version.
+          git checkout origin/master -- \
+            extension/package.json \
+            extension/public/static/manifest/v3.json
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: forward-port — keep master's version (drop release bump)"
+          fi
+
+          git push -f origin auto/forward-port-emergency-release
+
       - name: Open or update forward-port PR
         if: steps.check.outputs.count != '0'
         env:
@@ -45,7 +69,7 @@ jobs:
         run: |
           # Reuse the existing open PR if one is already open (it updates itself
           # on subsequent pushes); GitHub forbids a duplicate base+head PR anyway.
-          EXISTING=$(gh pr list --base master --head emergency-release --state open --json number --jq '.[0].number // empty')
+          EXISTING=$(gh pr list --base master --head auto/forward-port-emergency-release --state open --json number --jq '.[0].number // empty')
           if [ -n "$EXISTING" ]; then
             echo "Forward-port PR already open: #$EXISTING (updates automatically). Skipping create."
             exit 0
@@ -58,12 +82,14 @@ jobs:
           `emergency-release` are not on `master` until merged here. Review and merge
           to keep `master` from regressing the hotfix.
 
-          - The diff is exactly the commits on `emergency-release` not yet on `master`.
+          - Diff is the commits on `emergency-release` not yet on `master`.
+          - The release's version bump is intentionally excluded — `master` keeps its
+            own version.
           - If this PR is empty or the fix was already ported another way, just close it.
           BODY
 
           gh pr create \
             --base master \
-            --head emergency-release \
+            --head auto/forward-port-emergency-release \
             --title "Forward-port: emergency-release → master" \
             --body-file /tmp/forward-port-body.md
