@@ -18,10 +18,10 @@
  * bundle and reject the build for "remotely hosted code".
  *
  * Since we never use autocapture, we alias the package to these no-ops via
- * webpack `resolve.alias` (see webpack.common.js). This strips both
- * cdn.amplitude.com references from the bundle. Because nothing else imports
+ * webpack `resolve.alias` (see webpack.common.js). This deterministically strips
+ * the remotely-hosted-script strings from the bundle. Because nothing else imports
  * `getOrCreateWindowMessenger` / `enableBackgroundCapture` from
- * `@amplitude/analytics-core`, tree-shaking also drops the core messenger code
+ * `@amplitude/analytics-core`, tree-shaking also drops the related messenger code.
  * that holds the background-capture URL.
  *
  * If autocapture is ever genuinely needed, remove the alias rather than
