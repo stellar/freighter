@@ -1,0 +1,69 @@
+name: Forward-port emergency-release to master
+
+# Emergency releases are cut from a release tag, not from master. Fixes that
+# land on `emergency-release` are therefore NOT on `master` until someone ports
+# them — which has been silently forgotten before, regressing master. This
+# workflow opens (and reuses) a standing PR to port those commits forward so the
+# port can't be forgotten. It is a no-op when master already has everything.
+
+on:
+  push:
+    branches:
+      - emergency-release
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  forward-port:
+    name: Open forward-port PR to master
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Check for unported commits
+        id: check
+        run: |
+          git fetch origin master --quiet
+          # Commits on emergency-release that master does not yet contain.
+          COUNT=$(git rev-list --count origin/master..HEAD)
+          echo "count=$COUNT" >> "$GITHUB_OUTPUT"
+          if [ "$COUNT" -eq 0 ]; then
+            echo "Nothing to port — master already contains all emergency-release commits. Skipping."
+          else
+            echo "$COUNT commit(s) on emergency-release not yet on master."
+          fi
+
+      - name: Open or update forward-port PR
+        if: steps.check.outputs.count != '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Reuse the existing open PR if one is already open (it updates itself
+          # on subsequent pushes); GitHub forbids a duplicate base+head PR anyway.
+          EXISTING=$(gh pr list --base master --head emergency-release --state open --json number --jq '.[0].number // empty')
+          if [ -n "$EXISTING" ]; then
+            echo "Forward-port PR already open: #$EXISTING (updates automatically). Skipping create."
+            exit 0
+          fi
+
+          cat > /tmp/forward-port-body.md <<'BODY'
+          Automated forward-port of `emergency-release` hotfix commits into `master`.
+
+          The emergency release is cut from a release tag, so fixes that land on
+          `emergency-release` are not on `master` until merged here. Review and merge
+          to keep `master` from regressing the hotfix.
+
+          - The diff is exactly the commits on `emergency-release` not yet on `master`.
+          - If this PR is empty or the fix was already ported another way, just close it.
+          BODY
+
+          gh pr create \
+            --base master \
+            --head emergency-release \
+            --title "Forward-port: emergency-release → master" \
+            --body-file /tmp/forward-port-body.md
