@@ -6,8 +6,9 @@ name: Forward-port emergency-release to master
 # workflow opens (and reuses) a standing PR to port those commits forward so the
 # port can't be forgotten. It is a no-op when master already has everything.
 #
-# The port branch keeps master's version files so the release's patch-version
-# bump does not ride the port into master.
+# The port branch resets ONLY the version fields back to master's, so the
+# release's patch-version bump does not ride the port into master while any real
+# hotfix changes to those files are preserved.
 
 on:
   push:
@@ -17,6 +18,12 @@ on:
 permissions:
   contents: write
   pull-requests: write
+
+# Serialize runs so two back-to-back pushes don't both try to create the PR
+# (which would 422 on the duplicate base+head and fail the second run red).
+concurrency:
+  group: forward-port-emergency-release
+  cancel-in-progress: false
 
 jobs:
   forward-port:
@@ -50,12 +57,17 @@ jobs:
           # Start from the emergency-release tip...
           git checkout -B auto/forward-port-emergency-release HEAD
 
-          # ...but restore master's version files so the release's patch-version
-          # bump (package.json + manifest v3.json) does NOT get ported into
-          # master, where it would conflict or wrongly set master's version.
-          git checkout origin/master -- \
-            extension/package.json \
-            extension/public/static/manifest/v3.json
+          # ...but reset ONLY the version fields back to master's, so the
+          # release's patch-version bump does not ride the port into master.
+          # We rewrite just the version keys (not the whole files), so any real
+          # hotfix changes to package.json / the manifest are preserved.
+          MASTER_VERSION=$(git show origin/master:extension/package.json | jq -r .version)
+          tmp=$(mktemp)
+          jq --arg v "$MASTER_VERSION" '.version = $v' \
+            extension/package.json > "$tmp" && mv "$tmp" extension/package.json
+          jq --arg v "$MASTER_VERSION" '.version = $v | .version_name = $v' \
+            extension/public/static/manifest/v3.json > "$tmp" && mv "$tmp" extension/public/static/manifest/v3.json
+          git add extension/package.json extension/public/static/manifest/v3.json
           if ! git diff --cached --quiet; then
             git commit -m "chore: forward-port — keep master's version (drop release bump)"
           fi
