@@ -19,10 +19,10 @@
  *
  * Since we never use autocapture, we alias the package to these no-ops via
  * webpack `resolve.alias` (see webpack.common.js). This deterministically strips
- * the remotely-hosted-script strings from the bundle. Because nothing else imports
- * `getOrCreateWindowMessenger` / `enableBackgroundCapture` from
- * `@amplitude/analytics-core`, tree-shaking also drops the related messenger code.
- * that holds the background-capture URL.
+ * the remotely-hosted-script strings from the bundle. Because nothing else
+ * imports Amplitude's window messenger / background capture helpers from
+ * `@amplitude/analytics-core`, tree-shaking also drops the related code that
+ * holds the remaining remote URL.
  *
  * If autocapture is ever genuinely needed, remove the alias rather than
  * re-enabling the runtime flag — and confirm the store policy implications of
