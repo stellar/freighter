@@ -1,11 +1,10 @@
 /**
  * Build-time stub for `@amplitude/plugin-autocapture-browser`.
  *
- * `@amplitude/analytics-browser` statically imports this plugin, which in turn
- * pulls in Amplitude's "visual tagging" and "background capture" features.
- * Those features fetch remotely-hosted scripts from Amplitude's CDN at runtime
- * (the "visual-tagging-selector" and "background-capture" libs).
- *
+ * `@amplitude/analytics-browser` statically imports this plugin, which can pull in
+ * Amplitude autocapture features.
+ * Those features attempt to load additional scripts at runtime, and reviewers scan
+ * the static bundle (including source maps) for those remote-script strings.
  * NOTE: the blocked CDN URLs are deliberately NOT written out literally here.
  * The production build emits source maps with `sourcesContent`, and the store
  * submission zips the build dir recursively — so any literal blocked URL in
