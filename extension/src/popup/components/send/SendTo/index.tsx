@@ -382,6 +382,19 @@ export const SendTo = ({
                     onClick={async () => {
                       const addressFromInput =
                         await getAddressFromInput(address);
+                      // A recent that resolves to the active account (e.g. a
+                      // federation address the synchronous list filter can't
+                      // resolve) is a self-send. Don't continue - surface the
+                      // error through the normal input flow instead.
+                      if (
+                        isSameAccount(
+                          addressFromInput.validatedAddress,
+                          activePublicKey,
+                        )
+                      ) {
+                        formik.setFieldValue("destination", address);
+                        return;
+                      }
                       emitMetric(METRIC_NAMES.sendPaymentRecentAddress);
                       await fetchData(address, {});
                       handleContinue(
