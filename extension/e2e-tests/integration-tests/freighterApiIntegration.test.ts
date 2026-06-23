@@ -974,22 +974,22 @@ test("should open the Change Trust review and add a SAC token when allowed", asy
   await stubAccountBalances(popup);
 
   // Wait for the token lookup to resolve (the Confirm button is hidden while
-  // isLoading) then click. For a SAC token the click calls
-  // setShowTrustlineReview(true) instead of handleApprove().
+  // isLoading). For a SAC token the Add Token screen shows the Fee and Token
+  // address rows (per the Figma design) before the trustline review.
+  await expect(popup.getByTestId("AddToken__Metadata__Row__Fee")).toBeVisible({
+    timeout: 15000,
+  });
+  await expect(
+    popup.getByTestId("AddToken__Metadata__Row__TokenAddress"),
+  ).toBeVisible();
+
+  // Clicking confirm for a SAC slides in the standard changeTrust review.
   await popup.getByTestId("add-token-approve").click();
 
-  // ── Assert the ChangeTrustInternal review is shown ──────────────────────────
   await expect(popup.getByTestId("ChangeTrustInternal__Body")).toBeVisible({
     timeout: 15000,
   });
   await expect(popup.getByText("Add Trustline")).toBeVisible();
-  // SAC-specific disclosure rows rendered only when showSacDisclosure is true
-  await expect(
-    popup.getByTestId("ChangeTrustInternal__Metadata__Row__Issuer"),
-  ).toBeVisible();
-  await expect(
-    popup.getByTestId("ChangeTrustInternal__Metadata__Row__Reserve"),
-  ).toContainText("0.5 XLM");
 });
 
 test("should not add token when not allowed", async ({

@@ -1,12 +1,9 @@
 import React from "react";
 import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 
-import { BASE_FEE } from "stellar-sdk";
-
 import { ChangeTrustInternal } from "popup/components/manageAssets/ManageAssetRows/ChangeTrustInternal";
 import { Wrapper, mockBalances } from "popup/__testHelpers__";
 import { TESTNET_NETWORK_DETAILS } from "@shared/constants/stellar";
-import * as UseNetworkFees from "popup/helpers/useNetworkFees";
 
 import * as GetManageAssetXDR from "popup/helpers/getManageAssetXDR";
 import * as ApiInternal from "@shared/api/internal";
@@ -281,57 +278,8 @@ describe("ChangeTrustInternal", () => {
     await waitFor(() => expect(onCancel).toHaveBeenCalledTimes(1));
   });
 
-  it("shows Issuer and Account reserve rows only when showSacDisclosure is set", async () => {
-    const { rerender } = renderComponent({ showSacDisclosure: false });
-
-    await waitFor(() =>
-      expect(
-        screen.getByTestId("ChangeTrustInternal__Body"),
-      ).toBeInTheDocument(),
-    );
-
-    expect(
-      screen.queryByTestId("ChangeTrustInternal__Metadata__Row__Reserve"),
-    ).not.toBeInTheDocument();
-    expect(
-      screen.queryByTestId("ChangeTrustInternal__Metadata__Row__Issuer"),
-    ).not.toBeInTheDocument();
-
-    rerender(
-      <Wrapper state={PRELOADED_STATE} routes={["/"]}>
-        <ChangeTrustInternal
-          asset={ASSET}
-          addTrustline
-          publicKey={LEDGER_PUBLIC_KEY}
-          networkDetails={TESTNET_NETWORK_DETAILS}
-          onCancel={jest.fn()}
-          showSacDisclosure
-        />
-      </Wrapper>,
-    );
-
-    await waitFor(() =>
-      expect(
-        screen.getByTestId("ChangeTrustInternal__Metadata__Row__Reserve"),
-      ).toHaveTextContent("0.5 XLM"),
-    );
-
-    expect(
-      screen.getByTestId("ChangeTrustInternal__Metadata__Row__Issuer"),
-    ).toBeInTheDocument();
-  });
-
-  it("does not display the raw BASE_FEE stroops value as the XLM fee (regression for 100 XLM bug)", async () => {
-    // Reproduce the pre-fetch state of useNetworkFees, where recommendedFee is
-    // the raw BASE_FEE in stroops ("100"). The seed effect must NOT promote this
-    // into the XLM-denominated `fee` (which would render and charge "100 XLM").
-    const spy = jest.spyOn(UseNetworkFees, "useNetworkFees").mockReturnValue({
-      recommendedFee: BASE_FEE,
-      networkCongestion: "" as UseNetworkFees.NetworkCongestion,
-      fetchData: jest.fn().mockResolvedValue({ recommendedFee: BASE_FEE }),
-    });
-
-    renderComponent({ showSacDisclosure: true });
+  it("defaults the fee to the base fee in XLM when no initialFee is given", async () => {
+    renderComponent();
 
     await waitFor(() =>
       expect(
@@ -344,8 +292,22 @@ describe("ChangeTrustInternal", () => {
     );
     // baseFeeStroops = stroopToXlm(BASE_FEE) = "0.00001"
     expect(feeValue).toHaveTextContent("0.00001 XLM");
-    expect(feeValue).not.toHaveTextContent("100 XLM");
+  });
 
-    spy.mockRestore();
+  it("displays the provided initialFee (the disclosed fee == the charged fee)", async () => {
+    renderComponent({ initialFee: "0.0011234" });
+
+    await waitFor(() =>
+      expect(
+        screen.getByTestId("ChangeTrustInternal__Body"),
+      ).toBeInTheDocument(),
+    );
+
+    const feeValue = screen.getByTestId(
+      "ChangeTrustInternal__Metadata__Value__Fee",
+    );
+    expect(feeValue).toHaveTextContent("0.0011234 XLM");
+    // Guards the old unit bug: a stroops-denominated value rendered as XLM.
+    expect(feeValue).not.toHaveTextContent("100 XLM");
   });
 });

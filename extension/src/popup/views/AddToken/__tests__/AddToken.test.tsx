@@ -185,6 +185,14 @@ jest.mock("popup/helpers/useMarkQueueActive", () => ({
   useMarkQueueActive: jest.fn(),
 }));
 
+jest.mock("popup/helpers/useNetworkFees", () => ({
+  useNetworkFees: () => ({
+    recommendedFee: "0.0011234",
+    networkCongestion: "Low",
+    fetchData: jest.fn().mockResolvedValue({ recommendedFee: "0.0011234" }),
+  }),
+}));
+
 jest.mock("popup/helpers/route", () => ({
   reRouteOnboarding: jest.fn(),
 }));
@@ -275,6 +283,34 @@ describe("AddToken SAC / SEP-41 routing", () => {
         screen.getByTestId("ChangeTrustInternal-mock"),
       ).toBeInTheDocument(),
     );
+  });
+
+  it("SAC: Add Token screen shows Fee and Token address rows", async () => {
+    mockTokenLookupConfig.issuer = SAC_ISSUER;
+    renderAt();
+
+    await screen.findByTestId("add-token-approve");
+
+    expect(
+      screen.getByTestId("AddToken__Metadata__Row__Fee"),
+    ).toHaveTextContent("0.0011234 XLM");
+    expect(
+      screen.getByTestId("AddToken__Metadata__Row__TokenAddress"),
+    ).toBeInTheDocument();
+  });
+
+  it("SEP-41: Add Token screen does not show Fee or Token address rows", async () => {
+    mockTokenLookupConfig.issuer = SEP41_CONTRACT;
+    renderAt();
+
+    await screen.findByTestId("add-token-approve");
+
+    expect(
+      screen.queryByTestId("AddToken__Metadata__Row__Fee"),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByTestId("AddToken__Metadata__Row__TokenAddress"),
+    ).not.toBeInTheDocument();
   });
 
   it("SAC: a successful review resolves the dApp request (addToken + metric + close)", async () => {

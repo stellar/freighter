@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Button, Icon, Loader, Notification } from "@stellar/design-system";
 import { BASE_FEE, Transaction, TransactionBuilder } from "stellar-sdk";
 
-import { BASE_RESERVE, NetworkDetails } from "@shared/constants/stellar";
+import { NetworkDetails } from "@shared/constants/stellar";
 import { RequestState } from "constants/request";
 import {
   getCanonicalFromAsset,
@@ -54,7 +54,10 @@ interface ChangeTrustInternalProps {
   addTrustline: boolean;
   onCancel: () => void;
   onSuccess?: () => void;
-  showSacDisclosure?: boolean;
+  // Initial fee (in XLM) for the transaction. The external Add Token (SAC)
+  // flow passes the network-recommended fee it already displayed so the
+  // charged fee matches the disclosed one. Defaults to the base fee.
+  initialFee?: string;
 }
 
 export const ChangeTrustInternal = ({
@@ -64,7 +67,7 @@ export const ChangeTrustInternal = ({
   networkDetails,
   onCancel,
   onSuccess,
-  showSacDisclosure = false,
+  initialFee,
 }: ChangeTrustInternalProps) => {
   const activeOptionsRef = useRef<HTMLDivElement>(null);
   const [activePaneIndex, setActivePaneIndex] = useState(0);
@@ -78,7 +81,7 @@ export const ChangeTrustInternal = ({
   const { recommendedFee } = useNetworkFees();
 
   const baseFeeStroops = stroopToXlm(BASE_FEE).toString();
-  const [fee, setFee] = useState(baseFeeStroops);
+  const [fee, setFee] = useState(initialFee ?? baseFeeStroops);
   const [timeout, setTimeout] = useState("180");
   const [memo, setMemo] = useState("");
   const [isSettingsSelectorOpen, setSettingsSelectorOpen] =
@@ -108,24 +111,6 @@ export const ChangeTrustInternal = ({
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [activeOptionsRef]);
-
-  useEffect(() => {
-    // `recommendedFee` from useNetworkFees starts as BASE_FEE (raw stroops,
-    // e.g. "100") and only becomes an XLM-denominated value after its internal
-    // feeStats fetch resolves. `fee` is XLM-denominated, so only seed it once
-    // the fetched XLM value has arrived (recommendedFee !== BASE_FEE).
-    // The `fee === baseFeeStroops` guard makes this a one-shot seed that does
-    // not clobber a user-adjusted fee. If the fetch fails, recommendedFee
-    // stays BASE_FEE and `fee` keeps the safe baseFeeStroops default.
-    if (
-      showSacDisclosure &&
-      recommendedFee !== BASE_FEE &&
-      fee === baseFeeStroops
-    ) {
-      setFee(recommendedFee);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showSacDisclosure, recommendedFee]);
 
   if (
     state.state === RequestState.LOADING ||
@@ -297,34 +282,6 @@ export const ChangeTrustInternal = ({
               <span>{`${fee} XLM`}</span>
             </div>
           </div>
-          {showSacDisclosure && (
-            <>
-              <div
-                className="ChangeTrustInternal__Metadata__Row"
-                data-testid="ChangeTrustInternal__Metadata__Row__Issuer"
-              >
-                <div className="ChangeTrustInternal__Metadata__Label">
-                  <Icon.User01 />
-                  <span>{t("Issuer")}</span>
-                </div>
-                <div className="ChangeTrustInternal__Metadata__Value">
-                  <KeyIdenticon publicKey={asset.issuer} />
-                </div>
-              </div>
-              <div
-                className="ChangeTrustInternal__Metadata__Row"
-                data-testid="ChangeTrustInternal__Metadata__Row__Reserve"
-              >
-                <div className="ChangeTrustInternal__Metadata__Label">
-                  <Icon.Lock01 />
-                  <span>{t("Account reserve")}</span>
-                </div>
-                <div className="ChangeTrustInternal__Metadata__Value">
-                  <span>{`${BASE_RESERVE} XLM`}</span>
-                </div>
-              </div>
-            </>
-          )}
         </div>
         <div
           className="ChangeTrustInternal__TransactionDetailsBtn"

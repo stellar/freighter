@@ -11,11 +11,13 @@ import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Navigate, useLocation } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
-import { StellarToml, StrKey } from "stellar-sdk";
+import { BASE_FEE, StellarToml, StrKey } from "stellar-sdk";
 
 import { AppDispatch } from "popup/App";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { emitMetric } from "helpers/metrics";
+import { stroopToXlm, truncateString } from "helpers/stellar";
+import { useNetworkFees } from "popup/helpers/useNetworkFees";
 import { ChangeTrustInternal } from "popup/components/manageAssets/ManageAssetRows/ChangeTrustInternal";
 
 import { BlockAidScanAssetResult } from "@shared/api/types";
@@ -109,6 +111,15 @@ export const AddToken = () => {
   const dispatch: AppDispatch = useDispatch();
   const [showTrustlineReview, setShowTrustlineReview] = useState(false);
   const isSac = StrKey.isValidEd25519PublicKey(assetIssuer);
+
+  // `recommendedFee` is the network-recommended fee in XLM after useNetworkFees
+  // resolves; pre-fetch it is the raw BASE_FEE (stroops), so guard against that
+  // and fall back to the base fee converted to XLM. This same value is both
+  // displayed here and passed into the trustline review so the disclosed fee
+  // matches the charged fee.
+  const { recommendedFee } = useNetworkFees();
+  const baseFeeXlm = stroopToXlm(BASE_FEE).toString();
+  const displayFee = recommendedFee === BASE_FEE ? baseFeeXlm : recommendedFee;
 
   const handleSacSuccess = async () => {
     await dispatch(addToken({ uuid }));
@@ -374,7 +385,7 @@ export const AddToken = () => {
         networkDetails={state.data.settings.networkDetails}
         onCancel={() => setShowTrustlineReview(false)}
         onSuccess={handleSacSuccess}
-        showSacDisclosure
+        initialFee={displayFee}
       />
     );
   }
@@ -476,6 +487,34 @@ export const AddToken = () => {
                       <KeyIdenticon publicKey={state.data.account.publicKey} />
                     </div>
                   </div>
+                  {isSac && (
+                    <>
+                      <div
+                        className="AddToken__Metadata__Row"
+                        data-testid="AddToken__Metadata__Row__Fee"
+                      >
+                        <div className="AddToken__Metadata__Label">
+                          <Icon.Route />
+                          <span>{t("Fee")}</span>
+                        </div>
+                        <div className="AddToken__Metadata__Value">
+                          <span>{`${displayFee} XLM`}</span>
+                        </div>
+                      </div>
+                      <div
+                        className="AddToken__Metadata__Row"
+                        data-testid="AddToken__Metadata__Row__TokenAddress"
+                      >
+                        <div className="AddToken__Metadata__Label">
+                          <Icon.CodeCircle01 />
+                          <span>{t("Token address")}</span>
+                        </div>
+                        <div className="AddToken__Metadata__Value">
+                          <span>{truncateString(contractId)}</span>
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>,
               blockaidData ? (
