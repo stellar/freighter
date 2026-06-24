@@ -1,0 +1,149 @@
+@use "../../styles/utils.scss" as *;
+
+.CoinbaseAuthModal {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--sds-clr-gray-01);
+
+  &__overlay {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    justify-content: space-between;
+    padding: pxToRem(16px);
+    overflow-y: auto;
+  }
+
+  &__content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: pxToRem(12px);
+  }
+
+  &__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: pxToRem(56px);
+    height: pxToRem(56px);
+    border-radius: pxToRem(14px);
+    background-color: #0052ff;
+
+    img {
+      width: pxToRem(32px);
+      height: pxToRem(32px);
+    }
+  }
+
+  &__domain {
+    color: var(--sds-clr-gray-11);
+  }
+
+  &__badge {
+    display: flex;
+    align-items: center;
+    gap: pxToRem(6px);
+    padding: pxToRem(4px) pxToRem(12px);
+    border-radius: pxToRem(1000px);
+    background-color: var(--sds-clr-gray-03);
+    color: var(--sds-clr-gray-11);
+    font-size: pxToRem(13px);
+    font-weight: 500;
+
+    svg {
+      width: pxToRem(14px);
+      height: pxToRem(14px);
+    }
+  }
+
+  &__infoCard {
+    width: 100%;
+    padding: pxToRem(12px) pxToRem(16px);
+    border-radius: pxToRem(16px);
+    background-color: var(--sds-clr-gray-03);
+    color: var(--sds-clr-gray-11);
+    text-align: left;
+  }
+
+  &__detailsCard {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    border-radius: pxToRem(16px);
+    background-color: var(--sds-clr-gray-04);
+    padding: pxToRem(12px) pxToRem(16px);
+  }
+
+  &__detail {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    &:not(:last-child) {
+      margin-bottom: pxToRem(12px);
+      padding-bottom: pxToRem(12px);
+      border-bottom: 1px solid var(--sds-clr-gray-06);
+    }
+
+    &__label {
+      display: flex;
+      align-items: center;
+      color: var(--sds-clr-gray-11);
+
+      svg {
+        margin-right: pxToRem(6px);
+      }
+    }
+
+    &__value {
+      display: flex;
+      align-items: center;
+      gap: pxToRem(8px);
+    }
+
+    &__identicon {
+      display: flex;
+      width: pxToRem(20px);
+      height: pxToRem(20px);
+
+      img {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+      }
+    }
+  }
+
+  &__warning {
+    color: var(--sds-clr-gray-10);
+    text-align: center;
+    font-size: pxToRem(14px);
+    font-weight: 500;
+    line-height: pxToRem(20px);
+  }
+
+  &__footer {
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(8px);
+    padding-top: pxToRem(16px);
+  }
+
+  &__buttons {
+    display: flex;
+    width: 100%;
+    gap: pxToRem(8px);
+  }
+
+  &__error {
+    color: var(--sds-clr-red-11);
+    text-align: center;
+    font-size: pxToRem(14px);
+    font-weight: 500;
+  }
+}
