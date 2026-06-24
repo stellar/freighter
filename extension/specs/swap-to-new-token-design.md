@@ -37,14 +37,14 @@ Soroban support can come later behind the same discovery/routing seams.
 
 ### 1.2 What changes for users
 
-| Area                             | Today                                 | After this work                                                                                                                                                                                                                                                                                                                                                                   |
-| -------------------------------- | ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Destination picker**           | Held balances only                    | A "Swap to" picker with **Your tokens**, **Popular tokens**, and (when searching) **Verified** / **Unverified** sections, plus address paste ([Figma — picker default](https://www.figma.com/design/C3G0a4Gd6RQyplRBppGDsL/Freighter-Extension?node-id=8641-35309), [search results](https://www.figma.com/design/C3G0a4Gd6RQyplRBppGDsL/Freighter-Extension?node-id=8641-35483)) |
-| **Source picker**                | Held balances only                    | Unchanged in content — same "Swap from" picker, **Your tokens** only ([Figma](https://www.figma.com/design/C3G0a4Gd6RQyplRBppGDsL/Freighter-Extension?node-id=8641-33048))                                                                                                                                                                                                        |
-| **Trustline**                    | Manual, separate "Add asset" trip     | **Automatic** — bundled into the swap as one atomic transaction                                                                                                                                                                                                                                                                                                                   |
-| **Security**                     | Only held assets are Blockaid-scanned | **Every** destination candidate (held, popular, search result) is Blockaid-scanned before it is selectable, and the combined transaction XDR is scanned at review                                                                                                                                                                                                                 |
-| **New-trustline cost**           | Not surfaced                          | A purple **"This will add a trustline to {CODE}"** banner on review + a tappable info sheet explaining the 0.5 XLM reserve ([Figma — review](https://www.figma.com/design/C3G0a4Gd6RQyplRBppGDsL/Freighter-Extension?node-id=8641-34246), [info sheet](https://www.figma.com/design/C3G0a4Gd6RQyplRBppGDsL/Freighter-Extension?node-id=8641-34721))                               |
-| **Insufficient XLM for reserve** | On-chain failure                      | A pre-flight **"You need XLM to create a trustline"** sheet with a _Swap for 0.5 XLM_ helper + _Copy my wallet address_ ([Figma](https://www.figma.com/design/C3G0a4Gd6RQyplRBppGDsL/Freighter-Extension?node-id=8641-33468))                                                                                                                                                     |
+| Area                             | Today                                 | After this work                                                                                                                                                                                                                                                                                                                                               |
+| -------------------------------- | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Destination picker**           | Held balances only                    | A "Swap to" picker with **Your tokens**, **Popular tokens**, and (when searching) **Verified** / **Unverified** sections ([Figma — picker default](https://www.figma.com/design/C3G0a4Gd6RQyplRBppGDsL/Freighter-Extension?node-id=8641-35309), [search results](https://www.figma.com/design/C3G0a4Gd6RQyplRBppGDsL/Freighter-Extension?node-id=8641-35483)) |
+| **Source picker**                | Held balances only                    | Unchanged in content — same "Swap from" picker, **Your tokens** only ([Figma](https://www.figma.com/design/C3G0a4Gd6RQyplRBppGDsL/Freighter-Extension?node-id=8641-33048))                                                                                                                                                                                    |
+| **Trustline**                    | Manual, separate "Add asset" trip     | **Automatic** — bundled into the swap as one atomic transaction                                                                                                                                                                                                                                                                                               |
+| **Security**                     | Only held assets are Blockaid-scanned | **Every** destination candidate (held, popular, search result) is Blockaid-scanned before it is selectable, and the combined transaction XDR is scanned at review                                                                                                                                                                                             |
+| **New-trustline cost**           | Not surfaced                          | A purple **"This will add a trustline to {CODE}"** banner on review + a tappable info sheet explaining the 0.5 XLM reserve ([Figma — review](https://www.figma.com/design/C3G0a4Gd6RQyplRBppGDsL/Freighter-Extension?node-id=8641-34246), [info sheet](https://www.figma.com/design/C3G0a4Gd6RQyplRBppGDsL/Freighter-Extension?node-id=8641-34721))           |
+| **Insufficient XLM for reserve** | On-chain failure                      | A pre-flight **"You need XLM to create a trustline"** sheet with a _Swap for 0.5 XLM_ helper + _Copy my wallet address_ ([Figma](https://www.figma.com/design/C3G0a4Gd6RQyplRBppGDsL/Freighter-Extension?node-id=8641-33468))                                                                                                                                 |
 
 The Swap home screen has this shape ([Figma](https://www.figma.com/design/C3G0a4Gd6RQyplRBppGDsL/Freighter-Extension?node-id=8629-32073)):
 _You sell_ / _You receive_ cards, a direction chevron, `25% / 50% / 75% / Max`
@@ -180,6 +180,11 @@ The _feature_ is the same; the _platform_ is materially different.
   warnings); if the installed SDS version has no lilac/"highlight" variant, add a
   custom-styled variant — mobile added a `highlight` variant to its own SDS for
   exactly this.
+- **No clipboard "Paste" button.** Mobile offers a one-tap paste affordance on the
+  search bar; the extension **omits** it — a programmatic clipboard read needs an
+  extra `clipboardRead` manifest permission + user opt-in, which the team decided
+  isn't worth it on web. Users can still paste an address into the search field
+  manually (`⌘/Ctrl+V`).
 
 ### 2.5 Amount input
 
@@ -366,7 +371,7 @@ Extend [`SwapAsset`](../src/popup/components/swap/SwapAsset/index.tsx) (currentl
 - **source** → `holdsOnly` path (current `useSwapFromData`); single **Your tokens**
   section; header "Swap from".
 - **destination** → `useSwapTokenLookup` (§3.1); sectioned list; header "Swap to";
-  search bar with **Paste** button.
+  search bar.
 
 Rendering reuses [`TokenList`](../src/popup/components/InternalTransaction/TokenList/index.tsx)
 and the verified/unverified section layout from
