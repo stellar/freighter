@@ -614,6 +614,11 @@ export const getTokenPrices = async (
     const asset = getAssetFromCanonical(tokenId);
     return !tokenId.includes(":lp") && !isContractId(asset.issuer);
   });
+  // Nothing priceable left after filtering, so skip the request rather than
+  // POST an empty tokens array and risk a 4xx that surfaces as an error.
+  if (!filteredTokens.length) {
+    return {};
+  }
   const url = new URL(`${INDEXER_V2_URL}/token-prices`);
   url.searchParams.append("network", network);
   const options = {

@@ -197,5 +197,20 @@ describe("internalApi", () => {
       expect(fetchSpy).not.toHaveBeenCalled();
       expect(prices).toEqual({});
     });
+
+    it("skips the request when every token is filtered out", async () => {
+      const fetchSpy = mockFetchOk();
+
+      const prices = await internalApi.getTokenPrices(
+        [
+          "abc123:lp",
+          "DT:CCXVDIGMR6WTXZQX2OEVD6YM6AYCYPXPQ7YYH6OZMRS7U6VD3AVHNGBJ",
+        ],
+        NETWORKS.PUBLIC,
+      );
+
+      expect(fetchSpy).not.toHaveBeenCalled();
+      expect(prices).toEqual({});
+    });
   });
 });
