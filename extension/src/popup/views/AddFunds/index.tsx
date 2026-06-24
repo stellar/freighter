@@ -5,7 +5,6 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { Icon, Text } from "@stellar/design-system";
 
 import { SubviewHeader } from "popup/components/SubviewHeader";
-import { Loading } from "popup/components/Loading";
 import { CoinbaseAuthModal } from "popup/components/CoinbaseAuthModal";
 import { View } from "popup/basics/layout/View";
 import { ROUTES } from "popup/constants/routes";
@@ -70,10 +69,9 @@ export const AddFunds = () => {
     navigateTo(ROUTES.viewPublicKey, navigate);
   };
 
-  if (isTokenRequestLoading) {
-    return <Loading />;
-  }
-
+  // No full-page Loading here: while the token request is in flight the
+  // CoinbaseAuthModal stays open and shows its own Authorize-button spinner
+  // (isLoading). A full-page return would unmount the modal mid-flow.
   return (
     <>
       <SubviewHeader
