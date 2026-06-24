@@ -4,7 +4,7 @@ import { NetworkDetails } from "@shared/constants/stellar";
 import { xlmToStroop } from "helpers/stellar";
 import { getSdk } from "@shared/helpers/stellar";
 
-type AnySdk = typeof StellarSdk | typeof StellarSdkNext;
+export type AnySdk = typeof StellarSdk | typeof StellarSdkNext;
 
 export const buildChangeTrustOperation = ({
   assetCode,

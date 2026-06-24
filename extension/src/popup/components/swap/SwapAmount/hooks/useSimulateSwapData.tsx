@@ -18,6 +18,8 @@ import {
   xlmToStroop,
 } from "helpers/stellar";
 import { computeDestMinWithSlippage } from "helpers/transaction";
+import { buildChangeTrustOperation } from "popup/helpers/getManageAssetXDR";
+import { getSdk } from "@shared/helpers/stellar";
 
 import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 import {
@@ -81,6 +83,23 @@ export interface SimulateTxData {
   scanResult?: BlockAidScanTxResult | null;
 }
 
+export const MIN_PER_OP_FEE = 100; // network minimum, stroops
+
+type DestinationTokenDetails = {
+  tokenCode: string;
+  requiresTrustline: boolean;
+  decimals: number;
+  issuer?: string;
+} | null;
+
+export const getPerOpBaseFee = (totalFee: string, opCount: number): string => {
+  const totalStroops = xlmToStroop(totalFee);
+  const perOp = totalStroops.dividedBy(opCount);
+  return BigNumber.max(perOp, new BigNumber(MIN_PER_OP_FEE))
+    .integerValue(BigNumber.ROUND_FLOOR)
+    .toFixed();
+};
+
 const getOperation = (
   sourceAsset: Asset | { code: string; issuer: string },
   destAsset: Asset | { code: string; issuer: string },
@@ -104,7 +123,7 @@ const getOperation = (
   });
 };
 
-const getBuiltTx = async (
+export const getBuiltTx = async (
   publicKey: string,
   opData: {
     sourceAsset: Asset | { code: string; issuer: string };
@@ -113,6 +132,7 @@ const getBuiltTx = async (
     allowedSlippage: string;
     destinationAmount: string;
     path: string[];
+    destinationTokenDetails: DestinationTokenDetails;
   },
   fee: string,
   transactionTimeout: number,
@@ -126,12 +146,38 @@ const getBuiltTx = async (
     allowedSlippage,
     destinationAmount,
     path,
+    destinationTokenDetails,
   } = opData;
   const server = stellarSdkServer(
     networkDetails.networkUrl,
     networkDetails.networkPassphrase,
   );
   const sourceAccount = await server.loadAccount(publicKey);
+
+  const requiresTrustline = !!destinationTokenDetails?.requiresTrustline;
+  const opCount = requiresTrustline ? 2 : 1;
+
+  if (requiresTrustline && !destinationTokenDetails?.issuer) {
+    throw new Error(
+      "Cannot add a trustline for a destination token without an issuer",
+    );
+  }
+
+  const transaction = new TransactionBuilder(sourceAccount, {
+    fee: getPerOpBaseFee(fee, opCount),
+    networkPassphrase: networkDetails.networkPassphrase,
+  });
+
+  if (requiresTrustline) {
+    const Sdk = getSdk(networkDetails.networkPassphrase);
+    transaction.addOperation(
+      buildChangeTrustOperation({
+        assetCode: destinationTokenDetails!.tokenCode,
+        assetIssuer: destinationTokenDetails!.issuer!,
+        sdk: Sdk,
+      }),
+    );
+  }
 
   const operation = getOperation(
     sourceAsset,
@@ -142,13 +188,7 @@ const getBuiltTx = async (
     path,
     publicKey,
   );
-
-  const transaction = new TransactionBuilder(sourceAccount, {
-    fee: xlmToStroop(fee).toFixed(),
-    networkPassphrase: networkDetails.networkPassphrase,
-  })
-    .addOperation(operation)
-    .setTimeout(transactionTimeout);
+  transaction.addOperation(operation).setTimeout(transactionTimeout);
 
   if (memo) {
     transaction.addMemo(Memo.text(memo));
@@ -166,7 +206,9 @@ function useSimulateTxData({
   networkDetails: NetworkDetails;
   simParams: SimulationParams;
 }) {
-  const { memo } = useSelector(transactionDataSelector);
+  const { memo, destinationTokenDetails } = useSelector(
+    transactionDataSelector,
+  );
   const reduxDispatch = useDispatch<AppDispatch>();
 
   const { scanTx } = useScanTx();
@@ -234,6 +276,7 @@ function useSimulateTxData({
           destinationAmount,
           allowedSlippage,
           path,
+          destinationTokenDetails,
         },
         baseFee.toString(),
         transactionTimeout,
