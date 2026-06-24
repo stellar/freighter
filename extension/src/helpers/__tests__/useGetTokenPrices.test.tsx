@@ -8,7 +8,6 @@ import { defaultBlockaidScanAssetResult } from "@shared/helpers/stellar";
 import { RequestState } from "constants/request";
 import {
   MAINNET_NETWORK_DETAILS,
-  NETWORKS,
   TESTNET_NETWORK_DETAILS,
 } from "@shared/constants/stellar";
 import * as ApiInternal from "@shared/api/internal";
@@ -85,7 +84,7 @@ describe("useGetTokenPrices", () => {
     const preloadedState = {
       cache: {
         tokenPrices: {
-          [NETWORKS.PUBLIC]: {
+          [MAINNET_NETWORK_DETAILS.networkPassphrase]: {
             G123: {
               native: {
                 currentPrice: "1",
@@ -149,7 +148,7 @@ describe("useGetTokenPrices", () => {
     const preloadedState = {
       cache: {
         tokenPrices: {
-          [NETWORKS.PUBLIC]: {
+          [MAINNET_NETWORK_DETAILS.networkPassphrase]: {
             G123: {
               native: {
                 currentPrice: "1",
@@ -213,7 +212,7 @@ describe("useGetTokenPrices", () => {
     const preloadedState = {
       cache: {
         tokenPrices: {
-          [NETWORKS.PUBLIC]: {
+          [MAINNET_NETWORK_DETAILS.networkPassphrase]: {
             G123: {
               native: {
                 currentPrice: "1",
@@ -257,6 +256,80 @@ describe("useGetTokenPrices", () => {
       TESTNET_NETWORK_DETAILS,
     );
     expect(result.current.state.state).toBe<RequestState>(RequestState.SUCCESS);
+    expect(result.current.state.data?.tokenPrices).toEqual({
+      native: {
+        currentPrice: "2",
+        percentagePriceChange24h: ".75",
+      },
+    });
+  });
+  it("does not reuse one custom network's cache for another", async () => {
+    // Both custom networks share the STANDALONE network value but differ by
+    // passphrase. A fresh entry cached for the pubnet-passphrase custom network
+    // must not be reused for a testnet-passphrase custom network.
+    const customPubnet = {
+      ...MAINNET_NETWORK_DETAILS,
+      network: "STANDALONE",
+      networkName: "Custom Pubnet",
+    };
+    const customTestnet = {
+      ...TESTNET_NETWORK_DETAILS,
+      network: "STANDALONE",
+      networkName: "Custom Testnet",
+    };
+    const getTokenPricesSpy = jest
+      .spyOn(ApiInternal, "getTokenPrices")
+      .mockImplementationOnce(() =>
+        Promise.resolve({
+          native: {
+            currentPrice: "2",
+            percentagePriceChange24h: ".75",
+          },
+        }),
+      );
+    const preloadedState = {
+      cache: {
+        tokenPrices: {
+          [customPubnet.networkPassphrase]: {
+            G123: {
+              native: {
+                currentPrice: "1",
+                percentagePriceChange24h: ".5",
+              },
+              updatedAt: Date.now(),
+            },
+          },
+        },
+      },
+    };
+
+    const store = makeDummyStore(preloadedState);
+    const Wrapper =
+      (store: ReturnType<typeof makeDummyStore>) =>
+      ({ children }: { children: React.ReactNode }) => (
+        <Provider store={store}>{children}</Provider>
+      );
+
+    const { result } = renderHook(() => useGetTokenPrices(), {
+      wrapper: Wrapper(store),
+    });
+
+    await act(async () => {
+      await result.current.fetchData({
+        publicKey: "G123",
+        balances: [
+          {
+            token: { type: "native", code: "XLM" },
+            total: new BigNumber("50"),
+            available: new BigNumber("50"),
+            blockaidData: defaultBlockaidScanAssetResult,
+          },
+        ],
+        networkDetails: customTestnet,
+        useCache: true,
+      } as any);
+    });
+    expect(getTokenPricesSpy).toHaveBeenCalledWith(["native"], customTestnet);
     expect(result.current.state.data?.tokenPrices).toEqual({
       native: {
         currentPrice: "2",

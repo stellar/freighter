@@ -69,8 +69,11 @@ interface InitialState {
   historyData: {
     [network: string]: Record<PublicKey, HistoryResponse>;
   };
+  // Keyed by networkPassphrase, not network: custom networks all share the
+  // "STANDALONE" network value, but prices are determined by the passphrase
+  // (which is what getTokenPrices uses to choose PUBLIC vs TESTNET).
   tokenPrices: {
-    [network: string]: Record<
+    [networkPassphrase: string]: Record<
       PublicKey,
       ApiTokenPrices & { updatedAt: number }
     >;
@@ -129,10 +132,10 @@ const cacheSlice = createSlice({
           action.payload.publicKey
         ];
       }
-      if (state.tokenPrices[action.payload.networkDetails.network]) {
-        delete state.tokenPrices[action.payload.networkDetails.network][
-          action.payload.publicKey
-        ];
+      if (state.tokenPrices[action.payload.networkDetails.networkPassphrase]) {
+        delete state.tokenPrices[
+          action.payload.networkDetails.networkPassphrase
+        ][action.payload.publicKey];
       }
     },
     saveIconsForBalances(state, action: { payload: SaveIconsPayload }) {
@@ -160,10 +163,11 @@ const cacheSlice = createSlice({
       };
     },
     saveTokenPrices(state, action: { payload: SaveTokenPricesPayload }) {
+      const { networkPassphrase } = action.payload.networkDetails;
       state.tokenPrices = {
         ...state.tokenPrices,
-        [action.payload.networkDetails.network]: {
-          ...state.tokenPrices[action.payload.networkDetails.network],
+        [networkPassphrase]: {
+          ...state.tokenPrices[networkPassphrase],
           [action.payload.publicKey]: {
             ...action.payload.tokenPrices,
             updatedAt: Date.now(),

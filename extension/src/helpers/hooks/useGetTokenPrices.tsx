@@ -40,7 +40,7 @@ export function useGetTokenPrices() {
 
     let tokenPrices = {} as ApiTokenPrices;
     const publicKeyTokenPrices =
-      cachedTokenPrices[networkDetails.network]?.[publicKey];
+      cachedTokenPrices[networkDetails.networkPassphrase]?.[publicKey];
     const payload = {
       type: AppDataType.RESOLVED,
       tokenPrices,

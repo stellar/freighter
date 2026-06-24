@@ -283,7 +283,7 @@ describe("AssetDetail", () => {
                 "test-img-src",
             },
             tokenPrices: {
-              [TESTNET_NETWORK_DETAILS.network]: {
+              [TESTNET_NETWORK_DETAILS.networkPassphrase]: {
                 G1: {
                   "BAZ:GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF":
                     {

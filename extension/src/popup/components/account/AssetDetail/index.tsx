@@ -121,7 +121,7 @@ export const AssetDetail = ({
   const activeOptionsRef = useRef<HTMLDivElement>(null);
   const isNative = selectedAsset === "native";
   const tokenPrices =
-    cachedTokenPrices[networkDetails.network]?.[publicKey] || null;
+    cachedTokenPrices[networkDetails.networkPassphrase]?.[publicKey] || null;
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
