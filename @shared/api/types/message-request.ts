@@ -237,6 +237,17 @@ export interface SignAuthEntryMessage extends BaseMessage {
   uuid: string;
 }
 
+export interface SignOnrampProofMessage {
+  type: SERVICE_TYPES.SIGN_ONRAMP_PROOF;
+  activePublicKey: string;
+  body: unknown;
+}
+
+export interface SignOnrampProofResponse {
+  authHeader?: string;
+  error?: string;
+}
+
 export interface RejectTransactionMessage extends BaseMessage {
   type: SERVICE_TYPES.REJECT_TRANSACTION;
   uuid: string;
@@ -508,6 +519,7 @@ export type ServiceMessageRequest =
   | SignTransactionMessage
   | SignBlobMessage
   | SignAuthEntryMessage
+  | SignOnrampProofMessage
   | RejectTransactionMessage
   | SignFreighterTransactionMessage
   | SignFreighterSorobanTransactionMessage

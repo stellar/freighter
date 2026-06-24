@@ -55,6 +55,7 @@ import { addToken } from "./handlers/addToken";
 import { signTransaction } from "./handlers/signTransaction";
 import { signBlob } from "./handlers/signBlob";
 import { signAuthEntry } from "./handlers/signAuthEntry";
+import { signOnrampProof } from "./handlers/signOnrampProof";
 import { rejectTransaction } from "./handlers/rejectTransaction";
 import { rejectSigningRequest } from "./handlers/rejectSigningRequest";
 import { signFreighterTransaction } from "./handlers/signFreighterTransaction";
@@ -157,8 +158,7 @@ export const popupMessageListener = (
   // (browser-action popup, sidepanel) OR the URL is on our extension
   // origin (popup window, options page, fullscreen).
   const extensionOrigin = browser?.runtime?.getURL?.("") ?? "";
-  const isFromOwnExtension =
-    !sender.id || sender.id === browser?.runtime?.id;
+  const isFromOwnExtension = !sender.id || sender.id === browser?.runtime?.id;
   const isExtensionUrl =
     !!extensionOrigin &&
     typeof sender.url === "string" &&
@@ -362,6 +362,13 @@ export const popupMessageListener = (
         sessionStore,
         responseQueue,
         authEntryQueue,
+      });
+    }
+    case SERVICE_TYPES.SIGN_ONRAMP_PROOF: {
+      return signOnrampProof({
+        request,
+        localStore,
+        sessionStore,
       });
     }
     case SERVICE_TYPES.REJECT_TRANSACTION: {
