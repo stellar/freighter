@@ -69,3 +69,9 @@ describe("transactionSubmission destinationTokenDetails", () => {
     expect(initialState.transactionData.destinationTokenDetails).toBeNull();
   });
 });
+
+describe("transactionSubmission slippage default", () => {
+  it('defaults allowedSlippage to "2" (matching mobile)', () => {
+    expect(initialState.transactionData.allowedSlippage).toBe("2");
+  });
+});

@@ -523,7 +523,7 @@ export const initialState: InitialState = {
     destinationIcon: "",
     destinationTokenDetails: null,
     path: [],
-    allowedSlippage: "1",
+    allowedSlippage: "2",
     isCollectible: false,
     collectibleData: {
       collectionName: "",

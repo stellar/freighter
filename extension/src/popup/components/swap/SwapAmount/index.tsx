@@ -58,7 +58,7 @@ import { AssetTile } from "popup/components/AssetTile";
 
 import "./styles.scss";
 
-const defaultSlippage = "1";
+const defaultSlippage = "2";
 const DEFAULT_INPUT_WIDTH = 25;
 
 interface SwapAmountProps {
