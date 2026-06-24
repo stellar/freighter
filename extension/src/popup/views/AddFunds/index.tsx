@@ -1,14 +1,24 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Icon, Text } from "@stellar/design-system";
 
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { Loading } from "popup/components/Loading";
+import { CoinbaseAuthModal } from "popup/components/CoinbaseAuthModal";
 import { View } from "popup/basics/layout/View";
 import { ROUTES } from "popup/constants/routes";
 import { navigateTo } from "popup/helpers/navigate";
-import { useGetOnrampToken } from "helpers/hooks/useGetOnrampToken";
+import {
+  accountNameSelector,
+  publicKeySelector,
+} from "popup/ducks/accountServices";
+import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
+import {
+  useGetOnrampToken,
+  RequestState,
+} from "helpers/hooks/useGetOnrampToken";
 
 import CoinbaseLogo from "popup/assets/coinbase-logo.svg";
 
@@ -22,14 +32,38 @@ export const AddFunds = () => {
   const params = new URLSearchParams(search);
   const isAddXlm = params.get("isAddXlm") === "true";
 
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const accountName = useSelector(accountNameSelector);
+  const accountPublicKey = useSelector(publicKeySelector);
+  const networkDetails = useSelector(settingsNetworkDetailsSelector);
+
   const {
     isLoading: isTokenRequestLoading,
     fetchData,
     tokenError,
+    clearTokenError,
+    state,
   } = useGetOnrampToken({ ...(isAddXlm ? { asset: "XLM" } : {}) });
 
-  const handleOnrampClick = async () => {
+  useEffect(() => {
+    if (state.state === RequestState.SUCCESS) {
+      setIsModalOpen(false);
+    }
+  }, [state]);
+
+  const handleOnrampClick = () => {
+    clearTokenError();
+    setIsModalOpen(true);
+  };
+
+  const handleAuthorize = async () => {
     await fetchData();
+  };
+
+  const handleCancel = () => {
+    setIsModalOpen(false);
+    clearTokenError();
   };
 
   const handleTransferClick = () => {
@@ -116,6 +150,16 @@ export const AddFunds = () => {
           </div>
         </div>
       </View.Content>
+      <CoinbaseAuthModal
+        isOpen={isModalOpen}
+        accountName={accountName}
+        accountPublicKey={accountPublicKey}
+        networkName={networkDetails.networkName}
+        isLoading={isTokenRequestLoading}
+        errorMessage={tokenError}
+        onAuthorize={handleAuthorize}
+        onCancel={handleCancel}
+      />
     </>
   );
 };

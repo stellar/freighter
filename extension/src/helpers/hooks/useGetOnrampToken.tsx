@@ -1,8 +1,13 @@
 import { useEffect, useReducer, useState } from "react";
+import { useSelector } from "react-redux";
 import { captureException } from "@sentry/browser";
 
 import { INDEXER_URL } from "@shared/constants/mercury";
+import { signOnrampProof } from "@shared/api/internal";
+import { WalletType } from "@shared/constants/hardwareWallet";
 import { openTab } from "popup/helpers/navigate";
+import { hardwareWalletTypeSelector } from "popup/ducks/accountServices";
+import { signOnrampProofWithLedger } from "popup/helpers/onrampLedger";
 import { emitMetric } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { RequestState, initialState, reducer } from "./fetchHookInterface";
@@ -33,6 +38,7 @@ function useGetOnrampToken({ asset }: UseGetOnrampTokenParams) {
   );
   const [tokenError, setTokenError] = useState("");
   const { fetchData: fetchAppData } = useGetAppData();
+  const hardwareWalletType = useSelector(hardwareWalletTypeSelector);
 
   useEffect(() => {
     if (state.state === RequestState.ERROR) {
@@ -60,12 +66,33 @@ function useGetOnrampToken({ asset }: UseGetOnrampTokenParams) {
       }
       const publicKey =
         appData.type === AppDataType.RESOLVED ? appData.account.publicKey : "";
+      const requestBody = {};
+
+      let authHeader: string;
+      if (hardwareWalletType !== WalletType.NONE) {
+        authHeader = await signOnrampProofWithLedger({
+          publicKey,
+          body: requestBody,
+          hardwareWalletType,
+        });
+      } else {
+        const proof = await signOnrampProof({
+          activePublicKey: publicKey,
+          body: requestBody,
+        });
+        if (!proof.authHeader) {
+          throw new Error(proof.error || "Unable to authorize onramp request");
+        }
+        authHeader = proof.authHeader;
+      }
+
       const options = {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Authorization: authHeader,
         },
-        body: JSON.stringify({ address: publicKey }),
+        body: JSON.stringify(requestBody),
       };
       const url = `${INDEXER_URL}/onramp/token`;
       const response = await fetch(url, options);

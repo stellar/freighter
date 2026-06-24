@@ -27,6 +27,10 @@ jest.mock("webextension-polyfill", () => ({
   },
 }));
 
+jest
+  .spyOn(ApiInternal, "signOnrampProof")
+  .mockResolvedValue({ authHeader: "Stellar payload.sig" });
+
 jest.spyOn(ApiInternal, "loadAccount").mockImplementation(() =>
   Promise.resolve({
     hasPrivateKey: true,
@@ -77,6 +81,11 @@ const mockFetch = jest.spyOn(global, "fetch").mockResolvedValue({
 });
 
 describe("AddFunds view", () => {
+  beforeEach(() => {
+    newTabSpy.mockClear();
+    mockFetch.mockClear();
+  });
+
   it("displays Coinbase onramp button and opens Coinbase's default flow", async () => {
     render(
       <Wrapper
@@ -99,12 +108,22 @@ describe("AddFunds view", () => {
       </Wrapper>,
     );
 
-    await waitFor(async () => {
+    await waitFor(() => {
       expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
         "Add funds",
       );
-      const coinbaseButton = screen.getByTestId("add-coinbase-button");
-      await fireEvent.click(coinbaseButton);
+    });
+
+    const coinbaseButton = screen.getByTestId("add-coinbase-button");
+    fireEvent.click(coinbaseButton);
+
+    const modal = await screen.findByTestId("coinbase-auth-modal");
+    expect(modal).toBeInTheDocument();
+    expect(newTabSpy).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByText("Authorize"));
+
+    await waitFor(() => {
       expect(newTabSpy).toHaveBeenCalledWith({
         url: `https://pay.coinbase.com/buy/select-asset?sessionToken=${token}&defaultExperience=buy`,
       });
@@ -132,12 +151,22 @@ describe("AddFunds view", () => {
       </Wrapper>,
     );
 
-    await waitFor(async () => {
+    await waitFor(() => {
       expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
         "Add XLM",
       );
-      const coinbaseButton = screen.getByTestId("add-coinbase-button");
-      await fireEvent.click(coinbaseButton);
+    });
+
+    const coinbaseButton = screen.getByTestId("add-coinbase-button");
+    fireEvent.click(coinbaseButton);
+
+    const modal = await screen.findByTestId("coinbase-auth-modal");
+    expect(modal).toBeInTheDocument();
+    expect(newTabSpy).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByText("Authorize"));
+
+    await waitFor(() => {
       expect(newTabSpy).toHaveBeenCalledWith({
         url: `https://pay.coinbase.com/buy/select-asset?sessionToken=${token}&defaultExperience=buy&defaultAsset=XLM`,
       });

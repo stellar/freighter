@@ -306,6 +306,19 @@ export const updateAccountName = ({
     type: SERVICE_TYPES.UPDATE_ACCOUNT_NAME,
   });
 
+export const signOnrampProof = async ({
+  activePublicKey,
+  body,
+}: {
+  activePublicKey: string;
+  body: unknown;
+}): Promise<{ authHeader?: string; error?: string }> =>
+  sendMessageToBackground({
+    type: SERVICE_TYPES.SIGN_ONRAMP_PROOF,
+    activePublicKey,
+    body,
+  });
+
 export const loadAccount = (): Promise<{
   hasPrivateKey: boolean;
   publicKey: string;
