@@ -15,6 +15,7 @@ import {
   saveAmountUsd,
   saveAsset,
   saveDestinationAsset,
+  saveDestinationTokenDetails,
   saveIsToken,
   transactionSubmissionSelector,
 } from "popup/ducks/transactionSubmission";
@@ -106,9 +107,16 @@ export const Swap = () => {
             selectionType="destination"
             hiddenAssets={[transactionData.asset]}
             goBack={() => setActiveStep(STEPS.AMOUNT)}
-            onClickAsset={(canonical: string, isContract: boolean) => {
+            onClickAsset={(canonical, isContract, details) => {
               dispatch(saveDestinationAsset(canonical));
               dispatch(saveIsToken(isContract));
+              dispatch(saveDestinationTokenDetails(details ?? null));
+              emitMetric(METRIC_NAMES.swapDestinationSelected, {
+                tokenCode: details?.tokenCode,
+                tokenIssuer: details?.issuer,
+                requiresTrustline: details?.requiresTrustline,
+                source: details?.source,
+              });
               setActiveStep(STEPS.AMOUNT);
             }}
           />
@@ -154,6 +162,11 @@ export const Swap = () => {
               dispatch(saveIsToken(isContract));
               dispatch(saveAmount("0"));
               dispatch(saveAmountUsd("0.00"));
+              emitMetric(METRIC_NAMES.swapSourceSelected, {
+                tokenCode: getAssetFromCanonical(canonical).code,
+                tokenIssuer: getAssetFromCanonical(canonical).issuer,
+                source: "balances",
+              });
               setActiveStep(STEPS.AMOUNT);
             }}
           />

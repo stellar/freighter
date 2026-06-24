@@ -73,4 +73,18 @@ describe("AmountCard", () => {
       screen.getByText("You don’t have enough {{asset}} in your account"),
     ).toBeInTheDocument();
   });
+
+  it("fires onSelectAsset when asset selector is clicked even with isReadOnly", () => {
+    const onSelectAsset = jest.fn();
+    render(
+      <Wrapper state={{}} routes={["/"]}>
+        <AmountCard {...baseProps} isReadOnly onSelectAsset={onSelectAsset} />
+      </Wrapper>,
+    );
+    // The amount input must be disabled.
+    expect(screen.getByTestId("send-amount-amount-input")).toBeDisabled();
+    // The asset-selector button must still be clickable.
+    fireEvent.click(screen.getByTestId("send-amount-edit-dest-asset"));
+    expect(onSelectAsset).toHaveBeenCalledTimes(1);
+  });
 });

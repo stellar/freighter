@@ -1,4 +1,4 @@
-import { useReducer } from "react";
+import { useReducer, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import BigNumber from "bignumber.js";
 import {
@@ -28,8 +28,9 @@ import {
   transactionDataSelector,
 } from "popup/ducks/transactionSubmission";
 import { useScanTx } from "popup/helpers/blockaid";
-import { BlockAidScanTxResult } from "@shared/api/types";
+import { BlockAidScanTxResult, ErrorMessage } from "@shared/api/types";
 import { horizonGetBestPath } from "popup/helpers/horizonGetBestPath";
+import { isQuoteExpiredError } from "popup/helpers/quoteExpiry";
 import { isContractId } from "popup/helpers/soroban";
 import { formatAmount, roundUsdValue } from "popup/helpers/formatters";
 import { AppDispatch } from "popup/App";
@@ -217,6 +218,10 @@ function useSimulateTxData({
     reducer<SimulateTxData, string>,
     initialState,
   );
+  // Minimal flag the view can read: the frozen quote no longer clears (Horizon
+  // op_under_dest_min / op_too_few_offers). Surfaced for the quote-expired
+  // metric + Notification in SwapAmount.
+  const [isQuoteExpired, setIsQuoteExpired] = useState(false);
 
   const fetchData = async ({
     amount,
@@ -226,6 +231,7 @@ function useSimulateTxData({
     destinationRate?: string;
   }) => {
     dispatch({ type: "FETCH_DATA_START" });
+    setIsQuoteExpired(false);
     try {
       const payload = { transactionXdr: "" } as SimulateTxData;
       const { allowedSlippage, sourceAsset, destAsset, transactionTimeout } =
@@ -305,6 +311,7 @@ function useSimulateTxData({
       const { sourceAsset, destAsset } = simParams;
       const payload = getSwapErrorMessage(error, sourceAsset, destAsset);
 
+      setIsQuoteExpired(isQuoteExpiredError(error as ErrorMessage | undefined));
       dispatch({ type: "FETCH_DATA_ERROR", payload });
       return error;
     }
@@ -313,6 +320,7 @@ function useSimulateTxData({
   return {
     state,
     fetchData,
+    isQuoteExpired,
   };
 }
 

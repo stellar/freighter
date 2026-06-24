@@ -201,7 +201,6 @@ export const AmountCard = ({
           onClick={onSelectAsset}
           data-testid="send-amount-edit-dest-asset"
           aria-label={t("Change asset")}
-          disabled={isReadOnly}
         >
           <AssetIcon
             assetIcons={assetIssuerKey || assetCode !== "XLM" ? assetIcons : {}}

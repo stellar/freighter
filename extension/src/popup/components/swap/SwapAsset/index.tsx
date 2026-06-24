@@ -17,6 +17,7 @@ import { newTabHref } from "helpers/urls";
 import { reRouteOnboarding } from "popup/helpers/route";
 import { getStellarExpertUrl } from "popup/helpers/account";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
+import type { DestinationTokenDetails } from "popup/ducks/transactionSubmission";
 import { useGetSwapFromData } from "./hooks/useSwapFromData";
 import { useSwapTokenLookup } from "./hooks/useSwapTokenLookup";
 import { SwapPickerSections } from "./SwapPickerSections";
@@ -24,10 +25,21 @@ import type { SwapPickerSectionsResult } from "./SwapPickerSections";
 
 import "./styles.scss";
 
+/**
+ * The destination side passes a 3rd `details` argument carrying the picked
+ * token's descriptor plus a `source` discriminator (which picker section the
+ * row came from). The source side stays 2-arg-compatible (details optional).
+ */
+export type SwapPickerSelection = DestinationTokenDetails & { source?: string };
+
 interface SwapAssetProps {
   selectionType: "source" | "destination";
   hiddenAssets: string[];
-  onClickAsset: (canonical: string, isContract: boolean) => void;
+  onClickAsset: (
+    canonical: string,
+    isContract: boolean,
+    details?: SwapPickerSelection,
+  ) => void;
   goBack: () => void;
 }
 

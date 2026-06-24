@@ -8,8 +8,29 @@ import {
   UnverifiedTokenInfoSheet,
 } from "../InfoSheets";
 import type { SwapTokenRecord } from "../hooks/useSwapTokenLookup";
+import type { SwapPickerSelection } from "../index";
 
 import "./styles.scss";
+
+/** Which picker section a clicked row came from (used for telemetry). */
+type PickerSource = "balances" | "popular" | "search";
+
+/**
+ * Builds the destination descriptor passed up to the Swap view on pick.
+ * `decimals` is 7 for classic Stellar assets.
+ */
+const buildSelection = (
+  r: SwapTokenRecord,
+  source: PickerSource,
+): SwapPickerSelection => ({
+  tokenCode: r.code ?? "",
+  requiresTrustline: r.requiresTrustline,
+  decimals: 7,
+  issuer: r.issuer || undefined,
+  securityLevel: r.securityLevel,
+  iconUrl: r.image ?? r.icon ?? undefined,
+  source,
+});
 
 /**
  * Flat sections shape accepted by this presentational component.
@@ -30,7 +51,11 @@ export interface SwapPickerSectionsResult {
 export interface SwapPickerSectionsProps {
   result: SwapPickerSectionsResult;
   searchTerm: string;
-  onClickAsset: (canonical: string, isContract: boolean) => void;
+  onClickAsset: (
+    canonical: string,
+    isContract: boolean,
+    details?: SwapPickerSelection,
+  ) => void;
   stellarExpertUrl: string;
 }
 
@@ -46,7 +71,7 @@ export const SwapPickerSections = ({
 
   const isSearching = searchTerm.trim().length > 0;
 
-  const renderRows = (records: SwapTokenRecord[]) =>
+  const renderRows = (records: SwapTokenRecord[], source: PickerSource) =>
     records.map((r) => (
       <SwapTokenRow
         key={r.canonical}
@@ -60,7 +85,9 @@ export const SwapPickerSections = ({
         percentChange24h={r.percentChange24h}
         securityLevel={r.securityLevel}
         stellarExpertUrl={stellarExpertUrl}
-        onClick={() => onClickAsset(r.canonical, r.isContract)}
+        onClick={() =>
+          onClickAsset(r.canonical, r.isContract, buildSelection(r, source))
+        }
       />
     ));
 
@@ -117,7 +144,7 @@ export const SwapPickerSections = ({
               >
                 {t("Your tokens")}
               </div>
-              {renderRows(result.yourTokens)}
+              {renderRows(result.yourTokens, "balances")}
             </>
           )}
 
@@ -129,7 +156,7 @@ export const SwapPickerSections = ({
               >
                 {t("Popular tokens")}
               </div>
-              {renderRows(result.popular)}
+              {renderRows(result.popular, "popular")}
             </>
           )}
 
@@ -147,7 +174,7 @@ export const SwapPickerSections = ({
                   <Icon.InfoCircle />
                 </button>
               </div>
-              {renderRows(result.verified)}
+              {renderRows(result.verified, "search")}
             </>
           )}
 
@@ -167,7 +194,7 @@ export const SwapPickerSections = ({
                   <Icon.InfoCircle />
                 </button>
               </div>
-              {renderRows(result.unverified)}
+              {renderRows(result.unverified, "search")}
             </>
           )}
         </>

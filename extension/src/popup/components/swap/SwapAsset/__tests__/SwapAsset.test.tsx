@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 
 import { Wrapper } from "popup/__testHelpers__";
 import { RequestState } from "constants/request";
@@ -85,5 +85,64 @@ describe("SwapAsset selectionType", () => {
     expect(screen.getByText("Swap to")).toBeInTheDocument();
     expect(screen.getByTestId("swap-picker-sections")).toBeInTheDocument();
     expect(screen.queryByTestId("token-list")).toBeNull();
+  });
+
+  it("destination: forwards the widened descriptor (canonical, isContract, details) on pick", () => {
+    jest.spyOn(UseSwapTokenLookup, "useSwapTokenLookup").mockReturnValue({
+      fetchData: jest.fn().mockResolvedValue(undefined),
+      state: {
+        state: RequestState.SUCCESS,
+        data: {
+          sections: {
+            yourTokens: [],
+            popular: [
+              {
+                canonical: "AQUA:G456",
+                code: "AQUA",
+                issuer: "G456",
+                domain: "aqua.network",
+                image: "icon_url",
+                isHeld: false,
+                isContract: false,
+                requiresTrustline: true,
+              },
+            ],
+            verified: [],
+            unverified: [],
+          },
+          isSearch: false,
+          hadSorobanMatches: false,
+          isFallback: false,
+        },
+        error: null,
+      },
+    } as any);
+
+    const onClickAsset = jest.fn();
+    render(
+      <Wrapper state={{}} routes={["/"]}>
+        <SwapAsset
+          selectionType="destination"
+          hiddenAssets={[]}
+          onClickAsset={onClickAsset}
+          goBack={jest.fn()}
+        />
+      </Wrapper>,
+    );
+
+    fireEvent.click(screen.getByTestId("SwapTokenRow-AQUA-body"));
+
+    expect(onClickAsset).toHaveBeenCalledTimes(1);
+    const [canonical, isContract, details] = onClickAsset.mock.calls[0];
+    expect(canonical).toBe("AQUA:G456");
+    expect(isContract).toBe(false);
+    expect(details).toMatchObject({
+      tokenCode: "AQUA",
+      issuer: "G456",
+      requiresTrustline: true,
+      decimals: 7,
+      iconUrl: "icon_url",
+      source: "popular",
+    });
   });
 });

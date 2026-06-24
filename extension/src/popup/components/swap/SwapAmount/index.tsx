@@ -119,26 +119,30 @@ export const SwapAmount = ({
     },
     destination,
   );
-  const { state: simulationState, fetchData: fetchSimulationData } =
-    useSimulateTxData({
-      publicKey,
-      networkDetails,
-      simParams: {
-        sourceAsset: srcAsset,
-        destAsset: dstAsset!,
-        amount,
-        allowedSlippage,
-        path,
-        transactionFee: fee,
-        transactionTimeout,
-        memo,
-      },
-    });
+  const {
+    state: simulationState,
+    fetchData: fetchSimulationData,
+    isQuoteExpired,
+  } = useSimulateTxData({
+    publicKey,
+    networkDetails,
+    simParams: {
+      sourceAsset: srcAsset,
+      destAsset: dstAsset!,
+      amount,
+      allowedSlippage,
+      path,
+      transactionFee: fee,
+      transactionTimeout,
+      memo,
+    },
+  });
 
   const [isEditingSlippage, setIsEditingSlippage] = useState(false);
   const [isEditingSettings, setIsEditingSettings] = useState(false);
   const [isReviewingTx, setIsReviewingTx] = React.useState(false);
   const [isXlmReserveOpen, setIsXlmReserveOpen] = useState(false);
+  const [showQuoteExpired, setShowQuoteExpired] = useState(false);
 
   const handleContinue = async (values: { amount: string }) => {
     const amountVal = inputType === "crypto" ? values.amount : priceValue!;
@@ -212,6 +216,26 @@ export const SwapAmount = ({
     getData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Quote-expired surfacing: when the simulate hook flags an expired quote
+  // (Horizon op_under_dest_min / op_too_few_offers), emit the metric and show
+  // the user-facing notification. The auto-refetch is handled by Phase E's
+  // getBestPath retry; this only emits + surfaces the message.
+  useEffect(() => {
+    if (!isQuoteExpired) {
+      setShowQuoteExpired(false);
+      return;
+    }
+    setShowQuoteExpired(true);
+    emitMetric(METRIC_NAMES.swapQuoteExpired, {
+      sourceToken: asset,
+      destToken: destinationAsset,
+      sourceAmount: amount,
+      destAmount: destinationAmount,
+      allowedSlippage,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isQuoteExpired]);
 
   if (isLoading) {
     return <Loading />;
@@ -383,6 +407,19 @@ export const SwapAmount = ({
         }
       >
         <div className="SwapAsset">
+          {showQuoteExpired && (
+            <div
+              className="SwapAsset__quote-expired"
+              data-testid="swap-quote-expired"
+            >
+              <Notification
+                variant="warning"
+                title={t(
+                  "Quote has expired, please try again to get a new quote",
+                )}
+              />
+            </div>
+          )}
           <div className="SwapAsset__content">
             <form>
               <div className="SwapAsset__simplebar__content">
@@ -586,7 +623,15 @@ export const SwapAmount = ({
             fee={fee}
             networkDetails={networkDetails}
             onCancel={() => setIsReviewingTx(false)}
-            onConfirm={goToNext}
+            onConfirm={() => {
+              if (transactionData.destinationTokenDetails?.requiresTrustline) {
+                emitMetric(METRIC_NAMES.swapTrustlineAdded, {
+                  tokenCode: transactionData.destinationTokenDetails.tokenCode,
+                  tokenIssuer: transactionData.destinationTokenDetails.issuer,
+                });
+              }
+              goToNext();
+            }}
             sendAmount={amount}
             sendPriceUsd={priceValueUsd}
             simulationState={simulationState}
