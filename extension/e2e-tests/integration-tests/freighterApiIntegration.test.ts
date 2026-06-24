@@ -17,6 +17,7 @@ import {
   stubScanTx,
   stubTokenDetails,
   stubTokenPrices,
+  stubVerifiedToken,
 } from "../helpers/stubs";
 
 const TX_TO_SIGN =
@@ -815,7 +816,7 @@ test("should not sign message when not allowed", async ({
   await expect(popup.getByText("Connection Request")).toBeVisible();
 });
 
-test("should add token when allowed", async ({
+test("should add an unverified SEP-41 token when allowed", async ({
   page,
   extensionId,
   context,
@@ -843,6 +844,7 @@ test("should add token when allowed", async ({
   const popup = await popupPromise;
 
   await expect(popup.getByText("E2E Token")).toBeDefined();
+  await expect(popup.getByText("Not on your lists")).toBeVisible();
   await expectPageToHaveScreenshot({
     page: popup,
     screenshot: "add-token.png",
@@ -866,7 +868,7 @@ const SAC_CONTRACT_ID =
 // requires the window.fetch addInitScript approach described below. In
 // integration mode all stubs are bypassed and the real backend is used, but
 // the test account does not have a live SAC on testnet.
-test("should open the Change Trust review and add a SAC token when allowed", async ({
+test("should add an unverified SAC token through the Change Trust review when allowed", async ({
   page,
   extensionId,
   context,
@@ -982,6 +984,7 @@ test("should open the Change Trust review and add a SAC token when allowed", asy
   await expect(
     popup.getByTestId("AddToken__Metadata__Row__TokenAddress"),
   ).toBeVisible();
+  await expect(popup.getByText("Not on your lists")).toBeVisible();
 
   // Clicking confirm for a SAC slides in the standard changeTrust review.
   await popup.getByTestId("add-token-approve").click();
@@ -992,7 +995,7 @@ test("should open the Change Trust review and add a SAC token when allowed", asy
   await expect(popup.getByText("Add Trustline")).toBeVisible();
 });
 
-test("should not add token when not allowed", async ({
+test("should not add a SEP-41 token when the domain is not allowed", async ({
   page,
   extensionId,
   context,
@@ -1030,6 +1033,198 @@ test("should not add token when not allowed", async ({
     page: popup,
     screenshot: "domain-not-allowed-add-token.png",
   });
+});
+
+test("should add a verified SEP-41 token without the unverified banner", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  await stubIsSac(context);
+  // Stub the asset-list so TEST_TOKEN_ADDRESS appears as a verified token.
+  // This causes getVerifiedTokens() to find a match and setIsVerifiedToken(true),
+  // which suppresses the AssetListWarning "Not on your lists" banner.
+  await stubVerifiedToken(page, TEST_TOKEN_ADDRESS);
+
+  await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
+  await allowDapp({ page });
+
+  // open a second tab and go to docs playground
+  const pageTwo = await page.context().newPage();
+  await pageTwo.waitForLoadState();
+
+  const popupPromise = page.context().waitForEvent("page");
+  await pageTwo.goto(
+    "https://play.freighter.app/#/extension/playground/addToken",
+  );
+  await pageTwo.getByRole("textbox").first().fill(TEST_TOKEN_ADDRESS);
+  await pageTwo
+    .getByRole("textbox")
+    .nth(1)
+    .fill("Test SDF Network ; September 2015");
+  await pageTwo.getByText("Add Token").click();
+
+  const popup = await popupPromise;
+
+  // Also stub the asset-list on the popup page itself (belt-and-suspenders for
+  // requests fired after the popup is captured).
+  await stubVerifiedToken(popup, TEST_TOKEN_ADDRESS);
+
+  await expect(popup.getByText("E2E Token")).toBeDefined();
+  // Verified token: the "Not on your lists" banner must NOT be shown.
+  await expect(popup.getByText("Not on your lists")).toHaveCount(0);
+  await popup.getByTestId("add-token-approve").click();
+
+  await expect(pageTwo.locator("#result-addToken")).toContainText(
+    "Token added:",
+  );
+});
+
+// SAC verified token test: skipped in integration mode for the same reasons as the
+// unverified SAC test — stub injection via addInitScript is not compatible with
+// integration mode (real backend is used and there is no live SAC on testnet).
+test("should add a verified SAC token through the Change Trust review without the unverified banner", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  test.skip(
+    isIntegrationMode,
+    "SAC stub injection via addInitScript is not compatible with integration mode",
+  );
+
+  // Inject the SAC stubs (is-sac-contract, token-details) AND the asset-list
+  // via window.fetch override so they fire before the popup page script runs.
+  // This is the same technique used by the unverified SAC test for is-sac-contract
+  // and token-details; here we extend it to also cover the asset-list fetch so
+  // that getVerifiedTokens() finds SAC_CONTRACT_ID and sets isVerifiedToken=true.
+  await context.addInitScript(
+    ({
+      sacIssuer,
+      sacContractId,
+    }: {
+      sacIssuer: string;
+      sacContractId: string;
+    }) => {
+      const origFetch = (window as Window & typeof globalThis).fetch.bind(
+        window,
+      );
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (window as any).fetch = function (input: any, init: any) {
+        const url: string =
+          typeof input === "string"
+            ? input
+            : input instanceof URL
+              ? input.href
+              : (input?.url ?? "");
+        if (url.includes("/is-sac-contract/")) {
+          return Promise.resolve(
+            new Response(JSON.stringify({ isSacContract: true }), {
+              status: 200,
+              headers: { "Content-Type": "application/json" },
+            }),
+          );
+        }
+        if (url.includes("/token-details/")) {
+          return Promise.resolve(
+            new Response(
+              JSON.stringify({
+                name: `E2E:${sacIssuer}`,
+                symbol: "E2E",
+                decimals: 7,
+              }),
+              {
+                status: 200,
+                headers: { "Content-Type": "application/json" },
+              },
+            ),
+          );
+        }
+        if (url.includes("/asset-list/")) {
+          return Promise.resolve(
+            new Response(
+              JSON.stringify({
+                name: "StellarExpert Top 50",
+                provider: "StellarExpert",
+                description: "Verified asset list",
+                version: "1.0",
+                network: "testnet",
+                feedback: "https://stellar.expert",
+                assets: [
+                  {
+                    code: "E2E",
+                    issuer: sacIssuer,
+                    contract: sacContractId,
+                    name: "E2E Token",
+                    org: "unknown",
+                    domain: "example.com",
+                    decimals: 7,
+                  },
+                ],
+              }),
+              {
+                status: 200,
+                headers: { "Content-Type": "application/json" },
+              },
+            ),
+          );
+        }
+        return origFetch(input, init);
+      };
+    },
+    { sacIssuer: SAC_ISSUER, sacContractId: SAC_CONTRACT_ID },
+  );
+
+  // context.route() as belt-and-suspenders
+  await stubIsSacTrue(context);
+  await stubSacTokenDetails(context);
+  await stubVerifiedToken(context, SAC_CONTRACT_ID);
+
+  await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
+  await allowDapp({ page });
+
+  const pageTwo = await page.context().newPage();
+  await pageTwo.waitForLoadState();
+
+  const popupPromise = page.context().waitForEvent("page");
+  await pageTwo.goto(
+    "https://play.freighter.app/#/extension/playground/addToken",
+  );
+  await pageTwo.getByRole("textbox").first().fill(SAC_CONTRACT_ID);
+  await pageTwo
+    .getByRole("textbox")
+    .nth(1)
+    .fill("Test SDF Network ; September 2015");
+  await pageTwo.getByText("Add Token").click();
+
+  const popup = await popupPromise;
+
+  // Belt-and-suspenders page-level stubs on the popup.
+  await stubIsSacTrue(popup);
+  await stubSacTokenDetails(popup);
+  await stubVerifiedToken(popup, SAC_CONTRACT_ID);
+  await stubFeeStats(popup);
+  await stubHorizonAccounts(popup);
+  await stubScanAssetSafe(popup);
+  await stubScanTx(popup);
+  await stubBackendSubmitTx(popup);
+  await stubAccountBalances(popup);
+
+  await expect(popup.getByTestId("AddToken__Metadata__Row__Fee")).toBeVisible({
+    timeout: 15000,
+  });
+  await expect(
+    popup.getByTestId("AddToken__Metadata__Row__TokenAddress"),
+  ).toBeVisible();
+  // Verified SAC token: the "Not on your lists" banner must NOT be shown.
+  await expect(popup.getByText("Not on your lists")).toHaveCount(0);
+
+  await popup.getByTestId("add-token-approve").click();
+
+  await expect(popup.getByTestId("ChangeTrustInternal__Body")).toBeVisible({
+    timeout: 15000,
+  });
+  await expect(popup.getByText("Add Trustline")).toBeVisible();
 });
 
 test("should get public key when logged out", async ({

@@ -3182,3 +3182,40 @@ export const stubMaintenanceBannerVariant = async (
     },
   });
 };
+
+/**
+ * Stubs the asset-list endpoint so that the given contractId appears as a
+ * verified token. This causes getVerifiedTokens() to return a non-empty array,
+ * which sets isVerifiedToken=true in AddToken and suppresses the
+ * "Not on your lists" AssetListWarning banner.
+ *
+ * Use page.route() (popup-level) for SEP-41 tokens and context.addInitScript()
+ * for the SAC flow (where the popup is created before page.route() can fire).
+ *
+ * @param page - Playwright Page or BrowserContext to attach the route to
+ * @param contractId - The contract address that should appear as verified
+ */
+export const stubVerifiedToken = async (
+  page: Page | BrowserContext,
+  contractId: string,
+) => {
+  const verifiedAssetList = {
+    ...STELLAR_EXPERT_ASSET_LIST_JSON,
+    assets: [
+      ...STELLAR_EXPERT_ASSET_LIST_JSON.assets,
+      {
+        code: "E2E",
+        issuer: "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
+        contract: contractId,
+        name: "E2E Token",
+        org: "unknown",
+        domain: "example.com",
+        decimals: 7,
+      },
+    ],
+  };
+
+  await page.route("*/**/testnet/asset-list/**", async (route) => {
+    await route.fulfill({ json: verifiedAssetList });
+  });
+};

@@ -552,7 +552,9 @@ export const AddToken = () => {
             isSac ? setShowTrustlineReview(true) : handleApprove()
           }
         >
-          {t("Confirm")}
+          {/* SAC is a 2-step flow (Add Token → Change Trust review), so this
+              first button advances ("Continue"); SEP-41 confirms directly. */}
+          {isSac ? t("Continue") : t("Confirm")}
         </Button>
       </View.Footer>
     </React.Fragment>
