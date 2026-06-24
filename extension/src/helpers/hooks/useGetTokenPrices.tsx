@@ -7,7 +7,7 @@ import { initialState, isCacheValid, reducer } from "helpers/request";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { getCanonicalFromAsset } from "helpers/stellar";
 import { ApiTokenPrices } from "@shared/api/types";
-import { NETWORKS, NetworkDetails } from "@shared/constants/stellar";
+import { NetworkDetails } from "@shared/constants/stellar";
 import { saveTokenPrices } from "popup/ducks/cache";
 import { AppDispatch } from "popup/App";
 import { AccountBalances } from "./useGetBalances";
@@ -67,7 +67,7 @@ export function useGetTokenPrices() {
         if (assetIds.length) {
           const fetchedTokenPrices = await getTokenPrices(
             assetIds,
-            networkDetails.network as NETWORKS,
+            networkDetails.network,
           );
           reduxDispatch(
             saveTokenPrices({

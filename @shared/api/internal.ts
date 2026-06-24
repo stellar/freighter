@@ -601,7 +601,7 @@ export const getAccountIndexerBalances = async ({
 
 export const getTokenPrices = async (
   tokens: string[],
-  network: NETWORKS,
+  network: NetworkDetails["network"],
 ): Promise<ApiTokenPrices> => {
   // The v2 token-prices endpoint only supports pubnet and testnet (Futurenet
   // and custom networks are rejected), so skip the call entirely on anything
