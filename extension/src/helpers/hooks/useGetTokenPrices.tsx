@@ -67,7 +67,7 @@ export function useGetTokenPrices() {
         if (assetIds.length) {
           const fetchedTokenPrices = await getTokenPrices(
             assetIds,
-            networkDetails.network,
+            networkDetails,
           );
           reduxDispatch(
             saveTokenPrices({

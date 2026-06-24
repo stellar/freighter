@@ -601,12 +601,19 @@ export const getAccountIndexerBalances = async ({
 
 export const getTokenPrices = async (
   tokens: string[],
-  network: NetworkDetails["network"],
+  networkDetails: NetworkDetails,
 ): Promise<ApiTokenPrices> => {
-  // The v2 token-prices endpoint only supports pubnet and testnet (Futurenet
-  // and custom networks are rejected), so skip the call entirely on anything
-  // else to avoid a guaranteed error and Sentry noise.
-  if (network !== NETWORKS.PUBLIC && network !== NETWORKS.TESTNET) {
+  // The v2 token-prices endpoint only supports pubnet and testnet. Derive the
+  // price network from the passphrase rather than networkDetails.network so
+  // that custom networks sharing the pubnet/testnet passphrase (stored as
+  // STANDALONE) still resolve to the correct supported network. Anything else
+  // (Futurenet, custom passphrases) is skipped to avoid a guaranteed error and
+  // Sentry noise.
+  const priceNetwork = {
+    [Networks.PUBLIC]: NETWORKS.PUBLIC,
+    [Networks.TESTNET]: NETWORKS.TESTNET,
+  }[networkDetails.networkPassphrase];
+  if (!priceNetwork) {
     return {};
   }
   // NOTE: API does not accept LP IDs or custom tokens
@@ -620,7 +627,7 @@ export const getTokenPrices = async (
     return {};
   }
   const url = new URL(`${INDEXER_V2_URL}/token-prices`);
-  url.searchParams.append("network", network);
+  url.searchParams.append("network", priceNetwork);
   const options = {
     method: "POST",
     headers: {
