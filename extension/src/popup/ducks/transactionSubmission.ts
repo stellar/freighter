@@ -28,6 +28,7 @@ import {
 import { NETWORKS, NetworkDetails } from "@shared/constants/stellar";
 import { ConfigurableWalletType } from "@shared/constants/hardwareWallet";
 import { isCustomNetwork } from "@shared/helpers/stellar";
+import { SecurityLevel } from "popup/constants/blockaid";
 
 import { getCanonicalFromAsset } from "helpers/stellar";
 import { INDEXER_URL } from "@shared/constants/mercury";
@@ -416,6 +417,22 @@ export enum ShowOverlayStatus {
   IN_PROGRESS = "IN_PROGRESS",
 }
 
+export interface DestinationTokenDetails {
+  // e.g. "AQUA" / "XLM" — lets the banner, review rows, and warnings render
+  // without re-parsing the canonical destinationAsset string.
+  tokenCode: string;
+  // true when the user has no trustline for this destination yet.
+  requiresTrustline: boolean;
+  // 7 for classic assets.
+  decimals: number;
+  // omitted for native XLM.
+  issuer?: string;
+  // from the pick-time Blockaid bulk scan.
+  securityLevel?: SecurityLevel;
+  // from the search/Popular record, before balances hydrate.
+  iconUrl?: string;
+}
+
 interface TransactionData {
   amount: string;
   amountUsd: string;
@@ -432,6 +449,7 @@ interface TransactionData {
   destinationDecimals?: number;
   destinationAmount: string;
   destinationIcon: string;
+  destinationTokenDetails: DestinationTokenDetails | null;
   path: string[];
   allowedSlippage: string;
   isToken: boolean;
@@ -503,6 +521,7 @@ export const initialState: InitialState = {
     destinationAsset: "",
     destinationAmount: "",
     destinationIcon: "",
+    destinationTokenDetails: null,
     path: [],
     allowedSlippage: "1",
     isCollectible: false,
@@ -656,6 +675,12 @@ const transactionSubmissionSlice = createSlice({
       state.transactionData.destinationAmount =
         action.payload.destinationAmount;
     },
+    saveDestinationTokenDetails: (
+      state,
+      action: { payload: DestinationTokenDetails | null },
+    ) => {
+      state.transactionData.destinationTokenDetails = action.payload;
+    },
   },
   extraReducers: (builder) => {
     builder.addCase(submitFreighterTransaction.pending, (state) => {
@@ -791,6 +816,7 @@ export const {
   saveIsMergeSelected,
   saveBalancesToMigrate,
   saveSwapBestPath,
+  saveDestinationTokenDetails,
 } = transactionSubmissionSlice.actions;
 export const { reducer } = transactionSubmissionSlice;
 
@@ -805,3 +831,7 @@ export const transactionDataSelector = (state: {
 export const isPathPaymentSelector = (state: {
   transactionSubmission: InitialState;
 }) => state.transactionSubmission.transactionData.destinationAsset !== "";
+
+export const destinationTokenDetailsSelector = (state: {
+  transactionSubmission: InitialState;
+}) => state.transactionSubmission.transactionData.destinationTokenDetails;
