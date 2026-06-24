@@ -599,13 +599,23 @@ export const getAccountIndexerBalances = async ({
   };
 };
 
-export const getTokenPrices = async (tokens: string[]) => {
+export const getTokenPrices = async (
+  tokens: string[],
+  network: NETWORKS,
+): Promise<ApiTokenPrices> => {
+  // The v2 token-prices endpoint only supports pubnet and testnet (Futurenet
+  // and custom networks are rejected), so skip the call entirely on anything
+  // else to avoid a guaranteed error and Sentry noise.
+  if (network !== NETWORKS.PUBLIC && network !== NETWORKS.TESTNET) {
+    return {};
+  }
   // NOTE: API does not accept LP IDs or custom tokens
   const filteredTokens = tokens.filter((tokenId) => {
     const asset = getAssetFromCanonical(tokenId);
     return !tokenId.includes(":lp") && !isContractId(asset.issuer);
   });
-  const url = new URL(`${INDEXER_URL}/token-prices`);
+  const url = new URL(`${INDEXER_V2_URL}/token-prices`);
+  url.searchParams.append("network", network);
   const options = {
     method: "POST",
     headers: {

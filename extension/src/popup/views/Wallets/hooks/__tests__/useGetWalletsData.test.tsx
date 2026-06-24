@@ -13,6 +13,7 @@ import { RequestState } from "constants/request";
 import * as ApiInternal from "@shared/api/internal";
 import {
   MAINNET_NETWORK_DETAILS,
+  NETWORKS,
   TESTNET_NETWORK_DETAILS,
 } from "@shared/constants/stellar";
 import { AppDataType } from "helpers/hooks/useGetAppData";
@@ -221,11 +222,14 @@ describe("useGetWalletsData", () => {
       await result.current.fetchData(true);
     });
     expect(result.current.state.state).toBe<RequestState>(RequestState.SUCCESS);
-    expect(getTokenPricesSpy).toHaveBeenCalledWith([
-      "native",
-      "DT:CCXVDIGMR6WTXZQX2OEVD6YM6AYCYPXPQ7YYH6OZMRS7U6VD3AVHNGBJ",
-      "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
-    ]);
+    expect(getTokenPricesSpy).toHaveBeenCalledWith(
+      [
+        "native",
+        "DT:CCXVDIGMR6WTXZQX2OEVD6YM6AYCYPXPQ7YYH6OZMRS7U6VD3AVHNGBJ",
+        "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
+      ],
+      NETWORKS.PUBLIC,
+    );
     expect(result.current.state.data).toEqual({
       accountValue: {
         G1: "$250.00",

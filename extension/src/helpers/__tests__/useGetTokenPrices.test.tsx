@@ -6,6 +6,7 @@ import { useGetTokenPrices } from "../hooks/useGetTokenPrices";
 import { makeDummyStore } from "popup/__testHelpers__";
 import { defaultBlockaidScanAssetResult } from "@shared/helpers/stellar";
 import { RequestState } from "constants/request";
+import { MAINNET_NETWORK_DETAILS, NETWORKS } from "@shared/constants/stellar";
 import * as ApiInternal from "@shared/api/internal";
 
 describe("useGetTokenPrices", () => {
@@ -51,9 +52,10 @@ describe("useGetTokenPrices", () => {
             blockaidData: defaultBlockaidScanAssetResult,
           },
         ],
+        networkDetails: MAINNET_NETWORK_DETAILS,
       } as any);
     });
-    expect(getTokenPricesSpy).toHaveBeenCalledWith(["native"]);
+    expect(getTokenPricesSpy).toHaveBeenCalledWith(["native"], NETWORKS.PUBLIC);
     expect(result.current.state.state).toBe<RequestState>(RequestState.SUCCESS);
     expect(result.current.state.data?.tokenPrices).toEqual({
       native: {
@@ -109,9 +111,10 @@ describe("useGetTokenPrices", () => {
             blockaidData: defaultBlockaidScanAssetResult,
           },
         ],
+        networkDetails: MAINNET_NETWORK_DETAILS,
       } as any);
     });
-    expect(getTokenPricesSpy).toHaveBeenCalledWith(["native"]);
+    expect(getTokenPricesSpy).toHaveBeenCalledWith(["native"], NETWORKS.PUBLIC);
     expect(result.current.state.state).toBe<RequestState>(RequestState.SUCCESS);
     expect(result.current.state.data?.tokenPrices).toEqual({
       native: {
