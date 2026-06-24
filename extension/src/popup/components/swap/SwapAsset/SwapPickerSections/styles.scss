@@ -1,0 +1,35 @@
+.SwapPickerSections {
+  display: flex;
+  flex-direction: column;
+
+  &__notice {
+    margin-bottom: 0.75rem;
+  }
+
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    margin-top: 1rem;
+    margin-bottom: 0.25rem;
+    color: var(--sds-clr-gray-11);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+
+    &__info {
+      background: transparent;
+      border: none;
+      padding: 0;
+      cursor: pointer;
+      color: var(--sds-clr-gray-09);
+      display: inline-flex;
+    }
+  }
+
+  &__empty {
+    padding: 2rem 1rem;
+    text-align: center;
+    color: var(--sds-clr-gray-09);
+  }
+}
