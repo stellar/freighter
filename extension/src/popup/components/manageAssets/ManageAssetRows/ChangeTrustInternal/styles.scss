@@ -11,10 +11,15 @@
   border-radius: 0.875rem;
 
   // Full popup view (external Add Token), vs the content-sized in-app modal:
-  // fill the height so actions/footer pin to the bottom instead of floating.
+  // fill the height so actions/footer pin to the bottom and the scroll region
+  // expands to occupy all the space down to the buttons (no gray gap). Use a
+  // hard height (not min-height) so the inner Body is firmly bounded and
+  // becomes the scroll container instead of staying content-sized.
   &--standalone {
     flex: 1;
-    min-height: 100%;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
 
     // Grow the slider so the action row is pushed to the bottom.
     > .multi-pane-slider {
@@ -31,9 +36,12 @@
       }
     }
 
-    .multi-pane-slider__pane--active {
+    // The pane is the scroll container: bounded to the slider height and
+    // scrolls its content, so the details fill down to the pinned buttons.
+    .multi-pane-slider__pane {
       height: 100%;
       min-height: 0;
+      overflow: auto;
     }
 
     // Single scroll container, so transaction details scroll fully instead of

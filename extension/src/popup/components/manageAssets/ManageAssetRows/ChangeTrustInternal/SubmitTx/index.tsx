@@ -48,6 +48,7 @@ interface SubmitTransactionProps {
   icons: AssetIcons;
   goBack: () => void;
   onSuccess: () => void;
+  onClose: () => void;
 }
 
 export const SubmitTransaction = ({
@@ -57,6 +58,7 @@ export const SubmitTransaction = ({
   fee,
   goBack,
   onSuccess,
+  onClose,
 }: SubmitTransactionProps) => {
   const { t } = useTranslation();
   const dispatch: AppDispatch = useDispatch();
@@ -229,7 +231,11 @@ export const SubmitTransaction = ({
                         isHardwareWallet,
                         isSuccess,
                       });
-                      onSuccess();
+                      if (isSuccess) {
+                        onSuccess();
+                      } else {
+                        onClose();
+                      }
                     }}
                   >
                     {t("Done")}

@@ -146,6 +146,16 @@ jest.mock("popup/helpers/useTokenLookup", () => {
   };
 });
 
+// AddToken imports isContractId + isAssetSac from soroban. Stub both: a contract
+// id is a "C..." string, and a token is a SAC when the resolved issuer is a
+// classic G-address — matching the SAC vs SEP-41 setup driven by
+// mockTokenLookupConfig.issuer above.
+jest.mock("popup/helpers/soroban", () => ({
+  isContractId: (id?: string) => typeof id === "string" && id.startsWith("C"),
+  isAssetSac: ({ asset }: { asset: { issuer?: string } }) =>
+    (asset?.issuer || "").startsWith("G"),
+}));
+
 jest.mock("@shared/api/helpers/getIconUrlFromIssuer", () => ({
   getIconUrlFromIssuer: jest.fn().mockResolvedValue(""),
 }));

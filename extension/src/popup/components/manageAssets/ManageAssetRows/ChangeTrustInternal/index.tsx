@@ -539,6 +539,7 @@ export const ChangeTrustInternal = ({
             fee={fee}
             goBack={() => setActiveBodyContent(ActiveBodyContent.details)}
             onSuccess={onSuccess ?? onCancel}
+            onClose={onCancel}
           />
         )}
       </div>

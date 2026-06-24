@@ -11,7 +11,7 @@ import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Navigate, useLocation } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
-import { BASE_FEE, StellarToml, StrKey } from "stellar-sdk";
+import { BASE_FEE, StellarToml } from "stellar-sdk";
 
 import { AppDispatch } from "popup/App";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
@@ -42,7 +42,7 @@ import { VerifyAccount } from "popup/views/VerifyAccount";
 import { View } from "popup/basics/layout/View";
 import { ManageAssetCurrency } from "popup/components/manageAssets/ManageAssetRows";
 import { useTokenLookup } from "popup/helpers/useTokenLookup";
-import { isContractId } from "popup/helpers/soroban";
+import { isContractId, isAssetSac } from "popup/helpers/soroban";
 import {
   scanAsset,
   isAssetSuspicious,
@@ -110,7 +110,6 @@ export const AddToken = () => {
 
   const dispatch: AppDispatch = useDispatch();
   const [showTrustlineReview, setShowTrustlineReview] = useState(false);
-  const isSac = StrKey.isValidEd25519PublicKey(assetIssuer);
 
   // `recommendedFee` is the network-recommended fee in XLM after useNetworkFees
   // resolves; pre-fetch it is the raw BASE_FEE (stroops), so guard against that
@@ -311,6 +310,16 @@ export const AddToken = () => {
   });
 
   const { networkPassphrase, networkName } = state.data.settings.networkDetails;
+
+  // Verify the contract is the derived SAC, not just a G-address issuer.
+  const isSac = isAssetSac({
+    asset: {
+      code: assetCode,
+      issuer: assetIssuer,
+      contract: assetCurrency?.contract,
+    },
+    networkDetails: state.data.settings.networkDetails,
+  });
 
   if (entryNetworkPassphrase && entryNetworkPassphrase !== networkPassphrase) {
     return (
