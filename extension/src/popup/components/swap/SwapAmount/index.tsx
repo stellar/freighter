@@ -145,7 +145,8 @@ export const SwapAmount = ({
   const [showQuoteExpired, setShowQuoteExpired] = useState(false);
 
   const handleContinue = async (values: { amount: string }) => {
-    const amountVal = inputType === "crypto" ? values.amount : priceValue!;
+    const amountVal =
+      inputType === "crypto" ? values.amount : (priceValue ?? "0");
     const cleanedAmount = cleanAmount(amountVal);
     dispatch(saveAmount(cleanedAmount));
     await fetchSimulationData({
@@ -171,7 +172,7 @@ export const SwapAmount = ({
   };
 
   const validate = (values: { amount: string }) => {
-    const amount = inputType === "crypto" ? values.amount : priceValue!;
+    const amount = inputType === "crypto" ? values.amount : (priceValue ?? "0");
     const val = cleanAmount(amount);
     if (val.indexOf(".") !== -1 && val.split(".")[1].length > 7) {
       return { amount: AMOUNT_ERROR.DEC_MAX };
@@ -216,6 +217,23 @@ export const SwapAmount = ({
     getData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // If the user was in fiat mode and the current source asset no longer has a
+  // USD price (e.g. after a direction-swap or source picker change), force back
+  // to crypto mode so priceValue-dependent expressions are always safe.
+  useEffect(() => {
+    if (
+      inputType === "fiat" &&
+      swapAmountData.state === RequestState.SUCCESS &&
+      swapAmountData.data?.type === AppDataType.RESOLVED
+    ) {
+      const currentAssetPrice =
+        swapAmountData.data.tokenPrices?.[asset]?.currentPrice;
+      if (!currentAssetPrice) {
+        setInputType("crypto");
+      }
+    }
+  }, [inputType, swapAmountData.state, swapAmountData.data, asset]);
 
   // Quote-expired surfacing: when the simulate hook flags an expired quote
   // (Horizon op_under_dest_min / op_too_few_offers), emit the metric and show
@@ -326,7 +344,7 @@ export const SwapAmount = ({
         new BigNumber(availableBalance),
       )) ||
     (inputType === "fiat" &&
-      new BigNumber(cleanAmount(priceValue!)).gt(
+      new BigNumber(cleanAmount(priceValue ?? "0")).gt(
         new BigNumber(availableBalance),
       ));
 
