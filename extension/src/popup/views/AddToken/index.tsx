@@ -386,6 +386,7 @@ export const AddToken = () => {
         onCancel={() => setShowTrustlineReview(false)}
         onSuccess={handleSacSuccess}
         initialFee={displayFee}
+        isFullHeight
       />
     );
   }
