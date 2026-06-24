@@ -81,6 +81,7 @@ export interface SimulateTxData {
   transactionXdr: string;
   dstAmountPriceUsd: string;
   scanResult?: BlockAidScanTxResult | null;
+  destMin?: string;
 }
 
 export const MIN_PER_OP_FEE = 100; // network minimum, stroops

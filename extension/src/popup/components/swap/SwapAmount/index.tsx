@@ -56,6 +56,8 @@ import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { SlideupModal } from "popup/components/SlideupModal";
 import { AmountCard } from "popup/components/amount/AmountCard";
 import { PercentageButtons } from "popup/components/amount/PercentageButtons";
+import { shouldShowXlmReservePreflight } from "popup/helpers/xlmReserve";
+import { XlmReserveSheet } from "popup/components/swap/XlmReserveSheet";
 
 import "./styles.scss";
 
@@ -136,15 +138,31 @@ export const SwapAmount = ({
   const [isEditingSlippage, setIsEditingSlippage] = useState(false);
   const [isEditingSettings, setIsEditingSettings] = useState(false);
   const [isReviewingTx, setIsReviewingTx] = React.useState(false);
+  const [isXlmReserveOpen, setIsXlmReserveOpen] = useState(false);
 
   const handleContinue = async (values: { amount: string }) => {
-    const amount = inputType === "crypto" ? values.amount : priceValue!;
-    const cleanedAmount = cleanAmount(amount);
+    const amountVal = inputType === "crypto" ? values.amount : priceValue!;
+    const cleanedAmount = cleanAmount(amountVal);
     dispatch(saveAmount(cleanedAmount));
     await fetchSimulationData({
       amount: cleanedAmount,
       destinationRate: dstAssetPrice,
     });
+    const needsReserve = shouldShowXlmReservePreflight({
+      requiresTrustline:
+        transactionData.destinationTokenDetails?.requiresTrustline ?? false,
+      sourceIsXlm: asset === "native",
+      spendableXlm: getAvailableBalance({
+        assetCanonical: "native",
+        balances: sendData.userBalances.balances,
+        recommendedFee: fee,
+      }),
+    });
+    if (needsReserve) {
+      emitMetric(METRIC_NAMES.swapXlmReserveShown);
+      setIsXlmReserveOpen(true);
+      return;
+    }
     setIsReviewingTx(true);
   };
 
@@ -355,7 +373,11 @@ export const SwapAmount = ({
                 formik.submitForm();
               }}
             >
-              {destinationAsset ? t("Review swap") : t("Select an asset")}
+              {!destinationAsset
+                ? t("Select an asset")
+                : new BigNumber(cleanAmount(formik.values.amount)).isZero()
+                  ? t("Enter an amount")
+                  : t("Review swap")}
             </Button>
           </div>
         }
@@ -576,6 +598,26 @@ export const SwapAmount = ({
               amount: destinationAmount,
             }}
             title={t("You are swapping")}
+            destinationTokenDetails={transactionData.destinationTokenDetails}
+            destMin={simulationState.data?.destMin}
+          />
+        ) : (
+          <></>
+        )}
+      </SlideupModal>
+      <SlideupModal
+        setIsModalOpen={() => setIsXlmReserveOpen(false)}
+        isModalOpen={isXlmReserveOpen}
+      >
+        {isXlmReserveOpen ? (
+          <XlmReserveSheet
+            onClose={() => setIsXlmReserveOpen(false)}
+            publicKey={publicKey}
+            canSwapForReserve={false}
+            helpUrl=""
+            onSwapForReserve={() => {
+              dispatch(saveDestinationAsset("native"));
+            }}
           />
         ) : (
           <></>
