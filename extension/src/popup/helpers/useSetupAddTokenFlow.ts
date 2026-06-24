@@ -14,8 +14,6 @@ import {
 type Params = {
   rejectToken: typeof rejectToken;
   addToken: typeof addToken;
-  assetCode: string;
-  assetIssuer: string;
   uuid: string;
 };
 
@@ -31,8 +29,6 @@ type Response = {
 export const useSetupAddTokenFlow = ({
   rejectToken: rejectTokenFn,
   addToken: addTokenFn,
-  assetCode: _assetCode,
-  assetIssuer: _assetIssuer,
   uuid,
 }: Params): Response => {
   const [isConfirming, setIsConfirming] = useState(false);

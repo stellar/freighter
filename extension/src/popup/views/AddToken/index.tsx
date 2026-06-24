@@ -137,8 +137,6 @@ export const AddToken = () => {
   } = useSetupAddTokenFlow({
     rejectToken,
     addToken,
-    assetCode,
-    assetIssuer,
     uuid,
   });
 
