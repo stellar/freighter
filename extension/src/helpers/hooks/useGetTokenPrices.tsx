@@ -39,7 +39,8 @@ export function useGetTokenPrices() {
     dispatch({ type: "FETCH_DATA_START" });
 
     let tokenPrices = {} as ApiTokenPrices;
-    const publicKeyTokenPrices = cachedTokenPrices[publicKey];
+    const publicKeyTokenPrices =
+      cachedTokenPrices[networkDetails.network]?.[publicKey];
     const payload = {
       type: AppDataType.RESOLVED,
       tokenPrices,
@@ -69,7 +70,11 @@ export function useGetTokenPrices() {
             networkDetails.network as NETWORKS,
           );
           reduxDispatch(
-            saveTokenPrices({ publicKey, tokenPrices: fetchedTokenPrices }),
+            saveTokenPrices({
+              publicKey,
+              networkDetails,
+              tokenPrices: fetchedTokenPrices,
+            }),
           );
           payload.tokenPrices = fetchedTokenPrices;
         }

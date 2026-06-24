@@ -43,6 +43,7 @@ type SaveTokenDetailsPayload = { contractId: string } & TokenDetailsResponse;
 
 type SaveTokenPricesPayload = {
   publicKey: string;
+  networkDetails: NetworkDetails;
   tokenPrices: ApiTokenPrices;
 };
 
@@ -69,7 +70,10 @@ interface InitialState {
     [network: string]: Record<PublicKey, HistoryResponse>;
   };
   tokenPrices: {
-    [publicKey: string]: ApiTokenPrices & { updatedAt: number };
+    [network: string]: Record<
+      PublicKey,
+      ApiTokenPrices & { updatedAt: number }
+    >;
   };
   collections: { [network: string]: Record<PublicKey, Collection[]> };
 }
@@ -125,7 +129,11 @@ const cacheSlice = createSlice({
           action.payload.publicKey
         ];
       }
-      delete state.tokenPrices[action.payload.publicKey];
+      if (state.tokenPrices[action.payload.networkDetails.network]) {
+        delete state.tokenPrices[action.payload.networkDetails.network][
+          action.payload.publicKey
+        ];
+      }
     },
     saveIconsForBalances(state, action: { payload: SaveIconsPayload }) {
       state.icons = {
@@ -154,10 +162,13 @@ const cacheSlice = createSlice({
     saveTokenPrices(state, action: { payload: SaveTokenPricesPayload }) {
       state.tokenPrices = {
         ...state.tokenPrices,
-        [action.payload.publicKey]: {
-          ...action.payload.tokenPrices,
-          updatedAt: Date.now(),
-        } as ApiTokenPrices & { updatedAt: number },
+        [action.payload.networkDetails.network]: {
+          ...state.tokenPrices[action.payload.networkDetails.network],
+          [action.payload.publicKey]: {
+            ...action.payload.tokenPrices,
+            updatedAt: Date.now(),
+          } as ApiTokenPrices & { updatedAt: number },
+        },
       };
     },
     saveCollections(state, action: { payload: SaveCollectionsPayload }) {

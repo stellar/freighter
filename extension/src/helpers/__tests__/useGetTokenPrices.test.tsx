@@ -6,7 +6,11 @@ import { useGetTokenPrices } from "../hooks/useGetTokenPrices";
 import { makeDummyStore } from "popup/__testHelpers__";
 import { defaultBlockaidScanAssetResult } from "@shared/helpers/stellar";
 import { RequestState } from "constants/request";
-import { MAINNET_NETWORK_DETAILS, NETWORKS } from "@shared/constants/stellar";
+import {
+  MAINNET_NETWORK_DETAILS,
+  NETWORKS,
+  TESTNET_NETWORK_DETAILS,
+} from "@shared/constants/stellar";
 import * as ApiInternal from "@shared/api/internal";
 
 describe("useGetTokenPrices", () => {
@@ -78,12 +82,14 @@ describe("useGetTokenPrices", () => {
     const preloadedState = {
       cache: {
         tokenPrices: {
-          G123: {
-            native: {
-              currentPrice: "1",
-              percentagePriceChange24h: ".5",
+          [NETWORKS.PUBLIC]: {
+            G123: {
+              native: {
+                currentPrice: "1",
+                percentagePriceChange24h: ".5",
+              },
+              updatedAt: Date.now() - 60000,
             },
-            updatedAt: Date.now() - 60000,
           },
         },
       },
@@ -137,12 +143,14 @@ describe("useGetTokenPrices", () => {
     const preloadedState = {
       cache: {
         tokenPrices: {
-          G123: {
-            native: {
-              currentPrice: "1",
-              percentagePriceChange24h: ".5",
+          [NETWORKS.PUBLIC]: {
+            G123: {
+              native: {
+                currentPrice: "1",
+                percentagePriceChange24h: ".5",
+              },
+              updatedAt: Date.now(),
             },
-            updatedAt: Date.now(),
           },
         },
       },
@@ -170,6 +178,7 @@ describe("useGetTokenPrices", () => {
             blockaidData: defaultBlockaidScanAssetResult,
           },
         ],
+        networkDetails: MAINNET_NETWORK_DETAILS,
         useCache: true,
       } as any);
     });
@@ -179,6 +188,73 @@ describe("useGetTokenPrices", () => {
       native: {
         currentPrice: "1",
         percentagePriceChange24h: ".5",
+      },
+    });
+  });
+  it("does not reuse another network's cache for the same account", async () => {
+    // Cache holds a fresh PUBLIC entry for G123. A cached request on TESTNET
+    // for the same account must ignore it and hit the network.
+    const getTokenPricesSpy = jest
+      .spyOn(ApiInternal, "getTokenPrices")
+      .mockImplementationOnce(() =>
+        Promise.resolve({
+          native: {
+            currentPrice: "2",
+            percentagePriceChange24h: ".75",
+          },
+        }),
+      );
+    const preloadedState = {
+      cache: {
+        tokenPrices: {
+          [NETWORKS.PUBLIC]: {
+            G123: {
+              native: {
+                currentPrice: "1",
+                percentagePriceChange24h: ".5",
+              },
+              updatedAt: Date.now(),
+            },
+          },
+        },
+      },
+    };
+
+    const store = makeDummyStore(preloadedState);
+    const Wrapper =
+      (store: ReturnType<typeof makeDummyStore>) =>
+      ({ children }: { children: React.ReactNode }) => (
+        <Provider store={store}>{children}</Provider>
+      );
+
+    const { result } = renderHook(() => useGetTokenPrices(), {
+      wrapper: Wrapper(store),
+    });
+
+    await act(async () => {
+      await result.current.fetchData({
+        publicKey: "G123",
+        balances: [
+          {
+            token: { type: "native", code: "XLM" },
+            total: new BigNumber("50"),
+            available: new BigNumber("50"),
+            blockaidData: defaultBlockaidScanAssetResult,
+          },
+        ],
+        networkDetails: TESTNET_NETWORK_DETAILS,
+        useCache: true,
+      } as any);
+    });
+    expect(getTokenPricesSpy).toHaveBeenCalledWith(
+      ["native"],
+      NETWORKS.TESTNET,
+    );
+    expect(result.current.state.state).toBe<RequestState>(RequestState.SUCCESS);
+    expect(result.current.state.data?.tokenPrices).toEqual({
+      native: {
+        currentPrice: "2",
+        percentagePriceChange24h: ".75",
       },
     });
   });
@@ -214,6 +290,7 @@ describe("useGetTokenPrices", () => {
       await result.current.fetchData({
         publicKey: "G123",
         balances: [],
+        networkDetails: MAINNET_NETWORK_DETAILS,
       } as any);
     });
     expect(getTokenPricesSpy).not.toHaveBeenCalled();
