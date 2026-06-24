@@ -290,4 +290,18 @@
       color: var(--sds-clr-gray-12);
     }
   }
+
+  &__TrustlineBanner {
+    cursor: pointer;
+
+    .Notification {
+      background-color: var(--sds-clr-lilac-03, #2a2140);
+      border-color: var(--sds-clr-lilac-06, #5b3aa8);
+    }
+
+    &__Action {
+      display: flex;
+      justify-content: flex-end;
+    }
+  }
 }
