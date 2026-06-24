@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Navigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -16,11 +16,12 @@ import {
 import { View } from "popup/basics/layout/View";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
-import { useRunAfterUpdate } from "popup/helpers/useRunAfterUpdate";
 import {
   saveAllowedSlippage,
   saveAmount,
   saveAmountUsd,
+  saveAsset,
+  saveDestinationAsset,
   saveTransactionFee,
   saveTransactionTimeout,
   transactionDataSelector,
@@ -29,7 +30,6 @@ import {
 import {
   cleanAmount,
   formatAmount,
-  formatAmountPreserveCursor,
   roundUsdValue,
 } from "popup/helpers/formatters";
 import { TX_SEND_MAX } from "popup/constants/transaction";
@@ -54,12 +54,18 @@ import { useSimulateTxData } from "./hooks/useSimulateSwapData";
 import { publicKeySelector } from "popup/ducks/accountServices";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { SlideupModal } from "popup/components/SlideupModal";
-import { AssetTile } from "popup/components/AssetTile";
+import { AmountCard } from "popup/components/amount/AmountCard";
+import { PercentageButtons } from "popup/components/amount/PercentageButtons";
 
 import "./styles.scss";
 
 const defaultSlippage = "2";
-const DEFAULT_INPUT_WIDTH = 25;
+
+const AVAILABLE_BALANCE_FONT_SIZES = [
+  { maxLen: 28, sizePx: 14 },
+  { maxLen: 42, sizePx: 12 },
+  { maxLen: Infinity, sizePx: 11 },
+] as const;
 
 interface SwapAmountProps {
   inputType: InputType;
@@ -81,7 +87,6 @@ export const SwapAmount = ({
   const { t } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
   const { networkCongestion, recommendedFee } = useNetworkFees();
-  const runAfterUpdate = useRunAfterUpdate();
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const publicKey = useSelector(publicKeySelector);
   const { transactionData } = useSelector(transactionSubmissionSelector);
@@ -127,24 +132,6 @@ export const SwapAmount = ({
         memo,
       },
     });
-  const cryptoInputRef = useRef<HTMLInputElement>(null);
-  const usdInputRef = useRef<HTMLInputElement>(null);
-
-  const [inputWidthCrypto, setInputWidthCrypto] = useState(0);
-  const setCryptoSpan = (el: HTMLSpanElement | null) => {
-    if (el) {
-      const width = el.offsetWidth + 4;
-      setInputWidthCrypto(Math.max(DEFAULT_INPUT_WIDTH, width));
-    }
-  };
-
-  const [inputWidthFiat, setInputWidthFiat] = useState(0);
-  const setFiatSpan = (el: HTMLSpanElement | null) => {
-    if (el) {
-      const width = el.offsetWidth + 2;
-      setInputWidthFiat(Math.max(DEFAULT_INPUT_WIDTH, width));
-    }
-  };
 
   const [isEditingSlippage, setIsEditingSlippage] = useState(false);
   const [isEditingSettings, setIsEditingSettings] = useState(false);
@@ -181,33 +168,24 @@ export const SwapAmount = ({
     validateOnChange: true,
   });
 
-  const getAmountFontSize = () => {
-    const length = formik.values.amount.length;
-    if (length <= 9) {
-      return "";
+  const getAmountFontSizeClass = (): "lg" | "med" | "small" | "xsmall" => {
+    const currentValue =
+      inputType === "fiat" ? formik.values.amountUsd : formik.values.amount;
+    const digitsLength = currentValue.replace(/[^0-9]/g, "").length;
+    if (digitsLength <= 6) {
+      return "lg";
     }
-    if (length <= 15) {
+    if (digitsLength <= 10) {
       return "med";
     }
-    return "small";
+    if (digitsLength <= 13) {
+      return "small";
+    }
+    return "xsmall";
   };
-
-  const parsedSourceAsset = getAssetFromCanonical(formik.values.asset);
   const isLoading =
     swapAmountData.state === RequestState.IDLE ||
     swapAmountData.state === RequestState.LOADING;
-
-  useEffect(() => {
-    if (cryptoInputRef.current) {
-      cryptoInputRef.current.focus();
-      cryptoInputRef.current.select();
-    }
-
-    if (usdInputRef.current) {
-      usdInputRef.current.focus();
-      usdInputRef.current.select();
-    }
-  }, []);
 
   useEffect(() => {
     const getData = async () => {
@@ -310,9 +288,11 @@ export const SwapAmount = ({
         new BigNumber(availableBalance),
       ));
 
-  const goToEditSrcAction = () => {
-    goToEditSrc();
-  };
+  const availableBalanceText = `${displayTotal} ${srcAsset.code} ${t("available")}`;
+  const availableBalanceFontSizePx = AVAILABLE_BALANCE_FONT_SIZES.find(
+    ({ maxLen }) => availableBalanceText.length <= maxLen,
+  )!.sizePx;
+  const dstAvailableBalanceText = `${dstDisplayTotal} ${dstAsset ? dstAsset.code : ""} ${t("available")}`;
 
   return (
     <>
@@ -384,215 +364,151 @@ export const SwapAmount = ({
           <div className="SwapAsset__content">
             <form>
               <div className="SwapAsset__simplebar__content">
-                <div className="SwapAsset__amount-row">
-                  <div className="SwapAsset__amount-input-container">
-                    {inputType === "crypto" && (
-                      <>
-                        <span
-                          ref={setCryptoSpan}
-                          className={`SwapAsset__input-amount SwapAsset__${getAmountFontSize()}`}
-                          style={{
-                            position: "absolute",
-                            visibility: "hidden",
-                            whiteSpace: "pre",
-                          }}
-                        >
-                          {formik.values.amount || "0"}
-                        </span>
-                        <input
-                          ref={cryptoInputRef}
-                          className={`SwapAsset__input-amount SwapAsset__${getAmountFontSize()}`}
-                          style={{
-                            width: `${inputWidthCrypto || DEFAULT_INPUT_WIDTH}px`,
-                          }}
-                          data-testid="send-amount-amount-input"
-                          name="amount"
-                          type="text"
-                          placeholder="0"
-                          value={formik.values.amount}
-                          onChange={(e) => {
-                            const input = e.target;
-                            const { amount: newAmount, newCursor } =
-                              formatAmountPreserveCursor(
-                                e.target.value,
-                                formik.values.amount,
-                                getAssetDecimals(
-                                  asset,
-                                  sendData.userBalances,
-                                  isToken,
-                                ),
-                                e.target.selectionStart || 1,
-                              );
-                            formik.setFieldValue("amount", newAmount);
-                            dispatch(saveAmount(newAmount));
-                            runAfterUpdate(() => {
-                              input.selectionStart = newCursor;
-                              input.selectionEnd = newCursor;
-                            });
-                          }}
-                          autoFocus
-                          autoComplete="off"
-                        />
-                        <div
-                          className={`SwapAsset__amount-label SwapAsset__${getAmountFontSize()}`}
-                        >
-                          {parsedSourceAsset.code}
-                        </div>
-                      </>
-                    )}
-                    {inputType === "fiat" && (
-                      <>
-                        <div
-                          className={`SwapAsset__amount-label-usd SwapAsset__${getAmountFontSize()}`}
-                        >
-                          $
-                        </div>
-                        <span
-                          ref={setFiatSpan}
-                          className={`SwapAsset__input-amount SwapAsset__${getAmountFontSize()}`}
-                          style={{
-                            position: "absolute",
-                            visibility: "hidden",
-                            whiteSpace: "pre",
-                          }}
-                        >
-                          {formik.values.amountUsd || "0"}
-                        </span>
-                        <input
-                          ref={usdInputRef}
-                          className={`SwapAsset__input-amount SwapAsset__${getAmountFontSize()}`}
-                          style={{
-                            width: `${inputWidthFiat || DEFAULT_INPUT_WIDTH}px`,
-                          }}
-                          data-testid="send-amount-amount-input"
-                          name="amountUsd"
-                          type="text"
-                          value={formik.values.amountUsd}
-                          onChange={(e) => {
-                            const input = e.target;
-                            const { amount: newAmount, newCursor } =
-                              formatAmountPreserveCursor(
-                                e.target.value,
-                                formik.values.amountUsd,
-                                2,
-                                e.target.selectionStart || 1,
-                              );
-                            formik.setFieldValue("amountUsd", newAmount);
-                            dispatch(saveAmountUsd(newAmount));
-                            runAfterUpdate(() => {
-                              input.selectionStart = newCursor;
-                              input.selectionEnd = newCursor;
-                            });
-                          }}
-                          autoFocus
-                          autoComplete="off"
-                        />
-                      </>
-                    )}
-                  </div>
+                <div className="SwapAsset__cards" data-testid="swap-sell-card">
+                  <AmountCard
+                    label={t("You sell")}
+                    availableBalanceText={availableBalanceText}
+                    availableBalanceFontSizePx={availableBalanceFontSizePx}
+                    inputType={inputType}
+                    amount={formik.values.amount}
+                    amountUsd={formik.values.amountUsd}
+                    amountFontSizeClass={getAmountFontSizeClass()}
+                    assetCode={srcAsset.code}
+                    assetIcon={assetIcon}
+                    assetIcons={
+                      asset !== "native" ? { [asset]: assetIcon } : {}
+                    }
+                    assetIssuerKey={srcAsset.issuer}
+                    supportsUsd={Boolean(supportsUsd)}
+                    fiatLineText={
+                      inputType === "crypto"
+                        ? `$${priceValueUsd || "0.00"}`
+                        : `${priceValue || "0"} ${srcAsset.code}`
+                    }
+                    isAmountTooHigh={isAmountTooHigh}
+                    cryptoDecimals={assetDecimals}
+                    onAmountChange={({ amount: newAmount }) => {
+                      formik.setFieldValue("amount", newAmount);
+                      dispatch(saveAmount(newAmount));
+                    }}
+                    onAmountUsdChange={({ amount: newAmount }) => {
+                      formik.setFieldValue("amountUsd", newAmount);
+                      dispatch(saveAmountUsd(newAmount));
+                    }}
+                    onToggleInputType={() => {
+                      const newInputType =
+                        inputType === "crypto" ? "fiat" : "crypto";
+                      if (newInputType === "crypto") {
+                        dispatch(saveAmount(priceValue));
+                        formik.setFieldValue("amount", priceValue);
+                      }
+                      if (newInputType === "fiat") {
+                        dispatch(saveAmountUsd(priceValueUsd));
+                        formik.setFieldValue("amountUsd", priceValueUsd);
+                      }
+                      setInputType(newInputType);
+                    }}
+                    onSelectAsset={() => {
+                      emitMetric(METRIC_NAMES.swapPickerOpened, {
+                        side: "source",
+                        source: "dropdown",
+                      });
+                      goToEditSrc();
+                    }}
+                  />
                 </div>
-                {supportsUsd && (
-                  <div className="SwapAsset__amount-price">
-                    {inputType === "crypto"
-                      ? `$${priceValueUsd}`
-                      : `${priceValue} ${parsedSourceAsset.code}`}
-                    <Button
-                      size="md"
-                      type="button"
-                      isRounded
-                      variant="tertiary"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        const newInputType =
-                          inputType === "crypto" ? "fiat" : "crypto";
-                        if (newInputType === "crypto") {
-                          dispatch(saveAmount(priceValue));
-                          formik.setFieldValue("amount", priceValue);
-                        }
-                        if (newInputType === "fiat") {
-                          dispatch(saveAmountUsd(priceValueUsd));
-                          formik.setFieldValue("amountUsd", priceValueUsd);
-                        }
-                        setInputType(newInputType);
-                      }}
-                    >
-                      <Icon.RefreshCw03 />
-                    </Button>
-                  </div>
-                )}
-                <div className="SwapAsset__invalid-state">
-                  {isAmountTooHigh && (
-                    <>
-                      <Icon.AlertCircle />
-                      <span>
-                        {t("You don’t have enough {{asset}} in your account", {
-                          asset: parsedSourceAsset.code,
-                        })}
-                      </span>
-                    </>
-                  )}
-                </div>
-                <div className="SwapAsset__btn-set-max">
-                  <Button
-                    size="md"
-                    type="button"
-                    variant="tertiary"
-                    isRounded
-                    onClick={(e) => {
-                      e.preventDefault();
+                <div
+                  className="SwapAsset__percentage-buttons"
+                  data-testid="swap-percentage-buttons"
+                >
+                  <PercentageButtons
+                    onSelect={(pct: number) => {
                       emitMetric(METRIC_NAMES.swapAmount);
-                      if (inputType === "fiat") {
-                        const availableUsd = formatAmount(
+                      const fraction = new BigNumber(pct).dividedBy(100);
+                      if (inputType === "fiat" && assetPrice) {
+                        const pctUsd = formatAmount(
                           roundUsdValue(
-                            new BigNumber(assetPrice!)
+                            new BigNumber(assetPrice)
                               .multipliedBy(
                                 new BigNumber(cleanAmount(availableBalance)),
                               )
+                              .multipliedBy(fraction)
                               .toString(),
                           ),
                         );
-                        formik.setFieldValue("amountUsd", availableUsd);
-                        dispatch(saveAmountUsd(availableUsd));
+                        formik.setFieldValue("amountUsd", pctUsd);
+                        dispatch(saveAmountUsd(pctUsd));
                       } else {
-                        formik.setFieldValue("amount", availableBalance);
-                        dispatch(saveAmount(availableBalance));
+                        const pctAmount = new BigNumber(
+                          cleanAmount(availableBalance),
+                        )
+                          .multipliedBy(fraction)
+                          .decimalPlaces(assetDecimals)
+                          .toString();
+                        formik.setFieldValue("amount", pctAmount);
+                        dispatch(saveAmount(pctAmount));
                       }
                     }}
-                    data-testid="SwapAssetSetMax"
+                  />
+                </div>
+                <div
+                  className="SwapAsset__direction"
+                  data-testid="swap-direction-chevron"
+                >
+                  <Button
+                    size="md"
+                    type="button"
+                    isRounded
+                    variant="tertiary"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      emitMetric(METRIC_NAMES.swapDirectionToggled);
+                      const prevSrc = asset;
+                      dispatch(saveAsset(destinationAsset));
+                      dispatch(saveDestinationAsset(prevSrc));
+                    }}
                   >
-                    {t("Set Max")}
+                    <Icon.ChevronDownDouble />
                   </Button>
                 </div>
-                <AssetTile
-                  isSuspicious={false}
-                  asset={{
-                    code: srcAsset.code,
-                    canonical: asset,
-                    issuer: srcAsset.issuer,
-                  }}
-                  assetIcon={assetIcon}
-                  balance={displayTotal}
-                  onClick={goToEditSrcAction}
-                  emptyLabel={t("Send")}
-                  testId="swap-src-asset-tile"
-                />
-                <AssetTile
-                  isSuspicious={false}
-                  asset={
-                    dstAsset
-                      ? {
-                          code: dstAsset.code,
-                          canonical: destinationAsset,
-                          issuer: dstAsset.issuer,
-                        }
-                      : null
-                  }
-                  assetIcon={dstAssetIcon}
-                  balance={dstDisplayTotal}
-                  onClick={goToEditDst}
-                  emptyLabel={t("Receive")}
-                  testId="swap-dst-asset-tile"
-                />
+                <div
+                  className="SwapAsset__cards"
+                  data-testid="swap-receive-card"
+                >
+                  <AmountCard
+                    label={t("You receive")}
+                    availableBalanceText={dstAvailableBalanceText}
+                    availableBalanceFontSizePx={availableBalanceFontSizePx}
+                    inputType="crypto"
+                    amount={destinationAmount}
+                    amountUsd=""
+                    amountFontSizeClass={getAmountFontSizeClass()}
+                    assetCode={dstAsset ? dstAsset.code : ""}
+                    assetIcon={dstAssetIcon}
+                    assetIcons={
+                      destinationAsset && destinationAsset !== "native"
+                        ? { [destinationAsset]: dstAssetIcon }
+                        : {}
+                    }
+                    assetIssuerKey={dstAsset?.issuer}
+                    supportsUsd={false}
+                    fiatLineText=""
+                    isAmountTooHigh={false}
+                    isReadOnly
+                    autoFocus={false}
+                    cryptoDecimals={7}
+                    onAmountChange={() => {}}
+                    onAmountUsdChange={() => {}}
+                    onToggleInputType={() => {}}
+                    onSelectAsset={() => {
+                      emitMetric(METRIC_NAMES.swapPickerOpened, {
+                        side: "destination",
+                        source: "dropdown",
+                      });
+                      goToEditDst();
+                    }}
+                  />
+                </div>
               </div>
             </form>
           </div>
