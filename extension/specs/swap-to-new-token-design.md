@@ -71,13 +71,13 @@ flowchart TD
     PickerFrom -->|pick held token| Amount
     PickerTo -->|pick held or NEW token| Amount
 
-    Amount -->|tap 'Review swap'| ReserveCheck{destination isNew AND available XLM < 0.5 reserve?}
+    Amount -->|tap 'Review swap'| ReserveCheck{destination requiresTrustline AND available XLM < 0.5 reserve?}
     ReserveCheck -->|Yes| XlmSheet[XLM-reserve sheet — 'Swap for 0.5 XLM', 'Copy my wallet address', 'Why do I need XLM?']
     ReserveCheck -->|No| Build[/Build + Blockaid-tx-scan/]
 
     Build --> Review[Review Tx — 'You are swapping', trustline banner, Blockaid warnings, Wallet, Rate, details]
     Review -->|tap trustline banner| TrustInfo[Trustline info sheet]
-    Review -->|tap 'Confirm'| TxBuild{destination isNew?}
+    Review -->|tap 'Confirm'| TxBuild{destination requiresTrustline?}
 
     TxBuild -->|Yes| Atomic[changeTrust op + pathPaymentStrictSend op]
     TxBuild -->|No| PathOnly[pathPaymentStrictSend op]
@@ -472,7 +472,7 @@ carries the non-held metadata:
 destinationTokenDetails: {
   tokenCode: string;        // e.g. "AQUA" / "XLM" — lets the banner, review rows,
                             //   and warnings render without re-parsing destinationAsset
-  isNew: boolean;           // true when the user has no trustline for it
+  requiresTrustline: boolean; // true when the user has no trustline for it
   decimals: number;         // 7 for classic (mobile may also read tomlInfo)
   issuer?: string;          // omitted for native XLM
   securityLevel?: SecurityLevel;        // from the bulk scan
@@ -486,10 +486,10 @@ display + non-held metadata. `tokenCode` + `issuer` together fully describe the
 asset for rendering, so consumers never have to re-split the canonical string.
 
 Populated by `saveDestinationAsset` (or a new `saveDestinationTokenDetails`
-reducer) when a row is picked: held rows → `isNew: false` (from the balance),
-non-held rows → `isNew: true` (from the `searchAsset` / Popular record). This is
-the extension's analogue of mobile's `DestinationTokenDescriptor`, minimally
-invasive to the existing plumbing.
+reducer) when a row is picked: held rows → `requiresTrustline: false` (from the
+balance), non-held rows → `requiresTrustline: true` (from the `searchAsset` /
+Popular record). This is the extension's analogue of mobile's
+`DestinationTokenDescriptor`, minimally invasive to the existing plumbing.
 
 Two fields from mobile's descriptor are intentionally **dropped**: `tokenType`
 (mobile keeps it for its Soroban gate; the §3.1 classic-only filter guarantees
@@ -516,23 +516,25 @@ Add-asset).
 
 **Extend the swap builder.** In
 [`useSimulateSwapData.getBuiltTx`](../src/popup/components/swap/SwapAmount/hooks/useSimulateSwapData.tsx),
-when `destinationTokenDetails.isNew === true`, **prepend** the `changeTrust` op
-(op index 0) before `pathPaymentStrictSend` (op index 1), so both submit
-atomically in one transaction:
+when `destinationTokenDetails.requiresTrustline === true`, **prepend** the
+`changeTrust` op (op index 0) before `pathPaymentStrictSend` (op index 1), so
+both submit atomically in one transaction:
 
 ```
-op[0] = buildChangeTrustOperation({ assetCode, assetIssuer })   // only when isNew
+op[0] = buildChangeTrustOperation({ assetCode, assetIssuer })   // only when requiresTrustline
 op[1] = Operation.pathPaymentStrictSend({ sendAsset, sendAmount, destination: self, destAsset, destMin, path })
 ```
 
-A guard throws if `isNew` but `issuer` is missing (unreachable — XLM can't be new
-and Soroban is filtered — but fail-fast before an on-chain `tx_no_trust`).
+A guard throws if `requiresTrustline` but `issuer` is missing (unreachable —
+XLM can't be new and Soroban is filtered — but fail-fast before an on-chain
+`tx_no_trust`).
 
 **Fee = total across ops.** Today the builder sets the `TransactionBuilder`
 `fee` to `xlmToStroop(fee)` (the per-op base fee). Change it so the user-set fee
 is the **total**: per-op base fee = `xlmToStroop(totalFee) / opCount`, clamped to
-the 100-stroop network minimum, where `opCount = isNew ? 2 : 1`. A 2-op swap then
-charges exactly the displayed total. Send is always 1-op (unchanged). The fee
+the 100-stroop network minimum, where `opCount = requiresTrustline ? 2 : 1`. A
+2-op swap then charges exactly the displayed total. Send is always 1-op
+(unchanged). The fee
 input's recommended default / minimum should scale with `opCount` so the
 displayed value doesn't jump.
 
@@ -588,8 +590,9 @@ reserve, plus —
 In [`ReviewTx`](../src/popup/components/InternalTransaction/ReviewTransaction/index.tsx)
 (shared with Send; gets `dstAsset` for swaps):
 
-- **Trustline banner** — when `destinationTokenDetails.isNew`, render a purple SDS
-  `Notification` _"This will add a trustline to {CODE}"_ with a chevron → opens
+- **Trustline banner** — when `destinationTokenDetails.requiresTrustline`,
+  render a purple SDS `Notification` _"This will add a trustline to {CODE}"_ with
+  a chevron → opens
   **`TrustlineInfoSheet`** (NEW) explaining the 0.5 XLM reserve is one-time and
   refundable when the trustline is removed ([Figma](https://www.figma.com/design/C3G0a4Gd6RQyplRBppGDsL/Freighter-Extension?node-id=8641-34721)).
   Add a lilac/`highlight` SDS `Notification` variant if one doesn't exist.
@@ -646,8 +649,8 @@ Add new entries to [`constants/metricsNames.ts`](../src/popup/constants/metricsN
   the empty-state "Select an asset" button, `dropdown` = tapping the token chip in
   the You sell / You receive card)
 - **source** selected (`{ tokenCode, tokenIssuer, source: "balances" | "search" }`
-  — the source picker is held-only, so no `popular` / `isNew`)
-- **destination** selected (`{ tokenCode, tokenIssuer, isNew, source: "balances" | "popular" | "search" }`)
+  — the source picker is held-only, so no `popular` / `requiresTrustline`)
+- **destination** selected (`{ tokenCode, tokenIssuer, requiresTrustline, source: "balances" | "popular" | "search" }`)
 - direction toggled
 - trustline added (on confirmed combined tx)
 - XLM-reserve-insufficient shown
@@ -671,9 +674,9 @@ verified/unverified info sheets, and the quote-expired message.
   - `useSwapTokenLookup` ordering/dedupe (held → popular[volume7d ∩ verified] →
     search remainder), Soroban filtering, `hadSorobanMatches` empty-state,
     held-only fallback.
-  - `buildChangeTrustOperation` + the extended `getBuiltTx`: `isNew` produces
-    `changeTrust` as op[0] and `pathPaymentStrictSend` as op[1]; non-new produces
-    the single op (regression).
+  - `buildChangeTrustOperation` + the extended `getBuiltTx`: `requiresTrustline`
+    produces `changeTrust` as op[0] and `pathPaymentStrictSend` as op[1]; non-new
+    produces the single op (regression).
   - Fee total-across-ops: per-op base fee = total/opCount, clamped; 1-op
     send/swap unchanged.
   - Quote-expiry classification → expiry path (message + refetch) vs generic fail.
