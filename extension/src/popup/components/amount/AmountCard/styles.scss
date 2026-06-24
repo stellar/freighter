@@ -1,0 +1,172 @@
+@use "../../../styles/utils.scss" as *;
+
+.AmountCard {
+  background-color: var(--sds-clr-gray-03);
+  border-radius: pxToRem(16px);
+  padding: pxToRem(12px) pxToRem(16px);
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  margin-top: pxToRem(8px);
+  margin-bottom: pxToRem(8px);
+
+  &__sending-label {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: pxToRem(8px);
+    font-size: pxToRem(14px);
+    line-height: pxToRem(20px);
+    color: var(--sds-clr-gray-11);
+    margin-bottom: pxToRem(8px);
+
+    & > span {
+      text-box-trim: trim-end;
+    }
+  }
+
+  &__available-balance {
+    color: var(--sds-clr-gray-11);
+    flex-shrink: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: right;
+    text-box-trim: trim-end;
+  }
+
+  &__amount-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: pxToRem(12px);
+    position: relative;
+    flex-wrap: nowrap;
+  }
+
+  &__amount-input-container {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    overflow: hidden;
+  }
+
+  &__amount-label-usd {
+    font-size: pxToRem(24px);
+    line-height: 1;
+    font-weight: var(--font-weight-medium);
+    color: var(--sds-clr-gray-12);
+    flex-shrink: 0;
+  }
+
+  &__input-amount {
+    font-size: pxToRem(24px);
+    line-height: 1;
+    font-weight: var(--font-weight-medium);
+    color: var(--sds-clr-gray-12);
+    background: none;
+    border: none;
+    text-align: left;
+    background-color: transparent;
+    outline: none;
+    padding: 0;
+  }
+
+  &__lg {
+    font-size: pxToRem(24px);
+  }
+
+  &__small {
+    font-size: pxToRem(16px);
+  }
+
+  &__med {
+    font-size: pxToRem(19px);
+  }
+
+  &__xsmall {
+    font-size: pxToRem(14px);
+  }
+
+  &__asset-selector-inline {
+    display: flex;
+    align-items: center;
+    gap: pxToRem(4px);
+    cursor: pointer;
+    padding: pxToRem(4px) pxToRem(8px) pxToRem(4px) pxToRem(4px);
+    border-radius: pxToRem(20px);
+    background-color: var(--sds-clr-gray-01);
+    white-space: nowrap;
+    flex-shrink: 0;
+    margin-bottom: 0;
+    border: 0;
+    color: var(--sds-clr-gray-12);
+
+    &:hover {
+      background-color: var(--sds-clr-gray-06);
+    }
+
+    .AccountAssets__asset--logo {
+      width: pxToRem(20px) !important;
+      height: pxToRem(20px) !important;
+      min-width: pxToRem(20px);
+      margin: pxToRem(4px);
+
+      img {
+        width: 100%;
+        height: 100%;
+      }
+    }
+
+    svg:last-child {
+      width: pxToRem(14px);
+      height: pxToRem(14px);
+    }
+  }
+
+  &__asset-code {
+    font-size: pxToRem(14px);
+    font-weight: var(--font-weight-medium);
+  }
+
+  &__balance-row {
+    display: flex;
+    align-items: center;
+    gap: pxToRem(8px);
+    margin-top: pxToRem(6px);
+  }
+
+  &__amount-price {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    color: var(--sds-clr-gray-11);
+    font-size: pxToRem(14px);
+    flex: 0 0 auto;
+    white-space: nowrap;
+
+    .Button {
+      border: 0;
+      padding: 0;
+      width: 14px;
+      height: 14px;
+      margin-left: pxToRem(6px);
+      flex-shrink: 0;
+    }
+  }
+
+  &__invalid-state {
+    display: flex;
+    justify-content: center;
+    margin-top: pxToRem(8px);
+    color: var(--sds-clr-red-09);
+    font-size: pxToRem(14px);
+
+    svg {
+      margin-right: pxToRem(6px);
+    }
+  }
+}
