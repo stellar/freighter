@@ -1,8 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useTranslation } from "react-i18next";
-
 import { STEPS } from "popup/constants/swap";
 import { emitMetric } from "helpers/metrics";
 import { InputType } from "helpers/transaction";
@@ -34,7 +32,6 @@ const SWAP_METRIC_BY_STEP: Partial<Record<STEPS, string>> = {
 };
 
 export const Swap = () => {
-  const { t } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const location = useLocation();
@@ -106,7 +103,7 @@ export const Swap = () => {
       case STEPS.SET_DST_ASSET: {
         return (
           <SwapAsset
-            title={t("Swap to")}
+            selectionType="destination"
             hiddenAssets={[transactionData.asset]}
             goBack={() => setActiveStep(STEPS.AMOUNT)}
             onClickAsset={(canonical: string, isContract: boolean) => {
@@ -149,7 +146,7 @@ export const Swap = () => {
       default: {
         return (
           <SwapAsset
-            title={t("Swap from")}
+            selectionType="source"
             hiddenAssets={[transactionData.destinationAsset]}
             goBack={() => setActiveStep(STEPS.AMOUNT)}
             onClickAsset={(canonical: string, isContract: boolean) => {

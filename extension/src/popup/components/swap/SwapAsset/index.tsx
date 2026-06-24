@@ -4,6 +4,7 @@ import { Icon, Input, Loader } from "@stellar/design-system";
 import { useFormik } from "formik";
 import { debounce } from "lodash";
 import { useTranslation } from "react-i18next";
+import { useSelector } from "react-redux";
 
 import { TokenList } from "popup/components/InternalTransaction/TokenList";
 import { SubviewHeader } from "popup/components/SubviewHeader";
@@ -14,35 +15,71 @@ import { RequestState } from "constants/request";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { newTabHref } from "helpers/urls";
 import { reRouteOnboarding } from "popup/helpers/route";
+import { getStellarExpertUrl } from "popup/helpers/account";
+import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { useGetSwapFromData } from "./hooks/useSwapFromData";
+import { useSwapTokenLookup } from "./hooks/useSwapTokenLookup";
+import { SwapPickerSections } from "./SwapPickerSections";
+import type { SwapPickerSectionsResult } from "./SwapPickerSections";
 
 import "./styles.scss";
 
 interface SwapAssetProps {
-  title: string;
+  selectionType: "source" | "destination";
   hiddenAssets: string[];
   onClickAsset: (canonical: string, isContract: boolean) => void;
   goBack: () => void;
 }
 
 export const SwapAsset = ({
-  title,
+  selectionType,
   hiddenAssets,
   onClickAsset,
   goBack,
 }: SwapAssetProps) => {
   const { t } = useTranslation();
-  const { state, fetchData, filterBalances } = useGetSwapFromData({
-    showHidden: false,
-    includeIcons: true,
-  });
+  const networkDetails = useSelector(settingsNetworkDetailsSelector);
+  const isDestination = selectionType === "destination";
+  const title = isDestination ? t("Swap to") : t("Swap from");
 
-  const isLoading =
-    state.state === RequestState.IDLE || state.state === RequestState.LOADING;
+  const {
+    state: fromState,
+    fetchData,
+    filterBalances,
+  } = useGetSwapFromData({ showHidden: false, includeIcons: true });
+
+  const { fetchData: lookupFetchData, state: lookupState } =
+    useSwapTokenLookup();
+
+  const isLoading = isDestination
+    ? lookupState.state === RequestState.IDLE ||
+      lookupState.state === RequestState.LOADING
+    : fromState.state === RequestState.IDLE ||
+      fromState.state === RequestState.LOADING;
 
   const formik = useFormik({
     initialValues: { searchTerm: "" },
-    onSubmit: (values) => filterBalances(values.searchTerm),
+    onSubmit: (values) => {
+      if (isDestination) {
+        const resolvedFrom = fromState.data;
+        const balances =
+          resolvedFrom?.type === AppDataType.RESOLVED
+            ? resolvedFrom.balances.balances
+            : [];
+        const publicKey =
+          resolvedFrom?.type === AppDataType.RESOLVED
+            ? resolvedFrom.publicKey
+            : "";
+        lookupFetchData({
+          searchTerm: values.searchTerm,
+          balances,
+          publicKey,
+          networkDetails,
+        });
+      } else {
+        filterBalances(values.searchTerm);
+      }
+    },
     validateOnChange: false,
   });
 
@@ -51,7 +88,8 @@ export const SwapAsset = ({
       debounce(() => {
         formik.submitForm();
       }, 300),
-    [formik],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
   );
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -59,40 +97,92 @@ export const SwapAsset = ({
     formik.setFieldValue("searchTerm", val);
     debouncedSubmit();
   };
+
   useEffect(() => {
-    const getData = async () => {
-      await fetchData(true);
-    };
-    getData();
+    if (!isDestination) {
+      const getData = async () => {
+        await fetchData(true);
+      };
+      getData();
+    } else {
+      // Trigger initial idle fetch (populate held tokens + popular)
+      const resolvedFrom = fromState.data;
+      const balances =
+        resolvedFrom?.type === AppDataType.RESOLVED
+          ? resolvedFrom.balances.balances
+          : [];
+      const publicKey =
+        resolvedFrom?.type === AppDataType.RESOLVED
+          ? resolvedFrom.publicKey
+          : "";
+      lookupFetchData({
+        searchTerm: "",
+        balances,
+        publicKey,
+        networkDetails,
+      });
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const hasError = state.state === RequestState.ERROR;
-  if (state.data?.type === AppDataType.REROUTE) {
-    if (state.data.shouldOpenTab) {
-      openTab(newTabHref(state.data.routeTarget));
-      window.close();
+  // Source-only rerouting/onboarding guard
+  if (!isDestination) {
+    if (fromState.data?.type === AppDataType.REROUTE) {
+      if (fromState.data.shouldOpenTab) {
+        openTab(newTabHref(fromState.data.routeTarget));
+        window.close();
+      }
+      return (
+        <Navigate
+          to={`${fromState.data.routeTarget}${location.search}`}
+          state={{ from: location }}
+          replace
+        />
+      );
     }
-    return (
-      <Navigate
-        to={`${state.data.routeTarget}${location.search}`}
-        state={{ from: location }}
-        replace
-      />
-    );
+
+    const hasError = fromState.state === RequestState.ERROR;
+    // At this point fromState.data is either null/undefined or ResolvedSwapFrom
+    // (REROUTE was handled above). Only call reRouteOnboarding when resolved.
+    if (
+      !hasError &&
+      !isLoading &&
+      fromState.data?.type === AppDataType.RESOLVED
+    ) {
+      reRouteOnboarding({
+        type: fromState.data.type,
+        applicationState: fromState.data.applicationState,
+        state: fromState.state,
+      });
+    }
   }
 
-  if (!hasError && !isLoading) {
-    reRouteOnboarding({
-      type: state.data.type,
-      applicationState: state.data?.applicationState,
-      state: state.state,
-    });
-  }
+  const resolvedFromData =
+    fromState.data?.type === AppDataType.RESOLVED ? fromState.data : null;
+  const icons = resolvedFromData?.balances?.icons || {};
+  const tokenPrices = resolvedFromData?.tokenPrices || {};
+  const balances = resolvedFromData?.filteredBalances || [];
+  const stellarExpertUrl = getStellarExpertUrl(networkDetails);
 
-  const icons = state.data?.balances.icons || {};
-  const tokenPrices = state.data?.tokenPrices || {};
-  const balances = state.data?.filteredBalances || [];
+  // Build the flat sections result for SwapPickerSections
+  const lookupData = lookupState.data;
+  const heldBalancesForNewAccount = resolvedFromData?.balances.balances || [];
+  const pickerResult: SwapPickerSectionsResult = lookupData
+    ? {
+        ...lookupData.sections,
+        hadSorobanMatches: lookupData.hadSorobanMatches,
+        isFallback: lookupData.isFallback,
+        isNewAccount: heldBalancesForNewAccount.length === 0,
+      }
+    : {
+        yourTokens: [],
+        popular: [],
+        verified: [],
+        unverified: [],
+        hadSorobanMatches: false,
+        isFallback: false,
+        isNewAccount: true,
+      };
 
   return (
     <>
@@ -121,6 +211,13 @@ export const SwapAsset = ({
             <div className="SwapFrom__loader">
               <Loader size="2rem" />
             </div>
+          ) : isDestination ? (
+            <SwapPickerSections
+              result={pickerResult}
+              searchTerm={formik.values.searchTerm}
+              onClickAsset={onClickAsset}
+              stellarExpertUrl={stellarExpertUrl}
+            />
           ) : (
             <TokenList
               tokens={balances}
