@@ -164,7 +164,11 @@ The _feature_ is the same; the _platform_ is materially different.
 - **Extension:** **no trending list on the home screen**, and therefore **no
   `TrendingTokenDetail` sheet.** The space below the amount cards is occupied by
   the `Fee · Slippage · Settings` row. The **Popular tokens** list lives **only
-  in the "Swap to" picker** (same curated source as mobile — see §3.1).
+  in the "Swap to" picker** (same curated source as mobile — see §3.1). On
+  **custom networks** the Popular section is omitted entirely — an extension-only
+  concern (mobile has no custom networks): verified-token lists and
+  stellar.expert cover only Mainnet/Testnet; the picker falls back to held-only
+  there (§3.1).
 
 ### 2.4 Pickers, sheets & the design system
 
@@ -361,6 +365,15 @@ working. When the Popular/search fetch fails (and no fresh cache exists):
 Path-finding is unaffected — it uses Horizon `strictSendPaths`
 ([`horizonGetBestPath`](../src/popup/helpers/horizonGetBestPath.ts)), not
 stellar.expert.
+
+**Network support (Mainnet / Testnet only).** Token discovery beyond held
+balances depends on resources that exist **only for Mainnet and Testnet** — the
+verified-token lists and stellar.expert. On a **custom network** (the extension
+supports custom networks; mobile does not) the picker **omits the Popular
+section** and search **degrades to held-only** in-memory matches — the same
+held-only shape as the stellar.expert-unreachable fallback above, but a permanent
+state rather than an error. Held-to-held swaps still work (Horizon
+`strictSendPaths` against the custom network's Horizon).
 
 ### 3.2 Picker UI — extend `SwapAsset` (parameterised)
 
