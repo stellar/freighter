@@ -43,6 +43,9 @@ import { trackSendFeeBreakdownOpened } from "popup/metrics/send";
 import { FeesPane } from "popup/components/InternalTransaction/FeesPane";
 import { ActionButtons } from "./components/ActionButtons";
 import { SendAsset, SendDestination } from "./components";
+import { TrustlineBanner } from "./components/TrustlineBanner";
+import { TrustlineInfoSheet } from "./components/TrustlineInfoSheet";
+import { SwapRateRow } from "./components/SwapRateRow";
 
 import "./styles.scss";
 
@@ -107,6 +110,13 @@ interface ReviewTxProps {
   onConfirm: () => void;
   onCancel: () => void;
   onAddMemo?: () => void;
+  destinationTokenDetails?: {
+    tokenCode: string;
+    requiresTrustline: boolean;
+    decimals: number;
+    issuer?: string;
+  } | null;
+  destMin?: string;
 }
 
 export const ReviewTx = ({
@@ -122,6 +132,8 @@ export const ReviewTx = ({
   onConfirm,
   onCancel,
   onAddMemo,
+  destinationTokenDetails,
+  destMin,
 }: ReviewTxProps) => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
@@ -209,6 +221,9 @@ export const ReviewTx = ({
     activePaneIndex === paneConfig.blockaidIndex;
 
   const isOnFeesPane = activePaneIndex === paneConfig.feesIndex;
+
+  const requiresTrustline = !!destinationTokenDetails?.requiresTrustline;
+  const [isOnTrustlinePane, setIsOnTrustlinePane] = useState(false);
 
   // Extract contract ID for custom tokens or collectibles
   const contractId = React.useMemo(
@@ -350,6 +365,12 @@ export const ReviewTx = ({
             onClick={() => setActivePaneIndex(paneConfig.memoIndex)}
           />
         )}
+        {requiresTrustline && (
+          <TrustlineBanner
+            tokenCode={destinationTokenDetails!.tokenCode}
+            onClick={() => setIsOnTrustlinePane(true)}
+          />
+        )}
       </div>
       <div className="ReviewTx__Details">
         {/* Hide memo row when memo is disabled (e.g., for all M addresses) */}
@@ -392,6 +413,15 @@ export const ReviewTx = ({
             {fee} XLM
           </div>
         </div>
+        {dstAsset && destMin && dest && (
+          <SwapRateRow
+            srcCode={asset.code}
+            dstCode={dest.code}
+            sendAmount={sendAmount}
+            destinationAmount={dstAsset.amount}
+            destMin={destMin}
+          />
+        )}
         <div className="ReviewTx__Details__Row">
           <div className="ReviewTx__Details__Row__Title">
             <Icon.FileCode02 />
@@ -459,11 +489,19 @@ export const ReviewTx = ({
 
   // Build panes in order (no hooks on JSX)
   const panes: React.ReactNode[] = [];
-  if (shouldShowTxWarning) {
+  if (isOnTrustlinePane) {
+    panes.push(
+      <TrustlineInfoSheet
+        tokenCode={destinationTokenDetails!.tokenCode}
+        onClose={() => setIsOnTrustlinePane(false)}
+      />,
+    );
+  } else if (shouldShowTxWarning) {
     panes.push(reviewPane, memoPane, blockaidPane, feesPane);
   } else {
     panes.push(reviewPane, memoPane, feesPane);
   }
+  const trustlineActiveIndex = isOnTrustlinePane ? 0 : activePaneIndex;
 
   return (
     <View.Content hasNoTopPadding>
@@ -475,8 +513,8 @@ export const ReviewTx = ({
         />
       ) : (
         <div className="ReviewTx">
-          <MultiPaneSlider activeIndex={activePaneIndex} panes={panes} />
-          {!isOnFeesPane && (
+          <MultiPaneSlider activeIndex={trustlineActiveIndex} panes={panes} />
+          {!isOnFeesPane && !isOnTrustlinePane && (
             <div className="ReviewTx__Actions">
               <ActionButtons
                 isOnBlockaidPane={isOnBlockaidPane}
