@@ -29,6 +29,32 @@
     }
   }
 
+  &__cards {
+    width: 100%;
+  }
+
+  // The direction toggle sits centered on the seam between the sell and
+  // receive cards, overlapping the small gap between them.
+  &__direction {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    z-index: 1;
+    margin: pxToRem(-10px) 0;
+
+    .Button {
+      width: pxToRem(32px);
+      height: pxToRem(32px);
+      min-width: pxToRem(32px);
+      padding: 0;
+    }
+  }
+
+  &__percentage-buttons {
+    margin-top: pxToRem(16px);
+  }
+
   &__simplebar {
     margin-top: 1rem;
 

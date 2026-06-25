@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Navigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Form, Field, FieldProps, Formik, useFormik } from "formik";
+import { debounce } from "lodash";
 import BigNumber from "bignumber.js";
 import { object as YupObject, number as YupNumber } from "yup";
 import {
@@ -22,6 +23,7 @@ import {
   saveAmountUsd,
   saveAsset,
   saveDestinationAsset,
+  saveSwapBestPath,
   saveTransactionFee,
   saveTransactionTimeout,
   transactionDataSelector,
@@ -34,14 +36,17 @@ import {
 } from "popup/helpers/formatters";
 import { TX_SEND_MAX } from "popup/constants/transaction";
 import { useGetSwapAmountData } from "./hooks/useGetSwapAmountData";
-import { getAssetFromCanonical, isMainnet } from "helpers/stellar";
+import {
+  getAssetFromCanonical,
+  getCanonicalFromAsset,
+  isMainnet,
+} from "helpers/stellar";
 import { RequestState } from "constants/request";
 import { Loading } from "popup/components/Loading";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { openTab } from "popup/helpers/navigate";
 import { newTabHref } from "helpers/urls";
 import { reRouteOnboarding } from "popup/helpers/route";
-import { findAssetBalance } from "popup/helpers/balance";
 import { getAssetDecimals, getAvailableBalance } from "popup/helpers/soroban";
 import { AppDispatch } from "popup/App";
 import { emitMetric } from "helpers/metrics";
@@ -57,6 +62,7 @@ import { SlideupModal } from "popup/components/SlideupModal";
 import { AmountCard } from "popup/components/amount/AmountCard";
 import { PercentageButtons } from "popup/components/amount/PercentageButtons";
 import { shouldShowXlmReservePreflight } from "popup/helpers/xlmReserve";
+import { horizonGetBestPath } from "popup/helpers/horizonGetBestPath";
 import { XlmReserveSheet } from "popup/components/swap/XlmReserveSheet";
 
 import "./styles.scss";
@@ -255,6 +261,124 @@ export const SwapAmount = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isQuoteExpired]);
 
+  // Live quote: debounce the source amount and fetch the best path so the
+  // "You receive" amount updates as the user types. This is a lightweight
+  // path-only lookup (no XDR build / Blockaid scan / quote-expiry surfacing) —
+  // the full simulation runs at review time in handleContinue. A monotonic
+  // request id discards out-of-order responses; failures reset the displayed
+  // amount to 0 so a stale quote never lingers.
+  const liveQuoteReqRef = useRef(0);
+  const liveQuoteArgsRef = useRef({ asset, destinationAsset, networkDetails });
+  liveQuoteArgsRef.current = { asset, destinationAsset, networkDetails };
+  const destinationAmountRef = useRef(destinationAmount);
+  destinationAmountRef.current = destinationAmount;
+  // Once the review sheet is open the quote is frozen — a late live quote must
+  // not overwrite (or reset) the amount being reviewed.
+  const isReviewingRef = useRef(isReviewingTx);
+  isReviewingRef.current = isReviewingTx;
+
+  const debouncedQuote = useMemo(
+    () =>
+      debounce((quoteAmount: string) => {
+        const reqId = ++liveQuoteReqRef.current;
+        const {
+          asset: src,
+          destinationAsset: dst,
+          networkDetails: net,
+        } = liveQuoteArgsRef.current;
+        (async () => {
+          try {
+            const bestPath = await horizonGetBestPath({
+              amount: quoteAmount,
+              sourceAsset: src,
+              destAsset: dst,
+              networkDetails: net,
+            });
+            if (liveQuoteReqRef.current !== reqId || isReviewingRef.current) {
+              return; // superseded by a newer quote, or frozen for review
+            }
+            if (!bestPath?.destination_amount) {
+              dispatch(saveSwapBestPath({ path: [], destinationAmount: "0" }));
+              return;
+            }
+            const path: string[] = [];
+            bestPath.path.forEach((p) => {
+              if (!p.asset_code && !p.asset_issuer) {
+                path.push(p.asset_type);
+              } else {
+                path.push(getCanonicalFromAsset(p.asset_code, p.asset_issuer));
+              }
+            });
+            dispatch(
+              saveSwapBestPath({
+                path,
+                destinationAmount: bestPath.destination_amount,
+              }),
+            );
+          } catch {
+            if (liveQuoteReqRef.current !== reqId || isReviewingRef.current) {
+              return;
+            }
+            // No path / network error: clear the stale received amount.
+            dispatch(saveSwapBestPath({ path: [], destinationAmount: "0" }));
+          }
+        })();
+      }, 500),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
+
+  useEffect(() => () => debouncedQuote.cancel(), [debouncedQuote]);
+
+  useEffect(() => {
+    if (
+      swapAmountData.state !== RequestState.SUCCESS ||
+      swapAmountData.data?.type !== AppDataType.RESOLVED ||
+      !destinationAsset
+    ) {
+      return;
+    }
+    const livePrices = swapAmountData.data.tokenPrices;
+    const liveSrcPrice = livePrices[asset]?.currentPrice;
+    const liveDecimals = getAssetDecimals(
+      asset,
+      swapAmountData.data.userBalances,
+      isToken,
+    );
+    const cryptoAmount =
+      inputType === "fiat"
+        ? liveSrcPrice
+          ? new BigNumber(cleanAmount(amountUsd || "0"))
+              .dividedBy(new BigNumber(liveSrcPrice))
+              .decimalPlaces(liveDecimals)
+              .toString()
+          : "0"
+        : cleanAmount(amount || "0");
+
+    if (new BigNumber(cryptoAmount || "0").isGreaterThan(0)) {
+      debouncedQuote(cryptoAmount);
+    } else {
+      // Source amount cleared: cancel any pending/in-flight quote and reset the
+      // received amount so the card shows 0 (skip the dispatch if already 0).
+      debouncedQuote.cancel();
+      liveQuoteReqRef.current += 1;
+      if (
+        destinationAmountRef.current !== "0" &&
+        destinationAmountRef.current !== ""
+      ) {
+        dispatch(saveSwapBestPath({ path: [], destinationAmount: "0" }));
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    amount,
+    amountUsd,
+    asset,
+    destinationAsset,
+    inputType,
+    swapAmountData.state,
+  ]);
+
   if (isLoading) {
     return <Loading />;
   }
@@ -297,9 +421,6 @@ export const SwapAmount = ({
   const sendData = data;
   const assetIcon = sendData.icons[asset];
   const dstAssetIcon = sendData.icons[destinationAsset];
-  const dstAssetBalance = dstAsset
-    ? findAssetBalance(sendData.userBalances.balances, dstAsset)
-    : null;
   const prices = sendData.tokenPrices;
   const assetPrice = prices[asset] && prices[asset].currentPrice;
   const xlmPrice = prices["native"]?.currentPrice;
@@ -328,16 +449,22 @@ export const SwapAmount = ({
       )}`
     : null;
   const supportsUsd = isMainnet(data.networkDetails) && assetPrice;
+  const dstSupportsUsd = isMainnet(data.networkDetails) && dstAssetPrice;
+  const dstPriceValueUsd = dstAssetPrice
+    ? formatAmount(
+        roundUsdValue(
+          new BigNumber(dstAssetPrice)
+            .multipliedBy(new BigNumber(cleanAmount(destinationAmount || "0")))
+            .toString(),
+        ),
+      )
+    : null;
   const availableBalance = getAvailableBalance({
     assetCanonical: asset,
     balances: sendData.userBalances.balances,
     recommendedFee: fee,
   });
   const displayTotal = `${formatAmount(availableBalance)}`;
-  const dstDisplayTotal =
-    dstAssetBalance && dstAsset
-      ? `${formatAmount(dstAssetBalance.total.toString())}`
-      : "0";
   const isAmountTooHigh =
     (inputType === "crypto" &&
       new BigNumber(cleanAmount(formik.values.amount)).gt(
@@ -352,7 +479,6 @@ export const SwapAmount = ({
   const availableBalanceFontSizePx = AVAILABLE_BALANCE_FONT_SIZES.find(
     ({ maxLen }) => availableBalanceText.length <= maxLen,
   )!.sizePx;
-  const dstAvailableBalanceText = `${dstDisplayTotal} ${dstAsset ? dstAsset.code : ""} ${t("available")}`;
 
   return (
     <>
@@ -495,6 +621,64 @@ export const SwapAmount = ({
                   />
                 </div>
                 <div
+                  className="SwapAsset__direction"
+                  data-testid="swap-direction-chevron"
+                >
+                  <Button
+                    size="md"
+                    type="button"
+                    isRounded
+                    variant="tertiary"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      emitMetric(METRIC_NAMES.swapDirectionToggled);
+                      const prevSrc = asset;
+                      dispatch(saveAsset(destinationAsset));
+                      dispatch(saveDestinationAsset(prevSrc));
+                    }}
+                  >
+                    <Icon.ChevronDown />
+                  </Button>
+                </div>
+                <div
+                  className="SwapAsset__cards"
+                  data-testid="swap-receive-card"
+                >
+                  <AmountCard
+                    label={t("You receive")}
+                    availableBalanceText=""
+                    availableBalanceFontSizePx={availableBalanceFontSizePx}
+                    inputType="crypto"
+                    amount={destinationAmount}
+                    amountUsd=""
+                    amountFontSizeClass={getAmountFontSizeClass()}
+                    assetCode={dstAsset ? dstAsset.code : ""}
+                    assetIcon={dstAssetIcon}
+                    assetIcons={
+                      destinationAsset && destinationAsset !== "native"
+                        ? { [destinationAsset]: dstAssetIcon }
+                        : {}
+                    }
+                    assetIssuerKey={dstAsset?.issuer}
+                    supportsUsd={Boolean(dstSupportsUsd)}
+                    fiatLineText={`$${dstPriceValueUsd || "0.00"}`}
+                    isAmountTooHigh={false}
+                    isReadOnly
+                    autoFocus={false}
+                    cryptoDecimals={7}
+                    onAmountChange={() => {}}
+                    onAmountUsdChange={() => {}}
+                    onToggleInputType={() => {}}
+                    onSelectAsset={() => {
+                      emitMetric(METRIC_NAMES.swapPickerOpened, {
+                        side: "destination",
+                        source: "dropdown",
+                      });
+                      goToEditDst();
+                    }}
+                  />
+                </div>
+                <div
                   className="SwapAsset__percentage-buttons"
                   data-testid="swap-percentage-buttons"
                 >
@@ -525,64 +709,6 @@ export const SwapAmount = ({
                         formik.setFieldValue("amount", pctAmount);
                         dispatch(saveAmount(pctAmount));
                       }
-                    }}
-                  />
-                </div>
-                <div
-                  className="SwapAsset__direction"
-                  data-testid="swap-direction-chevron"
-                >
-                  <Button
-                    size="md"
-                    type="button"
-                    isRounded
-                    variant="tertiary"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      emitMetric(METRIC_NAMES.swapDirectionToggled);
-                      const prevSrc = asset;
-                      dispatch(saveAsset(destinationAsset));
-                      dispatch(saveDestinationAsset(prevSrc));
-                    }}
-                  >
-                    <Icon.ChevronDownDouble />
-                  </Button>
-                </div>
-                <div
-                  className="SwapAsset__cards"
-                  data-testid="swap-receive-card"
-                >
-                  <AmountCard
-                    label={t("You receive")}
-                    availableBalanceText={dstAvailableBalanceText}
-                    availableBalanceFontSizePx={availableBalanceFontSizePx}
-                    inputType="crypto"
-                    amount={destinationAmount}
-                    amountUsd=""
-                    amountFontSizeClass={getAmountFontSizeClass()}
-                    assetCode={dstAsset ? dstAsset.code : ""}
-                    assetIcon={dstAssetIcon}
-                    assetIcons={
-                      destinationAsset && destinationAsset !== "native"
-                        ? { [destinationAsset]: dstAssetIcon }
-                        : {}
-                    }
-                    assetIssuerKey={dstAsset?.issuer}
-                    supportsUsd={false}
-                    fiatLineText=""
-                    isAmountTooHigh={false}
-                    isReadOnly
-                    autoFocus={false}
-                    cryptoDecimals={7}
-                    onAmountChange={() => {}}
-                    onAmountUsdChange={() => {}}
-                    onToggleInputType={() => {}}
-                    onSelectAsset={() => {
-                      emitMetric(METRIC_NAMES.swapPickerOpened, {
-                        side: "destination",
-                        source: "dropdown",
-                      });
-                      goToEditDst();
                     }}
                   />
                 </div>

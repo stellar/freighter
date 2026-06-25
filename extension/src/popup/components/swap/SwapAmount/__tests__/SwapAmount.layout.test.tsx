@@ -53,4 +53,28 @@ describe("SwapAmount layout", () => {
     expect(screen.getByTestId("swap-direction-chevron")).toBeInTheDocument();
     expect(screen.getByTestId("swap-percentage-buttons")).toBeInTheDocument();
   });
+
+  it("orders sell card, chevron, receive card, then percentage buttons", () => {
+    render(
+      <Wrapper state={{}} routes={["/"]}>
+        <SwapAmount
+          inputType="crypto"
+          setInputType={jest.fn()}
+          goBack={jest.fn()}
+          goToNext={jest.fn()}
+          goToEditSrc={jest.fn()}
+          goToEditDst={jest.fn()}
+        />
+      </Wrapper>,
+    );
+    const sell = screen.getByTestId("swap-sell-card");
+    const chevron = screen.getByTestId("swap-direction-chevron");
+    const receive = screen.getByTestId("swap-receive-card");
+    const pct = screen.getByTestId("swap-percentage-buttons");
+
+    const following = Node.DOCUMENT_POSITION_FOLLOWING;
+    expect(sell.compareDocumentPosition(chevron) & following).toBeTruthy();
+    expect(chevron.compareDocumentPosition(receive) & following).toBeTruthy();
+    expect(receive.compareDocumentPosition(pct) & following).toBeTruthy();
+  });
 });

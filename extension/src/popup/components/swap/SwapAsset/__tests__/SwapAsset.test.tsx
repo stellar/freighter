@@ -145,4 +145,48 @@ describe("SwapAsset selectionType", () => {
       source: "popular",
     });
   });
+
+  it("destination: runs the idle lookup with the account's held balances", () => {
+    const heldUsdc = {
+      token: { code: "USDC", issuer: { key: "GUSD" } },
+      total: "10",
+    };
+    jest.spyOn(UseSwapFromData, "useGetSwapFromData").mockReturnValue({
+      state: {
+        ...resolvedFromState,
+        data: {
+          ...resolvedFromState.data,
+          balances: { balances: [heldUsdc], icons: {} },
+        },
+      },
+      fetchData: jest.fn().mockResolvedValue(undefined),
+      filterBalances: jest.fn(),
+    } as any);
+    const lookupFetchData = jest.fn().mockResolvedValue(undefined);
+    jest.spyOn(UseSwapTokenLookup, "useSwapTokenLookup").mockReturnValue({
+      fetchData: lookupFetchData,
+      state: {
+        state: RequestState.SUCCESS,
+        data: emptyLookupResult,
+        error: null,
+      },
+    } as any);
+
+    render(
+      <Wrapper state={{}} routes={["/"]}>
+        <SwapAsset
+          selectionType="destination"
+          hiddenAssets={[]}
+          onClickAsset={jest.fn()}
+          goBack={jest.fn()}
+        />
+      </Wrapper>,
+    );
+
+    // The held balances (not an empty array) must reach the token lookup so the
+    // "Your tokens" section can be populated.
+    expect(lookupFetchData).toHaveBeenCalledWith(
+      expect.objectContaining({ searchTerm: "", balances: [heldUsdc] }),
+    );
+  });
 });

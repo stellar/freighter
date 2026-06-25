@@ -150,6 +150,27 @@ describe("SwapPickerSections", () => {
     ).toBeInTheDocument();
   });
 
+  it("excludes hiddenAssets (the swap source) from every section", () => {
+    render(
+      <SwapPickerSections
+        {...baseProps}
+        searchTerm=""
+        hiddenAssets={["XLM:G123"]}
+        result={{
+          ...emptyResult,
+          yourTokens: [rec("XLM", true), rec("USDC", true)],
+          popular: [rec("XLM"), rec("AQUA")],
+        }}
+      />,
+    );
+
+    // The hidden source asset (XLM) is filtered out of all sections...
+    expect(screen.queryByTestId("row-XLM")).toBeNull();
+    // ...while other held/popular tokens remain.
+    expect(screen.getByTestId("row-USDC")).toBeInTheDocument();
+    expect(screen.getByTestId("row-AQUA")).toBeInTheDocument();
+  });
+
   it("idle + new account + no popular: renders nothing (no generic empty state)", () => {
     render(
       <SwapPickerSections

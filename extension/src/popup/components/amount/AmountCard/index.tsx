@@ -218,18 +218,23 @@ export const AmountCard = ({
         <div className="AmountCard__balance-row">
           <div className="AmountCard__amount-price">
             {fiatLineText}
-            <Button
-              size="md"
-              type="button"
-              isRounded
-              variant="tertiary"
-              onClick={(e) => {
-                e.preventDefault();
-                onToggleInputType();
-              }}
-            >
-              <Icon.RefreshCw03 />
-            </Button>
+            {/* Read-only cards (e.g. the swap "You receive" card) show the
+                fiat value but cannot toggle input type, so omit the toggle. */}
+            {!isReadOnly && (
+              <Button
+                size="md"
+                type="button"
+                isRounded
+                variant="tertiary"
+                data-testid="amount-fiat-toggle"
+                onClick={(e) => {
+                  e.preventDefault();
+                  onToggleInputType();
+                }}
+              >
+                <Icon.RefreshCw03 />
+              </Button>
+            )}
           </div>
         </div>
       )}

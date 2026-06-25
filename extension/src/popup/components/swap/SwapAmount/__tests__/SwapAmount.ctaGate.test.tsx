@@ -17,8 +17,8 @@ import * as UseSimulateSwapData from "popup/components/swap/SwapAmount/hooks/use
 import * as UseNetworkFees from "popup/helpers/useNetworkFees";
 import * as XlmReserve from "popup/helpers/xlmReserve";
 
-// Native-XLM balance that satisfies `findAssetBalance` (array-of-objects form)
-// and makes `availableBalance` > 0 so the "Review swap" button is not disabled.
+// Native-XLM balance that makes `availableBalance` > 0 so the "Review swap"
+// button is not disabled.
 const nativeBalance = {
   token: { type: "native", code: "XLM" },
   total: new BigNumber("100"),

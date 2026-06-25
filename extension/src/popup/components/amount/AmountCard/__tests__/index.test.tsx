@@ -74,6 +74,30 @@ describe("AmountCard", () => {
     ).toBeInTheDocument();
   });
 
+  it("shows the fiat line but no input-type toggle when read-only", () => {
+    render(
+      <Wrapper state={{}} routes={["/"]}>
+        <AmountCard
+          {...baseProps}
+          supportsUsd
+          fiatLineText="$1.23"
+          isReadOnly
+        />
+      </Wrapper>,
+    );
+    expect(screen.getByText("$1.23")).toBeInTheDocument();
+    expect(screen.queryByTestId("amount-fiat-toggle")).toBeNull();
+  });
+
+  it("shows the input-type toggle when not read-only and USD is supported", () => {
+    render(
+      <Wrapper state={{}} routes={["/"]}>
+        <AmountCard {...baseProps} supportsUsd fiatLineText="$1.23" />
+      </Wrapper>,
+    );
+    expect(screen.getByTestId("amount-fiat-toggle")).toBeInTheDocument();
+  });
+
   it("fires onSelectAsset when asset selector is clicked even with isReadOnly", () => {
     const onSelectAsset = jest.fn();
     render(

@@ -51,6 +51,9 @@ export interface SwapPickerSectionsResult {
 export interface SwapPickerSectionsProps {
   result: SwapPickerSectionsResult;
   searchTerm: string;
+  /** Canonicals to exclude from every section (e.g. the swap source asset, so
+   * a user can't pick the same token as both sides). */
+  hiddenAssets?: string[];
   onClickAsset: (
     canonical: string,
     isContract: boolean,
@@ -62,6 +65,7 @@ export interface SwapPickerSectionsProps {
 export const SwapPickerSections = ({
   result,
   searchTerm,
+  hiddenAssets = [],
   onClickAsset,
   stellarExpertUrl,
 }: SwapPickerSectionsProps) => {
@@ -70,6 +74,13 @@ export const SwapPickerSections = ({
   const [unverifiedSheetOpen, setUnverifiedSheetOpen] = useState(false);
 
   const isSearching = searchTerm.trim().length > 0;
+
+  // Exclude hidden canonicals (the swap source asset) from every section.
+  const hidden = new Set(hiddenAssets);
+  const yourTokens = result.yourTokens.filter((r) => !hidden.has(r.canonical));
+  const popular = result.popular.filter((r) => !hidden.has(r.canonical));
+  const verified = result.verified.filter((r) => !hidden.has(r.canonical));
+  const unverified = result.unverified.filter((r) => !hidden.has(r.canonical));
 
   const renderRows = (records: SwapTokenRecord[], source: PickerSource) =>
     records.map((r) => (
@@ -92,13 +103,8 @@ export const SwapPickerSections = ({
     ));
 
   const hasResults = isSearching
-    ? result.yourTokens.length +
-        result.verified.length +
-        result.unverified.length >
-      0
-    : (result.isNewAccount ? 0 : result.yourTokens.length) +
-        result.popular.length >
-      0;
+    ? yourTokens.length + verified.length + unverified.length > 0
+    : (result.isNewAccount ? 0 : yourTokens.length) + popular.length > 0;
 
   return (
     <div className="SwapPickerSections" data-testid="swap-picker-sections">
@@ -136,7 +142,7 @@ export const SwapPickerSections = ({
         ) : null
       ) : (
         <>
-          {!result.isNewAccount && result.yourTokens.length > 0 && (
+          {!result.isNewAccount && yourTokens.length > 0 && (
             <>
               <div
                 className="SwapPickerSections__header"
@@ -144,11 +150,11 @@ export const SwapPickerSections = ({
               >
                 {t("Your tokens")}
               </div>
-              {renderRows(result.yourTokens, "balances")}
+              {renderRows(yourTokens, "balances")}
             </>
           )}
 
-          {!isSearching && result.popular.length > 0 && (
+          {!isSearching && popular.length > 0 && (
             <>
               <div
                 className="SwapPickerSections__header"
@@ -156,11 +162,11 @@ export const SwapPickerSections = ({
               >
                 {t("Popular tokens")}
               </div>
-              {renderRows(result.popular, "popular")}
+              {renderRows(popular, "popular")}
             </>
           )}
 
-          {isSearching && result.verified.length > 0 && (
+          {isSearching && verified.length > 0 && (
             <>
               <div className="SwapPickerSections__header">
                 <span data-testid="swap-section-verified">{t("Verified")}</span>
@@ -174,11 +180,11 @@ export const SwapPickerSections = ({
                   <Icon.InfoCircle />
                 </button>
               </div>
-              {renderRows(result.verified, "search")}
+              {renderRows(verified, "search")}
             </>
           )}
 
-          {isSearching && result.unverified.length > 0 && (
+          {isSearching && unverified.length > 0 && (
             <>
               <div className="SwapPickerSections__header">
                 <span data-testid="swap-section-unverified">
@@ -194,7 +200,7 @@ export const SwapPickerSections = ({
                   <Icon.InfoCircle />
                 </button>
               </div>
-              {renderRows(result.unverified, "search")}
+              {renderRows(unverified, "search")}
             </>
           )}
         </>

@@ -110,32 +110,39 @@ export const SwapAsset = ({
     debouncedSubmit();
   };
 
+  // Always load the account's held balances. The source list renders them
+  // directly; the destination picker feeds them into the token lookup so the
+  // "Your tokens" section can be populated.
   useEffect(() => {
-    if (!isDestination) {
-      const getData = async () => {
-        await fetchData(true);
-      };
-      getData();
-    } else {
-      // Trigger initial idle fetch (populate held tokens + popular)
-      const resolvedFrom = fromState.data;
-      const balances =
-        resolvedFrom?.type === AppDataType.RESOLVED
-          ? resolvedFrom.balances.balances
-          : [];
-      const publicKey =
-        resolvedFrom?.type === AppDataType.RESOLVED
-          ? resolvedFrom.publicKey
-          : "";
-      lookupFetchData({
-        searchTerm: "",
-        balances,
-        publicKey,
-        networkDetails,
-      });
-    }
+    const getData = async () => {
+      await fetchData(true);
+    };
+    getData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Destination picker: once the held balances resolve, run the idle lookup
+  // (held tokens + popular). Skipped while searching, since the debounced
+  // search submit drives lookupFetchData in that case.
+  useEffect(() => {
+    if (!isDestination) {
+      return;
+    }
+    const resolvedFrom = fromState.data;
+    if (resolvedFrom?.type !== AppDataType.RESOLVED) {
+      return;
+    }
+    if (formik.values.searchTerm.trim().length > 0) {
+      return;
+    }
+    lookupFetchData({
+      searchTerm: "",
+      balances: resolvedFrom.balances.balances,
+      publicKey: resolvedFrom.publicKey,
+      networkDetails,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDestination, fromState.data]);
 
   // Source-only rerouting/onboarding guard
   if (!isDestination) {
@@ -227,6 +234,7 @@ export const SwapAsset = ({
             <SwapPickerSections
               result={pickerResult}
               searchTerm={formik.values.searchTerm}
+              hiddenAssets={hiddenAssets}
               onClickAsset={onClickAsset}
               stellarExpertUrl={stellarExpertUrl}
             />
