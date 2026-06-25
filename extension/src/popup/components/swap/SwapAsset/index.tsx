@@ -86,12 +86,17 @@ export const SwapAsset = ({
           resolvedFrom?.type === AppDataType.RESOLVED
             ? resolvedFrom.balances.icons
             : {};
+        const tokenPrices =
+          resolvedFrom?.type === AppDataType.RESOLVED
+            ? resolvedFrom.tokenPrices
+            : {};
         lookupFetchData({
           searchTerm: values.searchTerm,
           balances,
           publicKey,
           networkDetails,
           icons,
+          tokenPrices,
         });
       } else {
         filterBalances(values.searchTerm);
@@ -146,6 +151,7 @@ export const SwapAsset = ({
       publicKey: resolvedFrom.publicKey,
       networkDetails,
       icons: resolvedFrom.balances.icons,
+      tokenPrices: resolvedFrom.tokenPrices,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- re-run only when held balances resolve; lookupFetchData/networkDetails/searchTerm are intentionally excluded (search is driven by the debounced submit)
   }, [isDestination, fromState.data]);

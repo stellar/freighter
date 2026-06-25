@@ -2,8 +2,8 @@ import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Icon, Notification } from "@stellar/design-system";
 
-import { SwapTokenRow } from "../SwapTokenRow";
 import { SwapTokenMenu } from "../SwapTokenMenu";
+import { BalanceRow } from "popup/components/BalanceRow";
 import {
   VerifiedTokenInfoSheet,
   UnverifiedTokenInfoSheet,
@@ -85,26 +85,30 @@ export const SwapPickerSections = ({
   const verified = result.verified.filter((r) => !hidden.has(r.canonical));
   const unverified = result.unverified.filter((r) => !hidden.has(r.canonical));
 
-  // Held "Your tokens" rows still use SwapTokenRow (shows balance/value).
-  const renderRows = (records: SwapTokenRecord[], source: PickerSource) =>
-    records.map((r) => (
-      <SwapTokenRow
-        key={r.canonical}
-        code={r.code ?? ""}
-        issuerKey={r.issuer}
-        domain={r.domain}
-        // Both image and icon come from ManageAssetCurrency heritage; image is preferred
-        iconUrl={r.image ?? r.icon ?? undefined}
-        isHeld={r.isHeld}
-        fiatValue={r.fiatValue}
-        percentChange24h={r.percentChange24h}
-        securityLevel={r.securityLevel}
-        stellarExpertUrl={stellarExpertUrl}
-        onClick={() =>
-          onClickAsset(r.canonical, r.isContract, buildSelection(r, source))
-        }
-      />
-    ));
+  // Held "Your tokens" rows use the shared BalanceRow (code + balance + fiat +
+  // 24h delta), matching the account-home balances list.
+  const renderBalanceRows = (
+    records: SwapTokenRecord[],
+    source: PickerSource,
+  ) =>
+    records.map((r) => {
+      const code = r.code ?? "";
+      return (
+        <BalanceRow
+          key={r.canonical}
+          data-testid={`SwapTokenRow-${code}`}
+          code={code}
+          issuerKey={r.issuer}
+          iconUrl={r.image ?? r.icon ?? undefined}
+          amount={r.tokenAmount ?? "0"}
+          fiatAmount={r.fiatValue ?? null}
+          percentChange={r.percentChange24h ?? null}
+          onClick={() =>
+            onClickAsset(r.canonical, r.isContract, buildSelection(r, source))
+          }
+        />
+      );
+    });
 
   // Non-held discover rows (Popular / Verified / Unverified) use the shared
   // AssetListRow with an overflow menu on the right.
@@ -189,7 +193,7 @@ export const SwapPickerSections = ({
               >
                 {t("Your tokens")}
               </div>
-              {renderRows(yourTokens, "balances")}
+              {renderBalanceRows(yourTokens, "balances")}
             </>
           )}
 

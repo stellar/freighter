@@ -1,9 +1,10 @@
 import { useReducer, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { captureException } from "@sentry/browser";
+import BigNumber from "bignumber.js";
 
 import { NetworkDetails } from "@shared/constants/stellar";
-import { BlockAidScanAssetResult } from "@shared/api/types";
+import { ApiTokenPrices, BlockAidScanAssetResult } from "@shared/api/types";
 import { AssetListResponse } from "@shared/constants/soroban/asset-list";
 import { getCombinedAssetListData } from "@shared/api/helpers/token-list";
 import { AssetType } from "@shared/api/types/account-balance";
@@ -15,7 +16,12 @@ import { ManageAssetCurrency } from "popup/components/manageAssets/ManageAssetRo
 import { SecurityLevel } from "popup/constants/blockaid";
 import { searchAsset } from "popup/helpers/searchAsset";
 import { splitVerifiedAssetCurrency } from "popup/helpers/assetList";
-import { isContractId, isAssetSac } from "popup/helpers/soroban";
+import {
+  isContractId,
+  isAssetSac,
+  formatTokenAmount,
+} from "popup/helpers/soroban";
+import { formatAmount, roundUsdValue } from "popup/helpers/formatters";
 import {
   scanAssetBulk,
   isAssetMalicious,
@@ -49,6 +55,8 @@ export interface SwapTokenRecord extends ManageAssetCurrency {
   isContract: boolean;
   requiresTrustline: boolean;
   securityLevel?: SecurityLevel;
+  /** Formatted held-token balance (held rows only). */
+  tokenAmount?: string;
   fiatValue?: string;
   percentChange24h?: string;
 }
@@ -81,6 +89,7 @@ export const EMPTY_RESULT: SwapTokenLookupResult = {
 const heldToRecord = (
   balance: AssetType,
   icons: Record<string, string | null> = {},
+  tokenPrices: ApiTokenPrices = {},
 ): SwapTokenRecord | null => {
   if (!("token" in balance) || !balance.token) {
     return null;
@@ -95,6 +104,26 @@ const heldToRecord = (
   const code = isNative ? "XLM" : token.code;
   const issuer = isNative ? "" : token.issuer?.key || "";
   const canonical = isNative ? "native" : getCanonicalFromAsset(code, issuer);
+
+  // Held-token balance, fiat value and 24h delta (mirrors the account-home row).
+  const total = new BigNumber(
+    (balance as { total?: BigNumber.Value }).total ?? 0,
+  );
+  const rawAmount =
+    "contractId" in balance && "decimals" in balance
+      ? formatTokenAmount(total, (balance as { decimals: number }).decimals)
+      : total.toFixed();
+  const tokenAmount = formatAmount(rawAmount);
+  const price = tokenPrices[canonical];
+  const fiatValue = price?.currentPrice
+    ? `$${formatAmount(
+        roundUsdValue(
+          new BigNumber(price.currentPrice).multipliedBy(total).toString(),
+        ),
+      )}`
+    : undefined;
+  const percentChange24h = price?.percentagePriceChange24h || undefined;
+
   return {
     code,
     issuer,
@@ -103,6 +132,9 @@ const heldToRecord = (
     // Held tokens carry no icon URL of their own — pull it from the account's
     // icons map (keyed by canonical) so "Your tokens" rows show real logos.
     image: icons[canonical] || undefined,
+    tokenAmount,
+    fiatValue,
+    percentChange24h,
     isHeld: true,
     isContract: false,
     requiresTrustline: false,
@@ -149,6 +181,7 @@ export const buildSwapSections = ({
   searchResults = [],
   isFallback = false,
   icons = {},
+  tokenPrices = {},
 }: {
   searchTerm: string;
   balances: AssetType[];
@@ -159,12 +192,13 @@ export const buildSwapSections = ({
   searchResults?: ManageAssetCurrency[];
   isFallback?: boolean;
   icons?: Record<string, string | null>;
+  tokenPrices?: ApiTokenPrices;
 }): SwapTokenLookupResult => {
   const term = searchTerm.trim().toLowerCase();
   const isSearch = term.length > 0;
 
   const heldRecords = balances
-    .map((b) => heldToRecord(b, icons))
+    .map((b) => heldToRecord(b, icons, tokenPrices))
     .filter((r): r is SwapTokenRecord => r !== null);
   const heldCanonicals = new Set(heldRecords.map((r) => r.canonical));
 
@@ -370,12 +404,14 @@ export const useSwapTokenLookup = () => {
     publicKey: _publicKey,
     networkDetails,
     icons = {},
+    tokenPrices = {},
   }: {
     searchTerm: string;
     balances: AssetType[];
     publicKey: string;
     networkDetails: NetworkDetails;
     icons?: Record<string, string | null>;
+    tokenPrices?: ApiTokenPrices;
   }): Promise<void> => {
     // Cancel any in-flight request
     abortControllerRef.current?.abort();
@@ -398,6 +434,7 @@ export const useSwapTokenLookup = () => {
           balances,
           networkDetails,
           icons,
+          tokenPrices,
           isFallback: true,
         }),
       });
@@ -481,6 +518,7 @@ export const useSwapTokenLookup = () => {
         balances,
         networkDetails,
         icons,
+        tokenPrices,
         popular,
         verifiedAssets,
         unverifiedAssets,
@@ -550,6 +588,7 @@ export const useSwapTokenLookup = () => {
           balances,
           networkDetails,
           icons,
+          tokenPrices,
           isFallback: true,
         }),
       });

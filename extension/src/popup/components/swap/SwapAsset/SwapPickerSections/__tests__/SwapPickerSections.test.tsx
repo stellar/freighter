@@ -12,14 +12,15 @@ jest.mock("react-i18next", () => ({
 
 // SwapTokenRow is unit-tested separately; stub it to a simple marker so these
 // tests assert section structure, not row internals.
-jest.mock("../../SwapTokenRow", () => ({
-  SwapTokenRow: ({ code }: { code: string }) => (
+// "Your tokens" rows render through the shared BalanceRow; discover rows
+// (Popular/Verified/Unverified) render through AssetListRow. Stub both to the
+// same marker so section-structure assertions hold.
+jest.mock("popup/components/BalanceRow", () => ({
+  BalanceRow: ({ code }: { code: string }) => (
     <div data-testid={`row-${code}`} />
   ),
 }));
 
-// Discover rows (Popular/Verified/Unverified) render through the shared
-// AssetListRow; stub it to the same marker so section-structure assertions hold.
 jest.mock("popup/components/AssetListRow", () => ({
   AssetListRow: ({ code }: { code: string }) => (
     <div data-testid={`row-${code}`} />
