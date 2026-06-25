@@ -60,9 +60,9 @@
     padding: 0;
     border: none;
     border-radius: pxToRem(100px);
-    // A step darker than the cards (gray-03) so the toggle stays visible on the
-    // seam between them.
-    background-color: var(--sds-clr-gray-01);
+    // Between the dark page background and the cards (gray-03) so the toggle
+    // stays distinct from both.
+    background-color: var(--sds-clr-gray-02);
     color: var(--sds-clr-gray-12);
     cursor: pointer;
 
@@ -72,7 +72,7 @@
     }
 
     &:hover {
-      background-color: var(--sds-clr-gray-03);
+      background-color: var(--sds-clr-gray-04);
     }
   }
 
