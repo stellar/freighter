@@ -358,8 +358,13 @@
     display: flex;
     flex-direction: column;
     width: 100%;
-    overflow-y: scroll;
+    overflow-y: auto;
     max-width: 57rem;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
 
     &__Header {
       display: flex;
