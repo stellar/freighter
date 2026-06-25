@@ -127,10 +127,12 @@
     }
 
     // Empty "+ Select" state (e.g. the swap receive card before a token is
-    // picked): show a larger leading plus icon instead of the asset logo.
-    &--empty svg:last-child {
+    // picked): give the leading plus the same footprint (20px + 4px margin) as
+    // the asset logo so the pill matches the regular token picker's dimensions.
+    &--empty svg:first-child {
       width: pxToRem(20px);
       height: pxToRem(20px);
+      margin: pxToRem(4px);
     }
   }
 
