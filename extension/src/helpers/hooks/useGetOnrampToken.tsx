@@ -7,7 +7,10 @@ import { signOnrampProof } from "@shared/api/internal";
 import { WalletType } from "@shared/constants/hardwareWallet";
 import { openTab } from "popup/helpers/navigate";
 import { hardwareWalletTypeSelector } from "popup/ducks/accountServices";
-import { signOnrampProofWithLedger } from "popup/helpers/onrampLedger";
+import {
+  LedgerOnrampUnsupportedError,
+  signOnrampProofWithLedger,
+} from "popup/helpers/onrampLedger";
 import { emitMetric } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { RequestState, initialState, reducer } from "./fetchHookInterface";
@@ -42,7 +45,11 @@ function useGetOnrampToken({ asset }: UseGetOnrampTokenParams) {
 
   useEffect(() => {
     if (state.state === RequestState.ERROR) {
-      setTokenError("Unable to communicate with Coinbase");
+      if (state.error instanceof LedgerOnrampUnsupportedError) {
+        setTokenError(state.error.message);
+      } else {
+        setTokenError("Unable to communicate with Coinbase");
+      }
       captureException("Unable to fetch Coinbase session token");
     }
 
