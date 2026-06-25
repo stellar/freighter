@@ -5,6 +5,7 @@ import {
   SignBlobResponse,
   SignBlobMessage,
 } from "@shared/api/types/message-request";
+import { ONRAMP_AUTH_DOMAIN } from "helpers/onrampProof";
 import { signBlob } from "../handlers/signBlob";
 
 const MOCK_PUBLIC_KEY =
@@ -330,6 +331,76 @@ describe("signBlob handler", () => {
     expect(stellarHelpers.encodeSep53Message).toHaveBeenCalledWith(
       "test-message",
     );
+    expect(mockResponseFn).toHaveBeenCalled();
+  });
+
+  it("refuses to sign a message beginning with the onramp-auth domain prefix", async () => {
+    const stellarModule = require("@shared/helpers/stellar");
+    const signMock = stellarModule.getSdk().Keypair.fromSecret().sign;
+
+    const onrampMessage = `${ONRAMP_AUTH_DOMAIN}{"sub":"GABC","method":"POST"}`;
+    const blobDataWithOnrampMessage = {
+      blob: {
+        apiVersion: "5.0.0",
+        domain: "evil-dapp.com",
+        message: onrampMessage,
+        url: "https://evil-dapp.com",
+        uuid: "uuid-onramp",
+      } as any,
+      uuid: "uuid-onramp",
+      createdAt: Date.now(),
+    };
+
+    blobQueue.push(blobDataWithOnrampMessage);
+    responseQueue.push({
+      response: mockResponseFn,
+      uuid: "uuid-onramp",
+      createdAt: Date.now(),
+    });
+
+    const request: SignBlobMessage = {
+      type: SERVICE_TYPES.SIGN_BLOB,
+      activePublicKey: MOCK_PUBLIC_KEY,
+      uuid: "uuid-onramp",
+      apiVersion: "5.0.0",
+    };
+
+    const result = await signBlob({
+      request,
+      localStore: mockLocalStore,
+      sessionStore: mockSessionStore,
+      blobQueue,
+      responseQueue,
+    });
+
+    expect(result).toMatchObject({ error: expect.any(String) });
+    expect(signMock).not.toHaveBeenCalled();
+    expect(mockResponseFn).not.toHaveBeenCalled();
+  });
+
+  it("does not block normal blobs that don't begin with the onramp-auth domain prefix", async () => {
+    blobQueue.push(makeBlobData("uuid-normal"));
+    responseQueue.push({
+      response: mockResponseFn,
+      uuid: "uuid-normal",
+      createdAt: Date.now(),
+    });
+
+    const request: SignBlobMessage = {
+      type: SERVICE_TYPES.SIGN_BLOB,
+      activePublicKey: MOCK_PUBLIC_KEY,
+      uuid: "uuid-normal",
+      apiVersion: "5.0.0",
+    };
+
+    await signBlob({
+      request,
+      localStore: mockLocalStore,
+      sessionStore: mockSessionStore,
+      blobQueue,
+      responseQueue,
+    });
+
     expect(mockResponseFn).toHaveBeenCalled();
   });
 });

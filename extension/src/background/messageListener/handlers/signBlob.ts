@@ -13,6 +13,7 @@ import {
   SignBlobResponse,
 } from "@shared/api/types/message-request";
 import { encodeSep53Message } from "helpers/stellar";
+import { ONRAMP_AUTH_DOMAIN } from "helpers/onrampProof";
 
 export const signBlob = async ({
   request,
@@ -61,6 +62,13 @@ export const signBlob = async ({
     if (!blob) {
       captureException(`signBlob: no blob found in queue for uuid ${uuid}`);
       return { error: "Transaction not found" };
+    }
+
+    if (blob.message.startsWith(ONRAMP_AUTH_DOMAIN)) {
+      captureException(
+        "signBlob: refused to sign a reserved onramp-auth-domain message",
+      );
+      return { error: "Refusing to sign a reserved Freighter message" };
     }
 
     const signPayload = encodeSep53Message(blob.message);
