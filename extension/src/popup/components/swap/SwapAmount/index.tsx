@@ -530,7 +530,7 @@ export const SwapAmount = ({
             </div>
             <Button
               type="button"
-              size="md"
+              size="lg"
               data-testid="swap-amount-btn-continue"
               isFullWidth
               isRounded
