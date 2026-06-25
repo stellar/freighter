@@ -1,0 +1,81 @@
+@use "../../styles/utils.scss" as *;
+
+.InfoSheet {
+  display: flex;
+  flex-direction: column;
+  gap: pxToRem(24px);
+  padding: pxToRem(24px);
+
+  &__top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  &__badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: pxToRem(32px);
+    height: pxToRem(32px);
+    border-radius: pxToRem(8px);
+    border: 1px solid transparent;
+
+    svg {
+      width: pxToRem(20px);
+      height: pxToRem(20px);
+    }
+
+    &--brand {
+      background-color: var(--sds-clr-lilac-03);
+      border-color: var(--sds-clr-lilac-06);
+      color: var(--sds-clr-lilac-11);
+    }
+
+    &--neutral {
+      background-color: var(--sds-clr-gray-03);
+      border-color: var(--sds-clr-gray-06);
+      color: var(--sds-clr-gray-11);
+    }
+  }
+
+  &__close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: pxToRem(32px);
+    height: pxToRem(32px);
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background-color: var(--sds-clr-gray-03);
+    color: var(--sds-clr-gray-11);
+    cursor: pointer;
+
+    svg {
+      width: pxToRem(20px);
+      height: pxToRem(20px);
+    }
+  }
+
+  &__text {
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(8px);
+  }
+
+  &__title {
+    margin: 0;
+    color: var(--sds-clr-gray-12);
+    font-size: pxToRem(18px);
+    font-weight: var(--font-weight-medium);
+    line-height: pxToRem(26px);
+  }
+
+  &__body {
+    color: var(--sds-clr-gray-11);
+    font-size: pxToRem(14px);
+    font-weight: var(--font-weight-regular);
+    line-height: pxToRem(20px);
+  }
+}

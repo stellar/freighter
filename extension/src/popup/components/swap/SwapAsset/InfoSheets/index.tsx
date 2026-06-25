@@ -1,8 +1,8 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { Button } from "@stellar/design-system";
+import { Icon } from "@stellar/design-system";
 
-import { SlideupModal } from "popup/components/SlideupModal";
+import { InfoBottomSheet } from "popup/components/InfoBottomSheet";
 
 interface InfoSheetProps {
   isOpen: boolean;
@@ -12,24 +12,19 @@ interface InfoSheetProps {
 export const VerifiedTokenInfoSheet = ({ isOpen, onClose }: InfoSheetProps) => {
   const { t } = useTranslation();
   return (
-    <SlideupModal isModalOpen={isOpen} setIsModalOpen={() => onClose()}>
-      <div className="SwapInfoSheet" data-testid="verified-token-info-sheet">
-        <h5>{t("Verified tokens")}</h5>
-        <p>
-          {t(
-            "Freighter uses asset lists to verify assets before interactions.",
-          )}
-        </p>
-        <Button
-          size="md"
-          variant="tertiary"
-          isFullWidth
-          onClick={() => onClose()}
-        >
-          {t("Got it")}
-        </Button>
-      </div>
-    </SlideupModal>
+    <InfoBottomSheet
+      isOpen={isOpen}
+      onClose={onClose}
+      data-testid="verified-token-info-sheet"
+      badgeVariant="brand"
+      icon={<Icon.CheckVerified01 />}
+      title={t("Verified token")}
+      actionLabel={t("Close")}
+    >
+      {t(
+        "Freighter uses asset lists to verify assets before interactions. You can define your own assets lists in Settings.",
+      )}
+    </InfoBottomSheet>
   );
 };
 
@@ -39,23 +34,18 @@ export const UnverifiedTokenInfoSheet = ({
 }: InfoSheetProps) => {
   const { t } = useTranslation();
   return (
-    <SlideupModal isModalOpen={isOpen} setIsModalOpen={() => onClose()}>
-      <div className="SwapInfoSheet" data-testid="unverified-token-info-sheet">
-        <h5>{t("Unverified tokens")}</h5>
-        <p>
-          {t(
-            "These tokens are not on any of your lists. Proceed with caution.",
-          )}
-        </p>
-        <Button
-          size="md"
-          variant="tertiary"
-          isFullWidth
-          onClick={() => onClose()}
-        >
-          {t("Got it")}
-        </Button>
-      </div>
-    </SlideupModal>
+    <InfoBottomSheet
+      isOpen={isOpen}
+      onClose={onClose}
+      data-testid="unverified-token-info-sheet"
+      badgeVariant="neutral"
+      icon={<Icon.CheckVerified01 />}
+      title={t("Unverified token")}
+      actionLabel={t("Close")}
+    >
+      {t(
+        "These assets are not on any of your lists. Proceed with caution before adding.",
+      )}
+    </InfoBottomSheet>
   );
 };
