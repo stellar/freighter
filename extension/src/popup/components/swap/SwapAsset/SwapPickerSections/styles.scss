@@ -2,6 +2,13 @@
   display: flex;
   flex-direction: column;
 
+  // Give discover rows (AssetListRow) the same vertical rhythm as the held
+  // rows and the Add-a-token list (~1.5rem between adjacent rows) so they
+  // aren't glued together.
+  .AssetListRow {
+    padding: 0.75rem 0;
+  }
+
   &__notice {
     margin-bottom: 0.75rem;
   }
