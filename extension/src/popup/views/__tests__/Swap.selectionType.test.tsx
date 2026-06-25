@@ -152,9 +152,10 @@ describe("Swap selectionType wiring", () => {
     await waitFor(() => {
       expect(screen.getByText("Swap from")).toBeInTheDocument();
     });
-    // Source picker renders the held-only TokenList, not the discovery picker.
-    expect(screen.getByTestId("token-list")).toBeInTheDocument();
-    expect(screen.queryByTestId("swap-picker-sections")).toBeNull();
+    // Source picker reuses the same "Your tokens" list (SwapPickerSections) as
+    // the destination, not the legacy TokenList.
+    expect(screen.getByTestId("swap-picker-sections")).toBeInTheDocument();
+    expect(screen.queryByTestId("token-list")).toBeNull();
   });
 
   it("opens the destination picker (Swap to) when the receive card's asset selector is clicked", async () => {
@@ -176,23 +177,23 @@ describe("Swap selectionType wiring", () => {
   });
 
   it("emits swapSourceSelected with the picked source on source pick", async () => {
+    const usdcBalance = {
+      token: {
+        code: "USDC",
+        issuer: {
+          key: "GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
+        },
+      },
+      total: new BigNumber("100"),
+      available: new BigNumber("100"),
+    };
     jest.spyOn(UseSwapFromData, "useGetSwapFromData").mockReturnValue({
       state: {
         ...resolvedFromState,
         data: {
           ...resolvedFromState.data,
-          filteredBalances: [
-            {
-              token: {
-                code: "USDC",
-                issuer: {
-                  key: "GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
-                },
-              },
-              total: new BigNumber("100"),
-              available: new BigNumber("100"),
-            },
-          ],
+          balances: { balances: [usdcBalance], icons: {} },
+          filteredBalances: [usdcBalance],
         },
       },
       fetchData: jest.fn().mockResolvedValue(undefined),
@@ -208,10 +209,8 @@ describe("Swap selectionType wiring", () => {
       fireEvent.click(selectors[0]);
     });
 
-    // The held TokenList renders a clickable USDC row.
-    const usdcRow = await screen.findByTestId(
-      "SendRow-USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
-    );
+    // The "Your tokens" list renders a clickable USDC row.
+    const usdcRow = await screen.findByTestId("SwapTokenRow-USDC");
     await act(async () => {
       fireEvent.click(usdcRow);
     });

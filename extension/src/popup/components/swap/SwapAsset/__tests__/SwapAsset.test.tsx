@@ -53,7 +53,7 @@ describe("SwapAsset selectionType", () => {
 
   afterEach(() => jest.restoreAllMocks());
 
-  it("source: renders the 'Swap from' header and the held TokenList", () => {
+  it("source: renders the 'Swap from' header and the Your tokens list", () => {
     render(
       <Wrapper state={{}} routes={["/"]}>
         <SwapAsset
@@ -65,9 +65,11 @@ describe("SwapAsset selectionType", () => {
       </Wrapper>,
     );
 
+    // Source now reuses the same SwapPickerSections "Your tokens" list as the
+    // destination (held tokens only), not the legacy TokenList.
     expect(screen.getByText("Swap from")).toBeInTheDocument();
-    expect(screen.getByTestId("token-list")).toBeInTheDocument();
-    expect(screen.queryByTestId("swap-picker-sections")).toBeNull();
+    expect(screen.getByTestId("swap-picker-sections")).toBeInTheDocument();
+    expect(screen.queryByTestId("token-list")).toBeNull();
   });
 
   it("destination: renders the 'Swap to' header and SwapPickerSections", () => {

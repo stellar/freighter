@@ -6,7 +6,6 @@ import { debounce } from "lodash";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
-import { TokenList } from "popup/components/InternalTransaction/TokenList";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { openTab } from "popup/helpers/navigate";
 import { View } from "popup/basics/layout/View";
@@ -19,7 +18,10 @@ import { getStellarExpertUrl } from "popup/helpers/account";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import type { DestinationTokenDetails } from "popup/ducks/transactionSubmission";
 import { useGetSwapFromData } from "./hooks/useSwapFromData";
-import { useSwapTokenLookup } from "./hooks/useSwapTokenLookup";
+import {
+  useSwapTokenLookup,
+  balancesToHeldRecords,
+} from "./hooks/useSwapTokenLookup";
 import { SwapPickerSections } from "./SwapPickerSections";
 import type { SwapPickerSectionsResult } from "./SwapPickerSections";
 
@@ -215,6 +217,18 @@ export const SwapAsset = ({
         isNewAccount: true,
       };
 
+  // The source ("Swap from") picker shows the same held "Your tokens" list as
+  // the destination — held tokens only, filtered locally by the search term.
+  const sourceResult: SwapPickerSectionsResult = {
+    yourTokens: balancesToHeldRecords({ balances, icons, tokenPrices }),
+    popular: [],
+    verified: [],
+    unverified: [],
+    hadSorobanMatches: false,
+    isFallback: false,
+    isNewAccount: heldBalancesForNewAccount.length === 0,
+  };
+
   return (
     <>
       <SubviewHeader
@@ -251,12 +265,12 @@ export const SwapAsset = ({
               stellarExpertUrl={stellarExpertUrl}
             />
           ) : (
-            <TokenList
-              tokens={balances}
+            <SwapPickerSections
+              result={sourceResult}
+              searchTerm={formik.values.searchTerm}
               hiddenAssets={hiddenAssets}
-              icons={icons}
-              tokenPrices={tokenPrices}
               onClickAsset={onClickAsset}
+              stellarExpertUrl={stellarExpertUrl}
             />
           )}
         </div>

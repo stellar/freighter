@@ -142,6 +142,24 @@ const heldToRecord = (
 };
 
 /**
+ * Maps an account's held balances into SwapTokenRecords for the "Your tokens"
+ * list. Used directly by the Swap source picker (which shows held tokens only)
+ * and indirectly via buildSwapSections for the destination picker.
+ */
+export const balancesToHeldRecords = ({
+  balances,
+  icons = {},
+  tokenPrices = {},
+}: {
+  balances: AssetType[];
+  icons?: Record<string, string | null>;
+  tokenPrices?: ApiTokenPrices;
+}): SwapTokenRecord[] =>
+  balances
+    .map((b) => heldToRecord(b, icons, tokenPrices))
+    .filter((r): r is SwapTokenRecord => r !== null);
+
+/**
  * Converts a ManageAssetCurrency (search/popular result) into a SwapTokenRecord.
  */
 const currencyToRecord = (
