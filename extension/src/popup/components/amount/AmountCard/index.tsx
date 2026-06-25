@@ -68,6 +68,7 @@ export const AmountCard = ({
   // Width owned internally (replaces InputWidthContext, per design §3.3).
   const cryptoSpanRef = useRef<HTMLSpanElement>(null);
   const fiatSpanRef = useRef<HTMLSpanElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const [inputWidthCrypto, setInputWidthCrypto] = useState(0);
   const [inputWidthFiat, setInputWidthFiat] = useState(0);
 
@@ -102,7 +103,13 @@ export const AmountCard = ({
       </div>
 
       <div className="AmountCard__amount-row">
-        <div className="AmountCard__amount-input-container">
+        {/* Focus the input when anywhere between the amount and the asset
+            picker is clicked, not just the (content-width) input itself. */}
+        <div
+          className="AmountCard__amount-input-container"
+          onClick={isReadOnly ? undefined : () => inputRef.current?.focus()}
+          style={isReadOnly ? undefined : { cursor: "text" }}
+        >
           {inputType === "crypto" && (
             <>
               <span
@@ -117,6 +124,7 @@ export const AmountCard = ({
                 {amount || "0"}
               </span>
               <input
+                ref={inputRef}
                 className={fontClass}
                 style={{
                   width: `${inputWidthCrypto || DEFAULT_INPUT_WIDTH}px`,
@@ -165,6 +173,7 @@ export const AmountCard = ({
                 {amountUsd || "0"}
               </span>
               <input
+                ref={inputRef}
                 className={fontClass}
                 style={{
                   width: `${inputWidthFiat || DEFAULT_INPUT_WIDTH}px`,
