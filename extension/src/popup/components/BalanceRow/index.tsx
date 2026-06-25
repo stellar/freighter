@@ -16,9 +16,11 @@ export interface BalanceRowProps {
   iconUrl?: string | null;
   isSuspicious?: boolean;
   isLPShare?: boolean;
+  retryAssetIconFetch?: (arg: { key: string; code: string }) => void;
   /** Formatted token balance, e.g. "123.45". */
   amount: string;
-  /** Formatted fiat balance incl. symbol, e.g. "$12.34". Null → "--". */
+  /** Formatted fiat balance incl. symbol, e.g. "$12.34". When null the fiat
+   * cell is omitted entirely (matches the account-home no-price row). */
   fiatAmount?: string | null;
   /** Raw 24h % change number string (e.g. "1.23"); drives color + display.
    * Null → "--". */
@@ -42,6 +44,7 @@ export const BalanceRow = ({
   iconUrl,
   isSuspicious = false,
   isLPShare = false,
+  retryAssetIconFetch,
   amount,
   fiatAmount,
   percentChange,
@@ -52,13 +55,14 @@ export const BalanceRow = ({
   deltaTestId,
 }: BalanceRowProps) => {
   const hasDelta = percentChange !== undefined && percentChange !== null;
+  const hasFiat = fiatAmount !== undefined && fiatAmount !== null;
   const deltaColor = hasDelta
     ? getPriceDeltaColor(new BigNumber(roundUsdValue(percentChange as string)))
     : "";
 
   return (
     <div
-      className="BalanceRow"
+      className={`BalanceRow ${onClick ? "BalanceRow--clickable" : ""}`}
       data-testid={dataTestId}
       onClick={onClick}
       role={onClick ? "button" : undefined}
@@ -71,6 +75,7 @@ export const BalanceRow = ({
           icon={iconUrl || undefined}
           isLPShare={isLPShare}
           isSuspicious={isSuspicious}
+          retryAssetIconFetch={retryAssetIconFetch}
         />
         <div className="BalanceRow__value">
           <span className="BalanceRow__code">{code}</span>
@@ -80,9 +85,11 @@ export const BalanceRow = ({
         </div>
       </div>
       <div className="BalanceRow__right">
-        <div className="BalanceRow__fiat" data-testid={fiatTestId}>
-          {fiatAmount ?? "--"}
-        </div>
+        {hasFiat && (
+          <div className="BalanceRow__fiat" data-testid={fiatTestId}>
+            {fiatAmount}
+          </div>
+        )}
         <div
           className={`BalanceRow__delta ${deltaColor}`}
           data-testid={deltaTestId}
