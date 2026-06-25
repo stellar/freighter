@@ -8,6 +8,7 @@
     "@stellar/js-xdr": "4.0.0",
     "bignumber.js": "9.3.0",
     "prettier": "3.8.4",
+    "stellar-hd-wallet": "1.0.2",
     "stellar-sdk": "npm:@stellar/stellar-sdk@16.0.0-rc.1",
     "stellar-sdk-next": "npm:@stellar/stellar-sdk@16.0.0-rc.1",
     "typescript": "5.8.3",
