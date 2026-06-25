@@ -101,7 +101,7 @@ export const ChangeTrustInternal = ({
     addTrustline,
     publicKey,
     networkDetails,
-    recommendedFee: BASE_FEE,
+    recommendedFee: fee,
   });
 
   useEffect(() => {

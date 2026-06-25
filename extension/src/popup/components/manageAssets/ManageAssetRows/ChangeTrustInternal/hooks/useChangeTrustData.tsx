@@ -122,7 +122,18 @@ function useGetChangeTrustData({
   useEffect(() => {
     fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [
+    addTrustline,
+    asset.code,
+    asset.contract,
+    asset.domain,
+    asset.issuer,
+    blockaidOverrideState,
+    networkDetails.networkPassphrase,
+    networkDetails.networkUrl,
+    publicKey,
+    recommendedFee,
+  ]);
 
   return {
     state,
