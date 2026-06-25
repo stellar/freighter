@@ -1,10 +1,12 @@
 import React from "react";
 import BigNumber from "bignumber.js";
+import { isEmpty } from "lodash";
 
 import { AssetIcon } from "popup/components/account/AccountAssets";
 import { AssetIcons } from "@shared/api/types";
 import { formatAmount, roundUsdValue } from "popup/helpers/formatters";
 import { getPriceDeltaColor } from "popup/helpers/balance";
+import { getCanonicalFromAsset } from "helpers/stellar";
 
 import "./styles.scss";
 
@@ -56,6 +58,18 @@ export const BalanceRow = ({
 }: BalanceRowProps) => {
   const hasDelta = percentChange !== undefined && percentChange !== null;
   const hasFiat = fiatAmount !== undefined && fiatAmount !== null;
+
+  // AssetIcon shows a perpetual loading state when assetIcons is empty (and the
+  // asset isn't XLM). Callers that pass a single iconUrl (e.g. the swap picker's
+  // held list) would otherwise hit that; synthesize a one-entry map for them.
+  const canonical =
+    code === "XLM" && !issuerKey
+      ? "native"
+      : getCanonicalFromAsset(code, issuerKey);
+  const resolvedIcons =
+    code !== "XLM" && isEmpty(assetIcons)
+      ? { [canonical]: iconUrl ?? "" }
+      : assetIcons;
   const deltaColor = hasDelta
     ? getPriceDeltaColor(new BigNumber(roundUsdValue(percentChange as string)))
     : "";
@@ -69,7 +83,7 @@ export const BalanceRow = ({
     >
       <div className="BalanceRow__left">
         <AssetIcon
-          assetIcons={assetIcons}
+          assetIcons={resolvedIcons}
           code={code}
           issuerKey={issuerKey}
           icon={iconUrl || undefined}
