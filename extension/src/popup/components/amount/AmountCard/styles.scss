@@ -125,6 +125,13 @@
       width: pxToRem(14px);
       height: pxToRem(14px);
     }
+
+    // Empty "+ Select" state (e.g. the swap receive card before a token is
+    // picked): show a larger leading plus icon instead of the asset logo.
+    &--empty svg:last-child {
+      width: pxToRem(20px);
+      height: pxToRem(20px);
+    }
   }
 
   &__asset-code {

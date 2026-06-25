@@ -53,6 +53,17 @@ describe("buildSwapSections — idle (no search term)", () => {
     });
     expect(result.sections.popular.map((r) => r.code)).toEqual(["USDC"]);
   });
+
+  it("attaches held-token icons from the icons map (keyed by canonical)", () => {
+    const result = buildSwapSections({
+      searchTerm: "",
+      balances: [heldAqua],
+      networkDetails: MAINNET,
+      icons: { "AQUA:GBNZ": "https://icons/aqua.png" },
+    });
+    expect(result.sections.yourTokens[0].code).toBe("AQUA");
+    expect(result.sections.yourTokens[0].image).toBe("https://icons/aqua.png");
+  });
 });
 
 describe("buildSwapSections — search term", () => {

@@ -197,20 +197,33 @@ export const AmountCard = ({
         </div>
         <button
           type="button"
-          className="AmountCard__asset-selector-inline"
+          className={`AmountCard__asset-selector-inline${
+            assetCode ? "" : " AmountCard__asset-selector-inline--empty"
+          }`}
           onClick={onSelectAsset}
           data-testid="send-amount-edit-dest-asset"
-          aria-label={t("Change asset")}
+          aria-label={assetCode ? t("Change asset") : t("Select")}
         >
-          <AssetIcon
-            assetIcons={assetIssuerKey || assetCode !== "XLM" ? assetIcons : {}}
-            code={assetCode}
-            issuerKey={assetIssuerKey}
-            icon={assetIcon}
-            isSuspicious={isSuspicious}
-          />
-          <span className="AmountCard__asset-code">{assetCode}</span>
-          <Icon.ChevronDown />
+          {assetCode ? (
+            <>
+              <AssetIcon
+                assetIcons={
+                  assetIssuerKey || assetCode !== "XLM" ? assetIcons : {}
+                }
+                code={assetCode}
+                issuerKey={assetIssuerKey}
+                icon={assetIcon}
+                isSuspicious={isSuspicious}
+              />
+              <span className="AmountCard__asset-code">{assetCode}</span>
+              <Icon.ChevronDown />
+            </>
+          ) : (
+            <>
+              <Icon.PlusCircle />
+              <span className="AmountCard__asset-code">{t("Select")}</span>
+            </>
+          )}
         </button>
       </div>
 

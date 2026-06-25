@@ -78,7 +78,10 @@ export const EMPTY_RESULT: SwapTokenLookupResult = {
  * Converts a held balance entry (AssetType) into a SwapTokenRecord.
  * Returns null for LiquidityPoolShareAsset entries (no code/issuer).
  */
-const heldToRecord = (balance: AssetType): SwapTokenRecord | null => {
+const heldToRecord = (
+  balance: AssetType,
+  icons: Record<string, string | null> = {},
+): SwapTokenRecord | null => {
   if (!("token" in balance) || !balance.token) {
     return null;
   }
@@ -97,6 +100,9 @@ const heldToRecord = (balance: AssetType): SwapTokenRecord | null => {
     issuer,
     domain: null,
     canonical,
+    // Held tokens carry no icon URL of their own — pull it from the account's
+    // icons map (keyed by canonical) so "Your tokens" rows show real logos.
+    image: icons[canonical] || undefined,
     isHeld: true,
     isContract: false,
     requiresTrustline: false,
@@ -142,6 +148,7 @@ export const buildSwapSections = ({
   unverifiedAssets = [],
   searchResults = [],
   isFallback = false,
+  icons = {},
 }: {
   searchTerm: string;
   balances: AssetType[];
@@ -151,12 +158,13 @@ export const buildSwapSections = ({
   unverifiedAssets?: ManageAssetCurrency[];
   searchResults?: ManageAssetCurrency[];
   isFallback?: boolean;
+  icons?: Record<string, string | null>;
 }): SwapTokenLookupResult => {
   const term = searchTerm.trim().toLowerCase();
   const isSearch = term.length > 0;
 
   const heldRecords = balances
-    .map(heldToRecord)
+    .map((b) => heldToRecord(b, icons))
     .filter((r): r is SwapTokenRecord => r !== null);
   const heldCanonicals = new Set(heldRecords.map((r) => r.canonical));
 
@@ -361,11 +369,13 @@ export const useSwapTokenLookup = () => {
     balances,
     publicKey: _publicKey,
     networkDetails,
+    icons = {},
   }: {
     searchTerm: string;
     balances: AssetType[];
     publicKey: string;
     networkDetails: NetworkDetails;
+    icons?: Record<string, string | null>;
   }): Promise<void> => {
     // Cancel any in-flight request
     abortControllerRef.current?.abort();
@@ -387,6 +397,7 @@ export const useSwapTokenLookup = () => {
           searchTerm,
           balances,
           networkDetails,
+          icons,
           isFallback: true,
         }),
       });
@@ -469,6 +480,7 @@ export const useSwapTokenLookup = () => {
         searchTerm,
         balances,
         networkDetails,
+        icons,
         popular,
         verifiedAssets,
         unverifiedAssets,
@@ -537,6 +549,7 @@ export const useSwapTokenLookup = () => {
           searchTerm,
           balances,
           networkDetails,
+          icons,
           isFallback: true,
         }),
       });

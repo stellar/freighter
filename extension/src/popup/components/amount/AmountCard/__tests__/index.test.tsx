@@ -98,6 +98,19 @@ describe("AmountCard", () => {
     expect(screen.getByTestId("amount-fiat-toggle")).toBeInTheDocument();
   });
 
+  it("renders a '+ Select' affordance (no asset code) and still fires onSelectAsset", () => {
+    const onSelectAsset = jest.fn();
+    render(
+      <Wrapper state={{}} routes={["/"]}>
+        <AmountCard {...baseProps} assetCode="" onSelectAsset={onSelectAsset} />
+      </Wrapper>,
+    );
+    expect(screen.getByText("Select")).toBeInTheDocument();
+    expect(screen.queryByText("XLM")).toBeNull();
+    fireEvent.click(screen.getByTestId("send-amount-edit-dest-asset"));
+    expect(onSelectAsset).toHaveBeenCalledTimes(1);
+  });
+
   it("fires onSelectAsset when asset selector is clicked even with isReadOnly", () => {
     const onSelectAsset = jest.fn();
     render(

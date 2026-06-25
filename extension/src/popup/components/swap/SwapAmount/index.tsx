@@ -449,7 +449,6 @@ export const SwapAmount = ({
       )}`
     : null;
   const supportsUsd = isMainnet(data.networkDetails) && assetPrice;
-  const dstSupportsUsd = isMainnet(data.networkDetails) && dstAssetPrice;
   const dstPriceValueUsd = dstAssetPrice
     ? formatAmount(
         roundUsdValue(
@@ -624,11 +623,10 @@ export const SwapAmount = ({
                   className="SwapAsset__direction"
                   data-testid="swap-direction-chevron"
                 >
-                  <Button
-                    size="md"
+                  <button
                     type="button"
-                    isRounded
-                    variant="tertiary"
+                    className="SwapAsset__direction-btn"
+                    aria-label={t("Swap direction")}
                     onClick={(e) => {
                       e.preventDefault();
                       emitMetric(METRIC_NAMES.swapDirectionToggled);
@@ -638,7 +636,7 @@ export const SwapAmount = ({
                     }}
                   >
                     <Icon.ChevronDown />
-                  </Button>
+                  </button>
                 </div>
                 <div
                   className="SwapAsset__cards"
@@ -648,9 +646,9 @@ export const SwapAmount = ({
                     label={t("You receive")}
                     availableBalanceText=""
                     availableBalanceFontSizePx={availableBalanceFontSizePx}
-                    inputType="crypto"
+                    inputType={inputType}
                     amount={destinationAmount}
-                    amountUsd=""
+                    amountUsd={dstPriceValueUsd || "0.00"}
                     amountFontSizeClass={getAmountFontSizeClass()}
                     assetCode={dstAsset ? dstAsset.code : ""}
                     assetIcon={dstAssetIcon}
@@ -660,8 +658,14 @@ export const SwapAmount = ({
                         : {}
                     }
                     assetIssuerKey={dstAsset?.issuer}
-                    supportsUsd={Boolean(dstSupportsUsd)}
-                    fiatLineText={`$${dstPriceValueUsd || "0.00"}`}
+                    supportsUsd={Boolean(supportsUsd)}
+                    fiatLineText={
+                      inputType === "crypto"
+                        ? `$${dstPriceValueUsd || "0.00"}`
+                        : `${destinationAmount || "0"} ${
+                            dstAsset ? dstAsset.code : ""
+                          }`
+                    }
                     isAmountTooHigh={false}
                     isReadOnly
                     autoFocus={false}

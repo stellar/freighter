@@ -82,11 +82,16 @@ export const SwapAsset = ({
           resolvedFrom?.type === AppDataType.RESOLVED
             ? resolvedFrom.publicKey
             : "";
+        const icons =
+          resolvedFrom?.type === AppDataType.RESOLVED
+            ? resolvedFrom.balances.icons
+            : {};
         lookupFetchData({
           searchTerm: values.searchTerm,
           balances,
           publicKey,
           networkDetails,
+          icons,
         });
       } else {
         filterBalances(values.searchTerm);
@@ -140,6 +145,7 @@ export const SwapAsset = ({
       balances: resolvedFrom.balances.balances,
       publicKey: resolvedFrom.publicKey,
       networkDetails,
+      icons: resolvedFrom.balances.icons,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isDestination, fromState.data]);
