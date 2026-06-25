@@ -49,8 +49,19 @@ export const buildOnrampClaims = ({
   exp: nowSeconds + ONRAMP_PROOF_TTL_S,
 });
 
+// The `buffer` polyfill bundled into the extension/service-worker does not
+// support the "base64url" encoding (Node-only), so encoding directly throws
+// "Unknown encoding: base64url" at runtime. Transcode from base64 instead;
+// the result is byte-identical to Node's unpadded base64url.
+const toBase64Url = (buf: Buffer): string =>
+  buf
+    .toString("base64")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
+
 export const assembleAuthHeader = (
   canonicalPayload: string,
   signature: Buffer,
 ): string =>
-  `Stellar ${Buffer.from(canonicalPayload, "utf8").toString("base64url")}.${signature.toString("base64url")}`;
+  `Stellar ${toBase64Url(Buffer.from(canonicalPayload, "utf8"))}.${toBase64Url(signature)}`;

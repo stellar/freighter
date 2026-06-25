@@ -65,7 +65,6 @@ test("should show add XLM page and open Coinbase", async ({
   await expect(page.getByTestId("account-view")).toBeVisible({
     timeout: 30000,
   });
-  const popupPromise = page.context().waitForEvent("page");
   await page.getByText("Add XLM").click();
   await expectPageToHaveScreenshot({
     page,
@@ -73,6 +72,11 @@ test("should show add XLM page and open Coinbase", async ({
   });
 
   await page.getByText("Buy XLM with Coinbase").click();
+
+  // The Coinbase Authorization modal now gates the flow; Coinbase opens on Authorize.
+  await expect(page.getByText("Authorization Request")).toBeVisible();
+  const popupPromise = page.context().waitForEvent("page");
+  await page.getByRole("button", { name: "Authorize" }).click();
 
   const popup = await popupPromise;
 
@@ -144,7 +148,6 @@ test("should show Buy with Coinbase and open Coinbase", async ({
   await expect(page.getByTestId("account-view")).toBeVisible({
     timeout: 30000,
   });
-  const popupPromise = page.context().waitForEvent("page");
   await page.getByTestId("nav-link-add").click();
   await expectPageToHaveScreenshot({
     page,
@@ -152,6 +155,11 @@ test("should show Buy with Coinbase and open Coinbase", async ({
   });
 
   await page.getByText("Buy with Coinbase").click();
+
+  // The Coinbase Authorization modal now gates the flow; Coinbase opens on Authorize.
+  await expect(page.getByText("Authorization Request")).toBeVisible();
+  const popupPromise = page.context().waitForEvent("page");
+  await page.getByRole("button", { name: "Authorize" }).click();
 
   const popup = await popupPromise;
 

@@ -38,4 +38,20 @@ describe("onrampProof helper", () => {
       `Stellar ${Buffer.from("{}", "utf8").toString("base64url")}.${Buffer.from([1, 2, 3]).toString("base64url")}`,
     );
   });
+
+  // Regression guard: the bundled browser `buffer` polyfill cannot produce the
+  // Node-only "base64url" encoding, and the backend verifier expects url-safe
+  // base64. So the header must never contain "+", "/", or "=". This runs in
+  // Node (where "base64url" *is* available), so it would NOT catch a
+  // `.toString("base64url")` regression — it specifically catches a fallback to
+  // standard base64. See onrampProof.ts toBase64Url.
+  it("assembleAuthHeader emits url-safe base64 (no +, / or = padding)", () => {
+    // Bytes chosen so standard base64 is "+/+/+w==" — contains +, /, and =.
+    const signature = Buffer.from([0xfb, 0xff, 0xbf, 0xfb]);
+    expect(signature.toString("base64")).toMatch(/[+/=]/);
+
+    const header = assembleAuthHeader("{}", signature);
+    expect(header).toMatch(/^Stellar [A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/);
+    expect(header).not.toMatch(/[+/=]/);
+  });
 });
