@@ -220,7 +220,7 @@ export const AmountCard = ({
             </>
           ) : (
             <>
-              <Icon.PlusCircle />
+              <Icon.Plus />
               <span className="AmountCard__asset-code">{t("Select")}</span>
             </>
           )}
