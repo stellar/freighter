@@ -137,6 +137,30 @@ export const hardwareSignAuth: HardwareSignAuth = {
 };
 
 /*
+ * Returns a signature over an arbitrary message from the hardware wallet.
+ * Used by the onramp proof flow (SEP-53 message signing); requires the
+ * Ledger Stellar app's SIGN_MESSAGE (0x0c) APDU (hw-app-str >= 7.3.0).
+ * @param {string} bipPath - The bip path to pass to the API.
+ * @param {Buffer} message - The raw message bytes to sign on-device.
+ * @returns {{ signature: Buffer; appVersion: string }} The signature and the Stellar app version.
+ */
+export const hardwareSignMessage = {
+  [WalletType.LEDGER]: async ({
+    bipPath,
+    message,
+  }: {
+    bipPath: string;
+    message: Buffer;
+  }): Promise<{ signature: Buffer; appVersion: string }> => {
+    const transport = await connectToLedgerTransport();
+    const ledgerApi = new LedgerApi(transport);
+    const { version } = await ledgerApi.getAppConfiguration();
+    const result = await ledgerApi.signMessage(bipPath, message);
+    return { signature: result.signature, appVersion: version };
+  },
+};
+
+/*
  ** UI ELEMENTS
  */
 

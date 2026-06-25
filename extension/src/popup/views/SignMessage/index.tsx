@@ -140,6 +140,11 @@ export const SignMessage = () => {
     });
   }
 
+  // NOTE: Message signing on hardware wallets IS now supported on-device via
+  // hw-app-str >= 7.3.0 (signMessage / SEP-53). The onramp proof flow uses that
+  // internal Ledger path (see popup/helpers/onrampLedger.ts). This dapp-facing
+  // guard intentionally remains disabled — re-enabling arbitrary dapp message
+  // signing for hardware wallets is out of scope here.
   if (isHardwareWallet) {
     return (
       <WarningMessage

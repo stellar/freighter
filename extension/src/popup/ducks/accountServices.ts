@@ -974,7 +974,7 @@ export const hardwareWalletTypeSelector = createSelector(
     const account = allAccounts.find(
       ({ publicKey: accountPublicKey }) => accountPublicKey === publicKey,
     ) || { hardwareWalletType: WalletType.NONE };
-    return account.hardwareWalletType;
+    return account.hardwareWalletType ?? WalletType.NONE;
   },
 );
 

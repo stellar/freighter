@@ -1,7 +1,59 @@
-export const signOnrampProofWithLedger = async (_: {
+import { Buffer } from "buffer";
+
+import { WalletType } from "@shared/constants/hardwareWallet";
+import { store } from "popup/App";
+import { bipPathSelector } from "popup/ducks/accountServices";
+import {
+  buildOnrampClaims,
+  canonicalizeJson,
+  assembleAuthHeader,
+  ONRAMP_AUTH_DOMAIN,
+} from "helpers/onrampProof";
+import { hardwareSignMessage } from "popup/helpers/hardwareConnect";
+
+export class LedgerOnrampUnsupportedError extends Error {}
+
+/*
+ * Produces the onramp proof Authorization header by signing the SEP-53 framed
+ * claims on a hardware wallet. The signed bytes are
+ * encodeSep53Message(ONRAMP_AUTH_DOMAIN + canonical), matching the software-key
+ * path and the backend verifier. The header carries only the canonical payload
+ * plus the signature (via assembleAuthHeader).
+ */
+export const signOnrampProofWithLedger = async ({
+  publicKey,
+  body,
+  hardwareWalletType,
+}: {
   publicKey: string;
   body: unknown;
-  hardwareWalletType: unknown;
+  hardwareWalletType: WalletType;
 }): Promise<string> => {
-  throw new Error("not implemented");
+  if (hardwareWalletType !== WalletType.LEDGER) {
+    throw new LedgerOnrampUnsupportedError(
+      "Buying with Coinbase is not supported for this wallet type",
+    );
+  }
+
+  const bipPath = bipPathSelector(store.getState());
+
+  const claims = buildOnrampClaims({
+    publicKey,
+    body,
+    nowSeconds: Math.floor(Date.now() / 1000),
+  });
+  const canonical = canonicalizeJson(claims);
+
+  try {
+    const { signature } = await hardwareSignMessage[WalletType.LEDGER]({
+      bipPath,
+      message: Buffer.from(ONRAMP_AUTH_DOMAIN + canonical, "utf8"),
+    });
+    return assembleAuthHeader(canonical, signature);
+  } catch (e) {
+    // Older Ledger Stellar app rejects the SIGN_MESSAGE (0x0c) APDU.
+    throw new LedgerOnrampUnsupportedError(
+      "Update your Ledger Stellar app to buy with Coinbase",
+    );
+  }
 };
