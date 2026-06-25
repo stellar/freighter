@@ -61,6 +61,7 @@ describe("useGetTokenPrices", () => {
     expect(getTokenPricesSpy).toHaveBeenCalledWith(
       ["native"],
       MAINNET_NETWORK_DETAILS,
+      true,
     );
     expect(result.current.state.state).toBe<RequestState>(RequestState.SUCCESS);
     expect(result.current.state.data?.tokenPrices).toEqual({
@@ -125,6 +126,7 @@ describe("useGetTokenPrices", () => {
     expect(getTokenPricesSpy).toHaveBeenCalledWith(
       ["native"],
       MAINNET_NETWORK_DETAILS,
+      true,
     );
     expect(result.current.state.state).toBe<RequestState>(RequestState.SUCCESS);
     expect(result.current.state.data?.tokenPrices).toEqual({
@@ -254,6 +256,7 @@ describe("useGetTokenPrices", () => {
     expect(getTokenPricesSpy).toHaveBeenCalledWith(
       ["native"],
       TESTNET_NETWORK_DETAILS,
+      true,
     );
     expect(result.current.state.state).toBe<RequestState>(RequestState.SUCCESS);
     expect(result.current.state.data?.tokenPrices).toEqual({
@@ -329,7 +332,11 @@ describe("useGetTokenPrices", () => {
         useCache: true,
       } as any);
     });
-    expect(getTokenPricesSpy).toHaveBeenCalledWith(["native"], customTestnet);
+    expect(getTokenPricesSpy).toHaveBeenCalledWith(
+      ["native"],
+      customTestnet,
+      true,
+    );
     expect(result.current.state.data?.tokenPrices).toEqual({
       native: {
         currentPrice: "2",
