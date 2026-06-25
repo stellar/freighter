@@ -123,7 +123,7 @@ export const SwapAsset = ({
       await fetchData(true);
     };
     getData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only balance fetch; fetchData is stable for this purpose
   }, []);
 
   // Destination picker: once the held balances resolve, run the idle lookup
@@ -147,7 +147,7 @@ export const SwapAsset = ({
       networkDetails,
       icons: resolvedFrom.balances.icons,
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- re-run only when held balances resolve; lookupFetchData/networkDetails/searchTerm are intentionally excluded (search is driven by the debounced submit)
   }, [isDestination, fromState.data]);
 
   // Source-only rerouting/onboarding guard

@@ -69,6 +69,9 @@ import "./styles.scss";
 
 const defaultSlippage = "2";
 
+// Debounce window for the live "You receive" quote while the user is typing.
+const LIVE_QUOTE_DEBOUNCE_MS = 500;
+
 const AVAILABLE_BALANCE_FONT_SIZES = [
   { maxLen: 28, sizePx: 14 },
   { maxLen: 42, sizePx: 12 },
@@ -323,8 +326,8 @@ export const SwapAmount = ({
             dispatch(saveSwapBestPath({ path: [], destinationAmount: "0" }));
           }
         })();
-      }, 500),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+      }, LIVE_QUOTE_DEBOUNCE_MS),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- created once; reads the latest asset/destination/network via liveQuoteArgsRef so it stays stable across renders
     [],
   );
 
@@ -369,7 +372,7 @@ export const SwapAmount = ({
         dispatch(saveSwapBestPath({ path: [], destinationAmount: "0" }));
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- debouncedQuote/dispatch are stable and destinationAmount is read via a ref, so quote results don't re-trigger this effect (which would loop)
   }, [
     amount,
     amountUsd,
