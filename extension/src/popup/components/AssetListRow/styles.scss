@@ -5,6 +5,7 @@
   align-items: center;
   justify-content: space-between;
   gap: pxToRem(8px);
+  width: 100%;
 
   &__body {
     display: flex;

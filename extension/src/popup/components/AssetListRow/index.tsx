@@ -8,6 +8,9 @@ import "./styles.scss";
 
 export interface AssetListRowProps {
   code: string;
+  /** Label to show instead of `code` (e.g. a SAC token's name). Falls back to
+   * `code`. `code`/`issuer` are still used for the icon/canonical. */
+  displayCode?: string;
   issuer?: string;
   domain?: string | null;
   /** Icon URL (TOML image / stellar.expert). */
@@ -32,6 +35,7 @@ export interface AssetListRowProps {
  */
 export const AssetListRow = ({
   code,
+  displayCode,
   issuer = "",
   domain,
   iconUrl,
@@ -45,7 +49,8 @@ export const AssetListRow = ({
 }: AssetListRowProps) => {
   const canonical =
     code === "XLM" && !issuer ? "native" : getCanonicalFromAsset(code, issuer);
-  const displayCode = code.length > 20 ? truncateString(code) : code;
+  const label = displayCode ?? code;
+  const displayLabel = label.length > 20 ? truncateString(label) : label;
 
   return (
     <div className="AssetListRow" data-testid={dataTestId}>
@@ -64,7 +69,7 @@ export const AssetListRow = ({
         />
         <div className="AssetListRow__info">
           <div className="AssetListRow__code" data-testid={codeTestId}>
-            {displayCode}
+            {displayLabel}
           </div>
           {domain ? (
             <div className="AssetListRow__domain" data-testid={domainTestId}>

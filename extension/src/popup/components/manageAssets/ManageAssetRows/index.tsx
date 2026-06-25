@@ -3,19 +3,15 @@ import { createPortal } from "react-dom";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 
-import {
-  formatDomain,
-  getCanonicalFromAsset,
-  truncateString,
-} from "helpers/stellar";
+import { getCanonicalFromAsset } from "helpers/stellar";
 import { isContractId, isAssetSac } from "popup/helpers/soroban";
 import { findAssetBalance } from "popup/helpers/balance";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
-import { AssetIcon } from "popup/components/account/AccountAssets";
 import { InfoTooltip } from "popup/basics/InfoTooltip";
 import { AccountBalances } from "helpers/hooks/useGetBalances";
 import { SlideupModal } from "popup/components/SlideupModal";
 import { publicKeySelector } from "popup/ducks/accountServices";
+import { AssetListRow } from "popup/components/AssetListRow";
 import { ChangeTrustInternal } from "./ChangeTrustInternal";
 import { ManageAssetRowButton } from "../ManageAssetRowButton";
 import { ToggleTokenInternal } from "./ToggleTokenInternal";
@@ -116,34 +112,37 @@ export const ManageAssetRows = ({
               isTrustlineActive,
               name,
             }) => (
-              <>
-                <ManageAssetRow
-                  code={code}
-                  issuer={issuer}
-                  image={image}
-                  domain={domain}
-                  name={name}
-                  isSuspicious={isSuspicious}
-                />
-                <ManageAssetRowButton
-                  code={code}
-                  issuer={issuer}
-                  isTrustlineActive={!!isTrustlineActive}
-                  isSac={isSac}
-                  isLoading={false}
-                  onClick={async () => {
-                    setSelectedAsset({
-                      code,
-                      issuer,
-                      domain,
-                      name,
-                      image,
-                      isTrustlineActive,
-                      contract,
-                    });
-                  }}
-                />
-              </>
+              <AssetListRow
+                code={code}
+                issuer={issuer}
+                iconUrl={image}
+                domain={domain}
+                isSuspicious={isSuspicious}
+                // SAC contract tokens display their name; everything else the code.
+                displayCode={name && contract && !isSac ? name : code}
+                codeTestId="ManageAssetCode"
+                domainTestId="ManageAssetDomain"
+                rightElement={
+                  <ManageAssetRowButton
+                    code={code}
+                    issuer={issuer}
+                    isTrustlineActive={!!isTrustlineActive}
+                    isSac={isSac}
+                    isLoading={false}
+                    onClick={async () => {
+                      setSelectedAsset({
+                        code,
+                        issuer,
+                        domain,
+                        name,
+                        image,
+                        isTrustlineActive,
+                        contract,
+                      });
+                    }}
+                  />
+                }
+              />
             )}
           />
         </div>
@@ -433,57 +432,6 @@ const AssetRows = ({
           );
         },
       )}
-    </>
-  );
-};
-
-export const ManageAssetRow = ({
-  code = "",
-  issuer = "",
-  image = "",
-  domain,
-  name,
-  isSuspicious = false,
-  contractId,
-}: AssetRowData) => {
-  const networkDetails = useSelector(settingsNetworkDetailsSelector);
-  const canonicalAsset = getCanonicalFromAsset(code, issuer);
-  // use the name unless the name is SAC, format "code:issuer"
-  const assetCode =
-    name &&
-    contractId &&
-    !isAssetSac({
-      asset: {
-        code,
-        issuer,
-        contract: contractId,
-      },
-      networkDetails,
-    })
-      ? name
-      : code;
-  const truncatedAssetCode =
-    assetCode.length > 20 ? truncateString(assetCode) : assetCode;
-
-  return (
-    <>
-      <AssetIcon
-        assetIcons={code !== "XLM" ? { [canonicalAsset]: image } : {}}
-        code={code}
-        issuerKey={issuer}
-        isSuspicious={isSuspicious}
-      />
-      <div className="ManageAssetRows__row__info">
-        <div className="ManageAssetRows__row__info__header">
-          <span data-testid="ManageAssetCode">{truncatedAssetCode}</span>
-        </div>
-        <div
-          className="ManageAssetRows__domain"
-          data-testid="ManageAssetDomain"
-        >
-          {formatDomain(domain || "")}
-        </div>
-      </div>
     </>
   );
 };
