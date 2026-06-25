@@ -125,14 +125,25 @@
       width: pxToRem(14px);
       height: pxToRem(14px);
     }
+  }
 
-    // Empty "+ Select" state (e.g. the swap receive card before a token is
-    // picked): give the leading plus the same footprint (20px + 4px margin) as
-    // the asset logo so the pill matches the regular token picker's dimensions.
-    &--empty svg:first-child {
-      width: pxToRem(20px);
-      height: pxToRem(20px);
-      margin: pxToRem(4px);
+  // Empty "+ Select" state (e.g. the swap receive card before a token is
+  // picked): a circular badge the same footprint (20px + 4px margin) as the
+  // asset logo, with a small plus on a slightly lighter background.
+  &__select-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: pxToRem(20px);
+    height: pxToRem(20px);
+    margin: pxToRem(4px);
+    border-radius: 50%;
+    background-color: var(--sds-clr-gray-04);
+
+    svg {
+      width: pxToRem(14px);
+      height: pxToRem(14px);
     }
   }
 

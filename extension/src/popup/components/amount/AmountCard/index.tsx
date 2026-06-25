@@ -229,7 +229,9 @@ export const AmountCard = ({
             </>
           ) : (
             <>
-              <Icon.Plus />
+              <span className="AmountCard__select-icon">
+                <Icon.Plus />
+              </span>
               <span className="AmountCard__asset-code">{t("Select")}</span>
               <Icon.ChevronDown />
             </>
