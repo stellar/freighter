@@ -3,10 +3,13 @@ import { useTranslation } from "react-i18next";
 import { Icon, Notification } from "@stellar/design-system";
 
 import { SwapTokenRow } from "../SwapTokenRow";
+import { SwapTokenMenu } from "../SwapTokenMenu";
 import {
   VerifiedTokenInfoSheet,
   UnverifiedTokenInfoSheet,
 } from "../InfoSheets";
+import { AssetListRow } from "popup/components/AssetListRow";
+import { SecurityLevel } from "popup/constants/blockaid";
 import type { SwapTokenRecord } from "../hooks/useSwapTokenLookup";
 import type { SwapPickerSelection } from "../index";
 
@@ -82,6 +85,7 @@ export const SwapPickerSections = ({
   const verified = result.verified.filter((r) => !hidden.has(r.canonical));
   const unverified = result.unverified.filter((r) => !hidden.has(r.canonical));
 
+  // Held "Your tokens" rows still use SwapTokenRow (shows balance/value).
   const renderRows = (records: SwapTokenRecord[], source: PickerSource) =>
     records.map((r) => (
       <SwapTokenRow
@@ -101,6 +105,41 @@ export const SwapPickerSections = ({
         }
       />
     ));
+
+  // Non-held discover rows (Popular / Verified / Unverified) use the shared
+  // AssetListRow with an overflow menu on the right.
+  const renderDiscoverRows = (
+    records: SwapTokenRecord[],
+    source: PickerSource,
+  ) =>
+    records.map((r) => {
+      const code = r.code ?? "";
+      const isSuspicious =
+        r.securityLevel === SecurityLevel.MALICIOUS ||
+        r.securityLevel === SecurityLevel.SUSPICIOUS;
+      return (
+        <AssetListRow
+          key={r.canonical}
+          data-testid={`SwapTokenRow-${code}`}
+          bodyTestId={`SwapTokenRow-${code}-body`}
+          code={code}
+          issuer={r.issuer}
+          domain={r.domain}
+          iconUrl={r.image ?? r.icon ?? undefined}
+          isSuspicious={isSuspicious}
+          onClick={() =>
+            onClickAsset(r.canonical, r.isContract, buildSelection(r, source))
+          }
+          rightElement={
+            <SwapTokenMenu
+              code={code}
+              issuerKey={r.issuer}
+              stellarExpertUrl={stellarExpertUrl}
+            />
+          }
+        />
+      );
+    });
 
   const hasResults = isSearching
     ? yourTokens.length + verified.length + unverified.length > 0
@@ -162,7 +201,7 @@ export const SwapPickerSections = ({
               >
                 {t("Popular tokens")}
               </div>
-              {renderRows(popular, "popular")}
+              {renderDiscoverRows(popular, "popular")}
             </>
           )}
 
@@ -180,7 +219,7 @@ export const SwapPickerSections = ({
                   <Icon.InfoCircle />
                 </button>
               </div>
-              {renderRows(verified, "search")}
+              {renderDiscoverRows(verified, "search")}
             </>
           )}
 
@@ -200,7 +239,7 @@ export const SwapPickerSections = ({
                   <Icon.InfoCircle />
                 </button>
               </div>
-              {renderRows(unverified, "search")}
+              {renderDiscoverRows(unverified, "search")}
             </>
           )}
         </>

@@ -1,0 +1,27 @@
+.SwapTokenMenu {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--sds-clr-gray-11);
+  padding: 0.25rem;
+
+  &__content {
+    display: flex;
+    flex-direction: column;
+    background: var(--sds-clr-gray-03);
+    border: 1px solid var(--sds-clr-gray-06);
+    border-radius: 0.5rem;
+    padding: 0.25rem;
+    z-index: 10;
+  }
+
+  &__item {
+    background: transparent;
+    border: none;
+    text-align: left;
+    padding: 0.5rem 0.75rem;
+    cursor: pointer;
+    color: var(--sds-clr-gray-12);
+    white-space: nowrap;
+  }
+}

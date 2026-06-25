@@ -1,0 +1,42 @@
+@use "../../styles/utils.scss" as *;
+
+.AssetListRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: pxToRem(8px);
+
+  &__body {
+    display: flex;
+    align-items: center;
+    flex-grow: 1;
+    min-width: 0;
+    cursor: pointer;
+  }
+
+  &__info {
+    min-width: 0;
+    line-height: pxToRem(20px);
+  }
+
+  // Regular-weight token code (not bold), matching the Add-a-token list.
+  &__code {
+    color: var(--sds-clr-gray-12);
+    font-size: pxToRem(16px);
+    font-weight: var(--font-weight-regular);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  // Muted domain subtitle with a little breathing room below the code.
+  &__domain {
+    margin-top: pxToRem(2px);
+    color: var(--sds-clr-gray-09);
+    font-size: var(--sds-fs-secondary);
+    line-height: pxToRem(18px);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}

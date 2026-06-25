@@ -18,6 +18,14 @@ jest.mock("../../SwapTokenRow", () => ({
   ),
 }));
 
+// Discover rows (Popular/Verified/Unverified) render through the shared
+// AssetListRow; stub it to the same marker so section-structure assertions hold.
+jest.mock("popup/components/AssetListRow", () => ({
+  AssetListRow: ({ code }: { code: string }) => (
+    <div data-testid={`row-${code}`} />
+  ),
+}));
+
 const rec = (code: string, isHeld = false) => ({
   canonical: `${code}:G123`,
   code,
