@@ -235,4 +235,74 @@ describe("internalApi", () => {
       expect(prices).toEqual({});
     });
   });
+
+  describe("getTokenPrices v1 endpoint (useV2 = false)", () => {
+    const mockFetchOk = () =>
+      jest.spyOn(global, "fetch").mockResolvedValue({
+        ok: true,
+        json: jest.fn().mockResolvedValue({ data: {} }),
+      } as unknown as Response);
+
+    it("targets the v1 endpoint without a network query param", async () => {
+      const fetchSpy = mockFetchOk();
+
+      await internalApi.getTokenPrices(
+        ["native"],
+        TESTNET_NETWORK_DETAILS,
+        false,
+      );
+
+      const requestUrl = fetchSpy.mock.calls[0][0] as string;
+      expect(requestUrl).toContain("/token-prices");
+      expect(requestUrl).not.toContain("network=");
+    });
+
+    it("still filters LP IDs and contract-ID issuers from the request", async () => {
+      const fetchSpy = mockFetchOk();
+
+      await internalApi.getTokenPrices(
+        [
+          "native",
+          "abc123:lp",
+          "DT:CCXVDIGMR6WTXZQX2OEVD6YM6AYCYPXPQ7YYH6OZMRS7U6VD3AVHNGBJ",
+        ],
+        MAINNET_NETWORK_DETAILS,
+        false,
+      );
+
+      const requestInit = fetchSpy.mock.calls[0][1] as RequestInit;
+      const body = JSON.parse(requestInit.body as string);
+      expect(body.tokens).toEqual(["native"]);
+    });
+
+    it("does NOT skip unsupported networks (unlike v2)", async () => {
+      const fetchSpy = mockFetchOk();
+
+      await internalApi.getTokenPrices(
+        ["native"],
+        FUTURENET_NETWORK_DETAILS,
+        false,
+      );
+
+      expect(fetchSpy).toHaveBeenCalled();
+    });
+
+    it("does NOT skip when every token is filtered out (unlike v2)", async () => {
+      const fetchSpy = mockFetchOk();
+
+      await internalApi.getTokenPrices(
+        [
+          "abc123:lp",
+          "DT:CCXVDIGMR6WTXZQX2OEVD6YM6AYCYPXPQ7YYH6OZMRS7U6VD3AVHNGBJ",
+        ],
+        MAINNET_NETWORK_DETAILS,
+        false,
+      );
+
+      expect(fetchSpy).toHaveBeenCalled();
+      const requestInit = fetchSpy.mock.calls[0][1] as RequestInit;
+      const body = JSON.parse(requestInit.body as string);
+      expect(body.tokens).toEqual([]);
+    });
+  });
 });

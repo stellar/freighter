@@ -228,6 +228,7 @@ describe("useGetWalletsData", () => {
         "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
       ],
       MAINNET_NETWORK_DETAILS,
+      true,
     );
     expect(result.current.state.data).toEqual({
       accountValue: {
