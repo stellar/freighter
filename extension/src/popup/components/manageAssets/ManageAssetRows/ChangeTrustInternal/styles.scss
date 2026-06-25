@@ -38,10 +38,16 @@
 
     // The pane is the scroll container: bounded to the slider height and
     // scrolls its content, so the details fill down to the pinned buttons.
+    // Hide the scrollbar to match the app's other scrollable content.
     .multi-pane-slider__pane {
       height: 100%;
       min-height: 0;
       overflow: auto;
+      scrollbar-width: none;
+
+      &::-webkit-scrollbar {
+        display: none;
+      }
     }
 
     // Single scroll container, so transaction details scroll fully instead of
@@ -50,6 +56,11 @@
       flex: 1;
       min-height: 0;
       overflow-y: auto;
+      scrollbar-width: none;
+
+      &::-webkit-scrollbar {
+        display: none;
+      }
     }
 
     .ChangeTrustInternal__Body__Wrapper {
