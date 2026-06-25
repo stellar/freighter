@@ -11,15 +11,14 @@ backend auth keypair (and hex user ID) from the wallet mnemonic via
 
 **Architecture:** A single pure async function in
 `@shared/api/helpers/deriveAuthKeypair.ts`. Step 1 computes the 32-byte auth
-seed with `crypto.subtle` HMAC keyed on the 64-byte BIP39 seed
-(`stellar-hd-wallet`). Step 2 turns that seed into an Ed25519 keypair with
-`stellar-sdk` `Keypair.fromRawEd25519Seed`; the raw pubkey, lowercase-hex, is
-the user ID. Correctness is locked by committed cross-platform test vectors that
+seed with `crypto.subtle` HMAC keyed on the 64-byte BIP39 seed (`bip39`). Step 2
+turns that seed into an Ed25519 keypair with `stellar-sdk`
+`Keypair.fromRawEd25519Seed`; the raw pubkey, lowercase-hex, is the user ID.
+Correctness is locked by committed cross-platform test vectors that
 `freighter-mobile` will mirror.
 
 **Tech Stack:** TypeScript, Jest 29 (`jest-fixed-jsdom`), `crypto.subtle`
-(WebCrypto), `stellar-sdk` (`@stellar/stellar-sdk@16.0.0-rc.1`),
-`stellar-hd-wallet@1.0.2`.
+(WebCrypto), `stellar-sdk` (`@stellar/stellar-sdk@16.0.0-rc.1`), `bip39@3.1.0`.
 
 **Spec:** `extension/specs/AUTH_KEYPAIR_DERIVATION.md` (canonical contract —
 read before starting).
@@ -28,18 +27,21 @@ read before starting).
 
 Every task implicitly includes these:
 
-- **Zero new libraries.** Only `crypto.subtle`, `stellar-sdk`, and
-  `stellar-hd-wallet` — all already in the project. The only dependency-manifest
-  change allowed is _declaring_ `stellar-hd-wallet` in
-  `@shared/api/package.json`.
-- **Exact version pins, no caret ranges.** Declare `stellar-hd-wallet` as
-  `"1.0.2"` (matches the extension's pin; both repos depend on the same
-  singleton).
+- **No new library introduced.** Only `crypto.subtle`, `stellar-sdk`, and
+  `bip39` — all already in the project. The only dependency-manifest change is
+  _declaring_ `bip39` in `@shared/api/package.json` (it was already a transitive
+  dep). `stellar-hd-wallet` is NOT used: it cannot run under jest/jsdom (its
+  compiled bip39 import throws
+  `Cannot read properties of undefined (reading 'wordlists')`).
+  `bip39.mnemonicToSeedSync` is byte-identical to what `stellar-hd-wallet`
+  wraps.
+- **Exact version pins, no caret ranges.** Declare `bip39` as `"3.1.0"` (the
+  version already in the tree).
 - **`AUTH_SALT = "freighter-auth-v1"`** — exact literal, exported as a named
   constant.
 - **HMAC-SHA256:** KEY = the 64-byte BIP39 seed
-  (`StellarHDWallet.fromMnemonic(mnemonic).seedHex`, hex→bytes); MESSAGE =
-  `utf8(AUTH_SALT)`. Order is `HMAC(key, message)` — never reversed.
+  (`bip39.mnemonicToSeedSync(mnemonic)`); MESSAGE = `utf8(AUTH_SALT)`. Order is
+  `HMAC(key, message)` — never reversed.
 - **User ID = lowercase hex** of the raw 32-byte Ed25519 public key (matches the
   backend's canonical `sub`).
 - **Pure function:** no logging, no `keyManager`, no messaging, no persistence.
@@ -53,7 +55,7 @@ Every task implicitly includes these:
 | `@shared/api/helpers/deriveAuthKeypair.ts`                | The primitive: `AUTH_SALT`, `deriveAuthSeed`, `deriveAuthKeypair`.                          |
 | `@shared/api/helpers/__tests__/authKeypairVectors.ts`     | Committed cross-platform test vectors (canonical contract; mirrored in `freighter-mobile`). |
 | `@shared/api/helpers/__tests__/deriveAuthKeypair.test.ts` | Unit tests mapped to acceptance criteria.                                                   |
-| `@shared/api/package.json`                                | Declare `stellar-hd-wallet@1.0.2` (modify).                                                 |
+| `@shared/api/package.json`                                | Declare `bip39@3.1.0` (modify).                                                             |
 
 **Run a single test file:**
 `yarn jest @shared/api/helpers/__tests__/deriveAuthKeypair.test.ts` **Run one
@@ -65,7 +67,7 @@ test by name:** add `-t "<name>"`.
 
 **Files:**
 
-- Modify: `@shared/api/package.json` (add `stellar-hd-wallet` dependency)
+- Modify: `@shared/api/package.json` (add `bip39` dependency)
 - Create: `@shared/api/helpers/__tests__/authKeypairVectors.ts`
 - Create: `@shared/api/helpers/deriveAuthKeypair.ts`
 - Test: `@shared/api/helpers/__tests__/deriveAuthKeypair.test.ts`
@@ -78,20 +80,20 @@ test by name:** add `-t "<name>"`.
   - `AUTH_KEYPAIR_VECTORS: AuthKeypairVector[]` where
     `AuthKeypairVector = { mnemonic: string; authSeedHex: string; userId: string }`
 
-- [ ] **Step 1: Declare the `stellar-hd-wallet` dependency**
+- [ ] **Step 1: Declare the `bip39` dependency**
 
-In `@shared/api/package.json`, add to `dependencies` (keep alphabetical with the
-existing `stellar-sdk` entries; exact pin, no caret):
+In `@shared/api/package.json`, add to `dependencies` (keep alphabetical; exact
+pin, no caret):
 
 ```json
-    "stellar-hd-wallet": "1.0.2",
+    "bip39": "3.1.0",
 ```
 
 Then install so the workspace records it (it already resolves via hoisting at
 the same version, so this only updates the lockfile):
 
 Run: `yarn install` Expected: completes; `yarn.lock` gains a `@shared/api` →
-`stellar-hd-wallet` edge, no version change.
+`bip39` edge, no version change.
 
 - [ ] **Step 2: Create the test vectors fixture**
 
@@ -165,7 +167,7 @@ Create `@shared/api/helpers/deriveAuthKeypair.ts`:
 
 ```ts
 import { Buffer } from "buffer";
-import StellarHDWallet from "stellar-hd-wallet";
+import { mnemonicToSeedSync, validateMnemonic } from "bip39";
 
 /**
  * Versioned domain-separation salt for the backend auth keypair. The `-v1`
@@ -177,15 +179,19 @@ export const AUTH_SALT = "freighter-auth-v1";
 /**
  * Computes the 32-byte auth seed: HMAC-SHA256 keyed on the wallet's 64-byte
  * BIP39 seed, over the salt. Throws "Invalid mnemonic (see bip39)" on a
- * malformed mnemonic (via stellar-hd-wallet).
+ * malformed mnemonic.
+ *
+ * bip39 is called directly: stellar-hd-wallet cannot run under jest/jsdom (its
+ * compiled bip39 import throws on `wordlists`). The bytes are identical —
+ * stellar-hd-wallet's fromMnemonic wraps this same bip39 call.
  */
 export const deriveAuthSeed = async (mnemonic: string): Promise<Uint8Array> => {
-  // BIP39 seed, 64 bytes, empty passphrase. stellar-hd-wallet@1.0.2's
-  // fromMnemonic validates the mnemonic and runs bip39.mnemonicToSeedSync.
-  const seedBytes = Buffer.from(
-    StellarHDWallet.fromMnemonic(mnemonic).seedHex,
-    "hex",
-  );
+  // Validate first, matching stellar-hd-wallet's error contract.
+  if (!validateMnemonic(mnemonic)) {
+    throw new Error("Invalid mnemonic (see bip39)");
+  }
+  // BIP39 seed, 64 bytes, empty passphrase.
+  const seedBytes = Buffer.from(mnemonicToSeedSync(mnemonic));
 
   const key = await crypto.subtle.importKey(
     "raw",
