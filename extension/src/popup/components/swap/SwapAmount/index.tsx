@@ -242,7 +242,13 @@ export const SwapAmount = ({
         setInputType("crypto");
       }
     }
-  }, [inputType, swapAmountData.state, swapAmountData.data, asset]);
+  }, [
+    inputType,
+    swapAmountData.state,
+    swapAmountData.data,
+    asset,
+    setInputType,
+  ]);
 
   // Quote-expired surfacing: when the simulate hook flags an expired quote
   // (Horizon op_under_dest_min / op_too_few_offers), emit the metric and show
