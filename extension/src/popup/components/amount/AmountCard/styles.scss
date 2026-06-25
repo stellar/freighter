@@ -140,6 +140,8 @@
     margin: pxToRem(4px);
     border-radius: 50%;
     background-color: var(--sds-clr-gray-04);
+    // Muted plus, matching the "You receive" label color.
+    color: var(--sds-clr-gray-11);
 
     svg {
       width: pxToRem(14px);
