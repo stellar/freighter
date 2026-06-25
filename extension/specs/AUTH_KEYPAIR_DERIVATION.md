@@ -67,13 +67,15 @@ Both leak threats are treated as first-class:
 
 ## Crypto decisions
 
-Both halves reuse primitives **already central to the extension — zero new
-dependencies.**
+All three primitives are **already in the project — no new library is
+introduced** (`bip39` is promoted from a transitive dep to a declared one in
+`@shared/api`, pinned to `3.1.0`).
 
-| Step            | Choice                                     | Rationale                                                                                                                                                                                                                       |
-| :-------------- | :----------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| HMAC-SHA256     | `crypto.subtle`                            | Already the extension's core crypto layer (`extension/src/background/helpers/session.ts` uses it for AES-GCM session encryption + PBKDF2). Native, audited, no new dep.                                                         |
-| Ed25519 keypair | `stellar-sdk` `Keypair.fromRawEd25519Seed` | Already a core dep, already used for wallet keys. `Keypair.rawPublicKey()` gives the raw 32-byte pubkey (the user ID); `Keypair.sign()` gives a raw 64-byte Ed25519 signature, which the downstream JWT ticket reuses directly. |
+| Step            | Choice                                            | Rationale                                                                                                                                                                                                                       |
+| :-------------- | :------------------------------------------------ | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| BIP39 seed      | `bip39` (`mnemonicToSeedSync`/`validateMnemonic`) | The standard mnemonic→seed function. Called directly rather than via `stellar-hd-wallet` (whose compiled bip39 import cannot run under jest/jsdom). Byte-identical output — `stellar-hd-wallet` wraps the same call.            |
+| HMAC-SHA256     | `crypto.subtle`                                   | Already the extension's core crypto layer (`extension/src/background/helpers/session.ts` uses it for AES-GCM session encryption + PBKDF2). Native, audited, no new dep.                                                         |
+| Ed25519 keypair | `stellar-sdk` `Keypair.fromRawEd25519Seed`        | Already a core dep, already used for wallet keys. `Keypair.rawPublicKey()` gives the raw 32-byte pubkey (the user ID); `Keypair.sign()` gives a raw 64-byte Ed25519 signature, which the downstream JWT ticket reuses directly. |
 
 **Correctness is library-independent.** HMAC-SHA256 and Ed25519 derivation/signing
 are standardized and deterministic (RFC 8032), so any correct implementation
@@ -115,12 +117,16 @@ must-match chain inside one function, so the cross-platform vector is simply
 **Exact algorithm — this is the cross-platform contract:**
 
 ```ts
-// 1. BIP39 seed: 64 bytes, EMPTY passphrase. Both repos pin stellar-hd-wallet@1.0.2,
-//    whose fromMnemonic() does bip39.mnemonicToSeedSync(mnemonic) internally.
-const seedBytes = Buffer.from(
-  StellarHDWallet.fromMnemonic(mnemonic).seedHex,
-  "hex",
-); // 64 bytes
+// 1. BIP39 seed: 64 bytes, EMPTY passphrase. validateMnemonic rejects malformed
+//    input (the "Invalid mnemonic" error contract); mnemonicToSeedSync produces
+//    the 64-byte seed. We call `bip39` directly: stellar-hd-wallet cannot run
+//    under the jest/jsdom test env (its compiled bip39 default-import breaks with
+//    "Cannot read properties of undefined (reading 'wordlists')"). The bytes are
+//    identical — stellar-hd-wallet's fromMnemonic() wraps this same bip39 call —
+//    so cross-platform parity is unaffected (mobile may use either library).
+if (!validateMnemonic(mnemonic))
+  throw new Error("Invalid mnemonic (see bip39)");
+const seedBytes = Buffer.from(mnemonicToSeedSync(mnemonic)); // 64 bytes
 
 // 2. HMAC-SHA256. KEY = seedBytes (the 64-byte seed). MESSAGE = utf8(SALT).
 //    Order matters — HMAC(key, message). Pinned by the test vectors so it
