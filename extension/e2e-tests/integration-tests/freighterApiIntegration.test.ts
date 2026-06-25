@@ -1041,10 +1041,9 @@ test("should add a verified SEP-41 token without the unverified banner", async (
   context,
 }) => {
   await stubIsSac(context);
-  // Stub the asset-list so TEST_TOKEN_ADDRESS appears as a verified token.
-  // This causes getVerifiedTokens() to find a match and setIsVerifiedToken(true),
-  // which suppresses the AssetListWarning "Not on your lists" banner.
-  await stubVerifiedToken(page, TEST_TOKEN_ADDRESS);
+  // Mark verified (no "Not on your lists" banner). On `context` so it's set
+  // before the popup's initial asset-list fetch.
+  await stubVerifiedToken(context, TEST_TOKEN_ADDRESS);
 
   await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
   await allowDapp({ page });

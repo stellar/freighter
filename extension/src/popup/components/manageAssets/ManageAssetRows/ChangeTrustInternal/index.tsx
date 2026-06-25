@@ -540,6 +540,7 @@ export const ChangeTrustInternal = ({
             goBack={() => setActiveBodyContent(ActiveBodyContent.details)}
             onSuccess={onSuccess ?? onCancel}
             onClose={onCancel}
+            hideCloseTabHint={isFullHeight}
           />
         )}
       </div>

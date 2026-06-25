@@ -49,6 +49,10 @@ interface SubmitTransactionProps {
   goBack: () => void;
   onSuccess: () => void;
   onClose: () => void;
+  // Hide the "close this tab" hint shown during submit: it nudges users to
+  // close and leave the dApp's addToken promise hanging. The transaction itself
+  // still succeeds even if they close.
+  hideCloseTabHint?: boolean;
 }
 
 export const SubmitTransaction = ({
@@ -59,6 +63,7 @@ export const SubmitTransaction = ({
   goBack,
   onSuccess,
   onClose,
+  hideCloseTabHint = false,
 }: SubmitTransactionProps) => {
   const { t } = useTranslation();
   const dispatch: AppDispatch = useDispatch();
@@ -177,7 +182,7 @@ export const SubmitTransaction = ({
         <View.Content
           contentFooter={
             <div className="SubmitTransaction__Footer">
-              {isLoading && (
+              {isLoading && !hideCloseTabHint && (
                 <>
                   <div className="SubmitTransaction__Footer__Subtext">
                     {t(
