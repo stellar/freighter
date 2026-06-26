@@ -487,21 +487,11 @@ export const ReviewTx = ({
     />
   );
 
-  // Build panes in order (no hooks on JSX)
-  const panes: React.ReactNode[] = [];
-  if (isOnTrustlinePane) {
-    panes.push(
-      <TrustlineInfoSheet
-        tokenCode={destinationTokenDetails!.tokenCode}
-        onClose={() => setIsOnTrustlinePane(false)}
-      />,
-    );
-  } else if (shouldShowTxWarning) {
-    panes.push(reviewPane, memoPane, blockaidPane, feesPane);
-  } else {
-    panes.push(reviewPane, memoPane, feesPane);
-  }
-  const trustlineActiveIndex = isOnTrustlinePane ? 0 : activePaneIndex;
+  // Build panes in order (no hooks on JSX). The trustline info is a slide-up
+  // sheet overlay (rendered below), not a pane.
+  const panes: React.ReactNode[] = shouldShowTxWarning
+    ? [reviewPane, memoPane, blockaidPane, feesPane]
+    : [reviewPane, memoPane, feesPane];
 
   return (
     <View.Content hasNoTopPadding>
@@ -513,7 +503,12 @@ export const ReviewTx = ({
         />
       ) : (
         <div className="ReviewTx">
-          <MultiPaneSlider activeIndex={trustlineActiveIndex} panes={panes} />
+          <MultiPaneSlider activeIndex={activePaneIndex} panes={panes} />
+          <TrustlineInfoSheet
+            isOpen={isOnTrustlinePane}
+            tokenCode={destinationTokenDetails?.tokenCode || ""}
+            onClose={() => setIsOnTrustlinePane(false)}
+          />
           {!isOnFeesPane && !isOnTrustlinePane && (
             <div className="ReviewTx__Actions">
               <ActionButtons
