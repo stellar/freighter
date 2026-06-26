@@ -104,7 +104,7 @@ export const AutoLockTimer = () => {
 
   return (
     <React.Fragment>
-      <SubviewHeader title={t("Auto-Lock timer")} />
+      <SubviewHeader title={t("Auto-lock timer")} />
       <View.Content hasNoTopPadding>
         <div className="AutoLockTimer">
           {VALID_AUTO_LOCK_TIMEOUT_MINUTES.map((minutes) => {
