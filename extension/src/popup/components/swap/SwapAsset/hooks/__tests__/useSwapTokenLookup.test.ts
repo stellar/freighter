@@ -64,6 +64,38 @@ describe("buildSwapSections — idle (no search term)", () => {
     expect(result.sections.yourTokens[0].code).toBe("AQUA");
     expect(result.sections.yourTokens[0].image).toBe("https://icons/aqua.png");
   });
+
+  it("excludes held Soroban (contract) tokens — Classic assets only", () => {
+    const heldSoroban = {
+      token: { code: "SRBN", issuer: { key: "GSRBN" } },
+      contractId: "CAZXEHTSQATVQVWDPWWDTFSY6CM764JD4MZ6HUVPO3QKS64QEEP4KJH7",
+      total: "5",
+      decimals: 7,
+    } as any;
+    const result = buildSwapSections({
+      searchTerm: "",
+      balances: [heldAqua, heldSoroban],
+      networkDetails: MAINNET,
+    });
+    expect(result.sections.yourTokens.map((r) => r.code)).toEqual(["AQUA"]);
+  });
+
+  it("sorts Your tokens by descending fiat value", () => {
+    const result = buildSwapSections({
+      searchTerm: "",
+      balances: [heldAqua, heldXlm],
+      networkDetails: MAINNET,
+      tokenPrices: {
+        "AQUA:GBNZ": { currentPrice: "0.01" },
+        native: { currentPrice: "0.5" },
+      } as any,
+    });
+    // AQUA: 100 * 0.01 = 1; XLM: 50 * 0.5 = 25 -> XLM sorts first.
+    expect(result.sections.yourTokens.map((r) => r.code)).toEqual([
+      "XLM",
+      "AQUA",
+    ]);
+  });
 });
 
 describe("buildSwapSections — search term", () => {

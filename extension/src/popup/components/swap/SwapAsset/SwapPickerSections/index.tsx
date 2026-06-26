@@ -78,9 +78,11 @@ export const SwapPickerSections = ({
 
   const isSearching = searchTerm.trim().length > 0;
 
-  // Exclude hidden canonicals (the swap source asset) from every section.
+  // Exclude hidden canonicals (the other side's asset) from the discover
+  // sections. "Your tokens" is intentionally NOT filtered — every held token
+  // should stay visible even when it is already selected on the other side.
   const hidden = new Set(hiddenAssets);
-  const yourTokens = result.yourTokens.filter((r) => !hidden.has(r.canonical));
+  const yourTokens = result.yourTokens;
   const popular = result.popular.filter((r) => !hidden.has(r.canonical));
   const verified = result.verified.filter((r) => !hidden.has(r.canonical));
   const unverified = result.unverified.filter((r) => !hidden.has(r.canonical));

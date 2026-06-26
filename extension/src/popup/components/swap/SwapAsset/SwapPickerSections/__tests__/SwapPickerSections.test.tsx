@@ -159,25 +159,27 @@ describe("SwapPickerSections", () => {
     ).toBeInTheDocument();
   });
 
-  it("excludes hiddenAssets (the swap source) from every section", () => {
+  it("keeps held Your tokens visible but excludes hiddenAssets from discover sections", () => {
     render(
       <SwapPickerSections
         {...baseProps}
         searchTerm=""
-        hiddenAssets={["XLM:G123"]}
+        hiddenAssets={["XLM:G123", "AQUA:G123"]}
         result={{
           ...emptyResult,
           yourTokens: [rec("XLM", true), rec("USDC", true)],
-          popular: [rec("XLM"), rec("AQUA")],
+          popular: [rec("AQUA"), rec("DOGET")],
         }}
       />,
     );
 
-    // The hidden source asset (XLM) is filtered out of all sections...
-    expect(screen.queryByTestId("row-XLM")).toBeNull();
-    // ...while other held/popular tokens remain.
+    // "Your tokens" is never filtered — the held XLM stays visible even though
+    // it is the hidden (already-selected) source asset.
+    expect(screen.getByTestId("row-XLM")).toBeInTheDocument();
     expect(screen.getByTestId("row-USDC")).toBeInTheDocument();
-    expect(screen.getByTestId("row-AQUA")).toBeInTheDocument();
+    // Discover sections still drop hidden assets (AQUA) but keep the rest.
+    expect(screen.queryByTestId("row-AQUA")).toBeNull();
+    expect(screen.getByTestId("row-DOGET")).toBeInTheDocument();
   });
 
   it("idle + new account + no popular: renders nothing (no generic empty state)", () => {

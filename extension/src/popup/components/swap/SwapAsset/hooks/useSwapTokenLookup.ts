@@ -16,12 +16,9 @@ import { ManageAssetCurrency } from "popup/components/manageAssets/ManageAssetRo
 import { SecurityLevel } from "popup/constants/blockaid";
 import { searchAsset } from "popup/helpers/searchAsset";
 import { splitVerifiedAssetCurrency } from "popup/helpers/assetList";
-import {
-  isContractId,
-  isAssetSac,
-  formatTokenAmount,
-} from "popup/helpers/soroban";
+import { isContractId, isAssetSac } from "popup/helpers/soroban";
 import { formatAmount, roundUsdValue } from "popup/helpers/formatters";
+import { sortBalancesByValue } from "popup/helpers/balance";
 import {
   scanAssetBulk,
   isAssetMalicious,
@@ -91,7 +88,10 @@ const heldToRecord = (
   icons: Record<string, string | null> = {},
   tokenPrices: ApiTokenPrices = {},
 ): SwapTokenRecord | null => {
-  if (!("token" in balance) || !balance.token) {
+  // Classic-only: swaps run over the Classic path, so the "Your tokens" list
+  // shows native + classic assets only. Exclude liquidity-pool shares (no token)
+  // and custom Soroban contract tokens (carry a contractId).
+  if (!("token" in balance) || !balance.token || "contractId" in balance) {
     return null;
   }
   const token = balance.token as {
@@ -109,11 +109,7 @@ const heldToRecord = (
   const total = new BigNumber(
     (balance as { total?: BigNumber.Value }).total ?? 0,
   );
-  const rawAmount =
-    "contractId" in balance && "decimals" in balance
-      ? formatTokenAmount(total, (balance as { decimals: number }).decimals)
-      : total.toFixed();
-  const tokenAmount = formatAmount(rawAmount);
+  const tokenAmount = formatAmount(total.toFixed());
   const price = tokenPrices[canonical];
   const fiatValue = price?.currentPrice
     ? `$${formatAmount(
@@ -155,7 +151,8 @@ export const balancesToHeldRecords = ({
   icons?: Record<string, string | null>;
   tokenPrices?: ApiTokenPrices;
 }): SwapTokenRecord[] =>
-  balances
+  // Sort by descending fiat value, matching the account-home balances list.
+  sortBalancesByValue(balances, tokenPrices)
     .map((b) => heldToRecord(b, icons, tokenPrices))
     .filter((r): r is SwapTokenRecord => r !== null);
 
@@ -215,9 +212,7 @@ export const buildSwapSections = ({
   const term = searchTerm.trim().toLowerCase();
   const isSearch = term.length > 0;
 
-  const heldRecords = balances
-    .map((b) => heldToRecord(b, icons, tokenPrices))
-    .filter((r): r is SwapTokenRecord => r !== null);
+  const heldRecords = balancesToHeldRecords({ balances, icons, tokenPrices });
   const heldCanonicals = new Set(heldRecords.map((r) => r.canonical));
 
   // Classic-only filter: drop any Soroban (non-SAC) contract record.
