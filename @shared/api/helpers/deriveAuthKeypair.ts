@@ -1,5 +1,6 @@
 import { Buffer } from "buffer";
 import { mnemonicToSeedSync, validateMnemonic } from "bip39";
+import { Keypair } from "stellar-sdk";
 
 /**
  * Versioned domain-separation salt for the backend auth keypair. The `-v1`
@@ -41,4 +42,23 @@ export const deriveAuthSeed = async (mnemonic: string): Promise<Uint8Array> => {
     new TextEncoder().encode(AUTH_SALT),
   );
   return new Uint8Array(mac);
+};
+
+/**
+ * Derives the Freighter backend auth keypair from the wallet mnemonic.
+ * Pure crypto: no logging, no keyManager, no messaging, no persistence. The
+ * caller supplies the mnemonic (requires an unlocked session) and handles the
+ * locked-session case.
+ *
+ * @returns userId  lowercase hex Ed25519 public key (64 chars) — the anonymous
+ *                  backend user ID and the JWT `sub`.
+ * @returns keypair stellar-sdk Keypair; the JWT ticket signs with keypair.sign().
+ */
+export const deriveAuthKeypair = async (
+  mnemonic: string,
+): Promise<{ userId: string; keypair: Keypair }> => {
+  const authSeed = await deriveAuthSeed(mnemonic);
+  const keypair = Keypair.fromRawEd25519Seed(Buffer.from(authSeed));
+  const userId = keypair.rawPublicKey().toString("hex");
+  return { userId, keypair };
 };
