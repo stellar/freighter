@@ -4,7 +4,7 @@
  *
  * Usage:
  *   1. In freighter-backend-v2:  make run        # serves on :3002 by default
- *   2. From this repo:           npx tsx scripts/auth-e2e.ts
+ *   2. From this repo:           npx --yes tsx@4 scripts/auth-e2e.ts
  *
  * Env:
  *   BACKEND_V2_URL     default http://localhost:3002

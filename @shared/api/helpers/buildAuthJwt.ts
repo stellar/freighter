@@ -56,7 +56,7 @@ export const buildAuthJwt = async ({
     iat,
     exp: iat + JWT_LIFETIME_SECONDS,
     bodyHash: await sha256Hex(body),
-    methodAndPath: `${method} ${path}`,
+    methodAndPath: `${method.toUpperCase()} ${path}`,
   };
   const signingInput = `${encodeSegment({ alg: "EdDSA", typ: "JWT" })}.${encodeSegment(payload)}`;
   const signature = keypair.sign(Buffer.from(signingInput, "utf8"));

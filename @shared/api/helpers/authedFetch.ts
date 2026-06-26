@@ -29,7 +29,10 @@ export const authedFetch = async ({
   fetchImpl,
 }: AuthedFetchParams): Promise<Response> => {
   const doFetch = fetchImpl ?? fetch;
-  const url = `${baseUrl}${path}`;
+  // Strip a trailing slash so the fetched URL can't diverge from the `path`
+  // baked into the JWT's methodAndPath claim (a "//api/..." vs "/api/..." split
+  // would be a silent 401).
+  const url = `${baseUrl.replace(/\/+$/, "")}${path}`;
   const baseHeaders: Record<string, string> = {
     ...(method.toUpperCase() === "GET"
       ? {}

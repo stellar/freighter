@@ -91,4 +91,16 @@ describe("buildAuthJwt", () => {
     });
     expect(jwt).not.toMatch(/[+/=]/);
   });
+
+  it("uppercases the method in methodAndPath", async () => {
+    const jwt = await buildAuthJwt({
+      keypair: KP,
+      method: "get",
+      path: PATH,
+      now: NOW,
+    });
+    expect(decodeSegment(jwt.split(".")[1]).methodAndPath).toBe(
+      "GET /api/v1/auth/whoami",
+    );
+  });
 });

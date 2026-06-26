@@ -88,4 +88,16 @@ describe("authedFetch", () => {
     >;
     expect(hdrs["Content-Type"]).toBe("text/plain");
   });
+
+  it("strips a trailing slash from baseUrl when building the URL", async () => {
+    const fetchImpl = jest.fn().mockResolvedValue(resp(200));
+    await authedFetch({
+      keypair: KP,
+      baseUrl: "http://x/",
+      method: "GET",
+      path: "/p",
+      fetchImpl,
+    });
+    expect(fetchImpl.mock.calls[0][0]).toBe("http://x/p");
+  });
 });
