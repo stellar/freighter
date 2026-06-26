@@ -1,0 +1,115 @@
+/*
+ * Runnable end-to-end check of the per-request backend JWT against a locally
+ * running freighter-backend-v2.
+ *
+ * Usage:
+ *   1. In freighter-backend-v2:  make run        # serves on :3002 by default
+ *   2. From this repo:           npx tsx scripts/auth-e2e.ts
+ *
+ * Env:
+ *   BACKEND_V2_URL     default http://localhost:3002
+ *   AUTH_E2E_MNEMONIC  default: the #2769 vector mnemonic (known userId)
+ *
+ * Exits non-zero if any case fails.
+ */
+import { Buffer } from "buffer";
+
+import { buildAuthJwt } from "../@shared/api/helpers/buildAuthJwt";
+import { deriveAuthKeypair } from "../@shared/api/helpers/deriveAuthKeypair";
+
+const BASE = process.env.BACKEND_V2_URL ?? "http://localhost:3002";
+const MNEMONIC =
+  process.env.AUTH_E2E_MNEMONIC ??
+  "illness spike retreat truth genius clock brain pass fit cave bargain toe";
+const PATH = "/api/v1/auth/whoami";
+
+let failures = 0;
+const check = (name: string, ok: boolean, detail = ""): void => {
+  // eslint-disable-next-line no-console
+  console.log(
+    `  ${ok ? "PASS" : "FAIL"}  ${name}${detail ? ` — ${detail}` : ""}`,
+  );
+  if (!ok) failures += 1;
+};
+
+const get = (jwt: string): Promise<Response> =>
+  fetch(`${BASE}${PATH}`, { headers: { Authorization: `Bearer ${jwt}` } });
+
+const main = async (): Promise<void> => {
+  const { keypair, userId } = await deriveAuthKeypair(MNEMONIC);
+  // eslint-disable-next-line no-console
+  console.log(`backend: ${BASE}\nuserId:  ${userId}\n`);
+
+  // 1. Valid request.
+  {
+    const r = await get(
+      await buildAuthJwt({ keypair, method: "GET", path: PATH }),
+    );
+    const json =
+      r.status === 200
+        ? ((await r.json()) as { authenticated?: boolean; userId?: string })
+        : null;
+    check(
+      "valid JWT -> 200 + matching userId",
+      r.status === 200 &&
+        json?.authenticated === true &&
+        json?.userId === userId,
+      `status=${r.status}`,
+    );
+  }
+
+  // 2. Tampered body: claim a non-empty bodyHash but send an empty GET body.
+  {
+    const r = await get(
+      await buildAuthJwt({
+        keypair,
+        method: "GET",
+        path: PATH,
+        body: "tamper",
+      }),
+    );
+    check("tampered bodyHash -> 401", r.status === 401, `status=${r.status}`);
+  }
+
+  // 3. Wrong key: flip a byte in the signature segment.
+  {
+    const [h, p, s] = (
+      await buildAuthJwt({ keypair, method: "GET", path: PATH })
+    ).split(".");
+    const sig = Buffer.from(s.replace(/-/g, "+").replace(/_/g, "/"), "base64");
+    sig[0] ^= 0xff;
+    const badSig = sig
+      .toString("base64")
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_")
+      .replace(/=+$/, "");
+    const r = await get(`${h}.${p}.${badSig}`);
+    check("bad signature -> 401", r.status === 401, `status=${r.status}`);
+  }
+
+  // 4. Expired: backdate the clock beyond lifetime + skew.
+  {
+    const r = await get(
+      await buildAuthJwt({
+        keypair,
+        method: "GET",
+        path: PATH,
+        now: Date.now() - 60_000,
+      }),
+    );
+    check("expired token -> 401", r.status === 401, `status=${r.status}`);
+  }
+
+  // eslint-disable-next-line no-console
+  console.log(`\n${failures === 0 ? "ALL PASSED" : `${failures} FAILED`}`);
+  process.exit(failures === 0 ? 0 : 1);
+};
+
+main().catch((e) => {
+  // eslint-disable-next-line no-console
+  console.error(
+    `\nE2E run failed (is the backend up at ${BASE}? start it with 'make run' in freighter-backend-v2)\n`,
+    e,
+  );
+  process.exit(1);
+});
