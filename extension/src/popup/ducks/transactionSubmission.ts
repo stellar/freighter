@@ -431,6 +431,9 @@ export interface DestinationTokenDetails {
   securityLevel?: SecurityLevel;
   // from the search/Popular record, before balances hydrate.
   iconUrl?: string;
+  // USD spot price from the stellar.expert search result, used as a fallback
+  // for the "You receive" fiat when /token-prices has no entry. No 24h %.
+  spotPrice?: number;
 }
 
 interface TransactionData {

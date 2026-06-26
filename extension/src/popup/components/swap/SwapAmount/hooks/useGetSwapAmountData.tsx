@@ -36,6 +36,7 @@ function useGetSwapAmountData(
     includeIcons: boolean;
   },
   destinationAddress?: string, // NOTE: can be a G/C/M address
+  destinationAsset?: string, // canonical of the selected destination token
 ) {
   const [state, dispatch] = useReducer(
     reducer<SwapAmountData, unknown>,
@@ -86,6 +87,9 @@ function useGetSwapAmountData(
           publicKey: userDomains.publicKey,
           balances: destinationBalances.balances,
           useCache: true,
+          // Price the selected destination token too, even when the account
+          // doesn't hold it — mirrors freighter-mobile's extraTokenIds.
+          additionalAssetIds: destinationAsset ? [destinationAsset] : [],
         });
         tokenPrices = fetchedTokenPrices.tokenPrices || {};
       }

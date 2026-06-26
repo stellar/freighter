@@ -32,6 +32,7 @@ const buildSelection = (
   issuer: r.issuer || undefined,
   securityLevel: r.securityLevel,
   iconUrl: r.image ?? r.icon ?? undefined,
+  spotPrice: r.spotPrice,
   source,
 });
 

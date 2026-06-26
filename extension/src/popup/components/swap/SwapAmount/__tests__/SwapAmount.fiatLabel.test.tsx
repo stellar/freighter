@@ -23,7 +23,10 @@ const nativeBalance = {
 const makeSwapData = (tokenPrices: Record<string, unknown>) => ({
   type: AppDataType.RESOLVED,
   applicationState: "MNEMONIC_PHRASE_CONFIRMED",
-  networkDetails: { network: "PUBLIC" },
+  networkDetails: {
+    network: "PUBLIC",
+    networkPassphrase: "Public Global Stellar Network ; September 2015",
+  },
   icons: {},
   userBalances: { balances: [nativeBalance] },
   tokenPrices,
@@ -129,5 +132,27 @@ describe("SwapAmount fiat label", () => {
     expect(
       within(screen.getByTestId("swap-sell-card")).getByText(/^\$2/),
     ).toBeInTheDocument();
+  });
+
+  it("falls back to the destination's stellar.expert spot price when /token-prices has none", () => {
+    // tokenPrices is empty -> the receive card relies on the spot-price fallback.
+    mockAmountData({});
+    renderAmount({
+      asset: "native",
+      destinationAsset: USDC_CANONICAL,
+      destinationAmount: "10",
+      destinationTokenDetails: {
+        tokenCode: "USDC",
+        issuer: USDC_ISSUER,
+        requiresTrustline: true,
+        decimals: 7,
+        spotPrice: 0.5,
+      },
+    });
+
+    // 10 USDC * $0.5 spot = $5 -> receive card shows a value, not "--".
+    const receive = screen.getByTestId("swap-receive-card");
+    expect(within(receive).getByText(/^\$5/)).toBeInTheDocument();
+    expect(within(receive).queryByText("--")).toBeNull();
   });
 });

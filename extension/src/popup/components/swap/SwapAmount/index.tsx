@@ -132,6 +132,7 @@ export const SwapAmount = ({
       includeIcons: true,
     },
     destination,
+    destinationAsset,
   );
   const {
     state: simulationState,
@@ -451,7 +452,17 @@ export const SwapAmount = ({
     Boolean(destinationAsset) && !heldCanonicals.has(destinationAsset);
   const prices = sendData.tokenPrices;
   const assetPrice = prices[asset] && prices[asset].currentPrice;
-  const dstAssetPrice = prices[destinationAsset]?.currentPrice;
+  // Prefer the live backend price; fall back to the stellar.expert spot price
+  // captured when the (non-held) destination token was picked, so the receive
+  // card shows a fiat value instead of "--" when /token-prices has no entry.
+  const dstSpotPrice = transactionData.destinationTokenDetails?.spotPrice;
+  const dstAssetPrice =
+    prices[destinationAsset]?.currentPrice ??
+    // Spot-price fallback is mainnet-only, mirroring the /token-prices gate so
+    // the receive card never shows a fiat value the sell card can't.
+    (isMainnet(data.networkDetails) && dstSpotPrice != null
+      ? String(dstSpotPrice)
+      : undefined);
   const assetDecimals = getAssetDecimals(asset, sendData.userBalances, isToken);
   const priceValue = assetPrice
     ? new BigNumber(cleanAmount(formik.values.amountUsd))

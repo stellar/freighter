@@ -31,6 +31,8 @@ export type ManageAssetCurrency = {
   balance?: string;
   name?: string;
   image?: string | null;
+  /** USD spot price from the stellar.expert search response, if present. */
+  price?: number;
 };
 
 export interface NewAssetFlags {

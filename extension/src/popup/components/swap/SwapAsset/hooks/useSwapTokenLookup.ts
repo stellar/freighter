@@ -56,6 +56,9 @@ export interface SwapTokenRecord extends ManageAssetCurrency {
   tokenAmount?: string;
   fiatValue?: string;
   percentChange24h?: string;
+  /** USD spot price from the stellar.expert search result (non-held tokens),
+   * used as a fallback when /token-prices has no entry. No 24h % available. */
+  spotPrice?: number;
 }
 
 export interface SwapTokenLookupResult {
@@ -174,6 +177,7 @@ const currencyToRecord = (
     isHeld,
     isContract,
     requiresTrustline: !isHeld && !isNative,
+    spotPrice: asset.price,
   };
 };
 
@@ -371,6 +375,8 @@ interface AssetSearchRecord {
   code?: string;
   token_name?: string;
   decimals?: number;
+  /** USD spot price (stellar.expert). */
+  price?: number;
   tomlInfo?: {
     image?: string;
     code?: string;
@@ -389,6 +395,7 @@ const recordFromSearchResult = (
       contract: record.asset,
       domain: record.domain ?? null,
       image: record.tomlInfo?.image,
+      price: record.price,
     };
   }
   return {
@@ -396,6 +403,7 @@ const recordFromSearchResult = (
     issuer: record.asset.split("-")[1],
     domain: record.domain ?? null,
     image: record.tomlInfo?.image,
+    price: record.price,
   };
 };
 
