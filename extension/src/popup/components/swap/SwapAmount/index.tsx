@@ -429,7 +429,13 @@ export const SwapAmount = ({
 
   const sendData = data;
   const assetIcon = sendData.icons[asset];
-  const dstAssetIcon = sendData.icons[destinationAsset];
+  // The icons map only carries held-token logos. A non-held destination token
+  // (picked from search/popular) isn't in it, so fall back to the icon URL
+  // captured on the picked token so the receive picker shows its logo too.
+  const dstAssetIcon =
+    sendData.icons[destinationAsset] ||
+    transactionData.destinationTokenDetails?.iconUrl ||
+    null;
   const prices = sendData.tokenPrices;
   const assetPrice = prices[asset] && prices[asset].currentPrice;
   const xlmPrice = prices["native"]?.currentPrice;
