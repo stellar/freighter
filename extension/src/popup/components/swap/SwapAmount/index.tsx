@@ -852,7 +852,6 @@ export const SwapAmount = ({
             }}
             title={t("You are swapping")}
             destinationTokenDetails={transactionData.destinationTokenDetails}
-            destMin={simulationState.data?.destMin}
           />
         ) : (
           <></>

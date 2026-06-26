@@ -35,7 +35,6 @@ const baseProps = {
     priceUsd: null,
     amount: "25",
   },
-  destMin: "24.5",
 };
 
 describe("ReviewTx trustline banner", () => {

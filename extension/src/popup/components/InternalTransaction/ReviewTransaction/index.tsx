@@ -116,7 +116,6 @@ interface ReviewTxProps {
     decimals: number;
     issuer?: string;
   } | null;
-  destMin?: string;
 }
 
 export const ReviewTx = ({
@@ -133,7 +132,6 @@ export const ReviewTx = ({
   onCancel,
   onAddMemo,
   destinationTokenDetails,
-  destMin,
 }: ReviewTxProps) => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
@@ -165,6 +163,8 @@ export const ReviewTx = ({
 
   const asset = getAssetFromCanonical(srcAsset);
   const dest = dstAsset ? getAssetFromCanonical(dstAsset.canonical) : null;
+  // A destination asset is only present on swaps; Send has a recipient address.
+  const isSwap = !!dstAsset;
   const assetIcons = srcAsset !== "native" ? { [srcAsset]: assetIcon } : {};
   const truncatedDest = federationAddress
     ? truncatedFedAddress(federationAddress)
@@ -373,8 +373,9 @@ export const ReviewTx = ({
         )}
       </div>
       <div className="ReviewTx__Details">
-        {/* Hide memo row when memo is disabled (e.g., for all M addresses) */}
-        {!isMemoDisabled && (
+        {/* Swaps don't carry a memo; hide the row entirely. For Send, hide it
+            only when memo is disabled (e.g., for all M addresses). */}
+        {!isSwap && !isMemoDisabled && (
           <div className="ReviewTx__Details__Row ReviewTx__Details__Row--memo">
             <div className="ReviewTx__Details__Row__Title">
               <Icon.File02 />
@@ -413,13 +414,12 @@ export const ReviewTx = ({
             {fee} XLM
           </div>
         </div>
-        {dstAsset && destMin && dest && (
+        {dstAsset && dest && (
           <SwapRateRow
             srcCode={asset.code}
             dstCode={dest.code}
             sendAmount={sendAmount}
             destinationAmount={dstAsset.amount}
-            destMin={destMin}
           />
         )}
         <div className="ReviewTx__Details__Row">
