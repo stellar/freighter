@@ -111,6 +111,13 @@ export const Swap = () => {
               dispatch(saveDestinationAsset(canonical));
               dispatch(saveIsToken(isContract));
               dispatch(saveDestinationTokenDetails(details ?? null));
+              // Can't swap a token for itself: if it matches the current
+              // source, reset the source to "(+) Select".
+              if (canonical === transactionData.asset) {
+                dispatch(saveAsset(""));
+                dispatch(saveAmount("0"));
+                dispatch(saveAmountUsd("0.00"));
+              }
               emitMetric(METRIC_NAMES.swapDestinationSelected, {
                 tokenCode: details?.tokenCode,
                 tokenIssuer: details?.issuer,
@@ -162,6 +169,12 @@ export const Swap = () => {
               dispatch(saveIsToken(isContract));
               dispatch(saveAmount("0"));
               dispatch(saveAmountUsd("0.00"));
+              // Can't swap a token for itself: if it matches the current
+              // destination, reset the destination to "(+) Select".
+              if (canonical === transactionData.destinationAsset) {
+                dispatch(saveDestinationAsset(""));
+                dispatch(saveDestinationTokenDetails(null));
+              }
               emitMetric(METRIC_NAMES.swapSourceSelected, {
                 tokenCode: getAssetFromCanonical(canonical).code,
                 tokenIssuer: getAssetFromCanonical(canonical).issuer,
