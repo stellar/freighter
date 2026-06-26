@@ -71,24 +71,6 @@ describe("authedFetch", () => {
     expect(hdrs["Content-Type"]).toBe("application/json");
   });
 
-  it("lets caller headers override the default Content-Type", async () => {
-    const fetchImpl = jest.fn().mockResolvedValue(resp(200));
-    await authedFetch({
-      keypair: KP,
-      baseUrl: "http://x",
-      method: "POST",
-      path: "/p",
-      body: "x",
-      headers: { "Content-Type": "text/plain" },
-      fetchImpl,
-    });
-    const hdrs = (fetchImpl.mock.calls[0][1] as RequestInit).headers as Record<
-      string,
-      string
-    >;
-    expect(hdrs["Content-Type"]).toBe("text/plain");
-  });
-
   it("strips a trailing slash from baseUrl when building the URL", async () => {
     const fetchImpl = jest.fn().mockResolvedValue(resp(200));
     await authedFetch({

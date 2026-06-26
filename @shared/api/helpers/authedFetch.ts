@@ -8,8 +8,7 @@ export interface AuthedFetchParams {
   method: string;
   /** Full request-target including any query string. */
   path: string;
-  body?: Uint8Array | string;
-  headers?: Record<string, string>;
+  body?: string;
   /** Injectable for tests; defaults to the global fetch. */
   fetchImpl?: typeof fetch;
 }
@@ -25,7 +24,6 @@ export const authedFetch = async ({
   method,
   path,
   body,
-  headers,
   fetchImpl,
 }: AuthedFetchParams): Promise<Response> => {
   const doFetch = fetchImpl ?? fetch;
@@ -33,12 +31,11 @@ export const authedFetch = async ({
   // baked into the JWT's methodAndPath claim (a "//api/..." vs "/api/..." split
   // would be a silent 401).
   const url = `${baseUrl.replace(/\/+$/, "")}${path}`;
-  const baseHeaders: Record<string, string> = {
-    ...(method.toUpperCase() === "GET"
+  // Non-GET requests require Content-Type: application/json per the backend contract.
+  const baseHeaders: Record<string, string> =
+    method.toUpperCase() === "GET"
       ? {}
-      : { "Content-Type": "application/json" }),
-    ...headers,
-  };
+      : { "Content-Type": "application/json" };
 
   const send = async (): Promise<Response> => {
     const jwt = await buildAuthJwt({ keypair, method, path, body });

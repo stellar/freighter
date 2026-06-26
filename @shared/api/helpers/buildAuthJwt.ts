@@ -12,15 +12,13 @@ export interface BuildAuthJwtParams {
   /** Full request-target including any query string, e.g. "/api/v1/auth/whoami". */
   path: string;
   /** Raw request body; omit for GET (hashes the empty byte array). */
-  body?: Uint8Array | string;
+  body?: string;
   /** Injectable clock in ms epoch; defaults to Date.now(). */
   now?: number;
 }
 
-const toBytes = (body?: Uint8Array | string): Uint8Array => {
-  if (body === undefined) return new Uint8Array();
-  return typeof body === "string" ? new TextEncoder().encode(body) : body;
-};
+const toBytes = (body?: string): Uint8Array =>
+  body === undefined ? new Uint8Array() : new TextEncoder().encode(body);
 
 // URL-safe base64 with padding stripped.
 const base64url = (bytes: Uint8Array): string =>
@@ -30,7 +28,7 @@ const base64url = (bytes: Uint8Array): string =>
     .replace(/\//g, "_")
     .replace(/=+$/, "");
 
-const sha256Hex = async (body?: Uint8Array | string): Promise<string> => {
+const sha256Hex = async (body?: string): Promise<string> => {
   const digest = await crypto.subtle.digest("SHA-256", toBytes(body));
   return Buffer.from(digest).toString("hex");
 };
