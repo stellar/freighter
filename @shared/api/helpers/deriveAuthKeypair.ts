@@ -19,6 +19,8 @@ export const AUTH_SALT = "freighter-auth-v1";
  * (bip39 sets __esModule:true without a .default export). We call bip39 named
  * exports directly — bip39 is already a transitive dep of stellar-hd-wallet,
  * and the derivation is byte-for-byte identical.
+ * @internal Exported only for tests (intermediate-value assertions). The
+ * returned bytes are private-key seed material — do not use as a standalone key.
  */
 export const deriveAuthSeed = async (mnemonic: string): Promise<Uint8Array> => {
   // Validate mnemonic first, matching stellar-hd-wallet's error contract.

@@ -63,7 +63,10 @@ describe("deriveAuthKeypair", () => {
     expect(userId).not.toBe(WALLET_ACCOUNT_0_HEX);
   });
 
-  // Acceptance #3: pure crypto, no wallet-signing / messaging side effects.
+  // Acceptance #3: no messaging side effects.
+  // Purity is guaranteed structurally: the module imports nothing from the
+  // messaging/keyManager/storage paths. This spy is a lightweight tripwire
+  // that would catch a future regression which started sending messages.
   it("never sends an extension message during derivation", async () => {
     const sendMessage = jest.fn();
     (globalThis as unknown as { browser?: unknown }).browser = {
