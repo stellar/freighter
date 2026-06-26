@@ -33,7 +33,13 @@ export const useNetworkFees = () => {
   const { networkUrl, networkPassphrase } = useSelector(
     settingsNetworkDetailsSelector,
   );
-  const [recommendedFee, setRecommendedFee] = useState(BASE_FEE);
+  // recommendedFee is always expressed in XLM (the fetched value below is
+  // converted from stroops). Seed it with the base fee in XLM (0.00001) rather
+  // than the raw stroop BASE_FEE, so the fee label and XLM available-balance
+  // show a sane value on first render instead of "100 XLM".
+  const [recommendedFee, setRecommendedFee] = useState(
+    stroopToXlm(BASE_FEE).toFixed(),
+  );
   const [networkCongestion, setNetworkCongestion] = useState(
     "" as NetworkCongestion,
   );
@@ -55,7 +61,7 @@ export const useNetworkFees = () => {
       }
       return { recommendedFee, networkCongestion };
     } catch (e) {
-      setRecommendedFee(BASE_FEE);
+      setRecommendedFee(stroopToXlm(BASE_FEE).toFixed());
       return { recommendedFee };
     }
   };

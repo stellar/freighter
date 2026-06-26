@@ -9,6 +9,7 @@ import { BASE_FEE } from "stellar-sdk";
 
 import { useSelector } from "react-redux";
 import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
+import { stroopToXlm } from "helpers/stellar";
 
 jest.mock("react-redux", () => ({
   useSelector: jest.fn(),
@@ -37,7 +38,10 @@ describe("getNetworkCongestionTranslation", () => {
   });
 
   it("returns translated 'Low' for NetworkCongestion.LOW", () => {
-    const result = getNetworkCongestionTranslation(mockT, NetworkCongestion.LOW);
+    const result = getNetworkCongestionTranslation(
+      mockT,
+      NetworkCongestion.LOW,
+    );
     expect(mockT).toHaveBeenCalledWith("Low");
     expect(result).toBe("Low");
   });
@@ -135,7 +139,7 @@ describe("useNetworkFees (React 18 compatible)", () => {
     expect(hookResult.networkCongestion).toBe(NetworkCongestion.HIGH);
   });
 
-  it("falls back to BASE_FEE on error", async () => {
+  it("falls back to the base fee (in XLM) on error", async () => {
     useSelector.mockReturnValue({
       networkUrl: "https://testnet.stellar.org",
       networkPassphrase: "Test SDF Network ; September 2015",
@@ -160,7 +164,7 @@ describe("useNetworkFees (React 18 compatible)", () => {
       await hookResult.fetchData();
     });
 
-    expect(hookResult.recommendedFee).toBe(BASE_FEE);
+    expect(hookResult.recommendedFee).toBe(stroopToXlm(BASE_FEE).toFixed());
     expect(hookResult.networkCongestion).toBe("");
   });
 });
