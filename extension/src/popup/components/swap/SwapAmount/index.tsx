@@ -64,7 +64,10 @@ import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { SlideupModal } from "popup/components/SlideupModal";
 import { AmountCard } from "popup/components/amount/AmountCard";
 import { PercentageButtons } from "popup/components/amount/PercentageButtons";
-import { shouldShowXlmReservePreflight } from "popup/helpers/xlmReserve";
+import {
+  deductNewTrustlineReserve,
+  shouldShowXlmReservePreflight,
+} from "popup/helpers/xlmReserve";
 import { horizonGetBestPath } from "popup/helpers/horizonGetBestPath";
 import { XlmReserveSheet } from "popup/components/swap/XlmReserveSheet";
 
@@ -489,13 +492,22 @@ export const SwapAmount = ({
         ),
       )
     : null;
-  const availableBalance = asset
+  const baseAvailableBalance = asset
     ? getAvailableBalance({
         assetCanonical: asset,
         balances: sendData.userBalances.balances,
         recommendedFee: fee,
       })
     : "0";
+  // When swapping XLM into a new token, reserve the 0.5 XLM trustline bump
+  // up-front so it's excluded from Max / percentage buttons and the
+  // insufficient-balance check (matches mobile; §2.2).
+  const availableBalance = deductNewTrustlineReserve({
+    spendable: baseAvailableBalance,
+    sourceIsXlm: asset === "native",
+    requiresTrustline:
+      transactionData.destinationTokenDetails?.requiresTrustline ?? false,
+  });
   const displayTotal = `${formatAmount(availableBalance)}`;
   const isAmountTooHigh =
     (inputType === "crypto" &&

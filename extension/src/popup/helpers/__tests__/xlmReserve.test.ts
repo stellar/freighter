@@ -1,4 +1,7 @@
-import { shouldShowXlmReservePreflight } from "../xlmReserve";
+import {
+  deductNewTrustlineReserve,
+  shouldShowXlmReservePreflight,
+} from "../xlmReserve";
 
 describe("shouldShowXlmReservePreflight", () => {
   it("returns false when the destination is not new", () => {
@@ -51,5 +54,57 @@ describe("shouldShowXlmReservePreflight", () => {
         }),
       ).toBe(false);
     });
+  });
+});
+
+describe("deductNewTrustlineReserve", () => {
+  it("deducts 0.5 XLM when swapping XLM into a new token with spendable >= 0.5", () => {
+    expect(
+      deductNewTrustlineReserve({
+        spendable: "10",
+        sourceIsXlm: true,
+        requiresTrustline: true,
+      }),
+    ).toBe("9.5");
+  });
+
+  it("deducts down to zero at exactly the base reserve", () => {
+    expect(
+      deductNewTrustlineReserve({
+        spendable: "0.5",
+        sourceIsXlm: true,
+        requiresTrustline: true,
+      }),
+    ).toBe("0");
+  });
+
+  it("leaves spendable untouched below the base reserve (sheet handles it)", () => {
+    expect(
+      deductNewTrustlineReserve({
+        spendable: "0.4",
+        sourceIsXlm: true,
+        requiresTrustline: true,
+      }),
+    ).toBe("0.4");
+  });
+
+  it("does not deduct when the destination needs no trustline", () => {
+    expect(
+      deductNewTrustlineReserve({
+        spendable: "10",
+        sourceIsXlm: true,
+        requiresTrustline: false,
+      }),
+    ).toBe("10");
+  });
+
+  it("does not deduct when the source is not XLM (reserve comes from XLM balance)", () => {
+    expect(
+      deductNewTrustlineReserve({
+        spendable: "10",
+        sourceIsXlm: false,
+        requiresTrustline: true,
+      }),
+    ).toBe("10");
   });
 });
