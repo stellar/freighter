@@ -35,13 +35,24 @@ const check = (name: string, ok: boolean, detail = ""): void => {
 const get = (jwt: string): Promise<Response> =>
   fetch(`${BASE}${PATH}`, { headers: { Authorization: `Bearer ${jwt}` } });
 
+const runCase = async (
+  name: string,
+  fn: () => Promise<{ ok: boolean; detail?: string }>,
+): Promise<void> => {
+  try {
+    const { ok, detail } = await fn();
+    check(name, ok, detail);
+  } catch (e) {
+    check(name, false, `request threw: ${(e as Error).message}`);
+  }
+};
+
 const main = async (): Promise<void> => {
   const { keypair, userId } = await deriveAuthKeypair(MNEMONIC);
   // eslint-disable-next-line no-console
   console.log(`backend: ${BASE}\nuserId:  ${userId}\n`);
 
-  // 1. Valid request.
-  {
+  await runCase("valid JWT -> 200 + matching userId", async () => {
     const r = await get(
       await buildAuthJwt({ keypair, method: "GET", path: PATH }),
     );
@@ -49,17 +60,16 @@ const main = async (): Promise<void> => {
       r.status === 200
         ? ((await r.json()) as { authenticated?: boolean; userId?: string })
         : null;
-    check(
-      "valid JWT -> 200 + matching userId",
-      r.status === 200 &&
+    return {
+      ok:
+        r.status === 200 &&
         json?.authenticated === true &&
         json?.userId === userId,
-      `status=${r.status}`,
-    );
-  }
+      detail: `status=${r.status}`,
+    };
+  });
 
-  // 2. Tampered body: claim a non-empty bodyHash but send an empty GET body.
-  {
+  await runCase("tampered bodyHash -> 401", async () => {
     const r = await get(
       await buildAuthJwt({
         keypair,
@@ -68,11 +78,10 @@ const main = async (): Promise<void> => {
         body: "tamper",
       }),
     );
-    check("tampered bodyHash -> 401", r.status === 401, `status=${r.status}`);
-  }
+    return { ok: r.status === 401, detail: `status=${r.status}` };
+  });
 
-  // 3. Wrong key: flip a byte in the signature segment.
-  {
+  await runCase("bad signature -> 401", async () => {
     const [h, p, s] = (
       await buildAuthJwt({ keypair, method: "GET", path: PATH })
     ).split(".");
@@ -84,11 +93,10 @@ const main = async (): Promise<void> => {
       .replace(/\//g, "_")
       .replace(/=+$/, "");
     const r = await get(`${h}.${p}.${badSig}`);
-    check("bad signature -> 401", r.status === 401, `status=${r.status}`);
-  }
+    return { ok: r.status === 401, detail: `status=${r.status}` };
+  });
 
-  // 4. Expired: backdate the clock beyond lifetime + skew.
-  {
+  await runCase("expired token -> 401", async () => {
     const r = await get(
       await buildAuthJwt({
         keypair,
@@ -97,9 +105,15 @@ const main = async (): Promise<void> => {
         now: Date.now() - 60_000,
       }),
     );
-    check("expired token -> 401", r.status === 401, `status=${r.status}`);
-  }
+    return { ok: r.status === 401, detail: `status=${r.status}` };
+  });
 
+  if (failures > 0) {
+    // eslint-disable-next-line no-console
+    console.log(
+      `\n(${failures} failed — is the backend up at ${BASE}? start it with 'make run' in freighter-backend-v2)`,
+    );
+  }
   // eslint-disable-next-line no-console
   console.log(`\n${failures === 0 ? "ALL PASSED" : `${failures} FAILED`}`);
   process.exit(failures === 0 ? 0 : 1);
