@@ -27,17 +27,23 @@ export const grantAccess = createAsyncThunk(
   "grantAccess",
   async ({ url, uuid }: { url: string; uuid: string }, { dispatch }) => {
     const result = await internalGrantAccess({ url, uuid });
-    try {
-      const settings = await internalLoadSettings();
-      dispatch(saveSettingsAction(settings));
-    } catch (e) {
-      // Refresh is best-effort: a failed reload should not prevent the
-      // grant from resolving, since the backend write already succeeded.
-      // Next loadSettings call (e.g. on the next view mount) will sync.
-      captureException(e, {
-        extra: { context: "grantAccess: failed to refresh settings" },
+    // Fire-and-forget: do NOT await the refresh before resolving. Awaiting it
+    // delayed GrantAccess's window.close()/route-close, which in sidebar mode
+    // kept the reused popup tree on /grant-access long enough for the dApp's
+    // follow-up signing request to be treated as interrupting an active
+    // signing route (showing an interstitial) and then clobbered by the
+    // deferred close. Letting the refresh run async still updates redux when
+    // it resolves, re-rendering the next view with the fresh allowList.
+    internalLoadSettings()
+      .then((settings) => dispatch(saveSettingsAction(settings)))
+      .catch((e) => {
+        // Best-effort: a failed reload must not break the grant, since the
+        // backend write already succeeded. The next loadSettings call (e.g.
+        // on the next view mount) will sync.
+        captureException(e, {
+          extra: { context: "grantAccess: failed to refresh settings" },
+        });
       });
-    }
     return result;
   },
 );

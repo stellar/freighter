@@ -49,6 +49,11 @@ const makeStore = () =>
     } as any,
   });
 
+// The settings refresh is fire-and-forget (not awaited by the thunk), so it
+// lands a tick after the thunk fulfills. Flush pending microtasks before
+// asserting on its effects.
+const flushPromises = () => new Promise((resolve) => setTimeout(resolve, 0));
+
 describe("grantAccess thunk", () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -86,6 +91,9 @@ describe("grantAccess thunk", () => {
     await (store.dispatch as any)(
       grantAccess({ url: "https://dapp.example", uuid: "uuid-1" }),
     );
+    // The refresh dispatches saveSettingsAction asynchronously after the
+    // thunk fulfills; wait for it to land before asserting on redux state.
+    await flushPromises();
 
     expect(internalGrantAccess).toHaveBeenCalledWith({
       url: "https://dapp.example",
@@ -120,8 +128,13 @@ describe("grantAccess thunk", () => {
       grantAccess({ url: "https://dapp.example", uuid: "uuid-2" }),
     );
 
+    // The grant fulfills regardless of the refresh outcome.
     expect(action.type).toBe("grantAccess/fulfilled");
     expect(internalLoadSettings).toHaveBeenCalledTimes(1);
+
+    // The failure is reported to Sentry asynchronously, after the thunk
+    // has already fulfilled.
+    await flushPromises();
     expect(captureException).toHaveBeenCalledWith(loadError, {
       extra: { context: "grantAccess: failed to refresh settings" },
     });
