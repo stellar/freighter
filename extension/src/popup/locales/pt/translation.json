@@ -659,7 +659,7 @@
   "to": "para",
   "To access your wallet, click Freighter from your browser Extensions browser menu.": "Para acessar sua carteira, clique em Freighter no menu de Extensões do seu navegador.",
   "To create a new account you need to send at least 1 XLM to it.": "Para criar uma nova conta, você precisa enviar pelo menos 1 XLM para ela.",
-  "To hold {{code}} in your wallet, Stellar requires a trustline. 0.5 XLM will be reserved from your balance. You can get it back by removing the trustline after your {{code}} balance is zero.": "Para manter {{code}} na sua carteira, a Stellar exige uma linha de confiança. 0,5 XLM serão reservados do seu saldo. Você pode recuperá-los removendo a linha de confiança após o saldo de {{code}} ficar zerado.",
+  "To hold {{code}} in your wallet, Stellar requires a trustline. <bold>0.5 XLM will be reserved</bold> from your balance. You can get it back by removing the trustline after your {{code}} balance is zero.": "Para manter {{code}} na sua carteira, a Stellar exige uma linha de confiança. <bold>0,5 XLM serão reservados</bold> do seu saldo. Você pode recuperá-los removendo a linha de confiança após o saldo de {{code}} ficar zerado.",
   "To hold a new asset, your account locks a one-time 0.5 XLM reserve for its trustline.": "Para manter um novo ativo, sua conta reserva uma única vez 0,5 XLM para a linha de confiança.",
   "To start using this account, fund it with at least 1 XLM.": "Para começar a usar esta conta, financie-a com pelo menos 1 XLM.",
   "Toggle Assets": "Alternar Ativos",

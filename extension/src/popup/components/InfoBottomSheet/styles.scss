@@ -78,4 +78,10 @@
     font-weight: var(--font-weight-regular);
     line-height: pxToRem(20px);
   }
+
+  // Inline emphasis within body copy (e.g. the trustline reserve amount).
+  &__emphasis {
+    color: var(--sds-clr-gray-12);
+    font-weight: var(--font-weight-medium);
+  }
 }

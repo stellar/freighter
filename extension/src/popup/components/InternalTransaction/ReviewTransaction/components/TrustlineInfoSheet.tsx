@@ -1,5 +1,5 @@
 import React from "react";
-import { useTranslation } from "react-i18next";
+import { Trans, useTranslation } from "react-i18next";
 import { Icon } from "@stellar/design-system";
 
 import { InfoSheetContent } from "popup/components/InfoBottomSheet";
@@ -24,10 +24,11 @@ export const TrustlineInfoSheet = ({
       actionLabel={t("Got it")}
       onClose={onClose}
     >
-      {t(
-        "To hold {{code}} in your wallet, Stellar requires a trustline. 0.5 XLM will be reserved from your balance. You can get it back by removing the trustline after your {{code}} balance is zero.",
-        { code: tokenCode },
-      )}
+      <Trans
+        i18nKey="To hold {{code}} in your wallet, Stellar requires a trustline. <bold>0.5 XLM will be reserved</bold> from your balance. You can get it back by removing the trustline after your {{code}} balance is zero."
+        values={{ code: tokenCode }}
+        components={{ bold: <strong className="InfoSheet__emphasis" /> }}
+      />
     </InfoSheetContent>
   );
 };
