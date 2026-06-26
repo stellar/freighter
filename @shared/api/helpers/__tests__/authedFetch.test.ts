@@ -53,4 +53,39 @@ describe("authedFetch", () => {
     expect(r.status).toBe(401);
     expect(fetchImpl).toHaveBeenCalledTimes(2);
   });
+
+  it("sets Content-Type: application/json for non-GET by default", async () => {
+    const fetchImpl = jest.fn().mockResolvedValue(resp(201));
+    await authedFetch({
+      keypair: KP,
+      baseUrl: "http://x",
+      method: "POST",
+      path: "/p",
+      body: "{}",
+      fetchImpl,
+    });
+    const hdrs = (fetchImpl.mock.calls[0][1] as RequestInit).headers as Record<
+      string,
+      string
+    >;
+    expect(hdrs["Content-Type"]).toBe("application/json");
+  });
+
+  it("lets caller headers override the default Content-Type", async () => {
+    const fetchImpl = jest.fn().mockResolvedValue(resp(200));
+    await authedFetch({
+      keypair: KP,
+      baseUrl: "http://x",
+      method: "POST",
+      path: "/p",
+      body: "x",
+      headers: { "Content-Type": "text/plain" },
+      fetchImpl,
+    });
+    const hdrs = (fetchImpl.mock.calls[0][1] as RequestInit).headers as Record<
+      string,
+      string
+    >;
+    expect(hdrs["Content-Type"]).toBe("text/plain");
+  });
 });
