@@ -58,7 +58,10 @@ import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { LoadingBackground } from "popup/basics/LoadingBackground";
 import { EditSettings } from "popup/components/InternalTransaction/EditSettings";
 import { ReviewTx } from "popup/components/InternalTransaction/ReviewTransaction";
-import { useSimulateTxData } from "./hooks/useSimulateSwapData";
+import {
+  getSwapTotalFee,
+  useSimulateTxData,
+} from "./hooks/useSimulateSwapData";
 import { publicKeySelector } from "popup/ducks/accountServices";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { SlideupModal } from "popup/components/SlideupModal";
@@ -121,7 +124,17 @@ export const SwapAmount = ({
     transactionFee,
     transactionTimeout,
   } = transactionData;
-  const fee = transactionFee || recommendedFee;
+  // A new-trustline swap is two ops; scale the recommended default fee by op
+  // count so each op pays the recommended fee (a custom fee is the total and
+  // is split per op at build time). Mirrors mobile (§3.6/§3.7).
+  const swapOpCount = transactionData.destinationTokenDetails?.requiresTrustline
+    ? 2
+    : 1;
+  const fee = getSwapTotalFee({
+    recommendedFee,
+    customFee: transactionFee,
+    opCount: swapOpCount,
+  });
   // The source can be in the "(+) Select" (empty) state — e.g. after a
   // direction swap whose destination was unset or a non-held token.
   const srcAsset = asset ? getAssetFromCanonical(asset) : null;

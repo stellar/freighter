@@ -3,6 +3,7 @@ import { Asset } from "stellar-sdk";
 import {
   getBuiltTx,
   getPerOpBaseFee,
+  getSwapTotalFee,
   getSwapErrorMessage,
   ERROR_TO_DISPLAY,
 } from "../useSimulateSwapData";
@@ -43,6 +44,34 @@ describe("getPerOpBaseFee", () => {
 
   it("returns the full total for a single op", () => {
     expect(getPerOpBaseFee("0.00001", 1)).toBe("100");
+  });
+});
+
+describe("getSwapTotalFee", () => {
+  it("scales the recommended default fee by op count (2 ops for a new trustline)", () => {
+    expect(getSwapTotalFee({ recommendedFee: "0.001", opCount: 2 })).toBe(
+      "0.002",
+    );
+  });
+
+  it("leaves the recommended fee as-is for a single op", () => {
+    expect(getSwapTotalFee({ recommendedFee: "0.001", opCount: 1 })).toBe(
+      "0.001",
+    );
+  });
+
+  it("honors a custom fee as the total regardless of op count", () => {
+    expect(
+      getSwapTotalFee({
+        recommendedFee: "0.001",
+        customFee: "0.005",
+        opCount: 2,
+      }),
+    ).toBe("0.005");
+  });
+
+  it("passes through an empty recommended fee without producing NaN", () => {
+    expect(getSwapTotalFee({ recommendedFee: "", opCount: 2 })).toBe("");
   });
 });
 

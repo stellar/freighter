@@ -102,6 +102,29 @@ export const getPerOpBaseFee = (totalFee: string, opCount: number): string => {
     .toFixed();
 };
 
+// Total swap fee shown/charged. A new-trustline swap is two ops (changeTrust
+// + pathPaymentStrictSend), so the recommended default scales with op count —
+// each op pays the recommended fee. A user-set custom fee is treated as the
+// total and split per op at build time (getPerOpBaseFee). Mirrors mobile's
+// recommendedFee × ops default (§3.6/§3.7).
+export const getSwapTotalFee = ({
+  recommendedFee,
+  customFee,
+  opCount,
+}: {
+  recommendedFee: string;
+  customFee?: string;
+  opCount: number;
+}): string => {
+  if (customFee) {
+    return customFee;
+  }
+  if (!recommendedFee) {
+    return recommendedFee;
+  }
+  return new BigNumber(recommendedFee).times(opCount).toFixed();
+};
+
 const getOperation = (
   sourceAsset: Asset | { code: string; issuer: string },
   destAsset: Asset | { code: string; issuer: string },
