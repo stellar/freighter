@@ -4,11 +4,7 @@ import { NetworkDetails } from "@shared/constants/stellar";
 import { AssetListResponse } from "@shared/constants/soroban/asset-list";
 import { HistoryResponse } from "helpers/hooks/useGetHistory";
 import { TokenDetailsResponse } from "helpers/hooks/useTokenDetails";
-import {
-  ApiTokenPrices,
-  BlockAidScanAssetResult,
-  Collection,
-} from "@shared/api/types";
+import { ApiTokenPrices, Collection } from "@shared/api/types";
 import { TrendingAsset } from "popup/helpers/trendingAssets";
 
 type AssetCode = string;
@@ -62,12 +58,7 @@ type SavePopularTokensPayload = {
   tokens: TrendingAsset[];
 };
 
-type SaveAssetScanResultsPayload = {
-  networkDetails: NetworkDetails;
-  results: Record<string, BlockAidScanAssetResult>;
-};
-
-// ~30-min staleness window for the Popular list + scan-result Redux cache (§2.8).
+// ~30-min staleness window for the Popular list Redux cache (§2.8).
 export const POPULAR_TOKENS_STALE_MS = 30 * 60 * 1000;
 
 interface InitialState {
@@ -93,12 +84,6 @@ interface InitialState {
   popularTokens: {
     [network: string]: { tokens: TrendingAsset[]; updatedAt: number };
   };
-  assetScanResults: {
-    [network: string]: {
-      results: Record<string, BlockAidScanAssetResult>;
-      updatedAt: number;
-    };
-  };
 }
 
 const initialState: InitialState = {
@@ -111,7 +96,6 @@ const initialState: InitialState = {
   tokenPrices: {},
   collections: {},
   popularTokens: {},
-  assetScanResults: {},
 };
 
 const cacheSlice = createSlice({
@@ -127,7 +111,6 @@ const cacheSlice = createSlice({
       state.historyData = {};
       state.tokenPrices = {};
       state.popularTokens = {};
-      state.assetScanResults = {};
     },
     saveBalancesForAccount(state, action: { payload: SaveBalancesPayload }) {
       state.balanceData = {
@@ -219,22 +202,6 @@ const cacheSlice = createSlice({
         },
       };
     },
-    saveAssetScanResults(
-      state,
-      action: { payload: SaveAssetScanResultsPayload },
-    ) {
-      const network = action.payload.networkDetails.network;
-      state.assetScanResults = {
-        ...state.assetScanResults,
-        [network]: {
-          results: {
-            ...(state.assetScanResults[network]?.results || {}),
-            ...action.payload.results,
-          },
-          updatedAt: Date.now(),
-        },
-      };
-    },
   },
 });
 
@@ -258,8 +225,6 @@ export const collectionsSelector = (state: { cache: InitialState }) =>
   state.cache.collections;
 export const popularTokensSelector = (state: { cache: InitialState }) =>
   state.cache.popularTokens;
-export const assetScanResultsSelector = (state: { cache: InitialState }) =>
-  state.cache.assetScanResults;
 
 export const { reducer } = cacheSlice;
 export const {
@@ -275,5 +240,4 @@ export const {
   clearBalancesForAccount,
   clearCollectiblesForAccount,
   savePopularTokens,
-  saveAssetScanResults,
 } = cacheSlice.actions;

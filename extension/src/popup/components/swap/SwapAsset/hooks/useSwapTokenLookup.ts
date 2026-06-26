@@ -32,7 +32,6 @@ import {
   saveTokenLists,
   popularTokensSelector,
   savePopularTokens,
-  saveAssetScanResults,
   POPULAR_TOKENS_STALE_MS,
 } from "popup/ducks/cache";
 import { AppDispatch, store } from "popup/App";
@@ -567,9 +566,6 @@ export const useSwapTokenLookup = () => {
             }
           }
           if (Object.keys(scanResults).length) {
-            reduxDispatch(
-              saveAssetScanResults({ networkDetails, results: scanResults }),
-            );
             payload = {
               ...payload,
               sections: {
