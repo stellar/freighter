@@ -54,6 +54,9 @@ interface ChangeTrustInternalProps {
   addTrustline: boolean;
   onCancel: () => void;
   onSuccess?: () => void;
+  // Dismiss after a FAILED submit. Defaults to onCancel; the external Add Token
+  // flow passes a handler that rejects the dApp request so it doesn't hang.
+  onClose?: () => void;
   // Initial fee (in XLM) for the transaction. The external Add Token (SAC)
   // flow passes the network-recommended fee it already displayed so the
   // charged fee matches the disclosed one. Defaults to the base fee.
@@ -71,6 +74,7 @@ export const ChangeTrustInternal = ({
   networkDetails,
   onCancel,
   onSuccess,
+  onClose,
   initialFee,
   isFullHeight = false,
 }: ChangeTrustInternalProps) => {
@@ -539,7 +543,7 @@ export const ChangeTrustInternal = ({
             fee={fee}
             goBack={() => setActiveBodyContent(ActiveBodyContent.details)}
             onSuccess={onSuccess ?? onCancel}
-            onClose={onCancel}
+            onClose={onClose ?? onCancel}
             hideCloseTabHint={isFullHeight}
           />
         )}

@@ -392,6 +392,7 @@ export const AddToken = () => {
         networkDetails={state.data.settings.networkDetails}
         onCancel={() => setShowTrustlineReview(false)}
         onSuccess={handleSacSuccess}
+        onClose={rejectAndClose}
         initialFee={displayFee}
         isFullHeight
       />
