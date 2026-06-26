@@ -1,5 +1,7 @@
 import { combineReducers, configureStore } from "@reduxjs/toolkit";
 
+import { captureException } from "@sentry/browser";
+
 import {
   grantAccess as internalGrantAccess,
   loadSettings as internalLoadSettings,
@@ -14,6 +16,10 @@ jest.mock("@shared/api/internal", () => ({
   ...jest.requireActual("@shared/api/internal"),
   grantAccess: jest.fn(),
   loadSettings: jest.fn(),
+}));
+
+jest.mock("@sentry/browser", () => ({
+  captureException: jest.fn(),
 }));
 
 const TESTNET = {
@@ -106,12 +112,8 @@ describe("grantAccess thunk", () => {
   // popup allowList is a strictly better state than failing the grant.
   it("swallows a loadSettings error so the grant still fulfills", async () => {
     (internalGrantAccess as jest.Mock).mockResolvedValueOnce(undefined);
-    (internalLoadSettings as jest.Mock).mockRejectedValueOnce(
-      new Error("transient SW restart"),
-    );
-    const consoleSpy = jest
-      .spyOn(console, "error")
-      .mockImplementation(() => undefined);
+    const loadError = new Error("transient SW restart");
+    (internalLoadSettings as jest.Mock).mockRejectedValueOnce(loadError);
 
     const store = makeStore();
     const action = await (store.dispatch as any)(
@@ -120,7 +122,8 @@ describe("grantAccess thunk", () => {
 
     expect(action.type).toBe("grantAccess/fulfilled");
     expect(internalLoadSettings).toHaveBeenCalledTimes(1);
-    expect(consoleSpy).toHaveBeenCalled();
-    consoleSpy.mockRestore();
+    expect(captureException).toHaveBeenCalledWith(loadError, {
+      extra: { context: "grantAccess: failed to refresh settings" },
+    });
   });
 });

@@ -1,4 +1,5 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
+import { captureException } from "@sentry/browser";
 
 import {
   rejectAccess as internalRejectAccess,
@@ -33,7 +34,9 @@ export const grantAccess = createAsyncThunk(
       // Refresh is best-effort: a failed reload should not prevent the
       // grant from resolving, since the backend write already succeeded.
       // Next loadSettings call (e.g. on the next view mount) will sync.
-      console.error("grantAccess: failed to refresh settings", e);
+      captureException(e, {
+        extra: { context: "grantAccess: failed to refresh settings" },
+      });
     }
     return result;
   },
