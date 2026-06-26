@@ -1,5 +1,5 @@
 // Canonical cross-platform auth-keypair derivation vectors.
-// SOURCE OF TRUTH: extension/specs/AUTH_KEYPAIR_DERIVATION.md
+// SOURCE OF TRUTH: wallet-eng-monorepo design-docs/contact-lists/Freighter Auth Keypair Derivation Design Doc.md
 // freighter-mobile MUST commit the same values and assert identical output.
 // authSeedHex isolates failures: a wrong authSeedHex => HMAC step diverged
 // (e.g. key/message reversed); a right authSeedHex but wrong userId =>
