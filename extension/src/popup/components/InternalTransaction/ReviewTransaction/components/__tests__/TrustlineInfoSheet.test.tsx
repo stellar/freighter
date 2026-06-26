@@ -15,7 +15,7 @@ describe("TrustlineInfoSheet", () => {
     expect(screen.getByTestId("trustline-info-sheet")).toBeInTheDocument();
   });
 
-  it("renders the 0.5 XLM reserve line and the refundable line", () => {
+  it("renders the reserve explanation", () => {
     const onClose = jest.fn();
     render(
       <Wrapper state={{}} routes={["/"]}>
@@ -24,12 +24,7 @@ describe("TrustlineInfoSheet", () => {
     );
     expect(
       screen.getByText(
-        "To hold a new asset, your account locks a one-time 0.5 XLM reserve for its trustline.",
-      ),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(
-        "This reserve is refundable. Remove the trustline later to get it back.",
+        "To hold {{code}} in your wallet, Stellar requires a trustline. 0.5 XLM will be reserved from your balance. You can get it back by removing the trustline after your {{code}} balance is zero.",
       ),
     ).toBeInTheDocument();
   });

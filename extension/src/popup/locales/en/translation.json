@@ -659,6 +659,7 @@
   "to": "to",
   "To access your wallet, click Freighter from your browser Extensions browser menu.": "To access your wallet, click Freighter from your browser Extensions browser menu.",
   "To create a new account you need to send at least 1 XLM to it.": "To create a new account you need to send at least 1 XLM to it.",
+  "To hold {{code}} in your wallet, Stellar requires a trustline. 0.5 XLM will be reserved from your balance. You can get it back by removing the trustline after your {{code}} balance is zero.": "To hold {{code}} in your wallet, Stellar requires a trustline. 0.5 XLM will be reserved from your balance. You can get it back by removing the trustline after your {{code}} balance is zero.",
   "To hold a new asset, your account locks a one-time 0.5 XLM reserve for its trustline.": "To hold a new asset, your account locks a one-time 0.5 XLM reserve for its trustline.",
   "To start using this account, fund it with at least 1 XLM.": "To start using this account, fund it with at least 1 XLM.",
   "Toggle Assets": "Toggle Assets",

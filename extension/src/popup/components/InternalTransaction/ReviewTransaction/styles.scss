@@ -292,16 +292,32 @@
   }
 
   &__TrustlineBanner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: pxToRem(8px);
+    width: 100%;
+    padding: pxToRem(8px) pxToRem(16px);
+    border: 0;
+    border-radius: pxToRem(12px);
+    background-color: var(--sds-clr-lilac-03);
+    color: var(--sds-clr-lilac-11);
     cursor: pointer;
 
-    .Notification {
-      background-color: var(--sds-clr-lilac-03, #2a2140);
-      border-color: var(--sds-clr-lilac-06, #5b3aa8);
+    &__Label {
+      display: flex;
+      align-items: center;
+      gap: pxToRem(8px);
+      font-size: pxToRem(12px);
+      font-weight: var(--font-weight-medium);
+      line-height: pxToRem(18px);
+      text-align: left;
     }
 
-    &__Action {
-      display: flex;
-      justify-content: flex-end;
+    svg {
+      width: pxToRem(14px);
+      height: pxToRem(14px);
+      flex-shrink: 0;
     }
   }
 }
