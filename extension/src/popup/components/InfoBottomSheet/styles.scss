@@ -68,20 +68,21 @@
     margin: 0;
     color: var(--sds-clr-gray-12);
     font-size: pxToRem(18px);
-    font-weight: var(--font-weight-medium);
+    font-weight: var(--sds-fw-medium);
     line-height: pxToRem(26px);
   }
 
   &__body {
     color: var(--sds-clr-gray-11);
     font-size: pxToRem(14px);
-    font-weight: var(--font-weight-regular);
+    font-weight: var(--sds-fw-regular);
     line-height: pxToRem(20px);
   }
 
-  // Inline emphasis within body copy (e.g. the trustline reserve amount).
+  // Inline emphasis within body copy (e.g. the trustline reserve amount):
+  // brighter and slightly heavier (500) than the regular body text.
   &__emphasis {
     color: var(--sds-clr-gray-12);
-    font-weight: var(--font-weight-medium);
+    font-weight: var(--sds-fw-medium);
   }
 }
