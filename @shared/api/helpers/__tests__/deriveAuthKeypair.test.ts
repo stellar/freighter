@@ -5,7 +5,7 @@ import {
   deriveAuthKeypair,
   deriveAuthSeed,
 } from "../deriveAuthKeypair";
-import { AUTH_KEYPAIR_VECTORS } from "./authKeypairVectors";
+import { AUTH_KEYPAIR_VECTORS } from "../authKeypairVectors";
 
 describe("deriveAuthSeed (HMAC step)", () => {
   it("uses the versioned domain-separation salt", () => {
