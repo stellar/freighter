@@ -89,6 +89,16 @@ describe("AmountCard", () => {
     expect(screen.queryByTestId("amount-fiat-toggle")).toBeNull();
   });
 
+  it("always shows the fiat line (e.g. '--') even when USD is unavailable, without a toggle", () => {
+    render(
+      <Wrapper state={{}} routes={["/"]}>
+        <AmountCard {...baseProps} supportsUsd={false} fiatLineText="--" />
+      </Wrapper>,
+    );
+    expect(screen.getByText("--")).toBeInTheDocument();
+    expect(screen.queryByTestId("amount-fiat-toggle")).toBeNull();
+  });
+
   it("shows the input-type toggle when not read-only and USD is supported", () => {
     render(
       <Wrapper state={{}} routes={["/"]}>

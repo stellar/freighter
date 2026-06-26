@@ -239,30 +239,31 @@ export const AmountCard = ({
         </button>
       </div>
 
-      {supportsUsd && (
-        <div className="AmountCard__balance-row">
-          <div className="AmountCard__amount-price">
-            {fiatLineText}
-            {/* Read-only cards (e.g. the swap "You receive" card) show the
-                fiat value but cannot toggle input type, so omit the toggle. */}
-            {!isReadOnly && (
-              <Button
-                size="md"
-                type="button"
-                isRounded
-                variant="tertiary"
-                data-testid="amount-fiat-toggle"
-                onClick={(e) => {
-                  e.preventDefault();
-                  onToggleInputType();
-                }}
-              >
-                <Icon.RefreshCw03 />
-              </Button>
-            )}
-          </div>
+      {/* The fiat line is always shown (callers pass "$0.00"/"--" when there is
+          no value); only the input-type toggle depends on a usable USD price. */}
+      <div className="AmountCard__balance-row">
+        <div className="AmountCard__amount-price">
+          {fiatLineText}
+          {/* Read-only cards (e.g. the swap "You receive" card) show the fiat
+              value but cannot toggle input type, so omit the toggle. The toggle
+              also needs a usable USD price. */}
+          {!isReadOnly && supportsUsd && (
+            <Button
+              size="md"
+              type="button"
+              isRounded
+              variant="tertiary"
+              data-testid="amount-fiat-toggle"
+              onClick={(e) => {
+                e.preventDefault();
+                onToggleInputType();
+              }}
+            >
+              <Icon.RefreshCw03 />
+            </Button>
+          )}
         </div>
-      )}
+      </div>
 
       {isAmountTooHigh && (
         <div className="AmountCard__invalid-state">

@@ -804,7 +804,9 @@ export const SendAmount = ({
                     supportsUsd={Boolean(supportsUsd)}
                     fiatLineText={
                       inputType === "crypto"
-                        ? `$${priceValueUsd || "0.00"}`
+                        ? assetPrice
+                          ? `$${priceValueUsd || "0.00"}`
+                          : "--"
                         : `${formatAmount(effectiveTokenAmount || "0")} ${parsedSourceAsset.code}`
                     }
                     isAmountTooHigh={isAmountTooHigh}

@@ -451,7 +451,6 @@ export const SwapAmount = ({
     Boolean(destinationAsset) && !heldCanonicals.has(destinationAsset);
   const prices = sendData.tokenPrices;
   const assetPrice = prices[asset] && prices[asset].currentPrice;
-  const xlmPrice = prices["native"]?.currentPrice;
   const dstAssetPrice = prices[destinationAsset]?.currentPrice;
   const assetDecimals = getAssetDecimals(asset, sendData.userBalances, isToken);
   const priceValue = assetPrice
@@ -466,13 +465,6 @@ export const SwapAmount = ({
           new BigNumber(assetPrice)
             .multipliedBy(new BigNumber(cleanAmount(formik.values.amount)))
             .toString(),
-        ),
-      )}`
-    : null;
-  const recommendedFeeUsd = xlmPrice
-    ? `$${formatAmount(
-        roundUsdValue(
-          new BigNumber(xlmPrice).multipliedBy(new BigNumber(fee)).toString(),
         ),
       )}`
     : null;
@@ -526,9 +518,9 @@ export const SwapAmount = ({
                 <span className="SwapAsset__settings-fee-display__label">
                   {t("Fee")}:
                 </span>
-                <span>
-                  {inputType === "crypto" ? `${fee} XLM` : recommendedFeeUsd}
-                </span>
+                {/* The network fee is always denominated in XLM, regardless of
+                    whether the amount is being entered in crypto or fiat. */}
+                <span>{`${fee} XLM`}</span>
               </div>
               <div className="SwapAsset__settings-options">
                 <Button
@@ -616,9 +608,15 @@ export const SwapAmount = ({
                     assetIssuerKey={srcAsset?.issuer}
                     supportsUsd={Boolean(supportsUsd)}
                     fiatLineText={
-                      inputType === "crypto"
-                        ? `$${priceValueUsd || "0.00"}`
-                        : `${priceValue || "0"} ${srcAsset ? srcAsset.code : ""}`
+                      !asset
+                        ? "$0.00"
+                        : inputType === "crypto"
+                          ? assetPrice
+                            ? `$${priceValueUsd || "0.00"}`
+                            : "--"
+                          : `${priceValue || "0"} ${
+                              srcAsset ? srcAsset.code : ""
+                            }`
                     }
                     isAmountTooHigh={isAmountTooHigh}
                     cryptoDecimals={assetDecimals}
@@ -707,11 +705,15 @@ export const SwapAmount = ({
                     assetIssuerKey={dstAsset?.issuer}
                     supportsUsd={Boolean(supportsUsd)}
                     fiatLineText={
-                      inputType === "crypto"
-                        ? `$${dstPriceValueUsd || "0.00"}`
-                        : `${destinationAmount || "0"} ${
-                            dstAsset ? dstAsset.code : ""
-                          }`
+                      !destinationAsset
+                        ? "$0.00"
+                        : inputType === "crypto"
+                          ? dstAssetPrice
+                            ? `$${dstPriceValueUsd || "0.00"}`
+                            : "--"
+                          : `${destinationAmount || "0"} ${
+                              dstAsset ? dstAsset.code : ""
+                            }`
                     }
                     isAmountTooHigh={false}
                     isReadOnly
