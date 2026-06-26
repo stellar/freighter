@@ -103,28 +103,24 @@ export function useGetSwapFromData(getBalancesOptions: {
     }
 
     const balances = resolvedSwapData?.balances.balances || [];
-    const filtered =
-      term?.length > 2
-        ? balances.filter((balance) => {
-            if (
-              "token" in balance &&
-              balance.token.code.toLowerCase().includes(term)
-            )
-              return true;
-            if (
-              "token" in balance &&
-              "issuer" in balance.token &&
-              balance.token.issuer.key.toLowerCase().includes(term)
-            )
-              return true;
-            if (
-              "contractId" in balance &&
-              balance.contractId.toLowerCase().includes(term)
-            )
-              return true;
-            return false;
-          })
-        : balances;
+    // Filter from the first character (token codes can be 1-2 letters), matching
+    // the destination ("Swap to") search. The empty-term case is handled above.
+    const filtered = balances.filter((balance) => {
+      if ("token" in balance && balance.token.code.toLowerCase().includes(term))
+        return true;
+      if (
+        "token" in balance &&
+        "issuer" in balance.token &&
+        balance.token.issuer.key.toLowerCase().includes(term)
+      )
+        return true;
+      if (
+        "contractId" in balance &&
+        balance.contractId.toLowerCase().includes(term)
+      )
+        return true;
+      return false;
+    });
     const payload = {
       ...resolvedSwapData,
       filteredBalances: filtered,
