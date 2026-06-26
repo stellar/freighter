@@ -22,6 +22,12 @@ export const searchAsset = async ({
     `${getApiStellarExpertUrl(networkDetails)}/asset?search=${asset}`,
     { signal },
   );
+  // Surface backend outages instead of silently returning a non-records body:
+  // throwing lets callers (e.g. the swap picker) fall back to held-only with a
+  // "discovery unavailable" notice rather than rendering an empty result set.
+  if (!res.ok) {
+    throw new Error(res.statusText);
+  }
   return res.json();
 };
 

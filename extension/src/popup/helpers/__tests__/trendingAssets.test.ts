@@ -93,9 +93,21 @@ describe("fetchTrendingAssets", () => {
     expect(result.map((r) => r.code)).toEqual(["A", "B"]);
   });
 
-  it("returns [] when the fetch rejects", async () => {
+  it("propagates the error when the fetch rejects (so the picker can flag discovery-down)", async () => {
     jest.spyOn(global, "fetch").mockRejectedValue(new Error("network down"));
-    const result = await fetchTrendingAssets({ networkDetails: MAINNET });
-    expect(result).toEqual([]);
+    await expect(
+      fetchTrendingAssets({ networkDetails: MAINNET }),
+    ).rejects.toThrow("network down");
+  });
+
+  it("throws on a non-ok response instead of returning []", async () => {
+    jest.spyOn(global, "fetch").mockResolvedValue({
+      ok: false,
+      statusText: "Service Unavailable",
+      json: async () => ({}),
+    } as unknown as Response);
+    await expect(
+      fetchTrendingAssets({ networkDetails: MAINNET }),
+    ).rejects.toThrow("Service Unavailable");
   });
 });

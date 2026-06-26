@@ -39,32 +39,31 @@ export const fetchTrendingAssets = async ({
     ? `limit=${TRENDING_LIMIT}`
     : `sort=volume7d&order=desc&limit=${TRENDING_LIMIT}`;
 
-  try {
-    const res = await fetch(`${base}?${sortParams}`, { signal });
-    if (!res.ok) {
-      return [];
-    }
-    const json = await res.json();
-    const records: TrendingRecord[] = json?._embedded?.records ?? [];
-
-    const applyFloor = !testnet;
-
-    return records
-      .filter((record) => record.asset.includes("-")) // classic only; contract ids dropped here, SAC handled in the hook
-      .map((record): TrendingAsset => {
-        const [code, issuer] = record.asset.split("-");
-        return {
-          code,
-          issuer,
-          domain: record.domain ?? null,
-          icon: record.tomlInfo?.image,
-          volume7d: record.volume7d ?? 0,
-        };
-      })
-      .filter((asset) =>
-        applyFloor ? asset.volume7d >= MIN_TRENDING_VOLUME7D : true,
-      );
-  } catch (e) {
-    return [];
+  // No error swallowing: a backend outage (rejection or non-ok status) must
+  // propagate so the swap picker can flip to held-only with a "discovery
+  // unavailable" notice. A successful-but-empty response still returns [].
+  const res = await fetch(`${base}?${sortParams}`, { signal });
+  if (!res.ok) {
+    throw new Error(res.statusText);
   }
+  const json = await res.json();
+  const records: TrendingRecord[] = json?._embedded?.records ?? [];
+
+  const applyFloor = !testnet;
+
+  return records
+    .filter((record) => record.asset.includes("-")) // classic only; contract ids dropped here, SAC handled in the hook
+    .map((record): TrendingAsset => {
+      const [code, issuer] = record.asset.split("-");
+      return {
+        code,
+        issuer,
+        domain: record.domain ?? null,
+        icon: record.tomlInfo?.image,
+        volume7d: record.volume7d ?? 0,
+      };
+    })
+    .filter((asset) =>
+      applyFloor ? asset.volume7d >= MIN_TRENDING_VOLUME7D : true,
+    );
 };
