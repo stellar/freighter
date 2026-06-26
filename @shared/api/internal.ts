@@ -76,6 +76,7 @@ import {
   DEFAULT_NETWORKS,
   NetworkDetails,
   NETWORKS,
+  PASSPHRASE_TO_PRICE_NETWORK,
 } from "../constants/stellar";
 import { SERVICE_TYPES } from "../constants/services";
 import { isDev } from "../helpers/dev";
@@ -620,10 +621,8 @@ export const getTokenPrices = async (
     // STANDALONE) still resolve to the correct supported network. Anything else
     // (Futurenet, custom passphrases) is skipped to avoid a guaranteed error and
     // Sentry noise.
-    const priceNetwork = {
-      [Networks.PUBLIC]: NETWORKS.PUBLIC,
-      [Networks.TESTNET]: NETWORKS.TESTNET,
-    }[networkDetails.networkPassphrase];
+    const priceNetwork =
+      PASSPHRASE_TO_PRICE_NETWORK[networkDetails.networkPassphrase];
     if (!priceNetwork) {
       return {};
     }
