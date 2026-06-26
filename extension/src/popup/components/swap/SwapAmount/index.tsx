@@ -23,6 +23,8 @@ import {
   saveAmountUsd,
   saveAsset,
   saveDestinationAsset,
+  saveDestinationTokenDetails,
+  saveIsToken,
   saveSwapBestPath,
   saveTransactionFee,
   saveTransactionTimeout,
@@ -48,6 +50,7 @@ import { openTab } from "popup/helpers/navigate";
 import { newTabHref } from "helpers/urls";
 import { reRouteOnboarding } from "popup/helpers/route";
 import { getAssetDecimals, getAvailableBalance } from "popup/helpers/soroban";
+import { getBalanceCanonicalKey } from "popup/helpers/balance";
 import { AppDispatch } from "popup/App";
 import { emitMetric } from "helpers/metrics";
 import { AMOUNT_ERROR, InputType } from "helpers/transaction";
@@ -116,7 +119,9 @@ export const SwapAmount = ({
     transactionTimeout,
   } = transactionData;
   const fee = transactionFee || recommendedFee;
-  const srcAsset = getAssetFromCanonical(asset);
+  // The source can be in the "(+) Select" (empty) state — e.g. after a
+  // direction swap whose destination was unset or a non-held token.
+  const srcAsset = asset ? getAssetFromCanonical(asset) : null;
   const dstAsset = destinationAsset
     ? getAssetFromCanonical(destinationAsset)
     : null;
@@ -136,7 +141,7 @@ export const SwapAmount = ({
     publicKey,
     networkDetails,
     simParams: {
-      sourceAsset: srcAsset,
+      sourceAsset: srcAsset!,
       destAsset: dstAsset!,
       amount,
       allowedSlippage,
@@ -436,6 +441,14 @@ export const SwapAmount = ({
     sendData.icons[destinationAsset] ||
     transactionData.destinationTokenDetails?.iconUrl ||
     null;
+  // A non-held destination token can never become the source (we only swap
+  // held/classic assets), so the direction toggle handles it specially.
+  // Detect it by its absence from the account balances.
+  const heldCanonicals = new Set(
+    sendData.userBalances.balances.map((b) => getBalanceCanonicalKey(b)),
+  );
+  const destinationIsNonHeld =
+    Boolean(destinationAsset) && !heldCanonicals.has(destinationAsset);
   const prices = sendData.tokenPrices;
   const assetPrice = prices[asset] && prices[asset].currentPrice;
   const xlmPrice = prices["native"]?.currentPrice;
@@ -473,11 +486,13 @@ export const SwapAmount = ({
         ),
       )
     : null;
-  const availableBalance = getAvailableBalance({
-    assetCanonical: asset,
-    balances: sendData.userBalances.balances,
-    recommendedFee: fee,
-  });
+  const availableBalance = asset
+    ? getAvailableBalance({
+        assetCanonical: asset,
+        balances: sendData.userBalances.balances,
+        recommendedFee: fee,
+      })
+    : "0";
   const displayTotal = `${formatAmount(availableBalance)}`;
   const isAmountTooHigh =
     (inputType === "crypto" &&
@@ -489,7 +504,9 @@ export const SwapAmount = ({
         new BigNumber(availableBalance),
       ));
 
-  const availableBalanceText = `${displayTotal} ${srcAsset.code} ${t("available")}`;
+  const availableBalanceText = srcAsset
+    ? `${displayTotal} ${srcAsset.code} ${t("available")}`
+    : "";
   const availableBalanceFontSizePx = AVAILABLE_BALANCE_FONT_SIZES.find(
     ({ maxLen }) => availableBalanceText.length <= maxLen,
   )!.sizePx;
@@ -543,6 +560,7 @@ export const SwapAmount = ({
               variant="secondary"
               isLoading={simulationState.state === RequestState.LOADING}
               disabled={
+                !asset ||
                 !destinationAsset ||
                 (inputType === "crypto" &&
                   new BigNumber(formik.values.amount).isZero()) ||
@@ -555,7 +573,7 @@ export const SwapAmount = ({
                 formik.submitForm();
               }}
             >
-              {!destinationAsset
+              {!asset || !destinationAsset
                 ? t("Select an asset")
                 : new BigNumber(cleanAmount(formik.values.amount)).isZero()
                   ? t("Enter an amount")
@@ -590,17 +608,17 @@ export const SwapAmount = ({
                     amount={formik.values.amount}
                     amountUsd={formik.values.amountUsd}
                     amountFontSizeClass={getAmountFontSizeClass()}
-                    assetCode={srcAsset.code}
+                    assetCode={srcAsset ? srcAsset.code : ""}
                     assetIcon={assetIcon}
                     assetIcons={
-                      asset !== "native" ? { [asset]: assetIcon } : {}
+                      asset && asset !== "native" ? { [asset]: assetIcon } : {}
                     }
-                    assetIssuerKey={srcAsset.issuer}
+                    assetIssuerKey={srcAsset?.issuer}
                     supportsUsd={Boolean(supportsUsd)}
                     fiatLineText={
                       inputType === "crypto"
                         ? `$${priceValueUsd || "0.00"}`
-                        : `${priceValue || "0"} ${srcAsset.code}`
+                        : `${priceValue || "0"} ${srcAsset ? srcAsset.code : ""}`
                     }
                     isAmountTooHigh={isAmountTooHigh}
                     cryptoDecimals={assetDecimals}
@@ -646,8 +664,22 @@ export const SwapAmount = ({
                       e.preventDefault();
                       emitMetric(METRIC_NAMES.swapDirectionToggled);
                       const prevSrc = asset;
-                      dispatch(saveAsset(destinationAsset));
+                      // A non-held destination can't become the source, so reset
+                      // it to "(+) Select" instead of moving it into the sell
+                      // slot; otherwise swap the two positions normally.
+                      dispatch(
+                        saveAsset(destinationIsNonHeld ? "" : destinationAsset),
+                      );
                       dispatch(saveDestinationAsset(prevSrc));
+                      // The new destination (old source) and new source are both
+                      // held/classic or empty — neither carries trustline/contract
+                      // metadata.
+                      dispatch(saveDestinationTokenDetails(null));
+                      dispatch(saveIsToken(false));
+                      // The amount was denominated in the old source token; reset
+                      // it whenever the source token changes.
+                      dispatch(saveAmount("0"));
+                      dispatch(saveAmountUsd("0.00"));
                     }}
                   >
                     <Icon.ChevronDown />
