@@ -92,10 +92,8 @@ export const AutoLockTimer = () => {
     setIsSaving(true);
     await dispatch(
       saveSettings({
-        isDataSharingAllowed:
-          settings.isDataSharingAllowed ?? false,
-        isMemoValidationEnabled:
-          settings.isMemoValidationEnabled ?? true,
+        isDataSharingAllowed: settings.isDataSharingAllowed ?? false,
+        isMemoValidationEnabled: settings.isMemoValidationEnabled ?? true,
         isHideDustEnabled: settings.isHideDustEnabled ?? true,
         isOpenSidebarByDefault: settings.isOpenSidebarByDefault ?? false,
         autoLockTimeoutMinutes: minutes,
@@ -106,7 +104,7 @@ export const AutoLockTimer = () => {
 
   return (
     <React.Fragment>
-      <SubviewHeader title={t("Auto-Lock Timer")} />
+      <SubviewHeader title={t("Auto-Lock timer")} />
       <View.Content hasNoTopPadding>
         <div className="AutoLockTimer">
           {VALID_AUTO_LOCK_TIMEOUT_MINUTES.map((minutes) => {
