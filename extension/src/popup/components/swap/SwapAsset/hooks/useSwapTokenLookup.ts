@@ -16,7 +16,7 @@ import { ManageAssetCurrency } from "popup/components/manageAssets/ManageAssetRo
 import { SecurityLevel } from "popup/constants/blockaid";
 import { searchAsset } from "popup/helpers/searchAsset";
 import { splitVerifiedAssetCurrency } from "popup/helpers/assetList";
-import { isContractId, isAssetSac } from "popup/helpers/soroban";
+import { isContractId } from "popup/helpers/soroban";
 import { formatAmount, roundUsdValue } from "popup/helpers/formatters";
 import { sortBalancesByValue } from "popup/helpers/balance";
 import {
@@ -192,7 +192,6 @@ const currencyToRecord = (
 export const buildSwapSections = ({
   searchTerm,
   balances,
-  networkDetails,
   popular = [],
   verifiedAssets = [],
   unverifiedAssets = [],
@@ -203,6 +202,8 @@ export const buildSwapSections = ({
 }: {
   searchTerm: string;
   balances: AssetType[];
+  // Accepted for call-site symmetry with the lookup context; the record filter
+  // no longer needs the network (it keys purely on contract-id shape).
   networkDetails: NetworkDetails;
   popular?: TrendingAsset[];
   verifiedAssets?: ManageAssetCurrency[];
@@ -218,27 +219,19 @@ export const buildSwapSections = ({
   const heldRecords = balancesToHeldRecords({ balances, icons, tokenPrices });
   const heldCanonicals = new Set(heldRecords.map((r) => r.canonical));
 
-  // Classic-only filter: drop any Soroban (non-SAC) contract record.
-  // Side-effect: sets hadSorobanMatches when a Soroban record is encountered.
+  // Classic-only filter, mirroring mobile's isSorobanRecord
+  // (isContractId(record.asset)): drop any record whose issuer or contract is a
+  // contract id — i.e. a custom Soroban token. Classic CODE-ISSUER records are
+  // kept, including SAC-backed assets, which stellar.expert returns in their
+  // classic form (a bare SAC contract id has no classic representation to swap).
+  // Side-effect: sets hadSorobanMatches so the picker can show the "try a
+  // Classic token" empty state.
   let hadSorobanMatches = false;
   const isClassic = (asset: ManageAssetCurrency): boolean => {
-    // Check via explicit contract field
-    if (asset.contract && isContractId(asset.contract)) {
-      const sac = isAssetSac({
-        asset: {
-          code: asset.code || "",
-          issuer: asset.issuer,
-          contract: asset.contract,
-        },
-        networkDetails,
-      });
-      if (!sac) {
-        hadSorobanMatches = true;
-        return false;
-      }
-    }
-    // Also catch assets whose issuer itself is a contract address (Soroban token)
-    if (asset.issuer && isContractId(asset.issuer)) {
+    const isSorobanContract =
+      (asset.contract && isContractId(asset.contract)) ||
+      (asset.issuer && isContractId(asset.issuer));
+    if (isSorobanContract) {
       hadSorobanMatches = true;
       return false;
     }
