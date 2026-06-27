@@ -15,6 +15,10 @@ import { isMainnet, getCanonicalFromAsset } from "helpers/stellar";
 import { ManageAssetCurrency } from "popup/components/manageAssets/ManageAssetRows";
 import { SecurityLevel } from "popup/constants/blockaid";
 import { searchAsset } from "popup/helpers/searchAsset";
+import {
+  getPersistedPopularTokens,
+  setPersistedPopularTokens,
+} from "popup/helpers/swapPopularTokensCache";
 import { splitVerifiedAssetCurrency } from "popup/helpers/assetList";
 import { isContractId } from "popup/helpers/soroban";
 import { formatAmount, roundUsdValue } from "popup/helpers/formatters";
@@ -519,18 +523,34 @@ export const useSwapTokenLookup = () => {
         verifiedAssets = split.verifiedAssets;
         unverifiedAssets = split.unverifiedAssets;
       } else {
-        // IDLE path: popular tokens (cached or fresh from stellar.expert)
+        // IDLE path: popular tokens. Cache layering (fastest first):
+        //   Redux (in-session) → chrome.storage.local (cross-session, §5.3) →
+        //   stellar.expert trending request.
         const cachedByNetwork = popularTokensSelector(store.getState());
         const cached = cachedByNetwork[networkDetails.network];
         const isFresh =
           cached && Date.now() - cached.updatedAt < POPULAR_TOKENS_STALE_MS;
 
-        popular = isFresh
-          ? cached.tokens
-          : await fetchTrendingAssets({ networkDetails, signal });
-
-        if (!isFresh && popular.length) {
-          reduxDispatch(savePopularTokens({ networkDetails, tokens: popular }));
+        if (isFresh) {
+          popular = cached.tokens;
+        } else {
+          // Disk-persisted trending survives popup close, avoiding the slow
+          // trending request on reopen. Falls through to the network when the
+          // persisted copy is absent or stale.
+          const persisted = await getPersistedPopularTokens(
+            networkDetails.network,
+          );
+          if (persisted) {
+            popular = persisted;
+          } else {
+            popular = await fetchTrendingAssets({ networkDetails, signal });
+            if (popular.length) {
+              reduxDispatch(
+                savePopularTokens({ networkDetails, tokens: popular }),
+              );
+              await setPersistedPopularTokens(networkDetails.network, popular);
+            }
+          }
         }
 
         // Intersect popular with verified lists to compute the verified canonical set.
