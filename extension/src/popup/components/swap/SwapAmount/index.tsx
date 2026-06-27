@@ -539,9 +539,10 @@ export const SwapAmount = ({
   // (§3.2). The sell side is the current source when it's already a non-XLM
   // classic token; otherwise the largest held non-XLM classic balance.
   const sourceIsNonXlmClassic = !!asset && asset !== "native";
-  const bestNonXlmClassicCanonical = useMemo(
-    () => pickBestNonXlmClassicCanonical(sendData.userBalances.balances),
-    [sendData.userBalances.balances],
+  // Plain computation (not useMemo): this runs below early returns, so a hook
+  // here would violate the rules of hooks, and the filter/sort is cheap.
+  const bestNonXlmClassicCanonical = pickBestNonXlmClassicCanonical(
+    sendData.userBalances.balances,
   );
   const canSwapForReserve =
     sourceIsNonXlmClassic || !!bestNonXlmClassicCanonical;
