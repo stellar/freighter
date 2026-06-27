@@ -27,7 +27,7 @@ import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
 import { hardwareWalletTypeSelector } from "popup/ducks/accountServices";
 import { MultiPaneSlider } from "popup/components/SlidingPaneSwitcher";
 import { useValidateTransactionMemo } from "popup/helpers/useValidateTransactionMemo";
-import { SecurityLevel } from "popup/constants/blockaid";
+import { SecurityLevel, mergeSecurityLevels } from "popup/constants/blockaid";
 import {
   useBlockaidOverrideState,
   useShouldTreatTxAsUnableToScan,
@@ -115,6 +115,9 @@ interface ReviewTxProps {
     requiresTrustline: boolean;
     decimals: number;
     issuer?: string;
+    // Blockaid verdict captured when the destination token was picked; folded
+    // into the review security gate alongside the transaction scan (§4.1).
+    securityLevel?: SecurityLevel;
   } | null;
 }
 
@@ -180,18 +183,44 @@ export const ReviewTx = ({
   // Check override state (takes precedence, dev mode only)
   const blockaidOverrideState = useBlockaidOverrideState();
 
-  // Determine security level (includes overrides - takes precedence on all panes)
-  const securityLevel = getTransactionSecurityLevel(
+  // Transaction-scan verdict (includes overrides - takes precedence on all panes)
+  const txSecurityLevel = getTransactionSecurityLevel(
     txScanResult,
     isUnableToScan,
     blockaidOverrideState,
   );
 
+  // Roll the destination token's Blockaid verdict into the gate so a malicious /
+  // suspicious / unable-to-scan token warns and requires "Confirm anyway" — not
+  // only a flagged transaction (§4.1). Send passes no token level, so this
+  // reduces to the transaction verdict and leaves the Send gate unchanged.
+  const destTokenSecurityLevel = destinationTokenDetails?.securityLevel ?? null;
+  const securityLevel = mergeSecurityLevels([
+    txSecurityLevel,
+    destTokenSecurityLevel,
+  ]);
+
   const isMalicious = securityLevel === SecurityLevel.MALICIOUS;
   const isSuspicious = securityLevel === SecurityLevel.SUSPICIOUS;
 
-  // Determine if transaction warning should be shown
-  const shouldShowTxWarning = isMalicious || isSuspicious || isUnableToScan;
+  // Determine if a security warning should be shown (tx- or token-driven)
+  const shouldShowTxWarning =
+    isMalicious ||
+    isSuspicious ||
+    securityLevel === SecurityLevel.UNABLE_TO_SCAN;
+
+  // Banner copy for a flagged destination token (null when the token is clean
+  // or its verdict is already covered by the transaction-scan banner).
+  const destTokenWarningMessage =
+    destTokenSecurityLevel === SecurityLevel.MALICIOUS
+      ? t("The token you're receiving was flagged as malicious by Blockaid.")
+      : destTokenSecurityLevel === SecurityLevel.SUSPICIOUS
+        ? t("The token you're receiving was flagged as suspicious by Blockaid.")
+        : destTokenSecurityLevel === SecurityLevel.UNABLE_TO_SCAN
+          ? t(
+              "The token you're receiving couldn't be scanned for security risks.",
+            )
+          : null;
 
   /**
    * Pane state machine:
@@ -350,7 +379,10 @@ export const ReviewTx = ({
         </div>
       </div>
       <div className="ReviewTx__Warnings">
-        {shouldShowTxWarning && paneConfig.blockaidIndex !== null && (
+        {/* Transaction-scan banner (opens the expandable Blockaid pane). Gated
+            on the tx verdict so a token-only warning doesn't open an empty
+            pane — the token verdict gets its own banner below. */}
+        {txSecurityLevel && paneConfig.blockaidIndex !== null && (
           <BlockaidTxScanLabel
             scanResult={txScanResult}
             onClick={() => {
@@ -359,6 +391,17 @@ export const ReviewTx = ({
               }
             }}
           />
+        )}
+        {destTokenWarningMessage && (
+          <div
+            className="ReviewTx__Warnings__token"
+            data-testid="review-tx-dest-token-warning"
+          >
+            <Notification
+              variant={isMalicious ? "error" : "warning"}
+              title={destTokenWarningMessage}
+            />
+          </div>
         )}
         {isRequiredMemoMissing && !isValidatingMemo && !shouldShowTxWarning && (
           <MemoRequiredLabel
