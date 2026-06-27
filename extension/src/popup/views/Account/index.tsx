@@ -15,6 +15,7 @@ import { accountNameSelector } from "popup/ducks/accountServices";
 import { openTab } from "popup/helpers/navigate";
 import { isFullscreenMode } from "popup/helpers/isFullscreenMode";
 import { isMainnet } from "helpers/stellar";
+import { useSwapTopTokensPrewarm } from "popup/helpers/useSwapTopTokensPrewarm";
 
 import { AccountAssets } from "popup/components/account/AccountAssets";
 import { AccountCollectibles } from "popup/components/account/AccountCollectibles";
@@ -76,6 +77,10 @@ export const Account = () => {
   const { state: iconsData, fetchData: fetchIconsData } = useGetIcons();
   const { refreshHiddenCollectibles, isCollectibleHidden } =
     useHiddenCollectibles();
+
+  // Warm the swap top-tokens cache in the background so the first Swap entry
+  // paints Popular instantly (§5.7); no-op on testnet / when already cached.
+  useSwapTopTokensPrewarm();
 
   const previousAccountBalancesRef = useRef<AccountBalances | null>(null);
   const sorobanErrorShownRef = useRef(false);
