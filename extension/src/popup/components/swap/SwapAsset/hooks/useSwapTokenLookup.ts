@@ -399,6 +399,19 @@ const recordFromSearchResult = (
   };
 };
 
+// Module-scoped cache of the last successful IDLE (no search term) lookup per
+// network. It survives component remounts within a popup session, so
+// re-entering the picker repaints instantly instead of flashing a spinner
+// (§1.10), and it's served as a fallback when a fresh idle fetch fails (§5.4)
+// rather than dropping Popular to held-only. In-memory only — it dies on popup
+// close; cross-session disk persistence (§5.3) is a separate concern.
+const swapIdleResultCacheByNetwork = new Map<string, SwapTokenLookupResult>();
+
+/** Test-only: clear the module-scoped idle cache between tests. */
+export const resetSwapIdleCacheForTests = () => {
+  swapIdleResultCacheByNetwork.clear();
+};
+
 // ---- the hook ----
 
 export const useSwapTokenLookup = () => {
@@ -432,7 +445,18 @@ export const useSwapTokenLookup = () => {
     abortControllerRef.current = controller;
     const { signal } = controller;
 
-    dispatch({ type: "FETCH_DATA_START" });
+    // On idle re-entry, repaint instantly from the last cached result and
+    // revalidate silently (no spinner). Search has no such cache — show the
+    // spinner while it loads (§1.10).
+    const isIdle = !searchTerm.trim();
+    const cachedIdleResult = isIdle
+      ? swapIdleResultCacheByNetwork.get(networkDetails.network)
+      : undefined;
+    if (cachedIdleResult) {
+      dispatch({ type: "FETCH_DATA_SUCCESS", payload: cachedIdleResult });
+    } else {
+      dispatch({ type: "FETCH_DATA_START" });
+    }
 
     // Token discovery (Popular + search) only exists on Mainnet / Testnet.
     // Custom / Futurenet networks degrade to held-only (permanent fallback).
@@ -584,13 +608,25 @@ export const useSwapTokenLookup = () => {
           }
         }
       }
+
+      // Cache the fully-decorated idle result for instant repaint + stale-serve.
+      if (isIdle) {
+        swapIdleResultCacheByNetwork.set(networkDetails.network, payload);
+      }
     } catch (e) {
       if (signal.aborted) {
         // Cancelled — silently ignore (another call is already in flight)
         return;
       }
-      // Graceful fallback: stellar.expert or Blockaid unreachable → held-only
       captureException(`useSwapTokenLookup fallback - ${JSON.stringify(e)}`);
+      // Serve the last good idle result on a transient failure instead of
+      // dropping Popular to held-only (§5.4); fall back to held-only only when
+      // there's nothing cached.
+      if (cachedIdleResult) {
+        dispatch({ type: "FETCH_DATA_SUCCESS", payload: cachedIdleResult });
+        return;
+      }
+      // Graceful fallback: stellar.expert or Blockaid unreachable → held-only
       dispatch({
         type: "FETCH_DATA_SUCCESS",
         payload: buildSwapSections({
