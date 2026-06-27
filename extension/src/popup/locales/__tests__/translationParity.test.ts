@@ -14,6 +14,9 @@ const swapKeys = [
   "The token you're receiving was flagged as malicious by Blockaid.",
   "The token you're receiving was flagged as suspicious by Blockaid.",
   "The token you're receiving couldn't be scanned for security risks.",
+  "The token you're sending was flagged as malicious by Blockaid.",
+  "The token you're sending was flagged as suspicious by Blockaid.",
+  "The token you're sending couldn't be scanned for security risks.",
 ];
 
 describe("swap i18n parity", () => {

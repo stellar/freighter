@@ -119,6 +119,9 @@ interface ReviewTxProps {
     // into the review security gate alongside the transaction scan (§4.1).
     securityLevel?: SecurityLevel;
   } | null;
+  // Blockaid verdict for the swap source token (from its held balance); folded
+  // into the same review gate so a flagged sell token also warns (§4.3).
+  sourceTokenSecurityLevel?: SecurityLevel;
 }
 
 export const ReviewTx = ({
@@ -135,6 +138,7 @@ export const ReviewTx = ({
   onCancel,
   onAddMemo,
   destinationTokenDetails,
+  sourceTokenSecurityLevel,
 }: ReviewTxProps) => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
@@ -197,6 +201,7 @@ export const ReviewTx = ({
   const destTokenSecurityLevel = destinationTokenDetails?.securityLevel ?? null;
   const securityLevel = mergeSecurityLevels([
     txSecurityLevel,
+    sourceTokenSecurityLevel ?? null,
     destTokenSecurityLevel,
   ]);
 
@@ -219,6 +224,17 @@ export const ReviewTx = ({
         : destTokenSecurityLevel === SecurityLevel.UNABLE_TO_SCAN
           ? t(
               "The token you're receiving couldn't be scanned for security risks.",
+            )
+          : null;
+
+  const sourceTokenWarningMessage =
+    sourceTokenSecurityLevel === SecurityLevel.MALICIOUS
+      ? t("The token you're sending was flagged as malicious by Blockaid.")
+      : sourceTokenSecurityLevel === SecurityLevel.SUSPICIOUS
+        ? t("The token you're sending was flagged as suspicious by Blockaid.")
+        : sourceTokenSecurityLevel === SecurityLevel.UNABLE_TO_SCAN
+          ? t(
+              "The token you're sending couldn't be scanned for security risks.",
             )
           : null;
 
@@ -392,13 +408,32 @@ export const ReviewTx = ({
             }}
           />
         )}
+        {sourceTokenWarningMessage && (
+          <div
+            className="ReviewTx__Warnings__token"
+            data-testid="review-tx-source-token-warning"
+          >
+            <Notification
+              variant={
+                sourceTokenSecurityLevel === SecurityLevel.MALICIOUS
+                  ? "error"
+                  : "warning"
+              }
+              title={sourceTokenWarningMessage}
+            />
+          </div>
+        )}
         {destTokenWarningMessage && (
           <div
             className="ReviewTx__Warnings__token"
             data-testid="review-tx-dest-token-warning"
           >
             <Notification
-              variant={isMalicious ? "error" : "warning"}
+              variant={
+                destTokenSecurityLevel === SecurityLevel.MALICIOUS
+                  ? "error"
+                  : "warning"
+              }
               title={destTokenWarningMessage}
             />
           </div>

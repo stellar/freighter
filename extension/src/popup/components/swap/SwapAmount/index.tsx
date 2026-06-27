@@ -53,7 +53,14 @@ import { openTab } from "popup/helpers/navigate";
 import { newTabHref } from "helpers/urls";
 import { reRouteOnboarding } from "popup/helpers/route";
 import { getAssetDecimals, getAvailableBalance } from "popup/helpers/soroban";
-import { getBalanceCanonicalKey } from "popup/helpers/balance";
+import {
+  findAssetBalance,
+  getBalanceCanonicalKey,
+} from "popup/helpers/balance";
+import {
+  getAssetSecurityLevel,
+  useBlockaidOverrideState,
+} from "popup/helpers/blockaid";
 import { AppDispatch } from "popup/App";
 import { emitMetric } from "helpers/metrics";
 import { AMOUNT_ERROR, InputType } from "helpers/transaction";
@@ -115,6 +122,7 @@ export const SwapAmount = ({
   const { networkCongestion, recommendedFee } = useNetworkFees();
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const publicKey = useSelector(publicKeySelector);
+  const blockaidOverrideState = useBlockaidOverrideState();
   const { transactionData, isSwapQuoteExpired } = useSelector(
     transactionSubmissionSelector,
   );
@@ -549,6 +557,24 @@ export const SwapAmount = ({
   // (§3.2). The sell side is the current source when it's already a non-XLM
   // classic token; otherwise the largest held non-XLM classic balance.
   const sourceIsNonXlmClassic = !!asset && asset !== "native";
+
+  // Source token Blockaid verdict (from its held balance), passed to the review
+  // gate so a flagged sell token also warns (§4.3). XLM is never scanned.
+  const sourceBalance = sourceIsNonXlmClassic
+    ? findAssetBalance(
+        sendData.userBalances.balances,
+        getAssetFromCanonical(asset),
+      )
+    : null;
+  const sourceTokenSecurityLevel =
+    sourceBalance && "blockaidData" in sourceBalance
+      ? getAssetSecurityLevel({
+          blockaidData: sourceBalance.blockaidData,
+          blockaidOverrideState,
+          networkDetails,
+        })
+      : undefined;
+
   // Plain computation (not useMemo): this runs below early returns, so a hook
   // here would violate the rules of hooks, and the filter/sort is cheap.
   const bestNonXlmClassicCanonical = pickBestNonXlmClassicCanonical(
@@ -992,6 +1018,7 @@ export const SwapAmount = ({
             }}
             title={t("You are swapping")}
             destinationTokenDetails={transactionData.destinationTokenDetails}
+            sourceTokenSecurityLevel={sourceTokenSecurityLevel}
           />
         ) : (
           <></>

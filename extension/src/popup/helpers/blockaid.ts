@@ -443,6 +443,39 @@ export const isAssetSuspicious = (
   return blockaidData!.result_type !== "Benign";
 };
 
+/**
+ * Collapses a token's Blockaid scan result into a single SecurityLevel,
+ * honoring the dev override and the network gate. Used to derive the source
+ * token's verdict for the swap review gate (§4.3). UNABLE_TO_SCAN only applies
+ * where Blockaid runs (mainnet); a clean scan returns SAFE.
+ */
+export const getAssetSecurityLevel = ({
+  blockaidData,
+  blockaidOverrideState,
+  networkDetails,
+}: {
+  blockaidData?: BlockAidScanAssetResult | null;
+  blockaidOverrideState?: string | null;
+  networkDetails: NetworkDetails;
+}): SecurityLevel => {
+  if (isAssetMalicious(blockaidData, blockaidOverrideState)) {
+    return SecurityLevel.MALICIOUS;
+  }
+  if (isAssetSuspicious(blockaidData, blockaidOverrideState)) {
+    return SecurityLevel.SUSPICIOUS;
+  }
+  if (
+    shouldTreatAssetAsUnableToScan(
+      blockaidData,
+      blockaidOverrideState,
+      networkDetails,
+    )
+  ) {
+    return SecurityLevel.UNABLE_TO_SCAN;
+  }
+  return SecurityLevel.SAFE;
+};
+
 export const isTxSuspicious = (
   blockaidData?: BlockAidScanTxResult | null,
   blockaidOverrideState?: string | null,
