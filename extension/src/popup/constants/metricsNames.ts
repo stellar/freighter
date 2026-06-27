@@ -84,6 +84,7 @@ export const METRIC_NAMES = {
   swapTrustlineAdded: "swap: trustline added",
   swapXlmReserveShown: "swap: xlm reserve shown",
   swapQuoteExpired: "swap: quote expired",
+  swapSuccess: "swap: success",
 
   viewAddCollectibles: "loaded screen: add collectibles",
   viewSendCollectible: "loaded screen: send collectible",

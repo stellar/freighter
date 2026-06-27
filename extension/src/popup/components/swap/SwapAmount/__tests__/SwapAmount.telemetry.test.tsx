@@ -162,7 +162,7 @@ describe("SwapAmount telemetry + quote-expired surfacing", () => {
     ).toBeUndefined();
   });
 
-  it("emits swapTrustlineAdded on confirm when destination requires a trustline", async () => {
+  it("does NOT emit swapTrustlineAdded at review time — it fires post-confirmation", async () => {
     jest.spyOn(UseSimulateSwapData, "useSimulateTxData").mockReturnValue({
       state: {
         state: RequestState.SUCCESS,
@@ -196,14 +196,11 @@ describe("SwapAmount telemetry + quote-expired surfacing", () => {
       fireEvent.click(confirmBtn);
     });
 
-    const trustlineCall = emitMetricMock.mock.calls.find(
-      (c) => c[0] === "swap: trustline added",
-    );
-    expect(trustlineCall).toBeDefined();
-    expect(trustlineCall![1]).toMatchObject({
-      tokenCode: "AQUA",
-      tokenIssuer: "GBNZILSTVQZ4R7IKQDGHYGY2QXL5QOFJYQMXPKWRRM5PAV7Y4M67AQUA",
-    });
+    // The trustline-added metric now fires only once the swap settles
+    // (useSubmitTxData), not here at review/confirm time (§3.4).
+    expect(
+      emitMetricMock.mock.calls.find((c) => c[0] === "swap: trustline added"),
+    ).toBeUndefined();
     expect(goToNext).toHaveBeenCalled();
   });
 });

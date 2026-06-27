@@ -52,7 +52,16 @@ function useSubmitTxData({
   });
 
   const {
-    transactionData: { asset, destination, federationAddress },
+    transactionData: {
+      asset,
+      destination,
+      federationAddress,
+      destinationAsset,
+      destinationAmount,
+      amount,
+      allowedSlippage,
+      destinationTokenDetails,
+    },
     transactionSimulation,
   } = submission;
   const sourceAsset = getAssetFromCanonical(asset);
@@ -89,7 +98,24 @@ function useSubmitTxData({
       );
 
       if (submitFreighterTransaction.fulfilled.match(submitResp)) {
-        if (!isSwap) {
+        if (isSwap) {
+          // Post-confirmation swap telemetry (§3.8): the swap actually settled.
+          emitMetric(METRIC_NAMES.swapSuccess, {
+            sourceToken: sourceAsset.code,
+            destToken: destinationAsset,
+            sourceAmount: amount,
+            destAmount: destinationAmount,
+            allowedSlippage,
+          });
+          // Trustline added only once the combined changeTrust +
+          // pathPaymentStrictSend transaction confirmed it (§3.4).
+          if (destinationTokenDetails?.requiresTrustline) {
+            emitMetric(METRIC_NAMES.swapTrustlineAdded, {
+              tokenCode: destinationTokenDetails.tokenCode,
+              tokenIssuer: destinationTokenDetails.issuer,
+            });
+          }
+        } else {
           const isSelfOwnedDestination = (allAccounts ?? []).some(
             (account) => account.publicKey === destination,
           );
@@ -99,10 +125,10 @@ function useSubmitTxData({
               addRecentAddress({ address: federationAddress || destination }),
             );
           }
+          emitMetric(METRIC_NAMES.sendPaymentSuccess, {
+            sourceAsset: sourceAsset.code,
+          });
         }
-        emitMetric(METRIC_NAMES.sendPaymentSuccess, {
-          sourceAsset: sourceAsset.code,
-        });
 
         // After successful submission, re-fetch balances and collectibles to get their latest values
 

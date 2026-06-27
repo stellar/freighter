@@ -11,5 +11,6 @@ describe("METRIC_NAMES swap-to-new-token events", () => {
     expect(METRIC_NAMES.swapTrustlineAdded).toBe("swap: trustline added");
     expect(METRIC_NAMES.swapXlmReserveShown).toBe("swap: xlm reserve shown");
     expect(METRIC_NAMES.swapQuoteExpired).toBe("swap: quote expired");
+    expect(METRIC_NAMES.swapSuccess).toBe("swap: success");
   });
 });

@@ -997,15 +997,10 @@ export const SwapAmount = ({
             fee={fee}
             networkDetails={networkDetails}
             onCancel={() => setIsReviewingTx(false)}
-            onConfirm={() => {
-              if (transactionData.destinationTokenDetails?.requiresTrustline) {
-                emitMetric(METRIC_NAMES.swapTrustlineAdded, {
-                  tokenCode: transactionData.destinationTokenDetails.tokenCode,
-                  tokenIssuer: transactionData.destinationTokenDetails.issuer,
-                });
-              }
-              goToNext();
-            }}
+            // The trustline-added + swap-success metrics fire post-confirmation
+            // (in useSubmitTxData), once the swap actually settles — not here at
+            // review time (§3.4/§3.8).
+            onConfirm={goToNext}
             sendAmount={amount}
             sendPriceUsd={priceValueUsd}
             simulationState={simulationState}
