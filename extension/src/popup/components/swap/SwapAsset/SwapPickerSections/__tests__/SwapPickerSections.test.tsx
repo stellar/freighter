@@ -141,6 +141,20 @@ describe("SwapPickerSections", () => {
     expect(screen.getByTestId("swap-picker-empty-soroban")).toBeInTheDocument();
   });
 
+  it("Soroban empty state shown when the search term is a contract id with no results", () => {
+    render(
+      <SwapPickerSections
+        {...baseProps}
+        // A pasted contract id that returned no records (hadSorobanMatches false)
+        searchTerm="CAS3J7GYLGXMF6TDJBBYYSE3HQ6BBSMLNUQ34T6TZMYMW2EVH34XOWMA"
+        result={{ ...emptyResult, hadSorobanMatches: false }}
+      />,
+    );
+
+    expect(screen.getByTestId("swap-picker-empty-soroban")).toBeInTheDocument();
+    expect(screen.queryByTestId("swap-picker-empty")).toBeNull();
+  });
+
   it("soft fallback notice rendered when isFallback", () => {
     render(
       <SwapPickerSections

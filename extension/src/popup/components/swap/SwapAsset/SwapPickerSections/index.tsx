@@ -9,6 +9,7 @@ import {
   UnverifiedTokenInfoSheet,
 } from "../InfoSheets";
 import { AssetListRow } from "popup/components/AssetListRow";
+import { isContractId } from "popup/helpers/soroban";
 import { SecurityLevel } from "popup/constants/blockaid";
 import type { SwapTokenRecord } from "../hooks/useSwapTokenLookup";
 import type { SwapPickerSelection } from "../index";
@@ -169,7 +170,7 @@ export const SwapPickerSections = ({
       )}
 
       {!hasResults ? (
-        result.hadSorobanMatches ? (
+        result.hadSorobanMatches || isContractId(searchTerm.trim()) ? (
           <div
             className="SwapPickerSections__empty"
             data-testid="swap-picker-empty-soroban"
