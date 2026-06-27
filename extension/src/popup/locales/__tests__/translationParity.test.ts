@@ -8,6 +8,9 @@ const swapKeys = [
   "No tokens match {{term}}",
   "You sell",
   "You receive",
+  "Insufficient balance",
+  "Not enough XLM for network fees",
+  "No quote available",
 ];
 
 describe("swap i18n parity", () => {

@@ -65,6 +65,7 @@ import {
   getSwapTotalFee,
   useSimulateTxData,
 } from "./hooks/useSimulateSwapData";
+import { getSwapCtaState, SwapCtaLabelKey } from "./helpers/swapCtaState";
 import { publicKeySelector } from "popup/ducks/accountServices";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { SlideupModal } from "popup/components/SlideupModal";
@@ -181,6 +182,9 @@ export const SwapAmount = ({
   const [isReviewingTx, setIsReviewingTx] = React.useState(false);
   const [isXlmReserveOpen, setIsXlmReserveOpen] = useState(false);
   const [showQuoteExpired, setShowQuoteExpired] = useState(false);
+  // True while a live best-path quote is in flight, so the CTA can tell
+  // "still loading a quote" apart from "no path exists" (§2.5).
+  const [isLiveQuoteLoading, setIsLiveQuoteLoading] = useState(false);
 
   const handleContinue = async (values: { amount: string }) => {
     // Retrying after a quote-expiry submit failure: dismiss the stale notice
@@ -340,6 +344,9 @@ export const SwapAmount = ({
             if (liveQuoteReqRef.current !== reqId || isReviewingRef.current) {
               return; // superseded by a newer quote, or frozen for review
             }
+            // This is the current request settling — stop signalling "loading"
+            // so the CTA can distinguish a missing path from a pending one.
+            setIsLiveQuoteLoading(false);
             if (!bestPath?.destination_amount) {
               dispatch(saveSwapBestPath({ path: [], destinationAmount: "0" }));
               return;
@@ -362,6 +369,7 @@ export const SwapAmount = ({
             if (liveQuoteReqRef.current !== reqId || isReviewingRef.current) {
               return;
             }
+            setIsLiveQuoteLoading(false);
             // No path / network error: clear the stale received amount.
             dispatch(saveSwapBestPath({ path: [], destinationAmount: "0" }));
           }
@@ -399,10 +407,12 @@ export const SwapAmount = ({
         : cleanAmount(amount || "0");
 
     if (new BigNumber(cryptoAmount || "0").isGreaterThan(0)) {
+      setIsLiveQuoteLoading(true);
       debouncedQuote(cryptoAmount);
     } else {
       // Source amount cleared: cancel any pending/in-flight quote and reset the
       // received amount so the card shows 0 (skip the dispatch if already 0).
+      setIsLiveQuoteLoading(false);
       debouncedQuote.cancel();
       liveQuoteReqRef.current += 1;
       if (
@@ -607,6 +617,48 @@ export const SwapAmount = ({
         new BigNumber(availableBalance),
       ));
 
+  const swapAmountPositive =
+    inputType === "crypto"
+      ? new BigNumber(cleanAmount(formik.values.amount)).gt(0)
+      : new BigNumber(cleanAmount(formik.values.amountUsd)).gt(0);
+
+  // The live quote settled with no route for a positive amount → no swap path.
+  // While a quote is in flight (isLiveQuoteLoading) we leave the CTA enabled so
+  // it doesn't flicker disabled between keystrokes (§2.5).
+  const hasNoSwapPath =
+    swapAmountPositive &&
+    !isLiveQuoteLoading &&
+    new BigNumber(cleanAmount(destinationAmount || "0")).isZero();
+
+  // Non-XLM swaps pay the network fee from the separate XLM balance; block the
+  // CTA when that balance can't cover the fee (§2.4). XLM-source swaps already
+  // fold the fee into availableBalance, so this only applies to non-XLM sources.
+  const xlmSpendableForFees = getAvailableBalance({
+    assetCanonical: "native",
+    balances: sendData.userBalances.balances,
+    recommendedFee: "0",
+  });
+  const insufficientXlmForFees =
+    sourceIsNonXlmClassic &&
+    new BigNumber(xlmSpendableForFees).lt(new BigNumber(fee));
+
+  const cta = getSwapCtaState({
+    hasSource: !!asset,
+    hasDestination: !!destinationAsset,
+    amountIsZero: !swapAmountPositive,
+    isAmountTooHigh,
+    insufficientXlmForFees,
+    hasNoSwapPath,
+  });
+  const ctaLabels: Record<SwapCtaLabelKey, string> = {
+    select: t("Select an asset"),
+    enter: t("Enter an amount"),
+    insufficientBalance: t("Insufficient balance"),
+    insufficientXlmFees: t("Not enough XLM for network fees"),
+    noQuote: t("No quote available"),
+    review: t("Review swap"),
+  };
+
   const availableBalanceText = srcAsset
     ? `${displayTotal} ${srcAsset.code} ${t("available")}`
     : "";
@@ -662,25 +714,13 @@ export const SwapAmount = ({
               isRounded
               variant="secondary"
               isLoading={simulationState.state === RequestState.LOADING}
-              disabled={
-                !asset ||
-                !destinationAsset ||
-                (inputType === "crypto" &&
-                  new BigNumber(formik.values.amount).isZero()) ||
-                (inputType === "fiat" &&
-                  new BigNumber(formik.values.amountUsd).isZero()) ||
-                isAmountTooHigh
-              }
+              disabled={cta.disabled}
               onClick={(e) => {
                 e.preventDefault();
                 formik.submitForm();
               }}
             >
-              {!asset || !destinationAsset
-                ? t("Select an asset")
-                : new BigNumber(cleanAmount(formik.values.amount)).isZero()
-                  ? t("Enter an amount")
-                  : t("Review swap")}
+              {ctaLabels[cta.labelKey]}
             </Button>
           </div>
         }

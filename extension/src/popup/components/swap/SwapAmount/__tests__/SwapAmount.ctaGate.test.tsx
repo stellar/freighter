@@ -26,6 +26,14 @@ const nativeBalance = {
   blockaidData: {},
 };
 
+const USDC_ISSUER = "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN";
+const usdcBalance = {
+  token: { code: "USDC", issuer: { key: USDC_ISSUER } },
+  total: new BigNumber("100"),
+  available: new BigNumber("100"),
+  blockaidData: {},
+};
+
 const swapData = {
   type: AppDataType.RESOLVED,
   applicationState: "MNEMONIC_PHRASE_CONFIRMED",
@@ -107,6 +115,54 @@ describe("SwapAmount CTA gate", () => {
     await waitFor(() =>
       expect(screen.getByTestId("XlmReserveSheet")).toBeInTheDocument(),
     );
+  });
+
+  it("disables the CTA with a fee warning when a non-XLM swap lacks XLM for fees", async () => {
+    jest
+      .spyOn(XlmReserve, "shouldShowXlmReservePreflight")
+      .mockReturnValue(false);
+    // Hold USDC but no XLM, so the network fee can't be paid.
+    jest.spyOn(UseGetSwapAmountData, "useGetSwapAmountData").mockReturnValue({
+      state: {
+        state: RequestState.SUCCESS,
+        data: { ...swapData, userBalances: { balances: [usdcBalance] } },
+        error: null,
+      },
+      fetchData: jest.fn().mockResolvedValue(undefined),
+    } as any);
+    render(
+      <Wrapper
+        state={
+          {
+            transactionSubmission: {
+              transactionData: {
+                asset: `USDC:${USDC_ISSUER}`,
+                amount: "5",
+                amountUsd: "0.00",
+                destinationAsset: "native",
+                destinationAmount: "5",
+                allowedSlippage: "2",
+                transactionFee: "",
+                destinationTokenDetails: null,
+              },
+            },
+          } as any
+        }
+        routes={["/"]}
+      >
+        <SwapAmount
+          inputType="crypto"
+          setInputType={jest.fn()}
+          goBack={jest.fn()}
+          goToNext={jest.fn()}
+          goToEditSrc={jest.fn()}
+          goToEditDst={jest.fn()}
+        />
+      </Wrapper>,
+    );
+    const btn = screen.getByTestId("swap-amount-btn-continue");
+    expect(btn).toBeDisabled();
+    expect(btn).toHaveTextContent("Not enough XLM for network fees");
   });
 
   it("does NOT open the reserve sheet when shouldShowXlmReservePreflight returns false", async () => {
