@@ -1,16 +1,19 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useLocation } from "react-router-dom";
+import { ActionStatus } from "@shared/api/types";
 import { STEPS } from "popup/constants/swap";
 import { emitMetric } from "helpers/metrics";
 import { InputType } from "helpers/transaction";
 import { TransactionConfirm } from "popup/components/InternalTransaction/SubmitTransaction";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
+import { getQuoteExpiredOperationCodes } from "popup/helpers/quoteExpiry";
 import { SwapAsset } from "popup/components/swap/SwapAsset";
 import { SwapAmount } from "popup/components/swap/SwapAmount";
 import { AppDispatch } from "popup/App";
 import {
   resetSubmission,
+  resetSubmitStatus,
   saveAmount,
   saveAmountUsd,
   saveAsset,
@@ -53,6 +56,32 @@ export const Swap = () => {
   const submission = useSelector(transactionSubmissionSelector);
   const { transactionSimulation, transactionData } = submission;
 
+  // Quote expired at submit (op_under_dest_min / op_too_few_offers): recover to
+  // the review screen with a fresh quote instead of dead-ending in SubmitFail.
+  // The live-quote effect on SwapAmount re-fetches the path on remount, and the
+  // notification is surfaced from the isSwapQuoteExpired flag (§2.1/§3.3).
+  const isQuoteExpiredAtSubmit =
+    submission.submitStatus === ActionStatus.ERROR &&
+    submission.isSwapQuoteExpired;
+  useEffect(() => {
+    if (!isQuoteExpiredAtSubmit) {
+      return;
+    }
+    emitMetric(METRIC_NAMES.swapQuoteExpired, {
+      sourceToken: transactionData.asset,
+      destToken: transactionData.destinationAsset,
+      sourceAmount: transactionData.amount,
+      destAmount: transactionData.destinationAmount,
+      allowedSlippage: transactionData.allowedSlippage,
+      resultCode: getQuoteExpiredOperationCodes(submission.error).join(", "),
+    });
+    // Clear only the ERROR status (keep the transaction data + the
+    // isSwapQuoteExpired flag, which drives the amount-screen notification).
+    dispatch(resetSubmitStatus());
+    setActiveStep(STEPS.AMOUNT);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isQuoteExpiredAtSubmit]);
+
   const [inputType, setInputType] = useState<InputType>("crypto");
 
   useEffect(() => {
@@ -94,6 +123,11 @@ export const Swap = () => {
   const renderStep = (step: STEPS) => {
     switch (step) {
       case STEPS.SWAP_CONFIRM: {
+        // The recovery effect transitions back to review on a quote-expiry
+        // submit failure; render nothing this frame so SubmitFail never flashes.
+        if (isQuoteExpiredAtSubmit) {
+          return null;
+        }
         return (
           <TransactionConfirm
             xdr={transactionSimulation.preparedTransaction!}

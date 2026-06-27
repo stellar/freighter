@@ -33,6 +33,7 @@ import { SecurityLevel } from "popup/constants/blockaid";
 import { getCanonicalFromAsset } from "helpers/stellar";
 import { INDEXER_URL } from "@shared/constants/mercury";
 import { horizonGetBestPath } from "popup/helpers/horizonGetBestPath";
+import { isQuoteExpiredError } from "popup/helpers/quoteExpiry";
 import {
   soroswapGetBestPath,
   getSoroswapTokens as getSoroswapTokensService,
@@ -493,6 +494,10 @@ interface InitialState {
     | SorobanRpc.Api.SendTransactionResponse
     | null;
   error: ErrorMessage | undefined;
+  // Set when a swap submission fails because the frozen quote no longer clears
+  // on-chain (op_under_dest_min / op_too_few_offers). Drives the recover-and-
+  // retry flow instead of the terminal SubmitFail screen (§2.1/§3.3).
+  isSwapQuoteExpired: boolean;
   transactionData: TransactionData;
   transactionSimulation: {
     response: SorobanRpc.Api.SimulateTransactionSuccessResponse | null;
@@ -510,6 +515,7 @@ export const initialState: InitialState = {
   submitStatus: ActionStatus.IDLE,
   response: null,
   error: undefined,
+  isSwapQuoteExpired: false,
   transactionData: {
     amount: "0",
     amountUsd: "0.00",
@@ -565,6 +571,9 @@ const transactionSubmissionSlice = createSlice({
     resetSubmission: () => initialState,
     resetSubmitStatus: (state) => {
       state.submitStatus = initialState.submitStatus;
+    },
+    clearSwapQuoteExpired: (state) => {
+      state.isSwapQuoteExpired = false;
     },
     saveDestination: (state, action) => {
       state.transactionData.destination = action.payload;
@@ -692,6 +701,10 @@ const transactionSubmissionSlice = createSlice({
     builder.addCase(submitFreighterTransaction.rejected, (state, action) => {
       state.submitStatus = ActionStatus.ERROR;
       state.error = action.payload;
+      // Flag a swap quote-expiry so the Swap flow recovers (refetch + retry)
+      // instead of dead-ending in SubmitFail (§2.1/§3.3). These op codes only
+      // arise from swap path payments, so this is a no-op for sends.
+      state.isSwapQuoteExpired = isQuoteExpiredError(action.payload);
     });
     builder.addCase(submitFreighterTransaction.fulfilled, (state, action) => {
       state.submitStatus = ActionStatus.SUCCESS;
@@ -793,6 +806,7 @@ const transactionSubmissionSlice = createSlice({
 export const {
   resetSubmission,
   resetSubmitStatus,
+  clearSwapQuoteExpired,
   saveDestination,
   saveRecipientName,
   saveFederationAddress,

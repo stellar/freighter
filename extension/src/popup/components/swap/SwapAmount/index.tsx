@@ -30,6 +30,7 @@ import {
   saveSwapBestPath,
   saveTransactionFee,
   saveTransactionTimeout,
+  clearSwapQuoteExpired,
   transactionDataSelector,
   transactionSubmissionSelector,
 } from "popup/ducks/transactionSubmission";
@@ -113,7 +114,9 @@ export const SwapAmount = ({
   const { networkCongestion, recommendedFee } = useNetworkFees();
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const publicKey = useSelector(publicKeySelector);
-  const { transactionData } = useSelector(transactionSubmissionSelector);
+  const { transactionData, isSwapQuoteExpired } = useSelector(
+    transactionSubmissionSelector,
+  );
   const {
     allowedSlippage,
     amount,
@@ -180,6 +183,11 @@ export const SwapAmount = ({
   const [showQuoteExpired, setShowQuoteExpired] = useState(false);
 
   const handleContinue = async (values: { amount: string }) => {
+    // Retrying after a quote-expiry submit failure: dismiss the stale notice
+    // before re-simulating against a fresh quote (§2.1/§3.3).
+    if (isSwapQuoteExpired) {
+      dispatch(clearSwapQuoteExpired());
+    }
     const amountVal =
       inputType === "crypto" ? values.amount : (priceValue ?? "0");
     const cleanedAmount = cleanAmount(amountVal);
@@ -677,7 +685,7 @@ export const SwapAmount = ({
         }
       >
         <div className="SwapAsset">
-          {showQuoteExpired && (
+          {(showQuoteExpired || isSwapQuoteExpired) && (
             <div
               className="SwapAsset__quote-expired"
               data-testid="swap-quote-expired"
