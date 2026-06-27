@@ -1,7 +1,27 @@
+import BigNumber from "bignumber.js";
+
 import {
   deductNewTrustlineReserve,
+  pickBestNonXlmClassicCanonical,
   shouldShowXlmReservePreflight,
 } from "../xlmReserve";
+
+const classic = (code: string, issuer: string, total: string) =>
+  ({
+    token: { code, issuer: { key: issuer } },
+    total: new BigNumber(total),
+  }) as any;
+const native = (total: string) =>
+  ({
+    token: { type: "native", code: "XLM" },
+    total: new BigNumber(total),
+  }) as any;
+const soroban = (code: string, total: string) =>
+  ({
+    contractId: `C${code}`,
+    token: { code },
+    total: new BigNumber(total),
+  }) as any;
 
 describe("shouldShowXlmReservePreflight", () => {
   it("returns false when the destination is not new", () => {
@@ -106,5 +126,35 @@ describe("deductNewTrustlineReserve", () => {
         requiresTrustline: true,
       }),
     ).toBe("10");
+  });
+});
+
+describe("pickBestNonXlmClassicCanonical", () => {
+  it("picks the highest-total non-XLM classic balance, ignoring XLM and Soroban", () => {
+    const balances = [
+      classic("AQUA", "GAQUA", "100"),
+      classic("USDC", "GUSDC", "250"),
+      native("500"),
+      soroban("SRBN", "999"),
+    ];
+    expect(pickBestNonXlmClassicCanonical(balances)).toBe("USDC:GUSDC");
+  });
+
+  it("excludes zero-balance classic tokens", () => {
+    const balances = [
+      classic("ZERO", "GZERO", "0"),
+      classic("AQUA", "GAQUA", "5"),
+    ];
+    expect(pickBestNonXlmClassicCanonical(balances)).toBe("AQUA:GAQUA");
+  });
+
+  it("returns undefined when only XLM and Soroban tokens are held", () => {
+    expect(
+      pickBestNonXlmClassicCanonical([native("500"), soroban("SRBN", "999")]),
+    ).toBeUndefined();
+  });
+
+  it("returns undefined for an empty balance list", () => {
+    expect(pickBestNonXlmClassicCanonical([])).toBeUndefined();
   });
 });

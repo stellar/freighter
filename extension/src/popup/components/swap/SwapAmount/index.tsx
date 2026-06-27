@@ -5,7 +5,9 @@ import { useTranslation } from "react-i18next";
 import { Form, Field, FieldProps, Formik, useFormik } from "formik";
 import { debounce } from "lodash";
 import BigNumber from "bignumber.js";
+import { captureException } from "@sentry/browser";
 import { object as YupObject, number as YupNumber } from "yup";
+import { BASE_RESERVE } from "@shared/constants/stellar";
 import {
   Button,
   Card,
@@ -69,8 +71,10 @@ import { AmountCard } from "popup/components/amount/AmountCard";
 import { PercentageButtons } from "popup/components/amount/PercentageButtons";
 import {
   deductNewTrustlineReserve,
+  pickBestNonXlmClassicCanonical,
   shouldShowXlmReservePreflight,
 } from "popup/helpers/xlmReserve";
+import { horizonGetBestReceivePath } from "popup/helpers/horizonGetBestPath";
 import { horizonGetBestPath } from "popup/helpers/horizonGetBestPath";
 import { XlmReserveSheet } from "popup/components/swap/XlmReserveSheet";
 
@@ -522,6 +526,68 @@ export const SwapAmount = ({
       transactionData.destinationTokenDetails?.requiresTrustline ?? false,
   });
   const displayTotal = `${formatAmount(availableBalance)}`;
+
+  // "Swap for 0.5 XLM" reserve-recovery affordance on the XlmReserveSheet
+  // (§3.2). The sell side is the current source when it's already a non-XLM
+  // classic token; otherwise the largest held non-XLM classic balance.
+  const sourceIsNonXlmClassic = !!asset && asset !== "native";
+  const bestNonXlmClassicCanonical = useMemo(
+    () => pickBestNonXlmClassicCanonical(sendData.userBalances.balances),
+    [sendData.userBalances.balances],
+  );
+  const canSwapForReserve =
+    sourceIsNonXlmClassic || !!bestNonXlmClassicCanonical;
+
+  const handleSwapForReserve = async () => {
+    const sellCanonical = sourceIsNonXlmClassic
+      ? asset
+      : bestNonXlmClassicCanonical;
+    if (!sellCanonical) {
+      return;
+    }
+    // The receive side becomes XLM — a held token, so no trustline is needed.
+    dispatch(saveDestinationAsset("native"));
+    dispatch(saveDestinationTokenDetails(null));
+
+    if (!sourceIsNonXlmClassic) {
+      // Switching the sell side to a different token: reset the amount, since
+      // any prior amount was denominated in the now-replaced source.
+      dispatch(saveAsset(sellCanonical));
+      dispatch(saveAmount("0"));
+      dispatch(saveAmountUsd("0.00"));
+      return;
+    }
+
+    // Source reused (no token change): pre-fill the amount needed to receive
+    // ~0.5 XLM, capped to what's spendable of the sell token so the user never
+    // lands on an insufficient-balance state.
+    try {
+      const path = await horizonGetBestReceivePath({
+        destinationAmount: new BigNumber(BASE_RESERVE).toFixed(),
+        sourceAsset: sellCanonical,
+        destAsset: "native",
+        networkDetails,
+      });
+      if (path?.source_amount) {
+        const sellSpendable = getAvailableBalance({
+          assetCanonical: sellCanonical,
+          balances: sendData.userBalances.balances,
+          recommendedFee: fee,
+        });
+        const capped = BigNumber.minimum(
+          new BigNumber(path.source_amount),
+          new BigNumber(sellSpendable),
+        );
+        dispatch(saveAmount(capped.toFixed(7)));
+      }
+    } catch (e) {
+      // No path / network error — leave the amount as-is for manual entry.
+      captureException(
+        `Swap-for-reserve prefill failed - ${JSON.stringify(e)}`,
+      );
+    }
+  };
+
   const isAmountTooHigh =
     (inputType === "crypto" &&
       new BigNumber(cleanAmount(formik.values.amount)).gt(
@@ -890,11 +956,9 @@ export const SwapAmount = ({
           <XlmReserveSheet
             onClose={() => setIsXlmReserveOpen(false)}
             publicKey={publicKey}
-            canSwapForReserve={false}
+            canSwapForReserve={canSwapForReserve}
             helpUrl=""
-            onSwapForReserve={() => {
-              dispatch(saveDestinationAsset("native"));
-            }}
+            onSwapForReserve={handleSwapForReserve}
           />
         ) : (
           <></>

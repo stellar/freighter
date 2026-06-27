@@ -1,6 +1,13 @@
 import BigNumber from "bignumber.js";
 
 import { BASE_RESERVE } from "@shared/constants/stellar";
+import { AssetType } from "@shared/api/types/account-balance";
+import { getCanonicalFromAsset } from "@shared/helpers/stellar";
+import {
+  isClassicBalance,
+  isNativeBalance,
+  isSorobanBalance,
+} from "popup/helpers/balance";
 
 // Pre-flight: does a NEW-token swap risk failing on-chain because the source
 // account can't cover the extra 0.5 XLM trustline reserve? §3.6.
@@ -47,4 +54,31 @@ export const deductNewTrustlineReserve = ({
     return base.minus(reserve).toFixed();
   }
   return base.toFixed();
+};
+
+// Picks the held non-XLM CLASSIC balance with the largest total — the default
+// sell token for the "Swap for 0.5 XLM" reserve-recovery affordance on the
+// XlmReserveSheet. Returns its canonical ("CODE:ISSUER"), or undefined when
+// the account holds no swappable classic token (so the affordance is hidden).
+// Mirrors mobile's bestNonXlmClassicBalance, which sorts by fiat then total;
+// we sort by total, the value the amount screen already has on hand (§3.2).
+export const pickBestNonXlmClassicCanonical = (
+  balances: AssetType[],
+): string | undefined => {
+  const best = balances
+    .filter(
+      (b) =>
+        isClassicBalance(b) &&
+        !isNativeBalance(b) &&
+        !isSorobanBalance(b) &&
+        new BigNumber(b.total).gt(0),
+    )
+    .sort(
+      (a, b) => new BigNumber(b.total).comparedTo(new BigNumber(a.total)) ?? 0,
+    )[0];
+
+  if (!best || !isClassicBalance(best)) {
+    return undefined;
+  }
+  return getCanonicalFromAsset(best.token.code, best.token.issuer.key);
 };
