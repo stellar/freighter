@@ -65,6 +65,22 @@ export const SwapAsset = ({
   const { fetchData: lookupFetchData, state: lookupState } =
     useSwapTokenLookup();
 
+  // Destination search: the previous lookup result lingers in lookupState
+  // during the 300ms debounce, so the picker would briefly show stale held
+  // tokens (and empty search sections) before the new results arrive. Track a
+  // pending flag from the moment the user types until the lookup settles so we
+  // show the loader instead — clearing every result at once (§ task 4).
+  const [isSearchPending, setIsSearchPending] = React.useState(false);
+
+  React.useEffect(() => {
+    if (
+      lookupState.state === RequestState.SUCCESS ||
+      lookupState.state === RequestState.ERROR
+    ) {
+      setIsSearchPending(false);
+    }
+  }, [lookupState.state]);
+
   const isLoading = isDestination
     ? lookupState.state === RequestState.IDLE ||
       lookupState.state === RequestState.LOADING
@@ -119,6 +135,12 @@ export const SwapAsset = ({
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     formik.setFieldValue("searchTerm", val);
+    // The destination lookup is async (debounced + network); show the loader
+    // until it settles so all results clear at once on each keystroke. The
+    // source filter is synchronous, so it doesn't need this.
+    if (isDestination) {
+      setIsSearchPending(true);
+    }
     debouncedSubmit();
   };
 
@@ -252,7 +274,7 @@ export const SwapAsset = ({
           />
         </FormRows>
         <div className="SwapFrom">
-          {isLoading ? (
+          {isLoading || isSearchPending ? (
             <div className="SwapFrom__loader">
               <Loader size="2rem" />
             </div>

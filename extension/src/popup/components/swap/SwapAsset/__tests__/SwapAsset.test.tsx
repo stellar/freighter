@@ -148,6 +148,51 @@ describe("SwapAsset selectionType", () => {
     });
   });
 
+  it("destination: typing clears all results and shows the loader until the lookup settles", () => {
+    render(
+      <Wrapper state={{}} routes={["/"]}>
+        <SwapAsset
+          selectionType="destination"
+          hiddenAssets={[]}
+          onClickAsset={jest.fn()}
+          goBack={jest.fn()}
+        />
+      </Wrapper>,
+    );
+
+    // Idle results are shown first.
+    expect(screen.getByTestId("swap-picker-sections")).toBeInTheDocument();
+
+    // Typing immediately replaces every result (held + non-held) with the
+    // loader, instead of leaving stale held tokens visible during the debounce.
+    fireEvent.change(screen.getByTestId("swap-from-search"), {
+      target: { value: "AQ" },
+    });
+
+    expect(screen.queryByTestId("swap-picker-sections")).toBeNull();
+    expect(document.querySelector(".SwapFrom__loader")).toBeInTheDocument();
+  });
+
+  it("source: typing does not show the loader (the filter is synchronous)", () => {
+    render(
+      <Wrapper state={{}} routes={["/"]}>
+        <SwapAsset
+          selectionType="source"
+          hiddenAssets={[]}
+          onClickAsset={jest.fn()}
+          goBack={jest.fn()}
+        />
+      </Wrapper>,
+    );
+
+    fireEvent.change(screen.getByTestId("swap-from-search"), {
+      target: { value: "US" },
+    });
+
+    expect(screen.getByTestId("swap-picker-sections")).toBeInTheDocument();
+    expect(document.querySelector(".SwapFrom__loader")).toBeNull();
+  });
+
   it("destination: runs the idle lookup with the account's held balances", () => {
     const heldUsdc = {
       token: { code: "USDC", issuer: { key: "GUSD" } },
