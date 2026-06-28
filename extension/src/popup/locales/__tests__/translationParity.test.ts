@@ -6,6 +6,7 @@ const swapKeys = [
   "Token discovery is temporarily unavailable. You can still swap between tokens you already hold.",
   "Soroban contract tokens aren't supported for swaps yet. Try searching for a Classic token instead.",
   "No tokens match {{term}}",
+  "Select a token",
   "You sell",
   "You receive",
   "Insufficient balance",

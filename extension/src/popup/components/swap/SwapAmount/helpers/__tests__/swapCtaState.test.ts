@@ -10,13 +10,13 @@ const base: SwapCtaInputs = {
 };
 
 describe("getSwapCtaState", () => {
-  it("prompts to select an asset when either side is missing", () => {
+  it("prompts to select a token (enabled, so it can open the picker) when either side is missing", () => {
     expect(getSwapCtaState({ ...base, hasSource: false })).toEqual({
-      disabled: true,
+      disabled: false,
       labelKey: "select",
     });
     expect(getSwapCtaState({ ...base, hasDestination: false })).toEqual({
-      disabled: true,
+      disabled: false,
       labelKey: "select",
     });
   });

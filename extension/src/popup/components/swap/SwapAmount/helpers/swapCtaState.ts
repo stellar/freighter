@@ -27,8 +27,11 @@ export const getSwapCtaState = ({
   insufficientXlmForFees,
   hasNoSwapPath,
 }: SwapCtaInputs): { disabled: boolean; labelKey: SwapCtaLabelKey } => {
+  // Enabled so the user can tap it to open the picker for the missing side
+  // (the screen prefers the sell token when both are missing). Other blocking
+  // states stay disabled — there's nothing useful to do from them.
   if (!hasSource || !hasDestination) {
-    return { disabled: true, labelKey: "select" };
+    return { disabled: false, labelKey: "select" };
   }
   if (amountIsZero) {
     return { disabled: true, labelKey: "enter" };

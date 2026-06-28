@@ -976,8 +976,8 @@ describe.skip("Swap", () => {
     });
   });
 
-  describe("Select an asset button disabled state", () => {
-    it("Select an asset button is disabled when no destination asset is selected", async () => {
+  describe("Select a token button state", () => {
+    it("Select a token button is enabled (opens the picker) when no destination token is selected", async () => {
       render(
         <Wrapper
           routes={[ROUTES.swap]}
@@ -1008,8 +1008,8 @@ describe.skip("Swap", () => {
       });
 
       const continueButton = screen.getByTestId("swap-amount-btn-continue");
-      expect(continueButton).toBeDisabled();
-      expect(continueButton).toHaveTextContent("Select an asset");
+      expect(continueButton).toBeEnabled();
+      expect(continueButton).toHaveTextContent("Select a token");
     });
 
     it("Button shows Review swap and is enabled when destination asset is selected and amount > 0", async () => {

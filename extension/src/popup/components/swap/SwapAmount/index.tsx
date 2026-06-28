@@ -677,7 +677,7 @@ export const SwapAmount = ({
     hasNoSwapPath,
   });
   const ctaLabels: Record<SwapCtaLabelKey, string> = {
-    select: t("Select an asset"),
+    select: t("Select a token"),
     enter: t("Enter an amount"),
     insufficientBalance: t("Insufficient balance"),
     insufficientXlmFees: t("Not enough XLM for network fees"),
@@ -743,6 +743,22 @@ export const SwapAmount = ({
               disabled={cta.disabled}
               onClick={(e) => {
                 e.preventDefault();
+                // In the "select" state the button is a shortcut to the picker
+                // for the missing side — preferring the sell token when both
+                // are missing — rather than a submit (§ task 1).
+                if (cta.labelKey === "select") {
+                  const side = !asset ? "source" : "destination";
+                  emitMetric(METRIC_NAMES.swapPickerOpened, {
+                    side,
+                    source: "cta",
+                  });
+                  if (!asset) {
+                    goToEditSrc();
+                  } else {
+                    goToEditDst();
+                  }
+                  return;
+                }
                 formik.submitForm();
               }}
             >
@@ -774,9 +790,22 @@ export const SwapAmount = ({
                     availableBalanceText={availableBalanceText}
                     availableBalanceFontSizePx={availableBalanceFontSizePx}
                     inputType={inputType}
-                    amount={formik.values.amount}
-                    amountUsd={formik.values.amountUsd}
+                    // Show the gray "0" placeholder (empty input) until an
+                    // amount is entered; redux keeps the canonical "0".
+                    amount={
+                      formik.values.amount === "0" ? "" : formik.values.amount
+                    }
+                    amountUsd={
+                      formik.values.amountUsd === "0.00"
+                        ? ""
+                        : formik.values.amountUsd
+                    }
                     amountFontSizeClass={getAmountFontSizeClass()}
+                    // Don't grab focus until the swap is ready to receive an
+                    // amount (both tokens picked); on entry the source defaults
+                    // to XLM but the receive side is empty, so the card stays
+                    // unfocused with a gray "0" placeholder (§ task 1).
+                    autoFocus={!!asset && !!destinationAsset}
                     assetCode={srcAsset ? srcAsset.code : ""}
                     assetIcon={assetIcon}
                     assetIcons={
@@ -798,12 +827,15 @@ export const SwapAmount = ({
                     isAmountTooHigh={isAmountTooHigh}
                     cryptoDecimals={assetDecimals}
                     onAmountChange={({ amount: newAmount }) => {
-                      formik.setFieldValue("amount", newAmount);
-                      dispatch(saveAmount(newAmount));
+                      // Normalize a cleared input back to the canonical "0".
+                      const v = newAmount === "" ? "0" : newAmount;
+                      formik.setFieldValue("amount", v);
+                      dispatch(saveAmount(v));
                     }}
                     onAmountUsdChange={({ amount: newAmount }) => {
-                      formik.setFieldValue("amountUsd", newAmount);
-                      dispatch(saveAmountUsd(newAmount));
+                      const v = newAmount === "" ? "0.00" : newAmount;
+                      formik.setFieldValue("amountUsd", v);
+                      dispatch(saveAmountUsd(v));
                     }}
                     onToggleInputType={() => {
                       const newInputType =
