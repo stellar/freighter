@@ -130,6 +130,7 @@ export interface Response {
   overriddenBlockaidResponse: string | null;
   recentProtocols: RecentProtocolEntry[];
   hasSeenDiscoverWelcome: boolean;
+  cachedSwapTopTokens: { tokens: unknown[]; updatedAt: number } | null;
 }
 
 export interface MemoRequiredAccount {
