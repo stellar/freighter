@@ -140,7 +140,14 @@ export const SendingTransaction = ({
   const isSuccess = submissionState.state === RequestState.SUCCESS;
   const assetIcon = icons[asset]!;
   const assetIcons = asset !== "native" ? { [asset]: assetIcon } : {};
-  const dstAssetIcon = icons[destinationAsset]!;
+  // A new (not-yet-held) destination token has no entry in the icon cache, so
+  // fall back to the iconUrl carried on the picked token's details — the same
+  // source the picker and review screen use — so the icon persists through the
+  // Swapping/Swapped! states instead of showing a broken image (§ task 6).
+  const dstAssetIcon =
+    icons[destinationAsset] ||
+    transactionData.destinationTokenDetails?.iconUrl ||
+    "";
   const dstAssetIcons =
     destinationAsset !== "native" ? { [destinationAsset]: dstAssetIcon } : {};
 
