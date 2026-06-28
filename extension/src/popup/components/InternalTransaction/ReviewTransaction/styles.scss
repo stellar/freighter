@@ -58,6 +58,24 @@
         min-width: 0;
       }
 
+      // The rate row gives the short "Rate" label only its content width (plus
+      // a 20px gap) and lets the value take the rest, so a long rate isn't
+      // squeezed into a 50% column (§ task 5). The value's font-size steps down
+      // by length in the component.
+      &--rate {
+        .ReviewTx__Details__Row__Title {
+          flex: 0 0 auto;
+          margin-right: pxToRem(20px);
+        }
+
+        .ReviewTx__Details__Row__Value {
+          flex: 1 1 auto;
+          min-width: 0;
+          align-items: center;
+          text-align: right;
+        }
+      }
+
       &__Title {
         flex: 2;
         display: flex;
