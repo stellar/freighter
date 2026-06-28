@@ -812,6 +812,10 @@ export const SwapAmount = ({
                       asset && asset !== "native" ? { [asset]: assetIcon } : {}
                     }
                     assetIssuerKey={srcAsset?.issuer}
+                    // Carry the sell token's Blockaid verdict onto its pill so a
+                    // flagged source keeps its warning badge after selection,
+                    // matching the picker list (§ task 3).
+                    securityLevel={sourceTokenSecurityLevel}
                     supportsUsd={Boolean(supportsUsd)}
                     fiatLineText={
                       !asset
@@ -912,6 +916,12 @@ export const SwapAmount = ({
                         : {}
                     }
                     assetIssuerKey={dstAsset?.issuer}
+                    // Carry the destination token's pick-time Blockaid verdict
+                    // onto its pill so a flagged token keeps its warning badge
+                    // after selection, matching the picker list (§ task 3).
+                    securityLevel={
+                      transactionData.destinationTokenDetails?.securityLevel
+                    }
                     supportsUsd={Boolean(supportsUsd)}
                     fiatLineText={
                       !destinationAsset
