@@ -9,6 +9,12 @@ const resp = (status: number): Response => new Response(null, { status });
 const authHeaderOf = (call: unknown[]): string =>
   ((call[1] as RequestInit).headers as Record<string, string>).Authorization;
 
+const claimsOf = (call: unknown[]): Record<string, unknown> => {
+  const jwt = authHeaderOf(call).replace(/^Bearer /, "");
+  const payload = jwt.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
+  return JSON.parse(Buffer.from(payload, "base64").toString("utf8"));
+};
+
 describe("authedFetch", () => {
   it("returns the response and does not retry on success", async () => {
     const fetchImpl = jest.fn().mockResolvedValue(resp(200));
@@ -84,6 +90,38 @@ describe("authedFetch", () => {
       fetchImpl,
     });
     expect((fetchImpl.mock.calls[0][1] as RequestInit).method).toBe("PATCH");
+  });
+
+  it("signs the full request target when baseUrl carries an /api/v1 prefix", async () => {
+    // INDEXER_V2_URL is "<host>/api/v1"; callers append the endpoint suffix. The
+    // signed methodAndPath must be the full URI the server sees, not the bare
+    // path fragment, or the request 401s.
+    const fetchImpl = jest.fn().mockResolvedValue(resp(200));
+    await authedFetch({
+      keypair: KP,
+      baseUrl: "http://x/api/v1",
+      method: "GET",
+      path: "/contacts",
+      fetchImpl,
+    });
+    expect(fetchImpl.mock.calls[0][0]).toBe("http://x/api/v1/contacts");
+    expect(claimsOf(fetchImpl.mock.calls[0]).methodAndPath).toBe(
+      "GET /api/v1/contacts",
+    );
+  });
+
+  it("includes the query string in the signed request target", async () => {
+    const fetchImpl = jest.fn().mockResolvedValue(resp(200));
+    await authedFetch({
+      keypair: KP,
+      baseUrl: "http://x/api/v1",
+      method: "GET",
+      path: "/contacts?cursor=abc",
+      fetchImpl,
+    });
+    expect(claimsOf(fetchImpl.mock.calls[0]).methodAndPath).toBe(
+      "GET /api/v1/contacts?cursor=abc",
+    );
   });
 
   it("strips a trailing slash from baseUrl when building the URL", async () => {
