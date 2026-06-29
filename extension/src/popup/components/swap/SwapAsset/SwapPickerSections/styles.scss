@@ -22,6 +22,20 @@
     color: var(--sds-clr-gray-11);
     font-size: 0.875rem;
 
+    // The Verified/Unverified header is a button so the WHOLE title (not just
+    // the (i) icon) opens the info sheet. Reset native button styling and keep
+    // it inline so it sizes to its content (only the title is the hit target,
+    // not the full row width).
+    &--button {
+      background: transparent;
+      border: none;
+      padding: 0;
+      cursor: pointer;
+      text-align: left;
+      font: inherit;
+      align-self: flex-start;
+    }
+
     &__info {
       background: transparent;
       border: none;

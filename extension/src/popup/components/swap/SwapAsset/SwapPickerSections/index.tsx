@@ -223,38 +223,38 @@ export const SwapPickerSections = ({
 
           {isSearching && verified.length > 0 && (
             <>
-              <div className="SwapPickerSections__header">
+              <button
+                type="button"
+                className="SwapPickerSections__header SwapPickerSections__header--button"
+                data-testid="swap-section-verified-info"
+                aria-label={t("About verified tokens")}
+                onClick={() => setVerifiedSheetOpen(true)}
+              >
                 <span data-testid="swap-section-verified">{t("Verified")}</span>
-                <button
-                  type="button"
-                  className="SwapPickerSections__header__info"
-                  data-testid="swap-section-verified-info"
-                  aria-label={t("About verified tokens")}
-                  onClick={() => setVerifiedSheetOpen(true)}
-                >
+                <span className="SwapPickerSections__header__info">
                   <Icon.InfoCircle />
-                </button>
-              </div>
+                </span>
+              </button>
               {renderDiscoverRows(verified, "search")}
             </>
           )}
 
           {isSearching && unverified.length > 0 && (
             <>
-              <div className="SwapPickerSections__header">
+              <button
+                type="button"
+                className="SwapPickerSections__header SwapPickerSections__header--button"
+                data-testid="swap-section-unverified-info"
+                aria-label={t("About unverified tokens")}
+                onClick={() => setUnverifiedSheetOpen(true)}
+              >
                 <span data-testid="swap-section-unverified">
                   {t("Unverified")}
                 </span>
-                <button
-                  type="button"
-                  className="SwapPickerSections__header__info"
-                  data-testid="swap-section-unverified-info"
-                  aria-label={t("About unverified tokens")}
-                  onClick={() => setUnverifiedSheetOpen(true)}
-                >
+                <span className="SwapPickerSections__header__info">
                   <Icon.InfoCircle />
-                </button>
-              </div>
+                </span>
+              </button>
               {renderDiscoverRows(unverified, "search")}
             </>
           )}
