@@ -627,6 +627,15 @@ export const useSwapTokenLookup = () => {
         searchResults,
       });
 
+      // A newer lookup (the user typed again or cleared the box) already
+      // superseded this one. Some awaits above don't take the signal
+      // (splitVerifiedAssetCurrency), so a superseded call can still reach here
+      // and commit its stale sections over the current render — the "Your
+      // tokens" flash. Drop it (§ batch4 task 7).
+      if (signal.aborted) {
+        return;
+      }
+
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });
 
       // Bulk Blockaid scan of non-held candidates (mainnet only; testnet = unable-to-scan)
@@ -669,6 +678,11 @@ export const useSwapTokenLookup = () => {
                 }),
               },
             };
+            // Same guard as the first dispatch: don't repaint a superseded
+            // lookup's Blockaid-decorated sections over the current one.
+            if (signal.aborted) {
+              return;
+            }
             dispatch({ type: "FETCH_DATA_SUCCESS", payload });
           }
         }
