@@ -93,8 +93,9 @@
     padding: pxToRem(12px);
     border-radius: pxToRem(16px);
     background-color: var(--sds-clr-gray-03);
+    // Same 12px as the inter-banner gap, so the spacing below the banner block
+    // matches the spacing between banners (§ batch4 follow-up).
     margin-top: pxToRem(12px);
-    margin-top: pxToRem(24px);
 
     &__Row {
       display: flex;
