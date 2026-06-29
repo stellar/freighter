@@ -873,6 +873,7 @@ export const SwapAmount = ({
                             }`
                     }
                     isAmountTooHigh={isAmountTooHigh}
+                    maxSpendableText={displayTotal}
                     cryptoDecimals={assetDecimals}
                     onAmountChange={({ amount: newAmount }) => {
                       // Normalize a cleared input back to the canonical "0".

@@ -810,6 +810,7 @@ export const SendAmount = ({
                         : `${formatAmount(effectiveTokenAmount || "0")} ${parsedSourceAsset.code}`
                     }
                     isAmountTooHigh={isAmountTooHigh}
+                    maxSpendableText={displayTotal}
                     cryptoDecimals={getAssetDecimals(
                       asset,
                       sendData.userBalances,

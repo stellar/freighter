@@ -10,6 +10,7 @@ const swapKeys = [
   "You sell",
   "You receive",
   "Insufficient balance",
+  "Insufficient balance. Maximum spendable: {{amount}} {{symbol}}",
   "Not enough XLM for network fees",
   "No quote available",
   "The token you're receiving was flagged as malicious by Blockaid.",

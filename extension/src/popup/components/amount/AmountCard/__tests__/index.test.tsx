@@ -63,14 +63,18 @@ describe("AmountCard", () => {
     expect(screen.getByTestId("ScamAssetIcon")).toBeInTheDocument();
   });
 
-  it("renders the too-high error when isAmountTooHigh is true", () => {
+  it("renders the insufficient-balance error when isAmountTooHigh is true", () => {
     render(
       <Wrapper state={{}} routes={["/"]}>
-        <AmountCard {...baseProps} isAmountTooHigh />
+        <AmountCard {...baseProps} isAmountTooHigh maxSpendableText="12.34" />
       </Wrapper>,
     );
+    // The test i18n returns the key un-interpolated; assert the new copy is in
+    // use (the max-spendable amount + symbol are interpolated at runtime).
     expect(
-      screen.getByText("You don’t have enough {{asset}} in your account"),
+      screen.getByText(
+        "Insufficient balance. Maximum spendable: {{amount}} {{symbol}}",
+      ),
     ).toBeInTheDocument();
   });
 

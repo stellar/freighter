@@ -29,6 +29,9 @@ export interface AmountCardProps {
   supportsUsd: boolean;
   fiatLineText: string;
   isAmountTooHigh: boolean;
+  /** Pre-formatted max-spendable amount shown in the insufficient-balance
+   * error (e.g. "123.23"); the token code is taken from assetCode. */
+  maxSpendableText?: string;
   isReadOnly?: boolean;
   autoFocus?: boolean;
   /** Optional handle to the amount input so a parent can focus it (e.g. the
@@ -61,6 +64,7 @@ export const AmountCard = ({
   supportsUsd,
   fiatLineText,
   isAmountTooHigh,
+  maxSpendableText = "",
   isReadOnly = false,
   autoFocus = true,
   amountInputRef,
@@ -291,9 +295,13 @@ export const AmountCard = ({
         <div className="AmountCard__invalid-state">
           <Icon.AlertCircle />
           <span>
-            {t("You don’t have enough {{asset}} in your account", {
-              asset: assetCode,
-            })}
+            {t(
+              "Insufficient balance. Maximum spendable: {{amount}} {{symbol}}",
+              {
+                amount: maxSpendableText,
+                symbol: assetCode,
+              },
+            )}
           </span>
         </div>
       )}
