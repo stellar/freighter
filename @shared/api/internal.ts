@@ -12,7 +12,7 @@ import {
   XdrLargeInt,
 } from "stellar-sdk";
 import BigNumber from "bignumber.js";
-import { INDEXER_URL, INDEXER_V2_URL } from "@shared/constants/mercury";
+import { INDEXER_URL } from "@shared/constants/mercury";
 import {
   AutoLockTimeoutMinutes,
   DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
@@ -659,10 +659,18 @@ export const getTokenPrices = async (
 };
 
 export const getDiscoverData = async (): Promise<DiscoverData> => {
-  const url = new URL(`${INDEXER_V2_URL}/protocols`);
-  const response = await fetch(url.href);
-  const parsedResponse = (await response.json()) as {
-    data: {
+  const { status, body } = await sendMessageToBackground<{
+    status: number;
+    body: unknown;
+  }>({
+    type: SERVICE_TYPES.FETCH_BACKEND_V2,
+    activePublicKey: null,
+    method: "GET",
+    path: "/protocols",
+  });
+
+  const parsed = body as {
+    data?: {
       protocols: {
         description: string;
         icon_url: string;
@@ -676,15 +684,13 @@ export const getDiscoverData = async (): Promise<DiscoverData> => {
     };
   };
 
-  if (!response.ok || !parsedResponse.data) {
-    const _err = JSON.stringify(parsedResponse);
-    captureException(
-      `Failed to fetch discover entries - ${response.status}: ${response.statusText}`,
-    );
+  if (status !== 200 || !parsed?.data) {
+    const _err = JSON.stringify(parsed);
+    captureException(`Failed to fetch discover entries - ${status}`);
     throw new Error(_err);
   }
 
-  return parsedResponse.data.protocols.map((entry) => ({
+  return parsed.data.protocols.map((entry) => ({
     description: entry.description,
     iconUrl: entry.icon_url,
     name: entry.name,

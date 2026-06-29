@@ -99,6 +99,7 @@ import { addRecentProtocol } from "./handlers/addRecentProtocol";
 import { clearRecentProtocols } from "./handlers/clearRecentProtocols";
 import { getDiscoverWelcomeSeen } from "./handlers/getDiscoverWelcomeSeen";
 import { dismissDiscoverWelcome } from "./handlers/dismissDiscoverWelcome";
+import { callBackendV2 } from "background/helpers/callBackendV2";
 
 const numOfPublicKeysToCheck = 5;
 
@@ -157,8 +158,7 @@ export const popupMessageListener = (
   // (browser-action popup, sidepanel) OR the URL is on our extension
   // origin (popup window, options page, fullscreen).
   const extensionOrigin = browser?.runtime?.getURL?.("") ?? "";
-  const isFromOwnExtension =
-    !sender.id || sender.id === browser?.runtime?.id;
+  const isFromOwnExtension = !sender.id || sender.id === browser?.runtime?.id;
   const isExtensionUrl =
     !!extensionOrigin &&
     typeof sender.url === "string" &&
@@ -645,6 +645,16 @@ export const popupMessageListener = (
     case SERVICE_TYPES.USER_ACTIVITY: {
       if (!isFromExtensionPage) return { error: "Unauthorized" };
       return userActivity({ sessionTimer, sessionStore, localStore });
+    }
+
+    case SERVICE_TYPES.FETCH_BACKEND_V2: {
+      return callBackendV2({
+        method: request.method,
+        path: request.path,
+        body: request.body,
+        sessionStore,
+        localStore,
+      });
     }
 
     default:
