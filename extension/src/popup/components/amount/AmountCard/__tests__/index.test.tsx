@@ -142,6 +142,39 @@ describe("AmountCard", () => {
     expect(input.selectionStart).toBe(input.selectionEnd);
   });
 
+  it("fires onInputFocus/onInputBlur when the amount input gains/loses focus", () => {
+    const onInputFocus = jest.fn();
+    const onInputBlur = jest.fn();
+    render(
+      <Wrapper state={{}} routes={["/"]}>
+        <AmountCard
+          {...baseProps}
+          autoFocus={false}
+          onInputFocus={onInputFocus}
+          onInputBlur={onInputBlur}
+        />
+      </Wrapper>,
+    );
+    const input = screen.getByTestId("send-amount-amount-input");
+    fireEvent.focus(input);
+    expect(onInputFocus).toHaveBeenCalledTimes(1);
+    fireEvent.blur(input);
+    expect(onInputBlur).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not throw on focus/blur when the callbacks are omitted", () => {
+    render(
+      <Wrapper state={{}} routes={["/"]}>
+        <AmountCard {...baseProps} />
+      </Wrapper>,
+    );
+    const input = screen.getByTestId("send-amount-amount-input");
+    expect(() => {
+      fireEvent.focus(input);
+      fireEvent.blur(input);
+    }).not.toThrow();
+  });
+
   it("fires onSelectAsset when asset selector is clicked even with isReadOnly", () => {
     const onSelectAsset = jest.fn();
     render(

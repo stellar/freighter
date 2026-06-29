@@ -34,6 +34,10 @@ export interface AmountCardProps {
   /** Optional handle to the amount input so a parent can focus it (e.g. the
    * swap "Enter an amount" CTA focuses the sell card). */
   amountInputRef?: React.RefObject<HTMLInputElement | null>;
+  /** Fired when the amount input gains/loses focus, so a parent can track it
+   * (e.g. the swap CTA disables itself while the sell input is focused). */
+  onInputFocus?: () => void;
+  onInputBlur?: () => void;
   cryptoDecimals: number;
   onAmountChange: (next: { amount: string; newCursor: number }) => void;
   onAmountUsdChange: (next: { amount: string; newCursor: number }) => void;
@@ -60,6 +64,8 @@ export const AmountCard = ({
   isReadOnly = false,
   autoFocus = true,
   amountInputRef,
+  onInputFocus,
+  onInputBlur,
   cryptoDecimals,
   onAmountChange,
   onAmountUsdChange,
@@ -174,6 +180,8 @@ export const AmountCard = ({
                   input.selectionEnd = next.newCursor;
                 });
               }}
+              onFocus={onInputFocus}
+              onBlur={onInputBlur}
               autoFocus={autoFocus}
               autoComplete="off"
             />
@@ -210,6 +218,8 @@ export const AmountCard = ({
                     input.selectionEnd = next.newCursor;
                   });
                 }}
+                onFocus={onInputFocus}
+                onBlur={onInputBlur}
                 autoFocus={autoFocus}
                 autoComplete="off"
               />

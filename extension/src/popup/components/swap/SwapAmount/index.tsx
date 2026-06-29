@@ -197,6 +197,11 @@ export const SwapAmount = ({
   // True while a live best-path quote is in flight, so the CTA can tell
   // "still loading a quote" apart from "no path exists" (§2.5).
   const [isLiveQuoteLoading, setIsLiveQuoteLoading] = useState(false);
+  // Tracks focus on the sell input so the "Enter an amount" CTA can disable
+  // itself while the input is focused. Unlike mobile (which keeps it enabled to
+  // re-summon the keyboard), the extension has no virtual keyboard — once the
+  // input is focused the tap-to-focus affordance is redundant (§ batch3 task 1).
+  const [isSellInputFocused, setIsSellInputFocused] = useState(false);
 
   const handleContinue = async (values: { amount: string }) => {
     // Retrying after a quote-expiry submit failure: dismiss the stale notice
@@ -777,7 +782,9 @@ export const SwapAmount = ({
               isRounded
               variant="secondary"
               isLoading={simulationState.state === RequestState.LOADING}
-              disabled={cta.disabled}
+              disabled={
+                cta.disabled || (cta.labelKey === "enter" && isSellInputFocused)
+              }
               onClick={(e) => {
                 e.preventDefault();
                 // In the "select" state the button is a shortcut to the picker
@@ -841,6 +848,8 @@ export const SwapAmount = ({
                     // unfocused with a gray "0" placeholder (§ task 1).
                     autoFocus={!!asset && !!destinationAsset}
                     amountInputRef={sellInputRef}
+                    onInputFocus={() => setIsSellInputFocused(true)}
+                    onInputBlur={() => setIsSellInputFocused(false)}
                     assetCode={srcAsset ? srcAsset.code : ""}
                     assetIcon={assetIcon}
                     assetIcons={
