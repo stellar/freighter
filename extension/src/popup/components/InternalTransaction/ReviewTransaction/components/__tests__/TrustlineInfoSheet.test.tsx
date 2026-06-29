@@ -83,4 +83,23 @@ describe("TrustlineInfoSheet", () => {
     fireEvent.click(screen.getByTestId("trustline-info-sheet-close"));
     expect(onClose).toHaveBeenCalledTimes(1);
   });
+
+  it("renders the 'Got it' CTA as a real SDS secondary button (not bare text)", () => {
+    const onClose = jest.fn();
+    render(
+      <Wrapper state={{}} routes={["/"]}>
+        <TrustlineInfoSheet tokenCode="USDC" onClose={onClose} />
+      </Wrapper>,
+    );
+    // Regression guard for the SDS Button className footgun: passing className
+    // to <Button> overwrites its own variant classes, leaving a bare-text
+    // button. The CTA must carry the SDS variant class so it renders filled,
+    // matching the "Swap for 0.5 XLM" button.
+    const cta = screen.getByText("Got it").closest("button");
+    expect(cta).not.toBeNull();
+    expect(cta).toHaveClass("Button");
+    expect(cta).toHaveClass("Button--secondary");
+    fireEvent.click(cta as HTMLElement);
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
 });

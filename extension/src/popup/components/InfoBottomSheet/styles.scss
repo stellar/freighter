@@ -10,27 +10,6 @@
   // review sheet's View inset), so drop the self-padding to avoid doubling it.
   &--inline {
     padding: 0;
-
-    // Render the dismiss CTA as a solid white button — only for the in-flow
-    // review sheets (trustline + Blockaid), not the modal token-info sheets,
-    // which keep the default SDS secondary variant (§ batch4 follow-up). A
-    // subtle hover shift keeps the press affordance.
-    .InfoSheet__action.Button {
-      &,
-      &:focus,
-      &:focus-visible {
-        background-color: var(--sds-clr-white);
-        border-color: var(--sds-clr-white);
-        color: var(--sds-clr-gray-01);
-      }
-
-      &:hover,
-      &:active {
-        background-color: var(--sds-clr-gray-12);
-        border-color: var(--sds-clr-gray-12);
-        color: var(--sds-clr-gray-01);
-      }
-    }
   }
 
   &__top {

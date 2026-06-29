@@ -69,12 +69,16 @@ export const InfoSheetContent = ({
         <h2 className="InfoSheet__title">{title}</h2>
         <div className="InfoSheet__body">{children}</div>
       </div>
+      {/* Styled exactly like the swap "Swap for 0.5 XLM" CTA: a plain SDS
+          secondary button with no className. Passing a className here is a
+          footgun — SDS Button does `className: \`Button ...\`, ...props`, so a
+          passed className overwrites its own variant/size classes and the
+          button renders as bare text (§ batch4 follow-up). */}
       <Button
-        className="InfoSheet__action"
-        size={isInline ? "lg" : "md"}
+        size="lg"
         variant="secondary"
         isFullWidth
-        isRounded={isInline}
+        isRounded
         onClick={onClose}
       >
         {actionLabel}
