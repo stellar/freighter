@@ -1,7 +1,9 @@
 import { captureException } from "@sentry/browser";
+
 import { LedgerKeyAccounts, LedgerKeyAccount } from "../types";
 import { NetworkDetails } from "@shared/constants/stellar";
-import { INDEXER_V2_URL } from "@shared/constants/mercury";
+import { SERVICE_TYPES } from "@shared/constants/services";
+import { sendMessageToBackground } from "./extensionMessaging";
 
 export const getLedgerKeyAccounts = async ({
   accountList,
@@ -13,28 +15,20 @@ export const getLedgerKeyAccounts = async ({
   let fetchedAccounts = {} as { [code: string]: LedgerKeyAccount };
 
   try {
-    const options = {
+    const { status, body } = await sendMessageToBackground({
+      type: SERVICE_TYPES.FETCH_BACKEND_V2,
+      activePublicKey: null,
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        public_keys: accountList,
-      }),
-    };
-    const url = new URL(`${INDEXER_V2_URL}/ledger-key/accounts`);
-    url.searchParams.append("network", networkDetails.network);
-    const response = await fetch(url, options);
-    if (!response.ok) {
-      const _err = JSON.stringify(response);
-      captureException(
-        `Failed to fetch ledger key accounts - ${response.status}: ${response.statusText}`,
-      );
+      path: `/ledger-key/accounts?network=${networkDetails.network}`,
+      body: JSON.stringify({ public_keys: accountList }),
+    });
 
-      throw new Error(_err);
+    if (status !== 200) {
+      captureException(`Failed to fetch ledger key accounts - ${status}`);
+      return fetchedAccounts;
     }
-    const { data } = (await response.json()) as { data: LedgerKeyAccounts };
 
+    const { data } = body as { data: LedgerKeyAccounts };
     fetchedAccounts = data.ledger_key_accounts;
   } catch (e) {
     captureException(`Error fetching ledger key accounts: ${e}`);
