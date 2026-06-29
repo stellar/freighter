@@ -246,10 +246,13 @@ export const SwapAmount = ({
     validateOnChange: true,
   });
 
-  const getAmountFontSizeClass = (): "lg" | "med" | "small" | "xsmall" => {
-    const currentValue =
-      inputType === "fiat" ? formik.values.amountUsd : formik.values.amount;
-    const digitsLength = currentValue.replace(/[^0-9]/g, "").length;
+  // Size the displayed amount by its digit count. Each card passes its OWN
+  // value so the read-only receive amount isn't sized off the sell amount
+  // (which mis-sized and clipped it on toggle; § task 8).
+  const getAmountFontSizeClass = (
+    value: string,
+  ): "lg" | "med" | "small" | "xsmall" => {
+    const digitsLength = (value || "").replace(/[^0-9]/g, "").length;
     if (digitsLength <= 6) {
       return "lg";
     }
@@ -813,7 +816,11 @@ export const SwapAmount = ({
                         ? ""
                         : formik.values.amountUsd
                     }
-                    amountFontSizeClass={getAmountFontSizeClass()}
+                    amountFontSizeClass={getAmountFontSizeClass(
+                      inputType === "fiat"
+                        ? formik.values.amountUsd
+                        : formik.values.amount,
+                    )}
                     // Don't grab focus until the swap is ready to receive an
                     // amount (both tokens picked); on entry the source defaults
                     // to XLM but the receive side is empty, so the card stays
@@ -921,7 +928,11 @@ export const SwapAmount = ({
                     inputType={inputType}
                     amount={destinationAmount}
                     amountUsd={dstPriceValueUsd || "0.00"}
-                    amountFontSizeClass={getAmountFontSizeClass()}
+                    amountFontSizeClass={getAmountFontSizeClass(
+                      inputType === "fiat"
+                        ? dstPriceValueUsd || "0.00"
+                        : destinationAmount,
+                    )}
                     assetCode={dstAsset ? dstAsset.code : ""}
                     assetIcon={dstAssetIcon}
                     assetIcons={

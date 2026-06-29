@@ -121,6 +121,27 @@ describe("AmountCard", () => {
     expect(onSelectAsset).toHaveBeenCalledTimes(1);
   });
 
+  it("does not select-all the fiat amount on focus (matches the crypto input)", () => {
+    render(
+      <Wrapper state={{}} routes={["/"]}>
+        <AmountCard
+          {...baseProps}
+          inputType="fiat"
+          amountUsd="12.34"
+          supportsUsd
+          fiatLineText="$1.23"
+        />
+      </Wrapper>,
+    );
+    const input = screen.getByTestId(
+      "send-amount-amount-input",
+    ) as HTMLInputElement;
+    fireEvent.focus(input);
+    // The previous fiat-only onFocus={e => e.target.select()} highlighted the
+    // whole amount on the first toggle; the selection must stay collapsed.
+    expect(input.selectionStart).toBe(input.selectionEnd);
+  });
+
   it("fires onSelectAsset when asset selector is clicked even with isReadOnly", () => {
     const onSelectAsset = jest.fn();
     render(

@@ -116,49 +116,63 @@ export const AmountCard = ({
           onClick={isReadOnly ? undefined : () => inputRef.current?.focus()}
           style={isReadOnly ? undefined : { cursor: "text" }}
         >
+          {/* Hidden mirrors used to size each input to its content. BOTH are
+              always rendered so the inactive input's width is measured before
+              the first crypto<->fiat toggle — otherwise the toggled-in input
+              briefly falls back to DEFAULT_INPUT_WIDTH and the value is clipped
+              for a frame (§ task 8). */}
+          <span
+            ref={cryptoSpanRef}
+            className={fontClass}
+            style={{
+              position: "absolute",
+              visibility: "hidden",
+              whiteSpace: "pre",
+            }}
+          >
+            {amount || "0"}
+          </span>
+          <span
+            ref={fiatSpanRef}
+            className={fontClass}
+            style={{
+              position: "absolute",
+              visibility: "hidden",
+              whiteSpace: "pre",
+            }}
+          >
+            {amountUsd || "0"}
+          </span>
           {inputType === "crypto" && (
-            <>
-              <span
-                ref={cryptoSpanRef}
-                className={fontClass}
-                style={{
-                  position: "absolute",
-                  visibility: "hidden",
-                  whiteSpace: "pre",
-                }}
-              >
-                {amount || "0"}
-              </span>
-              <input
-                ref={inputRef}
-                className={fontClass}
-                style={{
-                  width: `${inputWidthCrypto || DEFAULT_INPUT_WIDTH}px`,
-                }}
-                data-testid="send-amount-amount-input"
-                name="amount"
-                type="text"
-                placeholder="0"
-                value={amount}
-                disabled={isReadOnly}
-                onChange={(e) => {
-                  const input = e.target;
-                  const next = formatAmountPreserveCursor(
-                    e.target.value,
-                    amount,
-                    cryptoDecimals,
-                    e.target.selectionStart || 1,
-                  );
-                  onAmountChange(next);
-                  runAfterUpdate(() => {
-                    input.selectionStart = next.newCursor;
-                    input.selectionEnd = next.newCursor;
-                  });
-                }}
-                autoFocus={autoFocus}
-                autoComplete="off"
-              />
-            </>
+            <input
+              ref={inputRef}
+              className={fontClass}
+              style={{
+                width: `${inputWidthCrypto || DEFAULT_INPUT_WIDTH}px`,
+              }}
+              data-testid="send-amount-amount-input"
+              name="amount"
+              type="text"
+              placeholder="0"
+              value={amount}
+              disabled={isReadOnly}
+              onChange={(e) => {
+                const input = e.target;
+                const next = formatAmountPreserveCursor(
+                  e.target.value,
+                  amount,
+                  cryptoDecimals,
+                  e.target.selectionStart || 1,
+                );
+                onAmountChange(next);
+                runAfterUpdate(() => {
+                  input.selectionStart = next.newCursor;
+                  input.selectionEnd = next.newCursor;
+                });
+              }}
+              autoFocus={autoFocus}
+              autoComplete="off"
+            />
           )}
           {inputType === "fiat" && (
             <>
@@ -167,17 +181,6 @@ export const AmountCard = ({
               >
                 $
               </div>
-              <span
-                ref={fiatSpanRef}
-                className={fontClass}
-                style={{
-                  position: "absolute",
-                  visibility: "hidden",
-                  whiteSpace: "pre",
-                }}
-              >
-                {amountUsd || "0"}
-              </span>
               <input
                 ref={inputRef}
                 className={fontClass}
@@ -205,7 +208,6 @@ export const AmountCard = ({
                 }}
                 autoFocus={autoFocus}
                 autoComplete="off"
-                onFocus={(e) => e.target.select()}
               />
             </>
           )}
