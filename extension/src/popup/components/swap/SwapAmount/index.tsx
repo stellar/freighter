@@ -645,8 +645,20 @@ export const SwapAmount = ({
     // ~0.5 XLM, capped to what's spendable of the sell token so the user never
     // lands on an insufficient-balance state.
     try {
+      // Target a little MORE than the bare reserve so the 0.5 XLM trustline
+      // bump stays covered after the swap's slippage floor (destMin). Sizing to
+      // BASE_RESERVE / (1 - slippage) keeps even a worst-case fill at >= 0.5,
+      // erring slightly over rather than under (§ batch4 task 5). Still capped
+      // to spendable below, so it never exceeds the user's balance.
+      const slippageFraction = Math.min(
+        Math.max(parseFloat(allowedSlippage) || 0, 0) / 100,
+        0.5,
+      );
+      const reserveTarget = new BigNumber(BASE_RESERVE)
+        .dividedBy(1 - slippageFraction)
+        .toFixed(7);
       const path = await horizonGetBestReceivePath({
-        destinationAmount: new BigNumber(BASE_RESERVE).toFixed(),
+        destinationAmount: reserveTarget,
         sourceAsset: sellCanonical,
         destAsset: "native",
         networkDetails,
