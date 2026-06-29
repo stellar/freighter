@@ -37,6 +37,7 @@ function useGetSwapAmountData(
   },
   destinationAddress?: string, // NOTE: can be a G/C/M address
   destinationAsset?: string, // canonical of the selected destination token
+  sourceAsset?: string, // canonical of the selected source token
 ) {
   const [state, dispatch] = useReducer(
     reducer<SwapAmountData, unknown>,
@@ -85,11 +86,17 @@ function useGetSwapAmountData(
       if (_isMainnet) {
         const fetchedTokenPrices = await fetchTokenPrices({
           publicKey: userDomains.publicKey,
-          balances: destinationBalances.balances,
+          // Price the account's HELD balances (the swap never sets a
+          // destination account, so destinationBalances is empty — pricing it
+          // fetched nothing, which left the source price "--" on a stale-cache
+          // miss after a quote expiry, § batch3 task 5).
+          balances: userDomains.balances.balances,
           useCache: true,
-          // Price the selected destination token too, even when the account
-          // doesn't hold it — mirrors freighter-mobile's extraTokenIds.
-          additionalAssetIds: destinationAsset ? [destinationAsset] : [],
+          // Price the selected source + destination tokens explicitly, even
+          // when the account doesn't hold them — mirrors mobile's extraTokenIds.
+          additionalAssetIds: [sourceAsset, destinationAsset].filter(
+            (id): id is string => Boolean(id),
+          ),
         });
         tokenPrices = fetchedTokenPrices.tokenPrices || {};
       }

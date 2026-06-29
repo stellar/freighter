@@ -170,6 +170,7 @@ export const SwapAmount = ({
     },
     destination,
     destinationAsset,
+    asset,
   );
   const {
     state: simulationState,
