@@ -65,6 +65,11 @@ export interface SwapPickerSectionsProps {
     details?: SwapPickerSelection,
   ) => void;
   stellarExpertUrl: string;
+  /** True on the swap-TO (destination) picker. The Soroban "not supported"
+   * empty state only applies to the destination; the source picker shows the
+   * generic "no tokens match" empty state instead (you can only swap FROM a
+   * token you already hold). */
+  isDestination: boolean;
 }
 
 export const SwapPickerSections = ({
@@ -73,6 +78,7 @@ export const SwapPickerSections = ({
   hiddenAssets = [],
   onClickAsset,
   stellarExpertUrl,
+  isDestination,
 }: SwapPickerSectionsProps) => {
   const { t } = useTranslation();
   const [verifiedSheetOpen, setVerifiedSheetOpen] = useState(false);
@@ -170,7 +176,8 @@ export const SwapPickerSections = ({
       )}
 
       {!hasResults ? (
-        result.hadSorobanMatches || isContractId(searchTerm.trim()) ? (
+        isDestination &&
+        (result.hadSorobanMatches || isContractId(searchTerm.trim())) ? (
           <div
             className="SwapPickerSections__empty"
             data-testid="swap-picker-empty-soroban"

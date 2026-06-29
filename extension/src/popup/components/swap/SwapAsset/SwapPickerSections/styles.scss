@@ -47,5 +47,10 @@
     font-weight: var(--font-weight-medium);
     line-height: 1.25rem;
     text-align: center;
+    // A pasted address has no spaces, so wrap it across lines instead of
+    // letting the 56-char string overflow the card (§ task 3).
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    word-break: break-word;
   }
 }

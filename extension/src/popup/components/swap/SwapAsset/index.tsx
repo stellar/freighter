@@ -297,6 +297,7 @@ export const SwapAsset = ({
               hiddenAssets={hiddenAssets}
               onClickAsset={onClickAsset}
               stellarExpertUrl={stellarExpertUrl}
+              isDestination
             />
           ) : (
             <SwapPickerSections
@@ -305,6 +306,7 @@ export const SwapAsset = ({
               hiddenAssets={hiddenAssets}
               onClickAsset={onClickAsset}
               stellarExpertUrl={stellarExpertUrl}
+              isDestination={false}
             />
           )}
         </div>

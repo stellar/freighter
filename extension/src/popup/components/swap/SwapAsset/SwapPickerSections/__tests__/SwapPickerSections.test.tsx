@@ -51,6 +51,9 @@ const emptyResult = {
 const baseProps = {
   onClickAsset: jest.fn(),
   stellarExpertUrl: "https://stellar.expert/explorer/public",
+  // Default to the destination picker so the Soroban-empty-state cases below
+  // behave as before; the source picker is covered by a dedicated test.
+  isDestination: true,
 };
 
 describe("SwapPickerSections", () => {
@@ -153,6 +156,21 @@ describe("SwapPickerSections", () => {
 
     expect(screen.getByTestId("swap-picker-empty-soroban")).toBeInTheDocument();
     expect(screen.queryByTestId("swap-picker-empty")).toBeNull();
+  });
+
+  it("source picker: a pasted contract id with no matches shows the generic empty state, not the Soroban one", () => {
+    render(
+      <SwapPickerSections
+        {...baseProps}
+        isDestination={false}
+        searchTerm="CAS3J7GYLGXMF6TDJBBYYSE3HQ6BBSMLNUQ34T6TZMYMW2EVH34XOWMA"
+        result={{ ...emptyResult, hadSorobanMatches: false }}
+      />,
+    );
+
+    // The Soroban "not supported" copy only makes sense on the swap-TO picker.
+    expect(screen.queryByTestId("swap-picker-empty-soroban")).toBeNull();
+    expect(screen.getByTestId("swap-picker-empty")).toBeInTheDocument();
   });
 
   it("soft fallback notice rendered when isFallback", () => {
