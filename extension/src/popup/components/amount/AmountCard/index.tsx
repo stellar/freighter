@@ -78,17 +78,21 @@ export const AmountCard = ({
   const [inputWidthCrypto, setInputWidthCrypto] = useState(0);
   const [inputWidthFiat, setInputWidthFiat] = useState(0);
 
+  // Re-measure on font-class changes too (not just value changes): the
+  // read-only receive card's inputType flips from the sell card's toggle
+  // without its own value changing, so a font-size-bucket change would
+  // otherwise leave a stale width and clip the value.
   useLayoutEffect(() => {
     if (cryptoSpanRef.current) {
       setInputWidthCrypto(cryptoSpanRef.current.offsetWidth + 2);
     }
-  }, [amount]);
+  }, [amount, amountFontSizeClass]);
 
   useLayoutEffect(() => {
     if (fiatSpanRef.current) {
       setInputWidthFiat(fiatSpanRef.current.offsetWidth + 4);
     }
-  }, [amountUsd]);
+  }, [amountUsd, amountFontSizeClass]);
 
   const isSuspicious =
     securityLevel === SecurityLevel.MALICIOUS ||
