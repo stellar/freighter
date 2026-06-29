@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 
 import { Wrapper } from "popup/__testHelpers__";
 import { RequestState } from "constants/request";
@@ -148,7 +148,7 @@ describe("SwapAsset selectionType", () => {
     });
   });
 
-  it("destination: typing clears all results and shows the loader until the lookup settles", () => {
+  it("destination: typing clears all results and shows the loader until the lookup settles", async () => {
     render(
       <Wrapper state={{}} routes={["/"]}>
         <SwapAsset
@@ -171,6 +171,14 @@ describe("SwapAsset selectionType", () => {
 
     expect(screen.queryByTestId("swap-picker-sections")).toBeNull();
     expect(document.querySelector(".SwapFrom__loader")).toBeInTheDocument();
+
+    // ...and the loader CLEARS once the debounced lookup settles. Regression
+    // guard: the previous lookupState-value effect missed the cache's
+    // SUCCESS→SUCCESS repaint, leaving the loader stuck forever.
+    await waitFor(() => {
+      expect(document.querySelector(".SwapFrom__loader")).toBeNull();
+    });
+    expect(screen.getByTestId("swap-picker-sections")).toBeInTheDocument();
   });
 
   it("source: typing does not show the loader (the filter is synchronous)", () => {
