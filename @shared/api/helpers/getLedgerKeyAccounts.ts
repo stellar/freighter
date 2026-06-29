@@ -27,7 +27,9 @@ export const getLedgerKeyAccounts = async ({
     });
 
     if (status !== 200) {
-      captureException(`Failed to fetch ledger key accounts - ${status}`);
+      captureException(
+        `Failed to fetch ledger key accounts - ${status}: ${JSON.stringify(body)}`,
+      );
       return fetchedAccounts;
     }
 

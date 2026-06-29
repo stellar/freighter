@@ -25,3 +25,14 @@ it("posts public_keys to /ledger-key/accounts via FETCH_BACKEND_V2 (with network
   });
   expect(result).toEqual({ G1: { home_domain: "ex.com" } });
 });
+
+it("returns an empty object on a non-200 response", async () => {
+  mockedSend.mockResolvedValue({ status: 500, body: {} });
+
+  const result = await getLedgerKeyAccounts({
+    accountList: ["G1"],
+    networkDetails: { network: "PUBLIC" } as never,
+  });
+
+  expect(result).toEqual({});
+});
