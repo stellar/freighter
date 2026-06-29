@@ -14,6 +14,7 @@ import { Wrapper } from "popup/__testHelpers__";
 import { initialState as transactionSubmissionInitialState } from "popup/ducks/transactionSubmission";
 import { SwapAmount } from "popup/components/swap/SwapAmount";
 import { emitMetric } from "helpers/metrics";
+import { toast } from "sonner";
 import * as UseGetSwapAmountData from "popup/components/swap/SwapAmount/hooks/useGetSwapAmountData";
 import * as UseSimulateSwapData from "popup/components/swap/SwapAmount/hooks/useSimulateSwapData";
 import * as UseNetworkFees from "popup/helpers/useNetworkFees";
@@ -24,7 +25,12 @@ jest.mock("helpers/metrics", () => ({
   emitMetric: jest.fn(),
 }));
 
+// The quote-expired notice is a sonner toast; assert it fires rather than
+// rendering the portal (the test Wrapper doesn't mount a Toaster).
+jest.mock("sonner", () => ({ toast: { custom: jest.fn() } }));
+
 const emitMetricMock = emitMetric as jest.Mock;
+const toastCustomMock = toast.custom as jest.Mock;
 
 const nativeBalance = {
   token: { type: "native", code: "XLM" },
@@ -104,6 +110,7 @@ describe("SwapAmount telemetry + quote-expired surfacing", () => {
   afterEach(() => {
     jest.restoreAllMocks();
     emitMetricMock.mockClear();
+    toastCustomMock.mockClear();
   });
 
   it("shows the quote-expired notice and emits swapQuoteExpired when flagged", async () => {
@@ -115,14 +122,11 @@ describe("SwapAmount telemetry + quote-expired surfacing", () => {
 
     renderSwapAmount({});
 
+    // The quote-expired toast fires (sonner toast.custom) instead of a fixed
+    // banner taking layout space.
     await waitFor(() => {
-      expect(screen.getByTestId("swap-quote-expired")).toBeInTheDocument();
+      expect(toastCustomMock).toHaveBeenCalled();
     });
-    expect(
-      screen.getByText(
-        "Quote has expired, please try again to get a new quote",
-      ),
-    ).toBeInTheDocument();
 
     const expiredCall = emitMetricMock.mock.calls.find(
       (c) => c[0] === "swap: quote expired",
@@ -156,7 +160,7 @@ describe("SwapAmount telemetry + quote-expired surfacing", () => {
         screen.getByTestId("swap-amount-btn-continue"),
       ).toBeInTheDocument();
     });
-    expect(screen.queryByTestId("swap-quote-expired")).toBeNull();
+    expect(toastCustomMock).not.toHaveBeenCalled();
     expect(
       emitMetricMock.mock.calls.find((c) => c[0] === "swap: quote expired"),
     ).toBeUndefined();

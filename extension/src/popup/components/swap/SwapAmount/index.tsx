@@ -4,6 +4,7 @@ import { Navigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Form, Field, FieldProps, Formik, useFormik } from "formik";
 import { debounce } from "lodash";
+import { toast } from "sonner";
 import BigNumber from "bignumber.js";
 import { captureException } from "@sentry/browser";
 import { object as YupObject, number as YupNumber } from "yup";
@@ -189,7 +190,6 @@ export const SwapAmount = ({
   const [isEditingSettings, setIsEditingSettings] = useState(false);
   const [isReviewingTx, setIsReviewingTx] = React.useState(false);
   const [isXlmReserveOpen, setIsXlmReserveOpen] = useState(false);
-  const [showQuoteExpired, setShowQuoteExpired] = useState(false);
   // True while a live best-path quote is in flight, so the CTA can tell
   // "still loading a quote" apart from "no path exists" (§2.5).
   const [isLiveQuoteLoading, setIsLiveQuoteLoading] = useState(false);
@@ -299,16 +299,30 @@ export const SwapAmount = ({
     setInputType,
   ]);
 
+  // A transient, swipe-/auto-dismissible toast (sonner) rather than a fixed
+  // banner that takes layout space. The stable id dedupes the in-screen
+  // (isQuoteExpired) and submit-recovery (isSwapQuoteExpired) triggers into one
+  // toast instead of stacking two.
+  const showQuoteExpiredToast = () =>
+    toast.custom(
+      () => (
+        <Notification
+          variant="warning"
+          title={t("Quote has expired, please try again to get a new quote")}
+        />
+      ),
+      { id: "swap-quote-expired" },
+    );
+
   // Quote-expired surfacing: when the simulate hook flags an expired quote
   // (Horizon op_under_dest_min / op_too_few_offers), emit the metric and show
-  // the user-facing notification. The auto-refetch is handled by Phase E's
-  // getBestPath retry; this only emits + surfaces the message.
+  // the user-facing toast. The auto-refetch is handled by Phase E's getBestPath
+  // retry; this only emits + surfaces the message.
   useEffect(() => {
     if (!isQuoteExpired) {
-      setShowQuoteExpired(false);
       return;
     }
-    setShowQuoteExpired(true);
+    showQuoteExpiredToast();
     emitMetric(METRIC_NAMES.swapQuoteExpired, {
       sourceToken: asset,
       destToken: destinationAsset,
@@ -318,6 +332,15 @@ export const SwapAmount = ({
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isQuoteExpired]);
+
+  // A quote that expired at submit time (Redux flag) routes back to this screen;
+  // surface the same toast on arrival.
+  useEffect(() => {
+    if (isSwapQuoteExpired) {
+      showQuoteExpiredToast();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isSwapQuoteExpired]);
 
   // Live quote: debounce the source amount and fetch the best path so the
   // "You receive" amount updates as the user types. This is a lightweight
@@ -784,19 +807,6 @@ export const SwapAmount = ({
         }
       >
         <div className="SwapAsset">
-          {(showQuoteExpired || isSwapQuoteExpired) && (
-            <div
-              className="SwapAsset__quote-expired"
-              data-testid="swap-quote-expired"
-            >
-              <Notification
-                variant="warning"
-                title={t(
-                  "Quote has expired, please try again to get a new quote",
-                )}
-              />
-            </div>
-          )}
           <div className="SwapAsset__content">
             <form>
               <div className="SwapAsset__simplebar__content">
