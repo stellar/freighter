@@ -1251,10 +1251,12 @@ export const BlockAidScanExpanded = ({
     }));
 
   const allWarnings = [...warnings, ...extraRows];
-  // A malicious extra escalates the whole pane to "Do not proceed"; any extra
-  // at least makes it suspicious. extraSeverityLevel covers the case where the
-  // caller's verdict is Malicious/Suspicious (via result_type) but carries no
-  // matching feature row, so the pane title stays in lockstep with the gate.
+  // Keep the pane title in lockstep with the gate. When the caller passes its
+  // verdict (extraSeverityLevel) — e.g. a swap token's merged SecurityLevel —
+  // trust it: this covers a token flagged via result_type with no matching
+  // feature row, and avoids over-escalating an unable-to-scan token (which has
+  // extra rows but is neither malicious nor suspicious). Fall back to the row
+  // presence only when no verdict was supplied.
   const hasMaliciousExtra =
     extraRows.some((row) => row.isError) ||
     extraSeverityLevel === SecurityLevel.MALICIOUS;
@@ -1262,8 +1264,8 @@ export const BlockAidScanExpanded = ({
   const mergedIsSuspicious =
     !mergedIsMalicious &&
     (isSuspicious ||
-      extraRows.length > 0 ||
-      extraSeverityLevel === SecurityLevel.SUSPICIOUS);
+      extraSeverityLevel === SecurityLevel.SUSPICIOUS ||
+      (extraSeverityLevel == null && extraRows.length > 0));
 
   let requestId = "";
   if (scanResult && "request_id" in scanResult && scanResult.request_id) {

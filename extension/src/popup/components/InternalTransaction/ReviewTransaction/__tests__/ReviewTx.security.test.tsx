@@ -356,4 +356,23 @@ describe("ReviewTx Blockaid security banner (single, by priority) + badges", () 
       screen.getByText("The sending token is associated with a known scam."),
     ).toBeInTheDocument();
   });
+
+  it("opens the pane from an unable-to-scan token banner that has no per-feature reasons", () => {
+    renderReview({
+      scanResult: null,
+      destLevel: SecurityLevel.UNABLE_TO_SCAN,
+      // No destWarnings — Blockaid returned no per-feature reasons.
+    });
+    const banner = screen.getByTestId("review-tx-token-warning");
+    fireEvent.click(banner);
+    // The pane opens and shows the consolidated message as its reason; an
+    // unable-to-scan token is neither malicious nor suspicious, so the title is
+    // the soft "Proceed with caution".
+    expect(screen.getByText("Proceed with caution")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "The token you're receiving couldn't be scanned for security risks.",
+      ),
+    ).toBeInTheDocument();
+  });
 });

@@ -277,28 +277,15 @@ export const ReviewTx = ({
     ...(destinationTokenDetails?.securityWarnings ?? []),
   ];
 
-  /**
-   * Pane state machine:
-   * - No warning: [Review (0), Memo (1), Fees (2)]
-   * - With Blockaid warning: [Review (0), Memo (1), Blockaid (2), Fees (3)] - Blockaid accessible via banner click
-   */
-  const paneConfig = React.useMemo(
-    () =>
-      !shouldShowTxWarning
-        ? {
-            blockaidIndex: null,
-            reviewIndex: 0,
-            memoIndex: 1,
-            feesIndex: 2,
-          }
-        : {
-            blockaidIndex: 2,
-            reviewIndex: 0,
-            memoIndex: 1,
-            feesIndex: 3,
-          },
-    [shouldShowTxWarning],
-  );
+  // Horizontal slider panes: [Review (0), Memo (1), Fees (2)]. The Blockaid
+  // "Do not proceed" sheet is NOT a slider pane — it renders in-flow over the
+  // body like the trustline sheet (see isOnBlockaidSheet below), so it appears
+  // in place instead of sliding in from the side (§ batch4 follow-up).
+  const paneConfig = {
+    reviewIndex: 0,
+    memoIndex: 1,
+    feesIndex: 2,
+  };
 
   // Which single Blockaid banner to render, by mobile's priority cascade
   // (useReviewSecuritySummary): tx-malicious > tx-suspicious > token-malicious
@@ -319,7 +306,7 @@ export const ReviewTx = ({
     ) {
       return "token";
     }
-    if (txSecurityLevel && paneConfig.blockaidIndex !== null) {
+    if (txSecurityLevel && shouldShowTxWarning) {
       return "tx"; // tx unable-to-scan
     }
     if (tokenWarningMessage) {
@@ -328,15 +315,12 @@ export const ReviewTx = ({
     return null;
   })();
 
-  // When the token banner is shown (clean/absent tx scan) but the token carries
-  // friendly reasons, make the banner open the expandable pane so those reasons
-  // are reachable — mirroring the tx banner (§ batch4 task 3).
-  const tokenBannerOpensPane =
-    blockaidBannerKind === "token" && tokenSecurityWarnings.length > 0;
-
-  const isOnBlockaidPane =
-    paneConfig.blockaidIndex !== null &&
-    activePaneIndex === paneConfig.blockaidIndex;
+  // The "Do not proceed" detail sheet renders in-flow over the body (like the
+  // trustline sheet) rather than as a horizontal slider pane, so it appears in
+  // place instead of sliding from the side (§ batch4 follow-up). Both the tx
+  // and token banners open it.
+  const [isOnBlockaidSheet, setIsOnBlockaidSheet] = useState(false);
+  const openBlockaidSheet = () => setIsOnBlockaidSheet(true);
 
   const isOnFeesPane = activePaneIndex === paneConfig.feesIndex;
 
@@ -477,45 +461,25 @@ export const ReviewTx = ({
       </div>
       <div className="ReviewTx__Warnings">
         {/* Exactly one Blockaid banner, chosen by blockaidBannerKind (mobile
-            priority). The tx-scan banner opens the expandable pane; the token
-            banner is a single consolidated warning. */}
+            priority). Either banner opens the in-flow "Do not proceed" sheet. */}
         {blockaidBannerKind === "tx" ? (
           <BlockaidTxScanLabel
             scanResult={txScanResult}
-            onClick={() => {
-              if (paneConfig.blockaidIndex !== null) {
-                setActivePaneIndex(paneConfig.blockaidIndex);
-              }
-            }}
+            onClick={openBlockaidSheet}
           />
         ) : blockaidBannerKind === "token" ? (
           <div
-            className={`ReviewTx__Warnings__token${
-              tokenBannerOpensPane
-                ? " ReviewTx__Warnings__token--clickable"
-                : ""
-            }`}
+            className="ReviewTx__Warnings__token ReviewTx__Warnings__token--clickable"
             data-testid="review-tx-token-warning"
-            {...(tokenBannerOpensPane
-              ? {
-                  role: "button",
-                  tabIndex: 0,
-                  onClick: () => {
-                    if (paneConfig.blockaidIndex !== null) {
-                      setActivePaneIndex(paneConfig.blockaidIndex);
-                    }
-                  },
-                  onKeyDown: (e: React.KeyboardEvent) => {
-                    if (
-                      (e.key === "Enter" || e.key === " ") &&
-                      paneConfig.blockaidIndex !== null
-                    ) {
-                      e.preventDefault();
-                      setActivePaneIndex(paneConfig.blockaidIndex);
-                    }
-                  },
-                }
-              : {})}
+            role="button"
+            tabIndex={0}
+            onClick={openBlockaidSheet}
+            onKeyDown={(e: React.KeyboardEvent) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                openBlockaidSheet();
+              }
+            }}
           >
             <Notification
               variant={
@@ -604,14 +568,28 @@ export const ReviewTx = ({
       </div>
     </>
   );
+  // The token banner always opens the sheet (even for an unable-to-scan token
+  // with no per-feature reasons), so fall back to the consolidated banner
+  // message when there are no friendly reasons — otherwise the sheet would have
+  // nothing to show (§ batch4 follow-up).
+  const blockaidSheetExtraWarnings: BlockaidWarning[] =
+    tokenSecurityWarnings.length > 0
+      ? tokenSecurityWarnings
+      : blockaidBannerKind === "token" && tokenWarningMessage
+        ? [
+            {
+              description: tokenWarningMessage,
+              isError: tokenWarningLevel === SecurityLevel.MALICIOUS,
+            },
+          ]
+        : [];
+
   const blockaidPane = (
     <BlockAidScanExpanded
       scanResult={txScanResult}
-      extraWarnings={tokenSecurityWarnings}
+      extraWarnings={blockaidSheetExtraWarnings}
       extraSeverityLevel={tokenWarningLevel}
-      onClose={() => {
-        setActivePaneIndex(paneConfig.reviewIndex);
-      }}
+      onClose={() => setIsOnBlockaidSheet(false)}
     />
   );
 
@@ -655,11 +633,9 @@ export const ReviewTx = ({
     />
   );
 
-  // Build panes in order (no hooks on JSX). The trustline info is a slide-up
-  // sheet overlay (rendered below), not a pane.
-  const panes: React.ReactNode[] = shouldShowTxWarning
-    ? [reviewPane, memoPane, blockaidPane, feesPane]
-    : [reviewPane, memoPane, feesPane];
+  // Horizontal slider panes (no hooks on JSX). The trustline and Blockaid
+  // sheets render in-flow over the body (below), not as slider panes.
+  const panes: React.ReactNode[] = [reviewPane, memoPane, feesPane];
 
   return (
     <View.Content hasNoTopPadding>
@@ -680,13 +656,15 @@ export const ReviewTx = ({
               tokenCode={destinationTokenDetails?.tokenCode || ""}
               onClose={() => setIsOnTrustlinePane(false)}
             />
+          ) : isOnBlockaidSheet ? (
+            blockaidPane
           ) : (
             <MultiPaneSlider activeIndex={activePaneIndex} panes={panes} />
           )}
           {!isOnFeesPane && !isOnTrustlinePane && (
             <div className="ReviewTx__Actions">
               <ActionButtons
-                isOnBlockaidPane={isOnBlockaidPane}
+                isOnBlockaidPane={isOnBlockaidSheet}
                 isMalicious={isMalicious}
                 isRequiredMemoMissing={isRequiredMemoMissing}
                 isValidatingMemo={isValidatingMemo}

@@ -14,10 +14,24 @@
   &__Warnings {
     margin-top: pxToRem(32px);
 
-    // The token banner is clickable when it has expandable token-scan reasons
-    // to reveal (§ batch4 task 3); show the affordance.
+    // The token banner opens the expandable "Do not proceed" sheet; show the
+    // affordance (§ batch4 follow-up).
     &__token--clickable {
       cursor: pointer;
+    }
+
+    // Match the Blockaid banners' font to the purple trustline banner
+    // (12px / 18px) for consistency when they appear together in the review
+    // (§ batch4 follow-up). Scoped here so Blockaid labels elsewhere are
+    // unaffected.
+    .ScanLabel .Message {
+      font-size: pxToRem(12px);
+      line-height: pxToRem(18px);
+    }
+
+    &__token .Notification__title__text {
+      font-size: pxToRem(12px);
+      line-height: pxToRem(18px);
     }
   }
 
