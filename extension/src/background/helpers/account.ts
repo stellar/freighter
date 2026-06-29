@@ -22,8 +22,10 @@ import { isCustomNetwork } from "@shared/helpers/stellar";
 import { decodeString, encodeObject } from "helpers/urls";
 import { isMainnet, isTestnet, isFuturenet } from "helpers/stellar";
 import { DataStorageAccess } from "background/helpers/dataStorageAccess";
-import { INDEXER_URL, INDEXER_V2_URL } from "@shared/constants/mercury";
+import { INDEXER_URL } from "@shared/constants/mercury";
 import { captureException } from "@sentry/browser";
+import { Store } from "redux";
+import { callBackendV2 } from "background/helpers/callBackendV2";
 
 export const getKeyIdList = async ({
   localStore,
@@ -306,7 +308,13 @@ export const getIsHideDustEnabled = async ({
   return isHideDustEnabled;
 };
 
-export const getIsRpcHealthy = async (localStore: DataStorageAccess) => {
+export const getIsRpcHealthy = async ({
+  localStore,
+  sessionStore,
+}: {
+  localStore: DataStorageAccess;
+  sessionStore: Store;
+}) => {
   let rpcHealth = { status: "" };
 
   const networkDetails = await getNetworkDetails({ localStore });
@@ -316,15 +324,18 @@ export const getIsRpcHealthy = async (localStore: DataStorageAccess) => {
     rpcHealth = { status: "healthy" };
   } else {
     try {
-      const res = await fetch(
-        `${INDEXER_V2_URL}/rpc-health?network=${networkDetails.network}`,
-      );
+      const { status, body } = await callBackendV2({
+        method: "GET",
+        path: `/rpc-health?network=${networkDetails.network}`,
+        sessionStore,
+        localStore,
+      });
 
-      if (!res.ok) {
+      if (status !== 200) {
         captureException(`Failed to load rpc health for Soroban`);
         rpcHealth = { status: "unhealthy" };
       } else {
-        rpcHealth = await res.json();
+        rpcHealth = body as typeof rpcHealth;
       }
     } catch (e) {
       captureException(

@@ -446,7 +446,7 @@ export const popupMessageListener = (
       });
     }
     case SERVICE_TYPES.LOAD_BACKEND_SETTINGS: {
-      return loadBackendSettings({ localStore });
+      return loadBackendSettings({ localStore, sessionStore });
     }
     case SERVICE_TYPES.SAVE_BLOCKAID_DEBUG_OVERRIDE: {
       return saveBlockaidOverrideState({
