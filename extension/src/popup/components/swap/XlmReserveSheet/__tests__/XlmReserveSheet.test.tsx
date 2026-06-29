@@ -56,4 +56,32 @@ describe("XlmReserveSheet", () => {
     fireEvent.click(screen.getByTestId("XlmReserveSheet__why-xlm"));
     expect(openTab).toHaveBeenCalledWith(HELP_URL);
   });
+
+  it("dismisses via the close button", () => {
+    const onClose = jest.fn();
+    render(
+      <XlmReserveSheet
+        canSwapForReserve={false}
+        publicKey={PUBLIC_KEY}
+        helpUrl={HELP_URL}
+        onClose={onClose}
+      />,
+    );
+    fireEvent.click(screen.getByTestId("XlmReserveSheet__close"));
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it("renders the reserve card and the XLM icon", () => {
+    render(
+      <XlmReserveSheet
+        canSwapForReserve={false}
+        publicKey={PUBLIC_KEY}
+        helpUrl={HELP_URL}
+        tokenCode="AQUA"
+        onClose={jest.fn()}
+      />,
+    );
+    expect(screen.getByText("0.5 XLM required")).toBeInTheDocument();
+    expect(screen.getByAltText("XLM")).toBeInTheDocument();
+  });
 });

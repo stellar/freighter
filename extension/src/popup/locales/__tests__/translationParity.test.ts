@@ -18,6 +18,13 @@ const swapKeys = [
   "The token you're sending was flagged as malicious by Blockaid.",
   "The token you're sending was flagged as suspicious by Blockaid.",
   "The token you're sending couldn't be scanned for security risks.",
+  "You need XLM to create a trustline",
+  "To receive {{tokenCode}}, your wallet needs a trustline on Stellar.",
+  "Why do I need XLM?",
+  "0.5 XLM required",
+  "Stellar requires this reserve to add {{tokenCode}}. You can get it back once your {{tokenCode}} balance is zero.",
+  "Swap for 0.5 XLM",
+  "Copy my wallet address",
 ];
 
 describe("swap i18n parity", () => {

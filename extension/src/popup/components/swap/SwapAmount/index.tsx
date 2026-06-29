@@ -101,6 +101,10 @@ const AVAILABLE_BALANCE_FONT_SIZES = [
   { maxLen: Infinity, sizePx: 11 },
 ] as const;
 
+// "Why do I need XLM?" help article (matches freighter-mobile).
+const XLM_RESERVE_HELP_URL =
+  "https://help.freighter.app/article/xjlva9dxov-how-much-xlm-do-i-need-in-my-wallet";
+
 interface SwapAmountProps {
   inputType: InputType;
   setInputType: (type: InputType) => void;
@@ -1105,7 +1109,8 @@ export const SwapAmount = ({
             onClose={() => setIsXlmReserveOpen(false)}
             publicKey={publicKey}
             canSwapForReserve={canSwapForReserve}
-            helpUrl=""
+            helpUrl={XLM_RESERVE_HELP_URL}
+            tokenCode={dstAsset ? dstAsset.code : ""}
             onSwapForReserve={handleSwapForReserve}
           />
         ) : (
