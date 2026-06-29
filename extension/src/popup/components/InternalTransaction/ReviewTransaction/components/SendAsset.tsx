@@ -20,6 +20,8 @@ interface SendAssetProps {
   sendAmount: string;
   networkDetails: NetworkDetails;
   sendPriceUsd: string | null;
+  /** Show the Blockaid warning badge over the icon for a flagged source token. */
+  isSuspicious?: boolean;
 }
 
 export const SendAsset: React.FC<SendAssetProps> = ({
@@ -31,6 +33,7 @@ export const SendAsset: React.FC<SendAssetProps> = ({
   sendAmount,
   networkDetails,
   sendPriceUsd,
+  isSuspicious = false,
 }) => {
   if (isCollectible) {
     return (
@@ -72,7 +75,7 @@ export const SendAsset: React.FC<SendAssetProps> = ({
         code={asset.code}
         issuerKey={asset.issuer}
         icon={assetIcon}
-        isSuspicious={false}
+        isSuspicious={isSuspicious}
       />
       <div
         className="ReviewTx__SendAssetDetails"

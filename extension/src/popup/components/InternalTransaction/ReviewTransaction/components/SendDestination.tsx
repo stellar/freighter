@@ -16,6 +16,8 @@ interface SendDestinationProps {
   networkDetails: NetworkDetails;
   destination: string;
   truncatedDest: string;
+  /** Show the Blockaid warning badge over the icon for a flagged destination token. */
+  isSuspicious?: boolean;
 }
 
 export const SendDestination: React.FC<SendDestinationProps> = ({
@@ -24,6 +26,7 @@ export const SendDestination: React.FC<SendDestinationProps> = ({
   networkDetails,
   destination,
   truncatedDest,
+  isSuspicious = false,
 }) => {
   if (dstAsset && dest) {
     return (
@@ -37,7 +40,7 @@ export const SendDestination: React.FC<SendDestinationProps> = ({
           code={dest.code}
           issuerKey={dest.issuer}
           icon={dstAsset.icon}
-          isSuspicious={false}
+          isSuspicious={isSuspicious}
         />
         <div className="ReviewTx__SendAssetDetails">
           <span>

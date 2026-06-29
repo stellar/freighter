@@ -238,6 +238,24 @@ export const ReviewTx = ({
             )
           : null;
 
+  // We show at most ONE Blockaid banner, by priority (mirrors mobile's
+  // useReviewSecuritySummary): the transaction verdict outranks the token
+  // verdict, and among tokens the worse level wins (the destination breaks a
+  // tie, since it's the token being acquired). When the transaction scan itself
+  // is flagged its banner renders below; otherwise this single token banner
+  // does.
+  const tokenWarningLevel = mergeSecurityLevels([
+    sourceTokenSecurityLevel ?? null,
+    destTokenSecurityLevel,
+  ]);
+  const tokenWarningMessage =
+    destTokenSecurityLevel && destTokenSecurityLevel === tokenWarningLevel
+      ? destTokenWarningMessage
+      : sourceTokenSecurityLevel &&
+          sourceTokenSecurityLevel === tokenWarningLevel
+        ? sourceTokenWarningMessage
+        : null;
+
   /**
    * Pane state machine:
    * - No warning: [Review (0), Memo (1), Fees (2)]
@@ -375,6 +393,10 @@ export const ReviewTx = ({
               sendAmount={sendAmount}
               networkDetails={networkDetails}
               sendPriceUsd={sendPriceUsd}
+              isSuspicious={
+                sourceTokenSecurityLevel === SecurityLevel.MALICIOUS ||
+                sourceTokenSecurityLevel === SecurityLevel.SUSPICIOUS
+              }
             />
           </div>
           <div className="ReviewTx__Divider">
@@ -390,15 +412,20 @@ export const ReviewTx = ({
               networkDetails={networkDetails}
               destination={destination}
               truncatedDest={truncatedDest}
+              isSuspicious={
+                destTokenSecurityLevel === SecurityLevel.MALICIOUS ||
+                destTokenSecurityLevel === SecurityLevel.SUSPICIOUS
+              }
             />
           </div>
         </div>
       </div>
       <div className="ReviewTx__Warnings">
-        {/* Transaction-scan banner (opens the expandable Blockaid pane). Gated
-            on the tx verdict so a token-only warning doesn't open an empty
-            pane — the token verdict gets its own banner below. */}
-        {txSecurityLevel && paneConfig.blockaidIndex !== null && (
+        {/* Exactly one Blockaid banner, by priority. The transaction-scan
+            banner (which opens the expandable Blockaid pane) outranks the token
+            verdict; when the transaction itself isn't flagged we fall back to a
+            single consolidated token banner. */}
+        {txSecurityLevel && paneConfig.blockaidIndex !== null ? (
           <BlockaidTxScanLabel
             scanResult={txScanResult}
             onClick={() => {
@@ -407,37 +434,21 @@ export const ReviewTx = ({
               }
             }}
           />
-        )}
-        {sourceTokenWarningMessage && (
+        ) : tokenWarningMessage ? (
           <div
             className="ReviewTx__Warnings__token"
-            data-testid="review-tx-source-token-warning"
+            data-testid="review-tx-token-warning"
           >
             <Notification
               variant={
-                sourceTokenSecurityLevel === SecurityLevel.MALICIOUS
+                tokenWarningLevel === SecurityLevel.MALICIOUS
                   ? "error"
                   : "warning"
               }
-              title={sourceTokenWarningMessage}
+              title={tokenWarningMessage}
             />
           </div>
-        )}
-        {destTokenWarningMessage && (
-          <div
-            className="ReviewTx__Warnings__token"
-            data-testid="review-tx-dest-token-warning"
-          >
-            <Notification
-              variant={
-                destTokenSecurityLevel === SecurityLevel.MALICIOUS
-                  ? "error"
-                  : "warning"
-              }
-              title={destTokenWarningMessage}
-            />
-          </div>
-        )}
+        ) : null}
         {isRequiredMemoMissing && !isValidatingMemo && !shouldShowTxWarning && (
           <MemoRequiredLabel
             onClick={() => setActivePaneIndex(paneConfig.memoIndex)}
