@@ -52,12 +52,28 @@ describe("ReviewTx trustline banner", () => {
         />
       </Wrapper>,
     );
+    // The review body is visible before the sheet opens.
+    expect(
+      screen.getByTestId("review-tx-send-destination"),
+    ).toBeInTheDocument();
+
     const banner = screen.getByTestId("review-tx-trustline-banner");
     // i18n interpolation is not processed in the test environment;
     // confirm the banner element is present (tokenCode wired) and clickable
     expect(banner).toBeInTheDocument();
     fireEvent.click(banner);
+
+    // The trustline sheet opens and the review body is hidden behind it (so it
+    // doesn't show as a ghost), then is restored when the sheet is closed.
     expect(screen.getByTestId("trustline-info-sheet")).toBeInTheDocument();
+    expect(
+      screen.queryByTestId("review-tx-send-destination"),
+    ).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId("trustline-info-sheet-close"));
+    expect(
+      screen.getByTestId("review-tx-send-destination"),
+    ).toBeInTheDocument();
   });
 
   it("does not render the banner when no trustline is required", () => {

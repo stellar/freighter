@@ -592,7 +592,13 @@ export const ReviewTx = ({
         />
       ) : (
         <div className="ReviewTx">
-          <MultiPaneSlider activeIndex={activePaneIndex} panes={panes} />
+          {/* Hide the review body while the trustline info sheet is up so the
+              review sheet doesn't show as a ghost behind it; closing the sheet
+              restores it (§ task 5). Matches the existing ActionButtons guard
+              below. */}
+          {!isOnTrustlinePane && (
+            <MultiPaneSlider activeIndex={activePaneIndex} panes={panes} />
+          )}
           <TrustlineInfoSheet
             isOpen={isOnTrustlinePane}
             tokenCode={destinationTokenDetails?.tokenCode || ""}
