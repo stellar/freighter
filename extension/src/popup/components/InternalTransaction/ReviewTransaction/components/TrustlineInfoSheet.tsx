@@ -24,6 +24,7 @@ export const TrustlineInfoSheet = ({
   const { t } = useTranslation();
   return (
     <InfoSheetContent
+      isInline
       data-testid="trustline-info-sheet"
       closeTestId="trustline-info-sheet-close"
       badgeVariant="brand"

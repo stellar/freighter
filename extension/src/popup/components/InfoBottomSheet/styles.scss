@@ -6,6 +6,12 @@
   gap: pxToRem(24px);
   padding: pxToRem(24px);
 
+  // Rendered in-flow inside a host that already provides the gutter (e.g. the
+  // review sheet's View inset), so drop the self-padding to avoid doubling it.
+  &--inline {
+    padding: 0;
+  }
+
   &__top {
     display: flex;
     align-items: center;

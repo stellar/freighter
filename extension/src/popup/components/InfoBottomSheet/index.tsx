@@ -22,6 +22,10 @@ interface InfoSheetContentProps {
   "data-testid"?: string;
   /** Test id for the circular X close button. */
   closeTestId?: string;
+  /** Rendered in-flow (not in its own SlideupModal), e.g. inside the review
+   * sheet. Drops the sheet's self-padding (the host already provides the
+   * gutter) and matches the host's lg/rounded action button. */
+  isInline?: boolean;
 }
 
 /**
@@ -39,10 +43,14 @@ export const InfoSheetContent = ({
   children,
   "data-testid": dataTestId,
   closeTestId,
+  isInline = false,
 }: InfoSheetContentProps) => {
   const { t } = useTranslation();
   return (
-    <div className="InfoSheet" data-testid={dataTestId}>
+    <div
+      className={`InfoSheet${isInline ? " InfoSheet--inline" : ""}`}
+      data-testid={dataTestId}
+    >
       <div className="InfoSheet__top">
         <div className={`InfoSheet__badge InfoSheet__badge--${badgeVariant}`}>
           {icon}
@@ -63,9 +71,10 @@ export const InfoSheetContent = ({
       </div>
       <Button
         className="InfoSheet__action"
-        size="md"
+        size={isInline ? "lg" : "md"}
         variant="secondary"
         isFullWidth
+        isRounded={isInline}
         onClick={onClose}
       >
         {actionLabel}
