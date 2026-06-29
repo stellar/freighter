@@ -25,7 +25,6 @@ import { DataStorageAccess } from "background/helpers/dataStorageAccess";
 import { INDEXER_URL } from "@shared/constants/mercury";
 import { captureException } from "@sentry/browser";
 import { Store } from "redux";
-import { callBackendV2 } from "background/helpers/callBackendV2";
 
 export const getKeyIdList = async ({
   localStore,
@@ -324,6 +323,10 @@ export const getIsRpcHealthy = async ({
     rpcHealth = { status: "healthy" };
   } else {
     try {
+      // Dynamic import avoids the module-eval-time cycle:
+      // ducks/session → account → callBackendV2 → session.ts → store → ducks/session
+      const { callBackendV2 } =
+        await import("background/helpers/callBackendV2");
       const { status, body } = await callBackendV2({
         method: "GET",
         path: `/rpc-health?network=${networkDetails.network}`,
