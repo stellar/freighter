@@ -6,8 +6,9 @@ import {
   CollectibleMetadataResponse,
 } from "../types";
 import { NetworkDetails } from "@shared/constants/stellar";
-import { INDEXER_V2_URL } from "@shared/constants/mercury";
+import { SERVICE_TYPES } from "@shared/constants/services";
 import { fetchMetadataJson } from "./fetchMetadataJson";
+import { sendMessageToBackground } from "./extensionMessaging";
 
 /**
  * Fetches metadata for a collectible from its token URI.
@@ -90,28 +91,25 @@ export const fetchCollectibles = async ({
   let fetchedCollections = [] as Collection[];
 
   try {
-    const options = {
+    const { status, body } = await sendMessageToBackground<{
+      status: number;
+      body: unknown;
+    }>({
+      type: SERVICE_TYPES.FETCH_BACKEND_V2,
+      activePublicKey: null,
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        owner: publicKey,
-        contracts,
-      }),
-    };
-    const url = new URL(`${INDEXER_V2_URL}/collectibles`);
-    url.searchParams.append("network", networkDetails.network);
-    const response = await fetch(url, options);
-    if (!response.ok) {
-      const _err = JSON.stringify(response);
-      captureException(
-        `Failed to fetch collectibles - ${response.status}: ${response.statusText}`,
-      );
+      path: `/collectibles?network=${networkDetails.network}`,
+      body: JSON.stringify({ owner: publicKey, contracts }),
+    });
 
-      throw new Error(_err);
+    if (status !== 200) {
+      captureException(
+        `Failed to fetch collectibles - ${status}: ${JSON.stringify(body)}`,
+      );
+      throw new Error(`Failed to fetch collectibles - ${status}`);
     }
-    const { data } = (await response.json()) as { data: CollectiblesResponse };
+
+    const { data } = body as { data: CollectiblesResponse };
 
     for (let i = 0; i < data.collections.length; i++) {
       const { collection } = data.collections[i];
