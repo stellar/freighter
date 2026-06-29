@@ -48,7 +48,10 @@ export const XlmReserveSheet = ({
         <h2 className="XlmReserveSheet__title">
           {t("You need XLM to create a trustline")}
         </h2>
-        <p className="XlmReserveSheet__body">
+        {/* A div, not a p: the SDS theme's global `p` rules force
+            color:inherit !important (→ near-white) and line-height 1.75rem,
+            overriding the muted gray + 20px we want (§ batch4 task 2). */}
+        <div className="XlmReserveSheet__body">
           {t(
             "To receive {{tokenCode}}, your wallet needs a trustline on Stellar.",
             {
@@ -63,7 +66,7 @@ export const XlmReserveSheet = ({
           >
             {t("Why do I need XLM?")}
           </button>
-        </p>
+        </div>
       </div>
 
       <div className="XlmReserveSheet__card">
@@ -89,7 +92,7 @@ export const XlmReserveSheet = ({
         {canSwapForReserve ? (
           <Button
             size="lg"
-            variant="tertiary"
+            variant="secondary"
             isFullWidth
             isRounded
             data-testid="XlmReserveSheet__swap-for-reserve"
@@ -105,7 +108,7 @@ export const XlmReserveSheet = ({
         <CopyText textToCopy={publicKey}>
           <Button
             size="lg"
-            variant="secondary"
+            variant="tertiary"
             isFullWidth
             isRounded
             data-testid="XlmReserveSheet__copy-address"
