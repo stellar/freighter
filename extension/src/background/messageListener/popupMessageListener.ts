@@ -648,6 +648,7 @@ export const popupMessageListener = (
     }
 
     case SERVICE_TYPES.FETCH_BACKEND_V2: {
+      if (!isFromExtensionPage) return { error: "Unauthorized" };
       return callBackendV2({
         method: request.method,
         path: request.path,
