@@ -26,12 +26,10 @@ describe("callBackendV2", () => {
     jest
       .spyOn(sessionMod, "getEncryptedTemporaryData")
       .mockResolvedValue(VECTOR_MNEMONIC);
-    jest
-      .spyOn(deriveMod, "deriveAuthKeypair")
-      .mockResolvedValue({
-        userId: KP.rawPublicKey().toString("hex"),
-        keypair: KP,
-      });
+    jest.spyOn(deriveMod, "deriveAuthKeypair").mockResolvedValue({
+      userId: KP.rawPublicKey().toString("hex"),
+      keypair: KP,
+    });
 
     const fetchImpl = jest
       .fn()
@@ -99,6 +97,49 @@ describe("callBackendV2", () => {
     expect(init.body).toBe(JSON.stringify({ public_keys: ["G..."] }));
     expect((init.headers as Record<string, string>)["Content-Type"]).toBe(
       "application/json",
+    );
+  });
+
+  it("when unlocked, authed POST carries Bearer token, Content-Type, and signs the query path", async () => {
+    jest
+      .spyOn(sessionMod, "getEncryptedTemporaryData")
+      .mockResolvedValue(VECTOR_MNEMONIC);
+    jest.spyOn(deriveMod, "deriveAuthKeypair").mockResolvedValue({
+      userId: KP.rawPublicKey().toString("hex"),
+      keypair: KP,
+    });
+
+    const fetchImpl = jest
+      .fn()
+      .mockResolvedValue(okResponse({ data: { ok: true } }));
+
+    await callBackendV2({
+      method: "POST",
+      path: "/ledger-key/accounts?network=PUBLIC",
+      body: JSON.stringify({ public_keys: ["G1"] }),
+      sessionStore,
+      localStore,
+      fetchImpl,
+    });
+
+    const init = fetchImpl.mock.calls[0][1] as RequestInit;
+    const headers = init.headers as Record<string, string>;
+
+    // Must carry a valid JWT
+    expect(headers.Authorization).toMatch(/^Bearer .+\..+\..+$/);
+    // Must set Content-Type for the POST body
+    expect(headers["Content-Type"]).toBe("application/json");
+
+    // The signed methodAndPath must include the query string
+    const jwt = headers.Authorization.replace("Bearer ", "");
+    const claims = JSON.parse(
+      Buffer.from(
+        jwt.split(".")[1].replace(/-/g, "+").replace(/_/g, "/"),
+        "base64",
+      ).toString("utf8"),
+    );
+    expect(claims.methodAndPath).toBe(
+      "POST /api/v1/ledger-key/accounts?network=PUBLIC",
     );
   });
 
