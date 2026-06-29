@@ -3,6 +3,7 @@ import { getSwapCtaState, SwapCtaInputs } from "../swapCtaState";
 const base: SwapCtaInputs = {
   hasSource: true,
   hasDestination: true,
+  availableBalanceIsZero: false,
   amountIsZero: false,
   isAmountTooHigh: false,
   insufficientXlmForFees: false,
@@ -21,11 +22,34 @@ describe("getSwapCtaState", () => {
     });
   });
 
-  it("prompts to enter an amount when the amount is zero", () => {
+  it("prompts to enter an amount (enabled, so the tap focuses the sell input) when the amount is zero", () => {
     expect(getSwapCtaState({ ...base, amountIsZero: true })).toEqual({
-      disabled: true,
+      disabled: false,
       labelKey: "enter",
     });
+  });
+
+  it("flags insufficient balance (disabled) when the spendable balance is zero, even before an amount is entered", () => {
+    expect(
+      getSwapCtaState({
+        ...base,
+        availableBalanceIsZero: true,
+        amountIsZero: true,
+      }),
+    ).toEqual({
+      disabled: true,
+      labelKey: "insufficientBalance",
+    });
+  });
+
+  it("prefers the zero-balance blocker over the enter state", () => {
+    expect(
+      getSwapCtaState({
+        ...base,
+        availableBalanceIsZero: true,
+        amountIsZero: true,
+      }).labelKey,
+    ).toBe("insufficientBalance");
   });
 
   it("flags insufficient balance over the source spendable", () => {

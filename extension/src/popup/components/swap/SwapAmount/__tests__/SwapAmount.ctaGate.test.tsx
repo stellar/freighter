@@ -4,6 +4,7 @@ import {
   screen,
   fireEvent,
   waitFor,
+  within,
   act,
 } from "@testing-library/react";
 import BigNumber from "bignumber.js";
@@ -115,6 +116,70 @@ describe("SwapAmount CTA gate", () => {
     await waitFor(() =>
       expect(screen.getByTestId("XlmReserveSheet")).toBeInTheDocument(),
     );
+  });
+
+  it("enables the 'Enter an amount' CTA and focuses the sell input on tap, without opening review", () => {
+    jest
+      .spyOn(XlmReserve, "shouldShowXlmReservePreflight")
+      .mockReturnValue(false);
+    const goToNext = jest.fn();
+    render(
+      <Wrapper
+        state={
+          {
+            transactionSubmission: {
+              transactionData: {
+                asset: "native",
+                amount: "0",
+                amountUsd: "0.00",
+                destinationAmount: "",
+                allowedSlippage: "2",
+                transactionFee: "",
+                transactionTimeout: 180,
+                memo: "",
+                destination: "",
+                path: [],
+                destinationAsset:
+                  "AQUA:GBNZILSTVQZ4R7IKQDGHYGY2QXL5QOFJYQMXPKWRRM5PAV7Y4M67AQUA",
+                destinationTokenDetails: {
+                  tokenCode: "AQUA",
+                  requiresTrustline: false,
+                  decimals: 7,
+                },
+                isToken: false,
+              },
+            },
+          } as any
+        }
+        routes={["/"]}
+      >
+        <SwapAmount
+          inputType="crypto"
+          setInputType={jest.fn()}
+          goBack={jest.fn()}
+          goToNext={goToNext}
+          goToEditSrc={jest.fn()}
+          goToEditDst={jest.fn()}
+        />
+      </Wrapper>,
+    );
+
+    const btn = screen.getByTestId("swap-amount-btn-continue");
+    expect(btn).toBeEnabled();
+    expect(btn).toHaveTextContent("Enter an amount");
+
+    // The sell card auto-focuses on mount; blur it so we can prove the CTA tap
+    // re-focuses it rather than submitting.
+    (document.activeElement as HTMLElement | null)?.blur();
+    const sellInput = within(screen.getByTestId("swap-sell-card")).getByTestId(
+      "send-amount-amount-input",
+    );
+    expect(sellInput).not.toHaveFocus();
+
+    fireEvent.click(btn);
+
+    expect(sellInput).toHaveFocus();
+    expect(goToNext).not.toHaveBeenCalled();
   });
 
   it("disables the CTA with a fee warning when a non-XLM swap lacks XLM for fees", async () => {

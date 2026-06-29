@@ -322,6 +322,8 @@ export const SwapAmount = ({
   // the full simulation runs at review time in handleContinue. A monotonic
   // request id discards out-of-order responses; failures reset the displayed
   // amount to 0 so a stale quote never lingers.
+  // Lets the "Enter an amount" CTA focus the sell input on tap (§ task 1).
+  const sellInputRef = useRef<HTMLInputElement>(null);
   const liveQuoteReqRef = useRef(0);
   const liveQuoteArgsRef = useRef({ asset, destinationAsset, networkDetails });
   liveQuoteArgsRef.current = { asset, destinationAsset, networkDetails };
@@ -671,6 +673,11 @@ export const SwapAmount = ({
   const cta = getSwapCtaState({
     hasSource: !!asset,
     hasDestination: !!destinationAsset,
+    // availableBalance already nets out the network fee + the new-trustline
+    // 0.5 XLM reserve, so a barely-funded account correctly reads as empty.
+    availableBalanceIsZero: new BigNumber(
+      cleanAmount(availableBalance),
+    ).isLessThanOrEqualTo(0),
     amountIsZero: !swapAmountPositive,
     isAmountTooHigh,
     insufficientXlmForFees,
@@ -759,6 +766,12 @@ export const SwapAmount = ({
                   }
                   return;
                 }
+                // Both tokens picked but no amount yet: focus the sell input so
+                // the user knows to type an amount (mirrors mobile; § task 1).
+                if (cta.labelKey === "enter") {
+                  sellInputRef.current?.focus();
+                  return;
+                }
                 formik.submitForm();
               }}
             >
@@ -806,6 +819,7 @@ export const SwapAmount = ({
                     // to XLM but the receive side is empty, so the card stays
                     // unfocused with a gray "0" placeholder (§ task 1).
                     autoFocus={!!asset && !!destinationAsset}
+                    amountInputRef={sellInputRef}
                     assetCode={srcAsset ? srcAsset.code : ""}
                     assetIcon={assetIcon}
                     assetIcons={

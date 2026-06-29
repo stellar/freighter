@@ -31,6 +31,9 @@ export interface AmountCardProps {
   isAmountTooHigh: boolean;
   isReadOnly?: boolean;
   autoFocus?: boolean;
+  /** Optional handle to the amount input so a parent can focus it (e.g. the
+   * swap "Enter an amount" CTA focuses the sell card). */
+  amountInputRef?: React.RefObject<HTMLInputElement | null>;
   cryptoDecimals: number;
   onAmountChange: (next: { amount: string; newCursor: number }) => void;
   onAmountUsdChange: (next: { amount: string; newCursor: number }) => void;
@@ -56,6 +59,7 @@ export const AmountCard = ({
   isAmountTooHigh,
   isReadOnly = false,
   autoFocus = true,
+  amountInputRef,
   cryptoDecimals,
   onAmountChange,
   onAmountUsdChange,
@@ -68,7 +72,9 @@ export const AmountCard = ({
   // Width owned internally (replaces InputWidthContext, per design §3.3).
   const cryptoSpanRef = useRef<HTMLSpanElement>(null);
   const fiatSpanRef = useRef<HTMLSpanElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const localInputRef = useRef<HTMLInputElement>(null);
+  // Use the caller's ref when provided so a parent can focus the input.
+  const inputRef = amountInputRef ?? localInputRef;
   const [inputWidthCrypto, setInputWidthCrypto] = useState(0);
   const [inputWidthFiat, setInputWidthFiat] = useState(0);
 
