@@ -13,6 +13,13 @@
 
   &__Warnings {
     margin-top: pxToRem(32px);
+    // A flex column with a single gap is the one source of inter-banner
+    // spacing, so every stacked banner (Blockaid, "Memo required", trustline)
+    // is spaced identically regardless of type or order (§ batch4 follow-up).
+    // The Warnings→Details gap is owned by __Details' own margin-top.
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(12px);
 
     // The token banner opens the expandable "Do not proceed" sheet; show the
     // affordance (§ batch4 follow-up).
@@ -28,6 +35,15 @@
     .ScanLabel {
       padding: pxToRem(8px) pxToRem(16px);
       border-radius: pxToRem(12px);
+
+      // Neutralize the global .ScanLabel margins so the flex gap above is the
+      // sole spacing (otherwise stacked banners would space inconsistently
+      // vs the margin-less trustline banner).
+      margin: 0;
+
+      &:not(:first-child) {
+        margin-top: 0;
+      }
 
       .Message {
         font-size: pxToRem(12px);
