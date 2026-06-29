@@ -1,5 +1,6 @@
 import BigNumber from "bignumber.js";
 import {
+  formatAmountPreserveCursor,
   getValidBigNumber,
   isValidPositiveAmount,
   normalizeNumericString,
@@ -134,5 +135,19 @@ describe("trimTrailingZeros", () => {
   it("handles large numbers with decimals", () => {
     expect(trimTrailingZeros("1234567.89000")).toBe("1234567.89");
     expect(trimTrailingZeros("1000000.0000")).toBe("1000000");
+  });
+});
+
+describe("formatAmountPreserveCursor", () => {
+  it("returns an empty amount for a fully-cleared field (not '0')", () => {
+    // Erasing every digit must stay empty so the input can show its placeholder
+    // / just the "$" prefix, rather than snapping back to a non-erasable "0".
+    expect(formatAmountPreserveCursor("", "12").amount).toBe("");
+    expect(formatAmountPreserveCursor("", "1.23").amount).toBe("");
+  });
+
+  it("still formats a non-empty amount", () => {
+    expect(formatAmountPreserveCursor("12", "1").amount).toBe("12");
+    expect(formatAmountPreserveCursor("1.23", "1.2", 2).amount).toBe("1.23");
   });
 });
