@@ -15,7 +15,10 @@ export const getLedgerKeyAccounts = async ({
   let fetchedAccounts = {} as { [code: string]: LedgerKeyAccount };
 
   try {
-    const { status, body } = await sendMessageToBackground({
+    const { status, body } = await sendMessageToBackground<{
+      status: number;
+      body: unknown;
+    }>({
       type: SERVICE_TYPES.FETCH_BACKEND_V2,
       activePublicKey: null,
       method: "POST",
