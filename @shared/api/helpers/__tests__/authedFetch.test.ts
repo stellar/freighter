@@ -71,6 +71,21 @@ describe("authedFetch", () => {
     expect(hdrs["Content-Type"]).toBe("application/json");
   });
 
+  it("upper-cases the wire method so it matches the signed methodAndPath", async () => {
+    // fetch does not auto-uppercase PATCH/custom verbs; authedFetch must, or the
+    // server's r.Method ("patch") won't match the JWT's "PATCH ..." claim -> 401.
+    const fetchImpl = jest.fn().mockResolvedValue(resp(200));
+    await authedFetch({
+      keypair: KP,
+      baseUrl: "http://x",
+      method: "patch",
+      path: "/p",
+      body: "{}",
+      fetchImpl,
+    });
+    expect((fetchImpl.mock.calls[0][1] as RequestInit).method).toBe("PATCH");
+  });
+
   it("strips a trailing slash from baseUrl when building the URL", async () => {
     const fetchImpl = jest.fn().mockResolvedValue(resp(200));
     await authedFetch({

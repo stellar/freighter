@@ -27,20 +27,25 @@ export const authedFetch = async ({
   fetchImpl,
 }: AuthedFetchParams): Promise<Response> => {
   const doFetch = fetchImpl ?? fetch;
+  // Upper-case the method once and use it for BOTH the signed methodAndPath
+  // claim and the wire request, so they can't diverge. buildAuthJwt signs the
+  // upper-cased method, but fetch only auto-uppercases the standard verbs
+  // (GET/POST/...), not PATCH or custom methods — sending the raw lower-case
+  // method would leave the server's `r.Method` mismatching the signed claim and
+  // produce a silent 401.
+  const httpMethod = method.toUpperCase();
   // Strip a trailing slash so the fetched URL can't diverge from the `path`
   // baked into the JWT's methodAndPath claim (a "//api/..." vs "/api/..." split
   // would be a silent 401).
   const url = `${baseUrl.replace(/\/+$/, "")}${path}`;
   // Non-GET requests require Content-Type: application/json per the backend contract.
   const baseHeaders: Record<string, string> =
-    method.toUpperCase() === "GET"
-      ? {}
-      : { "Content-Type": "application/json" };
+    httpMethod === "GET" ? {} : { "Content-Type": "application/json" };
 
   const send = async (): Promise<Response> => {
-    const jwt = await buildAuthJwt({ keypair, method, path, body });
+    const jwt = await buildAuthJwt({ keypair, method: httpMethod, path, body });
     return doFetch(url, {
-      method,
+      method: httpMethod,
       headers: { ...baseHeaders, Authorization: `Bearer ${jwt}` },
       body,
     });
