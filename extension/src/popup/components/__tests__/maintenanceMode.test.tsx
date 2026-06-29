@@ -53,6 +53,7 @@ function makeStore(overrides?: {
     preloadedState: {
       remoteConfig: {
         isInitialized: true,
+        use_token_prices_v2: true,
         maintenance_screen: overrides?.maintenance_screen ?? {
           enabled: false,
           payload: undefined,

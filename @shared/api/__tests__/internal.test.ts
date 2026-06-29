@@ -1,4 +1,9 @@
-import { TESTNET_NETWORK_DETAILS } from "@shared/constants/stellar";
+import { Networks } from "stellar-sdk";
+import {
+  FUTURENET_NETWORK_DETAILS,
+  MAINNET_NETWORK_DETAILS,
+  TESTNET_NETWORK_DETAILS,
+} from "@shared/constants/stellar";
 import * as GetLedgerKeyAccounts from "../helpers/getLedgerKeyAccounts";
 import * as internalApi from "../internal";
 
@@ -146,11 +151,14 @@ describe("internalApi", () => {
     it("excludes contract-ID issuers from the indexer request", async () => {
       const fetchSpy = mockFetchOk();
 
-      await internalApi.getTokenPrices([
-        "native",
-        "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
-        "DT:CCXVDIGMR6WTXZQX2OEVD6YM6AYCYPXPQ7YYH6OZMRS7U6VD3AVHNGBJ",
-      ]);
+      await internalApi.getTokenPrices(
+        [
+          "native",
+          "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
+          "DT:CCXVDIGMR6WTXZQX2OEVD6YM6AYCYPXPQ7YYH6OZMRS7U6VD3AVHNGBJ",
+        ],
+        MAINNET_NETWORK_DETAILS,
+      );
 
       const requestInit = fetchSpy.mock.calls[0][1] as RequestInit;
       const body = JSON.parse(requestInit.body as string);
@@ -163,11 +171,138 @@ describe("internalApi", () => {
     it("excludes liquidity-pool IDs from the indexer request", async () => {
       const fetchSpy = mockFetchOk();
 
-      await internalApi.getTokenPrices(["native", "abc123:lp"]);
+      await internalApi.getTokenPrices(
+        ["native", "abc123:lp"],
+        MAINNET_NETWORK_DETAILS,
+      );
 
       const requestInit = fetchSpy.mock.calls[0][1] as RequestInit;
       const body = JSON.parse(requestInit.body as string);
       expect(body.tokens).toEqual(["native"]);
+    });
+
+    it("targets the v2 endpoint with the network query param", async () => {
+      const fetchSpy = mockFetchOk();
+
+      await internalApi.getTokenPrices(["native"], TESTNET_NETWORK_DETAILS);
+
+      const requestUrl = fetchSpy.mock.calls[0][0] as string;
+      expect(requestUrl).toContain("/token-prices");
+      expect(requestUrl).toContain("network=TESTNET");
+    });
+
+    it("derives the price network from the passphrase for custom networks", async () => {
+      const fetchSpy = mockFetchOk();
+
+      // Custom network stored as STANDALONE but sharing the pubnet passphrase
+      // must still resolve to PUBLIC and hit the endpoint.
+      await internalApi.getTokenPrices(["native"], {
+        ...MAINNET_NETWORK_DETAILS,
+        network: "STANDALONE",
+        networkName: "Custom Pubnet",
+        networkPassphrase: Networks.PUBLIC,
+      });
+
+      expect(fetchSpy).toHaveBeenCalled();
+      const requestUrl = fetchSpy.mock.calls[0][0] as string;
+      expect(requestUrl).toContain("network=PUBLIC");
+    });
+
+    it("skips the request on unsupported networks", async () => {
+      const fetchSpy = mockFetchOk();
+
+      const prices = await internalApi.getTokenPrices(
+        ["native"],
+        FUTURENET_NETWORK_DETAILS,
+      );
+
+      expect(fetchSpy).not.toHaveBeenCalled();
+      expect(prices).toEqual({});
+    });
+
+    it("skips the request when every token is filtered out", async () => {
+      const fetchSpy = mockFetchOk();
+
+      const prices = await internalApi.getTokenPrices(
+        [
+          "abc123:lp",
+          "DT:CCXVDIGMR6WTXZQX2OEVD6YM6AYCYPXPQ7YYH6OZMRS7U6VD3AVHNGBJ",
+        ],
+        MAINNET_NETWORK_DETAILS,
+      );
+
+      expect(fetchSpy).not.toHaveBeenCalled();
+      expect(prices).toEqual({});
+    });
+  });
+
+  describe("getTokenPrices v1 endpoint (useV2 = false)", () => {
+    const mockFetchOk = () =>
+      jest.spyOn(global, "fetch").mockResolvedValue({
+        ok: true,
+        json: jest.fn().mockResolvedValue({ data: {} }),
+      } as unknown as Response);
+
+    it("targets the v1 endpoint without a network query param", async () => {
+      const fetchSpy = mockFetchOk();
+
+      await internalApi.getTokenPrices(
+        ["native"],
+        TESTNET_NETWORK_DETAILS,
+        false,
+      );
+
+      const requestUrl = fetchSpy.mock.calls[0][0] as string;
+      expect(requestUrl).toContain("/token-prices");
+      expect(requestUrl).not.toContain("network=");
+    });
+
+    it("still filters LP IDs and contract-ID issuers from the request", async () => {
+      const fetchSpy = mockFetchOk();
+
+      await internalApi.getTokenPrices(
+        [
+          "native",
+          "abc123:lp",
+          "DT:CCXVDIGMR6WTXZQX2OEVD6YM6AYCYPXPQ7YYH6OZMRS7U6VD3AVHNGBJ",
+        ],
+        MAINNET_NETWORK_DETAILS,
+        false,
+      );
+
+      const requestInit = fetchSpy.mock.calls[0][1] as RequestInit;
+      const body = JSON.parse(requestInit.body as string);
+      expect(body.tokens).toEqual(["native"]);
+    });
+
+    it("does NOT skip unsupported networks (unlike v2)", async () => {
+      const fetchSpy = mockFetchOk();
+
+      await internalApi.getTokenPrices(
+        ["native"],
+        FUTURENET_NETWORK_DETAILS,
+        false,
+      );
+
+      expect(fetchSpy).toHaveBeenCalled();
+    });
+
+    it("does NOT skip when every token is filtered out (unlike v2)", async () => {
+      const fetchSpy = mockFetchOk();
+
+      await internalApi.getTokenPrices(
+        [
+          "abc123:lp",
+          "DT:CCXVDIGMR6WTXZQX2OEVD6YM6AYCYPXPQ7YYH6OZMRS7U6VD3AVHNGBJ",
+        ],
+        MAINNET_NETWORK_DETAILS,
+        false,
+      );
+
+      expect(fetchSpy).toHaveBeenCalled();
+      const requestInit = fetchSpy.mock.calls[0][1] as RequestInit;
+      const body = JSON.parse(requestInit.body as string);
+      expect(body.tokens).toEqual([]);
     });
   });
 });
