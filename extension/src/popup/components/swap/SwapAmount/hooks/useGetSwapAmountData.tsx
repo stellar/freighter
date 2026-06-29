@@ -85,6 +85,7 @@ function useGetSwapAmountData(
         const fetchedTokenPrices = await fetchTokenPrices({
           publicKey: userDomains.publicKey,
           balances: destinationBalances.balances,
+          networkDetails: userDomains.networkDetails,
           useCache: true,
         });
         tokenPrices = fetchedTokenPrices.tokenPrices || {};
