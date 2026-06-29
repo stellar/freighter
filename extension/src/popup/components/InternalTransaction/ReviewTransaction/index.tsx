@@ -664,13 +664,11 @@ export const ReviewTx = ({
                 shouldShowTxWarning={shouldShowTxWarning}
                 onCancel={onCancel}
                 onConfirmTx={onConfirmTx}
-                paneConfig={paneConfig}
                 isSubmitDisabled={isSubmitDisabled}
                 dstAsset={dstAsset}
                 dest={dest}
                 asset={asset}
                 truncatedDest={truncatedDest}
-                setActivePaneIndex={setActivePaneIndex}
               />
             </div>
           )}

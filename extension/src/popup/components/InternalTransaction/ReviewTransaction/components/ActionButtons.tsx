@@ -12,9 +12,6 @@ interface ActionButtonsProps {
   shouldShowTxWarning: boolean;
   onCancel: () => void;
   onConfirmTx: () => void;
-  paneConfig: {
-    reviewIndex: number;
-  };
   isSubmitDisabled: boolean;
   dstAsset?: {
     canonical: string;
@@ -23,7 +20,6 @@ interface ActionButtonsProps {
   dest: Asset | { code: string; issuer: string } | null;
   asset: Asset | { code: string; issuer: string };
   truncatedDest: string;
-  setActivePaneIndex?: (index: number) => void;
 }
 
 export const ActionButtons: React.FC<ActionButtonsProps> = ({
@@ -35,17 +31,18 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
   shouldShowTxWarning,
   onCancel,
   onConfirmTx,
-  paneConfig,
   isSubmitDisabled,
   dstAsset,
   dest,
   asset,
   truncatedDest,
-  setActivePaneIndex,
 }) => {
   const { t } = useTranslation();
 
-  // 1. Blockaid pane: Cancel (primary) and Continue (text) to proceed to review
+  // 1. Blockaid "Do not proceed" pane: Cancel (primary) and "Confirm anyway"
+  // (text) which submits the transaction directly — matching mobile, where the
+  // security sheet's action confirms rather than bouncing back to review
+  // (§ batch4 task 9).
   if (isOnBlockaidPane) {
     return (
       <>
@@ -67,13 +64,13 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
           className={`ReviewTx__TextAction ReviewTx__TextAction--${
             isMalicious ? "error" : "default"
           }`}
-          data-testid="ContinueAction"
+          data-testid="SubmitAction"
           onClick={(e) => {
             e.preventDefault();
-            setActivePaneIndex?.(paneConfig.reviewIndex);
+            onConfirmTx();
           }}
         >
-          {t("Continue")}
+          {t("Confirm anyway")}
         </button>
       </>
     );

@@ -256,4 +256,40 @@ describe("ReviewTx Blockaid security banner (single, by priority) + badges", () 
     fireEvent.click(screen.getByTestId("blockaid-malicious-label"));
     expect(screen.getAllByText(shared)).toHaveLength(1);
   });
+
+  it("submits directly from the 'Do not proceed' pane via 'Confirm anyway' (no 'Continue' bounce)", () => {
+    const onConfirm = jest.fn();
+    render(
+      <Wrapper state={{}} routes={["/"]}>
+        <ReviewTx
+          {...swapProps}
+          onConfirm={onConfirm}
+          simulationState={
+            {
+              state: RequestState.SUCCESS,
+              data: {
+                transactionXdr: "AAAA",
+                dstAmountPriceUsd: "0",
+                scanResult: {
+                  validation: {
+                    result_type: "Malicious",
+                    description: "flagged",
+                  },
+                },
+              },
+              error: null,
+            } as any
+          }
+        />
+      </Wrapper>,
+    );
+    // Open the "Do not proceed" pane from the malicious banner.
+    fireEvent.click(screen.getByTestId("blockaid-malicious-label"));
+    expect(screen.getByText("Do not proceed")).toBeInTheDocument();
+    // The pane's action reads "Confirm anyway", not the old "Continue"...
+    expect(screen.queryByText("Continue")).not.toBeInTheDocument();
+    // ...and clicking it confirms the transaction directly.
+    fireEvent.click(screen.getByText("Confirm anyway"));
+    expect(onConfirm).toHaveBeenCalledTimes(1);
+  });
 });
