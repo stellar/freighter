@@ -375,4 +375,85 @@ describe("ReviewTx Blockaid security banner (single, by priority) + badges", () 
       ),
     ).toBeInTheDocument();
   });
+
+  it("opens 'Do not proceed' from a malicious token banner with no per-feature reasons", () => {
+    renderReview({
+      scanResult: null,
+      destLevel: SecurityLevel.MALICIOUS,
+      // No destWarnings — flagged via result_type only.
+    });
+    fireEvent.click(screen.getByTestId("review-tx-token-warning"));
+    // Malicious fallback row drives the hard "Do not proceed" title, and the
+    // consolidated message shows as the reason.
+    expect(screen.getByText("Do not proceed")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "The token you're receiving was flagged as malicious by Blockaid.",
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it("dismisses the in-flow sheet via its close (X) control and returns to the review body", () => {
+    renderReview({
+      scanResult: null,
+      destLevel: SecurityLevel.MALICIOUS,
+      destWarnings: [
+        {
+          description:
+            "An identified malicious address is associated with the token.",
+          isError: true,
+          featureId: "known_malicious",
+        },
+      ],
+    });
+    fireEvent.click(screen.getByTestId("review-tx-token-warning"));
+    expect(screen.getByText("Do not proceed")).toBeInTheDocument();
+    // The review body (XDR row) is hidden while the sheet is open.
+    expect(screen.queryByText("XDR")).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId("blockaid-details-close"));
+    // Sheet content gone; review body restored.
+    expect(screen.queryByText("Do not proceed")).not.toBeInTheDocument();
+    expect(screen.getByText("XDR")).toBeInTheDocument();
+  });
+
+  it("opens the in-flow sheet and confirms from a flagged Send transaction (no swap token)", () => {
+    const onConfirm = jest.fn();
+    render(
+      <Wrapper state={{}} routes={["/"]}>
+        <ReviewTx
+          assetIcon={null}
+          fee="0.001"
+          sendAmount="10"
+          sendPriceUsd={null}
+          srcAsset="native"
+          networkDetails={swapProps.networkDetails}
+          title="You are sending"
+          onConfirm={onConfirm}
+          onCancel={jest.fn()}
+          simulationState={
+            {
+              state: RequestState.SUCCESS,
+              data: {
+                transactionXdr: "AAAA",
+                scanResult: {
+                  validation: {
+                    result_type: "Malicious",
+                    description: "flagged",
+                  },
+                },
+              },
+              error: null,
+            } as any
+          }
+        />
+      </Wrapper>,
+    );
+    // Send has no destination token, so only the tx banner applies; it opens
+    // the same in-flow sheet.
+    fireEvent.click(screen.getByTestId("blockaid-malicious-label"));
+    expect(screen.getByTestId("CancelAction")).toBeInTheDocument();
+    fireEvent.click(screen.getByText("Confirm anyway"));
+    expect(onConfirm).toHaveBeenCalledTimes(1);
+  });
 });

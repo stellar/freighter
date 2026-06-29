@@ -463,10 +463,12 @@ export const ReviewTx = ({
         {/* Exactly one Blockaid banner, chosen by blockaidBannerKind (mobile
             priority). Either banner opens the in-flow "Do not proceed" sheet. */}
         {blockaidBannerKind === "tx" ? (
-          <BlockaidTxScanLabel
-            scanResult={txScanResult}
-            onClick={openBlockaidSheet}
-          />
+          <div className="ReviewTx__Warnings__blockaid">
+            <BlockaidTxScanLabel
+              scanResult={txScanResult}
+              onClick={openBlockaidSheet}
+            />
+          </div>
         ) : blockaidBannerKind === "token" ? (
           <div
             className="ReviewTx__Warnings__token ReviewTx__Warnings__token--clickable"

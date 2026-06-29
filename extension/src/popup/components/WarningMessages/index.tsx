@@ -1299,7 +1299,11 @@ export const BlockAidScanExpanded = ({
     <div className="BlockaidDetailsExpanded">
       <div className="BlockaidDetailsExpanded__Header">
         {headerIcon}
-        <div className="Close" onClick={onClose}>
+        <div
+          className="Close"
+          onClick={onClose}
+          data-testid="blockaid-details-close"
+        >
           <Icon.X />
         </div>
       </div>

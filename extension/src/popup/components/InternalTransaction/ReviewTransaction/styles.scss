@@ -22,9 +22,10 @@
 
     // Match the Blockaid banners' font to the purple trustline banner
     // (12px / 18px) for consistency when they appear together in the review
-    // (§ batch4 follow-up). Scoped here so Blockaid labels elsewhere are
-    // unaffected.
-    .ScanLabel .Message {
+    // (§ batch4 follow-up). Scoped to the Blockaid banners only (the tx banner
+    // is wrapped in __blockaid; the token banner is __token) so the shared
+    // .ScanLabel "Memo required" banner and labels elsewhere are unaffected.
+    &__blockaid .ScanLabel .Message {
       font-size: pxToRem(12px);
       line-height: pxToRem(18px);
     }
