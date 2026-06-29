@@ -125,7 +125,11 @@ export const SwapAmount = ({
 }: SwapAmountProps) => {
   const { t } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
-  const { networkCongestion, recommendedFee } = useNetworkFees();
+  const {
+    networkCongestion,
+    recommendedFee,
+    isLoading: isNetworkFeesLoading,
+  } = useNetworkFees();
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const publicKey = useSelector(publicKeySelector);
   const blockaidOverrideState = useBlockaidOverrideState();
@@ -276,6 +280,7 @@ export const SwapAmount = ({
     return "xsmall";
   };
   const isLoading =
+    isNetworkFeesLoading ||
     swapAmountData.state === RequestState.IDLE ||
     swapAmountData.state === RequestState.LOADING;
 

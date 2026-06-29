@@ -166,5 +166,41 @@ describe("useNetworkFees (React 18 compatible)", () => {
 
     expect(hookResult.recommendedFee).toBe(stroopToXlm(BASE_FEE).toFixed());
     expect(hookResult.networkCongestion).toBe("");
+    // Even on failure, the initial fetch settling clears isLoading so callers
+    // don't stay stuck on a loader.
+    expect(hookResult.isLoading).toBe(false);
+  });
+
+  it("starts loading and clears isLoading after the first fee fetch settles", async () => {
+    useSelector.mockReturnValue({
+      networkUrl: "https://testnet.stellar.org",
+      networkPassphrase: "Test SDF Network ; September 2015",
+    });
+
+    stellarSdkServer.mockReturnValue({
+      feeStats: jest.fn().mockResolvedValue({
+        max_fee: { mode: "300" },
+        ledger_capacity_usage: "0.6",
+      }),
+    });
+
+    const loadingStates = [];
+    let hookResult;
+    await act(async () => {
+      render(
+        <TestComponent
+          callback={(data) => {
+            hookResult = data;
+            loadingStates.push(data.isLoading);
+          }}
+        />,
+      );
+    });
+
+    // First render is loading (before feeStats resolves); once the initial
+    // fetch settles, isLoading is false so the final fee paints once (§ batch4
+    // task 8).
+    expect(loadingStates[0]).toBe(true);
+    expect(hookResult.isLoading).toBe(false);
   });
 });

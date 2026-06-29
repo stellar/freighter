@@ -43,6 +43,12 @@ export const useNetworkFees = () => {
   const [networkCongestion, setNetworkCongestion] = useState(
     "" as NetworkCongestion,
   );
+  // True until the first feeStats request settles. Callers can gate their
+  // first paint on this so the fee label and the fee-derived XLM available
+  // balance render their final values once, instead of flashing the seeded
+  // base-fee placeholder and jumping (§ batch4 task 8). Stays false after the
+  // first settle — a manual fetchData refresh never re-gates.
+  const [isLoading, setIsLoading] = useState(true);
 
   const fetchData = async () => {
     try {
@@ -63,6 +69,8 @@ export const useNetworkFees = () => {
     } catch (e) {
       setRecommendedFee(stroopToXlm(BASE_FEE).toFixed());
       return { recommendedFee };
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -73,5 +81,5 @@ export const useNetworkFees = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [networkUrl, networkPassphrase]);
 
-  return { recommendedFee, networkCongestion, fetchData };
+  return { recommendedFee, networkCongestion, fetchData, isLoading };
 };
