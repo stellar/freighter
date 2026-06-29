@@ -34,19 +34,31 @@ const swapProps = {
   },
 };
 
+// PUBLIC network so an absent tx scan is treated as UNABLE_TO_SCAN (Blockaid
+// is only enabled on mainnet).
+const MAINNET = {
+  network: "PUBLIC",
+  networkName: "Main Net",
+  networkPassphrase: "Public Global Stellar Network ; September 2015",
+  networkUrl: "https://horizon.stellar.org",
+} as any;
+
 const renderReview = ({
   destLevel,
   sourceLevel,
   scanResult,
+  networkDetails,
 }: {
   destLevel?: SecurityLevel;
   sourceLevel?: SecurityLevel;
   scanResult?: unknown;
+  networkDetails?: typeof swapProps.networkDetails;
 }) =>
   render(
     <Wrapper state={{}} routes={["/"]}>
       <ReviewTx
         {...swapProps}
+        networkDetails={networkDetails ?? swapProps.networkDetails}
         simulationState={
           {
             state: RequestState.SUCCESS,
@@ -135,6 +147,22 @@ describe("ReviewTx Blockaid security banner (single, by priority) + badges", () 
     // ...and the token banner is suppressed so only one Blockaid banner shows.
     expect(
       screen.queryByTestId("review-tx-token-warning"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("shows the malicious-token banner even when the tx could not be scanned (token outranks unable-to-scan)", () => {
+    // Mainnet + absent scan => tx verdict is UNABLE_TO_SCAN; a malicious token
+    // must not be downgraded to the soft "proceed with caution" tx banner.
+    renderReview({
+      networkDetails: MAINNET,
+      scanResult: null,
+      destLevel: SecurityLevel.MALICIOUS,
+    });
+    expect(screen.getByTestId("review-tx-token-warning")).toHaveTextContent(
+      "The token you're receiving was flagged as malicious by Blockaid.",
+    );
+    expect(
+      screen.queryByTestId("blockaid-unable-to-scan-label"),
     ).not.toBeInTheDocument();
   });
 });

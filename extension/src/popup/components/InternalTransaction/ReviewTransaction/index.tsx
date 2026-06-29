@@ -279,6 +279,34 @@ export const ReviewTx = ({
     [shouldShowTxWarning],
   );
 
+  // Which single Blockaid banner to render, by mobile's priority cascade
+  // (useReviewSecuritySummary): tx-malicious > tx-suspicious > token-malicious
+  // > token-suspicious > any unable-to-scan. Critically, a flagged TOKEN
+  // outranks a tx that merely couldn't be scanned (common on mainnet when the
+  // scan is absent), so we don't downgrade a malicious-token warning to the
+  // soft "proceed with caution". Only the tx banner opens the expandable pane.
+  const blockaidBannerKind: "tx" | "token" | null = (() => {
+    if (
+      txSecurityLevel === SecurityLevel.MALICIOUS ||
+      txSecurityLevel === SecurityLevel.SUSPICIOUS
+    ) {
+      return "tx";
+    }
+    if (
+      tokenWarningLevel === SecurityLevel.MALICIOUS ||
+      tokenWarningLevel === SecurityLevel.SUSPICIOUS
+    ) {
+      return "token";
+    }
+    if (txSecurityLevel && paneConfig.blockaidIndex !== null) {
+      return "tx"; // tx unable-to-scan
+    }
+    if (tokenWarningMessage) {
+      return "token"; // token unable-to-scan only
+    }
+    return null;
+  })();
+
   const isOnBlockaidPane =
     paneConfig.blockaidIndex !== null &&
     activePaneIndex === paneConfig.blockaidIndex;
@@ -421,11 +449,10 @@ export const ReviewTx = ({
         </div>
       </div>
       <div className="ReviewTx__Warnings">
-        {/* Exactly one Blockaid banner, by priority. The transaction-scan
-            banner (which opens the expandable Blockaid pane) outranks the token
-            verdict; when the transaction itself isn't flagged we fall back to a
-            single consolidated token banner. */}
-        {txSecurityLevel && paneConfig.blockaidIndex !== null ? (
+        {/* Exactly one Blockaid banner, chosen by blockaidBannerKind (mobile
+            priority). The tx-scan banner opens the expandable pane; the token
+            banner is a single consolidated warning. */}
+        {blockaidBannerKind === "tx" ? (
           <BlockaidTxScanLabel
             scanResult={txScanResult}
             onClick={() => {
@@ -434,7 +461,7 @@ export const ReviewTx = ({
               }
             }}
           />
-        ) : tokenWarningMessage ? (
+        ) : blockaidBannerKind === "token" ? (
           <div
             className="ReviewTx__Warnings__token"
             data-testid="review-tx-token-warning"
@@ -445,7 +472,7 @@ export const ReviewTx = ({
                   ? "error"
                   : "warning"
               }
-              title={tokenWarningMessage}
+              title={tokenWarningMessage || ""}
             />
           </div>
         ) : null}
