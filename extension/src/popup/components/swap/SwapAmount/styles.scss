@@ -52,9 +52,9 @@
     align-items: center;
     justify-content: center;
     // Slightly smaller than the cards' gap so it doesn't overlap the sell
-    // card's fiat-toggle (RefreshCw03) button (§ batch3 task 9).
-    width: pxToRem(33px);
-    height: pxToRem(33px);
+    // card's fiat-toggle (RefreshCw03) button (§ batch3 task 9; § batch4 task 6).
+    width: pxToRem(30px);
+    height: pxToRem(30px);
     padding: 0;
     border: none;
     border-radius: pxToRem(100px);

@@ -177,6 +177,23 @@
       height: 14px;
       margin-left: pxToRem(6px);
       flex-shrink: 0;
+
+      // Keep the fiat/crypto toggle's background transparent in every state.
+      // The SDS tertiary variant otherwise paints gray-01/gray-04 + a focus
+      // glow on hover/active/focus; the icon stroke comes from
+      // --Button-color-icon-* (independent of background) so it stays visible
+      // (§ batch4 task 6).
+      &,
+      &:hover,
+      &:active,
+      &:focus,
+      &:focus-visible {
+        --Button-color-background-default: transparent;
+        --Button-color-background-hover: transparent;
+        --Button-color-background-active: transparent;
+        background-color: transparent !important;
+        box-shadow: none !important;
+      }
     }
   }
 
