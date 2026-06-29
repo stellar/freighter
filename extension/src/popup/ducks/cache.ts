@@ -43,6 +43,7 @@ type SaveTokenDetailsPayload = { contractId: string } & TokenDetailsResponse;
 
 type SaveTokenPricesPayload = {
   publicKey: string;
+  networkDetails: NetworkDetails;
   tokenPrices: ApiTokenPrices;
 };
 
@@ -68,8 +69,14 @@ interface InitialState {
   historyData: {
     [network: string]: Record<PublicKey, HistoryResponse>;
   };
+  // Keyed by networkPassphrase, not network: custom networks all share the
+  // "STANDALONE" network value, but prices are determined by the passphrase
+  // (which is what getTokenPrices uses to choose PUBLIC vs TESTNET).
   tokenPrices: {
-    [publicKey: string]: ApiTokenPrices & { updatedAt: number };
+    [networkPassphrase: string]: Record<
+      PublicKey,
+      ApiTokenPrices & { updatedAt: number }
+    >;
   };
   collections: { [network: string]: Record<PublicKey, Collection[]> };
 }
@@ -125,7 +132,11 @@ const cacheSlice = createSlice({
           action.payload.publicKey
         ];
       }
-      delete state.tokenPrices[action.payload.publicKey];
+      if (state.tokenPrices[action.payload.networkDetails.networkPassphrase]) {
+        delete state.tokenPrices[
+          action.payload.networkDetails.networkPassphrase
+        ][action.payload.publicKey];
+      }
     },
     saveIconsForBalances(state, action: { payload: SaveIconsPayload }) {
       state.icons = {
@@ -152,12 +163,16 @@ const cacheSlice = createSlice({
       };
     },
     saveTokenPrices(state, action: { payload: SaveTokenPricesPayload }) {
+      const { networkPassphrase } = action.payload.networkDetails;
       state.tokenPrices = {
         ...state.tokenPrices,
-        [action.payload.publicKey]: {
-          ...action.payload.tokenPrices,
-          updatedAt: Date.now(),
-        } as ApiTokenPrices & { updatedAt: number },
+        [networkPassphrase]: {
+          ...state.tokenPrices[networkPassphrase],
+          [action.payload.publicKey]: {
+            ...action.payload.tokenPrices,
+            updatedAt: Date.now(),
+          } as ApiTokenPrices & { updatedAt: number },
+        },
       };
     },
     saveCollections(state, action: { payload: SaveCollectionsPayload }) {

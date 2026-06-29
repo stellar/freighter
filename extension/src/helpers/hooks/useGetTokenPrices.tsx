@@ -1,14 +1,16 @@
 import { useReducer } from "react";
 import { captureException } from "@sentry/browser";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch, useSelector, useStore } from "react-redux";
 import { tokenPricesSelector } from "popup/ducks/cache";
+import { tokenPricesV2Selector } from "popup/ducks/remoteConfig";
 import { getTokenPrices } from "@shared/api/internal";
 import { initialState, isCacheValid, reducer } from "helpers/request";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { getCanonicalFromAsset } from "helpers/stellar";
 import { ApiTokenPrices } from "@shared/api/types";
+import { NetworkDetails } from "@shared/constants/stellar";
 import { saveTokenPrices } from "popup/ducks/cache";
-import { AppDispatch } from "popup/App";
+import { AppDispatch, AppState } from "popup/App";
 import { AccountBalances } from "./useGetBalances";
 
 export interface GetTokenPricesData {
@@ -18,6 +20,7 @@ export interface GetTokenPricesData {
 
 export function useGetTokenPrices() {
   const reduxDispatch = useDispatch<AppDispatch>();
+  const store = useStore<AppState>();
   const cachedTokenPrices = useSelector(tokenPricesSelector);
 
   const [state, dispatch] = useReducer(
@@ -27,16 +30,19 @@ export function useGetTokenPrices() {
   const fetchData = async ({
     publicKey,
     balances,
+    networkDetails,
     useCache = false,
   }: {
     publicKey: string;
     balances: AccountBalances["balances"];
+    networkDetails: NetworkDetails;
     useCache: boolean;
   }): Promise<GetTokenPricesData> => {
     dispatch({ type: "FETCH_DATA_START" });
 
     let tokenPrices = {} as ApiTokenPrices;
-    const publicKeyTokenPrices = cachedTokenPrices[publicKey];
+    const publicKeyTokenPrices =
+      cachedTokenPrices[networkDetails.networkPassphrase]?.[publicKey];
     const payload = {
       type: AppDataType.RESOLVED,
       tokenPrices,
@@ -61,9 +67,22 @@ export function useGetTokenPrices() {
             ),
           );
         if (assetIds.length) {
-          const fetchedTokenPrices = await getTokenPrices(assetIds);
+          // Read the flag from the store at call time (not a render-captured
+          // value) so a freshly resolved Amplitude flag isn't missed when this
+          // fetch runs inside a long-lived async flow that closed over a stale
+          // default.
+          const useV2 = tokenPricesV2Selector(store.getState());
+          const fetchedTokenPrices = await getTokenPrices(
+            assetIds,
+            networkDetails,
+            useV2,
+          );
           reduxDispatch(
-            saveTokenPrices({ publicKey, tokenPrices: fetchedTokenPrices }),
+            saveTokenPrices({
+              publicKey,
+              networkDetails,
+              tokenPrices: fetchedTokenPrices,
+            }),
           );
           payload.tokenPrices = fetchedTokenPrices;
         }
