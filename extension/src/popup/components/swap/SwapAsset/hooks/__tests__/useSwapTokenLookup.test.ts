@@ -206,6 +206,58 @@ describe("mergeScanResults", () => {
     ]);
   });
 
+  it("leaves rows without a scan entry UNDECORATED when skipUnscanned is true", () => {
+    const rows = [
+      {
+        code: "USDC",
+        issuer: "GUSD",
+        canonical: "USDC:GUSD",
+        isHeld: false,
+        requiresTrustline: true,
+        domain: null,
+      },
+      {
+        code: "AQUA",
+        issuer: "GAQUA",
+        canonical: "AQUA:GAQUA",
+        isHeld: false,
+        requiresTrustline: true,
+        domain: null,
+      },
+    ] as any;
+    // Only USDC is in the (cached) scan map.
+    const merged = mergeScanResults({
+      rows,
+      scanResults: { "USDC-GUSD": { result_type: "Malicious" } } as any,
+      networkDetails: MAINNET,
+      skipUnscanned: true,
+    });
+    // USDC is decorated; AQUA (no scan entry) is left untouched (no premature
+    // badge) rather than defaulting to SAFE/unable-to-scan.
+    expect(merged[0].securityLevel).toBe(SecurityLevel.MALICIOUS);
+    expect(merged[1].securityLevel).toBeUndefined();
+  });
+
+  it("decorates every scanned row by default (skipUnscanned false)", () => {
+    const rows = [
+      {
+        code: "AQUA",
+        issuer: "GAQUA",
+        canonical: "AQUA:GAQUA",
+        isHeld: false,
+        requiresTrustline: true,
+        domain: null,
+      },
+    ] as any;
+    const merged = mergeScanResults({
+      rows,
+      scanResults: { "AQUA-GAQUA": { result_type: "Benign" } } as any,
+      networkDetails: MAINNET,
+    });
+    // A benign scan still yields a defined (SAFE) level — existing behavior.
+    expect(merged[0].securityLevel).toBe(SecurityLevel.SAFE);
+  });
+
   it("omits securityWarnings when the scan has no flagged features", () => {
     const rows = [
       {

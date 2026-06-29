@@ -62,7 +62,10 @@ import {
   getAssetSecurityLevel,
   extractAssetScanWarnings,
   useBlockaidOverrideState,
+  isBlockaidEnabled,
+  scanAssetBulk,
 } from "popup/helpers/blockaid";
+import { getCachedAssetScan } from "popup/components/swap/SwapAsset/hooks/useSwapTokenLookup";
 import { AppDispatch } from "popup/App";
 import { emitMetric } from "helpers/metrics";
 import { AMOUNT_ERROR, InputType } from "helpers/transaction";
@@ -291,6 +294,65 @@ export const SwapAmount = ({
     getData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // If the destination token was picked before its Blockaid verdict landed (the
+  // picker's bulk scan is async), its securityLevel is missing — so the receive
+  // badge and the review's security gate would silently lose the assessment.
+  // Recover the verdict from the in-session scan cache, or scan the single
+  // token, then persist it onto the stored destination details (§ batch4
+  // follow-up — fixes "select before the badge appears loses the assessment").
+  const resolvedScanTokenRef = useRef<string | null>(null);
+  useEffect(() => {
+    const details = transactionData.destinationTokenDetails;
+    if (
+      !details ||
+      !details.issuer ||
+      details.securityLevel !== undefined ||
+      !isBlockaidEnabled(networkDetails)
+    ) {
+      return;
+    }
+    const id = `${details.tokenCode}-${details.issuer}`;
+    if (resolvedScanTokenRef.current === id) {
+      return;
+    }
+    resolvedScanTokenRef.current = id;
+
+    const resolveVerdict = async () => {
+      let scan = getCachedAssetScan(
+        networkDetails.network,
+        details.tokenCode,
+        details.issuer!,
+      );
+      if (!scan) {
+        const bulk = await scanAssetBulk([id], networkDetails);
+        scan = bulk?.results?.[id];
+      }
+      if (!scan) {
+        return;
+      }
+      const securityLevel = getAssetSecurityLevel({
+        blockaidData: scan,
+        blockaidOverrideState,
+        networkDetails,
+      });
+      const securityWarnings = extractAssetScanWarnings(scan);
+      dispatch(
+        saveDestinationTokenDetails({
+          ...details,
+          securityLevel,
+          ...(securityWarnings.length ? { securityWarnings } : {}),
+        }),
+      );
+    };
+    resolveVerdict();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    transactionData.destinationTokenDetails?.tokenCode,
+    transactionData.destinationTokenDetails?.issuer,
+    transactionData.destinationTokenDetails?.securityLevel,
+    networkDetails.network,
+  ]);
 
   // If the user was in fiat mode and the current source asset no longer has a
   // USD price (e.g. after a direction-swap or source picker change), force back

@@ -343,10 +343,16 @@ export const mergeScanResults = ({
   rows,
   scanResults,
   networkDetails,
+  skipUnscanned = false,
 }: {
   rows: SwapTokenRecord[];
   scanResults: Record<string, BlockAidScanAssetResult>;
   networkDetails: NetworkDetails;
+  // When true, rows without a scan entry are left UNDECORATED (securityLevel
+  // stays undefined) instead of defaulting to SAFE/unable-to-scan. Used for the
+  // first paint when only some verdicts are known from the in-session cache, so
+  // not-yet-scanned rows don't flash a premature badge (§ batch4 follow-up).
+  skipUnscanned?: boolean;
 }): SwapTokenRecord[] =>
   rows.map((row) => {
     if (!row.issuer) {
@@ -354,6 +360,9 @@ export const mergeScanResults = ({
       return row;
     }
     const scan = scanResults[`${row.code}-${row.issuer}`];
+    if (skipUnscanned && !scan) {
+      return row;
+    }
     let securityLevel: SecurityLevel;
     if (shouldTreatAssetAsUnableToScan(scan, null, networkDetails)) {
       securityLevel = SecurityLevel.UNABLE_TO_SCAN;
@@ -448,10 +457,43 @@ const setCachedSearchResult = (
   byTerm.set(term, result);
 };
 
-/** Test-only: clear the module-scoped idle + search caches between tests. */
+// In-session per-asset Blockaid scan cache, keyed by network -> "CODE-ISSUER".
+// Bulk scans are slow (serial-ish network round-trips), so caching each asset's
+// verdict means re-entering the picker, or overlapping searches ("usd" then
+// "usdc"), reuse verdicts instead of re-scanning — badges then paint instantly
+// on the first dispatch. It also lets a token picked BEFORE its scan finished
+// resolve its verdict from here (§ batch4 follow-up).
+const swapAssetScanCacheByNetwork = new Map<
+  string,
+  Map<string, BlockAidScanAssetResult>
+>();
+
+const getAssetScanCacheForNetwork = (network: string) => {
+  let byId = swapAssetScanCacheByNetwork.get(network);
+  if (!byId) {
+    byId = new Map();
+    swapAssetScanCacheByNetwork.set(network, byId);
+  }
+  return byId;
+};
+
+/**
+ * Look up a single asset's cached Blockaid scan (this session) by code+issuer.
+ * Used so a destination token picked before the bulk scan finished can still
+ * recover its verdict without a fresh network call when it's already cached.
+ */
+export const getCachedAssetScan = (
+  network: string,
+  code: string,
+  issuer: string,
+): BlockAidScanAssetResult | undefined =>
+  swapAssetScanCacheByNetwork.get(network)?.get(`${code}-${issuer}`);
+
+/** Test-only: clear the module-scoped idle + search + scan caches. */
 export const resetSwapIdleCacheForTests = () => {
   swapIdleResultCacheByNetwork.clear();
   swapSearchResultCacheByNetwork.clear();
+  swapAssetScanCacheByNetwork.clear();
 };
 
 // ---- the hook ----
@@ -632,59 +674,120 @@ export const useSwapTokenLookup = () => {
       // (splitVerifiedAssetCurrency), so a superseded call can still reach here
       // and commit its stale sections over the current render — the "Your
       // tokens" flash. Drop it (§ batch4 task 7).
+      // Non-held classic candidates to scan with Blockaid (mainnet only;
+      // testnet has no Blockaid).
+      const scanCandidates = isBlockaidEnabled(networkDetails)
+        ? [
+            ...payload.sections.popular,
+            ...payload.sections.verified,
+            ...payload.sections.unverified,
+          ].filter((r) => r.issuer && !isContractId(r.issuer))
+        : [];
+
+      // Decorate the given payload's scannable sections from a scan map.
+      const decorateSections = (
+        p: SwapTokenLookupResult,
+        scanResults: Record<string, BlockAidScanAssetResult>,
+        skipUnscanned: boolean,
+      ): SwapTokenLookupResult => ({
+        ...p,
+        sections: {
+          yourTokens: p.sections.yourTokens,
+          popular: mergeScanResults({
+            rows: p.sections.popular,
+            scanResults,
+            networkDetails,
+            skipUnscanned,
+          }),
+          verified: mergeScanResults({
+            rows: p.sections.verified,
+            scanResults,
+            networkDetails,
+            skipUnscanned,
+          }),
+          unverified: mergeScanResults({
+            rows: p.sections.unverified,
+            scanResults,
+            networkDetails,
+            skipUnscanned,
+          }),
+        },
+      });
+
+      const assetScanCache = getAssetScanCacheForNetwork(
+        networkDetails.network,
+      );
+
+      // First paint: decorate from any already-cached verdicts so re-entry and
+      // overlapping searches show badges immediately instead of flashing
+      // undecorated. Only rows present in the cache are stamped (skipUnscanned).
+      if (scanCandidates.length) {
+        const cachedSeed: Record<string, BlockAidScanAssetResult> = {};
+        for (const row of scanCandidates) {
+          const cached = assetScanCache.get(`${row.code}-${row.issuer}`);
+          if (cached) {
+            cachedSeed[`${row.code}-${row.issuer}`] = cached;
+          }
+        }
+        if (Object.keys(cachedSeed).length) {
+          payload = decorateSections(payload, cachedSeed, true);
+        }
+      }
+
       if (signal.aborted) {
         return;
       }
 
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });
 
-      // Bulk Blockaid scan of non-held candidates (mainnet only; testnet = unable-to-scan)
-      if (isBlockaidEnabled(networkDetails)) {
-        const nonHeld = [
-          ...payload.sections.popular,
-          ...payload.sections.verified,
-          ...payload.sections.unverified,
-        ].filter((r) => r.issuer && !isContractId(r.issuer));
+      // Bulk-scan only the candidates not already cached this session, in
+      // parallel chunks. Cached verdicts seed the result map so the full
+      // decoration below is complete even when nothing needs re-scanning.
+      if (scanCandidates.length) {
+        const scanResults: Record<string, BlockAidScanAssetResult> = {};
+        const toScan: SwapTokenRecord[] = [];
+        for (const row of scanCandidates) {
+          const id = `${row.code}-${row.issuer}`;
+          const cached = assetScanCache.get(id);
+          if (cached) {
+            scanResults[id] = cached;
+          } else {
+            toScan.push(row);
+          }
+        }
 
-        if (nonHeld.length) {
-          const scanResults: Record<string, BlockAidScanAssetResult> = {};
-          for (let i = 0; i < nonHeld.length; i += MAX_ASSETS_TO_SCAN) {
-            const chunk = nonHeld.slice(i, i + MAX_ASSETS_TO_SCAN);
-            const ids = chunk.map((r) => `${r.code}-${r.issuer}`);
-            const bulk = await scanAssetBulk(ids, networkDetails, signal);
-            if (bulk?.results) {
-              Object.assign(scanResults, bulk.results);
+        const chunks: SwapTokenRecord[][] = [];
+        for (let i = 0; i < toScan.length; i += MAX_ASSETS_TO_SCAN) {
+          chunks.push(toScan.slice(i, i + MAX_ASSETS_TO_SCAN));
+        }
+        const bulks = await Promise.all(
+          chunks.map((chunk) =>
+            scanAssetBulk(
+              chunk.map((r) => `${r.code}-${r.issuer}`),
+              networkDetails,
+              signal,
+            ),
+          ),
+        );
+        for (const bulk of bulks) {
+          if (bulk?.results) {
+            Object.assign(scanResults, bulk.results);
+            // Populate the per-asset cache for instant warm re-entry + pick-time
+            // verdict recovery.
+            for (const [id, scan] of Object.entries(bulk.results)) {
+              assetScanCache.set(id, scan);
             }
           }
-          if (Object.keys(scanResults).length) {
-            payload = {
-              ...payload,
-              sections: {
-                yourTokens: payload.sections.yourTokens,
-                popular: mergeScanResults({
-                  rows: payload.sections.popular,
-                  scanResults,
-                  networkDetails,
-                }),
-                verified: mergeScanResults({
-                  rows: payload.sections.verified,
-                  scanResults,
-                  networkDetails,
-                }),
-                unverified: mergeScanResults({
-                  rows: payload.sections.unverified,
-                  scanResults,
-                  networkDetails,
-                }),
-              },
-            };
-            // Same guard as the first dispatch: don't repaint a superseded
-            // lookup's Blockaid-decorated sections over the current one.
-            if (signal.aborted) {
-              return;
-            }
-            dispatch({ type: "FETCH_DATA_SUCCESS", payload });
+        }
+
+        if (Object.keys(scanResults).length) {
+          payload = decorateSections(payload, scanResults, false);
+          // Same guard as the first dispatch: don't repaint a superseded
+          // lookup's Blockaid-decorated sections over the current one.
+          if (signal.aborted) {
+            return;
           }
+          dispatch({ type: "FETCH_DATA_SUCCESS", payload });
         }
       }
 
