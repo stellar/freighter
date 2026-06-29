@@ -619,18 +619,18 @@ export const ReviewTx = ({
         />
       ) : (
         <div className="ReviewTx">
-          {/* Hide the review body while the trustline info sheet is up so the
-              review sheet doesn't show as a ghost behind it; closing the sheet
-              restores it (§ task 5). Matches the existing ActionButtons guard
-              below. */}
-          {!isOnTrustlinePane && (
+          {/* The trustline explanation replaces the review body in-flow while
+              open (no ghost behind it), and the body returns when it closes.
+              Rendered in-flow rather than as a nested modal so it isn't clipped
+              by the self-measuring review modal (§ batch3 task 4). */}
+          {isOnTrustlinePane ? (
+            <TrustlineInfoSheet
+              tokenCode={destinationTokenDetails?.tokenCode || ""}
+              onClose={() => setIsOnTrustlinePane(false)}
+            />
+          ) : (
             <MultiPaneSlider activeIndex={activePaneIndex} panes={panes} />
           )}
-          <TrustlineInfoSheet
-            isOpen={isOnTrustlinePane}
-            tokenCode={destinationTokenDetails?.tokenCode || ""}
-            onClose={() => setIsOnTrustlinePane(false)}
-          />
           {!isOnFeesPane && !isOnTrustlinePane && (
             <div className="ReviewTx__Actions">
               <ActionButtons

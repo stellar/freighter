@@ -50,7 +50,7 @@ describe("TrustlineInfoSheet", () => {
     const onClose = jest.fn();
     render(
       <Wrapper state={{}} routes={["/"]}>
-        <TrustlineInfoSheet isOpen tokenCode="USDC" onClose={onClose} />
+        <TrustlineInfoSheet tokenCode="USDC" onClose={onClose} />
       </Wrapper>,
     );
     expect(screen.getByTestId("trustline-info-sheet")).toBeInTheDocument();
@@ -63,7 +63,7 @@ describe("TrustlineInfoSheet", () => {
     const onClose = jest.fn();
     render(
       <Wrapper state={{}} routes={["/"]}>
-        <TrustlineInfoSheet isOpen tokenCode="USDC" onClose={onClose} />
+        <TrustlineInfoSheet tokenCode="USDC" onClose={onClose} />
       </Wrapper>,
     );
     // Body copy is token-specific and present.
@@ -77,7 +77,7 @@ describe("TrustlineInfoSheet", () => {
     const onClose = jest.fn();
     render(
       <Wrapper state={{}} routes={["/"]}>
-        <TrustlineInfoSheet isOpen tokenCode="USDC" onClose={onClose} />
+        <TrustlineInfoSheet tokenCode="USDC" onClose={onClose} />
       </Wrapper>,
     );
     fireEvent.click(screen.getByTestId("trustline-info-sheet-close"));
