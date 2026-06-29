@@ -411,9 +411,36 @@ const recordFromSearchResult = (
 // close; cross-session disk persistence (§5.3) is a separate concern.
 const swapIdleResultCacheByNetwork = new Map<string, SwapTokenLookupResult>();
 
-/** Test-only: clear the module-scoped idle cache between tests. */
+// Module-scoped cache of the last successful SEARCH result per network, keyed
+// by the normalized search term. Same lifetime as the idle cache (in-memory,
+// dies on popup close): re-running a search the user already ran in this
+// session repaints instantly and revalidates silently, instead of re-hitting
+// stellar.expert + the Blockaid bulk scan from scratch (§ batch3 task 10).
+const swapSearchResultCacheByNetwork = new Map<
+  string,
+  Map<string, SwapTokenLookupResult>
+>();
+
+const getCachedSearchResult = (network: string, term: string) =>
+  swapSearchResultCacheByNetwork.get(network)?.get(term);
+
+const setCachedSearchResult = (
+  network: string,
+  term: string,
+  result: SwapTokenLookupResult,
+) => {
+  let byTerm = swapSearchResultCacheByNetwork.get(network);
+  if (!byTerm) {
+    byTerm = new Map();
+    swapSearchResultCacheByNetwork.set(network, byTerm);
+  }
+  byTerm.set(term, result);
+};
+
+/** Test-only: clear the module-scoped idle + search caches between tests. */
 export const resetSwapIdleCacheForTests = () => {
   swapIdleResultCacheByNetwork.clear();
+  swapSearchResultCacheByNetwork.clear();
 };
 
 // ---- the hook ----
@@ -449,15 +476,22 @@ export const useSwapTokenLookup = () => {
     abortControllerRef.current = controller;
     const { signal } = controller;
 
-    // On idle re-entry, repaint instantly from the last cached result and
-    // revalidate silently (no spinner). Search has no such cache — show the
-    // spinner while it loads (§1.10).
+    // On idle re-entry — or a repeated search the user already ran this session
+    // — repaint instantly from the last cached result and revalidate silently
+    // (no spinner); otherwise show the spinner while it loads (§1.10, § batch3
+    // task 10).
     const isIdle = !searchTerm.trim();
+    const normalizedTerm = searchTerm.trim().toLowerCase();
     const cachedIdleResult = isIdle
       ? swapIdleResultCacheByNetwork.get(networkDetails.network)
       : undefined;
-    if (cachedIdleResult) {
-      dispatch({ type: "FETCH_DATA_SUCCESS", payload: cachedIdleResult });
+    const cachedResult =
+      cachedIdleResult ||
+      (isIdle
+        ? undefined
+        : getCachedSearchResult(networkDetails.network, normalizedTerm));
+    if (cachedResult) {
+      dispatch({ type: "FETCH_DATA_SUCCESS", payload: cachedResult });
     } else {
       dispatch({ type: "FETCH_DATA_START" });
     }
@@ -629,9 +663,12 @@ export const useSwapTokenLookup = () => {
         }
       }
 
-      // Cache the fully-decorated idle result for instant repaint + stale-serve.
+      // Cache the fully-decorated result for instant repaint + stale-serve:
+      // idle keyed by network, search keyed by network + normalized term.
       if (isIdle) {
         swapIdleResultCacheByNetwork.set(networkDetails.network, payload);
+      } else {
+        setCachedSearchResult(networkDetails.network, normalizedTerm, payload);
       }
     } catch (e) {
       if (signal.aborted) {
@@ -639,11 +676,11 @@ export const useSwapTokenLookup = () => {
         return;
       }
       captureException(`useSwapTokenLookup fallback - ${JSON.stringify(e)}`);
-      // Serve the last good idle result on a transient failure instead of
-      // dropping Popular to held-only (§5.4); fall back to held-only only when
-      // there's nothing cached.
-      if (cachedIdleResult) {
-        dispatch({ type: "FETCH_DATA_SUCCESS", payload: cachedIdleResult });
+      // Serve the last good cached result (idle or this search term) on a
+      // transient failure instead of dropping Popular to held-only (§5.4); fall
+      // back to held-only only when there's nothing cached.
+      if (cachedResult) {
+        dispatch({ type: "FETCH_DATA_SUCCESS", payload: cachedResult });
         return;
       }
       // Graceful fallback: stellar.expert or Blockaid unreachable → held-only

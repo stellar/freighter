@@ -67,19 +67,13 @@ export const SwapAsset = ({
 
   // Destination search: the previous lookup result lingers in lookupState
   // during the 300ms debounce, so the picker would briefly show stale held
-  // tokens (and empty search sections) before the new results arrive. Track a
-  // pending flag from the moment the user types until the lookup settles so we
-  // show the loader instead — clearing every result at once (§ task 4).
-  //
-  // The flag is cleared off the lookup promise (in the formik onSubmit below),
-  // NOT off a lookupState-value effect: the idle in-memory cache can dispatch
-  // FETCH_DATA_SUCCESS while the state is already SUCCESS (a SUCCESS→SUCCESS
-  // repaint), which a [lookupState.state] effect never observes — that left the
-  // loader stuck forever when typing or clearing the box. A monotonic sequence
-  // guards against a superseded (debounced/aborted) call clearing a newer
-  // pending search.
+  // tokens (and empty search sections) before the new results arrive. This flag
+  // shows the loader from the keystroke until the lookup STARTS (bridging only
+  // the debounce gap); from there isLoading (lookupState LOADING) takes over and
+  // clears as soon as the first results paint. We deliberately don't keep it set
+  // for the whole fetch promise — that kept the spinner up through the silent
+  // Blockaid revalidation / cached-result repaint (§ batch3 tasks 10 & 11).
   const [isSearchPending, setIsSearchPending] = React.useState(false);
-  const searchSeqRef = React.useRef(0);
 
   const isLoading = isDestination
     ? lookupState.state === RequestState.IDLE ||
@@ -108,24 +102,21 @@ export const SwapAsset = ({
           resolvedFrom?.type === AppDataType.RESOLVED
             ? resolvedFrom.tokenPrices
             : {};
-        // Capture the sequence at submit time; clear the loader only if no
-        // newer keystroke has arrived by the time this lookup settles (covers
-        // the SUCCESS→SUCCESS cache repaint and aborted/superseded calls).
-        const seq = searchSeqRef.current;
-        try {
-          await lookupFetchData({
-            searchTerm: values.searchTerm,
-            balances,
-            publicKey,
-            networkDetails,
-            icons,
-            tokenPrices,
-          });
-        } finally {
-          if (seq === searchSeqRef.current) {
-            setIsSearchPending(false);
-          }
-        }
+        // The lookup is starting now (the debounce gap is over): hand the
+        // loading indicator off to isLoading, which clears at the first
+        // results dispatch. lookupFetchData synchronously dispatches its first
+        // action (LOADING, or an instant cached SUCCESS), so the loader state
+        // is correct in the same render — a cached/idle result shows at once
+        // and the spinner never waits for the silent revalidation.
+        setIsSearchPending(false);
+        await lookupFetchData({
+          searchTerm: values.searchTerm,
+          balances,
+          publicKey,
+          networkDetails,
+          icons,
+          tokenPrices,
+        });
       } else {
         filterBalances(values.searchTerm);
       }
@@ -146,11 +137,10 @@ export const SwapAsset = ({
     const val = e.target.value;
     formik.setFieldValue("searchTerm", val);
     // The destination lookup is async (debounced + network); show the loader
-    // until it settles so all results clear at once on each keystroke. The
-    // source filter is synchronous, so it doesn't need this. Bump the sequence
-    // so a still-in-flight earlier lookup can't clear this newer pending state.
+    // immediately so stale results clear at once. It's handed off to isLoading
+    // once the debounced lookup starts. The source filter is synchronous, so it
+    // doesn't need this.
     if (isDestination) {
-      searchSeqRef.current += 1;
       setIsSearchPending(true);
     }
     debouncedSubmit();
