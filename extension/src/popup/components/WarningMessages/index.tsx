@@ -538,8 +538,8 @@ export const BlockaidAssetWarning = ({
   }
 
   const header = isMaliciousFinal
-    ? t("This asset was flagged as malicious")
-    : t("This asset was flagged as suspicious");
+    ? t("This token was flagged as malicious")
+    : t("This token was flagged as suspicious");
   const scanType = isMaliciousFinal ? "ScanMalicious" : "ScanMiss";
 
   return (
@@ -615,13 +615,13 @@ export const BlockAidAssetScanExpanded = ({
         headerIcon={<Icon.AlertOctagon />}
         title={t("Do not proceed")}
         subtitle={t(
-          "This asset has been flagged as malicious for the following reasons.",
+          "This token has been flagged as malicious for the following reasons.",
         )}
         detailRows={
           <div className="BlockaidDetailsExpanded__DetailRow">
             <Icon.XCircle />
             <span>
-              {t("This asset was flagged as malicious (override active)")}
+              {t("This token was flagged as malicious (override active)")}
             </span>
           </div>
         }
@@ -637,13 +637,13 @@ export const BlockAidAssetScanExpanded = ({
         headerIcon={<Icon.AlertTriangle />}
         title={t("Suspicious Request")}
         subtitle={t(
-          "This asset has been flagged as suspicious for the following reasons.",
+          "This token has been flagged as suspicious for the following reasons.",
         )}
         detailRows={
           <div className="BlockaidDetailsExpanded__DetailRow">
             <Icon.MinusCircle />
             <span>
-              {t("This asset was flagged as suspicious (override active)")}
+              {t("This token was flagged as suspicious (override active)")}
             </span>
           </div>
         }
@@ -684,13 +684,13 @@ export const BlockAidAssetScanExpanded = ({
     ? {
         title: t("Do not proceed"),
         description: t(
-          "This asset has been flagged as malicious for the following reasons.",
+          "This token has been flagged as malicious for the following reasons.",
         ),
       }
     : {
         title: t("Suspicious Request"),
         description: t(
-          "This asset has been flagged as suspicious for the following reasons.",
+          "This token has been flagged as suspicious for the following reasons.",
         ),
       };
 
@@ -699,8 +699,8 @@ export const BlockAidAssetScanExpanded = ({
     : { class: "WarningMark", icon: <Icon.AlertTriangle /> };
 
   const fallbackMessage = isMalicious
-    ? t("This asset was flagged as malicious")
-    : t("This asset was flagged as suspicious");
+    ? t("This token was flagged as malicious")
+    : t("This token was flagged as suspicious");
 
   const featureRows =
     features.length > 0 ? (
@@ -1069,7 +1069,7 @@ const getScanWarnings = (
     warnings.push({
       icon: <Icon.XCircle />,
       text: isAssetScan
-        ? t("This asset was flagged as malicious (override active)")
+        ? t("This token was flagged as malicious (override active)")
         : t("This transaction was flagged as malicious (override active)"),
       isError: true,
     });
@@ -1080,7 +1080,7 @@ const getScanWarnings = (
     warnings.push({
       icon: <Icon.MinusCircle />,
       text: isAssetScan
-        ? t("This asset was flagged as suspicious (override active)")
+        ? t("This token was flagged as suspicious (override active)")
         : t("This transaction was flagged as suspicious (override active)"),
       isError: false,
     });
@@ -1092,7 +1092,7 @@ const getScanWarnings = (
     warnings.push({
       icon: <Icon.MinusCircle />,
       text: isAssetScan
-        ? t("Unable to scan asset")
+        ? t("Unable to scan token")
         : t("Unable to scan transaction"),
       isError: false,
     });
@@ -1225,7 +1225,7 @@ export const BlockAidScanExpanded = ({
       ? t("Suspicious Request")
       : t("Proceed with caution");
   const subtitle = isAssetScan
-    ? t("This asset does not appear safe for the following reasons.")
+    ? t("This token does not appear safe for the following reasons.")
     : t("This transaction does not appear safe for the following reasons.");
   const headerIcon = isMalicious ? (
     <div className="WarningMarkError">
