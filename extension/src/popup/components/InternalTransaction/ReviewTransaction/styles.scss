@@ -13,6 +13,12 @@
 
   &__Warnings {
     margin-top: pxToRem(32px);
+
+    // The token banner is clickable when it has expandable token-scan reasons
+    // to reveal (§ batch4 task 3); show the affordance.
+    &__token--clickable {
+      cursor: pointer;
+    }
   }
 
   &__loader {

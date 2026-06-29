@@ -292,4 +292,68 @@ describe("ReviewTx Blockaid security banner (single, by priority) + badges", () 
     fireEvent.click(screen.getByText("Confirm anyway"));
     expect(onConfirm).toHaveBeenCalledTimes(1);
   });
+
+  it("opens the pane from the token banner and lists token reasons when the tx scan is clean (token-only flag)", () => {
+    renderReview({
+      // Clean / absent transaction scan — only the picked token is flagged, the
+      // common mainnet swap-to-a-bad-token case.
+      scanResult: null,
+      destLevel: SecurityLevel.MALICIOUS,
+      destWarnings: [
+        {
+          description:
+            "An identified malicious address is associated with the token.",
+          isError: true,
+          featureId: "known_malicious",
+        },
+      ],
+    });
+    // The consolidated token banner is shown; clicking it opens the pane that
+    // lists the friendly token-scan reason (mobile parity).
+    fireEvent.click(screen.getByTestId("review-tx-token-warning"));
+    expect(screen.getByText("Do not proceed")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "An identified malicious address is associated with the token.",
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it("escalates the pane title to 'Suspicious Request' for a suspicious (non-malicious) token reason", () => {
+    renderReview({
+      scanResult: null,
+      destLevel: SecurityLevel.SUSPICIOUS,
+      destWarnings: [
+        {
+          description: "This token shows signs of suspicious activity.",
+          isError: false,
+          featureId: "suspicious_activity",
+        },
+      ],
+    });
+    fireEvent.click(screen.getByTestId("review-tx-token-warning"));
+    expect(screen.getByText("Suspicious Request")).toBeInTheDocument();
+    expect(screen.queryByText("Do not proceed")).not.toBeInTheDocument();
+    expect(
+      screen.getByText("This token shows signs of suspicious activity."),
+    ).toBeInTheDocument();
+  });
+
+  it("lists the source token reason in the pane (source-only flag)", () => {
+    renderReview({
+      scanResult: null,
+      sourceLevel: SecurityLevel.MALICIOUS,
+      sourceWarnings: [
+        {
+          description: "The sending token is associated with a known scam.",
+          isError: true,
+          featureId: "source_scam",
+        },
+      ],
+    });
+    fireEvent.click(screen.getByTestId("review-tx-token-warning"));
+    expect(
+      screen.getByText("The sending token is associated with a known scam."),
+    ).toBeInTheDocument();
+  });
 });

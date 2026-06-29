@@ -1004,6 +1004,12 @@ interface BlockAidScanExpandedProps {
   // swap, the source/destination token-scan features shown together with the
   // transaction-scan reasons, mirroring mobile — § batch4 task 3).
   extraWarnings?: BlockaidWarning[];
+  // The verdict that drives the parent gate's malicious/suspicious styling for
+  // those extra reasons (e.g. a swap token's merged SecurityLevel). Folded into
+  // the pane's title/icon so the pane can never under-state severity relative
+  // to the gate when a token is flagged via result_type but carries no
+  // matching feature row (§ batch4 task 3).
+  extraSeverityLevel?: SecurityLevel | null;
 }
 
 interface WarningInfo {
@@ -1181,6 +1187,7 @@ export const BlockAidScanExpanded = ({
   onClose,
   isAssetScan: isAssetScanProp,
   extraWarnings,
+  extraSeverityLevel,
 }: BlockAidScanExpandedProps) => {
   const { t } = useTranslation();
   const shouldTreatTxAsUnableToScan = useShouldTreatTxAsUnableToScan();
@@ -1201,7 +1208,12 @@ export const BlockAidScanExpanded = ({
     blockaidOverrideState === SecurityLevel.MALICIOUS ||
     blockaidOverrideState === SecurityLevel.SUSPICIOUS;
 
-  if (!scanResult && !isUnableToScan && !hasActiveOverride) {
+  if (
+    !scanResult &&
+    !isUnableToScan &&
+    !hasActiveOverride &&
+    !extraWarnings?.length
+  ) {
     return null;
   }
 
@@ -1240,11 +1252,18 @@ export const BlockAidScanExpanded = ({
 
   const allWarnings = [...warnings, ...extraRows];
   // A malicious extra escalates the whole pane to "Do not proceed"; any extra
-  // at least makes it suspicious.
-  const hasMaliciousExtra = extraRows.some((row) => row.isError);
+  // at least makes it suspicious. extraSeverityLevel covers the case where the
+  // caller's verdict is Malicious/Suspicious (via result_type) but carries no
+  // matching feature row, so the pane title stays in lockstep with the gate.
+  const hasMaliciousExtra =
+    extraRows.some((row) => row.isError) ||
+    extraSeverityLevel === SecurityLevel.MALICIOUS;
   const mergedIsMalicious = isMalicious || hasMaliciousExtra;
   const mergedIsSuspicious =
-    !mergedIsMalicious && (isSuspicious || extraRows.length > 0);
+    !mergedIsMalicious &&
+    (isSuspicious ||
+      extraRows.length > 0 ||
+      extraSeverityLevel === SecurityLevel.SUSPICIOUS);
 
   let requestId = "";
   if (scanResult && "request_id" in scanResult && scanResult.request_id) {

@@ -269,6 +269,14 @@ export const ReviewTx = ({
         ? sourceTokenWarningMessage
         : null;
 
+  // Token-scan reasons (source + destination) shown in the expandable pane next
+  // to the transaction-scan reasons, so the user sees every flagged reason in
+  // one list, like mobile (§ batch4 task 3).
+  const tokenSecurityWarnings: BlockaidWarning[] = [
+    ...(sourceTokenSecurityWarnings ?? []),
+    ...(destinationTokenDetails?.securityWarnings ?? []),
+  ];
+
   /**
    * Pane state machine:
    * - No warning: [Review (0), Memo (1), Fees (2)]
@@ -319,6 +327,12 @@ export const ReviewTx = ({
     }
     return null;
   })();
+
+  // When the token banner is shown (clean/absent tx scan) but the token carries
+  // friendly reasons, make the banner open the expandable pane so those reasons
+  // are reachable — mirroring the tx banner (§ batch4 task 3).
+  const tokenBannerOpensPane =
+    blockaidBannerKind === "token" && tokenSecurityWarnings.length > 0;
 
   const isOnBlockaidPane =
     paneConfig.blockaidIndex !== null &&
@@ -476,8 +490,32 @@ export const ReviewTx = ({
           />
         ) : blockaidBannerKind === "token" ? (
           <div
-            className="ReviewTx__Warnings__token"
+            className={`ReviewTx__Warnings__token${
+              tokenBannerOpensPane
+                ? " ReviewTx__Warnings__token--clickable"
+                : ""
+            }`}
             data-testid="review-tx-token-warning"
+            {...(tokenBannerOpensPane
+              ? {
+                  role: "button",
+                  tabIndex: 0,
+                  onClick: () => {
+                    if (paneConfig.blockaidIndex !== null) {
+                      setActivePaneIndex(paneConfig.blockaidIndex);
+                    }
+                  },
+                  onKeyDown: (e: React.KeyboardEvent) => {
+                    if (
+                      (e.key === "Enter" || e.key === " ") &&
+                      paneConfig.blockaidIndex !== null
+                    ) {
+                      e.preventDefault();
+                      setActivePaneIndex(paneConfig.blockaidIndex);
+                    }
+                  },
+                }
+              : {})}
           >
             <Notification
               variant={
@@ -566,19 +604,11 @@ export const ReviewTx = ({
       </div>
     </>
   );
-
-  // Token-scan reasons (source + destination) shown in the expandable pane next
-  // to the transaction-scan reasons, so the user sees every flagged reason in
-  // one list, like mobile (§ batch4 task 3).
-  const tokenSecurityWarnings: BlockaidWarning[] = [
-    ...(sourceTokenSecurityWarnings ?? []),
-    ...(destinationTokenDetails?.securityWarnings ?? []),
-  ];
-
   const blockaidPane = (
     <BlockAidScanExpanded
       scanResult={txScanResult}
       extraWarnings={tokenSecurityWarnings}
+      extraSeverityLevel={tokenWarningLevel}
       onClose={() => {
         setActivePaneIndex(paneConfig.reviewIndex);
       }}

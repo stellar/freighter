@@ -176,4 +176,52 @@ describe("mergeScanResults", () => {
     });
     expect(merged[0].securityLevel).toBe(SecurityLevel.MALICIOUS);
   });
+
+  it("stamps friendly securityWarnings from the scan's Warning/Malicious features (excluding Benign)", () => {
+    const rows = [
+      {
+        code: "USDC",
+        issuer: "GUSD",
+        canonical: "USDC:GUSD",
+        isHeld: false,
+        requiresTrustline: true,
+        domain: null,
+      },
+    ] as any;
+    const merged = mergeScanResults({
+      rows,
+      scanResults: {
+        "USDC-GUSD": {
+          result_type: "Malicious",
+          features: [
+            { type: "Malicious", feature_id: "mal", description: "bad thing" },
+            { type: "Benign", feature_id: "ok", description: "fine thing" },
+          ],
+        },
+      } as any,
+      networkDetails: MAINNET,
+    });
+    expect(merged[0].securityWarnings).toEqual([
+      { description: "bad thing", isError: true, featureId: "mal" },
+    ]);
+  });
+
+  it("omits securityWarnings when the scan has no flagged features", () => {
+    const rows = [
+      {
+        code: "USDC",
+        issuer: "GUSD",
+        canonical: "USDC:GUSD",
+        isHeld: false,
+        requiresTrustline: true,
+        domain: null,
+      },
+    ] as any;
+    const merged = mergeScanResults({
+      rows,
+      scanResults: { "USDC-GUSD": { result_type: "Malicious" } } as any,
+      networkDetails: MAINNET,
+    });
+    expect(merged[0].securityWarnings).toBeUndefined();
+  });
 });
