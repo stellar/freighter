@@ -27,7 +27,11 @@ import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
 import { hardwareWalletTypeSelector } from "popup/ducks/accountServices";
 import { MultiPaneSlider } from "popup/components/SlidingPaneSwitcher";
 import { useValidateTransactionMemo } from "popup/helpers/useValidateTransactionMemo";
-import { SecurityLevel, mergeSecurityLevels } from "popup/constants/blockaid";
+import {
+  BlockaidWarning,
+  SecurityLevel,
+  mergeSecurityLevels,
+} from "popup/constants/blockaid";
 import {
   useBlockaidOverrideState,
   useShouldTreatTxAsUnableToScan,
@@ -118,10 +122,18 @@ interface ReviewTxProps {
     // Blockaid verdict captured when the destination token was picked; folded
     // into the review security gate alongside the transaction scan (§4.1).
     securityLevel?: SecurityLevel;
+    // Friendly per-feature reasons from the destination token scan, listed in
+    // the expandable Blockaid pane next to the transaction-scan reasons (§ batch4
+    // task 3).
+    securityWarnings?: BlockaidWarning[];
   } | null;
   // Blockaid verdict for the swap source token (from its held balance); folded
   // into the same review gate so a flagged sell token also warns (§4.3).
   sourceTokenSecurityLevel?: SecurityLevel;
+  // Friendly per-feature reasons from the source token scan, listed in the
+  // expandable Blockaid pane alongside the transaction-scan reasons (§ batch4
+  // task 3).
+  sourceTokenSecurityWarnings?: BlockaidWarning[];
 }
 
 export const ReviewTx = ({
@@ -139,6 +151,7 @@ export const ReviewTx = ({
   onAddMemo,
   destinationTokenDetails,
   sourceTokenSecurityLevel,
+  sourceTokenSecurityWarnings,
 }: ReviewTxProps) => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
@@ -554,9 +567,18 @@ export const ReviewTx = ({
     </>
   );
 
+  // Token-scan reasons (source + destination) shown in the expandable pane next
+  // to the transaction-scan reasons, so the user sees every flagged reason in
+  // one list, like mobile (§ batch4 task 3).
+  const tokenSecurityWarnings: BlockaidWarning[] = [
+    ...(sourceTokenSecurityWarnings ?? []),
+    ...(destinationTokenDetails?.securityWarnings ?? []),
+  ];
+
   const blockaidPane = (
     <BlockAidScanExpanded
       scanResult={txScanResult}
+      extraWarnings={tokenSecurityWarnings}
       onClose={() => {
         setActivePaneIndex(paneConfig.reviewIndex);
       }}

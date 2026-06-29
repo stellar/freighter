@@ -18,7 +18,7 @@ import {
   overriddenBlockaidResponseSelector,
 } from "popup/ducks/settings";
 import { isDev } from "@shared/helpers/dev";
-import { SecurityLevel } from "popup/constants/blockaid";
+import { BlockaidWarning, SecurityLevel } from "popup/constants/blockaid";
 import { fetchJson } from "./fetch";
 import { captureFetchError } from "./captureFetchError";
 import { Action } from "constants/request";
@@ -474,6 +474,31 @@ export const getAssetSecurityLevel = ({
     return SecurityLevel.UNABLE_TO_SCAN;
   }
   return SecurityLevel.SAFE;
+};
+
+/**
+ * Friendly per-feature reasons from a token (asset) Blockaid scan — the same
+ * descriptions the Add-a-token flow shows. Only Warning/Malicious features are
+ * surfaced (Benign/Info are trust signals, not reasons). These are carried
+ * through the swap picker so the review's "Do not proceed" pane can list the
+ * token's reasons alongside the transaction-scan reasons (§ batch4 task 3).
+ */
+export const extractAssetScanWarnings = (
+  blockaidData?: BlockAidScanAssetResult | null,
+): BlockaidWarning[] => {
+  const features = blockaidData?.features;
+  if (!features?.length) {
+    return [];
+  }
+  return features
+    .filter(
+      (feature) => feature.type === "Warning" || feature.type === "Malicious",
+    )
+    .map((feature) => ({
+      description: feature.description,
+      isError: feature.type === "Malicious",
+      featureId: feature.feature_id,
+    }));
 };
 
 export const isTxSuspicious = (

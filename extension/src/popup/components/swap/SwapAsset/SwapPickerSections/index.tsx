@@ -32,6 +32,7 @@ const buildSelection = (
   decimals: 7,
   issuer: r.issuer || undefined,
   securityLevel: r.securityLevel,
+  securityWarnings: r.securityWarnings,
   iconUrl: r.image ?? r.icon ?? undefined,
   spotPrice: r.spotPrice,
   source,

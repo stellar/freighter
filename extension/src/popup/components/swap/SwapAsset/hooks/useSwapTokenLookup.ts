@@ -13,7 +13,7 @@ import { initialState, reducer } from "helpers/request";
 import { RequestState } from "constants/request";
 import { isMainnet, getCanonicalFromAsset } from "helpers/stellar";
 import { ManageAssetCurrency } from "popup/components/manageAssets/ManageAssetRows";
-import { SecurityLevel } from "popup/constants/blockaid";
+import { BlockaidWarning, SecurityLevel } from "popup/constants/blockaid";
 import { searchAsset } from "popup/helpers/searchAsset";
 import {
   getPersistedPopularTokens,
@@ -29,6 +29,7 @@ import {
   isAssetSuspicious,
   shouldTreatAssetAsUnableToScan,
   isBlockaidEnabled,
+  extractAssetScanWarnings,
 } from "popup/helpers/blockaid";
 import { settingsSelector } from "popup/ducks/settings";
 import {
@@ -55,6 +56,9 @@ export interface SwapTokenRecord extends ManageAssetCurrency {
   isContract: boolean;
   requiresTrustline: boolean;
   securityLevel?: SecurityLevel;
+  /** Friendly per-feature Blockaid reasons from the token's asset scan, carried
+   * to the review's "Do not proceed" pane (§ batch4 task 3). */
+  securityWarnings?: BlockaidWarning[];
   /** Formatted held-token balance (held rows only). */
   tokenAmount?: string;
   fiatValue?: string;
@@ -360,7 +364,14 @@ export const mergeScanResults = ({
     } else {
       securityLevel = SecurityLevel.SAFE;
     }
-    return { ...row, securityLevel };
+    // Keep the friendly per-feature reasons so the review can show them
+    // alongside the transaction-scan reasons (§ batch4 task 3).
+    const securityWarnings = extractAssetScanWarnings(scan);
+    return {
+      ...row,
+      securityLevel,
+      ...(securityWarnings.length ? { securityWarnings } : {}),
+    };
   });
 
 // ---- helper to convert a Stellar Expert search record to ManageAssetCurrency ----

@@ -28,7 +28,7 @@ import {
   useShouldTreatAssetAsUnableToScan,
   useShouldTreatTxAsUnableToScan,
 } from "popup/helpers/blockaid";
-import { SecurityLevel } from "popup/constants/blockaid";
+import { BlockaidWarning, SecurityLevel } from "popup/constants/blockaid";
 
 import "./styles.scss";
 
@@ -1000,6 +1000,10 @@ interface BlockAidScanExpandedProps {
   scanResult: BlockAidScanTxResult | BlockAidScanAssetResult | null | undefined;
   onClose?: () => void;
   isAssetScan?: boolean;
+  // Additional friendly reasons to list alongside the scan's own (e.g. on a
+  // swap, the source/destination token-scan features shown together with the
+  // transaction-scan reasons, mirroring mobile — § batch4 task 3).
+  extraWarnings?: BlockaidWarning[];
 }
 
 interface WarningInfo {
@@ -1176,6 +1180,7 @@ export const BlockAidScanExpanded = ({
   scanResult,
   onClose,
   isAssetScan: isAssetScanProp,
+  extraWarnings,
 }: BlockAidScanExpandedProps) => {
   const { t } = useTranslation();
   const shouldTreatTxAsUnableToScan = useShouldTreatTxAsUnableToScan();
@@ -1209,25 +1214,57 @@ export const BlockAidScanExpanded = ({
     blockaidOverrideState,
     isAssetScan,
   );
+
+  // Append any caller-supplied reasons (e.g. swap token-scan features), so the
+  // pane lists the transaction-scan and token-scan reasons together like mobile
+  // (§ batch4 task 3). Dedupe against the scan's own rows by text, and among the
+  // extras by featureId, so the same reason never doubles up.
+  const extraRows = (extraWarnings ?? [])
+    .filter(
+      (extra) =>
+        !warnings.some((existing) => existing.text === extra.description),
+    )
+    .filter((extra, index, arr) => {
+      const key = extra.featureId || extra.description;
+      return (
+        arr.findIndex(
+          (other) => (other.featureId || other.description) === key,
+        ) === index
+      );
+    })
+    .map((extra) => ({
+      icon: extra.isError ? <Icon.XCircle /> : <Icon.MinusCircle />,
+      text: extra.description,
+      isError: extra.isError,
+    }));
+
+  const allWarnings = [...warnings, ...extraRows];
+  // A malicious extra escalates the whole pane to "Do not proceed"; any extra
+  // at least makes it suspicious.
+  const hasMaliciousExtra = extraRows.some((row) => row.isError);
+  const mergedIsMalicious = isMalicious || hasMaliciousExtra;
+  const mergedIsSuspicious =
+    !mergedIsMalicious && (isSuspicious || extraRows.length > 0);
+
   let requestId = "";
   if (scanResult && "request_id" in scanResult && scanResult.request_id) {
     requestId = scanResult.request_id;
   }
 
   // Early return if no warnings
-  if (warnings.length === 0) {
+  if (allWarnings.length === 0) {
     return null;
   }
 
-  const title = isMalicious
+  const title = mergedIsMalicious
     ? t("Do not proceed")
-    : isSuspicious
+    : mergedIsSuspicious
       ? t("Suspicious Request")
       : t("Proceed with caution");
   const subtitle = isAssetScan
     ? t("This token does not appear safe for the following reasons.")
     : t("This transaction does not appear safe for the following reasons.");
-  const headerIcon = isMalicious ? (
+  const headerIcon = mergedIsMalicious ? (
     <div className="WarningMarkError">
       <Icon.AlertOctagon />
     </div>
@@ -1248,7 +1285,7 @@ export const BlockAidScanExpanded = ({
       <div className="BlockaidDetailsExpanded__Title">{title}</div>
       <div className="BlockaidDetailsExpanded__SubTitle">{subtitle}</div>
       <div className="BlockaidDetailsExpanded__Details">
-        {warnings.map((warning, index) => (
+        {allWarnings.map((warning, index) => (
           <div
             key={`${warning.text}-${index}`}
             className={

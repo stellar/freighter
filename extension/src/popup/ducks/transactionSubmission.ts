@@ -28,7 +28,7 @@ import {
 import { NETWORKS, NetworkDetails } from "@shared/constants/stellar";
 import { ConfigurableWalletType } from "@shared/constants/hardwareWallet";
 import { isCustomNetwork } from "@shared/helpers/stellar";
-import { SecurityLevel } from "popup/constants/blockaid";
+import { BlockaidWarning, SecurityLevel } from "popup/constants/blockaid";
 
 import { getCanonicalFromAsset } from "helpers/stellar";
 import { INDEXER_URL } from "@shared/constants/mercury";
@@ -430,6 +430,9 @@ export interface DestinationTokenDetails {
   issuer?: string;
   // from the pick-time Blockaid bulk scan.
   securityLevel?: SecurityLevel;
+  // friendly per-feature Blockaid reasons from the pick-time token scan, shown
+  // in the review's "Do not proceed" pane alongside the tx-scan reasons.
+  securityWarnings?: BlockaidWarning[];
   // from the search/Popular record, before balances hydrate.
   iconUrl?: string;
   // USD spot price from the stellar.expert search result, used as a fallback

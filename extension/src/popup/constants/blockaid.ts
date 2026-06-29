@@ -9,6 +9,21 @@ export enum SecurityLevel {
   UNABLE_TO_SCAN = "UNABLE_TO_SCAN",
 }
 
+/**
+ * A single friendly Blockaid reason extracted from a token/asset scan's
+ * `features[]`. Carried alongside the SecurityLevel so the review screen can
+ * list these reasons next to the transaction-scan reasons.
+ */
+export interface BlockaidWarning {
+  // The human-readable feature description, e.g. "An identified malicious
+  // address is associated with the token."
+  description: string;
+  // true for "Malicious" features, false for "Warning" (suspicious) ones.
+  isError: boolean;
+  // Blockaid's feature_id, used to dedupe against the transaction-scan reasons.
+  featureId?: string;
+}
+
 // Severity ordering for rolling several verdicts into one. SAFE never warns.
 const SECURITY_LEVEL_SEVERITY: Record<SecurityLevel, number> = {
   [SecurityLevel.SAFE]: 0,

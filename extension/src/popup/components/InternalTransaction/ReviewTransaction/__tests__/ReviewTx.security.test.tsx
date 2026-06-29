@@ -2,7 +2,7 @@ import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 
 import { RequestState } from "constants/request";
-import { SecurityLevel } from "popup/constants/blockaid";
+import { BlockaidWarning, SecurityLevel } from "popup/constants/blockaid";
 import { Wrapper } from "popup/__testHelpers__";
 import { ReviewTx } from "popup/components/InternalTransaction/ReviewTransaction";
 
@@ -48,11 +48,15 @@ const renderReview = ({
   sourceLevel,
   scanResult,
   networkDetails,
+  destWarnings,
+  sourceWarnings,
 }: {
   destLevel?: SecurityLevel;
   sourceLevel?: SecurityLevel;
   scanResult?: unknown;
   networkDetails?: typeof swapProps.networkDetails;
+  destWarnings?: BlockaidWarning[];
+  sourceWarnings?: BlockaidWarning[];
 }) =>
   render(
     <Wrapper state={{}} routes={["/"]}>
@@ -71,12 +75,14 @@ const renderReview = ({
           } as any
         }
         sourceTokenSecurityLevel={sourceLevel}
+        sourceTokenSecurityWarnings={sourceWarnings}
         destinationTokenDetails={{
           tokenCode: "AQUA",
           requiresTrustline: true,
           decimals: 7,
           issuer: "GBNZILSTVQZ4R7IKQDGHYGY2QXL5QOFJYQMXPKWRRM5PAV7Y4M67AQUA",
           securityLevel: destLevel,
+          securityWarnings: destWarnings,
         }}
       />
     </Wrapper>,
@@ -192,5 +198,62 @@ describe("ReviewTx Blockaid security banner (single, by priority) + badges", () 
       ),
     ).toBeInTheDocument();
     expect(screen.queryByText(/Token issuer <Address/)).not.toBeInTheDocument();
+  });
+
+  it("lists the destination token-scan reasons alongside the raw transaction-scan reason (mobile parity)", () => {
+    renderReview({
+      // Raw developer string with no per-feature descriptions — shown verbatim,
+      // matching mobile.
+      scanResult: {
+        validation: {
+          result_type: "Malicious",
+          description:
+            "Token issuer <Address [type=ACCOUNT address=GBNW7FS6...]> is flagged as malicious",
+        },
+      },
+      destWarnings: [
+        {
+          description:
+            "An identified malicious address is associated with the token.",
+          isError: true,
+          featureId: "known_malicious",
+        },
+      ],
+    });
+    fireEvent.click(screen.getByTestId("blockaid-malicious-label"));
+    // Both reasons appear together in the same list.
+    expect(screen.getByText(/Token issuer <Address/)).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "An identified malicious address is associated with the token.",
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it("does not duplicate a token-scan reason already shown by the transaction scan", () => {
+    const shared =
+      "An identified malicious address is associated with the token.";
+    renderReview({
+      // The tx scan already surfaces this exact friendly reason via a feature.
+      scanResult: {
+        validation: {
+          result_type: "Malicious",
+          description: "raw fallback",
+          features: [
+            {
+              type: "Malicious",
+              feature_id: "known_malicious",
+              description: shared,
+            },
+          ],
+        },
+      },
+      // Destination token carries the same reason — it must not appear twice.
+      destWarnings: [
+        { description: shared, isError: true, featureId: "known_malicious" },
+      ],
+    });
+    fireEvent.click(screen.getByTestId("blockaid-malicious-label"));
+    expect(screen.getAllByText(shared)).toHaveLength(1);
   });
 });

@@ -60,6 +60,7 @@ import {
 } from "popup/helpers/balance";
 import {
   getAssetSecurityLevel,
+  extractAssetScanWarnings,
   useBlockaidOverrideState,
 } from "popup/helpers/blockaid";
 import { AppDispatch } from "popup/App";
@@ -612,6 +613,13 @@ export const SwapAmount = ({
           networkDetails,
         })
       : undefined;
+  // Friendly per-feature reasons from the source token scan, surfaced in the
+  // review's Blockaid pane alongside the transaction-scan reasons (§ batch4
+  // task 3).
+  const sourceTokenSecurityWarnings =
+    sourceBalance && "blockaidData" in sourceBalance
+      ? extractAssetScanWarnings(sourceBalance.blockaidData)
+      : undefined;
 
   // Plain computation (not useMemo): this runs below early returns, so a hook
   // here would violate the rules of hooks, and the filter/sort is cheap.
@@ -1134,6 +1142,7 @@ export const SwapAmount = ({
             title={t("You are swapping")}
             destinationTokenDetails={transactionData.destinationTokenDetails}
             sourceTokenSecurityLevel={sourceTokenSecurityLevel}
+            sourceTokenSecurityWarnings={sourceTokenSecurityWarnings}
           />
         ) : (
           <></>
