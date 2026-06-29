@@ -35,8 +35,8 @@
     }
   }
 
-  // An 8px seam between the cards; the 40px circular toggle is centered on it
-  // and overlaps 16px into each card (matches Figma).
+  // An 8px seam between the cards; the circular direction toggle is centered on
+  // it and overlaps into each card (its size is set on __direction-btn below).
   &__direction {
     position: relative;
     height: pxToRem(8px);
