@@ -417,6 +417,25 @@ describe("ReviewTx Blockaid security banner (single, by priority) + badges", () 
     expect(screen.getByText("XDR")).toBeInTheDocument();
   });
 
+  it("opens the fee breakdown in-flow (over the body, no action buttons) and closes back", () => {
+    renderReview({ scanResult: null });
+    // Review body is showing (XDR row present); fee pane hidden.
+    expect(screen.getByText("XDR")).toBeInTheDocument();
+    expect(screen.queryByTestId("review-tx-fees-pane")).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId("review-tx-fee-info-btn"));
+    // Fee pane replaces the body in-flow; body + action buttons are gone.
+    expect(screen.getByTestId("review-tx-fees-pane")).toBeInTheDocument();
+    expect(screen.queryByText("XDR")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("CancelAction")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("SubmitAction")).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId("review-tx-fees-close-btn"));
+    // Body restored.
+    expect(screen.getByText("XDR")).toBeInTheDocument();
+    expect(screen.queryByTestId("review-tx-fees-pane")).not.toBeInTheDocument();
+  });
+
   it("opens the in-flow sheet and confirms from a flagged Send transaction (no swap token)", () => {
     const onConfirm = jest.fn();
     render(

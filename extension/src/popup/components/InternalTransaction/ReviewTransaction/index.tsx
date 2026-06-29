@@ -25,7 +25,6 @@ import { SimulateTxData } from "types/transactions";
 import { View } from "popup/basics/layout/View";
 import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
 import { hardwareWalletTypeSelector } from "popup/ducks/accountServices";
-import { MultiPaneSlider } from "popup/components/SlidingPaneSwitcher";
 import { useValidateTransactionMemo } from "popup/helpers/useValidateTransactionMemo";
 import {
   BlockaidWarning,
@@ -159,8 +158,6 @@ export const ReviewTx = ({
   const hardwareWalletType = useSelector(hardwareWalletTypeSelector);
   const isHardwareWallet = !!hardwareWalletType;
 
-  const [activePaneIndex, setActivePaneIndex] = useState(0);
-
   const {
     hardwareWalletData: { status: hwStatus },
     transactionData: {
@@ -277,16 +274,6 @@ export const ReviewTx = ({
     ...(destinationTokenDetails?.securityWarnings ?? []),
   ];
 
-  // Horizontal slider panes: [Review (0), Memo (1), Fees (2)]. The Blockaid
-  // "Do not proceed" sheet is NOT a slider pane — it renders in-flow over the
-  // body like the trustline sheet (see isOnBlockaidSheet below), so it appears
-  // in place instead of sliding in from the side (§ batch4 follow-up).
-  const paneConfig = {
-    reviewIndex: 0,
-    memoIndex: 1,
-    feesIndex: 2,
-  };
-
   // Which single Blockaid banner to render, by mobile's priority cascade
   // (useReviewSecuritySummary): tx-malicious > tx-suspicious > token-malicious
   // > token-suspicious > any unable-to-scan. Critically, a flagged TOKEN
@@ -315,14 +302,15 @@ export const ReviewTx = ({
     return null;
   })();
 
-  // The "Do not proceed" detail sheet renders in-flow over the body (like the
-  // trustline sheet) rather than as a horizontal slider pane, so it appears in
-  // place instead of sliding from the side (§ batch4 follow-up). Both the tx
-  // and token banners open it.
+  // The detail sheets (Blockaid "Do not proceed", fee breakdown, memo,
+  // trustline) all render IN-FLOW over the review body — each gated by its own
+  // boolean — so they appear in place instead of sliding in from the side
+  // (§ batch4 follow-up). The review body is the only horizontal-slider pane,
+  // so the slider is gone entirely.
   const [isOnBlockaidSheet, setIsOnBlockaidSheet] = useState(false);
   const openBlockaidSheet = () => setIsOnBlockaidSheet(true);
-
-  const isOnFeesPane = activePaneIndex === paneConfig.feesIndex;
+  const [isOnFeesPane, setIsOnFeesPane] = useState(false);
+  const [isOnMemoPane, setIsOnMemoPane] = useState(false);
 
   const requiresTrustline = !!destinationTokenDetails?.requiresTrustline;
   const [isOnTrustlinePane, setIsOnTrustlinePane] = useState(false);
@@ -492,9 +480,7 @@ export const ReviewTx = ({
           </div>
         ) : null}
         {isRequiredMemoMissing && !isValidatingMemo && !shouldShowTxWarning && (
-          <MemoRequiredLabel
-            onClick={() => setActivePaneIndex(paneConfig.memoIndex)}
-          />
+          <MemoRequiredLabel onClick={() => setIsOnMemoPane(true)} />
         )}
         {requiresTrustline && (
           <TrustlineBanner
@@ -536,7 +522,7 @@ export const ReviewTx = ({
               data-testid="review-tx-fee-info-btn"
               onClick={() => {
                 trackSendFeeBreakdownOpened("review");
-                setActivePaneIndex(paneConfig.feesIndex);
+                setIsOnFeesPane(true);
               }}
               aria-label={t("Fee breakdown")}
             >
@@ -601,7 +587,7 @@ export const ReviewTx = ({
         </div>
         <div
           className="ReviewTx__MemoDetails__Header__Close"
-          onClick={() => setActivePaneIndex(paneConfig.reviewIndex)}
+          onClick={() => setIsOnMemoPane(false)}
         >
           <Icon.X />
         </div>
@@ -629,13 +615,9 @@ export const ReviewTx = ({
       fee={fee}
       simulationState={simulationState}
       isSoroban={isToken || isCollectible}
-      onClose={() => setActivePaneIndex(paneConfig.reviewIndex)}
+      onClose={() => setIsOnFeesPane(false)}
     />
   );
-
-  // Horizontal slider panes (no hooks on JSX). The trustline and Blockaid
-  // sheets render in-flow over the body (below), not as slider panes.
-  const panes: React.ReactNode[] = [reviewPane, memoPane, feesPane];
 
   return (
     <View.Content hasNoTopPadding>
@@ -647,10 +629,11 @@ export const ReviewTx = ({
         />
       ) : (
         <div className="ReviewTx">
-          {/* The trustline explanation replaces the review body in-flow while
-              open (no ghost behind it), and the body returns when it closes.
-              Rendered in-flow rather than as a nested modal so it isn't clipped
-              by the self-measuring review modal (§ batch3 task 4). */}
+          {/* Every detail view (trustline, Blockaid, fees, memo) replaces the
+              review body in-flow while open, and the body returns when it
+              closes. Rendered in-flow rather than as nested modals/horizontal
+              slider panes so they aren't clipped by the self-measuring review
+              modal and appear in place (§ batch3 task 4, § batch4 follow-up). */}
           {isOnTrustlinePane ? (
             <TrustlineInfoSheet
               tokenCode={destinationTokenDetails?.tokenCode || ""}
@@ -658,10 +641,14 @@ export const ReviewTx = ({
             />
           ) : isOnBlockaidSheet ? (
             blockaidPane
+          ) : isOnFeesPane ? (
+            feesPane
+          ) : isOnMemoPane ? (
+            memoPane
           ) : (
-            <MultiPaneSlider activeIndex={activePaneIndex} panes={panes} />
+            reviewPane
           )}
-          {!isOnFeesPane && !isOnTrustlinePane && (
+          {!isOnFeesPane && !isOnMemoPane && !isOnTrustlinePane && (
             <div className="ReviewTx__Actions">
               <ActionButtons
                 isOnBlockaidPane={isOnBlockaidSheet}
