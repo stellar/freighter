@@ -662,6 +662,22 @@ export const SwapAmount = ({
           new BigNumber(sellSpendable),
         );
         dispatch(saveAmount(capped.toFixed(7)));
+        // In fiat mode the whole pipeline reads amountUsd, so also recalculate
+        // the fiat figure from the sell token's price; if it has no price, drop
+        // to crypto mode so the prefilled amount is the one used (§ batch3 t8).
+        if (assetPrice) {
+          dispatch(
+            saveAmountUsd(
+              formatAmount(
+                roundUsdValue(
+                  capped.multipliedBy(new BigNumber(assetPrice)).toString(),
+                ),
+              ),
+            ),
+          );
+        } else if (inputType === "fiat") {
+          setInputType("crypto");
+        }
       }
     } catch (e) {
       // No path / network error — leave the amount as-is for manual entry.
