@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 
 import { RequestState } from "constants/request";
 import { SecurityLevel } from "popup/constants/blockaid";
@@ -164,5 +164,33 @@ describe("ReviewTx Blockaid security banner (single, by priority) + badges", () 
     expect(
       screen.queryByTestId("blockaid-unable-to-scan-label"),
     ).not.toBeInTheDocument();
+  });
+
+  it("shows friendly Blockaid feature descriptions in the expanded pane, not the raw validation string", () => {
+    renderReview({
+      scanResult: {
+        validation: {
+          result_type: "Malicious",
+          description:
+            "Token issuer <Address [type=ACCOUNT address=GBNW7FS6...]> is flagged as malicious",
+          features: [
+            {
+              type: "Malicious",
+              feature_id: "known_malicious",
+              description:
+                "An identified malicious address is associated with the token.",
+            },
+          ],
+        },
+      },
+    });
+    // Open the expandable Blockaid pane from the transaction banner.
+    fireEvent.click(screen.getByTestId("blockaid-malicious-label"));
+    expect(
+      screen.getByText(
+        "An identified malicious address is associated with the token.",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/Token issuer <Address/)).not.toBeInTheDocument();
   });
 });

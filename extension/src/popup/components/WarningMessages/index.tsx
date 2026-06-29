@@ -1123,7 +1123,30 @@ const getScanWarnings = (
     }
 
     if (validation && "result_type" in validation) {
-      if (validation.description) {
+      // Prefer the per-feature friendly descriptions (same as the asset/
+      // add-token path) over the raw top-level validation.description, which is
+      // a developer string like "Token issuer <Address [type=ACCOUNT ...]> is
+      // flagged as malicious" (§ batch3 task 3). Fall back to the top-level
+      // description only when there are no flagged features.
+      const validationFeatures =
+        ("features" in validation && validation.features) || [];
+      const flaggedFeatures = validationFeatures.filter(
+        (feature) => feature.type === "Warning" || feature.type === "Malicious",
+      );
+      if (flaggedFeatures.length > 0) {
+        flaggedFeatures.forEach((feature) => {
+          warnings.push({
+            icon:
+              feature.type === "Malicious" ? (
+                <Icon.XCircle />
+              ) : (
+                <Icon.MinusCircle />
+              ),
+            text: feature.description,
+            isError: feature.type === "Malicious",
+          });
+        });
+      } else if (validation.description) {
         warnings.push({
           icon: isMalicious ? <Icon.XCircle /> : <Icon.MinusCircle />,
           text: validation.description,
