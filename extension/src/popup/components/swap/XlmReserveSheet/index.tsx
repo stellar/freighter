@@ -88,8 +88,8 @@ export const XlmReserveSheet = ({
       <div className="XlmReserveSheet__actions">
         {canSwapForReserve ? (
           <Button
-            size="md"
-            variant="primary"
+            size="lg"
+            variant="tertiary"
             isFullWidth
             isRounded
             data-testid="XlmReserveSheet__swap-for-reserve"
@@ -104,7 +104,7 @@ export const XlmReserveSheet = ({
 
         <CopyText textToCopy={publicKey}>
           <Button
-            size="md"
+            size="lg"
             variant="secondary"
             isFullWidth
             isRounded
