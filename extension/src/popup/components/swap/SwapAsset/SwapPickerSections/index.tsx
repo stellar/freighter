@@ -71,6 +71,11 @@ export interface SwapPickerSectionsProps {
    * generic "no tokens match" empty state instead (you can only swap FROM a
    * token you already hold). */
   isDestination: boolean;
+  /** Whether token discovery (Popular + search) exists on this network — true on
+   * Mainnet/Testnet, false on custom/Futurenet. When false the discovery-
+   * unavailable notice is suppressed: the network simply has no Popular list, so
+   * it's hidden gracefully rather than flagged as a (transient) outage. */
+  isDiscoverySupported?: boolean;
 }
 
 export const SwapPickerSections = ({
@@ -80,6 +85,7 @@ export const SwapPickerSections = ({
   onClickAsset,
   stellarExpertUrl,
   isDestination,
+  isDiscoverySupported = false,
 }: SwapPickerSectionsProps) => {
   const { t } = useTranslation();
   const [verifiedSheetOpen, setVerifiedSheetOpen] = useState(false);
@@ -162,7 +168,7 @@ export const SwapPickerSections = ({
 
   return (
     <div className="SwapPickerSections" data-testid="swap-picker-sections">
-      {result.isFallback && (
+      {result.isFallback && isDiscoverySupported && (
         <div
           className="SwapPickerSections__notice"
           data-testid="swap-picker-fallback-notice"

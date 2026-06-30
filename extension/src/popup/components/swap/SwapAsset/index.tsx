@@ -11,6 +11,7 @@ import { openTab } from "popup/helpers/navigate";
 import { View } from "popup/basics/layout/View";
 import { FormRows } from "popup/basics/Forms";
 import { RequestState } from "constants/request";
+import { isMainnet } from "helpers/stellar";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { newTabHref } from "helpers/urls";
 import { reRouteOnboarding } from "popup/helpers/route";
@@ -53,6 +54,11 @@ export const SwapAsset = ({
 }: SwapAssetProps) => {
   const { t } = useTranslation();
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
+  // Token discovery (Popular + search) only exists on Mainnet/Testnet. On
+  // custom/Futurenet networks the picker degrades to held-only and the Popular
+  // section is simply hidden — no "discovery unavailable" notice.
+  const isDiscoverySupported =
+    isMainnet(networkDetails) || networkDetails.network === "TESTNET";
   const isDestination = selectionType === "destination";
   const title = isDestination ? t("Swap to") : t("Swap from");
 
@@ -154,8 +160,12 @@ export const SwapAsset = ({
       await fetchData(true);
     };
     getData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only balance fetch; fetchData is stable for this purpose
-  }, []);
+    // Re-fetch when the network changes (not just on mount) so switching between
+    // Mainnet/Testnet refreshes balances; fromState.data then re-resolving
+    // re-runs the idle lookup below for the new network. fetchData is excluded
+    // (recreated each render but stable for this purpose).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [networkDetails.network]);
 
   // Destination picker: once the held balances resolve, run the idle lookup
   // (held tokens + popular). Skipped while searching, since the debounced
@@ -179,8 +189,11 @@ export const SwapAsset = ({
       icons: resolvedFrom.balances.icons,
       tokenPrices: resolvedFrom.tokenPrices,
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- re-run only when held balances resolve; lookupFetchData/networkDetails/searchTerm are intentionally excluded (search is driven by the debounced submit)
-  }, [isDestination, fromState.data]);
+    // Re-run when the held balances resolve OR the network changes, so the
+    // Popular list is re-fetched on a Mainnet/Testnet switch. lookupFetchData
+    // and searchTerm are excluded (search is driven by the debounced submit).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDestination, fromState.data, networkDetails.network]);
 
   // Source-only rerouting/onboarding guard
   if (!isDestination) {
@@ -288,6 +301,7 @@ export const SwapAsset = ({
               onClickAsset={onClickAsset}
               stellarExpertUrl={stellarExpertUrl}
               isDestination
+              isDiscoverySupported={isDiscoverySupported}
             />
           ) : (
             <SwapPickerSections

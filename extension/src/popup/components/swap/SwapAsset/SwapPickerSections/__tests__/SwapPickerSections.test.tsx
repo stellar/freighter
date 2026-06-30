@@ -173,7 +173,26 @@ describe("SwapPickerSections", () => {
     expect(screen.getByTestId("swap-picker-empty")).toBeInTheDocument();
   });
 
-  it("soft fallback notice rendered when isFallback", () => {
+  it("renders the soft fallback notice on an outage when discovery is supported", () => {
+    render(
+      <SwapPickerSections
+        {...baseProps}
+        searchTerm=""
+        isDiscoverySupported
+        result={{
+          ...emptyResult,
+          isFallback: true,
+          yourTokens: [rec("USDC", true)],
+        }}
+      />,
+    );
+
+    expect(
+      screen.getByTestId("swap-picker-fallback-notice"),
+    ).toBeInTheDocument();
+  });
+
+  it("hides the fallback notice on a network without discovery (no warning)", () => {
     render(
       <SwapPickerSections
         {...baseProps}
@@ -186,9 +205,7 @@ describe("SwapPickerSections", () => {
       />,
     );
 
-    expect(
-      screen.getByTestId("swap-picker-fallback-notice"),
-    ).toBeInTheDocument();
+    expect(screen.queryByTestId("swap-picker-fallback-notice")).toBeNull();
   });
 
   it("keeps held Your tokens visible but excludes hiddenAssets from discover sections", () => {
