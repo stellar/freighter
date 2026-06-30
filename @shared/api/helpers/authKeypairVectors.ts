@@ -1,6 +1,7 @@
-// Canonical cross-platform auth-keypair derivation vectors.
+// Test fixture: consumed only by the derivation unit tests, not by production code.
+// It is the canonical cross-platform parity contract — freighter-mobile commits the
+// same values and asserts identical output.
 // SOURCE OF TRUTH: wallet-eng-monorepo design-docs/contact-lists/Freighter Auth Keypair Derivation Design Doc.md
-// freighter-mobile MUST commit the same values and assert identical output.
 // authSeedHex isolates failures: a wrong authSeedHex => HMAC step diverged
 // (e.g. key/message reversed); a right authSeedHex but wrong userId =>
 // Ed25519 step diverged.
