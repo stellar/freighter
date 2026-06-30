@@ -11,7 +11,7 @@ import { AssetType } from "@shared/api/types/account-balance";
 
 import { initialState, reducer } from "helpers/request";
 import { RequestState } from "constants/request";
-import { isMainnet, getCanonicalFromAsset } from "helpers/stellar";
+import { isMainnet, isTestnet, getCanonicalFromAsset } from "helpers/stellar";
 import { ManageAssetCurrency } from "popup/components/manageAssets/ManageAssetRows";
 import { BlockaidWarning, SecurityLevel } from "popup/constants/blockaid";
 import { searchAsset } from "popup/helpers/searchAsset";
@@ -552,7 +552,7 @@ export const useSwapTokenLookup = () => {
     // Token discovery (Popular + search) only exists on Mainnet / Testnet.
     // Custom / Futurenet networks degrade to held-only (permanent fallback).
     const supportsDiscovery =
-      isMainnet(networkDetails) || networkDetails.network === "TESTNET";
+      isMainnet(networkDetails) || isTestnet(networkDetails);
 
     if (!supportsDiscovery) {
       dispatch({

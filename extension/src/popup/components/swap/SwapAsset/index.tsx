@@ -11,7 +11,7 @@ import { openTab } from "popup/helpers/navigate";
 import { View } from "popup/basics/layout/View";
 import { FormRows } from "popup/basics/Forms";
 import { RequestState } from "constants/request";
-import { isMainnet } from "helpers/stellar";
+import { isMainnet, isTestnet } from "helpers/stellar";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { newTabHref } from "helpers/urls";
 import { reRouteOnboarding } from "popup/helpers/route";
@@ -58,7 +58,7 @@ export const SwapAsset = ({
   // custom/Futurenet networks the picker degrades to held-only and the Popular
   // section is simply hidden — no "discovery unavailable" notice.
   const isDiscoverySupported =
-    isMainnet(networkDetails) || networkDetails.network === "TESTNET";
+    isMainnet(networkDetails) || isTestnet(networkDetails);
   const isDestination = selectionType === "destination";
   const title = isDestination ? t("Swap to") : t("Swap from");
 
