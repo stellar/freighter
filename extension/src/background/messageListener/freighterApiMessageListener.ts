@@ -320,10 +320,24 @@ export const freighterApiMessageListener = (
             apiError: FreighterApiDeclinedError,
           });
         }
-        const response = (success: boolean) => {
-          if (success) {
+        const response = (addTokenResponse: AddTokenResponse) => {
+          if (addTokenResponse === true) {
             safeResolve({
               contractId,
+            });
+            return;
+          }
+
+          // A failed-then-dismissed submit resolves with an explicit error
+          // (internal, code -1) so the dApp can tell it apart from a user
+          // rejection (declined, code -4).
+          if (
+            addTokenResponse &&
+            typeof addTokenResponse === "object" &&
+            "apiError" in addTokenResponse
+          ) {
+            safeResolve({
+              apiError: addTokenResponse.apiError,
             });
             return;
           }

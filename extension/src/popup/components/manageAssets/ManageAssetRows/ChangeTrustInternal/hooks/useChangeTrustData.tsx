@@ -1,4 +1,4 @@
-import { useEffect, useReducer } from "react";
+import { useCallback, useEffect, useReducer, useRef } from "react";
 
 import { initialState, reducer } from "helpers/request";
 import { checkForSuspiciousAsset } from "popup/helpers/checkForSuspiciousAsset";
@@ -56,7 +56,18 @@ function useGetChangeTrustData({
 
   const blockaidOverrideState = useBlockaidOverrideState() ?? null;
 
-  const fetchData = async () => {
+  // The asset scan / suspicious-asset checks depend only on asset identity, not
+  // the fee. Cache them so editing the fee (which only changes the XDR) doesn't
+  // re-issue the Blockaid scan and account load.
+  const scanCacheRef = useRef<{
+    key: string;
+    asset: NewAssetFlags;
+    scanResult: BlockAidScanAssetResult | null;
+    isAssetSuspicious: boolean;
+    isAssetUnableToScan: boolean;
+  } | null>(null);
+
+  const fetchData = useCallback(async () => {
     dispatch({ type: "FETCH_DATA_START" });
     try {
       const payload = { flaggedKeys: {} } as ChangeTrustData;
@@ -75,22 +86,55 @@ function useGetChangeTrustData({
           networkDetails.networkUrl,
           networkDetails.networkPassphrase,
         );
-        const resp = await checkForSuspiciousAsset({
-          code: asset.code,
-          issuer: asset.issuer,
-          domain: asset.domain || "",
-          server,
-          networkDetails,
-        });
-        payload.asset = resp;
 
-        const scannedAsset = await scanAsset(
-          `${asset.code}-${asset.issuer}`,
-          networkDetails,
-        );
-        payload.scanResult = scannedAsset;
+        const scanKey = [
+          asset.code,
+          asset.issuer,
+          asset.contract ?? "",
+          asset.domain ?? "",
+          networkDetails.networkPassphrase,
+          networkDetails.networkUrl,
+          blockaidOverrideState ?? "",
+        ].join("|");
 
-        const transactionXDR = await getManageAssetXDR({
+        let scan = scanCacheRef.current;
+        if (!scan || scan.key !== scanKey) {
+          const resp = await checkForSuspiciousAsset({
+            code: asset.code,
+            issuer: asset.issuer,
+            domain: asset.domain || "",
+            server,
+            networkDetails,
+          });
+          const scannedAsset = await scanAsset(
+            `${asset.code}-${asset.issuer}`,
+            networkDetails,
+          );
+          const isAssetUnableToScan = shouldTreatAssetAsUnableToScan(
+            scannedAsset,
+            blockaidOverrideState,
+            networkDetails,
+          );
+          scan = {
+            key: scanKey,
+            asset: resp,
+            scanResult: scannedAsset,
+            isAssetUnableToScan,
+            // unable-to-scan takes precedence — never mark both at once
+            isAssetSuspicious:
+              !isAssetUnableToScan &&
+              isAssetSuspicious(scannedAsset, blockaidOverrideState),
+          };
+          scanCacheRef.current = scan;
+        }
+
+        payload.asset = scan.asset;
+        payload.scanResult = scan.scanResult;
+        payload.isAssetUnableToScan = scan.isAssetUnableToScan;
+        payload.isAssetSuspicious = scan.isAssetSuspicious;
+
+        // Only the XDR depends on the fee, so it always rebuilds.
+        payload.transactionXDR = await getManageAssetXDR({
           publicKey,
           assetCode: asset.code,
           assetIssuer: asset.issuer,
@@ -99,16 +143,6 @@ function useGetChangeTrustData({
           recommendedFee,
           networkDetails,
         });
-        payload.transactionXDR = transactionXDR;
-        payload.isAssetUnableToScan = shouldTreatAssetAsUnableToScan(
-          scannedAsset,
-          blockaidOverrideState,
-          networkDetails,
-        );
-        // unable-to-scan takes precedence — never mark both at once
-        payload.isAssetSuspicious =
-          !payload.isAssetUnableToScan &&
-          isAssetSuspicious(scannedAsset, blockaidOverrideState);
       }
 
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });
@@ -117,11 +151,6 @@ function useGetChangeTrustData({
       dispatch({ type: "FETCH_DATA_ERROR", payload: error });
       return error;
     }
-  };
-
-  useEffect(() => {
-    fetchData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     addTrustline,
     asset.code,
@@ -129,11 +158,14 @@ function useGetChangeTrustData({
     asset.domain,
     asset.issuer,
     blockaidOverrideState,
-    networkDetails.networkPassphrase,
-    networkDetails.networkUrl,
+    networkDetails,
     publicKey,
     recommendedFee,
   ]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   return {
     state,

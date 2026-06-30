@@ -29,6 +29,8 @@ import { removeTokenId, startHwSign } from "popup/ducks/transactionSubmission";
 import { NETWORKS } from "@shared/constants/stellar";
 import { useGetChangeTrust } from "../hooks/useChangeTrust";
 import { isAssetSac } from "popup/helpers/soroban";
+import { emitMetric } from "helpers/metrics";
+import { METRIC_NAMES } from "popup/constants/metricsNames";
 
 import "./styles.scss";
 import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
@@ -80,61 +82,62 @@ export const SubmitTransaction = ({
   const { state: resetChangeTrustDataState, resetChangeTrustData } =
     useResetChangeTrustData();
 
-  useEffect(() => {
-    const getData = async () => {
-      const isSac = isAssetSac({
-        asset: {
-          code: asset.code,
-          issuer: asset.issuer,
-          contract: asset.contract,
-        },
+  const submitTransaction = async () => {
+    const isSac = isAssetSac({
+      asset: {
+        code: asset.code,
+        issuer: asset.issuer,
+        contract: asset.contract,
+      },
+      networkDetails,
+    });
+
+    // For SEP-41 tokens, just add/remove the token ID
+    // For SACs and classic assets, we need to submit a trustline transaction
+    if (asset.contract && !isSac) {
+      if (addTrustline) {
+        await dispatch(
+          addTokenId({
+            publicKey,
+            tokenId: asset.contract,
+            network: networkDetails.network as Networks,
+          }),
+        );
+      } else {
+        await dispatch(
+          removeTokenId({
+            contractId: asset.contract,
+            network: networkDetails.network as NETWORKS,
+          }),
+        );
+      }
+    } else {
+      // Classic asset or SAC - submit trustline transaction
+      const server = stellarSdkServer(
+        networkDetails.networkUrl,
+        networkDetails.networkPassphrase,
+      );
+      const xdr = await getManageAssetXDR({
+        publicKey,
+        assetCode: asset.code,
+        assetIssuer: asset.issuer,
+        addTrustline,
+        server,
+        recommendedFee: fee,
         networkDetails,
       });
 
-      // For SEP-41 tokens, just add/remove the token ID
-      // For SACs and classic assets, we need to submit a trustline transaction
-      if (asset.contract && !isSac) {
-        if (addTrustline) {
-          await dispatch(
-            addTokenId({
-              publicKey,
-              tokenId: asset.contract,
-              network: networkDetails.network as Networks,
-            }),
-          );
-        } else {
-          await dispatch(
-            removeTokenId({
-              contractId: asset.contract,
-              network: networkDetails.network as NETWORKS,
-            }),
-          );
-        }
+      if (isHardwareWallet) {
+        dispatch(startHwSign({ transactionXDR: xdr, shouldSubmit: true }));
       } else {
-        // Classic asset or SAC - submit trustline transaction
-        const server = stellarSdkServer(
-          networkDetails.networkUrl,
-          networkDetails.networkPassphrase,
-        );
-        const xdr = await getManageAssetXDR({
-          publicKey,
-          assetCode: asset.code,
-          assetIssuer: asset.issuer,
-          addTrustline,
-          server,
-          recommendedFee: fee,
-          networkDetails,
-        });
-
-        if (isHardwareWallet) {
-          dispatch(startHwSign({ transactionXDR: xdr, shouldSubmit: true }));
-        } else {
-          await fetchData({ publicKey, xdr, networkDetails });
-        }
+        await fetchData({ publicKey, xdr, networkDetails });
       }
-    };
+    }
+  };
+
+  useEffect(() => {
     if (!isVerifyAccountModalOpen) {
-      getData();
+      submitTransaction();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isVerifyAccountModalOpen]);
@@ -148,6 +151,33 @@ export const SubmitTransaction = ({
     state.state === RequestState.IDLE || state.state === RequestState.LOADING;
   const isSuccess = state.state === RequestState.SUCCESS;
   const isFail = state.state === RequestState.ERROR;
+
+  // A trustline (changeTrust) was submitted for classic assets and SACs — not
+  // for SEP-41 tokens (which take the addTokenId path above and submit no tx).
+  const isTrustlineSubmit =
+    !asset.contract ||
+    isAssetSac({
+      asset: {
+        code: asset.code,
+        issuer: asset.issuer,
+        contract: asset.contract,
+      },
+      networkDetails,
+    });
+
+  // Re-emit the add/remove-asset analytics the deleted useChangeTrustline used
+  // to fire — once, on a successful trustline submit.
+  useEffect(() => {
+    if (isSuccess && isTrustlineSubmit) {
+      emitMetric(
+        addTrustline
+          ? METRIC_NAMES.manageAssetAddAsset
+          : METRIC_NAMES.manageAssetRemoveAsset,
+        { code: asset.code, issuer: asset.issuer },
+      );
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isSuccess]);
 
   const canonical = getCanonicalFromAsset(
     asset.code,
@@ -220,6 +250,20 @@ export const SubmitTransaction = ({
                   </Button>
                 </>
               ) : null}
+              {isFail && (
+                <Button
+                  size="lg"
+                  isFullWidth
+                  isRounded
+                  variant="primary"
+                  onClick={async (e) => {
+                    e.preventDefault();
+                    await submitTransaction();
+                  }}
+                >
+                  {t("Retry")}
+                </Button>
+              )}
               {(isSuccess || isFail) && (
                 <div className="SubmitTransaction__Footer__Done">
                   <Button
@@ -243,7 +287,7 @@ export const SubmitTransaction = ({
                       }
                     }}
                   >
-                    {t("Done")}
+                    {isSuccess ? t("Done") : t("Cancel")}
                   </Button>
                 </div>
               )}

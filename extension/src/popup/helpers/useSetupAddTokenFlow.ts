@@ -23,6 +23,7 @@ type Response = {
   setIsPasswordRequired: (value: boolean) => void;
   verifyPasswordThenAddToken: (password: string) => Promise<void>;
   handleApprove: () => Promise<void>;
+  addTokenAndClose: () => Promise<void>;
   rejectAndClose: () => void;
 };
 
@@ -80,6 +81,7 @@ export const useSetupAddTokenFlow = ({
     setIsPasswordRequired,
     verifyPasswordThenAddToken,
     handleApprove,
+    addTokenAndClose,
     rejectAndClose,
   };
 };

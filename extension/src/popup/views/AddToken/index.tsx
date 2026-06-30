@@ -10,12 +10,8 @@ import {
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Navigate, useLocation } from "react-router-dom";
-import { useSelector, useDispatch } from "react-redux";
+import { useSelector } from "react-redux";
 import { BASE_FEE, StellarToml } from "stellar-sdk";
-
-import { AppDispatch } from "popup/App";
-import { METRIC_NAMES } from "popup/constants/metricsNames";
-import { emitMetric } from "helpers/metrics";
 import { stroopToXlm, truncateString } from "helpers/stellar";
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
 import { ChangeTrustInternal } from "popup/components/manageAssets/ManageAssetRows/ChangeTrustInternal";
@@ -105,10 +101,12 @@ export const AddToken = () => {
   const assetName = assetTomlName || assetCurrency?.name?.split(":")[0];
   const assetDomain = assetCurrency?.domain || "";
 
+  const hasLookupResult = assetRows.length > 0;
   const isLoading =
-    isSearching || assetIcon === undefined || assetTomlName === undefined;
+    isSearching ||
+    (hasLookupResult &&
+      (assetIcon === undefined || assetTomlName === undefined));
 
-  const dispatch: AppDispatch = useDispatch();
   const [showTrustlineReview, setShowTrustlineReview] = useState(false);
 
   // `recommendedFee` is the network-recommended fee in XLM after useNetworkFees
@@ -120,18 +118,13 @@ export const AddToken = () => {
   const baseFeeXlm = stroopToXlm(BASE_FEE).toString();
   const displayFee = recommendedFee === BASE_FEE ? baseFeeXlm : recommendedFee;
 
-  const handleSacSuccess = async () => {
-    await dispatch(addToken({ uuid }));
-    await emitMetric(METRIC_NAMES.tokenAddedApi);
-    window.close();
-  };
-
   const {
     isConfirming,
     isPasswordRequired,
     setIsPasswordRequired,
     verifyPasswordThenAddToken,
     handleApprove,
+    addTokenAndClose,
     rejectAndClose,
   } = useSetupAddTokenFlow({
     rejectToken,
@@ -139,14 +132,33 @@ export const AddToken = () => {
     uuid,
   });
 
+  const hydratedPublicKey =
+    state.state === RequestState.SUCCESS && state.data.type === "resolved"
+      ? state.data.account.publicKey
+      : "";
+  const hydratedNetworkDetails =
+    state.state === RequestState.SUCCESS && state.data.type === "resolved"
+      ? state.data.settings.networkDetails
+      : undefined;
+
   const { handleTokenLookup } = useTokenLookup({
     setAssetRows,
     setIsSearching,
     setIsVerifiedToken,
     setIsVerificationInfoShowing,
+    lookupPublicKey: hydratedPublicKey,
+    lookupNetworkDetails: hydratedNetworkDetails,
   });
 
   useEffect(() => {
+    if (!hydratedPublicKey) {
+      return;
+    }
+
+    if (!hydratedNetworkDetails?.network) {
+      return;
+    }
+
     if (!isContractId(contractId)) {
       setErrorMessage(
         `${t("This is not a valid contract id.")} ${t("Please try again with a different value.")}`,
@@ -156,7 +168,20 @@ export const AddToken = () => {
 
     handleTokenLookup(contractId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [contractId, handleTokenLookup]);
+  }, [
+    contractId,
+    handleTokenLookup,
+    hydratedNetworkDetails?.network,
+    hydratedPublicKey,
+  ]);
+
+  useEffect(() => {
+    if (!isSearching && !hasLookupResult && !errorMessage) {
+      setErrorMessage(
+        `${t("Unable to find your asset.")} ${t("Please try again with a different value.")}`,
+      );
+    }
+  }, [errorMessage, hasLookupResult, isSearching, t]);
 
   useEffect(() => {
     if (
@@ -391,7 +416,7 @@ export const AddToken = () => {
         publicKey={state.data.account.publicKey}
         networkDetails={state.data.settings.networkDetails}
         onCancel={() => setShowTrustlineReview(false)}
-        onSuccess={handleSacSuccess}
+        onSuccess={addTokenAndClose}
         onClose={rejectAndClose}
         initialFee={displayFee}
         isFullHeight

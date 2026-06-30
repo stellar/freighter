@@ -23,9 +23,6 @@ import { Wrapper, TEST_PUBLIC_KEY } from "popup/__testHelpers__";
 import { TESTNET_NETWORK_DETAILS } from "@shared/constants/stellar";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import * as UrlHelpers from "helpers/urls";
-import { addToken } from "popup/ducks/access";
-import { emitMetric } from "helpers/metrics";
-import { METRIC_NAMES } from "popup/constants/metricsNames";
 
 const SAC_ISSUER = "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5";
 const SEP41_CONTRACT =
@@ -40,6 +37,7 @@ const SEP41_CONTRACT =
 // value), allowing per-test updates to take effect.
 const mockTokenLookupConfig = {
   issuer: SAC_ISSUER,
+  noResults: false,
 };
 
 // ---------------------------------------------------------------------------
@@ -126,6 +124,14 @@ jest.mock("popup/helpers/useTokenLookup", () => {
     }: any) => {
       // eslint-disable-next-line react-hooks/exhaustive-deps
       const handleTokenLookup = useCallback(async (_contractId: string) => {
+        if (mockTokenLookupConfig.noResults) {
+          setAssetRows([]);
+          setIsVerifiedToken(false);
+          setIsVerificationInfoShowing(false);
+          setIsSearching(false);
+          return;
+        }
+
         setAssetRows([
           {
             code: "USDC",
@@ -218,6 +224,8 @@ jest.mock("popup/ducks/access", () => ({
   addToken: jest.fn(() => ({ type: "access/addToken" })),
 }));
 
+const mockAddTokenAndClose = jest.fn();
+
 jest.mock("popup/helpers/useSetupAddTokenFlow", () => ({
   useSetupAddTokenFlow: () => ({
     isConfirming: false,
@@ -225,6 +233,7 @@ jest.mock("popup/helpers/useSetupAddTokenFlow", () => ({
     setIsPasswordRequired: jest.fn(),
     verifyPasswordThenAddToken: jest.fn(),
     handleApprove: jest.fn(),
+    addTokenAndClose: mockAddTokenAndClose,
     rejectAndClose: jest.fn(),
   }),
 }));
@@ -266,6 +275,7 @@ const renderAt = () =>
 describe("AddToken SAC / SEP-41 routing", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockTokenLookupConfig.noResults = false;
     // Bypass base64 URL parsing — inject params directly so atob() doesn't crash
     jest.spyOn(UrlHelpers, "parsedSearchParam").mockReturnValue({
       contractId: SEP41_CONTRACT,
@@ -323,12 +333,11 @@ describe("AddToken SAC / SEP-41 routing", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("SAC: a successful review resolves the dApp request (addToken + metric + close)", async () => {
+  it("SAC: a successful review resolves the dApp request via addTokenAndClose", async () => {
+    // The add-token-and-close internals (addToken dispatch, success/failure
+    // metrics, window.close) are covered in useSetupAddTokenFlow.test.ts. Here
+    // we only assert the SAC review's onSuccess is wired to that handler.
     mockTokenLookupConfig.issuer = SAC_ISSUER;
-    const closeSpy = jest
-      .spyOn(window, "close")
-      .mockImplementation(() => undefined);
-
     renderAt();
 
     const confirm = await screen.findByTestId("add-token-approve");
@@ -339,13 +348,7 @@ describe("AddToken SAC / SEP-41 routing", () => {
       fireEvent.click(successBtn);
     });
 
-    await waitFor(() =>
-      expect(jest.mocked(addToken)).toHaveBeenCalledWith({ uuid: "test-uuid" }),
-    );
-    expect(jest.mocked(emitMetric)).toHaveBeenCalledWith(
-      METRIC_NAMES.tokenAddedApi,
-    );
-    expect(closeSpy).toHaveBeenCalled();
+    await waitFor(() => expect(mockAddTokenAndClose).toHaveBeenCalled());
   });
 
   it("SEP-41: Confirm does not open the Change Trust review", async () => {
@@ -362,5 +365,18 @@ describe("AddToken SAC / SEP-41 routing", () => {
     expect(
       screen.queryByTestId("ChangeTrustInternal-mock"),
     ).not.toBeInTheDocument();
+  });
+
+  it("shows an error instead of an infinite loader when token lookup returns no results", async () => {
+    mockTokenLookupConfig.noResults = true;
+    renderAt();
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(
+          "Unable to find your asset. Please try again with a different value.",
+        ),
+      ).toBeInTheDocument();
+    });
   });
 });
