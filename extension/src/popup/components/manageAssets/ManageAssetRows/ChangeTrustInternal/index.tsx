@@ -413,8 +413,22 @@ export const ChangeTrustInternal = ({
     </>
   );
 
+  // The fee / timeout / memo / submit-tx panes are self-contained sub-screens
+  // that render their own <View.Content> (and header/footer). Only the
+  // "details" pane relies on this wrapper's inset for its horizontal padding.
+  // Drop this wrapper's padding for the self-contained panes so their inset
+  // isn't doubled (which showed as double padding all around those sheets).
+  const isSelfContainedPane =
+    activeBodyContent === ActiveBodyContent.fee ||
+    activeBodyContent === ActiveBodyContent.timeout ||
+    activeBodyContent === ActiveBodyContent.memo ||
+    activeBodyContent === ActiveBodyContent.submitTx;
+
   return (
-    <View.Content hasNoTopPadding>
+    <View.Content
+      hasNoTopPadding={!isSelfContainedPane}
+      hasNoPadding={isSelfContainedPane}
+    >
       <div data-testid="ChangeTrustInternal" className="ChangeTrustInternal">
         {activeBodyContent === ActiveBodyContent.details && (
           <>
