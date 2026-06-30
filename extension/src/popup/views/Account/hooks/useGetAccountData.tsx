@@ -120,6 +120,7 @@ function useGetAccountData(options: {
           const fetchedTokenPrices = await fetchTokenPrices({
             publicKey,
             balances: balancesResult.balances,
+            networkDetails,
             useCache: true,
           });
           payload.tokenPrices = fetchedTokenPrices.tokenPrices;
@@ -213,6 +214,7 @@ function useGetAccountData(options: {
         const fetchedTokenPrices = await fetchTokenPrices({
           publicKey: resolvedData.publicKey,
           balances: resolvedData.balances.balances,
+          networkDetails: resolvedData.networkDetails,
           useCache: false,
         });
         const payload = {

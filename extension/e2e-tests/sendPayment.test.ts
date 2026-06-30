@@ -25,7 +25,7 @@ function visibleTokenList(page: Page) {
 }
 
 async function stubSendTokenPrices(context: BrowserContext) {
-  await context.route("**/token-prices", async (route) => {
+  await context.route("**/token-prices*", async (route) => {
     const request = route.request();
     let tokenIds = [] as string[];
 
