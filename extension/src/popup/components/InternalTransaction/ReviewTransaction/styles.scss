@@ -279,6 +279,9 @@
 
     .ReviewTx__TextAction {
       margin-top: pxToRem(12px);
+      // Extra breathing room below the "Confirm anyway" text button so it is
+      // not flush against the bottom edge of the screen.
+      margin-bottom: pxToRem(20px);
       width: 100%;
       border: none;
       background: none;
