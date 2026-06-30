@@ -125,9 +125,7 @@ describe("ReviewTx Blockaid security banner (single, by priority) + badges", () 
   it("shows one malicious token banner, the Confirm-anyway gate, and the icon badge for a malicious destination", () => {
     renderWithDestLevel(SecurityLevel.MALICIOUS);
     const banner = screen.getByTestId("review-tx-token-warning");
-    expect(banner).toHaveTextContent(
-      "The token you're receiving was flagged as malicious by Blockaid.",
-    );
+    expect(banner).toHaveTextContent("A token was flagged as malicious");
     // Case-3 "Confirm anyway" gate renders the dedicated CancelAction button.
     expect(screen.getByTestId("CancelAction")).toBeInTheDocument();
     // The warning badge overlays the (destination) token icon.
@@ -137,7 +135,7 @@ describe("ReviewTx Blockaid security banner (single, by priority) + badges", () 
   it("shows one suspicious token banner for a suspicious destination", () => {
     renderWithDestLevel(SecurityLevel.SUSPICIOUS);
     expect(screen.getByTestId("review-tx-token-warning")).toHaveTextContent(
-      "The token you're receiving was flagged as suspicious by Blockaid.",
+      "A token was flagged as suspicious",
     );
   });
 
@@ -152,7 +150,7 @@ describe("ReviewTx Blockaid security banner (single, by priority) + badges", () 
   it("shows one source-token banner + Confirm-anyway gate + badge when the sell token is malicious", () => {
     renderReview({ sourceLevel: SecurityLevel.MALICIOUS });
     expect(screen.getByTestId("review-tx-token-warning")).toHaveTextContent(
-      "The token you're sending was flagged as malicious by Blockaid.",
+      "A token was flagged as malicious",
     );
     expect(screen.getByTestId("CancelAction")).toBeInTheDocument();
     expect(screen.getAllByTestId("ScamAssetIcon").length).toBe(1);
@@ -166,9 +164,7 @@ describe("ReviewTx Blockaid security banner (single, by priority) + badges", () 
     // Exactly one banner, reflecting the worst level (malicious destination).
     const banners = screen.getAllByTestId("review-tx-token-warning");
     expect(banners).toHaveLength(1);
-    expect(banners[0]).toHaveTextContent(
-      "The token you're receiving was flagged as malicious by Blockaid.",
-    );
+    expect(banners[0]).toHaveTextContent("A token was flagged as malicious");
     // ...but the per-icon badge still appears on both flagged tokens.
     expect(screen.getAllByTestId("ScamAssetIcon").length).toBe(2);
   });
@@ -179,7 +175,9 @@ describe("ReviewTx Blockaid security banner (single, by priority) + badges", () 
       scanResult: { validation: { result_type: "Malicious" } },
     });
     // The transaction banner (which opens the expandable pane) is shown...
-    expect(screen.getByTestId("blockaid-malicious-label")).toBeInTheDocument();
+    expect(
+      screen.getByTestId("review-tx-blockaid-warning"),
+    ).toBeInTheDocument();
     // ...and the token banner is suppressed so only one Blockaid banner shows.
     expect(
       screen.queryByTestId("review-tx-token-warning"),
@@ -195,10 +193,10 @@ describe("ReviewTx Blockaid security banner (single, by priority) + badges", () 
       destLevel: SecurityLevel.MALICIOUS,
     });
     expect(screen.getByTestId("review-tx-token-warning")).toHaveTextContent(
-      "The token you're receiving was flagged as malicious by Blockaid.",
+      "A token was flagged as malicious",
     );
     expect(
-      screen.queryByTestId("blockaid-unable-to-scan-label"),
+      screen.queryByTestId("review-tx-blockaid-warning"),
     ).not.toBeInTheDocument();
   });
 
@@ -221,7 +219,7 @@ describe("ReviewTx Blockaid security banner (single, by priority) + badges", () 
       },
     });
     // Open the expandable Blockaid pane from the transaction banner.
-    fireEvent.click(screen.getByTestId("blockaid-malicious-label"));
+    fireEvent.click(screen.getByTestId("review-tx-blockaid-warning"));
     expect(
       screen.getByText(
         "An identified malicious address is associated with the token.",
@@ -250,7 +248,7 @@ describe("ReviewTx Blockaid security banner (single, by priority) + badges", () 
         },
       ],
     });
-    fireEvent.click(screen.getByTestId("blockaid-malicious-label"));
+    fireEvent.click(screen.getByTestId("review-tx-blockaid-warning"));
     // Both reasons appear together in the same list.
     expect(screen.getByText(/Token issuer <Address/)).toBeInTheDocument();
     expect(
@@ -283,7 +281,7 @@ describe("ReviewTx Blockaid security banner (single, by priority) + badges", () 
         { description: shared, isError: true, featureId: "known_malicious" },
       ],
     });
-    fireEvent.click(screen.getByTestId("blockaid-malicious-label"));
+    fireEvent.click(screen.getByTestId("review-tx-blockaid-warning"));
     expect(screen.getAllByText(shared)).toHaveLength(1);
   });
 
@@ -314,7 +312,7 @@ describe("ReviewTx Blockaid security banner (single, by priority) + badges", () 
       </Wrapper>,
     );
     // Open the "Do not proceed" pane from the malicious banner.
-    fireEvent.click(screen.getByTestId("blockaid-malicious-label"));
+    fireEvent.click(screen.getByTestId("review-tx-blockaid-warning"));
     expect(screen.getByText("Do not proceed")).toBeInTheDocument();
     // The pane's action reads "Confirm anyway", not the old "Continue"...
     expect(screen.queryByText("Continue")).not.toBeInTheDocument();
@@ -538,7 +536,7 @@ describe("ReviewTx Blockaid security banner (single, by priority) + badges", () 
     );
     // Send has no destination token, so only the tx banner applies; it opens
     // the same in-flow sheet.
-    fireEvent.click(screen.getByTestId("blockaid-malicious-label"));
+    fireEvent.click(screen.getByTestId("review-tx-blockaid-warning"));
     expect(screen.getByTestId("CancelAction")).toBeInTheDocument();
     fireEvent.click(screen.getByText("Confirm anyway"));
     expect(onConfirm).toHaveBeenCalledTimes(1);

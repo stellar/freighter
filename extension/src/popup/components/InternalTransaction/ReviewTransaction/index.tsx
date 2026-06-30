@@ -50,10 +50,10 @@ import {
   useShouldTreatTxAsUnableToScan,
 } from "popup/helpers/blockaid";
 import {
-  BlockaidTxScanLabel,
   BlockAidScanExpanded,
   MemoRequiredLabel,
 } from "popup/components/WarningMessages";
+import { BlockaidBanner } from "popup/components/BlockaidBanner";
 import { TruncatedMemo } from "popup/components/TruncatedMemo";
 import { trackSendFeeBreakdownOpened } from "popup/metrics/send";
 import { FeesPane } from "popup/components/InternalTransaction/FeesPane";
@@ -345,6 +345,11 @@ export const ReviewTx = ({
     return null;
   })();
 
+  // The single severity that drives the unified banner's color and copy: the
+  // transaction verdict for a tx banner, otherwise the worst token verdict.
+  const bannerSecurityLevel =
+    blockaidBannerKind === "tx" ? txSecurityLevel : tokenWarningLevel;
+
   // The detail sheets (Blockaid "Do not proceed", fee breakdown, memo,
   // trustline) all render IN-FLOW over the review body — each gated by its own
   // boolean — so they appear in place instead of sliding in from the side
@@ -492,35 +497,20 @@ export const ReviewTx = ({
       </div>
       <div className="ReviewTx__Warnings">
         {/* Exactly one Blockaid banner, chosen by blockaidBannerKind (mobile
-            priority). Either banner opens the in-flow "Do not proceed" sheet. */}
-        {blockaidBannerKind === "tx" ? (
-          <BlockaidTxScanLabel
-            scanResult={txScanResult}
+            priority). Both kinds open the in-flow "Do not proceed" sheet. */}
+        {blockaidBannerKind && bannerSecurityLevel ? (
+          <BlockaidBanner
+            securityLevel={bannerSecurityLevel}
+            entity={
+              blockaidBannerKind === "tx" ? "transaction" : "tokenAggregate"
+            }
             onClick={openBlockaidSheet}
+            dataTestId={
+              blockaidBannerKind === "tx"
+                ? "review-tx-blockaid-warning"
+                : "review-tx-token-warning"
+            }
           />
-        ) : blockaidBannerKind === "token" ? (
-          <div
-            className="ReviewTx__Warnings__token ReviewTx__Warnings__token--clickable"
-            data-testid="review-tx-token-warning"
-            role="button"
-            tabIndex={0}
-            onClick={openBlockaidSheet}
-            onKeyDown={(e: React.KeyboardEvent) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                openBlockaidSheet();
-              }
-            }}
-          >
-            <Notification
-              variant={
-                tokenWarningLevel === SecurityLevel.MALICIOUS
-                  ? "error"
-                  : "warning"
-              }
-              title={tokenWarningMessage || ""}
-            />
-          </div>
         ) : null}
         {isRequiredMemoMissing && !isValidatingMemo && !shouldShowTxWarning && (
           <MemoRequiredLabel onClick={() => setIsOnMemoPane(true)} />
