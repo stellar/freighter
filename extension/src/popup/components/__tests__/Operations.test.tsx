@@ -1,6 +1,6 @@
 import React from "react";
 import { render, waitFor, screen } from "@testing-library/react";
-import { Address, Operation, xdr, StrKey, ScInt } from "stellar-sdk";
+import { Address, Asset, Operation, xdr, StrKey, ScInt } from "stellar-sdk";
 
 import { mockAccounts, TEST_PUBLIC_KEY, Wrapper } from "popup/__testHelpers__";
 import { Operations } from "../signTransaction/Operations";
@@ -247,6 +247,100 @@ describe("Operations", () => {
         "[data-testid='OperationKeyVal__value']",
       );
       expect(limitValue).toHaveTextContent("100");
+    });
+  });
+
+  describe("value-bearing operations show the asset issuer", () => {
+    const renderOp = (op: Operation) =>
+      render(
+        <Wrapper
+          routes={[ROUTES.signTransaction]}
+          state={{
+            auth: {
+              error: null,
+              applicationState: APPLICATION_STATE.PASSWORD_CREATED,
+              TEST_PUBLIC_KEY,
+              allAccounts: mockAccounts,
+              hasPrivateKey: true,
+            },
+            settings: {
+              networkDetails: TESTNET_NETWORK_DETAILS,
+              networksList: DEFAULT_NETWORKS,
+              isSorobanPublicEnabled: true,
+              isRpcHealthy: true,
+            },
+          }}
+        >
+          <Operations
+            operations={[op]}
+            flaggedKeys={{}}
+            isMemoRequired={false}
+          />
+        </Wrapper>,
+      );
+
+    const valueOf = (label: string) =>
+      screen
+        .getByText(label)
+        .parentNode?.querySelector("[data-testid='OperationKeyVal__value']");
+
+    // Regression test for HackerOne #3768317: the signing UI must show the
+    // issuer for value-bearing assets so a counterfeit USDC:<attacker> is
+    // distinguishable from a non-native asset using the same code.
+    it("renders the issuer for the non-native asset in a manageSellOffer", async () => {
+      const op = {
+        offerId: "0",
+        selling: Asset.native(),
+        buying: new Asset("USDC", TEST_PUBLIC_KEY),
+        amount: "5000",
+        price: "1",
+        type: "manageSellOffer",
+      } as Operation.ManageSellOffer;
+
+      renderOp(op);
+
+      await waitFor(() => screen.getAllByTestId("OperationKeyVal"));
+
+      expect(valueOf("Selling")).toHaveTextContent("XLM");
+      expect(valueOf("Buying")).toHaveTextContent("USDC");
+
+      // Native XLM has no issuer, so exactly one issuer row is rendered, and it
+      // carries the (truncated, copyable) issuer of the non-native buying asset.
+      const issuerRows = screen.getAllByText("Asset Issuer");
+      expect(issuerRows).toHaveLength(1);
+      expect(valueOf("Asset Issuer")).toHaveTextContent("GBTY…JZOF");
+    });
+
+    it("renders the issuer for a payment of a non-native asset", async () => {
+      const op = {
+        destination: TEST_PUBLIC_KEY,
+        asset: new Asset("USDC", TEST_PUBLIC_KEY),
+        amount: "100",
+        type: "payment",
+      } as Operation.Payment;
+
+      renderOp(op);
+
+      await waitFor(() => screen.getAllByTestId("OperationKeyVal"));
+
+      expect(valueOf("Asset Code")).toHaveTextContent("USDC");
+      expect(valueOf("Asset Issuer")).toHaveTextContent("GBTY…JZOF");
+    });
+
+    it("does not render an issuer row for a native (XLM) payment", async () => {
+      const op = {
+        destination: TEST_PUBLIC_KEY,
+        asset: Asset.native(),
+        amount: "100",
+        type: "payment",
+      } as Operation.Payment;
+
+      renderOp(op);
+
+      await waitFor(() => screen.getAllByTestId("OperationKeyVal"));
+
+      expect(valueOf("Asset Code")).toHaveTextContent("XLM");
+      expect(screen.queryByText("Asset Issuer")).toBeNull();
     });
   });
 });
