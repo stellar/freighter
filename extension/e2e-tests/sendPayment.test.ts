@@ -1201,9 +1201,7 @@ test("Send token payment from Asset Detail", async ({
   await page.getByTestId("asset-detail-send-button").click();
   // Asset detail navigates with ?asset= param, so we land at DESTINATION (not token picker)
   await expect(page.getByTestId("send-to-input")).toBeVisible();
-  await page
-    .getByTestId("send-to-input")
-    .fill("GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY");
+  await page.getByTestId("send-to-input").fill(FUNDED_DESTINATION);
   await page.getByText("Continue").click();
 
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
@@ -1245,9 +1243,7 @@ test("Send XLM payment from Asset Detail", async ({
 
   await page.getByTestId("asset-detail-send-button").click();
   await expect(page.getByTestId("send-to-input")).toBeVisible();
-  await page
-    .getByTestId("send-to-input")
-    .fill("GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY");
+  await page.getByTestId("send-to-input").fill(FUNDED_DESTINATION);
   await page.getByText("Continue").click();
 
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
