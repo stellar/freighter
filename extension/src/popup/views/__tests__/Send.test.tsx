@@ -154,6 +154,11 @@ jest.mock("react-router-dom", () => {
 });
 
 const publicKey = "GA4UFF2WJM7KHHG4R5D5D2MZQ6FWMDOSVITVF7C5OLD5NFP6RBBW2FGV";
+// A destination distinct from the active account - sending to your own address
+// is blocked ("You cannot send to yourself"), so payment-flow tests must use
+// a different recipient.
+const destinationPublicKey =
+  "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF";
 
 describe("Send", () => {
   beforeEach(() => {
@@ -352,6 +357,57 @@ describe("Send", () => {
     });
   });
 
+  it("blocks sending to your own account", async () => {
+    render(
+      <Wrapper
+        routes={[ROUTES.sendPayment]}
+        state={{
+          auth: {
+            error: null,
+            hasPrivateKey: true,
+            applicationState: ApplicationState.PASSWORD_CREATED,
+            publicKey,
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: MAINNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+          },
+          transactionSubmission: {
+            ...transactionSubmissionInitialState,
+            accountBalances: mockBalances,
+          },
+          tokenPaymentSimulation: tokenPaymentActions.initialState,
+        }}
+      >
+        <Send />
+      </Wrapper>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("token-list")).toBeDefined();
+    });
+    await waitFor(() => {
+      fireEvent.click(screen.getByTestId("SendRow-native"));
+    });
+
+    const input = await screen.findByTestId("send-to-input");
+    // Entering the active account's own address is rejected.
+    fireEvent.change(input, { target: { value: publicKey } });
+
+    await waitFor(() => {
+      expect(
+        screen.getByText("You cannot send to yourself"),
+      ).toBeInTheDocument();
+    });
+    expect(
+      screen.queryByTestId("send-to-suggestion-button"),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByTestId("send-to-btn-continue"),
+    ).not.toBeInTheDocument();
+  });
+
   it("pre-populates asset from query params", async () => {
     const testAsset =
       "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM";
@@ -390,7 +446,7 @@ describe("Send", () => {
     });
 
     fireEvent.change(screen.getByTestId("send-to-input"), {
-      target: { value: publicKey },
+      target: { value: destinationPublicKey },
     });
     await waitFor(() => {
       expect(
@@ -712,7 +768,7 @@ const testPaymentFlow = async (asset: string, isMainnet: boolean) => {
 
   await waitFor(() => {
     const input = screen.getByTestId("send-to-input");
-    fireEvent.change(input, { target: { value: publicKey } });
+    fireEvent.change(input, { target: { value: destinationPublicKey } });
   });
 
   await waitFor(
