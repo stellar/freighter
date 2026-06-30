@@ -32,8 +32,12 @@
 
   &__badge {
     align-self: flex-start;
-    padding: pxToRem(4px) pxToRem(8px);
-    border-radius: pxToRem(100px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: pxToRem(28px);
+    height: pxToRem(28px);
+    border-radius: 50%;
     background-color: var(--sds-clr-lilac-01);
     border: 1px solid var(--sds-clr-lilac-06);
     color: var(--sds-clr-lilac-11);
