@@ -7,7 +7,11 @@ import { getCanonicalFromAsset } from "helpers/stellar";
 import { isContractId, isAssetSac } from "popup/helpers/soroban";
 import { findAssetBalance } from "popup/helpers/balance";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
-import { InfoTooltip } from "popup/basics/InfoTooltip";
+import { Icon } from "@stellar/design-system";
+import {
+  VerifiedTokenInfoSheet,
+  UnverifiedTokenInfoSheet,
+} from "popup/components/TokenVerificationSheets";
 import { AccountBalances } from "helpers/hooks/useGetBalances";
 import { SlideupModal } from "popup/components/SlideupModal";
 import { publicKeySelector } from "popup/ducks/accountServices";
@@ -229,28 +233,22 @@ const AssetRows = ({
   }) => React.ReactNode;
 }) => {
   const { t } = useTranslation();
+  const [verifiedSheetOpen, setVerifiedSheetOpen] = useState(false);
+  const [unverifiedSheetOpen, setUnverifiedSheetOpen] = useState(false);
   if (shouldSplitAssetsByVerificationStatus) {
     return (
       <>
         {verifiedAssetRows.length > 0 && (
-          <InfoTooltip
-            infoText={
-              <span>
-                {t(
-                  "Freighter uses asset lists to verify assets before interactions.",
-                )}
-                {t("You can define your own assets lists in Settings.")}
-              </span>
-            }
-            placement="bottom-start"
+          <button
+            type="button"
+            className="ManageAssetRows__list-header"
+            data-testid="asset-on-list"
+            aria-label={t("About verified tokens")}
+            onClick={() => setVerifiedSheetOpen(true)}
           >
-            <h5
-              className="ManageAssetRows__tooltip"
-              data-testid="asset-on-list"
-            >
-              {t("On your lists")}
-            </h5>
-          </InfoTooltip>
+            <span>{t("Verified")}</span>
+            <Icon.InfoCircle />
+          </button>
         )}
         {verifiedAssetRows.map(
           ({
@@ -305,23 +303,16 @@ const AssetRows = ({
           },
         )}
         {unverifiedAssetRows.length > 0 && (
-          <InfoTooltip
-            infoText={
-              <span>
-                {t(
-                  "These assets are not on any of your lists. Proceed with caution before adding.",
-                )}
-              </span>
-            }
-            placement="bottom-start"
+          <button
+            type="button"
+            className="ManageAssetRows__list-header"
+            data-testid="not-asset-on-list"
+            aria-label={t("About unverified tokens")}
+            onClick={() => setUnverifiedSheetOpen(true)}
           >
-            <h5
-              className="ManageAssetRows__tooltip"
-              data-testid="not-asset-on-list"
-            >
-              {t("Not on your lists")}
-            </h5>
-          </InfoTooltip>
+            <span>{t("Unverified")}</span>
+            <Icon.InfoCircle />
+          </button>
         )}
         {unverifiedAssetRows.map(
           ({
@@ -376,6 +367,14 @@ const AssetRows = ({
             );
           },
         )}
+        <VerifiedTokenInfoSheet
+          isOpen={verifiedSheetOpen}
+          onClose={() => setVerifiedSheetOpen(false)}
+        />
+        <UnverifiedTokenInfoSheet
+          isOpen={unverifiedSheetOpen}
+          onClose={() => setUnverifiedSheetOpen(false)}
+        />
       </>
     );
   }

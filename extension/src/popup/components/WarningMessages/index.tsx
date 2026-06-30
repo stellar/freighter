@@ -197,62 +197,6 @@ export const BackupPhraseWarningMessage = () => {
   );
 };
 
-export const AssetListWarning = ({
-  isVerified,
-  onClick,
-}: {
-  isVerified: boolean;
-  onClick: () => void;
-}) => {
-  const { t } = useTranslation();
-  const title = isVerified ? t("On your lists") : t("Not on your lists");
-  return (
-    <div className="ScanLabel ScanMiss" onClick={onClick}>
-      <div className="ScanLabel__Info">
-        <div className="Icon">
-          <Icon.InfoSquare className="WarningMessage__icon" />
-        </div>
-        <p className="Message">{title}</p>
-      </div>
-      <div className="ScanLabel__Action">
-        <Icon.ChevronRight />
-      </div>
-    </div>
-  );
-};
-
-interface AssetListWarningExpandedProps {
-  isVerified: boolean;
-  onClose?: () => void;
-}
-
-export const AssetListWarningExpanded = ({
-  isVerified,
-  onClose,
-}: AssetListWarningExpandedProps) => {
-  const { t } = useTranslation();
-  const title = isVerified
-    ? t("This asset is on your lists")
-    : t("This asset is not on your lists");
-
-  return (
-    <div className="BlockaidDetailsExpanded">
-      <div className="BlockaidDetailsExpanded__Header">
-        <div className="WarningMark">
-          <Icon.AlertTriangle />
-        </div>
-        <div className="Close" onClick={onClose}>
-          <Icon.X />
-        </div>
-      </div>
-      <div className="BlockaidDetailsExpanded__Title">{title}</div>
-      <div className="BlockaidDetailsExpanded__SubTitle">
-        {`${t("Freighter uses asset lists to check assets you interact with.")} ${t("You can define your own assets lists in Settings.")}`}
-      </div>
-    </div>
-  );
-};
-
 interface BlockaidFeedbackFormValues {
   details: string;
   transactionIssue?: string;

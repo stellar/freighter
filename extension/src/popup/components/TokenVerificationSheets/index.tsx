@@ -9,6 +9,11 @@ interface InfoSheetProps {
   onClose: () => void;
 }
 
+/**
+ * Shared "Verified token" / "Unverified token" info sheets, used by both the
+ * swap token picker and the add-a-token flow so the verified/unverified UX is
+ * identical across flows.
+ */
 export const VerifiedTokenInfoSheet = ({ isOpen, onClose }: InfoSheetProps) => {
   const { t } = useTranslation();
   return (

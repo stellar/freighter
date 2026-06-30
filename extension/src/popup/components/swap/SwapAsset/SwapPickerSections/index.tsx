@@ -7,7 +7,7 @@ import { BalanceRow } from "popup/components/BalanceRow";
 import {
   VerifiedTokenInfoSheet,
   UnverifiedTokenInfoSheet,
-} from "../InfoSheets";
+} from "popup/components/TokenVerificationSheets";
 import { AssetListRow } from "popup/components/AssetListRow";
 import { isContractId } from "popup/helpers/soroban";
 import { SecurityLevel } from "popup/constants/blockaid";

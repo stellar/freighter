@@ -27,10 +27,12 @@ import {
   SSLWarningMessage,
   BlockaidAssetWarning,
   DomainNotAllowedWarningMessage,
-  AssetListWarning,
-  AssetListWarningExpanded,
   BlockAidAssetScanExpanded,
 } from "popup/components/WarningMessages";
+import {
+  VerifiedTokenInfoSheet,
+  UnverifiedTokenInfoSheet,
+} from "popup/components/TokenVerificationSheets";
 import { VerifyAccount } from "popup/views/VerifyAccount";
 import { View } from "popup/basics/layout/View";
 import { ManageAssetCurrency } from "popup/components/manageAssets/ManageAssetRows";
@@ -90,6 +92,8 @@ export const AddToken = () => {
   const [isMaliciousAsset, setIsMaliciousAsset] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [activePaneIndex, setActivePaneIndex] = useState(0);
+  const [verifiedSheetOpen, setVerifiedSheetOpen] = useState(false);
+  const [unverifiedSheetOpen, setUnverifiedSheetOpen] = useState(false);
 
   const assetCurrency: ManageAssetCurrency | undefined = assetRows[0];
 
@@ -406,14 +410,32 @@ export const AddToken = () => {
                   </div>
                 </div>
 
-                {assetCurrency &&
-                  isVerificationInfoShowing &&
-                  !isVerifiedToken && (
-                    <AssetListWarning
-                      isVerified={isVerifiedToken}
-                      onClick={() => setActivePaneIndex(2)}
-                    />
-                  )}
+                {assetCurrency && isVerificationInfoShowing && (
+                  <button
+                    type="button"
+                    className="AddToken__verification"
+                    data-testid={
+                      isVerifiedToken
+                        ? "add-token-verified"
+                        : "add-token-unverified"
+                    }
+                    aria-label={
+                      isVerifiedToken
+                        ? t("About verified tokens")
+                        : t("About unverified tokens")
+                    }
+                    onClick={() =>
+                      isVerifiedToken
+                        ? setVerifiedSheetOpen(true)
+                        : setUnverifiedSheetOpen(true)
+                    }
+                  >
+                    <span>
+                      {isVerifiedToken ? t("Verified") : t("Unverified")}
+                    </span>
+                    <Icon.InfoCircle />
+                  </button>
+                )}
 
                 {blockaidData && (
                   <BlockaidAssetWarning
@@ -449,11 +471,17 @@ export const AddToken = () => {
                   onClose={() => setActivePaneIndex(0)}
                 />
               ) : null,
-              <AssetListWarningExpanded
-                isVerified={isVerifiedToken}
-                onClose={() => setActivePaneIndex(0)}
-              />,
             ]}
+          />
+          {/* Verified/Unverified info, shared with the swap picker — opened by
+              the clickable verification title above. */}
+          <VerifiedTokenInfoSheet
+            isOpen={verifiedSheetOpen}
+            onClose={() => setVerifiedSheetOpen(false)}
+          />
+          <UnverifiedTokenInfoSheet
+            isOpen={unverifiedSheetOpen}
+            onClose={() => setUnverifiedSheetOpen(false)}
           />
         </div>
       </View.Content>

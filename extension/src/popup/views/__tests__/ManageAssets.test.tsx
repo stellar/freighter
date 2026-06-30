@@ -860,7 +860,7 @@ describe.skip("Manage assets", () => {
       const addedTrustlines = screen.queryAllByTestId("ManageAssetRow");
       const verificationBadge = screen.getByTestId("asset-on-list");
 
-      expect(verificationBadge).toHaveTextContent("On your lists");
+      expect(verificationBadge).toHaveTextContent("Verified");
 
       expect(addedTrustlines.length).toBe(1);
       expect(
@@ -905,7 +905,7 @@ describe.skip("Manage assets", () => {
       const addedTrustlines = screen.queryAllByTestId("ManageAssetRow");
       const verificationBadge = screen.getByTestId("not-asset-on-list");
 
-      expect(verificationBadge).toHaveTextContent("Not on your lists");
+      expect(verificationBadge).toHaveTextContent("Unverified");
 
       expect(addedTrustlines.length).toBe(1);
       expect(

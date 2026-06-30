@@ -6,6 +6,27 @@
   display: flex;
   height: 100%;
 
+  // Clickable "Verified" / "Unverified" title that opens the shared token
+  // verification info sheet — matches the swap picker (§ batch4 follow-up).
+  &__verification {
+    display: flex;
+    align-items: center;
+    gap: pxToRem(6px);
+    margin-bottom: pxToRem(8px);
+    padding: 0;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: var(--sds-clr-gray-11);
+    font-size: pxToRem(14px);
+
+    svg {
+      width: pxToRem(16px);
+      height: pxToRem(16px);
+      color: var(--sds-clr-gray-09);
+    }
+  }
+
   &__loader,
   &__error {
     display: flex;
