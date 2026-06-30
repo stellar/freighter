@@ -50,6 +50,13 @@
         margin-top: pxToRem(8px);
         margin-bottom: pxToRem(12px);
       }
+
+      // The recipient (account) card carries its own 12px bottom margin; zero
+      // it here so the total gap to the Sending card is exactly the
+      // AmountCard's 8px top margin rather than 8px + 12px.
+      .SelectionTile {
+        margin-bottom: 0;
+      }
     }
   }
 

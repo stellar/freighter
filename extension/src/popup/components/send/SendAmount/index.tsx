@@ -628,7 +628,6 @@ export const SendAmount = ({
         title={<span>{t("Send")}</span>}
         hasBackButton
         customBackAction={goBackAction}
-        customBackIcon={<Icon.X />}
       />
       <View.Content
         hasNoTopPadding={isCollectible}
