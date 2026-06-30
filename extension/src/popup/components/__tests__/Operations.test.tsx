@@ -249,4 +249,76 @@ describe("Operations", () => {
       expect(limitValue).toHaveTextContent("100");
     });
   });
+
+  describe("Payment and Swap details (mobile parity)", () => {
+    const renderOp = (op: Operation) =>
+      render(
+        <Wrapper
+          routes={[ROUTES.signTransaction]}
+          state={{
+            auth: {
+              error: null,
+              applicationState: APPLICATION_STATE.PASSWORD_CREATED,
+              TEST_PUBLIC_KEY,
+              allAccounts: mockAccounts,
+              hasPrivateKey: true,
+            },
+            settings: {
+              networkDetails: TESTNET_NETWORK_DETAILS,
+              networksList: DEFAULT_NETWORKS,
+              isSorobanPublicEnabled: true,
+              isRpcHealthy: true,
+            },
+          }}
+        >
+          <Operations
+            operations={[op]}
+            flaggedKeys={{}}
+            isMemoRequired={false}
+          />
+        </Wrapper>,
+      );
+
+    const valueOf = (label: string) =>
+      screen
+        .getByText(label)
+        .parentNode?.querySelector("[data-testid='OperationKeyVal__value']");
+
+    it("renders a payment with the Token Code label and amount with its code", async () => {
+      renderOp({
+        type: "payment",
+        destination: TEST_PUBLIC_KEY,
+        asset: { code: "XLM" },
+        amount: "100.0000000",
+      } as Operation.Payment);
+      await waitFor(() => screen.getAllByTestId("OperationKeyVal"));
+
+      expect(screen.queryByText("Asset Code")).toBeNull();
+      expect(valueOf("Token Code")).toHaveTextContent("XLM");
+      expect(valueOf("Amount")).toHaveTextContent("100.0000000 XLM");
+    });
+
+    it("renders a swap with amounts carrying their token code and a clean destination token", async () => {
+      renderOp({
+        type: "pathPaymentStrictSend",
+        sendAsset: { code: "XLM" },
+        sendAmount: "12.3456789",
+        destination: TEST_PUBLIC_KEY,
+        destAsset: { code: "PYUSD" },
+        destMin: "2.2044110",
+        path: [],
+      } as Operation.PathPaymentStrictSend);
+      await waitFor(() => screen.getAllByTestId("OperationKeyVal"));
+
+      expect(valueOf("Token Code")).toHaveTextContent("XLM");
+      expect(valueOf("Send Amount")).toHaveTextContent("12.3456789 XLM");
+      // Clean destination token code, not the truncated "PYUS…YUSD" the
+      // KeyValueWithPublicKey path used to produce.
+      expect(screen.queryByText("Destination Asset")).toBeNull();
+      expect(valueOf("Destination Token")).toHaveTextContent("PYUSD");
+      expect(valueOf("Destination Minimum")).toHaveTextContent(
+        "2.2044110 PYUSD",
+      );
+    });
+  });
 });

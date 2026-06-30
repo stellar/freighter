@@ -699,7 +699,7 @@ export const PathList = ({ paths }: { paths: Asset[] }) => {
       {paths.map(({ code, issuer }, i) => (
         <div className="Operations--list--item" key={`${code} ${i + 1}`}>
           <div>#{i + 1}</div>
-          <KeyValueList operationKey={t("Asset Code")} operationValue={code} />
+          <KeyValueList operationKey={t("Token")} operationValue={code} />
           {issuer ? (
             <KeyValueList
               operationKey={t("Issuer")}

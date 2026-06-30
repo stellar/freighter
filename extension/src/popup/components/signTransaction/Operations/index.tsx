@@ -181,10 +181,13 @@ export const Operations = ({
               isMemoRequired={isMemoRequired}
             />
             <KeyValueList
-              operationKey={t("Asset Code")}
+              operationKey={t("Token Code")}
               operationValue={asset.code}
             />
-            <KeyValueList operationKey={t("Amount")} operationValue={amount} />
+            <KeyValueList
+              operationKey={t("Amount")}
+              operationValue={`${amount} ${asset.code}`}
+            />
           </>
         );
       }
@@ -230,12 +233,12 @@ export const Operations = ({
         return (
           <>
             <KeyValueList
-              operationKey={t("Asset Code")}
+              operationKey={t("Token Code")}
               operationValue={sendAsset.code}
             />
             <KeyValueList
               operationKey={t("Send Amount")}
-              operationValue={sendAmount}
+              operationValue={`${sendAmount} ${sendAsset.code}`}
             />
             <KeyValueWithPublicKey
               operationKey={t("Destination")}
@@ -246,13 +249,13 @@ export const Operations = ({
               flaggedKeys={flaggedKeys}
               isMemoRequired={isMemoRequired}
             />
-            <KeyValueWithPublicKey
-              operationKey={t("Destination Asset")}
+            <KeyValueList
+              operationKey={t("Destination Token")}
               operationValue={destAsset.code}
             />
             <KeyValueList
               operationKey={t("Destination Minimum")}
-              operationValue={destMin}
+              operationValue={`${destMin} ${destAsset.code}`}
             />
             <PathList paths={path} />
           </>

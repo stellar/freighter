@@ -51,23 +51,23 @@ export const Summary = (props: SummaryProps) => {
         </div>
         <p className="TxInfoBlock__value">{props.sequenceNumber}</p>
       </div>
-      <div className="TxInfoBlock" data-testid="MemoBlock">
-        <div className="TxInfoBlock__title">
-          <p>{t("Memo")}</p>
-        </div>
-        <span className="TxInfoBlock__value TxInfoBlock__value--memo">
-          <TruncatedMemo
-            inline
-            memo={props.memo && props.memo.value}
-            className="TxInfoBlock__memo"
-          />
-          <span className="TxInfoBlock__memoType">
-            {props.memo && props.memo.value
-              ? `(${getMemoLabel(props.memo.type)})`
-              : `(${getMemoLabel("none")})`}
+      {props.memo && props.memo.value ? (
+        <div className="TxInfoBlock" data-testid="MemoBlock">
+          <div className="TxInfoBlock__title">
+            <p>{t("Memo")}</p>
+          </div>
+          <span className="TxInfoBlock__value TxInfoBlock__value--memo">
+            <TruncatedMemo
+              inline
+              memo={props.memo.value}
+              className="TxInfoBlock__memo"
+            />
+            <span className="TxInfoBlock__memoType">
+              {`(${getMemoLabel(props.memo.type)})`}
+            </span>
           </span>
-        </span>
-      </div>
+        </div>
+      ) : null}
       <div className="TxInfoBlock">
         <div className="TxInfoBlock__title">
           <p>{t("XDR")}</p>
