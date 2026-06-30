@@ -29,10 +29,10 @@
     align-items: center;
   }
 
+  // Font size / line-height come from the SDS <Text size="xs"> (12px); we only
+  // add weight and alignment, mirroring the trustline banner.
   &__message {
-    font-size: pxToRem(12px);
     font-weight: var(--font-weight-medium);
-    line-height: pxToRem(18px);
     text-align: left;
   }
 
