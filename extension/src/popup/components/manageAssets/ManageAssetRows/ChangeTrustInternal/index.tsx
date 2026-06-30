@@ -64,6 +64,10 @@ export const ChangeTrustInternal = ({
 }: ChangeTrustInternalProps) => {
   const activeOptionsRef = useRef<HTMLDivElement>(null);
   const [activePaneIndex, setActivePaneIndex] = useState(0);
+  // The expanded Blockaid "Do not proceed" sheet renders IN-FLOW (replacing the
+  // body in place) rather than sliding in as a horizontal slider pane — mirrors
+  // ReviewTransaction. Its own boolean gate keeps it out of the slider.
+  const [isOnBlockaidSheet, setIsOnBlockaidSheet] = useState(false);
   const [activeBodyContent, setActiveBodyContent] = useState(
     ActiveBodyContent.details,
   );
@@ -173,35 +177,24 @@ export const ChangeTrustInternal = ({
       state.data.isAssetUnableToScan);
 
   /**
-   * Pane state machine for blockaid warnings:
-   * - With blockaid warning: [Confirm Transaction, Details, Blockaid] - Blockaid accessible via banner click
-   * - No warning: [Confirm Transaction, Details]
+   * Horizontal slider panes (Blockaid is no longer one of them — it renders
+   * in-flow via isOnBlockaidSheet):
+   * - [Confirm Transaction, Details]
    */
-  const paneConfig = !shouldShowBlockaidWarning
-    ? {
-        blockaidIndex: null,
-        confirmIndex: 0,
-        detailsIndex: 1,
-      }
-    : {
-        blockaidIndex: 2,
-        confirmIndex: 0,
-        detailsIndex: 1,
-      };
-
-  const isInBlockaidPane =
-    paneConfig.blockaidIndex !== null &&
-    activePaneIndex === paneConfig.blockaidIndex;
+  const paneConfig = {
+    confirmIndex: 0,
+    detailsIndex: 1,
+  };
 
   // Build panes in order (no hooks on JSX)
   const panes: React.ReactNode[] = [];
 
-  // Blockaid pane
+  // Blockaid expanded sheet — rendered in-flow, not as a slider pane.
   const blockaidPane = (
     <BlockAidAssetScanExpanded
       scanResult={state.data.scanResult}
       onClose={() => {
-        setActivePaneIndex(paneConfig.confirmIndex);
+        setIsOnBlockaidSheet(false);
       }}
     />
   );
@@ -233,18 +226,18 @@ export const ChangeTrustInternal = ({
         {isMalicious ? (
           <BlockaidAssetWarning
             blockaidData={state.data.scanResult}
-            onClick={() => setActivePaneIndex(paneConfig.blockaidIndex ?? 0)}
+            onClick={() => setIsOnBlockaidSheet(true)}
           />
         ) : state.data.isAssetUnableToScan ? (
           <BlockaidAssetWarning
             blockaidData={state.data.scanResult}
-            onClick={() => setActivePaneIndex(paneConfig.blockaidIndex ?? 0)}
+            onClick={() => setIsOnBlockaidSheet(true)}
             messageKey="Proceed with caution"
           />
         ) : state.data.isAssetSuspicious ? (
           <BlockaidAssetWarning
             blockaidData={state.data.scanResult}
-            onClick={() => setActivePaneIndex(paneConfig.blockaidIndex ?? 0)}
+            onClick={() => setIsOnBlockaidSheet(true)}
           />
         ) : null}
         {trustlineChanges.length > 0 && (
@@ -329,12 +322,8 @@ export const ChangeTrustInternal = ({
     </div>
   );
 
-  // Build panes in order
-  if (shouldShowBlockaidWarning) {
-    panes.push(confirmPane, detailsPane, blockaidPane);
-  } else {
-    panes.push(confirmPane, detailsPane);
-  }
+  // Build slider panes in order (Blockaid sheet is rendered in-flow, not here)
+  panes.push(confirmPane, detailsPane);
 
   // Button rendering functions
   const renderBlockaidPaneButtons = () => (
@@ -346,7 +335,7 @@ export const ChangeTrustInternal = ({
         variant={isMalicious ? "destructive" : "secondary"}
         onClick={(e) => {
           e.preventDefault();
-          setActivePaneIndex(paneConfig.confirmIndex);
+          setIsOnBlockaidSheet(false);
         }}
       >
         {t("Cancel")}
@@ -358,7 +347,7 @@ export const ChangeTrustInternal = ({
         }`}
         onClick={(e) => {
           e.preventDefault();
-          setActivePaneIndex(paneConfig.confirmIndex);
+          setIsOnBlockaidSheet(false);
         }}
       >
         {t("Continue")}
@@ -429,10 +418,14 @@ export const ChangeTrustInternal = ({
       <div data-testid="ChangeTrustInternal" className="ChangeTrustInternal">
         {activeBodyContent === ActiveBodyContent.details && (
           <>
-            <MultiPaneSlider activeIndex={activePaneIndex} panes={panes} />
+            {isOnBlockaidSheet ? (
+              blockaidPane
+            ) : (
+              <MultiPaneSlider activeIndex={activePaneIndex} panes={panes} />
+            )}
             <div className="ChangeTrustInternal__Actions">
               <div
-                className={`ChangeTrustInternal__Actions__BtnRow ${!shouldShowBlockaidWarning && !isInBlockaidPane ? "ChangeTrustInternal__Actions__BtnRow--side-by-side" : ""}`}
+                className={`ChangeTrustInternal__Actions__BtnRow ${!shouldShowBlockaidWarning && !isOnBlockaidSheet ? "ChangeTrustInternal__Actions__BtnRow--side-by-side" : ""}`}
               >
                 {isSettingsSelectorOpen ? (
                   <div
@@ -480,7 +473,7 @@ export const ChangeTrustInternal = ({
                     </div>
                   </div>
                 ) : null}
-                {isInBlockaidPane
+                {isOnBlockaidSheet
                   ? renderBlockaidPaneButtons()
                   : shouldShowBlockaidWarning
                     ? renderBlockaidWarningButtons()

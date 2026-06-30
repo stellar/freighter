@@ -51,7 +51,6 @@ import { RequestState } from "constants/request";
 import { openTab } from "popup/helpers/navigate";
 import { reRouteOnboarding } from "popup/helpers/route";
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
-import { MultiPaneSlider } from "popup/components/SlidingPaneSwitcher";
 import { useMarkQueueActive } from "popup/helpers/useMarkQueueActive";
 
 import "./styles.scss";
@@ -91,7 +90,10 @@ export const AddToken = () => {
     useState<BlockAidScanAssetResult | null>(null);
   const [isMaliciousAsset, setIsMaliciousAsset] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
-  const [activePaneIndex, setActivePaneIndex] = useState(0);
+  // The expanded Blockaid sheet renders IN-FLOW (replacing the body in place)
+  // rather than sliding in as a horizontal pane — same pattern as
+  // ReviewTransaction. Gated by this boolean.
+  const [isOnBlockaidSheet, setIsOnBlockaidSheet] = useState(false);
   const [verifiedSheetOpen, setVerifiedSheetOpen] = useState(false);
   const [unverifiedSheetOpen, setUnverifiedSheetOpen] = useState(false);
 
@@ -352,127 +354,123 @@ export const AddToken = () => {
     <React.Fragment>
       <View.Content hasNoBottomPadding>
         <div className="AddToken">
-          <MultiPaneSlider
-            activeIndex={activePaneIndex}
-            panes={[
-              <div className="AddToken__wrapper">
-                <div className="AddToken__wrapper__header">
-                  {assetIcon && (
-                    <div className="AddToken__wrapper__icon-logo">
-                      <Asset
-                        size="lg"
-                        variant="single"
-                        sourceOne={{
-                          altText: t("Add token logo"),
-                          image: assetIcon,
-                          backgroundColor: "transparent",
-                        }}
-                      />
-                    </div>
-                  )}
+          {isOnBlockaidSheet && blockaidData ? (
+            <BlockAidAssetScanExpanded
+              scanResult={blockaidData}
+              onClose={() => setIsOnBlockaidSheet(false)}
+            />
+          ) : (
+            <div className="AddToken__wrapper">
+              <div className="AddToken__wrapper__header">
+                {assetIcon && (
+                  <div className="AddToken__wrapper__icon-logo">
+                    <Asset
+                      size="lg"
+                      variant="single"
+                      sourceOne={{
+                        altText: t("Add token logo"),
+                        image: assetIcon,
+                        backgroundColor: "transparent",
+                      }}
+                    />
+                  </div>
+                )}
 
-                  {!assetIcon && assetCode && (
-                    <div className="AddToken__wrapper__code-logo">
-                      <Text
-                        as="div"
-                        size="sm"
-                        weight="bold"
-                        addlClassName="AddToken__wrapper--logo-label"
-                      >
-                        {assetCode.slice(0, 2)}
-                      </Text>
-                    </div>
-                  )}
-
-                  {assetCurrency && (
-                    <Text as="div" size="sm" weight="medium">
-                      {assetName || assetCode}
-                    </Text>
-                  )}
-                  {assetDomain && (
+                {!assetIcon && assetCode && (
+                  <div className="AddToken__wrapper__code-logo">
                     <Text
                       as="div"
                       size="sm"
-                      addlClassName="AddToken__wrapper--domain-label"
+                      weight="bold"
+                      addlClassName="AddToken__wrapper--logo-label"
                     >
-                      {assetDomain}
+                      {assetCode.slice(0, 2)}
                     </Text>
-                  )}
-                  <div className="AddToken__wrapper__badge">
-                    <Badge
-                      size="sm"
-                      variant="secondary"
-                      icon={<Icon.PlusCircle />}
-                      iconPosition="left"
-                    >
-                      {t("Add Token")}
-                    </Badge>
                   </div>
-                </div>
+                )}
 
-                {assetCurrency && isVerificationInfoShowing && (
-                  <button
-                    type="button"
-                    className="AddToken__verification"
-                    data-testid={
-                      isVerifiedToken
-                        ? "add-token-verified"
-                        : "add-token-unverified"
-                    }
-                    aria-label={
-                      isVerifiedToken
-                        ? t("About verified tokens")
-                        : t("About unverified tokens")
-                    }
-                    onClick={() =>
-                      isVerifiedToken
-                        ? setVerifiedSheetOpen(true)
-                        : setUnverifiedSheetOpen(true)
-                    }
+                {assetCurrency && (
+                  <Text as="div" size="sm" weight="medium">
+                    {assetName || assetCode}
+                  </Text>
+                )}
+                {assetDomain && (
+                  <Text
+                    as="div"
+                    size="sm"
+                    addlClassName="AddToken__wrapper--domain-label"
                   >
-                    <span>
-                      {isVerifiedToken ? t("Verified") : t("Unverified")}
-                    </span>
-                    <Icon.InfoCircle />
-                  </button>
+                    {assetDomain}
+                  </Text>
                 )}
-
-                {blockaidData && (
-                  <BlockaidAssetWarning
-                    blockaidData={blockaidData}
-                    onClick={() => setActivePaneIndex(1)}
-                  />
-                )}
-
-                {!isDomainListedAllowed && (
-                  <DomainNotAllowedWarningMessage domain={params.domain} />
-                )}
-
-                <div className="AddToken__Description">
-                  {t(
-                    "Allow token to be displayed and used with this wallet address",
-                  )}
+                <div className="AddToken__wrapper__badge">
+                  <Badge
+                    size="sm"
+                    variant="secondary"
+                    icon={<Icon.PlusCircle />}
+                    iconPosition="left"
+                  >
+                    {t("Add Token")}
+                  </Badge>
                 </div>
-                <div className="AddToken__Metadata">
-                  <div className="AddToken__Metadata__Row">
-                    <div className="AddToken__Metadata__Label">
-                      <Icon.Wallet01 />
-                      <span>{t("Wallet")}</span>
-                    </div>
-                    <div className="AddToken__Metadata__Value">
-                      <KeyIdenticon publicKey={state.data.account.publicKey} />
-                    </div>
+              </div>
+
+              {assetCurrency && isVerificationInfoShowing && (
+                <button
+                  type="button"
+                  className="AddToken__verification"
+                  data-testid={
+                    isVerifiedToken
+                      ? "add-token-verified"
+                      : "add-token-unverified"
+                  }
+                  aria-label={
+                    isVerifiedToken
+                      ? t("About verified tokens")
+                      : t("About unverified tokens")
+                  }
+                  onClick={() =>
+                    isVerifiedToken
+                      ? setVerifiedSheetOpen(true)
+                      : setUnverifiedSheetOpen(true)
+                  }
+                >
+                  <span>
+                    {isVerifiedToken ? t("Verified") : t("Unverified")}
+                  </span>
+                  <Icon.InfoCircle />
+                </button>
+              )}
+
+              {blockaidData && (
+                <BlockaidAssetWarning
+                  blockaidData={blockaidData}
+                  onClick={() => setIsOnBlockaidSheet(true)}
+                />
+              )}
+
+              {!isDomainListedAllowed && (
+                <DomainNotAllowedWarningMessage domain={params.domain} />
+              )}
+
+              <div className="AddToken__Description">
+                {t(
+                  "Allow token to be displayed and used with this wallet address",
+                )}
+              </div>
+              <div className="AddToken__Metadata">
+                <div className="AddToken__Metadata__Row">
+                  <div className="AddToken__Metadata__Label">
+                    <Icon.Wallet01 />
+                    <span>{t("Wallet")}</span>
+                  </div>
+                  <div className="AddToken__Metadata__Value">
+                    <KeyIdenticon publicKey={state.data.account.publicKey} />
                   </div>
                 </div>
-              </div>,
-              blockaidData ? (
-                <BlockAidAssetScanExpanded
-                  scanResult={blockaidData}
-                  onClose={() => setActivePaneIndex(0)}
-                />
-              ) : null,
-            ]}
-          />
+              </div>
+            </div>
+          )}
           {/* Verified/Unverified info, shared with the swap picker — opened by
               the clickable verification title above. */}
           <VerifiedTokenInfoSheet
