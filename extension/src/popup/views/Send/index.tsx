@@ -276,7 +276,6 @@ export const Send = () => {
           <SendDestinationAsset
             goBack={() => closeSendFlow()}
             goToNext={() => goToStep(STEPS.DESTINATION, "from-right")}
-            showCloseIcon
           />
         );
       }
