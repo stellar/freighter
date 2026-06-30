@@ -128,11 +128,7 @@ export const SwapAmount = ({
 }: SwapAmountProps) => {
   const { t } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
-  const {
-    networkCongestion,
-    recommendedFee,
-    isLoading: isNetworkFeesLoading,
-  } = useNetworkFees();
+  const { networkCongestion, recommendedFee } = useNetworkFees();
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const publicKey = useSelector(publicKeySelector);
   const blockaidOverrideState = useBlockaidOverrideState();
@@ -282,8 +278,11 @@ export const SwapAmount = ({
     }
     return "xsmall";
   };
+  // Gate the fullscreen spinner ONLY on the swap data, never on the network
+  // fee: feeStats() has no timeout and a slow Horizon was hanging the whole
+  // screen for >15s (§ batch4 follow-up). The fee seeds from the base fee /
+  // in-session cache and updates in place when feeStats resolves.
   const isLoading =
-    isNetworkFeesLoading ||
     swapAmountData.state === RequestState.IDLE ||
     swapAmountData.state === RequestState.LOADING;
 

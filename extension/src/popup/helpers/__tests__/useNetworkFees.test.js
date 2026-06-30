@@ -4,6 +4,7 @@ import {
   useNetworkFees,
   NetworkCongestion,
   getNetworkCongestionTranslation,
+  resetFeeCacheForTests,
 } from "../useNetworkFees";
 import { BASE_FEE } from "stellar-sdk";
 
@@ -93,6 +94,9 @@ describe("getNetworkCongestionTranslation", () => {
 describe("useNetworkFees (React 18 compatible)", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    // The fee cache is module-scoped and survives between tests; clear it so
+    // each test starts cold (isLoading begins true).
+    resetFeeCacheForTests();
   });
 
   it("fetches and updates fee + congestion manually", async () => {
