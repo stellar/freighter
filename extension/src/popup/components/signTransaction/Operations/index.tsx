@@ -140,7 +140,7 @@ export const Operations = ({
       };
 
       scan();
-    }, [networkDetails, op, scanAssets]);
+    }, [networkDetails, op]);
 
     switch (op.type) {
       case "createAccount": {
@@ -762,7 +762,7 @@ export const Operations = ({
       };
 
       scan();
-    }, [networkDetails, op, scanAssets]);
+    }, [networkDetails, op]);
 
     switch (op.type) {
       case "invokeHostFunction": {
