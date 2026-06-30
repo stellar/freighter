@@ -117,6 +117,11 @@ export const Send = () => {
   const location = useLocation();
   const sendParams = new URLSearchParams(location.search);
   const returnTo = sendParams.get("return_to");
+  const returnAsset = sendParams.get("return_asset");
+  const returnCollectionAddress = sendParams.get("return_collection_address");
+  const returnCollectibleTokenId = sendParams.get(
+    "return_collectible_token_id",
+  );
 
   const RETURN_TO = {
     ASSET_DETAIL: "asset_detail",
@@ -126,17 +131,27 @@ export const Send = () => {
   const closeSendFlow = () => {
     dispatch(resetSubmission());
 
-    // Closing the Send flow returns to the tab the user came from, but NOT the
-    // originating asset/collectible detail screen. Reopening that detail on
-    // close was surprising — tapping "X" should dismiss the flow, not navigate
-    // the user into a detail screen they didn't ask for.
-    if (returnTo === RETURN_TO.COLLECTIBLE_DETAIL) {
-      navigateTo(ROUTES.account, navigate, `?tab=${TabsList.COLLECTIBLES}`);
+    if (returnTo === RETURN_TO.ASSET_DETAIL && returnAsset) {
+      navigateTo(
+        ROUTES.account,
+        navigate,
+        `?tab=${TabsList.TOKENS}&asset_detail=${encodeURIComponent(returnAsset)}`,
+      );
       return;
     }
 
-    if (returnTo === RETURN_TO.ASSET_DETAIL) {
-      navigateTo(ROUTES.account, navigate, `?tab=${TabsList.TOKENS}`);
+    if (
+      returnTo === RETURN_TO.COLLECTIBLE_DETAIL &&
+      returnCollectionAddress &&
+      returnCollectibleTokenId
+    ) {
+      navigateTo(
+        ROUTES.account,
+        navigate,
+        `?tab=${TabsList.COLLECTIBLES}&collection_detail=${encodeURIComponent(
+          returnCollectionAddress,
+        )}&collectible_token_id=${encodeURIComponent(returnCollectibleTokenId)}`,
+      );
       return;
     }
 
