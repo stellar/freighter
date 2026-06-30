@@ -206,7 +206,12 @@ export const SwapAmount = ({
   // itself while the input is focused. Unlike mobile (which keeps it enabled to
   // re-summon the keyboard), the extension has no virtual keyboard — once the
   // input is focused the tap-to-focus affordance is redundant (§ batch3 task 1).
-  const [isSellInputFocused, setIsSellInputFocused] = useState(false);
+  // Seed it from the auto-focus condition (both tokens picked → the sell input
+  // autoFocuses on mount) so the CTA renders disabled from the first frame
+  // instead of flashing enabled→disabled when arriving from the token picker.
+  const [isSellInputFocused, setIsSellInputFocused] = useState(
+    () => !!asset && !!destinationAsset,
+  );
 
   const handleContinue = async (values: { amount: string }) => {
     // Retrying after a quote-expiry submit failure: dismiss the stale notice
