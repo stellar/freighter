@@ -368,7 +368,9 @@
     display: flex;
     flex-direction: column;
     width: 100%;
-    padding: 0 1rem;
+    // No self horizontal padding — the review host already provides the gutter
+    // (matching the other in-flow sheets); a 1rem inset here doubled it
+    // (§ batch4 follow-up).
 
     &__Header {
       display: flex;

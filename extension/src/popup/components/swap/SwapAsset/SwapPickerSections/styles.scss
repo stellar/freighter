@@ -32,7 +32,10 @@
       padding: 0;
       cursor: pointer;
       text-align: left;
-      font: inherit;
+      // Inherit only the font family — keep the header's own 0.875rem size so
+      // the Verified/Unverified titles match "Your tokens"/"Popular tokens"
+      // (a native button's `font` shorthand would otherwise shrink them).
+      font-family: inherit;
       align-self: flex-start;
     }
 

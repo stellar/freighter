@@ -54,7 +54,6 @@ import {
   BlockAidScanExpanded,
   MemoRequiredLabel,
 } from "popup/components/WarningMessages";
-import { CopyValue } from "popup/components/CopyValue";
 import { TruncatedMemo } from "popup/components/TruncatedMemo";
 import { trackSendFeeBreakdownOpened } from "popup/metrics/send";
 import { FeesPane } from "popup/components/InternalTransaction/FeesPane";
@@ -583,18 +582,8 @@ export const ReviewTx = ({
             destinationAmount={dstAsset.amount}
           />
         )}
-        <div className="ReviewTx__Details__Row">
-          <div className="ReviewTx__Details__Row__Title">
-            <Icon.FileCode02 />
-            {t("XDR")}
-          </div>
-          <div className="ReviewTx__Details__Row__Value">
-            <CopyValue
-              value={simulationState.data!.transactionXdr}
-              displayValue={simulationState.data!.transactionXdr}
-            />
-          </div>
-        </div>
+        {/* The raw XDR now lives in the "Transaction details" sheet (Summary),
+            so it's no longer duplicated as a row here (§ batch4 follow-up). */}
       </div>
       {detailTx && (
         <button
