@@ -198,10 +198,17 @@ export const ReviewTx = ({
       return null;
     }
     try {
-      return TransactionBuilder.fromXDR(
+      const parsed = TransactionBuilder.fromXDR(
         transactionXdr,
         networkDetails.networkPassphrase,
-      ) as Transaction;
+      );
+      // Fee-bump envelopes have no operations/sequence/memo of their own; the
+      // internal Send/Swap flow never builds them, but guard so the cast is
+      // safe rather than asserting.
+      if ("innerTransaction" in parsed) {
+        return null;
+      }
+      return parsed as Transaction;
     } catch (e) {
       return null;
     }
@@ -633,12 +640,15 @@ export const ReviewTx = ({
         <div className="ReviewTx__MemoDetails__Header__Icon">
           <Icon.InfoOctagon className="WarningMessage__icon" />
         </div>
-        <div
+        <button
+          type="button"
           className="ReviewTx__MemoDetails__Header__Close"
+          data-testid="review-tx-memo-close-btn"
+          aria-label={t("Close")}
           onClick={() => setIsOnMemoPane(false)}
         >
           <Icon.X />
-        </div>
+        </button>
       </div>
       <div className="ReviewTx__MemoDetails__Title">
         <span>{t("Memo is required")}</span>
@@ -719,6 +729,7 @@ export const ReviewTx = ({
         operations={detailTx.operations as unknown as OperationRecord[]}
         flaggedKeys={{}}
         isMemoRequired={false}
+        scanAssets={false}
       />
     </div>
   ) : null;

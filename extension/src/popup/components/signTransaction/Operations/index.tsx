@@ -79,10 +79,15 @@ export const Operations = ({
   flaggedKeys,
   isMemoRequired,
   operations = [] as OperationRecord[],
+  scanAssets = true,
 }: {
   flaggedKeys: FlaggedKeys;
   isMemoRequired: boolean;
   operations: OperationRecord[];
+  // The dapp-signing flow self-scans each op's assets for its own badges. The
+  // internal Send/Swap review already scans these assets, so it passes
+  // scanAssets={false} to avoid duplicate Blockaid requests (§ batch4 follow-up).
+  scanAssets?: boolean;
 }) => {
   const { t } = useTranslation();
 
@@ -100,6 +105,9 @@ export const Operations = ({
     const networkDetails = useSelector(settingsNetworkDetailsSelector);
 
     useEffect(() => {
+      if (!scanAssets) {
+        return;
+      }
       const scan = async () => {
         let sendAsset;
         let destAsset;
@@ -132,7 +140,7 @@ export const Operations = ({
       };
 
       scan();
-    }, [networkDetails, op]);
+    }, [networkDetails, op, scanAssets]);
 
     switch (op.type) {
       case "createAccount": {
@@ -719,6 +727,9 @@ export const Operations = ({
     const networkDetails = useSelector(settingsNetworkDetailsSelector);
 
     useEffect(() => {
+      if (!scanAssets) {
+        return;
+      }
       const scan = async () => {
         let sendAsset;
         let destAsset;
@@ -751,7 +762,7 @@ export const Operations = ({
       };
 
       scan();
-    }, [networkDetails, op]);
+    }, [networkDetails, op, scanAssets]);
 
     switch (op.type) {
       case "invokeHostFunction": {

@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import BigNumber from "bignumber.js";
 
 import { RequestState } from "constants/request";
@@ -10,6 +10,7 @@ import { SwapAmount } from "popup/components/swap/SwapAmount";
 import * as UseGetSwapAmountData from "popup/components/swap/SwapAmount/hooks/useGetSwapAmountData";
 import * as UseSimulateSwapData from "popup/components/swap/SwapAmount/hooks/useSimulateSwapData";
 import * as UseNetworkFees from "popup/helpers/useNetworkFees";
+import * as Blockaid from "popup/helpers/blockaid";
 
 const nativeBalance = {
   token: { type: "native", code: "XLM" },
@@ -29,7 +30,12 @@ const swapData = {
 
 const AQUA = "AQUA:GBNZILSTVQZ4R7IKQDGHYGY2QXL5QOFJYQMXPKWRRM5PAV7Y4M67AQUA";
 
-const renderWithDestination = (securityLevel?: SecurityLevel) =>
+const AQUA_ISSUER = "GBNZILSTVQZ4R7IKQDGHYGY2QXL5QOFJYQMXPKWRRM5PAV7Y4M67AQUA";
+
+const renderWithDestination = (
+  securityLevel?: SecurityLevel,
+  issuer?: string,
+) =>
   render(
     <Wrapper
       state={
@@ -48,6 +54,7 @@ const renderWithDestination = (securityLevel?: SecurityLevel) =>
                 tokenCode: "AQUA",
                 requiresTrustline: true,
                 decimals: 7,
+                issuer,
                 securityLevel,
               },
             },
@@ -102,5 +109,29 @@ describe("SwapAmount destination security badge", () => {
     expect(
       within(receiveCard).queryByTestId("ScamAssetIcon"),
     ).not.toBeInTheDocument();
+  });
+
+  it("recovers a missing destination verdict via scan-on-select and badges it", async () => {
+    // Token picked before its scan landed: securityLevel is undefined. The
+    // scan-on-select effect resolves the verdict and persists it, so the badge
+    // appears (§ batch4 follow-up — must not lose the assessment).
+    jest.spyOn(Blockaid, "isBlockaidEnabled").mockReturnValue(true);
+    const scanSpy = jest.spyOn(Blockaid, "scanAssetBulk").mockResolvedValue({
+      results: { [`AQUA-${AQUA_ISSUER}`]: { result_type: "Malicious" } },
+    } as any);
+
+    renderWithDestination(undefined, AQUA_ISSUER);
+
+    await waitFor(() => {
+      const receiveCard = screen.getByTestId("swap-receive-card");
+      expect(
+        within(receiveCard).getByTestId("ScamAssetIcon"),
+      ).toBeInTheDocument();
+    });
+    expect(scanSpy).toHaveBeenCalledWith(
+      [`AQUA-${AQUA_ISSUER}`],
+      expect.anything(),
+      expect.anything(),
+    );
   });
 });

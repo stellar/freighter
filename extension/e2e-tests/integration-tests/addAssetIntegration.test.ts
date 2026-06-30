@@ -105,12 +105,12 @@ test("Adding and removing unverified Soroban token", async ({
 
   if (await notOnLists.isVisible()) {
     // Case 1: token is not on your lists
-    await expect(notOnLists).toHaveText("Not on your lists");
+    await expect(notOnLists).toHaveText("Unverified");
     await expect(page.getByTestId("ManageAssetCode")).toHaveText("E2E");
     await expect(page.getByTestId("ManageAssetRowButton")).toHaveText("Add");
   } else if (await onLists.isVisible()) {
     // Case 2: token is already on your lists
-    await expect(onLists).toHaveText("On your lists");
+    await expect(onLists).toHaveText("Verified");
     await expect(page.getByTestId("ManageAssetCode")).toHaveText(
       truncateString(TEST_TOKEN_ADDRESS),
     );

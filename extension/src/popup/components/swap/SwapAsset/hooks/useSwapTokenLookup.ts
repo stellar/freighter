@@ -773,9 +773,12 @@ export const useSwapTokenLookup = () => {
           if (bulk?.results) {
             Object.assign(scanResults, bulk.results);
             // Populate the per-asset cache for instant warm re-entry + pick-time
-            // verdict recovery.
+            // verdict recovery. Skip entries with no result_type (transiently
+            // unscannable) so they're retried on re-entry rather than frozen.
             for (const [id, scan] of Object.entries(bulk.results)) {
-              assetScanCache.set(id, scan);
+              if (scan && "result_type" in scan && scan.result_type) {
+                assetScanCache.set(id, scan);
+              }
             }
           }
         }

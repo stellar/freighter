@@ -318,6 +318,14 @@ export const SwapAmount = ({
     }
     resolvedScanTokenRef.current = id;
 
+    // Guard the async write: if the destination changes (direction toggle, a
+    // different pick) or the screen unmounts while the scan is in flight, the
+    // cleanup cancels + aborts so a stale verdict for the OLD token is never
+    // written onto the new destination (§ batch4 follow-up — must NOT substitute
+    // a wrong assessment).
+    let cancelled = false;
+    const controller = new AbortController();
+
     const resolveVerdict = async () => {
       let scan = getCachedAssetScan(
         networkDetails.network,
@@ -325,10 +333,14 @@ export const SwapAmount = ({
         details.issuer!,
       );
       if (!scan) {
-        const bulk = await scanAssetBulk([id], networkDetails);
+        const bulk = await scanAssetBulk(
+          [id],
+          networkDetails,
+          controller.signal,
+        );
         scan = bulk?.results?.[id];
       }
-      if (!scan) {
+      if (cancelled || !scan) {
         return;
       }
       const securityLevel = getAssetSecurityLevel({
@@ -346,12 +358,18 @@ export const SwapAmount = ({
       );
     };
     resolveVerdict();
+
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     transactionData.destinationTokenDetails?.tokenCode,
     transactionData.destinationTokenDetails?.issuer,
     transactionData.destinationTokenDetails?.securityLevel,
     networkDetails.network,
+    blockaidOverrideState,
   ]);
 
   // If the user was in fiat mode and the current source asset no longer has a
