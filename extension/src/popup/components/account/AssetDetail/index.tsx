@@ -120,7 +120,8 @@ export const AssetDetail = ({
   const [optionsOpen, setOptionsOpen] = React.useState(false);
   const activeOptionsRef = useRef<HTMLDivElement>(null);
   const isNative = selectedAsset === "native";
-  const tokenPrices = cachedTokenPrices[publicKey] || null;
+  const tokenPrices =
+    cachedTokenPrices[networkDetails.networkPassphrase]?.[publicKey] || null;
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
