@@ -89,6 +89,92 @@
     flex-direction: column;
   }
 
+  // The purple "Transaction details" banner shown above the confirm buttons,
+  // opening the full operation breakdown in-flow (§ batch4 follow-up).
+  &__TxDetailsBtn {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding: pxToRem(12px) pxToRem(16px);
+    margin-top: pxToRem(12px);
+    border: 0;
+    border-radius: pxToRem(16px);
+    background-color: var(--sds-clr-gray-03);
+    color: var(--sds-clr-lilac-11);
+    font-size: pxToRem(14px);
+    cursor: pointer;
+
+    svg {
+      width: pxToRem(16px);
+      height: pxToRem(16px);
+      margin-right: pxToRem(8px);
+    }
+  }
+
+  // In-flow transaction-details view (reuses the dapp Summary/Details bodies).
+  &__TxDetails {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+
+    &__Header {
+      display: flex;
+      justify-content: space-between;
+      margin: pxToRem(12px) 0;
+
+      .DetailsMark {
+        display: flex;
+        width: pxToRem(40px);
+        height: pxToRem(40px);
+        padding: pxToRem(7px);
+        justify-content: center;
+        align-items: center;
+        border-radius: pxToRem(8px);
+        border: 1px solid var(--sds-clr-lilac-06);
+        background: var(--sds-clr-lilac-03);
+
+        svg {
+          width: pxToRem(24px);
+          height: pxToRem(24px);
+          color: var(--sds-clr-lilac-09);
+        }
+      }
+
+      .Close {
+        display: flex;
+        width: pxToRem(32px);
+        height: pxToRem(32px);
+        padding: 0;
+        justify-content: center;
+        align-items: center;
+        border: 0;
+        border-radius: 50%;
+        background: var(--sds-clr-gray-03);
+        color: var(--sds-clr-gray-09);
+        cursor: pointer;
+      }
+    }
+
+    &__Title {
+      color: var(--sds-clr-gray-12);
+      font-size: pxToRem(18px);
+      font-weight: var(--font-weight-medium);
+      margin-bottom: pxToRem(4px);
+    }
+
+    &__Summary {
+      padding: pxToRem(12px);
+      border-radius: pxToRem(16px);
+      background-color: var(--sds-clr-gray-03);
+      margin-top: pxToRem(12px);
+
+      > div:not(:first-child) {
+        margin-top: pxToRem(16px);
+        color: var(--sds-clr-gray-11);
+      }
+    }
+  }
+
   &__Details {
     padding: pxToRem(12px);
     border-radius: pxToRem(16px);

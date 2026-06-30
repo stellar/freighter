@@ -1,10 +1,40 @@
 import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
+import {
+  Account,
+  Asset,
+  BASE_FEE,
+  Operation,
+  TransactionBuilder,
+} from "stellar-sdk";
 
 import { RequestState } from "constants/request";
 import { BlockaidWarning, SecurityLevel } from "popup/constants/blockaid";
 import { Wrapper } from "popup/__testHelpers__";
 import { ReviewTx } from "popup/components/InternalTransaction/ReviewTransaction";
+
+// A real (testnet) transaction envelope XDR so ReviewTx can parse it for the
+// "Transaction details" sheet (a placeholder like "AAAA" won't parse).
+const buildTestnetXdr = () => {
+  const source = new Account(
+    "GBNZILSTVQZ4R7IKQDGHYGY2QXL5QOFJYQMXPKWRRM5PAV7Y4M67AQUA",
+    "1",
+  );
+  return new TransactionBuilder(source, {
+    fee: BASE_FEE,
+    networkPassphrase: "Test SDF Network ; September 2015",
+  })
+    .addOperation(
+      Operation.payment({
+        destination: "GBNZILSTVQZ4R7IKQDGHYGY2QXL5QOFJYQMXPKWRRM5PAV7Y4M67AQUA",
+        asset: Asset.native(),
+        amount: "1",
+      }),
+    )
+    .setTimeout(30)
+    .build()
+    .toXDR();
+};
 
 const swapProps = {
   assetIcon: null,
@@ -434,6 +464,44 @@ describe("ReviewTx Blockaid security banner (single, by priority) + badges", () 
     // Body restored.
     expect(screen.getByText("XDR")).toBeInTheDocument();
     expect(screen.queryByTestId("review-tx-fees-pane")).not.toBeInTheDocument();
+  });
+
+  it("shows the 'Transaction details' banner and opens the breakdown in-flow", () => {
+    const xdr = buildTestnetXdr();
+    render(
+      <Wrapper state={{}} routes={["/"]}>
+        <ReviewTx
+          {...swapProps}
+          simulationState={
+            {
+              state: RequestState.SUCCESS,
+              data: {
+                transactionXdr: xdr,
+                dstAmountPriceUsd: "0",
+                scanResult: null,
+              },
+              error: null,
+            } as any
+          }
+        />
+      </Wrapper>,
+    );
+    // Banner is present on the review body.
+    const banner = screen.getByTestId("review-tx-details-btn");
+    expect(banner).toHaveTextContent("Transaction details");
+
+    fireEvent.click(banner);
+    // The in-flow details pane replaces the body; the review body (its own
+    // "Transaction details" CTA) is gone and the action buttons are hidden.
+    expect(screen.getByTestId("review-tx-details-pane")).toBeInTheDocument();
+    expect(
+      screen.queryByTestId("review-tx-details-btn"),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByTestId("SubmitAction")).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId("review-tx-details-close-btn"));
+    // Body restored.
+    expect(screen.getByTestId("review-tx-details-btn")).toBeInTheDocument();
   });
 
   it("opens the in-flow sheet and confirms from a flagged Send transaction (no swap token)", () => {

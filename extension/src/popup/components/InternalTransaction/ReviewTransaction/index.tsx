@@ -2,9 +2,20 @@ import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { Icon, Notification } from "@stellar/design-system";
+import {
+  Operation,
+  OperationRecord,
+  Transaction,
+  TransactionBuilder,
+} from "stellar-sdk";
 
 import { NetworkDetails } from "@shared/constants/stellar";
 import { BlockAidScanTxResult } from "@shared/api/types";
+import { OPERATION_TYPES } from "constants/transaction";
+import { decodeMemo } from "popup/helpers/parseTransaction";
+import { Summary } from "popup/views/SignTransaction/Preview/Summary";
+import { Details } from "popup/views/SignTransaction/Preview/Details";
+import { AuthEntries } from "popup/components/AuthEntry";
 import { RequestState, State } from "constants/request";
 import {
   ShowOverlayStatus,
@@ -16,7 +27,10 @@ import {
   truncatedFedAddress,
   truncatedPublicKey,
 } from "helpers/stellar";
-import { getContractIdFromTransactionData } from "popup/helpers/soroban";
+import {
+  getContractIdFromTransactionData,
+  getAuthEntryBoundAddress,
+} from "popup/helpers/soroban";
 import {
   checkIsMuxedSupported,
   getMemoDisabledState,
@@ -174,6 +188,29 @@ export const ReviewTx = ({
   const transactionXdr = simulationState.data?.transactionXdr;
   const { isMemoMissing: isRequiredMemoMissing, isValidatingMemo } =
     useValidateTransactionMemo(transactionXdr);
+
+  // Parse the XDR into a Transaction so the "Transaction details" sheet can show
+  // the full per-operation breakdown (reusing the dapp-signing Summary/Details
+  // components, which take plain props) — § batch4 follow-up. Mirrors how
+  // SignTransaction builds its details view.
+  const detailTx = React.useMemo(() => {
+    if (!transactionXdr) {
+      return null;
+    }
+    try {
+      return TransactionBuilder.fromXDR(
+        transactionXdr,
+        networkDetails.networkPassphrase,
+      ) as Transaction;
+    } catch (e) {
+      return null;
+    }
+  }, [transactionXdr, networkDetails.networkPassphrase]);
+  const detailDecodedMemo = detailTx ? decodeMemo(detailTx.memo) : undefined;
+  const detailHasAuthEntries = !!detailTx?.operations.some(
+    (op) => op.type === "invokeHostFunction" && op.auth && op.auth.length,
+  );
+  const [isOnDetailsPane, setIsOnDetailsPane] = useState(false);
 
   // Disable button while validating or if memo is missing
   const isSubmitDisabled = isRequiredMemoMissing || isValidatingMemo;
@@ -552,6 +589,17 @@ export const ReviewTx = ({
           </div>
         </div>
       </div>
+      {detailTx && (
+        <button
+          type="button"
+          className="ReviewTx__TxDetailsBtn"
+          data-testid="review-tx-details-btn"
+          onClick={() => setIsOnDetailsPane(true)}
+        >
+          <Icon.List />
+          <span>{t("Transaction details")}</span>
+        </button>
+      )}
     </>
   );
   // The token banner always opens the sheet (even for an unable-to-scan token
@@ -619,6 +667,62 @@ export const ReviewTx = ({
     />
   );
 
+  // The full transaction breakdown (operations, fees, sequence, memo, XDR),
+  // reusing the dapp-signing Summary/Details/AuthEntries components. Internal
+  // txns have no flaggedKeys, so an empty object is passed (the warnings just
+  // no-op) and memo is never required here (§ batch4 follow-up).
+  const detailsPane = detailTx ? (
+    <div className="ReviewTx__TxDetails" data-testid="review-tx-details-pane">
+      <div className="ReviewTx__TxDetails__Header">
+        <div className="DetailsMark">
+          <Icon.List />
+        </div>
+        <button
+          type="button"
+          className="Close"
+          data-testid="review-tx-details-close-btn"
+          aria-label={t("Close")}
+          onClick={() => setIsOnDetailsPane(false)}
+        >
+          <Icon.X />
+        </button>
+      </div>
+      <div className="ReviewTx__TxDetails__Title">
+        <span>{t("Transaction details")}</span>
+      </div>
+      <div className="ReviewTx__TxDetails__Summary">
+        <Summary
+          sequenceNumber={detailTx.sequence}
+          fee={detailTx.fee}
+          memo={detailDecodedMemo}
+          xdr={transactionXdr!}
+          operationNames={detailTx.operations.map(
+            (op) =>
+              OPERATION_TYPES[op.type as keyof typeof OPERATION_TYPES] ||
+              op.type,
+          )}
+        />
+      </div>
+      {detailHasAuthEntries && (
+        <AuthEntries
+          entries={
+            (detailTx.operations[0] as Operation.InvokeHostFunction).auth?.map(
+              (authEntry) => ({
+                invocation: authEntry.rootInvocation(),
+                boundAddress: getAuthEntryBoundAddress(authEntry),
+              }),
+            ) || []
+          }
+        />
+      )}
+      <Details
+        operations={detailTx.operations as unknown as OperationRecord[]}
+        flaggedKeys={{}}
+        isMemoRequired={false}
+      />
+    </div>
+  ) : null;
+
   return (
     <View.Content hasNoTopPadding>
       {hwStatus === ShowOverlayStatus.IN_PROGRESS && hardwareWalletType ? (
@@ -645,28 +749,33 @@ export const ReviewTx = ({
             feesPane
           ) : isOnMemoPane ? (
             memoPane
+          ) : isOnDetailsPane ? (
+            detailsPane
           ) : (
             reviewPane
           )}
-          {!isOnFeesPane && !isOnMemoPane && !isOnTrustlinePane && (
-            <div className="ReviewTx__Actions">
-              <ActionButtons
-                isOnBlockaidPane={isOnBlockaidSheet}
-                isMalicious={isMalicious}
-                isRequiredMemoMissing={isRequiredMemoMissing}
-                isValidatingMemo={isValidatingMemo}
-                onAddMemo={onAddMemo}
-                shouldShowTxWarning={shouldShowTxWarning}
-                onCancel={onCancel}
-                onConfirmTx={onConfirmTx}
-                isSubmitDisabled={isSubmitDisabled}
-                dstAsset={dstAsset}
-                dest={dest}
-                asset={asset}
-                truncatedDest={truncatedDest}
-              />
-            </div>
-          )}
+          {!isOnFeesPane &&
+            !isOnMemoPane &&
+            !isOnDetailsPane &&
+            !isOnTrustlinePane && (
+              <div className="ReviewTx__Actions">
+                <ActionButtons
+                  isOnBlockaidPane={isOnBlockaidSheet}
+                  isMalicious={isMalicious}
+                  isRequiredMemoMissing={isRequiredMemoMissing}
+                  isValidatingMemo={isValidatingMemo}
+                  onAddMemo={onAddMemo}
+                  shouldShowTxWarning={shouldShowTxWarning}
+                  onCancel={onCancel}
+                  onConfirmTx={onConfirmTx}
+                  isSubmitDisabled={isSubmitDisabled}
+                  dstAsset={dstAsset}
+                  dest={dest}
+                  asset={asset}
+                  truncatedDest={truncatedDest}
+                />
+              </div>
+            )}
         </div>
       )}
     </View.Content>
