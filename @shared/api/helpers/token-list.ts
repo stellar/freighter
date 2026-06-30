@@ -99,6 +99,10 @@ export const schemaValidatedAssetList = async (
   // whole list as before.
   const finalPass = validate(candidate, schema);
   if (finalPass.errors.length) {
+    console.warn(
+      `Rejecting asset list from provider "${assetListJson.provider || "Unknown Provider"}": failed SEP-0042 schema validation`,
+      finalPass.errors,
+    );
     return { assets: [] as AssetListReponseItem[], errors: finalPass.errors };
   }
 
