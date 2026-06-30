@@ -54,6 +54,10 @@ interface ChangeTrustInternalProps {
   addTrustline: boolean;
   onCancel: () => void;
   onSuccess?: () => void;
+  // Fired once when the trustline transaction succeeds (before any button).
+  // The external Add Token flow resolves the dApp request here so the response
+  // tracks the actual transaction rather than the Done button.
+  onTransactionSuccess?: () => void;
   // Dismiss after a FAILED submit. Defaults to onCancel; the external Add Token
   // flow passes a handler that rejects the dApp request so it doesn't hang.
   onClose?: () => void;
@@ -74,6 +78,7 @@ export const ChangeTrustInternal = ({
   networkDetails,
   onCancel,
   onSuccess,
+  onTransactionSuccess,
   onClose,
   initialFee,
   isFullHeight = false,
@@ -543,6 +548,7 @@ export const ChangeTrustInternal = ({
             fee={fee}
             goBack={() => setActiveBodyContent(ActiveBodyContent.details)}
             onSuccess={onSuccess ?? onCancel}
+            onTransactionSuccess={onTransactionSuccess}
             onClose={onClose ?? onCancel}
             hideCloseTabHint={isFullHeight}
           />

@@ -20,10 +20,13 @@ type Params = {
 type Response = {
   isConfirming: boolean;
   isPasswordRequired: boolean;
+  isTokenAdded: boolean;
+  submitError: string;
+  clearSubmitError: () => void;
   setIsPasswordRequired: (value: boolean) => void;
   verifyPasswordThenAddToken: (password: string) => Promise<void>;
   handleApprove: () => Promise<void>;
-  addTokenAndClose: () => Promise<void>;
+  addTokenAndClose: () => Promise<boolean>;
   rejectAndClose: () => void;
 };
 
@@ -34,6 +37,8 @@ export const useSetupAddTokenFlow = ({
 }: Params): Response => {
   const [isConfirming, setIsConfirming] = useState(false);
   const [isPasswordRequired, setIsPasswordRequired] = useState(false);
+  const [isTokenAdded, setIsTokenAdded] = useState(false);
+  const [submitError, setSubmitError] = useState("");
 
   const dispatch: AppDispatch = useDispatch();
   const hasPrivateKey = useSelector(hasPrivateKeySelector);
@@ -44,15 +49,53 @@ export const useSetupAddTokenFlow = ({
     window.close();
   };
 
+  const getThunkErrorMessage = (action: unknown): string | null => {
+    if (!action || typeof action !== "object") {
+      return null;
+    }
+
+    const typedAction = action as {
+      type?: string;
+      error?: { message?: string };
+      payload?: { error?: string; message?: string };
+    };
+
+    const isRejected = (typedAction.type || "").endsWith("/rejected");
+    if (!isRejected) {
+      return null;
+    }
+
+    return (
+      typedAction.error?.message ||
+      typedAction.payload?.error ||
+      typedAction.payload?.message ||
+      "Failed to add token. Please retry or cancel."
+    );
+  };
+
   const addTokenAndClose = async () => {
+    setIsTokenAdded(false);
+    setSubmitError("");
     try {
-      await dispatch(addTokenFn({ uuid }));
+      const addTokenResp = await dispatch(addTokenFn({ uuid }));
+      const rejectedMessage = getThunkErrorMessage(addTokenResp);
+
+      if (rejectedMessage) {
+        await emitMetric(METRIC_NAMES.tokenFailedApi);
+        setSubmitError(rejectedMessage);
+        return false;
+      }
+
       await emitMetric(METRIC_NAMES.tokenAddedApi);
+      setIsTokenAdded(true);
     } catch (e) {
       console.error(e);
       await emitMetric(METRIC_NAMES.tokenFailedApi);
+      setSubmitError("Failed to add token. Please retry or cancel.");
+      return false;
     }
-    window.close();
+
+    return true;
   };
 
   const handleApprove = async () => {
@@ -78,6 +121,9 @@ export const useSetupAddTokenFlow = ({
   return {
     isConfirming,
     isPasswordRequired,
+    isTokenAdded,
+    submitError,
+    clearSubmitError: () => setSubmitError(""),
     setIsPasswordRequired,
     verifyPasswordThenAddToken,
     handleApprove,

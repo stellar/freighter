@@ -80,6 +80,7 @@ export const useTokenLookup = ({
           setAssetRows([
             {
               code: nativeContractDetails.code,
+              contract: contractId,
               issuer: contractId,
               domain: nativeContractDetails.domain,
             },

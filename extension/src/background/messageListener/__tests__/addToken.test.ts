@@ -274,7 +274,7 @@ describe("addToken handler", () => {
       uuid: "uuid-1",
     };
 
-    await addToken({
+    const result = await addToken({
       request,
       localStore: mockLocalStore,
       sessionStore: mockSessionStore,
@@ -283,5 +283,8 @@ describe("addToken handler", () => {
     });
 
     expect(mockResponseFn).toHaveBeenCalledWith(false);
+    expect(result).toEqual({
+      error: "Failed to subscribe to token details",
+    });
   });
 });

@@ -23,6 +23,7 @@ import { Wrapper, TEST_PUBLIC_KEY } from "popup/__testHelpers__";
 import { TESTNET_NETWORK_DETAILS } from "@shared/constants/stellar";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import * as UrlHelpers from "helpers/urls";
+import { getAccountBalances } from "@shared/api/internal";
 
 const SAC_ISSUER = "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5";
 const SEP41_CONTRACT =
@@ -38,6 +39,20 @@ const SEP41_CONTRACT =
 const mockTokenLookupConfig = {
   issuer: SAC_ISSUER,
   noResults: false,
+};
+
+const mockAppDataConfig = {
+  tokenIdList: [] as unknown,
+};
+
+const mockTokenIdsConfig = {
+  tokenIds: [] as string[],
+};
+
+const mockAccountBalancesConfig = {
+  balances: [] as Array<{
+    token?: { code?: string; issuer?: { key?: string } };
+  }>,
 };
 
 // ---------------------------------------------------------------------------
@@ -65,7 +80,7 @@ jest.mock("helpers/hooks/useGetAppData", () => ({
             },
           ],
           bipPath: "m/44'/148'/0'",
-          tokenIdList: [],
+          tokenIdList: mockAppDataConfig.tokenIdList,
         },
         settings: {
           networkDetails: {
@@ -103,6 +118,11 @@ jest.mock(
   () => ({
     ChangeTrustInternal: (props: any) => (
       <div data-testid="ChangeTrustInternal-mock">
+        {/* Fires when the trustline tx succeeds — resolves the dApp request. */}
+        <button type="button" onClick={props.onTransactionSuccess}>
+          mock-transaction-success
+        </button>
+        {/* The Done button — only closes the popup. */}
         <button type="button" onClick={props.onSuccess}>
           mock-success
         </button>
@@ -189,6 +209,16 @@ jest.mock("popup/helpers/blockaid", () => ({
 
 jest.mock("@shared/api/internal", () => ({
   getBlockaidOverrideState: jest.fn().mockResolvedValue(null),
+  getTokenIds: jest
+    .fn()
+    .mockImplementation(() => Promise.resolve(mockTokenIdsConfig.tokenIds)),
+  getAccountBalances: jest.fn().mockImplementation(() =>
+    Promise.resolve({
+      balances: mockAccountBalancesConfig.balances,
+      isFunded: true,
+      subentryCount: 0,
+    }),
+  ),
 }));
 
 jest.mock("popup/helpers/useIsDomainListedAllowed", () => ({
@@ -230,6 +260,9 @@ jest.mock("popup/helpers/useSetupAddTokenFlow", () => ({
   useSetupAddTokenFlow: () => ({
     isConfirming: false,
     isPasswordRequired: false,
+    isTokenAdded: false,
+    submitError: "",
+    clearSubmitError: jest.fn(),
     setIsPasswordRequired: jest.fn(),
     verifyPasswordThenAddToken: jest.fn(),
     handleApprove: jest.fn(),
@@ -276,6 +309,9 @@ describe("AddToken SAC / SEP-41 routing", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockTokenLookupConfig.noResults = false;
+    mockAppDataConfig.tokenIdList = [];
+    mockTokenIdsConfig.tokenIds = [];
+    mockAccountBalancesConfig.balances = [];
     // Bypass base64 URL parsing — inject params directly so atob() doesn't crash
     jest.spyOn(UrlHelpers, "parsedSearchParam").mockReturnValue({
       contractId: SEP41_CONTRACT,
@@ -296,6 +332,7 @@ describe("AddToken SAC / SEP-41 routing", () => {
     renderAt();
 
     const confirm = await screen.findByTestId("add-token-approve");
+    await waitFor(() => expect(confirm).toBeEnabled());
     fireEvent.click(confirm);
 
     await waitFor(() =>
@@ -333,22 +370,43 @@ describe("AddToken SAC / SEP-41 routing", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("SAC: a successful review resolves the dApp request via addTokenAndClose", async () => {
-    // The add-token-and-close internals (addToken dispatch, success/failure
-    // metrics, window.close) are covered in useSetupAddTokenFlow.test.ts. Here
-    // we only assert the SAC review's onSuccess is wired to that handler.
+  it("SAC: the trustline transaction (not the Done button) resolves the dApp request", async () => {
+    // The dApp request resolves off the actual transaction via
+    // onTransactionSuccess, not the Done button — so a successful trustline can
+    // never report "user rejected". The addTokenAndClose internals (addToken
+    // dispatch, metrics) are covered in useSetupAddTokenFlow.test.ts.
     mockTokenLookupConfig.issuer = SAC_ISSUER;
     renderAt();
 
     const confirm = await screen.findByTestId("add-token-approve");
     fireEvent.click(confirm);
 
-    const successBtn = await screen.findByText("mock-success");
+    const txSuccessBtn = await screen.findByText("mock-transaction-success");
     await act(async () => {
-      fireEvent.click(successBtn);
+      fireEvent.click(txSuccessBtn);
     });
 
     await waitFor(() => expect(mockAddTokenAndClose).toHaveBeenCalled());
+  });
+
+  it("SAC: the Done button only closes the popup (does not re-resolve)", async () => {
+    mockTokenLookupConfig.issuer = SAC_ISSUER;
+    const closeSpy = jest
+      .spyOn(window, "close")
+      .mockImplementation(() => undefined);
+    renderAt();
+
+    const confirm = await screen.findByTestId("add-token-approve");
+    fireEvent.click(confirm);
+
+    const doneBtn = await screen.findByText("mock-success");
+    await act(async () => {
+      fireEvent.click(doneBtn);
+    });
+
+    expect(closeSpy).toHaveBeenCalled();
+    expect(mockAddTokenAndClose).not.toHaveBeenCalled();
+    closeSpy.mockRestore();
   });
 
   it("SEP-41: Confirm does not open the Change Trust review", async () => {
@@ -378,5 +436,85 @@ describe("AddToken SAC / SEP-41 routing", () => {
         ),
       ).toBeInTheDocument();
     });
+  });
+
+  it("disables confirm when token already has a trustline", async () => {
+    mockTokenLookupConfig.issuer = SEP41_CONTRACT;
+    mockTokenIdsConfig.tokenIds = [SEP41_CONTRACT];
+    renderAt();
+
+    const confirm = await screen.findByTestId("add-token-approve");
+    expect(confirm).toBeDisabled();
+
+    expect(
+      screen.getByText("This token already has a trustline added."),
+    ).toBeInTheDocument();
+  });
+
+  it("handles nested tokenIdList objects and still blocks duplicate trustline", async () => {
+    mockTokenLookupConfig.issuer = SEP41_CONTRACT;
+    mockAppDataConfig.tokenIdList = {
+      TESTNET: [SEP41_CONTRACT],
+    };
+    mockTokenIdsConfig.tokenIds = [SEP41_CONTRACT];
+    renderAt();
+
+    const confirm = await screen.findByTestId("add-token-approve");
+    expect(confirm).toBeDisabled();
+    expect(
+      screen.getByText("This token already has a trustline added."),
+    ).toBeInTheDocument();
+  });
+
+  it("blocks duplicate trustline when tokenIdList is nested by network and account", async () => {
+    mockTokenLookupConfig.issuer = SEP41_CONTRACT;
+    mockAppDataConfig.tokenIdList = {
+      TESTNET: {
+        keyA: [SEP41_CONTRACT],
+      },
+    };
+    mockTokenIdsConfig.tokenIds = [SEP41_CONTRACT];
+    renderAt();
+
+    const confirm = await screen.findByTestId("add-token-approve");
+    expect(confirm).toBeDisabled();
+    expect(
+      screen.getByText("This token already has a trustline added."),
+    ).toBeInTheDocument();
+  });
+
+  it("SAC does not block based only on tokenIdList when no classic trustline exists", async () => {
+    mockTokenLookupConfig.issuer = SAC_ISSUER;
+    mockTokenIdsConfig.tokenIds = [SEP41_CONTRACT];
+    mockAccountBalancesConfig.balances = [];
+    renderAt();
+
+    const confirm = await screen.findByTestId("add-token-approve");
+    await waitFor(() => expect(confirm).toBeEnabled());
+    expect(
+      screen.queryByText("This token already has a trustline added."),
+    ).not.toBeInTheDocument();
+  });
+
+  it("keeps confirm disabled while SAC trustline check is loading", async () => {
+    mockTokenLookupConfig.issuer = SAC_ISSUER;
+
+    // Never-resolving balances so the SAC trustline check stays in-flight.
+    // Persistent (not Once): the classic-trustline effect can run more than
+    // once (dep settling), and a one-time mock would let a later call hit the
+    // default resolved mock and end the loading state early. The enable-after-
+    // resolve case is covered by the "does not block ... when no classic
+    // trustline exists" test.
+    (getAccountBalances as jest.Mock).mockImplementation(
+      () => new Promise(() => {}),
+    );
+
+    renderAt();
+
+    await screen.findByTestId("add-token-approve");
+
+    await waitFor(() =>
+      expect(screen.getByTestId("add-token-approve")).toBeDisabled(),
+    );
   });
 });

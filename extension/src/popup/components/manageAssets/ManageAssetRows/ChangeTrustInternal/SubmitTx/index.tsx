@@ -51,6 +51,11 @@ interface SubmitTransactionProps {
   goBack: () => void;
   onSuccess: () => void;
   onClose: () => void;
+  // Fired once when the trustline transaction itself succeeds — before any
+  // button press. The external Add Token flow uses this to resolve the dApp
+  // request (and store the token) based on the actual transaction, not on the
+  // Done button. "Done"/"View transaction" then only close / open the explorer.
+  onTransactionSuccess?: () => void;
   // Hide the "close this tab" hint shown during submit: it nudges users to
   // close and leave the dApp's addToken promise hanging. The transaction itself
   // still succeeds even if they close.
@@ -65,6 +70,7 @@ export const SubmitTransaction = ({
   goBack,
   onSuccess,
   onClose,
+  onTransactionSuccess,
   hideCloseTabHint = false,
 }: SubmitTransactionProps) => {
   const { t } = useTranslation();
@@ -165,10 +171,14 @@ export const SubmitTransaction = ({
       networkDetails,
     });
 
-  // Re-emit the add/remove-asset analytics the deleted useChangeTrustline used
-  // to fire — once, on a successful trustline submit.
+  // Once, when the transaction succeeds: re-emit the add/remove-asset analytics
+  // the deleted useChangeTrustline used to fire, and notify the caller so the
+  // dApp request resolves off the actual transaction (not the Done button).
   useEffect(() => {
-    if (isSuccess && isTrustlineSubmit) {
+    if (!isSuccess) {
+      return;
+    }
+    if (isTrustlineSubmit) {
       emitMetric(
         addTrustline
           ? METRIC_NAMES.manageAssetAddAsset
@@ -176,6 +186,7 @@ export const SubmitTransaction = ({
         { code: asset.code, issuer: asset.issuer },
       );
     }
+    onTransactionSuccess?.();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSuccess]);
 
