@@ -1,6 +1,13 @@
 import React from "react";
 import { render, waitFor, screen } from "@testing-library/react";
-import { Address, Operation, xdr, StrKey, ScInt } from "stellar-sdk";
+import {
+  Address,
+  Operation,
+  OperationRecord,
+  xdr,
+  StrKey,
+  ScInt,
+} from "stellar-sdk";
 
 import { mockAccounts, TEST_PUBLIC_KEY, Wrapper } from "popup/__testHelpers__";
 import { Operations } from "../signTransaction/Operations";
@@ -251,7 +258,7 @@ describe("Operations", () => {
   });
 
   describe("Payment and Swap details (mobile parity)", () => {
-    const renderOp = (op: Operation) =>
+    const renderOp = (op: OperationRecord) =>
       render(
         <Wrapper
           routes={[ROUTES.signTransaction]}
@@ -290,7 +297,7 @@ describe("Operations", () => {
         destination: TEST_PUBLIC_KEY,
         asset: { code: "XLM" },
         amount: "100.0000000",
-      } as Operation.Payment);
+      } as unknown as OperationRecord);
       await waitFor(() => screen.getAllByTestId("OperationKeyVal"));
 
       expect(screen.queryByText("Asset Code")).toBeNull();
@@ -307,7 +314,7 @@ describe("Operations", () => {
         destAsset: { code: "PYUSD" },
         destMin: "2.2044110",
         path: [],
-      } as Operation.PathPaymentStrictSend);
+      } as unknown as OperationRecord);
       await waitFor(() => screen.getAllByTestId("OperationKeyVal"));
 
       expect(valueOf("Token Code")).toHaveTextContent("XLM");
