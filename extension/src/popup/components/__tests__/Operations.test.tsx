@@ -327,5 +327,23 @@ describe("Operations", () => {
         "2.2044110 PYUSD",
       );
     });
+
+    it("renders the swap path as numbered cards with token and issuer", async () => {
+      renderOp({
+        type: "pathPaymentStrictSend",
+        sendAsset: { code: "XLM" },
+        sendAmount: "12.3456789",
+        destination: TEST_PUBLIC_KEY,
+        destAsset: { code: "PYUSD" },
+        destMin: "2.2044110",
+        path: [{ code: "USDC", issuer: TEST_PUBLIC_KEY }],
+      } as unknown as OperationRecord);
+      await waitFor(() => screen.getAllByTestId("OperationKeyVal"));
+
+      expect(screen.getByText("Path")).toBeDefined();
+      expect(screen.getByText("#1")).toBeDefined();
+      expect(screen.getByText("USDC")).toBeDefined();
+      expect(screen.getByText("Issuer")).toBeDefined();
+    });
   });
 });
