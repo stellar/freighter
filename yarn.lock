@@ -5429,6 +5429,7 @@ __metadata:
     "@lavamoat/allow-scripts": "npm:3.3.2"
     "@stellar/js-xdr": "npm:4.0.0"
     bignumber.js: "npm:9.3.0"
+    bip39: "npm:3.1.0"
     prettier: "npm:3.8.4"
     stellar-sdk: "npm:@stellar/stellar-sdk@16.0.0-rc.1"
     stellar-sdk-next: "npm:@stellar/stellar-sdk@16.0.0-rc.1"
