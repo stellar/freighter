@@ -203,6 +203,17 @@ const cacheSlice = createSlice({
       };
     },
   },
+  extraReducers: (builder) => {
+    // The verified token lists are network-specific but stored as a flat array
+    // (not keyed by network like balanceData/popularTokens), so drop them when
+    // the network changes to force a refetch for the new network. Otherwise the
+    // swap Popular list (trending ∩ verified) — and every other verified-list
+    // consumer — keeps showing the previous network's results until the popup
+    // (and its in-memory store) is reopened.
+    builder.addCase("settings/changeNetwork/fulfilled", (state) => {
+      state.tokenLists = [];
+    });
+  },
 });
 
 export const balancesSelector = (state: { cache: InitialState }) =>
