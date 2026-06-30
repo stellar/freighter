@@ -193,8 +193,7 @@ export const Operations = ({
       }
 
       case "pathPaymentStrictReceive": {
-        const { sendAsset, sendMax, destination, destAsset, destAmount, path } =
-          op;
+        const { sendAsset, sendMax, destination, destAsset, destAmount } = op;
         return (
           <>
             <KeyValueList
@@ -222,14 +221,12 @@ export const Operations = ({
               operationKey={t("Destination Amount")}
               operationValue={destAmount}
             />
-            <PathList paths={path} />
           </>
         );
       }
 
       case "pathPaymentStrictSend": {
-        const { sendAsset, sendAmount, destination, destAsset, destMin, path } =
-          op;
+        const { sendAsset, sendAmount, destination, destAsset, destMin } = op;
         return (
           <>
             <KeyValueList
@@ -257,7 +254,6 @@ export const Operations = ({
               operationKey={t("Destination Minimum")}
               operationValue={`${destMin} ${destAsset.code}`}
             />
-            <PathList paths={path} />
           </>
         );
       }
@@ -874,6 +870,10 @@ export const Operations = ({
               )}
               <RenderOpByType op={op} />
             </div>
+            {(op.type === "pathPaymentStrictSend" ||
+              op.type === "pathPaymentStrictReceive") && (
+              <PathList paths={op.path} />
+            )}
             {type === "invokeHostFunction" && (
               <>
                 <div className="Operations--header">
