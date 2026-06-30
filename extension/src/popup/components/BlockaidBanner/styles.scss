@@ -11,9 +11,16 @@
   border-radius: pxToRem(16px);
   cursor: pointer;
 
+  // Icon size, font and spacing intentionally match the trustline banner
+  // (.ReviewTx__TrustlineBanner) so stacked banners read as a consistent set.
   &__info {
     display: flex;
     align-items: center;
+    gap: pxToRem(8px);
+  }
+
+  &__icon {
+    display: flex;
   }
 
   &__action {
@@ -22,31 +29,26 @@
     align-items: center;
   }
 
-  &__icon {
-    height: pxToRem(16px);
-    margin-right: pxToRem(5px);
+  &__message {
+    font-size: pxToRem(12px);
+    font-weight: var(--font-weight-medium);
+    line-height: pxToRem(18px);
+    text-align: left;
   }
 
-  &__message {
-    font-size: pxToRem(14px);
-    line-height: 1rem;
+  svg {
+    width: pxToRem(14px);
+    height: pxToRem(14px);
+    flex-shrink: 0;
   }
 
   &--malicious {
     background-color: var(--sds-clr-red-03);
     color: var(--sds-clr-red-11);
-
-    .BlockaidBanner__icon svg {
-      color: var(--sds-clr-red-11);
-    }
   }
 
   &--caution {
     background-color: var(--sds-clr-amber-03);
     color: var(--sds-clr-amber-11);
-
-    .BlockaidBanner__icon svg {
-      color: var(--sds-clr-amber-11);
-    }
   }
 }
