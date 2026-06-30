@@ -6,6 +6,11 @@ import {
 } from "@shared/constants/stellar";
 import * as GetLedgerKeyAccounts from "../helpers/getLedgerKeyAccounts";
 import * as internalApi from "../internal";
+import { sendMessageToBackground } from "@shared/api/helpers/extensionMessaging";
+import { SERVICE_TYPES } from "@shared/constants/services";
+
+jest.mock("@shared/api/helpers/extensionMessaging");
+const mockedSend = sendMessageToBackground as jest.Mock;
 
 describe("internalApi", () => {
   afterEach(() => {
@@ -303,6 +308,43 @@ describe("internalApi", () => {
       const requestInit = fetchSpy.mock.calls[0][1] as RequestInit;
       const body = JSON.parse(requestInit.body as string);
       expect(body.tokens).toEqual([]);
+    });
+  });
+
+  describe("getDiscoverData", () => {
+    it("fetches /protocols via the FETCH_BACKEND_V2 message", async () => {
+      mockedSend.mockResolvedValue({
+        status: 200,
+        body: {
+          data: {
+            protocols: [
+              {
+                description: "d",
+                icon_url: "i",
+                name: "n",
+                website_url: "w",
+                tags: ["t"],
+                is_blacklisted: false,
+                is_trending: true,
+              },
+            ],
+          },
+        },
+      });
+
+      const result = await internalApi.getDiscoverData();
+
+      expect(mockedSend).toHaveBeenCalledWith({
+        type: SERVICE_TYPES.FETCH_BACKEND_V2,
+        activePublicKey: null,
+        method: "GET",
+        path: "/protocols",
+      });
+      expect(result[0]).toMatchObject({
+        name: "n",
+        iconUrl: "i",
+        isTrending: true,
+      });
     });
   });
 });

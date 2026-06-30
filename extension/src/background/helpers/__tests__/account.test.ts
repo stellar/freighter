@@ -2,6 +2,9 @@ import { getIsRpcHealthy } from "../account";
 import { NETWORK_ID } from "constants/localStorageTypes";
 import { DEFAULT_NETWORKS } from "@shared/constants/stellar";
 import type { DataStorageAccess } from "background/helpers/dataStorageAccess";
+import { callBackendV2 } from "background/helpers/callBackendV2";
+
+jest.mock("background/helpers/callBackendV2");
 
 jest.mock("@shared/helpers/stellar", () => {
   const actual = jest.requireActual("@shared/helpers/stellar");
@@ -16,7 +19,7 @@ jest.mock("@sentry/browser", () => ({
 }));
 
 describe("getIsRpcHealthy", () => {
-  const mockFetch = jest.fn();
+  const mockedCallBackendV2 = callBackendV2 as jest.Mock;
   const mockIsCustomNetwork = jest.requireMock("@shared/helpers/stellar")
     .isCustomNetwork as jest.Mock;
   const mockCaptureException = jest.requireMock("@sentry/browser")
@@ -29,9 +32,10 @@ describe("getIsRpcHealthy", () => {
     clear: jest.fn(),
   } as unknown as DataStorageAccess;
 
+  const sessionStore = {} as any;
+
   beforeEach(() => {
     jest.resetAllMocks();
-    (global as any).fetch = mockFetch;
     (localStore.getItem as jest.Mock).mockImplementation(async (key) => {
       if (key === NETWORK_ID) {
         return {
@@ -44,39 +48,62 @@ describe("getIsRpcHealthy", () => {
     });
   });
 
-  it("returns true without calling fetch for custom networks", async () => {
+  it("returns true without calling callBackendV2 for custom networks", async () => {
     mockIsCustomNetwork.mockReturnValue(true);
 
-    const result = await getIsRpcHealthy(localStore);
+    const result = await getIsRpcHealthy({ localStore, sessionStore });
 
     expect(result).toBe(true);
-    expect(mockFetch).not.toHaveBeenCalled();
+    expect(mockedCallBackendV2).not.toHaveBeenCalled();
   });
 
-  it("returns true when rpc health is healthy", async () => {
+  it("routes rpc-health through callBackendV2 and returns true when healthy", async () => {
     mockIsCustomNetwork.mockReturnValue(false);
-    mockFetch.mockResolvedValue({
-      ok: true,
-      json: async () => ({ status: "healthy" }),
+    mockedCallBackendV2.mockResolvedValue({
+      status: 200,
+      body: { status: "healthy" },
     });
 
-    const result = await getIsRpcHealthy(localStore);
+    const result = await getIsRpcHealthy({ localStore, sessionStore });
 
-    expect(mockFetch).toHaveBeenCalledWith(
-      "http://localhost:3003/api/v1/rpc-health?network=testnet",
+    expect(mockedCallBackendV2).toHaveBeenCalledWith(
+      expect.objectContaining({
+        method: "GET",
+        path: expect.stringContaining("/rpc-health?network="),
+        sessionStore,
+        localStore,
+      }),
     );
     expect(result).toBe(true);
     expect(mockCaptureException).not.toHaveBeenCalled();
   });
 
-  it("returns false and captures when rpc health is unhealthy", async () => {
+  it("returns false and captures when callBackendV2 returns non-200", async () => {
     mockIsCustomNetwork.mockReturnValue(false);
-    mockFetch.mockResolvedValue({
-      ok: true,
-      json: async () => ({ status: "unhealthy" }),
+    mockedCallBackendV2.mockResolvedValue({
+      status: 503,
+      body: null,
     });
 
-    const result = await getIsRpcHealthy(localStore);
+    const result = await getIsRpcHealthy({ localStore, sessionStore });
+
+    expect(result).toBe(false);
+    expect(mockCaptureException).toHaveBeenCalledWith(
+      "Failed to load rpc health for Soroban",
+    );
+    expect(mockCaptureException).toHaveBeenCalledWith(
+      "Soroban RPC is not healthy - unhealthy",
+    );
+  });
+
+  it("returns false and captures when rpc health body indicates unhealthy", async () => {
+    mockIsCustomNetwork.mockReturnValue(false);
+    mockedCallBackendV2.mockResolvedValue({
+      status: 200,
+      body: { status: "unhealthy" },
+    });
+
+    const result = await getIsRpcHealthy({ localStore, sessionStore });
 
     expect(result).toBe(false);
     expect(mockCaptureException).toHaveBeenCalledWith(

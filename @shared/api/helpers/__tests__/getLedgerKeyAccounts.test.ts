@@ -1,92 +1,38 @@
-import { TESTNET_NETWORK_DETAILS } from "@shared/constants/stellar";
 import { getLedgerKeyAccounts } from "../getLedgerKeyAccounts";
+import { sendMessageToBackground } from "../extensionMessaging";
+import { SERVICE_TYPES } from "@shared/constants/services";
 
-describe("getDomainFromIssuer", () => {
-  it("should return a list of domains from a list of issuers", async () => {
-    const fetchSpy = jest.spyOn(global, "fetch").mockImplementation(() =>
-      Promise.resolve({
-        ok: true,
-        json: () =>
-          Promise.resolve({
-            data: {
-              ledger_key_accounts: {
-                G1: { account_id: "G1", home_domain: "stellar1.org" },
-                g2: { account_id: "g2", home_domain: "stellar2.org" },
-              },
-            },
-          }),
-      } as any),
-    );
-    const ledgerKeyAccounts = await getLedgerKeyAccounts({
-      accountList: ["G1", "g2"],
-      networkDetails: TESTNET_NETWORK_DETAILS,
-    });
+jest.mock("../extensionMessaging");
+const mockedSend = sendMessageToBackground as jest.Mock;
 
-    expect(fetchSpy).toHaveBeenCalledWith(
-      new URL(
-        "http://localhost:3003/api/v1/ledger-key/accounts?network=TESTNET",
-      ),
-      {
-        body: '{"public_keys":["G1","g2"]}',
-        headers: { "Content-Type": "application/json" },
-        method: "POST",
-      },
-    );
-
-    expect(ledgerKeyAccounts).toEqual({
-      G1: { account_id: "G1", home_domain: "stellar1.org" },
-      g2: { account_id: "g2", home_domain: "stellar2.org" },
-    });
-  });
-  it("should return an empty object if the fetch fails", async () => {
-    const fetchSpy = jest.spyOn(global, "fetch").mockImplementation(() =>
-      Promise.resolve({
-        ok: false,
-      } as any),
-    );
-    const ledgerKeyAccounts = await getLedgerKeyAccounts({
-      accountList: ["G1", "g2"],
-      networkDetails: TESTNET_NETWORK_DETAILS,
-    });
-
-    expect(fetchSpy).toHaveBeenCalledWith(
-      new URL(
-        "http://localhost:3003/api/v1/ledger-key/accounts?network=TESTNET",
-      ),
-      {
-        body: '{"public_keys":["G1","g2"]}',
-        headers: { "Content-Type": "application/json" },
-        method: "POST",
-      },
-    );
-
-    expect(ledgerKeyAccounts).toEqual({});
+it("posts public_keys to /ledger-key/accounts via FETCH_BACKEND_V2 (with network query)", async () => {
+  mockedSend.mockResolvedValue({
+    status: 200,
+    body: { data: { ledger_key_accounts: { G1: { home_domain: "ex.com" } } } },
   });
 
-  it("should return an empty object if the fetch returns an error", async () => {
-    const fetchSpy = jest.spyOn(global, "fetch").mockImplementation(() =>
-      Promise.resolve({
-        ok: true,
-        json: () => Promise.resolve({ error: "test" }),
-      } as any),
-    );
-
-    const ledgerKeyAccounts = await getLedgerKeyAccounts({
-      accountList: ["G1", "g2"],
-      networkDetails: TESTNET_NETWORK_DETAILS,
-    });
-
-    expect(fetchSpy).toHaveBeenCalledWith(
-      new URL(
-        "http://localhost:3003/api/v1/ledger-key/accounts?network=TESTNET",
-      ),
-      {
-        body: '{"public_keys":["G1","g2"]}',
-        headers: { "Content-Type": "application/json" },
-        method: "POST",
-      },
-    );
-
-    expect(ledgerKeyAccounts).toEqual({});
+  const result = await getLedgerKeyAccounts({
+    accountList: ["G1"],
+    networkDetails: { network: "PUBLIC" } as never,
   });
+
+  expect(mockedSend).toHaveBeenCalledWith({
+    type: SERVICE_TYPES.FETCH_BACKEND_V2,
+    activePublicKey: null,
+    method: "POST",
+    path: "/ledger-key/accounts?network=PUBLIC",
+    body: JSON.stringify({ public_keys: ["G1"] }),
+  });
+  expect(result).toEqual({ G1: { home_domain: "ex.com" } });
+});
+
+it("returns an empty object on a non-200 response", async () => {
+  mockedSend.mockResolvedValue({ status: 500, body: {} });
+
+  const result = await getLedgerKeyAccounts({
+    accountList: ["G1"],
+    networkDetails: { network: "PUBLIC" } as never,
+  });
+
+  expect(result).toEqual({});
 });
