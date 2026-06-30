@@ -540,6 +540,14 @@ export const ReviewTx = ({
             </div>
           </div>
         )}
+        {dstAsset && dest && (
+          <SwapRateRow
+            srcCode={asset.code}
+            dstCode={dest.code}
+            sendAmount={sendAmount}
+            destinationAmount={dstAsset.amount}
+          />
+        )}
         <div className="ReviewTx__Details__Row">
           <div className="ReviewTx__Details__Row__Title">
             <Icon.Route />
@@ -564,14 +572,6 @@ export const ReviewTx = ({
             {fee} XLM
           </div>
         </div>
-        {dstAsset && dest && (
-          <SwapRateRow
-            srcCode={asset.code}
-            dstCode={dest.code}
-            sendAmount={sendAmount}
-            destinationAmount={dstAsset.amount}
-          />
-        )}
         {/* The raw XDR now lives in the "Transaction details" sheet (Summary),
             so it's no longer duplicated as a row here (§ batch4 follow-up). */}
       </div>
