@@ -1,7 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import * as Popover from "@radix-ui/react-popover";
-import { Icon } from "@stellar/design-system";
+import { CopyText, Icon } from "@stellar/design-system";
 
 import { openTab } from "popup/helpers/navigate";
 
@@ -25,13 +25,6 @@ export const SwapTokenMenu = ({
 }: SwapTokenMenuProps) => {
   const { t } = useTranslation();
 
-  const copyAddress = async () => {
-    if (!issuerKey) {
-      return;
-    }
-    await navigator.clipboard.writeText(issuerKey);
-  };
-
   const viewOnExpert = () => {
     openTab(`${stellarExpertUrl}/asset/${code}-${issuerKey}`);
   };
@@ -51,14 +44,19 @@ export const SwapTokenMenu = ({
       </Popover.Trigger>
       <Popover.Portal>
         <Popover.Content className="SwapTokenMenu__content" sideOffset={4}>
-          <button
-            type="button"
-            className="SwapTokenMenu__item"
-            data-testid={`SwapTokenRow-${code}-copy`}
-            onClick={copyAddress}
+          <CopyText
+            textToCopy={issuerKey}
+            variant="headless"
+            tooltipPlacement="top"
           >
-            {t("Copy address")}
-          </button>
+            <button
+              type="button"
+              className="SwapTokenMenu__item"
+              data-testid={`SwapTokenRow-${code}-copy`}
+            >
+              {t("Copy address")}
+            </button>
+          </CopyText>
           <button
             type="button"
             className="SwapTokenMenu__item"

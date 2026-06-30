@@ -13,6 +13,13 @@
     border-radius: 0.5rem;
     padding: 0.25rem;
     z-index: 10;
+
+    // The "Copy address" item is wrapped in CopyText, which renders a .Floater
+    // div around the button. Let that wrapper stretch full-width so the item
+    // matches its sibling row.
+    .Floater {
+      width: 100%;
+    }
   }
 
   &__item {
@@ -23,5 +30,9 @@
     cursor: pointer;
     color: var(--sds-clr-gray-12);
     white-space: nowrap;
+    // Fill the flex column (and the CopyText .Floater wrapper) so every item is
+    // the same full width.
+    display: block;
+    width: 100%;
   }
 }

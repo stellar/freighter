@@ -407,7 +407,7 @@ export const SwapAmount = ({
     toast.custom(
       () => (
         <Notification
-          variant="warning"
+          variant="error"
           title={t("Quote has expired, please try again to get a new quote")}
         />
       ),
