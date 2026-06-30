@@ -42,6 +42,14 @@
       display: flex;
       flex-direction: column;
       height: 100%;
+
+      // Explicit spacing around the "Sending" card: 8px below the recipient
+      // (account) card above it, 12px above the percentage buttons below it
+      // (overrides AmountCard's own 8px/8px) (§ batch4 follow-up).
+      .AmountCard {
+        margin-top: pxToRem(8px);
+        margin-bottom: pxToRem(12px);
+      }
     }
   }
 
