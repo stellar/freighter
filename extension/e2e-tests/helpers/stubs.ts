@@ -651,6 +651,42 @@ export const stubIsSac = async (page: Page | BrowserContext) => {
   });
 };
 
+/**
+ * SAC variant of stubIsSac — returns isSacContract: true so the AddToken view
+ * routes through the ChangeTrustInternal review instead of silently resolving.
+ * Use together with stubSacTokenDetails so token-details returns a "CODE:G…"
+ * name that satisfies StrKey.isValidEd25519PublicKey(assetIssuer).
+ */
+export const stubIsSacTrue = async (page: Page | BrowserContext) => {
+  await page.route("**/is-sac-contract**", async (route) => {
+    const json = {
+      isSacContract: true,
+    };
+    await route.fulfill({ json });
+  });
+};
+
+// The G-address used across the e2e suite as the SAC issuer.
+export const SAC_ISSUER =
+  "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY";
+
+/**
+ * Stubs token-details so the SAC token's name is "E2E:<SAC_ISSUER>".
+ * useTokenLookup splits on ":" to extract the issuer, and AddToken checks
+ * StrKey.isValidEd25519PublicKey(assetIssuer) to gate the SAC review branch.
+ */
+export const stubSacTokenDetails = async (page: Page | BrowserContext) => {
+  await page.route("**/token-details/**", async (route) => {
+    await route.fulfill({
+      json: {
+        name: `E2E:${SAC_ISSUER}`,
+        decimals: 7,
+        symbol: "E2E",
+      },
+    });
+  });
+};
+
 export const stubTokenDetails = async (page: Page | BrowserContext) => {
   await page.route("**/token-details/**", async (route) => {
     const url = route.request().url();
@@ -3144,5 +3180,42 @@ export const stubMaintenanceBannerVariant = async (
     maintenance_banner: {
       payload: rawPayload,
     },
+  });
+};
+
+/**
+ * Stubs the asset-list endpoint so that the given contractId appears as a
+ * verified token. This causes getVerifiedTokens() to return a non-empty array,
+ * which sets isVerifiedToken=true in AddToken and suppresses the
+ * "Not on your lists" AssetListWarning banner.
+ *
+ * Use page.route() (popup-level) for SEP-41 tokens and context.addInitScript()
+ * for the SAC flow (where the popup is created before page.route() can fire).
+ *
+ * @param page - Playwright Page or BrowserContext to attach the route to
+ * @param contractId - The contract address that should appear as verified
+ */
+export const stubVerifiedToken = async (
+  page: Page | BrowserContext,
+  contractId: string,
+) => {
+  const verifiedAssetList = {
+    ...STELLAR_EXPERT_ASSET_LIST_JSON,
+    assets: [
+      ...STELLAR_EXPERT_ASSET_LIST_JSON.assets,
+      {
+        code: "E2E",
+        issuer: "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
+        contract: contractId,
+        name: "E2E Token",
+        org: "unknown",
+        domain: "example.com",
+        decimals: 7,
+      },
+    ],
+  };
+
+  await page.route("*/**/testnet/asset-list/**", async (route) => {
+    await route.fulfill({ json: verifiedAssetList });
   });
 };

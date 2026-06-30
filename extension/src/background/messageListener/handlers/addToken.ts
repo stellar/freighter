@@ -61,6 +61,11 @@ export const addToken = async ({
 
     if (tokenResponse && typeof tokenResponse.response === "function") {
       tokenResponse.response(!response.error);
+
+      if (response.error) {
+        return { error: response.error };
+      }
+
       return {};
     }
 

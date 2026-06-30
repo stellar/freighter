@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { StrKey } from "stellar-sdk";
 
 import { emitMetric } from "helpers/metrics";
 
@@ -12,39 +11,37 @@ import {
   hasPrivateKeySelector,
 } from "popup/ducks/accountServices";
 
-import { useChangeTrustline } from "./useChangeTrustline";
-
 type Params = {
   rejectToken: typeof rejectToken;
   addToken: typeof addToken;
-  assetCode: string;
-  assetIssuer: string;
   uuid: string;
 };
 
 type Response = {
   isConfirming: boolean;
   isPasswordRequired: boolean;
+  isTokenAdded: boolean;
+  submitError: string;
+  clearSubmitError: () => void;
   setIsPasswordRequired: (value: boolean) => void;
   verifyPasswordThenAddToken: (password: string) => Promise<void>;
   handleApprove: () => Promise<void>;
+  addTokenAndClose: () => Promise<boolean>;
   rejectAndClose: () => void;
 };
 
 export const useSetupAddTokenFlow = ({
   rejectToken: rejectTokenFn,
   addToken: addTokenFn,
-  assetCode,
-  assetIssuer,
   uuid,
 }: Params): Response => {
   const [isConfirming, setIsConfirming] = useState(false);
   const [isPasswordRequired, setIsPasswordRequired] = useState(false);
+  const [isTokenAdded, setIsTokenAdded] = useState(false);
+  const [submitError, setSubmitError] = useState("");
 
   const dispatch: AppDispatch = useDispatch();
   const hasPrivateKey = useSelector(hasPrivateKeySelector);
-
-  const { changeTrustline } = useChangeTrustline({ assetCode, assetIssuer });
 
   const rejectAndClose = () => {
     emitMetric(METRIC_NAMES.tokenRejectApi);
@@ -52,24 +49,53 @@ export const useSetupAddTokenFlow = ({
     window.close();
   };
 
-  const addTokenAndClose = async () => {
-    const addTokenDispatch = async () => {
-      await dispatch(addTokenFn({ uuid }));
+  const getThunkErrorMessage = (action: unknown): string | null => {
+    if (!action || typeof action !== "object") {
+      return null;
+    }
+
+    const typedAction = action as {
+      type?: string;
+      error?: { message?: string };
+      payload?: { error?: string; message?: string };
     };
 
+    const isRejected = (typedAction.type || "").endsWith("/rejected");
+    if (!isRejected) {
+      return null;
+    }
+
+    return (
+      typedAction.error?.message ||
+      typedAction.payload?.error ||
+      typedAction.payload?.message ||
+      "Failed to add token. Please retry or cancel."
+    );
+  };
+
+  const addTokenAndClose = async () => {
+    setIsTokenAdded(false);
+    setSubmitError("");
     try {
-      if (StrKey.isValidEd25519PublicKey(assetIssuer)) {
-        await changeTrustline(true, addTokenDispatch);
-      } else {
-        await addTokenDispatch();
+      const addTokenResp = await dispatch(addTokenFn({ uuid }));
+      const rejectedMessage = getThunkErrorMessage(addTokenResp);
+
+      if (rejectedMessage) {
+        await emitMetric(METRIC_NAMES.tokenFailedApi);
+        setSubmitError(rejectedMessage);
+        return false;
       }
+
       await emitMetric(METRIC_NAMES.tokenAddedApi);
+      setIsTokenAdded(true);
     } catch (e) {
       console.error(e);
       await emitMetric(METRIC_NAMES.tokenFailedApi);
+      setSubmitError("Failed to add token. Please retry or cancel.");
+      return false;
     }
 
-    window.close();
+    return true;
   };
 
   const handleApprove = async () => {
@@ -95,9 +121,13 @@ export const useSetupAddTokenFlow = ({
   return {
     isConfirming,
     isPasswordRequired,
+    isTokenAdded,
+    submitError,
+    clearSubmitError: () => setSubmitError(""),
     setIsPasswordRequired,
     verifyPasswordThenAddToken,
     handleApprove,
+    addTokenAndClose,
     rejectAndClose,
   };
 };

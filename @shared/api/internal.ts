@@ -1350,14 +1350,14 @@ export const addToken = async ({
   activePublicKey: string;
   uuid: string;
 }): Promise<void> => {
-  try {
-    await sendMessageToBackground({
-      activePublicKey,
-      uuid,
-      type: SERVICE_TYPES.ADD_TOKEN,
-    });
-  } catch (e) {
-    console.error(e);
+  const response = await sendMessageToBackground<{ error?: string }>({
+    activePublicKey,
+    uuid,
+    type: SERVICE_TYPES.ADD_TOKEN,
+  });
+
+  if (response?.error) {
+    throw new Error(response.error);
   }
 };
 

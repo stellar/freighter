@@ -151,4 +151,8 @@
     color: var(--sds-clr-gray-11);
     margin-top: pxToRem(12px);
   }
+
+  &__submit-error {
+    margin-top: pxToRem(12px);
+  }
 }

@@ -53,6 +53,22 @@ interface ChangeTrustInternalProps {
   publicKey: string;
   addTrustline: boolean;
   onCancel: () => void;
+  onSuccess?: () => void;
+  // Fired once when the trustline transaction succeeds (before any button).
+  // The external Add Token flow resolves the dApp request here so the response
+  // tracks the actual transaction rather than the Done button.
+  onTransactionSuccess?: () => void;
+  // Dismiss after a FAILED submit. Defaults to onCancel; the external Add Token
+  // flow passes a handler that rejects the dApp request so it doesn't hang.
+  onClose?: () => void;
+  // Initial fee (in XLM) for the transaction. The external Add Token (SAC)
+  // flow passes the network-recommended fee it already displayed so the
+  // charged fee matches the disclosed one. Defaults to the base fee.
+  initialFee?: string;
+  // When rendered as a full popup view (the external Add Token flow) rather
+  // than inside the content-sized in-app modal, fill the available height so
+  // the action buttons / submit footer pin to the bottom instead of floating.
+  isFullHeight?: boolean;
 }
 
 export const ChangeTrustInternal = ({
@@ -61,7 +77,15 @@ export const ChangeTrustInternal = ({
   publicKey,
   networkDetails,
   onCancel,
+  onSuccess,
+  onTransactionSuccess,
+  onClose,
+  initialFee,
+  isFullHeight = false,
 }: ChangeTrustInternalProps) => {
+  const rootClassName = `ChangeTrustInternal${
+    isFullHeight ? " ChangeTrustInternal--standalone" : ""
+  }`;
   const activeOptionsRef = useRef<HTMLDivElement>(null);
   const [activePaneIndex, setActivePaneIndex] = useState(0);
   const [activeBodyContent, setActiveBodyContent] = useState(
@@ -74,7 +98,7 @@ export const ChangeTrustInternal = ({
   const { recommendedFee } = useNetworkFees();
 
   const baseFeeStroops = stroopToXlm(BASE_FEE).toString();
-  const [fee, setFee] = useState(baseFeeStroops);
+  const [fee, setFee] = useState(initialFee ?? baseFeeStroops);
   const [timeout, setTimeout] = useState("180");
   const [memo, setMemo] = useState("");
   const [isSettingsSelectorOpen, setSettingsSelectorOpen] =
@@ -86,7 +110,7 @@ export const ChangeTrustInternal = ({
     addTrustline,
     publicKey,
     networkDetails,
-    recommendedFee: BASE_FEE,
+    recommendedFee: fee,
   });
 
   useEffect(() => {
@@ -110,7 +134,7 @@ export const ChangeTrustInternal = ({
     state.state === RequestState.IDLE
   ) {
     return (
-      <div data-testid="ChangeTrustInternal" className="ChangeTrustInternal">
+      <div data-testid="ChangeTrustInternal" className={rootClassName}>
         <div className="ChangeTrustInternal__Loading">
           <Loader size="2rem" />
         </div>
@@ -120,7 +144,7 @@ export const ChangeTrustInternal = ({
 
   if (state.state === RequestState.ERROR) {
     return (
-      <div data-testid="ChangeTrustInternal" className="ChangeTrustInternal">
+      <div data-testid="ChangeTrustInternal" className={rootClassName}>
         <div className="ChangeTrustInternal__Error">
           <Notification
             variant="error"
@@ -424,9 +448,14 @@ export const ChangeTrustInternal = ({
     </>
   );
 
+  // The submit/success screen (SubmitTransaction) renders its own padded
+  // View.Content, so make this outer one transparent in that state to avoid
+  // double padding (which left the footer buttons misaligned vs the content).
+  const isSubmitting = activeBodyContent === ActiveBodyContent.submitTx;
+
   return (
-    <View.Content hasNoTopPadding>
-      <div data-testid="ChangeTrustInternal" className="ChangeTrustInternal">
+    <View.Content hasNoTopPadding={!isSubmitting} hasNoPadding={isSubmitting}>
+      <div data-testid="ChangeTrustInternal" className={rootClassName}>
         {activeBodyContent === ActiveBodyContent.details && (
           <>
             <MultiPaneSlider activeIndex={activePaneIndex} panes={panes} />
@@ -518,7 +547,10 @@ export const ChangeTrustInternal = ({
             icons={icons}
             fee={fee}
             goBack={() => setActiveBodyContent(ActiveBodyContent.details)}
-            onSuccess={onCancel}
+            onSuccess={onSuccess ?? onCancel}
+            onTransactionSuccess={onTransactionSuccess}
+            onClose={onClose ?? onCancel}
+            hideCloseTabHint={isFullHeight}
           />
         )}
       </div>

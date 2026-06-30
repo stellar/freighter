@@ -207,10 +207,10 @@ export const AssetListWarning = ({
   const { t } = useTranslation();
   const title = isVerified ? t("On your lists") : t("Not on your lists");
   return (
-    <div className="ScanLabel ScanMiss" onClick={onClick}>
+    <div className="ScanLabel ScanAssetList" onClick={onClick}>
       <div className="ScanLabel__Info">
         <div className="Icon">
-          <Icon.InfoSquare className="WarningMessage__icon" />
+          <Icon.AlertSquare className="WarningMessage__icon" />
         </div>
         <p className="Message">{title}</p>
       </div>
