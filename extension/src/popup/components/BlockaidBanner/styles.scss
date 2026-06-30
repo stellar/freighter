@@ -1,0 +1,52 @@
+@use "../../styles/utils.scss" as *;
+
+// The single reusable Blockaid warning banner: a filled strip colored by
+// severity, matching the design used across mobile and the swap review.
+.BlockaidBanner {
+  display: flex;
+  padding: pxToRem(12px) pxToRem(16px);
+  align-items: center;
+  align-self: stretch;
+  justify-content: space-between;
+  border-radius: pxToRem(16px);
+  cursor: pointer;
+
+  &__info {
+    display: flex;
+    align-items: center;
+  }
+
+  &__action {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  &__icon {
+    height: pxToRem(16px);
+    margin-right: pxToRem(5px);
+  }
+
+  &__message {
+    font-size: pxToRem(14px);
+    line-height: 1rem;
+  }
+
+  &--malicious {
+    background-color: var(--sds-clr-red-03);
+    color: var(--sds-clr-red-11);
+
+    .BlockaidBanner__icon svg {
+      color: var(--sds-clr-red-11);
+    }
+  }
+
+  &--caution {
+    background-color: var(--sds-clr-amber-03);
+    color: var(--sds-clr-amber-11);
+
+    .BlockaidBanner__icon svg {
+      color: var(--sds-clr-amber-11);
+    }
+  }
+}
