@@ -14,6 +14,47 @@ import {
 } from "@shared/constants/stellar";
 import { CUSTOM_NETWORK } from "@shared/helpers/stellar";
 
+const SEP_0042_SCHEMA_URL =
+  "https://raw.githubusercontent.com/orbitlens/stellar-protocol/sep-0042-token-lists/contents/sep-0042/assetlist.schema.json";
+
+// Per-asset fields we treat as best-effort: when one of these fails validation
+// we strip just that field and keep the rest of the asset. Matches error paths
+// like "instance.assets[3].contract".
+const STRIPPABLE_ASSET_FIELD =
+  /^instance\.assets\[(\d+)\]\.(name|contract|org)$/;
+
+// Relax the upstream SEP-0042 schema to the subset of rules Freighter needs so a
+// single odd field doesn't void an otherwise-useful list:
+//   - allow "mainnet" as a network value (in addition to public/testnet)
+//   - allow an optional third version segment (e.g. "1.4.4")
+//   - make name/org optional (contract is already optional via the schema's
+//     "contract OR code+issuer" anyOf)
+// Operates on a clone so the caller's schema object is never mutated.
+const relaxAssetListSchema = (rawSchema: unknown) => {
+  const schema = JSON.parse(JSON.stringify(rawSchema));
+  const properties = schema?.properties ?? {};
+
+  if (
+    Array.isArray(properties.network?.enum) &&
+    !properties.network.enum.includes("mainnet")
+  ) {
+    properties.network.enum.push("mainnet");
+  }
+
+  if (typeof properties.version?.pattern === "string") {
+    properties.version.pattern = "^\\d{1,4}\\.\\d{1,4}(\\.\\d{1,4})?$";
+  }
+
+  const assetItems = properties.assets?.items;
+  if (Array.isArray(assetItems?.required)) {
+    assetItems.required = assetItems.required.filter(
+      (field: string) => field !== "name" && field !== "org",
+    );
+  }
+
+  return schema;
+};
+
 export const schemaValidatedAssetList = async (
   assetListJson: AssetListResponse,
 ): Promise<{
@@ -22,9 +63,7 @@ export const schemaValidatedAssetList = async (
 }> => {
   let schemaRes;
   try {
-    schemaRes = await fetch(
-      "https://raw.githubusercontent.com/orbitlens/stellar-protocol/sep-0042-token-lists/contents/sep-0042/assetlist.schema.json",
-    );
+    schemaRes = await fetch(SEP_0042_SCHEMA_URL);
   } catch (err) {
     captureException("Error fetching SEP-0042 JSON schema");
     return { assets: [] as AssetListReponseItem[], errors: null };
@@ -35,19 +74,35 @@ export const schemaValidatedAssetList = async (
     return { assets: [] as AssetListReponseItem[], errors: null };
   }
 
-  const schemaResJson = await schemaRes?.json();
+  const schema = relaxAssetListSchema(await schemaRes.json());
 
-  // check against the SEP-0042 schema
-  const validatedList = validate(assetListJson, schemaResJson);
+  // Validate against a copy so we never mutate the (possibly cached) source list.
+  const candidate = {
+    ...assetListJson,
+    assets: (assetListJson.assets || []).map((asset) => ({ ...asset })),
+  };
 
-  if (validatedList.errors.length) {
-    return {
-      assets: [] as AssetListReponseItem[],
-      errors: validatedList.errors,
-    };
+  // First pass: drop the individual name/contract/org fields that fail
+  // validation, keeping the rest of each asset intact.
+  const firstPass = validate(candidate, schema);
+  for (const error of firstPass.errors) {
+    const match = error.property.match(STRIPPABLE_ASSET_FIELD);
+    if (match) {
+      const [, index, field] = match;
+      delete candidate.assets[Number(index)][
+        field as "name" | "contract" | "org"
+      ];
+    }
   }
 
-  return { assets: assetListJson.assets, errors: null };
+  // Second pass: anything still invalid is a rule we don't relax, so reject the
+  // whole list as before.
+  const finalPass = validate(candidate, schema);
+  if (finalPass.errors.length) {
+    return { assets: [] as AssetListReponseItem[], errors: finalPass.errors };
+  }
+
+  return { assets: candidate.assets, errors: null };
 };
 
 export const getCombinedAssetListData = async ({
