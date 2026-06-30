@@ -29,10 +29,14 @@
     align-items: center;
   }
 
-  // Font size / line-height come from the SDS <Text size="xs"> (12px); we only
-  // add weight and alignment, mirroring the trustline banner.
+  // Exactly mirrors .ReviewTx__TrustlineBanner__Label (a plain span that
+  // inherits the app font-family) so the security and trustline banners render
+  // identically. Plain <span>, not <p> or SDS <Text>, both of which were
+  // rendering the text larger / in a different family.
   &__message {
+    font-size: pxToRem(12px);
     font-weight: var(--font-weight-medium);
+    line-height: pxToRem(18px);
     text-align: left;
   }
 

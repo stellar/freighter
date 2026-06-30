@@ -1,5 +1,5 @@
 import React from "react";
-import { Icon, Text } from "@stellar/design-system";
+import { Icon } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 import { TFunction } from "i18next";
 
@@ -102,11 +102,11 @@ export const BlockaidBanner = ({
     >
       <div className="BlockaidBanner__info">
         <div className="BlockaidBanner__icon">
-          <Icon.InfoSquare />
+          <Icon.AlertSquare />
         </div>
-        <Text as="span" size="xs" className="BlockaidBanner__message">
+        <span className="BlockaidBanner__message">
           {getBlockaidBannerTitle(t, entity, securityLevel)}
-        </Text>
+        </span>
       </div>
       {onClick ? (
         <div className="BlockaidBanner__action">
