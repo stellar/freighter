@@ -1,7 +1,7 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import * as Popover from "@radix-ui/react-popover";
-import { CopyText, Icon } from "@stellar/design-system";
+import { Icon, Tooltip } from "@stellar/design-system";
 
 import { openTab } from "popup/helpers/navigate";
 
@@ -24,6 +24,24 @@ export const SwapTokenMenu = ({
   stellarExpertUrl,
 }: SwapTokenMenuProps) => {
   const { t } = useTranslation();
+  const [copied, setCopied] = useState(false);
+
+  // Briefly show the "Copied" tooltip after a successful copy, then hide it.
+  useEffect(() => {
+    if (!copied) {
+      return undefined;
+    }
+    const timeoutId = window.setTimeout(() => setCopied(false), 1000);
+    return () => window.clearTimeout(timeoutId);
+  }, [copied]);
+
+  const copyAddress = async () => {
+    if (!issuerKey) {
+      return;
+    }
+    await navigator.clipboard.writeText(issuerKey);
+    setCopied(true);
+  };
 
   const viewOnExpert = () => {
     openTab(`${stellarExpertUrl}/asset/${code}-${issuerKey}`);
@@ -44,19 +62,22 @@ export const SwapTokenMenu = ({
       </Popover.Trigger>
       <Popover.Portal>
         <Popover.Content className="SwapTokenMenu__content" sideOffset={4}>
-          <CopyText
-            textToCopy={issuerKey}
-            variant="headless"
-            tooltipPlacement="top"
+          <Tooltip
+            isVisible={copied}
+            placement="top"
+            triggerEl={
+              <button
+                type="button"
+                className="SwapTokenMenu__item"
+                data-testid={`SwapTokenRow-${code}-copy`}
+                onClick={copyAddress}
+              >
+                {t("Copy address")}
+              </button>
+            }
           >
-            <button
-              type="button"
-              className="SwapTokenMenu__item"
-              data-testid={`SwapTokenRow-${code}-copy`}
-            >
-              {t("Copy address")}
-            </button>
-          </CopyText>
+            {t("Copied")}
+          </Tooltip>
           <button
             type="button"
             className="SwapTokenMenu__item"
