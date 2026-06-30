@@ -3,6 +3,9 @@
 .Operations {
   display: flex;
   flex-direction: column;
+  // 14px base (down from the inherited 16px) so long operation values fit
+  // before truncating, matching mobile's transaction-details density.
+  font-size: pxToRem(14px);
 
   &--header {
     display: flex;

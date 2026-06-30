@@ -700,7 +700,7 @@ export const PathList = ({ paths }: { paths: Asset[] }) => {
   return (
     <div className="PathList">
       <div className="PathList__header">
-        <Icon.Route />
+        <Icon.Shuffle01 />
         <span>{t("Path")}</span>
       </div>
       {paths.map(({ code, issuer }, i) => (

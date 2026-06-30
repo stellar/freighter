@@ -4,7 +4,9 @@
   display: flex;
   flex-direction: column;
   width: 100%;
-  font-size: pxToRem(16px);
+  // 14px (down from 16px) to match mobile and give long values room before
+  // they truncate (e.g. "38.1972567 PYUSD").
+  font-size: pxToRem(14px);
 
   .TxInfoBlock {
     display: flex;
