@@ -76,7 +76,12 @@ test("Swap doesn't throw error when account is unfunded", async ({
   await login({ page, extensionId });
 
   await page.getByTestId("nav-link-swap").click();
-  await expect(page.getByTestId("swap-src-asset-tile")).toBeVisible({
+  // The swap picker was refactored: the old source-asset entry point
+  // (swap-src-asset-tile) no longer exists. Clicking nav-link-swap now lands on
+  // the SwapAmount view, whose sell card (swap-sell-card) is the source-asset
+  // entry point (source defaults to XLM). Its visibility is the smoke signal
+  // that opening Swap on an unfunded account did not crash.
+  await expect(page.getByTestId("swap-sell-card")).toBeVisible({
     timeout: 10000,
   });
 });
@@ -228,17 +233,37 @@ test("Swap shows correct balances for assets", async ({
   await loginToTestAccount({ page, extensionId, context, stubOverrides });
 
   await page.getByTestId("nav-link-swap").click();
-  await expect(page.getByTestId("swap-src-asset-tile")).toBeVisible({
+
+  // New swap flow: the sell card is shown on the amount screen with XLM as the
+  // default source. Open the "Swap from" source picker via the sell card's
+  // asset selector (the button is shared by both cards, so it must be scoped to
+  // swap-sell-card).
+  await expect(page.getByTestId("swap-sell-card")).toBeVisible({
     timeout: 15000,
   });
-  // Click on source asset tile to see asset list
-  await page.getByTestId("swap-src-asset-tile").click();
-  await expect(page.getByText("Swap from")).toBeVisible();
-  await expect(page.getByText(/FOO/)).toBeVisible();
-  await expect(page.getByTestId("FOO-balance")).toContainText("100");
-  await expect(page.getByTestId("BAZ-balance")).toContainText("10");
-  await expect(page.getByTestId("PBT-balance")).toContainText("98.997");
-  await expect(page.getByTestId("XLM-balance")).toContainText("998");
+  await page
+    .getByTestId("swap-sell-card")
+    .getByTestId("send-amount-edit-dest-asset")
+    .click({ force: true });
+
+  // The source picker's SubviewHeader title reads "Swap from".
+  await expect(page.getByText("Swap from")).toBeVisible({ timeout: 10000 });
+
+  // Held classic tokens render as SwapTokenRow-<CODE> rows (shared BalanceRow),
+  // each showing its formatted balance as text inside the row. Assert on the row
+  // rather than the removed <CODE>-balance testids.
+  await expect(page.getByTestId("SwapTokenRow-FOO")).toBeVisible();
+  await expect(page.getByTestId("SwapTokenRow-FOO")).toContainText("100");
+  await expect(page.getByTestId("SwapTokenRow-BAZ")).toContainText("10");
+
+  // XLM (native, default source) shows its full total balance. The new
+  // BalanceRow-based picker formats `total` directly (999), not the old
+  // reserve-adjusted value (998).
+  await expect(page.getByTestId("SwapTokenRow-XLM")).toContainText("999");
+
+  // The source "Your tokens" list is classic-only: Soroban contract tokens
+  // (carrying a contractId, e.g. PBT) are excluded, so PBT does NOT appear here.
+  await expect(page.getByTestId("SwapTokenRow-PBT")).toHaveCount(0);
 });
 test("Send doesn't throw error when account is unfunded", async ({
   page,
@@ -873,20 +898,32 @@ test("Swap persists amount when navigating to choose source asset", async ({
   await loginToTestAccount({ page, extensionId, context });
 
   await page.getByTestId("nav-link-swap").click();
-  await expect(page.getByTestId("swap-src-asset-tile")).toBeVisible({
+  // New SwapAmount view: the sell/source card replaces the old swap-src-asset-tile.
+  await expect(page.getByTestId("swap-sell-card")).toBeVisible({
     timeout: 15000,
   });
 
-  const amountInput = page.locator('input[type="text"]').first();
+  // Amount input lives in both the sell and receive cards (shared AmountCard),
+  // so scope it to the sell card to avoid a strict-mode violation.
+  const amountInput = page
+    .getByTestId("swap-sell-card")
+    .getByTestId("send-amount-amount-input");
   await amountInput.fill("100");
   await expect(amountInput).toHaveValue("100");
 
-  await page.getByTestId("swap-src-asset-tile").click({ force: true });
-  await expect(page.getByText("Swap from")).toBeVisible();
+  // Open the source ("Swap from") picker via the sell card's asset selector.
+  await page
+    .getByTestId("swap-sell-card")
+    .getByTestId("send-amount-edit-dest-asset")
+    .click({ force: true });
+  await expect(page.getByText("Swap from")).toBeVisible({ timeout: 10000 });
 
+  // Back out of the picker WITHOUT changing the source asset. The picker's
+  // BackButton (X icon) fires goBack -> setActiveStep(AMOUNT) and dispatches
+  // nothing, so the entered amount is preserved.
   await clickVisibleBackButton(page);
 
-  await expect(page.getByTestId("swap-src-asset-tile")).toBeVisible({
+  await expect(page.getByTestId("swap-sell-card")).toBeVisible({
     timeout: 15000,
   });
   await expect(amountInput).toHaveValue("100");
@@ -899,7 +936,34 @@ test("Swap resets amount when user selects new source asset", async ({
 }) => {
   test.slow();
   const stubOverrides = async () => {
-    await stubAccountBalancesWithUSDC(page);
+    await page.route("**/account-balances/**", async (route) => {
+      await route.fulfill({
+        json: {
+          balances: {
+            native: {
+              token: { type: "native", code: "XLM" },
+              total: "999",
+              available: "999",
+              minimumBalance: "1",
+            },
+            "USDC:GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5": {
+              token: {
+                type: "credit_alphanum4",
+                code: "USDC",
+                issuer: {
+                  key: "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
+                },
+              },
+              total: "100",
+              available: "100",
+            },
+          },
+          isFunded: true,
+          subentryCount: 0,
+          error: { horizon: null, soroban: null },
+        },
+      });
+    });
   };
   await loginToTestAccount({
     page,
@@ -909,21 +973,39 @@ test("Swap resets amount when user selects new source asset", async ({
   });
 
   await page.getByTestId("nav-link-swap").click();
-  await expect(page.getByTestId("swap-src-asset-tile")).toBeVisible({
+  // The new SwapAmount view renders swap-sell-card (the old swap-src-asset-tile
+  // testid was removed). Source defaults to XLM (native).
+  await expect(page.getByTestId("swap-sell-card")).toBeVisible({
     timeout: 15000,
   });
 
-  const amountInput = page.locator('input[type="text"]').first();
-  await amountInput.fill("50");
-  await expect(amountInput).toHaveValue("50");
+  // Scope the amount input to the sell card: send-amount-amount-input is
+  // rendered in both the sell and receive cards (shared AmountCard), so an
+  // unscoped locator is a strict-mode violation.
+  const sellAmountInput = page
+    .getByTestId("swap-sell-card")
+    .getByTestId("send-amount-amount-input");
+  await sellAmountInput.fill("50");
+  await expect(sellAmountInput).toHaveValue("50");
 
-  await page.getByTestId("swap-src-asset-tile").click({ force: true });
-  await page.getByText("USDC").first().click({ force: true });
+  // Open the SOURCE (sell) picker via the sell-card asset selector and pick a
+  // DIFFERENT held source token (USDC). The source picker lists only held
+  // tokens as SwapTokenRow-<code> rows.
+  await page
+    .getByTestId("swap-sell-card")
+    .getByTestId("send-amount-edit-dest-asset")
+    .click({ force: true });
+  await expect(page.getByText("Swap from")).toBeVisible({ timeout: 15000 });
+  await page.getByTestId("SwapTokenRow-USDC").click();
 
-  await expect(page.getByTestId("swap-src-asset-tile")).toBeVisible({
+  // Back on the amount screen, selecting a new source dispatches
+  // saveAmount("0"), so the entered amount is reset. The sell card maps a
+  // redux amount of "0" to an EMPTY input value (the "0" shown is only the
+  // placeholder), so the reset input value is "".
+  await expect(page.getByTestId("swap-sell-card")).toBeVisible({
     timeout: 15000,
   });
-  await expect(amountInput).toHaveValue("0");
+  await expect(sellAmountInput).toHaveValue("");
 });
 
 test("Swap preserves amount when selecting destination asset", async ({
@@ -933,7 +1015,34 @@ test("Swap preserves amount when selecting destination asset", async ({
 }) => {
   test.slow();
   const stubOverrides = async () => {
-    await stubAccountBalancesWithUSDC(page);
+    await page.route("**/account-balances/**", async (route) => {
+      await route.fulfill({
+        json: {
+          balances: {
+            native: {
+              token: { type: "native", code: "XLM" },
+              total: "999",
+              available: "999",
+              minimumBalance: "1",
+            },
+            "USDC:GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5": {
+              token: {
+                type: "credit_alphanum4",
+                code: "USDC",
+                issuer: {
+                  key: "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
+                },
+              },
+              total: "100",
+              available: "100",
+            },
+          },
+          isFunded: true,
+          subentryCount: 0,
+          error: { horizon: null, soroban: null },
+        },
+      });
+    });
   };
   await loginToTestAccount({
     page,
@@ -943,21 +1052,35 @@ test("Swap preserves amount when selecting destination asset", async ({
   });
 
   await page.getByTestId("nav-link-swap").click();
-  await expect(page.getByTestId("swap-src-asset-tile")).toBeVisible({
+  // New SwapAmount view: the sell card replaces the old swap-src-asset-tile.
+  await expect(page.getByTestId("swap-sell-card")).toBeVisible({
     timeout: 15000,
   });
 
-  const amountInput = page.locator('input[type="text"]').first();
-  await amountInput.fill("100");
-  await expect(amountInput).toHaveValue("100");
+  // Fill the sell amount. The input testid exists in BOTH the sell and
+  // receive cards (shared AmountCard), so scope it to swap-sell-card.
+  const sellAmountInput = page
+    .getByTestId("swap-sell-card")
+    .getByTestId("send-amount-amount-input");
+  await sellAmountInput.fill("100");
+  await expect(sellAmountInput).toHaveValue("100");
 
-  await page.getByTestId("swap-dst-asset-tile").click({ force: true });
-  await page.getByText("USDC").first().click({ force: true });
+  // Open the DESTINATION (receive) picker and pick a different held token.
+  // The source defaults to XLM and the destination picker hides the source,
+  // so USDC (the second held token) is what we pick here.
+  await page
+    .getByTestId("swap-receive-card")
+    .getByTestId("send-amount-edit-dest-asset")
+    .click({ force: true });
+  await expect(page.getByText("Swap to")).toBeVisible({ timeout: 10000 });
+  await page.getByTestId("SwapTokenRow-USDC").click();
 
-  await expect(page.getByTestId("swap-src-asset-tile")).toBeVisible({
+  // Back on the amount screen: picking a normal (different) destination does
+  // NOT reset the amount, so it is preserved.
+  await expect(page.getByTestId("swap-sell-card")).toBeVisible({
     timeout: 15000,
   });
-  await expect(amountInput).toHaveValue("100");
+  await expect(sellAmountInput).toHaveValue("100");
 });
 
 test("Swap resets state when navigating back to account", async ({
@@ -967,7 +1090,34 @@ test("Swap resets state when navigating back to account", async ({
 }) => {
   test.slow();
   const stubOverrides = async () => {
-    await stubAccountBalancesWithUSDC(page);
+    await page.route("**/account-balances/**", async (route) => {
+      await route.fulfill({
+        json: {
+          balances: {
+            native: {
+              token: { type: "native", code: "XLM" },
+              total: "999",
+              available: "999",
+              minimumBalance: "1",
+            },
+            "USDC:GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5": {
+              token: {
+                type: "credit_alphanum4",
+                code: "USDC",
+                issuer: {
+                  key: "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
+                },
+              },
+              total: "100",
+              available: "100",
+            },
+          },
+          isFunded: true,
+          subentryCount: 0,
+          error: { horizon: null, soroban: null },
+        },
+      });
+    });
   };
   await loginToTestAccount({
     page,
@@ -977,29 +1127,76 @@ test("Swap resets state when navigating back to account", async ({
   });
 
   await page.getByTestId("nav-link-swap").click();
-  await expect(page.getByTestId("swap-src-asset-tile")).toBeVisible();
+  // New SwapAmount view: the source (sell) card is swap-sell-card. Source
+  // defaults to XLM (native).
+  await expect(page.getByTestId("swap-sell-card")).toBeVisible({
+    timeout: 15000,
+  });
 
-  const amountInput = page.locator('input[type="text"]').first();
-  await amountInput.fill("100");
+  // Enter an amount on the sell card. Scope to swap-sell-card because both
+  // the sell and receive cards render send-amount-amount-input.
+  await page
+    .getByTestId("swap-sell-card")
+    .getByTestId("send-amount-amount-input")
+    .fill("100");
 
-  await page.getByTestId("swap-src-asset-tile").click({ force: true });
-  await page.getByText("USDC").first().click({ force: true });
+  // Change the source from XLM to USDC. Open the "Swap from" picker via the
+  // sell card's asset selector (send-amount-edit-dest-asset is shared by both
+  // cards, so it must be scoped), then pick the held USDC token.
+  // USDC is stubbed inline WITHOUT a contractId: the swap picker's held list
+  // (heldToRecord) drops any balance carrying a contractId key, so a
+  // contractId-bearing USDC would never render as SwapTokenRow-USDC.
+  await page
+    .getByTestId("swap-sell-card")
+    .getByTestId("send-amount-edit-dest-asset")
+    .click({ force: true });
+  await expect(page.getByText("Swap from")).toBeVisible({ timeout: 10000 });
+  await page.getByTestId("SwapTokenRow-USDC").click();
 
-  await page.getByTestId("swap-dst-asset-tile").click({ force: true });
-  await page.getByText("XLM").first().click({ force: true });
+  // Picking a new source unconditionally resets the amount to "0" (Swap
+  // source-select dispatches saveAmount("0")). The swap sell card renders the
+  // canonical "0" as an EMPTY input (amount === "0" ? "" : amount), so the
+  // visible value is "" — not "0".
+  await expect(page.getByTestId("swap-sell-card")).toBeVisible({
+    timeout: 15000,
+  });
+  await expect(
+    page.getByTestId("swap-sell-card").getByTestId("send-amount-amount-input"),
+  ).toHaveValue("");
 
-  await expect(page.getByTestId("swap-src-asset-tile")).toBeVisible();
+  // Set the destination to XLM. The destination picker hides the current
+  // source (now USDC), so XLM (native) is available in "Your tokens". Open the
+  // "Swap to" picker via the receive card's asset selector, then pick XLM.
+  await page
+    .getByTestId("swap-receive-card")
+    .getByTestId("send-amount-edit-dest-asset")
+    .click({ force: true });
+  await expect(page.getByText("Swap to")).toBeVisible({ timeout: 10000 });
+  await page.getByTestId("SwapTokenRow-XLM").click();
+
+  // Back on the amount screen with source USDC and destination XLM configured.
+  await expect(page.getByTestId("swap-sell-card")).toBeVisible({
+    timeout: 15000,
+  });
+
+  // Navigate back to the account view. From the amount screen goBack()
+  // dispatches resetSubmission() + resetSimulation(), wiping swap state back to
+  // initialState (source -> native/XLM, amount -> "0", destination -> "").
   await clickVisibleBackButton(page);
-
   await expect(page.getByTestId("account-view")).toBeVisible();
 
+  // Re-enter the Swap flow: state is reset. The sell input shows the empty
+  // placeholder (redux amount "0" -> "") and the source is back to XLM.
   await page.getByTestId("nav-link-swap").click();
-  await expect(page.getByTestId("swap-src-asset-tile")).toBeVisible();
+  await expect(page.getByTestId("swap-sell-card")).toBeVisible({
+    timeout: 15000,
+  });
 
-  const newAmountInput = page.locator('input[type="text"]').first();
-  await expect(newAmountInput).toHaveValue("0");
-  // Verify XLM is selected (more reliable than checking for "0 XLM" text)
-  await expect(page.getByTestId("swap-src-asset-tile")).toContainText("XLM");
+  await expect(
+    page.getByTestId("swap-sell-card").getByTestId("send-amount-amount-input"),
+  ).toHaveValue("");
+  // Source selection is reset to the default XLM.
+  await expect(page.getByTestId("swap-sell-card")).toContainText("XLM");
 });
 
 test("Send flow starts at token picker and proceeds to amount screen", async ({
