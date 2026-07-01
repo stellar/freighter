@@ -28,9 +28,10 @@ test("Adding classic asset on Testnet", async ({
     .fill("GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5");
   // Wait for search results to load
   await page.waitForLoadState("networkidle");
-  // Get the first ManageAssetCode that contains USDC (there may be multiple assets listed)
+  // Get the first ManageAssetCode that contains USDC (there may be multiple assets listed).
+  // The code is rendered in a div (AssetListRow__code), not a span, so match by testid only.
   await expect(
-    page.locator('span[data-testid="ManageAssetCode"] >> text=USDC').first(),
+    page.locator('[data-testid="ManageAssetCode"] >> text=USDC').first(),
   ).toBeVisible();
 
   await page.getByTestId("ManageAssetRowButton").first().click();
@@ -106,7 +107,9 @@ test("Adding and removing unverified Soroban token", async ({
   if (await notOnLists.isVisible()) {
     // Case 1: token is not on your lists
     await expect(notOnLists).toHaveText("Unverified");
-    await expect(page.getByTestId("ManageAssetCode")).toHaveText("E2E");
+    // Non-SAC contract tokens display their name (displayCode), so the E2E
+    // token's code cell reads "E2E Token", not "E2E".
+    await expect(page.getByTestId("ManageAssetCode")).toHaveText("E2E Token");
     await expect(page.getByTestId("ManageAssetRowButton")).toHaveText("Add");
   } else if (await onLists.isVisible()) {
     // Case 2: token is already on your lists
@@ -145,7 +148,9 @@ test("Adding and removing unverified Soroban token", async ({
     await page.getByTestId("account-options-dropdown").click();
     await page.getByText("Manage assets").click();
     await expect(page.getByText("Your assets")).toBeVisible();
-    await expect(page.getByTestId("ManageAssetCode")).toHaveText("E2E");
+    // Non-SAC contract tokens display their name (displayCode), so the E2E
+    // token's code cell reads "E2E Token", not "E2E".
+    await expect(page.getByTestId("ManageAssetCode")).toHaveText("E2E Token");
     await expect(page.getByTestId("ManageAssetDomain")).toHaveText(
       "Stellar Network",
     );
