@@ -108,10 +108,19 @@ export function useGetTokenPrices() {
       const missingExtra = additionalAssetIds.filter((id) => !(id in resolved));
       if (missingExtra.length) {
         try {
-          const extraPrices = await getTokenPrices(missingExtra);
+          const useV2 = tokenPricesV2Selector(store.getState());
+          const extraPrices = await getTokenPrices(
+            missingExtra,
+            networkDetails,
+            useV2,
+          );
           const mergedTokenPrices = { ...resolved, ...extraPrices };
           reduxDispatch(
-            saveTokenPrices({ publicKey, tokenPrices: mergedTokenPrices }),
+            saveTokenPrices({
+              publicKey,
+              networkDetails,
+              tokenPrices: mergedTokenPrices,
+            }),
           );
           payload.tokenPrices = mergedTokenPrices;
         } catch (e) {
