@@ -44,6 +44,9 @@ const jsdomTests = {
   testEnvironment: "jest-fixed-jsdom",
   resolver: "<rootDir>/config/jest/resolver.js",
   modulePathIgnorePatterns: ["extension/e2e-tests"],
+  // Fixtures live under __tests__/fixtures/ as importable data, not test files;
+  // without this the default __tests__ glob treats them as empty suites.
+  testPathIgnorePatterns: ["/node_modules/", "/__tests__/fixtures/"],
 };
 
 module.exports = {
