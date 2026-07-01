@@ -691,6 +691,7 @@
   "Token ID": "Token ID",
   "Token ID cannot contain spaces": "Token ID cannot contain spaces",
   "Token ID is required": "Token ID is required",
+  "Token Issuer": "Token Issuer",
   "Token List URL": "Token List URL",
   "Token logo": "Token logo",
   "Tokens": "Tokens",

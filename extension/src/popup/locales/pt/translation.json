@@ -691,6 +691,7 @@
   "Token ID": "ID do Token",
   "Token ID cannot contain spaces": "ID do token não pode conter espaços",
   "Token ID is required": "ID do token é obrigatório",
+  "Token Issuer": "Token Issuer",
   "Token List URL": "URL da Lista de Tokens",
   "Token logo": "Logo do token",
   "Tokens": "Tokens",

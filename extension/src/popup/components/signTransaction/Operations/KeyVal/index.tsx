@@ -224,9 +224,9 @@ export const KeyValueLine = ({
   }
   return (
     <>
-      <KeyValueList operationKey={t("Asset Code")} operationValue={line.code} />
+      <KeyValueList operationKey={t("Token Code")} operationValue={line.code} />
       <KeyValueList
-        operationKey={t("Asset Issuer")}
+        operationKey={t("Token Issuer")}
         operationValue={
           <CopyValue
             value={line.issuer ?? ""}

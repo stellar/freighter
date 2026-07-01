@@ -237,13 +237,13 @@ describe("Operations", () => {
         </Wrapper>,
       );
       await waitFor(() => screen.getAllByTestId("OperationKeyVal"));
-      const assetCodeLabel = screen.getByText("Asset Code");
+      const assetCodeLabel = screen.getByText("Token Code");
       const assetCodeValue = assetCodeLabel.parentNode?.querySelector(
         "[data-testid='OperationKeyVal__value']",
       );
       expect(assetCodeValue).toHaveTextContent(assetCode);
 
-      const issuerLabel = screen.getByText("Asset Issuer");
+      const issuerLabel = screen.getByText("Token Issuer");
       const issuerValue = issuerLabel.parentNode?.querySelector(
         "[data-testid='OperationKeyVal__value']",
       );
