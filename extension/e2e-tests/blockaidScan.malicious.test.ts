@@ -86,7 +86,7 @@ test.describe("BlockAid Scan - Malicious States", () => {
     ).toBeVisible({ timeout: 10000 });
 
     // Click on the warning banner to view blockaid details
-    await page.getByText("This asset was flagged as malicious").click();
+    await page.getByText("This token was flagged as malicious").click();
 
     // Wait for pane animation to finish
     await page.waitForTimeout(1000);
@@ -404,7 +404,9 @@ test.describe("BlockAid Scan - Malicious Site", () => {
     });
 
     // Malicious label should be visible
-    await expect(popup.getByTestId("blockaid-malicious-label")).toBeVisible();
+    await expect(
+      popup.getByTestId("domain-scan-blockaid-banner"),
+    ).toBeVisible();
     await expect(
       popup.getByText("This site was flagged as malicious"),
     ).toBeVisible();
@@ -418,7 +420,7 @@ test.describe("BlockAid Scan - Malicious Site", () => {
     ).not.toBeVisible();
 
     // Expand blockaid details pane
-    await popup.getByTestId("blockaid-malicious-label").click();
+    await popup.getByTestId("domain-scan-blockaid-banner").click();
     await popup.waitForTimeout(1000);
 
     // Expanded pane shows "Do not proceed" and attack type description
@@ -453,7 +455,9 @@ test.describe("BlockAid Scan - Malicious Site", () => {
     });
 
     // Malicious label should be visible
-    await expect(popup.getByTestId("blockaid-malicious-label")).toBeVisible();
+    await expect(
+      popup.getByTestId("sign-message-blockaid-banner"),
+    ).toBeVisible();
     await expect(
       popup.getByText("This site was flagged as malicious"),
     ).toBeVisible();
@@ -467,7 +471,7 @@ test.describe("BlockAid Scan - Malicious Site", () => {
     ).not.toBeVisible();
 
     // Expand blockaid details pane
-    await popup.getByTestId("blockaid-malicious-label").click();
+    await popup.getByTestId("sign-message-blockaid-banner").click();
     await popup.waitForTimeout(1000);
 
     // Expanded pane shows "Do not proceed" and site-specific subtitle

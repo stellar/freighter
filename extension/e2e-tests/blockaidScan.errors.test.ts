@@ -204,7 +204,7 @@ test.describe("BlockAid Scan - Edge Cases", () => {
       ).toBeVisible({ timeout: 10000 });
 
       // Click the warning banner to expand
-      await page.getByTestId("blockaid-unable-to-scan-label").click();
+      await page.getByTestId("blockaid-banner-change-trust").click();
       await page.waitForTimeout(1000);
 
       // Should show asset-specific "Unable to scan token" text

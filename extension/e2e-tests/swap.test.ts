@@ -91,7 +91,10 @@ test("held-to-held swap reaches review screen", async ({
   await page.getByTestId("XLM-balance").first().click();
 
   // Fill amount and proceed to review
-  await page.getByTestId("send-amount-amount-input").fill("1");
+  await page
+    .getByTestId("swap-sell-card")
+    .getByTestId("send-amount-amount-input")
+    .fill("1");
   await page.getByTestId("swap-amount-btn-continue").click({ force: true });
 
   // Review screen
@@ -174,7 +177,10 @@ test("swap to new token shows trustline banner at review", async ({
   await page.getByText("AQUA").first().click({ force: true });
 
   // Fill amount and proceed
-  await page.getByTestId("send-amount-amount-input").fill("1");
+  await page
+    .getByTestId("swap-sell-card")
+    .getByTestId("send-amount-amount-input")
+    .fill("1");
   await page.getByTestId("swap-amount-btn-continue").click({ force: true });
 
   // Review screen should show trustline banner (AQUA not in account balances)
@@ -272,7 +278,10 @@ test("shows XLM-reserve sheet when balance cannot cover the reserve", async ({
   await page.getByTestId("swap-from-search").fill("AQUA");
   await page.getByText("AQUA").first().click({ force: true });
 
-  await page.getByTestId("send-amount-amount-input").fill("0.05");
+  await page
+    .getByTestId("swap-sell-card")
+    .getByTestId("send-amount-amount-input")
+    .fill("0.05");
   await page.getByTestId("swap-amount-btn-continue").click({ force: true });
 
   // The XlmReserveSheet should appear because spendable XLM < required reserve
@@ -332,12 +341,15 @@ test("flagged destination surfaces blockaid malicious warning at review", async 
   await page.getByTestId("swap-from-search").fill("SCAM");
   await page.getByText("SCAM").first().click({ force: true });
 
-  await page.getByTestId("send-amount-amount-input").fill("1");
+  await page
+    .getByTestId("swap-sell-card")
+    .getByTestId("send-amount-amount-input")
+    .fill("1");
   await page.getByTestId("swap-amount-btn-continue").click({ force: true });
 
-  // Review screen: blockaid malicious label must be visible
-  // Real testid: "blockaid-malicious-label" (WarningMessages/index.tsx:768,933)
-  await expect(page.getByTestId("blockaid-malicious-label")).toBeVisible({
+  // Review screen: the unified transaction Blockaid banner must be visible
+  // (tx scan takes precedence over the token verdict on the review).
+  await expect(page.getByTestId("review-tx-blockaid-warning")).toBeVisible({
     timeout: 30000,
   });
 });
@@ -460,8 +472,8 @@ test("testnet swap picker shows no blockaid scam icons", async ({
   await expect(page.locator('[data-testid="ScamAssetIcon"]')).toHaveCount(0, {
     timeout: 10000,
   });
-  // No malicious label either
+  // No review-screen Blockaid banner either
   await expect(
-    page.locator('[data-testid="blockaid-malicious-label"]'),
+    page.locator('[data-testid="review-tx-token-warning"]'),
   ).toHaveCount(0);
 });

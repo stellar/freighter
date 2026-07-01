@@ -91,7 +91,7 @@ test.describe("BlockAid Scan - Unable to Scan States", () => {
     ).toBeVisible({ timeout: 10000 });
 
     // Click on the warning banner to view blockaid details
-    await page.getByTestId("blockaid-unable-to-scan-label").click();
+    await page.getByTestId("blockaid-banner-change-trust").click();
 
     // Wait for pane animation to finish
     await page.waitForTimeout(1000);
@@ -427,9 +427,11 @@ test.describe("BlockAid Scan - Unable to Scan Site", () => {
 
     // Unable-to-scan label should be visible
     await expect(
-      popup.getByTestId("blockaid-unable-to-scan-label"),
+      popup.getByTestId("domain-scan-blockaid-banner"),
     ).toBeVisible();
-    await expect(popup.getByText("Proceed with caution")).toBeVisible();
+    await expect(
+      popup.getByText("Unable to scan site for malicious behavior"),
+    ).toBeVisible();
 
     // "Connect anyway" replaces the normal "Connect" button
     await expect(
@@ -440,7 +442,7 @@ test.describe("BlockAid Scan - Unable to Scan Site", () => {
     ).not.toBeVisible();
 
     // Expand the blockaid details pane
-    await popup.getByTestId("blockaid-unable-to-scan-label").click();
+    await popup.getByTestId("domain-scan-blockaid-banner").click();
     await popup.waitForTimeout(1000);
 
     // Expanded pane shows "Unable to scan site" detail
@@ -471,9 +473,11 @@ test.describe("BlockAid Scan - Unable to Scan Site", () => {
 
     // Unable-to-scan label should be visible
     await expect(
-      popup.getByTestId("blockaid-unable-to-scan-label"),
+      popup.getByTestId("sign-message-blockaid-banner"),
     ).toBeVisible();
-    await expect(popup.getByText("Proceed with caution")).toBeVisible();
+    await expect(
+      popup.getByText("Unable to scan site for malicious behavior"),
+    ).toBeVisible();
 
     // "Confirm anyway" replaces the normal "Confirm" button
     await expect(
@@ -484,7 +488,7 @@ test.describe("BlockAid Scan - Unable to Scan Site", () => {
     ).not.toBeVisible();
 
     // Expand the blockaid details pane
-    await popup.getByTestId("blockaid-unable-to-scan-label").click();
+    await popup.getByTestId("sign-message-blockaid-banner").click();
     await popup.waitForTimeout(1000);
 
     // Expanded pane shows unable-to-scan title and subtitle

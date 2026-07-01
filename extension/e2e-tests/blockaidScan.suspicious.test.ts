@@ -81,7 +81,7 @@ test.describe("BlockAid Scan - Suspicious States", () => {
     ).toBeVisible({ timeout: 10000 });
 
     // Click on the warning banner to view blockaid details
-    await page.getByText("This asset was flagged as suspicious").click();
+    await page.getByText("This token was flagged as suspicious").click();
 
     // Wait for pane animation to finish
     await page.waitForTimeout(1000);

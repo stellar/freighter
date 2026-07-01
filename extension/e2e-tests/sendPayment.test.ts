@@ -328,7 +328,7 @@ test("Send XLM below minimum to unfunded destination shows warning", async ({
   const reviewButton = page.getByText("Review Send");
   await reviewButton.click({ force: true });
 
-  const warningLabel = page.getByTestId("blockaid-miss-label");
+  const warningLabel = page.getByTestId("review-tx-blockaid-warning");
   await expect(warningLabel).toBeVisible({ timeout: 30000 });
   await warningLabel.click();
 
@@ -383,7 +383,7 @@ test("Send XLM at minimum to unfunded destination proceeds without warning", asy
     timeout: 30000,
   });
 
-  await expect(page.getByTestId("blockaid-miss-label")).toHaveCount(0);
+  await expect(page.getByTestId("review-tx-blockaid-warning")).toHaveCount(0);
 });
 
 test("Send non-native asset to unfunded destination shows destination missing warning", async ({
@@ -439,7 +439,7 @@ test("Send non-native asset to unfunded destination shows destination missing wa
   const reviewButton = page.getByText("Review Send");
   await reviewButton.click({ force: true });
 
-  const warningLabel = page.getByTestId("blockaid-miss-label");
+  const warningLabel = page.getByTestId("review-tx-blockaid-warning");
   await expect(warningLabel).toBeVisible({ timeout: 30000 });
   await warningLabel.click();
 
@@ -481,7 +481,7 @@ test("Send XLM to funded destination does not show unfunded warning", async ({
     timeout: 30000,
   });
 
-  await expect(page.getByTestId("blockaid-miss-label")).toHaveCount(0);
+  await expect(page.getByTestId("review-tx-blockaid-warning")).toHaveCount(0);
 });
 
 test("Send doesn't throw error when creating muxed account", async ({
