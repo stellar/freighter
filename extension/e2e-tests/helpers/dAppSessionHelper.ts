@@ -66,3 +66,32 @@ export const openSignMessagePopup = async ({ page }: { page: Page }) => {
 
   return signMessagePopupPromise;
 };
+
+// Triggers the SignTransaction popup via the signTransaction playground.
+// Connects the dApp first (allowDapp) so the sign popup opens directly on the
+// "Confirm Transaction" screen, matching the API integration suite's flow.
+export const openSignTransactionPopup = async ({
+  page,
+  xdr,
+  networkPassphrase = "Test SDF Network ; September 2015",
+}: {
+  page: Page;
+  xdr: string;
+  networkPassphrase?: string;
+}) => {
+  await allowDapp({ page });
+
+  const dappPage = await page.context().newPage();
+  await dappPage.waitForLoadState();
+
+  const signTxPopupPromise = page.context().waitForEvent("page");
+
+  await dappPage.goto(
+    "https://play.freighter.app/#/extension/playground/signTransaction",
+  );
+  await dappPage.getByRole("textbox").first().fill(xdr);
+  await dappPage.getByRole("textbox").nth(1).fill(networkPassphrase);
+  await dappPage.getByText("Sign Transaction XDR").click();
+
+  return signTxPopupPromise;
+};

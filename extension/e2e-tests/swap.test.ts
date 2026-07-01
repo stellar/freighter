@@ -624,25 +624,24 @@ test("flagged non-held destination stacks trustline and Blockaid banners", async
         json: {
           data: {
             results: {
-              "SCAM-GBNZILSTVQZ4R7IKQDGHYGY2QXL5QOFJYQMXPKWRRM5PAV7Y4M67AQUA":
-                {
-                  result_type: "Malicious",
-                  malicious_score: "1.0",
-                  attack_types: {},
-                  chain: "stellar",
-                  address: "",
-                  metadata: { type: "" },
-                  fees: {},
-                  features: [
-                    {
-                      type: "Malicious",
-                      feature_id: "KNOWN_MALICIOUS",
-                      description: "Known malicious token",
-                    },
-                  ],
-                  trading_limits: {},
-                  financial_stats: {},
-                },
+              "SCAM-GBNZILSTVQZ4R7IKQDGHYGY2QXL5QOFJYQMXPKWRRM5PAV7Y4M67AQUA": {
+                result_type: "Malicious",
+                malicious_score: "1.0",
+                attack_types: {},
+                chain: "stellar",
+                address: "",
+                metadata: { type: "" },
+                fees: {},
+                features: [
+                  {
+                    type: "Malicious",
+                    feature_id: "KNOWN_MALICIOUS",
+                    description: "Known malicious token",
+                  },
+                ],
+                trading_limits: {},
+                financial_stats: {},
+              },
             },
           },
           error: null,
@@ -906,5 +905,183 @@ test("switching networks repopulates the swap picker held tokens", async ({
   // The picker re-derived "Your tokens" for Mainnet: HELDONLY now appears.
   await expect(page.getByTestId("SwapTokenRow-HELDONLY")).toBeVisible({
     timeout: 15000,
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 11. Quote-expiry recovery at submit
+//    When the swap submit fails with a quote-expiry op code (op_under_dest_min),
+//    the flow must recover to the amount screen with a "quote has expired"
+//    toast rather than dead-ending on a submit-failure screen.
+// ---------------------------------------------------------------------------
+test("recovers to the amount screen when the swap quote expires at submit", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  test.slow();
+
+  const AQUA_ISSUER =
+    "GBNZILSTVQZ4R7IKQDGHYGY2QXL5QOFJYQMXPKWRRM5PAV7Y4M67AQUA";
+
+  const stubOverrides = async () => {
+    await page.unroute("**/asset?search**");
+    await page.route("**/asset?search**", (route) =>
+      route.fulfill({
+        json: {
+          _embedded: {
+            records: [
+              {
+                asset: `AQUA-${AQUA_ISSUER}`,
+                num_accounts: 50000,
+                num_trades: 100000,
+                volume7d: 1_000_000_000_000,
+              },
+            ],
+          },
+        },
+      }),
+    );
+    await page.route("**/asset?sort=volume7d**", (route) =>
+      route.fulfill({ json: { _embedded: { records: [] } } }),
+    );
+    await page.route("**/paths**", (route) =>
+      route.fulfill({
+        json: {
+          _embedded: {
+            records: [
+              {
+                source_asset_type: "native",
+                source_asset_code: "XLM",
+                source_asset_issuer: "",
+                destination_asset_type: "credit_alphanum4",
+                destination_asset_code: "AQUA",
+                destination_asset_issuer: AQUA_ISSUER,
+                destination_amount: "0.95",
+                path: [],
+              },
+            ],
+          },
+        },
+      }),
+    );
+    await stubScanTxSafe(page);
+    // Submit fails with a quote-expiry op code → the flow recovers to review.
+    await page.route("**/submit-tx**", (route) =>
+      route.fulfill({
+        status: 400,
+        json: {
+          extras: {
+            result_codes: {
+              transaction: "tx_failed",
+              operations: ["op_under_dest_min"],
+            },
+          },
+        },
+      }),
+    );
+  };
+
+  await loginToTestAccount({ page, extensionId, context, stubOverrides });
+  await switchToMainnet(page);
+
+  await page.getByTestId("nav-link-swap").click();
+  await expect(page.getByTestId("swap-sell-card")).toBeVisible({
+    timeout: 15000,
+  });
+
+  await openSwapToPicker(page);
+  await page.getByTestId("swap-from-search").fill("AQUA");
+  await page.getByText("AQUA").first().click({ force: true });
+
+  await page
+    .getByTestId("swap-sell-card")
+    .getByTestId("send-amount-amount-input")
+    .fill("1");
+  await page.getByTestId("swap-amount-btn-continue").click({ force: true });
+
+  await expect(page.getByTestId("review-tx-trustline-banner")).toBeVisible({
+    timeout: 30000,
+  });
+
+  // Confirm → submit fails with a stale-quote code → recover to the amount
+  // screen with the quote-expired toast (not a dead-end submit failure).
+  await page.getByRole("button", { name: "Swap XLM to AQUA" }).click();
+
+  await expect(
+    page.getByText("Quote has expired, please try again to get a new quote"),
+  ).toBeVisible({ timeout: 30000 });
+  await expect(page.getByTestId("swap-sell-card")).toBeVisible();
+});
+
+// ---------------------------------------------------------------------------
+// 12. Fallback partial recovery
+//    When token discovery is unreachable the picker degrades to held-only but
+//    stays usable: the fallback notice appears AND held tokens are still listed
+//    so a held-to-held swap remains possible.
+// ---------------------------------------------------------------------------
+test("swap picker fallback still lists held tokens", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  test.slow();
+
+  const USDC_ISSUER =
+    "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5";
+
+  const stubOverrides = async () => {
+    // Discovery down (search + popular fail) → fallback branch.
+    await page.unroute("**/asset?search**");
+    await page.route("**/asset?search**", (route) => route.abort("failed"));
+    await page.route("**/asset?sort=volume7d**", (route) =>
+      route.abort("failed"),
+    );
+    await page.route("**/asset?limit=50**", (route) => route.abort("failed"));
+    // The account still holds USDC (besides XLM), so the held-only fallback has
+    // something to show and remains usable.
+    await page.route("**/account-balances/**", async (route) => {
+      await route.fulfill({
+        json: {
+          balances: {
+            native: {
+              token: { type: "native", code: "XLM" },
+              total: "100",
+              available: "100",
+            },
+            [`USDC:${USDC_ISSUER}`]: {
+              token: {
+                type: "credit_alphanum4",
+                code: "USDC",
+                issuer: { key: USDC_ISSUER },
+              },
+              total: "50",
+              available: "50",
+            },
+          },
+          isFunded: true,
+          subentryCount: 0,
+          error: { horizon: null, soroban: null },
+        },
+      });
+    });
+  };
+
+  await loginToTestAccount({ page, extensionId, context, stubOverrides });
+  await switchToMainnet(page);
+
+  await page.getByTestId("nav-link-swap").click();
+  await expect(page.getByTestId("swap-sell-card")).toBeVisible({
+    timeout: 15000,
+  });
+
+  await openSwapToPicker(page);
+
+  // Fallback notice appears, and the held token is still listed and pickable.
+  await expect(page.getByTestId("swap-picker-fallback-notice")).toBeVisible({
+    timeout: 20000,
+  });
+  await expect(page.getByTestId("SwapTokenRow-USDC")).toBeVisible({
+    timeout: 10000,
   });
 });
