@@ -19,12 +19,13 @@ import { Summary } from "popup/views/SignTransaction/Preview/Summary";
 import { Details } from "popup/views/SignTransaction/Preview/Details";
 import { OPERATION_TYPES, TRANSACTION_WARNING } from "constants/transaction";
 import { Trustline } from "popup/views/SignTransaction";
-import {
-  BlockAidAssetScanExpanded,
-  BlockaidAssetWarning,
-} from "popup/components/WarningMessages";
+import { BlockAidAssetScanExpanded } from "popup/components/WarningMessages";
+import { BlockaidBanner } from "popup/components/BlockaidBanner";
 import { SecurityLevel } from "popup/constants/blockaid";
-import { useBlockaidOverrideState } from "popup/helpers/blockaid";
+import {
+  useBlockaidOverrideState,
+  getAssetSecurityLevel,
+} from "popup/helpers/blockaid";
 import { useGetChangeTrustData } from "./hooks/useChangeTrustData";
 import { Fee } from "./Settings/Fee";
 import { Timeout } from "./Settings/Timeout";
@@ -223,23 +224,16 @@ export const ChangeTrustInternal = ({
             </span>
           </div>
         </div>
-        {isMalicious ? (
-          <BlockaidAssetWarning
-            blockaidData={state.data.scanResult}
-            onClick={() => setIsOnBlockaidSheet(true)}
-          />
-        ) : state.data.isAssetUnableToScan ? (
-          <BlockaidAssetWarning
-            blockaidData={state.data.scanResult}
-            onClick={() => setIsOnBlockaidSheet(true)}
-            messageKey="Proceed with caution"
-          />
-        ) : state.data.isAssetSuspicious ? (
-          <BlockaidAssetWarning
-            blockaidData={state.data.scanResult}
-            onClick={() => setIsOnBlockaidSheet(true)}
-          />
-        ) : null}
+        <BlockaidBanner
+          securityLevel={getAssetSecurityLevel({
+            blockaidData: state.data.scanResult,
+            blockaidOverrideState,
+            networkDetails,
+          })}
+          entity="token"
+          onClick={() => setIsOnBlockaidSheet(true)}
+          dataTestId="blockaid-banner-change-trust"
+        />
         {trustlineChanges.length > 0 && (
           <Trustline operations={trustlineChanges} icons={icons} />
         )}

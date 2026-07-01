@@ -107,6 +107,7 @@ export const AmountCard = ({
   const isSuspicious =
     securityLevel === SecurityLevel.MALICIOUS ||
     securityLevel === SecurityLevel.SUSPICIOUS;
+  const isMalicious = securityLevel === SecurityLevel.MALICIOUS;
 
   const fontClass = `AmountCard__input-amount AmountCard__${amountFontSizeClass}`;
 
@@ -249,6 +250,7 @@ export const AmountCard = ({
                 issuerKey={assetIssuerKey}
                 icon={assetIcon}
                 isSuspicious={isSuspicious}
+                isMalicious={isMalicious}
               />
               <span className="AmountCard__asset-code">{assetCode}</span>
               <Icon.ChevronDown />

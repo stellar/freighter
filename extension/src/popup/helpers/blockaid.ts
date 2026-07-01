@@ -608,6 +608,85 @@ export const getSiteSecurityStates = (
 };
 
 /**
+ * Collapses a site (dApp domain) Blockaid scan into a single SecurityLevel for
+ * the reusable BlockaidBanner. Blockaid sites have no "suspicious" verdict for
+ * real results (only the dev override can set it), so this is malicious /
+ * unable-to-scan / safe in practice. Honors the override and the network gate
+ * via getSiteSecurityStates.
+ */
+export const getSiteSecurityLevel = ({
+  scanData,
+  blockaidOverrideState,
+  networkDetails,
+}: {
+  scanData: BlockAidScanSiteResult | null | undefined;
+  blockaidOverrideState: string | null | undefined;
+  networkDetails: NetworkDetails | null;
+}): SecurityLevel => {
+  const { isMalicious, isSuspicious, isUnableToScan } = getSiteSecurityStates(
+    scanData,
+    blockaidOverrideState,
+    networkDetails,
+  );
+  if (isMalicious) {
+    return SecurityLevel.MALICIOUS;
+  }
+  if (isSuspicious) {
+    return SecurityLevel.SUSPICIOUS;
+  }
+  if (isUnableToScan) {
+    return SecurityLevel.UNABLE_TO_SCAN;
+  }
+  return SecurityLevel.SAFE;
+};
+
+/**
+ * Collapses a transaction Blockaid scan into a single SecurityLevel (or null
+ * when nothing is flagged) for the reusable BlockaidBanner. A simulation error
+ * is treated as suspicious. The dev override takes precedence. Shared by the
+ * swap review and the dApp sign-transaction flow so both read one source.
+ */
+export const getTransactionSecurityLevel = (
+  txScanResult: BlockAidScanTxResult | null | undefined,
+  isUnableToScan: boolean,
+  blockaidOverrideState: string | null,
+): SecurityLevel | null => {
+  // Check overrides first (takes precedence, dev mode only)
+  if (blockaidOverrideState) {
+    return blockaidOverrideState as SecurityLevel;
+  }
+
+  if (!txScanResult) {
+    return isUnableToScan ? SecurityLevel.UNABLE_TO_SCAN : null;
+  }
+
+  const { simulation, validation } = txScanResult;
+
+  // Handle simulation error - treat as suspicious
+  if (simulation && "error" in simulation) {
+    return SecurityLevel.SUSPICIOUS;
+  }
+
+  // Handle validation result
+  if (validation && "result_type" in validation) {
+    const resultType = validation.result_type;
+    if (resultType === "Malicious") {
+      return SecurityLevel.MALICIOUS;
+    }
+    if (resultType === "Warning") {
+      return SecurityLevel.SUSPICIOUS;
+    }
+  }
+
+  // Handle unable to scan
+  if (isUnableToScan) {
+    return SecurityLevel.UNABLE_TO_SCAN;
+  }
+
+  return null;
+};
+
+/**
  * Hook that handles asynchronous site scanning and updates state via dispatch
  * This prevents blocking the UI while scanning sites
  *

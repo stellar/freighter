@@ -44,15 +44,17 @@ import {
   WarningMessageVariant,
   WarningMessage,
   SSLWarningMessage,
-  BlockaidTxScanLabel,
   BlockAidScanExpanded,
   DomainNotAllowedWarningMessage,
   MemoRequiredLabel,
 } from "popup/components/WarningMessages";
+import { BlockaidBanner } from "popup/components/BlockaidBanner";
+import { SecurityLevel, mergeSecurityLevels } from "popup/constants/blockaid";
 import {
   useShouldTreatTxAsUnableToScan,
   useIsTxSuspicious,
   getSiteSecurityStates,
+  getTransactionSecurityLevel,
 } from "popup/helpers/blockaid";
 import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
 import { Loading } from "popup/components/Loading";
@@ -316,6 +318,27 @@ export const SignTransaction = () => {
     hasSimulationError ||
     isSiteMalicious;
 
+  // Single Blockaid verdict for the banner: the worst of the transaction scan
+  // and the requesting site's scan. Entity is "transaction" when the tx itself
+  // is flagged, otherwise "site" (so the copy matches what was actually flagged).
+  const txSecurityLevel = getTransactionSecurityLevel(
+    scanResult,
+    isUnableToScan,
+    blockaidOverrideState,
+  );
+  const siteSecurityLevel = isSiteMalicious
+    ? SecurityLevel.MALICIOUS
+    : isSiteSuspicious
+      ? SecurityLevel.SUSPICIOUS
+      : isSiteUnableToScan
+        ? SecurityLevel.UNABLE_TO_SCAN
+        : null;
+  const blockaidSecurityLevel = mergeSecurityLevels([
+    txSecurityLevel,
+    siteSecurityLevel,
+  ]);
+  const blockaidBannerEntity = txSecurityLevel ? "transaction" : "site";
+
   if (_networkPassphrase !== networkPassphrase) {
     return (
       <WarningMessage
@@ -404,12 +427,14 @@ export const SignTransaction = () => {
     }
 
     // 2. Blockaid: malicious / suspicious / unable-to-scan
-    if (showBlockAidDetails) {
+    if (showBlockAidDetails && blockaidSecurityLevel) {
       return (
         <div className="SignTransaction__BlockaidDetails">
-          <BlockaidTxScanLabel
-            scanResult={scanResult}
+          <BlockaidBanner
+            securityLevel={blockaidSecurityLevel}
+            entity={blockaidBannerEntity}
             onClick={() => setIsOnBlockaidSheet(true)}
+            dataTestId="sign-tx-blockaid-banner"
           />
         </div>
       );

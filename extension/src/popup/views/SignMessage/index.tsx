@@ -13,9 +13,9 @@ import {
   WarningMessage,
   SSLWarningMessage,
   DomainNotAllowedWarningMessage,
-  BlockAidSiteScanLabel,
   BlockaidByLine,
 } from "popup/components/WarningMessages";
+import { BlockaidBanner } from "popup/components/BlockaidBanner";
 import { View } from "popup/basics/layout/View";
 
 import { ShowOverlayStatus } from "popup/ducks/transactionSubmission";
@@ -335,11 +335,17 @@ export const SignMessage = () => {
               )}
               {shouldShowWarning && (
                 <div className="SignMessage__BlockaidBanner">
-                  <BlockAidSiteScanLabel
-                    isMalicious={isMalicious}
-                    isUnableToScan={isUnableToScan}
-                    status={scanData?.status}
+                  <BlockaidBanner
+                    securityLevel={
+                      isMalicious
+                        ? SecurityLevel.MALICIOUS
+                        : isSuspicious
+                          ? SecurityLevel.SUSPICIOUS
+                          : SecurityLevel.UNABLE_TO_SCAN
+                    }
+                    entity="site"
                     onClick={() => setIsOnBlockaidSheet(true)}
+                    dataTestId="sign-message-blockaid-banner"
                   />
                 </div>
               )}

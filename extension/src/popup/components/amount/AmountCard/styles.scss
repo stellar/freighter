@@ -119,9 +119,24 @@
         width: 100%;
         height: 100%;
       }
+
+      // The icon is only 20px here, so the default half-size corner badge is
+      // too small to read. Bump it to ~65% (glyph kept legible) so the "!" is
+      // clearly shown in the bottom-right corner without covering the whole
+      // token image.
+      .ScamAssetIcon {
+        width: 65%;
+
+        svg {
+          width: 60%;
+          height: 60%;
+        }
+      }
     }
 
-    svg:last-child {
+    // Direct child only: this sizes the chevron, not the Blockaid badge's
+    // nested <svg> (which is the last child of its own .ScamAssetIcon span).
+    > svg:last-child {
       width: pxToRem(14px);
       height: pxToRem(14px);
     }

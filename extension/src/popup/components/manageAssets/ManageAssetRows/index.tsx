@@ -31,6 +31,7 @@ export type ManageAssetCurrency = {
   contract?: string;
   icon?: string;
   isSuspicious?: boolean;
+  isMalicious?: boolean;
   decimals?: number;
   balance?: string;
   name?: string;
@@ -114,6 +115,7 @@ export const ManageAssetRows = ({
               image,
               issuer,
               isSuspicious,
+              isMalicious,
               isSac,
               isTrustlineActive,
               name,
@@ -124,6 +126,7 @@ export const ManageAssetRows = ({
                 iconUrl={image}
                 domain={domain}
                 isSuspicious={isSuspicious}
+                isMalicious={isMalicious}
                 // SAC contract tokens display their name; everything else the code.
                 displayCode={name && contract && !isSac ? name : code}
                 codeTestId="ManageAssetCode"
@@ -218,6 +221,7 @@ const AssetRows = ({
     isContract,
     isTrustlineActive,
     isSuspicious,
+    isMalicious,
     isSac,
   }: {
     code: string;
@@ -229,6 +233,7 @@ const AssetRows = ({
     isContract: boolean;
     isTrustlineActive: boolean;
     isSuspicious?: boolean;
+    isMalicious?: boolean;
     isSac: boolean;
   }) => React.ReactNode;
 }) => {
@@ -259,6 +264,7 @@ const AssetRows = ({
             name = "",
             contract = "",
             isSuspicious,
+            isMalicious,
           }) => {
             if (!accountBalances.balances) {
               return null;
@@ -292,6 +298,7 @@ const AssetRows = ({
                   isContract,
                   issuer,
                   isSuspicious,
+                  isMalicious,
                   isSac,
                   isTrustlineActive:
                     isTrustlineActive !== undefined ||
@@ -323,6 +330,7 @@ const AssetRows = ({
             name = "",
             contract = "",
             isSuspicious,
+            isMalicious,
           }) => {
             if (!accountBalances.balances) {
               return null;
@@ -357,6 +365,7 @@ const AssetRows = ({
                   isContract,
                   issuer,
                   isSuspicious,
+                  isMalicious,
                   isSac,
                   isTrustlineActive:
                     isTrustlineActive !== undefined ||

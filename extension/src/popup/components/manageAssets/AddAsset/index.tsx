@@ -22,6 +22,7 @@ import {
   scanAsset,
   scanAssetBulk,
   useIsAssetSuspicious,
+  useIsAssetMalicious,
 } from "popup/helpers/blockaid";
 
 import { SubviewHeader } from "popup/components/SubviewHeader";
@@ -72,6 +73,7 @@ export const AddAsset = () => {
   const cachedTokenLists = useSelector(tokensListsSelector);
   const navigate = useNavigate();
   const isAssetSuspicious = useIsAssetSuspicious();
+  const isAssetMalicious = useIsAssetMalicious();
 
   const { state, fetchData } = useGetAddAssetData({
     showHidden: true,
@@ -159,6 +161,7 @@ export const AddAsset = () => {
         domain: "",
         name: tokenDetailsResponse.name,
         isSuspicious: isAssetSuspicious(scannedAsset),
+        isMalicious: isAssetMalicious(scannedAsset),
       } as ManageAssetCurrency;
     };
 
@@ -245,6 +248,9 @@ export const AddAsset = () => {
             ({
               ...record,
               isSuspicious: isAssetSuspicious(
+                scannedAssets?.results[`${record.code}-${record.issuer}`],
+              ),
+              isMalicious: isAssetMalicious(
                 scannedAssets?.results[`${record.code}-${record.issuer}`],
               ),
             }) as ManageAssetCurrency,

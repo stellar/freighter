@@ -10,7 +10,6 @@
     flex-direction: column;
     max-width: 57rem;
     width: 100%;
-    flex: 1;
     overflow-y: auto;
   }
 
@@ -89,7 +88,10 @@
   }
 
   &__BlockaidBanner {
-    margin-bottom: pxToRem(16px);
+    // No own margin: the header above (TitleRow margin-bottom) and the message
+    // card below (SignMessageData margin-top) already supply the popup's
+    // standard spacing, so adding margin here just doubled the gap.
+    margin: 0;
   }
 
   &__MainPane {

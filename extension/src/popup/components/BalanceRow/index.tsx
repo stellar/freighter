@@ -17,6 +17,7 @@ export interface BalanceRowProps {
   /** Direct icon URL (used when there is no assetIcons map entry). */
   iconUrl?: string | null;
   isSuspicious?: boolean;
+  isMalicious?: boolean;
   isLPShare?: boolean;
   retryAssetIconFetch?: (arg: { key: string; code: string }) => void;
   /** Formatted token balance, e.g. "123.45". */
@@ -45,6 +46,7 @@ export const BalanceRow = ({
   assetIcons = {},
   iconUrl,
   isSuspicious = false,
+  isMalicious = true,
   isLPShare = false,
   retryAssetIconFetch,
   amount,
@@ -89,6 +91,7 @@ export const BalanceRow = ({
           icon={iconUrl || undefined}
           isLPShare={isLPShare}
           isSuspicious={isSuspicious}
+          isMalicious={isMalicious}
           retryAssetIconFetch={retryAssetIconFetch}
         />
         <div className="BalanceRow__value">

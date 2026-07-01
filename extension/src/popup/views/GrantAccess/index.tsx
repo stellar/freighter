@@ -145,7 +145,6 @@ export const GrantAccess = () => {
               domain={domain}
               isMalicious={isMalicious}
               isUnableToScan={isUnableToScan}
-              scanStatus={scanData?.status}
               onClick={() => setActivePaneIndex(1)}
               subject={t(
                 `Allow ${domain} to view your wallet address, balance, activity and request approval for transactions`,

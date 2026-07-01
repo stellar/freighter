@@ -17,6 +17,8 @@ export interface AssetListRowProps {
   iconUrl?: string | null;
   /** Renders the Blockaid scam badge on the icon when true. */
   isSuspicious?: boolean;
+  /** Colors the badge red (malicious) vs amber (suspicious). Defaults to red. */
+  isMalicious?: boolean;
   /** Slot rendered on the right of the row (e.g. an "Add" button or a menu). */
   rightElement?: React.ReactNode;
   /** Click handler for the row body (icon + code + domain). */
@@ -40,6 +42,7 @@ export const AssetListRow = ({
   domain,
   iconUrl,
   isSuspicious = false,
+  isMalicious = true,
   rightElement,
   onClick,
   "data-testid": dataTestId,
@@ -66,6 +69,7 @@ export const AssetListRow = ({
           issuerKey={issuer}
           icon={iconUrl || undefined}
           isSuspicious={isSuspicious}
+          isMalicious={isMalicious}
         />
         <div className="AssetListRow__info">
           <div className="AssetListRow__code" data-testid={codeTestId}>

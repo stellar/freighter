@@ -138,6 +138,7 @@ export const SwapPickerSections = ({
       const isSuspicious =
         r.securityLevel === SecurityLevel.MALICIOUS ||
         r.securityLevel === SecurityLevel.SUSPICIOUS;
+      const isMalicious = r.securityLevel === SecurityLevel.MALICIOUS;
       return (
         <AssetListRow
           key={r.canonical}
@@ -148,6 +149,7 @@ export const SwapPickerSections = ({
           domain={r.domain}
           iconUrl={r.image ?? r.icon ?? undefined}
           isSuspicious={isSuspicious}
+          isMalicious={isMalicious}
           onClick={() =>
             onClickAsset(r.canonical, r.isContract, buildSelection(r, source))
           }

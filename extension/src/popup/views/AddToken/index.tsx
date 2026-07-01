@@ -25,10 +25,10 @@ import {
   WarningMessageVariant,
   WarningMessage,
   SSLWarningMessage,
-  BlockaidAssetWarning,
   DomainNotAllowedWarningMessage,
   BlockAidAssetScanExpanded,
 } from "popup/components/WarningMessages";
+import { BlockaidBanner } from "popup/components/BlockaidBanner";
 import {
   VerifiedTokenInfoSheet,
   UnverifiedTokenInfoSheet,
@@ -43,6 +43,8 @@ import {
   isAssetSuspicious,
   isAssetMalicious,
   shouldTreatAssetAsUnableToScan,
+  getAssetSecurityLevel,
+  useBlockaidOverrideState,
 } from "popup/helpers/blockaid";
 import { getBlockaidOverrideState } from "@shared/api/internal";
 import { useIsDomainListedAllowed } from "popup/helpers/useIsDomainListedAllowed";
@@ -96,6 +98,7 @@ export const AddToken = () => {
   const [isOnBlockaidSheet, setIsOnBlockaidSheet] = useState(false);
   const [verifiedSheetOpen, setVerifiedSheetOpen] = useState(false);
   const [unverifiedSheetOpen, setUnverifiedSheetOpen] = useState(false);
+  const blockaidOverrideState = useBlockaidOverrideState();
 
   const assetCurrency: ManageAssetCurrency | undefined = assetRows[0];
 
@@ -443,9 +446,15 @@ export const AddToken = () => {
               )}
 
               {blockaidData && (
-                <BlockaidAssetWarning
-                  blockaidData={blockaidData}
+                <BlockaidBanner
+                  securityLevel={getAssetSecurityLevel({
+                    blockaidData,
+                    blockaidOverrideState,
+                    networkDetails: state.data.settings.networkDetails,
+                  })}
+                  entity="token"
                   onClick={() => setIsOnBlockaidSheet(true)}
+                  dataTestId="blockaid-banner-add-token"
                 />
               )}
 

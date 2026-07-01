@@ -10,7 +10,6 @@ import {
 } from "stellar-sdk";
 
 import { NetworkDetails } from "@shared/constants/stellar";
-import { BlockAidScanTxResult } from "@shared/api/types";
 import { OPERATION_TYPES } from "constants/transaction";
 import { decodeMemo } from "popup/helpers/parseTransaction";
 import { Summary } from "popup/views/SignTransaction/Preview/Summary";
@@ -48,6 +47,7 @@ import {
 import {
   useBlockaidOverrideState,
   useShouldTreatTxAsUnableToScan,
+  getTransactionSecurityLevel,
 } from "popup/helpers/blockaid";
 import {
   BlockAidScanExpanded,
@@ -64,49 +64,6 @@ import { TrustlineInfoSheet } from "./components/TrustlineInfoSheet";
 import { SwapRateRow } from "./components/SwapRateRow";
 
 import "./styles.scss";
-
-/**
- * Determines security level from transaction scan result, considering overrides
- */
-const getTransactionSecurityLevel = (
-  txScanResult: BlockAidScanTxResult | null | undefined,
-  isUnableToScan: boolean,
-  blockaidOverrideState: string | null,
-): SecurityLevel | null => {
-  // Check overrides first (takes precedence, dev mode only)
-  if (blockaidOverrideState) {
-    return blockaidOverrideState as SecurityLevel;
-  }
-
-  if (!txScanResult) {
-    return isUnableToScan ? SecurityLevel.UNABLE_TO_SCAN : null;
-  }
-
-  const { simulation, validation } = txScanResult;
-
-  // Handle simulation error - treat as suspicious
-  if (simulation && "error" in simulation) {
-    return SecurityLevel.SUSPICIOUS;
-  }
-
-  // Handle validation result
-  if (validation && "result_type" in validation) {
-    const resultType = validation.result_type;
-    if (resultType === "Malicious") {
-      return SecurityLevel.MALICIOUS;
-    }
-    if (resultType === "Warning") {
-      return SecurityLevel.SUSPICIOUS;
-    }
-  }
-
-  // Handle unable to scan
-  if (isUnableToScan) {
-    return SecurityLevel.UNABLE_TO_SCAN;
-  }
-
-  return null;
-};
 
 interface ReviewTxProps {
   assetIcon: string | null;
@@ -472,6 +429,7 @@ export const ReviewTx = ({
                 sourceTokenSecurityLevel === SecurityLevel.MALICIOUS ||
                 sourceTokenSecurityLevel === SecurityLevel.SUSPICIOUS
               }
+              isMalicious={sourceTokenSecurityLevel === SecurityLevel.MALICIOUS}
             />
           </div>
           <div className="ReviewTx__Divider">
@@ -491,6 +449,7 @@ export const ReviewTx = ({
                 destTokenSecurityLevel === SecurityLevel.MALICIOUS ||
                 destTokenSecurityLevel === SecurityLevel.SUSPICIOUS
               }
+              isMalicious={destTokenSecurityLevel === SecurityLevel.MALICIOUS}
             />
           </div>
         </div>
