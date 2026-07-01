@@ -1,38 +1,26 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Navigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Form, Field, FieldProps, Formik, useFormik } from "formik";
-import { debounce } from "lodash";
-import { toast } from "sonner";
+import { useFormik } from "formik";
 import BigNumber from "bignumber.js";
 import { captureException } from "@sentry/browser";
-import { object as YupObject, number as YupNumber } from "yup";
 import { BASE_RESERVE } from "@shared/constants/stellar";
-import {
-  Button,
-  Card,
-  Icon,
-  Input,
-  Notification,
-} from "@stellar/design-system";
+import { Button, Icon, Notification } from "@stellar/design-system";
 
 import { View } from "popup/basics/layout/View";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
 import {
-  saveAllowedSlippage,
   saveAmount,
   saveAmountUsd,
   saveAsset,
   saveDestinationAsset,
   saveDestinationTokenDetails,
   saveIsToken,
-  saveSwapBestPath,
   saveTransactionFee,
   saveTransactionTimeout,
   clearSwapQuoteExpired,
-  transactionDataSelector,
   transactionSubmissionSelector,
 } from "popup/ducks/transactionSubmission";
 import {
@@ -40,35 +28,19 @@ import {
   formatAmount,
   roundUsdValue,
 } from "popup/helpers/formatters";
-import { TX_SEND_MAX } from "popup/constants/transaction";
 import { useGetSwapAmountData } from "./hooks/useGetSwapAmountData";
-import {
-  getAssetFromCanonical,
-  getCanonicalFromAsset,
-  isMainnet,
-} from "helpers/stellar";
+import { getAssetFromCanonical } from "helpers/stellar";
 import { RequestState } from "constants/request";
 import { Loading } from "popup/components/Loading";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { openTab } from "popup/helpers/navigate";
 import { newTabHref } from "helpers/urls";
 import { reRouteOnboarding } from "popup/helpers/route";
-import { getAssetDecimals, getAvailableBalance } from "popup/helpers/soroban";
-import {
-  findAssetBalance,
-  getBalanceCanonicalKey,
-} from "popup/helpers/balance";
-import {
-  getAssetSecurityLevel,
-  extractAssetScanWarnings,
-  useBlockaidOverrideState,
-  isBlockaidEnabled,
-  scanAssetBulk,
-} from "popup/helpers/blockaid";
-import { getCachedAssetScan } from "popup/components/swap/SwapAsset/hooks/useSwapTokenLookup";
+import { getAvailableBalance } from "popup/helpers/soroban";
+import { useBlockaidOverrideState } from "popup/helpers/blockaid";
 import { AppDispatch } from "popup/App";
 import { emitMetric } from "helpers/metrics";
-import { AMOUNT_ERROR, InputType } from "helpers/transaction";
+import { InputType } from "helpers/transaction";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { LoadingBackground } from "popup/basics/LoadingBackground";
 import { EditSettings } from "popup/components/InternalTransaction/EditSettings";
@@ -77,33 +49,28 @@ import {
   getSwapTotalFee,
   useSimulateTxData,
 } from "./hooks/useSimulateSwapData";
-import { getSwapCtaState, SwapCtaLabelKey } from "./helpers/swapCtaState";
+import { SwapCtaLabelKey } from "./helpers/swapCtaState";
+import { getSwapDerivedData } from "./helpers/getSwapDerivedData";
+import { validateSwapAmount } from "./helpers/swapAmountValidation";
+import {
+  getAmountFontSizeClass,
+  getAvailableBalanceFontSizePx,
+  buildFiatLineText,
+} from "./helpers/swapAmountDisplay";
+import { useSwapQuoteExpiry } from "./hooks/useSwapQuoteExpiry";
+import { useSwapDestinationScan } from "./hooks/useSwapDestinationScan";
 import { publicKeySelector } from "popup/ducks/accountServices";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { SlideupModal } from "popup/components/SlideupModal";
 import { AmountCard } from "popup/components/amount/AmountCard";
 import { PercentageButtons } from "popup/components/amount/PercentageButtons";
-import {
-  deductNewTrustlineReserve,
-  pickBestNonXlmClassicCanonical,
-  shouldShowXlmReservePreflight,
-} from "popup/helpers/xlmReserve";
+import { shouldShowXlmReservePreflight } from "popup/helpers/xlmReserve";
 import { horizonGetBestReceivePath } from "popup/helpers/horizonGetBestPath";
-import { horizonGetBestPath } from "popup/helpers/horizonGetBestPath";
 import { XlmReserveSheet } from "popup/components/swap/XlmReserveSheet";
+import { useSwapLiveQuote } from "./hooks/useSwapLiveQuote";
+import { EditSlippage } from "./EditSlippage";
 
 import "./styles.scss";
-
-const defaultSlippage = "2";
-
-// Debounce window for the live "You receive" quote while the user is typing.
-const LIVE_QUOTE_DEBOUNCE_MS = 500;
-
-const AVAILABLE_BALANCE_FONT_SIZES = [
-  { maxLen: 28, sizePx: 14 },
-  { maxLen: 42, sizePx: 12 },
-  { maxLen: Infinity, sizePx: 11 },
-] as const;
 
 // "Why do I need XLM?" help article (matches freighter-mobile).
 const XLM_RESERVE_HELP_URL =
@@ -199,9 +166,6 @@ export const SwapAmount = ({
   const [isEditingSettings, setIsEditingSettings] = useState(false);
   const [isReviewingTx, setIsReviewingTx] = React.useState(false);
   const [isXlmReserveOpen, setIsXlmReserveOpen] = useState(false);
-  // True while a live best-path quote is in flight, so the CTA can tell
-  // "still loading a quote" apart from "no path exists" (§2.5).
-  const [isLiveQuoteLoading, setIsLiveQuoteLoading] = useState(false);
   // Tracks focus on the sell input so the "Enter an amount" CTA can disable
   // itself while the input is focused. Unlike mobile (which keeps it enabled to
   // re-summon the keyboard), the extension has no virtual keyboard — once the
@@ -247,14 +211,8 @@ export const SwapAmount = ({
 
   const validate = (values: { amount: string }) => {
     const amount = inputType === "crypto" ? values.amount : (priceValue ?? "0");
-    const val = cleanAmount(amount);
-    if (val.indexOf(".") !== -1 && val.split(".")[1].length > 7) {
-      return { amount: AMOUNT_ERROR.DEC_MAX };
-    }
-    if (new BigNumber(val).gt(new BigNumber(TX_SEND_MAX))) {
-      return { amount: AMOUNT_ERROR.SEND_MAX };
-    }
-    return {};
+    const error = validateSwapAmount(amount);
+    return error ? { amount: error } : {};
   };
 
   const formik = useFormik({
@@ -265,24 +223,6 @@ export const SwapAmount = ({
     validateOnChange: true,
   });
 
-  // Size the displayed amount by its digit count. Each card passes its OWN
-  // value so the read-only receive amount isn't sized off the sell amount
-  // (which mis-sized and clipped it on toggle; § task 8).
-  const getAmountFontSizeClass = (
-    value: string,
-  ): "lg" | "med" | "small" | "xsmall" => {
-    const digitsLength = (value || "").replace(/[^0-9]/g, "").length;
-    if (digitsLength <= 6) {
-      return "lg";
-    }
-    if (digitsLength <= 10) {
-      return "med";
-    }
-    if (digitsLength <= 13) {
-      return "small";
-    }
-    return "xsmall";
-  };
   // Gate the fullscreen spinner ONLY on the swap data, never on the network
   // fee: feeStats() has no timeout and a slow Horizon was hanging the whole
   // screen for >15s (§ batch4 follow-up). The fee seeds from the base fee /
@@ -299,82 +239,15 @@ export const SwapAmount = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // If the destination token was picked before its Blockaid verdict landed (the
-  // picker's bulk scan is async), its securityLevel is missing — so the receive
-  // badge and the review's security gate would silently lose the assessment.
-  // Recover the verdict from the in-session scan cache, or scan the single
-  // token, then persist it onto the stored destination details (§ batch4
-  // follow-up — fixes "select before the badge appears loses the assessment").
-  const resolvedScanTokenRef = useRef<string | null>(null);
-  useEffect(() => {
-    const details = transactionData.destinationTokenDetails;
-    if (
-      !details ||
-      !details.issuer ||
-      details.securityLevel !== undefined ||
-      !isBlockaidEnabled(networkDetails)
-    ) {
-      return;
-    }
-    const id = `${details.tokenCode}-${details.issuer}`;
-    if (resolvedScanTokenRef.current === id) {
-      return;
-    }
-    resolvedScanTokenRef.current = id;
-
-    // Guard the async write: if the destination changes (direction toggle, a
-    // different pick) or the screen unmounts while the scan is in flight, the
-    // cleanup cancels + aborts so a stale verdict for the OLD token is never
-    // written onto the new destination (§ batch4 follow-up — must NOT substitute
-    // a wrong assessment).
-    let cancelled = false;
-    const controller = new AbortController();
-
-    const resolveVerdict = async () => {
-      let scan = getCachedAssetScan(
-        networkDetails.network,
-        details.tokenCode,
-        details.issuer!,
-      );
-      if (!scan) {
-        const bulk = await scanAssetBulk(
-          [id],
-          networkDetails,
-          controller.signal,
-        );
-        scan = bulk?.results?.[id];
-      }
-      if (cancelled || !scan) {
-        return;
-      }
-      const securityLevel = getAssetSecurityLevel({
-        blockaidData: scan,
-        blockaidOverrideState,
-        networkDetails,
-      });
-      const securityWarnings = extractAssetScanWarnings(scan);
-      dispatch(
-        saveDestinationTokenDetails({
-          ...details,
-          securityLevel,
-          ...(securityWarnings.length ? { securityWarnings } : {}),
-        }),
-      );
-    };
-    resolveVerdict();
-
-    return () => {
-      cancelled = true;
-      controller.abort();
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    transactionData.destinationTokenDetails?.tokenCode,
-    transactionData.destinationTokenDetails?.issuer,
-    transactionData.destinationTokenDetails?.securityLevel,
-    networkDetails.network,
+  // Recover a destination token's Blockaid verdict when it was picked before
+  // the async picker scan landed, persisting it onto the stored destination
+  // details so the receive badge + review gate keep the assessment.
+  useSwapDestinationScan({
+    destinationTokenDetails: transactionData.destinationTokenDetails,
+    networkDetails,
     blockaidOverrideState,
-  ]);
+    dispatch,
+  });
 
   // If the user was in fiat mode and the current source asset no longer has a
   // USD price (e.g. after a direction-swap or source picker change), force back
@@ -399,174 +272,36 @@ export const SwapAmount = ({
     setInputType,
   ]);
 
-  // A transient, swipe-/auto-dismissible toast (sonner) rather than a fixed
-  // banner that takes layout space. The stable id dedupes the in-screen
-  // (isQuoteExpired) and submit-recovery (isSwapQuoteExpired) triggers into one
-  // toast instead of stacking two.
-  const showQuoteExpiredToast = () =>
-    toast.custom(
-      () => (
-        <Notification
-          variant="error"
-          title={t("Quote has expired, please try again to get a new quote")}
-        />
-      ),
-      { id: "swap-quote-expired" },
-    );
+  // Surfaces the "quote has expired" toast + metric for both the in-screen
+  // (isQuoteExpired) and submit-recovery (isSwapQuoteExpired) triggers.
+  useSwapQuoteExpiry({
+    isQuoteExpired,
+    isSwapQuoteExpired,
+    asset,
+    destinationAsset,
+    amount,
+    destinationAmount,
+    allowedSlippage,
+  });
 
-  // Quote-expired surfacing: when the simulate hook flags an expired quote
-  // (Horizon op_under_dest_min / op_too_few_offers), emit the metric and show
-  // the user-facing toast. The auto-refetch is handled by Phase E's getBestPath
-  // retry; this only emits + surfaces the message.
-  useEffect(() => {
-    if (!isQuoteExpired) {
-      return;
-    }
-    showQuoteExpiredToast();
-    emitMetric(METRIC_NAMES.swapQuoteExpired, {
-      sourceToken: asset,
-      destToken: destinationAsset,
-      sourceAmount: amount,
-      destAmount: destinationAmount,
-      allowedSlippage,
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isQuoteExpired]);
-
-  // A quote that expired at submit time (Redux flag) routes back to this screen;
-  // surface the same toast on arrival.
-  useEffect(() => {
-    if (isSwapQuoteExpired) {
-      showQuoteExpiredToast();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isSwapQuoteExpired]);
-
-  // Live quote: debounce the source amount and fetch the best path so the
-  // "You receive" amount updates as the user types. This is a lightweight
-  // path-only lookup (no XDR build / Blockaid scan / quote-expiry surfacing) —
-  // the full simulation runs at review time in handleContinue. A monotonic
-  // request id discards out-of-order responses; failures reset the displayed
-  // amount to 0 so a stale quote never lingers.
   // Lets the "Enter an amount" CTA focus the sell input on tap (§ task 1).
   const sellInputRef = useRef<HTMLInputElement>(null);
-  const liveQuoteReqRef = useRef(0);
-  const liveQuoteArgsRef = useRef({ asset, destinationAsset, networkDetails });
-  liveQuoteArgsRef.current = { asset, destinationAsset, networkDetails };
-  const destinationAmountRef = useRef(destinationAmount);
-  destinationAmountRef.current = destinationAmount;
-  // Once the review sheet is open the quote is frozen — a late live quote must
-  // not overwrite (or reset) the amount being reviewed.
-  const isReviewingRef = useRef(isReviewingTx);
-  isReviewingRef.current = isReviewingTx;
 
-  const debouncedQuote = useMemo(
-    () =>
-      debounce((quoteAmount: string) => {
-        const reqId = ++liveQuoteReqRef.current;
-        const {
-          asset: src,
-          destinationAsset: dst,
-          networkDetails: net,
-        } = liveQuoteArgsRef.current;
-        (async () => {
-          try {
-            const bestPath = await horizonGetBestPath({
-              amount: quoteAmount,
-              sourceAsset: src,
-              destAsset: dst,
-              networkDetails: net,
-            });
-            if (liveQuoteReqRef.current !== reqId || isReviewingRef.current) {
-              return; // superseded by a newer quote, or frozen for review
-            }
-            // This is the current request settling — stop signalling "loading"
-            // so the CTA can distinguish a missing path from a pending one.
-            setIsLiveQuoteLoading(false);
-            if (!bestPath?.destination_amount) {
-              dispatch(saveSwapBestPath({ path: [], destinationAmount: "0" }));
-              return;
-            }
-            const path: string[] = [];
-            bestPath.path.forEach((p) => {
-              if (!p.asset_code && !p.asset_issuer) {
-                path.push(p.asset_type);
-              } else {
-                path.push(getCanonicalFromAsset(p.asset_code, p.asset_issuer));
-              }
-            });
-            dispatch(
-              saveSwapBestPath({
-                path,
-                destinationAmount: bestPath.destination_amount,
-              }),
-            );
-          } catch {
-            if (liveQuoteReqRef.current !== reqId || isReviewingRef.current) {
-              return;
-            }
-            setIsLiveQuoteLoading(false);
-            // No path / network error: clear the stale received amount.
-            dispatch(saveSwapBestPath({ path: [], destinationAmount: "0" }));
-          }
-        })();
-      }, LIVE_QUOTE_DEBOUNCE_MS),
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- created once; reads the latest asset/destination/network via liveQuoteArgsRef so it stays stable across renders
-    [],
-  );
-
-  useEffect(() => () => debouncedQuote.cancel(), [debouncedQuote]);
-
-  useEffect(() => {
-    if (
-      swapAmountData.state !== RequestState.SUCCESS ||
-      swapAmountData.data?.type !== AppDataType.RESOLVED ||
-      !destinationAsset
-    ) {
-      return;
-    }
-    const livePrices = swapAmountData.data.tokenPrices;
-    const liveSrcPrice = livePrices[asset]?.currentPrice;
-    const liveDecimals = getAssetDecimals(
-      asset,
-      swapAmountData.data.userBalances,
-      isToken,
-    );
-    const cryptoAmount =
-      inputType === "fiat"
-        ? liveSrcPrice
-          ? new BigNumber(cleanAmount(amountUsd || "0"))
-              .dividedBy(new BigNumber(liveSrcPrice))
-              .decimalPlaces(liveDecimals)
-              .toString()
-          : "0"
-        : cleanAmount(amount || "0");
-
-    if (new BigNumber(cryptoAmount || "0").isGreaterThan(0)) {
-      setIsLiveQuoteLoading(true);
-      debouncedQuote(cryptoAmount);
-    } else {
-      // Source amount cleared: cancel any pending/in-flight quote and reset the
-      // received amount so the card shows 0 (skip the dispatch if already 0).
-      setIsLiveQuoteLoading(false);
-      debouncedQuote.cancel();
-      liveQuoteReqRef.current += 1;
-      if (
-        destinationAmountRef.current !== "0" &&
-        destinationAmountRef.current !== ""
-      ) {
-        dispatch(saveSwapBestPath({ path: [], destinationAmount: "0" }));
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- debouncedQuote/dispatch are stable and destinationAmount is read via a ref, so quote results don't re-trigger this effect (which would loop)
-  }, [
+  // Live "You receive" quote as the user types (debounced path-only lookup).
+  // isLiveQuoteLoading lets the CTA tell "loading a quote" apart from "no path".
+  const { isLiveQuoteLoading } = useSwapLiveQuote({
     amount,
     amountUsd,
     asset,
     destinationAsset,
     inputType,
-    swapAmountData.state,
-  ]);
+    isToken,
+    destinationAmount,
+    networkDetails,
+    isReviewingTx,
+    swapAmountData,
+    dispatch,
+  });
 
   if (isLoading) {
     return <Loading />;
@@ -607,116 +342,44 @@ export const SwapAmount = ({
     state: swapAmountData.state,
   });
 
-  const sendData = data;
-  const assetIcon = sendData.icons[asset];
-  // The icons map only carries held-token logos. A non-held destination token
-  // (picked from search/popular) isn't in it, so fall back to the icon URL
-  // captured on the picked token so the receive picker shows its logo too.
-  const dstAssetIcon =
-    sendData.icons[destinationAsset] ||
-    transactionData.destinationTokenDetails?.iconUrl ||
-    null;
-  // A non-held destination token can never become the source (we only swap
-  // held/classic assets), so the direction toggle handles it specially.
-  // Detect it by its absence from the account balances.
-  const heldCanonicals = new Set(
-    sendData.userBalances.balances.map((b) => getBalanceCanonicalKey(b)),
-  );
-  const destinationIsNonHeld =
-    Boolean(destinationAsset) && !heldCanonicals.has(destinationAsset);
-  const prices = sendData.tokenPrices;
-  const assetPrice = prices[asset] && prices[asset].currentPrice;
-  // Prefer the live backend price; fall back to the stellar.expert spot price
-  // captured when the (non-held) destination token was picked, so the receive
-  // card shows a fiat value instead of "--" when /token-prices has no entry.
-  const dstSpotPrice = transactionData.destinationTokenDetails?.spotPrice;
-  const dstAssetPrice =
-    prices[destinationAsset]?.currentPrice ??
-    // Spot-price fallback is mainnet-only, mirroring the /token-prices gate so
-    // the receive card never shows a fiat value the sell card can't.
-    (isMainnet(data.networkDetails) && dstSpotPrice != null
-      ? String(dstSpotPrice)
-      : undefined);
-  const assetDecimals = getAssetDecimals(asset, sendData.userBalances, isToken);
-  const priceValue = assetPrice
-    ? new BigNumber(cleanAmount(formik.values.amountUsd))
-        .dividedBy(new BigNumber(assetPrice))
-        .decimalPlaces(assetDecimals)
-        .toString()
-    : null;
-  const priceValueUsd = assetPrice
-    ? `${formatAmount(
-        roundUsdValue(
-          new BigNumber(assetPrice)
-            .multipliedBy(new BigNumber(cleanAmount(formik.values.amount)))
-            .toString(),
-        ),
-      )}`
-    : null;
-  const supportsUsd = isMainnet(data.networkDetails) && assetPrice;
-  const dstPriceValueUsd = dstAssetPrice
-    ? formatAmount(
-        roundUsdValue(
-          new BigNumber(dstAssetPrice)
-            .multipliedBy(new BigNumber(cleanAmount(destinationAmount || "0")))
-            .toString(),
-        ),
-      )
-    : null;
-  const baseAvailableBalance = asset
-    ? getAvailableBalance({
-        assetCanonical: asset,
-        balances: sendData.userBalances.balances,
-        recommendedFee: fee,
-      })
-    : "0";
-  // When swapping XLM into a new token, reserve the 0.5 XLM trustline bump
-  // up-front so it's excluded from Max / percentage buttons and the
-  // insufficient-balance check (matches mobile; §2.2).
-  const availableBalance = deductNewTrustlineReserve({
-    spendable: baseAvailableBalance,
-    sourceIsXlm: asset === "native",
-    requiresTrustline:
-      transactionData.destinationTokenDetails?.requiresTrustline ?? false,
+  // All balance/price/fee/security/CTA derivation. Plain function (not a hook):
+  // it runs below the early returns, where a hook would violate rules-of-hooks.
+  const {
+    sendData,
+    assetIcon,
+    dstAssetIcon,
+    destinationIsNonHeld,
+    assetPrice,
+    dstAssetPrice,
+    assetDecimals,
+    priceValue,
+    priceValueUsd,
+    supportsUsd,
+    dstPriceValueUsd,
+    availableBalance,
+    displayTotal,
+    sourceIsNonXlmClassic,
+    sourceTokenSecurityLevel,
+    sourceTokenSecurityWarnings,
+    bestNonXlmClassicCanonical,
+    canSwapForReserve,
+    isAmountTooHigh,
+    cta,
+  } = getSwapDerivedData({
+    data,
+    asset,
+    destinationAsset,
+    isToken,
+    destinationAmount,
+    destinationTokenDetails: transactionData.destinationTokenDetails,
+    amount: formik.values.amount,
+    amountUsd: formik.values.amountUsd,
+    fee,
+    blockaidOverrideState,
+    networkDetails,
+    inputType,
+    isLiveQuoteLoading,
   });
-  const displayTotal = `${formatAmount(availableBalance)}`;
-
-  // "Swap for 0.5 XLM" reserve-recovery affordance on the XlmReserveSheet
-  // (§3.2). The sell side is the current source when it's already a non-XLM
-  // classic token; otherwise the largest held non-XLM classic balance.
-  const sourceIsNonXlmClassic = !!asset && asset !== "native";
-
-  // Source token Blockaid verdict (from its held balance), passed to the review
-  // gate so a flagged sell token also warns (§4.3). XLM is never scanned.
-  const sourceBalance = sourceIsNonXlmClassic
-    ? findAssetBalance(
-        sendData.userBalances.balances,
-        getAssetFromCanonical(asset),
-      )
-    : null;
-  const sourceTokenSecurityLevel =
-    sourceBalance && "blockaidData" in sourceBalance
-      ? getAssetSecurityLevel({
-          blockaidData: sourceBalance.blockaidData,
-          blockaidOverrideState,
-          networkDetails,
-        })
-      : undefined;
-  // Friendly per-feature reasons from the source token scan, surfaced in the
-  // review's Blockaid pane alongside the transaction-scan reasons (§ batch4
-  // task 3).
-  const sourceTokenSecurityWarnings =
-    sourceBalance && "blockaidData" in sourceBalance
-      ? extractAssetScanWarnings(sourceBalance.blockaidData)
-      : undefined;
-
-  // Plain computation (not useMemo): this runs below early returns, so a hook
-  // here would violate the rules of hooks, and the filter/sort is cheap.
-  const bestNonXlmClassicCanonical = pickBestNonXlmClassicCanonical(
-    sendData.userBalances.balances,
-  );
-  const canSwapForReserve =
-    sourceIsNonXlmClassic || !!bestNonXlmClassicCanonical;
 
   const handleSwapForReserve = async () => {
     const sellCanonical = sourceIsNonXlmClassic
@@ -796,54 +459,6 @@ export const SwapAmount = ({
     }
   };
 
-  const isAmountTooHigh =
-    (inputType === "crypto" &&
-      new BigNumber(cleanAmount(formik.values.amount)).gt(
-        new BigNumber(availableBalance),
-      )) ||
-    (inputType === "fiat" &&
-      new BigNumber(cleanAmount(priceValue ?? "0")).gt(
-        new BigNumber(availableBalance),
-      ));
-
-  const swapAmountPositive =
-    inputType === "crypto"
-      ? new BigNumber(cleanAmount(formik.values.amount)).gt(0)
-      : new BigNumber(cleanAmount(formik.values.amountUsd)).gt(0);
-
-  // The live quote settled with no route for a positive amount → no swap path.
-  // While a quote is in flight (isLiveQuoteLoading) we leave the CTA enabled so
-  // it doesn't flicker disabled between keystrokes (§2.5).
-  const hasNoSwapPath =
-    swapAmountPositive &&
-    !isLiveQuoteLoading &&
-    new BigNumber(cleanAmount(destinationAmount || "0")).isZero();
-
-  // Non-XLM swaps pay the network fee from the separate XLM balance; block the
-  // CTA when that balance can't cover the fee (§2.4). XLM-source swaps already
-  // fold the fee into availableBalance, so this only applies to non-XLM sources.
-  const xlmSpendableForFees = getAvailableBalance({
-    assetCanonical: "native",
-    balances: sendData.userBalances.balances,
-    recommendedFee: "0",
-  });
-  const insufficientXlmForFees =
-    sourceIsNonXlmClassic &&
-    new BigNumber(xlmSpendableForFees).lt(new BigNumber(fee));
-
-  const cta = getSwapCtaState({
-    hasSource: !!asset,
-    hasDestination: !!destinationAsset,
-    // availableBalance already nets out the network fee + the new-trustline
-    // 0.5 XLM reserve, so a barely-funded account correctly reads as empty.
-    availableBalanceIsZero: new BigNumber(
-      cleanAmount(availableBalance),
-    ).isLessThanOrEqualTo(0),
-    amountIsZero: !swapAmountPositive,
-    isAmountTooHigh,
-    insufficientXlmForFees,
-    hasNoSwapPath,
-  });
   const ctaLabels: Record<SwapCtaLabelKey, string> = {
     select: t("Select a token"),
     enter: t("Enter an amount"),
@@ -856,9 +471,8 @@ export const SwapAmount = ({
   const availableBalanceText = srcAsset
     ? `${displayTotal} ${srcAsset.code} ${t("available")}`
     : "";
-  const availableBalanceFontSizePx = AVAILABLE_BALANCE_FONT_SIZES.find(
-    ({ maxLen }) => availableBalanceText.length <= maxLen,
-  )!.sizePx;
+  const availableBalanceFontSizePx =
+    getAvailableBalanceFontSizePx(availableBalanceText);
 
   return (
     <>
@@ -987,17 +601,14 @@ export const SwapAmount = ({
                     // matching the picker list (§ task 3).
                     securityLevel={sourceTokenSecurityLevel}
                     supportsUsd={Boolean(supportsUsd)}
-                    fiatLineText={
-                      !asset
-                        ? "$0.00"
-                        : inputType === "crypto"
-                          ? assetPrice
-                            ? `$${priceValueUsd || "0.00"}`
-                            : "--"
-                          : `${priceValue || "0"} ${
-                              srcAsset ? srcAsset.code : ""
-                            }`
-                    }
+                    fiatLineText={buildFiatLineText({
+                      hasAsset: !!asset,
+                      inputType,
+                      price: assetPrice,
+                      priceUsd: priceValueUsd,
+                      cryptoAmount: priceValue,
+                      code: srcAsset ? srcAsset.code : "",
+                    })}
                     isAmountTooHigh={isAmountTooHigh}
                     maxSpendableText={displayTotal}
                     cryptoDecimals={assetDecimals}
@@ -1098,17 +709,14 @@ export const SwapAmount = ({
                       transactionData.destinationTokenDetails?.securityLevel
                     }
                     supportsUsd={Boolean(supportsUsd)}
-                    fiatLineText={
-                      !destinationAsset
-                        ? "$0.00"
-                        : inputType === "crypto"
-                          ? dstAssetPrice
-                            ? `$${dstPriceValueUsd || "0.00"}`
-                            : "--"
-                          : `${destinationAmount || "0"} ${
-                              dstAsset ? dstAsset.code : ""
-                            }`
-                    }
+                    fiatLineText={buildFiatLineText({
+                      hasAsset: !!destinationAsset,
+                      inputType,
+                      price: dstAssetPrice,
+                      priceUsd: dstPriceValueUsd,
+                      cryptoAmount: destinationAmount,
+                      code: dstAsset ? dstAsset.code : "",
+                    })}
                     isAmountTooHigh={false}
                     isReadOnly
                     autoFocus={false}
@@ -1255,120 +863,5 @@ export const SwapAmount = ({
         )}
       </SlideupModal>
     </>
-  );
-};
-
-interface EditSlippageProps {
-  onClose: () => void;
-}
-
-const EditSlippage = ({ onClose }: EditSlippageProps) => {
-  const { t } = useTranslation();
-  const dispatch = useDispatch();
-  const { allowedSlippage } = useSelector(transactionDataSelector);
-
-  let presetSlippage = "";
-  let customSlippage = "";
-  if (["1", "2", "3"].includes(allowedSlippage)) {
-    presetSlippage = allowedSlippage;
-  } else {
-    customSlippage = allowedSlippage;
-  }
-
-  return (
-    <Formik
-      initialValues={{ presetSlippage, customSlippage }}
-      onSubmit={(values) => {
-        dispatch(
-          saveAllowedSlippage(values.customSlippage || values.presetSlippage),
-        );
-        onClose();
-      }}
-      validationSchema={YupObject().shape({
-        customSlippage: YupNumber()
-          .min(0, `${t("must be at least")} 0%`)
-          .max(10, `${t("must be below")} 10%`),
-      })}
-    >
-      {({ setFieldValue, values, errors }) => (
-        <Form
-          className="View__contentAndFooterWrapper"
-          data-testid="slippage-form"
-        >
-          <View.Content hasNoTopPadding>
-            <div className="Slippage">
-              <Card>
-                <p>{t("Allowed Slippage")}</p>
-                <div className="Slippage__cards">
-                  {["1", "2", "3"].map((value) => (
-                    <label key={value} className="Slippage--radio-label">
-                      <Field
-                        className="Slippage--radio-field"
-                        name="presetSlippage"
-                        type="radio"
-                        value={value}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                          setFieldValue("presetSlippage", e.target.value);
-                          setFieldValue("customSlippage", "");
-                          dispatch(saveAllowedSlippage(e.target.value));
-                          onClose();
-                        }}
-                      />
-                      <Card>{value}%</Card>
-                    </label>
-                  ))}
-                </div>
-                <div className="Slippage__custom-input">
-                  <Field name="customSlippage">
-                    {({ field }: FieldProps) => (
-                      <Input
-                        data-testid="custom-slippage-input"
-                        fieldSize="md"
-                        id="custom-input"
-                        min={0}
-                        max={10}
-                        placeholder={`${t("Custom")} %`}
-                        type="number"
-                        {...field}
-                        onChange={(e) => {
-                          setFieldValue("customSlippage", e.target.value);
-                          setFieldValue("presetSlippage", "");
-                        }}
-                        error={errors.customSlippage}
-                      />
-                    )}
-                  </Field>
-                </div>
-                <div className="Slippage__Footer">
-                  <Button
-                    size="md"
-                    isFullWidth
-                    isRounded
-                    variant="tertiary"
-                    type="button"
-                    onClick={() => {
-                      setFieldValue("presetSlippage", defaultSlippage);
-                      setFieldValue("customSlippage", "");
-                    }}
-                  >
-                    {t("Set default")}
-                  </Button>
-                  <Button
-                    size="md"
-                    isFullWidth
-                    isRounded
-                    disabled={!values.presetSlippage && !values.customSlippage}
-                    variant="secondary"
-                    type="submit"
-                  >
-                    {t("Done")}
-                  </Button>
-                </div>
-              </Card>
-            </div>
-          </View.Content>
-        </Form>
-      )}
-    </Formik>
   );
 };
