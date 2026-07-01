@@ -1935,7 +1935,7 @@ test("Send workflow: 25% amount is preserved across fiat toggle and review", asy
   await expect(amountBeforeToggle).not.toBe("0");
 
   // Toggle to fiat and back to token.
-  const toggleButton = page.locator(".SendAmount__amount-price button").first();
+  const toggleButton = page.getByTestId("amount-fiat-toggle");
   await expect(toggleButton).toHaveCount(1, { timeout: 15000 });
   await expect(toggleButton).toBeVisible({ timeout: 10000 });
   await toggleButton.click({ force: true });
@@ -1979,7 +1979,7 @@ test("Send workflow: typed token amount is preserved across fiat toggle and revi
   await expect(amountInput).toHaveValue("11");
 
   // Toggle to fiat and back.
-  const toggleButton = page.locator(".SendAmount__amount-price button").first();
+  const toggleButton = page.getByTestId("amount-fiat-toggle");
   await expect(toggleButton).toHaveCount(1, { timeout: 15000 });
   await expect(toggleButton).toBeVisible({ timeout: 10000 });
   await toggleButton.click({ force: true });
