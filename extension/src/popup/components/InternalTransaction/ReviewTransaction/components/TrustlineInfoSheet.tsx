@@ -14,7 +14,7 @@ interface TrustlineInfoSheetProps {
  * inside the review sheet in place of the review body while open: nesting a
  * position:fixed SlideupModal inside the self-measuring review modal collapsed
  * the review modal's height and clipped the sheet down to just its action
- * button (§ batch3 task 4). In-flow content drives the modal's height, so it
+ * button. In-flow content drives the modal's height, so it
  * renders full-size as the only visible sheet.
  */
 export const TrustlineInfoSheet = ({

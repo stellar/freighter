@@ -92,8 +92,8 @@ export const useSwapLiveQuote = ({
             if (liveQuoteReqRef.current !== reqId || isReviewingRef.current) {
               return; // superseded by a newer quote, or frozen for review
             }
-            // This is the current request settling — stop signalling "loading"
-            // so the CTA can distinguish a missing path from a pending one.
+            // Stop signalling "loading" so the CTA can distinguish a missing
+            // path from a pending one.
             setIsLiveQuoteLoading(false);
             if (!bestPath?.destination_amount) {
               dispatch(saveSwapBestPath({ path: [], destinationAmount: "0" }));

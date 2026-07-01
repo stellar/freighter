@@ -648,13 +648,13 @@ interface BlockAidScanExpandedProps {
   isAssetScan?: boolean;
   // Additional friendly reasons to list alongside the scan's own (e.g. on a
   // swap, the source/destination token-scan features shown together with the
-  // transaction-scan reasons, mirroring mobile — § batch4 task 3).
+  // transaction-scan reasons in a single pane).
   extraWarnings?: BlockaidWarning[];
   // The verdict that drives the parent gate's malicious/suspicious styling for
   // those extra reasons (e.g. a swap token's merged SecurityLevel). Folded into
   // the pane's title/icon so the pane can never under-state severity relative
   // to the gate when a token is flagged via result_type but carries no
-  // matching feature row (§ batch4 task 3).
+  // matching feature row.
   extraSeverityLevel?: SecurityLevel | null;
 }
 
@@ -779,11 +779,11 @@ const getScanWarnings = (
     }
 
     if (validation && "result_type" in validation) {
-      // Prefer the per-feature friendly descriptions (same as the asset/
-      // add-token path) over the raw top-level validation.description, which is
-      // a developer string like "Token issuer <Address [type=ACCOUNT ...]> is
-      // flagged as malicious" (§ batch3 task 3). Fall back to the top-level
-      // description only when there are no flagged features.
+      // Prefer per-feature friendly descriptions over the raw top-level
+      // validation.description, which is a developer string like
+      // "Token issuer <Address [type=ACCOUNT ...]> is flagged as malicious".
+      // Fall back to the top-level description only when there are no flagged
+      // features.
       const validationFeatures =
         ("features" in validation && validation.features) || [];
       const flaggedFeatures = validationFeatures.filter(
@@ -874,9 +874,9 @@ export const BlockAidScanExpanded = ({
   );
 
   // Append any caller-supplied reasons (e.g. swap token-scan features), so the
-  // pane lists the transaction-scan and token-scan reasons together like mobile
-  // (§ batch4 task 3). Dedupe against the scan's own rows by text, and among the
-  // extras by featureId, so the same reason never doubles up.
+  // pane lists the transaction-scan and token-scan reasons together in one view.
+  // Dedupe against the scan's own rows by text, and among the extras by
+  // featureId, so the same reason never doubles up.
   const extraRows = (extraWarnings ?? [])
     .filter(
       (extra) =>

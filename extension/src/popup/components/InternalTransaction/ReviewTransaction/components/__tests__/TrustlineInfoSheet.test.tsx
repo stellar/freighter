@@ -66,7 +66,6 @@ describe("TrustlineInfoSheet", () => {
         <TrustlineInfoSheet tokenCode="USDC" onClose={onClose} />
       </Wrapper>,
     );
-    // Body copy is token-specific and present.
     expect(screen.getByText(/To hold USDC in your wallet/)).toBeInTheDocument();
     // The reserve amount renders as inline bold (a <strong> element).
     const emphasized = screen.getByText("0.5 XLM will be reserved");
@@ -93,8 +92,7 @@ describe("TrustlineInfoSheet", () => {
     );
     // Regression guard for the SDS Button className footgun: passing className
     // to <Button> overwrites its own variant classes, leaving a bare-text
-    // button. The CTA must carry the SDS variant class so it renders filled,
-    // matching the "Swap for 0.5 XLM" button.
+    // button. The CTA must carry the SDS variant class so it renders filled.
     const cta = screen.getByText("Got it").closest("button");
     expect(cta).not.toBeNull();
     expect(cta).toHaveClass("Button");

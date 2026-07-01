@@ -14,8 +14,7 @@ import * as ApiInternal from "@shared/api/internal";
 
 describe("useGetTokenPrices", () => {
   afterEach(() => {
-    // restore (not just clear) so an unconsumed mockImplementationOnce from a
-    // cache-hit test doesn't leak its queued impl into the next test.
+    // restore (not just clear) so unconsumed mockImplementationOnce calls don't leak into the next test.
     jest.restoreAllMocks();
   });
   it("should return token prices from API with no cache", async () => {

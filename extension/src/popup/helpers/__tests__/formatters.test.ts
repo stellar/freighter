@@ -141,7 +141,7 @@ describe("trimTrailingZeros", () => {
 describe("formatAmountPreserveCursor", () => {
   it("returns an empty amount for a fully-cleared field (not '0')", () => {
     // Erasing every digit must stay empty so the input can show its placeholder
-    // / just the "$" prefix, rather than snapping back to a non-erasable "0".
+    // or just the "$" prefix, rather than snapping back to a non-erasable "0".
     expect(formatAmountPreserveCursor("", "12").amount).toBe("");
     expect(formatAmountPreserveCursor("", "1.23").amount).toBe("");
   });

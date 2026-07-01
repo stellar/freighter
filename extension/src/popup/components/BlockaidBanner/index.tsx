@@ -22,9 +22,9 @@ export type BlockaidEntity =
   | "site";
 
 /**
- * Resolves the banner title from the flagged entity and its severity, matching
- * freighter-mobile's wording. UNABLE_TO_SCAN is a soft "proceed with caution"
- * (site has its own copy). SAFE never produces a title.
+ * Resolves the banner title from the flagged entity and its severity.
+ * UNABLE_TO_SCAN is a soft "proceed with caution" (site has its own copy).
+ * SAFE never produces a title.
  */
 export const getBlockaidBannerTitle = (
   t: TFunction,

@@ -86,7 +86,7 @@ export const Operations = ({
   operations: OperationRecord[];
   // The dapp-signing flow self-scans each op's assets for its own badges. The
   // internal Send/Swap review already scans these assets, so it passes
-  // scanAssets={false} to avoid duplicate Blockaid requests (§ batch4 follow-up).
+  // scanAssets={false} to avoid duplicate Blockaid requests.
   scanAssets?: boolean;
 }) => {
   const { t } = useTranslation();

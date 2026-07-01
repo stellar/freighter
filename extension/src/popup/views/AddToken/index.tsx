@@ -92,9 +92,8 @@ export const AddToken = () => {
     useState<BlockAidScanAssetResult | null>(null);
   const [isMaliciousAsset, setIsMaliciousAsset] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
-  // The expanded Blockaid sheet renders IN-FLOW (replacing the body in place)
-  // rather than sliding in as a horizontal pane — same pattern as
-  // ReviewTransaction. Gated by this boolean.
+  // The expanded Blockaid sheet renders in-flow (replacing the body in place),
+  // matching the ReviewTransaction pattern.
   const [isOnBlockaidSheet, setIsOnBlockaidSheet] = useState(false);
   const [verifiedSheetOpen, setVerifiedSheetOpen] = useState(false);
   const [unverifiedSheetOpen, setUnverifiedSheetOpen] = useState(false);
@@ -162,7 +161,6 @@ export const AddToken = () => {
         getBlockaidOverrideState().catch(() => null),
       ]);
 
-      // Show Blockaid warning if suspicious, malicious, or unable to scan (including debug override)
       if (
         scannedAsset &&
         (isAssetSuspicious(scannedAsset, overrideState) ||
@@ -480,8 +478,7 @@ export const AddToken = () => {
               </div>
             </div>
           )}
-          {/* Verified/Unverified info, shared with the swap picker — opened by
-              the clickable verification title above. */}
+          {/* Verified/Unverified info sheets, shared with the swap picker. */}
           <VerifiedTokenInfoSheet
             isOpen={verifiedSheetOpen}
             onClose={() => setVerifiedSheetOpen(false)}

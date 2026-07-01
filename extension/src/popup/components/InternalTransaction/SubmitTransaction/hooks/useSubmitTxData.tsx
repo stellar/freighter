@@ -99,7 +99,7 @@ function useSubmitTxData({
 
       if (submitFreighterTransaction.fulfilled.match(submitResp)) {
         if (isSwap) {
-          // Post-confirmation swap telemetry (§3.8): the swap actually settled.
+          // Post-confirmation swap telemetry: the swap actually settled.
           emitMetric(METRIC_NAMES.swapSuccess, {
             sourceToken: sourceAsset.code,
             destToken: destinationAsset,
@@ -108,7 +108,7 @@ function useSubmitTxData({
             allowedSlippage,
           });
           // Trustline added only once the combined changeTrust +
-          // pathPaymentStrictSend transaction confirmed it (§3.4).
+          // pathPaymentStrictSend transaction confirmed it.
           if (destinationTokenDetails?.requiresTrustline) {
             emitMetric(METRIC_NAMES.swapTrustlineAdded, {
               tokenCode: destinationTokenDetails.tokenCode,

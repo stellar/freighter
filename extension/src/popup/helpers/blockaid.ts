@@ -445,8 +445,7 @@ export const isAssetSuspicious = (
 
 /**
  * Collapses a token's Blockaid scan result into a single SecurityLevel,
- * honoring the dev override and the network gate. Used to derive the source
- * token's verdict for the swap review gate (§4.3). UNABLE_TO_SCAN only applies
+ * honoring the dev override and the network gate. UNABLE_TO_SCAN only applies
  * where Blockaid runs (mainnet); a clean scan returns SAFE.
  */
 export const getAssetSecurityLevel = ({
@@ -479,9 +478,9 @@ export const getAssetSecurityLevel = ({
 /**
  * Friendly per-feature reasons from a token (asset) Blockaid scan — the same
  * descriptions the Add-a-token flow shows. Only Warning/Malicious features are
- * surfaced (Benign/Info are trust signals, not reasons). These are carried
- * through the swap picker so the review's "Do not proceed" pane can list the
- * token's reasons alongside the transaction-scan reasons (§ batch4 task 3).
+ * surfaced (Benign/Info are trust signals, not reasons). Carried through the
+ * swap picker so the review's "Do not proceed" pane can list token reasons
+ * alongside the transaction-scan reasons.
  */
 export const extractAssetScanWarnings = (
   blockaidData?: BlockAidScanAssetResult | null,
@@ -667,7 +666,6 @@ export const getTransactionSecurityLevel = (
     return SecurityLevel.SUSPICIOUS;
   }
 
-  // Handle validation result
   if (validation && "result_type" in validation) {
     const resultType = validation.result_type;
     if (resultType === "Malicious") {
@@ -678,7 +676,6 @@ export const getTransactionSecurityLevel = (
     }
   }
 
-  // Handle unable to scan
   if (isUnableToScan) {
     return SecurityLevel.UNABLE_TO_SCAN;
   }

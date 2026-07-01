@@ -143,7 +143,7 @@ export const SendingTransaction = ({
   // A new (not-yet-held) destination token has no entry in the icon cache, so
   // fall back to the iconUrl carried on the picked token's details — the same
   // source the picker and review screen use — so the icon persists through the
-  // Swapping/Swapped! states instead of showing a broken image (§ task 6).
+  // Swapping/Swapped! states instead of showing a broken image.
   const dstAssetIcon =
     icons[destinationAsset] ||
     transactionData.destinationTokenDetails?.iconUrl ||

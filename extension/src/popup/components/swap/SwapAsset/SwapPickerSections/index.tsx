@@ -102,8 +102,7 @@ export const SwapPickerSections = ({
   const verified = result.verified.filter((r) => !hidden.has(r.canonical));
   const unverified = result.unverified.filter((r) => !hidden.has(r.canonical));
 
-  // Held "Your tokens" rows use the shared BalanceRow (code + balance + fiat +
-  // 24h delta), matching the account-home balances list.
+  // Held "Your tokens" rows use BalanceRow, matching the account-home balances list.
   const renderBalanceRows = (
     records: SwapTokenRecord[],
     source: PickerSource,

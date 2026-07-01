@@ -1,6 +1,5 @@
-// Pure CTA state machine for the swap amount screen, mirroring mobile's
-// useSwapCtaState. Precedence matters: each guard short-circuits, so the
-// label reflects the most specific blocker (§2.4/§2.5).
+// Pure CTA state machine for the swap amount screen. Precedence matters:
+// each guard short-circuits, so the label reflects the most specific blocker.
 
 export type SwapCtaLabelKey =
   | "select"
@@ -41,7 +40,7 @@ export const getSwapCtaState = ({
     return { disabled: true, labelKey: "insufficientBalance" };
   }
   // Both tokens picked but no amount yet: ENABLED so tapping it focuses the
-  // sell input (mirrors mobile useSwapCtaState — "enter" is not disabled).
+  // sell input ("enter" is not disabled).
   if (amountIsZero) {
     return { disabled: false, labelKey: "enter" };
   }

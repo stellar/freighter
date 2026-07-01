@@ -78,7 +78,7 @@ export const SwapAsset = ({
   // the debounce gap); from there isLoading (lookupState LOADING) takes over and
   // clears as soon as the first results paint. We deliberately don't keep it set
   // for the whole fetch promise — that kept the spinner up through the silent
-  // Blockaid revalidation / cached-result repaint (§ batch3 tasks 10 & 11).
+  // Blockaid revalidation / cached-result repaint.
   const [isSearchPending, setIsSearchPending] = React.useState(false);
 
   const isLoading = isDestination

@@ -1,7 +1,7 @@
 .ManageAssetRows {
   // Clickable "Verified" / "Unverified" search-result section header. The whole
   // title (not just the (i)) opens the token-verification info sheet, matching
-  // the swap picker (§ batch4 follow-up). Reset native button styling.
+  // the swap picker.
   &__list-header {
     display: flex;
     align-items: center;

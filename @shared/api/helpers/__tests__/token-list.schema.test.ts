@@ -37,8 +37,8 @@ const baseList = (overrides: Record<string, unknown> = {}): AssetListResponse =>
 describe("schemaValidatedAssetList", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    // The SEP-0042 schema is fetched over the network; return the captured
-    // snapshot so validation is deterministic and offline.
+    // The SEP-0042 schema is fetched over the network; return the fixture
+    // so validation is deterministic and offline.
     global.fetch = jest.fn().mockResolvedValue({
       ok: true,
       status: 200,

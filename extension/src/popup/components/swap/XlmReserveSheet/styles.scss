@@ -22,7 +22,7 @@
     border-radius: pxToRem(8px);
     border: 1px solid var(--sds-clr-lilac-06);
     background-color: var(--sds-clr-lilac-03);
-    // Brand/Foreground/Primary — muted vs the brighter lilac-11 (§ batch3 t7d).
+    // Brand/Foreground/Primary — muted vs the brighter lilac-11.
     color: var(--sds-clr-lilac-09);
 
     svg {
@@ -41,7 +41,7 @@
     border: 0;
     border-radius: 50%;
     background-color: var(--sds-clr-gray-03);
-    // Default/Foreground/Primary — muted vs the brighter gray-11 (§ batch3 t7d).
+    // Default/Foreground/Primary — muted vs the brighter gray-11.
     color: var(--sds-clr-gray-09);
     cursor: pointer;
 
@@ -130,7 +130,7 @@
 
     // CopyText nests the copy button under .Floater / .CopyText__content
     // wrappers that otherwise shrink to content width; stretch the chain so the
-    // copy button is full-width like the swap button (§ batch3 task 7b).
+    // copy button is full-width like the swap button.
     .CopyText,
     .Floater,
     .CopyText__content {

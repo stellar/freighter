@@ -98,11 +98,9 @@ export function useGetTokenPrices() {
       }
     }
 
-    // Best-effort: additively price any requested extra ids (e.g. a non-held
-    // swap destination) that the balance prices don't already cover. This runs
-    // as a SEPARATE request and swallows its own errors so a failure here can
-    // never wipe the (reliable) balance prices — the destination just falls back
-    // to its stellar.expert spot price downstream.
+    // Runs as a separate request so errors here can never corrupt the balance
+    // prices already in payload — a failure just leaves the missing ids
+    // unpopulated and lets callers fall back to stellar.expert spot prices.
     if (payload.tokenPrices) {
       const resolved = payload.tokenPrices;
       const missingExtra = additionalAssetIds.filter((id) => !(id in resolved));

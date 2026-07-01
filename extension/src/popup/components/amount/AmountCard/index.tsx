@@ -84,7 +84,7 @@ export const AmountCard = ({
   const { t } = useTranslation();
   const runAfterUpdate = useRunAfterUpdate();
 
-  // Width owned internally (replaces InputWidthContext, per design §3.3).
+  // Input width is tracked locally so each card sizes its own input.
   const cryptoSpanRef = useRef<HTMLSpanElement>(null);
   const fiatSpanRef = useRef<HTMLSpanElement>(null);
   const localInputRef = useRef<HTMLInputElement>(null);
@@ -140,7 +140,7 @@ export const AmountCard = ({
               always rendered so the inactive input's width is measured before
               the first crypto<->fiat toggle — otherwise the toggled-in input
               briefly falls back to DEFAULT_INPUT_WIDTH and the value is clipped
-              for a frame (§ task 8). */}
+              for a frame. */}
           <span
             ref={cryptoSpanRef}
             className={fontClass}

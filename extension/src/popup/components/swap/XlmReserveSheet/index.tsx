@@ -50,7 +50,7 @@ export const XlmReserveSheet = ({
         </h2>
         {/* A div, not a p: the SDS theme's global `p` rules force
             color:inherit !important (→ near-white) and line-height 1.75rem,
-            overriding the muted gray + 20px we want (§ batch4 task 2). */}
+            overriding the muted gray + 20px we want here. */}
         <div className="XlmReserveSheet__body">
           {t(
             "To receive {{tokenCode}}, your wallet needs a trustline on Stellar.",

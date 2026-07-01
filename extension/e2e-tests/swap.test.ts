@@ -1,5 +1,5 @@
 /**
- * E2E spec: Swap-to-New-Token flow (Phase F, Task 11)
+ * E2E spec: Swap-to-New-Token flow
  *
  * Covers:
  *  1. Held-to-held regression (smoke that the existing swap still works)
@@ -10,7 +10,7 @@
  *  6. stellar.expert unreachable fallback: fallback-notice shown
  *  7. Testnet: blockaid badges absent
  *
- * Stub URL shapes (reconciled against source):
+ * Stub URL shapes:
  *  - Asset search:  getApiStellarExpertUrl(networkDetails) + "/asset?search=" + term
  *                   pattern: "** /asset?search**" (already in stubAllExternalApis via stubAssetSearch)
  *  - Popular fetch: mainnet ".../asset?sort=volume7d&order=desc&limit=50"
@@ -18,7 +18,7 @@
  *                   patterns: "** /asset?sort=volume7d**" or "** /asset?limit=50**"
  *  - scan-tx:       "** /scan-tx**" (registered by stubScanTx in stubAllExternalApis)
  *
- * testid notes (all verified against source as of this task):
+ * testid index:
  *  - swap-sell-card              SwapAmount/index.tsx:426
  *  - swap-receive-card           SwapAmount/index.tsx:535
  *  - send-amount-edit-dest-asset AmountCard/index.tsx:202 (shared asset-selector button)
@@ -31,15 +31,12 @@
  *  - swap-picker-empty-soroban   SwapPickerSections/index.tsx:123
  *  - blockaid-malicious-label    WarningMessages/index.tsx:768,933
  *
- * testids NOT yet in source (follow-up: product code would need to add them):
- *  - "swap-receive-card-select-asset" (brief assumed this; real id is "send-amount-edit-dest-asset")
- *  - "swap-asset-search-input"        (real id is "swap-from-search")
- *  - "xlm-reserve-sheet"              (real id is "XlmReserveSheet")
+ * testids NOT yet in source (design doc used wrong names; real counterparts above):
+ *  - "swap-receive-card-select-asset" → real id is "send-amount-edit-dest-asset"
+ *  - "swap-asset-search-input"        → real id is "swap-from-search"
+ *  - "xlm-reserve-sheet"              → real id is "XlmReserveSheet"
  *
  * Execution: `yarn test:e2e e2e-tests/swap.test.ts` from repo root.
- * This spec was NOT executed locally (Playwright E2E requires a built
- * extension + browser binary not available in the sandbox). Verified
- * statically for type/import correctness and fixture alignment.
  */
 
 import { test, expect } from "./test-fixtures";
@@ -68,8 +65,7 @@ async function openSwapToPicker(page: Page) {
 // ---------------------------------------------------------------------------
 // 1. Held-to-held regression
 //    Verifies the existing swap flow (source + destination both already held)
-//    still reaches the review screen. This mirrors the smoke tests that lived
-//    inside sendPayment.test.ts before this dedicated file existed.
+//    still reaches the review screen.
 // ---------------------------------------------------------------------------
 test("held-to-held swap reaches review screen", async ({
   page,
@@ -176,8 +172,7 @@ test("swap to new token shows trustline banner at review", async ({
   const stubOverrides = async () => {
     // Stub stellar.expert asset search to return AQUA.
     // Real URL: https://api.stellar.expert/explorer/public/asset?search=AQUA
-    // Pattern from stubAssetSearch in stubs.ts: "**/asset?search**"
-    // We unroute the default (returns USDC) and install our AQUA response.
+    // Pattern matches stubAssetSearch in stubs.ts: "**/asset?search**"
     await page.unroute("**/asset?search**");
     await page.route("**/asset?search**", (route) =>
       route.fulfill({
@@ -341,8 +336,7 @@ test("shows XLM-reserve sheet when balance cannot cover the reserve", async ({
     .fill("0.05");
   await page.getByTestId("swap-amount-btn-continue").click({ force: true });
 
-  // The XlmReserveSheet should appear because spendable XLM < required reserve
-  // Real testid: "XlmReserveSheet" (XlmReserveSheet/index.tsx:27)
+  // XlmReserveSheet appears because spendable XLM < required reserve
   await expect(page.getByTestId("XlmReserveSheet")).toBeVisible({
     timeout: 30000,
   });
@@ -404,9 +398,7 @@ test("flagged destination surfaces blockaid malicious warning at review", async 
         },
       }),
     );
-    // Override scan-tx to return Malicious
-    // Real URL: POST to the Freighter backend /scan-tx endpoint
-    // Existing helper: stubScanTxMalicious matches "**/scan-tx**"
+    // Stub scan-tx to return Malicious (stubScanTxMalicious matches "**/scan-tx**")
     await stubScanTxMalicious(page);
   };
 
@@ -518,8 +510,7 @@ test("stellar.expert unreachable falls back to held-only with fallback notice", 
 
   await openSwapToPicker(page);
 
-  // The fallback notice should appear automatically once popular-token fetch fails
-  // Real testid: "swap-picker-fallback-notice" (SwapPickerSections/index.tsx:108)
+  // Fallback notice appears once the popular-token fetch fails
   await expect(page.getByTestId("swap-picker-fallback-notice")).toBeVisible({
     timeout: 20000,
   });

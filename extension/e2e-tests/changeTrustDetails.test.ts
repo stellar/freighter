@@ -7,8 +7,8 @@ import {
 } from "./helpers/stubs";
 
 // The Add-a-token confirmation reuses the dApp SignTransaction Details view.
-// Its changeTrust operation must use the token-centric labels ("Token Code" /
-// "Token Issuer"), not the deprecated "Asset Code" / "Asset Issuer" wording.
+// Its changeTrust operation uses token-centric labels ("Token Code" /
+// "Token Issuer"), not "Asset Code" / "Asset Issuer".
 test.describe("Add-a-token transaction details", () => {
   test("changeTrust details use Token Code / Token Issuer labels", async ({
     page,
@@ -65,7 +65,6 @@ test.describe("Add-a-token transaction details", () => {
       timeout: 30000,
     });
 
-    // Open the transaction-details pane and check the changeTrust op labels.
     await page.getByText("Transaction details").click({ force: true });
 
     await expect(page.getByText("Token Code")).toBeVisible({ timeout: 10000 });

@@ -319,8 +319,8 @@ describe("Operations", () => {
 
       expect(valueOf("Token Code")).toHaveTextContent("XLM");
       expect(valueOf("Send Amount")).toHaveTextContent("12.3456789 XLM");
-      // Clean destination token code, not the truncated "PYUS…YUSD" the
-      // KeyValueWithPublicKey path used to produce.
+      // The destination token renders as plain text ("Destination Token"), not
+      // via KeyValueWithPublicKey, which would truncate long codes like "PYUSD".
       expect(screen.queryByText("Destination Asset")).toBeNull();
       expect(valueOf("Destination Token")).toHaveTextContent("PYUSD");
       expect(valueOf("Destination Minimum")).toHaveTextContent(

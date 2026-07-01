@@ -126,7 +126,7 @@ describe("ReviewTx Blockaid security banner (single, by priority) + badges", () 
     renderWithDestLevel(SecurityLevel.MALICIOUS);
     const banner = screen.getByTestId("review-tx-token-warning");
     expect(banner).toHaveTextContent("A token was flagged as malicious");
-    // Case-3 "Confirm anyway" gate renders the dedicated CancelAction button.
+    // The "Confirm anyway" gate renders the dedicated CancelAction button.
     expect(screen.getByTestId("CancelAction")).toBeInTheDocument();
     // The warning badge overlays the (destination) token icon.
     expect(screen.getAllByTestId("ScamAssetIcon").length).toBe(1);
@@ -218,7 +218,6 @@ describe("ReviewTx Blockaid security banner (single, by priority) + badges", () 
         },
       },
     });
-    // Open the expandable Blockaid pane from the transaction banner.
     fireEvent.click(screen.getByTestId("review-tx-blockaid-warning"));
     expect(
       screen.getByText(
@@ -230,8 +229,7 @@ describe("ReviewTx Blockaid security banner (single, by priority) + badges", () 
 
   it("lists the destination token-scan reasons alongside the raw transaction-scan reason (mobile parity)", () => {
     renderReview({
-      // Raw developer string with no per-feature descriptions — shown verbatim,
-      // matching mobile.
+      // Raw developer string with no per-feature descriptions — shown verbatim.
       scanResult: {
         validation: {
           result_type: "Malicious",
@@ -249,7 +247,6 @@ describe("ReviewTx Blockaid security banner (single, by priority) + badges", () 
       ],
     });
     fireEvent.click(screen.getByTestId("review-tx-blockaid-warning"));
-    // Both reasons appear together in the same list.
     expect(screen.getByText(/Token issuer <Address/)).toBeInTheDocument();
     expect(
       screen.getByText(
@@ -311,12 +308,11 @@ describe("ReviewTx Blockaid security banner (single, by priority) + badges", () 
         />
       </Wrapper>,
     );
-    // Open the "Do not proceed" pane from the malicious banner.
     fireEvent.click(screen.getByTestId("review-tx-blockaid-warning"));
     expect(screen.getByText("Do not proceed")).toBeInTheDocument();
-    // The pane's action reads "Confirm anyway", not the old "Continue"...
+    // The pane's action is "Confirm anyway", not a two-step "Continue" bounce.
     expect(screen.queryByText("Continue")).not.toBeInTheDocument();
-    // ...and clicking it confirms the transaction directly.
+    // Clicking it confirms the transaction directly.
     fireEvent.click(screen.getByText("Confirm anyway"));
     expect(onConfirm).toHaveBeenCalledTimes(1);
   });
@@ -336,8 +332,7 @@ describe("ReviewTx Blockaid security banner (single, by priority) + badges", () 
         },
       ],
     });
-    // The consolidated token banner is shown; clicking it opens the pane that
-    // lists the friendly token-scan reason (mobile parity).
+    // Clicking the token banner opens the pane listing the friendly token-scan reason.
     fireEvent.click(screen.getByTestId("review-tx-token-warning"));
     expect(screen.getByText("Do not proceed")).toBeInTheDocument();
     expect(
@@ -484,7 +479,6 @@ describe("ReviewTx Blockaid security banner (single, by priority) + badges", () 
         />
       </Wrapper>,
     );
-    // Banner is present on the review body.
     const banner = screen.getByTestId("review-tx-details-btn");
     expect(banner).toHaveTextContent("Transaction details");
 

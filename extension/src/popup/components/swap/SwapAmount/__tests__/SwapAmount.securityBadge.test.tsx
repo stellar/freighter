@@ -113,9 +113,8 @@ describe("SwapAmount destination security badge", () => {
 
   it("renders the amount screen even while the network fee is still loading", () => {
     // Regression: the fullscreen spinner must NOT be gated on the (untimed-out)
-    // feeStats request — a slow Horizon was hanging the screen >15s
-    // (§ batch4 follow-up). With swap data ready, the form renders regardless
-    // of useNetworkFees isLoading.
+    // feeStats request — a slow Horizon was hanging the screen >15s.
+    // With swap data ready, the form renders regardless of useNetworkFees isLoading.
     jest.spyOn(UseNetworkFees, "useNetworkFees").mockReturnValue({
       networkCongestion: "LOW",
       recommendedFee: "0.00001",
@@ -128,7 +127,7 @@ describe("SwapAmount destination security badge", () => {
   it("recovers a missing destination verdict via scan-on-select and badges it", async () => {
     // Token picked before its scan landed: securityLevel is undefined. The
     // scan-on-select effect resolves the verdict and persists it, so the badge
-    // appears (§ batch4 follow-up — must not lose the assessment).
+    // appears.
     jest.spyOn(Blockaid, "isBlockaidEnabled").mockReturnValue(true);
     const scanSpy = jest.spyOn(Blockaid, "scanAssetBulk").mockResolvedValue({
       results: { [`AQUA-${AQUA_ISSUER}`]: { result_type: "Malicious" } },

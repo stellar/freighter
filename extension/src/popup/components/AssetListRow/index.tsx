@@ -24,7 +24,7 @@ export interface AssetListRowProps {
   /** Click handler for the row body (icon + code + domain). */
   onClick?: () => void;
   "data-testid"?: string;
-  /** Optional testids that mirror legacy markup so existing tests keep working. */
+  /** Optional testids for targeting sub-elements independently of the row root. */
   bodyTestId?: string;
   codeTestId?: string;
   domainTestId?: string;

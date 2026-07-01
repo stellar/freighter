@@ -159,8 +159,7 @@ describe("SubmitTransaction", () => {
           settings: {
             networkDetails: TESTNET_NETWORK_DETAILS,
           },
-          // The new destination token isn't held yet, so the icon cache has no
-          // entry for it.
+          // The destination token is not in the user's account, so no icon is cached.
           cache: { icons: {} },
           transactionSubmission: {
             transactionData: {

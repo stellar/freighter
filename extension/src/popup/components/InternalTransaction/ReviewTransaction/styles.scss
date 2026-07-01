@@ -15,14 +15,14 @@
     margin-top: pxToRem(32px);
     // A flex column with a single gap is the one source of inter-banner
     // spacing, so every stacked banner (Blockaid, "Memo required", trustline)
-    // is spaced identically regardless of type or order (§ batch4 follow-up).
+    // is spaced identically regardless of type or order.
     // The Warnings→Details gap is owned by __Details' own margin-top.
     display: flex;
     flex-direction: column;
     gap: pxToRem(12px);
 
     // The token banner opens the expandable "Do not proceed" sheet; show the
-    // affordance (§ batch4 follow-up).
+    // affordance.
     &__token--clickable {
       cursor: pointer;
     }
@@ -30,7 +30,7 @@
     // Size the review's banners (Blockaid tx-scan + "Memo required", both
     // .ScanLabel) to match the purple trustline banner for consistency: same
     // font (12px / 18px), padding, radius, and icon size, so all banners render
-    // at the same height (§ batch4 follow-up). Scoped under __Warnings so
+    // at the same height. Scoped under __Warnings so
     // .ScanLabel banners elsewhere (e.g. dapp signing) are unaffected.
     .ScanLabel {
       padding: pxToRem(8px) pxToRem(16px);
@@ -90,7 +90,7 @@
   }
 
   // The purple "Transaction details" banner shown above the confirm buttons,
-  // opening the full operation breakdown in-flow (§ batch4 follow-up).
+  // opening the full operation breakdown in-flow.
   &__TxDetailsBtn {
     display: flex;
     align-items: center;
@@ -116,7 +116,7 @@
     display: flex;
     flex-direction: column;
     width: 100%;
-    // Extra breathing room below the operation breakdown (§ batch4 follow-up).
+    // Extra breathing room below the operation breakdown.
     padding-bottom: pxToRem(20px);
 
     &__Header {
@@ -182,7 +182,7 @@
     border-radius: pxToRem(16px);
     background-color: var(--sds-clr-gray-03);
     // Same 12px as the inter-banner gap, so the spacing below the banner block
-    // matches the spacing between banners (§ batch4 follow-up).
+    // matches the spacing between banners.
     margin-top: pxToRem(12px);
 
     &__Row {
@@ -200,7 +200,7 @@
 
       // The rate row gives the short "Rate" label only its content width (plus
       // a 20px gap) and lets the value take the rest, so a long rate isn't
-      // squeezed into a 50% column (§ task 5). The value's font-size steps down
+      // squeezed into a 50% column. The value's font-size steps down
       // by length in the component.
       &--rate {
         .ReviewTx__Details__Row__Title {
@@ -371,9 +371,8 @@
     display: flex;
     flex-direction: column;
     width: 100%;
-    // No self horizontal padding — the review host already provides the gutter
-    // (matching the other in-flow sheets); a 1rem inset here doubled it
-    // (§ batch4 follow-up).
+    // No self horizontal padding — the review host already provides the gutter,
+    // matching the other in-flow sheets.
 
     &__Header {
       display: flex;

@@ -86,15 +86,15 @@ function useGetSwapAmountData(
       if (_isMainnet) {
         const fetchedTokenPrices = await fetchTokenPrices({
           publicKey: userDomains.publicKey,
-          // Price the account's HELD balances (the swap never sets a
-          // destination account, so destinationBalances is empty — pricing it
-          // fetched nothing, which left the source price "--" on a stale-cache
-          // miss after a quote expiry, § batch3 task 5).
+          // Price the account's held balances. The swap flow never sets a
+          // destination account, so destinationBalances is always empty and
+          // pricing it yields nothing — leaving the source price blank on a
+          // stale-cache miss after a quote expiry.
           balances: userDomains.balances.balances,
           networkDetails: userDomains.networkDetails,
           useCache: true,
           // Price the selected source + destination tokens explicitly, even
-          // when the account doesn't hold them — mirrors mobile's extraTokenIds.
+          // when the account doesn't hold them.
           additionalAssetIds: [sourceAsset, destinationAsset].filter(
             (id): id is string => Boolean(id),
           ),

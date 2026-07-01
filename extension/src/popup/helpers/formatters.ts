@@ -86,9 +86,8 @@ export const formatAmountPreserveCursor = (
   const decimal = new Intl.NumberFormat("en-US", { style: "decimal" });
   const maxDigits = 12;
   const cleaned = cleanAmount(val);
-  // A fully-cleared field stays empty rather than snapping to "0" (Number("")
-  // is 0, which would force a non-erasable "0"). Callers coerce "" to their
-  // canonical zero ("0"/"0.00") while the input shows its gray placeholder.
+  // Return early so a fully-cleared field stays empty: Number("") === 0 would
+  // otherwise force a non-erasable "0". Callers treat "" as their zero value.
   if (cleaned === "") {
     return { amount: "", newCursor: 0 };
   }

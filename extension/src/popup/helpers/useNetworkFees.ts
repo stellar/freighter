@@ -30,11 +30,10 @@ export const getNetworkCongestionTranslation = (
 };
 
 // In-session cache of the last resolved fee per network (keyed by Horizon URL).
-// feeStats() is an untimed-out network call, so callers must NOT block their UI
-// on it (see § batch4 follow-up — a slow /fee_stats was hanging the swap screen
-// behind a fullscreen spinner). Caching lets a re-entered screen seed the real
-// fee immediately — avoiding the fee/balance flash (§ batch4 task 8) — without
-// ever gating render on the request.
+// feeStats() has no timeout, so callers must NOT block their UI on it — a slow
+// /fee_stats can hang the screen behind a fullscreen spinner. Caching lets a
+// re-entered screen seed the real fee immediately, avoiding a fee/balance flash,
+// without ever gating render on the request.
 const feeCacheByNetwork = new Map<
   string,
   { recommendedFee: string; networkCongestion: NetworkCongestion }
@@ -62,7 +61,7 @@ export const useNetworkFees = () => {
   // True until the first feeStats request settles for this network. Starts
   // false when the fee is already cached this session. Callers may surface a
   // hint on the fee field itself, but must NOT gate the whole screen on it —
-  // feeStats has no timeout and can hang (§ batch4 follow-up).
+  // feeStats has no timeout and can hang indefinitely.
   const [isLoading, setIsLoading] = useState(!cachedFee);
 
   const fetchData = async () => {

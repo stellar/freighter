@@ -92,9 +92,8 @@ test("Stellar Expert contract ID result shows Add when not owned", async ({
   await expect(rows.first()).toBeVisible({ timeout: 10000 });
 
   // Find the E2E token row by its exact asset code
-  // Non-SAC contract tokens render their NAME (not code) in ManageAssetCode
-  // (displayCode = name when name && contract && !isSac). The E2E token's name
-  // is "E2E Token", so match the row on that.
+  // Non-SAC contract tokens render their NAME in ManageAssetCode
+  // (displayCode = name when name && contract && !isSac), so match on "E2E Token".
   const e2eRow = getAssetRow(page, "E2E Token");
   await expect(e2eRow).toBeVisible();
 
@@ -137,9 +136,8 @@ test("Can add a token returned as contract ID from Stellar Expert search", async
   await expect(rows.first()).toBeVisible({ timeout: 10000 });
 
   // Find the E2E token row by its exact asset code and click Add
-  // Non-SAC contract tokens render their NAME (not code) in ManageAssetCode
-  // (displayCode = name when name && contract && !isSac). The E2E token's name
-  // is "E2E Token", so match the row on that.
+  // Non-SAC contract tokens render their NAME in ManageAssetCode
+  // (displayCode = name when name && contract && !isSac), so match on "E2E Token".
   const e2eRow = getAssetRow(page, "E2E Token");
   await expect(e2eRow).toBeVisible();
   await e2eRow.getByTestId("ManageAssetRowButton").click();

@@ -20,7 +20,7 @@
     line-height: pxToRem(20px);
   }
 
-  // Regular-weight token code (not bold), matching the Add-a-token list.
+  // Regular-weight (not bold) to avoid competing with the token name.
   &__code {
     color: var(--sds-clr-gray-12);
     font-size: pxToRem(16px);
@@ -30,7 +30,6 @@
     text-overflow: ellipsis;
   }
 
-  // Muted domain subtitle with a little breathing room below the code.
   &__domain {
     margin-top: pxToRem(2px);
     color: var(--sds-clr-gray-09);

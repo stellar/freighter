@@ -109,8 +109,8 @@ export const SignTransaction = () => {
     useState(false);
   const [activePaneIndex, setActivePaneIndex] = useState(0);
   // The expanded Blockaid "Do not proceed" sheet renders IN-FLOW (replacing the
-  // body in place) rather than as a horizontal slider pane, matching the
-  // pattern shipped in ReviewTransaction.
+  // body in place) rather than as a horizontal slider pane, consistent with
+  // ReviewTransaction.
   const [isOnBlockaidSheet, setIsOnBlockaidSheet] = useState(false);
   const isNonSSLEnabled = useSelector(isNonSSLEnabledSelector);
   const publicKey = useSelector(publicKeySelector);

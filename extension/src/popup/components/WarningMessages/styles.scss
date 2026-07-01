@@ -812,7 +812,7 @@
       margin-right: pxToRem(8px);
     }
 
-    // Wrap long reasons instead of scrolling/clipping them (§ batch3 task 3).
+    // Wrap long reasons instead of scrolling/clipping them.
     span {
       flex: 3;
       word-break: break-word;

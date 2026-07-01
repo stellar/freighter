@@ -72,7 +72,7 @@ import { EditSlippage } from "./EditSlippage";
 
 import "./styles.scss";
 
-// "Why do I need XLM?" help article (matches freighter-mobile).
+// "Why do I need XLM?" help article.
 const XLM_RESERVE_HELP_URL =
   "https://help.freighter.app/article/xjlva9dxov-how-much-xlm-do-i-need-in-my-wallet";
 
@@ -118,7 +118,7 @@ export const SwapAmount = ({
   } = transactionData;
   // A new-trustline swap is two ops; scale the recommended default fee by op
   // count so each op pays the recommended fee (a custom fee is the total and
-  // is split per op at build time). Mirrors mobile (§3.6/§3.7).
+  // is split per op at build time).
   const swapOpCount = transactionData.destinationTokenDetails?.requiresTrustline
     ? 2
     : 1;
@@ -167,9 +167,8 @@ export const SwapAmount = ({
   const [isReviewingTx, setIsReviewingTx] = React.useState(false);
   const [isXlmReserveOpen, setIsXlmReserveOpen] = useState(false);
   // Tracks focus on the sell input so the "Enter an amount" CTA can disable
-  // itself while the input is focused. Unlike mobile (which keeps it enabled to
-  // re-summon the keyboard), the extension has no virtual keyboard — once the
-  // input is focused the tap-to-focus affordance is redundant (§ batch3 task 1).
+  // itself while the input is focused. The extension has no virtual keyboard,
+  // so once the input is focused the tap-to-focus affordance is redundant.
   // Seed it from the auto-focus condition (both tokens picked → the sell input
   // autoFocuses on mount) so the CTA renders disabled from the first frame
   // instead of flashing enabled→disabled when arriving from the token picker.
@@ -179,7 +178,7 @@ export const SwapAmount = ({
 
   const handleContinue = async (values: { amount: string }) => {
     // Retrying after a quote-expiry submit failure: dismiss the stale notice
-    // before re-simulating against a fresh quote (§2.1/§3.3).
+    // before re-simulating against a fresh quote.
     if (isSwapQuoteExpired) {
       dispatch(clearSwapQuoteExpired());
     }
@@ -224,9 +223,9 @@ export const SwapAmount = ({
   });
 
   // Gate the fullscreen spinner ONLY on the swap data, never on the network
-  // fee: feeStats() has no timeout and a slow Horizon was hanging the whole
-  // screen for >15s (§ batch4 follow-up). The fee seeds from the base fee /
-  // in-session cache and updates in place when feeStats resolves.
+  // fee: feeStats() has no timeout and a slow Horizon can hang the whole
+  // screen for >15s. The fee seeds from the base fee / in-session cache and
+  // updates in place when feeStats resolves.
   const isLoading =
     swapAmountData.state === RequestState.IDLE ||
     swapAmountData.state === RequestState.LOADING;
@@ -284,7 +283,6 @@ export const SwapAmount = ({
     allowedSlippage,
   });
 
-  // Lets the "Enter an amount" CTA focus the sell input on tap (§ task 1).
   const sellInputRef = useRef<HTMLInputElement>(null);
 
   // Live "You receive" quote as the user types (debounced path-only lookup).
@@ -408,8 +406,8 @@ export const SwapAmount = ({
       // Target a little MORE than the bare reserve so the 0.5 XLM trustline
       // bump stays covered after the swap's slippage floor (destMin). Sizing to
       // BASE_RESERVE / (1 - slippage) keeps even a worst-case fill at >= 0.5,
-      // erring slightly over rather than under (§ batch4 task 5). Still capped
-      // to spendable below, so it never exceeds the user's balance.
+      // erring slightly over rather than under. Still capped to spendable
+      // below, so it never exceeds the user's balance.
       const slippageFraction = Math.min(
         Math.max(parseFloat(allowedSlippage) || 0, 0) / 100,
         0.5,
@@ -436,7 +434,7 @@ export const SwapAmount = ({
         dispatch(saveAmount(capped.toFixed(7)));
         // In fiat mode the whole pipeline reads amountUsd, so also recalculate
         // the fiat figure from the sell token's price; if it has no price, drop
-        // to crypto mode so the prefilled amount is the one used (§ batch3 t8).
+        // to crypto mode so the prefilled amount is the one used.
         if (assetPrice) {
           dispatch(
             saveAmountUsd(
@@ -529,7 +527,7 @@ export const SwapAmount = ({
                 e.preventDefault();
                 // In the "select" state the button is a shortcut to the picker
                 // for the missing side — preferring the sell token when both
-                // are missing — rather than a submit (§ task 1).
+                // are missing — rather than a submit.
                 if (cta.labelKey === "select") {
                   const side = !asset ? "source" : "destination";
                   emitMetric(METRIC_NAMES.swapPickerOpened, {
@@ -544,7 +542,7 @@ export const SwapAmount = ({
                   return;
                 }
                 // Both tokens picked but no amount yet: focus the sell input so
-                // the user knows to type an amount (mirrors mobile; § task 1).
+                // the user knows to type an amount.
                 if (cta.labelKey === "enter") {
                   sellInputRef.current?.focus();
                   return;
@@ -585,7 +583,7 @@ export const SwapAmount = ({
                     // Don't grab focus until the swap is ready to receive an
                     // amount (both tokens picked); on entry the source defaults
                     // to XLM but the receive side is empty, so the card stays
-                    // unfocused with a gray "0" placeholder (§ task 1).
+                    // unfocused with a gray "0" placeholder.
                     autoFocus={!!asset && !!destinationAsset}
                     amountInputRef={sellInputRef}
                     onInputFocus={() => setIsSellInputFocused(true)}
@@ -598,7 +596,7 @@ export const SwapAmount = ({
                     assetIssuerKey={srcAsset?.issuer}
                     // Carry the sell token's Blockaid verdict onto its pill so a
                     // flagged source keeps its warning badge after selection,
-                    // matching the picker list (§ task 3).
+                    // matching the picker list.
                     securityLevel={sourceTokenSecurityLevel}
                     supportsUsd={Boolean(supportsUsd)}
                     hasUsdPrice={Boolean(assetPrice)}
@@ -705,7 +703,7 @@ export const SwapAmount = ({
                     assetIssuerKey={dstAsset?.issuer}
                     // Carry the destination token's pick-time Blockaid verdict
                     // onto its pill so a flagged token keeps its warning badge
-                    // after selection, matching the picker list (§ task 3).
+                    // after selection, matching the picker list.
                     securityLevel={
                       transactionData.destinationTokenDetails?.securityLevel
                     }
@@ -826,7 +824,7 @@ export const SwapAmount = ({
             onCancel={() => setIsReviewingTx(false)}
             // The trustline-added + swap-success metrics fire post-confirmation
             // (in useSubmitTxData), once the swap actually settles — not here at
-            // review time (§3.4/§3.8).
+            // review time.
             onConfirm={goToNext}
             sendAmount={amount}
             sendPriceUsd={priceValueUsd}

@@ -17,7 +17,7 @@ import {
 const PREWARM_DELAY_MS = 1000;
 
 /**
- * Best-effort top-tokens pre-warm (§5.7). Mainnet-only (trending is meaningless
+ * Best-effort top-tokens pre-warm. Mainnet-only (trending is meaningless
  * on testnet); skips the network when the persisted cache is still fresh, so it
  * costs at most one trending request per staleness window. On a fresh fetch it
  * updates both the Redux cache and the disk cache. All errors are swallowed —

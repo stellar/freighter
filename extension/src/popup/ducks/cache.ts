@@ -59,7 +59,7 @@ type SavePopularTokensPayload = {
   tokens: TrendingAsset[];
 };
 
-// ~30-min staleness window for the Popular list Redux cache (§2.8).
+// ~30-min staleness window for the Popular list Redux cache.
 export const POPULAR_TOKENS_STALE_MS = 30 * 60 * 1000;
 
 interface InitialState {
@@ -219,12 +219,10 @@ const cacheSlice = createSlice({
     },
   },
   extraReducers: (builder) => {
-    // The verified token lists are network-specific but stored as a flat array
-    // (not keyed by network like balanceData/popularTokens), so drop them when
-    // the network changes to force a refetch for the new network. Otherwise the
-    // swap Popular list (trending ∩ verified) — and every other verified-list
-    // consumer — keeps showing the previous network's results until the popup
-    // (and its in-memory store) is reopened.
+    // tokenLists is network-specific but stored as a flat array (not
+    // network-keyed like balanceData/popularTokens), so clear it on network
+    // change to force a refetch. Without this, verified-list consumers show
+    // the previous network's results until the in-memory store is reset.
     builder.addCase("settings/changeNetwork/fulfilled", (state) => {
       state.tokenLists = [];
     });

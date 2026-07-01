@@ -10,8 +10,8 @@ import { TrendingAsset } from "popup/helpers/trendingAssets";
  * (trending) list, keyed per network. The storage write itself lives in the
  * background (the GET/CACHE_SWAP_TOP_TOKENS message handlers own
  * chrome.storage.local, matching every other cache in the codebase); this
- * popup-side wrapper just messages the background and applies the 30-min
- * staleness window (§5.3). Unlike the in-memory Redux + module caches, it
+ * popup-side wrapper just messages the background and applies the
+ * staleness window (POPULAR_TOKENS_STALE_MS). Unlike the in-memory Redux + module caches, it
  * survives popup close, so reopening paints Popular from disk instead of
  * re-running the slow trending request. Returns null when the entry is absent
  * or stale so the caller fetches fresh. Best-effort: any messaging error

@@ -54,8 +54,8 @@ export const useSwapQuoteExpiry = ({
 
   // Quote-expired surfacing: when the simulate hook flags an expired quote
   // (Horizon op_under_dest_min / op_too_few_offers), emit the metric and show
-  // the user-facing toast. The auto-refetch is handled by Phase E's getBestPath
-  // retry; this only emits + surfaces the message.
+  // the user-facing toast. The auto-refetch is handled by getBestPath's retry
+  // logic; this only emits + surfaces the message.
   useEffect(() => {
     if (!isQuoteExpired) {
       return;

@@ -65,9 +65,9 @@ export const ChangeTrustInternal = ({
 }: ChangeTrustInternalProps) => {
   const activeOptionsRef = useRef<HTMLDivElement>(null);
   const [activePaneIndex, setActivePaneIndex] = useState(0);
-  // The expanded Blockaid "Do not proceed" sheet renders IN-FLOW (replacing the
-  // body in place) rather than sliding in as a horizontal slider pane — mirrors
-  // ReviewTransaction. Its own boolean gate keeps it out of the slider.
+  // The expanded Blockaid "Do not proceed" sheet renders in-flow (replacing the
+  // body in place) rather than as a horizontal slider pane. Its own boolean
+  // gate keeps it out of the slider.
   const [isOnBlockaidSheet, setIsOnBlockaidSheet] = useState(false);
   const [activeBodyContent, setActiveBodyContent] = useState(
     ActiveBodyContent.details,
@@ -178,8 +178,8 @@ export const ChangeTrustInternal = ({
       state.data.isAssetUnableToScan);
 
   /**
-   * Horizontal slider panes (Blockaid is no longer one of them — it renders
-   * in-flow via isOnBlockaidSheet):
+   * Horizontal slider panes (Blockaid renders in-flow via isOnBlockaidSheet,
+   * not as a slider pane):
    * - [Confirm Transaction, Details]
    */
   const paneConfig = {
@@ -410,8 +410,8 @@ export const ChangeTrustInternal = ({
   // The fee / timeout / memo / submit-tx panes are self-contained sub-screens
   // that render their own <View.Content> (and header/footer). Only the
   // "details" pane relies on this wrapper's inset for its horizontal padding.
-  // Drop this wrapper's padding for the self-contained panes so their inset
-  // isn't doubled (which showed as double padding all around those sheets).
+  // Suppress this wrapper's padding for self-contained panes to avoid doubling
+  // the inset around those sheets.
   const isSelfContainedPane =
     activeBodyContent === ActiveBodyContent.fee ||
     activeBodyContent === ActiveBodyContent.timeout ||

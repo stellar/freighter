@@ -23,7 +23,6 @@ test.fixme("Adding Soroban verified token", async ({
   const manageAssetsText = page.getByText("Manage Assets");
   await expect(manageAssetsText).toBeVisible();
   await manageAssetsText.click({ force: true });
-  // Wait for the manage assets page to load
   await page.waitForLoadState("networkidle");
   await expect(page.getByText("Your assets")).toBeVisible({ timeout: 10000 });
   await page.getByText("Add an asset").click({ force: true });

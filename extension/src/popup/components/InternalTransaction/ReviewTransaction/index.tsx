@@ -89,19 +89,17 @@ interface ReviewTxProps {
     decimals: number;
     issuer?: string;
     // Blockaid verdict captured when the destination token was picked; folded
-    // into the review security gate alongside the transaction scan (§4.1).
+    // into the review security gate alongside the transaction scan.
     securityLevel?: SecurityLevel;
     // Friendly per-feature reasons from the destination token scan, listed in
-    // the expandable Blockaid pane next to the transaction-scan reasons (§ batch4
-    // task 3).
+    // the expandable Blockaid pane next to the transaction-scan reasons.
     securityWarnings?: BlockaidWarning[];
   } | null;
   // Blockaid verdict for the swap source token (from its held balance); folded
-  // into the same review gate so a flagged sell token also warns (§4.3).
+  // into the same review gate so a flagged sell token also warns.
   sourceTokenSecurityLevel?: SecurityLevel;
   // Friendly per-feature reasons from the source token scan, listed in the
-  // expandable Blockaid pane alongside the transaction-scan reasons (§ batch4
-  // task 3).
+  // expandable Blockaid pane alongside the transaction-scan reasons.
   sourceTokenSecurityWarnings?: BlockaidWarning[];
 }
 
@@ -146,9 +144,8 @@ export const ReviewTx = ({
     useValidateTransactionMemo(transactionXdr);
 
   // Parse the XDR into a Transaction so the "Transaction details" sheet can show
-  // the full per-operation breakdown (reusing the dapp-signing Summary/Details
-  // components, which take plain props) — § batch4 follow-up. Mirrors how
-  // SignTransaction builds its details view.
+  // the full per-operation breakdown, reusing the dapp-signing Summary/Details
+  // components (which take plain props) the same way SignTransaction does.
   const detailTx = React.useMemo(() => {
     if (!transactionXdr) {
       return null;
@@ -206,8 +203,8 @@ export const ReviewTx = ({
 
   // Roll the destination token's Blockaid verdict into the gate so a malicious /
   // suspicious / unable-to-scan token warns and requires "Confirm anyway" — not
-  // only a flagged transaction (§4.1). Send passes no token level, so this
-  // reduces to the transaction verdict and leaves the Send gate unchanged.
+  // only a flagged transaction. Send passes no token level, so this reduces to
+  // the transaction verdict and leaves the Send gate unchanged.
   const destTokenSecurityLevel = destinationTokenDetails?.securityLevel ?? null;
   const securityLevel = mergeSecurityLevels([
     txSecurityLevel,
@@ -248,12 +245,10 @@ export const ReviewTx = ({
             )
           : null;
 
-  // We show at most ONE Blockaid banner, by priority (mirrors mobile's
-  // useReviewSecuritySummary): the transaction verdict outranks the token
-  // verdict, and among tokens the worse level wins (the destination breaks a
-  // tie, since it's the token being acquired). When the transaction scan itself
-  // is flagged its banner renders below; otherwise this single token banner
-  // does.
+  // At most one Blockaid banner is shown: the transaction verdict outranks the
+  // token verdict, and among tokens the worse level wins (the destination breaks
+  // a tie, since it's the token being acquired). When the transaction scan is
+  // flagged its banner renders; otherwise the single token banner does.
   const tokenWarningLevel = mergeSecurityLevels([
     sourceTokenSecurityLevel ?? null,
     destTokenSecurityLevel,
@@ -268,18 +263,18 @@ export const ReviewTx = ({
 
   // Token-scan reasons (source + destination) shown in the expandable pane next
   // to the transaction-scan reasons, so the user sees every flagged reason in
-  // one list, like mobile (§ batch4 task 3).
+  // one list.
   const tokenSecurityWarnings: BlockaidWarning[] = [
     ...(sourceTokenSecurityWarnings ?? []),
     ...(destinationTokenDetails?.securityWarnings ?? []),
   ];
 
-  // Which single Blockaid banner to render, by mobile's priority cascade
-  // (useReviewSecuritySummary): tx-malicious > tx-suspicious > token-malicious
-  // > token-suspicious > any unable-to-scan. Critically, a flagged TOKEN
-  // outranks a tx that merely couldn't be scanned (common on mainnet when the
-  // scan is absent), so we don't downgrade a malicious-token warning to the
-  // soft "proceed with caution". Only the tx banner opens the expandable pane.
+  // Which single Blockaid banner to render, by priority cascade:
+  // tx-malicious > tx-suspicious > token-malicious > token-suspicious >
+  // any unable-to-scan. A flagged TOKEN outranks a tx that merely couldn't be
+  // scanned (common on mainnet), so a malicious-token warning is never
+  // downgraded to the soft "proceed with caution". Only the tx banner opens
+  // the expandable pane.
   const blockaidBannerKind: "tx" | "token" | null = (() => {
     if (
       txSecurityLevel === SecurityLevel.MALICIOUS ||
@@ -309,9 +304,8 @@ export const ReviewTx = ({
 
   // The detail sheets (Blockaid "Do not proceed", fee breakdown, memo,
   // trustline) all render IN-FLOW over the review body — each gated by its own
-  // boolean — so they appear in place instead of sliding in from the side
-  // (§ batch4 follow-up). The review body is the only horizontal-slider pane,
-  // so the slider is gone entirely.
+  // boolean — so they appear in place instead of sliding in from the side.
+  // There is no horizontal slider; the review body is the sole pane.
   const [isOnBlockaidSheet, setIsOnBlockaidSheet] = useState(false);
   const openBlockaidSheet = () => setIsOnBlockaidSheet(true);
   const [isOnFeesPane, setIsOnFeesPane] = useState(false);
@@ -531,8 +525,8 @@ export const ReviewTx = ({
             {fee} XLM
           </div>
         </div>
-        {/* The raw XDR now lives in the "Transaction details" sheet (Summary),
-            so it's no longer duplicated as a row here (§ batch4 follow-up). */}
+        {/* The raw XDR is in the "Transaction details" sheet (Summary),
+            not duplicated as a row here. */}
       </div>
       {detailTx && (
         <button
@@ -550,7 +544,7 @@ export const ReviewTx = ({
   // The token banner always opens the sheet (even for an unable-to-scan token
   // with no per-feature reasons), so fall back to the consolidated banner
   // message when there are no friendly reasons — otherwise the sheet would have
-  // nothing to show (§ batch4 follow-up).
+  // nothing to show.
   const blockaidSheetExtraWarnings: BlockaidWarning[] =
     tokenSecurityWarnings.length > 0
       ? tokenSecurityWarnings
@@ -618,7 +612,7 @@ export const ReviewTx = ({
   // The full transaction breakdown (operations, fees, sequence, memo, XDR),
   // reusing the dapp-signing Summary/Details/AuthEntries components. Internal
   // txns have no flaggedKeys, so an empty object is passed (the warnings just
-  // no-op) and memo is never required here (§ batch4 follow-up).
+  // no-op) and memo is never required here.
   const detailsPane = detailTx ? (
     <div className="ReviewTx__TxDetails" data-testid="review-tx-details-pane">
       <div className="ReviewTx__TxDetails__Header">
@@ -686,7 +680,7 @@ export const ReviewTx = ({
               review body in-flow while open, and the body returns when it
               closes. Rendered in-flow rather than as nested modals/horizontal
               slider panes so they aren't clipped by the self-measuring review
-              modal and appear in place (§ batch3 task 4, § batch4 follow-up). */}
+              modal and appear in place. */}
           {isOnTrustlinePane ? (
             <TrustlineInfoSheet
               tokenCode={destinationTokenDetails?.tokenCode || ""}

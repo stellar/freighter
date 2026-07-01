@@ -3,9 +3,9 @@ import { getApiStellarExpertUrl } from "popup/helpers/account";
 import { isTestnet } from "helpers/stellar";
 
 export const TRENDING_LIMIT = 50;
-// Mainnet-only floor mirroring mobile's MIN_TRENDING_VOLUME7D. stellar.expert
-// reports volume7d in USD scaled by 10^7 (so 70_000_000_000 ≈ $7,000 USD/week);
-// this filters out dust-volume assets before they reach the Popular list.
+// Mainnet-only floor. stellar.expert reports volume7d in USD scaled by 10^7
+// (so 70_000_000_000 ≈ $7,000 USD/week); filters out dust-volume assets
+// before they reach the Popular list.
 export const MIN_TRENDING_VOLUME7D = 70_000_000_000;
 
 export interface TrendingAsset {

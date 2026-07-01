@@ -1,5 +1,4 @@
-// Snapshot of the upstream SEP-0042 asset-list JSON schema
-// (orbitlens/stellar-protocol@sep-0042-token-lists) captured for deterministic tests.
+// Upstream SEP-0042 asset-list JSON schema, pinned verbatim for deterministic tests.
 /* eslint-disable */
 export const SEP0042_ASSETLIST_SCHEMA = {
   $schema: "http://json-schema.org/draft-07/schema#",

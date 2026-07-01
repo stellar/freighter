@@ -129,7 +129,7 @@ export const getSwapDerivedData = ({
     : "0";
   // When swapping XLM into a new token, reserve the 0.5 XLM trustline bump
   // up-front so it's excluded from Max / percentage buttons and the
-  // insufficient-balance check (matches mobile; §2.2).
+  // insufficient-balance check.
   const availableBalance = deductNewTrustlineReserve({
     spendable: baseAvailableBalance,
     sourceIsXlm: asset === "native",
@@ -137,13 +137,13 @@ export const getSwapDerivedData = ({
   });
   const displayTotal = `${formatAmount(availableBalance)}`;
 
-  // "Swap for 0.5 XLM" reserve-recovery affordance on the XlmReserveSheet
-  // (§3.2). The sell side is the current source when it's already a non-XLM
+  // "Swap for 0.5 XLM" reserve-recovery affordance on the XlmReserveSheet.
+  // The sell side is the current source when it's already a non-XLM
   // classic token; otherwise the largest held non-XLM classic balance.
   const sourceIsNonXlmClassic = !!asset && asset !== "native";
 
   // Source token Blockaid verdict (from its held balance), passed to the review
-  // gate so a flagged sell token also warns (§4.3). XLM is never scanned.
+  // gate so a flagged sell token also warns. XLM is never scanned.
   const sourceBalance = sourceIsNonXlmClassic
     ? findAssetBalance(
         sendData.userBalances.balances,
@@ -159,8 +159,7 @@ export const getSwapDerivedData = ({
         })
       : undefined;
   // Friendly per-feature reasons from the source token scan, surfaced in the
-  // review's Blockaid pane alongside the transaction-scan reasons (§ batch4
-  // task 3).
+  // review's Blockaid pane alongside the transaction-scan reasons.
   const sourceTokenSecurityWarnings =
     sourceBalance && "blockaidData" in sourceBalance
       ? extractAssetScanWarnings(sourceBalance.blockaidData)
@@ -187,14 +186,14 @@ export const getSwapDerivedData = ({
 
   // The live quote settled with no route for a positive amount → no swap path.
   // While a quote is in flight (isLiveQuoteLoading) we leave the CTA enabled so
-  // it doesn't flicker disabled between keystrokes (§2.5).
+  // it doesn't flicker disabled between keystrokes.
   const hasNoSwapPath =
     swapAmountPositive &&
     !isLiveQuoteLoading &&
     new BigNumber(cleanAmount(destinationAmount || "0")).isZero();
 
   // Non-XLM swaps pay the network fee from the separate XLM balance; block the
-  // CTA when that balance can't cover the fee (§2.4). XLM-source swaps already
+  // CTA when that balance can't cover the fee. XLM-source swaps already
   // fold the fee into availableBalance, so this only applies to non-XLM sources.
   const xlmSpendableForFees = getAvailableBalance({
     assetCanonical: "native",

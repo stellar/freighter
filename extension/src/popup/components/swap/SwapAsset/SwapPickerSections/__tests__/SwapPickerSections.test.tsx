@@ -10,11 +10,8 @@ jest.mock("react-i18next", () => ({
   }),
 }));
 
-// SwapTokenRow is unit-tested separately; stub it to a simple marker so these
-// tests assert section structure, not row internals.
-// "Your tokens" rows render through the shared BalanceRow; discover rows
-// (Popular/Verified/Unverified) render through AssetListRow. Stub both to the
-// same marker so section-structure assertions hold.
+// Stub BalanceRow and AssetListRow to simple markers so tests assert section
+// structure without depending on row internals.
 jest.mock("popup/components/BalanceRow", () => ({
   BalanceRow: ({ code }: { code: string }) => (
     <div data-testid={`row-${code}`} />
@@ -51,8 +48,7 @@ const emptyResult = {
 const baseProps = {
   onClickAsset: jest.fn(),
   stellarExpertUrl: "https://stellar.expert/explorer/public",
-  // Default to the destination picker so the Soroban-empty-state cases below
-  // behave as before; the source picker is covered by a dedicated test.
+  // Destination picker triggers the Soroban empty states; the source picker is covered by a dedicated test.
   isDestination: true,
 };
 
@@ -113,7 +109,6 @@ describe("SwapPickerSections", () => {
       screen.getByTestId("swap-section-unverified-info"),
     ).toBeInTheDocument();
 
-    // tapping (i) opens the verified info sheet
     fireEvent.click(screen.getByTestId("swap-section-verified-info"));
     expect(screen.getByTestId("verified-token-info-sheet")).toBeInTheDocument();
   });
@@ -244,9 +239,7 @@ describe("SwapPickerSections", () => {
       />,
     );
 
-    // Generic empty state with "No tokens match" should not render
     expect(screen.queryByTestId("swap-picker-empty")).toBeNull();
-    // No sections should render
     expect(screen.queryByTestId(/^swap-section-/)).toBeNull();
   });
 });

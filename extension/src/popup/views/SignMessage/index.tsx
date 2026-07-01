@@ -60,9 +60,8 @@ export const SignMessage = () => {
     settingsNetworkDetailsSelector,
   );
   const publicKey = useSelector(publicKeySelector);
-  // The expanded Blockaid site-scan sheet renders IN-FLOW (replacing the body
-  // in place) rather than sliding in as a horizontal slider pane, mirroring
-  // ReviewTransaction. Gated by this boolean.
+  // Blockaid site-scan detail sheet renders in-flow (replacing the main body),
+  // matching the pattern used in ReviewTransaction.
   const [isOnBlockaidSheet, setIsOnBlockaidSheet] = useState(false);
 
   const message = parsedSearchParam(location.search) as MessageToSign;

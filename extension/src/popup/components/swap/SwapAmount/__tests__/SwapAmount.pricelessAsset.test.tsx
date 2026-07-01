@@ -46,8 +46,8 @@ describe("SwapAmount priceless source asset", () => {
     const setInputType = jest.fn();
 
     // Rendering with inputType="fiat" while the source asset has no price is
-    // the crash scenario: priceValue is null and was previously dereferenced as
-    // priceValue! inside isAmountTooHigh (and validate / handleContinue).
+    // the crash scenario: priceValue is null and must not be non-null-asserted
+    // inside isAmountTooHigh (or validate / handleContinue).
     expect(() =>
       render(
         <Wrapper

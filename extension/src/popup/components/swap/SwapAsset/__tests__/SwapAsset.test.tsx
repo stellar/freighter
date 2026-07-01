@@ -65,8 +65,7 @@ describe("SwapAsset selectionType", () => {
       </Wrapper>,
     );
 
-    // Source now reuses the same SwapPickerSections "Your tokens" list as the
-    // destination (held tokens only), not the legacy TokenList.
+    // Both source and destination use SwapPickerSections (held tokens only).
     expect(screen.getByText("Swap from")).toBeInTheDocument();
     expect(screen.getByTestId("swap-picker-sections")).toBeInTheDocument();
     expect(screen.queryByTestId("token-list")).toBeNull();
@@ -160,7 +159,6 @@ describe("SwapAsset selectionType", () => {
       </Wrapper>,
     );
 
-    // Idle results are shown first.
     expect(screen.getByTestId("swap-picker-sections")).toBeInTheDocument();
 
     // Typing immediately replaces every result (held + non-held) with the
@@ -172,9 +170,8 @@ describe("SwapAsset selectionType", () => {
     expect(screen.queryByTestId("swap-picker-sections")).toBeNull();
     expect(document.querySelector(".SwapFrom__loader")).toBeInTheDocument();
 
-    // ...and the loader CLEARS once the debounced lookup settles. Regression
-    // guard: the previous lookupState-value effect missed the cache's
-    // SUCCESS→SUCCESS repaint, leaving the loader stuck forever.
+    // Regression guard: the loader must clear when the lookup settles with a
+    // SUCCESS→SUCCESS cache hit, not only on a fresh SUCCESS.
     await waitFor(() => {
       expect(document.querySelector(".SwapFrom__loader")).toBeNull();
     });

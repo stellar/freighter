@@ -13,13 +13,11 @@ describe("buildChangeTrustOperation", () => {
       assetIssuer,
       sdk: StellarSdk,
     });
-    // Decode the XDR operation to verify its semantic content
     const op = StellarSdk.Operation.fromXDRObject(xdrOp);
     expect(op.type).toBe("changeTrust");
     // add-trustline: no explicit limit passed — SDK defaults to max trustline
     expect((op as any).line.code).toBe(assetCode);
     expect((op as any).line.issuer).toBe(assetIssuer);
-    // limit should be the SDK max (not "0"), meaning no cap was set
     expect((op as any).limit).not.toBe("0");
   });
 

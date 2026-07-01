@@ -57,7 +57,7 @@ export interface SwapTokenRecord extends ManageAssetCurrency {
   requiresTrustline: boolean;
   securityLevel?: SecurityLevel;
   /** Friendly per-feature Blockaid reasons from the token's asset scan, carried
-   * to the review's "Do not proceed" pane (§ batch4 task 3). */
+   * to the review's "Do not proceed" pane. */
   securityWarnings?: BlockaidWarning[];
   /** Formatted held-token balance (held rows only). */
   tokenAmount?: string;
@@ -211,7 +211,7 @@ export const buildSwapSections = ({
   searchTerm: string;
   balances: AssetType[];
   // Accepted for call-site symmetry with the lookup context; the record filter
-  // no longer needs the network (it keys purely on contract-id shape).
+  // keys purely on contract-id shape and does not use the network value.
   networkDetails: NetworkDetails;
   popular?: TrendingAsset[];
   verifiedAssets?: ManageAssetCurrency[];
@@ -227,11 +227,10 @@ export const buildSwapSections = ({
   const heldRecords = balancesToHeldRecords({ balances, icons, tokenPrices });
   const heldCanonicals = new Set(heldRecords.map((r) => r.canonical));
 
-  // Classic-only filter, mirroring mobile's isSorobanRecord
-  // (isContractId(record.asset)): drop any record whose issuer or contract is a
-  // contract id — i.e. a custom Soroban token. Classic CODE-ISSUER records are
-  // kept, including SAC-backed assets, which stellar.expert returns in their
-  // classic form (a bare SAC contract id has no classic representation to swap).
+  // Classic-only filter: drop any record whose issuer or contract is a contract
+  // id — i.e. a custom Soroban token. Classic CODE-ISSUER records are kept,
+  // including SAC-backed assets, which stellar.expert returns in their classic
+  // form (a bare SAC contract id has no classic representation to swap).
   // Side-effect: sets hadSorobanMatches so the picker can show the "try a
   // Classic token" empty state.
   let hadSorobanMatches = false;
@@ -350,8 +349,8 @@ export const mergeScanResults = ({
   networkDetails: NetworkDetails;
   // When true, rows without a scan entry are left UNDECORATED (securityLevel
   // stays undefined) instead of defaulting to SAFE/unable-to-scan. Used for the
-  // first paint when only some verdicts are known from the in-session cache, so
-  // not-yet-scanned rows don't flash a premature badge (§ batch4 follow-up).
+  // first paint when only some verdicts are in the in-session cache, so
+  // not-yet-scanned rows don't flash a premature badge.
   skipUnscanned?: boolean;
 }): SwapTokenRecord[] =>
   rows.map((row) => {
@@ -374,7 +373,7 @@ export const mergeScanResults = ({
       securityLevel = SecurityLevel.SAFE;
     }
     // Keep the friendly per-feature reasons so the review can show them
-    // alongside the transaction-scan reasons (§ batch4 task 3).
+    // alongside the transaction-scan reasons.
     const securityWarnings = extractAssetScanWarnings(scan);
     return {
       ...row,
@@ -425,17 +424,17 @@ const recordFromSearchResult = (
 
 // Module-scoped cache of the last successful IDLE (no search term) lookup per
 // network. It survives component remounts within a popup session, so
-// re-entering the picker repaints instantly instead of flashing a spinner
-// (§1.10), and it's served as a fallback when a fresh idle fetch fails (§5.4)
-// rather than dropping Popular to held-only. In-memory only — it dies on popup
-// close; cross-session disk persistence (§5.3) is a separate concern.
+// re-entering the picker repaints instantly instead of flashing a spinner, and
+// is served as a fallback when a fresh idle fetch fails rather than dropping
+// Popular to held-only. In-memory only — dies on popup close; disk persistence
+// across sessions is a separate concern handled by swapPopularTokensCache.
 const swapIdleResultCacheByNetwork = new Map<string, SwapTokenLookupResult>();
 
 // Module-scoped cache of the last successful SEARCH result per network, keyed
 // by the normalized search term. Same lifetime as the idle cache (in-memory,
-// dies on popup close): re-running a search the user already ran in this
-// session repaints instantly and revalidates silently, instead of re-hitting
-// stellar.expert + the Blockaid bulk scan from scratch (§ batch3 task 10).
+// dies on popup close): re-running a search already performed this session
+// repaints instantly and revalidates silently, instead of re-hitting
+// stellar.expert + the Blockaid bulk scan from scratch.
 const swapSearchResultCacheByNetwork = new Map<
   string,
   Map<string, SwapTokenLookupResult>
@@ -461,8 +460,8 @@ const setCachedSearchResult = (
 // Bulk scans are slow (serial-ish network round-trips), so caching each asset's
 // verdict means re-entering the picker, or overlapping searches ("usd" then
 // "usdc"), reuse verdicts instead of re-scanning — badges then paint instantly
-// on the first dispatch. It also lets a token picked BEFORE its scan finished
-// resolve its verdict from here (§ batch4 follow-up).
+// on the first dispatch. It also lets a destination token picked before its
+// scan finished resolve its verdict via getCachedAssetScan.
 const swapAssetScanCacheByNetwork = new Map<
   string,
   Map<string, BlockAidScanAssetResult>
@@ -531,8 +530,7 @@ export const useSwapTokenLookup = () => {
 
     // On idle re-entry — or a repeated search the user already ran this session
     // — repaint instantly from the last cached result and revalidate silently
-    // (no spinner); otherwise show the spinner while it loads (§1.10, § batch3
-    // task 10).
+    // (no spinner); otherwise show the spinner while it loads.
     const isIdle = !searchTerm.trim();
     const normalizedTerm = searchTerm.trim().toLowerCase();
     const cachedIdleResult = isIdle
@@ -611,7 +609,7 @@ export const useSwapTokenLookup = () => {
         unverifiedAssets = split.unverifiedAssets;
       } else {
         // IDLE path: popular tokens. Cache layering (fastest first):
-        //   Redux (in-session) → chrome.storage.local (cross-session, §5.3) →
+        //   Redux (in-session) → chrome.storage.local (cross-session) →
         //   stellar.expert trending request.
         const cachedByNetwork = popularTokensSelector(store.getState());
         const cached = cachedByNetwork[networkDetails.network];
@@ -669,11 +667,11 @@ export const useSwapTokenLookup = () => {
         searchResults,
       });
 
-      // A newer lookup (the user typed again or cleared the box) already
-      // superseded this one. Some awaits above don't take the signal
+      // A newer lookup (the user typed again or cleared the box) may have
+      // superseded this one. Some awaits above don't honor the AbortSignal
       // (splitVerifiedAssetCurrency), so a superseded call can still reach here
       // and commit its stale sections over the current render — the "Your
-      // tokens" flash. Drop it (§ batch4 task 7).
+      // tokens" flash. The guard below drops it before dispatch.
       // Non-held classic candidates to scan with Blockaid (mainnet only;
       // testnet has no Blockaid).
       const scanCandidates = isBlockaidEnabled(networkDetails)
@@ -808,8 +806,8 @@ export const useSwapTokenLookup = () => {
       }
       captureException(`useSwapTokenLookup fallback - ${JSON.stringify(e)}`);
       // Serve the last good cached result (idle or this search term) on a
-      // transient failure instead of dropping Popular to held-only (§5.4); fall
-      // back to held-only only when there's nothing cached.
+      // transient failure instead of dropping Popular to held-only; fall back
+      // to held-only only when there's nothing cached.
       if (cachedResult) {
         dispatch({ type: "FETCH_DATA_SUCCESS", payload: cachedResult });
         return;

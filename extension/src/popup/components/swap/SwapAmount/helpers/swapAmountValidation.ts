@@ -5,10 +5,8 @@ import { TX_SEND_MAX } from "popup/constants/transaction";
 import { AMOUNT_ERROR } from "helpers/transaction";
 
 /**
- * Validates the raw sell amount for the swap. Returns an AMOUNT_ERROR key when
- * the amount has more than 7 decimals or exceeds the max send amount, else null.
- * Pure so it can be unit-tested in isolation and keeps the Formik validate a
- * one-liner.
+ * Returns an AMOUNT_ERROR key when the sell amount is invalid (too many decimals
+ * or over the send cap), else null. Kept pure so it can be unit-tested directly.
  */
 export const validateSwapAmount = (rawAmount: string): string | null => {
   const val = cleanAmount(rawAmount);

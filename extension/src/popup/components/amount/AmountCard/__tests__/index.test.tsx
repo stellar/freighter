@@ -69,8 +69,8 @@ describe("AmountCard", () => {
         <AmountCard {...baseProps} isAmountTooHigh maxSpendableText="12.34" />
       </Wrapper>,
     );
-    // The test i18n returns the key un-interpolated; assert the new copy is in
-    // use (the max-spendable amount + symbol are interpolated at runtime).
+    // The test i18n returns the key un-interpolated; the max-spendable amount
+    // and symbol are interpolated at runtime.
     expect(
       screen.getByText(
         "Insufficient balance. Maximum spendable: {{amount}} {{symbol}}",
@@ -116,9 +116,7 @@ describe("AmountCard", () => {
         />
       </Wrapper>,
     );
-    // The main fiat amount renders "--" rather than the "$0.00" input.
     expect(screen.getByText("--")).toBeInTheDocument();
-    // No fiat amount input is rendered for a priceless token.
     expect(screen.queryByTestId("send-amount-amount-input")).toBeNull();
   });
 
@@ -160,8 +158,8 @@ describe("AmountCard", () => {
       "send-amount-amount-input",
     ) as HTMLInputElement;
     fireEvent.focus(input);
-    // The previous fiat-only onFocus={e => e.target.select()} highlighted the
-    // whole amount on the first toggle; the selection must stay collapsed.
+    // onFocus must NOT call select() — doing so highlights the whole amount
+    // on the first toggle, which diverges from the crypto input's behavior.
     expect(input.selectionStart).toBe(input.selectionEnd);
   });
 
@@ -205,9 +203,7 @@ describe("AmountCard", () => {
         <AmountCard {...baseProps} isReadOnly onSelectAsset={onSelectAsset} />
       </Wrapper>,
     );
-    // The amount input must be disabled.
     expect(screen.getByTestId("send-amount-amount-input")).toBeDisabled();
-    // The asset-selector button must still be clickable.
     fireEvent.click(screen.getByTestId("send-amount-edit-dest-asset"));
     expect(onSelectAsset).toHaveBeenCalledTimes(1);
   });

@@ -16,7 +16,7 @@ $loader-light-color: #444961;
 
     &--logo {
       margin-right: 1rem;
-      // Fixed square (not max-width/height) so non-square source logos are
+      // Fixed square rather than max-width/height so non-square source logos are
       // cropped to a circle by object-fit: cover instead of rendering as an
       // ellipse.
       width: 2rem;

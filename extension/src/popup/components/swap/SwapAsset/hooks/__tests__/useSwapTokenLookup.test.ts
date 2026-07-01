@@ -232,8 +232,8 @@ describe("mergeScanResults", () => {
       networkDetails: MAINNET,
       skipUnscanned: true,
     });
-    // USDC is decorated; AQUA (no scan entry) is left untouched (no premature
-    // badge) rather than defaulting to SAFE/unable-to-scan.
+    // USDC is decorated; AQUA (no scan entry) is left untouched — no security
+    // badge — to avoid false classification before a result is available.
     expect(merged[0].securityLevel).toBe(SecurityLevel.MALICIOUS);
     expect(merged[1].securityLevel).toBeUndefined();
   });
@@ -254,7 +254,7 @@ describe("mergeScanResults", () => {
       scanResults: { "AQUA-GAQUA": { result_type: "Benign" } } as any,
       networkDetails: MAINNET,
     });
-    // A benign scan still yields a defined (SAFE) level — existing behavior.
+    // A benign scan yields a defined (SAFE) level, not undefined.
     expect(merged[0].securityLevel).toBe(SecurityLevel.SAFE);
   });
 

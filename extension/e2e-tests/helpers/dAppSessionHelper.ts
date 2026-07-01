@@ -69,7 +69,7 @@ export const openSignMessagePopup = async ({ page }: { page: Page }) => {
 
 // Triggers the SignTransaction popup via the signTransaction playground.
 // Connects the dApp first (allowDapp) so the sign popup opens directly on the
-// "Confirm Transaction" screen, matching the API integration suite's flow.
+// "Confirm Transaction" screen without an intervening connection prompt.
 export const openSignTransactionPopup = async ({
   page,
   xdr,

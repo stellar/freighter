@@ -99,7 +99,6 @@ describe("SwapAmount fiat label", () => {
 
   it("shows '--' on both cards when the selected assets have no price", () => {
     mockAmountData({});
-    // Source XLM and destination USDC, neither priced.
     renderAmount({ asset: "native", destinationAsset: USDC_CANONICAL });
 
     expect(
@@ -115,7 +114,6 @@ describe("SwapAmount fiat label", () => {
     // No source asset selected -> "(+) Select".
     renderAmount({ asset: "", destinationAsset: "" });
 
-    // Both cards are in the "(+) Select" state and show $0.00, not "--".
     expect(
       within(screen.getByTestId("swap-sell-card")).getByText("$0.00"),
     ).toBeInTheDocument();

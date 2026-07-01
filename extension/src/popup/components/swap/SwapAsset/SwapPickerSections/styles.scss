@@ -16,7 +16,7 @@
     margin-bottom: 0.9375rem;
 
     // The message is passed as the Notification title, whose text SDS renders
-    // semi-bold; show it at regular weight per design.
+    // semi-bold; show it at regular weight.
     .Notification__title__text {
       font-weight: var(--font-weight-regular);
     }
@@ -82,7 +82,7 @@
     line-height: 1.25rem;
     text-align: center;
     // A pasted address has no spaces, so wrap it across lines instead of
-    // letting the 56-char string overflow the card (§ task 3).
+    // letting the 56-char string overflow the card.
     max-width: 100%;
     overflow-wrap: anywhere;
     word-break: break-word;

@@ -3,8 +3,7 @@
 .Operations {
   display: flex;
   flex-direction: column;
-  // 14px base (down from the inherited 16px) so long operation values fit
-  // before truncating, matching mobile's transaction-details density.
+  // 14px keeps long operation values from truncating prematurely.
   font-size: pxToRem(14px);
 
   &--header {

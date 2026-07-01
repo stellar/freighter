@@ -58,8 +58,6 @@ export const Swap = () => {
 
   // Quote expired at submit (op_under_dest_min / op_too_few_offers): recover to
   // the review screen with a fresh quote instead of dead-ending in SubmitFail.
-  // The live-quote effect on SwapAmount re-fetches the path on remount, and the
-  // notification is surfaced from the isSwapQuoteExpired flag (§2.1/§3.3).
   const isQuoteExpiredAtSubmit =
     submission.submitStatus === ActionStatus.ERROR &&
     submission.isSwapQuoteExpired;

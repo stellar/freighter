@@ -378,9 +378,9 @@
   }
 
   // The in-flow Blockaid detail pane renders inside this sheet's View.Content,
-  // which has no top padding (so the confirm pane can hug the top edge). Give
-  // the detail pane the same ~24px breathing room above its alert/close header
-  // that the inset already provides on the left and right.
+  // which has no top padding (so the confirm pane can hug the top edge).
+  // Restore the same breathing room above the alert/close header that the
+  // inset already provides on the sides.
   .BlockaidDetailsExpanded {
     padding-top: pxToRem(24px);
   }

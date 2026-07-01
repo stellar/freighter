@@ -10,7 +10,7 @@ import {
 } from "popup/helpers/balance";
 
 // Pre-flight: does a NEW-token swap risk failing on-chain because the source
-// account can't cover the extra 0.5 XLM trustline reserve? §3.6.
+// account can't cover the extra 0.5 XLM trustline reserve?
 export const shouldShowXlmReservePreflight = ({
   requiresTrustline,
   sourceIsXlm,
@@ -37,8 +37,7 @@ export const shouldShowXlmReservePreflight = ({
 // screen (so the percentage buttons + insufficient-balance check exclude it).
 // Only when there's at least 0.5 XLM spendable to begin with — below that we
 // leave the value untouched and let shouldShowXlmReservePreflight surface the
-// shortfall through the XlmReserveSheet instead. Mirrors mobile's
-// SwapAmountScreen spendable deduction (§2.2).
+// shortfall through the XlmReserveSheet instead.
 export const deductNewTrustlineReserve = ({
   spendable,
   sourceIsXlm,
@@ -60,8 +59,8 @@ export const deductNewTrustlineReserve = ({
 // sell token for the "Swap for 0.5 XLM" reserve-recovery affordance on the
 // XlmReserveSheet. Returns its canonical ("CODE:ISSUER"), or undefined when
 // the account holds no swappable classic token (so the affordance is hidden).
-// Mirrors mobile's bestNonXlmClassicBalance, which sorts by fiat then total;
-// we sort by total, the value the amount screen already has on hand (§3.2).
+// Sorts by total rather than fiat value — total is what the amount screen
+// already has on hand.
 export const pickBestNonXlmClassicCanonical = (
   balances: AssetType[],
 ): string | undefined => {

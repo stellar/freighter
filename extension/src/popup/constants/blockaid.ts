@@ -37,7 +37,7 @@ const SECURITY_LEVEL_SEVERITY: Record<SecurityLevel, number> = {
  * and destination token verdicts on a swap) into the single most severe level
  * that warrants a warning. SAFE / null / undefined never escalate, so the
  * result is null when nothing is flagged — matching getTransactionSecurityLevel,
- * which returns null for a clean transaction (§4.1).
+ * which returns null for a clean transaction.
  */
 export const mergeSecurityLevels = (
   levels: (SecurityLevel | null | undefined)[],

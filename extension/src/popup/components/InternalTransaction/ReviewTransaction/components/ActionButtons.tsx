@@ -40,9 +40,7 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
   const { t } = useTranslation();
 
   // 1. Blockaid "Do not proceed" pane: Cancel (primary) and "Confirm anyway"
-  // (text) which submits the transaction directly — matching mobile, where the
-  // security sheet's action confirms rather than bouncing back to review
-  // (§ batch4 task 9).
+  // (text) which submits the transaction directly rather than returning to review.
   if (isOnBlockaidPane) {
     return (
       <>

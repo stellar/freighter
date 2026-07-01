@@ -96,7 +96,7 @@ export const schemaValidatedAssetList = async (
   }
 
   // Second pass: anything still invalid is a rule we don't relax, so reject the
-  // whole list as before.
+  // whole list.
   const finalPass = validate(candidate, schema);
   if (finalPass.errors.length) {
     console.warn(

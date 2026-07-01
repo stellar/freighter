@@ -105,8 +105,7 @@ export const getPerOpBaseFee = (totalFee: string, opCount: number): string => {
 // Total swap fee shown/charged. A new-trustline swap is two ops (changeTrust
 // + pathPaymentStrictSend), so the recommended default scales with op count —
 // each op pays the recommended fee. A user-set custom fee is treated as the
-// total and split per op at build time (getPerOpBaseFee). Mirrors mobile's
-// recommendedFee × ops default (§3.6/§3.7).
+// total and split per op at build time (getPerOpBaseFee).
 export const getSwapTotalFee = ({
   recommendedFee,
   customFee,
@@ -241,9 +240,9 @@ function useSimulateTxData({
     reducer<SimulateTxData, string>,
     initialState,
   );
-  // Minimal flag the view can read: the frozen quote no longer clears (Horizon
-  // op_under_dest_min / op_too_few_offers). Surfaced for the quote-expired
-  // metric + Notification in SwapAmount.
+  // Separate from reducer state so the view retains the expired-quote flag
+  // across re-fetches. Set on Horizon op_under_dest_min / op_too_few_offers
+  // errors; consumed by the quote-expired metric + Notification in SwapAmount.
   const [isQuoteExpired, setIsQuoteExpired] = useState(false);
 
   const fetchData = async ({

@@ -122,8 +122,6 @@ describe("SwapAmount telemetry + quote-expired surfacing", () => {
 
     renderSwapAmount({});
 
-    // The quote-expired toast fires (sonner toast.custom) instead of a fixed
-    // banner taking layout space.
     await waitFor(() => {
       expect(toastCustomMock).toHaveBeenCalled();
     });
@@ -194,14 +192,13 @@ describe("SwapAmount telemetry + quote-expired surfacing", () => {
       fireEvent.click(screen.getByTestId("swap-amount-btn-continue"));
     });
 
-    // Confirm in the review sheet.
     const confirmBtn = await screen.findByTestId("SubmitAction");
     await act(async () => {
       fireEvent.click(confirmBtn);
     });
 
-    // The trustline-added metric now fires only once the swap settles
-    // (useSubmitTxData), not here at review/confirm time (§3.4).
+    // The trustline-added metric fires in useSubmitTxData after the swap
+    // settles, not here at review/confirm time.
     expect(
       emitMetricMock.mock.calls.find((c) => c[0] === "swap: trustline added"),
     ).toBeUndefined();

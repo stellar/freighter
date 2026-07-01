@@ -79,7 +79,7 @@ export const Account = () => {
     useHiddenCollectibles();
 
   // Warm the swap top-tokens cache in the background so the first Swap entry
-  // paints Popular instantly (§5.7); no-op on testnet / when already cached.
+  // paints Popular instantly; no-op on testnet / when already cached.
   useSwapTopTokensPrewarm();
 
   const previousAccountBalancesRef = useRef<AccountBalances | null>(null);

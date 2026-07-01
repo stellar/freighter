@@ -108,7 +108,7 @@ export function useGetSwapFromData(getBalancesOptions: {
     // Filter from the first character (token codes can be 1-2 letters), matching
     // the destination ("Swap to") search. The empty-term case is handled above.
     // matchesSwapFromSearch also resolves a pasted SAC to the held token it
-    // wraps (§ task 2) — derived from the asset, no extra API call.
+    // wraps — derived from the asset, no extra API call.
     const filtered = balances.filter((balance) =>
       matchesSwapFromSearch({
         balance,

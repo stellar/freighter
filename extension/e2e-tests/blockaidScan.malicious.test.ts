@@ -19,8 +19,7 @@ import {
 } from "./helpers/stubs";
 import { testBlockaidFeedback } from "./helpers/blockaid";
 
-// A valid classic transaction XDR the signTransaction playground can hand to
-// the extension. Reused from the API integration suite.
+// A valid classic transaction XDR for openSignTransactionPopup.
 const TX_TO_SIGN =
   "AAAAAgAAAADLvQoIbFw9k0tgjZoOrLTuJJY9kHFYp/YAEAlt/xirbAAAAGQAAAfjAAAOpQAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAQAAAABngBTmbmUycqG2cAMHcomSR80dRzGtKzxM6gb3yySD5AAAAAAAAAAAAvrwgAAAAAAAAAAA";
 

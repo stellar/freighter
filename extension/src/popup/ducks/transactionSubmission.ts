@@ -499,7 +499,7 @@ interface InitialState {
   error: ErrorMessage | undefined;
   // Set when a swap submission fails because the frozen quote no longer clears
   // on-chain (op_under_dest_min / op_too_few_offers). Drives the recover-and-
-  // retry flow instead of the terminal SubmitFail screen (§2.1/§3.3).
+  // retry flow instead of the terminal SubmitFail screen.
   isSwapQuoteExpired: boolean;
   transactionData: TransactionData;
   transactionSimulation: {
@@ -705,8 +705,8 @@ const transactionSubmissionSlice = createSlice({
       state.submitStatus = ActionStatus.ERROR;
       state.error = action.payload;
       // Flag a swap quote-expiry so the Swap flow recovers (refetch + retry)
-      // instead of dead-ending in SubmitFail (§2.1/§3.3). These op codes only
-      // arise from swap path payments, so this is a no-op for sends.
+      // instead of dead-ending in SubmitFail. These op codes only arise from
+      // swap path payments, so this is a no-op for sends.
       state.isSwapQuoteExpired = isQuoteExpiredError(action.payload);
     });
     builder.addCase(submitFreighterTransaction.fulfilled, (state, action) => {

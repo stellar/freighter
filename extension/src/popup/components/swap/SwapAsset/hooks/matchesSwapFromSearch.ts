@@ -6,8 +6,8 @@ import { isAssetSac, isContractId } from "popup/helpers/soroban";
  * Whether a held balance matches the swap-from ("Swap from") search term.
  * Matches by token code, classic issuer, or Soroban contractId; and — when the
  * term is itself a contract id — by the held classic/native token's derived SAC
- * address, so a pasted SAC resolves to the token it wraps without an API call
- * (§ task 2). The destination picker gets the equivalent SAC match back from
+ * address, so a pasted SAC resolves to the token it wraps without an API call.
+ * The destination picker gets the equivalent SAC match back from
  * stellar.expert; this keeps the source picker symmetric.
  */
 export const matchesSwapFromSearch = ({

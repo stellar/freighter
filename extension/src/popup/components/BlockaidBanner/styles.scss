@@ -1,7 +1,7 @@
 @use "../../styles/utils.scss" as *;
 
 // The single reusable Blockaid warning banner: a filled strip colored by
-// severity, matching the design used across mobile and the swap review.
+// severity, used across swap review and other transaction flows.
 .BlockaidBanner {
   display: flex;
   // 8px vertical padding + 12px radius to match .ReviewTx__TrustlineBanner's
@@ -31,10 +31,9 @@
     align-items: center;
   }
 
-  // Exactly mirrors .ReviewTx__TrustlineBanner__Label (a plain span that
-  // inherits the app font-family) so the security and trustline banners render
-  // identically. Plain <span>, not <p> or SDS <Text>, both of which were
-  // rendering the text larger / in a different family.
+  // Matches .ReviewTx__TrustlineBanner__Label (a plain span that inherits the
+  // app font-family) so both banners render identically. <p> and SDS <Text>
+  // both render text larger and in a different family.
   &__message {
     font-size: pxToRem(12px);
     font-weight: var(--font-weight-medium);

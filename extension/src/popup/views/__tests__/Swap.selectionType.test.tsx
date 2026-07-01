@@ -156,8 +156,8 @@ describe("Swap selectionType wiring", () => {
     await waitFor(() => {
       expect(screen.getByText("Swap from")).toBeInTheDocument();
     });
-    // Source picker reuses the same "Your tokens" list (SwapPickerSections) as
-    // the destination, not the legacy TokenList.
+    // Both source and destination pickers render SwapPickerSections, not
+    // the InternalTransaction TokenList.
     expect(screen.getByTestId("swap-picker-sections")).toBeInTheDocument();
     expect(screen.queryByTestId("token-list")).toBeNull();
   });
