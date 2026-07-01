@@ -277,40 +277,24 @@ test.describe("BlockAid Scan - Unable to Scan States", () => {
 
     // Navigate to swap
     await page.getByTestId("nav-link-swap").click();
-    await expect(page.getByTestId("AppHeaderPageTitle")).toContainText("Swap");
-
-    // Select source token (XLM)
-    await page.getByTestId("swap-src-asset-tile").click();
-    await expect(page.getByTestId("AppHeaderPageTitle")).toContainText(
-      "Swap from",
-    );
-    await expect(page.getByText(/XLM/)).toBeVisible();
-    await page.getByTestId("XLM-balance").click();
-
-    // Select destination token (USDC)
-    await page.getByTestId("swap-dst-asset-tile").click({ force: true });
-    await expect(page.getByText("Swap to")).toBeVisible();
-    await expect(page.getByText(/USDC/)).toBeVisible();
-    await page.getByTestId("USDC-balance").click();
-
-    // Wait to be back at amount step
-    await expect(page.getByTestId("AppHeaderPageTitle")).toContainText("Swap");
-    await expect(page.getByTestId("send-amount-amount-input")).toBeVisible({
-      timeout: 10000,
+    await expect(page.getByTestId("swap-sell-card")).toBeVisible({
+      timeout: 15000,
     });
 
-    // Enter amount
-    await page.getByTestId("send-amount-amount-input").fill("10");
+    // Source defaults to XLM; pick the held USDC as the destination.
+    await page
+      .getByTestId("swap-receive-card")
+      .getByTestId("send-amount-edit-dest-asset")
+      .click({ force: true });
+    await expect(page.getByText("Swap to")).toBeVisible({ timeout: 10000 });
+    await page.getByTestId("SwapTokenRow-USDC").click();
 
-    // Wait for Continue button to be enabled (simulation needs to complete)
-    // The button might be "Continue" or "Review swap"
-    const continueButton = page
-      .getByRole("button", { name: "Continue" })
-      .or(page.getByText("Review swap"));
-    await expect(continueButton).toBeEnabled({ timeout: 30000 });
-
-    // Click continue
-    await continueButton.click({ force: true });
+    // Enter amount and continue
+    await page
+      .getByTestId("swap-sell-card")
+      .getByTestId("send-amount-amount-input")
+      .fill("10");
+    await page.getByTestId("swap-amount-btn-continue").click({ force: true });
 
     // Should be on review pane with warning banner visible
     await expect(
