@@ -127,7 +127,8 @@ export const ManageAssetRows = ({
                 domain={domain}
                 isSuspicious={isSuspicious}
                 isMalicious={isMalicious}
-                // SAC contract tokens display their name; everything else the code.
+                // Native (non-SAC) contract tokens display their name; classic
+                // assets and SAC-wrapped tokens display their code.
                 displayCode={name && contract && !isSac ? name : code}
                 codeTestId="ManageAssetCode"
                 domainTestId="ManageAssetDomain"
