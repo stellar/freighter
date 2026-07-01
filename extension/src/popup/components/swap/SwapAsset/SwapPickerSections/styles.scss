@@ -10,7 +10,24 @@
   }
 
   &__notice {
-    margin-bottom: 0.75rem;
+    // 15px of breathing room above (from the search box) and below (to the
+    // results), so the notice isn't glued to either.
+    margin-top: 0.9375rem;
+    margin-bottom: 0.9375rem;
+
+    // The message is passed as the Notification title, whose text SDS renders
+    // semi-bold; show it at regular weight per design.
+    .Notification__title__text {
+      font-weight: var(--font-weight-regular);
+    }
+  }
+
+  // When the notice is shown it owns the 15px gap to whatever follows it, so
+  // neutralize the following element's own top margin (otherwise it stacks into
+  // a larger gap in this flex column).
+  &__notice + &__empty,
+  &__notice + &__header {
+    margin-top: 0;
   }
 
   &__header {
