@@ -27,6 +27,10 @@ export interface AmountCardProps {
   assetIssuerKey?: string;
   securityLevel?: SecurityLevel;
   supportsUsd: boolean;
+  /** Whether the token has a usable USD price. When false, the fiat amount is
+   * shown as "--" (unknown) instead of "$0.00" — e.g. the read-only "You
+   * receive" card for a token with no price. Defaults to true. */
+  hasUsdPrice?: boolean;
   fiatLineText: string;
   isAmountTooHigh: boolean;
   /** Pre-formatted max-spendable amount shown in the insufficient-balance
@@ -62,6 +66,7 @@ export const AmountCard = ({
   assetIssuerKey,
   securityLevel,
   supportsUsd,
+  hasUsdPrice = true,
   fiatLineText,
   isAmountTooHigh,
   maxSpendableText = "",
@@ -191,45 +196,49 @@ export const AmountCard = ({
               autoComplete="off"
             />
           )}
-          {inputType === "fiat" && (
-            <>
-              <div
-                className={`AmountCard__amount-label-usd AmountCard__${amountFontSizeClass}`}
-              >
-                $
-              </div>
-              <input
-                ref={inputRef}
-                className={fontClass}
-                style={{
-                  width: `${inputWidthFiat || DEFAULT_INPUT_WIDTH}px`,
-                }}
-                data-testid="send-amount-amount-input"
-                name="amountUsd"
-                type="text"
-                value={amountUsd}
-                disabled={isReadOnly}
-                onChange={(e) => {
-                  const input = e.target;
-                  const next = formatAmountPreserveCursor(
-                    e.target.value,
-                    amountUsd,
-                    2,
-                    e.target.selectionStart || 1,
-                  );
-                  onAmountUsdChange(next);
-                  runAfterUpdate(() => {
-                    input.selectionStart = next.newCursor;
-                    input.selectionEnd = next.newCursor;
-                  });
-                }}
-                onFocus={onInputFocus}
-                onBlur={onInputBlur}
-                autoFocus={autoFocus}
-                autoComplete="off"
-              />
-            </>
-          )}
+          {inputType === "fiat" &&
+            (hasUsdPrice ? (
+              <>
+                <div
+                  className={`AmountCard__amount-label-usd AmountCard__${amountFontSizeClass}`}
+                >
+                  $
+                </div>
+                <input
+                  ref={inputRef}
+                  className={fontClass}
+                  style={{
+                    width: `${inputWidthFiat || DEFAULT_INPUT_WIDTH}px`,
+                  }}
+                  data-testid="send-amount-amount-input"
+                  name="amountUsd"
+                  type="text"
+                  value={amountUsd}
+                  disabled={isReadOnly}
+                  onChange={(e) => {
+                    const input = e.target;
+                    const next = formatAmountPreserveCursor(
+                      e.target.value,
+                      amountUsd,
+                      2,
+                      e.target.selectionStart || 1,
+                    );
+                    onAmountUsdChange(next);
+                    runAfterUpdate(() => {
+                      input.selectionStart = next.newCursor;
+                      input.selectionEnd = next.newCursor;
+                    });
+                  }}
+                  onFocus={onInputFocus}
+                  onBlur={onInputBlur}
+                  autoFocus={autoFocus}
+                  autoComplete="off"
+                />
+              </>
+            ) : (
+              // No USD price for this token — show "--" rather than "$0.00".
+              <div className={fontClass}>--</div>
+            ))}
         </div>
         <button
           type="button"

@@ -103,6 +103,25 @@ describe("AmountCard", () => {
     expect(screen.queryByTestId("amount-fiat-toggle")).toBeNull();
   });
 
+  it("shows '--' as the fiat amount (not '$0.00') when the token has no USD price in fiat mode", () => {
+    render(
+      <Wrapper state={{}} routes={["/"]}>
+        <AmountCard
+          {...baseProps}
+          inputType="fiat"
+          amountUsd="0.00"
+          hasUsdPrice={false}
+          isReadOnly
+          fiatLineText="6.28 WSGBP"
+        />
+      </Wrapper>,
+    );
+    // The main fiat amount renders "--" rather than the "$0.00" input.
+    expect(screen.getByText("--")).toBeInTheDocument();
+    // No fiat amount input is rendered for a priceless token.
+    expect(screen.queryByTestId("send-amount-amount-input")).toBeNull();
+  });
+
   it("shows the input-type toggle when not read-only and USD is supported", () => {
     render(
       <Wrapper state={{}} routes={["/"]}>

@@ -601,6 +601,7 @@ export const SwapAmount = ({
                     // matching the picker list (§ task 3).
                     securityLevel={sourceTokenSecurityLevel}
                     supportsUsd={Boolean(supportsUsd)}
+                    hasUsdPrice={Boolean(assetPrice)}
                     fiatLineText={buildFiatLineText({
                       hasAsset: !!asset,
                       inputType,
@@ -709,6 +710,7 @@ export const SwapAmount = ({
                       transactionData.destinationTokenDetails?.securityLevel
                     }
                     supportsUsd={Boolean(supportsUsd)}
+                    hasUsdPrice={Boolean(dstAssetPrice)}
                     fiatLineText={buildFiatLineText({
                       hasAsset: !!destinationAsset,
                       inputType,
