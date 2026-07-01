@@ -45,7 +45,7 @@
 import { test, expect } from "./test-fixtures";
 import { Page } from "@playwright/test";
 import { loginToTestAccount, switchToMainnet } from "./helpers/login";
-import { stubScanTxMalicious } from "./helpers/stubs";
+import { stubScanTxMalicious, stubScanTxSafe } from "./helpers/stubs";
 // Soroban contract address — searching for this should produce the Soroban empty state.
 const SOROBAN_CONTRACT_ADDRESS =
   "CAZXRTOKNUQ2JQQF3NCRU7GYMDJNZ2NMQN6IGN4FCT5DWPODMPVEXSND";
@@ -77,7 +77,64 @@ test("held-to-held swap reaches review screen", async ({
   context,
 }) => {
   test.slow();
-  await loginToTestAccount({ page, extensionId, context });
+
+  const USDC_ISSUER =
+    "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5";
+
+  const stubOverrides = async () => {
+    // Hold both XLM (default source) and USDC so a held-to-held swap is
+    // possible: the destination picker hides the source, so a second held
+    // token is required to have anything to pick.
+    await page.route("**/account-balances/**", async (route) => {
+      await route.fulfill({
+        json: {
+          balances: {
+            native: {
+              token: { type: "native", code: "XLM" },
+              total: "10000.0000000",
+              available: "10000.0000000",
+              minimumBalance: "1",
+            },
+            [`USDC:${USDC_ISSUER}`]: {
+              token: {
+                type: "credit_alphanum4",
+                code: "USDC",
+                issuer: { key: USDC_ISSUER },
+              },
+              total: "100",
+              available: "100",
+            },
+          },
+          isFunded: true,
+          subentryCount: 0,
+          error: { horizon: null, soroban: null },
+        },
+      });
+    });
+    // Path so the held-to-held swap simulates and reaches the review.
+    await page.route("**/paths**", (route) =>
+      route.fulfill({
+        json: {
+          _embedded: {
+            records: [
+              {
+                source_asset_type: "native",
+                source_asset_code: "XLM",
+                source_asset_issuer: "",
+                destination_asset_type: "credit_alphanum4",
+                destination_asset_code: "USDC",
+                destination_asset_issuer: USDC_ISSUER,
+                destination_amount: "0.95",
+                path: [],
+              },
+            ],
+          },
+        },
+      }),
+    );
+  };
+
+  await loginToTestAccount({ page, extensionId, context, stubOverrides });
 
   await page.getByTestId("nav-link-swap").click();
   // The new SwapAmount view uses swap-sell-card (not swap-src-asset-tile)
@@ -85,10 +142,10 @@ test("held-to-held swap reaches review screen", async ({
     timeout: 15000,
   });
 
-  // Open the destination picker and pick a held token (XLM — always held)
+  // Open the destination picker and pick the other held token (USDC). The
+  // picker lists held balances as SwapTokenRow-<code> rows.
   await openSwapToPicker(page);
-  // "Your tokens" section in the destination picker lists held balances
-  await page.getByTestId("XLM-balance").first().click();
+  await page.getByTestId("SwapTokenRow-USDC").click();
 
   // Fill amount and proceed to review
   await page
@@ -323,6 +380,30 @@ test("flagged destination surfaces blockaid malicious warning at review", async 
     await page.route("**/asset?sort=volume7d**", (route) =>
       route.fulfill({ json: { _embedded: { records: [] } } }),
     );
+    // Stub a swap path so the simulation succeeds and reaches the review
+    // screen (where the transaction scan runs). Without this the swap dies at
+    // "No path found for swap" and never reaches the banner.
+    await page.route("**/paths**", (route) =>
+      route.fulfill({
+        json: {
+          _embedded: {
+            records: [
+              {
+                source_asset_type: "native",
+                source_asset_code: "XLM",
+                source_asset_issuer: "",
+                destination_asset_type: "credit_alphanum4",
+                destination_asset_code: "SCAM",
+                destination_asset_issuer:
+                  "GBNZILSTVQZ4R7IKQDGHYGY2QXL5QOFJYQMXPKWRRM5PAV7Y4M67AQUA",
+                destination_amount: "0.95",
+                path: [],
+              },
+            ],
+          },
+        },
+      }),
+    );
     // Override scan-tx to return Malicious
     // Real URL: POST to the Freighter backend /scan-tx endpoint
     // Existing helper: stubScanTxMalicious matches "**/scan-tx**"
@@ -476,4 +557,354 @@ test("testnet swap picker shows no blockaid scam icons", async ({
   await expect(
     page.locator('[data-testid="review-tx-token-warning"]'),
   ).toHaveCount(0);
+});
+
+// ---------------------------------------------------------------------------
+// 8. Flagged non-held destination → trustline banner AND Blockaid banner stack
+//    A non-held destination token that Blockaid flags (token verdict, not tx)
+//    must show BOTH the trustline-required banner and the token Blockaid banner
+//    at review. Exercises the unified worst-of banner alongside the trustline
+//    banner (the two are stacked in the review's warnings block).
+// ---------------------------------------------------------------------------
+test("flagged non-held destination stacks trustline and Blockaid banners", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  test.slow();
+
+  const stubOverrides = async () => {
+    // Search returns a non-held "SCAM" token (no trustline yet).
+    await page.unroute("**/asset?search**");
+    await page.route("**/asset?search**", (route) =>
+      route.fulfill({
+        json: {
+          _embedded: {
+            records: [
+              {
+                asset:
+                  "SCAM-GBNZILSTVQZ4R7IKQDGHYGY2QXL5QOFJYQMXPKWRRM5PAV7Y4M67AQUA",
+              },
+            ],
+          },
+        },
+      }),
+    );
+    await page.route("**/asset?sort=volume7d**", (route) =>
+      route.fulfill({ json: { _embedded: { records: [] } } }),
+    );
+    // Path so the simulation succeeds and reaches review.
+    await page.route("**/paths**", (route) =>
+      route.fulfill({
+        json: {
+          _embedded: {
+            records: [
+              {
+                source_asset_type: "native",
+                source_asset_code: "XLM",
+                source_asset_issuer: "",
+                destination_asset_type: "credit_alphanum4",
+                destination_asset_code: "SCAM",
+                destination_asset_issuer:
+                  "GBNZILSTVQZ4R7IKQDGHYGY2QXL5QOFJYQMXPKWRRM5PAV7Y4M67AQUA",
+                destination_amount: "0.95",
+                path: [],
+              },
+            ],
+          },
+        },
+      }),
+    );
+    // Flag the destination TOKEN malicious via the bulk-scan endpoint. The swap
+    // reads data.results["CODE-ISSUER"], so the map MUST be keyed exactly by
+    // "SCAM-<issuer>". The transaction scan stays safe, so the review's single
+    // worst-of banner is the TOKEN one.
+    await page.route("**/scan-asset-bulk**", (route) =>
+      route.fulfill({
+        json: {
+          data: {
+            results: {
+              "SCAM-GBNZILSTVQZ4R7IKQDGHYGY2QXL5QOFJYQMXPKWRRM5PAV7Y4M67AQUA":
+                {
+                  result_type: "Malicious",
+                  malicious_score: "1.0",
+                  attack_types: {},
+                  chain: "stellar",
+                  address: "",
+                  metadata: { type: "" },
+                  fees: {},
+                  features: [
+                    {
+                      type: "Malicious",
+                      feature_id: "KNOWN_MALICIOUS",
+                      description: "Known malicious token",
+                    },
+                  ],
+                  trading_limits: {},
+                  financial_stats: {},
+                },
+            },
+          },
+          error: null,
+        },
+      }),
+    );
+  };
+
+  await loginToTestAccount({ page, extensionId, context, stubOverrides });
+  await switchToMainnet(page);
+
+  await page.getByTestId("nav-link-swap").click();
+  await expect(page.getByTestId("swap-sell-card")).toBeVisible({
+    timeout: 15000,
+  });
+
+  await openSwapToPicker(page);
+  await page.getByTestId("swap-from-search").fill("SCAM");
+  await page.getByText("SCAM").first().click({ force: true });
+
+  await page
+    .getByTestId("swap-sell-card")
+    .getByTestId("send-amount-amount-input")
+    .fill("1");
+  await page.getByTestId("swap-amount-btn-continue").click({ force: true });
+
+  // Both banners must render together at review.
+  await expect(page.getByTestId("review-tx-trustline-banner")).toBeVisible({
+    timeout: 30000,
+  });
+  await expect(page.getByTestId("review-tx-token-warning")).toBeVisible({
+    timeout: 30000,
+  });
+  await expect(
+    page.getByText("A token was flagged as malicious"),
+  ).toBeVisible();
+});
+
+// ---------------------------------------------------------------------------
+// 9. Full swap-to-new-token completion (happy path)
+//    Swap XLM into a non-held token (adds the trustline in the same tx),
+//    confirm, and land on the success summary. Guards the end-to-end submit
+//    path — the branch's only full swap-completion coverage.
+// ---------------------------------------------------------------------------
+test("completes a swap to a new token and shows the success summary", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  test.slow();
+
+  const AQUA_ISSUER =
+    "GBNZILSTVQZ4R7IKQDGHYGY2QXL5QOFJYQMXPKWRRM5PAV7Y4M67AQUA";
+
+  const stubOverrides = async () => {
+    await page.unroute("**/asset?search**");
+    await page.route("**/asset?search**", (route) =>
+      route.fulfill({
+        json: {
+          _embedded: {
+            records: [
+              {
+                asset: `AQUA-${AQUA_ISSUER}`,
+                num_accounts: 50000,
+                num_trades: 100000,
+                volume7d: 1_000_000_000_000,
+              },
+            ],
+          },
+        },
+      }),
+    );
+    await page.route("**/asset?sort=volume7d**", (route) =>
+      route.fulfill({
+        json: {
+          _embedded: {
+            records: [
+              {
+                asset: `AQUA-${AQUA_ISSUER}`,
+                volume7d: 1_000_000_000_000,
+                domain: "aquarius.world",
+              },
+            ],
+          },
+        },
+      }),
+    );
+    // Path so the swap simulates and builds a prepared transaction to submit.
+    await page.route("**/paths**", (route) =>
+      route.fulfill({
+        json: {
+          _embedded: {
+            records: [
+              {
+                source_asset_type: "native",
+                source_asset_code: "XLM",
+                source_asset_issuer: "",
+                destination_asset_type: "credit_alphanum4",
+                destination_asset_code: "AQUA",
+                destination_asset_issuer: AQUA_ISSUER,
+                destination_amount: "0.95",
+                path: [],
+              },
+            ],
+          },
+        },
+      }),
+    );
+    // Token + transaction both scan clean, so the review shows the normal
+    // "Swap XLM to AQUA" confirm button (no "Confirm anyway").
+    await page.route("**/scan-asset-bulk**", (route) =>
+      route.fulfill({
+        json: {
+          data: {
+            results: {
+              [`AQUA-${AQUA_ISSUER}`]: {
+                result_type: "Benign",
+                malicious_score: "0.0",
+                attack_types: {},
+                chain: "stellar",
+                address: "",
+                metadata: { type: "" },
+                fees: {},
+                features: [],
+                trading_limits: {},
+                financial_stats: {},
+              },
+            },
+          },
+          error: null,
+        },
+      }),
+    );
+    await stubScanTxSafe(page);
+  };
+
+  await loginToTestAccount({ page, extensionId, context, stubOverrides });
+  await switchToMainnet(page);
+
+  await page.getByTestId("nav-link-swap").click();
+  await expect(page.getByTestId("swap-sell-card")).toBeVisible({
+    timeout: 15000,
+  });
+
+  await openSwapToPicker(page);
+  await page.getByTestId("swap-from-search").fill("AQUA");
+  await page.getByText("AQUA").first().click({ force: true });
+
+  await page
+    .getByTestId("swap-sell-card")
+    .getByTestId("send-amount-amount-input")
+    .fill("1");
+  await page.getByTestId("swap-amount-btn-continue").click({ force: true });
+
+  // Review renders with the trustline banner (AQUA not yet trusted).
+  await expect(page.getByTestId("review-tx-trustline-banner")).toBeVisible({
+    timeout: 30000,
+  });
+
+  // Confirm and submit the swap. Use an actionability-checked click (not
+  // force) so the tap lands after the review sheet settles.
+  await page.getByRole("button", { name: "Swap XLM to AQUA" }).click();
+
+  // Land on the success summary and finish.
+  await expect(page.getByText("was swapped to")).toBeVisible({
+    timeout: 40000,
+  });
+  await expect(
+    page.getByTestId("sending-transaction-summary-description-label"),
+  ).toBeVisible();
+
+  await page.getByText("Done").click({ force: true });
+  await expect(page.getByTestId("account-view")).toBeVisible({
+    timeout: 20000,
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 10. Network switch repopulates the swap picker
+//    Held balances are per-network, so a token held only on Mainnet must not
+//    leak into the Testnet picker and must appear after switching. Switching
+//    networks from Home (the globe) between two picker visits proves the picker
+//    re-derives its "Your tokens" section for the active network. A distinctive
+//    code (HELDONLY) that is never a popular/discover token isolates the held
+//    section from the popular list.
+// ---------------------------------------------------------------------------
+test("switching networks repopulates the swap picker held tokens", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  test.slow();
+
+  const HELD_ISSUER =
+    "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5";
+
+  const stubOverrides = async () => {
+    // Network-aware balances: XLM everywhere, HELDONLY held only on Mainnet.
+    await page.route("**/account-balances/**", async (route) => {
+      const network = new URL(route.request().url()).searchParams.get(
+        "network",
+      );
+      const balances: Record<string, unknown> = {
+        native: {
+          token: { type: "native", code: "XLM" },
+          total: "100",
+          available: "100",
+        },
+      };
+      if (network === "PUBLIC") {
+        balances[`HELDONLY:${HELD_ISSUER}`] = {
+          token: {
+            type: "credit_alphanum12",
+            code: "HELDONLY",
+            issuer: { key: HELD_ISSUER },
+          },
+          total: "50",
+          available: "50",
+        };
+      }
+      await route.fulfill({
+        json: {
+          balances,
+          isFunded: true,
+          subentryCount: 0,
+          error: { horizon: null, soroban: null },
+        },
+      });
+    });
+  };
+
+  await loginToTestAccount({ page, extensionId, context, stubOverrides });
+
+  // --- Testnet: HELDONLY is not held, so it is absent from the picker. ---
+  await page.getByTestId("nav-link-swap").click();
+  await expect(page.getByTestId("swap-sell-card")).toBeVisible({
+    timeout: 15000,
+  });
+  await openSwapToPicker(page);
+  await expect(page.getByTestId("swap-section-your-tokens")).toBeVisible({
+    timeout: 10000,
+  });
+  await expect(page.getByTestId("SwapTokenRow-HELDONLY")).toHaveCount(0);
+
+  // Back out of the swap flow to Home (picker → amount → home).
+  await page.getByTestId("BackButton").click();
+  await page.getByTestId("BackButton").click();
+  await expect(page.getByTestId("account-view")).toBeVisible({
+    timeout: 15000,
+  });
+
+  // --- Switch to Mainnet via the globe, then reopen the picker. ---
+  await switchToMainnet(page);
+
+  await page.getByTestId("nav-link-swap").click();
+  await expect(page.getByTestId("swap-sell-card")).toBeVisible({
+    timeout: 15000,
+  });
+  await openSwapToPicker(page);
+
+  // The picker re-derived "Your tokens" for Mainnet: HELDONLY now appears.
+  await expect(page.getByTestId("SwapTokenRow-HELDONLY")).toBeVisible({
+    timeout: 15000,
+  });
 });
