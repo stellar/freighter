@@ -97,14 +97,10 @@ test.describe("BlockAid Scan - Safe States (No Override)", () => {
       await page.waitForTimeout(2000);
     }
 
-    // Should NOT show any BlockAid warning banners
+    // Should NOT show any BlockAid warning banner
     await expect(
-      page.getByTestId("blockaid-unable-to-scan-label"),
+      page.getByTestId("blockaid-banner-change-trust"),
     ).not.toBeVisible();
-    await expect(
-      page.getByTestId("blockaid-malicious-label"),
-    ).not.toBeVisible();
-    await expect(page.getByTestId("blockaid-miss-label")).not.toBeVisible();
   });
 
   test("Send payment shows no warning when scan confirms transaction is safe", async ({
@@ -146,14 +142,10 @@ test.describe("BlockAid Scan - Safe States (No Override)", () => {
       timeout: 200000,
     });
 
-    // Should NOT show any BlockAid warning banners
+    // Should NOT show any BlockAid warning banner
     await expect(
-      page.getByTestId("blockaid-unable-to-scan-label"),
+      page.getByTestId("review-tx-blockaid-warning"),
     ).not.toBeVisible();
-    await expect(
-      page.getByTestId("blockaid-malicious-label"),
-    ).not.toBeVisible();
-    await expect(page.getByTestId("blockaid-miss-label")).not.toBeVisible();
   });
 
   test("Swap shows no warning when scan confirms tokens are safe", async ({
@@ -269,33 +261,23 @@ test.describe("BlockAid Scan - Safe States (No Override)", () => {
     });
 
     await page.getByTestId("nav-link-swap").click();
-    await expect(page.getByTestId("AppHeaderPageTitle")).toContainText("Swap");
-
-    await page.getByTestId("swap-src-asset-tile").click();
-    await expect(page.getByTestId("AppHeaderPageTitle")).toContainText(
-      "Swap from",
-    );
-    await expect(page.getByText(/XLM/)).toBeVisible();
-    await page.getByTestId("XLM-balance").click();
-
-    await page.getByTestId("swap-dst-asset-tile").click({ force: true });
-    await expect(page.getByText("Swap to")).toBeVisible();
-    await expect(page.getByText(/USDC/)).toBeVisible();
-    await page.getByTestId("USDC-balance").click();
-
-    await expect(page.getByTestId("AppHeaderPageTitle")).toContainText("Swap");
-    await expect(page.getByTestId("send-amount-amount-input")).toBeVisible({
-      timeout: 10000,
+    await expect(page.getByTestId("swap-sell-card")).toBeVisible({
+      timeout: 15000,
     });
 
-    await page.getByTestId("send-amount-amount-input").fill("10");
+    // Source defaults to XLM; pick the held USDC as the destination.
+    await page
+      .getByTestId("swap-receive-card")
+      .getByTestId("send-amount-edit-dest-asset")
+      .click({ force: true });
+    await expect(page.getByText("Swap to")).toBeVisible({ timeout: 10000 });
+    await page.getByTestId("SwapTokenRow-USDC").click();
 
-    const continueButton = page
-      .getByRole("button", { name: "Continue" })
-      .or(page.getByText("Review swap"));
-    await expect(continueButton).toBeEnabled({ timeout: 30000 });
-
-    await continueButton.click({ force: true });
+    await page
+      .getByTestId("swap-sell-card")
+      .getByTestId("send-amount-amount-input")
+      .fill("10");
+    await page.getByTestId("swap-amount-btn-continue").click({ force: true });
 
     await expect(
       page.getByText("You are swapping").or(page.getByText("Review")),
@@ -305,14 +287,11 @@ test.describe("BlockAid Scan - Safe States (No Override)", () => {
 
     await page.waitForTimeout(5000);
 
-    // Should NOT show any BlockAid warning banners
+    // Should NOT show any BlockAid warning banner
     await expect(
-      page.getByTestId("blockaid-unable-to-scan-label"),
+      page.getByTestId("review-tx-blockaid-warning"),
     ).not.toBeVisible();
-    await expect(
-      page.getByTestId("blockaid-malicious-label"),
-    ).not.toBeVisible();
-    await expect(page.getByTestId("blockaid-miss-label")).not.toBeVisible();
+    await expect(page.getByTestId("review-tx-token-warning")).not.toBeVisible();
   });
 
   test("GrantAccess shows no warning when site scan confirms site is safe", async ({
@@ -336,14 +315,10 @@ test.describe("BlockAid Scan - Safe States (No Override)", () => {
       popup.getByTestId("grant-access-connect-button"),
     ).toBeVisible();
 
-    // No blockaid warning banners
+    // No blockaid warning banner
     await expect(
-      popup.getByTestId("blockaid-malicious-label"),
+      popup.getByTestId("domain-scan-blockaid-banner"),
     ).not.toBeVisible();
-    await expect(
-      popup.getByTestId("blockaid-unable-to-scan-label"),
-    ).not.toBeVisible();
-    await expect(popup.getByTestId("blockaid-miss-label")).not.toBeVisible();
   });
 
   test("SignMessage shows no warning when site scan confirms site is safe", async ({
@@ -366,13 +341,9 @@ test.describe("BlockAid Scan - Safe States (No Override)", () => {
       popup.getByTestId("sign-message-approve-button"),
     ).toBeVisible();
 
-    // No blockaid warning banners
+    // No blockaid warning banner
     await expect(
-      popup.getByTestId("blockaid-malicious-label"),
+      popup.getByTestId("sign-message-blockaid-banner"),
     ).not.toBeVisible();
-    await expect(
-      popup.getByTestId("blockaid-unable-to-scan-label"),
-    ).not.toBeVisible();
-    await expect(popup.getByTestId("blockaid-miss-label")).not.toBeVisible();
   });
 });

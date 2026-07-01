@@ -3,6 +3,8 @@
 .Operations {
   display: flex;
   flex-direction: column;
+  // 14px keeps long operation values from truncating prematurely.
+  font-size: pxToRem(14px);
 
   &--header {
     display: flex;

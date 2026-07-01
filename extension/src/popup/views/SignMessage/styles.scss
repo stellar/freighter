@@ -10,7 +10,6 @@
     flex-direction: column;
     max-width: 57rem;
     width: 100%;
-    flex: 1;
     overflow-y: auto;
   }
 
@@ -89,7 +88,9 @@
   }
 
   &__BlockaidBanner {
-    margin-bottom: pxToRem(16px);
+    // No own margin: TitleRow margin-bottom above and SignMessageData margin-top
+    // below already provide the standard spacing; own margin would double it.
+    margin: 0;
   }
 
   &__MainPane {

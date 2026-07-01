@@ -1,4 +1,4 @@
-import { useReducer } from "react";
+import { useReducer, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import BigNumber from "bignumber.js";
 import {
@@ -18,6 +18,8 @@ import {
   xlmToStroop,
 } from "helpers/stellar";
 import { computeDestMinWithSlippage } from "helpers/transaction";
+import { buildChangeTrustOperation } from "popup/helpers/getManageAssetXDR";
+import { getSdk } from "@shared/helpers/stellar";
 
 import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 import {
@@ -26,8 +28,9 @@ import {
   transactionDataSelector,
 } from "popup/ducks/transactionSubmission";
 import { useScanTx } from "popup/helpers/blockaid";
-import { BlockAidScanTxResult } from "@shared/api/types";
+import { BlockAidScanTxResult, ErrorMessage } from "@shared/api/types";
 import { horizonGetBestPath } from "popup/helpers/horizonGetBestPath";
+import { isQuoteExpiredError } from "popup/helpers/quoteExpiry";
 import { isContractId } from "popup/helpers/soroban";
 import { formatAmount, roundUsdValue } from "popup/helpers/formatters";
 import { AppDispatch } from "popup/App";
@@ -79,7 +82,47 @@ export interface SimulateTxData {
   transactionXdr: string;
   dstAmountPriceUsd: string;
   scanResult?: BlockAidScanTxResult | null;
+  destMin?: string;
 }
+
+export const MIN_PER_OP_FEE = 100; // network minimum, stroops
+
+type DestinationTokenDetails = {
+  tokenCode: string;
+  requiresTrustline: boolean;
+  decimals: number;
+  issuer?: string;
+} | null;
+
+export const getPerOpBaseFee = (totalFee: string, opCount: number): string => {
+  const totalStroops = xlmToStroop(totalFee);
+  const perOp = totalStroops.dividedBy(opCount);
+  return BigNumber.max(perOp, new BigNumber(MIN_PER_OP_FEE))
+    .integerValue(BigNumber.ROUND_FLOOR)
+    .toFixed();
+};
+
+// Total swap fee shown/charged. A new-trustline swap is two ops (changeTrust
+// + pathPaymentStrictSend), so the recommended default scales with op count —
+// each op pays the recommended fee. A user-set custom fee is treated as the
+// total and split per op at build time (getPerOpBaseFee).
+export const getSwapTotalFee = ({
+  recommendedFee,
+  customFee,
+  opCount,
+}: {
+  recommendedFee: string;
+  customFee?: string;
+  opCount: number;
+}): string => {
+  if (customFee) {
+    return customFee;
+  }
+  if (!recommendedFee) {
+    return recommendedFee;
+  }
+  return new BigNumber(recommendedFee).times(opCount).toFixed();
+};
 
 const getOperation = (
   sourceAsset: Asset | { code: string; issuer: string },
@@ -104,7 +147,7 @@ const getOperation = (
   });
 };
 
-const getBuiltTx = async (
+export const getBuiltTx = async (
   publicKey: string,
   opData: {
     sourceAsset: Asset | { code: string; issuer: string };
@@ -113,6 +156,7 @@ const getBuiltTx = async (
     allowedSlippage: string;
     destinationAmount: string;
     path: string[];
+    destinationTokenDetails: DestinationTokenDetails;
   },
   fee: string,
   transactionTimeout: number,
@@ -126,12 +170,38 @@ const getBuiltTx = async (
     allowedSlippage,
     destinationAmount,
     path,
+    destinationTokenDetails,
   } = opData;
   const server = stellarSdkServer(
     networkDetails.networkUrl,
     networkDetails.networkPassphrase,
   );
   const sourceAccount = await server.loadAccount(publicKey);
+
+  const requiresTrustline = !!destinationTokenDetails?.requiresTrustline;
+  const opCount = requiresTrustline ? 2 : 1;
+
+  if (requiresTrustline && !destinationTokenDetails?.issuer) {
+    throw new Error(
+      "Cannot add a trustline for a destination token without an issuer",
+    );
+  }
+
+  const transaction = new TransactionBuilder(sourceAccount, {
+    fee: getPerOpBaseFee(fee, opCount),
+    networkPassphrase: networkDetails.networkPassphrase,
+  });
+
+  if (requiresTrustline) {
+    const Sdk = getSdk(networkDetails.networkPassphrase);
+    transaction.addOperation(
+      buildChangeTrustOperation({
+        assetCode: destinationTokenDetails!.tokenCode,
+        assetIssuer: destinationTokenDetails!.issuer!,
+        sdk: Sdk,
+      }),
+    );
+  }
 
   const operation = getOperation(
     sourceAsset,
@@ -142,13 +212,7 @@ const getBuiltTx = async (
     path,
     publicKey,
   );
-
-  const transaction = new TransactionBuilder(sourceAccount, {
-    fee: xlmToStroop(fee).toFixed(),
-    networkPassphrase: networkDetails.networkPassphrase,
-  })
-    .addOperation(operation)
-    .setTimeout(transactionTimeout);
+  transaction.addOperation(operation).setTimeout(transactionTimeout);
 
   if (memo) {
     transaction.addMemo(Memo.text(memo));
@@ -166,7 +230,9 @@ function useSimulateTxData({
   networkDetails: NetworkDetails;
   simParams: SimulationParams;
 }) {
-  const { memo } = useSelector(transactionDataSelector);
+  const { memo, destinationTokenDetails } = useSelector(
+    transactionDataSelector,
+  );
   const reduxDispatch = useDispatch<AppDispatch>();
 
   const { scanTx } = useScanTx();
@@ -174,6 +240,10 @@ function useSimulateTxData({
     reducer<SimulateTxData, string>,
     initialState,
   );
+  // Separate from reducer state so the view retains the expired-quote flag
+  // across re-fetches. Set on Horizon op_under_dest_min / op_too_few_offers
+  // errors; consumed by the quote-expired metric + Notification in SwapAmount.
+  const [isQuoteExpired, setIsQuoteExpired] = useState(false);
 
   const fetchData = async ({
     amount,
@@ -183,6 +253,7 @@ function useSimulateTxData({
     destinationRate?: string;
   }) => {
     dispatch({ type: "FETCH_DATA_START" });
+    setIsQuoteExpired(false);
     try {
       const payload = { transactionXdr: "" } as SimulateTxData;
       const { allowedSlippage, sourceAsset, destAsset, transactionTimeout } =
@@ -234,6 +305,7 @@ function useSimulateTxData({
           destinationAmount,
           allowedSlippage,
           path,
+          destinationTokenDetails,
         },
         baseFee.toString(),
         transactionTimeout,
@@ -261,6 +333,7 @@ function useSimulateTxData({
       const { sourceAsset, destAsset } = simParams;
       const payload = getSwapErrorMessage(error, sourceAsset, destAsset);
 
+      setIsQuoteExpired(isQuoteExpiredError(error as ErrorMessage | undefined));
       dispatch({ type: "FETCH_DATA_ERROR", payload });
       return error;
     }
@@ -269,6 +342,7 @@ function useSimulateTxData({
   return {
     state,
     fetchData,
+    isQuoteExpired,
   };
 }
 

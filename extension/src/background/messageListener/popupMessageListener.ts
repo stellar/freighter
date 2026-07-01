@@ -99,6 +99,8 @@ import { addRecentProtocol } from "./handlers/addRecentProtocol";
 import { clearRecentProtocols } from "./handlers/clearRecentProtocols";
 import { getDiscoverWelcomeSeen } from "./handlers/getDiscoverWelcomeSeen";
 import { dismissDiscoverWelcome } from "./handlers/dismissDiscoverWelcome";
+import { getCachedSwapTopTokens } from "./handlers/getCachedSwapTopTokens";
+import { cacheSwapTopTokens } from "./handlers/cacheSwapTopTokens";
 
 const numOfPublicKeysToCheck = 5;
 
@@ -157,8 +159,7 @@ export const popupMessageListener = (
   // (browser-action popup, sidepanel) OR the URL is on our extension
   // origin (popup window, options page, fullscreen).
   const extensionOrigin = browser?.runtime?.getURL?.("") ?? "";
-  const isFromOwnExtension =
-    !sender.id || sender.id === browser?.runtime?.id;
+  const isFromOwnExtension = !sender.id || sender.id === browser?.runtime?.id;
   const isExtensionUrl =
     !!extensionOrigin &&
     typeof sender.url === "string" &&
@@ -612,6 +613,12 @@ export const popupMessageListener = (
     }
     case SERVICE_TYPES.DISMISS_DISCOVER_WELCOME: {
       return dismissDiscoverWelcome({ localStore });
+    }
+    case SERVICE_TYPES.GET_CACHED_SWAP_TOP_TOKENS: {
+      return getCachedSwapTopTokens({ request, localStore });
+    }
+    case SERVICE_TYPES.CACHE_SWAP_TOP_TOKENS: {
+      return cacheSwapTopTokens({ request, localStore });
     }
     case SERVICE_TYPES.MARK_QUEUE_ACTIVE: {
       const { uuid, isActive } = request as MarkQueueActiveMessage;

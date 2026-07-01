@@ -87,7 +87,12 @@ const prodConfig = (
                 keepRemoved: true,
                 removeUnusedKeys: false,
                 keySeparator: false,
+                // i18next-parser (wrapped by i18next-scanner-webpack) uses
+                // `namespaceSeparator`, not `nsSeparator`. Without this, a key
+                // containing ": " (e.g. "Maximum spendable: {{amount}}") is
+                // split into a stray namespace file. Keep both names set.
                 nsSeparator: false,
+                namespaceSeparator: false,
                 func: {
                   list: ["t", "i18next.t", "i18n.t"],
                   extensions: [".ts", ".tsx"],

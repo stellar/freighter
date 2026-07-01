@@ -4,6 +4,26 @@ import { NetworkDetails } from "@shared/constants/stellar";
 import { xlmToStroop } from "helpers/stellar";
 import { getSdk } from "@shared/helpers/stellar";
 
+export type AnySdk = typeof StellarSdk | typeof StellarSdkNext;
+
+export const buildChangeTrustOperation = ({
+  assetCode,
+  assetIssuer,
+  isRemove = false,
+  sdk,
+}: {
+  assetCode: string;
+  assetIssuer: string;
+  isRemove?: boolean;
+  sdk: AnySdk;
+}) => {
+  const changeParams = isRemove ? { limit: "0" } : {};
+  return sdk.Operation.changeTrust({
+    asset: new sdk.Asset(assetCode, assetIssuer),
+    ...changeParams,
+  });
+};
+
 export const getManageAssetXDR = async ({
   publicKey,
   assetCode,
@@ -25,7 +45,6 @@ export const getManageAssetXDR = async ({
   timeout?: number;
   memo?: string;
 }) => {
-  const changeParams = addTrustline ? {} : { limit: "0" };
   const sourceAccount = await server.loadAccount(publicKey);
 
   const Sdk = getSdk(networkDetails.networkPassphrase);
@@ -35,9 +54,11 @@ export const getManageAssetXDR = async ({
     networkPassphrase: networkDetails.networkPassphrase,
   })
     .addOperation(
-      Sdk.Operation.changeTrust({
-        asset: new Sdk.Asset(assetCode, assetIssuer),
-        ...changeParams,
+      buildChangeTrustOperation({
+        assetCode,
+        assetIssuer,
+        isRemove: !addTrustline,
+        sdk: Sdk,
       }),
     )
     .setTimeout(timeout);

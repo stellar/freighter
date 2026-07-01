@@ -3,6 +3,7 @@ import { loginToTestAccount } from "./helpers/login";
 import {
   openGrantAccessPopup,
   openSignMessagePopup,
+  openSignTransactionPopup,
 } from "./helpers/dAppSessionHelper";
 import {
   stubAccountBalances,
@@ -17,6 +18,10 @@ import {
   stubMemoRequiredAccounts,
 } from "./helpers/stubs";
 import { testBlockaidFeedback } from "./helpers/blockaid";
+
+// A valid classic transaction XDR for openSignTransactionPopup.
+const TX_TO_SIGN =
+  "AAAAAgAAAADLvQoIbFw9k0tgjZoOrLTuJJY9kHFYp/YAEAlt/xirbAAAAGQAAAfjAAAOpQAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAQAAAABngBTmbmUycqG2cAMHcomSR80dRzGtKzxM6gb3yySD5AAAAAAAAAAAAvrwgAAAAAAAAAAA";
 
 test.describe("BlockAid Scan - Malicious States", () => {
   test("Add asset shows malicious warning when scan detects malicious asset", async ({
@@ -86,7 +91,7 @@ test.describe("BlockAid Scan - Malicious States", () => {
     ).toBeVisible({ timeout: 10000 });
 
     // Click on the warning banner to view blockaid details
-    await page.getByText("This asset was flagged as malicious").click();
+    await page.getByText("This token was flagged as malicious").click();
 
     // Wait for pane animation to finish
     await page.waitForTimeout(1000);
@@ -100,6 +105,83 @@ test.describe("BlockAid Scan - Malicious States", () => {
         "A malicious transaction causes a transfer, draining the user's assets and tokens.",
       ),
     ).toBeVisible();
+  });
+
+  test("Add asset search row shows a scam badge for a flagged token", async ({
+    page,
+    extensionId,
+    context,
+  }) => {
+    test.slow();
+    // Default search returns USDC at this issuer; flag it via the bulk-scan
+    // endpoint the search-results scanner uses (keyed by "CODE-ISSUER").
+    const FLAGGED_ID =
+      "USDC-GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5";
+    await loginToTestAccount({
+      page,
+      extensionId,
+      context,
+      stubOverrides: async () => {
+        await stubAssetSearch(page);
+        await stubTokenDetails(page);
+        await page.route("**/scan-asset-bulk**", (route) =>
+          route.fulfill({
+            json: {
+              data: {
+                results: {
+                  [FLAGGED_ID]: {
+                    result_type: "Malicious",
+                    malicious_score: "1.0",
+                    attack_types: {},
+                    chain: "stellar",
+                    address: "",
+                    metadata: { type: "" },
+                    fees: {},
+                    features: [],
+                    trading_limits: {},
+                    financial_stats: {},
+                  },
+                },
+              },
+              error: null,
+            },
+          }),
+        );
+        await page.route("**/account-balances/*", async (route) => {
+          await route.fulfill({
+            json: {
+              balances: {
+                native: {
+                  token: { type: "native", code: "XLM" },
+                  total: "100",
+                  available: "100",
+                },
+              },
+              isFunded: true,
+              subentryCount: 0,
+              error: { horizon: null, soroban: null },
+            },
+          });
+        });
+      },
+    });
+
+    await page.getByTestId("account-options-dropdown").click();
+    await page.getByText("Manage assets").click();
+    await expect(page.getByText("Your assets")).toBeVisible();
+    await page.getByText("Add an asset").click({ force: true });
+
+    await page
+      .getByTestId("search-asset-input")
+      .fill("GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5");
+    await expect(page.getByTestId("ManageAssetRowButton")).toBeVisible({
+      timeout: 10000,
+    });
+
+    // The flagged search row carries a scam badge before the user opens it.
+    await expect(
+      page.locator('[data-testid="ScamAssetIcon"]').first(),
+    ).toBeVisible({ timeout: 15000 });
   });
 
   test("Send payment shows malicious warning when scan detects malicious transaction", async ({
@@ -265,33 +347,23 @@ test.describe("BlockAid Scan - Malicious States", () => {
     });
 
     await page.getByTestId("nav-link-swap").click();
-    await expect(page.getByTestId("AppHeaderPageTitle")).toContainText("Swap");
-
-    await page.getByTestId("swap-src-asset-tile").click();
-    await expect(page.getByTestId("AppHeaderPageTitle")).toContainText(
-      "Swap from",
-    );
-    await expect(page.getByText(/XLM/)).toBeVisible();
-    await page.getByTestId("XLM-balance").click();
-
-    await page.getByTestId("swap-dst-asset-tile").click({ force: true });
-    await expect(page.getByText("Swap to")).toBeVisible();
-    await expect(page.getByText(/USDC/)).toBeVisible();
-    await page.getByTestId("USDC-balance").click();
-
-    await expect(page.getByTestId("AppHeaderPageTitle")).toContainText("Swap");
-    await expect(page.getByTestId("send-amount-amount-input")).toBeVisible({
-      timeout: 10000,
+    await expect(page.getByTestId("swap-sell-card")).toBeVisible({
+      timeout: 15000,
     });
 
-    await page.getByTestId("send-amount-amount-input").fill("10");
+    // Source defaults to XLM; pick the (flagged) held USDC as the destination.
+    await page
+      .getByTestId("swap-receive-card")
+      .getByTestId("send-amount-edit-dest-asset")
+      .click({ force: true });
+    await expect(page.getByText("Swap to")).toBeVisible({ timeout: 10000 });
+    await page.getByTestId("SwapTokenRow-USDC").click();
 
-    const continueButton = page
-      .getByRole("button", { name: "Continue" })
-      .or(page.getByText("Review swap"));
-    await expect(continueButton).toBeEnabled({ timeout: 30000 });
-
-    await continueButton.click({ force: true });
+    await page
+      .getByTestId("swap-sell-card")
+      .getByTestId("send-amount-amount-input")
+      .fill("10");
+    await page.getByTestId("swap-amount-btn-continue").click({ force: true });
 
     // Should be on review pane with warning banner visible
     await expect(
@@ -404,7 +476,9 @@ test.describe("BlockAid Scan - Malicious Site", () => {
     });
 
     // Malicious label should be visible
-    await expect(popup.getByTestId("blockaid-malicious-label")).toBeVisible();
+    await expect(
+      popup.getByTestId("domain-scan-blockaid-banner"),
+    ).toBeVisible();
     await expect(
       popup.getByText("This site was flagged as malicious"),
     ).toBeVisible();
@@ -418,7 +492,7 @@ test.describe("BlockAid Scan - Malicious Site", () => {
     ).not.toBeVisible();
 
     // Expand blockaid details pane
-    await popup.getByTestId("blockaid-malicious-label").click();
+    await popup.getByTestId("domain-scan-blockaid-banner").click();
     await popup.waitForTimeout(1000);
 
     // Expanded pane shows "Do not proceed" and attack type description
@@ -453,7 +527,9 @@ test.describe("BlockAid Scan - Malicious Site", () => {
     });
 
     // Malicious label should be visible
-    await expect(popup.getByTestId("blockaid-malicious-label")).toBeVisible();
+    await expect(
+      popup.getByTestId("sign-message-blockaid-banner"),
+    ).toBeVisible();
     await expect(
       popup.getByText("This site was flagged as malicious"),
     ).toBeVisible();
@@ -467,7 +543,7 @@ test.describe("BlockAid Scan - Malicious Site", () => {
     ).not.toBeVisible();
 
     // Expand blockaid details pane
-    await popup.getByTestId("blockaid-malicious-label").click();
+    await popup.getByTestId("sign-message-blockaid-banner").click();
     await popup.waitForTimeout(1000);
 
     // Expanded pane shows "Do not proceed" and site-specific subtitle
@@ -476,6 +552,41 @@ test.describe("BlockAid Scan - Malicious Site", () => {
       popup.getByText(
         "This site does not appear safe for the following reasons",
       ),
+    ).toBeVisible();
+  });
+});
+
+test.describe("BlockAid Scan - Malicious Transaction (dApp sign)", () => {
+  test("SignTransaction shows the merged Blockaid banner when the transaction is flagged", async ({
+    page,
+    extensionId,
+    context,
+  }) => {
+    test.slow();
+    await loginToTestAccount({
+      page,
+      extensionId,
+      context,
+      stubOverrides: async () => {
+        // Stub on the context so the popup (a separate page) inherits it. The
+        // site scan stays safe, so the merged banner reflects the tx verdict.
+        await stubScanTxMalicious(context);
+      },
+    });
+
+    const popup = await openSignTransactionPopup({ page, xdr: TX_TO_SIGN });
+
+    await expect(popup.getByText("Confirm Transaction")).toBeVisible({
+      timeout: 15000,
+    });
+
+    // The unified sign-tx banner (tx + site verdicts merged) surfaces the
+    // malicious transaction verdict.
+    await expect(popup.getByTestId("sign-tx-blockaid-banner")).toBeVisible({
+      timeout: 15000,
+    });
+    await expect(
+      popup.getByText("This transaction was flagged as malicious"),
     ).toBeVisible();
   });
 });

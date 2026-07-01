@@ -18,7 +18,7 @@ import {
   overriddenBlockaidResponseSelector,
 } from "popup/ducks/settings";
 import { isDev } from "@shared/helpers/dev";
-import { SecurityLevel } from "popup/constants/blockaid";
+import { BlockaidWarning, SecurityLevel } from "popup/constants/blockaid";
 import { fetchJson } from "./fetch";
 import { captureFetchError } from "./captureFetchError";
 import { Action } from "constants/request";
@@ -443,6 +443,63 @@ export const isAssetSuspicious = (
   return blockaidData!.result_type !== "Benign";
 };
 
+/**
+ * Collapses a token's Blockaid scan result into a single SecurityLevel,
+ * honoring the dev override and the network gate. UNABLE_TO_SCAN only applies
+ * where Blockaid runs (mainnet); a clean scan returns SAFE.
+ */
+export const getAssetSecurityLevel = ({
+  blockaidData,
+  blockaidOverrideState,
+  networkDetails,
+}: {
+  blockaidData?: BlockAidScanAssetResult | null;
+  blockaidOverrideState?: string | null;
+  networkDetails: NetworkDetails;
+}): SecurityLevel => {
+  if (isAssetMalicious(blockaidData, blockaidOverrideState)) {
+    return SecurityLevel.MALICIOUS;
+  }
+  if (isAssetSuspicious(blockaidData, blockaidOverrideState)) {
+    return SecurityLevel.SUSPICIOUS;
+  }
+  if (
+    shouldTreatAssetAsUnableToScan(
+      blockaidData,
+      blockaidOverrideState,
+      networkDetails,
+    )
+  ) {
+    return SecurityLevel.UNABLE_TO_SCAN;
+  }
+  return SecurityLevel.SAFE;
+};
+
+/**
+ * Friendly per-feature reasons from a token (asset) Blockaid scan — the same
+ * descriptions the Add-a-token flow shows. Only Warning/Malicious features are
+ * surfaced (Benign/Info are trust signals, not reasons). Carried through the
+ * swap picker so the review's "Do not proceed" pane can list token reasons
+ * alongside the transaction-scan reasons.
+ */
+export const extractAssetScanWarnings = (
+  blockaidData?: BlockAidScanAssetResult | null,
+): BlockaidWarning[] => {
+  const features = blockaidData?.features;
+  if (!features?.length) {
+    return [];
+  }
+  return features
+    .filter(
+      (feature) => feature.type === "Warning" || feature.type === "Malicious",
+    )
+    .map((feature) => ({
+      description: feature.description,
+      isError: feature.type === "Malicious",
+      featureId: feature.feature_id,
+    }));
+};
+
 export const isTxSuspicious = (
   blockaidData?: BlockAidScanTxResult | null,
   blockaidOverrideState?: string | null,
@@ -547,6 +604,83 @@ export const getSiteSecurityStates = (
     // exercised during development without needing a real suspicious scan result.
     isSuspicious: false,
   };
+};
+
+/**
+ * Collapses a site (dApp domain) Blockaid scan into a single SecurityLevel for
+ * the reusable BlockaidBanner. Blockaid sites have no "suspicious" verdict for
+ * real results (only the dev override can set it), so this is malicious /
+ * unable-to-scan / safe in practice. Honors the override and the network gate
+ * via getSiteSecurityStates.
+ */
+export const getSiteSecurityLevel = ({
+  scanData,
+  blockaidOverrideState,
+  networkDetails,
+}: {
+  scanData: BlockAidScanSiteResult | null | undefined;
+  blockaidOverrideState: string | null | undefined;
+  networkDetails: NetworkDetails | null;
+}): SecurityLevel => {
+  const { isMalicious, isSuspicious, isUnableToScan } = getSiteSecurityStates(
+    scanData,
+    blockaidOverrideState,
+    networkDetails,
+  );
+  if (isMalicious) {
+    return SecurityLevel.MALICIOUS;
+  }
+  if (isSuspicious) {
+    return SecurityLevel.SUSPICIOUS;
+  }
+  if (isUnableToScan) {
+    return SecurityLevel.UNABLE_TO_SCAN;
+  }
+  return SecurityLevel.SAFE;
+};
+
+/**
+ * Collapses a transaction Blockaid scan into a single SecurityLevel (or null
+ * when nothing is flagged) for the reusable BlockaidBanner. A simulation error
+ * is treated as suspicious. The dev override takes precedence. Shared by the
+ * swap review and the dApp sign-transaction flow so both read one source.
+ */
+export const getTransactionSecurityLevel = (
+  txScanResult: BlockAidScanTxResult | null | undefined,
+  isUnableToScan: boolean,
+  blockaidOverrideState: string | null,
+): SecurityLevel | null => {
+  // Check overrides first (takes precedence, dev mode only)
+  if (blockaidOverrideState) {
+    return blockaidOverrideState as SecurityLevel;
+  }
+
+  if (!txScanResult) {
+    return isUnableToScan ? SecurityLevel.UNABLE_TO_SCAN : null;
+  }
+
+  const { simulation, validation } = txScanResult;
+
+  // Handle simulation error - treat as suspicious
+  if (simulation && "error" in simulation) {
+    return SecurityLevel.SUSPICIOUS;
+  }
+
+  if (validation && "result_type" in validation) {
+    const resultType = validation.result_type;
+    if (resultType === "Malicious") {
+      return SecurityLevel.MALICIOUS;
+    }
+    if (resultType === "Warning") {
+      return SecurityLevel.SUSPICIOUS;
+    }
+  }
+
+  if (isUnableToScan) {
+    return SecurityLevel.UNABLE_TO_SCAN;
+  }
+
+  return null;
 };
 
 /**

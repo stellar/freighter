@@ -1,22 +1,24 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useTranslation } from "react-i18next";
-
+import { ActionStatus } from "@shared/api/types";
 import { STEPS } from "popup/constants/swap";
 import { emitMetric } from "helpers/metrics";
 import { InputType } from "helpers/transaction";
 import { TransactionConfirm } from "popup/components/InternalTransaction/SubmitTransaction";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
+import { getQuoteExpiredOperationCodes } from "popup/helpers/quoteExpiry";
 import { SwapAsset } from "popup/components/swap/SwapAsset";
 import { SwapAmount } from "popup/components/swap/SwapAmount";
 import { AppDispatch } from "popup/App";
 import {
   resetSubmission,
+  resetSubmitStatus,
   saveAmount,
   saveAmountUsd,
   saveAsset,
   saveDestinationAsset,
+  saveDestinationTokenDetails,
   saveIsToken,
   transactionSubmissionSelector,
 } from "popup/ducks/transactionSubmission";
@@ -34,7 +36,6 @@ const SWAP_METRIC_BY_STEP: Partial<Record<STEPS, string>> = {
 };
 
 export const Swap = () => {
-  const { t } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const location = useLocation();
@@ -54,6 +55,30 @@ export const Swap = () => {
 
   const submission = useSelector(transactionSubmissionSelector);
   const { transactionSimulation, transactionData } = submission;
+
+  // Quote expired at submit (op_under_dest_min / op_too_few_offers): recover to
+  // the review screen with a fresh quote instead of dead-ending in SubmitFail.
+  const isQuoteExpiredAtSubmit =
+    submission.submitStatus === ActionStatus.ERROR &&
+    submission.isSwapQuoteExpired;
+  useEffect(() => {
+    if (!isQuoteExpiredAtSubmit) {
+      return;
+    }
+    emitMetric(METRIC_NAMES.swapQuoteExpired, {
+      sourceToken: transactionData.asset,
+      destToken: transactionData.destinationAsset,
+      sourceAmount: transactionData.amount,
+      destAmount: transactionData.destinationAmount,
+      allowedSlippage: transactionData.allowedSlippage,
+      resultCode: getQuoteExpiredOperationCodes(submission.error).join(", "),
+    });
+    // Clear only the ERROR status (keep the transaction data + the
+    // isSwapQuoteExpired flag, which drives the amount-screen notification).
+    dispatch(resetSubmitStatus());
+    setActiveStep(STEPS.AMOUNT);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isQuoteExpiredAtSubmit]);
 
   const [inputType, setInputType] = useState<InputType>("crypto");
 
@@ -96,6 +121,11 @@ export const Swap = () => {
   const renderStep = (step: STEPS) => {
     switch (step) {
       case STEPS.SWAP_CONFIRM: {
+        // The recovery effect transitions back to review on a quote-expiry
+        // submit failure; render nothing this frame so SubmitFail never flashes.
+        if (isQuoteExpiredAtSubmit) {
+          return null;
+        }
         return (
           <TransactionConfirm
             xdr={transactionSimulation.preparedTransaction!}
@@ -106,12 +136,26 @@ export const Swap = () => {
       case STEPS.SET_DST_ASSET: {
         return (
           <SwapAsset
-            title={t("Swap to")}
+            selectionType="destination"
             hiddenAssets={[transactionData.asset]}
             goBack={() => setActiveStep(STEPS.AMOUNT)}
-            onClickAsset={(canonical: string, isContract: boolean) => {
+            onClickAsset={(canonical, isContract, details) => {
               dispatch(saveDestinationAsset(canonical));
               dispatch(saveIsToken(isContract));
+              dispatch(saveDestinationTokenDetails(details ?? null));
+              // Can't swap a token for itself: if it matches the current
+              // source, reset the source to "(+) Select".
+              if (canonical === transactionData.asset) {
+                dispatch(saveAsset(""));
+                dispatch(saveAmount("0"));
+                dispatch(saveAmountUsd("0.00"));
+              }
+              emitMetric(METRIC_NAMES.swapDestinationSelected, {
+                tokenCode: details?.tokenCode,
+                tokenIssuer: details?.issuer,
+                requiresTrustline: details?.requiresTrustline,
+                source: details?.source,
+              });
               setActiveStep(STEPS.AMOUNT);
             }}
           />
@@ -149,7 +193,7 @@ export const Swap = () => {
       default: {
         return (
           <SwapAsset
-            title={t("Swap from")}
+            selectionType="source"
             hiddenAssets={[transactionData.destinationAsset]}
             goBack={() => setActiveStep(STEPS.AMOUNT)}
             onClickAsset={(canonical: string, isContract: boolean) => {
@@ -157,6 +201,17 @@ export const Swap = () => {
               dispatch(saveIsToken(isContract));
               dispatch(saveAmount("0"));
               dispatch(saveAmountUsd("0.00"));
+              // Can't swap a token for itself: if it matches the current
+              // destination, reset the destination to "(+) Select".
+              if (canonical === transactionData.destinationAsset) {
+                dispatch(saveDestinationAsset(""));
+                dispatch(saveDestinationTokenDetails(null));
+              }
+              emitMetric(METRIC_NAMES.swapSourceSelected, {
+                tokenCode: getAssetFromCanonical(canonical).code,
+                tokenIssuer: getAssetFromCanonical(canonical).issuer,
+                source: "balances",
+              });
               setActiveStep(STEPS.AMOUNT);
             }}
           />

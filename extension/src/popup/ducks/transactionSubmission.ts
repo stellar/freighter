@@ -28,10 +28,12 @@ import {
 import { NETWORKS, NetworkDetails } from "@shared/constants/stellar";
 import { ConfigurableWalletType } from "@shared/constants/hardwareWallet";
 import { isCustomNetwork } from "@shared/helpers/stellar";
+import { BlockaidWarning, SecurityLevel } from "popup/constants/blockaid";
 
 import { getCanonicalFromAsset } from "helpers/stellar";
 import { INDEXER_URL } from "@shared/constants/mercury";
 import { horizonGetBestPath } from "popup/helpers/horizonGetBestPath";
+import { isQuoteExpiredError } from "popup/helpers/quoteExpiry";
 import {
   soroswapGetBestPath,
   getSoroswapTokens as getSoroswapTokensService,
@@ -416,6 +418,28 @@ export enum ShowOverlayStatus {
   IN_PROGRESS = "IN_PROGRESS",
 }
 
+export interface DestinationTokenDetails {
+  // e.g. "AQUA" / "XLM" — lets the banner, review rows, and warnings render
+  // without re-parsing the canonical destinationAsset string.
+  tokenCode: string;
+  // true when the user has no trustline for this destination yet.
+  requiresTrustline: boolean;
+  // 7 for classic assets.
+  decimals: number;
+  // omitted for native XLM.
+  issuer?: string;
+  // from the pick-time Blockaid bulk scan.
+  securityLevel?: SecurityLevel;
+  // friendly per-feature Blockaid reasons from the pick-time token scan, shown
+  // in the review's "Do not proceed" pane alongside the tx-scan reasons.
+  securityWarnings?: BlockaidWarning[];
+  // from the search/Popular record, before balances hydrate.
+  iconUrl?: string;
+  // USD spot price from the stellar.expert search result, used as a fallback
+  // for the "You receive" fiat when /token-prices has no entry. No 24h %.
+  spotPrice?: number;
+}
+
 interface TransactionData {
   amount: string;
   amountUsd: string;
@@ -432,6 +456,7 @@ interface TransactionData {
   destinationDecimals?: number;
   destinationAmount: string;
   destinationIcon: string;
+  destinationTokenDetails: DestinationTokenDetails | null;
   path: string[];
   allowedSlippage: string;
   isToken: boolean;
@@ -472,6 +497,10 @@ interface InitialState {
     | SorobanRpc.Api.SendTransactionResponse
     | null;
   error: ErrorMessage | undefined;
+  // Set when a swap submission fails because the frozen quote no longer clears
+  // on-chain (op_under_dest_min / op_too_few_offers). Drives the recover-and-
+  // retry flow instead of the terminal SubmitFail screen.
+  isSwapQuoteExpired: boolean;
   transactionData: TransactionData;
   transactionSimulation: {
     response: SorobanRpc.Api.SimulateTransactionSuccessResponse | null;
@@ -489,6 +518,7 @@ export const initialState: InitialState = {
   submitStatus: ActionStatus.IDLE,
   response: null,
   error: undefined,
+  isSwapQuoteExpired: false,
   transactionData: {
     amount: "0",
     amountUsd: "0.00",
@@ -503,8 +533,9 @@ export const initialState: InitialState = {
     destinationAsset: "",
     destinationAmount: "",
     destinationIcon: "",
+    destinationTokenDetails: null,
     path: [],
-    allowedSlippage: "1",
+    allowedSlippage: "2",
     isCollectible: false,
     collectibleData: {
       collectionName: "",
@@ -543,6 +574,9 @@ const transactionSubmissionSlice = createSlice({
     resetSubmission: () => initialState,
     resetSubmitStatus: (state) => {
       state.submitStatus = initialState.submitStatus;
+    },
+    clearSwapQuoteExpired: (state) => {
+      state.isSwapQuoteExpired = false;
     },
     saveDestination: (state, action) => {
       state.transactionData.destination = action.payload;
@@ -656,6 +690,12 @@ const transactionSubmissionSlice = createSlice({
       state.transactionData.destinationAmount =
         action.payload.destinationAmount;
     },
+    saveDestinationTokenDetails: (
+      state,
+      action: { payload: DestinationTokenDetails | null },
+    ) => {
+      state.transactionData.destinationTokenDetails = action.payload;
+    },
   },
   extraReducers: (builder) => {
     builder.addCase(submitFreighterTransaction.pending, (state) => {
@@ -664,6 +704,10 @@ const transactionSubmissionSlice = createSlice({
     builder.addCase(submitFreighterTransaction.rejected, (state, action) => {
       state.submitStatus = ActionStatus.ERROR;
       state.error = action.payload;
+      // Flag a swap quote-expiry so the Swap flow recovers (refetch + retry)
+      // instead of dead-ending in SubmitFail. These op codes only arise from
+      // swap path payments, so this is a no-op for sends.
+      state.isSwapQuoteExpired = isQuoteExpiredError(action.payload);
     });
     builder.addCase(submitFreighterTransaction.fulfilled, (state, action) => {
       state.submitStatus = ActionStatus.SUCCESS;
@@ -765,6 +809,7 @@ const transactionSubmissionSlice = createSlice({
 export const {
   resetSubmission,
   resetSubmitStatus,
+  clearSwapQuoteExpired,
   saveDestination,
   saveRecipientName,
   saveFederationAddress,
@@ -791,6 +836,7 @@ export const {
   saveIsMergeSelected,
   saveBalancesToMigrate,
   saveSwapBestPath,
+  saveDestinationTokenDetails,
 } = transactionSubmissionSlice.actions;
 export const { reducer } = transactionSubmissionSlice;
 
@@ -805,3 +851,7 @@ export const transactionDataSelector = (state: {
 export const isPathPaymentSelector = (state: {
   transactionSubmission: InitialState;
 }) => state.transactionSubmission.transactionData.destinationAsset !== "";
+
+export const destinationTokenDetailsSelector = (state: {
+  transactionSubmission: InitialState;
+}) => state.transactionSubmission.transactionData.destinationTokenDetails;

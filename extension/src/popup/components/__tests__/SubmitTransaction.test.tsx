@@ -141,6 +141,52 @@ describe("SubmitTransaction", () => {
     });
   });
 
+  it("uses the picked token's iconUrl for a new destination token not yet in the icon cache", async () => {
+    const AQUA =
+      "AQUA:GBNZILSTVQZ4R7IKQDGHYGY2QXL5QOFJYQMXPKWRRM5PAV7Y4M67AQUA";
+    const iconUrl = "https://example.com/aqua.png";
+    render(
+      <Wrapper
+        routes={[ROUTES.sendPayment]}
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.PASSWORD_CREATED,
+            publicKey: "G1",
+            allAccounts: mockAccounts,
+            hasPrivateKey: true,
+          },
+          settings: {
+            networkDetails: TESTNET_NETWORK_DETAILS,
+          },
+          // The destination token is not in the user's account, so no icon is cached.
+          cache: { icons: {} },
+          transactionSubmission: {
+            transactionData: {
+              asset: "native",
+              amount: "5",
+              destination: "G1",
+              destinationAsset: AQUA,
+              destinationAmount: "10",
+              destinationTokenDetails: {
+                tokenCode: "AQUA",
+                requiresTrustline: true,
+                decimals: 7,
+                iconUrl,
+              },
+            },
+          },
+        }}
+      >
+        <SendingTransaction xdr="xdr" goBack={() => {}} />
+      </Wrapper>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByAltText("AQUA logo")).toHaveAttribute("src", iconUrl);
+    });
+  });
+
   it("asks for password if session has expired mid flow", async () => {
     // when we make a fresh request to load account, we don't have the private key
     jest

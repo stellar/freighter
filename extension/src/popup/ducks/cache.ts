@@ -5,6 +5,7 @@ import { AssetListResponse } from "@shared/constants/soroban/asset-list";
 import { HistoryResponse } from "helpers/hooks/useGetHistory";
 import { TokenDetailsResponse } from "helpers/hooks/useTokenDetails";
 import { ApiTokenPrices, Collection } from "@shared/api/types";
+import { TrendingAsset } from "popup/helpers/trendingAssets";
 
 type AssetCode = string;
 type PublicKey = string;
@@ -53,6 +54,14 @@ type SaveCollectionsPayload = {
   collections: Collection[];
 };
 
+type SavePopularTokensPayload = {
+  networkDetails: NetworkDetails;
+  tokens: TrendingAsset[];
+};
+
+// ~30-min staleness window for the Popular list Redux cache.
+export const POPULAR_TOKENS_STALE_MS = 30 * 60 * 1000;
+
 interface InitialState {
   balanceData: {
     [network: string]: Record<
@@ -79,6 +88,9 @@ interface InitialState {
     >;
   };
   collections: { [network: string]: Record<PublicKey, Collection[]> };
+  popularTokens: {
+    [network: string]: { tokens: TrendingAsset[]; updatedAt: number };
+  };
 }
 
 const initialState: InitialState = {
@@ -90,6 +102,7 @@ const initialState: InitialState = {
   historyData: {},
   tokenPrices: {},
   collections: {},
+  popularTokens: {},
 };
 
 const cacheSlice = createSlice({
@@ -104,6 +117,7 @@ const cacheSlice = createSlice({
       state.tokenDetails = {};
       state.historyData = {};
       state.tokenPrices = {};
+      state.popularTokens = {};
     },
     saveBalancesForAccount(state, action: { payload: SaveBalancesPayload }) {
       state.balanceData = {
@@ -194,6 +208,24 @@ const cacheSlice = createSlice({
         ];
       }
     },
+    savePopularTokens(state, action: { payload: SavePopularTokensPayload }) {
+      state.popularTokens = {
+        ...state.popularTokens,
+        [action.payload.networkDetails.network]: {
+          tokens: action.payload.tokens,
+          updatedAt: Date.now(),
+        },
+      };
+    },
+  },
+  extraReducers: (builder) => {
+    // tokenLists is network-specific but stored as a flat array (not
+    // network-keyed like balanceData/popularTokens), so clear it on network
+    // change to force a refetch. Without this, verified-list consumers show
+    // the previous network's results until the in-memory store is reset.
+    builder.addCase("settings/changeNetwork/fulfilled", (state) => {
+      state.tokenLists = [];
+    });
   },
 });
 
@@ -215,6 +247,8 @@ export const selectBalancesByPublicKey = (publicKey: string) =>
   createSelector(balancesSelector, (balances) => balances[publicKey]);
 export const collectionsSelector = (state: { cache: InitialState }) =>
   state.cache.collections;
+export const popularTokensSelector = (state: { cache: InitialState }) =>
+  state.cache.popularTokens;
 
 export const { reducer } = cacheSlice;
 export const {
@@ -229,4 +263,5 @@ export const {
   saveCollections,
   clearBalancesForAccount,
   clearCollectiblesForAccount,
+  savePopularTokens,
 } = cacheSlice.actions;

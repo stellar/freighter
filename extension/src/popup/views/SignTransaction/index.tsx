@@ -44,15 +44,17 @@ import {
   WarningMessageVariant,
   WarningMessage,
   SSLWarningMessage,
-  BlockaidTxScanLabel,
   BlockAidScanExpanded,
   DomainNotAllowedWarningMessage,
   MemoRequiredLabel,
 } from "popup/components/WarningMessages";
+import { BlockaidBanner } from "popup/components/BlockaidBanner";
+import { SecurityLevel, mergeSecurityLevels } from "popup/constants/blockaid";
 import {
   useShouldTreatTxAsUnableToScan,
   useIsTxSuspicious,
   getSiteSecurityStates,
+  getTransactionSecurityLevel,
 } from "popup/helpers/blockaid";
 import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
 import { Loading } from "popup/components/Loading";
@@ -106,6 +108,10 @@ export const SignTransaction = () => {
   const [hasAcceptedInsufficientFee, setHasAcceptedInsufficientFee] =
     useState(false);
   const [activePaneIndex, setActivePaneIndex] = useState(0);
+  // The expanded Blockaid "Do not proceed" sheet renders IN-FLOW (replacing the
+  // body in place) rather than as a horizontal slider pane, consistent with
+  // ReviewTransaction.
+  const [isOnBlockaidSheet, setIsOnBlockaidSheet] = useState(false);
   const isNonSSLEnabled = useSelector(isNonSSLEnabledSelector);
   const publicKey = useSelector(publicKeySelector);
   const { isDomainListedAllowed } = useIsDomainListedAllowed({
@@ -312,6 +318,27 @@ export const SignTransaction = () => {
     hasSimulationError ||
     isSiteMalicious;
 
+  // Single Blockaid verdict for the banner: the worst of the transaction scan
+  // and the requesting site's scan. Entity is "transaction" when the tx itself
+  // is flagged, otherwise "site" (so the copy matches what was actually flagged).
+  const txSecurityLevel = getTransactionSecurityLevel(
+    scanResult,
+    isUnableToScan,
+    blockaidOverrideState,
+  );
+  const siteSecurityLevel = isSiteMalicious
+    ? SecurityLevel.MALICIOUS
+    : isSiteSuspicious
+      ? SecurityLevel.SUSPICIOUS
+      : isSiteUnableToScan
+        ? SecurityLevel.UNABLE_TO_SCAN
+        : null;
+  const blockaidSecurityLevel = mergeSecurityLevels([
+    txSecurityLevel,
+    siteSecurityLevel,
+  ]);
+  const blockaidBannerEntity = txSecurityLevel ? "transaction" : "site";
+
   if (_networkPassphrase !== networkPassphrase) {
     return (
       <WarningMessage
@@ -400,12 +427,14 @@ export const SignTransaction = () => {
     }
 
     // 2. Blockaid: malicious / suspicious / unable-to-scan
-    if (showBlockAidDetails) {
+    if (showBlockAidDetails && blockaidSecurityLevel) {
       return (
         <div className="SignTransaction__BlockaidDetails">
-          <BlockaidTxScanLabel
-            scanResult={scanResult}
-            onClick={() => setActivePaneIndex(1)}
+          <BlockaidBanner
+            securityLevel={blockaidSecurityLevel}
+            entity={blockaidBannerEntity}
+            onClick={() => setIsOnBlockaidSheet(true)}
+            dataTestId="sign-tx-blockaid-banner"
           />
         </div>
       );
@@ -413,7 +442,7 @@ export const SignTransaction = () => {
 
     // 3. Memo required
     if (isMemoRequired) {
-      return <MemoRequiredLabel onClick={() => setActivePaneIndex(3)} />;
+      return <MemoRequiredLabel onClick={() => setActivePaneIndex(2)} />;
     }
 
     return null;
@@ -431,191 +460,194 @@ export const SignTransaction = () => {
         <HardwareSign walletType={hardwareWalletType} uuid={uuid} />
       )}
       <div data-testid="SignTransaction" className="SignTransaction">
-        <MultiPaneSlider
-          activeIndex={activePaneIndex}
-          panes={[
-            <div className="SignTransaction__Body">
-              <div className="SignTransaction__Body__Wrapper">
-                <div className="SignTransaction__TitleRow">
-                  <img
-                    className="PunycodedDomain__favicon"
-                    src={favicon}
-                    alt={t("Site favicon")}
-                  />
-                  <div className="SignTransaction__TitleRow__Detail">
-                    <span className="SignTransaction__TitleRow__Title">
-                      {t("Confirm Transaction")}
-                    </span>
-                    <span className="SignTransaction__TitleRow__Domain">
-                      {validDomain}
-                    </span>
-                  </div>
-                </div>
-                {renderBanner()}
-                {assetDiffs && (
-                  <AssetDiffs
-                    icons={signTxState.data?.icons || {}}
-                    assetDiffs={assetDiffs}
-                  />
-                )}
-                {trustlineChanges.length > 0 && (
-                  <Trustline
-                    operations={trustlineChanges}
-                    icons={signTxState.data?.icons || {}}
-                  />
-                )}
-                <div className="SignTransaction__Metadata">
-                  <div className="SignTransaction__Metadata__Row">
-                    <div className="SignTransaction__Metadata__Label">
-                      <Icon.Wallet01 />
-                      <span>{t("Wallet")}</span>
-                    </div>
-                    <div className="SignTransaction__Metadata__Value">
-                      <KeyIdenticon publicKey={publicKey} />
-                    </div>
-                  </div>
-                  <div className="SignTransaction__Metadata__Row">
-                    <div className="SignTransaction__Metadata__Label">
-                      <Icon.Globe02 />
-                      <span>{t("Network")}</span>
-                    </div>
-                    <div className="SignTransaction__Metadata__Value">
-                      <span>{networkName}</span>
-                    </div>
-                  </div>
-                  <div className="SignTransaction__Metadata__Row">
-                    <div className="SignTransaction__Metadata__Label">
-                      <Icon.Route />
-                      <span>{t("Fee")}</span>
-                    </div>
-                    <div className="SignTransaction__Metadata__Value">
-                      <span>
-                        {`${formatTokenAmount(new BigNumber(_fee), CLASSIC_ASSET_DECIMALS)} XLM `}
+        {isOnBlockaidSheet ? (
+          <BlockAidScanExpanded
+            scanResult={scanResult}
+            onClose={() => setIsOnBlockaidSheet(false)}
+          />
+        ) : (
+          <MultiPaneSlider
+            activeIndex={activePaneIndex}
+            panes={[
+              <div className="SignTransaction__Body">
+                <div className="SignTransaction__Body__Wrapper">
+                  <div className="SignTransaction__TitleRow">
+                    <img
+                      className="PunycodedDomain__favicon"
+                      src={favicon}
+                      alt={t("Site favicon")}
+                    />
+                    <div className="SignTransaction__TitleRow__Detail">
+                      <span className="SignTransaction__TitleRow__Title">
+                        {t("Confirm Transaction")}
+                      </span>
+                      <span className="SignTransaction__TitleRow__Domain">
+                        {validDomain}
                       </span>
                     </div>
                   </div>
-                  <div className="SignTransaction__Metadata__Row SignTransaction__Metadata__Row--memo">
-                    <div className="SignTransaction__Metadata__Label">
-                      <Icon.File02 />
-                      <span>{t("Memo")}</span>
-                    </div>
-                    <div className="SignTransaction__Metadata__Value SignTransaction__Metadata__Value--memo">
-                      <TruncatedMemo
-                        memo={decodedMemo && decodedMemo.value}
-                        className="SignTransaction__Metadata__Memo"
-                      />
-                    </div>
-                  </div>
-                </div>
-                <div
-                  className="SignTransaction__TransactionDetailsBtn"
-                  onClick={() => setActivePaneIndex(2)}
-                >
-                  <Icon.List />
-                  <span>{t("Transaction details")}</span>
-                </div>
-              </div>
-            </div>,
-            <BlockAidScanExpanded
-              scanResult={scanResult}
-              onClose={() => setActivePaneIndex(0)}
-            />,
-            <div className="SignTransaction__Body">
-              <div className="SignTransaction__Body__Wrapper">
-                <div className="SignTransaction__TransactionDetails">
-                  <div className="SignTransaction__TransactionDetails__Header">
-                    <div className="DetailsMark">
-                      <Icon.List />
-                    </div>
-                    <div
-                      className="Close"
-                      onClick={() => setActivePaneIndex(0)}
-                    >
-                      <Icon.X />
-                    </div>
-                  </div>
-                  <div className="SignTransaction__TransactionDetails__Title">
-                    <span>{t("Transaction Details")}</span>
-                  </div>
-                  <div className="SignTransaction__TransactionDetails__Summary">
-                    <Summary
-                      sequenceNumber={_sequence}
-                      fee={_fee}
-                      memo={decodedMemo}
-                      xdr={transactionXdr}
-                      operationNames={_tx.operations.map(
-                        (op) =>
-                          OPERATION_TYPES[
-                            op.type as keyof typeof OPERATION_TYPES
-                          ] || op.type,
-                      )}
-                    />
-                  </div>
-                  {hasAuthEntries && (
-                    <AuthEntries
-                      entries={
-                        (
-                          _tx.operations[0] as Operation.InvokeHostFunction
-                        ).auth?.map((authEntry) => ({
-                          invocation: authEntry.rootInvocation(),
-                          boundAddress: getAuthEntryBoundAddress(authEntry),
-                        })) || []
-                      }
+                  {renderBanner()}
+                  {assetDiffs && (
+                    <AssetDiffs
+                      icons={signTxState.data?.icons || {}}
+                      assetDiffs={assetDiffs}
                     />
                   )}
-                  <Details
-                    operations={_tx.operations}
-                    flaggedKeys={flaggedKeys}
-                    isMemoRequired={isMemoRequired}
-                  />
-                </div>
-              </div>
-            </div>,
-            <div className="SignTransaction__Body">
-              <div className="SignTransaction__Body__Wrapper">
-                <div className="SignTransaction__TransactionDetails">
-                  <div className="SignTransaction__TransactionDetails__Header">
-                    <div className="DetailsMark">
-                      <Icon.File02 />
-                    </div>
-                    <div
-                      className="Close"
-                      onClick={() => setActivePaneIndex(0)}
-                    >
-                      <Icon.X />
-                    </div>
-                  </div>
-                  <div className="SignTransaction__TransactionDetails__Title">
-                    <span>{t("Memo is required")}</span>
-                  </div>
-                  <div className="SignTransaction__TransactionDetails__Summary">
-                    <div className="WarningMessage__infoBlock WarningMessage__infoBlock--warning">
-                      <div className="WarningMessage__header">
-                        <Icon.InfoOctagon className="WarningMessage__icon" />
-                        <div>{t("Memo is required")}</div>
+                  {trustlineChanges.length > 0 && (
+                    <Trustline
+                      operations={trustlineChanges}
+                      icons={signTxState.data?.icons || {}}
+                    />
+                  )}
+                  <div className="SignTransaction__Metadata">
+                    <div className="SignTransaction__Metadata__Row">
+                      <div className="SignTransaction__Metadata__Label">
+                        <Icon.Wallet01 />
+                        <span>{t("Wallet")}</span>
+                      </div>
+                      <div className="SignTransaction__Metadata__Value">
+                        <KeyIdenticon publicKey={publicKey} />
                       </div>
                     </div>
-                    <div>
-                      {t(
-                        "A destination account requires the use of the memo field which is not present in the transaction you’re about to sign.",
-                      )}
+                    <div className="SignTransaction__Metadata__Row">
+                      <div className="SignTransaction__Metadata__Label">
+                        <Icon.Globe02 />
+                        <span>{t("Network")}</span>
+                      </div>
+                      <div className="SignTransaction__Metadata__Value">
+                        <span>{networkName}</span>
+                      </div>
                     </div>
-                    <div>
-                      {t(
-                        "Freighter automatically disabled the option to sign this transaction.",
-                      )}
+                    <div className="SignTransaction__Metadata__Row">
+                      <div className="SignTransaction__Metadata__Label">
+                        <Icon.Route />
+                        <span>{t("Fee")}</span>
+                      </div>
+                      <div className="SignTransaction__Metadata__Value">
+                        <span>
+                          {`${formatTokenAmount(new BigNumber(_fee), CLASSIC_ASSET_DECIMALS)} XLM `}
+                        </span>
+                      </div>
                     </div>
-                    <div>
-                      {t(
-                        "Check the destination account memo requirements and include it in the transaction.",
-                      )}
+                    <div className="SignTransaction__Metadata__Row SignTransaction__Metadata__Row--memo">
+                      <div className="SignTransaction__Metadata__Label">
+                        <Icon.File02 />
+                        <span>{t("Memo")}</span>
+                      </div>
+                      <div className="SignTransaction__Metadata__Value SignTransaction__Metadata__Value--memo">
+                        <TruncatedMemo
+                          memo={decodedMemo && decodedMemo.value}
+                          className="SignTransaction__Metadata__Memo"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div
+                    className="SignTransaction__TransactionDetailsBtn"
+                    onClick={() => setActivePaneIndex(1)}
+                  >
+                    <Icon.List />
+                    <span>{t("Transaction details")}</span>
+                  </div>
+                </div>
+              </div>,
+              <div className="SignTransaction__Body">
+                <div className="SignTransaction__Body__Wrapper">
+                  <div className="SignTransaction__TransactionDetails">
+                    <div className="SignTransaction__TransactionDetails__Header">
+                      <div className="DetailsMark">
+                        <Icon.List />
+                      </div>
+                      <div
+                        className="Close"
+                        onClick={() => setActivePaneIndex(0)}
+                      >
+                        <Icon.X />
+                      </div>
+                    </div>
+                    <div className="SignTransaction__TransactionDetails__Title">
+                      <span>{t("Transaction Details")}</span>
+                    </div>
+                    <div className="SignTransaction__TransactionDetails__Summary">
+                      <Summary
+                        sequenceNumber={_sequence}
+                        fee={_fee}
+                        memo={decodedMemo}
+                        xdr={transactionXdr}
+                        operationNames={_tx.operations.map(
+                          (op) =>
+                            OPERATION_TYPES[
+                              op.type as keyof typeof OPERATION_TYPES
+                            ] || op.type,
+                        )}
+                      />
+                    </div>
+                    {hasAuthEntries && (
+                      <AuthEntries
+                        entries={
+                          (
+                            _tx.operations[0] as Operation.InvokeHostFunction
+                          ).auth?.map((authEntry) => ({
+                            invocation: authEntry.rootInvocation(),
+                            boundAddress: getAuthEntryBoundAddress(authEntry),
+                          })) || []
+                        }
+                      />
+                    )}
+                    <Details
+                      operations={_tx.operations}
+                      flaggedKeys={flaggedKeys}
+                      isMemoRequired={isMemoRequired}
+                    />
+                  </div>
+                </div>
+              </div>,
+              <div className="SignTransaction__Body">
+                <div className="SignTransaction__Body__Wrapper">
+                  <div className="SignTransaction__TransactionDetails">
+                    <div className="SignTransaction__TransactionDetails__Header">
+                      <div className="DetailsMark">
+                        <Icon.File02 />
+                      </div>
+                      <div
+                        className="Close"
+                        onClick={() => setActivePaneIndex(0)}
+                      >
+                        <Icon.X />
+                      </div>
+                    </div>
+                    <div className="SignTransaction__TransactionDetails__Title">
+                      <span>{t("Memo is required")}</span>
+                    </div>
+                    <div className="SignTransaction__TransactionDetails__Summary">
+                      <div className="WarningMessage__infoBlock WarningMessage__infoBlock--warning">
+                        <div className="WarningMessage__header">
+                          <Icon.InfoOctagon className="WarningMessage__icon" />
+                          <div>{t("Memo is required")}</div>
+                        </div>
+                      </div>
+                      <div>
+                        {t(
+                          "A destination account requires the use of the memo field which is not present in the transaction you’re about to sign.",
+                        )}
+                      </div>
+                      <div>
+                        {t(
+                          "Freighter automatically disabled the option to sign this transaction.",
+                        )}
+                      </div>
+                      <div>
+                        {t(
+                          "Check the destination account memo requirements and include it in the transaction.",
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            </div>,
-          ]}
-        />
+              </div>,
+            ]}
+          />
+        )}
         <div className="SignTransaction__Actions">
           <div className="SignTransaction__Actions__BtnRow">
             {showBlockAidDetails ? (

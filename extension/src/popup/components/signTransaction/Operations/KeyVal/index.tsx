@@ -224,9 +224,9 @@ export const KeyValueLine = ({
   }
   return (
     <>
-      <KeyValueList operationKey={t("Asset Code")} operationValue={line.code} />
+      <KeyValueList operationKey={t("Token Code")} operationValue={line.code} />
       <KeyValueList
-        operationKey={t("Asset Issuer")}
+        operationKey={t("Token Issuer")}
         operationValue={
           <CopyValue
             value={line.issuer ?? ""}
@@ -693,21 +693,29 @@ export const KeyValueInvokeHostFn = ({
 export const PathList = ({ paths }: { paths: Asset[] }) => {
   const { t } = useTranslation();
 
+  if (!paths.length) {
+    return null;
+  }
+
   return (
-    <>
-      <div>{t("Paths")}: </div>
+    <div className="PathList">
+      <div className="PathList__header">
+        <Icon.Shuffle01 />
+        <span>{t("Path")}</span>
+      </div>
       {paths.map(({ code, issuer }, i) => (
-        <div className="Operations--list--item" key={`${code} ${i + 1}`}>
-          <div>#{i + 1}</div>
-          <KeyValueList operationKey={t("Asset Code")} operationValue={code} />
-          {issuer ? (
-            <KeyValueList
-              operationKey={t("Issuer")}
-              operationValue={<KeyIdenticon publicKey={issuer} isSmall />}
-            />
-          ) : null}
+        <div className="PathList__card" key={`${code} ${i + 1}`}>
+          <div className="PathList__badge">#{i + 1}</div>
+          <div className="PathList__row PathList__row--labels">
+            <span>{t("Token")}</span>
+            {issuer ? <span>{t("Issuer")}</span> : null}
+          </div>
+          <div className="PathList__row">
+            <span>{code}</span>
+            {issuer ? <KeyIdenticon publicKey={issuer} isSmall /> : null}
+          </div>
         </div>
       ))}
-    </>
+    </div>
   );
 };

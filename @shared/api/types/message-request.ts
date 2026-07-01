@@ -325,6 +325,18 @@ export interface CacheAssetIconMessage extends BaseMessage {
   iconUrl: string;
 }
 
+export interface GetCachedSwapTopTokensMessage extends BaseMessage {
+  type: SERVICE_TYPES.GET_CACHED_SWAP_TOP_TOKENS;
+  network: string;
+}
+
+export interface CacheSwapTopTokensMessage extends BaseMessage {
+  type: SERVICE_TYPES.CACHE_SWAP_TOP_TOKENS;
+  network: string;
+  // Opaque to the background — the popup owns the trending-asset schema.
+  tokens: unknown[];
+}
+
 export interface GetCachedDomainMessage extends BaseMessage {
   type: SERVICE_TYPES.GET_CACHED_ASSET_DOMAIN;
   assetCanonical: string;
@@ -524,6 +536,8 @@ export type ServiceMessageRequest =
   | GetCachedAssetIconListMessage
   | GetCachedAssetIconMessage
   | CacheAssetIconMessage
+  | GetCachedSwapTopTokensMessage
+  | CacheSwapTopTokensMessage
   | GetCachedDomainMessage
   | CacheDomainMessage
   | GetMemoRequiredAccountsMessage

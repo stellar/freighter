@@ -1,0 +1,140 @@
+@use "../../../styles/utils.scss" as *;
+
+.XlmReserveSheet {
+  display: flex;
+  flex-direction: column;
+  gap: pxToRem(24px);
+  padding: pxToRem(24px);
+
+  &__top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  // Brand (lilac) icon badge — matches the shared InfoSheet badge.
+  &__badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: pxToRem(32px);
+    height: pxToRem(32px);
+    border-radius: pxToRem(8px);
+    border: 1px solid var(--sds-clr-lilac-06);
+    background-color: var(--sds-clr-lilac-03);
+    // Brand/Foreground/Primary — muted vs the brighter lilac-11.
+    color: var(--sds-clr-lilac-09);
+
+    svg {
+      width: pxToRem(20px);
+      height: pxToRem(20px);
+    }
+  }
+
+  &__close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: pxToRem(32px);
+    height: pxToRem(32px);
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background-color: var(--sds-clr-gray-03);
+    // Default/Foreground/Primary — muted vs the brighter gray-11.
+    color: var(--sds-clr-gray-09);
+    cursor: pointer;
+
+    svg {
+      width: pxToRem(20px);
+      height: pxToRem(20px);
+    }
+  }
+
+  &__text {
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(8px);
+  }
+
+  &__title {
+    margin: 0;
+    color: var(--sds-clr-gray-12);
+    font-size: pxToRem(18px);
+    font-weight: var(--sds-fw-medium);
+    line-height: pxToRem(26px);
+  }
+
+  &__body {
+    margin: 0;
+    color: var(--sds-clr-gray-11);
+    font-size: pxToRem(14px);
+    font-weight: var(--sds-fw-regular);
+    line-height: pxToRem(20px);
+  }
+
+  // Inline "Why do I need XLM?" link, flowing within the body paragraph.
+  &__why-link {
+    display: inline;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--sds-clr-lilac-11);
+    font: inherit;
+    font-weight: var(--sds-fw-medium);
+    cursor: pointer;
+  }
+
+  // Reserve info card: token icon + "0.5 XLM required" + explanation.
+  &__card {
+    display: flex;
+    align-items: center;
+    gap: pxToRem(12px);
+    padding: pxToRem(16px);
+    border-radius: pxToRem(16px);
+    background-color: var(--sds-clr-gray-03);
+  }
+
+  &__card-icon {
+    flex-shrink: 0;
+    width: pxToRem(32px);
+    height: pxToRem(32px);
+    border-radius: 50%;
+    object-fit: cover;
+  }
+
+  &__card-text {
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(2px);
+  }
+
+  &__card-title {
+    color: var(--sds-clr-gray-12);
+    font-size: pxToRem(14px);
+    font-weight: var(--sds-fw-medium);
+    line-height: pxToRem(20px);
+  }
+
+  &__card-body {
+    color: var(--sds-clr-gray-11);
+    font-size: pxToRem(12px);
+    font-weight: var(--sds-fw-medium);
+    line-height: pxToRem(18px);
+  }
+
+  &__actions {
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(12px);
+
+    // CopyText nests the copy button under .Floater / .CopyText__content
+    // wrappers that otherwise shrink to content width; stretch the chain so the
+    // copy button is full-width like the swap button.
+    .CopyText,
+    .Floater,
+    .CopyText__content {
+      width: 100%;
+    }
+  }
+}

@@ -796,7 +796,6 @@
 
   &__DetailRowError {
     display: flex;
-    overflow: scroll;
 
     &:first-child {
       padding-top: pxToRem(8px);
@@ -811,6 +810,14 @@
       height: 16px;
       color: var(--sds-clr-red-09);
       margin-right: pxToRem(8px);
+    }
+
+    // Wrap long reasons instead of scrolling/clipping them.
+    span {
+      flex: 3;
+      word-break: break-word;
+      font-size: pxToRem(16px);
+      font-weight: 500;
     }
   }
 }

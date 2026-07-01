@@ -86,6 +86,11 @@ export const formatAmountPreserveCursor = (
   const decimal = new Intl.NumberFormat("en-US", { style: "decimal" });
   const maxDigits = 12;
   const cleaned = cleanAmount(val);
+  // Return early so a fully-cleared field stays empty: Number("") === 0 would
+  // otherwise force a non-erasable "0". Callers treat "" as their zero value.
+  if (cleaned === "") {
+    return { amount: "", newCursor: 0 };
+  }
   // add commas to pre decimal digits
   if (cleaned.indexOf(".") !== -1) {
     const parts = cleaned.split(".");

@@ -91,7 +91,7 @@ test.describe("BlockAid Scan - Unable to Scan States", () => {
     ).toBeVisible({ timeout: 10000 });
 
     // Click on the warning banner to view blockaid details
-    await page.getByTestId("blockaid-unable-to-scan-label").click();
+    await page.getByTestId("blockaid-banner-change-trust").click();
 
     // Wait for pane animation to finish
     await page.waitForTimeout(1000);
@@ -277,40 +277,24 @@ test.describe("BlockAid Scan - Unable to Scan States", () => {
 
     // Navigate to swap
     await page.getByTestId("nav-link-swap").click();
-    await expect(page.getByTestId("AppHeaderPageTitle")).toContainText("Swap");
-
-    // Select source token (XLM)
-    await page.getByTestId("swap-src-asset-tile").click();
-    await expect(page.getByTestId("AppHeaderPageTitle")).toContainText(
-      "Swap from",
-    );
-    await expect(page.getByText(/XLM/)).toBeVisible();
-    await page.getByTestId("XLM-balance").click();
-
-    // Select destination token (USDC)
-    await page.getByTestId("swap-dst-asset-tile").click({ force: true });
-    await expect(page.getByText("Swap to")).toBeVisible();
-    await expect(page.getByText(/USDC/)).toBeVisible();
-    await page.getByTestId("USDC-balance").click();
-
-    // Wait to be back at amount step
-    await expect(page.getByTestId("AppHeaderPageTitle")).toContainText("Swap");
-    await expect(page.getByTestId("send-amount-amount-input")).toBeVisible({
-      timeout: 10000,
+    await expect(page.getByTestId("swap-sell-card")).toBeVisible({
+      timeout: 15000,
     });
 
-    // Enter amount
-    await page.getByTestId("send-amount-amount-input").fill("10");
+    // Source defaults to XLM; pick the held USDC as the destination.
+    await page
+      .getByTestId("swap-receive-card")
+      .getByTestId("send-amount-edit-dest-asset")
+      .click({ force: true });
+    await expect(page.getByText("Swap to")).toBeVisible({ timeout: 10000 });
+    await page.getByTestId("SwapTokenRow-USDC").click();
 
-    // Wait for Continue button to be enabled (simulation needs to complete)
-    // The button might be "Continue" or "Review swap"
-    const continueButton = page
-      .getByRole("button", { name: "Continue" })
-      .or(page.getByText("Review swap"));
-    await expect(continueButton).toBeEnabled({ timeout: 30000 });
-
-    // Click continue
-    await continueButton.click({ force: true });
+    // Enter amount and continue
+    await page
+      .getByTestId("swap-sell-card")
+      .getByTestId("send-amount-amount-input")
+      .fill("10");
+    await page.getByTestId("swap-amount-btn-continue").click({ force: true });
 
     // Should be on review pane with warning banner visible
     await expect(
@@ -427,9 +411,11 @@ test.describe("BlockAid Scan - Unable to Scan Site", () => {
 
     // Unable-to-scan label should be visible
     await expect(
-      popup.getByTestId("blockaid-unable-to-scan-label"),
+      popup.getByTestId("domain-scan-blockaid-banner"),
     ).toBeVisible();
-    await expect(popup.getByText("Proceed with caution")).toBeVisible();
+    await expect(
+      popup.getByText("Unable to scan site for malicious behavior"),
+    ).toBeVisible();
 
     // "Connect anyway" replaces the normal "Connect" button
     await expect(
@@ -440,7 +426,7 @@ test.describe("BlockAid Scan - Unable to Scan Site", () => {
     ).not.toBeVisible();
 
     // Expand the blockaid details pane
-    await popup.getByTestId("blockaid-unable-to-scan-label").click();
+    await popup.getByTestId("domain-scan-blockaid-banner").click();
     await popup.waitForTimeout(1000);
 
     // Expanded pane shows "Unable to scan site" detail
@@ -471,9 +457,11 @@ test.describe("BlockAid Scan - Unable to Scan Site", () => {
 
     // Unable-to-scan label should be visible
     await expect(
-      popup.getByTestId("blockaid-unable-to-scan-label"),
+      popup.getByTestId("sign-message-blockaid-banner"),
     ).toBeVisible();
-    await expect(popup.getByText("Proceed with caution")).toBeVisible();
+    await expect(
+      popup.getByText("Unable to scan site for malicious behavior"),
+    ).toBeVisible();
 
     // "Confirm anyway" replaces the normal "Confirm" button
     await expect(
@@ -484,7 +472,7 @@ test.describe("BlockAid Scan - Unable to Scan Site", () => {
     ).not.toBeVisible();
 
     // Expand the blockaid details pane
-    await popup.getByTestId("blockaid-unable-to-scan-label").click();
+    await popup.getByTestId("sign-message-blockaid-banner").click();
     await popup.waitForTimeout(1000);
 
     // Expanded pane shows unable-to-scan title and subtitle

@@ -79,10 +79,15 @@ export const Operations = ({
   flaggedKeys,
   isMemoRequired,
   operations = [] as OperationRecord[],
+  scanAssets = true,
 }: {
   flaggedKeys: FlaggedKeys;
   isMemoRequired: boolean;
   operations: OperationRecord[];
+  // The dapp-signing flow self-scans each op's assets for its own badges. The
+  // internal Send/Swap review already scans these assets, so it passes
+  // scanAssets={false} to avoid duplicate Blockaid requests.
+  scanAssets?: boolean;
 }) => {
   const { t } = useTranslation();
 
@@ -100,6 +105,9 @@ export const Operations = ({
     const networkDetails = useSelector(settingsNetworkDetailsSelector);
 
     useEffect(() => {
+      if (!scanAssets) {
+        return;
+      }
       const scan = async () => {
         let sendAsset;
         let destAsset;
@@ -173,17 +181,19 @@ export const Operations = ({
               isMemoRequired={isMemoRequired}
             />
             <KeyValueList
-              operationKey={t("Asset Code")}
+              operationKey={t("Token Code")}
               operationValue={asset.code}
             />
-            <KeyValueList operationKey={t("Amount")} operationValue={amount} />
+            <KeyValueList
+              operationKey={t("Amount")}
+              operationValue={`${amount} ${asset.code}`}
+            />
           </>
         );
       }
 
       case "pathPaymentStrictReceive": {
-        const { sendAsset, sendMax, destination, destAsset, destAmount, path } =
-          op;
+        const { sendAsset, sendMax, destination, destAsset, destAmount } = op;
         return (
           <>
             <KeyValueList
@@ -211,23 +221,21 @@ export const Operations = ({
               operationKey={t("Destination Amount")}
               operationValue={destAmount}
             />
-            <PathList paths={path} />
           </>
         );
       }
 
       case "pathPaymentStrictSend": {
-        const { sendAsset, sendAmount, destination, destAsset, destMin, path } =
-          op;
+        const { sendAsset, sendAmount, destination, destAsset, destMin } = op;
         return (
           <>
             <KeyValueList
-              operationKey={t("Asset Code")}
+              operationKey={t("Token Code")}
               operationValue={sendAsset.code}
             />
             <KeyValueList
               operationKey={t("Send Amount")}
-              operationValue={sendAmount}
+              operationValue={`${sendAmount} ${sendAsset.code}`}
             />
             <KeyValueWithPublicKey
               operationKey={t("Destination")}
@@ -238,15 +246,14 @@ export const Operations = ({
               flaggedKeys={flaggedKeys}
               isMemoRequired={isMemoRequired}
             />
-            <KeyValueWithPublicKey
-              operationKey={t("Destination Asset")}
+            <KeyValueList
+              operationKey={t("Destination Token")}
               operationValue={destAsset.code}
             />
             <KeyValueList
               operationKey={t("Destination Minimum")}
-              operationValue={destMin}
+              operationValue={`${destMin} ${destAsset.code}`}
             />
-            <PathList paths={path} />
           </>
         );
       }
@@ -719,6 +726,9 @@ export const Operations = ({
     const networkDetails = useSelector(settingsNetworkDetailsSelector);
 
     useEffect(() => {
+      if (!scanAssets) {
+        return;
+      }
       const scan = async () => {
         let sendAsset;
         let destAsset;
@@ -860,6 +870,10 @@ export const Operations = ({
               )}
               <RenderOpByType op={op} />
             </div>
+            {(op.type === "pathPaymentStrictSend" ||
+              op.type === "pathPaymentStrictReceive") && (
+              <PathList paths={op.path} />
+            )}
             {type === "invokeHostFunction" && (
               <>
                 <div className="Operations--header">

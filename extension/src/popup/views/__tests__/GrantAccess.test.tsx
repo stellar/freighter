@@ -196,7 +196,7 @@ describe("Grant Access view", () => {
     await waitFor(() => screen.getByTestId("grant-access-view"));
     expect(screen.getByTestId("grant-access-view")).toBeDefined();
     await waitFor(() =>
-      expect(screen.getByTestId("blockaid-miss-label")).toBeDefined(),
+      expect(screen.getByTestId("domain-scan-blockaid-banner")).toBeDefined(),
     );
   });
 
@@ -237,7 +237,7 @@ describe("Grant Access view", () => {
     await waitFor(() => screen.getByTestId("grant-access-view"));
     expect(screen.getByTestId("grant-access-view")).toBeDefined();
     await waitFor(() =>
-      expect(screen.getByTestId("blockaid-malicious-label")).toBeDefined(),
+      expect(screen.getByTestId("domain-scan-blockaid-banner")).toBeDefined(),
     );
   });
 
@@ -273,7 +273,7 @@ describe("Grant Access view", () => {
     await waitFor(() => screen.getByTestId("grant-access-view"));
     expect(screen.getByTestId("grant-access-view")).toBeDefined();
     await waitFor(() =>
-      expect(screen.getByTestId("blockaid-unable-to-scan-label")).toBeDefined(),
+      expect(screen.getByTestId("domain-scan-blockaid-banner")).toBeDefined(),
     );
     expect(
       screen.getByTestId("grant-access-connect-anyway-button"),
@@ -371,7 +371,7 @@ describe("Grant Access view", () => {
     await waitFor(() => screen.getByTestId("grant-access-view"));
     expect(screen.getByTestId("grant-access-view")).toBeDefined();
     await waitFor(() =>
-      expect(screen.getByTestId("blockaid-unable-to-scan-label")).toBeDefined(),
+      expect(screen.getByTestId("domain-scan-blockaid-banner")).toBeDefined(),
     );
     expect(
       screen.getByTestId("grant-access-connect-anyway-button"),

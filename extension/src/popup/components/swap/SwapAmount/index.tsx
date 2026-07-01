@@ -2,64 +2,79 @@ import React, { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Navigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Form, Field, FieldProps, Formik, useFormik } from "formik";
+import { useFormik } from "formik";
 import BigNumber from "bignumber.js";
-import { object as YupObject, number as YupNumber } from "yup";
-import {
-  Button,
-  Card,
-  Icon,
-  Input,
-  Notification,
-} from "@stellar/design-system";
+import { captureException } from "@sentry/browser";
+import { BASE_RESERVE } from "@shared/constants/stellar";
+import { Button, Icon, Notification } from "@stellar/design-system";
 
 import { View } from "popup/basics/layout/View";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
-import { useRunAfterUpdate } from "popup/helpers/useRunAfterUpdate";
 import {
-  saveAllowedSlippage,
   saveAmount,
   saveAmountUsd,
+  saveAsset,
+  saveDestinationAsset,
+  saveDestinationTokenDetails,
+  saveIsToken,
   saveTransactionFee,
   saveTransactionTimeout,
-  transactionDataSelector,
+  clearSwapQuoteExpired,
   transactionSubmissionSelector,
 } from "popup/ducks/transactionSubmission";
 import {
   cleanAmount,
   formatAmount,
-  formatAmountPreserveCursor,
   roundUsdValue,
 } from "popup/helpers/formatters";
-import { TX_SEND_MAX } from "popup/constants/transaction";
 import { useGetSwapAmountData } from "./hooks/useGetSwapAmountData";
-import { getAssetFromCanonical, isMainnet } from "helpers/stellar";
+import { getAssetFromCanonical } from "helpers/stellar";
 import { RequestState } from "constants/request";
 import { Loading } from "popup/components/Loading";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { openTab } from "popup/helpers/navigate";
 import { newTabHref } from "helpers/urls";
 import { reRouteOnboarding } from "popup/helpers/route";
-import { findAssetBalance } from "popup/helpers/balance";
-import { getAssetDecimals, getAvailableBalance } from "popup/helpers/soroban";
+import { getAvailableBalance } from "popup/helpers/soroban";
+import { useBlockaidOverrideState } from "popup/helpers/blockaid";
 import { AppDispatch } from "popup/App";
 import { emitMetric } from "helpers/metrics";
-import { AMOUNT_ERROR, InputType } from "helpers/transaction";
+import { InputType } from "helpers/transaction";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { LoadingBackground } from "popup/basics/LoadingBackground";
 import { EditSettings } from "popup/components/InternalTransaction/EditSettings";
 import { ReviewTx } from "popup/components/InternalTransaction/ReviewTransaction";
-import { useSimulateTxData } from "./hooks/useSimulateSwapData";
+import {
+  getSwapTotalFee,
+  useSimulateTxData,
+} from "./hooks/useSimulateSwapData";
+import { SwapCtaLabelKey } from "./helpers/swapCtaState";
+import { getSwapDerivedData } from "./helpers/getSwapDerivedData";
+import { validateSwapAmount } from "./helpers/swapAmountValidation";
+import {
+  getAmountFontSizeClass,
+  getAvailableBalanceFontSizePx,
+  buildFiatLineText,
+} from "./helpers/swapAmountDisplay";
+import { useSwapQuoteExpiry } from "./hooks/useSwapQuoteExpiry";
+import { useSwapDestinationScan } from "./hooks/useSwapDestinationScan";
 import { publicKeySelector } from "popup/ducks/accountServices";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { SlideupModal } from "popup/components/SlideupModal";
-import { AssetTile } from "popup/components/AssetTile";
+import { AmountCard } from "popup/components/amount/AmountCard";
+import { PercentageButtons } from "popup/components/amount/PercentageButtons";
+import { shouldShowXlmReservePreflight } from "popup/helpers/xlmReserve";
+import { horizonGetBestReceivePath } from "popup/helpers/horizonGetBestPath";
+import { XlmReserveSheet } from "popup/components/swap/XlmReserveSheet";
+import { useSwapLiveQuote } from "./hooks/useSwapLiveQuote";
+import { EditSlippage } from "./EditSlippage";
 
 import "./styles.scss";
 
-const defaultSlippage = "1";
-const DEFAULT_INPUT_WIDTH = 25;
+// "Why do I need XLM?" help article.
+const XLM_RESERVE_HELP_URL =
+  "https://help.freighter.app/article/xjlva9dxov-how-much-xlm-do-i-need-in-my-wallet";
 
 interface SwapAmountProps {
   inputType: InputType;
@@ -81,10 +96,12 @@ export const SwapAmount = ({
   const { t } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
   const { networkCongestion, recommendedFee } = useNetworkFees();
-  const runAfterUpdate = useRunAfterUpdate();
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const publicKey = useSelector(publicKeySelector);
-  const { transactionData } = useSelector(transactionSubmissionSelector);
+  const blockaidOverrideState = useBlockaidOverrideState();
+  const { transactionData, isSwapQuoteExpired } = useSelector(
+    transactionSubmissionSelector,
+  );
   const {
     allowedSlippage,
     amount,
@@ -99,8 +116,20 @@ export const SwapAmount = ({
     transactionFee,
     transactionTimeout,
   } = transactionData;
-  const fee = transactionFee || recommendedFee;
-  const srcAsset = getAssetFromCanonical(asset);
+  // A new-trustline swap is two ops; scale the recommended default fee by op
+  // count so each op pays the recommended fee (a custom fee is the total and
+  // is split per op at build time).
+  const swapOpCount = transactionData.destinationTokenDetails?.requiresTrustline
+    ? 2
+    : 1;
+  const fee = getSwapTotalFee({
+    recommendedFee,
+    customFee: transactionFee,
+    opCount: swapOpCount,
+  });
+  // The source can be in the "(+) Select" (empty) state — e.g. after a
+  // direction swap whose destination was unset or a non-held token.
+  const srcAsset = asset ? getAssetFromCanonical(asset) : null;
   const dstAsset = destinationAsset
     ? getAssetFromCanonical(destinationAsset)
     : null;
@@ -111,66 +140,78 @@ export const SwapAmount = ({
       includeIcons: true,
     },
     destination,
+    destinationAsset,
+    asset,
   );
-  const { state: simulationState, fetchData: fetchSimulationData } =
-    useSimulateTxData({
-      publicKey,
-      networkDetails,
-      simParams: {
-        sourceAsset: srcAsset,
-        destAsset: dstAsset!,
-        amount,
-        allowedSlippage,
-        path,
-        transactionFee: fee,
-        transactionTimeout,
-        memo,
-      },
-    });
-  const cryptoInputRef = useRef<HTMLInputElement>(null);
-  const usdInputRef = useRef<HTMLInputElement>(null);
-
-  const [inputWidthCrypto, setInputWidthCrypto] = useState(0);
-  const setCryptoSpan = (el: HTMLSpanElement | null) => {
-    if (el) {
-      const width = el.offsetWidth + 4;
-      setInputWidthCrypto(Math.max(DEFAULT_INPUT_WIDTH, width));
-    }
-  };
-
-  const [inputWidthFiat, setInputWidthFiat] = useState(0);
-  const setFiatSpan = (el: HTMLSpanElement | null) => {
-    if (el) {
-      const width = el.offsetWidth + 2;
-      setInputWidthFiat(Math.max(DEFAULT_INPUT_WIDTH, width));
-    }
-  };
+  const {
+    state: simulationState,
+    fetchData: fetchSimulationData,
+    isQuoteExpired,
+  } = useSimulateTxData({
+    publicKey,
+    networkDetails,
+    simParams: {
+      sourceAsset: srcAsset!,
+      destAsset: dstAsset!,
+      amount,
+      allowedSlippage,
+      path,
+      transactionFee: fee,
+      transactionTimeout,
+      memo,
+    },
+  });
 
   const [isEditingSlippage, setIsEditingSlippage] = useState(false);
   const [isEditingSettings, setIsEditingSettings] = useState(false);
   const [isReviewingTx, setIsReviewingTx] = React.useState(false);
+  const [isXlmReserveOpen, setIsXlmReserveOpen] = useState(false);
+  // Tracks focus on the sell input so the "Enter an amount" CTA can disable
+  // itself while the input is focused. The extension has no virtual keyboard,
+  // so once the input is focused the tap-to-focus affordance is redundant.
+  // Seed it from the auto-focus condition (both tokens picked → the sell input
+  // autoFocuses on mount) so the CTA renders disabled from the first frame
+  // instead of flashing enabled→disabled when arriving from the token picker.
+  const [isSellInputFocused, setIsSellInputFocused] = useState(
+    () => !!asset && !!destinationAsset,
+  );
 
   const handleContinue = async (values: { amount: string }) => {
-    const amount = inputType === "crypto" ? values.amount : priceValue!;
-    const cleanedAmount = cleanAmount(amount);
+    // Retrying after a quote-expiry submit failure: dismiss the stale notice
+    // before re-simulating against a fresh quote.
+    if (isSwapQuoteExpired) {
+      dispatch(clearSwapQuoteExpired());
+    }
+    const amountVal =
+      inputType === "crypto" ? values.amount : (priceValue ?? "0");
+    const cleanedAmount = cleanAmount(amountVal);
     dispatch(saveAmount(cleanedAmount));
     await fetchSimulationData({
       amount: cleanedAmount,
       destinationRate: dstAssetPrice,
     });
+    const needsReserve = shouldShowXlmReservePreflight({
+      requiresTrustline:
+        transactionData.destinationTokenDetails?.requiresTrustline ?? false,
+      sourceIsXlm: asset === "native",
+      spendableXlm: getAvailableBalance({
+        assetCanonical: "native",
+        balances: sendData.userBalances.balances,
+        recommendedFee: fee,
+      }),
+    });
+    if (needsReserve) {
+      emitMetric(METRIC_NAMES.swapXlmReserveShown);
+      setIsXlmReserveOpen(true);
+      return;
+    }
     setIsReviewingTx(true);
   };
 
   const validate = (values: { amount: string }) => {
-    const amount = inputType === "crypto" ? values.amount : priceValue!;
-    const val = cleanAmount(amount);
-    if (val.indexOf(".") !== -1 && val.split(".")[1].length > 7) {
-      return { amount: AMOUNT_ERROR.DEC_MAX };
-    }
-    if (new BigNumber(val).gt(new BigNumber(TX_SEND_MAX))) {
-      return { amount: AMOUNT_ERROR.SEND_MAX };
-    }
-    return {};
+    const amount = inputType === "crypto" ? values.amount : (priceValue ?? "0");
+    const error = validateSwapAmount(amount);
+    return error ? { amount: error } : {};
   };
 
   const formik = useFormik({
@@ -181,33 +222,13 @@ export const SwapAmount = ({
     validateOnChange: true,
   });
 
-  const getAmountFontSize = () => {
-    const length = formik.values.amount.length;
-    if (length <= 9) {
-      return "";
-    }
-    if (length <= 15) {
-      return "med";
-    }
-    return "small";
-  };
-
-  const parsedSourceAsset = getAssetFromCanonical(formik.values.asset);
+  // Gate the fullscreen spinner ONLY on the swap data, never on the network
+  // fee: feeStats() has no timeout and a slow Horizon can hang the whole
+  // screen for >15s. The fee seeds from the base fee / in-session cache and
+  // updates in place when feeStats resolves.
   const isLoading =
     swapAmountData.state === RequestState.IDLE ||
     swapAmountData.state === RequestState.LOADING;
-
-  useEffect(() => {
-    if (cryptoInputRef.current) {
-      cryptoInputRef.current.focus();
-      cryptoInputRef.current.select();
-    }
-
-    if (usdInputRef.current) {
-      usdInputRef.current.focus();
-      usdInputRef.current.select();
-    }
-  }, []);
 
   useEffect(() => {
     const getData = async () => {
@@ -216,6 +237,69 @@ export const SwapAmount = ({
     getData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Recover a destination token's Blockaid verdict when it was picked before
+  // the async picker scan landed, persisting it onto the stored destination
+  // details so the receive badge + review gate keep the assessment.
+  useSwapDestinationScan({
+    destinationTokenDetails: transactionData.destinationTokenDetails,
+    networkDetails,
+    blockaidOverrideState,
+    dispatch,
+  });
+
+  // If the user was in fiat mode and the current source asset no longer has a
+  // USD price (e.g. after a direction-swap or source picker change), force back
+  // to crypto mode so priceValue-dependent expressions are always safe.
+  useEffect(() => {
+    if (
+      inputType === "fiat" &&
+      swapAmountData.state === RequestState.SUCCESS &&
+      swapAmountData.data?.type === AppDataType.RESOLVED
+    ) {
+      const currentAssetPrice =
+        swapAmountData.data.tokenPrices?.[asset]?.currentPrice;
+      if (!currentAssetPrice) {
+        setInputType("crypto");
+      }
+    }
+  }, [
+    inputType,
+    swapAmountData.state,
+    swapAmountData.data,
+    asset,
+    setInputType,
+  ]);
+
+  // Surfaces the "quote has expired" toast + metric for both the in-screen
+  // (isQuoteExpired) and submit-recovery (isSwapQuoteExpired) triggers.
+  useSwapQuoteExpiry({
+    isQuoteExpired,
+    isSwapQuoteExpired,
+    asset,
+    destinationAsset,
+    amount,
+    destinationAmount,
+    allowedSlippage,
+  });
+
+  const sellInputRef = useRef<HTMLInputElement>(null);
+
+  // Live "You receive" quote as the user types (debounced path-only lookup).
+  // isLiveQuoteLoading lets the CTA tell "loading a quote" apart from "no path".
+  const { isLiveQuoteLoading } = useSwapLiveQuote({
+    amount,
+    amountUsd,
+    asset,
+    destinationAsset,
+    inputType,
+    isToken,
+    destinationAmount,
+    networkDetails,
+    isReviewingTx,
+    swapAmountData,
+    dispatch,
+  });
 
   if (isLoading) {
     return <Loading />;
@@ -256,63 +340,137 @@ export const SwapAmount = ({
     state: swapAmountData.state,
   });
 
-  const sendData = data;
-  const assetIcon = sendData.icons[asset];
-  const dstAssetIcon = sendData.icons[destinationAsset];
-  const dstAssetBalance = dstAsset
-    ? findAssetBalance(sendData.userBalances.balances, dstAsset)
-    : null;
-  const prices = sendData.tokenPrices;
-  const assetPrice = prices[asset] && prices[asset].currentPrice;
-  const xlmPrice = prices["native"]?.currentPrice;
-  const dstAssetPrice = prices[destinationAsset]?.currentPrice;
-  const assetDecimals = getAssetDecimals(asset, sendData.userBalances, isToken);
-  const priceValue = assetPrice
-    ? new BigNumber(cleanAmount(formik.values.amountUsd))
-        .dividedBy(new BigNumber(assetPrice))
-        .decimalPlaces(assetDecimals)
-        .toString()
-    : null;
-  const priceValueUsd = assetPrice
-    ? `${formatAmount(
-        roundUsdValue(
-          new BigNumber(assetPrice)
-            .multipliedBy(new BigNumber(cleanAmount(formik.values.amount)))
-            .toString(),
-        ),
-      )}`
-    : null;
-  const recommendedFeeUsd = xlmPrice
-    ? `$${formatAmount(
-        roundUsdValue(
-          new BigNumber(xlmPrice).multipliedBy(new BigNumber(fee)).toString(),
-        ),
-      )}`
-    : null;
-  const supportsUsd = isMainnet(data.networkDetails) && assetPrice;
-  const availableBalance = getAvailableBalance({
-    assetCanonical: asset,
-    balances: sendData.userBalances.balances,
-    recommendedFee: fee,
+  // All balance/price/fee/security/CTA derivation. Plain function (not a hook):
+  // it runs below the early returns, where a hook would violate rules-of-hooks.
+  const {
+    sendData,
+    assetIcon,
+    dstAssetIcon,
+    destinationIsNonHeld,
+    assetPrice,
+    dstAssetPrice,
+    assetDecimals,
+    priceValue,
+    priceValueUsd,
+    supportsUsd,
+    dstPriceValueUsd,
+    availableBalance,
+    displayTotal,
+    sourceIsNonXlmClassic,
+    sourceTokenSecurityLevel,
+    sourceTokenSecurityWarnings,
+    bestNonXlmClassicCanonical,
+    canSwapForReserve,
+    isAmountTooHigh,
+    cta,
+  } = getSwapDerivedData({
+    data,
+    asset,
+    destinationAsset,
+    isToken,
+    destinationAmount,
+    destinationTokenDetails: transactionData.destinationTokenDetails,
+    amount: formik.values.amount,
+    amountUsd: formik.values.amountUsd,
+    fee,
+    blockaidOverrideState,
+    networkDetails,
+    inputType,
+    isLiveQuoteLoading,
   });
-  const displayTotal = `${formatAmount(availableBalance)}`;
-  const dstDisplayTotal =
-    dstAssetBalance && dstAsset
-      ? `${formatAmount(dstAssetBalance.total.toString())}`
-      : "0";
-  const isAmountTooHigh =
-    (inputType === "crypto" &&
-      new BigNumber(cleanAmount(formik.values.amount)).gt(
-        new BigNumber(availableBalance),
-      )) ||
-    (inputType === "fiat" &&
-      new BigNumber(cleanAmount(priceValue!)).gt(
-        new BigNumber(availableBalance),
-      ));
 
-  const goToEditSrcAction = () => {
-    goToEditSrc();
+  const handleSwapForReserve = async () => {
+    const sellCanonical = sourceIsNonXlmClassic
+      ? asset
+      : bestNonXlmClassicCanonical;
+    if (!sellCanonical) {
+      return;
+    }
+    // The receive side becomes XLM — a held token, so no trustline is needed.
+    dispatch(saveDestinationAsset("native"));
+    dispatch(saveDestinationTokenDetails(null));
+
+    if (!sourceIsNonXlmClassic) {
+      // Switching the sell side to a different token: reset the amount, since
+      // any prior amount was denominated in the now-replaced source.
+      dispatch(saveAsset(sellCanonical));
+      dispatch(saveAmount("0"));
+      dispatch(saveAmountUsd("0.00"));
+      return;
+    }
+
+    // Source reused (no token change): pre-fill the amount needed to receive
+    // ~0.5 XLM, capped to what's spendable of the sell token so the user never
+    // lands on an insufficient-balance state.
+    try {
+      // Target a little MORE than the bare reserve so the 0.5 XLM trustline
+      // bump stays covered after the swap's slippage floor (destMin). Sizing to
+      // BASE_RESERVE / (1 - slippage) keeps even a worst-case fill at >= 0.5,
+      // erring slightly over rather than under. Still capped to spendable
+      // below, so it never exceeds the user's balance.
+      const slippageFraction = Math.min(
+        Math.max(parseFloat(allowedSlippage) || 0, 0) / 100,
+        0.5,
+      );
+      const reserveTarget = new BigNumber(BASE_RESERVE)
+        .dividedBy(1 - slippageFraction)
+        .toFixed(7);
+      const path = await horizonGetBestReceivePath({
+        destinationAmount: reserveTarget,
+        sourceAsset: sellCanonical,
+        destAsset: "native",
+        networkDetails,
+      });
+      if (path?.source_amount) {
+        const sellSpendable = getAvailableBalance({
+          assetCanonical: sellCanonical,
+          balances: sendData.userBalances.balances,
+          recommendedFee: fee,
+        });
+        const capped = BigNumber.minimum(
+          new BigNumber(path.source_amount),
+          new BigNumber(sellSpendable),
+        );
+        dispatch(saveAmount(capped.toFixed(7)));
+        // In fiat mode the whole pipeline reads amountUsd, so also recalculate
+        // the fiat figure from the sell token's price; if it has no price, drop
+        // to crypto mode so the prefilled amount is the one used.
+        if (assetPrice) {
+          dispatch(
+            saveAmountUsd(
+              formatAmount(
+                roundUsdValue(
+                  capped.multipliedBy(new BigNumber(assetPrice)).toString(),
+                ),
+              ),
+            ),
+          );
+        } else if (inputType === "fiat") {
+          setInputType("crypto");
+        }
+      }
+    } catch (e) {
+      // No path / network error — leave the amount as-is for manual entry.
+      captureException(
+        `Swap-for-reserve prefill failed - ${JSON.stringify(e)}`,
+      );
+    }
   };
+
+  const ctaLabels: Record<SwapCtaLabelKey, string> = {
+    select: t("Select a token"),
+    enter: t("Enter an amount"),
+    insufficientBalance: t("Insufficient balance"),
+    insufficientXlmFees: t("Not enough XLM for network fees"),
+    noQuote: t("No quote available"),
+    review: t("Review swap"),
+  };
+
+  const availableBalanceText = srcAsset
+    ? `${displayTotal} ${srcAsset.code} ${t("available")}`
+    : "";
+  const availableBalanceFontSizePx =
+    getAvailableBalanceFontSizePx(availableBalanceText);
 
   return (
     <>
@@ -329,9 +487,9 @@ export const SwapAmount = ({
                 <span className="SwapAsset__settings-fee-display__label">
                   {t("Fee")}:
                 </span>
-                <span>
-                  {inputType === "crypto" ? `${fee} XLM` : recommendedFeeUsd}
-                </span>
+                {/* The network fee is always denominated in XLM, regardless of
+                    whether the amount is being entered in crypto or fiat. */}
+                <span>{`${fee} XLM`}</span>
               </div>
               <div className="SwapAsset__settings-options">
                 <Button
@@ -356,26 +514,43 @@ export const SwapAmount = ({
             </div>
             <Button
               type="button"
-              size="md"
+              size="lg"
               data-testid="swap-amount-btn-continue"
               isFullWidth
               isRounded
               variant="secondary"
               isLoading={simulationState.state === RequestState.LOADING}
               disabled={
-                !destinationAsset ||
-                (inputType === "crypto" &&
-                  new BigNumber(formik.values.amount).isZero()) ||
-                (inputType === "fiat" &&
-                  new BigNumber(formik.values.amountUsd).isZero()) ||
-                isAmountTooHigh
+                cta.disabled || (cta.labelKey === "enter" && isSellInputFocused)
               }
               onClick={(e) => {
                 e.preventDefault();
+                // In the "select" state the button is a shortcut to the picker
+                // for the missing side — preferring the sell token when both
+                // are missing — rather than a submit.
+                if (cta.labelKey === "select") {
+                  const side = !asset ? "source" : "destination";
+                  emitMetric(METRIC_NAMES.swapPickerOpened, {
+                    side,
+                    source: "cta",
+                  });
+                  if (!asset) {
+                    goToEditSrc();
+                  } else {
+                    goToEditDst();
+                  }
+                  return;
+                }
+                // Both tokens picked but no amount yet: focus the sell input so
+                // the user knows to type an amount.
+                if (cta.labelKey === "enter") {
+                  sellInputRef.current?.focus();
+                  return;
+                }
                 formik.submitForm();
               }}
             >
-              {destinationAsset ? t("Review swap") : t("Select an asset")}
+              {ctaLabels[cta.labelKey]}
             </Button>
           </div>
         }
@@ -384,215 +559,214 @@ export const SwapAmount = ({
           <div className="SwapAsset__content">
             <form>
               <div className="SwapAsset__simplebar__content">
-                <div className="SwapAsset__amount-row">
-                  <div className="SwapAsset__amount-input-container">
-                    {inputType === "crypto" && (
-                      <>
-                        <span
-                          ref={setCryptoSpan}
-                          className={`SwapAsset__input-amount SwapAsset__${getAmountFontSize()}`}
-                          style={{
-                            position: "absolute",
-                            visibility: "hidden",
-                            whiteSpace: "pre",
-                          }}
-                        >
-                          {formik.values.amount || "0"}
-                        </span>
-                        <input
-                          ref={cryptoInputRef}
-                          className={`SwapAsset__input-amount SwapAsset__${getAmountFontSize()}`}
-                          style={{
-                            width: `${inputWidthCrypto || DEFAULT_INPUT_WIDTH}px`,
-                          }}
-                          data-testid="send-amount-amount-input"
-                          name="amount"
-                          type="text"
-                          placeholder="0"
-                          value={formik.values.amount}
-                          onChange={(e) => {
-                            const input = e.target;
-                            const { amount: newAmount, newCursor } =
-                              formatAmountPreserveCursor(
-                                e.target.value,
-                                formik.values.amount,
-                                getAssetDecimals(
-                                  asset,
-                                  sendData.userBalances,
-                                  isToken,
-                                ),
-                                e.target.selectionStart || 1,
-                              );
-                            formik.setFieldValue("amount", newAmount);
-                            dispatch(saveAmount(newAmount));
-                            runAfterUpdate(() => {
-                              input.selectionStart = newCursor;
-                              input.selectionEnd = newCursor;
-                            });
-                          }}
-                          autoFocus
-                          autoComplete="off"
-                        />
-                        <div
-                          className={`SwapAsset__amount-label SwapAsset__${getAmountFontSize()}`}
-                        >
-                          {parsedSourceAsset.code}
-                        </div>
-                      </>
+                <div className="SwapAsset__cards" data-testid="swap-sell-card">
+                  <AmountCard
+                    label={t("You sell")}
+                    availableBalanceText={availableBalanceText}
+                    availableBalanceFontSizePx={availableBalanceFontSizePx}
+                    inputType={inputType}
+                    // Show the gray "0" placeholder (empty input) until an
+                    // amount is entered; redux keeps the canonical "0".
+                    amount={
+                      formik.values.amount === "0" ? "" : formik.values.amount
+                    }
+                    amountUsd={
+                      formik.values.amountUsd === "0.00"
+                        ? ""
+                        : formik.values.amountUsd
+                    }
+                    amountFontSizeClass={getAmountFontSizeClass(
+                      inputType === "fiat"
+                        ? formik.values.amountUsd
+                        : formik.values.amount,
                     )}
-                    {inputType === "fiat" && (
-                      <>
-                        <div
-                          className={`SwapAsset__amount-label-usd SwapAsset__${getAmountFontSize()}`}
-                        >
-                          $
-                        </div>
-                        <span
-                          ref={setFiatSpan}
-                          className={`SwapAsset__input-amount SwapAsset__${getAmountFontSize()}`}
-                          style={{
-                            position: "absolute",
-                            visibility: "hidden",
-                            whiteSpace: "pre",
-                          }}
-                        >
-                          {formik.values.amountUsd || "0"}
-                        </span>
-                        <input
-                          ref={usdInputRef}
-                          className={`SwapAsset__input-amount SwapAsset__${getAmountFontSize()}`}
-                          style={{
-                            width: `${inputWidthFiat || DEFAULT_INPUT_WIDTH}px`,
-                          }}
-                          data-testid="send-amount-amount-input"
-                          name="amountUsd"
-                          type="text"
-                          value={formik.values.amountUsd}
-                          onChange={(e) => {
-                            const input = e.target;
-                            const { amount: newAmount, newCursor } =
-                              formatAmountPreserveCursor(
-                                e.target.value,
-                                formik.values.amountUsd,
-                                2,
-                                e.target.selectionStart || 1,
-                              );
-                            formik.setFieldValue("amountUsd", newAmount);
-                            dispatch(saveAmountUsd(newAmount));
-                            runAfterUpdate(() => {
-                              input.selectionStart = newCursor;
-                              input.selectionEnd = newCursor;
-                            });
-                          }}
-                          autoFocus
-                          autoComplete="off"
-                        />
-                      </>
-                    )}
-                  </div>
+                    // Don't grab focus until the swap is ready to receive an
+                    // amount (both tokens picked); on entry the source defaults
+                    // to XLM but the receive side is empty, so the card stays
+                    // unfocused with a gray "0" placeholder.
+                    autoFocus={!!asset && !!destinationAsset}
+                    amountInputRef={sellInputRef}
+                    onInputFocus={() => setIsSellInputFocused(true)}
+                    onInputBlur={() => setIsSellInputFocused(false)}
+                    assetCode={srcAsset ? srcAsset.code : ""}
+                    assetIcon={assetIcon}
+                    assetIcons={
+                      asset && asset !== "native" ? { [asset]: assetIcon } : {}
+                    }
+                    assetIssuerKey={srcAsset?.issuer}
+                    // Carry the sell token's Blockaid verdict onto its pill so a
+                    // flagged source keeps its warning badge after selection,
+                    // matching the picker list.
+                    securityLevel={sourceTokenSecurityLevel}
+                    supportsUsd={Boolean(supportsUsd)}
+                    hasUsdPrice={Boolean(assetPrice)}
+                    fiatLineText={buildFiatLineText({
+                      hasAsset: !!asset,
+                      inputType,
+                      price: assetPrice,
+                      priceUsd: priceValueUsd,
+                      cryptoAmount: priceValue,
+                      code: srcAsset ? srcAsset.code : "",
+                    })}
+                    isAmountTooHigh={isAmountTooHigh}
+                    maxSpendableText={displayTotal}
+                    cryptoDecimals={assetDecimals}
+                    onAmountChange={({ amount: newAmount }) => {
+                      // Normalize a cleared input back to the canonical "0".
+                      const v = newAmount === "" ? "0" : newAmount;
+                      formik.setFieldValue("amount", v);
+                      dispatch(saveAmount(v));
+                    }}
+                    onAmountUsdChange={({ amount: newAmount }) => {
+                      const v = newAmount === "" ? "0.00" : newAmount;
+                      formik.setFieldValue("amountUsd", v);
+                      dispatch(saveAmountUsd(v));
+                    }}
+                    onToggleInputType={() => {
+                      const newInputType =
+                        inputType === "crypto" ? "fiat" : "crypto";
+                      if (newInputType === "crypto") {
+                        dispatch(saveAmount(priceValue));
+                        formik.setFieldValue("amount", priceValue);
+                      }
+                      if (newInputType === "fiat") {
+                        dispatch(saveAmountUsd(priceValueUsd));
+                        formik.setFieldValue("amountUsd", priceValueUsd);
+                      }
+                      setInputType(newInputType);
+                    }}
+                    onSelectAsset={() => {
+                      emitMetric(METRIC_NAMES.swapPickerOpened, {
+                        side: "source",
+                        source: "dropdown",
+                      });
+                      goToEditSrc();
+                    }}
+                  />
                 </div>
-                {supportsUsd && (
-                  <div className="SwapAsset__amount-price">
-                    {inputType === "crypto"
-                      ? `$${priceValueUsd}`
-                      : `${priceValue} ${parsedSourceAsset.code}`}
-                    <Button
-                      size="md"
-                      type="button"
-                      isRounded
-                      variant="tertiary"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        const newInputType =
-                          inputType === "crypto" ? "fiat" : "crypto";
-                        if (newInputType === "crypto") {
-                          dispatch(saveAmount(priceValue));
-                          formik.setFieldValue("amount", priceValue);
-                        }
-                        if (newInputType === "fiat") {
-                          dispatch(saveAmountUsd(priceValueUsd));
-                          formik.setFieldValue("amountUsd", priceValueUsd);
-                        }
-                        setInputType(newInputType);
-                      }}
-                    >
-                      <Icon.RefreshCw03 />
-                    </Button>
-                  </div>
-                )}
-                <div className="SwapAsset__invalid-state">
-                  {isAmountTooHigh && (
-                    <>
-                      <Icon.AlertCircle />
-                      <span>
-                        {t("You don’t have enough {{asset}} in your account", {
-                          asset: parsedSourceAsset.code,
-                        })}
-                      </span>
-                    </>
-                  )}
-                </div>
-                <div className="SwapAsset__btn-set-max">
-                  <Button
-                    size="md"
+                <div
+                  className="SwapAsset__direction"
+                  data-testid="swap-direction-chevron"
+                >
+                  <button
                     type="button"
-                    variant="tertiary"
-                    isRounded
+                    className="SwapAsset__direction-btn"
+                    aria-label={t("Swap direction")}
                     onClick={(e) => {
                       e.preventDefault();
+                      emitMetric(METRIC_NAMES.swapDirectionToggled);
+                      const prevSrc = asset;
+                      // A non-held destination can't become the source, so reset
+                      // it to "(+) Select" instead of moving it into the sell
+                      // slot; otherwise swap the two positions normally.
+                      dispatch(
+                        saveAsset(destinationIsNonHeld ? "" : destinationAsset),
+                      );
+                      dispatch(saveDestinationAsset(prevSrc));
+                      // The new destination (old source) and new source are both
+                      // held/classic or empty — neither carries trustline/contract
+                      // metadata.
+                      dispatch(saveDestinationTokenDetails(null));
+                      dispatch(saveIsToken(false));
+                      // The amount was denominated in the old source token; reset
+                      // it whenever the source token changes.
+                      dispatch(saveAmount("0"));
+                      dispatch(saveAmountUsd("0.00"));
+                    }}
+                  >
+                    <Icon.ChevronDown />
+                  </button>
+                </div>
+                <div
+                  className="SwapAsset__cards"
+                  data-testid="swap-receive-card"
+                >
+                  <AmountCard
+                    label={t("You receive")}
+                    availableBalanceText=""
+                    availableBalanceFontSizePx={availableBalanceFontSizePx}
+                    inputType={inputType}
+                    amount={destinationAmount}
+                    amountUsd={dstPriceValueUsd || "0.00"}
+                    amountFontSizeClass={getAmountFontSizeClass(
+                      inputType === "fiat"
+                        ? dstPriceValueUsd || "0.00"
+                        : destinationAmount,
+                    )}
+                    assetCode={dstAsset ? dstAsset.code : ""}
+                    assetIcon={dstAssetIcon}
+                    assetIcons={
+                      destinationAsset && destinationAsset !== "native"
+                        ? { [destinationAsset]: dstAssetIcon }
+                        : {}
+                    }
+                    assetIssuerKey={dstAsset?.issuer}
+                    // Carry the destination token's pick-time Blockaid verdict
+                    // onto its pill so a flagged token keeps its warning badge
+                    // after selection, matching the picker list.
+                    securityLevel={
+                      transactionData.destinationTokenDetails?.securityLevel
+                    }
+                    supportsUsd={Boolean(supportsUsd)}
+                    hasUsdPrice={Boolean(dstAssetPrice)}
+                    fiatLineText={buildFiatLineText({
+                      hasAsset: !!destinationAsset,
+                      inputType,
+                      price: dstAssetPrice,
+                      priceUsd: dstPriceValueUsd,
+                      cryptoAmount: destinationAmount,
+                      code: dstAsset ? dstAsset.code : "",
+                    })}
+                    isAmountTooHigh={false}
+                    isReadOnly
+                    autoFocus={false}
+                    cryptoDecimals={7}
+                    onAmountChange={() => {}}
+                    onAmountUsdChange={() => {}}
+                    onToggleInputType={() => {}}
+                    onSelectAsset={() => {
+                      emitMetric(METRIC_NAMES.swapPickerOpened, {
+                        side: "destination",
+                        source: "dropdown",
+                      });
+                      goToEditDst();
+                    }}
+                  />
+                </div>
+                <div
+                  className="SwapAsset__percentage-buttons"
+                  data-testid="swap-percentage-buttons"
+                >
+                  <PercentageButtons
+                    onSelect={(pct: number) => {
                       emitMetric(METRIC_NAMES.swapAmount);
-                      if (inputType === "fiat") {
-                        const availableUsd = formatAmount(
+                      const fraction = new BigNumber(pct).dividedBy(100);
+                      if (inputType === "fiat" && assetPrice) {
+                        const pctUsd = formatAmount(
                           roundUsdValue(
-                            new BigNumber(assetPrice!)
+                            new BigNumber(assetPrice)
                               .multipliedBy(
                                 new BigNumber(cleanAmount(availableBalance)),
                               )
+                              .multipliedBy(fraction)
                               .toString(),
                           ),
                         );
-                        formik.setFieldValue("amountUsd", availableUsd);
-                        dispatch(saveAmountUsd(availableUsd));
+                        formik.setFieldValue("amountUsd", pctUsd);
+                        dispatch(saveAmountUsd(pctUsd));
                       } else {
-                        formik.setFieldValue("amount", availableBalance);
-                        dispatch(saveAmount(availableBalance));
+                        const pctAmount = new BigNumber(
+                          cleanAmount(availableBalance),
+                        )
+                          .multipliedBy(fraction)
+                          .decimalPlaces(assetDecimals)
+                          .toString();
+                        formik.setFieldValue("amount", pctAmount);
+                        dispatch(saveAmount(pctAmount));
                       }
                     }}
-                    data-testid="SwapAssetSetMax"
-                  >
-                    {t("Set Max")}
-                  </Button>
+                  />
                 </div>
-                <AssetTile
-                  isSuspicious={false}
-                  asset={{
-                    code: srcAsset.code,
-                    canonical: asset,
-                    issuer: srcAsset.issuer,
-                  }}
-                  assetIcon={assetIcon}
-                  balance={displayTotal}
-                  onClick={goToEditSrcAction}
-                  emptyLabel={t("Send")}
-                  testId="swap-src-asset-tile"
-                />
-                <AssetTile
-                  isSuspicious={false}
-                  asset={
-                    dstAsset
-                      ? {
-                          code: dstAsset.code,
-                          canonical: destinationAsset,
-                          issuer: dstAsset.issuer,
-                        }
-                      : null
-                  }
-                  assetIcon={dstAssetIcon}
-                  balance={dstDisplayTotal}
-                  onClick={goToEditDst}
-                  emptyLabel={t("Receive")}
-                  testId="swap-dst-asset-tile"
-                />
               </div>
             </form>
           </div>
@@ -648,6 +822,9 @@ export const SwapAmount = ({
             fee={fee}
             networkDetails={networkDetails}
             onCancel={() => setIsReviewingTx(false)}
+            // The trustline-added + swap-success metrics fire post-confirmation
+            // (in useSubmitTxData), once the swap actually settles — not here at
+            // review time.
             onConfirm={goToNext}
             sendAmount={amount}
             sendPriceUsd={priceValueUsd}
@@ -660,126 +837,31 @@ export const SwapAmount = ({
               amount: destinationAmount,
             }}
             title={t("You are swapping")}
+            destinationTokenDetails={transactionData.destinationTokenDetails}
+            sourceTokenSecurityLevel={sourceTokenSecurityLevel}
+            sourceTokenSecurityWarnings={sourceTokenSecurityWarnings}
+          />
+        ) : (
+          <></>
+        )}
+      </SlideupModal>
+      <SlideupModal
+        setIsModalOpen={() => setIsXlmReserveOpen(false)}
+        isModalOpen={isXlmReserveOpen}
+      >
+        {isXlmReserveOpen ? (
+          <XlmReserveSheet
+            onClose={() => setIsXlmReserveOpen(false)}
+            publicKey={publicKey}
+            canSwapForReserve={canSwapForReserve}
+            helpUrl={XLM_RESERVE_HELP_URL}
+            tokenCode={dstAsset ? dstAsset.code : ""}
+            onSwapForReserve={handleSwapForReserve}
           />
         ) : (
           <></>
         )}
       </SlideupModal>
     </>
-  );
-};
-
-interface EditSlippageProps {
-  onClose: () => void;
-}
-
-const EditSlippage = ({ onClose }: EditSlippageProps) => {
-  const { t } = useTranslation();
-  const dispatch = useDispatch();
-  const { allowedSlippage } = useSelector(transactionDataSelector);
-
-  let presetSlippage = "";
-  let customSlippage = "";
-  if (["1", "2", "3"].includes(allowedSlippage)) {
-    presetSlippage = allowedSlippage;
-  } else {
-    customSlippage = allowedSlippage;
-  }
-
-  return (
-    <Formik
-      initialValues={{ presetSlippage, customSlippage }}
-      onSubmit={(values) => {
-        dispatch(
-          saveAllowedSlippage(values.customSlippage || values.presetSlippage),
-        );
-        onClose();
-      }}
-      validationSchema={YupObject().shape({
-        customSlippage: YupNumber()
-          .min(0, `${t("must be at least")} 0%`)
-          .max(10, `${t("must be below")} 10%`),
-      })}
-    >
-      {({ setFieldValue, values, errors }) => (
-        <Form
-          className="View__contentAndFooterWrapper"
-          data-testid="slippage-form"
-        >
-          <View.Content hasNoTopPadding>
-            <div className="Slippage">
-              <Card>
-                <p>{t("Allowed Slippage")}</p>
-                <div className="Slippage__cards">
-                  {["1", "2", "3"].map((value) => (
-                    <label key={value} className="Slippage--radio-label">
-                      <Field
-                        className="Slippage--radio-field"
-                        name="presetSlippage"
-                        type="radio"
-                        value={value}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                          setFieldValue("presetSlippage", e.target.value);
-                          setFieldValue("customSlippage", "");
-                          dispatch(saveAllowedSlippage(e.target.value));
-                          onClose();
-                        }}
-                      />
-                      <Card>{value}%</Card>
-                    </label>
-                  ))}
-                </div>
-                <div className="Slippage__custom-input">
-                  <Field name="customSlippage">
-                    {({ field }: FieldProps) => (
-                      <Input
-                        data-testid="custom-slippage-input"
-                        fieldSize="md"
-                        id="custom-input"
-                        min={0}
-                        max={10}
-                        placeholder={`${t("Custom")} %`}
-                        type="number"
-                        {...field}
-                        onChange={(e) => {
-                          setFieldValue("customSlippage", e.target.value);
-                          setFieldValue("presetSlippage", "");
-                        }}
-                        error={errors.customSlippage}
-                      />
-                    )}
-                  </Field>
-                </div>
-                <div className="Slippage__Footer">
-                  <Button
-                    size="md"
-                    isFullWidth
-                    isRounded
-                    variant="tertiary"
-                    type="button"
-                    onClick={() => {
-                      setFieldValue("presetSlippage", defaultSlippage);
-                      setFieldValue("customSlippage", "");
-                    }}
-                  >
-                    {t("Set default")}
-                  </Button>
-                  <Button
-                    size="md"
-                    isFullWidth
-                    isRounded
-                    disabled={!values.presetSlippage && !values.customSlippage}
-                    variant="secondary"
-                    type="submit"
-                  >
-                    {t("Done")}
-                  </Button>
-                </div>
-              </Card>
-            </div>
-          </View.Content>
-        </Form>
-      )}
-    </Formik>
   );
 };

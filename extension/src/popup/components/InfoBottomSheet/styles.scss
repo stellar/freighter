@@ -1,0 +1,94 @@
+@use "../../styles/utils.scss" as *;
+
+.InfoSheet {
+  display: flex;
+  flex-direction: column;
+  gap: pxToRem(24px);
+  padding: pxToRem(24px);
+
+  // Rendered in-flow inside a host that already provides the gutter (e.g. the
+  // review sheet's View inset), so drop the self-padding to avoid doubling it.
+  &--inline {
+    padding: 0;
+  }
+
+  &__top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  &__badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: pxToRem(32px);
+    height: pxToRem(32px);
+    border-radius: pxToRem(8px);
+    border: 1px solid transparent;
+
+    svg {
+      width: pxToRem(20px);
+      height: pxToRem(20px);
+    }
+
+    &--brand {
+      background-color: var(--sds-clr-lilac-03);
+      border-color: var(--sds-clr-lilac-06);
+      color: var(--sds-clr-lilac-11);
+    }
+
+    &--neutral {
+      background-color: var(--sds-clr-gray-03);
+      border-color: var(--sds-clr-gray-06);
+      color: var(--sds-clr-gray-11);
+    }
+  }
+
+  &__close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: pxToRem(32px);
+    height: pxToRem(32px);
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background-color: var(--sds-clr-gray-03);
+    color: var(--sds-clr-gray-11);
+    cursor: pointer;
+
+    svg {
+      width: pxToRem(20px);
+      height: pxToRem(20px);
+    }
+  }
+
+  &__text {
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(8px);
+  }
+
+  &__title {
+    margin: 0;
+    color: var(--sds-clr-gray-12);
+    font-size: pxToRem(18px);
+    font-weight: var(--sds-fw-medium);
+    line-height: pxToRem(26px);
+  }
+
+  &__body {
+    color: var(--sds-clr-gray-11);
+    font-size: pxToRem(14px);
+    font-weight: var(--sds-fw-regular);
+    line-height: pxToRem(20px);
+  }
+
+  // Inline emphasis within body copy (e.g. the trustline reserve amount):
+  // brighter and slightly heavier (500) than the regular body text.
+  &__emphasis {
+    color: var(--sds-clr-gray-12);
+    font-weight: var(--sds-fw-medium);
+  }
+}
