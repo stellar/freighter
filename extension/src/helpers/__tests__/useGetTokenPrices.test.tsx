@@ -398,9 +398,11 @@ describe("useGetTokenPrices", () => {
     const preloadedState = {
       cache: {
         tokenPrices: {
-          G123: {
-            native: { currentPrice: "1", percentagePriceChange24h: ".5" },
-            updatedAt: Date.now(),
+          [MAINNET_NETWORK_DETAILS.networkPassphrase]: {
+            G123: {
+              native: { currentPrice: "1", percentagePriceChange24h: ".5" },
+              updatedAt: Date.now(),
+            },
           },
         },
       },
@@ -430,10 +432,15 @@ describe("useGetTokenPrices", () => {
         ],
         useCache: true,
         additionalAssetIds: ["USDC:GUSD"],
+        networkDetails: MAINNET_NETWORK_DETAILS,
       } as any);
     });
     // Balance prices came from cache; only the missing destination was fetched.
-    expect(getTokenPricesSpy).toHaveBeenCalledWith(["USDC:GUSD"]);
+    expect(getTokenPricesSpy).toHaveBeenCalledWith(
+      ["USDC:GUSD"],
+      MAINNET_NETWORK_DETAILS,
+      true,
+    );
     expect(result.current.state.data?.tokenPrices).toEqual({
       native: { currentPrice: "1", percentagePriceChange24h: ".5" },
       "USDC:GUSD": { currentPrice: "1", percentagePriceChange24h: "0" },
@@ -475,11 +482,22 @@ describe("useGetTokenPrices", () => {
         ],
         useCache: true,
         additionalAssetIds: ["USDC:GUSD"],
+        networkDetails: MAINNET_NETWORK_DETAILS,
       } as any);
     });
     // The destination fetch failing must NOT wipe the balance prices.
-    expect(getTokenPricesSpy).toHaveBeenNthCalledWith(1, ["native"]);
-    expect(getTokenPricesSpy).toHaveBeenNthCalledWith(2, ["USDC:GUSD"]);
+    expect(getTokenPricesSpy).toHaveBeenNthCalledWith(
+      1,
+      ["native"],
+      MAINNET_NETWORK_DETAILS,
+      true,
+    );
+    expect(getTokenPricesSpy).toHaveBeenNthCalledWith(
+      2,
+      ["USDC:GUSD"],
+      MAINNET_NETWORK_DETAILS,
+      true,
+    );
     expect(result.current.state.data?.tokenPrices).toEqual({
       native: { currentPrice: "1", percentagePriceChange24h: ".5" },
     });
@@ -495,10 +513,12 @@ describe("useGetTokenPrices", () => {
     const preloadedState = {
       cache: {
         tokenPrices: {
-          G123: {
-            native: { currentPrice: "1", percentagePriceChange24h: ".5" },
-            "USDC:GUSD": { currentPrice: "1", percentagePriceChange24h: "0" },
-            updatedAt: Date.now(),
+          [MAINNET_NETWORK_DETAILS.networkPassphrase]: {
+            G123: {
+              native: { currentPrice: "1", percentagePriceChange24h: ".5" },
+              "USDC:GUSD": { currentPrice: "1", percentagePriceChange24h: "0" },
+              updatedAt: Date.now(),
+            },
           },
         },
       },
@@ -528,6 +548,7 @@ describe("useGetTokenPrices", () => {
         ],
         useCache: true,
         additionalAssetIds: ["USDC:GUSD"],
+        networkDetails: MAINNET_NETWORK_DETAILS,
       } as any);
     });
     expect(getTokenPricesSpy).not.toHaveBeenCalled();
