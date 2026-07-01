@@ -75,7 +75,7 @@ jobs:
           exit 1
 
       - name: Checkout code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v6
         with:
           # Default leaves a GITHUB_TOKEN auth header in .git/config for the
           # rest of the job. With contents:write granted, any subsequent
