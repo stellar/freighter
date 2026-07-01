@@ -78,6 +78,8 @@ export const TokenList = ({
                   ? balance.token.issuer.key
                   : undefined;
               const isContract = "contractId" in balance;
+              const isNative =
+                "type" in balance.token && balance.token.type === "native";
               const canonical = getCanonicalFromAsset(code, issuerKey);
               const icon = icons[canonical];
               const availableBalance = getAvailableBalance({
@@ -107,13 +109,13 @@ export const TokenList = ({
                     />
                     <div className="TokenList__AssetRow__Title">
                       <div className="TokenList__AssetRow__Title__Heading">
-                        {title(balance)}
+                        {isNative ? t("Stellar Lumens") : title(balance)}
                       </div>
                       <div
                         className="TokenList__AssetRow__Title__Total"
                         data-testid={`${code}-balance`}
                       >
-                        {displayTotal}
+                        {displayTotal} {code}
                       </div>
                     </div>
                   </div>
