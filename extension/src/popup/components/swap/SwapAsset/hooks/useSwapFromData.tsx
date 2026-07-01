@@ -70,6 +70,7 @@ export function useGetSwapFromData(getBalancesOptions: {
       const fetchedTokenPrices = await fetchTokenPrices({
         publicKey,
         balances: balances.balances,
+        networkDetails,
         useCache: true,
       });
 

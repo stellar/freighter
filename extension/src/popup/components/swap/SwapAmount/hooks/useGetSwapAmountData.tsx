@@ -91,6 +91,7 @@ function useGetSwapAmountData(
           // fetched nothing, which left the source price "--" on a stale-cache
           // miss after a quote expiry, § batch3 task 5).
           balances: userDomains.balances.balances,
+          networkDetails: userDomains.networkDetails,
           useCache: true,
           // Price the selected source + destination tokens explicitly, even
           // when the account doesn't hold them — mirrors mobile's extraTokenIds.

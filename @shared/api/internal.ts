@@ -76,6 +76,7 @@ import {
   DEFAULT_NETWORKS,
   NetworkDetails,
   NETWORKS,
+  PASSPHRASE_TO_PRICE_NETWORK,
 } from "../constants/stellar";
 import { SERVICE_TYPES } from "../constants/services";
 import { isDev } from "../helpers/dev";
@@ -599,13 +600,42 @@ export const getAccountIndexerBalances = async ({
   };
 };
 
-export const getTokenPrices = async (tokens: string[]) => {
+export const getTokenPrices = async (
+  tokens: string[],
+  networkDetails: NetworkDetails,
+  // Defaults to the v2 endpoint. Callers pass the `use_token_prices_v2` feature
+  // flag so Amplitude can roll back to the v1 endpoint without a release.
+  useV2 = true,
+): Promise<ApiTokenPrices> => {
   // NOTE: API does not accept LP IDs or custom tokens
   const filteredTokens = tokens.filter((tokenId) => {
     const asset = getAssetFromCanonical(tokenId);
     return !tokenId.includes(":lp") && !isContractId(asset.issuer);
   });
-  const url = new URL(`${INDEXER_URL}/token-prices`);
+
+  let url: URL;
+  if (useV2) {
+    // The v2 token-prices endpoint only supports pubnet and testnet. Derive the
+    // price network from the passphrase rather than networkDetails.network so
+    // that custom networks sharing the pubnet/testnet passphrase (stored as
+    // STANDALONE) still resolve to the correct supported network. Anything else
+    // (Futurenet, custom passphrases) is skipped to avoid a guaranteed error and
+    // Sentry noise.
+    const priceNetwork =
+      PASSPHRASE_TO_PRICE_NETWORK[networkDetails.networkPassphrase];
+    if (!priceNetwork) {
+      return {};
+    }
+    // Nothing priceable left after filtering, so skip the request rather than
+    // POST an empty tokens array and risk a 4xx that surfaces as an error.
+    if (!filteredTokens.length) {
+      return {};
+    }
+    url = new URL(`${INDEXER_V2_URL}/token-prices`);
+    url.searchParams.append("network", priceNetwork);
+  } else {
+    url = new URL(`${INDEXER_URL}/token-prices`);
+  }
   const options = {
     method: "POST",
     headers: {

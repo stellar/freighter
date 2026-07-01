@@ -78,6 +78,7 @@ function useGetWalletsData() {
           const prices = await fetchTokenPrices({
             publicKey: account.publicKey,
             balances: balances.balances,
+            networkDetails,
             useCache: true,
           });
           const totalPriceUsd = getTotalUsd(
