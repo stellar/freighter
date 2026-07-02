@@ -20,7 +20,6 @@ type Params = {
 type Response = {
   isConfirming: boolean;
   isPasswordRequired: boolean;
-  isTokenAdded: boolean;
   submitError: string;
   clearSubmitError: () => void;
   setIsPasswordRequired: (value: boolean) => void;
@@ -37,7 +36,6 @@ export const useSetupAddTokenFlow = ({
 }: Params): Response => {
   const [isConfirming, setIsConfirming] = useState(false);
   const [isPasswordRequired, setIsPasswordRequired] = useState(false);
-  const [isTokenAdded, setIsTokenAdded] = useState(false);
   const [submitError, setSubmitError] = useState("");
 
   const dispatch: AppDispatch = useDispatch();
@@ -73,8 +71,11 @@ export const useSetupAddTokenFlow = ({
     );
   };
 
+  // Resolves the dApp request and reports success/failure — does NOT close the
+  // popup itself. The SAC review flow needs the popup to stay open (it shows
+  // its own Success/Done screen); the plain SEP-41 approve flow below closes
+  // right after this resolves, since it has no further screen to show.
   const addTokenAndClose = async () => {
-    setIsTokenAdded(false);
     setSubmitError("");
     try {
       const addTokenResp = await dispatch(addTokenFn({ uuid }));
@@ -87,7 +88,6 @@ export const useSetupAddTokenFlow = ({
       }
 
       await emitMetric(METRIC_NAMES.tokenAddedApi);
-      setIsTokenAdded(true);
     } catch (e) {
       console.error(e);
       await emitMetric(METRIC_NAMES.tokenFailedApi);
@@ -98,11 +98,16 @@ export const useSetupAddTokenFlow = ({
     return true;
   };
 
+  // SEP-41 is a one-step flow: approve submits and closes immediately on
+  // success (matching the pre-SAC-review behavior), with no separate Done
+  // click. On failure the popup stays open so the user can retry or cancel.
   const handleApprove = async () => {
     setIsConfirming(true);
 
     if (hasPrivateKey) {
-      await addTokenAndClose();
+      if (await addTokenAndClose()) {
+        window.close();
+      }
     } else {
       setIsPasswordRequired(true);
     }
@@ -114,14 +119,15 @@ export const useSetupAddTokenFlow = ({
     const confirmPasswordResp = await dispatch(confirmPassword(password));
 
     if (confirmPassword.fulfilled.match(confirmPasswordResp)) {
-      await addTokenAndClose();
+      if (await addTokenAndClose()) {
+        window.close();
+      }
     }
   };
 
   return {
     isConfirming,
     isPasswordRequired,
-    isTokenAdded,
     submitError,
     clearSubmitError: () => setSubmitError(""),
     setIsPasswordRequired,

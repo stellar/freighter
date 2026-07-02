@@ -849,7 +849,14 @@ test("should add an unverified SEP-41 token when allowed", async ({
     page: popup,
     screenshot: "add-token.png",
   });
+  // Register the close listener BEFORE clicking: window.close() can fire
+  // fast enough that waiting for the event after the click races it.
+  const popupClosed = popup.waitForEvent("close", { timeout: 15000 });
   await popup.getByTestId("add-token-approve").click();
+
+  // SEP-41 is a one-step flow: a single Confirm click resolves the dApp
+  // request AND closes the popup — no separate success screen / Done click.
+  await popupClosed;
 
   await expect(pageTwo.locator("#result-addToken")).toContainText(
     "Token added:",
@@ -995,6 +1002,172 @@ test("should add an unverified SAC token through the Change Trust review when al
   await expect(popup.getByText("Add Trustline")).toBeVisible();
 });
 
+// Regression test for PR #2869 comment 4859103563: a successful SAC trustline
+// could still resolve the dApp's addToken() request as "user rejected" if the
+// user clicked Done before the background ADD_TOKEN round-trip finished —
+// window.close() raced response(true) and rejectOnWindowClose won, reporting
+// a rejection for a trustline that had actually succeeded on-chain. The fix
+// makes Done await the in-flight add before closing. This test forces the
+// race by artificially delaying the ADD_TOKEN message round-trip and clicking
+// Done the instant "Success!" appears — reproducing the race deterministically
+// instead of relying on click timing.
+test("should not report the dApp request as rejected when Done is clicked immediately after a successful SAC trustline", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  test.skip(
+    isIntegrationMode,
+    "SAC stub injection via addInitScript is not compatible with integration mode",
+  );
+
+  // Same SAC-classification stubs as the test above (see its comment for why
+  // this init-script approach, rather than context.route(), is required).
+  await context.addInitScript(
+    ({ sacIssuer }: { sacIssuer: string }) => {
+      const origFetch = (window as Window & typeof globalThis).fetch.bind(
+        window,
+      );
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (window as any).fetch = function (input: any, init: any) {
+        const url: string =
+          typeof input === "string"
+            ? input
+            : input instanceof URL
+              ? input.href
+              : (input?.url ?? "");
+        if (url.includes("/is-sac-contract/")) {
+          return Promise.resolve(
+            new Response(JSON.stringify({ isSacContract: true }), {
+              status: 200,
+              headers: { "Content-Type": "application/json" },
+            }),
+          );
+        }
+        if (url.includes("/token-details/")) {
+          return Promise.resolve(
+            new Response(
+              JSON.stringify({
+                name: `E2E:${sacIssuer}`,
+                symbol: "E2E",
+                decimals: 7,
+              }),
+              {
+                status: 200,
+                headers: { "Content-Type": "application/json" },
+              },
+            ),
+          );
+        }
+        return origFetch(input, init);
+      };
+    },
+    { sacIssuer: SAC_ISSUER },
+  );
+
+  // Delay ONLY the ADD_TOKEN background round-trip (the popup -> background
+  // extension message triggered by dispatch(addToken({uuid}))). This is a
+  // local extension-messaging call, not a network request, so context.route()
+  // can't touch it — we monkey-patch the sender side instead. The delay gives
+  // a same-tick "click Done the moment Success renders" a real chance to race
+  // ahead of response(true) if Done doesn't await it.
+  await context.addInitScript(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const chromeApi = (window as any).chrome;
+    if (!chromeApi?.runtime?.sendMessage) {
+      return;
+    }
+    const nativeSendMessage = chromeApi.runtime.sendMessage.bind(
+      chromeApi.runtime,
+    );
+    const ADD_TOKEN_DELAY_MS = 1000;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    chromeApi.runtime.sendMessage = (...args: any[]) => {
+      const msg = args[0];
+      if (!msg || msg.type !== "ADD_TOKEN") {
+        return nativeSendMessage(...args);
+      }
+      const lastArg = args[args.length - 1];
+      if (typeof lastArg === "function") {
+        const callback = lastArg;
+        const callArgs = args.slice(0, -1);
+        setTimeout(
+          () => nativeSendMessage(...callArgs, callback),
+          ADD_TOKEN_DELAY_MS,
+        );
+        return undefined;
+      }
+      return new Promise((resolve) => {
+        setTimeout(
+          () => resolve(nativeSendMessage(...args)),
+          ADD_TOKEN_DELAY_MS,
+        );
+      });
+    };
+  });
+
+  await stubIsSacTrue(context);
+  await stubSacTokenDetails(context);
+
+  await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
+  await allowDapp({ page });
+
+  const pageTwo = await page.context().newPage();
+  await pageTwo.waitForLoadState();
+
+  const popupPromise = page.context().waitForEvent("page");
+  await pageTwo.goto(
+    "https://play.freighter.app/#/extension/playground/addToken",
+  );
+  await pageTwo.getByRole("textbox").first().fill(SAC_CONTRACT_ID);
+  await pageTwo
+    .getByRole("textbox")
+    .nth(1)
+    .fill("Test SDF Network ; September 2015");
+  await pageTwo.getByText("Add Token").click();
+
+  const popup = await popupPromise;
+
+  await stubIsSacTrue(popup);
+  await stubSacTokenDetails(popup);
+  await stubFeeStats(popup);
+  await stubHorizonAccounts(popup);
+  await stubScanAssetSafe(popup);
+  await stubScanTx(popup);
+  await stubBackendSubmitTx(popup);
+  await stubAccountBalances(popup);
+
+  await expect(popup.getByTestId("AddToken__Metadata__Row__Fee")).toBeVisible({
+    timeout: 15000,
+  });
+  await popup.getByTestId("add-token-approve").click();
+
+  await expect(popup.getByTestId("ChangeTrustInternal__Body")).toBeVisible({
+    timeout: 15000,
+  });
+  await popup.getByRole("button", { name: "Confirm", exact: true }).click();
+
+  // Click Done the instant it appears — no wait between Success rendering and
+  // the click, so this races the (artificially delayed) ADD_TOKEN response.
+  await expect(
+    popup.getByTestId("SubmitTransaction__Title__Success"),
+  ).toBeVisible({ timeout: 15000 });
+  await popup.getByRole("button", { name: "Done", exact: true }).click();
+
+  // The popup should wait out the delayed round-trip before closing.
+  await popup.waitForEvent("close", { timeout: 15000 });
+
+  // The dApp must see the trustline succeed — never "user rejected" — even
+  // though Done was clicked before the round-trip had a chance to finish.
+  await expect(pageTwo.locator("#result-addToken")).toContainText(
+    "Token added:",
+    { timeout: 15000 },
+  );
+  await expect(pageTwo.locator("#result-addToken")).not.toContainText(
+    "rejected",
+  );
+});
+
 test("should not add a SEP-41 token when the domain is not allowed", async ({
   page,
   extensionId,
@@ -1072,7 +1245,14 @@ test("should add a verified SEP-41 token without the unverified banner", async (
   await expect(popup.getByText("E2E Token")).toBeDefined();
   // Verified token: the "Not on your lists" banner must NOT be shown.
   await expect(popup.getByText("Not on your lists")).toHaveCount(0);
+  // Register the close listener BEFORE clicking: window.close() can fire
+  // fast enough that waiting for the event after the click races it.
+  const popupClosed = popup.waitForEvent("close", { timeout: 15000 });
   await popup.getByTestId("add-token-approve").click();
+
+  // SEP-41 is a one-step flow: a single Confirm click resolves the dApp
+  // request AND closes the popup — no separate success screen / Done click.
+  await popupClosed;
 
   await expect(pageTwo.locator("#result-addToken")).toContainText(
     "Token added:",

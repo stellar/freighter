@@ -47,9 +47,7 @@ export type RequestAccessResponse = string;
 export type SignAuthEntryResponse = Buffer | null;
 export type SignTransactionResponse = string;
 export type SignBlobResponse = Buffer | null;
-export type AddTokenResponse =
-  | boolean
-  | { apiError: { code: number; message: string } };
+export type AddTokenResponse = boolean;
 export type SetAllowedStatusResponse = string;
 export type SignedHwPayloadResponse = string | Buffer<ArrayBufferLike>;
 export type RejectAccessResponse = undefined;
@@ -220,11 +218,6 @@ export interface HandleSignedHWPayloadMessage extends BaseMessage {
 
 export interface AddTokenMessage extends BaseMessage {
   type: SERVICE_TYPES.ADD_TOKEN;
-  uuid: string;
-}
-
-export interface AddTokenFailureMessage extends BaseMessage {
-  type: SERVICE_TYPES.ADD_TOKEN_FAILURE;
   uuid: string;
 }
 
@@ -512,7 +505,6 @@ export type ServiceMessageRequest =
   | RejectAccessMessage
   | HandleSignedHWPayloadMessage
   | AddTokenMessage
-  | AddTokenFailureMessage
   | SignTransactionMessage
   | SignBlobMessage
   | SignAuthEntryMessage

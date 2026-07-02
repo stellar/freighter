@@ -16,11 +16,23 @@ jest.mock("helpers/metrics", () => ({
   emitMetric: jest.fn().mockResolvedValue(undefined),
 }));
 
+const mockConfirmPassword = jest.fn((password: string) => ({
+  type: "confirmPassword",
+  payload: password,
+})) as jest.Mock & { fulfilled: { match: (action: unknown) => boolean } };
+mockConfirmPassword.fulfilled = {
+  match: (action: unknown) =>
+    (action as { type?: string } | undefined)?.type ===
+    "confirmPassword/fulfilled",
+};
+
 jest.mock("popup/ducks/accountServices", () => ({
-  confirmPassword: jest.fn((password: string) => ({
-    type: "confirmPassword",
-    payload: password,
-  })),
+  // A getter defers reading mockConfirmPassword until first use (inside a
+  // test), avoiding a TDZ error from the hoisted jest.mock factory running
+  // before the module-level `const mockConfirmPassword = ...` below executes.
+  get confirmPassword() {
+    return mockConfirmPassword;
+  },
   hasPrivateKeySelector: () => mockHasPrivateKey,
 }));
 
@@ -71,7 +83,6 @@ describe("useSetupAddTokenFlow", () => {
     expect(addToken).toHaveBeenCalledWith({ uuid: UUID });
     expect(emitMetric).toHaveBeenCalledWith(METRIC_NAMES.tokenAddedApi);
     expect(emitMetric).not.toHaveBeenCalledWith(METRIC_NAMES.tokenFailedApi);
-    expect(result.current.isTokenAdded).toBe(true);
     expect(closeSpy).not.toHaveBeenCalled();
   });
 
@@ -126,7 +137,7 @@ describe("useSetupAddTokenFlow", () => {
     expect(closeSpy).toHaveBeenCalled();
   });
 
-  it("handleApprove adds the token directly when a private key is present", async () => {
+  it("handleApprove adds the token directly and closes on success (SEP-41 one-step flow)", async () => {
     mockDispatch.mockResolvedValue({ type: "addToken/fulfilled" });
     const { result } = setup();
 
@@ -136,7 +147,39 @@ describe("useSetupAddTokenFlow", () => {
 
     expect(addToken).toHaveBeenCalledWith({ uuid: UUID });
     expect(result.current.isPasswordRequired).toBe(false);
-    expect(result.current.isTokenAdded).toBe(true);
+    expect(closeSpy).toHaveBeenCalled();
+  });
+
+  it("handleApprove does NOT close when adding the token fails", async () => {
+    mockDispatch.mockResolvedValue({
+      type: "addToken/rejected",
+      error: { message: "boom" },
+    });
+    const { result } = setup();
+
+    await act(async () => {
+      await result.current.handleApprove();
+    });
+
+    expect(result.current.submitError).toBe("boom");
+    expect(closeSpy).not.toHaveBeenCalled();
+  });
+
+  it("verifyPasswordThenAddToken adds the token and closes on success", async () => {
+    mockDispatch.mockImplementation((action: any) => {
+      if (action?.type === "confirmPassword") {
+        return Promise.resolve({ type: "confirmPassword/fulfilled" });
+      }
+      return Promise.resolve({ type: "addToken/fulfilled" });
+    });
+    const { result } = setup();
+
+    await act(async () => {
+      await result.current.verifyPasswordThenAddToken("pw");
+    });
+
+    expect(addToken).toHaveBeenCalledWith({ uuid: UUID });
+    expect(closeSpy).toHaveBeenCalled();
   });
 
   it("handleApprove requires a password when no private key is present", async () => {
