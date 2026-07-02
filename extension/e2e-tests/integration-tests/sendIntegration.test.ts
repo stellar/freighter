@@ -421,7 +421,7 @@ test("Send token payment to C address", async ({
 
   await page
     .locator(".Send__step:not(.Send__step--hidden)")
-    .getByText("E2E")
+    .getByTestId(`SendRow-E2E:${TEST_TOKEN_ADDRESS}`)
     .click();
 
   await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
