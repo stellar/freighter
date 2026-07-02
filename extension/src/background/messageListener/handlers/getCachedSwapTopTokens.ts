@@ -1,9 +1,10 @@
 import { GetCachedSwapTopTokensMessage } from "@shared/api/types/message-request";
+import { TrendingAsset } from "@shared/api/types";
 import { DataStorageAccess } from "background/helpers/dataStorageAccess";
 import { CACHED_SWAP_TOP_TOKENS_ID } from "constants/localStorageTypes";
 
 interface CachedSwapTopTokensEntry {
-  tokens: unknown[];
+  tokens: TrendingAsset[];
   updatedAt: number;
 }
 

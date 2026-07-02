@@ -29,7 +29,7 @@ export const getPersistedPopularTokens = async (
     ) {
       return null;
     }
-    return cached.tokens as TrendingAsset[];
+    return cached.tokens;
   } catch (e) {
     return null;
   }

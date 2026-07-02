@@ -1,21 +1,16 @@
 import { NetworkDetails } from "@shared/constants/stellar";
+import { TrendingAsset } from "@shared/api/types";
 import { getApiStellarExpertUrl } from "popup/helpers/account";
 import { isTestnet } from "helpers/stellar";
+
+// Re-exported so existing `popup/helpers/trendingAssets` imports keep resolving.
+export type { TrendingAsset };
 
 export const TRENDING_LIMIT = 50;
 // Mainnet-only floor. stellar.expert reports volume7d in USD scaled by 10^7
 // (so 70_000_000_000 ≈ $7,000 USD/week); filters out dust-volume assets
 // before they reach the Popular list.
 export const MIN_TRENDING_VOLUME7D = 70_000_000_000;
-
-export interface TrendingAsset {
-  code: string;
-  issuer: string;
-  contract?: string;
-  domain: string | null;
-  icon?: string;
-  volume7d: number;
-}
 
 interface TrendingRecord {
   asset: string; // "CODE-ISSUER" for classic, contract id otherwise

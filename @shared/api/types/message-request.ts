@@ -9,6 +9,7 @@ import {
   BalanceToMigrate,
   IssuerKey,
   CollectibleKey,
+  TrendingAsset,
 } from "./types";
 import { AssetsListItem } from "@shared/constants/soroban/asset-list";
 import { AutoLockTimeoutMinutes } from "@shared/constants/autoLock";
@@ -333,8 +334,9 @@ export interface GetCachedSwapTopTokensMessage extends BaseMessage {
 export interface CacheSwapTopTokensMessage extends BaseMessage {
   type: SERVICE_TYPES.CACHE_SWAP_TOP_TOKENS;
   network: string;
-  // Opaque to the background — the popup owns the trending-asset schema.
-  tokens: unknown[];
+  // Pass-through cache: the background stores these as-is and never reads
+  // individual token fields.
+  tokens: TrendingAsset[];
 }
 
 export interface GetCachedDomainMessage extends BaseMessage {
