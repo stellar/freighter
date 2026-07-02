@@ -75,6 +75,15 @@
     padding: 0;
   }
 
+  // Hidden mirror spans that measure the amount input's content width. Kept in
+  // layout (visibility: hidden, not display: none) so offsetWidth stays
+  // measurable.
+  &__hidden-mirror {
+    position: absolute;
+    visibility: hidden;
+    white-space: pre;
+  }
+
   &__lg {
     font-size: pxToRem(24px);
   }

@@ -143,23 +143,13 @@ export const AmountCard = ({
               for a frame. */}
           <span
             ref={cryptoSpanRef}
-            className={fontClass}
-            style={{
-              position: "absolute",
-              visibility: "hidden",
-              whiteSpace: "pre",
-            }}
+            className={`${fontClass} AmountCard__hidden-mirror`}
           >
             {amount || "0"}
           </span>
           <span
             ref={fiatSpanRef}
-            className={fontClass}
-            style={{
-              position: "absolute",
-              visibility: "hidden",
-              whiteSpace: "pre",
-            }}
+            className={`${fontClass} AmountCard__hidden-mirror`}
           >
             {amountUsd || "0"}
           </span>
