@@ -1,5 +1,6 @@
 import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import { Icon } from "@stellar/design-system";
 import BigNumber from "bignumber.js";
 import classnames from "classnames";
 
@@ -53,7 +54,10 @@ export const TokenList = ({
       ) : (
         <>
           {isShowingHeader && (
-            <div className="TokenList__Assets__Header">{t("Tokens")}</div>
+            <div className="TokenList__Assets__Header">
+              <Icon.Coins03 />
+              {t("Tokens")}
+            </div>
           )}
           {sortedTokens
             .filter(

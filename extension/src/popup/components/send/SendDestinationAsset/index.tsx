@@ -139,6 +139,7 @@ export const SendDestinationAsset = ({
           {destAssetDataState.data.collectibles.collections.length > 0 && (
             <div className="SendDestinationAsset__collectibles-section">
               <div className="SendDestinationAsset__collectibles-heading">
+                <Icon.Image01 />
                 {t("Collectibles")}
               </div>
               <CollectiblesList
