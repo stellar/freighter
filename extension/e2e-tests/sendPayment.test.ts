@@ -234,7 +234,7 @@ test("Swap shows correct balances for assets", async ({
   // Click on source asset tile to see asset list
   await page.getByTestId("swap-src-asset-tile").click();
   await expect(page.getByText("Swap from")).toBeVisible();
-  await expect(page.getByText(/FOO/)).toBeVisible();
+  await expect(page.getByTestId("FOO-balance")).toBeVisible();
   await expect(page.getByTestId("FOO-balance")).toContainText("100");
   await expect(page.getByTestId("BAZ-balance")).toContainText("10");
   await expect(page.getByTestId("PBT-balance")).toContainText("98.997");
