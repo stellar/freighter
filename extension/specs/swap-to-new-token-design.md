@@ -1,6 +1,11 @@
 # Swap to New Token (Browser Extension) — Design Doc
 
-> **Status:** Draft for team review · **Author:** Cássio Goulart · **Date:** 2026-06-23
+> **Status:** Implemented (as-built) · **Author:** Cássio Goulart · **Date:** 2026-06-23 (design), reconciled against the shipped code 2026-07-02
+>
+> **Note:** This began as a pre-implementation design doc and has been updated to
+> reflect what actually shipped on branch `feature/swap-to-new-token`. The
+> "Decision" items below were all implemented; where the build diverged from the
+> original plan, the text now describes the **as-built** behavior.
 >
 > **Reference (mobile):** This feature already shipped on freighter-mobile —
 > PR [stellar/freighter-mobile#879](https://github.com/stellar/freighter-mobile/pull/879)
@@ -93,6 +98,20 @@ flowchart TD
     class ReserveCheck,TxBuild decision
 ```
 
+> **As-built note.** The diagram is conceptual. In code the steps are the `STEPS`
+> enum in [`popup/constants/swap.ts`](../src/popup/constants/swap.ts), driven by
+> [`views/Swap/index.tsx`](../src/popup/views/Swap/index.tsx): `AMOUNT`,
+> `CONFIRM_AMOUNT`, `SET_FROM_ASSET`, `SET_DST_ASSET`, `SWAP_CONFIRM`
+> (+ settings steps).
+> **"Build + Blockaid-tx-scan" and "Review Tx" are _not_ separate steps** — they
+> run inside the `AMOUNT` step as `SlideupModal`s gated by `isReviewingTx`, and
+> **ReserveCheck** is an inline branch in `SwapAmount.handleContinue`
+> (`shouldShowXlmReservePreflight`) that opens the XLM-reserve `SlideupModal`.
+> The Swap home (`SwapAmount`) existed before but was **heavily extended** here
+> (live quote, reserve pre-flight, Fee/Slippage/Settings row, direction chevron,
+> and the hook/component extraction in §3.3) — treat it as extended despite the
+> slate styling.
+
 **One picker, parameterised.** A single picker component (`SwapAsset`, extended)
 serves both sides; a `selectionType: "source" | "destination"` param toggles the
 header ("Swap from" / "Swap to"), whether the Popular/search sections appear
@@ -137,8 +156,10 @@ The _feature_ is the same; the _platform_ is materially different.
 - **Extension:** **Redux** (`transactionSubmission` slice) + react-router
   `HashRouter`; the whole swap is **one `/swap` route** whose steps
   (`SwapAmount`, `SwapAsset`, settings, confirm) are an internal **`STEPS` enum
-  state machine** in [`views/Swap/index.tsx`](../src/popup/views/Swap/index.tsx).
-  There is no navigation stack — "screens" are conditional renders.
+  state machine** — the enum lives in
+  [`popup/constants/swap.ts`](../src/popup/constants/swap.ts), driven by
+  [`views/Swap/index.tsx`](../src/popup/views/Swap/index.tsx). There is no
+  navigation stack — "screens" are conditional renders.
 
 ### 2.2 Send & Swap "live together"
 
@@ -152,10 +173,12 @@ The _feature_ is the same; the _platform_ is materially different.
   amount card and the `25/50/75/Max` buttons (`PERCENTAGE_OPTIONS`,
   `handlePercentage`); [`SwapAmount`](../src/popup/components/swap/SwapAmount/index.tsx)
   reimplements its own input and only has a single **Max** button.
-  - **Decision note:** we will **extract shared `AmountCard` + `PercentageButtons`
-    components** from `SendAmount` and use them in both flows (matching mobile's
-    shared-component approach). This is the one place we deliberately refactor
-    working Send code; see §3.3 for the safety boundary.
+  - **As built:** shared **`AmountCard`** + **`PercentageButtons`** were extracted
+    from `SendAmount` and are used by both flows (matching mobile's
+    shared-component approach; §3.3). The pickers additionally share
+    **`AssetListRow`** (non-held discover rows) and **`BalanceRow`** (held "Your
+    tokens" rows) — the same row components used by `ManageAssetRows` and the
+    account-home balances list — so the swap picker doesn't fork its own rows.
 
 ### 2.3 No trending list on the Swap home
 
@@ -175,15 +198,15 @@ The _feature_ is the same; the _platform_ is materially different.
 - **Mobile:** full-screen `SectionList` picker; bottom sheets (`TrustlineInfo`,
   `XlmReserve`) via the native bottom-sheet primitive.
 - **Extension:** the picker is a **step** inside the fixed **360×600 popup**,
-  built on the `View` layout primitives + `TokenList`. The mobile bottom sheets
-  map onto the extension's existing **`SlideupModal`** component — which today
-  wraps the swap **Review** sheet ([`SwapAmount/index.tsx:641`](../src/popup/components/swap/SwapAmount/index.tsx#L641)) —
-  or the Radix **`Sheet`** primitive. SDS (`@stellar/design-system`) provides
-  `Button`, `Input`, `Notification`, `Icon`, `Card`, etc. The purple trustline
-  banner is an SDS **`Notification`** (the component `ReviewTx` already uses for
-  warnings); if the installed SDS version has no lilac/"highlight" variant, add a
-  custom-styled variant — mobile added a `highlight` variant to its own SDS for
-  exactly this.
+  built on the `View` layout primitives. The mobile bottom sheets map onto the
+  extension's existing **`SlideupModal`** component — which wraps the swap
+  **Review** sheet and the **XLM-reserve** sheet
+  ([`SwapAmount/index.tsx:827`](../src/popup/components/swap/SwapAmount/index.tsx#L827)
+  and `:865`). SDS (`@stellar/design-system`) provides `Button`, `Input`,
+  `Notification`, `Icon`, `Card`, etc. **As built, the trustline banner is a
+  custom `TrustlineBanner` button** (SCSS-styled, `Icon.AlertSquare` +
+  `ChevronRight`), not an SDS `Notification` variant — no lilac/"highlight" SDS
+  variant was needed.
 - **No clipboard "Paste" button.** Mobile offers a one-tap paste affordance on the
   search bar; the extension **omits** it — a programmatic clipboard read needs an
   extra `clipboardRead` manifest permission + user opt-in, which the team decided
@@ -198,9 +221,17 @@ The _feature_ is the same; the _platform_ is materially different.
   `formatAmountPreserveCursor` / `cleanAmount` helpers and the existing
   `inputType: "crypto" | "fiat"` toggle (lifted from the Swap parent). There is
   **no `useTokenFiatConverter`** to adopt; we keep the extension's current
-  crypto/fiat conversion logic and move it into the shared `AmountCard`. We may
-  want to revisit this during implementation in case we see that using a similar
-  useTokenFiatConverter hook would work better for extension too.
+  crypto/fiat conversion logic and move it into the shared `AmountCard`.
+  - **As built:** the crypto `amount` is the **single source of truth** in both
+    display modes — the fiat field only mirrors it. In fiat mode every keystroke
+    (and the `25/50/75/Max` buttons) writes the fiat value for display but
+    re-derives and commits the crypto `amount` (`SwapAmount`/`SendAmount`
+    `onAmountUsdChange` + the percentage `onSelect`), and the live quote,
+    spendable-balance check, and submit all read the crypto amount directly
+    (`getSwapDerivedData.ts`, `useSwapLiveQuote.ts`). Toggling back to crypto
+    leaves the amount untouched (re-deriving from the rounded fiat value would
+    drift). We kept the extension's `inputType` toggle rather than adopting a
+    `useTokenFiatConverter`-style hook.
 
 ### 2.6 Transaction building, fee & quote
 
@@ -228,32 +259,49 @@ The _feature_ is the same; the _platform_ is materially different.
 
 ### 2.7 Slippage default
 
-- **Mobile:** 2%. **Extension today:** **1%** (`allowedSlippage: "1"` in
-  [`transactionSubmission.ts:507`](../src/popup/ducks/transactionSubmission.ts#L507)
-  and `defaultSlippage = "1"` in
-  [`SwapAmount/index.tsx:61`](../src/popup/components/swap/SwapAmount/index.tsx#L61)).
-  - **Decision:** change the default to **2%** to match mobile. With the frozen
-    quote, the wider tolerance materially reduces `op_under_dest_min` /
-    `op_too_few_offers` rejections between amount entry and submit, improving
-    success rate.
+- **Mobile:** 2%. **Extension (before this work):** 1%.
+  - **As built:** the default is now **2%** to match mobile —
+    `allowedSlippage: "2"` in
+    [`transactionSubmission.ts:538`](../src/popup/ducks/transactionSubmission.ts#L538)
+    and `defaultSlippage = "2"` in the extracted
+    [`EditSlippage.tsx:14`](../src/popup/components/swap/SwapAmount/EditSlippage.tsx#L14)
+    (slippage editing was extracted out of `SwapAmount`). With the frozen quote,
+    the wider tolerance materially reduces `op_under_dest_min` /
+    `op_too_few_offers` rejections between amount entry and submit.
 
 ### 2.8 Blockaid & caching
 
-- **Scan timing:** mobile bulk-scans every destination before it is
-  selectable. The extension scans only held assets + the review XDR today.
-  **Decision:** adopt mobile's **pick-time bulk scan** of Popular + search
-  results (closes the same security gap), keeping the review-time XDR scan.
-- **Caching:** mobile uses a 3-layer cache (a **module-memory cache that survives
-  remounts** + a disk-backed 30-min `cachedFetch` + SWR background revalidate),
-  with the trending list **fetched on swap-screen mount** (not pre-fetched ahead of
-  time). The extension has its own idioms: **`cachedFetch`** (persistent
-  `localStorage`, 7-day TTL, background worker) and the **Redux `cache` slice**
-  (in-memory, with `updatedAt` staleness stamps — its native SWR). **Decision:**
-  reuse the verified-list cache as-is; cache **Popular tokens** + **Blockaid scan
-  results** in the Redux `cache` slice with `updatedAt` staleness (~30-min window);
-  back the Popular list with a short-TTL (~30-min) `cachedFetch`-style persistent
-  entry so frequent popup reopens paint instantly. **No** separate module-memory
-  cache (the popup refetches on open; low value given its lifecycle).
+- **Scan timing (as built):** adopted mobile's **pick-time bulk scan** — every
+  non-held destination candidate is `scanAssetBulk`-scanned before it's
+  selectable (closing the security gap), and the review still runs a fresh
+  `scanTransaction` on the combined XDR.
+- **Caching (as built):** Popular ("top tokens") lists are cached in **two
+  layers, keyed per network** — richer than the original plan:
+  1. a **persistent disk cache** in `chrome.storage.local` (background-owned via
+     the `GET/CACHE_SWAP_TOP_TOKENS` message handlers +
+     [`swapPopularTokensCache.ts`](../src/popup/helpers/swapPopularTokensCache.ts)),
+     with a **30-min staleness window** (`POPULAR_TOKENS_STALE_MS`,
+     [`ducks/cache.ts`](../src/popup/ducks/cache.ts)) — it **survives popup close**,
+     so reopening paints Popular from disk with no spinner; and
+  2. the **in-memory Redux `cache` slice** (`savePopularTokens`) — the session
+     working copy, read first on each open.
+
+  On open the lookup reads Redux → disk → network in freshness order, and
+  search/discover results **repaint from the last cached result and revalidate
+  silently** (SWR-style). Contrary to the original "no module-memory cache"
+  decision, module-scoped Maps **were** used after all —
+  [`useSwapTokenLookup`](../src/popup/components/swap/SwapAsset/hooks/useSwapTokenLookup.ts)
+  keeps them for idle/search results and asset scans. Verified lists reuse the
+  existing asset-lists cache.
+  - **Pre-warm:** [`useSwapTopTokensPrewarm`](../src/popup/helpers/useSwapTopTokensPrewarm.ts)
+    mounts on the account/home screen ([`views/Account/index.tsx`](../src/popup/views/Account/index.tsx))
+    and — deferred ~1s past first paint, mainnet-only — fills both layers when the
+    persisted entry is stale/absent, so Swap usually opens with Popular warm (the
+    analog of mobile's tab-mount pre-warm).
+  - **Blockaid asset scans are deliberately _not_ persisted** — per-token verdicts
+    stay in an in-memory module cache and are re-scanned each session; persisting
+    them to disk would risk cache-poisoning (a tampered entry marking a malicious
+    token "safe").
 
 ### 2.9 Naming map (mobile → extension)
 
@@ -304,7 +352,8 @@ It exposes two surfaces, switched on whether the search term is empty.
 
    Held tokens are filtered **out** of the Popular section (so a user never sees
    a held token twice on the same screen). Mainnet applies a minimum-volume floor
-   inside the cache layer before caching (mirroring mobile's `MIN_TRENDING_VOLUME7D`);
+   in the trending fetch helper before the list is cached (`MIN_TRENDING_VOLUME7D`
+   in `helpers/trendingAssets.ts`, mirroring mobile);
    on **testnet** `volume7d` is always 0, so the `sort=volume7d&order=desc` query
    params are **omitted** (accept the API's default order), the floor is a no-op,
    and the verified-list intersection is what produces a meaningful list.
@@ -322,9 +371,9 @@ exclusive sections (matching [Figma](https://www.figma.com/design/C3G0a4Gd6RQypl
    [`searchAsset`](../src/popup/helpers/searchAsset.ts) results (excluding the
    above); header carries its own **(i)** → `UnverifiedTokenInfoSheet` (NEW).
 
-**Classic-only filter.** Every record (idle or search) passes through
-[`isContractId`](../src/popup/helpers/soroban.ts) / `isAssetSac` so Soroban
-contract tokens are dropped. A `C…` paste that resolves to a wrapped classic
+**Classic-only filter.** Every record (idle or search) is checked with
+[`isContractId`](../src/popup/helpers/soroban.ts) on `asset.contract || asset.issuer`
+so Soroban contract tokens are dropped. A `C…` paste that resolves to a wrapped classic
 (SAC) surfaces its classic asset; a pure-Soroban paste yields nothing. When the
 filtered result set is empty **and** the term is a contract address (or the
 pre-filter set contained Soroban matches), show the empty-state copy _"Soroban
@@ -342,12 +391,15 @@ balances is scanned via
 helpers. Mainnet-only (`isBlockaidEnabled`); on testnet the state is
 "unable to scan", as today. Held tokens already carry their balance scan.
 
-**Search mechanics.** Reuse `useSwapFromData`'s existing **300 ms lodash
-debounce** + `AbortController` cancellation so the trailing keystroke wins;
-dedupe by canonical `CODE:ISSUER`. `searchAsset` already targets
-`${getApiStellarExpertUrl(networkDetails)}/asset?search=` per network. (The
-extension keeps its existing **300 ms** debounce rather than mobile's 500 ms —
-reusing the held-search primitive; the difference is immaterial.)
+**Search mechanics (as built).** The **300 ms lodash debounce** lives in the
+`SwapAsset` picker container
+([`SwapAsset/index.tsx`](../src/popup/components/swap/SwapAsset/index.tsx)),
+wrapping the lookup submit; `useSwapTokenLookup` owns the `AbortController`
+cancellation so the trailing keystroke wins; dedupe by canonical `CODE:ISSUER`.
+`searchAsset` targets `${getApiStellarExpertUrl(networkDetails)}/asset?search=`
+per network. (Separately, the amount screen's live "You receive" quote debounces
+at **500 ms** — `LIVE_QUOTE_DEBOUNCE_MS` in `useSwapLiveQuote` — a distinct
+concern from this picker search debounce.)
 
 **Caching.** See §2.8 — verified lists reuse the existing cache; Popular +
 scan results go in the Redux `cache` slice with `updatedAt` staleness; Popular
@@ -375,31 +427,37 @@ held-only shape as the stellar.expert-unreachable fallback above, but a permanen
 state rather than an error. Held-to-held swaps still work (Horizon
 `strictSendPaths` against the custom network's Horizon).
 
-### 3.2 Picker UI — extend `SwapAsset` (parameterised)
+### 3.2 Picker UI — `SwapAsset` (parameterised)
 
-Extend [`SwapAsset`](../src/popup/components/swap/SwapAsset/index.tsx) (currently
-`{ title, hiddenAssets, onClickAsset, goBack }`) with a
-`selectionType: "source" | "destination"` prop:
+[`SwapAsset`](../src/popup/components/swap/SwapAsset/index.tsx) takes a
+`selectionType: "source" | "destination"` prop. **As-built props are
+`{ selectionType, hiddenAssets, onClickAsset, goBack }` — there is no `title`
+prop**; the header is derived internally (`"Swap to"` / `"Swap from"`), and
+`onClickAsset` is `(canonical, isContract, details?)`.
 
-- **source** → `holdsOnly` path (current `useSwapFromData`); single **Your tokens**
-  section; header "Swap from".
-- **destination** → `useSwapTokenLookup` (§3.1); sectioned list; header "Swap to";
-  search bar.
+- **source** → `holdsOnly` path (`useSwapFromData`); a single **Your tokens**
+  section.
+- **destination** → `useSwapTokenLookup` (§3.1); sectioned list + search bar.
 
-Rendering reuses [`TokenList`](../src/popup/components/InternalTransaction/TokenList/index.tsx)
-and the verified/unverified section layout from
-[`ManageAssetRows`](../src/popup/components/manageAssets/ManageAssetRows/index.tsx).
-A **`SwapTokenRow`** (NEW, or an extension of the existing row) renders, by section:
+Rows are rendered by
+[`SwapPickerSections`](../src/popup/components/swap/SwapAsset/SwapPickerSections/index.tsx),
+which owns its own section headers (with the `(i)` info buttons opening the
+Verified/Unverified sheets, §3.7) and reuses **shared row components** — **there
+is no `SwapTokenRow`** (it was retired during the Figma polish in favor of the
+shared rows; it does not import `TokenList`/`ManageAssetRows` layout):
 
-- **held** — fiat balance + 24h % (as on the Home balance row).
-- **non-held** (Verified / Unverified) — a `⋯` context menu (**Copy address**,
-  **View on stellar.expert** via the existing in-app-browser/`getStellarExpertUrl`
-  pattern) and a Blockaid badge ([`ScamAssetIcon`](../src/popup/components/account/ScamAssetIcon/index.tsx))
-  overlaid on the icon when suspicious/malicious.
+- **held ("Your tokens")** — the shared
+  [`BalanceRow`](../src/popup/components/BalanceRow/index.tsx) (code + balance +
+  fiat + 24h delta, matching the account-home balances list).
+- **non-held (Popular / Verified / Unverified)** — the shared
+  [`AssetListRow`](../src/popup/components/AssetListRow/index.tsx) with a
+  `SwapTokenMenu` (`⋯` → **Copy address**, **View on stellar.expert**) and a
+  Blockaid badge rendered by its `AssetIcon` (via `isSuspicious`/`isMalicious`)
+  when the token is flagged.
 
 The picker prevents nothing by default — malicious destinations remain selectable
-but surface their warning in the row and again at review (matching the "Confirm
-anyway" pattern). Native XLM is always trusted.
+but surface their warning in the row and again at review (the "Confirm anyway"
+pattern). Native XLM is always trusted.
 
 ### 3.3 Amount screen — extract shared `AmountCard` + `PercentageButtons`
 
@@ -418,9 +476,12 @@ Extract two components from
   `TokenIconWithBadge`; mobile §9 / Figma 8629-19445). The Sell side reads the
   source balance's scan; the Receive side reads
   `destinationTokenDetails.securityLevel` (§3.4).
-- **`PercentageButtons`** (NEW) — the `25% / 50% / 75% / Max` group
-  (`PERCENTAGE_OPTIONS` + `handlePercentage`), parameterised by an
-  `availableBalance` and an `onSelect(pct)` callback.
+- **`PercentageButtons`** (NEW) — the `25% / 50% / 75% / Max` group,
+  parameterised solely by an `onSelect(pct)` callback. The component owns the
+  button labels (`PERCENTAGE_OPTIONS` for 25/50/75 + a separate Max); each caller
+  keeps its own `availableBalance`-based handler (Send's `handlePercentage`,
+  Swap's inline `onSelect`) and derives the committed amount from the crypto
+  balance.
 
 `SwapAmount` then renders two `AmountCard`s (You sell = editable; You receive =
 read-only, fed by the path-finder result) + `PercentageButtons` + the direction
@@ -433,10 +494,31 @@ single Max button.
    the existing Send E2E + unit tests green (pure refactor, no UX change).
 2. Only then wire `SwapAmount` to them.
 
-`InputWidthContext` ([`views/Send/contexts/inputWidthContext.tsx`](../src/popup/views/Send/contexts/inputWidthContext.tsx))
-is Send-local today; either lift it to a shared provider used by both flows or
-let `AmountCard` own its width state internally (preferred — keeps the component
-self-contained).
+**Input width (as built).** `InputWidthContext` was **removed** — `AmountCard`
+owns its input width internally via `useState` + span measurement (the preferred
+self-contained option). There is no longer a
+`views/Send/contexts/inputWidthContext.tsx`.
+
+**`SwapAmount` hook/helper decomposition (as built).** After the initial build,
+`SwapAmount` was decomposed to keep the component presentation-focused (mirroring
+mobile's `SwapScreen`): the debounced live "You receive" quote engine →
+[`useSwapLiveQuote`](../src/popup/components/swap/SwapAmount/hooks/useSwapLiveQuote.ts),
+the quote-expired toast/effects →
+[`useSwapQuoteExpiry`](../src/popup/components/swap/SwapAmount/hooks/useSwapQuoteExpiry.tsx),
+the Blockaid scan-on-select verdict recovery →
+[`useSwapDestinationScan`](../src/popup/components/swap/SwapAmount/hooks/useSwapDestinationScan.ts),
+and the balance/price/fee/CTA derivation →
+[`getSwapDerivedData`](../src/popup/components/swap/SwapAmount/helpers/getSwapDerivedData.ts)
+(a plain helper, since it runs below the early returns), plus
+`swapAmountValidation` / `swapAmountDisplay` helpers. `EditSlippage` was extracted
+to its own file. Formik stayed inline (no mobile analog + it couples to the
+post-early-return `priceValueUsd` ordering). Net: `index.tsx` went 1374 → ~884
+lines. The byte-identical available-balance font scales were also consolidated
+into a shared [`fontScale`](../src/popup/components/amount/fontScale.ts) module
+(`fitFontSizePx` + `AVAILABLE_BALANCE_FONT_SIZES` / `getAvailableBalanceFontSizePx`);
+`SwapAmount` and `SendAmount` compute the balance-line font size with it and pass
+the px into `AmountCard`, and `SwapRateRow` reuses the `fitFontSizePx` lookup with
+its own rate-value scale.
 
 **Spendable amount.** Reuse [`getAvailableBalance`](../src/popup/helpers/soroban.ts)
 (deducts XLM minimum reserve + fee). For a **new-token** swap the destination
@@ -468,14 +550,16 @@ path-finding, `getBuiltTx`) depends on that shape. Rather than replace it, **kee
 carries the non-held metadata:
 
 ```ts
-// transactionSubmission TransactionData — NEW field
+// transactionSubmission TransactionData — NEW field (as built)
 destinationTokenDetails: {
   tokenCode: string;        // e.g. "AQUA" / "XLM" — lets the banner, review rows,
                             //   and warnings render without re-parsing destinationAsset
   requiresTrustline: boolean; // true when the user has no trustline for it
-  decimals: number;         // 7 for classic (mobile may also read tomlInfo)
+  decimals: number;         // 7 for classic
   issuer?: string;          // omitted for native XLM
-  securityLevel?: SecurityLevel;        // from the bulk scan
+  securityLevel?: SecurityLevel;         // from the bulk scan
+  securityWarnings?: BlockaidWarning[];  // per-feature reasons, snapshotted at pick time
+  spotPrice?: number;       // stellar.expert spot price (mainnet fiat fallback)
   iconUrl?: string;         // from the search record, before balances hydrate
 } | null;
 ```
@@ -491,13 +575,15 @@ balance), non-held rows → `requiresTrustline: true` (from the `searchAsset` /
 Popular record). This is the extension's analogue of mobile's
 `DestinationTokenDescriptor`, minimally invasive to the existing plumbing.
 
-Two fields from mobile's descriptor are intentionally **dropped**: `tokenType`
+One field from mobile's descriptor is intentionally **dropped**: `tokenType`
 (mobile keeps it for its Soroban gate; the §3.1 classic-only filter guarantees
 every destination is a classic asset, and the canonical string + `issuer` already
-imply native-vs-classic, so no type discriminator is needed here), and
-`securityWarnings[]` (we keep only `securityLevel` on the slot and re-feed the live
-bulk-scan / XDR-scan results into the Blockaid components at review — §3.7 — rather
-than snapshotting a warnings array on the descriptor).
+imply native-vs-classic). **Contrary to the original plan, `securityWarnings[]`
+is kept** — the per-feature reasons are snapshotted at pick time and shown in the
+review's "Do not proceed" pane. At the picker boundary the pick-time type is
+`SwapPickerSelection = DestinationTokenDetails & { source?: string }`, where
+`source` (`"balances" | "popular" | "search"`) feeds the selection telemetry
+(§3.10) and is not persisted onto the slice.
 
 ### 3.5 Atomic transaction — bundle `changeTrust` + `pathPaymentStrictSend`
 
@@ -547,10 +633,13 @@ re-quoted at submit). If Horizon rejects with a quote-expired op code —
 **`op_under_dest_min`** _or_ **`op_too_few_offers`** — classify it specially (a
 `getQuoteExpiredOperationCodes`-style helper over `resultCodes.operations`; this
 concrete code set `["op_under_dest_min", "op_too_few_offers"]` matches mobile's
-`quoteErrors.ts`), show an **alert** (the extension's toast/`Notification`) reading
-_"Quote has expired, please try again to get a new quote"_, fire the dedicated
-metric (§3.10) instead of a generic swap-fail, and **auto-refetch** a fresh path
-(`getBestPath`) so the retry uses a new quote.
+`quoteErrors.ts`), surface a **sonner toast** (`toast.custom` wrapping an SDS
+`Notification`, variant `error`) via the
+[`useSwapQuoteExpiry`](../src/popup/components/swap/SwapAmount/hooks/useSwapQuoteExpiry.tsx)
+hook reading _"Quote has expired, please try again to get a new quote"_ (a stable
+toast id dedupes the in-screen simulate flag and the submit-recovery redux flag
+into one toast), fire the dedicated metric (§3.10) instead of a generic swap-fail,
+and **auto-refetch** a fresh path (`getBestPath`) so the retry uses a new quote.
 
 **Sign & submit unchanged.** The combined 2-op XDR flows through the existing
 [`signFreighterTransaction`](../src/popup/ducks/transactionSubmission.ts) →
@@ -590,34 +679,43 @@ reserve, plus —
 In [`ReviewTx`](../src/popup/components/InternalTransaction/ReviewTransaction/index.tsx)
 (shared with Send; gets `dstAsset` for swaps):
 
-- **Trustline banner** — when `destinationTokenDetails.requiresTrustline`,
-  render a purple SDS `Notification` _"This will add a trustline to {CODE}"_ with
-  a chevron → opens
-  **`TrustlineInfoSheet`** (NEW) explaining the 0.5 XLM reserve is one-time and
-  refundable when the trustline is removed ([Figma](https://www.figma.com/design/C3G0a4Gd6RQyplRBppGDsL/Freighter-Extension?node-id=8641-34721)).
-  Add a lilac/`highlight` SDS `Notification` variant if one doesn't exist.
-- **Blockaid warnings** — feed the destination's bulk-scan result and the
-  combined-XDR scan (already produced by `useSimulateSwapData` via
-  [`useScanTx`](../src/popup/helpers/blockaid.ts)) into the existing
-  `BlockaidTxScanLabel` / `BlockAidScanExpanded` / `ScamAssetIcon` components. A
-  malicious/suspicious destination shows the red/amber banner and flips the
-  footer to **Cancel** + **Confirm anyway** ([Figma](https://www.figma.com/design/C3G0a4Gd6RQyplRBppGDsL/Freighter-Extension?node-id=8629-19445));
-  fold a transaction-level **unable-to-scan** into the caution banner.
-- **`VerifiedTokenInfoSheet` / `UnverifiedTokenInfoSheet`** (NEW) — the picker
-  section **(i)** sheets.
-- **Rate / details / minimum-received** — the Figma review shows a `Rate`
-  (`1 {src} ≈ {n} {dst}`) and a `Transaction details` row. Verify whether the
-  shared `ReviewTx` already renders these; if not, add a swap-rate row (a
-  `calculateSwapRate`-style helper) and a **minimum-received** value computed from
-  the **frozen `destMin`** (§3.5). Mobile's analogue is
-  `SwapTransactionDetailsBottomSheet` + `calculateSwapRate`.
+- **Trustline banner (as built)** — when
+  `destinationTokenDetails.requiresTrustline`, render a custom **`TrustlineBanner`**
+  button (SCSS-styled, `Icon.AlertSquare` + `ChevronRight`) _"This will add a
+  trustline to {CODE}"_ → opens the **`TrustlineInfoSheet`** in-flow as a pane,
+  explaining the 0.5 XLM reserve is one-time and refundable
+  ([Figma](https://www.figma.com/design/C3G0a4Gd6RQyplRBppGDsL/Freighter-Extension?node-id=8641-34721)).
+  No SDS `highlight`/lilac `Notification` variant was needed.
+- **Blockaid warnings (as built)** — the per-flow warning components were
+  **unified into a single reusable
+  [`BlockaidBanner`](../src/popup/components/BlockaidBanner/index.tsx)** used across
+  every flow (ReviewTx, ChangeTrust/AddToken, SignTransaction, SignMessage,
+  GrantAccess). It renders nothing for SAFE, amber for suspicious, red for
+  malicious. The review still runs a fresh `scanTransaction` over the combined XDR
+  (via `useSimulateSwapData` / [`useScanTx`](../src/popup/helpers/blockaid.ts)); the
+  destination's pick-time verdict + a transaction-level **unable-to-scan** fold
+  into the same banner, flipping the footer to **Cancel** + **Confirm anyway**
+  ([Figma](https://www.figma.com/design/C3G0a4Gd6RQyplRBppGDsL/Freighter-Extension?node-id=8629-19445)).
+  There is **no** `BlockaidTxScanLabel`; `WarningMessages` now only supplies the
+  expanded detail pane (`BlockAidScanExpanded`) + `MemoRequiredLabel`.
+- **Verified/Unverified info sheets (as built)** — the picker section **(i)**
+  sheets live in
+  [`components/TokenVerificationSheets`](../src/popup/components/TokenVerificationSheets/index.tsx)
+  (`VerifiedTokenInfoSheet` / `UnverifiedTokenInfoSheet`), not under ReviewTx.
+- **Rate + Transaction details (as built)** — both shipped: a **`SwapRateRow`**
+  (`calculateSwapRate`, `1 {src} ≈ {n} {dst}`) and a **"Transaction details"**
+  sheet (reusing the `Summary` + `Details` op breakdown), now available in the
+  Swap **and** Send review flows. A discrete minimum-received row was **not**
+  added — the slippage-adjusted `destMin` is enforced in the built tx (§3.5).
 
 ### 3.8 Redux state changes (`transactionSubmission`)
 
 In [`ducks/transactionSubmission.ts`](../src/popup/ducks/transactionSubmission.ts):
 
-- `allowedSlippage` default `"1"` → **`"2"`** (line 507) and `defaultSlippage`
-  `"1"` → `"2"` in [`SwapAmount/index.tsx:61`](../src/popup/components/swap/SwapAmount/index.tsx#L61).
+- `allowedSlippage` default is **`"2"`**
+  ([`transactionSubmission.ts:538`](../src/popup/ducks/transactionSubmission.ts#L538));
+  the `defaultSlippage = "2"` constant now lives in the extracted
+  [`EditSlippage.tsx:14`](../src/popup/components/swap/SwapAmount/EditSlippage.tsx#L14).
 - Add `destinationTokenDetails` to `TransactionData` (§3.4) + its reducer.
 - Freeze fields for the quote (`destinationAmount`, frozen `destMin`) already
   largely exist (`saveSwapBestPath`); add what's needed for expiry detection.
@@ -625,19 +723,34 @@ In [`ducks/transactionSubmission.ts`](../src/popup/ducks/transactionSubmission.t
 
 ### 3.9 Blockaid integration summary
 
-Everything needed already exists in [`helpers/blockaid.ts`](../src/popup/helpers/blockaid.ts)
-and [`components/WarningMessages`](../src/popup/components/WarningMessages/index.tsx):
+The scanning primitives live in [`helpers/blockaid.ts`](../src/popup/helpers/blockaid.ts);
+banner rendering was **unified into
+[`components/BlockaidBanner`](../src/popup/components/BlockaidBanner/index.tsx)**
+(`WarningMessages` now only supplies the expanded `BlockAidScanExpanded` pane +
+`MemoRequiredLabel`):
 
 - **Pick-time:** `scanAssetBulk` in `useSwapTokenLookup` (mainnet-only).
 - **Review-time:** `useScanTx` on the combined `changeTrust + pathPaymentStrictSend`
-  XDR (already wired in `useSimulateSwapData`; it now scans 2 ops).
-- **Caching:** add a session/Redux scan-result cache (new — the extension has none
-  today) keyed by asset id with `updatedAt`, so the picker doesn't re-scan within
-  a session.
-- **In-place badges:** `ScamAssetIcon` renders the warning on (a) picker rows
-  (§3.2), (b) the selected Sell/Receive token icon on the Swap home `AmountCard`
-  (§3.3 — persists after the picker closes), and (c) the review sheet (§3.7) — the
-  extension analogue of mobile's `TokenIconWithBadge` surfaces.
+  XDR (wired in `useSimulateSwapData`; scans 2 ops).
+- **Verdict recovery (fail-closed):** if the destination is picked before its
+  pick-time bulk-scan verdict lands,
+  [`useSwapDestinationScan`](../src/popup/components/swap/SwapAmount/hooks/useSwapDestinationScan.ts)
+  recovers it from the in-session scan cache or a single-token `scanAssetBulk`,
+  then writes `securityLevel` (+ `securityWarnings`) back onto
+  `destinationTokenDetails`. A **missing** verdict (cache miss + failed/empty
+  scan) does **not** fail open — it flows through `getAssetSecurityLevel`, which
+  maps absent data to **`UNABLE_TO_SCAN`** on a Blockaid-enabled network
+  (matching the picker's unscanned-row handling), so the review shows the
+  "couldn't be scanned" banner + acknowledgement gate instead of a clean
+  confirm. The async write is cancel/abort-guarded so a stale verdict is never
+  written onto a changed destination.
+- **Caching (as built):** an in-memory **module-scoped** scan cache in
+  `useSwapTokenLookup` (deliberately not persisted — §2.8), so the picker doesn't
+  re-scan within a session.
+- **In-place badges:** the warning renders on (a) picker discover rows via
+  `AssetListRow`'s `AssetIcon` (§3.2), (b) the selected Sell/Receive token icon on
+  the Swap home `AmountCard` (§3.3 — persists after the picker closes), and
+  (c) the review sheet's `BlockaidBanner` (§3.7).
 
 ### 3.10 Telemetry
 
@@ -645,18 +758,22 @@ Add new entries to [`constants/metricsNames.ts`](../src/popup/constants/metricsN
 (which already has `viewSwap`, `swapFrom`, `swapTo`, `swapAmount`, `swapConfirm`,
 …) and emit via `emitMetric`, mirroring mobile's `SWAP_*` set:
 
-- swap **from**/**to** picker opened (`{ source: "cta" | "dropdown" }` — `cta` =
-  the empty-state "Select an asset" button, `dropdown` = tapping the token chip in
-  the You sell / You receive card)
-- **source** selected (`{ tokenCode, tokenIssuer, source: "balances" | "search" }`
-  — the source picker is held-only, so no `popular` / `requiresTrustline`)
+- **picker opened** (`{ side: "source" | "destination", source: "cta" | "dropdown" }`
+  — `side` records which picker; `cta` = the CTA shortcut to the missing side,
+  `dropdown` = tapping the token chip in the You sell / You receive card)
+- **source** selected (`{ tokenCode, tokenIssuer, source: "balances" }` — the
+  source picker is held-only, so `source` is always `balances`)
 - **destination** selected (`{ tokenCode, tokenIssuer, requiresTrustline, source: "balances" | "popular" | "search" }`)
-- direction toggled
-- trustline added (on confirmed combined tx)
-- XLM-reserve-insufficient shown
-- quote expired (`{ sourceToken, destToken, sourceAmount, destAmount, allowedSlippage, resultCode }`)
-  — fired instead of swap-fail (§3.5); `allowedSlippage` lets us measure the 2%
-  default's effect (§2.7) and `resultCode` carries the Horizon op code(s)
+- **direction toggled**
+- **trustline added** (`{ tokenCode, tokenIssuer }`, post-confirmation once the
+  combined tx settles)
+- **XLM-reserve shown**
+- **quote expired** (`{ sourceToken, destToken, sourceAmount, destAmount, allowedSlippage }`,
+  plus `resultCode` on the **submit-time recovery path only**) — fired from two
+  triggers that dedupe into one toast (§3.5); `allowedSlippage` lets us measure
+  the 2% default's effect (§2.7) and `resultCode` carries the Horizon op code(s)
+- **swap success** (`{ sourceToken, destToken, sourceAmount, destAmount, allowedSlippage }`,
+  post-confirmation)
 
 These measure the discovery → swap funnel and first-time trustline creation.
 
@@ -682,15 +799,22 @@ verified/unverified info sheets, and the quote-expired message.
   - Quote-expiry classification → expiry path (message + refetch) vs generic fail.
   - `shouldShowXlmReservePreflight` branches (XLM vs non-XLM source).
   - `AmountCard` / `PercentageButtons` extraction: Send behavior preserved.
-- **E2E (Playwright,** [`e2e-tests/`](../e2e-tests)**):** the Playwright spec
-  **replaces mobile's manual/integration matrix** (mobile §12). There is **no swap
-  E2E test today** (only `sendPayment` / `sendCollectible`). Add a `swap` spec
-  covering held-to-held (regression), swap-to-new-token happy path (picker →
-  non-held pick → review trustline banner → confirm → combined tx), the
-  XLM-reserve sheet, a Blockaid-flagged destination, search (verified / unverified
-  / Soroban empty state), the **stellar.expert-unreachable fallback** (Popular
-  omitted + held-only search + soft notice — §3.1), and **testnet** behavior
-  (Blockaid badges absent / unable-to-scan), reusing the existing fixtures/stubs.
+  - `useSwapDestinationScan` verdict recovery: a failed/empty recovery scan
+    resolves to `UNABLE_TO_SCAN` (fail-closed), a flagged scan resolves to
+    `MALICIOUS`, and a superseded (unmounted mid-flight) scan writes nothing.
+  - `fontScale` (`fitFontSizePx` / `getAvailableBalanceFontSizePx`): the shared
+    amount font-size scale shrinks with text length at the step boundaries.
+- **E2E (Playwright,** [`e2e-tests/swap.test.ts`](../e2e-tests/swap.test.ts)**):**
+  the Playwright spec **replaces mobile's manual/integration matrix** (mobile §12).
+  Shipped tests: held-to-held (regression), swap-to-new-token trustline banner at
+  review, full swap-to-new-token completion (through the success summary),
+  network-switch picker repopulation, a flagged-destination Blockaid warning at
+  review, stacked trustline + token banners, the XLM-reserve pre-flight sheet,
+  Soroban-contract-search empty state, the **stellar.expert-unreachable fallback**
+  (Popular omitted + held-only + soft notice), fallback-still-lists-held-tokens,
+  quote-expiry recovery, and **testnet** (no Blockaid badges). The Blockaid swap
+  banners are additionally covered in
+  `blockaidScan.{safe,suspicious,malicious,unable}.test.ts`.
 - **Regression:** Add-asset still calls `getManageAssetXDR` (delegating to
   `buildChangeTrustOperation`); Send amount input behavior unchanged after the
   `AmountCard` extraction.
