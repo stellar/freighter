@@ -73,9 +73,14 @@ export const useSwapDestinationScan = ({
         );
         scan = bulk?.results?.[id];
       }
-      if (cancelled || !scan) {
+      if (cancelled) {
         return;
       }
+      // A missing scan (cache miss + failed/empty bulk scan) must NOT fail open:
+      // getAssetSecurityLevel maps absent data to UNABLE_TO_SCAN on a
+      // Blockaid-enabled network, matching the picker's unscanned-row handling,
+      // so the review shows the "couldn't be scanned" banner + acknowledgement
+      // gate instead of a clean confirm.
       const securityLevel = getAssetSecurityLevel({
         blockaidData: scan,
         blockaidOverrideState,
