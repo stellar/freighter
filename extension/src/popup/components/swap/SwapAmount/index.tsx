@@ -186,9 +186,10 @@ export const SwapAmount = ({
     if (isSwapQuoteExpired) {
       dispatch(clearSwapQuoteExpired());
     }
-    const amountVal =
-      inputType === "crypto" ? values.amount : (priceValue ?? DEFAULT_AMOUNT);
-    const cleanedAmount = cleanAmount(amountVal);
+    // The crypto amount is the committed source of truth in both display modes
+    // (the fiat input keeps it in sync), so a set value stays stable whether it
+    // was entered in token or dollar terms.
+    const cleanedAmount = cleanAmount(values.amount);
     dispatch(saveAmount(cleanedAmount));
     await fetchSimulationData({
       amount: cleanedAmount,
@@ -213,9 +214,7 @@ export const SwapAmount = ({
   };
 
   const validate = (values: { amount: string }) => {
-    const amount =
-      inputType === "crypto" ? values.amount : (priceValue ?? DEFAULT_AMOUNT);
-    const error = validateSwapAmount(amount);
+    const error = validateSwapAmount(values.amount);
     return error ? { amount: error } : {};
   };
 
@@ -625,18 +624,28 @@ export const SwapAmount = ({
                       dispatch(saveAmount(v));
                     }}
                     onAmountUsdChange={({ amount: newAmount }) => {
-                      const v =
+                      const usd =
                         newAmount === "" ? DEFAULT_AMOUNT_USD : newAmount;
-                      formik.setFieldValue("amountUsd", v);
-                      dispatch(saveAmountUsd(v));
+                      formik.setFieldValue("amountUsd", usd);
+                      dispatch(saveAmountUsd(usd));
+                      // Keep the crypto amount (the committed source of truth)
+                      // in sync with the fiat input.
+                      const crypto = assetPrice
+                        ? new BigNumber(cleanAmount(usd))
+                            .dividedBy(assetPrice)
+                            .decimalPlaces(assetDecimals)
+                            .toString()
+                        : DEFAULT_AMOUNT;
+                      formik.setFieldValue("amount", crypto);
+                      dispatch(saveAmount(crypto));
                     }}
                     onToggleInputType={() => {
                       const newInputType =
                         inputType === "crypto" ? "fiat" : "crypto";
-                      if (newInputType === "crypto") {
-                        dispatch(saveAmount(priceValue));
-                        formik.setFieldValue("amount", priceValue);
-                      }
+                      // Switching to fiat seeds the fiat field from the current
+                      // crypto amount. Switching to crypto leaves the amount
+                      // untouched — it's already the source of truth, so
+                      // re-deriving it from the rounded fiat value would drift.
                       if (newInputType === "fiat") {
                         dispatch(saveAmountUsd(priceValueUsd));
                         formik.setFieldValue("amountUsd", priceValueUsd);
@@ -748,29 +757,28 @@ export const SwapAmount = ({
                   <PercentageButtons
                     onSelect={(pct: number) => {
                       emitMetric(METRIC_NAMES.swapAmount);
-                      const fraction = new BigNumber(pct).dividedBy(100);
+                      // Always a fraction of the crypto available balance, so
+                      // the committed amount is identical in crypto and fiat
+                      // display. In fiat mode the fiat field mirrors it (rounded
+                      // to cents) for display only.
+                      const pctAmount = new BigNumber(
+                        cleanAmount(availableBalance),
+                      )
+                        .multipliedBy(new BigNumber(pct).dividedBy(100))
+                        .decimalPlaces(assetDecimals)
+                        .toString();
+                      formik.setFieldValue("amount", pctAmount);
+                      dispatch(saveAmount(pctAmount));
                       if (inputType === "fiat" && assetPrice) {
                         const pctUsd = formatAmount(
                           roundUsdValue(
                             new BigNumber(assetPrice)
-                              .multipliedBy(
-                                new BigNumber(cleanAmount(availableBalance)),
-                              )
-                              .multipliedBy(fraction)
+                              .multipliedBy(pctAmount)
                               .toString(),
                           ),
                         );
                         formik.setFieldValue("amountUsd", pctUsd);
                         dispatch(saveAmountUsd(pctUsd));
-                      } else {
-                        const pctAmount = new BigNumber(
-                          cleanAmount(availableBalance),
-                        )
-                          .multipliedBy(fraction)
-                          .decimalPlaces(assetDecimals)
-                          .toString();
-                        formik.setFieldValue("amount", pctAmount);
-                        dispatch(saveAmount(pctAmount));
                       }
                     }}
                   />
