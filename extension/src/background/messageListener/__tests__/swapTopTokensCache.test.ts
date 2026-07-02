@@ -62,4 +62,18 @@ describe("swap top-tokens cache handlers", () => {
     });
     expect(cachedSwapTopTokens).toBeNull();
   });
+
+  it("resolves to a response object so the popup caller's `{ error }` destructure is safe", async () => {
+    const response = await cacheSwapTopTokens({
+      request: cacheRequest("PUBLIC", tokens),
+      localStore: mockDataStorage,
+    });
+
+    // internal.ts's cacheSwapTopTokens does `const { error } = await
+    // sendMessageToBackground(...)`; a void (undefined) return would throw a
+    // TypeError on that destructure, so the handler must resolve to an object.
+    const { error } = response as { error?: string };
+    expect(error).toBeUndefined();
+    expect(response).toEqual({});
+  });
 });
