@@ -230,9 +230,12 @@ function useSimulateTxData({
   networkDetails: NetworkDetails;
   simParams: SimulationParams;
 }) {
-  const { memo, destinationTokenDetails } = useSelector(
-    transactionDataSelector,
-  );
+  const {
+    memo,
+    destinationTokenDetails,
+    path: storedPath,
+    destinationAmount: storedDestinationAmount,
+  } = useSelector(transactionDataSelector);
   const reduxDispatch = useDispatch<AppDispatch>();
 
   const { scanTx } = useScanTx();
@@ -263,30 +266,41 @@ function useSimulateTxData({
         simParams.transactionFee || stroopToXlm(BASE_FEE),
       );
 
-      const bestPath = await horizonGetBestPath({
-        amount,
-        sourceAsset: getCanonicalFromAsset(
-          sourceAsset.code,
-          sourceAsset.issuer,
-        ),
-        destAsset: getCanonicalFromAsset(destAsset.code, destAsset.issuer),
-        networkDetails,
-      });
+      // Reuse the quote the live "You receive" preview already surfaced (its
+      // path + destination amount are in Redux) instead of re-fetching, so the
+      // reviewed amount matches exactly what the user saw — no last-moment jump.
+      // Any drift by submit time is bounded by destMin (slippage) and recovered
+      // via the quote-expiry flow. Only fetch a fresh path when no live quote
+      // exists yet (path may legitimately be empty for a direct swap).
+      let destinationAmount = storedDestinationAmount;
+      let path: string[] = storedPath || [];
 
-      if (!bestPath?.destination_amount) {
-        throw new Error(ERROR_TO_DISPLAY.NO_PATH_FOUND);
-      }
+      if (!destinationAmount || new BigNumber(destinationAmount).lte(0)) {
+        const bestPath = await horizonGetBestPath({
+          amount,
+          sourceAsset: getCanonicalFromAsset(
+            sourceAsset.code,
+            sourceAsset.issuer,
+          ),
+          destAsset: getCanonicalFromAsset(destAsset.code, destAsset.issuer),
+          networkDetails,
+        });
 
-      const destinationAmount = bestPath.destination_amount;
-      // store in canonical form for easier use
-      const path: string[] = [];
-      bestPath.path.forEach((p) => {
-        if (!p.asset_code && !p.asset_issuer) {
-          path.push(p.asset_type);
-        } else {
-          path.push(getCanonicalFromAsset(p.asset_code, p.asset_issuer));
+        if (!bestPath?.destination_amount) {
+          throw new Error(ERROR_TO_DISPLAY.NO_PATH_FOUND);
         }
-      });
+
+        destinationAmount = bestPath.destination_amount;
+        // store in canonical form for easier use
+        path = [];
+        bestPath.path.forEach((p) => {
+          if (!p.asset_code && !p.asset_issuer) {
+            path.push(p.asset_type);
+          } else {
+            path.push(getCanonicalFromAsset(p.asset_code, p.asset_issuer));
+          }
+        });
+      }
       if (destinationRate) {
         payload.dstAmountPriceUsd = formatAmount(
           roundUsdValue(
