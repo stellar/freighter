@@ -432,9 +432,9 @@ export const SwapAmount = ({
           new BigNumber(sellSpendable),
         );
         dispatch(saveAmount(capped.toFixed(7)));
-        // In fiat mode the whole pipeline reads amountUsd, so also recalculate
-        // the fiat figure from the sell token's price; if it has no price, drop
-        // to crypto mode so the prefilled amount is the one used.
+        // Also set the fiat display from the sell token's price so it matches
+        // the prefilled crypto amount; if the token has no price, drop to
+        // crypto mode so the prefilled amount is the one shown.
         if (assetPrice) {
           dispatch(
             saveAmountUsd(
@@ -839,7 +839,12 @@ export const SwapAmount = ({
             // review time.
             onConfirm={goToNext}
             sendAmount={amount}
-            sendPriceUsd={priceValueUsd}
+            // Show the same fiat figure the amount screen displayed: the
+            // entered dollars in fiat mode, the computed USD of the crypto
+            // amount in crypto mode.
+            sendPriceUsd={
+              inputType === "fiat" ? formik.values.amountUsd : priceValueUsd
+            }
             simulationState={simulationState}
             srcAsset={asset}
             dstAsset={{
