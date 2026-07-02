@@ -284,13 +284,13 @@ test.describe("BlockAid Scan - Unable to Scan States", () => {
     await expect(page.getByTestId("AppHeaderPageTitle")).toContainText(
       "Swap from",
     );
-    await expect(page.getByText(/XLM/)).toBeVisible();
+    await expect(page.getByTestId("XLM-balance")).toBeVisible();
     await page.getByTestId("XLM-balance").click();
 
     // Select destination token (USDC)
     await page.getByTestId("swap-dst-asset-tile").click({ force: true });
     await expect(page.getByText("Swap to")).toBeVisible();
-    await expect(page.getByText(/USDC/)).toBeVisible();
+    await expect(page.getByTestId("USDC-balance")).toBeVisible();
     await page.getByTestId("USDC-balance").click();
 
     // Wait to be back at amount step
