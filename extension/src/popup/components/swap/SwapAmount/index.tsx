@@ -76,6 +76,10 @@ import "./styles.scss";
 const XLM_RESERVE_HELP_URL =
   "https://help.freighter.app/article/xjlva9dxov-how-much-xlm-do-i-need-in-my-wallet";
 
+// Canonical "zero" values for the swap amount and its USD equivalent.
+const DEFAULT_AMOUNT = "0";
+const DEFAULT_AMOUNT_USD = "0.00";
+
 interface SwapAmountProps {
   inputType: InputType;
   setInputType: (type: InputType) => void;
@@ -183,7 +187,7 @@ export const SwapAmount = ({
       dispatch(clearSwapQuoteExpired());
     }
     const amountVal =
-      inputType === "crypto" ? values.amount : (priceValue ?? "0");
+      inputType === "crypto" ? values.amount : (priceValue ?? DEFAULT_AMOUNT);
     const cleanedAmount = cleanAmount(amountVal);
     dispatch(saveAmount(cleanedAmount));
     await fetchSimulationData({
@@ -209,7 +213,8 @@ export const SwapAmount = ({
   };
 
   const validate = (values: { amount: string }) => {
-    const amount = inputType === "crypto" ? values.amount : (priceValue ?? "0");
+    const amount =
+      inputType === "crypto" ? values.amount : (priceValue ?? DEFAULT_AMOUNT);
     const error = validateSwapAmount(amount);
     return error ? { amount: error } : {};
   };
@@ -394,8 +399,8 @@ export const SwapAmount = ({
       // Switching the sell side to a different token: reset the amount, since
       // any prior amount was denominated in the now-replaced source.
       dispatch(saveAsset(sellCanonical));
-      dispatch(saveAmount("0"));
-      dispatch(saveAmountUsd("0.00"));
+      dispatch(saveAmount(DEFAULT_AMOUNT));
+      dispatch(saveAmountUsd(DEFAULT_AMOUNT_USD));
       return;
     }
 
@@ -568,10 +573,12 @@ export const SwapAmount = ({
                     // Show the gray "0" placeholder (empty input) until an
                     // amount is entered; redux keeps the canonical "0".
                     amount={
-                      formik.values.amount === "0" ? "" : formik.values.amount
+                      formik.values.amount === DEFAULT_AMOUNT
+                        ? ""
+                        : formik.values.amount
                     }
                     amountUsd={
-                      formik.values.amountUsd === "0.00"
+                      formik.values.amountUsd === DEFAULT_AMOUNT_USD
                         ? ""
                         : formik.values.amountUsd
                     }
@@ -613,12 +620,13 @@ export const SwapAmount = ({
                     cryptoDecimals={assetDecimals}
                     onAmountChange={({ amount: newAmount }) => {
                       // Normalize a cleared input back to the canonical "0".
-                      const v = newAmount === "" ? "0" : newAmount;
+                      const v = newAmount === "" ? DEFAULT_AMOUNT : newAmount;
                       formik.setFieldValue("amount", v);
                       dispatch(saveAmount(v));
                     }}
                     onAmountUsdChange={({ amount: newAmount }) => {
-                      const v = newAmount === "" ? "0.00" : newAmount;
+                      const v =
+                        newAmount === "" ? DEFAULT_AMOUNT_USD : newAmount;
                       formik.setFieldValue("amountUsd", v);
                       dispatch(saveAmountUsd(v));
                     }}
@@ -670,8 +678,8 @@ export const SwapAmount = ({
                       dispatch(saveIsToken(false));
                       // The amount was denominated in the old source token; reset
                       // it whenever the source token changes.
-                      dispatch(saveAmount("0"));
-                      dispatch(saveAmountUsd("0.00"));
+                      dispatch(saveAmount(DEFAULT_AMOUNT));
+                      dispatch(saveAmountUsd(DEFAULT_AMOUNT_USD));
                     }}
                   >
                     <Icon.ChevronDown />
@@ -687,10 +695,10 @@ export const SwapAmount = ({
                     availableBalanceFontSizePx={availableBalanceFontSizePx}
                     inputType={inputType}
                     amount={destinationAmount}
-                    amountUsd={dstPriceValueUsd || "0.00"}
+                    amountUsd={dstPriceValueUsd || DEFAULT_AMOUNT_USD}
                     amountFontSizeClass={getAmountFontSizeClass(
                       inputType === "fiat"
-                        ? dstPriceValueUsd || "0.00"
+                        ? dstPriceValueUsd || DEFAULT_AMOUNT_USD
                         : destinationAmount,
                     )}
                     assetCode={dstAsset ? dstAsset.code : ""}
