@@ -134,7 +134,7 @@ export const SendDestinationAsset = ({
               resetAmountForm();
               goToNext();
             }}
-            isShowingHeader={false}
+            isShowingHeader={true}
           />
           {destAssetDataState.data.collectibles.collections.length > 0 && (
             <div className="SendDestinationAsset__collectibles-section">
