@@ -25,6 +25,17 @@ import { InputType } from "helpers/transaction";
 import { getSwapCtaState } from "./swapCtaState";
 import { ResolvedSwapAmountData } from "../hooks/useGetSwapAmountData";
 
+// USD value of `amount` units priced at `price` per unit, rounded and formatted
+// for a card's fiat line.
+const formatUsdValue = (price: BigNumber.Value, amount: string): string =>
+  formatAmount(
+    roundUsdValue(
+      new BigNumber(price)
+        .multipliedBy(new BigNumber(cleanAmount(amount)))
+        .toString(),
+    ),
+  );
+
 interface GetSwapDerivedDataParams {
   data: ResolvedSwapAmountData;
   asset: string;
@@ -101,24 +112,10 @@ export const getSwapDerivedData = ({
         .decimalPlaces(assetDecimals)
         .toString()
     : null;
-  const priceValueUsd = assetPrice
-    ? `${formatAmount(
-        roundUsdValue(
-          new BigNumber(assetPrice)
-            .multipliedBy(new BigNumber(cleanAmount(amount)))
-            .toString(),
-        ),
-      )}`
-    : null;
+  const priceValueUsd = assetPrice ? formatUsdValue(assetPrice, amount) : null;
   const supportsUsd = isMainnet(data.networkDetails) && assetPrice;
   const dstPriceValueUsd = dstAssetPrice
-    ? formatAmount(
-        roundUsdValue(
-          new BigNumber(dstAssetPrice)
-            .multipliedBy(new BigNumber(cleanAmount(destinationAmount || "0")))
-            .toString(),
-        ),
-      )
+    ? formatUsdValue(dstAssetPrice, destinationAmount || "0")
     : null;
   const baseAvailableBalance = asset
     ? getAvailableBalance({
