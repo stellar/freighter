@@ -25,6 +25,7 @@ import { formatAmount, roundUsdValue } from "popup/helpers/formatters";
 import { sortBalancesByValue } from "popup/helpers/balance";
 import {
   scanAssetBulk,
+  MAX_ASSETS_TO_SCAN,
   isAssetMalicious,
   isAssetSuspicious,
   shouldTreatAssetAsUnableToScan,
@@ -47,8 +48,6 @@ import {
 
 // Re-export RequestState for consumers
 export { RequestState };
-
-const MAX_ASSETS_TO_SCAN = 10;
 
 export interface SwapTokenRecord extends ManageAssetCurrency {
   canonical: string;

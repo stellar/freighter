@@ -18,6 +18,7 @@ import { initialState, reducer } from "helpers/request";
 import { RequestState } from "constants/request";
 import {
   scanAsset,
+  MAX_ASSETS_TO_SCAN,
   useIsAssetSuspicious,
   useIsAssetMalicious,
 } from "popup/helpers/blockaid";
@@ -72,7 +73,6 @@ const useAssetLookup = () => {
 
   const reduxDispatch = useDispatch<AppDispatch>();
   const { assetsLists } = useSelector(settingsSelector);
-  const MAX_ASSETS_TO_SCAN = 10;
   const isAssetSuspicious = useIsAssetSuspicious();
   const isAssetMalicious = useIsAssetMalicious();
 

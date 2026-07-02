@@ -772,6 +772,10 @@ export const fetchSiteScanData = async <T>(
   }
 };
 
+// Max assets per /scan-asset-bulk request; callers chunk their candidate list
+// into batches of this size. Not a cap on how many assets get scanned.
+export const MAX_ASSETS_TO_SCAN = 10;
+
 export const scanAssetBulk = async (
   addressList: string[],
   networkDetails: NetworkDetails,
