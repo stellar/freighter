@@ -59,7 +59,7 @@ async function openSwapToPicker(page: Page) {
     .getByTestId("swap-receive-card")
     .getByTestId("send-amount-edit-dest-asset")
     .click({ force: true });
-  await expect(page.getByText("Swap to")).toBeVisible({ timeout: 10000 });
+  await expect(page.getByText("Swap to")).toBeVisible();
 }
 
 // ---------------------------------------------------------------------------
@@ -134,9 +134,7 @@ test("held-to-held swap reaches review screen", async ({
 
   await page.getByTestId("nav-link-swap").click();
   // The new SwapAmount view uses swap-sell-card (not swap-src-asset-tile)
-  await expect(page.getByTestId("swap-sell-card")).toBeVisible({
-    timeout: 15000,
-  });
+  await expect(page.getByTestId("swap-sell-card")).toBeVisible();
 
   // Open the destination picker and pick the other held token (USDC). The
   // picker lists held balances as SwapTokenRow-<code> rows.
@@ -216,9 +214,7 @@ test("swap to new token shows trustline banner at review", async ({
   await switchToMainnet(page);
 
   await page.getByTestId("nav-link-swap").click();
-  await expect(page.getByTestId("swap-sell-card")).toBeVisible({
-    timeout: 15000,
-  });
+  await expect(page.getByTestId("swap-sell-card")).toBeVisible();
 
   // Open "Swap to" picker and search for AQUA
   await openSwapToPicker(page);
@@ -322,9 +318,7 @@ test("shows XLM-reserve sheet when balance cannot cover the reserve", async ({
   await switchToMainnet(page);
 
   await page.getByTestId("nav-link-swap").click();
-  await expect(page.getByTestId("swap-sell-card")).toBeVisible({
-    timeout: 15000,
-  });
+  await expect(page.getByTestId("swap-sell-card")).toBeVisible();
 
   await openSwapToPicker(page);
   await page.getByTestId("swap-from-search").fill("AQUA");
@@ -406,9 +400,7 @@ test("flagged destination surfaces blockaid malicious warning at review", async 
   await switchToMainnet(page);
 
   await page.getByTestId("nav-link-swap").click();
-  await expect(page.getByTestId("swap-sell-card")).toBeVisible({
-    timeout: 15000,
-  });
+  await expect(page.getByTestId("swap-sell-card")).toBeVisible();
 
   await openSwapToPicker(page);
   await page.getByTestId("swap-from-search").fill("SCAM");
@@ -456,9 +448,7 @@ test("search with Soroban contract address shows Soroban empty state", async ({
   await switchToMainnet(page);
 
   await page.getByTestId("nav-link-swap").click();
-  await expect(page.getByTestId("swap-sell-card")).toBeVisible({
-    timeout: 15000,
-  });
+  await expect(page.getByTestId("swap-sell-card")).toBeVisible();
 
   await openSwapToPicker(page);
   // Type a Soroban contract address — SwapPickerSections.hadSorobanMatches
@@ -504,9 +494,7 @@ test("stellar.expert unreachable falls back to held-only with fallback notice", 
   await switchToMainnet(page);
 
   await page.getByTestId("nav-link-swap").click();
-  await expect(page.getByTestId("swap-sell-card")).toBeVisible({
-    timeout: 15000,
-  });
+  await expect(page.getByTestId("swap-sell-card")).toBeVisible();
 
   await openSwapToPicker(page);
 
@@ -534,9 +522,7 @@ test("testnet swap picker shows no blockaid scam icons", async ({
   await loginToTestAccount({ page, extensionId, context });
 
   await page.getByTestId("nav-link-swap").click();
-  await expect(page.getByTestId("swap-sell-card")).toBeVisible({
-    timeout: 15000,
-  });
+  await expect(page.getByTestId("swap-sell-card")).toBeVisible();
 
   await openSwapToPicker(page);
 
@@ -645,9 +631,7 @@ test("flagged non-held destination stacks trustline and Blockaid banners", async
   await switchToMainnet(page);
 
   await page.getByTestId("nav-link-swap").click();
-  await expect(page.getByTestId("swap-sell-card")).toBeVisible({
-    timeout: 15000,
-  });
+  await expect(page.getByTestId("swap-sell-card")).toBeVisible();
 
   await openSwapToPicker(page);
   await page.getByTestId("swap-from-search").fill("SCAM");
@@ -773,9 +757,7 @@ test("completes a swap to a new token and shows the success summary", async ({
   await switchToMainnet(page);
 
   await page.getByTestId("nav-link-swap").click();
-  await expect(page.getByTestId("swap-sell-card")).toBeVisible({
-    timeout: 15000,
-  });
+  await expect(page.getByTestId("swap-sell-card")).toBeVisible();
 
   await openSwapToPicker(page);
   await page.getByTestId("swap-from-search").fill("AQUA");
@@ -868,9 +850,7 @@ test("switching networks repopulates the swap picker held tokens", async ({
 
   // --- Testnet: HELDONLY is not held, so it is absent from the picker. ---
   await page.getByTestId("nav-link-swap").click();
-  await expect(page.getByTestId("swap-sell-card")).toBeVisible({
-    timeout: 15000,
-  });
+  await expect(page.getByTestId("swap-sell-card")).toBeVisible();
   await openSwapToPicker(page);
   await expect(page.getByTestId("swap-section-your-tokens")).toBeVisible({
     timeout: 10000,
@@ -888,9 +868,7 @@ test("switching networks repopulates the swap picker held tokens", async ({
   await switchToMainnet(page);
 
   await page.getByTestId("nav-link-swap").click();
-  await expect(page.getByTestId("swap-sell-card")).toBeVisible({
-    timeout: 15000,
-  });
+  await expect(page.getByTestId("swap-sell-card")).toBeVisible();
   await openSwapToPicker(page);
 
   // The picker re-derived "Your tokens" for Mainnet: HELDONLY now appears.
@@ -977,9 +955,7 @@ test("recovers to the amount screen when the swap quote expires at submit", asyn
   await switchToMainnet(page);
 
   await page.getByTestId("nav-link-swap").click();
-  await expect(page.getByTestId("swap-sell-card")).toBeVisible({
-    timeout: 15000,
-  });
+  await expect(page.getByTestId("swap-sell-card")).toBeVisible();
 
   await openSwapToPicker(page);
   await page.getByTestId("swap-from-search").fill("AQUA");
@@ -1062,9 +1038,7 @@ test("swap picker fallback still lists held tokens", async ({
   await switchToMainnet(page);
 
   await page.getByTestId("nav-link-swap").click();
-  await expect(page.getByTestId("swap-sell-card")).toBeVisible({
-    timeout: 15000,
-  });
+  await expect(page.getByTestId("swap-sell-card")).toBeVisible();
 
   await openSwapToPicker(page);
 

@@ -78,9 +78,7 @@ test("Swap doesn't throw error when account is unfunded", async ({
   await page.getByTestId("nav-link-swap").click();
   // swap-sell-card is the source-asset entry point (source defaults to XLM).
   // Its visibility confirms that opening Swap on an unfunded account did not crash.
-  await expect(page.getByTestId("swap-sell-card")).toBeVisible({
-    timeout: 10000,
-  });
+  await expect(page.getByTestId("swap-sell-card")).toBeVisible();
 });
 test("Swap shows correct balances for assets", async ({
   page,
@@ -233,9 +231,7 @@ test("Swap shows correct balances for assets", async ({
 
   // The sell card (swap-sell-card) is the source entry point, defaulting to XLM.
   // send-amount-edit-dest-asset is shared by both cards, so it must be scoped.
-  await expect(page.getByTestId("swap-sell-card")).toBeVisible({
-    timeout: 15000,
-  });
+  await expect(page.getByTestId("swap-sell-card")).toBeVisible();
   await page
     .getByTestId("swap-sell-card")
     .getByTestId("send-amount-edit-dest-asset")
@@ -891,9 +887,7 @@ test("Swap persists amount when navigating to choose source asset", async ({
 
   await page.getByTestId("nav-link-swap").click();
   // swap-sell-card is the source entry point; source defaults to XLM.
-  await expect(page.getByTestId("swap-sell-card")).toBeVisible({
-    timeout: 15000,
-  });
+  await expect(page.getByTestId("swap-sell-card")).toBeVisible();
 
   // Amount input lives in both the sell and receive cards (shared AmountCard),
   // so scope it to the sell card to avoid a strict-mode violation.
@@ -915,9 +909,7 @@ test("Swap persists amount when navigating to choose source asset", async ({
   // nothing, so the entered amount is preserved.
   await clickVisibleBackButton(page);
 
-  await expect(page.getByTestId("swap-sell-card")).toBeVisible({
-    timeout: 15000,
-  });
+  await expect(page.getByTestId("swap-sell-card")).toBeVisible();
   await expect(amountInput).toHaveValue("100");
 });
 
@@ -966,9 +958,7 @@ test("Swap resets amount when user selects new source asset", async ({
 
   await page.getByTestId("nav-link-swap").click();
   // swap-sell-card is the source entry point; source defaults to XLM (native).
-  await expect(page.getByTestId("swap-sell-card")).toBeVisible({
-    timeout: 15000,
-  });
+  await expect(page.getByTestId("swap-sell-card")).toBeVisible();
 
   // Scope the amount input to the sell card: send-amount-amount-input is
   // rendered in both the sell and receive cards (shared AmountCard), so an
@@ -993,9 +983,7 @@ test("Swap resets amount when user selects new source asset", async ({
   // saveAmount("0"), so the entered amount is reset. The sell card maps a
   // redux amount of "0" to an EMPTY input value (the "0" shown is only the
   // placeholder), so the reset input value is "".
-  await expect(page.getByTestId("swap-sell-card")).toBeVisible({
-    timeout: 15000,
-  });
+  await expect(page.getByTestId("swap-sell-card")).toBeVisible();
   await expect(sellAmountInput).toHaveValue("");
 });
 
@@ -1044,9 +1032,7 @@ test("Swap preserves amount when selecting destination asset", async ({
 
   await page.getByTestId("nav-link-swap").click();
   // swap-sell-card is the source entry point; source defaults to XLM.
-  await expect(page.getByTestId("swap-sell-card")).toBeVisible({
-    timeout: 15000,
-  });
+  await expect(page.getByTestId("swap-sell-card")).toBeVisible();
 
   // Fill the sell amount. The input testid exists in BOTH the sell and
   // receive cards (shared AmountCard), so scope it to swap-sell-card.
@@ -1062,14 +1048,12 @@ test("Swap preserves amount when selecting destination asset", async ({
     .getByTestId("swap-receive-card")
     .getByTestId("send-amount-edit-dest-asset")
     .click({ force: true });
-  await expect(page.getByText("Swap to")).toBeVisible({ timeout: 10000 });
+  await expect(page.getByText("Swap to")).toBeVisible();
   await page.getByTestId("SwapTokenRow-USDC").click();
 
   // Back on the amount screen: picking a normal (different) destination does
   // NOT reset the amount, so it is preserved.
-  await expect(page.getByTestId("swap-sell-card")).toBeVisible({
-    timeout: 15000,
-  });
+  await expect(page.getByTestId("swap-sell-card")).toBeVisible();
   await expect(sellAmountInput).toHaveValue("100");
 });
 
@@ -1118,9 +1102,7 @@ test("Swap resets state when navigating back to account", async ({
 
   await page.getByTestId("nav-link-swap").click();
   // swap-sell-card is the source entry point; source defaults to XLM (native).
-  await expect(page.getByTestId("swap-sell-card")).toBeVisible({
-    timeout: 15000,
-  });
+  await expect(page.getByTestId("swap-sell-card")).toBeVisible();
 
   // Enter an amount on the sell card. Scope to swap-sell-card because both
   // the sell and receive cards render send-amount-amount-input.
@@ -1144,9 +1126,7 @@ test("Swap resets state when navigating back to account", async ({
   // source-select dispatches saveAmount("0")). The swap sell card renders the
   // canonical "0" as an EMPTY input (amount === "0" ? "" : amount), so the
   // visible value is "" — not "0".
-  await expect(page.getByTestId("swap-sell-card")).toBeVisible({
-    timeout: 15000,
-  });
+  await expect(page.getByTestId("swap-sell-card")).toBeVisible();
   await expect(
     page.getByTestId("swap-sell-card").getByTestId("send-amount-amount-input"),
   ).toHaveValue("");
@@ -1157,13 +1137,11 @@ test("Swap resets state when navigating back to account", async ({
     .getByTestId("swap-receive-card")
     .getByTestId("send-amount-edit-dest-asset")
     .click({ force: true });
-  await expect(page.getByText("Swap to")).toBeVisible({ timeout: 10000 });
+  await expect(page.getByText("Swap to")).toBeVisible();
   await page.getByTestId("SwapTokenRow-XLM").click();
 
   // Back on the amount screen with source USDC and destination XLM configured.
-  await expect(page.getByTestId("swap-sell-card")).toBeVisible({
-    timeout: 15000,
-  });
+  await expect(page.getByTestId("swap-sell-card")).toBeVisible();
 
   // Navigate back to the account view. From the amount screen goBack()
   // dispatches resetSubmission() + resetSimulation(), wiping swap state back to
@@ -1174,9 +1152,7 @@ test("Swap resets state when navigating back to account", async ({
   // Re-enter the Swap flow: state is reset. The sell input shows the empty
   // placeholder (redux amount "0" -> "") and the source is back to XLM.
   await page.getByTestId("nav-link-swap").click();
-  await expect(page.getByTestId("swap-sell-card")).toBeVisible({
-    timeout: 15000,
-  });
+  await expect(page.getByTestId("swap-sell-card")).toBeVisible();
 
   await expect(
     page.getByTestId("swap-sell-card").getByTestId("send-amount-amount-input"),

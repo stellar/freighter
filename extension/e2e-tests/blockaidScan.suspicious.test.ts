@@ -253,16 +253,14 @@ test.describe("BlockAid Scan - Suspicious States", () => {
     });
 
     await page.getByTestId("nav-link-swap").click();
-    await expect(page.getByTestId("swap-sell-card")).toBeVisible({
-      timeout: 15000,
-    });
+    await expect(page.getByTestId("swap-sell-card")).toBeVisible();
 
     // Source defaults to XLM; pick the held USDC as the destination.
     await page
       .getByTestId("swap-receive-card")
       .getByTestId("send-amount-edit-dest-asset")
       .click({ force: true });
-    await expect(page.getByText("Swap to")).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText("Swap to")).toBeVisible();
     await page.getByTestId("SwapTokenRow-USDC").click();
 
     await page
