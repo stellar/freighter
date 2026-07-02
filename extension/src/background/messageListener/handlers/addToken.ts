@@ -7,7 +7,6 @@ import {
   ResponseQueue,
   TokenQueue,
 } from "@shared/api/types/message-request";
-import { isSacContractExecutable } from "@shared/helpers/soroban/token";
 import { publicKeySelector } from "background/ducks/session";
 import { getNetworkDetails } from "background/helpers/account";
 import { addTokenWithContractId } from "../helpers/add-token-contract-id";
@@ -26,7 +25,7 @@ export const addToken = async ({
   tokenQueue: TokenQueue;
   responseQueue: ResponseQueue<AddTokenResponse>;
 }) => {
-  const { uuid } = request;
+  const { uuid, isTrustlineBacked } = request;
 
   if (!uuid) {
     captureException("addToken: missing uuid in request");
@@ -61,21 +60,14 @@ export const addToken = async ({
         : undefined;
 
     if (tokenResponse && typeof tokenResponse.response === "function") {
-      let hasError = Boolean(response.error);
-
-      if (hasError) {
-        // Storage failed. For SAC/classic tokens a trustline was already
-        // submitted and succeeded on-chain (the real operation), so don't
-        // decline the dApp over a local write failure. SEP-41 tokens have no
-        // trustline — this write is the whole operation — so surface it.
-        const isTrustlineBacked = await isSacContractExecutable(
-          tokenQueueItem.token.contractId,
-          networkDetails,
-        ).catch(() => false);
-        if (isTrustlineBacked) {
-          hasError = false;
-        }
-      }
+      // Storage failed. For SAC/classic tokens a trustline was already
+      // submitted and succeeded on-chain (the real operation), so don't
+      // decline the dApp over a local write failure. SEP-41 tokens have no
+      // trustline — this write is the whole operation — so surface it.
+      // isTrustlineBacked is set by the popup, which already knows for
+      // certain — a network call here to re-derive it could itself fail and
+      // wrongly decline a successful SAC trustline.
+      const hasError = Boolean(response.error) && !isTrustlineBacked;
 
       tokenResponse.response(!hasError);
 

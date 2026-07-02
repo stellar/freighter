@@ -25,7 +25,7 @@ type Response = {
   setIsPasswordRequired: (value: boolean) => void;
   verifyPasswordThenAddToken: (password: string) => Promise<void>;
   handleApprove: () => Promise<void>;
-  addTokenAndClose: () => Promise<boolean>;
+  addTokenAndClose: (isTrustlineBacked?: boolean) => Promise<boolean>;
   rejectAndClose: () => void;
 };
 
@@ -71,14 +71,16 @@ export const useSetupAddTokenFlow = ({
     );
   };
 
-  // Resolves the dApp request and reports success/failure — does NOT close the
-  // popup itself. The SAC review flow needs the popup to stay open (it shows
-  // its own Success/Done screen); the plain SEP-41 approve flow below closes
-  // right after this resolves, since it has no further screen to show.
-  const addTokenAndClose = async () => {
+  // Resolves the dApp request but doesn't close the popup — the SAC review
+  // needs to stay open for its own Success/Done screen. isTrustlineBacked
+  // tells the background whether an on-chain trustline already succeeded,
+  // so it doesn't have to re-derive that via a network call that could fail.
+  const addTokenAndClose = async (isTrustlineBacked = false) => {
     setSubmitError("");
     try {
-      const addTokenResp = await dispatch(addTokenFn({ uuid }));
+      const addTokenResp = await dispatch(
+        addTokenFn({ uuid, isTrustlineBacked }),
+      );
       const rejectedMessage = getThunkErrorMessage(addTokenResp);
 
       if (rejectedMessage) {

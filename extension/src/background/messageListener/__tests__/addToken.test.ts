@@ -24,12 +24,6 @@ jest.mock("../helpers/add-token-contract-id", () => ({
   addTokenWithContractId: jest.fn(),
 }));
 
-const mockIsSacContractExecutable = jest.fn();
-jest.mock("@shared/helpers/soroban/token", () => ({
-  isSacContractExecutable: (...args: unknown[]) =>
-    mockIsSacContractExecutable(...args),
-}));
-
 jest.mock("@sentry/browser", () => ({
   captureException: jest.fn(),
 }));
@@ -73,8 +67,6 @@ describe("addToken handler", () => {
     tokenQueue = [];
     responseQueue = [];
     mockResponseFn = jest.fn();
-    // Default: not a SAC (SEP-41) unless a test opts in.
-    mockIsSacContractExecutable.mockResolvedValue(false);
 
     const addTokenModule = require("../helpers/add-token-contract-id");
     addTokenModule.addTokenWithContractId.mockResolvedValue({
@@ -264,7 +256,72 @@ describe("addToken handler", () => {
   });
 
   it("surfaces the error to the dApp (response false) when a SEP-41 add fails to persist", async () => {
-    mockIsSacContractExecutable.mockResolvedValue(false);
+    const addTokenModule = require("../helpers/add-token-contract-id");
+    addTokenModule.addTokenWithContractId.mockResolvedValueOnce({
+      accountTokenIdList: [],
+      error: "Failed to add token",
+    });
+
+    tokenQueue.push(makeTokenQueueItem("uuid-1"));
+    responseQueue.push({
+      response: mockResponseFn,
+      uuid: "uuid-1",
+      createdAt: Date.now(),
+    });
+
+    const request: AddTokenMessage = {
+      type: SERVICE_TYPES.ADD_TOKEN,
+      activePublicKey: MOCK_PUBLIC_KEY,
+      uuid: "uuid-1",
+      isTrustlineBacked: false,
+    };
+
+    const result = await addToken({
+      request,
+      localStore: mockLocalStore,
+      sessionStore: mockSessionStore,
+      tokenQueue,
+      responseQueue,
+    });
+
+    expect(mockResponseFn).toHaveBeenCalledWith(false);
+    expect(result).toEqual({ error: "Failed to add token" });
+  });
+
+  it("still reports success to the dApp when a SAC add fails to persist (trustline already succeeded)", async () => {
+    const addTokenModule = require("../helpers/add-token-contract-id");
+    addTokenModule.addTokenWithContractId.mockResolvedValueOnce({
+      accountTokenIdList: [],
+      error: "Failed to add token",
+    });
+
+    tokenQueue.push(makeTokenQueueItem("uuid-1"));
+    responseQueue.push({
+      response: mockResponseFn,
+      uuid: "uuid-1",
+      createdAt: Date.now(),
+    });
+
+    const request: AddTokenMessage = {
+      type: SERVICE_TYPES.ADD_TOKEN,
+      activePublicKey: MOCK_PUBLIC_KEY,
+      uuid: "uuid-1",
+      isTrustlineBacked: true,
+    };
+
+    const result = await addToken({
+      request,
+      localStore: mockLocalStore,
+      sessionStore: mockSessionStore,
+      tokenQueue,
+      responseQueue,
+    });
+
+    expect(mockResponseFn).toHaveBeenCalledWith(true);
+    expect(result).toEqual({});
+  });
+
+  it("surfaces the error to the dApp (response false) when isTrustlineBacked is omitted (defaults to SEP-41 behavior)", async () => {
     const addTokenModule = require("../helpers/add-token-contract-id");
     addTokenModule.addTokenWithContractId.mockResolvedValueOnce({
       accountTokenIdList: [],
@@ -294,38 +351,5 @@ describe("addToken handler", () => {
 
     expect(mockResponseFn).toHaveBeenCalledWith(false);
     expect(result).toEqual({ error: "Failed to add token" });
-  });
-
-  it("still reports success to the dApp when a SAC add fails to persist (trustline already succeeded)", async () => {
-    mockIsSacContractExecutable.mockResolvedValue(true);
-    const addTokenModule = require("../helpers/add-token-contract-id");
-    addTokenModule.addTokenWithContractId.mockResolvedValueOnce({
-      accountTokenIdList: [],
-      error: "Failed to add token",
-    });
-
-    tokenQueue.push(makeTokenQueueItem("uuid-1"));
-    responseQueue.push({
-      response: mockResponseFn,
-      uuid: "uuid-1",
-      createdAt: Date.now(),
-    });
-
-    const request: AddTokenMessage = {
-      type: SERVICE_TYPES.ADD_TOKEN,
-      activePublicKey: MOCK_PUBLIC_KEY,
-      uuid: "uuid-1",
-    };
-
-    const result = await addToken({
-      request,
-      localStore: mockLocalStore,
-      sessionStore: mockSessionStore,
-      tokenQueue,
-      responseQueue,
-    });
-
-    expect(mockResponseFn).toHaveBeenCalledWith(true);
-    expect(result).toEqual({});
   });
 });

@@ -173,17 +173,14 @@ export const AddToken = () => {
     lookupNetworkDetails: hydratedNetworkDetails,
   });
 
-  // The dApp request resolves off the actual trustline transaction (fired by
-  // SubmitTx's onTransactionSuccess), not the Done button — a successful
-  // trustline must never report "user rejected" to the dApp. addTokenAndClose
-  // records the token and resolves the request; storage is best-effort, so a
-  // storage hiccup can't decline a transaction the user already approved.
-  // We keep the in-flight promise so Done can await it before closing.
+  // Resolves off the trustline tx succeeding, not the Done button, so a
+  // successful trustline is never reported as "user rejected". Kept as a
+  // promise so Done can await it before closing.
   const addTokenPromiseRef = useRef<Promise<boolean> | null>(null);
 
   const handleTrustlineTransactionSuccess = () => {
     if (!addTokenPromiseRef.current) {
-      addTokenPromiseRef.current = addTokenAndClose();
+      addTokenPromiseRef.current = addTokenAndClose(true);
     }
   };
 
@@ -191,7 +188,7 @@ export const AddToken = () => {
   // resolve the dApp request first. Otherwise window.close() races response()
   // and rejectOnWindowClose reports "user rejected" for a successful trustline.
   const handleTrustlineDone = async () => {
-    await (addTokenPromiseRef.current ?? addTokenAndClose());
+    await (addTokenPromiseRef.current ?? addTokenAndClose(true));
     window.close();
   };
 
@@ -650,7 +647,9 @@ export const AddToken = () => {
                 {/* This wording is trustline-specific and only applies to
                     SAC/classic assets — SEP-41 tokens have no trustline, they
                     are only recorded locally, so the message would be
-                    misleading for them. */}
+                    misleading for them. Native XLM also renders this: isSac
+                    is true for the native contract too (isAssetSac special-
+                    cases it), so gating on isSac alone covers both. */}
                 {hasExistingTrustline && isSac && (
                   <div className="AddToken__submit-error">
                     <Notification

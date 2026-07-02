@@ -80,10 +80,27 @@ describe("useSetupAddTokenFlow", () => {
     });
 
     expect(didClose).toBe(true);
-    expect(addToken).toHaveBeenCalledWith({ uuid: UUID });
+    expect(addToken).toHaveBeenCalledWith({
+      uuid: UUID,
+      isTrustlineBacked: false,
+    });
     expect(emitMetric).toHaveBeenCalledWith(METRIC_NAMES.tokenAddedApi);
     expect(emitMetric).not.toHaveBeenCalledWith(METRIC_NAMES.tokenFailedApi);
     expect(closeSpy).not.toHaveBeenCalled();
+  });
+
+  it("addTokenAndClose(true) dispatches addToken with isTrustlineBacked so the background never declines a successful SAC trustline over a storage hiccup", async () => {
+    mockDispatch.mockResolvedValue({ type: "addToken/fulfilled" });
+    const { result } = setup();
+
+    await act(async () => {
+      await result.current.addTokenAndClose(true);
+    });
+
+    expect(addToken).toHaveBeenCalledWith({
+      uuid: UUID,
+      isTrustlineBacked: true,
+    });
   });
 
   it("addTokenAndClose emits failed metric and keeps the popup open when dispatch rejects", async () => {
@@ -145,7 +162,10 @@ describe("useSetupAddTokenFlow", () => {
       await result.current.handleApprove();
     });
 
-    expect(addToken).toHaveBeenCalledWith({ uuid: UUID });
+    expect(addToken).toHaveBeenCalledWith({
+      uuid: UUID,
+      isTrustlineBacked: false,
+    });
     expect(result.current.isPasswordRequired).toBe(false);
     expect(closeSpy).toHaveBeenCalled();
   });
@@ -178,7 +198,10 @@ describe("useSetupAddTokenFlow", () => {
       await result.current.verifyPasswordThenAddToken("pw");
     });
 
-    expect(addToken).toHaveBeenCalledWith({ uuid: UUID });
+    expect(addToken).toHaveBeenCalledWith({
+      uuid: UUID,
+      isTrustlineBacked: false,
+    });
     expect(closeSpy).toHaveBeenCalled();
   });
 
