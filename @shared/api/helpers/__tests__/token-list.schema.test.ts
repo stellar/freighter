@@ -1,4 +1,7 @@
-import { schemaValidatedAssetList } from "../token-list";
+import {
+  schemaValidatedAssetList,
+  __resetSep0042SchemaCache,
+} from "../token-list";
 import { AssetListResponse } from "@shared/constants/soroban/asset-list";
 import { SEP0042_ASSETLIST_SCHEMA } from "./fixtures/sep0042-assetlist.schema";
 
@@ -37,6 +40,9 @@ const baseList = (overrides: Record<string, unknown> = {}): AssetListResponse =>
 describe("schemaValidatedAssetList", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    // The schema is memoized across validations, so clear the cache between
+    // cases (each mocks its own fetch response).
+    __resetSep0042SchemaCache();
     // The SEP-0042 schema is fetched over the network; return the fixture
     // so validation is deterministic and offline.
     global.fetch = jest.fn().mockResolvedValue({
@@ -121,5 +127,12 @@ describe("schemaValidatedAssetList", () => {
     const snapshot = JSON.stringify(list);
     await schemaValidatedAssetList(list);
     expect(JSON.stringify(list)).toBe(snapshot);
+  });
+
+  it("fetches the SEP-0042 schema only once across multiple validations", async () => {
+    await schemaValidatedAssetList(baseList());
+    await schemaValidatedAssetList(baseList());
+    await schemaValidatedAssetList(baseList());
+    expect(global.fetch).toHaveBeenCalledTimes(1);
   });
 });

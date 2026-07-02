@@ -17,6 +17,35 @@ import { CUSTOM_NETWORK } from "@shared/helpers/stellar";
 const SEP_0042_SCHEMA_URL =
   "https://raw.githubusercontent.com/orbitlens/stellar-protocol/sep-0042-token-lists/contents/sep-0042/assetlist.schema.json";
 
+// The SEP-0042 schema rarely changes, so fetch it once and reuse it across
+// every asset list validated in the same session — otherwise each list
+// re-fetches the identical file. A rejected fetch is not cached, so a transient
+// failure can retry on the next call.
+let sep0042SchemaPromise: Promise<unknown> | null = null;
+
+const fetchSep0042Schema = (): Promise<unknown> => {
+  if (!sep0042SchemaPromise) {
+    sep0042SchemaPromise = (async () => {
+      const res = await fetch(SEP_0042_SCHEMA_URL);
+      if (!res.ok) {
+        throw new Error(
+          `SEP-0042 schema fetch failed with status ${res.status}`,
+        );
+      }
+      return res.json();
+    })();
+    sep0042SchemaPromise.catch(() => {
+      sep0042SchemaPromise = null;
+    });
+  }
+  return sep0042SchemaPromise;
+};
+
+// Test-only: clear the memoized schema between cases.
+export const __resetSep0042SchemaCache = () => {
+  sep0042SchemaPromise = null;
+};
+
 // Per-asset fields we treat as best-effort: when one of these fails validation
 // we strip just that field and keep the rest of the asset. Matches error paths
 // like "instance.assets[3].contract".
@@ -61,20 +90,15 @@ export const schemaValidatedAssetList = async (
   assets: AssetListReponseItem[];
   errors: ValidationError[] | null;
 }> => {
-  let schemaRes;
+  let rawSchema;
   try {
-    schemaRes = await fetch(SEP_0042_SCHEMA_URL);
+    rawSchema = await fetchSep0042Schema();
   } catch (err) {
-    captureException("Error fetching SEP-0042 JSON schema");
-    return { assets: [] as AssetListReponseItem[], errors: null };
-  }
-
-  if (!schemaRes.ok) {
     captureException("Unable to fetch SEP-0042 JSON schema");
     return { assets: [] as AssetListReponseItem[], errors: null };
   }
 
-  const schema = relaxAssetListSchema(await schemaRes.json());
+  const schema = relaxAssetListSchema(rawSchema);
 
   // Validate against a copy so we never mutate the (possibly cached) source list.
   const candidate = {
