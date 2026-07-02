@@ -254,7 +254,7 @@ export const SwapAmount = ({
 
   // If the user was in fiat mode and the current source asset no longer has a
   // USD price (e.g. after a direction-swap or source picker change), force back
-  // to crypto mode so priceValue-dependent expressions are always safe.
+  // to crypto mode: the fiat field can't convert without a price.
   useEffect(() => {
     if (
       inputType === "fiat" &&
@@ -293,11 +293,8 @@ export const SwapAmount = ({
   // isLiveQuoteLoading lets the CTA tell "loading a quote" apart from "no path".
   const { isLiveQuoteLoading } = useSwapLiveQuote({
     amount,
-    amountUsd,
     asset,
     destinationAsset,
-    inputType,
-    isToken,
     destinationAmount,
     networkDetails,
     isReviewingTx,
@@ -354,7 +351,6 @@ export const SwapAmount = ({
     assetPrice,
     dstAssetPrice,
     assetDecimals,
-    priceValue,
     priceValueUsd,
     supportsUsd,
     dstPriceValueUsd,
@@ -611,7 +607,7 @@ export const SwapAmount = ({
                       inputType,
                       price: assetPrice,
                       priceUsd: priceValueUsd,
-                      cryptoAmount: priceValue,
+                      cryptoAmount: amount,
                       code: srcAsset ? srcAsset.code : "",
                     })}
                     isAmountTooHigh={isAmountTooHigh}

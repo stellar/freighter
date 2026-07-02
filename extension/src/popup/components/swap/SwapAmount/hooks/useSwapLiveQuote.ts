@@ -7,11 +7,9 @@ import { AppDispatch } from "popup/App";
 import { saveSwapBestPath } from "popup/ducks/transactionSubmission";
 import { cleanAmount } from "popup/helpers/formatters";
 import { getCanonicalFromAsset } from "helpers/stellar";
-import { getAssetDecimals } from "popup/helpers/soroban";
 import { horizonGetBestPath } from "popup/helpers/horizonGetBestPath";
 import { RequestState } from "constants/request";
 import { AppDataType } from "helpers/hooks/useGetAppData";
-import { InputType } from "helpers/transaction";
 
 import { useGetSwapAmountData } from "./useGetSwapAmountData";
 
@@ -22,11 +20,8 @@ const LIVE_QUOTE_DEBOUNCE_MS = 500;
 
 interface UseSwapLiveQuoteParams {
   amount: string;
-  amountUsd: string;
   asset: string;
   destinationAsset: string;
-  inputType: InputType;
-  isToken: boolean;
   destinationAmount: string;
   networkDetails: NetworkDetails;
   isReviewingTx: boolean;
@@ -49,11 +44,8 @@ interface UseSwapLiveQuoteParams {
  */
 export const useSwapLiveQuote = ({
   amount,
-  amountUsd,
   asset,
   destinationAsset,
-  inputType,
-  isToken,
   destinationAmount,
   networkDetails,
   isReviewingTx,
@@ -137,22 +129,9 @@ export const useSwapLiveQuote = ({
     ) {
       return;
     }
-    const livePrices = swapAmountData.data.tokenPrices;
-    const liveSrcPrice = livePrices[asset]?.currentPrice;
-    const liveDecimals = getAssetDecimals(
-      asset,
-      swapAmountData.data.userBalances,
-      isToken,
-    );
-    const cryptoAmount =
-      inputType === "fiat"
-        ? liveSrcPrice
-          ? new BigNumber(cleanAmount(amountUsd || "0"))
-              .dividedBy(new BigNumber(liveSrcPrice))
-              .decimalPlaces(liveDecimals)
-              .toString()
-          : "0"
-        : cleanAmount(amount || "0");
+    // The crypto amount is the source of truth in both display modes (the fiat
+    // input keeps it in sync), so quote it directly.
+    const cryptoAmount = cleanAmount(amount || "0");
 
     if (new BigNumber(cryptoAmount || "0").isGreaterThan(0)) {
       setIsLiveQuoteLoading(true);
@@ -171,14 +150,7 @@ export const useSwapLiveQuote = ({
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- debouncedQuote/dispatch are stable and destinationAmount is read via a ref, so quote results don't re-trigger this effect (which would loop)
-  }, [
-    amount,
-    amountUsd,
-    asset,
-    destinationAsset,
-    inputType,
-    swapAmountData.state,
-  ]);
+  }, [amount, asset, destinationAsset, swapAmountData.state]);
 
   return { isLiveQuoteLoading };
 };

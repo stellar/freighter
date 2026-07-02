@@ -106,12 +106,6 @@ export const getSwapDerivedData = ({
       ? String(dstSpotPrice)
       : undefined);
   const assetDecimals = getAssetDecimals(asset, sendData.userBalances, isToken);
-  const priceValue = assetPrice
-    ? new BigNumber(cleanAmount(amountUsd))
-        .dividedBy(new BigNumber(assetPrice))
-        .decimalPlaces(assetDecimals)
-        .toString()
-    : null;
   const priceValueUsd = assetPrice ? formatUsdValue(assetPrice, amount) : null;
   const supportsUsd = isMainnet(data.networkDetails) && assetPrice;
   const dstPriceValueUsd = dstAssetPrice
@@ -168,13 +162,11 @@ export const getSwapDerivedData = ({
   const canSwapForReserve =
     sourceIsNonXlmClassic || !!bestNonXlmClassicCanonical;
 
-  const isAmountTooHigh =
-    (inputType === "crypto" &&
-      new BigNumber(cleanAmount(amount)).gt(new BigNumber(availableBalance))) ||
-    (inputType === "fiat" &&
-      new BigNumber(cleanAmount(priceValue ?? "0")).gt(
-        new BigNumber(availableBalance),
-      ));
+  // The crypto amount is the source of truth in both display modes, so compare
+  // it directly against the available balance.
+  const isAmountTooHigh = new BigNumber(cleanAmount(amount)).gt(
+    new BigNumber(availableBalance),
+  );
 
   const swapAmountPositive =
     inputType === "crypto"
@@ -223,7 +215,6 @@ export const getSwapDerivedData = ({
     assetPrice,
     dstAssetPrice,
     assetDecimals,
-    priceValue,
     priceValueUsd,
     supportsUsd,
     dstPriceValueUsd,
