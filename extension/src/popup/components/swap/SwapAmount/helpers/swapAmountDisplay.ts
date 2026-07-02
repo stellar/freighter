@@ -1,11 +1,5 @@
 import { InputType } from "helpers/transaction";
 
-const AVAILABLE_BALANCE_FONT_SIZES = [
-  { maxLen: 28, sizePx: 14 },
-  { maxLen: 42, sizePx: 12 },
-  { maxLen: Infinity, sizePx: 11 },
-] as const;
-
 /**
  * Sizes the displayed amount by its digit count. Each card passes its OWN value
  * so the read-only receive amount isn't sized off the sell amount.
@@ -25,11 +19,6 @@ export const getAmountFontSizeClass = (
   }
   return "xsmall";
 };
-
-/** Shrinks the "X CODE available" line as it gets longer so it never wraps. */
-export const getAvailableBalanceFontSizePx = (text: string): number =>
-  AVAILABLE_BALANCE_FONT_SIZES.find(({ maxLen }) => text.length <= maxLen)!
-    .sizePx;
 
 /**
  * Builds a card's fiat/secondary line: "$0.00" when no token is picked, the USD

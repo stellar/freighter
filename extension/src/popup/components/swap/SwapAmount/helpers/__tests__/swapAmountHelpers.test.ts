@@ -2,7 +2,6 @@ import { AMOUNT_ERROR } from "helpers/transaction";
 import { validateSwapAmount } from "../swapAmountValidation";
 import {
   getAmountFontSizeClass,
-  getAvailableBalanceFontSizePx,
   buildFiatLineText,
 } from "../swapAmountDisplay";
 
@@ -33,14 +32,6 @@ describe("getAmountFontSizeClass", () => {
   it("ignores non-digits and empty values", () => {
     expect(getAmountFontSizeClass("1,234.56")).toBe("lg");
     expect(getAmountFontSizeClass("")).toBe("lg");
-  });
-});
-
-describe("getAvailableBalanceFontSizePx", () => {
-  it("shrinks as the text gets longer", () => {
-    expect(getAvailableBalanceFontSizePx("100 XLM available")).toBe(14);
-    expect(getAvailableBalanceFontSizePx("x".repeat(35))).toBe(12);
-    expect(getAvailableBalanceFontSizePx("x".repeat(60))).toBe(11);
   });
 });
 

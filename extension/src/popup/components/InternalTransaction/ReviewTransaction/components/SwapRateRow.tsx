@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Icon } from "@stellar/design-system";
 
 import { calculateSwapRate } from "../helpers/calculateSwapRate";
+import { fitFontSizePx } from "popup/components/amount/fontScale";
 
 interface SwapRateRowProps {
   srcCode: string;
@@ -14,8 +15,7 @@ interface SwapRateRowProps {
 // The rate value can be long ("1 yXLMUSD ≈ 0.00000012 yBTCETH") while the
 // "Rate" label is short, so the row gives the label only the width it needs
 // and lets the value fill the rest, stepping the value's font-size down by
-// length so it isn't cropped. Mirrors the AVAILABLE_BALANCE_FONT_SIZES scale
-// used on the swap amount screen.
+// length so it isn't cropped.
 const RATE_VALUE_FONT_SIZES = [
   { maxLen: 26, sizePx: 14 },
   { maxLen: 34, sizePx: 13 },
@@ -24,7 +24,7 @@ const RATE_VALUE_FONT_SIZES = [
 ] as const;
 
 export const getRateValueFontSizePx = (value: string): number =>
-  RATE_VALUE_FONT_SIZES.find(({ maxLen }) => value.length <= maxLen)!.sizePx;
+  fitFontSizePx(value, RATE_VALUE_FONT_SIZES);
 
 export const SwapRateRow = ({
   srcCode,

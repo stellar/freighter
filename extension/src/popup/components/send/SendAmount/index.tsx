@@ -24,6 +24,7 @@ import {
   getContractIdFromTransactionData,
 } from "popup/helpers/soroban";
 import { SubviewHeader } from "popup/components/SubviewHeader";
+import { getAvailableBalanceFontSizePx } from "popup/components/amount/fontScale";
 import {
   cleanAmount,
   formatAmount,
@@ -74,12 +75,6 @@ import { captureException } from "@sentry/browser";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 
 import "../styles.scss";
-
-const AVAILABLE_BALANCE_FONT_SIZES = [
-  { maxLen: 28, sizePx: 14 },
-  { maxLen: 42, sizePx: 12 },
-  { maxLen: Infinity, sizePx: 11 },
-] as const;
 
 // Returns the value to show in FeesPane's total row given the user's current
 // draft inclusion fee and the simulated resource fee.  For classic (no
@@ -550,9 +545,8 @@ export const SendAmount = ({
       : formatAmount(availableBalance);
 
   const availableBalanceText = `${displayTotal} ${parsedSourceAsset.code} ${t("available")}`;
-  const availableBalanceFontSize = AVAILABLE_BALANCE_FONT_SIZES.find(
-    ({ maxLen }) => availableBalanceText.length <= maxLen,
-  )!.sizePx;
+  const availableBalanceFontSize =
+    getAvailableBalanceFontSizePx(availableBalanceText);
 
   const goBackAction = () => {
     dispatch(saveAsset("native"));

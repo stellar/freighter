@@ -54,9 +54,9 @@ import { getSwapDerivedData } from "./helpers/getSwapDerivedData";
 import { validateSwapAmount } from "./helpers/swapAmountValidation";
 import {
   getAmountFontSizeClass,
-  getAvailableBalanceFontSizePx,
   buildFiatLineText,
 } from "./helpers/swapAmountDisplay";
+import { getAvailableBalanceFontSizePx } from "popup/components/amount/fontScale";
 import { useSwapQuoteExpiry } from "./hooks/useSwapQuoteExpiry";
 import { useSwapDestinationScan } from "./hooks/useSwapDestinationScan";
 import { publicKeySelector } from "popup/ducks/accountServices";
