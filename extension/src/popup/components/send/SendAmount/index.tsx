@@ -189,9 +189,6 @@ export const SendAmount = ({
   const [contractSupportsMuxed, setContractSupportsMuxed] = React.useState<
     boolean | null
   >(null);
-  // Mirror mobile behavior: preserve the amount from the field the user
-  // actually edited; only convert when switching away from that source field.
-  const [editedInputType, setEditedInputType] = useState<InputType>("crypto");
 
   // Get contract ID for custom tokens - must be before conditional returns
   const contractId = React.useMemo(
@@ -292,8 +289,9 @@ export const SendAmount = ({
     React.useState<MemoEditingContext | null>(null);
 
   const handlePaymentContinue = async () => {
-    const nextAmount =
-      inputType === "crypto" ? formik.values.amount : effectiveTokenAmount;
+    // The crypto amount is the committed source of truth in both display modes
+    // (the fiat input keeps it in sync).
+    const nextAmount = formik.values.amount;
 
     if (!isValidPositiveAmount(nextAmount)) {
       return;
@@ -336,9 +334,7 @@ export const SendAmount = ({
   };
 
   const validate = (values: { amount: string }) => {
-    const valueToValidate =
-      inputType === "crypto" ? values.amount : effectiveTokenAmount;
-    const cleanedValue = normalizeNumericString(valueToValidate);
+    const cleanedValue = normalizeNumericString(values.amount);
 
     if (
       cleanedValue.indexOf(".") !== -1 &&
@@ -510,15 +506,6 @@ export const SendAmount = ({
   const assetPrice = prices[asset] && prices[asset].currentPrice;
   const assetDecimals = getAssetDecimals(asset, sendData.userBalances, isToken);
   const amountBigNumber = getValidBigNumber(formik.values.amount);
-  const amountUsdBigNumber = getValidBigNumber(formik.values.amountUsd);
-  const priceValue = assetPrice
-    ? amountUsdBigNumber
-      ? amountUsdBigNumber
-          .dividedBy(new BigNumber(assetPrice))
-          .decimalPlaces(assetDecimals)
-          .toString()
-      : null
-    : null;
   const priceValueUsd = assetPrice
     ? amountBigNumber
       ? `${formatAmount(
@@ -528,10 +515,6 @@ export const SendAmount = ({
         )}`
       : null
     : null;
-  const effectiveTokenAmount =
-    inputType === "fiat" && editedInputType === "crypto"
-      ? normalizeNumericString(formik.values.amount)
-      : (priceValue ?? "");
   const supportsUsd = isMainnet(data.networkDetails) && assetPrice;
 
   const availableBalance = getAvailableBalance({
@@ -571,48 +554,40 @@ export const SendAmount = ({
     goToChooseAsset();
   };
 
-  const isAmountTooHigh =
-    (inputType === "crypto" &&
-      Boolean(amountBigNumber?.gt(new BigNumber(availableBalance)))) ||
-    (inputType === "fiat" &&
-      Boolean(
-        getValidBigNumber(effectiveTokenAmount)?.gt(
-          new BigNumber(availableBalance),
-        ),
-      ));
+  // The crypto amount is the source of truth in both display modes, so compare
+  // it directly against the available balance.
+  const isAmountTooHigh = Boolean(
+    amountBigNumber?.gt(new BigNumber(availableBalance)),
+  );
 
   const isAmountInputValid =
     inputType === "crypto"
       ? isValidPositiveAmount(formik.values.amount)
       : isValidPositiveAmount(formik.values.amountUsd) &&
-        isValidPositiveAmount(effectiveTokenAmount);
+        isValidPositiveAmount(formik.values.amount);
 
   const handlePercentage = (pct: number) => {
     if (pct === 100) {
       emitMetric(METRIC_NAMES.sendPaymentSetMax);
     }
 
-    const fraction = new BigNumber(pct).dividedBy(100);
+    // Always a fraction of the crypto available balance, so the committed
+    // amount is identical in crypto and fiat display. In fiat mode the fiat
+    // field mirrors it (rounded to cents) for display only.
+    const pctAmount = new BigNumber(cleanAmount(availableBalance))
+      .multipliedBy(new BigNumber(pct).dividedBy(100))
+      .decimalPlaces(assetDecimals)
+      .toString();
+    formik.setFieldValue("amount", pctAmount);
+    dispatch(saveAmount(pctAmount));
     if (inputType === "fiat" && assetPrice) {
       const pctUsd = formatAmount(
         roundUsdValue(
-          new BigNumber(assetPrice)
-            .multipliedBy(new BigNumber(cleanAmount(availableBalance)))
-            .multipliedBy(fraction)
-            .toString(),
+          new BigNumber(assetPrice).multipliedBy(pctAmount).toString(),
         ),
       );
       formik.setFieldValue("amountUsd", pctUsd);
       dispatch(saveAmountUsd(pctUsd));
-      setEditedInputType("fiat");
-    } else {
-      const pctAmount = new BigNumber(cleanAmount(availableBalance))
-        .multipliedBy(fraction)
-        .decimalPlaces(assetDecimals)
-        .toString();
-      formik.setFieldValue("amount", pctAmount);
-      dispatch(saveAmount(pctAmount));
-      setEditedInputType("crypto");
     }
   };
 
@@ -801,7 +776,7 @@ export const SendAmount = ({
                         ? assetPrice
                           ? `$${priceValueUsd || "0.00"}`
                           : "--"
-                        : `${formatAmount(effectiveTokenAmount || "0")} ${parsedSourceAsset.code}`
+                        : `${formatAmount(formik.values.amount || "0")} ${parsedSourceAsset.code}`
                     }
                     isAmountTooHigh={isAmountTooHigh}
                     maxSpendableText={displayTotal}
@@ -813,29 +788,30 @@ export const SendAmount = ({
                     onAmountChange={({ amount: newAmount }) => {
                       formik.setFieldValue("amount", newAmount);
                       dispatch(saveAmount(newAmount));
-                      setEditedInputType("crypto");
                     }}
                     onAmountUsdChange={({ amount: newAmount }) => {
                       formik.setFieldValue("amountUsd", newAmount);
                       dispatch(saveAmountUsd(newAmount));
-                      setEditedInputType("fiat");
+                      // Keep the crypto amount (the committed source of truth)
+                      // in sync with the fiat input.
+                      const crypto = assetPrice
+                        ? new BigNumber(cleanAmount(newAmount || "0"))
+                            .dividedBy(assetPrice)
+                            .decimalPlaces(assetDecimals)
+                            .toString()
+                        : "0";
+                      formik.setFieldValue("amount", crypto);
+                      dispatch(saveAmount(crypto));
                     }}
                     onToggleInputType={() => {
                       const newInputType =
                         inputType === "crypto" ? "fiat" : "crypto";
-                      if (newInputType === "crypto") {
-                        const converted =
-                          editedInputType === "crypto"
-                            ? formik.values.amount || "0"
-                            : (priceValue ?? "0");
-                        dispatch(saveAmount(converted));
-                        formik.setFieldValue("amount", converted);
-                      }
+                      // Switching to fiat seeds the fiat field from the current
+                      // crypto amount. Switching to crypto leaves the amount
+                      // untouched — it's already the source of truth, so
+                      // re-deriving it from the rounded fiat value would drift.
                       if (newInputType === "fiat") {
-                        const raw =
-                          editedInputType === "fiat"
-                            ? formik.values.amountUsd || "0"
-                            : (priceValueUsd ?? "0");
+                        const raw = priceValueUsd ?? "0";
                         const converted = raw === "0.00" ? "0" : raw;
                         dispatch(saveAmountUsd(converted));
                         formik.setFieldValue("amountUsd", converted);
@@ -991,7 +967,12 @@ export const SendAmount = ({
               setIsEditingMemo(true);
             }}
             sendAmount={amount}
-            sendPriceUsd={priceValueUsd}
+            // Show the same fiat figure the amount screen displayed: the
+            // entered dollars in fiat mode, the computed USD of the crypto
+            // amount in crypto mode.
+            sendPriceUsd={
+              inputType === "fiat" ? formik.values.amountUsd : priceValueUsd
+            }
             simulationState={simulationState}
             srcAsset={asset}
             title={t("You are sending")}
