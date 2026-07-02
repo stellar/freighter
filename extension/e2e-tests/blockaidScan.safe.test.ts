@@ -275,13 +275,13 @@ test.describe("BlockAid Scan - Safe States (No Override)", () => {
     await expect(page.getByTestId("AppHeaderPageTitle")).toContainText(
       "Swap from",
     );
-    await expect(page.getByTestId("XLM-balance")).toBeVisible();
-    await page.getByTestId("XLM-balance").click();
+    await expect(page.getByTestId("SendRow-native")).toBeVisible();
+    await page.getByTestId("SendRow-native").click();
 
     await page.getByTestId("swap-dst-asset-tile").click({ force: true });
     await expect(page.getByText("Swap to")).toBeVisible();
-    await expect(page.getByTestId("USDC-balance")).toBeVisible();
-    await page.getByTestId("USDC-balance").click();
+    await expect(page.getByTestId(`SendRow-USDC:${USDC_ISSUER}`)).toBeVisible();
+    await page.getByTestId(`SendRow-USDC:${USDC_ISSUER}`).click();
 
     await expect(page.getByTestId("AppHeaderPageTitle")).toContainText("Swap");
     await expect(page.getByTestId("send-amount-amount-input")).toBeVisible({
