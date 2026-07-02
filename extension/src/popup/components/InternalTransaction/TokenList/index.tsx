@@ -53,7 +53,7 @@ export const TokenList = ({
       ) : (
         <>
           {isShowingHeader && (
-            <div className="TokenList__Assets__Header">{t("Your Tokens")}</div>
+            <div className="TokenList__Assets__Header">{t("Tokens")}</div>
           )}
           {sortedTokens
             .filter(
