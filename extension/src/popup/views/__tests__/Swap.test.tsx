@@ -743,7 +743,7 @@ describe.skip("Swap", () => {
 
       // Should show XLM as default source asset
       const srcTile = screen.getByTestId("swap-src-asset-tile");
-      expect(within(srcTile).getByText("XLM")).toBeDefined();
+      expect(within(srcTile).getByText("Stellar Lumens")).toBeDefined();
     });
 
     it("shows empty state when no destination_asset param", async () => {
@@ -814,7 +814,7 @@ describe.skip("Swap", () => {
 
       // Should default to XLM since source asset is invalid
       const srcTile = screen.getByTestId("swap-src-asset-tile");
-      expect(within(srcTile).getByText("XLM")).toBeDefined();
+      expect(within(srcTile).getByText("Stellar Lumens")).toBeDefined();
     });
 
     it("falls back to native when source_asset is empty", async () => {
@@ -849,7 +849,7 @@ describe.skip("Swap", () => {
 
       // Should default to XLM since source asset is empty
       const srcTile = screen.getByTestId("swap-src-asset-tile");
-      expect(within(srcTile).getByText("XLM")).toBeDefined();
+      expect(within(srcTile).getByText("Stellar Lumens")).toBeDefined();
     });
 
     it("ignores invalid destination_asset query param", async () => {
@@ -968,7 +968,7 @@ describe.skip("Swap", () => {
 
       // Should default source to XLM
       const srcTile = screen.getByTestId("swap-src-asset-tile");
-      expect(within(srcTile).getByText("XLM")).toBeDefined();
+      expect(within(srcTile).getByText("Stellar Lumens")).toBeDefined();
 
       // Should show empty destination state
       const dstTile = screen.getByTestId("swap-dst-asset-tile");

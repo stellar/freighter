@@ -234,7 +234,7 @@ test("Swap shows correct balances for assets", async ({
   // Click on source asset tile to see asset list
   await page.getByTestId("swap-src-asset-tile").click();
   await expect(page.getByText("Swap from")).toBeVisible();
-  await expect(page.getByText(/FOO/)).toBeVisible();
+  await expect(page.getByTestId("FOO-balance")).toBeVisible();
   await expect(page.getByTestId("FOO-balance")).toContainText("100");
   await expect(page.getByTestId("BAZ-balance")).toContainText("10");
   await expect(page.getByTestId("PBT-balance")).toContainText("98.997");
@@ -681,7 +681,7 @@ test.fixme("Send SAC to C address", async ({ page, extensionId, context }) => {
   // Click on destination asset tile to select USDC
   await page.getByTestId("swap-dst-asset-tile").click({ force: true });
   await expect(page.getByText("Swap to")).toBeVisible();
-  await page.getByText("USDC").click({ force: true });
+  await page.getByTestId("USDC-balance").click({ force: true });
 
   // Back at amount step, fill in amount
   await expect(page.getByText("Swap")).toBeVisible();
@@ -1039,7 +1039,7 @@ test("Send flow from asset detail starts at destination step", async ({
   await stubContractSpec(page, TEST_TOKEN_ADDRESS, true);
   await loginToTestAccount({ page, extensionId, context, stubOverrides });
 
-  await page.getByText("E2E").click();
+  await page.getByText("E2E").first().click();
   await page.getByTestId("asset-detail-send-button").click();
 
   // Asset detail pre-selects asset via ?asset= param → starts at DESTINATION
@@ -1196,7 +1196,7 @@ test("Send token payment from Asset Detail", async ({
     context,
     stubOverrides,
   });
-  await page.getByText("E2E").click();
+  await page.getByText("E2E").first().click();
 
   await page.getByTestId("asset-detail-send-button").click();
   // Asset detail navigates with ?asset= param, so we land at DESTINATION (not token picker)
@@ -1239,7 +1239,7 @@ test("Send XLM payment from Asset Detail", async ({
     context,
     stubOverrides,
   });
-  await page.getByText("XLM").click();
+  await page.getByText("Stellar Lumens").click();
 
   await page.getByTestId("asset-detail-send-button").click();
   await expect(page.getByTestId("send-to-input")).toBeVisible();

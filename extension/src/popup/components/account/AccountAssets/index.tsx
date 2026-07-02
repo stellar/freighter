@@ -7,10 +7,15 @@ import BigNumber from "bignumber.js";
 import isEqual from "lodash/isEqual";
 
 import { ApiTokenPrices, AssetIcons, Balance } from "@shared/api/types";
+import {
+  AssetType,
+  LiquidityPoolShareAsset,
+} from "@shared/api/types/account-balance";
 import { retryAssetIcon } from "@shared/api/internal";
 import { AccountBalances } from "helpers/hooks/useGetBalances";
 
 import { getCanonicalFromAsset } from "helpers/stellar";
+import { getDisplayName } from "helpers/transaction";
 import { isSorobanIssuer } from "popup/helpers/account";
 import { formatTokenAmount } from "popup/helpers/soroban";
 import { useIsAssetSuspicious } from "popup/helpers/blockaid";
@@ -314,6 +319,9 @@ export const AccountAssets = ({
         }
 
         const canonicalAsset = getCanonicalFromAsset(code, issuer?.key);
+        const displayName = isLP
+          ? code
+          : getDisplayName(rb as Exclude<AssetType, LiquidityPoolShareAsset>);
         const assetPrice = assetPrices ? assetPrices[canonicalAsset] : null;
 
         const isSuspicious = isAssetSuspicious((rb as Balance).blockaidData);
@@ -351,12 +359,12 @@ export const AccountAssets = ({
                   isSuspicious={isSuspicious}
                 />
                 <div className="asset-native-value">
-                  <span className="asset-code">{code}</span>
+                  <span className="asset-code">{displayName}</span>
                   <div
                     className="asset-native-amount"
                     data-testid="asset-amount"
                   >
-                    {formatAmount(amountVal)}
+                    {formatAmount(amountVal)} {code}
                   </div>
                 </div>
               </div>

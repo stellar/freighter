@@ -295,10 +295,10 @@ export const SwapAmount = ({
     balances: sendData.userBalances.balances,
     recommendedFee: fee,
   });
-  const displayTotal = `${formatAmount(availableBalance)}`;
+  const displayTotal = `${formatAmount(availableBalance)} ${srcAsset.code}`;
   const dstDisplayTotal =
     dstAssetBalance && dstAsset
-      ? `${formatAmount(dstAssetBalance.total.toString())}`
+      ? `${formatAmount(dstAssetBalance.total.toString())} ${dstAsset.code}`
       : "0";
   const isAmountTooHigh =
     (inputType === "crypto" &&

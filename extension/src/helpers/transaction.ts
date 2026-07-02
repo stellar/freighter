@@ -20,9 +20,13 @@ export const computeDestMinWithSlippage = (
   return new BigNumber(destMin).times(new BigNumber(mult));
 };
 
-export const title = (balance: Exclude<AssetType, LiquidityPoolShareAsset>) => {
+export const NATIVE_ASSET_DISPLAY_NAME = "Stellar Lumens";
+
+export const getDisplayName = (
+  balance: Exclude<AssetType, LiquidityPoolShareAsset>,
+) => {
   if ("type" in balance.token && balance.token.type === "native") {
-    return "XLM";
+    return NATIVE_ASSET_DISPLAY_NAME;
   }
   if ("symbol" in balance) {
     return balance.symbol;
@@ -30,3 +34,6 @@ export const title = (balance: Exclude<AssetType, LiquidityPoolShareAsset>) => {
 
   return balance.token.code;
 };
+
+export const getDisplayNameFromCode = (code: string, isNative: boolean) =>
+  isNative ? NATIVE_ASSET_DISPLAY_NAME : code;

@@ -149,7 +149,9 @@ describe("AssetTile", () => {
         />,
       );
 
-      expect(screen.getByTestId("tile-primary")).toHaveTextContent("XLM");
+      expect(screen.getByTestId("tile-primary")).toHaveTextContent(
+        "Stellar Lumens",
+      );
       expect(screen.getByTestId("tile-secondary")).toHaveTextContent("500.00");
       expect(
         screen.getByTestId("AccountAssets__asset--loading-XLM"),

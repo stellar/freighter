@@ -13,7 +13,7 @@ import { getAvailableBalance } from "popup/helpers/soroban";
 import { formatAmount, roundUsdValue } from "popup/helpers/formatters";
 import { sortBalancesByValue } from "popup/helpers/balance";
 import { AssetIcon } from "popup/components/account/AccountAssets";
-import { title } from "helpers/transaction";
+import { getDisplayName } from "helpers/transaction";
 
 import "./styles.scss";
 
@@ -78,8 +78,6 @@ export const TokenList = ({
                   ? balance.token.issuer.key
                   : undefined;
               const isContract = "contractId" in balance;
-              const isNative =
-                "type" in balance.token && balance.token.type === "native";
               const canonical = getCanonicalFromAsset(code, issuerKey);
               const icon = icons[canonical];
               const availableBalance = getAvailableBalance({
@@ -109,7 +107,7 @@ export const TokenList = ({
                     />
                     <div className="TokenList__AssetRow__Title">
                       <div className="TokenList__AssetRow__Title__Heading">
-                        {isNative ? t("Stellar Lumens") : title(balance)}
+                        {getDisplayName(balance)}
                       </div>
                       <div
                         className="TokenList__AssetRow__Title__Total"

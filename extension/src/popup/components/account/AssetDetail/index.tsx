@@ -35,7 +35,7 @@ import StellarLogo from "popup/assets/stellar-logo.png";
 import { formatAmount, roundUsdValue } from "popup/helpers/formatters";
 import { Loading } from "popup/components/Loading";
 import { AccountBalances } from "helpers/hooks/useGetBalances";
-import { title } from "helpers/transaction";
+import { getDisplayName } from "helpers/transaction";
 import {
   getBalanceByAsset,
   getPriceDeltaColor,
@@ -216,6 +216,11 @@ export const AssetDetail = ({
     : `asset/${selectedAsset.replace(":", "-")}`;
 
   const isLpShare = "liquidityPoolId" in selectedBalance;
+  const displayName = isLpShare
+    ? canonical.code
+    : getDisplayName(
+        selectedBalance as Exclude<AssetType, LiquidityPoolShareAsset>,
+      );
   const hasBalance =
     selectedBalance?.total &&
     new BigNumber(selectedBalance.total).isGreaterThan(0);
@@ -236,7 +241,7 @@ export const AssetDetail = ({
     <React.Fragment>
       <View>
         <SubviewHeader
-          title={canonical.code}
+          title={displayName}
           customBackIcon={<Icon.X />}
           customBackAction={handleClose}
           rightButton={
@@ -310,12 +315,7 @@ export const AssetDetail = ({
             <div className="AssetDetail__title">
               {isLpShare && "liquidityPoolId" in selectedBalance
                 ? `LP: ${truncateString(selectedBalance.liquidityPoolId as string, 12)}`
-                : title(
-                    selectedBalance as Exclude<
-                      AssetType,
-                      LiquidityPoolShareAsset
-                    >,
-                  ) || assetDomain}
+                : displayName || assetDomain}
             </div>
             {"contractId" in selectedBalance ? (
               <div className="AssetDetail__subtitle">

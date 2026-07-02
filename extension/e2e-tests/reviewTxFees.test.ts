@@ -31,7 +31,7 @@ test("Fee breakdown pane shows Soroban fees for token send", async ({
   await loginToTestAccount({ page, extensionId, context, stubOverrides });
 
   // Navigate to token send via Asset Detail
-  await page.getByText("E2E").click();
+  await page.getByText("E2E").first().click();
   await page.getByTestId("asset-detail-send-button").click();
   await expect(page.getByTestId("send-to-input")).toBeVisible();
   await page.getByTestId("send-to-input").fill(FUNDED_DESTINATION);
@@ -276,7 +276,7 @@ test("Custom token without destination — full fee lifecycle in EditSettings an
   // Navigate to token send and set destination.
   // Auto-simulation fires as soon as destination is set (isToken=true), so the
   // fee display will update to the simulated total without needing an amount.
-  await page.getByText("E2E").click();
+  await page.getByText("E2E").first().click();
   await page.getByTestId("asset-detail-send-button").click();
   await expect(page.getByTestId("send-to-input")).toBeVisible();
   await page.getByTestId("send-to-input").fill(FUNDED_DESTINATION);
@@ -392,7 +392,7 @@ test("Custom token with recipient — full fee lifecycle in EditSettings and Fee
   await loginToTestAccount({ page, extensionId, context, stubOverrides });
 
   // Navigate to token send and set destination
-  await page.getByText("E2E").click();
+  await page.getByText("E2E").first().click();
   await page.getByTestId("asset-detail-send-button").click();
   await expect(page.getByTestId("send-to-input")).toBeVisible();
   await page.getByTestId("send-to-input").fill(FUNDED_DESTINATION);
@@ -512,7 +512,7 @@ test("Custom fee resets to default when re-entering send flow from home screen",
   await loginToTestAccount({ page, extensionId, context, stubOverrides });
 
   // ── First session: set custom fee ─────────────────────────────────────────
-  await page.getByText("E2E").click();
+  await page.getByText("E2E").first().click();
   await page.getByTestId("asset-detail-send-button").click();
   await expect(page.getByTestId("send-to-input")).toBeVisible();
   await page.getByTestId("send-to-input").fill(FUNDED_DESTINATION);
@@ -605,7 +605,7 @@ test("Auto-simulation updates fee display on SendAmount before Review Send", asy
   await loginToTestAccount({ page, extensionId, context, stubOverrides });
 
   // Navigate to token send via Asset Detail
-  await page.getByText("E2E").click();
+  await page.getByText("E2E").first().click();
   await page.getByTestId("asset-detail-send-button").click();
   await expect(page.getByTestId("send-to-input")).toBeVisible();
   await page.getByTestId("send-to-input").fill(FUNDED_DESTINATION);
@@ -634,7 +634,7 @@ test("Soroban token — manually set fee is preserved when recipient is selected
   await stubContractSpec(page, TEST_TOKEN_ADDRESS, true);
   await loginToTestAccount({ page, extensionId, context, stubOverrides });
 
-  await page.getByText("E2E").click();
+  await page.getByText("E2E").first().click();
   await page.getByTestId("asset-detail-send-button").click();
   await expect(page.getByTestId("send-to-input")).toBeVisible();
   await page.getByTestId("send-to-input").fill(FUNDED_DESTINATION);
@@ -876,7 +876,7 @@ test("Re-simulation on destination change shows correct inclusion fee in EditSet
   await loginToTestAccount({ page, extensionId, context, stubOverrides });
 
   // Navigate to token send
-  await page.getByText("E2E").click();
+  await page.getByText("E2E").first().click();
   await page.getByTestId("asset-detail-send-button").click();
   await expect(page.getByTestId("send-to-input")).toBeVisible();
   await page.getByTestId("send-to-input").fill(FUNDED_DESTINATION);
@@ -947,7 +947,7 @@ test("FeesPane shows inclusion/resource rows immediately for Soroban — resourc
   await loginToTestAccount({ page, extensionId, context, stubOverrides });
 
   // Navigate to token send and set destination (no amount — no auto-simulation fires)
-  await page.getByText("E2E").click();
+  await page.getByText("E2E").first().click();
   await page.getByTestId("asset-detail-send-button").click();
   await expect(page.getByTestId("send-to-input")).toBeVisible();
   await page.getByTestId("send-to-input").fill(FUNDED_DESTINATION);
@@ -1005,7 +1005,7 @@ test("FeesPane shows — for all fee rows when simulation fails", async ({
   await loginToTestAccount({ page, extensionId, context, stubOverrides });
 
   // Navigate to token send and set destination + amount to trigger auto-simulation
-  await page.getByText("E2E").click();
+  await page.getByText("E2E").first().click();
   await page.getByTestId("asset-detail-send-button").click();
   await expect(page.getByTestId("send-to-input")).toBeVisible();
   await page.getByTestId("send-to-input").fill(FUNDED_DESTINATION);
@@ -1048,7 +1048,7 @@ test("Send settings Default button resets to recommended fee after saving custom
   await loginToTestAccount({ page, extensionId, context, stubOverrides });
 
   // Navigate to token send and trigger Soroban simulation
-  await page.getByText("E2E").click();
+  await page.getByText("E2E").first().click();
   await page.getByTestId("asset-detail-send-button").click();
   await expect(page.getByTestId("send-to-input")).toBeVisible();
   await page.getByTestId("send-to-input").fill(FUNDED_DESTINATION);

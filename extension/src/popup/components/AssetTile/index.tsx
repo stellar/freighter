@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 
 import { AssetIcon } from "popup/components/account/AccountAssets";
 import { SelectionTile } from "popup/components/SelectionTile";
+import { getDisplayNameFromCode } from "helpers/transaction";
 
 interface AssetTileProps {
   asset: {
@@ -48,7 +49,10 @@ export const AssetTile = ({
             isSuspicious={isSuspicious}
           />
         }
-        primaryText={asset.code}
+        primaryText={getDisplayNameFromCode(
+          asset.code,
+          asset.canonical === "native",
+        )}
         secondaryText={balance}
         onClick={onClick}
         shouldUseIconWrapper={false}
