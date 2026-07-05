@@ -5,10 +5,10 @@
   "dependencies": {
     "stellar-sdk": "npm:@stellar/stellar-sdk@16.0.0-rc.1",
     "stellar-sdk-next": "npm:@stellar/stellar-sdk@16.0.0-rc.1",
-    "typescript": "5.8.3"
+    "typescript": "6.0.3"
   },
   "devDependencies": {
-    "@lavamoat/allow-scripts": "3.3.2"
+    "@lavamoat/allow-scripts": "5.1.0"
   },
   "lavamoat": {
     "allowScripts": {
