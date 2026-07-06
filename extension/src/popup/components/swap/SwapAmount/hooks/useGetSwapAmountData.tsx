@@ -36,6 +36,8 @@ function useGetSwapAmountData(
     includeIcons: boolean;
   },
   destinationAddress?: string, // NOTE: can be a G/C/M address
+  destinationAsset?: string, // canonical of the selected destination token
+  sourceAsset?: string, // canonical of the selected source token
 ) {
   const [state, dispatch] = useReducer(
     reducer<SwapAmountData, unknown>,
@@ -84,9 +86,18 @@ function useGetSwapAmountData(
       if (_isMainnet) {
         const fetchedTokenPrices = await fetchTokenPrices({
           publicKey: userDomains.publicKey,
-          balances: destinationBalances.balances,
+          // Price the account's held balances. The swap flow never sets a
+          // destination account, so destinationBalances is always empty and
+          // pricing it yields nothing — leaving the source price blank on a
+          // stale-cache miss after a quote expiry.
+          balances: userDomains.balances.balances,
           networkDetails: userDomains.networkDetails,
           useCache: true,
+          // Price the selected source + destination tokens explicitly, even
+          // when the account doesn't hold them.
+          additionalAssetIds: [sourceAsset, destinationAsset].filter(
+            (id): id is string => Boolean(id),
+          ),
         });
         tokenPrices = fetchedTokenPrices.tokenPrices || {};
       }

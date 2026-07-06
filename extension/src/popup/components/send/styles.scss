@@ -42,6 +42,21 @@
       display: flex;
       flex-direction: column;
       height: 100%;
+
+      // Explicit spacing around the "Sending" card: 8px below the recipient
+      // (account) card above it, 12px above the percentage buttons below it
+      // (overrides AmountCard's own 8px/8px).
+      .AmountCard {
+        margin-top: pxToRem(8px);
+        margin-bottom: pxToRem(12px);
+      }
+
+      // The recipient (account) card carries its own 12px bottom margin; zero
+      // it here so the total gap to the Sending card is exactly the
+      // AmountCard's 8px top margin rather than 8px + 12px.
+      .SelectionTile {
+        margin-bottom: 0;
+      }
     }
   }
 
@@ -152,6 +167,11 @@
     align-items: center;
     gap: pxToRem(4px);
     font-size: pxToRem(14px);
+
+    // Match the Swap flow: the "Fee:" label is muted gray, not primary text.
+    &__label {
+      color: var(--sds-clr-gray-11);
+    }
   }
 
   &__amount-price {

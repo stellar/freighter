@@ -4,6 +4,7 @@ import { NetworkDetails } from "@shared/constants/stellar";
 import { initialState, isError, reducer } from "helpers/request";
 
 import { isMainnet } from "helpers/stellar";
+import { matchesSwapFromSearch } from "./matchesSwapFromSearch";
 
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import {
@@ -104,28 +105,17 @@ export function useGetSwapFromData(getBalancesOptions: {
     }
 
     const balances = resolvedSwapData?.balances.balances || [];
-    const filtered =
-      term?.length > 2
-        ? balances.filter((balance) => {
-            if (
-              "token" in balance &&
-              balance.token.code.toLowerCase().includes(term)
-            )
-              return true;
-            if (
-              "token" in balance &&
-              "issuer" in balance.token &&
-              balance.token.issuer.key.toLowerCase().includes(term)
-            )
-              return true;
-            if (
-              "contractId" in balance &&
-              balance.contractId.toLowerCase().includes(term)
-            )
-              return true;
-            return false;
-          })
-        : balances;
+    // Filter from the first character (token codes can be 1-2 letters), matching
+    // the destination ("Swap to") search. The empty-term case is handled above.
+    // matchesSwapFromSearch also resolves a pasted SAC to the held token it
+    // wraps — derived from the asset, no extra API call.
+    const filtered = balances.filter((balance) =>
+      matchesSwapFromSearch({
+        balance,
+        searchTerm,
+        networkDetails: resolvedSwapData.networkDetails,
+      }),
+    );
     const payload = {
       ...resolvedSwapData,
       filteredBalances: filtered,

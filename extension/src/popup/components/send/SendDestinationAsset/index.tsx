@@ -31,13 +31,11 @@ import "./styles.scss";
 interface SendDestinationAssetProps {
   goBack: () => void;
   goToNext: () => void;
-  showCloseIcon?: boolean;
 }
 
 export const SendDestinationAsset = ({
   goBack,
   goToNext,
-  showCloseIcon = false,
 }: SendDestinationAssetProps) => {
   const { t } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
@@ -118,7 +116,6 @@ export const SendDestinationAsset = ({
         title={<span>{t("Send")}</span>}
         hasBackButton
         customBackAction={goBack}
-        {...(showCloseIcon && { customBackIcon: <Icon.X /> })}
       />
       <View.Content hasNoTopPadding>
         <div className="SendDestinationAsset">
