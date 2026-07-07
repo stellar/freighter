@@ -285,7 +285,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@amplitude/analytics-browser@npm:^2.44.3":
+"@amplitude/analytics-browser@npm:2.44.4":
   version: 2.44.4
   resolution: "@amplitude/analytics-browser@npm:2.44.4"
   dependencies:
@@ -340,7 +340,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@amplitude/experiment-js-client@npm:^1.21.1":
+"@amplitude/experiment-js-client@npm:1.21.2":
   version: 1.21.2
   resolution: "@amplitude/experiment-js-client@npm:1.21.2"
   dependencies:
@@ -12072,8 +12072,8 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "extension@workspace:extension"
   dependencies:
-    "@amplitude/analytics-browser": "npm:^2.44.3"
-    "@amplitude/experiment-js-client": "npm:^1.21.1"
+    "@amplitude/analytics-browser": "npm:2.44.4"
+    "@amplitude/experiment-js-client": "npm:1.21.2"
     "@lavamoat/allow-scripts": "npm:5.1.0"
     "@ledgerhq/hw-app-str": "npm:7.7.4"
     "@ledgerhq/hw-transport-webhid": "npm:6.35.4"
