@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "ignoreDeprecations": "6.0",
     "sourceMap": true,
     "importHelpers": true,
     "target": "ES2019",
