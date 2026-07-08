@@ -9,8 +9,8 @@ import { encodeSep53Message } from "helpers/stellar";
 import {
   buildOnrampClaims,
   canonicalizeJson,
-  assembleAuthHeader,
-  ONRAMP_AUTH_DOMAIN,
+  assembleProofToken,
+  ADDRESS_PROOF_DOMAIN,
 } from "helpers/onrampProof";
 import {
   SignOnrampProofMessage,
@@ -52,8 +52,8 @@ export const signOnrampProof = async ({
   });
   const canonical = canonicalizeJson(claims);
   const signature = sourceKeys.sign(
-    encodeSep53Message(ONRAMP_AUTH_DOMAIN + canonical),
+    encodeSep53Message(ADDRESS_PROOF_DOMAIN + canonical),
   );
 
-  return { authHeader: assembleAuthHeader(canonical, signature) };
+  return { proof: assembleProofToken(canonical, signature) };
 };

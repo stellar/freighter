@@ -2,10 +2,12 @@ import { hash } from "stellar-sdk";
 
 export const ONRAMP_TOKEN_PATH = "/api/v1/onramp/token";
 export const ONRAMP_PROOF_TTL_S = 15;
-// Domain tag folded into the signed bytes (must match backend src/auth/verifier.ts).
-// Signers sign encodeSep53Message(ONRAMP_AUTH_DOMAIN + canonical); the public
-// signMessage path will later refuse messages beginning with it.
-export const ONRAMP_AUTH_DOMAIN = "freighter:onramp-auth:v1\n";
+// Domain tag folded into the signed bytes (must match backend src/auth/verifier.ts
+// ADDRESS_PROOF_DOMAIN). Signers sign encodeSep53Message(ADDRESS_PROOF_DOMAIN +
+// canonical); the public signMessage path refuses messages beginning with it.
+// Named generically (address-proof, not onramp): it lives in the signed bytes, so
+// a rename would be a wire-breaking v2.
+export const ADDRESS_PROOF_DOMAIN = "freighter:address-proof:v1\n";
 
 export interface OnrampClaims {
   sub: string;
@@ -60,8 +62,11 @@ const toBase64Url = (buf: Buffer): string =>
     .replace(/\//g, "_")
     .replace(/=+$/, "");
 
-export const assembleAuthHeader = (
+// Assembles the `address_proof` body-field value: `<payload>.<sig>` (unpadded
+// base64url, dot-separated). No scheme literal — the proof travels as a POST-body
+// field, not an Authorization header (that header is reserved for v2's JWT).
+export const assembleProofToken = (
   canonicalPayload: string,
   signature: Buffer,
 ): string =>
-  `Stellar ${toBase64Url(Buffer.from(canonicalPayload, "utf8"))}.${toBase64Url(signature)}`;
+  `${toBase64Url(Buffer.from(canonicalPayload, "utf8"))}.${toBase64Url(signature)}`;

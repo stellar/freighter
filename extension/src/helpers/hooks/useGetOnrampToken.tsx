@@ -73,11 +73,13 @@ function useGetOnrampToken({ asset }: UseGetOnrampTokenParams) {
       }
       const publicKey =
         appData.type === AppDataType.RESOLVED ? appData.account.publicKey : "";
+      // The proof commits to this "business" body (without the proof field);
+      // it is added as `address_proof` below. For current clients it is empty.
       const requestBody = {};
 
-      let authHeader: string;
+      let proofToken: string;
       if (hardwareWalletType !== WalletType.NONE) {
-        authHeader = await signOnrampProofWithLedger({
+        proofToken = await signOnrampProofWithLedger({
           publicKey,
           body: requestBody,
           hardwareWalletType,
@@ -87,19 +89,20 @@ function useGetOnrampToken({ asset }: UseGetOnrampTokenParams) {
           activePublicKey: publicKey,
           body: requestBody,
         });
-        if (!proof.authHeader) {
+        if (!proof.proof) {
           throw new Error(proof.error || "Unable to authorize onramp request");
         }
-        authHeader = proof.authHeader;
+        proofToken = proof.proof;
       }
 
+      // The proof travels in the request body (address_proof), not an
+      // Authorization header — that header is reserved for v2's JWT.
       const options = {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: authHeader,
         },
-        body: JSON.stringify(requestBody),
+        body: JSON.stringify({ ...requestBody, address_proof: proofToken }),
       };
       const url = `${INDEXER_URL}/onramp/token`;
       const response = await fetch(url, options);

@@ -19,7 +19,7 @@ describe("signOnrampProof handler", () => {
     );
   });
 
-  it("returns an Authorization header for the active key", async () => {
+  it("returns a proof token for the active key", async () => {
     const res = await signOnrampProof({
       request: {
         type: SERVICE_TYPES.SIGN_ONRAMP_PROOF,
@@ -31,9 +31,8 @@ describe("signOnrampProof handler", () => {
       } as any,
       sessionStore: {} as any,
     });
-    expect(res.authHeader).toBeDefined();
-    const [, token] = res.authHeader!.split(" ");
-    const [payloadB64] = token.split(".");
+    expect(res.proof).toBeDefined();
+    const [payloadB64] = res.proof!.split(".");
     const claims = JSON.parse(
       Buffer.from(payloadB64, "base64url").toString("utf8"),
     );
@@ -57,6 +56,6 @@ describe("signOnrampProof handler", () => {
       sessionStore: {} as any,
     });
     expect(res.error).toBeDefined();
-    expect(res.authHeader).toBeUndefined();
+    expect(res.proof).toBeUndefined();
   });
 });

@@ -29,7 +29,7 @@ jest.mock("webextension-polyfill", () => ({
 
 jest
   .spyOn(ApiInternal, "signOnrampProof")
-  .mockResolvedValue({ authHeader: "Stellar payload.sig" });
+  .mockResolvedValue({ proof: "payload.sig" });
 
 jest.spyOn(ApiInternal, "loadAccount").mockImplementation(() =>
   Promise.resolve({

@@ -33,10 +33,10 @@ jest.mock("popup/helpers/onrampLedger", () => {
 
 describe("useGetOnrampToken (software key)", () => {
   afterEach(() => jest.restoreAllMocks());
-  it("attaches the Authorization header and sends an empty body", async () => {
+  it("sends the proof in the address_proof body field, no Authorization header", async () => {
     jest
       .spyOn(ApiInternal, "signOnrampProof")
-      .mockResolvedValue({ authHeader: "Stellar payload.sig" });
+      .mockResolvedValue({ proof: "payload.sig" });
     const fetchSpy = jest.spyOn(global, "fetch" as any).mockResolvedValue({
       json: async () => ({ data: { token: "t" } }),
     } as any);
@@ -45,10 +45,10 @@ describe("useGetOnrampToken (software key)", () => {
       await result.current.fetchData();
     });
     const [, options] = fetchSpy.mock.calls[0];
-    expect((options as any).headers.Authorization).toEqual(
-      "Stellar payload.sig",
+    expect((options as any).headers.Authorization).toBeUndefined();
+    expect((options as any).body).toEqual(
+      JSON.stringify({ address_proof: "payload.sig" }),
     );
-    expect((options as any).body).toEqual(JSON.stringify({}));
   });
 });
 

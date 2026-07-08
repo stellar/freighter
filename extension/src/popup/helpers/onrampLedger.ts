@@ -6,19 +6,19 @@ import { bipPathSelector } from "popup/ducks/accountServices";
 import {
   buildOnrampClaims,
   canonicalizeJson,
-  assembleAuthHeader,
-  ONRAMP_AUTH_DOMAIN,
+  assembleProofToken,
+  ADDRESS_PROOF_DOMAIN,
 } from "helpers/onrampProof";
 import { hardwareSignMessage } from "popup/helpers/hardwareConnect";
 
 export class LedgerOnrampUnsupportedError extends Error {}
 
 /*
- * Produces the onramp proof Authorization header by signing the SEP-53 framed
+ * Produces the `address_proof` body-field value by signing the SEP-53 framed
  * claims on a hardware wallet. The signed bytes are
- * encodeSep53Message(ONRAMP_AUTH_DOMAIN + canonical), matching the software-key
- * path and the backend verifier. The header carries only the canonical payload
- * plus the signature (via assembleAuthHeader).
+ * encodeSep53Message(ADDRESS_PROOF_DOMAIN + canonical), matching the software-key
+ * path and the backend verifier. The token carries only the canonical payload
+ * plus the signature (via assembleProofToken).
  */
 export const signOnrampProofWithLedger = async ({
   publicKey,
@@ -47,9 +47,9 @@ export const signOnrampProofWithLedger = async ({
   try {
     const { signature } = await hardwareSignMessage[WalletType.LEDGER]({
       bipPath,
-      message: Buffer.from(ONRAMP_AUTH_DOMAIN + canonical, "utf8"),
+      message: Buffer.from(ADDRESS_PROOF_DOMAIN + canonical, "utf8"),
     });
-    return assembleAuthHeader(canonical, signature);
+    return assembleProofToken(canonical, signature);
   } catch (e) {
     // Older Ledger Stellar app rejects the SIGN_MESSAGE (0x0c) APDU.
     throw new LedgerOnrampUnsupportedError(

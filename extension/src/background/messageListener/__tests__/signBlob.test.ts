@@ -5,7 +5,7 @@ import {
   SignBlobResponse,
   SignBlobMessage,
 } from "@shared/api/types/message-request";
-import { ONRAMP_AUTH_DOMAIN } from "helpers/onrampProof";
+import { ADDRESS_PROOF_DOMAIN } from "helpers/onrampProof";
 import { signBlob } from "../handlers/signBlob";
 
 const MOCK_PUBLIC_KEY =
@@ -334,11 +334,11 @@ describe("signBlob handler", () => {
     expect(mockResponseFn).toHaveBeenCalled();
   });
 
-  it("refuses to sign a message beginning with the onramp-auth domain prefix", async () => {
+  it("refuses to sign a message beginning with the address-proof domain prefix", async () => {
     const stellarModule = require("@shared/helpers/stellar");
     const signMock = stellarModule.getSdk().Keypair.fromSecret().sign;
 
-    const onrampMessage = `${ONRAMP_AUTH_DOMAIN}{"sub":"GABC","method":"POST"}`;
+    const onrampMessage = `${ADDRESS_PROOF_DOMAIN}{"sub":"GABC","method":"POST"}`;
     const blobDataWithOnrampMessage = {
       blob: {
         apiVersion: "5.0.0",

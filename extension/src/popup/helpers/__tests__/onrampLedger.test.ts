@@ -1,7 +1,7 @@
 import { Buffer } from "buffer";
 
 import { WalletType } from "@shared/constants/hardwareWallet";
-import { ONRAMP_AUTH_DOMAIN } from "helpers/onrampProof";
+import { ADDRESS_PROOF_DOMAIN } from "helpers/onrampProof";
 
 // Mock the redux store (non-hook module reads state via store.getState()).
 jest.mock("popup/App", () => ({
@@ -41,31 +41,29 @@ describe("signOnrampProofWithLedger", () => {
     jest.clearAllMocks();
   });
 
-  it("returns a Stellar auth header and signs the SEP-53 framed message", async () => {
+  it("returns a proof token and signs the SEP-53 framed message", async () => {
     const signature = Buffer.from([1, 2, 3, 4]);
     mockSignMessage.mockResolvedValue({ signature, appVersion: "5.0.0" });
 
-    const header = await signOnrampProofWithLedger({
+    const token = await signOnrampProofWithLedger({
       publicKey: PUBLIC_KEY,
       body: {},
       hardwareWalletType: WalletType.LEDGER,
     });
 
-    // Header shape: "Stellar <b64url(canonical)>.<b64url(sig)>"
-    expect(header).toMatch(/^Stellar [A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/);
-    const [scheme, payload] = header.split(" ");
-    expect(scheme).toBe("Stellar");
-    const [canonicalB64, sigB64] = payload.split(".");
+    // Token shape: "<b64url(canonical)>.<b64url(sig)>" (no scheme — body field)
+    expect(token).toMatch(/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/);
+    const [canonicalB64, sigB64] = token.split(".");
     const canonical = Buffer.from(canonicalB64, "base64url").toString("utf8");
     expect(canonical).toContain(`"sub":"${PUBLIC_KEY}"`);
     expect(Buffer.from(sigB64, "base64url").equals(signature)).toBe(true);
 
     // Device was called once with the fixed bipPath and a message that begins
-    // with the ONRAMP_AUTH_DOMAIN domain tag bytes.
+    // with the ADDRESS_PROOF_DOMAIN domain tag bytes.
     expect(mockSignMessage).toHaveBeenCalledTimes(1);
     const callArg = mockSignMessage.mock.calls[0][0];
     expect(callArg.bipPath).toBe(MOCK_BIP_PATH);
-    const domainBytes = Buffer.from(ONRAMP_AUTH_DOMAIN, "utf8");
+    const domainBytes = Buffer.from(ADDRESS_PROOF_DOMAIN, "utf8");
     expect(callArg.message.subarray(0, domainBytes.length)).toEqual(
       domainBytes,
     );

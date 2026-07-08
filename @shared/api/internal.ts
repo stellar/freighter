@@ -312,7 +312,7 @@ export const signOnrampProof = async ({
 }: {
   activePublicKey: string;
   body: unknown;
-}): Promise<{ authHeader?: string; error?: string }> =>
+}): Promise<{ proof?: string; error?: string }> =>
   sendMessageToBackground({
     type: SERVICE_TYPES.SIGN_ONRAMP_PROOF,
     activePublicKey,

@@ -244,7 +244,7 @@ export interface SignOnrampProofMessage {
 }
 
 export interface SignOnrampProofResponse {
-  authHeader?: string;
+  proof?: string;
   error?: string;
 }
 

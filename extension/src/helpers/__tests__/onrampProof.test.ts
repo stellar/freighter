@@ -2,7 +2,7 @@ import {
   canonicalizeJson,
   sha256Hex,
   buildOnrampClaims,
-  assembleAuthHeader,
+  assembleProofToken,
 } from "../onrampProof";
 
 describe("onrampProof helper", () => {
@@ -32,10 +32,10 @@ describe("onrampProof helper", () => {
     });
   });
 
-  it("assembleAuthHeader base64url-encodes payload and signature", () => {
-    const header = assembleAuthHeader("{}", Buffer.from([1, 2, 3]));
-    expect(header).toEqual(
-      `Stellar ${Buffer.from("{}", "utf8").toString("base64url")}.${Buffer.from([1, 2, 3]).toString("base64url")}`,
+  it("assembleProofToken base64url-encodes payload and signature", () => {
+    const token = assembleProofToken("{}", Buffer.from([1, 2, 3]));
+    expect(token).toEqual(
+      `${Buffer.from("{}", "utf8").toString("base64url")}.${Buffer.from([1, 2, 3]).toString("base64url")}`,
     );
   });
 
@@ -45,13 +45,13 @@ describe("onrampProof helper", () => {
   // Node (where "base64url" *is* available), so it would NOT catch a
   // `.toString("base64url")` regression — it specifically catches a fallback to
   // standard base64. See onrampProof.ts toBase64Url.
-  it("assembleAuthHeader emits url-safe base64 (no +, / or = padding)", () => {
+  it("assembleProofToken emits url-safe base64 (no +, / or = padding)", () => {
     // Bytes chosen so standard base64 is "+/+/+w==" — contains +, /, and =.
     const signature = Buffer.from([0xfb, 0xff, 0xbf, 0xfb]);
     expect(signature.toString("base64")).toMatch(/[+/=]/);
 
-    const header = assembleAuthHeader("{}", signature);
-    expect(header).toMatch(/^Stellar [A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/);
-    expect(header).not.toMatch(/[+/=]/);
+    const token = assembleProofToken("{}", signature);
+    expect(token).toMatch(/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/);
+    expect(token).not.toMatch(/[+/=]/);
   });
 });
