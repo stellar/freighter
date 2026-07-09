@@ -613,7 +613,12 @@ export const getTokenPrices = async (
     return !tokenId.includes(":lp") && !isContractId(asset.issuer);
   });
 
-  let url: URL;
+  const requestBody = JSON.stringify({ tokens: filteredTokens });
+
+  // The v2 token-prices endpoint is a freighter-backend-v2 call, so it must go
+  // through the background chokepoint (callBackendV2), which attaches the
+  // per-request JWT when the wallet is unlocked and sends anonymously otherwise
+  // (#2879). The v1 path below is the legacy indexer and stays a direct fetch.
   if (useV2) {
     // The v2 token-prices endpoint only supports pubnet and testnet. Derive the
     // price network from the passphrase rather than networkDetails.network so
@@ -631,18 +636,41 @@ export const getTokenPrices = async (
     if (!filteredTokens.length) {
       return {};
     }
-    url = new URL(`${INDEXER_V2_URL}/token-prices`);
-    url.searchParams.append("network", priceNetwork);
-  } else {
-    url = new URL(`${INDEXER_URL}/token-prices`);
+
+    const { status, body } = await sendMessageToBackground<{
+      status: number;
+      body: unknown;
+    }>({
+      type: SERVICE_TYPES.FETCH_BACKEND_V2,
+      activePublicKey: null,
+      method: "POST",
+      // Query lives in the path so callBackendV2 signs the JWT's methodAndPath
+      // over the server's full request-target (path + query) — see #2879.
+      path: `/token-prices?network=${priceNetwork}`,
+      body: requestBody,
+    });
+
+    // Mirror getDiscoverData: a 200 without a `data` payload is still a
+    // failure — returning undefined would violate the Promise<ApiTokenPrices>
+    // contract (the caller's try/catch only handles throws, not bad returns).
+    const parsed = body as { data?: ApiTokenPrices };
+    if (status !== 200 || !parsed?.data) {
+      const _err = JSON.stringify(body);
+      captureException(`Failed to fetch token prices - ${status}: ${_err}`);
+      throw new Error(_err);
+    }
+
+    return parsed.data;
   }
+
+  // v1 (legacy) path — direct fetch to the v1 indexer, not a backend-v2 call.
+  const url = new URL(`${INDEXER_URL}/token-prices`);
   const options = {
     method: "POST",
     headers: {
-      // eslint-disable-next-line @typescript-eslint/naming-convention
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ tokens: filteredTokens }),
+    body: requestBody,
   };
   const response = await fetch(url.href, options);
   const parsedResponse = (await response.json()) as { data: ApiTokenPrices };

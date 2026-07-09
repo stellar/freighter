@@ -147,14 +147,15 @@ describe("internalApi", () => {
   });
 
   describe("getTokenPrices request payload filtering", () => {
-    const mockFetchOk = () =>
-      jest.spyOn(global, "fetch").mockResolvedValue({
-        ok: true,
-        json: jest.fn().mockResolvedValue({ data: {} }),
-      } as unknown as Response);
+    // The v2 path routes through the FETCH_BACKEND_V2 background chokepoint
+    // (#2879), so it goes through sendMessageToBackground, not a direct fetch.
+    const mockSendOk = () =>
+      mockedSend.mockResolvedValue({ status: 200, body: { data: {} } });
+
+    const sentMessage = () => mockedSend.mock.calls[0][0];
 
     it("excludes contract-ID issuers from the indexer request", async () => {
-      const fetchSpy = mockFetchOk();
+      mockSendOk();
 
       await internalApi.getTokenPrices(
         [
@@ -165,8 +166,7 @@ describe("internalApi", () => {
         MAINNET_NETWORK_DETAILS,
       );
 
-      const requestInit = fetchSpy.mock.calls[0][1] as RequestInit;
-      const body = JSON.parse(requestInit.body as string);
+      const body = JSON.parse(sentMessage().body as string);
       expect(body.tokens).toEqual([
         "native",
         "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
@@ -174,30 +174,31 @@ describe("internalApi", () => {
     });
 
     it("excludes liquidity-pool IDs from the indexer request", async () => {
-      const fetchSpy = mockFetchOk();
+      mockSendOk();
 
       await internalApi.getTokenPrices(
         ["native", "abc123:lp"],
         MAINNET_NETWORK_DETAILS,
       );
 
-      const requestInit = fetchSpy.mock.calls[0][1] as RequestInit;
-      const body = JSON.parse(requestInit.body as string);
+      const body = JSON.parse(sentMessage().body as string);
       expect(body.tokens).toEqual(["native"]);
     });
 
-    it("targets the v2 endpoint with the network query param", async () => {
-      const fetchSpy = mockFetchOk();
+    it("targets the v2 chokepoint with the network query param", async () => {
+      mockSendOk();
 
       await internalApi.getTokenPrices(["native"], TESTNET_NETWORK_DETAILS);
 
-      const requestUrl = fetchSpy.mock.calls[0][0] as string;
-      expect(requestUrl).toContain("/token-prices");
-      expect(requestUrl).toContain("network=TESTNET");
+      const message = sentMessage();
+      expect(message.type).toBe(SERVICE_TYPES.FETCH_BACKEND_V2);
+      expect(message.method).toBe("POST");
+      expect(message.path).toContain("/token-prices");
+      expect(message.path).toContain("network=TESTNET");
     });
 
     it("derives the price network from the passphrase for custom networks", async () => {
-      const fetchSpy = mockFetchOk();
+      mockSendOk();
 
       // Custom network stored as STANDALONE but sharing the pubnet passphrase
       // must still resolve to PUBLIC and hit the endpoint.
@@ -208,25 +209,24 @@ describe("internalApi", () => {
         networkPassphrase: Networks.PUBLIC,
       });
 
-      expect(fetchSpy).toHaveBeenCalled();
-      const requestUrl = fetchSpy.mock.calls[0][0] as string;
-      expect(requestUrl).toContain("network=PUBLIC");
+      expect(mockedSend).toHaveBeenCalled();
+      expect(sentMessage().path).toContain("network=PUBLIC");
     });
 
     it("skips the request on unsupported networks", async () => {
-      const fetchSpy = mockFetchOk();
+      mockSendOk();
 
       const prices = await internalApi.getTokenPrices(
         ["native"],
         FUTURENET_NETWORK_DETAILS,
       );
 
-      expect(fetchSpy).not.toHaveBeenCalled();
+      expect(mockedSend).not.toHaveBeenCalled();
       expect(prices).toEqual({});
     });
 
     it("skips the request when every token is filtered out", async () => {
-      const fetchSpy = mockFetchOk();
+      mockSendOk();
 
       const prices = await internalApi.getTokenPrices(
         [
@@ -236,8 +236,40 @@ describe("internalApi", () => {
         MAINNET_NETWORK_DETAILS,
       );
 
-      expect(fetchSpy).not.toHaveBeenCalled();
+      expect(mockedSend).not.toHaveBeenCalled();
       expect(prices).toEqual({});
+    });
+  });
+
+  describe("getTokenPrices v2 response handling", () => {
+    it("returns the price data from a 200 response", async () => {
+      const prices = { native: { usd: "1", usdDelta24hPct: "0" } };
+      mockedSend.mockResolvedValue({ status: 200, body: { data: prices } });
+
+      const result = await internalApi.getTokenPrices(
+        ["native"],
+        TESTNET_NETWORK_DETAILS,
+      );
+
+      expect(result).toEqual(prices);
+    });
+
+    it("throws on a non-200 response", async () => {
+      mockedSend.mockResolvedValue({ status: 500, body: null });
+
+      await expect(
+        internalApi.getTokenPrices(["native"], TESTNET_NETWORK_DETAILS),
+      ).rejects.toThrow();
+    });
+
+    it("throws when a 200 response is missing its data payload", async () => {
+      // A 200 without `data` must throw, not resolve to undefined — otherwise
+      // undefined flows into the price cache/UI.
+      mockedSend.mockResolvedValue({ status: 200, body: {} });
+
+      await expect(
+        internalApi.getTokenPrices(["native"], TESTNET_NETWORK_DETAILS),
+      ).rejects.toThrow();
     });
   });
 
