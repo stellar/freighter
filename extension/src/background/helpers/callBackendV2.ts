@@ -17,6 +17,12 @@ export interface CallBackendV2Params {
   localStore: DataStorageAccess;
   /** Injectable for tests; defaults to global fetch. */
   fetchImpl?: typeof fetch;
+  /**
+   * Skip auth entirely: no keypair derivation, no JWT — always an anonymous
+   * fetch. For endpoints that will never be auth-gated (e.g. rpc-health), this
+   * avoids the per-request PBKDF2 cost of deriving the auth key.
+   */
+  skipAuth?: boolean;
 }
 
 export interface CallBackendV2Result {
@@ -62,10 +68,13 @@ export const callBackendV2 = async ({
   sessionStore,
   localStore,
   fetchImpl,
+  skipAuth,
 }: CallBackendV2Params): Promise<CallBackendV2Result> => {
   const doFetch = fetchImpl ?? fetch;
   const fullUrl = new URL(`${INDEXER_V2_URL}${path}`);
-  const keypair = await tryGetAuthKeypair(sessionStore, localStore);
+  const keypair = skipAuth
+    ? null
+    : await tryGetAuthKeypair(sessionStore, localStore);
 
   let res: Response;
   if (keypair) {

@@ -72,6 +72,8 @@ describe("getIsRpcHealthy", () => {
         path: expect.stringContaining("/rpc-health?network="),
         sessionStore,
         localStore,
+        // rpc-health is never auth-gated — it must skip the JWT/keypair.
+        skipAuth: true,
       }),
     );
     expect(result).toBe(true);

@@ -79,6 +79,34 @@ describe("callBackendV2", () => {
     expect(headers.Authorization).toBeUndefined();
   });
 
+  it("with skipAuth, sends anonymously and never derives a keypair even when unlocked", async () => {
+    const getMnemonic = jest
+      .spyOn(sessionMod, "getEncryptedTemporaryData")
+      .mockResolvedValue(VECTOR_MNEMONIC);
+    const derive = jest.spyOn(deriveMod, "deriveAuthKeypair");
+    const fetchImpl = jest
+      .fn()
+      .mockResolvedValue(okResponse({ status: "healthy" }));
+
+    const result = await callBackendV2({
+      method: "GET",
+      path: "/rpc-health?network=PUBLIC",
+      sessionStore,
+      localStore,
+      fetchImpl,
+      skipAuth: true,
+    });
+
+    expect(result).toEqual({ status: 200, body: { status: "healthy" } });
+    // No session read and no key derivation (avoids the PBKDF2 cost).
+    expect(getMnemonic).not.toHaveBeenCalled();
+    expect(derive).not.toHaveBeenCalled();
+    // No Authorization header.
+    const headers = ((fetchImpl.mock.calls[0][1] as RequestInit).headers ??
+      {}) as Record<string, string>;
+    expect(headers.Authorization).toBeUndefined();
+  });
+
   it("forwards a POST body and sets Content-Type", async () => {
     jest.spyOn(sessionMod, "getEncryptedTemporaryData").mockResolvedValue("");
     const fetchImpl = jest.fn().mockResolvedValue(okResponse({ data: [] }));

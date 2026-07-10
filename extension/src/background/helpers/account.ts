@@ -332,6 +332,9 @@ export const getIsRpcHealthy = async ({
         path: `/rpc-health?network=${networkDetails.network}`,
         sessionStore,
         localStore,
+        // rpc-health is never auth-gated, so skip the JWT (and the PBKDF2 key
+        // derivation it would trigger on every health check).
+        skipAuth: true,
       });
 
       if (status !== 200) {
