@@ -676,7 +676,11 @@ export const stubTokenDetails = async (page: Page | BrowserContext) => {
 };
 
 export const stubTokenPrices = async (page: Page | BrowserContext) => {
-  await page.route("**/token-prices*", async (route) => {
+  // token-prices is fetched from the background service worker (#2879), so it
+  // must be intercepted on the BrowserContext; page.route only sees the popup.
+  // Accept either a Page or a Context and normalize to the context.
+  const ctx = "context" in page ? page.context() : page;
+  await ctx.route("**/token-prices*", async (route) => {
     const request = route.request();
 
     let tokenIds = [] as string[];
@@ -1432,7 +1436,7 @@ export const stubDiscoverProtocols = async (
   page: Page,
   payload: typeof DISCOVER_PROTOCOLS_STUB = DISCOVER_PROTOCOLS_STUB,
 ) => {
-  await page.route("**/protocols", async (route) => {
+  await page.context().route("**/protocols", async (route) => {
     await route.fulfill({ json: payload });
   });
 };
@@ -1446,7 +1450,7 @@ export const stubDiscoverProtocolsError = async (
   page: Page,
   status: number = 500,
 ) => {
-  await page.route("**/protocols", async (route) => {
+  await page.context().route("**/protocols", async (route) => {
     await route.fulfill({
       status,
       json: { error: "Simulated protocols fetch error" },
