@@ -615,10 +615,11 @@ export const getTokenPrices = async (
 
   const requestBody = JSON.stringify({ tokens: filteredTokens });
 
-  // The v2 token-prices endpoint is a freighter-backend-v2 call, so it must go
+  // The v2 token-prices endpoint is a freighter-backend-v2 call, so it goes
   // through the background chokepoint (callBackendV2), which attaches the
-  // per-request JWT when the wallet is unlocked and sends anonymously otherwise
-  // (#2879). The v1 path below is the legacy indexer and stays a direct fetch.
+  // per-request JWT (#2879). token-prices is only ever fetched from an unlocked
+  // wallet (a locked wallet shows the login screen), so this request always
+  // carries the JWT. The v1 path below is the legacy indexer, a direct fetch.
   if (useV2) {
     // The v2 token-prices endpoint only supports pubnet and testnet. Derive the
     // price network from the passphrase rather than networkDetails.network so

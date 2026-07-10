@@ -83,7 +83,10 @@ describe("callBackendV2", () => {
     const getMnemonic = jest
       .spyOn(sessionMod, "getEncryptedTemporaryData")
       .mockResolvedValue(VECTOR_MNEMONIC);
-    const derive = jest.spyOn(deriveMod, "deriveAuthKeypair");
+    // Mocked so a skipAuth regression fails fast instead of running real PBKDF2.
+    const derive = jest
+      .spyOn(deriveMod, "deriveAuthKeypair")
+      .mockResolvedValue({ userId: KP.rawPublicKey().toString("hex"), keypair: KP });
     const fetchImpl = jest
       .fn()
       .mockResolvedValue(okResponse({ status: "healthy" }));
