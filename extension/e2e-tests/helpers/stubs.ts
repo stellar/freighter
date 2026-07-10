@@ -1056,6 +1056,11 @@ export const stubAccountHistory = async (context: BrowserContext) => {
 
 export const stubCollectibles = async (
   page: Page,
+  // The /collectibles list is fetched from the background service worker
+  // (#2879), so it must be intercepted with context.route; page.route only
+  // sees the popup. tokenMetadata below is fetched by the popup, so it stays
+  // on page.route.
+  context: BrowserContext,
   shouldFailRefreshMetadata?: boolean,
 ) => {
   let tokenMetadataCount = 0;
@@ -1169,7 +1174,7 @@ export const stubCollectibles = async (
     };
     await route.fulfill({ json });
   });
-  await page.route("**/collectibles**", async (route) => {
+  await context.route("**/collectibles**", async (route) => {
     const json = {
       data: {
         collections: [
@@ -1247,7 +1252,11 @@ export const stubCollectibles = async (
   });
 };
 
-export const stubCollectiblesUnsuccessfulMetadata = async (page: Page) => {
+export const stubCollectiblesUnsuccessfulMetadata = async (
+  page: Page,
+  // See stubCollectibles: /collectibles is a background fetch (context.route).
+  context: BrowserContext,
+) => {
   await page.route("**/tokenMetadata/1", async (route) => {
     const json = {
       name: "Stellar Frog 1",
@@ -1285,7 +1294,7 @@ export const stubCollectiblesUnsuccessfulMetadata = async (page: Page) => {
     await route.fulfill({ json, status: 404 });
   });
 
-  await page.route("**/collectibles**", async (route) => {
+  await context.route("**/collectibles**", async (route) => {
     const json = {
       data: {
         collections: [
@@ -2915,7 +2924,7 @@ export const stubAllExternalApis = async (
   await stubDefaultAccountBalances(page);
 
   // Collectibles
-  await stubCollectibles(page);
+  await stubCollectibles(page, context);
 
   // Discover protocols
   await stubDiscoverProtocols(page);

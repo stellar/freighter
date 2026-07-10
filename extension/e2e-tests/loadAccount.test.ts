@@ -643,7 +643,7 @@ test("Loads collectibles data with successful metadata", async ({
   context,
 }) => {
   const stubOverrides = async () => {
-    await stubCollectibles(page, true);
+    await stubCollectibles(page, context, true);
   };
   await loginToTestAccount({ page, extensionId, context, stubOverrides });
   await page.getByTestId("account-tab-collectibles").click();
@@ -792,7 +792,7 @@ test("Loads collectibles data with unsuccessful metadata", async ({
   context,
 }) => {
   const stubOverrides = async () => {
-    await stubCollectiblesUnsuccessfulMetadata(page);
+    await stubCollectiblesUnsuccessfulMetadata(page, context);
   };
   await loginToTestAccount({ page, extensionId, context, stubOverrides });
   await page.getByTestId("account-tab-collectibles").click();
