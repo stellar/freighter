@@ -260,7 +260,6 @@ jest.mock("popup/helpers/useSetupAddTokenFlow", () => ({
   useSetupAddTokenFlow: () => ({
     isConfirming: false,
     isPasswordRequired: false,
-    isTokenAdded: false,
     submitError: "",
     clearSubmitError: jest.fn(),
     setIsPasswordRequired: jest.fn(),
@@ -389,8 +388,9 @@ describe("AddToken SAC / SEP-41 routing", () => {
     await waitFor(() => expect(mockAddTokenAndClose).toHaveBeenCalled());
   });
 
-  it("SAC: the Done button only closes the popup (does not re-resolve)", async () => {
+  it("SAC: Done waits for the in-flight resolution, then closes (no double dispatch)", async () => {
     mockTokenLookupConfig.issuer = SAC_ISSUER;
+    mockAddTokenAndClose.mockResolvedValue(true);
     const closeSpy = jest
       .spyOn(window, "close")
       .mockImplementation(() => undefined);
@@ -399,13 +399,21 @@ describe("AddToken SAC / SEP-41 routing", () => {
     const confirm = await screen.findByTestId("add-token-approve");
     fireEvent.click(confirm);
 
+    // Transaction success resolves the dApp request exactly once.
+    const txSuccessBtn = await screen.findByText("mock-transaction-success");
+    await act(async () => {
+      fireEvent.click(txSuccessBtn);
+    });
+    await waitFor(() => expect(mockAddTokenAndClose).toHaveBeenCalledTimes(1));
+
+    // Done closes the popup and does NOT re-dispatch the add.
     const doneBtn = await screen.findByText("mock-success");
     await act(async () => {
       fireEvent.click(doneBtn);
     });
 
     expect(closeSpy).toHaveBeenCalled();
-    expect(mockAddTokenAndClose).not.toHaveBeenCalled();
+    expect(mockAddTokenAndClose).toHaveBeenCalledTimes(1);
     closeSpy.mockRestore();
   });
 
@@ -438,46 +446,33 @@ describe("AddToken SAC / SEP-41 routing", () => {
     });
   });
 
-  it("disables confirm when token already has a trustline", async () => {
+  it("keeps confirm enabled for a duplicate SEP-41 token (SEP-41 tokens can be added more than once)", async () => {
+    // SEP-41 tokens are only ever recorded locally — no trustline, no fee —
+    // so re-adding one, unlike a SAC/classic trustline resubmit, must stay
+    // allowed. The trustline wording never applies to SEP-41 either way.
     mockTokenLookupConfig.issuer = SEP41_CONTRACT;
     mockTokenIdsConfig.tokenIds = [SEP41_CONTRACT];
-    renderAt();
-
-    const confirm = await screen.findByTestId("add-token-approve");
-    expect(confirm).toBeDisabled();
-
-    expect(
-      screen.getByText("This token already has a trustline added."),
-    ).toBeInTheDocument();
-  });
-
-  it("handles nested tokenIdList objects and still blocks duplicate trustline", async () => {
-    mockTokenLookupConfig.issuer = SEP41_CONTRACT;
     mockAppDataConfig.tokenIdList = {
       TESTNET: [SEP41_CONTRACT],
     };
-    mockTokenIdsConfig.tokenIds = [SEP41_CONTRACT];
     renderAt();
 
     const confirm = await screen.findByTestId("add-token-approve");
-    expect(confirm).toBeDisabled();
+    await waitFor(() => expect(confirm).toBeEnabled());
     expect(
-      screen.getByText("This token already has a trustline added."),
-    ).toBeInTheDocument();
+      screen.queryByText("This token already has a trustline added."),
+    ).not.toBeInTheDocument();
   });
 
-  it("blocks duplicate trustline when tokenIdList is nested by network and account", async () => {
-    mockTokenLookupConfig.issuer = SEP41_CONTRACT;
-    mockAppDataConfig.tokenIdList = {
-      TESTNET: {
-        keyA: [SEP41_CONTRACT],
-      },
-    };
-    mockTokenIdsConfig.tokenIds = [SEP41_CONTRACT];
+  it("shows the trustline message for a duplicate SAC token", async () => {
+    mockTokenLookupConfig.issuer = SAC_ISSUER;
+    mockAccountBalancesConfig.balances = [
+      { token: { code: "USDC", issuer: { key: SAC_ISSUER } } },
+    ];
     renderAt();
 
     const confirm = await screen.findByTestId("add-token-approve");
-    expect(confirm).toBeDisabled();
+    await waitFor(() => expect(confirm).toBeDisabled());
     expect(
       screen.getByText("This token already has a trustline added."),
     ).toBeInTheDocument();

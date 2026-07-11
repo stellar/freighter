@@ -1346,13 +1346,16 @@ export const handleSignedHwPayload = async ({
 export const addToken = async ({
   activePublicKey,
   uuid,
+  isTrustlineBacked,
 }: {
   activePublicKey: string;
   uuid: string;
+  isTrustlineBacked?: boolean;
 }): Promise<void> => {
   const response = await sendMessageToBackground<{ error?: string }>({
     activePublicKey,
     uuid,
+    isTrustlineBacked,
     type: SERVICE_TYPES.ADD_TOKEN,
   });
 

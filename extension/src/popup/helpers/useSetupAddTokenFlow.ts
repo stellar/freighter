@@ -20,13 +20,12 @@ type Params = {
 type Response = {
   isConfirming: boolean;
   isPasswordRequired: boolean;
-  isTokenAdded: boolean;
   submitError: string;
   clearSubmitError: () => void;
   setIsPasswordRequired: (value: boolean) => void;
   verifyPasswordThenAddToken: (password: string) => Promise<void>;
   handleApprove: () => Promise<void>;
-  addTokenAndClose: () => Promise<boolean>;
+  addTokenAndClose: (isTrustlineBacked?: boolean) => Promise<boolean>;
   rejectAndClose: () => void;
 };
 
@@ -37,7 +36,6 @@ export const useSetupAddTokenFlow = ({
 }: Params): Response => {
   const [isConfirming, setIsConfirming] = useState(false);
   const [isPasswordRequired, setIsPasswordRequired] = useState(false);
-  const [isTokenAdded, setIsTokenAdded] = useState(false);
   const [submitError, setSubmitError] = useState("");
 
   const dispatch: AppDispatch = useDispatch();
@@ -73,11 +71,16 @@ export const useSetupAddTokenFlow = ({
     );
   };
 
-  const addTokenAndClose = async () => {
-    setIsTokenAdded(false);
+  // Resolves the dApp request but doesn't close the popup — the SAC review
+  // needs to stay open for its own Success/Done screen. isTrustlineBacked
+  // tells the background whether an on-chain trustline already succeeded,
+  // so it doesn't have to re-derive that via a network call that could fail.
+  const addTokenAndClose = async (isTrustlineBacked = false) => {
     setSubmitError("");
     try {
-      const addTokenResp = await dispatch(addTokenFn({ uuid }));
+      const addTokenResp = await dispatch(
+        addTokenFn({ uuid, isTrustlineBacked }),
+      );
       const rejectedMessage = getThunkErrorMessage(addTokenResp);
 
       if (rejectedMessage) {
@@ -87,7 +90,6 @@ export const useSetupAddTokenFlow = ({
       }
 
       await emitMetric(METRIC_NAMES.tokenAddedApi);
-      setIsTokenAdded(true);
     } catch (e) {
       console.error(e);
       await emitMetric(METRIC_NAMES.tokenFailedApi);
@@ -98,11 +100,16 @@ export const useSetupAddTokenFlow = ({
     return true;
   };
 
+  // SEP-41 is a one-step flow: approve submits and closes immediately on
+  // success (matching the pre-SAC-review behavior), with no separate Done
+  // click. On failure the popup stays open so the user can retry or cancel.
   const handleApprove = async () => {
     setIsConfirming(true);
 
     if (hasPrivateKey) {
-      await addTokenAndClose();
+      if (await addTokenAndClose()) {
+        window.close();
+      }
     } else {
       setIsPasswordRequired(true);
     }
@@ -114,14 +121,15 @@ export const useSetupAddTokenFlow = ({
     const confirmPasswordResp = await dispatch(confirmPassword(password));
 
     if (confirmPassword.fulfilled.match(confirmPasswordResp)) {
-      await addTokenAndClose();
+      if (await addTokenAndClose()) {
+        window.close();
+      }
     }
   };
 
   return {
     isConfirming,
     isPasswordRequired,
-    isTokenAdded,
     submitError,
     clearSubmitError: () => setSubmitError(""),
     setIsPasswordRequired,

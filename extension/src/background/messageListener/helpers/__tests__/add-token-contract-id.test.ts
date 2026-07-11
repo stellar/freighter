@@ -76,7 +76,9 @@ describe("addTokenWithContractId", () => {
     expect(localStore.setItem).not.toHaveBeenCalled();
   });
 
-  it("does not return an error when persisting fails after a successful trustline", async () => {
+  it("surfaces an error when persisting the token fails", async () => {
+    // The helper reports the failure; the addToken handler decides whether to
+    // swallow it (trustline-backed SAC) or report it to the dApp (SEP-41).
     const localStore = makeLocalStore();
     localStore.setItem.mockRejectedValueOnce(new Error("storage boom"));
     jest.spyOn(console, "error").mockImplementation(() => undefined);
@@ -86,6 +88,6 @@ describe("addTokenWithContractId", () => {
       localStore,
     });
 
-    expect(result.error).toBeUndefined();
+    expect(result.error).toBeDefined();
   });
 });

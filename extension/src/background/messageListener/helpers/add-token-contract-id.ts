@@ -49,9 +49,12 @@ export const addTokenWithContractId = async ({
     });
   } catch (error) {
     console.error(error);
-    // Do not reject a dApp addToken request after the user has already
-    // approved and submitted a successful trustline transaction.
-    return { accountTokenIdList };
+    // Persisting the token failed. Surface it — the caller decides whether to
+    // swallow it (SAC/classic, where the on-chain trustline is the real
+    // operation) or report it to the dApp (SEP-41, where this write is the
+    // whole operation and a silent failure would claim a token was added that
+    // isn't there on reload).
+    return { accountTokenIdList, error: "Failed to add token" };
   }
 
   // Fire-and-forget best-effort subscriptions. These are slow indexer calls and

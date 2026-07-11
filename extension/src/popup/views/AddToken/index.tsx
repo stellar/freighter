@@ -7,7 +7,7 @@ import {
   Notification,
   Text,
 } from "@stellar/design-system";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Navigate, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
@@ -49,9 +49,7 @@ import {
 import {
   getAccountBalances,
   getBlockaidOverrideState,
-  getTokenIds,
 } from "@shared/api/internal";
-import { NETWORKS } from "@shared/constants/stellar";
 import { useIsDomainListedAllowed } from "popup/helpers/useIsDomainListedAllowed";
 import { AppDataType, useGetAppData } from "helpers/hooks/useGetAppData";
 import { RequestState } from "constants/request";
@@ -99,9 +97,6 @@ export const AddToken = () => {
   const [isMaliciousAsset, setIsMaliciousAsset] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [activePaneIndex, setActivePaneIndex] = useState(0);
-  const [existingTokenIds, setExistingTokenIds] = useState<string[]>([]);
-  const [isExistingTokenIdsLoading, setIsExistingTokenIdsLoading] =
-    useState(true);
   const [hasClassicTrustline, setHasClassicTrustline] = useState(false);
   const [hasClassicTrustlineResolved, setHasClassicTrustlineResolved] =
     useState(false);
@@ -135,7 +130,6 @@ export const AddToken = () => {
   const {
     isConfirming,
     isPasswordRequired,
-    isTokenAdded,
     submitError,
     clearSubmitError,
     setIsPasswordRequired,
@@ -179,13 +173,23 @@ export const AddToken = () => {
     lookupNetworkDetails: hydratedNetworkDetails,
   });
 
-  // The dApp request resolves off the actual trustline transaction (fired by
-  // SubmitTx's onTransactionSuccess), not the Done button — a successful
-  // trustline must never report "user rejected" to the dApp. addTokenAndClose
-  // records the token and resolves the request; storage is best-effort, so a
-  // storage hiccup can't decline a transaction the user already approved.
+  // Resolves off the trustline tx succeeding, not the Done button, so a
+  // successful trustline is never reported as "user rejected". Kept as a
+  // promise so Done can await it before closing.
+  const addTokenPromiseRef = useRef<Promise<boolean> | null>(null);
+
   const handleTrustlineTransactionSuccess = () => {
-    void addTokenAndClose();
+    if (!addTokenPromiseRef.current) {
+      addTokenPromiseRef.current = addTokenAndClose(true);
+    }
+  };
+
+  // Done only closes the popup — but wait for the add-token round-trip to
+  // resolve the dApp request first. Otherwise window.close() races response()
+  // and rejectOnWindowClose reports "user rejected" for a successful trustline.
+  const handleTrustlineDone = async () => {
+    await (addTokenPromiseRef.current ?? addTokenAndClose(true));
+    window.close();
   };
 
   useEffect(() => {
@@ -325,40 +329,6 @@ export const AddToken = () => {
   }, []);
 
   useEffect(() => {
-    if (!hydratedPublicKey || !hydratedNetworkDetails?.network) {
-      setIsExistingTokenIdsLoading(true);
-      setExistingTokenIds([]);
-      return;
-    }
-
-    let isMounted = true;
-
-    const fetchTokenIds = async () => {
-      setIsExistingTokenIdsLoading(true);
-      const tokenIds = await getTokenIds({
-        activePublicKey: hydratedPublicKey,
-        network: hydratedNetworkDetails.network as NETWORKS,
-      });
-
-      if (isMounted) {
-        setExistingTokenIds(Array.isArray(tokenIds) ? tokenIds : []);
-        setIsExistingTokenIdsLoading(false);
-      }
-    };
-
-    fetchTokenIds().catch(() => {
-      if (isMounted) {
-        setExistingTokenIds([]);
-        setIsExistingTokenIdsLoading(false);
-      }
-    });
-
-    return () => {
-      isMounted = false;
-    };
-  }, [hydratedNetworkDetails?.network, hydratedPublicKey]);
-
-  useEffect(() => {
     if (
       !hydratedPublicKey ||
       !hydratedNetworkDetails ||
@@ -491,17 +461,16 @@ export const AddToken = () => {
     state.data.settings.networkDetails,
   ).contract;
   const isNativeContract = contractId === nativeContract;
-  const hasExistingSep41Token =
-    existingTokenIds.includes(contractId) ||
-    (!!assetCurrency?.contract &&
-      existingTokenIds.includes(assetCurrency.contract));
 
-  const isTrustlineCheckLoading = isSac
-    ? !hasClassicTrustlineResolved || isClassicTrustlineLoading
-    : isExistingTokenIdsLoading;
+  // SEP-41 tokens are only ever recorded locally (no trustline, no cost), so
+  // they can be added any number of times — only SAC/classic (real trustline
+  // submissions, which charge a fee) and native (already auto-trusted) block
+  // re-adding.
+  const isTrustlineCheckLoading =
+    isSac && (!hasClassicTrustlineResolved || isClassicTrustlineLoading);
 
   const hasExistingTrustline =
-    isNativeContract || (isSac ? hasClassicTrustline : hasExistingSep41Token);
+    isNativeContract || (isSac && hasClassicTrustline);
 
   if (entryNetworkPassphrase && entryNetworkPassphrase !== networkPassphrase) {
     return (
@@ -574,7 +543,7 @@ export const AddToken = () => {
         networkDetails={state.data.settings.networkDetails}
         onCancel={() => setShowTrustlineReview(false)}
         onTransactionSuccess={handleTrustlineTransactionSuccess}
-        onSuccess={() => window.close()}
+        onSuccess={handleTrustlineDone}
         onClose={() => setShowTrustlineReview(false)}
         initialFee={displayFee}
         isFullHeight
@@ -675,20 +644,13 @@ export const AddToken = () => {
                   </div>
                 )}
 
-                {isTokenAdded && (
-                  <div className="AddToken__submit-error">
-                    <Notification
-                      variant="success"
-                      title={t("Token added successfully.")}
-                    >
-                      {t(
-                        "This request has been approved. You can now close this window.",
-                      )}
-                    </Notification>
-                  </div>
-                )}
-
-                {hasExistingTrustline && (
+                {/* This wording is trustline-specific and only applies to
+                    SAC/classic assets — SEP-41 tokens have no trustline, they
+                    are only recorded locally, so the message would be
+                    misleading for them. Native XLM also renders this: isSac
+                    is true for the native contract too (isAssetSac special-
+                    cases it), so gating on isSac alone covers both. */}
+                {hasExistingTrustline && isSac && (
                   <div className="AddToken__submit-error">
                     <Notification
                       variant="error"
@@ -762,23 +724,16 @@ export const AddToken = () => {
           isRounded
           size="lg"
           variant="tertiary"
-          onClick={() => {
-            if (isTokenAdded) {
-              window.close();
-              return;
-            }
-            rejectAndClose();
-          }}
+          onClick={() => rejectAndClose()}
         >
-          {isTokenAdded ? t("Close") : t("Cancel")}
+          {t("Cancel")}
         </Button>
         <Button
           data-testid="add-token-approve"
           disabled={
-            !isTokenAdded &&
-            (!isDomainListedAllowed ||
-              hasExistingTrustline ||
-              isTrustlineCheckLoading)
+            !isDomainListedAllowed ||
+            hasExistingTrustline ||
+            isTrustlineCheckLoading
           }
           isFullWidth
           isRounded
@@ -786,10 +741,6 @@ export const AddToken = () => {
           variant={isMaliciousAsset ? "error" : "secondary"}
           isLoading={isConfirming}
           onClick={() => {
-            if (isTokenAdded) {
-              window.close();
-              return;
-            }
             clearSubmitError();
             if (hasExistingTrustline || isTrustlineCheckLoading) {
               return;
@@ -798,12 +749,14 @@ export const AddToken = () => {
               setShowTrustlineReview(true);
               return;
             }
+            // SEP-41 is a one-step flow: this submits and closes immediately
+            // on success (see useSetupAddTokenFlow.handleApprove).
             handleApprove();
           }}
         >
           {/* SAC is a 2-step flow (Add Token → Change Trust review), so this
               first button advances ("Continue"); SEP-41 confirms directly. */}
-          {isTokenAdded ? t("Done") : isSac ? t("Continue") : t("Confirm")}
+          {isSac ? t("Continue") : t("Confirm")}
         </Button>
       </View.Footer>
     </React.Fragment>
