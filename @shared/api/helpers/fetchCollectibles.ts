@@ -6,9 +6,8 @@ import {
   CollectibleMetadataResponse,
 } from "../types";
 import { NetworkDetails } from "@shared/constants/stellar";
-import { SERVICE_TYPES } from "@shared/constants/services";
 import { fetchMetadataJson } from "./fetchMetadataJson";
-import { sendMessageToBackground } from "./extensionMessaging";
+import { fetchBackendV2 } from "./fetchBackendV2";
 
 /**
  * Fetches metadata for a collectible from its token URI.
@@ -91,12 +90,7 @@ export const fetchCollectibles = async ({
   let fetchedCollections = [] as Collection[];
 
   try {
-    const { status, body } = await sendMessageToBackground<{
-      status: number;
-      body: unknown;
-    }>({
-      type: SERVICE_TYPES.FETCH_BACKEND_V2,
-      activePublicKey: null,
+    const { status, body } = await fetchBackendV2({
       method: "POST",
       path: `/collectibles?network=${networkDetails.network}`,
       body: JSON.stringify({ owner: publicKey, contracts }),

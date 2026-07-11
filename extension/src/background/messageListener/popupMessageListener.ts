@@ -19,7 +19,7 @@ import {
   MarkQueueActiveMessage,
   OpenSidebarMessage,
 } from "@shared/api/types/message-request";
-import { SERVICE_TYPES } from "@shared/constants/services";
+import { SERVICE_TYPES, DEV_SERVER } from "@shared/constants/services";
 import { DataStorageAccess } from "background/helpers/dataStorageAccess";
 import { KeyManager } from "@stellar/typescript-wallet-sdk-km";
 import { SessionTimer } from "background/helpers/session";
@@ -648,7 +648,12 @@ export const popupMessageListener = (
     }
 
     case SERVICE_TYPES.FETCH_BACKEND_V2: {
-      if (!isFromExtensionPage) return { error: "Unauthorized" };
+      // DEV_SERVER carve-out: under the webpack dev server the popup relays
+      // through the content script, so the message arrives with a dev-server
+      // tab sender and isFromExtensionPage is false. Without this, every v2
+      // call (Discover, prices, collectibles, ledger-key import) breaks in
+      // local dev. The gate stays intact in production, where DEV_SERVER=false.
+      if (!isFromExtensionPage && !DEV_SERVER) return { error: "Unauthorized" };
       return callBackendV2({
         method: request.method,
         path: request.path,

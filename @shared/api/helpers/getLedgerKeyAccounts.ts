@@ -2,8 +2,7 @@ import { captureException } from "@sentry/browser";
 
 import { LedgerKeyAccounts, LedgerKeyAccount } from "../types";
 import { NetworkDetails } from "@shared/constants/stellar";
-import { SERVICE_TYPES } from "@shared/constants/services";
-import { sendMessageToBackground } from "./extensionMessaging";
+import { fetchBackendV2 } from "./fetchBackendV2";
 
 export const getLedgerKeyAccounts = async ({
   accountList,
@@ -15,12 +14,7 @@ export const getLedgerKeyAccounts = async ({
   let fetchedAccounts = {} as { [code: string]: LedgerKeyAccount };
 
   try {
-    const { status, body } = await sendMessageToBackground<{
-      status: number;
-      body: unknown;
-    }>({
-      type: SERVICE_TYPES.FETCH_BACKEND_V2,
-      activePublicKey: null,
+    const { status, body } = await fetchBackendV2({
       method: "POST",
       path: `/ledger-key/accounts?network=${networkDetails.network}`,
       body: JSON.stringify({ public_keys: accountList }),

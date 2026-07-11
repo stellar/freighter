@@ -1,3 +1,4 @@
+import { captureException } from "@sentry/browser";
 import { Store } from "redux";
 import { Keypair } from "stellar-sdk";
 
@@ -27,7 +28,7 @@ export interface CallBackendV2Params {
 
 export interface CallBackendV2Result {
   status: number;
-  /** Parsed JSON body, or null on non-2xx. */
+  /** Parsed JSON body (including non-2xx error payloads); null if not JSON. */
   body: unknown;
 }
 
@@ -49,8 +50,16 @@ const tryGetAuthKeypair = async (
     if (!mnemonic) return null;
     const { keypair } = await deriveAuthKeypair(mnemonic);
     return keypair;
-  } catch (_e) {
-    // Locked (no hashKey) or no mnemonic → anonymous.
+  } catch (e) {
+    // getEncryptedTemporaryData returns "" for both a locked store and a
+    // missing entry (handled by the `!mnemonic` check above), so anything
+    // reaching here is unexpected — a corrupted temporaryStoreExtra entry or a
+    // WebCrypto/PBKDF2 failure. Capture it: otherwise an unlocked user silently
+    // downgrades to anonymous with zero telemetry the moment the backend
+    // enforces auth on these endpoints.
+    captureException(
+      `callBackendV2: unexpected error deriving auth keypair - ${JSON.stringify(e)}`,
+    );
     return null;
   }
 };
@@ -94,5 +103,9 @@ export const callBackendV2 = async ({
     });
   }
 
-  return { status: res.status, body: res.ok ? await res.json() : null };
+  // Parse the body on error responses too — a non-2xx JSON payload carries the
+  // server's diagnostic detail, which callers surface to Sentry. Falls back to
+  // null only when the body isn't valid JSON.
+  const parsedBody = await res.json().catch(() => null);
+  return { status: res.status, body: parsedBody };
 };

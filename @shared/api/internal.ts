@@ -84,6 +84,7 @@ import { SorobanRpcNotSupportedError } from "../constants/errors";
 import { APPLICATION_STATE } from "../constants/applicationState";
 import { WalletType } from "../constants/hardwareWallet";
 import { sendMessageToBackground } from "./helpers/extensionMessaging";
+import { fetchBackendV2 } from "./helpers/fetchBackendV2";
 import { getIconUrlFromIssuer } from "./helpers/getIconUrlFromIssuer";
 import { getLedgerKeyAccounts } from "./helpers/getLedgerKeyAccounts";
 import { stellarSdkServer, submitTx } from "./helpers/stellarSdkServer";
@@ -638,15 +639,10 @@ export const getTokenPrices = async (
       return {};
     }
 
-    const { status, body } = await sendMessageToBackground<{
-      status: number;
-      body: unknown;
-    }>({
-      type: SERVICE_TYPES.FETCH_BACKEND_V2,
-      activePublicKey: null,
+    // Query lives in the path so callBackendV2 signs the JWT's methodAndPath
+    // over the server's full request-target (path + query) — see #2879.
+    const { status, body } = await fetchBackendV2({
       method: "POST",
-      // Query lives in the path so callBackendV2 signs the JWT's methodAndPath
-      // over the server's full request-target (path + query) — see #2879.
       path: `/token-prices?network=${priceNetwork}`,
       body: requestBody,
     });
@@ -688,12 +684,7 @@ export const getTokenPrices = async (
 };
 
 export const getDiscoverData = async (): Promise<DiscoverData> => {
-  const { status, body } = await sendMessageToBackground<{
-    status: number;
-    body: unknown;
-  }>({
-    type: SERVICE_TYPES.FETCH_BACKEND_V2,
-    activePublicKey: null,
+  const { status, body } = await fetchBackendV2({
     method: "GET",
     path: "/protocols",
   });

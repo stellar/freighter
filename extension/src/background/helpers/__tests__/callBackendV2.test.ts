@@ -1,10 +1,13 @@
 import { Buffer } from "buffer";
 import { Keypair } from "stellar-sdk";
 
+import * as Sentry from "@sentry/browser";
+
 import { callBackendV2 } from "../callBackendV2";
 import * as deriveMod from "@shared/api/helpers/deriveAuthKeypair";
 import * as sessionMod from "background/helpers/session";
 
+jest.mock("@sentry/browser");
 jest.mock("@shared/constants/mercury", () => ({
   INDEXER_V2_URL: "https://be.example.test/api/v1",
 }));
@@ -189,5 +192,55 @@ describe("callBackendV2", () => {
     });
 
     expect(result).toEqual({ status: 500, body: null });
+  });
+
+  it("preserves a JSON error body on a non-2xx response (for Sentry detail)", async () => {
+    jest.spyOn(sessionMod, "getEncryptedTemporaryData").mockResolvedValue("");
+    const fetchImpl = jest
+      .fn()
+      .mockResolvedValue(
+        new Response(JSON.stringify({ error: "boom", code: 42 }), {
+          status: 500,
+        }),
+      );
+
+    const result = await callBackendV2({
+      method: "GET",
+      path: "/protocols",
+      sessionStore,
+      localStore,
+      fetchImpl,
+    });
+
+    // The server's error detail must survive so callers can surface it to
+    // Sentry — not be flattened to null.
+    expect(result).toEqual({ status: 500, body: { error: "boom", code: 42 } });
+  });
+
+  it("captures and falls back to anonymous when key derivation throws unexpectedly", async () => {
+    (Sentry.captureException as jest.Mock).mockClear();
+    jest
+      .spyOn(sessionMod, "getEncryptedTemporaryData")
+      .mockResolvedValue(VECTOR_MNEMONIC);
+    jest
+      .spyOn(deriveMod, "deriveAuthKeypair")
+      .mockRejectedValue(new Error("corrupted temporaryStoreExtra"));
+    const fetchImpl = jest.fn().mockResolvedValue(okResponse({ data: 1 }));
+
+    const result = await callBackendV2({
+      method: "GET",
+      path: "/protocols",
+      sessionStore,
+      localStore,
+      fetchImpl,
+    });
+
+    // Unexpected derivation failure must emit telemetry (not be swallowed)…
+    expect(Sentry.captureException).toHaveBeenCalled();
+    // …and the request still goes out anonymously (no Authorization header).
+    const headers = ((fetchImpl.mock.calls[0][1] as RequestInit).headers ??
+      {}) as Record<string, string>;
+    expect(headers.Authorization).toBeUndefined();
+    expect(result).toEqual({ status: 200, body: { data: 1 } });
   });
 });
