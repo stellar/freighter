@@ -3,9 +3,9 @@
   "prettier": "../../.prettierrc.yaml",
   "version": "1.0.0",
   "dependencies": {
-    "bignumber.js": "9.3.0",
+    "bignumber.js": "11.1.4",
     "stellar-sdk": "npm:@stellar/stellar-sdk@16.0.0-rc.1",
     "stellar-sdk-next": "npm:@stellar/stellar-sdk@16.0.0-rc.1",
-    "typescript": "5.8.3"
+    "typescript": "6.0.3"
   }
 }
