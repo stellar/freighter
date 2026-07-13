@@ -27,6 +27,59 @@ test("View Account History", async ({ page, extensionId, context }) => {
   });
 });
 
+test("Classifies a payment received to a muxed (M...) address as Received", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  // Horizon reports a payment received to the wallet's muxed address with the
+  // base (G...) account in `to` and the muxed (M...) account in `to_muxed`.
+  // The test account is GDF32...ZEFY; MDF32...LVH4 is one of its muxed forms.
+  const TEST_ACCOUNT_MUXED =
+    "MDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWYAAAAAAAAAAAFLVH4";
+  const SENDER = "GCKUVXILBNYS4FDNWCGCYSJBY2PBQ4KAW2M5CODRVJPUFM62IJFH67J2";
+
+  const mockAccountHistoryData = [
+    {
+      amount: "5.0000000",
+      asset_type: "native",
+      created_at: "2025-03-21T22:28:46Z",
+      from: SENDER,
+      id: "164007621169153",
+      paging_token: "164007621169153",
+      source_account: SENDER,
+      to: "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
+      to_muxed: TEST_ACCOUNT_MUXED,
+      to_muxed_id: "42",
+      transaction_attr: {
+        operation_count: 1,
+      },
+      transaction_hash:
+        "686601028de9ddf40a1c24461a6a9c0415d60a39255c35eccad0b52ac1e700a6",
+      transaction_successful: true,
+      type: "payment",
+      type_i: 1,
+    },
+  ];
+
+  const stubOverrides = async () => {
+    await stubAccountHistoryWith(page, context, mockAccountHistoryData);
+  };
+
+  await loginToTestAccount({ page, extensionId, context, stubOverrides });
+  await page.getByTestId("nav-link-account-history").click();
+
+  const amountCell = page.getByTestId("history-item-amount-component");
+  await expect(amountCell).toContainText("Mar 21", { timeout: 30000 });
+
+  // The received payment must show a positive amount and a "Received" action,
+  // not a negative "Sent" amount.
+  await expect(amountCell).toContainText("+5");
+  await expect(amountCell).toContainText("XLM");
+  await expect(amountCell).toHaveClass(/credit/);
+  await expect(page.getByText("Received")).toBeVisible();
+});
+
 test("View failed transaction", async ({ page, extensionId, context }) => {
   test.slow();
   const mockAccountHistoryData = [

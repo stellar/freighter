@@ -24,9 +24,9 @@ const ON_VARIANT_VALUES = ["on", "true", "enabled", "yes"];
 
 /**
  * Boolean flags — variant value is checked against ON_VARIANT_VALUES.
- * Empty for now; add flag names here as new boolean flags are introduced.
+ * Add flag names here as new boolean flags are introduced.
  */
-const BOOLEAN_FLAGS = [] as const;
+const BOOLEAN_FLAGS = ["use_token_prices_v2"] as const;
 
 /**
  * Version flags — variant value is parsed from underscore format (1_2_3 → 1.2.3).
@@ -82,6 +82,9 @@ interface RemoteConfigState extends FeatureFlags {
 
 const initialState: RemoteConfigState = {
   isInitialized: false,
+  // Defaults to v2; Amplitude can flip it off to roll back to the v1
+  // token-prices endpoint without a release.
+  use_token_prices_v2: true,
   maintenance_banner: { enabled: false, payload: undefined },
   maintenance_screen: { enabled: false, payload: undefined },
 };
@@ -215,6 +218,15 @@ export const maintenanceScreenSelector = createSelector(
       return { enabled: false as const, content: null };
     }
   },
+);
+
+/**
+ * Returns whether the v2 token-prices endpoint should be used. Defaults to
+ * true; Amplitude can flip the flag off to roll back to the v1 endpoint.
+ */
+export const tokenPricesV2Selector = createSelector(
+  remoteConfigSelector,
+  (rc) => rc.use_token_prices_v2,
 );
 
 /**

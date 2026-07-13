@@ -7,6 +7,7 @@ import {
   BASE_FEE,
   Networks,
   Operation,
+  OperationRecord,
   StrKey,
   TransactionBuilder,
   xdr,
@@ -55,7 +56,7 @@ const renderOps = (operations: Operation[]) =>
       <Operations
         flaggedKeys={{}}
         isMemoRequired={false}
-        operations={operations}
+        operations={operations as unknown as OperationRecord[]}
       />
     </Provider>,
   );
@@ -122,10 +123,11 @@ describe("Operations — setOptions field visibility", () => {
     expect(screen.queryByText(MASTER_KEY_WARNING)).not.toBeInTheDocument();
   });
 
-  it("HOME DOMAIN: clearing the home domain is surfaced, not hidden", () => {
+  it("HOME DOMAIN: clearing the home domain is surfaced as a status badge, not hidden", () => {
     renderOps(decodeSetOptions({ homeDomain: "" }));
 
-    expect(rowValue("Home Domain")).toBe("(clearing home domain)");
+    expect(rowValue("Home Domain")).toBe("Cleared");
+    expect(screen.getByText("Cleared").closest(".Badge")).not.toBeNull();
   });
 
   it("FLAGS: a single-bit setFlags decodes to its label", () => {
@@ -180,12 +182,13 @@ describe("Operations — manageData value visibility", () => {
     expect(rowValue("Value")).toBe("");
   });
 
-  it("surfaces a deletion when value is absent ", () => {
+  it("surfaces a deletion as a status badge when value is absent ", () => {
     renderOps(
       decodeOperation(Operation.manageData({ name: "k", value: null })),
     );
 
-    expect(rowValue("Value")).toBe("(deleting entry)");
+    expect(rowValue("Value")).toBe("Deleted");
+    expect(screen.getByText("Deleted").closest(".Badge")).not.toBeNull();
   });
 });
 

@@ -28,7 +28,7 @@ import {
   useShouldTreatAssetAsUnableToScan,
   useShouldTreatTxAsUnableToScan,
 } from "popup/helpers/blockaid";
-import { SecurityLevel } from "popup/constants/blockaid";
+import { BlockaidWarning, SecurityLevel } from "popup/constants/blockaid";
 
 import "./styles.scss";
 
@@ -192,62 +192,6 @@ export const BackupPhraseWarningMessage = () => {
             {t("Stellar Development Foundation will never ask for your phrase")}
           </span>
         </div>
-      </div>
-    </div>
-  );
-};
-
-export const AssetListWarning = ({
-  isVerified,
-  onClick,
-}: {
-  isVerified: boolean;
-  onClick: () => void;
-}) => {
-  const { t } = useTranslation();
-  const title = isVerified ? t("On your lists") : t("Not on your lists");
-  return (
-    <div className="ScanLabel ScanMiss" onClick={onClick}>
-      <div className="ScanLabel__Info">
-        <div className="Icon">
-          <Icon.InfoSquare className="WarningMessage__icon" />
-        </div>
-        <p className="Message">{title}</p>
-      </div>
-      <div className="ScanLabel__Action">
-        <Icon.ChevronRight />
-      </div>
-    </div>
-  );
-};
-
-interface AssetListWarningExpandedProps {
-  isVerified: boolean;
-  onClose?: () => void;
-}
-
-export const AssetListWarningExpanded = ({
-  isVerified,
-  onClose,
-}: AssetListWarningExpandedProps) => {
-  const { t } = useTranslation();
-  const title = isVerified
-    ? t("This asset is on your lists")
-    : t("This asset is not on your lists");
-
-  return (
-    <div className="BlockaidDetailsExpanded">
-      <div className="BlockaidDetailsExpanded__Header">
-        <div className="WarningMark">
-          <Icon.AlertTriangle />
-        </div>
-        <div className="Close" onClick={onClose}>
-          <Icon.X />
-        </div>
-      </div>
-      <div className="BlockaidDetailsExpanded__Title">{title}</div>
-      <div className="BlockaidDetailsExpanded__SubTitle">
-        {`${t("Freighter uses asset lists to check assets you interact with.")} ${t("You can define your own assets lists in Settings.")}`}
       </div>
     </div>
   );
@@ -482,85 +426,6 @@ export const BlockaidByLine = ({
   );
 };
 
-interface BlockaidAssetWarningProps {
-  blockaidData: BlockAidScanAssetResult | null | undefined;
-  onClick: () => void;
-  messageKey?: string; // Optional translation key for custom message
-}
-
-export const BlockaidAssetWarning = ({
-  blockaidData,
-  onClick,
-  messageKey = "Unable to scan token",
-}: BlockaidAssetWarningProps) => {
-  const { t } = useTranslation();
-  const shouldTreatAsUnableToScan = useShouldTreatAssetAsUnableToScan();
-  const blockaidOverrideState = useBlockaidOverrideState();
-
-  if (shouldTreatAsUnableToScan(blockaidData)) {
-    return (
-      <div
-        className="ScanLabel ScanMiss"
-        data-testid="blockaid-unable-to-scan-label"
-        onClick={onClick}
-      >
-        <div className="ScanLabel__Info">
-          <div className="Icon">
-            <Icon.InfoSquare className="WarningMessage__icon" />
-          </div>
-          <p className="Message">{t(messageKey)}</p>
-        </div>
-        <div className="ScanLabel__Action">
-          <Icon.ChevronRight />
-        </div>
-      </div>
-    );
-  }
-
-  // Determine effective severity — override takes precedence over scan result
-  let isMaliciousFinal =
-    blockaidData?.result_type === "Malicious" ||
-    blockaidData?.result_type === "Spam";
-  let isSuspiciousFinal =
-    blockaidData?.result_type === "Warning" ||
-    blockaidData?.result_type === "Spam";
-
-  if (blockaidOverrideState === SecurityLevel.MALICIOUS) {
-    isMaliciousFinal = true;
-    isSuspiciousFinal = false;
-  } else if (blockaidOverrideState === SecurityLevel.SUSPICIOUS) {
-    isMaliciousFinal = false;
-    isSuspiciousFinal = true;
-  }
-
-  if (!isMaliciousFinal && !isSuspiciousFinal) {
-    return null;
-  }
-
-  const header = isMaliciousFinal
-    ? t("This asset was flagged as malicious")
-    : t("This asset was flagged as suspicious");
-  const scanType = isMaliciousFinal ? "ScanMalicious" : "ScanMiss";
-
-  return (
-    <div
-      className={`ScanLabel ${scanType}`}
-      data-testid="blockaid-miss-label"
-      onClick={onClick}
-    >
-      <div className="ScanLabel__Info">
-        <div className="Icon">
-          <Icon.InfoSquare className="WarningMessage__icon" />
-        </div>
-        <p className="Message">{header}</p>
-      </div>
-      <div className="ScanLabel__Action">
-        <Icon.ChevronRight />
-      </div>
-    </div>
-  );
-};
-
 interface BlockAidAssetScanExpandedProps {
   scanResult: BlockAidScanAssetResult | null | undefined;
   onClose?: () => void;
@@ -615,13 +480,13 @@ export const BlockAidAssetScanExpanded = ({
         headerIcon={<Icon.AlertOctagon />}
         title={t("Do not proceed")}
         subtitle={t(
-          "This asset has been flagged as malicious for the following reasons.",
+          "This token has been flagged as malicious for the following reasons.",
         )}
         detailRows={
           <div className="BlockaidDetailsExpanded__DetailRow">
             <Icon.XCircle />
             <span>
-              {t("This asset was flagged as malicious (override active)")}
+              {t("This token was flagged as malicious (override active)")}
             </span>
           </div>
         }
@@ -637,13 +502,13 @@ export const BlockAidAssetScanExpanded = ({
         headerIcon={<Icon.AlertTriangle />}
         title={t("Suspicious Request")}
         subtitle={t(
-          "This asset has been flagged as suspicious for the following reasons.",
+          "This token has been flagged as suspicious for the following reasons.",
         )}
         detailRows={
           <div className="BlockaidDetailsExpanded__DetailRow">
             <Icon.MinusCircle />
             <span>
-              {t("This asset was flagged as suspicious (override active)")}
+              {t("This token was flagged as suspicious (override active)")}
             </span>
           </div>
         }
@@ -684,13 +549,13 @@ export const BlockAidAssetScanExpanded = ({
     ? {
         title: t("Do not proceed"),
         description: t(
-          "This asset has been flagged as malicious for the following reasons.",
+          "This token has been flagged as malicious for the following reasons.",
         ),
       }
     : {
         title: t("Suspicious Request"),
         description: t(
-          "This asset has been flagged as suspicious for the following reasons.",
+          "This token has been flagged as suspicious for the following reasons.",
         ),
       };
 
@@ -699,8 +564,8 @@ export const BlockAidAssetScanExpanded = ({
     : { class: "WarningMark", icon: <Icon.AlertTriangle /> };
 
   const fallbackMessage = isMalicious
-    ? t("This asset was flagged as malicious")
-    : t("This asset was flagged as suspicious");
+    ? t("This token was flagged as malicious")
+    : t("This token was flagged as suspicious");
 
   const featureRows =
     features.length > 0 ? (
@@ -756,102 +621,6 @@ export const SSLWarningMessage = ({ url }: { url: string }) => {
   );
 };
 
-export const BlockAidMaliciousSiteLabel = ({
-  onClick,
-}: {
-  onClick: () => void;
-}) => {
-  const { t } = useTranslation();
-  return (
-    <div
-      className={`ScanLabel ScanMalicious SiteMalicious`}
-      data-testid="blockaid-malicious-label"
-      onClick={onClick}
-    >
-      <div className="ScanLabel__Info">
-        <div className="Icon">
-          <Icon.InfoSquare className="WarningMessage__icon" />
-        </div>
-        <p className="Message">{t("This site was flagged as malicious")}</p>
-      </div>
-      <div className="ScanLabel__Action">
-        <Icon.ChevronRight />
-      </div>
-    </div>
-  );
-};
-
-export const BlockAidUnableToScanSiteLabel = ({
-  onClick,
-}: {
-  onClick: () => void;
-}) => {
-  const { t } = useTranslation();
-  return (
-    <div
-      className="ScanLabel ScanMiss SiteUnableToScan"
-      data-testid="blockaid-unable-to-scan-label"
-      onClick={onClick}
-    >
-      <div className="ScanLabel__Info">
-        <div className="Icon">
-          <Icon.InfoSquare className="WarningMessage__icon" />
-        </div>
-        <p className="Message">{t("Proceed with caution")}</p>
-      </div>
-      <div className="ScanLabel__Action">
-        <Icon.ChevronRight />
-      </div>
-    </div>
-  );
-};
-
-export const BlockAidMissLabel = () => {
-  const { t } = useTranslation();
-  return (
-    <div
-      className="ScanLabel ScanMiss SiteUnableToScan"
-      data-testid="blockaid-miss-label"
-    >
-      <div className="ScanLabel__Info">
-        <div className="Icon">
-          <Icon.InfoSquare className="WarningMessage__icon" />
-        </div>
-        <p className="Message">
-          {t("Unable to scan site for malicious behavior")}
-        </p>
-      </div>
-    </div>
-  );
-};
-
-export const BlockAidSiteScanLabel = ({
-  status,
-  isMalicious,
-  isUnableToScan,
-  onClick,
-}: {
-  status: "hit" | "miss" | undefined;
-  isMalicious: boolean;
-  isUnableToScan?: boolean;
-  onClick: () => void;
-}) => {
-  if (status === "miss") {
-    return <BlockAidMissLabel />;
-  }
-
-  if (isUnableToScan) {
-    return <BlockAidUnableToScanSiteLabel onClick={onClick} />;
-  }
-
-  if (isMalicious) {
-    return <BlockAidMaliciousSiteLabel onClick={onClick} />;
-  }
-
-  // benign case should not show anything for now
-  return <React.Fragment />;
-};
-
 export const MemoRequiredLabel = ({ onClick }: { onClick: () => void }) => {
   const { t } = useTranslation();
   return (
@@ -873,133 +642,20 @@ export const MemoRequiredLabel = ({ onClick }: { onClick: () => void }) => {
   );
 };
 
-export const BlockaidTxScanLabel = ({
-  scanResult,
-  onClick,
-}: {
-  scanResult: BlockAidScanTxResult | null | undefined;
-  onClick: () => void;
-}) => {
-  const { t } = useTranslation();
-  const shouldTreatAsUnableToScan = useShouldTreatTxAsUnableToScan();
-  const blockaidOverrideState = useBlockaidOverrideState();
-
-  // Extract complex conditions for readability
-  const isUnableToScan = shouldTreatAsUnableToScan(scanResult);
-
-  // Check actual scan result for malicious/suspicious (normal cases)
-  const securityFlags = getScanResultSecurityFlags(scanResult);
-  let isMalicious = securityFlags.isMalicious;
-  let isSuspicious = securityFlags.isSuspicious;
-
-  // Override takes precedence, otherwise use actual scan result
-  // Override takes full precedence if set
-  let isMaliciousFinal = isMalicious;
-  let isSuspiciousFinal = isSuspicious;
-  if (blockaidOverrideState === SecurityLevel.MALICIOUS) {
-    isMaliciousFinal = true;
-    isSuspiciousFinal = false;
-  } else if (blockaidOverrideState === SecurityLevel.SUSPICIOUS) {
-    isMaliciousFinal = false;
-    isSuspiciousFinal = true;
-  }
-
-  // Handle unable to scan state
-  if (isUnableToScan) {
-    return (
-      <div
-        className="ScanLabel ScanMiss"
-        data-testid="blockaid-unable-to-scan-label"
-        onClick={onClick}
-      >
-        <div className="ScanLabel__Info">
-          <div className="Icon">
-            <Icon.InfoSquare className="WarningMessage__icon" />
-          </div>
-          <p className="Message">{t("Proceed with caution")}</p>
-        </div>
-        <div className="ScanLabel__Action">
-          <Icon.ChevronRight />
-        </div>
-      </div>
-    );
-  }
-
-  // Check malicious (override or actual scan result)
-  if (isMaliciousFinal) {
-    return (
-      <div
-        className="ScanLabel ScanMalicious"
-        data-testid="blockaid-malicious-label"
-        onClick={onClick}
-      >
-        <div className="ScanLabel__Info">
-          <div className="Icon">
-            <Icon.InfoSquare className="WarningMessage__icon" />
-          </div>
-          <p className="Message">
-            {t("This transaction was flagged as malicious")}
-          </p>
-        </div>
-        <div className="ScanLabel__Action">
-          <Icon.ChevronRight />
-        </div>
-      </div>
-    );
-  }
-
-  // Check suspicious (override or actual scan result)
-  if (isSuspiciousFinal) {
-    return (
-      <div
-        className="ScanLabel ScanMiss"
-        data-testid="blockaid-miss-label"
-        onClick={onClick}
-      >
-        <div className="ScanLabel__Info">
-          <div className="Icon">
-            <Icon.InfoSquare className="WarningMessage__icon" />
-          </div>
-          <p className="Message">
-            {t("This transaction was flagged as suspicious")}
-          </p>
-        </div>
-        <div className="ScanLabel__Action">
-          <Icon.ChevronRight />
-        </div>
-      </div>
-    );
-  }
-
-  // Handle simulation errors
-  if (scanResult?.simulation && "error" in scanResult.simulation) {
-    const header = t("This transaction is expected to fail");
-    return (
-      <div
-        className="ScanLabel ScanMiss"
-        data-testid="blockaid-miss-label"
-        onClick={onClick}
-      >
-        <div className="ScanLabel__Info">
-          <div className="Icon">
-            <Icon.InfoSquare className="WarningMessage__icon" />
-          </div>
-          <p className="Message">{header}</p>
-        </div>
-        <div className="ScanLabel__Action">
-          <Icon.ChevronRight />
-        </div>
-      </div>
-    );
-  }
-
-  return <></>;
-};
-
 interface BlockAidScanExpandedProps {
   scanResult: BlockAidScanTxResult | BlockAidScanAssetResult | null | undefined;
   onClose?: () => void;
   isAssetScan?: boolean;
+  // Additional friendly reasons to list alongside the scan's own (e.g. on a
+  // swap, the source/destination token-scan features shown together with the
+  // transaction-scan reasons in a single pane).
+  extraWarnings?: BlockaidWarning[];
+  // The verdict that drives the parent gate's malicious/suspicious styling for
+  // those extra reasons (e.g. a swap token's merged SecurityLevel). Folded into
+  // the pane's title/icon so the pane can never under-state severity relative
+  // to the gate when a token is flagged via result_type but carries no
+  // matching feature row.
+  extraSeverityLevel?: SecurityLevel | null;
 }
 
 interface WarningInfo {
@@ -1069,7 +725,7 @@ const getScanWarnings = (
     warnings.push({
       icon: <Icon.XCircle />,
       text: isAssetScan
-        ? t("This asset was flagged as malicious (override active)")
+        ? t("This token was flagged as malicious (override active)")
         : t("This transaction was flagged as malicious (override active)"),
       isError: true,
     });
@@ -1080,7 +736,7 @@ const getScanWarnings = (
     warnings.push({
       icon: <Icon.MinusCircle />,
       text: isAssetScan
-        ? t("This asset was flagged as suspicious (override active)")
+        ? t("This token was flagged as suspicious (override active)")
         : t("This transaction was flagged as suspicious (override active)"),
       isError: false,
     });
@@ -1092,7 +748,7 @@ const getScanWarnings = (
     warnings.push({
       icon: <Icon.MinusCircle />,
       text: isAssetScan
-        ? t("Unable to scan asset")
+        ? t("Unable to scan token")
         : t("Unable to scan transaction"),
       isError: false,
     });
@@ -1123,7 +779,30 @@ const getScanWarnings = (
     }
 
     if (validation && "result_type" in validation) {
-      if (validation.description) {
+      // Prefer per-feature friendly descriptions over the raw top-level
+      // validation.description, which is a developer string like
+      // "Token issuer <Address [type=ACCOUNT ...]> is flagged as malicious".
+      // Fall back to the top-level description only when there are no flagged
+      // features.
+      const validationFeatures =
+        ("features" in validation && validation.features) || [];
+      const flaggedFeatures = validationFeatures.filter(
+        (feature) => feature.type === "Warning" || feature.type === "Malicious",
+      );
+      if (flaggedFeatures.length > 0) {
+        flaggedFeatures.forEach((feature) => {
+          warnings.push({
+            icon:
+              feature.type === "Malicious" ? (
+                <Icon.XCircle />
+              ) : (
+                <Icon.MinusCircle />
+              ),
+            text: feature.description,
+            isError: feature.type === "Malicious",
+          });
+        });
+      } else if (validation.description) {
         warnings.push({
           icon: isMalicious ? <Icon.XCircle /> : <Icon.MinusCircle />,
           text: validation.description,
@@ -1153,6 +832,8 @@ export const BlockAidScanExpanded = ({
   scanResult,
   onClose,
   isAssetScan: isAssetScanProp,
+  extraWarnings,
+  extraSeverityLevel,
 }: BlockAidScanExpandedProps) => {
   const { t } = useTranslation();
   const shouldTreatTxAsUnableToScan = useShouldTreatTxAsUnableToScan();
@@ -1173,7 +854,12 @@ export const BlockAidScanExpanded = ({
     blockaidOverrideState === SecurityLevel.MALICIOUS ||
     blockaidOverrideState === SecurityLevel.SUSPICIOUS;
 
-  if (!scanResult && !isUnableToScan && !hasActiveOverride) {
+  if (
+    !scanResult &&
+    !isUnableToScan &&
+    !hasActiveOverride &&
+    !extraWarnings?.length
+  ) {
     return null;
   }
 
@@ -1186,25 +872,66 @@ export const BlockAidScanExpanded = ({
     blockaidOverrideState,
     isAssetScan,
   );
+
+  // Append any caller-supplied reasons (e.g. swap token-scan features), so the
+  // pane lists the transaction-scan and token-scan reasons together in one view.
+  // Dedupe against the scan's own rows by text, and among the extras by
+  // featureId, so the same reason never doubles up.
+  const extraRows = (extraWarnings ?? [])
+    .filter(
+      (extra) =>
+        !warnings.some((existing) => existing.text === extra.description),
+    )
+    .filter((extra, index, arr) => {
+      const key = extra.featureId || extra.description;
+      return (
+        arr.findIndex(
+          (other) => (other.featureId || other.description) === key,
+        ) === index
+      );
+    })
+    .map((extra) => ({
+      icon: extra.isError ? <Icon.XCircle /> : <Icon.MinusCircle />,
+      text: extra.description,
+      isError: extra.isError,
+    }));
+
+  const allWarnings = [...warnings, ...extraRows];
+  // Keep the pane title in lockstep with the gate. When the caller passes its
+  // verdict (extraSeverityLevel) — e.g. a swap token's merged SecurityLevel —
+  // trust it: this covers a token flagged via result_type with no matching
+  // feature row, and avoids over-escalating an unable-to-scan token (which has
+  // extra rows but is neither malicious nor suspicious). Fall back to the row
+  // presence only when no verdict was supplied.
+  const hasMaliciousExtra =
+    extraRows.some((row) => row.isError) ||
+    extraSeverityLevel === SecurityLevel.MALICIOUS;
+  const mergedIsMalicious = isMalicious || hasMaliciousExtra;
+  const mergedIsSuspicious =
+    !mergedIsMalicious &&
+    (isSuspicious ||
+      extraSeverityLevel === SecurityLevel.SUSPICIOUS ||
+      (extraSeverityLevel == null && extraRows.length > 0));
+
   let requestId = "";
   if (scanResult && "request_id" in scanResult && scanResult.request_id) {
     requestId = scanResult.request_id;
   }
 
   // Early return if no warnings
-  if (warnings.length === 0) {
+  if (allWarnings.length === 0) {
     return null;
   }
 
-  const title = isMalicious
+  const title = mergedIsMalicious
     ? t("Do not proceed")
-    : isSuspicious
+    : mergedIsSuspicious
       ? t("Suspicious Request")
       : t("Proceed with caution");
   const subtitle = isAssetScan
-    ? t("This asset does not appear safe for the following reasons.")
+    ? t("This token does not appear safe for the following reasons.")
     : t("This transaction does not appear safe for the following reasons.");
-  const headerIcon = isMalicious ? (
+  const headerIcon = mergedIsMalicious ? (
     <div className="WarningMarkError">
       <Icon.AlertOctagon />
     </div>
@@ -1218,14 +945,18 @@ export const BlockAidScanExpanded = ({
     <div className="BlockaidDetailsExpanded">
       <div className="BlockaidDetailsExpanded__Header">
         {headerIcon}
-        <div className="Close" onClick={onClose}>
+        <div
+          className="Close"
+          onClick={onClose}
+          data-testid="blockaid-details-close"
+        >
           <Icon.X />
         </div>
       </div>
       <div className="BlockaidDetailsExpanded__Title">{title}</div>
       <div className="BlockaidDetailsExpanded__SubTitle">{subtitle}</div>
       <div className="BlockaidDetailsExpanded__Details">
-        {warnings.map((warning, index) => (
+        {allWarnings.map((warning, index) => (
           <div
             key={`${warning.text}-${index}`}
             className={

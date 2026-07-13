@@ -265,7 +265,7 @@ function useGetSignTxData(
               icons[canonical] = cachedIcon;
             } else {
               let icon = await getIconUrlFromIssuer({
-                key: issuer,
+                key: issuer ?? "",
                 code,
                 networkDetails,
               });

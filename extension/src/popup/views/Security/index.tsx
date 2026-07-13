@@ -52,6 +52,12 @@ export const Security = () => {
             >
               {t("Advanced settings")}
             </ListNavLink>
+            <ListNavLink
+              href={ROUTES.autoLockTimer}
+              icon={<Icon.ClockSnooze />}
+            >
+              {t("Auto-lock timer")}
+            </ListNavLink>
             {/* <ListNavButtonLink
               handleClick={() => {
                 openTab(newTabHref(ROUTES.accountMigration));

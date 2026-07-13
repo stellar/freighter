@@ -3,7 +3,7 @@ import { Button, Icon } from "@stellar/design-system";
 import { Navigate, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
-import { hash, xdr } from "stellar-sdk";
+import { Address, hash, xdr } from "stellar-sdk";
 import { PASSPHRASE_TO_NETWORK_NAME } from "@shared/constants/stellar";
 
 import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
@@ -40,6 +40,8 @@ import { reRouteOnboarding } from "popup/helpers/route";
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
 import { getSiteFavicon } from "popup/helpers/getSiteFavicon";
 import { AuthEntries } from "popup/components/AuthEntry";
+import { parseAuthEntryPreimage } from "popup/helpers/soroban";
+import { truncateString } from "helpers/stellar";
 import { useMarkQueueActive } from "popup/helpers/useMarkQueueActive";
 
 import "./styles.scss";
@@ -142,9 +144,9 @@ export const SignAuthEntry = () => {
   // Cryptographically validate the networkId embedded in the XDR against the
   // wallet's active network. This is stronger than trusting the dApp-supplied
   // networkPassphrase string (which may be absent or spoofed).
-  let sorobanAuth: ReturnType<typeof preimage.sorobanAuthorization>;
+  let sorobanAuth: ReturnType<typeof parseAuthEntryPreimage>;
   try {
-    sorobanAuth = preimage.sorobanAuthorization();
+    sorobanAuth = parseAuthEntryPreimage(preimage);
     const embeddedNetworkId = sorobanAuth.networkId();
     const entryNetworkName =
       Object.entries(PASSPHRASE_TO_NETWORK_NAME).find(([passphrase]) =>
@@ -161,7 +163,9 @@ export const SignAuthEntry = () => {
         >
           <p>
             {entryNetworkName
-              ? `${t("The authorization entry is for")} ${entryNetworkName}.`
+              ? t("The authorization entry is for {{network}}.", {
+                  network: entryNetworkName,
+                })
               : t(
                   "The authorization entry is for a different network than the one you are connected to.",
                 )}
@@ -183,6 +187,34 @@ export const SignAuthEntry = () => {
         <p>
           {t("The authorization entry is malformed or contains invalid data.")}
         </p>
+      </WarningMessage>
+    );
+  }
+
+  // The CAP-71 address-bound preimage carries the address the signature is
+  // bound to. We only support authorizing on behalf of the active account, so
+  // a bound address that isn't the active account (e.g. delegated auth, or a
+  // smart-wallet/contract authorizer) is blocked the same way a network
+  // mismatch is — signing it is not supported for now.
+  const boundAddress =
+    sorobanAuth instanceof xdr.HashIdPreimageSorobanAuthorizationWithAddress
+      ? Address.fromScAddress(sorobanAuth.address()).toString()
+      : undefined;
+
+  if (boundAddress && boundAddress !== publicKey) {
+    return (
+      <WarningMessage
+        variant={WarningMessageVariant.warning}
+        handleCloseClick={() => rejectAndClose()}
+        isActive
+        header={t("Freighter is set to a different account")}
+      >
+        <p>
+          {t("This authorization is for {{address}}.", {
+            address: truncateString(boundAddress),
+          })}
+        </p>
+        <p>{t("Signing this authorization is not possible at the moment.")}</p>
       </WarningMessage>
     );
   }
@@ -254,9 +286,24 @@ export const SignAuthEntry = () => {
                   <span>{networkName}</span>
                 </div>
               </div>
+              {boundAddress && (
+                // Address-bound authorization (CAP-71): show the address this
+                // signature is bound to so the user knows who is authorizing.
+                <div className="SignAuthEntry__Metadata__Row">
+                  <div className="SignAuthEntry__Metadata__Label">
+                    <Icon.UserCircle />
+                    <span>{t("Authorized address")}</span>
+                  </div>
+                  <div className="SignAuthEntry__Metadata__Value">
+                    <KeyIdenticon publicKey={boundAddress} />
+                  </div>
+                </div>
+              )}
             </div>
           </div>
-          <AuthEntries invocations={[invocation]} />
+          {/* boundAddress is shown in the metadata block above, so it is
+              intentionally omitted here to avoid duplication. */}
+          <AuthEntries entries={[{ invocation }]} />
         </View.Content>
         <View.Footer isInline>
           <Button

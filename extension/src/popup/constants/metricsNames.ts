@@ -34,6 +34,7 @@ export const METRIC_NAMES = {
   viewAbout: "loaded screen: about",
   viewManageAssetsLists: "loaded screen: manage assets lists",
   viewAdvancedSettings: "loaded screen: advanced settings",
+  viewAutoLockTimer: "loaded screen: auto-lock timer",
 
   viewSendPayment: "loaded screen: send payment",
   sendPaymentTo: "loaded screen: send payment to",
@@ -76,6 +77,14 @@ export const METRIC_NAMES = {
   swapSettingsSlippage: "loaded screen: swap settings slippage",
   swapSettingsTimeout: "loaded screen: swap settings timeout",
   swapConfirm: "loaded screen: swap confirm",
+  swapPickerOpened: "swap: picker opened",
+  swapSourceSelected: "swap: source selected",
+  swapDestinationSelected: "swap: destination selected",
+  swapDirectionToggled: "swap: direction toggled",
+  swapTrustlineAdded: "swap: trustline added",
+  swapXlmReserveShown: "swap: xlm reserve shown",
+  swapQuoteExpired: "swap: quote expired",
+  swapSuccess: "swap: success",
 
   viewAddCollectibles: "loaded screen: add collectibles",
   viewSendCollectible: "loaded screen: send collectible",

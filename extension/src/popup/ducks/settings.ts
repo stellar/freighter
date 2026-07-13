@@ -28,6 +28,10 @@ import {
   AssetsLists,
   DEFAULT_ASSETS_LISTS,
 } from "@shared/constants/soroban/asset-list";
+import {
+  AutoLockTimeoutMinutes,
+  DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
+} from "@shared/constants/autoLock";
 
 import {
   AllowList,
@@ -35,6 +39,7 @@ import {
   IndexerSettings,
   SettingsState,
   ExperimentalFeatures,
+  SaveSettingsResponse,
 } from "@shared/api/types";
 import { publicKeySelector } from "popup/ducks/accountServices";
 import { AppState } from "popup/App";
@@ -59,6 +64,8 @@ const settingsInitialState: Settings = {
   isMemoValidationEnabled: true,
   isHideDustEnabled: true,
   isOpenSidebarByDefault: false,
+  autoLockTimeoutMinutes:
+    DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES as AutoLockTimeoutMinutes,
   error: "",
 };
 
@@ -120,12 +127,13 @@ export const saveAllowList = createAsyncThunk<
 );
 
 export const saveSettings = createAsyncThunk<
-  Settings & IndexerSettings,
+  SaveSettingsResponse,
   {
     isDataSharingAllowed: boolean;
     isMemoValidationEnabled: boolean;
     isHideDustEnabled: boolean;
     isOpenSidebarByDefault: boolean;
+    autoLockTimeoutMinutes: AutoLockTimeoutMinutes;
   },
   { rejectValue: ErrorMessage; state: AppState }
 >(
@@ -136,17 +144,22 @@ export const saveSettings = createAsyncThunk<
       isMemoValidationEnabled,
       isHideDustEnabled,
       isOpenSidebarByDefault,
+      autoLockTimeoutMinutes,
     },
     { getState, rejectWithValue },
   ) => {
-    let res = {
-      ...settingsInitialState,
-      isSorobanPublicEnabled: false,
+    let res: SaveSettingsResponse = {
+      allowList: DEFAULT_ALLOW_LIST,
+      isDataSharingAllowed: false,
+      isMemoValidationEnabled: false,
+      networkDetails: settingsInitialState.networkDetails,
+      networksList: settingsInitialState.networksList,
       isRpcHealthy: false,
-      userNotification: { enabled: false, message: "" },
-      settingsState: SettingsState.IDLE,
+      isSorobanPublicEnabled: false,
+      isNonSSLEnabled: false,
       isHideDustEnabled: true,
       isOpenSidebarByDefault: false,
+      autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
     };
     const activePublicKey = publicKeySelector(getState());
 
@@ -157,6 +170,7 @@ export const saveSettings = createAsyncThunk<
         isMemoValidationEnabled,
         isHideDustEnabled,
         isOpenSidebarByDefault,
+        autoLockTimeoutMinutes,
       });
     } catch (e) {
       console.error(e);
@@ -375,6 +389,7 @@ const settingsSlice = createSlice({
         isNonSSLEnabled,
         isHideDustEnabled,
         isOpenSidebarByDefault,
+        autoLockTimeoutMinutes,
       } = payload;
       state.allowList = allowList;
       state.isDataSharingAllowed = isDataSharingAllowed;
@@ -387,6 +402,8 @@ const settingsSlice = createSlice({
       state.isNonSSLEnabled = isNonSSLEnabled;
       state.isHideDustEnabled = isHideDustEnabled;
       state.isOpenSidebarByDefault = isOpenSidebarByDefault;
+      state.autoLockTimeoutMinutes =
+        autoLockTimeoutMinutes ?? DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES;
       state.overriddenBlockaidResponse =
         payload.overriddenBlockaidResponse ?? null;
       state.settingsState = SettingsState.SUCCESS;
@@ -436,11 +453,8 @@ const settingsSlice = createSlice({
         isSorobanPublicEnabled,
         isHideDustEnabled,
         isOpenSidebarByDefault,
-        overriddenBlockaidResponse,
-      } = (action?.payload as typeof action.payload & {
-        overriddenBlockaidResponse?: string | null;
-        isOpenSidebarByDefault?: boolean;
-      }) || {
+        autoLockTimeoutMinutes,
+      } = action?.payload || {
         ...initialState,
       };
 
@@ -454,7 +468,8 @@ const settingsSlice = createSlice({
         isSorobanPublicEnabled,
         isHideDustEnabled,
         isOpenSidebarByDefault: isOpenSidebarByDefault ?? false,
-        overriddenBlockaidResponse: overriddenBlockaidResponse ?? null,
+        autoLockTimeoutMinutes:
+          autoLockTimeoutMinutes ?? DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
       };
     });
     builder.addCase(saveExperimentalFeatures.pending, (state) => ({
@@ -699,4 +714,10 @@ export const overriddenBlockaidResponseSelector = createSelector(
 export const isOpenSidebarByDefaultSelector = createSelector(
   settingsSelector,
   (settings) => settings.isOpenSidebarByDefault,
+);
+
+export const autoLockTimeoutMinutesSelector = createSelector(
+  settingsSelector,
+  (settings): AutoLockTimeoutMinutes =>
+    settings.autoLockTimeoutMinutes ?? DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
 );

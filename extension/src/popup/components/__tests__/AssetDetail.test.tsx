@@ -283,12 +283,14 @@ describe("AssetDetail", () => {
                 "test-img-src",
             },
             tokenPrices: {
-              G1: {
-                "BAZ:GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF":
-                  {
-                    price: 1,
-                    timestamp: 1718236800,
-                  },
+              [TESTNET_NETWORK_DETAILS.networkPassphrase]: {
+                G1: {
+                  "BAZ:GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF":
+                    {
+                      price: 1,
+                      timestamp: 1718236800,
+                    },
+                },
               },
             },
           },

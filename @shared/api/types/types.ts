@@ -13,6 +13,7 @@ import {
   AssetsLists,
   AssetsListItem,
 } from "../../constants/soroban/asset-list";
+import { AutoLockTimeoutMinutes } from "../../constants/autoLock";
 
 export enum ActionStatus {
   IDLE = "IDLE",
@@ -30,6 +31,18 @@ export type MigratableAccount = Account & { keyIdIndex: number };
 export type IssuerKey = string; // {assetCode}:{issuer/contract ID} issuer pub key for classic, contract ID for tokens
 export type CollectibleKey = string; // {collectionAddress}:{tokenId}
 export type AssetVisibility = "visible" | "hidden";
+
+// stellar.expert top-tokens ("trending") entry for the swap Popular list. Lives
+// in @shared because both the popup and the background — which persists it to
+// chrome.storage.local — reference the shape.
+export interface TrendingAsset {
+  code: string;
+  issuer: string;
+  contract?: string;
+  domain: string | null;
+  icon?: string;
+  volume7d: number;
+}
 
 export interface AllowList {
   [networkName: string]: {
@@ -129,6 +142,7 @@ export interface Response {
   overriddenBlockaidResponse: string | null;
   recentProtocols: RecentProtocolEntry[];
   hasSeenDiscoverWelcome: boolean;
+  cachedSwapTopTokens: { tokens: TrendingAsset[]; updatedAt: number } | null;
 }
 
 export interface MemoRequiredAccount {
@@ -189,6 +203,7 @@ export interface Preferences {
   networksList: NetworkDetails[];
   isHideDustEnabled: boolean;
   isOpenSidebarByDefault: boolean;
+  autoLockTimeoutMinutes: AutoLockTimeoutMinutes;
   error: string;
 }
 
@@ -219,6 +234,20 @@ export interface IndexerSettings {
   isRpcHealthy: boolean;
   userNotification: UserNotification;
 }
+
+export type SaveSettingsResponse = {
+  allowList: AllowList;
+  isDataSharingAllowed: boolean;
+  isMemoValidationEnabled: boolean;
+  networkDetails: NetworkDetails;
+  networksList: NetworkDetails[];
+  isRpcHealthy: boolean;
+  isSorobanPublicEnabled: boolean;
+  isNonSSLEnabled: boolean;
+  isHideDustEnabled: boolean;
+  isOpenSidebarByDefault: boolean;
+  autoLockTimeoutMinutes: AutoLockTimeoutMinutes;
+};
 
 export type Settings = {
   allowList: AllowList;

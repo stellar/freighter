@@ -49,11 +49,6 @@ export const useChangeTrustline = ({
 
   const isHardwareWallet = !!walletType;
 
-  const server = stellarSdkServer(
-    networkDetails.networkUrl,
-    networkDetails.networkPassphrase,
-  );
-
   const { fetchData: fetchFees } = useNetworkFees();
 
   const canonicalAsset = getCanonicalFromAsset(assetCode, assetIssuer);
@@ -101,6 +96,13 @@ export const useChangeTrustline = ({
     successfulCallback?: () => Promise<void>,
   ) => {
     setAssetSubmitting?.(canonicalAsset);
+    // Build the server here (on submit) rather than during render: the dApp
+    // popup mounts before network details hydrate, so constructing it at render
+    // time can hit an empty networkUrl (v16's Server throws on that).
+    const server = stellarSdkServer(
+      networkDetails.networkUrl,
+      networkDetails.networkPassphrase,
+    );
     const fees = await fetchFees();
     const transactionXDR: string = await getManageAssetXDR({
       publicKey,

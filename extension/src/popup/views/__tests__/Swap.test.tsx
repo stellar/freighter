@@ -28,6 +28,7 @@ import { Wrapper, mockAccounts } from "../../__testHelpers__";
 import * as GetIconHelper from "@shared/api/helpers/getIconUrlFromIssuer";
 import { SettingsState } from "@shared/api/types";
 import { DEFAULT_ASSETS_LISTS } from "@shared/constants/soroban/asset-list";
+import { DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES } from "@shared/constants/autoLock";
 
 export const swapMockBalances = {
   balances: {
@@ -127,6 +128,7 @@ jest.spyOn(UseNetworkFees, "useNetworkFees").mockImplementation(() => ({
   recommendedFee: "0.00001",
   networkCongestion: UseNetworkFees.NetworkCongestion.MEDIUM,
   fetchData: () => Promise.resolve({ recommendedFee: "00.1" }),
+  isLoading: false,
 }));
 
 jest.spyOn(BlockaidHelpers, "useScanTx").mockImplementation(() => {
@@ -173,6 +175,7 @@ jest.spyOn(ApiInternal, "loadSettings").mockImplementation(() =>
     isNonSSLEnabled: false,
     experimentalFeaturesState: SettingsState.SUCCESS,
     assetsLists: DEFAULT_ASSETS_LISTS,
+    autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
   }),
 );
 
@@ -974,8 +977,8 @@ describe.skip("Swap", () => {
     });
   });
 
-  describe("Select an asset button disabled state", () => {
-    it("Select an asset button is disabled when no destination asset is selected", async () => {
+  describe("Select a token button state", () => {
+    it("Select a token button is enabled (opens the picker) when no destination token is selected", async () => {
       render(
         <Wrapper
           routes={[ROUTES.swap]}
@@ -1006,8 +1009,8 @@ describe.skip("Swap", () => {
       });
 
       const continueButton = screen.getByTestId("swap-amount-btn-continue");
-      expect(continueButton).toBeDisabled();
-      expect(continueButton).toHaveTextContent("Select an asset");
+      expect(continueButton).toBeEnabled();
+      expect(continueButton).toHaveTextContent("Select a token");
     });
 
     it("Button shows Review swap and is enabled when destination asset is selected and amount > 0", async () => {

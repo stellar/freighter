@@ -39,7 +39,7 @@ export const splitVerifiedAssetCurrency = async ({
   // make a unique set of contract IDs and issuers
   const verifiedIds = new Set<string>();
   for (const validAsset of validatedAssets) {
-    if (!verifiedIds.has(validAsset.contract)) {
+    if (validAsset.contract && !verifiedIds.has(validAsset.contract)) {
       verifiedIds.add(validAsset.contract);
     }
     if (!verifiedIds.has(validAsset.issuer)) {

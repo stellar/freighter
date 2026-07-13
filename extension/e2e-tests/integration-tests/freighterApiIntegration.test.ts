@@ -27,6 +27,12 @@ const SIGNED_AUTH_ENTRY =
 const NON_SOROBAN_AUTH_ENTRY =
   "AAAABgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAA==";
 
+// A CAP-71 (protocol 27) ENVELOPE_TYPE_SOROBAN_AUTHORIZATION_WITH_ADDRESS
+// preimage on TestNet, bound to account GAAQCAIB… (ed25519 0x01*32) — never the
+// e2e test account. Used to exercise the bound-address mismatch block.
+const V2_AUTH_ENTRY_WRONG_ADDRESS =
+  "AAAACs7gMC1ZhE0yvcqRXIID3USzP7t+3BkFHqN6vt8o7NRyAAAAAAAAACoAD0JAAAAAAAAAAAABAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQAAAAAAAAABAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMAAAAIdHJhbnNmZXIAAAAAAAAAAA==";
+
 const MSG_TO_SIGN = "Hello, World!";
 const SIGNED_MSG =
   "dxdeMTXPabzkvpVyTFFvPyiQ1soAJVf55NLkzgQ1a5HihB0wGi78P6p4Qac3YJa9pOVD9YeKGeUPZVNCM/f8Cg==";
@@ -946,6 +952,45 @@ test("should show network mismatch warning when signing auth entry for wrong net
 
   await expect(
     popup.getByText(/The authorization entry is for Test Net/),
+  ).toBeVisible();
+  await expect(
+    popup.getByText(
+      "Signing this authorization is not possible at the moment.",
+    ),
+  ).toBeVisible();
+});
+
+test("should block signing an auth entry bound to a different account", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
+  // Stay on TestNet so the embedded networkId matches (passes the network
+  // check) and we reach the bound-address mismatch check. The preimage is
+  // bound to GAAQCAIB… which is not the test account.
+  await allowDapp({ page });
+
+  const pageTwo = await page.context().newPage();
+  await pageTwo.waitForLoadState();
+
+  const popupPromise = page.context().waitForEvent("page");
+  await pageTwo.goto(
+    "https://play.freighter.app/#/extension/playground/signAuthEntry",
+  );
+  await pageTwo.getByRole("textbox").first().fill(V2_AUTH_ENTRY_WRONG_ADDRESS);
+  await pageTwo
+    .getByRole("textbox")
+    .nth(1)
+    .fill("Test SDF Network ; September 2015");
+  await pageTwo
+    .getByText("Sign Authorization Entry XDR")
+    .click({ force: true });
+
+  const popup = await popupPromise;
+
+  await expect(
+    popup.getByText("Freighter is set to a different account"),
   ).toBeVisible();
   await expect(
     popup.getByText(

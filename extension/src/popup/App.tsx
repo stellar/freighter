@@ -15,6 +15,7 @@ import { reducer as cache } from "popup/ducks/cache";
 import { reducer as remoteConfig } from "popup/ducks/remoteConfig";
 import { ErrorTracking } from "popup/components/ErrorTracking";
 import { AccountMismatch } from "popup/components/AccountMismatch";
+import { ActivityTracker } from "popup/components/ActivityTracker";
 import { MaintenanceScreen } from "popup/components/MaintenanceScreen";
 import { useRemoteConfig } from "popup/helpers/hooks/useRemoteConfig";
 import { maintenanceScreenSelector } from "popup/ducks/remoteConfig";
@@ -66,6 +67,7 @@ export const App = () => (
   <ErrorBoundary>
     <Provider store={store}>
       <MaintenanceGate>
+        <ActivityTracker />
         <AccountMismatch />
         <Toaster />
         <ErrorTracking />

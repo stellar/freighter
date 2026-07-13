@@ -66,6 +66,7 @@ describe("useGetWalletsData", () => {
   const preloadedState = {
     auth: {
       publicKey: TEST_PUBLIC_KEY,
+      hasPrivateKey: true,
       allAccounts: mockAccounts,
       applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
     },
@@ -113,6 +114,7 @@ describe("useGetWalletsData", () => {
     const mainnetPreloadedState = {
       auth: {
         publicKey: "G1",
+        hasPrivateKey: true,
         allAccounts: [{ publicKey: "G1" }],
         applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
       },
@@ -166,6 +168,7 @@ describe("useGetWalletsData", () => {
     const mainnetPreloadedState = {
       auth: {
         publicKey: "G1",
+        hasPrivateKey: true,
         allAccounts: [
           { publicKey: "G1" },
           { publicKey: "G2" },
@@ -218,11 +221,15 @@ describe("useGetWalletsData", () => {
       await result.current.fetchData(true);
     });
     expect(result.current.state.state).toBe<RequestState>(RequestState.SUCCESS);
-    expect(getTokenPricesSpy).toHaveBeenCalledWith([
-      "native",
-      "DT:CCXVDIGMR6WTXZQX2OEVD6YM6AYCYPXPQ7YYH6OZMRS7U6VD3AVHNGBJ",
-      "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
-    ]);
+    expect(getTokenPricesSpy).toHaveBeenCalledWith(
+      [
+        "native",
+        "DT:CCXVDIGMR6WTXZQX2OEVD6YM6AYCYPXPQ7YYH6OZMRS7U6VD3AVHNGBJ",
+        "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
+      ],
+      MAINNET_NETWORK_DETAILS,
+      true,
+    );
     expect(result.current.state.data).toEqual({
       accountValue: {
         G1: "$250.00",

@@ -1,12 +1,15 @@
 import React, { useEffect } from "react";
 import { Notification, Toggle } from "@stellar/design-system";
 import { Field, Form, Formik } from "formik";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 
 import { View } from "popup/basics/layout/View";
 import { AppDispatch } from "popup/App";
-import { saveSettings } from "popup/ducks/settings";
+import {
+  autoLockTimeoutMinutesSelector,
+  saveSettings,
+} from "popup/ducks/settings";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { AutoSaveFields } from "popup/components/AutoSave";
 import { AppDataType, useGetAppData } from "helpers/hooks/useGetAppData";
@@ -24,6 +27,7 @@ export const Preferences = () => {
   const location = useLocation();
   const dispatch = useDispatch<AppDispatch>();
   const { state, fetchData } = useGetAppData();
+  const autoLockTimeoutMinutes = useSelector(autoLockTimeoutMinutesSelector);
 
   interface SettingValues {
     isValidatingMemoValue: boolean;
@@ -46,6 +50,7 @@ export const Preferences = () => {
         isDataSharingAllowed: isDataSharingAllowedValue,
         isHideDustEnabled: isHideDustEnabledValue,
         isOpenSidebarByDefault: isOpenSidebarByDefaultValue,
+        autoLockTimeoutMinutes,
       }),
     );
   };

@@ -38,6 +38,7 @@ import { Wrapper, mockAccounts } from "../../__testHelpers__";
 import { ManageAssets } from "../ManageAssets";
 import { SettingsState } from "@shared/api/types";
 import { DEFAULT_ASSETS_LISTS } from "@shared/constants/soroban/asset-list";
+import { DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES } from "@shared/constants/autoLock";
 
 const mockXDR =
   "AAAAAgAAAADaBSz5rQFDZHNdV8//w/Yiy11vE1ZxGJ8QD8j7HUtNEwAAAGQAAAAAAAAAAQAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAQAAAADaBSz5rQFDZHNdV8//w/Yiy11vE1ZxGJ8QD8j7HUtNEwAAAAAAAAAAAvrwgAAAAAAAAAABHUtNEwAAAEBY/jSiXJNsA2NpiXrOi6Ll6RiIY7v8QZEEZviM8HmmzeI4FBP9wGZm7YMorQue+DK9KI5BEXDt3hi0VOA9gD8A";
@@ -126,6 +127,7 @@ jest.spyOn(UseNetworkFees, "useNetworkFees").mockImplementation(() => ({
   recommendedFee: "0.00001",
   networkCongestion: UseNetworkFees.NetworkCongestion.MEDIUM,
   fetchData: () => Promise.resolve({ recommendedFee: "00.1" }),
+  isLoading: false,
 }));
 
 jest.spyOn(SearchAsset, "searchAsset").mockImplementation(({ asset }) => {
@@ -330,6 +332,7 @@ jest.spyOn(ApiInternal, "loadSettings").mockImplementation(() =>
     isNonSSLEnabled: false,
     experimentalFeaturesState: SettingsState.SUCCESS,
     assetsLists: DEFAULT_ASSETS_LISTS,
+    autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
   }),
 );
 
@@ -857,7 +860,7 @@ describe.skip("Manage assets", () => {
       const addedTrustlines = screen.queryAllByTestId("ManageAssetRow");
       const verificationBadge = screen.getByTestId("asset-on-list");
 
-      expect(verificationBadge).toHaveTextContent("On your lists");
+      expect(verificationBadge).toHaveTextContent("Verified");
 
       expect(addedTrustlines.length).toBe(1);
       expect(
@@ -902,7 +905,7 @@ describe.skip("Manage assets", () => {
       const addedTrustlines = screen.queryAllByTestId("ManageAssetRow");
       const verificationBadge = screen.getByTestId("not-asset-on-list");
 
-      expect(verificationBadge).toHaveTextContent("Not on your lists");
+      expect(verificationBadge).toHaveTextContent("Unverified");
 
       expect(addedTrustlines.length).toBe(1);
       expect(

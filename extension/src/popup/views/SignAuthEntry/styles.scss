@@ -53,13 +53,29 @@
       display: flex;
       align-items: center;
       color: var(--sds-clr-gray-11);
+      // The label gives up space first: it truncates so the value (address +
+      // identicon) always keeps its full width and never runs to the edge.
+      flex: 1;
+      min-width: 0;
+      margin-right: pxToRem(12px);
 
       svg {
         margin-right: pxToRem(8px);
+        flex-shrink: 0;
+      }
+
+      span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
     }
 
     &__Value {
+      // The value holds its natural width (identicon never shrinks, key isn't
+      // clipped); the label truncates instead.
+      flex-shrink: 0;
+
       .CopyValue {
         max-width: pxToRem(120px);
 
@@ -73,6 +89,18 @@
         svg {
           color: var(--sds-clr-gray-09);
         }
+      }
+
+      .KeyIdenticon {
+        flex-wrap: nowrap;
+      }
+
+      .KeyIdenticon--icon {
+        flex-shrink: 0;
+      }
+
+      .KeyIdenticon--key {
+        white-space: nowrap;
       }
     }
   }

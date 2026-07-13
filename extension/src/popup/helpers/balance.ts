@@ -33,7 +33,7 @@ export const isNativeBalance = (balance: AssetType): balance is NativeAsset =>
 
 export const findAssetBalance = (
   balances: AssetType[],
-  asset: Asset | { issuer: string; code: string },
+  asset: Asset | { issuer?: string; code: string },
 ) => {
   if (isAsset(asset) && asset.isNative()) {
     return balances.find(
@@ -61,7 +61,7 @@ export const findAssetBalance = (
 };
 
 export const getBalanceByAsset = (
-  asset: Asset | { issuer: string; code: string },
+  asset: Asset | { issuer?: string; code: string },
   balances: AssetType[],
 ) => {
   const code = asset.code;

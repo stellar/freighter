@@ -1,11 +1,4 @@
-import {
-  FeeBumpTransaction,
-  Memo,
-  MemoType,
-  Operation,
-  Transaction,
-  StrKey,
-} from "stellar-sdk";
+import { FeeBumpTransaction, Transaction, StrKey } from "stellar-sdk";
 import {
   ConfigurableWalletType,
   WalletType,
@@ -78,7 +71,7 @@ export const getWalletPublicKey: GetWalletPublicKey = {
 
 interface HardwareSignParams {
   bipPath?: string;
-  tx: Transaction<Memo<MemoType>, Operation[]> | FeeBumpTransaction;
+  tx: Transaction | FeeBumpTransaction;
   isHashSigningEnabled?: boolean;
 }
 

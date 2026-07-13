@@ -1,8 +1,8 @@
 import React, { useEffect } from "react";
-import { Icon, IconButton } from "@stellar/design-system";
+import { Badge, Icon, IconButton } from "@stellar/design-system";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
-import { Operation, xdr } from "stellar-sdk";
+import { OperationRecord, Signer, xdr } from "stellar-sdk";
 
 import {
   FLAG_TYPES,
@@ -52,6 +52,14 @@ const MemoRequiredWarning = ({
   ) : null;
 };
 
+// A neutral gray pill used for "cleared"/"deleted" states in the technical
+// operation view — easier to scan at a glance than a parenthetical string.
+const StatusBadge = ({ children }: { children: string }) => (
+  <Badge variant="tertiary" size="sm">
+    {children}
+  </Badge>
+);
+
 const MasterKeyDisableWarning = () => {
   const { t } = useTranslation();
 
@@ -99,11 +107,16 @@ const DestinationWarning = ({
 export const Operations = ({
   flaggedKeys,
   isMemoRequired,
-  operations = [] as Operation[],
+  operations = [] as OperationRecord[],
+  scanAssets = true,
 }: {
   flaggedKeys: FlaggedKeys;
   isMemoRequired: boolean;
-  operations: Operation[];
+  operations: OperationRecord[];
+  // The dapp-signing flow self-scans each op's assets for its own badges. The
+  // internal Send/Swap review already scans these assets, so it passes
+  // scanAssets={false} to avoid duplicate Blockaid requests.
+  scanAssets?: boolean;
 }) => {
   const { t } = useTranslation();
 
@@ -138,10 +151,13 @@ export const Operations = ({
     return labels.join(", ");
   };
 
-  const RenderOpByType = ({ op }: { op: Operation }) => {
+  const RenderOpByType = ({ op }: { op: OperationRecord }) => {
     const networkDetails = useSelector(settingsNetworkDetailsSelector);
 
     useEffect(() => {
+      if (!scanAssets) {
+        return;
+      }
       const scan = async () => {
         let sendAsset;
         let destAsset;
@@ -215,17 +231,19 @@ export const Operations = ({
               isMemoRequired={isMemoRequired}
             />
             <KeyValueList
-              operationKey={t("Asset Code")}
+              operationKey={t("Token Code")}
               operationValue={asset.code}
             />
-            <KeyValueList operationKey={t("Amount")} operationValue={amount} />
+            <KeyValueList
+              operationKey={t("Amount")}
+              operationValue={`${amount} ${asset.code}`}
+            />
           </>
         );
       }
 
       case "pathPaymentStrictReceive": {
-        const { sendAsset, sendMax, destination, destAsset, destAmount, path } =
-          op;
+        const { sendAsset, sendMax, destination, destAsset, destAmount } = op;
         return (
           <>
             <KeyValueList
@@ -253,23 +271,21 @@ export const Operations = ({
               operationKey={t("Destination Amount")}
               operationValue={destAmount}
             />
-            <PathList paths={path} />
           </>
         );
       }
 
       case "pathPaymentStrictSend": {
-        const { sendAsset, sendAmount, destination, destAsset, destMin, path } =
-          op;
+        const { sendAsset, sendAmount, destination, destAsset, destMin } = op;
         return (
           <>
             <KeyValueList
-              operationKey={t("Asset Code")}
+              operationKey={t("Token Code")}
               operationValue={sendAsset.code}
             />
             <KeyValueList
               operationKey={t("Send Amount")}
-              operationValue={sendAmount}
+              operationValue={`${sendAmount} ${sendAsset.code}`}
             />
             <KeyValueWithPublicKey
               operationKey={t("Destination")}
@@ -280,15 +296,14 @@ export const Operations = ({
               flaggedKeys={flaggedKeys}
               isMemoRequired={isMemoRequired}
             />
-            <KeyValueWithPublicKey
-              operationKey={t("Destination Asset")}
+            <KeyValueList
+              operationKey={t("Destination Token")}
               operationValue={destAsset.code}
             />
             <KeyValueList
               operationKey={t("Destination Minimum")}
-              operationValue={destMin}
+              operationValue={`${destMin} ${destAsset.code}`}
             />
-            <PathList paths={path} />
           </>
         );
       }
@@ -372,7 +387,11 @@ export const Operations = ({
         } = op;
         return (
           <>
-            {signer && <KeyValueSigner signer={signer} />}
+            {signer && (
+              // v16 types the parsed setOptions signer as the builder opts
+              // type; at runtime it is a parsed Signer (Buffer-backed fields).
+              <KeyValueSigner signer={signer as unknown as Signer} />
+            )}
             {inflationDest && (
               <KeyValueWithPublicKey
                 operationKey={t("Inflation Destination")}
@@ -383,7 +402,11 @@ export const Operations = ({
               <KeyValueList
                 operationKey={t("Home Domain")}
                 operationValue={
-                  homeDomain === "" ? t("(clearing home domain)") : homeDomain
+                  homeDomain === "" ? (
+                    <StatusBadge>{t("Cleared")}</StatusBadge>
+                  ) : (
+                    homeDomain
+                  )
                 }
               />
             )}
@@ -488,7 +511,11 @@ export const Operations = ({
             <KeyValueList
               operationKey={t("Value")}
               operationValue={
-                isDeletingEntry ? t("(deleting entry)") : value.toString()
+                isDeletingEntry ? (
+                  <StatusBadge>{t("Deleted")}</StatusBadge>
+                ) : (
+                  value.toString()
+                )
               }
             />
           </>
@@ -685,12 +712,8 @@ export const Operations = ({
       case "restoreFootprint":
       case "inflation":
       default: {
-        // OperationType is missing some types
-        // Issue: https://github.com/stellar/js-stellar-base/issues/728
-        const type = op.type as string;
-        if (type === "revokeTrustlineSponsorship") {
-          const _op = op as unknown as Operation.RevokeTrustlineSponsorship;
-          const { account, asset } = _op;
+        if (op.type === "revokeTrustlineSponsorship") {
+          const { account, asset } = op;
           return (
             <>
               <KeyValueWithPublicKey
@@ -712,9 +735,8 @@ export const Operations = ({
             </>
           );
         }
-        if (type === "revokeAccountSponsorship") {
-          const _op = op as unknown as Operation.RevokeAccountSponsorship;
-          const { account } = _op;
+        if (op.type === "revokeAccountSponsorship") {
+          const { account } = op;
           return (
             <KeyValueWithPublicKey
               operationKey={t("Account")}
@@ -722,9 +744,8 @@ export const Operations = ({
             />
           );
         }
-        if (type === "revokeOfferSponsorship") {
-          const _op = op as unknown as Operation.RevokeOfferSponsorship;
-          const { seller, offerId } = _op;
+        if (op.type === "revokeOfferSponsorship") {
+          const { seller, offerId } = op;
           return (
             <>
               <KeyValueWithPublicKey
@@ -738,9 +759,8 @@ export const Operations = ({
             </>
           );
         }
-        if (type === "revokeDataSponsorship") {
-          const _op = op as unknown as Operation.RevokeDataSponsorship;
-          const { account, name } = _op;
+        if (op.type === "revokeDataSponsorship") {
+          const { account, name } = op;
           return (
             <>
               <KeyValueWithPublicKey
@@ -751,10 +771,8 @@ export const Operations = ({
             </>
           );
         }
-        if (type === "revokeClaimableBalanceSponsorship") {
-          const _op =
-            op as unknown as Operation.RevokeClaimableBalanceSponsorship;
-          const { balanceId } = _op;
+        if (op.type === "revokeClaimableBalanceSponsorship") {
+          const { balanceId } = op;
           return (
             <KeyValueList
               operationKey={t("Balance ID")}
@@ -762,12 +780,11 @@ export const Operations = ({
             />
           );
         }
-        if (type === "revokeSignerSponsorship") {
-          const _op = op as unknown as Operation.RevokeSignerSponsorship;
-          const { account, signer } = _op;
+        if (op.type === "revokeSignerSponsorship") {
+          const { account, signer } = op;
           return (
             <>
-              <KeyValueSignerKeyOptions signer={signer} />
+              <KeyValueSignerKeyOptions signer={signer as unknown as Signer} />
               <KeyValueWithPublicKey
                 operationKey={t("Account")}
                 operationValue={account}
@@ -780,10 +797,13 @@ export const Operations = ({
     }
   };
 
-  const RenderOpArgsByType = ({ op }: { op: Operation }) => {
+  const RenderOpArgsByType = ({ op }: { op: OperationRecord }) => {
     const networkDetails = useSelector(settingsNetworkDetailsSelector);
 
     useEffect(() => {
+      if (!scanAssets) {
+        return;
+      }
       const scan = async () => {
         let sendAsset;
         let destAsset;
@@ -912,7 +932,9 @@ export const Operations = ({
           >
             <div className="Operations--header">
               <Icon.Cube02 />
-              <span>{OPERATION_TYPES[type] || type}</span>
+              <span>
+                {OPERATION_TYPES[type as keyof typeof OPERATION_TYPES] || type}
+              </span>
             </div>
             <div className="Operations--item">
               {sourceVal && (
@@ -923,6 +945,10 @@ export const Operations = ({
               )}
               <RenderOpByType op={op} />
             </div>
+            {(op.type === "pathPaymentStrictSend" ||
+              op.type === "pathPaymentStrictReceive") && (
+              <PathList paths={op.path} />
+            )}
             {type === "invokeHostFunction" && (
               <>
                 <div className="Operations--header">

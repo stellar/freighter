@@ -1,0 +1,26 @@
+@use "../../../styles/utils.scss" as *;
+
+.PercentageButtons {
+  display: flex;
+  gap: pxToRem(8px);
+  margin-bottom: pxToRem(16px);
+
+  &__btn {
+    flex: 1;
+    padding: pxToRem(8px) 0;
+    border: 1px solid var(--sds-clr-gray-06);
+    border-radius: pxToRem(20px);
+    background: none;
+    color: var(--sds-clr-gray-12);
+    font-size: pxToRem(13px);
+    cursor: pointer;
+
+    &:hover {
+      background-color: var(--sds-clr-gray-03);
+    }
+
+    &:active {
+      background-color: var(--sds-clr-gray-04);
+    }
+  }
+}

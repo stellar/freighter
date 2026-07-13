@@ -18,6 +18,7 @@ import * as urlHelpers from "../../../helpers/urls";
 import { ROUTES } from "popup/constants/routes";
 import * as ApiInternal from "@shared/api/internal";
 import { DEFAULT_ASSETS_LISTS } from "@shared/constants/soroban/asset-list";
+import { DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES } from "@shared/constants/autoLock";
 import { CUSTOM_NETWORK } from "@shared/helpers/stellar";
 
 const mockLoadAccount = () =>
@@ -53,6 +54,7 @@ const mockLoadSettings = () =>
     isNonSSLEnabled: false,
     experimentalFeaturesState: SettingsState.SUCCESS,
     assetsLists: DEFAULT_ASSETS_LISTS,
+    autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
   });
 
 describe("Grant Access view", () => {
@@ -99,6 +101,7 @@ describe("Grant Access view", () => {
             applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
             publicKey:
               "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF",
+            hasPrivateKey: true,
             allAccounts: mockAccounts,
           },
           settings: {
@@ -141,6 +144,7 @@ describe("Grant Access view", () => {
             applicationState: ApplicationState.PASSWORD_CREATED,
             publicKey:
               "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF",
+            hasPrivateKey: true,
             allAccounts: mockAccounts,
           },
           settings: {
@@ -176,6 +180,7 @@ describe("Grant Access view", () => {
             applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
             publicKey:
               "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF",
+            hasPrivateKey: true,
             allAccounts: mockAccounts,
           },
           settings: {
@@ -191,7 +196,7 @@ describe("Grant Access view", () => {
     await waitFor(() => screen.getByTestId("grant-access-view"));
     expect(screen.getByTestId("grant-access-view")).toBeDefined();
     await waitFor(() =>
-      expect(screen.getByTestId("blockaid-miss-label")).toBeDefined(),
+      expect(screen.getByTestId("domain-scan-blockaid-banner")).toBeDefined(),
     );
   });
 
@@ -216,6 +221,7 @@ describe("Grant Access view", () => {
             applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
             publicKey:
               "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF",
+            hasPrivateKey: true,
             allAccounts: mockAccounts,
           },
           settings: {
@@ -231,7 +237,7 @@ describe("Grant Access view", () => {
     await waitFor(() => screen.getByTestId("grant-access-view"));
     expect(screen.getByTestId("grant-access-view")).toBeDefined();
     await waitFor(() =>
-      expect(screen.getByTestId("blockaid-malicious-label")).toBeDefined(),
+      expect(screen.getByTestId("domain-scan-blockaid-banner")).toBeDefined(),
     );
   });
 
@@ -251,6 +257,7 @@ describe("Grant Access view", () => {
             applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
             publicKey:
               "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF",
+            hasPrivateKey: true,
             allAccounts: mockAccounts,
           },
           settings: {
@@ -266,7 +273,7 @@ describe("Grant Access view", () => {
     await waitFor(() => screen.getByTestId("grant-access-view"));
     expect(screen.getByTestId("grant-access-view")).toBeDefined();
     await waitFor(() =>
-      expect(screen.getByTestId("blockaid-unable-to-scan-label")).toBeDefined(),
+      expect(screen.getByTestId("domain-scan-blockaid-banner")).toBeDefined(),
     );
     expect(
       screen.getByTestId("grant-access-connect-anyway-button"),
@@ -292,6 +299,7 @@ describe("Grant Access view", () => {
             applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
             publicKey:
               "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF",
+            hasPrivateKey: true,
             allAccounts: mockAccounts,
           },
           settings: {
@@ -347,6 +355,7 @@ describe("Grant Access view", () => {
             applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
             publicKey:
               "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF",
+            hasPrivateKey: true,
             allAccounts: mockAccounts,
           },
           settings: {
@@ -362,7 +371,7 @@ describe("Grant Access view", () => {
     await waitFor(() => screen.getByTestId("grant-access-view"));
     expect(screen.getByTestId("grant-access-view")).toBeDefined();
     await waitFor(() =>
-      expect(screen.getByTestId("blockaid-unable-to-scan-label")).toBeDefined(),
+      expect(screen.getByTestId("domain-scan-blockaid-banner")).toBeDefined(),
     );
     expect(
       screen.getByTestId("grant-access-connect-anyway-button"),

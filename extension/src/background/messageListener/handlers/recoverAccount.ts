@@ -151,7 +151,7 @@ export const recoverAccount = async ({
     });
 
     // start the timer now that we have active private key
-    sessionTimer.startSession();
+    await sessionTimer.startSession();
   }
 
   const currentState = sessionStore.getState();

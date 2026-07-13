@@ -55,7 +55,11 @@ function useGetAppData() {
     dispatch({ type: "FETCH_DATA_START" });
     reduxDispatch(saveApplicationState(APPLICATION_STATE.APPLICATION_LOADING));
     try {
-      if (useCache && currentAccount.publicKey) {
+      if (
+        useCache &&
+        currentAccount.publicKey &&
+        currentAccount.hasPrivateKey
+      ) {
         const payload = {
           type: "resolved",
           account: currentAccount,
@@ -74,6 +78,7 @@ function useGetAppData() {
 
       if (
         !account.publicKey ||
+        !account.hasPrivateKey ||
         account.applicationState === APPLICATION_STATE.APPLICATION_STARTED
       ) {
         const hasOnboarded =

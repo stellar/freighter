@@ -14,6 +14,10 @@ import {
 import BigNumber from "bignumber.js";
 import { INDEXER_URL, INDEXER_V2_URL } from "@shared/constants/mercury";
 import {
+  AutoLockTimeoutMinutes,
+  DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
+} from "@shared/constants/autoLock";
+import {
   AssetListResponse,
   AssetsListItem,
   AssetsLists,
@@ -60,6 +64,8 @@ import {
   CollectibleContract,
   DiscoverData,
   RecentProtocolEntry,
+  SaveSettingsResponse,
+  TrendingAsset,
 } from "./types";
 import {
   AccountBalancesInterface,
@@ -71,6 +77,7 @@ import {
   DEFAULT_NETWORKS,
   NetworkDetails,
   NETWORKS,
+  PASSPHRASE_TO_PRICE_NETWORK,
 } from "../constants/stellar";
 import { SERVICE_TYPES } from "../constants/services";
 import { isDev } from "../helpers/dev";
@@ -594,13 +601,42 @@ export const getAccountIndexerBalances = async ({
   };
 };
 
-export const getTokenPrices = async (tokens: string[]) => {
+export const getTokenPrices = async (
+  tokens: string[],
+  networkDetails: NetworkDetails,
+  // Defaults to the v2 endpoint. Callers pass the `use_token_prices_v2` feature
+  // flag so Amplitude can roll back to the v1 endpoint without a release.
+  useV2 = true,
+): Promise<ApiTokenPrices> => {
   // NOTE: API does not accept LP IDs or custom tokens
   const filteredTokens = tokens.filter((tokenId) => {
     const asset = getAssetFromCanonical(tokenId);
     return !tokenId.includes(":lp") && !isContractId(asset.issuer);
   });
-  const url = new URL(`${INDEXER_URL}/token-prices`);
+
+  let url: URL;
+  if (useV2) {
+    // The v2 token-prices endpoint only supports pubnet and testnet. Derive the
+    // price network from the passphrase rather than networkDetails.network so
+    // that custom networks sharing the pubnet/testnet passphrase (stored as
+    // STANDALONE) still resolve to the correct supported network. Anything else
+    // (Futurenet, custom passphrases) is skipped to avoid a guaranteed error and
+    // Sentry noise.
+    const priceNetwork =
+      PASSPHRASE_TO_PRICE_NETWORK[networkDetails.networkPassphrase];
+    if (!priceNetwork) {
+      return {};
+    }
+    // Nothing priceable left after filtering, so skip the request rather than
+    // POST an empty tokens array and risk a 4xx that surfaces as an error.
+    if (!filteredTokens.length) {
+      return {};
+    }
+    url = new URL(`${INDEXER_V2_URL}/token-prices`);
+    url.searchParams.append("network", priceNetwork);
+  } else {
+    url = new URL(`${INDEXER_URL}/token-prices`);
+  }
   const options = {
     method: "POST",
     headers: {
@@ -1618,45 +1654,49 @@ export const saveSettings = async ({
   isMemoValidationEnabled,
   isHideDustEnabled,
   isOpenSidebarByDefault,
+  autoLockTimeoutMinutes,
 }: {
   activePublicKey: string;
   isDataSharingAllowed: boolean;
   isMemoValidationEnabled: boolean;
   isHideDustEnabled: boolean;
   isOpenSidebarByDefault: boolean;
-}): Promise<Settings & IndexerSettings> => {
-  let response = {
+  autoLockTimeoutMinutes: AutoLockTimeoutMinutes;
+}): Promise<SaveSettingsResponse> => {
+  let response: SaveSettingsResponse = {
     allowList: DEFAULT_ALLOW_LIST,
     isDataSharingAllowed: false,
     networkDetails: MAINNET_NETWORK_DETAILS,
     networksList: DEFAULT_NETWORKS,
     isMemoValidationEnabled: true,
     isRpcHealthy: false,
-    userNotification: { enabled: false, message: "" },
-    settingsState: SettingsState.IDLE,
     isSorobanPublicEnabled: false,
     isNonSSLEnabled: false,
     isHideDustEnabled: true,
     isOpenSidebarByDefault: false,
-    error: "",
-    hiddenAssets: {},
+    autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
   };
 
   try {
-    response = await sendMessageToBackground({
+    const raw = await sendMessageToBackground<
+      SaveSettingsResponse | { error: string }
+    >({
       activePublicKey,
       isDataSharingAllowed,
       isMemoValidationEnabled,
       isHideDustEnabled,
       isOpenSidebarByDefault,
+      autoLockTimeoutMinutes,
       type: SERVICE_TYPES.SAVE_SETTINGS,
     });
+
+    if ("error" in raw && raw.error) {
+      throw new Error(raw.error);
+    }
+
+    response = raw as SaveSettingsResponse;
   } catch (e) {
     console.error(e);
-  }
-
-  if (response.error) {
-    throw new Error(response.error);
   }
 
   return response;
@@ -1863,7 +1903,11 @@ export const loadSettings = (): Promise<
     IndexerSettings &
     ExperimentalFeatures & { assetsLists: AssetsLists }
 > =>
-  sendMessageToBackground({
+  sendMessageToBackground<
+    Settings &
+      IndexerSettings &
+      ExperimentalFeatures & { assetsLists: AssetsLists }
+  >({
     activePublicKey: null,
     type: SERVICE_TYPES.LOAD_SETTINGS,
   });
@@ -2500,4 +2544,36 @@ export const dismissDiscoverWelcome = async (): Promise<boolean> => {
   }
 
   return !!hasSeenDiscoverWelcome;
+};
+
+export const getCachedSwapTopTokens = async (
+  network: string,
+): Promise<{ tokens: TrendingAsset[]; updatedAt: number } | null> => {
+  const { cachedSwapTopTokens, error } = await sendMessageToBackground({
+    activePublicKey: null,
+    type: SERVICE_TYPES.GET_CACHED_SWAP_TOP_TOKENS,
+    network,
+  });
+
+  if (error) {
+    throw new Error(error);
+  }
+
+  return cachedSwapTopTokens || null;
+};
+
+export const cacheSwapTopTokens = async (
+  network: string,
+  tokens: TrendingAsset[],
+): Promise<void> => {
+  const { error } = await sendMessageToBackground({
+    activePublicKey: null,
+    type: SERVICE_TYPES.CACHE_SWAP_TOP_TOKENS,
+    network,
+    tokens,
+  });
+
+  if (error) {
+    throw new Error(error);
+  }
 };

@@ -12,7 +12,9 @@ import {
   getOverriddenBlockaidResponse,
 } from "background/helpers/account";
 import { DataStorageAccess } from "background/helpers/dataStorageAccess";
+import { coerceAutoLockTimeoutMinutes } from "@shared/constants/autoLock";
 import {
+  AUTO_LOCK_TIMEOUT_MINUTES_ID,
   DATA_SHARING_ID,
   IS_OPEN_SIDEBAR_BY_DEFAULT_ID,
 } from "constants/localStorageTypes";
@@ -34,6 +36,9 @@ export const loadSettings = async ({
   const isOpenSidebarByDefault =
     ((await localStore.getItem(IS_OPEN_SIDEBAR_BY_DEFAULT_ID)) as boolean) ??
     false;
+  const autoLockTimeoutMinutes = coerceAutoLockTimeoutMinutes(
+    await localStore.getItem(AUTO_LOCK_TIMEOUT_MINUTES_ID),
+  );
   const { hiddenAssets } = await getHiddenAssets({ localStore });
   const overriddenBlockaidResponse = await getOverriddenBlockaidResponse({
     localStore,
@@ -53,6 +58,7 @@ export const loadSettings = async ({
     isNonSSLEnabled,
     isHideDustEnabled,
     isOpenSidebarByDefault,
+    autoLockTimeoutMinutes,
     hiddenAssets,
     overriddenBlockaidResponse,
   };

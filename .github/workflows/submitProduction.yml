@@ -102,7 +102,7 @@ jobs:
           body: ${{ steps.package_version.outputs.version }}
           draft: false
           prerelease: false
-          target_commitish: ${{ steps.checkout_sha.outputs.sha }}
+          commitish: ${{ steps.checkout_sha.outputs.sha }}
       - name: Build for Firefox
         id: web-ext-build
         uses: kewisch/action-web-ext@fe10addf5d5e5ba6b78ffde720dd488a27d10e8c #v1
