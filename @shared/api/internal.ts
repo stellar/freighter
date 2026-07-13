@@ -71,6 +71,7 @@ import {
   AccountBalancesInterface,
   BalanceMap,
   Balances,
+  V2AccountBalances,
 } from "./types/backend-api";
 import {
   MAINNET_NETWORK_DETAILS,
@@ -89,6 +90,7 @@ import { getIconUrlFromIssuer } from "./helpers/getIconUrlFromIssuer";
 import { getLedgerKeyAccounts } from "./helpers/getLedgerKeyAccounts";
 import { stellarSdkServer, submitTx } from "./helpers/stellarSdkServer";
 import { getIconFromTokenLists } from "./helpers/getIconFromTokenList";
+import { mapAccountBalancesV2 } from "./helpers/mapAccountBalancesV2";
 
 const TRANSACTIONS_LIMIT = 100;
 
@@ -601,6 +603,45 @@ export const getAccountIndexerBalances = async ({
   };
 };
 
+export const getAccountBalancesV2 = async ({
+  publicKey,
+  networkDetails,
+}: {
+  publicKey: string;
+  networkDetails: NetworkDetails;
+}): Promise<AccountBalancesInterface> => {
+  // Multi-address fan-out endpoint; the extension fetches one account at a
+  // time. Addresses travel in the POST body, so the URL carries no G-address
+  // (no Sentry scrubbing needed, unlike the v1 GET path).
+  const url = new URL(`${INDEXER_V2_URL}/accounts/balances`);
+  url.searchParams.append("network", networkDetails.network);
+  const options = {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ addresses: [publicKey] }),
+  };
+  const response = await fetch(url.href, options);
+  if (!response.ok) {
+    // Read the error body as text — a gateway/proxy failure may not be JSON,
+    // and the Sentry capture must run regardless.
+    const _err = await response.text();
+    captureException(
+      `Failed to fetch account balances v2 - ${response.status}: ${response.statusText}`,
+    );
+    throw new Error(_err);
+  }
+  const parsedResponse = (await response.json()) as {
+    data: V2AccountBalances[];
+  };
+
+  const account = (parsedResponse.data || []).find(
+    (accountBalances) => accountBalances.address === publicKey,
+  );
+  return mapAccountBalancesV2(account);
+};
+
 export const getTokenPrices = async (
   tokens: string[],
   networkDetails: NetworkDetails,
@@ -993,12 +1034,26 @@ export const getAccountBalances = async (
   networkDetails: NetworkDetails,
   isMainnet: boolean,
   shouldSkipScan?: boolean,
+  // Defaults to the v2 endpoint. Callers pass the `use_balances_v2` feature
+  // flag so Amplitude can roll back to the v1 endpoint without a release.
+  useV2 = true,
 ) => {
   if (isCustomNetwork(networkDetails)) {
     return await getAccountBalancesStandalone({
       publicKey,
       networkDetails,
       isMainnet,
+    });
+  }
+  // The v2 balances endpoint only supports pubnet and testnet; Futurenet
+  // stays on v1 regardless of the flag.
+  const isV2SupportedNetwork =
+    networkDetails.network === NETWORKS.PUBLIC ||
+    networkDetails.network === NETWORKS.TESTNET;
+  if (useV2 && isV2SupportedNetwork) {
+    return await getAccountBalancesV2({
+      publicKey,
+      networkDetails,
     });
   }
   return await getAccountIndexerBalances({

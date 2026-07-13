@@ -176,3 +176,83 @@ describe("useGetBalances (cached path)", () => {
     expect(result.current.state.state).toBe<RequestState>(RequestState.SUCCESS);
   });
 });
+
+describe("useGetBalances (flag routing)", () => {
+  const publicKey = TEST_PUBLIC_KEY;
+
+  const makeFlagStore = (useBalancesV2: boolean) =>
+    makeDummyStore({
+      cache: { balanceData: {}, icons: {}, tokenLists: [] },
+      settings: { assetsLists: [] },
+      remoteConfig: {
+        isInitialized: true,
+        use_token_prices_v2: true,
+        use_balances_v2: useBalancesV2,
+        maintenance_banner: { enabled: false, payload: undefined },
+        maintenance_screen: { enabled: false, payload: undefined },
+      },
+    });
+
+  const Wrapper =
+    (store: ReturnType<typeof makeDummyStore>) =>
+    ({ children }: { children: React.ReactNode }) => (
+      <Provider store={store}>{children}</Provider>
+    );
+
+  beforeEach(() => {
+    (getAccountBalances as jest.Mock).mockReset();
+    (getAccountBalances as jest.Mock).mockResolvedValue({
+      isFunded: true,
+      subentryCount: 0,
+      balances: {},
+    });
+  });
+
+  it("passes useV2: true to getAccountBalances when the flag is on", async () => {
+    const { result } = renderHook(
+      () => useGetBalances({ showHidden: false, includeIcons: false }),
+      { wrapper: Wrapper(makeFlagStore(true)) },
+    );
+
+    await act(async () => {
+      await result.current.fetchData(
+        publicKey,
+        true,
+        TESTNET_NETWORK_DETAILS,
+        false,
+      );
+    });
+
+    expect(getAccountBalances).toHaveBeenCalledWith(
+      publicKey,
+      TESTNET_NETWORK_DETAILS,
+      true,
+      false,
+      true,
+    );
+  });
+
+  it("passes useV2: false to getAccountBalances when the flag is off", async () => {
+    const { result } = renderHook(
+      () => useGetBalances({ showHidden: false, includeIcons: false }),
+      { wrapper: Wrapper(makeFlagStore(false)) },
+    );
+
+    await act(async () => {
+      await result.current.fetchData(
+        publicKey,
+        true,
+        TESTNET_NETWORK_DETAILS,
+        false,
+      );
+    });
+
+    expect(getAccountBalances).toHaveBeenCalledWith(
+      publicKey,
+      TESTNET_NETWORK_DETAILS,
+      true,
+      false,
+      false,
+    );
+  });
+});
