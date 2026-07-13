@@ -16,6 +16,7 @@ import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { truncateString, truncatedPoolId } from "helpers/stellar";
 import { scanAsset } from "popup/helpers/blockaid";
 import { addressToString, getCreateContractArgs } from "popup/helpers/soroban";
+import { CopyValue } from "popup/components/CopyValue";
 import {
   KeyValueClaimants,
   KeyValueInvokeHostFn,
@@ -102,6 +103,24 @@ const DestinationWarning = ({
       ) : null}
     </>
   );
+};
+
+// On Stellar a non-native asset is identified by (code, issuer), not by code
+// alone, so the signing UI must show the issuer for any value-bearing asset to
+// let the user distinguish a legitimate asset from a look-alike using the same
+// code. Native XLM has no issuer, so nothing is rendered for it. Mirrors the
+// issuer row already shown by changeTrust (KeyValueLine) and PathList.
+const KeyValueAssetIssuer = ({ issuer }: { issuer?: string }) => {
+  const { t } = useTranslation();
+
+  return issuer ? (
+    <KeyValueList
+      operationKey={t("Asset Issuer")}
+      operationValue={
+        <CopyValue value={issuer} displayValue={truncateString(issuer)} />
+      }
+    />
+  ) : null;
 };
 
 export const Operations = ({
@@ -234,6 +253,7 @@ export const Operations = ({
               operationKey={t("Token Code")}
               operationValue={asset.code}
             />
+            <KeyValueAssetIssuer issuer={asset.issuer} />
             <KeyValueList
               operationKey={t("Amount")}
               operationValue={`${amount} ${asset.code}`}
@@ -250,6 +270,7 @@ export const Operations = ({
               operationKey={t("Asset Code")}
               operationValue={sendAsset.code}
             />
+            <KeyValueAssetIssuer issuer={sendAsset.issuer} />
             <KeyValueList
               operationKey={t("Send Max")}
               operationValue={sendMax}
@@ -267,6 +288,7 @@ export const Operations = ({
               operationKey={t("Destination Asset")}
               operationValue={destAsset.code}
             />
+            <KeyValueAssetIssuer issuer={destAsset.issuer} />
             <KeyValueList
               operationKey={t("Destination Amount")}
               operationValue={destAmount}
@@ -283,6 +305,7 @@ export const Operations = ({
               operationKey={t("Token Code")}
               operationValue={sendAsset.code}
             />
+            <KeyValueAssetIssuer issuer={sendAsset.issuer} />
             <KeyValueList
               operationKey={t("Send Amount")}
               operationValue={`${sendAmount} ${sendAsset.code}`}
@@ -300,6 +323,7 @@ export const Operations = ({
               operationKey={t("Destination Token")}
               operationValue={destAsset.code}
             />
+            <KeyValueAssetIssuer issuer={destAsset.issuer} />
             <KeyValueList
               operationKey={t("Destination Minimum")}
               operationValue={`${destMin} ${destAsset.code}`}
@@ -316,11 +340,13 @@ export const Operations = ({
               operationKey={t("Buying")}
               operationValue={buying.code}
             />
+            <KeyValueAssetIssuer issuer={buying.issuer} />
             <KeyValueList operationKey={t("Amount")} operationValue={amount} />
             <KeyValueList
               operationKey={t("Selling")}
               operationValue={selling.code}
             />
+            <KeyValueAssetIssuer issuer={selling.issuer} />
             <KeyValueList operationKey={t("Price")} operationValue={price} />
           </>
         );
@@ -338,10 +364,12 @@ export const Operations = ({
               operationKey={t("Selling")}
               operationValue={selling.code}
             />
+            <KeyValueAssetIssuer issuer={selling.issuer} />
             <KeyValueList
               operationKey={t("Buying")}
               operationValue={buying.code}
             />
+            <KeyValueAssetIssuer issuer={buying.issuer} />
             <KeyValueList operationKey={t("Amount")} operationValue={amount} />
             <KeyValueList operationKey={t("Price")} operationValue={price} />
           </>
@@ -360,6 +388,7 @@ export const Operations = ({
               operationKey={t("Buying")}
               operationValue={buying.code}
             />
+            <KeyValueAssetIssuer issuer={buying.issuer} />
             <KeyValueList
               operationKey={t("Buy Amount")}
               operationValue={buyAmount}
@@ -368,6 +397,7 @@ export const Operations = ({
               operationKey={t("Selling")}
               operationValue={selling.code}
             />
+            <KeyValueAssetIssuer issuer={selling.issuer} />
             <KeyValueList operationKey={t("Price")} operationValue={price} />
           </>
         );
@@ -537,6 +567,7 @@ export const Operations = ({
               operationKey={t("Asset Code")}
               operationValue={asset.code}
             />
+            <KeyValueAssetIssuer issuer={asset.issuer} />
             <KeyValueList operationKey={t("Amount")} operationValue={amount} />
             <KeyValueClaimants claimants={claimants} />
           </>
