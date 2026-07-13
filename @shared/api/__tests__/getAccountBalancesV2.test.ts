@@ -1,6 +1,7 @@
 import { getAccountBalances, getAccountBalancesV2 } from "../internal";
 import {
   FUTURENET_NETWORK_DETAILS,
+  MAINNET_NETWORK_DETAILS,
   TESTNET_NETWORK_DETAILS,
 } from "@shared/constants/stellar";
 
@@ -33,6 +34,28 @@ const v2Account = {
       minimum_balance: "1.5",
       buying_liabilities: "0",
       selling_liabilities: "0",
+    },
+  ],
+};
+
+// Account with a scannable classic asset, for the mainnet Blockaid tests.
+const v2AccountWithClassic = {
+  ...v2Account,
+  balances: [
+    ...v2Account.balances,
+    {
+      token_type: "CLASSIC",
+      token_id: "CUSDC",
+      balance: "50",
+      available: "50",
+      code: "USDC",
+      issuer: "GISSUER",
+      type: "credit_alphanum4",
+      limit: "1000",
+      buying_liabilities: "0",
+      selling_liabilities: "0",
+      is_authorized: true,
+      is_authorized_to_maintain_liabilities: true,
     },
   ],
 };
@@ -82,6 +105,55 @@ describe("getAccountBalancesV2", () => {
 
     expect(result.isFunded).toBe(false);
     expect(result.balances).toEqual({});
+  });
+
+  it("bulk-scans scannable assets and merges blockaidData on mainnet", async () => {
+    mockFetch
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ data: [v2AccountWithClassic] }),
+      })
+      .mockResolvedValueOnce({
+        json: async () => ({
+          data: { results: { "USDC-GISSUER": { result_type: "Spam" } } },
+        }),
+      });
+
+    const result = await getAccountBalancesV2({
+      publicKey: PUBLIC_KEY,
+      networkDetails: MAINNET_NETWORK_DETAILS,
+    });
+
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+    const [scanUrl] = mockFetch.mock.calls[1];
+    expect(scanUrl).toContain("/scan-asset-bulk");
+    expect(scanUrl).toContain("USDC-GISSUER");
+    expect((result.balances!["USDC:GISSUER"] as any).blockaidData).toEqual({
+      result_type: "Spam",
+    });
+    // native isn't scannable — it gets the benign default
+    expect((result.balances!.native as any).blockaidData.result_type).toBe(
+      "Benign",
+    );
+  });
+
+  it("skips the Blockaid scan when shouldSkipScan is true", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ data: [v2AccountWithClassic] }),
+    });
+
+    const result = await getAccountBalancesV2({
+      publicKey: PUBLIC_KEY,
+      networkDetails: MAINNET_NETWORK_DETAILS,
+      shouldSkipScan: true,
+    });
+
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+    // entries still carry the benign default so the payload matches v1
+    expect(
+      (result.balances!["USDC:GISSUER"] as any).blockaidData.result_type,
+    ).toBe("Benign");
   });
 
   it("throws on a non-OK response", async () => {

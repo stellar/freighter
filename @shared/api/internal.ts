@@ -91,6 +91,7 @@ import { getLedgerKeyAccounts } from "./helpers/getLedgerKeyAccounts";
 import { stellarSdkServer, submitTx } from "./helpers/stellarSdkServer";
 import { getIconFromTokenLists } from "./helpers/getIconFromTokenList";
 import { mapAccountBalancesV2 } from "./helpers/mapAccountBalancesV2";
+import { addBlockaidScanResults } from "./helpers/addBlockaidScanResults";
 
 const TRANSACTIONS_LIMIT = 100;
 
@@ -606,9 +607,11 @@ export const getAccountIndexerBalances = async ({
 export const getAccountBalancesV2 = async ({
   publicKey,
   networkDetails,
+  shouldSkipScan,
 }: {
   publicKey: string;
   networkDetails: NetworkDetails;
+  shouldSkipScan?: boolean;
 }): Promise<AccountBalancesInterface> => {
   // Multi-address fan-out endpoint; the extension fetches one account at a
   // time. Addresses travel in the POST body, so the URL carries no G-address
@@ -639,7 +642,13 @@ export const getAccountBalancesV2 = async ({
   const account = (parsedResponse.data || []).find(
     (accountBalances) => accountBalances.address === publicKey,
   );
-  return mapAccountBalancesV2(account);
+  // The v2 response has no Blockaid data yet — replicate the v1 backend's
+  // scan-and-merge client-side so both paths return the same payload.
+  return await addBlockaidScanResults(
+    mapAccountBalancesV2(account),
+    networkDetails,
+    shouldSkipScan,
+  );
 };
 
 export const getTokenPrices = async (
@@ -1054,6 +1063,7 @@ export const getAccountBalances = async (
     return await getAccountBalancesV2({
       publicKey,
       networkDetails,
+      shouldSkipScan,
     });
   }
   return await getAccountIndexerBalances({
