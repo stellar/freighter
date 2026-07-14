@@ -280,9 +280,10 @@ export const syncIdentifyTraits = (allAccounts: Account[]): void => {
   const traits = deriveIdentifyTraits(allAccounts);
   const fingerprint = JSON.stringify(traits);
   if (fingerprint === lastIdentifiedTraits) return;
-  lastIdentifiedTraits = fingerprint;
 
   if (!AMPLITUDE_KEY || !hasInitialized) return;
+
+  lastIdentifiedTraits = fingerprint;
 
   const identify = new amplitude.Identify();
   identify.set("wallet_count", traits.wallet_count);

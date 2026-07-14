@@ -202,6 +202,40 @@ describe("deriveIdentifyTraits", () => {
       has_imported_account: false,
     });
   });
+
+  it("does not cache the fingerprint when called before Amplitude init, so an identical call after init still sends Identify", async () => {
+    // syncIdentifyTraits guards on module-level `hasInitialized`/`AMPLITUDE_KEY`
+    // state, so isolate the module here to get a fresh, uninitialized instance
+    // independent of init having already run in another describe block.
+    const accounts = [
+      { publicKey: "G1", hardwareWalletType: "ledger", imported: false },
+    ] as never;
+
+    let mod: typeof import("helpers/metrics");
+    jest.isolateModules(() => {
+      mod = require("helpers/metrics");
+    });
+    const identify = (
+      require("@amplitude/analytics-browser") as typeof amplitude
+    ).identify as jest.Mock;
+    identify.mockClear();
+
+    // Pre-init call: the init/consent guard short-circuits before any Identify
+    // is sent. The fingerprint must NOT be cached here (the hardening fix).
+    mod!.syncIdentifyTraits(accounts);
+    expect(identify).not.toHaveBeenCalled();
+
+    await mod!.initAmplitude();
+    // initAmplitude sends its own Identify (bundle id property); clear that
+    // call so it doesn't get confused with the assertion below.
+    identify.mockClear();
+
+    // Same accounts as the pre-init call: if the fingerprint had been cached
+    // pre-init, this would be a no-op dirty-check short-circuit and Identify
+    // would never fire. Post-fix, it must fire because nothing was cached.
+    mod!.syncIdentifyTraits(accounts);
+    expect(identify).toHaveBeenCalled();
+  });
 });
 
 describe("storeBalanceMetricData (privacy)", () => {
