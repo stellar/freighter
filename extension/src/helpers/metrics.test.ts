@@ -270,7 +270,7 @@ describe("initAmplitude SDK config", () => {
 
 describe("privacy guard", () => {
   it("buildCommonContext never includes a raw or truncated public key", () => {
-    (publicKeySelector as jest.Mock).mockReturnValue(
+    (publicKeySelector as unknown as jest.Mock).mockReturnValue(
       "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF",
     );
     const ctx = buildCommonContext({} as never);
