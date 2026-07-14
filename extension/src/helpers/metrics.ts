@@ -203,42 +203,51 @@ export const initAmplitude = async () => {
     identify.set(BUNDLE_ID_USER_PROPERTY_KEY, getBundleId());
     amplitude.identify(identify);
 
-    // Apply initial opt-out state. Note: settings may not yet be loaded from the
-    // background at this point (they're fetched async). The store subscription
-    // below will correct this as soon as the real preference arrives.
-    const isDataSharingAllowed = settingsDataSharingSelector(store.getState());
-    amplitude.setOptOut(!isDataSharingAllowed);
-
     hasInitialized = true;
 
     // Initialize Experiment client now that analytics is ready.
     // initializeWithAmplitudeAnalytics requires the analytics SDK to be started first.
     initExperimentClient();
 
-    // Resolve the surface once (async), then emit the one-time app.opened snapshot.
+    // Resolve the surface once (async) so getSurface() is synchronous afterward.
     await resolveSurface();
 
-    const nav = navigator as Navigator & {
-      connection?: { type?: string; effectiveType?: string };
-    };
-    emitMetric(METRIC_NAMES.appOpened, {
-      connection_type: nav.connection?.type ?? "unknown",
-      ...(nav.connection?.effectiveType
-        ? { effective_type: nav.connection.effectiveType }
-        : {}),
-    });
+    // The persisted data-sharing preference has NOT hydrated yet at init — it
+    // defaults to `false` and the real value arrives asynchronously. Emitting
+    // app.opened here would be suppressed (emitMetric's consent gate) or dropped
+    // by the SDK (opt-out), yet lost forever. So defer it: emit exactly once, the
+    // moment data-sharing is (or becomes) allowed.
+    let hasEmittedAppOpened = false;
+    const emitAppOpenedOnce = () => {
+      if (hasEmittedAppOpened) return;
+      hasEmittedAppOpened = true;
 
-    // Keep opt-out in sync whenever the data-sharing setting changes in Redux.
-    // This is the authoritative source of truth; the initial call above may fire
-    // before settings are loaded from the background script.
+      const nav = navigator as Navigator & {
+        connection?: { type?: string; effectiveType?: string };
+      };
+      emitMetric(METRIC_NAMES.appOpened, {
+        connection_type: nav.connection?.type ?? "unknown",
+        ...(nav.connection?.effectiveType
+          ? { effective_type: nav.connection.effectiveType }
+          : {}),
+      });
+    };
+
+    // Keep Amplitude opt-out synced with the data-sharing preference (the
+    // authoritative source of truth). Primes immediately for the case where
+    // settings are already hydrated, and updates on every change. Fires the
+    // one-shot app.opened the first time consent resolves to allowed.
     let lastDataSharingAllowed: boolean | null = null;
-    store.subscribe(() => {
+    const syncDataSharing = () => {
       const allowed = settingsDataSharingSelector(store.getState());
       if (allowed !== lastDataSharingAllowed) {
         lastDataSharingAllowed = allowed;
         amplitude.setOptOut(!allowed);
+        if (allowed) emitAppOpenedOnce();
       }
-    });
+    };
+    store.subscribe(syncDataSharing);
+    syncDataSharing();
 
     // Flush any queued events before the popup window closes so they aren't lost.
     if (typeof window !== "undefined") {
@@ -282,6 +291,13 @@ export const syncIdentifyTraits = (allAccounts: Account[]): void => {
   if (fingerprint === lastIdentifiedTraits) return;
 
   if (!AMPLITUDE_KEY || !hasInitialized) return;
+
+  // Don't cache the fingerprint unless the Identify can actually be sent. During
+  // startup this runs before the data-sharing preference hydrates (SDK still
+  // opted out), so caching here would record traits as "sent" while the SDK
+  // drops them — and the unchanged traits would then be suppressed forever. Skip
+  // without caching so a later call (after consent hydrates) re-syncs.
+  if (!settingsDataSharingSelector(store.getState())) return;
 
   lastIdentifiedTraits = fingerprint;
 
@@ -361,14 +377,17 @@ export const buildCommonContext = (
     schema_version: SCHEMA_VERSION,
     surface: getSurface(),
     network: networkDetails?.network ?? "UNKNOWN",
-    account_type: ACCOUNT_TYPE_WIRE[metricsData.accountType],
-    account_funded: accountFundedByType[metricsData.accountType],
-    is_hardware_account: metricsData.accountType === AccountType.HW,
   };
 
+  // Active-account fields are meaningful only when there is an active account.
+  // Pre-unlock (no active key) we omit them rather than emit a default
+  // "freighter/false" context that misrepresents state.
   if (activePublicKey) {
     const idHash = getAccountIdHash(activePublicKey);
     if (idHash) context.account_id_hash = idHash;
+    context.account_type = ACCOUNT_TYPE_WIRE[metricsData.accountType];
+    context.account_funded = accountFundedByType[metricsData.accountType];
+    context.is_hardware_account = metricsData.accountType === AccountType.HW;
   }
 
   return context;

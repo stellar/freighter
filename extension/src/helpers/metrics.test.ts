@@ -153,11 +153,16 @@ describe("buildCommonContext (four-bucket property model)", () => {
     expect(ctx).not.toHaveProperty("effectiveType");
   });
 
-  it("omits account_id_hash when there is no active key (pre-unlock)", () => {
+  it("omits all account fields when there is no active key (pre-unlock)", () => {
     (publicKeySelector as unknown as jest.Mock).mockReturnValue("");
-    expect(buildCommonContext({} as never)).not.toHaveProperty(
-      "account_id_hash",
-    );
+    const ctx = buildCommonContext({} as never);
+    expect(ctx).not.toHaveProperty("account_id_hash");
+    expect(ctx).not.toHaveProperty("account_type");
+    expect(ctx).not.toHaveProperty("account_funded");
+    expect(ctx).not.toHaveProperty("is_hardware_account");
+    // non-account context is still present
+    expect(ctx).toMatchObject({ schema_version: "2", network: "TESTNET" });
+    expect(ctx.surface).toBeDefined();
   });
 
   it("marks hardware active account", () => {
@@ -311,6 +316,80 @@ describe("privacy guard", () => {
     const serialized = JSON.stringify(ctx);
     expect(serialized).not.toContain("GAAAAAAAAAAAAAAAAAAAAAAAAA");
     expect(ctx).not.toHaveProperty("publicKey");
+  });
+});
+
+describe("consent hydration (startup)", () => {
+  it("defers app.opened while data-sharing is disallowed, then emits exactly once when it becomes allowed", async () => {
+    let mod: typeof import("helpers/metrics");
+    let store: { subscribe: jest.Mock };
+    let settingsMod: { settingsDataSharingSelector: jest.Mock };
+    let track: jest.Mock;
+    jest.isolateModules(() => {
+      mod = require("helpers/metrics");
+      store = require("popup/App").store;
+      settingsMod = require("popup/ducks/settings");
+      track = (require("@amplitude/analytics-browser") as typeof amplitude)
+        .track as jest.Mock;
+    });
+
+    // Persisted preference hasn't hydrated yet → disallowed at init.
+    settingsMod!.settingsDataSharingSelector.mockReturnValue(false);
+    track!.mockClear();
+    store!.subscribe.mockClear();
+
+    await mod!.initAmplitude();
+
+    // Nothing emitted while consent is disallowed.
+    expect(
+      track!.mock.calls.find((c) => c[0] === "app.opened"),
+    ).toBeUndefined();
+
+    // Consent now resolves to allowed; the store subscription fires.
+    settingsMod!.settingsDataSharingSelector.mockReturnValue(true);
+    const subCb =
+      store!.subscribe.mock.calls[store!.subscribe.mock.calls.length - 1][0];
+    subCb();
+
+    expect(track!.mock.calls.filter((c) => c[0] === "app.opened")).toHaveLength(
+      1,
+    );
+
+    // Idempotent: further store changes don't re-emit.
+    subCb();
+    expect(track!.mock.calls.filter((c) => c[0] === "app.opened")).toHaveLength(
+      1,
+    );
+  });
+
+  it("does not send or cache Identify while data-sharing is disallowed, then sends once allowed", async () => {
+    let mod: typeof import("helpers/metrics");
+    let settingsMod: { settingsDataSharingSelector: jest.Mock };
+    let identify: jest.Mock;
+    jest.isolateModules(() => {
+      mod = require("helpers/metrics");
+      settingsMod = require("popup/ducks/settings");
+      identify = (require("@amplitude/analytics-browser") as typeof amplitude)
+        .identify as jest.Mock;
+    });
+    const accounts = [
+      { publicKey: "G1", hardwareWalletType: "", imported: false },
+    ] as never;
+
+    settingsMod!.settingsDataSharingSelector.mockReturnValue(true);
+    await mod!.initAmplitude();
+    identify!.mockClear();
+
+    // Opted out: no Identify, and (critically) the fingerprint is NOT cached.
+    settingsMod!.settingsDataSharingSelector.mockReturnValue(false);
+    mod!.syncIdentifyTraits(accounts);
+    expect(identify!).not.toHaveBeenCalled();
+
+    // Opt in: the same traits must now reach Amplitude (proving nothing was
+    // cached while opted out — otherwise the dirty-check would suppress it).
+    settingsMod!.settingsDataSharingSelector.mockReturnValue(true);
+    mod!.syncIdentifyTraits(accounts);
+    expect(identify!).toHaveBeenCalled();
   });
 });
 
