@@ -13,6 +13,7 @@ import { initExperimentClient } from "helpers/experimentClient";
 import { BUNDLE_ID_USER_PROPERTY_KEY, getBundleId } from "helpers/analytics";
 import { isDev } from "@shared/helpers/dev";
 import { truncatedPublicKey } from "helpers/stellar";
+import { isSidebarMode } from "popup/helpers/isSidebarMode";
 import {
   settingsDataSharingSelector,
   settingsNetworkDetailsSelector,
@@ -232,6 +233,30 @@ export const initAmplitude = () => {
 // ---------------------------------------------------------------------------
 // Common context (mirrors mobile's buildCommonContext)
 // ---------------------------------------------------------------------------
+
+export type Surface = "popup" | "sidebar" | "fullpage";
+
+// Resolved once at init: browser.tabs.getCurrent() is async, but the emit path
+// must be synchronous, so cache the surface in a module variable.
+let cachedSurface: Surface | null = null;
+
+/** Resolve and cache the surface. Call once during init, before app.opened. */
+export const resolveSurface = async (): Promise<void> => {
+  if (isSidebarMode()) {
+    cachedSurface = "sidebar";
+    return;
+  }
+  try {
+    const tab = await browser.tabs.getCurrent();
+    cachedSurface = tab ? "fullpage" : "popup";
+  } catch {
+    cachedSurface = "popup";
+  }
+};
+
+/** Synchronous surface accessor for the emit path. */
+export const getSurface = (): Surface =>
+  cachedSurface ?? (isSidebarMode() ? "sidebar" : "popup");
 
 /**
  * Returns the extension version. Prefers the build-time constant (always

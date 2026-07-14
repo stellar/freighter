@@ -24,8 +24,17 @@ jest.mock("constants/env", () => ({
   APP_VERSION: "9.9.9",
   METRICS_PLATFORM: "WEB",
 }));
+jest.mock("popup/helpers/isSidebarMode", () => ({
+  isSidebarMode: jest.fn(() => false),
+}));
+jest.mock("webextension-polyfill", () => ({
+  tabs: { getCurrent: jest.fn() },
+  runtime: { getManifest: jest.fn(() => ({ version: "9.9.9" })) },
+}));
 
-import { getAccountIdHash } from "helpers/metrics";
+import { getAccountIdHash, getSurface, resolveSurface } from "helpers/metrics";
+import { isSidebarMode } from "popup/helpers/isSidebarMode";
+import browser from "webextension-polyfill";
 
 describe("getAccountIdHash", () => {
   const PUBLIC_KEY = "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF";
@@ -44,5 +53,36 @@ describe("getAccountIdHash", () => {
 
   it("differs for different keys", () => {
     expect(getAccountIdHash("GABC")).not.toBe(getAccountIdHash("GXYZ"));
+  });
+});
+
+describe("getSurface", () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it("returns 'sidebar' when in sidebar mode", async () => {
+    (isSidebarMode as jest.Mock).mockReturnValue(true);
+    await resolveSurface();
+    expect(getSurface()).toBe("sidebar");
+  });
+
+  it("returns 'fullpage' when opened in a tab", async () => {
+    (isSidebarMode as jest.Mock).mockReturnValue(false);
+    (browser.tabs.getCurrent as jest.Mock).mockResolvedValue({ id: 1 });
+    await resolveSurface();
+    expect(getSurface()).toBe("fullpage");
+  });
+
+  it("returns 'popup' when not a tab", async () => {
+    (isSidebarMode as jest.Mock).mockReturnValue(false);
+    (browser.tabs.getCurrent as jest.Mock).mockResolvedValue(undefined);
+    await resolveSurface();
+    expect(getSurface()).toBe("popup");
+  });
+
+  it("defaults to 'popup' if getCurrent throws", async () => {
+    (isSidebarMode as jest.Mock).mockReturnValue(false);
+    (browser.tabs.getCurrent as jest.Mock).mockRejectedValue(new Error("x"));
+    await resolveSurface();
+    expect(getSurface()).toBe("popup");
   });
 });
