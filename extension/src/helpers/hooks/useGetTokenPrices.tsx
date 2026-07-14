@@ -32,11 +32,15 @@ export function useGetTokenPrices() {
     balances,
     networkDetails,
     useCache = false,
+    additionalAssetIds = [],
   }: {
     publicKey: string;
     balances: AccountBalances["balances"];
     networkDetails: NetworkDetails;
     useCache: boolean;
+    // Extra canonicals to price beyond the account's balances — e.g. a swap
+    // destination token the account doesn't hold yet.
+    additionalAssetIds?: string[];
   }): Promise<GetTokenPricesData> => {
     dispatch({ type: "FETCH_DATA_START" });
 
@@ -93,6 +97,38 @@ export function useGetTokenPrices() {
         payload.tokenPrices = null;
       }
     }
+
+    // Runs as a separate request so errors here can never corrupt the balance
+    // prices already in payload — a failure just leaves the missing ids
+    // unpopulated and lets callers fall back to stellar.expert spot prices.
+    if (payload.tokenPrices) {
+      const resolved = payload.tokenPrices;
+      const missingExtra = additionalAssetIds.filter((id) => !(id in resolved));
+      if (missingExtra.length) {
+        try {
+          const useV2 = tokenPricesV2Selector(store.getState());
+          const extraPrices = await getTokenPrices(
+            missingExtra,
+            networkDetails,
+            useV2,
+          );
+          const mergedTokenPrices = { ...resolved, ...extraPrices };
+          reduxDispatch(
+            saveTokenPrices({
+              publicKey,
+              networkDetails,
+              tokenPrices: mergedTokenPrices,
+            }),
+          );
+          payload.tokenPrices = mergedTokenPrices;
+        } catch (e) {
+          captureException(
+            `Failed to fetch additional token prices in useGetTokenPrices - ${e}`,
+          );
+        }
+      }
+    }
+
     dispatch({ type: "FETCH_DATA_SUCCESS", payload });
     return payload;
   };

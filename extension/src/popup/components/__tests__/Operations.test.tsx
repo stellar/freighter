@@ -1,6 +1,13 @@
 import React from "react";
 import { render, waitFor, screen } from "@testing-library/react";
-import { Address, Operation, xdr, StrKey, ScInt } from "stellar-sdk";
+import {
+  Address,
+  Operation,
+  OperationRecord,
+  xdr,
+  StrKey,
+  ScInt,
+} from "stellar-sdk";
 
 import { mockAccounts, TEST_PUBLIC_KEY, Wrapper } from "popup/__testHelpers__";
 import { Operations } from "../signTransaction/Operations";
@@ -230,13 +237,13 @@ describe("Operations", () => {
         </Wrapper>,
       );
       await waitFor(() => screen.getAllByTestId("OperationKeyVal"));
-      const assetCodeLabel = screen.getByText("Asset Code");
+      const assetCodeLabel = screen.getByText("Token Code");
       const assetCodeValue = assetCodeLabel.parentNode?.querySelector(
         "[data-testid='OperationKeyVal__value']",
       );
       expect(assetCodeValue).toHaveTextContent(assetCode);
 
-      const issuerLabel = screen.getByText("Asset Issuer");
+      const issuerLabel = screen.getByText("Token Issuer");
       const issuerValue = issuerLabel.parentNode?.querySelector(
         "[data-testid='OperationKeyVal__value']",
       );
@@ -247,6 +254,96 @@ describe("Operations", () => {
         "[data-testid='OperationKeyVal__value']",
       );
       expect(limitValue).toHaveTextContent("100");
+    });
+  });
+
+  describe("Payment and Swap details (mobile parity)", () => {
+    const renderOp = (op: OperationRecord) =>
+      render(
+        <Wrapper
+          routes={[ROUTES.signTransaction]}
+          state={{
+            auth: {
+              error: null,
+              applicationState: APPLICATION_STATE.PASSWORD_CREATED,
+              TEST_PUBLIC_KEY,
+              allAccounts: mockAccounts,
+              hasPrivateKey: true,
+            },
+            settings: {
+              networkDetails: TESTNET_NETWORK_DETAILS,
+              networksList: DEFAULT_NETWORKS,
+              isSorobanPublicEnabled: true,
+              isRpcHealthy: true,
+            },
+          }}
+        >
+          <Operations
+            operations={[op]}
+            flaggedKeys={{}}
+            isMemoRequired={false}
+          />
+        </Wrapper>,
+      );
+
+    const valueOf = (label: string) =>
+      screen
+        .getByText(label)
+        .parentNode?.querySelector("[data-testid='OperationKeyVal__value']");
+
+    it("renders a payment with the Token Code label and amount with its code", async () => {
+      renderOp({
+        type: "payment",
+        destination: TEST_PUBLIC_KEY,
+        asset: { code: "XLM" },
+        amount: "100.0000000",
+      } as unknown as OperationRecord);
+      await waitFor(() => screen.getAllByTestId("OperationKeyVal"));
+
+      expect(screen.queryByText("Asset Code")).toBeNull();
+      expect(valueOf("Token Code")).toHaveTextContent("XLM");
+      expect(valueOf("Amount")).toHaveTextContent("100.0000000 XLM");
+    });
+
+    it("renders a swap with amounts carrying their token code and a clean destination token", async () => {
+      renderOp({
+        type: "pathPaymentStrictSend",
+        sendAsset: { code: "XLM" },
+        sendAmount: "12.3456789",
+        destination: TEST_PUBLIC_KEY,
+        destAsset: { code: "PYUSD" },
+        destMin: "2.2044110",
+        path: [],
+      } as unknown as OperationRecord);
+      await waitFor(() => screen.getAllByTestId("OperationKeyVal"));
+
+      expect(valueOf("Token Code")).toHaveTextContent("XLM");
+      expect(valueOf("Send Amount")).toHaveTextContent("12.3456789 XLM");
+      // The destination token renders as plain text ("Destination Token"), not
+      // via KeyValueWithPublicKey, which would truncate long codes like "PYUSD".
+      expect(screen.queryByText("Destination Asset")).toBeNull();
+      expect(valueOf("Destination Token")).toHaveTextContent("PYUSD");
+      expect(valueOf("Destination Minimum")).toHaveTextContent(
+        "2.2044110 PYUSD",
+      );
+    });
+
+    it("renders the swap path as numbered cards with token and issuer", async () => {
+      renderOp({
+        type: "pathPaymentStrictSend",
+        sendAsset: { code: "XLM" },
+        sendAmount: "12.3456789",
+        destination: TEST_PUBLIC_KEY,
+        destAsset: { code: "PYUSD" },
+        destMin: "2.2044110",
+        path: [{ code: "USDC", issuer: TEST_PUBLIC_KEY }],
+      } as unknown as OperationRecord);
+      await waitFor(() => screen.getAllByTestId("OperationKeyVal"));
+
+      expect(screen.getByText("Path")).toBeDefined();
+      expect(screen.getByText("#1")).toBeDefined();
+      expect(screen.getByText("USDC")).toBeDefined();
+      expect(screen.getByText("Issuer")).toBeDefined();
     });
   });
 });

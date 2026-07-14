@@ -65,6 +65,7 @@ import {
   DiscoverData,
   RecentProtocolEntry,
   SaveSettingsResponse,
+  TrendingAsset,
 } from "./types";
 import {
   AccountBalancesInterface,
@@ -2543,4 +2544,36 @@ export const dismissDiscoverWelcome = async (): Promise<boolean> => {
   }
 
   return !!hasSeenDiscoverWelcome;
+};
+
+export const getCachedSwapTopTokens = async (
+  network: string,
+): Promise<{ tokens: TrendingAsset[]; updatedAt: number } | null> => {
+  const { cachedSwapTopTokens, error } = await sendMessageToBackground({
+    activePublicKey: null,
+    type: SERVICE_TYPES.GET_CACHED_SWAP_TOP_TOKENS,
+    network,
+  });
+
+  if (error) {
+    throw new Error(error);
+  }
+
+  return cachedSwapTopTokens || null;
+};
+
+export const cacheSwapTopTokens = async (
+  network: string,
+  tokens: TrendingAsset[],
+): Promise<void> => {
+  const { error } = await sendMessageToBackground({
+    activePublicKey: null,
+    type: SERVICE_TYPES.CACHE_SWAP_TOP_TOKENS,
+    network,
+    tokens,
+  });
+
+  if (error) {
+    throw new Error(error);
+  }
 };

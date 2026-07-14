@@ -25,6 +25,59 @@
     }
   }
 
+  &__cards {
+    width: 100%;
+
+    // The swap layout owns inter-card spacing (an 8px seam with an overlapping
+    // chevron), so neutralize AmountCard's own vertical margins here.
+    .AmountCard {
+      margin: 0;
+    }
+  }
+
+  // An 8px seam between the cards; the circular direction toggle is centered on
+  // it and overlaps into each card (its size is set on __direction-btn below).
+  &__direction {
+    position: relative;
+    height: pxToRem(8px);
+    z-index: 1;
+  }
+
+  &__direction-btn {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    // Slightly smaller than the cards' gap so it doesn't overlap the sell
+    // card's fiat-toggle (RefreshCw03) button.
+    width: pxToRem(30px);
+    height: pxToRem(30px);
+    padding: 0;
+    border: none;
+    border-radius: pxToRem(100px);
+    // Between the dark page background and the cards (gray-03) so the toggle
+    // stays distinct from both.
+    background-color: var(--sds-clr-gray-02);
+    color: var(--sds-clr-gray-12);
+    cursor: pointer;
+
+    svg {
+      width: pxToRem(16px);
+      height: pxToRem(16px);
+    }
+
+    &:hover {
+      background-color: var(--sds-clr-gray-04);
+    }
+  }
+
+  &__percentage-buttons {
+    margin-top: pxToRem(12px);
+  }
+
   &__simplebar {
     margin-top: 1rem;
 
@@ -154,6 +207,7 @@
 
   &__settings-fee-display {
     display: flex;
+    font-size: pxToRem(14px);
 
     svg {
       margin-right: pxToRem(6px);

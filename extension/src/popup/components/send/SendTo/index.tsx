@@ -13,6 +13,7 @@ import { useTranslation } from "react-i18next";
 
 import {
   isFederationAddress,
+  isSameAccount,
   isValidFederatedDomain,
   truncatedPublicKey,
 } from "helpers/stellar";
@@ -71,10 +72,10 @@ const isResolvedSuggestionData = (
 ): data is ResolvedSuggestionData =>
   Boolean(
     data &&
-      typeof data === "object" &&
-      "type" in data &&
-      (data as { type?: AppDataType }).type === AppDataType.RESOLVED &&
-      "validatedAddress" in data,
+    typeof data === "object" &&
+    "type" in data &&
+    (data as { type?: AppDataType }).type === AppDataType.RESOLVED &&
+    "validatedAddress" in data,
   );
 
 export const AccountDoesntExistWarning = () => {
@@ -256,10 +257,11 @@ export const SendTo = ({
   // don't render until the data is ready (avoids a layout shift / reflow flash).
   const isInitialLoad = isLoading && !hasLoadedOnceRef.current;
 
-  const visibleRecentAddresses = cachedRecentAddressesRef.current.slice(
-    0,
-    MAX_VISIBLE_RECENT_ADDRESSES,
-  );
+  // Exclude any recent address that resolves to the active account (including
+  // its muxed M... forms) - you can't send to yourself.
+  const visibleRecentAddresses = cachedRecentAddressesRef.current
+    .filter((address) => !isSameAccount(address, activePublicKey))
+    .slice(0, MAX_VISIBLE_RECENT_ADDRESSES);
 
   if (isInitialLoad) {
     return <Loading />;
@@ -380,6 +382,19 @@ export const SendTo = ({
                     onClick={async () => {
                       const addressFromInput =
                         await getAddressFromInput(address);
+                      // A recent that resolves to the active account (e.g. a
+                      // federation address the synchronous list filter can't
+                      // resolve) is a self-send. Don't continue - surface the
+                      // error through the normal input flow instead.
+                      if (
+                        isSameAccount(
+                          addressFromInput.validatedAddress,
+                          activePublicKey,
+                        )
+                      ) {
+                        formik.setFieldValue("destination", address);
+                        return;
+                      }
                       emitMetric(METRIC_NAMES.sendPaymentRecentAddress);
                       await fetchData(address, {});
                       handleContinue(
@@ -447,6 +462,7 @@ export const SendTo = ({
       </View.Content>
       <View.Footer>
         {!isLoading &&
+        !hasError &&
         isSearchSettled &&
         formik.values.destination &&
         formik.isValid ? (

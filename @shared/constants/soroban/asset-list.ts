@@ -37,8 +37,11 @@ export const DEFAULT_ASSETS_LISTS: AssetsLists = {
 export interface AssetListReponseItem {
   code: string;
   issuer: string;
-  contract: string;
-  org?: string; //org is not optional in the spec but lobstr list does not adhere in this case
+  // contract, org and name are best-effort: schemaValidatedAssetList keeps an
+  // asset even when these are absent or fail validation (the bad field is
+  // stripped), so consumers must treat them as optional.
+  contract?: string;
+  org?: string;
   domain: string;
   icon: string;
   decimals: number;

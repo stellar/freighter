@@ -1,0 +1,90 @@
+.SwapPickerSections {
+  display: flex;
+  flex-direction: column;
+
+  // Give discover rows (AssetListRow) the same vertical rhythm as the held
+  // rows and the Add-a-token list (~1.5rem between adjacent rows) so they
+  // aren't glued together.
+  .AssetListRow {
+    padding: 0.75rem 0;
+  }
+
+  &__notice {
+    // 15px of breathing room above (from the search box) and below (to the
+    // results), so the notice isn't glued to either.
+    margin-top: 0.9375rem;
+    margin-bottom: 0.9375rem;
+
+    // The message is passed as the Notification title, whose text SDS renders
+    // semi-bold; show it at regular weight.
+    .Notification__title__text {
+      font-weight: var(--font-weight-regular);
+    }
+  }
+
+  // When the notice is shown it owns the 15px gap to whatever follows it, so
+  // neutralize the following element's own top margin (otherwise it stacks into
+  // a larger gap in this flex column).
+  &__notice + &__empty,
+  &__notice + &__header {
+    margin-top: 0;
+  }
+
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    margin-top: 1rem;
+    margin-bottom: 0.25rem;
+    color: var(--sds-clr-gray-11);
+    font-size: 0.875rem;
+
+    // The Verified/Unverified header is a button so the WHOLE title (not just
+    // the (i) icon) opens the info sheet. Reset native button styling and keep
+    // it inline so it sizes to its content (only the title is the hit target,
+    // not the full row width).
+    &--button {
+      background: transparent;
+      border: none;
+      padding: 0;
+      cursor: pointer;
+      text-align: left;
+      // Inherit only the font family — keep the header's own 0.875rem size so
+      // the Verified/Unverified titles match "Your tokens"/"Popular tokens"
+      // (a native button's `font` shorthand would otherwise shrink them).
+      font-family: inherit;
+      align-self: flex-start;
+    }
+
+    &__info {
+      background: transparent;
+      border: none;
+      padding: 0;
+      cursor: pointer;
+      color: var(--sds-clr-gray-09);
+      display: inline-flex;
+    }
+  }
+
+  // Empty-result message shown as a filled card (e.g. a search that matched
+  // only unsupported Soroban contract tokens, or no matches at all).
+  &__empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 0.75rem;
+    padding: 1rem 1.5rem;
+    border-radius: 0.75rem;
+    background-color: var(--sds-clr-gray-03);
+    color: var(--sds-clr-gray-11);
+    font-size: 0.875rem;
+    font-weight: var(--font-weight-medium);
+    line-height: 1.25rem;
+    text-align: center;
+    // A pasted address has no spaces, so wrap it across lines instead of
+    // letting the 56-char string overflow the card.
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+}

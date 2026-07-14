@@ -3,19 +3,19 @@ import { createPortal } from "react-dom";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 
-import {
-  formatDomain,
-  getCanonicalFromAsset,
-  truncateString,
-} from "helpers/stellar";
+import { getCanonicalFromAsset } from "helpers/stellar";
 import { isContractId, isAssetSac } from "popup/helpers/soroban";
 import { findAssetBalance } from "popup/helpers/balance";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
-import { AssetIcon } from "popup/components/account/AccountAssets";
-import { InfoTooltip } from "popup/basics/InfoTooltip";
+import { Icon } from "@stellar/design-system";
+import {
+  VerifiedTokenInfoSheet,
+  UnverifiedTokenInfoSheet,
+} from "popup/components/TokenVerificationSheets";
 import { AccountBalances } from "helpers/hooks/useGetBalances";
 import { SlideupModal } from "popup/components/SlideupModal";
 import { publicKeySelector } from "popup/ducks/accountServices";
+import { AssetListRow } from "popup/components/AssetListRow";
 import { ChangeTrustInternal } from "./ChangeTrustInternal";
 import { ManageAssetRowButton } from "../ManageAssetRowButton";
 import { ToggleTokenInternal } from "./ToggleTokenInternal";
@@ -31,10 +31,13 @@ export type ManageAssetCurrency = {
   contract?: string;
   icon?: string;
   isSuspicious?: boolean;
+  isMalicious?: boolean;
   decimals?: number;
   balance?: string;
   name?: string;
   image?: string | null;
+  /** USD spot price, populated when available from asset search. */
+  price?: number;
 };
 
 export interface NewAssetFlags {
@@ -112,38 +115,44 @@ export const ManageAssetRows = ({
               image,
               issuer,
               isSuspicious,
+              isMalicious,
               isSac,
               isTrustlineActive,
               name,
             }) => (
-              <>
-                <ManageAssetRow
-                  code={code}
-                  issuer={issuer}
-                  image={image}
-                  domain={domain}
-                  name={name}
-                  isSuspicious={isSuspicious}
-                />
-                <ManageAssetRowButton
-                  code={code}
-                  issuer={issuer}
-                  isTrustlineActive={!!isTrustlineActive}
-                  isSac={isSac}
-                  isLoading={false}
-                  onClick={async () => {
-                    setSelectedAsset({
-                      code,
-                      issuer,
-                      domain,
-                      name,
-                      image,
-                      isTrustlineActive,
-                      contract,
-                    });
-                  }}
-                />
-              </>
+              <AssetListRow
+                code={code}
+                issuer={issuer}
+                iconUrl={image}
+                domain={domain}
+                isSuspicious={isSuspicious}
+                isMalicious={isMalicious}
+                // Native (non-SAC) contract tokens display their name; classic
+                // assets and SAC-wrapped tokens display their code.
+                displayCode={name && contract && !isSac ? name : code}
+                codeTestId="ManageAssetCode"
+                domainTestId="ManageAssetDomain"
+                rightElement={
+                  <ManageAssetRowButton
+                    code={code}
+                    issuer={issuer}
+                    isTrustlineActive={!!isTrustlineActive}
+                    isSac={isSac}
+                    isLoading={false}
+                    onClick={async () => {
+                      setSelectedAsset({
+                        code,
+                        issuer,
+                        domain,
+                        name,
+                        image,
+                        isTrustlineActive,
+                        contract,
+                      });
+                    }}
+                  />
+                }
+              />
             )}
           />
         </div>
@@ -213,6 +222,7 @@ const AssetRows = ({
     isContract,
     isTrustlineActive,
     isSuspicious,
+    isMalicious,
     isSac,
   }: {
     code: string;
@@ -224,32 +234,27 @@ const AssetRows = ({
     isContract: boolean;
     isTrustlineActive: boolean;
     isSuspicious?: boolean;
+    isMalicious?: boolean;
     isSac: boolean;
   }) => React.ReactNode;
 }) => {
   const { t } = useTranslation();
+  const [verifiedSheetOpen, setVerifiedSheetOpen] = useState(false);
+  const [unverifiedSheetOpen, setUnverifiedSheetOpen] = useState(false);
   if (shouldSplitAssetsByVerificationStatus) {
     return (
       <>
         {verifiedAssetRows.length > 0 && (
-          <InfoTooltip
-            infoText={
-              <span>
-                {t(
-                  "Freighter uses asset lists to verify assets before interactions.",
-                )}
-                {t("You can define your own assets lists in Settings.")}
-              </span>
-            }
-            placement="bottom-start"
+          <button
+            type="button"
+            className="ManageAssetRows__list-header"
+            data-testid="asset-on-list"
+            aria-label={t("About verified tokens")}
+            onClick={() => setVerifiedSheetOpen(true)}
           >
-            <h5
-              className="ManageAssetRows__tooltip"
-              data-testid="asset-on-list"
-            >
-              {t("On your lists")}
-            </h5>
-          </InfoTooltip>
+            <span>{t("Verified")}</span>
+            <Icon.InfoCircle />
+          </button>
         )}
         {verifiedAssetRows.map(
           ({
@@ -260,6 +265,7 @@ const AssetRows = ({
             name = "",
             contract = "",
             isSuspicious,
+            isMalicious,
           }) => {
             if (!accountBalances.balances) {
               return null;
@@ -293,6 +299,7 @@ const AssetRows = ({
                   isContract,
                   issuer,
                   isSuspicious,
+                  isMalicious,
                   isSac,
                   isTrustlineActive:
                     isTrustlineActive !== undefined ||
@@ -304,23 +311,16 @@ const AssetRows = ({
           },
         )}
         {unverifiedAssetRows.length > 0 && (
-          <InfoTooltip
-            infoText={
-              <span>
-                {t(
-                  "These assets are not on any of your lists. Proceed with caution before adding.",
-                )}
-              </span>
-            }
-            placement="bottom-start"
+          <button
+            type="button"
+            className="ManageAssetRows__list-header"
+            data-testid="not-asset-on-list"
+            aria-label={t("About unverified tokens")}
+            onClick={() => setUnverifiedSheetOpen(true)}
           >
-            <h5
-              className="ManageAssetRows__tooltip"
-              data-testid="not-asset-on-list"
-            >
-              {t("Not on your lists")}
-            </h5>
-          </InfoTooltip>
+            <span>{t("Unverified")}</span>
+            <Icon.InfoCircle />
+          </button>
         )}
         {unverifiedAssetRows.map(
           ({
@@ -331,6 +331,7 @@ const AssetRows = ({
             name = "",
             contract = "",
             isSuspicious,
+            isMalicious,
           }) => {
             if (!accountBalances.balances) {
               return null;
@@ -365,6 +366,7 @@ const AssetRows = ({
                   isContract,
                   issuer,
                   isSuspicious,
+                  isMalicious,
                   isSac,
                   isTrustlineActive:
                     isTrustlineActive !== undefined ||
@@ -375,6 +377,14 @@ const AssetRows = ({
             );
           },
         )}
+        <VerifiedTokenInfoSheet
+          isOpen={verifiedSheetOpen}
+          onClose={() => setVerifiedSheetOpen(false)}
+        />
+        <UnverifiedTokenInfoSheet
+          isOpen={unverifiedSheetOpen}
+          onClose={() => setUnverifiedSheetOpen(false)}
+        />
       </>
     );
   }
@@ -433,57 +443,6 @@ const AssetRows = ({
           );
         },
       )}
-    </>
-  );
-};
-
-export const ManageAssetRow = ({
-  code = "",
-  issuer = "",
-  image = "",
-  domain,
-  name,
-  isSuspicious = false,
-  contractId,
-}: AssetRowData) => {
-  const networkDetails = useSelector(settingsNetworkDetailsSelector);
-  const canonicalAsset = getCanonicalFromAsset(code, issuer);
-  // use the name unless the name is SAC, format "code:issuer"
-  const assetCode =
-    name &&
-    contractId &&
-    !isAssetSac({
-      asset: {
-        code,
-        issuer,
-        contract: contractId,
-      },
-      networkDetails,
-    })
-      ? name
-      : code;
-  const truncatedAssetCode =
-    assetCode.length > 20 ? truncateString(assetCode) : assetCode;
-
-  return (
-    <>
-      <AssetIcon
-        assetIcons={code !== "XLM" ? { [canonicalAsset]: image } : {}}
-        code={code}
-        issuerKey={issuer}
-        isSuspicious={isSuspicious}
-      />
-      <div className="ManageAssetRows__row__info">
-        <div className="ManageAssetRows__row__info__header">
-          <span data-testid="ManageAssetCode">{truncatedAssetCode}</span>
-        </div>
-        <div
-          className="ManageAssetRows__domain"
-          data-testid="ManageAssetDomain"
-        >
-          {formatDomain(domain || "")}
-        </div>
-      </div>
     </>
   );
 };

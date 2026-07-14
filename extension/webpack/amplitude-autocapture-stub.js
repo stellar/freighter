@@ -46,6 +46,9 @@ export const autocapturePlugin = noopPlugin(
 export const frustrationPlugin = noopPlugin(
   "@amplitude/plugin-frustration-browser",
 );
+export const performancePlugin = noopPlugin(
+  "@amplitude/plugin-autocapture-browser/performance",
+);
 
 // Mirror the real package's named exports so any importer resolves cleanly.
 export const plugin = autocapturePlugin;
