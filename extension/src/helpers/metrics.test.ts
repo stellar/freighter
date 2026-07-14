@@ -38,6 +38,9 @@ import {
   getSurface,
   resolveSurface,
   buildCommonContext,
+  deriveIdentifyTraits,
+  storeBalanceMetricData,
+  initAmplitude,
 } from "helpers/metrics";
 import { isSidebarMode } from "popup/helpers/isSidebarMode";
 import browser from "webextension-polyfill";
@@ -45,6 +48,8 @@ import { publicKeySelector } from "popup/ducks/accountServices";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { METRICS_DATA } from "constants/localStorageTypes";
 import { AccountType } from "@shared/api/types";
+import { truncatedPublicKey } from "helpers/stellar";
+import { METRIC_NAMES } from "popup/constants/metricsNames";
 
 describe("getAccountIdHash", () => {
   const PUBLIC_KEY = "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF";
@@ -173,6 +178,71 @@ describe("buildCommonContext (four-bucket property model)", () => {
       is_hardware_account: true,
       account_funded: true,
     });
+  });
+});
+
+describe("deriveIdentifyTraits", () => {
+  it("counts accounts and detects hardware/imported presence", () => {
+    const accounts = [
+      { publicKey: "G1", hardwareWalletType: "ledger", imported: false },
+      { publicKey: "G2", hardwareWalletType: "", imported: true },
+      { publicKey: "G3", hardwareWalletType: "", imported: false },
+    ] as never;
+    expect(deriveIdentifyTraits(accounts)).toEqual({
+      wallet_count: 3,
+      has_hardware_wallet: true,
+      has_imported_account: true,
+    });
+  });
+
+  it("reports zero/false for an empty account list", () => {
+    expect(deriveIdentifyTraits([])).toEqual({
+      wallet_count: 0,
+      has_hardware_wallet: false,
+      has_imported_account: false,
+    });
+  });
+});
+
+describe("storeBalanceMetricData (privacy)", () => {
+  const PUBLIC_KEY = "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF";
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    localStorage.clear();
+    (settingsNetworkDetailsSelector as unknown as jest.Mock).mockReturnValue({
+      network: "TESTNET",
+    });
+    (publicKeySelector as unknown as jest.Mock).mockReturnValue(PUBLIC_KEY);
+    localStorage.setItem(
+      METRICS_DATA,
+      JSON.stringify({
+        accountType: AccountType.FREIGHTER,
+        hwExists: false,
+        importedExists: false,
+        hwFunded: false,
+        importedFunded: false,
+        freighterFunded: false,
+        unfundedFreighterAccounts: [truncatedPublicKey(PUBLIC_KEY)],
+      }),
+    );
+  });
+
+  it("emits freighterAccountFunded with account_id_hash and never a raw/truncated publicKey", () => {
+    // Ensure emitMetric's `!hasInitialized` guard doesn't short-circuit before
+    // the amplitude.track call this test inspects.
+    initAmplitude();
+    storeBalanceMetricData(PUBLIC_KEY, true);
+
+    expect(amplitude.track).toHaveBeenCalledWith(
+      METRIC_NAMES.freighterAccountFunded,
+      expect.objectContaining({
+        account_id_hash: getAccountIdHash(PUBLIC_KEY),
+      }),
+    );
+
+    const [, body] = (amplitude.track as jest.Mock).mock.calls[0];
+    expect(body).not.toHaveProperty("publicKey");
   });
 });
 

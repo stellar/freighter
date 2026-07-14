@@ -241,6 +241,43 @@ export const initAmplitude = () => {
   }
 };
 
+/** Derives the durable Identify traits from the full account list. */
+export const deriveIdentifyTraits = (allAccounts: Account[]) => {
+  let hasHardware = false;
+  let hasImported = false;
+  allAccounts.forEach((acc) => {
+    if (acc.hardwareWalletType) {
+      hasHardware = true;
+    } else if (acc.imported) {
+      hasImported = true;
+    }
+  });
+  return {
+    wallet_count: allAccounts.length,
+    has_hardware_wallet: hasHardware,
+    has_imported_account: hasImported,
+  };
+};
+
+// Only re-send Identify when a durable trait actually changed.
+let lastIdentifiedTraits: string | null = null;
+
+/** Sends durable wallet-composition traits to Amplitude Identify (dirty-checked). */
+export const syncIdentifyTraits = (allAccounts: Account[]): void => {
+  const traits = deriveIdentifyTraits(allAccounts);
+  const fingerprint = JSON.stringify(traits);
+  if (fingerprint === lastIdentifiedTraits) return;
+  lastIdentifiedTraits = fingerprint;
+
+  if (!AMPLITUDE_KEY || !hasInitialized) return;
+
+  const identify = new amplitude.Identify();
+  identify.set("wallet_count", traits.wallet_count);
+  identify.set("has_hardware_wallet", traits.has_hardware_wallet);
+  identify.set("has_imported_account", traits.has_imported_account);
+  amplitude.identify(identify);
+};
+
 // ---------------------------------------------------------------------------
 // Common context (mirrors mobile's buildCommonContext)
 // ---------------------------------------------------------------------------
@@ -417,7 +454,7 @@ export const storeBalanceMetricData = (
       metricsData.freighterFunded = true;
       if (idx !== -1) {
         emitMetric(METRIC_NAMES.freighterAccountFunded, {
-          publicKey: truncated,
+          account_id_hash: getAccountIdHash(publicKey),
         });
         unfundedFreighterAccounts.splice(idx, 1);
       }
@@ -464,4 +501,6 @@ export const storeAccountMetricsData = (
   });
   metricsData.accountType = accountType;
   localStorage.setItem(METRICS_DATA, JSON.stringify(metricsData));
+
+  syncIdentifyTraits(allAccounts);
 };
