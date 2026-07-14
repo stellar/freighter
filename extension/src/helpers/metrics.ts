@@ -8,7 +8,7 @@ import browser from "webextension-polyfill";
 
 import { store } from "popup/App";
 import { METRICS_DATA, METRICS_USER_ID } from "constants/localStorageTypes";
-import { AMPLITUDE_KEY, METRICS_PLATFORM, APP_VERSION } from "constants/env";
+import { AMPLITUDE_KEY } from "constants/env";
 import { initExperimentClient } from "helpers/experimentClient";
 import { BUNDLE_ID_USER_PROPERTY_KEY, getBundleId } from "helpers/analytics";
 import { isDev } from "@shared/helpers/dev";
@@ -106,6 +106,16 @@ let hasInitialized = false;
  * so queued events are sent promptly before the extension popup closes.
  */
 const AMPLITUDE_FLUSH_INTERVAL_MS = 500;
+
+/** Schema generation marker for the new cross-platform property model. */
+export const SCHEMA_VERSION = "2";
+
+/** Maps the internal account type to the RFC's wire value for `account_type`. */
+const ACCOUNT_TYPE_WIRE: Record<AccountType, string> = {
+  [AccountType.FREIGHTER]: "freighter",
+  [AccountType.HW]: "hardware",
+  [AccountType.IMPORTED]: "imported_secret_key",
+};
 
 // ---------------------------------------------------------------------------
 // User identity (mirrors mobile's src/services/analytics/user.ts)
@@ -259,48 +269,6 @@ export const getSurface = (): Surface =>
   cachedSurface ?? (isSidebarMode() ? "sidebar" : "popup");
 
 /**
- * Returns the extension version. Prefers the build-time constant (always
- * available via DefinePlugin), falling back to the browser extension manifest.
- */
-const getAppVersion = (): string => {
-  if (APP_VERSION) return APP_VERSION;
-
-  try {
-    return browser.runtime.getManifest().version;
-  } catch {
-    return "unknown";
-  }
-};
-
-/**
- * Extracts a coarsened browser identifier from the user agent string.
- * Returns "BrowserName/MajorVersion" (e.g. "Chrome/120", "Firefox/121").
- * Falls back to "Unknown" if parsing fails.
- */
-const getCoarsenedUserAgent = (): string => {
-  const ua = navigator.userAgent;
-
-  // Order matters: check more specific browsers first.
-  // Edge includes "Chrome" in its UA, so check Edge before Chrome.
-  const patterns: Array<[RegExp, string]> = [
-    [/Edg(?:e|A|iOS)?\/(\d+)/, "Edge"],
-    [/OPR\/(\d+)/, "Opera"],
-    [/Firefox\/(\d+)/, "Firefox"],
-    [/(?:Chrome|CriOS)\/(\d+)/, "Chrome"],
-    [/Version\/(\d+).*Safari/, "Safari"],
-  ];
-
-  for (const [regex, name] of patterns) {
-    const match = ua.match(regex);
-    if (match) {
-      return `${name}/${match[1]}`;
-    }
-  }
-
-  return "Unknown";
-};
-
-/**
  * Cross-platform account identifier: lowercase hex SHA-256 of the full
  * G-address string. Never emit a raw/truncated public key. Memoized per key
  * so the hot emit path stays synchronous and does no repeat work. Mobile must
@@ -320,41 +288,35 @@ export const getAccountIdHash = (publicKey: string): string => {
 };
 
 /**
- * Builds common context data attached to every event.
- * Mirrors the mobile app's context properties for consistency across platforms.
- *
- * | Mobile property   | Extension equivalent                         |
- * |-------------------|----------------------------------------------|
- * | Platform.OS       | METRICS_PLATFORM ("WEB")                     |
- * | Platform.Version  | coarsened user agent (e.g. "Chrome/120")     |
- * | getVersion()      | manifest version / APP_VERSION               |
- * | getBundleId()     | "extension.<BUILD_TYPE>"                     |
- *
- * @param state Current Redux state (passed in to avoid a redundant getState() call).
+ * Builds the event-level "volatile context" bucket attached to every event,
+ * plus schema_version. Durable traits live in Identify (see syncIdentifyTraits);
+ * device/app metadata comes from the Amplitude SDK; connectivity is on app.opened.
  */
-const buildCommonContext = (
+export const buildCommonContext = (
   state: ReturnType<typeof store.getState>,
 ): Record<string, unknown> => {
   const activePublicKey = publicKeySelector(state);
   const networkDetails = settingsNetworkDetailsSelector(state);
+  const metricsData = getMetricsData();
 
-  // Navigator.connection is not available in all browsers
-  const nav = navigator as Navigator & {
-    connection?: { type?: string; effectiveType?: string };
+  const accountFundedByType: Record<AccountType, boolean> = {
+    [AccountType.FREIGHTER]: metricsData.freighterFunded,
+    [AccountType.HW]: metricsData.hwFunded,
+    [AccountType.IMPORTED]: metricsData.importedFunded,
   };
 
   const context: Record<string, unknown> = {
-    publicKey: activePublicKey ? truncatedPublicKey(activePublicKey) : "N/A",
-    platform: METRICS_PLATFORM,
-    platformVersion: getCoarsenedUserAgent(),
+    schema_version: SCHEMA_VERSION,
+    surface: getSurface(),
     network: networkDetails?.network ?? "UNKNOWN",
-    connectionType: nav.connection?.type ?? "unknown",
-    appVersion: getAppVersion(),
-    bundleId: getBundleId(),
+    account_type: ACCOUNT_TYPE_WIRE[metricsData.accountType],
+    account_funded: accountFundedByType[metricsData.accountType],
+    is_hardware_account: metricsData.accountType === AccountType.HW,
   };
 
-  if (nav.connection?.effectiveType) {
-    context.effectiveType = nav.connection.effectiveType;
+  if (activePublicKey) {
+    const idHash = getAccountIdHash(activePublicKey);
+    if (idHash) context.account_id_hash = idHash;
   }
 
   return context;
@@ -402,15 +364,9 @@ const getMetricsData = (): MetricsData => {
 export const emitMetric = (name: string, body?: Record<string, unknown>) => {
   const state = store.getState();
 
-  const metricsData = getMetricsData();
-
   const eventProperties = {
     ...buildCommonContext(state),
     ...body,
-    freighter_account_funded: metricsData.freighterFunded,
-    hw_connected: metricsData.hwExists,
-    secret_key_account: metricsData.importedExists,
-    secret_key_account_funded: metricsData.importedFunded,
   };
 
   const isDataSharingAllowed = settingsDataSharingSelector(state);

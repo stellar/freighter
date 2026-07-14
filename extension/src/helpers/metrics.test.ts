@@ -32,9 +32,18 @@ jest.mock("webextension-polyfill", () => ({
   runtime: { getManifest: jest.fn(() => ({ version: "9.9.9" })) },
 }));
 
-import { getAccountIdHash, getSurface, resolveSurface } from "helpers/metrics";
+import {
+  getAccountIdHash,
+  getSurface,
+  resolveSurface,
+  buildCommonContext,
+} from "helpers/metrics";
 import { isSidebarMode } from "popup/helpers/isSidebarMode";
 import browser from "webextension-polyfill";
+import { publicKeySelector } from "popup/ducks/accountServices";
+import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
+import { METRICS_DATA } from "constants/localStorageTypes";
+import { AccountType } from "@shared/api/types";
 
 describe("getAccountIdHash", () => {
   const PUBLIC_KEY = "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF";
@@ -84,5 +93,84 @@ describe("getSurface", () => {
     (browser.tabs.getCurrent as jest.Mock).mockRejectedValue(new Error("x"));
     await resolveSurface();
     expect(getSurface()).toBe("popup");
+  });
+});
+
+describe("buildCommonContext (four-bucket property model)", () => {
+  const PUBLIC_KEY = "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF";
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    localStorage.clear();
+    (settingsNetworkDetailsSelector as unknown as jest.Mock).mockReturnValue({
+      network: "TESTNET",
+    });
+    (publicKeySelector as unknown as jest.Mock).mockReturnValue(PUBLIC_KEY);
+    localStorage.setItem(
+      METRICS_DATA,
+      JSON.stringify({
+        accountType: AccountType.IMPORTED,
+        hwExists: false,
+        importedExists: true,
+        hwFunded: false,
+        importedFunded: true,
+        freighterFunded: false,
+        unfundedFreighterAccounts: [],
+      }),
+    );
+  });
+
+  it("stamps schema_version '2'", () => {
+    expect(buildCommonContext({} as never).schema_version).toBe("2");
+  });
+
+  it("emits the reshaped event-level bucket", () => {
+    const ctx = buildCommonContext({} as never);
+    expect(ctx).toMatchObject({
+      network: "TESTNET",
+      account_type: "imported_secret_key",
+      account_funded: true,
+      is_hardware_account: false,
+      account_id_hash:
+        "f56f6f2c6cf1b9388e3495dfab96f0c55ec5d217f481b2ae45d11b46145c44ef",
+    });
+    expect(ctx.surface).toBeDefined();
+  });
+
+  it("drops SDK-supplied and legacy fields", () => {
+    const ctx = buildCommonContext({} as never);
+    expect(ctx).not.toHaveProperty("platform");
+    expect(ctx).not.toHaveProperty("platformVersion");
+    expect(ctx).not.toHaveProperty("appVersion");
+    expect(ctx).not.toHaveProperty("publicKey");
+    expect(ctx).not.toHaveProperty("connectionType");
+    expect(ctx).not.toHaveProperty("effectiveType");
+  });
+
+  it("omits account_id_hash when there is no active key (pre-unlock)", () => {
+    (publicKeySelector as unknown as jest.Mock).mockReturnValue("");
+    expect(buildCommonContext({} as never)).not.toHaveProperty(
+      "account_id_hash",
+    );
+  });
+
+  it("marks hardware active account", () => {
+    localStorage.setItem(
+      METRICS_DATA,
+      JSON.stringify({
+        accountType: AccountType.HW,
+        hwExists: true,
+        importedExists: false,
+        hwFunded: true,
+        importedFunded: false,
+        freighterFunded: false,
+        unfundedFreighterAccounts: [],
+      }),
+    );
+    expect(buildCommonContext({} as never)).toMatchObject({
+      account_type: "hardware",
+      is_hardware_account: true,
+      account_funded: true,
+    });
   });
 });
