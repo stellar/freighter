@@ -18,10 +18,12 @@ export interface FetchBackendV2Result {
  * message.
  *
  * The background handler returns either `{ status, body }` (from callBackendV2)
- * or `{ error }` when it rejects an unauthorized sender. The `{ error }` reply
- * is normalized to a 401 result so every caller degrades identically (a
- * non-200 status) instead of destructuring `status`/`body` off an unexpected
- * shape.
+ * or `{ error }` when it rejects an unauthorized sender. Any non-`{ status }`
+ * reply is normalized to a synthetic non-2xx result so every caller degrades
+ * identically (a defined `{ status, body }`) instead of destructuring off an
+ * unexpected shape. Only the sender-rejection error maps to 401; any other
+ * error (or a missing response) maps to 500 so callers don't misread an
+ * unrelated failure as an auth problem.
  */
 export const fetchBackendV2 = async ({
   method,
@@ -43,8 +45,12 @@ export const fetchBackendV2 = async ({
     body,
   });
 
-  if (response && "error" in response) {
-    return { status: 401, body: { error: response.error } };
+  if (!response) {
+    return { status: 500, body: { error: "No response from background" } };
+  }
+  if ("error" in response) {
+    const status = response.error === "Unauthorized" ? 401 : 500;
+    return { status, body: { error: response.error } };
   }
   return response;
 };

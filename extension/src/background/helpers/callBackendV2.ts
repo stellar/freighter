@@ -57,9 +57,13 @@ const tryGetAuthKeypair = async (
     // WebCrypto/PBKDF2 failure. Capture it: otherwise an unlocked user silently
     // downgrades to anonymous with zero telemetry the moment the backend
     // enforces auth on these endpoints.
-    captureException(
-      `callBackendV2: unexpected error deriving auth keypair - ${JSON.stringify(e)}`,
-    );
+    // Capture the original exception (not a JSON.stringify of it): stringifying
+    // an Error yields "{}" and loses the stack, and JSON.stringify itself throws
+    // on non-serializable values. Sentry preserves the stack; the context string
+    // lives in `extra`.
+    captureException(e, {
+      extra: { context: "callBackendV2: unexpected error deriving auth keypair" },
+    });
     return null;
   }
 };

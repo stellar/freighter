@@ -222,9 +222,10 @@ describe("callBackendV2", () => {
     jest
       .spyOn(sessionMod, "getEncryptedTemporaryData")
       .mockResolvedValue(VECTOR_MNEMONIC);
+    const deriveError = new Error("corrupted temporaryStoreExtra");
     jest
       .spyOn(deriveMod, "deriveAuthKeypair")
-      .mockRejectedValue(new Error("corrupted temporaryStoreExtra"));
+      .mockRejectedValue(deriveError);
     const fetchImpl = jest.fn().mockResolvedValue(okResponse({ data: 1 }));
 
     const result = await callBackendV2({
@@ -235,8 +236,17 @@ describe("callBackendV2", () => {
       fetchImpl,
     });
 
-    // Unexpected derivation failure must emit telemetry (not be swallowed)…
-    expect(Sentry.captureException).toHaveBeenCalled();
+    // Unexpected derivation failure must emit telemetry (not be swallowed), and
+    // the original Error is captured (preserving the stack) with the context in
+    // `extra` — not a JSON.stringify that would flatten it to "{}".
+    expect(Sentry.captureException).toHaveBeenCalledWith(
+      deriveError,
+      expect.objectContaining({
+        extra: expect.objectContaining({
+          context: expect.stringContaining("deriving auth keypair"),
+        }),
+      }),
+    );
     // …and the request still goes out anonymously (no Authorization header).
     const headers = ((fetchImpl.mock.calls[0][1] as RequestInit).headers ??
       {}) as Record<string, string>;

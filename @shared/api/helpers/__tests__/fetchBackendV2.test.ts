@@ -44,4 +44,31 @@ describe("fetchBackendV2", () => {
 
     expect(res).toEqual({ status: 401, body: { error: "Unauthorized" } });
   });
+
+  it("maps a non-auth { error } reply to a 500 (not 401)", async () => {
+    // Only sender-rejection ("Unauthorized") is an auth failure. Any other
+    // error (e.g. "Message type not supported") must not be misclassified as
+    // 401, or callers would treat an unrelated failure as an auth problem.
+    mockedSend.mockResolvedValue({ error: "Message type not supported" });
+
+    const res = await fetchBackendV2({ method: "GET", path: "/protocols" });
+
+    expect(res).toEqual({
+      status: 500,
+      body: { error: "Message type not supported" },
+    });
+  });
+
+  it("returns a 500 result for a missing/undefined response", async () => {
+    // A falsy message-channel reply would break callers that destructure
+    // { status, body }; normalize it to a defined non-2xx result.
+    mockedSend.mockResolvedValue(undefined);
+
+    const res = await fetchBackendV2({ method: "GET", path: "/protocols" });
+
+    expect(res).toEqual({
+      status: 500,
+      body: { error: "No response from background" },
+    });
+  });
 });
