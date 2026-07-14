@@ -17,8 +17,13 @@ export interface BuildAuthJwtParams {
   now?: number;
 }
 
-const toBytes = (body?: string): Uint8Array =>
-  body === undefined ? new Uint8Array() : new TextEncoder().encode(body);
+// Return an ArrayBuffer-backed view: crypto.subtle expects BufferSource
+// (ArrayBufferView<ArrayBuffer>), not the default Uint8Array<ArrayBufferLike>
+// that TextEncoder.encode is typed to produce.
+const toBytes = (body?: string): Uint8Array<ArrayBuffer> =>
+  body === undefined
+    ? new Uint8Array()
+    : new Uint8Array(new TextEncoder().encode(body));
 
 // URL-safe base64 with padding stripped.
 const base64url = (bytes: Uint8Array): string =>

@@ -31,9 +31,10 @@ export const deriveAuthSeed = async (mnemonic: string): Promise<Uint8Array> => {
     throw new Error("Invalid mnemonic (see bip39)");
   }
   // BIP39 seed, 64 bytes, empty passphrase — identical to what StellarHDWallet
-  // .fromMnemonic(mnemonic).seedHex produces. mnemonicToSeedSync already
-  // returns a Buffer, so no wrapping is needed.
-  const seedBytes = mnemonicToSeedSync(mnemonic);
+  // .fromMnemonic(mnemonic).seedHex produces. mnemonicToSeedSync returns bip39's
+  // Buffer (typed Buffer<ArrayBufferLike>); copy into an ArrayBuffer-backed
+  // Uint8Array so it satisfies crypto.subtle's BufferSource parameter.
+  const seedBytes = new Uint8Array(mnemonicToSeedSync(mnemonic));
 
   const key = await crypto.subtle.importKey(
     "raw",
