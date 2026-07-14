@@ -8,7 +8,7 @@ import browser from "webextension-polyfill";
 
 import { store } from "popup/App";
 import { METRICS_DATA, METRICS_USER_ID } from "constants/localStorageTypes";
-import { AMPLITUDE_KEY } from "constants/env";
+import { AMPLITUDE_KEY, APP_VERSION } from "constants/env";
 import { initExperimentClient } from "helpers/experimentClient";
 import { BUNDLE_ID_USER_PROPERTY_KEY, getBundleId } from "helpers/analytics";
 import { isDev } from "@shared/helpers/dev";
@@ -188,6 +188,7 @@ export const initAmplitude = () => {
       // generate a UUID deviceId and persist it across sessions.
       identityStorage: "localStorage",
       autocapture: false,
+      appVersion: APP_VERSION || undefined,
       // The extension popup can close at any time; reduce the flush interval
       // so queued events are sent promptly instead of waiting the default 1 s.
       flushIntervalMillis: AMPLITUDE_FLUSH_INTERVAL_MS,

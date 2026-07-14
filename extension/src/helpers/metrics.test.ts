@@ -32,6 +32,7 @@ jest.mock("webextension-polyfill", () => ({
   runtime: { getManifest: jest.fn(() => ({ version: "9.9.9" })) },
 }));
 
+import * as amplitude from "@amplitude/analytics-browser";
 import {
   getAccountIdHash,
   getSurface,
@@ -172,5 +173,27 @@ describe("buildCommonContext (four-bucket property model)", () => {
       is_hardware_account: true,
       account_funded: true,
     });
+  });
+});
+
+describe("initAmplitude SDK config", () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it("passes appVersion so the SDK attaches app_version, with autocapture off", async () => {
+    // initAmplitude guards on a module-level `hasInitialized` flag, so isolate
+    // the module here to ensure this test is independent of init having
+    // already run in another describe block.
+    let mod: typeof import("helpers/metrics");
+    jest.isolateModules(() => {
+      mod = require("helpers/metrics");
+    });
+    await mod!.initAmplitude();
+    expect(
+      (require("@amplitude/analytics-browser") as typeof amplitude).init,
+    ).toHaveBeenCalledWith(
+      "test-key",
+      undefined,
+      expect.objectContaining({ appVersion: "9.9.9", autocapture: false }),
+    );
   });
 });
