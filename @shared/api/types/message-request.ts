@@ -496,6 +496,14 @@ export interface RejectSigningRequestMessage extends BaseMessage {
   uuid: string;
 }
 
+export interface FetchBackendV2Message {
+  activePublicKey: string | null;
+  type: SERVICE_TYPES.FETCH_BACKEND_V2;
+  method: string;
+  path: string;
+  body?: string;
+}
+
 export type ServiceMessageRequest =
   | FundAccountMessage
   | CreateAccountMessage
@@ -570,4 +578,5 @@ export type ServiceMessageRequest =
   | MarkQueueActiveMessage
   | OpenSidebarMessage
   | RejectSigningRequestMessage
-  | UserActivityMessage;
+  | UserActivityMessage
+  | FetchBackendV2Message;

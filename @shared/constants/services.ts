@@ -75,6 +75,7 @@ export enum SERVICE_TYPES {
   USER_ACTIVITY = "USER_ACTIVITY",
   SESSION_LOCKED = "SESSION_LOCKED",
   SESSION_UNLOCKED = "SESSION_UNLOCKED",
+  FETCH_BACKEND_V2 = "FETCH_BACKEND_V2",
 }
 
 // SIDEBAR_NAVIGATE is a plain string constant (not in an enum) because it is
