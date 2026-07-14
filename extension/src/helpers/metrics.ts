@@ -164,7 +164,7 @@ export const getUserId = (): string => {
  * Initializes the Amplitude SDK. Should be called once at app startup.
  * In development (no AMPLITUDE_KEY), events are logged to console only.
  */
-export const initAmplitude = () => {
+export const initAmplitude = async () => {
   if (hasInitialized) return;
 
   if (!AMPLITUDE_KEY) {
@@ -214,6 +214,19 @@ export const initAmplitude = () => {
     // Initialize Experiment client now that analytics is ready.
     // initializeWithAmplitudeAnalytics requires the analytics SDK to be started first.
     initExperimentClient();
+
+    // Resolve the surface once (async), then emit the one-time app.opened snapshot.
+    await resolveSurface();
+
+    const nav = navigator as Navigator & {
+      connection?: { type?: string; effectiveType?: string };
+    };
+    emitMetric(METRIC_NAMES.appOpened, {
+      connection_type: nav.connection?.type ?? "unknown",
+      ...(nav.connection?.effectiveType
+        ? { effective_type: nav.connection.effectiveType }
+        : {}),
+    });
 
     // Keep opt-out in sync whenever the data-sharing setting changes in Redux.
     // This is the authoritative source of truth; the initial call above may fire

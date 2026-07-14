@@ -267,3 +267,36 @@ describe("initAmplitude SDK config", () => {
     );
   });
 });
+
+describe("app.opened", () => {
+  it("exposes the appOpened event name", () => {
+    expect(METRIC_NAMES.appOpened).toBe("app.opened");
+  });
+
+  it("emits app.opened once during init with the connectivity snapshot", async () => {
+    (Object.defineProperty as typeof Object.defineProperty)(
+      global.navigator,
+      "connection",
+      { value: { type: "wifi", effectiveType: "4g" }, configurable: true },
+    );
+    let mod: typeof import("helpers/metrics");
+    jest.isolateModules(() => {
+      mod = require("helpers/metrics");
+    });
+    const track = (
+      require("@amplitude/analytics-browser") as typeof import("@amplitude/analytics-browser")
+    ).track as jest.Mock;
+    track.mockClear();
+
+    await mod!.initAmplitude();
+
+    const call = track.mock.calls.find((c) => c[0] === "app.opened");
+    expect(call).toBeDefined();
+    expect(call![1]).toMatchObject({
+      connection_type: "wifi",
+      effective_type: "4g",
+      schema_version: "2",
+    });
+    expect(call![1].surface).toBeDefined();
+  });
+});

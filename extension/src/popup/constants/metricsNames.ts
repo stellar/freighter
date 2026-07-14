@@ -191,4 +191,5 @@ export const METRIC_NAMES = {
   coinbaseOnrampOpened: "coinbase onramp: opened",
   wallets: "loaded screen: wallets",
   confirmSidebarRequest: "loaded screen: confirm sidebar request",
+  appOpened: "app.opened",
 };
