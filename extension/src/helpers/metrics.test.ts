@@ -268,6 +268,18 @@ describe("initAmplitude SDK config", () => {
   });
 });
 
+describe("privacy guard", () => {
+  it("buildCommonContext never includes a raw or truncated public key", () => {
+    (publicKeySelector as jest.Mock).mockReturnValue(
+      "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF",
+    );
+    const ctx = buildCommonContext({} as never);
+    const serialized = JSON.stringify(ctx);
+    expect(serialized).not.toContain("GAAAAAAAAAAAAAAAAAAAAAAAAA");
+    expect(ctx).not.toHaveProperty("publicKey");
+  });
+});
+
 describe("app.opened", () => {
   it("exposes the appOpened event name", () => {
     expect(METRIC_NAMES.appOpened).toBe("app.opened");
