@@ -113,7 +113,7 @@ All centralized in `emitMetric` + `buildCommonContext` (`extension/src/helpers/m
 ## 6. Identify wiring
 
 - Extend the existing `amplitude.identify()` block in `initAmplitude`.
-- Traits derive from the same `allAccounts` that `storeAccountMetricsData(publicKey, allAccounts)` already walks (call sites: `popup/ducks/accountServices.ts:192`, `helpers/hooks/useGetAppData.tsx:74`, `views/RecoverAccount/hooks/useGetRecoverAccountData.ts`):
+- Traits derive from the same `allAccounts` that `storeAccountMetricsData(publicKey, allAccounts)` already walks. The effective sync sites are `helpers/hooks/useGetAppData.tsx:74` and `views/RecoverAccount/hooks/useGetRecoverAccountData.ts`, which call the shared `helpers/metrics` implementation. **Note:** `popup/ducks/accountServices.ts` has a _private duplicate_ `storeAccountMetricsData` (it imports only the `MetricsData` type from `helpers/metrics`), so wiring `syncIdentifyTraits` into the shared function does **not** cover the active-account-switch (`makeAccountActive`) path. That is acceptable — switching the active account does not change the account _set_ the durable traits describe, and any set change (add/import/create/recover) flows through `useGetAppData` and re-syncs. Follow-up: dedupe the two `storeAccountMetricsData` implementations. Traits:
   - `has_hardware_wallet` ← `hwExists`
   - `has_imported_account` ← `importedExists`
   - `wallet_count` ← `allAccounts.length`
