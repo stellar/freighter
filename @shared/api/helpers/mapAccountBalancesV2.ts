@@ -2,6 +2,13 @@ import BigNumber from "bignumber.js";
 import { AssetType as SdkAssetType } from "stellar-sdk";
 
 import {
+  ClassicAsset,
+  LiquidityPoolShareAsset,
+  NativeAsset,
+  SorobanAsset,
+} from "../types/account-balance";
+import { BlockAidScanAssetResult } from "../types";
+import {
   AccountBalancesInterface,
   BalanceMap,
   V2AccountBalances,
@@ -38,14 +45,37 @@ import {
 const classicAssetType = (code: string): SdkAssetType =>
   (code.length > 4 ? "credit_alphanum12" : "credit_alphanum4") as SdkAssetType;
 
+// The mapper emits the runtime `AssetType` shapes from account-balance.ts —
+// the shapes the type guards in `popup/helpers/balance.ts` discriminate on —
+// with two deltas relative to those declarations:
+//   - `blockaidData` is stamped by `addBlockaidScanResults` AFTER mapping, so
+//     here it is explicitly `undefined` (the declared types require it).
+//   - v2 has no trustline `limit` for LP shares, and consumers never read it
+//     (see docs/balances-api-fields.md §3), so it is omitted.
+type ScanPending = { blockaidData: BlockAidScanAssetResult | undefined };
+
+type MappedNative = Omit<NativeAsset, "blockaidData"> & ScanPending;
+// `limit` is optional: present on CLASSIC (v1 wire parity, never read by
+// consumers), absent on SAC (no trustline exists).
+type MappedClassic = Omit<ClassicAsset, "blockaidData"> &
+  ScanPending & { limit?: BigNumber };
+type MappedSoroban = SorobanAsset & ScanPending & { available: BigNumber };
+type MappedLiquidityPool = Omit<LiquidityPoolShareAsset, "limit"> & ScanPending;
+
+type MappedBalance =
+  | MappedNative
+  | MappedClassic
+  | MappedSoroban
+  | MappedLiquidityPool;
+
 interface MappedEntry {
   key: string;
-  // Runtime shape matches the legacy BalanceMap entries; some strict fields
-  // (e.g. `blockaidData`) are intentionally undefined until v2 provides them.
-  value: any;
+  value: MappedBalance;
 }
 
-const mapNative = (b: V2NativeBalance): MappedEntry => ({
+const mapNative = (
+  b: V2NativeBalance,
+): { key: string; value: MappedNative } => ({
   key: "native",
   value: {
     token: { type: "native", code: "XLM" },
@@ -58,7 +88,9 @@ const mapNative = (b: V2NativeBalance): MappedEntry => ({
   },
 });
 
-const mapClassic = (b: V2ClassicBalance): MappedEntry => {
+const mapClassic = (
+  b: V2ClassicBalance,
+): { key: string; value: MappedClassic } => {
   const code = b.code || "";
   const issuer = b.issuer || "";
   return {
@@ -85,7 +117,7 @@ const mapClassic = (b: V2ClassicBalance): MappedEntry => {
 // path re-scales by `decimals`, which would double-scale an already-formatted
 // SAC amount. No trustline liabilities exist on a SAC (available = balance
 // server-side).
-const mapSac = (b: V2SacBalance): MappedEntry => ({
+const mapSac = (b: V2SacBalance): { key: string; value: MappedClassic } => ({
   key: `${b.code}:${b.issuer}`,
   value: {
     token: {
@@ -104,7 +136,7 @@ const mapSac = (b: V2SacBalance): MappedEntry => ({
 // A pure SEP-41 token maps to the Soroban shape: `balance` is a raw i128 that
 // display logic scales by `decimals`. `issuer.key` is the contract id, matching
 // the standalone Soroban convention.
-const mapSep41 = (b: V2Sep41Balance): MappedEntry => {
+const mapSep41 = (b: V2Sep41Balance): { key: string; value: MappedSoroban } => {
   const symbol = b.symbol || "";
   const name = b.name || "";
   return {
@@ -126,7 +158,9 @@ const mapSep41 = (b: V2Sep41Balance): MappedEntry => {
 // the share total plus the pool's constituent reserves ({asset, amount}[]),
 // which is the same shape as Horizon's Reserve[] that the LP-name rendering
 // in AccountAssets reads.
-const mapLiquidityPool = (b: V2LiquidityPoolBalance): MappedEntry => ({
+const mapLiquidityPool = (
+  b: V2LiquidityPoolBalance,
+): { key: string; value: MappedLiquidityPool } => ({
   key: `${b.liquidity_pool_id}:lp`,
   value: {
     liquidityPoolId: b.liquidity_pool_id,
@@ -140,7 +174,7 @@ const mapLiquidityPool = (b: V2LiquidityPoolBalance): MappedEntry => ({
 export const mapAccountBalancesV2 = (
   account: V2AccountBalances | undefined,
 ): AccountBalancesInterface => {
-  const balances = {} as any;
+  const balances: Record<string, MappedBalance> = {};
   const v2Balances = account?.balances || [];
 
   for (const balance of v2Balances) {
@@ -171,7 +205,12 @@ export const mapAccountBalancesV2 = (
   }
 
   return {
-    balances: balances as BalanceMap,
+    // Single cast at the boundary: the legacy BalanceMap declarations
+    // over-promise relative to every runtime path (v1 included) — they
+    // require `blockaidData` (stamped after mapping), a `token` on LP
+    // entries, and `limit`/`token.type` on Soroban entries, none of which
+    // exist at runtime. The mapped shapes above are the runtime truth.
+    balances: balances as unknown as BalanceMap,
     // Envelope fields come straight from the v2 response; an account missing
     // from the fan-out result reads as unfunded.
     isFunded: account?.is_funded ?? false,
