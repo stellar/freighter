@@ -1,5 +1,6 @@
 import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import { Icon } from "@stellar/design-system";
 import BigNumber from "bignumber.js";
 import classnames from "classnames";
 
@@ -53,7 +54,10 @@ export const TokenList = ({
       ) : (
         <>
           {isShowingHeader && (
-            <div className="TokenList__Assets__Header">{t("Your Tokens")}</div>
+            <div className="TokenList__Assets__Header">
+              <Icon.Coins03 />
+              {t("Tokens")}
+            </div>
           )}
           {sortedTokens
             .filter(
@@ -78,6 +82,8 @@ export const TokenList = ({
                   ? balance.token.issuer.key
                   : undefined;
               const isContract = "contractId" in balance;
+              const isNative =
+                "type" in balance.token && balance.token.type === "native";
               const canonical = getCanonicalFromAsset(code, issuerKey);
               const icon = icons[canonical];
               const availableBalance = getAvailableBalance({
@@ -107,13 +113,13 @@ export const TokenList = ({
                     />
                     <div className="TokenList__AssetRow__Title">
                       <div className="TokenList__AssetRow__Title__Heading">
-                        {title(balance)}
+                        {isNative ? t("Stellar Lumens") : title(balance)}
                       </div>
                       <div
                         className="TokenList__AssetRow__Title__Total"
                         data-testid={`${code}-balance`}
                       >
-                        {displayTotal}
+                        {displayTotal} {code}
                       </div>
                     </div>
                   </div>
