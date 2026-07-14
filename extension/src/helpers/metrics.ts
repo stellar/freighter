@@ -2,6 +2,7 @@ import * as amplitude from "@amplitude/analytics-browser";
 import { Action, Middleware } from "redux";
 import { PayloadAction } from "@reduxjs/toolkit";
 import { Location } from "react-router-dom";
+import { hash } from "stellar-sdk";
 
 import browser from "webextension-polyfill";
 
@@ -272,6 +273,25 @@ const getCoarsenedUserAgent = (): string => {
   }
 
   return "Unknown";
+};
+
+/**
+ * Cross-platform account identifier: lowercase hex SHA-256 of the full
+ * G-address string. Never emit a raw/truncated public key. Memoized per key
+ * so the hot emit path stays synchronous and does no repeat work. Mobile must
+ * hash the same G-address string with SHA-256 to produce a matching value.
+ */
+const accountIdHashCache = new Map<string, string>();
+export const getAccountIdHash = (publicKey: string): string => {
+  const cached = accountIdHashCache.get(publicKey);
+  if (cached) return cached;
+  try {
+    const digest = hash(Buffer.from(publicKey, "utf8")).toString("hex");
+    accountIdHashCache.set(publicKey, digest);
+    return digest;
+  } catch {
+    return "";
+  }
 };
 
 /**
