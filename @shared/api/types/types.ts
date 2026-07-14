@@ -32,6 +32,18 @@ export type IssuerKey = string; // {assetCode}:{issuer/contract ID} issuer pub k
 export type CollectibleKey = string; // {collectionAddress}:{tokenId}
 export type AssetVisibility = "visible" | "hidden";
 
+// stellar.expert top-tokens ("trending") entry for the swap Popular list. Lives
+// in @shared because both the popup and the background — which persists it to
+// chrome.storage.local — reference the shape.
+export interface TrendingAsset {
+  code: string;
+  issuer: string;
+  contract?: string;
+  domain: string | null;
+  icon?: string;
+  volume7d: number;
+}
+
 export interface AllowList {
   [networkName: string]: {
     [publicKey: string]: string[];
@@ -130,6 +142,7 @@ export interface Response {
   overriddenBlockaidResponse: string | null;
   recentProtocols: RecentProtocolEntry[];
   hasSeenDiscoverWelcome: boolean;
+  cachedSwapTopTokens: { tokens: TrendingAsset[]; updatedAt: number } | null;
 }
 
 export interface MemoRequiredAccount {

@@ -29,14 +29,40 @@ export const getNetworkCongestionTranslation = (
   return congestionMap[congestion] || congestion;
 };
 
+// In-session cache of the last resolved fee per network (keyed by Horizon URL).
+// feeStats() has no timeout, so callers must NOT block their UI on it — a slow
+// /fee_stats can hang the screen behind a fullscreen spinner. Caching lets a
+// re-entered screen seed the real fee immediately, avoiding a fee/balance flash,
+// without ever gating render on the request.
+const feeCacheByNetwork = new Map<
+  string,
+  { recommendedFee: string; networkCongestion: NetworkCongestion }
+>();
+
+/** Test-only: clear the module-scoped fee cache between tests. */
+export const resetFeeCacheForTests = () => feeCacheByNetwork.clear();
+
 export const useNetworkFees = () => {
   const { networkUrl, networkPassphrase } = useSelector(
     settingsNetworkDetailsSelector,
   );
-  const [recommendedFee, setRecommendedFee] = useState(BASE_FEE);
-  const [networkCongestion, setNetworkCongestion] = useState(
-    "" as NetworkCongestion,
+  const cachedFee = feeCacheByNetwork.get(networkUrl);
+  // recommendedFee is always expressed in XLM (the fetched value below is
+  // converted from stroops). Seed from the in-session cache when available,
+  // else the base fee in XLM (0.00001) rather than the raw stroop BASE_FEE, so
+  // the fee label and XLM available-balance show a sane value on first render
+  // instead of "100 XLM".
+  const [recommendedFee, setRecommendedFee] = useState(
+    cachedFee?.recommendedFee ?? stroopToXlm(BASE_FEE).toFixed(),
   );
+  const [networkCongestion, setNetworkCongestion] = useState(
+    cachedFee?.networkCongestion ?? ("" as NetworkCongestion),
+  );
+  // True until the first feeStats request settles for this network. Starts
+  // false when the fee is already cached this session. Callers may surface a
+  // hint on the fee field itself, but must NOT gate the whole screen on it —
+  // feeStats has no timeout and can hang indefinitely.
+  const [isLoading, setIsLoading] = useState(!cachedFee);
 
   const fetchData = async () => {
     try {
@@ -45,18 +71,27 @@ export const useNetworkFees = () => {
         await server.feeStats();
       const ledgerCapacityUsageNum = Number(ledgerCapacityUsage);
 
-      setRecommendedFee(stroopToXlm(maxFee.mode).toFixed());
+      const fee = stroopToXlm(maxFee.mode).toFixed();
+      let congestion: NetworkCongestion;
       if (ledgerCapacityUsageNum > 0.5 && ledgerCapacityUsageNum <= 0.75) {
-        setNetworkCongestion(NetworkCongestion.MEDIUM);
+        congestion = NetworkCongestion.MEDIUM;
       } else if (ledgerCapacityUsageNum > 0.75) {
-        setNetworkCongestion(NetworkCongestion.HIGH);
+        congestion = NetworkCongestion.HIGH;
       } else {
-        setNetworkCongestion(NetworkCongestion.LOW);
+        congestion = NetworkCongestion.LOW;
       }
-      return { recommendedFee, networkCongestion };
+      setRecommendedFee(fee);
+      setNetworkCongestion(congestion);
+      feeCacheByNetwork.set(networkUrl, {
+        recommendedFee: fee,
+        networkCongestion: congestion,
+      });
+      return { recommendedFee: fee, networkCongestion: congestion };
     } catch (e) {
-      setRecommendedFee(BASE_FEE);
+      setRecommendedFee(stroopToXlm(BASE_FEE).toFixed());
       return { recommendedFee };
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -67,5 +102,5 @@ export const useNetworkFees = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [networkUrl, networkPassphrase]);
 
-  return { recommendedFee, networkCongestion, fetchData };
+  return { recommendedFee, networkCongestion, fetchData, isLoading };
 };

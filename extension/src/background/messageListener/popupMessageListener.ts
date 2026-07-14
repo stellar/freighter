@@ -100,6 +100,8 @@ import { clearRecentProtocols } from "./handlers/clearRecentProtocols";
 import { getDiscoverWelcomeSeen } from "./handlers/getDiscoverWelcomeSeen";
 import { dismissDiscoverWelcome } from "./handlers/dismissDiscoverWelcome";
 import { callBackendV2 } from "background/helpers/callBackendV2";
+import { getCachedSwapTopTokens } from "./handlers/getCachedSwapTopTokens";
+import { cacheSwapTopTokens } from "./handlers/cacheSwapTopTokens";
 
 const numOfPublicKeysToCheck = 5;
 
@@ -612,6 +614,12 @@ export const popupMessageListener = (
     }
     case SERVICE_TYPES.DISMISS_DISCOVER_WELCOME: {
       return dismissDiscoverWelcome({ localStore });
+    }
+    case SERVICE_TYPES.GET_CACHED_SWAP_TOP_TOKENS: {
+      return getCachedSwapTopTokens({ request, localStore });
+    }
+    case SERVICE_TYPES.CACHE_SWAP_TOP_TOKENS: {
+      return cacheSwapTopTokens({ request, localStore });
     }
     case SERVICE_TYPES.MARK_QUEUE_ACTIVE: {
       const { uuid, isActive } = request as MarkQueueActiveMessage;

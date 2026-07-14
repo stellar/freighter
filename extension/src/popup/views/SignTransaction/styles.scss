@@ -22,7 +22,10 @@
   }
 
   &__BlockaidDetails {
-    margin-bottom: pxToRem(-16px);
+    // No own margin: the header above (TitleRow margin-bottom) and the card
+    // below (Metadata margin-top) already supply the popup's standard spacing,
+    // so adding margin here just doubled the gap.
+    margin: 0;
   }
 
   &__tabWrapper {

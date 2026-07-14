@@ -548,25 +548,33 @@ export const stubScanAssetSuspicious = async (page: Page | BrowserContext) => {
  * This simulates when BlockAid confirms an asset is safe
  */
 export const stubScanAssetSafe = async (page: Page | BrowserContext) => {
+  const benign = {
+    result_type: "Benign",
+    malicious_score: "0.0",
+    attack_types: {},
+    chain: "stellar",
+    address: "",
+    metadata: {
+      type: "",
+    },
+    fees: {},
+    features: [],
+    trading_limits: {},
+    financial_stats: {},
+  };
   await page.route("**/scan-asset**", async (route) => {
-    const json = {
-      data: {
-        result_type: "Benign",
-        malicious_score: "0.0",
-        attack_types: {},
-        chain: "stellar",
-        address: "",
-        metadata: {
-          type: "",
-        },
-        fees: {},
-        features: [],
-        trading_limits: {},
-        financial_stats: {},
-      },
-      error: null,
-    };
-    await route.fulfill({ json });
+    const url = new URL(route.request().url());
+    // The swap flow scans via the bulk endpoint, whose response is shaped
+    // { data: { results: { [assetId]: ... } } } rather than a single result.
+    if (url.pathname.includes("scan-asset-bulk")) {
+      const results: Record<string, typeof benign> = {};
+      url.searchParams.getAll("asset_ids").forEach((id) => {
+        results[id] = { ...benign, address: id };
+      });
+      await route.fulfill({ json: { data: { results }, error: null } });
+      return;
+    }
+    await route.fulfill({ json: { data: benign, error: null } });
   });
 };
 
