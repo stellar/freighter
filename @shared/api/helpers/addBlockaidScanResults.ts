@@ -51,22 +51,25 @@ export const addBlockaidScanResults = async (
   }
 
   try {
-    const url = new URL(`${INDEXER_URL}/scan-asset-bulk`);
-    for (const id of scannableIds) {
-      url.searchParams.append("asset_ids", id.replace(":", "-"));
-    }
-    const response = await fetch(url.href);
-    const data = await response.json();
-    const results = (data?.data?.results || {}) as {
-      [assetId: string]: BlockAidScanAssetResult;
-    };
-
-    Object.entries(results).forEach(([assetId, scanResult]) => {
-      const balanceKey = assetId.replace("-", ":");
-      if (balances[balanceKey]) {
-        (balances[balanceKey] as any).blockaidData = scanResult;
+    const chunkSize = 10;
+    for (let offset = 0; offset < scannableIds.length; offset += chunkSize) {
+      const url = new URL(`${INDEXER_URL}/scan-asset-bulk`);
+      for (const id of scannableIds.slice(offset, offset + chunkSize)) {
+        url.searchParams.append("asset_ids", id.replace(":", "-"));
       }
-    });
+      const response = await fetch(url.href);
+      const data = await response.json();
+      const results = (data?.data?.results || {}) as {
+        [assetId: string]: BlockAidScanAssetResult;
+      };
+
+      Object.entries(results).forEach(([assetId, scanResult]) => {
+        const balanceKey = assetId.replace("-", ":");
+        if (balances[balanceKey]) {
+          (balances[balanceKey] as any).blockaidData = scanResult;
+        }
+      });
+    }
   } catch (e) {
     captureException(`Failed to bulk scan v2 balances - ${e}`);
   }
