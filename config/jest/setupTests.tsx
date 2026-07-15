@@ -85,6 +85,7 @@ jest.mock("@amplitude/analytics-browser", () => ({
 jest.mock("helpers/metrics", () => ({
   registerHandler: () => {},
   emitMetric: () => {},
+  emitScreenViewed: () => {},
   initAmplitude: () => {},
   getUserId: () => "test-user-id",
   metricsMiddleware: jest.fn(

@@ -461,6 +461,73 @@ export const emitMetric = (name: string, body?: Record<string, unknown>) => {
   amplitude.track(name, eventProperties);
 };
 
+// ---------------------------------------------------------------------------
+// Screen views (screen.viewed consolidation — Slice B)
+// ---------------------------------------------------------------------------
+
+/**
+ * The product areas a screen can belong to. Attached to `screen.viewed` as the
+ * `flow` property so screens can be grouped cross-platform. `undefined` when no
+ * flow is a good fit (e.g. the home account view, debug/integration screens).
+ */
+export type Flow =
+  | "onboarding"
+  | "send"
+  | "swap"
+  | "signing"
+  | "assets"
+  | "settings"
+  | "discovery"
+  | "security"
+  | "history";
+
+/**
+ * Deterministically derives a canonical `screen_name` from a legacy
+ * `"loaded screen: X"` string: take the part after the prefix, trim, lowercase,
+ * and collapse each run of non-alphanumeric chars into a single `_`. Both
+ * platforms use identical legacy strings, so this yields cross-platform-
+ * consistent names automatically.
+ *
+ * e.g. "loaded screen: send payment amount" -> "send_payment_amount"
+ *      "loaded screen: account"             -> "account"
+ */
+export const toScreenName = (legacy: string): string =>
+  legacy
+    .replace(/^loaded screen:\s*/i, "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+
+/** Extra, screen-specific properties carried alongside the canonical event. */
+export interface ScreenViewedProps {
+  /** Product-area grouping; omitted from the event when undefined. */
+  flow?: Flow;
+  /** Sub-step marker (e.g. completion/success screens); omitted when undefined. */
+  step?: string;
+  [key: string]: unknown;
+}
+
+/**
+ * Emits the single canonical screen-view event, `screen.viewed`, carrying a
+ * `screen_name` plus optional `flow`, `step`, and any preserved extra props.
+ * `surface` and the rest of the common context are attached by emitMetric.
+ * Properties whose value is `undefined` are dropped so the wire payload stays
+ * clean (e.g. no `flow: undefined`).
+ */
+export const emitScreenViewed = (
+  screenName: string,
+  props: ScreenViewedProps = {},
+) => {
+  const body: Record<string, unknown> = { screen_name: screenName };
+  Object.entries(props).forEach(([key, value]) => {
+    if (value !== undefined) {
+      body[key] = value;
+    }
+  });
+  emitMetric(METRIC_NAMES.screenViewed, body);
+};
+
 /**
  * Persists balance-related metrics data for a given account.
  * Tracks whether HW, imported, or Freighter accounts are funded, and

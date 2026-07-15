@@ -192,4 +192,9 @@ export const METRIC_NAMES = {
   wallets: "loaded screen: wallets",
   confirmSidebarRequest: "loaded screen: confirm sidebar request",
   appOpened: "app.opened",
+
+  // Canonical, consolidated screen-view event. Screen identity is carried in
+  // the `screen_name` property (plus `flow`, `surface`, and `step` where a
+  // screen is a sub-step). See helpers/metrics#emitScreenViewed.
+  screenViewed: "screen.viewed",
 };
