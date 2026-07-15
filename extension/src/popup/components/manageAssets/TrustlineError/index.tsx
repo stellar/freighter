@@ -10,7 +10,7 @@ import { Button } from "@stellar/design-system";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { transactionSubmissionSelector } from "popup/ducks/transactionSubmission";
 
-import { emitMetric } from "helpers/metrics";
+import { emitMetric, emitScreenViewed } from "helpers/metrics";
 import { findAssetBalance } from "popup/helpers/balance";
 import { getResultCodes, RESULT_CODES } from "popup/helpers/parseTransaction";
 
@@ -151,7 +151,7 @@ export const TrustlineError = ({
 
   useEffect(() => {
     // emit general metric on view load
-    emitMetric(METRIC_NAMES.viewTrustlineError);
+    emitScreenViewed("trustline_error", { flow: "assets" });
   }, []);
 
   useEffect(() => {

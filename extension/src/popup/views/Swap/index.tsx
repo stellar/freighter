@@ -4,10 +4,9 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
 import { STEPS } from "popup/constants/swap";
-import { emitMetric } from "helpers/metrics";
+import { emitScreenViewed, ScreenViewedProps } from "helpers/metrics";
 import { InputType } from "helpers/transaction";
 import { TransactionConfirm } from "popup/components/InternalTransaction/SubmitTransaction";
-import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { SwapAsset } from "popup/components/swap/SwapAsset";
 import { SwapAmount } from "popup/components/swap/SwapAmount";
 import { AppDispatch } from "popup/App";
@@ -25,12 +24,16 @@ import { ROUTES } from "popup/constants/routes";
 import { resetSimulation } from "popup/ducks/token-payment";
 import { getAssetFromCanonical } from "helpers/stellar";
 
-const SWAP_METRIC_BY_STEP: Partial<Record<STEPS, string>> = {
-  [STEPS.SWAP_CONFIRM]: METRIC_NAMES.swapConfirm,
-  [STEPS.SET_DST_ASSET]: METRIC_NAMES.swapTo,
-  [STEPS.AMOUNT]: METRIC_NAMES.swapAmount,
-  [STEPS.CONFIRM_AMOUNT]: METRIC_NAMES.swapAmountReview,
-  [STEPS.SET_FROM_ASSET]: METRIC_NAMES.swapFrom,
+// Each swap sub-step emits the consolidated `screen.viewed` event; the step's
+// identity lives in `screen_name` (derived from the legacy "loaded screen: X").
+const SWAP_SCREEN_BY_STEP: Partial<
+  Record<STEPS, { screen_name: string } & ScreenViewedProps>
+> = {
+  [STEPS.SWAP_CONFIRM]: { screen_name: "swap_confirm", flow: "swap" },
+  [STEPS.SET_DST_ASSET]: { screen_name: "swap_to_asset", flow: "swap" },
+  [STEPS.AMOUNT]: { screen_name: "swap_amount", flow: "swap" },
+  [STEPS.CONFIRM_AMOUNT]: { screen_name: "swap_amount_review", flow: "swap" },
+  [STEPS.SET_FROM_ASSET]: { screen_name: "swap_from_asset", flow: "swap" },
 };
 
 export const Swap = () => {
@@ -46,9 +49,10 @@ export const Swap = () => {
     if (activeStep === lastEmittedStep.current) return;
     lastEmittedStep.current = activeStep;
 
-    const metric = SWAP_METRIC_BY_STEP[activeStep];
-    if (metric) {
-      emitMetric(metric);
+    const screen = SWAP_SCREEN_BY_STEP[activeStep];
+    if (screen) {
+      const { screen_name, ...props } = screen;
+      emitScreenViewed(screen_name, props);
     }
   }, [activeStep]);
 

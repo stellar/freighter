@@ -44,9 +44,8 @@ import { reRouteOnboarding } from "popup/helpers/route";
 import { findAssetBalance } from "popup/helpers/balance";
 import { getAssetDecimals, getAvailableBalance } from "popup/helpers/soroban";
 import { AppDispatch } from "popup/App";
-import { emitMetric } from "helpers/metrics";
+import { emitScreenViewed } from "helpers/metrics";
 import { AMOUNT_ERROR, InputType } from "helpers/transaction";
-import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { LoadingBackground } from "popup/basics/LoadingBackground";
 import { EditSettings } from "popup/components/InternalTransaction/EditSettings";
 import { ReviewTx } from "popup/components/InternalTransaction/ReviewTransaction";
@@ -540,7 +539,7 @@ export const SwapAmount = ({
                     isRounded
                     onClick={(e) => {
                       e.preventDefault();
-                      emitMetric(METRIC_NAMES.swapAmount);
+                      emitScreenViewed("swap_amount", { flow: "swap" });
                       if (inputType === "fiat") {
                         const availableUsd = formatAmount(
                           roundUsdValue(

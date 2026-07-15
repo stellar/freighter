@@ -8,7 +8,7 @@ import { showBackupPhrase } from "@shared/api/internal";
 
 import { ROUTES } from "popup/constants/routes";
 import { navigateTo, openTab } from "popup/helpers/navigate";
-import { emitMetric } from "helpers/metrics";
+import { emitMetric, emitScreenViewed } from "helpers/metrics";
 
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 
@@ -35,10 +35,9 @@ export const DisplayBackupPhrase = () => {
   const { state, fetchData } = useGetAppData();
 
   useEffect(() => {
-    emitMetric(
-      isPhraseUnlocked
-        ? METRIC_NAMES.viewDisplayBackupPhrase
-        : METRIC_NAMES.viewUnlockBackupPhrase,
+    emitScreenViewed(
+      isPhraseUnlocked ? "display_backup_phrase" : "unlock_backup_phrase",
+      { flow: "security" },
     );
   }, [isPhraseUnlocked]);
 

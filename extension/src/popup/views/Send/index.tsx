@@ -6,8 +6,7 @@ import { useTranslation } from "react-i18next";
 
 import { ROUTES } from "popup/constants/routes";
 import { STEPS } from "popup/constants/send-payment";
-import { emitMetric } from "helpers/metrics";
-import { METRIC_NAMES } from "popup/constants/metricsNames";
+import { emitScreenViewed, ScreenViewedProps } from "helpers/metrics";
 import { SendTo } from "popup/components/send/SendTo";
 import { SendAmount } from "popup/components/send/SendAmount";
 import { SendDestinationAsset } from "popup/components/send/SendDestinationAsset";
@@ -34,11 +33,21 @@ import { InputWidthProvider } from "./contexts/inputWidthContext";
 
 import "./styles.scss";
 
-const SEND_METRIC_BY_STEP: Partial<Record<STEPS, string>> = {
-  [STEPS.SET_SOURCE_ASSET]: METRIC_NAMES.sendPaymentSelectAsset,
-  [STEPS.AMOUNT]: METRIC_NAMES.sendPaymentAmount,
-  [STEPS.PAYMENT_CONFIRM]: METRIC_NAMES.sendPaymentConfirm,
-  [STEPS.DESTINATION]: METRIC_NAMES.sendPaymentTo,
+// Each send sub-step emits the consolidated `screen.viewed` event; the step's
+// identity lives in `screen_name` (derived from the legacy "loaded screen: X").
+const SEND_SCREEN_BY_STEP: Partial<
+  Record<STEPS, { screen_name: string } & ScreenViewedProps>
+> = {
+  [STEPS.SET_SOURCE_ASSET]: {
+    screen_name: "send_payment_select_asset",
+    flow: "send",
+  },
+  [STEPS.AMOUNT]: { screen_name: "send_payment_amount", flow: "send" },
+  [STEPS.PAYMENT_CONFIRM]: {
+    screen_name: "send_payment_confirm",
+    flow: "send",
+  },
+  [STEPS.DESTINATION]: { screen_name: "send_payment_to", flow: "send" },
 };
 
 /*
@@ -200,9 +209,10 @@ export const Send = () => {
     if (activeStep === lastEmittedStep.current) return;
     lastEmittedStep.current = activeStep;
 
-    const metric = SEND_METRIC_BY_STEP[activeStep];
-    if (metric) {
-      emitMetric(metric);
+    const screen = SEND_SCREEN_BY_STEP[activeStep];
+    if (screen) {
+      const { screen_name, ...props } = screen;
+      emitScreenViewed(screen_name, props);
     }
   }, [activeStep]);
 
