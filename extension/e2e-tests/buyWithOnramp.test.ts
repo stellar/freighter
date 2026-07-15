@@ -61,7 +61,7 @@ test("should show add XLM page and open Coinbase", async ({
   await loginToTestAccount({ page, extensionId, context, stubOverrides });
 
   await page.getByTestId("network-selector-open").click();
-  await page.getByText("Main Net").click();
+  await page.getByText("Mainnet").click();
   await expect(page.getByTestId("account-view")).toBeVisible({
     timeout: 30000,
   });
@@ -140,7 +140,7 @@ test("should show Buy with Coinbase and open Coinbase", async ({
   await loginToTestAccount({ page, extensionId, context, stubOverrides });
 
   await page.getByTestId("network-selector-open").click();
-  await page.getByText("Main Net").click();
+  await page.getByText("Mainnet").click();
   await expect(page.getByTestId("account-view")).toBeVisible({
     timeout: 30000,
   });
