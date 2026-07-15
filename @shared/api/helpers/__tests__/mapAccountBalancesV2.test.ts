@@ -94,7 +94,27 @@ describe("mapAccountBalancesV2", () => {
       expect((native.total as BigNumber).toString()).toBe("100");
       // available passes through from the server: 100 - 10 - 1.5
       expect((native.available as BigNumber).toString()).toBe("88.5");
-      expect((native as any).minimumBalance).toBe("1.5");
+    });
+
+    it("folds selling liabilities into minimumBalance (v1 parity)", () => {
+      // v2's minimum_balance excludes liabilities; the v1 contract includes
+      // them, and getAvailableBalance computes spendable XLM as
+      // total − minimumBalance. 1.5 reserve + 10 selling liabilities = 11.5,
+      // so total − minimumBalance === the server's own `available`.
+      const result = mapAccountBalancesV2(makeAccount([nativeBalance]));
+      const native = result.balances!.native as any;
+
+      expect(native.minimumBalance).toBe("11.5");
+      expect(
+        (native.total as BigNumber).minus(native.minimumBalance).toString(),
+      ).toBe((native.available as BigNumber).toString());
+    });
+
+    it("leaves minimumBalance at the base reserve when there are no selling liabilities", () => {
+      const result = mapAccountBalancesV2(
+        makeAccount([{ ...nativeBalance, selling_liabilities: "0" }]),
+      );
+      expect((result.balances!.native as any).minimumBalance).toBe("1.5");
     });
   });
 

@@ -32,7 +32,9 @@ import {
  *   - `blockaidData` → undefined (no spam/scam badges)
  *
  * `total` and `available` are both server-provided (`balance`/`available`) and
- * converted to BigNumber here, mirroring the v1 path.
+ * converted to BigNumber here, mirroring the v1 path. `minimumBalance` is
+ * re-derived as `minimum_balance + selling_liabilities` because the v1
+ * contract folds selling liabilities into it (see `mapNative`).
  *
  * Key formats match the v1/standalone conventions that `sortBalances` and
  * `filterHiddenBalances` (`popup/helpers/account.ts`) rely on:
@@ -81,7 +83,14 @@ const mapNative = (
     token: { type: "native", code: "XLM" },
     total: new BigNumber(b.balance),
     available: new BigNumber(b.available),
-    minimumBalance: b.minimum_balance,
+    // v2's minimum_balance is the bare base-reserve requirement (excludes
+    // liabilities), but the legacy contract folds selling liabilities in:
+    // getAvailableBalance (popup/helpers/soroban.ts) computes spendable XLM
+    // as total − minimumBalance, so without this the max-send/swap cap
+    // exceeds spendable XLM by the selling-liabilities amount.
+    minimumBalance: new BigNumber(b.minimum_balance)
+      .plus(b.selling_liabilities)
+      .toString(),
     buyingLiabilities: b.buying_liabilities,
     sellingLiabilities: b.selling_liabilities,
     blockaidData: undefined,
