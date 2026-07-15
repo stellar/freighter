@@ -16,6 +16,9 @@ jest.mock("popup/ducks/settings", () => ({
   settingsDataSharingSelector: jest.fn(() => true),
   settingsNetworkDetailsSelector: jest.fn(() => ({ network: "TESTNET" })),
 }));
+jest.mock("popup/ducks/cache", () => ({
+  balancesSelector: jest.fn(() => ({})),
+}));
 jest.mock("helpers/experimentClient", () => ({
   initExperimentClient: jest.fn(),
 }));
@@ -46,6 +49,7 @@ import { isSidebarMode } from "popup/helpers/isSidebarMode";
 import browser from "webextension-polyfill";
 import { publicKeySelector } from "popup/ducks/accountServices";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
+import { balancesSelector } from "popup/ducks/cache";
 import { METRICS_DATA } from "constants/localStorageTypes";
 import { AccountType } from "@shared/api/types";
 import { truncatedPublicKey } from "helpers/stellar";
@@ -112,6 +116,9 @@ describe("buildCommonContext (four-bucket property model)", () => {
       network: "TESTNET",
     });
     (publicKeySelector as unknown as jest.Mock).mockReturnValue(PUBLIC_KEY);
+    (balancesSelector as unknown as jest.Mock).mockReturnValue({
+      TESTNET: { [PUBLIC_KEY]: { isFunded: true } },
+    });
     localStorage.setItem(
       METRICS_DATA,
       JSON.stringify({
@@ -141,6 +148,38 @@ describe("buildCommonContext (four-bucket property model)", () => {
         "f56f6f2c6cf1b9388e3495dfab96f0c55ec5d217f481b2ae45d11b46145c44ef",
     });
     expect(ctx.surface).toBeDefined();
+  });
+
+  it("derives account_funded from the active account's cached balance entry, not the sticky metricsData flag", () => {
+    // metricsData says this account type has never been funded, but the
+    // balances cache has a funded entry for the *active* key — the cache
+    // must win. This is the fix for the sticky-per-type inaccuracy.
+    localStorage.setItem(
+      METRICS_DATA,
+      JSON.stringify({
+        accountType: AccountType.IMPORTED,
+        hwExists: false,
+        importedExists: true,
+        hwFunded: false,
+        importedFunded: false,
+        freighterFunded: false,
+        unfundedFreighterAccounts: [],
+      }),
+    );
+    (balancesSelector as unknown as jest.Mock).mockReturnValue({
+      TESTNET: { [PUBLIC_KEY]: { isFunded: true } },
+    });
+    expect(buildCommonContext({} as never)).toMatchObject({
+      account_funded: true,
+    });
+  });
+
+  it("omits account_funded when there is no cached balances entry for the active key", () => {
+    (balancesSelector as unknown as jest.Mock).mockReturnValue({});
+    const ctx = buildCommonContext({} as never);
+    expect(ctx).not.toHaveProperty("account_funded");
+    // Other active-account fields are still present.
+    expect(ctx).toMatchObject({ account_type: "imported_secret_key" });
   });
 
   it("drops SDK-supplied and legacy fields", () => {
@@ -178,6 +217,9 @@ describe("buildCommonContext (four-bucket property model)", () => {
         unfundedFreighterAccounts: [],
       }),
     );
+    (balancesSelector as unknown as jest.Mock).mockReturnValue({
+      TESTNET: { [PUBLIC_KEY]: { isFunded: true } },
+    });
     expect(buildCommonContext({} as never)).toMatchObject({
       account_type: "hardware",
       is_hardware_account: true,

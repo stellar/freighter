@@ -19,6 +19,7 @@ import {
   settingsNetworkDetailsSelector,
 } from "popup/ducks/settings";
 import { publicKeySelector } from "popup/ducks/accountServices";
+import { balancesSelector } from "popup/ducks/cache";
 import { Account, AccountType } from "@shared/api/types";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 
@@ -367,12 +368,6 @@ export const buildCommonContext = (
   const networkDetails = settingsNetworkDetailsSelector(state);
   const metricsData = getMetricsData();
 
-  const accountFundedByType: Record<AccountType, boolean> = {
-    [AccountType.FREIGHTER]: metricsData.freighterFunded,
-    [AccountType.HW]: metricsData.hwFunded,
-    [AccountType.IMPORTED]: metricsData.importedFunded,
-  };
-
   const context: Record<string, unknown> = {
     schema_version: SCHEMA_VERSION,
     surface: getSurface(),
@@ -386,7 +381,20 @@ export const buildCommonContext = (
     const idHash = getAccountIdHash(activePublicKey);
     if (idHash) context.account_id_hash = idHash;
     context.account_type = ACCOUNT_TYPE_WIRE[metricsData.accountType];
-    context.account_funded = accountFundedByType[metricsData.accountType];
+
+    // account_funded reflects the *active account's* cached balance, not a
+    // sticky per-account-type flag — funding one Freighter account must not
+    // make every other (unfunded) Freighter account report funded. Balances
+    // are cached per network, per public key (see popup/ducks/cache
+    // balanceData); omit the property entirely (rather than defaulting to
+    // false) when there is no cached entry, or the cached fundedness is
+    // unknown (`isFunded === null`), for the active key.
+    const cachedBalances =
+      balancesSelector(state)[networkDetails?.network ?? ""]?.[activePublicKey];
+    if (cachedBalances && cachedBalances.isFunded !== null) {
+      context.account_funded = cachedBalances.isFunded;
+    }
+
     context.is_hardware_account = metricsData.accountType === AccountType.HW;
   }
 
