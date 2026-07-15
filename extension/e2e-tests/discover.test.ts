@@ -83,7 +83,7 @@ test.describe("Discover critical flows (stubbed)", () => {
     });
 
     // Restore the default 200 stub before retrying
-    await page.unroute("**/protocols");
+    await page.context().unroute("**/protocols");
     await stubDiscoverProtocols(page);
 
     await page.getByTestId("discover-error-retry").click();

@@ -4,19 +4,19 @@ import {
   MAINNET_NETWORK_DETAILS,
   TESTNET_NETWORK_DETAILS,
 } from "@shared/constants/stellar";
+import { SERVICE_TYPES } from "@shared/constants/services";
+import { sendMessageToBackground } from "../helpers/extensionMessaging";
 
 jest.mock("@sentry/browser", () => ({
   captureException: jest.fn(),
 }));
 
-// getAccountIndexerBalances (the v1 path) calls getTokenIds, which messages
-// the background script — stub the messaging layer so the v1 routing tests
-// can run outside the extension.
-jest.mock("../helpers/extensionMessaging", () => ({
-  sendMessageToBackground: jest
-    .fn()
-    .mockResolvedValue({ tokenIdList: [], error: undefined }),
-}));
+// The v2 path routes through the FETCH_BACKEND_V2 background chokepoint
+// (#2879) via sendMessageToBackground; the v1 path (getAccountIndexerBalances)
+// also messages the background for getTokenIds. Mock the messaging layer and
+// branch on message type so both paths run outside the extension.
+jest.mock("../helpers/extensionMessaging");
+const mockedSend = sendMessageToBackground as jest.Mock;
 
 const PUBLIC_KEY = "GACCOUNTPUBLICKEY";
 
@@ -60,31 +60,44 @@ const v2AccountWithClassic = {
   ],
 };
 
+// Routes FETCH_BACKEND_V2 messages to the given chokepoint result and lets
+// every other message type (getTokenIds on the v1 path) resolve benignly.
+const mockBackendV2 = (result: { status: number; body: unknown }) => {
+  mockedSend.mockImplementation((msg: { type: SERVICE_TYPES }) => {
+    if (msg.type === SERVICE_TYPES.FETCH_BACKEND_V2) {
+      return Promise.resolve(result);
+    }
+    return Promise.resolve({ tokenIdList: [], error: undefined });
+  });
+};
+
+const backendV2Message = () =>
+  mockedSend.mock.calls
+    .map(([msg]) => msg)
+    .find((msg) => msg.type === SERVICE_TYPES.FETCH_BACKEND_V2);
+
+// The Blockaid bulk scan (v1 indexer) is still a direct fetch.
 const mockFetch = jest.fn();
 
 describe("getAccountBalancesV2", () => {
   beforeEach(() => {
+    mockedSend.mockReset();
     mockFetch.mockReset();
     global.fetch = mockFetch as any;
   });
 
-  it("POSTs the address to the v2 endpoint and maps the response", async () => {
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ data: [v2Account] }),
-    });
+  it("POSTs the address through the v2 chokepoint and maps the response", async () => {
+    mockBackendV2({ status: 200, body: { data: [v2Account] } });
 
     const result = await getAccountBalancesV2({
       publicKey: PUBLIC_KEY,
       networkDetails: TESTNET_NETWORK_DETAILS,
     });
 
-    const [url, options] = mockFetch.mock.calls[0];
-    expect(url).toBe(
-      "http://localhost:3003/api/v1/accounts/balances?network=TESTNET",
-    );
-    expect(options.method).toBe("POST");
-    expect(JSON.parse(options.body)).toEqual({ addresses: [PUBLIC_KEY] });
+    const message = backendV2Message();
+    expect(message.method).toBe("POST");
+    expect(message.path).toBe("/accounts/balances?network=TESTNET");
+    expect(JSON.parse(message.body)).toEqual({ addresses: [PUBLIC_KEY] });
 
     expect(result.isFunded).toBe(true);
     expect(result.subentryCount).toBe(2);
@@ -93,10 +106,7 @@ describe("getAccountBalancesV2", () => {
   });
 
   it("maps a missing account in the fan-out result as unfunded", async () => {
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ data: [] }),
-    });
+    mockBackendV2({ status: 200, body: { data: [] } });
 
     const result = await getAccountBalancesV2({
       publicKey: PUBLIC_KEY,
@@ -108,24 +118,20 @@ describe("getAccountBalancesV2", () => {
   });
 
   it("bulk-scans scannable assets and merges blockaidData on mainnet", async () => {
-    mockFetch
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ data: [v2AccountWithClassic] }),
-      })
-      .mockResolvedValueOnce({
-        json: async () => ({
-          data: { results: { "USDC-GISSUER": { result_type: "Spam" } } },
-        }),
-      });
+    mockBackendV2({ status: 200, body: { data: [v2AccountWithClassic] } });
+    mockFetch.mockResolvedValueOnce({
+      json: async () => ({
+        data: { results: { "USDC-GISSUER": { result_type: "Spam" } } },
+      }),
+    });
 
     const result = await getAccountBalancesV2({
       publicKey: PUBLIC_KEY,
       networkDetails: MAINNET_NETWORK_DETAILS,
     });
 
-    expect(mockFetch).toHaveBeenCalledTimes(2);
-    const [scanUrl] = mockFetch.mock.calls[1];
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+    const [scanUrl] = mockFetch.mock.calls[0];
     expect(scanUrl).toContain("/scan-asset-bulk");
     expect(scanUrl).toContain("USDC-GISSUER");
     expect((result.balances!["USDC:GISSUER"] as any).blockaidData).toEqual({
@@ -138,10 +144,7 @@ describe("getAccountBalancesV2", () => {
   });
 
   it("skips the Blockaid scan when shouldSkipScan is true", async () => {
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ data: [v2AccountWithClassic] }),
-    });
+    mockBackendV2({ status: 200, body: { data: [v2AccountWithClassic] } });
 
     const result = await getAccountBalancesV2({
       publicKey: PUBLIC_KEY,
@@ -149,20 +152,29 @@ describe("getAccountBalancesV2", () => {
       shouldSkipScan: true,
     });
 
-    expect(mockFetch).toHaveBeenCalledTimes(1);
+    expect(mockFetch).not.toHaveBeenCalled();
     // entries still carry the benign default so the payload matches v1
     expect(
       (result.balances!["USDC:GISSUER"] as any).blockaidData.result_type,
     ).toBe("Benign");
   });
 
-  it("throws on a non-OK response", async () => {
-    mockFetch.mockResolvedValueOnce({
-      ok: false,
+  it("throws on a non-200 chokepoint result", async () => {
+    mockBackendV2({
       status: 500,
-      statusText: "Internal Server Error",
-      text: async () => JSON.stringify({ message: "boom", statusCode: 500 }),
+      body: { message: "boom", statusCode: 500 },
     });
+
+    await expect(
+      getAccountBalancesV2({
+        publicKey: PUBLIC_KEY,
+        networkDetails: TESTNET_NETWORK_DETAILS,
+      }),
+    ).rejects.toThrow();
+  });
+
+  it("throws on a 200 with no data payload", async () => {
+    mockBackendV2({ status: 200, body: {} });
 
     await expect(
       getAccountBalancesV2({
@@ -175,23 +187,23 @@ describe("getAccountBalancesV2", () => {
 
 describe("getAccountBalances routing", () => {
   beforeEach(() => {
+    mockedSend.mockReset();
     mockFetch.mockReset();
     global.fetch = mockFetch as any;
   });
 
   it("routes to v2 by default on a supported network", async () => {
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ data: [v2Account] }),
-    });
+    mockBackendV2({ status: 200, body: { data: [v2Account] } });
 
     await getAccountBalances(PUBLIC_KEY, TESTNET_NETWORK_DETAILS, false);
 
-    const [url] = mockFetch.mock.calls[0];
-    expect(url).toContain("/accounts/balances");
+    const message = backendV2Message();
+    expect(message).toBeDefined();
+    expect(message.path).toContain("/accounts/balances");
   });
 
   it("routes to v1 when the flag is off", async () => {
+    mockBackendV2({ status: 200, body: { data: [] } });
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => ({ balances: {}, isFunded: true, subentryCount: 0 }),
@@ -205,11 +217,13 @@ describe("getAccountBalances routing", () => {
       false,
     );
 
+    expect(backendV2Message()).toBeUndefined();
     const [url] = mockFetch.mock.calls[0];
     expect(url).toContain(`/account-balances/${PUBLIC_KEY}`);
   });
 
   it("routes to v1 on Futurenet even with the flag on", async () => {
+    mockBackendV2({ status: 200, body: { data: [] } });
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => ({ balances: {}, isFunded: true, subentryCount: 0 }),
@@ -217,6 +231,7 @@ describe("getAccountBalances routing", () => {
 
     await getAccountBalances(PUBLIC_KEY, FUTURENET_NETWORK_DETAILS, false);
 
+    expect(backendV2Message()).toBeUndefined();
     const [url] = mockFetch.mock.calls[0];
     expect(url).toContain(`/account-balances/${PUBLIC_KEY}`);
   });

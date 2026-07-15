@@ -684,7 +684,11 @@ export const stubTokenDetails = async (page: Page | BrowserContext) => {
 };
 
 export const stubTokenPrices = async (page: Page | BrowserContext) => {
-  await page.route("**/token-prices*", async (route) => {
+  // token-prices is fetched from the background service worker (#2879), so it
+  // must be intercepted on the BrowserContext; page.route only sees the popup.
+  // Accept either a Page or a Context and normalize to the context.
+  const ctx = "context" in page ? page.context() : page;
+  await ctx.route("**/token-prices*", async (route) => {
     const request = route.request();
 
     let tokenIds = [] as string[];
@@ -1064,6 +1068,11 @@ export const stubAccountHistory = async (context: BrowserContext) => {
 
 export const stubCollectibles = async (
   page: Page,
+  // The /collectibles list is fetched from the background service worker
+  // (#2879), so it must be intercepted with context.route; page.route only
+  // sees the popup. tokenMetadata below is fetched by the popup, so it stays
+  // on page.route.
+  context: BrowserContext,
   shouldFailRefreshMetadata?: boolean,
 ) => {
   let tokenMetadataCount = 0;
@@ -1177,7 +1186,7 @@ export const stubCollectibles = async (
     };
     await route.fulfill({ json });
   });
-  await page.route("**/collectibles**", async (route) => {
+  await context.route("**/collectibles**", async (route) => {
     const json = {
       data: {
         collections: [
@@ -1255,7 +1264,11 @@ export const stubCollectibles = async (
   });
 };
 
-export const stubCollectiblesUnsuccessfulMetadata = async (page: Page) => {
+export const stubCollectiblesUnsuccessfulMetadata = async (
+  page: Page,
+  // See stubCollectibles: /collectibles is a background fetch (context.route).
+  context: BrowserContext,
+) => {
   await page.route("**/tokenMetadata/1", async (route) => {
     const json = {
       name: "Stellar Frog 1",
@@ -1293,7 +1306,7 @@ export const stubCollectiblesUnsuccessfulMetadata = async (page: Page) => {
     await route.fulfill({ json, status: 404 });
   });
 
-  await page.route("**/collectibles**", async (route) => {
+  await context.route("**/collectibles**", async (route) => {
     const json = {
       data: {
         collections: [
@@ -1431,7 +1444,7 @@ export const stubDiscoverProtocols = async (
   page: Page,
   payload: typeof DISCOVER_PROTOCOLS_STUB = DISCOVER_PROTOCOLS_STUB,
 ) => {
-  await page.route("**/protocols", async (route) => {
+  await page.context().route("**/protocols", async (route) => {
     await route.fulfill({ json: payload });
   });
 };
@@ -1445,7 +1458,7 @@ export const stubDiscoverProtocolsError = async (
   page: Page,
   status: number = 500,
 ) => {
-  await page.route("**/protocols", async (route) => {
+  await page.context().route("**/protocols", async (route) => {
     await route.fulfill({
       status,
       json: { error: "Simulated protocols fetch error" },
@@ -2923,7 +2936,7 @@ export const stubAllExternalApis = async (
   await stubDefaultAccountBalances(page);
 
   // Collectibles
-  await stubCollectibles(page);
+  await stubCollectibles(page, context);
 
   // Discover protocols
   await stubDiscoverProtocols(page);

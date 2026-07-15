@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { useDispatch } from "react-redux";
 import { Navigate, useLocation } from "react-router-dom";
-import { Loader, Notification } from "@stellar/design-system";
+import { Icon, Loader, Notification } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
 import { AppDispatch } from "popup/App";
@@ -131,11 +131,12 @@ export const SendDestinationAsset = ({
               resetAmountForm();
               goToNext();
             }}
-            isShowingHeader={false}
+            isShowingHeader={true}
           />
           {destAssetDataState.data.collectibles.collections.length > 0 && (
             <div className="SendDestinationAsset__collectibles-section">
               <div className="SendDestinationAsset__collectibles-heading">
+                <Icon.Image01 />
                 {t("Collectibles")}
               </div>
               <CollectiblesList

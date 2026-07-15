@@ -12,7 +12,7 @@ import {
   XdrLargeInt,
 } from "stellar-sdk";
 import BigNumber from "bignumber.js";
-import { INDEXER_URL, INDEXER_V2_URL } from "@shared/constants/mercury";
+import { INDEXER_URL } from "@shared/constants/mercury";
 import {
   AutoLockTimeoutMinutes,
   DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
@@ -86,6 +86,7 @@ import { SorobanRpcNotSupportedError } from "../constants/errors";
 import { APPLICATION_STATE } from "../constants/applicationState";
 import { WalletType } from "../constants/hardwareWallet";
 import { sendMessageToBackground } from "./helpers/extensionMessaging";
+import { fetchBackendV2 } from "./helpers/fetchBackendV2";
 import { getIconUrlFromIssuer } from "./helpers/getIconUrlFromIssuer";
 import { getLedgerKeyAccounts } from "./helpers/getLedgerKeyAccounts";
 import { stellarSdkServer, submitTx } from "./helpers/stellarSdkServer";
@@ -616,30 +617,28 @@ export const getAccountBalancesV2 = async ({
   // Multi-address fan-out endpoint; the extension fetches one account at a
   // time. Addresses travel in the POST body, so the URL carries no G-address
   // (no Sentry scrubbing needed, unlike the v1 GET path).
-  const url = new URL(`${INDEXER_V2_URL}/accounts/balances`);
-  url.searchParams.append("network", networkDetails.network);
-  const options = {
+  //
+  // This is a freighter-backend-v2 call, so it goes through the background
+  // chokepoint (callBackendV2), which attaches the per-request JWT (#2879).
+  // Balances are only fetched from an unlocked wallet, so the request always
+  // carries the JWT. The query lives in the path so callBackendV2 signs the
+  // JWT's methodAndPath over the server's full request-target (path + query).
+  const { status, body } = await fetchBackendV2({
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    path: `/accounts/balances?network=${networkDetails.network}`,
     body: JSON.stringify({ addresses: [publicKey] }),
-  };
-  const response = await fetch(url.href, options);
-  if (!response.ok) {
-    // Read the error body as text — a gateway/proxy failure may not be JSON,
-    // and the Sentry capture must run regardless.
-    const _err = await response.text();
-    captureException(
-      `Failed to fetch account balances v2 - ${response.status}: ${response.statusText}`,
-    );
+  });
+
+  // Mirror getTokenPrices: a 200 without a `data` payload is still a failure —
+  // callers' try/catch only handles throws, not bad returns.
+  const parsedResponse = body as { data?: V2AccountBalances[] };
+  if (status !== 200 || !parsedResponse?.data) {
+    const _err = JSON.stringify(body);
+    captureException(`Failed to fetch account balances v2 - ${status}`);
     throw new Error(_err);
   }
-  const parsedResponse = (await response.json()) as {
-    data: V2AccountBalances[];
-  };
 
-  const account = (parsedResponse.data || []).find(
+  const account = parsedResponse.data.find(
     (accountBalances) => accountBalances.address === publicKey,
   );
   // The v2 response has no Blockaid data yet — replicate the v1 backend's
@@ -664,7 +663,13 @@ export const getTokenPrices = async (
     return !tokenId.includes(":lp") && !isContractId(asset.issuer);
   });
 
-  let url: URL;
+  const requestBody = JSON.stringify({ tokens: filteredTokens });
+
+  // The v2 token-prices endpoint is a freighter-backend-v2 call, so it goes
+  // through the background chokepoint (callBackendV2), which attaches the
+  // per-request JWT (#2879). token-prices is only ever fetched from an unlocked
+  // wallet (a locked wallet shows the login screen), so this request always
+  // carries the JWT. The v1 path below is the legacy indexer, a direct fetch.
   if (useV2) {
     // The v2 token-prices endpoint only supports pubnet and testnet. Derive the
     // price network from the passphrase rather than networkDetails.network so
@@ -682,18 +687,36 @@ export const getTokenPrices = async (
     if (!filteredTokens.length) {
       return {};
     }
-    url = new URL(`${INDEXER_V2_URL}/token-prices`);
-    url.searchParams.append("network", priceNetwork);
-  } else {
-    url = new URL(`${INDEXER_URL}/token-prices`);
+
+    // Query lives in the path so callBackendV2 signs the JWT's methodAndPath
+    // over the server's full request-target (path + query) — see #2879.
+    const { status, body } = await fetchBackendV2({
+      method: "POST",
+      path: `/token-prices?network=${priceNetwork}`,
+      body: requestBody,
+    });
+
+    // Mirror getDiscoverData: a 200 without a `data` payload is still a
+    // failure — returning undefined would violate the Promise<ApiTokenPrices>
+    // contract (the caller's try/catch only handles throws, not bad returns).
+    const parsed = body as { data?: ApiTokenPrices };
+    if (status !== 200 || !parsed?.data) {
+      const _err = JSON.stringify(body);
+      captureException(`Failed to fetch token prices - ${status}: ${_err}`);
+      throw new Error(_err);
+    }
+
+    return parsed.data;
   }
+
+  // v1 (legacy) path — direct fetch to the v1 indexer, not a backend-v2 call.
+  const url = new URL(`${INDEXER_URL}/token-prices`);
   const options = {
     method: "POST",
     headers: {
-      // eslint-disable-next-line @typescript-eslint/naming-convention
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ tokens: filteredTokens }),
+    body: requestBody,
   };
   const response = await fetch(url.href, options);
   const parsedResponse = (await response.json()) as { data: ApiTokenPrices };
@@ -710,10 +733,13 @@ export const getTokenPrices = async (
 };
 
 export const getDiscoverData = async (): Promise<DiscoverData> => {
-  const url = new URL(`${INDEXER_V2_URL}/protocols`);
-  const response = await fetch(url.href);
-  const parsedResponse = (await response.json()) as {
-    data: {
+  const { status, body } = await fetchBackendV2({
+    method: "GET",
+    path: "/protocols",
+  });
+
+  const parsed = body as {
+    data?: {
       protocols: {
         description: string;
         icon_url: string;
@@ -727,15 +753,13 @@ export const getDiscoverData = async (): Promise<DiscoverData> => {
     };
   };
 
-  if (!response.ok || !parsedResponse.data) {
-    const _err = JSON.stringify(parsedResponse);
-    captureException(
-      `Failed to fetch discover entries - ${response.status}: ${response.statusText}`,
-    );
+  if (status !== 200 || !parsed?.data) {
+    const _err = JSON.stringify(parsed);
+    captureException(`Failed to fetch discover entries - ${status}`);
     throw new Error(_err);
   }
 
-  return parsedResponse.data.protocols.map((entry) => ({
+  return parsed.data.protocols.map((entry) => ({
     description: entry.description,
     iconUrl: entry.icon_url,
     name: entry.name,
