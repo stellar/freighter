@@ -14,13 +14,27 @@ test("Send persists inputs and submits to network", async ({
   test.slow();
   let isScanSkiped = false;
 
-  page.on("request", (request) => {
+  // The destination balance lookup must skip the Blockaid scan. On the v1
+  // path the fetcher marks this with should_skip_scan=true in the URL. On the
+  // v2 path the address travels in the POST body and shouldSkipScan is a
+  // client-side argument with no wire marker (it suppresses the follow-up
+  // scan-asset-bulk call — covered by getAccountBalancesV2 unit tests), so
+  // observing the v2 destination lookup itself is the check. v2 requests come
+  // from the background service worker, so listen on the context.
+  page.context().on("request", (request) => {
+    const url = request.url();
     if (
-      request
-        .url()
-        .includes("GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF")
+      url.includes("GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF")
     ) {
-      isScanSkiped = request.url().includes("should_skip_scan=true");
+      isScanSkiped = url.includes("should_skip_scan=true");
+    }
+    if (
+      url.includes("/accounts/balances") &&
+      (request.postData() || "").includes(
+        "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF",
+      )
+    ) {
+      isScanSkiped = true;
     }
   });
 
@@ -359,11 +373,14 @@ test("Send token payment to C address", async ({
             },
           },
           contractId: TEST_TOKEN_ADDRESS,
-          total: "500.0000000",
-          available: "500.0000000",
+          symbol: "E2E",
+          // Raw integer amount scaled by `decimals` (= 500.000 E2E), matching
+          // the wire shape for contract tokens — see stubAccountBalancesE2e.
+          decimals: 3,
+          total: "500000",
+          available: "500000",
           sellingLiabilities: "0",
           buyingLiabilities: "0",
-          minimumBalance: "0.5",
           blockaidData: {
             result_type: "Benign",
             malicious_score: "0.0",
