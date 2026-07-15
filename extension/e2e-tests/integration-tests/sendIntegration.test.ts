@@ -1,6 +1,7 @@
 import { TransactionBuilder } from "stellar-sdk";
 import { test, expect } from "../test-fixtures";
 import { loginToTestAccount } from "../helpers/login";
+import { stubAccountBalancesV2 } from "../helpers/stubs";
 import { TEST_M_ADDRESS, TEST_TOKEN_ADDRESS } from "../helpers/test-token";
 
 const isIntegrationMode = process.env.IS_INTEGRATION_MODE === "true";
@@ -201,8 +202,13 @@ test("Send XLM payments to recent federated addresses", async ({
   await submitAction.click({ force: true });
 
   let accountBalancesRequestWasMade = false;
-  page.on("request", (request) => {
-    if (request.url().includes("/account-balances/")) {
+  // v2 balances requests come from the background service worker, so listen
+  // on the context (which observes SW requests as well as page requests).
+  page.context().on("request", (request) => {
+    if (
+      request.url().includes("/account-balances/") ||
+      request.url().includes("/accounts/balances")
+    ) {
       accountBalancesRequestWasMade = true;
     }
   });
@@ -244,8 +250,13 @@ test("Send XLM payment to C address", async ({
   await submitAction.click({ force: true, timeout: 60000 });
 
   let accountBalancesRequestWasMade = false;
-  page.on("request", (request) => {
-    if (request.url().includes("/account-balances/")) {
+  // v2 balances requests come from the background service worker, so listen
+  // on the context (which observes SW requests as well as page requests).
+  page.context().on("request", (request) => {
+    if (
+      request.url().includes("/account-balances/") ||
+      request.url().includes("/accounts/balances")
+    ) {
       accountBalancesRequestWasMade = true;
     }
   });
@@ -288,8 +299,13 @@ test("Send XLM payment to M address", async ({
   await submitButton.click();
 
   let accountBalancesRequestWasMade = false;
-  page.on("request", (request) => {
-    if (request.url().includes("/account-balances/")) {
+  // v2 balances requests come from the background service worker, so listen
+  // on the context (which observes SW requests as well as page requests).
+  page.context().on("request", (request) => {
+    if (
+      request.url().includes("/account-balances/") ||
+      request.url().includes("/accounts/balances")
+    ) {
       accountBalancesRequestWasMade = true;
     }
   });
@@ -308,72 +324,73 @@ test("Send token payment to C address", async ({
 }) => {
   test.slow();
   const stubOverrides = async () => {
+    const balancesJson = {
+      balances: {
+        native: {
+          token: {
+            type: "native",
+            code: "XLM",
+          },
+          total: "10000.0000000",
+          available: "10000.0000000",
+          sellingLiabilities: "0",
+          buyingLiabilities: "0",
+          minimumBalance: "1",
+          blockaidData: {
+            result_type: "Benign",
+            malicious_score: "0.0",
+            attack_types: {},
+            chain: "stellar",
+            address: "",
+            metadata: {
+              type: "",
+            },
+            fees: {},
+            features: [],
+            trading_limits: {},
+            financial_stats: {},
+          },
+        },
+        [`E2E:${TEST_TOKEN_ADDRESS}`]: {
+          token: {
+            code: "E2E",
+            issuer: {
+              key: TEST_TOKEN_ADDRESS,
+            },
+          },
+          contractId: TEST_TOKEN_ADDRESS,
+          total: "500.0000000",
+          available: "500.0000000",
+          sellingLiabilities: "0",
+          buyingLiabilities: "0",
+          minimumBalance: "0.5",
+          blockaidData: {
+            result_type: "Benign",
+            malicious_score: "0.0",
+            attack_types: {},
+            chain: "stellar",
+            address: "",
+            metadata: {
+              type: "",
+            },
+            fees: {},
+            features: [],
+            trading_limits: {},
+            financial_stats: {},
+          },
+        },
+      },
+      isFunded: true,
+      subentryCount: 0,
+      error: {
+        horizon: null,
+        soroban: null,
+      },
+    };
     await page.route("**/account-balances/**", async (route) => {
-      const json = {
-        balances: {
-          native: {
-            token: {
-              type: "native",
-              code: "XLM",
-            },
-            total: "10000.0000000",
-            available: "10000.0000000",
-            sellingLiabilities: "0",
-            buyingLiabilities: "0",
-            minimumBalance: "1",
-            blockaidData: {
-              result_type: "Benign",
-              malicious_score: "0.0",
-              attack_types: {},
-              chain: "stellar",
-              address: "",
-              metadata: {
-                type: "",
-              },
-              fees: {},
-              features: [],
-              trading_limits: {},
-              financial_stats: {},
-            },
-          },
-          [`E2E:${TEST_TOKEN_ADDRESS}`]: {
-            token: {
-              code: "E2E",
-              issuer: {
-                key: TEST_TOKEN_ADDRESS,
-              },
-            },
-            contractId: TEST_TOKEN_ADDRESS,
-            total: "500.0000000",
-            available: "500.0000000",
-            sellingLiabilities: "0",
-            buyingLiabilities: "0",
-            minimumBalance: "0.5",
-            blockaidData: {
-              result_type: "Benign",
-              malicious_score: "0.0",
-              attack_types: {},
-              chain: "stellar",
-              address: "",
-              metadata: {
-                type: "",
-              },
-              fees: {},
-              features: [],
-              trading_limits: {},
-              financial_stats: {},
-            },
-          },
-        },
-        isFunded: true,
-        subentryCount: 0,
-        error: {
-          horizon: null,
-          soroban: null,
-        },
-      };
-      await route.fulfill({ json });
+      await route.fulfill({ json: balancesJson });
     });
+    await stubAccountBalancesV2(page, balancesJson);
   };
   await loginToTestAccount({
     page,
@@ -442,8 +459,13 @@ test("Send token payment to C address", async ({
   await submitButton.click();
 
   let accountBalancesRequestWasMade = false;
-  page.on("request", (request) => {
-    if (request.url().includes("/account-balances/")) {
+  // v2 balances requests come from the background service worker, so listen
+  // on the context (which observes SW requests as well as page requests).
+  page.context().on("request", (request) => {
+    if (
+      request.url().includes("/account-balances/") ||
+      request.url().includes("/accounts/balances")
+    ) {
       accountBalancesRequestWasMade = true;
     }
   });

@@ -4,6 +4,7 @@ import { login, loginToTestAccount, switchToMainnet } from "./helpers/login";
 import { TEST_TOKEN_ADDRESS } from "./helpers/test-token";
 import {
   stubAccountBalancesE2e,
+  stubAccountBalancesV2,
   stubAccountBalancesWithUnfundedDestination,
   stubAccountBalancesWithUSDC,
   stubContractSpec,
@@ -73,6 +74,11 @@ test("Swap doesn't throw error when account is unfunded", async ({
   page,
   extensionId,
 }) => {
+  // This test intentionally uses the unstubbed login() (real endpoints) with
+  // an unfunded account. The v2 balances endpoint can't serve every network in
+  // the beta env yet, so stub just that route as unfunded (empty fan-out
+  // result) to keep the account state deterministic.
+  await stubAccountBalancesV2(page, () => null);
   await login({ page, extensionId });
 
   await page.getByTestId("nav-link-swap").click();
@@ -86,143 +92,144 @@ test("Swap shows correct balances for assets", async ({
   context,
 }) => {
   const stubOverrides = async () => {
+    const json = {
+      balances: {
+        "FOO:GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY": {
+          token: {
+            type: "credit_alphanum12",
+            code: "FOO",
+            issuer: {
+              key: "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
+            },
+          },
+          sellingLiabilities: "0",
+          buyingLiabilities: "0",
+          total: "100",
+          limit: "922337203685.4775807",
+          available: "100",
+          blockaidData: {
+            result_type: "Benign",
+            malicious_score: "0.0",
+            attack_types: {},
+            chain: "stellar",
+            address:
+              "FOO-GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
+            metadata: {
+              external_links: {},
+            },
+            fees: {},
+            features: [],
+            trading_limits: {},
+            financial_stats: {
+              top_holders: [],
+            },
+          },
+        },
+        "BAZ:GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY": {
+          token: {
+            type: "credit_alphanum12",
+            code: "BAZ",
+            issuer: {
+              key: "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
+            },
+          },
+          sellingLiabilities: "0",
+          buyingLiabilities: "0",
+          total: "10",
+          limit: "922337203685.4775807",
+          available: "10",
+          blockaidData: {
+            result_type: "Benign",
+            malicious_score: "0.0",
+            attack_types: {},
+            chain: "stellar",
+            address:
+              "BAZ-GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
+            metadata: {
+              external_links: {},
+            },
+            fees: {},
+            features: [
+              {
+                feature_id: "HIGH_REPUTATION_TOKEN",
+                type: "Benign",
+                description: "Token with verified high reputation",
+              },
+            ],
+            trading_limits: {},
+            financial_stats: {
+              top_holders: [],
+            },
+          },
+        },
+        native: {
+          token: {
+            type: "native",
+            code: "XLM",
+          },
+          total: "999",
+          available: "999",
+          sellingLiabilities: "0",
+          buyingLiabilities: "0",
+          minimumBalance: "1",
+          blockaidData: {
+            result_type: "Benign",
+            malicious_score: "0.0",
+            attack_types: {},
+            chain: "stellar",
+            address: "",
+            metadata: {
+              type: "",
+            },
+            fees: {},
+            features: [],
+            trading_limits: {},
+            financial_stats: {},
+          },
+        },
+        "PBT:GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY": {
+          token: {
+            code: "PBT",
+            issuer: {
+              key: "CAZXRTOKNUQ2JQQF3NCRU7GYMDJNZ2NMQN6IGN4FCT5DWPODMPVEXSND",
+            },
+          },
+          contractId:
+            "CAZXRTOKNUQ2JQQF3NCRU7GYMDJNZ2NMQN6IGN4FCT5DWPODMPVEXSND",
+          symbol: "PBT",
+          decimals: 5,
+          total: "9899700",
+          available: "9899700",
+          blockaidData: {
+            result_type: "Benign",
+            malicious_score: "0.0",
+            attack_types: {},
+            chain: "stellar",
+            address:
+              "PBT-CAZXRTOKNUQ2JQQF3NCRU7GYMDJNZ2NMQN6IGN4FCT5DWPODMPVEXSND",
+            metadata: {
+              external_links: {},
+            },
+            fees: {},
+            features: [],
+            trading_limits: {},
+            financial_stats: {
+              top_holders: [],
+            },
+          },
+        },
+      },
+      isFunded: true,
+      subentryCount: 0,
+      error: {
+        horizon: null,
+        soroban: null,
+      },
+    };
     await page.route("*/**/account-balances/*", async (route) => {
-      const json = {
-        balances: {
-          "FOO:GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY": {
-            token: {
-              type: "credit_alphanum12",
-              code: "FOO",
-              issuer: {
-                key: "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
-              },
-            },
-            sellingLiabilities: "0",
-            buyingLiabilities: "0",
-            total: "100",
-            limit: "922337203685.4775807",
-            available: "100",
-            blockaidData: {
-              result_type: "Benign",
-              malicious_score: "0.0",
-              attack_types: {},
-              chain: "stellar",
-              address:
-                "FOO-GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
-              metadata: {
-                external_links: {},
-              },
-              fees: {},
-              features: [],
-              trading_limits: {},
-              financial_stats: {
-                top_holders: [],
-              },
-            },
-          },
-          "BAZ:GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY": {
-            token: {
-              type: "credit_alphanum12",
-              code: "BAZ",
-              issuer: {
-                key: "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
-              },
-            },
-            sellingLiabilities: "0",
-            buyingLiabilities: "0",
-            total: "10",
-            limit: "922337203685.4775807",
-            available: "10",
-            blockaidData: {
-              result_type: "Benign",
-              malicious_score: "0.0",
-              attack_types: {},
-              chain: "stellar",
-              address:
-                "BAZ-GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
-              metadata: {
-                external_links: {},
-              },
-              fees: {},
-              features: [
-                {
-                  feature_id: "HIGH_REPUTATION_TOKEN",
-                  type: "Benign",
-                  description: "Token with verified high reputation",
-                },
-              ],
-              trading_limits: {},
-              financial_stats: {
-                top_holders: [],
-              },
-            },
-          },
-          native: {
-            token: {
-              type: "native",
-              code: "XLM",
-            },
-            total: "999",
-            available: "999",
-            sellingLiabilities: "0",
-            buyingLiabilities: "0",
-            minimumBalance: "1",
-            blockaidData: {
-              result_type: "Benign",
-              malicious_score: "0.0",
-              attack_types: {},
-              chain: "stellar",
-              address: "",
-              metadata: {
-                type: "",
-              },
-              fees: {},
-              features: [],
-              trading_limits: {},
-              financial_stats: {},
-            },
-          },
-          "PBT:GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY": {
-            token: {
-              code: "PBT",
-              issuer: {
-                key: "CAZXRTOKNUQ2JQQF3NCRU7GYMDJNZ2NMQN6IGN4FCT5DWPODMPVEXSND",
-              },
-            },
-            contractId:
-              "CAZXRTOKNUQ2JQQF3NCRU7GYMDJNZ2NMQN6IGN4FCT5DWPODMPVEXSND",
-            symbol: "PBT",
-            decimals: 5,
-            total: "9899700",
-            available: "9899700",
-            blockaidData: {
-              result_type: "Benign",
-              malicious_score: "0.0",
-              attack_types: {},
-              chain: "stellar",
-              address:
-                "PBT-CAZXRTOKNUQ2JQQF3NCRU7GYMDJNZ2NMQN6IGN4FCT5DWPODMPVEXSND",
-              metadata: {
-                external_links: {},
-              },
-              fees: {},
-              features: [],
-              trading_limits: {},
-              financial_stats: {
-                top_holders: [],
-              },
-            },
-          },
-        },
-        isFunded: true,
-        subentryCount: 0,
-        error: {
-          horizon: null,
-          soroban: null,
-        },
-      };
       await route.fulfill({ json });
     });
+    await stubAccountBalancesV2(page, json);
   };
   test.slow();
   await loginToTestAccount({ page, extensionId, context, stubOverrides });
@@ -506,13 +513,11 @@ test("Send doesn't throw error when creating muxed account", async ({
 
   const stubOverrides = async () => {
     // Override account-balances to return 0 XLM only for the muxed account address
-    await page.route("**/account-balances/**", async (route) => {
-      const url = route.request().url();
-      const isMuxedAccount = url.includes(
+    const makeBalances = (addressOrUrl: string) => {
+      const isMuxedAccount = addressOrUrl.includes(
         "GCQ7EGW7VXHI4AKJAFADOIHCSK2OCVA42KUETUK5LQ3LVSEQEEKP7O7B",
       );
-
-      const json = {
+      return {
         balances: {
           native: {
             token: {
@@ -547,8 +552,11 @@ test("Send doesn't throw error when creating muxed account", async ({
           soroban: null,
         },
       };
-      await route.fulfill({ json });
+    };
+    await page.route("**/account-balances/**", async (route) => {
+      await route.fulfill({ json: makeBalances(route.request().url()) });
     });
+    await stubAccountBalancesV2(page, (address) => makeBalances(address));
   };
 
   await loginToTestAccount({
@@ -589,13 +597,11 @@ test("Send can review formatted inputs", async ({
 
   const stubOverrides = async () => {
     // Override account-balances to return 0 XLM only for the muxed account address
-    await page.route("**/account-balances/**", async (route) => {
-      const url = route.request().url();
-      const isMuxedAccount = url.includes(
+    const makeBalances = (addressOrUrl: string) => {
+      const isMuxedAccount = addressOrUrl.includes(
         "GCQ7EGW7VXHI4AKJAFADOIHCSK2OCVA42KUETUK5LQ3LVSEQEEKP7O7B",
       );
-
-      const json = {
+      return {
         balances: {
           native: {
             token: {
@@ -630,8 +636,11 @@ test("Send can review formatted inputs", async ({
           soroban: null,
         },
       };
-      await route.fulfill({ json });
+    };
+    await page.route("**/account-balances/**", async (route) => {
+      await route.fulfill({ json: makeBalances(route.request().url()) });
     });
+    await stubAccountBalancesV2(page, (address) => makeBalances(address));
   };
 
   await loginToTestAccount({
@@ -920,34 +929,34 @@ test("Swap resets amount when user selects new source asset", async ({
 }) => {
   test.slow();
   const stubOverrides = async () => {
-    await page.route("**/account-balances/**", async (route) => {
-      await route.fulfill({
-        json: {
-          balances: {
-            native: {
-              token: { type: "native", code: "XLM" },
-              total: "999",
-              available: "999",
-              minimumBalance: "1",
-            },
-            "USDC:GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5": {
-              token: {
-                type: "credit_alphanum4",
-                code: "USDC",
-                issuer: {
-                  key: "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
-                },
-              },
-              total: "100",
-              available: "100",
+    const balancesJson = {
+      balances: {
+        native: {
+          token: { type: "native", code: "XLM" },
+          total: "999",
+          available: "999",
+          minimumBalance: "1",
+        },
+        "USDC:GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5": {
+          token: {
+            type: "credit_alphanum4",
+            code: "USDC",
+            issuer: {
+              key: "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
             },
           },
-          isFunded: true,
-          subentryCount: 0,
-          error: { horizon: null, soroban: null },
+          total: "100",
+          available: "100",
         },
-      });
+      },
+      isFunded: true,
+      subentryCount: 0,
+      error: { horizon: null, soroban: null },
+    };
+    await page.route("**/account-balances/**", async (route) => {
+      await route.fulfill({ json: balancesJson });
     });
+    await stubAccountBalancesV2(page, balancesJson);
   };
   await loginToTestAccount({
     page,
@@ -994,34 +1003,34 @@ test("Swap preserves amount when selecting destination asset", async ({
 }) => {
   test.slow();
   const stubOverrides = async () => {
-    await page.route("**/account-balances/**", async (route) => {
-      await route.fulfill({
-        json: {
-          balances: {
-            native: {
-              token: { type: "native", code: "XLM" },
-              total: "999",
-              available: "999",
-              minimumBalance: "1",
-            },
-            "USDC:GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5": {
-              token: {
-                type: "credit_alphanum4",
-                code: "USDC",
-                issuer: {
-                  key: "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
-                },
-              },
-              total: "100",
-              available: "100",
+    const balancesJson = {
+      balances: {
+        native: {
+          token: { type: "native", code: "XLM" },
+          total: "999",
+          available: "999",
+          minimumBalance: "1",
+        },
+        "USDC:GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5": {
+          token: {
+            type: "credit_alphanum4",
+            code: "USDC",
+            issuer: {
+              key: "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
             },
           },
-          isFunded: true,
-          subentryCount: 0,
-          error: { horizon: null, soroban: null },
+          total: "100",
+          available: "100",
         },
-      });
+      },
+      isFunded: true,
+      subentryCount: 0,
+      error: { horizon: null, soroban: null },
+    };
+    await page.route("**/account-balances/**", async (route) => {
+      await route.fulfill({ json: balancesJson });
     });
+    await stubAccountBalancesV2(page, balancesJson);
   };
   await loginToTestAccount({
     page,
@@ -1064,34 +1073,34 @@ test("Swap resets state when navigating back to account", async ({
 }) => {
   test.slow();
   const stubOverrides = async () => {
-    await page.route("**/account-balances/**", async (route) => {
-      await route.fulfill({
-        json: {
-          balances: {
-            native: {
-              token: { type: "native", code: "XLM" },
-              total: "999",
-              available: "999",
-              minimumBalance: "1",
-            },
-            "USDC:GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5": {
-              token: {
-                type: "credit_alphanum4",
-                code: "USDC",
-                issuer: {
-                  key: "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
-                },
-              },
-              total: "100",
-              available: "100",
+    const balancesJson = {
+      balances: {
+        native: {
+          token: { type: "native", code: "XLM" },
+          total: "999",
+          available: "999",
+          minimumBalance: "1",
+        },
+        "USDC:GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5": {
+          token: {
+            type: "credit_alphanum4",
+            code: "USDC",
+            issuer: {
+              key: "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
             },
           },
-          isFunded: true,
-          subentryCount: 0,
-          error: { horizon: null, soroban: null },
+          total: "100",
+          available: "100",
         },
-      });
+      },
+      isFunded: true,
+      subentryCount: 0,
+      error: { horizon: null, soroban: null },
+    };
+    await page.route("**/account-balances/**", async (route) => {
+      await route.fulfill({ json: balancesJson });
     });
+    await stubAccountBalancesV2(page, balancesJson);
   };
   await loginToTestAccount({
     page,

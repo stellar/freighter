@@ -42,7 +42,11 @@
 import { test, expect } from "./test-fixtures";
 import { Page } from "@playwright/test";
 import { loginToTestAccount, switchToMainnet } from "./helpers/login";
-import { stubScanTxMalicious, stubScanTxSafe } from "./helpers/stubs";
+import {
+  stubAccountBalancesV2,
+  stubScanTxMalicious,
+  stubScanTxSafe,
+} from "./helpers/stubs";
 // Soroban contract address — searching for this should produce the Soroban empty state.
 const SOROBAN_CONTRACT_ADDRESS =
   "CAZXRTOKNUQ2JQQF3NCRU7GYMDJNZ2NMQN6IGN4FCT5DWPODMPVEXSND";
@@ -81,32 +85,32 @@ test("held-to-held swap reaches review screen", async ({
     // Hold both XLM (default source) and USDC so a held-to-held swap is
     // possible: the destination picker hides the source, so a second held
     // token is required to have anything to pick.
-    await page.route("**/account-balances/**", async (route) => {
-      await route.fulfill({
-        json: {
-          balances: {
-            native: {
-              token: { type: "native", code: "XLM" },
-              total: "10000.0000000",
-              available: "10000.0000000",
-              minimumBalance: "1",
-            },
-            [`USDC:${USDC_ISSUER}`]: {
-              token: {
-                type: "credit_alphanum4",
-                code: "USDC",
-                issuer: { key: USDC_ISSUER },
-              },
-              total: "100",
-              available: "100",
-            },
-          },
-          isFunded: true,
-          subentryCount: 0,
-          error: { horizon: null, soroban: null },
+    const balancesJson = {
+      balances: {
+        native: {
+          token: { type: "native", code: "XLM" },
+          total: "10000.0000000",
+          available: "10000.0000000",
+          minimumBalance: "1",
         },
-      });
+        [`USDC:${USDC_ISSUER}`]: {
+          token: {
+            type: "credit_alphanum4",
+            code: "USDC",
+            issuer: { key: USDC_ISSUER },
+          },
+          total: "100",
+          available: "100",
+        },
+      },
+      isFunded: true,
+      subentryCount: 0,
+      error: { horizon: null, soroban: null },
+    };
+    await page.route("**/account-balances/**", async (route) => {
+      await route.fulfill({ json: balancesJson });
     });
+    await stubAccountBalancesV2(page, balancesJson);
     // Path so the held-to-held swap simulates and reaches the review.
     await page.route("**/paths**", (route) =>
       route.fulfill({
@@ -258,38 +262,38 @@ test("shows XLM-reserve sheet when balance cannot cover the reserve", async ({
 
   const stubOverrides = async () => {
     // Override default balances with a near-empty XLM account
+    const balancesJson = {
+      balances: {
+        native: {
+          token: { type: "native", code: "XLM" },
+          total: "0.6",
+          available: "0.1",
+          minimumBalance: "0.5",
+          sellingLiabilities: "0",
+          buyingLiabilities: "0",
+          blockaidData: {
+            result_type: "Benign",
+            malicious_score: "0.0",
+            attack_types: {},
+            chain: "stellar",
+            address: "",
+            metadata: { type: "" },
+            fees: {},
+            features: [],
+            trading_limits: {},
+            financial_stats: {},
+          },
+        },
+      },
+      isFunded: true,
+      subentryCount: 0,
+      error: { horizon: null, soroban: null },
+    };
     await page.unroute("**/account-balances/**");
     await page.route("*/**/account-balances/*", (route) =>
-      route.fulfill({
-        json: {
-          balances: {
-            native: {
-              token: { type: "native", code: "XLM" },
-              total: "0.6",
-              available: "0.1",
-              minimumBalance: "0.5",
-              sellingLiabilities: "0",
-              buyingLiabilities: "0",
-              blockaidData: {
-                result_type: "Benign",
-                malicious_score: "0.0",
-                attack_types: {},
-                chain: "stellar",
-                address: "",
-                metadata: { type: "" },
-                fees: {},
-                features: [],
-                trading_limits: {},
-                financial_stats: {},
-              },
-            },
-          },
-          isFunded: true,
-          subentryCount: 0,
-          error: { horizon: null, soroban: null },
-        },
-      }),
+      route.fulfill({ json: balancesJson }),
     );
+    await stubAccountBalancesV2(page, balancesJson);
     // Stub search so AQUA appears in results
     await page.unroute("**/asset?search**");
     await page.route("**/asset?search**", (route) =>
@@ -813,10 +817,7 @@ test("switching networks repopulates the swap picker held tokens", async ({
 
   const stubOverrides = async () => {
     // Network-aware balances: XLM everywhere, HELDONLY held only on Mainnet.
-    await page.route("**/account-balances/**", async (route) => {
-      const network = new URL(route.request().url()).searchParams.get(
-        "network",
-      );
+    const makeBalances = (network: string | null) => {
       const balances: Record<string, unknown> = {
         native: {
           token: { type: "native", code: "XLM" },
@@ -835,15 +836,22 @@ test("switching networks repopulates the swap picker held tokens", async ({
           available: "50",
         };
       }
-      await route.fulfill({
-        json: {
-          balances,
-          isFunded: true,
-          subentryCount: 0,
-          error: { horizon: null, soroban: null },
-        },
-      });
+      return {
+        balances,
+        isFunded: true,
+        subentryCount: 0,
+        error: { horizon: null, soroban: null },
+      };
+    };
+    await page.route("**/account-balances/**", async (route) => {
+      const network = new URL(route.request().url()).searchParams.get(
+        "network",
+      );
+      await route.fulfill({ json: makeBalances(network) });
     });
+    await stubAccountBalancesV2(page, (_address, network) =>
+      makeBalances(network),
+    );
   };
 
   await loginToTestAccount({ page, extensionId, context, stubOverrides });
@@ -1007,31 +1015,31 @@ test("swap picker fallback still lists held tokens", async ({
     await page.route("**/asset?limit=50**", (route) => route.abort("failed"));
     // The account still holds USDC (besides XLM), so the held-only fallback has
     // something to show and remains usable.
-    await page.route("**/account-balances/**", async (route) => {
-      await route.fulfill({
-        json: {
-          balances: {
-            native: {
-              token: { type: "native", code: "XLM" },
-              total: "100",
-              available: "100",
-            },
-            [`USDC:${USDC_ISSUER}`]: {
-              token: {
-                type: "credit_alphanum4",
-                code: "USDC",
-                issuer: { key: USDC_ISSUER },
-              },
-              total: "50",
-              available: "50",
-            },
-          },
-          isFunded: true,
-          subentryCount: 0,
-          error: { horizon: null, soroban: null },
+    const balancesJson = {
+      balances: {
+        native: {
+          token: { type: "native", code: "XLM" },
+          total: "100",
+          available: "100",
         },
-      });
+        [`USDC:${USDC_ISSUER}`]: {
+          token: {
+            type: "credit_alphanum4",
+            code: "USDC",
+            issuer: { key: USDC_ISSUER },
+          },
+          total: "50",
+          available: "50",
+        },
+      },
+      isFunded: true,
+      subentryCount: 0,
+      error: { horizon: null, soroban: null },
+    };
+    await page.route("**/account-balances/**", async (route) => {
+      await route.fulfill({ json: balancesJson });
     });
+    await stubAccountBalancesV2(page, balancesJson);
   };
 
   await loginToTestAccount({ page, extensionId, context, stubOverrides });

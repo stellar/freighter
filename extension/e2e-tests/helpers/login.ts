@@ -53,12 +53,19 @@ export const login = async ({
   await page.getByTestId("network-selector-open").click();
   await page.getByText("Test Net").click();
 
-  // Wait for account-balances API call with TESTNET network param before clicking
-  const balancesPromise = page.waitForResponse(
-    (response) =>
-      response.url().includes("/account-balances/") &&
-      response.url().includes("network=TESTNET"),
-  );
+  // Wait for the balances API call with TESTNET network param before clicking.
+  // Matches both the v1 GET (/account-balances/) and the v2 POST
+  // (/accounts/balances); v2 is fetched from the background service worker,
+  // whose responses only surface on the context, not the page.
+  const balancesPromise = page
+    .context()
+    .waitForEvent(
+      "response",
+      (response) =>
+        (response.url().includes("/account-balances/") ||
+          response.url().includes("/accounts/balances")) &&
+        response.url().includes("network=TESTNET"),
+    );
 
   // Wait for the balances API call to complete
   await balancesPromise;

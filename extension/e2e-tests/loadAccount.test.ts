@@ -2,6 +2,7 @@ import { test, expect, expectPageToHaveScreenshot } from "./test-fixtures";
 import { loginToTestAccount, PASSWORD } from "./helpers/login";
 import {
   stubAccountBalances,
+  stubAccountBalancesV2,
   stubAccountHistory,
   stubScanDapp,
   stubTokenDetails,
@@ -9,6 +10,43 @@ import {
   stubCollectibles,
   stubCollectiblesUnsuccessfulMetadata,
 } from "./helpers/stubs";
+
+// XLM-only fixture served on both the v1 and v2 balances endpoints.
+const makeXlmBalances = (total: string, available: string) => ({
+  balances: {
+    native: {
+      token: {
+        type: "native",
+        code: "XLM",
+      },
+      total,
+      available,
+      sellingLiabilities: "0",
+      buyingLiabilities: "0",
+      minimumBalance: "1",
+      blockaidData: {
+        result_type: "Benign",
+        malicious_score: "0.0",
+        attack_types: {},
+        chain: "stellar",
+        address: "",
+        metadata: {
+          type: "",
+        },
+        fees: {},
+        features: [],
+        trading_limits: {},
+        financial_stats: {},
+      },
+    },
+  },
+  isFunded: true,
+  subentryCount: 0,
+  error: {
+    horizon: null,
+    soroban: null,
+  },
+});
 
 test("Load accounts on standalone network", async ({
   page,
@@ -73,45 +111,11 @@ test.skip("Switches account and fetches correct balances while clearing cache", 
   await expect(account1XlmBalance).not.toEqual(account2XlmBalance);
 
   // go back to account 1 and make sure we do a fresh balance fetch
+  const updatedBalances = makeXlmBalances("999111", "99911");
   await page.route("**/account-balances/**", async (route) => {
-    const json = {
-      balances: {
-        native: {
-          token: {
-            type: "native",
-            code: "XLM",
-          },
-          total: "999111",
-          available: "99911",
-          sellingLiabilities: "0",
-          buyingLiabilities: "0",
-          minimumBalance: "1",
-          blockaidData: {
-            result_type: "Benign",
-            malicious_score: "0.0",
-            attack_types: {},
-            chain: "stellar",
-            address: "",
-            metadata: {
-              type: "",
-            },
-            fees: {},
-            features: [],
-            trading_limits: {},
-            financial_stats: {},
-          },
-        },
-      },
-      isFunded: true,
-      subentryCount: 0,
-      error: {
-        horizon: null,
-        soroban: null,
-      },
-    };
-
-    await route.fulfill({ json });
+    await route.fulfill({ json: updatedBalances });
   });
+  await stubAccountBalancesV2(page, updatedBalances);
 
   await page.getByTestId("account-view-account-name").click();
   await page.getByText("Account 1").click();
@@ -128,85 +132,17 @@ test("Switches network and fetches correct balances while clearing cache", async
   context,
 }) => {
   const stubOverrides = async () => {
+    const testnetBalances = makeXlmBalances("2", "2");
+    const mainnetBalances = makeXlmBalances("1", "1");
     await page.route("**/account-balances/**", async (route) => {
-      let json = {};
-
-      if (route.request().url().includes("TESTNET")) {
-        json = {
-          balances: {
-            native: {
-              token: {
-                type: "native",
-                code: "XLM",
-              },
-              total: "2",
-              available: "2",
-              sellingLiabilities: "0",
-              buyingLiabilities: "0",
-              minimumBalance: "1",
-              blockaidData: {
-                result_type: "Benign",
-                malicious_score: "0.0",
-                attack_types: {},
-                chain: "stellar",
-                address: "",
-                metadata: {
-                  type: "",
-                },
-                fees: {},
-                features: [],
-                trading_limits: {},
-                financial_stats: {},
-              },
-            },
-          },
-          isFunded: true,
-          subentryCount: 0,
-          error: {
-            horizon: null,
-            soroban: null,
-          },
-        };
-      } else {
-        json = {
-          balances: {
-            native: {
-              token: {
-                type: "native",
-                code: "XLM",
-              },
-              total: "1",
-              available: "1",
-              sellingLiabilities: "0",
-              buyingLiabilities: "0",
-              minimumBalance: "1",
-              blockaidData: {
-                result_type: "Benign",
-                malicious_score: "0.0",
-                attack_types: {},
-                chain: "stellar",
-                address: "",
-                metadata: {
-                  type: "",
-                },
-                fees: {},
-                features: [],
-                trading_limits: {},
-                financial_stats: {},
-              },
-            },
-          },
-          isFunded: true,
-          subentryCount: 0,
-          error: {
-            horizon: null,
-            soroban: null,
-          },
-        };
-      }
-
+      const json = route.request().url().includes("TESTNET")
+        ? testnetBalances
+        : mainnetBalances;
       await route.fulfill({ json });
     });
+    await stubAccountBalancesV2(page, (_address, network) =>
+      network === "TESTNET" ? testnetBalances : mainnetBalances,
+    );
   };
 
   await loginToTestAccount({ page, extensionId, context, stubOverrides });
@@ -219,45 +155,11 @@ test("Switches network and fetches correct balances while clearing cache", async
   await expect(page.getByTestId("asset-amount")).toHaveText("1");
 
   // now go back to Testnet and make sure we do a fresh balance fetch
+  const updatedBalances = makeXlmBalances("999111", "99911");
   await page.route("**/account-balances/**", async (route) => {
-    const json = {
-      balances: {
-        native: {
-          token: {
-            type: "native",
-            code: "XLM",
-          },
-          total: "999111",
-          available: "99911",
-          sellingLiabilities: "0",
-          buyingLiabilities: "0",
-          minimumBalance: "1",
-          blockaidData: {
-            result_type: "Benign",
-            malicious_score: "0.0",
-            attack_types: {},
-            chain: "stellar",
-            address: "",
-            metadata: {
-              type: "",
-            },
-            fees: {},
-            features: [],
-            trading_limits: {},
-            financial_stats: {},
-          },
-        },
-      },
-      isFunded: true,
-      subentryCount: 0,
-      error: {
-        horizon: null,
-        soroban: null,
-      },
-    };
-
-    await route.fulfill({ json });
+    await route.fulfill({ json: updatedBalances });
   });
+  await stubAccountBalancesV2(page, updatedBalances);
   await page.getByTestId("network-selector-open").click();
   await page.getByText("Test Net").click();
   await expect(page.getByTestId("asset-amount")).toHaveText("999,111");
@@ -271,8 +173,13 @@ test("Account Balances should be loaded once and cached", async ({
   await loginToTestAccount({ page, extensionId, context });
 
   let accountBalancesRequestWasMade = false;
-  page.on("request", (request) => {
-    if (request.url().includes("/account-balances/")) {
+  // v2 balances requests come from the background service worker, so listen
+  // on the context (which observes SW requests as well as page requests).
+  context.on("request", (request) => {
+    if (
+      request.url().includes("/account-balances/") ||
+      request.url().includes("/accounts/balances")
+    ) {
       accountBalancesRequestWasMade = true;
     }
   });
@@ -367,45 +274,11 @@ test.skip("Clears cache and fetches balances if it's been 2 minutes since the la
   await expect(page.getByTestId("AppHeaderPageTitle")).toHaveText("Settings");
 
   // go back to account 1 and make sure we do a fresh balance fetch
+  const updatedBalances = makeXlmBalances("999111", "99911");
   await page.route("**/account-balances/**", async (route) => {
-    const json = {
-      balances: {
-        native: {
-          token: {
-            type: "native",
-            code: "XLM",
-          },
-          total: "999111",
-          available: "99911",
-          sellingLiabilities: "0",
-          buyingLiabilities: "0",
-          minimumBalance: "1",
-          blockaidData: {
-            result_type: "Benign",
-            malicious_score: "0.0",
-            attack_types: {},
-            chain: "stellar",
-            address: "",
-            metadata: {
-              type: "",
-            },
-            fees: {},
-            features: [],
-            trading_limits: {},
-            financial_stats: {},
-          },
-        },
-      },
-      isFunded: true,
-      subentryCount: 0,
-      error: {
-        horizon: null,
-        soroban: null,
-      },
-    };
-
-    await route.fulfill({ json });
+    await route.fulfill({ json: updatedBalances });
   });
+  await stubAccountBalancesV2(page, updatedBalances);
 
   // test 1 minute
   await page.clock.fastForward("01:00");
@@ -445,7 +318,10 @@ test("Loads wallets data and token prices on Mainnet in batches", async ({
   });
 
   const stubOverrides = async () => {
-    await page.route("**/account-balances/**", async (route) => {
+    // Per-address fixture factory shared by the v1 and v2 balances stubs.
+    // Matching uses `.includes` so it accepts either a bare address (v2
+    // resolver) or the full v1 URL containing the address.
+    const makeBalances = (addressOrUrl: string) => {
       const json = {
         balances: {
           native: {
@@ -507,10 +383,9 @@ test("Loads wallets data and token prices on Mainnet in batches", async ({
         },
       } as any;
       if (
-        route
-          .request()
-          .url()
-          .includes("GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY")
+        addressOrUrl.includes(
+          "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
+        )
       ) {
         json.balances.native.total = "10";
         json.balances.native.available = "9";
@@ -543,61 +418,59 @@ test("Loads wallets data and token prices on Mainnet in batches", async ({
         };
       }
       if (
-        route
-          .request()
-          .url()
-          .includes("GCKUVXILBNYS4FDNWCGCYSJBY2PBQ4KAW2M5CODRVJPUFM62IJFH67J2")
+        addressOrUrl.includes(
+          "GCKUVXILBNYS4FDNWCGCYSJBY2PBQ4KAW2M5CODRVJPUFM62IJFH67J2",
+        )
       ) {
         json.balances.native.total = "11";
         json.balances.native.available = "10";
       }
       if (
-        route
-          .request()
-          .url()
-          .includes("GDPXC35MQCSFJCEDNWUJZYDJWKNGNL2YMFZZS47LT46CFVGAJ6GWYGJC")
+        addressOrUrl.includes(
+          "GDPXC35MQCSFJCEDNWUJZYDJWKNGNL2YMFZZS47LT46CFVGAJ6GWYGJC",
+        )
       ) {
         json.balances.native.total = "12";
         json.balances.native.available = "11";
       }
       if (
-        route
-          .request()
-          .url()
-          .includes("GC32JSRAZA6BJYIKEI2X5LAVJKFVDVVIYWRVCAI7Q7N36WKXVDHTGTQA")
+        addressOrUrl.includes(
+          "GC32JSRAZA6BJYIKEI2X5LAVJKFVDVVIYWRVCAI7Q7N36WKXVDHTGTQA",
+        )
       ) {
         json.balances.native.total = "13";
         json.balances.native.available = "9";
       }
       if (
-        route
-          .request()
-          .url()
-          .includes("GDY4ZZLCUEBZPHTKSAESUHV37JA5MZ7BGP2KS32DSBSHS7ONSBFZBQ7C")
+        addressOrUrl.includes(
+          "GDY4ZZLCUEBZPHTKSAESUHV37JA5MZ7BGP2KS32DSBSHS7ONSBFZBQ7C",
+        )
       ) {
         json.balances.native.total = "14";
         json.balances.native.available = "9";
       }
       if (
-        route
-          .request()
-          .url()
-          .includes("GBW2O3KT5E6W6XN2T66X5TM6EXVTTKVHQJE426PUX5ANMGQVLS2KOU3T")
+        addressOrUrl.includes(
+          "GBW2O3KT5E6W6XN2T66X5TM6EXVTTKVHQJE426PUX5ANMGQVLS2KOU3T",
+        )
       ) {
         json.balances.native.total = "15";
         json.balances.native.available = "9";
       }
       if (
-        route
-          .request()
-          .url()
-          .includes("GARHHLBEZLF3WWIENRZLHKOB62IIDZX2DHNWXAR2E7KVQTDQGDI4H6NU")
+        addressOrUrl.includes(
+          "GARHHLBEZLF3WWIENRZLHKOB62IIDZX2DHNWXAR2E7KVQTDQGDI4H6NU",
+        )
       ) {
         json.balances.native.total = "16";
         json.balances.native.available = "9";
       }
-      await route.fulfill({ json });
+      return json;
+    };
+    await page.route("**/account-balances/**", async (route) => {
+      await route.fulfill({ json: makeBalances(route.request().url()) });
     });
+    await stubAccountBalancesV2(page, (address) => makeBalances(address));
   };
   await loginToTestAccount({ page, extensionId, context, stubOverrides });
   await page.getByTestId("network-selector-open").click();
