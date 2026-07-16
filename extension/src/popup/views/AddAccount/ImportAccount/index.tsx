@@ -55,13 +55,13 @@ export const ImportAccount = () => {
     const res = await dispatch(importAccount({ password, privateKey }));
 
     if (importAccount.fulfilled.match(res)) {
-      emitMetric(METRIC_NAMES.accountScreenImportAccount, {
+      emitMetric(METRIC_NAMES.accountImported, {
         number_of_accounts: res.payload.allAccounts.length,
       });
       navigateTo(ROUTES.account, navigate);
     } else {
-      emitMetric(METRIC_NAMES.accountScreenImportAccountFail, {
-        error_type: res.payload?.errorMessage || "",
+      emitMetric(METRIC_NAMES.accountImportFailed, {
+        reason_code: res.payload?.errorMessage || "",
       });
     }
   };

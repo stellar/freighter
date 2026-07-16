@@ -1,10 +1,7 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { useTranslation } from "react-i18next";
 import { Text, Icon } from "@stellar/design-system";
 
-import { emitMetric } from "helpers/metrics";
-
-import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { Onboarding, OnboardingModal } from "popup/components/Onboarding";
 import { View } from "popup/basics/layout/View";
 
@@ -14,10 +11,6 @@ import "./styles.scss";
 
 export const FullscreenSuccessMessage = () => {
   const { t } = useTranslation();
-
-  useEffect(() => {
-    emitMetric(METRIC_NAMES.recoverAccountFinished);
-  }, []);
 
   return (
     <>
