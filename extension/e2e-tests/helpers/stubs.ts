@@ -818,8 +818,10 @@ const toV2WireBalance = (key: string, entry: any) => {
  *
  * Accepts either a single v1-style fixture (served for every address in the
  * POST body) or a resolver called with each requested address and the
- * `network` query param (e.g. "TESTNET"). A null fixture omits the address
- * from the fan-out result, which the client maps to an unfunded account.
+ * `network` query param (e.g. "TESTNET"). A null fixture serves the address
+ * as unfunded (`is_funded: false`, empty balances) — the backend always
+ * includes every requested address in the fan-out result, and the client
+ * rejects responses that omit one as malformed.
  */
 export const stubAccountBalancesV2 = async (
   page: Page | BrowserContext,
@@ -842,21 +844,24 @@ export const stubAccountBalancesV2 = async (
       console.error("Failed to parse POST body for accounts/balances", e);
     }
 
-    const data = addresses.flatMap((address) => {
+    const data = addresses.map((address) => {
       const account = resolveAccount(address, network);
       if (!account) {
-        return [];
-      }
-      return [
-        {
+        return {
           address,
-          is_funded: account.isFunded ?? true,
-          subentry_count: account.subentryCount ?? 0,
-          balances: Object.entries(account.balances).map(([key, entry]) =>
-            toV2WireBalance(key, entry),
-          ),
-        },
-      ];
+          is_funded: false,
+          subentry_count: 0,
+          balances: [],
+        };
+      }
+      return {
+        address,
+        is_funded: account.isFunded ?? true,
+        subentry_count: account.subentryCount ?? 0,
+        balances: Object.entries(account.balances).map(([key, entry]) =>
+          toV2WireBalance(key, entry),
+        ),
+      };
     });
 
     await route.fulfill({ json: { data } });
@@ -3036,8 +3041,8 @@ export const stubAccountBalancesWithUnfundedDestination = async (
     await route.fulfill({ json });
   });
 
-  // v2 fan-out: the unfunded destination is omitted from the result, which
-  // the client maps to an unfunded account.
+  // v2 fan-out: the unfunded destination is served with is_funded=false and
+  // empty balances, matching the real backend's account-not-found shape.
   await stubAccountBalancesV2(page, (address) =>
     address === unfundedDestination ? null : senderFixture,
   );

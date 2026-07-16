@@ -76,8 +76,8 @@ test("Swap doesn't throw error when account is unfunded", async ({
 }) => {
   // This test intentionally uses the unstubbed login() (real endpoints) with
   // an unfunded account. The v2 balances endpoint can't serve every network in
-  // the beta env yet, so stub just that route as unfunded (empty fan-out
-  // result) to keep the account state deterministic.
+  // the beta env yet, so stub just that route as unfunded (is_funded=false
+  // with empty balances) to keep the account state deterministic.
   await stubAccountBalancesV2(page, () => null);
   await login({ page, extensionId });
 
