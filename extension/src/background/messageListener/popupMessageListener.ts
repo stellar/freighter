@@ -21,6 +21,7 @@ import {
 } from "@shared/api/types/message-request";
 import { SERVICE_TYPES, DEV_SERVER } from "@shared/constants/services";
 import { DataStorageAccess } from "background/helpers/dataStorageAccess";
+import { getAnalyticsUserId } from "background/helpers/analyticsUserId";
 import { KeyManager } from "@stellar/typescript-wallet-sdk-km";
 import { SessionTimer } from "background/helpers/session";
 import { publicKeySelector } from "background/ducks/session";
@@ -669,6 +670,16 @@ export const popupMessageListener = (
         sessionStore,
         localStore,
       });
+    }
+
+    case SERVICE_TYPES.GET_ANALYTICS_USER_ID: {
+      return (async () => {
+        const analyticsUserId = await getAnalyticsUserId(
+          sessionStore,
+          localStore,
+        );
+        return { analyticsUserId };
+      })();
     }
 
     default:
