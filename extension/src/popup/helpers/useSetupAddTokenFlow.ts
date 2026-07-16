@@ -47,7 +47,7 @@ export const useSetupAddTokenFlow = ({
   const { changeTrustline } = useChangeTrustline({ assetCode, assetIssuer });
 
   const rejectAndClose = () => {
-    emitMetric(METRIC_NAMES.tokenRejectApi);
+    emitMetric(METRIC_NAMES.assetAddApiCancelled);
     dispatch(rejectTokenFn({ uuid }));
     window.close();
   };
@@ -63,10 +63,14 @@ export const useSetupAddTokenFlow = ({
       } else {
         await addTokenDispatch();
       }
-      await emitMetric(METRIC_NAMES.tokenAddedApi);
+      await emitMetric(METRIC_NAMES.assetAddApiCompleted, {
+        asset_code: assetCode,
+      });
     } catch (e) {
       console.error(e);
-      await emitMetric(METRIC_NAMES.tokenFailedApi);
+      await emitMetric(METRIC_NAMES.assetAddApiFailed, {
+        reason_code: e instanceof Error ? e.message : "unknown",
+      });
     }
 
     window.close();

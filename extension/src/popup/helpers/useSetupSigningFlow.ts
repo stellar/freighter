@@ -16,9 +16,6 @@ import {
   startHwSign,
   transactionSubmissionSelector,
 } from "popup/ducks/transactionSubmission";
-import { emitMetric } from "helpers/metrics";
-import { METRIC_NAMES } from "popup/constants/metricsNames";
-
 type AppThunk<Arg = void> = AsyncThunk<void, Arg, { state: AppState }>;
 
 // The only payload shape this hook ever dispatches to signFn.
@@ -47,8 +44,11 @@ export function useSetupSigningFlow(
     hardwareWalletData: { status: hwStatus },
   } = useSelector(transactionSubmissionSelector);
 
+  // Approval/rejection telemetry is emitted per signing type by the redux
+  // handlers in popup/metrics/access.ts (signing.transaction_*,
+  // signing.message_*, signing.auth_entry_*), keyed off the specific
+  // sign/reject thunk this flow dispatches — so no generic event fires here.
   const rejectAndClose = () => {
-    emitMetric(METRIC_NAMES.rejectSigning);
     dispatch(reject({ uuid }));
     window.close();
   };
@@ -61,7 +61,6 @@ export function useSetupSigningFlow(
       setStartedHwSign(true);
     } else {
       await dispatch(signFn({ apiVersion, uuid }));
-      await emitMetric(METRIC_NAMES.approveSign);
       window.close();
     }
   };

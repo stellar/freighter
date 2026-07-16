@@ -239,7 +239,9 @@ export const SignTransaction = () => {
 
   useEffect(() => {
     if (isMemoRequired) {
-      emitMetric(METRIC_NAMES.signTransactionMemoRequired);
+      emitMetric(METRIC_NAMES.signingTransactionBlocked, {
+        reason_code: "memo_required",
+      });
     }
   }, [isMemoRequired]);
 
