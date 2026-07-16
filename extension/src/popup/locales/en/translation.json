@@ -211,6 +211,7 @@
   "Extend To": "Extend To",
   "Failed": "Failed",
   "Failed to add token.": "Failed to add token.",
+  "Failed to add token. Please retry or cancel.": "Failed to add token. Please retry or cancel.",
   "Failed to build transaction.": "Failed to build transaction.",
   "Failed to fetch assets.": "Failed to fetch assets.",
   "Failed to fetch your account balances.": "Failed to fetch your account balances.",

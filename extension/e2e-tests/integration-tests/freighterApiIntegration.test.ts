@@ -3,7 +3,8 @@ import { TEST_TOKEN_ADDRESS } from "../helpers/test-token";
 import { loginToTestAccount, switchToMainnet } from "../helpers/login";
 import { allowDapp } from "../helpers/dAppSessionHelper";
 import {
-  SAC_ISSUER,
+  SAC_CONTRACT_ID,
+  delayAddTokenRoundTrip,
   stubAccountBalances,
   stubAccountHistory,
   stubBackendSubmitTx,
@@ -12,6 +13,7 @@ import {
   stubIsSac,
   stubIsSacTrue,
   stubSacTokenDetails,
+  stubSacViaInitScript,
   stubScanAssetSafe,
   stubScanDapp,
   stubScanTx,
@@ -865,10 +867,9 @@ test("should add an unverified SEP-41 token when allowed", async ({
 
 // The cryptographically-derived SAC contract for E2E:SAC_ISSUER on testnet.
 // new Asset("E2E", SAC_ISSUER).contractId("Test SDF Network ; September 2015")
-// Using this contract (not TEST_TOKEN_ADDRESS) is required so that
-// isAssetSac() in useGetChangeTrustData verifies correctly and builds the XDR.
-const SAC_CONTRACT_ID =
-  "CAMGWOMKYNKCWGHXTU6A7OYW3O6O4UFMHSMQDSIA2WSD6M6U6GSAJASN";
+// SAC_CONTRACT_ID (derived from Asset("E2E", SAC_ISSUER)) is imported from
+// helpers/stubs — using it, not TEST_TOKEN_ADDRESS, is required so isAssetSac()
+// in useGetChangeTrustData verifies correctly and builds the XDR.
 
 // SAC token test: skipped in integration mode — the stubs needed to classify
 // SAC_CONTRACT_ID as a SAC must be injected before the popup opens, which
@@ -902,47 +903,7 @@ test("should add an unverified SAC token through the Change Trust review when al
   //   → StrKey.isValidEd25519PublicKey(issuer) = true → isSac = true
   //   → Confirm click calls setShowTrustlineReview(true) instead of handleApprove()
   //   → ChangeTrustInternal renders, isAssetSac verifies SAC_CONTRACT_ID, builds XDR
-  await context.addInitScript(
-    ({ sacIssuer }: { sacIssuer: string }) => {
-      const origFetch = (window as Window & typeof globalThis).fetch.bind(
-        window,
-      );
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (window as any).fetch = function (input: any, init: any) {
-        const url: string =
-          typeof input === "string"
-            ? input
-            : input instanceof URL
-              ? input.href
-              : (input?.url ?? "");
-        if (url.includes("/is-sac-contract/")) {
-          return Promise.resolve(
-            new Response(JSON.stringify({ isSacContract: true }), {
-              status: 200,
-              headers: { "Content-Type": "application/json" },
-            }),
-          );
-        }
-        if (url.includes("/token-details/")) {
-          return Promise.resolve(
-            new Response(
-              JSON.stringify({
-                name: `E2E:${sacIssuer}`,
-                symbol: "E2E",
-                decimals: 7,
-              }),
-              {
-                status: 200,
-                headers: { "Content-Type": "application/json" },
-              },
-            ),
-          );
-        }
-        return origFetch(input, init);
-      };
-    },
-    { sacIssuer: SAC_ISSUER },
-  );
+  await stubSacViaInitScript(context);
 
   // context.route() as belt-and-suspenders (intercepted when CDP cooperates)
   await stubIsSacTrue(context);
@@ -1023,88 +984,12 @@ test("should not report the dApp request as rejected when Done is clicked immedi
 
   // Same SAC-classification stubs as the test above (see its comment for why
   // this init-script approach, rather than context.route(), is required).
-  await context.addInitScript(
-    ({ sacIssuer }: { sacIssuer: string }) => {
-      const origFetch = (window as Window & typeof globalThis).fetch.bind(
-        window,
-      );
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (window as any).fetch = function (input: any, init: any) {
-        const url: string =
-          typeof input === "string"
-            ? input
-            : input instanceof URL
-              ? input.href
-              : (input?.url ?? "");
-        if (url.includes("/is-sac-contract/")) {
-          return Promise.resolve(
-            new Response(JSON.stringify({ isSacContract: true }), {
-              status: 200,
-              headers: { "Content-Type": "application/json" },
-            }),
-          );
-        }
-        if (url.includes("/token-details/")) {
-          return Promise.resolve(
-            new Response(
-              JSON.stringify({
-                name: `E2E:${sacIssuer}`,
-                symbol: "E2E",
-                decimals: 7,
-              }),
-              {
-                status: 200,
-                headers: { "Content-Type": "application/json" },
-              },
-            ),
-          );
-        }
-        return origFetch(input, init);
-      };
-    },
-    { sacIssuer: SAC_ISSUER },
-  );
+  await stubSacViaInitScript(context);
 
-  // Delay ONLY the ADD_TOKEN background round-trip (the popup -> background
-  // extension message triggered by dispatch(addToken({uuid}))). This is a
-  // local extension-messaging call, not a network request, so context.route()
-  // can't touch it — we monkey-patch the sender side instead. The delay gives
-  // a same-tick "click Done the moment Success renders" a real chance to race
-  // ahead of response(true) if Done doesn't await it.
-  await context.addInitScript(() => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const chromeApi = (window as any).chrome;
-    if (!chromeApi?.runtime?.sendMessage) {
-      return;
-    }
-    const nativeSendMessage = chromeApi.runtime.sendMessage.bind(
-      chromeApi.runtime,
-    );
-    const ADD_TOKEN_DELAY_MS = 1000;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    chromeApi.runtime.sendMessage = (...args: any[]) => {
-      const msg = args[0];
-      if (!msg || msg.type !== "ADD_TOKEN") {
-        return nativeSendMessage(...args);
-      }
-      const lastArg = args[args.length - 1];
-      if (typeof lastArg === "function") {
-        const callback = lastArg;
-        const callArgs = args.slice(0, -1);
-        setTimeout(
-          () => nativeSendMessage(...callArgs, callback),
-          ADD_TOKEN_DELAY_MS,
-        );
-        return undefined;
-      }
-      return new Promise((resolve) => {
-        setTimeout(
-          () => resolve(nativeSendMessage(...args)),
-          ADD_TOKEN_DELAY_MS,
-        );
-      });
-    };
-  });
+  // Delay ONLY the ADD_TOKEN background round-trip so a same-tick "click Done
+  // the moment Success renders" can race ahead of response(true) if Done
+  // doesn't await it.
+  await delayAddTokenRoundTrip(context);
 
   await stubIsSacTrue(context);
   await stubSacTokenDetails(context);
@@ -1272,87 +1157,11 @@ test("should add a verified SAC token through the Change Trust review without th
     "SAC stub injection via addInitScript is not compatible with integration mode",
   );
 
-  // Inject the SAC stubs (is-sac-contract, token-details) AND the asset-list
-  // via window.fetch override so they fire before the popup page script runs.
-  // This is the same technique used by the unverified SAC test for is-sac-contract
-  // and token-details; here we extend it to also cover the asset-list fetch so
-  // that getVerifiedTokens() finds SAC_CONTRACT_ID and sets isVerifiedToken=true.
-  await context.addInitScript(
-    ({
-      sacIssuer,
-      sacContractId,
-    }: {
-      sacIssuer: string;
-      sacContractId: string;
-    }) => {
-      const origFetch = (window as Window & typeof globalThis).fetch.bind(
-        window,
-      );
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (window as any).fetch = function (input: any, init: any) {
-        const url: string =
-          typeof input === "string"
-            ? input
-            : input instanceof URL
-              ? input.href
-              : (input?.url ?? "");
-        if (url.includes("/is-sac-contract/")) {
-          return Promise.resolve(
-            new Response(JSON.stringify({ isSacContract: true }), {
-              status: 200,
-              headers: { "Content-Type": "application/json" },
-            }),
-          );
-        }
-        if (url.includes("/token-details/")) {
-          return Promise.resolve(
-            new Response(
-              JSON.stringify({
-                name: `E2E:${sacIssuer}`,
-                symbol: "E2E",
-                decimals: 7,
-              }),
-              {
-                status: 200,
-                headers: { "Content-Type": "application/json" },
-              },
-            ),
-          );
-        }
-        if (url.includes("/asset-list/")) {
-          return Promise.resolve(
-            new Response(
-              JSON.stringify({
-                name: "StellarExpert Top 50",
-                provider: "StellarExpert",
-                description: "Verified asset list",
-                version: "1.0",
-                network: "testnet",
-                feedback: "https://stellar.expert",
-                assets: [
-                  {
-                    code: "E2E",
-                    issuer: sacIssuer,
-                    contract: sacContractId,
-                    name: "E2E Token",
-                    org: "unknown",
-                    domain: "example.com",
-                    decimals: 7,
-                  },
-                ],
-              }),
-              {
-                status: 200,
-                headers: { "Content-Type": "application/json" },
-              },
-            ),
-          );
-        }
-        return origFetch(input, init);
-      };
-    },
-    { sacIssuer: SAC_ISSUER, sacContractId: SAC_CONTRACT_ID },
-  );
+  // Inject the SAC stubs (is-sac-contract, token-details) AND the verified
+  // asset-list via window.fetch override so they fire before the popup page
+  // script runs — withAssetList makes getVerifiedTokens() find SAC_CONTRACT_ID
+  // and set isVerifiedToken=true.
+  await stubSacViaInitScript(context, { withAssetList: true });
 
   // context.route() as belt-and-suspenders
   await stubIsSacTrue(context);

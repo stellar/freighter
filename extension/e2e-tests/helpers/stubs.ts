@@ -670,6 +670,12 @@ export const stubIsSacTrue = async (page: Page | BrowserContext) => {
 export const SAC_ISSUER =
   "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY";
 
+// The SAC contract id derived from Asset("E2E", SAC_ISSUER). Using this (not
+// TEST_TOKEN_ADDRESS) is required so isAssetSac() in useGetChangeTrustData
+// verifies correctly and builds the XDR.
+export const SAC_CONTRACT_ID =
+  "CAMGWOMKYNKCWGHXTU6A7OYW3O6O4UFMHSMQDSIA2WSD6M6U6GSAJASN";
+
 /**
  * Stubs token-details so the SAC token's name is "E2E:<SAC_ISSUER>".
  * useTokenLookup splits on ":" to extract the issuer, and AddToken checks
@@ -685,6 +691,150 @@ export const stubSacTokenDetails = async (page: Page | BrowserContext) => {
       },
     });
   });
+};
+
+/**
+ * Injects the SAC-classification fetch stubs (is-sac-contract + token-details,
+ * and optionally the verified asset-list) via context.addInitScript so they run
+ * before the popup's own page script. context.route() can't reliably intercept
+ * these because the popup fetches them before CDP request routing attaches — the
+ * SAC add-token e2e tests all depend on this window.fetch override running
+ * first. Pass `withAssetList: true` to additionally stub the asset-list so
+ * getVerifiedTokens() finds SAC_CONTRACT_ID and marks the token verified.
+ */
+export const stubSacViaInitScript = async (
+  context: BrowserContext,
+  { withAssetList = false }: { withAssetList?: boolean } = {},
+) => {
+  await context.addInitScript(
+    ({
+      sacIssuer,
+      sacContractId,
+      injectAssetList,
+    }: {
+      sacIssuer: string;
+      sacContractId: string;
+      injectAssetList: boolean;
+    }) => {
+      const origFetch = (window as Window & typeof globalThis).fetch.bind(
+        window,
+      );
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (window as any).fetch = function (input: any, init: any) {
+        const url: string =
+          typeof input === "string"
+            ? input
+            : input instanceof URL
+              ? input.href
+              : (input?.url ?? "");
+        if (url.includes("/is-sac-contract/")) {
+          return Promise.resolve(
+            new Response(JSON.stringify({ isSacContract: true }), {
+              status: 200,
+              headers: { "Content-Type": "application/json" },
+            }),
+          );
+        }
+        if (url.includes("/token-details/")) {
+          return Promise.resolve(
+            new Response(
+              JSON.stringify({
+                name: `E2E:${sacIssuer}`,
+                symbol: "E2E",
+                decimals: 7,
+              }),
+              {
+                status: 200,
+                headers: { "Content-Type": "application/json" },
+              },
+            ),
+          );
+        }
+        if (injectAssetList && url.includes("/asset-list/")) {
+          return Promise.resolve(
+            new Response(
+              JSON.stringify({
+                name: "StellarExpert Top 50",
+                provider: "StellarExpert",
+                description: "Verified asset list",
+                version: "1.0",
+                network: "testnet",
+                feedback: "https://stellar.expert",
+                assets: [
+                  {
+                    code: "E2E",
+                    issuer: sacIssuer,
+                    contract: sacContractId,
+                    name: "E2E Token",
+                    org: "unknown",
+                    domain: "example.com",
+                    decimals: 7,
+                  },
+                ],
+              }),
+              {
+                status: 200,
+                headers: { "Content-Type": "application/json" },
+              },
+            ),
+          );
+        }
+        return origFetch(input, init);
+      };
+    },
+    {
+      sacIssuer: SAC_ISSUER,
+      sacContractId: SAC_CONTRACT_ID,
+      injectAssetList: withAssetList,
+    },
+  );
+};
+
+/**
+ * Delays ONLY the ADD_TOKEN background round-trip (the popup→background
+ * chrome.runtime.sendMessage triggered by dispatch(addToken)). This is a local
+ * extension-messaging call, not a network request, so context.route() can't
+ * touch it — we monkey-patch the sender side. The delay gives a same-tick
+ * "click Done the moment Success renders" a real chance to race ahead of
+ * response(true) if Done doesn't await it.
+ */
+export const delayAddTokenRoundTrip = async (
+  context: BrowserContext,
+  delayMs = 1000,
+) => {
+  await context.addInitScript((ADD_TOKEN_DELAY_MS: number) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const chromeApi = (window as any).chrome;
+    if (!chromeApi?.runtime?.sendMessage) {
+      return;
+    }
+    const nativeSendMessage = chromeApi.runtime.sendMessage.bind(
+      chromeApi.runtime,
+    );
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    chromeApi.runtime.sendMessage = (...args: any[]) => {
+      const msg = args[0];
+      if (!msg || msg.type !== "ADD_TOKEN") {
+        return nativeSendMessage(...args);
+      }
+      const lastArg = args[args.length - 1];
+      if (typeof lastArg === "function") {
+        const callback = lastArg;
+        const callArgs = args.slice(0, -1);
+        setTimeout(
+          () => nativeSendMessage(...callArgs, callback),
+          ADD_TOKEN_DELAY_MS,
+        );
+        return undefined;
+      }
+      return new Promise((resolve) => {
+        setTimeout(
+          () => resolve(nativeSendMessage(...args)),
+          ADD_TOKEN_DELAY_MS,
+        );
+      });
+    };
+  }, delayMs);
 };
 
 export const stubTokenDetails = async (page: Page | BrowserContext) => {

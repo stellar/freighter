@@ -7,6 +7,7 @@ import {
   Notification,
   Text,
 } from "@stellar/design-system";
+import { captureException } from "@sentry/browser";
 import React, { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Navigate, useLocation } from "react-router-dom";
@@ -177,6 +178,10 @@ export const AddToken = () => {
   // successful trustline is never reported as "user rejected". Kept as a
   // promise so Done can await it before closing.
   const addTokenPromiseRef = useRef<Promise<boolean> | null>(null);
+  // Total attempts (initial + retries) to deliver the ADD_TOKEN round-trip
+  // once a trustline has succeeded on-chain, before giving up and leaving the
+  // popup open rather than reporting the dApp a false decline.
+  const MAX_ADD_TOKEN_ATTEMPTS = 3;
 
   const handleTrustlineTransactionSuccess = () => {
     if (!addTokenPromiseRef.current) {
@@ -184,12 +189,40 @@ export const AddToken = () => {
     }
   };
 
-  // Done only closes the popup — but wait for the add-token round-trip to
-  // resolve the dApp request first. Otherwise window.close() races response()
-  // and rejectOnWindowClose reports "user rejected" for a successful trustline.
+  // Done only closes the popup — but the dApp request is resolved by the
+  // background's response(true); window.close() triggers rejectOnWindowClose,
+  // which reports "user rejected". By the time this runs the trustline has
+  // already succeeded on-chain, so a close that beats response(true) would
+  // report a decline for a live trustline. The eager addTokenAndClose(true)
+  // (fired on tx success) normally delivers response(true) before Done; the
+  // residual failure is the messaging round-trip itself throwing, which never
+  // reaches the background. So retry it and close ONLY once success has
+  // actually been delivered — don't rely on the response callback winning a
+  // race against window.close(). If it stays undeliverable, keep the popup
+  // open rather than closing into a false "user rejected"; the user can retry.
   const handleTrustlineDone = async () => {
-    await (addTokenPromiseRef.current ?? addTokenAndClose(true));
-    window.close();
+    let succeeded = await (addTokenPromiseRef.current ??
+      addTokenAndClose(true));
+
+    for (
+      let attempt = 1;
+      !succeeded && attempt < MAX_ADD_TOKEN_ATTEMPTS;
+      attempt += 1
+    ) {
+      addTokenPromiseRef.current = null;
+      succeeded = await addTokenAndClose(true);
+    }
+
+    if (succeeded) {
+      window.close();
+      return;
+    }
+
+    captureException(
+      "addToken: trustline succeeded on-chain but the ADD_TOKEN round-trip " +
+        "could not be delivered; leaving popup open to avoid reporting the " +
+        "dApp a false decline for a live trustline",
+    );
   };
 
   useEffect(() => {

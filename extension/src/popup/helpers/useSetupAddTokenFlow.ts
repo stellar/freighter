@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { useTranslation } from "react-i18next";
 
 import { emitMetric } from "helpers/metrics";
 
@@ -34,6 +35,7 @@ export const useSetupAddTokenFlow = ({
   addToken: addTokenFn,
   uuid,
 }: Params): Response => {
+  const { t } = useTranslation();
   const [isConfirming, setIsConfirming] = useState(false);
   const [isPasswordRequired, setIsPasswordRequired] = useState(false);
   const [submitError, setSubmitError] = useState("");
@@ -67,7 +69,7 @@ export const useSetupAddTokenFlow = ({
       typedAction.error?.message ||
       typedAction.payload?.error ||
       typedAction.payload?.message ||
-      "Failed to add token. Please retry or cancel."
+      t("Failed to add token. Please retry or cancel.")
     );
   };
 
@@ -93,7 +95,7 @@ export const useSetupAddTokenFlow = ({
     } catch (e) {
       console.error(e);
       await emitMetric(METRIC_NAMES.tokenFailedApi);
-      setSubmitError("Failed to add token. Please retry or cancel.");
+      setSubmitError(t("Failed to add token. Please retry or cancel."));
       return false;
     }
 

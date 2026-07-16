@@ -254,6 +254,12 @@ jest.mock("popup/ducks/access", () => ({
   addToken: jest.fn(() => ({ type: "access/addToken" })),
 }));
 
+const mockCaptureException = jest.fn();
+
+jest.mock("@sentry/browser", () => ({
+  captureException: (...args: unknown[]) => mockCaptureException(...args),
+}));
+
 const mockAddTokenAndClose = jest.fn();
 
 jest.mock("popup/helpers/useSetupAddTokenFlow", () => ({
@@ -414,6 +420,68 @@ describe("AddToken SAC / SEP-41 routing", () => {
 
     expect(closeSpy).toHaveBeenCalled();
     expect(mockAddTokenAndClose).toHaveBeenCalledTimes(1);
+    closeSpy.mockRestore();
+  });
+
+  it("SAC: Done does NOT close when the round-trip fails, so a live trustline is never reported rejected", async () => {
+    // The trustline already succeeded on-chain, but the ADD_TOKEN round-trip
+    // keeps failing (e.g. a messaging error that never reaches the background,
+    // so response(true) is never delivered). Closing here would let
+    // rejectOnWindowClose report the dApp a false "user rejected". So Done must
+    // retry and, if it stays undeliverable, leave the popup open rather than
+    // close.
+    mockTokenLookupConfig.issuer = SAC_ISSUER;
+    mockAddTokenAndClose.mockResolvedValue(false);
+    const closeSpy = jest
+      .spyOn(window, "close")
+      .mockImplementation(() => undefined);
+    renderAt();
+
+    const confirm = await screen.findByTestId("add-token-approve");
+    fireEvent.click(confirm);
+
+    const txSuccessBtn = await screen.findByText("mock-transaction-success");
+    await act(async () => {
+      fireEvent.click(txSuccessBtn);
+    });
+
+    const doneBtn = await screen.findByText("mock-success");
+    await act(async () => {
+      fireEvent.click(doneBtn);
+    });
+
+    // Retried (eager attempt + retries) but never closed into a false decline.
+    expect(mockAddTokenAndClose.mock.calls.length).toBeGreaterThan(1);
+    expect(closeSpy).not.toHaveBeenCalled();
+    expect(mockCaptureException).toHaveBeenCalled();
+    closeSpy.mockRestore();
+  });
+
+  it("SAC: Done retries a transient round-trip failure, then closes on success", async () => {
+    // The eager attempt fails but a retry delivers response(true); once the
+    // dApp has actually been told success the popup closes normally.
+    mockTokenLookupConfig.issuer = SAC_ISSUER;
+    mockAddTokenAndClose.mockResolvedValueOnce(false).mockResolvedValue(true);
+    const closeSpy = jest
+      .spyOn(window, "close")
+      .mockImplementation(() => undefined);
+    renderAt();
+
+    const confirm = await screen.findByTestId("add-token-approve");
+    fireEvent.click(confirm);
+
+    const txSuccessBtn = await screen.findByText("mock-transaction-success");
+    await act(async () => {
+      fireEvent.click(txSuccessBtn);
+    });
+
+    const doneBtn = await screen.findByText("mock-success");
+    await act(async () => {
+      fireEvent.click(doneBtn);
+    });
+
+    expect(closeSpy).toHaveBeenCalled();
+    expect(mockCaptureException).not.toHaveBeenCalled();
     closeSpy.mockRestore();
   });
 
