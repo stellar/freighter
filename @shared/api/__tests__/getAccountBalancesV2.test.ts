@@ -105,16 +105,20 @@ describe("getAccountBalancesV2", () => {
     expect(result.balances!.native.total.toString()).toBe("100");
   });
 
-  it("maps a missing account in the fan-out result as unfunded", async () => {
+  it("rejects a response missing the requested account (contract violation)", async () => {
+    // The backend always includes unfunded accounts with is_funded=false, so
+    // a 200 without the requested address is malformed — mapping it to
+    // "unfunded" would render a funded wallet as empty.
     mockBackendV2({ status: 200, body: { data: [] } });
 
-    const result = await getAccountBalancesV2({
-      publicKey: PUBLIC_KEY,
-      networkDetails: TESTNET_NETWORK_DETAILS,
-    });
-
-    expect(result.isFunded).toBe(false);
-    expect(result.balances).toEqual({});
+    await expect(
+      getAccountBalancesV2({
+        publicKey: PUBLIC_KEY,
+        networkDetails: TESTNET_NETWORK_DETAILS,
+      }),
+    ).rejects.toThrow(
+      `v2 balances response is missing the requested account ${PUBLIC_KEY}`,
+    );
   });
 
   it("bulk-scans scannable assets and merges blockaidData on mainnet", async () => {

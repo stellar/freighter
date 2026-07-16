@@ -641,6 +641,18 @@ export const getAccountBalancesV2 = async ({
   const account = parsedResponse.data.find(
     (accountBalances) => accountBalances.address === publicKey,
   );
+  // The backend includes every requested address in the fan-out result, with
+  // is_funded=false for unfunded accounts. A missing entry is a malformed
+  // response — treating it as "unfunded" would render (and cache) a funded
+  // wallet as empty.
+  if (!account) {
+    captureException(
+      `v2 balances response is missing the requested account - ${status}`,
+    );
+    throw new Error(
+      `v2 balances response is missing the requested account ${publicKey}`,
+    );
+  }
   // The v2 response has no Blockaid data yet — replicate the v1 backend's
   // scan-and-merge client-side so both paths return the same payload.
   return await addBlockaidScanResults(

@@ -181,10 +181,10 @@ const mapLiquidityPool = (
 });
 
 export const mapAccountBalancesV2 = (
-  account: V2AccountBalances | undefined,
+  account: V2AccountBalances,
 ): AccountBalancesInterface => {
   const balances: Record<string, MappedBalance> = {};
-  const v2Balances = account?.balances || [];
+  const v2Balances = account.balances || [];
 
   for (const balance of v2Balances) {
     let entry: MappedEntry | null = null;
@@ -220,9 +220,7 @@ export const mapAccountBalancesV2 = (
     // entries, and `limit`/`token.type` on Soroban entries, none of which
     // exist at runtime. The mapped shapes above are the runtime truth.
     balances: balances as unknown as BalanceMap,
-    // Envelope fields come straight from the v2 response; an account missing
-    // from the fan-out result reads as unfunded.
-    isFunded: account?.is_funded ?? false,
-    subentryCount: account?.subentry_count ?? 0,
+    isFunded: account.is_funded,
+    subentryCount: account.subentry_count,
   };
 };

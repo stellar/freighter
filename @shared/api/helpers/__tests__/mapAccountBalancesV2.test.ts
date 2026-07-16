@@ -223,13 +223,6 @@ describe("mapAccountBalancesV2", () => {
       expect(result.subentryCount).toBe(0);
     });
 
-    it("handles an undefined account (missing from the fan-out result)", () => {
-      const result = mapAccountBalancesV2(undefined);
-      expect(result.isFunded).toBe(false);
-      expect(result.balances).toEqual({});
-      expect(result.subentryCount).toBe(0);
-    });
-
     it("skips unknown token types rather than emitting malformed entries", () => {
       const result = mapAccountBalancesV2(
         makeAccount([
