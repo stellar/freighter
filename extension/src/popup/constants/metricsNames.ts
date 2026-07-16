@@ -1,122 +1,129 @@
 export const METRIC_NAMES = {
-  // Screen-load events are consolidated into the single canonical
-  // `screen.viewed` event (see METRIC_NAMES.screenViewed below and
-  // helpers/metrics#emitScreenViewed). Per-screen legacy "loaded screen: X"
-  // names have been removed; screen identity now lives in the `screen_name`
-  // property. Non-screen (domain/action) event names remain unchanged.
+  // Domain (action/outcome) event catalog, shared cross-platform.
+  //
+  // Grammar: `domain.action_past` — a dotted domain prefix followed by a
+  // snake_case, past-tense action. Outcomes get their own terminal events
+  // (`completed` / `failed` / `rejected` / `blocked` / `submitted`) rather
+  // than a single event with a status flag; a `result` property is used only
+  // where the attempt itself is the analytical unit (Blockaid scans).
+  //
+  // A user rejecting a prompt (`*_rejected`) is always kept distinct from a
+  // runtime error (`*_failed`). `schema_version` and the rest of the volatile
+  // context (network, surface, account fields) are stamped by
+  // buildCommonContext — never hand-add them at a call site.
 
-  sendPaymentRecentAddress: "send payment: recent address",
-  sendPaymentSetMax: "send payment: set max",
-  sendPaymentFeeBreakdownOpened: "send payment: fee breakdown opened",
-  sendPaymentTypePayment: "send payment: selected type payment",
-  sendPaymentTypePathPayment: "send payment: selected type path payment",
-  sendPaymentSuccess: "send payment: payment success",
-  sendPaymentPathPaymentSuccess: "send payment: path payment success",
-  sendPaymentError: "send payment: error",
-  simuilateTokenPaymentError: "failed to simulate token payment",
+  // -- Payments (direct, non-routed sends) --------------------------------
+  paymentRecipientRecentSelected: "payment.recipient_recent_selected",
+  paymentMaxAmountSelected: "payment.max_amount_selected",
+  paymentFeeBreakdownOpened: "payment.fee_breakdown_opened",
+  // UI selection of the send type. `payment_type` distinguishes
+  // `payment` vs `path_payment` — it is a selection, not an outcome, so both
+  // selections share this one event.
+  paymentTypeSelected: "payment.type_selected",
+  // Direct (non-routed) payment outcomes. Routed/path payments settle as
+  // swaps (see swapCompleted / swapFailed below).
+  paymentCompleted: "payment.completed",
+  paymentFailed: "payment.failed",
+  paymentSimulationFailed: "payment.simulation_failed",
 
-  swapPickerOpened: "swap: picker opened",
-  swapSourceSelected: "swap: source selected",
-  swapDestinationSelected: "swap: destination selected",
-  swapDirectionToggled: "swap: direction toggled",
-  swapTrustlineAdded: "swap: trustline added",
-  swapXlmReserveShown: "swap: xlm reserve shown",
-  swapQuoteExpired: "swap: quote expired",
-  swapSuccess: "swap: success",
-  discoverProtocolOpened: "discover: protocol opened",
-  discoverProtocolDetailsViewed: "discover: protocol details viewed",
-  discoverProtocolOpenedFromDetails: "discover: protocol opened from details",
-  discoverWelcomeModalViewed: "discover: welcome modal viewed",
+  // -- Swap (first-class; also the home of routed/path-payment outcomes) ---
+  swapPickerOpened: "swap.picker_opened",
+  swapSourceSelected: "swap.source_selected",
+  swapDestinationSelected: "swap.destination_selected",
+  swapDirectionToggled: "swap.direction_toggled",
+  swapTrustlineAdded: "swap.trustline_added",
+  swapXlmReserveShown: "swap.xlm_reserve_shown",
+  swapQuoteExpired: "swap.quote_expired",
+  swapCompleted: "swap.completed",
+  swapFailed: "swap.failed",
 
-  manageAssetAddAsset: "manage asset: add asset",
-  manageAssetAddToken: "manage asset: add token",
-  manageAssetAddUnsafeAsset: "manage asset: add unsafe asset",
-  manageAssetRemoveAsset: "manage asset: remove asset",
-  manageAssetError: "manage asset: error",
+  // -- Collectibles --------------------------------------------------------
+  collectibleSendCompleted: "collectible_send.completed",
+  collectibleSendFailed: "collectible_send.failed",
 
-  manageAssetListsModifyAssetList: "manage asset list: modify asset list",
+  // -- Transaction submission ---------------------------------------------
+  // A signed transaction was actually broadcast to the network — distinct
+  // from signing.transaction_approved (the user approving a signature).
+  transactionSubmitted: "transaction.submitted",
 
-  accountCreatorSuccess: "account creator: create password: success",
-  accountCreatorReject: "account creator: create password: error",
+  // -- Discovery -----------------------------------------------------------
+  discoverProtocolOpened: "discover.protocol_opened",
+  discoverProtocolDetailsViewed: "discover.protocol_details_viewed",
+  discoverProtocolOpenedFromDetails: "discover.protocol_opened_from_details",
+  discoverWelcomeModalViewed: "discover.welcome_modal_viewed",
 
-  accountCreatorMnemonicViewPhrase: "account creator: viewed phrase",
+  // -- Assets / trustlines -------------------------------------------------
+  assetAdded: "asset.added",
+  assetRemoved: "asset.removed",
+  assetOperationFailed: "asset.operation_failed",
+  assetListModified: "asset_list.modified",
+  // Add-token prompt response. `decision` = confirm | reject.
+  assetAddResponded: "asset_add.responded",
+  // Remove-token prompt response. `decision` = confirm | reject.
+  assetRemoveResponded: "asset_remove.responded",
+  // Trustline removal blocked by chain state; `reason_code` carries which.
+  trustlineRemoveFailed: "trustline_remove.failed",
+  // Token add/remove initiated through the injected dApp API.
+  assetAddApiCompleted: "asset_add_api.completed",
+  assetAddApiFailed: "asset_add_api.failed",
+  assetAddApiCancelled: "asset_add_api.cancelled",
 
-  accountCreatorMnemonicConfirmPhrase:
-    "account creator: confirm phrase: confirmed phrase",
-  accountCreatorConfirmMnemonicFail:
-    "account creator: confirm phrase: error confirming",
-  accountCreatorConfirmMnemonicBack:
-    "account creator: confirm phrase: back to phrase",
+  // -- Onboarding / account creation --------------------------------------
+  onboardingPasswordCreated: "onboarding.password_created",
+  onboardingPasswordCreateFailed: "onboarding.password_create_failed",
+  onboardingRecoveryPhraseViewed: "onboarding.recovery_phrase_viewed",
+  onboardingRecoveryPhraseConfirmed: "onboarding.recovery_phrase_confirmed",
+  onboardingRecoveryPhraseConfirmFailed:
+    "onboarding.recovery_phrase_confirm_failed",
+  onboardingRecoveryPhraseBackClicked: "onboarding.recovery_phrase_back_clicked",
+  onboardingCompleted: "onboarding.completed",
 
-  accountCreatorFinished:
-    "account creator finished: closed account creator flow",
+  // -- Account recovery / management --------------------------------------
+  accountRecoveryCompleted: "account_recovery.completed",
+  accountRecoveryFailed: "account_recovery.failed",
+  accountCreated: "account.created",
+  accountImported: "account.imported",
+  accountImportFailed: "account.import_failed",
+  accountFirstFunded: "account.first_funded",
+  accountRenamed: "account.renamed",
+  accountPublicKeyCopied: "account.public_key_copied",
+  accountStellarExpertOpened: "account.stellar_expert_opened",
 
-  accountScreenAddAccount: "account screen: created new account",
-  accountScreenCopyPublickKey: "account screen: copied public key",
-  accountScreenImportAccount: "account screen: imported new account",
-  accountScreenImportAccountFail: "account screen: imported new account: error",
+  // -- Re-authentication (unlock) -----------------------------------------
+  // Not part of the shared cross-platform mapping; named to the same grammar
+  // for consistency.
+  reauthCompleted: "reauth.completed",
+  reauthFailed: "reauth.failed",
 
-  freighterAccountFunded: "freighter created account funded",
+  // -- Recovery phrase (backup) -------------------------------------------
+  recoveryPhraseCopied: "recovery_phrase.copied",
+  recoveryPhraseDownloaded: "recovery_phrase.downloaded",
 
-  confirmPasswordSuccess: "re-auth: success",
-  confirmPasswordFail: "re-auth: error",
+  // -- dApp access ---------------------------------------------------------
+  dappAccessGranted: "dapp_access.granted",
+  dappAccessRejected: "dapp_access.rejected",
 
-  historyOpenFullHistory: "history: opened full history on external website",
-  historyOpenItem: "history: opened item on external website",
+  // -- Signing -------------------------------------------------------------
+  signingTransactionApproved: "signing.transaction_approved",
+  signingTransactionRejected: "signing.transaction_rejected",
+  signingTransactionBlocked: "signing.transaction_blocked",
+  signingAuthEntryApproved: "signing.auth_entry_approved",
+  signingAuthEntryRejected: "signing.auth_entry_rejected",
+  signingAuthEntryFailed: "signing.auth_entry_failed",
+  signingMessageApproved: "signing.message_approved",
+  signingMessageRejected: "signing.message_rejected",
 
-  recoverAccountSuccess: "recover account: success",
-  recoverAccountFail: "recover account: error",
-  recoverAccountFinished:
-    "recover account finished: closed recover account flow",
+  // -- History -------------------------------------------------------------
+  historyFullHistoryOpened: "history.full_history_opened",
+  historyItemOpened: "history.item_opened",
 
-  grantAccessSuccess: "grant access: granted",
-  grantAccessFail: "grant access: rejected",
+  // -- On-ramp -------------------------------------------------------------
+  onrampCoinbaseOpened: "onramp.coinbase_opened",
 
-  addToken: "add token: confirmed",
-  rejectToken: "add token: rejected",
-
-  signTransaction: "sign transaction: confirmed",
-  signTransactionMemoRequired: "sign transaction: memo required error",
-  rejectTransaction: "sign transaction: rejected",
-
-  signBlob: "sign blob: confirmed",
-  rejectBlob: "sign blob: rejected",
-
-  signAuthEntry: "sign auth entry: confirmed",
-  rejectAuthEntry: "sign auth entry: rejected",
-
-  backupPhraseSuccess: "backup phrase: success",
-  backupPhraseFail: "backup phrase: error",
-
-  backupPhraseDownload: "backup phrase: downloaded phrase",
-  backupPhraseCopy: "backup phrase: copied phrase",
-
-  viewPublicKeyAccountRenamed: "viewPublicKey: renamed account",
-  viewPublicKeyCopy: "viewPublicKey: copied public key",
-  viewPublicKeyClickedStellarExpert: "viewPublicKey: clicked StellarExpert",
-
-  invalidAuthEntry: "invalid authorization entry",
-
-  tokenAddedApi: "user added token through api",
-  tokenFailedApi: "failed adding token through api",
-  tokenRejectApi: "user cancelled adding token through api",
-
-  rejectSigning: "user cancelled signing flow",
-  approveSign: "user signed transaction",
-  reviewedAuthEntry: "reviewed authorization entry",
-
-  trustlineErrorBuyingLiability:
-    "trustline removal error: asset has buying liabilties",
-  trustlineErrorHasBalance: "trustline removal error: asset has balance",
-  trustlineErrorLowReserve: "trustline removal error: asset has low reserve",
-
-  blockaidDomainScan: "blockaid: scanned domain",
-  blockaidTxScan: "blockaid: scanned transaction",
-  blockaidTxScanFailed: "blockaid: transaction scan failed",
-  blockaidAssetScan: "blockaid: scanned asset",
-  blockaidAssetScanFailed: "blockaid: asset scan failed",
-
-  coinbaseOnrampOpened: "coinbase onramp: opened",
+  // -- Blockaid (consolidated: one completed + one failed event, keyed by
+  //    scan_target = domain | transaction | asset, with a `result`) --------
+  blockaidScanCompleted: "blockaid.scan_completed",
+  blockaidScanFailed: "blockaid.scan_failed",
 
   appOpened: "app.opened",
 
