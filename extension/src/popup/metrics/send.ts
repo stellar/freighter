@@ -6,7 +6,7 @@ export type SendFeeBreakdownEntryPoint = "review" | "settings";
 export const trackSendFeeBreakdownOpened = (
   entryPoint: SendFeeBreakdownEntryPoint,
 ) => {
-  emitMetric(METRIC_NAMES.sendPaymentFeeBreakdownOpened, {
+  emitMetric(METRIC_NAMES.paymentFeeBreakdownOpened, {
     entry_point: entryPoint,
   });
 };

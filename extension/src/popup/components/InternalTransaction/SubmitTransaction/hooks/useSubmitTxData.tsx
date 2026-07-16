@@ -61,6 +61,7 @@ function useSubmitTxData({
       amount,
       allowedSlippage,
       destinationTokenDetails,
+      isCollectible,
     },
     transactionSimulation,
   } = submission;
@@ -98,9 +99,17 @@ function useSubmitTxData({
       );
 
       if (submitFreighterTransaction.fulfilled.match(submitResp)) {
+        // A signed transaction was actually broadcast to the network. Tracked
+        // distinctly from the signing approval; `network` rides on the common
+        // context.
+        emitMetric(METRIC_NAMES.transactionSubmitted);
+
         if (isSwap) {
-          // Post-confirmation swap telemetry: the swap actually settled.
-          emitMetric(METRIC_NAMES.swapSuccess, {
+          // Post-confirmation swap telemetry: the swap actually settled. A
+          // routed/path payment settles here too — its outcome is a swap.
+          emitMetric(METRIC_NAMES.swapCompleted, {
+            from_asset_code: sourceAsset.code,
+            to_asset_code: getAssetFromCanonical(destinationAsset).code,
             sourceToken: sourceAsset.code,
             destToken: destinationAsset,
             sourceAmount: amount,
@@ -125,9 +134,16 @@ function useSubmitTxData({
               addRecentAddress({ address: federationAddress || destination }),
             );
           }
-          emitMetric(METRIC_NAMES.sendPaymentSuccess, {
-            sourceAsset: sourceAsset.code,
-          });
+
+          if (isCollectible) {
+            emitMetric(METRIC_NAMES.collectibleSendCompleted);
+          } else {
+            // Direct (non-routed) payment outcome.
+            emitMetric(METRIC_NAMES.paymentCompleted, {
+              payment_type: "payment",
+              sourceAsset: sourceAsset.code,
+            });
+          }
         }
 
         // After successful submission, re-fetch balances and collectibles to get their latest values

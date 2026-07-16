@@ -31,15 +31,31 @@ interface ErrorDetails {
 }
 
 export const SubmitFail = () => {
-  const { error } = useSelector(transactionSubmissionSelector);
+  const { error, transactionData } = useSelector(transactionSubmissionSelector);
   const isSwap = useIsSwap();
+  const { isCollectible } = transactionData;
   const { t } = useTranslation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
   useEffect(() => {
-    emitMetric(METRIC_NAMES.sendPaymentError, { error });
-  }, [error]);
+    const resultCodes = getResultCodes(error);
+    const reasonCode =
+      resultCodes.operations?.[0] || resultCodes.transaction || "unknown";
+
+    // A routed/path payment fails as a swap; a collectible send has its own
+    // terminal event. `network` rides on the common context.
+    if (isCollectible) {
+      emitMetric(METRIC_NAMES.collectibleSendFailed, {
+        reason_code: reasonCode,
+        error,
+      });
+    } else if (isSwap) {
+      emitMetric(METRIC_NAMES.swapFailed, { reason_code: reasonCode, error });
+    } else {
+      emitMetric(METRIC_NAMES.paymentFailed, { reason_code: reasonCode, error });
+    }
+  }, [error, isSwap, isCollectible]);
 
   const getErrorDetails = (err: ErrorMessage | undefined): ErrorDetails => {
     const errorDetails: ErrorDetails = {
