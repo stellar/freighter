@@ -33,6 +33,7 @@ export const trackDiscoverProtocolOpened = (
   source: DiscoverSource,
 ): void => {
   emitMetric(METRIC_NAMES.discoverProtocolOpened, {
+    protocol_id: protocolName,
     url: stripQueryParams(url),
     protocolName,
     source,
@@ -48,6 +49,7 @@ export const trackDiscoverProtocolDetailsViewed = (
   tags: string[],
 ): void => {
   emitMetric(METRIC_NAMES.discoverProtocolDetailsViewed, {
+    protocol_id: protocolName,
     protocolName,
     tags,
   });
@@ -58,6 +60,7 @@ export const trackDiscoverProtocolOpenedFromDetails = (
   url: string,
 ): void => {
   emitMetric(METRIC_NAMES.discoverProtocolOpenedFromDetails, {
+    protocol_id: protocolName,
     protocolName,
     url: stripQueryParams(url),
   });

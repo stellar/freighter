@@ -585,7 +585,7 @@ export const storeBalanceMetricData = (
     if (accountFunded) {
       metricsData.freighterFunded = true;
       if (idx !== -1) {
-        emitMetric(METRIC_NAMES.freighterAccountFunded, {
+        emitMetric(METRIC_NAMES.accountFirstFunded, {
           account_id_hash: getAccountIdHash(publicKey),
         });
         unfundedFreighterAccounts.splice(idx, 1);

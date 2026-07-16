@@ -122,7 +122,7 @@ export const ViewPublicKey = () => {
       await dispatch(
         updateAccountName({ accountName: newAccountName, publicKey }),
       );
-      emitMetric(METRIC_NAMES.viewPublicKeyAccountRenamed);
+      emitMetric(METRIC_NAMES.accountRenamed, { source: "view_public_key" });
     }
     setIsEditingName(false);
   };
@@ -209,7 +209,7 @@ export const ViewPublicKey = () => {
                 openTab(
                   `https://stellar.expert/explorer/${networkDetails.network.toLowerCase()}/account/${publicKey}`,
                 );
-                emitMetric(METRIC_NAMES.viewPublicKeyClickedStellarExpert);
+                emitMetric(METRIC_NAMES.accountStellarExpertOpened);
               }}
             >
               {t("View on")} stellar.expert
