@@ -14,6 +14,7 @@ interface AssetTileProps {
   assetIcon: string | null;
   balance?: string;
   isSuspicious: boolean;
+  isMalicious?: boolean;
   onClick: () => void;
   emptyLabel?: string;
   emptySubtext?: string;
@@ -25,6 +26,7 @@ export const AssetTile = ({
   assetIcon,
   balance,
   isSuspicious,
+  isMalicious = true,
   onClick,
   emptyLabel,
   emptySubtext,
@@ -46,6 +48,7 @@ export const AssetTile = ({
             issuerKey={asset.issuer}
             icon={assetIcon}
             isSuspicious={isSuspicious}
+            isMalicious={isMalicious}
           />
         }
         primaryText={asset.code}

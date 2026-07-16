@@ -37,6 +37,10 @@
       display: flex;
       align-items: center;
       margin-bottom: pxToRem(12px);
+      font-size: pxToRem(14);
+      line-height: pxToRem(20);
+      font-weight: 600;
+      color: var(--sds-clr-gray-11);
 
       svg {
         margin-right: pxToRem(4px);

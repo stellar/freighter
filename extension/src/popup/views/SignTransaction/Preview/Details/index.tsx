@@ -10,18 +10,23 @@ interface DetailsProps {
   operations: OperationRecord[];
   flaggedKeys: FlaggedKeys;
   isMemoRequired: boolean;
+  // Forwarded to Operations: false skips the per-op Blockaid self-scan when the
+  // host flow has already scanned these assets (e.g. internal Send/Swap review).
+  scanAssets?: boolean;
 }
 
 export const Details = ({
   operations,
   flaggedKeys,
   isMemoRequired,
+  scanAssets = true,
 }: DetailsProps) => (
   <div className="DetailsBody" data-testid="DetailsBody">
     <Operations
       operations={operations}
       flaggedKeys={flaggedKeys}
       isMemoRequired={isMemoRequired}
+      scanAssets={scanAssets}
     />
   </div>
 );

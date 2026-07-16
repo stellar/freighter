@@ -1,13 +1,35 @@
 .ScamAssetIcon {
   display: flex;
   align-items: center;
-  background: var(--sds-clr-red-03);
-  border-radius: 1rem;
+  justify-content: center;
   position: absolute;
   bottom: 0;
   right: 0;
-  padding: 0.25rem;
+  // Half the icon footprint, kept a perfect circle via aspect-ratio so it never
+  // looks squashed when the parent logo is small (e.g. the compact AmountCard
+  // token pill).
   width: 50%;
-  height: 50%;
-  background-size: auto;
+  aspect-ratio: 1 / 1;
+  border-radius: 50%;
+
+  // The warning glyph uses currentColor, so the badge color follows the verdict
+  // modifier below. Sized as a share of the badge (not a fixed value) so it
+  // scales with the parent icon instead of overflowing small badges.
+  svg {
+    width: 50%;
+    height: 50%;
+  }
+
+  // Malicious: red. Matches the swap review's malicious banner.
+  &--malicious {
+    background: var(--sds-clr-red-03);
+    color: var(--sds-clr-red-09);
+  }
+
+  // Suspicious: amber. Matches the caution banner and the Blockaid detail
+  // sheet's amber alert icon.
+  &--suspicious {
+    background: var(--sds-clr-amber-03);
+    color: var(--sds-clr-amber-09);
+  }
 }

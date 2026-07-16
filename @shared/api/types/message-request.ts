@@ -9,6 +9,7 @@ import {
   BalanceToMigrate,
   IssuerKey,
   CollectibleKey,
+  TrendingAsset,
 } from "./types";
 import { AssetsListItem } from "@shared/constants/soroban/asset-list";
 import { AutoLockTimeoutMinutes } from "@shared/constants/autoLock";
@@ -328,6 +329,19 @@ export interface CacheAssetIconMessage extends BaseMessage {
   iconUrl: string;
 }
 
+export interface GetCachedSwapTopTokensMessage extends BaseMessage {
+  type: SERVICE_TYPES.GET_CACHED_SWAP_TOP_TOKENS;
+  network: string;
+}
+
+export interface CacheSwapTopTokensMessage extends BaseMessage {
+  type: SERVICE_TYPES.CACHE_SWAP_TOP_TOKENS;
+  network: string;
+  // Pass-through cache: the background stores these as-is and never reads
+  // individual token fields.
+  tokens: TrendingAsset[];
+}
+
 export interface GetCachedDomainMessage extends BaseMessage {
   type: SERVICE_TYPES.GET_CACHED_ASSET_DOMAIN;
   assetCanonical: string;
@@ -485,6 +499,14 @@ export interface RejectSigningRequestMessage extends BaseMessage {
   uuid: string;
 }
 
+export interface FetchBackendV2Message {
+  activePublicKey: string | null;
+  type: SERVICE_TYPES.FETCH_BACKEND_V2;
+  method: string;
+  path: string;
+  body?: string;
+}
+
 export type ServiceMessageRequest =
   | FundAccountMessage
   | CreateAccountMessage
@@ -527,6 +549,8 @@ export type ServiceMessageRequest =
   | GetCachedAssetIconListMessage
   | GetCachedAssetIconMessage
   | CacheAssetIconMessage
+  | GetCachedSwapTopTokensMessage
+  | CacheSwapTopTokensMessage
   | GetCachedDomainMessage
   | CacheDomainMessage
   | GetMemoRequiredAccountsMessage
@@ -557,4 +581,5 @@ export type ServiceMessageRequest =
   | MarkQueueActiveMessage
   | OpenSidebarMessage
   | RejectSigningRequestMessage
-  | UserActivityMessage;
+  | UserActivityMessage
+  | FetchBackendV2Message;

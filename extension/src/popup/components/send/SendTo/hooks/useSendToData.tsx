@@ -10,7 +10,7 @@ import { initialState, isError, reducer } from "helpers/request";
 import { AccountBalances, useGetBalances } from "helpers/hooks/useGetBalances";
 import { loadRecentAddresses } from "@shared/api/internal";
 import { getBaseAccount } from "popup/helpers/account";
-import { isFederationAddress, isMainnet } from "helpers/stellar";
+import { isFederationAddress, isMainnet, isSameAccount } from "helpers/stellar";
 import { isContractId } from "popup/helpers/soroban";
 import {
   AppDataType,
@@ -99,6 +99,14 @@ function useSendToData() {
           federationMemo,
           federationMemoType,
         } = await getAddressFromInput(userInput);
+
+        // Block self-sends. isSameAccount resolves muxed (M...) addresses to
+        // their base (G...) account, so sending to one of your own muxed
+        // addresses is caught too - as is a federation address that resolves to
+        // your own account (validatedAddress is the resolved G... here).
+        if (isSameAccount(validatedAddress, publicKey)) {
+          throw new Error(i18n.t("You cannot send to yourself"));
+        }
 
         const { recentAddresses } = await loadRecentAddresses({
           activePublicKey: publicKey,
