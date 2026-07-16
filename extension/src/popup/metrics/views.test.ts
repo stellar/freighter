@@ -108,7 +108,7 @@ describe("views navigate handler → screen.viewed", () => {
   it("leaves the non-screen modify-asset-list event untouched", () => {
     fireNavigate(ROUTES.manageAssetsListsModifyAssetList);
     expect(emitMetric).toHaveBeenCalledWith(
-      METRIC_NAMES.manageAssetListsModifyAssetList,
+      METRIC_NAMES.assetListModified,
     );
     expect(emitScreenViewed).not.toHaveBeenCalled();
   });

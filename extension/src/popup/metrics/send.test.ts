@@ -18,7 +18,7 @@ describe("trackSendFeeBreakdownOpened", () => {
     trackSendFeeBreakdownOpened("settings");
 
     expect(mockEmitMetric).toHaveBeenCalledWith(
-      METRIC_NAMES.sendPaymentFeeBreakdownOpened,
+      METRIC_NAMES.paymentFeeBreakdownOpened,
       { entry_point: "settings" },
     );
   });
@@ -27,7 +27,7 @@ describe("trackSendFeeBreakdownOpened", () => {
     trackSendFeeBreakdownOpened("review");
 
     expect(mockEmitMetric).toHaveBeenCalledWith(
-      METRIC_NAMES.sendPaymentFeeBreakdownOpened,
+      METRIC_NAMES.paymentFeeBreakdownOpened,
       { entry_point: "review" },
     );
   });

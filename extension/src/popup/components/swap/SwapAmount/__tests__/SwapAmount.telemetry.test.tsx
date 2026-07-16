@@ -127,7 +127,7 @@ describe("SwapAmount telemetry + quote-expired surfacing", () => {
     });
 
     const expiredCall = emitMetricMock.mock.calls.find(
-      (c) => c[0] === "swap: quote expired",
+      (c) => c[0] === "swap.quote_expired",
     );
     expect(expiredCall).toBeDefined();
     expect(expiredCall![1]).toMatchObject({
@@ -160,7 +160,7 @@ describe("SwapAmount telemetry + quote-expired surfacing", () => {
     });
     expect(toastCustomMock).not.toHaveBeenCalled();
     expect(
-      emitMetricMock.mock.calls.find((c) => c[0] === "swap: quote expired"),
+      emitMetricMock.mock.calls.find((c) => c[0] === "swap.quote_expired"),
     ).toBeUndefined();
   });
 
@@ -200,7 +200,7 @@ describe("SwapAmount telemetry + quote-expired surfacing", () => {
     // The trustline-added metric fires in useSubmitTxData after the swap
     // settles, not here at review/confirm time.
     expect(
-      emitMetricMock.mock.calls.find((c) => c[0] === "swap: trustline added"),
+      emitMetricMock.mock.calls.find((c) => c[0] === "swap.trustline_added"),
     ).toBeUndefined();
     expect(goToNext).toHaveBeenCalled();
   });

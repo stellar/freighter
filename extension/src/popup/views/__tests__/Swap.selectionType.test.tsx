@@ -220,7 +220,7 @@ describe("Swap selectionType wiring", () => {
     });
 
     const sourceCall = emitMetricMock.mock.calls.find(
-      (c) => c[0] === "swap: source selected",
+      (c) => c[0] === "swap.source_selected",
     );
     expect(sourceCall).toBeDefined();
     expect(sourceCall![1]).toMatchObject({
