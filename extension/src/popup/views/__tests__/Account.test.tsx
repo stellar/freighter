@@ -269,6 +269,7 @@ jest.mock("helpers/metrics", () => ({
   emitMetric: jest.fn(),
   initAmplitude: jest.fn(),
   metricsMiddleware: jest.fn(),
+  reconcileAnalyticsUserId: jest.fn().mockResolvedValue(undefined),
 }));
 
 jest.mock("popup/ducks/accountServices", () => {

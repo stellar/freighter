@@ -92,6 +92,7 @@ jest.mock("helpers/metrics", () => ({
   ),
   storeBalanceMetricData: () => {},
   storeAccountMetricsData: () => {},
+  reconcileAnalyticsUserId: jest.fn().mockResolvedValue(undefined),
   getAnalyticsDebugInfo: () => ({
     hasInitialized: false,
     hasAmplitudeKey: false,

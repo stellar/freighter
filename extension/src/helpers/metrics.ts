@@ -1,4 +1,5 @@
 import * as amplitude from "@amplitude/analytics-browser";
+import * as Sentry from "@sentry/browser";
 import { Action, Middleware } from "redux";
 import { PayloadAction } from "@reduxjs/toolkit";
 import { Location } from "react-router-dom";
@@ -19,6 +20,7 @@ import {
 import { publicKeySelector } from "popup/ducks/accountServices";
 import { Account, AccountType } from "@shared/api/types";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
+import { getAnalyticsUserId } from "@shared/api/internal";
 
 // Console log message constants
 const LOG_MESSAGES = {
@@ -146,6 +148,34 @@ export const getUserId = (): string => {
     sessionUserId = generateRandomUserId();
     return sessionUserId;
   }
+};
+
+/**
+ * Resolves the seed-derived auth user id from the background and, when it
+ * differs from the persisted id, adopts it as the canonical analytics/Sentry
+ * user id (overwriting the random bootstrap id — this migrates existing
+ * users onto a stable, cross-platform-consistent id). Idempotent; no-op
+ * when locked (background returns `null`) or already reconciled. Never
+ * throws into callers.
+ */
+export const reconcileAnalyticsUserId = async (): Promise<void> => {
+  let authUserId: string | null = null;
+  try {
+    const res = await getAnalyticsUserId();
+    authUserId = res.analyticsUserId;
+  } catch {
+    return; // never throw into callers
+  }
+
+  if (!authUserId) return;
+  if (localStorage.getItem(METRICS_USER_ID) === authUserId) return;
+
+  localStorage.setItem(METRICS_USER_ID, authUserId);
+  sessionUserId = authUserId;
+  if (hasInitialized && AMPLITUDE_KEY) {
+    amplitude.setUserId(authUserId);
+  }
+  Sentry.setUser({ id: authUserId });
 };
 
 /**
