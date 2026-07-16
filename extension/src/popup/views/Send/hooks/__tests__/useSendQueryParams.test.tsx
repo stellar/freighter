@@ -1,7 +1,7 @@
 import React from "react";
 import { Provider } from "react-redux";
 import { useLocation } from "react-router-dom";
-import { renderHook } from "@testing-library/react";
+import { renderHook, act } from "@testing-library/react";
 import { StrKey } from "stellar-sdk";
 import {
   makeDummyStore,
@@ -22,6 +22,7 @@ import {
   saveFederationAddress,
 } from "popup/ducks/transactionSubmission";
 import { initialState as transactionSubmissionInitialState } from "popup/ducks/transactionSubmission";
+import { saveCollections } from "popup/ducks/cache";
 import * as StellarHelpers from "@shared/helpers/stellar";
 import * as SorobanHelpers from "@shared/api/helpers/soroban";
 
@@ -612,6 +613,61 @@ describe("useSendQueryParams", () => {
           collectionName: "Test Collection",
           image: "",
         }),
+      );
+    });
+  });
+
+  describe("In-flow asset selection (issue #2871)", () => {
+    // Repro: open a token's detail page -> Send (URL carries ?asset=<that token>
+    // for the whole flow) -> switch to a different token -> submit. The success
+    // ("Sent!") screen reads transactionData.asset, so the user's switched asset
+    // must survive any effect re-run that happens after the switch (e.g. the
+    // account/collections refresh triggered by a successful submit).
+    const switchedAsset =
+      "AQUA:GBNZILSTVQZ4R7IKQDGHYGY2QXL5QOFJYQMXPKWRRM5PAV7Y4M67AQUA";
+
+    it("does not revert the user's switched asset when the effect re-runs without a URL change", () => {
+      mockUseLocation.mockReturnValue({
+        pathname: "/send",
+        search: `?asset=${validAsset}`,
+        state: null,
+      });
+
+      const store = makeDummyStore(defaultState);
+      const Wrapper = ({ children }: { children: React.ReactNode }) => (
+        <Provider store={store}>{children}</Provider>
+      );
+      renderHook(() => useSendQueryParams(), { wrapper: Wrapper });
+
+      // Mount pre-populates the asset from the URL param.
+      expect(store.getState().transactionSubmission.transactionData.asset).toBe(
+        validAsset,
+      );
+
+      // The user switches the source asset mid-flow (SendDestinationAsset).
+      act(() => {
+        store.dispatch(saveAsset(switchedAsset));
+      });
+      expect(store.getState().transactionSubmission.transactionData.asset).toBe(
+        switchedAsset,
+      );
+
+      // An unrelated store change re-triggers the hook's effect without any URL
+      // change (mirrors the account/collections refresh after a successful send,
+      // which changes the collections dependency reference).
+      act(() => {
+        store.dispatch(
+          saveCollections({
+            networkDetails: MAINNET_NETWORK_DETAILS,
+            publicKey: TEST_PUBLIC_KEY,
+            collections: [],
+          }),
+        );
+      });
+
+      // The switched asset must survive — the URL param must not clobber it.
+      expect(store.getState().transactionSubmission.transactionData.asset).toBe(
+        switchedAsset,
       );
     });
   });

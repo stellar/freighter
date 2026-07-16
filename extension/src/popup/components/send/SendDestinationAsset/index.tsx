@@ -31,13 +31,11 @@ import "./styles.scss";
 interface SendDestinationAssetProps {
   goBack: () => void;
   goToNext: () => void;
-  showCloseIcon?: boolean;
 }
 
 export const SendDestinationAsset = ({
   goBack,
   goToNext,
-  showCloseIcon = false,
 }: SendDestinationAssetProps) => {
   const { t } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
@@ -118,7 +116,6 @@ export const SendDestinationAsset = ({
         title={<span>{t("Send")}</span>}
         hasBackButton
         customBackAction={goBack}
-        {...(showCloseIcon && { customBackIcon: <Icon.X /> })}
       />
       <View.Content hasNoTopPadding>
         <div className="SendDestinationAsset">
@@ -134,11 +131,12 @@ export const SendDestinationAsset = ({
               resetAmountForm();
               goToNext();
             }}
-            isShowingHeader={false}
+            isShowingHeader={true}
           />
           {destAssetDataState.data.collectibles.collections.length > 0 && (
             <div className="SendDestinationAsset__collectibles-section">
               <div className="SendDestinationAsset__collectibles-heading">
+                <Icon.Image01 />
                 {t("Collectibles")}
               </div>
               <CollectiblesList

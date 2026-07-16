@@ -1,4 +1,7 @@
-const core = require("@actions/core");
+// @actions/core v3+ is ESM-only (no CommonJS `require` export), so it is
+// loaded via dynamic import inside run() before any use. ncc bundles the
+// dynamically-imported module into dist/index.js.
+let core;
 const fs = require("fs");
 const glob = require("glob");
 const chromeWebstoreUpload = require("./chrome-extension-upload");
@@ -31,7 +34,7 @@ function uploadFile(webStore, filePath, publishFlg, publishTarget) {
             .catch((e) => {
               core.error(e);
               core.setFailed(
-                "publish error - You will need to access the Chrome Web Store Developer Dashboard and publish manually."
+                "publish error - You will need to access the Chrome Web Store Developer Dashboard and publish manually.",
               );
             });
         }
@@ -40,7 +43,7 @@ function uploadFile(webStore, filePath, publishFlg, publishTarget) {
         console.log(e);
         core.error(e);
         core.setFailed(
-          "upload error - You will need to go to the Chrome Web Store Developer Dashboard and upload it manually."
+          "upload error - You will need to go to the Chrome Web Store Developer Dashboard and upload it manually.",
         );
       });
   });
@@ -48,6 +51,8 @@ function uploadFile(webStore, filePath, publishFlg, publishTarget) {
 
 async function run() {
   try {
+    core = await import(/* webpackMode: "eager" */ "@actions/core");
+
     const filePath = core.getInput("file-path", { required: true });
     const extensionId = core.getInput("extension-id", { required: true });
     const clientId = core.getInput("client-id", { required: true });
@@ -75,7 +80,12 @@ async function run() {
       uploadFile(webStore, filePath, publishFlg, publishTarget);
     }
   } catch (error) {
-    core.setFailed(error.message);
+    if (core) {
+      core.setFailed(error.message);
+    } else {
+      console.error(error);
+      process.exitCode = 1;
+    }
   }
 }
 

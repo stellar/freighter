@@ -146,6 +146,38 @@ export const getBaseAccount = (muxedAddress: string): string | null => {
 };
 
 /**
+ * Compares two Stellar addresses, treating a muxed account (M...) as equal to
+ * its base account (G...).
+ *
+ * Horizon and Soroban can surface the recipient of a payment/transfer as a muxed
+ * (M...) address, while the wallet only ever knows its own base (G...) public key.
+ * A strict `===` comparison between the two formats always fails, which would
+ * misclassify payments received to a muxed address as "sent". Normalizing both
+ * sides to their base account before comparing avoids that.
+ *
+ * @param addressA First address (G..., M..., C..., or empty)
+ * @param addressB Second address (G..., M..., C..., or empty)
+ * @returns True if both addresses resolve to the same base account
+ */
+export const isSameAccount = (
+  addressA?: string | null,
+  addressB?: string | null,
+): boolean => {
+  if (!addressA || !addressB) {
+    return false;
+  }
+
+  const baseA = getBaseAccount(addressA);
+  const baseB = getBaseAccount(addressB);
+
+  if (!baseA || !baseB) {
+    return false;
+  }
+
+  return baseA === baseB;
+};
+
+/**
  * Creates a muxed account address from a base account and a muxed ID (memo)
  * This is used for CAP-0067 to support memo in Soroban transfers
  *

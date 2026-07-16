@@ -12,7 +12,7 @@ import {
   XdrLargeInt,
 } from "stellar-sdk";
 import BigNumber from "bignumber.js";
-import { INDEXER_URL, INDEXER_V2_URL } from "@shared/constants/mercury";
+import { INDEXER_URL } from "@shared/constants/mercury";
 import {
   AutoLockTimeoutMinutes,
   DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
@@ -65,6 +65,7 @@ import {
   DiscoverData,
   RecentProtocolEntry,
   SaveSettingsResponse,
+  TrendingAsset,
 } from "./types";
 import {
   AccountBalancesInterface,
@@ -76,6 +77,7 @@ import {
   DEFAULT_NETWORKS,
   NetworkDetails,
   NETWORKS,
+  PASSPHRASE_TO_PRICE_NETWORK,
 } from "../constants/stellar";
 import { SERVICE_TYPES } from "../constants/services";
 import { isDev } from "../helpers/dev";
@@ -83,6 +85,7 @@ import { SorobanRpcNotSupportedError } from "../constants/errors";
 import { APPLICATION_STATE } from "../constants/applicationState";
 import { WalletType } from "../constants/hardwareWallet";
 import { sendMessageToBackground } from "./helpers/extensionMessaging";
+import { fetchBackendV2 } from "./helpers/fetchBackendV2";
 import { getIconUrlFromIssuer } from "./helpers/getIconUrlFromIssuer";
 import { getLedgerKeyAccounts } from "./helpers/getLedgerKeyAccounts";
 import { stellarSdkServer, submitTx } from "./helpers/stellarSdkServer";
@@ -599,20 +602,73 @@ export const getAccountIndexerBalances = async ({
   };
 };
 
-export const getTokenPrices = async (tokens: string[]) => {
+export const getTokenPrices = async (
+  tokens: string[],
+  networkDetails: NetworkDetails,
+  // Defaults to the v2 endpoint. Callers pass the `use_token_prices_v2` feature
+  // flag so Amplitude can roll back to the v1 endpoint without a release.
+  useV2 = true,
+): Promise<ApiTokenPrices> => {
   // NOTE: API does not accept LP IDs or custom tokens
   const filteredTokens = tokens.filter((tokenId) => {
     const asset = getAssetFromCanonical(tokenId);
     return !tokenId.includes(":lp") && !isContractId(asset.issuer);
   });
+
+  const requestBody = JSON.stringify({ tokens: filteredTokens });
+
+  // The v2 token-prices endpoint is a freighter-backend-v2 call, so it goes
+  // through the background chokepoint (callBackendV2), which attaches the
+  // per-request JWT (#2879). token-prices is only ever fetched from an unlocked
+  // wallet (a locked wallet shows the login screen), so this request always
+  // carries the JWT. The v1 path below is the legacy indexer, a direct fetch.
+  if (useV2) {
+    // The v2 token-prices endpoint only supports pubnet and testnet. Derive the
+    // price network from the passphrase rather than networkDetails.network so
+    // that custom networks sharing the pubnet/testnet passphrase (stored as
+    // STANDALONE) still resolve to the correct supported network. Anything else
+    // (Futurenet, custom passphrases) is skipped to avoid a guaranteed error and
+    // Sentry noise.
+    const priceNetwork =
+      PASSPHRASE_TO_PRICE_NETWORK[networkDetails.networkPassphrase];
+    if (!priceNetwork) {
+      return {};
+    }
+    // Nothing priceable left after filtering, so skip the request rather than
+    // POST an empty tokens array and risk a 4xx that surfaces as an error.
+    if (!filteredTokens.length) {
+      return {};
+    }
+
+    // Query lives in the path so callBackendV2 signs the JWT's methodAndPath
+    // over the server's full request-target (path + query) — see #2879.
+    const { status, body } = await fetchBackendV2({
+      method: "POST",
+      path: `/token-prices?network=${priceNetwork}`,
+      body: requestBody,
+    });
+
+    // Mirror getDiscoverData: a 200 without a `data` payload is still a
+    // failure — returning undefined would violate the Promise<ApiTokenPrices>
+    // contract (the caller's try/catch only handles throws, not bad returns).
+    const parsed = body as { data?: ApiTokenPrices };
+    if (status !== 200 || !parsed?.data) {
+      const _err = JSON.stringify(body);
+      captureException(`Failed to fetch token prices - ${status}: ${_err}`);
+      throw new Error(_err);
+    }
+
+    return parsed.data;
+  }
+
+  // v1 (legacy) path — direct fetch to the v1 indexer, not a backend-v2 call.
   const url = new URL(`${INDEXER_URL}/token-prices`);
   const options = {
     method: "POST",
     headers: {
-      // eslint-disable-next-line @typescript-eslint/naming-convention
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ tokens: filteredTokens }),
+    body: requestBody,
   };
   const response = await fetch(url.href, options);
   const parsedResponse = (await response.json()) as { data: ApiTokenPrices };
@@ -629,10 +685,13 @@ export const getTokenPrices = async (tokens: string[]) => {
 };
 
 export const getDiscoverData = async (): Promise<DiscoverData> => {
-  const url = new URL(`${INDEXER_V2_URL}/protocols`);
-  const response = await fetch(url.href);
-  const parsedResponse = (await response.json()) as {
-    data: {
+  const { status, body } = await fetchBackendV2({
+    method: "GET",
+    path: "/protocols",
+  });
+
+  const parsed = body as {
+    data?: {
       protocols: {
         description: string;
         icon_url: string;
@@ -646,15 +705,13 @@ export const getDiscoverData = async (): Promise<DiscoverData> => {
     };
   };
 
-  if (!response.ok || !parsedResponse.data) {
-    const _err = JSON.stringify(parsedResponse);
-    captureException(
-      `Failed to fetch discover entries - ${response.status}: ${response.statusText}`,
-    );
+  if (status !== 200 || !parsed?.data) {
+    const _err = JSON.stringify(parsed);
+    captureException(`Failed to fetch discover entries - ${status}`);
     throw new Error(_err);
   }
 
-  return parsedResponse.data.protocols.map((entry) => ({
+  return parsed.data.protocols.map((entry) => ({
     description: entry.description,
     iconUrl: entry.icon_url,
     name: entry.name,
@@ -2513,4 +2570,36 @@ export const dismissDiscoverWelcome = async (): Promise<boolean> => {
   }
 
   return !!hasSeenDiscoverWelcome;
+};
+
+export const getCachedSwapTopTokens = async (
+  network: string,
+): Promise<{ tokens: TrendingAsset[]; updatedAt: number } | null> => {
+  const { cachedSwapTopTokens, error } = await sendMessageToBackground({
+    activePublicKey: null,
+    type: SERVICE_TYPES.GET_CACHED_SWAP_TOP_TOKENS,
+    network,
+  });
+
+  if (error) {
+    throw new Error(error);
+  }
+
+  return cachedSwapTopTokens || null;
+};
+
+export const cacheSwapTopTokens = async (
+  network: string,
+  tokens: TrendingAsset[],
+): Promise<void> => {
+  const { error } = await sendMessageToBackground({
+    activePublicKey: null,
+    type: SERVICE_TYPES.CACHE_SWAP_TOP_TOKENS,
+    network,
+    tokens,
+  });
+
+  if (error) {
+    throw new Error(error);
+  }
 };

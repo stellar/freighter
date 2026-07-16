@@ -91,6 +91,7 @@ function useGetSendAmountData(
         const fetchedTokenPrices = await fetchTokenPrices({
           publicKey: userDomains.publicKey,
           balances: userDomains.balances.balances,
+          networkDetails: userDomains.networkDetails,
           useCache: true,
         });
 

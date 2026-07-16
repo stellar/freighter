@@ -8,6 +8,7 @@ export const ACCOUNT_NAME_LIST_ID = "accountNameList";
 export const CACHED_MEMO_REQUIRED_ACCOUNTS_ID = "cachedMemoRequiredAccountsId";
 export const CACHED_ASSET_ICONS_ID = "cachedAssetIconsId";
 export const CACHED_ASSET_DOMAINS_ID = "cachedAssetDomainsId";
+export const CACHED_SWAP_TOP_TOKENS_ID = "cachedSwapTopTokensId";
 export const IS_VALIDATING_MEMO_ID = "isValidatingMemo";
 export const IS_EXPERIMENTAL_MODE_ID = "isExperimentalMode";
 export const RECENT_ADDRESSES = "recentAddresses";

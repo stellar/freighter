@@ -9,10 +9,16 @@
   }
 
   &__collectibles-heading {
+    display: flex;
+    align-items: center;
     font-size: pxToRem(14);
     line-height: pxToRem(20);
     font-weight: 600;
     padding: pxToRem(8) 0;
     color: var(--sds-clr-gray-11);
+
+    svg {
+      margin-right: pxToRem(4px);
+    }
   }
 }

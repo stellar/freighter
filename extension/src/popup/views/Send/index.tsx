@@ -30,7 +30,6 @@ import { RequestState } from "constants/request";
 import { View } from "popup/basics/layout/View";
 
 import { useSendQueryParams } from "./hooks/useSendQueryParams";
-import { InputWidthProvider } from "./contexts/inputWidthContext";
 
 import "./styles.scss";
 
@@ -277,7 +276,6 @@ export const Send = () => {
           <SendDestinationAsset
             goBack={() => closeSendFlow()}
             goToNext={() => goToStep(STEPS.DESTINATION, "from-right")}
-            showCloseIcon
           />
         );
       }
@@ -329,7 +327,7 @@ export const Send = () => {
             }`}
             aria-hidden={!isActive}
           >
-            <InputWidthProvider>{renderStep(step)}</InputWidthProvider>
+            {renderStep(step)}
           </div>
         );
       })}

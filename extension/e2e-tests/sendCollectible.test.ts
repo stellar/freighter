@@ -93,7 +93,7 @@ test("Send collectible without metadata", async ({
 }) => {
   test.slow();
   const stubOverrides = async () => {
-    await stubCollectiblesUnsuccessfulMetadata(page);
+    await stubCollectiblesUnsuccessfulMetadata(page, context);
     await stubSimulateSendCollectible(page);
   };
 

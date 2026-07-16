@@ -1,6 +1,9 @@
 import { validAssetList } from "popup/__testHelpers__";
 import * as SearchAsset from "../searchAsset";
-import { schemaValidatedAssetList } from "@shared/api/helpers/token-list";
+import {
+  schemaValidatedAssetList,
+  __resetSep0042SchemaCache,
+} from "@shared/api/helpers/token-list";
 
 /**
  * SEP-0042 Asset List JSON Schema
@@ -39,6 +42,9 @@ const SEP_0042_ASSET_LIST_SCHEMA = {
 describe("searchAsset", () => {
   beforeEach(() => {
     jest.restoreAllMocks();
+    // The SEP-0042 schema is memoized after the first fetch, so clear it
+    // between cases (each mocks its own fetch response).
+    __resetSep0042SchemaCache();
   });
 
   it("should getNativeContractDetails for Mainnet", () => {
