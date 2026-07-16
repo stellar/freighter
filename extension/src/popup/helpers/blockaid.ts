@@ -74,7 +74,10 @@ export const useScanSite = () => {
       }>(`${INDEXER_URL}/scan-dapp?url=${encodeURIComponent(url)}`);
 
       setData(response.data);
-      emitMetric(METRIC_NAMES.blockaidDomainScan);
+      emitMetric(METRIC_NAMES.blockaidScanCompleted, {
+        scan_target: "domain",
+        result: response.data?.is_malicious ? "malicious" : "benign",
+      });
       setLoading(false);
       return response.data;
     } catch (err) {
@@ -129,13 +132,22 @@ export const useScanTx = () => {
 
       // If there's an error or no data, treat as unable to scan
       if (response.error || !response.data) {
-        emitMetric(METRIC_NAMES.blockaidTxScanFailed);
+        emitMetric(METRIC_NAMES.blockaidScanFailed, {
+          scan_target: "transaction",
+          reason_code: response.error ?? "no_data",
+        });
         setLoading(false);
         return null;
       }
 
       setData(response.data);
-      emitMetric(METRIC_NAMES.blockaidTxScan);
+      emitMetric(METRIC_NAMES.blockaidScanCompleted, {
+        scan_target: "transaction",
+        result:
+          response.data.validation && "result_type" in response.data.validation
+            ? response.data.validation.result_type
+            : "benign",
+      });
       setLoading(false);
       return response.data;
     } catch (err) {
@@ -200,11 +212,17 @@ export const scanAsset = async (
       Sentry.captureException(
         new Error(response.error || "Failed to scan asset"),
       );
-      emitMetric(METRIC_NAMES.blockaidAssetScanFailed);
+      emitMetric(METRIC_NAMES.blockaidScanFailed, {
+        scan_target: "asset",
+        reason_code: response.error ?? "unknown",
+      });
       return null;
     }
 
-    emitMetric(METRIC_NAMES.blockaidAssetScan);
+    emitMetric(METRIC_NAMES.blockaidScanCompleted, {
+      scan_target: "asset",
+      result: response.data?.result_type ?? "benign",
+    });
     if (!response.data) {
       return null;
     }
@@ -800,7 +818,7 @@ export const scanAssetBulk = async (
       );
     }
 
-    emitMetric(METRIC_NAMES.blockaidAssetScan);
+    emitMetric(METRIC_NAMES.blockaidScanCompleted, { scan_target: "asset" });
     if (!resJson.data) {
       return null;
     }
@@ -840,7 +858,7 @@ export const reportAssetWarning = async ({
       );
     }
 
-    emitMetric(METRIC_NAMES.blockaidAssetScan);
+    emitMetric(METRIC_NAMES.blockaidScanCompleted, { scan_target: "asset" });
     if (!res.data) {
       return {} as ReportAssetWarningResponse;
     }
@@ -882,7 +900,9 @@ export const reportTransactionWarning = async ({
       );
     }
 
-    emitMetric(METRIC_NAMES.blockaidAssetScan);
+    emitMetric(METRIC_NAMES.blockaidScanCompleted, {
+      scan_target: "transaction",
+    });
     if (!res.data) {
       return {} as ReportTransactionWarningResponse;
     }

@@ -116,10 +116,12 @@ export const useChangeTrustline = ({
 
     const trackChangeTrustline = () => {
       emitMetric(
-        addTrustline
-          ? METRIC_NAMES.manageAssetAddAsset
-          : METRIC_NAMES.manageAssetRemoveAsset,
-        { code: assetCode, issuer: assetIssuer },
+        addTrustline ? METRIC_NAMES.assetAdded : METRIC_NAMES.assetRemoved,
+        {
+          asset_code: assetCode,
+          code: assetCode,
+          issuer: assetIssuer,
+        },
       );
     };
 

@@ -37,16 +37,22 @@ const mapErrorToErrorState = (
 ) => {
   if (operations.includes(RESULT_CODES.op_invalid_limit)) {
     if (buyingLiabilities) {
-      emitMetric(METRIC_NAMES.trustlineErrorBuyingLiability);
+      emitMetric(METRIC_NAMES.trustlineRemoveFailed, {
+        reason_code: "buying_liabilities",
+      });
       return TRUSTLINE_ERROR_STATES.ASSET_HAS_BUYING_LIABILITIES;
     }
 
-    emitMetric(METRIC_NAMES.trustlineErrorHasBalance);
+    emitMetric(METRIC_NAMES.trustlineRemoveFailed, {
+      reason_code: "has_balance",
+    });
     return TRUSTLINE_ERROR_STATES.ASSET_HAS_BALANCE;
   }
 
   if (operations.includes(RESULT_CODES.op_low_reserve)) {
-    emitMetric(METRIC_NAMES.trustlineErrorLowReserve);
+    emitMetric(METRIC_NAMES.trustlineRemoveFailed, {
+      reason_code: "low_reserve",
+    });
     return TRUSTLINE_ERROR_STATES.NOT_ENOUGH_LUMENS;
   }
 
@@ -146,7 +152,11 @@ export const TrustlineError = ({
   const [isModalShowing, setIsModalShowing] = useState(true);
 
   useEffect(() => {
-    emitMetric(METRIC_NAMES.manageAssetError, { error });
+    emitMetric(METRIC_NAMES.assetOperationFailed, {
+      operation: "change_trustline",
+      reason_code: getResultCodes(error).operations[0] || "unknown",
+      error,
+    });
   }, [error]);
 
   useEffect(() => {
