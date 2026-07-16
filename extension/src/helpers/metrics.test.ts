@@ -11,6 +11,7 @@ jest.mock("popup/App", () => ({
 }));
 jest.mock("popup/ducks/accountServices", () => ({
   publicKeySelector: jest.fn(),
+  allAccountsSelector: jest.fn(() => []),
 }));
 jest.mock("popup/ducks/settings", () => ({
   settingsDataSharingSelector: jest.fn(() => true),
@@ -47,7 +48,10 @@ import {
 } from "helpers/metrics";
 import { isSidebarMode } from "popup/helpers/isSidebarMode";
 import browser from "webextension-polyfill";
-import { publicKeySelector } from "popup/ducks/accountServices";
+import {
+  publicKeySelector,
+  allAccountsSelector,
+} from "popup/ducks/accountServices";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { balancesSelector } from "popup/ducks/cache";
 import { METRICS_DATA } from "constants/localStorageTypes";
@@ -116,13 +120,20 @@ describe("buildCommonContext (four-bucket property model)", () => {
       network: "TESTNET",
     });
     (publicKeySelector as unknown as jest.Mock).mockReturnValue(PUBLIC_KEY);
+    // account_type/is_hardware_account are resolved LIVE from the Redux
+    // account list keyed on the active key — not from the localStorage cache.
+    (allAccountsSelector as unknown as jest.Mock).mockReturnValue([
+      { publicKey: PUBLIC_KEY, name: "Imported", imported: true },
+    ]);
     (balancesSelector as unknown as jest.Mock).mockReturnValue({
       TESTNET: { [PUBLIC_KEY]: { isFunded: true } },
     });
+    // A deliberately *stale* metricsData cache (wrong type) — proves the
+    // account_type resolution no longer trusts it.
     localStorage.setItem(
       METRICS_DATA,
       JSON.stringify({
-        accountType: AccountType.IMPORTED,
+        accountType: AccountType.FREIGHTER,
         hwExists: false,
         importedExists: true,
         hwFunded: false,
@@ -205,18 +216,14 @@ describe("buildCommonContext (four-bucket property model)", () => {
   });
 
   it("marks hardware active account", () => {
-    localStorage.setItem(
-      METRICS_DATA,
-      JSON.stringify({
-        accountType: AccountType.HW,
-        hwExists: true,
-        importedExists: false,
-        hwFunded: true,
-        importedFunded: false,
-        freighterFunded: false,
-        unfundedFreighterAccounts: [],
-      }),
-    );
+    (allAccountsSelector as unknown as jest.Mock).mockReturnValue([
+      {
+        publicKey: PUBLIC_KEY,
+        name: "Ledger",
+        imported: false,
+        hardwareWalletType: "Ledger",
+      },
+    ]);
     (balancesSelector as unknown as jest.Mock).mockReturnValue({
       TESTNET: { [PUBLIC_KEY]: { isFunded: true } },
     });
@@ -225,6 +232,35 @@ describe("buildCommonContext (four-bucket property model)", () => {
       is_hardware_account: true,
       account_funded: true,
     });
+  });
+
+  it("resolves account_type from the live account list, ignoring a stale metricsData cache", () => {
+    // The cache (set in beforeEach) says FREIGHTER, but the active account is
+    // resolvable as an imported secret-key account — the live list must win.
+    // This is the regression guard for the post-import mislabeling bug: an
+    // account-mutation thunk switches the active account without refreshing
+    // metricsData, and events emitted before the next full reload must still
+    // report the correct type.
+    const ctx = buildCommonContext({} as never);
+    expect(ctx).toMatchObject({
+      account_type: "imported_secret_key",
+      is_hardware_account: false,
+    });
+  });
+
+  it("omits account_type/is_hardware_account when the active key is not resolvable in allAccounts", () => {
+    // Auth-store update race: the active public key is set, but the account
+    // list hasn't caught up (or doesn't contain it). Fail safe by OMITTING the
+    // type fields rather than guessing "freighter" — parity with mobile.
+    (allAccountsSelector as unknown as jest.Mock).mockReturnValue([
+      { publicKey: "GSOMEOTHERKEY", name: "Other", imported: false },
+    ]);
+    const ctx = buildCommonContext({} as never);
+    expect(ctx).not.toHaveProperty("account_type");
+    expect(ctx).not.toHaveProperty("is_hardware_account");
+    // The active-key-derived fields are still emitted.
+    expect(ctx).toHaveProperty("account_id_hash");
+    expect(ctx).toMatchObject({ account_funded: true });
   });
 });
 
