@@ -1,0 +1,71 @@
+name: Runbook updates
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  runbook-update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Mint GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ vars.WALLET_ENG_APP_ID }}
+          private-key: ${{ secrets.WALLET_ENG_APP_PRIVATE_KEY }}
+          owner: stellar
+          repositories: |
+            freighter
+            wallet-eng-runbooks
+
+      - name: Checkout this repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Checkout wallet-eng-runbooks
+        uses: actions/checkout@v4
+        with:
+          repository: stellar/wallet-eng-runbooks
+          ref: main
+          token: ${{ steps.app-token.outputs.token }}
+          path: .runbooks
+
+      - name: Identify affected runbooks and propose edits
+        id: scan
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY_PARITY_CHECK }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          RUNBOOKS_PATH: .runbooks
+          SOURCE_REPO: ${{ github.repository }}
+          COMMIT_SHA: ${{ github.sha }}
+        run: node .github/scripts/runbook-update.mjs
+
+      - name: Open PR against wallet-eng-runbooks
+        if: hashFiles('runbook-pr-body.md') != ''
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          COMMIT_SHA: ${{ github.sha }}
+        working-directory: .runbooks
+        run: |
+          BRANCH="bot/runbook-update-$(echo "$COMMIT_SHA" | cut -c1-8)"
+          git config user.name "wallet-eng-bot"
+          git config user.email "wallet-eng-bot@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No runbook changes staged; skipping PR."
+            exit 0
+          fi
+          git commit -m "Runbook update from freighter@${COMMIT_SHA:0:8}"
+          git push origin "$BRANCH"
+          gh pr create \
+            --repo stellar/wallet-eng-runbooks \
+            --base main \
+            --head "$BRANCH" \
+            --title "Runbook update from freighter@${COMMIT_SHA:0:8}" \
+            --body-file ../runbook-pr-body.md

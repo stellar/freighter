@@ -34,7 +34,7 @@ interface ScreenDef {
  * per-screen "loaded screen: X" event names have been retired.
  *
  * Note: ROUTES.manageAssetsListsModifyAssetList is intentionally absent — it
- * historically emits a non-screen (action) event, which Slice B does not touch.
+ * historically emits a non-screen (action) event, which this change does not touch.
  */
 const routeToScreen: Partial<Record<ROUTES, ScreenDef>> = {
   [ROUTES.welcome]: { screen_name: "welcome", flow: "onboarding" },
@@ -172,7 +172,7 @@ registerHandler<AppState>(navigate, (_, a) => {
   const { pathname, search } = action.payload.location;
 
   // The modify-asset-list route historically emits a non-screen (action) event
-  // rather than a screen-view. Slice B does not touch non-screen events, so
+  // rather than a screen-view. this change does not touch non-screen events, so
   // preserve it verbatim.
   if (pathname === ROUTES.manageAssetsListsModifyAssetList) {
     emitMetric(METRIC_NAMES.manageAssetListsModifyAssetList);

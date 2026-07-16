@@ -1,0 +1,61 @@
+name: Parity check (extension ↔ mobile)
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - "extension/src/popup/services/contacts/**"
+      - "extension/src/popup/services/federation/**"
+      - "extension/src/popup/helpers/validation/**"
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  parity:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Mint GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ vars.WALLET_ENG_APP_ID }}
+          private-key: ${{ secrets.WALLET_ENG_APP_PRIVATE_KEY }}
+          owner: stellar
+          repositories: |
+            freighter
+            freighter-mobile
+
+      - name: Checkout PR
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Checkout freighter-mobile (main)
+        uses: actions/checkout@v4
+        with:
+          repository: stellar/freighter-mobile
+          ref: main
+          token: ${{ steps.app-token.outputs.token }}
+          path: .freighter-mobile
+
+      - name: Run parity check
+        id: parity
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY_PARITY_CHECK }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_REPO: ${{ github.repository }}
+          MOBILE_PATH: .freighter-mobile
+          PARITY_MAP: .github/parity-map.json
+          DIRECTION: extension-to-mobile
+        run: node .github/scripts/parity-check.mjs
+
+      - name: Post PR comment
+        if: hashFiles('parity-comment.md') != ''
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run:
+          gh pr comment "$PR_NUMBER" --repo "$PR_REPO" --body-file
+          parity-comment.md

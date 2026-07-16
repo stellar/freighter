@@ -462,7 +462,7 @@ export const emitMetric = (name: string, body?: Record<string, unknown>) => {
 };
 
 // ---------------------------------------------------------------------------
-// Screen views (screen.viewed consolidation — Slice B)
+// Screen views (screen.viewed consolidation)
 // ---------------------------------------------------------------------------
 
 /**
