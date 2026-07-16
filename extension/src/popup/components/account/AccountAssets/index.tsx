@@ -13,7 +13,10 @@ import { AccountBalances } from "helpers/hooks/useGetBalances";
 import { getCanonicalFromAsset } from "helpers/stellar";
 import { isSorobanIssuer } from "popup/helpers/account";
 import { formatTokenAmount } from "popup/helpers/soroban";
-import { useIsAssetSuspicious } from "popup/helpers/blockaid";
+import {
+  useIsAssetSuspicious,
+  useIsAssetMalicious,
+} from "popup/helpers/blockaid";
 import { formatAmount, roundUsdValue } from "popup/helpers/formatters";
 
 import {
@@ -29,9 +32,9 @@ import { transactionSubmissionSelector } from "popup/ducks/transactionSubmission
 import { ScamAssetIcon } from "popup/components/account/ScamAssetIcon";
 import ImageMissingIcon from "popup/assets/image-missing.svg?react";
 import IconSoroban from "popup/assets/icon-soroban.svg?react";
-import { getPriceDeltaColor } from "popup/helpers/balance";
 import { AccountHistoryData } from "popup/views/Account/hooks/useGetAccountHistoryData";
 import { ROUTES } from "popup/constants/routes";
+import { BalanceRow } from "popup/components/BalanceRow";
 
 import "./styles.scss";
 import { AssetDetail } from "../AssetDetail";
@@ -57,6 +60,7 @@ interface AssetIconProps {
   isSorobanToken?: boolean;
   icon?: string | null;
   isSuspicious?: boolean;
+  isMalicious?: boolean;
   isModal?: boolean;
 }
 
@@ -65,7 +69,8 @@ const shouldAssetIconSkipUpdate = (
   nextProps: AssetIconProps,
 ) =>
   isEqual(prevProps.assetIcons, nextProps.assetIcons) &&
-  prevProps.isSuspicious === nextProps.isSuspicious;
+  prevProps.isSuspicious === nextProps.isSuspicious &&
+  prevProps.isMalicious === nextProps.isMalicious;
 
 export const AssetIcon = memo(
   ({
@@ -77,6 +82,7 @@ export const AssetIcon = memo(
     isSorobanToken = false,
     icon,
     isSuspicious = false,
+    isMalicious = true,
     isModal = false,
   }: AssetIconProps) => {
     /*
@@ -137,7 +143,7 @@ export const AssetIcon = memo(
           data-testid="AccountAssets__asset--loading"
           className="AccountAssets__asset--logo AccountAssets__asset--loading"
         >
-          <ScamAssetIcon isScamAsset={isSuspicious} />
+          <ScamAssetIcon isScamAsset={isSuspicious} isMalicious={isMalicious} />
         </div>
       );
     }
@@ -167,7 +173,7 @@ export const AssetIcon = memo(
             setIsLoading(false);
           }}
         />
-        <ScamAssetIcon isScamAsset={isSuspicious} />
+        <ScamAssetIcon isScamAsset={isSuspicious} isMalicious={isMalicious} />
       </div>
     ) : (
       // the image path wasn't found, show a default broken image icon
@@ -177,7 +183,7 @@ export const AssetIcon = memo(
         }`}
       >
         <ImageMissingIcon />
-        <ScamAssetIcon isScamAsset={isSuspicious} />
+        <ScamAssetIcon isScamAsset={isSuspicious} isMalicious={isMalicious} />
       </div>
     );
   },
@@ -203,6 +209,7 @@ export const AccountAssets = ({
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const [hasIconFetchRetried, setHasIconFetchRetried] = useState(false);
   const isAssetSuspicious = useIsAssetSuspicious();
+  const isAssetMalicious = useIsAssetMalicious();
   const [selectedAsset, setSelectedAsset] = useState<string>("");
 
   const clearAssetDetailQueryParams = () => {
@@ -317,6 +324,7 @@ export const AccountAssets = ({
         const assetPrice = assetPrices ? assetPrices[canonicalAsset] : null;
 
         const isSuspicious = isAssetSuspicious((rb as Balance).blockaidData);
+        const isMalicious = isAssetMalicious((rb as Balance).blockaidData);
 
         const amountVal =
           "contractId" in rb && "decimals" in rb
@@ -334,80 +342,33 @@ export const AccountAssets = ({
             }}
             key={canonicalAsset}
           >
-            <div
+            <BalanceRow
               data-testid="account-assets-item"
-              className={`AccountAssets__asset ${
-                !isLP ? "AccountAssets__asset--has-detail" : ""
-              }`}
-              onClick={isLP ? () => null : () => handleClick(canonicalAsset)}
-            >
-              <div className="AccountAssets__copy-left">
-                <AssetIcon
-                  assetIcons={assetIcons}
-                  code={code}
-                  issuerKey={issuer?.key}
-                  retryAssetIconFetch={retryAssetIconFetch}
-                  isLPShare={"liquidityPoolId" in rb && !!rb.liquidityPoolId}
-                  isSuspicious={isSuspicious}
-                />
-                <div className="asset-native-value">
-                  <span className="asset-code">{code}</span>
-                  <div
-                    className="asset-native-amount"
-                    data-testid="asset-amount"
-                  >
-                    {formatAmount(amountVal)}
-                  </div>
-                </div>
-              </div>
-              {assetPrice ? (
-                <div className="AccountAssets__copy-right">
-                  <div
-                    className="asset-usd-amount"
-                    data-testid={`asset-amount-${canonicalAsset}`}
-                  >
-                    $
-                    {formatAmount(
+              code={code}
+              issuerKey={issuer?.key}
+              assetIcons={assetIcons}
+              isSuspicious={isSuspicious}
+              isMalicious={isMalicious}
+              isLPShare={"liquidityPoolId" in rb && !!rb.liquidityPoolId}
+              retryAssetIconFetch={retryAssetIconFetch}
+              amount={formatAmount(amountVal)}
+              fiatAmount={
+                assetPrice
+                  ? `$${formatAmount(
                       roundUsdValue(
                         new BigNumber(assetPrice.currentPrice)
                           .multipliedBy(rb.total)
                           .toString(),
                       ),
-                    )}
-                  </div>
-                  {assetPrice.percentagePriceChange24h ? (
-                    <div
-                      data-testid={`asset-price-delta-${canonicalAsset}`}
-                      className={`asset-value-delta ${getPriceDeltaColor(
-                        new BigNumber(
-                          roundUsdValue(assetPrice.percentagePriceChange24h),
-                        ),
-                      )}
-                    `}
-                    >
-                      {formatAmount(
-                        roundUsdValue(assetPrice.percentagePriceChange24h),
-                      )}
-                      %
-                    </div>
-                  ) : (
-                    <div
-                      data-testid={`asset-price-delta-${canonicalAsset}`}
-                      className="asset-value-delta"
-                    >
-                      --
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div
-                  data-testid={`asset-price-delta-${canonicalAsset}`}
-                  className="asset-value-delta"
-                >
-                  --
-                </div>
-              )}
-            </div>
+                    )}`
+                  : null
+              }
+              percentChange={assetPrice?.percentagePriceChange24h ?? null}
+              amountTestId="asset-amount"
+              fiatTestId={`asset-amount-${canonicalAsset}`}
+              deltaTestId={`asset-price-delta-${canonicalAsset}`}
+              onClick={isLP ? undefined : () => handleClick(canonicalAsset)}
+            />
             <SheetContent
               onOpenAutoFocus={(e) => e.preventDefault()}
               aria-describedby={undefined}

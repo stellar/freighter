@@ -1,0 +1,59 @@
+@use "../../styles/utils.scss" as *;
+
+// The single reusable Blockaid warning banner: a filled strip colored by
+// severity, used across swap review and other transaction flows.
+.BlockaidBanner {
+  display: flex;
+  // 8px vertical padding + 12px radius to match .ReviewTx__TrustlineBanner's
+  // height exactly when stacked alongside it.
+  padding: pxToRem(8px) pxToRem(16px);
+  align-items: center;
+  align-self: stretch;
+  justify-content: space-between;
+  border-radius: pxToRem(12px);
+  cursor: pointer;
+
+  // Icon size, font and spacing intentionally match the trustline banner
+  // (.ReviewTx__TrustlineBanner) so stacked banners read as a consistent set.
+  &__info {
+    display: flex;
+    align-items: center;
+    gap: pxToRem(8px);
+  }
+
+  &__icon {
+    display: flex;
+  }
+
+  &__action {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  // Matches .ReviewTx__TrustlineBanner__Label (a plain span that inherits the
+  // app font-family) so both banners render identically. <p> and SDS <Text>
+  // both render text larger and in a different family.
+  &__message {
+    font-size: pxToRem(12px);
+    font-weight: var(--font-weight-medium);
+    line-height: pxToRem(18px);
+    text-align: left;
+  }
+
+  svg {
+    width: pxToRem(14px);
+    height: pxToRem(14px);
+    flex-shrink: 0;
+  }
+
+  &--malicious {
+    background-color: var(--sds-clr-red-03);
+    color: var(--sds-clr-red-11);
+  }
+
+  &--caution {
+    background-color: var(--sds-clr-amber-03);
+    color: var(--sds-clr-amber-11);
+  }
+}

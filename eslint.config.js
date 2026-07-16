@@ -87,6 +87,12 @@ export default [
 
       semi: ["error", "always"],
       "no-unsafe-optional-chaining": "off",
+
+      // Newly added to eslint's `recommended` set in ESLint 10. Kept off here to
+      // preserve the pre-upgrade lint baseline; adopting them (and fixing the
+      // ~42 existing violations) is tracked as a separate follow-up.
+      "no-useless-assignment": "off",
+      "preserve-caught-error": "off",
     },
   },
 ];

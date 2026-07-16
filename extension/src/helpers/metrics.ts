@@ -18,7 +18,10 @@ import {
   settingsDataSharingSelector,
   settingsNetworkDetailsSelector,
 } from "popup/ducks/settings";
-import { publicKeySelector } from "popup/ducks/accountServices";
+import {
+  publicKeySelector,
+  allAccountsSelector,
+} from "popup/ducks/accountServices";
 import { balancesSelector } from "popup/ducks/cache";
 import { Account, AccountType } from "@shared/api/types";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
@@ -116,6 +119,13 @@ const ACCOUNT_TYPE_WIRE: Record<AccountType, string> = {
   [AccountType.FREIGHTER]: "freighter",
   [AccountType.HW]: "hardware",
   [AccountType.IMPORTED]: "imported_secret_key",
+};
+
+/** Resolves an account's type from its discriminating fields. */
+const resolveAccountType = (account: Account): AccountType => {
+  if (account.hardwareWalletType) return AccountType.HW;
+  if (account.imported) return AccountType.IMPORTED;
+  return AccountType.FREIGHTER;
 };
 
 // ---------------------------------------------------------------------------
@@ -366,7 +376,6 @@ export const buildCommonContext = (
 ): Record<string, unknown> => {
   const activePublicKey = publicKeySelector(state);
   const networkDetails = settingsNetworkDetailsSelector(state);
-  const metricsData = getMetricsData();
 
   const context: Record<string, unknown> = {
     schema_version: SCHEMA_VERSION,
@@ -380,7 +389,24 @@ export const buildCommonContext = (
   if (activePublicKey) {
     const idHash = getAccountIdHash(activePublicKey);
     if (idHash) context.account_id_hash = idHash;
-    context.account_type = ACCOUNT_TYPE_WIRE[metricsData.accountType];
+
+    // Resolve account_type/is_hardware_account LIVE from the Redux account
+    // list, keyed on the active public key — not from the localStorage
+    // metricsData cache. Account-mutation thunks (importAccount,
+    // importHardwareWallet, addAccount, createAccount) switch the active
+    // account without refreshing metricsData, so the cache can lag a switch
+    // and mislabel e.g. a freshly-imported secret-key account as "freighter"
+    // until the next full app-data reload. If the active key isn't resolvable
+    // in allAccounts (an auth-store update race), OMIT these fields rather
+    // than guessing — matching mobile's fail-safe behavior.
+    const activeAccount = (allAccountsSelector(state) ?? []).find(
+      (acc: Account) => acc.publicKey === activePublicKey,
+    );
+    if (activeAccount) {
+      const accountType = resolveAccountType(activeAccount);
+      context.account_type = ACCOUNT_TYPE_WIRE[accountType];
+      context.is_hardware_account = accountType === AccountType.HW;
+    }
 
     // account_funded reflects the *active account's* cached balance, not a
     // sticky per-account-type flag — funding one Freighter account must not
@@ -394,8 +420,6 @@ export const buildCommonContext = (
     if (cachedBalances && cachedBalances.isFunded !== null) {
       context.account_funded = cachedBalances.isFunded;
     }
-
-    context.is_hardware_account = metricsData.accountType === AccountType.HW;
   }
 
   return context;

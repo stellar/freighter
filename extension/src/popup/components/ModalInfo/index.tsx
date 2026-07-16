@@ -8,7 +8,8 @@ import { AssetIcon } from "popup/components/account/AccountAssets";
 import IconShieldPlus from "popup/assets/icon-shield-plus.svg";
 import { AssetIcons } from "@shared/api/types";
 
-import { BlockAidSiteScanLabel } from "../WarningMessages";
+import { BlockaidBanner } from "../BlockaidBanner";
+import { SecurityLevel } from "popup/constants/blockaid";
 
 import "./styles.scss";
 
@@ -106,7 +107,6 @@ interface DomainScanModalInfoProps {
   subject: string;
   isMalicious: boolean;
   isUnableToScan?: boolean;
-  scanStatus: "hit" | "miss" | undefined;
   onClick: () => void;
 }
 
@@ -116,7 +116,6 @@ export const DomainScanModalInfo = ({
   subject,
   isMalicious,
   isUnableToScan,
-  scanStatus,
   onClick,
 }: DomainScanModalInfoProps) => {
   const { t } = useTranslation();
@@ -134,11 +133,15 @@ export const DomainScanModalInfo = ({
         </div>
         <div className="ModalInfo--connection-request-scan-label">
           {shouldShowWarning && (
-            <BlockAidSiteScanLabel
-              isMalicious={isMalicious}
-              isUnableToScan={isUnableToScan}
-              status={scanStatus}
+            <BlockaidBanner
+              securityLevel={
+                isMalicious
+                  ? SecurityLevel.MALICIOUS
+                  : SecurityLevel.UNABLE_TO_SCAN
+              }
+              entity="site"
               onClick={onClick}
+              dataTestId="domain-scan-blockaid-banner"
             />
           )}
         </div>

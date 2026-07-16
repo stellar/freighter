@@ -19,7 +19,7 @@ import {
   MarkQueueActiveMessage,
   OpenSidebarMessage,
 } from "@shared/api/types/message-request";
-import { SERVICE_TYPES } from "@shared/constants/services";
+import { SERVICE_TYPES, DEV_SERVER } from "@shared/constants/services";
 import { DataStorageAccess } from "background/helpers/dataStorageAccess";
 import { KeyManager } from "@stellar/typescript-wallet-sdk-km";
 import { SessionTimer } from "background/helpers/session";
@@ -99,6 +99,9 @@ import { addRecentProtocol } from "./handlers/addRecentProtocol";
 import { clearRecentProtocols } from "./handlers/clearRecentProtocols";
 import { getDiscoverWelcomeSeen } from "./handlers/getDiscoverWelcomeSeen";
 import { dismissDiscoverWelcome } from "./handlers/dismissDiscoverWelcome";
+import { callBackendV2 } from "background/helpers/callBackendV2";
+import { getCachedSwapTopTokens } from "./handlers/getCachedSwapTopTokens";
+import { cacheSwapTopTokens } from "./handlers/cacheSwapTopTokens";
 
 const numOfPublicKeysToCheck = 5;
 
@@ -157,8 +160,7 @@ export const popupMessageListener = (
   // (browser-action popup, sidepanel) OR the URL is on our extension
   // origin (popup window, options page, fullscreen).
   const extensionOrigin = browser?.runtime?.getURL?.("") ?? "";
-  const isFromOwnExtension =
-    !sender.id || sender.id === browser?.runtime?.id;
+  const isFromOwnExtension = !sender.id || sender.id === browser?.runtime?.id;
   const isExtensionUrl =
     !!extensionOrigin &&
     typeof sender.url === "string" &&
@@ -446,7 +448,7 @@ export const popupMessageListener = (
       });
     }
     case SERVICE_TYPES.LOAD_BACKEND_SETTINGS: {
-      return loadBackendSettings({ localStore });
+      return loadBackendSettings({ localStore, sessionStore });
     }
     case SERVICE_TYPES.SAVE_BLOCKAID_DEBUG_OVERRIDE: {
       return saveBlockaidOverrideState({
@@ -613,6 +615,12 @@ export const popupMessageListener = (
     case SERVICE_TYPES.DISMISS_DISCOVER_WELCOME: {
       return dismissDiscoverWelcome({ localStore });
     }
+    case SERVICE_TYPES.GET_CACHED_SWAP_TOP_TOKENS: {
+      return getCachedSwapTopTokens({ request, localStore });
+    }
+    case SERVICE_TYPES.CACHE_SWAP_TOP_TOKENS: {
+      return cacheSwapTopTokens({ request, localStore });
+    }
     case SERVICE_TYPES.MARK_QUEUE_ACTIVE: {
       const { uuid, isActive } = request as MarkQueueActiveMessage;
       if (isActive) {
@@ -645,6 +653,22 @@ export const popupMessageListener = (
     case SERVICE_TYPES.USER_ACTIVITY: {
       if (!isFromExtensionPage) return { error: "Unauthorized" };
       return userActivity({ sessionTimer, sessionStore, localStore });
+    }
+
+    case SERVICE_TYPES.FETCH_BACKEND_V2: {
+      // DEV_SERVER carve-out: under the webpack dev server the popup relays
+      // through the content script, so the message arrives with a dev-server
+      // tab sender and isFromExtensionPage is false. Without this, every v2
+      // call (Discover, prices, collectibles, ledger-key import) breaks in
+      // local dev. The gate stays intact in production, where DEV_SERVER=false.
+      if (!isFromExtensionPage && !DEV_SERVER) return { error: "Unauthorized" };
+      return callBackendV2({
+        method: request.method,
+        path: request.path,
+        body: request.body,
+        sessionStore,
+        localStore,
+      });
     }
 
     default:

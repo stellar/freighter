@@ -19,9 +19,9 @@ test("Hide and unhide a collectible", async ({
   await stubAccountHistory(page);
   await stubTokenPrices(page);
   await stubScanDapp(context);
-  await stubCollectibles(page);
+  await stubCollectibles(page, context);
 
-  await page.route("**/collectibles**", async (route) => {
+  await context.route("**/collectibles**", async (route) => {
     const json = {
       data: {
         collections: [
@@ -157,9 +157,9 @@ test("Hidden collectibles view shows empty state when no collectibles are hidden
   await stubAccountHistory(page);
   await stubTokenPrices(page);
   await stubScanDapp(context);
-  await stubCollectibles(page);
+  await stubCollectibles(page, context);
 
-  await page.route("**/collectibles**", async (route) => {
+  await context.route("**/collectibles**", async (route) => {
     const json = {
       data: {
         collections: [
@@ -214,9 +214,9 @@ test("Hiding a collectible removes it from the main view", async ({
   await stubAccountHistory(page);
   await stubTokenPrices(page);
   await stubScanDapp(context);
-  await stubCollectibles(page);
+  await stubCollectibles(page, context);
 
-  await page.route("**/collectibles**", async (route) => {
+  await context.route("**/collectibles**", async (route) => {
     const json = {
       data: {
         collections: [

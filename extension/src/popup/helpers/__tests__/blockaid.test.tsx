@@ -11,6 +11,7 @@ import {
   useShouldTreatTxAsUnableToScan,
   isBlockaidEnabled,
   getSiteSecurityStates,
+  extractAssetScanWarnings,
 } from "../blockaid";
 import { SecurityLevel } from "popup/constants/blockaid";
 import {
@@ -517,5 +518,46 @@ describe("BlockAid Helper Functions", () => {
       expect(result).toEqual({});
       expect(fetchSpy).not.toHaveBeenCalled();
     });
+  });
+});
+
+describe("extractAssetScanWarnings", () => {
+  it("returns only Warning/Malicious features, excluding Benign/Info", () => {
+    const scan = {
+      features: [
+        { type: "Malicious", feature_id: "mal", description: "bad thing" },
+        { type: "Warning", feature_id: "warn", description: "iffy thing" },
+        { type: "Benign", feature_id: "ok", description: "fine thing" },
+        { type: "Info", feature_id: "info", description: "fyi thing" },
+      ],
+    } as unknown as BlockAidScanAssetResult;
+
+    expect(extractAssetScanWarnings(scan)).toEqual([
+      { description: "bad thing", isError: true, featureId: "mal" },
+      { description: "iffy thing", isError: false, featureId: "warn" },
+    ]);
+  });
+
+  it("maps isError from the feature type (Malicious -> true, Warning -> false)", () => {
+    const scan = {
+      features: [
+        { type: "Malicious", feature_id: "a", description: "m" },
+        { type: "Warning", feature_id: "b", description: "w" },
+      ],
+    } as unknown as BlockAidScanAssetResult;
+
+    const result = extractAssetScanWarnings(scan);
+    expect(result[0].isError).toBe(true);
+    expect(result[1].isError).toBe(false);
+  });
+
+  it("returns [] for null/undefined/empty features", () => {
+    expect(extractAssetScanWarnings(null)).toEqual([]);
+    expect(extractAssetScanWarnings(undefined)).toEqual([]);
+    expect(
+      extractAssetScanWarnings({
+        features: [],
+      } as unknown as BlockAidScanAssetResult),
+    ).toEqual([]);
   });
 });

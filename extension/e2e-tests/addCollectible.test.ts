@@ -27,9 +27,9 @@ test("Add a collectible to an account", async ({
     await stubAccountHistory(page);
     await stubTokenPrices(page);
     await stubScanDapp(context);
-    await stubCollectibles(page);
+    await stubCollectibles(page, context);
 
-    await page.route("**/collectibles**", async (route) => {
+    await context.route("**/collectibles**", async (route) => {
       const postData = JSON.parse(route.request().postData() || "{}");
       const { owner, contracts } = postData as {
         owner: string;

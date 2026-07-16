@@ -758,8 +758,8 @@ describe("SignTransactions", () => {
       </Wrapper>,
     );
     await waitFor(() => screen.getByTestId("SignTransaction"));
-    expect(screen.getByTestId("blockaid-miss-label")).toHaveTextContent(
-      "This transaction is expected to fail",
+    expect(screen.getByTestId("sign-tx-blockaid-banner")).toHaveTextContent(
+      "This transaction was flagged as suspicious",
     );
     expect(screen.getByText("Confirm anyway")).toBeDefined();
   });
@@ -881,7 +881,7 @@ describe("SignTransactions", () => {
       </Wrapper>,
     );
     await waitFor(() => screen.getByTestId("SignTransaction"));
-    expect(screen.getByTestId("blockaid-malicious-label")).toHaveTextContent(
+    expect(screen.getByTestId("sign-tx-blockaid-banner")).toHaveTextContent(
       "This transaction was flagged as malicious",
     );
     expect(screen.getByText("Confirm anyway")).toBeDefined();
@@ -1004,7 +1004,7 @@ describe("SignTransactions", () => {
       </Wrapper>,
     );
     await waitFor(() => screen.getByTestId("SignTransaction"));
-    expect(screen.getByTestId("blockaid-miss-label")).toHaveTextContent(
+    expect(screen.getByTestId("sign-tx-blockaid-banner")).toHaveTextContent(
       "This transaction was flagged as suspicious",
     );
     expect(screen.getByText("Confirm anyway")).toBeDefined();
