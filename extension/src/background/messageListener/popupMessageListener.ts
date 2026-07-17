@@ -673,6 +673,11 @@ export const popupMessageListener = (
     }
 
     case SERVICE_TYPES.GET_ANALYTICS_USER_ID: {
+      // Mirrors the FETCH_BACKEND_V2 guard immediately above: this handler
+      // also derives from the auth keypair, so a dev-mode web page must not
+      // be able to reach it either. Same DEV_SERVER carve-out for the
+      // webpack dev-server popup relay.
+      if (!isFromExtensionPage && !DEV_SERVER) return { error: "Unauthorized" };
       return (async () => {
         const analyticsUserId = await getAnalyticsUserId(
           sessionStore,

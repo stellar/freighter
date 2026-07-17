@@ -1,4 +1,5 @@
 import { Store } from "redux";
+import { captureException } from "@sentry/browser";
 
 import { deriveAuthKeypair } from "@shared/api/helpers/deriveAuthKeypair";
 import { DataStorageAccess } from "background/helpers/dataStorageAccess";
@@ -24,7 +25,17 @@ export const getAnalyticsUserId = async (
     if (!mnemonic) return null;
     const { userId } = await deriveAuthKeypair(mnemonic);
     return userId;
-  } catch {
+  } catch (e) {
+    // Mirrors callBackendV2.tryGetAuthKeypair: the locked / no-mnemonic case
+    // is already handled by the `!mnemonic` check above, so anything reaching
+    // here is unexpected (corrupted temporaryStoreExtra entry, WebCrypto/PBKDF2
+    // failure, etc). Capture it — otherwise an unlocked user whose derivation
+    // fails silently goes anonymous with zero signal.
+    captureException(e, {
+      extra: {
+        context: "getAnalyticsUserId: unexpected error deriving auth keypair",
+      },
+    });
     return null;
   }
 };

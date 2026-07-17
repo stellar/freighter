@@ -112,4 +112,42 @@ describe("reconcileAnalyticsUserId (auth id migration)", () => {
     expect(localStorage.getItem(METRICS_USER_ID)).toBe("4873921");
     expect(amplitude.setUserId).not.toHaveBeenCalled();
   });
+
+  it("does NOT call Sentry.setUser when data-sharing is off, but still persists + re-identifies amplitude", async () => {
+    const { settingsDataSharingSelector } = jest.requireMock(
+      "popup/ducks/settings",
+    ) as {
+      settingsDataSharingSelector: jest.Mock;
+    };
+    settingsDataSharingSelector.mockReturnValue(false);
+
+    localStorage.setItem(METRICS_USER_ID, "4873921");
+    mockGetAnalyticsUserId.mockResolvedValue({
+      analyticsUserId: "b".repeat(64),
+    });
+
+    await reconcileAnalyticsUserId();
+
+    expect(localStorage.getItem(METRICS_USER_ID)).toBe("b".repeat(64));
+    expect(amplitude.setUserId).toHaveBeenCalledWith("b".repeat(64));
+    expect(Sentry.setUser).not.toHaveBeenCalled();
+  });
+
+  it("calls Sentry.setUser when data-sharing is on", async () => {
+    const { settingsDataSharingSelector } = jest.requireMock(
+      "popup/ducks/settings",
+    ) as {
+      settingsDataSharingSelector: jest.Mock;
+    };
+    settingsDataSharingSelector.mockReturnValue(true);
+
+    localStorage.setItem(METRICS_USER_ID, "4873921");
+    mockGetAnalyticsUserId.mockResolvedValue({
+      analyticsUserId: "c".repeat(64),
+    });
+
+    await reconcileAnalyticsUserId();
+
+    expect(Sentry.setUser).toHaveBeenCalledWith({ id: "c".repeat(64) });
+  });
 });

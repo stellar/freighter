@@ -159,23 +159,34 @@ export const getUserId = (): string => {
  * throws into callers.
  */
 export const reconcileAnalyticsUserId = async (): Promise<void> => {
-  let authUserId: string | null = null;
+  // Whole body wrapped in one try/catch — a storage-quota throw from
+  // setItem, or anything unexpected from amplitude/Sentry, must never
+  // become an unhandled rejection for callers. Catch → return.
   try {
     const res = await getAnalyticsUserId();
-    authUserId = res.analyticsUserId;
+    const authUserId = res.analyticsUserId;
+
+    if (!authUserId) return;
+    if (localStorage.getItem(METRICS_USER_ID) === authUserId) return;
+
+    localStorage.setItem(METRICS_USER_ID, authUserId);
+    sessionUserId = authUserId;
+    // amplitude.setUserId is local-only (setOptOut governs upload), so this
+    // runs regardless of the data-sharing consent setting.
+    if (hasInitialized && AMPLITUDE_KEY) {
+      amplitude.setUserId(authUserId);
+    }
+
+    // Consent-gate the Sentry write: when data-sharing is off, ErrorTracking
+    // owns the opted-out identity (setUser(null) + close()) — don't
+    // re-identify the user behind its back.
+    const isDataSharingAllowed = settingsDataSharingSelector(store.getState());
+    if (isDataSharingAllowed) {
+      Sentry.setUser({ id: authUserId });
+    }
   } catch {
     return; // never throw into callers
   }
-
-  if (!authUserId) return;
-  if (localStorage.getItem(METRICS_USER_ID) === authUserId) return;
-
-  localStorage.setItem(METRICS_USER_ID, authUserId);
-  sessionUserId = authUserId;
-  if (hasInitialized && AMPLITUDE_KEY) {
-    amplitude.setUserId(authUserId);
-  }
-  Sentry.setUser({ id: authUserId });
 };
 
 /**
