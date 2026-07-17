@@ -1,7 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(grep -r \"scan-tx\\\\|scan-dapp\\\\|scan-asset\" /Users/piyal/Stellar/freighter --include=\"*.ts\" --include=\"*.js\" -l -not -path \"*/node_modules/*\")"
-    ]
-  }
-}

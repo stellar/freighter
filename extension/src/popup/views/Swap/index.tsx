@@ -32,7 +32,7 @@ import { resetSimulation } from "popup/ducks/token-payment";
 import { getAssetFromCanonical } from "helpers/stellar";
 
 // Each swap sub-step emits the consolidated `screen.viewed` event; the step's
-// identity lives in `screen_name` (derived from the legacy "loaded screen: X").
+// identity lives in `screen_name`, declared as a literal below.
 const SWAP_SCREEN_BY_STEP: Partial<
   Record<STEPS, { screen_name: string } & ScreenViewedProps>
 > = {

@@ -46,7 +46,6 @@ import {
   storeBalanceMetricData,
   initAmplitude,
   emitScreenViewed,
-  toScreenName,
 } from "helpers/metrics";
 import { isSidebarMode } from "popup/helpers/isSidebarMode";
 import browser from "webextension-polyfill";
@@ -470,30 +469,6 @@ describe("consent hydration (startup)", () => {
     settingsMod!.settingsDataSharingSelector.mockReturnValue(true);
     mod!.syncIdentifyTraits(accounts);
     expect(identify!).toHaveBeenCalled();
-  });
-});
-
-describe("toScreenName (deterministic canonicalization)", () => {
-  it("strips the 'loaded screen: ' prefix and snake-cases the remainder", () => {
-    expect(toScreenName("loaded screen: send payment amount")).toBe(
-      "send_payment_amount",
-    );
-    expect(toScreenName("loaded screen: account")).toBe("account");
-  });
-
-  it("collapses each run of non-alphanumeric chars into a single underscore", () => {
-    // The ": " and the "-" each become a single "_".
-    expect(toScreenName("loaded screen: recover account: success")).toBe(
-      "recover_account_success",
-    );
-    expect(toScreenName("loaded screen: auto-lock timer")).toBe(
-      "auto_lock_timer",
-    );
-  });
-
-  it("is idempotent for already-canonical input and trims stray separators", () => {
-    expect(toScreenName("account")).toBe("account");
-    expect(toScreenName("loaded screen:   welcome  ")).toBe("welcome");
   });
 });
 

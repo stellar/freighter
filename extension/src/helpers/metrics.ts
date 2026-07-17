@@ -505,24 +505,6 @@ export type Flow =
   | "security"
   | "history";
 
-/**
- * Deterministically derives a canonical `screen_name` from a legacy
- * `"loaded screen: X"` string: take the part after the prefix, trim, lowercase,
- * and collapse each run of non-alphanumeric chars into a single `_`. Both
- * platforms use identical legacy strings, so this yields cross-platform-
- * consistent names automatically.
- *
- * e.g. "loaded screen: send payment amount" -> "send_payment_amount"
- *      "loaded screen: account"             -> "account"
- */
-export const toScreenName = (legacy: string): string =>
-  legacy
-    .replace(/^loaded screen:\s*/i, "")
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "_")
-    .replace(/^_+|_+$/g, "");
-
 /** Extra, screen-specific properties carried alongside the canonical event. */
 export interface ScreenViewedProps {
   /** Product-area grouping; omitted from the event when undefined. */
