@@ -16,9 +16,9 @@ import { ROUTES } from "popup/constants/routes";
 
 interface ScreenDef {
   /**
-   * Canonical, cross-platform screen name. Derived deterministically from the
-   * legacy "loaded screen: X" string via helpers/metrics#toScreenName (kept as
-   * a literal here so this map is the single source of truth).
+   * Canonical, cross-platform screen name — a deterministic slug of the legacy
+   * "loaded screen: X" string, kept as a literal here so this map is the
+   * single source of truth.
    */
   screen_name: string;
   /** Product-area grouping; omit when no flow is a good fit. */
