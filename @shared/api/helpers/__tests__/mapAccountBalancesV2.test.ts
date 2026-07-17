@@ -11,12 +11,15 @@ import {
 } from "../../types/backend-api";
 
 // Fixtures mirror the live wire format (snake_case; server-computed
-// `available` — balance minus reserves/liabilities for native/classic, equal
-// to balance for contract tokens and pool shares).
+// `available` — total minus reserves/liabilities for native/classic, equal
+// to total for contract tokens and pool shares; server-derived `key` and
+// `token`).
 const nativeBalance: V2NativeBalance = {
   token_type: "NATIVE",
   token_id: "CAS3J7GYLGXMF6TDJBBYYSE3HQ6BBSMLNUQ34T6TZMYMW2EVH34XOWMA",
-  balance: "100",
+  key: "native",
+  token: { type: "native", code: "XLM" },
+  total: "100",
   available: "88.5",
   minimum_balance: "1.5",
   buying_liabilities: "0",
@@ -26,7 +29,13 @@ const nativeBalance: V2NativeBalance = {
 const classicBalance: V2ClassicBalance = {
   token_type: "CLASSIC",
   token_id: "CUSDC",
-  balance: "50",
+  key: "USDC:GISSUER",
+  token: {
+    type: "credit_alphanum4",
+    code: "USDC",
+    issuer: { key: "GISSUER" },
+  },
+  total: "50",
   available: "45",
   code: "USDC",
   issuer: "GISSUER",
@@ -41,7 +50,13 @@ const classicBalance: V2ClassicBalance = {
 const sacBalance: V2SacBalance = {
   token_type: "SAC",
   token_id: "CSAC123",
-  balance: "42.5",
+  key: "SACT:GSACISSUER",
+  token: {
+    type: "credit_alphanum4",
+    code: "SACT",
+    issuer: { key: "GSACISSUER" },
+  },
+  total: "42.5",
   available: "42.5",
   code: "SACT",
   issuer: "GSACISSUER",
@@ -53,7 +68,9 @@ const sacBalance: V2SacBalance = {
 const sep41Balance: V2Sep41Balance = {
   token_type: "SEP41",
   token_id: "CTOKEN456",
-  balance: "5000000000",
+  key: "TKN:CTOKEN456",
+  token: { code: "TKN", issuer: { key: "CTOKEN456" } },
+  total: "5000000000",
   available: "5000000000",
   symbol: "TKN",
   name: "Token Name",
@@ -63,7 +80,8 @@ const sep41Balance: V2Sep41Balance = {
 const lpBalance: V2LiquidityPoolBalance = {
   token_type: "LIQUIDITY_POOL",
   token_id: "LPTOKENID",
-  balance: "12.75",
+  key: "abc123poolid:lp",
+  total: "12.75",
   available: "12.75",
   liquidity_pool_id: "abc123poolid",
   reserves: [
@@ -135,9 +153,22 @@ describe("mapAccountBalancesV2", () => {
       expect(entry.contractId).toBeUndefined();
     });
 
-    it("uses credit_alphanum12 for codes longer than 4 chars", () => {
+    it("passes the server-provided key and token through verbatim", () => {
+      // Identity derivation (key format, credit_alphanum4 vs 12) is
+      // server-side now — the mapper must not re-derive any of it.
       const result = mapAccountBalancesV2(
-        makeAccount([{ ...classicBalance, code: "LONGCODE" }]),
+        makeAccount([
+          {
+            ...classicBalance,
+            key: "LONGCODE:GISSUER",
+            token: {
+              type: "credit_alphanum12",
+              code: "LONGCODE",
+              issuer: { key: "GISSUER" },
+            },
+            code: "LONGCODE",
+          },
+        ]),
       );
       const entry = result.balances!["LONGCODE:GISSUER"] as any;
       expect(entry.token.type).toBe("credit_alphanum12");

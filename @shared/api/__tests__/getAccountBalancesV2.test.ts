@@ -29,7 +29,9 @@ const v2Account = {
     {
       token_type: "NATIVE",
       token_id: "CAS3J7GYLGXMF6TDJBBYYSE3HQ6BBSMLNUQ34T6TZMYMW2EVH34XOWMA",
-      balance: "100",
+      key: "native",
+      token: { type: "native", code: "XLM" },
+      total: "100",
       available: "98.5",
       minimum_balance: "1.5",
       buying_liabilities: "0",
@@ -46,7 +48,13 @@ const v2AccountWithClassic = {
     {
       token_type: "CLASSIC",
       token_id: "CUSDC",
-      balance: "50",
+      key: "USDC:GISSUER",
+      token: {
+        type: "credit_alphanum4",
+        code: "USDC",
+        issuer: { key: "GISSUER" },
+      },
+      total: "50",
       available: "50",
       code: "USDC",
       issuer: "GISSUER",

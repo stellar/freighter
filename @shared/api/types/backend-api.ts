@@ -18,10 +18,11 @@ export interface AccountBalancesInterface {
 // freighter-backend-v2 `POST /accounts/balances` wire types.
 // All keys are snake_case — this mirrors the REST response types in
 // freighter-backend-v2 internal/types/account_balances.go verbatim (verified
-// against the deployed dev instance). `balance` is the on-ledger amount and
-// `available` is the server-computed spendable portion (balance minus the
-// reserved amount for native/classic; equal to balance for contract tokens
-// and pool shares).
+// against the deployed dev instance). `total` is the on-ledger amount and
+// `available` is the server-computed spendable portion (total minus the
+// reserved amount for native/classic; equal to total for contract tokens
+// and pool shares). `key` and `token` are the server-derived v1 balance-map
+// key and token identity, so clients index balances without re-deriving them.
 // ---------------------------------------------------------------------------
 
 export type V2TokenType =
@@ -31,8 +32,26 @@ export type V2TokenType =
   | "SEP41"
   | "LIQUIDITY_POOL";
 
+export interface V2TokenIssuer {
+  key: string;
+}
+
+// v1-pattern token identity. `type` is omitted for SEP-41 tokens and `issuer`
+// is omitted for the native asset, matching the v1 shapes.
+export interface V2Token {
+  type?: string;
+  code: string;
+  issuer?: V2TokenIssuer;
+}
+
 export interface V2BalanceBase {
-  balance: string;
+  // v1-format balance-map key: "native" / "CODE:ISSUER" /
+  // "SYMBOL:CONTRACT_ID" / "POOLID:lp".
+  key: string;
+  // Present on every variant except LIQUIDITY_POOL (LP shares carry no token
+  // in v1). Each variant below narrows it to what the server guarantees.
+  token?: V2Token;
+  total: string;
   available: string;
   token_id: string;
   token_type: V2TokenType;
@@ -40,6 +59,7 @@ export interface V2BalanceBase {
 
 export interface V2NativeBalance extends V2BalanceBase {
   token_type: "NATIVE";
+  token: { type: "native"; code: "XLM" };
   // Base reserve requirement (excludes liabilities):
   // (2 + numSubentries + numSponsoring - numSponsored) * baseReserve.
   minimum_balance: string;
@@ -50,6 +70,8 @@ export interface V2NativeBalance extends V2BalanceBase {
 
 export interface V2ClassicBalance extends V2BalanceBase {
   token_type: "CLASSIC";
+  // `type` is the trustline's asset type verbatim (e.g. credit_alphanum4).
+  token: { type: string; code: string; issuer: V2TokenIssuer };
   code?: string;
   issuer?: string;
   type: string;
@@ -63,6 +85,8 @@ export interface V2ClassicBalance extends V2BalanceBase {
 
 export interface V2SacBalance extends V2BalanceBase {
   token_type: "SAC";
+  // `type` is derived server-side from the code length (credit_alphanum4/12).
+  token: { type: string; code: string; issuer: V2TokenIssuer };
   code: string;
   issuer: string;
   decimals: number;
@@ -70,10 +94,13 @@ export interface V2SacBalance extends V2BalanceBase {
   is_clawback_enabled?: boolean;
 }
 
-// `balance` is the raw i128 amount as a decimal string, NOT scaled by
+// `total` is the raw i128 amount as a decimal string, NOT scaled by
 // `decimals` — display logic scales it.
 export interface V2Sep41Balance extends V2BalanceBase {
   token_type: "SEP41";
+  // A pure SEP-41 token has no classic asset type; `issuer.key` is the
+  // contract id.
+  token: { code: string; issuer: V2TokenIssuer };
   name?: string;
   symbol?: string;
   decimals: number;
@@ -87,6 +114,7 @@ export interface V2LiquidityPoolReserve {
 
 export interface V2LiquidityPoolBalance extends V2BalanceBase {
   token_type: "LIQUIDITY_POOL";
+  token?: undefined;
   liquidity_pool_id: string;
   reserves: V2LiquidityPoolReserve[];
   last_modified_ledger?: number;

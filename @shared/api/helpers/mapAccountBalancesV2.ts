@@ -1,5 +1,4 @@
 import BigNumber from "bignumber.js";
-import { AssetType as SdkAssetType } from "stellar-sdk";
 
 import {
   ClassicAsset,
@@ -31,21 +30,17 @@ import {
  * them:
  *   - `blockaidData` → undefined (no spam/scam badges)
  *
- * `total` and `available` are both server-provided (`balance`/`available`) and
- * converted to BigNumber here, mirroring the v1 path. `minimumBalance` is
- * re-derived as `minimum_balance + selling_liabilities` because the v1
- * contract folds selling liabilities into it (see `mapNative`).
+ * `total` and `available` are both server-provided and converted to BigNumber
+ * here, mirroring the v1 path. `minimumBalance` is re-derived as
+ * `minimum_balance + selling_liabilities` because the v1 contract folds
+ * selling liabilities into it (see `mapNative`).
  *
- * Key formats match the v1/standalone conventions that `sortBalances` and
- * `filterHiddenBalances` (`popup/helpers/account.ts`) rely on:
- *   - native → `"native"`
- *   - classic / SAC → `"<code>:<issuer>"`
- *   - SEP-41 token → `"<symbol>:<contractId>"`
- *   - liquidity-pool share → `"<liquidityPoolId>:lp"`
+ * The balance-map `key` and the `token` identity are server-provided (v1
+ * conventions: `native` / `"<code>:<issuer>"` / `"<symbol>:<contractId>"` /
+ * `"<liquidityPoolId>:lp"` — the formats `sortBalances` and
+ * `filterHiddenBalances` in `popup/helpers/account.ts` rely on) and pass
+ * through verbatim — no per-asset identity logic lives client-side.
  */
-
-const classicAssetType = (code: string): SdkAssetType =>
-  (code.length > 4 ? "credit_alphanum12" : "credit_alphanum4") as SdkAssetType;
 
 // The mapper emits the runtime `AssetType` shapes from account-balance.ts —
 // the shapes the type guards in `popup/helpers/balance.ts` discriminate on —
@@ -78,10 +73,10 @@ interface MappedEntry {
 const mapNative = (
   b: V2NativeBalance,
 ): { key: string; value: MappedNative } => ({
-  key: "native",
+  key: b.key,
   value: {
-    token: { type: "native", code: "XLM" },
-    total: new BigNumber(b.balance),
+    token: b.token,
+    total: new BigNumber(b.total),
     available: new BigNumber(b.available),
     // v2's minimum_balance is the bare base-reserve requirement (excludes
     // liabilities), but the legacy contract folds selling liabilities in:
@@ -99,42 +94,30 @@ const mapNative = (
 
 const mapClassic = (
   b: V2ClassicBalance,
-): { key: string; value: MappedClassic } => {
-  const code = b.code || "";
-  const issuer = b.issuer || "";
-  return {
-    key: `${code}:${issuer}`,
-    value: {
-      token: {
-        type: classicAssetType(code),
-        code,
-        issuer: { key: issuer },
-      },
-      total: new BigNumber(b.balance),
-      available: new BigNumber(b.available),
-      limit: new BigNumber(b.limit || "0"),
-      buyingLiabilities: b.buying_liabilities,
-      sellingLiabilities: b.selling_liabilities,
-      blockaidData: undefined,
-    },
-  };
-};
+): { key: string; value: MappedClassic } => ({
+  key: b.key,
+  value: {
+    token: b.token,
+    total: new BigNumber(b.total),
+    available: new BigNumber(b.available),
+    limit: new BigNumber(b.limit || "0"),
+    buyingLiabilities: b.buying_liabilities,
+    sellingLiabilities: b.selling_liabilities,
+    blockaidData: undefined,
+  },
+});
 
 // A SAC balance is a classic asset (code + G-address issuer) held via contract.
-// The server pre-formats `balance` as decimal (like classic), so we map it to a
+// The server pre-formats `total` as decimal (like classic), so we map it to a
 // classic-shaped balance rather than the Soroban shape — the Soroban display
 // path re-scales by `decimals`, which would double-scale an already-formatted
-// SAC amount. No trustline liabilities exist on a SAC (available = balance
+// SAC amount. No trustline liabilities exist on a SAC (available = total
 // server-side).
 const mapSac = (b: V2SacBalance): { key: string; value: MappedClassic } => ({
-  key: `${b.code}:${b.issuer}`,
+  key: b.key,
   value: {
-    token: {
-      type: classicAssetType(b.code),
-      code: b.code,
-      issuer: { key: b.issuer },
-    },
-    total: new BigNumber(b.balance),
+    token: b.token,
+    total: new BigNumber(b.total),
     available: new BigNumber(b.available),
     buyingLiabilities: "0",
     sellingLiabilities: "0",
@@ -142,26 +125,24 @@ const mapSac = (b: V2SacBalance): { key: string; value: MappedClassic } => ({
   },
 });
 
-// A pure SEP-41 token maps to the Soroban shape: `balance` is a raw i128 that
-// display logic scales by `decimals`. `issuer.key` is the contract id, matching
-// the standalone Soroban convention.
-const mapSep41 = (b: V2Sep41Balance): { key: string; value: MappedSoroban } => {
-  const symbol = b.symbol || "";
-  const name = b.name || "";
-  return {
-    key: `${symbol}:${b.token_id}`,
-    value: {
-      token: { code: symbol, issuer: { key: b.token_id } },
-      contractId: b.token_id,
-      total: new BigNumber(b.balance),
-      available: new BigNumber(b.available),
-      symbol,
-      name,
-      decimals: b.decimals,
-      blockaidData: undefined,
-    },
-  };
-};
+// A pure SEP-41 token maps to the Soroban shape: `total` is a raw i128 that
+// display logic scales by `decimals`. `token.issuer.key` is the contract id,
+// matching the standalone Soroban convention.
+const mapSep41 = (
+  b: V2Sep41Balance,
+): { key: string; value: MappedSoroban } => ({
+  key: b.key,
+  value: {
+    token: b.token,
+    contractId: b.token_id,
+    total: new BigNumber(b.total),
+    available: new BigNumber(b.available),
+    symbol: b.symbol || "",
+    name: b.name || "",
+    decimals: b.decimals,
+    blockaidData: undefined,
+  },
+});
 
 // LP shares map to the legacy `<poolId>:lp` entry: no token identity, just
 // the share total plus the pool's constituent reserves ({asset, amount}[]),
@@ -170,10 +151,10 @@ const mapSep41 = (b: V2Sep41Balance): { key: string; value: MappedSoroban } => {
 const mapLiquidityPool = (
   b: V2LiquidityPoolBalance,
 ): { key: string; value: MappedLiquidityPool } => ({
-  key: `${b.liquidity_pool_id}:lp`,
+  key: b.key,
   value: {
     liquidityPoolId: b.liquidity_pool_id,
-    total: new BigNumber(b.balance),
+    total: new BigNumber(b.total),
     available: new BigNumber(b.available),
     reserves: b.reserves,
     blockaidData: undefined,

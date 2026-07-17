@@ -756,7 +756,8 @@ interface V1BalancesFixture {
  * same asset, so each stub defines its fixture data once and serves both
  * endpoints. Classification mirrors what mapAccountBalancesV2 consumes:
  * `native` key → NATIVE, `:lp` suffix → LIQUIDITY_POOL, `contractId` without
- * a classic trustline type → SEP41, everything else → CLASSIC.
+ * a classic trustline type → SEP41, everything else → CLASSIC. The server
+ * derives `key`/`token` per entry, so the stub emits them alongside `total`.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const toV2WireBalance = (key: string, entry: any) => {
@@ -764,7 +765,9 @@ const toV2WireBalance = (key: string, entry: any) => {
     return {
       token_type: "NATIVE",
       token_id: "native",
-      balance: entry.total,
+      key: "native",
+      token: { type: "native", code: "XLM" },
+      total: entry.total,
       available: entry.available,
       minimum_balance: entry.minimumBalance || "1",
       buying_liabilities: entry.buyingLiabilities || "0",
@@ -775,7 +778,8 @@ const toV2WireBalance = (key: string, entry: any) => {
     return {
       token_type: "LIQUIDITY_POOL",
       token_id: key,
-      balance: entry.total,
+      key,
+      total: entry.total,
       available: entry.available,
       liquidity_pool_id: entry.liquidityPoolId || key.slice(0, -3),
       reserves: entry.reserves || [],
@@ -783,25 +787,33 @@ const toV2WireBalance = (key: string, entry: any) => {
   }
   const trustlineType = entry.token?.type as string | undefined;
   if (entry.contractId && !trustlineType?.startsWith("credit")) {
+    const symbol = entry.symbol || entry.token?.code;
     return {
       token_type: "SEP41",
       token_id: entry.contractId,
-      balance: entry.total,
+      key,
+      token: { code: symbol, issuer: { key: entry.contractId } },
+      total: entry.total,
       available: entry.available,
-      symbol: entry.symbol || entry.token?.code,
+      symbol,
       name: entry.name || entry.token?.code,
       decimals: entry.decimals ?? 7,
     };
   }
   const [keyCode, keyIssuer] = key.split(":");
+  const code = entry.token?.code || keyCode;
+  const issuer = entry.token?.issuer?.key || keyIssuer;
+  const type = trustlineType || "credit_alphanum4";
   return {
     token_type: "CLASSIC",
     token_id: key,
-    balance: entry.total,
+    key,
+    token: { type, code, issuer: { key: issuer } },
+    total: entry.total,
     available: entry.available,
-    code: entry.token?.code || keyCode,
-    issuer: entry.token?.issuer?.key || keyIssuer,
-    type: trustlineType || "credit_alphanum4",
+    code,
+    issuer,
+    type,
     limit: entry.limit || "922337203685.4775807",
     buying_liabilities: entry.buyingLiabilities || "0",
     selling_liabilities: entry.sellingLiabilities || "0",
