@@ -175,5 +175,9 @@
 
   &__submit-error {
     margin-top: pxToRem(12px);
+    // Separate the warning/error notification from the element below it (the
+    // "Verified" chip has no margin-top of its own), so they don't collapse
+    // together. Also spaces stacked notifications from each other.
+    margin-bottom: pxToRem(16px);
   }
 }
