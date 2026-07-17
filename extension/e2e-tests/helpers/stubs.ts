@@ -3357,8 +3357,8 @@ export const stubMaintenanceBannerVariant = async (
 /**
  * Stubs the asset-list endpoint so that the given contractId appears as a
  * verified token. This causes getVerifiedTokens() to return a non-empty array,
- * which sets isVerifiedToken=true in AddToken and suppresses the
- * "Not on your lists" AssetListWarning banner.
+ * which sets isVerifiedToken=true in AddToken so the verification chip shows
+ * "Verified" instead of "Unverified".
  *
  * Use page.route() (popup-level) for SEP-41 tokens and context.addInitScript()
  * for the SAC flow (where the popup is created before page.route() can fire).

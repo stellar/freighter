@@ -846,7 +846,7 @@ test("should add an unverified SEP-41 token when allowed", async ({
   const popup = await popupPromise;
 
   await expect(popup.getByText("E2E Token")).toBeDefined();
-  await expect(popup.getByText("Not on your lists")).toBeVisible();
+  await expect(popup.getByTestId("add-token-unverified")).toBeVisible();
   await expectPageToHaveScreenshot({
     page: popup,
     screenshot: "add-token.png",
@@ -952,7 +952,7 @@ test("should add an unverified SAC token through the Change Trust review when al
   await expect(
     popup.getByTestId("AddToken__Metadata__Row__TokenAddress"),
   ).toBeVisible();
-  await expect(popup.getByText("Not on your lists")).toBeVisible();
+  await expect(popup.getByTestId("add-token-unverified")).toBeVisible();
 
   // Clicking confirm for a SAC slides in the standard changeTrust review.
   await popup.getByTestId("add-token-approve").click();
@@ -1099,7 +1099,7 @@ test("should add a verified SEP-41 token without the unverified banner", async (
   context,
 }) => {
   await stubIsSac(context);
-  // Mark verified (no "Not on your lists" banner). On `context` so it's set
+  // Mark verified (chip shows "Verified"). On `context` so it's set
   // before the popup's initial asset-list fetch.
   await stubVerifiedToken(context, TEST_TOKEN_ADDRESS);
 
@@ -1128,8 +1128,9 @@ test("should add a verified SEP-41 token without the unverified banner", async (
   await stubVerifiedToken(popup, TEST_TOKEN_ADDRESS);
 
   await expect(popup.getByText("E2E Token")).toBeDefined();
-  // Verified token: the "Not on your lists" banner must NOT be shown.
-  await expect(popup.getByText("Not on your lists")).toHaveCount(0);
+  // Verified token: the verification chip shows "Verified", not "Unverified".
+  await expect(popup.getByTestId("add-token-verified")).toBeVisible();
+  await expect(popup.getByTestId("add-token-unverified")).toHaveCount(0);
   // Register the close listener BEFORE clicking: window.close() can fire
   // fast enough that waiting for the event after the click races it.
   const popupClosed = popup.waitForEvent("close", { timeout: 15000 });
@@ -1204,8 +1205,9 @@ test("should add a verified SAC token through the Change Trust review without th
   await expect(
     popup.getByTestId("AddToken__Metadata__Row__TokenAddress"),
   ).toBeVisible();
-  // Verified SAC token: the "Not on your lists" banner must NOT be shown.
-  await expect(popup.getByText("Not on your lists")).toHaveCount(0);
+  // Verified SAC token: the verification chip shows "Verified", not "Unverified".
+  await expect(popup.getByTestId("add-token-verified")).toBeVisible();
+  await expect(popup.getByTestId("add-token-unverified")).toHaveCount(0);
 
   await popup.getByTestId("add-token-approve").click();
 
