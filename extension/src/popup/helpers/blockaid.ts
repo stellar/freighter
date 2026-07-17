@@ -76,7 +76,10 @@ export const useScanSite = () => {
       setData(response.data);
       emitMetric(METRIC_NAMES.blockaidScanCompleted, {
         scan_target: "domain",
-        result: response.data?.is_malicious ? "malicious" : "benign",
+        result:
+          response.data?.status === "hit" && response.data.is_malicious
+            ? "malicious"
+            : "benign",
       });
       setLoading(false);
       return response.data;
