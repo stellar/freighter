@@ -33,7 +33,7 @@ import { useSendQueryParams } from "./hooks/useSendQueryParams";
 import "./styles.scss";
 
 // Each send sub-step emits the consolidated `screen.viewed` event; the step's
-// identity lives in `screen_name` (derived from the legacy "loaded screen: X").
+// identity lives in `screen_name`, declared as a literal below.
 const SEND_SCREEN_BY_STEP: Partial<
   Record<STEPS, { screen_name: string } & ScreenViewedProps>
 > = {
