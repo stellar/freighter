@@ -8,7 +8,7 @@
     "@stellar/js-xdr": "4.0.0",
     "bignumber.js": "9.3.0",
     "bip39": "3.1.0",
-    "prettier": "3.8.4",
+    "prettier": "3.9.5",
     "stellar-sdk": "npm:@stellar/stellar-sdk@16.0.0-rc.1",
     "stellar-sdk-next": "npm:@stellar/stellar-sdk@16.0.0-rc.1",
     "typescript": "6.0.3",

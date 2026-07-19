@@ -26,14 +26,14 @@
     ]
   },
   "dependencies": {
-    "@docusaurus/core": "3.10.1",
-    "@docusaurus/preset-classic": "3.10.1",
+    "@docusaurus/core": "3.10.2",
+    "@docusaurus/preset-classic": "3.10.2",
     "@stellar/freighter-api": "6.0.1",
     "clsx": "2.1.1",
     "react": "19.2.7",
     "react-dom": "19.2.7",
     "react-is": "19.2.7",
-    "styled-components": "6.4.2"
+    "styled-components": "6.4.3"
   },
   "devDependencies": {
     "@lavamoat/allow-scripts": "5.1.0"
