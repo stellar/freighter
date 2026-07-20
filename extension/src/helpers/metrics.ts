@@ -505,12 +505,22 @@ export type Flow =
   | "security"
   | "history";
 
+/**
+ * Canonical cross-platform `step` vocabulary (RFC #2883): a screen's position
+ * within a multi-step flow. Closed set, applied identically on mobile — a
+ * screen present on both platforms MUST carry the same `step`.
+ *   - `confirm`:    the review/confirm stage before submitting (send/swap).
+ *   - `processing`: the in-flight submission stage.
+ *   - `success`:    the terminal completion stage of a flow.
+ */
+export type Step = "confirm" | "processing" | "success";
+
 /** Extra, screen-specific properties carried alongside the canonical event. */
 export interface ScreenViewedProps {
   /** Product-area grouping; omitted from the event when undefined. */
   flow?: Flow;
-  /** Sub-step marker (e.g. completion/success screens); omitted when undefined. */
-  step?: string;
+  /** Stage within a flow (see Step); omitted when undefined. */
+  step?: Step;
   [key: string]: unknown;
 }
 

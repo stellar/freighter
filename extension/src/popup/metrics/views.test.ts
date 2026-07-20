@@ -24,7 +24,9 @@ jest.mock("helpers/urls", () => ({
 jest.mock("popup/helpers/isSidebarMode", () => ({
   isSidebarMode: jest.fn(() => false),
 }));
+jest.mock("@sentry/browser", () => ({ captureException: jest.fn() }));
 
+import { captureException } from "@sentry/browser";
 import { registerHandler, emitMetric, emitScreenViewed } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { ROUTES } from "popup/constants/routes";
@@ -63,9 +65,26 @@ describe("views navigate handler → screen.viewed", () => {
     expect(emitMetric).not.toHaveBeenCalled();
   });
 
-  it("maps the home account route with no flow", () => {
+  it("maps the home account route to the assets flow", () => {
     fireNavigate(ROUTES.account);
-    expect(emitScreenViewed).toHaveBeenCalledWith("account", {});
+    expect(emitScreenViewed).toHaveBeenCalledWith("account", {
+      flow: "assets",
+    });
+  });
+
+  it("does not emit a screen-view for the send container route (D8)", () => {
+    // The send route is a container: its per-step screens are emitted by the
+    // Send flow's step effect, so navigating the route itself emits nothing.
+    fireNavigate(ROUTES.sendPayment);
+    expect(emitScreenViewed).not.toHaveBeenCalled();
+    expect(emitMetric).not.toHaveBeenCalled();
+  });
+
+  it("skips (does not throw) and reports to Sentry for an uncatalogued route (D6)", () => {
+    (captureException as jest.Mock).mockClear();
+    expect(() => fireNavigate("/some-brand-new-route")).not.toThrow();
+    expect(emitScreenViewed).not.toHaveBeenCalled();
+    expect(captureException).toHaveBeenCalledTimes(1);
   });
 
   it("attaches a step for completion/success screens", () => {
@@ -123,7 +142,11 @@ describe("views navigate handler → screen.viewed", () => {
 
   it("produces only snake_case screen names with no legacy prefix across all routes", () => {
     const screenRoutes = Object.values(ROUTES).filter(
-      (r) => r !== ROUTES.manageAssetsListsModifyAssetList,
+      (r) =>
+        r !== ROUTES.manageAssetsListsModifyAssetList &&
+        // The send route is an intentional non-emit container (D8); its
+        // per-step screens are emitted by the Send flow's step effect.
+        r !== ROUTES.sendPayment,
     );
     const names: string[] = [];
     screenRoutes.forEach((pathname) => {

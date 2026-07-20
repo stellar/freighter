@@ -35,8 +35,11 @@ export const DisplayBackupPhrase = () => {
   const { state, fetchData } = useGetAppData();
 
   useEffect(() => {
+    // Canonical cross-platform names (RFC #2883): mobile uses
+    // show_recovery_phrase for the revealed screen. The locked-state gate is
+    // extension-only (mobile unlocks globally); kept with matching terminology.
     emitScreenViewed(
-      isPhraseUnlocked ? "display_backup_phrase" : "unlock_backup_phrase",
+      isPhraseUnlocked ? "show_recovery_phrase" : "unlock_recovery_phrase",
       { flow: "security" },
     );
   }, [isPhraseUnlocked]);

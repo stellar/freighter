@@ -1,3 +1,5 @@
+import { captureException } from "@sentry/browser";
+
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 
 import {
@@ -5,6 +7,7 @@ import {
   emitMetric,
   emitScreenViewed,
   Flow,
+  Step,
 } from "helpers/metrics";
 import { getTransactionInfo } from "helpers/stellar";
 import { parsedSearchParam, getUrlHostname, getUrlDomain } from "helpers/urls";
@@ -22,8 +25,8 @@ interface ScreenDef {
   screen_name: string;
   /** Product-area grouping; omit when no flow is a good fit. */
   flow?: Flow;
-  /** Sub-step marker (used here for terminal completion/success screens). */
-  step?: string;
+  /** Stage within a flow (see Step); omit for distinct-destination screens. */
+  step?: Step;
 }
 
 /**
@@ -37,7 +40,7 @@ interface ScreenDef {
  */
 const routeToScreen: Partial<Record<ROUTES, ScreenDef>> = {
   [ROUTES.welcome]: { screen_name: "welcome", flow: "onboarding" },
-  [ROUTES.account]: { screen_name: "account" },
+  [ROUTES.account]: { screen_name: "account", flow: "assets" },
   [ROUTES.accountHistory]: { screen_name: "account_history", flow: "history" },
   [ROUTES.addAccount]: { screen_name: "add_account", flow: "onboarding" },
   [ROUTES.importAccount]: { screen_name: "import_account", flow: "onboarding" },
@@ -88,7 +91,8 @@ const routeToScreen: Partial<Record<ROUTES, ScreenDef>> = {
     step: "success",
   },
   [ROUTES.displayBackupPhrase]: {
-    screen_name: "display_backup_phrase",
+    // Canonical cross-platform name (RFC #2883): mobile uses show_recovery_phrase.
+    screen_name: "show_recovery_phrase",
     flow: "security",
   },
   [ROUTES.settings]: { screen_name: "settings", flow: "settings" },
@@ -99,10 +103,12 @@ const routeToScreen: Partial<Record<ROUTES, ScreenDef>> = {
     flow: "settings",
   },
   [ROUTES.about]: { screen_name: "about", flow: "settings" },
-  [ROUTES.viewPublicKey]: { screen_name: "view_public_key_generator" },
+  [ROUTES.viewPublicKey]: {
+    screen_name: "view_public_key_generator",
+    flow: "assets",
+  },
   [ROUTES.debug]: { screen_name: "debug" },
   [ROUTES.integrationTest]: { screen_name: "integration_test" },
-  [ROUTES.sendPayment]: { screen_name: "send_payment", flow: "send" },
   [ROUTES.addCollectibles]: { screen_name: "add_collectibles", flow: "assets" },
   [ROUTES.manageAssets]: { screen_name: "manage_assets", flow: "assets" },
   [ROUTES.searchAsset]: { screen_name: "search_asset", flow: "assets" },
@@ -155,6 +161,14 @@ const routeToScreen: Partial<Record<ROUTES, ScreenDef>> = {
   },
 };
 
+/**
+ * Routes that intentionally emit NO screen-view. The send route is a container:
+ * its per-step screens (send_payment_to / send_payment_amount / …) are emitted
+ * by the Send flow's step effect, so tracking the bare container here would only
+ * double-count. Mobile has no send_payment container either (RFC #2883, D8).
+ */
+const ROUTES_WITHOUT_SCREEN_VIEW = new Set<string>([ROUTES.sendPayment]);
+
 /** Builds the screen.viewed props object, dropping any undefined flow/step. */
 const screenProps = (
   screen: ScreenDef,
@@ -178,10 +192,23 @@ registerHandler<AppState>(navigate, (_, a) => {
     return;
   }
 
+  // Intentionally-untracked routes (e.g. the send container) emit nothing.
+  if (ROUTES_WITHOUT_SCREEN_VIEW.has(pathname)) {
+    return;
+  }
+
   const screen = routeToScreen[pathname as ROUTES];
 
   if (!screen) {
-    throw new Error(`Didn't find a screen definition for path '${pathname}'`);
+    // RFC #2883 (D6): an uncatalogued route is not tracked. Report to Sentry so
+    // the gap is visible, but never throw inside the navigate handler — throwing
+    // here risks breaking navigation for a route someone simply forgot to add.
+    captureException(
+      new Error(
+        `No screen definition for path '${pathname}'; screen.viewed skipped`,
+      ),
+    );
+    return;
   }
 
   // "/sign-transaction" and "/grant-access" require additional metrics on loaded page

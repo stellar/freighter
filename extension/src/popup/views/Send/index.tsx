@@ -45,6 +45,9 @@ const SEND_SCREEN_BY_STEP: Partial<
   [STEPS.PAYMENT_CONFIRM]: {
     screen_name: "send_payment_confirm",
     flow: "send",
+    // Canonical cross-platform stage (RFC #2883): mobile tags this screen
+    // step:"confirm"; keep them in sync so `step` is funnel-able across both.
+    step: "confirm",
   },
   [STEPS.DESTINATION]: { screen_name: "send_payment_to", flow: "send" },
 };

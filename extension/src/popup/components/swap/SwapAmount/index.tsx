@@ -39,7 +39,7 @@ import { reRouteOnboarding } from "popup/helpers/route";
 import { getAvailableBalance } from "popup/helpers/soroban";
 import { useBlockaidOverrideState } from "popup/helpers/blockaid";
 import { AppDispatch } from "popup/App";
-import { emitMetric, emitScreenViewed } from "helpers/metrics";
+import { emitMetric } from "helpers/metrics";
 import { InputType } from "helpers/transaction";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { LoadingBackground } from "popup/basics/LoadingBackground";
@@ -752,7 +752,13 @@ export const SwapAmount = ({
                 >
                   <PercentageButtons
                     onSelect={(pct: number) => {
-                      emitScreenViewed("swap_amount", { flow: "swap" });
+                      // A percentage/set-max tap is a user action, not a screen
+                      // view (RFC #2883, D5): emit an action event so it doesn't
+                      // inflate the swap_amount screen.viewed count. Mobile emits
+                      // swap_amount only on the actual screen view.
+                      emitMetric(METRIC_NAMES.swapAmountPercentageSet, {
+                        percentage: pct,
+                      });
                       // Always a fraction of the crypto available balance, so
                       // the committed amount is identical in crypto and fiat
                       // display. In fiat mode the fiat field mirrors it (rounded
