@@ -469,6 +469,37 @@ describe("consent hydration (startup)", () => {
     mod!.syncIdentifyTraits(accounts);
     expect(identify!).toHaveBeenCalled();
   });
+
+  it("does not cache the fingerprint if identify() throws, so the next call retries", async () => {
+    let mod: typeof import("helpers/metrics");
+    let settingsMod: { settingsDataSharingSelector: jest.Mock };
+    let identify: jest.Mock;
+    jest.isolateModules(() => {
+      mod = require("helpers/metrics");
+      settingsMod = require("popup/ducks/settings");
+      identify = (require("@amplitude/analytics-browser") as typeof amplitude)
+        .identify as jest.Mock;
+    });
+    const accounts = [
+      { publicKey: "G1", hardwareWalletType: "", imported: false },
+    ] as never;
+
+    settingsMod!.settingsDataSharingSelector.mockReturnValue(true);
+    await mod!.initAmplitude();
+    identify!.mockClear();
+
+    // First sync throws mid-dispatch — the fingerprint must NOT be cached.
+    identify!.mockImplementationOnce(() => {
+      throw new Error("boom");
+    });
+    expect(() => mod!.syncIdentifyTraits(accounts)).not.toThrow();
+    expect(identify!).toHaveBeenCalledTimes(1);
+
+    // Same traits again: because the throw left nothing cached, the dirty-check
+    // does not short-circuit and the Identify retries.
+    mod!.syncIdentifyTraits(accounts);
+    expect(identify!).toHaveBeenCalledTimes(2);
+  });
 });
 
 describe("app.opened", () => {

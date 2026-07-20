@@ -31,6 +31,7 @@ const LOG_MESSAGES = {
   AMPLITUDE_PREFIX: "[Amplitude]",
   MISSING_KEY: "Missing AMPLITUDE_KEY — events will not be uploaded",
   INIT_FAILED: "Failed to initialize",
+  IDENTIFY_FAILED: "Failed to send Identify",
   EVENT_NOT_UPLOADED: "Amplitude event (not uploaded):",
 } as const;
 
@@ -310,13 +311,25 @@ export const syncIdentifyTraits = (allAccounts: Account[]): void => {
   // without caching so a later call (after consent hydrates) re-syncs.
   if (!settingsDataSharingSelector(store.getState())) return;
 
-  lastIdentifiedTraits = fingerprint;
+  // Cache the fingerprint only after the Identify has been dispatched
+  // successfully. Caching before the send would mean a one-off throw leaves the
+  // dirty-check short-circuiting every later sync with the same traits, so they'd
+  // never retry. Mirrors the mobile implementation (freighter-mobile#936).
+  try {
+    const identify = new amplitude.Identify();
+    identify.set("wallet_count", traits.wallet_count);
+    identify.set("has_hardware_wallet", traits.has_hardware_wallet);
+    identify.set("has_imported_account", traits.has_imported_account);
+    amplitude.identify(identify);
 
-  const identify = new amplitude.Identify();
-  identify.set("wallet_count", traits.wallet_count);
-  identify.set("has_hardware_wallet", traits.has_hardware_wallet);
-  identify.set("has_imported_account", traits.has_imported_account);
-  amplitude.identify(identify);
+    lastIdentifiedTraits = fingerprint;
+  } catch (e) {
+    // Leave lastIdentifiedTraits unset so the next call retries.
+    console.error(
+      `${LOG_MESSAGES.AMPLITUDE_PREFIX} ${LOG_MESSAGES.IDENTIFY_FAILED}`,
+      e,
+    );
+  }
 };
 
 // ---------------------------------------------------------------------------
