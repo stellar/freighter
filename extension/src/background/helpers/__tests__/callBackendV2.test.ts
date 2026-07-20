@@ -89,7 +89,10 @@ describe("callBackendV2", () => {
     // Mocked so a skipAuth regression fails fast instead of running real PBKDF2.
     const derive = jest
       .spyOn(deriveMod, "deriveAuthKeypair")
-      .mockResolvedValue({ userId: KP.rawPublicKey().toString("hex"), keypair: KP });
+      .mockResolvedValue({
+        userId: KP.rawPublicKey().toString("hex"),
+        keypair: KP,
+      });
     const fetchImpl = jest
       .fn()
       .mockResolvedValue(okResponse({ status: "healthy" }));
@@ -196,13 +199,11 @@ describe("callBackendV2", () => {
 
   it("preserves a JSON error body on a non-2xx response (for Sentry detail)", async () => {
     jest.spyOn(sessionMod, "getEncryptedTemporaryData").mockResolvedValue("");
-    const fetchImpl = jest
-      .fn()
-      .mockResolvedValue(
-        new Response(JSON.stringify({ error: "boom", code: 42 }), {
-          status: 500,
-        }),
-      );
+    const fetchImpl = jest.fn().mockResolvedValue(
+      new Response(JSON.stringify({ error: "boom", code: 42 }), {
+        status: 500,
+      }),
+    );
 
     const result = await callBackendV2({
       method: "GET",
@@ -223,9 +224,7 @@ describe("callBackendV2", () => {
       .spyOn(sessionMod, "getEncryptedTemporaryData")
       .mockResolvedValue(VECTOR_MNEMONIC);
     const deriveError = new Error("corrupted temporaryStoreExtra");
-    jest
-      .spyOn(deriveMod, "deriveAuthKeypair")
-      .mockRejectedValue(deriveError);
+    jest.spyOn(deriveMod, "deriveAuthKeypair").mockRejectedValue(deriveError);
     const fetchImpl = jest.fn().mockResolvedValue(okResponse({ data: 1 }));
 
     const result = await callBackendV2({

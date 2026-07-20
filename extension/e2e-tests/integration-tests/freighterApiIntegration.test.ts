@@ -3,12 +3,23 @@ import { TEST_TOKEN_ADDRESS } from "../helpers/test-token";
 import { loginToTestAccount, switchToMainnet } from "../helpers/login";
 import { allowDapp } from "../helpers/dAppSessionHelper";
 import {
+  SAC_CONTRACT_ID,
+  delayAddTokenRoundTrip,
   stubAccountBalances,
   stubAccountHistory,
+  stubBackendSubmitTx,
+  stubFeeStats,
+  stubHorizonAccounts,
   stubIsSac,
+  stubIsSacTrue,
+  stubSacTokenDetails,
+  stubSacViaInitScript,
+  stubScanAssetSafe,
   stubScanDapp,
+  stubScanTx,
   stubTokenDetails,
   stubTokenPrices,
+  stubVerifiedToken,
 } from "../helpers/stubs";
 
 const TX_TO_SIGN =
@@ -807,7 +818,7 @@ test("should not sign message when not allowed", async ({
   await expect(popup.getByText("Connection Request")).toBeVisible();
 });
 
-test("should add token when allowed", async ({
+test("should add an unverified SEP-41 token when allowed", async ({
   page,
   extensionId,
   context,
@@ -835,18 +846,214 @@ test("should add token when allowed", async ({
   const popup = await popupPromise;
 
   await expect(popup.getByText("E2E Token")).toBeDefined();
+  await expect(popup.getByTestId("add-token-unverified")).toBeVisible();
   await expectPageToHaveScreenshot({
     page: popup,
     screenshot: "add-token.png",
   });
+  // Register the close listener BEFORE clicking: window.close() can fire
+  // fast enough that waiting for the event after the click races it.
+  const popupClosed = popup.waitForEvent("close", { timeout: 15000 });
   await popup.getByTestId("add-token-approve").click();
+
+  // SEP-41 is a one-step flow: a single Confirm click resolves the dApp
+  // request AND closes the popup — no separate success screen / Done click.
+  await popupClosed;
 
   await expect(pageTwo.locator("#result-addToken")).toContainText(
     "Token added:",
   );
 });
 
-test("should not add token when not allowed", async ({
+// The cryptographically-derived SAC contract for E2E:SAC_ISSUER on testnet.
+// new Asset("E2E", SAC_ISSUER).contractId("Test SDF Network ; September 2015")
+// SAC_CONTRACT_ID (derived from Asset("E2E", SAC_ISSUER)) is imported from
+// helpers/stubs — using it, not TEST_TOKEN_ADDRESS, is required so isAssetSac()
+// in useGetChangeTrustData verifies correctly and builds the XDR.
+
+// SAC token test: skipped in integration mode — the stubs needed to classify
+// SAC_CONTRACT_ID as a SAC must be injected before the popup opens, which
+// requires the window.fetch addInitScript approach described below. In
+// integration mode all stubs are bypassed and the real backend is used, but
+// the test account does not have a live SAC on testnet.
+test("should add an unverified SAC token through the Change Trust review when allowed", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  test.skip(
+    isIntegrationMode,
+    "SAC stub injection via addInitScript is not compatible with integration mode",
+  );
+
+  // Playwright's context.route() / page.route() does not reliably intercept
+  // fetch calls made by Chrome extension popup pages in headless mode because
+  // those pages run in an isolated extension process. We therefore override
+  // window.fetch via context.addInitScript(), which is guaranteed to run before
+  // ANY page script on every new page — including the popup opened by
+  // browser.windows.create(). This is the same technique used in
+  // stubAccountHistoryWith (page level) applied at context level.
+  //
+  // Endpoints overridden:
+  //   is-sac-contract → { isSacContract: true }
+  //   token-details   → { name: "E2E:<SAC_ISSUER>", symbol: "E2E", decimals: 7 }
+  //
+  // Effect on the AddToken flow:
+  //   useTokenLookup receives isSacContract=true → sets issuer to the G-address
+  //   → StrKey.isValidEd25519PublicKey(issuer) = true → isSac = true
+  //   → Confirm click calls setShowTrustlineReview(true) instead of handleApprove()
+  //   → ChangeTrustInternal renders, isAssetSac verifies SAC_CONTRACT_ID, builds XDR
+  await stubSacViaInitScript(context);
+
+  // context.route() as belt-and-suspenders (intercepted when CDP cooperates)
+  await stubIsSacTrue(context);
+  await stubSacTokenDetails(context);
+
+  await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
+  await allowDapp({ page });
+
+  // Open a second tab pointing at the addToken playground.
+  const pageTwo = await page.context().newPage();
+  await pageTwo.waitForLoadState();
+
+  const popupPromise = page.context().waitForEvent("page");
+  await pageTwo.goto(
+    "https://play.freighter.app/#/extension/playground/addToken",
+  );
+  // Use the cryptographically-derived SAC contract ID, not TEST_TOKEN_ADDRESS.
+  // AddToken passes this contractId to useTokenLookup and then to ChangeTrustInternal;
+  // isAssetSac() verifies it against Asset("E2E", SAC_ISSUER).contractId(passphrase).
+  await pageTwo.getByRole("textbox").first().fill(SAC_CONTRACT_ID);
+  await pageTwo
+    .getByRole("textbox")
+    .nth(1)
+    .fill("Test SDF Network ; September 2015");
+  await pageTwo.getByText("Add Token").click();
+
+  const popup = await popupPromise;
+
+  // Belt-and-suspenders page-level stubs on the popup for requests fired after
+  // the popup is captured (ChangeTrust data-loading phase).
+  await stubIsSacTrue(popup);
+  await stubSacTokenDetails(popup);
+  await stubFeeStats(popup);
+  await stubHorizonAccounts(popup);
+  await stubScanAssetSafe(popup);
+  await stubScanTx(popup);
+  await stubBackendSubmitTx(popup);
+  await stubAccountBalances(popup);
+
+  // Wait for the token lookup to resolve (the Confirm button is hidden while
+  // isLoading). For a SAC token the Add Token screen shows the Fee and Token
+  // address rows (per the Figma design) before the trustline review.
+  await expect(popup.getByTestId("AddToken__Metadata__Row__Fee")).toBeVisible({
+    timeout: 15000,
+  });
+  await expect(
+    popup.getByTestId("AddToken__Metadata__Row__TokenAddress"),
+  ).toBeVisible();
+  await expect(popup.getByTestId("add-token-unverified")).toBeVisible();
+
+  // Clicking confirm for a SAC slides in the standard changeTrust review.
+  await popup.getByTestId("add-token-approve").click();
+
+  await expect(popup.getByTestId("ChangeTrustInternal__Body")).toBeVisible({
+    timeout: 15000,
+  });
+  await expect(popup.getByText("Add Trustline")).toBeVisible();
+});
+
+// Regression test for PR #2869 comment 4859103563: a successful SAC trustline
+// could still resolve the dApp's addToken() request as "user rejected" if the
+// user clicked Done before the background ADD_TOKEN round-trip finished —
+// window.close() raced response(true) and rejectOnWindowClose won, reporting
+// a rejection for a trustline that had actually succeeded on-chain. The fix
+// makes Done await the in-flight add before closing. This test forces the
+// race by artificially delaying the ADD_TOKEN message round-trip and clicking
+// Done the instant "Success!" appears — reproducing the race deterministically
+// instead of relying on click timing.
+test("should not report the dApp request as rejected when Done is clicked immediately after a successful SAC trustline", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  test.skip(
+    isIntegrationMode,
+    "SAC stub injection via addInitScript is not compatible with integration mode",
+  );
+
+  // Same SAC-classification stubs as the test above (see its comment for why
+  // this init-script approach, rather than context.route(), is required).
+  await stubSacViaInitScript(context);
+
+  // Delay ONLY the ADD_TOKEN background round-trip so a same-tick "click Done
+  // the moment Success renders" can race ahead of response(true) if Done
+  // doesn't await it.
+  await delayAddTokenRoundTrip(context);
+
+  await stubIsSacTrue(context);
+  await stubSacTokenDetails(context);
+
+  await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
+  await allowDapp({ page });
+
+  const pageTwo = await page.context().newPage();
+  await pageTwo.waitForLoadState();
+
+  const popupPromise = page.context().waitForEvent("page");
+  await pageTwo.goto(
+    "https://play.freighter.app/#/extension/playground/addToken",
+  );
+  await pageTwo.getByRole("textbox").first().fill(SAC_CONTRACT_ID);
+  await pageTwo
+    .getByRole("textbox")
+    .nth(1)
+    .fill("Test SDF Network ; September 2015");
+  await pageTwo.getByText("Add Token").click();
+
+  const popup = await popupPromise;
+
+  await stubIsSacTrue(popup);
+  await stubSacTokenDetails(popup);
+  await stubFeeStats(popup);
+  await stubHorizonAccounts(popup);
+  await stubScanAssetSafe(popup);
+  await stubScanTx(popup);
+  await stubBackendSubmitTx(popup);
+  await stubAccountBalances(popup);
+
+  await expect(popup.getByTestId("AddToken__Metadata__Row__Fee")).toBeVisible({
+    timeout: 15000,
+  });
+  await popup.getByTestId("add-token-approve").click();
+
+  await expect(popup.getByTestId("ChangeTrustInternal__Body")).toBeVisible({
+    timeout: 15000,
+  });
+  await popup.getByRole("button", { name: "Confirm", exact: true }).click();
+
+  // Click Done the instant it appears — no wait between Success rendering and
+  // the click, so this races the (artificially delayed) ADD_TOKEN response.
+  await expect(
+    popup.getByTestId("SubmitTransaction__Title__Success"),
+  ).toBeVisible({ timeout: 15000 });
+  await popup.getByRole("button", { name: "Done", exact: true }).click();
+
+  // The popup should wait out the delayed round-trip before closing.
+  await popup.waitForEvent("close", { timeout: 15000 });
+
+  // The dApp must see the trustline succeed — never "user rejected" — even
+  // though Done was clicked before the round-trip had a chance to finish.
+  await expect(pageTwo.locator("#result-addToken")).toContainText(
+    "Token added:",
+    { timeout: 15000 },
+  );
+  await expect(pageTwo.locator("#result-addToken")).not.toContainText(
+    "rejected",
+  );
+});
+
+test("should not add a SEP-41 token when the domain is not allowed", async ({
   page,
   extensionId,
   context,
@@ -884,6 +1091,130 @@ test("should not add token when not allowed", async ({
     page: popup,
     screenshot: "domain-not-allowed-add-token.png",
   });
+});
+
+test("should add a verified SEP-41 token without the unverified banner", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  await stubIsSac(context);
+  // Mark verified (chip shows "Verified"). On `context` so it's set
+  // before the popup's initial asset-list fetch.
+  await stubVerifiedToken(context, TEST_TOKEN_ADDRESS);
+
+  await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
+  await allowDapp({ page });
+
+  // open a second tab and go to docs playground
+  const pageTwo = await page.context().newPage();
+  await pageTwo.waitForLoadState();
+
+  const popupPromise = page.context().waitForEvent("page");
+  await pageTwo.goto(
+    "https://play.freighter.app/#/extension/playground/addToken",
+  );
+  await pageTwo.getByRole("textbox").first().fill(TEST_TOKEN_ADDRESS);
+  await pageTwo
+    .getByRole("textbox")
+    .nth(1)
+    .fill("Test SDF Network ; September 2015");
+  await pageTwo.getByText("Add Token").click();
+
+  const popup = await popupPromise;
+
+  // Also stub the asset-list on the popup page itself (belt-and-suspenders for
+  // requests fired after the popup is captured).
+  await stubVerifiedToken(popup, TEST_TOKEN_ADDRESS);
+
+  await expect(popup.getByText("E2E Token")).toBeDefined();
+  // Verified token: the verification chip shows "Verified", not "Unverified".
+  await expect(popup.getByTestId("add-token-verified")).toBeVisible();
+  await expect(popup.getByTestId("add-token-unverified")).toHaveCount(0);
+  // Register the close listener BEFORE clicking: window.close() can fire
+  // fast enough that waiting for the event after the click races it.
+  const popupClosed = popup.waitForEvent("close", { timeout: 15000 });
+  await popup.getByTestId("add-token-approve").click();
+
+  // SEP-41 is a one-step flow: a single Confirm click resolves the dApp
+  // request AND closes the popup — no separate success screen / Done click.
+  await popupClosed;
+
+  await expect(pageTwo.locator("#result-addToken")).toContainText(
+    "Token added:",
+  );
+});
+
+// SAC verified token test: skipped in integration mode for the same reasons as the
+// unverified SAC test — stub injection via addInitScript is not compatible with
+// integration mode (real backend is used and there is no live SAC on testnet).
+test("should add a verified SAC token through the Change Trust review without the unverified banner", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  test.skip(
+    isIntegrationMode,
+    "SAC stub injection via addInitScript is not compatible with integration mode",
+  );
+
+  // Inject the SAC stubs (is-sac-contract, token-details) AND the verified
+  // asset-list via window.fetch override so they fire before the popup page
+  // script runs — withAssetList makes getVerifiedTokens() find SAC_CONTRACT_ID
+  // and set isVerifiedToken=true.
+  await stubSacViaInitScript(context, { withAssetList: true });
+
+  // context.route() as belt-and-suspenders
+  await stubIsSacTrue(context);
+  await stubSacTokenDetails(context);
+  await stubVerifiedToken(context, SAC_CONTRACT_ID);
+
+  await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
+  await allowDapp({ page });
+
+  const pageTwo = await page.context().newPage();
+  await pageTwo.waitForLoadState();
+
+  const popupPromise = page.context().waitForEvent("page");
+  await pageTwo.goto(
+    "https://play.freighter.app/#/extension/playground/addToken",
+  );
+  await pageTwo.getByRole("textbox").first().fill(SAC_CONTRACT_ID);
+  await pageTwo
+    .getByRole("textbox")
+    .nth(1)
+    .fill("Test SDF Network ; September 2015");
+  await pageTwo.getByText("Add Token").click();
+
+  const popup = await popupPromise;
+
+  // Belt-and-suspenders page-level stubs on the popup.
+  await stubIsSacTrue(popup);
+  await stubSacTokenDetails(popup);
+  await stubVerifiedToken(popup, SAC_CONTRACT_ID);
+  await stubFeeStats(popup);
+  await stubHorizonAccounts(popup);
+  await stubScanAssetSafe(popup);
+  await stubScanTx(popup);
+  await stubBackendSubmitTx(popup);
+  await stubAccountBalances(popup);
+
+  await expect(popup.getByTestId("AddToken__Metadata__Row__Fee")).toBeVisible({
+    timeout: 15000,
+  });
+  await expect(
+    popup.getByTestId("AddToken__Metadata__Row__TokenAddress"),
+  ).toBeVisible();
+  // Verified SAC token: the verification chip shows "Verified", not "Unverified".
+  await expect(popup.getByTestId("add-token-verified")).toBeVisible();
+  await expect(popup.getByTestId("add-token-unverified")).toHaveCount(0);
+
+  await popup.getByTestId("add-token-approve").click();
+
+  await expect(popup.getByTestId("ChangeTrustInternal__Body")).toBeVisible({
+    timeout: 15000,
+  });
+  await expect(popup.getByText("Add Trustline")).toBeVisible();
 });
 
 test("should get public key when logged out", async ({

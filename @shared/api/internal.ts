@@ -1373,18 +1373,21 @@ export const handleSignedHwPayload = async ({
 export const addToken = async ({
   activePublicKey,
   uuid,
+  isTrustlineBacked,
 }: {
   activePublicKey: string;
   uuid: string;
+  isTrustlineBacked?: boolean;
 }): Promise<void> => {
-  try {
-    await sendMessageToBackground({
-      activePublicKey,
-      uuid,
-      type: SERVICE_TYPES.ADD_TOKEN,
-    });
-  } catch (e) {
-    console.error(e);
+  const response = await sendMessageToBackground<{ error?: string }>({
+    activePublicKey,
+    uuid,
+    isTrustlineBacked,
+    type: SERVICE_TYPES.ADD_TOKEN,
+  });
+
+  if (response?.error) {
+    throw new Error(response.error);
   }
 };
 

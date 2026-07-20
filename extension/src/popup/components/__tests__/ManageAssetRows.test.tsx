@@ -764,7 +764,9 @@ describe("ManageAssetRows", () => {
       );
     });
 
-    fireEvent.click(screen.getByText("Done"));
+    // On a failed submit the dismiss button reads "Cancel" (paired with Retry),
+    // not "Done".
+    fireEvent.click(screen.getByText("Cancel"));
 
     expect(resetSubmissionSpy).toHaveBeenCalled();
     expect(getAccountBalancesSpy).not.toHaveBeenCalled();
@@ -875,9 +877,7 @@ describe("ManageAssetRows", () => {
   });
 
   it("shows 'unable to scan' warning on mainnet when scan returns null", async () => {
-    jest
-      .spyOn(BlockaidHelpers, "scanAsset")
-      .mockResolvedValueOnce(null);
+    jest.spyOn(BlockaidHelpers, "scanAsset").mockResolvedValueOnce(null);
 
     render(
       <Wrapper
@@ -946,9 +946,7 @@ describe("ManageAssetRows", () => {
   });
 
   it("does not show 'unable to scan' warning on testnet when scan returns null", async () => {
-    jest
-      .spyOn(BlockaidHelpers, "scanAsset")
-      .mockResolvedValueOnce(null);
+    jest.spyOn(BlockaidHelpers, "scanAsset").mockResolvedValueOnce(null);
 
     render(
       <Wrapper
