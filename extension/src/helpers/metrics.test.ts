@@ -470,6 +470,117 @@ describe("consent hydration (startup)", () => {
     mod!.syncIdentifyTraits(accounts);
     expect(identify!).toHaveBeenCalled();
   });
+
+  it("does not cache the fingerprint if identify() throws, so the next call retries", async () => {
+    let mod: typeof import("helpers/metrics");
+    let settingsMod: { settingsDataSharingSelector: jest.Mock };
+    let identify: jest.Mock;
+    jest.isolateModules(() => {
+      mod = require("helpers/metrics");
+      settingsMod = require("popup/ducks/settings");
+      identify = (require("@amplitude/analytics-browser") as typeof amplitude)
+        .identify as jest.Mock;
+    });
+    const accounts = [
+      { publicKey: "G1", hardwareWalletType: "", imported: false },
+    ] as never;
+
+    settingsMod!.settingsDataSharingSelector.mockReturnValue(true);
+    await mod!.initAmplitude();
+    identify!.mockClear();
+
+    // First sync throws mid-dispatch — the fingerprint must NOT be cached.
+    identify!.mockImplementationOnce(() => {
+      throw new Error("boom");
+    });
+    expect(() => mod!.syncIdentifyTraits(accounts)).not.toThrow();
+    expect(identify!).toHaveBeenCalledTimes(1);
+
+    // Same traits again: because the throw left nothing cached, the dirty-check
+    // does not short-circuit and the Identify retries.
+    mod!.syncIdentifyTraits(accounts);
+    expect(identify!).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("emitScreenViewed (screen.viewed consolidation)", () => {
+  beforeEach(async () => {
+    jest.clearAllMocks();
+    // emitMetric only reaches amplitude.track once the SDK has initialized.
+    await initAmplitude();
+    (amplitude.track as jest.Mock).mockClear();
+  });
+
+  it("exposes the canonical screenViewed event name", () => {
+    expect(METRIC_NAMES.screenViewed).toBe("screen.viewed");
+  });
+
+  it("emits the single canonical event with screen_name, flow, and surface", () => {
+    emitScreenViewed("send_payment_amount", { flow: "send" });
+
+    expect(amplitude.track).toHaveBeenCalledTimes(1);
+    const [name, body] = (amplitude.track as jest.Mock).mock.calls[0];
+    expect(name).toBe("screen.viewed");
+    expect(body).toMatchObject({
+      screen_name: "send_payment_amount",
+      flow: "send",
+      schema_version: "2",
+    });
+    // surface comes from the Slice-A common context (getSurface()).
+    expect(body.surface).toBeDefined();
+  });
+
+  it("passes through preserved extra props (domain / operations) and step", () => {
+    emitScreenViewed("sign_transaction", {
+      flow: "signing",
+      domain: "example",
+      subdomain: "example.org",
+      number_of_operations: 3,
+      operationTypes: ["payment"],
+    });
+
+    const [, body] = (amplitude.track as jest.Mock).mock.calls[0];
+    expect(body).toMatchObject({
+      screen_name: "sign_transaction",
+      flow: "signing",
+      domain: "example",
+      subdomain: "example.org",
+      number_of_operations: 3,
+      operationTypes: ["payment"],
+    });
+  });
+
+  it("emits a step property for completion/success screens", () => {
+    emitScreenViewed("recover_account_success", {
+      flow: "onboarding",
+      step: "success",
+    });
+
+    const [, body] = (amplitude.track as jest.Mock).mock.calls[0];
+    expect(body).toMatchObject({
+      screen_name: "recover_account_success",
+      step: "success",
+    });
+  });
+
+  it("omits flow and step when not provided", () => {
+    emitScreenViewed("account");
+
+    const [, body] = (amplitude.track as jest.Mock).mock.calls[0];
+    expect(body.screen_name).toBe("account");
+    expect(body).not.toHaveProperty("flow");
+    expect(body).not.toHaveProperty("step");
+  });
+
+  it("never emits a legacy 'loaded screen:' event name", () => {
+    emitScreenViewed("welcome", { flow: "onboarding" });
+
+    const names = (amplitude.track as jest.Mock).mock.calls.map((c) => c[0]);
+    expect(names).not.toHaveLength(0);
+    expect(names.every((n: string) => !n.startsWith("loaded screen:"))).toBe(
+      true,
+    );
+  });
 });
 
 describe("emitScreenViewed (screen.viewed consolidation)", () => {

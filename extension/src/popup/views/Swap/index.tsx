@@ -36,7 +36,13 @@ import { getAssetFromCanonical } from "helpers/stellar";
 const SWAP_SCREEN_BY_STEP: Partial<
   Record<STEPS, { screen_name: string } & ScreenViewedProps>
 > = {
-  [STEPS.SWAP_CONFIRM]: { screen_name: "swap_confirm", flow: "swap" },
+  [STEPS.SWAP_CONFIRM]: {
+    screen_name: "swap_confirm",
+    flow: "swap",
+    // Canonical cross-platform stage (RFC #2883): mobile tags this screen
+    // step:"confirm"; keep them in sync so `step` is funnel-able across both.
+    step: "confirm",
+  },
   [STEPS.SET_DST_ASSET]: { screen_name: "swap_to_asset", flow: "swap" },
   [STEPS.AMOUNT]: { screen_name: "swap_amount", flow: "swap" },
   [STEPS.CONFIRM_AMOUNT]: { screen_name: "swap_amount_review", flow: "swap" },
