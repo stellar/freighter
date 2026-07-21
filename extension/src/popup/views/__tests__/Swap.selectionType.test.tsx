@@ -24,6 +24,11 @@ import * as UseSwapTokenLookup from "popup/components/swap/SwapAsset/hooks/useSw
 jest.mock("helpers/metrics", () => ({
   ...jest.requireActual("helpers/metrics"),
   emitMetric: jest.fn(),
+  // The Swap view emits screen.viewed on mount; the real emitScreenViewed runs
+  // buildCommonContext, which reads the Redux auth slice this test's minimal
+  // store doesn't provide. This test covers picker-selection wiring, not
+  // screen-view analytics, so stub the emit.
+  emitScreenViewed: jest.fn(),
 }));
 
 const emitMetricMock = emitMetric as jest.Mock;

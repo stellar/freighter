@@ -164,6 +164,48 @@ describe("SwapAmount telemetry + quote-expired surfacing", () => {
     ).toBeUndefined();
   });
 
+  it("emits the shared set-max action event (not a screen view) only on the Max tap (D5)", async () => {
+    jest.spyOn(UseSimulateSwapData, "useSimulateTxData").mockReturnValue({
+      state: {
+        state: RequestState.SUCCESS,
+        data: { transactionXdr: "AAAA", scanResult: null },
+        error: null,
+      },
+      isQuoteExpired: false,
+      fetchData: jest.fn().mockResolvedValue(undefined),
+    } as any);
+
+    renderSwapAmount({});
+
+    // A partial percentage tap is not a set-max: it emits no action event...
+    const pctButton = await screen.findByText("25%");
+    await act(async () => {
+      fireEvent.click(pctButton);
+    });
+    expect(
+      emitMetricMock.mock.calls.find((c) => c[0] === "send payment: set max"),
+    ).toBeUndefined();
+
+    // ...and the Max tap emits the shared "send payment: set max" action event,
+    // matching the Send handler and mobile (both platforms fire this on the max
+    // tap only, on send and swap alike).
+    const maxButton = await screen.findByTestId("SendAmountSetMax");
+    await act(async () => {
+      fireEvent.click(maxButton);
+    });
+    const maxCall = emitMetricMock.mock.calls.find(
+      (c) => c[0] === "send payment: set max",
+    );
+    expect(maxCall).toBeDefined();
+
+    // Reclassified as an action event (RFC #2883, D5): a set-max tap is a user
+    // action, so it must NOT re-emit the swap_amount screen.viewed and inflate
+    // its count (which is what the pre-fix emitScreenViewed did).
+    expect(
+      emitMetricMock.mock.calls.find((c) => c[0] === "screen.viewed"),
+    ).toBeUndefined();
+  });
+
   it("does NOT emit swapTrustlineAdded at review time — it fires post-confirmation", async () => {
     jest.spyOn(UseSimulateSwapData, "useSimulateTxData").mockReturnValue({
       state: {

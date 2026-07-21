@@ -498,6 +498,65 @@ export const emitMetric = (name: string, body?: Record<string, unknown>) => {
   amplitude.track(name, eventProperties);
 };
 
+// ---------------------------------------------------------------------------
+// Screen views (screen.viewed consolidation)
+// ---------------------------------------------------------------------------
+
+/**
+ * The product areas a screen can belong to. Attached to `screen.viewed` as the
+ * `flow` property so screens can be grouped cross-platform. `undefined` when no
+ * flow is a good fit (e.g. the home account view, debug/integration screens).
+ */
+export type Flow =
+  | "onboarding"
+  | "send"
+  | "swap"
+  | "signing"
+  | "assets"
+  | "settings"
+  | "discovery"
+  | "security"
+  | "history";
+
+/**
+ * Canonical cross-platform `step` vocabulary (RFC #2883): a screen's position
+ * within a multi-step flow. Closed set, applied identically on mobile — a
+ * screen present on both platforms MUST carry the same `step`.
+ *   - `confirm`:    the review/confirm stage before submitting (send/swap).
+ *   - `processing`: the in-flight submission stage.
+ *   - `success`:    the terminal completion stage of a flow.
+ */
+export type Step = "confirm" | "processing" | "success";
+
+/** Extra, screen-specific properties carried alongside the canonical event. */
+export interface ScreenViewedProps {
+  /** Product-area grouping; omitted from the event when undefined. */
+  flow?: Flow;
+  /** Stage within a flow (see Step); omitted when undefined. */
+  step?: Step;
+  [key: string]: unknown;
+}
+
+/**
+ * Emits the single canonical screen-view event, `screen.viewed`, carrying a
+ * `screen_name` plus optional `flow`, `step`, and any preserved extra props.
+ * `surface` and the rest of the common context are attached by emitMetric.
+ * Properties whose value is `undefined` are dropped so the wire payload stays
+ * clean (e.g. no `flow: undefined`).
+ */
+export const emitScreenViewed = (
+  screenName: string,
+  props: ScreenViewedProps = {},
+) => {
+  const body: Record<string, unknown> = { screen_name: screenName };
+  Object.entries(props).forEach(([key, value]) => {
+    if (value !== undefined) {
+      body[key] = value;
+    }
+  });
+  emitMetric(METRIC_NAMES.screenViewed, body);
+};
+
 /**
  * Persists balance-related metrics data for a given account.
  * Tracks whether HW, imported, or Freighter accounts are funded, and

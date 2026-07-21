@@ -1,63 +1,11 @@
 export const METRIC_NAMES = {
-  viewDebug: "loaded screen: debug",
-  viewIntegrationTest: "loaded screen: integration test",
-  viewWelcome: "loaded screen: welcome",
-  viewAccount: "loaded screen: account",
-  viewAccountHistory: "loaded screen: account history",
-  viewAccountCreator: "loaded screen: account creator",
-  viewAddAccount: "loaded screen: add account",
-  viewImportAccount: "loaded screen: import account",
-  viewConnectWallet: "loaded screen: connect wallet",
-  viewConnectWalletPlugin: "loaded screen: connect wallet plugin",
-  viewConnectDevice: "loaded screen: connect device",
-  viewGrantAccess: "loaded screen: grant access",
-  viewLoading: "loaded screen: loading",
-  viewMnemonicPhrase: "loaded screen: mnemonic phrase",
-  viewMnemonicPhraseConfirm: "loaded screen: confirm mnemonic phrase",
-  viewMnemonicPhraseConfirmed: "loaded screen: account creator finished",
-  viewRecoverAccount: "loaded screen: recover account",
-  viewRecoverAccountSuccess: "loaded screen: recover account: success",
-  viewAddToken: "loaded screen: add token",
-  viewSignTransaction: "loaded screen: sign transaction",
-  viewReviewAuthorization: "loaded screen: review authorization",
-  viewSignMessage: "loaded screen: sign message",
-  viewSignAuthEntry: "loaded screen: sign auth entry",
-  viewUnlockAccount: "loaded screen: unlock account",
-  viewVerifyAccount: "loaded screen: verify account",
-  viewUnlockBackupPhrase: "loaded screen: unlock backup phrase",
-  viewDisplayBackupPhrase: "loaded screen: display backup phrase",
-  viewPublicKey: "loaded screen: view public key generator",
-  viewSettings: "loaded screen: settings",
-  viewPreferences: "loaded screen: preferences",
-  viewSecurity: "loaded screen: security",
-  viewManageConnectedApps: "loaded screen: manage connected apps",
-  viewAbout: "loaded screen: about",
-  viewManageAssetsLists: "loaded screen: manage assets lists",
-  viewAdvancedSettings: "loaded screen: advanced settings",
-  viewAutoLockTimer: "loaded screen: auto-lock timer",
-
-  viewSendPayment: "loaded screen: send payment",
-  sendPaymentTo: "loaded screen: send payment to",
-  sendPaymentAmount: "loaded screen: send payment amount",
-  sendPaymentType: "loaded screen: send payment type",
-  sendPaymentSettings: "loaded screen: send payment settings",
-  sendPaymentSettingsFee: "loaded screen: send payment settings fee",
-  sendPaymentSettingsSlippage: "loaded screen: send payment settings slippage",
-  sendPaymentSettingsTimeout: "loaded screen: send payment settings timeout",
-  sendPaymentConfirm: "loaded screen: send payment confirm",
-
-  viewAccountMigration: "loaded screen: account migration",
-  viewAccountMigrationReviewMigration:
-    "loaded screen: account migration review migration",
-  viewAccountMigrationMnemonicPhrase:
-    "loaded screen: account migration mnemonic phrase",
-  viewAccountMigrationConfirmMigration:
-    "loaded screen: account migration confirm migration",
-  viewAccountMigrationMigrationComplete:
-    "loaded screen: account migration migration complete",
+  // Screen-load events are consolidated into the single canonical
+  // `screen.viewed` event (see METRIC_NAMES.screenViewed below and
+  // helpers/metrics#emitScreenViewed). Per-screen legacy "loaded screen: X"
+  // names have been removed; screen identity now lives in the `screen_name`
+  // property. Non-screen (domain/action) event names remain unchanged.
 
   sendPaymentRecentAddress: "send payment: recent address",
-  sendPaymentSelectAsset: "loaded screen: send payment select asset",
   sendPaymentSetMax: "send payment: set max",
   sendPaymentFeeBreakdownOpened: "send payment: fee breakdown opened",
   sendPaymentTypePayment: "send payment: selected type payment",
@@ -67,16 +15,6 @@ export const METRIC_NAMES = {
   sendPaymentError: "send payment: error",
   simuilateTokenPaymentError: "failed to simulate token payment",
 
-  viewSwap: "loaded screen: swap",
-  swapFrom: "loaded screen: swap from asset",
-  swapTo: "loaded screen: swap to asset",
-  swapAmount: "loaded screen: swap amount",
-  swapAmountReview: "loaded screen: swap amount review",
-  swapSettings: "loaded screen: swap settings",
-  swapSettingsFee: "loaded screen: swap settings fee",
-  swapSettingsSlippage: "loaded screen: swap settings slippage",
-  swapSettingsTimeout: "loaded screen: swap settings timeout",
-  swapConfirm: "loaded screen: swap confirm",
   swapPickerOpened: "swap: picker opened",
   swapSourceSelected: "swap: source selected",
   swapDestinationSelected: "swap: destination selected",
@@ -85,22 +23,6 @@ export const METRIC_NAMES = {
   swapXlmReserveShown: "swap: xlm reserve shown",
   swapQuoteExpired: "swap: quote expired",
   swapSuccess: "swap: success",
-
-  viewAddCollectibles: "loaded screen: add collectibles",
-  viewSendCollectible: "loaded screen: send collectible",
-  viewManageAssets: "loaded screen: manage assets",
-  viewSearchAsset: "loaded screen: search asset",
-  viewAssetVisibility: "loaded screen: asset visibility",
-  viewTrustlineError: "loaded screen: trustline error",
-  viewAddAsset: "loaded screen: add asset manually",
-
-  viewManageNetwork: "loaded screen: manage network",
-  viewAddNetwork: "loaded screen: add network",
-  viewEditNetwork: "loaded screen: edit network",
-  viewNetworkSettings: "loaded screen: network settings",
-  viewAddFunds: "loaded screen: add fund",
-
-  viewDiscover: "loaded screen: discover",
   discoverProtocolOpened: "discover: protocol opened",
   discoverProtocolDetailsViewed: "discover: protocol details viewed",
   discoverProtocolOpenedFromDetails: "discover: protocol opened from details",
@@ -173,8 +95,6 @@ export const METRIC_NAMES = {
   viewPublicKeyCopy: "viewPublicKey: copied public key",
   viewPublicKeyClickedStellarExpert: "viewPublicKey: clicked StellarExpert",
 
-  viewLeaveFeedback: "loaded screen: leave feedback",
-
   invalidAuthEntry: "invalid authorization entry",
 
   tokenAddedApi: "user added token through api",
@@ -197,7 +117,11 @@ export const METRIC_NAMES = {
   blockaidAssetScanFailed: "blockaid: asset scan failed",
 
   coinbaseOnrampOpened: "coinbase onramp: opened",
-  wallets: "loaded screen: wallets",
-  confirmSidebarRequest: "loaded screen: confirm sidebar request",
+
   appOpened: "app.opened",
+
+  // Canonical, consolidated screen-view event. Screen identity is carried in
+  // the `screen_name` property (plus `flow`, `surface`, and `step` where a
+  // screen is a sub-step). See helpers/metrics#emitScreenViewed.
+  screenViewed: "screen.viewed",
 };
