@@ -267,6 +267,51 @@ describe("Send", () => {
     expect(processingCalls).toHaveLength(1);
   });
 
+  it("emits send_payment_success (step:success) when a submission succeeds", async () => {
+    // The terminal success is likewise an internal state of the confirm screen,
+    // emitted from the same submitStatus effect. Seeding SUCCESS exercises it
+    // and mirrors mobile's send_payment_success (SENT state).
+    render(
+      <Wrapper
+        routes={[ROUTES.sendPayment]}
+        state={{
+          auth: {
+            error: null,
+            hasPrivateKey: true,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
+            publicKey,
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: MAINNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+          },
+          transactionSubmission: {
+            ...transactionSubmissionInitialState,
+            accountBalances: mockBalances,
+            submitStatus: ActionStatus.SUCCESS,
+          },
+          tokenPaymentSimulation: tokenPaymentActions.initialState,
+        }}
+      >
+        <Send />
+      </Wrapper>,
+    );
+
+    await waitFor(() => {
+      expect(emitScreenViewedMock).toHaveBeenCalledWith("send_payment_success", {
+        flow: "send",
+        step: "success",
+      });
+    });
+
+    // Emitted exactly once for the successful submission, never as a duplicate.
+    const successCalls = emitScreenViewedMock.mock.calls.filter(
+      (c) => c[0] === "send_payment_success",
+    );
+    expect(successCalls).toHaveLength(1);
+  });
+
   it("starts on the token picker step when no asset is pre-selected", async () => {
     render(
       <Wrapper

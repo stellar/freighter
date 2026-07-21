@@ -190,6 +190,7 @@ export const Send = () => {
 
   const lastEmittedStep = useRef<STEPS | null>(null);
   const hasEmittedProcessing = useRef(false);
+  const hasEmittedSuccess = useRef(false);
 
   const goToStep = (
     next: STEPS,
@@ -220,12 +221,13 @@ export const Send = () => {
     }
   }, [activeStep]);
 
-  // The in-flight submission is an internal state of the confirm screen rather
-  // than a distinct step/route, so emit its `screen.viewed` here when the
-  // submission enters PENDING. Matches mobile's `send_payment_processing`
-  // (flow:"send", step:"processing"), keeping the processing funnel stage
-  // cross-platform. Emit once per submission; reset when the status clears so a
-  // subsequent send re-emits.
+  // The in-flight submission and its terminal success are internal states of
+  // the confirm screen rather than distinct steps/routes, so emit their
+  // `screen.viewed` here as the submission status advances. Matches mobile's
+  // `send_payment_processing` (step:"processing") and `send_payment_success`
+  // (step:"success") so the send funnel stages stay joined cross-platform. Each
+  // emits once per submission; reset when the status clears so a subsequent
+  // send re-emits.
   useEffect(() => {
     if (submission.submitStatus === ActionStatus.PENDING) {
       if (!hasEmittedProcessing.current) {
@@ -235,8 +237,17 @@ export const Send = () => {
           step: "processing",
         });
       }
+    } else if (submission.submitStatus === ActionStatus.SUCCESS) {
+      if (!hasEmittedSuccess.current) {
+        hasEmittedSuccess.current = true;
+        emitScreenViewed("send_payment_success", {
+          flow: "send",
+          step: "success",
+        });
+      }
     } else if (submission.submitStatus === ActionStatus.IDLE) {
       hasEmittedProcessing.current = false;
+      hasEmittedSuccess.current = false;
     }
   }, [submission.submitStatus]);
 
