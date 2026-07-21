@@ -106,6 +106,13 @@ declare const DEV_SERVER: string;
 const _DEV_SERVER = DEV_SERVER;
 export { _DEV_SERVER as DEV_SERVER };
 
+// Origin the webpack dev server serves the popup from (empty in production
+// builds). Used by the background to scope the dev-server popup-relay
+// carve-out to that exact sender origin instead of every dev-mode tab.
+declare const DEV_SERVER_URL: string;
+const _DEV_SERVER_URL = DEV_SERVER_URL;
+export { _DEV_SERVER_URL as DEV_SERVER_URL };
+
 declare const DEV_EXTENSION: string;
 const _DEV_EXTENSION = DEV_EXTENSION;
 export { _DEV_EXTENSION as DEV_EXTENSION };

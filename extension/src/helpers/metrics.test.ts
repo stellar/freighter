@@ -10,7 +10,11 @@ import * as Sentry from "@sentry/browser";
 
 import { getAnalyticsUserId } from "@shared/api/internal";
 import { METRICS_USER_ID } from "constants/localStorageTypes";
-import { initAmplitude, reconcileAnalyticsUserId } from "./metrics";
+import {
+  initAmplitude,
+  reconcileAnalyticsUserId,
+  resetAnalyticsUserIdReconciliation,
+} from "./metrics";
 
 jest.mock("@amplitude/analytics-browser", () => ({
   init: jest.fn(),
@@ -66,6 +70,9 @@ describe("reconcileAnalyticsUserId (auth id migration)", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     localStorage.clear();
+    // Clear the once-per-session guard so each case starts from an
+    // un-reconciled session (mirrors a fresh unlock).
+    resetAnalyticsUserIdReconciliation();
   });
 
   it("overwrites a random persisted id with the auth id and re-identifies", async () => {
@@ -149,5 +156,52 @@ describe("reconcileAnalyticsUserId (auth id migration)", () => {
     await reconcileAnalyticsUserId();
 
     expect(Sentry.setUser).toHaveBeenCalledWith({ id: "c".repeat(64) });
+  });
+
+  it("reconciles once per session: skips the background round-trip on repeat calls", async () => {
+    localStorage.setItem(METRICS_USER_ID, "4873921");
+    mockGetAnalyticsUserId.mockResolvedValue({
+      analyticsUserId: "d".repeat(64),
+    });
+
+    await reconcileAnalyticsUserId();
+    await reconcileAnalyticsUserId();
+    await reconcileAnalyticsUserId();
+
+    // Only the first call hits the (expensive) background handler.
+    expect(mockGetAnalyticsUserId).toHaveBeenCalledTimes(1);
+    expect(localStorage.getItem(METRICS_USER_ID)).toBe("d".repeat(64));
+  });
+
+  it("does not latch the guard while locked, so a later unlock still reconciles", async () => {
+    localStorage.setItem(METRICS_USER_ID, "4873921");
+    // Locked: background returns a null auth id.
+    mockGetAnalyticsUserId.mockResolvedValueOnce({ analyticsUserId: null });
+    await reconcileAnalyticsUserId();
+    expect(localStorage.getItem(METRICS_USER_ID)).toBe("4873921");
+
+    // Now unlocked: the auth id resolves and reconciliation proceeds.
+    mockGetAnalyticsUserId.mockResolvedValue({
+      analyticsUserId: "e".repeat(64),
+    });
+    await reconcileAnalyticsUserId();
+
+    expect(mockGetAnalyticsUserId).toHaveBeenCalledTimes(2);
+    expect(localStorage.getItem(METRICS_USER_ID)).toBe("e".repeat(64));
+  });
+
+  it("re-reconciles after the guard is reset on lock", async () => {
+    mockGetAnalyticsUserId.mockResolvedValue({
+      analyticsUserId: "f".repeat(64),
+    });
+
+    await reconcileAnalyticsUserId();
+    expect(mockGetAnalyticsUserId).toHaveBeenCalledTimes(1);
+
+    // Simulate a lock transition (SessionLockListener → SESSION_LOCKED).
+    resetAnalyticsUserIdReconciliation();
+
+    await reconcileAnalyticsUserId();
+    expect(mockGetAnalyticsUserId).toHaveBeenCalledTimes(2);
   });
 });
