@@ -55,12 +55,15 @@ export const ImportAccount = () => {
     const res = await dispatch(importAccount({ password, privateKey }));
 
     if (importAccount.fulfilled.match(res)) {
+      // account.imported carries import_method (this view imports a Stellar
+      // secret key). Mnemonic restore is account_recovery.* instead.
       emitMetric(METRIC_NAMES.accountImported, {
-        number_of_accounts: res.payload.allAccounts.length,
+        import_method: "secret_key",
       });
       navigateTo(ROUTES.account, navigate);
     } else {
       emitMetric(METRIC_NAMES.accountImportFailed, {
+        import_method: "secret_key",
         reason_code: res.payload?.errorMessage || "",
       });
     }

@@ -57,9 +57,6 @@ function useSubmitTxData({
       destination,
       federationAddress,
       destinationAsset,
-      destinationAmount,
-      amount,
-      allowedSlippage,
       destinationTokenDetails,
       isCollectible,
     },
@@ -99,22 +96,17 @@ function useSubmitTxData({
       );
 
       if (submitFreighterTransaction.fulfilled.match(submitResp)) {
-        // A signed transaction was actually broadcast to the network. Tracked
-        // distinctly from the signing approval; `network` rides on the common
-        // context.
-        emitMetric(METRIC_NAMES.transactionSubmitted);
-
+        // NB: `transaction.submitted` is intentionally NOT emitted here. It is a
+        // dApp *sign-and-submit* event, and the extension dApp API only
+        // signs-and-returns (no submit path), so there's no conformant emit.
+        // Internal broadcasts are already captured by the payment/swap/
+        // collectible_send `.completed` events below.
         if (isSwap) {
           // Post-confirmation swap telemetry: the swap actually settled. A
           // routed/path payment settles here too — its outcome is a swap.
           emitMetric(METRIC_NAMES.swapCompleted, {
             from_asset_code: sourceAsset.code,
             to_asset_code: getAssetFromCanonical(destinationAsset).code,
-            sourceToken: sourceAsset.code,
-            destToken: destinationAsset,
-            sourceAmount: amount,
-            destAmount: destinationAmount,
-            allowedSlippage,
           });
           // Trustline added only once the combined changeTrust +
           // pathPaymentStrictSend transaction confirmed it.
@@ -141,7 +133,7 @@ function useSubmitTxData({
             // Direct (non-routed) payment outcome.
             emitMetric(METRIC_NAMES.paymentCompleted, {
               payment_type: "payment",
-              sourceAsset: sourceAsset.code,
+              asset_code: sourceAsset.code,
             });
           }
         }

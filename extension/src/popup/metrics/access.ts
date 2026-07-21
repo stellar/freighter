@@ -18,11 +18,21 @@ import { AppState } from "popup/App";
 // account_type / is_hardware_account now ride on every event via
 // buildCommonContext, so the per-handler metricsData reads are gone.
 
-registerHandler<AppState>(grantAccess.fulfilled, () => {
-  emitMetric(METRIC_NAMES.dappAccessGranted);
+// The dApp origin rides in the thunk arg (`action.meta.arg.url`), threaded from
+// the signing/grant views (useSetupSigningFlow / grantAccess). Attach it as
+// `origin`; omit gracefully when a path doesn't carry a url.
+const originProps = (action: {
+  meta?: { arg?: { url?: string } };
+}): { origin?: string } => {
+  const url = action.meta?.arg?.url;
+  return url ? { origin: url } : {};
+};
+
+registerHandler<AppState>(grantAccess.fulfilled, (_state, action) => {
+  emitMetric(METRIC_NAMES.dappAccessGranted, originProps(action));
 });
-registerHandler<AppState>(rejectAccess.fulfilled, () => {
-  emitMetric(METRIC_NAMES.dappAccessRejected);
+registerHandler<AppState>(rejectAccess.fulfilled, (_state, action) => {
+  emitMetric(METRIC_NAMES.dappAccessRejected, originProps(action));
 });
 registerHandler<AppState>(addToken.fulfilled, () => {
   emitMetric(METRIC_NAMES.assetAddResponded, { decision: "confirm" });
@@ -30,21 +40,50 @@ registerHandler<AppState>(addToken.fulfilled, () => {
 registerHandler<AppState>(rejectToken.fulfilled, () => {
   emitMetric(METRIC_NAMES.assetAddResponded, { decision: "reject" });
 });
-registerHandler<AppState>(signTransaction.fulfilled, () => {
-  emitMetric(METRIC_NAMES.signingTransactionApproved);
+registerHandler<AppState>(signTransaction.fulfilled, (_state, action) => {
+  emitMetric(METRIC_NAMES.signingTransactionApproved, originProps(action));
 });
-registerHandler<AppState>(rejectTransaction.fulfilled, () => {
-  emitMetric(METRIC_NAMES.signingTransactionRejected);
+registerHandler<AppState>(rejectTransaction.fulfilled, (_state, action) => {
+  emitMetric(METRIC_NAMES.signingTransactionRejected, originProps(action));
 });
-registerHandler<AppState>(signBlob.fulfilled, () => {
-  emitMetric(METRIC_NAMES.signingMessageApproved, { message_type: "blob" });
+registerHandler<AppState>(signBlob.fulfilled, (_state, action) => {
+  emitMetric(METRIC_NAMES.signingMessageApproved, {
+    message_type: "blob",
+    ...originProps(action),
+  });
 });
-registerHandler<AppState>(rejectBlob.fulfilled, () => {
-  emitMetric(METRIC_NAMES.signingMessageRejected, { message_type: "blob" });
+registerHandler<AppState>(rejectBlob.fulfilled, (_state, action) => {
+  emitMetric(METRIC_NAMES.signingMessageRejected, {
+    message_type: "blob",
+    ...originProps(action),
+  });
 });
-registerHandler<AppState>(signEntry.fulfilled, () => {
-  emitMetric(METRIC_NAMES.signingAuthEntryApproved);
+registerHandler<AppState>(signEntry.fulfilled, (_state, action) => {
+  emitMetric(METRIC_NAMES.signingAuthEntryApproved, originProps(action));
 });
-registerHandler<AppState>(rejectAuthEntry.fulfilled, () => {
-  emitMetric(METRIC_NAMES.signingAuthEntryRejected);
+registerHandler<AppState>(rejectAuthEntry.fulfilled, (_state, action) => {
+  emitMetric(METRIC_NAMES.signingAuthEntryRejected, originProps(action));
+});
+
+// Runtime signing FAILURE paths — distinct from the user-cancel
+// (`reject*.fulfilled`) events above. The sign thunks don't catch, so a runtime
+// error surfaces as `.rejected` with the message on `action.error`.
+const rejectedReasonCode = (action: {
+  error?: { message?: string };
+  payload?: { errorMessage?: string };
+}): string =>
+  action.error?.message || action.payload?.errorMessage || "unknown";
+
+registerHandler<AppState>(signBlob.rejected, (_state, action) => {
+  emitMetric(METRIC_NAMES.signingMessageFailed, {
+    message_type: "blob",
+    reason_code: rejectedReasonCode(action),
+    ...originProps(action),
+  });
+});
+registerHandler<AppState>(signEntry.rejected, (_state, action) => {
+  emitMetric(METRIC_NAMES.signingAuthEntryFailed, {
+    reason_code: rejectedReasonCode(action),
+    ...originProps(action),
+  });
 });

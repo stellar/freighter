@@ -35,12 +35,12 @@ export const trackDiscoverProtocolOpened = (
   emitMetric(METRIC_NAMES.discoverProtocolOpened, {
     protocol_id: protocolName,
     url: stripQueryParams(url),
-    protocolName,
+    protocol_name: protocolName,
     source,
     // We currently only allow known protocols in the Discover view for extension,
     // but this field is included for future-proofing in case we later expand to
     // allowing unknown protocols (e.g. from a search bar like we have on mobile).
-    isKnownProtocol: true,
+    is_known_protocol: true,
   });
 };
 
@@ -50,7 +50,7 @@ export const trackDiscoverProtocolDetailsViewed = (
 ): void => {
   emitMetric(METRIC_NAMES.discoverProtocolDetailsViewed, {
     protocol_id: protocolName,
-    protocolName,
+    protocol_name: protocolName,
     tags,
   });
 };
@@ -61,7 +61,7 @@ export const trackDiscoverProtocolOpenedFromDetails = (
 ): void => {
   emitMetric(METRIC_NAMES.discoverProtocolOpenedFromDetails, {
     protocol_id: protocolName,
-    protocolName,
+    protocol_name: protocolName,
     url: stripQueryParams(url),
   });
 };

@@ -33,7 +33,9 @@ describe("METRIC_NAMES domain-event catalog", () => {
     expect(METRIC_NAMES.swapDestinationSelected).toBe("swap.destination_selected");
     expect(METRIC_NAMES.swapDirectionToggled).toBe("swap.direction_toggled");
     expect(METRIC_NAMES.swapTrustlineAdded).toBe("swap.trustline_added");
-    expect(METRIC_NAMES.swapXlmReserveShown).toBe("swap.xlm_reserve_shown");
+    expect(METRIC_NAMES.swapXlmReserveInsufficientShown).toBe(
+      "swap.xlm_reserve_insufficient_shown",
+    );
     expect(METRIC_NAMES.swapQuoteExpired).toBe("swap.quote_expired");
     expect(METRIC_NAMES.swapCompleted).toBe("swap.completed");
     expect(METRIC_NAMES.swapFailed).toBe("swap.failed");
@@ -100,8 +102,12 @@ describe("METRIC_NAMES domain-event catalog", () => {
     expect(METRIC_NAMES.signingAuthEntryRejected).toBe(
       "signing.auth_entry_rejected",
     );
+    expect(METRIC_NAMES.signingAuthEntryFailed).toBe(
+      "signing.auth_entry_failed",
+    );
     expect(METRIC_NAMES.signingMessageApproved).toBe("signing.message_approved");
     expect(METRIC_NAMES.signingMessageRejected).toBe("signing.message_rejected");
+    expect(METRIC_NAMES.signingMessageFailed).toBe("signing.message_failed");
   });
 
   it("names blockaid scan events consolidated to completed/failed", () => {

@@ -206,7 +206,7 @@ export const SwapAmount = ({
       }),
     });
     if (needsReserve) {
-      emitMetric(METRIC_NAMES.swapXlmReserveShown);
+      emitMetric(METRIC_NAMES.swapXlmReserveInsufficientShown);
       setIsXlmReserveOpen(true);
       return;
     }
@@ -529,7 +529,7 @@ export const SwapAmount = ({
                 // for the missing side — preferring the sell token when both
                 // are missing — rather than a submit.
                 if (cta.labelKey === "select") {
-                  const side = !asset ? "source" : "destination";
+                  const side = !asset ? "from" : "to";
                   emitMetric(METRIC_NAMES.swapPickerOpened, {
                     side,
                     source: "cta",
@@ -650,7 +650,7 @@ export const SwapAmount = ({
                     }}
                     onSelectAsset={() => {
                       emitMetric(METRIC_NAMES.swapPickerOpened, {
-                        side: "source",
+                        side: "from",
                         source: "dropdown",
                       });
                       goToEditSrc();
@@ -739,7 +739,7 @@ export const SwapAmount = ({
                     onToggleInputType={() => {}}
                     onSelectAsset={() => {
                       emitMetric(METRIC_NAMES.swapPickerOpened, {
-                        side: "destination",
+                        side: "to",
                         source: "dropdown",
                       });
                       goToEditDst();

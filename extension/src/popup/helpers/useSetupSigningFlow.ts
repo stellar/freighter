@@ -18,10 +18,12 @@ import {
 } from "popup/ducks/transactionSubmission";
 type AppThunk<Arg = void> = AsyncThunk<void, Arg, { state: AppState }>;
 
-// The only payload shape this hook ever dispatches to signFn.
+// The only payload shape this hook ever dispatches to signFn. `url` (the dApp
+// origin) rides along so the metrics handlers can attach `origin`.
 interface SigningPayload {
   uuid: string;
   apiVersion?: string;
+  url?: string;
 }
 
 export function useSetupSigningFlow(
@@ -30,6 +32,7 @@ export function useSetupSigningFlow(
   transactionXdr: string,
   uuid: string,
   apiVersion?: string,
+  url?: string,
 ) {
   const [isConfirming, setIsConfirming] = useState(false);
   const [isPasswordRequired, setIsPasswordRequired] = useState(false);
@@ -49,7 +52,7 @@ export function useSetupSigningFlow(
   // signing.message_*, signing.auth_entry_*), keyed off the specific
   // sign/reject thunk this flow dispatches — so no generic event fires here.
   const rejectAndClose = () => {
-    dispatch(reject({ uuid }));
+    dispatch(reject({ uuid, url }));
     window.close();
   };
 
@@ -60,7 +63,7 @@ export function useSetupSigningFlow(
       );
       setStartedHwSign(true);
     } else {
-      await dispatch(signFn({ apiVersion, uuid }));
+      await dispatch(signFn({ apiVersion, uuid, url }));
       window.close();
     }
   };

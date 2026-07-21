@@ -149,6 +149,8 @@ export const SignTransaction = () => {
     signTransaction,
     transactionXdr,
     uuid,
+    undefined,
+    url,
   );
 
   const siteScanData =

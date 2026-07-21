@@ -50,12 +50,15 @@ export const grantAccess = createAsyncThunk(
 
 export const rejectAccess = createAsyncThunk(
   "rejectAccess",
-  ({ uuid }: { uuid: string }) => internalRejectAccess({ uuid }),
+  ({ uuid }: { uuid: string; url?: string }) => internalRejectAccess({ uuid }),
 );
 
+// NB: several signing thunks accept an optional `url` that the payload creators
+// ignore — it rides in `action.meta.arg` so the metrics handlers in
+// popup/metrics/access.ts can attach `origin` to the signing events.
 export const signTransaction = createAsyncThunk(
   "signTransaction",
-  ({ uuid }: { uuid: string }, { getState }) => {
+  ({ uuid }: { uuid: string; url?: string }, { getState }) => {
     const activePublicKey = publicKeySelector(getState() as AppState);
     return internalSignTransaction({ activePublicKey, uuid });
   },
@@ -64,7 +67,7 @@ export const signTransaction = createAsyncThunk(
 export const signBlob = createAsyncThunk(
   "signBlob",
   (
-    { apiVersion, uuid }: { apiVersion?: string; uuid: string },
+    { apiVersion, uuid }: { apiVersion?: string; uuid: string; url?: string },
     { getState },
   ) => {
     const activePublicKey = publicKeySelector(getState() as AppState);
@@ -73,7 +76,7 @@ export const signBlob = createAsyncThunk(
 );
 export const signEntry = createAsyncThunk(
   "signEntry",
-  ({ uuid }: { uuid: string }, { getState }) => {
+  ({ uuid }: { uuid: string; url?: string }, { getState }) => {
     const activePublicKey = publicKeySelector(getState() as AppState);
     return internalSignAuthEntry({ activePublicKey, uuid });
   },
@@ -97,14 +100,14 @@ export const rejectToken = createAsyncThunk(
 
 export const rejectTransaction = createAsyncThunk(
   "rejectTransaction",
-  ({ uuid }: { uuid: string }) => internalRejectAccess({ uuid }),
+  ({ uuid }: { uuid: string; url?: string }) => internalRejectAccess({ uuid }),
 );
 
 export const rejectBlob = createAsyncThunk(
   "rejectBlob",
-  ({ uuid }: { uuid: string }) => internalRejectAccess({ uuid }),
+  ({ uuid }: { uuid: string; url?: string }) => internalRejectAccess({ uuid }),
 );
 export const rejectAuthEntry = createAsyncThunk(
   "rejectAuthEntry",
-  ({ uuid }: { uuid: string }) => internalRejectAccess({ uuid }),
+  ({ uuid }: { uuid: string; url?: string }) => internalRejectAccess({ uuid }),
 );

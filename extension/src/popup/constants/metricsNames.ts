@@ -32,7 +32,7 @@ export const METRIC_NAMES = {
   swapDestinationSelected: "swap.destination_selected",
   swapDirectionToggled: "swap.direction_toggled",
   swapTrustlineAdded: "swap.trustline_added",
-  swapXlmReserveShown: "swap.xlm_reserve_shown",
+  swapXlmReserveInsufficientShown: "swap.xlm_reserve_insufficient_shown",
   swapQuoteExpired: "swap.quote_expired",
   swapCompleted: "swap.completed",
   swapFailed: "swap.failed",
@@ -112,6 +112,7 @@ export const METRIC_NAMES = {
   signingAuthEntryFailed: "signing.auth_entry_failed",
   signingMessageApproved: "signing.message_approved",
   signingMessageRejected: "signing.message_rejected",
+  signingMessageFailed: "signing.message_failed",
 
   // -- History -------------------------------------------------------------
   historyFullHistoryOpened: "history.full_history_opened",

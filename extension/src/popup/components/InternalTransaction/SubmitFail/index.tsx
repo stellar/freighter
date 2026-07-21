@@ -19,6 +19,7 @@ import {
 import { View } from "popup/basics/layout/View";
 import IconFail from "popup/assets/icon-fail.svg";
 import { emitMetric } from "helpers/metrics";
+import { getAssetFromCanonical } from "helpers/stellar";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 
 import "./styles.scss";
@@ -33,7 +34,7 @@ interface ErrorDetails {
 export const SubmitFail = () => {
   const { error, transactionData } = useSelector(transactionSubmissionSelector);
   const isSwap = useIsSwap();
-  const { isCollectible } = transactionData;
+  const { isCollectible, asset, destinationAsset } = transactionData;
   const { t } = useTranslation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -48,14 +49,20 @@ export const SubmitFail = () => {
     if (isCollectible) {
       emitMetric(METRIC_NAMES.collectibleSendFailed, {
         reason_code: reasonCode,
-        error,
       });
     } else if (isSwap) {
-      emitMetric(METRIC_NAMES.swapFailed, { reason_code: reasonCode, error });
+      emitMetric(METRIC_NAMES.swapFailed, {
+        from_asset_code: getAssetFromCanonical(asset).code,
+        to_asset_code: getAssetFromCanonical(destinationAsset).code,
+        reason_code: reasonCode,
+      });
     } else {
-      emitMetric(METRIC_NAMES.paymentFailed, { reason_code: reasonCode, error });
+      emitMetric(METRIC_NAMES.paymentFailed, {
+        payment_type: "payment",
+        reason_code: reasonCode,
+      });
     }
-  }, [error, isSwap, isCollectible]);
+  }, [error, isSwap, isCollectible, asset, destinationAsset]);
 
   const getErrorDetails = (err: ErrorMessage | undefined): ErrorDetails => {
     const errorDetails: ErrorDetails = {

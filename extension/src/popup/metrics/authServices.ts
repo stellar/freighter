@@ -44,7 +44,10 @@ registerHandler<AppState>(confirmMnemonicPhrase.rejected, (_state, action) => {
 });
 
 registerHandler<AppState>(recoverAccount.fulfilled, () => {
-  emitMetric(METRIC_NAMES.accountRecoveryCompleted);
+  // account_recovery.completed carries recovery_method.
+  emitMetric(METRIC_NAMES.accountRecoveryCompleted, {
+    recovery_method: "recovery_phrase",
+  });
 });
 registerHandler<AppState>(recoverAccount.rejected, (_state, action) => {
   const { errorMessage } = action.payload;

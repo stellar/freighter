@@ -152,12 +152,38 @@ export const TrustlineError = ({
   const [isModalShowing, setIsModalShowing] = useState(true);
 
   useEffect(() => {
-    emitMetric(METRIC_NAMES.assetOperationFailed, {
-      operation: "change_trustline",
+    // Cross-platform parity: asset.operation_failed.operation ∈ {add, remove}
+    // (was "change_trustline"). Derive direction from the failed ChangeTrust
+    // op's limit (limit "0" = remove trustline). asset_code/asset_issuer are
+    // extra context beyond the shared minimal {operation, reason_code}.
+    const failedProps: Record<string, unknown> = {
+      operation: "remove",
       reason_code: getResultCodes(error).operations[0] || "unknown",
-      error,
-    });
-  }, [error]);
+    };
+    const xdrEnvelope = error?.response?.extras?.envelope_xdr;
+    if (xdrEnvelope) {
+      try {
+        const parsedTx = TransactionBuilder.fromXDR(
+          xdrEnvelope,
+          networkPassphrase,
+        );
+        if ("operations" in parsedTx) {
+          const op = parsedTx.operations[0];
+          if (op && "limit" in op) {
+            failedProps.operation = op.limit === "0" ? "remove" : "add";
+          }
+          if (op && "line" in op) {
+            const { code, issuer } = op.line as Asset;
+            failedProps.asset_code = code;
+            failedProps.asset_issuer = issuer;
+          }
+        }
+      } catch {
+        // Fall back to operation:"remove" (this screen's primary case).
+      }
+    }
+    emitMetric(METRIC_NAMES.assetOperationFailed, failedProps);
+  }, [error, networkPassphrase]);
 
   useEffect(() => {
     // emit general metric on view load

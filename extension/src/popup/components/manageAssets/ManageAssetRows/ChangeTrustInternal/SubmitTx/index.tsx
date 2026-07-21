@@ -181,7 +181,7 @@ export const SubmitTransaction = ({
     if (isTrustlineSubmit) {
       emitMetric(
         addTrustline ? METRIC_NAMES.assetAdded : METRIC_NAMES.assetRemoved,
-        { asset_code: asset.code, code: asset.code, issuer: asset.issuer },
+        { asset_code: asset.code, asset_issuer: asset.issuer },
       );
     }
     onTransactionSuccess?.();

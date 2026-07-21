@@ -48,7 +48,14 @@ const isRuntimeTestEnv = (): boolean => {
 type MetricsPayloadAction = PayloadAction<{
   errorMessage?: string;
   location?: Location;
-}>;
+}> & {
+  // Present at runtime on createAsyncThunk actions: `meta.arg` is the dispatched
+  // thunk argument (used to read the dApp `url`→`origin`), and `.error` carries
+  // a runtime rejection's message. Typed optional so metrics handlers can read
+  // them without casting.
+  meta?: { arg?: { url?: string } };
+  error?: { message?: string };
+};
 type MetricHandler<AppState> = (
   state: AppState,
   action: MetricsPayloadAction,
