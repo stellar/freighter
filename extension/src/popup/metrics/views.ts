@@ -38,7 +38,7 @@ interface ScreenDef {
  * Note: ROUTES.manageAssetsListsModifyAssetList is intentionally absent — it
  * historically emits a non-screen (action) event, which this change does not touch.
  */
-const routeToScreen: Partial<Record<ROUTES, ScreenDef>> = {
+const SCREEN_BY_ROUTE: Partial<Record<ROUTES, ScreenDef>> = {
   [ROUTES.welcome]: { screen_name: "welcome", flow: "onboarding" },
   [ROUTES.account]: { screen_name: "account", flow: "assets" },
   [ROUTES.accountHistory]: { screen_name: "account_history", flow: "history" },
@@ -197,7 +197,7 @@ registerHandler<AppState>(navigate, (_, a) => {
     return;
   }
 
-  const screen = routeToScreen[pathname as ROUTES];
+  const screen = SCREEN_BY_ROUTE[pathname as ROUTES];
 
   if (!screen) {
     // RFC #2883 (D6): an uncatalogued route is not tracked. Report to Sentry so
