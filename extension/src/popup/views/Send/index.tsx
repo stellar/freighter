@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { Notification } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
+import { ActionStatus } from "@shared/api/types";
 
 import { ROUTES } from "popup/constants/routes";
 import { STEPS } from "popup/constants/send-payment";
@@ -188,6 +189,7 @@ export const Send = () => {
   >(initialAnim);
 
   const lastEmittedStep = useRef<STEPS | null>(null);
+  const hasEmittedProcessing = useRef(false);
 
   const goToStep = (
     next: STEPS,
@@ -217,6 +219,26 @@ export const Send = () => {
       emitScreenViewed(screen_name, props);
     }
   }, [activeStep]);
+
+  // The in-flight submission is an internal state of the confirm screen rather
+  // than a distinct step/route, so emit its `screen.viewed` here when the
+  // submission enters PENDING. Matches mobile's `send_payment_processing`
+  // (flow:"send", step:"processing"), keeping the processing funnel stage
+  // cross-platform. Emit once per submission; reset when the status clears so a
+  // subsequent send re-emits.
+  useEffect(() => {
+    if (submission.submitStatus === ActionStatus.PENDING) {
+      if (!hasEmittedProcessing.current) {
+        hasEmittedProcessing.current = true;
+        emitScreenViewed("send_payment_processing", {
+          flow: "send",
+          step: "processing",
+        });
+      }
+    } else if (submission.submitStatus === ActionStatus.IDLE) {
+      hasEmittedProcessing.current = false;
+    }
+  }, [submission.submitStatus]);
 
   // Handle query params and set defaults on mount
   // This is used to pre-populate the destination, asset and/or collectible data if they are provided in the query params.
