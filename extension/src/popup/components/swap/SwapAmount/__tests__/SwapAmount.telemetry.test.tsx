@@ -164,7 +164,7 @@ describe("SwapAmount telemetry + quote-expired surfacing", () => {
     ).toBeUndefined();
   });
 
-  it("emits the percentage action event (not a screen view) when a percentage button is tapped (D5)", async () => {
+  it("emits the shared set-max action event (not a screen view) only on the Max tap (D5)", async () => {
     jest.spyOn(UseSimulateSwapData, "useSimulateTxData").mockReturnValue({
       state: {
         state: RequestState.SUCCESS,
@@ -177,21 +177,30 @@ describe("SwapAmount telemetry + quote-expired surfacing", () => {
 
     renderSwapAmount({});
 
+    // A partial percentage tap is not a set-max: it emits no action event...
     const pctButton = await screen.findByText("25%");
     await act(async () => {
       fireEvent.click(pctButton);
     });
+    expect(
+      emitMetricMock.mock.calls.find((c) => c[0] === "send payment: set max"),
+    ).toBeUndefined();
 
-    // Reclassified as an action event (RFC #2883, D5): a percentage/set-max tap
-    // is a user action, so it must NOT re-emit the swap_amount screen.viewed and
-    // inflate its count (which is what the pre-fix emitScreenViewed did).
-    const pctCall = emitMetricMock.mock.calls.find(
-      (c) => c[0] === "swap: amount percentage set",
+    // ...and the Max tap emits the shared "send payment: set max" action event,
+    // matching the Send handler and mobile (both platforms fire this on the max
+    // tap only, on send and swap alike).
+    const maxButton = await screen.findByTestId("SendAmountSetMax");
+    await act(async () => {
+      fireEvent.click(maxButton);
+    });
+    const maxCall = emitMetricMock.mock.calls.find(
+      (c) => c[0] === "send payment: set max",
     );
-    expect(pctCall).toBeDefined();
-    expect(pctCall![1]).toMatchObject({ percentage: 25 });
+    expect(maxCall).toBeDefined();
 
-    // No screen.viewed emitted from the button tap.
+    // Reclassified as an action event (RFC #2883, D5): a set-max tap is a user
+    // action, so it must NOT re-emit the swap_amount screen.viewed and inflate
+    // its count (which is what the pre-fix emitScreenViewed did).
     expect(
       emitMetricMock.mock.calls.find((c) => c[0] === "screen.viewed"),
     ).toBeUndefined();

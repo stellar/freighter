@@ -16,7 +16,6 @@ export const METRIC_NAMES = {
   simuilateTokenPaymentError: "failed to simulate token payment",
 
   swapPickerOpened: "swap: picker opened",
-  swapAmountPercentageSet: "swap: amount percentage set",
   swapSourceSelected: "swap: source selected",
   swapDestinationSelected: "swap: destination selected",
   swapDirectionToggled: "swap: direction toggled",
