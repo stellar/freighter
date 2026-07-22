@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 
 import { emitMetric } from "helpers/metrics";
+import { scrubStrKeys } from "helpers/stellarStrKey";
 
 import { AppDispatch } from "popup/App";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
@@ -91,7 +92,8 @@ export const useSetupAddTokenFlow = ({
 
       if (rejectedMessage) {
         await emitMetric(METRIC_NAMES.assetAddApiFailed, {
-          reason_code: rejectedMessage,
+          // Scrub Stellar StrKeys before this free-text reaches Amplitude.
+          reason_code: scrubStrKeys(rejectedMessage) ?? rejectedMessage,
         });
         setSubmitError(rejectedMessage);
         return false;
@@ -101,7 +103,7 @@ export const useSetupAddTokenFlow = ({
     } catch (e) {
       console.error(e);
       await emitMetric(METRIC_NAMES.assetAddApiFailed, {
-        reason_code: e instanceof Error ? e.message : "unknown",
+        reason_code: e instanceof Error ? (scrubStrKeys(e.message) ?? e.message) : "unknown",
       });
       setSubmitError(t("Failed to add token. Please retry or cancel."));
       return false;

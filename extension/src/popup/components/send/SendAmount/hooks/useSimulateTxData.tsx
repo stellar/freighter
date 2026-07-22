@@ -14,6 +14,7 @@ import {
 
 import { initialState, isError, reducer } from "helpers/request";
 import { emitMetric } from "helpers/metrics";
+import { scrubStrKeys } from "helpers/stellarStrKey";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { NetworkDetails } from "@shared/constants/stellar";
 import {
@@ -646,7 +647,12 @@ function useSimulateTxData({
       // additionally carries transaction_type; this catch is broader than a
       // single simulate type, so it's an additive mobile-only dimension.)
       emitMetric(METRIC_NAMES.paymentSimulationFailed, {
-        reason_code: error instanceof Error ? error.message : "unknown",
+        // Scrub Stellar StrKeys — this free-text message goes to Amplitude, a
+        // third-party sink. Consistent with the auth/onboarding paths.
+        reason_code:
+          error instanceof Error
+            ? (scrubStrKeys(error.message) ?? error.message)
+            : "unknown",
       });
       const errorMessage =
         "We had an issue retrieving your transaction details. Please try again.";
