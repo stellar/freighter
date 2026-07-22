@@ -31,6 +31,8 @@ import { useGetChangeTrust } from "../hooks/useChangeTrust";
 import { isAssetSac } from "popup/helpers/soroban";
 import { emitMetric } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
+import { RESULT_CODES, getResultCodes } from "popup/helpers/parseTransaction";
+import { ErrorMessage } from "@shared/api/types";
 
 import "./styles.scss";
 import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
@@ -187,6 +189,41 @@ export const SubmitTransaction = ({
     onTransactionSuccess?.();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSuccess]);
+
+  // Once, when the transaction fails: emit asset.operation_failed (+ the
+  // granular trustline_remove.failed for removals). `operation` comes straight
+  // from `addTrustline`, so add-vs-remove is never mislabeled. Mirrors mobile.
+  useEffect(() => {
+    if (!isFail || !isTrustlineSubmit) {
+      return;
+    }
+    const opCodes: string[] =
+      getResultCodes(state.error as ErrorMessage).operations ?? [];
+    emitMetric(METRIC_NAMES.assetOperationFailed, {
+      operation: addTrustline ? "add" : "remove",
+      reason_code: opCodes[0] || "unknown",
+      asset_code: asset.code,
+      asset_issuer: asset.issuer,
+    });
+    if (!addTrustline) {
+      // Map the removal-failure op code to the canonical reason. NB: extension
+      // does not split op_invalid_limit into buying_liabilities vs has_balance
+      // (that needs the asset's buying-liabilities from the balance cache);
+      // it reports has_balance. Mobile distinguishes buying_liabilities.
+      let removeReason: string | undefined;
+      if (opCodes.includes(RESULT_CODES.op_low_reserve)) {
+        removeReason = "low_reserve";
+      } else if (opCodes.includes(RESULT_CODES.op_invalid_limit)) {
+        removeReason = "has_balance";
+      }
+      if (removeReason) {
+        emitMetric(METRIC_NAMES.trustlineRemoveFailed, {
+          reason_code: removeReason,
+        });
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isFail]);
 
   const canonical = getCanonicalFromAsset(
     asset.code,
