@@ -642,7 +642,9 @@ function useSimulateTxData({
     } catch (error) {
       // Report the real cause here (the generic user-facing string below is not
       // a useful reason_code). Matches mobile's payment.simulation_failed.
-      // `network` is NOT hand-added — it rides on buildCommonContext.
+      // `network` is NOT hand-added — it rides on buildCommonContext. (Mobile
+      // additionally carries transaction_type; this catch is broader than a
+      // single simulate type, so it's an additive mobile-only dimension.)
       emitMetric(METRIC_NAMES.paymentSimulationFailed, {
         reason_code: error instanceof Error ? error.message : "unknown",
       });

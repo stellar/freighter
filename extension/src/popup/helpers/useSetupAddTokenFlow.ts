@@ -16,6 +16,9 @@ type Params = {
   rejectToken: typeof rejectToken;
   addToken: typeof addToken;
   uuid: string;
+  // Threaded onto the add/reject dispatch so asset_add.responded carries
+  // asset_code (analytics only — see ducks/access.ts). Empty when unknown.
+  assetCode?: string;
 };
 
 type Response = {
@@ -34,6 +37,7 @@ export const useSetupAddTokenFlow = ({
   rejectToken: rejectTokenFn,
   addToken: addTokenFn,
   uuid,
+  assetCode,
 }: Params): Response => {
   const { t } = useTranslation();
   const [isConfirming, setIsConfirming] = useState(false);
@@ -45,7 +49,7 @@ export const useSetupAddTokenFlow = ({
 
   const rejectAndClose = () => {
     emitMetric(METRIC_NAMES.assetAddApiCancelled);
-    dispatch(rejectTokenFn({ uuid }));
+    dispatch(rejectTokenFn({ uuid, assetCode }));
     window.close();
   };
 
@@ -81,7 +85,7 @@ export const useSetupAddTokenFlow = ({
     setSubmitError("");
     try {
       const addTokenResp = await dispatch(
-        addTokenFn({ uuid, isTrustlineBacked }),
+        addTokenFn({ uuid, isTrustlineBacked, assetCode }),
       );
       const rejectedMessage = getThunkErrorMessage(addTokenResp);
 

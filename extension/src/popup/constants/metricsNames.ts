@@ -18,7 +18,8 @@ export const METRIC_NAMES = {
   paymentFeeBreakdownOpened: "payment.fee_breakdown_opened",
   // UI selection of the send type. `payment_type` distinguishes
   // `payment` vs `path_payment` — it is a selection, not an outcome, so both
-  // selections share this one event.
+  // selections share this one event. Reserved: not currently emitted on either
+  // platform (legacy type-selection events were retired without a replacement).
   paymentTypeSelected: "payment.type_selected",
   // Direct (non-routed) payment outcomes. Routed/path payments settle as
   // swaps (see swapCompleted / swapFailed below).
@@ -103,12 +104,22 @@ export const METRIC_NAMES = {
   reauthFailed: "reauth.failed",
 
   // -- Recovery phrase (backup) -------------------------------------------
+  // Not emitted on extension: the mnemonic UI (MnemonicDisplay /
+  // DisplayBackupPhrase) has no copy or download affordance to instrument.
+  // Mobile emits `copied`; `downloaded` is reserved on both platforms. Kept for
+  // a shared catalog. Never attach the phrase itself.
   recoveryPhraseCopied: "recovery_phrase.copied",
   recoveryPhraseDownloaded: "recovery_phrase.downloaded",
 
   // -- dApp access ---------------------------------------------------------
   dappAccessGranted: "dapp_access.granted",
   dappAccessRejected: "dapp_access.rejected",
+  // Not emitted on extension: GrantAccess only opens from an already-unlocked
+  // popup, so there is no locked-state auto-decline path. Mobile emits it when a
+  // WalletConnect proposal arrives while not authenticated ({ origin,
+  // reason_code: "not_authenticated" }). Kept for a shared catalog so a future
+  // system-decline never reuses the user-decision dapp_access.rejected.
+  dappAccessBlocked: "dapp_access.blocked",
 
   // -- Signing -------------------------------------------------------------
   signingTransactionApproved: "signing.transaction_approved",

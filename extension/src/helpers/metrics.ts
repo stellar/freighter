@@ -53,7 +53,7 @@ type MetricsPayloadAction = PayloadAction<{
   // thunk argument (used to read the dApp `url`→`origin`), and `.error` carries
   // a runtime rejection's message. Typed optional so metrics handlers can read
   // them without casting.
-  meta?: { arg?: { url?: string } };
+  meta?: { arg?: { url?: string; assetCode?: string } };
   error?: { message?: string };
 };
 type MetricHandler<AppState> = (

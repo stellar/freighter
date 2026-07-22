@@ -87,6 +87,7 @@ describe("METRIC_NAMES domain-event catalog", () => {
   it("names signing / dApp-access events, separating rejection from failure", () => {
     expect(METRIC_NAMES.dappAccessGranted).toBe("dapp_access.granted");
     expect(METRIC_NAMES.dappAccessRejected).toBe("dapp_access.rejected");
+    expect(METRIC_NAMES.dappAccessBlocked).toBe("dapp_access.blocked");
     expect(METRIC_NAMES.signingTransactionApproved).toBe(
       "signing.transaction_approved",
     );

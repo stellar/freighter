@@ -38,18 +38,29 @@ registerHandler<AppState>(grantAccess.fulfilled, (_state, action) => {
 registerHandler<AppState>(rejectAccess.fulfilled, (_state, action) => {
   emitMetric(METRIC_NAMES.dappAccessRejected, originProps(action));
 });
-registerHandler<AppState>(addToken.fulfilled, () => {
+// asset_code (when the flow knew the token's code) mirrors mobile's
+// asset_add.responded { asset_code }; undefined stays off the payload.
+const assetCodeProps = (action: {
+  meta?: { arg?: { assetCode?: string } };
+}): { asset_code?: string } => {
+  const assetCode = action.meta?.arg?.assetCode;
+  return assetCode ? { asset_code: assetCode } : {};
+};
+
+registerHandler<AppState>(addToken.fulfilled, (_state, action) => {
   // These handlers fire only for the dApp injected-API add-token prompt, so the
   // source is fixed. Distinguishes it from mobile's manual add (source:manage_assets).
   emitMetric(METRIC_NAMES.assetAddResponded, {
     decision: "confirm",
     source: "dapp_api",
+    ...assetCodeProps(action),
   });
 });
-registerHandler<AppState>(rejectToken.fulfilled, () => {
+registerHandler<AppState>(rejectToken.fulfilled, (_state, action) => {
   emitMetric(METRIC_NAMES.assetAddResponded, {
     decision: "reject",
     source: "dapp_api",
+    ...assetCodeProps(action),
   });
 });
 registerHandler<AppState>(signTransaction.fulfilled, (_state, action) => {

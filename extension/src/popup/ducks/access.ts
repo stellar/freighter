@@ -85,7 +85,16 @@ export const signEntry = createAsyncThunk(
 export const addToken = createAsyncThunk(
   "addToken",
   (
-    { uuid, isTrustlineBacked }: { uuid: string; isTrustlineBacked?: boolean },
+    {
+      uuid,
+      isTrustlineBacked,
+    }: {
+      uuid: string;
+      isTrustlineBacked?: boolean;
+      // Carried for analytics only (asset_add.responded { asset_code }); not
+      // used by the thunk body — read off action.meta.arg in metrics/access.ts.
+      assetCode?: string;
+    },
     { getState },
   ) => {
     const activePublicKey = publicKeySelector(getState() as AppState);
@@ -95,7 +104,9 @@ export const addToken = createAsyncThunk(
 
 export const rejectToken = createAsyncThunk(
   "rejectToken",
-  ({ uuid }: { uuid: string }) => internalRejectAccess({ uuid }),
+  // assetCode is carried for analytics only (see addToken above).
+  ({ uuid }: { uuid: string; assetCode?: string }) =>
+    internalRejectAccess({ uuid }),
 );
 
 export const rejectTransaction = createAsyncThunk(

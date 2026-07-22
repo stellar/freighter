@@ -115,11 +115,14 @@ export const useScanSite = () => {
       captureFetchError(err);
       // Mirror mobile's domain-scan failure emit (scanSite catch →
       // trackScanFailed("domain", …)) so blockaid.scan_failed has
-      // cross-platform coverage for scan_target="domain".
-      emitMetric(METRIC_NAMES.blockaidScanFailed, {
-        scan_target: "domain",
-        reason_code: err instanceof Error ? err.message : "unknown",
-      });
+      // cross-platform coverage for scan_target="domain". Skip aborts (expected
+      // on cancel), matching scanAsset's guard.
+      if (!(err instanceof Error && err.name === "AbortError")) {
+        emitMetric(METRIC_NAMES.blockaidScanFailed, {
+          scan_target: "domain",
+          reason_code: err instanceof Error ? err.message : "unknown",
+        });
+      }
       setLoading(false);
       return null;
     }
@@ -192,10 +195,13 @@ export const useScanTx = () => {
       captureFetchError(err);
       // A thrown scan failure (backend 5xx / network) must report too, not just
       // the response.error branch — mirrors mobile's trackScanFailed coverage.
-      emitMetric(METRIC_NAMES.blockaidScanFailed, {
-        scan_target: "transaction",
-        reason_code: err instanceof Error ? err.message : "unknown",
-      });
+      // Skip aborts (expected on cancel), matching scanAsset's guard.
+      if (!(err instanceof Error && err.name === "AbortError")) {
+        emitMetric(METRIC_NAMES.blockaidScanFailed, {
+          scan_target: "transaction",
+          reason_code: err instanceof Error ? err.message : "unknown",
+        });
+      }
       setLoading(false);
     }
     return null;

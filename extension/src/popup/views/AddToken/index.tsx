@@ -151,6 +151,7 @@ export const AddToken = () => {
     rejectToken,
     addToken,
     uuid,
+    assetCode,
   });
 
   const hydratedPublicKey =

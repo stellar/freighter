@@ -103,6 +103,32 @@ describe("useSetupAddTokenFlow", () => {
     });
   });
 
+  it("threads assetCode onto the add/reject dispatch (for asset_add.responded analytics)", async () => {
+    mockDispatch.mockResolvedValue({ type: "addToken/fulfilled" });
+    const { result } = renderHook(() =>
+      useSetupAddTokenFlow({
+        rejectToken,
+        addToken,
+        uuid: UUID,
+        assetCode: "USDC",
+      } as any),
+    );
+
+    await act(async () => {
+      await result.current.addTokenAndClose();
+    });
+    expect(addToken).toHaveBeenCalledWith({
+      uuid: UUID,
+      isTrustlineBacked: false,
+      assetCode: "USDC",
+    });
+
+    act(() => {
+      result.current.rejectAndClose();
+    });
+    expect(rejectToken).toHaveBeenCalledWith({ uuid: UUID, assetCode: "USDC" });
+  });
+
   it("addTokenAndClose emits failed metric and keeps the popup open when dispatch rejects", async () => {
     mockDispatch.mockRejectedValue(new Error("boom"));
     jest.spyOn(console, "error").mockImplementation(() => undefined);
