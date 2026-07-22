@@ -31,6 +31,7 @@ import { useGetChangeTrust } from "../hooks/useChangeTrust";
 import { isAssetSac } from "popup/helpers/soroban";
 import { emitMetric } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
+import { balancesSelector } from "popup/ducks/cache";
 import { RESULT_CODES, getResultCodes } from "popup/helpers/parseTransaction";
 import { ErrorMessage } from "@shared/api/types";
 
@@ -87,6 +88,7 @@ export const SubmitTransaction = ({
   const isHardwareWallet = !!walletType;
 
   const { state, fetchData } = useGetChangeTrust();
+  const balanceData = useSelector(balancesSelector);
   const { state: resetChangeTrustDataState, resetChangeTrustData } =
     useResetChangeTrustData();
 
@@ -206,15 +208,24 @@ export const SubmitTransaction = ({
       asset_issuer: asset.issuer,
     });
     if (!addTrustline) {
-      // Map the removal-failure op code to the canonical reason. NB: extension
-      // does not split op_invalid_limit into buying_liabilities vs has_balance
-      // (that needs the asset's buying-liabilities from the balance cache);
-      // it reports has_balance. Mobile distinguishes buying_liabilities.
+      // Map the removal-failure op code to the canonical reason. op_invalid_limit
+      // splits into buying_liabilities vs has_balance by the asset's buying
+      // liabilities (from the balance cache) — matching mobile.
       let removeReason: string | undefined;
       if (opCodes.includes(RESULT_CODES.op_low_reserve)) {
         removeReason = "low_reserve";
       } else if (opCodes.includes(RESULT_CODES.op_invalid_limit)) {
-        removeReason = "has_balance";
+        const canonical = getCanonicalFromAsset(asset.code, asset.issuer);
+        const balance =
+          balanceData?.[networkDetails.network]?.[publicKey]?.balances?.[
+            canonical
+          ];
+        const buyingLiabilities =
+          balance && "buyingLiabilities" in balance
+            ? Number(balance.buyingLiabilities)
+            : 0;
+        removeReason =
+          buyingLiabilities > 0 ? "buying_liabilities" : "has_balance";
       }
       if (removeReason) {
         emitMetric(METRIC_NAMES.trustlineRemoveFailed, {
