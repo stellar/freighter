@@ -59,6 +59,7 @@ function useSubmitTxData({
       destinationAsset,
       destinationTokenDetails,
       isCollectible,
+      collectibleData,
     },
     transactionSimulation,
   } = submission;
@@ -128,7 +129,10 @@ function useSubmitTxData({
           }
 
           if (isCollectible) {
-            emitMetric(METRIC_NAMES.collectibleSendCompleted);
+            emitMetric(METRIC_NAMES.collectibleSendCompleted, {
+              collection_address: collectibleData.collectionAddress,
+              token_id: collectibleData.tokenId,
+            });
           } else {
             // Direct (non-routed) payment outcome.
             emitMetric(METRIC_NAMES.paymentCompleted, {

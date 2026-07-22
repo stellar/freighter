@@ -13,6 +13,7 @@ import {
   rejectAuthEntry,
 } from "popup/ducks/access";
 import { registerHandler, emitMetric } from "helpers/metrics";
+import { getUrlHostname } from "helpers/urls";
 import { AppState } from "popup/App";
 
 // account_type / is_hardware_account now ride on every event via
@@ -20,12 +21,14 @@ import { AppState } from "popup/App";
 
 // The dApp origin rides in the thunk arg (`action.meta.arg.url`), threaded from
 // the signing/grant views (useSetupSigningFlow / grantAccess). Attach it as
-// `origin`; omit gracefully when a path doesn't carry a url.
+// `origin`, normalized to the bare hostname so it matches mobile's
+// dappDomain-based `origin` (never a full URL). Omit when no url is present.
 const originProps = (action: {
   meta?: { arg?: { url?: string } };
 }): { origin?: string } => {
   const url = action.meta?.arg?.url;
-  return url ? { origin: url } : {};
+  const origin = url ? getUrlHostname(url) : "";
+  return origin ? { origin } : {};
 };
 
 registerHandler<AppState>(grantAccess.fulfilled, (_state, action) => {

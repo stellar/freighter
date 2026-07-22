@@ -42,8 +42,11 @@ export const METRIC_NAMES = {
   collectibleSendFailed: "collectible_send.failed",
 
   // -- Transaction submission ---------------------------------------------
-  // A signed transaction was actually broadcast to the network — distinct
-  // from signing.transaction_approved (the user approving a signature).
+  // dApp sign-and-submit event. RESERVED / never emitted on the extension:
+  // the extension dApp API only signs-and-returns (no submit path), and
+  // internal broadcasts are covered by payment/swap/collectible_send.completed.
+  // Mobile emits it (sign-and-submit); kept here for a shared catalog. Do NOT
+  // build a cross-platform transaction.submitted funnel expecting ext data.
   transactionSubmitted: "transaction.submitted",
 
   // -- Discovery -----------------------------------------------------------

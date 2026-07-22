@@ -184,6 +184,12 @@ export const useScanTx = () => {
     } catch (err) {
       setError("Failed to scan transaction");
       captureFetchError(err);
+      // A thrown scan failure (backend 5xx / network) must report too, not just
+      // the response.error branch — mirrors mobile's trackScanFailed coverage.
+      emitMetric(METRIC_NAMES.blockaidScanFailed, {
+        scan_target: "transaction",
+        reason_code: err instanceof Error ? err.message : "unknown",
+      });
       setLoading(false);
     }
     return null;
@@ -261,6 +267,13 @@ export const scanAsset = async (
   } catch (err) {
     console.error("Failed to scan asset");
     captureFetchError(err);
+    // Report thrown failures too (skip aborts, which are expected on cancel).
+    if (!(err instanceof Error && err.name === "AbortError")) {
+      emitMetric(METRIC_NAMES.blockaidScanFailed, {
+        scan_target: "asset",
+        reason_code: err instanceof Error ? err.message : "unknown",
+      });
+    }
   }
   return null;
 };
@@ -849,10 +862,22 @@ export const scanAssetBulk = async (
       );
     }
 
-    // Bulk scans report a distinct scan_target. (No aggregate `result` on
-    // extension — a known gap; mobile aggregates worst-case.)
+    // Aggregate the batch to a worst-case verdict (block > warn > safe),
+    // matching mobile's aggregateBulkResult, so asset_bulk carries `result`.
+    const bulkLevels = Object.values(resJson.data?.results ?? {}).map((r) =>
+      toBlockaidResultLevel(r?.result_type),
+    );
+    const bulkResult = bulkLevels.includes("block")
+      ? "block"
+      : bulkLevels.includes("warn")
+        ? "warn"
+        : bulkLevels.includes("safe")
+          ? "safe"
+          : "unknown";
     emitMetric(METRIC_NAMES.blockaidScanCompleted, {
       scan_target: "asset_bulk",
+      result: bulkResult,
+      address_count: addressList.length,
     });
     if (!resJson.data) {
       return null;
@@ -861,6 +886,12 @@ export const scanAssetBulk = async (
   } catch (err) {
     console.error("Failed to bulk scan asset");
     captureFetchError(err);
+    if (!(err instanceof Error && err.name === "AbortError")) {
+      emitMetric(METRIC_NAMES.blockaidScanFailed, {
+        scan_target: "asset_bulk",
+        reason_code: err instanceof Error ? err.message : "unknown",
+      });
+    }
   }
   return null;
 };
