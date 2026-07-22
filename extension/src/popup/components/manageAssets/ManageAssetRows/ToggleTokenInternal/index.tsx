@@ -57,6 +57,7 @@ export const ToggleTokenInternal = ({
       emitMetric(METRIC_NAMES.assetRemoveResponded, {
         decision: "reject",
         source: "manage_assets",
+        asset_code: asset.code,
       });
     }
     onCancel();
@@ -75,6 +76,7 @@ export const ToggleTokenInternal = ({
       emitMetric(METRIC_NAMES.assetRemoveResponded, {
         decision: "confirm",
         source: "manage_assets",
+        asset_code: asset.code,
       });
       await dispatch(
         removeTokenId({

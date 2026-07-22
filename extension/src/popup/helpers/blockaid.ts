@@ -265,6 +265,8 @@ export const scanAsset = async (
     emitMetric(METRIC_NAMES.blockaidScanCompleted, {
       scan_target: "asset",
       result: toBlockaidResultLevel(response.data?.result_type),
+      // Callers pass a `CODE-ISSUER` address; asset codes never contain "-".
+      token_code: address.split("-")[0],
     });
     if (!response.data) {
       return null;
