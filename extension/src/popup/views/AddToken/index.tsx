@@ -7,11 +7,15 @@ import {
   Notification,
   Text,
 } from "@stellar/design-system";
-import React, { useEffect, useState } from "react";
+import { captureException } from "@sentry/browser";
+import React, { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Navigate, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
-import { StellarToml } from "stellar-sdk";
+import { BASE_FEE, StellarToml } from "stellar-sdk";
+import { isMainnet, stroopToXlm, truncateString } from "helpers/stellar";
+import { useNetworkFees } from "popup/helpers/useNetworkFees";
+import { ChangeTrustInternal } from "popup/components/manageAssets/ManageAssetRows/ChangeTrustInternal";
 
 import { BlockAidScanAssetResult } from "@shared/api/types";
 import { getIconUrlFromIssuer } from "@shared/api/helpers/getIconUrlFromIssuer";
@@ -37,7 +41,8 @@ import { VerifyAccount } from "popup/views/VerifyAccount";
 import { View } from "popup/basics/layout/View";
 import { ManageAssetCurrency } from "popup/components/manageAssets/ManageAssetRows";
 import { useTokenLookup } from "popup/helpers/useTokenLookup";
-import { isContractId } from "popup/helpers/soroban";
+import { isContractId, isAssetSac } from "popup/helpers/soroban";
+import { getNativeContractDetails } from "popup/helpers/searchAsset";
 import {
   scanAsset,
   isAssetSuspicious,
@@ -46,7 +51,10 @@ import {
   getAssetSecurityLevel,
   useBlockaidOverrideState,
 } from "popup/helpers/blockaid";
-import { getBlockaidOverrideState } from "@shared/api/internal";
+import {
+  getAccountBalances,
+  getBlockaidOverrideState,
+} from "@shared/api/internal";
 import { useIsDomainListedAllowed } from "popup/helpers/useIsDomainListedAllowed";
 import { AppDataType, useGetAppData } from "helpers/hooks/useGetAppData";
 import { RequestState } from "constants/request";
@@ -98,6 +106,12 @@ export const AddToken = () => {
   const [verifiedSheetOpen, setVerifiedSheetOpen] = useState(false);
   const [unverifiedSheetOpen, setUnverifiedSheetOpen] = useState(false);
   const blockaidOverrideState = useBlockaidOverrideState();
+  // SAC/classic duplicate-add guard state (see the trustline-lookup effect).
+  const [hasClassicTrustline, setHasClassicTrustline] = useState(false);
+  const [hasClassicTrustlineResolved, setHasClassicTrustlineResolved] =
+    useState(false);
+  const [isClassicTrustlineLoading, setIsClassicTrustlineLoading] =
+    useState(false);
 
   const assetCurrency: ManageAssetCurrency | undefined = assetRows[0];
 
@@ -106,32 +120,129 @@ export const AddToken = () => {
   const assetName = assetTomlName || assetCurrency?.name?.split(":")[0];
   const assetDomain = assetCurrency?.domain || "";
 
+  const hasLookupResult = assetRows.length > 0;
   const isLoading =
-    isSearching || assetIcon === undefined || assetTomlName === undefined;
+    isSearching ||
+    (hasLookupResult &&
+      (assetIcon === undefined || assetTomlName === undefined));
+
+  const [showTrustlineReview, setShowTrustlineReview] = useState(false);
+
+  // `recommendedFee` is the network-recommended fee in XLM after useNetworkFees
+  // resolves; pre-fetch it is the raw BASE_FEE (stroops), so guard against that
+  // and fall back to the base fee converted to XLM. This same value is both
+  // displayed here and passed into the trustline review so the disclosed fee
+  // matches the charged fee.
+  const { recommendedFee } = useNetworkFees();
+  const baseFeeXlm = stroopToXlm(BASE_FEE).toString();
+  const displayFee = recommendedFee === BASE_FEE ? baseFeeXlm : recommendedFee;
 
   const {
     isConfirming,
     isPasswordRequired,
+    submitError,
+    clearSubmitError,
     setIsPasswordRequired,
     verifyPasswordThenAddToken,
     handleApprove,
+    addTokenAndClose,
     rejectAndClose,
   } = useSetupAddTokenFlow({
     rejectToken,
     addToken,
-    assetCode,
-    assetIssuer,
     uuid,
   });
+
+  const hydratedPublicKey =
+    state.state === RequestState.SUCCESS && state.data.type === "resolved"
+      ? state.data.account.publicKey
+      : "";
+  const hydratedNetworkDetails =
+    state.state === RequestState.SUCCESS && state.data.type === "resolved"
+      ? state.data.settings.networkDetails
+      : undefined;
+
+  // Verify the contract is the derived SAC, not just a G-address issuer.
+  const isSac =
+    !!hydratedNetworkDetails &&
+    isAssetSac({
+      asset: {
+        code: assetCode,
+        issuer: assetIssuer,
+        contract: assetCurrency?.contract,
+      },
+      networkDetails: hydratedNetworkDetails,
+    });
 
   const { handleTokenLookup } = useTokenLookup({
     setAssetRows,
     setIsSearching,
     setIsVerifiedToken,
     setIsVerificationInfoShowing,
+    lookupPublicKey: hydratedPublicKey,
+    lookupNetworkDetails: hydratedNetworkDetails,
   });
 
+  // Resolves off the trustline tx succeeding, not the Done button, so a
+  // successful trustline is never reported as "user rejected". Kept as a
+  // promise so Done can await it before closing.
+  const addTokenPromiseRef = useRef<Promise<boolean> | null>(null);
+  // Total attempts (initial + retries) to deliver the ADD_TOKEN round-trip
+  // once a trustline has succeeded on-chain, before giving up and leaving the
+  // popup open rather than reporting the dApp a false decline.
+  const MAX_ADD_TOKEN_ATTEMPTS = 3;
+
+  const handleTrustlineTransactionSuccess = () => {
+    if (!addTokenPromiseRef.current) {
+      addTokenPromiseRef.current = addTokenAndClose(true);
+    }
+  };
+
+  // Done only closes the popup — but the dApp request is resolved by the
+  // background's response(true); window.close() triggers rejectOnWindowClose,
+  // which reports "user rejected". By the time this runs the trustline has
+  // already succeeded on-chain, so a close that beats response(true) would
+  // report a decline for a live trustline. The eager addTokenAndClose(true)
+  // (fired on tx success) normally delivers response(true) before Done; the
+  // residual failure is the messaging round-trip itself throwing, which never
+  // reaches the background. So retry it and close ONLY once success has
+  // actually been delivered — don't rely on the response callback winning a
+  // race against window.close(). If it stays undeliverable, keep the popup
+  // open rather than closing into a false "user rejected"; the user can retry.
+  const handleTrustlineDone = async () => {
+    let succeeded = await (addTokenPromiseRef.current ??
+      addTokenAndClose(true));
+
+    for (
+      let attempt = 1;
+      !succeeded && attempt < MAX_ADD_TOKEN_ATTEMPTS;
+      attempt += 1
+    ) {
+      addTokenPromiseRef.current = null;
+      succeeded = await addTokenAndClose(true);
+    }
+
+    if (succeeded) {
+      window.close();
+      return;
+    }
+
+    captureException(
+      "addToken: trustline succeeded on-chain but the ADD_TOKEN round-trip " +
+        "could not be delivered; leaving popup open to avoid reporting the " +
+        "dApp a false decline for a live trustline",
+    );
+  };
+
   useEffect(() => {
+    if (!hydratedPublicKey) {
+      return;
+    }
+
+    if (!hydratedNetworkDetails?.network) {
+      return;
+    }
+
     if (!isContractId(contractId)) {
       setErrorMessage(
         `${t("This is not a valid contract id.")} ${t("Please try again with a different value.")}`,
@@ -141,7 +252,20 @@ export const AddToken = () => {
 
     handleTokenLookup(contractId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [contractId, handleTokenLookup]);
+  }, [
+    contractId,
+    handleTokenLookup,
+    hydratedNetworkDetails?.network,
+    hydratedPublicKey,
+  ]);
+
+  useEffect(() => {
+    if (!isSearching && !hasLookupResult && !errorMessage) {
+      setErrorMessage(
+        `${t("Unable to find your asset.")} ${t("Please try again with a different value.")}`,
+      );
+    }
+  }, [errorMessage, hasLookupResult, isSearching, t]);
 
   useEffect(() => {
     if (
@@ -245,6 +369,85 @@ export const AddToken = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    if (
+      !hydratedPublicKey ||
+      !hydratedNetworkDetails ||
+      !assetCode ||
+      !assetIssuer ||
+      !isSac
+    ) {
+      setIsClassicTrustlineLoading(false);
+      setHasClassicTrustline(false);
+      setHasClassicTrustlineResolved(false);
+      return;
+    }
+
+    let isMounted = true;
+    setHasClassicTrustlineResolved(false);
+    setIsClassicTrustlineLoading(true);
+
+    const fetchClassicTrustline = async () => {
+      try {
+        const accountBalances = await getAccountBalances(
+          hydratedPublicKey,
+          hydratedNetworkDetails,
+          isMainnet(hydratedNetworkDetails),
+          true,
+        );
+
+        const balances = accountBalances.balances;
+        const balanceItems = Array.isArray(balances)
+          ? balances
+          : Object.values(balances || {});
+
+        const hasTrustline = balanceItems.some((balance: unknown) => {
+          if (
+            !balance ||
+            typeof balance !== "object" ||
+            !("token" in balance)
+          ) {
+            return false;
+          }
+
+          const token = (
+            balance as {
+              token?: { code?: string; issuer?: { key?: string } };
+            }
+          ).token;
+
+          return (
+            token?.code === assetCode && token?.issuer?.key === assetIssuer
+          );
+        });
+
+        if (isMounted) {
+          setHasClassicTrustline(hasTrustline);
+          setIsClassicTrustlineLoading(false);
+          setHasClassicTrustlineResolved(true);
+        }
+      } catch (e) {
+        if (isMounted) {
+          setHasClassicTrustline(false);
+          setIsClassicTrustlineLoading(false);
+          setHasClassicTrustlineResolved(true);
+        }
+      }
+    };
+
+    fetchClassicTrustline();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [
+    assetCode,
+    assetIssuer,
+    hydratedNetworkDetails,
+    hydratedPublicKey,
+    isSac,
+  ]);
+
   if (
     state.state === RequestState.IDLE ||
     state.state === RequestState.LOADING
@@ -294,6 +497,21 @@ export const AddToken = () => {
   });
 
   const { networkPassphrase, networkName } = state.data.settings.networkDetails;
+
+  const nativeContract = getNativeContractDetails(
+    state.data.settings.networkDetails,
+  ).contract;
+  const isNativeContract = contractId === nativeContract;
+
+  // SEP-41 tokens are only ever recorded locally (no trustline, no cost), so
+  // they can be added any number of times — only SAC/classic (real trustline
+  // submissions, which charge a fee) and native (already auto-trusted) block
+  // re-adding.
+  const isTrustlineCheckLoading =
+    isSac && (!hasClassicTrustlineResolved || isClassicTrustlineLoading);
+
+  const hasExistingTrustline =
+    isNativeContract || (isSac && hasClassicTrustline);
 
   if (entryNetworkPassphrase && entryNetworkPassphrase !== networkPassphrase) {
     return (
@@ -348,6 +566,29 @@ export const AddToken = () => {
           </div>
         </View.Content>
       </React.Fragment>
+    );
+  }
+
+  if (showTrustlineReview && isSac && assetCurrency) {
+    return (
+      <ChangeTrustInternal
+        asset={{
+          code: assetCode,
+          issuer: assetIssuer,
+          image: assetIcon || null,
+          domain: assetDomain || null,
+          contract: assetCurrency.contract,
+        }}
+        addTrustline
+        publicKey={state.data.account.publicKey}
+        networkDetails={state.data.settings.networkDetails}
+        onCancel={() => setShowTrustlineReview(false)}
+        onTransactionSuccess={handleTrustlineTransactionSuccess}
+        onSuccess={handleTrustlineDone}
+        onClose={() => setShowTrustlineReview(false)}
+        initialFee={displayFee}
+        isFullHeight
+      />
     );
   }
 
@@ -416,6 +657,32 @@ export const AddToken = () => {
                 </div>
               </div>
 
+              {submitError && (
+                <div className="AddToken__submit-error">
+                  <Notification
+                    variant="error"
+                    title={t("Failed to add token.")}
+                  >
+                    {submitError}
+                  </Notification>
+                </div>
+              )}
+
+              {/* This wording is trustline-specific and only applies to
+                  SAC/classic assets — SEP-41 tokens have no trustline, they
+                  are only recorded locally, so the message would be
+                  misleading for them. Native XLM also renders this: isSac
+                  is true for the native contract too (isAssetSac special-
+                  cases it), so gating on isSac alone covers both. */}
+              {hasExistingTrustline && isSac && (
+                <div className="AddToken__submit-error">
+                  <Notification
+                    variant="error"
+                    title={t("This token already has a trustline added.")}
+                  />
+                </div>
+              )}
+
               {assetCurrency && isVerificationInfoShowing && (
                 <button
                   type="button"
@@ -475,6 +742,34 @@ export const AddToken = () => {
                     <KeyIdenticon publicKey={state.data.account.publicKey} />
                   </div>
                 </div>
+                {isSac && (
+                  <>
+                    <div
+                      className="AddToken__Metadata__Row"
+                      data-testid="AddToken__Metadata__Row__Fee"
+                    >
+                      <div className="AddToken__Metadata__Label">
+                        <Icon.Route />
+                        <span>{t("Fee")}</span>
+                      </div>
+                      <div className="AddToken__Metadata__Value">
+                        <span>{`${displayFee} XLM`}</span>
+                      </div>
+                    </div>
+                    <div
+                      className="AddToken__Metadata__Row"
+                      data-testid="AddToken__Metadata__Row__TokenAddress"
+                    >
+                      <div className="AddToken__Metadata__Label">
+                        <Icon.CodeCircle01 />
+                        <span>{t("Token address")}</span>
+                      </div>
+                      <div className="AddToken__Metadata__Value">
+                        <span>{truncateString(contractId)}</span>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           )}
@@ -501,15 +796,33 @@ export const AddToken = () => {
         </Button>
         <Button
           data-testid="add-token-approve"
-          disabled={!isDomainListedAllowed}
+          disabled={
+            !isDomainListedAllowed ||
+            hasExistingTrustline ||
+            isTrustlineCheckLoading
+          }
           isFullWidth
           isRounded
           size="lg"
           variant={isMaliciousAsset ? "error" : "secondary"}
           isLoading={isConfirming}
-          onClick={() => handleApprove()}
+          onClick={() => {
+            clearSubmitError();
+            if (hasExistingTrustline || isTrustlineCheckLoading) {
+              return;
+            }
+            if (isSac) {
+              setShowTrustlineReview(true);
+              return;
+            }
+            // SEP-41 is a one-step flow: this submits and closes immediately
+            // on success (see useSetupAddTokenFlow.handleApprove).
+            handleApprove();
+          }}
         >
-          {t("Confirm")}
+          {/* SAC is a 2-step flow (Add Token → Change Trust review), so this
+              first button advances ("Continue"); SEP-41 confirms directly. */}
+          {isSac ? t("Continue") : t("Confirm")}
         </Button>
       </View.Footer>
     </React.Fragment>

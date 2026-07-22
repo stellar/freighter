@@ -62,7 +62,9 @@ const tryGetAuthKeypair = async (
     // on non-serializable values. Sentry preserves the stack; the context string
     // lives in `extra`.
     captureException(e, {
-      extra: { context: "callBackendV2: unexpected error deriving auth keypair" },
+      extra: {
+        context: "callBackendV2: unexpected error deriving auth keypair",
+      },
     });
     return null;
   }
