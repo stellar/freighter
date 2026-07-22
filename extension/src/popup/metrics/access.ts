@@ -13,6 +13,7 @@ import {
   rejectAuthEntry,
 } from "popup/ducks/access";
 import { registerHandler, emitMetric } from "helpers/metrics";
+import { scrubStrKeys } from "helpers/stellarStrKey";
 import { getUrlHostname } from "helpers/urls";
 import { AppState } from "popup/App";
 
@@ -83,7 +84,8 @@ const rejectedReasonCode = (action: {
   error?: { message?: string };
   payload?: { errorMessage?: string };
 }): string =>
-  action.error?.message || action.payload?.errorMessage || "unknown";
+  scrubStrKeys(action.error?.message || action.payload?.errorMessage) ||
+  "unknown";
 
 registerHandler<AppState>(signBlob.rejected, (_state, action) => {
   emitMetric(METRIC_NAMES.signingMessageFailed, {

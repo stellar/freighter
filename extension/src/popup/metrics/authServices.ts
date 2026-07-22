@@ -1,6 +1,7 @@
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 
 import { registerHandler, emitMetric } from "helpers/metrics";
+import { scrubStrKeys } from "helpers/stellarStrKey";
 
 import {
   createAccount,
@@ -17,7 +18,7 @@ registerHandler<AppState>(createAccount.rejected, (_state, action) => {
   const { errorMessage } = action.payload;
 
   emitMetric(METRIC_NAMES.onboardingPasswordCreateFailed, {
-    reason_code: errorMessage,
+    reason_code: scrubStrKeys(errorMessage) ?? errorMessage,
   });
 });
 
@@ -28,7 +29,7 @@ registerHandler<AppState>(confirmPassword.rejected, (_state, action) => {
   const { errorMessage } = action.payload;
 
   emitMetric(METRIC_NAMES.reauthFailed, {
-    reason_code: errorMessage,
+    reason_code: scrubStrKeys(errorMessage) ?? errorMessage,
   });
 });
 
@@ -42,7 +43,7 @@ registerHandler<AppState>(confirmMnemonicPhrase.rejected, (_state, action) => {
   const { errorMessage } = action.payload;
 
   emitMetric(METRIC_NAMES.onboardingRecoveryPhraseConfirmFailed, {
-    reason_code: errorMessage,
+    reason_code: scrubStrKeys(errorMessage) ?? errorMessage,
   });
 });
 
@@ -56,6 +57,6 @@ registerHandler<AppState>(recoverAccount.rejected, (_state, action) => {
   const { errorMessage } = action.payload;
 
   emitMetric(METRIC_NAMES.accountRecoveryFailed, {
-    reason_code: errorMessage,
+    reason_code: scrubStrKeys(errorMessage) ?? errorMessage,
   });
 });

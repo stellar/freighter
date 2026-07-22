@@ -642,9 +642,9 @@ function useSimulateTxData({
     } catch (error) {
       // Report the real cause here (the generic user-facing string below is not
       // a useful reason_code). Matches mobile's payment.simulation_failed.
+      // `network` is NOT hand-added — it rides on buildCommonContext.
       emitMetric(METRIC_NAMES.paymentSimulationFailed, {
         reason_code: error instanceof Error ? error.message : "unknown",
-        network: networkDetails.network,
       });
       const errorMessage =
         "We had an issue retrieving your transaction details. Please try again.";

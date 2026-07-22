@@ -95,12 +95,18 @@ export const useScanSite = () => {
       }>(`${INDEXER_URL}/scan-dapp?url=${encodeURIComponent(url)}`);
 
       setData(response.data);
+      // Mirrors mobile's assessSiteSecurity: no data => unknown; status "miss"
+      // (domain not in Blockaid's DB) => warn; hit + is_malicious => block;
+      // hit + clean => safe. Extension previously only emitted block/safe.
       emitMetric(METRIC_NAMES.blockaidScanCompleted, {
         scan_target: "domain",
-        result:
-          response.data?.status === "hit" && response.data.is_malicious
-            ? "block"
-            : "safe",
+        result: !response.data
+          ? "unknown"
+          : response.data.status === "miss"
+            ? "warn"
+            : response.data.is_malicious
+              ? "block"
+              : "safe",
       });
       setLoading(false);
       return response.data;

@@ -54,7 +54,10 @@ export const ToggleTokenInternal = ({
 
   const handleCancel = () => {
     if (isRemoveFlow) {
-      emitMetric(METRIC_NAMES.assetRemoveResponded, { decision: "reject" });
+      emitMetric(METRIC_NAMES.assetRemoveResponded, {
+        decision: "reject",
+        source: "manage_assets",
+      });
     }
     onCancel();
   };
@@ -69,7 +72,10 @@ export const ToggleTokenInternal = ({
         }),
       );
     } else {
-      emitMetric(METRIC_NAMES.assetRemoveResponded, { decision: "confirm" });
+      emitMetric(METRIC_NAMES.assetRemoveResponded, {
+        decision: "confirm",
+        source: "manage_assets",
+      });
       await dispatch(
         removeTokenId({
           contractId: asset.contract!,

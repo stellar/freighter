@@ -17,6 +17,7 @@ import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { AppDispatch } from "popup/App";
 import { navigateTo } from "popup/helpers/navigate";
 import { emitMetric } from "helpers/metrics";
+import { scrubStrKeys } from "helpers/stellarStrKey";
 import { FormRows } from "popup/basics/Forms";
 import { importAccount, authErrorSelector } from "popup/ducks/accountServices";
 
@@ -64,7 +65,7 @@ export const ImportAccount = () => {
     } else {
       emitMetric(METRIC_NAMES.accountImportFailed, {
         import_method: "secret_key",
-        reason_code: res.payload?.errorMessage || "",
+        reason_code: scrubStrKeys(res.payload?.errorMessage) || "",
       });
     }
   };

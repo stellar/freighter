@@ -230,6 +230,8 @@ export const SubmitTransaction = ({
       if (removeReason) {
         emitMetric(METRIC_NAMES.trustlineRemoveFailed, {
           reason_code: removeReason,
+          asset_code: asset.code,
+          asset_issuer: asset.issuer,
         });
       }
     }
