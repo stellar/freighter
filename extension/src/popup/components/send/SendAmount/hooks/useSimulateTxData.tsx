@@ -13,6 +13,8 @@ import {
 } from "stellar-sdk";
 
 import { initialState, isError, reducer } from "helpers/request";
+import { emitMetric } from "helpers/metrics";
+import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { NetworkDetails } from "@shared/constants/stellar";
 import {
   getAssetFromCanonical,
@@ -638,6 +640,12 @@ function useSimulateTxData({
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });
       return { ok: true, data: payload } as SimulateResult;
     } catch (error) {
+      // Report the real cause here (the generic user-facing string below is not
+      // a useful reason_code). Matches mobile's payment.simulation_failed.
+      emitMetric(METRIC_NAMES.paymentSimulationFailed, {
+        reason_code: error instanceof Error ? error.message : "unknown",
+        network: networkDetails.network,
+      });
       const errorMessage =
         "We had an issue retrieving your transaction details. Please try again.";
       dispatch({ type: "FETCH_DATA_ERROR", payload: errorMessage });

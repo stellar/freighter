@@ -34,6 +34,9 @@ registerHandler<AppState>(confirmPassword.rejected, (_state, action) => {
 
 registerHandler<AppState>(confirmMnemonicPhrase.fulfilled, () => {
   emitMetric(METRIC_NAMES.onboardingRecoveryPhraseConfirmed);
+  // Create-account onboarding completes on mnemonic confirm (also the skip
+  // paths dispatch confirmMnemonicPhrase). Mirrors mobile's onboarding.completed.
+  emitMetric(METRIC_NAMES.onboardingCompleted);
 });
 registerHandler<AppState>(confirmMnemonicPhrase.rejected, (_state, action) => {
   const { errorMessage } = action.payload;

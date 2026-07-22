@@ -78,6 +78,8 @@ export const METRIC_NAMES = {
   onboardingRecoveryPhraseConfirmed: "onboarding.recovery_phrase_confirmed",
   onboardingRecoveryPhraseConfirmFailed:
     "onboarding.recovery_phrase_confirm_failed",
+  // Not emitted on extension: the create-account recovery-phrase screens have
+  // no Back affordance to instrument. Mobile emits it; kept for a shared catalog.
   onboardingRecoveryPhraseBackClicked: "onboarding.recovery_phrase_back_clicked",
   onboardingCompleted: "onboarding.completed",
 
@@ -87,6 +89,8 @@ export const METRIC_NAMES = {
   accountCreated: "account.created",
   accountImported: "account.imported",
   accountImportFailed: "account.import_failed",
+  // Extension-only: no mobile equivalent (mobile has no first-funded milestone
+  // detector). Documented cross-platform asymmetry.
   accountFirstFunded: "account.first_funded",
   accountRenamed: "account.renamed",
   accountPublicKeyCopied: "account.public_key_copied",
@@ -128,6 +132,8 @@ export const METRIC_NAMES = {
   //    scan_target = domain | transaction | asset, with a `result`) --------
   blockaidScanCompleted: "blockaid.scan_completed",
   blockaidScanFailed: "blockaid.scan_failed",
+  // A user-submitted Blockaid warning report — distinct from a scan (no result).
+  blockaidWarningReported: "blockaid.warning_reported",
 
   appOpened: "app.opened",
 

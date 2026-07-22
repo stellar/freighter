@@ -924,7 +924,7 @@ export const reportAssetWarning = async ({
       );
     }
 
-    emitMetric(METRIC_NAMES.blockaidScanCompleted, { scan_target: "asset" });
+    emitMetric(METRIC_NAMES.blockaidWarningReported, { scan_target: "asset" });
     if (!res.data) {
       return {} as ReportAssetWarningResponse;
     }
@@ -966,7 +966,7 @@ export const reportTransactionWarning = async ({
       );
     }
 
-    emitMetric(METRIC_NAMES.blockaidScanCompleted, {
+    emitMetric(METRIC_NAMES.blockaidWarningReported, {
       scan_target: "transaction",
     });
     if (!res.data) {

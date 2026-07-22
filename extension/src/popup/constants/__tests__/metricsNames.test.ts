@@ -113,6 +113,9 @@ describe("METRIC_NAMES domain-event catalog", () => {
   it("names blockaid scan events consolidated to completed/failed", () => {
     expect(METRIC_NAMES.blockaidScanCompleted).toBe("blockaid.scan_completed");
     expect(METRIC_NAMES.blockaidScanFailed).toBe("blockaid.scan_failed");
+    expect(METRIC_NAMES.blockaidWarningReported).toBe(
+      "blockaid.warning_reported",
+    );
   });
 
   it("keeps the foundation events untouched", () => {

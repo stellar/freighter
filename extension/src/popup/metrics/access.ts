@@ -38,10 +38,18 @@ registerHandler<AppState>(rejectAccess.fulfilled, (_state, action) => {
   emitMetric(METRIC_NAMES.dappAccessRejected, originProps(action));
 });
 registerHandler<AppState>(addToken.fulfilled, () => {
-  emitMetric(METRIC_NAMES.assetAddResponded, { decision: "confirm" });
+  // These handlers fire only for the dApp injected-API add-token prompt, so the
+  // source is fixed. Distinguishes it from mobile's manual add (source:manage_assets).
+  emitMetric(METRIC_NAMES.assetAddResponded, {
+    decision: "confirm",
+    source: "dapp_api",
+  });
 });
 registerHandler<AppState>(rejectToken.fulfilled, () => {
-  emitMetric(METRIC_NAMES.assetAddResponded, { decision: "reject" });
+  emitMetric(METRIC_NAMES.assetAddResponded, {
+    decision: "reject",
+    source: "dapp_api",
+  });
 });
 registerHandler<AppState>(signTransaction.fulfilled, (_state, action) => {
   emitMetric(METRIC_NAMES.signingTransactionApproved, originProps(action));
