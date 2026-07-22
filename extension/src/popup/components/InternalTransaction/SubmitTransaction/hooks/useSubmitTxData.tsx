@@ -113,8 +113,8 @@ function useSubmitTxData({
           // pathPaymentStrictSend transaction confirmed it.
           if (destinationTokenDetails?.requiresTrustline) {
             emitMetric(METRIC_NAMES.swapTrustlineAdded, {
-              tokenCode: destinationTokenDetails.tokenCode,
-              tokenIssuer: destinationTokenDetails.issuer,
+              asset_code: destinationTokenDetails.tokenCode,
+              asset_issuer: destinationTokenDetails.issuer,
             });
           }
         } else {
