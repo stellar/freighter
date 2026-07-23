@@ -64,7 +64,15 @@ citable assertion ("never X", "always Y when Z"). Seed list to replace/expand:
   or a guaranteed error. Derive the network from `networkDetails`; for
   passphrase-keyed logic, account for custom networks that reuse a known
   passphrase.
-- **Muxed / federated address handling:** `TODO(team)`
+- **Address handling — cover all address types.** Any code that accepts,
+  parses, displays, resolves, or routes a Stellar address must handle all four:
+  classic **G** accounts, contract **C** addresses (`isContractId`), **muxed M**
+  accounts (`isMuxedAccount`), and **federated** addresses (`isFederationAddress`
+  / `isValidFederatedDomain`). Never assume a bare G key. In particular: resolve
+  federated addresses before use; preserve/extract the muxed memo id (don't strip
+  or mislabel it — e.g. sent-vs-received attribution); reject or route C addresses
+  appropriately where a fundable account is expected; and validate with
+  `isValidStellarAddress` rather than ad-hoc string checks.
 - **Signing preconditions — always attempt a Blockaid scan before signing.**
   Every flow that signs or submits a transaction (dApp sign requests, send,
   swap, send-collectible) must call `scanTx` (via the `useScanTx` hook) and
