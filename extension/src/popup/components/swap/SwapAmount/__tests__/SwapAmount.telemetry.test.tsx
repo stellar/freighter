@@ -130,14 +130,15 @@ describe("SwapAmount telemetry + quote-expired surfacing", () => {
       (c) => c[0] === "swap.quote_expired",
     );
     expect(expiredCall).toBeDefined();
+    // Bare asset codes (getAssetFromCanonical), matching mobile ("native" → XLM);
+    // amounts intentionally dropped (parity with swap.completed/failed).
     expect(expiredCall![1]).toMatchObject({
-      sourceToken: "native",
-      destToken:
-        "AQUA:GBNZILSTVQZ4R7IKQDGHYGY2QXL5QOFJYQMXPKWRRM5PAV7Y4M67AQUA",
-      sourceAmount: "5",
-      destAmount: "10",
-      allowedSlippage: "2",
+      from_asset_code: "XLM",
+      to_asset_code: "AQUA",
     });
+    expect(expiredCall![1]).not.toHaveProperty("sourceAmount");
+    expect(expiredCall![1]).not.toHaveProperty("destAmount");
+    expect(expiredCall![1]).not.toHaveProperty("allowedSlippage");
   });
 
   it("does NOT show the quote-expired notice when not flagged", async () => {

@@ -282,9 +282,6 @@ export const SwapAmount = ({
     isSwapQuoteExpired,
     asset,
     destinationAsset,
-    amount,
-    destinationAmount,
-    allowedSlippage,
   });
 
   const sellInputRef = useRef<HTMLInputElement>(null);

@@ -12,6 +12,7 @@ import {
 } from "@shared/api/types";
 import { isMainnet } from "helpers/stellar";
 import { emitMetric } from "helpers/metrics";
+import { scrubStrKeys } from "helpers/stellarStrKey";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import {
   settingsNetworkDetailsSelector,
@@ -120,7 +121,10 @@ export const useScanSite = () => {
       if (!(err instanceof Error && err.name === "AbortError")) {
         emitMetric(METRIC_NAMES.blockaidScanFailed, {
           scan_target: "domain",
-          reason_code: err instanceof Error ? err.message : "unknown",
+          reason_code:
+            err instanceof Error
+              ? (scrubStrKeys(err.message) ?? err.message)
+              : "unknown",
         });
       }
       setLoading(false);
@@ -174,7 +178,7 @@ export const useScanTx = () => {
       if (response.error || !response.data) {
         emitMetric(METRIC_NAMES.blockaidScanFailed, {
           scan_target: "transaction",
-          reason_code: response.error ?? "no_data",
+          reason_code: scrubStrKeys(response.error) ?? "no_data",
         });
         setLoading(false);
         return null;
@@ -199,7 +203,10 @@ export const useScanTx = () => {
       if (!(err instanceof Error && err.name === "AbortError")) {
         emitMetric(METRIC_NAMES.blockaidScanFailed, {
           scan_target: "transaction",
-          reason_code: err instanceof Error ? err.message : "unknown",
+          reason_code:
+            err instanceof Error
+              ? (scrubStrKeys(err.message) ?? err.message)
+              : "unknown",
         });
       }
       setLoading(false);
@@ -263,7 +270,7 @@ export const scanAsset = async (
       );
       emitMetric(METRIC_NAMES.blockaidScanFailed, {
         scan_target: "asset",
-        reason_code: response.error ?? "unknown",
+        reason_code: scrubStrKeys(response.error) ?? "unknown",
       });
       return null;
     }

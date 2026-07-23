@@ -229,7 +229,7 @@ describe("Swap selectionType wiring", () => {
     );
     expect(sourceCall).toBeDefined();
     expect(sourceCall![1]).toMatchObject({
-      tokenCode: "USDC",
+      asset_code: "USDC",
       source: "balances",
     });
   });
