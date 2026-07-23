@@ -71,6 +71,12 @@ const rowValue = (key: string) => {
     ?.textContent?.trim();
 };
 
+// Whether an operation-detail row with the given label was rendered at all.
+const hasKey = (key: string) =>
+  screen
+    .getAllByTestId("OperationKeyVal__key")
+    .some((el) => el.textContent === key);
+
 const MASTER_KEY_WARNING = /disables your account's master key/i;
 
 describe("Operations — setOptions field visibility", () => {
@@ -229,5 +235,31 @@ describe("Operations — setTrustLineFlags visibility", () => {
         .some((el) => el.textContent === "Authorized"),
     ).toBe(false);
     expect(rowValue("Clawback Enabled")).toBe("Disabled");
+  });
+
+  it("renders the asset issuer alongside the asset code", () => {
+    renderOps(decodeSetTrustLineFlags({ authorized: true }));
+
+    expect(rowValue("Asset Code")).toBe("USDC");
+    expect(hasKey("Asset Issuer")).toBe(true);
+  });
+});
+
+describe("Operations — clawback asset identity", () => {
+  const FROM = StrKey.encodeEd25519PublicKey(Buffer.alloc(32, 5));
+  const ASSET = new Asset(
+    "USDC",
+    StrKey.encodeEd25519PublicKey(Buffer.alloc(32, 9)),
+  );
+
+  it("renders the asset issuer alongside the asset code", () => {
+    renderOps(
+      decodeOperation(
+        Operation.clawback({ asset: ASSET, amount: "100", from: FROM }),
+      ),
+    );
+
+    expect(rowValue("Asset Code")).toBe("USDC");
+    expect(hasKey("Asset Issuer")).toBe(true);
   });
 });

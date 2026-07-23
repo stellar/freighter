@@ -611,6 +611,7 @@ export const Operations = ({
               operationKey={t("Asset Code")}
               operationValue={asset.code}
             />
+            <KeyValueAssetIssuer issuer={asset.issuer} />
             <KeyValueList operationKey={t("Amount")} operationValue={amount} />
             <KeyValueWithPublicKey
               operationKey={t("From")}
@@ -642,6 +643,7 @@ export const Operations = ({
               operationKey={t("Asset Code")}
               operationValue={asset.code}
             />
+            <KeyValueAssetIssuer issuer={asset.issuer} />
             {/*
               A flag present in the decoded `flags` object is being changed:
               `true` enables it, `false` *clears* it. Use a presence check so a
