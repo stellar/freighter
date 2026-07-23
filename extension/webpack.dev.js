@@ -31,16 +31,23 @@ if (missingVars.length > 0) {
   process.exit(1);
 }
 
+// The webpack dev server serves the popup here. The background guards that
+// allow the dev-server popup relay (see popupMessageListener) match sender
+// origins against this exact URL, so it is single-sourced from the port.
+const DEV_SERVER_PORT = 9000;
+const DEV_SERVER_ORIGIN = `http://localhost:${DEV_SERVER_PORT}/`;
+
 const devConfig = (env = {}) => ({
   mode: "development",
   devtool: "cheap-source-map",
   devServer: {
     static: BUILD_PATH,
-    port: 9000,
+    port: DEV_SERVER_PORT,
   },
   plugins: [
     new webpack.DefinePlugin({
       DEV_SERVER: true,
+      DEV_SERVER_URL: JSON.stringify(DEV_SERVER_ORIGIN),
       DEV_EXTENSION: true,
     }),
     new webpack.NormalModuleReplacementPlugin(

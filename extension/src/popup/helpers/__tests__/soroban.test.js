@@ -14,12 +14,41 @@ import {
   getAvailableBalance,
   getDecimalsForAsset,
   getContractIdFromTransactionData,
+  isAssetSac,
   CLASSIC_ASSET_DECIMALS,
 } from "../soroban";
+import { getNativeContractDetails } from "../searchAsset";
 import { TEST_PUBLIC_KEY } from "popup/__testHelpers__";
 import { TESTNET_NETWORK_DETAILS } from "@shared/constants/stellar";
 import * as ApiInternal from "@shared/api/internal";
 import * as SorobanHelpers from "@shared/api/helpers/soroban";
+
+describe("isAssetSac", () => {
+  it("returns true for the native XLM contract", () => {
+    // AddToken's SAC-only UI relies on this special-case for native.
+    const nativeContract = getNativeContractDetails(TESTNET_NETWORK_DETAILS);
+
+    const isSac = isAssetSac({
+      asset: {
+        code: nativeContract.code,
+        issuer: nativeContract.contract,
+        contract: nativeContract.contract,
+      },
+      networkDetails: TESTNET_NETWORK_DETAILS,
+    });
+
+    expect(isSac).toBe(true);
+  });
+
+  it("returns false when there is no contract", () => {
+    const isSac = isAssetSac({
+      asset: { code: "USDC", issuer: TEST_PUBLIC_KEY, contract: undefined },
+      networkDetails: TESTNET_NETWORK_DETAILS,
+    });
+
+    expect(isSac).toBe(false);
+  });
+});
 
 describe("getInvocationArgs", () => {
   it("can parse a create contract v1 xdr class", () => {

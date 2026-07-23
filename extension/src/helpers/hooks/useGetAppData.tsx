@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import * as Sentry from "@sentry/browser";
 
 import { initialState, reducer } from "../request";
-import { storeAccountMetricsData } from "../metrics";
+import { reconcileAnalyticsUserId, storeAccountMetricsData } from "../metrics";
 import {
   loadAccount,
   loadBackendSettings,
@@ -66,6 +66,10 @@ function useGetAppData() {
           settings: currentSettings,
         } as ResolvedData;
         dispatch({ type: "FETCH_DATA_SUCCESS", payload });
+        // Fire-and-forget: reconcile the analytics/Sentry user id against
+        // the background's auth-derived id now that app data has resolved
+        // for an already-unlocked session.
+        void reconcileAnalyticsUserId();
         return payload;
       }
       const account = await loadAccount();
@@ -106,6 +110,10 @@ function useGetAppData() {
         settings: { ...settings, ...backendSettings },
       } as ResolvedData;
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });
+      // Fire-and-forget: reconcile the analytics/Sentry user id against the
+      // background's auth-derived id now that app data has resolved
+      // post-unlock. Idempotent and never throws.
+      void reconcileAnalyticsUserId();
 
       return payload;
     } catch (error) {

@@ -29,6 +29,8 @@ import { removeTokenId, startHwSign } from "popup/ducks/transactionSubmission";
 import { NETWORKS } from "@shared/constants/stellar";
 import { useGetChangeTrust } from "../hooks/useChangeTrust";
 import { isAssetSac } from "popup/helpers/soroban";
+import { emitMetric } from "helpers/metrics";
+import { METRIC_NAMES } from "popup/constants/metricsNames";
 
 import "./styles.scss";
 import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
@@ -48,6 +50,16 @@ interface SubmitTransactionProps {
   icons: AssetIcons;
   goBack: () => void;
   onSuccess: () => void;
+  onClose: () => void;
+  // Fired once when the trustline transaction itself succeeds — before any
+  // button press. The external Add Token flow uses this to resolve the dApp
+  // request (and store the token) based on the actual transaction, not on the
+  // Done button. "Done"/"View transaction" then only close / open the explorer.
+  onTransactionSuccess?: () => void;
+  // Hide the "close this tab" hint shown during submit: it nudges users to
+  // close and leave the dApp's addToken promise hanging. The transaction itself
+  // still succeeds even if they close.
+  hideCloseTabHint?: boolean;
 }
 
 export const SubmitTransaction = ({
@@ -57,6 +69,9 @@ export const SubmitTransaction = ({
   fee,
   goBack,
   onSuccess,
+  onClose,
+  onTransactionSuccess,
+  hideCloseTabHint = false,
 }: SubmitTransactionProps) => {
   const { t } = useTranslation();
   const dispatch: AppDispatch = useDispatch();
@@ -73,61 +88,62 @@ export const SubmitTransaction = ({
   const { state: resetChangeTrustDataState, resetChangeTrustData } =
     useResetChangeTrustData();
 
-  useEffect(() => {
-    const getData = async () => {
-      const isSac = isAssetSac({
-        asset: {
-          code: asset.code,
-          issuer: asset.issuer,
-          contract: asset.contract,
-        },
+  const submitTransaction = async () => {
+    const isSac = isAssetSac({
+      asset: {
+        code: asset.code,
+        issuer: asset.issuer,
+        contract: asset.contract,
+      },
+      networkDetails,
+    });
+
+    // For SEP-41 tokens, just add/remove the token ID
+    // For SACs and classic assets, we need to submit a trustline transaction
+    if (asset.contract && !isSac) {
+      if (addTrustline) {
+        await dispatch(
+          addTokenId({
+            publicKey,
+            tokenId: asset.contract,
+            network: networkDetails.network as Networks,
+          }),
+        );
+      } else {
+        await dispatch(
+          removeTokenId({
+            contractId: asset.contract,
+            network: networkDetails.network as NETWORKS,
+          }),
+        );
+      }
+    } else {
+      // Classic asset or SAC - submit trustline transaction
+      const server = stellarSdkServer(
+        networkDetails.networkUrl,
+        networkDetails.networkPassphrase,
+      );
+      const xdr = await getManageAssetXDR({
+        publicKey,
+        assetCode: asset.code,
+        assetIssuer: asset.issuer,
+        addTrustline,
+        server,
+        recommendedFee: fee,
         networkDetails,
       });
 
-      // For SEP-41 tokens, just add/remove the token ID
-      // For SACs and classic assets, we need to submit a trustline transaction
-      if (asset.contract && !isSac) {
-        if (addTrustline) {
-          await dispatch(
-            addTokenId({
-              publicKey,
-              tokenId: asset.contract,
-              network: networkDetails.network as Networks,
-            }),
-          );
-        } else {
-          await dispatch(
-            removeTokenId({
-              contractId: asset.contract,
-              network: networkDetails.network as NETWORKS,
-            }),
-          );
-        }
+      if (isHardwareWallet) {
+        dispatch(startHwSign({ transactionXDR: xdr, shouldSubmit: true }));
       } else {
-        // Classic asset or SAC - submit trustline transaction
-        const server = stellarSdkServer(
-          networkDetails.networkUrl,
-          networkDetails.networkPassphrase,
-        );
-        const xdr = await getManageAssetXDR({
-          publicKey,
-          assetCode: asset.code,
-          assetIssuer: asset.issuer,
-          addTrustline,
-          server,
-          recommendedFee: fee,
-          networkDetails,
-        });
-
-        if (isHardwareWallet) {
-          dispatch(startHwSign({ transactionXDR: xdr, shouldSubmit: true }));
-        } else {
-          await fetchData({ publicKey, xdr, networkDetails });
-        }
+        await fetchData({ publicKey, xdr, networkDetails });
       }
-    };
+    }
+  };
+
+  useEffect(() => {
     if (!isVerifyAccountModalOpen) {
-      getData();
+      submitTransaction();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isVerifyAccountModalOpen]);
@@ -141,6 +157,38 @@ export const SubmitTransaction = ({
     state.state === RequestState.IDLE || state.state === RequestState.LOADING;
   const isSuccess = state.state === RequestState.SUCCESS;
   const isFail = state.state === RequestState.ERROR;
+
+  // A trustline (changeTrust) was submitted for classic assets and SACs — not
+  // for SEP-41 tokens (which take the addTokenId path above and submit no tx).
+  const isTrustlineSubmit =
+    !asset.contract ||
+    isAssetSac({
+      asset: {
+        code: asset.code,
+        issuer: asset.issuer,
+        contract: asset.contract,
+      },
+      networkDetails,
+    });
+
+  // Once, when the transaction succeeds: re-emit the add/remove-asset analytics
+  // the deleted useChangeTrustline used to fire, and notify the caller so the
+  // dApp request resolves off the actual transaction (not the Done button).
+  useEffect(() => {
+    if (!isSuccess) {
+      return;
+    }
+    if (isTrustlineSubmit) {
+      emitMetric(
+        addTrustline
+          ? METRIC_NAMES.manageAssetAddAsset
+          : METRIC_NAMES.manageAssetRemoveAsset,
+        { code: asset.code, issuer: asset.issuer },
+      );
+    }
+    onTransactionSuccess?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isSuccess]);
 
   const canonical = getCanonicalFromAsset(
     asset.code,
@@ -175,7 +223,7 @@ export const SubmitTransaction = ({
         <View.Content
           contentFooter={
             <div className="SubmitTransaction__Footer">
-              {isLoading && (
+              {isLoading && !hideCloseTabHint && (
                 <>
                   <div className="SubmitTransaction__Footer__Subtext">
                     {t(
@@ -213,6 +261,20 @@ export const SubmitTransaction = ({
                   </Button>
                 </>
               ) : null}
+              {isFail && (
+                <Button
+                  size="lg"
+                  isFullWidth
+                  isRounded
+                  variant="primary"
+                  onClick={async (e) => {
+                    e.preventDefault();
+                    await submitTransaction();
+                  }}
+                >
+                  {t("Retry")}
+                </Button>
+              )}
               {(isSuccess || isFail) && (
                 <div className="SubmitTransaction__Footer__Done">
                   <Button
@@ -229,10 +291,14 @@ export const SubmitTransaction = ({
                         isHardwareWallet,
                         isSuccess,
                       });
-                      onSuccess();
+                      if (isSuccess) {
+                        onSuccess();
+                      } else {
+                        onClose();
+                      }
                     }}
                   >
-                    {t("Done")}
+                    {isSuccess ? t("Done") : t("Cancel")}
                   </Button>
                 </div>
               )}

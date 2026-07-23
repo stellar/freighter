@@ -220,6 +220,9 @@ export interface HandleSignedHWPayloadMessage extends BaseMessage {
 export interface AddTokenMessage extends BaseMessage {
   type: SERVICE_TYPES.ADD_TOKEN;
   uuid: string;
+  // Set by the popup, which already knows whether this went through the SAC
+  // trustline review or the plain SEP-41 path.
+  isTrustlineBacked?: boolean;
 }
 
 export interface SignTransactionMessage extends BaseMessage {
@@ -496,6 +499,18 @@ export interface RejectSigningRequestMessage extends BaseMessage {
   uuid: string;
 }
 
+export interface FetchBackendV2Message {
+  activePublicKey: string | null;
+  type: SERVICE_TYPES.FETCH_BACKEND_V2;
+  method: string;
+  path: string;
+  body?: string;
+}
+
+export interface GetAnalyticsUserIdMessage extends BaseMessage {
+  type: SERVICE_TYPES.GET_ANALYTICS_USER_ID;
+}
+
 export type ServiceMessageRequest =
   | FundAccountMessage
   | CreateAccountMessage
@@ -570,4 +585,6 @@ export type ServiceMessageRequest =
   | MarkQueueActiveMessage
   | OpenSidebarMessage
   | RejectSigningRequestMessage
-  | UserActivityMessage;
+  | UserActivityMessage
+  | FetchBackendV2Message
+  | GetAnalyticsUserIdMessage;

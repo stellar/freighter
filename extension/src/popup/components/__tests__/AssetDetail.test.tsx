@@ -41,6 +41,20 @@ const mockHistoryData = {
   },
 } as any;
 
+// These call backend-v2 through the FETCH_BACKEND_V2 background message
+// (#2879), which has no listener in this test env — so unmocked they hang
+// (never resolve or reject) rather than fail fast. getAssetDomains (via
+// getLedgerKeyAccounts) gates AssetDetail's render: without it the asset-domain
+// fetch never settles and the view is stuck on <Loading />. getTokenPrices is
+// stubbed for the same reason (mirrors Send.test.tsx). Both resolve empty since
+// these tests seed prices in the redux cache and assert on balances.
+jest
+  .spyOn(ApiInternal, "getTokenPrices")
+  .mockImplementation(() => Promise.resolve({}));
+jest
+  .spyOn(ApiInternal, "getAssetDomains")
+  .mockImplementation(() => Promise.resolve({} as any));
+
 describe("AssetDetail", () => {
   it("renders asset detail", async () => {
     jest

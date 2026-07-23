@@ -81,9 +81,12 @@ export const signEntry = createAsyncThunk(
 
 export const addToken = createAsyncThunk(
   "addToken",
-  ({ uuid }: { uuid: string }, { getState }) => {
+  (
+    { uuid, isTrustlineBacked }: { uuid: string; isTrustlineBacked?: boolean },
+    { getState },
+  ) => {
     const activePublicKey = publicKeySelector(getState() as AppState);
-    return internalAddToken({ activePublicKey, uuid });
+    return internalAddToken({ activePublicKey, uuid, isTrustlineBacked });
   },
 );
 

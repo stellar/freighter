@@ -7,6 +7,7 @@ import { loadAccount } from "@shared/api/internal";
 import { SERVICE_TYPES } from "@shared/constants/services";
 import { ROUTES } from "popup/constants/routes";
 import { lockAccount, saveAccount } from "popup/ducks/accountServices";
+import { resetAnalyticsUserIdReconciliation } from "helpers/metrics";
 
 /**
  * Listens for the background's `SESSION_LOCKED` broadcast (fired when
@@ -81,6 +82,11 @@ export const SessionLockListener = () => {
         // `USER_ACTIVITY` pings (which are no-ops once the background
         // is locked, but still wasted IPC and a misleading signal).
         dispatch(lockAccount());
+        // Clear the once-per-session analytics-user-id reconciliation guard
+        // so the next unlock (possibly of a different wallet) re-derives the
+        // auth id once. Both auto-lock and manual sign-out reach here via the
+        // background's SESSION_LOCKED broadcast.
+        resetAnalyticsUserIdReconciliation();
         // Skip the navigate only when we're already on the unlock
         // screen. That avoids clobbering an existing `state.from` set
         // by an earlier reroute (e.g. a sign-transaction flow that

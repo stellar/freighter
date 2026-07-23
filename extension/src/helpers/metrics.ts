@@ -1,4 +1,5 @@
 import * as amplitude from "@amplitude/analytics-browser";
+import * as Sentry from "@sentry/browser";
 import { Action, Middleware } from "redux";
 import { PayloadAction } from "@reduxjs/toolkit";
 import { Location } from "react-router-dom";
@@ -19,6 +20,7 @@ import {
 import { publicKeySelector } from "popup/ducks/accountServices";
 import { Account, AccountType } from "@shared/api/types";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
+import { getAnalyticsUserId } from "@shared/api/internal";
 
 // Console log message constants
 const LOG_MESSAGES = {
@@ -120,6 +122,29 @@ const generateRandomUserId = (): string =>
 let sessionUserId: string | null = null;
 
 /**
+ * Once-per-unlocked-session guard for `reconcileAnalyticsUserId`.
+ * `fetchData` (useGetAppData) runs on many screens and re-runs on every
+ * navigation/refresh; each reconcile hits the background's
+ * `getAnalyticsUserId`, which decrypts the mnemonic and runs BIP39 seed
+ * derivation (see callBackendV2's per-request PBKDF2 note). We only need to
+ * reconcile once per unlocked session, so short-circuit after the first
+ * successful resolve and reset the flag on lock (see
+ * `resetAnalyticsUserIdReconciliation`, wired into SessionLockListener) so a
+ * later unlock — possibly of a different wallet — reconciles again.
+ */
+let hasReconciledUserId = false;
+
+/**
+ * Clears the once-per-session reconciliation guard so the next
+ * `reconcileAnalyticsUserId` call re-derives the auth id. Called on every
+ * lock transition (auto-lock and manual sign-out both broadcast
+ * `SESSION_LOCKED`).
+ */
+export const resetAnalyticsUserIdReconciliation = (): void => {
+  hasReconciledUserId = false;
+};
+
+/**
  * Gets or creates a persistent analytics user ID.
  * Mirrors mobile's `getUserId` from `src/services/analytics/user.ts`:
  * - Reads from localStorage under key `"metrics_user_id"`
@@ -145,6 +170,55 @@ export const getUserId = (): string => {
     if (sessionUserId) return sessionUserId;
     sessionUserId = generateRandomUserId();
     return sessionUserId;
+  }
+};
+
+/**
+ * Resolves the seed-derived auth user id from the background and, when it
+ * differs from the persisted id, adopts it as the canonical analytics/Sentry
+ * user id (overwriting the random bootstrap id — this migrates existing
+ * users onto a stable, cross-platform-consistent id). Idempotent; no-op
+ * when locked (background returns `null`) or already reconciled. Never
+ * throws into callers.
+ */
+export const reconcileAnalyticsUserId = async (): Promise<void> => {
+  // Already reconciled this unlocked session — skip the background round-trip
+  // (mnemonic decrypt + BIP39 derivation) entirely. The guard is reset on
+  // lock so the next unlocked session reconciles once more.
+  if (hasReconciledUserId) return;
+
+  // Whole body wrapped in one try/catch — a storage-quota throw from
+  // setItem, or anything unexpected from amplitude/Sentry, must never
+  // become an unhandled rejection for callers. Catch → return.
+  try {
+    const res = await getAnalyticsUserId();
+    const authUserId = res.analyticsUserId;
+
+    // No id means the wallet is locked/unavailable; leave the guard unset so
+    // we retry once the session is actually unlocked.
+    if (!authUserId) return;
+    // A real id resolved — this session is reconciled. Mark it before the
+    // already-matching early return so routine reloads short-circuit above.
+    hasReconciledUserId = true;
+    if (localStorage.getItem(METRICS_USER_ID) === authUserId) return;
+
+    localStorage.setItem(METRICS_USER_ID, authUserId);
+    sessionUserId = authUserId;
+    // amplitude.setUserId is local-only (setOptOut governs upload), so this
+    // runs regardless of the data-sharing consent setting.
+    if (hasInitialized && AMPLITUDE_KEY) {
+      amplitude.setUserId(authUserId);
+    }
+
+    // Consent-gate the Sentry write: when data-sharing is off, ErrorTracking
+    // owns the opted-out identity (setUser(null) + close()) — don't
+    // re-identify the user behind its back.
+    const isDataSharingAllowed = settingsDataSharingSelector(store.getState());
+    if (isDataSharingAllowed) {
+      Sentry.setUser({ id: authUserId });
+    }
+  } catch {
+    return; // never throw into callers
   }
 };
 
