@@ -1,0 +1,59 @@
+# CLAUDE.md — Freighter extension
+
+Guidance for Claude (and human reviewers) working in this repo. `/code-review`
+reads this file and audits changes against it, so rules must be **specific and
+citable** — a reviewer should be able to point at a line and say "this violates
+rule X." Do **not** add rules a linter/typechecker/CI already enforces, or vague
+aspirations ("write clean code"); those get filtered out and only add noise.
+
+## Standing invariant: secret material never leaks
+
+The wallet mnemonic, seed, derived private/auth keypairs, and passwords must
+never be:
+
+- written to disk or unencrypted storage — they live only in the encrypted
+  session store;
+- logged, sent to Sentry/analytics/breadcrumbs, or included in error messages or
+  stack traces;
+- returned across the background→popup boundary — key derivation happens in the
+  background service worker; only `{ status, body }` (never the mnemonic/key)
+  crosses back to the popup;
+- placed in a network request or a JWT payload beyond the pubkey `sub` claim;
+- left resident in memory past lock / logout / expiry.
+
+## freighter-backend-v2 access
+
+- All backend-v2 calls go through the background chokepoint. Popup callers use
+  `fetchBackendV2()` (which sends the `FETCH_BACKEND_V2` message to
+  `callBackendV2` in the background); never construct a `fetch`/`URL` to
+  `INDEXER_V2_URL` at a call site, and don't re-declare the `FETCH_BACKEND_V2`
+  message shape — add a new v2 caller via `fetchBackendV2()`.
+- An endpoint that must never be auth-gated (e.g. rpc-health) passes
+  `skipAuth: true` so it does not derive the auth keypair.
+
+## Caching and side-effect ordering (past regressions)
+
+- Response caching (`cachedFetch` and similar): validate `res.ok` before caching
+  — never cache a non-2xx/error body (it poisons the cache for the whole TTL) —
+  and ensure a cache miss / empty stored value triggers a real fetch (don't let a
+  `"{}"` default satisfy a staleness gate).
+- Persist side effects only after validating the request. Never write state
+  (e.g. the allow-list) on a path that then returns denied/error.
+
+## Dependencies
+
+- Pin `@stellar/*` packages (`stellar-sdk`, `stellar-base`, `js-xdr`, etc.) to
+  exact versions — no caret ranges.
+
+## Domain invariants — TODO(team)
+
+The highest-value rules are the domain truths the code can't state and a reviewer
+can't infer. Add the ones that have actually bitten us, each as a one-line,
+citable assertion ("never X", "always Y when Z"). Seed list to replace/expand:
+
+- **Token/asset decimals:** SEP-41 / custom tokens have variable `decimals` —
+  never format amounts with a hardcoded `CLASSIC_ASSET_DECIMALS` (7); look up the
+  token's real decimals. _(from #2647)_
+- **Network / passphrase handling:** `TODO(team)`
+- **Muxed / federated address handling:** `TODO(team)`
+- **Signing preconditions:** `TODO(team)`
