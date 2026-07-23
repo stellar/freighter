@@ -45,11 +45,11 @@ never be:
 - Pin `@stellar/*` packages (`stellar-sdk`, `stellar-base`, `js-xdr`, etc.) to
   exact versions — no caret ranges.
 
-## Domain invariants — TODO(team)
+## Domain invariants
 
-The highest-value rules are the domain truths the code can't state and a reviewer
-can't infer. Add the ones that have actually bitten us, each as a one-line,
-citable assertion ("never X", "always Y when Z"). Seed list to replace/expand:
+The domain truths the code can't state and a reviewer can't infer. Keep this list
+growing as new classes bite us — each a one-line, citable assertion ("never X",
+"always Y when Z"):
 
 - **Token/asset decimals:** SEP-41 / custom tokens have variable `decimals` —
   never format amounts with a hardcoded `CLASSIC_ASSET_DECIMALS` (7); look up the
