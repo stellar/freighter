@@ -54,7 +54,16 @@ citable assertion ("never X", "always Y when Z"). Seed list to replace/expand:
 - **Token/asset decimals:** SEP-41 / custom tokens have variable `decimals` —
   never format amounts with a hardcoded `CLASSIC_ASSET_DECIMALS` (7); look up the
   token's real decimals. _(from #2647)_
-- **Network / passphrase handling:** `TODO(team)`
+- **Network handling — support all networks, not just Mainnet/Testnet.** Every
+  network-dependent path must handle Mainnet (`NETWORKS.PUBLIC`), Testnet,
+  Futurenet, **and** custom networks (detected via `isCustomNetwork(networkDetails)`).
+  A `switch`/map keyed on `NETWORKS` must have a default/custom branch — never
+  assume only PUBLIC/TESTNET. If a feature genuinely can't support a network
+  (e.g. an endpoint that exists only for pubnet/testnet), handle it explicitly
+  with a graceful fallback (skip/no-op or a clear message), not an unhandled case
+  or a guaranteed error. Derive the network from `networkDetails`; for
+  passphrase-keyed logic, account for custom networks that reuse a known
+  passphrase.
 - **Muxed / federated address handling:** `TODO(team)`
 - **Signing preconditions — always attempt a Blockaid scan before signing.**
   Every flow that signs or submits a transaction (dApp sign requests, send,
