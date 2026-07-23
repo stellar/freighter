@@ -56,4 +56,11 @@ citable assertion ("never X", "always Y when Z"). Seed list to replace/expand:
   token's real decimals. _(from #2647)_
 - **Network / passphrase handling:** `TODO(team)`
 - **Muxed / federated address handling:** `TODO(team)`
-- **Signing preconditions:** `TODO(team)`
+- **Signing preconditions — always attempt a Blockaid scan before signing.**
+  Every flow that signs or submits a transaction (dApp sign requests, send,
+  swap, send-collectible) must call `scanTx` (via the `useScanTx` hook) and
+  surface the resulting `scanResult` before the user signs. If the scan can't
+  complete, show the explicit "unable to scan" warning — never silently skip the
+  scan or present the transaction as if it were safe. Do not add a signing or
+  submit entry point that bypasses the scan. (Add-token/asset flows follow the
+  parallel rule with `scanAsset`.)
