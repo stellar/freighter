@@ -124,6 +124,79 @@ Do not modify these without fully understanding the security implications:
 - `@shared/constants/` — network endpoints, key derivation parameters
 - Any code touching `browser.storage` or key material
 
+## Invariants — must always hold
+
+Hard, review-checkable rules. Written to be citable against a specific line —
+human and automated reviewers (including `/code-review`, which reads this via the
+`CLAUDE.md` symlink) audit changes against them. Keep them specific; don't add
+anything a linter/typechecker/CI already enforces.
+
+### Secret material never leaks
+
+The wallet mnemonic, seed, derived private/auth keypairs, and passwords must
+never be:
+
+- written to disk or unencrypted storage — they live only in the encrypted
+  session store;
+- logged, sent to Sentry/analytics/breadcrumbs, or included in error messages or
+  stack traces;
+- returned across the background→popup boundary — key derivation happens in the
+  background service worker; only `{ status, body }` (never the mnemonic/key)
+  crosses back to the popup;
+- placed in a network request or a JWT payload beyond the pubkey `sub` claim;
+- left resident in memory past lock / logout / expiry.
+
+### freighter-backend-v2 access
+
+- All backend-v2 calls go through the background chokepoint. Popup callers use
+  `fetchBackendV2()` (which sends the `FETCH_BACKEND_V2` message to
+  `callBackendV2` in the background); never construct a `fetch`/`URL` to
+  `INDEXER_V2_URL` at a call site, and don't re-declare the `FETCH_BACKEND_V2`
+  message shape — add a new v2 caller via `fetchBackendV2()`.
+- An endpoint that must never be auth-gated (e.g. rpc-health) passes
+  `skipAuth: true` so it does not derive the auth keypair.
+
+### Caching and side-effect ordering
+
+- Response caching (`cachedFetch` and similar): validate `res.ok` before caching
+  — never cache a non-2xx/error body (it poisons the cache for the whole TTL) —
+  and ensure a cache miss / empty stored value triggers a real fetch (don't let a
+  `"{}"` default satisfy a staleness gate).
+- Persist side effects only after validating the request. Never write state
+  (e.g. the allow-list) on a path that then returns denied/error.
+
+### Dependencies
+
+- Pin `@stellar/*` packages (`stellar-sdk`, `stellar-base`, `js-xdr`, etc.) to
+  exact versions — no caret ranges.
+
+### Domain invariants
+
+The domain truths the code can't state and a reviewer can't infer. Keep this list
+growing as new classes bite us — each a one-line, citable assertion:
+
+- **Token/asset decimals:** SEP-41 / custom tokens have variable `decimals` —
+  never format amounts with a hardcoded `CLASSIC_ASSET_DECIMALS` (7); look up the
+  token's real decimals. _(from #2647)_
+- **Network handling:** every network-dependent path must handle Mainnet
+  (`NETWORKS.PUBLIC`), Testnet, Futurenet, **and** custom networks
+  (`isCustomNetwork(networkDetails)`); a `switch`/map keyed on `NETWORKS` needs a
+  default/custom branch. If a feature can't support a network, handle it with an
+  explicit graceful fallback, not an unhandled case or guaranteed error.
+- **Signing — always attempt a Blockaid scan before signing.** Every flow that
+  signs or submits a transaction (dApp sign, send, swap, send-collectible) must
+  call `scanTx` (via `useScanTx`) and surface the `scanResult` before the user
+  signs; on unable-to-scan, show the explicit warning rather than proceeding as
+  if safe. Don't add a signing/submit entry point that bypasses the scan.
+  (Add-token/asset flows follow the parallel rule with `scanAsset`.)
+- **Address handling:** any code that accepts, parses, displays, resolves, or
+  routes a Stellar address must handle all four types — classic **G** accounts,
+  contract **C** addresses (`isContractId`), muxed **M** accounts
+  (`isMuxedAccount`), and **federated** addresses (`isFederationAddress` /
+  `isValidFederatedDomain`). Resolve federated before use; preserve/extract the
+  muxed memo id (don't strip or mislabel it); route C addresses appropriately
+  where a fundable account is expected; validate with `isValidStellarAddress`.
+
 ## Known Complexity / Gotchas
 
 - **Message passing** uses typed enums. Follow existing patterns — do not add
