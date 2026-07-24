@@ -292,7 +292,10 @@ export const scanAsset = async (
     if (!(err instanceof Error && err.name === "AbortError")) {
       emitMetric(METRIC_NAMES.blockaidScanFailed, {
         scan_target: "asset",
-        reason_code: err instanceof Error ? err.message : "unknown",
+        reason_code:
+          err instanceof Error
+            ? (scrubStrKeys(err.message) ?? err.message)
+            : "unknown",
       });
     }
   }
@@ -910,7 +913,10 @@ export const scanAssetBulk = async (
     if (!(err instanceof Error && err.name === "AbortError")) {
       emitMetric(METRIC_NAMES.blockaidScanFailed, {
         scan_target: "asset_bulk",
-        reason_code: err instanceof Error ? err.message : "unknown",
+        reason_code:
+          err instanceof Error
+            ? (scrubStrKeys(err.message) ?? err.message)
+            : "unknown",
       });
     }
   }
