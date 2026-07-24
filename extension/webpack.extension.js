@@ -68,6 +68,7 @@ const prodConfig = (
     plugins: [
       new webpack.DefinePlugin({
         DEV_SERVER: false,
+        DEV_SERVER_URL: JSON.stringify(""),
         DEV_EXTENSION: !env.PRODUCTION,
       }),
       ...(env.TRANSLATIONS

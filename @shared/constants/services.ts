@@ -76,6 +76,7 @@ export enum SERVICE_TYPES {
   SESSION_LOCKED = "SESSION_LOCKED",
   SESSION_UNLOCKED = "SESSION_UNLOCKED",
   FETCH_BACKEND_V2 = "FETCH_BACKEND_V2",
+  GET_ANALYTICS_USER_ID = "GET_ANALYTICS_USER_ID",
 }
 
 // SIDEBAR_NAVIGATE is a plain string constant (not in an enum) because it is
@@ -104,6 +105,13 @@ export const EXTERNAL_MSG_RESPONSE = "FREIGHTER_EXTERNAL_MSG_RESPONSE";
 declare const DEV_SERVER: string;
 const _DEV_SERVER = DEV_SERVER;
 export { _DEV_SERVER as DEV_SERVER };
+
+// Origin the webpack dev server serves the popup from (empty in production
+// builds). Used by the background to scope the dev-server popup-relay
+// carve-out to that exact sender origin instead of every dev-mode tab.
+declare const DEV_SERVER_URL: string;
+const _DEV_SERVER_URL = DEV_SERVER_URL;
+export { _DEV_SERVER_URL as DEV_SERVER_URL };
 
 declare const DEV_EXTENSION: string;
 const _DEV_EXTENSION = DEV_EXTENSION;

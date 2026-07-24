@@ -19,8 +19,13 @@ import {
   MarkQueueActiveMessage,
   OpenSidebarMessage,
 } from "@shared/api/types/message-request";
-import { SERVICE_TYPES, DEV_SERVER } from "@shared/constants/services";
+import {
+  SERVICE_TYPES,
+  DEV_SERVER,
+  DEV_SERVER_URL,
+} from "@shared/constants/services";
 import { DataStorageAccess } from "background/helpers/dataStorageAccess";
+import { getAnalyticsUserId } from "background/helpers/analyticsUserId";
 import { KeyManager } from "@stellar/typescript-wallet-sdk-km";
 import { SessionTimer } from "background/helpers/session";
 import { publicKeySelector } from "background/ducks/session";
@@ -167,6 +172,20 @@ export const popupMessageListener = (
     sender.url.startsWith(extensionOrigin);
   const isFromExtensionPage =
     isFromOwnExtension && (!sender.tab || isExtensionUrl);
+
+  // Under the webpack dev server the popup relays through the content script,
+  // so the message arrives with a dev-server tab sender and
+  // isFromExtensionPage is false. Scope that carve-out to the dev-server
+  // origin (DEV_SERVER_URL, injected at build time and empty in production)
+  // rather than trusting every dev-mode tab: with DEV_EXTENSION on, the
+  // content script forwards arbitrary internal service types from any visited
+  // page, so a bare `!DEV_SERVER` gate would let any page reach dev-only
+  // handlers while the wallet is unlocked.
+  const isFromDevServer =
+    !!DEV_SERVER &&
+    !!DEV_SERVER_URL &&
+    typeof sender.url === "string" &&
+    sender.url.startsWith(DEV_SERVER_URL);
 
   if (
     request.activePublicKey &&
@@ -656,12 +675,14 @@ export const popupMessageListener = (
     }
 
     case SERVICE_TYPES.FETCH_BACKEND_V2: {
-      // DEV_SERVER carve-out: under the webpack dev server the popup relays
-      // through the content script, so the message arrives with a dev-server
-      // tab sender and isFromExtensionPage is false. Without this, every v2
-      // call (Discover, prices, collectibles, ledger-key import) breaks in
-      // local dev. The gate stays intact in production, where DEV_SERVER=false.
-      if (!isFromExtensionPage && !DEV_SERVER) return { error: "Unauthorized" };
+      // Dev-server carve-out (see isFromDevServer above): the popup relays
+      // through the content script under the webpack dev server, so the
+      // message arrives with a dev-server tab sender and isFromExtensionPage
+      // is false. Without this, every v2 call (Discover, prices, collectibles,
+      // ledger-key import) breaks in local dev. The gate stays intact in
+      // production, where DEV_SERVER=false.
+      if (!isFromExtensionPage && !isFromDevServer)
+        return { error: "Unauthorized" };
       return callBackendV2({
         method: request.method,
         path: request.path,
@@ -669,6 +690,22 @@ export const popupMessageListener = (
         sessionStore,
         localStore,
       });
+    }
+
+    case SERVICE_TYPES.GET_ANALYTICS_USER_ID: {
+      // Mirrors the FETCH_BACKEND_V2 guard immediately above: this handler
+      // also derives from the auth keypair, so a dev-mode web page must not
+      // be able to reach it either. Same origin-scoped dev-server carve-out
+      // for the webpack dev-server popup relay.
+      if (!isFromExtensionPage && !isFromDevServer)
+        return { error: "Unauthorized" };
+      return (async () => {
+        const analyticsUserId = await getAnalyticsUserId(
+          sessionStore,
+          localStore,
+        );
+        return { analyticsUserId };
+      })();
     }
 
     default:

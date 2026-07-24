@@ -507,6 +507,10 @@ export interface FetchBackendV2Message {
   body?: string;
 }
 
+export interface GetAnalyticsUserIdMessage extends BaseMessage {
+  type: SERVICE_TYPES.GET_ANALYTICS_USER_ID;
+}
+
 export type ServiceMessageRequest =
   | FundAccountMessage
   | CreateAccountMessage
@@ -582,4 +586,5 @@ export type ServiceMessageRequest =
   | OpenSidebarMessage
   | RejectSigningRequestMessage
   | UserActivityMessage
-  | FetchBackendV2Message;
+  | FetchBackendV2Message
+  | GetAnalyticsUserIdMessage;
