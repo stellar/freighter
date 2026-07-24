@@ -45,7 +45,7 @@ function useGetOnrampToken({ asset }: UseGetOnrampTokenParams) {
 
       setTokenError("");
       const coinbaseUrl = getCoinbaseUrl({ token, asset });
-      emitMetric(METRIC_NAMES.coinbaseOnrampOpened, { asset });
+      emitMetric(METRIC_NAMES.onrampCoinbaseOpened, { asset });
 
       openTab(coinbaseUrl);
     }

@@ -141,7 +141,7 @@ const RenameWallet = ({
       await dispatch(
         updateAccountName({ accountName: newAccountName, publicKey }),
       );
-      emitMetric(METRIC_NAMES.viewPublicKeyAccountRenamed);
+      emitMetric(METRIC_NAMES.accountRenamed, { source: "wallets" });
       onSubmit();
       onClose();
     }

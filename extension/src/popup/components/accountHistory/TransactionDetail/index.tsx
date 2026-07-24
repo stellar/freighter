@@ -397,7 +397,9 @@ export const TransactionDetail = ({
           isFullWidth
           isRounded
           onClick={() => {
-            emitMetric(METRIC_NAMES.historyOpenItem);
+            emitMetric(METRIC_NAMES.historyItemOpened, {
+              source: "transaction_detail",
+            });
             openTab(`${stellarExpertUrl}/op/${activeOperation.id}`);
           }}
           icon={<Icon.LinkExternal01 />}

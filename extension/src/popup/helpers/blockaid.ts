@@ -12,6 +12,7 @@ import {
 } from "@shared/api/types";
 import { isMainnet } from "helpers/stellar";
 import { emitMetric } from "helpers/metrics";
+import { scrubStrKeys } from "helpers/stellarStrKey";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import {
   settingsNetworkDetailsSelector,
@@ -55,6 +56,27 @@ export const ATTACK_TO_DISPLAY = {
   other: "A malicious behavior was detected by the Blockaid network.",
 };
 
+/**
+ * Map a raw Blockaid `result_type` to the shared cross-platform `result`
+ * vocabulary (`safe | warn | block | unknown`) so blockaid.scan_completed.result
+ * aligns with mobile's SecurityLevel mapping. `Spam` maps to `warn`.
+ */
+export const toBlockaidResultLevel = (
+  raw?: string,
+): "safe" | "warn" | "block" | "unknown" => {
+  switch (raw) {
+    case "Benign":
+      return "safe";
+    case "Warning":
+    case "Spam":
+      return "warn";
+    case "Malicious":
+      return "block";
+    default:
+      return "unknown";
+  }
+};
+
 export const useScanSite = () => {
   const [data, setData] = useState({} as BlockAidScanSiteResult);
   const [error, setError] = useState(null as string | null);
@@ -74,12 +96,37 @@ export const useScanSite = () => {
       }>(`${INDEXER_URL}/scan-dapp?url=${encodeURIComponent(url)}`);
 
       setData(response.data);
-      emitMetric(METRIC_NAMES.blockaidDomainScan);
+      // Mirrors mobile's assessSiteSecurity: no data => unknown; status "miss"
+      // (domain not in Blockaid's DB) => warn; hit + is_malicious => block;
+      // hit + clean => safe. Extension previously only emitted block/safe.
+      emitMetric(METRIC_NAMES.blockaidScanCompleted, {
+        scan_target: "domain",
+        result: !response.data
+          ? "unknown"
+          : response.data.status === "miss"
+            ? "warn"
+            : response.data.is_malicious
+              ? "block"
+              : "safe",
+      });
       setLoading(false);
       return response.data;
     } catch (err) {
       setError("Failed to scan site");
       captureFetchError(err);
+      // Mirror mobile's domain-scan failure emit (scanSite catch →
+      // trackScanFailed("domain", …)) so blockaid.scan_failed has
+      // cross-platform coverage for scan_target="domain". Skip aborts (expected
+      // on cancel), matching scanAsset's guard.
+      if (!(err instanceof Error && err.name === "AbortError")) {
+        emitMetric(METRIC_NAMES.blockaidScanFailed, {
+          scan_target: "domain",
+          reason_code:
+            err instanceof Error
+              ? (scrubStrKeys(err.message) ?? err.message)
+              : "unknown",
+        });
+      }
       setLoading(false);
       return null;
     }
@@ -129,18 +176,39 @@ export const useScanTx = () => {
 
       // If there's an error or no data, treat as unable to scan
       if (response.error || !response.data) {
-        emitMetric(METRIC_NAMES.blockaidTxScanFailed);
+        emitMetric(METRIC_NAMES.blockaidScanFailed, {
+          scan_target: "transaction",
+          reason_code: scrubStrKeys(response.error) ?? "no_data",
+        });
         setLoading(false);
         return null;
       }
 
       setData(response.data);
-      emitMetric(METRIC_NAMES.blockaidTxScan);
+      emitMetric(METRIC_NAMES.blockaidScanCompleted, {
+        scan_target: "transaction",
+        result:
+          response.data.validation && "result_type" in response.data.validation
+            ? toBlockaidResultLevel(response.data.validation.result_type)
+            : "unknown",
+      });
       setLoading(false);
       return response.data;
     } catch (err) {
       setError("Failed to scan transaction");
       captureFetchError(err);
+      // A thrown scan failure (backend 5xx / network) must report too, not just
+      // the response.error branch — mirrors mobile's trackScanFailed coverage.
+      // Skip aborts (expected on cancel), matching scanAsset's guard.
+      if (!(err instanceof Error && err.name === "AbortError")) {
+        emitMetric(METRIC_NAMES.blockaidScanFailed, {
+          scan_target: "transaction",
+          reason_code:
+            err instanceof Error
+              ? (scrubStrKeys(err.message) ?? err.message)
+              : "unknown",
+        });
+      }
       setLoading(false);
     }
     return null;
@@ -200,11 +268,19 @@ export const scanAsset = async (
       Sentry.captureException(
         new Error(response.error || "Failed to scan asset"),
       );
-      emitMetric(METRIC_NAMES.blockaidAssetScanFailed);
+      emitMetric(METRIC_NAMES.blockaidScanFailed, {
+        scan_target: "asset",
+        reason_code: scrubStrKeys(response.error) ?? "unknown",
+      });
       return null;
     }
 
-    emitMetric(METRIC_NAMES.blockaidAssetScan);
+    emitMetric(METRIC_NAMES.blockaidScanCompleted, {
+      scan_target: "asset",
+      result: toBlockaidResultLevel(response.data?.result_type),
+      // Callers pass a `CODE-ISSUER` address; asset codes never contain "-".
+      token_code: address.split("-")[0],
+    });
     if (!response.data) {
       return null;
     }
@@ -212,6 +288,16 @@ export const scanAsset = async (
   } catch (err) {
     console.error("Failed to scan asset");
     captureFetchError(err);
+    // Report thrown failures too (skip aborts, which are expected on cancel).
+    if (!(err instanceof Error && err.name === "AbortError")) {
+      emitMetric(METRIC_NAMES.blockaidScanFailed, {
+        scan_target: "asset",
+        reason_code:
+          err instanceof Error
+            ? (scrubStrKeys(err.message) ?? err.message)
+            : "unknown",
+      });
+    }
   }
   return null;
 };
@@ -800,7 +886,23 @@ export const scanAssetBulk = async (
       );
     }
 
-    emitMetric(METRIC_NAMES.blockaidAssetScan);
+    // Aggregate the batch to a worst-case verdict (block > warn > safe),
+    // matching mobile's aggregateBulkResult, so asset_bulk carries `result`.
+    const bulkLevels = Object.values(resJson.data?.results ?? {}).map((r) =>
+      toBlockaidResultLevel(r?.result_type),
+    );
+    const bulkResult = bulkLevels.includes("block")
+      ? "block"
+      : bulkLevels.includes("warn")
+        ? "warn"
+        : bulkLevels.includes("safe")
+          ? "safe"
+          : "unknown";
+    emitMetric(METRIC_NAMES.blockaidScanCompleted, {
+      scan_target: "asset_bulk",
+      result: bulkResult,
+      address_count: addressList.length,
+    });
     if (!resJson.data) {
       return null;
     }
@@ -808,6 +910,15 @@ export const scanAssetBulk = async (
   } catch (err) {
     console.error("Failed to bulk scan asset");
     captureFetchError(err);
+    if (!(err instanceof Error && err.name === "AbortError")) {
+      emitMetric(METRIC_NAMES.blockaidScanFailed, {
+        scan_target: "asset_bulk",
+        reason_code:
+          err instanceof Error
+            ? (scrubStrKeys(err.message) ?? err.message)
+            : "unknown",
+      });
+    }
   }
   return null;
 };
@@ -840,7 +951,7 @@ export const reportAssetWarning = async ({
       );
     }
 
-    emitMetric(METRIC_NAMES.blockaidAssetScan);
+    emitMetric(METRIC_NAMES.blockaidWarningReported, { scan_target: "asset" });
     if (!res.data) {
       return {} as ReportAssetWarningResponse;
     }
@@ -882,7 +993,9 @@ export const reportTransactionWarning = async ({
       );
     }
 
-    emitMetric(METRIC_NAMES.blockaidAssetScan);
+    emitMetric(METRIC_NAMES.blockaidWarningReported, {
+      scan_target: "transaction",
+    });
     if (!res.data) {
       return {} as ReportTransactionWarningResponse;
     }

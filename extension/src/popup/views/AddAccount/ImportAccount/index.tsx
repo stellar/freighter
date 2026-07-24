@@ -17,6 +17,7 @@ import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { AppDispatch } from "popup/App";
 import { navigateTo } from "popup/helpers/navigate";
 import { emitMetric } from "helpers/metrics";
+import { scrubStrKeys } from "helpers/stellarStrKey";
 import { FormRows } from "popup/basics/Forms";
 import { importAccount, authErrorSelector } from "popup/ducks/accountServices";
 
@@ -55,13 +56,16 @@ export const ImportAccount = () => {
     const res = await dispatch(importAccount({ password, privateKey }));
 
     if (importAccount.fulfilled.match(res)) {
-      emitMetric(METRIC_NAMES.accountScreenImportAccount, {
-        number_of_accounts: res.payload.allAccounts.length,
+      // account.imported carries import_method (this view imports a Stellar
+      // secret key). Mnemonic restore is account_recovery.* instead.
+      emitMetric(METRIC_NAMES.accountImported, {
+        import_method: "secret_key",
       });
       navigateTo(ROUTES.account, navigate);
     } else {
-      emitMetric(METRIC_NAMES.accountScreenImportAccountFail, {
-        error_type: res.payload?.errorMessage || "",
+      emitMetric(METRIC_NAMES.accountImportFailed, {
+        import_method: "secret_key",
+        reason_code: scrubStrKeys(res.payload?.errorMessage) || "",
       });
     }
   };

@@ -100,7 +100,7 @@ export const GrantAccess = () => {
   const { publicKey, networkDetails } = state.data;
 
   const rejectAndClose = () => {
-    dispatch(rejectAccess({ uuid }));
+    dispatch(rejectAccess({ uuid, url }));
     window.close();
   };
 

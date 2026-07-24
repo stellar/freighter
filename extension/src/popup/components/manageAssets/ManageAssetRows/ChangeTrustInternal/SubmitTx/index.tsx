@@ -31,6 +31,9 @@ import { useGetChangeTrust } from "../hooks/useChangeTrust";
 import { isAssetSac } from "popup/helpers/soroban";
 import { emitMetric } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
+import { balancesSelector } from "popup/ducks/cache";
+import { RESULT_CODES, getResultCodes } from "popup/helpers/parseTransaction";
+import { ErrorMessage } from "@shared/api/types";
 
 import "./styles.scss";
 import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
@@ -85,6 +88,7 @@ export const SubmitTransaction = ({
   const isHardwareWallet = !!walletType;
 
   const { state, fetchData } = useGetChangeTrust();
+  const balanceData = useSelector(balancesSelector);
   const { state: resetChangeTrustDataState, resetChangeTrustData } =
     useResetChangeTrustData();
 
@@ -180,15 +184,59 @@ export const SubmitTransaction = ({
     }
     if (isTrustlineSubmit) {
       emitMetric(
-        addTrustline
-          ? METRIC_NAMES.manageAssetAddAsset
-          : METRIC_NAMES.manageAssetRemoveAsset,
-        { code: asset.code, issuer: asset.issuer },
+        addTrustline ? METRIC_NAMES.assetAdded : METRIC_NAMES.assetRemoved,
+        { asset_code: asset.code, asset_issuer: asset.issuer },
       );
     }
     onTransactionSuccess?.();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSuccess]);
+
+  // Once, when the transaction fails: emit asset.operation_failed (+ the
+  // granular trustline_remove.failed for removals). `operation` comes straight
+  // from `addTrustline`, so add-vs-remove is never mislabeled. Mirrors mobile.
+  useEffect(() => {
+    if (!isFail || !isTrustlineSubmit) {
+      return;
+    }
+    const opCodes: string[] =
+      getResultCodes(state.error as ErrorMessage).operations ?? [];
+    emitMetric(METRIC_NAMES.assetOperationFailed, {
+      operation: addTrustline ? "add" : "remove",
+      reason_code: opCodes[0] || "unknown",
+      asset_code: asset.code,
+      asset_issuer: asset.issuer,
+    });
+    if (!addTrustline) {
+      // Map the removal-failure op code to the canonical reason. op_invalid_limit
+      // splits into buying_liabilities vs has_balance by the asset's buying
+      // liabilities (from the balance cache) — matching mobile.
+      let removeReason: string | undefined;
+      if (opCodes.includes(RESULT_CODES.op_low_reserve)) {
+        removeReason = "low_reserve";
+      } else if (opCodes.includes(RESULT_CODES.op_invalid_limit)) {
+        const canonical = getCanonicalFromAsset(asset.code, asset.issuer);
+        const balance =
+          balanceData?.[networkDetails.network]?.[publicKey]?.balances?.[
+            canonical
+          ];
+        const buyingLiabilities =
+          balance && "buyingLiabilities" in balance
+            ? Number(balance.buyingLiabilities)
+            : 0;
+        removeReason =
+          buyingLiabilities > 0 ? "buying_liabilities" : "has_balance";
+      }
+      if (removeReason) {
+        emitMetric(METRIC_NAMES.trustlineRemoveFailed, {
+          reason_code: removeReason,
+          asset_code: asset.code,
+          asset_issuer: asset.issuer,
+        });
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isFail]);
 
   const canonical = getCanonicalFromAsset(
     asset.code,

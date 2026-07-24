@@ -188,7 +188,7 @@ registerHandler<AppState>(navigate, (_, a) => {
   // rather than a screen-view. this change does not touch non-screen events, so
   // preserve it verbatim.
   if (pathname === ROUTES.manageAssetsListsModifyAssetList) {
-    emitMetric(METRIC_NAMES.manageAssetListsModifyAssetList);
+    emitMetric(METRIC_NAMES.assetListModified);
     return;
   }
 

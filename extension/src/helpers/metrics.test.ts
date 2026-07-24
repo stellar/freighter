@@ -353,7 +353,7 @@ describe("storeBalanceMetricData (privacy)", () => {
     storeBalanceMetricData(PUBLIC_KEY, true);
 
     expect(amplitude.track).toHaveBeenCalledWith(
-      METRIC_NAMES.freighterAccountFunded,
+      METRIC_NAMES.accountFirstFunded,
       expect.objectContaining({
         account_id_hash: getAccountIdHash(PUBLIC_KEY),
       }),

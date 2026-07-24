@@ -100,6 +100,7 @@ export const SignMessage = () => {
     message.message,
     message.uuid,
     apiVersion,
+    url,
   );
 
   useEffect(() => {

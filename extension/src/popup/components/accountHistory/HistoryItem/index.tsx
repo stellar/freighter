@@ -77,7 +77,7 @@ export const HistoryItem = ({
       data-testid="history-item"
       className="HistoryItem"
       onClick={() => {
-        emitMetric(METRIC_NAMES.historyOpenItem);
+        emitMetric(METRIC_NAMES.historyItemOpened, { source: "history_list" });
         setActiveHistoryDetailId(operation.id);
       }}
     >

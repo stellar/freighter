@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 
 import { emitMetric } from "helpers/metrics";
+import { scrubStrKeys } from "helpers/stellarStrKey";
 
 import { AppDispatch } from "popup/App";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
@@ -16,6 +17,9 @@ type Params = {
   rejectToken: typeof rejectToken;
   addToken: typeof addToken;
   uuid: string;
+  // Threaded onto the add/reject dispatch so asset_add.responded carries
+  // asset_code (analytics only — see ducks/access.ts). Empty when unknown.
+  assetCode?: string;
 };
 
 type Response = {
@@ -34,6 +38,7 @@ export const useSetupAddTokenFlow = ({
   rejectToken: rejectTokenFn,
   addToken: addTokenFn,
   uuid,
+  assetCode,
 }: Params): Response => {
   const { t } = useTranslation();
   const [isConfirming, setIsConfirming] = useState(false);
@@ -44,8 +49,8 @@ export const useSetupAddTokenFlow = ({
   const hasPrivateKey = useSelector(hasPrivateKeySelector);
 
   const rejectAndClose = () => {
-    emitMetric(METRIC_NAMES.tokenRejectApi);
-    dispatch(rejectTokenFn({ uuid }));
+    emitMetric(METRIC_NAMES.assetAddApiCancelled);
+    dispatch(rejectTokenFn({ uuid, assetCode }));
     window.close();
   };
 
@@ -81,20 +86,25 @@ export const useSetupAddTokenFlow = ({
     setSubmitError("");
     try {
       const addTokenResp = await dispatch(
-        addTokenFn({ uuid, isTrustlineBacked }),
+        addTokenFn({ uuid, isTrustlineBacked, assetCode }),
       );
       const rejectedMessage = getThunkErrorMessage(addTokenResp);
 
       if (rejectedMessage) {
-        await emitMetric(METRIC_NAMES.tokenFailedApi);
+        await emitMetric(METRIC_NAMES.assetAddApiFailed, {
+          // Scrub Stellar StrKeys before this free-text reaches Amplitude.
+          reason_code: scrubStrKeys(rejectedMessage) ?? rejectedMessage,
+        });
         setSubmitError(rejectedMessage);
         return false;
       }
 
-      await emitMetric(METRIC_NAMES.tokenAddedApi);
+      await emitMetric(METRIC_NAMES.assetAddApiCompleted);
     } catch (e) {
       console.error(e);
-      await emitMetric(METRIC_NAMES.tokenFailedApi);
+      await emitMetric(METRIC_NAMES.assetAddApiFailed, {
+        reason_code: e instanceof Error ? (scrubStrKeys(e.message) ?? e.message) : "unknown",
+      });
       setSubmitError(t("Failed to add token. Please retry or cancel."));
       return false;
     }

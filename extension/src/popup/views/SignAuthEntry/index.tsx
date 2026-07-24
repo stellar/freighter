@@ -82,6 +82,8 @@ export const SignAuthEntry = () => {
     signEntry,
     params.entry,
     params.uuid,
+    undefined,
+    params.url,
   );
 
   useEffect(() => {

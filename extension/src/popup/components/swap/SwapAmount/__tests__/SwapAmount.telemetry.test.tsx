@@ -127,17 +127,18 @@ describe("SwapAmount telemetry + quote-expired surfacing", () => {
     });
 
     const expiredCall = emitMetricMock.mock.calls.find(
-      (c) => c[0] === "swap: quote expired",
+      (c) => c[0] === "swap.quote_expired",
     );
     expect(expiredCall).toBeDefined();
+    // Bare asset codes (getAssetFromCanonical), matching mobile ("native" → XLM);
+    // amounts intentionally dropped (parity with swap.completed/failed).
     expect(expiredCall![1]).toMatchObject({
-      sourceToken: "native",
-      destToken:
-        "AQUA:GBNZILSTVQZ4R7IKQDGHYGY2QXL5QOFJYQMXPKWRRM5PAV7Y4M67AQUA",
-      sourceAmount: "5",
-      destAmount: "10",
-      allowedSlippage: "2",
+      from_asset_code: "XLM",
+      to_asset_code: "AQUA",
     });
+    expect(expiredCall![1]).not.toHaveProperty("sourceAmount");
+    expect(expiredCall![1]).not.toHaveProperty("destAmount");
+    expect(expiredCall![1]).not.toHaveProperty("allowedSlippage");
   });
 
   it("does NOT show the quote-expired notice when not flagged", async () => {
@@ -160,7 +161,7 @@ describe("SwapAmount telemetry + quote-expired surfacing", () => {
     });
     expect(toastCustomMock).not.toHaveBeenCalled();
     expect(
-      emitMetricMock.mock.calls.find((c) => c[0] === "swap: quote expired"),
+      emitMetricMock.mock.calls.find((c) => c[0] === "swap.quote_expired"),
     ).toBeUndefined();
   });
 
@@ -183,18 +184,20 @@ describe("SwapAmount telemetry + quote-expired surfacing", () => {
       fireEvent.click(pctButton);
     });
     expect(
-      emitMetricMock.mock.calls.find((c) => c[0] === "send payment: set max"),
+      emitMetricMock.mock.calls.find(
+        (c) => c[0] === "payment.max_amount_selected",
+      ),
     ).toBeUndefined();
 
-    // ...and the Max tap emits the shared "send payment: set max" action event,
-    // matching the Send handler and mobile (both platforms fire this on the max
-    // tap only, on send and swap alike).
+    // ...and the Max tap emits the shared payment.max_amount_selected action
+    // event, matching the Send handler and mobile (both platforms fire this on
+    // the max tap only, on send and swap alike).
     const maxButton = await screen.findByTestId("SendAmountSetMax");
     await act(async () => {
       fireEvent.click(maxButton);
     });
     const maxCall = emitMetricMock.mock.calls.find(
-      (c) => c[0] === "send payment: set max",
+      (c) => c[0] === "payment.max_amount_selected",
     );
     expect(maxCall).toBeDefined();
 
@@ -242,7 +245,7 @@ describe("SwapAmount telemetry + quote-expired surfacing", () => {
     // The trustline-added metric fires in useSubmitTxData after the swap
     // settles, not here at review/confirm time.
     expect(
-      emitMetricMock.mock.calls.find((c) => c[0] === "swap: trustline added"),
+      emitMetricMock.mock.calls.find((c) => c[0] === "swap.trustline_added"),
     ).toBeUndefined();
     expect(goToNext).toHaveBeenCalled();
   });

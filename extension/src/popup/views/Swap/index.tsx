@@ -80,13 +80,13 @@ export const Swap = () => {
     if (!isQuoteExpiredAtSubmit) {
       return;
     }
+    // Amounts intentionally dropped (parity with swap.completed/failed, which
+    // carry no amounts). Assets are bare codes (getAssetFromCanonical) so
+    // from_asset_code/to_asset_code match mobile rather than being canonical ids.
     emitMetric(METRIC_NAMES.swapQuoteExpired, {
-      sourceToken: transactionData.asset,
-      destToken: transactionData.destinationAsset,
-      sourceAmount: transactionData.amount,
-      destAmount: transactionData.destinationAmount,
-      allowedSlippage: transactionData.allowedSlippage,
-      resultCode: getQuoteExpiredOperationCodes(submission.error).join(", "),
+      from_asset_code: getAssetFromCanonical(transactionData.asset).code,
+      to_asset_code: getAssetFromCanonical(transactionData.destinationAsset).code,
+      result_code: getQuoteExpiredOperationCodes(submission.error).join(", "),
     });
     // Clear only the ERROR status (keep the transaction data + the
     // isSwapQuoteExpired flag, which drives the amount-screen notification).
@@ -166,9 +166,9 @@ export const Swap = () => {
                 dispatch(saveAmountUsd("0.00"));
               }
               emitMetric(METRIC_NAMES.swapDestinationSelected, {
-                tokenCode: details?.tokenCode,
-                tokenIssuer: details?.issuer,
-                requiresTrustline: details?.requiresTrustline,
+                asset_code: details?.tokenCode,
+                asset_issuer: details?.issuer,
+                requires_trustline: details?.requiresTrustline,
                 source: details?.source,
               });
               setActiveStep(STEPS.AMOUNT);
@@ -223,8 +223,8 @@ export const Swap = () => {
                 dispatch(saveDestinationTokenDetails(null));
               }
               emitMetric(METRIC_NAMES.swapSourceSelected, {
-                tokenCode: getAssetFromCanonical(canonical).code,
-                tokenIssuer: getAssetFromCanonical(canonical).issuer,
+                asset_code: getAssetFromCanonical(canonical).code,
+                asset_issuer: getAssetFromCanonical(canonical).issuer,
                 source: "balances",
               });
               setActiveStep(STEPS.AMOUNT);

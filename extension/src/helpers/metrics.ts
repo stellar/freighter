@@ -48,7 +48,14 @@ const isRuntimeTestEnv = (): boolean => {
 type MetricsPayloadAction = PayloadAction<{
   errorMessage?: string;
   location?: Location;
-}>;
+}> & {
+  // Present at runtime on createAsyncThunk actions: `meta.arg` is the dispatched
+  // thunk argument (used to read the dApp `url`→`origin`), and `.error` carries
+  // a runtime rejection's message. Typed optional so metrics handlers can read
+  // them without casting.
+  meta?: { arg?: { url?: string; assetCode?: string } };
+  error?: { message?: string };
+};
 type MetricHandler<AppState> = (
   state: AppState,
   action: MetricsPayloadAction,
@@ -590,7 +597,7 @@ export const storeBalanceMetricData = (
     if (accountFunded) {
       metricsData.freighterFunded = true;
       if (idx !== -1) {
-        emitMetric(METRIC_NAMES.freighterAccountFunded, {
+        emitMetric(METRIC_NAMES.accountFirstFunded, {
           account_id_hash: getAccountIdHash(publicKey),
         });
         unfundedFreighterAccounts.splice(idx, 1);

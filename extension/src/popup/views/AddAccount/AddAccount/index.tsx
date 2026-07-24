@@ -31,7 +31,7 @@ export const AddAccount = () => {
       const res = await dispatch(addAccount({ password }));
 
       if (addAccount.fulfilled.match(res)) {
-        emitMetric(METRIC_NAMES.accountScreenAddAccount, {
+        emitMetric(METRIC_NAMES.accountCreated, {
           number_of_accounts: res.payload.allAccounts.length,
         });
         navigateTo(ROUTES.account, navigate);

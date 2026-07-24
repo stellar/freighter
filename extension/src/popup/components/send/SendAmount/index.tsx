@@ -568,7 +568,7 @@ export const SendAmount = ({
 
   const handlePercentage = (pct: number) => {
     if (pct === 100) {
-      emitMetric(METRIC_NAMES.sendPaymentSetMax);
+      emitMetric(METRIC_NAMES.paymentMaxAmountSelected);
     }
 
     // Always a fraction of the crypto available balance, so the committed

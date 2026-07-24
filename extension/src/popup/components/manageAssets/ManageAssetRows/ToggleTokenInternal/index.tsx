@@ -14,6 +14,8 @@ import { removeTokenId } from "popup/ducks/transactionSubmission";
 import { isAssetSac } from "popup/helpers/soroban";
 import { isMainnet, truncateString } from "helpers/stellar";
 import { AccountBalances, useGetBalances } from "helpers/hooks/useGetBalances";
+import { emitMetric } from "helpers/metrics";
+import { METRIC_NAMES } from "popup/constants/metricsNames";
 
 import { isError } from "helpers/request";
 
@@ -47,6 +49,20 @@ export const ToggleTokenInternal = ({
     includeIcons: false,
   });
 
+  // The remove-token prompt confirm/reject is its own analytical unit.
+  const isRemoveFlow = asset.isTrustlineActive;
+
+  const handleCancel = () => {
+    if (isRemoveFlow) {
+      emitMetric(METRIC_NAMES.assetRemoveResponded, {
+        decision: "reject",
+        source: "manage_assets",
+        asset_code: asset.code,
+      });
+    }
+    onCancel();
+  };
+
   const onConfirm = async () => {
     if (!asset.isTrustlineActive) {
       await dispatch(
@@ -57,6 +73,11 @@ export const ToggleTokenInternal = ({
         }),
       );
     } else {
+      emitMetric(METRIC_NAMES.assetRemoveResponded, {
+        decision: "confirm",
+        source: "manage_assets",
+        asset_code: asset.code,
+      });
       await dispatch(
         removeTokenId({
           contractId: asset.contract!,
@@ -167,7 +188,7 @@ export const ToggleTokenInternal = ({
             isFullWidth
             size="lg"
             variant="tertiary"
-            onClick={onCancel}
+            onClick={handleCancel}
           >
             {t("Cancel")}
           </Button>

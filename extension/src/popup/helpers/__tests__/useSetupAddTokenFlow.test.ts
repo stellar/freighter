@@ -84,8 +84,8 @@ describe("useSetupAddTokenFlow", () => {
       uuid: UUID,
       isTrustlineBacked: false,
     });
-    expect(emitMetric).toHaveBeenCalledWith(METRIC_NAMES.tokenAddedApi);
-    expect(emitMetric).not.toHaveBeenCalledWith(METRIC_NAMES.tokenFailedApi);
+    expect(emitMetric).toHaveBeenCalledWith(METRIC_NAMES.assetAddApiCompleted);
+    expect(emitMetric).not.toHaveBeenCalledWith(METRIC_NAMES.assetAddApiFailed);
     expect(closeSpy).not.toHaveBeenCalled();
   });
 
@@ -103,6 +103,32 @@ describe("useSetupAddTokenFlow", () => {
     });
   });
 
+  it("threads assetCode onto the add/reject dispatch (for asset_add.responded analytics)", async () => {
+    mockDispatch.mockResolvedValue({ type: "addToken/fulfilled" });
+    const { result } = renderHook(() =>
+      useSetupAddTokenFlow({
+        rejectToken,
+        addToken,
+        uuid: UUID,
+        assetCode: "USDC",
+      } as any),
+    );
+
+    await act(async () => {
+      await result.current.addTokenAndClose();
+    });
+    expect(addToken).toHaveBeenCalledWith({
+      uuid: UUID,
+      isTrustlineBacked: false,
+      assetCode: "USDC",
+    });
+
+    act(() => {
+      result.current.rejectAndClose();
+    });
+    expect(rejectToken).toHaveBeenCalledWith({ uuid: UUID, assetCode: "USDC" });
+  });
+
   it("addTokenAndClose emits failed metric and keeps the popup open when dispatch rejects", async () => {
     mockDispatch.mockRejectedValue(new Error("boom"));
     jest.spyOn(console, "error").mockImplementation(() => undefined);
@@ -115,8 +141,12 @@ describe("useSetupAddTokenFlow", () => {
     });
 
     expect(didClose).toBe(false);
-    expect(emitMetric).toHaveBeenCalledWith(METRIC_NAMES.tokenFailedApi);
-    expect(emitMetric).not.toHaveBeenCalledWith(METRIC_NAMES.tokenAddedApi);
+    expect(emitMetric).toHaveBeenCalledWith(METRIC_NAMES.assetAddApiFailed, {
+      reason_code: "boom",
+    });
+    expect(emitMetric).not.toHaveBeenCalledWith(
+      METRIC_NAMES.assetAddApiCompleted,
+    );
     expect(result.current.submitError).toBe(
       "Failed to add token. Please retry or cancel.",
     );
@@ -137,7 +167,9 @@ describe("useSetupAddTokenFlow", () => {
     });
 
     expect(didClose).toBe(false);
-    expect(emitMetric).toHaveBeenCalledWith(METRIC_NAMES.tokenFailedApi);
+    expect(emitMetric).toHaveBeenCalledWith(METRIC_NAMES.assetAddApiFailed, {
+      reason_code: "user rejected",
+    });
     expect(result.current.submitError).toBe("user rejected");
     expect(closeSpy).not.toHaveBeenCalled();
   });
@@ -149,7 +181,7 @@ describe("useSetupAddTokenFlow", () => {
       result.current.rejectAndClose();
     });
 
-    expect(emitMetric).toHaveBeenCalledWith(METRIC_NAMES.tokenRejectApi);
+    expect(emitMetric).toHaveBeenCalledWith(METRIC_NAMES.assetAddApiCancelled);
     expect(rejectToken).toHaveBeenCalledWith({ uuid: UUID });
     expect(closeSpy).toHaveBeenCalled();
   });
