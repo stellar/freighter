@@ -131,13 +131,18 @@ jobs:
 
           if GIT_SSH_COMMAND="ssh -i $KEY_FILE -o IdentitiesOnly=yes -o UserKnownHostsFile=$KNOWN_HOSTS -o StrictHostKeyChecking=yes" \
                git clone --depth 1 git@github.com:stellar/freighter-config.git "$CLONE_DIR" 2>/tmp/fc-clone.err \
-             && [ -f "$CLONE_DIR/config.json" ]; then
+             && [ -f "$CLONE_DIR/config.json" ] \
+             && jq empty "$CLONE_DIR/config.json" 2>/dev/null; then
+            # `jq empty` validates the file is parseable JSON before we publish
+            # config_available=true — otherwise a malformed config.json would
+            # make the resolve step's jq abort under `set -e` (build failure)
+            # instead of taking the documented staging fallback.
             cp "$CLONE_DIR/config.json" "$CONFIG_OUT"
             echo "config_available=true" >> "$GITHUB_OUTPUT"
             echo "Fetched freighter-config/config.json"
           else
             echo "config_available=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::Could not read freighter-config/config.json; falling back to staging"
+            echo "::warning::freighter-config unreachable or config.json missing/invalid; falling back to staging"
             cat /tmp/fc-clone.err 2>/dev/null || true
           fi
 
@@ -165,16 +170,18 @@ jobs:
           V1_URL=""; V2_URL=""; TARGET=""; DESC=""; DEGRADED="false"
 
           if [ "${CONFIG_AVAILABLE}" = "true" ]; then
-            V1_URL=$(jq -r --arg u "$PR_AUTHOR" '.engineers[$u].v1 // empty' "$CONFIG_OUT")
-            V2_URL=$(jq -r --arg u "$PR_AUTHOR" '.engineers[$u].v2 // empty' "$CONFIG_OUT")
+            # Tolerate a malformed entry (valid JSON but unexpected shape):
+            # jq errors -> empty -> staging fallback, never aborts the build.
+            V1_URL=$(jq -r --arg u "$PR_AUTHOR" '.engineers[$u].v1 // empty' "$CONFIG_OUT" 2>/dev/null || echo "")
+            V2_URL=$(jq -r --arg u "$PR_AUTHOR" '.engineers[$u].v2 // empty' "$CONFIG_OUT" 2>/dev/null || echo "")
             if [ -n "$V1_URL" ] && [ -n "$V2_URL" ]; then
               TARGET="sandbox"; DESC="sandbox (${PR_AUTHOR})"
             else
-              TARGET="staging"; DESC="staging — no sandbox configured for @${PR_AUTHOR}"
+              TARGET="staging"; DESC="V1 prod + V2 beta (no sandbox configured for @${PR_AUTHOR})"
             fi
           else
             TARGET="staging-degraded"; DEGRADED="true"
-            DESC="staging — freighter-config unreachable (preview degraded)"
+            DESC="V1 prod + V2 beta — freighter-config unreachable (preview degraded)"
           fi
 
           if [ "$TARGET" != "sandbox" ]; then
