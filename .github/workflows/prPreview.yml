@@ -53,27 +53,21 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write # release create/delete + tag operations
-      pull-requests: write # sticky preview-link comment on the PR
-    env:
-      # Secrets injected at job level (not workflow level) so a future job
-      # added without the same fork-guard if: doesn't inherit them.
-      #
-      # V1: PROD. V1 staging/beta does not have a public DNS entry — the
-      #   only v1 stg ingress is kube-internal and would require sshuttle.
-      # V2: BETA. V2 beta is publicly reachable and is the right target
-      #   for preview-stage testing.
-      # freighter-backend is a read-side indexer (balances, assets,
-      # history); the wallet submits txs directly to Horizon/RPC, so the
-      # backend choice here doesn't affect write paths.
-      INDEXER_URL: ${{ secrets.INDEXER_URL }}
-      INDEXER_V2_URL: ${{ secrets.INDEXER_V2_BETA_URL }}
+      pull-requests: write # sticky preview-link comment + add/remove preview-degraded label
+      issues: write # create the `preview-degraded` label definition if missing (label defs are managed under the Issues API; add/remove on the PR itself only needs pull-requests: write)
+    # Backend URLs (INDEXER_URL=v1, INDEXER_V2_URL=v2) are intentionally NOT set
+    # at job level. They are resolved at runtime by the "Resolve backend URLs"
+    # step below — the PR author's per-engineer sandbox (from freighter-config)
+    # when they have an entry, otherwise the staging fallback
+    # (secrets.INDEXER_URL / secrets.INDEXER_V2_BETA_URL) — and written to
+    # $GITHUB_ENV before the build reads them. Setting them here as well would
+    # create a job-`env:`-vs-`$GITHUB_ENV` precedence ambiguity, so they live
+    # EXCLUSIVELY in the resolve step (which also fails fast if the staging
+    # fallback is empty — replacing the old "Validate required secrets" step).
+    # V1 staging has no public DNS; V2 beta is publicly reachable.
+    # freighter-backend is a read-side indexer; wallet writes go direct to
+    # Horizon/RPC, so the backend choice never affects write paths.
     steps:
-      - name: Validate required secrets
-        if: ${{ env.INDEXER_URL == '' || env.INDEXER_V2_URL == '' }}
-        run: |
-          echo "::error::INDEXER_URL or INDEXER_V2_URL is empty. Verify repo Secrets are configured."
-          exit 1
-
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
@@ -83,6 +77,117 @@ jobs:
           # `git push` using those persisted creds. `gh` uses GH_TOKEN env
           # separately so disabling this doesn't affect the release flow.
           persist-credentials: false
+
+      # ── Phase 2: fetch the PR author's sandbox URL map from freighter-config ──
+      # Runs immediately after checkout, BEFORE any PR-controlled code (yarn
+      # lifecycle scripts, build) executes, so the read-only deploy key is never
+      # in process scope while PR-authored code runs. The key lives ONLY inside
+      # this step: a mode-600 tempfile, one shallow clone, deleted on exit.
+      # freighter-config is a separate PRIVATE repo, so the job GITHUB_TOKEN
+      # can't read it — hence a dedicated contents-read-only deploy key
+      # (extension-scoped; private half = secrets.FREIGHTER_CONFIG_DEPLOY_KEY).
+      # NEVER fails the build: an unreachable/malformed config degrades to the
+      # staging fallback in "Resolve backend URLs".
+      - name: Fetch freighter-config (sandbox URL map)
+        id: fetch_config
+        env:
+          FREIGHTER_CONFIG_DEPLOY_KEY:
+            ${{ secrets.FREIGHTER_CONFIG_DEPLOY_KEY }}
+        run: |
+          set -uo pipefail
+          KEY_FILE="$(mktemp)"
+          CLONE_DIR="$(mktemp -d)"
+          CONFIG_OUT="${RUNNER_TEMP}/freighter-config.json"
+          cleanup() { rm -f "$KEY_FILE"; rm -rf "$CLONE_DIR"; }
+          trap cleanup EXIT
+
+          if [ -z "${FREIGHTER_CONFIG_DEPLOY_KEY}" ]; then
+            echo "config_available=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::FREIGHTER_CONFIG_DEPLOY_KEY is not set; falling back to staging"
+            exit 0
+          fi
+
+          printf '%s\n' "${FREIGHTER_CONFIG_DEPLOY_KEY}" > "$KEY_FILE"
+          chmod 600 "$KEY_FILE"
+
+          if GIT_SSH_COMMAND="ssh -i $KEY_FILE -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new" \
+               git clone --depth 1 git@github.com:stellar/freighter-config.git "$CLONE_DIR" 2>/tmp/fc-clone.err \
+             && [ -f "$CLONE_DIR/config.json" ]; then
+            cp "$CLONE_DIR/config.json" "$CONFIG_OUT"
+            echo "config_available=true" >> "$GITHUB_OUTPUT"
+            echo "Fetched freighter-config/config.json"
+          else
+            echo "config_available=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Could not read freighter-config/config.json; falling back to staging"
+            cat /tmp/fc-clone.err 2>/dev/null || true
+          fi
+
+      # ── Phase 2: choose sandbox vs staging and inject INDEXER_URL/INDEXER_V2_URL ──
+      # No deploy key in scope here (fetch tore it down). Reads the cached
+      # config.json (if the fetch succeeded), looks the PR author up by GitHub
+      # login, and writes the resolved URLs to $GITHUB_ENV so the build bakes
+      # them. Manages the `preview-degraded` label and exports BACKEND_DESC for
+      # the release notes + sticky comment. Also fails fast if the resolved URLs
+      # are empty (replaces the old "Validate required secrets" step).
+      - name: Resolve backend URLs (sandbox vs staging)
+        id: resolve_backend
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          CONFIG_AVAILABLE: ${{ steps.fetch_config.outputs.config_available }}
+          # Staging fallbacks (the values previously hardcoded in job env).
+          STAGING_V1_URL: ${{ secrets.INDEXER_URL }}
+          STAGING_V2_URL: ${{ secrets.INDEXER_V2_BETA_URL }}
+        run: |
+          set -euo pipefail
+          CONFIG_OUT="${RUNNER_TEMP}/freighter-config.json"
+          V1_URL=""; V2_URL=""; TARGET=""; DESC=""; DEGRADED="false"
+
+          if [ "${CONFIG_AVAILABLE}" = "true" ]; then
+            V1_URL=$(jq -r --arg u "$PR_AUTHOR" '.engineers[$u].v1 // empty' "$CONFIG_OUT")
+            V2_URL=$(jq -r --arg u "$PR_AUTHOR" '.engineers[$u].v2 // empty' "$CONFIG_OUT")
+            if [ -n "$V1_URL" ] && [ -n "$V2_URL" ]; then
+              TARGET="sandbox"; DESC="sandbox (${PR_AUTHOR})"
+            else
+              TARGET="staging"; DESC="staging — no sandbox configured for @${PR_AUTHOR}"
+            fi
+          else
+            TARGET="staging-degraded"; DEGRADED="true"
+            DESC="staging — freighter-config unreachable (preview degraded)"
+          fi
+
+          if [ "$TARGET" != "sandbox" ]; then
+            V1_URL="$STAGING_V1_URL"
+            V2_URL="$STAGING_V2_URL"
+          fi
+
+          if [ -z "$V1_URL" ] || [ -z "$V2_URL" ]; then
+            echo "::error::Resolved backend URLs are empty (V1='$V1_URL' V2='$V2_URL'). Check secrets INDEXER_URL / INDEXER_V2_BETA_URL."
+            exit 1
+          fi
+
+          {
+            echo "INDEXER_URL=${V1_URL}"
+            echo "INDEXER_V2_URL=${V2_URL}"
+            echo "BACKEND_TARGET=${TARGET}"
+            echo "BACKEND_DESC=${DESC}"
+          } >> "$GITHUB_ENV"
+          echo "Backend target: ${TARGET} — ${DESC}"
+
+          # preview-degraded label: create-if-missing, then add on degrade /
+          # remove otherwise so a fixed re-run self-corrects. Never fail the
+          # build on label plumbing.
+          gh label create preview-degraded --repo "$GH_REPO" \
+            --color B60205 \
+            --description "PR preview fell back to staging because freighter-config was unreachable" \
+            2>/dev/null || true
+          if [ "$DEGRADED" = "true" ]; then
+            gh pr edit "$PR_NUMBER" --repo "$GH_REPO" --add-label preview-degraded || true
+          else
+            gh pr edit "$PR_NUMBER" --repo "$GH_REPO" --remove-label preview-degraded || true
+          fi
 
       - name: Assert source manifest has no top-level `key` field
         run: |
@@ -175,7 +280,7 @@ jobs:
           Internal preview build for PR [#${PR_NUMBER}](${PR_URL}). SDF collaborators only — non-SDF GitHub users get 404 on this page. Auto-deleted when the PR is closed.
 
           **Commit:** ${PR_HEAD_SHA}
-          **Backend:** V1 production, V2 beta (read-only indexer; wallet writes go direct to Horizon/RPC)
+          **Backend:** ${BACKEND_DESC} (read-only indexer; wallet writes go direct to Horizon/RPC)
 
           ### How to install (Chromium)
 
@@ -216,7 +321,7 @@ jobs:
           RELEASE_URL: ${{ steps.release.outputs.url }}
         run: |
           MARKER="<!-- pr-preview-comment -->"
-          BODY="${MARKER}"$'\n'"PR Preview build is ready: ${RELEASE_URL} (SDF collaborators only — install instructions in the release description)"
+          BODY="${MARKER}"$'\n'"PR Preview build is ready: ${RELEASE_URL}"$'\n'"Backend: ${BACKEND_DESC}. SDF collaborators only — install instructions in the release description."
 
           # --paginate so this works on PRs with >30 comments (default page
           # size). Without it, the marker comment can fall off a later page
