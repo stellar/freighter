@@ -1,6 +1,12 @@
 const { merge } = require("webpack-merge");
 const webpack = require("webpack");
-const I18nextWebpackPlugin = require("i18next-scanner-webpack");
+// i18next-scanner-webpack is published as transpiled ESM, so the plugin comes
+// back on `.default` under CommonJS require. Without the unwrap, `new
+// I18nextWebpackPlugin(...)` throws "is not a constructor" and
+// `yarn build:translations` fails at config load.
+const i18nextScannerWebpack = require("i18next-scanner-webpack");
+const I18nextWebpackPlugin =
+  i18nextScannerWebpack.default || i18nextScannerWebpack;
 const { commonConfig } = require("./webpack.common.js");
 const Dotenv = require("dotenv-webpack");
 const dotenv = require("dotenv");
