@@ -86,3 +86,11 @@ export const PASSPHRASE_TO_PRICE_NETWORK: Record<string, NETWORKS> = {
   [Networks.PUBLIC]: NETWORKS.PUBLIC,
   [Networks.TESTNET]: NETWORKS.TESTNET,
 };
+
+// The v2 account-history endpoint (GET /accounts/{address}/transactions) only
+// supports pubnet and testnet — anything not listed here must fall back to the
+// v1 history path (see getAccountHistoryWithFlag).
+export const PASSPHRASE_TO_HISTORY_NETWORK: Record<string, NETWORKS> = {
+  [Networks.PUBLIC]: NETWORKS.PUBLIC,
+  [Networks.TESTNET]: NETWORKS.TESTNET,
+};

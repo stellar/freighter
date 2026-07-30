@@ -343,6 +343,108 @@ describe("internalApi", () => {
     });
   });
 
+  describe("getAccountHistoryV2", () => {
+    it("returns the fixture page while the endpoint is mocked", async () => {
+      const result = await internalApi.getAccountHistoryV2(
+        "GCFIRY65OQE7DFP5KLNS2PF2LVZMUZYJX4OZIEQ36N2IQANUB5XVYOJR",
+        MAINNET_NETWORK_DETAILS,
+        { limit: 5 },
+      );
+
+      expect(result.data).toHaveLength(5);
+      expect(result.pagination.has_next).toBe(true);
+      expect(result.pagination.next_cursor).toBeTruthy();
+      // The mock never hits the background chokepoint
+      expect(mockedSend).not.toHaveBeenCalled();
+
+      // Every transaction matches the wire shape: promoted tx fields plus
+      // account-scoped operations and state changes
+      for (const tx of result.data) {
+        expect(tx).toMatchObject({
+          hash: expect.any(String),
+          fee_charged: expect.any(String),
+          result_code: expect.any(String),
+          operations: expect.any(Array),
+          state_changes: expect.any(Array),
+        });
+      }
+    });
+
+    it("paginates with the cursor", async () => {
+      const pageOne = await internalApi.getAccountHistoryV2(
+        "GCFIRY65OQE7DFP5KLNS2PF2LVZMUZYJX4OZIEQ36N2IQANUB5XVYOJR",
+        MAINNET_NETWORK_DETAILS,
+        { limit: 5 },
+      );
+      const pageTwo = await internalApi.getAccountHistoryV2(
+        "GCFIRY65OQE7DFP5KLNS2PF2LVZMUZYJX4OZIEQ36N2IQANUB5XVYOJR",
+        MAINNET_NETWORK_DETAILS,
+        { limit: 5, cursor: pageOne.pagination.next_cursor! },
+      );
+
+      expect(pageTwo.data[0].hash).not.toEqual(pageOne.data[0].hash);
+      expect(pageTwo.pagination.has_previous).toBe(true);
+    });
+
+    it("rejects networks the v2 backend does not serve", async () => {
+      await expect(
+        internalApi.getAccountHistoryV2(
+          "GCFIRY65OQE7DFP5KLNS2PF2LVZMUZYJX4OZIEQ36N2IQANUB5XVYOJR",
+          FUTURENET_NETWORK_DETAILS,
+        ),
+      ).rejects.toThrow("history v2 does not support network passphrase");
+    });
+  });
+
+  describe("getAccountHistoryWithFlag", () => {
+    it("routes to v2 when the flag is on and the network is supported", async () => {
+      const result = await internalApi.getAccountHistoryWithFlag(
+        "GCFIRY65OQE7DFP5KLNS2PF2LVZMUZYJX4OZIEQ36N2IQANUB5XVYOJR",
+        MAINNET_NETWORK_DETAILS,
+        true,
+      );
+
+      expect(result.version).toBe("v2");
+      if (result.version === "v2") {
+        expect(result.page.data.length).toBeGreaterThan(0);
+      }
+    });
+
+    it("routes to v1 when the flag is off", async () => {
+      const fetchSpy = jest.spyOn(global, "fetch").mockResolvedValue({
+        ok: true,
+        json: async () => [],
+      } as unknown as Response);
+
+      const result = await internalApi.getAccountHistoryWithFlag(
+        "GCFIRY65OQE7DFP5KLNS2PF2LVZMUZYJX4OZIEQ36N2IQANUB5XVYOJR",
+        MAINNET_NETWORK_DETAILS,
+        false,
+      );
+
+      expect(result.version).toBe("v1");
+      expect(fetchSpy).toHaveBeenCalledWith(
+        expect.stringContaining("/account-history/"),
+      );
+    });
+
+    it("routes to v1 when the flag is on but the network is unsupported", async () => {
+      const fetchSpy = jest.spyOn(global, "fetch").mockResolvedValue({
+        ok: true,
+        json: async () => [],
+      } as unknown as Response);
+
+      const result = await internalApi.getAccountHistoryWithFlag(
+        "GCFIRY65OQE7DFP5KLNS2PF2LVZMUZYJX4OZIEQ36N2IQANUB5XVYOJR",
+        FUTURENET_NETWORK_DETAILS,
+        true,
+      );
+
+      expect(result.version).toBe("v1");
+      expect(fetchSpy).toHaveBeenCalled();
+    });
+  });
+
   describe("getDiscoverData", () => {
     it("fetches /protocols via the FETCH_BACKEND_V2 message", async () => {
       mockedSend.mockResolvedValue({

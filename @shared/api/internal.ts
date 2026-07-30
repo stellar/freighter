@@ -69,14 +69,17 @@ import {
 } from "./types";
 import {
   AccountBalancesInterface,
+  AccountHistoryV2Response,
   BalanceMap,
   Balances,
 } from "./types/backend-api";
+import { mockFetchAccountHistoryV2 } from "./fixtures/history-v2";
 import {
   MAINNET_NETWORK_DETAILS,
   DEFAULT_NETWORKS,
   NetworkDetails,
   NETWORKS,
+  PASSPHRASE_TO_HISTORY_NETWORK,
   PASSPHRASE_TO_PRICE_NETWORK,
 } from "../constants/stellar";
 import { SERVICE_TYPES } from "../constants/services";
@@ -1033,6 +1036,89 @@ export const getAccountHistory = async (
     publicKey,
     networkDetails,
   });
+};
+
+// The v2 account-history endpoint exists in freighter-backend-v2
+// (GET /api/v1/accounts/{address}/transactions) but is not deployed yet, so
+// getAccountHistoryV2 serves fixtures matching the real wire shape while the
+// redesigned History UI is built. Flip to false when the endpoint is live.
+const IS_HISTORY_V2_MOCKED = true;
+
+export const getAccountHistoryV2 = async (
+  publicKey: string,
+  networkDetails: NetworkDetails,
+  { limit, cursor }: { limit?: number; cursor?: string } = {},
+): Promise<AccountHistoryV2Response> => {
+  // The v2 history endpoint only supports pubnet and testnet. Derive the
+  // network from the passphrase (mirroring getTokenPrices) so custom networks
+  // sharing a supported passphrase still resolve; callers route everything
+  // else to v1 via getAccountHistoryWithFlag before getting here.
+  const historyNetwork =
+    PASSPHRASE_TO_HISTORY_NETWORK[networkDetails.networkPassphrase];
+  if (!historyNetwork) {
+    throw new Error(
+      `history v2 does not support network passphrase ${networkDetails.networkPassphrase}`,
+    );
+  }
+
+  if (IS_HISTORY_V2_MOCKED) {
+    return mockFetchAccountHistoryV2({ address: publicKey, limit, cursor });
+  }
+
+  // Query lives in the path so callBackendV2 signs the JWT's methodAndPath
+  // over the server's full request-target (path + query) — see #2879.
+  const search = new URLSearchParams({ network: historyNetwork });
+  if (limit !== undefined) {
+    search.set("limit", String(limit));
+  }
+  if (cursor) {
+    search.set("cursor", cursor);
+  }
+  const { status, body } = await fetchBackendV2({
+    method: "GET",
+    path: `/accounts/${publicKey}/transactions?${search.toString()}`,
+  });
+
+  // The endpoint writes the PaginatedResponse envelope directly (data +
+  // pagination at the top level) — it is NOT wrapped in { data: T } the way
+  // /protocols and /token-prices are.
+  const parsed = body as AccountHistoryV2Response | null;
+  if (status !== 200 || !parsed?.data) {
+    const _err = JSON.stringify(body);
+    captureException(`Failed to fetch account history v2 - ${status}`);
+    throw new Error(_err);
+  }
+  return parsed;
+};
+
+export type AccountHistoryV1V2 =
+  | { version: "v1"; operations: HorizonOperation[] }
+  | { version: "v2"; page: AccountHistoryV2Response };
+
+/**
+ * Routes between the v1 and v2 history APIs. Callers pass the
+ * `use_history_v2` feature flag (read via historyV2Selector at fetch time,
+ * mirroring getTokenPrices). Custom networks and passphrases the v2 backend
+ * doesn't serve always fall back to v1 regardless of the flag.
+ */
+export const getAccountHistoryWithFlag = async (
+  publicKey: string,
+  networkDetails: NetworkDetails,
+  useV2 = false,
+  params: { limit?: number; cursor?: string } = {},
+): Promise<AccountHistoryV1V2> => {
+  const historyNetwork =
+    PASSPHRASE_TO_HISTORY_NETWORK[networkDetails.networkPassphrase];
+  if (useV2 && historyNetwork) {
+    return {
+      version: "v2",
+      page: await getAccountHistoryV2(publicKey, networkDetails, params),
+    };
+  }
+  return {
+    version: "v1",
+    operations: await getAccountHistory(publicKey, networkDetails),
+  };
 };
 
 export const getAccountBalances = async (

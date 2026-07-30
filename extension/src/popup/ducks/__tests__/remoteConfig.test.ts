@@ -6,6 +6,7 @@ import {
   maintenanceScreenSelector,
   isRemoteConfigInitializedSelector,
   tokenPricesV2Selector,
+  historyV2Selector,
   reducer,
 } from "../remoteConfig";
 import {
@@ -393,5 +394,30 @@ describe("remoteConfig selectors", () => {
     const store = makeStore();
     await store.dispatch(fetchFeatureFlags());
     expect(tokenPricesV2Selector(store.getState())).toBe(false);
+  });
+
+  it("historyV2Selector defaults to false", () => {
+    const store = makeStore();
+    expect(historyV2Selector(store.getState())).toBe(false);
+  });
+
+  it("historyV2Selector stays false when Amplitude omits the flag", async () => {
+    (getExperimentClient as jest.Mock).mockReturnValue(makeClient());
+
+    const store = makeStore();
+    await store.dispatch(fetchFeatureFlags());
+    expect(historyV2Selector(store.getState())).toBe(false);
+  });
+
+  it("historyV2Selector enables when variant is on", async () => {
+    (getExperimentClient as jest.Mock).mockReturnValue(
+      makeClient({
+        use_history_v2: { value: "on" },
+      }),
+    );
+
+    const store = makeStore();
+    await store.dispatch(fetchFeatureFlags());
+    expect(historyV2Selector(store.getState())).toBe(true);
   });
 });

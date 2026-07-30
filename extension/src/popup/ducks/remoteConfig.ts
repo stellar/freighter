@@ -26,7 +26,7 @@ const ON_VARIANT_VALUES = ["on", "true", "enabled", "yes"];
  * Boolean flags — variant value is checked against ON_VARIANT_VALUES.
  * Add flag names here as new boolean flags are introduced.
  */
-const BOOLEAN_FLAGS = ["use_token_prices_v2"] as const;
+const BOOLEAN_FLAGS = ["use_token_prices_v2", "use_history_v2"] as const;
 
 /**
  * Version flags — variant value is parsed from underscore format (1_2_3 → 1.2.3).
@@ -85,6 +85,10 @@ const initialState: RemoteConfigState = {
   // Defaults to v2; Amplitude can flip it off to roll back to the v1
   // token-prices endpoint without a release.
   use_token_prices_v2: true,
+  // History redesign data source. Defaults to v1 while the v2
+  // account-history endpoint is mocked (see getAccountHistoryV2); Amplitude
+  // enables it for dev/beta and eventually flips the default.
+  use_history_v2: false,
   maintenance_banner: { enabled: false, payload: undefined },
   maintenance_screen: { enabled: false, payload: undefined },
 };
@@ -227,6 +231,15 @@ export const maintenanceScreenSelector = createSelector(
 export const tokenPricesV2Selector = createSelector(
   remoteConfigSelector,
   (rc) => rc.use_token_prices_v2,
+);
+
+/**
+ * Returns whether the v2 account-history endpoint (state-change-driven
+ * history redesign) should be used. Defaults to false; Amplitude flips it on.
+ */
+export const historyV2Selector = createSelector(
+  remoteConfigSelector,
+  (rc) => rc.use_history_v2,
 );
 
 /**
