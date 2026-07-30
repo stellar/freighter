@@ -1,0 +1,141 @@
+@use "../../../styles/utils.scss" as *;
+
+$icon-size: 32px;
+$sub-size: 22px;
+
+.HistoryRowIcon {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: pxToRem($icon-size);
+  width: pxToRem($icon-size);
+  flex-shrink: 0;
+
+  &__token {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    width: 100%;
+    border-radius: 50%;
+    overflow: hidden;
+    background-color: var(--sds-clr-gray-03);
+
+    img,
+    svg {
+      height: 100%;
+      width: 100%;
+      object-fit: cover;
+    }
+
+    &--letter {
+      color: var(--sds-clr-gray-11);
+      font-size: pxToRem(13px);
+      font-weight: var(--sds-fw-semi-bold);
+      text-transform: uppercase;
+    }
+  }
+
+  &__protocol {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    width: 100%;
+    border-radius: pxToRem(8px);
+    overflow: hidden;
+
+    img {
+      height: 100%;
+      width: 100%;
+      object-fit: cover;
+    }
+  }
+
+  // overlapping swap pair — first token behind, second in front
+  &--pair {
+    .HistoryRowIcon__token {
+      position: absolute;
+      height: pxToRem($sub-size);
+      width: pxToRem($sub-size);
+      border: 1px solid var(--sds-clr-gray-01);
+
+      &:first-child {
+        top: 0;
+        left: 0;
+        z-index: 1;
+      }
+
+      &:last-child {
+        bottom: 0;
+        right: 0;
+        z-index: 2;
+      }
+    }
+  }
+
+  // stacked multi-asset — two tokens plus a "+N" badge
+  &--stacked {
+    .HistoryRowIcon__token {
+      position: absolute;
+      height: pxToRem($sub-size);
+      width: pxToRem($sub-size);
+      border: 1px solid var(--sds-clr-gray-01);
+
+      &:first-child {
+        top: 0;
+        left: 0;
+        z-index: 1;
+      }
+
+      &:nth-child(2) {
+        bottom: 0;
+        left: pxToRem(6px);
+        z-index: 2;
+      }
+    }
+  }
+
+  &__badge {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: pxToRem(16px);
+    height: pxToRem(16px);
+    padding: 0 pxToRem(3px);
+    border-radius: pxToRem(8px);
+    background-color: var(--sds-clr-gray-05);
+    color: var(--sds-clr-gray-12);
+    font-size: pxToRem(10px);
+    font-weight: var(--sds-fw-semi-bold);
+    line-height: 1;
+  }
+
+  // non-asset glyph variants (contract, settings, failed, account)
+  &__glyph {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: pxToRem($icon-size);
+    width: pxToRem($icon-size);
+    flex-shrink: 0;
+    border-radius: 50%;
+    background-color: var(--sds-clr-gray-03);
+    color: var(--sds-clr-gray-11);
+
+    svg {
+      height: pxToRem(18px);
+      width: pxToRem(18px);
+    }
+
+    &--failed {
+      background-color: var(--sds-clr-red-03);
+      color: var(--sds-clr-red-09);
+    }
+  }
+}

@@ -6,6 +6,7 @@
  */
 
 import { formatAmount, trimTrailingZeros } from "popup/helpers/formatters";
+import i18n from "popup/helpers/localizationConfig";
 import {
   BalanceChangeRow,
   HistoryEntry,
@@ -52,128 +53,133 @@ const configPresentation = (
   Presentation,
   "kind" | "primaryText" | "secondaryText" | "secondaryIcon" | "rowIcon"
 > & { title: string } => {
-  const settings = { type: "settings" } as const;
   switch (card.kind) {
     case "accountCreated":
       return {
         kind: "accountCreated",
-        primaryText: "Account created",
-        secondaryText: "Created",
+        primaryText: i18n.t("Account created"),
+        secondaryText: i18n.t("Created"),
         secondaryIcon: "add",
         rowIcon: { type: "account", variant: "create" },
-        title: "Account created",
+        title: i18n.t("Account created"),
       };
     case "accountMerged":
       return {
         kind: "accountMerged",
-        primaryText: "Account merged",
-        secondaryText: "Merged",
+        primaryText: i18n.t("Account merged"),
+        secondaryText: i18n.t("Merged"),
         secondaryIcon: "remove",
         rowIcon: { type: "account", variant: "merge" },
-        title: "Account merged",
+        title: i18n.t("Account merged"),
       };
     case "trustlines": {
       const first = card.entries[0];
       const primaryText =
-        card.entries.length === 1 ? first.token.code : "Trustlines";
+        card.entries.length === 1 ? first.token.code : i18n.t("Trustlines");
       if (card.verb === "removed") {
         return {
           kind: "trustlineRemoved",
           primaryText,
-          secondaryText: "Removed trustline",
+          secondaryText: i18n.t("Removed trustline"),
           secondaryIcon: "remove",
           rowIcon: { type: "asset", tokens: card.entries.map((e) => e.token) },
-          title: "Removed trustline",
+          title: i18n.t("Removed trustline"),
         };
       }
       return {
         kind: "trustlineAdded",
         primaryText,
         secondaryText:
-          card.verb === "created" ? "Added trustline" : "Updated trustline",
+          card.verb === "created"
+            ? i18n.t("Added trustline")
+            : i18n.t("Updated trustline"),
         secondaryIcon: "add",
         rowIcon: { type: "asset", tokens: card.entries.map((e) => e.token) },
         title:
-          card.verb === "created" ? "Added trustline" : "Updated trustline",
+          card.verb === "created"
+            ? i18n.t("Added trustline")
+            : i18n.t("Updated trustline"),
       };
     }
     case "signers":
       return {
         kind: "other",
-        primaryText: "Signers",
-        secondaryText: `Signer ${card.verb}`,
+        primaryText: i18n.t("Signers"),
+        secondaryText: `${i18n.t("Signer")} ${card.verb}`,
         secondaryIcon: "settings",
-        rowIcon: settings,
-        title: "Signer change",
+        rowIcon: { type: "settings", glyph: "signer" },
+        title: i18n.t("Signer change"),
       };
     case "thresholds":
       return {
         kind: "other",
-        primaryText: "Thresholds",
-        secondaryText: "Threshold updated",
+        primaryText: i18n.t("Thresholds"),
+        secondaryText: i18n.t("Threshold updated"),
         secondaryIcon: "settings",
-        rowIcon: settings,
-        title: "Threshold updated",
+        rowIcon: { type: "settings", glyph: "threshold" },
+        title: i18n.t("Threshold updated"),
       };
     case "dataEntry":
       return {
         kind: "other",
-        primaryText: "Data entry",
-        secondaryText: `Data entry ${card.verb}`,
+        primaryText: i18n.t("Data entry"),
+        secondaryText: `${i18n.t("Data entry")} ${card.verb}`,
         secondaryIcon: "settings",
-        rowIcon: settings,
-        title: `Data entry ${card.verb}`,
+        rowIcon: { type: "settings", glyph: "data" },
+        title: `${i18n.t("Data entry")} ${card.verb}`,
       };
     case "homeDomain":
       return {
         kind: "other",
-        primaryText: "Home domain",
-        secondaryText: `Home domain ${card.verb}`,
+        primaryText: i18n.t("Home domain"),
+        secondaryText: `${i18n.t("Home domain")} ${card.verb}`,
         secondaryIcon: "settings",
-        rowIcon: settings,
-        title: `Home domain ${card.verb}`,
+        rowIcon: { type: "settings", glyph: "domain" },
+        title: `${i18n.t("Home domain")} ${card.verb}`,
       };
     case "flags":
       return {
         kind: "other",
-        primaryText: "Account settings",
-        secondaryText: "Setting updated",
+        primaryText: i18n.t("Account settings"),
+        secondaryText: i18n.t("Setting updated"),
         secondaryIcon: "settings",
-        rowIcon: settings,
-        title: "Account setting updated",
+        rowIcon: { type: "settings", glyph: "flag" },
+        title: i18n.t("Account setting updated"),
       };
     case "balanceAuthorizations":
       return {
         kind: "other",
         primaryText:
-          card.tokens.length === 1 ? card.tokens[0].code : "Trustlines",
+          card.tokens.length === 1 ? card.tokens[0].code : i18n.t("Trustlines"),
         secondaryText: card.authorized
-          ? "Balance authorized"
-          : "Balance unauthorized",
+          ? i18n.t("Balance authorized")
+          : i18n.t("Balance unauthorized"),
         secondaryIcon: "settings",
         rowIcon: { type: "asset", tokens: card.tokens },
-        title: card.authorized ? "Balance authorized" : "Balance unauthorized",
+        title: card.authorized
+          ? i18n.t("Balance authorized")
+          : i18n.t("Balance unauthorized"),
       };
     case "reserves":
       return {
         kind: "other",
-        primaryText: "Reserves",
+        primaryText: i18n.t("Reserves"),
         secondaryText:
           card.verb === "sponsored"
-            ? "Reserve sponsored"
-            : "Reserve unsponsored",
+            ? i18n.t("Reserve sponsored")
+            : i18n.t("Reserve unsponsored"),
         secondaryIcon: "settings",
-        rowIcon: settings,
-        title: "Reserve change",
+        rowIcon: { type: "settings", glyph: "reserve" },
+        title: i18n.t("Reserve change"),
       };
     default:
       return {
         kind: "other",
-        primaryText: "Transaction",
-        secondaryText: "Interacted",
+        primaryText: i18n.t("Transaction"),
+        secondaryText: i18n.t("Interacted"),
         secondaryIcon: null,
-        rowIcon: settings,
-        title: "Transaction",
+        rowIcon: { type: "settings", glyph: "generic" },
+        title: i18n.t("Transaction"),
       };
   }
 };
@@ -195,11 +201,11 @@ export const buildPresentation = ({
     return {
       kind: "failed",
       rowIcon: { type: "failed" },
-      primaryText: "Transaction failed",
-      secondaryText: "Failed",
+      primaryText: i18n.t("Transaction failed"),
+      secondaryText: i18n.t("Failed"),
       secondaryIcon: "failed",
       amounts: null,
-      title: "Transaction failed",
+      title: i18n.t("Transaction failed"),
     };
   }
 
@@ -207,18 +213,24 @@ export const buildPresentation = ({
   switch (classification.type) {
     case "swapped": {
       const { credit, debit } = classification;
-      const pair = `${debit.token.code} to ${credit.token.code}`;
+      const pair = `${debit.token.code} ${i18n.t("to")} ${credit.token.code}`;
       const viaContract = contractCall !== null;
       return {
         kind: "swapped",
         rowIcon: viaContract
           ? iconForContract(protocol, distinctTokens([debit, credit]))
           : { type: "asset", tokens: [debit.token, credit.token] },
-        primaryText: viaContract ? (protocol?.name ?? "Contract") : pair,
-        secondaryText: protocol?.domain ?? "Swapped",
+        primaryText: viaContract
+          ? (protocol?.name ?? i18n.t("Contract"))
+          : pair,
+        secondaryText: protocol?.domain ?? i18n.t("Swapped"),
         secondaryIcon: protocol?.domain ? "globe" : "swap",
-        amounts: [signedAmount(credit), signedAmount(debit)],
-        title: viaContract ? "Contract" : `Swapped ${pair}`,
+        // Row shows only the received (credit) amount, matching the legacy
+        // list; the debit is still shown in the detail drawer's balance card.
+        amounts: [signedAmount(credit)],
+        title: viaContract
+          ? i18n.t("Contract")
+          : `${i18n.t("Swapped")} ${pair}`,
       };
     }
     case "sent":
@@ -228,12 +240,12 @@ export const buildPresentation = ({
           ? iconForContract(protocol, [classification.row.token])
           : { type: "asset", tokens: [classification.row.token] },
         primaryText: contractCall
-          ? (protocol?.name ?? "Contract")
+          ? (protocol?.name ?? i18n.t("Contract"))
           : classification.row.token.code,
-        secondaryText: protocol?.domain ?? "Sent",
+        secondaryText: protocol?.domain ?? i18n.t("Sent"),
         secondaryIcon: protocol?.domain ? "globe" : "sent",
         amounts: [signedAmount(classification.row)],
-        title: `Sent ${classification.row.token.code}`,
+        title: `${i18n.t("Sent")} ${classification.row.token.code}`,
       };
     case "received":
       return {
@@ -242,22 +254,22 @@ export const buildPresentation = ({
           ? iconForContract(protocol, [classification.row.token])
           : { type: "asset", tokens: [classification.row.token] },
         primaryText: contractCall
-          ? (protocol?.name ?? "Contract")
+          ? (protocol?.name ?? i18n.t("Contract"))
           : classification.row.token.code,
-        secondaryText: protocol?.domain ?? "Received",
+        secondaryText: protocol?.domain ?? i18n.t("Received"),
         secondaryIcon: protocol?.domain ? "globe" : "received",
         amounts: [signedAmount(classification.row)],
-        title: `Received ${classification.row.token.code}`,
+        title: `${i18n.t("Received")} ${classification.row.token.code}`,
       };
     case "multiple":
       return {
         kind: contractCall ? "contract" : "other",
         rowIcon: iconForContract(protocol, distinctTokens(classification.rows)),
-        primaryText: protocol?.name ?? "Contract",
-        secondaryText: protocol?.domain ?? "Multiple balance changes",
+        primaryText: protocol?.name ?? i18n.t("Contract"),
+        secondaryText: protocol?.domain ?? i18n.t("Multiple balance changes"),
         secondaryIcon: protocol?.domain ? "globe" : "contract",
         amounts: "multiple",
-        title: protocol?.name ?? "Contract",
+        title: protocol?.name ?? i18n.t("Contract"),
       };
     case "none":
     default:
@@ -271,11 +283,11 @@ export const buildPresentation = ({
       rowIcon: protocol
         ? { type: "protocol", src: protocol.iconUrl, name: protocol.name }
         : { type: "contract" },
-      primaryText: protocol?.name ?? "Contract",
-      secondaryText: protocol?.domain ?? "Interacted",
+      primaryText: protocol?.name ?? i18n.t("Contract"),
+      secondaryText: protocol?.domain ?? i18n.t("Interacted"),
       secondaryIcon: protocol?.domain ? "globe" : "contract",
       amounts: null,
-      title: protocol?.name ?? "Contract",
+      title: protocol?.name ?? i18n.t("Contract"),
     };
   }
 
@@ -288,11 +300,11 @@ export const buildPresentation = ({
   return {
     kind: "other",
     rowIcon: { type: "contract" },
-    primaryText: "Transaction",
-    secondaryText: "Interacted",
+    primaryText: i18n.t("Transaction"),
+    secondaryText: i18n.t("Interacted"),
     secondaryIcon: null,
     amounts: null,
-    title: "Transaction",
+    title: i18n.t("Transaction"),
   };
 };
 

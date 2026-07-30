@@ -9,9 +9,8 @@
  * The use_history_v2 flag is read from the store at fetch time (mirroring
  * useGetTokenPrices) so a freshly resolved Amplitude flag isn't missed by a
  * render-captured value. When the router serves v1 (flag off at fetch time or
- * an unsupported network), the resolved payload carries fallbackToV1 so the
- * view renders the legacy history instead. (The U8 horizon adapter will map
- * v1 payloads into this model and remove that marker.)
+ * an unsupported network), the Horizon adapter maps the legacy payload into
+ * the same model so the redesigned UI can still render it.
  */
 
 import { useReducer, useRef, useState } from "react";
@@ -19,6 +18,7 @@ import { useSelector, useStore } from "react-redux";
 import { captureException } from "@sentry/browser";
 
 import { getAccountHistoryWithFlag } from "@shared/api/internal";
+import { V2AccountTransaction } from "@shared/api/types/backend-api";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import { initialState, isError, reducer } from "helpers/request";
@@ -40,7 +40,7 @@ import {
   collectTokenIds,
   mapV2Transaction,
 } from "popup/views/AccountHistory/mappers/v2";
-import { V2AccountTransaction } from "@shared/api/types/backend-api";
+import { mapHorizonOperations } from "popup/views/AccountHistory/mappers/horizon";
 
 export const HISTORY_V2_PAGE_SIZE = 25;
 
@@ -56,7 +56,7 @@ export interface ResolvedHistoryV2 {
   applicationState: APPLICATION_STATE;
   balances: AccountBalances;
   sections: HistoryEntrySection[];
-  /** v1 payload came back — render the legacy history until U8 lands */
+  /** true only if v1 mapping cannot render through the redesigned UI */
   fallbackToV1: boolean;
   hasNextPage: boolean;
 }
@@ -192,10 +192,21 @@ export function useGetHistoryDataV2({
 
       let payload: ResolvedHistoryV2;
       if (result.version === "v1") {
-        entriesRef.current = [];
+        const nativeTokenId = getNativeContractDetails(networkDetails).contract;
+        const entries = await mapHorizonOperations({
+          operations: result.operations,
+          publicKey,
+          networkDetails,
+          balances: balancesResult,
+          assetsListsData: cachedTokenLists,
+        });
+        entriesRef.current = filterHistoryEntries(entries, {
+          isHideDustEnabled,
+          nativeTokenId,
+        });
         cursorRef.current = null;
         payload = resolvedPayload(target, {
-          fallbackToV1: true,
+          fallbackToV1: false,
           hasNextPage: false,
         });
       } else {

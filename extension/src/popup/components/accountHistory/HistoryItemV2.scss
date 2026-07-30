@@ -1,0 +1,84 @@
+@use "../../styles/utils.scss" as *;
+
+.HistoryItemV2 {
+  display: flex;
+  align-items: center;
+  gap: pxToRem(10px);
+  cursor: pointer;
+
+  &__leading {
+    flex-shrink: 0;
+  }
+
+  &__body {
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__primary {
+    color: var(--sds-clr-gray-12);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__secondary {
+    display: flex;
+    align-items: center;
+    gap: pxToRem(4px);
+    color: var(--sds-clr-gray-11);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__secondary-icon {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+
+    svg {
+      height: pxToRem(14px);
+      width: pxToRem(14px);
+    }
+  }
+
+  &__trailing {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    text-align: right;
+    max-width: 45%;
+    flex-shrink: 0;
+  }
+
+  &__amounts {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+  }
+
+  &__amount {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    font-size: pxToRem(14px);
+
+    &--credit {
+      color: var(--sds-clr-green-11);
+    }
+
+    &--debit {
+      color: var(--sds-clr-gray-12);
+    }
+
+    &--multiple {
+      color: var(--sds-clr-gray-12);
+    }
+  }
+
+  &__date {
+    color: var(--sds-clr-gray-11);
+  }
+}

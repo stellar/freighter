@@ -80,7 +80,6 @@ describe("mapV2Transaction", () => {
     });
     expect(entry.amounts).toEqual([
       { text: "+40.4 USDC", direction: "credit" },
-      { text: "-40 XLM", direction: "debit" },
     ]);
     expect(entry.details.title).toBe("Swapped XLM to USDC");
     expect(entry.details.rate).toBe("1 XLM ≈ 1.01 USDC");

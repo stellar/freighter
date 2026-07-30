@@ -20,13 +20,24 @@ export interface ResolvedToken {
   decimals: number;
 }
 
+/** Distinct glyphs for the account-configuration (non-asset) operation types,
+ *  so each config change shows an icon that matches its type in the design. */
+export type SettingsGlyph =
+  | "signer"
+  | "threshold"
+  | "data"
+  | "domain"
+  | "flag"
+  | "reserve"
+  | "generic";
+
 /** Describes the leading icon of a list row / detail header */
 export type RowIconDescriptor =
   /** 1 icon = single token, 2 = overlapping swap pair, 3+ = stacked with "+N" badge */
   | { type: "asset"; tokens: ResolvedToken[] }
   | { type: "protocol"; src: string; name: string }
   | { type: "contract" }
-  | { type: "settings" }
+  | { type: "settings"; glyph: SettingsGlyph }
   | { type: "failed" }
   | { type: "account"; variant: "create" | "merge" };
 

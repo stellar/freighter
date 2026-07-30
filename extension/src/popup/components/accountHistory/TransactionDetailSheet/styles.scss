@@ -1,0 +1,150 @@
+@use "../../../styles/utils.scss" as *;
+
+// The detail drawer reuses the legacy `TransactionDetailModal` layout
+// (title-row, `Metadata`, `AssetDiff__*`) so it stays visually aligned with the
+// shipped drawer. This file only adds the redesign extras: the header
+// domain/contract chip, the state-change tiles, and the "Transaction details"
+// link.
+
+.TransactionDetailSheet {
+  &__header-meta {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    max-width: 40%;
+    margin-left: auto;
+  }
+
+  &__header-domain {
+    color: var(--sds-clr-gray-11);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  // Positive/negative amount colouring layered on top of the legacy
+  // `AssetDiff__value` (kept as its own class so unit tests can assert it).
+  &__balance-amount {
+    &--credit {
+      color: var(--sds-clr-green-11);
+    }
+
+    &--debit {
+      color: var(--sds-clr-red-11);
+    }
+  }
+
+  // Mirrors the shared "Transaction details" button used in the sign / review
+  // flows (see ReviewTx__TxDetailsBtn): a filled gray-03 card with a leading
+  // list icon and lilac label.
+  &__advanced-link {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding: pxToRem(12px) pxToRem(16px);
+    margin-top: pxToRem(12px);
+    border: 0;
+    border-radius: pxToRem(16px);
+    background-color: var(--sds-clr-gray-03);
+    color: var(--sds-clr-lilac-11);
+    font-size: pxToRem(14px);
+    cursor: pointer;
+
+    svg {
+      width: pxToRem(16px);
+      height: pxToRem(16px);
+      margin-right: pxToRem(8px);
+    }
+  }
+
+  // Legacy `__metadata` supplies its own bottom margin before the footer
+  // button, but the advanced-link card does not — restore that gap so the
+  // "Transaction details" card and the stellar.expert button aren't flush.
+  &__footer {
+    margin-top: pxToRem(12px);
+  }
+}
+
+// State-change tiles adopt the legacy card treatment (gray-03, 16px radius,
+// no border) so they sit flush with the asset-diff and metadata cards.
+.StateChangeCard {
+  display: flex;
+  flex-direction: column;
+  gap: pxToRem(12px);
+  width: 100%;
+  padding: pxToRem(12px) pxToRem(16px);
+  margin-top: pxToRem(12px);
+  border-radius: pxToRem(16px);
+  background: var(--sds-clr-gray-03);
+  text-align: left;
+  border: none;
+
+  &--interactive {
+    cursor: pointer;
+  }
+
+  &__title {
+    color: var(--sds-clr-gray-11);
+    text-transform: capitalize;
+  }
+
+  &__body {
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(12px);
+  }
+
+  &__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: pxToRem(8px);
+    min-width: 0;
+
+    &:not(:last-child) {
+      padding-bottom: pxToRem(12px);
+      border-bottom: 1px solid var(--sds-clr-gray-06);
+    }
+  }
+
+  &__row-label {
+    color: var(--sds-clr-gray-11);
+    min-width: 0;
+  }
+
+  &__row-value {
+    color: var(--sds-clr-gray-12);
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  &__old {
+    color: var(--sds-clr-gray-12);
+  }
+
+  &__new {
+    color: var(--sds-clr-gray-12);
+  }
+
+  &__arrow {
+    color: var(--sds-clr-gray-11);
+  }
+
+  &__flags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: pxToRem(6px);
+  }
+
+  &__flag {
+    font-size: pxToRem(13px);
+
+    &--set {
+      color: var(--sds-clr-green-11);
+    }
+
+    &--cleared {
+      color: var(--sds-clr-red-11);
+    }
+  }
+}

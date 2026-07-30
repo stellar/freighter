@@ -1,0 +1,8 @@
+@use "../../../styles/utils.scss" as *;
+
+.CopyChip {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  max-width: 100%;
+}

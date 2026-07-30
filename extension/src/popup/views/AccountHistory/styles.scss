@@ -11,4 +11,29 @@
   &__section-header {
     color: var(--sds-clr-gray-11);
   }
+
+  &__sentinel {
+    display: flex;
+    justify-content: center;
+    min-height: pxToRem(1px);
+  }
+
+  &__loading-more {
+    color: var(--sds-clr-gray-11);
+    padding: pxToRem(8px) 0;
+  }
+
+  &__detail-placeholder {
+    padding: pxToRem(16px);
+  }
+
+  // The detail drawer is a bottom sheet (SlideupModal) anchored to the viewport
+  // bottom; it sizes itself to its content's height. A tall drawer (e.g. the
+  // "Transaction details" view with a full operation breakdown) would otherwise
+  // extend above the top of the viewport with no way to scroll to it. Cap the
+  // drawer content to the viewport and let it scroll internally instead.
+  &__detail {
+    max-height: 90vh;
+    overflow-y: auto;
+  }
 }

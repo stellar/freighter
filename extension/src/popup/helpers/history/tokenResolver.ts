@@ -19,6 +19,7 @@ import { NetworkDetails } from "@shared/constants/stellar";
 import { AssetListResponse } from "@shared/constants/soroban/asset-list";
 import { getTokenDetails } from "@shared/api/internal";
 import { getIconFromTokenLists } from "@shared/api/helpers/getIconFromTokenList";
+import { getCanonicalFromAsset } from "@shared/helpers/stellar";
 import { AccountBalances } from "helpers/hooks/useGetBalances";
 
 import { getNativeContractDetails } from "popup/helpers/searchAsset";
@@ -71,11 +72,19 @@ const indexBalancesByContractId = (
       continue;
     }
 
+    // Reuse the icons already fetched for the account's balances (keyed by
+    // canonical code:issuer) so held tokens like USDC render their logo
+    // instead of the lettered fallback.
+    const icon =
+      balances?.icons?.[
+        getCanonicalFromAsset(token.code, issuerKey ?? undefined)
+      ] ?? null;
+
     byContract.set(contractId, {
       code: token.code,
       contractId,
       issuer: issuerKey,
-      icon: null,
+      icon,
       decimals:
         "decimals" in balance && typeof balance.decimals === "number"
           ? balance.decimals

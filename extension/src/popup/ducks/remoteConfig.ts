@@ -5,6 +5,7 @@ import {
 } from "@reduxjs/toolkit";
 import type { Variant } from "@amplitude/experiment-js-client";
 
+import { isDev } from "@shared/helpers/dev";
 import { getExperimentClient } from "helpers/experimentClient";
 import { BUNDLE_ID_USER_PROPERTY_KEY, getBundleId } from "helpers/analytics";
 import {
@@ -85,9 +86,10 @@ const initialState: RemoteConfigState = {
   // Defaults to v2; Amplitude can flip it off to roll back to the v1
   // token-prices endpoint without a release.
   use_token_prices_v2: true,
-  // History redesign data source. Defaults to v1 while the v2
-  // account-history endpoint is mocked (see getAccountHistoryV2); Amplitude
-  // enables it for dev/beta and eventually flips the default.
+  // History redesign data source. Defaults off; enabled for local dev in the
+  // no-client branch of fetchFeatureFlags (see below) and by Amplitude for
+  // beta. Production flips the default once the v2 endpoint is live (see
+  // getAccountHistoryV2, still mocked).
   use_history_v2: false,
   maintenance_banner: { enabled: false, payload: undefined },
   maintenance_screen: { enabled: false, payload: undefined },
@@ -111,7 +113,10 @@ export const fetchFeatureFlags = createAsyncThunk(
     const client = getExperimentClient();
 
     if (!client) {
-      return { ...initialState, isInitialized: true };
+      // In local dev there is no Amplitude deployment key, so the client is
+      // null. Enable the v2 history UI here so the redesign is visible without
+      // a key; production has a key and takes the real fetch path below.
+      return { ...initialState, use_history_v2: isDev, isInitialized: true };
     }
 
     // Pass user_properties explicitly so flags are fetched correctly even when
