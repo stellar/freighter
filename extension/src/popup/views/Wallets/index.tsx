@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
-import { Link, Navigate, useNavigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import {
   Button,
   Card,
@@ -44,69 +44,9 @@ import { newTabHref } from "helpers/urls";
 import { navigateTo, openTab } from "popup/helpers/navigate";
 import { reRouteOnboarding } from "popup/helpers/route";
 import { WalletType } from "@shared/constants/hardwareWallet";
+import { AddWallet } from "popup/components/account/AddWallet";
 
 import "./styles.scss";
-
-interface AddWalletProps {
-  onBack: () => void;
-}
-
-const AddWallet = ({ onBack }: AddWalletProps) => {
-  const { t } = useTranslation();
-  const actions = [
-    {
-      icon: <Icon.Activity stroke="#99D52A" />,
-      color: "lime",
-      title: t("Create new wallet"),
-      description: t("Create a wallet from your seed phrase."),
-      link: ROUTES.addAccount,
-    },
-    {
-      icon: <Icon.Activity stroke="#D6409F" />,
-      color: "purple",
-      title: t("Import Stellar Secret Key"),
-      description: t("Add a wallet using a secret key."),
-      link: ROUTES.importAccount,
-    },
-    {
-      icon: <Icon.ShieldPlus stroke="#3E63DD" />,
-      color: "blue",
-      title: t("Connect a hardware wallet"),
-      description: t("Add a wallet from a hardware wallet."),
-      link: ROUTES.connectWallet,
-    },
-  ];
-  return (
-    <>
-      <SubviewHeader
-        title={t("Add another wallet")}
-        customBackAction={onBack}
-        customBackIcon={<Icon.ArrowLeft />}
-      />
-      <View.Content hasNoTopPadding>
-        <div className="AddWallet">
-          {actions.map((action) => {
-            const iconClasses = classNames(
-              "AddWallet__row__icon",
-              action.color,
-            );
-            return (
-              <div key={action.title} className="AddWallet__row">
-                <Link className="AddWallet__row-link" to={action.link}>
-                  <div className={iconClasses}>{action.icon}</div>
-                  <div className="AddWallet__row__title">{action.title}</div>
-                  <div className="AddWallet__row__description">
-                    {action.description}
-                  </div>
-                </Link>
-              </div>
-            );
-          })}
-        </div>
-      </View.Content>
-    </>
-  );
-};
 
 interface FormValue {
   accountName: string;
