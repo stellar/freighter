@@ -1,11 +1,46 @@
-.NotFunded {
-  width: 100%;
+@use "../../../styles/utils.scss" as *;
 
-  &__link {
-    margin-left: 1.5rem;
+.NotFunded {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: pxToRem(8px);
+  padding: pxToRem(48px) pxToRem(16px);
+
+  &__badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: pxToRem(48px);
+    height: pxToRem(48px);
+    border-radius: 50%;
+    background-color: var(--sds-clr-gray-03);
+    color: var(--sds-clr-gray-09);
+    margin-bottom: pxToRem(8px);
   }
 
-  &__spacer {
-    height: 0.75rem;
+  &__title {
+    color: var(--sds-clr-gray-12);
+    font-size: pxToRem(16px);
+    font-weight: var(--font-weight-medium);
+    line-height: pxToRem(24px);
+  }
+
+  &__body {
+    color: var(--sds-clr-gray-11);
+    font-size: pxToRem(14px);
+    font-weight: var(--font-weight-regular);
+    line-height: pxToRem(20px);
+    margin-bottom: pxToRem(8px);
+  }
+
+  &__link {
+    color: var(--sds-clr-lilac-11);
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
   }
 }
