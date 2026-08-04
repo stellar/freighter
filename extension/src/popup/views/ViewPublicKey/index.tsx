@@ -126,7 +126,7 @@ export const ViewPublicKey = () => {
                 key. CopyText has no copy callback, so emit on click. */}
             <Button
               size="lg"
-              variant="primary"
+              variant="secondary"
               isFullWidth
               isRounded
               icon={<Icon.Copy01 />}
