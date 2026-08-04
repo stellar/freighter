@@ -56,6 +56,7 @@ function useSubmitTxData({
       asset,
       destination,
       federationAddress,
+      domainAddress,
       destinationAsset,
       destinationTokenDetails,
       isCollectible,
@@ -124,7 +125,9 @@ function useSubmitTxData({
 
           if (!isSelfOwnedDestination) {
             await reduxDispatch(
-              addRecentAddress({ address: federationAddress || destination }),
+              addRecentAddress({
+                address: federationAddress || domainAddress || destination,
+              }),
             );
           }
 

@@ -13,7 +13,8 @@ export const SelectedCollectible = ({
   goToChooseDest: () => void;
 }) => {
   const { transactionData } = useSelector(transactionSubmissionSelector);
-  const { collectibleData, destination, federationAddress } = transactionData;
+  const { collectibleData, destination, federationAddress, domainAddress } =
+    transactionData;
   const { collectionName, tokenId, name, image } = collectibleData;
   return (
     <div className="SelectedCollectible" data-testid="SelectedCollectible">
@@ -21,6 +22,7 @@ export const SelectedCollectible = ({
         <AddressTile
           address={destination}
           federationAddress={federationAddress}
+          domainAddress={domainAddress}
           onClick={goToChooseDest}
         />
       </div>
