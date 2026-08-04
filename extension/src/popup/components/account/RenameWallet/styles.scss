@@ -3,21 +3,65 @@
 .RenameWallet {
   z-index: var(--z-index--banner);
   position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: #{pxToRem(24px)};
+  width: #{pxToRem(312px)};
+  margin: 0 auto;
+  padding: #{pxToRem(24px)};
+  background-color: var(--sds-clr-gray-01);
+  border-radius: #{pxToRem(32px)};
 
-  &__short-address {
-    font-size: 14px;
-    color: var(--sds-clr-gray-10);
-    margin: #{pxToRem(12px)} 0 #{pxToRem(18px)} 0;
+  &__close {
+    position: absolute;
+    top: 0;
+    right: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: #{pxToRem(34px)};
+    height: #{pxToRem(34px)};
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background-color: var(--sds-clr-gray-03);
+    color: var(--sds-clr-gray-11);
+    cursor: pointer;
+
+    svg {
+      width: #{pxToRem(14px)};
+      height: #{pxToRem(14px)};
+    }
+  }
+
+  &__identicon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: #{pxToRem(48px)};
+    height: #{pxToRem(48px)};
+    margin: 0 auto;
+    border-radius: 50%;
+    background-color: var(--sds-clr-gray-03);
+
+    .IdenticonImg {
+      width: #{pxToRem(20.8px)};
+      height: #{pxToRem(20.8px)};
+    }
+  }
+
+  &__form {
+    display: flex;
+    flex-direction: column;
+    gap: #{pxToRem(24px)};
   }
 
   &__actions {
     display: flex;
+    gap: #{pxToRem(8px)};
 
     button {
       flex: 1;
-    }
-    button:not(:first-child) {
-      margin-left: #{pxToRem(10px)};
     }
   }
 }

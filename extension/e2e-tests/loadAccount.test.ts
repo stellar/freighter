@@ -635,7 +635,7 @@ test("Renames wallets", async ({ page, extensionId, context }) => {
   await walletRowOptions[0].click();
   await page.getByText("Rename wallet").click();
   await page.getByTestId("rename-wallet-input").fill("New Wallet");
-  await page.getByText("Save").click();
+  await page.getByText("Set name").click();
   await expect(page.getByText("New Wallet")).toBeVisible();
 });
 

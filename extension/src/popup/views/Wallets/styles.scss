@@ -2,8 +2,11 @@
 
 .RenameWalletWrapper {
   position: absolute;
+  z-index: var(--z-index--banner);
+  top: 50%;
+  left: 0;
   width: 100%;
-  top: 30%;
+  transform: translateY(-50%);
 }
 
 .AddWalletWrapper {
