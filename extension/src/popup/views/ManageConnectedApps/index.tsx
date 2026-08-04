@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
 import { Button, Icon, Notification, Select } from "@stellar/design-system";
 import { Navigate, useLocation } from "react-router-dom";
+import { toast } from "sonner";
 
 import { saveAllowList } from "popup/ducks/settings";
 import { SubviewHeader } from "popup/components/SubviewHeader";
@@ -42,6 +43,10 @@ export const ManageConnectedApps = () => {
     setSelectedNetworkName(e.target.value);
   };
 
+  const notifySuccess = (title: string) => {
+    toast.custom(() => <Notification variant="success" title={title} />);
+  };
+
   const handleRemove = async (domainToRemove: string) => {
     await dispatch(
       saveAllowList({
@@ -50,6 +55,7 @@ export const ManageConnectedApps = () => {
       }),
     );
     await fetchData(false);
+    notifySuccess(t("{{appName}} disconnected", { appName: domainToRemove }));
   };
 
   const handleRemoveAll = async () => {
@@ -59,6 +65,7 @@ export const ManageConnectedApps = () => {
       );
     }
     await fetchData(false);
+    notifySuccess(t("All apps disconnected"));
   };
 
   useEffect(() => {
@@ -184,13 +191,21 @@ export const ManageConnectedApps = () => {
                 )}
               </div>
 
+              {/*
+                No `className` here on purpose: SDS spreads its props *after*
+                its own `className`, so any className we pass replaces the
+                whole `Button Button--error Button--lg ...` list rather than
+                adding to it — which collapsed this button to an unstyled
+                18px block. Styling hooks off `.Button` via the wrapper
+                instead (same approach as the row's RemoveButton).
+              */}
               <Button
                 size="lg"
-                variant="tertiary"
+                variant="error"
                 isFullWidth
                 isRounded
                 onClick={handleRemoveAll}
-                className="ManageConnectedApps__disconnect-all"
+                data-testid="disconnect-all"
               >
                 {t("Disconnect all")}
               </Button>
@@ -210,7 +225,7 @@ export const ManageConnectedApps = () => {
                 {t("Discover apps and connect your first one.")}
               </div>
               <Button
-                size="md"
+                size="lg"
                 variant="secondary"
                 isRounded
                 onClick={() => setIsDiscoverOpen(true)}

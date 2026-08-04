@@ -1,4 +1,5 @@
 {
+  "{{appName}} disconnected": "{{appName}} disconnected",
   "{{domain}} is not currently connected to Freighter": "{{domain}} is not currently connected to Freighter",
   "* All Stellar accounts must maintain a minimum balance of lumens.": "* All Stellar accounts must maintain a minimum balance of lumens.",
   "* payment methods may vary based on your location": "* payment methods may vary based on your location",
@@ -50,6 +51,7 @@
   "Addresses are uppercase and begin with letters \"G\", \"M\", or \"C\"": "Addresses are uppercase and begin with letters \"G\", \"M\", or \"C\"",
   "Advanced settings": "Advanced settings",
   "Advanced settings are not recommended for new or unexperienced users": "Advanced settings are not recommended for new or unexperienced users.",
+  "All apps disconnected": "All apps disconnected",
   "Allow connecting to non-HTTPS networks": "Allow connecting to non-HTTPS networks",
   "Allow Freighter to collect anonymous information about usage.": "Allow Freighter to collect anonymous information about usage.",
   "Allow Freighter to connect to domains that do not have an SSL certificate on Mainnet.": "Allow Freighter to connect to domains that do not have an SSL certificate on Mainnet.",

@@ -26,12 +26,21 @@
     // here so the pill's own 4px gap is the only spacing between icon/label.
     .NetworkIcon {
       margin-right: 0;
+
+      // The frame draws the globe at the same visual weight as the semi-bold
+      // label beside it. SDS ships the glyph at `stroke-width: 2` in a 24
+      // viewBox, which thins out to ~1.3px once scaled down to the 16px the
+      // pill renders it at, so thicken the stroke to compensate. Scoped to
+      // the pill — NetworkIcon's other call sites keep the default weight.
+      svg {
+        stroke-width: 2.5;
+      }
     }
 
     &__label {
       color: var(--sds-clr-gray-12);
       font-size: pxToRem(14px);
-      font-weight: var(--font-weight-semi-bold);
+      font-weight: var(--sds-fw-semi-bold);
       line-height: pxToRem(20px);
       white-space: nowrap;
     }
@@ -72,6 +81,13 @@
       height: 100%;
       background-color: transparent;
       border: none;
+
+      // SDS grows a 4px box-shadow ring on the container whenever the select
+      // takes focus (`.Select__container:has(select:focus-visible)` bumps
+      // `--Select-box-shadow-size` to 0.25rem). Stretched over the pill, that
+      // reads as a halo around the whole pill on every click. The frame has
+      // no such treatment, so suppress it in all states.
+      box-shadow: none;
     }
 
     // SDS renders its own decorative chevron inside the select container;
@@ -158,7 +174,7 @@
     .PunycodedDomain__domain {
       color: var(--sds-clr-gray-12);
       font-size: pxToRem(14px);
-      font-weight: var(--font-weight-medium);
+      font-weight: var(--sds-fw-medium);
       line-height: pxToRem(20px);
       min-width: 0;
       overflow: hidden;
@@ -167,16 +183,11 @@
     }
   }
 
-  &__disconnect-all {
-    // The frame's outlined red pill is exactly SDS `Button--error`'s default
-    // triad (red-01 background / red-06 border / red-11 text) — see the
-    // design-spec Gotchas. Restated explicitly (rather than left to the
-    // `tertiary` variant's gray default) since Task 2 drops `variant="error"`
-    // to also drop the leading icon.
-    background-color: var(--sds-clr-red-01) !important; // sds Button override
-    border-color: var(--sds-clr-red-06) !important; // sds Button override
-    color: var(--sds-clr-red-11) !important; // sds Button override
-  }
+  // The frame's outlined red pill — red-01 background / red-06 border /
+  // red-11 text, 14px semi-bold, pill radius, full width — is exactly what
+  // SDS gives us for `variant="error" size="lg" isRounded isFullWidth`, so
+  // there is nothing left to override here. (`variant="error"` adds no
+  // leading icon; SDS only renders one when the `icon` prop is set.)
 
   &__empty {
     display: flex;
@@ -196,21 +207,31 @@
       background-color: var(--sds-clr-gray-03);
       color: var(--sds-clr-gray-09);
       margin-bottom: pxToRem(8px);
+
+      // Without an explicit size the glyph lands at ~16px inside the 48px
+      // circle, well short of the frame's 20.571px icon (48px badge less its
+      // 13.714px padding on each side).
+      svg {
+        width: pxToRem(20.571px);
+        height: pxToRem(20.571px);
+      }
     }
 
     &__title {
       color: var(--sds-clr-gray-12);
       font-size: pxToRem(16px);
-      font-weight: var(--font-weight-medium);
+      font-weight: var(--sds-fw-medium);
       line-height: pxToRem(24px);
     }
 
     &__subtitle {
       color: var(--sds-clr-gray-11);
       font-size: pxToRem(14px);
-      font-weight: var(--font-weight-regular);
+      font-weight: var(--sds-fw-regular);
       line-height: pxToRem(20px);
-      margin-bottom: pxToRem(8px);
+      // Plus the column's own 8px gap, this makes the frame's 24px gap
+      // between the subtext and the "Go to Discover" button.
+      margin-bottom: pxToRem(16px);
     }
   }
 

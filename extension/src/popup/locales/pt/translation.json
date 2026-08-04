@@ -1,4 +1,5 @@
 {
+  "{{appName}} disconnected": "{{appName}} desconectado",
   "{{domain}} is not currently connected to Freighter": "{{domain}} não está atualmente conectado ao Freighter",
   "* All Stellar accounts must maintain a minimum balance of lumens.": "* Todas as contas Stellar devem manter um saldo mínimo de lumens.",
   "* payment methods may vary based on your location": "* Os métodos de pagamento podem variar com base na sua localização",
@@ -50,6 +51,7 @@
   "Addresses are uppercase and begin with letters \"G\", \"M\", or \"C\"": "Os endereços são em maiúsculas e começam com as letras \"G\", \"M\" ou \"C\"",
   "Advanced settings": "Configurações avançadas",
   "Advanced settings are not recommended for new or unexperienced users": "As configurações avançadas não são recomendadas para usuários novos ou inexperientes.",
+  "All apps disconnected": "Todos os apps desconectados",
   "Allow connecting to non-HTTPS networks": "Permitir conexão com redes não-HTTPS",
   "Allow Freighter to collect anonymous information about usage.": "Permitir que o Freighter colete informações anônimas sobre o uso.",
   "Allow Freighter to connect to domains that do not have an SSL certificate on Mainnet.": "Permitir que o Freighter se conecte a domínios que não possuem um certificado SSL na Mainnet.",
