@@ -56,6 +56,10 @@
 
     &__pane {
       padding: 0 var(--account-view-padding-side);
+      // Reserve room below the last row so the floating add pill (an
+      // absolutely-positioned overlay pinned near the bottom of the view)
+      // never sits on top of real list content and swallows its clicks.
+      padding-bottom: pxToRem(88px);
       height: auto;
       overflow: auto;
       position: relative;
