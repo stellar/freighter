@@ -2,27 +2,16 @@ import React, { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { Navigate, useNavigate } from "react-router-dom";
-import {
-  Button,
-  Card,
-  CopyText,
-  Icon,
-  Input,
-  Notification,
-} from "@stellar/design-system";
+import { Button, CopyText, Icon, Notification } from "@stellar/design-system";
 import classNames from "classnames";
-import { Field, FieldProps, Form, Formik } from "formik";
-import { object as YupObject, string as YupString } from "yup";
 
 import { AppDispatch } from "popup/App";
 import { ROUTES } from "popup/constants/routes";
-import { Account } from "@shared/api/types";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { View } from "popup/basics/layout/View";
 import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
 import {
   makeAccountActive,
-  updateAccountName,
   allAccountsSelector,
 } from "popup/ducks/accountServices";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
@@ -33,8 +22,6 @@ import {
 import IconEllipsis from "popup/assets/icon-ellipsis.svg";
 import { truncatedPublicKey } from "helpers/stellar";
 import { getColorPubKey } from "helpers/stellarIdenticon";
-import { METRIC_NAMES } from "popup/constants/metricsNames";
-import { emitMetric } from "helpers/metrics";
 import { LoadingBackground } from "popup/basics/LoadingBackground";
 import { useGetWalletsData } from "./hooks/useGetWalletsData";
 import { RequestState } from "constants/request";
@@ -45,112 +32,9 @@ import { navigateTo, openTab } from "popup/helpers/navigate";
 import { reRouteOnboarding } from "popup/helpers/route";
 import { WalletType } from "@shared/constants/hardwareWallet";
 import { AddWallet } from "popup/components/account/AddWallet";
+import { RenameWallet } from "popup/components/account/RenameWallet";
 
 import "./styles.scss";
-
-interface FormValue {
-  accountName: string;
-}
-
-interface RenameWalletProps {
-  allAccounts: Account[];
-  publicKey: string;
-  onClose: () => void;
-  onSubmit: () => void;
-}
-
-const RenameWallet = ({
-  allAccounts,
-  publicKey,
-  onClose,
-  onSubmit,
-}: RenameWalletProps) => {
-  const { t } = useTranslation();
-  const dispatch = useDispatch<AppDispatch>();
-  const account = allAccounts.find(
-    (account) => account.publicKey === publicKey,
-  )!;
-  const accountName = account.name;
-  const shortPublicKey = truncatedPublicKey(publicKey);
-  const initialValues: FormValue = {
-    accountName,
-  };
-  const handleSubmit = async (values: FormValue) => {
-    const { accountName: newAccountName } = values;
-    if (accountName !== newAccountName) {
-      await dispatch(
-        updateAccountName({ accountName: newAccountName, publicKey }),
-      );
-      emitMetric(METRIC_NAMES.accountRenamed, { source: "wallets" });
-      onSubmit();
-      onClose();
-    }
-  };
-
-  return (
-    <View.Content hasNoTopPadding>
-      <div className="RenameWallet">
-        <Card>
-          <p>{t("Rename Wallet")}</p>
-          <Formik
-            initialValues={initialValues}
-            onSubmit={handleSubmit}
-            validationSchema={YupObject().shape({
-              accountName: YupString().max(
-                24,
-                t("max of 24 characters allowed"),
-              ),
-            })}
-          >
-            {({ errors }) => (
-              <>
-                <Form className="RenameWallet__form">
-                  <Field name="accountName">
-                    {({ field }: FieldProps) => (
-                      <Input
-                        data-testid="rename-wallet-input"
-                        autoFocus
-                        fieldSize="md"
-                        autoComplete="off"
-                        id="accountName"
-                        placeholder={accountName}
-                        maxLength={24}
-                        {...field}
-                        error={errors.accountName}
-                      />
-                    )}
-                  </Field>
-                  <div className="RenameWallet__short-address">
-                    {t("Address")}: {shortPublicKey}
-                  </div>
-                  <div className="RenameWallet__actions">
-                    <Button
-                      type="button"
-                      size="md"
-                      isRounded
-                      variant="tertiary"
-                      onClick={onClose}
-                    >
-                      {t("Cancel")}
-                    </Button>
-                    <Button
-                      type="submit"
-                      size="md"
-                      isRounded
-                      variant="secondary"
-                    >
-                      {t("Save")}
-                    </Button>
-                  </div>
-                </Form>
-              </>
-            )}
-          </Formik>
-        </Card>
-      </div>
-    </View.Content>
-  );
-};
 
 interface WalletRowProps {
   isFetchingTokenPrices: boolean;
