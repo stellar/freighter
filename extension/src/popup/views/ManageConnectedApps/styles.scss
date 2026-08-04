@@ -3,120 +3,220 @@
 .ManageConnectedApps {
   display: flex;
   flex-direction: column;
+  gap: pxToRem(16px);
+  // Lets `&__wrapper` below stretch to fill the remaining popup height, so
+  // "Disconnect all" pins to the bottom (frame: footer fills remaining
+  // height, content bottom-aligned) instead of trailing right after the
+  // list. Harmless for the empty state, which doesn't opt into the stretch.
   height: 100%;
+
+  &__network-pill {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: pxToRem(4px);
+    width: fit-content;
+    background-color: var(--sds-clr-gray-01);
+    border: 1px solid var(--sds-clr-gray-06);
+    border-radius: pxToRem(8px);
+    padding: pxToRem(8px) pxToRem(12px);
+    cursor: pointer;
+
+    // NetworkIcon carries its own margin-right for other call sites; zero it
+    // here so the pill's own 4px gap is the only spacing between icon/label.
+    .NetworkIcon {
+      margin-right: 0;
+    }
+
+    &__label {
+      color: var(--sds-clr-gray-12);
+      font-size: pxToRem(14px);
+      font-weight: var(--font-weight-semi-bold);
+      line-height: pxToRem(20px);
+      white-space: nowrap;
+    }
+
+    &__chevron {
+      width: pxToRem(16px);
+      height: pxToRem(16px);
+      color: var(--sds-clr-gray-09);
+      flex-shrink: 0;
+    }
+
+    // The native select stays in the DOM for keyboard and screen-reader
+    // support, stretched over the whole pill but visually transparent. The
+    // label and chevron beside it are what the user actually sees.
+    //
+    // SDS's <Select> spreads `className`/`data-testid`/`onChange` straight
+    // onto the <select> element itself, not onto a wrapper div (see
+    // node_modules/@stellar/design-system/build/components/Select/index.js)
+    // — so `&__select` below IS the <select>. Its own `.Select__container`
+    // ancestor is `position: relative`, which would hijack `position:
+    // absolute; inset: 0` on the select and collapse its hitbox to that
+    // inner wrapper's shrink-to-fit size (confirmed by measurement: ~24x12px
+    // pinned to the decorative chevron SDS renders there) instead of the
+    // pill. Stretch the outer `.Select` div instead — reached structurally,
+    // since it does not carry our className either — and let a plain 100%
+    // cascade the resulting definite size down to the select.
+    .Select {
+      position: absolute;
+      inset: 0;
+    }
+
+    // `.Select__container` paints its own opaque background/border (SDS
+    // default: gray-01 fill, gray-06 border) and, now that it's stretched
+    // to cover the whole pill, would otherwise sit on top of and hide the
+    // NetworkIcon/label/chevron painted earlier in the pill's DOM order.
+    .Select__container {
+      width: 100%;
+      height: 100%;
+      background-color: transparent;
+      border: none;
+    }
+
+    // SDS renders its own decorative chevron inside the select container;
+    // redundant with the explicit Icon.ChevronDown already in the pill, and
+    // would otherwise be visible now that the container spans the pill.
+    .Select__icon {
+      display: none;
+    }
+
+    &__select {
+      display: block;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      cursor: pointer;
+    }
+  }
 
   &__wrapper {
     display: flex;
     flex-direction: column;
-    height: 100%;
-    gap: 2rem;
+    flex: 1;
+    gap: pxToRem(16px);
     justify-content: space-between;
   }
 
   &__list {
     display: flex;
     flex-direction: column;
-    padding: pxToRem(12px) pxToRem(16px);
+    background-color: var(--sds-clr-gray-03);
     border-radius: pxToRem(16px);
-    background-color: var(--sds-clr-gray-02);
+    overflow: hidden;
   }
 
   &__row {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    padding: pxToRem(12px) pxToRem(16px);
 
     &:not(:last-child) {
-      margin-bottom: pxToRem(16px);
-      padding-bottom: pxToRem(16px);
       border-bottom: 1px solid var(--sds-clr-gray-06);
     }
 
+    // RemoveButton renders an SDS `Button variant="tertiary"` whose default
+    // treatment is a bordered gray pill. The frame just wants a bare red
+    // minus-circle glyph, so strip the button chrome and force the icon
+    // color the row diagram calls for.
     .Button {
       flex: 0 0 auto;
-      margin-left: pxToRem(8px);
       color: var(--sds-clr-red-09);
       background-color: transparent;
       border: none;
-      height: 18px;
-      width: 18px;
+      height: pxToRem(18px);
+      width: pxToRem(18px);
       padding: 0;
     }
 
     .PunycodedDomain {
-      flex: 1 1 0%;
-      min-width: 0;
       display: flex;
       align-items: center;
-      gap: pxToRem(8px);
-
-      div {
-        margin-bottom: 0;
-      }
-
-      .PunycodedDomain__favicon-container {
-        flex: 0 0 auto;
-      }
-
-      .PunycodedDomain__domain {
-        flex: 1 1 auto;
-        min-width: 0;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
+      gap: pxToRem(12px);
+      flex: 1 1 0%;
+      min-width: 0;
     }
 
     .PunycodedDomain__favicon-container {
-      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: pxToRem(32px);
+      height: pxToRem(32px);
+      border-radius: pxToRem(8px);
+      overflow: hidden;
+      flex: 0 0 auto;
+    }
+
+    .PunycodedDomain__favicon {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .PunycodedDomain__domain {
+      color: var(--sds-clr-gray-12);
+      font-size: pxToRem(14px);
+      font-weight: var(--font-weight-medium);
+      line-height: pxToRem(20px);
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
   }
 
+  &__disconnect-all {
+    // The frame's outlined red pill is exactly SDS `Button--error`'s default
+    // triad (red-01 background / red-06 border / red-11 text) — see the
+    // design-spec Gotchas. Restated explicitly (rather than left to the
+    // `tertiary` variant's gray default) since Task 2 drops `variant="error"`
+    // to also drop the leading icon.
+    background-color: var(--sds-clr-red-01) !important; // sds Button override
+    border-color: var(--sds-clr-red-06) !important; // sds Button override
+    color: var(--sds-clr-red-11) !important; // sds Button override
+  }
+
   &__empty {
-    align-items: center;
     display: flex;
-    justify-content: center;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: pxToRem(8px);
     padding-top: pxToRem(24px);
+
+    &__badge {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: pxToRem(48px);
+      height: pxToRem(48px);
+      border-radius: 50%;
+      background-color: var(--sds-clr-gray-03);
+      color: var(--sds-clr-gray-09);
+      margin-bottom: pxToRem(8px);
+    }
+
+    &__title {
+      color: var(--sds-clr-gray-12);
+      font-size: pxToRem(16px);
+      font-weight: var(--font-weight-medium);
+      line-height: pxToRem(24px);
+    }
+
+    &__subtitle {
+      color: var(--sds-clr-gray-11);
+      font-size: pxToRem(14px);
+      font-weight: var(--font-weight-regular);
+      line-height: pxToRem(20px);
+      margin-bottom: pxToRem(8px);
+    }
   }
 
-  &__select {
-    padding-left: 1.625rem !important;
-  }
-
-  &__network {
-    position: absolute;
-    top: pxToRem(13);
-    left: pxToRem(30);
-  }
-
-  &__loader {
-    align-items: center;
-    display: flex;
+  &__discover-sheet {
+    background: var(--sds-clr-gray-01);
     height: 100%;
-    justify-content: center;
-  }
-
-  &__list {
-    margin-top: 1.5rem;
-  }
-
-  &__badge {
-    display: flex;
-    margin-bottom: 1rem;
-  }
-
-  &__title {
-    font-size: 0.875rem;
-    line-height: 1.25rem;
-  }
-
-  &__subtitle {
-    font-size: 0.75rem;
-    color: var(--sds-clr-gray-11);
-    line-height: 1.125rem;
-  }
-
-  &__select-wrapper {
-    margin-top: pxToRem(4px);
+    width: 100%;
   }
 }
