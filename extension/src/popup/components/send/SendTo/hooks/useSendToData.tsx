@@ -1,16 +1,22 @@
-import { useReducer } from "react";
+import { useReducer, useRef } from "react";
 import { Federation, StrKey } from "stellar-sdk";
 import { FormikErrors } from "formik";
 import debounce from "lodash/debounce";
 import { captureException } from "@sentry/browser";
 import i18n from "popup/helpers/localizationConfig";
 import { FederationMemoType } from "popup/helpers/federationMemo";
+import { resolveSorobanDomain } from "popup/helpers/sorobanDomains";
 
 import { initialState, isError, reducer } from "helpers/request";
 import { AccountBalances, useGetBalances } from "helpers/hooks/useGetBalances";
 import { loadRecentAddresses } from "@shared/api/internal";
 import { getBaseAccount } from "popup/helpers/account";
-import { isFederationAddress, isMainnet, isSameAccount } from "helpers/stellar";
+import {
+  isFederationAddress,
+  isMainnet,
+  isSameAccount,
+  isSorobanDomain,
+} from "helpers/stellar";
 import { isContractId } from "popup/helpers/soroban";
 import {
   AppDataType,
@@ -26,6 +32,7 @@ interface ResolvedSendToData {
   destinationBalances?: AccountBalances;
   validatedAddress: string;
   fedAddress: string;
+  domainAddress: string;
   federationMemo: string;
   federationMemoType: FederationMemoType | "";
   applicationState: APPLICATION_STATE;
@@ -35,7 +42,10 @@ interface ResolvedSendToData {
 
 type SendToData = NeedsReRoute | ResolvedSendToData;
 
-export const getAddressFromInput = async (userInput: string) => {
+export const getAddressFromInput = async (
+  userInput: string,
+  networkDetails: NetworkDetails,
+) => {
   if (isFederationAddress(userInput)) {
     let fedResp;
     try {
@@ -60,14 +70,35 @@ export const getAddressFromInput = async (userInput: string) => {
     return {
       validatedAddress: fedResp.account_id,
       fedAddress: userInput,
+      domainAddress: "",
       federationMemo: memo,
       federationMemoType: memoType,
+    };
+  }
+
+  if (isSorobanDomain(userInput)) {
+    if (!isMainnet(networkDetails)) {
+      throw new Error(i18n.t("Soroban Domains is only available on Mainnet"));
+    }
+
+    const { address, domain } = await resolveSorobanDomain(
+      userInput,
+      networkDetails,
+    );
+
+    return {
+      validatedAddress: address,
+      fedAddress: "",
+      domainAddress: domain,
+      federationMemo: "",
+      federationMemoType: "" as const,
     };
   }
 
   return {
     validatedAddress: userInput,
     fedAddress: "",
+    domainAddress: "",
     federationMemo: "",
     federationMemoType: "" as const,
   };
@@ -83,6 +114,13 @@ function useSendToData() {
     showHidden: true,
     includeIcons: false,
   });
+  // Domain/federation resolution is async and can be slow (RPC round-trip).
+  // A fast typist can trigger a newer fetch before an older one settles; this
+  // guard stops the older one's dispatch from overwriting the newer state.
+  // getAddressFromInput/loadRecentAddresses/fetchBalances don't accept an
+  // AbortSignal, so this can't cancel the underlying network calls - it only
+  // marks a superseded call as stale. Same pattern as useSwapTokenLookup.
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const debouncedFetch = debounce(
     async (
@@ -92,13 +130,22 @@ function useSendToData() {
       networkDetails: NetworkDetails,
       _isMainnet: boolean,
     ) => {
+      abortControllerRef.current?.abort();
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
+
       try {
         const {
           validatedAddress,
           fedAddress,
+          domainAddress,
           federationMemo,
           federationMemoType,
-        } = await getAddressFromInput(userInput);
+        } = await getAddressFromInput(userInput, networkDetails);
+
+        if (controller.signal.aborted) {
+          return;
+        }
 
         // Block self-sends. isSameAccount resolves muxed (M...) addresses to
         // their base (G...) account, so sending to one of your own muxed
@@ -112,11 +159,16 @@ function useSendToData() {
           activePublicKey: publicKey,
         });
 
+        if (controller.signal.aborted) {
+          return;
+        }
+
         const payload = {
           type: AppDataType.RESOLVED,
           recentAddresses,
           validatedAddress,
           fedAddress,
+          domainAddress,
           federationMemo,
           federationMemoType,
           applicationState,
@@ -140,9 +192,16 @@ function useSendToData() {
           payload.destinationBalances = destinationBalances;
         }
 
+        if (controller.signal.aborted) {
+          return;
+        }
+
         dispatch({ type: "FETCH_DATA_SUCCESS", payload });
         return payload;
       } catch (error) {
+        if (controller.signal.aborted) {
+          return;
+        }
         dispatch({ type: "FETCH_DATA_ERROR", payload: error });
         return error;
       }
@@ -177,6 +236,7 @@ function useSendToData() {
         recentAddresses: [],
         validatedAddress: "",
         fedAddress: "",
+        domainAddress: "",
         federationMemo: "",
         federationMemoType: "",
         applicationState,
@@ -205,6 +265,7 @@ function useSendToData() {
       recentAddresses,
       validatedAddress: "",
       fedAddress: "",
+      domainAddress: "",
       federationMemo: "",
       federationMemoType: "",
       applicationState,
