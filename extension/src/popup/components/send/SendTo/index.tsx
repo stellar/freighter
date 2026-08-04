@@ -14,6 +14,7 @@ import { useTranslation } from "react-i18next";
 import {
   isFederationAddress,
   isSameAccount,
+  isSorobanDomain,
   isValidFederatedDomain,
   truncatedPublicKey,
 } from "helpers/stellar";
@@ -33,9 +34,11 @@ import {
   allAccountsSelector,
   publicKeySelector,
 } from "popup/ducks/accountServices";
+import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import {
   saveDestination,
   saveDestinationAsset,
+  saveDomainAddress,
   saveFederationAddress,
   saveMemoAndType,
   saveRecipientName,
@@ -61,6 +64,7 @@ type ResolvedSuggestionData = {
   type: AppDataType.RESOLVED;
   validatedAddress: string;
   fedAddress: string;
+  domainAddress: string;
   federationMemo: string;
   federationMemoType: FederationMemoType | "";
   destinationBalances?: { isFunded: boolean };
@@ -134,6 +138,7 @@ export const SendTo = ({
   );
   const allAccounts = useSelector(allAccountsSelector);
   const activePublicKey = useSelector(publicKeySelector);
+  const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const { state: sendDataState, fetchData } = useSendToData();
   const [debouncedDestination, setDebouncedDestination] = useState(
     federationAddress || destination || "",
@@ -149,15 +154,18 @@ export const SendTo = ({
       recipientName = "",
       federationMemo,
       federationMemoType,
+      domainAddress = "",
     }: {
       recipientName?: string;
       federationMemo?: string;
       federationMemoType?: FederationMemoType | "";
+      domainAddress?: string;
     } = {},
   ) => {
     dispatch(saveDestination(validatedDestination));
     dispatch(saveDestinationAsset(""));
     dispatch(saveFederationAddress(validatedFedAdress || ""));
+    dispatch(saveDomainAddress(domainAddress));
     dispatch(saveRecipientName(recipientName));
     if (validatedFedAdress && federationMemo !== undefined) {
       dispatch(
@@ -185,6 +193,7 @@ export const SendTo = ({
           {
             federationMemo: sendDataState.data.federationMemo,
             federationMemoType: sendDataState.data.federationMemoType,
+            domainAddress: sendDataState.data.domainAddress,
           },
         );
       }
@@ -206,6 +215,9 @@ export const SendTo = ({
       return true;
     }
     if (isValidFederatedDomain(publicKey)) {
+      return true;
+    }
+    if (isSorobanDomain(publicKey)) {
       return true;
     }
     if (StrKey.isValidEd25519PublicKey(publicKey)) {
@@ -345,6 +357,7 @@ export const SendTo = ({
                             federationMemo: resolvedSendData.federationMemo,
                             federationMemoType:
                               resolvedSendData.federationMemoType,
+                            domainAddress: resolvedSendData.domainAddress,
                           },
                         );
                       }}
@@ -380,8 +393,10 @@ export const SendTo = ({
                     type="button"
                     data-testid="recent-address-button"
                     onClick={async () => {
-                      const addressFromInput =
-                        await getAddressFromInput(address);
+                      const addressFromInput = await getAddressFromInput(
+                        address,
+                        networkDetails,
+                      );
                       // A recent that resolves to the active account (e.g. a
                       // federation address the synchronous list filter can't
                       // resolve) is a self-send. Don't continue - surface the
@@ -404,6 +419,7 @@ export const SendTo = ({
                           federationMemo: addressFromInput.federationMemo,
                           federationMemoType:
                             addressFromInput.federationMemoType,
+                          domainAddress: addressFromInput.domainAddress,
                         },
                       );
                     }}
@@ -413,7 +429,7 @@ export const SendTo = ({
                       <IdenticonImg publicKey={address} />
                     </div>
                     <span>
-                      {isFederationAddress(address)
+                      {isFederationAddress(address) || isSorobanDomain(address)
                         ? address
                         : truncatedPublicKey(address)}
                     </span>
