@@ -1,5 +1,11 @@
 import React from "react";
-import { render, waitFor, screen, within } from "@testing-library/react";
+import {
+  render,
+  waitFor,
+  screen,
+  within,
+  fireEvent,
+} from "@testing-library/react";
 
 import { APPLICATION_STATE as ApplicationState } from "@shared/constants/applicationState";
 import { AccountCollectibles } from "popup/components/account/AccountCollectibles";
@@ -132,6 +138,69 @@ describe("AccountCollectibles", () => {
       "src",
       "https://nftcalendar.io/storage/uploads/events/2025/3/oUfeUrSj3KcVnjColyfnS5ICYuqzDbiuqQP4qLIz.png",
     );
+  });
+  it("collapses and expands a collection when its header is clicked", async () => {
+    // Reuses the same render setup and mockCollectibles fixture as
+    // "renders collectibles" above, which populates 3 valid collections.
+    render(
+      <Wrapper
+        routes={[ROUTES.account]}
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
+            publicKey:
+              "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF",
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: TESTNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+            isHideDustEnabled: false,
+          },
+          cache: {
+            balanceData: {
+              [TESTNET_NETWORK_DETAILS.network]: {
+                G1: {
+                  balances: {},
+                },
+              },
+            },
+            icons: {},
+            homeDomains: {},
+            tokenLists: [],
+            tokenDetails: {},
+            historyData: {},
+            tokenPrices: {},
+            collections: {},
+          },
+        }}
+      >
+        <AccountCollectibles
+          collections={mockCollectibles}
+          refreshHiddenCollectibles={mockRefreshHiddenCollectibles}
+          isCollectibleHidden={mockIsCollectibleHidden}
+        />
+      </Wrapper>,
+    );
+    await waitFor(() => screen.getByTestId("account-collectibles"));
+
+    // All 3 collections are expanded by default (spec D5: expanded on mount).
+    expect(screen.getAllByTestId("account-collection-grid")).toHaveLength(3);
+
+    // Click the first collection's header to collapse just that collection —
+    // its grid disappears while the other two stay expanded.
+    const firstHeader = screen.getAllByTestId("account-collection-header")[0];
+    fireEvent.click(firstHeader);
+    await waitFor(() => {
+      expect(screen.getAllByTestId("account-collection-grid")).toHaveLength(2);
+    });
+
+    // Clicking the same header again re-expands it.
+    fireEvent.click(firstHeader);
+    await waitFor(() => {
+      expect(screen.getAllByTestId("account-collection-grid")).toHaveLength(3);
+    });
   });
   it("renders empty state", async () => {
     render(
