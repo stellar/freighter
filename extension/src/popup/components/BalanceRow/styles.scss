@@ -1,9 +1,13 @@
+@use "../../styles/utils.scss" as *;
+
 .BalanceRow {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  // Same vertical rhythm as the other token lists (~1.5rem between rows).
-  padding: 0.75rem 0;
+  // Same vertical rhythm as the other token lists — each row contributes
+  // 12px top + 12px bottom, so two adjacent rows land on frame 9567-17044's
+  // 24px inner-frame gap without an extra margin between them.
+  padding: pxToRem(12px) 0;
   color: var(--sds-clr-gray-12);
   font-size: 1rem;
   line-height: 1.5rem;
@@ -17,6 +21,10 @@
     display: flex;
     align-items: center;
     font-weight: var(--font-weight-medium);
+    // No `gap` here: the icon-to-text spacing comes from AssetIcon's own
+    // `margin-right` (AccountAssets/styles.scss `&__asset--logo`), which is
+    // shared far more widely than BalanceRow and out of scope for this PR.
+    // Adding a gap here as well would stack on top of that margin.
   }
 
   &__value {
@@ -26,6 +34,10 @@
   }
 
   &__code {
+    font-size: pxToRem(14px);
+    line-height: pxToRem(20px);
+    font-weight: var(--font-weight-medium);
+    color: var(--sds-clr-gray-12);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -33,7 +45,9 @@
   }
 
   &__amount {
-    font-size: var(--sds-fs-secondary);
+    font-size: pxToRem(12px);
+    line-height: pxToRem(18px);
+    font-weight: var(--font-weight-medium);
     color: var(--sds-clr-gray-11);
   }
 
@@ -44,6 +58,10 @@
   }
 
   &__fiat {
+    font-size: pxToRem(14px);
+    line-height: pxToRem(20px);
+    font-weight: var(--font-weight-medium);
+    color: var(--sds-clr-gray-12);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -55,14 +73,20 @@
     overflow: hidden;
     text-overflow: ellipsis;
     min-width: 0;
-    font-size: var(--sds-fs-secondary);
+    font-size: pxToRem(12px);
+    line-height: pxToRem(18px);
+    font-weight: var(--font-weight-medium);
 
+    // Color is intentionally NOT set here — it comes entirely from the
+    // `positive`/`negative` modifier below, composed in from
+    // `getPriceDeltaColor()` in index.tsx. Setting a color on `&__delta`
+    // itself would flatten gains and losses to the same color.
     &.positive {
       color: var(--sds-clr-green-09);
     }
 
     &.negative {
-      color: var(--sds-clr-gray-11);
+      color: var(--sds-clr-red-09);
     }
   }
 }

@@ -1,6 +1,15 @@
 $loader-dark-color: #191b22;
 $loader-light-color: #444961;
 
+// Row-to-row spacing and the list's outer padding (frame 9567-17044) are both
+// already satisfied elsewhere: BalanceRow's own 12px top/bottom padding
+// produces the frame's 24px rhythm between rows (see BalanceRow/styles.scss),
+// and the 24px section padding comes from `.multi-pane-slider__pane` in
+// views/Account/styles.scss. AccountAssets renders BalanceRow as bare
+// siblings (no wrapper element of its own), so there is no live
+// `.AccountAssets`-scoped hook to add a list-container rule to here without
+// introducing an unscoped, app-wide `.BalanceRow` selector — left out
+// intentionally rather than guessing at a pixel value with no source frame.
 .AccountAssets {
   &__asset {
     align-items: center;

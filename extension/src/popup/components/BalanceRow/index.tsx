@@ -76,6 +76,10 @@ export const BalanceRow = ({
     ? getPriceDeltaColor(new BigNumber(roundUsdValue(percentChange as string)))
     : "";
 
+  // The design shows a friendly name where one exists; every other token falls
+  // back to its code. XLM is the only token whose name we hold locally.
+  const displayName = code === "XLM" && !issuerKey ? "Stellar Lumens" : code;
+
   return (
     <div
       className={`BalanceRow ${onClick ? "BalanceRow--clickable" : ""}`}
@@ -95,7 +99,7 @@ export const BalanceRow = ({
           retryAssetIconFetch={retryAssetIconFetch}
         />
         <div className="BalanceRow__value">
-          <span className="BalanceRow__code">{code}</span>
+          <span className="BalanceRow__code">{displayName}</span>
           <div className="BalanceRow__amount" data-testid={amountTestId}>
             {amount}
           </div>
