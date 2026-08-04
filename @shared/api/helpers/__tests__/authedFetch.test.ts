@@ -135,4 +135,41 @@ describe("authedFetch", () => {
     });
     expect(fetchImpl.mock.calls[0][0]).toBe("http://x/p");
   });
+
+  it("re-signs against server time from the 401's Date header on retry (clock-skew immune)", async () => {
+    // A fresh module instance so the module-level server-time offset starts at 0
+    // and this test's large offset can't leak into the other tests.
+    jest.resetModules();
+    const { authedFetch: freshAuthedFetch } = await import("../authedFetch");
+
+    // The device clock is ~1000s behind the server. The first token, signed on
+    // the local clock, lands outside the server's window → 401. The 401 carries
+    // the server's Date, so the retry signs iat/exp against SERVER time.
+    const serverNowMs = Date.now() + 1_000_000;
+    const fetchImpl = jest
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(null, {
+          status: 401,
+          headers: { Date: new Date(serverNowMs).toUTCString() },
+        }),
+      )
+      .mockResolvedValueOnce(new Response(null, { status: 200 }));
+
+    const r = await freshAuthedFetch({
+      keypair: KP,
+      baseUrl: "http://x",
+      method: "GET",
+      path: "/p",
+      fetchImpl,
+    });
+
+    expect(r.status).toBe(200);
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    // The retry's iat must track SERVER time (~serverNowMs), not the local clock.
+    const retryIat = claimsOf(fetchImpl.mock.calls[1]).iat as number;
+    expect(
+      Math.abs(retryIat - Math.floor(serverNowMs / 1000)),
+    ).toBeLessThanOrEqual(2);
+  });
 });

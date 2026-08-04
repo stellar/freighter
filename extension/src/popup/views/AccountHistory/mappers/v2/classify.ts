@@ -5,6 +5,7 @@
  * adjustments stay one-file changes (wrapped by the UI layer's t()).
  */
 
+import { V2OperationType } from "@shared/api/types/backend-api";
 import { formatAmount, trimTrailingZeros } from "popup/helpers/formatters";
 import i18n from "popup/helpers/localizationConfig";
 import {
@@ -17,6 +18,7 @@ import {
 } from "popup/views/AccountHistory/model";
 import { BalanceClassification } from "./balances";
 import { ContractCallInfo } from "./contract";
+import { ProtocolAction } from "./protocolActions";
 
 type Presentation = Pick<
   HistoryEntry,
@@ -44,6 +46,63 @@ const distinctTokens = (rows: BalanceChangeRow[]): ResolvedToken[] => {
     }
   }
   return [...seen.values()];
+};
+
+/**
+ * Sentence-case labels for the operation types that can reach the fallback
+ * below. The v1 list used constants/transaction's Title Case names; the
+ * redesign's rows are sentence case ("Added trustline", "Data entry added").
+ */
+const OPERATION_LABELS: Partial<Record<V2OperationType, string>> = {
+  CLAIM_CLAIMABLE_BALANCE: i18n.t("Claimable balance claimed"),
+  CLAWBACK_CLAIMABLE_BALANCE: i18n.t("Claimable balance clawed back"),
+  MANAGE_SELL_OFFER: i18n.t("Offer"),
+  MANAGE_BUY_OFFER: i18n.t("Offer"),
+  CREATE_PASSIVE_SELL_OFFER: i18n.t("Offer"),
+  BUMP_SEQUENCE: i18n.t("Sequence bumped"),
+  BEGIN_SPONSORING_FUTURE_RESERVES: i18n.t("Sponsorship"),
+  END_SPONSORING_FUTURE_RESERVES: i18n.t("Sponsorship"),
+  REVOKE_SPONSORSHIP: i18n.t("Sponsorship revoked"),
+  EXTEND_FOOTPRINT_TTL: i18n.t("Footprint extended"),
+  RESTORE_FOOTPRINT: i18n.t("Footprint restored"),
+  LIQUIDITY_POOL_DEPOSIT: i18n.t("Liquidity pool deposit"),
+  LIQUIDITY_POOL_WITHDRAW: i18n.t("Liquidity pool withdrawal"),
+  ALLOW_TRUST: i18n.t("Trustline authorization"),
+  INFLATION: i18n.t("Inflation"),
+};
+
+/**
+ * Row treatment for operations that move no balance and emit no state change
+ * the account can be told about — a claimable balance it is only a claimant of
+ * (the funds move on claim, not on creation), an offer, a sequence bump, a
+ * footprint extension. Without this they would all read "Transaction".
+ */
+const operationPresentation = (
+  type: V2OperationType | undefined,
+): Pick<
+  Presentation,
+  "kind" | "primaryText" | "secondaryText" | "secondaryIcon" | "rowIcon"
+> & { title: string } => {
+  if (type === "CREATE_CLAIMABLE_BALANCE") {
+    return {
+      kind: "other",
+      primaryText: i18n.t("Claimable balance created"),
+      secondaryText: i18n.t("Pending claim"),
+      secondaryIcon: null,
+      rowIcon: { type: "settings", glyph: "claimable" },
+      title: i18n.t("Claimable balance created"),
+    };
+  }
+
+  const label = type ? OPERATION_LABELS[type] : undefined;
+  return {
+    kind: "other",
+    primaryText: label ?? i18n.t("Transaction"),
+    secondaryText: label ? i18n.t("Submitted") : i18n.t("Interacted"),
+    secondaryIcon: null,
+    rowIcon: { type: "contract" },
+    title: label ?? i18n.t("Transaction"),
+  };
 };
 
 /** Row treatment for pure config-change transactions (no balance movement) */
@@ -160,17 +219,14 @@ const configPresentation = (
           ? i18n.t("Balance authorized")
           : i18n.t("Balance unauthorized"),
       };
-    case "reserves":
+    case "allowance":
       return {
         kind: "other",
-        primaryText: i18n.t("Reserves"),
-        secondaryText:
-          card.verb === "sponsored"
-            ? i18n.t("Reserve sponsored")
-            : i18n.t("Reserve unsponsored"),
+        primaryText: card.token.code,
+        secondaryText: i18n.t("Allowance approved"),
         secondaryIcon: "settings",
-        rowIcon: { type: "settings", glyph: "reserve" },
-        title: i18n.t("Reserve change"),
+        rowIcon: { type: "settings", glyph: "allowance" },
+        title: i18n.t("Allowance approved"),
       };
     default:
       return {
@@ -184,18 +240,21 @@ const configPresentation = (
   }
 };
 
-export const buildPresentation = ({
+const basePresentation = ({
   classification,
   cards,
   contractCall,
   protocol,
   failed,
+  operationTypes,
 }: {
   classification: BalanceClassification;
   cards: StateChangeCardData[];
   contractCall: ContractCallInfo | null;
   protocol: ProtocolInfo | null;
   failed: boolean;
+  /** this account's operations within the transaction, in ledger order */
+  operationTypes: V2OperationType[];
 }): Presentation => {
   if (failed) {
     return {
@@ -276,8 +335,12 @@ export const buildPresentation = ({
       break;
   }
 
-  // No balance movement: contract call or pure config change
-  if (contractCall && cards.length === 0) {
+  // No balance movement. A contract invocation is still identified by the
+  // contract it called, even when it emitted state changes (data entries,
+  // allowances, …) — those are supporting cards in the detail sheet, not the
+  // row's title: node 12132:62391 heads a data-entry tx "Contract / domain.com".
+  // Only classic config operations fall through to configPresentation.
+  if (contractCall) {
     return {
       kind: "contract",
       rowIcon: protocol
@@ -296,16 +359,8 @@ export const buildPresentation = ({
     return { ...config, amounts: null };
   }
 
-  // Nothing decodable at all
-  return {
-    kind: "other",
-    rowIcon: { type: "contract" },
-    primaryText: i18n.t("Transaction"),
-    secondaryText: i18n.t("Interacted"),
-    secondaryIcon: null,
-    amounts: null,
-    title: i18n.t("Transaction"),
-  };
+  // No state change to describe — fall back to naming the operation itself
+  return { ...operationPresentation(operationTypes[0]), amounts: null };
 };
 
 /**
@@ -324,4 +379,36 @@ const iconForContract = (
     return { type: "asset", tokens };
   }
   return { type: "contract" };
+};
+
+/**
+ * The row presentation, with protocol-action labels overlaid when the
+ * transaction emitted a recognized protocol state change.
+ *
+ * The overlay replaces only the four label fields. `kind`, `rowIcon`, and
+ * `amounts` come from basePresentation untouched, so a relabelled row is
+ * otherwise identical to the row that shipped before — that is the mechanism
+ * behind the "preserve every other label" requirement, and why a failed
+ * transaction still reads "Transaction failed": basePresentation returns the
+ * failed row and `failed` suppresses the overlay.
+ */
+export const buildPresentation = (
+  params: Parameters<typeof basePresentation>[0] & {
+    protocolAction: ProtocolAction | null;
+  },
+): Presentation => {
+  const base = basePresentation(params);
+  const { protocolAction, failed } = params;
+
+  if (!protocolAction || failed) {
+    return base;
+  }
+
+  return {
+    ...base,
+    primaryText: protocolAction.label,
+    secondaryText: protocolAction.protocolName,
+    secondaryIcon: "contract",
+    title: protocolAction.label,
+  };
 };

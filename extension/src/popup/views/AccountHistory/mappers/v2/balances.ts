@@ -8,7 +8,7 @@ import BigNumber from "bignumber.js";
 
 import {
   V2AccountTransaction,
-  V2StandardBalanceChange,
+  V2BalanceChange,
 } from "@shared/api/types/backend-api";
 import { formatTokenAmount } from "popup/helpers/soroban";
 import {
@@ -30,26 +30,27 @@ export type BalanceClassification =
     }
   | { type: "multiple"; rows: BalanceChangeRow[] };
 
-const isCredit = (change: V2StandardBalanceChange) =>
+const isCredit = (change: V2BalanceChange) =>
   change.reason === "CREDIT" || change.reason === "MINT";
 
 /**
  * The v2 payload carries no operation linkage on state changes, so the
- * transaction-level fee entry is indistinguishable structurally. Heuristic:
- * drop the first native-token DEBIT whose raw amount equals fee_charged.
+ * transaction-level fee entry is indistinguishable structurally — the GraphQL
+ * schema marks fee rows by a null `operation`, but the REST mapper drops that
+ * field entirely (confirmed against live dev data 2026-07-30). Heuristic: drop
+ * the first native-token DEBIT whose raw amount equals fee_charged.
  * (Backend follow-up filed to add operation_id / a fee marker.)
  */
 const withoutFeeEntry = (
-  changes: V2StandardBalanceChange[],
+  changes: V2BalanceChange[],
   feeCharged: string,
   nativeTokenId: string | null,
-): V2StandardBalanceChange[] => {
+): V2BalanceChange[] => {
   const feeIndex = changes.findIndex(
     (change) =>
       change.reason === "DEBIT" &&
       change.amount === feeCharged &&
-      (nativeTokenId === null ||
-        change.standard_balance_token_id === nativeTokenId),
+      (nativeTokenId === null || change.token_id === nativeTokenId),
   );
   if (feeIndex === -1) {
     return changes;
@@ -63,7 +64,7 @@ export const mapBalanceChanges = (
   nativeTokenId: string | null,
 ): { rows: BalanceChangeRow[]; classification: BalanceClassification } => {
   const balanceChanges = tx.state_changes.filter(
-    (change): change is V2StandardBalanceChange => change.type === "BALANCE",
+    (change): change is V2BalanceChange => change.variant === "BalanceChange",
   );
 
   const displayChanges = withoutFeeEntry(
@@ -73,7 +74,7 @@ export const mapBalanceChanges = (
   );
 
   const rows: BalanceChangeRow[] = displayChanges.map((change) => {
-    const token = getResolvedToken(tokens, change.standard_balance_token_id);
+    const token = getResolvedToken(tokens, change.token_id);
     return {
       token,
       amount: formatTokenAmount(new BigNumber(change.amount), token.decimals),

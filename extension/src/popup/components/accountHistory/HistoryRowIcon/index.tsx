@@ -143,10 +143,11 @@ export const HistoryRowIcon = ({ icon }: { icon: RowIconDescriptor }) => {
       const settingsGlyphs = {
         signer: <Icon.Key01 />,
         threshold: <Icon.ShieldTick />,
-        data: <Icon.Database01 />,
+        data: <Icon.Data />,
         domain: <Icon.Globe02 />,
         flag: <Icon.Flag01 />,
-        reserve: <Icon.Coins01 />,
+        allowance: <Icon.CheckDone01 />,
+        claimable: <Icon.Gift01 />,
         generic: <Icon.Settings04 />,
       };
       return (

@@ -129,9 +129,6 @@ const decimalToSmallestUnit = (amount: string | number | undefined): string => {
     .toFixed(0);
 };
 
-const stringifyOldNew = <T>(oldValue: T | null, newValue: T | null) =>
-  JSON.stringify({ old: oldValue, new: newValue });
-
 const normalizeCreatedAt = (createdAt: string | number | undefined): string => {
   if (typeof createdAt === "number") {
     return new Date(createdAt).toISOString();
@@ -205,9 +202,10 @@ const standardBalanceChange = ({
   reason: "DEBIT" | "CREDIT";
 }): V2StateChange => ({
   ...stateBase(operation),
+  variant: "BalanceChange",
   type: "BALANCE",
   reason,
-  standard_balance_token_id: tokenId,
+  token_id: tokenId,
   amount: decimalToSmallestUnit(amount),
 });
 
@@ -281,9 +279,10 @@ const createAccountStateChanges = (
   const changes: V2StateChange[] = [
     {
       ...stateBase(operation),
+      variant: "AccountCreatedChange",
       type: "ACCOUNT",
       reason: "CREATE",
-      funder_address: operation.funder ?? operation.from,
+      creator_address: operation.funder ?? operation.from ?? "",
     },
   ];
 
@@ -324,8 +323,10 @@ const accountMergeStateChanges = (
 ): V2StateChange[] => [
   {
     ...stateBase(operation),
+    variant: "AccountMergedChange",
     type: "ACCOUNT",
     reason: "MERGE",
+    destination_address: operation.into ?? "",
   },
 ];
 
@@ -335,15 +336,29 @@ const changeTrustStateChanges = (
 ): V2StateChange[] => {
   const tokenId = assetTokenId(operation, networkDetails);
   const limit = operation.limit ?? "0";
-  const reason = new BigNumber(limit).isZero() ? "REMOVE" : "CREATE";
+
+  // Horizon exposes only the resulting limit, so a zero limit reads as a
+  // removal and anything else as an add; updates are indistinguishable here.
+  if (new BigNumber(limit).isZero()) {
+    return [
+      {
+        ...stateBase(operation),
+        variant: "TrustlineRemovedChange",
+        type: "TRUSTLINE",
+        reason: "REMOVE",
+        token_id: tokenId ?? undefined,
+      },
+    ];
+  }
 
   return [
     {
       ...stateBase(operation),
+      variant: "TrustlineAddedChange",
       type: "TRUSTLINE",
-      reason,
-      trustline_token_id: tokenId ?? undefined,
-      limit: stringifyOldNew(null, limit),
+      reason: "ADD",
+      token_id: tokenId ?? undefined,
+      limit,
     },
   ];
 };
@@ -356,6 +371,7 @@ const flagsStateChanges = (
   if (operation.set_flags?.length) {
     changes.push({
       ...stateBase(operation),
+      variant: "AccountFlagsChange",
       type: "FLAGS",
       reason: "SET",
       flags: operation.set_flags.map(String),
@@ -365,6 +381,7 @@ const flagsStateChanges = (
   if (operation.clear_flags?.length) {
     changes.push({
       ...stateBase(operation),
+      variant: "AccountFlagsChange",
       type: "FLAGS",
       reason: "CLEAR",
       flags: operation.clear_flags.map(String),
@@ -382,15 +399,29 @@ const signerStateChanges = (
   }
 
   const weight = Number(operation.signer_weight);
-  const reason = weight === 0 ? "REMOVE" : "ADD";
+
+  // Horizon reports only the resulting weight: 0 means the signer was removed,
+  // and the prior weight is unknown either way.
+  if (weight === 0) {
+    return [
+      {
+        ...stateBase(operation),
+        variant: "SignerRemovedChange",
+        type: "SIGNER",
+        reason: "REMOVE",
+        signer_address: operation.signer_key,
+      },
+    ];
+  }
 
   return [
     {
       ...stateBase(operation),
+      variant: "SignerAddedChange",
       type: "SIGNER",
-      reason,
+      reason: "ADD",
       signer_address: operation.signer_key,
-      signer_weights: stringifyOldNew(null, reason === "ADD" ? weight : null),
+      new_weight: weight,
     },
   ];
 };
@@ -404,13 +435,16 @@ const thresholdStateChanges = (
     ["HIGH", operation.high_threshold],
   ] as const;
 
+  // Horizon carries no prior threshold, so old_threshold is left unset.
   return thresholdFields
     .filter(([, value]) => value !== undefined && value !== null)
-    .map(([reason, value]) => ({
+    .map(([threshold, value]) => ({
       ...stateBase(operation),
+      variant: "ThresholdChange" as const,
       type: "SIGNATURE_THRESHOLD" as const,
-      reason,
-      thresholds: stringifyOldNew(null, String(value)),
+      reason: "UPDATE" as const,
+      threshold,
+      new_threshold: Number(value),
     }));
 };
 
@@ -424,11 +458,10 @@ const homeDomainStateChange = (
   return [
     {
       ...stateBase(operation),
-      type: "METADATA",
-      reason: "HOME_DOMAIN",
-      metadata_key_value: JSON.stringify({
-        home_domain: { old: null, new: operation.home_domain },
-      }),
+      variant: "HomeDomainSetChange",
+      type: "HOME_DOMAIN",
+      reason: "SET",
+      home_domain: operation.home_domain,
     },
   ];
 };
@@ -452,11 +485,11 @@ const manageDataStateChanges = (
   return [
     {
       ...stateBase(operation),
-      type: "METADATA",
-      reason: "DATA_ENTRY",
-      metadata_key_value: JSON.stringify({
-        [operation.name]: { old: null, new: operation.value ?? null },
-      }),
+      variant: "DataEntryAddedChange",
+      type: "DATA_ENTRY",
+      reason: "ADD",
+      name: operation.name,
+      value: operation.value ?? "",
     },
   ];
 };

@@ -8,8 +8,8 @@ import { allAccountsSelector } from "popup/ducks/accountServices";
 import { openTab } from "popup/helpers/navigate";
 import { getStellarExpertUrl } from "popup/helpers/account";
 import {
+  DataEntrySelection,
   HistoryEntry,
-  StateChangeCardData,
 } from "popup/views/AccountHistory/model";
 
 import { DetailHeader } from "./DetailHeader";
@@ -23,8 +23,6 @@ import "../TransactionDetail/styles.scss";
 import "./styles.scss";
 
 type SheetView = "detail" | "advanced" | "dataEntry";
-
-type DataEntryCard = Extract<StateChangeCardData, { kind: "dataEntry" }>;
 
 const counterpartyDirectionFor = (
   entry: HistoryEntry,
@@ -48,26 +46,27 @@ export const TransactionDetailSheet = ({
   const { t } = useTranslation();
   const allAccounts = useSelector(allAccountsSelector);
   const [view, setView] = useState<SheetView>("detail");
-  const [activeDataEntry, setActiveDataEntry] = useState<DataEntryCard | null>(
-    null,
-  );
+  const [activeDataEntry, setActiveDataEntry] =
+    useState<DataEntrySelection | null>(null);
 
   const stellarExpertUrl = getStellarExpertUrl(networkDetails);
 
-  const openDataEntry = (card: DataEntryCard) => {
-    setActiveDataEntry(card);
+  const openDataEntry = (selection: DataEntrySelection) => {
+    setActiveDataEntry(selection);
     setView("dataEntry");
   };
 
   if (view === "dataEntry" && activeDataEntry) {
     return (
-      <DataEntrySheet
-        card={activeDataEntry}
-        onClose={() => {
-          setActiveDataEntry(null);
-          setView("detail");
-        }}
-      />
+      <div className="TransactionDetailModal">
+        <DataEntrySheet
+          selection={activeDataEntry}
+          onClose={() => {
+            setActiveDataEntry(null);
+            setView("detail");
+          }}
+        />
+      </div>
     );
   }
 

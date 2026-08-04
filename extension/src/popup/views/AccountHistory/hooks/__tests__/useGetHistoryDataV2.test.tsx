@@ -4,13 +4,15 @@ import { renderHook, act, waitFor } from "@testing-library/react";
 
 import * as ApiInternal from "@shared/api/internal";
 import {
-  MOCK_ACCOUNT_2,
   MOCK_SELF,
   MOCK_XLM_SAC,
   mockHistoryTransactions,
-  mockPaymentReceived,
   mockFetchAccountHistoryV2,
 } from "@shared/api/fixtures/history-v2";
+import {
+  MOCK_ACCOUNT_2,
+  mockPaymentReceived,
+} from "@shared/api/fixtures/history-v2-scenarios";
 import { V2AccountTransaction } from "@shared/api/types/backend-api";
 import { TESTNET_NETWORK_DETAILS } from "@shared/constants/stellar";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
@@ -56,8 +58,10 @@ jest.mock("popup/helpers/searchAsset", () => {
 // Skip real (network-bound) token resolution — the mappers own that logic.
 jest.mock("popup/helpers/history/tokenResolver", () => {
   const actual = jest.requireActual("popup/helpers/history/tokenResolver");
-  const { MOCK_XLM_SAC, MOCK_USDC_SAC, MOCK_EURC_SAC } = jest.requireActual(
-    "@shared/api/fixtures/history-v2",
+  const { MOCK_XLM_SAC, MOCK_YUSDC_SAC, MOCK_BLND_SAC, MOCK_CETES_SAC } =
+    jest.requireActual("@shared/api/fixtures/history-v2");
+  const { MOCK_USDC_SAC, MOCK_EURC_SAC } = jest.requireActual(
+    "@shared/api/fixtures/history-v2-scenarios",
   );
   const token = (code: string, contractId: string) => ({
     code,
@@ -72,6 +76,9 @@ jest.mock("popup/helpers/history/tokenResolver", () => {
       Promise.resolve(
         new Map([
           [MOCK_XLM_SAC, token("XLM", MOCK_XLM_SAC)],
+          [MOCK_YUSDC_SAC, token("yUSDC", MOCK_YUSDC_SAC)],
+          [MOCK_BLND_SAC, token("BLND", MOCK_BLND_SAC)],
+          [MOCK_CETES_SAC, token("CETES", MOCK_CETES_SAC)],
           [MOCK_USDC_SAC, token("USDC", MOCK_USDC_SAC)],
           [MOCK_EURC_SAC, token("EURC", MOCK_EURC_SAC)],
         ]),
@@ -139,9 +146,10 @@ const nativeDustTx: V2AccountTransaction = {
   operations: [],
   state_changes: [
     {
+      variant: "BalanceChange",
       type: "BALANCE",
       reason: "CREDIT",
-      standard_balance_token_id: MOCK_XLM_SAC,
+      token_id: MOCK_XLM_SAC,
       amount: "500000", // 0.05 XLM ≤ 0.1 dust threshold
       ledger_number: 60_000_000,
       ledger_created_at: "2024-05-01T00:00:00Z",
@@ -209,7 +217,7 @@ describe("useGetHistoryDataV2 — initial fetch", () => {
     });
   });
 
-  it("groups an entire page in one section when it fits one month", async () => {
+  it("groups a full single page into month sections", async () => {
     const { result } = renderV2Hook({ pageSize: 100 });
 
     await act(async () => {
@@ -242,7 +250,7 @@ describe("useGetHistoryDataV2 — pagination", () => {
     await act(async () => {
       await result.current.fetchNextPage();
     });
-    // 21 total fixtures → last page has the remaining 1, no more pages
+    // the remaining fixtures land on the last page, then no more pages
     expect(countEntries(result.current.state.data)).toBe(
       mockHistoryTransactions.length,
     );

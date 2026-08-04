@@ -126,32 +126,61 @@ describe("StateChangeCard", () => {
     );
   });
 
-  it("renders a reserves sponsorship card", () => {
+  it("renders an allowance card", () => {
     renderCard({
-      kind: "reserves",
-      verb: "sponsored",
-      sponsor: "GSPONSOR",
-      sponsored: "GSPONSORED",
-      detail: null,
+      kind: "allowance",
+      token: {
+        code: "USDC",
+        contractId: "CUSDC",
+        issuer: "GISSUER",
+        icon: null,
+        decimals: 7,
+      },
+      spender: "GSPENDER",
+      amount: "100",
+      expirationLedger: 51_530_000,
     });
     expect(screen.getByTestId("state-change-title")).toHaveTextContent(
-      "Reserve sponsored",
+      "Allowance approved",
     );
   });
 
-  it("makes a data-entry card interactive and reports taps", () => {
-    const card: StateChangeCardData = {
-      kind: "dataEntry",
+  it("labels the key column and reports taps per key", () => {
+    const entries = [
+      { key: "config-key", valueOldB64: null, valueNewB64: "aGVsbG8=" },
+      { key: "other-key", valueOldB64: null, valueNewB64: "d29ybGQ=" },
+    ];
+    const onView = renderCard({ kind: "dataEntry", verb: "added", entries });
+
+    expect(screen.getByTestId("state-change-title")).toHaveTextContent(
+      "Data entry added",
+    );
+    expect(screen.getByText("Key")).toBeDefined();
+
+    const keys = screen.getAllByTestId("state-change-key");
+    expect(keys.map((key) => key.textContent)).toEqual([
+      "config-key",
+      "other-key",
+    ]);
+
+    fireEvent.click(keys[1]);
+    expect(onView).toHaveBeenCalledWith({
       verb: "added",
-      key: "config-key",
-      valueOldB64: null,
-      valueNewB64: "aGVsbG8=",
-    };
-    const onView = renderCard(card);
-    const cardEl = screen.getByTestId("state-change-card");
-    expect(cardEl.tagName).toBe("BUTTON");
-    fireEvent.click(cardEl);
-    expect(onView).toHaveBeenCalledWith(card);
+      entry: entries[1],
+    });
+  });
+
+  it("strikes through removed data-entry keys", () => {
+    renderCard({
+      kind: "dataEntry",
+      verb: "removed",
+      entries: [
+        { key: "config-key", valueOldB64: "aGVsbG8=", valueNewB64: null },
+      ],
+    });
+    expect(screen.getByText("config-key").className).toContain(
+      "StateChangeCard__key-text--removed",
+    );
   });
 });
 
@@ -169,16 +198,17 @@ describe("DataEntrySheet", () => {
     expect(decodeDataValue(null)).toBeNull();
   });
 
-  it("renders the key and decoded value with a close action", () => {
+  it("renders the key and decoded value with close actions", () => {
     const onClose = jest.fn();
     render(
       <DataEntrySheet
-        card={{
-          kind: "dataEntry",
+        selection={{
           verb: "added",
-          key: "config-key",
-          valueOldB64: null,
-          valueNewB64: "aGVsbG8=",
+          entry: {
+            key: "config-key",
+            valueOldB64: null,
+            valueNewB64: "aGVsbG8=",
+          },
         }}
         onClose={onClose}
       />,
@@ -187,7 +217,9 @@ describe("DataEntrySheet", () => {
       "config-key",
     );
     expect(screen.getByTestId("data-entry-value")).toHaveTextContent("hello");
+
+    fireEvent.click(screen.getByTestId("data-entry-dismiss"));
     fireEvent.click(screen.getByTestId("data-entry-close"));
-    expect(onClose).toHaveBeenCalled();
+    expect(onClose).toHaveBeenCalledTimes(2);
   });
 });

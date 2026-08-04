@@ -1,11 +1,15 @@
-import React from "react";
+import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Text } from "@stellar/design-system";
+import { Icon, Text } from "@stellar/design-system";
 
 import { Account } from "@shared/api/types/types";
 import { AvatarChip } from "popup/components/accountHistory/AvatarChip";
-import { truncateString } from "helpers/stellar";
-import { StateChangeCardData } from "popup/views/AccountHistory/model";
+import {
+  DataEntrySelection,
+  StateChangeCardData,
+  ResolvedToken,
+} from "popup/views/AccountHistory/model";
+import StellarLogo from "popup/assets/stellar-logo.png";
 
 const OldNew = ({
   oldValue,
@@ -42,13 +46,104 @@ const Row = ({
   </div>
 );
 
+const isXlm = (token: ResolvedToken) =>
+  token.code === "XLM" && token.issuer === null;
+
+/** A small round token icon (image, XLM logo, or a lettered fallback). */
+const AssetChip = ({ token }: { token: ResolvedToken }) => {
+  const [hasError, setHasError] = useState(false);
+  const src = isXlm(token) ? StellarLogo : token.icon;
+
+  return (
+    <span className="StateChangeCard__asset" data-testid="state-change-asset">
+      {src && !hasError ? (
+        <img
+          className="StateChangeCard__asset-icon"
+          src={src}
+          alt={token.code}
+          onError={() => setHasError(true)}
+        />
+      ) : (
+        <span className="StateChangeCard__asset-icon StateChangeCard__asset-icon--letter">
+          {token.code.slice(0, 1).toUpperCase()}
+        </span>
+      )}
+      <span>{token.code}</span>
+    </span>
+  );
+};
+
 interface StateChangeCardProps {
   card: StateChangeCardData;
   allAccounts: Account[];
-  onViewDataEntry: (
-    card: Extract<StateChangeCardData, { kind: "dataEntry" }>,
-  ) => void;
+  onViewDataEntry: (selection: DataEntrySelection) => void;
 }
+
+type DataEntryCard = Extract<StateChangeCardData, { kind: "dataEntry" }>;
+
+/**
+ * Right-aligned, tappable key rows for a data-entry card. The key is the only
+ * value shown inline — the full key/value pair opens in the DataEntrySheet,
+ * which is what the trailing info icon advertises (node 12132:62410).
+ */
+const DataEntryKeys = ({
+  card,
+  onViewDataEntry,
+}: {
+  card: DataEntryCard;
+  onViewDataEntry: (selection: DataEntrySelection) => void;
+}) => (
+  <div className="StateChangeCard__keys">
+    {card.entries.map((entry) => (
+      <button
+        key={entry.key}
+        type="button"
+        className="StateChangeCard__key"
+        data-testid="state-change-key"
+        onClick={() => onViewDataEntry({ verb: card.verb, entry })}
+      >
+        <span
+          className={
+            card.verb === "removed"
+              ? "StateChangeCard__key-text StateChangeCard__key-text--removed"
+              : "StateChangeCard__key-text"
+          }
+        >
+          {entry.key}
+        </span>
+        <Icon.InfoCircle />
+      </button>
+    ))}
+  </div>
+);
+
+/** The leading icon shown next to a state-change card title, chosen per type. */
+const getCardIcon = (kind: StateChangeCardData["kind"]): React.ReactNode => {
+  switch (kind) {
+    case "accountCreated":
+      return <Icon.UserPlus01 />;
+    case "accountMerged":
+      return <Icon.UserX01 />;
+    case "signers":
+      return <Icon.Users01 />;
+    case "thresholds":
+      return <Icon.ShieldTick />;
+    case "dataEntry":
+      return <Icon.Data />;
+    case "homeDomain":
+      return <Icon.Globe02 />;
+    case "flags":
+      return <Icon.Flag01 />;
+    case "trustlines":
+      return <Icon.Coins01 />;
+    case "balanceAuthorizations":
+      return <Icon.Lock01 />;
+    case "allowance":
+      return <Icon.CheckDone01 />;
+    default:
+      return <Icon.Settings04 />;
+  }
+};
 
 const useCardTitle = () => {
   const { t } = useTranslation();
@@ -74,10 +169,8 @@ const useCardTitle = () => {
         return card.authorized
           ? t("Balance authorized")
           : t("Balance unauthorized");
-      case "reserves":
-        return card.verb === "sponsored"
-          ? t("Reserve sponsored")
-          : t("Reserve unsponsored");
+      case "allowance":
+        return t("Allowance approved");
       default:
         return "";
     }
@@ -87,9 +180,11 @@ const useCardTitle = () => {
 const CardBody = ({
   card,
   allAccounts,
+  onViewDataEntry,
 }: {
   card: StateChangeCardData;
   allAccounts: Account[];
+  onViewDataEntry: (selection: DataEntrySelection) => void;
 }) => {
   const { t } = useTranslation();
 
@@ -147,7 +242,7 @@ const CardBody = ({
         </Row>
       );
     case "dataEntry":
-      return <Row label={card.key} />;
+      return <DataEntryKeys card={card} onViewDataEntry={onViewDataEntry} />;
     case "flags":
       return (
         <div className="StateChangeCard__flags">
@@ -174,13 +269,22 @@ const CardBody = ({
       );
     case "trustlines":
       return (
-        <>
+        <div className="StateChangeCard__assets">
           {card.entries.map((line) => (
-            <Row key={line.token.code} label={line.token.code}>
-              <OldNew oldValue={line.limitOld} newValue={line.limitNew} />
-            </Row>
+            <div
+              key={line.token.code}
+              className="StateChangeCard__asset-entry"
+              data-testid="state-change-row"
+            >
+              <AssetChip token={line.token} />
+              {card.verb === "updated" ? (
+                <div className="StateChangeCard__asset-limit">
+                  <OldNew oldValue={line.limitOld} newValue={line.limitNew} />
+                </div>
+              ) : null}
+            </div>
           ))}
-        </>
+        </div>
       );
     case "balanceAuthorizations":
       return (
@@ -188,20 +292,19 @@ const CardBody = ({
           {card.tokens.map((tok) => tok.code).join(", ")}
         </Row>
       );
-    case "reserves":
+    case "allowance":
       return (
         <>
-          {card.sponsor ? (
-            <Row label={t("Sponsor")}>
-              <AvatarChip address={card.sponsor} allAccounts={allAccounts} />
-            </Row>
-          ) : null}
-          {card.sponsored ? (
-            <Row label={t("Sponsored")}>
-              <AvatarChip address={card.sponsored} allAccounts={allAccounts} />
-            </Row>
-          ) : null}
-          {card.detail ? <Row label={truncateString(card.detail, 6)} /> : null}
+          <Row label={t("Asset")}>
+            <AssetChip token={card.token} />
+          </Row>
+          <Row label={t("Spender")}>
+            <AvatarChip address={card.spender} allAccounts={allAccounts} />
+          </Row>
+          <Row label={t("Amount")}>
+            {card.amount} {card.token.code}
+          </Row>
+          <Row label={t("Expires at ledger")}>{card.expirationLedger}</Row>
         </>
       );
     default:
@@ -214,45 +317,43 @@ export const StateChangeCard = ({
   allAccounts,
   onViewDataEntry,
 }: StateChangeCardProps) => {
+  const { t } = useTranslation();
   const getTitle = useCardTitle();
+  const isInline = card.kind === "trustlines";
   const isDataEntry = card.kind === "dataEntry";
-
-  const content = (
-    <>
-      <Text
-        as="div"
-        size="md"
-        weight="medium"
-        addlClassName="StateChangeCard__title"
-      >
-        <span data-testid="state-change-title">{getTitle(card)}</span>
-      </Text>
-      <div className="StateChangeCard__body">
-        <CardBody card={card} allAccounts={allAccounts} />
-      </div>
-    </>
-  );
-
-  if (isDataEntry) {
-    return (
-      <button
-        type="button"
-        className="StateChangeCard StateChangeCard--interactive"
-        data-testid="state-change-card"
-        onClick={() =>
-          onViewDataEntry(
-            card as Extract<StateChangeCardData, { kind: "dataEntry" }>,
-          )
-        }
-      >
-        {content}
-      </button>
-    );
-  }
+  // Key rows sit tighter under their header than the other cards' rows do
+  const layoutClass = isInline
+    ? "StateChangeCard__inline"
+    : `StateChangeCard__stacked${
+        isDataEntry ? " StateChangeCard__stacked--keys" : ""
+      }`;
 
   return (
     <div className="StateChangeCard" data-testid="state-change-card">
-      {content}
+      <div className={layoutClass}>
+        <Text
+          as="div"
+          size="md"
+          weight="medium"
+          addlClassName="StateChangeCard__title"
+        >
+          <span className="StateChangeCard__title-icon" aria-hidden="true">
+            {getCardIcon(card.kind)}
+          </span>
+          <span data-testid="state-change-title">{getTitle(card)}</span>
+          {/* Data-entry cards label the right-hand column of key rows */}
+          {isDataEntry ? (
+            <span className="StateChangeCard__column-label">{t("Key")}</span>
+          ) : null}
+        </Text>
+        <div className="StateChangeCard__body">
+          <CardBody
+            card={card}
+            allAccounts={allAccounts}
+            onViewDataEntry={onViewDataEntry}
+          />
+        </div>
+      </div>
     </div>
   );
 };

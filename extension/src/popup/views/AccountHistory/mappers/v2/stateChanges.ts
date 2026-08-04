@@ -1,70 +1,39 @@
 /**
- * Maps the 8 non-BALANCE v2 state-change categories into StateChangeCardData
- * for the detail sheet, grouping same-verb changes into one card (signers,
+ * Maps the non-BALANCE v2 state-change variants into StateChangeCardData for
+ * the detail sheet, grouping same-verb changes into one card (signers,
  * trustlines, balance authorizations) and merging flag SET/CLEAR pairs —
  * matching the Figma card layouts.
  *
- * Old/new values arrive as JSON strings (see @shared/api/types/backend-api.ts
- * encodings) and are parsed defensively — a malformed value degrades to nulls
- * rather than dropping the card.
+ * Each variant carries typed fields, so the switch reads them directly; the
+ * old/new JSON-blob parsing the previous wire shape required is gone.
  */
 
+import BigNumber from "bignumber.js";
+
 import { V2StateChange } from "@shared/api/types/backend-api";
+import { formatTokenAmount } from "popup/helpers/soroban";
 import {
   getResolvedToken,
   TokenContext,
 } from "popup/helpers/history/tokenResolver";
 import {
+  DataEntryItem,
+  DataEntryVerb,
   SignerEntry,
   StateChangeCardData,
   TrustlineEntry,
 } from "popup/views/AccountHistory/model";
 
-type OldNew<T> = { old: T | null; new: T | null };
-
-const parseOldNew = <T>(raw: string | undefined | null): OldNew<T> => {
-  if (!raw) {
-    return { old: null, new: null };
-  }
-  try {
-    const parsed = JSON.parse(raw) as { old?: T | null; new?: T | null };
-    return { old: parsed.old ?? null, new: parsed.new ?? null };
-  } catch {
-    return { old: null, new: null };
-  }
-};
-
-/** {"<key>": {"old": ..., "new": ...}} → [key, {old, new}] */
-const parseKeyValue = (
-  raw: string,
-): { key: string; values: OldNew<string> } | null => {
-  try {
-    const parsed = JSON.parse(raw) as Record<
-      string,
-      { old?: string | null; new?: string | null }
-    >;
-    const [key] = Object.keys(parsed);
-    if (!key) {
-      return null;
-    }
-    const values = parsed[key] ?? {};
-    return {
-      key,
-      values: { old: values.old ?? null, new: values.new ?? null },
-    };
-  } catch {
-    return null;
-  }
-};
-
-const verbFromOldNew = (
-  values: OldNew<string>,
-): "added" | "updated" | "removed" => {
-  if (values.old && values.new) {
-    return "updated";
-  }
-  return values.new ? "added" : "removed";
-};
+/**
+ * Trustline and balance-authorization changes carry either a token id or a
+ * liquidity pool id. Pools have no token metadata to resolve, so the pool id
+ * stands in as the code and getResolvedToken's unknown-token fallback applies.
+ */
+const resolveTrustlineToken = (
+  tokens: TokenContext,
+  change: { token_id?: string; liquidity_pool_id?: string },
+) =>
+  getResolvedToken(tokens, change.token_id ?? change.liquidity_pool_id ?? "");
 
 export const mapStateChangeCards = (
   changes: V2StateChange[],
@@ -81,124 +50,195 @@ export const mapStateChangeCards = (
     "created" | "updated" | "removed",
     TrustlineEntry[]
   >();
+  const dataEntriesByVerb = new Map<DataEntryVerb, DataEntryItem[]>();
   const authorizedTokens: ReturnType<typeof getResolvedToken>[] = [];
   const unauthorizedTokens: ReturnType<typeof getResolvedToken>[] = [];
   const flagsSet: string[] = [];
   const flagsCleared: string[] = [];
 
+  const addSigner = (
+    verb: "added" | "updated" | "removed",
+    entry: SignerEntry,
+  ) => {
+    const entries = signersByVerb.get(verb) ?? [];
+    entries.push(entry);
+    signersByVerb.set(verb, entries);
+  };
+
+  const addDataEntry = (verb: DataEntryVerb, entry: DataEntryItem) => {
+    const entries = dataEntriesByVerb.get(verb) ?? [];
+    entries.push(entry);
+    dataEntriesByVerb.set(verb, entries);
+  };
+
+  const addTrustline = (
+    verb: "created" | "updated" | "removed",
+    entry: TrustlineEntry,
+  ) => {
+    const entries = trustlinesByVerb.get(verb) ?? [];
+    entries.push(entry);
+    trustlinesByVerb.set(verb, entries);
+  };
+
   for (const change of changes) {
-    switch (change.type) {
-      case "BALANCE":
+    switch (change.variant) {
+      // Balance movements render as amount rows, not cards — see balances.ts
+      case "BalanceChange":
         break;
 
-      case "ACCOUNT": {
-        if (change.reason === "CREATE") {
-          cards.push({
-            kind: "accountCreated",
-            address: publicKey,
-            funder: change.funder_address ?? null,
-          });
-        } else {
-          cards.push({ kind: "accountMerged" });
-        }
-        break;
-      }
-
-      case "SIGNER": {
-        const weights = parseOldNew<number>(change.signer_weights);
-        const verb =
-          change.reason === "ADD"
-            ? "added"
-            : change.reason === "REMOVE"
-              ? "removed"
-              : "updated";
-        const entries = signersByVerb.get(verb) ?? [];
-        entries.push({
-          address: change.signer_address ?? "",
-          weightOld: weights.old,
-          weightNew: weights.new,
+      case "AccountCreatedChange":
+        cards.push({
+          kind: "accountCreated",
+          address: publicKey,
+          funder: change.creator_address,
         });
-        signersByVerb.set(verb, entries);
         break;
-      }
 
-      case "SIGNATURE_THRESHOLD": {
-        const values = parseOldNew<string>(change.thresholds);
+      case "AccountMergedChange":
+        cards.push({ kind: "accountMerged" });
+        break;
+
+      case "SignerAddedChange":
+        addSigner("added", {
+          address: change.signer_address,
+          weightOld: null,
+          weightNew: change.new_weight,
+        });
+        break;
+
+      case "SignerUpdatedChange":
+        addSigner("updated", {
+          address: change.signer_address,
+          weightOld: change.old_weight,
+          weightNew: change.new_weight,
+        });
+        break;
+
+      case "SignerRemovedChange":
+        addSigner("removed", {
+          address: change.signer_address,
+          weightOld: change.old_weight ?? null,
+          weightNew: null,
+        });
+        break;
+
+      case "ThresholdChange":
         cards.push({
           kind: "thresholds",
           level:
-            change.reason === "LOW"
+            change.threshold === "LOW"
               ? "low"
-              : change.reason === "HIGH"
+              : change.threshold === "HIGH"
                 ? "high"
                 : "medium",
-          valueOld: values.old,
-          valueNew: values.new,
+          valueOld:
+            change.old_threshold !== undefined
+              ? String(change.old_threshold)
+              : null,
+          valueNew: String(change.new_threshold),
         });
         break;
-      }
 
-      case "METADATA": {
-        const entry = parseKeyValue(change.metadata_key_value);
-        if (!entry) {
-          break;
-        }
-        if (change.reason === "HOME_DOMAIN") {
-          cards.push({
-            kind: "homeDomain",
-            verb:
-              entry.values.old && entry.values.new
-                ? "updated"
-                : entry.values.new
-                  ? "set"
-                  : "removed",
-            domainOld: entry.values.old,
-            domainNew: entry.values.new,
-          });
-        } else {
-          cards.push({
-            kind: "dataEntry",
-            verb: verbFromOldNew(entry.values),
-            key: entry.key,
-            valueOldB64: entry.values.old,
-            valueNewB64: entry.values.new,
-          });
-        }
-        break;
-      }
-
-      case "FLAGS": {
+      case "AccountFlagsChange":
         if (change.reason === "SET") {
           flagsSet.push(...change.flags);
         } else {
           flagsCleared.push(...change.flags);
         }
         break;
-      }
 
-      case "TRUSTLINE": {
-        const limit = parseOldNew<string>(change.limit);
-        const verb =
-          change.reason === "CREATE"
-            ? "created"
-            : change.reason === "REMOVE"
-              ? "removed"
-              : "updated";
-        const entries = trustlinesByVerb.get(verb) ?? [];
-        entries.push({
-          token: getResolvedToken(tokens, change.trustline_token_id ?? ""),
-          limitOld: limit.old,
-          limitNew: limit.new,
+      case "HomeDomainSetChange":
+        cards.push({
+          kind: "homeDomain",
+          verb: "set",
+          domainOld: null,
+          domainNew: change.home_domain,
         });
-        trustlinesByVerb.set(verb, entries);
+        break;
+
+      case "HomeDomainUpdatedChange":
+        cards.push({
+          kind: "homeDomain",
+          verb: "updated",
+          domainOld: change.old_home_domain,
+          domainNew: change.new_home_domain,
+        });
+        break;
+
+      case "HomeDomainClearedChange":
+        cards.push({
+          kind: "homeDomain",
+          verb: "removed",
+          domainOld: change.old_home_domain,
+          domainNew: null,
+        });
+        break;
+
+      case "DataEntryAddedChange":
+        addDataEntry("added", {
+          key: change.name,
+          valueOldB64: null,
+          valueNewB64: change.value,
+        });
+        break;
+
+      case "DataEntryUpdatedChange":
+        addDataEntry("updated", {
+          key: change.name,
+          valueOldB64: change.old_value,
+          valueNewB64: change.new_value,
+        });
+        break;
+
+      case "DataEntryRemovedChange":
+        addDataEntry("removed", {
+          key: change.name,
+          valueOldB64: change.old_value,
+          valueNewB64: null,
+        });
+        break;
+
+      case "AllowanceChange": {
+        const token = getResolvedToken(tokens, change.token_id);
+        cards.push({
+          kind: "allowance",
+          token,
+          spender: change.spender,
+          amount: formatTokenAmount(
+            new BigNumber(change.amount),
+            token.decimals,
+          ),
+          expirationLedger: change.expiration_ledger,
+        });
         break;
       }
 
-      case "BALANCE_AUTHORIZATION": {
-        const token = getResolvedToken(
-          tokens,
-          change.balance_auth_token_id ?? "",
-        );
+      case "TrustlineAddedChange":
+        addTrustline("created", {
+          token: resolveTrustlineToken(tokens, change),
+          limitOld: null,
+          limitNew: change.limit,
+        });
+        break;
+
+      case "TrustlineUpdatedChange":
+        addTrustline("updated", {
+          token: resolveTrustlineToken(tokens, change),
+          limitOld: change.old_limit,
+          limitNew: change.new_limit,
+        });
+        break;
+
+      case "TrustlineRemovedChange":
+        addTrustline("removed", {
+          token: resolveTrustlineToken(tokens, change),
+          limitOld: null,
+          limitNew: null,
+        });
+        break;
+
+      case "BalanceAuthorizationChange": {
+        const token = resolveTrustlineToken(tokens, change);
         if (change.reason === "SET") {
           authorizedTokens.push(token);
         } else {
@@ -207,33 +247,23 @@ export const mapStateChangeCards = (
         break;
       }
 
-      case "RESERVES": {
-        cards.push({
-          kind: "reserves",
-          verb: change.reason === "SPONSOR" ? "sponsored" : "unsponsored",
-          sponsor: change.sponsor_address ?? null,
-          sponsored: change.sponsored_address ?? null,
-          detail:
-            change.sponsored_trustline ??
-            change.sponsored_data ??
-            change.claimable_balance_id ??
-            change.liquidity_pool_id ??
-            null,
-        });
-        break;
-      }
-
       default:
         break;
     }
   }
 
-  // Grouped cards in the Figma's display order: signers, trustlines,
-  // authorizations, flags
+  // Grouped cards in the Figma's display order: signers, data entries,
+  // trustlines, authorizations, flags
   for (const verb of ["added", "updated", "removed"] as const) {
     const entries = signersByVerb.get(verb);
     if (entries) {
       cards.push({ kind: "signers", verb, entries });
+    }
+  }
+  for (const verb of ["added", "updated", "removed"] as const) {
+    const entries = dataEntriesByVerb.get(verb);
+    if (entries) {
+      cards.push({ kind: "dataEntry", verb, entries });
     }
   }
   for (const verb of ["created", "updated", "removed"] as const) {

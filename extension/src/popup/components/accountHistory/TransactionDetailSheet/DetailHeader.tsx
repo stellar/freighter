@@ -2,7 +2,6 @@ import React from "react";
 import { Text } from "@stellar/design-system";
 
 import { HistoryRowIcon } from "popup/components/accountHistory/HistoryRowIcon";
-import { CopyChip } from "popup/components/accountHistory/CopyChip";
 import { HistoryEntry } from "popup/views/AccountHistory/model";
 
 /** "2024-04-08T14:33:00Z" → "Apr 8 2024 · 2:33pm" */
@@ -30,7 +29,7 @@ export const formatDetailTimestamp = (createdAt: string) => {
 /**
  * Header for the detail drawer. Reuses the legacy `TransactionDetailModal`
  * title-row layout (icon + title + subtitle date) and adds the redesign's
- * right-aligned domain / contract-id chip.
+ * right-aligned protocol domain.
  */
 export const DetailHeader = ({ entry }: { entry: HistoryEntry }) => {
   const { details, rowIcon, createdAt } = entry;
@@ -73,9 +72,6 @@ export const DetailHeader = ({ entry }: { entry: HistoryEntry }) => {
               {details.protocol.domain}
             </span>
           </Text>
-        ) : null}
-        {!details.protocol && details.contractId ? (
-          <CopyChip value={details.contractId} />
         ) : null}
       </div>
     </div>

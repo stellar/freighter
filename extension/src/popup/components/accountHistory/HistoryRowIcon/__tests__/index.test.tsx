@@ -109,7 +109,8 @@ describe("HistoryRowIcon — non-asset variants", () => {
       "data",
       "domain",
       "flag",
-      "reserve",
+      "allowance",
+      "claimable",
       "generic",
     ] as const;
     const svgs = glyphs.map((glyph) => {

@@ -27,6 +27,7 @@ import {
   resolveProtocol,
 } from "./contract";
 import { buildPresentation } from "./classify";
+import { resolveProtocolAction } from "./protocolActions";
 
 export interface MapV2Context {
   tokens: TokenContext;
@@ -44,16 +45,15 @@ export const collectTokenIds = (
   const collect = (change: V2StateChange) => {
     switch (change.type) {
       case "BALANCE":
-        ids.add(change.standard_balance_token_id);
+      case "ALLOWANCE":
+        ids.add(change.token_id);
         break;
+      // Trustlines and authorizations reference either a token or a liquidity
+      // pool; only token ids resolve to token metadata.
       case "TRUSTLINE":
-        if (change.trustline_token_id) {
-          ids.add(change.trustline_token_id);
-        }
-        break;
       case "BALANCE_AUTHORIZATION":
-        if (change.balance_auth_token_id) {
-          ids.add(change.balance_auth_token_id);
+        if (change.token_id) {
+          ids.add(change.token_id);
         }
         break;
       default:
@@ -66,11 +66,26 @@ export const collectTokenIds = (
   return [...ids];
 };
 
+/**
+ * Transaction result codes arrive as XDR enum names
+ * ("TransactionResultCodeTxSuccess"), not the snake_case Horizon spelling —
+ * freighter-backend-v2 passes wallet-backend's stored value straight through.
+ * Fee-bump transactions report their inner result separately, so both success
+ * codes count as success. The snake_case forms are accepted too because the
+ * Horizon fallback (custom networks) synthesizes them.
+ */
+const SUCCESS_RESULT_CODES = new Set([
+  "TransactionResultCodeTxSuccess",
+  "TransactionResultCodeTxFeeBumpInnerSuccess",
+  "tx_success",
+  "tx_fee_bump_inner_success",
+]);
+
 export const mapV2Transaction = (
   tx: V2AccountTransaction,
   { tokens, publicKey, nativeTokenId }: MapV2Context,
 ): HistoryEntry => {
-  const failed = tx.result_code !== "tx_success";
+  const failed = !SUCCESS_RESULT_CODES.has(tx.result_code);
 
   const { rows, classification } = mapBalanceChanges(tx, tokens, nativeTokenId);
   const cards = mapStateChangeCards(tx.state_changes, tokens, publicKey);
@@ -88,12 +103,16 @@ export const mapV2Transaction = (
       .find((address) => address !== null) ??
     null;
 
+  const protocolAction = resolveProtocolAction(tx.state_changes);
+
   const presentation = buildPresentation({
     classification,
     cards,
     contractCall,
     protocol,
     failed,
+    operationTypes: tx.operations.map((op) => op.operation_type),
+    protocolAction,
   });
 
   return {

@@ -28,7 +28,8 @@ export type SettingsGlyph =
   | "data"
   | "domain"
   | "flag"
-  | "reserve"
+  | "allowance"
+  | "claimable"
   | "generic";
 
 /** Describes the leading icon of a list row / detail header */
@@ -62,13 +63,32 @@ export interface BalanceChangeRow {
 
 export interface SignerEntry {
   address: string;
+  /** null when the signer is being added (no prior weight) */
   weightOld: number | null;
+  /** null when the signer is being removed */
   weightNew: number | null;
+}
+
+export type DataEntryVerb = "added" | "updated" | "removed";
+
+export interface DataEntryItem {
+  key: string;
+  /** base64-encoded raw values, shown in the DataEntrySheet */
+  valueOldB64: string | null;
+  valueNewB64: string | null;
+}
+
+/** A data-entry row the user tapped, expanded in the DataEntrySheet */
+export interface DataEntrySelection {
+  verb: DataEntryVerb;
+  entry: DataEntryItem;
 }
 
 export interface TrustlineEntry {
   token: ResolvedToken;
+  /** null when the trustline is being added */
   limitOld: string | null;
+  /** null when the trustline is being removed */
   limitNew: string | null;
 }
 
@@ -87,14 +107,8 @@ export type StateChangeCardData =
       valueOld: string | null;
       valueNew: string | null;
     }
-  | {
-      kind: "dataEntry";
-      verb: "added" | "updated" | "removed";
-      key: string;
-      /** base64-encoded raw values, shown in the DataEntrySheet */
-      valueOldB64: string | null;
-      valueNewB64: string | null;
-    }
+  /** Same-verb data entries share a card, one tappable key row each */
+  | { kind: "dataEntry"; verb: DataEntryVerb; entries: DataEntryItem[] }
   | {
       kind: "homeDomain";
       verb: "set" | "updated" | "removed";
@@ -112,13 +126,17 @@ export type StateChangeCardData =
       authorized: boolean;
       tokens: ResolvedToken[];
     }
+  /**
+   * SEP-41 allowance approval. No Figma yet — rendered with the generic
+   * key/value card layout pending design.
+   */
   | {
-      kind: "reserves";
-      verb: "sponsored" | "unsponsored";
-      sponsor: string | null;
-      sponsored: string | null;
-      /** sponsored trustline / data name / claimable balance id, when present */
-      detail: string | null;
+      kind: "allowance";
+      token: ResolvedToken;
+      spender: string;
+      /** decimal amount, formatted to the token's decimals */
+      amount: string;
+      expirationLedger: number;
     };
 
 export interface HistoryOperation {

@@ -47,7 +47,7 @@
     border-radius: pxToRem(16px);
     background-color: var(--sds-clr-gray-03);
     color: var(--sds-clr-lilac-11);
-    font-size: pxToRem(14px);
+    font-size: pxToRem(16px);
     cursor: pointer;
 
     svg {
@@ -65,6 +65,79 @@
   }
 }
 
+// Expanded single data entry (node 12150:63302): title + dismiss, then the key
+// and value in filled fields, with a full-width Close action.
+.DataEntrySheet {
+  display: flex;
+  flex-direction: column;
+  gap: pxToRem(24px);
+  padding-top: pxToRem(8px);
+
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: pxToRem(8px);
+  }
+
+  &__title {
+    flex: 1 1 auto;
+    min-width: 0;
+    color: var(--sds-clr-gray-12);
+    text-transform: capitalize;
+  }
+
+  &__dismiss {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: pxToRem(32px);
+    height: pxToRem(32px);
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: var(--sds-clr-gray-03);
+    color: var(--sds-clr-gray-11);
+    cursor: pointer;
+
+    svg {
+      width: pxToRem(20px);
+      height: pxToRem(20px);
+    }
+  }
+
+  &__fields {
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(24px);
+  }
+
+  &__field {
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(12px);
+  }
+
+  &__label {
+    color: var(--sds-clr-gray-11);
+  }
+
+  &__value {
+    padding: pxToRem(12px) pxToRem(16px);
+    border-radius: pxToRem(16px);
+    background: var(--sds-clr-gray-03);
+    color: var(--sds-clr-gray-12);
+    font-size: pxToRem(16px);
+    line-height: pxToRem(24px);
+    overflow-wrap: anywhere;
+  }
+
+  // 24px container gap + 8px = the design's 32px above the Close action
+  &__footer {
+    margin-top: pxToRem(8px);
+  }
+}
+
 // State-change tiles adopt the legacy card treatment (gray-03, 16px radius,
 // no border) so they sit flush with the asset-diff and metadata cards.
 .StateChangeCard {
@@ -79,19 +152,113 @@
   text-align: left;
   border: none;
 
-  &--interactive {
-    cursor: pointer;
+  &__stacked {
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(12px);
+    width: 100%;
+
+    // Data-entry key rows hug their column header (node 12132:62410)
+    &--keys {
+      gap: pxToRem(4px);
+    }
+  }
+
+  &__inline {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: pxToRem(12px);
+    width: 100%;
+
+    .StateChangeCard__title {
+      flex-shrink: 0;
+      white-space: nowrap;
+    }
+
+    .StateChangeCard__body {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
   }
 
   &__title {
+    display: flex;
+    align-items: center;
+    gap: pxToRem(8px);
     color: var(--sds-clr-gray-11);
     text-transform: capitalize;
+  }
+
+  &__title-icon {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    color: var(--sds-clr-gray-11);
+
+    svg {
+      width: pxToRem(16px);
+      height: pxToRem(16px);
+    }
+  }
+
+  // "Key" header above the right-aligned data-entry key rows
+  &__column-label {
+    flex: 1 1 auto;
+    text-align: right;
+    color: var(--sds-clr-gray-11);
   }
 
   &__body {
     display: flex;
     flex-direction: column;
     gap: pxToRem(12px);
+  }
+
+  &__keys {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: pxToRem(4px);
+    width: 100%;
+  }
+
+  // Each key opens the DataEntrySheet with the full key/value pair
+  &__key {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: pxToRem(4px);
+    max-width: 100%;
+    padding: pxToRem(4px) 0 pxToRem(4px) pxToRem(8px);
+    border: 0;
+    border-radius: pxToRem(8px);
+    background: transparent;
+    color: var(--sds-clr-gray-12);
+    font-size: pxToRem(16px);
+    cursor: pointer;
+
+    &:hover {
+      background: var(--sds-clr-gray-06);
+    }
+
+    svg {
+      flex-shrink: 0;
+      width: pxToRem(18px);
+      height: pxToRem(18px);
+      color: var(--sds-clr-gray-11);
+    }
+  }
+
+  &__key-text {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+
+    &--removed {
+      text-decoration: line-through;
+    }
   }
 
   &__row {
@@ -128,6 +295,48 @@
 
   &__arrow {
     color: var(--sds-clr-gray-11);
+  }
+
+  &__assets {
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(12px);
+  }
+
+  &__asset-entry {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: pxToRem(4px);
+  }
+
+  &__asset {
+    display: flex;
+    align-items: center;
+    gap: pxToRem(8px);
+    color: var(--sds-clr-gray-12);
+  }
+
+  &__asset-icon {
+    width: pxToRem(18px);
+    height: pxToRem(18px);
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+  }
+
+  &__asset-icon--letter {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--sds-clr-gray-06);
+    color: var(--sds-clr-gray-11);
+    font-size: pxToRem(10px);
+    font-weight: 600;
+  }
+
+  &__asset-limit {
+    color: var(--sds-clr-gray-12);
   }
 
   &__flags {

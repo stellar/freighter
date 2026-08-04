@@ -2,10 +2,15 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { Button, Icon, Text } from "@stellar/design-system";
 
-import { CopyChip } from "popup/components/accountHistory/CopyChip";
-import { StateChangeCardData } from "popup/views/AccountHistory/model";
+import { DataEntrySelection } from "popup/views/AccountHistory/model";
 
-type DataEntryCard = Extract<StateChangeCardData, { kind: "dataEntry" }>;
+/** True when the text holds control characters, i.e. it isn't printable. */
+const hasControlChars = (text: string) =>
+  [...text].some((char) => {
+    const code = char.charCodeAt(0);
+    // allow the whitespace controls (tab, LF, VT, FF, CR)
+    return code < 32 && (code < 9 || code > 13);
+  });
 
 /** Decode base64 to a printable UTF-8 string, else return the base64 as-is. */
 export const decodeDataValue = (b64: string | null): string | null => {
@@ -14,8 +19,7 @@ export const decodeDataValue = (b64: string | null): string | null => {
   }
   try {
     const decoded = atob(b64);
-    // eslint-disable-next-line no-control-regex
-    if (/[\u0000-\u0008\u000e-\u001f]/.test(decoded)) {
+    if (hasControlChars(decoded)) {
       return b64;
     }
     return decoded;
@@ -24,75 +28,83 @@ export const decodeDataValue = (b64: string | null): string | null => {
   }
 };
 
+/**
+ * Expanded view of a single data entry, opened from a key row in the
+ * detail sheet's data-entry card: the untruncated key and value, each in its
+ * own filled field (node 12150:63302).
+ */
 export const DataEntrySheet = ({
-  card,
+  selection,
   onClose,
 }: {
-  card: DataEntryCard;
+  selection: DataEntrySelection;
   onClose: () => void;
 }) => {
   const { t } = useTranslation();
-  const value = decodeDataValue(card.valueNewB64 ?? card.valueOldB64);
+  const { verb, entry } = selection;
+  const value = decodeDataValue(entry.valueNewB64 ?? entry.valueOldB64);
 
   return (
-    <div className="TransactionDetailSheet" data-testid="data-entry-sheet">
-      <div className="TransactionDetailSheet__header">
-        <div className="TransactionDetailSheet__header-body">
-          <Text
-            as="div"
-            size="md"
-            weight="medium"
-            addlClassName="TransactionDetailSheet__header-title"
-          >
-            {`${t("Data entry")} ${card.verb}`}
-          </Text>
-        </div>
+    <div className="DataEntrySheet" data-testid="data-entry-sheet">
+      <div className="DataEntrySheet__header">
+        <Text
+          as="div"
+          size="xl"
+          weight="medium"
+          addlClassName="DataEntrySheet__title"
+        >
+          {`${t("Data entry")} ${verb}`}
+        </Text>
+        <button
+          type="button"
+          className="DataEntrySheet__dismiss"
+          aria-label={t("Close")}
+          data-testid="data-entry-dismiss"
+          onClick={onClose}
+        >
+          <Icon.X />
+        </button>
       </div>
 
-      <div className="TransactionDetailSheet__card">
-        <div className="TransactionDetailSheet__meta-row">
+      <div className="DataEntrySheet__fields">
+        <div className="DataEntrySheet__field">
           <Text
-            as="span"
+            as="div"
             size="sm"
-            addlClassName="TransactionDetailSheet__meta-label"
+            weight="medium"
+            addlClassName="DataEntrySheet__label"
           >
             {t("Key")}
           </Text>
-          <Text
-            as="span"
-            size="sm"
-            addlClassName="TransactionDetailSheet__meta-value"
-          >
-            <span data-testid="data-entry-key">{card.key}</span>
-          </Text>
+          <div className="DataEntrySheet__value" data-testid="data-entry-key">
+            {entry.key}
+          </div>
         </div>
-        <div className="TransactionDetailSheet__meta-row">
+
+        <div className="DataEntrySheet__field">
           <Text
-            as="span"
+            as="div"
             size="sm"
-            addlClassName="TransactionDetailSheet__meta-label"
+            weight="medium"
+            addlClassName="DataEntrySheet__label"
           >
             {t("Value")}
           </Text>
-          <span data-testid="data-entry-value">
-            {value ? (
-              <CopyChip value={value} displayValue={value} />
-            ) : (
-              t("None")
-            )}
-          </span>
+          <div className="DataEntrySheet__value" data-testid="data-entry-value">
+            {value ?? t("None")}
+          </div>
         </div>
       </div>
 
-      <div className="TransactionDetailSheet__footer">
+      <div className="DataEntrySheet__footer">
         <Button
-          size="md"
-          variant="tertiary"
+          size="lg"
+          variant="secondary"
           isFullWidth
+          isRounded
           data-testid="data-entry-close"
           onClick={onClose}
         >
-          <Icon.ArrowLeft />
           {t("Close")}
         </Button>
       </div>

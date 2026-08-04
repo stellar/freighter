@@ -229,9 +229,9 @@ describe("mapHorizonOperations", () => {
       {
         kind: "dataEntry",
         verb: "added",
-        key: "hair_color",
-        valueOldB64: null,
-        valueNewB64: "Ymx1ZQ==",
+        entries: [
+          { key: "hair_color", valueOldB64: null, valueNewB64: "Ymx1ZQ==" },
+        ],
       },
     ]);
   });
@@ -331,8 +331,9 @@ describe("mapHorizonOperations", () => {
       }),
     ]);
 
+    // no state change to describe → the row is named after the operation
     expect(entry.kind).toBe("other");
-    expect(entry.primaryText).toBe("Transaction");
+    expect(entry.primaryText).toBe("Sequence bumped");
     expect(entry.details.operations).toHaveLength(1);
   });
 
@@ -353,9 +354,7 @@ describe("mapHorizonOperations", () => {
 
     expect(transaction.state_changes).toEqual([
       expect.objectContaining({
-        standard_balance_token_id: getNativeContractDetails(
-          TESTNET_NETWORK_DETAILS,
-        ).contract,
+        token_id: getNativeContractDetails(TESTNET_NETWORK_DETAILS).contract,
       }),
     ]);
   });
