@@ -1,9 +1,10 @@
 import React, { useEffect } from "react";
 import { useSelector } from "react-redux";
 import { QRCodeSVG } from "qrcode.react";
-import { Icon, CopyText, Button, Notification } from "@stellar/design-system";
+import { Icon, Button, Notification } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 import { Navigate, useLocation } from "react-router-dom";
+import { toast } from "sonner";
 
 import { emitMetric } from "helpers/metrics";
 import { truncatedPublicKey } from "helpers/stellar";
@@ -78,6 +79,28 @@ export const ViewPublicKey = () => {
 
   const { publicKey } = state.data.account;
 
+  const copyAddress = async () => {
+    try {
+      await navigator.clipboard.writeText(publicKey);
+      emitMetric(METRIC_NAMES.accountPublicKeyCopied);
+      toast.custom(() => (
+        <Notification
+          variant="success"
+          title={t("Address {{address}} copied!", {
+            address: truncatedPublicKey(publicKey),
+          })}
+        />
+      ));
+    } catch {
+      toast.custom(() => (
+        <Notification
+          variant="error"
+          title={t("Couldn’t copy your wallet address")}
+        />
+      ));
+    }
+  };
+
   return (
     <React.Fragment>
       <View.AppHeader hasBackButton customBackIcon={<Icon.X />} />
@@ -121,21 +144,20 @@ export const ViewPublicKey = () => {
           <div className="ViewPublicKey__footer__caption">
             {t("This address supports Stellar network.")}
           </div>
-          <CopyText textToCopy={publicKey} doneLabel={t("Copied!")}>
-            {/* account.public_key_copied carries no source and never the raw
-                key. CopyText has no copy callback, so emit on click. */}
-            <Button
-              size="lg"
-              variant="secondary"
-              isFullWidth
-              isRounded
-              icon={<Icon.Copy01 />}
-              iconPosition="left"
-              onClick={() => emitMetric(METRIC_NAMES.accountPublicKeyCopied)}
-            >
-              {t("Copy wallet address")}
-            </Button>
-          </CopyText>
+          {/* account.public_key_copied carries no source and never the raw
+              key. Emitted from copyAddress only once the clipboard write
+              succeeds, so failed copies aren't counted. */}
+          <Button
+            size="lg"
+            variant="secondary"
+            isFullWidth
+            isRounded
+            icon={<Icon.Copy01 />}
+            iconPosition="left"
+            onClick={copyAddress}
+          >
+            {t("Copy wallet address")}
+          </Button>
         </div>
       </View.Footer>
     </React.Fragment>
