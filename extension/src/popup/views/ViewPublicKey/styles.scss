@@ -21,6 +21,7 @@
       height: pxToRem(24px);
       border-radius: 50%;
       overflow: hidden;
+      background-color: var(--sds-clr-gray-03);
     }
 
     &__text {
@@ -58,15 +59,16 @@
     gap: pxToRem(4px);
     background-color: var(--sds-clr-gray-03);
     border-radius: pxToRem(100px);
-    padding: pxToRem(6px) pxToRem(12px);
+    padding: pxToRem(6px) pxToRem(10px);
     color: var(--sds-clr-gray-12);
     font-size: pxToRem(14px);
-    font-weight: var(--font-weight-medium);
+    font-weight: var(--sds-fw-semi-bold);
+    line-height: pxToRem(20px);
 
     img,
     svg {
-      width: pxToRem(16px);
-      height: pxToRem(16px);
+      width: pxToRem(14px);
+      height: pxToRem(14px);
     }
   }
 
@@ -84,9 +86,8 @@
       text-align: center;
     }
 
-    .CopyText,
-    .CopyText__content {
-      width: 100%;
+    .Button {
+      font-weight: var(--sds-fw-medium);
     }
   }
 }
