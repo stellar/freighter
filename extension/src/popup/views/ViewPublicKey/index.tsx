@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { useSelector } from "react-redux";
 import { QRCodeSVG } from "qrcode.react";
 import { Icon, Button, Notification } from "@stellar/design-system";
@@ -28,6 +28,10 @@ export const ViewPublicKey = () => {
   const location = useLocation();
   const accountName = useSelector(accountNameSelector);
   const { state, fetchData } = useGetAppData();
+  // Holds the currently-shown copy-toast's id (see copyAddress below for why
+  // this can't be a stable id). Declared here, above the early returns, so
+  // this hook always runs regardless of which branch this render takes.
+  const lastToastIdRef = useRef<string | number | null>(null);
 
   useEffect(() => {
     const getData = async () => {
@@ -79,36 +83,44 @@ export const ViewPublicKey = () => {
 
   const { publicKey } = state.data.account;
 
-  // Both outcomes share one stable toast id so repeated taps replace the
-  // current toast instead of stacking, and a failure after a success shows only
-  // the latest outcome. Same approach as the swap quote-expiry toast.
-  const COPY_TOAST_ID = "copy-wallet-address";
+  // Deliberately NOT a stable id. sonner's Observer.create() checks
+  // `alreadyExists = this.toasts.find(t => t.id === id)` and, when true, takes
+  // an "update" path instead of mounting a new toast - but Observer.dismiss(id)
+  // (fired on a manual swipe) only adds the id to `dismissedToasts`, it never
+  // removes the entry from `this.toasts`. Reusing a stable id here made that
+  // stale-update path reachable and a real user hit a case where, after
+  // swiping a toast away, tapping "Copy" again showed nothing. Instead we keep
+  // the last-shown toast's id in a ref (declared above, before the early
+  // returns) and explicitly dismiss it before creating a new one with a
+  // fresh, auto-generated id, so the "replace instead of stack" behavior is
+  // preserved without ever reusing an id and risking that path. Do not
+  // "simplify" this back to a shared constant id.
+  const showToast = (render: (id: string | number) => React.ReactElement) => {
+    if (lastToastIdRef.current !== null) {
+      toast.dismiss(lastToastIdRef.current);
+    }
+    lastToastIdRef.current = toast.custom(render);
+  };
 
   const copyAddress = async () => {
     try {
       await navigator.clipboard.writeText(publicKey);
       emitMetric(METRIC_NAMES.accountPublicKeyCopied);
-      toast.custom(
-        () => (
-          <Notification
-            variant="success"
-            title={t("Address {{address}} copied!", {
-              address: truncatedPublicKey(publicKey),
-            })}
-          />
-        ),
-        { id: COPY_TOAST_ID },
-      );
+      showToast(() => (
+        <Notification
+          variant="success"
+          title={t("Address {{address}} copied!", {
+            address: truncatedPublicKey(publicKey),
+          })}
+        />
+      ));
     } catch {
-      toast.custom(
-        () => (
-          <Notification
-            variant="error"
-            title={t("Couldn’t copy your wallet address")}
-          />
-        ),
-        { id: COPY_TOAST_ID },
-      );
+      showToast(() => (
+        <Notification
+          variant="error"
+          title={t("Couldn’t copy your wallet address")}
+        />
+      ));
     }
   };
 
