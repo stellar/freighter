@@ -28,4 +28,22 @@
     margin-top: pxToRem(6px);
     text-align: center;
   }
+
+  &__show-hidden {
+    color: var(--sds-clr-lilac-11);
+    font-size: pxToRem(14px);
+    font-weight: var(--font-weight-medium);
+    line-height: pxToRem(20px);
+    cursor: pointer;
+    width: fit-content;
+    margin-top: pxToRem(16px);
+  }
+
+  &__helper-text {
+    color: var(--sds-clr-gray-11);
+    font-size: pxToRem(14px);
+    font-weight: var(--font-weight-regular);
+    line-height: pxToRem(20px);
+    margin-top: pxToRem(16px);
+  }
 }
