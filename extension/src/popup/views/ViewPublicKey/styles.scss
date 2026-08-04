@@ -17,11 +17,20 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      width: pxToRem(24px);
-      height: pxToRem(24px);
+      width: pxToRem(32px);
+      height: pxToRem(32px);
       border-radius: 50%;
-      overflow: hidden;
       background-color: var(--sds-clr-gray-03);
+
+      // IdenticonImg's own styles set the <img> to width/height: 100%, which
+      // would let it fill this entire circle. Size the descendant image
+      // directly so a visible ring of the circle's background remains
+      // around a smaller identicon, instead of cropping with
+      // overflow: hidden.
+      img {
+        width: pxToRem(16px);
+        height: pxToRem(16px);
+      }
     }
 
     &__text {
@@ -87,6 +96,17 @@
     }
 
     .Button {
+      // Measured in the built extension (see pr5-followup-report.md):
+      // font-weight: 550 (a raw number, since no SDS token exists between
+      // medium/500 and semi-bold/600) does NOT render as a genuine
+      // midpoint here. Rendered label width was identical to 600's
+      // (135.39px vs 135.39px, both != 500's 126.06px), because SDS's
+      // --sds-ff-base ("Inter") is never actually loaded in this repo, so
+      // text falls back to the system sans-serif, which only has
+      // normal/bold physical faces and snaps 550 to the bold one. 550 is
+      // therefore indistinguishable from 600 (the "too bold" option the
+      // design owner rejected) and would be theater. Keeping medium/500,
+      // which measurably renders as the lighter, distinct face.
       font-weight: var(--sds-fw-medium);
     }
   }
