@@ -23,7 +23,7 @@ test("View Allow List selector", async ({ page, extensionId, context }) => {
   await expect(popup.getByText("Connection Request")).toBeVisible();
   await popup.getByTestId("grant-access-connect-button").click();
 
-  await expect(page.getByText("No connected apps found")).toBeVisible();
+  await expect(page.getByText("Nothing connected yet")).toBeVisible();
 
   await expectPageToHaveScreenshot({
     page,
@@ -46,7 +46,7 @@ test("View Allow List selector", async ({ page, extensionId, context }) => {
     .getByTestId("manage-connected-apps-select")
     .selectOption("Main Net");
 
-  await expect(page.getByText("No connected apps found")).toBeVisible();
+  await expect(page.getByText("Nothing connected yet")).toBeVisible();
 
   await expectPageToHaveScreenshot({
     page,
@@ -69,7 +69,7 @@ test("View Allow List selector", async ({ page, extensionId, context }) => {
   await page.getByTestId("network-selector-open").click();
   await page.getByText("Connected apps").click();
 
-  await expect(page.getByText("No connected apps found")).toBeVisible();
+  await expect(page.getByText("Nothing connected yet")).toBeVisible();
 
   await expectPageToHaveScreenshot({
     page,

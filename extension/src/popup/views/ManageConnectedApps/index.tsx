@@ -18,6 +18,13 @@ import { Loading } from "popup/components/Loading";
 import { openTab } from "popup/helpers/navigate";
 import { newTabHref } from "helpers/urls";
 import { reRouteOnboarding } from "popup/helpers/route";
+import {
+  ScreenReaderOnly,
+  Sheet,
+  SheetContent,
+  SheetTitle,
+} from "popup/basics/shadcn/Sheet";
+import { Discover } from "popup/views/Discover";
 
 import "./styles.scss";
 
@@ -27,6 +34,7 @@ export const ManageConnectedApps = () => {
   const location = useLocation();
   const [selectedNetworkName, setSelectedNetworkName] = useState("");
   const [selectedAllowlist, setSelectedAllowlist] = useState<string[]>([]);
+  const [isDiscoverOpen, setIsDiscoverOpen] = useState(false);
 
   const { state, fetchData } = useGetAppData();
 
@@ -128,12 +136,22 @@ export const ManageConnectedApps = () => {
       <SubviewHeader title={t("Connected apps")} customBackIcon={<Icon.X />} />
       <View.Content hasNoTopPadding>
         <div className="ManageConnectedApps">
-          <div className="ManageConnectedApps__select-wrapper">
+          <div className="ManageConnectedApps__network-pill">
+            <NetworkIcon
+              index={networksList.findIndex(
+                ({ networkName: currNetworkName }) =>
+                  currNetworkName === selectedNetworkName,
+              )}
+            />
+            <span className="ManageConnectedApps__network-pill__label">
+              {selectedNetworkName}
+            </span>
+            <Icon.ChevronDown className="ManageConnectedApps__network-pill__chevron" />
             <Select
               data-testid="manage-connected-apps-select"
               fieldSize="md"
               id="select"
-              className="ManageConnectedApps__select"
+              className="ManageConnectedApps__network-pill__select"
               onChange={handleSelectChange}
             >
               {networksList.map(({ networkName }) => (
@@ -146,14 +164,6 @@ export const ManageConnectedApps = () => {
                 </option>
               ))}
             </Select>
-          </div>
-          <div className="ManageConnectedApps__network">
-            <NetworkIcon
-              index={networksList.findIndex(
-                ({ networkName: currNetworkName }) =>
-                  currNetworkName === selectedNetworkName,
-              )}
-            />
           </div>
           {selectedAllowlist.length ? (
             <div className="ManageConnectedApps__wrapper">
@@ -176,23 +186,58 @@ export const ManageConnectedApps = () => {
 
               <Button
                 size="lg"
-                variant="error"
+                variant="tertiary"
                 isFullWidth
                 isRounded
-                icon={<Icon.LinkBroken01 />}
-                iconPosition="left"
                 onClick={handleRemoveAll}
+                className="ManageConnectedApps__disconnect-all"
               >
                 {t("Disconnect all")}
               </Button>
             </div>
           ) : (
-            <div className="ManageConnectedApps__empty">
-              {t("No connected apps found")}
+            <div
+              className="ManageConnectedApps__empty"
+              data-testid="connected-apps-empty"
+            >
+              <div className="ManageConnectedApps__empty__badge">
+                <Icon.NotificationBox />
+              </div>
+              <div className="ManageConnectedApps__empty__title">
+                {t("Nothing connected yet")}
+              </div>
+              <div className="ManageConnectedApps__empty__subtitle">
+                {t("Discover apps and connect your first one.")}
+              </div>
+              <Button
+                size="md"
+                variant="secondary"
+                isRounded
+                onClick={() => setIsDiscoverOpen(true)}
+                data-testid="go-to-discover"
+              >
+                {t("Go to Discover")}
+              </Button>
             </div>
           )}
         </div>
       </View.Content>
+      <Sheet
+        open={isDiscoverOpen}
+        onOpenChange={(open) => !open && setIsDiscoverOpen(false)}
+      >
+        <SheetContent
+          onOpenAutoFocus={(e) => e.preventDefault()}
+          aria-describedby={undefined}
+          side="bottom"
+          className="ManageConnectedApps__discover-sheet"
+        >
+          <ScreenReaderOnly>
+            <SheetTitle>{t("Discover")}</SheetTitle>
+          </ScreenReaderOnly>
+          <Discover onClose={() => setIsDiscoverOpen(false)} />
+        </SheetContent>
+      </Sheet>
     </React.Fragment>
   );
 };
