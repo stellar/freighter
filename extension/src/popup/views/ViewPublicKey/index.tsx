@@ -79,25 +79,36 @@ export const ViewPublicKey = () => {
 
   const { publicKey } = state.data.account;
 
+  // Both outcomes share one stable toast id so repeated taps replace the
+  // current toast instead of stacking, and a failure after a success shows only
+  // the latest outcome. Same approach as the swap quote-expiry toast.
+  const COPY_TOAST_ID = "copy-wallet-address";
+
   const copyAddress = async () => {
     try {
       await navigator.clipboard.writeText(publicKey);
       emitMetric(METRIC_NAMES.accountPublicKeyCopied);
-      toast.custom(() => (
-        <Notification
-          variant="success"
-          title={t("Address {{address}} copied!", {
-            address: truncatedPublicKey(publicKey),
-          })}
-        />
-      ));
+      toast.custom(
+        () => (
+          <Notification
+            variant="success"
+            title={t("Address {{address}} copied!", {
+              address: truncatedPublicKey(publicKey),
+            })}
+          />
+        ),
+        { id: COPY_TOAST_ID },
+      );
     } catch {
-      toast.custom(() => (
-        <Notification
-          variant="error"
-          title={t("Couldn’t copy your wallet address")}
-        />
-      ));
+      toast.custom(
+        () => (
+          <Notification
+            variant="error"
+            title={t("Couldn’t copy your wallet address")}
+          />
+        ),
+        { id: COPY_TOAST_ID },
+      );
     }
   };
 
