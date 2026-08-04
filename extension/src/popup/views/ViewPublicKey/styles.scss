@@ -95,19 +95,11 @@
       text-align: center;
     }
 
-    .Button {
-      // Measured in the built extension (see pr5-followup-report.md):
-      // font-weight: 550 (a raw number, since no SDS token exists between
-      // medium/500 and semi-bold/600) does NOT render as a genuine
-      // midpoint here. Rendered label width was identical to 600's
-      // (135.39px vs 135.39px, both != 500's 126.06px), because SDS's
-      // --sds-ff-base ("Inter") is never actually loaded in this repo, so
-      // text falls back to the system sans-serif, which only has
-      // normal/bold physical faces and snaps 550 to the bold one. 550 is
-      // therefore indistinguishable from 600 (the "too bold" option the
-      // design owner rejected) and would be theater. Keeping medium/500,
-      // which measurably renders as the lighter, distinct face.
-      font-weight: var(--sds-fw-medium);
-    }
+    // No font-weight override here on purpose: SDS Button already ships
+    // semi-bold/600, which is what the design calls for. A lighter 500 and a
+    // raw 550 were both tried; 550 measured identical to 600 because SDS's
+    // --sds-ff-base ("Inter") is never loaded in this repo, so text falls back
+    // to the system sans-serif and there is no face between medium and bold.
+    // Loading Inter is the real fix — see the PR description.
   }
 }
