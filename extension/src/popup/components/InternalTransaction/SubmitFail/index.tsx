@@ -19,6 +19,7 @@ import {
 import { View } from "popup/basics/layout/View";
 import IconFail from "popup/assets/icon-fail.svg";
 import { emitMetric } from "helpers/metrics";
+import { getAssetFromCanonical } from "helpers/stellar";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 
 import "./styles.scss";
@@ -31,15 +32,37 @@ interface ErrorDetails {
 }
 
 export const SubmitFail = () => {
-  const { error } = useSelector(transactionSubmissionSelector);
+  const { error, transactionData } = useSelector(transactionSubmissionSelector);
   const isSwap = useIsSwap();
+  const { isCollectible, asset, destinationAsset } = transactionData;
   const { t } = useTranslation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
   useEffect(() => {
-    emitMetric(METRIC_NAMES.sendPaymentError, { error });
-  }, [error]);
+    const resultCodes = getResultCodes(error);
+    const reasonCode =
+      resultCodes.operations?.[0] || resultCodes.transaction || "unknown";
+
+    // A routed/path payment fails as a swap; a collectible send has its own
+    // terminal event. `network` rides on the common context.
+    if (isCollectible) {
+      emitMetric(METRIC_NAMES.collectibleSendFailed, {
+        reason_code: reasonCode,
+      });
+    } else if (isSwap) {
+      emitMetric(METRIC_NAMES.swapFailed, {
+        from_asset_code: getAssetFromCanonical(asset).code,
+        to_asset_code: getAssetFromCanonical(destinationAsset).code,
+        reason_code: reasonCode,
+      });
+    } else {
+      emitMetric(METRIC_NAMES.paymentFailed, {
+        payment_type: "payment",
+        reason_code: reasonCode,
+      });
+    }
+  }, [error, isSwap, isCollectible, asset, destinationAsset]);
 
   const getErrorDetails = (err: ErrorMessage | undefined): ErrorDetails => {
     const errorDetails: ErrorDetails = {

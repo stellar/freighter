@@ -507,6 +507,27 @@ export const getMigratableAccounts = async () => {
   return { migratableAccounts };
 };
 
+/**
+ * Fetches the seed-derived analytics user id from the background. Returns
+ * `null` when locked (no active session) or if the message fails.
+ */
+export const getAnalyticsUserId = async (): Promise<{
+  analyticsUserId: string | null;
+}> => {
+  let analyticsUserId: string | null = null;
+
+  try {
+    ({ analyticsUserId } = await sendMessageToBackground({
+      activePublicKey: null,
+      type: SERVICE_TYPES.GET_ANALYTICS_USER_ID,
+    }));
+  } catch (e) {
+    console.error(e);
+  }
+
+  return { analyticsUserId };
+};
+
 export const migrateAccounts = async ({
   balancesToMigrate,
   isMergeSelected,
@@ -1448,18 +1469,21 @@ export const handleSignedHwPayload = async ({
 export const addToken = async ({
   activePublicKey,
   uuid,
+  isTrustlineBacked,
 }: {
   activePublicKey: string;
   uuid: string;
+  isTrustlineBacked?: boolean;
 }): Promise<void> => {
-  try {
-    await sendMessageToBackground({
-      activePublicKey,
-      uuid,
-      type: SERVICE_TYPES.ADD_TOKEN,
-    });
-  } catch (e) {
-    console.error(e);
+  const response = await sendMessageToBackground<{ error?: string }>({
+    activePublicKey,
+    uuid,
+    isTrustlineBacked,
+    type: SERVICE_TYPES.ADD_TOKEN,
+  });
+
+  if (response?.error) {
+    throw new Error(response.error);
   }
 };
 

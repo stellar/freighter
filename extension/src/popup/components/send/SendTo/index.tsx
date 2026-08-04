@@ -395,7 +395,7 @@ export const SendTo = ({
                         formik.setFieldValue("destination", address);
                         return;
                       }
-                      emitMetric(METRIC_NAMES.sendPaymentRecentAddress);
+                      emitMetric(METRIC_NAMES.paymentRecipientRecentSelected);
                       await fetchData(address, {});
                       handleContinue(
                         addressFromInput.validatedAddress,

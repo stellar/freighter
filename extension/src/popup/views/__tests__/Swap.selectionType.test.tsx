@@ -24,6 +24,11 @@ import * as UseSwapTokenLookup from "popup/components/swap/SwapAsset/hooks/useSw
 jest.mock("helpers/metrics", () => ({
   ...jest.requireActual("helpers/metrics"),
   emitMetric: jest.fn(),
+  // The Swap view emits screen.viewed on mount; the real emitScreenViewed runs
+  // buildCommonContext, which reads the Redux auth slice this test's minimal
+  // store doesn't provide. This test covers picker-selection wiring, not
+  // screen-view analytics, so stub the emit.
+  emitScreenViewed: jest.fn(),
 }));
 
 const emitMetricMock = emitMetric as jest.Mock;
@@ -220,11 +225,11 @@ describe("Swap selectionType wiring", () => {
     });
 
     const sourceCall = emitMetricMock.mock.calls.find(
-      (c) => c[0] === "swap: source selected",
+      (c) => c[0] === "swap.source_selected",
     );
     expect(sourceCall).toBeDefined();
     expect(sourceCall![1]).toMatchObject({
-      tokenCode: "USDC",
+      asset_code: "USDC",
       source: "balances",
     });
   });

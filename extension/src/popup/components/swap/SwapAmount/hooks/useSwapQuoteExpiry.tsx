@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { Notification } from "@stellar/design-system";
 
+import { getAssetFromCanonical } from "@shared/helpers/stellar";
 import { emitMetric } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 
@@ -13,9 +14,6 @@ interface UseSwapQuoteExpiryParams {
   isSwapQuoteExpired: boolean;
   asset: string;
   destinationAsset: string;
-  amount: string;
-  destinationAmount: string;
-  allowedSlippage: string;
 }
 
 /**
@@ -28,9 +26,6 @@ export const useSwapQuoteExpiry = ({
   isSwapQuoteExpired,
   asset,
   destinationAsset,
-  amount,
-  destinationAmount,
-  allowedSlippage,
 }: UseSwapQuoteExpiryParams) => {
   const { t } = useTranslation();
 
@@ -61,12 +56,11 @@ export const useSwapQuoteExpiry = ({
       return;
     }
     showQuoteExpiredToast();
+    // Amounts intentionally dropped (parity with swap.completed/failed). Bare
+    // asset codes so from/to_asset_code match mobile rather than canonical ids.
     emitMetric(METRIC_NAMES.swapQuoteExpired, {
-      sourceToken: asset,
-      destToken: destinationAsset,
-      sourceAmount: amount,
-      destAmount: destinationAmount,
-      allowedSlippage,
+      from_asset_code: getAssetFromCanonical(asset).code,
+      to_asset_code: getAssetFromCanonical(destinationAsset).code,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isQuoteExpired]);

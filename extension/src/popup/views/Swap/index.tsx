@@ -3,7 +3,11 @@ import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useLocation } from "react-router-dom";
 import { ActionStatus } from "@shared/api/types";
 import { STEPS } from "popup/constants/swap";
-import { emitMetric } from "helpers/metrics";
+import {
+  emitMetric,
+  emitScreenViewed,
+  ScreenViewedProps,
+} from "helpers/metrics";
 import { InputType } from "helpers/transaction";
 import { TransactionConfirm } from "popup/components/InternalTransaction/SubmitTransaction";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
@@ -27,12 +31,22 @@ import { ROUTES } from "popup/constants/routes";
 import { resetSimulation } from "popup/ducks/token-payment";
 import { getAssetFromCanonical } from "helpers/stellar";
 
-const SWAP_METRIC_BY_STEP: Partial<Record<STEPS, string>> = {
-  [STEPS.SWAP_CONFIRM]: METRIC_NAMES.swapConfirm,
-  [STEPS.SET_DST_ASSET]: METRIC_NAMES.swapTo,
-  [STEPS.AMOUNT]: METRIC_NAMES.swapAmount,
-  [STEPS.CONFIRM_AMOUNT]: METRIC_NAMES.swapAmountReview,
-  [STEPS.SET_FROM_ASSET]: METRIC_NAMES.swapFrom,
+// Each swap sub-step emits the consolidated `screen.viewed` event; the step's
+// identity lives in `screen_name`, declared as a literal below.
+const SWAP_SCREEN_BY_STEP: Partial<
+  Record<STEPS, { screen_name: string } & ScreenViewedProps>
+> = {
+  [STEPS.SWAP_CONFIRM]: {
+    screen_name: "swap_confirm",
+    flow: "swap",
+    // Canonical cross-platform stage (RFC #2883): mobile tags this screen
+    // step:"confirm"; keep them in sync so `step` is funnel-able across both.
+    step: "confirm",
+  },
+  [STEPS.SET_DST_ASSET]: { screen_name: "swap_to_asset", flow: "swap" },
+  [STEPS.AMOUNT]: { screen_name: "swap_amount", flow: "swap" },
+  [STEPS.CONFIRM_AMOUNT]: { screen_name: "swap_amount_review", flow: "swap" },
+  [STEPS.SET_FROM_ASSET]: { screen_name: "swap_from_asset", flow: "swap" },
 };
 
 export const Swap = () => {
@@ -47,9 +61,10 @@ export const Swap = () => {
     if (activeStep === lastEmittedStep.current) return;
     lastEmittedStep.current = activeStep;
 
-    const metric = SWAP_METRIC_BY_STEP[activeStep];
-    if (metric) {
-      emitMetric(metric);
+    const screen = SWAP_SCREEN_BY_STEP[activeStep];
+    if (screen) {
+      const { screen_name, ...props } = screen;
+      emitScreenViewed(screen_name, props);
     }
   }, [activeStep]);
 
@@ -65,13 +80,13 @@ export const Swap = () => {
     if (!isQuoteExpiredAtSubmit) {
       return;
     }
+    // Amounts intentionally dropped (parity with swap.completed/failed, which
+    // carry no amounts). Assets are bare codes (getAssetFromCanonical) so
+    // from_asset_code/to_asset_code match mobile rather than being canonical ids.
     emitMetric(METRIC_NAMES.swapQuoteExpired, {
-      sourceToken: transactionData.asset,
-      destToken: transactionData.destinationAsset,
-      sourceAmount: transactionData.amount,
-      destAmount: transactionData.destinationAmount,
-      allowedSlippage: transactionData.allowedSlippage,
-      resultCode: getQuoteExpiredOperationCodes(submission.error).join(", "),
+      from_asset_code: getAssetFromCanonical(transactionData.asset).code,
+      to_asset_code: getAssetFromCanonical(transactionData.destinationAsset).code,
+      result_code: getQuoteExpiredOperationCodes(submission.error).join(", "),
     });
     // Clear only the ERROR status (keep the transaction data + the
     // isSwapQuoteExpired flag, which drives the amount-screen notification).
@@ -151,9 +166,9 @@ export const Swap = () => {
                 dispatch(saveAmountUsd("0.00"));
               }
               emitMetric(METRIC_NAMES.swapDestinationSelected, {
-                tokenCode: details?.tokenCode,
-                tokenIssuer: details?.issuer,
-                requiresTrustline: details?.requiresTrustline,
+                asset_code: details?.tokenCode,
+                asset_issuer: details?.issuer,
+                requires_trustline: details?.requiresTrustline,
                 source: details?.source,
               });
               setActiveStep(STEPS.AMOUNT);
@@ -208,8 +223,8 @@ export const Swap = () => {
                 dispatch(saveDestinationTokenDetails(null));
               }
               emitMetric(METRIC_NAMES.swapSourceSelected, {
-                tokenCode: getAssetFromCanonical(canonical).code,
-                tokenIssuer: getAssetFromCanonical(canonical).issuer,
+                asset_code: getAssetFromCanonical(canonical).code,
+                asset_issuer: getAssetFromCanonical(canonical).issuer,
                 source: "balances",
               });
               setActiveStep(STEPS.AMOUNT);

@@ -16,6 +16,7 @@ import {
   loadLastUsedAccount,
 } from "popup/ducks/accountServices";
 import { EnterPassword } from "popup/components/EnterPassword";
+import { reconcileAnalyticsUserId } from "helpers/metrics";
 
 import "./styles.scss";
 import { AppDispatch } from "popup/App";
@@ -41,10 +42,15 @@ export const UnlockAccount = () => {
   const wasLockedOnMount = useRef(!hasPrivateKey);
 
   const handleSubmit = async (password: string) => {
-    await dispatch(confirmPassword(password));
+    const response = await dispatch(confirmPassword(password));
     // Navigation is handled by the `hasPrivateKey` effect below so
     // that both password-submit and cross-surface SESSION_UNLOCKED
     // broadcasts converge on the same destination.
+    if (confirmPassword.fulfilled.match(response)) {
+      // Fire-and-forget: adopt the auth-derived analytics/Sentry user id
+      // now that the session is unlocked. Never blocks the unlock flow.
+      void reconcileAnalyticsUserId();
+    }
   };
 
   useEffect(() => {

@@ -57,10 +57,9 @@ function useSubmitTxData({
       destination,
       federationAddress,
       destinationAsset,
-      destinationAmount,
-      amount,
-      allowedSlippage,
       destinationTokenDetails,
+      isCollectible,
+      collectibleData,
     },
     transactionSimulation,
   } = submission;
@@ -98,21 +97,24 @@ function useSubmitTxData({
       );
 
       if (submitFreighterTransaction.fulfilled.match(submitResp)) {
+        // NB: `transaction.submitted` is intentionally NOT emitted here. It is a
+        // dApp *sign-and-submit* event, and the extension dApp API only
+        // signs-and-returns (no submit path), so there's no conformant emit.
+        // Internal broadcasts are already captured by the payment/swap/
+        // collectible_send `.completed` events below.
         if (isSwap) {
-          // Post-confirmation swap telemetry: the swap actually settled.
-          emitMetric(METRIC_NAMES.swapSuccess, {
-            sourceToken: sourceAsset.code,
-            destToken: destinationAsset,
-            sourceAmount: amount,
-            destAmount: destinationAmount,
-            allowedSlippage,
+          // Post-confirmation swap telemetry: the swap actually settled. A
+          // routed/path payment settles here too — its outcome is a swap.
+          emitMetric(METRIC_NAMES.swapCompleted, {
+            from_asset_code: sourceAsset.code,
+            to_asset_code: getAssetFromCanonical(destinationAsset).code,
           });
           // Trustline added only once the combined changeTrust +
           // pathPaymentStrictSend transaction confirmed it.
           if (destinationTokenDetails?.requiresTrustline) {
             emitMetric(METRIC_NAMES.swapTrustlineAdded, {
-              tokenCode: destinationTokenDetails.tokenCode,
-              tokenIssuer: destinationTokenDetails.issuer,
+              asset_code: destinationTokenDetails.tokenCode,
+              asset_issuer: destinationTokenDetails.issuer,
             });
           }
         } else {
@@ -125,9 +127,19 @@ function useSubmitTxData({
               addRecentAddress({ address: federationAddress || destination }),
             );
           }
-          emitMetric(METRIC_NAMES.sendPaymentSuccess, {
-            sourceAsset: sourceAsset.code,
-          });
+
+          if (isCollectible) {
+            emitMetric(METRIC_NAMES.collectibleSendCompleted, {
+              collection_address: collectibleData.collectionAddress,
+              token_id: collectibleData.tokenId,
+            });
+          } else {
+            // Direct (non-routed) payment outcome.
+            emitMetric(METRIC_NAMES.paymentCompleted, {
+              payment_type: "payment",
+              asset_code: sourceAsset.code,
+            });
+          }
         }
 
         // After successful submission, re-fetch balances and collectibles to get their latest values

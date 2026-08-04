@@ -29,8 +29,21 @@ import * as RouteHelpers from "popup/helpers/route";
 import * as tokenPaymentActions from "popup/ducks/token-payment";
 import * as GetIconHelper from "@shared/api/helpers/getIconUrlFromIssuer";
 import { WalletType } from "@shared/constants/hardwareWallet";
+import { ActionStatus } from "@shared/api/types";
+import { emitScreenViewed } from "helpers/metrics";
 
 jest.mock("lodash/debounce", () => jest.fn((fn) => fn));
+
+// Stub the screen-view emit so we can assert on it without running the real
+// buildCommonContext (which reads Redux slices this suite's stores don't fully
+// provide). Mirrors the Swap.selectionType test.
+jest.mock("helpers/metrics", () => ({
+  ...jest.requireActual("helpers/metrics"),
+  emitMetric: jest.fn(),
+  emitScreenViewed: jest.fn(),
+}));
+
+const emitScreenViewedMock = emitScreenViewed as jest.Mock;
 
 jest
   .spyOn(GetIconHelper, "getIconUrlFromIssuer")
@@ -207,6 +220,96 @@ describe("Send", () => {
       expect(screen.getByTestId("token-list")).toBeDefined();
       expect(screen.queryByTestId("send-amount-amount-input")).toBeNull();
     });
+  });
+
+  it("emits send_payment_processing (step:processing) when a submission is in-flight", async () => {
+    // The in-flight state is an internal state of the confirm screen, not a
+    // step/route, so it's emitted from a submitStatus effect. Seeding PENDING
+    // exercises that effect and mirrors mobile's send_payment_processing.
+    render(
+      <Wrapper
+        routes={[ROUTES.sendPayment]}
+        state={{
+          auth: {
+            error: null,
+            hasPrivateKey: true,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
+            publicKey,
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: MAINNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+          },
+          transactionSubmission: {
+            ...transactionSubmissionInitialState,
+            accountBalances: mockBalances,
+            submitStatus: ActionStatus.PENDING,
+          },
+          tokenPaymentSimulation: tokenPaymentActions.initialState,
+        }}
+      >
+        <Send />
+      </Wrapper>,
+    );
+
+    await waitFor(() => {
+      expect(emitScreenViewedMock).toHaveBeenCalledWith(
+        "send_payment_processing",
+        { flow: "send", step: "processing" },
+      );
+    });
+
+    // Emitted exactly once for the in-flight submission, never as a duplicate.
+    const processingCalls = emitScreenViewedMock.mock.calls.filter(
+      (c) => c[0] === "send_payment_processing",
+    );
+    expect(processingCalls).toHaveLength(1);
+  });
+
+  it("emits send_payment_success (step:success) when a submission succeeds", async () => {
+    // The terminal success is likewise an internal state of the confirm screen,
+    // emitted from the same submitStatus effect. Seeding SUCCESS exercises it
+    // and mirrors mobile's send_payment_success (SENT state).
+    render(
+      <Wrapper
+        routes={[ROUTES.sendPayment]}
+        state={{
+          auth: {
+            error: null,
+            hasPrivateKey: true,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
+            publicKey,
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: MAINNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+          },
+          transactionSubmission: {
+            ...transactionSubmissionInitialState,
+            accountBalances: mockBalances,
+            submitStatus: ActionStatus.SUCCESS,
+          },
+          tokenPaymentSimulation: tokenPaymentActions.initialState,
+        }}
+      >
+        <Send />
+      </Wrapper>,
+    );
+
+    await waitFor(() => {
+      expect(emitScreenViewedMock).toHaveBeenCalledWith("send_payment_success", {
+        flow: "send",
+        step: "success",
+      });
+    });
+
+    // Emitted exactly once for the successful submission, never as a duplicate.
+    const successCalls = emitScreenViewedMock.mock.calls.filter(
+      (c) => c[0] === "send_payment_success",
+    );
+    expect(successCalls).toHaveLength(1);
   });
 
   it("starts on the token picker step when no asset is pre-selected", async () => {

@@ -3,11 +3,11 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { Notification } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
+import { ActionStatus } from "@shared/api/types";
 
 import { ROUTES } from "popup/constants/routes";
 import { STEPS } from "popup/constants/send-payment";
-import { emitMetric } from "helpers/metrics";
-import { METRIC_NAMES } from "popup/constants/metricsNames";
+import { emitScreenViewed, ScreenViewedProps } from "helpers/metrics";
 import { SendTo } from "popup/components/send/SendTo";
 import { SendAmount } from "popup/components/send/SendAmount";
 import { SendDestinationAsset } from "popup/components/send/SendDestinationAsset";
@@ -33,11 +33,24 @@ import { useSendQueryParams } from "./hooks/useSendQueryParams";
 
 import "./styles.scss";
 
-const SEND_METRIC_BY_STEP: Partial<Record<STEPS, string>> = {
-  [STEPS.SET_SOURCE_ASSET]: METRIC_NAMES.sendPaymentSelectAsset,
-  [STEPS.AMOUNT]: METRIC_NAMES.sendPaymentAmount,
-  [STEPS.PAYMENT_CONFIRM]: METRIC_NAMES.sendPaymentConfirm,
-  [STEPS.DESTINATION]: METRIC_NAMES.sendPaymentTo,
+// Each send sub-step emits the consolidated `screen.viewed` event; the step's
+// identity lives in `screen_name`, declared as a literal below.
+const SEND_SCREEN_BY_STEP: Partial<
+  Record<STEPS, { screen_name: string } & ScreenViewedProps>
+> = {
+  [STEPS.SET_SOURCE_ASSET]: {
+    screen_name: "send_payment_select_asset",
+    flow: "send",
+  },
+  [STEPS.AMOUNT]: { screen_name: "send_payment_amount", flow: "send" },
+  [STEPS.PAYMENT_CONFIRM]: {
+    screen_name: "send_payment_confirm",
+    flow: "send",
+    // Canonical cross-platform stage (RFC #2883): mobile tags this screen
+    // step:"confirm"; keep them in sync so `step` is funnel-able across both.
+    step: "confirm",
+  },
+  [STEPS.DESTINATION]: { screen_name: "send_payment_to", flow: "send" },
 };
 
 /*
@@ -176,6 +189,8 @@ export const Send = () => {
   >(initialAnim);
 
   const lastEmittedStep = useRef<STEPS | null>(null);
+  const hasEmittedProcessing = useRef(false);
+  const hasEmittedSuccess = useRef(false);
 
   const goToStep = (
     next: STEPS,
@@ -199,11 +214,42 @@ export const Send = () => {
     if (activeStep === lastEmittedStep.current) return;
     lastEmittedStep.current = activeStep;
 
-    const metric = SEND_METRIC_BY_STEP[activeStep];
-    if (metric) {
-      emitMetric(metric);
+    const screen = SEND_SCREEN_BY_STEP[activeStep];
+    if (screen) {
+      const { screen_name, ...props } = screen;
+      emitScreenViewed(screen_name, props);
     }
   }, [activeStep]);
+
+  // The in-flight submission and its terminal success are internal states of
+  // the confirm screen rather than distinct steps/routes, so emit their
+  // `screen.viewed` here as the submission status advances. Matches mobile's
+  // `send_payment_processing` (step:"processing") and `send_payment_success`
+  // (step:"success") so the send funnel stages stay joined cross-platform. Each
+  // emits once per submission; reset when the status clears so a subsequent
+  // send re-emits.
+  useEffect(() => {
+    if (submission.submitStatus === ActionStatus.PENDING) {
+      if (!hasEmittedProcessing.current) {
+        hasEmittedProcessing.current = true;
+        emitScreenViewed("send_payment_processing", {
+          flow: "send",
+          step: "processing",
+        });
+      }
+    } else if (submission.submitStatus === ActionStatus.SUCCESS) {
+      if (!hasEmittedSuccess.current) {
+        hasEmittedSuccess.current = true;
+        emitScreenViewed("send_payment_success", {
+          flow: "send",
+          step: "success",
+        });
+      }
+    } else if (submission.submitStatus === ActionStatus.IDLE) {
+      hasEmittedProcessing.current = false;
+      hasEmittedSuccess.current = false;
+    }
+  }, [submission.submitStatus]);
 
   // Handle query params and set defaults on mount
   // This is used to pre-populate the destination, asset and/or collectible data if they are provided in the query params.

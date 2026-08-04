@@ -16,15 +16,14 @@ import {
   startHwSign,
   transactionSubmissionSelector,
 } from "popup/ducks/transactionSubmission";
-import { emitMetric } from "helpers/metrics";
-import { METRIC_NAMES } from "popup/constants/metricsNames";
-
 type AppThunk<Arg = void> = AsyncThunk<void, Arg, { state: AppState }>;
 
-// The only payload shape this hook ever dispatches to signFn.
+// The only payload shape this hook ever dispatches to signFn. `url` (the dApp
+// origin) rides along so the metrics handlers can attach `origin`.
 interface SigningPayload {
   uuid: string;
   apiVersion?: string;
+  url?: string;
 }
 
 export function useSetupSigningFlow(
@@ -33,6 +32,7 @@ export function useSetupSigningFlow(
   transactionXdr: string,
   uuid: string,
   apiVersion?: string,
+  url?: string,
 ) {
   const [isConfirming, setIsConfirming] = useState(false);
   const [isPasswordRequired, setIsPasswordRequired] = useState(false);
@@ -47,9 +47,12 @@ export function useSetupSigningFlow(
     hardwareWalletData: { status: hwStatus },
   } = useSelector(transactionSubmissionSelector);
 
+  // Approval/rejection telemetry is emitted per signing type by the redux
+  // handlers in popup/metrics/access.ts (signing.transaction_*,
+  // signing.message_*, signing.auth_entry_*), keyed off the specific
+  // sign/reject thunk this flow dispatches — so no generic event fires here.
   const rejectAndClose = () => {
-    emitMetric(METRIC_NAMES.rejectSigning);
-    dispatch(reject({ uuid }));
+    dispatch(reject({ uuid, url }));
     window.close();
   };
 
@@ -60,8 +63,7 @@ export function useSetupSigningFlow(
       );
       setStartedHwSign(true);
     } else {
-      await dispatch(signFn({ apiVersion, uuid }));
-      await emitMetric(METRIC_NAMES.approveSign);
+      await dispatch(signFn({ apiVersion, uuid, url }));
       window.close();
     }
   };

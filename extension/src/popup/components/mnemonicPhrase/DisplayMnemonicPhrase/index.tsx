@@ -1,7 +1,9 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Button, Text } from "@stellar/design-system";
 
+import { emitMetric } from "helpers/metrics";
+import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { OnboardingModal } from "popup/components/Onboarding";
 
 import { MnemonicDisplay } from "../MnemonicDisplay";
@@ -16,6 +18,11 @@ export const DisplayMnemonicPhrase = ({
   setIsConfirmed: (confirmed: boolean) => void;
 }) => {
   const { t } = useTranslation();
+
+  // Recovery phrase shown → onboarding.recovery_phrase_viewed (mirrors mobile).
+  useEffect(() => {
+    emitMetric(METRIC_NAMES.onboardingRecoveryPhraseViewed);
+  }, []);
 
   return (
     <OnboardingModal

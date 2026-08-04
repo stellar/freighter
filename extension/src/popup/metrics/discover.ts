@@ -1,4 +1,4 @@
-import { emitMetric } from "helpers/metrics";
+import { emitMetric, emitScreenViewed } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 
 /** Strip query parameters and fragments from a URL to avoid leaking
@@ -33,13 +33,14 @@ export const trackDiscoverProtocolOpened = (
   source: DiscoverSource,
 ): void => {
   emitMetric(METRIC_NAMES.discoverProtocolOpened, {
+    protocol_id: protocolName,
     url: stripQueryParams(url),
-    protocolName,
+    protocol_name: protocolName,
     source,
     // We currently only allow known protocols in the Discover view for extension,
     // but this field is included for future-proofing in case we later expand to
     // allowing unknown protocols (e.g. from a search bar like we have on mobile).
-    isKnownProtocol: true,
+    is_known_protocol: true,
   });
 };
 
@@ -48,7 +49,8 @@ export const trackDiscoverProtocolDetailsViewed = (
   tags: string[],
 ): void => {
   emitMetric(METRIC_NAMES.discoverProtocolDetailsViewed, {
-    protocolName,
+    protocol_id: protocolName,
+    protocol_name: protocolName,
     tags,
   });
 };
@@ -58,13 +60,14 @@ export const trackDiscoverProtocolOpenedFromDetails = (
   url: string,
 ): void => {
   emitMetric(METRIC_NAMES.discoverProtocolOpenedFromDetails, {
-    protocolName,
+    protocol_id: protocolName,
+    protocol_name: protocolName,
     url: stripQueryParams(url),
   });
 };
 
 export const trackDiscoverViewed = (): void => {
-  emitMetric(METRIC_NAMES.viewDiscover);
+  emitScreenViewed("discover", { flow: "discovery" });
 };
 
 export const trackDiscoverWelcomeModalViewed = (): void => {

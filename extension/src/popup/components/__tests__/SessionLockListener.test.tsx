@@ -14,12 +14,17 @@ import { loadAccount } from "@shared/api/internal";
 import { SERVICE_TYPES } from "@shared/constants/services";
 import { ROUTES } from "popup/constants/routes";
 import { reducer as authReducer } from "popup/ducks/accountServices";
+// helpers/metrics is globally auto-mocked in config/jest/setupTests.tsx, so
+// this import resolves to the mocked export.
+import { resetAnalyticsUserIdReconciliation } from "helpers/metrics";
 import { SessionLockListener } from "../SessionLockListener";
 
 type RuntimeHandler = (message: unknown) => void | Promise<void>;
 
 const listeners: RuntimeHandler[] = [];
 const mockLoadAccount = loadAccount as jest.MockedFunction<typeof loadAccount>;
+const mockResetReconciliation =
+  resetAnalyticsUserIdReconciliation as jest.Mock;
 
 jest.mock("webextension-polyfill", () => ({
   runtime: {
@@ -127,6 +132,22 @@ describe("SessionLockListener", () => {
     expect(auth.publicKey).toBe("");
     expect(auth.allAccounts).toEqual([]);
     expect(lastLocation?.pathname).toBe(ROUTES.unlockAccount);
+  });
+
+  it("resets the analytics-user-id reconciliation guard on SESSION_LOCKED", async () => {
+    renderListener("/");
+
+    await emitMessage({ type: SERVICE_TYPES.SESSION_LOCKED });
+
+    expect(mockResetReconciliation).toHaveBeenCalledTimes(1);
+  });
+
+  it("does NOT reset the reconciliation guard on SESSION_UNLOCKED", async () => {
+    renderListener(ROUTES.unlockAccount);
+
+    await emitMessage({ type: SERVICE_TYPES.SESSION_UNLOCKED });
+
+    expect(mockResetReconciliation).not.toHaveBeenCalled();
   });
 
   it("preserves the originating route as state.from and forwards location.search", async () => {

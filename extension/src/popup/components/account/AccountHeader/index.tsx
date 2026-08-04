@@ -12,6 +12,8 @@ import { ROUTES } from "popup/constants/routes";
 import { LoadingBackground } from "popup/basics/LoadingBackground";
 import { View } from "popup/basics/layout/View";
 import { isActiveNetwork } from "helpers/stellar";
+import { emitMetric } from "helpers/metrics";
+import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { navigateTo, openTab, openSidebar } from "popup/helpers/navigate";
 import { newTabHref } from "helpers/urls";
 import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
@@ -397,6 +399,11 @@ export const AccountHeader = ({
                 <NavLink
                   to={ROUTES.accountHistory}
                   data-testid="nav-link-account-history"
+                  onClick={() =>
+                    emitMetric(METRIC_NAMES.historyFullHistoryOpened, {
+                      source: "account_header",
+                    })
+                  }
                 >
                   <div className="AccountHeader__actions__column">
                     <div className="AccountHeader__actions__btn">

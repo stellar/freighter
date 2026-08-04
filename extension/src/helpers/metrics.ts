@@ -1,30 +1,39 @@
 import * as amplitude from "@amplitude/analytics-browser";
+import * as Sentry from "@sentry/browser";
 import { Action, Middleware } from "redux";
 import { PayloadAction } from "@reduxjs/toolkit";
 import { Location } from "react-router-dom";
+import { hash } from "stellar-sdk";
 
 import browser from "webextension-polyfill";
 
 import { store } from "popup/App";
 import { METRICS_DATA, METRICS_USER_ID } from "constants/localStorageTypes";
-import { AMPLITUDE_KEY, METRICS_PLATFORM, APP_VERSION } from "constants/env";
+import { AMPLITUDE_KEY, APP_VERSION } from "constants/env";
 import { initExperimentClient } from "helpers/experimentClient";
 import { BUNDLE_ID_USER_PROPERTY_KEY, getBundleId } from "helpers/analytics";
 import { isDev } from "@shared/helpers/dev";
 import { truncatedPublicKey } from "helpers/stellar";
+import { isSidebarMode } from "popup/helpers/isSidebarMode";
 import {
   settingsDataSharingSelector,
   settingsNetworkDetailsSelector,
 } from "popup/ducks/settings";
-import { publicKeySelector } from "popup/ducks/accountServices";
+import {
+  publicKeySelector,
+  allAccountsSelector,
+} from "popup/ducks/accountServices";
+import { balancesSelector } from "popup/ducks/cache";
 import { Account, AccountType } from "@shared/api/types";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
+import { getAnalyticsUserId } from "@shared/api/internal";
 
 // Console log message constants
 const LOG_MESSAGES = {
   AMPLITUDE_PREFIX: "[Amplitude]",
   MISSING_KEY: "Missing AMPLITUDE_KEY — events will not be uploaded",
   INIT_FAILED: "Failed to initialize",
+  IDENTIFY_FAILED: "Failed to send Identify",
   EVENT_NOT_UPLOADED: "Amplitude event (not uploaded):",
 } as const;
 
@@ -41,7 +50,14 @@ const isRuntimeTestEnv = (): boolean => {
 type MetricsPayloadAction = PayloadAction<{
   errorMessage?: string;
   location?: Location;
-}>;
+}> & {
+  // Present at runtime on createAsyncThunk actions: `meta.arg` is the dispatched
+  // thunk argument (used to read the dApp `url`→`origin`), and `.error` carries
+  // a runtime rejection's message. Typed optional so metrics handlers can read
+  // them without casting.
+  meta?: { arg?: { url?: string; assetCode?: string } };
+  error?: { message?: string };
+};
 type MetricHandler<AppState> = (
   state: AppState,
   action: MetricsPayloadAction,
@@ -105,6 +121,23 @@ let hasInitialized = false;
  */
 const AMPLITUDE_FLUSH_INTERVAL_MS = 500;
 
+/** Schema generation marker for the new cross-platform property model. */
+export const SCHEMA_VERSION = "2";
+
+/** Maps the internal account type to the RFC's wire value for `account_type`. */
+const ACCOUNT_TYPE_WIRE: Record<AccountType, string> = {
+  [AccountType.FREIGHTER]: "freighter",
+  [AccountType.HW]: "hardware",
+  [AccountType.IMPORTED]: "imported_secret_key",
+};
+
+/** Resolves an account's type from its discriminating fields. */
+const resolveAccountType = (account: Account): AccountType => {
+  if (account.hardwareWalletType) return AccountType.HW;
+  if (account.imported) return AccountType.IMPORTED;
+  return AccountType.FREIGHTER;
+};
+
 // ---------------------------------------------------------------------------
 // User identity (mirrors mobile's src/services/analytics/user.ts)
 // ---------------------------------------------------------------------------
@@ -118,6 +151,29 @@ const generateRandomUserId = (): string =>
 
 /** Session-level cache, mirrors mobile's module-level `sessionUserId` fallback. */
 let sessionUserId: string | null = null;
+
+/**
+ * Once-per-unlocked-session guard for `reconcileAnalyticsUserId`.
+ * `fetchData` (useGetAppData) runs on many screens and re-runs on every
+ * navigation/refresh; each reconcile hits the background's
+ * `getAnalyticsUserId`, which decrypts the mnemonic and runs BIP39 seed
+ * derivation (see callBackendV2's per-request PBKDF2 note). We only need to
+ * reconcile once per unlocked session, so short-circuit after the first
+ * successful resolve and reset the flag on lock (see
+ * `resetAnalyticsUserIdReconciliation`, wired into SessionLockListener) so a
+ * later unlock — possibly of a different wallet — reconciles again.
+ */
+let hasReconciledUserId = false;
+
+/**
+ * Clears the once-per-session reconciliation guard so the next
+ * `reconcileAnalyticsUserId` call re-derives the auth id. Called on every
+ * lock transition (auto-lock and manual sign-out both broadcast
+ * `SESSION_LOCKED`).
+ */
+export const resetAnalyticsUserIdReconciliation = (): void => {
+  hasReconciledUserId = false;
+};
 
 /**
  * Gets or creates a persistent analytics user ID.
@@ -149,10 +205,59 @@ export const getUserId = (): string => {
 };
 
 /**
+ * Resolves the seed-derived auth user id from the background and, when it
+ * differs from the persisted id, adopts it as the canonical analytics/Sentry
+ * user id (overwriting the random bootstrap id — this migrates existing
+ * users onto a stable, cross-platform-consistent id). Idempotent; no-op
+ * when locked (background returns `null`) or already reconciled. Never
+ * throws into callers.
+ */
+export const reconcileAnalyticsUserId = async (): Promise<void> => {
+  // Already reconciled this unlocked session — skip the background round-trip
+  // (mnemonic decrypt + BIP39 derivation) entirely. The guard is reset on
+  // lock so the next unlocked session reconciles once more.
+  if (hasReconciledUserId) return;
+
+  // Whole body wrapped in one try/catch — a storage-quota throw from
+  // setItem, or anything unexpected from amplitude/Sentry, must never
+  // become an unhandled rejection for callers. Catch → return.
+  try {
+    const res = await getAnalyticsUserId();
+    const authUserId = res.analyticsUserId;
+
+    // No id means the wallet is locked/unavailable; leave the guard unset so
+    // we retry once the session is actually unlocked.
+    if (!authUserId) return;
+    // A real id resolved — this session is reconciled. Mark it before the
+    // already-matching early return so routine reloads short-circuit above.
+    hasReconciledUserId = true;
+    if (localStorage.getItem(METRICS_USER_ID) === authUserId) return;
+
+    localStorage.setItem(METRICS_USER_ID, authUserId);
+    sessionUserId = authUserId;
+    // amplitude.setUserId is local-only (setOptOut governs upload), so this
+    // runs regardless of the data-sharing consent setting.
+    if (hasInitialized && AMPLITUDE_KEY) {
+      amplitude.setUserId(authUserId);
+    }
+
+    // Consent-gate the Sentry write: when data-sharing is off, ErrorTracking
+    // owns the opted-out identity (setUser(null) + close()) — don't
+    // re-identify the user behind its back.
+    const isDataSharingAllowed = settingsDataSharingSelector(store.getState());
+    if (isDataSharingAllowed) {
+      Sentry.setUser({ id: authUserId });
+    }
+  } catch {
+    return; // never throw into callers
+  }
+};
+
+/**
  * Initializes the Amplitude SDK. Should be called once at app startup.
  * In development (no AMPLITUDE_KEY), events are logged to console only.
  */
-export const initAmplitude = () => {
+export const initAmplitude = async () => {
   if (hasInitialized) return;
 
   if (!AMPLITUDE_KEY) {
@@ -176,6 +281,7 @@ export const initAmplitude = () => {
       // generate a UUID deviceId and persist it across sessions.
       identityStorage: "localStorage",
       autocapture: false,
+      appVersion: APP_VERSION || undefined,
       // The extension popup can close at any time; reduce the flush interval
       // so queued events are sent promptly instead of waiting the default 1 s.
       flushIntervalMillis: AMPLITUDE_FLUSH_INTERVAL_MS,
@@ -190,29 +296,51 @@ export const initAmplitude = () => {
     identify.set(BUNDLE_ID_USER_PROPERTY_KEY, getBundleId());
     amplitude.identify(identify);
 
-    // Apply initial opt-out state. Note: settings may not yet be loaded from the
-    // background at this point (they're fetched async). The store subscription
-    // below will correct this as soon as the real preference arrives.
-    const isDataSharingAllowed = settingsDataSharingSelector(store.getState());
-    amplitude.setOptOut(!isDataSharingAllowed);
-
     hasInitialized = true;
 
     // Initialize Experiment client now that analytics is ready.
     // initializeWithAmplitudeAnalytics requires the analytics SDK to be started first.
     initExperimentClient();
 
-    // Keep opt-out in sync whenever the data-sharing setting changes in Redux.
-    // This is the authoritative source of truth; the initial call above may fire
-    // before settings are loaded from the background script.
+    // Resolve the surface once (async) so getSurface() is synchronous afterward.
+    await resolveSurface();
+
+    // The persisted data-sharing preference has NOT hydrated yet at init — it
+    // defaults to `false` and the real value arrives asynchronously. Emitting
+    // app.opened here would be suppressed (emitMetric's consent gate) or dropped
+    // by the SDK (opt-out), yet lost forever. So defer it: emit exactly once, the
+    // moment data-sharing is (or becomes) allowed.
+    let hasEmittedAppOpened = false;
+    const emitAppOpenedOnce = () => {
+      if (hasEmittedAppOpened) return;
+      hasEmittedAppOpened = true;
+
+      const nav = navigator as Navigator & {
+        connection?: { type?: string; effectiveType?: string };
+      };
+      emitMetric(METRIC_NAMES.appOpened, {
+        connection_type: nav.connection?.type ?? "unknown",
+        ...(nav.connection?.effectiveType
+          ? { effective_type: nav.connection.effectiveType }
+          : {}),
+      });
+    };
+
+    // Keep Amplitude opt-out synced with the data-sharing preference (the
+    // authoritative source of truth). Primes immediately for the case where
+    // settings are already hydrated, and updates on every change. Fires the
+    // one-shot app.opened the first time consent resolves to allowed.
     let lastDataSharingAllowed: boolean | null = null;
-    store.subscribe(() => {
+    const syncDataSharing = () => {
       const allowed = settingsDataSharingSelector(store.getState());
       if (allowed !== lastDataSharingAllowed) {
         lastDataSharingAllowed = allowed;
         amplitude.setOptOut(!allowed);
+        if (allowed) emitAppOpenedOnce();
       }
-    });
+    };
+    store.subscribe(syncDataSharing);
+    syncDataSharing();
 
     // Flush any queued events before the popup window closes so they aren't lost.
     if (typeof window !== "undefined") {
@@ -228,88 +356,164 @@ export const initAmplitude = () => {
   }
 };
 
+/** Derives the durable Identify traits from the full account list. */
+export const deriveIdentifyTraits = (allAccounts: Account[]) => {
+  let hasHardware = false;
+  let hasImported = false;
+  allAccounts.forEach((acc) => {
+    if (acc.hardwareWalletType) {
+      hasHardware = true;
+    } else if (acc.imported) {
+      hasImported = true;
+    }
+  });
+  return {
+    wallet_count: allAccounts.length,
+    has_hardware_wallet: hasHardware,
+    has_imported_account: hasImported,
+  };
+};
+
+// Only re-send Identify when a durable trait actually changed.
+let lastIdentifiedTraits: string | null = null;
+
+/** Sends durable wallet-composition traits to Amplitude Identify (dirty-checked). */
+export const syncIdentifyTraits = (allAccounts: Account[]): void => {
+  const traits = deriveIdentifyTraits(allAccounts);
+  const fingerprint = JSON.stringify(traits);
+  if (fingerprint === lastIdentifiedTraits) return;
+
+  if (!AMPLITUDE_KEY || !hasInitialized) return;
+
+  // Don't cache the fingerprint unless the Identify can actually be sent. During
+  // startup this runs before the data-sharing preference hydrates (SDK still
+  // opted out), so caching here would record traits as "sent" while the SDK
+  // drops them — and the unchanged traits would then be suppressed forever. Skip
+  // without caching so a later call (after consent hydrates) re-syncs.
+  if (!settingsDataSharingSelector(store.getState())) return;
+
+  // Cache the fingerprint only after the Identify has been dispatched
+  // successfully. Caching before the send would mean a one-off throw leaves the
+  // dirty-check short-circuiting every later sync with the same traits, so they'd
+  // never retry. Mirrors the mobile implementation (freighter-mobile#936).
+  try {
+    const identify = new amplitude.Identify();
+    identify.set("wallet_count", traits.wallet_count);
+    identify.set("has_hardware_wallet", traits.has_hardware_wallet);
+    identify.set("has_imported_account", traits.has_imported_account);
+    amplitude.identify(identify);
+
+    lastIdentifiedTraits = fingerprint;
+  } catch (e) {
+    // Leave lastIdentifiedTraits unset so the next call retries.
+    console.error(
+      `${LOG_MESSAGES.AMPLITUDE_PREFIX} ${LOG_MESSAGES.IDENTIFY_FAILED}`,
+      e,
+    );
+  }
+};
+
 // ---------------------------------------------------------------------------
 // Common context (mirrors mobile's buildCommonContext)
 // ---------------------------------------------------------------------------
 
-/**
- * Returns the extension version. Prefers the build-time constant (always
- * available via DefinePlugin), falling back to the browser extension manifest.
- */
-const getAppVersion = (): string => {
-  if (APP_VERSION) return APP_VERSION;
+export type Surface = "popup" | "sidebar" | "fullpage";
 
+// Resolved once at init: browser.tabs.getCurrent() is async, but the emit path
+// must be synchronous, so cache the surface in a module variable.
+let cachedSurface: Surface | null = null;
+
+/** Resolve and cache the surface. Call once during init, before app.opened. */
+export const resolveSurface = async (): Promise<void> => {
+  if (isSidebarMode()) {
+    cachedSurface = "sidebar";
+    return;
+  }
   try {
-    return browser.runtime.getManifest().version;
+    const tab = await browser.tabs.getCurrent();
+    cachedSurface = tab ? "fullpage" : "popup";
   } catch {
-    return "unknown";
+    cachedSurface = "popup";
+  }
+};
+
+/** Synchronous surface accessor for the emit path. */
+export const getSurface = (): Surface =>
+  cachedSurface ?? (isSidebarMode() ? "sidebar" : "popup");
+
+/**
+ * Cross-platform account identifier: lowercase hex SHA-256 of the full
+ * G-address string. Never emit a raw/truncated public key. Memoized per key
+ * so the hot emit path stays synchronous and does no repeat work. Mobile must
+ * hash the same G-address string with SHA-256 to produce a matching value.
+ */
+const accountIdHashCache = new Map<string, string>();
+export const getAccountIdHash = (publicKey: string): string => {
+  const cached = accountIdHashCache.get(publicKey);
+  if (cached) return cached;
+  try {
+    const digest = hash(Buffer.from(publicKey, "utf8")).toString("hex");
+    accountIdHashCache.set(publicKey, digest);
+    return digest;
+  } catch {
+    return "";
   }
 };
 
 /**
- * Extracts a coarsened browser identifier from the user agent string.
- * Returns "BrowserName/MajorVersion" (e.g. "Chrome/120", "Firefox/121").
- * Falls back to "Unknown" if parsing fails.
+ * Builds the event-level "volatile context" bucket attached to every event,
+ * plus schema_version. Durable traits live in Identify (see syncIdentifyTraits);
+ * device/app metadata comes from the Amplitude SDK; connectivity is on app.opened.
  */
-const getCoarsenedUserAgent = (): string => {
-  const ua = navigator.userAgent;
-
-  // Order matters: check more specific browsers first.
-  // Edge includes "Chrome" in its UA, so check Edge before Chrome.
-  const patterns: Array<[RegExp, string]> = [
-    [/Edg(?:e|A|iOS)?\/(\d+)/, "Edge"],
-    [/OPR\/(\d+)/, "Opera"],
-    [/Firefox\/(\d+)/, "Firefox"],
-    [/(?:Chrome|CriOS)\/(\d+)/, "Chrome"],
-    [/Version\/(\d+).*Safari/, "Safari"],
-  ];
-
-  for (const [regex, name] of patterns) {
-    const match = ua.match(regex);
-    if (match) {
-      return `${name}/${match[1]}`;
-    }
-  }
-
-  return "Unknown";
-};
-
-/**
- * Builds common context data attached to every event.
- * Mirrors the mobile app's context properties for consistency across platforms.
- *
- * | Mobile property   | Extension equivalent                         |
- * |-------------------|----------------------------------------------|
- * | Platform.OS       | METRICS_PLATFORM ("WEB")                     |
- * | Platform.Version  | coarsened user agent (e.g. "Chrome/120")     |
- * | getVersion()      | manifest version / APP_VERSION               |
- * | getBundleId()     | "extension.<BUILD_TYPE>"                     |
- *
- * @param state Current Redux state (passed in to avoid a redundant getState() call).
- */
-const buildCommonContext = (
+export const buildCommonContext = (
   state: ReturnType<typeof store.getState>,
 ): Record<string, unknown> => {
   const activePublicKey = publicKeySelector(state);
   const networkDetails = settingsNetworkDetailsSelector(state);
 
-  // Navigator.connection is not available in all browsers
-  const nav = navigator as Navigator & {
-    connection?: { type?: string; effectiveType?: string };
-  };
-
   const context: Record<string, unknown> = {
-    publicKey: activePublicKey ? truncatedPublicKey(activePublicKey) : "N/A",
-    platform: METRICS_PLATFORM,
-    platformVersion: getCoarsenedUserAgent(),
+    schema_version: SCHEMA_VERSION,
+    surface: getSurface(),
     network: networkDetails?.network ?? "UNKNOWN",
-    connectionType: nav.connection?.type ?? "unknown",
-    appVersion: getAppVersion(),
-    bundleId: getBundleId(),
   };
 
-  if (nav.connection?.effectiveType) {
-    context.effectiveType = nav.connection.effectiveType;
+  // Active-account fields are meaningful only when there is an active account.
+  // Pre-unlock (no active key) we omit them rather than emit a default
+  // "freighter/false" context that misrepresents state.
+  if (activePublicKey) {
+    const idHash = getAccountIdHash(activePublicKey);
+    if (idHash) context.account_id_hash = idHash;
+
+    // Resolve account_type/is_hardware_account LIVE from the Redux account
+    // list, keyed on the active public key — not from the localStorage
+    // metricsData cache. Account-mutation thunks (importAccount,
+    // importHardwareWallet, addAccount, createAccount) switch the active
+    // account without refreshing metricsData, so the cache can lag a switch
+    // and mislabel e.g. a freshly-imported secret-key account as "freighter"
+    // until the next full app-data reload. If the active key isn't resolvable
+    // in allAccounts (an auth-store update race), OMIT these fields rather
+    // than guessing — matching mobile's fail-safe behavior.
+    const activeAccount = (allAccountsSelector(state) ?? []).find(
+      (acc: Account) => acc.publicKey === activePublicKey,
+    );
+    if (activeAccount) {
+      const accountType = resolveAccountType(activeAccount);
+      context.account_type = ACCOUNT_TYPE_WIRE[accountType];
+      context.is_hardware_account = accountType === AccountType.HW;
+    }
+
+    // account_funded reflects the *active account's* cached balance, not a
+    // sticky per-account-type flag — funding one Freighter account must not
+    // make every other (unfunded) Freighter account report funded. Balances
+    // are cached per network, per public key (see popup/ducks/cache
+    // balanceData); omit the property entirely (rather than defaulting to
+    // false) when there is no cached entry, or the cached fundedness is
+    // unknown (`isFunded === null`), for the active key.
+    const cachedBalances =
+      balancesSelector(state)[networkDetails?.network ?? ""]?.[activePublicKey];
+    if (cachedBalances && cachedBalances.isFunded !== null) {
+      context.account_funded = cachedBalances.isFunded;
+    }
   }
 
   return context;
@@ -357,15 +561,9 @@ const getMetricsData = (): MetricsData => {
 export const emitMetric = (name: string, body?: Record<string, unknown>) => {
   const state = store.getState();
 
-  const metricsData = getMetricsData();
-
   const eventProperties = {
     ...buildCommonContext(state),
     ...body,
-    freighter_account_funded: metricsData.freighterFunded,
-    hw_connected: metricsData.hwExists,
-    secret_key_account: metricsData.importedExists,
-    secret_key_account_funded: metricsData.importedFunded,
   };
 
   const isDataSharingAllowed = settingsDataSharingSelector(state);
@@ -379,6 +577,65 @@ export const emitMetric = (name: string, body?: Record<string, unknown>) => {
   }
 
   amplitude.track(name, eventProperties);
+};
+
+// ---------------------------------------------------------------------------
+// Screen views (screen.viewed consolidation)
+// ---------------------------------------------------------------------------
+
+/**
+ * The product areas a screen can belong to. Attached to `screen.viewed` as the
+ * `flow` property so screens can be grouped cross-platform. `undefined` when no
+ * flow is a good fit (e.g. the home account view, debug/integration screens).
+ */
+export type Flow =
+  | "onboarding"
+  | "send"
+  | "swap"
+  | "signing"
+  | "assets"
+  | "settings"
+  | "discovery"
+  | "security"
+  | "history";
+
+/**
+ * Canonical cross-platform `step` vocabulary (RFC #2883): a screen's position
+ * within a multi-step flow. Closed set, applied identically on mobile — a
+ * screen present on both platforms MUST carry the same `step`.
+ *   - `confirm`:    the review/confirm stage before submitting (send/swap).
+ *   - `processing`: the in-flight submission stage.
+ *   - `success`:    the terminal completion stage of a flow.
+ */
+export type Step = "confirm" | "processing" | "success";
+
+/** Extra, screen-specific properties carried alongside the canonical event. */
+export interface ScreenViewedProps {
+  /** Product-area grouping; omitted from the event when undefined. */
+  flow?: Flow;
+  /** Stage within a flow (see Step); omitted when undefined. */
+  step?: Step;
+  [key: string]: unknown;
+}
+
+/**
+ * Emits the single canonical screen-view event, `screen.viewed`, carrying a
+ * `screen_name` plus optional `flow`, `step`, and any preserved extra props.
+ * `surface` and the rest of the common context are attached by emitMetric.
+ * Properties whose value is `undefined` are dropped so the wire payload stays
+ * clean (e.g. no `flow: undefined`).
+ */
+export const emitScreenViewed = (
+  screenName: string,
+  props: ScreenViewedProps = {},
+) => {
+  const body: Record<string, unknown> = { screen_name: screenName };
+  Object.entries(props).forEach(([key, value]) => {
+    if (value !== undefined) {
+      body[key] = value;
+    }
+  });
+  emitMetric(METRIC_NAMES.screenViewed, body);
 };
 
 /**
@@ -414,8 +671,8 @@ export const storeBalanceMetricData = (
     if (accountFunded) {
       metricsData.freighterFunded = true;
       if (idx !== -1) {
-        emitMetric(METRIC_NAMES.freighterAccountFunded, {
-          publicKey: truncated,
+        emitMetric(METRIC_NAMES.accountFirstFunded, {
+          account_id_hash: getAccountIdHash(publicKey),
         });
         unfundedFreighterAccounts.splice(idx, 1);
       }
@@ -462,4 +719,6 @@ export const storeAccountMetricsData = (
   });
   metricsData.accountType = accountType;
   localStorage.setItem(METRICS_DATA, JSON.stringify(metricsData));
+
+  syncIdentifyTraits(allAccounts);
 };

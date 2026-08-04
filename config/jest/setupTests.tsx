@@ -30,6 +30,7 @@ const { window } = jsdom;
 global.fetch = fetch;
 window.fetch = fetch;
 global.DEV_SERVER = true;
+global.DEV_SERVER_URL = "http://localhost:9000/";
 global.DEV_EXTENSION = true;
 global.PRODUCTION = false;
 global.EXPERIMENTAL = false;
@@ -85,6 +86,7 @@ jest.mock("@amplitude/analytics-browser", () => ({
 jest.mock("helpers/metrics", () => ({
   registerHandler: () => {},
   emitMetric: () => {},
+  emitScreenViewed: () => {},
   initAmplitude: () => {},
   getUserId: () => "test-user-id",
   metricsMiddleware: jest.fn(
@@ -92,6 +94,8 @@ jest.mock("helpers/metrics", () => ({
   ),
   storeBalanceMetricData: () => {},
   storeAccountMetricsData: () => {},
+  reconcileAnalyticsUserId: jest.fn().mockResolvedValue(undefined),
+  resetAnalyticsUserIdReconciliation: jest.fn(),
   getAnalyticsDebugInfo: () => ({
     hasInitialized: false,
     hasAmplitudeKey: false,

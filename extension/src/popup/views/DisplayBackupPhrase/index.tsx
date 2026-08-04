@@ -8,9 +8,7 @@ import { showBackupPhrase } from "@shared/api/internal";
 
 import { ROUTES } from "popup/constants/routes";
 import { navigateTo, openTab } from "popup/helpers/navigate";
-import { emitMetric } from "helpers/metrics";
-
-import { METRIC_NAMES } from "popup/constants/metricsNames";
+import { emitScreenViewed } from "helpers/metrics";
 
 import { MnemonicDisplay } from "popup/components/mnemonicPhrase/MnemonicDisplay";
 import { SubviewHeader } from "popup/components/SubviewHeader";
@@ -35,10 +33,12 @@ export const DisplayBackupPhrase = () => {
   const { state, fetchData } = useGetAppData();
 
   useEffect(() => {
-    emitMetric(
-      isPhraseUnlocked
-        ? METRIC_NAMES.viewDisplayBackupPhrase
-        : METRIC_NAMES.viewUnlockBackupPhrase,
+    // Canonical cross-platform names (RFC #2883): mobile uses
+    // show_recovery_phrase for the revealed screen. The locked-state gate is
+    // extension-only (mobile unlocks globally); kept with matching terminology.
+    emitScreenViewed(
+      isPhraseUnlocked ? "show_recovery_phrase" : "unlock_recovery_phrase",
+      { flow: "security" },
     );
   }, [isPhraseUnlocked]);
 
@@ -108,14 +108,10 @@ export const DisplayBackupPhrase = () => {
 
     if (res.error) {
       setErrorMessage(res.error);
-      emitMetric(METRIC_NAMES.backupPhraseFail, {
-        error_type: res.error,
-      });
     } else {
       setMnemonicPhrase(res.mnemonicPhrase);
       setIsPhraseUnlocked(true);
       setErrorMessage("");
-      emitMetric(METRIC_NAMES.backupPhraseSuccess);
     }
   };
 

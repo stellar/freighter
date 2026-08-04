@@ -122,7 +122,7 @@ export const ViewPublicKey = () => {
       await dispatch(
         updateAccountName({ accountName: newAccountName, publicKey }),
       );
-      emitMetric(METRIC_NAMES.viewPublicKeyAccountRenamed);
+      emitMetric(METRIC_NAMES.accountRenamed, { source: "view_public_key" });
     }
     setIsEditingName(false);
   };
@@ -190,7 +190,16 @@ export const ViewPublicKey = () => {
           </div>
           <div className="ViewPublicKey__copy-btn">
             <CopyText textToCopy={publicKey} doneLabel={t("Copied!")}>
-              <Button size="md" variant="tertiary" isRounded>
+              {/* account.public_key_copied carries no source and never the raw
+                  key. CopyText has no copy callback, so emit on click. */}
+              <Button
+                size="md"
+                variant="tertiary"
+                isRounded
+                onClick={() =>
+                  emitMetric(METRIC_NAMES.accountPublicKeyCopied)
+                }
+              >
                 {t("COPY")}
               </Button>
             </CopyText>
@@ -209,7 +218,7 @@ export const ViewPublicKey = () => {
                 openTab(
                   `https://stellar.expert/explorer/${networkDetails.network.toLowerCase()}/account/${publicKey}`,
                 );
-                emitMetric(METRIC_NAMES.viewPublicKeyClickedStellarExpert);
+                emitMetric(METRIC_NAMES.accountStellarExpertOpened);
               }}
             >
               {t("View on")} stellar.expert

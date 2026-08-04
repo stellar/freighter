@@ -206,7 +206,7 @@ export const SwapAmount = ({
       }),
     });
     if (needsReserve) {
-      emitMetric(METRIC_NAMES.swapXlmReserveShown);
+      emitMetric(METRIC_NAMES.swapXlmReserveInsufficientShown);
       setIsXlmReserveOpen(true);
       return;
     }
@@ -282,9 +282,6 @@ export const SwapAmount = ({
     isSwapQuoteExpired,
     asset,
     destinationAsset,
-    amount,
-    destinationAmount,
-    allowedSlippage,
   });
 
   const sellInputRef = useRef<HTMLInputElement>(null);
@@ -529,7 +526,7 @@ export const SwapAmount = ({
                 // for the missing side — preferring the sell token when both
                 // are missing — rather than a submit.
                 if (cta.labelKey === "select") {
-                  const side = !asset ? "source" : "destination";
+                  const side = !asset ? "from" : "to";
                   emitMetric(METRIC_NAMES.swapPickerOpened, {
                     side,
                     source: "cta",
@@ -650,7 +647,7 @@ export const SwapAmount = ({
                     }}
                     onSelectAsset={() => {
                       emitMetric(METRIC_NAMES.swapPickerOpened, {
-                        side: "source",
+                        side: "from",
                         source: "dropdown",
                       });
                       goToEditSrc();
@@ -739,7 +736,7 @@ export const SwapAmount = ({
                     onToggleInputType={() => {}}
                     onSelectAsset={() => {
                       emitMetric(METRIC_NAMES.swapPickerOpened, {
-                        side: "destination",
+                        side: "to",
                         source: "dropdown",
                       });
                       goToEditDst();
@@ -752,7 +749,14 @@ export const SwapAmount = ({
                 >
                   <PercentageButtons
                     onSelect={(pct: number) => {
-                      emitMetric(METRIC_NAMES.swapAmount);
+                      // A set-max tap is a user action, not a screen view (RFC
+                      // #2883, D5): emit the shared action event so it doesn't
+                      // inflate the swap_amount screen.viewed count. Mirrors the
+                      // Send handler and mobile — both fire the max-amount
+                      // action on the max tap only, on send and swap alike.
+                      if (pct === 100) {
+                        emitMetric(METRIC_NAMES.paymentMaxAmountSelected);
+                      }
                       // Always a fraction of the crypto available balance, so
                       // the committed amount is identical in crypto and fiat
                       // display. In fiat mode the fiat field mirrors it (rounded
