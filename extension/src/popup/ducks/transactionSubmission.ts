@@ -448,6 +448,7 @@ interface TransactionData {
   destination: string;
   recipientName: string;
   federationAddress: string;
+  domainAddress: string;
   transactionFee: string;
   transactionTimeout: number;
   memo?: string;
@@ -526,6 +527,7 @@ export const initialState: InitialState = {
     destination: "",
     recipientName: "",
     federationAddress: "",
+    domainAddress: "",
     transactionFee: "",
     transactionTimeout: 180,
     memo: "",
@@ -586,6 +588,9 @@ const transactionSubmissionSlice = createSlice({
     },
     saveFederationAddress: (state, action) => {
       state.transactionData.federationAddress = action.payload;
+    },
+    saveDomainAddress: (state, action) => {
+      state.transactionData.domainAddress = action.payload;
     },
     saveAmount: (state, action) => {
       state.transactionData.amount = action.payload;
@@ -813,6 +818,7 @@ export const {
   saveDestination,
   saveRecipientName,
   saveFederationAddress,
+  saveDomainAddress,
   saveAmount,
   saveAmountUsd,
   saveAsset,
