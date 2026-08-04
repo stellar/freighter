@@ -20,6 +20,7 @@ import { useSwapTopTokensPrewarm } from "popup/helpers/useSwapTopTokensPrewarm";
 import { AccountAssets } from "popup/components/account/AccountAssets";
 import { AccountCollectibles } from "popup/components/account/AccountCollectibles";
 import { AccountHeader } from "popup/components/account/AccountHeader";
+import { FloatingAddButton } from "popup/components/account/FloatingAddButton";
 import { useHiddenCollectibles } from "popup/components/account/hooks/useHiddenCollectibles";
 import { Loading } from "popup/components/Loading";
 import { NotFundedMessage } from "popup/components/account/NotFundedMessage";
@@ -229,8 +230,6 @@ export const Account = () => {
         }}
         roundedTotalBalanceUsd={roundedTotalBalanceUsd}
         isFunded={!!resolvedData?.balances?.isFunded}
-        refreshHiddenCollectibles={refreshHiddenCollectibles}
-        isCollectibleHidden={isCollectibleHidden}
         onDiscoverClick={() => setIsDiscoverOpen(true)}
       />
       <View.Content hasNoPadding>
@@ -314,6 +313,7 @@ export const Account = () => {
             ]}
           />
         </div>
+        <FloatingAddButton isFunded={!!resolvedData?.balances?.isFunded} />
       </View.Content>
       {!resolvedData?.balances?.isFunded &&
         !hasError &&

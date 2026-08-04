@@ -1,0 +1,28 @@
+@use "../../../styles/utils.scss" as *;
+
+.FloatingAddButton {
+  position: absolute;
+  bottom: pxToRem(16px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: var(--z-index--banner);
+
+  display: flex;
+  align-items: center;
+  gap: pxToRem(4px);
+
+  color: var(--sds-clr-gray-12);
+  background-color: rgba(35, 35, 35, 0.8);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--sds-clr-gray-06);
+  border-radius: pxToRem(100px);
+  padding: pxToRem(8px) pxToRem(12px);
+  cursor: pointer;
+
+  &__label {
+    font-size: pxToRem(14px);
+    font-weight: var(--font-weight-medium);
+    line-height: pxToRem(20px);
+    white-space: nowrap;
+  }
+}

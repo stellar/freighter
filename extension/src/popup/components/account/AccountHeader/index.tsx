@@ -44,8 +44,6 @@ interface AccountHeaderProps {
   }) => Promise<void>;
   publicKey: string;
   roundedTotalBalanceUsd: string;
-  refreshHiddenCollectibles: () => Promise<void>;
-  isCollectibleHidden: (collectionAddress: string, tokenId: string) => boolean;
   onDiscoverClick: () => void;
 }
 
@@ -57,8 +55,6 @@ export const AccountHeader = ({
   onClickRow,
   publicKey,
   roundedTotalBalanceUsd,
-  refreshHiddenCollectibles,
-  isCollectibleHidden,
   onDiscoverClick,
 }: AccountHeaderProps) => {
   const { t } = useTranslation();
@@ -429,10 +425,7 @@ export const AccountHeader = ({
                 : null}
             </div>
           </div>
-          <AccountTabs
-            refreshHiddenCollectibles={refreshHiddenCollectibles}
-            isCollectibleHidden={isCollectibleHidden}
-          />
+          <AccountTabs />
         </View.Inset>
       </View.AppHeader>
     </>
