@@ -17,6 +17,7 @@
   "dependencies": {
     "@amplitude/analytics-browser": "2.44.4",
     "@amplitude/experiment-js-client": "1.21.2",
+    "@creit-tech/sorobandomains-sdk": "npm:@jsr/creit-tech__sorobandomains-sdk@^1.0.4",
     "@ledgerhq/hw-app-str": "7.7.4",
     "@ledgerhq/hw-transport-webhid": "6.35.4",
     "@radix-ui/react-dialog": "1.1.16",

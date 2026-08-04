@@ -12,6 +12,8 @@ const esModules = [
   "eventsource",
   "uint8array-extras",
   "feaxios",
+  "@creit-tech/sorobandomains-sdk",
+  "@jsr",
 ];
 
 const jsdomTests = {
