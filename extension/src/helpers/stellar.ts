@@ -294,6 +294,9 @@ export const isValidFederatedDomain = (input: string) => {
   return isFederationAddress(input) && isValidDomain(domain);
 };
 
+export const isSorobanDomain = (input: string): boolean =>
+  /^[a-z]{1,15}\.xlm$/.test(input.toLowerCase());
+
 export const isMainnet = (networkDetails: NetworkDetails) => {
   const { networkPassphrase } = networkDetails;
 

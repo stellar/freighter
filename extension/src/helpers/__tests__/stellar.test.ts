@@ -7,6 +7,7 @@ import {
   xlmToStroop,
   encodeSep53Message,
   isSameAccount,
+  isSorobanDomain,
 } from "../stellar";
 import * as urls from "../urls";
 
@@ -164,5 +165,44 @@ describe("encodeSep53Message", () => {
     const message = "Hello, World!";
     const expected = "1S61nAa7UQ0GWZf/kwdwaO7QpIbCAhW14C4asNLr6l8=";
     expect(encodeSep53Message(message).toString("base64")).toEqual(expected);
+  });
+});
+
+describe("isSorobanDomain", () => {
+  it("accepts a valid root .xlm domain", () => {
+    expect(isSorobanDomain("jhon.xlm")).toBe(true);
+  });
+
+  it("is case-insensitive", () => {
+    expect(isSorobanDomain("Jhon.Xlm")).toBe(true);
+  });
+
+  it("rejects subdomains", () => {
+    expect(isSorobanDomain("payments.jhon.xlm")).toBe(false);
+  });
+
+  it("rejects a non-.xlm TLD", () => {
+    expect(isSorobanDomain("jhon.com")).toBe(false);
+  });
+
+  it("rejects digits and hyphens", () => {
+    expect(isSorobanDomain("jhon2.xlm")).toBe(false);
+    expect(isSorobanDomain("jhon-doe.xlm")).toBe(false);
+  });
+
+  it("rejects a label longer than 15 characters", () => {
+    expect(isSorobanDomain("a".repeat(16) + ".xlm")).toBe(false);
+  });
+
+  it("accepts a label at the 15-character boundary", () => {
+    expect(isSorobanDomain("a".repeat(15) + ".xlm")).toBe(true);
+  });
+
+  it("rejects an empty string", () => {
+    expect(isSorobanDomain("")).toBe(false);
+  });
+
+  it("rejects a federation address", () => {
+    expect(isSorobanDomain("user*domain.com")).toBe(false);
   });
 });
