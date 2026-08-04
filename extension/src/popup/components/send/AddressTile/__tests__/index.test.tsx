@@ -126,6 +126,47 @@ describe("AddressTile", () => {
     });
   });
 
+  describe("with soroban domain address", () => {
+    const mockDomainAddress = "jhon.xlm";
+
+    it("renders the domain name", () => {
+      render(
+        <AddressTile
+          address={mockAddress}
+          domainAddress={mockDomainAddress}
+          onClick={mockOnClick}
+        />,
+      );
+
+      expect(screen.getByTestId("tile-primary")).toHaveTextContent(
+        mockDomainAddress,
+      );
+    });
+
+    it("prefers the federation address over the domain when both are somehow present", () => {
+      render(
+        <AddressTile
+          address={mockAddress}
+          federationAddress="user*stellar.org"
+          domainAddress={mockDomainAddress}
+          onClick={mockOnClick}
+        />,
+      );
+
+      expect(screen.getByTestId("tile-primary")).toHaveTextContent(
+        "truncated-fed-user*stellar.org",
+      );
+    });
+
+    it("falls back to the truncated public key when neither federation nor domain is present", () => {
+      render(<AddressTile address={mockAddress} onClick={mockOnClick} />);
+
+      expect(screen.getByTestId("tile-primary")).toHaveTextContent(
+        `truncated-${mockAddress}`,
+      );
+    });
+  });
+
   describe("empty state (no address)", () => {
     it("renders empty state with default labels", () => {
       render(<AddressTile address="" onClick={mockOnClick} />);
