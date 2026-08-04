@@ -36,3 +36,17 @@ describe("swap i18n parity", () => {
     });
   });
 });
+
+const sorobanDomainsKeys = [
+  "Failed to resolve Soroban Domain",
+  "Soroban Domains is only available on Mainnet",
+];
+
+describe("soroban domains i18n parity", () => {
+  it("defines every soroban domains key in en and pt", () => {
+    sorobanDomainsKeys.forEach((k) => {
+      expect(en).toHaveProperty([k]);
+      expect(pt).toHaveProperty([k]);
+    });
+  });
+});
