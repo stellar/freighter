@@ -229,6 +229,21 @@ export const AccountHeader = ({
                 </AccountHeaderModal>
               </div>
 
+              <div data-testid="nav-link-account-history">
+                <NavButton
+                  showBorder
+                  title={t("View history")}
+                  id="nav-btn-history"
+                  icon={<Icon.ClockRewind />}
+                  onClick={() => {
+                    emitMetric(METRIC_NAMES.historyFullHistoryOpened, {
+                      source: "account_header",
+                    });
+                    navigateTo(ROUTES.accountHistory, navigate);
+                  }}
+                />
+              </div>
+
               <div
                 className="AccountHeader__dropdown"
                 data-testid="network-selector-open"
@@ -393,24 +408,6 @@ export const AccountHeader = ({
                     </div>
                     <Text as="div" size="sm" weight="medium">
                       {t("Swap")}
-                    </Text>
-                  </div>
-                </NavLink>
-                <NavLink
-                  to={ROUTES.accountHistory}
-                  data-testid="nav-link-account-history"
-                  onClick={() =>
-                    emitMetric(METRIC_NAMES.historyFullHistoryOpened, {
-                      source: "account_header",
-                    })
-                  }
-                >
-                  <div className="AccountHeader__actions__column">
-                    <div className="AccountHeader__actions__btn">
-                      <Icon.ClockRewind />
-                    </div>
-                    <Text as="div" size="sm" weight="medium">
-                      {t("History")}
                     </Text>
                   </div>
                 </NavLink>
