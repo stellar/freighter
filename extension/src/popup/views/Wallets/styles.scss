@@ -16,52 +16,95 @@
   z-index: var(--z-index--banner);
 }
 
-.WalletRow__options-actions {
+.Wallets__header {
   display: flex;
   flex-direction: column;
-  position: absolute;
-  background-color: var(--sds-clr-gray-01);
-  border: 1px solid var(--sds-clr-gray-06);
-  border-radius: 6px;
-  margin-top: -2rem;
-  padding: 0.25rem;
-  right: 2rem;
-  width: 10.75rem;
-  z-index: var(--z-index--banner);
+  align-items: center;
+  gap: #{pxToRem(16px)};
+  padding: #{pxToRem(24px)} 0;
+  text-align: center;
 
-  &__row {
-    padding: 0.375rem 0.5rem;
-    width: 100%;
-    border-radius: 6px;
+  &__identicon {
+    width: #{pxToRem(48px)};
+    height: #{pxToRem(48px)};
+    flex-shrink: 0;
+    padding: #{pxToRem(14px)};
+    border-radius: 50%;
+    background-color: var(--sds-clr-gray-03);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  &__name {
+    font-size: #{pxToRem(16px)};
+    line-height: #{pxToRem(24px)};
+    font-weight: var(--font-weight-medium);
+    color: var(--sds-clr-gray-12);
+  }
+
+  &__address {
+    font-size: #{pxToRem(14px)};
+    line-height: #{pxToRem(20px)};
+    font-weight: var(--font-weight-regular);
+    color: var(--sds-clr-gray-11);
+  }
+
+  &__actions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: #{pxToRem(16px)};
+  }
+
+  &__action {
+    width: #{pxToRem(48px)};
+    height: #{pxToRem(48px)};
+    padding: #{pxToRem(8px)};
+    border: none;
+    border-radius: 100px;
+    background-color: var(--sds-clr-gray-03);
+    color: var(--sds-clr-gray-09);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+
+    svg {
+      width: #{pxToRem(20px)};
+      height: #{pxToRem(20px)};
+    }
 
     &:hover {
-      background-color: var(--sds-clr-gray-05);
-    }
-
-    .CopyText__content,
-    .CopyText {
-      width: 100%;
-    }
-
-    .action-copy {
-      width: 100%;
-      display: flex;
-      justify-content: space-between;
-
-      svg {
-        color: var(--sds-clr-gray-09);
-      }
+      background-color: var(--sds-clr-gray-04);
     }
   }
+}
 
-  &__label {
-    font-size: 0.875rem;
-    font-weight: var(--font-weight-medium);
-  }
+.Wallets__divider {
+  height: 1px;
+  margin: 0 #{pxToRem(-24px)};
+  background-color: var(--sds-clr-gray-06);
+}
 
-  &__background {
-    height: 100vh;
-    position: absolute;
-    width: 100vw;
-  }
+.Wallets__list {
+  display: flex;
+  flex-direction: column;
+  gap: #{pxToRem(16px)};
+  padding-top: #{pxToRem(16px)};
+}
+
+.Button.Wallets__add-wallet-button {
+  --Button-height: #{pxToRem(34px)};
+  --Button-padding-vertical: #{pxToRem(6px)};
+  --Button-padding-horizontal: #{pxToRem(10px)};
+  --Button-gap: #{pxToRem(16px)};
+  --Button-color-text-default: var(--sds-clr-lilac-11);
+  --Button-color-icon-default: var(--sds-clr-lilac-09);
+  --Button-color-background-default: var(--sds-clr-lilac-02);
+  --Button-color-border-default: var(--sds-clr-lilac-02);
+  --Button-color-text-hover: var(--sds-clr-lilac-11);
+  --Button-color-icon-hover: var(--sds-clr-lilac-09);
+  --Button-color-background-hover: var(--sds-clr-lilac-03);
+  --Button-color-border-hover: var(--sds-clr-lilac-03);
 }

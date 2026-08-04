@@ -2,8 +2,17 @@
 
 .WalletRow {
   display: flex;
+  align-items: center;
   width: 100%;
-  margin-bottom: #{pxToRem(24px)};
+  gap: #{pxToRem(16px)};
+  min-height: #{pxToRem(44px)};
+  padding: #{pxToRem(2px)} 0;
+  border-radius: #{pxToRem(8px)};
+  cursor: pointer;
+
+  &:hover {
+    background-color: var(--sds-clr-gray-03);
+  }
 
   &__identicon {
     width: 50px;
@@ -12,7 +21,7 @@
     justify-content: center;
     align-items: center;
     position: relative;
-    cursor: pointer;
+    flex-shrink: 0;
 
     .identicon-wrapper {
       background: var(--color-white);
@@ -44,38 +53,42 @@
     }
   }
 
-  &__options {
-    width: 50px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    cursor: pointer;
-  }
-
   &__details {
     flex: 1;
     min-width: 0;
     display: flex;
     flex-direction: column;
-    cursor: pointer;
-    padding-left: #{pxToRem(12px)};
 
     .detail-name {
       margin: 0 !important; // sds override
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: #{pxToRem(14px)};
+      line-height: #{pxToRem(20px)};
+      font-weight: var(--font-weight-medium);
+      color: var(--sds-clr-gray-12);
     }
 
-    .detail-short-key {
+    .detail-address {
       margin: 0 !important; // sds override
-      line-height: 1rem;
+      line-height: #{pxToRem(18px)};
       color: var(--sds-clr-gray-11) !important; // sds override
       font-size: #{pxToRem(12px)};
-    }
+      font-weight: var(--font-weight-regular);
 
-    .detail-indentifier {
-      margin: 0 !important; // sds override
-      line-height: 1rem;
-      color: var(--sds-clr-gray-11) !important; // sds override
-      font-size: #{pxToRem(12px)};
+      .detail-imported {
+        margin-left: #{pxToRem(6px)};
+      }
     }
+  }
+
+  &__balance {
+    flex-shrink: 0;
+    white-space: nowrap;
+    font-size: #{pxToRem(14px)};
+    line-height: #{pxToRem(20px)};
+    font-weight: var(--font-weight-medium);
+    color: var(--sds-clr-gray-12);
   }
 }

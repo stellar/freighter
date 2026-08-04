@@ -7,7 +7,6 @@ import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
 import { truncatedPublicKey } from "helpers/stellar";
 import { getColorPubKey } from "helpers/stellarIdenticon";
 import { WalletType } from "@shared/constants/hardwareWallet";
-import IconEllipsis from "popup/assets/icon-ellipsis.svg";
 
 import "./styles.scss";
 
@@ -20,7 +19,6 @@ interface WalletRowProps {
   isSelected: boolean;
   publicKey: string;
   onClick: (publicKey: string) => unknown;
-  setOptionsOpen: (publicKey: string) => unknown;
 }
 
 export const WalletRow = ({
@@ -32,32 +30,29 @@ export const WalletRow = ({
   isSelected,
   publicKey,
   onClick,
-  setOptionsOpen,
 }: WalletRowProps) => {
+  const { t } = useTranslation();
   const shortPublicKey = truncatedPublicKey(publicKey);
   const identiconWrapperStyles = classNames("identicon-wrapper", {
     "is-selected": isSelected,
   });
   const selectedBorderColorRgb = getColorPubKey(publicKey);
   const isSelectedColor = `rgb(${selectedBorderColorRgb.r} ${selectedBorderColorRgb.g} ${selectedBorderColorRgb.b} / 100%`;
-  const borderColor = isSelected ? isSelectedColor : "#232323";
+  const borderColor = isSelected ? isSelectedColor : "var(--sds-clr-gray-03)";
 
-  let subTitle = accountValue
-    ? `${shortPublicKey} - ${accountValue}`
-    : shortPublicKey;
-  if (isFetchingTokenPrices && !accountValue) {
-    subTitle = `${shortPublicKey} - ...`;
-  }
-  const { t } = useTranslation();
-  const walletIdentifier =
-    hardwareWalletType || isImported ? t("Imported") : "";
+  const isImportedWallet = !!hardwareWalletType || isImported;
+
+  // Balance is its own cell now. While prices are still loading we show an
+  // ellipsis rather than an empty gap, matching the previous subtitle behavior.
+  const balanceLabel = accountValue || (isFetchingTokenPrices ? "..." : "");
+
   return (
-    <div className="WalletRow">
-      <div
-        className="WalletRow__identicon"
-        onClick={() => onClick(publicKey)}
-        data-testid="wallet-row-select"
-      >
+    <div
+      className="WalletRow"
+      onClick={() => onClick(publicKey)}
+      data-testid="wallet-row-select"
+    >
+      <div className="WalletRow__identicon">
         <div
           className={identiconWrapperStyles}
           style={{ borderColor: borderColor }}
@@ -73,17 +68,17 @@ export const WalletRow = ({
           </div>
         ) : null}
       </div>
-      <div className="WalletRow__details" onClick={() => onClick(publicKey)}>
+      <div className="WalletRow__details">
         <p className="detail-name">{accountName}</p>
-        <p className="detail-short-key">{subTitle}</p>
-        <p className="detail-short-key">{walletIdentifier}</p>
+        <p className="detail-address">
+          {shortPublicKey}
+          {isImportedWallet ? (
+            <span className="detail-imported">{t("Imported")}</span>
+          ) : null}
+        </p>
       </div>
-      <div
-        className="WalletRow__options"
-        data-testid="wallet-row-options"
-        onClick={() => setOptionsOpen(publicKey)}
-      >
-        <img src={IconEllipsis} alt={t("wallet action options")} />
+      <div className="WalletRow__balance" data-testid="wallet-row-balance">
+        {balanceLabel}
       </div>
     </div>
   );

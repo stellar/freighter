@@ -1,11 +1,20 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { Navigate, useNavigate } from "react-router-dom";
 import { Button, CopyText, Icon, Notification } from "@stellar/design-system";
 
+import { isCustomNetwork } from "@shared/helpers/stellar";
+
+import { emitMetric } from "helpers/metrics";
+import { truncatedPublicKey } from "helpers/stellar";
+import { newTabHref } from "helpers/urls";
+import { AppDataType } from "helpers/hooks/useGetAppData";
+import { RequestState } from "constants/request";
+
 import { AppDispatch } from "popup/App";
 import { ROUTES } from "popup/constants/routes";
+import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { View } from "popup/basics/layout/View";
 import {
@@ -19,12 +28,10 @@ import {
 } from "popup/ducks/cache";
 import { LoadingBackground } from "popup/basics/LoadingBackground";
 import { useGetWalletsData } from "./hooks/useGetWalletsData";
-import { RequestState } from "constants/request";
 import { Loading } from "popup/components/Loading";
-import { AppDataType } from "helpers/hooks/useGetAppData";
-import { newTabHref } from "helpers/urls";
 import { navigateTo, openTab } from "popup/helpers/navigate";
 import { reRouteOnboarding } from "popup/helpers/route";
+import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
 import { WalletRow } from "popup/components/account/WalletRow";
 import { RenameWallet } from "popup/components/account/RenameWallet";
 import { AddWallet } from "popup/components/account/AddWallet";
@@ -32,14 +39,11 @@ import { AddWallet } from "popup/components/account/AddWallet";
 import "./styles.scss";
 
 export const Wallets = () => {
-  const activeOptionsRef = useRef<HTMLDivElement>(null);
   const { t } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const [isEditingName, setIsEditingName] = React.useState("");
   const [isAddingWallet, setIsAddingWallet] = React.useState(false);
-  const [activeOptionsPublicKey, setActiveOptionsPublicKey] =
-    React.useState("");
   const { state: dataState, fetchData } = useGetWalletsData();
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const allAccounts = useSelector(allAccountsSelector);
@@ -51,22 +55,6 @@ export const Wallets = () => {
     getData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (
-        activeOptionsRef.current &&
-        !activeOptionsRef.current.contains(event.target as Node)
-      ) {
-        setActiveOptionsPublicKey("");
-      }
-    }
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [activeOptionsRef]);
 
   if (
     dataState.state === RequestState.IDLE ||
@@ -103,7 +91,7 @@ export const Wallets = () => {
 
   if (hasError) {
     return (
-      <div className="Wallets__fail">
+      <div>
         <Notification
           variant="error"
           title={t("Failed to fetch your wallets.")}
@@ -115,6 +103,9 @@ export const Wallets = () => {
   }
 
   const { publicKey: activePublicKey, accountValue } = dataState.data;
+  const activeAccountName =
+    allAccounts.find((account) => account.publicKey === activePublicKey)
+      ?.name || "";
 
   return (
     <React.Fragment>
@@ -127,82 +118,102 @@ export const Wallets = () => {
         hasNoTopPadding
         contentFooter={
           <Button
-            size="lg"
-            isFullWidth
+            size="xl"
             isRounded
-            variant="secondary"
+            variant="tertiary"
             iconPosition="left"
             icon={<Icon.PlusCircle />}
             onClick={() => setIsAddingWallet(true)}
             data-testid="add-wallet"
+            className="Wallets__add-wallet-button"
           >
             {t("Add a wallet")}
           </Button>
         }
       >
-        <div>
+        <div className="Wallets__header" data-testid="wallets-header">
+          <div className="Wallets__header__identicon">
+            <IdenticonImg publicKey={activePublicKey} />
+          </div>
+          <div className="Wallets__header__name">{activeAccountName}</div>
+          <div className="Wallets__header__address">
+            {truncatedPublicKey(activePublicKey)}
+          </div>
+          <div className="Wallets__header__actions">
+            <button
+              className="Wallets__header__action"
+              onClick={() => navigateTo(ROUTES.viewPublicKey, navigate)}
+              data-testid="wallets-header-qr"
+              aria-label={t("Show QR code")}
+            >
+              <Icon.QrCode01 />
+            </button>
+            <CopyText textToCopy={activePublicKey} doneLabel={t("Copied!")}>
+              <button
+                className="Wallets__header__action"
+                onClick={() => emitMetric(METRIC_NAMES.accountPublicKeyCopied)}
+                data-testid="wallets-header-copy"
+                aria-label={t("Copy wallet address")}
+              >
+                <Icon.Copy01 />
+              </button>
+            </CopyText>
+            {!isCustomNetwork(networkDetails) ? (
+              <button
+                className="Wallets__header__action"
+                onClick={() => {
+                  openTab(
+                    `https://stellar.expert/explorer/${networkDetails.network.toLowerCase()}/account/${activePublicKey}`,
+                  );
+                  emitMetric(METRIC_NAMES.accountStellarExpertOpened);
+                }}
+                data-testid="wallets-header-explorer"
+                aria-label={t("View on stellar.expert")}
+              >
+                <Icon.LinkExternal01 />
+              </button>
+            ) : null}
+            <button
+              className="Wallets__header__action"
+              onClick={() => setIsEditingName(activePublicKey)}
+              data-testid="wallets-header-edit-name"
+              aria-label={t("Rename wallet")}
+            >
+              <Icon.Edit05 />
+            </button>
+          </div>
+        </div>
+        <div className="Wallets__divider" />
+        <div className="Wallets__list">
           {allAccounts.map(
             ({ publicKey, name, imported, hardwareWalletType }) => {
               const isSelected = activePublicKey === publicKey;
               const totalValueUsd = accountValue ? accountValue[publicKey] : "";
 
               return (
-                <>
-                  <WalletRow
-                    isFetchingTokenPrices={isFetchingTokenPrices}
-                    accountName={name}
-                    accountValue={totalValueUsd}
-                    isImported={imported}
-                    hardwareWalletType={hardwareWalletType}
-                    publicKey={publicKey}
-                    isSelected={isSelected}
-                    onClick={async (publicKey) => {
-                      await dispatch(makeAccountActive(publicKey));
-                      await dispatch(
-                        clearBalancesForAccount({ publicKey, networkDetails }),
-                      );
-                      await dispatch(
-                        clearCollectiblesForAccount({
-                          publicKey,
-                          networkDetails,
-                        }),
-                      );
-                      navigateTo(ROUTES.account, navigate);
-                    }}
-                    setOptionsOpen={setActiveOptionsPublicKey}
-                  />
-                  {activeOptionsPublicKey === publicKey ? (
-                    <div
-                      className="WalletRow__options-actions"
-                      ref={activeOptionsRef}
-                    >
-                      <div
-                        className="WalletRow__options-actions__row"
-                        onClick={() => {
-                          setIsEditingName(publicKey);
-                          setActiveOptionsPublicKey("");
-                        }}
-                      >
-                        <div className="action-copy">
-                          <div className="WalletRow__options-actions__label">
-                            {t("Rename Wallet")}
-                          </div>
-                          <Icon.Edit05 />
-                        </div>
-                      </div>
-                      <div className="WalletRow__options-actions__row">
-                        <CopyText textToCopy={publicKey}>
-                          <div className="action-copy">
-                            <div className="WalletRow__options-actions__label">
-                              {t("Copy address")}
-                            </div>
-                            <Icon.Copy01 />
-                          </div>
-                        </CopyText>
-                      </div>
-                    </div>
-                  ) : null}
-                </>
+                <WalletRow
+                  key={publicKey}
+                  isFetchingTokenPrices={isFetchingTokenPrices}
+                  accountName={name}
+                  accountValue={totalValueUsd}
+                  isImported={imported}
+                  hardwareWalletType={hardwareWalletType}
+                  publicKey={publicKey}
+                  isSelected={isSelected}
+                  onClick={async (publicKey) => {
+                    await dispatch(makeAccountActive(publicKey));
+                    dispatch(
+                      clearBalancesForAccount({ publicKey, networkDetails }),
+                    );
+                    dispatch(
+                      clearCollectiblesForAccount({
+                        publicKey,
+                        networkDetails,
+                      }),
+                    );
+                    navigateTo(ROUTES.account, navigate);
+                  }}
+                />
               );
             },
           )}
