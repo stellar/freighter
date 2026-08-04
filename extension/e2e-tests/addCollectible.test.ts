@@ -128,8 +128,7 @@ test("Add a collectible to an account", async ({
   // add the collectible
   await expect(page.getByTestId("account-view")).toBeVisible();
   await page.getByTestId("account-tab-collectibles").click();
-  await page.getByTestId("account-tabs-manage-btn-collectibles").click();
-  await page.getByText("Add manually").click();
+  await page.getByTestId("add-collectible-btn").click();
   await expect(page.getByTestId("AppHeaderPageTitle")).toHaveText(
     "Add Collectible",
   );
