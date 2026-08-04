@@ -117,18 +117,19 @@ export const Wallets = () => {
       <View.Content
         hasNoTopPadding
         contentFooter={
-          <Button
-            size="xl"
-            isRounded
-            variant="tertiary"
-            iconPosition="left"
-            icon={<Icon.PlusCircle />}
-            onClick={() => setIsAddingWallet(true)}
-            data-testid="add-wallet"
-            className="Wallets__add-wallet-button"
-          >
-            {t("Add a wallet")}
-          </Button>
+          <div className="Wallets__add-wallet">
+            <Button
+              size="xl"
+              isRounded
+              variant="tertiary"
+              iconPosition="left"
+              icon={<Icon.PlusCircle />}
+              onClick={() => setIsAddingWallet(true)}
+              data-testid="add-wallet"
+            >
+              {t("Add a wallet")}
+            </Button>
+          </div>
         }
       >
         <div className="Wallets__header" data-testid="wallets-header">

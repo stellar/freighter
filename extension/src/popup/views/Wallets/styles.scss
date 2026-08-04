@@ -94,17 +94,31 @@
   padding-top: #{pxToRem(16px)};
 }
 
-.Button.Wallets__add-wallet-button {
-  --Button-height: #{pxToRem(34px)};
-  --Button-padding-vertical: #{pxToRem(6px)};
-  --Button-padding-horizontal: #{pxToRem(10px)};
-  --Button-gap: #{pxToRem(16px)};
-  --Button-color-text-default: var(--sds-clr-lilac-11);
-  --Button-color-icon-default: var(--sds-clr-lilac-09);
-  --Button-color-background-default: var(--sds-clr-lilac-02);
-  --Button-color-border-default: var(--sds-clr-lilac-02);
-  --Button-color-text-hover: var(--sds-clr-lilac-11);
-  --Button-color-icon-hover: var(--sds-clr-lilac-09);
-  --Button-color-background-hover: var(--sds-clr-lilac-03);
-  --Button-color-border-hover: var(--sds-clr-lilac-03);
+.Wallets__add-wallet {
+  // SDS `Button` overwrites (rather than merges) any `className` passed to
+  // it, so a class placed directly on it can never combine with its own
+  // `Button`/`Button--*` classes. Scope the override through this wrapper
+  // instead, at higher specificity than `.Button--tertiary` itself.
+  .Button {
+    --Button-height: #{pxToRem(34px)};
+    --Button-padding-vertical: #{pxToRem(6px)};
+    --Button-padding-horizontal: #{pxToRem(10px)};
+    --Button-gap: #{pxToRem(16px)};
+    --Button-color-text-default: var(--sds-clr-lilac-11);
+    --Button-color-icon-default: var(--sds-clr-lilac-09);
+    --Button-color-background-default: var(--sds-clr-lilac-02);
+    --Button-color-border-default: var(--sds-clr-lilac-02);
+    --Button-color-text-hover: var(--sds-clr-lilac-11);
+    --Button-color-icon-hover: var(--sds-clr-lilac-09);
+    --Button-color-background-hover: var(--sds-clr-lilac-03);
+    --Button-color-border-hover: var(--sds-clr-lilac-03);
+  }
+
+  // The plus glyph uses `stroke="currentColor"`, inheriting whatever
+  // `color` it finds — which would otherwise be the button's own (lighter)
+  // text color above. Target the icon's own wrapper so it keeps the
+  // spec's more saturated fill purple instead.
+  .Button__icon {
+    color: var(--sds-clr-lilac-09);
+  }
 }
