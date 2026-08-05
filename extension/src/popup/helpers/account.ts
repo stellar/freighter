@@ -364,6 +364,13 @@ export const getBaseAccount = async (address?: string) => {
   return address;
 };
 
+/**
+ * The name of one of the user's own accounts ("Account 1"), or undefined when
+ * the key doesn't belong to them.
+ */
+export const getAccountName = (allAccounts: Account[], publicKey: string) =>
+  allAccounts.find((account) => account.publicKey === publicKey)?.name;
+
 export const signFlowAccountSelector = ({
   allAccounts,
   publicKey,

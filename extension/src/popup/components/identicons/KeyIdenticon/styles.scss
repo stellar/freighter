@@ -1,3 +1,5 @@
+@use "../../../styles/utils.scss" as *;
+
 .KeyIdenticon {
   --Icon-padding: 0.25rem;
   --Icon-dimension: 1.5rem;
@@ -17,5 +19,34 @@
   &--key {
     width: 100%;
     display: flex;
+  }
+
+  // borderless identicon + label, used for the to/from and counterparty chips
+  // in the transaction detail sheet
+  &--plain {
+    --Icon-padding: 0;
+    --Icon-dimension: #{pxToRem(20px)};
+
+    gap: pxToRem(6px);
+    min-width: 0;
+
+    .KeyIdenticon--icon {
+      background: none;
+      border: none;
+      border-radius: 50%;
+      flex-shrink: 0;
+      height: var(--Icon-dimension);
+      overflow: hidden;
+    }
+
+    .KeyIdenticon--key {
+      color: var(--sds-clr-gray-12);
+      display: block;
+      font-size: pxToRem(14px);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      width: auto;
+    }
   }
 }

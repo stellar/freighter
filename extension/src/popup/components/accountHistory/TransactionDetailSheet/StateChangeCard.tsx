@@ -3,7 +3,8 @@ import { useTranslation } from "react-i18next";
 import { Icon, Text } from "@stellar/design-system";
 
 import { Account } from "@shared/api/types/types";
-import { AvatarChip } from "popup/components/accountHistory/AvatarChip";
+import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
+import { getAccountName } from "popup/helpers/account";
 import {
   DataEntrySelection,
   StateChangeCardData,
@@ -193,11 +194,19 @@ const CardBody = ({
       return (
         <>
           <Row label={t("Account")}>
-            <AvatarChip address={card.address} allAccounts={allAccounts} />
+            <KeyIdenticon
+              publicKey={card.address}
+              variant="plain"
+              label={getAccountName(allAccounts, card.address)}
+            />
           </Row>
           {card.funder ? (
             <Row label={t("Funder")}>
-              <AvatarChip address={card.funder} allAccounts={allAccounts} />
+              <KeyIdenticon
+                publicKey={card.funder}
+                variant="plain"
+                label={getAccountName(allAccounts, card.funder)}
+              />
             </Row>
           ) : null}
         </>
@@ -211,9 +220,10 @@ const CardBody = ({
             <Row
               key={signer.address}
               label={
-                <AvatarChip
-                  address={signer.address}
-                  allAccounts={allAccounts}
+                <KeyIdenticon
+                  publicKey={signer.address}
+                  variant="plain"
+                  label={getAccountName(allAccounts, signer.address)}
                 />
               }
             >
@@ -299,7 +309,11 @@ const CardBody = ({
             <AssetChip token={card.token} />
           </Row>
           <Row label={t("Spender")}>
-            <AvatarChip address={card.spender} allAccounts={allAccounts} />
+            <KeyIdenticon
+              publicKey={card.spender}
+              variant="plain"
+              label={getAccountName(allAccounts, card.spender)}
+            />
           </Row>
           <Row label={t("Amount")}>
             {card.amount} {card.token.code}

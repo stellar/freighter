@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, within } from "@testing-library/react";
 import { Provider } from "react-redux";
 
 import { TESTNET_NETWORK_DETAILS } from "@shared/constants/stellar";
@@ -109,9 +109,11 @@ describe("TransactionDetailSheet", () => {
     expect(amount).toHaveClass("TransactionDetailSheet__balance-amount--debit");
     // counterparty resolves to the named account and is labelled "To"
     expect(screen.getByTestId("balance-counterparty")).toHaveTextContent("To");
-    expect(screen.getByTestId("avatar-chip-label")).toHaveTextContent(
-      "Account 2",
-    );
+    expect(
+      within(screen.getByTestId("balance-counterparty")).getByTestId(
+        "KeyIdenticonKey",
+      ),
+    ).toHaveTextContent("Account 2");
   });
 
   it("renders a credit balance change and a From label for a receive", () => {
@@ -132,12 +134,11 @@ describe("TransactionDetailSheet", () => {
     expect(screen.getByTestId("balance-counterparty")).toHaveTextContent(
       "From",
     );
-    // external address is truncated
-    expect(screen.getByTestId("avatar-chip-label")).toHaveTextContent("…");
-    // the identicon image is shown, but the address must not be duplicated by
-    // KeyIdenticon's own key label alongside the AvatarChip label
-    expect(screen.getAllByTestId("identicon-img").length).toBeGreaterThan(0);
-    expect(screen.queryByTestId("KeyIdenticonKey")).toBeNull();
+    // an external address gets an identicon and a single truncated label — no
+    // owned-account name to resolve, and no second copy of the address
+    const counterparty = within(screen.getByTestId("balance-counterparty"));
+    expect(counterparty.getAllByTestId("identicon-img")).toHaveLength(1);
+    expect(counterparty.getByTestId("KeyIdenticonKey")).toHaveTextContent("…");
   });
 
   it("renders stacked amounts and a rate row for a swap", () => {

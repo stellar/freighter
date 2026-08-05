@@ -2,7 +2,8 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { Icon } from "@stellar/design-system";
 
-import { AvatarChip } from "popup/components/accountHistory/AvatarChip";
+import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
+import { getAccountName } from "popup/helpers/account";
 import { Account } from "@shared/api/types/types";
 import {
   BalanceChangeRow,
@@ -69,9 +70,10 @@ export const BalanceChangesCard = ({
             <span>{counterpartyDirection === "to" ? t("To") : t("From")}</span>
           </div>
           <div className="AssetDiff__value">
-            <AvatarChip
-              address={details.counterparty}
-              allAccounts={allAccounts}
+            <KeyIdenticon
+              publicKey={details.counterparty}
+              variant="plain"
+              label={getAccountName(allAccounts, details.counterparty)}
             />
           </div>
         </div>
