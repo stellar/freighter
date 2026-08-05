@@ -8,7 +8,7 @@ import {
   settingsNetworkDetailsSelector,
   settingsSelector,
 } from "popup/ducks/settings";
-import { getMonthLabel } from "popup/helpers/getMonthLabel";
+import { formatMonthLabel } from "popup/helpers/date";
 
 import { HistoryItem } from "popup/components/accountHistory/HistoryItem";
 import { TransactionDetail } from "popup/components/accountHistory/TransactionDetail";
@@ -106,7 +106,7 @@ export const AccountHistoryLegacy = () => {
                   size="sm"
                   addlClassName="AccountHistory__section-header"
                 >
-                  {getMonthLabel(Number(section.monthYear.split(":")[0]))}
+                  {formatMonthLabel(Number(section.monthYear.split(":")[0]))}
                 </Text>
 
                 <div className="AccountHistory__list">

@@ -32,6 +32,7 @@ import { isMainnet } from "helpers/stellar";
 import { AppState } from "popup/App";
 import { historyV2Selector } from "popup/ducks/remoteConfig";
 import { tokensListsSelector } from "popup/ducks/cache";
+import { getMonthYearKey } from "popup/helpers/date";
 import { buildTokenContext } from "popup/helpers/history/tokenResolver";
 import { filterHistoryEntries } from "popup/helpers/history/filters";
 import { getNativeContractDetails } from "popup/helpers/searchAsset";
@@ -45,7 +46,7 @@ import { mapHorizonOperations } from "popup/views/AccountHistory/mappers/horizon
 export const HISTORY_V2_PAGE_SIZE = 25;
 
 export interface HistoryEntrySection {
-  /** "{month}:{year}" — same format the v1 sections use (getMonthLabel) */
+  /** "{month}:{year}" from `getMonthYearKey` — same format the v1 sections use */
   monthYear: string;
   entries: HistoryEntry[];
 }
@@ -67,8 +68,7 @@ export const groupEntriesByMonth = (
   entries: HistoryEntry[],
 ): HistoryEntrySection[] =>
   entries.reduce((sections, entry) => {
-    const date = new Date(Date.parse(entry.createdAt));
-    const monthYear = `${date.getMonth()}:${date.getFullYear()}`;
+    const monthYear = getMonthYearKey(entry.createdAt);
 
     const lastSection = sections[sections.length - 1];
     if (lastSection?.monthYear === monthYear) {

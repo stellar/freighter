@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { emitMetric } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { HistoryRowIcon } from "popup/components/accountHistory/HistoryRowIcon";
+import { formatMonthDay } from "popup/helpers/date";
 import { HistoryEntry } from "popup/views/AccountHistory/model";
 
 import "./HistoryItemV2.scss";
@@ -34,15 +35,6 @@ const SecondaryActionIcon = ({ icon }: { icon: SecondaryIcon }) => {
     default:
       return null;
   }
-};
-
-/** "2024-05-27T..." → "May 27" */
-const formatRowDate = (createdAt: string) => {
-  const date = new Date(Date.parse(createdAt));
-  if (Number.isNaN(date.getTime())) {
-    return "";
-  }
-  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 };
 
 const RowAmounts = ({ amounts }: { amounts: HistoryEntry["amounts"] }) => {
@@ -130,7 +122,7 @@ export const HistoryItemV2 = ({ entry, onClick }: HistoryItemV2Props) => (
         weight="regular"
         addlClassName="HistoryItemV2__date"
       >
-        {formatRowDate(entry.createdAt)}
+        {formatMonthDay(entry.createdAt)}
       </Text>
     </div>
   </div>

@@ -59,6 +59,7 @@ import {
   SorobanTokenInterface,
 } from "@shared/constants/soroban/token";
 import { getBalanceByKey } from "popup/helpers/balance";
+import { formatMonthDay, getMonthYearKey } from "popup/helpers/date";
 import { AssetType } from "@shared/api/types/account-balance";
 import {
   TokenDetailsResponse,
@@ -583,11 +584,7 @@ export const getRowDataByOpType = async (
     envelope_xdr: txEnvelopeXdr,
   } = transaction_attr;
 
-  const date = new Date(Date.parse(createdAt))
-    .toDateString()
-    .split(" ")
-    .slice(1, 3)
-    .join(" ");
+  const date = formatMonthDay(createdAt);
 
   const operationType = camelCase(type) as keyof typeof OPERATION_TYPES;
   const opTypeStr = OPERATION_TYPES[operationType] || "Transaction";
@@ -1242,10 +1239,7 @@ const createHistorySections = async (
         return sections;
       }
 
-      const date = new Date(operation.created_at);
-      const month = date.getMonth();
-      const year = date.getFullYear();
-      const monthYear = `${month}:${year}`;
+      const monthYear = getMonthYearKey(operation.created_at);
 
       const lastSection = sections.length > 0 && sections[sections.length - 1];
 

@@ -2,29 +2,8 @@ import React from "react";
 import { Text } from "@stellar/design-system";
 
 import { HistoryRowIcon } from "popup/components/accountHistory/HistoryRowIcon";
+import { formatDetailTimestamp } from "popup/helpers/date";
 import { HistoryEntry } from "popup/views/AccountHistory/model";
-
-/** "2024-04-08T14:33:00Z" → "Apr 8 2024 · 2:33pm" */
-export const formatDetailTimestamp = (createdAt: string) => {
-  const date = new Date(Date.parse(createdAt));
-  if (Number.isNaN(date.getTime())) {
-    return "";
-  }
-  const day = date.toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-  const time = date
-    .toLocaleTimeString("en-US", {
-      hour: "numeric",
-      minute: "2-digit",
-      hour12: true,
-    })
-    .replace(/\s/g, "")
-    .toLowerCase();
-  return `${day} · ${time}`;
-};
 
 /**
  * Header for the detail drawer. Reuses the legacy `TransactionDetailModal`

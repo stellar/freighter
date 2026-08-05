@@ -21,6 +21,7 @@ import {
 } from "popup/views/AccountHistory/hooks/useGetHistoryData";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { getStellarExpertUrl } from "popup/helpers/account";
+import { formatClockTime, formatLegacyDetailDate } from "popup/helpers/date";
 import { getMemoDisabledState } from "helpers/muxedAddress";
 
 import "./styles.scss";
@@ -57,21 +58,10 @@ export const TransactionDetail = ({
     return <></>;
   }
 
-  const createdAtDateInstance = new Date(
-    Date.parse(activeOperation.metadata.createdAt),
+  const createdAtTime = formatClockTime(activeOperation.metadata.createdAt);
+  const createdAtDateStr = formatLegacyDetailDate(
+    activeOperation.metadata.createdAt,
   );
-  const createdAtLocalStrArr = createdAtDateInstance
-    .toLocaleString()
-    .split(" ");
-  const createdAtTime = `${createdAtLocalStrArr[1]
-    .split(":")
-    .slice(0, 2)
-    .join(":")} ${createdAtLocalStrArr[2]}`;
-  const createdAtDateStr = createdAtDateInstance
-    .toDateString()
-    .split(" ")
-    .slice(1)
-    .join(" ");
 
   const stellarExpertUrl = getStellarExpertUrl(networkDetails);
   const { feeCharged, memo } = activeOperation.metadata;
