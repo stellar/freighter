@@ -79,8 +79,7 @@ import {
   DEFAULT_NETWORKS,
   NetworkDetails,
   NETWORKS,
-  PASSPHRASE_TO_HISTORY_NETWORK,
-  PASSPHRASE_TO_PRICE_NETWORK,
+  PASSPHRASE_TO_INDEXER_NETWORK,
 } from "../constants/stellar";
 import { SERVICE_TYPES } from "../constants/services";
 import { isDev } from "../helpers/dev";
@@ -654,7 +653,7 @@ export const getTokenPrices = async (
     // (Futurenet, custom passphrases) is skipped to avoid a guaranteed error and
     // Sentry noise.
     const priceNetwork =
-      PASSPHRASE_TO_PRICE_NETWORK[networkDetails.networkPassphrase];
+      PASSPHRASE_TO_INDEXER_NETWORK[networkDetails.networkPassphrase];
     if (!priceNetwork) {
       return {};
     }
@@ -1054,7 +1053,7 @@ export const getAccountHistoryV2 = async (
   // sharing a supported passphrase still resolve; callers route everything
   // else to v1 via getAccountHistoryWithFlag before getting here.
   const historyNetwork =
-    PASSPHRASE_TO_HISTORY_NETWORK[networkDetails.networkPassphrase];
+    PASSPHRASE_TO_INDEXER_NETWORK[networkDetails.networkPassphrase];
   if (!historyNetwork) {
     throw new Error(
       `history v2 does not support network passphrase ${networkDetails.networkPassphrase}`,
@@ -1108,7 +1107,7 @@ export const getAccountHistoryWithFlag = async (
   params: { limit?: number; cursor?: string } = {},
 ): Promise<AccountHistoryV1V2> => {
   const historyNetwork =
-    PASSPHRASE_TO_HISTORY_NETWORK[networkDetails.networkPassphrase];
+    PASSPHRASE_TO_INDEXER_NETWORK[networkDetails.networkPassphrase];
   if (useV2 && historyNetwork) {
     return {
       version: "v2",

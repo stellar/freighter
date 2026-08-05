@@ -79,18 +79,13 @@ export const PASSPHRASE_TO_NETWORK_NAME: Record<string, string> = {
   [FUTURENET_NETWORK_DETAILS.networkPassphrase]: NETWORK_NAMES.FUTURENET,
 };
 
-// The token-prices endpoint only supports pubnet and testnet. This map is the
-// single source of truth for which passphrases resolve to a price-supported
-// network; anything not listed here is skipped by getTokenPrices.
-export const PASSPHRASE_TO_PRICE_NETWORK: Record<string, NETWORKS> = {
-  [Networks.PUBLIC]: NETWORKS.PUBLIC,
-  [Networks.TESTNET]: NETWORKS.TESTNET,
-};
-
-// The v2 account-history endpoint (GET /accounts/{address}/transactions) only
-// supports pubnet and testnet — anything not listed here must fall back to the
-// v1 history path (see getAccountHistoryWithFlag).
-export const PASSPHRASE_TO_HISTORY_NETWORK: Record<string, NETWORKS> = {
+// The indexer endpoints (token prices, v2 account history) only support pubnet
+// and testnet, and take the network as a NETWORKS value rather than a display
+// name — so this is deliberately not derived from PASSPHRASE_TO_NETWORK_NAME.
+// Single source of truth for which passphrases reach those endpoints: a custom
+// network sharing a supported passphrase still resolves, and anything absent
+// here is skipped (prices) or routed to v1 (history).
+export const PASSPHRASE_TO_INDEXER_NETWORK: Record<string, NETWORKS> = {
   [Networks.PUBLIC]: NETWORKS.PUBLIC,
   [Networks.TESTNET]: NETWORKS.TESTNET,
 };
