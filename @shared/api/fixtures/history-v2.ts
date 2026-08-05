@@ -5,16 +5,14 @@
  * `IS_HISTORY_V2_MOCKED` is true in `@shared/api/internal.ts`.
  *
  * Source account: GCBDC5AVPZEOSO3IAASQZSVRJMHX3UCCZH5O7S53FPZ636LQ5RHEW65H
- * Assembled 2026-08-04. Every transaction below is a real pubnet transaction of
- * that account — real hashes, ledgers, fees, and `operation_xdr` taken from the
- * on-chain envelopes — so every XDR-decoding path (advanced details sheet,
- * invoke parameters) works, and the stellar.expert links resolve as long as the
- * wallet is pointed at mainnet (the mock is served for any supported network).
+ * Every transaction below is a real pubnet transaction of that account — real
+ * hashes, ledgers, fees, and `operation_xdr` taken from the on-chain envelopes —
+ * so every XDR-decoding path (advanced details sheet, invoke parameters) works,
+ * and the stellar.expert links resolve as long as the wallet is pointed at
+ * mainnet (the mock is served for any supported network).
  *
  * Provenance, per the `(captured)` / `(derived)` tag on each entry:
- *  - captured: served verbatim by a locally-run freighter-backend-v2 against
- *    wallet-backend-mainnet. That instance only retains ~5 days, which is why
- *    it covers just the six most recent transactions.
+ *  - captured: served verbatim by the account-history endpoint.
  *  - derived: rebuilt from Horizon (transaction envelope + per-operation
  *    effects) using the wire conventions the capture confirmed — SAC contract
  *    ids as `token_id`, smallest-unit amounts, an XLM fee DEBIT only when this
@@ -22,21 +20,16 @@
  *    transaction (the batch payouts below are 100-operation transactions
  *    upstream).
  *
- * A third provenance applies to individual state changes tagged `(projected)`:
- * the `BlendEmissionsClaimChange` rows on the three Blend `claim` transactions.
- * No deployed backend serves these — they are modelled from wallet-backend PR
- * #661's GraphQL schema and require #659+#661 merged, the wallet-backend Go SDK
- * taught the Blend `__typename`s, and a freighter-backend-v2 mapper arm. See
- * the BLEND_* block in `@shared/api/types/backend-api.ts` for the full
- * dependency chain. They are included so the redesign can be built against the
- * shape that is coming rather than retrofitted onto it; the mappers ignore
- * unknown variants, so nothing renders from them yet.
+ * The `BlendEmissionsClaimChange` rows on the three Blend `claim` transactions
+ * are modelled from the upstream `Blend*Change` schema rather than captured, so
+ * that protocol-action labelling has coverage. Mappers skip variants they do not
+ * recognize, so an environment that does not emit them simply renders the
+ * `BalanceChange` rows beside them.
  *
  * Two live-wire behaviours this data deliberately preserves:
- *  1. The real endpoint returns pages **oldest-first** and its `next_cursor`
- *     walks forward in time (verified: limit=3 returns the 3 oldest, page 2 the
- *     3 newest). The array below is newest-first so the mocked list renders the
- *     way the design intends — `useGetHistoryDataV2` does not sort, so the
+ *  1. The endpoint returns pages **oldest-first**, with `next_cursor` walking
+ *     forward in time. The array below is newest-first so the mocked list renders
+ *     the way the design intends — `useGetHistoryDataV2` does not sort, so the
  *     ordering/pagination direction must be resolved before
  *     `IS_HISTORY_V2_MOCKED` is flipped off.
  *  2. Inbound payments carry no fee state change at all; the fee DEBIT only
@@ -51,10 +44,8 @@
  * comparison never matches and inbound payments name the destination rather
  * than the sender as counterparty.
  *
- * To re-assemble after new activity: run freighter-backend-v2 locally against
- * wallet-backend-mainnet (port-forward `svc/wallet-backend-api-mainnet`), GET
- * the transactions route for the account, and rebuild anything older than its
- * retention window from Horizon.
+ * To re-assemble after new activity: GET the transactions route for the account,
+ * and rebuild anything outside the endpoint's retention window from Horizon.
  *
  * Transactions with no state changes are real: `CREATE_CLAIMABLE_BALANCE`
  * entries where this account is only a claimant move no balance until claimed,
@@ -88,10 +79,9 @@ export const MOCK_CETES_SAC =
 
 /**
  * Blend v2 pool contract ids this history interacts with. Names read off each
- * pool's `Name` instance-storage entry on pubnet; the `claim` calls below
- * target these contracts, and they are the `pool_id` on the
- * BlendEmissionsClaimChange rows (see the Blend note in `backend-api.ts` —
- * those rows are ahead of every deployed backend).
+ * pool's `Name` instance-storage entry on pubnet; the `claim` calls below target
+ * these contracts, and they are the `pool_id` on the BlendEmissionsClaimChange
+ * rows.
  */
 export const MOCK_BLEND_POOL_YIELDBLOX =
   "CCCCIQSDILITHMM7PBSLVDT5MISSY7R26MNZXCX4H7J5JQ5FPIYOGYFS";
@@ -1033,7 +1023,7 @@ export const mockHistoryTransactions: V2AccountTransaction[] = [
         ledger_created_at: "2026-06-16T19:18:17Z",
         ingested_at: "2026-06-16T19:18:17Z",
       },
-      // (projected) Blend emitter row — same 0.101548 BLND as the CREDIT above
+      // Blend emitter row — restates the 0.101548 BLND of the CREDIT above
       {
         variant: "BlendEmissionsClaimChange",
         type: "BLEND_EMISSIONS",
@@ -1255,7 +1245,7 @@ export const mockHistoryTransactions: V2AccountTransaction[] = [
         ledger_created_at: "2026-06-10T19:56:42Z",
         ingested_at: "2026-06-10T19:56:42Z",
       },
-      // (projected) Blend emitter row — same 8.3407357 BLND as the CREDIT above
+      // Blend emitter row — restates the 8.3407357 BLND of the CREDIT above
       {
         variant: "BlendEmissionsClaimChange",
         type: "BLEND_EMISSIONS",
@@ -1312,7 +1302,7 @@ export const mockHistoryTransactions: V2AccountTransaction[] = [
         ledger_created_at: "2026-06-10T19:56:19Z",
         ingested_at: "2026-06-10T19:56:19Z",
       },
-      // (projected) Blend emitter row — same 6.842782 BLND as the CREDIT above
+      // Blend emitter row — restates the 6.842782 BLND of the CREDIT above
       {
         variant: "BlendEmissionsClaimChange",
         type: "BLEND_EMISSIONS",

@@ -18,17 +18,15 @@ export interface AccountBalancesInterface {
  * Account history — freighter-backend-v2
  * `GET /api/v1/accounts/{address}/transactions`
  *
- * Source of truth: stellar/freighter-backend-v2
- * `internal/types/account_history.go` + `internal/api/handlers/account_history.go`
- * (wire format is snake_case; the backend maps wallet-backend upstream data
- * into these shapes server-side — this client never talks to wallet-backend).
+ * Source of truth: the stellar/freighter-backend-v2 account-history types. The
+ * wire format is snake_case; that backend maps its own upstream data into these
+ * shapes server-side, so this client never talks to the indexer directly.
  *
  * Query params: `network=PUBLIC|TESTNET` (required), `limit` (default set by
  * backend config, max 100), `direction=next|prev`, `cursor` (opaque),
  * `since`/`until` (RFC3339). Address may be G... or C....
  *
- * Field encodings (verified against freighter-backend-v2 types and the
- * wallet-backend processors/resolvers that produce the values):
+ * Field encodings:
  * - Timestamps            → RFC3339 strings, e.g. "2024-04-08T14:33:00Z"
  * - `fee_charged`, `id`   → int64 values string-encoded by the backend
  *   (`json:",string"`) so TOIDs above 2^53-1 survive JSON parsing.
@@ -53,10 +51,9 @@ export interface AccountBalancesInterface {
  * - `operations` and `state_changes` are scoped to the QUERIED account — they
  *   are not the transaction's full contents.
  * - Fee state changes appear as their own BALANCE/DEBIT entry (fees are
- *   transaction-level, netted across fee + refund events). NOTE: the v2 shape
- *   carries no operation linkage on state changes, so fee entries are not
- *   structurally distinguishable — flagged as a backend follow-up. Confirmed
- *   against live dev data 2026-07-30: no state change carries an operation id.
+ *   transaction-level, netted across fee + refund events). State changes carry
+ *   no operation linkage, so a fee entry is not structurally distinguishable
+ *   from a real balance movement — see the heuristic in `mappers/v2/balances.ts`.
  * ──────────────────────────────────────────────────────────────────────────── */
 
 export type StateChangeCategory =
@@ -348,34 +345,18 @@ export interface V2BalanceAuthorizationChange extends V2StateChangeBase {
 }
 
 /* ────────────────────────────────────────────────────────────────────────────
- * Blend v2 protocol state changes — NOT YET SERVED BY ANY DEPLOYED BACKEND.
+ * Blend v2 protocol state changes.
  *
- * Modelled from the `Blend*Change` GraphQL types on wallet-backend
- * `blend/pr5-graphql` (PR #661), which is open alongside #657–#660 and #664;
- * `main` carries no Blend emitter at all. Three upstream changes have to land
- * before a single one of these reaches the wire:
+ * Mirrors the upstream `Blend*Change` types, snake_cased by the same convention
+ * as every variant above (`poolId` → `pool_id`, required → present, nullable →
+ * optional).
  *
- *   1. wallet-backend #659 (the processor that writes BLEND_* rows) merged
- *      together with #661 (the GraphQL types). #659 alone makes
- *      `convertStateChangeTypes` error on every Blend row.
- *   2. wallet-backend's Go SDK (`pkg/wbclient/types`) gaining the Blend cases
- *      in `UnmarshalStateChangeNode` — #661 adds the schema but NOT the SDK,
- *      whose `default` arm rejects unknown `__typename`, so today a Blend row
- *      would fail the whole freighter-backend-v2 history request.
- *   3. freighter-backend-v2 bumping that dep and adding the matching arms to
- *      `mapStateChange` (a 19-case switch whose `default` drops every
- *      variant-specific field).
- *
- * Field names below are the snake_case forms fbv2's mapper produces from the
- * GraphQL camelCase, following the convention every existing variant uses
- * (`poolId` → `pool_id`, required → present, nullable → optional).
- *
- * Blend rows are ADDITIVE: the SEP-41 token-transfer processor still emits its
- * own `BalanceChange` for the same movement (separate emitter namespaces —
- * indexer 0, SEP-41 1<<40, Blend 2<<40, so Blend rows sort last). A pool
- * emissions claim therefore reports its amount twice, once as a
- * `BalanceChange` CREDIT and once as a `BlendEmissionsClaimChange`. Never sum
- * amounts across variants.
+ * Blend rows are ADDITIVE: the SEP-41 token-transfer processor emits its own
+ * `BalanceChange` for the same movement, so a pool emissions claim reports its
+ * amount twice — once as a `BalanceChange` CREDIT and once as a
+ * `BlendEmissionsClaimChange`. Never sum amounts across variants. Blend rows
+ * also sort after the core rows, since each emitter numbers state changes in its
+ * own id namespace.
  * ──────────────────────────────────────────────────────────────────────────── */
 
 /** Uncollateralized supply position in a pool reserve (tokens lent, not backing a borrow) */
@@ -519,7 +500,7 @@ export type V2StateChange =
   | V2TrustlineUpdatedChange
   | V2TrustlineRemovedChange
   | V2BalanceAuthorizationChange
-  // Blend v2 — not yet served by any deployed backend, see the note above
+  // Blend v2 protocol state changes
   | V2BlendSupplyChange
   | V2BlendCollateralChange
   | V2BlendDebtChange

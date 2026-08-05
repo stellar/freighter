@@ -2,16 +2,13 @@
  * Derives a history row's label from a protocol state change's (type, reason)
  * pair.
  *
- * wallet-backend models state changes as a noun/verb pair — "category = object,
- * reason = action" (wallet-backend `internal/indexer/types/types.go:508-510`) —
- * so a recognized category names the protocol and the pair names what happened.
- * No contract->protocol resolution is involved: `BLEND_EMISSIONS` + `CLAIM` is
- * self-describing, which is why this works without `/protocols` carrying
- * contract ids.
+ * State changes are modelled upstream as a noun/verb pair — the category names
+ * the on-chain object, the reason names the action — so a recognized category
+ * names the protocol and the pair names what happened. That is why this needs no
+ * contract->protocol resolution: `BLEND_EMISSIONS` + `CLAIM` is self-describing.
  *
- * Only used to relabel rows the account can already see; it never changes the
- * amount, icon, or kind. See
- * docs/superpowers/specs/2026-08-04-blend-contract-row-label-design.md.
+ * Only relabels rows the account can already see; never changes the amount,
+ * icon, or kind.
  */
 
 import {
@@ -51,12 +48,11 @@ type ActionKey = `${StateChangeCategory}:${StateChangeReason}`;
  * What each (category, reason) pair means to the account whose history this is.
  *
  * Two Blend debt rows differ in whose position moved, which sets the label's
- * point of view (wallet-backend `internal/services/blend/events.go`):
- *  - BAD_DEBT is attributed to the borrower (`Account: user`), so it does reach
- *    an ordinary wallet's history and reads from their side: "Debt defaulted".
- *  - BURN is attributed to the emitting pool (`Account: poolID`), so it cannot
- *    reach a user wallet. Kept because the endpoint accepts C-addresses, so
- *    querying a pool address would surface it.
+ * point of view:
+ *  - BAD_DEBT is attributed to the borrower, so it reaches an ordinary wallet's
+ *    history and reads from their side: "Debt defaulted".
+ *  - BURN is attributed to the emitting pool, so it only surfaces when the
+ *    queried address IS that pool — the endpoint accepts C-addresses.
  */
 export const PROTOCOL_ACTION_LABELS: Partial<Record<ActionKey, string>> = {
   "BLEND_SUPPLY:CREDIT": i18n.t("Supplied"),

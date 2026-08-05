@@ -558,13 +558,12 @@ describe("real captured history", () => {
   });
 
   /**
-   * The Blend claims carry a projected `BlendEmissionsClaimChange` alongside the
-   * generic BalanceChange for the same movement (see the Blend note in
-   * backend-api.ts — those rows are additive upstream, not a replacement). The
-   * UI reads these rows for the protocol-action label, but they must never
-   * double-count into a second amount row or a state-change card.
+   * A Blend claim carries a `BlendEmissionsClaimChange` alongside the generic
+   * BalanceChange for the same movement — the two are additive, not a
+   * replacement. The UI reads the Blend row for the protocol-action label, but it
+   * must never double-count into a second amount row or a state-change card.
    */
-  it("ignores the projected Blend rows rather than double-counting them", () => {
+  it("does not double-count the Blend row against the balance change", () => {
     const claims = mockHistoryTransactions.filter((tx) =>
       tx.state_changes.some(
         (change) => change.variant === "BlendEmissionsClaimChange",
@@ -579,7 +578,7 @@ describe("real captured history", () => {
       if (blend.variant !== "BlendEmissionsClaimChange") {
         throw new Error("unreachable");
       }
-      // the projected row restates the CREDIT's token and amount verbatim
+      // the Blend row restates the CREDIT's token and amount verbatim
       const credit = tx.state_changes.find(
         (change) =>
           change.variant === "BalanceChange" && change.reason === "CREDIT",

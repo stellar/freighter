@@ -35,11 +35,10 @@ const isCredit = (change: V2BalanceChange) =>
 
 /**
  * The v2 payload carries no operation linkage on state changes, so the
- * transaction-level fee entry is indistinguishable structurally — the GraphQL
- * schema marks fee rows by a null `operation`, but the REST mapper drops that
- * field entirely (confirmed against live dev data 2026-07-30). Heuristic: drop
- * the first native-token DEBIT whose raw amount equals fee_charged.
- * (Backend follow-up filed to add operation_id / a fee marker.)
+ * transaction-level fee entry is structurally indistinguishable from a real
+ * balance movement. Heuristic: drop the first native-token DEBIT whose raw
+ * amount equals fee_charged. Remove this once the wire carries an operation id
+ * or an explicit fee marker.
  */
 const withoutFeeEntry = (
   changes: V2BalanceChange[],
