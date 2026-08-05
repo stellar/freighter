@@ -19,31 +19,6 @@ export interface AuthedFetchParams {
 }
 
 /**
- * Server-time offset in ms (serverEpochMs − localEpochMs), learned from the
- * `Date` header the backend returns on every response. The per-request JWT is
- * signed against `Date.now() + serverTimeOffsetMs` so its iat/exp track the
- * SERVER's clock rather than the device's. This removes any dependence on local
- * clock accuracy: a skewed device clock would otherwise push every 15s token
- * outside the server's validation window and 401 — no matter how wide a fixed
- * skew leeway the server allows, since a local clock can be arbitrarily wrong.
- *
- * Module scope so it survives across requests for the life of the service
- * worker. It is not secret. On worker restart it resets to 0 (falls back to the
- * local clock); the first 401 then re-teaches it from that response's `Date`
- * header and the built-in retry re-signs correctly, so no request stays broken.
- */
-let serverTimeOffsetMs = 0;
-
-/** Refresh serverTimeOffsetMs from a response's `Date` header when present/valid. */
-const learnServerTimeOffset = (res: Response): void => {
-  const dateHeader = res.headers.get("Date");
-  if (!dateHeader) return;
-  const serverMs = Date.parse(dateHeader);
-  if (Number.isNaN(serverMs)) return;
-  serverTimeOffsetMs = serverMs - Date.now();
-};
-
-/**
  * Sends a request authenticated with a fresh per-request JWT. On 401 it rebuilds
  * a fresh JWT and retries exactly once, returning that response (success or the
  * second 401). The JWT is never cached.
@@ -85,21 +60,12 @@ export const authedFetch = async ({
       method: httpMethod,
       path: requestTarget,
       body,
-      // Sign against the SERVER's clock (see serverTimeOffsetMs), not the
-      // device's, so a skewed local clock can't push iat/exp outside the 15s
-      // validation window.
-      now: Date.now() + serverTimeOffsetMs,
     });
-    const res = await doFetch(url, {
+    return doFetch(url, {
       method: httpMethod,
       headers: { ...baseHeaders, Authorization: `Bearer ${jwt}` },
       body,
     });
-    // Learn/refresh the offset from THIS response — including a 401's `Date`
-    // header — so the retry below (and subsequent requests) sign against server
-    // time even on the first call after a cold start.
-    learnServerTimeOffset(res);
-    return res;
   };
 
   const first = await send();

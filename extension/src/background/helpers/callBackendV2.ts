@@ -75,15 +75,6 @@ const tryGetAuthKeypair = async (
  * per-request JWT when the session is unlocked; otherwise sends anonymously
  * (backend is permissive). The signed methodAndPath uses the server's full
  * request-target (incl. /api/v1), derived from the resolved URL.
- *
- * Permissive-mode safety net: an unlocked wallet always attaches a short-lived
- * (15s) JWT, and the backend rejects an out-of-window token with 401 — most
- * commonly when the client clock is skewed — even though it would accept the
- * exact same request anonymously. When that happens we retry once without the
- * JWT so a skewed/misconfigured client degrades to the anonymous path (which
- * permissive mode allows) instead of surfacing a spurious 401. Once the backend
- * enforces auth, the anonymous retry 401s too, so this never hides a real
- * authorization failure.
  */
 export const callBackendV2 = async ({
   method,
@@ -100,13 +91,6 @@ export const callBackendV2 = async ({
     ? null
     : await tryGetAuthKeypair(sessionStore, localStore);
 
-  const anonymousFetch = (): Promise<Response> =>
-    doFetch(fullUrl.href, {
-      method,
-      headers: body ? { "Content-Type": "application/json" } : {},
-      body,
-    });
-
   let res: Response;
   if (keypair) {
     res = await authedFetch({
@@ -117,16 +101,12 @@ export const callBackendV2 = async ({
       body,
       fetchImpl: doFetch,
     });
-    // authedFetch already rebuilt the JWT and retried once, so a persistent 401
-    // means the token itself is being rejected (e.g. clock skew), not a transient
-    // failure. While the backend is permissive, retry once anonymously so the
-    // request still succeeds instead of surfacing a 401 the anonymous path would
-    // have avoided.
-    if (res.status === 401) {
-      res = await anonymousFetch();
-    }
   } else {
-    res = await anonymousFetch();
+    res = await doFetch(fullUrl.href, {
+      method,
+      headers: body ? { "Content-Type": "application/json" } : {},
+      body,
+    });
   }
 
   // Parse the body on error responses too — a non-2xx JSON payload carries the
