@@ -26,10 +26,11 @@ import {
 import { signOut } from "popup/ducks/accountServices";
 import { AccountHeaderModal } from "popup/components/account/AccountHeaderModal";
 import { NetworkIcon } from "popup/components/manageNetwork/NetworkIcon";
-import { NetworkDetails, NETWORK_NAMES } from "@shared/constants/stellar";
+import { NetworkDetails } from "@shared/constants/stellar";
 import { MobileAppBanner } from "popup/components/account/MobileAppBanner";
 import { AccountTabs } from "popup/components/account/AccountTabs";
 import { MaintenanceBanner } from "popup/components/MaintenanceBanner";
+import { getNetworkDisplayName } from "./getNetworkDisplayName";
 
 import "./styles.scss";
 
@@ -49,19 +50,6 @@ interface AccountHeaderProps {
   onDiscoverClick: () => void;
 }
 
-const getNetworkDisplayName = (networkName: string) => {
-  switch (networkName) {
-    case NETWORK_NAMES.PUBNET:
-      return "Mainnet";
-    case NETWORK_NAMES.TESTNET:
-      return "Testnet";
-    case NETWORK_NAMES.FUTURENET:
-      return "Futurenet";
-    default:
-      return networkName;
-  }
-};
-
 export const AccountHeader = ({
   allowList,
   currentAccountName,
@@ -75,6 +63,11 @@ export const AccountHeader = ({
   onDiscoverClick,
 }: AccountHeaderProps) => {
   const { t } = useTranslation();
+  const networkDisplayNames = {
+    mainnet: t("Mainnet"),
+    testnet: t("Testnet"),
+    futurenet: t("Futurenet"),
+  };
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const networksList = useSelector(settingsNetworksListSelector);
   const [isNetworkSelectorOpen, setIsNetworkSelectorOpen] = useState(false);
@@ -277,7 +270,10 @@ export const AccountHeader = ({
                           >
                             <NetworkIcon index={i} />
                             <div className="AccountHeader__network-copy">
-                              {getNetworkDisplayName(n.networkName)}
+                              {getNetworkDisplayName(
+                                n.networkName,
+                                networkDisplayNames,
+                              )}
                             </div>
                             {isActiveNetwork(n, networkDetails) ? (
                               <div className="AccountHeader__network-selector__check">
