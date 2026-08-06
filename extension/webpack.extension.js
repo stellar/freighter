@@ -1,6 +1,6 @@
 const { merge } = require("webpack-merge");
 const webpack = require("webpack");
-const I18nextWebpackPlugin = require("i18next-scanner-webpack");
+const I18nextWebpackPlugin = require("i18next-scanner-webpack").default;
 const { commonConfig } = require("./webpack.common.js");
 const Dotenv = require("dotenv-webpack");
 const dotenv = require("dotenv");
