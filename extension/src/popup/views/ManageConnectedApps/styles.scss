@@ -16,6 +16,11 @@
     align-items: center;
     gap: pxToRem(4px);
     width: fit-content;
+    // The view renders with `hasNoTopPadding`, so the pill would otherwise sit
+    // flush against the top of `.View__inset` — which is `overflow: auto` and
+    // would clip the top of the 4px SDS focus ring below. This inset leaves
+    // exactly enough room for the ring to draw in full.
+    margin-top: pxToRem(4px);
     background-color: var(--sds-clr-gray-01);
     border: 1px solid var(--sds-clr-gray-06);
     border-radius: pxToRem(8px);
@@ -87,16 +92,12 @@
       border-radius: pxToRem(8px);
     }
 
-    // SDS grows a 4px ring on focus (`--Select-box-shadow-size: 0.25rem`),
-    // which read as a heavy halo around the whole pill. Halved rather than
-    // removed: the <select> itself is `opacity: 0`, so this ring is the only
-    // thing marking the pill as focused, and dropping it would leave keyboard
-    // users with no focus indicator at all. Note Chromium matches
-    // :focus-visible on <select> for mouse clicks too, so this shows on click
-    // as well — there is no CSS-only way to make it keyboard-exclusive.
-    .Select__container:has(select:focus-visible) {
-      --Select-box-shadow-size: #{pxToRem(2px)};
-    }
+    // SDS's own 4px focus ring (`--Select-box-shadow-size: 0.25rem` on
+    // `.Select__container:has(select:focus-visible)`) is left as-is. It's the
+    // only focus affordance the pill has, since the <select> that actually
+    // takes focus is `opacity: 0`. What made it look wrong before was the top
+    // of the ring being clipped by the scroll container, not its size — see
+    // the `margin-top` on the pill above.
 
     // SDS renders its own decorative chevron inside the select container;
     // redundant with the explicit Icon.ChevronDown already in the pill, and
