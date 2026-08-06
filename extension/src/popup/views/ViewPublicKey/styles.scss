@@ -94,12 +94,5 @@
       line-height: pxToRem(20px);
       text-align: center;
     }
-
-    // No font-weight override here on purpose: SDS Button already ships
-    // semi-bold/600, which is what the design calls for. A lighter 500 and a
-    // raw 550 were both tried; 550 measured identical to 600 because SDS's
-    // --sds-ff-base ("Inter") is never loaded in this repo, so text falls back
-    // to the system sans-serif and there is no face between medium and bold.
-    // Loading Inter is the real fix — see the PR description.
   }
 }

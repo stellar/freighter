@@ -83,18 +83,10 @@ export const ViewPublicKey = () => {
 
   const { publicKey } = state.data.account;
 
-  // Deliberately NOT a stable id. sonner's Observer.create() checks
-  // `alreadyExists = this.toasts.find(t => t.id === id)` and, when true, takes
-  // an "update" path instead of mounting a new toast - but Observer.dismiss(id)
-  // (fired on a manual swipe) only adds the id to `dismissedToasts`, it never
-  // removes the entry from `this.toasts`. Reusing a stable id here made that
-  // stale-update path reachable and a real user hit a case where, after
-  // swiping a toast away, tapping "Copy" again showed nothing. Instead we keep
-  // the last-shown toast's id in a ref (declared above, before the early
-  // returns) and explicitly dismiss it before creating a new one with a
-  // fresh, auto-generated id, so the "replace instead of stack" behavior is
-  // preserved without ever reusing an id and risking that path. Do not
-  // "simplify" this back to a shared constant id.
+  // Dismiss-then-create with a fresh id, so repeated taps replace rather than
+  // stack. Do NOT switch to a stable id: sonner's create() updates an existing
+  // entry, but dismiss() never removes it, so after a swipe the update targets
+  // an unmounted toast and nothing renders.
   const showToast = (render: (id: string | number) => React.ReactElement) => {
     if (lastToastIdRef.current !== null) {
       toast.dismiss(lastToastIdRef.current);
