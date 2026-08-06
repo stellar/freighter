@@ -1,12 +1,9 @@
 import { useReducer } from "react";
-import { useDispatch, useSelector } from "react-redux";
 
 import { initialState, isError, reducer } from "helpers/request";
 import { ApiTokenPrices, AssetIcons } from "@shared/api/types";
 import { ManageAssetCurrency } from "popup/components/manageAssets/ManageAssetRows";
 import { isContractId } from "popup/helpers/soroban";
-import { getIconFromTokenLists } from "@shared/api/helpers/getIconFromTokenList";
-import { getCombinedAssetListData } from "@shared/api/helpers/token-list";
 import { AccountBalances, useGetBalances } from "helpers/hooks/useGetBalances";
 import {
   AssetDomains,
@@ -18,9 +15,6 @@ import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import { isMainnet } from "helpers/stellar";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { useGetTokenPrices } from "helpers/hooks/useGetTokenPrices";
-import { settingsSelector } from "popup/ducks/settings";
-import { tokensListsSelector, saveTokenLists } from "popup/ducks/cache";
-import { AppDispatch, store } from "popup/App";
 
 export interface ResolvedSwapAmountData {
   type: AppDataType.RESOLVED;
@@ -49,8 +43,6 @@ function useGetSwapAmountData(
     reducer<SwapAmountData, unknown>,
     initialState,
   );
-  const reduxDispatch = useDispatch<AppDispatch>();
-  const { assetsLists } = useSelector(settingsSelector);
   const { fetchData: fetchBalances } = useGetBalances({
     showHidden: true,
     includeIcons: false,
@@ -110,40 +102,6 @@ function useGetSwapAmountData(
         tokenPrices = fetchedTokenPrices.tokenPrices || {};
       }
 
-      // The balances icon map only carries held-token logos, and a destination
-      // that didn't come through the picker (the network USDC default or a
-      // destination_asset deep link) has no picker-captured iconUrl either.
-      // Resolve it from the same token lists the picker uses so both paths
-      // render the same logo.
-      let icons = userDomains.balances.icons || {};
-      const [dstCode, dstIssuer] = (destinationAsset || "").split(":");
-      if (destinationAsset && dstIssuer && !icons[destinationAsset]) {
-        try {
-          const cachedLists = tokensListsSelector(store.getState());
-          const assetsListsData = cachedLists?.length
-            ? cachedLists
-            : await getCombinedAssetListData({
-                networkDetails: userDomains.networkDetails,
-                assetsLists,
-                cachedAssetLists: [],
-              });
-          if (!cachedLists?.length && assetsListsData.length > 0) {
-            reduxDispatch(saveTokenLists(assetsListsData));
-          }
-          const { icon } = await getIconFromTokenLists({
-            issuerId: isContractId(dstIssuer) ? undefined : dstIssuer,
-            contractId: isContractId(dstIssuer) ? dstIssuer : undefined,
-            code: dstCode,
-            assetsListsData,
-          });
-          if (icon) {
-            icons = { ...icons, [destinationAsset]: icon };
-          }
-        } catch {
-          // The logo is cosmetic — never fail the swap screen over it.
-        }
-      }
-
       const payload = {
         type: AppDataType.RESOLVED,
         applicationState: userDomains.applicationState,
@@ -151,7 +109,7 @@ function useGetSwapAmountData(
         networkDetails: userDomains.networkDetails,
         userBalances: userDomains.balances,
         destinationBalances,
-        icons,
+        icons: userDomains.balances.icons || {},
         domains: userDomains.domains,
         tokenPrices,
       } as ResolvedSwapAmountData;

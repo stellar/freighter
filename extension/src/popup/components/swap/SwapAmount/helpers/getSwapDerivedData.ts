@@ -124,7 +124,9 @@ export const getSwapDerivedData = ({
   const availableBalance = deductNewTrustlineReserve({
     spendable: baseAvailableBalance,
     sourceIsXlm: asset === "native",
-    requiresTrustline: destinationTokenDetails?.requiresTrustline ?? false,
+    // Derived from holdings (not the pick-time snapshot) so defaulted and
+    // deep-linked destinations reserve the trustline bump too.
+    requiresTrustline: destinationIsNonHeld,
   });
   const displayTotal = `${formatAmount(availableBalance)}`;
 
