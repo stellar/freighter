@@ -4,10 +4,8 @@
   display: flex;
   flex-direction: column;
   gap: pxToRem(16px);
-  // Lets `&__wrapper` below stretch to fill the remaining popup height, so
-  // "Disconnect all" pins to the bottom (frame: footer fills remaining
-  // height, content bottom-aligned) instead of trailing right after the
-  // list. Harmless for the empty state, which doesn't opt into the stretch.
+  // Lets `&__wrapper` fill the leftover height so "Disconnect all" pins to
+  // the bottom instead of trailing the list.
   height: 100%;
 
   &__network-pill {
@@ -16,10 +14,8 @@
     align-items: center;
     gap: pxToRem(4px);
     width: fit-content;
-    // The view renders with `hasNoTopPadding`, so the pill would otherwise sit
-    // flush against the top of `.View__inset` — which is `overflow: auto` and
-    // would clip the top of the 4px SDS focus ring below. This inset leaves
-    // exactly enough room for the ring to draw in full.
+    // The view has no top padding, so without this the pill sits flush against
+    // `.View__inset` (`overflow: auto`) and its 4px focus ring gets clipped.
     margin-top: pxToRem(4px);
     background-color: var(--sds-clr-gray-01);
     border: 1px solid var(--sds-clr-gray-06);
@@ -27,16 +23,14 @@
     padding: pxToRem(8px) pxToRem(12px);
     cursor: pointer;
 
-    // NetworkIcon carries its own margin-right for other call sites; zero it
-    // here so the pill's own 4px gap is the only spacing between icon/label.
+    // NetworkIcon ships a margin-right for other call sites; the pill uses
+    // its own gap instead.
     .NetworkIcon {
       margin-right: 0;
 
-      // The frame draws the globe at the same visual weight as the semi-bold
-      // label beside it. SDS ships the glyph at `stroke-width: 2` in a 24
-      // viewBox, which thins out to ~1.3px once scaled down to the 16px the
-      // pill renders it at, so thicken the stroke to compensate. Scoped to
-      // the pill — NetworkIcon's other call sites keep the default weight.
+      // SDS's stroke-width of 2 in a 24 viewBox thins to ~1.3px at the 16px
+      // rendered here, too light next to the semi-bold label. Scoped to the
+      // pill so other NetworkIcon call sites keep the default.
       svg {
         stroke-width: 2.5;
       }
@@ -57,51 +51,30 @@
       flex-shrink: 0;
     }
 
-    // The native select stays in the DOM for keyboard and screen-reader
-    // support, stretched over the whole pill but visually transparent. The
-    // label and chevron beside it are what the user actually sees.
+    // The real <select> is stretched invisibly over the pill; the icon, label
+    // and chevron beside it are what the user sees.
     //
-    // SDS's <Select> spreads `className`/`data-testid`/`onChange` straight
-    // onto the <select> element itself, not onto a wrapper div (see
-    // node_modules/@stellar/design-system/build/components/Select/index.js)
-    // — so `&__select` below IS the <select>. Its own `.Select__container`
-    // ancestor is `position: relative`, which would hijack `position:
-    // absolute; inset: 0` on the select and collapse its hitbox to that
-    // inner wrapper's shrink-to-fit size (confirmed by measurement: ~24x12px
-    // pinned to the decorative chevron SDS renders there) instead of the
-    // pill. Stretch the outer `.Select` div instead — reached structurally,
-    // since it does not carry our className either — and let a plain 100%
-    // cascade the resulting definite size down to the select.
+    // Stretching the outer `.Select` rather than the <select> itself: SDS puts
+    // our className on the <select>, whose `.Select__container` ancestor is
+    // `position: relative` and would trap `inset: 0`, shrinking the hitbox to
+    // that wrapper instead of the pill.
     .Select {
       position: absolute;
       inset: 0;
     }
 
-    // `.Select__container` paints its own opaque background/border (SDS
-    // default: gray-01 fill, gray-06 border) and, now that it's stretched
-    // to cover the whole pill, would otherwise sit on top of and hide the
-    // NetworkIcon/label/chevron painted earlier in the pill's DOM order.
+    // Stretched over the pill, the container's own fill and border would
+    // otherwise paint over the icon/label/chevron beneath it.
     .Select__container {
       width: 100%;
       height: 100%;
       background-color: transparent;
       border: none;
-      // The container is stretched over the pill, so its own 4px default
-      // corner would draw the focus ring below with squarer corners than the
-      // 8px pill it traces.
+      // Match the pill, so the focus ring traces its corners and not SDS's 4px.
       border-radius: pxToRem(8px);
     }
 
-    // SDS's own 4px focus ring (`--Select-box-shadow-size: 0.25rem` on
-    // `.Select__container:has(select:focus-visible)`) is left as-is. It's the
-    // only focus affordance the pill has, since the <select> that actually
-    // takes focus is `opacity: 0`. What made it look wrong before was the top
-    // of the ring being clipped by the scroll container, not its size — see
-    // the `margin-top` on the pill above.
-
-    // SDS renders its own decorative chevron inside the select container;
-    // redundant with the explicit Icon.ChevronDown already in the pill, and
-    // would otherwise be visible now that the container spans the pill.
+    // Redundant with the Icon.ChevronDown already in the pill.
     .Select__icon {
       display: none;
     }
@@ -110,6 +83,8 @@
       display: block;
       width: 100%;
       height: 100%;
+      // Invisible, but still the focused element — which is why SDS's focus
+      // ring is left at full strength as the pill's only focus affordance.
       opacity: 0;
       cursor: pointer;
     }
@@ -141,10 +116,8 @@
       border-bottom: 1px solid var(--sds-clr-gray-06);
     }
 
-    // RemoveButton renders an SDS `Button variant="tertiary"` whose default
-    // treatment is a bordered gray pill. The frame just wants a bare red
-    // minus-circle glyph, so strip the button chrome and force the icon
-    // color the row diagram calls for.
+    // RemoveButton is an SDS tertiary Button (a bordered gray pill); the frame
+    // wants a bare red minus-circle, so strip the chrome.
     .Button {
       flex: 0 0 auto;
       color: var(--sds-clr-red-09);
@@ -192,12 +165,6 @@
     }
   }
 
-  // The frame's outlined red pill — red-01 background / red-06 border /
-  // red-11 text, 14px semi-bold, pill radius, full width — is exactly what
-  // SDS gives us for `variant="error" size="lg" isRounded isFullWidth`, so
-  // there is nothing left to override here. (`variant="error"` adds no
-  // leading icon; SDS only renders one when the `icon` prop is set.)
-
   &__empty {
     display: flex;
     flex-direction: column;
@@ -217,9 +184,7 @@
       color: var(--sds-clr-gray-09);
       margin-bottom: pxToRem(8px);
 
-      // Without an explicit size the glyph lands at ~16px inside the 48px
-      // circle, well short of the frame's 20.571px icon (48px badge less its
-      // 13.714px padding on each side).
+      // Unsized, the glyph lands at ~16px — short of the frame's 20.571px.
       svg {
         width: pxToRem(20.571px);
         height: pxToRem(20.571px);
@@ -238,8 +203,7 @@
       font-size: pxToRem(14px);
       font-weight: var(--sds-fw-regular);
       line-height: pxToRem(20px);
-      // Plus the column's own 8px gap, this makes the frame's 24px gap
-      // between the subtext and the "Go to Discover" button.
+      // With the column's 8px gap, makes the frame's 24px above the button.
       margin-bottom: pxToRem(16px);
     }
   }

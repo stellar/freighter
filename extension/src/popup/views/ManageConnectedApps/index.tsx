@@ -47,10 +47,8 @@ export const ManageConnectedApps = () => {
     toast.custom(() => <Notification variant={variant} title={title} />);
   };
 
-  // `saveAllowList` is a createAsyncThunk that swallows failures into
-  // `rejectWithValue`, so awaiting the dispatch resolves either way and the
-  // returned action is the only signal of what actually happened. Checking
-  // `fulfilled.match` keeps us from reporting a disconnect that never landed.
+  // `saveAllowList` rejects into `rejectWithValue`, so awaiting the dispatch
+  // resolves either way — the returned action is the only success signal.
   const handleRemove = async (domainToRemove: string) => {
     const res = await dispatch(
       saveAllowList({
@@ -84,8 +82,7 @@ export const ManageConnectedApps = () => {
     }
     await fetchData(false);
 
-    // A partial failure leaves apps still connected, so it must not report
-    // the batch as done.
+    // A partial failure leaves apps connected, so don't report the batch done.
     if (results.every((res) => saveAllowList.fulfilled.match(res))) {
       notify("success", t("All apps disconnected"));
     } else {
@@ -179,11 +176,8 @@ export const ManageConnectedApps = () => {
               {selectedNetworkName}
             </span>
             <Icon.ChevronDown className="ManageConnectedApps__network-pill__chevron" />
-            {/*
-              The select is transparent and its visible "Main Net" label is a
-              sibling, not a <label>, so it needs its own accessible name for
-              screen readers to identify the control.
-            */}
+            {/* The visible label is a sibling, not a <label>, so the select
+                needs its own accessible name. */}
             <Select
               data-testid="manage-connected-apps-select"
               aria-label={t("Select network")}
@@ -222,14 +216,11 @@ export const ManageConnectedApps = () => {
                 )}
               </div>
 
-              {/*
-                No `className` here on purpose: SDS spreads its props *after*
-                its own `className`, so any className we pass replaces the
-                whole `Button Button--error Button--lg ...` list rather than
-                adding to it — which collapsed this button to an unstyled
-                18px block. Styling hooks off `.Button` via the wrapper
-                instead (same approach as the row's RemoveButton).
-              */}
+              {/* No `className` on purpose: SDS spreads props after its own
+                  className, so passing one replaces `Button Button--error ...`
+                  rather than adding to it, leaving an unstyled block. These
+                  props alone give the frame's red pill; style via `.Button`
+                  from the wrapper if it ever needs overriding. */}
               <Button
                 size="lg"
                 variant="error"
