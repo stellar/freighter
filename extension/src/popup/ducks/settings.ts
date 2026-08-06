@@ -35,6 +35,7 @@ import {
 
 import {
   AllowList,
+  ErrorMessage,
   Settings,
   IndexerSettings,
   SettingsState,
@@ -45,10 +46,6 @@ import { publicKeySelector } from "popup/ducks/accountServices";
 import { AppState } from "popup/App";
 
 import { isMainnet } from "helpers/stellar";
-
-interface ErrorMessage {
-  errorMessage: string;
-}
 
 const settingsInitialState: Settings = {
   allowList: DEFAULT_ALLOW_LIST,

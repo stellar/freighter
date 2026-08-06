@@ -450,6 +450,50 @@ describe("mapV2Transaction", () => {
 });
 
 /**
+ * Amounts arrive as smallest-unit integers with no scale, so the resolved token's
+ * decimals are the only thing that makes them meaningful — and a token whose
+ * scale we could not resolve must not be rendered as though it were 7.
+ */
+describe("token scale", () => {
+  const withUsdc = (token: ResolvedToken): MapV2Context => ({
+    ...ctx,
+    tokens: new Map([...tokens, [MOCK_USDC_SAC, token]]),
+  });
+
+  it("scales an amount by the token's own decimals", () => {
+    const raw = { ...token("USDC", MOCK_USDC_SAC), decimals: 18 };
+    const entry = mapV2Transaction(
+      mockTokenTransferSent,
+      withUsdc(raw as ResolvedToken),
+    );
+
+    // 404000000 at 18 decimals, not the 40.4 that 7 decimals would give
+    expect(entry.details.balanceChanges[0].amount).toBe("0.000000000404");
+    expect(entry.amounts).toEqual([
+      { text: "-0.000000000404 USDC", direction: "debit" },
+    ]);
+  });
+
+  it("reports no amount when the token's scale is unknown", () => {
+    const unscaled = { ...token("USDC", MOCK_USDC_SAC), decimals: null };
+    const entry = mapV2Transaction(mockTokenTransferSent, withUsdc(unscaled));
+
+    expect(entry.details.balanceChanges[0].amount).toBeNull();
+    // em dash, not a number derived from a guessed scale
+    expect(entry.amounts).toEqual([{ text: "— USDC", direction: "debit" }]);
+  });
+
+  it("omits the swap rate when one side's scale is unknown", () => {
+    const unscaled = { ...token("USDC", MOCK_USDC_SAC), decimals: null };
+    const entry = mapV2Transaction(mockSwapClassicDex, withUsdc(unscaled));
+
+    // still recognizably a swap, just without a computable ratio
+    expect(entry.kind).toBe("swapped");
+    expect(entry.details.rate).toBeNull();
+  });
+});
+
+/**
  * The mocked app history is a real capture (see history-v2.ts). These guard the
  * wire quirks that only real data exposes — they are the reason the fixture was
  * rebuilt from a live account.

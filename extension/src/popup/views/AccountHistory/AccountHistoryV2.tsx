@@ -20,7 +20,6 @@ import { newTabHref } from "helpers/urls";
 import { reRouteOnboarding } from "popup/helpers/route";
 import { SlideupModal } from "popup/components/SlideupModal";
 
-import { AccountHistoryLegacy } from "./AccountHistoryLegacy";
 import { useGetHistoryDataV2 } from "./hooks/useGetHistoryDataV2";
 import { HistoryEntry } from "./model";
 
@@ -95,13 +94,6 @@ export const AccountHistoryV2 = () => {
         replace
       />
     );
-  }
-
-  // Unsupported network / flag resolved off at fetch time → the router served
-  // v1. Render the legacy history until the U8 Horizon adapter maps v1 into
-  // this model.
-  if (resolved?.fallbackToV1) {
-    return <AccountHistoryLegacy />;
   }
 
   if (!hasError && resolved) {

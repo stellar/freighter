@@ -386,62 +386,19 @@ describe("internalApi", () => {
       expect(pageTwo.pagination.has_previous).toBe(true);
     });
 
+    // Unsupported networks are custom-network territory; v2 throws rather than
+    // quietly downgrading to Horizon, and the History view shows its error
+    // state. No v1 request is made.
     it("rejects networks the v2 backend does not serve", async () => {
+      const fetchSpy = jest.spyOn(global, "fetch");
+
       await expect(
         internalApi.getAccountHistoryV2(
           "GCFIRY65OQE7DFP5KLNS2PF2LVZMUZYJX4OZIEQ36N2IQANUB5XVYOJR",
           FUTURENET_NETWORK_DETAILS,
         ),
       ).rejects.toThrow("history v2 does not support network passphrase");
-    });
-  });
-
-  describe("getAccountHistoryWithFlag", () => {
-    it("routes to v2 when the flag is on and the network is supported", async () => {
-      const result = await internalApi.getAccountHistoryWithFlag(
-        "GCFIRY65OQE7DFP5KLNS2PF2LVZMUZYJX4OZIEQ36N2IQANUB5XVYOJR",
-        MAINNET_NETWORK_DETAILS,
-        true,
-      );
-
-      expect(result.version).toBe("v2");
-      if (result.version === "v2") {
-        expect(result.page.data.length).toBeGreaterThan(0);
-      }
-    });
-
-    it("routes to v1 when the flag is off", async () => {
-      const fetchSpy = jest.spyOn(global, "fetch").mockResolvedValue({
-        ok: true,
-        json: async () => [],
-      } as unknown as Response);
-
-      const result = await internalApi.getAccountHistoryWithFlag(
-        "GCFIRY65OQE7DFP5KLNS2PF2LVZMUZYJX4OZIEQ36N2IQANUB5XVYOJR",
-        MAINNET_NETWORK_DETAILS,
-        false,
-      );
-
-      expect(result.version).toBe("v1");
-      expect(fetchSpy).toHaveBeenCalledWith(
-        expect.stringContaining("/account-history/"),
-      );
-    });
-
-    it("routes to v1 when the flag is on but the network is unsupported", async () => {
-      const fetchSpy = jest.spyOn(global, "fetch").mockResolvedValue({
-        ok: true,
-        json: async () => [],
-      } as unknown as Response);
-
-      const result = await internalApi.getAccountHistoryWithFlag(
-        "GCFIRY65OQE7DFP5KLNS2PF2LVZMUZYJX4OZIEQ36N2IQANUB5XVYOJR",
-        FUTURENET_NETWORK_DETAILS,
-        true,
-      );
-
-      expect(result.version).toBe("v1");
-      expect(fetchSpy).toHaveBeenCalled();
+      expect(fetchSpy).not.toHaveBeenCalled();
     });
   });
 

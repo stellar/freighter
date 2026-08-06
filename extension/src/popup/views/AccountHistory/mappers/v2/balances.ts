@@ -25,8 +25,11 @@ export type BalanceClassification =
       type: "swapped";
       credit: BalanceChangeRow;
       debit: BalanceChangeRow;
-      /** "1 <debit.code> ≈ <rate> <credit.code>" */
-      rate: string;
+      /**
+       * "1 <debit.code> ≈ <rate> <credit.code>"; null when either side's scale
+       * is unknown, since the ratio of unscaled amounts is meaningless
+       */
+      rate: string | null;
     }
   | { type: "multiple"; rows: BalanceChangeRow[] };
 
@@ -76,7 +79,12 @@ export const mapBalanceChanges = (
     const token = getResolvedToken(tokens, change.token_id);
     return {
       token,
-      amount: formatTokenAmount(new BigNumber(change.amount), token.decimals),
+      // an unknown scale can't be applied to a smallest-unit integer, and
+      // guessing one renders a wildly wrong number — report no amount instead
+      amount:
+        token.decimals === null
+          ? null
+          : formatTokenAmount(new BigNumber(change.amount), token.decimals),
       direction: isCredit(change) ? "credit" : "debit",
     };
   });
@@ -105,15 +113,23 @@ const classify = (rows: BalanceChangeRow[]): BalanceClassification => {
   ) {
     const credit = credits[0];
     const debit = debits[0];
-    const rate = new BigNumber(credit.amount)
-      .dividedBy(debit.amount)
-      .precision(4)
-      .toString();
+    const isRateComputable =
+      credit.amount !== null &&
+      debit.amount !== null &&
+      !new BigNumber(debit.amount).isZero();
+    const rate = isRateComputable
+      ? new BigNumber(credit.amount!)
+          .dividedBy(debit.amount!)
+          .precision(4)
+          .toString()
+      : null;
     return {
       type: "swapped",
       credit,
       debit,
-      rate: `1 ${debit.token.code} ≈ ${rate} ${credit.token.code}`,
+      rate: rate
+        ? `1 ${debit.token.code} ≈ ${rate} ${credit.token.code}`
+        : null,
     };
   }
 

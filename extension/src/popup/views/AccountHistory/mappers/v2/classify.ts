@@ -30,10 +30,17 @@ type Presentation = Pick<
   | "amounts"
 > & { title: string };
 
+/**
+ * An unknown token scale leaves the magnitude unknowable, so the row shows an em
+ * dash with the token code — the direction still colors it credit/debit.
+ */
 const signedAmount = (row: BalanceChangeRow) => ({
-  text: `${row.direction === "credit" ? "+" : "-"}${trimTrailingZeros(
-    formatAmount(row.amount),
-  )} ${row.token.code}`,
+  text:
+    row.amount === null
+      ? `— ${row.token.code}`
+      : `${row.direction === "credit" ? "+" : "-"}${trimTrailingZeros(
+          formatAmount(row.amount),
+        )} ${row.token.code}`,
   direction: row.direction,
 });
 

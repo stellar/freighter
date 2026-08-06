@@ -1,7 +1,7 @@
 /**
  * Normalized, transaction-centric history model — the single shape the
- * redesigned History UI renders from. Produced by mappers/v2 (backend v2
- * state-change payload) and mappers/horizon (custom-network fallback).
+ * redesigned History UI renders from. Produced by mappers/v2 from the backend
+ * v2 state-change payload.
  *
  * Pure data only: no ReactNode, no formatting side effects — icons are
  * described by RowIconDescriptor and rendered by HistoryRowIcon.
@@ -17,7 +17,13 @@ export interface ResolvedToken {
   /** Classic issuer (G...) when known; null for native */
   issuer: string | null;
   icon: string | null;
-  decimals: number;
+  /**
+   * null when no source could tell us the scale — never assume 7. The v2 payload
+   * reports amounts as smallest-unit integers only, so a guessed scale renders an
+   * 18-decimal SEP-41 token 10^11 times too large. Amounts derived from a null
+   * are themselves null and render as an em dash.
+   */
+  decimals: number | null;
 }
 
 /** Distinct glyphs for the account-configuration (non-asset) operation types,
@@ -56,8 +62,8 @@ export type HistoryEntryKind =
 
 export interface BalanceChangeRow {
   token: ResolvedToken;
-  /** decimal amount, unsigned (e.g. "40.4") */
-  amount: string;
+  /** decimal amount, unsigned (e.g. "40.4"); null when the token's scale is unknown */
+  amount: string | null;
   direction: "credit" | "debit";
 }
 
@@ -134,8 +140,11 @@ export type StateChangeCardData =
       kind: "allowance";
       token: ResolvedToken;
       spender: string;
-      /** decimal amount, formatted to the token's decimals */
-      amount: string;
+      /**
+       * decimal amount, formatted to the token's decimals; null when the scale
+       * is unknown
+       */
+      amount: string | null;
       expirationLedger: number;
     };
 

@@ -50,11 +50,3 @@ export type AssetType =
   | ClassicAsset
   | SorobanAsset
   | LiquidityPoolShareAsset;
-
-export interface AccountBalances {
-  balances: AssetType[];
-  isFunded: boolean | null;
-  subentryCount: number;
-  error?: { horizon: any; soroban: any };
-  icons?: { [code: string]: string };
-}

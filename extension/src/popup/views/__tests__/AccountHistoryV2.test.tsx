@@ -15,10 +15,6 @@ jest.mock("popup/views/AccountHistory/hooks/useGetHistoryDataV2", () => ({
   useGetHistoryDataV2: (...args: unknown[]) => mockUseGetHistoryDataV2(...args),
 }));
 
-jest.mock("popup/views/AccountHistory/AccountHistoryLegacy", () => ({
-  AccountHistoryLegacy: () => <div data-testid="legacy-history" />,
-}));
-
 jest.mock("popup/helpers/route", () => ({
   reRouteOnboarding: jest.fn(),
 }));
@@ -114,7 +110,6 @@ const makeEntry = (id: string, primaryText: string): HistoryEntry =>
 const reducerState = (
   overrides: Partial<{
     sections: { monthYear: string; entries: HistoryEntry[] }[];
-    fallbackToV1: boolean;
     hasNextPage: boolean;
   }> = {},
 ) => ({
@@ -125,7 +120,6 @@ const reducerState = (
     applicationState: "MNEMONIC_PHRASE_CONFIRMED",
     balances: {},
     sections: overrides.sections ?? [],
-    fallbackToV1: overrides.fallbackToV1 ?? false,
     hasNextPage: overrides.hasNextPage ?? false,
   },
   error: null,
@@ -195,13 +189,6 @@ describe("AccountHistoryV2", () => {
     mockHook(reducerState({ sections: [] }));
     renderView();
     expect(screen.getByText("No transactions to show")).toBeInTheDocument();
-  });
-
-  it("falls back to the legacy history when fallbackToV1 is set", () => {
-    mockHook(reducerState({ fallbackToV1: true }));
-    renderView();
-    expect(screen.getByTestId("legacy-history")).toBeInTheDocument();
-    expect(screen.queryByTestId("AccountHistoryV2")).toBeNull();
   });
 
   it("renders the infinite-scroll sentinel when another page exists", () => {

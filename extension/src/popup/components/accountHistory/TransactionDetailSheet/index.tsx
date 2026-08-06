@@ -85,9 +85,6 @@ export const TransactionDetailSheet = ({
     >
       <DetailHeader entry={entry} />
 
-      {/* Figma groups state changes above the balance amounts (e.g. the
-          "Added signer" rows sit on top of Sent/Received), both above the
-          Status/Fee meta card — see node 12045:41260. */}
       {entry.details.stateChangeCards.map((card, i) => (
         <StateChangeCard
           key={`${card.kind}-${i}`}

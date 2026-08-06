@@ -204,10 +204,10 @@ export const mapStateChangeCards = (
           kind: "allowance",
           token,
           spender: change.spender,
-          amount: formatTokenAmount(
-            new BigNumber(change.amount),
-            token.decimals,
-          ),
+          amount:
+            token.decimals === null
+              ? null
+              : formatTokenAmount(new BigNumber(change.amount), token.decimals),
           expirationLedger: change.expiration_ledger,
         });
         break;

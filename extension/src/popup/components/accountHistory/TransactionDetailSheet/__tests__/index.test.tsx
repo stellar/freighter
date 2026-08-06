@@ -116,6 +116,20 @@ describe("TransactionDetailSheet", () => {
     ).toHaveTextContent("Account 2");
   });
 
+  it("renders an em dash for a balance change whose token scale is unknown", () => {
+    renderSheet(
+      makeEntry("sent", {
+        balanceChanges: [
+          // amount is null when no source could resolve the token's decimals
+          { token: token("CBI7…IHRV"), amount: null, direction: "debit" },
+        ],
+      }),
+    );
+    const amount = screen.getByTestId("balance-change-amount");
+    expect(amount).toHaveTextContent("— CBI7…IHRV");
+    expect(amount).not.toHaveTextContent("NaN");
+  });
+
   it("renders a credit balance change and a From label for a receive", () => {
     renderSheet(
       makeEntry("received", {

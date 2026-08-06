@@ -384,10 +384,6 @@ export type HorizonOperation = Horizon.ServerApi.OperationRecord & {
   from?: string;
 };
 
-export interface AccountHistoryInterface {
-  operations: Array<HorizonOperation> | [];
-}
-
 export interface ErrorMessage {
   errorMessage: string;
   response?: Horizon.HorizonApi.ErrorResponseData.TransactionFailed;

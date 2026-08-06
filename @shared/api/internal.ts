@@ -1049,9 +1049,10 @@ export const getAccountHistoryV2 = async (
   { limit, cursor }: { limit?: number; cursor?: string } = {},
 ): Promise<AccountHistoryV2Response> => {
   // The v2 history endpoint only supports pubnet and testnet. Derive the
-  // network from the passphrase (mirroring getTokenPrices) so custom networks
-  // sharing a supported passphrase still resolve; callers route everything
-  // else to v1 via getAccountHistoryWithFlag before getting here.
+  // network from the passphrase, mirroring getTokenPrices. Anything else throws
+  // rather than silently downgrading to Horizon: the History view routes custom
+  // networks to the legacy (v1) view before getting here, so reaching this with
+  // an unserved passphrase is a bug, not a fallback path.
   const historyNetwork =
     PASSPHRASE_TO_INDEXER_NETWORK[networkDetails.networkPassphrase];
   if (!historyNetwork) {
@@ -1088,36 +1089,6 @@ export const getAccountHistoryV2 = async (
     throw new Error(_err);
   }
   return parsed;
-};
-
-export type AccountHistoryV1V2 =
-  | { version: "v1"; operations: HorizonOperation[] }
-  | { version: "v2"; page: AccountHistoryV2Response };
-
-/**
- * Routes between the v1 and v2 history APIs. Callers pass the
- * `use_history_v2` feature flag (read via historyV2Selector at fetch time,
- * mirroring getTokenPrices). Custom networks and passphrases the v2 backend
- * doesn't serve always fall back to v1 regardless of the flag.
- */
-export const getAccountHistoryWithFlag = async (
-  publicKey: string,
-  networkDetails: NetworkDetails,
-  useV2 = false,
-  params: { limit?: number; cursor?: string } = {},
-): Promise<AccountHistoryV1V2> => {
-  const historyNetwork =
-    PASSPHRASE_TO_INDEXER_NETWORK[networkDetails.networkPassphrase];
-  if (useV2 && historyNetwork) {
-    return {
-      version: "v2",
-      page: await getAccountHistoryV2(publicKey, networkDetails, params),
-    };
-  }
-  return {
-    version: "v1",
-    operations: await getAccountHistory(publicKey, networkDetails),
-  };
 };
 
 export const getAccountBalances = async (

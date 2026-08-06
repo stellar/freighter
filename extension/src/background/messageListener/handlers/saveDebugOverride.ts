@@ -1,10 +1,7 @@
+import { SaveBlockaidDebugOverrideMessage } from "@shared/api/types/message-request";
 import { DataStorageAccess } from "background/helpers/dataStorageAccess";
 import { OVERRIDDEN_BLOCKAID_RESPONSE_ID } from "constants/localStorageTypes";
 import { isDev } from "@shared/helpers/dev";
-
-export interface SaveBlockaidDebugOverrideMessage {
-  overriddenBlockaidResponse: string | null;
-}
 
 export const saveBlockaidOverrideState = async ({
   request,

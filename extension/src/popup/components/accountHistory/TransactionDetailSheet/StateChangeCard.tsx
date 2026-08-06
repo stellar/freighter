@@ -316,7 +316,7 @@ const CardBody = ({
             />
           </Row>
           <Row label={t("Amount")}>
-            {card.amount} {card.token.code}
+            {card.amount ?? "—"} {card.token.code}
           </Row>
           <Row label={t("Expires at ledger")}>{card.expirationLedger}</Row>
         </>

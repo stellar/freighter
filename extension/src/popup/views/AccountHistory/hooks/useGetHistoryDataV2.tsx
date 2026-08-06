@@ -6,18 +6,18 @@
  * payload to the normalized HistoryEntry model, filters it, and groups it
  * into month sections. fetchNextPage appends subsequent pages.
  *
- * The use_history_v2 flag is read from the store at fetch time (mirroring
- * useGetTokenPrices) so a freshly resolved Amplitude flag isn't missed by a
- * render-captured value. When the router serves v1 (flag off at fetch time or
- * an unsupported network), the Horizon adapter maps the legacy payload into
- * the same model so the redesigned UI can still render it.
+ * This hook is v2-only. The History shell (views/AccountHistory/index.tsx)
+ * decides between this view and the legacy one — on the use_history_v2 flag,
+ * and on the network, since the v2 backend doesn't index custom networks. There
+ * is no fallback to the v1 API from here: a failed v2 fetch surfaces as the
+ * view's error state.
  */
 
 import { useReducer, useRef, useState } from "react";
-import { useSelector, useStore } from "react-redux";
+import { useSelector } from "react-redux";
 import { captureException } from "@sentry/browser";
 
-import { getAccountHistoryWithFlag } from "@shared/api/internal";
+import { getAccountHistoryV2 } from "@shared/api/internal";
 import { V2AccountTransaction } from "@shared/api/types/backend-api";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
@@ -29,8 +29,6 @@ import {
   useGetAppData,
 } from "helpers/hooks/useGetAppData";
 import { isMainnet } from "helpers/stellar";
-import { AppState } from "popup/App";
-import { historyV2Selector } from "popup/ducks/remoteConfig";
 import { tokensListsSelector } from "popup/ducks/cache";
 import { getMonthYearKey } from "popup/helpers/date";
 import { buildTokenContext } from "popup/helpers/history/tokenResolver";
@@ -41,7 +39,6 @@ import {
   collectTokenIds,
   mapV2Transaction,
 } from "popup/views/AccountHistory/mappers/v2";
-import { mapHorizonOperations } from "popup/views/AccountHistory/mappers/horizon";
 
 export const HISTORY_V2_PAGE_SIZE = 25;
 
@@ -57,8 +54,6 @@ export interface ResolvedHistoryV2 {
   applicationState: APPLICATION_STATE;
   balances: AccountBalances;
   sections: HistoryEntrySection[];
-  /** true only if v1 mapping cannot render through the redesigned UI */
-  fallbackToV1: boolean;
   hasNextPage: boolean;
 }
 
@@ -96,7 +91,6 @@ export function useGetHistoryDataV2({
     reducer<HistoryDataV2, unknown>,
     initialState,
   );
-  const store = useStore<AppState>();
   const { fetchData: fetchAppData } = useGetAppData();
   const { fetchData: fetchBalances } = useGetBalances({
     showHidden: false,
@@ -119,6 +113,7 @@ export function useGetHistoryDataV2({
     const tokens = await buildTokenContext({
       tokenIds: collectTokenIds(transactions),
       networkDetails: target.networkDetails,
+      publicKey: target.publicKey,
       balances: target.balances,
       assetsListsData: cachedTokenLists,
     });
@@ -134,17 +129,13 @@ export function useGetHistoryDataV2({
 
   const resolvedPayload = (
     target: FetchTarget,
-    {
-      fallbackToV1,
-      hasNextPage,
-    }: { fallbackToV1: boolean; hasNextPage: boolean },
+    { hasNextPage }: { hasNextPage: boolean },
   ): ResolvedHistoryV2 => ({
     type: AppDataType.RESOLVED,
     publicKey: target.publicKey,
     applicationState: target.applicationState,
     balances: target.balances,
     sections: groupEntriesByMonth(entriesRef.current),
-    fallbackToV1,
     hasNextPage,
   });
 
@@ -180,43 +171,15 @@ export function useGetHistoryDataV2({
       };
       targetRef.current = target;
 
-      // Read the flag from the store at call time (not a render-captured
-      // value) so a freshly resolved Amplitude flag isn't missed.
-      const useV2 = historyV2Selector(store.getState());
-      const result = await getAccountHistoryWithFlag(
-        publicKey,
-        networkDetails,
-        useV2,
-        { limit: pageSize },
-      );
+      const page = await getAccountHistoryV2(publicKey, networkDetails, {
+        limit: pageSize,
+      });
 
-      let payload: ResolvedHistoryV2;
-      if (result.version === "v1") {
-        const nativeTokenId = getNativeContractDetails(networkDetails).contract;
-        const entries = await mapHorizonOperations({
-          operations: result.operations,
-          publicKey,
-          networkDetails,
-          balances: balancesResult,
-          assetsListsData: cachedTokenLists,
-        });
-        entriesRef.current = filterHistoryEntries(entries, {
-          isHideDustEnabled,
-          nativeTokenId,
-        });
-        cursorRef.current = null;
-        payload = resolvedPayload(target, {
-          fallbackToV1: false,
-          hasNextPage: false,
-        });
-      } else {
-        entriesRef.current = await mapPage(result.page.data, target);
-        cursorRef.current = result.page.pagination.next_cursor;
-        payload = resolvedPayload(target, {
-          fallbackToV1: false,
-          hasNextPage: result.page.pagination.has_next,
-        });
-      }
+      entriesRef.current = await mapPage(page.data, target);
+      cursorRef.current = page.pagination.next_cursor;
+      const payload = resolvedPayload(target, {
+        hasNextPage: page.pagination.has_next,
+      });
 
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });
       return payload;
@@ -233,28 +196,21 @@ export function useGetHistoryDataV2({
     }
     setIsLoadingMore(true);
     try {
-      const useV2 = historyV2Selector(store.getState());
-      const result = await getAccountHistoryWithFlag(
+      const page = await getAccountHistoryV2(
         target.publicKey,
         target.networkDetails,
-        useV2,
         { limit: pageSize, cursor: cursorRef.current },
       );
-      if (result.version !== "v2") {
-        cursorRef.current = null;
-        return;
-      }
 
       entriesRef.current = [
         ...entriesRef.current,
-        ...(await mapPage(result.page.data, target)),
+        ...(await mapPage(page.data, target)),
       ];
-      cursorRef.current = result.page.pagination.next_cursor;
+      cursorRef.current = page.pagination.next_cursor;
       dispatch({
         type: "FETCH_DATA_SUCCESS",
         payload: resolvedPayload(target, {
-          fallbackToV1: false,
-          hasNextPage: result.page.pagination.has_next,
+          hasNextPage: page.pagination.has_next,
         }),
       });
     } catch (error) {

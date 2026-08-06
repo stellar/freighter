@@ -9,10 +9,7 @@ import {
   mockHistoryTransactions,
   mockFetchAccountHistoryV2,
 } from "@shared/api/fixtures/history-v2";
-import {
-  MOCK_ACCOUNT_2,
-  mockPaymentReceived,
-} from "@shared/api/fixtures/history-v2-scenarios";
+import { mockPaymentReceived } from "@shared/api/fixtures/history-v2-scenarios";
 import { V2AccountTransaction } from "@shared/api/types/backend-api";
 import { TESTNET_NETWORK_DETAILS } from "@shared/constants/stellar";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
@@ -162,14 +159,11 @@ beforeEach(() => {
   mockFetchAppData.mockResolvedValue(RESOLVED_APP_DATA);
   mockFetchBalances.mockResolvedValue(RESOLVED_BALANCES);
   jest
-    .spyOn(ApiInternal, "getAccountHistoryWithFlag")
-    .mockImplementation(
-      async (_publicKey, _networkDetails, _useV2, params = {}) => ({
-        version: "v2",
-        page: await mockFetchAccountHistoryV2({
-          limit: params.limit,
-          cursor: params.cursor,
-        }),
+    .spyOn(ApiInternal, "getAccountHistoryV2")
+    .mockImplementation(async (_publicKey, _networkDetails, params = {}) =>
+      mockFetchAccountHistoryV2({
+        limit: params.limit,
+        cursor: params.cursor,
       }),
     );
 });
@@ -182,7 +176,7 @@ afterEach(() => {
 // ── Tests ────────────────────────────────────────────────────────────────────
 
 describe("useGetHistoryDataV2 — initial fetch", () => {
-  it("resolves the first page into month-grouped, non-fallback sections", async () => {
+  it("resolves the first page into month-grouped sections", async () => {
     const { result } = renderV2Hook({ pageSize: 10 });
 
     await act(async () => {
@@ -192,7 +186,6 @@ describe("useGetHistoryDataV2 — initial fetch", () => {
     expect(result.current.state.state).toBe<RequestState>(RequestState.SUCCESS);
     const data = asResolved(result.current.state.data);
     expect(data.type).toBe(AppDataType.RESOLVED);
-    expect(data.fallbackToV1).toBe(false);
     expect(data.publicKey).toBe(MOCK_SELF);
     expect(countEntries(data)).toBe(10);
     expect(data.hasNextPage).toBe(true);
@@ -204,15 +197,15 @@ describe("useGetHistoryDataV2 — initial fetch", () => {
     });
   });
 
-  it("reads use_history_v2 from the store and forwards it to the router", async () => {
-    const spy = jest.spyOn(ApiInternal, "getAccountHistoryWithFlag");
+  it("requests the v2 endpoint directly with the page size", async () => {
+    const spy = jest.spyOn(ApiInternal, "getAccountHistoryV2");
     const { result } = renderV2Hook({ pageSize: 10 });
 
     await act(async () => {
       await result.current.fetchData();
     });
 
-    expect(spy).toHaveBeenCalledWith(MOCK_SELF, TESTNET_NETWORK_DETAILS, true, {
+    expect(spy).toHaveBeenCalledWith(MOCK_SELF, TESTNET_NETWORK_DETAILS, {
       limit: 10,
     });
   });
@@ -258,7 +251,7 @@ describe("useGetHistoryDataV2 — pagination", () => {
   });
 
   it("is a no-op when there is no next cursor", async () => {
-    const spy = jest.spyOn(ApiInternal, "getAccountHistoryWithFlag");
+    const spy = jest.spyOn(ApiInternal, "getAccountHistoryV2");
     const { result } = renderV2Hook({ pageSize: 100 });
 
     await act(async () => {
@@ -269,7 +262,7 @@ describe("useGetHistoryDataV2 — pagination", () => {
     await act(async () => {
       await result.current.fetchNextPage();
     });
-    // no cursor after a single full page → the router isn't hit again
+    // no cursor after a single full page → the endpoint isn't hit again
     expect(spy).toHaveBeenCalledTimes(1);
   });
 
@@ -282,7 +275,7 @@ describe("useGetHistoryDataV2 — pagination", () => {
     const before = countEntries(result.current.state.data);
 
     jest
-      .spyOn(ApiInternal, "getAccountHistoryWithFlag")
+      .spyOn(ApiInternal, "getAccountHistoryV2")
       .mockRejectedValueOnce(new Error("network"));
 
     await act(async () => {
@@ -296,21 +289,18 @@ describe("useGetHistoryDataV2 — pagination", () => {
 
 describe("useGetHistoryDataV2 — dust filter", () => {
   const pageWithDust = async () => ({
-    version: "v2" as const,
-    page: {
-      data: [nativeDustTx, mockPaymentReceived],
-      pagination: {
-        next_cursor: null,
-        prev_cursor: null,
-        has_next: false,
-        has_previous: false,
-      },
+    data: [nativeDustTx, mockPaymentReceived],
+    pagination: {
+      next_cursor: null,
+      prev_cursor: null,
+      has_next: false,
+      has_previous: false,
     },
   });
 
   it("keeps native dust when hide-dust is off", async () => {
     jest
-      .spyOn(ApiInternal, "getAccountHistoryWithFlag")
+      .spyOn(ApiInternal, "getAccountHistoryV2")
       .mockImplementation(pageWithDust);
     const { result } = renderV2Hook({ isHideDustEnabled: false });
 
@@ -323,7 +313,7 @@ describe("useGetHistoryDataV2 — dust filter", () => {
 
   it("removes native dust when hide-dust is on", async () => {
     jest
-      .spyOn(ApiInternal, "getAccountHistoryWithFlag")
+      .spyOn(ApiInternal, "getAccountHistoryV2")
       .mockImplementation(pageWithDust);
     const { result } = renderV2Hook({ isHideDustEnabled: true });
 
@@ -335,74 +325,9 @@ describe("useGetHistoryDataV2 — dust filter", () => {
   });
 });
 
-describe("useGetHistoryDataV2 — v1 fallback & routing", () => {
-  it("maps v1 router payloads into redesigned history sections", async () => {
-    jest.spyOn(ApiInternal, "getAccountHistoryWithFlag").mockResolvedValue({
-      version: "v1",
-      operations: [
-        {
-          account: MOCK_SELF,
-          amount: "2.0000000",
-          asset_type: "native",
-          created_at: "2024-05-01T00:00:00Z",
-          from: MOCK_ACCOUNT_2,
-          id: "v1-op",
-          paging_token: "v1-op",
-          source_account: MOCK_ACCOUNT_2,
-          to: MOCK_SELF,
-          transaction_hash: "v1-tx",
-          transaction_successful: true,
-          type: "payment",
-          type_i: 1,
-          transaction_attr: {
-            fee_charged: "100",
-            hash: "v1-tx",
-            ledger: 123,
-            operation_count: 1,
-          },
-        } as any,
-      ],
-    });
-    const { result } = renderV2Hook();
-
-    await act(async () => {
-      await result.current.fetchData();
-    });
-
-    const data = asResolved(result.current.state.data);
-    expect(data.fallbackToV1).toBe(false);
-    expect(data.hasNextPage).toBe(false);
-    expect(countEntries(data)).toBe(1);
-    expect(data.sections[0].entries[0]).toEqual(
-      expect.objectContaining({
-        id: "v1-tx",
-        kind: "received",
-        primaryText: "XLM",
-      }),
-    );
-    expect(data.sections[0].entries[0].details.counterparty).toBe(
-      MOCK_ACCOUNT_2,
-    );
-  });
-
-  it("keeps redesigned mode with empty sections when v1 returns no operations", async () => {
-    jest
-      .spyOn(ApiInternal, "getAccountHistoryWithFlag")
-      .mockResolvedValue({ version: "v1", operations: [] });
-    const { result } = renderV2Hook();
-
-    await act(async () => {
-      await result.current.fetchData();
-    });
-
-    const data = asResolved(result.current.state.data);
-    expect(data.fallbackToV1).toBe(false);
-    expect(data.sections).toEqual([]);
-    expect(data.hasNextPage).toBe(false);
-  });
-
+describe("useGetHistoryDataV2 — routing", () => {
   it("passes through a re-route without fetching history", async () => {
-    const spy = jest.spyOn(ApiInternal, "getAccountHistoryWithFlag");
+    const spy = jest.spyOn(ApiInternal, "getAccountHistoryV2");
     mockFetchAppData.mockResolvedValue({
       type: AppDataType.REROUTE,
       routeTarget: ROUTES.unlockAccount,
@@ -418,10 +343,13 @@ describe("useGetHistoryDataV2 — v1 fallback & routing", () => {
     expect(spy).not.toHaveBeenCalled();
   });
 
-  it("surfaces an error state when the history fetch rejects", async () => {
+  // use_history_v2 is the only switch between v1 and v2, so a failed v2 fetch
+  // must surface as an error rather than quietly falling back to Horizon.
+  it("surfaces an error state without falling back to v1 when the fetch rejects", async () => {
     jest
-      .spyOn(ApiInternal, "getAccountHistoryWithFlag")
+      .spyOn(ApiInternal, "getAccountHistoryV2")
       .mockRejectedValue(new Error("boom"));
+    const v1Spy = jest.spyOn(ApiInternal, "getAccountHistory");
     const { result } = renderV2Hook();
 
     await act(async () => {
@@ -431,5 +359,6 @@ describe("useGetHistoryDataV2 — v1 fallback & routing", () => {
     await waitFor(() =>
       expect(result.current.state.state).toBe<RequestState>(RequestState.ERROR),
     );
+    expect(v1Spy).not.toHaveBeenCalled();
   });
 });

@@ -28,8 +28,10 @@ const AmountRow = ({ change }: { change: BalanceChangeRow }) => {
         } TransactionDetailSheet__balance-amount--${change.direction}`}
         data-testid="balance-change-amount"
       >
-        {sign}
-        {change.amount} {change.token.code}
+        {/* an unknown token scale means an unknowable magnitude — show no
+            number rather than one derived from a guessed decimals */}
+        {change.amount === null ? "—" : `${sign}${change.amount}`}{" "}
+        {change.token.code}
       </div>
     </div>
   );

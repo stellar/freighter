@@ -86,10 +86,6 @@ const initialState: RemoteConfigState = {
   // Defaults to v2; Amplitude can flip it off to roll back to the v1
   // token-prices endpoint without a release.
   use_token_prices_v2: true,
-  // History redesign data source. Defaults off; enabled for local dev in the
-  // no-client branch of fetchFeatureFlags (see below) and by Amplitude for
-  // beta. Production flips the default once the v2 endpoint is live (see
-  // getAccountHistoryV2, still mocked).
   use_history_v2: false,
   maintenance_banner: { enabled: false, payload: undefined },
   maintenance_screen: { enabled: false, payload: undefined },

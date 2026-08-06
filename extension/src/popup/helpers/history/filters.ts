@@ -19,11 +19,18 @@ const DUST_THRESHOLD = new BigNumber(0.1);
 const isDustEntry = (
   entry: HistoryEntry,
   nativeTokenId: string | null,
-): boolean =>
-  entry.kind === "received" &&
-  entry.details.balanceChanges.length === 1 &&
-  entry.details.balanceChanges[0].token.contractId === nativeTokenId &&
-  new BigNumber(entry.details.balanceChanges[0].amount).lte(DUST_THRESHOLD);
+): boolean => {
+  if (
+    entry.kind !== "received" ||
+    entry.details.balanceChanges.length !== 1 ||
+    entry.details.balanceChanges[0].token.contractId !== nativeTokenId
+  ) {
+    return false;
+  }
+  // an amount we couldn't scale is not something we can call dust
+  const { amount } = entry.details.balanceChanges[0];
+  return amount !== null && new BigNumber(amount).lte(DUST_THRESHOLD);
+};
 
 export const filterHistoryEntries = (
   entries: HistoryEntry[],
