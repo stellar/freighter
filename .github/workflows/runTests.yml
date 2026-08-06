@@ -1,7 +1,7 @@
 name: Run Tests
 env:
-  INDEXER_URL: ${{ secrets.INDEXER_URL }}
-  INDEXER_V2_URL: ${{ secrets.INDEXER_V2_BETA_URL }}
+  INDEXER_URL: ${{ secrets.INDEXER_URL || 'http://127.0.0.1' }}
+  INDEXER_V2_URL: ${{ secrets.INDEXER_V2_BETA_URL || 'http://127.0.0.1' }}
 on: [pull_request]
 permissions:
   contents: read
