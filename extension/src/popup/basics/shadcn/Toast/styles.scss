@@ -3,3 +3,17 @@
     content: none !important;
   }
 }
+
+// sonner's toaster container has no pointer-events rule of its own, so its
+// full bounding box (width: var(--width), positioned over the popup header
+// at top-center) swallows clicks in the empty space around a toast - e.g.
+// the header's X button. Disable pointer events on the container and
+// re-enable them on the toast itself so the toast stays clickable/swipeable
+// while the container's empty regions let clicks pass through.
+[data-sonner-toaster] {
+  pointer-events: none;
+}
+
+[data-sonner-toast] {
+  pointer-events: auto;
+}
