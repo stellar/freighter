@@ -81,13 +81,21 @@
       height: 100%;
       background-color: transparent;
       border: none;
+      // The container is stretched over the pill, so its own 4px default
+      // corner would draw the focus ring below with squarer corners than the
+      // 8px pill it traces.
+      border-radius: pxToRem(8px);
+    }
 
-      // SDS grows a 4px box-shadow ring on the container whenever the select
-      // takes focus (`.Select__container:has(select:focus-visible)` bumps
-      // `--Select-box-shadow-size` to 0.25rem). Stretched over the pill, that
-      // reads as a halo around the whole pill on every click. The frame has
-      // no such treatment, so suppress it in all states.
-      box-shadow: none;
+    // SDS grows a 4px ring on focus (`--Select-box-shadow-size: 0.25rem`),
+    // which read as a heavy halo around the whole pill. Halved rather than
+    // removed: the <select> itself is `opacity: 0`, so this ring is the only
+    // thing marking the pill as focused, and dropping it would leave keyboard
+    // users with no focus indicator at all. Note Chromium matches
+    // :focus-visible on <select> for mouse clicks too, so this shows on click
+    // as well — there is no CSS-only way to make it keyboard-exclusive.
+    .Select__container:has(select:focus-visible) {
+      --Select-box-shadow-size: #{pxToRem(2px)};
     }
 
     // SDS renders its own decorative chevron inside the select container;

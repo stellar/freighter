@@ -43,29 +43,54 @@ export const ManageConnectedApps = () => {
     setSelectedNetworkName(e.target.value);
   };
 
-  const notifySuccess = (title: string) => {
-    toast.custom(() => <Notification variant="success" title={title} />);
+  const notify = (variant: "success" | "error", title: string) => {
+    toast.custom(() => <Notification variant={variant} title={title} />);
   };
 
+  // `saveAllowList` is a createAsyncThunk that swallows failures into
+  // `rejectWithValue`, so awaiting the dispatch resolves either way and the
+  // returned action is the only signal of what actually happened. Checking
+  // `fulfilled.match` keeps us from reporting a disconnect that never landed.
   const handleRemove = async (domainToRemove: string) => {
-    await dispatch(
+    const res = await dispatch(
       saveAllowList({
         domain: domainToRemove,
         networkName: selectedNetworkName,
       }),
     );
     await fetchData(false);
-    notifySuccess(t("{{appName}} disconnected", { appName: domainToRemove }));
+
+    if (saveAllowList.fulfilled.match(res)) {
+      notify(
+        "success",
+        t("{{appName}} disconnected", { appName: domainToRemove }),
+      );
+    } else {
+      notify(
+        "error",
+        t("Couldn’t disconnect {{appName}}", { appName: domainToRemove }),
+      );
+    }
   };
 
   const handleRemoveAll = async () => {
+    const results = [];
     for (const domain of selectedAllowlist) {
-      await dispatch(
-        saveAllowList({ domain, networkName: selectedNetworkName }),
+      results.push(
+        await dispatch(
+          saveAllowList({ domain, networkName: selectedNetworkName }),
+        ),
       );
     }
     await fetchData(false);
-    notifySuccess(t("All apps disconnected"));
+
+    // A partial failure leaves apps still connected, so it must not report
+    // the batch as done.
+    if (results.every((res) => saveAllowList.fulfilled.match(res))) {
+      notify("success", t("All apps disconnected"));
+    } else {
+      notify("error", t("Couldn’t disconnect all apps"));
+    }
   };
 
   useEffect(() => {
@@ -154,8 +179,14 @@ export const ManageConnectedApps = () => {
               {selectedNetworkName}
             </span>
             <Icon.ChevronDown className="ManageConnectedApps__network-pill__chevron" />
+            {/*
+              The select is transparent and its visible "Main Net" label is a
+              sibling, not a <label>, so it needs its own accessible name for
+              screen readers to identify the control.
+            */}
             <Select
               data-testid="manage-connected-apps-select"
+              aria-label={t("Select network")}
               fieldSize="md"
               id="select"
               className="ManageConnectedApps__network-pill__select"
