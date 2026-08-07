@@ -103,6 +103,11 @@ export const Swap = () => {
   }, [isQuoteExpiredAtSubmit]);
 
   const [inputType, setInputType] = useState<InputType>("crypto");
+  // Children fetch in their own mount effects, and React runs child effects
+  // before this parent effect — so hold rendering until the reset + defaults
+  // below have landed in Redux, or the first fetch reads the pre-reset state
+  // (e.g. no destination default → no destination price/icon on first load).
+  const [areDefaultsApplied, setAreDefaultsApplied] = useState(false);
 
   useEffect(() => {
     dispatch(resetSimulation());
@@ -150,6 +155,7 @@ export const Swap = () => {
     if (destinationAsset) {
       dispatch(saveDestinationAsset(destinationAsset));
     }
+    setAreDefaultsApplied(true);
   }, [dispatch, location.search, networkDetails.network]);
 
   const renderStep = (step: STEPS) => {
@@ -253,6 +259,10 @@ export const Swap = () => {
       }
     }
   };
+
+  if (!areDefaultsApplied) {
+    return null;
+  }
 
   return renderStep(activeStep);
 };

@@ -62,6 +62,9 @@ export interface AccountBalances {
 function useGetBalances(options: {
   showHidden: boolean;
   includeIcons: boolean;
+  // Canonicals to resolve icons for alongside the held balances (e.g. the
+  // swap flow's default destination, which the account may not hold).
+  additionalIconAssetIds?: string[];
 }) {
   const reduxDispatch = useDispatch<AppDispatch>();
   const [state, dispatch] = useReducer(
@@ -129,6 +132,7 @@ function useGetBalances(options: {
           networkDetails,
           assetsListsData,
           cachedIcons: cachedIconsFromCache,
+          additionalAssetIds: options.additionalIconAssetIds,
         });
         payload.icons = icons;
         reduxDispatch(saveTokenLists(assetsListsData));

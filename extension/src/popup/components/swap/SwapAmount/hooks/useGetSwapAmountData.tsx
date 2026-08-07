@@ -49,8 +49,15 @@ function useGetSwapAmountData(
   });
   const { fetchData: fetchTokenPrices } = useGetTokenPrices();
 
-  const { fetchData: fetchAssetDomains } =
-    useGetAssetDomainsWithBalances(options);
+  // Resolve the destination's icon through the same held-token pipeline
+  // (cache -> token lists -> issuer toml) even when the account doesn't hold
+  // it — a defaulted or deep-linked destination never goes through the picker,
+  // so it has no pick-time iconUrl. Mirrors additionalAssetIds on the
+  // token-prices fetch below.
+  const { fetchData: fetchAssetDomains } = useGetAssetDomainsWithBalances({
+    ...options,
+    additionalIconAssetIds: destinationAsset ? [destinationAsset] : undefined,
+  });
 
   const fetchData = async () => {
     dispatch({ type: "FETCH_DATA_START" });
