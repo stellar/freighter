@@ -1,6 +1,9 @@
 $loader-dark-color: #191b22;
 $loader-light-color: #444961;
 
+// This file holds no list-container rule: AccountAssets returns a fragment, so
+// there's no element to hang one on. Row spacing lives in BalanceRow's own
+// padding, the list's top offset in `.AccountView__assets-wrapper`.
 .AccountAssets {
   &__asset {
     align-items: center;
