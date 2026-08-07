@@ -19,7 +19,7 @@ export const AddWallet = ({ onBack }: AddWalletProps) => {
     {
       icon: <Icon.PlusCircle />,
       title: t("Create a new wallet"),
-      description: t("Create a wallet on your seed phrase"),
+      description: t("Create a wallet from your seed phrase"),
       link: ROUTES.addAccount,
     },
     {
