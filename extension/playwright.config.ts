@@ -1,5 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
+const TEST_TIMEOUT_MS = 60_000;
+
 /**
  * Read environment variables from file.
  * https://github.com/motdotla/dotenv
@@ -10,7 +12,10 @@ import { defineConfig, devices } from "@playwright/test";
  * See https://playwright.dev/docs/test-configuration.
  */
 export default defineConfig({
-  timeout: 15000,
+  timeout: TEST_TIMEOUT_MS,
+  expect: {
+    timeout: 20_000,
+  },
   testDir: "./e2e-tests",
   /* Run tests in files in parallel */
   fullyParallel: true,

@@ -226,7 +226,7 @@ test("Switches network and fetches correct balances while clearing cache", async
   await expect(page.getByTestId("asset-amount")).toHaveText("2");
 
   await page.getByTestId("network-selector-open").click();
-  await page.getByText("Main Net").click();
+  await page.getByText("Mainnet").click();
 
   await expect(page.getByTestId("asset-amount")).toHaveText("1");
 
@@ -271,7 +271,7 @@ test("Switches network and fetches correct balances while clearing cache", async
     await route.fulfill({ json });
   });
   await page.getByTestId("network-selector-open").click();
-  await page.getByText("Test Net").click();
+  await page.getByText("Testnet").click();
   await expect(page.getByTestId("asset-amount")).toHaveText("999,111");
 });
 
@@ -621,7 +621,7 @@ test("Loads wallets data and token prices on Mainnet in batches", async ({
   };
   await loginToTestAccount({ page, extensionId, context, stubOverrides });
   await page.getByTestId("network-selector-open").click();
-  await page.getByText("Main Net").click();
+  await page.getByText("Mainnet").click();
   // The native row shows the "Stellar Lumens" display name, not "XLM"
   // (BalanceRow).
   await expect(page.getByTestId("account-assets")).toContainText(
@@ -631,7 +631,7 @@ test("Loads wallets data and token prices on Mainnet in batches", async ({
   await expect(page.getByText("Wallets")).toBeVisible();
 
   await page.getByText("Add a wallet").click();
-  await page.getByText("Create new wallet").click();
+  await page.getByText("Create a new wallet").click();
   await page.locator("#password-input").fill(PASSWORD);
   await page.getByRole("button", { name: "Create New Address" }).click();
   // The native row shows the "Stellar Lumens" display name, not "XLM"

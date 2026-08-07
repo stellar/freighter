@@ -3,6 +3,7 @@ import { BrowserContext, Page } from "@playwright/test";
 import { login, loginToTestAccount, switchToMainnet } from "./helpers/login";
 import { TEST_TOKEN_ADDRESS } from "./helpers/test-token";
 import {
+  stubAccountBalances,
   stubAccountBalancesE2e,
   stubAccountBalancesWithUnfundedDestination,
   stubAccountBalancesWithUSDC,
@@ -73,6 +74,7 @@ test("Swap doesn't throw error when account is unfunded", async ({
   page,
   extensionId,
 }) => {
+  await stubAccountBalances(page, "0");
   await login({ page, extensionId });
 
   await page.getByTestId("nav-link-swap").click();
