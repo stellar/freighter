@@ -265,6 +265,11 @@ test("should not sign transaction when not allowed", async ({
 
   const txPopup = await txPopupPromise;
   await stubAccountBalances(txPopup);
+  // stubAllExternalApis routes scan-tx on the opener page, not the context, so
+  // the popup would otherwise reach the real backend. Without a reachable one
+  // the scan fails, showBlockAidDetails flips true, and the actions row renders
+  // its Blockaid branch -- which has no sign-transaction-sign button at all.
+  await stubScanTx(txPopup);
 
   await expect(
     txPopup.getByText(
