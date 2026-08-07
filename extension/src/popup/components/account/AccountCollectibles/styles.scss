@@ -32,18 +32,29 @@
     align-items: center;
     text-align: center;
     gap: pxToRem(8px);
-    padding-top: pxToRem(48px);
+    // 24px here + the 24px top padding on `.AccountCollectibles` above lands
+    // this content at the same 48px offset as the tokens tab's unfunded state
+    // (`.NotFunded` sets `padding: 48px 16px` and sits directly in the pane),
+    // so switching tabs doesn't shift the empty state vertically.
+    padding-top: pxToRem(24px);
 
     &__badge {
       display: flex;
       align-items: center;
       justify-content: center;
-      width: pxToRem(48px);
-      height: pxToRem(48px);
+      // Same 40x40 / 17.143px badge as the unfunded tokens state
+      // (NotFundedMessage/styles.scss), per frame 9569:35981.
+      width: pxToRem(40px);
+      height: pxToRem(40px);
       border-radius: 50%;
       background-color: var(--sds-clr-gray-03);
       color: var(--sds-clr-gray-09);
       margin-bottom: pxToRem(8px);
+
+      svg {
+        width: pxToRem(17.143px);
+        height: pxToRem(17.143px);
+      }
     }
 
     &__title {
@@ -56,7 +67,7 @@
     &__subtitle {
       color: var(--sds-clr-gray-11);
       font-size: pxToRem(14px);
-      font-weight: var(--font-weight-regular);
+      font-weight: var(--sds-fw-regular);
       line-height: pxToRem(20px);
     }
   }
@@ -115,7 +126,10 @@
     &__grid {
       display: grid;
       gap: pxToRem(16px);
-      grid-template-columns: repeat(auto-fill, pxToRem(150px));
+      // Always two columns: the popup only has 312px of content width, so a
+      // fixed-width `auto-fill` track collapses to a single column as soon as
+      // the gap grows. `1fr` tracks let the tiles shrink to fit instead.
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       font-size: 0;
 
       &__item {
