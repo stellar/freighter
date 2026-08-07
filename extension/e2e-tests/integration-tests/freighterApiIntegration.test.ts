@@ -24,6 +24,8 @@ import {
 
 const TX_TO_SIGN =
   "AAAAAgAAAADLvQoIbFw9k0tgjZoOrLTuJJY9kHFYp/YAEAlt/xirbAAAAGQAAAfjAAAOpQAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAQAAAABngBTmbmUycqG2cAMHcomSR80dRzGtKzxM6gb3yySD5AAAAAAAAAAAAvrwgAAAAAAAAAAA";
+const SECOND_TX_TO_SIGN =
+  "AAAAAgAAAADLvQoIbFw9k0tgjZoOrLTuJJY9kHFYp/YAEAlt/xirbAAAAGQAAAUVAAAA/QAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAQAAAABngBTmbmUycqG2cAMHcomSR80dRzGtKzxM6gb3yySD5AAAAAAAAAAABfXhAAAAAAAAAAAA";
 const SIGNED_TX =
   "AAAAAgAAAADLvQoIbFw9k0tgjZoOrLTuJJY9kHFYp/YAEAlt/xirbAAAAGQAAAfjAAAOpQAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAQAAAABngBTmbmUycqG2cAMHcomSR80dRzGtKzxM6gb3yySD5AAAAAAAAAAAAvrwgAAAAAAAAAAB/xirbAAAAEBWgE2DhhukpAdJTOhBxvuvePAJH+gBbD3hQQljuidQbTFDMEyak7c2fOjyK2moqVhf3AUpCIMSlALglwFXumQH";
 
@@ -68,6 +70,8 @@ const JSON_SIGNED_MSG =
   "42IH7/mvkAT+ltbEG8oEPhVBzP7hb6NU+P+WZP3j1AIMdbwuFPrzBuRFRvLjXdXl5lDmC7aL0zrZIUrfrMXHDw==";
 
 const isIntegrationMode = process.env.IS_INTEGRATION_MODE === "true";
+
+test.describe.configure({ mode: "default" });
 
 test("should sign transaction when allowed", async ({
   page,
@@ -408,12 +412,7 @@ test("should sign correct transactions when Freighter receives multiple requests
   await pageThree.goto(
     "https://play.freighter.app/#/extension/playground/signTransaction",
   );
-  await pageThree
-    .getByRole("textbox")
-    .first()
-    .fill(
-      "AAAAAgAAAADLvQoIbFw9k0tgjZoOrLTuJJY9kHFYp/YAEAlt/xirbAAAAGQAAAUVAAAA/QAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAQAAAABngBTmbmUycqG2cAMHcomSR80dRzGtKzxM6gb3yySD5AAAAAAAAAAABfXhAAAAAAAAAAAA",
-    );
+  await pageThree.getByRole("textbox").first().fill(SECOND_TX_TO_SIGN);
   await pageThree
     .getByRole("textbox")
     .nth(1)
@@ -421,9 +420,15 @@ test("should sign correct transactions when Freighter receives multiple requests
   await pageThree.getByText("Sign Transaction XDR").click();
 
   const txPopup2 = await txPopupPromise2;
+  await stubAccountBalances(txPopup2);
+  await stubScanTx(txPopup2);
   await expect(txPopup2.getByText("Confirm Transaction")).toBeVisible();
   await expect(txPopup2.getByText("GDF3…ZEFY")).toBeVisible();
-  await expect(txPopup2.getByText("-10")).toBeVisible();
+  const encodedParams = txPopup2.url().split("?")[1];
+  const popupParams = JSON.parse(
+    Buffer.from(encodedParams, "base64").toString("utf8"),
+  );
+  expect(popupParams.transactionXdr).toBe(SECOND_TX_TO_SIGN);
 
   await txPopup.getByRole("button", { name: "Confirm" }).click();
   await expect(pageTwo.locator("#result-signTx")).toHaveText(SIGNED_TX);
@@ -823,9 +828,10 @@ test("should add an unverified SEP-41 token when allowed", async ({
   extensionId,
   context,
 }) => {
-  await stubIsSac(context);
-
   await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
+  await stubIsSac(context);
+  await stubTokenDetails(context);
+  await stubScanAssetSafe(context);
   await allowDapp({ page });
 
   // open a second tab and go to docs playground
@@ -845,7 +851,7 @@ test("should add an unverified SEP-41 token when allowed", async ({
 
   const popup = await popupPromise;
 
-  await expect(popup.getByText("E2E Token")).toBeDefined();
+  await expect(popup.getByText("E2E Token")).toBeVisible();
   await expect(popup.getByTestId("add-token-unverified")).toBeVisible();
   await expectPageToHaveScreenshot({
     page: popup,
@@ -1058,11 +1064,12 @@ test("should not add a SEP-41 token when the domain is not allowed", async ({
   extensionId,
   context,
 }) => {
+  await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
   if (!isIntegrationMode) {
     await stubIsSac(context);
+    await stubTokenDetails(context);
+    await stubScanAssetSafe(context);
   }
-
-  await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
 
   // open a second tab and go to docs playground
   const pageTwo = await page.context().newPage();

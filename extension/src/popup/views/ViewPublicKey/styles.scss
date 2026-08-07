@@ -5,78 +5,94 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    flex-grow: 1;
-    width: 100%;
+    gap: pxToRem(24px);
   }
 
-  &__form {
-    display: flex;
-    flex-flow: row wrap;
-    flex-grow: 1;
-    align-items: center;
-    justify-content: space-between;
-    width: 100%;
-
-    * {
-      text-align: center;
-    }
-
-    .FieldNote--error {
-      position: absolute;
-    }
-  }
-
-  &__account-name-display {
-    height: 2.75rem;
+  &__account {
     display: flex;
     align-items: center;
-    text-align: center;
-  }
+    gap: pxToRem(8px);
 
-  &--account-name-div {
-    > button {
-      background: none;
-      color: inherit;
-      border: none;
-      padding: 0;
-      cursor: pointer;
+    &__identicon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: pxToRem(32px);
+      height: pxToRem(32px);
+      border-radius: 50%;
+      background-color: var(--sds-clr-gray-03);
+
+      // IdenticonImg's own styles set the <img> to width/height: 100%, which
+      // would let it fill this entire circle. Size the descendant image
+      // directly so a visible ring of the circle's background remains
+      // around a smaller identicon, instead of cropping with
+      // overflow: hidden.
+      img {
+        width: pxToRem(16px);
+        height: pxToRem(16px);
+      }
     }
 
-    svg {
-      width: var(--back--button-dimension);
+    &__text {
+      display: flex;
+      flex-direction: column;
+    }
+
+    &__name {
+      color: var(--sds-clr-gray-12);
+      font-size: pxToRem(16px);
+      font-weight: var(--font-weight-medium);
+      line-height: pxToRem(24px);
+    }
+
+    &__address {
+      color: var(--sds-clr-gray-11);
+      font-size: pxToRem(14px);
+      font-weight: var(--font-weight-regular);
+      line-height: pxToRem(20px);
     }
   }
 
   &__qr-code {
-    border: pxToRem(16px) solid var(--sds-clr-base-01);
-    height: 11.5rem;
-    width: 11.5rem;
-    background: var(--color-white);
-    border-radius: 0.5rem;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-top: 3rem;
+    background-color: var(--sds-clr-white);
+    border-radius: pxToRem(16px);
+    padding: pxToRem(16px);
   }
 
-  &__address-copy-label {
-    font-size: 0.875rem;
-    line-height: 1.375rem;
-    color: rgba(255, 255, 255, 0.4);
-    margin-top: 2rem;
-  }
-
-  &__address-copy {
-    font-size: 1rem;
-    line-height: 1.5rem;
+  &__network-chip {
+    display: flex;
+    align-items: center;
+    gap: pxToRem(4px);
+    background-color: var(--sds-clr-gray-03);
+    border-radius: pxToRem(100px);
+    padding: pxToRem(6px) pxToRem(10px);
     color: var(--sds-clr-gray-12);
+    font-size: pxToRem(14px);
+    font-weight: var(--sds-fw-semi-bold);
+    line-height: pxToRem(20px);
+
+    img,
+    svg {
+      width: pxToRem(14px);
+      height: pxToRem(14px);
+    }
   }
 
-  &__copy-btn {
-    margin-top: 1rem;
-  }
-
-  &__external-link {
+  &__footer {
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(12px);
     width: 100%;
+
+    &__caption {
+      color: var(--sds-clr-gray-11);
+      font-size: pxToRem(14px);
+      font-weight: var(--font-weight-regular);
+      line-height: pxToRem(20px);
+      text-align: center;
+    }
   }
 }

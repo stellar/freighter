@@ -51,7 +51,7 @@ export const loginToTestAccountPT = async ({
     timeout: 50000,
   });
   await page.getByTestId("network-selector-open").click();
-  await page.getByText("Test Net").click();
+  await page.getByText("Testnet").click();
   await expect(page.getByTestId("account-view")).toBeVisible({
     timeout: 30000,
   });
