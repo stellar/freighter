@@ -1169,7 +1169,8 @@ describe("Account view", () => {
       const assetNodes = screen.getAllByTestId("account-assets-item");
       expect(assetNodes.length).toEqual(3);
       expect(assetNodes[0]).toHaveTextContent("USDC");
-      expect(assetNodes[1]).toHaveTextContent("XLM");
+      // XLM's row shows the "Stellar Lumens" display name, not its code.
+      expect(assetNodes[1]).toHaveTextContent("Stellar Lumens");
       expect(assetNodes[2]).toHaveTextContent("DT");
     });
   });
@@ -1233,7 +1234,8 @@ describe("Account view", () => {
     await waitFor(() => {
       const assetNodes = screen.getAllByTestId("account-assets-item");
       expect(assetNodes.length).toEqual(3);
-      expect(assetNodes[0]).toHaveTextContent("XLM");
+      // XLM's row shows the "Stellar Lumens" display name, not its code.
+      expect(assetNodes[0]).toHaveTextContent("Stellar Lumens");
       expect(assetNodes[1]).toHaveTextContent("DT");
       expect(assetNodes[2]).toHaveTextContent("USDC");
     });
