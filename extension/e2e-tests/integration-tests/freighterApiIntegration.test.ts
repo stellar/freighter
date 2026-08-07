@@ -271,7 +271,7 @@ test("should not sign transaction when not allowed", async ({
       "play.freighter.app is not currently connected to Freighter",
     ),
   ).toBeVisible();
-  await expect(txPopup.getByTestId("sign-transaction-sign")).toHaveCount(0);
+  await expect(txPopup.getByTestId("sign-transaction-sign")).toBeDisabled();
   await expectPageToHaveScreenshot({
     page: txPopup,
     screenshot: "domain-not-allowed-sign-transaction.png",
