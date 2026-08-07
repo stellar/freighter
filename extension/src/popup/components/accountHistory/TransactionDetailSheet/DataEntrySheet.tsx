@@ -8,17 +8,33 @@ import { DataEntrySelection } from "popup/views/AccountHistory/model";
 const hasControlChars = (text: string) =>
   [...text].some((char) => {
     const code = char.charCodeAt(0);
-    // allow the whitespace controls (tab, LF, VT, FF, CR)
-    return code < 32 && (code < 9 || code > 13);
+    if (code < 32) {
+      // allow the whitespace controls (tab, LF, VT, FF, CR)
+      return code < 9 || code > 13;
+    }
+    return code === 127 || (code >= 128 && code <= 159);
   });
 
-/** Decode base64 to a printable UTF-8 string, else return the base64 as-is. */
+/** Throws on invalid UTF-8 rather than substituting replacement characters. */
+const utf8 = new TextDecoder("utf-8", { fatal: true });
+
+const toBytes = (b64: string) =>
+  Uint8Array.from(atob(b64), (char) => char.charCodeAt(0));
+
+/**
+ * Decode base64 to a printable UTF-8 string, else return the base64 as-is.
+ *
+ * Data entry values are arbitrary bytes, so both branches are common. Decoding
+ * has to be strict UTF-8: latin1 would turn multi-byte text into mojibake that
+ * still looks printable, and so would render as if it had decoded cleanly.
+ */
 export const decodeDataValue = (b64: string | null): string | null => {
   if (!b64) {
     return null;
   }
   try {
-    const decoded = atob(b64);
+    const decoded = utf8.decode(toBytes(b64));
+    // ASCII control bytes are valid UTF-8, so binary can survive the decode.
     if (hasControlChars(decoded)) {
       return b64;
     }

@@ -189,9 +189,34 @@ describe("DataEntrySheet", () => {
     expect(decodeDataValue("aGVsbG8=")).toBe("hello");
   });
 
+  it("decodes multi-byte UTF-8 rather than latin1", () => {
+    // latin1 would render these as "cafÃ©" and "ð"
+    expect(decodeDataValue("Y2Fmw6k=")).toBe("café");
+    expect(decodeDataValue("8J+YgA==")).toBe("😀");
+  });
+
+  it("keeps the whitespace controls", () => {
+    expect(decodeDataValue("bGluZTEKbGluZTI=")).toBe("line1\nline2");
+  });
+
   it("falls back to base64 for binary values", () => {
     // base64 of bytes [0x00, 0x01]
     expect(decodeDataValue("AAE=")).toBe("AAE=");
+  });
+
+  it("falls back to base64 for bytes that are not valid UTF-8", () => {
+    // base64 of bytes [0xff, 0xfe]
+    expect(decodeDataValue("//4=")).toBe("//4=");
+  });
+
+  it("falls back to base64 for DEL and C1 controls", () => {
+    // base64 of byte [0x7f], and of U+0080 encoded as UTF-8
+    expect(decodeDataValue("fw==")).toBe("fw==");
+    expect(decodeDataValue("woA=")).toBe("woA=");
+  });
+
+  it("falls back to the input for malformed base64", () => {
+    expect(decodeDataValue("!!!")).toBe("!!!");
   });
 
   it("returns null for empty values", () => {
