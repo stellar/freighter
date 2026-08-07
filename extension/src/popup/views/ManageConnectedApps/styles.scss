@@ -134,6 +134,15 @@
       gap: pxToRem(12px);
       flex: 1 1 0%;
       min-width: 0;
+
+      // PunycodedDomain's own stylesheet puts `margin-bottom` on every nested
+      // div, and its `--row` modifier only clears the root. The element rules
+      // below are more specific but never declare the property, so without
+      // this the base rule applies unopposed: 4px taller rows, contents 2px
+      // above centre.
+      div {
+        margin-bottom: 0;
+      }
     }
 
     .PunycodedDomain__favicon-container {
