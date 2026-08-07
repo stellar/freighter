@@ -41,7 +41,11 @@ test("Load accounts on standalone network", async ({
   await expect(page.getByTestId("account-view")).toBeVisible({
     timeout: 30000,
   });
-  await expect(page.getByTestId("account-assets")).toContainText("XLM");
+  // The native row shows the "Stellar Lumens" display name, not "XLM"
+  // (BalanceRow).
+  await expect(page.getByTestId("account-assets")).toContainText(
+    "Stellar Lumens",
+  );
 });
 
 test.skip("Switches account and fetches correct balances while clearing cache", async ({
@@ -58,7 +62,11 @@ test.skip("Switches account and fetches correct balances while clearing cache", 
 
   test.slow();
   await loginToTestAccount({ page, extensionId, context, stubOverrides });
-  await expect(page.getByTestId("account-assets")).toContainText("XLM");
+  // The native row shows the "Stellar Lumens" display name, not "XLM"
+  // (BalanceRow).
+  await expect(page.getByTestId("account-assets")).toContainText(
+    "Stellar Lumens",
+  );
   const account1XlmBalance = await page
     .getByTestId("asset-amount")
     .textContent();
@@ -210,7 +218,11 @@ test("Switches network and fetches correct balances while clearing cache", async
   };
 
   await loginToTestAccount({ page, extensionId, context, stubOverrides });
-  await expect(page.getByTestId("account-assets")).toContainText("XLM");
+  // The native row shows the "Stellar Lumens" display name, not "XLM"
+  // (BalanceRow).
+  await expect(page.getByTestId("account-assets")).toContainText(
+    "Stellar Lumens",
+  );
   await expect(page.getByTestId("asset-amount")).toHaveText("2");
 
   await page.getByTestId("network-selector-open").click();
@@ -289,7 +301,11 @@ test("Switches account without password prompt", async ({
   context,
 }) => {
   await loginToTestAccount({ page, extensionId, context });
-  await expect(page.getByTestId("account-assets")).toContainText("XLM");
+  // The native row shows the "Stellar Lumens" display name, not "XLM"
+  // (BalanceRow).
+  await expect(page.getByTestId("account-assets")).toContainText(
+    "Stellar Lumens",
+  );
   await page.getByTestId("account-view-account-name").click();
   await page.getByText("Account 2").click();
 
@@ -357,7 +373,11 @@ test.skip("Clears cache and fetches balances if it's been 2 minutes since the la
   test.slow();
   await page.clock.install({ time: new Date("2024-01-01T12:00:00") });
   await loginToTestAccount({ page, extensionId, context });
-  await expect(page.getByTestId("account-assets")).toContainText("XLM");
+  // The native row shows the "Stellar Lumens" display name, not "XLM"
+  // (BalanceRow).
+  await expect(page.getByTestId("account-assets")).toContainText(
+    "Stellar Lumens",
+  );
   const account1XlmBalance = await page
     .getByTestId("asset-amount")
     .textContent();
@@ -602,7 +622,11 @@ test("Loads wallets data and token prices on Mainnet in batches", async ({
   await loginToTestAccount({ page, extensionId, context, stubOverrides });
   await page.getByTestId("network-selector-open").click();
   await page.getByText("Mainnet").click();
-  await expect(page.getByTestId("account-assets")).toContainText("XLM");
+  // The native row shows the "Stellar Lumens" display name, not "XLM"
+  // (BalanceRow).
+  await expect(page.getByTestId("account-assets")).toContainText(
+    "Stellar Lumens",
+  );
   await page.getByTestId("account-view-account-name").click();
   await expect(page.getByText("Wallets")).toBeVisible();
 
@@ -610,7 +634,11 @@ test("Loads wallets data and token prices on Mainnet in batches", async ({
   await page.getByText("Create a new wallet").click();
   await page.locator("#password-input").fill(PASSWORD);
   await page.getByRole("button", { name: "Create New Address" }).click();
-  await expect(page.getByTestId("account-assets")).toContainText("XLM");
+  // The native row shows the "Stellar Lumens" display name, not "XLM"
+  // (BalanceRow).
+  await expect(page.getByTestId("account-assets")).toContainText(
+    "Stellar Lumens",
+  );
 
   await page.getByTestId("account-view-account-name").click();
   await expect(page.getByText("Wallets")).toBeVisible();
