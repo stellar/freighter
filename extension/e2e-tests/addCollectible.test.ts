@@ -123,7 +123,7 @@ test("Add a collectible to an account", async ({
   test.slow();
   await loginToTestAccount({ page, extensionId, context, stubOverrides });
   await page.getByTestId("network-selector-open").click();
-  await page.getByText("Main Net").click();
+  await page.getByText("Mainnet").click();
 
   // add the collectible
   await expect(page.getByTestId("account-view")).toBeVisible();

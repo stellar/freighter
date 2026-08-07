@@ -30,6 +30,7 @@ import { NetworkDetails } from "@shared/constants/stellar";
 import { MobileAppBanner } from "popup/components/account/MobileAppBanner";
 import { AccountTabs } from "popup/components/account/AccountTabs";
 import { MaintenanceBanner } from "popup/components/MaintenanceBanner";
+import { getNetworkDisplayName } from "./getNetworkDisplayName";
 
 import "./styles.scss";
 
@@ -58,6 +59,11 @@ export const AccountHeader = ({
   onDiscoverClick,
 }: AccountHeaderProps) => {
   const { t } = useTranslation();
+  const networkDisplayNames = {
+    mainnet: t("Mainnet"),
+    testnet: t("Testnet"),
+    futurenet: t("Futurenet"),
+  };
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const networksList = useSelector(settingsNetworksListSelector);
   const [isNetworkSelectorOpen, setIsNetworkSelectorOpen] = useState(false);
@@ -275,7 +281,10 @@ export const AccountHeader = ({
                           >
                             <NetworkIcon index={i} />
                             <div className="AccountHeader__network-copy">
-                              {n.networkName}
+                              {getNetworkDisplayName(
+                                n.networkName,
+                                networkDisplayNames,
+                              )}
                             </div>
                             {isActiveNetwork(n, networkDetails) ? (
                               <div className="AccountHeader__network-selector__check">

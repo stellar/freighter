@@ -79,7 +79,7 @@ test("Hide and unhide a collectible", async ({
   test.slow();
   await loginToTestAccount({ page, extensionId });
   await page.getByTestId("network-selector-open").click();
-  await page.getByText("Main Net").click();
+  await page.getByText("Mainnet").click();
 
   // Navigate to collectibles tab
   await expect(page.getByTestId("account-view")).toBeVisible();
@@ -185,7 +185,7 @@ test("Hidden collectibles view shows empty state when no collectibles are hidden
   test.slow();
   await loginToTestAccount({ page, extensionId });
   await page.getByTestId("network-selector-open").click();
-  await page.getByText("Main Net").click();
+  await page.getByText("Mainnet").click();
 
   // Navigate to collectibles tab
   await expect(page.getByTestId("account-view")).toBeVisible();
@@ -246,7 +246,7 @@ test("Hiding a collectible removes it from the main view", async ({
   test.slow();
   await loginToTestAccount({ page, extensionId });
   await page.getByTestId("network-selector-open").click();
-  await page.getByText("Main Net").click();
+  await page.getByText("Mainnet").click();
 
   // Navigate to collectibles tab
   await expect(page.getByTestId("account-view")).toBeVisible();
