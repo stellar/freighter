@@ -288,7 +288,7 @@ export const Account = () => {
           <MultiPaneSlider
             activeIndex={Object.values(TabsList).indexOf(activeTab)}
             panes={[
-              resolvedData?.balances?.isFunded && !hasError && (
+              resolvedData?.balances?.isFunded && !hasError ? (
                 <div
                   className="AccountView__assets-wrapper"
                   data-testid="account-assets"
@@ -303,6 +303,22 @@ export const Account = () => {
                     assetIcons={resolvedIcons}
                   />
                 </div>
+              ) : (
+                !hasError &&
+                !resolvedData?.balances?.error?.horizon && (
+                  <NotFundedMessage
+                    canUseFriendbot={
+                      !!resolvedData!.networkDetails.friendbotUrl
+                    }
+                    publicKey={resolvedData?.publicKey || ""}
+                    reloadBalances={() =>
+                      fetchData({
+                        useAppDataCache: true,
+                        shouldForceBalancesRefresh: true,
+                      })
+                    }
+                  />
+                )
               ),
               <div data-testid="account-collectibles">
                 <AccountCollectibles
@@ -315,22 +331,6 @@ export const Account = () => {
           />
         </div>
       </View.Content>
-      {!resolvedData?.balances?.isFunded &&
-        !hasError &&
-        !resolvedData?.balances?.error?.horizon && (
-          <View.Footer>
-            <NotFundedMessage
-              canUseFriendbot={!!resolvedData!.networkDetails.friendbotUrl}
-              publicKey={resolvedData?.publicKey || ""}
-              reloadBalances={() =>
-                fetchData({
-                  useAppDataCache: true,
-                  shouldForceBalancesRefresh: true,
-                })
-              }
-            />
-          </View.Footer>
-        )}
       <Sheet
         open={isDiscoverOpen}
         onOpenChange={(open) => !open && setIsDiscoverOpen(false)}
