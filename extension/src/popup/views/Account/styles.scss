@@ -18,6 +18,12 @@
     margin-top: 1.5rem;
   }
 
+  // 12px + BalanceRow's own 12px puts the first row 24px below the pane, level
+  // with the collectibles list. The slider pane adds no vertical padding.
+  &__assets-wrapper {
+    padding-top: pxToRem(12px);
+  }
+
   @keyframes animateNotification {
     from {
       margin-top: 0;
