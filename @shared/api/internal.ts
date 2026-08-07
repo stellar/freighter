@@ -79,7 +79,7 @@ import {
   DEFAULT_NETWORKS,
   NetworkDetails,
   NETWORKS,
-  PASSPHRASE_TO_INDEXER_NETWORK,
+  PASSPHRASE_TO_V2_NETWORK,
 } from "../constants/stellar";
 import { SERVICE_TYPES } from "../constants/services";
 import { isDev } from "../helpers/dev";
@@ -653,7 +653,7 @@ export const getTokenPrices = async (
     // (Futurenet, custom passphrases) is skipped to avoid a guaranteed error and
     // Sentry noise.
     const priceNetwork =
-      PASSPHRASE_TO_INDEXER_NETWORK[networkDetails.networkPassphrase];
+      PASSPHRASE_TO_V2_NETWORK[networkDetails.networkPassphrase];
     if (!priceNetwork) {
       return {};
     }
@@ -1054,7 +1054,7 @@ export const getAccountHistoryV2 = async (
   // networks to the legacy (v1) view before getting here, so reaching this with
   // an unserved passphrase is a bug, not a fallback path.
   const historyNetwork =
-    PASSPHRASE_TO_INDEXER_NETWORK[networkDetails.networkPassphrase];
+    PASSPHRASE_TO_V2_NETWORK[networkDetails.networkPassphrase];
   if (!historyNetwork) {
     throw new Error(
       `history v2 does not support network passphrase ${networkDetails.networkPassphrase}`,

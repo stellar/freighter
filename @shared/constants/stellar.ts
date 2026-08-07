@@ -79,13 +79,13 @@ export const PASSPHRASE_TO_NETWORK_NAME: Record<string, string> = {
   [FUTURENET_NETWORK_DETAILS.networkPassphrase]: NETWORK_NAMES.FUTURENET,
 };
 
-// The indexer endpoints (token prices, v2 account history) only support pubnet
+// The v2 endpoints (token prices, v2 account history) only support pubnet
 // and testnet, and take the network as a NETWORKS value rather than a display
 // name — so this is deliberately not derived from PASSPHRASE_TO_NETWORK_NAME.
 // Single source of truth for which passphrases reach those endpoints: a custom
 // network sharing a supported passphrase still resolves, and anything absent
 // here is skipped (prices) or routed to v1 (history).
-export const PASSPHRASE_TO_INDEXER_NETWORK: Record<string, NETWORKS> = {
+export const PASSPHRASE_TO_V2_NETWORK: Record<string, NETWORKS> = {
   [Networks.PUBLIC]: NETWORKS.PUBLIC,
   [Networks.TESTNET]: NETWORKS.TESTNET,
 };
