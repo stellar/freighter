@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { useTranslation } from "react-i18next";
+import { useTranslation, Trans } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { Button, Icon } from "@stellar/design-system";
 import { Formik, Form } from "formik";
@@ -8,7 +8,7 @@ import { Formik, Form } from "formik";
 import { fundAccount } from "popup/ducks/accountServices";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { ROUTES } from "popup/constants/routes";
-import { STELLAR_DOCS_CREATE_ACCOUNT_URL } from "popup/constants/externalLinks";
+import { XLM_RESERVE_HELP_URL } from "popup/constants/externalLinks";
 import { navigateTo } from "popup/helpers/navigate";
 import { AppDispatch } from "popup/App";
 import { isMainnet } from "helpers/stellar";
@@ -37,16 +37,17 @@ export const NotFundedMessage = ({
   return (
     <div className="NotFunded" data-testid="not-funded">
       <div className="NotFunded__badge">
-        <Icon.Link04 />
+        <Icon.Coins01 />
       </div>
       <div className="NotFunded__title">{t("Looking a little empty...")}</div>
       <div className="NotFunded__body">
-        {t(
-          "Add at least 2 XLM to activate your wallet. Once funded, you'll be able to add tokens and make transactions.",
-        )}{" "}
+        <Trans
+          i18nKey="Add at least <bold>2 XLM</bold> to activate your wallet. Once funded, you'll be able to add tokens and make transactions."
+          components={{ bold: <strong className="NotFunded__amount" /> }}
+        />{" "}
         <a
           className="NotFunded__link"
-          href={STELLAR_DOCS_CREATE_ACCOUNT_URL}
+          href={XLM_RESERVE_HELP_URL}
           rel="noreferrer"
           target="_blank"
         >

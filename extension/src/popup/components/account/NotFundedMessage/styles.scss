@@ -12,27 +12,44 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: pxToRem(48px);
-    height: pxToRem(48px);
+    // 40x40 badge holding a 17.143px glyph, per frame 9711:3008 — Figma
+    // expresses it as 11.429px padding around the icon; fixing the outer box
+    // instead keeps the circle exact regardless of the glyph.
+    width: pxToRem(40px);
+    height: pxToRem(40px);
     border-radius: 50%;
     background-color: var(--sds-clr-gray-03);
     color: var(--sds-clr-gray-09);
     margin-bottom: pxToRem(8px);
+
+    // SDS icons carry width/height="24" attributes; without this they render
+    // at their intrinsic size and overflow the design's proportions.
+    svg {
+      width: pxToRem(17.143px);
+      height: pxToRem(17.143px);
+    }
   }
 
   &__title {
     color: var(--sds-clr-gray-12);
     font-size: pxToRem(16px);
-    font-weight: var(--font-weight-medium);
+    font-weight: var(--sds-fw-medium);
     line-height: pxToRem(24px);
   }
 
   &__body {
     color: var(--sds-clr-gray-11);
     font-size: pxToRem(14px);
-    font-weight: var(--font-weight-regular);
+    font-weight: var(--sds-fw-regular);
     line-height: pxToRem(20px);
     margin-bottom: pxToRem(8px);
+  }
+
+  // One step up from `__body`'s regular weight (400 -> 500), in the primary
+  // text color, so the amount reads as emphasis without becoming a heading.
+  &__amount {
+    color: var(--sds-clr-gray-12);
+    font-weight: var(--sds-fw-medium);
   }
 
   &__link {
