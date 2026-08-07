@@ -18,11 +18,8 @@
     margin-top: 1.5rem;
   }
 
-  // Starts the token list at the same height as the collectibles list, which
-  // gets 24px from `.AccountCollectibles`'s own top padding. The first
-  // BalanceRow already contributes 12px of its own, so 12px here makes both
-  // tabs open with their first row 24px below the pane. The slider pane has no
-  // vertical padding of its own, so this is the only offset in play.
+  // 12px + BalanceRow's own 12px puts the first row 24px below the pane, level
+  // with the collectibles list. The slider pane adds no vertical padding.
   &__assets-wrapper {
     padding-top: pxToRem(12px);
   }

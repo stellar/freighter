@@ -32,18 +32,15 @@
     align-items: center;
     text-align: center;
     gap: pxToRem(8px);
-    // 24px here + the 24px top padding on `.AccountCollectibles` above lands
-    // this content at the same 48px offset as the tokens tab's unfunded state
-    // (`.NotFunded` sets `padding: 48px 16px` and sits directly in the pane),
-    // so switching tabs doesn't shift the empty state vertically.
+    // 24px + the 24px above on `.AccountCollectibles` matches `.NotFunded`'s
+    // 48px, so switching tabs doesn't shift the empty state.
     padding-top: pxToRem(24px);
 
     &__badge {
       display: flex;
       align-items: center;
       justify-content: center;
-      // Same 40x40 / 17.143px badge as the unfunded tokens state
-      // (NotFundedMessage/styles.scss), per frame 9569:35981.
+      // Same badge as the unfunded tokens state, per frame 9569:35981.
       width: pxToRem(40px);
       height: pxToRem(40px);
       border-radius: 50%;
@@ -102,11 +99,9 @@
         gap: pxToRem(8px);
         color: var(--sds-clr-gray-11);
 
-        // Chevron is 12px per frame 9569:36836, and takes the collection
-        // title's color rather than this container's muted gray. Scoped to the
-        // svg instead of `&__right` so the count badge keeps its own color
-        // without depending on override order. SDS icons stroke with
-        // `currentColor`, so setting `color` is what tints them.
+        // 12px per frame 9569:36836, in the title's color rather than this
+        // row's muted gray. Scoped to the svg (SDS icons stroke with
+        // `currentColor`) so the count badge keeps its own color regardless.
         svg {
           width: pxToRem(12px);
           height: pxToRem(12px);
@@ -118,15 +113,13 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        // Equal min-width and height make a single digit a perfect circle,
-        // while two or more digits grow past it into a pill. 24px is the
-        // badge's natural height in frame 9569:36835 (2px padding + 18px line
-        // box + 1px border, top and bottom); SDS sets `box-sizing: border-box`
-        // on everything under `.sds-theme-*`, so the border is inside these.
+        // Equal min-width and height make one digit a circle; more digits grow
+        // into a pill. 24px is the badge's natural height in frame 9569:36835,
+        // border included — SDS sets `box-sizing: border-box` app-wide.
         min-width: pxToRem(24px);
         height: pxToRem(24px);
         padding: 0 pxToRem(6px);
-        // `--default/border/primary` in the design == gray-06 (#e2e2e2 light).
+        // gray-06 == the design's `--default/border/primary`.
         border: 1px solid var(--sds-clr-gray-06);
         border-radius: pxToRem(100px);
         background-color: var(--sds-clr-gray-03);
@@ -139,9 +132,8 @@
     &__grid {
       display: grid;
       gap: pxToRem(16px);
-      // Always two columns: the popup only has 312px of content width, so a
-      // fixed-width `auto-fill` track collapses to a single column as soon as
-      // the gap grows. `1fr` tracks let the tiles shrink to fit instead.
+      // `1fr` rather than a fixed `auto-fill` track: the popup has only 312px
+      // of content width, so fixed tracks drop to one column when the gap grows.
       grid-template-columns: repeat(2, minmax(0, 1fr));
       font-size: 0;
 

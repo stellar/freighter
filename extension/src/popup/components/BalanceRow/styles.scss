@@ -4,9 +4,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  // Same vertical rhythm as the other token lists — each row contributes
-  // 12px top + 12px bottom, so two adjacent rows land on frame 9567-17044's
-  // 24px inner-frame gap without an extra margin between them.
+  // 12px top + bottom, so adjacent rows land on frame 9567-17044's 24px gap
+  // without an extra margin between them.
   padding: pxToRem(12px) 0;
   color: var(--sds-clr-gray-12);
   font-size: 1rem;
@@ -21,10 +20,8 @@
     display: flex;
     align-items: center;
     font-weight: var(--sds-fw-medium);
-    // No `gap` here: the icon-to-text spacing comes from AssetIcon's own
-    // `margin-right` (AccountAssets/styles.scss `&__asset--logo`), which is
-    // shared far more widely than BalanceRow and out of scope for this PR.
-    // Adding a gap here as well would stack on top of that margin.
+    // No `gap`: icon-to-text spacing already comes from AssetIcon's
+    // `margin-right` (AccountAssets `&__asset--logo`), and would stack.
   }
 
   &__value {
@@ -77,16 +74,14 @@
     line-height: pxToRem(18px);
     font-weight: var(--sds-fw-medium);
 
-    // Color is intentionally NOT set here — it comes entirely from the
-    // `positive`/`negative` modifier below, composed in from
-    // `getPriceDeltaColor()` in index.tsx. Setting a color on `&__delta`
-    // itself would flatten gains and losses to the same color.
+    // No color here — the modifiers below carry it, via
+    // `getPriceDeltaColor()` in index.tsx. A color on `&__delta` itself would
+    // flatten gains and losses together.
     &.positive {
       color: var(--sds-clr-green-09);
     }
 
-    // `getPriceDeltaColor()` also returns `negative` for a zero delta, so this
-    // stays gray rather than red: only gains are called out with color.
+    // Zero deltas are `negative` too, so this stays gray: only gains get color.
     &.negative {
       color: var(--sds-clr-gray-11);
     }

@@ -33,11 +33,9 @@ const CollectionsList = ({
   const [detailData, setDetailData] = useState<SelectedCollectible | null>(
     null,
   );
-  // Tracking *collapsed* addresses (rather than expanded ones) is what makes
-  // "all expanded on mount" fall out of an empty set — a newly fetched
-  // collection is expanded by default with no extra bookkeeping. Local React
-  // state only: this deliberately resets on unmount (spec D5), not a Redux
-  // slice or chrome.storage.
+  // Tracks *collapsed* ids, so "expanded on mount" (spec D5) falls out of an
+  // empty set. Local state only — not persisted, since chrome.storage is
+  // background-owned and would pull a message handler into a styling change.
   const [collapsedCollections, setCollapsedCollections] = useState<Set<string>>(
     new Set(),
   );

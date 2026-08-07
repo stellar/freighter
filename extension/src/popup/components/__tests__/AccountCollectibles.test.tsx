@@ -140,8 +140,6 @@ describe("AccountCollectibles", () => {
     );
   });
   it("collapses and expands a collection when its header is clicked", async () => {
-    // Reuses the same render setup and mockCollectibles fixture as
-    // "renders collectibles" above, which populates 3 valid collections.
     render(
       <Wrapper
         routes={[ROUTES.account]}
@@ -185,18 +183,16 @@ describe("AccountCollectibles", () => {
     );
     await waitFor(() => screen.getByTestId("account-collectibles"));
 
-    // All 3 collections are expanded by default (spec D5: expanded on mount).
+    // Expanded on mount, per spec D5.
     expect(screen.getAllByTestId("account-collection-grid")).toHaveLength(3);
 
-    // Click the first collection's header to collapse just that collection —
-    // its grid disappears while the other two stay expanded.
+    // Collapsing the first collection leaves the other two expanded.
     const firstHeader = screen.getAllByTestId("account-collection-header")[0];
     fireEvent.click(firstHeader);
     await waitFor(() => {
       expect(screen.getAllByTestId("account-collection-grid")).toHaveLength(2);
     });
 
-    // Clicking the same header again re-expands it.
     fireEvent.click(firstHeader);
     await waitFor(() => {
       expect(screen.getAllByTestId("account-collection-grid")).toHaveLength(3);

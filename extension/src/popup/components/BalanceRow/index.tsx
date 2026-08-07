@@ -76,8 +76,8 @@ export const BalanceRow = ({
     ? getPriceDeltaColor(new BigNumber(roundUsdValue(percentChange as string)))
     : "";
 
-  // The design shows a friendly name where one exists; every other token falls
-  // back to its code. XLM is the only token whose name we hold locally.
+  // XLM is the only token whose friendly name we hold locally; the rest fall
+  // back to their code.
   const displayName = code === "XLM" && !issuerKey ? "Stellar Lumens" : code;
 
   return (
