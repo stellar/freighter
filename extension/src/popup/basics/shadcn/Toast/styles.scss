@@ -3,3 +3,14 @@
     content: none !important;
   }
 }
+
+// sonner's container has no pointer-events rule of its own, so its full
+// bounding box swallows clicks around the toast. Let those through; keep the
+// toast itself clickable so it stays swipeable.
+[data-sonner-toaster] {
+  pointer-events: none;
+}
+
+[data-sonner-toast] {
+  pointer-events: auto;
+}
