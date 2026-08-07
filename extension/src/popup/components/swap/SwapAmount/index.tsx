@@ -42,6 +42,7 @@ import { AppDispatch } from "popup/App";
 import { emitMetric } from "helpers/metrics";
 import { InputType } from "helpers/transaction";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
+import { XLM_RESERVE_HELP_URL } from "popup/constants/externalLinks";
 import { LoadingBackground } from "popup/basics/LoadingBackground";
 import { EditSettings } from "popup/components/InternalTransaction/EditSettings";
 import { ReviewTx } from "popup/components/InternalTransaction/ReviewTransaction";
@@ -71,10 +72,6 @@ import { useSwapLiveQuote } from "./hooks/useSwapLiveQuote";
 import { EditSlippage } from "./EditSlippage";
 
 import "./styles.scss";
-
-// "Why do I need XLM?" help article.
-const XLM_RESERVE_HELP_URL =
-  "https://help.freighter.app/article/xjlva9dxov-how-much-xlm-do-i-need-in-my-wallet";
 
 // Canonical "zero" values for the swap amount and its USD equivalent.
 const DEFAULT_AMOUNT = "0";

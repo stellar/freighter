@@ -1,5 +1,11 @@
 import React from "react";
-import { render, waitFor, screen, within } from "@testing-library/react";
+import {
+  render,
+  waitFor,
+  screen,
+  within,
+  fireEvent,
+} from "@testing-library/react";
 
 import { APPLICATION_STATE as ApplicationState } from "@shared/constants/applicationState";
 import { AccountCollectibles } from "popup/components/account/AccountCollectibles";
@@ -132,6 +138,70 @@ describe("AccountCollectibles", () => {
       "src",
       "https://nftcalendar.io/storage/uploads/events/2025/3/oUfeUrSj3KcVnjColyfnS5ICYuqzDbiuqQP4qLIz.png",
     );
+  });
+  it("collapses and expands a collection when its header is clicked", async () => {
+    render(
+      <Wrapper
+        routes={[ROUTES.account]}
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
+            publicKey:
+              "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF",
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: TESTNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+            isHideDustEnabled: false,
+          },
+          cache: {
+            balanceData: {
+              [TESTNET_NETWORK_DETAILS.network]: {
+                G1: {
+                  balances: {},
+                },
+              },
+            },
+            icons: {},
+            homeDomains: {},
+            tokenLists: [],
+            tokenDetails: {},
+            historyData: {},
+            tokenPrices: {},
+            collections: {},
+          },
+        }}
+      >
+        <AccountCollectibles
+          collections={mockCollectibles}
+          refreshHiddenCollectibles={mockRefreshHiddenCollectibles}
+          isCollectibleHidden={mockIsCollectibleHidden}
+        />
+      </Wrapper>,
+    );
+    await waitFor(() => screen.getByTestId("account-collectibles"));
+
+    // Expanded on mount, per spec D5.
+    expect(screen.getAllByTestId("account-collection-grid")).toHaveLength(3);
+
+    // Collapsing the first collection leaves the other two expanded.
+    const firstHeader = screen.getAllByTestId("account-collection-header")[0];
+    expect(firstHeader).toHaveAttribute("aria-expanded", "true");
+
+    fireEvent.click(firstHeader);
+    await waitFor(() => {
+      expect(screen.getAllByTestId("account-collection-grid")).toHaveLength(2);
+    });
+    // The toggle reports its own state, not just the grid's presence.
+    expect(firstHeader).toHaveAttribute("aria-expanded", "false");
+
+    fireEvent.click(firstHeader);
+    await waitFor(() => {
+      expect(screen.getAllByTestId("account-collection-grid")).toHaveLength(3);
+    });
+    expect(firstHeader).toHaveAttribute("aria-expanded", "true");
   });
   it("renders empty state", async () => {
     render(
