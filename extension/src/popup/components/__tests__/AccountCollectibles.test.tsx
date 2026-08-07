@@ -188,15 +188,20 @@ describe("AccountCollectibles", () => {
 
     // Collapsing the first collection leaves the other two expanded.
     const firstHeader = screen.getAllByTestId("account-collection-header")[0];
+    expect(firstHeader).toHaveAttribute("aria-expanded", "true");
+
     fireEvent.click(firstHeader);
     await waitFor(() => {
       expect(screen.getAllByTestId("account-collection-grid")).toHaveLength(2);
     });
+    // The toggle reports its own state, not just the grid's presence.
+    expect(firstHeader).toHaveAttribute("aria-expanded", "false");
 
     fireEvent.click(firstHeader);
     await waitFor(() => {
       expect(screen.getAllByTestId("account-collection-grid")).toHaveLength(3);
     });
+    expect(firstHeader).toHaveAttribute("aria-expanded", "true");
   });
   it("renders empty state", async () => {
     render(

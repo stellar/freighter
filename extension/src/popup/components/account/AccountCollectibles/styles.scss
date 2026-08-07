@@ -80,11 +80,21 @@
     flex-direction: column;
     gap: pxToRem(12px);
 
+    // A real <button> so the collapse toggle is keyboard-reachable and exposes
+    // `aria-expanded`; these resets strip the UA styling it brings with it.
     &__header {
       display: flex;
       justify-content: space-between;
       align-items: center;
       cursor: pointer;
+      width: 100%;
+      padding: 0;
+      border: 0;
+      background: none;
+      appearance: none;
+      font: inherit;
+      color: inherit;
+      text-align: left;
 
       &__name {
         color: var(--sds-clr-gray-12);

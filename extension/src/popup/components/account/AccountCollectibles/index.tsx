@@ -135,9 +135,11 @@ const CollectionsList = ({
             key={collection.address}
             data-testid="account-collectible"
           >
-            <div
+            <button
+              type="button"
               className="AccountCollectibles__collection__header"
               onClick={() => toggleCollection(collection.address)}
+              aria-expanded={!isCollapsed}
               data-testid="account-collection-header"
             >
               <div
@@ -155,7 +157,7 @@ const CollectionsList = ({
                 </div>
                 {isCollapsed ? <Icon.ChevronDown /> : <Icon.ChevronUp />}
               </div>
-            </div>
+            </button>
             {!isCollapsed && (
               <div
                 className="AccountCollectibles__collection__grid"
