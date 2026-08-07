@@ -27,7 +27,7 @@
   "Add another wallet": "Adicionar outra carteira",
   "Add Asset List": "Adicionar Lista de Ativos",
   "Add Asset trustline": "Adicionar linha de confiança de ativo",
-  "Add at least 2 XLM to activate your wallet. Once funded, you'll be able to add tokens and make transactions.": "Adicione pelo menos 2 XLM para ativar sua carteira. Depois de financiada, você poderá adicionar tokens e fazer transações.",
+  "Add at least <bold>2 XLM</bold> to activate your wallet. Once funded, you'll be able to add tokens and make transactions.": "Adicione pelo menos <bold>2 XLM</bold> para ativar sua carteira. Depois de financiada, você poderá adicionar tokens e fazer transações.",
   "Add by address": "Adicionar por endereço",
   "Add Collectible": "Adicionar Colecionável",
   "Add custom network": "Adicionar rede personalizada",

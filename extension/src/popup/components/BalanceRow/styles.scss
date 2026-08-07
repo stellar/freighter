@@ -20,7 +20,7 @@
     min-width: 0;
     display: flex;
     align-items: center;
-    font-weight: var(--font-weight-medium);
+    font-weight: var(--sds-fw-medium);
     // No `gap` here: the icon-to-text spacing comes from AssetIcon's own
     // `margin-right` (AccountAssets/styles.scss `&__asset--logo`), which is
     // shared far more widely than BalanceRow and out of scope for this PR.
@@ -36,7 +36,7 @@
   &__code {
     font-size: pxToRem(14px);
     line-height: pxToRem(20px);
-    font-weight: var(--font-weight-medium);
+    font-weight: var(--sds-fw-medium);
     color: var(--sds-clr-gray-12);
     white-space: nowrap;
     overflow: hidden;
@@ -47,20 +47,20 @@
   &__amount {
     font-size: pxToRem(12px);
     line-height: pxToRem(18px);
-    font-weight: var(--font-weight-medium);
+    font-weight: var(--sds-fw-medium);
     color: var(--sds-clr-gray-11);
   }
 
   &__right {
     min-width: 0;
-    font-weight: var(--font-weight-regular);
+    font-weight: var(--sds-fw-regular);
     text-align: right;
   }
 
   &__fiat {
     font-size: pxToRem(14px);
     line-height: pxToRem(20px);
-    font-weight: var(--font-weight-medium);
+    font-weight: var(--sds-fw-medium);
     color: var(--sds-clr-gray-12);
     white-space: nowrap;
     overflow: hidden;
@@ -75,7 +75,7 @@
     min-width: 0;
     font-size: pxToRem(12px);
     line-height: pxToRem(18px);
-    font-weight: var(--font-weight-medium);
+    font-weight: var(--sds-fw-medium);
 
     // Color is intentionally NOT set here — it comes entirely from the
     // `positive`/`negative` modifier below, composed in from
@@ -85,8 +85,10 @@
       color: var(--sds-clr-green-09);
     }
 
+    // `getPriceDeltaColor()` also returns `negative` for a zero delta, so this
+    // stays gray rather than red: only gains are called out with color.
     &.negative {
-      color: var(--sds-clr-red-09);
+      color: var(--sds-clr-gray-11);
     }
   }
 }

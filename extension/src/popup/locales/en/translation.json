@@ -27,7 +27,7 @@
   "Add another wallet": "Add another wallet",
   "Add Asset List": "Add Asset List",
   "Add Asset trustline": "Add Asset trustline",
-  "Add at least 2 XLM to activate your wallet. Once funded, you'll be able to add tokens and make transactions.": "Add at least 2 XLM to activate your wallet. Once funded, you'll be able to add tokens and make transactions.",
+  "Add at least <bold>2 XLM</bold> to activate your wallet. Once funded, you'll be able to add tokens and make transactions.": "Add at least <bold>2 XLM</bold> to activate your wallet. Once funded, you'll be able to add tokens and make transactions.",
   "Add by address": "Add by address",
   "Add Collectible": "Add Collectible",
   "Add custom network": "Add custom network",
