@@ -3,7 +3,10 @@
 .AccountTabs {
   display: flex;
   gap: pxToRem(12px);
-  padding: pxToRem(12px) 0;
+  // No bottom padding: Figma's tab strip is flush, and the 24px below it is
+  // owned by the list/empty-state that follows. Keeping it here double-counted
+  // against those, pushing every pane 12px too low.
+  padding: pxToRem(12px) 0 0;
   align-items: center;
   position: relative;
 

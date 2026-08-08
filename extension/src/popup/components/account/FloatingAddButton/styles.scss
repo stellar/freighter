@@ -1,8 +1,14 @@
 @use "../../../styles/utils.scss" as *;
 
 .FloatingAddButton {
-  position: absolute;
-  bottom: pxToRem(16px);
+  // Fixed, not absolute: on Home the layout has no inner scroll container —
+  // `.View` grows with the token list and the document itself scrolls. Any
+  // absolutely-positioned anchor therefore rides along with the content.
+  // Fixed pins the pill to the viewport, which is what "floating" means here.
+  // Safe because no ancestor sets transform/filter/backdrop-filter, which
+  // would otherwise turn into its containing block.
+  position: fixed;
+  bottom: pxToRem(24px);
   left: 50%;
   transform: translateX(-50%);
   z-index: var(--z-index--banner);
@@ -10,6 +16,13 @@
   display: flex;
   align-items: center;
   gap: pxToRem(4px);
+
+  svg {
+    width: pxToRem(16px);
+    height: pxToRem(16px);
+    stroke: var(--sds-clr-gray-09);
+    stroke-width: 2;
+  }
 
   color: var(--sds-clr-gray-12);
   background-color: rgba(35, 35, 35, 0.8);
@@ -21,7 +34,7 @@
 
   &__label {
     font-size: pxToRem(14px);
-    font-weight: var(--font-weight-medium);
+    font-weight: var(--sds-fw-semi-bold);
     line-height: pxToRem(20px);
     white-space: nowrap;
   }

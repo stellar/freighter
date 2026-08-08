@@ -329,8 +329,14 @@ export const Account = () => {
             ]}
           />
         </div>
-        <FloatingAddButton isFunded={!!resolvedData?.balances?.isFunded} />
       </View.Content>
+      {/*
+        Rendered as a sibling of View.Content, not inside it: View.Content's
+        inset is the scroll container, and an absolutely-positioned child of a
+        scroll container is placed against its content box, so the pill scrolled
+        away with the list. `.View` is viewport-sized and already positioned.
+      */}
+      <FloatingAddButton isFunded={!!resolvedData?.balances?.isFunded} />
       <Sheet
         open={isDiscoverOpen}
         onOpenChange={(open) => !open && setIsDiscoverOpen(false)}

@@ -6,7 +6,9 @@
   align-items: center;
   text-align: center;
   gap: pxToRem(8px);
-  padding: pxToRem(48px) pxToRem(16px);
+  // 24px above per Figma (empty-state content sits 24px under the tab strip);
+  // the roomier bottom keeps the copy clear of the floating add pill.
+  padding: pxToRem(24px) pxToRem(16px) pxToRem(48px);
 
   &__badge {
     display: flex;

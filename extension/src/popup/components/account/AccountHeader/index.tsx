@@ -357,7 +357,7 @@ export const AccountHeader = ({
           </div>
         }
       >
-        <View.Inset hasVerticalBorder hasBottomBorder>
+        <View.Inset hasVerticalBorder>
           <div
             className="AccountHeader__account-info"
             data-testid="account-header"
@@ -391,7 +391,7 @@ export const AccountHeader = ({
                     <div className="AccountHeader__actions__btn">
                       <Icon.Plus />
                     </div>
-                    <Text as="div" size="sm" weight="medium">
+                    <Text as="div" size="xs" weight="medium">
                       {t("Add")}
                     </Text>
                   </div>
@@ -401,7 +401,7 @@ export const AccountHeader = ({
                     <div className="AccountHeader__actions__btn">
                       <Icon.ArrowUp />
                     </div>
-                    <Text as="div" size="sm" weight="medium">
+                    <Text as="div" size="xs" weight="medium">
                       {t("Send")}
                     </Text>
                   </div>
@@ -409,9 +409,9 @@ export const AccountHeader = ({
                 <NavLink to={ROUTES.swap} data-testid="nav-link-swap">
                   <div className="AccountHeader__actions__column">
                     <div className="AccountHeader__actions__btn">
-                      <Icon.RefreshCcw05 />
+                      <Icon.RefreshCw02 />
                     </div>
-                    <Text as="div" size="sm" weight="medium">
+                    <Text as="div" size="xs" weight="medium">
                       {t("Swap")}
                     </Text>
                   </div>
