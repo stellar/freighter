@@ -21,8 +21,15 @@
     width: pxToRem(16px);
     height: pxToRem(16px);
     stroke: var(--sds-clr-gray-09);
-    // SDS icons carry a 24x24 viewBox, so a 16px box scales strokes by 2/3.
-    // 3 renders as the 2px Figma draws; the authored 2 would land at 1.33px.
+  }
+
+  // Must target the path, not the svg. SDS ships these through SVGR, so the
+  // path keeps its own `stroke-width="2"` presentation attribute -- which loses
+  // to a rule matching the path, but beats a value inherited from the svg.
+  //
+  // The value is 3, not 2, because the viewBox is 24x24 while the box is 16px:
+  // strokes scale by 2/3, so 3 user units render as the 2px Figma draws.
+  svg path {
     stroke-width: 3;
   }
 

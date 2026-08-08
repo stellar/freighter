@@ -320,6 +320,12 @@
         width: pxToRem(24px);
         height: pxToRem(24px);
         stroke: var(--sds-clr-lilac-11);
+      }
+
+      // On the path, not the svg: the path's own `stroke-width` presentation
+      // attribute beats an inherited value, so a rule on the svg is silently
+      // dead. Here 2 over a 24x24 viewBox in a 24px box renders as Figma's 2px.
+      svg path {
         stroke-width: 2;
       }
     }
