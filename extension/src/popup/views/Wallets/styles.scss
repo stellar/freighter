@@ -105,18 +105,16 @@
 
 // Per the spec this reads as a purple icon chip sitting beside a plain purple
 // label — the tinted background belongs to the chip alone, not to the whole
-// control, so the button itself is transparent and unpadded.
+// control, so the button itself is transparent.
 .Wallets__add-wallet {
   // SDS `Button` overwrites (rather than merges) any `className` passed to
   // it, so a class placed directly on it can never combine with its own
   // `Button`/`Button--*` classes. Scope the override through this wrapper
   // instead, at higher specificity than `.Button--tertiary` itself.
+  // Height, padding and type come from SDS's `xl` size, whose 16px/24px text
+  // already matches the spec — only the colors, gap and weight are overridden.
   .Button {
-    --Button-height: #{pxToRem(34px)};
-    --Button-padding-vertical: 0;
-    --Button-padding-horizontal: 0;
     --Button-gap: #{pxToRem(16px)};
-    --Button-font-size: #{pxToRem(16px)};
     --Button-color-text-default: var(--sds-clr-lilac-11);
     --Button-color-icon-default: var(--sds-clr-lilac-09);
     --Button-color-background-default: transparent;
@@ -128,7 +126,6 @@
 
     // SDS exposes no font-weight custom property, so set it directly.
     font-weight: var(--font-weight-medium);
-    line-height: #{pxToRem(24px)};
   }
 
   // The chip. The plus glyph uses `stroke="currentColor"`, inheriting

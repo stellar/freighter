@@ -1,8 +1,9 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { Navigate, useNavigate } from "react-router-dom";
-import { Button, CopyText, Icon, Notification } from "@stellar/design-system";
+import { Button, Icon, Notification } from "@stellar/design-system";
+import { toast } from "sonner";
 
 import { isCustomNetwork } from "@shared/helpers/stellar";
 
@@ -47,6 +48,10 @@ export const Wallets = () => {
   const { state: dataState, fetchData } = useGetWalletsData();
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const allAccounts = useSelector(allAccountsSelector);
+  // Holds the currently-shown copy-toast's id (see copyAddress below for why
+  // this can't be a stable id). Declared here, above the early returns, so
+  // this hook always runs regardless of which branch this render takes.
+  const lastToastIdRef = useRef<string | number | null>(null);
 
   useEffect(() => {
     const getData = async () => {
@@ -107,6 +112,39 @@ export const Wallets = () => {
     allAccounts.find((account) => account.publicKey === activePublicKey)
       ?.name || "";
 
+  // Dismiss-then-create with a fresh id, so repeated taps replace rather than
+  // stack. Do NOT switch to a stable id: sonner's create() updates an existing
+  // entry, but dismiss() never removes it, so after a swipe the update targets
+  // an unmounted toast and nothing renders.
+  const showToast = (render: (id: string | number) => React.ReactElement) => {
+    if (lastToastIdRef.current !== null) {
+      toast.dismiss(lastToastIdRef.current);
+    }
+    lastToastIdRef.current = toast.custom(render);
+  };
+
+  const copyAddress = async () => {
+    try {
+      await navigator.clipboard.writeText(activePublicKey);
+      emitMetric(METRIC_NAMES.accountPublicKeyCopied);
+      showToast(() => (
+        <Notification
+          variant="success"
+          title={t("Address {{address}} copied!", {
+            address: truncatedPublicKey(activePublicKey),
+          })}
+        />
+      ));
+    } catch {
+      showToast(() => (
+        <Notification
+          variant="error"
+          title={t("Couldn’t copy your wallet address")}
+        />
+      ));
+    }
+  };
+
   return (
     <React.Fragment>
       <SubviewHeader
@@ -153,16 +191,17 @@ export const Wallets = () => {
             >
               <Icon.QrCode02 />
             </button>
-            <CopyText textToCopy={activePublicKey} doneLabel={t("Copied!")}>
-              <button
-                className="Wallets__header__action"
-                onClick={() => emitMetric(METRIC_NAMES.accountPublicKeyCopied)}
-                data-testid="wallets-header-copy"
-                aria-label={t("Copy wallet address")}
-              >
-                <Icon.Copy01 />
-              </button>
-            </CopyText>
+            {/* account.public_key_copied carries no source and never the raw
+                key. Emitted from copyAddress only once the clipboard write
+                succeeds, so failed copies aren't counted. */}
+            <button
+              className="Wallets__header__action"
+              onClick={copyAddress}
+              data-testid="wallets-header-copy"
+              aria-label={t("Copy wallet address")}
+            >
+              <Icon.Copy01 />
+            </button>
             {!isCustomNetwork(networkDetails) ? (
               <button
                 className="Wallets__header__action"

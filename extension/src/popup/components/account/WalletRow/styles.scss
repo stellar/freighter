@@ -10,10 +10,6 @@
   border-radius: #{pxToRem(8px)};
   cursor: pointer;
 
-  &:hover {
-    background-color: var(--sds-clr-gray-03);
-  }
-
   &__identicon {
     width: #{pxToRem(40px)};
     height: #{pxToRem(40px)};
