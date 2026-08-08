@@ -32,7 +32,7 @@
   &__show-hidden {
     color: var(--sds-clr-lilac-11);
     font-size: pxToRem(14px);
-    font-weight: var(--font-weight-medium);
+    font-weight: var(--sds-fw-medium);
     line-height: pxToRem(20px);
     cursor: pointer;
     width: fit-content;
@@ -42,7 +42,7 @@
   &__helper-text {
     color: var(--sds-clr-gray-11);
     font-size: pxToRem(14px);
-    font-weight: var(--font-weight-regular);
+    font-weight: var(--sds-fw-regular);
     line-height: pxToRem(20px);
     margin-top: pxToRem(16px);
   }

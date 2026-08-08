@@ -21,7 +21,9 @@
     width: pxToRem(16px);
     height: pxToRem(16px);
     stroke: var(--sds-clr-gray-09);
-    stroke-width: 2;
+    // SDS icons carry a 24x24 viewBox, so a 16px box scales strokes by 2/3.
+    // 3 renders as the 2px Figma draws; the authored 2 would land at 1.33px.
+    stroke-width: 3;
   }
 
   color: var(--sds-clr-gray-12);
@@ -31,6 +33,11 @@
   border-radius: pxToRem(100px);
   padding: pxToRem(8px) pxToRem(12px);
   cursor: pointer;
+  transition: background-color var(--sds-anim-transition-default);
+
+  &:hover {
+    background-color: rgba(40, 40, 40, 0.9);
+  }
 
   &__label {
     font-size: pxToRem(14px);

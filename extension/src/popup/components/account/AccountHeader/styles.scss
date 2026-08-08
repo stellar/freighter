@@ -282,7 +282,9 @@
     grid-template-columns: repeat(3, 1fr);
     margin-top: pxToRem(8px);
     gap: pxToRem(8px);
-    padding-bottom: pxToRem(16px);
+    // Figma's Balance frame closes with 24px, and the tab strip below adds no
+    // top offset of its own, so this alone sets the tiles -> tabs gap.
+    padding-bottom: pxToRem(24px);
 
     // The NavLink is the grid item; without this the tile inside it shrinks to
     // its content instead of filling the column.

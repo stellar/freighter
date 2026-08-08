@@ -154,7 +154,12 @@ export const AddCollectibles = () => {
             title={t("Add Collectible")}
             customBackIcon={<Icon.X />}
           />
-          <View.Content hasNoTopPadding>
+          {/*
+            hasTopInput rather than hasNoTopPadding: the address input is the
+            first element, and its focus ring is a 4px box-shadow that a
+            zero-padding inset clips.
+          */}
+          <View.Content hasTopInput>
             <FormRows>
               <Field name="collectibleContractAddress">
                 {({ field }: FieldProps) => (
@@ -166,6 +171,7 @@ export const AddCollectibles = () => {
                       type="text"
                       fieldSize="md"
                       autoComplete="off"
+                      autoFocus
                       data-testid="collectibleContractAddress"
                       id="collectibleContractAddress"
                       placeholder={t("Collection address")}
