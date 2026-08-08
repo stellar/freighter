@@ -92,14 +92,14 @@
 
   &__amount-label {
     font-size: 2.5rem;
-    font-weight: var(--font-weight-light);
+    font-weight: var(--sds-fw-light);
     margin-left: pxToRem(6px);
   }
 
   &__amount-label-usd {
     font-size: pxToRem(24px);
     line-height: 1;
-    font-weight: var(--font-weight-medium);
+    font-weight: var(--sds-fw-medium);
     color: var(--sds-clr-gray-12);
     flex-shrink: 0;
   }
@@ -107,7 +107,7 @@
   &__input-amount {
     font-size: pxToRem(24px);
     line-height: 1;
-    font-weight: var(--font-weight-medium);
+    font-weight: var(--sds-fw-medium);
     color: var(--sds-clr-gray-12);
     background: none;
     border: none;
@@ -273,7 +273,7 @@
 
   &__asset-code {
     font-size: pxToRem(14px);
-    font-weight: var(--font-weight-medium);
+    font-weight: var(--sds-fw-medium);
   }
 
   &__balance-row {
@@ -353,7 +353,7 @@
     margin-top: 1.5rem;
     font-size: 0.875rem;
     line-height: 1.375rem;
-    font-weight: var(--font-weight-medium);
+    font-weight: var(--sds-fw-medium);
     color: var(--sds-clr-gray-11);
 
     svg {
@@ -384,7 +384,7 @@
     font-size: 0.875rem;
     line-height: 1.375rem;
     color: var(--sds-clr-gray-12);
-    font-weight: var(--font-weight-medium);
+    font-weight: var(--sds-fw-medium);
     background: none;
     border: 0;
     display: flex;

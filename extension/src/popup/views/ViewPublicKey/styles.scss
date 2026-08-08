@@ -41,14 +41,14 @@
     &__name {
       color: var(--sds-clr-gray-12);
       font-size: pxToRem(16px);
-      font-weight: var(--font-weight-medium);
+      font-weight: var(--sds-fw-medium);
       line-height: pxToRem(24px);
     }
 
     &__address {
       color: var(--sds-clr-gray-11);
       font-size: pxToRem(14px);
-      font-weight: var(--font-weight-regular);
+      font-weight: var(--sds-fw-regular);
       line-height: pxToRem(20px);
     }
   }
@@ -90,7 +90,7 @@
     &__caption {
       color: var(--sds-clr-gray-11);
       font-size: pxToRem(14px);
-      font-weight: var(--font-weight-regular);
+      font-weight: var(--sds-fw-regular);
       line-height: pxToRem(20px);
       text-align: center;
     }

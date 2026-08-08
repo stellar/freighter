@@ -54,7 +54,7 @@
   &__network-copy {
     font-size: pxToRem(14px);
     line-height: 1.5rem;
-    font-weight: var(--font-weight-medium);
+    font-weight: var(--sds-fw-medium);
     white-space: nowrap;
   }
 
@@ -86,7 +86,7 @@
 
   &__account-name {
     color: var(--sds-clr-gray-11);
-    font-weight: var(--font-weight-medium);
+    font-weight: var(--sds-fw-medium);
     margin: 0 pxToRem(4px);
   }
 

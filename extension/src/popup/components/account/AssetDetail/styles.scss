@@ -123,7 +123,7 @@
       align-items: center;
       display: flex;
       font-size: 2rem;
-      font-weight: var(--font-weight-medium);
+      font-weight: var(--sds-fw-medium);
       line-height: 150%;
 
       &--isSuspicious {
@@ -294,7 +294,7 @@
 
     &__label {
       font-size: 0.875rem;
-      font-weight: var(--font-weight-medium);
+      font-weight: var(--sds-fw-medium);
     }
 
     &__background {

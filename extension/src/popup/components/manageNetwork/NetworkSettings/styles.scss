@@ -6,7 +6,7 @@ $activeColor: rgba(61, 204, 152, 1);
   &__header {
     color: var(--sds-clr-gray-11);
     font-size: pxToRem(14px);
-    font-weight: var(--font-weight-medium);
+    font-weight: var(--sds-fw-medium);
     margin-bottom: pxToRem(16px);
     margin-top: pxToRem(32px);
   }
@@ -15,7 +15,7 @@ $activeColor: rgba(61, 204, 152, 1);
     align-items: center;
     display: flex;
     font-size: 0.875rem;
-    font-weight: var(--font-weight-medium);
+    font-weight: var(--sds-fw-medium);
 
     &--active {
       color: $activeColor;

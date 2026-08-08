@@ -32,7 +32,7 @@
 
   &__title {
     font-size: pxToRem(18px);
-    font-weight: var(--font-weight-medium);
+    font-weight: var(--sds-fw-medium);
     line-height: pxToRem(26px);
     color: var(--sds-clr-gray-12);
     margin: 0;
@@ -40,7 +40,7 @@
 
   &__body {
     font-size: pxToRem(14px);
-    font-weight: var(--font-weight-regular);
+    font-weight: var(--sds-fw-regular);
     font-style: normal;
     line-height: pxToRem(20px);
     color: var(--sds-clr-gray-11);
