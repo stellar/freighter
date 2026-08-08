@@ -630,7 +630,9 @@ test("Loads wallets data and token prices on Mainnet in batches", async ({
   await page.getByTestId("account-view-account-name").click();
   await expect(page.getByText("Wallets")).toBeVisible();
 
-  await page.getByText("Add a wallet").click();
+  // By testid: the footer button and the sheet it opens share the "Add
+  // wallet" label, so matching on text is ambiguous once the sheet is open.
+  await page.getByTestId("add-wallet").click();
   await page.getByText("Create a new wallet").click();
   await page.locator("#password-input").fill(PASSWORD);
   await page.getByRole("button", { name: "Create New Address" }).click();

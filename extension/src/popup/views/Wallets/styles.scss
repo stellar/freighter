@@ -36,6 +36,14 @@
     justify-content: center;
   }
 
+  // Name sits directly above the address with no gap between them; the
+  // parent's 16px gap separates this pair from the identicon and actions.
+  &__identity {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
   &__name {
     font-size: #{pxToRem(16px)};
     line-height: #{pxToRem(24px)};
@@ -81,9 +89,11 @@
   }
 }
 
+// Inset to the content gutter rather than bleeding to the window edges, and
+// held off the list below it. The 24px above comes from the header's padding.
 .Wallets__divider {
   height: 1px;
-  margin: 0 #{pxToRem(-24px)};
+  margin-bottom: #{pxToRem(16px)};
   background-color: var(--sds-clr-gray-06);
 }
 
@@ -91,9 +101,11 @@
   display: flex;
   flex-direction: column;
   gap: #{pxToRem(16px)};
-  padding-top: #{pxToRem(16px)};
 }
 
+// Per the spec this reads as a purple icon chip sitting beside a plain purple
+// label — the tinted background belongs to the chip alone, not to the whole
+// control, so the button itself is transparent and unpadded.
 .Wallets__add-wallet {
   // SDS `Button` overwrites (rather than merges) any `className` passed to
   // it, so a class placed directly on it can never combine with its own
@@ -101,24 +113,46 @@
   // instead, at higher specificity than `.Button--tertiary` itself.
   .Button {
     --Button-height: #{pxToRem(34px)};
-    --Button-padding-vertical: #{pxToRem(6px)};
-    --Button-padding-horizontal: #{pxToRem(10px)};
+    --Button-padding-vertical: 0;
+    --Button-padding-horizontal: 0;
     --Button-gap: #{pxToRem(16px)};
+    --Button-font-size: #{pxToRem(16px)};
     --Button-color-text-default: var(--sds-clr-lilac-11);
     --Button-color-icon-default: var(--sds-clr-lilac-09);
-    --Button-color-background-default: var(--sds-clr-lilac-02);
-    --Button-color-border-default: var(--sds-clr-lilac-02);
+    --Button-color-background-default: transparent;
+    --Button-color-border-default: transparent;
     --Button-color-text-hover: var(--sds-clr-lilac-11);
     --Button-color-icon-hover: var(--sds-clr-lilac-09);
-    --Button-color-background-hover: var(--sds-clr-lilac-03);
-    --Button-color-border-hover: var(--sds-clr-lilac-03);
+    --Button-color-background-hover: transparent;
+    --Button-color-border-hover: transparent;
+
+    // SDS exposes no font-weight custom property, so set it directly.
+    font-weight: var(--font-weight-medium);
+    line-height: #{pxToRem(24px)};
   }
 
-  // The plus glyph uses `stroke="currentColor"`, inheriting whatever
-  // `color` it finds — which would otherwise be the button's own (lighter)
-  // text color above. Target the icon's own wrapper so it keeps the
-  // spec's more saturated fill purple instead.
+  // The chip. The plus glyph uses `stroke="currentColor"`, inheriting
+  // whatever `color` it finds — which would otherwise be the button's own
+  // (lighter) text color above. Setting `color` here keeps it the spec's
+  // more saturated fill purple.
   .Button__icon {
+    width: #{pxToRem(34px)};
+    height: #{pxToRem(34px)};
+    flex-shrink: 0;
+    border-radius: 100px;
+    background-color: var(--sds-clr-lilac-02);
     color: var(--sds-clr-lilac-09);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    svg {
+      width: #{pxToRem(14px)};
+      height: #{pxToRem(14px)};
+    }
+  }
+
+  .Button:hover .Button__icon {
+    background-color: var(--sds-clr-lilac-03);
   }
 }

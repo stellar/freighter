@@ -123,11 +123,11 @@ export const Wallets = () => {
               isRounded
               variant="tertiary"
               iconPosition="left"
-              icon={<Icon.PlusCircle />}
+              icon={<Icon.Plus />}
               onClick={() => setIsAddingWallet(true)}
               data-testid="add-wallet"
             >
-              {t("Add a wallet")}
+              {t("Add wallet")}
             </Button>
           </div>
         }
@@ -136,9 +136,13 @@ export const Wallets = () => {
           <div className="Wallets__header__identicon">
             <IdenticonImg publicKey={activePublicKey} />
           </div>
-          <div className="Wallets__header__name">{activeAccountName}</div>
-          <div className="Wallets__header__address">
-            {truncatedPublicKey(activePublicKey)}
+          {/* Name and address are one tight block; the 16px gap belongs
+              between the identicon, this block, and the action row. */}
+          <div className="Wallets__header__identity">
+            <div className="Wallets__header__name">{activeAccountName}</div>
+            <div className="Wallets__header__address">
+              {truncatedPublicKey(activePublicKey)}
+            </div>
           </div>
           <div className="Wallets__header__actions">
             <button
@@ -147,7 +151,7 @@ export const Wallets = () => {
               data-testid="wallets-header-qr"
               aria-label={t("Show QR code")}
             >
-              <Icon.QrCode01 />
+              <Icon.QrCode02 />
             </button>
             <CopyText textToCopy={activePublicKey} doneLabel={t("Copied!")}>
               <button
@@ -180,7 +184,7 @@ export const Wallets = () => {
               data-testid="wallets-header-edit-name"
               aria-label={t("Rename wallet")}
             >
-              <Icon.Edit05 />
+              <Icon.Edit01 />
             </button>
           </div>
         </div>

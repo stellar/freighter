@@ -1,11 +1,9 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { Icon } from "@stellar/design-system";
-import classNames from "classnames";
 
 import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
 import { truncatedPublicKey } from "helpers/stellar";
-import { getColorPubKey } from "helpers/stellarIdenticon";
 import { WalletType } from "@shared/constants/hardwareWallet";
 
 import "./styles.scss";
@@ -33,12 +31,6 @@ export const WalletRow = ({
 }: WalletRowProps) => {
   const { t } = useTranslation();
   const shortPublicKey = truncatedPublicKey(publicKey);
-  const identiconWrapperStyles = classNames("identicon-wrapper", {
-    "is-selected": isSelected,
-  });
-  const selectedBorderColorRgb = getColorPubKey(publicKey);
-  const isSelectedColor = `rgb(${selectedBorderColorRgb.r} ${selectedBorderColorRgb.g} ${selectedBorderColorRgb.b} / 100%`;
-  const borderColor = isSelected ? isSelectedColor : "var(--sds-clr-gray-03)";
 
   const isImportedWallet = !!hardwareWalletType || isImported;
 
@@ -53,18 +45,12 @@ export const WalletRow = ({
       data-testid="wallet-row-select"
     >
       <div className="WalletRow__identicon">
-        <div
-          className={identiconWrapperStyles}
-          style={{ borderColor: borderColor }}
-        >
+        <div className="identicon-wrapper">
           <IdenticonImg publicKey={publicKey} />
         </div>
         {isSelected ? (
-          <div
-            className="WalletRow__identicon__selected-check"
-            style={{ backgroundColor: isSelectedColor }}
-          >
-            <Icon.Check width="14px" height="14px" />
+          <div className="WalletRow__identicon__selected-check">
+            <Icon.Check />
           </div>
         ) : null}
       </div>
@@ -73,7 +59,14 @@ export const WalletRow = ({
         <p className="detail-address">
           {shortPublicKey}
           {isImportedWallet ? (
-            <span className="detail-imported">{t("Imported")}</span>
+            <>
+              {/* Decorative separator; the address and label are already
+                  distinct to a screen reader without it. */}
+              <span className="detail-separator" aria-hidden="true">
+                •
+              </span>
+              <span className="detail-imported">{t("Imported")}</span>
+            </>
           ) : null}
         </p>
       </div>
