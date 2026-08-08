@@ -47,14 +47,14 @@
   &__name {
     font-size: #{pxToRem(16px)};
     line-height: #{pxToRem(24px)};
-    font-weight: var(--font-weight-medium);
+    font-weight: var(--sds-fw-medium);
     color: var(--sds-clr-gray-12);
   }
 
   &__address {
     font-size: #{pxToRem(14px)};
     line-height: #{pxToRem(20px)};
-    font-weight: var(--font-weight-regular);
+    font-weight: var(--sds-fw-regular);
     color: var(--sds-clr-gray-11);
   }
 
@@ -125,7 +125,11 @@
     --Button-color-border-hover: transparent;
 
     // SDS exposes no font-weight custom property, so set it directly.
-    font-weight: var(--font-weight-medium);
+    font-weight: var(--sds-fw-medium);
+
+    // SDS drives both sides from one horizontal custom property, so zero the
+    // left alone here to line the icon chip up with the list's avatars.
+    padding-left: 0;
   }
 
   // The chip. The plus glyph uses `stroke="currentColor"`, inheriting
@@ -152,4 +156,12 @@
   .Button:hover .Button__icon {
     background-color: var(--sds-clr-lilac-03);
   }
+}
+
+// The shared content footer pads 24px below and nothing above. The spec wants
+// an even 8px on both sides of the add-wallet control, so restate both here.
+// Scoped with :has() so every other view's footer keeps its own padding.
+.View__inset__footer:has(.Wallets__add-wallet) {
+  padding-top: #{pxToRem(8px)};
+  padding-bottom: #{pxToRem(8px)};
 }

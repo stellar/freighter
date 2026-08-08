@@ -62,7 +62,7 @@
       white-space: nowrap;
       font-size: #{pxToRem(14px)};
       line-height: #{pxToRem(20px)};
-      font-weight: var(--font-weight-medium);
+      font-weight: var(--sds-fw-medium);
       color: var(--sds-clr-gray-12);
     }
 
@@ -71,7 +71,7 @@
       line-height: #{pxToRem(18px)};
       color: var(--sds-clr-gray-11) !important; // sds override
       font-size: #{pxToRem(12px)};
-      font-weight: var(--font-weight-regular);
+      font-weight: var(--sds-fw-regular);
 
       .detail-separator {
         margin: 0 #{pxToRem(4px)};
@@ -84,7 +84,7 @@
     white-space: nowrap;
     font-size: #{pxToRem(14px)};
     line-height: #{pxToRem(20px)};
-    font-weight: var(--font-weight-medium);
+    font-weight: var(--sds-fw-medium);
     color: var(--sds-clr-gray-12);
   }
 }
