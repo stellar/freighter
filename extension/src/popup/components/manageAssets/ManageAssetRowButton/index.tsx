@@ -14,7 +14,12 @@ interface ManageAssetRowButtonProps {
   code: string;
   issuer: string;
   isTrustlineActive: boolean;
-  isSac: boolean;
+  /**
+   * Whether this asset can be removed from the balances view at all. False for
+   * SACs, and for custom tokens the backend returns on its own — removing the
+   * local entry would not stop them coming back, so those are hide-only.
+   */
+  isRemovable: boolean;
   isLoading: boolean;
   onClick: () => void;
 }
@@ -23,7 +28,7 @@ export const ManageAssetRowButton = ({
   code,
   issuer,
   isTrustlineActive,
-  isSac,
+  isRemovable,
   isLoading,
   onClick,
 }: ManageAssetRowButtonProps) => {
@@ -71,7 +76,7 @@ export const ManageAssetRowButton = ({
                   </>
                 </CopyText>
               </div>
-              {!isSac && (
+              {isRemovable && (
                 <div className="ManageAssetRowButton__dropdown__row">
                   <Button
                     className="ManageAssetRowButton__remove"

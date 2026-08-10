@@ -12,6 +12,14 @@ export interface AccountBalancesInterface {
   isFunded: boolean | null;
   subentryCount: number;
   error?: { horizon: any; soroban: any };
+  /**
+   * Contract IDs whose presence in `balances` comes from the user's locally
+   * saved custom-token list rather than from the backend. These are the only
+   * tokens a user can remove from their balances view — everything the backend
+   * returns on its own can be hidden but not removed, because removing the
+   * local entry would not stop the backend from returning it.
+   */
+  localOnlyTokenIds?: string[];
 }
 
 // ---------------------------------------------------------------------------

@@ -68,14 +68,36 @@ const v2AccountWithClassic = {
   ],
 };
 
+const LOCAL_CONTRACT = "CLOCALTOKENCONTRACTID";
+
 // Routes FETCH_BACKEND_V2 messages to the given chokepoint result and lets
-// every other message type (getTokenIds on the v1 path) resolve benignly.
-const mockBackendV2 = (result: { status: number; body: unknown }) => {
+// every other message type (getTokenIds on the v1 path, and the local
+// custom-token merge on the v2 path) resolve benignly.
+const mockBackendV2 = (
+  result: { status: number; body: unknown },
+  tokenIdList: string[] = [],
+) => {
   mockedSend.mockImplementation((msg: { type: SERVICE_TYPES }) => {
     if (msg.type === SERVICE_TYPES.FETCH_BACKEND_V2) {
       return Promise.resolve(result);
     }
-    return Promise.resolve({ tokenIdList: [], error: undefined });
+    return Promise.resolve({ tokenIdList, error: undefined });
+  });
+};
+
+// The merge resolves each unreturned contract through the v1 token-details
+// endpoint, then the Blockaid scan runs — both are direct fetches.
+const mockTokenDetailsAndScan = (
+  tokenDetails: unknown,
+  scanResults: Record<string, unknown> = {},
+) => {
+  mockFetch.mockImplementation((url: string) => {
+    if (url.includes("/token-details/")) {
+      return Promise.resolve({ ok: true, json: async () => tokenDetails });
+    }
+    return Promise.resolve({
+      json: async () => ({ data: { results: scanResults } }),
+    });
   });
 };
 
@@ -171,6 +193,95 @@ describe("getAccountBalancesV2", () => {
     ).toBe("Benign");
   });
 
+  it("injects a locally saved token the response omits, and scans it", async () => {
+    mockBackendV2({ status: 200, body: { data: [v2Account] } }, [
+      LOCAL_CONTRACT,
+    ]);
+    mockTokenDetailsAndScan(
+      { name: "My Token", symbol: "TKN", decimals: 7, balance: "0" },
+      { [`TKN-${LOCAL_CONTRACT}`]: { result_type: "Spam" } },
+    );
+
+    const result = await getAccountBalancesV2({
+      publicKey: PUBLIC_KEY,
+      networkDetails: MAINNET_NETWORK_DETAILS,
+    });
+
+    const detailsCall = mockFetch.mock.calls.find(([url]) =>
+      String(url).includes("/token-details/"),
+    );
+    expect(detailsCall[0]).toContain(LOCAL_CONTRACT);
+    expect(detailsCall[0]).toContain("should_fetch_balance=true");
+
+    const entry = result.balances![`TKN:${LOCAL_CONTRACT}`] as any;
+    expect(entry.contractId).toBe(LOCAL_CONTRACT);
+    expect(entry.total.toString()).toBe("0");
+    expect(result.localOnlyTokenIds).toEqual([LOCAL_CONTRACT]);
+    // the merge runs before the scan, so injected tokens get verdicts too
+    expect(entry.blockaidData).toEqual({ result_type: "Spam" });
+  });
+
+  it("reports no local-only tokens when the response already covers them", async () => {
+    const v2AccountWithToken = {
+      ...v2Account,
+      balances: [
+        ...v2Account.balances,
+        {
+          token_type: "SEP41",
+          token_id: LOCAL_CONTRACT,
+          key: `TKN:${LOCAL_CONTRACT}`,
+          token: { code: "TKN", issuer: { key: LOCAL_CONTRACT } },
+          total: "5000000000",
+          available: "5000000000",
+          symbol: "TKN",
+          name: "My Token",
+          decimals: 7,
+        },
+      ],
+    };
+    mockBackendV2({ status: 200, body: { data: [v2AccountWithToken] } }, [
+      LOCAL_CONTRACT,
+    ]);
+
+    const result = await getAccountBalancesV2({
+      publicKey: PUBLIC_KEY,
+      networkDetails: TESTNET_NETWORK_DETAILS,
+      shouldSkipScan: true,
+    });
+
+    expect(mockFetch).not.toHaveBeenCalled();
+    expect(result.localOnlyTokenIds).toEqual([]);
+    expect(result.balances![`TKN:${LOCAL_CONTRACT}`]).toBeDefined();
+  });
+
+  it("skips the merge for an unfunded account", async () => {
+    mockBackendV2(
+      {
+        status: 200,
+        body: {
+          data: [
+            {
+              address: PUBLIC_KEY,
+              is_funded: false,
+              subentry_count: 0,
+              balances: [],
+            },
+          ],
+        },
+      },
+      [LOCAL_CONTRACT],
+    );
+
+    const result = await getAccountBalancesV2({
+      publicKey: PUBLIC_KEY,
+      networkDetails: TESTNET_NETWORK_DETAILS,
+    });
+
+    expect(mockFetch).not.toHaveBeenCalled();
+    expect(result.isFunded).toBe(false);
+    expect(result.localOnlyTokenIds).toBeUndefined();
+  });
+
   it("throws on a non-200 chokepoint result", async () => {
     mockBackendV2({
       status: 500,
@@ -232,6 +343,28 @@ describe("getAccountBalances routing", () => {
     expect(backendV2Message()).toBeUndefined();
     const [url] = mockFetch.mock.calls[0];
     expect(url).toContain(`/account-balances/${PUBLIC_KEY}`);
+  });
+
+  it("marks every locally saved contract removable on the v1 path", async () => {
+    // v1 returns a contract-token balance only for an ID it was handed, so
+    // dropping the local entry is enough to hide it.
+    mockBackendV2({ status: 200, body: { data: [] } }, [LOCAL_CONTRACT]);
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ balances: {}, isFunded: true, subentryCount: 0 }),
+    });
+
+    const result = await getAccountBalances(
+      PUBLIC_KEY,
+      TESTNET_NETWORK_DETAILS,
+      false,
+      undefined,
+      false,
+    );
+
+    const [url] = mockFetch.mock.calls[0];
+    expect(url).toContain(`contract_ids=${LOCAL_CONTRACT}`);
+    expect(result.localOnlyTokenIds).toEqual([LOCAL_CONTRACT]);
   });
 
   it("routes to v1 on Futurenet even with the flag on", async () => {

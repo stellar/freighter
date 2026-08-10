@@ -57,6 +57,7 @@ export interface AccountBalances {
   isFunded: AccountBalancesInterface["isFunded"];
   subentryCount: AccountBalancesInterface["subentryCount"];
   error?: AccountBalancesInterface["error"];
+  localOnlyTokenIds?: AccountBalancesInterface["localOnlyTokenIds"];
   icons?: AssetIcons;
 }
 
@@ -106,6 +107,7 @@ function useGetBalances(options: {
         isFunded: accountBalances.isFunded,
         subentryCount: accountBalances.subentryCount,
         error: accountBalances.error,
+        localOnlyTokenIds: accountBalances.localOnlyTokenIds,
         balances: await formatBalances({
           publicKey,
           balances: accountBalances.balances as NonNullable<BalanceMap>,

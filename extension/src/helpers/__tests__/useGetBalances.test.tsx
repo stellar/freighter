@@ -1,7 +1,11 @@
 import React from "react";
 import { Provider } from "react-redux";
 import { renderHook, act } from "@testing-library/react";
-import { useGetBalances, RequestState } from "../hooks/useGetBalances";
+import {
+  useGetBalances,
+  RequestState,
+  AccountBalances,
+} from "../hooks/useGetBalances";
 import { getAccountBalances } from "@shared/api/internal";
 import { makeDummyStore, TEST_PUBLIC_KEY } from "popup/__testHelpers__";
 import { TESTNET_NETWORK_DETAILS } from "@shared/constants/stellar";
@@ -254,5 +258,34 @@ describe("useGetBalances (flag routing)", () => {
       false,
       false,
     );
+  });
+
+  it("passes localOnlyTokenIds through to the payload", async () => {
+    const localOnlyTokenIds = ["CLOCALTOKENCONTRACTID"];
+    (getAccountBalances as jest.Mock).mockResolvedValue({
+      isFunded: true,
+      subentryCount: 0,
+      balances: {},
+      localOnlyTokenIds,
+    });
+
+    const { result } = renderHook(
+      () => useGetBalances({ showHidden: false, includeIcons: false }),
+      { wrapper: Wrapper(makeFlagStore(true)) },
+    );
+
+    await act(async () => {
+      const payload = await result.current.fetchData(
+        publicKey,
+        true,
+        TESTNET_NETWORK_DETAILS,
+        false,
+      );
+      // Manage Assets reads this off the payload to decide whether a custom
+      // token may be removed rather than only hidden.
+      expect((payload as AccountBalances).localOnlyTokenIds).toEqual(
+        localOnlyTokenIds,
+      );
+    });
   });
 });

@@ -93,6 +93,7 @@ import { stellarSdkServer, submitTx } from "./helpers/stellarSdkServer";
 import { getIconFromTokenLists } from "./helpers/getIconFromTokenList";
 import { mapAccountBalancesV2 } from "./helpers/mapAccountBalancesV2";
 import { addBlockaidScanResults } from "./helpers/addBlockaidScanResults";
+import { injectLocalTokenBalances } from "./helpers/injectLocalTokenBalances";
 
 const TRANSACTIONS_LIMIT = 100;
 
@@ -605,7 +606,6 @@ export const getAccountIndexerBalances = async ({
   const formattedBalances = {} as NonNullable<
     AccountBalancesInterface["balances"]
   >;
-  const balanceIds = [] as string[];
   for (const balanceKey of Object.keys(data.balances || {})) {
     const balance = data.balances![balanceKey];
     formattedBalances[balanceKey] = {
@@ -613,16 +613,13 @@ export const getAccountIndexerBalances = async ({
       available: new BigNumber(balance.available),
       total: new BigNumber(balance.total),
     };
-    // track token IDs that come back from the server in order to get
-    // the difference between contractIds set in the client and balances returned from server.
-    const [_, assetId] = balanceKey.split(":");
-    if (contractIds.includes(assetId)) {
-      balanceIds.push(assetId);
-    }
   }
   return {
     ...data,
     balances: formattedBalances,
+    // v1 returns a contract-token balance only for an ID it was handed, so
+    // every locally saved contract is removable from the balances view.
+    localOnlyTokenIds: contractIds,
   };
 };
 
@@ -674,10 +671,38 @@ export const getAccountBalancesV2 = async ({
       `v2 balances response is missing the requested account ${publicKey}`,
     );
   }
+  // v2 takes account addresses only, so the locally saved custom-token
+  // contract IDs the v1 path sent as `contract_ids` hints are merged in here
+  // instead. Skipped for an unfunded account: the not-funded UI renders in
+  // place of balances, so resolving tokens would only burn requests.
+  const mappedBalances = mapAccountBalancesV2(account);
+  const mergedBalances = account.is_funded
+    ? await injectLocalTokenBalances({
+        accountBalances: mappedBalances,
+        backendTokenIds: new Set(
+          (account.balances || []).map((balance) => balance.token_id),
+        ),
+        localTokenIds: await getTokenIds({
+          activePublicKey: publicKey,
+          network: networkDetails.network as NETWORKS,
+        }),
+        networkPassphrase: networkDetails.networkPassphrase,
+        fetchTokenDetails: (contractId) =>
+          getTokenDetails({
+            contractId,
+            publicKey,
+            networkDetails,
+            shouldFetchBalance: true,
+          }),
+      })
+    : mappedBalances;
+
   // The v2 response has no Blockaid data yet — replicate the v1 backend's
-  // scan-and-merge client-side so both paths return the same payload.
+  // scan-and-merge client-side so both paths return the same payload. Runs
+  // after the merge so locally added tokens are scanned too, as they were on
+  // v1.
   return await addBlockaidScanResults(
-    mapAccountBalancesV2(account),
+    mergedBalances,
     networkDetails,
     shouldSkipScan,
   );
@@ -967,6 +992,9 @@ export const getAccountBalancesStandalone = async ({
     balances: { ...balances, ...tokenBalances },
     isFunded,
     subentryCount,
+    // Contract tokens on this path exist only because they are in the local
+    // list, so all of them are removable from the balances view.
+    localOnlyTokenIds: tokenIdList,
   } as AccountBalancesInterface;
 };
 
