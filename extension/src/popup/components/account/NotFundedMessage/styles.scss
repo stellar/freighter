@@ -51,9 +51,8 @@
     font-weight: var(--sds-fw-medium);
   }
 
-  // One step down from the SDS Button default of semi-bold (600).
   .Button {
-    font-weight: var(--sds-fw-medium);
+    font-weight: var(--sds-fw-semi-bold);
   }
 
   &__link {
