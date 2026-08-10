@@ -171,7 +171,6 @@ export const AddCollectibles = () => {
                       type="text"
                       fieldSize="md"
                       autoComplete="off"
-                      autoFocus
                       data-testid="collectibleContractAddress"
                       id="collectibleContractAddress"
                       placeholder={t("Collection address")}
