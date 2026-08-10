@@ -152,7 +152,7 @@ test("Import 12 word wallet by pasting", async ({ page, context }) => {
   }, TEST_MNEMONIC_12_WORDS);
 
   // paste text from clipboard
-  await page.locator("#MnemonicPhrase-1").press("Meta+v");
+  await page.locator("#MnemonicPhrase-1").press("ControlOrMeta+v");
 
   await expectPageToHaveScreenshot(
     {
@@ -295,7 +295,7 @@ test("Import 24 word wallet by pasting", async ({ page, context }) => {
   );
 
   // paste text from clipboard
-  await page.locator("#MnemonicPhrase-1").press("Meta+v");
+  await page.locator("#MnemonicPhrase-1").press("ControlOrMeta+v");
 
   await expectPageToHaveScreenshot(
     {
@@ -596,7 +596,7 @@ test("Overwrites account when user abandons mnemonic phrase confirmation", async
   );
   await page.getByTestId("account-view-account-name").click();
 
-  expect(page.getByTestId("wallet-row-select")).toHaveCount(1);
+  await expect(page.getByTestId("wallet-row-select")).toHaveCount(1);
 
   await page.getByTestId("BackButton").click();
   await page.getByTestId("account-options-dropdown").click();

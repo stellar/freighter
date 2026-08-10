@@ -44,6 +44,7 @@ import { Page } from "@playwright/test";
 import { loginToTestAccount, switchToMainnet } from "./helpers/login";
 import {
   stubAccountBalancesV2,
+  stubScanAssetSafe,
   stubScanTxMalicious,
   stubScanTxSafe,
 } from "./helpers/stubs";
@@ -943,6 +944,7 @@ test("recovers to the amount screen when the swap quote expires at submit", asyn
       }),
     );
     await stubScanTxSafe(page);
+    await stubScanAssetSafe(page);
     // Submit fails with a quote-expiry op code → the flow recovers to review.
     await page.route("**/submit-tx**", (route) =>
       route.fulfill({

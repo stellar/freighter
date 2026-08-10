@@ -8,7 +8,7 @@ const { generateMnemonic } = StellarHDWallet;
 export const PASSWORD = "My-password123";
 
 /**
- * Creates a new wallet and logs into the extension on Test Net.
+ * Creates a new wallet and logs into the extension on Testnet.
  */
 export const login = async ({
   page,
@@ -67,7 +67,7 @@ export const login = async ({
     );
 
   await page.getByTestId("network-selector-open").click();
-  await page.getByText("Test Net").click();
+  await page.getByText("Testnet").click();
 
   // Wait for the balances API call to complete
   await balancesPromise;
@@ -165,7 +165,7 @@ export const loginToTestAccount = async ({
     timeout: 50000,
   });
   await page.getByTestId("network-selector-open").click();
-  await page.getByText("Test Net").click();
+  await page.getByText("Testnet").click();
   await expect(page.getByTestId("account-view")).toBeVisible({
     timeout: 30000,
   });
@@ -173,9 +173,9 @@ export const loginToTestAccount = async ({
 
 export const switchToMainnet = async (page: Page) => {
   await page.getByTestId("network-selector-open").click();
-  await page.getByText("Main Net").click();
+  await page.getByText("Mainnet").click();
   await expect(page.getByTestId("network-selector-open")).toContainText(
-    "Main Net",
+    "Mainnet",
     { timeout: 30000 },
   );
 };

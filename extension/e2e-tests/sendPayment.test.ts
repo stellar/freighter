@@ -1289,11 +1289,12 @@ test("Send flow from token detail allows changing the pre-selected asset", async
   await switchToMainnet(page);
 
   // Enter Send via XLM token detail → ?asset=native pre-selects XLM and the
-  // flow lands directly on DESTINATION. Click the asset-code text inside the
-  // first account-assets-item row to open the asset detail sheet.
+  // flow lands directly on DESTINATION. Click the first account-assets-item
+  // row to open the asset detail sheet — the native row shows the "Stellar
+  // Lumens" display name rather than the "XLM" code (BalanceRow).
   await page
     .getByTestId("account-assets-item")
-    .filter({ hasText: "XLM" })
+    .filter({ hasText: "Stellar Lumens" })
     .first()
     .click();
   await page.getByTestId("asset-detail-send-button").click();
@@ -1407,7 +1408,9 @@ test("Send XLM payment from Asset Detail", async ({
     context,
     stubOverrides,
   });
-  await page.getByText("XLM").click();
+  // The native row shows the "Stellar Lumens" display name, not "XLM"
+  // (BalanceRow).
+  await page.getByText("Stellar Lumens").click();
 
   await page.getByTestId("asset-detail-send-button").click();
   await expect(page.getByTestId("send-to-input")).toBeVisible();
