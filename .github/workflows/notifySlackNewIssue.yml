@@ -1,49 +1,12 @@
-# Posts a Slack notification to #gh-wallet-eng whenever a new issue is opened.
+# Posts a Slack notification to #gh-wallet-eng when an issue is opened.
 #
-# Fires on issue creation only (`types: [opened]`) — not on close, reopen, or
-# edit. The GitHub Slack app's `/github subscribe <repo> issues` cannot be
-# narrowed this way; its `issues` feature always covers opened + closed +
-# reopened, and it has no author filter at all. That is why this is a workflow
-# rather than a subscription.
+# Requires the SLACK_WEBHOOK_GH_ISSUES secret: an incoming webhook bound to
+# that channel.
 #
-# Currently notifies for EVERY new issue, including ones opened by the team.
-# If the channel gets too noisy, restrict it to externally-authored issues by
-# adding this to the `notify` job:
-#
-#   if: >-
-#     github.event.issue.user.type != 'Bot' &&
-#     !contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'),
-#               github.event.issue.author_association)
-#
-# Note that `author_association` reports MEMBER based on Stellar org
-# membership; verify it behaves as expected for teammates whose org membership
-# is private before relying on it.
-#
-# ============================================================================
-# Why this does not use rtCamp/action-slack-notify like the release workflows
-# ============================================================================
-# Issue titles are attacker-controlled: anyone can open an issue here, and the
-# title is relayed verbatim into an internal channel. Two properties matter
-# that the release workflows do not need, since those are triggered by our own
-# release process rather than by untrusted input.
-#
-# 1. slackapi/slack-github-action is `runs: using: node24`, so pinning it by
-#    commit SHA pins the code that actually executes. rtCamp's action is a
-#    composite that shells out to `docker://ghcr.io/rtcamp/action-slack-notify`
-#    at a MUTABLE tag, so a SHA pin there does not pin what really runs.
-#
-# 2. The title goes into a Block Kit `plain_text` object, which Slack does not
-#    parse as mrkdwn. A title such as `<https://evil.example|Reset your key>`
-#    therefore renders literally instead of becoming a live link. Building the
-#    payload with `jq --arg` and handing it over as a file means no untrusted
-#    text is ever interpolated into YAML or JSON syntax.
-#
-# The `plain_text` title is deliberately NOT entity-escaped — plain_text is not
-# mrkdwn, so `&lt;` would render as literal "&lt;". The top-level `text`
-# fallback (used for push notifications, where mrkdwn IS parsed) is escaped
-# instead. Every other interpolated value is GitHub-generated and constrained:
-# logins are alphanumeric plus hyphens, and the URL and number come from the
-# API.
+# The issue title is untrusted input. It is rendered through a Block Kit
+# plain_text object, which Slack does not parse as mrkdwn, so link and mention
+# syntax in a title cannot take effect. Do not move the title into a mrkdwn
+# field. The top-level text fallback is mrkdwn-parsed, so it is escaped.
 
 name: Notify Slack of new issue
 
@@ -51,7 +14,6 @@ on:
   issues:
     types: [opened]
 
-# Nothing here needs the repository token.
 permissions: {}
 
 jobs:
@@ -74,8 +36,7 @@ jobs:
             --arg author "$ISSUE_AUTHOR" \
             --arg repo "$REPO" \
             '
-            # Escape Slack mrkdwn control characters, "&" first so that the
-            # entities introduced here are not themselves re-escaped.
+            # "&" first, so the entities introduced here are not re-escaped.
             def slack_escape:
               gsub("&"; "&amp;") | gsub("<"; "&lt;") | gsub(">"; "&gt;");
             {
