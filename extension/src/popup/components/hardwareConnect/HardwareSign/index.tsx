@@ -32,6 +32,7 @@ import "./styles.scss";
 export const HardwareSign = ({
   walletType,
   isSignSorobanAuthorization,
+  isSignMessage,
   onSubmit,
   isInternal = false,
   onCancel,
@@ -39,6 +40,7 @@ export const HardwareSign = ({
 }: {
   walletType: ConfigurableWalletType;
   isSignSorobanAuthorization?: boolean;
+  isSignMessage?: boolean;
   onSubmit?: () => void;
   isInternal?: boolean;
   onCancel?: () => void;
@@ -93,11 +95,12 @@ export const HardwareSign = ({
           walletType,
           isHashSigningEnabled,
           isSignSorobanAuthorization,
+          isSignMessage,
         }),
       );
       // should support saving signed xdr for SubmitTransaction to submit
       if (signWithHardwareWallet.fulfilled.match(res)) {
-        if (shouldSubmit && !isSignSorobanAuthorization) {
+        if (shouldSubmit && !isSignSorobanAuthorization && !isSignMessage) {
           dispatch(
             saveSimulation({
               preparedTransaction: res.payload,
@@ -106,7 +109,11 @@ export const HardwareSign = ({
         } else if (uuid) {
           // right now there are only two cases after signing,
           // submitting to network or handling in background script
-          await handleSignedHwPayload({ signedPayload: res.payload, uuid });
+          await handleSignedHwPayload({
+            signedPayload: res.payload,
+            signerAddress: publicKey,
+            uuid,
+          });
         }
         closeOverlay();
         if (onSubmit) {

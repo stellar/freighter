@@ -1,4 +1,5 @@
 import { FeeBumpTransaction, Transaction, StrKey } from "stellar-sdk";
+import semver from "semver";
 import {
   ConfigurableWalletType,
   WalletType,
@@ -11,6 +12,16 @@ import LedgerApi from "@ledgerhq/hw-app-str";
 
 import LedgerLogo from "popup/assets/ledger-logo.png";
 /* end Ledger imports */
+
+// SEP-53 message signing (APDU 0x0C) landed in the Ledger Stellar app v6.0.0.
+// Older apps reject the instruction with INS_NOT_SUPPORTED, which reads as an
+// opaque transport error, so we check the version up front instead.
+export const MIN_SIGN_MESSAGE_APP_VERSION = "6.0.0";
+
+// Sentinel thrown by hardwareSignMessage and mapped to a user-facing string in
+// parseWalletError.
+export const UNSUPPORTED_SIGN_MESSAGE_APP_ERROR =
+  "SIGN_MESSAGE_APP_VERSION_UNSUPPORTED";
 
 /*
  ** HELPER METHODS
@@ -136,6 +147,53 @@ export const hardwareSignAuth: HardwareSignAuth = {
   },
 };
 
+interface HardwareSignMessageParams {
+  bipPath?: string;
+  message: string;
+}
+
+type HardwareSignMessage = {
+  [key in ConfigurableWalletType]: ({
+    bipPath,
+    message,
+  }: HardwareSignMessageParams) => Promise<Buffer>;
+};
+
+/*
+ * Returns a SEP-53 message signature from the hardware wallet
+ * @param {string} bipPath - The bip path to pass to the API (optional).
+ * @param {string} message - The message that will be signed by the wallet.
+ * @returns {Buffer} A signature over the SEP-53 encoded message.
+ */
+export const hardwareSignMessage: HardwareSignMessage = {
+  [WalletType.LEDGER]: async ({
+    bipPath = "",
+    message,
+  }: HardwareSignMessageParams) => {
+    const transport = await connectToLedgerTransport();
+    const ledgerApi = new LedgerApi(transport);
+
+    // An unparseable version is not a reason to refuse — fall through and let
+    // the device answer, since it rejects the instruction itself if too old.
+    const { version } = await ledgerApi.getAppConfiguration();
+    if (
+      semver.valid(version) &&
+      semver.lt(version, MIN_SIGN_MESSAGE_APP_VERSION)
+    ) {
+      throw new Error(UNSUPPORTED_SIGN_MESSAGE_APP_ERROR);
+    }
+
+    // The device applies the SEP-53 prefix and hashing itself and displays the
+    // message for review, so it receives the raw UTF-8 bytes. The resulting
+    // signature matches what encodeSep53Message produces for a local key.
+    const result = await ledgerApi.signMessage(
+      bipPath,
+      Buffer.from(message, "utf8"),
+    );
+    return result.signature;
+  },
+};
+
 /*
  ** UI ELEMENTS
  */
@@ -212,6 +270,17 @@ export const parseWalletError: ParseWalletError = {
     }
     if (message.indexOf("Transaction approval request was rejected") > -1) {
       return i18n.t("Transaction Rejected");
+    }
+    // Either our own preflight check or the device rejecting APDU 0x0C outright
+    // on an app that predates SEP-53 message signing.
+    if (
+      message.indexOf(UNSUPPORTED_SIGN_MESSAGE_APP_ERROR) > -1 ||
+      message.indexOf("INS_NOT_SUPPORTED") > -1
+    ) {
+      return i18n.t(
+        "Update the Stellar app on your Ledger to version {{version}} or later to sign messages.",
+        { version: MIN_SIGN_MESSAGE_APP_VERSION },
+      );
     }
     return message;
   },

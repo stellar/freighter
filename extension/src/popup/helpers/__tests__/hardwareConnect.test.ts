@@ -6,9 +6,18 @@ import {
   getWalletPublicKey,
   hardwareSign,
   hardwareSignAuth,
+  hardwareSignMessage,
+  parseWalletError,
+  MIN_SIGN_MESSAGE_APP_VERSION,
+  UNSUPPORTED_SIGN_MESSAGE_APP_ERROR,
 } from "popup/helpers/hardwareConnect";
 import { WalletType } from "@shared/constants/hardwareWallet";
 import { TESTNET_NETWORK_DETAILS } from "@shared/constants/stellar";
+
+// Mutable so individual tests can pretend the device runs an older Stellar app.
+// Must be `mock`-prefixed to be referenced from the jest.mock factory below.
+let mockAppVersion = "6.0.3";
+const mockSignMessage = jest.fn();
 
 jest.mock("@ledgerhq/hw-transport-webhid", () => {
   return {
@@ -33,10 +42,17 @@ jest.mock("@ledgerhq/hw-app-str", () => {
         Promise.resolve({
           rawPublicKey: Buffer.from(param),
         }),
+      getAppConfiguration: () =>
+        Promise.resolve({
+          version: mockAppVersion,
+          hashSigningEnabled: true,
+          maxDataSize: 1024,
+        }),
       signTransaction: () => Promise.resolve({ signature: "signTransaction" }),
       signHash: () => Promise.resolve({ signature: "signHash" }),
       signSorobanAuthorization: () =>
         Promise.resolve({ signature: "signSorobanAuthorization" }),
+      signMessage: mockSignMessage,
     };
   });
 });
@@ -107,5 +123,107 @@ describe("hardwareSignAuth", () => {
     });
     expect(signature).toBeDefined();
     expect(signature).toBe("signSorobanAuthorization");
+  });
+});
+
+describe("hardwareSignMessage", () => {
+  beforeEach(() => {
+    mockAppVersion = "6.0.3";
+    mockSignMessage.mockReset().mockResolvedValue({ signature: "signMessage" });
+  });
+
+  it("should send the raw message bytes to the device", async () => {
+    const signature = await hardwareSignMessage[WalletType.LEDGER]({
+      bipPath: "bip",
+      message: "Hello, Stellar!",
+    });
+
+    expect(signature).toBe("signMessage");
+    // The device applies the SEP-53 prefix and hashing itself, so it must
+    // receive the unmodified UTF-8 message.
+    expect(mockSignMessage).toHaveBeenCalledWith(
+      "bip",
+      Buffer.from("Hello, Stellar!", "utf8"),
+    );
+  });
+
+  it("should preserve non-ASCII messages byte for byte", async () => {
+    await hardwareSignMessage[WalletType.LEDGER]({
+      bipPath: "bip",
+      message: "café ☕",
+    });
+
+    expect(mockSignMessage).toHaveBeenCalledWith(
+      "bip",
+      Buffer.from("café ☕", "utf8"),
+    );
+  });
+
+  it("should reject when the Stellar app predates SEP-53 signing", async () => {
+    mockAppVersion = "5.6.0";
+
+    await expect(
+      hardwareSignMessage[WalletType.LEDGER]({
+        bipPath: "bip",
+        message: "Hello, Stellar!",
+      }),
+    ).rejects.toThrow(UNSUPPORTED_SIGN_MESSAGE_APP_ERROR);
+
+    expect(mockSignMessage).not.toHaveBeenCalled();
+  });
+
+  it("should sign on the minimum supported app version", async () => {
+    mockAppVersion = MIN_SIGN_MESSAGE_APP_VERSION;
+
+    const signature = await hardwareSignMessage[WalletType.LEDGER]({
+      bipPath: "bip",
+      message: "Hello, Stellar!",
+    });
+
+    expect(signature).toBe("signMessage");
+  });
+
+  it("should defer to the device when the version is unparseable", async () => {
+    mockAppVersion = "not-a-version";
+
+    const signature = await hardwareSignMessage[WalletType.LEDGER]({
+      bipPath: "bip",
+      message: "Hello, Stellar!",
+    });
+
+    expect(signature).toBe("signMessage");
+    expect(mockSignMessage).toHaveBeenCalled();
+  });
+});
+
+describe("parseWalletError", () => {
+  // i18n is not initialized under Jest, so t() returns the key and leaves
+  // {{version}} uninterpolated — assert on the key itself.
+  const UPDATE_APP_MESSAGE =
+    "Update the Stellar app on your Ledger to version {{version}} or later to sign messages.";
+
+  it("should ask the user to update an outdated Stellar app", () => {
+    const message = parseWalletError[WalletType.LEDGER](
+      new Error(UNSUPPORTED_SIGN_MESSAGE_APP_ERROR),
+    );
+
+    expect(message).toBe(UPDATE_APP_MESSAGE);
+    expect(message).not.toContain(UNSUPPORTED_SIGN_MESSAGE_APP_ERROR);
+  });
+
+  it("should map the device's INS_NOT_SUPPORTED status word", () => {
+    const message = parseWalletError[WalletType.LEDGER](
+      new Error("Ledger device: INS_NOT_SUPPORTED (0x6d00)"),
+    );
+
+    expect(message).toBe(UPDATE_APP_MESSAGE);
+  });
+
+  it("should pass through unrelated errors untouched", () => {
+    const message = parseWalletError[WalletType.LEDGER](
+      new Error("Some other device failure"),
+    );
+
+    expect(message).toBe("Some other device failure");
   });
 });

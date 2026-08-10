@@ -38,7 +38,11 @@ import {
   soroswapGetBestPath,
   getSoroswapTokens as getSoroswapTokensService,
 } from "popup/helpers/sorobanSwap";
-import { hardwareSign, hardwareSignAuth } from "popup/helpers/hardwareConnect";
+import {
+  hardwareSign,
+  hardwareSignAuth,
+  hardwareSignMessage,
+} from "popup/helpers/hardwareConnect";
 import type { FederationMemoType } from "popup/helpers/federationMemo";
 import { AppState } from "popup/App";
 import { publicKeySelector } from "./accountServices";
@@ -219,6 +223,7 @@ export const signWithHardwareWallet = createAsyncThunk<
     walletType: ConfigurableWalletType;
     isHashSigningEnabled: boolean;
     isSignSorobanAuthorization?: boolean;
+    isSignMessage?: boolean;
   },
   { rejectValue: ErrorMessage }
 >(
@@ -232,9 +237,30 @@ export const signWithHardwareWallet = createAsyncThunk<
       walletType,
       isHashSigningEnabled,
       isSignSorobanAuthorization,
+      isSignMessage,
     },
     thunkApi,
   ) => {
+    // SEP-53 messages ride in `transactionXDR` as raw text, the same way auth
+    // entries ride in it as base64 — the field is the generic payload carrier
+    // for the hardware signing overlay.
+    if (isSignMessage) {
+      try {
+        const signature = await hardwareSignMessage[walletType]({
+          bipPath,
+          message: transactionXDR,
+        });
+
+        // A Buffer does not survive the JSON serialization that
+        // `runtime.sendMessage` applies on the way to the background script, so
+        // the signature travels as base64 and is decoded there.
+        return signature.toString("base64");
+      } catch (e) {
+        const message = e instanceof Error ? e.message : JSON.stringify(e);
+        return thunkApi.rejectWithValue({ errorMessage: message });
+      }
+    }
+
     if (isSignSorobanAuthorization) {
       try {
         const auth = Buffer.from(transactionXDR, "base64");

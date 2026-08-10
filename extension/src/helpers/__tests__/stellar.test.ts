@@ -7,6 +7,7 @@ import {
   xlmToStroop,
   encodeSep53Message,
   isSameAccount,
+  toSignatureBuffer,
 } from "../stellar";
 import * as urls from "../urls";
 
@@ -164,5 +165,23 @@ describe("encodeSep53Message", () => {
     const message = "Hello, World!";
     const expected = "1S61nAa7UQ0GWZf/kwdwaO7QpIbCAhW14C4asNLr6l8=";
     expect(encodeSep53Message(message).toString("base64")).toEqual(expected);
+  });
+});
+
+describe("toSignatureBuffer", () => {
+  const signature = Buffer.from("a-signature-from-a-device");
+
+  test("should pass a Buffer through untouched", () => {
+    expect(toSignatureBuffer(signature)).toBe(signature);
+  });
+
+  test("should decode a base64 signature from a hardware wallet", () => {
+    expect(toSignatureBuffer(signature.toString("base64"))).toEqual(signature);
+  });
+
+  test("should round-trip back to the same base64 either way", () => {
+    const base64 = signature.toString("base64");
+    expect(toSignatureBuffer(base64).toString("base64")).toEqual(base64);
+    expect(toSignatureBuffer(signature).toString("base64")).toEqual(base64);
   });
 });

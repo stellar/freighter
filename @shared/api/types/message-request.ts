@@ -214,6 +214,9 @@ export interface RejectAccessMessage extends BaseMessage {
 export interface HandleSignedHWPayloadMessage extends BaseMessage {
   type: SERVICE_TYPES.HANDLE_SIGNED_HW_PAYLOAD;
   signedPayload: string | Buffer<ArrayBufferLike>;
+  // The device-derived address that produced the signature. SEP-53 consumers
+  // need it to verify the signature they get back.
+  signerAddress?: string;
   uuid: string;
 }
 
