@@ -54,6 +54,14 @@ export const stubFeatureFlags = async (context: BrowserContext) => {
   });
 };
 
+export const stubRpcHealth = async (context: BrowserContext) => {
+  await context.route("*/**/rpc-health**", async (route) => {
+    await route.fulfill({
+      json: { status: "healthy" },
+    });
+  });
+};
+
 export const stubSubscriptionAccount = async (context: BrowserContext) => {
   await context.route("*/**/subscription/account", async (route) => {
     await route.fulfill({
@@ -3259,6 +3267,9 @@ export const stubAllExternalApis = async (
 
   // Feature flags
   await stubFeatureFlags(context);
+
+  // RPC health is fetched by the background service worker
+  await stubRpcHealth(context);
 
   // Subscription account
   await stubSubscriptionAccount(context);
