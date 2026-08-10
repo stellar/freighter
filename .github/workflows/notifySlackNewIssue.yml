@@ -1,0 +1,49 @@
+# Posts a Slack notification to #gh-wallet-eng whenever a new issue is opened.
+#
+# Fires on issue creation only (`types: [opened]`) — not on close, reopen, or
+# edit. The GitHub Slack app's `/github subscribe <repo> issues` cannot be
+# narrowed this way; its `issues` feature always covers opened + closed +
+# reopened, and it has no author filter at all. That is why this is a workflow
+# rather than a subscription.
+#
+# Currently notifies for EVERY new issue, including ones opened by the team.
+# If the channel gets too noisy, restrict it to externally-authored issues by
+# adding this to the `notify` job:
+#
+#   if: >-
+#     github.event.issue.user.type != 'Bot' &&
+#     !contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'),
+#               github.event.issue.author_association)
+#
+# Note that `author_association` reports MEMBER based on Stellar org
+# membership; verify it behaves as expected for teammates whose org membership
+# is private before relying on it.
+
+name: Notify Slack of new issue
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: read
+
+jobs:
+  notify:
+    name: Notify Slack
+    runs-on: ubuntu-latest
+    steps:
+      - name: Slack Notification
+        uses: rtCamp/action-slack-notify@07cbdbfd6c6190970778d8f98f11d073b2932aae #v2.3.3
+        env:
+          MSG_MINIMAL: true
+          SLACK_CHANNEL: gh-wallet-eng
+          SLACK_COLOR: "#70E1C8"
+          SLACK_ICON: https://github.com/stellar/freighter/blob/master/docs/static/images/logo.png?size=48
+          SLACK_MESSAGE:
+            "<${{ github.event.issue.html_url }}|#${{ github.event.issue.number
+            }}: ${{ github.event.issue.title }}> — opened by ${{
+            github.event.issue.user.login }}"
+          SLACK_TITLE: "New issue in ${{ github.repository }}"
+          SLACK_USERNAME: Freighter Administrative Assistant
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
