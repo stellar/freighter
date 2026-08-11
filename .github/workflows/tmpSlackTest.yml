@@ -1,0 +1,70 @@
+# TEMPORARY — delete before merging. Verifies SLACK_WEBHOOK_GH_ISSUES end to
+# end by running the same payload build and post as notifySlackNewIssue.yml
+# against fixed values, since `issues` events only run workflows from the
+# default branch.
+
+name: TEMP Slack notification test
+
+on:
+  push:
+    branches: [claude/slack-external-issue-notifications-d3wuc6]
+
+permissions: {}
+
+jobs:
+  notify:
+    name: Notify Slack (test)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Build Slack payload
+        env:
+          ISSUE_TITLE: '[TEST - please ignore] escaping check <https://example.com|not-a-real-link> & "quotes"'
+          ISSUE_NUMBER: "0"
+          ISSUE_URL: https://github.com/stellar/freighter/pull/2951
+          ISSUE_AUTHOR: workflow-test
+          REPO: ${{ github.repository }}
+        run: |
+          jq -n \
+            --arg title "$ISSUE_TITLE" \
+            --arg number "$ISSUE_NUMBER" \
+            --arg url "$ISSUE_URL" \
+            --arg author "$ISSUE_AUTHOR" \
+            --arg repo "$REPO" \
+            '
+            # "&" first, so the entities introduced here are not re-escaped.
+            def slack_escape:
+              gsub("&"; "&amp;") | gsub("<"; "&lt;") | gsub(">"; "&gt;");
+            {
+              text: ("New issue in " + $repo + ": #" + $number + ": "
+                     + ($title | slack_escape)),
+              blocks: [
+                {
+                  type: "section",
+                  text: {
+                    type: "plain_text",
+                    text: ("#" + $number + ": " + $title),
+                    emoji: false
+                  }
+                },
+                {
+                  type: "context",
+                  elements: [
+                    {
+                      type: "mrkdwn",
+                      text: ("New issue in *" + $repo + "* — opened by "
+                             + $author + " • <" + $url + "|View issue>")
+                    }
+                  ]
+                }
+              ]
+            }' > "$RUNNER_TEMP/slack-payload.json"
+
+      - name: Show payload
+        run: cat "$RUNNER_TEMP/slack-payload.json"
+
+      - name: Notify Slack
+        uses: slackapi/slack-github-action@dcb1066f776dd043e64d0e8ba94ca15cc7e1875d # v4.0.0
+        with:
+          webhook: ${{ secrets.SLACK_WEBHOOK_GH_ISSUES }}
+          webhook-type: incoming-webhook
+          payload-file-path: ${{ runner.temp }}/slack-payload.json
