@@ -202,7 +202,7 @@ describe("hardwareSignMessage", () => {
   });
 
   it("should measure the limit in bytes, not characters", async () => {
-    // "☕" is 3 UTF-8 bytes; 4 of them exceed a 8-byte device limit even though
+    // "☕" is 3 UTF-8 bytes; 4 of them exceed an 8-byte device limit even though
     // the string is only 4 characters long.
     mockAppConfig = { version: "6.0.3", maxDataSize: 8 };
 
