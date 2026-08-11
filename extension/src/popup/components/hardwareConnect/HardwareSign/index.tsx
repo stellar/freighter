@@ -9,7 +9,10 @@ import { POPUP_HEIGHT } from "constants/dimensions";
 
 import { AppDispatch } from "popup/App";
 import { SubviewHeader } from "popup/components/SubviewHeader";
-import { bipPathSelector } from "popup/ducks/accountServices";
+import {
+  bipPathSelector,
+  publicKeySelector,
+} from "popup/ducks/accountServices";
 import {
   signWithHardwareWallet,
   transactionSubmissionSelector,
@@ -23,6 +26,7 @@ import { WalletErrorBlock } from "popup/views/AddAccount/connect/DeviceConnect";
 import {
   getWalletPublicKey,
   parseWalletError,
+  MISMATCHED_HARDWARE_ACCOUNT_ERROR,
 } from "popup/helpers/hardwareConnect";
 import LedgerSigning from "popup/assets/ledger-signing.png";
 import Ledger from "popup/assets/ledger.png";
@@ -55,6 +59,7 @@ export const HardwareSign = ({
     hardwareWalletData: { transactionXDR, shouldSubmit },
   } = useSelector(transactionSubmissionSelector);
   const bipPath = useSelector(bipPathSelector);
+  const activePublicKey = useSelector(publicKeySelector);
   const [hardwareConnectSuccessful, setHardwareConnectSuccessful] =
     useState(false);
   const [hardwareWalletIsSigning, setHardwareWalletIsSigning] = useState(false);
@@ -85,6 +90,17 @@ export const HardwareSign = ({
     setConnectError("");
     try {
       const publicKey = await getWalletPublicKey[walletType](bipPath);
+
+      // A transaction signed by the wrong device fails on its own — the
+      // signature will not satisfy the transaction's source account. A
+      // standalone message has no such binding, so a device holding a different
+      // seed would hand back a perfectly valid signature from an account the
+      // user never approved, and we would return it as authoritative. Refuse
+      // instead of signing.
+      if (isSignMessage && activePublicKey && publicKey !== activePublicKey) {
+        throw new Error(MISMATCHED_HARDWARE_ACCOUNT_ERROR);
+      }
+
       setHardwareConnectSuccessful(true);
       setHardwareWalletIsSigning(true);
 
@@ -135,6 +151,15 @@ export const HardwareSign = ({
     setIsDetecting(false);
   };
 
+  // The device renders whatever it was handed, so the instruction has to match
+  // it — telling someone to review a "transaction" while a SEP-53 message is on
+  // screen is simply wrong.
+  const reviewInstruction = isSignMessage
+    ? t("Review message on device")
+    : isSignSorobanAuthorization
+      ? t("Review authorization on device")
+      : t("Review transaction on device");
+
   // let's check connection on initial load
   useEffect(() => {
     if (transactionXDR) {
@@ -172,7 +197,7 @@ export const HardwareSign = ({
             />
             <span data-testid="HardwareSign__connect-text">
               {hardwareConnectSuccessful
-                ? t("Review transaction on device")
+                ? reviewInstruction
                 : t("Connect device to computer")}
             </span>
             {hardwareWalletIsSigning && (
@@ -220,7 +245,7 @@ export const HardwareSign = ({
             />
             <span data-testid="HardwareSign__connect-text">
               {hardwareConnectSuccessful
-                ? t("Review transaction on device")
+                ? reviewInstruction
                 : t("Connect device to computer")}
             </span>
             {hardwareWalletIsSigning && (

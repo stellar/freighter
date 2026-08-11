@@ -23,6 +23,10 @@ export const MIN_SIGN_MESSAGE_APP_VERSION = "6.0.0";
 export const UNSUPPORTED_SIGN_MESSAGE_APP_ERROR =
   "SIGN_MESSAGE_APP_VERSION_UNSUPPORTED";
 
+// Sentinel thrown when the attached device derives a different key than the
+// account the user is approving with. See the check in HardwareSign.
+export const MISMATCHED_HARDWARE_ACCOUNT_ERROR = "MISMATCHED_HARDWARE_ACCOUNT";
+
 /*
  ** HELPER METHODS
  */
@@ -280,6 +284,11 @@ export const parseWalletError: ParseWalletError = {
       return i18n.t(
         "Update the Stellar app on your Ledger to version {{version}} or later to sign messages.",
         { version: MIN_SIGN_MESSAGE_APP_VERSION },
+      );
+    }
+    if (message.indexOf(MISMATCHED_HARDWARE_ACCOUNT_ERROR) > -1) {
+      return i18n.t(
+        "The connected device does not match the selected account. Connect the device this account was added from and try again.",
       );
     }
     return message;
