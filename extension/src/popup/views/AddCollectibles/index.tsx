@@ -209,13 +209,14 @@ export const AddCollectibles = () => {
                 )}
               </Field>
             </FormRows>
-            <div
+            <button
+              type="button"
               className="AddCollectibles__show-hidden"
               data-testid="hidden-collectibles-btn"
               onClick={() => setIsHiddenCollectiblesOpen(true)}
             >
               {t("Show hidden")}
-            </div>
+            </button>
             <div className="AddCollectibles__helper-text">
               {t(
                 "If a collectible is missing from your wallet, you can manually add it here.",
