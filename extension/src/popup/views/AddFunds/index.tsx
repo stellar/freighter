@@ -44,9 +44,9 @@ export const AddFunds = () => {
     <>
       <SubviewHeader
         title={isAddXlm ? t("Add XLM") : t("Add funds")}
-        subtitle={<div>{t("Choose your method")}</div>}
+        customBackIcon={<Icon.X />}
       />
-      <View.Content>
+      <View.Content hasNoTopPadding>
         <div className="AddFunds">
           <div className="AddFunds__content">
             <div
@@ -59,11 +59,11 @@ export const AddFunds = () => {
                 src={CoinbaseLogo}
                 alt={t("Coinbase Logo")}
               />
-              <div>
+              <div className="AddFunds__button__text">
                 <Text
                   as="div"
                   size="sm"
-                  weight="semi-bold"
+                  weight="medium"
                   addlClassName="AddFunds__button__title"
                 >
                   {isAddXlm
@@ -72,13 +72,11 @@ export const AddFunds = () => {
                 </Text>
                 <Text
                   as="div"
-                  size="sm"
+                  size="xs"
                   weight="medium"
                   addlClassName="AddFunds__button__description"
                 >
-                  {t(
-                    "Transfer from Coinbase, buy with debit and credit cards or bank transfer *",
-                  )}
+                  {t("Transfer from Coinbase & other options")}
                 </Text>
               </div>
             </div>
@@ -86,33 +84,28 @@ export const AddFunds = () => {
               <div className="AddFunds__button__qr">
                 <Icon.QrCode01 />
               </div>
-              <div>
+              <div className="AddFunds__button__text">
                 <Text
                   as="div"
                   size="sm"
-                  weight="semi-bold"
+                  weight="medium"
                   addlClassName="AddFunds__button__title"
                 >
                   {t("Transfer from another account")}
                 </Text>
                 <Text
                   as="div"
-                  size="sm"
+                  size="xs"
                   weight="medium"
                   addlClassName="AddFunds__button__description"
                 >
                   {isAddXlm
                     ? t("Send XLM to this account address")
-                    : t("Send funds to this account address")}
+                    : t("Receive funds from another wallet")}
                 </Text>
               </div>
             </div>
             {tokenError && <div className="AddFunds__error">{tokenError}</div>}
-          </div>
-          <div className="AddFunds__footer">
-            <Text as="div" size="xs" weight="medium">
-              {t("* payment methods may vary based on your location")}
-            </Text>
           </div>
         </div>
       </View.Content>
