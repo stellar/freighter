@@ -38,6 +38,10 @@ jest.mock("@shared/api/internal", () => ({
   handleSignedHwPayload: jest.fn().mockResolvedValue(undefined),
 }));
 
+const { handleSignedHwPayload } = jest.requireMock<
+  typeof import("@shared/api/internal")
+>("@shared/api/internal");
+
 const renderOverlay = ({
   requestedPublicKey,
   message = "Hello, Stellar!",
@@ -152,6 +156,21 @@ describe("HardwareSign message signing", () => {
         bipPath: "44'/148'/0'",
         message: "",
       });
+    });
+  });
+
+  it("reports the verified signer address to the background", async () => {
+    mockGetWalletPublicKey.mockResolvedValue(TEST_PUBLIC_KEY);
+
+    renderOverlay();
+
+    await waitFor(() => {
+      expect(handleSignedHwPayload).toHaveBeenCalledWith(
+        expect.objectContaining({
+          signerAddress: TEST_PUBLIC_KEY,
+          uuid: "test-uuid",
+        }),
+      );
     });
   });
 

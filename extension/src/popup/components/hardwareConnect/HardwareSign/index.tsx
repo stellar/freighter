@@ -143,7 +143,14 @@ export const HardwareSign = ({
           // submitting to network or handling in background script
           await handleSignedHwPayload({
             signedPayload: res.payload,
-            signerAddress: publicKey,
+            // Only the message path proves this key actually produced the
+            // signature. `publicKey` was read over a connection that
+            // hardwareSignMessage/hardwareSign then closed and reopened, so on
+            // the transaction and auth-entry paths it is the key we asked
+            // first, not necessarily the key that signed. Those signatures are
+            // self-invalidating on the wrong key, so reporting nothing stays
+            // truthful where reporting a guess would not.
+            signerAddress: isSignMessage ? publicKey : undefined,
             uuid,
           });
         }
