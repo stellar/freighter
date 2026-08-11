@@ -27,6 +27,10 @@ export const UNSUPPORTED_SIGN_MESSAGE_APP_ERROR =
 // account the user is approving with. See the check in HardwareSign.
 export const MISMATCHED_HARDWARE_ACCOUNT_ERROR = "MISMATCHED_HARDWARE_ACCOUNT";
 
+// Sentinel thrown when a message exceeds the device's own byte limit, which
+// getAppConfiguration reports alongside the version.
+export const OVERSIZED_SIGN_MESSAGE_ERROR = "SIGN_MESSAGE_TOO_LARGE";
+
 /*
  ** HELPER METHODS
  */
@@ -179,7 +183,7 @@ export const hardwareSignMessage: HardwareSignMessage = {
 
     // An unparseable version is not a reason to refuse — fall through and let
     // the device answer, since it rejects the instruction itself if too old.
-    const { version } = await ledgerApi.getAppConfiguration();
+    const { version, maxDataSize } = await ledgerApi.getAppConfiguration();
     if (
       semver.valid(version) &&
       semver.lt(version, MIN_SIGN_MESSAGE_APP_VERSION)
@@ -190,10 +194,15 @@ export const hardwareSignMessage: HardwareSignMessage = {
     // The device applies the SEP-53 prefix and hashing itself and displays the
     // message for review, so it receives the raw UTF-8 bytes. The resulting
     // signature matches what encodeSep53Message produces for a local key.
-    const result = await ledgerApi.signMessage(
-      bipPath,
-      Buffer.from(message, "utf8"),
-    );
+    const messageBytes = Buffer.from(message, "utf8");
+
+    // Older apps do not report maxDataSize; when they do, checking it here
+    // turns the device's opaque 0xb004 rejection into an actionable message.
+    if (maxDataSize && messageBytes.length > maxDataSize) {
+      throw new Error(OVERSIZED_SIGN_MESSAGE_ERROR);
+    }
+
+    const result = await ledgerApi.signMessage(bipPath, messageBytes);
     return result.signature;
   },
 };
@@ -284,6 +293,11 @@ export const parseWalletError: ParseWalletError = {
       return i18n.t(
         "Update the Stellar app on your Ledger to version {{version}} or later to sign messages.",
         { version: MIN_SIGN_MESSAGE_APP_VERSION },
+      );
+    }
+    if (message.indexOf(OVERSIZED_SIGN_MESSAGE_ERROR) > -1) {
+      return i18n.t(
+        "This message is too large for your Ledger to display. Ask the site for a shorter message.",
       );
     }
     if (message.indexOf(MISMATCHED_HARDWARE_ACCOUNT_ERROR) > -1) {

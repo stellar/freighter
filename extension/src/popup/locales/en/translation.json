@@ -685,6 +685,7 @@
   "This can be used to sign arbitrary transaction hashes without having to decode them first.": "This can be used to sign arbitrary transaction hashes without having to decode them first.",
   "This collectible is hidden": "This collectible is hidden",
   "This is not a valid contract id.": "This is not a valid contract id.",
+  "This message is too large for your Ledger to display. Ask the site for a shorter message.": "This message is too large for your Ledger to display. Ask the site for a shorter message.",
   "This reserve is refundable. Remove the trustline later to get it back.": "This reserve is refundable. Remove the trustline later to get it back.",
   "This setting enables access to the Futurenet network and disables access to Pubnet.": "This setting enables access to the Futurenet network and disables access to Pubnet.",
   "This site does not appear safe for the following reasons": "This site does not appear safe for the following reasons",

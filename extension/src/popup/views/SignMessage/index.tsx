@@ -214,6 +214,7 @@ export const SignMessage = () => {
         <HardwareSign
           walletType={hardwareWalletType}
           isSignMessage
+          requestedPublicKey={accountToSign}
           uuid={message.uuid}
         />
       )}

@@ -37,6 +37,7 @@ export const HardwareSign = ({
   walletType,
   isSignSorobanAuthorization,
   isSignMessage,
+  requestedPublicKey,
   onSubmit,
   isInternal = false,
   onCancel,
@@ -45,6 +46,10 @@ export const HardwareSign = ({
   walletType: ConfigurableWalletType;
   isSignSorobanAuthorization?: boolean;
   isSignMessage?: boolean;
+  // The account the dApp asked to sign with, when it named one. Freighter falls
+  // back to the active account if that account is not in the wallet, so this
+  // cannot be inferred from redux — see the check in handleSign.
+  requestedPublicKey?: string;
   onSubmit?: () => void;
   isInternal?: boolean;
   onCancel?: () => void;
@@ -93,11 +98,20 @@ export const HardwareSign = ({
 
       // A transaction signed by the wrong device fails on its own — the
       // signature will not satisfy the transaction's source account. A
-      // standalone message has no such binding, so a device holding a different
-      // seed would hand back a perfectly valid signature from an account the
-      // user never approved, and we would return it as authoritative. Refuse
-      // instead of signing.
-      if (isSignMessage && activePublicKey && publicKey !== activePublicKey) {
+      // standalone message has no such binding, so the wrong key would hand
+      // back a perfectly valid signature for an identity nobody approved, and
+      // we would report it as authoritative. Refuse instead of signing.
+      //
+      // Compare against the requested account, not merely the active one:
+      // signFlowAccountSelector silently leaves the previous account active
+      // when the dApp names an account the wallet does not hold, so checking
+      // the active account alone would pass in exactly that case.
+      const expectedPublicKey = requestedPublicKey || activePublicKey;
+      if (
+        isSignMessage &&
+        expectedPublicKey &&
+        publicKey !== expectedPublicKey
+      ) {
         throw new Error(MISMATCHED_HARDWARE_ACCOUNT_ERROR);
       }
 
@@ -162,7 +176,12 @@ export const HardwareSign = ({
 
   // let's check connection on initial load
   useEffect(() => {
-    if (transactionXDR) {
+    // An XDR or a base64 auth entry is never empty, so their presence doubles as
+    // "the payload has arrived". A SEP-53 message may legitimately be the empty
+    // string, which would otherwise leave the overlay waiting on a device that
+    // is already connected. The overlay only mounts once startHwSign has stored
+    // the payload, so signing on mount is safe here.
+    if (isSignMessage || transactionXDR) {
       handleSign();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -685,6 +685,7 @@
   "This can be used to sign arbitrary transaction hashes without having to decode them first.": "Isso pode ser usado para assinar hashes de transação arbitrários sem precisar decodificá-los primeiro.",
   "This collectible is hidden": "Este colecionável está oculto",
   "This is not a valid contract id.": "Este não é um ID de contrato válido.",
+  "This message is too large for your Ledger to display. Ask the site for a shorter message.": "Esta mensagem é grande demais para o seu Ledger exibir. Peça ao site uma mensagem mais curta.",
   "This reserve is refundable. Remove the trustline later to get it back.": "Essa reserva é reembolsável. Remova a linha de confiança depois para recuperá-la.",
   "This setting enables access to the Futurenet network and disables access to Pubnet.": "Esta configuração permite acesso à rede Futurenet e desabilita o acesso ao Pubnet.",
   "This site does not appear safe for the following reasons": "Este site não parece seguro pelos seguintes motivos",

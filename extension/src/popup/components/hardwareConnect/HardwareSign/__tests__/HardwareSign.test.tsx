@@ -30,7 +30,10 @@ jest.mock("@shared/api/internal", () => ({
   handleSignedHwPayload: jest.fn().mockResolvedValue(undefined),
 }));
 
-const renderOverlay = () =>
+const renderOverlay = ({
+  requestedPublicKey,
+  message = "Hello, Stellar!",
+}: { requestedPublicKey?: string; message?: string } = {}) =>
   render(
     <Wrapper
       routes={["/"]}
@@ -48,7 +51,7 @@ const renderOverlay = () =>
           ...transactionSubmissionInitialState,
           hardwareWalletData: {
             ...transactionSubmissionInitialState.hardwareWalletData,
-            transactionXDR: "Hello, Stellar!",
+            transactionXDR: message,
             shouldSubmit: false,
           },
         },
@@ -57,6 +60,7 @@ const renderOverlay = () =>
       <HardwareSign
         walletType={WalletType.LEDGER}
         isSignMessage
+        requestedPublicKey={requestedPublicKey}
         uuid="test-uuid"
       />
     </Wrapper>,
@@ -105,6 +109,38 @@ describe("HardwareSign message signing", () => {
       expect(mockHardwareSignMessage).toHaveBeenCalledWith({
         bipPath: "44'/148'/0'",
         message: "Hello, Stellar!",
+      });
+    });
+  });
+
+  it("refuses when the device matches the active account but not the requested one", async () => {
+    // The dApp asked for an account the wallet does not hold, so
+    // signFlowAccountSelector silently left the previous account active. The
+    // attached device matches that active account, so an active-only check
+    // would pass and sign for an identity nobody requested.
+    mockGetWalletPublicKey.mockResolvedValue(TEST_PUBLIC_KEY);
+
+    renderOverlay({ requestedPublicKey: OTHER_PUBLIC_KEY });
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(/does not match the selected account/),
+      ).toBeDefined();
+    });
+    expect(mockHardwareSignMessage).not.toHaveBeenCalled();
+  });
+
+  it("signs an empty message instead of waiting for a payload that never changes", async () => {
+    // A SEP-53 message may legitimately be "". The mount effect used to gate on
+    // a truthy payload, which left the overlay idle on a connected device.
+    mockGetWalletPublicKey.mockResolvedValue(TEST_PUBLIC_KEY);
+
+    renderOverlay({ message: "" });
+
+    await waitFor(() => {
+      expect(mockHardwareSignMessage).toHaveBeenCalledWith({
+        bipPath: "44'/148'/0'",
+        message: "",
       });
     });
   });

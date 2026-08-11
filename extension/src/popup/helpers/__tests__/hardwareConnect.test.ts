@@ -10,13 +10,18 @@ import {
   parseWalletError,
   MIN_SIGN_MESSAGE_APP_VERSION,
   UNSUPPORTED_SIGN_MESSAGE_APP_ERROR,
+  OVERSIZED_SIGN_MESSAGE_ERROR,
 } from "popup/helpers/hardwareConnect";
 import { WalletType } from "@shared/constants/hardwareWallet";
 import { TESTNET_NETWORK_DETAILS } from "@shared/constants/stellar";
 
-// Mutable so individual tests can pretend the device runs an older Stellar app.
-// Must be `mock`-prefixed to be referenced from the jest.mock factory below.
-let mockAppVersion = "6.0.3";
+// Mutable so individual tests can pretend the device runs a different Stellar
+// app build. Must be `mock`-prefixed to be referenced from the jest.mock
+// factory below.
+let mockAppConfig: { version: string; maxDataSize?: number } = {
+  version: "6.0.3",
+  maxDataSize: 1024,
+};
 const mockSignMessage = jest.fn();
 
 jest.mock("@ledgerhq/hw-transport-webhid", () => {
@@ -43,11 +48,7 @@ jest.mock("@ledgerhq/hw-app-str", () => {
           rawPublicKey: Buffer.from(param),
         }),
       getAppConfiguration: () =>
-        Promise.resolve({
-          version: mockAppVersion,
-          hashSigningEnabled: true,
-          maxDataSize: 1024,
-        }),
+        Promise.resolve({ hashSigningEnabled: true, ...mockAppConfig }),
       signTransaction: () => Promise.resolve({ signature: "signTransaction" }),
       signHash: () => Promise.resolve({ signature: "signHash" }),
       signSorobanAuthorization: () =>
@@ -128,7 +129,7 @@ describe("hardwareSignAuth", () => {
 
 describe("hardwareSignMessage", () => {
   beforeEach(() => {
-    mockAppVersion = "6.0.3";
+    mockAppConfig = { version: "6.0.3", maxDataSize: 1024 };
     mockSignMessage.mockReset().mockResolvedValue({ signature: "signMessage" });
   });
 
@@ -160,7 +161,7 @@ describe("hardwareSignMessage", () => {
   });
 
   it("should reject when the Stellar app predates SEP-53 signing", async () => {
-    mockAppVersion = "5.6.0";
+    mockAppConfig = { version: "5.6.0", maxDataSize: 1024 };
 
     await expect(
       hardwareSignMessage[WalletType.LEDGER]({
@@ -173,7 +174,48 @@ describe("hardwareSignMessage", () => {
   });
 
   it("should sign on the minimum supported app version", async () => {
-    mockAppVersion = MIN_SIGN_MESSAGE_APP_VERSION;
+    mockAppConfig = {
+      version: MIN_SIGN_MESSAGE_APP_VERSION,
+      maxDataSize: 1024,
+    };
+
+    const signature = await hardwareSignMessage[WalletType.LEDGER]({
+      bipPath: "bip",
+      message: "Hello, Stellar!",
+    });
+
+    expect(signature).toBe("signMessage");
+  });
+
+  it("should refuse a message larger than the device can display", async () => {
+    // maxDataSize comes back from the same getAppConfiguration call as version.
+    mockAppConfig = { version: "6.0.3", maxDataSize: 8 };
+
+    await expect(
+      hardwareSignMessage[WalletType.LEDGER]({
+        bipPath: "bip",
+        message: "a message well past eight bytes",
+      }),
+    ).rejects.toThrow(OVERSIZED_SIGN_MESSAGE_ERROR);
+
+    expect(mockSignMessage).not.toHaveBeenCalled();
+  });
+
+  it("should measure the limit in bytes, not characters", async () => {
+    // "☕" is 3 UTF-8 bytes; 4 of them exceed a 8-byte device limit even though
+    // the string is only 4 characters long.
+    mockAppConfig = { version: "6.0.3", maxDataSize: 8 };
+
+    await expect(
+      hardwareSignMessage[WalletType.LEDGER]({
+        bipPath: "bip",
+        message: "☕☕☕☕",
+      }),
+    ).rejects.toThrow(OVERSIZED_SIGN_MESSAGE_ERROR);
+  });
+
+  it("should sign when an older app does not report a size limit", async () => {
+    mockAppConfig = { version: "6.0.3", maxDataSize: undefined };
 
     const signature = await hardwareSignMessage[WalletType.LEDGER]({
       bipPath: "bip",
@@ -184,7 +226,7 @@ describe("hardwareSignMessage", () => {
   });
 
   it("should defer to the device when the version is unparseable", async () => {
-    mockAppVersion = "not-a-version";
+    mockAppConfig = { version: "not-a-version", maxDataSize: 1024 };
 
     const signature = await hardwareSignMessage[WalletType.LEDGER]({
       bipPath: "bip",
