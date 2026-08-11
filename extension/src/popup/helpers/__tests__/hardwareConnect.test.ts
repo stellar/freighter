@@ -211,12 +211,17 @@ describe("parseWalletError", () => {
     expect(message).not.toContain(UNSUPPORTED_SIGN_MESSAGE_APP_ERROR);
   });
 
-  it("should map the device's INS_NOT_SUPPORTED status word", () => {
+  it("should NOT claim a message-signing problem on a generic INS_NOT_SUPPORTED", () => {
+    // 0x6d00 means "app does not know this instruction" — it also fires when
+    // signing a Soroban auth entry on an older app, or with the wrong app open.
+    // Claiming those users need 6.0.0 "to sign messages" would be wrong on both
+    // counts, so this parser leaves the device's own wording alone.
     const message = parseWalletError[WalletType.LEDGER](
       new Error("Ledger device: INS_NOT_SUPPORTED (0x6d00)"),
     );
 
-    expect(message).toBe(UPDATE_APP_MESSAGE);
+    expect(message).not.toBe(UPDATE_APP_MESSAGE);
+    expect(message).toBe("Ledger device: INS_NOT_SUPPORTED (0x6d00)");
   });
 
   it("should pass through unrelated errors untouched", () => {

@@ -271,12 +271,12 @@ export const parseWalletError: ParseWalletError = {
     if (message.indexOf("Transaction approval request was rejected") > -1) {
       return i18n.t("Transaction Rejected");
     }
-    // Either our own preflight check or the device rejecting APDU 0x0C outright
-    // on an app that predates SEP-53 message signing.
-    if (
-      message.indexOf(UNSUPPORTED_SIGN_MESSAGE_APP_ERROR) > -1 ||
-      message.indexOf("INS_NOT_SUPPORTED") > -1
-    ) {
+    // Raised by the preflight in hardwareSignMessage. Deliberately not matched
+    // on the device's generic INS_NOT_SUPPORTED (0x6d00) status word: that fires
+    // for any instruction the app does not know — signing a Soroban auth entry
+    // on an older app, or a Stellar APDU sent while another app is open — and
+    // this parser is shared by every Ledger flow.
+    if (message.indexOf(UNSUPPORTED_SIGN_MESSAGE_APP_ERROR) > -1) {
       return i18n.t(
         "Update the Stellar app on your Ledger to version {{version}} or later to sign messages.",
         { version: MIN_SIGN_MESSAGE_APP_VERSION },

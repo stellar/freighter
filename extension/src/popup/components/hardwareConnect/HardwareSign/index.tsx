@@ -58,8 +58,10 @@ export const HardwareSign = ({
   const [hardwareConnectSuccessful, setHardwareConnectSuccessful] =
     useState(false);
   const [hardwareWalletIsSigning, setHardwareWalletIsSigning] = useState(false);
+  // Rendered whenever it is non-empty, including after the automatic signing
+  // attempt that runs on mount — otherwise a device that fails immediately
+  // leaves the overlay sitting on "Connect device to computer" with no reason.
   const [connectError, setConnectError] = useState("");
-  const [isDetectBtnDirty, setIsDetectBtnDirty] = useState(false);
 
   const closeOverlay = () => {
     if (hardwareConnectRef.current) {
@@ -181,7 +183,7 @@ export const HardwareSign = ({
           </div>
         </div>
         <div className="HardwareSign__bottom">
-          {isDetectBtnDirty && <WalletErrorBlock error={connectError} />}
+          {connectError && <WalletErrorBlock error={connectError} />}
           {!hardwareConnectSuccessful && (
             <Button
               data-testid="HardwareSign__detect-device-button"
@@ -189,10 +191,7 @@ export const HardwareSign = ({
               variant="secondary"
               isFullWidth
               isRounded
-              onClick={() => {
-                setIsDetectBtnDirty(true);
-                handleSign();
-              }}
+              onClick={() => handleSign()}
               isLoading={isDetecting}
             >
               {isDetecting ? t("Detecting") : t("Detect device")}
@@ -232,17 +231,14 @@ export const HardwareSign = ({
           </div>
         </div>
         <div className="HardwareSign__bottom">
-          {isDetectBtnDirty && <WalletErrorBlock error={connectError} />}
+          {connectError && <WalletErrorBlock error={connectError} />}
           {!hardwareConnectSuccessful && (
             <Button
               data-testid="HardwareSign__detect-device-button"
               size="md"
               variant="secondary"
               isFullWidth
-              onClick={() => {
-                setIsDetectBtnDirty(true);
-                handleSign();
-              }}
+              onClick={() => handleSign()}
               isLoading={isDetecting}
             >
               {isDetecting ? t("Detecting") : t("Detect device")}
