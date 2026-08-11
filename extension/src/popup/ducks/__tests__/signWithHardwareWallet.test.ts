@@ -1,16 +1,19 @@
 import { configureStore } from "@reduxjs/toolkit";
+import { Keypair } from "stellar-sdk";
 
 import {
   ConfigurableWalletType,
   WalletType,
 } from "@shared/constants/hardwareWallet";
 import { TESTNET_NETWORK_DETAILS } from "@shared/constants/stellar";
+import { encodeSep53Message } from "helpers/stellar";
 import {
   reducer as transactionSubmissionReducer,
   signWithHardwareWallet,
 } from "../transactionSubmission";
 
 jest.mock("popup/helpers/hardwareConnect", () => ({
+  ...jest.requireActual("popup/helpers/hardwareConnect"),
   hardwareSign: { Ledger: jest.fn() },
   hardwareSignAuth: { Ledger: jest.fn() },
   hardwareSignMessage: { Ledger: jest.fn() },
@@ -25,10 +28,17 @@ const makeStore = () =>
     reducer: { transactionSubmission: transactionSubmissionReducer },
   });
 
+const MESSAGE = "Hello, Stellar!";
+
+// Real keypairs, so the thunk's signature verification is exercised for real
+// rather than against a mock-shaped stand-in.
+const deviceKeypair = Keypair.fromRawEd25519Seed(Buffer.alloc(32, 1));
+const otherKeypair = Keypair.fromRawEd25519Seed(Buffer.alloc(32, 2));
+
 const signMessageArgs = {
-  transactionXDR: "Hello, Stellar!",
+  transactionXDR: MESSAGE,
   networkPassphrase: TESTNET_NETWORK_DETAILS.networkPassphrase,
-  publicKey: "GDQ6FCJPB5PWDXQNZKHGCM4FKMWJDNCSDSAKHOZPUEHFNMCRDDDA5PSC",
+  publicKey: deviceKeypair.publicKey(),
   bipPath: "44'/148'/0'",
   walletType: WalletType.LEDGER as ConfigurableWalletType,
   isHashSigningEnabled: false,
@@ -41,7 +51,7 @@ describe("signWithHardwareWallet isSignMessage", () => {
   });
 
   it("signs the raw message and returns a base64 signature", async () => {
-    const signature = Buffer.from("a-64-byte-signature");
+    const signature = deviceKeypair.sign(encodeSep53Message(MESSAGE));
     (hardwareSignMessage[WalletType.LEDGER] as jest.Mock).mockResolvedValue(
       signature,
     );
@@ -51,7 +61,7 @@ describe("signWithHardwareWallet isSignMessage", () => {
 
     expect(hardwareSignMessage[WalletType.LEDGER]).toHaveBeenCalledWith({
       bipPath: "44'/148'/0'",
-      message: "Hello, Stellar!",
+      message: MESSAGE,
     });
     expect(signWithHardwareWallet.fulfilled.match(res)).toBe(true);
     // Base64 rather than a Buffer, because runtime.sendMessage JSON-serializes
@@ -60,9 +70,39 @@ describe("signWithHardwareWallet isSignMessage", () => {
     expect(typeof res.payload).toBe("string");
   });
 
+  it("refuses a signature produced by a different key than the one reported", async () => {
+    // getWalletPublicKey and hardwareSignMessage each open their own device
+    // connection, so a second Ledger — or a swap between the two calls — can
+    // sign while the first key is still what gets reported as signerAddress.
+    (hardwareSignMessage[WalletType.LEDGER] as jest.Mock).mockResolvedValue(
+      otherKeypair.sign(encodeSep53Message(MESSAGE)),
+    );
+
+    const store = makeStore();
+    const res = await store.dispatch(signWithHardwareWallet(signMessageArgs));
+
+    expect(signWithHardwareWallet.rejected.match(res)).toBe(true);
+    expect(res.payload).toEqual({
+      errorMessage: "MISMATCHED_HARDWARE_ACCOUNT",
+    });
+  });
+
+  it("refuses a signature over a different message", async () => {
+    // Guards the digest agreement itself: the signature must cover exactly the
+    // SEP-53 encoding of the message the user approved.
+    (hardwareSignMessage[WalletType.LEDGER] as jest.Mock).mockResolvedValue(
+      deviceKeypair.sign(encodeSep53Message("a different message")),
+    );
+
+    const store = makeStore();
+    const res = await store.dispatch(signWithHardwareWallet(signMessageArgs));
+
+    expect(signWithHardwareWallet.rejected.match(res)).toBe(true);
+  });
+
   it("does not route a message through the auth-entry signer", async () => {
     (hardwareSignMessage[WalletType.LEDGER] as jest.Mock).mockResolvedValue(
-      Buffer.from("sig"),
+      deviceKeypair.sign(encodeSep53Message(MESSAGE)),
     );
 
     const store = makeStore();

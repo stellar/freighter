@@ -30,7 +30,7 @@ import { ConfigurableWalletType } from "@shared/constants/hardwareWallet";
 import { isCustomNetwork } from "@shared/helpers/stellar";
 import { BlockaidWarning, SecurityLevel } from "popup/constants/blockaid";
 
-import { getCanonicalFromAsset } from "helpers/stellar";
+import { encodeSep53Message, getCanonicalFromAsset } from "helpers/stellar";
 import { INDEXER_URL } from "@shared/constants/mercury";
 import { horizonGetBestPath } from "popup/helpers/horizonGetBestPath";
 import { isQuoteExpiredError } from "popup/helpers/quoteExpiry";
@@ -42,6 +42,7 @@ import {
   hardwareSign,
   hardwareSignAuth,
   hardwareSignMessage,
+  MISMATCHED_HARDWARE_ACCOUNT_ERROR,
 } from "popup/helpers/hardwareConnect";
 import type { FederationMemoType } from "popup/helpers/federationMemo";
 import { AppState } from "popup/App";
@@ -250,6 +251,24 @@ export const signWithHardwareWallet = createAsyncThunk<
           bipPath,
           message: transactionXDR,
         });
+
+        // `publicKey` was read over a separate device connection —
+        // connectToLedgerTransport closes and reopens the transport on every
+        // call — so the device that signed is not necessarily the one that was
+        // checked. Verify the signature against the key we are about to report
+        // as the signer instead of assuming the same device answered twice.
+        // This also pins the device's SEP-53 digest to encodeSep53Message: if
+        // they ever disagreed, signing fails here rather than returning a
+        // signature no verifier can check.
+        const isFromExpectedSigner = Keypair.fromPublicKey(publicKey).verify(
+          encodeSep53Message(transactionXDR),
+          signature,
+        );
+        if (!isFromExpectedSigner) {
+          return thunkApi.rejectWithValue({
+            errorMessage: MISMATCHED_HARDWARE_ACCOUNT_ERROR,
+          });
+        }
 
         // A Buffer does not survive the JSON serialization that
         // `runtime.sendMessage` applies on the way to the background script, so

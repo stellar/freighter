@@ -1,14 +1,22 @@
 import React from "react";
 import { render, screen, waitFor } from "@testing-library/react";
 
+import { Keypair } from "stellar-sdk";
+
 import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
-import { Wrapper, TEST_PUBLIC_KEY } from "popup/__testHelpers__";
+import { Wrapper } from "popup/__testHelpers__";
 import { WalletType } from "@shared/constants/hardwareWallet";
 import { TESTNET_NETWORK_DETAILS } from "@shared/constants/stellar";
+import { encodeSep53Message } from "helpers/stellar";
 import { initialState as transactionSubmissionInitialState } from "popup/ducks/transactionSubmission";
 
-const OTHER_PUBLIC_KEY =
-  "GDQ6FCJPB5PWDXQNZKHGCM4FKMWJDNCSDSAKHOZPUEHFNMCRDDDA5PSC";
+// Real keypairs: the thunk verifies the signature against the reported signer,
+// so a stand-in Buffer would be rejected before the UI ever settles.
+const deviceKeypair = Keypair.fromRawEd25519Seed(Buffer.alloc(32, 1));
+const TEST_PUBLIC_KEY = deviceKeypair.publicKey();
+const OTHER_PUBLIC_KEY = Keypair.fromRawEd25519Seed(
+  Buffer.alloc(32, 2),
+).publicKey();
 
 const mockGetWalletPublicKey = jest.fn();
 const mockHardwareSignMessage = jest.fn();
@@ -69,7 +77,9 @@ const renderOverlay = ({
 describe("HardwareSign message signing", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockHardwareSignMessage.mockResolvedValue(Buffer.from("signature"));
+    mockHardwareSignMessage.mockImplementation(({ message }) =>
+      Promise.resolve(deviceKeypair.sign(encodeSep53Message(message))),
+    );
   });
 
   it("shows the failure from the automatic attempt without clicking Detect device", async () => {
