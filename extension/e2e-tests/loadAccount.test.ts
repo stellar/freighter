@@ -697,6 +697,31 @@ test("Renames wallets", async ({ page, extensionId, context }) => {
   ).toHaveCount(1);
 });
 
+test("Copies the active wallet address", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+  await loginToTestAccount({ page, extensionId, context });
+  await page.getByTestId("account-view-account-name").click();
+  await expect(page.getByText("Wallets")).toBeVisible();
+
+  await page.getByTestId("wallets-header-copy").click();
+
+  // The clipboard write is what the button exists for, so assert on the
+  // clipboard itself rather than only on the confirmation.
+  const copied = await page.evaluate(() => navigator.clipboard.readText());
+  expect(copied).toMatch(/^G[A-Z2-7]{55}$/);
+
+  // Confirmation is a toast, matching the QR screen, not an inline label on
+  // the button. It quotes the truncated address, which the header also
+  // shows, so scope the assertion to the toast region.
+  await expect(
+    page.getByText(/copied!$/).filter({ hasText: "Address" }),
+  ).toBeVisible();
+});
+
 test("Loads collectibles data with successful metadata", async ({
   page,
   extensionId,

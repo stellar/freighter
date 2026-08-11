@@ -39,9 +39,14 @@ export const WalletRow = ({
   const balanceLabel = accountValue || (isFetchingTokenPrices ? "..." : "");
 
   return (
+    // role/aria-current match BalanceRow, the sibling list row. The active
+    // account is otherwise conveyed only by the badge on its avatar, which
+    // says nothing to a screen reader.
     <div
       className="WalletRow"
       onClick={() => onClick(publicKey)}
+      role="button"
+      aria-current={isSelected ? true : undefined}
       data-testid="wallet-row-select"
     >
       <div className="WalletRow__identicon">

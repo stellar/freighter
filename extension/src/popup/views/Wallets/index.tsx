@@ -5,7 +5,10 @@ import { Navigate, useNavigate } from "react-router-dom";
 import { Button, Icon, Notification } from "@stellar/design-system";
 import { toast } from "sonner";
 
-import { isCustomNetwork } from "@shared/helpers/stellar";
+import {
+  getStellarExpertUrl,
+  isStellarExpertSupported,
+} from "popup/helpers/account";
 
 import { emitMetric } from "helpers/metrics";
 import { truncatedPublicKey } from "helpers/stellar";
@@ -202,12 +205,15 @@ export const Wallets = () => {
             >
               <Icon.Copy01 />
             </button>
-            {!isCustomNetwork(networkDetails) ? (
+            {/* Gated on stellar.expert's supported networks, not merely on
+                "not a custom network": it has no Futurenet explorer, and
+                experimental mode makes Futurenet the active network. */}
+            {isStellarExpertSupported(networkDetails) ? (
               <button
                 className="Wallets__header__action"
                 onClick={() => {
                   openTab(
-                    `https://stellar.expert/explorer/${networkDetails.network.toLowerCase()}/account/${activePublicKey}`,
+                    `${getStellarExpertUrl(networkDetails)}/account/${activePublicKey}`,
                   );
                   emitMetric(METRIC_NAMES.accountStellarExpertOpened);
                 }}
