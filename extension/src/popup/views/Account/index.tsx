@@ -11,7 +11,10 @@ import {
   settingsSelector,
 } from "popup/ducks/settings";
 import { View } from "popup/basics/layout/View";
-import { accountNameSelector } from "popup/ducks/accountServices";
+import {
+  accountNameSelector,
+  publicKeySelector,
+} from "popup/ducks/accountServices";
 import { openTab } from "popup/helpers/navigate";
 import { isFullscreenMode } from "popup/helpers/isFullscreenMode";
 import { useSwapTopTokensPrewarm } from "popup/helpers/useSwapTopTokensPrewarm";
@@ -58,6 +61,10 @@ export const Account = () => {
   const isSorobanSuported = useSelector(settingsSorobanSupportedSelector);
   const { userNotification } = useSelector(settingsSelector);
   const currentAccountName = useSelector(accountNameSelector);
+  // Fallback for the error state, where the fetch yields no data. The account
+  // name already came from Redux, so without this the header rendered a named
+  // account with a blank identicon (and a copy button holding "").
+  const reduxPublicKey = useSelector(publicKeySelector);
   const { activeTab } = useContext(AccountTabsContext);
   const [isDiscoverOpen, setIsDiscoverOpen] = useState(false);
 
@@ -219,7 +226,7 @@ export const Account = () => {
       <AccountHeader
         allowList={activeAllowList}
         currentAccountName={currentAccountName}
-        publicKey={resolvedData?.publicKey || ""}
+        publicKey={resolvedData?.publicKey || reduxPublicKey}
         onAllowListRemove={refreshAppData}
         onClickRow={async (updatedValues: {
           publicKey?: string;

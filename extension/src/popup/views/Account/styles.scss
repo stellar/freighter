@@ -37,8 +37,12 @@
     }
   }
 
+  // `margin-top` takes a single value, so the three-value shorthand this used
+  // to carry was invalid and dropped whole — which is why the notification
+  // rendered flush against the window edges. Same gutter as __fetch-fail,
+  // plus a bottom margin so it isn't glued to the content below either.
   &__fullscreen {
-    margin-top: pxToRem(24) pxToRem(24) 0;
+    margin: 1.5rem var(--account-view-padding-side);
   }
 
   // The content inset is disabled for this view (`View.Content hasNoPadding`),

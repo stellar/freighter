@@ -1357,6 +1357,11 @@ describe("Account view", () => {
       "$0.00",
     );
 
+    // Deliberately no identicon assertion here: jsdom has no canvas, so
+    // createStellarIdenticon().toDataURL() returns the same constant for
+    // every key — including "". The header's identicon fix is verified in a
+    // real browser instead; a unit assertion could not fail.
+
     accountDataSpy.mockRestore();
   });
 
