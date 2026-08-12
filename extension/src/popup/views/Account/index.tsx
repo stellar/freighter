@@ -331,10 +331,12 @@ export const Account = () => {
         </div>
       </View.Content>
       {/*
-        Rendered as a sibling of View.Content, not inside it: View.Content's
-        inset is the scroll container, and an absolutely-positioned child of a
-        scroll container is placed against its content box, so the pill scrolled
-        away with the list. `.View` is viewport-sized and already positioned.
+        Kept a sibling of View.Content for readability only — the pill is
+        `position: fixed`, so with no transform/filter ancestor its containing
+        block is the viewport and nesting depth doesn't affect where it lands.
+        On Home nothing here is a scroll container: AccountView overrides
+        View.Content and its inset to `overflow: visible`, so the document
+        itself is the scrollport (document.scrollingElement === html).
       */}
       <FloatingAddButton isFunded={!!resolvedData?.balances?.isFunded} />
       <Sheet

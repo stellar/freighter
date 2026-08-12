@@ -209,10 +209,17 @@ export const AddCollectibles = () => {
                 )}
               </Field>
             </FormRows>
+            {/* The sheet this opens is a Radix dialog, and its Root lives
+              inside HiddenCollectibles, so Radix's own Dialog.Trigger can't
+              reach it from here. These mirror what that trigger would emit;
+              aria-controls is omitted because the id is generated inside the
+              portal and isn't knowable at this level. */}
             <button
               type="button"
               className="AddCollectibles__show-hidden"
               data-testid="hidden-collectibles-btn"
+              aria-haspopup="dialog"
+              aria-expanded={isHiddenCollectiblesOpen}
               onClick={() => setIsHiddenCollectiblesOpen(true)}
             >
               {t("Show hidden")}

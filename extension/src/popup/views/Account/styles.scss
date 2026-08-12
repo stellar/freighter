@@ -62,9 +62,13 @@
 
     &__pane {
       padding: 0 var(--account-view-padding-side);
-      // Reserve room below the last row so the floating add pill (an
-      // absolutely-positioned overlay pinned near the bottom of the view)
-      // never sits on top of real list content and swallows its clicks.
+      // Reserve room below the last row so the floating add pill (fixed to the
+      // viewport, not absolutely positioned) never comes to rest on top of the
+      // last row at max scroll, where it would permanently swallow its clicks.
+      // This only guarantees the *last* row clears the pill; at intermediate
+      // scroll offsets the pill still overlays whatever row is beneath it,
+      // which is inherent to the floating-pill pattern and bounded by the fact
+      // that any covered row can be scrolled out from under it.
       padding-bottom: pxToRem(88px);
       height: auto;
       overflow: auto;
