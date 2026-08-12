@@ -9,7 +9,7 @@
     border-bottom: 1px solid var(--sds-clr-gray-04);
     color: var(--color-white);
     font-size: 2rem;
-    font-weight: var(--font-weight-light);
+    font-weight: var(--sds-fw-light);
     padding-bottom: 1.5rem;
     text-align: center;
     white-space: nowrap;
@@ -380,7 +380,7 @@
     }
 
     .AssetDiff__value {
-      font-weight: var(--sds-font-weight-medium);
+      font-weight: var(--sds-fw-medium);
 
       &.credit {
         color: var(--sds-clr-green-11);

@@ -71,7 +71,7 @@
       }
 
       &__Label {
-        font-weight: var(--font-weight-medium);
+        font-weight: var(--sds-fw-medium);
         color: var(--sds-clr-gray-11);
 
         &--total {
@@ -80,7 +80,7 @@
       }
 
       &__Value {
-        font-weight: var(--font-weight-medium);
+        font-weight: var(--sds-fw-medium);
         color: var(--sds-clr-gray-12);
 
         &--total {

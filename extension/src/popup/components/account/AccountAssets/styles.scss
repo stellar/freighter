@@ -46,7 +46,7 @@ $loader-light-color: #444961;
       align-items: center;
       justify-content: center;
       font-size: 0.875rem;
-      font-weight: var(--font-weight-semi-bold);
+      font-weight: var(--sds-fw-semi-bold);
       line-height: 1.5rem;
       color: var(--sds-clr-gray-12);
     }
@@ -118,7 +118,7 @@ $loader-light-color: #444961;
   &__copy-left {
     min-width: 0;
     display: flex;
-    font-weight: var(--font-weight-medium);
+    font-weight: var(--sds-fw-medium);
 
     .asset-icon {
       display: flex;
@@ -146,7 +146,7 @@ $loader-light-color: #444961;
 
   &__copy-right {
     min-width: 0;
-    font-weight: var(--font-weight-regular);
+    font-weight: var(--sds-fw-regular);
 
     .asset-usd-amount {
       text-align: right;

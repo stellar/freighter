@@ -18,7 +18,7 @@
     // The message is passed as the Notification title, whose text SDS renders
     // semi-bold; show it at regular weight.
     .Notification__title__text {
-      font-weight: var(--font-weight-regular);
+      font-weight: var(--sds-fw-regular);
     }
   }
 
@@ -78,7 +78,7 @@
     background-color: var(--sds-clr-gray-03);
     color: var(--sds-clr-gray-11);
     font-size: 0.875rem;
-    font-weight: var(--font-weight-medium);
+    font-weight: var(--sds-fw-medium);
     line-height: 1.25rem;
     text-align: center;
     // A pasted address has no spaces, so wrap it across lines instead of

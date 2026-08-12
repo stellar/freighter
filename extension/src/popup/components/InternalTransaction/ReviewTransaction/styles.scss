@@ -160,7 +160,7 @@
     &__Title {
       color: var(--sds-clr-gray-12);
       font-size: pxToRem(18px);
-      font-weight: var(--font-weight-medium);
+      font-weight: var(--sds-fw-medium);
       margin-bottom: pxToRem(4px);
     }
 
@@ -416,7 +416,7 @@
       width: 100%;
       margin: pxToRem(12px) 0;
       font-size: pxToRem(20px);
-      font-weight: var(--font-weight-medium);
+      font-weight: var(--sds-fw-medium);
     }
 
     &__Content {
@@ -471,7 +471,7 @@
       align-items: center;
       gap: pxToRem(8px);
       font-size: pxToRem(12px);
-      font-weight: var(--font-weight-medium);
+      font-weight: var(--sds-fw-medium);
       line-height: pxToRem(18px);
       text-align: left;
     }
