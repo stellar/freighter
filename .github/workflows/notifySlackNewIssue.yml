@@ -1,0 +1,72 @@
+# Posts a Slack notification to #gh-wallet-eng when an issue is opened.
+#
+# Requires the SLACK_WEBHOOK_GH_ISSUES secret: an incoming webhook bound to
+# that channel.
+#
+# The issue title is untrusted input. It is rendered through a Block Kit
+# plain_text object, which Slack does not parse as mrkdwn, so link and mention
+# syntax in a title cannot take effect. Do not move the title into a mrkdwn
+# field. The top-level text fallback is mrkdwn-parsed, so it is escaped.
+
+name: Notify Slack of new issue
+
+on:
+  issues:
+    types: [opened]
+
+permissions: {}
+
+jobs:
+  notify:
+    name: Notify Slack
+    runs-on: ubuntu-latest
+    steps:
+      - name: Build Slack payload
+        env:
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          ISSUE_URL: ${{ github.event.issue.html_url }}
+          ISSUE_AUTHOR: ${{ github.event.issue.user.login }}
+          REPO: ${{ github.repository }}
+        run: |
+          jq -n \
+            --arg title "$ISSUE_TITLE" \
+            --arg number "$ISSUE_NUMBER" \
+            --arg url "$ISSUE_URL" \
+            --arg author "$ISSUE_AUTHOR" \
+            --arg repo "$REPO" \
+            '
+            # "&" first, so the entities introduced here are not re-escaped.
+            def slack_escape:
+              gsub("&"; "&amp;") | gsub("<"; "&lt;") | gsub(">"; "&gt;");
+            {
+              text: ("New issue in " + $repo + ": #" + $number + ": "
+                     + ($title | slack_escape)),
+              blocks: [
+                {
+                  type: "section",
+                  text: {
+                    type: "plain_text",
+                    text: ("#" + $number + ": " + $title),
+                    emoji: false
+                  }
+                },
+                {
+                  type: "context",
+                  elements: [
+                    {
+                      type: "mrkdwn",
+                      text: ("New issue in *" + $repo + "* — opened by "
+                             + $author + " • <" + $url + "|View issue>")
+                    }
+                  ]
+                }
+              ]
+            }' > "$RUNNER_TEMP/slack-payload.json"
+
+      - name: Notify Slack
+        uses: slackapi/slack-github-action@dcb1066f776dd043e64d0e8ba94ca15cc7e1875d # v4.0.0
+        with:
+          webhook: ${{ secrets.SLACK_WEBHOOK_GH_ISSUES }}
+          webhook-type: incoming-webhook
+          payload-file-path: ${{ runner.temp }}/slack-payload.json
