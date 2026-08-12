@@ -24,8 +24,19 @@ export const UNSUPPORTED_SIGN_MESSAGE_APP_ERROR =
   "SIGN_MESSAGE_APP_VERSION_UNSUPPORTED";
 
 // Sentinel thrown when the attached device derives a different key than the
-// account the user is approving with. See the check in HardwareSign.
+// account the user is approving with. See the check in HardwareSign, which
+// reads the device key before signing and refuses outright.
 export const MISMATCHED_HARDWARE_ACCOUNT_ERROR = "MISMATCHED_HARDWARE_ACCOUNT";
+
+// Sentinel raised when a returned signature does not verify against the key we
+// are about to report as the signer. Distinct from the mismatch above: that one
+// is a key we read and compared, this one is a signature we cannot attribute.
+// A device swapped between connections is only one cause — a device whose
+// SEP-53 digest disagrees with encodeSep53Message, or one that returns a
+// malformed signature, lands here too, and for those the correct device is
+// already attached. See the verification in signWithHardwareWallet.
+export const UNVERIFIED_SIGN_MESSAGE_ERROR =
+  "SIGN_MESSAGE_SIGNATURE_UNVERIFIED";
 
 // Sentinel thrown when a message exceeds the device's own byte limit, which
 // getAppConfiguration reports alongside the version.
@@ -303,6 +314,15 @@ export const parseWalletError: ParseWalletError = {
     if (message.indexOf(MISMATCHED_HARDWARE_ACCOUNT_ERROR) > -1) {
       return i18n.t(
         "The connected device does not match the selected account. Connect the device this account was added from and try again.",
+      );
+    }
+    // Deliberately does not tell the user to connect a different device: the
+    // signature may well have come from the right one. Retrying covers a device
+    // swapped between connections, updating covers an app whose SEP-53 digest
+    // disagrees with ours.
+    if (message.indexOf(UNVERIFIED_SIGN_MESSAGE_ERROR) > -1) {
+      return i18n.t(
+        "The signature returned by your Ledger could not be verified. Disconnect any other devices and try again. If this keeps happening, update the Stellar app on your Ledger.",
       );
     }
     return message;

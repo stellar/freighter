@@ -657,6 +657,7 @@
   "The destination account must opt to accept this asset before receiving it.": "The destination account must opt to accept this asset before receiving it.",
   "The requester expects you to sign this message on": "The requester expects you to sign this message on",
   "The secret phrase you entered is incorrect.": "The secret phrase you entered is incorrect.",
+  "The signature returned by your Ledger could not be verified. Disconnect any other devices and try again. If this keeps happening, update the Stellar app on your Ledger.": "The signature returned by your Ledger could not be verified. Disconnect any other devices and try again. If this keeps happening, update the Stellar app on your Ledger.",
   "The token you're receiving couldn't be scanned for security risks.": "The token you're receiving couldn't be scanned for security risks.",
   "The token you're receiving was flagged as malicious by Blockaid.": "The token you're receiving was flagged as malicious by Blockaid.",
   "The token you're receiving was flagged as suspicious by Blockaid.": "The token you're receiving was flagged as suspicious by Blockaid.",

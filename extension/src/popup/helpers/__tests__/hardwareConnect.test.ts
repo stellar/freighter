@@ -10,6 +10,8 @@ import {
   parseWalletError,
   MIN_SIGN_MESSAGE_APP_VERSION,
   UNSUPPORTED_SIGN_MESSAGE_APP_ERROR,
+  UNVERIFIED_SIGN_MESSAGE_ERROR,
+  MISMATCHED_HARDWARE_ACCOUNT_ERROR,
   OVERSIZED_SIGN_MESSAGE_ERROR,
 } from "popup/helpers/hardwareConnect";
 import { WalletType } from "@shared/constants/hardwareWallet";
@@ -264,6 +266,22 @@ describe("parseWalletError", () => {
 
     expect(message).not.toBe(UPDATE_APP_MESSAGE);
     expect(message).toBe("Ledger device: INS_NOT_SUPPORTED (0x6d00)");
+  });
+
+  it("should not blame the device when a signature fails to verify", () => {
+    // A failed verify also fires for a device whose SEP-53 digest disagrees
+    // with ours, where the attached device is the right one. Telling that user
+    // to connect a different device sends them down a dead end.
+    const unverified = parseWalletError[WalletType.LEDGER](
+      new Error(UNVERIFIED_SIGN_MESSAGE_ERROR),
+    );
+    const mismatched = parseWalletError[WalletType.LEDGER](
+      new Error(MISMATCHED_HARDWARE_ACCOUNT_ERROR),
+    );
+
+    expect(unverified).not.toBe(mismatched);
+    expect(unverified).not.toContain(UNVERIFIED_SIGN_MESSAGE_ERROR);
+    expect(unverified).toContain("could not be verified");
   });
 
   it("should pass through unrelated errors untouched", () => {

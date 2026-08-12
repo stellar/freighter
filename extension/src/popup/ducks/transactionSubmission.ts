@@ -42,7 +42,7 @@ import {
   hardwareSign,
   hardwareSignAuth,
   hardwareSignMessage,
-  MISMATCHED_HARDWARE_ACCOUNT_ERROR,
+  UNVERIFIED_SIGN_MESSAGE_ERROR,
 } from "popup/helpers/hardwareConnect";
 import type { FederationMemoType } from "popup/helpers/federationMemo";
 import { AppState } from "popup/App";
@@ -260,13 +260,19 @@ export const signWithHardwareWallet = createAsyncThunk<
         // This also pins the device's SEP-53 digest to encodeSep53Message: if
         // they ever disagreed, signing fails here rather than returning a
         // signature no verifier can check.
+        //
+        // Both of those land on the same boolean, and from here they are
+        // indistinguishable — so this reports "could not verify" rather than
+        // MISMATCHED_HARDWARE_ACCOUNT_ERROR. That sentinel belongs to the
+        // pre-sign check in HardwareSign, which has actually compared two keys
+        // and can honestly tell the user to connect a different device.
         const isFromExpectedSigner = Keypair.fromPublicKey(publicKey).verify(
           encodeSep53Message(transactionXDR),
           signature,
         );
         if (!isFromExpectedSigner) {
           return thunkApi.rejectWithValue({
-            errorMessage: MISMATCHED_HARDWARE_ACCOUNT_ERROR,
+            errorMessage: UNVERIFIED_SIGN_MESSAGE_ERROR,
           });
         }
 

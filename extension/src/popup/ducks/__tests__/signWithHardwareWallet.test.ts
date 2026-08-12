@@ -83,7 +83,7 @@ describe("signWithHardwareWallet isSignMessage", () => {
 
     expect(signWithHardwareWallet.rejected.match(res)).toBe(true);
     expect(res.payload).toEqual({
-      errorMessage: "MISMATCHED_HARDWARE_ACCOUNT",
+      errorMessage: "SIGN_MESSAGE_SIGNATURE_UNVERIFIED",
     });
   });
 
@@ -98,6 +98,15 @@ describe("signWithHardwareWallet isSignMessage", () => {
     const res = await store.dispatch(signWithHardwareWallet(signMessageArgs));
 
     expect(signWithHardwareWallet.rejected.match(res)).toBe(true);
+    // The correct device signed — it just did not produce the digest we
+    // expected. Reporting a device mismatch here would send the user off to
+    // swap hardware that was never the problem.
+    expect(res.payload).toEqual({
+      errorMessage: "SIGN_MESSAGE_SIGNATURE_UNVERIFIED",
+    });
+    expect(res.payload).not.toEqual({
+      errorMessage: "MISMATCHED_HARDWARE_ACCOUNT",
+    });
   });
 
   it("does not route a message through the auth-entry signer", async () => {
