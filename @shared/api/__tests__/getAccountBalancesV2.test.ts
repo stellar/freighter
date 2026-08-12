@@ -315,10 +315,16 @@ describe("getAccountBalances routing", () => {
     global.fetch = mockFetch as any;
   });
 
-  it("routes to v2 by default on a supported network", async () => {
+  it("routes to v2 when the flag is on and the network is supported", async () => {
     mockBackendV2({ status: 200, body: { data: [v2Account] } });
 
-    await getAccountBalances(PUBLIC_KEY, TESTNET_NETWORK_DETAILS, false);
+    await getAccountBalances(
+      PUBLIC_KEY,
+      TESTNET_NETWORK_DETAILS,
+      false,
+      undefined,
+      true,
+    );
 
     const message = backendV2Message();
     expect(message).toBeDefined();
@@ -374,7 +380,13 @@ describe("getAccountBalances routing", () => {
       json: async () => ({ balances: {}, isFunded: true, subentryCount: 0 }),
     });
 
-    await getAccountBalances(PUBLIC_KEY, FUTURENET_NETWORK_DETAILS, false);
+    await getAccountBalances(
+      PUBLIC_KEY,
+      FUTURENET_NETWORK_DETAILS,
+      false,
+      undefined,
+      true,
+    );
 
     expect(backendV2Message()).toBeUndefined();
     const [url] = mockFetch.mock.calls[0];

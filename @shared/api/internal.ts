@@ -711,9 +711,11 @@ export const getAccountBalancesV2 = async ({
 export const getTokenPrices = async (
   tokens: string[],
   networkDetails: NetworkDetails,
-  // Defaults to the v2 endpoint. Callers pass the `use_token_prices_v2` feature
-  // flag so Amplitude can roll back to the v1 endpoint without a release.
-  useV2 = true,
+  // Required, not defaulted: callers must thread the `use_token_prices_v2`
+  // feature flag so Amplitude can roll back to the v1 endpoint without a
+  // release. A default silently opts new callers into v2 and defeats the
+  // kill switch.
+  useV2: boolean,
 ): Promise<ApiTokenPrices> => {
   // NOTE: API does not accept LP IDs or custom tokens
   const filteredTokens = tokens.filter((tokenId) => {
@@ -1127,10 +1129,11 @@ export const getAccountBalances = async (
   publicKey: string,
   networkDetails: NetworkDetails,
   isMainnet: boolean,
-  shouldSkipScan?: boolean,
-  // Defaults to the v2 endpoint. Callers pass the `use_balances_v2` feature
-  // flag so Amplitude can roll back to the v1 endpoint without a release.
-  useV2 = true,
+  shouldSkipScan: boolean | undefined,
+  // Required, not defaulted: callers must thread the `use_balances_v2` feature
+  // flag so Amplitude can roll back to the v1 endpoint without a release. A
+  // default silently opts new callers into v2 and defeats the kill switch.
+  useV2: boolean,
 ) => {
   if (isCustomNetwork(networkDetails)) {
     return await getAccountBalancesStandalone({

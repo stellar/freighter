@@ -306,6 +306,27 @@ const renderAt = () =>
     </Wrapper>,
   );
 
+// Renders with an explicit `use_balances_v2` value so the trustline check's
+// flag threading can be asserted in both directions.
+const renderWithBalancesV2 = (useBalancesV2: boolean) =>
+  render(
+    <Wrapper
+      state={{
+        ...mockState,
+        remoteConfig: {
+          isInitialized: true,
+          use_token_prices_v2: true,
+          use_balances_v2: useBalancesV2,
+          maintenance_banner: { enabled: false, payload: undefined },
+          maintenance_screen: { enabled: false, payload: undefined },
+        },
+      }}
+      routes={["/add-token"]}
+    >
+      <AddToken />
+    </Wrapper>,
+  );
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
@@ -579,5 +600,33 @@ describe("AddToken SAC / SEP-41 routing", () => {
     await waitFor(() =>
       expect(screen.getByTestId("add-token-approve")).toBeDisabled(),
     );
+  });
+
+  // The `use_balances_v2` kill switch has to reach this call too. `useV2` is
+  // the 5th positional arg, directly after `shouldSkipScan` — asserting both
+  // slots guards the arg order, which is how this call previously ended up
+  // pinned to v2 regardless of the flag.
+  it("passes useV2: true to the trustline check when the flag is on", async () => {
+    mockTokenLookupConfig.issuer = SAC_ISSUER;
+    renderWithBalancesV2(true);
+
+    await waitFor(() => expect(getAccountBalances).toHaveBeenCalled());
+
+    const [, , , shouldSkipScan, useV2] = (getAccountBalances as jest.Mock).mock
+      .calls[0];
+    expect(shouldSkipScan).toBe(true);
+    expect(useV2).toBe(true);
+  });
+
+  it("passes useV2: false to the trustline check when the flag is off", async () => {
+    mockTokenLookupConfig.issuer = SAC_ISSUER;
+    renderWithBalancesV2(false);
+
+    await waitFor(() => expect(getAccountBalances).toHaveBeenCalled());
+
+    const [, , , shouldSkipScan, useV2] = (getAccountBalances as jest.Mock).mock
+      .calls[0];
+    expect(shouldSkipScan).toBe(true);
+    expect(useV2).toBe(false);
   });
 });
