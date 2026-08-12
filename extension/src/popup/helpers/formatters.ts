@@ -159,6 +159,28 @@ export const scrubPathGkey = (route: string, url: string) => {
 export const roundUsdValue = (fullValue: string) =>
   (Math.floor(parseFloat(fullValue) * 100) / 100).toFixed(2);
 
+/**
+ * Formats a USD amount for display, falling back to "$0.00".
+ *
+ * Callers that show a total for an account with no price data at all (a
+ * non-Mainnet network, or a failed price fetch) rely on that fallback rather
+ * than hiding the value — so the zero has to come from one place instead of
+ * being hand-rolled per call site.
+ *
+ * Anything that isn't a finite number — `undefined`, `null`, or the empty
+ * string some callers use to mean "no value" — becomes the zero. A default
+ * parameter would only cover `undefined` and let `""` through as "$NaN".
+ *
+ * @example formatFiatAmount("1149.234") // "$1,149.23"
+ * @example formatFiatAmount("")         // "$0.00"
+ * @example formatFiatAmount()           // "$0.00"
+ */
+export const formatFiatAmount = (value?: string | null) => {
+  const parsed = parseFloat(value ?? "");
+
+  return `$${formatAmount(roundUsdValue(Number.isFinite(parsed) ? parsed.toString() : "0"))}`;
+};
+
 export const capitalize = (str: string) => {
   return str.charAt(0).toUpperCase() + str.slice(1);
 };

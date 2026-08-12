@@ -1,9 +1,10 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { Icon } from "@stellar/design-system";
+import { Icon, Loader } from "@stellar/design-system";
 
 import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
 import { truncatedPublicKey } from "helpers/stellar";
+import { formatFiatAmount } from "popup/helpers/formatters";
 import { WalletType } from "@shared/constants/hardwareWallet";
 
 import "./styles.scss";
@@ -11,7 +12,13 @@ import "./styles.scss";
 interface WalletRowProps {
   isFetchingTokenPrices: boolean;
   accountName: string;
-  accountValue: string;
+  /**
+   * Pre-formatted USD total for this account. Absent (or empty, which the
+   * data hook writes on a failed fetch) means "no total to show" — see
+   * `isTotalLoading` below for how that is distinguished from "still
+   * loading".
+   */
+  accountValue?: string;
   isImported: boolean;
   hardwareWalletType?: WalletType;
   isSelected: boolean;
@@ -34,9 +41,14 @@ export const WalletRow = ({
 
   const isImportedWallet = !!hardwareWalletType || isImported;
 
-  // Balance is its own cell now. While prices are still loading we show an
-  // ellipsis rather than an empty gap, matching the previous subtitle behavior.
-  const balanceLabel = accountValue || (isFetchingTokenPrices ? "..." : "");
+  // Balance is its own cell. Mirrors the mobile app: a spinner only while
+  // this account's total is genuinely still pending — totals arrive in
+  // batches, so early rows show a real value while later ones are unresolved.
+  // Once loading settles the total always shows, defaulting to $0.00 rather
+  // than an empty cell. A falsy check (not `== null`) is deliberate: the data
+  // hook writes "" for an account whose fetch threw, which is also "no total".
+  const isTotalLoading = !accountValue && isFetchingTokenPrices;
+  const balanceLabel = accountValue || formatFiatAmount();
 
   return (
     // role/aria-current match BalanceRow, the sibling list row. The active
@@ -76,7 +88,14 @@ export const WalletRow = ({
         </p>
       </div>
       <div className="WalletRow__balance" data-testid="wallet-row-balance">
-        {balanceLabel}
+        {isTotalLoading ? (
+          // SDS `Loader` takes only `size`, so the testid goes on a wrapper.
+          <span data-testid="wallet-row-balance-spinner">
+            <Loader size="1rem" />
+          </span>
+        ) : (
+          balanceLabel
+        )}
       </div>
     </div>
   );

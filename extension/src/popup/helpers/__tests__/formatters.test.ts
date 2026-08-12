@@ -1,6 +1,7 @@
 import BigNumber from "bignumber.js";
 import {
   formatAmountPreserveCursor,
+  formatFiatAmount,
   getValidBigNumber,
   isValidPositiveAmount,
   normalizeNumericString,
@@ -149,5 +150,27 @@ describe("formatAmountPreserveCursor", () => {
   it("still formats a non-empty amount", () => {
     expect(formatAmountPreserveCursor("12", "1").amount).toBe("12");
     expect(formatAmountPreserveCursor("1.23", "1.2", 2).amount).toBe("1.23");
+  });
+});
+
+describe("formatFiatAmount", () => {
+  it("formats a USD amount, flooring to two decimals", () => {
+    expect(formatFiatAmount("1149.239")).toBe("$1,149.23");
+    expect(formatFiatAmount("0.5")).toBe("$0.50");
+  });
+
+  // Totals for accounts with no price data at all (non-Mainnet networks, or a
+  // failed price fetch) render this rather than being hidden.
+  it("falls back to $0.00 rather than hiding the value", () => {
+    expect(formatFiatAmount("0")).toBe("$0.00");
+    expect(formatFiatAmount()).toBe("$0.00");
+  });
+
+  // A default parameter would only cover `undefined`; these would each have
+  // produced "$NaN" and shipped that into the UI.
+  it("treats non-numeric input as zero, never $NaN", () => {
+    expect(formatFiatAmount("")).toBe("$0.00");
+    expect(formatFiatAmount(null)).toBe("$0.00");
+    expect(formatFiatAmount("not a number")).toBe("$0.00");
   });
 });

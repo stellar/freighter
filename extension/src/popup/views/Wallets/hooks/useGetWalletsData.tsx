@@ -10,7 +10,7 @@ import {
 import { isMainnet } from "helpers/stellar";
 import { getTotalUsd } from "popup/helpers/balance";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
-import { formatAmount, roundUsdValue } from "popup/helpers/formatters";
+import { formatFiatAmount } from "popup/helpers/formatters";
 import { AccountBalances, useGetBalances } from "helpers/hooks/useGetBalances";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { useGetTokenPrices } from "helpers/hooks/useGetTokenPrices";
@@ -71,7 +71,7 @@ function useGetWalletsData() {
               `Error loading account balances in wallets data - ${balances.message}`,
             );
             return {
-              [account.publicKey]: `$${formatAmount(roundUsdValue("0.00"))}`,
+              [account.publicKey]: formatFiatAmount(),
             };
           }
 
@@ -86,7 +86,7 @@ function useGetWalletsData() {
             balances.balances,
           );
           return {
-            [account.publicKey]: `$${formatAmount(roundUsdValue(totalPriceUsd.toString()))}`,
+            [account.publicKey]: formatFiatAmount(totalPriceUsd.toString()),
           };
         } catch (error) {
           captureException(

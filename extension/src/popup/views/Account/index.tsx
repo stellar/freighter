@@ -14,7 +14,6 @@ import { View } from "popup/basics/layout/View";
 import { accountNameSelector } from "popup/ducks/accountServices";
 import { openTab } from "popup/helpers/navigate";
 import { isFullscreenMode } from "popup/helpers/isFullscreenMode";
-import { isMainnet } from "helpers/stellar";
 import { useSwapTopTokensPrewarm } from "popup/helpers/useSwapTopTokensPrewarm";
 
 import { AccountAssets } from "popup/components/account/AccountAssets";
@@ -23,7 +22,7 @@ import { AccountHeader } from "popup/components/account/AccountHeader";
 import { useHiddenCollectibles } from "popup/components/account/hooks/useHiddenCollectibles";
 import { Loading } from "popup/components/Loading";
 import { NotFundedMessage } from "popup/components/account/NotFundedMessage";
-import { formatAmount, roundUsdValue } from "popup/helpers/formatters";
+import { formatFiatAmount } from "popup/helpers/formatters";
 
 import { newTabHref } from "helpers/urls";
 import { getTotalUsd } from "popup/helpers/balance";
@@ -198,12 +197,18 @@ export const Account = () => {
       : {};
 
   const totalBalanceUsd = getTotalUsd(tokenPrices ?? {}, balances);
-  const roundedTotalBalanceUsd =
-    !hasError &&
-    isMainnet(resolvedData!.networkDetails) &&
-    resolvedData?.tokenPrices
-      ? `$${formatAmount(roundUsdValue(totalBalanceUsd.toString()))}`
-      : "";
+  // The total is shown whenever account data resolved, defaulting to $0.00
+  // rather than being hidden when nothing is priced — which is every
+  // non-Mainnet network (no price feed) and any failed price fetch. Matches
+  // the mobile app, where the hero is always present.
+  //
+  // `hasError` still yields an empty string: there the balances themselves
+  // are unknown, a "Failed to fetch your account balances" notification is
+  // already on screen, and `resolvedData` is null — so claiming $0.00 would
+  // be both misleading and unsafe to compute.
+  const roundedTotalBalanceUsd = hasError
+    ? ""
+    : formatFiatAmount(totalBalanceUsd.toString());
 
   const activeAllowList =
     resolvedData?.allowList?.[resolvedData?.networkDetails?.networkName]?.[

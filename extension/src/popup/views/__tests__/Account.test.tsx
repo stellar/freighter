@@ -1085,9 +1085,12 @@ describe("Account view", () => {
       expect(
         screen.getByTestId(`asset-price-delta-${TEST_CANONICAL}`),
       ).toHaveTextContent("--");
+      // The hero is never hidden: with no prices there is no fiat value, so
+      // it falls back to a zero total rather than collapsing. The token rows
+      // above still show dashes — that distinction is the point.
       expect(
         screen.queryByTestId("account-view-total-balance"),
-      ).toBeEmptyDOMElement();
+      ).toHaveTextContent("$0.00");
     });
   });
 
