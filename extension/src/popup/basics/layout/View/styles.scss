@@ -229,7 +229,17 @@
     }
   }
 
+  // Home is the only scrollable view, and it has to grow past the viewport
+  // rather than clip like the fixed-height views do.
+  //
+  // `height: 100%` resolved against a parent with no height of its own, i.e.
+  // to `auto`, so the layout was only ever as tall as its content. In the
+  // popup that is invisible — the base `min-height` matches the popup height
+  // — but in fullscreen it left the inset's vertical borders stopping partway
+  // down the window. Grow with the content, but never be shorter than the
+  // viewport; `View__content` is `flex: 1`, so it takes up any slack.
   &--scrollable {
-    height: 100%;
+    height: auto;
+    min-height: 100dvh;
   }
 }
