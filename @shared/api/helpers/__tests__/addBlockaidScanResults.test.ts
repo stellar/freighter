@@ -130,6 +130,84 @@ describe("addBlockaidScanResults", () => {
     );
   });
 
+  // Regression: the verdict used to be matched back by re-parsing the returned
+  // id (`assetId.replace("-", ":")`), which consumed the first hyphen. A symbol
+  // containing one split in the wrong place, the lookup missed, and the verdict
+  // was dropped — and because every entry is pre-stamped benign, that renders a
+  // malicious token as affirmatively safe.
+  it("applies the verdict to a token whose symbol contains a hyphen", async () => {
+    const hyphenated = {
+      isFunded: true,
+      subentryCount: 0,
+      balances: {
+        "MY-TOKEN:CTOKEN456": {
+          token: { code: "MY-TOKEN", issuer: { key: "CTOKEN456" } },
+          contractId: "CTOKEN456",
+          total: new BigNumber("1"),
+          available: new BigNumber("1"),
+        },
+      },
+    } as any;
+
+    mockFetch.mockResolvedValueOnce({
+      json: async () => ({
+        data: { results: { "MY-TOKEN-CTOKEN456": maliciousResult } },
+      }),
+    });
+
+    const result = await addBlockaidScanResults(
+      hyphenated,
+      MAINNET_NETWORK_DETAILS,
+    );
+
+    const [url] = mockFetch.mock.calls[0];
+    expect(new URL(url).searchParams.getAll("asset_ids")).toEqual([
+      "MY-TOKEN-CTOKEN456",
+    ]);
+    expect(
+      (result.balances!["MY-TOKEN:CTOKEN456"] as any).blockaidData,
+    ).toEqual(maliciousResult);
+  });
+
+  // Two distinct keys can produce the same Blockaid id, so the id must map to
+  // every key behind it — otherwise one of them keeps the benign default.
+  it("stamps every balance key that collapses onto the same Blockaid id", async () => {
+    const colliding = {
+      isFunded: true,
+      subentryCount: 0,
+      balances: {
+        "A-B:C123": {
+          token: { code: "A-B", issuer: { key: "C123" } },
+          total: new BigNumber("1"),
+          available: new BigNumber("1"),
+        },
+        "A:B-C123": {
+          token: { code: "A", issuer: { key: "B-C123" } },
+          total: new BigNumber("1"),
+          available: new BigNumber("1"),
+        },
+      },
+    } as any;
+
+    mockFetch.mockResolvedValueOnce({
+      json: async () => ({
+        data: { results: { "A-B-C123": maliciousResult } },
+      }),
+    });
+
+    const result = await addBlockaidScanResults(
+      colliding,
+      MAINNET_NETWORK_DETAILS,
+    );
+
+    expect((result.balances!["A-B:C123"] as any).blockaidData).toEqual(
+      maliciousResult,
+    );
+    expect((result.balances!["A:B-C123"] as any).blockaidData).toEqual(
+      maliciousResult,
+    );
+  });
+
   it("does not fetch when there is nothing scannable", async () => {
     const onlyNative = {
       isFunded: true,

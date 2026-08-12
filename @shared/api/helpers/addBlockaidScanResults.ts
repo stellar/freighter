@@ -54,8 +54,24 @@ export const addBlockaidScanResults = async (
     const chunkSize = 10;
     for (let offset = 0; offset < scannableIds.length; offset += chunkSize) {
       const url = new URL(`${INDEXER_URL}/scan-asset-bulk`);
-      for (const id of scannableIds.slice(offset, offset + chunkSize)) {
-        url.searchParams.append("asset_ids", id.replace(":", "-"));
+      // Record which balance key produced each Blockaid id so verdicts can be
+      // matched back by lookup instead of re-parsing the id. Deriving the key
+      // from the response is ambiguous once a symbol contains a hyphen
+      // (`MY-TOKEN:C…` → `MY-TOKEN-C…` → splits back to `MY:TOKEN-C…`), which
+      // silently dropped the verdict — and since every entry is pre-stamped
+      // benign above, a dropped verdict reads as an affirmative "Benign".
+      // Distinct keys can collapse onto one id (`A-B:C` and `A:B-C` both yield
+      // `A-B-C`), so each id maps to a list rather than a single key.
+      const idToBalanceKeys = new Map<string, string[]>();
+      for (const key of scannableIds.slice(offset, offset + chunkSize)) {
+        const assetId = key.replace(":", "-");
+        url.searchParams.append("asset_ids", assetId);
+        const existing = idToBalanceKeys.get(assetId);
+        if (existing) {
+          existing.push(key);
+        } else {
+          idToBalanceKeys.set(assetId, [key]);
+        }
       }
       const response = await fetch(url.href);
       const data = await response.json();
@@ -64,8 +80,7 @@ export const addBlockaidScanResults = async (
       };
 
       Object.entries(results).forEach(([assetId, scanResult]) => {
-        const balanceKey = assetId.replace("-", ":");
-        if (balances[balanceKey]) {
+        for (const balanceKey of idToBalanceKeys.get(assetId) || []) {
           (balances[balanceKey] as any).blockaidData = scanResult;
         }
       });
