@@ -1350,6 +1350,13 @@ describe("Account view", () => {
       ).toBeInTheDocument();
     });
 
+    // The hero is never hidden, not even here: it falls back to a zero total
+    // while the notification above carries the failure. Matches mobile, whose
+    // hero has no error branch, and the wallets rows.
+    expect(screen.getByTestId("account-view-total-balance")).toHaveTextContent(
+      "$0.00",
+    );
+
     accountDataSpy.mockRestore();
   });
 

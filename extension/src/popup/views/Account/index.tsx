@@ -197,18 +197,17 @@ export const Account = () => {
       : {};
 
   const totalBalanceUsd = getTotalUsd(tokenPrices ?? {}, balances);
-  // The total is shown whenever account data resolved, defaulting to $0.00
-  // rather than being hidden when nothing is priced — which is every
-  // non-Mainnet network (no price feed) and any failed price fetch. Matches
-  // the mobile app, where the hero is always present.
+  // Always shown, defaulting to $0.00 rather than being hidden when there is
+  // no total to compute — every non-Mainnet network (no price feed), a failed
+  // price fetch, and a failed balances fetch alike. Matches the mobile app,
+  // whose hero has no error branch at all, and the wallets rows, which settle
+  // on $0.00 for an account whose fetch failed.
   //
-  // `hasError` still yields an empty string: there the balances themselves
-  // are unknown, a "Failed to fetch your account balances" notification is
-  // already on screen, and `resolvedData` is null — so claiming $0.00 would
-  // be both misleading and unsafe to compute.
-  const roundedTotalBalanceUsd = hasError
-    ? ""
-    : formatFiatAmount(totalBalanceUsd.toString());
+  // Safe in the error state: `balances` falls back to [] and `tokenPrices` to
+  // undefined above, so getTotalUsd sums nothing and returns zero without
+  // touching the null `resolvedData`. The failure itself is still reported by
+  // the notification below.
+  const roundedTotalBalanceUsd = formatFiatAmount(totalBalanceUsd.toString());
 
   const activeAllowList =
     resolvedData?.allowList?.[resolvedData?.networkDetails?.networkName]?.[
