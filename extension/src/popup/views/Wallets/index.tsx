@@ -24,6 +24,7 @@ import { View } from "popup/basics/layout/View";
 import {
   makeAccountActive,
   allAccountsSelector,
+  publicKeySelector,
 } from "popup/ducks/accountServices";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import {
@@ -51,6 +52,9 @@ export const Wallets = () => {
   const { state: dataState, fetchData } = useGetWalletsData();
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const allAccounts = useSelector(allAccountsSelector);
+  // Fallback for the error state, where the fetch yields no data but Redux
+  // still holds the active account from the last successful load.
+  const reduxPublicKey = useSelector(publicKeySelector);
   // Holds the currently-shown copy-toast's id (see copyAddress below for why
   // this can't be a stable id). Declared here, above the early returns, so
   // this hook always runs regardless of which branch this render takes.
@@ -97,20 +101,15 @@ export const Wallets = () => {
     });
   }
 
-  if (hasError) {
-    return (
-      <div>
-        <Notification
-          variant="error"
-          title={t("Failed to fetch your wallets.")}
-        >
-          {t("Your wallets could not be fetched at this time.")}
-        </Notification>
-      </div>
-    );
-  }
-
-  const { publicKey: activePublicKey, accountValue } = dataState.data;
+  // Deliberately not an early return on `hasError`. `dataState.data` is null
+  // in that state, but everything the chrome needs — the active key, the
+  // account list — lives in Redux and survives a failed fetch. Returning the
+  // notification on its own left the screen with no close button, no account
+  // actions and no Add wallet, i.e. an error the user could not navigate out
+  // of. The failure is scoped to the list instead, below.
+  const resolvedData = hasError ? null : dataState.data;
+  const activePublicKey = resolvedData?.publicKey || reduxPublicKey;
+  const accountValue = resolvedData?.accountValue;
   const activeAccountName =
     allAccounts.find((account) => account.publicKey === activePublicKey)
       ?.name || "";
@@ -235,37 +234,48 @@ export const Wallets = () => {
         </div>
         <div className="Wallets__divider" />
         <div className="Wallets__list">
-          {allAccounts.map(
-            ({ publicKey, name, imported, hardwareWalletType }) => {
-              const isSelected = activePublicKey === publicKey;
-              const totalValueUsd = accountValue ? accountValue[publicKey] : "";
+          {hasError ? (
+            <Notification
+              variant="error"
+              title={t("Failed to fetch your wallets.")}
+            >
+              {t("Your wallets could not be fetched at this time.")}
+            </Notification>
+          ) : (
+            allAccounts.map(
+              ({ publicKey, name, imported, hardwareWalletType }) => {
+                const isSelected = activePublicKey === publicKey;
+                const totalValueUsd = accountValue
+                  ? accountValue[publicKey]
+                  : "";
 
-              return (
-                <WalletRow
-                  key={publicKey}
-                  isFetchingTokenPrices={isFetchingTokenPrices}
-                  accountName={name}
-                  accountValue={totalValueUsd}
-                  isImported={imported}
-                  hardwareWalletType={hardwareWalletType}
-                  publicKey={publicKey}
-                  isSelected={isSelected}
-                  onClick={async (publicKey) => {
-                    await dispatch(makeAccountActive(publicKey));
-                    dispatch(
-                      clearBalancesForAccount({ publicKey, networkDetails }),
-                    );
-                    dispatch(
-                      clearCollectiblesForAccount({
-                        publicKey,
-                        networkDetails,
-                      }),
-                    );
-                    navigateTo(ROUTES.account, navigate);
-                  }}
-                />
-              );
-            },
+                return (
+                  <WalletRow
+                    key={publicKey}
+                    isFetchingTokenPrices={isFetchingTokenPrices}
+                    accountName={name}
+                    accountValue={totalValueUsd}
+                    isImported={imported}
+                    hardwareWalletType={hardwareWalletType}
+                    publicKey={publicKey}
+                    isSelected={isSelected}
+                    onClick={async (publicKey) => {
+                      await dispatch(makeAccountActive(publicKey));
+                      dispatch(
+                        clearBalancesForAccount({ publicKey, networkDetails }),
+                      );
+                      dispatch(
+                        clearCollectiblesForAccount({
+                          publicKey,
+                          networkDetails,
+                        }),
+                      );
+                      navigateTo(ROUTES.account, navigate);
+                    }}
+                  />
+                );
+              },
+            )
           )}
         </div>
       </View.Content>

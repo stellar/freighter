@@ -41,9 +41,14 @@
     margin-top: pxToRem(24) pxToRem(24) 0;
   }
 
+  // The content inset is disabled for this view (`View.Content hasNoPadding`),
+  // so notifications have to bring their own gutter or they run edge to edge.
+  // Set only the sides: `margin-top` is what animateNotification animates.
   &__fetch-fail {
     animation: animateNotification 0.3s ease-in-out;
     margin-top: 1.5rem;
+    margin-left: var(--account-view-padding-side);
+    margin-right: var(--account-view-padding-side);
   }
 
   /* overwrite default MultiPaneSlider styles for AccountView
