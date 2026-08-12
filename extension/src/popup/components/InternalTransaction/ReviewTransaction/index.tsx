@@ -132,6 +132,7 @@ export const ReviewTx = ({
       destination,
       memo,
       federationAddress,
+      domainAddress,
       isToken,
       isCollectible,
       collectibleData,
@@ -182,7 +183,7 @@ export const ReviewTx = ({
   const assetIcons = srcAsset !== "native" ? { [srcAsset]: assetIcon } : {};
   const truncatedDest = federationAddress
     ? truncatedFedAddress(federationAddress)
-    : truncatedPublicKey(destination);
+    : domainAddress || truncatedPublicKey(destination);
 
   // Scan transaction
   const txScanResult = simulationState.data?.scanResult;

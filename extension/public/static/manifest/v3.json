@@ -56,5 +56,8 @@
     },
     "open_at_install": false
   },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self';"
+  },
   "manifest_version": 3
 }

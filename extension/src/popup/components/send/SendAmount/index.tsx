@@ -120,6 +120,7 @@ export const SendAmount = ({
     destination,
     destinationAsset,
     federationAddress,
+    domainAddress,
     recipientName,
     isToken,
     transactionFee,
@@ -751,6 +752,7 @@ export const SendAmount = ({
                   <AddressTile
                     address={destination}
                     federationAddress={federationAddress}
+                    domainAddress={domainAddress}
                     recipientName={recipientName}
                     onClick={goToChooseDest}
                   />
