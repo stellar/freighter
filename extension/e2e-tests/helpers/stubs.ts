@@ -55,7 +55,11 @@ export const stubFeatureFlags = async (context: BrowserContext) => {
 };
 
 export const stubRpcHealth = async (context: BrowserContext) => {
-  await context.route("*/**/rpc-health**", async (route) => {
+  // rpc-health is a freighter-backend-v2 call made from the background
+  // service worker (#2879), so it must be intercepted on the BrowserContext.
+  // Without this stub an unreachable backend surfaces a "Soroban is
+  // temporarily experiencing issues" toast that intercepts pointer events.
+  await context.route("**/rpc-health**", async (route) => {
     await route.fulfill({
       json: { status: "healthy" },
     });
@@ -328,16 +332,6 @@ export const stubBackendSettingsEndpoint = async (page: Page) => {
         userNotification: { enabled: false, message: "" },
       },
     });
-  });
-};
-
-export const stubRpcHealth = async (context: BrowserContext) => {
-  // rpc-health is a freighter-backend-v2 call made from the background
-  // service worker (#2879), so it must be intercepted on the BrowserContext.
-  // Without this stub an unreachable backend surfaces a "Soroban is
-  // temporarily experiencing issues" toast that intercepts pointer events.
-  await context.route("**/rpc-health*", async (route) => {
-    await route.fulfill({ json: { status: "healthy" } });
   });
 };
 
