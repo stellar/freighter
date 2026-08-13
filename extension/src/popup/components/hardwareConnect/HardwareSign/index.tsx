@@ -37,7 +37,6 @@ export const HardwareSign = ({
   walletType,
   isSignSorobanAuthorization,
   isSignMessage,
-  requestedPublicKey,
   onSubmit,
   isInternal = false,
   onCancel,
@@ -46,10 +45,6 @@ export const HardwareSign = ({
   walletType: ConfigurableWalletType;
   isSignSorobanAuthorization?: boolean;
   isSignMessage?: boolean;
-  // The account the dApp asked to sign with, when it named one. Freighter falls
-  // back to the active account if that account is not in the wallet, so this
-  // cannot be inferred from redux — see the check in handleSign.
-  requestedPublicKey?: string;
   onSubmit?: () => void;
   isInternal?: boolean;
   onCancel?: () => void;
@@ -98,20 +93,20 @@ export const HardwareSign = ({
 
       // A transaction signed by the wrong device fails on its own — the
       // signature will not satisfy the transaction's source account. A
-      // standalone message has no such binding, so the wrong key would hand
-      // back a perfectly valid signature for an identity nobody approved, and
-      // we would report it as authoritative. Refuse instead of signing.
+      // standalone message has no such binding, so a second attached Ledger
+      // would hand back a perfectly valid signature while the popup says it is
+      // signing as someone else. Refuse rather than let the UI lie.
       //
-      // Compare against the requested account, not merely the active one:
-      // signFlowAccountSelector silently leaves the previous account active
-      // when the dApp names an account the wallet does not hold, so checking
-      // the active account alone would pass in exactly that case.
-      const expectedPublicKey = requestedPublicKey || activePublicKey;
-      if (
-        isSignMessage &&
-        expectedPublicKey &&
-        publicKey !== expectedPublicKey
-      ) {
+      // Scoped to the account the popup actually displays. Whether the dApp's
+      // requested account was honoured is not decided here: signFlowAccountSelector
+      // activates it when the wallet holds it and otherwise leaves the active
+      // account alone, exactly as it does for software keys, and the true
+      // signer goes back as `signerAddress` for the dApp to check. Comparing
+      // against the raw request here would also dead-end any address the
+      // selector cannot match — a muxed (M...) address whose base account is
+      // the attached device, say — on an error telling the user to swap
+      // hardware that was never the problem.
+      if (isSignMessage && activePublicKey && publicKey !== activePublicKey) {
         throw new Error(MISMATCHED_HARDWARE_ACCOUNT_ERROR);
       }
 

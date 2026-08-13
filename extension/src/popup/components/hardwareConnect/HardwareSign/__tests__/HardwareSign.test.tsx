@@ -43,9 +43,8 @@ const { handleSignedHwPayload } = jest.requireMock<
 >("@shared/api/internal");
 
 const renderOverlay = ({
-  requestedPublicKey,
   message = "Hello, Stellar!",
-}: { requestedPublicKey?: string; message?: string } = {}) =>
+}: { message?: string } = {}) =>
   render(
     <Wrapper
       routes={["/"]}
@@ -72,7 +71,6 @@ const renderOverlay = ({
       <HardwareSign
         walletType={WalletType.LEDGER}
         isSignMessage
-        requestedPublicKey={requestedPublicKey}
         uuid="test-uuid"
       />
     </Wrapper>,
@@ -100,6 +98,14 @@ describe("HardwareSign message signing", () => {
   });
 
   it("refuses to sign when the device derives a different account", async () => {
+    // The guard's whole scope: the attached device must be the account the
+    // popup says it is signing as. It deliberately does not see the dApp's
+    // requested account — signFlowAccountSelector activates that when the
+    // wallet holds it and otherwise leaves the active account alone, the same
+    // as for software keys, and the true signer goes back as signerAddress for
+    // the dApp to check. Comparing the raw request here would dead-end every
+    // address the selector cannot match, muxed (M...) addresses included, on an
+    // error telling the user to swap hardware that was never the problem.
     mockGetWalletPublicKey.mockResolvedValue(OTHER_PUBLIC_KEY);
 
     renderOverlay();
@@ -125,23 +131,6 @@ describe("HardwareSign message signing", () => {
         message: "Hello, Stellar!",
       });
     });
-  });
-
-  it("refuses when the device matches the active account but not the requested one", async () => {
-    // The dApp asked for an account the wallet does not hold, so
-    // signFlowAccountSelector silently left the previous account active. The
-    // attached device matches that active account, so an active-only check
-    // would pass and sign for an identity nobody requested.
-    mockGetWalletPublicKey.mockResolvedValue(TEST_PUBLIC_KEY);
-
-    renderOverlay({ requestedPublicKey: OTHER_PUBLIC_KEY });
-
-    await waitFor(() => {
-      expect(
-        screen.getByText(/does not match the selected account/),
-      ).toBeDefined();
-    });
-    expect(mockHardwareSignMessage).not.toHaveBeenCalled();
   });
 
   it("signs an empty message instead of waiting for a payload that never changes", async () => {
