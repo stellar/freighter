@@ -630,7 +630,9 @@ test("Loads wallets data and token prices on Mainnet in batches", async ({
   await page.getByTestId("account-view-account-name").click();
   await expect(page.getByText("Wallets")).toBeVisible();
 
-  await page.getByText("Add a wallet").click();
+  // By testid: the footer button and the sheet it opens share the "Add
+  // wallet" label, so matching on text is ambiguous once the sheet is open.
+  await page.getByTestId("add-wallet").click();
   await page.getByText("Create a new wallet").click();
   await page.locator("#password-input").fill(PASSWORD);
   await page.getByRole("button", { name: "Create New Address" }).click();
@@ -643,13 +645,30 @@ test("Loads wallets data and token prices on Mainnet in batches", async ({
   await page.getByTestId("account-view-account-name").click();
   await expect(page.getByText("Wallets")).toBeVisible();
 
-  await expect(page.getByText("GDF3…ZEFY - $6.52")).toBeVisible();
-  await expect(page.getByText("GCKU…67J2 - $5.71")).toBeVisible();
-  await expect(page.getByText("GDPX…YGJC - $6.11")).toBeVisible();
-  await expect(page.getByText("GC32…GTQA - $6.52")).toBeVisible();
-  await expect(page.getByText("GDY4…BQ7C - $6.93")).toBeVisible();
-  await expect(page.getByText("GBW2…OU3T - $7.34")).toBeVisible();
-  await expect(page.getByText("GARH…H6NU - $7.75")).toBeVisible();
+  // Address and balance now live in separate cells (no more concatenated
+  // "address - $balance" text), so scope each assertion to the row that
+  // contains the address and check its balance cell within that row.
+  await expect(
+    page.getByTestId("wallet-row-select").filter({ hasText: "GDF3…ZEFY" }),
+  ).toContainText("$6.52");
+  await expect(
+    page.getByTestId("wallet-row-select").filter({ hasText: "GCKU…67J2" }),
+  ).toContainText("$5.71");
+  await expect(
+    page.getByTestId("wallet-row-select").filter({ hasText: "GDPX…YGJC" }),
+  ).toContainText("$6.11");
+  await expect(
+    page.getByTestId("wallet-row-select").filter({ hasText: "GC32…GTQA" }),
+  ).toContainText("$6.52");
+  await expect(
+    page.getByTestId("wallet-row-select").filter({ hasText: "GDY4…BQ7C" }),
+  ).toContainText("$6.93");
+  await expect(
+    page.getByTestId("wallet-row-select").filter({ hasText: "GBW2…OU3T" }),
+  ).toContainText("$7.34");
+  await expect(
+    page.getByTestId("wallet-row-select").filter({ hasText: "GARH…H6NU" }),
+  ).toContainText("$7.75");
 
   expect(tokenPricesCallCount).toBe(7);
 });
@@ -659,12 +678,48 @@ test("Renames wallets", async ({ page, extensionId, context }) => {
   await page.getByTestId("account-view-account-name").click();
   await expect(page.getByText("Wallets")).toBeVisible();
 
-  const walletRowOptions = await page.getByTestId("wallet-row-options").all();
-  await walletRowOptions[0].click();
-  await page.getByText("Rename wallet").click();
+  // Rename now acts on the active account via the header pencil button
+  // instead of the (removed) per-row ellipsis menu. This seed phrase has
+  // several accounts, but `loginToTestAccount` always leaves one of them
+  // active by default, so the header already targets an account without
+  // needing to select a row first.
+  await page.getByTestId("wallets-header-edit-name").click();
   await page.getByTestId("rename-wallet-input").fill("New Wallet");
   await page.getByText("Set name").click();
-  await expect(page.getByText("New Wallet")).toBeVisible();
+
+  // The new name now renders in two places at once (the active-account
+  // header, plus that account's own row among several in this seed's
+  // account list), so scope each check instead of asserting on the bare
+  // text or the full row list, either of which would be an ambiguous match.
+  await expect(page.getByTestId("wallets-header")).toContainText("New Wallet");
+  await expect(
+    page.getByTestId("wallet-row-select").filter({ hasText: "New Wallet" }),
+  ).toHaveCount(1);
+});
+
+test("Copies the active wallet address", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+  await loginToTestAccount({ page, extensionId, context });
+  await page.getByTestId("account-view-account-name").click();
+  await expect(page.getByText("Wallets")).toBeVisible();
+
+  await page.getByTestId("wallets-header-copy").click();
+
+  // The clipboard write is what the button exists for, so assert on the
+  // clipboard itself rather than only on the confirmation.
+  const copied = await page.evaluate(() => navigator.clipboard.readText());
+  expect(copied).toMatch(/^G[A-Z2-7]{55}$/);
+
+  // Confirmation is a toast, matching the QR screen, not an inline label on
+  // the button. It quotes the truncated address, which the header also
+  // shows, so scope the assertion to the toast region.
+  await expect(
+    page.getByText(/copied!$/).filter({ hasText: "Address" }),
+  ).toBeVisible();
 });
 
 test("Loads collectibles data with successful metadata", async ({
