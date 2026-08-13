@@ -1,13 +1,10 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { Icon } from "@stellar/design-system";
-import classNames from "classnames";
 
 import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
 import { truncatedPublicKey } from "helpers/stellar";
-import { getColorPubKey } from "helpers/stellarIdenticon";
 import { WalletType } from "@shared/constants/hardwareWallet";
-import IconEllipsis from "popup/assets/icon-ellipsis.svg";
 
 import "./styles.scss";
 
@@ -20,7 +17,6 @@ interface WalletRowProps {
   isSelected: boolean;
   publicKey: string;
   onClick: (publicKey: string) => unknown;
-  setOptionsOpen: (publicKey: string) => unknown;
 }
 
 export const WalletRow = ({
@@ -32,58 +28,55 @@ export const WalletRow = ({
   isSelected,
   publicKey,
   onClick,
-  setOptionsOpen,
 }: WalletRowProps) => {
-  const shortPublicKey = truncatedPublicKey(publicKey);
-  const identiconWrapperStyles = classNames("identicon-wrapper", {
-    "is-selected": isSelected,
-  });
-  const selectedBorderColorRgb = getColorPubKey(publicKey);
-  const isSelectedColor = `rgb(${selectedBorderColorRgb.r} ${selectedBorderColorRgb.g} ${selectedBorderColorRgb.b} / 100%`;
-  const borderColor = isSelected ? isSelectedColor : "#232323";
-
-  let subTitle = accountValue
-    ? `${shortPublicKey} - ${accountValue}`
-    : shortPublicKey;
-  if (isFetchingTokenPrices && !accountValue) {
-    subTitle = `${shortPublicKey} - ...`;
-  }
   const { t } = useTranslation();
-  const walletIdentifier =
-    hardwareWalletType || isImported ? t("Imported") : "";
+  const shortPublicKey = truncatedPublicKey(publicKey);
+
+  const isImportedWallet = !!hardwareWalletType || isImported;
+
+  // Balance is its own cell now. While prices are still loading we show an
+  // ellipsis rather than an empty gap, matching the previous subtitle behavior.
+  const balanceLabel = accountValue || (isFetchingTokenPrices ? "..." : "");
+
   return (
-    <div className="WalletRow">
-      <div
-        className="WalletRow__identicon"
-        onClick={() => onClick(publicKey)}
-        data-testid="wallet-row-select"
-      >
-        <div
-          className={identiconWrapperStyles}
-          style={{ borderColor: borderColor }}
-        >
+    // role/aria-current match BalanceRow, the sibling list row. The active
+    // account is otherwise conveyed only by the badge on its avatar, which
+    // says nothing to a screen reader.
+    <div
+      className="WalletRow"
+      onClick={() => onClick(publicKey)}
+      role="button"
+      aria-current={isSelected ? true : undefined}
+      data-testid="wallet-row-select"
+    >
+      <div className="WalletRow__identicon">
+        <div className="identicon-wrapper">
           <IdenticonImg publicKey={publicKey} />
         </div>
         {isSelected ? (
-          <div
-            className="WalletRow__identicon__selected-check"
-            style={{ backgroundColor: isSelectedColor }}
-          >
-            <Icon.Check width="14px" height="14px" />
+          <div className="WalletRow__identicon__selected-check">
+            <Icon.Check />
           </div>
         ) : null}
       </div>
-      <div className="WalletRow__details" onClick={() => onClick(publicKey)}>
+      <div className="WalletRow__details">
         <p className="detail-name">{accountName}</p>
-        <p className="detail-short-key">{subTitle}</p>
-        <p className="detail-short-key">{walletIdentifier}</p>
+        <p className="detail-address">
+          {shortPublicKey}
+          {isImportedWallet ? (
+            <>
+              {/* Decorative separator; the address and label are already
+                  distinct to a screen reader without it. */}
+              <span className="detail-separator" aria-hidden="true">
+                •
+              </span>
+              <span className="detail-imported">{t("Imported")}</span>
+            </>
+          ) : null}
+        </p>
       </div>
-      <div
-        className="WalletRow__options"
-        data-testid="wallet-row-options"
-        onClick={() => setOptionsOpen(publicKey)}
-      >
-        <img src={IconEllipsis} alt={t("wallet action options")} />
+      <div className="WalletRow__balance" data-testid="wallet-row-balance">
+        {balanceLabel}
       </div>
     </div>
   );
