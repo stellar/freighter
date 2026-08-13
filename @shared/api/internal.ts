@@ -73,7 +73,6 @@ import {
   BalanceMap,
   Balances,
 } from "./types/backend-api";
-import { mockFetchAccountHistoryV2 } from "./fixtures/history-v2";
 import {
   MAINNET_NETWORK_DETAILS,
   DEFAULT_NETWORKS,
@@ -1037,12 +1036,6 @@ export const getAccountHistory = async (
   });
 };
 
-// The v2 account-history endpoint exists in freighter-backend-v2
-// (GET /api/v1/accounts/{address}/transactions) but is not deployed yet, so
-// getAccountHistoryV2 serves fixtures matching the real wire shape while the
-// redesigned History UI is built. Flip to false when the endpoint is live.
-const IS_HISTORY_V2_MOCKED = true;
-
 export const getAccountHistoryV2 = async (
   publicKey: string,
   networkDetails: NetworkDetails,
@@ -1059,10 +1052,6 @@ export const getAccountHistoryV2 = async (
     throw new Error(
       `history v2 does not support network passphrase ${networkDetails.networkPassphrase}`,
     );
-  }
-
-  if (IS_HISTORY_V2_MOCKED) {
-    return mockFetchAccountHistoryV2({ address: publicKey, limit, cursor });
   }
 
   // Query lives in the path so callBackendV2 signs the JWT's methodAndPath

@@ -2,12 +2,14 @@
  * Hand-built account-history transactions, one per scenario in the Figma
  * "History details" design (file KwkHXQxbNmDllwermJtnRu, section 11870:39557).
  *
- * TEST-ONLY. The app's mocked history comes from `./history-v2.ts`, which is
- * real pubnet data; that account produces no configuration state changes at
- * all, so these synthetic transactions remain the only inputs covering signer,
- * threshold, data-entry, home-domain, flag, balance-authorization, allowance,
- * account-created/merged and failed-transaction rendering. Do not import them
- * from application code.
+ * TEST-ONLY — it lives under `__tests__/fixtures/` (jest treats that directory
+ * as importable data, not as suites) precisely so application code cannot reach
+ * for it: the app has no fixture path, `getAccountHistoryV2` always calls the
+ * backend. These transactions are the inputs the v2 history suites map, filter
+ * and render, and between them they cover every row treatment the design
+ * defines: swaps, payments, trustlines,
+ * signer, threshold, data-entry, home-domain, flag, balance-authorization,
+ * allowance, account-created/merged, protocol actions and failed transactions.
  *
  * Shapes mirror the account-history types in `@shared/api/types/backend-api.ts`
  * (see that block for verified field encodings).
@@ -22,7 +24,7 @@ import {
   V2Operation,
   V2OperationType,
   V2StateChange,
-} from "../types/backend-api";
+} from "@shared/api/types/backend-api";
 
 /* ── Test actors ─────────────────────────────────────────────────────────── */
 
@@ -45,9 +47,15 @@ export const MOCK_USDC_SAC =
   "CCW67TSZV3SSS2HXMBQ5JFGCKJNXKZM7UQUWUZPUTHXSTZLEO7SJMI75";
 export const MOCK_EURC_SAC =
   "CAEQSCIJBEEQSCIJBEEQSCIJBEEQSCIJBEEQSCIJBEEQSCIJBEEQTD2L";
+/** BLND — GDJEHTBE6ZHUXSWFI642DCGLUOECLHPF3KSXHPXTSTJ7E3JF6MQ5EZYY */
+export const MOCK_BLND_SAC =
+  "CD25MNVTZDL4Y3XBCPCJXGXATV5WUHHOWMYFF4YBEGU5FCPGMYTVG5JY";
 /** An unknown protocol's router contract (no /protocols match → fallback row) */
 export const MOCK_ROUTER_CONTRACT =
   "CADQOBYHA4DQOBYHA4DQOBYHA4DQOBYHA4DQOBYHA4DQOBYHA4DQP5KR";
+/** A Blend v2 pool contract (YieldBlox on pubnet) — the emissions claim's `pool_id` */
+export const MOCK_BLEND_POOL =
+  "CCCCIQSDILITHMM7PBSLVDT5MISSY7R26MNZXCX4H7J5JQ5FPIYOGYFS";
 
 /* ── Real xdr.Operation base64 blobs (generated with @stellar/stellar-sdk) ── */
 
@@ -87,6 +95,12 @@ const OP_XDR = {
   /** router.swap(self, 400000000 i128, 293807090 i128, [XLM_SAC, USDC_SAC], deadline u64) */
   invokeHostFnSwap:
     "AAAAAQAAAACKiOPddAnxlf1S2y08ul1yymcJvx2UEhvzdIgBtA9vXAAAABgAAAAAAAAAAQcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHAAAABHN3YXAAAAAFAAAAEgAAAAAAAAAAiojj3XQJ8ZX9UtstPLpdcspnCb8dlBIb83SIAbQPb1wAAAAKAAAAAAAAAAAAAAAAF9eEAAAAAAoAAAAAAAAAAAAAAAARgyPyAAAAEAAAAAEAAAACAAAAEgAAAAEltPzYWa7C+mNIQ4xImzw8EMmLbSG+T9PLMMtolT75dwAAABIAAAABre/OWa7lKWj3YGHUlMJSW3Vln6QpamX0me8p5WR35JYAAAAFbO4FfQAAAZUAAAAA",
+  /** blendPool.claim(self, [0, 1] vec<u32>, self) */
+  invokeHostFnBlendClaim:
+    "AAAAAQAAAACKiOPddAnxlf1S2y08ul1yymcJvx2UEhvzdIgBtA9vXAAAABgAAAAAAAAAAYQkQkNC0TOxn3hkuo59YiUsfjrzG5uK/D/T1MOlejDjAAAABWNsYWltAAAAAAAAAwAAABIAAAAAAAAAAIqI4910CfGV/VLbLTy6XXLKZwm/HZQSG/N0iAG0D29cAAAAEAAAAAEAAAACAAAAAwAAAAAAAAADAAAAAQAAABIAAAAAAAAAAIqI4910CfGV/VLbLTy6XXLKZwm/HZQSG/N0iAG0D29cAAAAAA==",
+  /** external creates a 100 XLM claimable balance with self as the only claimant */
+  createClaimableBalance:
+    "AAAAAQAAAACBOXcOqH0XX1ajVGbDTH7My42KkbTuN6Jd9g9bj8mzlAAAAA4AAAAAAAAAADuaygAAAAABAAAAAAAAAACKiOPddAnxlf1S2y08ul1yymcJvx2UEhvzdIgBtA9vXAAAAAA=",
   /** usdcSac.transfer(self, account2, 404000000 i128) */
   invokeHostFnTransfer:
     "AAAAAQAAAACKiOPddAnxlf1S2y08ul1yymcJvx2UEhvzdIgBtA9vXAAAABgAAAAAAAAAAa3vzlmu5Slo92Bh1JTCUlt1ZZ+kKWpl9JnvKeVkd+SWAAAACHRyYW5zZmVyAAAAAwAAABIAAAAAAAAAAIqI4910CfGV/VLbLTy6XXLKZwm/HZQSG/N0iAG0D29cAAAAEgAAAAAAAAAA7UkoxijRwsbq6QM4kFmVYSlZJzpcY/k2NsFGFKyHN9EAAAAKAAAAAAAAAAAAAAAAGBSNAAAAAAA=",
@@ -656,6 +670,56 @@ export const mockSponsorshipOperation = buildTransaction({
   stateChanges: [],
 });
 
+/**
+ * A Blend pool emissions claim. The Blend row is ADDITIVE — it restates the
+ * token and amount of the BalanceChange CREDIT beside it rather than replacing
+ * it (see `@shared/api/types/blend.ts`), so this fixture is what proves the
+ * protocol-action overlay relabels the row without double-counting the BLND
+ * into a second amount or a state-change card.
+ */
+export const mockBlendEmissionsClaim = buildTransaction({
+  ledger: 51_415_000,
+  txOrder: 12,
+  createdAt: "2024-04-11T16:20:00Z",
+  operations: [
+    {
+      operationType: "INVOKE_HOST_FUNCTION",
+      operationXdr: OP_XDR.invokeHostFnBlendClaim,
+    },
+  ],
+  stateChanges: [
+    balance("CREDIT", MOCK_BLND_SAC, "1015480"), // +0.101548 BLND
+    {
+      variant: "BlendEmissionsClaimChange",
+      type: "BLEND_EMISSIONS",
+      reason: "CLAIM",
+      token_id: MOCK_BLND_SAC,
+      amount: "1015480",
+      pool_id: MOCK_BLEND_POOL,
+    },
+  ],
+});
+
+/**
+ * A claimable balance created by someone else with this account as the only
+ * claimant. Upstream reports no state change at all until the balance is
+ * claimed, and the fee belongs to the creator — so the operation type is the
+ * only thing the row has to render from.
+ */
+export const mockClaimableBalanceAirdrop = buildTransaction({
+  ledger: 51_410_000,
+  txOrder: 41,
+  createdAt: "2024-04-10T11:05:00Z",
+  operations: [
+    {
+      operationType: "CREATE_CLAIMABLE_BALANCE",
+      operationXdr: OP_XDR.createClaimableBalance,
+    },
+  ],
+  stateChanges: [],
+  selfPaidFee: false,
+});
+
 /** Figma 12116:48895 "Balance change _Sent" + list row "XLM / Sent / -100.00 XLM" */
 export const mockPaymentSent = buildTransaction({
   ledger: 51_400_000,
@@ -683,7 +747,7 @@ export const mockFailedTransaction = buildTransaction({
   stateChanges: [],
 });
 
-/** Every designed scenario, newest first — the old one-page history mock */
+/** Every designed scenario, newest first — one full page of history */
 export const mockScenarioTransactions: V2AccountTransaction[] = [
   mockSwapClassicDex,
   mockSwapViaContract,
@@ -705,6 +769,8 @@ export const mockScenarioTransactions: V2AccountTransaction[] = [
   mockBalanceAuthChanged,
   mockAllowanceApproved,
   mockSponsorshipOperation,
+  mockBlendEmissionsClaim,
+  mockClaimableBalanceAirdrop,
   mockPaymentSent,
   mockFailedTransaction,
 ];

@@ -6,11 +6,13 @@ import * as ApiInternal from "@shared/api/internal";
 import {
   MOCK_SELF,
   MOCK_XLM_SAC,
-  mockHistoryTransactions,
-  mockFetchAccountHistoryV2,
-} from "@shared/api/fixtures/history-v2";
-import { mockPaymentReceived } from "@shared/api/fixtures/history-v2-scenarios";
-import { V2AccountTransaction } from "@shared/api/types/backend-api";
+  mockPaymentReceived,
+  mockScenarioTransactions,
+} from "popup/views/AccountHistory/__tests__/fixtures/historyV2Scenarios";
+import {
+  AccountHistoryV2Response,
+  V2AccountTransaction,
+} from "@shared/api/types/backend-api";
 import { TESTNET_NETWORK_DETAILS } from "@shared/constants/stellar";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import { RequestState } from "constants/request";
@@ -44,7 +46,7 @@ jest.mock("helpers/hooks/useGetBalances", () => ({
 jest.mock("popup/helpers/searchAsset", () => {
   const actual = jest.requireActual("popup/helpers/searchAsset");
   const { MOCK_XLM_SAC } = jest.requireActual(
-    "@shared/api/fixtures/history-v2",
+    "popup/views/AccountHistory/__tests__/fixtures/historyV2Scenarios",
   );
   return {
     ...actual,
@@ -55,11 +57,10 @@ jest.mock("popup/helpers/searchAsset", () => {
 // Skip real (network-bound) token resolution — the mappers own that logic.
 jest.mock("popup/helpers/history/tokenResolver", () => {
   const actual = jest.requireActual("popup/helpers/history/tokenResolver");
-  const { MOCK_XLM_SAC, MOCK_YUSDC_SAC, MOCK_BLND_SAC, MOCK_CETES_SAC } =
-    jest.requireActual("@shared/api/fixtures/history-v2");
-  const { MOCK_USDC_SAC, MOCK_EURC_SAC } = jest.requireActual(
-    "@shared/api/fixtures/history-v2-scenarios",
-  );
+  const { MOCK_XLM_SAC, MOCK_USDC_SAC, MOCK_EURC_SAC, MOCK_BLND_SAC } =
+    jest.requireActual(
+      "popup/views/AccountHistory/__tests__/fixtures/historyV2Scenarios",
+    );
   const token = (code: string, contractId: string) => ({
     code,
     contractId,
@@ -73,11 +74,9 @@ jest.mock("popup/helpers/history/tokenResolver", () => {
       Promise.resolve(
         new Map([
           [MOCK_XLM_SAC, token("XLM", MOCK_XLM_SAC)],
-          [MOCK_YUSDC_SAC, token("yUSDC", MOCK_YUSDC_SAC)],
-          [MOCK_BLND_SAC, token("BLND", MOCK_BLND_SAC)],
-          [MOCK_CETES_SAC, token("CETES", MOCK_CETES_SAC)],
           [MOCK_USDC_SAC, token("USDC", MOCK_USDC_SAC)],
           [MOCK_EURC_SAC, token("EURC", MOCK_EURC_SAC)],
+          [MOCK_BLND_SAC, token("BLND", MOCK_BLND_SAC)],
         ]),
       ),
   };
@@ -155,16 +154,39 @@ const nativeDustTx: V2AccountTransaction = {
   ],
 };
 
+/**
+ * Cursor-paginated stand-in for the transactions endpoint, serving the scenario
+ * fixtures. The cursor is the index the next page starts at — the endpoint's
+ * cursors are opaque, and the hook only ever echoes them back.
+ */
+const fetchScenarioPage = ({
+  limit = 25,
+  cursor,
+}: {
+  limit?: number;
+  cursor?: string;
+}): AccountHistoryV2Response => {
+  const start = cursor ? Number(cursor) : 0;
+  const end = Math.min(start + limit, mockScenarioTransactions.length);
+  const hasNext = end < mockScenarioTransactions.length;
+  return {
+    data: mockScenarioTransactions.slice(start, end),
+    pagination: {
+      next_cursor: hasNext ? String(end) : null,
+      prev_cursor: start > 0 ? "0" : null,
+      has_next: hasNext,
+      has_previous: start > 0,
+    },
+  };
+};
+
 beforeEach(() => {
   mockFetchAppData.mockResolvedValue(RESOLVED_APP_DATA);
   mockFetchBalances.mockResolvedValue(RESOLVED_BALANCES);
   jest
     .spyOn(ApiInternal, "getAccountHistoryV2")
     .mockImplementation(async (_publicKey, _networkDetails, params = {}) =>
-      mockFetchAccountHistoryV2({
-        limit: params.limit,
-        cursor: params.cursor,
-      }),
+      fetchScenarioPage({ limit: params.limit, cursor: params.cursor }),
     );
 });
 
@@ -218,7 +240,7 @@ describe("useGetHistoryDataV2 — initial fetch", () => {
     });
 
     expect(countEntries(result.current.state.data)).toBe(
-      mockHistoryTransactions.length,
+      mockScenarioTransactions.length,
     );
     expect(asResolved(result.current.state.data).hasNextPage).toBe(false);
   });
@@ -245,7 +267,7 @@ describe("useGetHistoryDataV2 — pagination", () => {
     });
     // the remaining fixtures land on the last page, then no more pages
     expect(countEntries(result.current.state.data)).toBe(
-      mockHistoryTransactions.length,
+      mockScenarioTransactions.length,
     );
     expect(asResolved(result.current.state.data).hasNextPage).toBe(false);
   });

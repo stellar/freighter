@@ -5,7 +5,6 @@ import {
 } from "@reduxjs/toolkit";
 import type { Variant } from "@amplitude/experiment-js-client";
 
-import { isDev } from "@shared/helpers/dev";
 import { getExperimentClient } from "helpers/experimentClient";
 import { BUNDLE_ID_USER_PROPERTY_KEY, getBundleId } from "helpers/analytics";
 import {
@@ -109,10 +108,7 @@ export const fetchFeatureFlags = createAsyncThunk(
     const client = getExperimentClient();
 
     if (!client) {
-      // In local dev there is no Amplitude deployment key, so the client is
-      // null. Enable the v2 history UI here so the redesign is visible without
-      // a key; production has a key and takes the real fetch path below.
-      return { ...initialState, use_history_v2: isDev, isInitialized: true };
+      return { ...initialState, isInitialized: true };
     }
 
     // Pass user_properties explicitly so flags are fetched correctly even when

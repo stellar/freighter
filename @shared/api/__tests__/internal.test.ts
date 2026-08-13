@@ -344,46 +344,83 @@ describe("internalApi", () => {
   });
 
   describe("getAccountHistoryV2", () => {
-    it("returns the fixture page while the endpoint is mocked", async () => {
-      const result = await internalApi.getAccountHistoryV2(
-        "GCFIRY65OQE7DFP5KLNS2PF2LVZMUZYJX4OZIEQ36N2IQANUB5XVYOJR",
+    // Like getTokenPrices, the v2 history call routes through the
+    // FETCH_BACKEND_V2 background chokepoint (#2879) rather than fetching
+    // directly, so the request is asserted on the message, not on fetch.
+    const PUBLIC_KEY =
+      "GCFIRY65OQE7DFP5KLNS2PF2LVZMUZYJX4OZIEQ36N2IQANUB5XVYOJR";
+    const page = {
+      data: [{ hash: "9f2c", operations: [], state_changes: [] }],
+      pagination: {
+        next_cursor: "cursor-2",
+        prev_cursor: null,
+        has_next: true,
+        has_previous: false,
+      },
+    };
+    const sentMessage = () => mockedSend.mock.calls[0][0];
+
+    it("targets the transactions route with the network and page params", async () => {
+      mockedSend.mockResolvedValue({ status: 200, body: page });
+
+      await internalApi.getAccountHistoryV2(
+        PUBLIC_KEY,
         MAINNET_NETWORK_DETAILS,
-        { limit: 5 },
+        { limit: 25, cursor: "cursor-1" },
       );
 
-      expect(result.data).toHaveLength(5);
-      expect(result.pagination.has_next).toBe(true);
-      expect(result.pagination.next_cursor).toBeTruthy();
-      // The mock never hits the background chokepoint
-      expect(mockedSend).not.toHaveBeenCalled();
-
-      // Every transaction matches the wire shape: promoted tx fields plus
-      // account-scoped operations and state changes
-      for (const tx of result.data) {
-        expect(tx).toMatchObject({
-          hash: expect.any(String),
-          fee_charged: expect.any(String),
-          result_code: expect.any(String),
-          operations: expect.any(Array),
-          state_changes: expect.any(Array),
-        });
-      }
+      const message = sentMessage();
+      expect(message.type).toBe(SERVICE_TYPES.FETCH_BACKEND_V2);
+      expect(message.method).toBe("GET");
+      // Query lives in the path so the JWT signs the full request-target
+      expect(message.path).toBe(
+        `/accounts/${PUBLIC_KEY}/transactions?network=PUBLIC&limit=25&cursor=cursor-1`,
+      );
     });
 
-    it("paginates with the cursor", async () => {
-      const pageOne = await internalApi.getAccountHistoryV2(
-        "GCFIRY65OQE7DFP5KLNS2PF2LVZMUZYJX4OZIEQ36N2IQANUB5XVYOJR",
-        MAINNET_NETWORK_DETAILS,
-        { limit: 5 },
-      );
-      const pageTwo = await internalApi.getAccountHistoryV2(
-        "GCFIRY65OQE7DFP5KLNS2PF2LVZMUZYJX4OZIEQ36N2IQANUB5XVYOJR",
-        MAINNET_NETWORK_DETAILS,
-        { limit: 5, cursor: pageOne.pagination.next_cursor! },
+    it("omits limit and cursor when the caller doesn't page", async () => {
+      mockedSend.mockResolvedValue({ status: 200, body: page });
+
+      await internalApi.getAccountHistoryV2(
+        PUBLIC_KEY,
+        TESTNET_NETWORK_DETAILS,
       );
 
-      expect(pageTwo.data[0].hash).not.toEqual(pageOne.data[0].hash);
-      expect(pageTwo.pagination.has_previous).toBe(true);
+      expect(sentMessage().path).toBe(
+        `/accounts/${PUBLIC_KEY}/transactions?network=TESTNET`,
+      );
+    });
+
+    it("returns the paginated envelope as-is", async () => {
+      // The endpoint writes data + pagination at the top level — it is NOT
+      // wrapped in { data: T } the way /protocols and /token-prices are.
+      mockedSend.mockResolvedValue({ status: 200, body: page });
+
+      const result = await internalApi.getAccountHistoryV2(
+        PUBLIC_KEY,
+        MAINNET_NETWORK_DETAILS,
+      );
+
+      expect(result).toEqual(page);
+    });
+
+    it("throws when the endpoint errors", async () => {
+      mockedSend.mockResolvedValue({
+        status: 500,
+        body: { error: "internal error" },
+      });
+
+      await expect(
+        internalApi.getAccountHistoryV2(PUBLIC_KEY, MAINNET_NETWORK_DETAILS),
+      ).rejects.toThrow("internal error");
+    });
+
+    it("throws when a 200 carries no data", async () => {
+      mockedSend.mockResolvedValue({ status: 200, body: {} });
+
+      await expect(
+        internalApi.getAccountHistoryV2(PUBLIC_KEY, MAINNET_NETWORK_DETAILS),
+      ).rejects.toThrow();
     });
 
     // Unsupported networks are custom-network territory; v2 throws rather than
