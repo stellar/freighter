@@ -5,11 +5,12 @@
   background: var(--sds-clr-lilac-03);
   border-radius: pxToRem(12px);
   padding: pxToRem(16px);
-  margin-right: pxToRem(32px);
+  // No horizontal offsets: this sits in `AccountHeader__account-info__details`,
+  // which now spans the full content column, so the banner stretches to match
+  // the action tiles and tab strip. The old -16px/+32px pair predates that and
+  // pushed the banner 16px past the column on both sides.
   margin-bottom: pxToRem(16px);
   margin-top: 0;
-  margin-left: pxToRem(-16px);
-  width: calc(100% + pxToRem(32px));
   display: flex;
   align-items: center;
   justify-content: space-between;

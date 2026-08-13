@@ -108,11 +108,8 @@ test("Hide and unhide a collectible", async ({
   // Wait for detail sheet to close
   await expect(page.getByTestId("CollectibleDetail")).not.toBeVisible();
 
-  // Open the manage dropdown and go to hidden collectibles
-  await page.getByTestId("account-tabs-manage-btn-collectibles").click();
-  await expect(page.getByText("Hidden collectibles")).toBeVisible();
-
-  // Click on hidden collectibles
+  // Navigate to hidden collectibles via the Add Collectible screen
+  await page.getByTestId("add-collectible-btn").click();
   await page.getByTestId("hidden-collectibles-btn").click();
 
   // Wait for hidden collectibles view to open by checking for the grid or empty state
@@ -194,10 +191,8 @@ test("Hidden collectibles view shows empty state when no collectibles are hidden
   await expect(page.getByTestId("account-view")).toBeVisible();
   await page.getByTestId("account-tab-collectibles").click();
 
-  // Open the manage dropdown
-  await page.getByTestId("account-tabs-manage-btn-collectibles").click();
-
-  // Click on hidden collectibles
+  // Navigate to hidden collectibles via the Add Collectible screen
+  await page.getByTestId("add-collectible-btn").click();
   await page.getByTestId("hidden-collectibles-btn").click();
 
   // Verify empty state
