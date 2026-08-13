@@ -240,6 +240,12 @@
   // viewport; `View__content` is `flex: 1`, so it takes up any slack.
   &--scrollable {
     height: auto;
-    min-height: 100dvh;
+    // Both floors, deliberately. `100dvh` alone is circular in the popup:
+    // Chrome sizes the popup window to the document, so the floor would
+    // depend on the viewport, which depends on the content, which depends on
+    // the floor — a short account then opens a short popup. The fixed
+    // `--popup--height` breaks that cycle, and `100dvh` still wins in
+    // fullscreen, where the window is taller than the popup height.
+    min-height: max(var(--popup--height), 100dvh);
   }
 }
