@@ -1374,15 +1374,18 @@ export const grantAccess = async ({
 
 export const handleSignedHwPayload = async ({
   signedPayload,
+  signerAddress,
   uuid,
 }: {
   signedPayload: string | Buffer;
+  signerAddress?: string;
   uuid: string;
 }): Promise<void> => {
   try {
     await sendMessageToBackground({
       activePublicKey: null,
       signedPayload,
+      signerAddress,
       uuid,
       type: SERVICE_TYPES.HANDLE_SIGNED_HW_PAYLOAD,
     });

@@ -66,6 +66,15 @@ export const createWalletConnection: CreateWalletConnection = {
    method will return the signature from the hardware wallet. Freighter will
    then add that signature to the transaction.
 
+   Transactions are not the only thing a dApp can ask a wallet to sign, so
+   there are two sibling maps to fill in as well. `hardwareSignAuth` signs a
+   Soroban authorization entry, and `hardwareSignMessage` signs a SEP-53
+   message. Both return the raw signature rather than a transaction. For
+   `hardwareSignMessage`, pass the raw message bytes to your device if it
+   applies the SEP-53 prefix and hashing itself; otherwise sign the digest
+   produced by `encodeSep53Message` in
+   [src/helpers/stellar.ts](src/helpers/stellar.ts).
+
 6. With those methods set, Freighter now knows how to interact with the hardware
    wallet. Next, we'll tell Freighter how to show information about your wallet.
    Scroll down to `walletAssets`. Here we'll set the key `logo` with your

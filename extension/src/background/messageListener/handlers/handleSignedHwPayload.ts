@@ -16,7 +16,7 @@ export const handleSignedHwPayload = async ({
   responseQueue: ResponseQueue<SignedHwPayloadResponse>;
   sessionTimer: SessionTimer;
 }) => {
-  const { signedPayload, uuid } = request;
+  const { signedPayload, signerAddress, uuid } = request;
 
   if (!uuid) {
     captureException("handleSignedHwPayload: missing uuid in request");
@@ -39,7 +39,7 @@ export const handleSignedHwPayload = async ({
     // entry is never a legitimate signal of user presence and must
     // not be allowed to extend the deadline.
     await sessionTimer.resetSession();
-    transactionResponse.response(signedPayload);
+    transactionResponse.response(signedPayload, signerAddress);
     return {};
   }
 
