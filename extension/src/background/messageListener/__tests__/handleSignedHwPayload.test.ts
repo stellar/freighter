@@ -37,9 +37,34 @@ describe("handleSignedHwPayload", () => {
 
     expect(result).toEqual({});
     expect(sessionTimer.resetSession).toHaveBeenCalledTimes(1);
-    expect(response).toHaveBeenCalledWith("signed-xdr");
+    expect(response).toHaveBeenCalledWith("signed-xdr", undefined);
     expect(callOrder).toEqual(["reset", "response"]);
     expect(responseQueue).toEqual([]);
+  });
+
+  it("forwards the signer address alongside the payload", async () => {
+    const response = jest.fn();
+    const sessionTimer = makeSessionTimer();
+    const responseQueue = [{ uuid: "uuid-1", response }];
+
+    // SEP-53 consumers need the signing address to verify the signature, and
+    // for a hardware wallet only the device knows which key it derived.
+    const result = await handleSignedHwPayload({
+      request: {
+        uuid: "uuid-1",
+        signedPayload: "base64-signature",
+        signerAddress:
+          "GDQ6FCJPB5PWDXQNZKHGCM4FKMWJDNCSDSAKHOZPUEHFNMCRDDDA5PSC",
+      } as any,
+      responseQueue: responseQueue as any,
+      sessionTimer,
+    });
+
+    expect(result).toEqual({});
+    expect(response).toHaveBeenCalledWith(
+      "base64-signature",
+      "GDQ6FCJPB5PWDXQNZKHGCM4FKMWJDNCSDSAKHOZPUEHFNMCRDDDA5PSC",
+    );
   });
 
   it("does NOT extend the idle alarm when the uuid is missing", async () => {
