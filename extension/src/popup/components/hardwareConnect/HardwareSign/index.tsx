@@ -209,7 +209,7 @@ export const HardwareSign = ({
             }
           }}
           customBackIcon={<Icon.X />}
-          title={t("Connect {walletType}", { walletType })}
+          title={t("Connect {{walletType}}", { walletType })}
         />
         <div className="HardwareSign__content">
           <div className="HardwareSign__success">
@@ -219,7 +219,7 @@ export const HardwareSign = ({
             <img
               className="HardwareSign__img"
               src={hardwareConnectSuccessful ? LedgerSigning : Ledger}
-              alt={t("Connect {walletType}", { walletType })}
+              alt={t("Connect {{walletType}}", { walletType })}
             />
             <span data-testid="HardwareSign__connect-text">
               {hardwareConnectSuccessful
@@ -257,7 +257,7 @@ export const HardwareSign = ({
         <SubviewHeader
           customBackAction={closeOverlay}
           customBackIcon={<Icon.X />}
-          title={t("Connect {walletType}", { walletType })}
+          title={t("Connect {{walletType}}", { walletType })}
         />
         <div className="HardwareSign__content">
           <div className="HardwareSign__success">
@@ -267,7 +267,7 @@ export const HardwareSign = ({
             <img
               className="HardwareSign__img"
               src={hardwareConnectSuccessful ? LedgerSigning : Ledger}
-              alt={t("Connect {walletType}", { walletType })}
+              alt={t("Connect {{walletType}}", { walletType })}
             />
             <span data-testid="HardwareSign__connect-text">
               {hardwareConnectSuccessful
