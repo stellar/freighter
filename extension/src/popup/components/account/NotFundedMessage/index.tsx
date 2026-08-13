@@ -57,7 +57,7 @@ export const NotFundedMessage = ({
 
       <Button
         variant="secondary"
-        size="md"
+        size="lg"
         isRounded
         onClick={() =>
           isMainnet(networkDetails)

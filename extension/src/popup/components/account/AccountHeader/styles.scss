@@ -19,9 +19,24 @@
   }
 
   &__icon-btn {
+    // Styles all three nav circles (options / history / networks) from one
+    // place. The history button is not wrapped in `__dropdown`, so keying off
+    // that class left it at the SDS NavButton default while its neighbours
+    // were overridden.
     &__left {
       display: flex;
-      gap: pxToRem(12px);
+      gap: pxToRem(8px);
+
+      button {
+        width: pxToRem(32);
+        height: pxToRem(32);
+
+        svg {
+          width: pxToRem(16);
+          height: pxToRem(16);
+          stroke: var(--sds-clr-base-01);
+        }
+      }
     }
   }
 
@@ -86,8 +101,7 @@
 
   &__account-name {
     color: var(--sds-clr-gray-11);
-    font-weight: var(--font-weight-medium);
-    margin: 0 pxToRem(4px);
+    font-weight: var(--sds-fw-medium);
   }
 
   &__account-dropdown-modal {
@@ -117,12 +131,18 @@
   &__account-info {
     display: flex;
     justify-content: space-around;
+    // Figma's Balance frame carries 24px of top padding, putting the account
+    // row 48px below the nav buttons (which end at 56px in an 80px header).
+    padding-top: pxToRem(24px);
 
+    // Full width so the action tiles below span the whole row; without it this
+    // flex item is content-sized and the tiles sit inset from both edges.
     &__details {
       display: flex;
       flex-direction: column;
       justify-content: center;
       gap: pxToRem(8px);
+      width: 100%;
     }
   }
 
@@ -131,10 +151,17 @@
     display: flex;
     flex-direction: row;
     justify-content: center;
-    gap: pxToRem(2px);
+    gap: pxToRem(6px);
     font-size: pxToRem(14px);
     line-height: pxToRem(20px);
     cursor: pointer;
+
+    // The chevron is the only svg in this row.
+    > svg {
+      width: pxToRem(12);
+      height: pxToRem(12);
+      stroke: var(--sds-clr-gray-09);
+    }
 
     .Tooltip {
       padding: 0.125rem 0.375rem;
@@ -145,14 +172,14 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: pxToRem(24);
-    height: pxToRem(24);
-    border: 1px solid var(--sds-clr-gray-06);
+    width: pxToRem(16);
+    height: pxToRem(16);
+    background: var(--sds-clr-gray-03);
     border-radius: pxToRem(100);
 
     img {
-      width: pxToRem(12);
-      height: pxToRem(12);
+      width: pxToRem(8);
+      height: pxToRem(8);
     }
   }
 
@@ -241,6 +268,9 @@
   &__total-usd-balance {
     display: flex;
     font-size: pxToRem(32);
+    line-height: pxToRem(40px);
+    font-weight: var(--sds-fw-medium);
+    letter-spacing: pxToRem(-1.28px);
     justify-content: center;
     overflow: hidden;
     white-space: nowrap;
@@ -248,36 +278,55 @@
   }
 
   &__actions {
-    display: flex;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
     margin-top: pxToRem(8px);
-    gap: pxToRem(12px);
-    justify-content: center;
-    padding-bottom: pxToRem(16px);
+    gap: pxToRem(8px);
+    // Figma's Balance frame closes with 24px, and the tab strip below adds no
+    // top offset of its own, so this alone sets the tiles -> tabs gap.
+    padding-bottom: pxToRem(24px);
+
+    // The NavLink is the grid item; without this the tile inside it shrinks to
+    // its content instead of filling the column.
+    a {
+      display: block;
+    }
 
     &__column {
       align-items: center;
-      color: var(--sds-clr-gray-11);
+      color: var(--sds-clr-gray-12);
       display: flex;
       flex-direction: column;
       gap: pxToRem(4px);
       justify-content: center;
+      background: var(--sds-clr-gray-03);
+      border-radius: pxToRem(16px);
+      height: pxToRem(78px);
+      padding: pxToRem(16px) pxToRem(8px);
+      width: 100%;
+      transition: background var(--sds-anim-transition-default);
+
+      &:hover {
+        background: var(--sds-clr-gray-04);
+      }
     }
 
     &__btn {
-      padding: pxToRem(12);
-      border-radius: pxToRem(100px);
-      background: var(--sds-clr-gray-03);
-      border: 1px solid var(--sds-clr-gray-06);
-      color: var(--sds-clr-base-01);
       display: flex;
-      width: pxToRem(40);
-      height: pxToRem(40);
       justify-content: center;
       align-items: center;
 
       svg {
-        width: pxToRem(16px);
-        height: pxToRem(16px);
+        width: pxToRem(24px);
+        height: pxToRem(24px);
+        stroke: var(--sds-clr-lilac-11);
+      }
+
+      // On the path, not the svg: the path's own `stroke-width` presentation
+      // attribute beats an inherited value, so a rule on the svg is silently
+      // dead. Here 2 over a 24x24 viewBox in a 24px box renders as Figma's 2px.
+      svg path {
+        stroke-width: 2;
       }
     }
   }
@@ -337,15 +386,5 @@
     display: flex;
     align-items: center;
     justify-content: center;
-
-    button {
-      width: pxToRem(32);
-      height: pxToRem(32);
-
-      svg {
-        width: pxToRem(12);
-        height: pxToRem(12);
-      }
-    }
   }
 }
