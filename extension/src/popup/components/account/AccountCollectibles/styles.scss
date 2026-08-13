@@ -32,9 +32,10 @@
     align-items: center;
     text-align: center;
     gap: pxToRem(8px);
-    // 24px + the 24px above on `.AccountCollectibles` matches `.NotFunded`'s
-    // 48px, so switching tabs doesn't shift the empty state.
-    padding-top: pxToRem(24px);
+    // No padding of its own: `.AccountCollectibles` already contributes the
+    // 24px Figma puts between the tab strip and the empty state, which is also
+    // what `.NotFunded` uses, so switching tabs doesn't shift the empty state.
+    padding-top: 0;
 
     &__badge {
       display: flex;
