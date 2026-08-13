@@ -9,7 +9,10 @@ import { POPUP_HEIGHT } from "constants/dimensions";
 
 import { AppDispatch } from "popup/App";
 import { SubviewHeader } from "popup/components/SubviewHeader";
-import { bipPathSelector } from "popup/ducks/accountServices";
+import {
+  bipPathSelector,
+  publicKeySelector,
+} from "popup/ducks/accountServices";
 import {
   signWithHardwareWallet,
   transactionSubmissionSelector,
@@ -23,6 +26,7 @@ import { WalletErrorBlock } from "popup/views/AddAccount/connect/DeviceConnect";
 import {
   getWalletPublicKey,
   parseWalletError,
+  MISMATCHED_HARDWARE_ACCOUNT_ERROR,
 } from "popup/helpers/hardwareConnect";
 import LedgerSigning from "popup/assets/ledger-signing.png";
 import Ledger from "popup/assets/ledger.png";
@@ -32,6 +36,7 @@ import "./styles.scss";
 export const HardwareSign = ({
   walletType,
   isSignSorobanAuthorization,
+  isSignMessage,
   onSubmit,
   isInternal = false,
   onCancel,
@@ -39,6 +44,7 @@ export const HardwareSign = ({
 }: {
   walletType: ConfigurableWalletType;
   isSignSorobanAuthorization?: boolean;
+  isSignMessage?: boolean;
   onSubmit?: () => void;
   isInternal?: boolean;
   onCancel?: () => void;
@@ -53,11 +59,14 @@ export const HardwareSign = ({
     hardwareWalletData: { transactionXDR, shouldSubmit },
   } = useSelector(transactionSubmissionSelector);
   const bipPath = useSelector(bipPathSelector);
+  const activePublicKey = useSelector(publicKeySelector);
   const [hardwareConnectSuccessful, setHardwareConnectSuccessful] =
     useState(false);
   const [hardwareWalletIsSigning, setHardwareWalletIsSigning] = useState(false);
+  // Rendered whenever it is non-empty, including after the automatic signing
+  // attempt that runs on mount — otherwise a device that fails immediately
+  // leaves the overlay sitting on "Connect device to computer" with no reason.
   const [connectError, setConnectError] = useState("");
-  const [isDetectBtnDirty, setIsDetectBtnDirty] = useState(false);
 
   const closeOverlay = () => {
     if (hardwareConnectRef.current) {
@@ -81,6 +90,26 @@ export const HardwareSign = ({
     setConnectError("");
     try {
       const publicKey = await getWalletPublicKey[walletType](bipPath);
+
+      // A transaction signed by the wrong device fails on its own — the
+      // signature will not satisfy the transaction's source account. A
+      // standalone message has no such binding, so a second attached Ledger
+      // would hand back a perfectly valid signature while the popup says it is
+      // signing as someone else. Refuse rather than let the UI lie.
+      //
+      // Scoped to the account the popup actually displays. Whether the dApp's
+      // requested account was honoured is not decided here: signFlowAccountSelector
+      // activates it when the wallet holds it and otherwise leaves the active
+      // account alone, exactly as it does for software keys, and the true
+      // signer goes back as `signerAddress` for the dApp to check. Comparing
+      // against the raw request here would also dead-end any address the
+      // selector cannot match — a muxed (M...) address whose base account is
+      // the attached device, say — on an error telling the user to swap
+      // hardware that was never the problem.
+      if (isSignMessage && activePublicKey && publicKey !== activePublicKey) {
+        throw new Error(MISMATCHED_HARDWARE_ACCOUNT_ERROR);
+      }
+
       setHardwareConnectSuccessful(true);
       setHardwareWalletIsSigning(true);
 
@@ -93,11 +122,12 @@ export const HardwareSign = ({
           walletType,
           isHashSigningEnabled,
           isSignSorobanAuthorization,
+          isSignMessage,
         }),
       );
       // should support saving signed xdr for SubmitTransaction to submit
       if (signWithHardwareWallet.fulfilled.match(res)) {
-        if (shouldSubmit && !isSignSorobanAuthorization) {
+        if (shouldSubmit && !isSignSorobanAuthorization && !isSignMessage) {
           dispatch(
             saveSimulation({
               preparedTransaction: res.payload,
@@ -106,7 +136,18 @@ export const HardwareSign = ({
         } else if (uuid) {
           // right now there are only two cases after signing,
           // submitting to network or handling in background script
-          await handleSignedHwPayload({ signedPayload: res.payload, uuid });
+          await handleSignedHwPayload({
+            signedPayload: res.payload,
+            // Only the message path proves this key actually produced the
+            // signature. `publicKey` was read over a connection that
+            // hardwareSignMessage/hardwareSign then closed and reopened, so on
+            // the transaction and auth-entry paths it is the key we asked
+            // first, not necessarily the key that signed. Those signatures are
+            // self-invalidating on the wrong key, so reporting nothing stays
+            // truthful where reporting a guess would not.
+            signerAddress: isSignMessage ? publicKey : undefined,
+            uuid,
+          });
         }
         closeOverlay();
         if (onSubmit) {
@@ -126,9 +167,23 @@ export const HardwareSign = ({
     setIsDetecting(false);
   };
 
+  // The device renders whatever it was handed, so the instruction has to match
+  // it — telling someone to review a "transaction" while a SEP-53 message is on
+  // screen is simply wrong.
+  const reviewInstruction = isSignMessage
+    ? t("Review message on device")
+    : isSignSorobanAuthorization
+      ? t("Review authorization on device")
+      : t("Review transaction on device");
+
   // let's check connection on initial load
   useEffect(() => {
-    if (transactionXDR) {
+    // An XDR or a base64 auth entry is never empty, so their presence doubles as
+    // "the payload has arrived". A SEP-53 message may legitimately be the empty
+    // string, which would otherwise leave the overlay waiting on a device that
+    // is already connected. The overlay only mounts once startHwSign has stored
+    // the payload, so signing on mount is safe here.
+    if (isSignMessage || transactionXDR) {
       handleSign();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -149,7 +204,7 @@ export const HardwareSign = ({
             }
           }}
           customBackIcon={<Icon.X />}
-          title={t("Connect {walletType}", { walletType })}
+          title={t("Connect {{walletType}}", { walletType })}
         />
         <div className="HardwareSign__content">
           <div className="HardwareSign__success">
@@ -159,11 +214,11 @@ export const HardwareSign = ({
             <img
               className="HardwareSign__img"
               src={hardwareConnectSuccessful ? LedgerSigning : Ledger}
-              alt={t("Connect {walletType}", { walletType })}
+              alt={t("Connect {{walletType}}", { walletType })}
             />
             <span data-testid="HardwareSign__connect-text">
               {hardwareConnectSuccessful
-                ? t("Review transaction on device")
+                ? reviewInstruction
                 : t("Connect device to computer")}
             </span>
             {hardwareWalletIsSigning && (
@@ -174,7 +229,7 @@ export const HardwareSign = ({
           </div>
         </div>
         <div className="HardwareSign__bottom">
-          {isDetectBtnDirty && <WalletErrorBlock error={connectError} />}
+          {connectError && <WalletErrorBlock error={connectError} />}
           {!hardwareConnectSuccessful && (
             <Button
               data-testid="HardwareSign__detect-device-button"
@@ -182,10 +237,7 @@ export const HardwareSign = ({
               variant="secondary"
               isFullWidth
               isRounded
-              onClick={() => {
-                setIsDetectBtnDirty(true);
-                handleSign();
-              }}
+              onClick={() => handleSign()}
               isLoading={isDetecting}
             >
               {isDetecting ? t("Detecting") : t("Detect device")}
@@ -200,7 +252,7 @@ export const HardwareSign = ({
         <SubviewHeader
           customBackAction={closeOverlay}
           customBackIcon={<Icon.X />}
-          title={t("Connect {walletType}", { walletType })}
+          title={t("Connect {{walletType}}", { walletType })}
         />
         <div className="HardwareSign__content">
           <div className="HardwareSign__success">
@@ -210,11 +262,11 @@ export const HardwareSign = ({
             <img
               className="HardwareSign__img"
               src={hardwareConnectSuccessful ? LedgerSigning : Ledger}
-              alt={t("Connect {walletType}", { walletType })}
+              alt={t("Connect {{walletType}}", { walletType })}
             />
             <span data-testid="HardwareSign__connect-text">
               {hardwareConnectSuccessful
-                ? t("Review transaction on device")
+                ? reviewInstruction
                 : t("Connect device to computer")}
             </span>
             {hardwareWalletIsSigning && (
@@ -225,17 +277,14 @@ export const HardwareSign = ({
           </div>
         </div>
         <div className="HardwareSign__bottom">
-          {isDetectBtnDirty && <WalletErrorBlock error={connectError} />}
+          {connectError && <WalletErrorBlock error={connectError} />}
           {!hardwareConnectSuccessful && (
             <Button
               data-testid="HardwareSign__detect-device-button"
               size="md"
               variant="secondary"
               isFullWidth
-              onClick={() => {
-                setIsDetectBtnDirty(true);
-                handleSign();
-              }}
+              onClick={() => handleSign()}
               isLoading={isDetecting}
             >
               {isDetecting ? t("Detecting") : t("Detect device")}
