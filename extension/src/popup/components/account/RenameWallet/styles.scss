@@ -67,16 +67,5 @@
   &__actions {
     display: flex;
     gap: #{pxToRem(8px)};
-
-    button {
-      --Button-height: #{pxToRem(36px)};
-      --Button-font-size: #{pxToRem(14px)};
-      --Button-line-height: #{pxToRem(20px)};
-      --Button-padding-vertical: #{pxToRem(8px)};
-      --Button-padding-horizontal: #{pxToRem(12px)};
-
-      flex: 1;
-      font-weight: var(--sds-fw-semi-bold);
-    }
   }
 }

@@ -97,15 +97,22 @@ export const RenameWallet = ({
             </Field>
             <div className="RenameWallet__actions">
               <Button
+                isFullWidth
                 type="button"
-                size="md"
+                size="lg"
                 isRounded
                 variant="tertiary"
                 onClick={onClose}
               >
                 {t("Cancel")}
               </Button>
-              <Button type="submit" size="md" isRounded variant="secondary">
+              <Button
+                isFullWidth
+                type="submit"
+                size="lg"
+                isRounded
+                variant="secondary"
+              >
                 {t("Set name")}
               </Button>
             </div>
