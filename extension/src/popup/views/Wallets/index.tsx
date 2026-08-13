@@ -1,28 +1,28 @@
 import React, { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
-import { Link, Navigate, useNavigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
+import { Button, Icon, Notification } from "@stellar/design-system";
+import { toast } from "sonner";
+
 import {
-  Button,
-  Card,
-  CopyText,
-  Icon,
-  Input,
-  Notification,
-} from "@stellar/design-system";
-import classNames from "classnames";
-import { Field, FieldProps, Form, Formik } from "formik";
-import { object as YupObject, string as YupString } from "yup";
+  getStellarExpertUrl,
+  isStellarExpertSupported,
+} from "popup/helpers/account";
+
+import { emitMetric } from "helpers/metrics";
+import { truncatedPublicKey } from "helpers/stellar";
+import { newTabHref } from "helpers/urls";
+import { AppDataType } from "helpers/hooks/useGetAppData";
+import { RequestState } from "constants/request";
 
 import { AppDispatch } from "popup/App";
 import { ROUTES } from "popup/constants/routes";
-import { Account } from "@shared/api/types";
+import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { View } from "popup/basics/layout/View";
-import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
 import {
   makeAccountActive,
-  updateAccountName,
   allAccountsSelector,
 } from "popup/ducks/accountServices";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
@@ -30,278 +30,31 @@ import {
   clearBalancesForAccount,
   clearCollectiblesForAccount,
 } from "popup/ducks/cache";
-import IconEllipsis from "popup/assets/icon-ellipsis.svg";
-import { truncatedPublicKey } from "helpers/stellar";
-import { getColorPubKey } from "helpers/stellarIdenticon";
-import { METRIC_NAMES } from "popup/constants/metricsNames";
-import { emitMetric } from "helpers/metrics";
 import { LoadingBackground } from "popup/basics/LoadingBackground";
 import { useGetWalletsData } from "./hooks/useGetWalletsData";
-import { RequestState } from "constants/request";
 import { Loading } from "popup/components/Loading";
-import { AppDataType } from "helpers/hooks/useGetAppData";
-import { newTabHref } from "helpers/urls";
 import { navigateTo, openTab } from "popup/helpers/navigate";
 import { reRouteOnboarding } from "popup/helpers/route";
-import { WalletType } from "@shared/constants/hardwareWallet";
+import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
+import { WalletRow } from "popup/components/account/WalletRow";
+import { RenameWallet } from "popup/components/account/RenameWallet";
+import { AddWallet } from "popup/components/account/AddWallet";
 
 import "./styles.scss";
 
-interface AddWalletProps {
-  onBack: () => void;
-}
-
-const AddWallet = ({ onBack }: AddWalletProps) => {
-  const { t } = useTranslation();
-  const actions = [
-    {
-      icon: <Icon.Activity stroke="#99D52A" />,
-      color: "lime",
-      title: t("Create new wallet"),
-      description: t("Create a wallet from your seed phrase."),
-      link: ROUTES.addAccount,
-    },
-    {
-      icon: <Icon.Activity stroke="#D6409F" />,
-      color: "purple",
-      title: t("Import Stellar Secret Key"),
-      description: t("Add a wallet using a secret key."),
-      link: ROUTES.importAccount,
-    },
-    {
-      icon: <Icon.ShieldPlus stroke="#3E63DD" />,
-      color: "blue",
-      title: t("Connect a hardware wallet"),
-      description: t("Add a wallet from a hardware wallet."),
-      link: ROUTES.connectWallet,
-    },
-  ];
-  return (
-    <>
-      <SubviewHeader
-        title={t("Add another wallet")}
-        customBackAction={onBack}
-        customBackIcon={<Icon.ArrowLeft />}
-      />
-      <View.Content hasNoTopPadding>
-        <div className="AddWallet">
-          {actions.map((action) => {
-            const iconClasses = classNames(
-              "AddWallet__row__icon",
-              action.color,
-            );
-            return (
-              <div key={action.title} className="AddWallet__row">
-                <Link className="AddWallet__row-link" to={action.link}>
-                  <div className={iconClasses}>{action.icon}</div>
-                  <div className="AddWallet__row__title">{action.title}</div>
-                  <div className="AddWallet__row__description">
-                    {action.description}
-                  </div>
-                </Link>
-              </div>
-            );
-          })}
-        </div>
-      </View.Content>
-    </>
-  );
-};
-
-interface FormValue {
-  accountName: string;
-}
-
-interface RenameWalletProps {
-  allAccounts: Account[];
-  publicKey: string;
-  onClose: () => void;
-  onSubmit: () => void;
-}
-
-const RenameWallet = ({
-  allAccounts,
-  publicKey,
-  onClose,
-  onSubmit,
-}: RenameWalletProps) => {
-  const { t } = useTranslation();
-  const dispatch = useDispatch<AppDispatch>();
-  const account = allAccounts.find(
-    (account) => account.publicKey === publicKey,
-  )!;
-  const accountName = account.name;
-  const shortPublicKey = truncatedPublicKey(publicKey);
-  const initialValues: FormValue = {
-    accountName,
-  };
-  const handleSubmit = async (values: FormValue) => {
-    const { accountName: newAccountName } = values;
-    if (accountName !== newAccountName) {
-      await dispatch(
-        updateAccountName({ accountName: newAccountName, publicKey }),
-      );
-      emitMetric(METRIC_NAMES.accountRenamed, { source: "wallets" });
-      onSubmit();
-      onClose();
-    }
-  };
-
-  return (
-    <View.Content hasNoTopPadding>
-      <div className="RenameWallet">
-        <Card>
-          <p>{t("Rename Wallet")}</p>
-          <Formik
-            initialValues={initialValues}
-            onSubmit={handleSubmit}
-            validationSchema={YupObject().shape({
-              accountName: YupString().max(
-                24,
-                t("max of 24 characters allowed"),
-              ),
-            })}
-          >
-            {({ errors }) => (
-              <>
-                <Form className="RenameWallet__form">
-                  <Field name="accountName">
-                    {({ field }: FieldProps) => (
-                      <Input
-                        data-testid="rename-wallet-input"
-                        autoFocus
-                        fieldSize="md"
-                        autoComplete="off"
-                        id="accountName"
-                        placeholder={accountName}
-                        maxLength={24}
-                        {...field}
-                        error={errors.accountName}
-                      />
-                    )}
-                  </Field>
-                  <div className="RenameWallet__short-address">
-                    {t("Address")}: {shortPublicKey}
-                  </div>
-                  <div className="RenameWallet__actions">
-                    <Button
-                      type="button"
-                      size="md"
-                      isRounded
-                      variant="tertiary"
-                      onClick={onClose}
-                    >
-                      {t("Cancel")}
-                    </Button>
-                    <Button
-                      type="submit"
-                      size="md"
-                      isRounded
-                      variant="secondary"
-                    >
-                      {t("Save")}
-                    </Button>
-                  </div>
-                </Form>
-              </>
-            )}
-          </Formik>
-        </Card>
-      </div>
-    </View.Content>
-  );
-};
-
-interface WalletRowProps {
-  isFetchingTokenPrices: boolean;
-  accountName: string;
-  accountValue: string;
-  isImported: boolean;
-  hardwareWalletType?: WalletType;
-  isSelected: boolean;
-  publicKey: string;
-  onClick: (publicKey: string) => unknown;
-  setOptionsOpen: (publicKey: string) => unknown;
-}
-
-const WalletRow = ({
-  isFetchingTokenPrices,
-  accountName,
-  accountValue,
-  isImported,
-  hardwareWalletType,
-  isSelected,
-  publicKey,
-  onClick,
-  setOptionsOpen,
-}: WalletRowProps) => {
-  const shortPublicKey = truncatedPublicKey(publicKey);
-  const identiconWrapperStyles = classNames("identicon-wrapper", {
-    "is-selected": isSelected,
-  });
-  const selectedBorderColorRgb = getColorPubKey(publicKey);
-  const isSelectedColor = `rgb(${selectedBorderColorRgb.r} ${selectedBorderColorRgb.g} ${selectedBorderColorRgb.b} / 100%`;
-  const borderColor = isSelected ? isSelectedColor : "#232323";
-
-  let subTitle = accountValue
-    ? `${shortPublicKey} - ${accountValue}`
-    : shortPublicKey;
-  if (isFetchingTokenPrices && !accountValue) {
-    subTitle = `${shortPublicKey} - ...`;
-  }
-  const { t } = useTranslation();
-  const walletIdentifier =
-    hardwareWalletType || isImported ? t("Imported") : "";
-  return (
-    <div className="WalletRow">
-      <div
-        className="WalletRow__identicon"
-        onClick={() => onClick(publicKey)}
-        data-testid="wallet-row-select"
-      >
-        <div
-          className={identiconWrapperStyles}
-          style={{ borderColor: borderColor }}
-        >
-          <IdenticonImg publicKey={publicKey} />
-        </div>
-        {isSelected ? (
-          <div
-            className="WalletRow__identicon__selected-check"
-            style={{ backgroundColor: isSelectedColor }}
-          >
-            <Icon.Check width="14px" height="14px" />
-          </div>
-        ) : null}
-      </div>
-      <div className="WalletRow__details" onClick={() => onClick(publicKey)}>
-        <p className="detail-name">{accountName}</p>
-        <p className="detail-short-key">{subTitle}</p>
-        <p className="detail-short-key">{walletIdentifier}</p>
-      </div>
-      <div
-        className="WalletRow__options"
-        data-testid="wallet-row-options"
-        onClick={() => setOptionsOpen(publicKey)}
-      >
-        <img src={IconEllipsis} alt={t("wallet action options")} />
-      </div>
-    </div>
-  );
-};
-
 export const Wallets = () => {
-  const activeOptionsRef = useRef<HTMLDivElement>(null);
   const { t } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const [isEditingName, setIsEditingName] = React.useState("");
   const [isAddingWallet, setIsAddingWallet] = React.useState(false);
-  const [activeOptionsPublicKey, setActiveOptionsPublicKey] =
-    React.useState("");
   const { state: dataState, fetchData } = useGetWalletsData();
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const allAccounts = useSelector(allAccountsSelector);
+  // Holds the currently-shown copy-toast's id (see copyAddress below for why
+  // this can't be a stable id). Declared here, above the early returns, so
+  // this hook always runs regardless of which branch this render takes.
+  const lastToastIdRef = useRef<string | number | null>(null);
 
   useEffect(() => {
     const getData = async () => {
@@ -310,22 +63,6 @@ export const Wallets = () => {
     getData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (
-        activeOptionsRef.current &&
-        !activeOptionsRef.current.contains(event.target as Node)
-      ) {
-        setActiveOptionsPublicKey("");
-      }
-    }
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [activeOptionsRef]);
 
   if (
     dataState.state === RequestState.IDLE ||
@@ -362,7 +99,7 @@ export const Wallets = () => {
 
   if (hasError) {
     return (
-      <div className="Wallets__fail">
+      <div>
         <Notification
           variant="error"
           title={t("Failed to fetch your wallets.")}
@@ -374,6 +111,42 @@ export const Wallets = () => {
   }
 
   const { publicKey: activePublicKey, accountValue } = dataState.data;
+  const activeAccountName =
+    allAccounts.find((account) => account.publicKey === activePublicKey)
+      ?.name || "";
+
+  // Dismiss-then-create with a fresh id, so repeated taps replace rather than
+  // stack. Do NOT switch to a stable id: sonner's create() updates an existing
+  // entry, but dismiss() never removes it, so after a swipe the update targets
+  // an unmounted toast and nothing renders.
+  const showToast = (render: (id: string | number) => React.ReactElement) => {
+    if (lastToastIdRef.current !== null) {
+      toast.dismiss(lastToastIdRef.current);
+    }
+    lastToastIdRef.current = toast.custom(render);
+  };
+
+  const copyAddress = async () => {
+    try {
+      await navigator.clipboard.writeText(activePublicKey);
+      emitMetric(METRIC_NAMES.accountPublicKeyCopied);
+      showToast(() => (
+        <Notification
+          variant="success"
+          title={t("Address {{address}} copied!", {
+            address: truncatedPublicKey(activePublicKey),
+          })}
+        />
+      ));
+    } catch {
+      showToast(() => (
+        <Notification
+          variant="error"
+          title={t("Couldn’t copy your wallet address")}
+        />
+      ));
+    }
+  };
 
   return (
     <React.Fragment>
@@ -385,83 +158,112 @@ export const Wallets = () => {
       <View.Content
         hasNoTopPadding
         contentFooter={
-          <Button
-            size="lg"
-            isFullWidth
-            isRounded
-            variant="secondary"
-            iconPosition="left"
-            icon={<Icon.PlusCircle />}
-            onClick={() => setIsAddingWallet(true)}
-            data-testid="add-wallet"
-          >
-            {t("Add a wallet")}
-          </Button>
+          <div className="Wallets__add-wallet">
+            <Button
+              size="xl"
+              isRounded
+              variant="tertiary"
+              iconPosition="left"
+              icon={<Icon.Plus />}
+              onClick={() => setIsAddingWallet(true)}
+              data-testid="add-wallet"
+            >
+              {t("Add wallet")}
+            </Button>
+          </div>
         }
       >
-        <div>
+        <div className="Wallets__header" data-testid="wallets-header">
+          <div className="Wallets__header__identicon">
+            <IdenticonImg publicKey={activePublicKey} />
+          </div>
+          {/* Name and address are one tight block; the 16px gap belongs
+              between the identicon, this block, and the action row. */}
+          <div className="Wallets__header__identity">
+            <div className="Wallets__header__name">{activeAccountName}</div>
+            <div className="Wallets__header__address">
+              {truncatedPublicKey(activePublicKey)}
+            </div>
+          </div>
+          <div className="Wallets__header__actions">
+            <button
+              className="Wallets__header__action"
+              onClick={() => navigateTo(ROUTES.viewPublicKey, navigate)}
+              data-testid="wallets-header-qr"
+              aria-label={t("Show QR code")}
+            >
+              <Icon.QrCode02 />
+            </button>
+            {/* account.public_key_copied carries no source and never the raw
+                key. Emitted from copyAddress only once the clipboard write
+                succeeds, so failed copies aren't counted. */}
+            <button
+              className="Wallets__header__action"
+              onClick={copyAddress}
+              data-testid="wallets-header-copy"
+              aria-label={t("Copy wallet address")}
+            >
+              <Icon.Copy01 />
+            </button>
+            {/* Gated on stellar.expert's supported networks, not merely on
+                "not a custom network": it has no Futurenet explorer, and
+                experimental mode makes Futurenet the active network. */}
+            {isStellarExpertSupported(networkDetails) ? (
+              <button
+                className="Wallets__header__action"
+                onClick={() => {
+                  openTab(
+                    `${getStellarExpertUrl(networkDetails)}/account/${activePublicKey}`,
+                  );
+                  emitMetric(METRIC_NAMES.accountStellarExpertOpened);
+                }}
+                data-testid="wallets-header-explorer"
+                aria-label={t("View on stellar.expert")}
+              >
+                <Icon.LinkExternal01 />
+              </button>
+            ) : null}
+            <button
+              className="Wallets__header__action"
+              onClick={() => setIsEditingName(activePublicKey)}
+              data-testid="wallets-header-edit-name"
+              aria-label={t("Rename wallet")}
+            >
+              <Icon.Edit01 />
+            </button>
+          </div>
+        </div>
+        <div className="Wallets__divider" />
+        <div className="Wallets__list">
           {allAccounts.map(
             ({ publicKey, name, imported, hardwareWalletType }) => {
               const isSelected = activePublicKey === publicKey;
               const totalValueUsd = accountValue ? accountValue[publicKey] : "";
 
               return (
-                <>
-                  <WalletRow
-                    isFetchingTokenPrices={isFetchingTokenPrices}
-                    accountName={name}
-                    accountValue={totalValueUsd}
-                    isImported={imported}
-                    hardwareWalletType={hardwareWalletType}
-                    publicKey={publicKey}
-                    isSelected={isSelected}
-                    onClick={async (publicKey) => {
-                      await dispatch(makeAccountActive(publicKey));
-                      await dispatch(
-                        clearBalancesForAccount({ publicKey, networkDetails }),
-                      );
-                      await dispatch(
-                        clearCollectiblesForAccount({
-                          publicKey,
-                          networkDetails,
-                        }),
-                      );
-                      navigateTo(ROUTES.account, navigate);
-                    }}
-                    setOptionsOpen={setActiveOptionsPublicKey}
-                  />
-                  {activeOptionsPublicKey === publicKey ? (
-                    <div
-                      className="WalletRow__options-actions"
-                      ref={activeOptionsRef}
-                    >
-                      <div
-                        className="WalletRow__options-actions__row"
-                        onClick={() => {
-                          setIsEditingName(publicKey);
-                          setActiveOptionsPublicKey("");
-                        }}
-                      >
-                        <div className="action-copy">
-                          <div className="WalletRow__options-actions__label">
-                            {t("Rename Wallet")}
-                          </div>
-                          <Icon.Edit05 />
-                        </div>
-                      </div>
-                      <div className="WalletRow__options-actions__row">
-                        <CopyText textToCopy={publicKey}>
-                          <div className="action-copy">
-                            <div className="WalletRow__options-actions__label">
-                              {t("Copy address")}
-                            </div>
-                            <Icon.Copy01 />
-                          </div>
-                        </CopyText>
-                      </div>
-                    </div>
-                  ) : null}
-                </>
+                <WalletRow
+                  key={publicKey}
+                  isFetchingTokenPrices={isFetchingTokenPrices}
+                  accountName={name}
+                  accountValue={totalValueUsd}
+                  isImported={imported}
+                  hardwareWalletType={hardwareWalletType}
+                  publicKey={publicKey}
+                  isSelected={isSelected}
+                  onClick={async (publicKey) => {
+                    await dispatch(makeAccountActive(publicKey));
+                    dispatch(
+                      clearBalancesForAccount({ publicKey, networkDetails }),
+                    );
+                    dispatch(
+                      clearCollectiblesForAccount({
+                        publicKey,
+                        networkDetails,
+                      }),
+                    );
+                    navigateTo(ROUTES.account, navigate);
+                  }}
+                />
               );
             },
           )}

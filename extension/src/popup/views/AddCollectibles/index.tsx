@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Formik, Form, Field, FieldProps } from "formik";
 import { useTranslation } from "react-i18next";
-import { Button, Input } from "@stellar/design-system";
+import { Button, Icon, Input } from "@stellar/design-system";
 import { object as YupObject, string as YupString } from "yup";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
@@ -13,9 +13,12 @@ import { navigateTo } from "popup/helpers/navigate";
 import { ROUTES } from "popup/constants/routes";
 import { Loading } from "popup/components/Loading";
 import { SubviewHeader } from "popup/components/SubviewHeader";
+import { HiddenCollectibles } from "popup/components/account/HiddenCollectibles";
+import { useHiddenCollectibles } from "popup/components/account/hooks/useHiddenCollectibles";
 import { View } from "popup/basics/layout/View";
 import { FormRows } from "popup/basics/Forms";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
+import { collectionsSelector } from "popup/ducks/cache";
 import { isContractId } from "@shared/api/helpers/soroban";
 import { addCollectible } from "@shared/api/internal";
 import { useGetCollectibles } from "helpers/hooks/useGetCollectibles";
@@ -44,9 +47,17 @@ export const AddCollectibles = () => {
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const navigate = useNavigate();
   const [addCollectibleError, setAddCollectibleError] = useState<string>("");
+  const [isHiddenCollectiblesOpen, setIsHiddenCollectiblesOpen] =
+    useState(false);
+  const collections = useSelector(collectionsSelector);
+  const { refreshHiddenCollectibles, isCollectibleHidden } =
+    useHiddenCollectibles();
   const { fetchData: fetchCollectiblesData } = useGetCollectibles({
     useCache: false,
   });
+
+  const currentCollections =
+    collections[networkDetails?.network || ""]?.[publicKey || ""] || [];
 
   const handleSubmit = async (values: FormValues) => {
     try {
@@ -139,8 +150,16 @@ export const AddCollectibles = () => {
     >
       {({ touched, errors, dirty, isValid, isSubmitting }) => (
         <Form className="AddCollectibles" data-testid="AddCollectibles">
-          <SubviewHeader title={t("Add Collectible")} />
-          <View.Content hasNoTopPadding>
+          <SubviewHeader
+            title={t("Add Collectible")}
+            customBackIcon={<Icon.X />}
+          />
+          {/*
+            hasTopInput rather than hasNoTopPadding: the address input is the
+            first element, and its focus ring is a 4px box-shadow that a
+            zero-padding inset clips.
+          */}
+          <View.Content hasTopInput>
             <FormRows>
               <Field name="collectibleContractAddress">
                 {({ field }: FieldProps) => (
@@ -151,7 +170,6 @@ export const AddCollectibles = () => {
                     <Input
                       type="text"
                       fieldSize="md"
-                      autoFocus
                       autoComplete="off"
                       data-testid="collectibleContractAddress"
                       id="collectibleContractAddress"
@@ -191,6 +209,26 @@ export const AddCollectibles = () => {
                 )}
               </Field>
             </FormRows>
+            {/* The sheet this opens is a Radix dialog, and its Root lives
+              inside HiddenCollectibles, so Radix's own Dialog.Trigger can't
+              reach it from here. These mirror what that trigger would emit;
+              aria-controls is omitted because the id is generated inside the
+              portal and isn't knowable at this level. */}
+            <button
+              type="button"
+              className="AddCollectibles__show-hidden"
+              data-testid="hidden-collectibles-btn"
+              aria-haspopup="dialog"
+              aria-expanded={isHiddenCollectiblesOpen}
+              onClick={() => setIsHiddenCollectiblesOpen(true)}
+            >
+              {t("Show hidden")}
+            </button>
+            <div className="AddCollectibles__helper-text">
+              {t(
+                "If a collectible is missing from your wallet, you can manually add it here.",
+              )}
+            </div>
           </View.Content>
           <View.Footer isInline>
             <div className="AddCollectibles__button-wrapper">
@@ -213,6 +251,13 @@ export const AddCollectibles = () => {
               )}
             </div>
           </View.Footer>
+          <HiddenCollectibles
+            collections={currentCollections}
+            refreshHiddenCollectibles={refreshHiddenCollectibles}
+            isCollectibleHidden={isCollectibleHidden}
+            isOpen={isHiddenCollectiblesOpen}
+            onClose={() => setIsHiddenCollectiblesOpen(false)}
+          />
         </Form>
       )}
     </Formik>

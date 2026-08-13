@@ -1,0 +1,50 @@
+@use "../../../styles/utils.scss" as *;
+
+.AddWallet {
+  display: flex;
+  flex-direction: column;
+  gap: pxToRem(24px);
+
+  &__row {
+    display: flex;
+    flex-direction: column;
+    background-color: var(--sds-clr-gray-03);
+    border-radius: pxToRem(12px);
+    padding: pxToRem(16px);
+    text-decoration: none;
+    cursor: pointer;
+
+    &__icon {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: pxToRem(24px);
+      height: pxToRem(24px);
+      margin-bottom: pxToRem(12px);
+      border-radius: 50%;
+      border: 1px solid var(--sds-clr-lilac-06);
+      background-color: var(--sds-clr-lilac-03);
+      color: var(--sds-clr-lilac-09);
+
+      svg {
+        width: pxToRem(16px);
+        height: pxToRem(16px);
+      }
+    }
+
+    &__title {
+      color: var(--sds-clr-gray-12);
+      font-size: pxToRem(14px);
+      line-height: pxToRem(20px);
+      font-weight: var(--font-weight-medium);
+    }
+
+    &__description {
+      margin-top: pxToRem(4px);
+      color: var(--sds-clr-gray-11);
+      font-size: pxToRem(12px);
+      line-height: pxToRem(18px);
+      font-weight: var(--font-weight-medium);
+    }
+  }
+}

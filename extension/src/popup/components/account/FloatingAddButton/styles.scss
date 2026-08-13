@@ -1,0 +1,55 @@
+@use "../../../styles/utils.scss" as *;
+
+.FloatingAddButton {
+  // Fixed, not absolute: on Home the layout has no inner scroll container —
+  // `.View` grows with the token list and the document itself scrolls. Any
+  // absolutely-positioned anchor therefore rides along with the content.
+  // Fixed pins the pill to the viewport, which is what "floating" means here.
+  // Safe because no ancestor sets transform/filter/backdrop-filter, which
+  // would otherwise turn into its containing block.
+  position: fixed;
+  bottom: pxToRem(24px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: var(--z-index--banner);
+
+  display: flex;
+  align-items: center;
+  gap: pxToRem(4px);
+
+  svg {
+    width: pxToRem(16px);
+    height: pxToRem(16px);
+    stroke: var(--sds-clr-gray-09);
+  }
+
+  // Must target the path, not the svg. SDS ships these through SVGR, so the
+  // path keeps its own `stroke-width="2"` presentation attribute -- which loses
+  // to a rule matching the path, but beats a value inherited from the svg.
+  //
+  // The value is 3, not 2, because the viewBox is 24x24 while the box is 16px:
+  // strokes scale by 2/3, so 3 user units render as the 2px Figma draws.
+  svg path {
+    stroke-width: 3;
+  }
+
+  color: var(--sds-clr-gray-12);
+  background-color: rgba(35, 35, 35, 0.8);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--sds-clr-gray-06);
+  border-radius: pxToRem(100px);
+  padding: pxToRem(8px) pxToRem(12px);
+  cursor: pointer;
+  transition: background-color var(--sds-anim-transition-default);
+
+  &:hover {
+    background-color: rgba(40, 40, 40, 0.9);
+  }
+
+  &__label {
+    font-size: pxToRem(14px);
+    font-weight: var(--sds-fw-semi-bold);
+    line-height: pxToRem(20px);
+    white-space: nowrap;
+  }
+}
