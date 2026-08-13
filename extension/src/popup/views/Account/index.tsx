@@ -20,6 +20,7 @@ import { useSwapTopTokensPrewarm } from "popup/helpers/useSwapTopTokensPrewarm";
 import { AccountAssets } from "popup/components/account/AccountAssets";
 import { AccountCollectibles } from "popup/components/account/AccountCollectibles";
 import { AccountHeader } from "popup/components/account/AccountHeader";
+import { FloatingAddButton } from "popup/components/account/FloatingAddButton";
 import { useHiddenCollectibles } from "popup/components/account/hooks/useHiddenCollectibles";
 import { Loading } from "popup/components/Loading";
 import { NotFundedMessage } from "popup/components/account/NotFundedMessage";
@@ -229,8 +230,6 @@ export const Account = () => {
         }}
         roundedTotalBalanceUsd={roundedTotalBalanceUsd}
         isFunded={!!resolvedData?.balances?.isFunded}
-        refreshHiddenCollectibles={refreshHiddenCollectibles}
-        isCollectibleHidden={isCollectibleHidden}
         onDiscoverClick={() => setIsDiscoverOpen(true)}
       />
       <View.Content hasNoPadding>
@@ -331,6 +330,15 @@ export const Account = () => {
           />
         </div>
       </View.Content>
+      {/*
+        Kept a sibling of View.Content for readability only — the pill is
+        `position: fixed`, so with no transform/filter ancestor its containing
+        block is the viewport and nesting depth doesn't affect where it lands.
+        On Home nothing here is a scroll container: AccountView overrides
+        View.Content and its inset to `overflow: visible`, so the document
+        itself is the scrollport (document.scrollingElement === html).
+      */}
+      <FloatingAddButton isFunded={!!resolvedData?.balances?.isFunded} />
       <Sheet
         open={isDiscoverOpen}
         onOpenChange={(open) => !open && setIsDiscoverOpen(false)}

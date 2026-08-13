@@ -28,4 +28,35 @@
     margin-top: pxToRem(6px);
     text-align: center;
   }
+
+  // A real <button> so it is focusable and activates on Enter/Space. These
+  // strip the native chrome; the type-specific values below deliberately come
+  // after `font: inherit` so they win.
+  &__show-hidden {
+    padding: 0;
+    border: 0;
+    background: none;
+    appearance: none;
+    font: inherit;
+    text-align: left;
+
+    // Block, not the button default of inline-block, so it keeps the exact
+    // layout the div had -- inline-block would add baseline leading beneath it.
+    display: block;
+    color: var(--sds-clr-lilac-11);
+    font-size: pxToRem(14px);
+    font-weight: var(--sds-fw-medium);
+    line-height: pxToRem(20px);
+    cursor: pointer;
+    width: fit-content;
+    margin-top: pxToRem(16px);
+  }
+
+  &__helper-text {
+    color: var(--sds-clr-gray-11);
+    font-size: pxToRem(14px);
+    font-weight: var(--sds-fw-regular);
+    line-height: pxToRem(20px);
+    margin-top: pxToRem(16px);
+  }
 }
