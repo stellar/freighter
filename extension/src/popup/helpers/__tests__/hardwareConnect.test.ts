@@ -284,6 +284,18 @@ describe("parseWalletError", () => {
     expect(unverified).toContain("could not be verified");
   });
 
+  it("should translate a device rejection", () => {
+    // Declining on the device is the one error users hit on purpose.
+    // hw-app-str maps the deny status word to StellarUserRefusedError with
+    // this exact text, for every sign call — see remapErrors in its Str.js.
+    const message = parseWalletError[WalletType.LEDGER](
+      new Error("User refused the request"),
+    );
+
+    expect(message).toBe("Request rejected on your device.");
+    expect(message).not.toContain("User refused the request");
+  });
+
   it("should pass through unrelated errors untouched", () => {
     const message = parseWalletError[WalletType.LEDGER](
       new Error("Some other device failure"),

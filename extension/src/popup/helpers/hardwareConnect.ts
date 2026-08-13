@@ -292,6 +292,15 @@ export const parseWalletError: ParseWalletError = {
         "Connect device to computer and open the Stellar app on it",
       );
     }
+    // Declining on the device is the one "error" every hardware user will hit
+    // deliberately. hw-app-str funnels the deny status word (0x6985) through a
+    // shared remapErrors for every sign call, so this covers transactions and
+    // auth entries as well as messages — none of which were translated before,
+    // because the branch below matches a string the pinned library never
+    // throws. Kept anyway in case an older app or transport still produces it.
+    if (message.indexOf("User refused the request") > -1) {
+      return i18n.t("Request rejected on your device.");
+    }
     if (message.indexOf("Transaction approval request was rejected") > -1) {
       return i18n.t("Transaction Rejected");
     }
