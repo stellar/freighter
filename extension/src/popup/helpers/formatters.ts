@@ -160,6 +160,16 @@ export const roundUsdValue = (fullValue: string) =>
   (Math.floor(parseFloat(fullValue) * 100) / 100).toFixed(2);
 
 /**
+ * Shown in place of a USD amount that cannot be determined — no price for the
+ * token, or a total that could not be read.
+ *
+ * Distinct from "$0.00", which asserts a known zero. Prefer that wherever the
+ * absence of value is a fact rather than a gap: an unfunded account, or a
+ * network that prices no tokens.
+ */
+export const NO_FIAT_VALUE = "--";
+
+/**
  * Formats a USD amount for display, falling back to "$0.00".
  *
  * Callers that show a total for an account with no price data at all (a

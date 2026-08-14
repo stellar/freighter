@@ -5,7 +5,11 @@ import { useTranslation } from "react-i18next";
 
 import { AssetIcon } from "popup/components/account/AccountAssets";
 import { AssetIcons } from "@shared/api/types";
-import { formatAmount, roundUsdValue } from "popup/helpers/formatters";
+import {
+  NO_FIAT_VALUE,
+  formatAmount,
+  roundUsdValue,
+} from "popup/helpers/formatters";
 import { getPriceDeltaColor } from "popup/helpers/balance";
 import { getCanonicalFromAsset } from "helpers/stellar";
 
@@ -27,7 +31,7 @@ export interface BalanceRowProps {
    * cell is omitted entirely (matches the account-home no-price row). */
   fiatAmount?: string | null;
   /** Raw 24h % change number string (e.g. "1.23"); drives color + display.
-   * Null → "--". */
+   * Null → NO_FIAT_VALUE. */
   percentChange?: string | null;
   onClick?: () => void;
   "data-testid"?: string;
@@ -119,7 +123,7 @@ export const BalanceRow = ({
         >
           {hasDelta
             ? `${formatAmount(roundUsdValue(percentChange as string))}%`
-            : "--"}
+            : NO_FIAT_VALUE}
         </div>
       </div>
     </div>

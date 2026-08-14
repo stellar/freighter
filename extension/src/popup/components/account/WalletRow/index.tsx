@@ -4,7 +4,7 @@ import { Icon, Loader } from "@stellar/design-system";
 
 import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
 import { truncatedPublicKey } from "helpers/stellar";
-import { formatFiatAmount } from "popup/helpers/formatters";
+import { NO_FIAT_VALUE, formatFiatAmount } from "popup/helpers/formatters";
 import { WalletType } from "@shared/constants/hardwareWallet";
 
 import "./styles.scss";
@@ -49,11 +49,11 @@ export const WalletRow = ({
   // rows behind it are still loading.
   const isTotalLoading = !accountValue && isFetchingTokenPrices;
   // Zero is accurate where there is no price feed. Everywhere else an absent
-  // total means prices or balances could not be read, and "--" says so rather
-  // than asserting a balance the account may not have. The falsy check covers
-  // both "not fetched" and the "" written for an account whose fetch failed.
+  // total means prices or balances could not be read, which the placeholder
+  // states rather than asserting a balance the account may not have. The falsy
+  // check covers both "not fetched" and the "" written for a failed fetch.
   const balanceLabel =
-    accountValue || (hasPriceFeed ? "--" : formatFiatAmount());
+    accountValue || (hasPriceFeed ? NO_FIAT_VALUE : formatFiatAmount());
 
   return (
     // role/aria-current match BalanceRow, the sibling list row. The active

@@ -26,6 +26,7 @@ import {
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { getAvailableBalanceFontSizePx } from "popup/components/amount/fontScale";
 import {
+  NO_FIAT_VALUE,
   cleanAmount,
   formatAmount,
   getValidBigNumber,
@@ -775,7 +776,7 @@ export const SendAmount = ({
                       inputType === "crypto"
                         ? assetPrice
                           ? `$${priceValueUsd || "0.00"}`
-                          : "--"
+                          : NO_FIAT_VALUE
                         : `${formatAmount(formik.values.amount || "0")} ${parsedSourceAsset.code}`
                     }
                     isAmountTooHigh={isAmountTooHigh}
