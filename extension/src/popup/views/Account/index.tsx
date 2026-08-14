@@ -208,21 +208,25 @@ export const Account = () => {
       : {};
 
   const totalBalanceUsd = getTotalUsd(tokenPrices ?? {}, balances);
-  // The hero is never hidden. Zero is accurate where there is no price feed,
-  // so those networks show it. Everywhere else an absent total means prices
-  // or balances could not be read, and "--" says so rather than asserting a
-  // balance the account may not have — the same thing the token rows below
-  // show for a token with no price.
+  // The hero is never hidden. Zero is accurate whenever there is nothing to
+  // value — a network that prices no tokens, or an account holding nothing —
+  // so those cases show it. Otherwise a missing total means prices or
+  // balances could not be read, and "--" says so rather than asserting a
+  // balance the account may not have, matching the token rows below.
   //
-  // The network comes from Redux because `resolvedData` is null once the
-  // fetch has failed, which is one of the cases this has to cover.
+  // A failed fetch leaves the account's funding unknown, so it reads as
+  // unavailable rather than zero. The network comes from Redux because
+  // `resolvedData` is null in that state.
   const hasPriceFeed = isMainnet(networkDetails);
   const hasPrices = !!tokenPrices && Object.keys(tokenPrices).length > 0;
-  const roundedTotalBalanceUsd = !hasPriceFeed
-    ? formatFiatAmount()
-    : hasError || !hasPrices
-      ? "--"
-      : formatFiatAmount(totalBalanceUsd.toString());
+  const isFunded = !!resolvedData?.balances?.isFunded;
+  const roundedTotalBalanceUsd = hasError
+    ? "--"
+    : !hasPriceFeed || !isFunded
+      ? formatFiatAmount()
+      : hasPrices
+        ? formatFiatAmount(totalBalanceUsd.toString())
+        : "--";
 
   const activeAllowList =
     resolvedData?.allowList?.[resolvedData?.networkDetails?.networkName]?.[
