@@ -52,6 +52,11 @@ interface GetSwapDerivedDataParams {
   networkDetails: NetworkDetails;
   inputType: InputType;
   isLiveQuoteLoading: boolean;
+  // Balances-derived "this swap adds a trustline", checked against the
+  // UNFILTERED balances (a hidden held asset needs no new trustline). Drives
+  // the reserve math; distinct from destinationIsNonHeld below, which is a
+  // display-list concept for the direction toggle.
+  destRequiresTrustline: boolean;
 }
 
 /**
@@ -74,6 +79,7 @@ export const getSwapDerivedData = ({
   networkDetails,
   inputType,
   isLiveQuoteLoading,
+  destRequiresTrustline,
 }: GetSwapDerivedDataParams) => {
   const sendData = data;
   const assetIcon = sendData.icons[asset];
@@ -124,9 +130,9 @@ export const getSwapDerivedData = ({
   const availableBalance = deductNewTrustlineReserve({
     spendable: baseAvailableBalance,
     sourceIsXlm: asset === "native",
-    // Derived from holdings (not the pick-time snapshot) so defaulted and
-    // deep-linked destinations reserve the trustline bump too.
-    requiresTrustline: destinationIsNonHeld,
+    // The unfiltered-balances flag, NOT destinationIsNonHeld: a hidden held
+    // destination builds no changeTrust, so no reserve should be withheld.
+    requiresTrustline: destRequiresTrustline,
   });
   const displayTotal = `${formatAmount(availableBalance)}`;
 

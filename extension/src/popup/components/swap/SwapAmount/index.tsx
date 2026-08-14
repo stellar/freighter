@@ -142,11 +142,15 @@ export const SwapAmount = ({
   // destination. Derived from holdings (like the picker derives held-ness)
   // rather than the pick-time snapshot, so a defaulted or deep-linked
   // destination — which never went through the picker — is covered too.
+  // Checked against the UNFILTERED balances: visibility is a display
+  // preference, and a hidden held asset must not get a redundant changeTrust
+  // (doubled fee, false reserve preflight, trustline limit reset to default).
   // Empty until balances resolve; every consumer (fee count, reserve
   // preflight, simulation) only acts post-resolve, behind the spinner.
   const heldBalances =
     swapAmountData.data?.type === AppDataType.RESOLVED
-      ? swapAmountData.data.userBalances.balances
+      ? (swapAmountData.data.userBalances.unfilteredBalances ??
+        swapAmountData.data.userBalances.balances)
       : [];
   const destRequiresTrustline =
     Boolean(destinationAsset) &&
@@ -389,6 +393,7 @@ export const SwapAmount = ({
     networkDetails,
     inputType,
     isLiveQuoteLoading,
+    destRequiresTrustline,
   });
 
   const handleSwapForReserve = async () => {
