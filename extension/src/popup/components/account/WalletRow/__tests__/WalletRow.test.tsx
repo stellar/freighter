@@ -11,6 +11,7 @@ const renderRow = (props: Partial<React.ComponentProps<typeof WalletRow>>) =>
     <Wrapper state={{}} routes={["/"]}>
       <WalletRow
         isFetchingTokenPrices={false}
+        hasPriceFeed
         accountName="Account 1"
         isImported={false}
         isSelected={false}
@@ -44,10 +45,14 @@ describe("WalletRow balance cell", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("falls back to $0.00 when there is no price data at all", () => {
-    // The non-Mainnet case: the hook never fetches, so there is no entry for
-    // this account and nothing is loading. The cell must not be left blank.
-    renderRow({ accountValue: undefined, isFetchingTokenPrices: false });
+  it("shows $0.00 where the network has no price feed", () => {
+    // No prices exist to fetch, so zero is the accurate total rather than a
+    // stand-in for one that could not be read.
+    renderRow({
+      accountValue: undefined,
+      isFetchingTokenPrices: false,
+      hasPriceFeed: false,
+    });
 
     expect(screen.getByTestId("wallet-row-balance")).toHaveTextContent("$0.00");
     expect(
@@ -55,12 +60,14 @@ describe("WalletRow balance cell", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("falls back to $0.00 for an account whose fetch failed", () => {
-    // The data hook writes "" when a per-account fetch throws; once the cycle
-    // finishes that must read as a zero total, not an empty cell.
+  it("shows -- for an account whose fetch failed", () => {
+    // "" is what the data hook writes when a per-account fetch throws. On a
+    // network that does price tokens, that is an unknown total, not zero.
     renderRow({ accountValue: "", isFetchingTokenPrices: false });
 
-    expect(screen.getByTestId("wallet-row-balance")).toHaveTextContent("$0.00");
+    const cell = screen.getByTestId("wallet-row-balance");
+    expect(cell).toHaveTextContent("--");
+    expect(cell).not.toHaveTextContent("$");
   });
 
   it("keeps showing the spinner for a failed row while the cycle runs", () => {

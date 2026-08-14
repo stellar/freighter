@@ -11,6 +11,9 @@ import "./styles.scss";
 
 interface WalletRowProps {
   isFetchingTokenPrices: boolean;
+  /** Whether this network prices tokens at all; false means no USD value
+   * exists, as opposed to one that could not be read. */
+  hasPriceFeed: boolean;
   accountName: string;
   /**
    * Pre-formatted USD total for this account. Absent (or empty, which the
@@ -28,6 +31,7 @@ interface WalletRowProps {
 
 export const WalletRow = ({
   isFetchingTokenPrices,
+  hasPriceFeed,
   accountName,
   accountValue,
   isImported,
@@ -41,14 +45,15 @@ export const WalletRow = ({
 
   const isImportedWallet = !!hardwareWalletType || isImported;
 
-  // Balance is its own cell. Mirrors the mobile app: a spinner only while
-  // this account's total is genuinely still pending — totals arrive in
-  // batches, so early rows show a real value while later ones are unresolved.
-  // Once loading settles the total always shows, defaulting to $0.00 rather
-  // than an empty cell. A falsy check (not `== null`) is deliberate: the data
-  // hook writes "" for an account whose fetch threw, which is also "no total".
+  // Totals arrive in batches, so a resolved row keeps its value while the
+  // rows behind it are still loading.
   const isTotalLoading = !accountValue && isFetchingTokenPrices;
-  const balanceLabel = accountValue || formatFiatAmount();
+  // Zero is accurate where there is no price feed. Everywhere else an absent
+  // total means prices or balances could not be read, and "--" says so rather
+  // than asserting a balance the account may not have. The falsy check covers
+  // both "not fetched" and the "" written for an account whose fetch failed.
+  const balanceLabel =
+    accountValue || (hasPriceFeed ? "--" : formatFiatAmount());
 
   return (
     // role/aria-current match BalanceRow, the sibling list row. The active

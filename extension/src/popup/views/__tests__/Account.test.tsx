@@ -1085,12 +1085,11 @@ describe("Account view", () => {
       expect(
         screen.getByTestId(`asset-price-delta-${TEST_CANONICAL}`),
       ).toHaveTextContent("--");
-      // The hero is never hidden: with no prices there is no fiat value, so
-      // it falls back to a zero total rather than collapsing. The token rows
-      // above still show dashes — that distinction is the point.
+      // Mainnet prices failed, so the total is unknown rather than zero —
+      // the hero reports that the same way the token rows above do.
       expect(
         screen.queryByTestId("account-view-total-balance"),
-      ).toHaveTextContent("$0.00");
+      ).toHaveTextContent("--");
     });
   });
 
@@ -1350,19 +1349,20 @@ describe("Account view", () => {
       ).toBeInTheDocument();
     });
 
-    // The hero is never hidden, not even here: it falls back to a zero total
-    // while the notification above carries the failure. Matches mobile, whose
-    // hero has no error branch, and the wallets rows.
+    // Restored before asserting: a failure after this point would otherwise
+    // leave useGetAccountData mocked for every later test in this file.
+    accountDataSpy.mockRestore();
+
+    // Balances are unknown here, not zero, so the hero shows the same dash
+    // the token rows use while the notification above carries the failure.
     expect(screen.getByTestId("account-view-total-balance")).toHaveTextContent(
-      "$0.00",
+      "--",
     );
 
     // Deliberately no identicon assertion here: jsdom has no canvas, so
     // createStellarIdenticon().toDataURL() returns the same constant for
     // every key — including "". The header's identicon fix is verified in a
     // real browser instead; a unit assertion could not fail.
-
-    accountDataSpy.mockRestore();
   });
 
   it("handles abandoned onboarding in password created step", async () => {

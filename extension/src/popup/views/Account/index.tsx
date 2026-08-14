@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import {
   settingsSorobanSupportedSelector,
   settingsSelector,
+  settingsNetworkDetailsSelector,
 } from "popup/ducks/settings";
 import { View } from "popup/basics/layout/View";
 import {
@@ -28,6 +29,7 @@ import { Loading } from "popup/components/Loading";
 import { NotFundedMessage } from "popup/components/account/NotFundedMessage";
 import { formatFiatAmount } from "popup/helpers/formatters";
 
+import { isMainnet } from "helpers/stellar";
 import { newTabHref } from "helpers/urls";
 import { getTotalUsd } from "popup/helpers/balance";
 import { NetworkDetails } from "@shared/constants/stellar";
@@ -66,6 +68,7 @@ export const Account = () => {
   // name already came from Redux, so without this the header rendered a named
   // account with a blank identicon (and a copy button holding "").
   const reduxPublicKey = useSelector(publicKeySelector);
+  const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const { activeTab } = useContext(AccountTabsContext);
   const [isDiscoverOpen, setIsDiscoverOpen] = useState(false);
 
@@ -205,17 +208,21 @@ export const Account = () => {
       : {};
 
   const totalBalanceUsd = getTotalUsd(tokenPrices ?? {}, balances);
-  // Always shown, defaulting to $0.00 rather than being hidden when there is
-  // no total to compute — every non-Mainnet network (no price feed), a failed
-  // price fetch, and a failed balances fetch alike. Matches the mobile app,
-  // whose hero has no error branch at all, and the wallets rows, which settle
-  // on $0.00 for an account whose fetch failed.
+  // The hero is never hidden. Zero is accurate where there is no price feed,
+  // so those networks show it. Everywhere else an absent total means prices
+  // or balances could not be read, and "--" says so rather than asserting a
+  // balance the account may not have — the same thing the token rows below
+  // show for a token with no price.
   //
-  // Safe in the error state: `balances` falls back to [] and `tokenPrices` to
-  // undefined above, so getTotalUsd sums nothing and returns zero without
-  // touching the null `resolvedData`. The failure itself is still reported by
-  // the notification below.
-  const roundedTotalBalanceUsd = formatFiatAmount(totalBalanceUsd.toString());
+  // The network comes from Redux because `resolvedData` is null once the
+  // fetch has failed, which is one of the cases this has to cover.
+  const hasPriceFeed = isMainnet(networkDetails);
+  const hasPrices = !!tokenPrices && Object.keys(tokenPrices).length > 0;
+  const roundedTotalBalanceUsd = !hasPriceFeed
+    ? formatFiatAmount()
+    : hasError || !hasPrices
+      ? "--"
+      : formatFiatAmount(totalBalanceUsd.toString());
 
   const activeAllowList =
     resolvedData?.allowList?.[resolvedData?.networkDetails?.networkName]?.[

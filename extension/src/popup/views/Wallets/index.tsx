@@ -11,7 +11,7 @@ import {
 } from "popup/helpers/account";
 
 import { emitMetric } from "helpers/metrics";
-import { truncatedPublicKey } from "helpers/stellar";
+import { isMainnet, truncatedPublicKey } from "helpers/stellar";
 import { newTabHref } from "helpers/urls";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { RequestState } from "constants/request";
@@ -92,6 +92,9 @@ export const Wallets = () => {
   }
 
   const isFetchingTokenPrices = dataState.data?.isFetchingTokenPrices || false;
+  // Only Mainnet prices tokens, so elsewhere a missing total is expected
+  // rather than a failure.
+  const hasPriceFeed = isMainnet(networkDetails);
 
   if (!hasError) {
     reRouteOnboarding({
@@ -253,6 +256,7 @@ export const Wallets = () => {
                   <WalletRow
                     key={publicKey}
                     isFetchingTokenPrices={isFetchingTokenPrices}
+                    hasPriceFeed={hasPriceFeed}
                     accountName={name}
                     accountValue={totalValueUsd}
                     isImported={imported}
