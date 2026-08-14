@@ -1,6 +1,7 @@
 import React from "react";
 import BigNumber from "bignumber.js";
 import { isEmpty } from "lodash";
+import { useTranslation } from "react-i18next";
 
 import { AssetIcon } from "popup/components/account/AccountAssets";
 import { AssetIcons } from "@shared/api/types";
@@ -58,6 +59,7 @@ export const BalanceRow = ({
   fiatTestId,
   deltaTestId,
 }: BalanceRowProps) => {
+  const { t } = useTranslation();
   const hasDelta = percentChange !== undefined && percentChange !== null;
   const hasFiat = fiatAmount !== undefined && fiatAmount !== null;
 
@@ -75,6 +77,10 @@ export const BalanceRow = ({
   const deltaColor = hasDelta
     ? getPriceDeltaColor(new BigNumber(roundUsdValue(percentChange as string)))
     : "";
+
+  // XLM is the only token whose friendly name we hold locally; the rest fall
+  // back to their code.
+  const displayName = code === "XLM" && !issuerKey ? t("Stellar Lumens") : code;
 
   return (
     <div
@@ -95,7 +101,7 @@ export const BalanceRow = ({
           retryAssetIconFetch={retryAssetIconFetch}
         />
         <div className="BalanceRow__value">
-          <span className="BalanceRow__code">{code}</span>
+          <span className="BalanceRow__code">{displayName}</span>
           <div className="BalanceRow__amount" data-testid={amountTestId}>
             {amount}
           </div>

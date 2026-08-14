@@ -18,6 +18,12 @@
     margin-top: 1.5rem;
   }
 
+  // 12px + BalanceRow's own 12px puts the first row 24px below the pane, level
+  // with the collectibles list. The slider pane adds no vertical padding.
+  &__assets-wrapper {
+    padding-top: pxToRem(12px);
+  }
+
   @keyframes animateNotification {
     from {
       margin-top: 0;
@@ -56,6 +62,14 @@
 
     &__pane {
       padding: 0 var(--account-view-padding-side);
+      // Reserve room below the last row so the floating add pill (fixed to the
+      // viewport, not absolutely positioned) never comes to rest on top of the
+      // last row at max scroll, where it would permanently swallow its clicks.
+      // This only guarantees the *last* row clears the pill; at intermediate
+      // scroll offsets the pill still overlays whatever row is beneath it,
+      // which is inherent to the floating-pill pattern and bounded by the fact
+      // that any covered row can be scrolled out from under it.
+      padding-bottom: pxToRem(88px);
       height: auto;
       overflow: auto;
       position: relative;

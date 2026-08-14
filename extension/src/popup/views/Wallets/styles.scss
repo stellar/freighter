@@ -2,8 +2,11 @@
 
 .RenameWalletWrapper {
   position: absolute;
+  z-index: var(--z-index--banner);
+  top: 50%;
+  left: 0;
   width: 100%;
-  top: 30%;
+  transform: translateY(-50%);
 }
 
 .AddWalletWrapper {
@@ -16,52 +19,152 @@
   z-index: var(--z-index--banner);
 }
 
-.WalletRow__options-actions {
+.Wallets__header {
   display: flex;
   flex-direction: column;
-  position: absolute;
-  background-color: var(--sds-clr-gray-01);
-  border: 1px solid var(--sds-clr-gray-06);
-  border-radius: 6px;
-  margin-top: -2rem;
-  padding: 0.25rem;
-  right: 2rem;
-  width: 10.75rem;
-  z-index: var(--z-index--banner);
+  align-items: center;
+  gap: #{pxToRem(16px)};
+  padding: #{pxToRem(24px)} 0;
+  text-align: center;
 
-  &__row {
-    padding: 0.375rem 0.5rem;
-    width: 100%;
-    border-radius: 6px;
+  &__identicon {
+    width: #{pxToRem(48px)};
+    height: #{pxToRem(48px)};
+    flex-shrink: 0;
+    padding: #{pxToRem(14px)};
+    border-radius: 50%;
+    background-color: var(--sds-clr-gray-03);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  // Name sits directly above the address with no gap between them; the
+  // parent's 16px gap separates this pair from the identicon and actions.
+  &__identity {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  &__name {
+    font-size: #{pxToRem(16px)};
+    line-height: #{pxToRem(24px)};
+    font-weight: var(--sds-fw-medium);
+    color: var(--sds-clr-gray-12);
+  }
+
+  &__address {
+    font-size: #{pxToRem(14px)};
+    line-height: #{pxToRem(20px)};
+    font-weight: var(--sds-fw-regular);
+    color: var(--sds-clr-gray-11);
+  }
+
+  &__actions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: #{pxToRem(16px)};
+  }
+
+  &__action {
+    width: #{pxToRem(48px)};
+    height: #{pxToRem(48px)};
+    padding: #{pxToRem(8px)};
+    border: none;
+    border-radius: 100px;
+    background-color: var(--sds-clr-gray-03);
+    color: var(--sds-clr-gray-09);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+
+    svg {
+      width: #{pxToRem(20px)};
+      height: #{pxToRem(20px)};
+    }
 
     &:hover {
-      background-color: var(--sds-clr-gray-05);
+      background-color: var(--sds-clr-gray-04);
     }
+  }
+}
 
-    .CopyText__content,
-    .CopyText {
-      width: 100%;
-    }
+// Inset to the content gutter rather than bleeding to the window edges, and
+// held off the list below it. The 24px above comes from the header's padding.
+.Wallets__divider {
+  height: 1px;
+  margin-bottom: #{pxToRem(16px)};
+  background-color: var(--sds-clr-gray-06);
+}
 
-    .action-copy {
-      width: 100%;
-      display: flex;
-      justify-content: space-between;
+.Wallets__list {
+  display: flex;
+  flex-direction: column;
+  gap: #{pxToRem(16px)};
+}
 
-      svg {
-        color: var(--sds-clr-gray-09);
-      }
+// Per the spec this reads as a purple icon chip sitting beside a plain purple
+// label — the tinted background belongs to the chip alone, not to the whole
+// control, so the button itself is transparent.
+.Wallets__add-wallet {
+  // SDS `Button` overwrites (rather than merges) any `className` passed to
+  // it, so a class placed directly on it can never combine with its own
+  // `Button`/`Button--*` classes. Scope the override through this wrapper
+  // instead, at higher specificity than `.Button--tertiary` itself.
+  // Height, padding and type come from SDS's `xl` size, whose 16px/24px text
+  // already matches the spec — only the colors, gap and weight are overridden.
+  .Button {
+    --Button-gap: #{pxToRem(16px)};
+    --Button-color-text-default: var(--sds-clr-lilac-11);
+    --Button-color-icon-default: var(--sds-clr-lilac-09);
+    --Button-color-background-default: transparent;
+    --Button-color-border-default: transparent;
+    --Button-color-text-hover: var(--sds-clr-lilac-11);
+    --Button-color-icon-hover: var(--sds-clr-lilac-09);
+    --Button-color-background-hover: transparent;
+    --Button-color-border-hover: transparent;
+
+    // SDS exposes no font-weight custom property, so set it directly.
+    font-weight: var(--sds-fw-medium);
+
+    // SDS drives both sides from one horizontal custom property, so zero the
+    // left alone here to line the icon chip up with the list's avatars.
+    padding-left: 0;
+  }
+
+  // The chip. The plus glyph uses `stroke="currentColor"`, inheriting
+  // whatever `color` it finds — which would otherwise be the button's own
+  // (lighter) text color above. Setting `color` here keeps it the spec's
+  // more saturated fill purple.
+  .Button__icon {
+    width: #{pxToRem(34px)};
+    height: #{pxToRem(34px)};
+    flex-shrink: 0;
+    border-radius: 100px;
+    background-color: var(--sds-clr-lilac-02);
+    color: var(--sds-clr-lilac-09);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    svg {
+      width: #{pxToRem(14px)};
+      height: #{pxToRem(14px)};
     }
   }
 
-  &__label {
-    font-size: 0.875rem;
-    font-weight: var(--font-weight-medium);
+  .Button:hover .Button__icon {
+    background-color: var(--sds-clr-lilac-03);
   }
+}
 
-  &__background {
-    height: 100vh;
-    position: absolute;
-    width: 100vw;
-  }
+// The shared content footer pads 24px below and nothing above. The spec wants
+// an even 8px on both sides of the add-wallet control, so restate both here.
+// Scoped with :has() so every other view's footer keeps its own padding.
+.View__inset__footer:has(.Wallets__add-wallet) {
+  padding-top: #{pxToRem(8px)};
+  padding-bottom: #{pxToRem(8px)};
 }

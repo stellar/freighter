@@ -42,7 +42,11 @@
 import { test, expect } from "./test-fixtures";
 import { Page } from "@playwright/test";
 import { loginToTestAccount, switchToMainnet } from "./helpers/login";
-import { stubScanTxMalicious, stubScanTxSafe } from "./helpers/stubs";
+import {
+  stubScanAssetSafe,
+  stubScanTxMalicious,
+  stubScanTxSafe,
+} from "./helpers/stubs";
 // Soroban contract address — searching for this should produce the Soroban empty state.
 const SOROBAN_CONTRACT_ADDRESS =
   "CAZXRTOKNUQ2JQQF3NCRU7GYMDJNZ2NMQN6IGN4FCT5DWPODMPVEXSND";
@@ -935,6 +939,7 @@ test("recovers to the amount screen when the swap quote expires at submit", asyn
       }),
     );
     await stubScanTxSafe(page);
+    await stubScanAssetSafe(page);
     // Submit fails with a quote-expiry op code → the flow recovers to review.
     await page.route("**/submit-tx**", (route) =>
       route.fulfill({

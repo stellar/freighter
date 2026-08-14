@@ -151,7 +151,7 @@ export const Preferences = () => {
 
               <div className="Preferences--section">
                 <div className="Preferences--section--title">
-                  <span>{t("Anonymous data sharing")} </span>
+                  <span>{t("Usage data sharing")} </span>
                   <div className="Preferences--toggle">
                     <Toggle
                       fieldSize="sm"
@@ -162,11 +162,9 @@ export const Preferences = () => {
                   </div>
                 </div>
                 <span className="Preferences--section--subtitle">
-                  {`${t(
-                    "Allow Freighter to collect anonymous information about usage.",
-                  )} ${t(
-                    "Freighter will never collect your personal information such as IP address, keys, balance or transaction amounts.",
-                  )}`}
+                  {t(
+                    "Help us improve Freighter by sharing usage, device, and activity data, including your public keys, IP address, and a persistent ID that links your wallet across extension and mobile, with our analytics and crash-reporting providers. You can turn this off at any time. See our Privacy Policy for details.",
+                  )}
                 </span>
               </div>
 
