@@ -18,6 +18,7 @@ import {
 import { NetworkDetails } from "@shared/constants/stellar";
 import { getAssetSacAddress } from "@shared/helpers/soroban/token";
 import { LP_IDENTIFIER } from "./account";
+import { NO_FIAT_VALUE, formatFiatAmount } from "./formatters";
 import { isContractId } from "./soroban";
 
 export const isClassicBalance = (balance: AssetType): balance is ClassicAsset =>
@@ -276,4 +277,44 @@ export const getTotalUsd = (prices: ApiTokenPrices, balances: AssetType[]) => {
     );
     return currentUsdBalance.plus(prev);
   }, new BigNumber(0));
+};
+
+/**
+ * Picks what to show for an account's total USD value.
+ *
+ * Zero and "no value" are different answers. Zero is a fact when there is
+ * nothing to value; the placeholder means the total could not be determined.
+ */
+export const getTotalUsdLabel = ({
+  hasError,
+  hasPriceFeed,
+  isFunded,
+  tokenPrices,
+  totalUsd,
+}: {
+  /** Account data failed to load. */
+  hasError: boolean;
+  /** Whether the network prices tokens at all. */
+  hasPriceFeed: boolean;
+  isFunded: boolean;
+  tokenPrices?: ApiTokenPrices | null;
+  totalUsd: BigNumber;
+}) => {
+  // Balances are unknown, so any figure would be a claim rather than a total.
+  if (hasError) {
+    return NO_FIAT_VALUE;
+  }
+
+  // Nothing to value: the network prices no tokens, or the account holds none.
+  if (!hasPriceFeed || !isFunded) {
+    return formatFiatAmount();
+  }
+
+  // A funded account on a network that prices tokens, yet nothing priced —
+  // the total exists but could not be read.
+  if (!tokenPrices || Object.keys(tokenPrices).length === 0) {
+    return NO_FIAT_VALUE;
+  }
+
+  return formatFiatAmount(totalUsd.toString());
 };

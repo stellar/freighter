@@ -27,11 +27,10 @@ import { FloatingAddButton } from "popup/components/account/FloatingAddButton";
 import { useHiddenCollectibles } from "popup/components/account/hooks/useHiddenCollectibles";
 import { Loading } from "popup/components/Loading";
 import { NotFundedMessage } from "popup/components/account/NotFundedMessage";
-import { NO_FIAT_VALUE, formatFiatAmount } from "popup/helpers/formatters";
 
 import { isMainnet } from "helpers/stellar";
 import { newTabHref } from "helpers/urls";
-import { getTotalUsd } from "popup/helpers/balance";
+import { getTotalUsd, getTotalUsdLabel } from "popup/helpers/balance";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { reRouteOnboarding } from "popup/helpers/route";
 import { AppDataType } from "helpers/hooks/useGetAppData";
@@ -208,25 +207,16 @@ export const Account = () => {
       : {};
 
   const totalBalanceUsd = getTotalUsd(tokenPrices ?? {}, balances);
-  // The hero is never hidden. Zero is accurate whenever there is nothing to
-  // value — a network that prices no tokens, or an account holding nothing —
-  // so those cases show it. Otherwise a missing total means prices or
-  // balances could not be read, which the placeholder states rather than
-  // asserting a balance the account may not have, matching the token rows.
-  //
-  // A failed fetch leaves the account's funding unknown, so it reads as
-  // unavailable rather than zero. The network comes from Redux because
-  // `resolvedData` is null in that state.
-  const hasPriceFeed = isMainnet(networkDetails);
-  const hasPrices = !!tokenPrices && Object.keys(tokenPrices).length > 0;
-  const isFunded = !!resolvedData?.balances?.isFunded;
-  const roundedTotalBalanceUsd = hasError
-    ? NO_FIAT_VALUE
-    : !hasPriceFeed || !isFunded
-      ? formatFiatAmount()
-      : hasPrices
-        ? formatFiatAmount(totalBalanceUsd.toString())
-        : NO_FIAT_VALUE;
+  // The hero is never hidden; see getTotalUsdLabel for which of a total, a
+  // zero or the placeholder it shows. The network comes from Redux because
+  // `resolvedData` is null once the fetch has failed.
+  const roundedTotalBalanceUsd = getTotalUsdLabel({
+    hasError,
+    hasPriceFeed: isMainnet(networkDetails),
+    isFunded: !!resolvedData?.balances?.isFunded,
+    tokenPrices,
+    totalUsd: totalBalanceUsd,
+  });
 
   const activeAllowList =
     resolvedData?.allowList?.[resolvedData?.networkDetails?.networkName]?.[
