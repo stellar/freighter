@@ -876,6 +876,10 @@ export const SwapAmount = ({
             destinationTokenDetails={transactionData.destinationTokenDetails}
             sourceTokenSecurityLevel={sourceTokenSecurityLevel}
             sourceTokenSecurityWarnings={sourceTokenSecurityWarnings}
+            // Balances-derived, so the trustline disclosure also renders for
+            // defaulted/deep-linked destinations that have no pick-time
+            // snapshot — the same flag that made getBuiltTx add the op.
+            requiresTrustline={destRequiresTrustline}
           />
         ) : (
           <></>
