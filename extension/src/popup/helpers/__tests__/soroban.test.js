@@ -9,6 +9,7 @@ import {
 import BigNumber from "bignumber.js";
 
 import {
+  getArgsForTokenInvocation,
   getInvocationArgs,
   buildInvocationTree,
   getAvailableBalance,
@@ -474,5 +475,57 @@ describe("getContractIdFromTransactionData", () => {
 
     // Classic assets don't have contract IDs, so should return undefined
     expect(result).toBeUndefined();
+  });
+});
+
+describe("getArgsForTokenInvocation", () => {
+  const SELF = "GCFIRY65OQE7DFP5KLNS2PF2LVZMUZYJX4OZIEQ36N2IQANUB5XVYOJR";
+  const OTHER = "GDWUSKGGFDI4FRXK5EBTRECZSVQSSWJHHJOGH6JWG3AUMFFMQ435DIAG";
+  const MUXED_SELF =
+    "MCFIRY65OQE7DFP5KLNS2PF2LVZMUZYJX4OZIEQ36N2IQANUB5XVYAAAAAAAAABQHFTBG";
+
+  const addr = (a) => new Address(a).toScVal();
+  const i128 = (n) =>
+    xdr.ScVal.scvI128(
+      new xdr.Int128Parts({
+        hi: new xdr.Int64(0),
+        lo: new xdr.Uint64(BigInt(n)),
+      }),
+    );
+
+  it("parses a 2-arg mint(to, amount) without throwing", () => {
+    // Regression: an unconditional args[2] read used to throw on every mint
+    // (mint has only two args), and callers swallowed the throw — silently
+    // degrading mints to generic invocations in both history paths.
+    const result = getArgsForTokenInvocation("mint", [addr(SELF), i128(500)]);
+
+    expect(result.to).toBe(SELF);
+    expect(result.from).toBe("");
+    expect(result.amount).toBe(BigInt(500));
+  });
+
+  it("parses transfer(from, to, amount) parties and amount", () => {
+    const result = getArgsForTokenInvocation("transfer", [
+      addr(OTHER),
+      addr(SELF),
+      i128(404000000),
+    ]);
+
+    expect(result.from).toBe(OTHER);
+    expect(result.to).toBe(SELF);
+    expect(result.amount).toBe(BigInt(404000000));
+  });
+
+  it("returns the muxed (M...) string verbatim for a muxed transfer recipient", () => {
+    // CAP-67: the `to` ScAddress can be scAddressTypeMuxedAccount.
+    // addressToString must surface the M-form, not crash or strip it.
+    const result = getArgsForTokenInvocation("transfer", [
+      addr(OTHER),
+      addr(MUXED_SELF),
+      i128(404000000),
+    ]);
+
+    expect(result.to).toBe(MUXED_SELF);
+    expect(result.from).toBe(OTHER);
   });
 });

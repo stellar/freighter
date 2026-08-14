@@ -56,6 +56,24 @@ export const mapStateChangeCards = (
   const flagsSet: string[] = [];
   const flagsCleared: string[] = [];
 
+  // A trustline's lifecycle arrives with a companion BalanceAuthorizationChange
+  // for the same token — creating a line to a default-auth issuer emits SET,
+  // removing one emits CLEAR. That authorization state is part of the
+  // trustline event, not an issuer action, and the design's trustline card
+  // owns the whole story (the "Balance authorization change" frame exists for
+  // SET_TRUST_LINE_FLAGS / ALLOW_TRUST / SAC set_authorized events). Suppress
+  // the companions; a standalone authorization change still gets its card.
+  const trustlineTokenIds = new Set(
+    changes.flatMap((change) =>
+      (change.variant === "TrustlineAddedChange" ||
+        change.variant === "TrustlineUpdatedChange" ||
+        change.variant === "TrustlineRemovedChange") &&
+      (change.token_id ?? change.liquidity_pool_id)
+        ? [change.token_id ?? change.liquidity_pool_id]
+        : [],
+    ),
+  );
+
   const addSigner = (
     verb: "added" | "updated" | "removed",
     entry: SignerEntry,
@@ -238,6 +256,12 @@ export const mapStateChangeCards = (
         break;
 
       case "BalanceAuthorizationChange": {
+        // Companion to a trustline change in this tx — the trustline card
+        // already tells the story (see trustlineTokenIds above).
+        const identity = change.token_id ?? change.liquidity_pool_id;
+        if (identity && trustlineTokenIds.has(identity)) {
+          break;
+        }
         const token = resolveTrustlineToken(tokens, change);
         if (change.reason === "SET") {
           authorizedTokens.push(token);

@@ -262,10 +262,15 @@ describe("useGetHistoryDataV2 — pagination", () => {
     expect(countEntries(result.current.state.data)).toBe(20);
     expect(asResolved(result.current.state.data).hasNextPage).toBe(true);
 
-    await act(async () => {
-      await result.current.fetchNextPage();
-    });
-    // the remaining fixtures land on the last page, then no more pages
+    // Drain whatever pages remain rather than hard-coding how many: the
+    // scenario list grows as coverage is added, and this test is about
+    // append/advance/terminate, not the fixture count.
+    while (asResolved(result.current.state.data).hasNextPage) {
+      // eslint-disable-next-line no-await-in-loop -- sequential by design: each page request needs the cursor the previous one produced.
+      await act(async () => {
+        await result.current.fetchNextPage();
+      });
+    }
     expect(countEntries(result.current.state.data)).toBe(
       mockScenarioTransactions.length,
     );

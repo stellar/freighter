@@ -31,14 +31,10 @@ import {
 import { isMainnet } from "helpers/stellar";
 import { tokensListsSelector } from "popup/ducks/cache";
 import { getMonthYearKey } from "popup/helpers/date";
-import { buildTokenContext } from "popup/helpers/history/tokenResolver";
 import { filterHistoryEntries } from "popup/helpers/history/filters";
+import { mapV2Page } from "popup/helpers/history/mapPage";
 import { getNativeContractDetails } from "popup/helpers/searchAsset";
 import { HistoryEntry } from "popup/views/AccountHistory/model";
-import {
-  collectTokenIds,
-  mapV2Transaction,
-} from "popup/views/AccountHistory/mappers/v2";
 
 export const HISTORY_V2_PAGE_SIZE = 25;
 
@@ -110,20 +106,13 @@ export function useGetHistoryDataV2({
     const nativeTokenId = getNativeContractDetails(
       target.networkDetails,
     ).contract;
-    const tokens = await buildTokenContext({
-      tokenIds: collectTokenIds(transactions),
-      networkDetails: target.networkDetails,
+    const entries = await mapV2Page({
+      transactions,
       publicKey: target.publicKey,
+      networkDetails: target.networkDetails,
       balances: target.balances,
       assetsListsData: cachedTokenLists,
     });
-    const entries = transactions.map((tx) =>
-      mapV2Transaction(tx, {
-        tokens,
-        publicKey: target.publicKey,
-        nativeTokenId,
-      }),
-    );
     return filterHistoryEntries(entries, { isHideDustEnabled, nativeTokenId });
   };
 

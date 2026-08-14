@@ -366,17 +366,21 @@ export const getArgsForTokenInvocation = (
   let amount: bigint | number | undefined;
   let from = "";
   let to = "";
-  const thirdArgType = args[2].switch();
 
   switch (fnName) {
     case SorobanTokenInterface.transfer:
-    case SorobanCollectibleInterface.transfer:
+    case SorobanCollectibleInterface.transfer: {
       // both SEP-41 & SEP-50 tokens use the transfer method
       // with different signatures. Without parsing the token spec,
       // we can guess that the contract is either a token or a collectible
       // by the type of the 3rd argument.
       // Token transfer - (from: Address, to: Address, amount: i128)
       // Collectible transfer - (from: Address, to: Address, tokenId: u32)
+      //
+      // Read args[2] only inside this branch: mint(to, amount) has two args,
+      // and an unconditional read here used to throw on every mint — which
+      // callers swallowed, silently degrading mints to generic invocations.
+      const thirdArgType = args[2].switch();
       if (thirdArgType === xdr.ScValType.scvI128()) {
         amount = scValToNative(args[2]);
       }
@@ -386,6 +390,7 @@ export const getArgsForTokenInvocation = (
       from = addressToString(args[0].address());
       to = addressToString(args[1].address());
       break;
+    }
     case SorobanTokenInterface.mint:
       to = addressToString(args[0].address());
       amount = scValToNative(args[1]);

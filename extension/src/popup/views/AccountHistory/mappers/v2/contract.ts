@@ -8,13 +8,24 @@
 import { Address, Operation, xdr } from "stellar-sdk";
 
 import { V2Operation } from "@shared/api/types/backend-api";
+import { isSameAccount } from "helpers/stellar";
+import { getArgsForTokenInvocation } from "popup/helpers/soroban";
 import { ProtocolInfo } from "popup/views/AccountHistory/model";
 
 export interface ContractCallInfo {
   contractId: string;
   functionName: string | null;
-  /** SEP-41 transfer destination when the invoked fn is transfer(from, to, amount) */
-  transferDestination: string | null;
+  /**
+   * The token-movement parties, decoded via getArgsForTokenInvocation:
+   * transfer(from, to, ..) sets both; mint(to, ..) sets only transferTo (a
+   * mint has no sender). Null for every other function. Either side may be a
+   * muxed (M...) address — CAP-67 SEP-41 transfers put the muxed form in the
+   * ScAddress arg itself — and it is kept verbatim here: comparisons against
+   * the wallet's G key must normalize (isSameAccount), while display wants
+   * the muxed form the user actually targeted.
+   */
+  transferFrom: string | null;
+  transferTo: string | null;
 }
 
 const decodeOp = (operationXdr: string): xdr.Operation | null => {
@@ -47,15 +58,27 @@ export const decodeContractCall = (
     ).toString();
     const functionName = invocation.functionName().toString();
 
-    let transferDestination: string | null = null;
-    if (functionName === "transfer") {
-      const toArg = invocation.args()[1];
-      if (toArg?.switch().name === "scvAddress") {
-        transferDestination = Address.fromScAddress(toArg.address()).toString();
+    let transferFrom: string | null = null;
+    let transferTo: string | null = null;
+    if (functionName === "transfer" || functionName === "mint") {
+      // Own try/catch, deliberately: getArgsForTokenInvocation throws on
+      // malformed args, and losing the parties should not also lose the
+      // contractId/functionName already decoded above (the outer catch would
+      // return null for the whole ContractCallInfo).
+      try {
+        const parties = getArgsForTokenInvocation(
+          functionName,
+          invocation.args(),
+        );
+        // the helper returns "" (not null) for an absent party
+        transferFrom = parties.from || null;
+        transferTo = parties.to || null;
+      } catch {
+        // malformed args — keep contractId/functionName, drop the parties
       }
     }
 
-    return { contractId, functionName, transferDestination };
+    return { contractId, functionName, transferFrom, transferTo };
   } catch {
     return null;
   }
@@ -80,18 +103,22 @@ export const decodeCounterparty = (
       case "pathPaymentStrictSend":
       case "pathPaymentStrictReceive": {
         const destination = typed.destination;
-        // Received → counterparty is the op source; sent → the destination
-        if (destination === publicKey) {
+        // Received → counterparty is the op source; sent → the destination.
+        // isSameAccount, not ===: the destination can be a muxed (M...) form
+        // of the wallet's own G key, and a bare comparison would return the
+        // user's own muxed address as the counterparty. The returned string
+        // keeps its muxed form — display wants what the sender targeted.
+        if (isSameAccount(destination, publicKey)) {
           return typed.source ?? null;
         }
         return destination;
       }
       case "createAccount":
-        return typed.destination === publicKey
+        return isSameAccount(typed.destination, publicKey)
           ? (typed.source ?? null)
           : typed.destination;
       case "accountMerge":
-        return typed.destination === publicKey
+        return isSameAccount(typed.destination, publicKey)
           ? (typed.source ?? null)
           : typed.destination;
       default:

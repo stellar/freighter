@@ -12,6 +12,14 @@ import {
   mockBalanceAuthChanged,
   mockBlendEmissionsClaim,
   mockClaimableBalanceAirdrop,
+  mockClaimableBalanceClaimed,
+  mockClaimableBalanceCreatedBySelf,
+  mockClassicBatch,
+  mockHeterogeneousBatch,
+  mockPathPaymentMultiRow,
+  mockLpDeposit,
+  mockLpWithdraw,
+  mockOfferCrossed,
   mockContractMultiAsset,
   mockContractNoBalanceChange,
   mockDataEntryAdded,
@@ -20,6 +28,7 @@ import {
   mockFlagsChanged,
   mockHomeDomainUpdated,
   mockPaymentReceived,
+  mockPaymentReceivedMuxed,
   mockPaymentSent,
   mockSponsorshipOperation,
   mockAllowanceApproved,
@@ -28,7 +37,15 @@ import {
   mockSwapClassicDex,
   mockSwapViaContract,
   mockThresholdsChange,
+  mockTokenMintReceived,
+  mockTokenMintToOther,
+  mockTokenTransferReceived,
+  mockTokenTransferReceivedMuxed,
   mockTokenTransferSent,
+  mockTokenTransferSentMuxed,
+  mockTokenTransferSentWithMuxedId,
+  MOCK_MUXED_ACCOUNT_2,
+  MOCK_MUXED_SELF,
   mockTrustlineAdded,
   mockTrustlineMulti,
   mockScenarioTransactions,
@@ -98,10 +115,12 @@ describe("mapV2Transaction", () => {
     const entry = mapV2Transaction(mockSwapViaContract, ctx);
 
     expect(entry.kind).toBe("swapped");
-    // no protocol match yet → "Contract" + token icons
-    expect(entry.primaryText).toBe("Contract");
+    // No protocol match yet — but the movement says what happened: the
+    // classic pair treatment, whatever contract routed it.
+    expect(entry.primaryText).toBe("XLM to USDC");
+    expect(entry.secondaryText).toBe("Swapped");
     expect(entry.rowIcon.type).toBe("asset");
-    expect(entry.details.title).toBe("Contract");
+    expect(entry.details.title).toBe("Swapped XLM to USDC");
     expect(entry.details.contractId).toBe(MOCK_ROUTER_CONTRACT);
     expect(entry.details.functionName).toBe("swap");
     expect(entry.details.protocol).toBeNull();
@@ -113,6 +132,8 @@ describe("mapV2Transaction", () => {
 
     expect(entry.kind).toBe("contract");
     expect(entry.amounts).toBe("multiple");
+    // multi-asset movement has no single identity and invocation names stay
+    // in the detail sheet — generic by design
     expect(entry.primaryText).toBe("Contract");
     // stacked icons over the distinct moved tokens (XLM, EURC, USDC)
     expect(entry.rowIcon).toEqual({
@@ -131,6 +152,8 @@ describe("mapV2Transaction", () => {
 
     expect(entry.kind).toBe("contract");
     expect(entry.amounts).toBeNull();
+    // fee-only, so no movement to describe — generic by design (invocation
+    // names stay in the detail sheet)
     expect(entry.primaryText).toBe("Contract");
     expect(entry.secondaryText).toBe("Interacted");
     expect(entry.rowIcon).toEqual({ type: "contract" });
@@ -168,6 +191,207 @@ describe("mapV2Transaction", () => {
     expect(entry.details.functionName).toBe("transfer");
     expect(entry.details.counterparty).toBe(MOCK_ACCOUNT_2);
     expect(entry.amounts).toEqual([{ text: "-40.4 USDC", direction: "debit" }]);
+    // a SEP-41 transfer IS a payment — identical row to the classic treatment
+    expect(entry.primaryText).toBe("USDC");
+    expect(entry.secondaryText).toBe("Sent");
+    expect(entry.rowIcon.type).toBe("asset");
+    expect(entry.details.title).toBe("Sent USDC");
+  });
+
+  it("maps an INCOMING SEP-41 transfer with the sender as counterparty, never self", () => {
+    const entry = mapV2Transaction(mockTokenTransferReceived, ctx);
+
+    expect(entry.kind).toBe("received");
+    expect(entry.details.functionName).toBe("transfer");
+    // The regression this guards: the counterparty used to short-circuit on
+    // the transfer's `to` arg with no publicKey comparison, so a received
+    // transfer rendered "From: <the user's own address>".
+    expect(entry.details.counterparty).toBe(MOCK_ACCOUNT_2);
+    expect(entry.details.counterparty).not.toBe(MOCK_SELF);
+    expect(entry.amounts).toEqual([
+      { text: "+40.4 USDC", direction: "credit" },
+    ]);
+    // the incoming half of the same rule: renders like a received payment
+    expect(entry.primaryText).toBe("USDC");
+    expect(entry.secondaryText).toBe("Received");
+  });
+
+  it("maps a SEP-41 mint to self with no counterparty (a mint has no sender)", () => {
+    const entry = mapV2Transaction(mockTokenMintReceived, ctx);
+
+    expect(entry.kind).toBe("received");
+    expect(entry.details.functionName).toBe("mint");
+    // mint(to, amount) has two args — getArgsForTokenInvocation used to read
+    // args[2] unconditionally and throw, silently degrading every mint.
+    expect(entry.details.counterparty).toBeNull();
+    expect(entry.amounts).toEqual([
+      { text: "+40.4 USDC", direction: "credit" },
+    ]);
+    // state changes drive: a mint's credit renders like a received payment
+    // (invocation names stay in the detail sheet)
+    expect(entry.primaryText).toBe("USDC");
+    expect(entry.secondaryText).toBe("Received");
+  });
+
+  it("maps the admin's mint to another account with the recipient as counterparty", () => {
+    const entry = mapV2Transaction(mockTokenMintToOther, ctx);
+
+    expect(entry.details.functionName).toBe("mint");
+    // The recipient at args[0]. Unlike mint-to-self (counterparty null either
+    // way), this is only reachable when the 2-arg mint actually decodes — the
+    // mapper-level guard on the old unconditional-args[2] throw.
+    expect(entry.details.counterparty).toBe(MOCK_ACCOUNT_2);
+  });
+
+  it("maps an incoming transfer addressed to the muxed form of self by base account", () => {
+    const entry = mapV2Transaction(mockTokenTransferReceivedMuxed, ctx);
+
+    expect(entry.kind).toBe("received");
+    // The `to` arg is MOCK_MUXED_SELF (scAddressTypeMuxedAccount). A bare ===
+    // against the G key misreads this as outgoing and returns the user's own
+    // M-address as counterparty. Also proves the to_muxed_id upgrade is NOT
+    // applied when the counterparty is the sender.
+    expect(entry.details.counterparty).toBe(MOCK_ACCOUNT_2);
+    expect(entry.details.counterparty).not.toBe(MOCK_MUXED_SELF);
+  });
+
+  it("keeps the muxed recipient verbatim on an outgoing transfer", () => {
+    const entry = mapV2Transaction(mockTokenTransferSentMuxed, ctx);
+
+    expect(entry.kind).toBe("sent");
+    // Display preserves the M-address the user actually targeted.
+    expect(entry.details.counterparty).toBe(MOCK_MUXED_ACCOUNT_2);
+  });
+
+  it("reconstructs the muxed recipient from to_muxed_id when the arg decoded bare (first consumer of the field)", () => {
+    const entry = mapV2Transaction(mockTokenTransferSentWithMuxedId, ctx);
+
+    expect(entry.kind).toBe("sent");
+    // Bare-G `to` arg + to_muxed_id on the balance change → the CAP-67
+    // reconstruction MCFI...(MOCK_ACCOUNT_2, 67890).
+    expect(entry.details.counterparty).toBe(MOCK_MUXED_ACCOUNT_2);
+  });
+
+  it("maps a classic payment received at the muxed form of self with the sender as counterparty", () => {
+    const entry = mapV2Transaction(mockPaymentReceivedMuxed, ctx);
+
+    expect(entry.kind).toBe("received");
+    // decodeCounterparty's destination comparison must normalize the muxed
+    // destination to its base account; the counterparty is the op source.
+    expect(entry.details.counterparty).toBe(MOCK_ACCOUNT_2);
+    expect(entry.details.counterparty).not.toBe(MOCK_MUXED_SELF);
+  });
+
+  it("suppresses the companion balance-authorization change on a trustline event, but keeps standalone ones", () => {
+    // Creating a trustline against a default-auth issuer emits a
+    // BalanceAuthorizationChange(SET) companion; the design's trustline frame
+    // shows only the trustline card, so the companion must not become a
+    // second "Balance Authorized" card (mockTrustlineAdded carries it).
+    const trustline = mapV2Transaction(mockTrustlineAdded, ctx);
+    expect(
+      trustline.details.stateChangeCards.filter(
+        (card) => card.kind === "balanceAuthorizations",
+      ),
+    ).toHaveLength(0);
+
+    // ...while an issuer's own SET_TRUST_LINE_FLAGS tx (no trustline change
+    // in it) still renders the authorization card.
+    const standalone = mapV2Transaction(mockBalanceAuthChanged, ctx);
+    expect(
+      standalone.details.stateChangeCards.filter(
+        (card) => card.kind === "balanceAuthorizations",
+      ),
+    ).not.toHaveLength(0);
+  });
+
+  it("labels an LP deposit by its operation, never as Contract", () => {
+    const entry = mapV2Transaction(mockLpDeposit, ctx);
+
+    // Two same-direction debits "look like" a generic multi-asset contract
+    // call — the regression that drove op-type-first dispatch. The op says
+    // what it is.
+    expect(entry.primaryText).toBe("Liquidity pool deposit");
+    expect(entry.primaryText).not.toBe("Contract");
+    expect(entry.secondaryText).toBe("Submitted");
+    expect(entry.kind).toBe("other");
+    // two assets moved → the Multiple label, never stacked amounts; the
+    // per-asset breakdown is the detail sheet's job
+    expect(entry.amounts).toBe("multiple");
+    expect(entry.rowIcon).toEqual({
+      type: "asset",
+      tokens: [tokens.get(MOCK_XLM_SAC), tokens.get(MOCK_USDC_SAC)],
+    });
+    expect(entry.details.title).toBe("Liquidity pool deposit");
+  });
+
+  it("labels an LP withdrawal by its operation", () => {
+    const entry = mapV2Transaction(mockLpWithdraw, ctx);
+
+    expect(entry.primaryText).toBe("Liquidity pool withdrawal");
+    expect(entry.amounts).toBe("multiple");
+  });
+
+  it("labels a claim as claimed, not as a received payment", () => {
+    const entry = mapV2Transaction(mockClaimableBalanceClaimed, ctx);
+
+    expect(entry.primaryText).toBe("Claimable balance claimed");
+    expect(entry.secondaryText).toBe("Claimed");
+    // kind stays shape-behavioral (dust filtering, sheet direction) — only
+    // the labels are op-driven.
+    expect(entry.kind).toBe("received");
+    expect(entry.amounts).toEqual([
+      { text: "+40.4 USDC", direction: "credit" },
+    ]);
+  });
+
+  it("labels the creator side of a claimable balance as created, not as Sent", () => {
+    const entry = mapV2Transaction(mockClaimableBalanceCreatedBySelf, ctx);
+
+    expect(entry.primaryText).toBe("Claimable balance created");
+    expect(entry.secondaryText).toBe("Pending claim");
+    // The escrowed debit is a sheet detail, not the row's identity — nothing
+    // has been received by anyone yet.
+    expect(entry.amounts).toBeNull();
+    expect(entry.details.balanceChanges).toHaveLength(1);
+    expect(entry.details.balanceChanges[0].direction).toBe("debit");
+  });
+
+  it("labels a crossed offer as Offer, not as a swap", () => {
+    const entry = mapV2Transaction(mockOfferCrossed, ctx);
+
+    expect(entry.primaryText).toBe("Offer");
+    expect(entry.secondaryText).toBe("Submitted");
+    expect(entry.kind).toBe("other");
+    // two assets filled → the Multiple label, not stacked amounts
+    expect(entry.amounts).toBe("multiple");
+  });
+
+  it("labels a homogeneous payment batch by its operation — never a swap pair, never Contract", () => {
+    const entry = mapV2Transaction(mockClassicBatch, ctx);
+
+    // One debit + one credit is exactly a swap's shape, but the ops are two
+    // ordinary payments, and homogeneous ops name themselves.
+    expect(entry.primaryText).toBe("Payment");
+    expect(entry.secondaryText).toBe("Multiple balance changes");
+    expect(entry.kind).toBe("other");
+    expect(entry.amounts).toBe("multiple");
+  });
+
+  it("labels a multi-row path payment as Path payment, never the generic Transaction", () => {
+    const entry = mapV2Transaction(mockPathPaymentMultiRow, ctx);
+
+    expect(entry.primaryText).toBe("Path payment");
+    expect(entry.secondaryText).toBe("Multiple balance changes");
+    expect(entry.amounts).toBe("multiple");
+  });
+
+  it("reserves the Transaction label for genuinely heterogeneous classic batches", () => {
+    const entry = mapV2Transaction(mockHeterogeneousBatch, ctx);
+
+    // PAYMENT + LIQUIDITY_POOL_DEPOSIT in one tx: no single operation
+    // identity exists, so — and only so — the generic label is honest.
+    expect(entry.primaryText).toBe("Transaction");
+    expect(entry.secondaryText).toBe("Multiple balance changes");
   });
 
   it("maps a trustline added", () => {
@@ -419,7 +643,6 @@ describe("mapV2Transaction", () => {
     const entry = buildPresentation({
       classification: { type: "none" },
       cards: [],
-      contractCall: null,
       protocol: null,
       failed: true,
       operationTypes: [],

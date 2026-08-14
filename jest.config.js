@@ -46,7 +46,14 @@ const jsdomTests = {
   modulePathIgnorePatterns: ["extension/e2e-tests"],
   // Fixtures live under __tests__/fixtures/ as importable data, not test files;
   // without this the default __tests__ glob treats them as empty suites.
-  testPathIgnorePatterns: ["/node_modules/", "/__tests__/fixtures/"],
+  // `.superpowers/` is a git-ignored agent-session scratch dir whose review
+  // snapshots include *.test.ts copies with unresolvable relative imports —
+  // same reason freighter-mobile's config ignores its `.claude/` scratch dir.
+  testPathIgnorePatterns: [
+    "/node_modules/",
+    "/__tests__/fixtures/",
+    "/.superpowers/",
+  ],
 };
 
 module.exports = {

@@ -396,17 +396,17 @@ describe("remoteConfig selectors", () => {
     expect(tokenPricesV2Selector(store.getState())).toBe(false);
   });
 
-  it("historyV2Selector defaults to false", () => {
-    const store = makeStore();
-    expect(historyV2Selector(store.getState())).toBe(false);
-  });
-
-  it("historyV2Selector stays false when Amplitude omits the flag", async () => {
+  // Deliberately no assertion on WHAT the default is: it's a rollout dial
+  // that flips as v2 history ships. What must hold is that Amplitude
+  // omitting the flag leaves the shipped default alone, whichever way it
+  // points.
+  it("historyV2Selector keeps the shipped default when Amplitude omits the flag", async () => {
     (getExperimentClient as jest.Mock).mockReturnValue(makeClient());
 
     const store = makeStore();
+    const shippedDefault = historyV2Selector(store.getState());
     await store.dispatch(fetchFeatureFlags());
-    expect(historyV2Selector(store.getState())).toBe(false);
+    expect(historyV2Selector(store.getState())).toBe(shippedDefault);
   });
 
   it("historyV2Selector enables when variant is on", async () => {

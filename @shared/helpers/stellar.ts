@@ -8,6 +8,7 @@ import {
   BASE_RESERVE,
   BASE_RESERVE_MIN_COUNT,
   NetworkDetails,
+  PASSPHRASE_TO_V2_NETWORK,
 } from "@shared/constants/stellar";
 import { INDEXER_URL } from "@shared/constants/mercury";
 
@@ -21,6 +22,20 @@ export const isNextSdk = (networkPassphrase: string) =>
 
 export const getSdk = (networkPassphrase: string) =>
   isNextSdk(networkPassphrase) ? StellarSdkNext : StellarSdk;
+
+/**
+ * Whether the v2 (state-change) history backend can serve this network. The
+ * single gate every v2-history surface must share — the History view router
+ * and the home screen's per-asset history both key off it:
+ *  - custom networks always take v1, even on a pubnet/testnet passphrase the
+ *    backend could technically answer for: the user pointed the wallet at
+ *    their own Horizon, so serve THAT;
+ *  - passphrases absent from PASSPHRASE_TO_V2_NETWORK (e.g. Futurenet) are
+ *    not indexed and getAccountHistoryV2 throws for them.
+ */
+export const isHistoryV2Servable = (networkDetails: NetworkDetails): boolean =>
+  !isCustomNetwork(networkDetails) &&
+  Boolean(PASSPHRASE_TO_V2_NETWORK[networkDetails.networkPassphrase]);
 
 export const isCustomNetwork = (networkDetails: NetworkDetails) => {
   const { network } = networkDetails;

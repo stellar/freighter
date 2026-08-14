@@ -1,8 +1,7 @@
 import React from "react";
 import { useSelector } from "react-redux";
 
-import { isCustomNetwork } from "@shared/helpers/stellar";
-import { PASSPHRASE_TO_V2_NETWORK } from "@shared/constants/stellar";
+import { isHistoryV2Servable } from "@shared/helpers/stellar";
 import {
   historyV2Selector,
   isRemoteConfigInitializedSelector,
@@ -49,11 +48,7 @@ export const AccountHistory = () => {
     return <Loading />;
   }
 
-  const isV2Servable =
-    !isCustomNetwork(networkDetails) &&
-    Boolean(PASSPHRASE_TO_V2_NETWORK[networkDetails.networkPassphrase]);
-
-  return useHistoryV2 && isV2Servable ? (
+  return useHistoryV2 && isHistoryV2Servable(networkDetails) ? (
     <AccountHistoryV2 />
   ) : (
     <AccountHistoryLegacy />

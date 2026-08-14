@@ -120,6 +120,17 @@ jest
     },
   );
 
+// This suite exercises the LEGACY (v1) home / asset-detail flow end to end,
+// so pin the history flag off at the selector rather than per-test store
+// state: the duck's default flips as v2 history rolls out (and is toggled
+// locally during development), and a test that silently takes the v2 branch
+// never consumes its queued v1 mockImplementationOnce — which then leaks
+// into whichever later test calls getAccountHistory next.
+jest.mock("popup/ducks/remoteConfig", () => ({
+  ...jest.requireActual("popup/ducks/remoteConfig"),
+  historyV2Selector: () => false,
+}));
+
 jest
   .spyOn(ApiInternal, "getHiddenAssets")
   .mockImplementation(() => Promise.resolve({ hiddenAssets: {}, error: "" }));
@@ -760,7 +771,11 @@ describe("Account view", () => {
         screen.getByTestId("asset-detail-available-copy"),
       ).toHaveTextContent("100 USDC");
     });
-    fireEvent.click(screen.getByTestId("history-item"));
+    // waitFor, not a bare getByTestId: the per-asset history resolves after
+    // the balance card does, so clicking immediately races the fetch.
+    await waitFor(() => {
+      fireEvent.click(screen.getByTestId("history-item"));
+    });
 
     await waitFor(() => {
       expect(screen.getByTestId("TransactionDetailModal")).toBeDefined();

@@ -224,7 +224,9 @@
     width: 100%;
   }
 
-  // Each key opens the DataEntrySheet with the full key/value pair
+  // Each key opens the DataEntrySheet with the full key/value pair. No hover
+  // treatment: the design (node 12132:62410) draws these as plain rows — the
+  // trailing info icon is the whole affordance.
   &__key {
     display: flex;
     align-items: center;
@@ -237,13 +239,15 @@
     background: transparent;
     color: var(--sds-clr-gray-12);
     font-size: pxToRem(16px);
+    // Text/MD/400 is 16/24 in the design; without this the text box floats
+    // at the browser's default line-height and sits off the icon's midline.
+    line-height: pxToRem(24px);
     cursor: pointer;
 
-    &:hover {
-      background: var(--sds-clr-gray-06);
-    }
-
     svg {
+      // block, not inline: an inline svg baseline-aligns and rides above the
+      // text's midline even inside align-items: center
+      display: block;
       flex-shrink: 0;
       width: pxToRem(18px);
       height: pxToRem(18px);

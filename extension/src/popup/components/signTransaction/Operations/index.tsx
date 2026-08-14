@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import { Badge, Icon, IconButton } from "@stellar/design-system";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
-import { OperationRecord, Signer, xdr } from "stellar-sdk";
+import { hash, OperationRecord, Signer, xdr } from "stellar-sdk";
 
 import {
   FLAG_TYPES,
@@ -931,9 +931,20 @@ export const Operations = ({
             }
 
             case xdr.HostFunctionType.hostFunctionTypeUploadContractWasm(): {
-              const wasm = hostfn.wasm().toString();
+              // The parameter IS the raw wasm blob — render its identity (the
+              // SHA-256 hash the ledger stores it under), never a UTF-8
+              // decode of the bytes, which prints as mojibake.
+              const uploadedWasmHash = hash(hostfn.wasm()).toString("hex");
               return (
-                <KeyValueList operationKey={t("wasm")} operationValue={wasm} />
+                <KeyValueList
+                  operationKey={t("Wasm Hash")}
+                  operationValue={
+                    <CopyValue
+                      value={uploadedWasmHash}
+                      displayValue={truncateString(uploadedWasmHash, 8)}
+                    />
+                  }
+                />
               );
             }
 
@@ -947,6 +958,32 @@ export const Operations = ({
       default: {
         return <></>;
       }
+    }
+  };
+
+  /**
+   * Whether an invoke-host-function operation has anything to show under the
+   * "Parameters" header — a no-arg call (decimals(), name(), …) must not
+   * render the header over an empty row.
+   */
+  const hasInvokeParameters = (op: OperationRecord): boolean => {
+    if (op.type !== "invokeHostFunction") {
+      return false;
+    }
+    const hostfn = op.func;
+    switch (hostfn.switch()) {
+      case xdr.HostFunctionType.hostFunctionTypeInvokeContract():
+        return hostfn.invokeContract().args().length > 0;
+      case xdr.HostFunctionType.hostFunctionTypeCreateContractV2():
+      case xdr.HostFunctionType.hostFunctionTypeCreateContract(): {
+        const { constructorArgs } = getCreateContractArgs(hostfn);
+        return Boolean(constructorArgs && constructorArgs.length > 0);
+      }
+      case xdr.HostFunctionType.hostFunctionTypeUploadContractWasm():
+        // the uploaded blob's hash renders as the parameter
+        return true;
+      default:
+        return false;
     }
   };
 
@@ -982,7 +1019,7 @@ export const Operations = ({
               op.type === "pathPaymentStrictReceive") && (
               <PathList paths={op.path} />
             )}
-            {type === "invokeHostFunction" && (
+            {type === "invokeHostFunction" && hasInvokeParameters(op) && (
               <>
                 <div className="Operations--header">
                   <Icon.BracketsEllipses />

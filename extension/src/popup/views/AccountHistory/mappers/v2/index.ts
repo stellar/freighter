@@ -11,8 +11,14 @@ import BigNumber from "bignumber.js";
 
 import {
   V2AccountTransaction,
+  V2BalanceChange,
   V2StateChange,
 } from "@shared/api/types/backend-api";
+import {
+  createMuxedAccount,
+  isMuxedAccount,
+  isSameAccount,
+} from "helpers/stellar";
 import {
   CLASSIC_ASSET_DECIMALS,
   formatTokenAmount,
@@ -96,8 +102,57 @@ export const mapV2Transaction = (
     ? resolveProtocol(contractCall.contractId)
     : null;
 
+  // The detail sheet labels the counterparty purely from entry.kind
+  // ("received" → "From", "sent" → "To"), so this must resolve to the OTHER
+  // party — and the comparisons must normalize muxed (M...) forms to their
+  // base account, because the wallet only knows its own G key and a bare ===
+  // would misread an incoming transfer to the user's own M-address as
+  // outgoing, rendering "From: <the user's own address>".
+  //
+  // Incoming transfer → the sender; outgoing or third-party → the recipient;
+  // mint to self → none (a mint has no sender — matches legacy, which renders
+  // no counterparty row for mints). The resolved string keeps its muxed form:
+  // display wants the address the user actually targeted.
+  const resolveContractCounterparty = (): string | null => {
+    if (!contractCall?.transferTo) {
+      return null;
+    }
+    const { transferFrom, transferTo } = contractCall;
+    if (isSameAccount(transferTo, publicKey)) {
+      if (transferFrom && !isSameAccount(transferFrom, publicKey)) {
+        return transferFrom;
+      }
+      return null;
+    }
+    return transferTo;
+  };
+
+  // CAP-67: a SEP-41 transfer's destination memo arrives distilled as
+  // to_muxed_id on the BALANCE state change. When the counterparty we just
+  // resolved is the transfer's *recipient* and decoded as a bare G address,
+  // reconstruct the M-address the user actually targeted. Never applied when
+  // the counterparty is the sender — to_muxed_id describes the destination
+  // only. First consumer of the field.
+  const upgradeToMuxed = (resolved: string | null): string | null => {
+    if (
+      !resolved ||
+      resolved !== contractCall?.transferTo ||
+      isMuxedAccount(resolved)
+    ) {
+      return resolved;
+    }
+    const toMuxedId = tx.state_changes.find(
+      (change): change is V2BalanceChange =>
+        change.variant === "BalanceChange" && Boolean(change.to_muxed_id),
+    )?.to_muxed_id;
+    if (!toMuxedId) {
+      return resolved;
+    }
+    return createMuxedAccount(resolved, toMuxedId) ?? resolved;
+  };
+
   const counterparty =
-    contractCall?.transferDestination ??
+    upgradeToMuxed(resolveContractCounterparty()) ??
     tx.operations
       .map((op) => decodeCounterparty(op, publicKey))
       .find((address) => address !== null) ??
@@ -108,7 +163,6 @@ export const mapV2Transaction = (
   const presentation = buildPresentation({
     classification,
     cards,
-    contractCall,
     protocol,
     failed,
     operationTypes: tx.operations.map((op) => op.operation_type),

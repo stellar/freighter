@@ -53,6 +53,19 @@ export const MOCK_BLND_SAC =
 /** An unknown protocol's router contract (no /protocols match → fallback row) */
 export const MOCK_ROUTER_CONTRACT =
   "CADQOBYHA4DQOBYHA4DQOBYHA4DQOBYHA4DQOBYHA4DQOBYHA4DQP5KR";
+
+/**
+ * CAP-67 muxed (M...) forms of the two accounts above. Deterministic:
+ * MuxedAccount(MOCK_SELF, "12345") and MuxedAccount(MOCK_ACCOUNT_2, "67890").
+ * The ids also appear as `to_muxed_id` on the matching balance changes, the
+ * way the backend distills the destination memo out of the transfer arg.
+ */
+export const MOCK_MUXED_SELF =
+  "MCFIRY65OQE7DFP5KLNS2PF2LVZMUZYJX4OZIEQ36N2IQANUB5XVYAAAAAAAAABQHFTBG";
+export const MOCK_MUXED_SELF_ID = "12345";
+export const MOCK_MUXED_ACCOUNT_2 =
+  "MDWUSKGGFDI4FRXK5EBTRECZSVQSSWJHHJOGH6JWG3AUMFFMQ435CAAAAAAAAAIJGK5BY";
+export const MOCK_MUXED_ACCOUNT_2_ID = "67890";
 /** A Blend v2 pool contract (YieldBlox on pubnet) — the emissions claim's `pool_id` */
 export const MOCK_BLEND_POOL =
   "CCCCIQSDILITHMM7PBSLVDT5MISSY7R26MNZXCX4H7J5JQ5FPIYOGYFS";
@@ -101,9 +114,48 @@ const OP_XDR = {
   /** external creates a 100 XLM claimable balance with self as the only claimant */
   createClaimableBalance:
     "AAAAAQAAAACBOXcOqH0XX1ajVGbDTH7My42KkbTuN6Jd9g9bj8mzlAAAAA4AAAAAAAAAADuaygAAAAABAAAAAAAAAACKiOPddAnxlf1S2y08ul1yymcJvx2UEhvzdIgBtA9vXAAAAAA=",
+  /** lp.deposit(pool a468…6d7e, max 100 XLM / 40.4 USDC) — classic LP op */
+  liquidityPoolDeposit:
+    "AAAAAQAAAACKiOPddAnxlf1S2y08ul1yymcJvx2UEhvzdIgBtA9vXAAAABakaNbQsvTTtgsPLAXh5rPwx9ChssPU5fYHGCk6S1xtfgAAAAA7msoAAAAAABgUjQAAAAADAAAACgAAAAEAAAAC",
+  /** lp.withdraw(pool a468…6d7e, 50 shares) */
+  liquidityPoolWithdraw:
+    "AAAAAQAAAACKiOPddAnxlf1S2y08ul1yymcJvx2UEhvzdIgBtA9vXAAAABekaNbQsvTTtgsPLAXh5rPwx9ChssPU5fYHGCk6S1xtfgAAAAAdzWUAAAAAADWk6QAAAAAAFXUqAA==",
+  /** self claims claimable balance 00000000abab…ab */
+  claimClaimableBalance:
+    "AAAAAQAAAACKiOPddAnxlf1S2y08ul1yymcJvx2UEhvzdIgBtA9vXAAAAA8AAAAAq6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6s=",
+  /** sell 100 XLM for USDC at 0.404 */
+  manageSellOffer:
+    "AAAAAQAAAACKiOPddAnxlf1S2y08ul1yymcJvx2UEhvzdIgBtA9vXAAAAAMAAAAAAAAAAVVTREMAAAAAypOsFwUYcHHWe4PH/w7+gQjo7EUwV113JoeTM9vavnwAAAAAO5rKAAAAAGUAAAD6AAAAAAAAAAA=",
+  /** SELF creates a 100 XLM claimable balance with account2 as claimant */
+  createClaimableBalanceBySelf:
+    "AAAAAQAAAACKiOPddAnxlf1S2y08ul1yymcJvx2UEhvzdIgBtA9vXAAAAA4AAAAAAAAAADuaygAAAAABAAAAAAAAAADtSSjGKNHCxurpAziQWZVhKVknOlxj+TY2wUYUrIc30QAAAAA=",
+  /** router.write_metadata() — a no-arg invocation that emits data entries */
+  invokeHostFnWriteMetadata:
+    "AAAAAQAAAACKiOPddAnxlf1S2y08ul1yymcJvx2UEhvzdIgBtA9vXAAAABgAAAAAAAAAAQcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHAAAADndyaXRlX21ldGFkYXRhAAAAAAAAAAAAAA==",
   /** usdcSac.transfer(self, account2, 404000000 i128) */
   invokeHostFnTransfer:
     "AAAAAQAAAACKiOPddAnxlf1S2y08ul1yymcJvx2UEhvzdIgBtA9vXAAAABgAAAAAAAAAAa3vzlmu5Slo92Bh1JTCUlt1ZZ+kKWpl9JnvKeVkd+SWAAAACHRyYW5zZmVyAAAAAwAAABIAAAAAAAAAAIqI4910CfGV/VLbLTy6XXLKZwm/HZQSG/N0iAG0D29cAAAAEgAAAAAAAAAA7UkoxijRwsbq6QM4kFmVYSlZJzpcY/k2NsFGFKyHN9EAAAAKAAAAAAAAAAAAAAAAGBSNAAAAAAA=",
+  /** usdcSac.transfer(account2, self, 404000000 i128) — an INCOMING transfer */
+  invokeHostFnTransferReceived:
+    "AAAAAQAAAADtSSjGKNHCxurpAziQWZVhKVknOlxj+TY2wUYUrIc30QAAABgAAAAAAAAAAa3vzlmu5Slo92Bh1JTCUlt1ZZ+kKWpl9JnvKeVkd+SWAAAACHRyYW5zZmVyAAAAAwAAABIAAAAAAAAAAO1JKMYo0cLG6ukDOJBZlWEpWSc6XGP5NjbBRhSshzfRAAAAEgAAAAAAAAAAiojj3XQJ8ZX9UtstPLpdcspnCb8dlBIb83SIAbQPb1wAAAAKAAAAAAAAAAAAAAAAGBSNAAAAAAA=",
+  /** usdcSac.mint(account2, 404000000 i128) — the admin minting to another account */
+  invokeHostFnMintToOther:
+    "AAAAAQAAAACKiOPddAnxlf1S2y08ul1yymcJvx2UEhvzdIgBtA9vXAAAABgAAAAAAAAAAa3vzlmu5Slo92Bh1JTCUlt1ZZ+kKWpl9JnvKeVkd+SWAAAABG1pbnQAAAACAAAAEgAAAAAAAAAA7UkoxijRwsbq6QM4kFmVYSlZJzpcY/k2NsFGFKyHN9EAAAAKAAAAAAAAAAAAAAAAGBSNAAAAAAA=",
+  /** usdcSac.mint(self, 404000000 i128) — TWO args, the mint regression shape */
+  invokeHostFnMint:
+    "AAAAAQAAAADtSSjGKNHCxurpAziQWZVhKVknOlxj+TY2wUYUrIc30QAAABgAAAAAAAAAAa3vzlmu5Slo92Bh1JTCUlt1ZZ+kKWpl9JnvKeVkd+SWAAAABG1pbnQAAAACAAAAEgAAAAAAAAAAiojj3XQJ8ZX9UtstPLpdcspnCb8dlBIb83SIAbQPb1wAAAAKAAAAAAAAAAAAAAAAGBSNAAAAAAA=",
+  /**
+   * usdcSac.transfer(account2, MUXED_SELF, 404000000 i128) — the `to` ScAddress
+   * is scAddressTypeMuxedAccount (CAP-67), round-trip verified
+   */
+  invokeHostFnTransferReceivedMuxed:
+    "AAAAAQAAAADtSSjGKNHCxurpAziQWZVhKVknOlxj+TY2wUYUrIc30QAAABgAAAAAAAAAAa3vzlmu5Slo92Bh1JTCUlt1ZZ+kKWpl9JnvKeVkd+SWAAAACHRyYW5zZmVyAAAAAwAAABIAAAAAAAAAAO1JKMYo0cLG6ukDOJBZlWEpWSc6XGP5NjbBRhSshzfRAAAAEgAAAAIAAAAAAAAwOYqI4910CfGV/VLbLTy6XXLKZwm/HZQSG/N0iAG0D29cAAAACgAAAAAAAAAAAAAAABgUjQAAAAAA",
+  /** usdcSac.transfer(self, MUXED_ACCOUNT_2, 404000000 i128) */
+  invokeHostFnTransferSentMuxed:
+    "AAAAAQAAAACKiOPddAnxlf1S2y08ul1yymcJvx2UEhvzdIgBtA9vXAAAABgAAAAAAAAAAa3vzlmu5Slo92Bh1JTCUlt1ZZ+kKWpl9JnvKeVkd+SWAAAACHRyYW5zZmVyAAAAAwAAABIAAAAAAAAAAIqI4910CfGV/VLbLTy6XXLKZwm/HZQSG/N0iAG0D29cAAAAEgAAAAIAAAAAAAEJMu1JKMYo0cLG6ukDOJBZlWEpWSc6XGP5NjbBRhSshzfRAAAACgAAAAAAAAAAAAAAABgUjQAAAAAA",
+  /** classic USDC payment from account2 to MUXED_SELF (muxed destination) */
+  paymentReceivedMuxedUsdc:
+    "AAAAAQAAAADtSSjGKNHCxurpAziQWZVhKVknOlxj+TY2wUYUrIc30QAAAAEAAAEAAAAAAAAAMDmKiOPddAnxlf1S2y08ul1yymcJvx2UEhvzdIgBtA9vXAAAAAFVU0RDAAAAAMqTrBcFGHBx1nuDx/8O/oEI6OxFMFdddyaHkzPb2r58AAAAABgUjQA=",
 };
 
 /* ── Builders ────────────────────────────────────────────────────────────── */
@@ -306,6 +358,320 @@ export const mockTokenTransferSent = buildTransaction({
   stateChanges: [balance("DEBIT", MOCK_USDC_SAC, "404000000")],
 });
 
+/**
+ * Soroban SEP-41 transfer IN — transfer(account2, self, ...). The counterparty
+ * must resolve to the sender (account2), never to `to` (which is self): the
+ * sheet labels a received entry's counterparty "From".
+ */
+export const mockTokenTransferReceived = buildTransaction({
+  ledger: 51_549_000,
+  txOrder: 3,
+  createdAt: "2024-04-19T15:10:00Z",
+  operations: [
+    {
+      operationType: "INVOKE_HOST_FUNCTION",
+      operationXdr: OP_XDR.invokeHostFnTransferReceived,
+    },
+  ],
+  stateChanges: [balance("CREDIT", MOCK_USDC_SAC, "404000000")],
+  selfPaidFee: false, // sender paid the fee
+});
+
+/**
+ * SEP-41 mint to self — mint(self, amount), TWO args. The regression shape:
+ * getArgsForTokenInvocation used to read args[2] unconditionally and throw on
+ * every mint. A mint has no sender, so the counterparty is null (legacy
+ * renders no counterparty row for mints either).
+ */
+export const mockTokenMintReceived = buildTransaction({
+  ledger: 51_548_000,
+  txOrder: 6,
+  createdAt: "2024-04-19T14:05:00Z",
+  operations: [
+    {
+      operationType: "INVOKE_HOST_FUNCTION",
+      operationXdr: OP_XDR.invokeHostFnMint,
+    },
+  ],
+  stateChanges: [balance("MINT", MOCK_USDC_SAC, "404000000")],
+  selfPaidFee: false, // the minting admin paid the fee
+});
+
+/**
+ * The admin's own view of a mint to ANOTHER account: fee-only for the admin,
+ * counterparty = the recipient. The one mint shape whose counterparty is
+ * non-null — which also makes the mint decode observable at the mapper level
+ * (a throwing decode and a working one are indistinguishable on mint-to-self,
+ * whose counterparty is null either way).
+ */
+export const mockTokenMintToOther = buildTransaction({
+  ledger: 51_547_500,
+  txOrder: 4,
+  createdAt: "2024-04-19T13:15:00Z",
+  operations: [
+    {
+      operationType: "INVOKE_HOST_FUNCTION",
+      operationXdr: OP_XDR.invokeHostFnMintToOther,
+    },
+  ],
+  stateChanges: [],
+});
+
+/**
+ * CAP-67: transfer IN where the `to` arg is the muxed form of self. Direction
+ * must resolve by base account (bare === against the G key misreads this as
+ * outgoing and shows "From: <own M-address>"). The credit carries the
+ * distilled to_muxed_id, as the backend sends it — the muxed-upgrade must NOT
+ * apply here, because the counterparty is the sender.
+ */
+export const mockTokenTransferReceivedMuxed = buildTransaction({
+  ledger: 51_547_000,
+  txOrder: 11,
+  createdAt: "2024-04-19T12:30:00Z",
+  operations: [
+    {
+      operationType: "INVOKE_HOST_FUNCTION",
+      operationXdr: OP_XDR.invokeHostFnTransferReceivedMuxed,
+    },
+  ],
+  stateChanges: [
+    {
+      ...balance("CREDIT", MOCK_USDC_SAC, "404000000"),
+      to_muxed_id: MOCK_MUXED_SELF_ID,
+    },
+  ],
+  selfPaidFee: false,
+});
+
+/**
+ * CAP-67: transfer OUT to a muxed recipient (an exchange deposit). The
+ * decoded `to` is already the M-address, so it is displayed verbatim — the
+ * to_muxed_id upgrade is skipped by its isMuxedAccount guard.
+ */
+export const mockTokenTransferSentMuxed = buildTransaction({
+  ledger: 51_546_000,
+  txOrder: 14,
+  createdAt: "2024-04-19T11:00:00Z",
+  operations: [
+    {
+      operationType: "INVOKE_HOST_FUNCTION",
+      operationXdr: OP_XDR.invokeHostFnTransferSentMuxed,
+    },
+  ],
+  stateChanges: [
+    {
+      ...balance("DEBIT", MOCK_USDC_SAC, "404000000"),
+      to_muxed_id: MOCK_MUXED_ACCOUNT_2_ID,
+    },
+  ],
+});
+
+/**
+ * CAP-67 distilled-only: the transfer arg decoded to a bare G address, but
+ * the balance change carries to_muxed_id — the mapper reconstructs the
+ * M-address the user actually targeted (first consumer of the wire field).
+ * Reuses the bare-G sent-transfer blob on purpose.
+ */
+export const mockTokenTransferSentWithMuxedId = buildTransaction({
+  ledger: 51_545_500,
+  txOrder: 2,
+  createdAt: "2024-04-19T10:20:00Z",
+  operations: [
+    {
+      operationType: "INVOKE_HOST_FUNCTION",
+      operationXdr: OP_XDR.invokeHostFnTransfer,
+    },
+  ],
+  stateChanges: [
+    {
+      ...balance("DEBIT", MOCK_USDC_SAC, "404000000"),
+      to_muxed_id: MOCK_MUXED_ACCOUNT_2_ID,
+    },
+  ],
+});
+
+/**
+ * Classic USDC payment received at the muxed form of self — exercises
+ * decodeCounterparty's base-account comparison for classic ops.
+ */
+export const mockPaymentReceivedMuxed = buildTransaction({
+  ledger: 51_545_000,
+  txOrder: 8,
+  createdAt: "2024-04-19T09:45:00Z",
+  operations: [
+    {
+      operationType: "PAYMENT",
+      operationXdr: OP_XDR.paymentReceivedMuxedUsdc,
+    },
+  ],
+  stateChanges: [
+    {
+      ...balance("CREDIT", MOCK_USDC_SAC, "404000000"),
+      to_muxed_id: MOCK_MUXED_SELF_ID,
+    },
+  ],
+  selfPaidFee: false,
+});
+
+/**
+ * Classic LP deposit: two same-direction debits. Shape-first classification
+ * read this as "multiple" and labeled it "Contract" — the regression that
+ * drove the op-type-first dispatch. Identity must come from the op.
+ */
+export const mockLpDeposit = buildTransaction({
+  ledger: 51_444_000,
+  txOrder: 3,
+  createdAt: "2024-04-14T10:00:00Z",
+  operations: [
+    {
+      operationType: "LIQUIDITY_POOL_DEPOSIT",
+      operationXdr: OP_XDR.liquidityPoolDeposit,
+    },
+  ],
+  stateChanges: [
+    balance("DEBIT", MOCK_XLM_SAC, "1000000000"),
+    balance("DEBIT", MOCK_USDC_SAC, "404000000"),
+  ],
+});
+
+/** Classic LP withdrawal: two same-direction credits. */
+export const mockLpWithdraw = buildTransaction({
+  ledger: 51_443_000,
+  txOrder: 7,
+  createdAt: "2024-04-14T09:00:00Z",
+  operations: [
+    {
+      operationType: "LIQUIDITY_POOL_WITHDRAW",
+      operationXdr: OP_XDR.liquidityPoolWithdraw,
+    },
+  ],
+  stateChanges: [
+    balance("CREDIT", MOCK_XLM_SAC, "900000000"),
+    balance("CREDIT", MOCK_USDC_SAC, "360000000"),
+  ],
+});
+
+/**
+ * A claim credits the account, so shape-first classification rendered it
+ * exactly like a payment ("USDC / Received"). The op names it.
+ */
+export const mockClaimableBalanceClaimed = buildTransaction({
+  ledger: 51_442_000,
+  txOrder: 5,
+  createdAt: "2024-04-14T08:00:00Z",
+  operations: [
+    {
+      operationType: "CLAIM_CLAIMABLE_BALANCE",
+      operationXdr: OP_XDR.claimClaimableBalance,
+    },
+  ],
+  stateChanges: [balance("CREDIT", MOCK_USDC_SAC, "404000000")],
+});
+
+/**
+ * An offer that crossed immediately: one debit + one credit, which
+ * shape-first classification rendered as "XLM to USDC / Swapped". The user
+ * placed an offer; the fill is its consequence, shown in the amounts.
+ */
+export const mockOfferCrossed = buildTransaction({
+  ledger: 51_441_000,
+  txOrder: 9,
+  createdAt: "2024-04-14T07:00:00Z",
+  operations: [
+    {
+      operationType: "MANAGE_SELL_OFFER",
+      operationXdr: OP_XDR.manageSellOffer,
+    },
+  ],
+  stateChanges: [
+    balance("DEBIT", MOCK_XLM_SAC, "1000000000"),
+    balance("CREDIT", MOCK_USDC_SAC, "404000000"),
+  ],
+});
+
+/**
+ * The CREATOR side of a claimable balance: the escrowed amount debits the
+ * creator, which shape-first classification rendered as "Sent XLM" — but
+ * nothing has been received by anyone yet. The debit stays visible in the
+ * detail sheet's balance card; the row names the operation.
+ */
+export const mockClaimableBalanceCreatedBySelf = buildTransaction({
+  ledger: 51_440_500,
+  txOrder: 2,
+  createdAt: "2024-04-14T06:30:00Z",
+  operations: [
+    {
+      operationType: "CREATE_CLAIMABLE_BALANCE",
+      operationXdr: OP_XDR.createClaimableBalanceBySelf,
+    },
+  ],
+  stateChanges: [balance("DEBIT", MOCK_XLM_SAC, "1000000000")],
+});
+
+/**
+ * A batch of two ordinary payments whose rows happen to pair a debit with a
+ * credit — the exact shape of a swap, but the ops say transfers. Must read
+ * "Transaction / Multiple balance changes", never "XLM to USDC / Swapped"
+ * and never "Contract".
+ */
+export const mockClassicBatch = buildTransaction({
+  ledger: 51_440_000,
+  txOrder: 11,
+  createdAt: "2024-04-14T06:00:00Z",
+  operations: [
+    { operationType: "PAYMENT", operationXdr: OP_XDR.paymentSentXlm },
+    { operationType: "PAYMENT", operationXdr: OP_XDR.paymentReceivedUsdc },
+  ],
+  stateChanges: [
+    balance("DEBIT", MOCK_XLM_SAC, "1000000000"),
+    balance("CREDIT", MOCK_USDC_SAC, "404000000"),
+  ],
+});
+
+/**
+ * A path payment whose fills touched three assets — the "multiple" shape
+ * inside a known classic family. Must read "Path payment", never the generic
+ * "Transaction" (no classic operation gets a generic label).
+ */
+export const mockPathPaymentMultiRow = buildTransaction({
+  ledger: 51_439_500,
+  txOrder: 4,
+  createdAt: "2024-04-14T05:30:00Z",
+  operations: [
+    {
+      operationType: "PATH_PAYMENT_STRICT_SEND",
+      operationXdr: OP_XDR.pathPaymentSwap,
+    },
+  ],
+  stateChanges: [
+    balance("DEBIT", MOCK_XLM_SAC, "1000000000"),
+    balance("CREDIT", MOCK_USDC_SAC, "202000000"),
+    balance("CREDIT", MOCK_EURC_SAC, "180000000"),
+  ],
+});
+
+/**
+ * Operations from two different classic families in one transaction — the
+ * only classic shape with no single identity, and therefore the only one
+ * allowed to read "Transaction".
+ */
+export const mockHeterogeneousBatch = buildTransaction({
+  ledger: 51_439_000,
+  txOrder: 6,
+  createdAt: "2024-04-14T05:00:00Z",
+  operations: [
+    { operationType: "PAYMENT", operationXdr: OP_XDR.paymentSentXlm },
+    {
+      operationType: "LIQUIDITY_POOL_DEPOSIT",
+      operationXdr: OP_XDR.liquidityPoolDeposit,
+    },
+  ],
+  stateChanges: [
+    balance("DEBIT", MOCK_XLM_SAC, "1000000000"),
+    balance("DEBIT", MOCK_USDC_SAC, "404000000"),
+  ],
+});
+
 /** Figma 12116:48163 "Trustline change" / list row "USDC / Added trustline" */
 export const mockTrustlineAdded = buildTransaction({
   ledger: 51_540_000,
@@ -321,6 +687,17 @@ export const mockTrustlineAdded = buildTransaction({
       reason: "ADD",
       token_id: MOCK_USDC_SAC,
       limit: "922337203685.4775807",
+    },
+    // The backend emits this companion for every trustline created against a
+    // default-auth issuer (the line is born authorized). The mapper suppresses
+    // it — the trustline card owns the story, per the design's trustline frame
+    // — so the card assertions on this scenario see the trustlines card only.
+    {
+      variant: "BalanceAuthorizationChange",
+      type: "BALANCE_AUTHORIZATION",
+      reason: "SET",
+      token_id: MOCK_USDC_SAC,
+      flags: ["AUTHORIZED"],
     },
   ],
 });
@@ -356,6 +733,23 @@ export const mockTrustlineMulti = buildTransaction({
       type: "TRUSTLINE",
       reason: "REMOVE",
       token_id: MOCK_EURC_SAC,
+    },
+    // Companions the backend sends with the lifecycle changes above — the
+    // created line is born authorized (SET), the removed line loses its
+    // authorization (CLEAR). Both suppressed by the mapper.
+    {
+      variant: "BalanceAuthorizationChange",
+      type: "BALANCE_AUTHORIZATION",
+      reason: "SET",
+      token_id: MOCK_USDC_SAC,
+      flags: ["AUTHORIZED"],
+    },
+    {
+      variant: "BalanceAuthorizationChange",
+      type: "BALANCE_AUTHORIZATION",
+      reason: "CLEAR",
+      token_id: MOCK_EURC_SAC,
+      flags: ["AUTHORIZED"],
     },
   ],
 });
@@ -491,7 +885,7 @@ export const mockDataEntryAdded = buildTransaction({
   operations: [
     {
       operationType: "INVOKE_HOST_FUNCTION",
-      operationXdr: OP_XDR.invokeHostFnTransfer,
+      operationXdr: OP_XDR.invokeHostFnWriteMetadata,
     },
   ],
   stateChanges: [
@@ -517,7 +911,7 @@ export const mockDataEntryMulti = buildTransaction({
   operations: [
     {
       operationType: "INVOKE_HOST_FUNCTION",
-      operationXdr: OP_XDR.invokeHostFnTransfer,
+      operationXdr: OP_XDR.invokeHostFnWriteMetadata,
     },
   ],
   stateChanges: [
@@ -754,7 +1148,22 @@ export const mockScenarioTransactions: V2AccountTransaction[] = [
   mockContractMultiAsset,
   mockContractNoBalanceChange,
   mockPaymentReceived,
+  mockPaymentReceivedMuxed,
   mockTokenTransferSent,
+  mockTokenTransferReceived,
+  mockTokenMintReceived,
+  mockTokenMintToOther,
+  mockTokenTransferReceivedMuxed,
+  mockTokenTransferSentMuxed,
+  mockTokenTransferSentWithMuxedId,
+  mockLpDeposit,
+  mockLpWithdraw,
+  mockClaimableBalanceClaimed,
+  mockOfferCrossed,
+  mockClaimableBalanceCreatedBySelf,
+  mockClassicBatch,
+  mockPathPaymentMultiRow,
+  mockHeterogeneousBatch,
   mockTrustlineAdded,
   mockTrustlineMulti,
   mockAccountCreated,

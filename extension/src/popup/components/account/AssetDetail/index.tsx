@@ -23,8 +23,16 @@ import {
 } from "helpers/stellar";
 
 import { HistoryItem } from "popup/components/accountHistory/HistoryItem";
+import { HistoryItemV2 } from "popup/components/accountHistory/HistoryItemV2";
 import { TransactionDetail } from "popup/components/accountHistory/TransactionDetail";
+import { TransactionDetailSheet } from "popup/components/accountHistory/TransactionDetailSheet";
 import { SlideupModal } from "popup/components/SlideupModal";
+import {
+  filterEntriesByToken,
+  filterHistoryEntries,
+} from "popup/helpers/history/filters";
+import { getNativeContractDetails } from "popup/helpers/searchAsset";
+import { HistoryEntry } from "popup/views/AccountHistory/model";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { View } from "popup/basics/layout/View";
 import {
@@ -204,6 +212,25 @@ export const AssetDetail = ({
       filteredAssetOperations.find((op) => op.id === activeAssetId) || null;
   }
 
+  // v2 (flag on, servable network): the home hook fetched HistoryEntry[]
+  // instead of per-asset v1 ops; this asset's slice is a client-side filter.
+  const v2Entries =
+    historyData?.type === AppDataType.RESOLVED
+      ? historyData.historyEntries
+      : null;
+  let filteredV2Entries: HistoryEntry[] | null = null;
+  let activeV2Entry: HistoryEntry | null = null;
+  if (v2Entries) {
+    const nativeTokenId = getNativeContractDetails(networkDetails).contract;
+    filteredV2Entries = filterEntriesByToken(
+      filterHistoryEntries(v2Entries, { isHideDustEnabled, nativeTokenId }),
+      selectedAsset,
+      networkDetails,
+    );
+    activeV2Entry =
+      filteredV2Entries.find((entry) => entry.id === activeAssetId) || null;
+  }
+
   if (assetIssuer && !assetDomain && !assetError && !isSorobanAsset) {
     // if we have an asset issuer, wait until we have the asset domain before continuing
     return <Loading />;
@@ -224,13 +251,21 @@ export const AssetDetail = ({
 
   return activeAssetId ? (
     <SlideupModal
-      isModalOpen={activeOperation !== null}
+      isModalOpen={activeOperation !== null || activeV2Entry !== null}
       setIsModalOpen={() => setActiveAssetId(null)}
     >
-      <TransactionDetail
-        activeOperation={activeOperation}
-        networkDetails={networkDetails}
-      />
+      {activeV2Entry ? (
+        <TransactionDetailSheet
+          key={activeV2Entry.id}
+          entry={activeV2Entry}
+          networkDetails={networkDetails}
+        />
+      ) : (
+        <TransactionDetail
+          activeOperation={activeOperation}
+          networkDetails={networkDetails}
+        />
+      )}
     </SlideupModal>
   ) : (
     <React.Fragment>
@@ -380,7 +415,29 @@ export const AssetDetail = ({
                 </div>
               </div>
             </div>
-            {filteredAssetOperations === null ? (
+            {filteredV2Entries !== null ? (
+              filteredV2Entries.length ? (
+                <div
+                  className="AssetDetail__list"
+                  data-testid="AssetDetail__list"
+                >
+                  {filteredV2Entries.map((entry) => (
+                    <HistoryItemV2
+                      key={entry.id}
+                      entry={entry}
+                      onClick={setActiveAssetId}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div
+                  className="AssetDetail__empty"
+                  data-testid="AssetDetail__empty"
+                >
+                  {t("No transactions to show")}
+                </div>
+              )
+            ) : filteredAssetOperations === null ? (
               <div
                 className="AssetDetail__list AssetDetail__list--loading"
                 data-testid="AssetDetail__list__loader"
