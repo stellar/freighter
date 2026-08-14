@@ -220,8 +220,18 @@ const buildTransaction = (spec: TxSpec): V2AccountTransaction => {
     ingested_at: spec.createdAt,
   };
 
+  // Operation-produced state changes carry the producing operation's TOID;
+  // the transaction-level fee entry below deliberately does NOT — the absence
+  // of operation_id is the wire's authoritative fee discriminator, and these
+  // fixtures model the id-bearing wire. (A spec can still override
+  // operation_id, including to undefined, to model the pre-id wire.)
   const stateChanges = spec.stateChanges.map(
-    (change) => ({ ...base, ...change }) as V2StateChange,
+    (change) =>
+      ({
+        ...base,
+        operation_id: operations[0]?.id,
+        ...change,
+      }) as V2StateChange,
   );
 
   if (spec.selfPaidFee !== false) {

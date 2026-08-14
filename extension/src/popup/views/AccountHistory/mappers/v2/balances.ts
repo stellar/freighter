@@ -37,17 +37,29 @@ const isCredit = (change: V2BalanceChange) =>
   change.reason === "CREDIT" || change.reason === "MINT";
 
 /**
- * The v2 payload carries no operation linkage on state changes, so the
- * transaction-level fee entry is structurally indistinguishable from a real
- * balance movement. Heuristic: drop the first native-token DEBIT whose raw
- * amount equals fee_charged. Remove this once the wire carries an operation id
- * or an explicit fee marker.
+ * Drop the transaction-level fee entry from the operation-driven rows.
+ *
+ * Authoritative signal: fee changes carry no `operation_id` — they belong to
+ * the transaction, not to any operation. When this wire emits ids at all,
+ * classification uses ONLY id-bearing changes; nothing else is inferred.
+ * That also makes the sponsored/fee-bump case correct for free: a real
+ * payment that happens to equal fee_charged keeps its id and is never
+ * mistaken for the fee.
+ *
+ * Fallback, for backend versions that predate the field (no change in the
+ * transaction has an id): the old amount heuristic — drop the first
+ * native-token DEBIT whose raw amount equals fee_charged. Delete the fallback
+ * once every deployed backend emits operation ids.
  */
 const withoutFeeEntry = (
   changes: V2BalanceChange[],
   feeCharged: string,
   nativeTokenId: string | null,
 ): V2BalanceChange[] => {
+  if (changes.some((change) => change.operation_id)) {
+    return changes.filter((change) => Boolean(change.operation_id));
+  }
+
   const feeIndex = changes.findIndex(
     (change) =>
       change.reason === "DEBIT" &&

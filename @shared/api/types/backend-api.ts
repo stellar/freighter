@@ -155,6 +155,13 @@ export interface V2Operation {
  */
 export interface V2StateChangeBase {
   variant: string;
+  /**
+   * TOID of the operation that produced this change — ABSENT on
+   * transaction-level changes, which is exactly one thing: the fee debit.
+   * The authoritative fee discriminator; older backend versions omit the
+   * field entirely, in which case nothing can be inferred from its absence.
+   */
+  operation_id?: string;
   type: StateChangeCategory;
   reason: StateChangeReason;
   ledger_number: number;

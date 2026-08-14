@@ -184,6 +184,48 @@ describe("mapV2Transaction", () => {
     expect(entry.details.counterparty).toBe(MOCK_ACCOUNT_2);
   });
 
+  it("keeps a real payment equal to fee_charged when the wire carries operation ids (sponsored/fee-bump)", () => {
+    // A sponsored account pays no fee, so its state changes have no fee
+    // entry — but the old amount heuristic still deleted the first native
+    // debit equal to fee_charged, erasing the actual payment. The wire's
+    // authoritative signal is operation_id: fee entries have none, real
+    // movements do.
+    const [payment] = mockPaymentSent.state_changes;
+    const sponsored = {
+      ...mockPaymentSent,
+      state_changes: [
+        // real payment (operation_id present) whose amount IS fee_charged
+        { ...payment, amount: mockPaymentSent.fee_charged },
+      ],
+    };
+
+    const entry = mapV2Transaction(sponsored, ctx);
+
+    expect(entry.kind).toBe("sent");
+    expect(entry.amounts).toEqual([
+      { text: "-0.0051234 XLM", direction: "debit" },
+    ]);
+  });
+
+  it("falls back to the amount heuristic on a wire that predates operation ids", () => {
+    // No change in the tx carries an id — absence means nothing there, so
+    // the fee is identified the old way (first native debit == fee_charged).
+    const legacyWire = {
+      ...mockPaymentSent,
+      state_changes: mockPaymentSent.state_changes.map((change) => ({
+        ...change,
+        operation_id: undefined,
+      })),
+    };
+
+    const entry = mapV2Transaction(legacyWire, ctx);
+
+    // fee stripped, the real -100 XLM payment drives the row
+    expect(entry.kind).toBe("sent");
+    expect(entry.amounts).toEqual([{ text: "-100 XLM", direction: "debit" }]);
+    expect(entry.details.balanceChanges).toHaveLength(1);
+  });
+
   it("maps a SEP-41 token transfer with the transfer destination", () => {
     const entry = mapV2Transaction(mockTokenTransferSent, ctx);
 
