@@ -4,6 +4,7 @@ import { Provider } from "react-redux";
 
 import { CUSTOM_NETWORK } from "@shared/helpers/stellar";
 import {
+  FUTURENET_NETWORK_DETAILS,
   NetworkDetails,
   TESTNET_NETWORK_DETAILS,
 } from "@shared/constants/stellar";
@@ -79,12 +80,30 @@ describe("AccountHistory — history version routing", () => {
   });
 
   // The v2 backend only indexes pubnet and testnet, and the legacy view reads
-  // Horizon/RPC directly, so custom networks take the v1 path either way.
+  // Horizon/RPC directly, so custom networks take the v1 path either way —
+  // even this one, whose passphrase (testnet's) the v2 backend could answer
+  // for: the user pointed the wallet at their own Horizon, so serve THAT.
   it("mounts the legacy history on a custom network even with the flag on", () => {
     renderShell({
       isInitialized: true,
       use_history_v2: true,
       networkDetails: CUSTOM_NETWORK_DETAILS,
+    });
+
+    expect(screen.getByTestId("history-legacy")).toBeInTheDocument();
+    expect(screen.queryByTestId("history-v2")).toBeNull();
+  });
+
+  // Regression: Futurenet is a built-in network (network !== CUSTOM_NETWORK),
+  // so an isCustomNetwork-only gate routed it to AccountHistoryV2 — where
+  // getAccountHistoryV2 throws for any passphrase outside
+  // PASSPHRASE_TO_V2_NETWORK and history permanently errored. Anything the v2
+  // backend does not serve must fall back to legacy, custom or not.
+  it("mounts the legacy history on Futurenet even with the flag on", () => {
+    renderShell({
+      isInitialized: true,
+      use_history_v2: true,
+      networkDetails: FUTURENET_NETWORK_DETAILS,
     });
 
     expect(screen.getByTestId("history-legacy")).toBeInTheDocument();

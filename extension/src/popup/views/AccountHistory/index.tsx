@@ -2,6 +2,7 @@ import React from "react";
 import { useSelector } from "react-redux";
 
 import { isCustomNetwork } from "@shared/helpers/stellar";
+import { PASSPHRASE_TO_V2_NETWORK } from "@shared/constants/stellar";
 import {
   historyV2Selector,
   isRemoteConfigInitializedSelector,
@@ -18,10 +19,20 @@ import { AccountHistoryV2 } from "./AccountHistoryV2";
  * — neither view falls back to the other at runtime, and neither reaches for
  * the other's API.
  *
- * Custom networks always get the legacy view: the v2 backend only indexes
- * pubnet and testnet, while the legacy view reads Horizon and RPC directly
- * (see getAccountHistoryStandalone) and so still works against an arbitrary
- * network. Everything else follows the use_history_v2 Amplitude flag.
+ * Two conditions route to the legacy view regardless of the flag, and both are
+ * needed:
+ *  - Custom networks (network === CUSTOM_NETWORK): the user pointed the wallet
+ *    at their own Horizon/RPC, so serve history from *that* network via the
+ *    legacy view (getAccountHistoryStandalone reads it directly) — even when
+ *    the custom network reuses a pubnet/testnet passphrase that the v2 backend
+ *    could technically answer for.
+ *  - Passphrases absent from PASSPHRASE_TO_V2_NETWORK: the v2 backend only
+ *    indexes pubnet and testnet, and getAccountHistoryV2 throws for anything
+ *    else. Futurenet is the case isCustomNetwork misses — it is a built-in
+ *    network, not CUSTOM_NETWORK, so without this check the flag being on
+ *    would mount AccountHistoryV2 and every fetch would error where legacy
+ *    Horizon history works.
+ * Everything else follows the use_history_v2 Amplitude flag.
  *
  * Flags start out unresolved and default to off, so wait for them before
  * mounting either view: rendering on the default would mount the legacy view
@@ -38,7 +49,11 @@ export const AccountHistory = () => {
     return <Loading />;
   }
 
-  return useHistoryV2 && !isCustomNetwork(networkDetails) ? (
+  const isV2Servable =
+    !isCustomNetwork(networkDetails) &&
+    Boolean(PASSPHRASE_TO_V2_NETWORK[networkDetails.networkPassphrase]);
+
+  return useHistoryV2 && isV2Servable ? (
     <AccountHistoryV2 />
   ) : (
     <AccountHistoryLegacy />
