@@ -298,7 +298,8 @@ export const getTotalUsdLabel = ({
   hasPriceFeed: boolean;
   isFunded: boolean;
   tokenPrices?: ApiTokenPrices | null;
-  totalUsd: BigNumber;
+  /** Omit where no total was computed; the branches that ignore it win. */
+  totalUsd?: BigNumber;
 }) => {
   // Balances are unknown, so any figure would be a claim rather than a total.
   if (hasError) {
@@ -316,5 +317,5 @@ export const getTotalUsdLabel = ({
     return NO_FIAT_VALUE;
   }
 
-  return formatFiatAmount(totalUsd.toString());
+  return formatFiatAmount(totalUsd?.toString());
 };

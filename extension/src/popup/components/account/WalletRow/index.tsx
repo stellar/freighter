@@ -4,23 +4,15 @@ import { Icon, Loader } from "@stellar/design-system";
 
 import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
 import { truncatedPublicKey } from "helpers/stellar";
-import { NO_FIAT_VALUE, formatFiatAmount } from "popup/helpers/formatters";
 import { WalletType } from "@shared/constants/hardwareWallet";
 
 import "./styles.scss";
 
 interface WalletRowProps {
   isFetchingTokenPrices: boolean;
-  /** Whether this network prices tokens at all; false means no USD value
-   * exists, as opposed to one that could not be read. */
-  hasPriceFeed: boolean;
   accountName: string;
-  /**
-   * Pre-formatted USD total for this account. Absent (or empty, which the
-   * data hook writes on a failed fetch) means "no total to show" — see
-   * `isTotalLoading` below for how that is distinguished from "still
-   * loading".
-   */
+  /** Display-ready USD total from the data hook: an amount, a zero, or the
+   * no-value placeholder. Absent only while it is still being fetched. */
   accountValue?: string;
   isImported: boolean;
   hardwareWalletType?: WalletType;
@@ -31,7 +23,6 @@ interface WalletRowProps {
 
 export const WalletRow = ({
   isFetchingTokenPrices,
-  hasPriceFeed,
   accountName,
   accountValue,
   isImported,
@@ -48,12 +39,9 @@ export const WalletRow = ({
   // Totals arrive in batches, so a resolved row keeps its value while the
   // rows behind it are still loading.
   const isTotalLoading = !accountValue && isFetchingTokenPrices;
-  // Zero is accurate where there is no price feed. Everywhere else an absent
-  // total means prices or balances could not be read, which the placeholder
-  // states rather than asserting a balance the account may not have. The falsy
-  // check covers both "not fetched" and the "" written for a failed fetch.
-  const balanceLabel =
-    accountValue || (hasPriceFeed ? NO_FIAT_VALUE : formatFiatAmount());
+  // The data hook decides zero-vs-unavailable via getTotalUsdLabel and hands
+  // down the finished label, so there is nothing to interpret here.
+  const balanceLabel = accountValue ?? "";
 
   return (
     // role/aria-current match BalanceRow, the sibling list row. The active
