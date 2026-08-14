@@ -18,6 +18,10 @@ interface FormValue {
   accountName: string;
 }
 
+// Matches the mobile app's ACCOUNT_NAME_MIN_LENGTH / ACCOUNT_NAME_MAX_LENGTH.
+const ACCOUNT_NAME_MIN_LENGTH = 1;
+const ACCOUNT_NAME_MAX_LENGTH = 24;
+
 interface RenameWalletProps {
   allAccounts: Account[];
   publicKey: string;
@@ -41,15 +45,17 @@ export const RenameWallet = ({
     accountName,
   };
   const handleSubmit = async (values: FormValue) => {
-    const { accountName: newAccountName } = values;
-    if (accountName !== newAccountName) {
+    const newAccountName = values.accountName.trim();
+    // Submitting an unchanged name is a no-op save, not a broken button, so
+    // always close. Only touch storage when the name actually differs.
+    if (newAccountName !== accountName) {
       await dispatch(
         updateAccountName({ accountName: newAccountName, publicKey }),
       );
       emitMetric(METRIC_NAMES.accountRenamed, { source: "wallets" });
       onSubmit();
-      onClose();
     }
+    onClose();
   };
 
   return (
@@ -75,49 +81,60 @@ export const RenameWallet = ({
         initialValues={initialValues}
         onSubmit={handleSubmit}
         validationSchema={YupObject().shape({
-          accountName: YupString().max(24, t("max of 24 characters allowed")),
+          accountName: YupString()
+            .trim()
+            .max(ACCOUNT_NAME_MAX_LENGTH, t("max of 24 characters allowed")),
         })}
       >
-        {({ errors }) => (
-          <Form className="RenameWallet__form">
-            <Field name="accountName">
-              {({ field }: FieldProps) => (
-                <Input
-                  data-testid="rename-wallet-input"
-                  autoFocus
-                  fieldSize="md"
-                  autoComplete="off"
-                  id="accountName"
-                  placeholder={accountName}
-                  maxLength={24}
-                  {...field}
-                  error={errors.accountName}
-                />
-              )}
-            </Field>
-            <div className="RenameWallet__actions">
-              <Button
-                isFullWidth
-                type="button"
-                size="lg"
-                isRounded
-                variant="tertiary"
-                onClick={onClose}
-              >
-                {t("Cancel")}
-              </Button>
-              <Button
-                isFullWidth
-                type="submit"
-                size="lg"
-                isRounded
-                variant="secondary"
-              >
-                {t("Set name")}
-              </Button>
-            </div>
-          </Form>
-        )}
+        {({ errors, values }) => {
+          // Trim before measuring so a whitespace-only name counts as empty.
+          const trimmedName = values.accountName.trim();
+          const isNameValid =
+            trimmedName.length >= ACCOUNT_NAME_MIN_LENGTH &&
+            trimmedName.length <= ACCOUNT_NAME_MAX_LENGTH;
+
+          return (
+            <Form className="RenameWallet__form">
+              <Field name="accountName">
+                {({ field }: FieldProps) => (
+                  <Input
+                    data-testid="rename-wallet-input"
+                    autoFocus
+                    fieldSize="md"
+                    autoComplete="off"
+                    id="accountName"
+                    placeholder={accountName}
+                    maxLength={ACCOUNT_NAME_MAX_LENGTH}
+                    {...field}
+                    error={errors.accountName}
+                  />
+                )}
+              </Field>
+              <div className="RenameWallet__actions">
+                <Button
+                  isFullWidth
+                  type="button"
+                  size="lg"
+                  isRounded
+                  variant="tertiary"
+                  onClick={onClose}
+                >
+                  {t("Cancel")}
+                </Button>
+                <Button
+                  isFullWidth
+                  type="submit"
+                  size="lg"
+                  isRounded
+                  variant="secondary"
+                  disabled={!isNameValid}
+                >
+                  {t("Set name")}
+                </Button>
+              </div>
+            </Form>
+          );
+        }}
       </Formik>
     </div>
   );

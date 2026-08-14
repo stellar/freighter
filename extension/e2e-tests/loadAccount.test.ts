@@ -697,6 +697,56 @@ test("Renames wallets", async ({ page, extensionId, context }) => {
   ).toHaveCount(1);
 });
 
+test("Trims the wallet name and rejects blank ones", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  await loginToTestAccount({ page, extensionId, context });
+  await page.getByTestId("account-view-account-name").click();
+  await expect(page.getByText("Wallets")).toBeVisible();
+  await page.getByTestId("wallets-header-edit-name").click();
+
+  const input = page.getByTestId("rename-wallet-input");
+  const setName = page.getByText("Set name");
+
+  // A blank or whitespace-only name would leave the wallet unlabelled, so
+  // the submit button stays disabled rather than saving an empty string.
+  await input.fill("");
+  await expect(setName).toBeDisabled();
+  await input.fill("   ");
+  await expect(setName).toBeDisabled();
+
+  // Surrounding whitespace is trimmed off before saving.
+  await input.fill("  Padded Wallet  ");
+  await expect(setName).toBeEnabled();
+  await setName.click();
+
+  await expect(page.getByTestId("wallets-header")).toContainText(
+    "Padded Wallet",
+  );
+  await expect(
+    page.getByTestId("wallet-row-select").filter({ hasText: "Padded Wallet" }),
+  ).toHaveCount(1);
+});
+
+test("Closes the rename modal when the name is unchanged", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  await loginToTestAccount({ page, extensionId, context });
+  await page.getByTestId("account-view-account-name").click();
+  await expect(page.getByText("Wallets")).toBeVisible();
+  await page.getByTestId("wallets-header-edit-name").click();
+
+  // Submitting without editing is a no-op save, but it must still dismiss the
+  // modal — otherwise the button reads as broken.
+  await expect(page.getByTestId("rename-wallet-input")).toBeVisible();
+  await page.getByText("Set name").click();
+  await expect(page.getByTestId("rename-wallet-input")).not.toBeVisible();
+});
+
 test("Copies the active wallet address", async ({
   page,
   extensionId,
