@@ -159,8 +159,9 @@ describe("formatFiatAmount", () => {
     expect(formatFiatAmount("0.5")).toBe("$0.50");
   });
 
-  // Totals for accounts with no price data at all (non-Mainnet networks, or a
-  // failed price fetch) render this rather than being hidden.
+  // A total that is genuinely zero — a network that prices no tokens, or an
+  // unfunded account — renders this rather than being hidden. A total that
+  // exists but could not be read uses NO_FIAT_VALUE; see getTotalUsdLabel.
   it("falls back to $0.00 rather than hiding the value", () => {
     expect(formatFiatAmount("0")).toBe("$0.00");
     expect(formatFiatAmount()).toBe("$0.00");
