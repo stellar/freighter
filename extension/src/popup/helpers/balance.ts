@@ -306,7 +306,9 @@ export const getTotalUsdLabel = ({
     return NO_FIAT_VALUE;
   }
 
-  // Nothing to value: the network prices no tokens, or the account holds none.
+  // Nothing to value: the network prices no tokens, or the account holds
+  // none. A bare formatFiatAmount() is "$0.00" — a real zero, not a stand-in
+  // for a total that could not be read.
   if (!hasPriceFeed || !isFunded) {
     return formatFiatAmount();
   }

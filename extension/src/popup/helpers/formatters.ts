@@ -170,16 +170,17 @@ export const roundUsdValue = (fullValue: string) =>
 export const NO_FIAT_VALUE = "--";
 
 /**
- * Formats a USD amount for display, falling back to "$0.00".
+ * Formats a USD amount for display. Anything that is not a finite number —
+ * `undefined`, `null`, or the empty string some callers use for "no value" —
+ * formats as "$0.00", so a bare `formatFiatAmount()` is how callers write
+ * that zero.
  *
- * Callers that show a total for an account with no price data at all (a
- * non-Mainnet network, or a failed price fetch) rely on that fallback rather
- * than hiding the value — so the zero has to come from one place instead of
- * being hand-rolled per call site.
+ * The zero states a real total: nothing held, or a network that prices no
+ * tokens. Where a total exists but could not be determined, use
+ * {@link NO_FIAT_VALUE} instead — `getTotalUsdLabel` chooses between them.
  *
- * Anything that isn't a finite number — `undefined`, `null`, or the empty
- * string some callers use to mean "no value" — becomes the zero. A default
- * parameter would only cover `undefined` and let `""` through as "$NaN".
+ * The non-numeric guard is explicit rather than a default parameter, which
+ * would cover `undefined` alone and let `""` through as "$NaN".
  *
  * @example formatFiatAmount("1149.234") // "$1,149.23"
  * @example formatFiatAmount("")         // "$0.00"
