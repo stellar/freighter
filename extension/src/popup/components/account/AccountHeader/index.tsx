@@ -27,6 +27,7 @@ import { signOut } from "popup/ducks/accountServices";
 import { AccountHeaderModal } from "popup/components/account/AccountHeaderModal";
 import { NetworkIcon } from "popup/components/manageNetwork/NetworkIcon";
 import { NetworkDetails } from "@shared/constants/stellar";
+import { isEarnSupportedNetwork } from "@shared/constants/blend";
 import { AccountTabs } from "popup/components/account/AccountTabs";
 import { MaintenanceBanner } from "popup/components/MaintenanceBanner";
 import { getNetworkDisplayName } from "./getNetworkDisplayName";
@@ -415,6 +416,18 @@ export const AccountHeader = ({
                     </Text>
                   </div>
                 </NavLink>
+                {isEarnSupportedNetwork(networkDetails) ? (
+                  <NavLink to={ROUTES.earn} data-testid="nav-link-earn">
+                    <div className="AccountHeader__actions__column">
+                      <div className="AccountHeader__actions__btn">
+                        <Icon.Asterisk01 />
+                      </div>
+                      <Text as="div" size="xs" weight="medium">
+                        {t("Earn")}
+                      </Text>
+                    </div>
+                  </NavLink>
+                ) : null}
               </div>
               {isBackgroundActive
                 ? createPortal(

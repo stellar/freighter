@@ -449,6 +449,14 @@ export interface DismissDiscoverWelcomeMessage extends BaseMessage {
   type: SERVICE_TYPES.DISMISS_DISCOVER_WELCOME;
 }
 
+export interface GetEarnIntroSeenMessage extends BaseMessage {
+  type: SERVICE_TYPES.GET_EARN_INTRO_SEEN;
+}
+
+export interface DismissEarnIntroMessage extends BaseMessage {
+  type: SERVICE_TYPES.DISMISS_EARN_INTRO;
+}
+
 export interface GetBlockaidDebugOverrideMessage extends BaseMessage {
   type: SERVICE_TYPES.GET_BLOCKAID_DEBUG_OVERRIDE;
 }
@@ -570,6 +578,8 @@ export type ServiceMessageRequest =
   | ClearRecentProtocolsMessage
   | GetDiscoverWelcomeSeenMessage
   | DismissDiscoverWelcomeMessage
+  | GetEarnIntroSeenMessage
+  | DismissEarnIntroMessage
   | GetBlockaidDebugOverrideMessage
   | AddCollectibleMessage
   | GetCollectiblesMessage

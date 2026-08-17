@@ -592,6 +592,7 @@ export type Flow =
   | "onboarding"
   | "send"
   | "swap"
+  | "earn"
   | "signing"
   | "assets"
   | "settings"
