@@ -65,7 +65,10 @@ describe("Collectibles empty-state CTA", () => {
   });
 
   // The two empty states sit side by side as tabs, so their CTAs have to be the
-  // same button rather than merely similar ones.
+  // same button rather than merely similar ones. This pins the SDS side of that
+  // -- variant, size and isRounded, via the class SDS computes from them. The
+  // weight bump and the 16px offset live in SCSS, which jest maps to a style
+  // mock, so those two are verified by the stylesheets themselves, not here.
   it("wears the same button style as the Tokens empty state", () => {
     const { unmount } = renderCollectibles({ hasInlineCta: true });
     const addCollectibleClass = screen

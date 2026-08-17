@@ -32,6 +32,7 @@ import {
   Wrapper,
   mockBalances,
   mockAccounts,
+  mockCollectibles,
   mockTestnetBalances,
   mockPrices,
   TEST_CANONICAL,
@@ -45,6 +46,7 @@ import { DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES } from "@shared/constants/autoLock";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import * as AccountDataHooks from "../../views/Account/hooks/useGetAccountData";
 import { RequestState } from "helpers/hooks/fetchHookInterface";
+import { ActiveTabProvider } from "../Account/contexts/activeTabContext";
 
 const mockHistoryOperations = {
   operations: [
@@ -1423,6 +1425,182 @@ describe("Account view", () => {
     // createStellarIdenticon().toDataURL() returns the same constant for
     // every key — including "". The header's identicon fix is verified in a
     // real browser instead; a unit assertion could not fail.
+  });
+
+  // The both-or-neither rule lives in this view's `hasInlineCtas` derivation,
+  // not in the components it feeds, so it has to be pinned here: the component
+  // suites take that decision as a literal prop and cannot catch it drifting.
+  describe("Add CTA placement across the two tabs", () => {
+    const renderWithHoldings = async ({
+      collections,
+      isFunded,
+      requestState = RequestState.SUCCESS,
+    }: {
+      collections: any[];
+      isFunded: boolean;
+      requestState?: RequestState;
+    }) => {
+      const accountDataSpy = jest
+        .spyOn(AccountDataHooks, "useGetAccountData")
+        .mockReturnValue({
+          state:
+            requestState === RequestState.ERROR
+              ? {
+                  state: RequestState.ERROR,
+                  data: null,
+                  error: new Error("boom"),
+                }
+              : ({
+                  state: RequestState.SUCCESS,
+                  error: null,
+                  data: {
+                    type: AppDataType.RESOLVED,
+                    publicKey: TEST_PUBLIC_KEY,
+                    applicationState:
+                      ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
+                    networkDetails: MAINNET_NETWORK_DETAILS,
+                    allowList: ApiInternal.DEFAULT_ALLOW_LIST,
+                    isScanAppended: true,
+                    collectibles: { collections },
+                    // `isFunded` is the only part of this the CTA decision
+                    // reads, and the list is post-normalisation here (this
+                    // mocks the hook, not the network), so an empty array is
+                    // enough and avoids restating the balance fixture shape.
+                    balances: { balances: [], isFunded, subentryCount: 0 },
+                    tokenPrices: {},
+                  },
+                } as any),
+          fetchData: jest.fn(),
+          refreshAppData: jest.fn(),
+        } as any);
+
+      render(
+        <Wrapper
+          routes={[ROUTES.account]}
+          state={{
+            auth: {
+              error: null,
+              applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
+              publicKey: TEST_PUBLIC_KEY,
+              allAccounts: mockAccounts,
+            },
+            settings: {
+              networkDetails: MAINNET_NETWORK_DETAILS,
+              networksList: DEFAULT_NETWORKS,
+            },
+          }}
+        >
+          {/* Router supplies this in the app; without it `setActiveTab` is the
+              context default no-op and the tabs cannot be switched. */}
+          <ActiveTabProvider>
+            <Account />
+          </ActiveTabProvider>
+        </Wrapper>,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId("account-view")).toBeInTheDocument();
+      });
+
+      return accountDataSpy;
+    };
+
+    // MultiPaneSlider mounts only the active pane, so the Collectibles half of
+    // the invariant has to be asserted after actually switching tabs.
+    const switchToCollectibles = async () => {
+      fireEvent.click(screen.getByTestId("account-tab-collectibles"));
+      // getAllByTestId: the view wraps AccountCollectibles in a div carrying the
+      // same testid the component itself sets, so there are two matches.
+      await waitFor(() => {
+        expect(
+          screen.getAllByTestId("account-collectibles").length,
+        ).toBeGreaterThan(0);
+      });
+    };
+
+    const pillTestIds = () =>
+      ["add-token-btn", "add-collectible-btn", "fund-account-btn"].filter(
+        (id) => screen.queryByTestId(id),
+      );
+
+    it("puts the CTA inside both empty states when both tabs are empty", async () => {
+      const spy = await renderWithHoldings({
+        collections: [],
+        isFunded: false,
+      });
+
+      // Tokens: inline funding button, no pill.
+      expect(
+        screen.getByTestId("not-funded").querySelectorAll("button"),
+      ).toHaveLength(1);
+      expect(pillTestIds()).toEqual([]);
+
+      // Collectibles: inline Add collectible, still no pill.
+      await switchToCollectibles();
+      spy.mockRestore();
+
+      expect(
+        screen.getByTestId("add-collectible-inline-btn"),
+      ).toBeInTheDocument();
+      expect(pillTestIds()).toEqual([]);
+    });
+
+    // This is the case a mutation dropping the collectibles half of the
+    // derivation would break: one collectible is enough to move BOTH tabs to
+    // the pill, including the Tokens tab that is still empty.
+    it("moves both CTAs to the pill once a collectible exists", async () => {
+      const spy = await renderWithHoldings({
+        collections: mockCollectibles,
+        isFunded: false,
+      });
+
+      // The Tokens empty state still explains itself but hands its action over.
+      expect(screen.getByTestId("not-funded")).toBeInTheDocument();
+      expect(
+        screen.getByTestId("not-funded").querySelectorAll("button"),
+      ).toHaveLength(0);
+      // Unfunded, so the Tokens pill carries funding rather than "Add token".
+      expect(pillTestIds()).toEqual(["fund-account-btn"]);
+
+      await switchToCollectibles();
+      spy.mockRestore();
+
+      expect(
+        screen.queryByTestId("add-collectible-inline-btn"),
+      ).not.toBeInTheDocument();
+      expect(pillTestIds()).toEqual(["add-collectible-btn"]);
+    });
+
+    it("moves both CTAs to the pill once the account is funded", async () => {
+      const spy = await renderWithHoldings({ collections: [], isFunded: true });
+
+      expect(screen.queryByTestId("not-funded")).not.toBeInTheDocument();
+      expect(pillTestIds()).toEqual(["add-token-btn"]);
+
+      // Collectibles is empty here, but the account has a token, so its empty
+      // state stays CTA-less and the pill covers it.
+      await switchToCollectibles();
+      spy.mockRestore();
+
+      expect(
+        screen.queryByTestId("add-collectible-inline-btn"),
+      ).not.toBeInTheDocument();
+      expect(pillTestIds()).toEqual(["add-collectible-btn"]);
+    });
+
+    // A failed balances fetch leaves the funded state unknown, so the Tokens tab
+    // offers nothing at all rather than guessing between funding and Add token.
+    it("offers no Tokens CTA when the balances fetch failed", async () => {
+      const spy = await renderWithHoldings({
+        collections: [],
+        isFunded: false,
+        requestState: RequestState.ERROR,
+      });
+      spy.mockRestore();
+
+      expect(screen.queryByTestId("not-funded")).not.toBeInTheDocument();
+      expect(pillTestIds()).toEqual([]);
+    });
   });
 
   it("handles abandoned onboarding in password created step", async () => {

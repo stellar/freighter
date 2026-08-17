@@ -16,12 +16,16 @@ const renderPill = ({
   activeTab,
   canUseFriendbot = false,
   isFunded,
+  // Defaults to the ordinary "we know it is unfunded" case; the tests that care
+  // about the unknown-funded-state branch pass it explicitly.
+  isTokensEmpty = !isFunded,
   isHidden,
   networkDetails = MAINNET_NETWORK_DETAILS,
 }: {
   activeTab: TabsList;
   canUseFriendbot?: boolean;
   isFunded: boolean;
+  isTokensEmpty?: boolean;
   isHidden: boolean;
   networkDetails?: typeof MAINNET_NETWORK_DETAILS;
 }) =>
@@ -36,6 +40,7 @@ const renderPill = ({
         <FloatingAddButton
           canUseFriendbot={canUseFriendbot}
           isFunded={isFunded}
+          isTokensEmpty={isTokensEmpty}
           isHidden={isHidden}
           publicKey="GDF3ZEFYPUBLICKEYFORTESTINGONLYAAAAAAAAAAAAAAAAAAAAAAAAA"
           reloadBalances={() => Promise.resolve()}
@@ -125,6 +130,62 @@ describe("FloatingAddButton", () => {
       renderPill({
         activeTab: TabsList.COLLECTIBLES,
         isFunded: false,
+        isHidden: false,
+      });
+
+      expect(screen.getByTestId("add-collectible-btn")).toBeInTheDocument();
+    });
+
+    // The funding pill navigates in this branch, so it has to be a link rather
+    // than a button wearing a link's job.
+    it("renders the Add XLM funding pill as a link to the funding route", () => {
+      renderPill({
+        activeTab: TabsList.TOKENS,
+        isFunded: false,
+        isHidden: false,
+      });
+
+      const pill = screen.getByTestId("fund-account-btn");
+      expect(pill.tagName).toBe("A");
+      expect(pill).toHaveAttribute("href", "/add-funds?isAddXlm=true");
+    });
+
+    // Friendbot submits instead of navigating, so that one stays a button.
+    it("renders the Friendbot funding pill as a button", () => {
+      renderPill({
+        activeTab: TabsList.TOKENS,
+        canUseFriendbot: true,
+        isFunded: false,
+        isHidden: false,
+        networkDetails: TESTNET_NETWORK_DETAILS,
+      });
+
+      expect(screen.getByTestId("fund-account-btn").tagName).toBe("BUTTON");
+    });
+  });
+
+  // A failed balances fetch leaves the funded state unknown, not unfunded:
+  // "Add token" could be impossible and funding could be redundant, so the
+  // Tokens tab offers nothing -- which is what it did before this pill existed.
+  describe("when the funded state is unknown", () => {
+    it("renders nothing on the Tokens tab", () => {
+      const { container } = renderPill({
+        activeTab: TabsList.TOKENS,
+        isFunded: false,
+        isTokensEmpty: false,
+        isHidden: false,
+      });
+
+      expect(container).toBeEmptyDOMElement();
+    });
+
+    // Collectibles are unaffected by a balances failure, so that tab keeps its
+    // pill rather than losing its only way to add one.
+    it("still offers Add collectible", () => {
+      renderPill({
+        activeTab: TabsList.COLLECTIBLES,
+        isFunded: false,
+        isTokensEmpty: false,
         isHidden: false,
       });
 

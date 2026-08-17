@@ -34,6 +34,11 @@ export const useFundingAction = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const fundWithFriendbot = async () => {
+    // Re-entrancy guard: the pill keeps its focus (and so stays clickable)
+    // while the request is in flight rather than going `disabled`.
+    if (isSubmitting) {
+      return;
+    }
     setIsSubmitting(true);
     try {
       await dispatch(fundAccount({ publicKey }));
@@ -44,17 +49,26 @@ export const useFundingAction = ({
   };
 
   // Where a friendbot exists it *is* the way to fund the account, so it
-  // replaces "Add XLM" rather than sitting alongside it.
+  // replaces "Add XLM" rather than sitting alongside it. This is the one branch
+  // that submits rather than navigates, hence no `route`.
   if (canUseFriendbot) {
     return {
       label: t("Fund with Friendbot"),
+      route: null,
       isSubmitting,
       onClick: fundWithFriendbot,
     };
   }
 
+  const route = isMainnet(networkDetails)
+    ? `${ROUTES.addFunds}?isAddXlm=true`
+    : ROUTES.viewPublicKey;
+
   return {
     label: t("Add XLM"),
+    // Exposed so a surface that is naturally a link (the floating pill) can
+    // stay one instead of faking a navigation through a button.
+    route,
     isSubmitting: false,
     onClick: async () =>
       isMainnet(networkDetails)

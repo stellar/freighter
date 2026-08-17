@@ -13,6 +13,12 @@ import "./styles.scss";
 interface FloatingAddButtonProps {
   canUseFriendbot: boolean;
   isFunded: boolean;
+  /**
+   * Whether the Tokens tab is actually showing its empty state. Distinct from
+   * `!isFunded`: when the balances fetch fails the account's funded state is
+   * unknown rather than unfunded, and both are false.
+   */
+  isTokensEmpty: boolean;
   isHidden: boolean;
   publicKey: string;
   reloadBalances: () => Promise<unknown>;
@@ -21,6 +27,7 @@ interface FloatingAddButtonProps {
 export const FloatingAddButton = ({
   canUseFriendbot,
   isFunded,
+  isTokensEmpty,
   isHidden,
   publicKey,
   reloadBalances,
@@ -41,16 +48,36 @@ export const FloatingAddButton = ({
 
   const isTokensTab = activeTab === TabsList.TOKENS;
 
-  // Adding a token means adding a trustline, which an unfunded account cannot
-  // do, so the Tokens pill offers funding instead -- the same action the empty
-  // state hands over when it stops rendering its own.
   if (isTokensTab && !isFunded) {
-    return (
+    // Funded state unknown -- the balances fetch failed, so the pane is showing
+    // an error rather than an empty state. Offering "Add token" would be wrong
+    // (the account may be unfunded) and so would offering to fund it (it may
+    // already be funded), so offer nothing, as before this pill existed.
+    if (!isTokensEmpty) {
+      return null;
+    }
+
+    // Adding a token means adding a trustline, which an unfunded account cannot
+    // do, so this tab offers funding instead -- the same action its empty state
+    // hands over when it stops rendering its own.
+    return fundingAction.route ? (
+      <Link
+        className="FloatingAddButton"
+        to={fundingAction.route}
+        data-testid="fund-account-btn"
+      >
+        <Icon.Plus />
+        <span className="FloatingAddButton__label">{fundingAction.label}</span>
+      </Link>
+    ) : (
+      // Friendbot is the one funding action that submits instead of navigating.
+      // `aria-busy` rather than `disabled` so an in-flight request does not drop
+      // keyboard focus to <body>; re-entry is guarded in the hook.
       <button
         type="button"
         className="FloatingAddButton"
         onClick={fundingAction.onClick}
-        disabled={fundingAction.isSubmitting}
+        aria-busy={fundingAction.isSubmitting}
         data-testid="fund-account-btn"
       >
         <Icon.Plus />

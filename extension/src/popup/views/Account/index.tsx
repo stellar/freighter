@@ -236,8 +236,9 @@ export const Account = () => {
     ] ?? [];
 
   // A funded account always holds XLM, so the Tokens tab is empty exactly when
-  // the account is unfunded -- but it only renders the empty state (and so an
-  // inline CTA) when the fetch actually succeeded.
+  // the account is unfunded. The error guards matter: when the fetch fails the
+  // pane shows an error instead of an empty state, which leaves the funded state
+  // *unknown* rather than unfunded, and `isFunded` cannot tell those apart.
   const isTokensEmptyStateShown =
     !isFunded && !hasError && !resolvedData?.balances?.error?.horizon;
 
@@ -246,6 +247,11 @@ export const Account = () => {
   // the floating pill stands down; as soon as there is a token or a collectible
   // to show, the pill takes over on both tabs and the inline CTAs stand down.
   // Either way exactly one of the two is on screen.
+  //
+  // `hasVisibleCollections` is deliberately the same predicate the Collectibles
+  // pane switches on, so this decision can never disagree with what that pane
+  // actually renders -- including while `collections` is still the empty array
+  // the first FETCH_DATA_SUCCESS carries, before collectibles have loaded.
   const hasInlineCtas =
     isTokensEmptyStateShown && !hasVisibleCollections(collections);
 
@@ -374,6 +380,7 @@ export const Account = () => {
       <FloatingAddButton
         canUseFriendbot={canUseFriendbot}
         isFunded={isFunded}
+        isTokensEmpty={isTokensEmptyStateShown}
         isHidden={hasInlineCtas}
         publicKey={resolvedData?.publicKey || ""}
         reloadBalances={reloadBalances}

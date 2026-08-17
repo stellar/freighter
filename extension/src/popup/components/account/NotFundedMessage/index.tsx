@@ -52,6 +52,7 @@ export const NotFundedMessage = ({
           two copies of it on screen. */}
       {hasInlineCta && (
         <Button
+          type="button"
           variant="secondary"
           size="lg"
           isRounded

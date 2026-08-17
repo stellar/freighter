@@ -49,12 +49,16 @@
   cursor: pointer;
   transition: background-color var(--sds-anim-transition-default);
 
-  &:hover {
+  // `:not([aria-busy="true"])` so an in-flight friendbot request stops reading
+  // as interactive; without it this rule would keep repainting the background
+  // of a pill that ignores clicks.
+  &:not([aria-busy="true"]):hover {
     background-color: rgba(40, 40, 40, 0.9);
   }
 
-  // Only reachable in the funding variant, while friendbot is in flight.
-  &:disabled {
+  // Only reachable in the friendbot funding variant, while the request is in
+  // flight. It stays focusable on purpose, so this is the only "busy" signal.
+  &[aria-busy="true"] {
     opacity: 0.7;
     cursor: default;
   }

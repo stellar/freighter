@@ -275,6 +275,7 @@ export const AccountCollectibles = ({
           {hasInlineCta && (
             <div className="AccountCollectibles__empty__cta">
               <Button
+                type="button"
                 variant="secondary"
                 size="lg"
                 isRounded
