@@ -2,14 +2,25 @@ import React, { useEffect, useRef, useState } from "react";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 
+import { getCanonicalFromAsset } from "@shared/helpers/stellar";
 import { ROUTES } from "popup/constants/routes";
 import { STEPS } from "popup/constants/earn";
 import { navigateTo } from "popup/helpers/navigate";
 import { emitScreenViewed, ScreenViewedProps } from "helpers/metrics";
-import { resetSubmission } from "popup/ducks/transactionSubmission";
-import { resetEarn } from "popup/ducks/earn";
+import {
+  resetSubmission,
+  saveAsset,
+  saveDestination,
+  saveIsToken,
+} from "popup/ducks/transactionSubmission";
+import {
+  resetEarn,
+  saveEarnPool,
+  saveSelectedAssetApy,
+} from "popup/ducks/earn";
 import { EarnIntro } from "popup/components/earn/EarnIntro";
 import { useEarnIntroSeen } from "popup/components/earn/EarnIntro/hooks/useEarnIntroSeen";
+import { EarnTokenPicker } from "popup/components/earn/EarnTokenPicker";
 
 import "./styles.scss";
 
@@ -47,6 +58,9 @@ export const Earn = () => {
     () => ({ [STEPS.CHOOSE_TOKEN]: true }) as Record<STEPS, boolean>,
   );
   const [enterAnim, setEnterAnim] = useState<EnterAnim>("from-bottom");
+  // The picker stays mounted across the swap branch, so it needs an explicit
+  // nudge to re-fetch balances once a swap lands.
+  const [pickerRefreshKey] = useState(0);
 
   const hasResolvedIntro = useRef(false);
   const lastEmittedStep = useRef<STEPS | null>(null);
@@ -104,8 +118,35 @@ export const Earn = () => {
             onClose={closeEarnFlow}
           />
         );
-      default:
       case STEPS.CHOOSE_TOKEN:
+        return (
+          <EarnTokenPicker
+            refreshKey={pickerRefreshKey}
+            onClose={closeEarnFlow}
+            onSelect={(option, resolved) => {
+              dispatch(saveEarnPool(resolved.pool));
+              dispatch(saveSelectedAssetApy(option.apy));
+              dispatch(
+                saveAsset(getCanonicalFromAsset(option.code, option.issuer)),
+              );
+              // The pool contract is the transaction's destination;
+              // isContractId() on it is what routes the flow down the Soroban
+              // simulation path rather than the classic one.
+              dispatch(saveDestination(option.poolId));
+              dispatch(saveIsToken(true));
+              goToStep(STEPS.AMOUNT, "from-right");
+            }}
+            // Interim: hand off to the existing Swap route. The design layers
+            // Swap as a sheet over this picker and returns here with a toast,
+            // which needs the Swap components remounted inside STEPS.SWAP —
+            // that lands with the swap-branch work.
+            onSwapRequested={() => navigateTo(ROUTES.swap, navigate)}
+          />
+        );
+      // AMOUNT, SWAP and DEPOSIT_CONFIRM land in later steps. Returning null
+      // rather than falling through to a default keeps an unbuilt step from
+      // silently rendering another step's screen.
+      default:
         return null;
     }
   };
