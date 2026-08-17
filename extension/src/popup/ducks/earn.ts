@@ -18,6 +18,12 @@ export interface EarnState {
   /** Catalog entry for the allowlisted pool; null until the fetch resolves. */
   pool: BlendCatalogPool | null;
   /**
+   * The chosen asset's contract address (its SAC). Captured at pick time rather
+   * than re-derived from the canonical later: the pool addresses reserves by
+   * contract id, and the deposit's Request carries that address, not the code.
+   */
+  selectedAssetId: string;
+  /**
    * The chosen asset's headline rate (supply APY + emissions APR) as a decimal
    * fraction, or null when the oracle has no fresh price. Carried from the token
    * picker so the amount ribbon and review row don't re-derive it.
@@ -43,6 +49,7 @@ export interface EarnState {
 
 export const initialState: EarnState = {
   pool: null,
+  selectedAssetId: "",
   selectedAssetApy: null,
   currentPositionTokens: "0",
   hasSeenIntro: null,
@@ -58,6 +65,9 @@ const earnSlice = createSlice({
     },
     saveSelectedAssetApy: (state, action: { payload: number | null }) => {
       state.selectedAssetApy = action.payload;
+    },
+    saveSelectedAssetId: (state, action: { payload: string }) => {
+      state.selectedAssetId = action.payload;
     },
     saveCurrentPositionTokens: (state, action: { payload: string }) => {
       state.currentPositionTokens = action.payload;
@@ -83,6 +93,7 @@ const earnSlice = createSlice({
 export const {
   saveEarnPool,
   saveSelectedAssetApy,
+  saveSelectedAssetId,
   saveCurrentPositionTokens,
   setEarnIntroSeen,
   setEarnSubmitFailed,

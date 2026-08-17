@@ -38,6 +38,12 @@ export const METRIC_NAMES = {
   swapCompleted: "swap.completed",
   swapFailed: "swap.failed",
 
+  // -- Earn ----------------------------------------------------------------
+  earnDepositCompleted: "earn.deposit_completed",
+  earnDepositFailed: "earn.deposit_failed",
+  earnPoolDetailsOpened: "earn.pool_details_opened",
+  earnXlmFeeInsufficientShown: "earn.xlm_fee_insufficient_shown",
+
   // -- Collectibles --------------------------------------------------------
   collectibleSendCompleted: "collectible_send.completed",
   collectibleSendFailed: "collectible_send.failed",
@@ -81,7 +87,8 @@ export const METRIC_NAMES = {
     "onboarding.recovery_phrase_confirm_failed",
   // Not emitted on extension: the create-account recovery-phrase screens have
   // no Back affordance to instrument. Mobile emits it; kept for a shared catalog.
-  onboardingRecoveryPhraseBackClicked: "onboarding.recovery_phrase_back_clicked",
+  onboardingRecoveryPhraseBackClicked:
+    "onboarding.recovery_phrase_back_clicked",
   onboardingCompleted: "onboarding.completed",
 
   // -- Account recovery / management --------------------------------------

@@ -29,11 +29,16 @@ import { getAssetDecimals, getAvailableBalance } from "popup/helpers/soroban";
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
 import {
   saveAmount,
-  saveSimulation,
   transactionDataSelector,
 } from "popup/ducks/transactionSubmission";
-import { buildAndSimulateBlendDeposit } from "popup/helpers/blendDeposit";
-import { earnSelector, setEarnSubmitFailed } from "popup/ducks/earn";
+import { EarnReview } from "popup/components/earn/EarnReview";
+import {
+  earnSelector,
+  saveCurrentPositionTokens,
+  setEarnSubmitFailed,
+} from "popup/ducks/earn";
+import { getBlendSuppliedTokens } from "@shared/api/helpers/blend";
+import { formatTokenAmount } from "popup/helpers/soroban";
 
 import { PoolCard } from "./PoolCard";
 import { NetworkFeeSheet } from "./NetworkFeeSheet";
@@ -46,6 +51,7 @@ import {
   ResolvedEarnAmount,
   useGetEarnAmountData,
 } from "./hooks/useGetEarnAmountData";
+import { useSimulateEarnDeposit } from "./hooks/useSimulateEarnDeposit";
 
 import "./styles.scss";
 
@@ -53,28 +59,32 @@ const DEFAULT_AMOUNT = "0";
 
 interface EarnAmountProps {
   goBack: () => void;
-  /**
-   * Fired once the deposit has been built and simulated successfully. The
-   * prepared XDR is in redux (`transactionSimulation`) by the time this runs.
-   */
-  onSimulated: () => void;
+  /** Confirmed on the review sheet — hand off to the submit step. */
+  onConfirm: () => void;
 }
 
-export const EarnAmount = ({ goBack, onSimulated }: EarnAmountProps) => {
+export const EarnAmount = ({ goBack, onConfirm }: EarnAmountProps) => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
   const { state, fetchData } = useGetEarnAmountData();
   const { asset, amount, destination, transactionTimeout } = useSelector(
     transactionDataSelector,
   );
-  const { pool, selectedAssetApy, lastSubmitFailed } =
-    useSelector(earnSelector);
+  const {
+    pool,
+    selectedAssetApy,
+    selectedAssetId,
+    lastSubmitFailed,
+    currentPositionTokens,
+  } = useSelector(earnSelector);
+  const { state: simulationState, simulate } = useSimulateEarnDeposit();
   const { recommendedFee } = useNetworkFees();
 
   const [isPoolSheetOpen, setIsPoolSheetOpen] = useState(false);
   const [isFeeSheetOpen, setIsFeeSheetOpen] = useState(false);
   const [isSimulating, setIsSimulating] = useState(false);
   const [simulationError, setSimulationError] = useState("");
+  const [isReviewOpen, setIsReviewOpen] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -177,28 +187,36 @@ export const EarnAmount = ({ goBack, onSimulated }: EarnAmountProps) => {
 
     setIsSimulating(true);
     try {
-      const { preparedTransaction, simulationResponse } =
-        await buildAndSimulateBlendDeposit({
-          publicKey: data.publicKey,
-          assetId: destination,
-          amount,
-          decimals,
-          networkDetails: data.networkDetails,
-          transactionFee: recommendedFee,
-          transactionTimeout,
-        });
+      // The existing position is the "before" half of Review's 0.00 -> N row.
+      // Fetched alongside the simulation and deliberately non-fatal: a stale
+      // before-value must never block a deposit that is otherwise valid.
+      getBlendSuppliedTokens({
+        publicKey: data.publicKey,
+        poolId: destination,
+        assetId: selectedAssetId,
+        networkDetails: data.networkDetails,
+      })
+        .then((raw) =>
+          dispatch(
+            saveCurrentPositionTokens(
+              formatTokenAmount(new BigNumber(raw), decimals),
+            ),
+          ),
+        )
+        .catch(() => dispatch(saveCurrentPositionTokens("0")));
 
-      dispatch(
-        saveSimulation({
-          preparedTransaction,
-          response: simulationResponse,
-        }),
-      );
-      onSimulated();
+      await simulate({
+        publicKey: data.publicKey,
+        assetId: selectedAssetId,
+        amount,
+        decimals,
+        networkDetails: data.networkDetails,
+        transactionFee: recommendedFee,
+        transactionTimeout,
+      });
+
+      setIsReviewOpen(true);
     } catch (error) {
-      // Surface the pool's own rejection (supply cap, frozen pool, stale
-      // oracle) rather than a generic failure — it is the only signal the user
-      // gets about why this deposit will not go through.
       setSimulationError(
         error instanceof Error ? error.message : String(error),
       );
@@ -300,6 +318,37 @@ export const EarnAmount = ({ goBack, onSimulated }: EarnAmountProps) => {
           />
         </div>
       </View.Content>
+
+      <SlideupModal
+        isModalOpen={isReviewOpen}
+        setIsModalOpen={setIsReviewOpen}
+        hasBackdrop
+      >
+        <EarnReview
+          pool={pool}
+          assetCode={selected?.code || ""}
+          assetIssuer={selected?.issuer}
+          amount={amount}
+          amountUsd={priceValueUsd}
+          apy={selectedAssetApy}
+          currentPosition={currentPositionTokens}
+          currentPositionUsd={
+            assetPrice
+              ? new BigNumber(currentPositionTokens)
+                  .multipliedBy(assetPrice)
+                  .toFixed(2)
+              : null
+          }
+          fee={recommendedFee}
+          simulationState={simulationState}
+          networkDetails={data.networkDetails}
+          onCancel={() => setIsReviewOpen(false)}
+          onConfirm={() => {
+            setIsReviewOpen(false);
+            onConfirm();
+          }}
+        />
+      </SlideupModal>
 
       <SlideupModal
         isModalOpen={isPoolSheetOpen}

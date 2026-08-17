@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 
 import { getCanonicalFromAsset } from "@shared/helpers/stellar";
@@ -7,21 +7,29 @@ import { ROUTES } from "popup/constants/routes";
 import { STEPS } from "popup/constants/earn";
 import { navigateTo } from "popup/helpers/navigate";
 import { emitScreenViewed, ScreenViewedProps } from "helpers/metrics";
+import { ActionStatus } from "@shared/api/types";
 import {
   resetSubmission,
+  resetSubmitStatus,
   saveAsset,
   saveDestination,
   saveIsToken,
+  transactionSubmissionSelector,
 } from "popup/ducks/transactionSubmission";
 import {
   resetEarn,
   saveEarnPool,
   saveSelectedAssetApy,
+  saveSelectedAssetId,
+  setEarnSubmitFailed,
 } from "popup/ducks/earn";
+import { emitMetric } from "helpers/metrics";
+import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { EarnIntro } from "popup/components/earn/EarnIntro";
 import { useEarnIntroSeen } from "popup/components/earn/EarnIntro/hooks/useEarnIntroSeen";
 import { EarnTokenPicker } from "popup/components/earn/EarnTokenPicker";
 import { EarnAmount } from "popup/components/earn/EarnAmount";
+import { EarnSubmit } from "popup/components/earn/EarnSubmit";
 
 import "./styles.scss";
 
@@ -49,6 +57,7 @@ export const Earn = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { hasSeenIntro, dismissIntro } = useEarnIntroSeen();
+  const submission = useSelector(transactionSubmissionSelector);
 
   // Start on CHOOSE_TOKEN and only fall back to the interstitial once the
   // persisted flag has actually resolved to false. Defaulting to INTRO instead
@@ -93,6 +102,22 @@ export const Earn = () => {
     }
   }, [hasSeenIntro]);
 
+  // A failed submission returns to the amount screen with a banner rather than
+  // showing a terminal failure state — the design has no SubmitFail for Earn,
+  // and the amount is the only place the user can act on the failure.
+  useEffect(() => {
+    if (submission.submitStatus !== ActionStatus.ERROR) {
+      return;
+    }
+    emitMetric(METRIC_NAMES.earnDepositFailed);
+    dispatch(setEarnSubmitFailed(true));
+    // Keeps transactionData and the simulation so the amount screen comes back
+    // populated and the user can retry without re-entering anything.
+    dispatch(resetSubmitStatus());
+    goToStep(STEPS.AMOUNT, "dismiss");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [submission.submitStatus]);
+
   // Emit a screen-view metric only once per step transition.
   useEffect(() => {
     if (activeStep === lastEmittedStep.current) {
@@ -127,6 +152,7 @@ export const Earn = () => {
             onSelect={(option, resolved) => {
               dispatch(saveEarnPool(resolved.pool));
               dispatch(saveSelectedAssetApy(option.apy));
+              dispatch(saveSelectedAssetId(option.assetId));
               dispatch(
                 saveAsset(getCanonicalFromAsset(option.code, option.issuer)),
               );
@@ -148,14 +174,23 @@ export const Earn = () => {
         return (
           <EarnAmount
             goBack={() => goToStep(STEPS.CHOOSE_TOKEN, "from-left")}
-            // The review sheet is the next thing to land; until it exists the
-            // simulated deposit stops here rather than stepping into a screen
-            // that would sign without a review.
-            onSimulated={() => {}}
+            onConfirm={() => goToStep(STEPS.DEPOSIT_CONFIRM, "from-right")}
           />
         );
-      // SWAP and DEPOSIT_CONFIRM land in later steps. Returning null rather
-      // than falling through to a default keeps an unbuilt step from silently
+      case STEPS.DEPOSIT_CONFIRM:
+        // Blanked for the frame on which a submission error is being handled,
+        // so the terminal never flashes before the flow steps back to AMOUNT.
+        if (submission.submitStatus === ActionStatus.ERROR) {
+          return null;
+        }
+        return (
+          <EarnSubmit
+            xdr={submission.transactionSimulation.preparedTransaction || ""}
+            onExit={closeEarnFlow}
+          />
+        );
+      // SWAP lands with the swap-branch work. Returning null rather than
+      // falling through to a default keeps an unbuilt step from silently
       // rendering another step's screen.
       default:
         return null;
