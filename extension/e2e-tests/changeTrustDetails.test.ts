@@ -1,6 +1,7 @@
 import { test, expect } from "./test-fixtures";
 import { loginToTestAccount, switchToMainnet } from "./helpers/login";
 import {
+  stubAccountBalancesV2,
   stubTokenDetails,
   stubScanAssetSafe,
   stubAssetSearch,
@@ -25,22 +26,22 @@ test.describe("Add-a-token transaction details", () => {
         await stubScanAssetSafe(page);
         await stubAssetSearch(page);
         // Mainnet-shaped balances so the classic-asset add flow proceeds.
-        await page.route("**/account-balances/*", async (route) => {
-          await route.fulfill({
-            json: {
-              balances: {
-                native: {
-                  token: { type: "native", code: "XLM" },
-                  total: "100",
-                  available: "100",
-                },
-              },
-              isFunded: true,
-              subentryCount: 0,
-              error: { horizon: null, soroban: null },
+        const balancesJson = {
+          balances: {
+            native: {
+              token: { type: "native", code: "XLM" },
+              total: "100",
+              available: "100",
             },
-          });
+          },
+          isFunded: true,
+          subentryCount: 0,
+          error: { horizon: null, soroban: null },
+        };
+        await page.route("**/account-balances/*", async (route) => {
+          await route.fulfill({ json: balancesJson });
         });
+        await stubAccountBalancesV2(page, balancesJson);
       },
     });
 

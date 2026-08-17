@@ -26,7 +26,7 @@ const ON_VARIANT_VALUES = ["on", "true", "enabled", "yes"];
  * Boolean flags — variant value is checked against ON_VARIANT_VALUES.
  * Add flag names here as new boolean flags are introduced.
  */
-const BOOLEAN_FLAGS = ["use_token_prices_v2"] as const;
+const BOOLEAN_FLAGS = ["use_token_prices_v2", "use_balances_v2"] as const;
 
 /**
  * Version flags — variant value is parsed from underscore format (1_2_3 → 1.2.3).
@@ -85,6 +85,9 @@ const initialState: RemoteConfigState = {
   // Defaults to v2; Amplitude can flip it off to roll back to the v1
   // token-prices endpoint without a release.
   use_token_prices_v2: true,
+  // Defaults to v2; Amplitude can flip it off to roll back to the v1
+  // account-balances endpoint without a release.
+  use_balances_v2: true,
   maintenance_banner: { enabled: false, payload: undefined },
   maintenance_screen: { enabled: false, payload: undefined },
 };
@@ -227,6 +230,15 @@ export const maintenanceScreenSelector = createSelector(
 export const tokenPricesV2Selector = createSelector(
   remoteConfigSelector,
   (rc) => rc.use_token_prices_v2,
+);
+
+/**
+ * Returns whether the v2 account-balances endpoint should be used. Defaults
+ * to true; Amplitude can flip the flag off to roll back to the v1 endpoint.
+ */
+export const balancesV2Selector = createSelector(
+  remoteConfigSelector,
+  (rc) => rc.use_balances_v2,
 );
 
 /**

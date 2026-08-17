@@ -45,6 +45,36 @@ export interface NewAssetFlags {
   isRevocable: boolean;
 }
 
+/**
+ * Whether the row may offer "Remove asset".
+ *
+ * Classic assets are removed by closing their trustline, and SACs are not
+ * removable at all — both unchanged. A custom token is removable only while it
+ * is on screen because of the user's local token list: once the backend returns
+ * it on its own, dropping the local entry would not stop it coming back, so it
+ * can only be hidden (Manage assets → Toggle Assets).
+ */
+const getIsRemovable = ({
+  contract,
+  isSac,
+  localOnlyTokenIds,
+}: {
+  contract: string;
+  isSac: boolean;
+  localOnlyTokenIds?: string[];
+}) => {
+  if (isSac) {
+    return false;
+  }
+  // No contract means a classic asset, removed by closing its trustline. This
+  // is the same test isAssetSac and shouldChangeTrust use to tell the two
+  // apart.
+  if (!contract) {
+    return true;
+  }
+  return !!localOnlyTokenIds?.includes(contract);
+};
+
 interface ManageAssetRowsProps {
   children?: React.ReactNode;
   header?: React.ReactNode;
@@ -116,6 +146,7 @@ export const ManageAssetRows = ({
               issuer,
               isSuspicious,
               isMalicious,
+              isRemovable,
               isSac,
               isTrustlineActive,
               name,
@@ -137,7 +168,7 @@ export const ManageAssetRows = ({
                     code={code}
                     issuer={issuer}
                     isTrustlineActive={!!isTrustlineActive}
-                    isSac={isSac}
+                    isRemovable={isRemovable}
                     isLoading={false}
                     onClick={async () => {
                       setSelectedAsset({
@@ -223,6 +254,7 @@ const AssetRows = ({
     isTrustlineActive,
     isSuspicious,
     isMalicious,
+    isRemovable,
     isSac,
   }: {
     code: string;
@@ -235,6 +267,7 @@ const AssetRows = ({
     isTrustlineActive: boolean;
     isSuspicious?: boolean;
     isMalicious?: boolean;
+    isRemovable: boolean;
     isSac: boolean;
   }) => React.ReactNode;
 }) => {
@@ -300,6 +333,11 @@ const AssetRows = ({
                   issuer,
                   isSuspicious,
                   isMalicious,
+                  isRemovable: getIsRemovable({
+                    contract,
+                    isSac,
+                    localOnlyTokenIds: accountBalances.localOnlyTokenIds,
+                  }),
                   isSac,
                   isTrustlineActive:
                     isTrustlineActive !== undefined ||
@@ -367,6 +405,11 @@ const AssetRows = ({
                   issuer,
                   isSuspicious,
                   isMalicious,
+                  isRemovable: getIsRemovable({
+                    contract,
+                    isSac,
+                    localOnlyTokenIds: accountBalances.localOnlyTokenIds,
+                  }),
                   isSac,
                   isTrustlineActive:
                     isTrustlineActive !== undefined ||
@@ -433,6 +476,11 @@ const AssetRows = ({
                 isContract,
                 issuer,
                 isSuspicious,
+                isRemovable: getIsRemovable({
+                  contract,
+                  isSac,
+                  localOnlyTokenIds: accountBalances.localOnlyTokenIds,
+                }),
                 isSac,
                 isTrustlineActive:
                   isTrustlineActive !== undefined ||

@@ -164,6 +164,7 @@ describe("internalApi", () => {
           "DT:CCXVDIGMR6WTXZQX2OEVD6YM6AYCYPXPQ7YYH6OZMRS7U6VD3AVHNGBJ",
         ],
         MAINNET_NETWORK_DETAILS,
+        true,
       );
 
       const body = JSON.parse(sentMessage().body as string);
@@ -179,6 +180,7 @@ describe("internalApi", () => {
       await internalApi.getTokenPrices(
         ["native", "abc123:lp"],
         MAINNET_NETWORK_DETAILS,
+        true,
       );
 
       const body = JSON.parse(sentMessage().body as string);
@@ -188,7 +190,11 @@ describe("internalApi", () => {
     it("targets the v2 chokepoint with the network query param", async () => {
       mockSendOk();
 
-      await internalApi.getTokenPrices(["native"], TESTNET_NETWORK_DETAILS);
+      await internalApi.getTokenPrices(
+        ["native"],
+        TESTNET_NETWORK_DETAILS,
+        true,
+      );
 
       const message = sentMessage();
       expect(message.type).toBe(SERVICE_TYPES.FETCH_BACKEND_V2);
@@ -202,12 +208,16 @@ describe("internalApi", () => {
 
       // Custom network stored as STANDALONE but sharing the pubnet passphrase
       // must still resolve to PUBLIC and hit the endpoint.
-      await internalApi.getTokenPrices(["native"], {
-        ...MAINNET_NETWORK_DETAILS,
-        network: "STANDALONE",
-        networkName: "Custom Pubnet",
-        networkPassphrase: Networks.PUBLIC,
-      });
+      await internalApi.getTokenPrices(
+        ["native"],
+        {
+          ...MAINNET_NETWORK_DETAILS,
+          network: "STANDALONE",
+          networkName: "Custom Pubnet",
+          networkPassphrase: Networks.PUBLIC,
+        },
+        true,
+      );
 
       expect(mockedSend).toHaveBeenCalled();
       expect(sentMessage().path).toContain("network=PUBLIC");
@@ -219,6 +229,7 @@ describe("internalApi", () => {
       const prices = await internalApi.getTokenPrices(
         ["native"],
         FUTURENET_NETWORK_DETAILS,
+        true,
       );
 
       expect(mockedSend).not.toHaveBeenCalled();
@@ -234,6 +245,7 @@ describe("internalApi", () => {
           "DT:CCXVDIGMR6WTXZQX2OEVD6YM6AYCYPXPQ7YYH6OZMRS7U6VD3AVHNGBJ",
         ],
         MAINNET_NETWORK_DETAILS,
+        true,
       );
 
       expect(mockedSend).not.toHaveBeenCalled();
@@ -249,6 +261,7 @@ describe("internalApi", () => {
       const result = await internalApi.getTokenPrices(
         ["native"],
         TESTNET_NETWORK_DETAILS,
+        true,
       );
 
       expect(result).toEqual(prices);
@@ -258,7 +271,7 @@ describe("internalApi", () => {
       mockedSend.mockResolvedValue({ status: 500, body: null });
 
       await expect(
-        internalApi.getTokenPrices(["native"], TESTNET_NETWORK_DETAILS),
+        internalApi.getTokenPrices(["native"], TESTNET_NETWORK_DETAILS, true),
       ).rejects.toThrow();
     });
 
@@ -268,7 +281,7 @@ describe("internalApi", () => {
       mockedSend.mockResolvedValue({ status: 200, body: {} });
 
       await expect(
-        internalApi.getTokenPrices(["native"], TESTNET_NETWORK_DETAILS),
+        internalApi.getTokenPrices(["native"], TESTNET_NETWORK_DETAILS, true),
       ).rejects.toThrow();
     });
   });

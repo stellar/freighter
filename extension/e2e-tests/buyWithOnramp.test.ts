@@ -1,5 +1,44 @@
 import { test, expect, expectPageToHaveScreenshot } from "./test-fixtures";
 import { loginToTestAccount } from "./helpers/login";
+import { stubAccountBalancesV2 } from "./helpers/stubs";
+
+// Zero-XLM unfunded fixture shared by both tests, served on both the v1 and
+// v2 balances endpoints.
+const zeroXlmBalances = {
+  balances: {
+    native: {
+      token: {
+        type: "native",
+        code: "XLM",
+      },
+      total: "0",
+      available: "0",
+      sellingLiabilities: "0",
+      buyingLiabilities: "0",
+      minimumBalance: "1",
+      blockaidData: {
+        result_type: "Benign",
+        malicious_score: "0.0",
+        attack_types: {},
+        chain: "stellar",
+        address: "",
+        metadata: {
+          type: "",
+        },
+        fees: {},
+        features: [],
+        trading_limits: {},
+        financial_stats: {},
+      },
+    },
+  },
+  isFunded: false,
+  subentryCount: 0,
+  error: {
+    horizon: null,
+    soroban: null,
+  },
+};
 
 test("should show add XLM page and open Coinbase", async ({
   page,
@@ -9,43 +48,9 @@ test("should show add XLM page and open Coinbase", async ({
   const stubOverrides = async () => {
     // Override account-balances to return 0 XLM balance
     await page.route("**/account-balances/**", async (route) => {
-      const json = {
-        balances: {
-          native: {
-            token: {
-              type: "native",
-              code: "XLM",
-            },
-            total: "0",
-            available: "0",
-            sellingLiabilities: "0",
-            buyingLiabilities: "0",
-            minimumBalance: "1",
-            blockaidData: {
-              result_type: "Benign",
-              malicious_score: "0.0",
-              attack_types: {},
-              chain: "stellar",
-              address: "",
-              metadata: {
-                type: "",
-              },
-              fees: {},
-              features: [],
-              trading_limits: {},
-              financial_stats: {},
-            },
-          },
-        },
-        isFunded: false,
-        subentryCount: 0,
-        error: {
-          horizon: null,
-          soroban: null,
-        },
-      };
-      await route.fulfill({ json });
+      await route.fulfill({ json: zeroXlmBalances });
     });
+    await stubAccountBalancesV2(page, zeroXlmBalances);
 
     // Stub /token endpoint
     await page.route("**/token", async (route) => {
@@ -88,43 +93,9 @@ test("should show Buy with Coinbase and open Coinbase", async ({
   const stubOverrides = async () => {
     // Override account-balances to return 0 XLM balance
     await page.route("**/account-balances/**", async (route) => {
-      const json = {
-        balances: {
-          native: {
-            token: {
-              type: "native",
-              code: "XLM",
-            },
-            total: "0",
-            available: "0",
-            sellingLiabilities: "0",
-            buyingLiabilities: "0",
-            minimumBalance: "1",
-            blockaidData: {
-              result_type: "Benign",
-              malicious_score: "0.0",
-              attack_types: {},
-              chain: "stellar",
-              address: "",
-              metadata: {
-                type: "",
-              },
-              fees: {},
-              features: [],
-              trading_limits: {},
-              financial_stats: {},
-            },
-          },
-        },
-        isFunded: false,
-        subentryCount: 0,
-        error: {
-          horizon: null,
-          soroban: null,
-        },
-      };
-      await route.fulfill({ json });
+      await route.fulfill({ json: zeroXlmBalances });
     });
+    await stubAccountBalancesV2(page, zeroXlmBalances);
 
     // Stub /token endpoint
     await page.route("**/token", async (route) => {

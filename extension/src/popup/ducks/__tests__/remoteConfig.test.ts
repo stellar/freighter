@@ -6,6 +6,7 @@ import {
   maintenanceScreenSelector,
   isRemoteConfigInitializedSelector,
   tokenPricesV2Selector,
+  balancesV2Selector,
   reducer,
 } from "../remoteConfig";
 import {
@@ -76,6 +77,11 @@ describe("remoteConfig duck — initial state", () => {
   it("defaults use_token_prices_v2 to true", () => {
     const store = makeStore();
     expect(getState(store).use_token_prices_v2).toBe(true);
+  });
+
+  it("defaults use_balances_v2 to true", () => {
+    const store = makeStore();
+    expect(getState(store).use_balances_v2).toBe(true);
   });
 
   it("has both maintenance flags disabled with no payload by default", () => {
@@ -393,5 +399,29 @@ describe("remoteConfig selectors", () => {
     const store = makeStore();
     await store.dispatch(fetchFeatureFlags());
     expect(tokenPricesV2Selector(store.getState())).toBe(false);
+  });
+
+  it("balancesV2Selector stays true when the variant is on", async () => {
+    (getExperimentClient as jest.Mock).mockReturnValue(
+      makeClient({
+        use_balances_v2: { value: "on" },
+      }),
+    );
+
+    const store = makeStore();
+    await store.dispatch(fetchFeatureFlags());
+    expect(balancesV2Selector(store.getState())).toBe(true);
+  });
+
+  it("balancesV2Selector rolls back to false when the variant is off", async () => {
+    (getExperimentClient as jest.Mock).mockReturnValue(
+      makeClient({
+        use_balances_v2: { value: "off" },
+      }),
+    );
+
+    const store = makeStore();
+    await store.dispatch(fetchFeatureFlags());
+    expect(balancesV2Selector(store.getState())).toBe(false);
   });
 });

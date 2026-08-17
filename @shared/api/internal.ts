@@ -71,6 +71,7 @@ import {
   AccountBalancesInterface,
   BalanceMap,
   Balances,
+  V2AccountBalances,
 } from "./types/backend-api";
 import {
   MAINNET_NETWORK_DETAILS,
@@ -90,6 +91,9 @@ import { getIconUrlFromIssuer } from "./helpers/getIconUrlFromIssuer";
 import { getLedgerKeyAccounts } from "./helpers/getLedgerKeyAccounts";
 import { stellarSdkServer, submitTx } from "./helpers/stellarSdkServer";
 import { getIconFromTokenLists } from "./helpers/getIconFromTokenList";
+import { mapAccountBalancesV2 } from "./helpers/mapAccountBalancesV2";
+import { addBlockaidScanResults } from "./helpers/addBlockaidScanResults";
+import { injectLocalTokenBalances } from "./helpers/injectLocalTokenBalances";
 
 const TRANSACTIONS_LIMIT = 100;
 
@@ -602,7 +606,6 @@ export const getAccountIndexerBalances = async ({
   const formattedBalances = {} as NonNullable<
     AccountBalancesInterface["balances"]
   >;
-  const balanceIds = [] as string[];
   for (const balanceKey of Object.keys(data.balances || {})) {
     const balance = data.balances![balanceKey];
     formattedBalances[balanceKey] = {
@@ -610,25 +613,109 @@ export const getAccountIndexerBalances = async ({
       available: new BigNumber(balance.available),
       total: new BigNumber(balance.total),
     };
-    // track token IDs that come back from the server in order to get
-    // the difference between contractIds set in the client and balances returned from server.
-    const [_, assetId] = balanceKey.split(":");
-    if (contractIds.includes(assetId)) {
-      balanceIds.push(assetId);
-    }
   }
   return {
     ...data,
     balances: formattedBalances,
+    // v1 returns a contract-token balance only for an ID it was handed, so
+    // every locally saved contract is removable from the balances view.
+    localOnlyTokenIds: contractIds,
   };
+};
+
+export const getAccountBalancesV2 = async ({
+  publicKey,
+  networkDetails,
+  shouldSkipScan,
+}: {
+  publicKey: string;
+  networkDetails: NetworkDetails;
+  shouldSkipScan?: boolean;
+}): Promise<AccountBalancesInterface> => {
+  // Multi-address fan-out endpoint; the extension fetches one account at a
+  // time. Addresses travel in the POST body, so the URL carries no G-address
+  // (no Sentry scrubbing needed, unlike the v1 GET path).
+  //
+  // This is a freighter-backend-v2 call, so it goes through the background
+  // chokepoint (callBackendV2), which attaches the per-request JWT (#2879).
+  // Balances are only fetched from an unlocked wallet, so the request always
+  // carries the JWT. The query lives in the path so callBackendV2 signs the
+  // JWT's methodAndPath over the server's full request-target (path + query).
+  const { status, body } = await fetchBackendV2({
+    method: "POST",
+    path: `/accounts/balances?network=${networkDetails.network}`,
+    body: JSON.stringify({ addresses: [publicKey] }),
+  });
+
+  // Mirror getTokenPrices: a 200 without a `data` payload is still a failure —
+  // callers' try/catch only handles throws, not bad returns.
+  const parsedResponse = body as { data?: V2AccountBalances[] };
+  if (status !== 200 || !parsedResponse?.data) {
+    const _err = JSON.stringify(body);
+    captureException(`Failed to fetch account balances v2 - ${status}`);
+    throw new Error(_err);
+  }
+
+  const account = parsedResponse.data.find(
+    (accountBalances) => accountBalances.address === publicKey,
+  );
+  // The backend includes every requested address in the fan-out result, with
+  // is_funded=false for unfunded accounts. A missing entry is a malformed
+  // response — treating it as "unfunded" would render (and cache) a funded
+  // wallet as empty.
+  if (!account) {
+    captureException(
+      `v2 balances response is missing the requested account - ${status}`,
+    );
+    throw new Error(
+      `v2 balances response is missing the requested account ${publicKey}`,
+    );
+  }
+  // v2 takes account addresses only, so the locally saved custom-token
+  // contract IDs the v1 path sent as `contract_ids` hints are merged in here
+  // instead. Skipped for an unfunded account: the not-funded UI renders in
+  // place of balances, so resolving tokens would only burn requests.
+  const mappedBalances = mapAccountBalancesV2(account);
+  const mergedBalances = account.is_funded
+    ? await injectLocalTokenBalances({
+        accountBalances: mappedBalances,
+        backendTokenIds: new Set(
+          (account.balances || []).map((balance) => balance.token_id),
+        ),
+        localTokenIds: await getTokenIds({
+          activePublicKey: publicKey,
+          network: networkDetails.network as NETWORKS,
+        }),
+        networkPassphrase: networkDetails.networkPassphrase,
+        fetchTokenDetails: (contractId) =>
+          getTokenDetails({
+            contractId,
+            publicKey,
+            networkDetails,
+            shouldFetchBalance: true,
+          }),
+      })
+    : mappedBalances;
+
+  // The v2 response has no Blockaid data yet — replicate the v1 backend's
+  // scan-and-merge client-side so both paths return the same payload. Runs
+  // after the merge so locally added tokens are scanned too, as they were on
+  // v1.
+  return await addBlockaidScanResults(
+    mergedBalances,
+    networkDetails,
+    shouldSkipScan,
+  );
 };
 
 export const getTokenPrices = async (
   tokens: string[],
   networkDetails: NetworkDetails,
-  // Defaults to the v2 endpoint. Callers pass the `use_token_prices_v2` feature
-  // flag so Amplitude can roll back to the v1 endpoint without a release.
-  useV2 = true,
+  // Required, not defaulted: callers must thread the `use_token_prices_v2`
+  // feature flag so Amplitude can roll back to the v1 endpoint without a
+  // release. A default silently opts new callers into v2 and defeats the
+  // kill switch.
+  useV2: boolean,
 ): Promise<ApiTokenPrices> => {
   // NOTE: API does not accept LP IDs or custom tokens
   const filteredTokens = tokens.filter((tokenId) => {
@@ -907,6 +994,9 @@ export const getAccountBalancesStandalone = async ({
     balances: { ...balances, ...tokenBalances },
     isFunded,
     subentryCount,
+    // Contract tokens on this path exist only because they are in the local
+    // list, so all of them are removable from the balances view.
+    localOnlyTokenIds: tokenIdList,
   } as AccountBalancesInterface;
 };
 
@@ -1039,13 +1129,29 @@ export const getAccountBalances = async (
   publicKey: string,
   networkDetails: NetworkDetails,
   isMainnet: boolean,
-  shouldSkipScan?: boolean,
+  shouldSkipScan: boolean | undefined,
+  // Required, not defaulted: callers must thread the `use_balances_v2` feature
+  // flag so Amplitude can roll back to the v1 endpoint without a release. A
+  // default silently opts new callers into v2 and defeats the kill switch.
+  useV2: boolean,
 ) => {
   if (isCustomNetwork(networkDetails)) {
     return await getAccountBalancesStandalone({
       publicKey,
       networkDetails,
       isMainnet,
+    });
+  }
+  // The v2 balances endpoint only supports pubnet and testnet; Futurenet
+  // stays on v1 regardless of the flag.
+  const isV2SupportedNetwork =
+    networkDetails.network === NETWORKS.PUBLIC ||
+    networkDetails.network === NETWORKS.TESTNET;
+  if (useV2 && isV2SupportedNetwork) {
+    return await getAccountBalancesV2({
+      publicKey,
+      networkDetails,
+      shouldSkipScan,
     });
   }
   return await getAccountIndexerBalances({

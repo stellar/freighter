@@ -2,6 +2,7 @@ import { test, expect } from "./test-fixtures";
 import { loginToTestAccount, switchToMainnet } from "./helpers/login";
 import {
   stubAccountBalances,
+  stubAccountBalancesV2,
   stubScanAssetServerError,
   stubScanTxServerError,
   stubScanTxUnableToScan,
@@ -24,21 +25,22 @@ test.describe("BlockAid Scan - Edge Cases", () => {
         stubOverrides: async () => {
           await stubScanAssetServerError(page);
           // Mock mainnet balances so asset scan proceeds
-          await page.route("**/account-balances/*", async (route) => {
-            const json = {
-              balances: {
-                native: {
-                  token: { type: "native", code: "XLM" },
-                  total: "100",
-                  available: "100",
-                },
+          const balancesJson = {
+            balances: {
+              native: {
+                token: { type: "native", code: "XLM" },
+                total: "100",
+                available: "100",
               },
-              isFunded: true,
-              subentryCount: 0,
-              error: { horizon: null, soroban: null },
-            };
-            await route.fulfill({ json });
+            },
+            isFunded: true,
+            subentryCount: 0,
+            error: { horizon: null, soroban: null },
+          };
+          await page.route("**/account-balances/*", async (route) => {
+            await route.fulfill({ json: balancesJson });
           });
+          await stubAccountBalancesV2(page, balancesJson);
         },
       });
 
@@ -163,21 +165,22 @@ test.describe("BlockAid Scan - Edge Cases", () => {
               json: { data: null, error: null },
             });
           });
-          await page.route("**/account-balances/*", async (route) => {
-            const json = {
-              balances: {
-                native: {
-                  token: { type: "native", code: "XLM" },
-                  total: "100",
-                  available: "100",
-                },
+          const balancesJson = {
+            balances: {
+              native: {
+                token: { type: "native", code: "XLM" },
+                total: "100",
+                available: "100",
               },
-              isFunded: true,
-              subentryCount: 0,
-              error: { horizon: null, soroban: null },
-            };
-            await route.fulfill({ json });
+            },
+            isFunded: true,
+            subentryCount: 0,
+            error: { horizon: null, soroban: null },
+          };
+          await page.route("**/account-balances/*", async (route) => {
+            await route.fulfill({ json: balancesJson });
           });
+          await stubAccountBalancesV2(page, balancesJson);
         },
       });
 
