@@ -57,7 +57,7 @@ import { validateSwapAmount } from "./helpers/swapAmountValidation";
 import {
   getAmountFontSizeClass,
   buildFiatLineText,
-} from "./helpers/swapAmountDisplay";
+} from "popup/components/amount/helpers/amountDisplay";
 import { getAvailableBalanceFontSizePx } from "popup/components/amount/fontScale";
 import { useSwapQuoteExpiry } from "./hooks/useSwapQuoteExpiry";
 import { useSwapDestinationScan } from "./hooks/useSwapDestinationScan";

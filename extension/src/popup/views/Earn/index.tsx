@@ -21,6 +21,7 @@ import {
 import { EarnIntro } from "popup/components/earn/EarnIntro";
 import { useEarnIntroSeen } from "popup/components/earn/EarnIntro/hooks/useEarnIntroSeen";
 import { EarnTokenPicker } from "popup/components/earn/EarnTokenPicker";
+import { EarnAmount } from "popup/components/earn/EarnAmount";
 
 import "./styles.scss";
 
@@ -143,9 +144,19 @@ export const Earn = () => {
             onSwapRequested={() => navigateTo(ROUTES.swap, navigate)}
           />
         );
-      // AMOUNT, SWAP and DEPOSIT_CONFIRM land in later steps. Returning null
-      // rather than falling through to a default keeps an unbuilt step from
-      // silently rendering another step's screen.
+      case STEPS.AMOUNT:
+        return (
+          <EarnAmount
+            goBack={() => goToStep(STEPS.CHOOSE_TOKEN, "from-left")}
+            // The review sheet is the next thing to land; until it exists the
+            // simulated deposit stops here rather than stepping into a screen
+            // that would sign without a review.
+            onSimulated={() => {}}
+          />
+        );
+      // SWAP and DEPOSIT_CONFIRM land in later steps. Returning null rather
+      // than falling through to a default keeps an unbuilt step from silently
+      // rendering another step's screen.
       default:
         return null;
     }

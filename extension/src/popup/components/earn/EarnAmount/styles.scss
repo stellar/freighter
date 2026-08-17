@@ -1,0 +1,112 @@
+@use "../../../styles/utils.scss" as *;
+
+.EarnAmount {
+  display: flex;
+  flex-direction: column;
+  gap: pxToRem(12);
+
+  &__error {
+    margin-bottom: pxToRem(4);
+  }
+
+  &__loader {
+    display: flex;
+    justify-content: center;
+    padding-top: pxToRem(48);
+  }
+}
+
+.PoolCard {
+  display: flex;
+  flex-direction: column;
+
+  // The ribbon sits behind the card's top edge, so the card overlaps it.
+  &__ribbon {
+    align-self: center;
+    background: var(--sds-clr-green-08);
+    color: var(--sds-clr-green-01);
+    border-radius: pxToRem(8) pxToRem(8) 0 0;
+    padding: pxToRem(4) pxToRem(12) pxToRem(10);
+    margin-bottom: pxToRem(-6);
+    width: calc(100% - #{pxToRem(40)});
+    text-align: center;
+  }
+
+  &__body {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: pxToRem(12);
+    width: 100%;
+    padding: pxToRem(14) pxToRem(16);
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    background: var(--sds-clr-gray-03);
+    border-radius: pxToRem(12);
+  }
+
+  &__identity {
+    color: var(--sds-clr-gray-11);
+  }
+
+  &__chevron {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: pxToRem(28);
+    height: pxToRem(28);
+    border-radius: 50%;
+    background: var(--sds-clr-gray-05);
+    color: var(--sds-clr-gray-11);
+  }
+}
+
+.NetworkFeeSheet {
+  padding: pxToRem(24);
+  display: flex;
+  flex-direction: column;
+  gap: pxToRem(8);
+
+  &__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+  }
+
+  &__badge {
+    width: pxToRem(32);
+    height: pxToRem(32);
+    border-radius: pxToRem(8);
+    background: var(--sds-clr-gray-04);
+    color: var(--sds-clr-gray-12);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  &__close {
+    width: pxToRem(32);
+    height: pxToRem(32);
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    background: var(--sds-clr-gray-04);
+    color: var(--sds-clr-gray-11);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  &__body {
+    color: var(--sds-clr-gray-11);
+    margin-bottom: pxToRem(12);
+  }
+
+  &__actions {
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(8);
+  }
+}
