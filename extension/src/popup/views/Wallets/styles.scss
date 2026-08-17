@@ -153,8 +153,20 @@
     justify-content: center;
 
     svg {
-      width: #{pxToRem(14px)};
-      height: #{pxToRem(14px)};
+      width: #{pxToRem(16px)};
+      height: #{pxToRem(16px)};
+    }
+
+    // Must target the path, not the svg. SDS ships these through SVGR, so the
+    // path keeps its own `stroke-width="2"` presentation attribute -- which
+    // loses to a rule matching the path, but beats a value inherited from the
+    // svg.
+    //
+    // The value is 3, not 2, because the viewBox is 24x24 while the glyph
+    // renders at 16px: strokes scale by 2/3, so 3 user units draw as 2px.
+    // Same treatment as FloatingAddButton's plus.
+    svg path {
+      stroke-width: 3;
     }
   }
 
