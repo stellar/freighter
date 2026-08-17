@@ -68,6 +68,18 @@
       font-weight: var(--sds-fw-regular);
       line-height: pxToRem(20px);
     }
+
+    // Sits 16px under the copy, like "Add XLM" does: 8px of the column's own
+    // gap plus 8px here. Carried by the wrapper rather than a margin on
+    // `__subtitle` so the CTA-less empty state keeps its original spacing.
+    &__cta {
+      margin-top: pxToRem(8px);
+    }
+
+    // Same weight bump the Tokens empty state gives its funding button.
+    .Button {
+      font-weight: var(--sds-fw-semi-bold);
+    }
   }
 
   &__list {

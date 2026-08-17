@@ -6,23 +6,57 @@ import { Link } from "react-router-dom";
 import { ROUTES } from "popup/constants/routes";
 import { TabsList } from "popup/views/Account/contexts/activeTabContext";
 import { useActiveTab } from "popup/components/account/AccountTabs/hooks/useActiveTab";
+import { useFundingAction } from "popup/components/account/hooks/useFundingAction";
 
 import "./styles.scss";
 
 interface FloatingAddButtonProps {
+  canUseFriendbot: boolean;
   isFunded: boolean;
+  isHidden: boolean;
+  publicKey: string;
+  reloadBalances: () => Promise<unknown>;
 }
 
-export const FloatingAddButton = ({ isFunded }: FloatingAddButtonProps) => {
+export const FloatingAddButton = ({
+  canUseFriendbot,
+  isFunded,
+  isHidden,
+  publicKey,
+  reloadBalances,
+}: FloatingAddButtonProps) => {
   const { t } = useTranslation();
   const { activeTab } = useActiveTab();
+  const fundingAction = useFundingAction({
+    canUseFriendbot,
+    publicKey,
+    reloadBalances,
+  });
+
+  // Both tabs are empty, so each empty state carries its own Add action and the
+  // pill would be a duplicate call to action on either of them.
+  if (isHidden) {
+    return null;
+  }
 
   const isTokensTab = activeTab === TabsList.TOKENS;
 
-  // The unfunded Tokens empty state carries its own "Add XLM" action, so the
-  // pill would be a duplicate call to action there.
+  // Adding a token means adding a trustline, which an unfunded account cannot
+  // do, so the Tokens pill offers funding instead -- the same action the empty
+  // state hands over when it stops rendering its own.
   if (isTokensTab && !isFunded) {
-    return null;
+    return (
+      <button
+        type="button"
+        className="FloatingAddButton"
+        onClick={fundingAction.onClick}
+        disabled={fundingAction.isSubmitting}
+        data-testid="fund-account-btn"
+      >
+        <Icon.Plus />
+        <span className="FloatingAddButton__label">{fundingAction.label}</span>
+      </button>
+    );
   }
 
   const { label, route, testId } = isTokensTab

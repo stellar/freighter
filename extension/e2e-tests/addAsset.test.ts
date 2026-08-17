@@ -136,12 +136,13 @@ test("Tokens tab add button is absent for an unfunded account", async ({
     timeout: 30000,
   });
 
-  // The unfunded empty state carries its own "Add XLM" action, so the pill
-  // would be a duplicate call to action and is deliberately not rendered.
+  // With nothing in either tab, both empty states carry their own Add action
+  // and the pill stands down, so it would be a duplicate call to action here.
   await expect(page.getByText("Looking a little empty...")).toBeVisible({
     timeout: 20000,
   });
   await expect(page.getByTestId("add-token-btn")).toHaveCount(0);
+  await expect(page.getByTestId("fund-account-btn")).toHaveCount(0);
 });
 
 test.afterAll(async ({ page, extensionId, context }) => {

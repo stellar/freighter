@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Icon } from "@stellar/design-system";
+import { Button, Icon } from "@stellar/design-system";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import { Collection } from "@shared/api/types/types";
+import { navigateTo } from "popup/helpers/navigate";
 import {
   ScreenReaderOnly,
   Sheet,
@@ -222,8 +223,17 @@ const CollectionsList = ({
   );
 };
 
+/**
+ * Whether the Collectibles tab has anything to show. Exported because Home
+ * decides between the inline empty-state CTAs and the floating pill from both
+ * tabs at once, and has to read "empty" exactly the way this tab does.
+ */
+export const hasVisibleCollections = (collections: Collection[]) =>
+  collections.some((c) => c.collection && !c.error);
+
 interface AccountCollectiblesProps {
   collections: Collection[];
+  hasInlineCta: boolean;
   refreshHiddenCollectibles: () => Promise<void>;
   isCollectibleHidden: (collectionAddress: string, tokenId: string) => boolean;
   onClickCollectible?: (selectedCollectible: SelectedCollectible) => void;
@@ -231,13 +241,14 @@ interface AccountCollectiblesProps {
 
 export const AccountCollectibles = ({
   collections,
+  hasInlineCta,
   refreshHiddenCollectibles,
   isCollectibleHidden,
 }: AccountCollectiblesProps) => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
 
-  // Check if there are any valid collections with collectibles
-  const hasValidCollections = collections.some((c) => c.collection && !c.error);
+  const hasValidCollections = hasVisibleCollections(collections);
 
   return (
     <div className="AccountCollectibles" data-testid="account-collectibles">
@@ -259,6 +270,21 @@ export const AccountCollectibles = ({
           <div className="AccountCollectibles__empty__subtitle">
             {t("Collectibles you own will appear here.")}
           </div>
+          {/* Matches the Tokens empty state: when both tabs are empty each one
+              carries its own Add action and the floating pill stands down. */}
+          {hasInlineCta && (
+            <div className="AccountCollectibles__empty__cta">
+              <Button
+                variant="secondary"
+                size="lg"
+                isRounded
+                onClick={() => navigateTo(ROUTES.addCollectibles, navigate)}
+                data-testid="add-collectible-inline-btn"
+              >
+                {t("Add collectible")}
+              </Button>
+            </div>
+          )}
         </div>
       )}
     </div>

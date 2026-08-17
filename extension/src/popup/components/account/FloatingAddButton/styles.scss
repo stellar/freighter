@@ -17,6 +17,13 @@
   align-items: center;
   gap: pxToRem(4px);
 
+  // The pill renders as a <button> rather than a <Link> when it carries the
+  // funding action, which dispatches instead of routing. These strip the UA
+  // button styling that brings with it; they are inert on the anchor.
+  appearance: none;
+  font: inherit;
+  text-align: center;
+
   svg {
     width: pxToRem(16px);
     height: pxToRem(16px);
@@ -44,6 +51,12 @@
 
   &:hover {
     background-color: rgba(40, 40, 40, 0.9);
+  }
+
+  // Only reachable in the funding variant, while friendbot is in flight.
+  &:disabled {
+    opacity: 0.7;
+    cursor: default;
   }
 
   &__label {
