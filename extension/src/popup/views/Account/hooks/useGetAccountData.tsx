@@ -33,13 +33,6 @@ interface ResolvedAccountData {
   applicationState: APPLICATION_STATE;
   isScanAppended: boolean;
   collectibles: Collectibles;
-  /**
-   * False until the collectibles fetch has resolved. `collectibles` is an empty
-   * list both before it lands and when the account genuinely has none, so
-   * anything that has to tell those apart -- Home decides where the Add CTAs
-   * live from it -- needs this rather than the list length.
-   */
-  hasLoadedCollectibles: boolean;
 }
 
 type AccountData = NeedsReRoute | ResolvedAccountData;
@@ -98,15 +91,6 @@ function useGetAccountData(options: {
       const allowList = appData.settings.allowList;
       const isMainnetNetwork = isMainnet(networkDetails);
 
-      // Started here rather than after the first dispatch, and deliberately not
-      // awaited yet: Home cannot place its Add CTAs until it knows whether the
-      // account has collectibles, so running this alongside the balances fetch
-      // keeps that answer from arriving long after the first paint. It needs
-      // only the key and the network, both of which are already known.
-      const collectiblesRequest = isCustomNetwork(networkDetails)
-        ? Promise.resolve({ collections: [] } as Collectibles)
-        : fetchCollectibles({ publicKey, networkDetails });
-
       // let's fetch *just* the balances (without Blockaid scan results) to quickly be able to show the user their balances
       const balancesResult = await fetchBalances(
         publicKey,
@@ -129,7 +113,6 @@ function useGetAccountData(options: {
         networkDetails,
         isScanAppended: false,
         collectibles: { collections: [] },
-        hasLoadedCollectibles: false,
       } as ResolvedAccountData;
 
       if (isMainnetNetwork) {
@@ -149,14 +132,13 @@ function useGetAccountData(options: {
 
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });
 
-      payload.collectibles = await collectiblesRequest;
-      payload.hasLoadedCollectibles = true;
-      // Dispatched, not just assigned: the reducer holds this very object, so
-      // mutating it updates what a later render would read but schedules no
-      // render of its own. Without this the Collectibles tab kept showing its
-      // empty state, and Home kept placing the Add CTAs as though the account
-      // had nothing, until some unrelated dispatch happened to land.
-      dispatch({ type: "FETCH_DATA_SUCCESS", payload: { ...payload } });
+      if (!isCustomNetwork(networkDetails)) {
+        const collectiblesResult = await fetchCollectibles({
+          publicKey,
+          networkDetails,
+        });
+        payload.collectibles = collectiblesResult;
+      }
 
       if (isMainnetNetwork) {
         // now that the UI has renderered, on Mainnet, let's make an additional call to fetch the balances with the Blockaid scan results included

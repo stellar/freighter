@@ -235,34 +235,20 @@ export const Account = () => {
       resolvedData?.publicKey
     ] ?? [];
 
-  // A funded account always holds XLM, so the Tokens tab is empty exactly when
-  // the account is unfunded. The error guards matter: when the fetch fails the
-  // pane shows an error instead of an empty state, which leaves the funded state
-  // *unknown* rather than unfunded, and `isFunded` cannot tell those apart.
+  // The Tokens tab dictates which kind of Add button both tabs use, so that they
+  // never show two different styles. It is showing its own inline CTA exactly
+  // when it renders the unfunded empty state: a funded account shows its assets
+  // instead, and a failed fetch shows an error, in which case the Tokens tab has
+  // no CTA of either kind and Collectibles falls back to the pill.
   const isTokensEmptyStateShown =
     !isFunded && !hasError && !resolvedData?.balances?.error?.horizon;
 
-  // An empty `collections` means "none" only once the fetch has landed; before
-  // that it means "not known yet". Committing to a placement on the optimistic
-  // reading would show the inline CTA and then visibly move it into the pill a
-  // moment later for anyone who does own a collectible, so neither surface
-  // offers a CTA until the answer is in. The collectibles request starts
-  // alongside the balances one, so this is usually already true on first paint.
-  const isCtaPlacementKnown = !!resolvedData?.hasLoadedCollectibles;
-
-  // Both-or-neither, so the two tabs never disagree about where their Add
-  // action lives: with both tabs empty each empty state carries its own CTA and
-  // the floating pill stands down; as soon as there is a token or a collectible
-  // to show, the pill takes over on both tabs and the inline CTAs stand down.
-  // Either way exactly one of the two is on screen.
-  //
-  // `hasVisibleCollections` is deliberately the same predicate the Collectibles
-  // pane switches on, so this decision can never disagree with what that pane
-  // actually renders.
-  const hasInlineCtas =
-    isCtaPlacementKnown &&
-    isTokensEmptyStateShown &&
-    !hasVisibleCollections(collections);
+  // Collectibles follows that lead, but can only host an inline CTA when it has
+  // an empty state to put one in -- with collectibles on screen the pill stays,
+  // so the tab is never left without a way to add one. `hasVisibleCollections`
+  // is the same predicate that pane switches on, so the two cannot disagree.
+  const isCollectiblesCtaInline =
+    isTokensEmptyStateShown && !hasVisibleCollections(collections);
 
   return (
     <>
@@ -360,7 +346,6 @@ export const Account = () => {
                 !resolvedData?.balances?.error?.horizon && (
                   <NotFundedMessage
                     canUseFriendbot={canUseFriendbot}
-                    hasInlineCta={hasInlineCtas}
                     publicKey={resolvedData?.publicKey || ""}
                     reloadBalances={reloadBalances}
                   />
@@ -369,7 +354,7 @@ export const Account = () => {
               <div data-testid="account-collectibles">
                 <AccountCollectibles
                   collections={collections}
-                  hasInlineCta={hasInlineCtas}
+                  hasInlineCta={isCollectiblesCtaInline}
                   refreshHiddenCollectibles={refreshHiddenCollectibles}
                   isCollectibleHidden={isCollectibleHidden}
                 />
@@ -387,12 +372,8 @@ export const Account = () => {
         itself is the scrollport (document.scrollingElement === html).
       */}
       <FloatingAddButton
-        canUseFriendbot={canUseFriendbot}
         isFunded={isFunded}
-        isTokensEmpty={isTokensEmptyStateShown}
-        isHidden={!isCtaPlacementKnown || hasInlineCtas}
-        publicKey={resolvedData?.publicKey || ""}
-        reloadBalances={reloadBalances}
+        isCollectiblesCtaInline={isCollectiblesCtaInline}
       />
       <Sheet
         open={isDiscoverOpen}

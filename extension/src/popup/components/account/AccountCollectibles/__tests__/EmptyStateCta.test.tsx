@@ -88,7 +88,6 @@ describe("Collectibles empty-state CTA", () => {
       >
         <NotFundedMessage
           canUseFriendbot={false}
-          hasInlineCta
           publicKey="GDF3ZEFYPUBLICKEYFORTESTINGONLYAAAAAAAAAAAAAAAAAAAAAAAAA"
           reloadBalances={() => Promise.resolve()}
         />

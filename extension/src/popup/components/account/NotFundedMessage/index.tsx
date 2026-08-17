@@ -1,29 +1,38 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import { useTranslation, Trans } from "react-i18next";
+import { useDispatch, useSelector } from "react-redux";
 import { Button, Icon } from "@stellar/design-system";
+import { Formik, Form } from "formik";
 
+import { fundAccount } from "popup/ducks/accountServices";
+import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
+import { ROUTES } from "popup/constants/routes";
 import { XLM_RESERVE_HELP_URL } from "popup/constants/externalLinks";
-import { useFundingAction } from "popup/components/account/hooks/useFundingAction";
+import { navigateTo } from "popup/helpers/navigate";
+import { AppDispatch } from "popup/App";
+import { isMainnet } from "helpers/stellar";
 
 import "./styles.scss";
 
 export const NotFundedMessage = ({
   canUseFriendbot,
-  hasInlineCta,
   publicKey,
   reloadBalances,
 }: {
   canUseFriendbot: boolean;
-  hasInlineCta: boolean;
   publicKey: string;
   reloadBalances: () => Promise<unknown>;
 }) => {
   const { t } = useTranslation();
-  const fundingAction = useFundingAction({
-    canUseFriendbot,
-    publicKey,
-    reloadBalances,
-  });
+  const dispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
+  const networkDetails = useSelector(settingsNetworkDetailsSelector);
+
+  const handleFundAccount = async () => {
+    await dispatch(fundAccount({ publicKey }));
+    await reloadBalances();
+  };
 
   return (
     <div className="NotFunded" data-testid="not-funded">
@@ -46,20 +55,37 @@ export const NotFundedMessage = ({
         </a>
       </div>
 
-      {/* One funding action, not two stacked, and only when this empty state is
-          the one carrying it. Where the floating pill is showing instead it
-          takes over the very same action, so rendering it here too would put
-          two copies of it on screen. */}
-      {hasInlineCta && (
+      {/* One funding action, not two stacked. Where a friendbot exists it is
+          the way to fund the account, so it replaces "Add XLM" rather than
+          sitting under it — and wears the same style, since it is now the
+          primary action of this empty state rather than a secondary offer. */}
+      {canUseFriendbot ? (
+        <Formik initialValues={{}} onSubmit={handleFundAccount}>
+          {({ isSubmitting }) => (
+            <Form>
+              <Button
+                variant="secondary"
+                size="lg"
+                isRounded
+                isLoading={isSubmitting}
+              >
+                {t("Fund with Friendbot")}
+              </Button>
+            </Form>
+          )}
+        </Formik>
+      ) : (
         <Button
-          type="button"
           variant="secondary"
           size="lg"
           isRounded
-          isLoading={fundingAction.isSubmitting}
-          onClick={fundingAction.onClick}
+          onClick={() =>
+            isMainnet(networkDetails)
+              ? navigateTo(ROUTES.addFunds, navigate, "?isAddXlm=true")
+              : navigateTo(ROUTES.viewPublicKey, navigate)
+          }
         >
-          {fundingAction.label}
+          {t("Add XLM")}
         </Button>
       )}
     </div>

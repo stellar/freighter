@@ -10,11 +10,9 @@ import { NotFundedMessage } from "popup/components/account/NotFundedMessage";
 
 const renderMessage = ({
   canUseFriendbot,
-  hasInlineCta = true,
   networkDetails = TESTNET_NETWORK_DETAILS,
 }: {
   canUseFriendbot: boolean;
-  hasInlineCta?: boolean;
   networkDetails?: typeof TESTNET_NETWORK_DETAILS;
 }) =>
   render(
@@ -24,7 +22,6 @@ const renderMessage = ({
     >
       <NotFundedMessage
         canUseFriendbot={canUseFriendbot}
-        hasInlineCta={hasInlineCta}
         publicKey="GDF3ZEFYPUBLICKEYFORTESTINGONLYAAAAAAAAAAAAAAAAAAAAAAAAA"
         reloadBalances={() => Promise.resolve()}
       />
@@ -80,26 +77,5 @@ describe("NotFundedMessage funding action", () => {
 
     expect(friendbotClass).toBe(addXlmClass);
     expect(friendbotClass).toContain("Button--secondary");
-  });
-
-  // The floating pill takes over the same funding action when the account has
-  // collectibles to show, so this state must not render a second copy of it.
-  describe("when the floating pill carries the action instead", () => {
-    it("drops the inline funding button but keeps the message", () => {
-      renderMessage({ canUseFriendbot: false, hasInlineCta: false });
-
-      expect(screen.getByText("Looking a little empty...")).toBeInTheDocument();
-      expect(
-        screen.getByTestId("not-funded").querySelectorAll("button"),
-      ).toHaveLength(0);
-    });
-
-    it("drops the inline Friendbot button too", () => {
-      renderMessage({ canUseFriendbot: true, hasInlineCta: false });
-
-      expect(
-        screen.queryByRole("button", { name: "Fund with Friendbot" }),
-      ).not.toBeInTheDocument();
-    });
   });
 });

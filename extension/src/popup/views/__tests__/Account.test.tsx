@@ -1427,19 +1427,18 @@ describe("Account view", () => {
     // real browser instead; a unit assertion could not fail.
   });
 
-  // The both-or-neither rule lives in this view's `hasInlineCtas` derivation,
-  // not in the components it feeds, so it has to be pinned here: the component
-  // suites take that decision as a literal prop and cannot catch it drifting.
+  // The Tokens tab dictates the button style for both tabs, and that decision
+  // lives in this view rather than in the components it feeds, so it has to be
+  // pinned here: the component suites take it as a literal prop and cannot catch
+  // it drifting.
   describe("Add CTA placement across the two tabs", () => {
     const renderWithHoldings = async ({
       collections,
       isFunded,
-      hasLoadedCollectibles = true,
       requestState = RequestState.SUCCESS,
     }: {
       collections: any[];
       isFunded: boolean;
-      hasLoadedCollectibles?: boolean;
       requestState?: RequestState;
     }) => {
       const accountDataSpy = jest
@@ -1464,7 +1463,6 @@ describe("Account view", () => {
                     allowList: ApiInternal.DEFAULT_ALLOW_LIST,
                     isScanAppended: true,
                     collectibles: { collections },
-                    hasLoadedCollectibles,
                     // `isFunded` is the only part of this the CTA decision
                     // reads, and the list is post-normalisation here (this
                     // mocks the hook, not the network), so an empty array is
@@ -1508,8 +1506,8 @@ describe("Account view", () => {
       return accountDataSpy;
     };
 
-    // MultiPaneSlider mounts only the active pane, so the Collectibles half of
-    // the invariant has to be asserted after actually switching tabs.
+    // MultiPaneSlider mounts only the active pane, so the Collectibles half has
+    // to be asserted after actually switching tabs.
     const switchToCollectibles = async () => {
       fireEvent.click(screen.getByTestId("account-tab-collectibles"));
       // getAllByTestId: the view wraps AccountCollectibles in a div carrying the
@@ -1522,23 +1520,23 @@ describe("Account view", () => {
     };
 
     const pillTestIds = () =>
-      ["add-token-btn", "add-collectible-btn", "fund-account-btn"].filter(
-        (id) => screen.queryByTestId(id),
+      ["add-token-btn", "add-collectible-btn"].filter((id) =>
+        screen.queryByTestId(id),
       );
 
-    it("puts the CTA inside both empty states when both tabs are empty", async () => {
+    it("gives Collectibles an inline CTA while Tokens is showing its empty state", async () => {
       const spy = await renderWithHoldings({
         collections: [],
         isFunded: false,
       });
 
-      // Tokens: inline funding button, no pill.
+      // Tokens is untouched: its empty state carries "Add XLM" and no pill.
       expect(
         screen.getByTestId("not-funded").querySelectorAll("button"),
       ).toHaveLength(1);
       expect(pillTestIds()).toEqual([]);
 
-      // Collectibles: inline Add collectible, still no pill.
+      // Collectibles follows suit, so both tabs show the same button style.
       await switchToCollectibles();
       spy.mockRestore();
 
@@ -1548,40 +1546,12 @@ describe("Account view", () => {
       expect(pillTestIds()).toEqual([]);
     });
 
-    // This is the case a mutation dropping the collectibles half of the
-    // derivation would break: one collectible is enough to move BOTH tabs to
-    // the pill, including the Tokens tab that is still empty.
-    it("moves both CTAs to the pill once a collectible exists", async () => {
-      const spy = await renderWithHoldings({
-        collections: mockCollectibles,
-        isFunded: false,
-      });
-
-      // The Tokens empty state still explains itself but hands its action over.
-      expect(screen.getByTestId("not-funded")).toBeInTheDocument();
-      expect(
-        screen.getByTestId("not-funded").querySelectorAll("button"),
-      ).toHaveLength(0);
-      // Unfunded, so the Tokens pill carries funding rather than "Add token".
-      expect(pillTestIds()).toEqual(["fund-account-btn"]);
-
-      await switchToCollectibles();
-      spy.mockRestore();
-
-      expect(
-        screen.queryByTestId("add-collectible-inline-btn"),
-      ).not.toBeInTheDocument();
-      expect(pillTestIds()).toEqual(["add-collectible-btn"]);
-    });
-
-    it("moves both CTAs to the pill once the account is funded", async () => {
+    it("moves Collectibles to the pill once Tokens shows one", async () => {
       const spy = await renderWithHoldings({ collections: [], isFunded: true });
 
       expect(screen.queryByTestId("not-funded")).not.toBeInTheDocument();
       expect(pillTestIds()).toEqual(["add-token-btn"]);
 
-      // Collectibles is empty here, but the account has a token, so its empty
-      // state stays CTA-less and the pill covers it.
       await switchToCollectibles();
       spy.mockRestore();
 
@@ -1591,25 +1561,39 @@ describe("Account view", () => {
       expect(pillTestIds()).toEqual(["add-collectible-btn"]);
     });
 
-    // The flash this guards against: collectibles land after balances, and an
-    // empty list reads the same before that fetch resolves as it does when the
-    // account owns none. Committing to the inline CTA on that reading meant an
-    // unfunded account holding a collectible showed the inline CTA and then
-    // visibly moved it into the pill. Neither surface offers one until the
-    // answer is in.
-    it("offers no CTA on either tab until collectibles have loaded", async () => {
+    // Collectibles can only host an inline CTA inside its empty state. With
+    // collectibles on screen there is no empty state, so it keeps the pill even
+    // though Tokens is inline -- otherwise the tab would have no way to add one.
+    it("keeps the Collectibles pill when that tab has collectibles to show", async () => {
+      const spy = await renderWithHoldings({
+        collections: mockCollectibles,
+        isFunded: false,
+      });
+
+      // Tokens is still untouched.
+      expect(
+        screen.getByTestId("not-funded").querySelectorAll("button"),
+      ).toHaveLength(1);
+
+      await switchToCollectibles();
+      spy.mockRestore();
+
+      expect(
+        screen.queryByTestId("add-collectible-inline-btn"),
+      ).not.toBeInTheDocument();
+      expect(pillTestIds()).toEqual(["add-collectible-btn"]);
+    });
+
+    // A failed balances fetch leaves Tokens with no CTA of either kind, so there
+    // is no style for Collectibles to match and it falls back to the pill.
+    it("falls back to the Collectibles pill when the balances fetch failed", async () => {
       const spy = await renderWithHoldings({
         collections: [],
         isFunded: false,
-        hasLoadedCollectibles: false,
+        requestState: RequestState.ERROR,
       });
 
-      // The empty state still renders and explains itself...
-      expect(screen.getByTestId("not-funded")).toBeInTheDocument();
-      // ...but carries no CTA, and no pill has appeared in its place either.
-      expect(
-        screen.getByTestId("not-funded").querySelectorAll("button"),
-      ).toHaveLength(0);
+      expect(screen.queryByTestId("not-funded")).not.toBeInTheDocument();
       expect(pillTestIds()).toEqual([]);
 
       await switchToCollectibles();
@@ -1618,21 +1602,7 @@ describe("Account view", () => {
       expect(
         screen.queryByTestId("add-collectible-inline-btn"),
       ).not.toBeInTheDocument();
-      expect(pillTestIds()).toEqual([]);
-    });
-
-    // A failed balances fetch leaves the funded state unknown, so the Tokens tab
-    // offers nothing at all rather than guessing between funding and Add token.
-    it("offers no Tokens CTA when the balances fetch failed", async () => {
-      const spy = await renderWithHoldings({
-        collections: [],
-        isFunded: false,
-        requestState: RequestState.ERROR,
-      });
-      spy.mockRestore();
-
-      expect(screen.queryByTestId("not-funded")).not.toBeInTheDocument();
-      expect(pillTestIds()).toEqual([]);
+      expect(pillTestIds()).toEqual(["add-collectible-btn"]);
     });
   });
 
