@@ -1,4 +1,4 @@
-import { useReducer, useState } from "react";
+import { useReducer, useRef, useState } from "react";
 
 import {
   Account,
@@ -78,25 +78,30 @@ function useGetSignTxData(
   const { assetsLists } = useSelector(settingsSelector);
   const { scanTx } = useScanTx();
   const blockaidOverrideState = useBlockaidOverrideState() ?? null;
+  // The site scan runs unawaited while `fetchData` keeps awaiting icon lookups,
+  // so both write to the same reducer slot in an order we do not control. The
+  // reducer full-replaces `data` (see `helpers/request.ts`), which means the
+  // later dispatch owns the entire payload. These refs are the source of truth
+  // for the two fields each writer would otherwise drop: reading `state` here
+  // would not work, since `fetchData` closes over a stale render's copy.
+  const siteScanDataRef = useRef<BlockAidScanSiteResult | null | undefined>(
+    undefined,
+  );
+  const iconsRef = useRef<AssetIcons>({} as AssetIcons);
   const { scanSite } = useAsyncSiteScan<SignTxData>(
     domain,
     dispatch,
     (payload, scanData) => {
       // Type guard to ensure we're working with ResolvedData
       if (payload.type === AppDataType.RESOLVED) {
-        const resolvedPayload = payload as ResolvedData;
-        const updated = {
-          ...resolvedPayload,
+        siteScanDataRef.current = scanData;
+        return {
+          ...(payload as ResolvedData),
           siteScanData: scanData,
+          // Carry whatever icons have been fetched so far, so a scan that
+          // resolves after the final dispatch does not blank them out.
+          icons: iconsRef.current,
         } as ResolvedData;
-        // Preserve icons if they've been fetched
-        if (
-          resolvedPayload.icons &&
-          Object.keys(resolvedPayload.icons).length > 0
-        ) {
-          updated.icons = resolvedPayload.icons;
-        }
-        return updated;
       }
       return payload;
     },
@@ -105,6 +110,10 @@ function useGetSignTxData(
 
   const fetchData = async (newPublicKey?: string) => {
     dispatch({ type: "FETCH_DATA_START" });
+    // Clear both slots so a refetch never inherits the previous run's verdict
+    // or icons.
+    siteScanDataRef.current = undefined;
+    iconsRef.current = {} as AssetIcons;
     try {
       if (newPublicKey) {
         await reduxDispatch(makeAccountActive(newPublicKey));
@@ -297,11 +306,15 @@ function useGetSignTxData(
         }
       }
 
+      iconsRef.current = icons;
       const payload = {
         type: AppDataType.RESOLVED,
         balances: balancesResult,
         scanResult,
-        siteScanData: firstRenderPayload.siteScanData,
+        // Read the ref, not `firstRenderPayload` — the scan callback returns a
+        // new object rather than mutating it, so that field is always the
+        // initial `undefined` and would blank out a verdict already dispatched.
+        siteScanData: siteScanDataRef.current,
         blockaidOverrideState: firstRenderPayload.blockaidOverrideState,
         publicKey,
         applicationState: appData.account.applicationState,
