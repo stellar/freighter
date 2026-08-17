@@ -79,8 +79,15 @@
     }
   }
 
+  // Reserves the width of a typical total so rows don't shift sideways as
+  // batches land and each spinner is replaced by its value, and centers the
+  // spinner in the cell instead of dropping it on the text baseline.
   &__balance {
     flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    min-width: #{pxToRem(48px)};
     white-space: nowrap;
     font-size: #{pxToRem(14px)};
     line-height: #{pxToRem(20px)};

@@ -1085,9 +1085,11 @@ describe("Account view", () => {
       expect(
         screen.getByTestId(`asset-price-delta-${TEST_CANONICAL}`),
       ).toHaveTextContent("--");
+      // Mainnet prices failed, so the total is unknown rather than zero —
+      // the hero reports that the same way the token rows above do.
       expect(
         screen.queryByTestId("account-view-total-balance"),
-      ).toBeEmptyDOMElement();
+      ).toHaveTextContent("--");
     });
   });
 
@@ -1308,6 +1310,66 @@ describe("Account view", () => {
     expect(getAccountBalancesSpy).toHaveBeenCalledTimes(3);
   });
 
+  // An unfunded account holds nothing, so zero is its real total even on a
+  // network that prices tokens — the dash is reserved for a total that could
+  // not be read.
+  it("shows $0.00 for an unfunded Mainnet account rather than a dash", async () => {
+    const accountDataSpy = jest
+      .spyOn(AccountDataHooks, "useGetAccountData")
+      .mockReturnValue({
+        state: {
+          state: RequestState.SUCCESS,
+          error: null,
+          data: {
+            type: AppDataType.RESOLVED,
+            publicKey: TEST_PUBLIC_KEY,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
+            networkDetails: MAINNET_NETWORK_DETAILS,
+            allowList: ApiInternal.DEFAULT_ALLOW_LIST,
+            isScanAppended: true,
+            collectibles: { collections: [] },
+            // No holdings, so nothing is priced either.
+            balances: { balances: [], isFunded: false, subentryCount: 0 },
+            tokenPrices: {},
+          },
+        },
+        fetchData: jest.fn(),
+        refreshAppData: jest.fn(),
+      } as any);
+
+    render(
+      <Wrapper
+        routes={[ROUTES.account]}
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
+            publicKey: TEST_PUBLIC_KEY,
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: MAINNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+          },
+        }}
+      >
+        <Account />
+      </Wrapper>,
+    );
+
+    await waitFor(() => {
+      expect(
+        screen.getByTestId("account-view-total-balance"),
+      ).toBeInTheDocument();
+    });
+
+    accountDataSpy.mockRestore();
+
+    expect(screen.getByTestId("account-view-total-balance")).toHaveTextContent(
+      "$0.00",
+    );
+  });
+
   it("renders the error notification without crashing when account data is in ERROR state", async () => {
     const accountDataSpy = jest
       .spyOn(AccountDataHooks, "useGetAccountData")
@@ -1347,7 +1409,20 @@ describe("Account view", () => {
       ).toBeInTheDocument();
     });
 
+    // Restored before asserting: a failure after this point would otherwise
+    // leave useGetAccountData mocked for every later test in this file.
     accountDataSpy.mockRestore();
+
+    // Balances are unknown here, not zero, so the hero shows the same dash
+    // the token rows use while the notification above carries the failure.
+    expect(screen.getByTestId("account-view-total-balance")).toHaveTextContent(
+      "--",
+    );
+
+    // Deliberately no identicon assertion here: jsdom has no canvas, so
+    // createStellarIdenticon().toDataURL() returns the same constant for
+    // every key — including "". The header's identicon fix is verified in a
+    // real browser instead; a unit assertion could not fail.
   });
 
   it("handles abandoned onboarding in password created step", async () => {

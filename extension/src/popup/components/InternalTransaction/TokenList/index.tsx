@@ -11,7 +11,11 @@ import {
 import { getCanonicalFromAsset } from "helpers/stellar";
 import { ApiTokenPrices, AssetIcons } from "@shared/api/types";
 import { getAvailableBalance } from "popup/helpers/soroban";
-import { formatAmount, roundUsdValue } from "popup/helpers/formatters";
+import {
+  NO_FIAT_VALUE,
+  formatAmount,
+  roundUsdValue,
+} from "popup/helpers/formatters";
 import { sortBalancesByValue } from "popup/helpers/balance";
 import { AssetIcon } from "popup/components/account/AccountAssets";
 import { title } from "helpers/transaction";
@@ -132,7 +136,7 @@ export const TokenList = ({
                               .toString(),
                           ),
                         )}`
-                      : "--"}
+                      : NO_FIAT_VALUE}
                   </div>
                 </div>
               );

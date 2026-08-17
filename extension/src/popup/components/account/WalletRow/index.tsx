@@ -1,6 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { Icon } from "@stellar/design-system";
+import { Icon, Loader } from "@stellar/design-system";
 
 import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
 import { truncatedPublicKey } from "helpers/stellar";
@@ -11,7 +11,9 @@ import "./styles.scss";
 interface WalletRowProps {
   isFetchingTokenPrices: boolean;
   accountName: string;
-  accountValue: string;
+  /** Display-ready USD total from the data hook: an amount, a zero, or the
+   * no-value placeholder. Absent only while it is still being fetched. */
+  accountValue?: string;
   isImported: boolean;
   hardwareWalletType?: WalletType;
   isSelected: boolean;
@@ -34,9 +36,12 @@ export const WalletRow = ({
 
   const isImportedWallet = !!hardwareWalletType || isImported;
 
-  // Balance is its own cell now. While prices are still loading we show an
-  // ellipsis rather than an empty gap, matching the previous subtitle behavior.
-  const balanceLabel = accountValue || (isFetchingTokenPrices ? "..." : "");
+  // Totals arrive in batches, so a resolved row keeps its value while the
+  // rows behind it are still loading.
+  const isTotalLoading = !accountValue && isFetchingTokenPrices;
+  // The data hook decides zero-vs-unavailable via getTotalUsdLabel and hands
+  // down the finished label, so there is nothing to interpret here.
+  const balanceLabel = accountValue ?? "";
 
   return (
     // role/aria-current match BalanceRow, the sibling list row. The active
@@ -76,7 +81,14 @@ export const WalletRow = ({
         </p>
       </div>
       <div className="WalletRow__balance" data-testid="wallet-row-balance">
-        {balanceLabel}
+        {isTotalLoading ? (
+          // SDS `Loader` takes only `size`, so the testid goes on a wrapper.
+          <span data-testid="wallet-row-balance-spinner">
+            <Loader size="1rem" />
+          </span>
+        ) : (
+          balanceLabel
+        )}
       </div>
     </div>
   );
