@@ -1434,10 +1434,12 @@ describe("Account view", () => {
     const renderWithHoldings = async ({
       collections,
       isFunded,
+      hasLoadedCollectibles = true,
       requestState = RequestState.SUCCESS,
     }: {
       collections: any[];
       isFunded: boolean;
+      hasLoadedCollectibles?: boolean;
       requestState?: RequestState;
     }) => {
       const accountDataSpy = jest
@@ -1462,6 +1464,7 @@ describe("Account view", () => {
                     allowList: ApiInternal.DEFAULT_ALLOW_LIST,
                     isScanAppended: true,
                     collectibles: { collections },
+                    hasLoadedCollectibles,
                     // `isFunded` is the only part of this the CTA decision
                     // reads, and the list is post-normalisation here (this
                     // mocks the hook, not the network), so an empty array is
@@ -1586,6 +1589,36 @@ describe("Account view", () => {
         screen.queryByTestId("add-collectible-inline-btn"),
       ).not.toBeInTheDocument();
       expect(pillTestIds()).toEqual(["add-collectible-btn"]);
+    });
+
+    // The flash this guards against: collectibles land after balances, and an
+    // empty list reads the same before that fetch resolves as it does when the
+    // account owns none. Committing to the inline CTA on that reading meant an
+    // unfunded account holding a collectible showed the inline CTA and then
+    // visibly moved it into the pill. Neither surface offers one until the
+    // answer is in.
+    it("offers no CTA on either tab until collectibles have loaded", async () => {
+      const spy = await renderWithHoldings({
+        collections: [],
+        isFunded: false,
+        hasLoadedCollectibles: false,
+      });
+
+      // The empty state still renders and explains itself...
+      expect(screen.getByTestId("not-funded")).toBeInTheDocument();
+      // ...but carries no CTA, and no pill has appeared in its place either.
+      expect(
+        screen.getByTestId("not-funded").querySelectorAll("button"),
+      ).toHaveLength(0);
+      expect(pillTestIds()).toEqual([]);
+
+      await switchToCollectibles();
+      spy.mockRestore();
+
+      expect(
+        screen.queryByTestId("add-collectible-inline-btn"),
+      ).not.toBeInTheDocument();
+      expect(pillTestIds()).toEqual([]);
     });
 
     // A failed balances fetch leaves the funded state unknown, so the Tokens tab

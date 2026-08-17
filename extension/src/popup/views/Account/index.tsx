@@ -242,6 +242,14 @@ export const Account = () => {
   const isTokensEmptyStateShown =
     !isFunded && !hasError && !resolvedData?.balances?.error?.horizon;
 
+  // An empty `collections` means "none" only once the fetch has landed; before
+  // that it means "not known yet". Committing to a placement on the optimistic
+  // reading would show the inline CTA and then visibly move it into the pill a
+  // moment later for anyone who does own a collectible, so neither surface
+  // offers a CTA until the answer is in. The collectibles request starts
+  // alongside the balances one, so this is usually already true on first paint.
+  const isCtaPlacementKnown = !!resolvedData?.hasLoadedCollectibles;
+
   // Both-or-neither, so the two tabs never disagree about where their Add
   // action lives: with both tabs empty each empty state carries its own CTA and
   // the floating pill stands down; as soon as there is a token or a collectible
@@ -250,10 +258,11 @@ export const Account = () => {
   //
   // `hasVisibleCollections` is deliberately the same predicate the Collectibles
   // pane switches on, so this decision can never disagree with what that pane
-  // actually renders -- including while `collections` is still the empty array
-  // the first FETCH_DATA_SUCCESS carries, before collectibles have loaded.
+  // actually renders.
   const hasInlineCtas =
-    isTokensEmptyStateShown && !hasVisibleCollections(collections);
+    isCtaPlacementKnown &&
+    isTokensEmptyStateShown &&
+    !hasVisibleCollections(collections);
 
   return (
     <>
@@ -381,7 +390,7 @@ export const Account = () => {
         canUseFriendbot={canUseFriendbot}
         isFunded={isFunded}
         isTokensEmpty={isTokensEmptyStateShown}
-        isHidden={hasInlineCtas}
+        isHidden={!isCtaPlacementKnown || hasInlineCtas}
         publicKey={resolvedData?.publicKey || ""}
         reloadBalances={reloadBalances}
       />
