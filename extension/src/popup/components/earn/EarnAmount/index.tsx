@@ -27,6 +27,8 @@ import {
 } from "popup/helpers/formatters";
 import { getAssetDecimals, getAvailableBalance } from "popup/helpers/soroban";
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
+import { emitMetric } from "helpers/metrics";
+import { METRIC_NAMES } from "popup/constants/metricsNames";
 import {
   saveAmount,
   transactionDataSelector,
@@ -181,6 +183,9 @@ export const EarnAmount = ({ goBack, onConfirm }: EarnAmountProps) => {
     // Checked after the CTA gate, so an unaffordable XLM deposit reads as
     // "Insufficient funds" rather than as a missing-fee problem.
     if (needsXlmForFee({ spendableXlm, fee: recommendedFee })) {
+      emitMetric(METRIC_NAMES.earnXlmFeeInsufficientShown, {
+        asset_code: selected?.code,
+      });
       setIsFeeSheetOpen(true);
       return;
     }
@@ -300,7 +305,12 @@ export const EarnAmount = ({ goBack, onConfirm }: EarnAmountProps) => {
             <PoolCard
               poolName={pool.name}
               apy={selectedAssetApy}
-              onOpenDetails={() => setIsPoolSheetOpen(true)}
+              onOpenDetails={() => {
+                emitMetric(METRIC_NAMES.earnPoolDetailsOpened, {
+                  pool_id: pool.id,
+                });
+                setIsPoolSheetOpen(true);
+              }}
             />
           )}
 

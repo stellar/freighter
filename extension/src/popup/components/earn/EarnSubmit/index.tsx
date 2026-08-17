@@ -96,8 +96,10 @@ export const EarnSubmit = ({ xdr, onExit }: EarnSubmitProps) => {
             {isLoading && (
               <>
                 <div className="EarnSubmit__footer-note">
+                  {/* Same string Send and Swap use — reusing the key keeps the
+                      copy consistent and avoids a second translation. */}
                   {t(
-                    "You can close this screen, your transaction should be complete in less than a minute",
+                    "You can close this screen, your transaction should be complete in less than a minute.",
                   )}
                 </div>
                 <Button

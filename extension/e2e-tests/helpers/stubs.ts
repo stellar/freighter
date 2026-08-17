@@ -3401,3 +3401,107 @@ export const stubVerifiedToken = async (
     await route.fulfill({ json: verifiedAssetList });
   });
 };
+
+/**
+ * Stubs the three Blend endpoints the Earn flow reads.
+ *
+ * Asset ids are the real mainnet SACs so `getBalanceByKey` resolves them the
+ * way it does in production — XLM via its native-SAC special case, the rest via
+ * classic-SAC derivation. Using placeholder contract ids would make every token
+ * look unheld and silently collapse the "In your account" section.
+ */
+export const stubBlendEarn = async (
+  page: Page,
+  {
+    positions = [],
+  }: {
+    positions?: unknown[];
+  } = {},
+) => {
+  const XLM_SAC = "CAS3J7GYLGXMF6TDJBBYYSE3HQ6BBSMLNUQ34T6TZMYMW2EVH34XOWMA";
+  const USDC_SAC = "CCW67TSZV3SSS2HXMBQ5JFGCKJNXKZM7UQUWUZPUTHXSTZLEO7SJMI75";
+  const EURC_SAC = "CDTKPWPLOURQA2SGTKTUQOWRCBZEORB4BWBOMJ3D3ZTQQSGE5F6JBQLV";
+  const POOL_ID = "CAJJZSGMMM3PD7N33TAPHGBUGTB43OC73HVIK2L2G6BNGGGYOSSYBXBD";
+
+  const offer = (supplyApy: number) => ({
+    id: POOL_ID,
+    name: "Fixed Pool v2",
+    supply_apy: supplyApy,
+    // Null rather than 0 for USDC/EURC: on the live pool only XLM has a
+    // supply-side BLND stream, so this mirrors what the backend returns.
+    emissions_supply_apr: null,
+    supplied_usd: 50050000,
+  });
+
+  await page.route("**/protocols/blend/earn-options**", async (route) => {
+    await route.fulfill({
+      json: {
+        data: {
+          options: [
+            {
+              asset_id: USDC_SAC,
+              symbol: "USDC",
+              name: "USD Coin",
+              decimals: 7,
+              pools: [offer(0.1694)],
+            },
+            {
+              asset_id: XLM_SAC,
+              symbol: "XLM",
+              name: "Stellar Lumens",
+              decimals: 7,
+              pools: [offer(0.0002)],
+            },
+            {
+              asset_id: EURC_SAC,
+              symbol: "EURC",
+              name: "Euro Coin",
+              decimals: 7,
+              pools: [offer(0.1059)],
+            },
+          ],
+        },
+      },
+    });
+  });
+
+  await page.route("**/protocols/blend/pools**", async (route) => {
+    await route.fulfill({
+      json: {
+        data: {
+          pools: [
+            {
+              id: POOL_ID,
+              name: "Fixed Pool v2",
+              status: "ACTIVE",
+              supplied_usd: 50050000,
+              borrowed_usd: 16150000,
+              interest_apy: 0.0424,
+              net_apy: 0.1694,
+              reserves: [
+                {
+                  asset_id: XLM_SAC,
+                  symbol: "XLM",
+                  name: "Stellar Lumens",
+                  decimals: 7,
+                  enabled: true,
+                  utilization: 0.32,
+                  supply_apy: 0.0002,
+                  borrow_apy: 0.09,
+                  emissions_supply_apr: 0.0001,
+                  supplied_usd: 50050000,
+                  borrowed_usd: 16150000,
+                  price_usd: 0.15,
+                },
+              ],
+            },
+          ],
+        },
+      },
+    });
+  });
+
+  await page.route("**/accounts/positions**", async (route) => {
+    await route.fulfill({ json: { data: positions } });
+  });
+};
