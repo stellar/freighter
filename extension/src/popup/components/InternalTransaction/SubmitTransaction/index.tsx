@@ -43,11 +43,24 @@ import "./styles.scss";
 interface SendingTransactionProps {
   xdr: string;
   goBack: () => void;
+  /**
+   * Overrides what "Done" does on success. Defaults to navigating home and
+   * resetting the submission — correct for Send and Swap as routes, but wrong
+   * when this screen is embedded in another flow that owns its own exit.
+   */
+  onDone?: () => void;
+  /**
+   * Overrides the in-flight "Close" button, which otherwise closes the popup
+   * outright. An embedding flow needs to stay open and dismiss its own step.
+   */
+  onClose?: () => void;
 }
 
 export const SendingTransaction = ({
   xdr,
   goBack,
+  onDone,
+  onClose,
 }: SendingTransactionProps) => {
   const { t } = useTranslation();
   const dispatch: AppDispatch = useDispatch();
@@ -195,6 +208,10 @@ export const SendingTransaction = ({
                     variant="tertiary"
                     onClick={(e) => {
                       e.preventDefault();
+                      if (onClose) {
+                        onClose();
+                        return;
+                      }
                       window.close();
                     }}
                   >
@@ -228,6 +245,10 @@ export const SendingTransaction = ({
                     variant="secondary"
                     onClick={(e) => {
                       e.preventDefault();
+                      if (onDone) {
+                        onDone();
+                        return;
+                      }
                       navigateTo(ROUTES.account, navigate);
                       setTimeout(() => {
                         dispatch(resetSimulation());
@@ -363,21 +384,34 @@ export const SendingTransaction = ({
 export const TransactionConfirm = ({
   xdr,
   goBack,
+  onDone,
+  onClose,
+  onDismissError,
 }: {
   xdr: string;
   goBack: () => void;
+  onDone?: () => void;
+  onClose?: () => void;
+  onDismissError?: () => void;
 }) => {
   const submission = useSelector(transactionSubmissionSelector);
 
   const render = () => {
     switch (submission.submitStatus) {
       case ActionStatus.ERROR:
-        return <SubmitFail />;
+        return <SubmitFail onDismiss={onDismissError} />;
       case ActionStatus.IDLE:
       case ActionStatus.PENDING:
       case ActionStatus.SUCCESS:
       default:
-        return <SendingTransaction xdr={xdr} goBack={goBack} />;
+        return (
+          <SendingTransaction
+            xdr={xdr}
+            goBack={goBack}
+            onDone={onDone}
+            onClose={onClose}
+          />
+        );
     }
   };
 

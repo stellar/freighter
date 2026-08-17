@@ -30,6 +30,16 @@ import { useEarnIntroSeen } from "popup/components/earn/EarnIntro/hooks/useEarnI
 import { EarnTokenPicker } from "popup/components/earn/EarnTokenPicker";
 import { EarnAmount } from "popup/components/earn/EarnAmount";
 import { EarnSubmit } from "popup/components/earn/EarnSubmit";
+import { EarnSwap } from "popup/components/earn/EarnSwap";
+import { resolveSwapDestination } from "popup/components/earn/EarnTokenPicker/helpers/resolveSwapDestination";
+import {
+  DestinationTokenDetails,
+  saveDestinationAsset,
+  saveDestinationTokenDetails,
+} from "popup/ducks/transactionSubmission";
+import { Notification } from "@stellar/design-system";
+import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 import "./styles.scss";
 
@@ -56,6 +66,7 @@ const EARN_SCREEN_BY_STEP: Partial<
 export const Earn = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { hasSeenIntro, dismissIntro } = useEarnIntroSeen();
   const submission = useSelector(transactionSubmissionSelector);
 
@@ -70,7 +81,11 @@ export const Earn = () => {
   const [enterAnim, setEnterAnim] = useState<EnterAnim>("from-bottom");
   // The picker stays mounted across the swap branch, so it needs an explicit
   // nudge to re-fetch balances once a swap lands.
-  const [pickerRefreshKey] = useState(0);
+  const [pickerRefreshKey, setPickerRefreshKey] = useState(0);
+  const [swapTarget, setSwapTarget] = useState<{
+    canonical: string;
+    details: DestinationTokenDetails;
+  } | null>(null);
 
   const hasResolvedIntro = useRef(false);
   const lastEmittedStep = useRef<STEPS | null>(null);
@@ -118,6 +133,20 @@ export const Earn = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [submission.submitStatus]);
 
+  // useIsSwap is path-based and also honours ?swap=true. Inside /earn the swap
+  // branch would otherwise be misread as a payment — SubmitFail would title
+  // "Transaction failed" and emit payment.failed instead of swap.failed. Setting
+  // the flag here means neither useIsSwap nor its other caller has to change.
+  useEffect(() => {
+    const isSwapStep = activeStep === STEPS.SWAP;
+    const search = isSwapStep ? "?swap=true" : "";
+    if (window.location.hash.includes("?swap=true") === isSwapStep) {
+      return;
+    }
+    navigate({ pathname: ROUTES.earn, search }, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeStep]);
+
   // Emit a screen-view metric only once per step transition.
   useEffect(() => {
     if (activeStep === lastEmittedStep.current) {
@@ -163,11 +192,21 @@ export const Earn = () => {
               dispatch(saveIsToken(true));
               goToStep(STEPS.AMOUNT, "from-right");
             }}
-            // Interim: hand off to the existing Swap route. The design layers
-            // Swap as a sheet over this picker and returns here with a toast,
-            // which needs the Swap components remounted inside STEPS.SWAP —
-            // that lands with the swap-branch work.
-            onSwapRequested={() => navigateTo(ROUTES.swap, navigate)}
+            onSwapRequested={async (option, resolved) => {
+              // A zero-balance token carries no issuer, so the canonical has to
+              // be read off the SAC before the swap can target it. Decline to
+              // start rather than open a swap with a half-filled destination.
+              const target = await resolveSwapDestination({
+                option,
+                publicKey: resolved.publicKey,
+                networkDetails: resolved.networkDetails,
+              });
+              if (!target) {
+                return;
+              }
+              setSwapTarget(target);
+              goToStep(STEPS.SWAP, "from-bottom");
+            }}
           />
         );
       case STEPS.AMOUNT:
@@ -189,9 +228,43 @@ export const Earn = () => {
             onExit={closeEarnFlow}
           />
         );
-      // SWAP lands with the swap-branch work. Returning null rather than
-      // falling through to a default keeps an unbuilt step from silently
-      // rendering another step's screen.
+      case STEPS.SWAP:
+        if (!swapTarget) {
+          return null;
+        }
+        return (
+          <EarnSwap
+            destinationAsset={swapTarget.canonical}
+            destinationTokenDetails={swapTarget.details}
+            onCancel={() => {
+              setSwapTarget(null);
+              dispatch(saveDestinationAsset(""));
+              dispatch(saveDestinationTokenDetails(null));
+              goToStep(STEPS.CHOOSE_TOKEN, "dismiss");
+            }}
+            onDone={({ fromCode, toCode }) => {
+              setSwapTarget(null);
+              dispatch(saveDestinationAsset(""));
+              dispatch(saveDestinationTokenDetails(null));
+              toast.custom(
+                () => (
+                  <Notification
+                    variant="success"
+                    title={t("{{from}} has been swapped to {{to}}", {
+                      from: fromCode,
+                      to: toCode,
+                    })}
+                  />
+                ),
+                { id: "earn-swap-success" },
+              );
+              // The picker stayed mounted underneath, so it needs an explicit
+              // nudge to pick up the balance the swap just created.
+              setPickerRefreshKey((key) => key + 1);
+              goToStep(STEPS.CHOOSE_TOKEN, "dismiss");
+            }}
+          />
+        );
       default:
         return null;
     }

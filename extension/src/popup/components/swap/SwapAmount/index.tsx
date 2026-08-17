@@ -85,6 +85,12 @@ interface SwapAmountProps {
   goToNext: () => void;
   goToEditSrc: () => void;
   goToEditDst: () => void;
+  /**
+   * Pins the receive side. Used when the swap is embedded in a flow that
+   * already chose what the user needs (the Earn deposit picker), where letting
+   * them change it would silently swap for something the pool does not accept.
+   */
+  isDestinationLocked?: boolean;
 }
 
 export const SwapAmount = ({
@@ -93,6 +99,7 @@ export const SwapAmount = ({
   goBack,
   goToNext,
   goToEditSrc,
+  isDestinationLocked = false,
   goToEditDst,
 }: SwapAmountProps) => {
   const { t } = useTranslation();
@@ -671,9 +678,12 @@ export const SwapAmount = ({
                     }}
                   />
                 </div>
+                {/* Flipping the direction would move the pinned token to the
+                    sell side, which the embedding flow did not ask for. */}
                 <div
                   className="SwapAsset__direction"
                   data-testid="swap-direction-chevron"
+                  hidden={isDestinationLocked}
                 >
                   <button
                     type="button"
@@ -752,6 +762,9 @@ export const SwapAmount = ({
                     onAmountUsdChange={() => {}}
                     onToggleInputType={() => {}}
                     onSelectAsset={() => {
+                      if (isDestinationLocked) {
+                        return;
+                      }
                       emitMetric(METRIC_NAMES.swapPickerOpened, {
                         side: "to",
                         source: "dropdown",

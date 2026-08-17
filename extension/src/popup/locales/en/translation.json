@@ -3,6 +3,7 @@
   "{{amount}} {{code}} to {{pool}}": "",
   "{{appName}} disconnected": "{{appName}} disconnected",
   "{{domain}} is not currently connected to Freighter": "{{domain}} is not currently connected to Freighter",
+  "{{from}} has been swapped to {{to}}": "",
   "* All Stellar accounts must maintain a minimum balance of lumens.": "* All Stellar accounts must maintain a minimum balance of lumens.",
   "*APY is an estimate based on current protocol conditions and changes with market activity. It is not guaranteed by Freighter, SDF, or the protocol.": "",
   "0.5 XLM required": "0.5 XLM required",

@@ -31,7 +31,11 @@ interface ErrorDetails {
   status: string;
 }
 
-export const SubmitFail = () => {
+/**
+ * @param onDismiss overrides "Got it", which otherwise resets the submission and
+ * navigates home. An embedding flow needs to dismiss its own step instead.
+ */
+export const SubmitFail = ({ onDismiss }: { onDismiss?: () => void } = {}) => {
   const { error, transactionData } = useSelector(transactionSubmissionSelector);
   const isSwap = useIsSwap();
   const { isCollectible, asset, destinationAsset } = transactionData;
@@ -240,6 +244,10 @@ export const SubmitFail = () => {
           variant="tertiary"
           size="md"
           onClick={() => {
+            if (onDismiss) {
+              onDismiss();
+              return;
+            }
             dispatch(resetSubmission());
             navigateTo(ROUTES.account, navigate);
           }}
