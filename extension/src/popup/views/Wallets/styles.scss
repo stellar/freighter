@@ -135,13 +135,15 @@
     padding-left: 0;
   }
 
-  // The chip. The plus glyph uses `stroke="currentColor"`, inheriting
-  // whatever `color` it finds — which would otherwise be the button's own
-  // (lighter) text color above. Setting `color` here keeps it the spec's
-  // more saturated fill purple.
+  // The chip. Sized to the list rows' 40px avatars so the two circles read as
+  // one column — with the 16px gap above, that also lines the "Add wallet"
+  // label up with each row's name. The plus glyph uses `stroke="currentColor"`,
+  // inheriting whatever `color` it finds — which would otherwise be the
+  // button's own (lighter) text color above. Setting `color` here keeps it the
+  // spec's more saturated fill purple.
   .Button__icon {
-    width: #{pxToRem(34px)};
-    height: #{pxToRem(34px)};
+    width: #{pxToRem(40px)};
+    height: #{pxToRem(40px)};
     flex-shrink: 0;
     border-radius: 100px;
     background-color: var(--sds-clr-lilac-02);
