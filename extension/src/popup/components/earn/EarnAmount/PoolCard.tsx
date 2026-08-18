@@ -3,6 +3,7 @@ import { Icon, Text } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
 import { formatRate } from "popup/components/earn/PoolDetailsSheet/helpers/formatPoolStats";
+import { PoolIcon } from "popup/components/earn/PoolIcon";
 
 interface PoolCardProps {
   poolName: string | null;
@@ -33,6 +34,7 @@ export const PoolCard = ({ poolName, apy, onOpenDetails }: PoolCardProps) => {
         onClick={onOpenDetails}
         data-testid="earn-pool-card"
       >
+        <PoolIcon />
         <div className="PoolCard__identity">
           <Text as="div" size="sm" weight="medium">
             {poolName || t("Blend pool")}

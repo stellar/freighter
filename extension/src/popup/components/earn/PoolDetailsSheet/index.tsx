@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 
 import { BlendCatalogPool } from "@shared/api/types/blend";
 import { AssetIcon } from "popup/components/account/AccountAssets";
+import { PoolIcon } from "popup/components/earn/PoolIcon";
 
 import { getPoolDescription } from "./poolDescriptions";
 import { formatCompactUsd, formatRate } from "./helpers/formatPoolStats";
@@ -55,6 +56,7 @@ export const PoolDetailsSheet = ({ pool, onClose }: PoolDetailsSheetProps) => {
   return (
     <div className="PoolDetailsSheet" data-testid="earn-pool-details-sheet">
       <div className="PoolDetailsSheet__header">
+        <PoolIcon />
         <div className="PoolDetailsSheet__identity">
           <Text as="div" size="md" weight="semi-bold">
             {pool.name || t("Blend pool")}

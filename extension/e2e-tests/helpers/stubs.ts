@@ -3425,7 +3425,8 @@ export const stubBlendEarn = async (
 
   const offer = (supplyApy: number) => ({
     id: POOL_ID,
-    name: "Fixed Pool v2",
+    // The live pool is named "Fixed", not "Fixed Pool v2".
+    name: "Fixed",
     supply_apy: supplyApy,
     // Null rather than 0 for USDC/EURC: on the live pool only XLM has a
     // supply-side BLND stream, so this mirrors what the backend returns.
@@ -3446,9 +3447,12 @@ export const stubBlendEarn = async (
               pools: [offer(0.1694)],
             },
             {
+              // Native XLM really does come back with a null symbol and name
+              // from the live catalog — verified against dev. Hardcoding "XLM"
+              // here hid a bug where the row rendered with no token code.
               asset_id: XLM_SAC,
-              symbol: "XLM",
-              name: "Stellar Lumens",
+              symbol: null,
+              name: null,
               decimals: 7,
               pools: [offer(0.0002)],
             },
@@ -3472,7 +3476,7 @@ export const stubBlendEarn = async (
           pools: [
             {
               id: POOL_ID,
-              name: "Fixed Pool v2",
+              name: "Fixed",
               status: "ACTIVE",
               supplied_usd: 50050000,
               borrowed_usd: 16150000,
@@ -3481,8 +3485,8 @@ export const stubBlendEarn = async (
               reserves: [
                 {
                   asset_id: XLM_SAC,
-                  symbol: "XLM",
-                  name: "Stellar Lumens",
+                  symbol: null,
+                  name: null,
                   decimals: 7,
                   enabled: true,
                   utilization: 0.32,

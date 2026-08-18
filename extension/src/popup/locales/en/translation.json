@@ -465,6 +465,7 @@
   "Operation": "Operation",
   "Operations": "Operations",
   "Optional": "Optional",
+  "or": "or",
   "Order is incorrect, try again": "Order is incorrect, try again",
   "Overridden response": "Overridden response",
   "Override Blockaid security responses for testing different security states (DEV only)": "Override Blockaid security responses for testing different security states (DEV only)",

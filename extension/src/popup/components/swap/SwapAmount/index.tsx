@@ -86,11 +86,11 @@ interface SwapAmountProps {
   goToEditSrc: () => void;
   goToEditDst: () => void;
   /**
-   * Pins the receive side. Used when the swap is embedded in a flow that
-   * already chose what the user needs (the Earn deposit picker), where letting
-   * them change it would silently swap for something the pool does not accept.
+   * Laid out for a bottom sheet rather than a screen (the Earn swap branch):
+   * the host sheet owns the dismiss X, so the header's left slot carries the
+   * settings control that would otherwise sit above the CTA.
    */
-  isDestinationLocked?: boolean;
+  isSheetLayout?: boolean;
 }
 
 export const SwapAmount = ({
@@ -99,7 +99,7 @@ export const SwapAmount = ({
   goBack,
   goToNext,
   goToEditSrc,
-  isDestinationLocked = false,
+  isSheetLayout = false,
   goToEditDst,
 }: SwapAmountProps) => {
   const { t } = useTranslation();
@@ -497,21 +497,43 @@ export const SwapAmount = ({
     <>
       <SubviewHeader
         title={<span>{t("Swap")}</span>}
-        hasBackButton
+        hasBackButton={!isSheetLayout}
         customBackAction={goBack}
+        leftButton={
+          isSheetLayout ? (
+            <button
+              type="button"
+              className="SwapAsset__header-settings"
+              onClick={() => setIsEditingSettings(true)}
+              aria-label={t("Swap Settings")}
+              data-testid="swap-amount-header-settings"
+            >
+              <Icon.Settings04 />
+            </button>
+          ) : undefined
+        }
       />
       <View.Content
         contentFooter={
           <div className="SwapAsset__btn-continue">
-            <div className="SwapAsset__settings-row">
-              <div className="SwapAsset__settings-fee-display">
-                <span className="SwapAsset__settings-fee-display__label">
-                  {t("Fee")}:
-                </span>
-                {/* The network fee is always denominated in XLM, regardless of
-                    whether the amount is being entered in crypto or fiat. */}
-                <span>{`${fee} XLM`}</span>
-              </div>
+            <div
+              className={`SwapAsset__settings-row ${
+                isSheetLayout ? "SwapAsset__settings-row--sheet" : ""
+              }`}
+            >
+              {/* In a sheet the fee readout and the settings button move out:
+                  the fee is shown on the review sheet and edited from the header,
+                  which leaves slippage as the only footer control. */}
+              {!isSheetLayout && (
+                <div className="SwapAsset__settings-fee-display">
+                  <span className="SwapAsset__settings-fee-display__label">
+                    {t("Fee")}:
+                  </span>
+                  {/* The network fee is always denominated in XLM, regardless of
+                      whether the amount is being entered in crypto or fiat. */}
+                  <span>{`${fee} XLM`}</span>
+                </div>
+              )}
               <div className="SwapAsset__settings-options">
                 <Button
                   type="button"
@@ -522,15 +544,17 @@ export const SwapAmount = ({
                 >
                   {`${t("Slippage")}: ${allowedSlippage}%`}
                 </Button>
-                <Button
-                  type="button"
-                  size="md"
-                  isRounded
-                  variant="tertiary"
-                  onClick={() => setIsEditingSettings(true)}
-                >
-                  <Icon.Settings01 />
-                </Button>
+                {!isSheetLayout && (
+                  <Button
+                    type="button"
+                    size="md"
+                    isRounded
+                    variant="tertiary"
+                    onClick={() => setIsEditingSettings(true)}
+                  >
+                    <Icon.Settings01 />
+                  </Button>
+                )}
               </div>
             </div>
             <Button
@@ -678,12 +702,11 @@ export const SwapAmount = ({
                     }}
                   />
                 </div>
-                {/* Flipping the direction would move the pinned token to the
-                    sell side, which the embedding flow did not ask for. */}
+                {/* The seam and the notch sitting on it are part of the card
+                    pair's shape, so they always render. */}
                 <div
                   className="SwapAsset__direction"
                   data-testid="swap-direction-chevron"
-                  hidden={isDestinationLocked}
                 >
                   <button
                     type="button"
@@ -762,9 +785,6 @@ export const SwapAmount = ({
                     onAmountUsdChange={() => {}}
                     onToggleInputType={() => {}}
                     onSelectAsset={() => {
-                      if (isDestinationLocked) {
-                        return;
-                      }
                       emitMetric(METRIC_NAMES.swapPickerOpened, {
                         side: "to",
                         source: "dropdown",

@@ -49,6 +49,7 @@ import {
   getMaxDepositAmount,
   needsXlmForFee,
 } from "./helpers/earnCtaState";
+import { getPercentageDepositAmount } from "./helpers/depositAmount";
 import {
   ResolvedEarnAmount,
   useGetEarnAmountData,
@@ -318,10 +319,7 @@ export const EarnAmount = ({ goBack, onConfirm }: EarnAmountProps) => {
             onSelect={(pct) =>
               dispatch(
                 saveAmount(
-                  new BigNumber(maxDepositable)
-                    .multipliedBy(pct)
-                    .decimalPlaces(decimals, BigNumber.ROUND_DOWN)
-                    .toFixed(),
+                  getPercentageDepositAmount({ maxDepositable, pct, decimals }),
                 ),
               )
             }

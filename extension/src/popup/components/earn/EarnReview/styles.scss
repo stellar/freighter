@@ -30,17 +30,6 @@
     font-weight: 500;
   }
 
-  &__pool-icon {
-    width: pxToRem(32);
-    height: pxToRem(32);
-    border-radius: 50%;
-    background: var(--sds-clr-green-04);
-    color: var(--sds-clr-green-11);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
   &__chevrons {
     color: var(--sds-clr-gray-09);
     padding: pxToRem(6) 0 0 pxToRem(10);
@@ -87,12 +76,33 @@
     color: var(--sds-clr-lilac-11);
   }
 
+  // The details pane carries the whole invocation — auth entries plus every
+  // contract parameter — so it routinely outgrows the popup. SlideupModal sizes
+  // itself to its content's scrollHeight, so without a cap here the sheet runs
+  // off the viewport with nothing to scroll. Capped like `.ReviewTx`, with the
+  // header pinned and only the body scrolling.
+  &--details {
+    max-height: 85vh;
+  }
+
   &__details-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding-bottom: pxToRem(8);
     color: var(--sds-clr-gray-12);
+    flex: none;
+  }
+
+  &__details-body {
+    flex: 1;
+    // Without this a flex item refuses to shrink below its content height, and
+    // the overflow never engages.
+    min-height: 0;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(12);
   }
 
   &__close {

@@ -43,17 +43,6 @@
     color: var(--sds-clr-gray-09);
   }
 
-  &__pool-icon {
-    width: pxToRem(32);
-    height: pxToRem(32);
-    border-radius: 50%;
-    background: var(--sds-clr-green-04);
-    color: var(--sds-clr-green-11);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
   &__footer {
     display: flex;
     flex-direction: column;

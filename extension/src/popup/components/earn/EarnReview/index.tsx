@@ -18,6 +18,7 @@ import { AuthEntries } from "popup/components/AuthEntry";
 import { FeesPane } from "popup/components/InternalTransaction/FeesPane";
 import { Summary } from "popup/views/SignTransaction/Preview/Summary";
 import { Details } from "popup/views/SignTransaction/Preview/Details";
+import { PoolIcon } from "popup/components/earn/PoolIcon";
 import { AssetIcon } from "popup/components/account/AccountAssets";
 import { getAuthEntryBoundAddress } from "popup/helpers/soroban";
 import { formatAmount } from "popup/helpers/formatters";
@@ -165,7 +166,10 @@ export const EarnReview = ({
 
   if (isOnDetailsPane && detailTx) {
     return (
-      <div className="EarnReview" data-testid="earn-review-details-pane">
+      <div
+        className="EarnReview EarnReview--details"
+        data-testid="earn-review-details-pane"
+      >
         <div className="EarnReview__details-header">
           <Text as="div" size="md" weight="semi-bold">
             {t("Transaction details")}
@@ -179,24 +183,29 @@ export const EarnReview = ({
             <Icon.XClose />
           </button>
         </div>
-        <Summary
-          sequenceNumber={detailTx.sequence}
-          fee={detailTx.fee}
-          memo={undefined}
-          xdr={preparedXdr!}
-          operationNames={detailTx.operations.map(
-            (op) =>
-              OPERATION_TYPES[op.type as keyof typeof OPERATION_TYPES] ||
-              op.type,
-          )}
-        />
-        {authEntries.length > 0 && <AuthEntries entries={authEntries} />}
-        <Details
-          operations={detailTx.operations as unknown as OperationRecord[]}
-          flaggedKeys={{}}
-          isMemoRequired={false}
-          scanAssets={false}
-        />
+        <div
+          className="EarnReview__details-body"
+          data-testid="earn-review-details-body"
+        >
+          <Summary
+            sequenceNumber={detailTx.sequence}
+            fee={detailTx.fee}
+            memo={undefined}
+            xdr={preparedXdr!}
+            operationNames={detailTx.operations.map(
+              (op) =>
+                OPERATION_TYPES[op.type as keyof typeof OPERATION_TYPES] ||
+                op.type,
+            )}
+          />
+          {authEntries.length > 0 && <AuthEntries entries={authEntries} />}
+          <Details
+            operations={detailTx.operations as unknown as OperationRecord[]}
+            flaggedKeys={{}}
+            isMemoRequired={false}
+            scanAssets={false}
+          />
+        </div>
       </div>
     );
   }
@@ -232,9 +241,7 @@ export const EarnReview = ({
         </div>
 
         <div className="EarnReview__asset">
-          <div className="EarnReview__pool-icon">
-            <Icon.Coins03 />
-          </div>
+          <PoolIcon />
           <div>
             <Text as="div" size="xs">
               {t("To")}

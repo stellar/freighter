@@ -47,7 +47,10 @@
     border-radius: pxToRem(12);
   }
 
+  // The row is space-between with three children now, so the identity claims the
+  // slack and keeps the icon beside it rather than at the opposite edge.
   &__identity {
+    margin-right: auto;
     color: var(--sds-clr-gray-11);
   }
 

@@ -61,6 +61,11 @@ export const resolveSwapDestination = async ({
       requiresTrustline: canonical !== "native",
       decimals: option.decimals || CLASSIC_ASSET_DECIMALS,
       issuer,
+      // Carry the row's icon across: the swap screens read the destination's
+      // logo from here precisely because a non-held token is absent from the
+      // balances icon map, and without it the receive pill, the review row and
+      // the terminal summary all fall back to a placeholder.
+      iconUrl: option.iconUrl || undefined,
     },
   };
 };

@@ -6,6 +6,7 @@ import { useSelector } from "react-redux";
 import { ActionStatus } from "@shared/api/types";
 import { View } from "popup/basics/layout/View";
 import { AssetIcon } from "popup/components/account/AccountAssets";
+import { PoolIcon } from "popup/components/earn/PoolIcon";
 import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
 import { RequestState } from "constants/request";
 import { getAssetFromCanonical } from "helpers/stellar";
@@ -172,9 +173,7 @@ export const EarnSubmit = ({ xdr, onExit }: EarnSubmitProps) => {
                 issuerKey={srcAsset.issuer}
               />
               <Icon.ChevronRightDouble />
-              <div className="EarnSubmit__pool-icon">
-                <Icon.Coins03 />
-              </div>
+              <PoolIcon />
             </div>
             <Text as="div" size="sm">
               {t("{{amount}} {{code}} to {{pool}}", {

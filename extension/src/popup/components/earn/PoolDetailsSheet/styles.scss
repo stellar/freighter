@@ -15,6 +15,9 @@
 
   &__identity {
     color: var(--sds-clr-gray-11);
+    // Keeps the icon adjacent to the name instead of at the opposite edge of the
+    // space-between header.
+    margin-right: auto;
   }
 
   &__close {

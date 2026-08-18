@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Loader, Text } from "@stellar/design-system";
+import { Icon, Loader, Text } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 import { Navigate } from "react-router-dom";
 
@@ -84,7 +84,8 @@ export const EarnTokenPicker = ({
       <View data-testid="earn-token-picker-loading">
         <SubviewHeader
           title={t("Choose Token to earn")}
-          hasBackButton={false}
+          customBackAction={onClose}
+          customBackIcon={<Icon.X />}
         />
         <View.Content>
           <div className="EarnTokenPicker__loader">
@@ -100,8 +101,8 @@ export const EarnTokenPicker = ({
       <View data-testid="earn-token-picker-error">
         <SubviewHeader
           title={t("Choose Token to earn")}
-          hasBackButton={false}
           customBackAction={onClose}
+          customBackIcon={<Icon.X />}
         />
         <View.Content>
           <Text as="p" size="sm">
@@ -149,8 +150,8 @@ export const EarnTokenPicker = ({
     <View data-testid="earn-token-picker">
       <SubviewHeader
         title={t("Choose Token to earn")}
-        hasBackButton={false}
         customBackAction={onClose}
+        customBackIcon={<Icon.X />}
       />
       <View.Content
         contentFooter={

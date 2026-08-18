@@ -1,7 +1,15 @@
 import React, { useEffect, useState } from "react";
+import { Icon } from "@stellar/design-system";
+import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
 import { AppDispatch } from "popup/App";
+import {
+  Sheet,
+  SheetContent,
+  SheetTitle,
+  ScreenReaderOnly,
+} from "popup/basics/shadcn/Sheet";
 import { EARN_SWAP_STEPS } from "popup/constants/earn";
 import { InputType } from "helpers/transaction";
 import { emitMetric, emitScreenViewed } from "helpers/metrics";
@@ -24,6 +32,8 @@ import {
   transactionSubmissionSelector,
 } from "popup/ducks/transactionSubmission";
 
+import "./styles.scss";
+
 interface EarnSwapProps {
   /** Canonical of the token the user needs, pinned as the receive side. */
   destinationAsset: string;
@@ -40,10 +50,15 @@ interface EarnSwapProps {
  *
  * Owns its own sub-step state so the token picker underneath stays mounted, and
  * so the sub-state resets for free when the branch unmounts. The receive side is
- * pinned to the token the deposit needs — the whole point of entering here.
+ * seeded with the token the deposit needs — the reason for entering here — but
+ * stays editable, so both amount-card dropdowns open their own picker with only
+ * the opposite side's token filtered out.
  *
- * Not rendered inside a SlideupModal: those self-measure via scrollHeight, which
- * breaks for full-height screens using View.Content's footer.
+ * Presented as a bottom sheet over the still-visible token picker, per the
+ * design. Not a SlideupModal: those self-measure via scrollHeight, which breaks
+ * for the full-height Views this branch reuses from the Swap route. The radix
+ * sheet takes an explicit height instead, and `.EarnSwapSheet` re-bases those
+ * Views from 100dvh onto the sheet.
  */
 export const EarnSwap = ({
   destinationAsset,
@@ -51,6 +66,7 @@ export const EarnSwap = ({
   onDone,
   onCancel,
 }: EarnSwapProps) => {
+  const { t } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
   const submission = useSelector(transactionSubmissionSelector);
   const { transactionSimulation, transactionData } = submission;
@@ -86,64 +102,145 @@ export const EarnSwap = ({
     onDone({ fromCode, toCode });
   };
 
-  switch (activeStep) {
-    case EARN_SWAP_STEPS.SWAP_CONFIRM: {
-      // The recovery effect steps back to the amount screen on a quote-expiry
-      // failure; render nothing this frame so SubmitFail never flashes.
-      if (isQuoteExpiredAtSubmit) {
-        return null;
+  const renderStep = () => {
+    switch (activeStep) {
+      case EARN_SWAP_STEPS.SWAP_CONFIRM: {
+        // The recovery effect steps back to the amount screen on a quote-expiry
+        // failure; render nothing this frame so SubmitFail never flashes.
+        if (isQuoteExpiredAtSubmit) {
+          return null;
+        }
+        return (
+          <TransactionConfirm
+            xdr={transactionSimulation.preparedTransaction!}
+            goBack={() => setActiveStep(EARN_SWAP_STEPS.AMOUNT)}
+            // Both exits stay inside Earn: Done returns to the picker with the
+            // new balance, Close backs out without abandoning the deposit.
+            onDone={finish}
+            onClose={onCancel}
+            onDismissError={onCancel}
+          />
+        );
       }
-      return (
-        <TransactionConfirm
-          xdr={transactionSimulation.preparedTransaction!}
-          goBack={() => setActiveStep(EARN_SWAP_STEPS.AMOUNT)}
-          // Both exits stay inside Earn: Done returns to the picker with the
-          // new balance, Close backs out without abandoning the deposit.
-          onDone={finish}
-          onClose={onCancel}
-          onDismissError={onCancel}
-        />
-      );
-    }
 
-    case EARN_SWAP_STEPS.SET_FROM_ASSET: {
-      return (
-        <SwapAsset
-          selectionType="source"
-          hiddenAssets={[destinationAsset]}
-          goBack={() => setActiveStep(EARN_SWAP_STEPS.AMOUNT)}
-          onClickAsset={(canonical: string, isContract: boolean) => {
-            dispatch(saveAsset(canonical));
-            dispatch(saveIsToken(isContract));
-            dispatch(saveAmount("0"));
-            dispatch(saveAmountUsd("0.00"));
-            emitMetric(METRIC_NAMES.swapSourceSelected, {
-              asset_code: getAssetFromCanonical(canonical).code,
-              asset_issuer: getAssetFromCanonical(canonical).issuer,
-              source: "balances",
-            });
-            setActiveStep(EARN_SWAP_STEPS.AMOUNT);
-          }}
-        />
-      );
-    }
+      case EARN_SWAP_STEPS.SET_FROM_ASSET: {
+        return (
+          <SwapAsset
+            selectionType="source"
+            // Read from redux rather than the entry prop: the receive side is
+            // editable, so the token to exclude is whatever it holds now.
+            hiddenAssets={[transactionData.destinationAsset]}
+            // A real step back to the amount sheet, so an arrow rather than the
+            // X the standalone Swap route uses — the sheet owns the X.
+            backIcon={<Icon.ArrowLeft />}
+            goBack={() => setActiveStep(EARN_SWAP_STEPS.AMOUNT)}
+            onClickAsset={(canonical: string, isContract: boolean) => {
+              dispatch(saveAsset(canonical));
+              dispatch(saveIsToken(isContract));
+              dispatch(saveAmount("0"));
+              dispatch(saveAmountUsd("0.00"));
+              // Can't swap a token for itself: if it matches the current
+              // destination, reset the destination to "(+) Select".
+              if (canonical === transactionData.destinationAsset) {
+                dispatch(saveDestinationAsset(""));
+                dispatch(saveDestinationTokenDetails(null));
+              }
+              emitMetric(METRIC_NAMES.swapSourceSelected, {
+                asset_code: getAssetFromCanonical(canonical).code,
+                asset_issuer: getAssetFromCanonical(canonical).issuer,
+                source: "balances",
+              });
+              setActiveStep(EARN_SWAP_STEPS.AMOUNT);
+            }}
+          />
+        );
+      }
 
-    case EARN_SWAP_STEPS.AMOUNT:
-    default: {
-      return (
-        <SwapAmount
-          inputType={inputType}
-          setInputType={setInputType}
-          isDestinationLocked
-          goBack={onCancel}
-          goToEditSrc={() => setActiveStep(EARN_SWAP_STEPS.SET_FROM_ASSET)}
-          // Unreachable while the destination is locked, but the prop is
-          // required; point it at the source picker rather than leaving a
-          // no-op that would silently swallow a future unlock.
-          goToEditDst={() => setActiveStep(EARN_SWAP_STEPS.SET_FROM_ASSET)}
-          goToNext={() => setActiveStep(EARN_SWAP_STEPS.SWAP_CONFIRM)}
-        />
-      );
+      case EARN_SWAP_STEPS.SET_TO_ASSET: {
+        return (
+          <SwapAsset
+            selectionType="destination"
+            hiddenAssets={[transactionData.asset]}
+            backIcon={<Icon.ArrowLeft />}
+            goBack={() => setActiveStep(EARN_SWAP_STEPS.AMOUNT)}
+            onClickAsset={(canonical, isContract, details) => {
+              dispatch(saveDestinationAsset(canonical));
+              dispatch(saveIsToken(isContract));
+              dispatch(saveDestinationTokenDetails(details ?? null));
+              // Mirror of the source handler above.
+              if (canonical === transactionData.asset) {
+                dispatch(saveAsset(""));
+                dispatch(saveAmount("0"));
+                dispatch(saveAmountUsd("0.00"));
+              }
+              emitMetric(METRIC_NAMES.swapDestinationSelected, {
+                asset_code: details?.tokenCode,
+                asset_issuer: details?.issuer,
+                requires_trustline: details?.requiresTrustline,
+                source: details?.source,
+              });
+              setActiveStep(EARN_SWAP_STEPS.AMOUNT);
+            }}
+          />
+        );
+      }
+
+      case EARN_SWAP_STEPS.AMOUNT:
+      default: {
+        return (
+          <SwapAmount
+            inputType={inputType}
+            setInputType={setInputType}
+            // In the sheet the X dismisses the whole branch, so the header's
+            // left slot carries the settings control instead of a back button.
+            isSheetLayout
+            goBack={onCancel}
+            goToEditSrc={() => setActiveStep(EARN_SWAP_STEPS.SET_FROM_ASSET)}
+            goToEditDst={() => setActiveStep(EARN_SWAP_STEPS.SET_TO_ASSET)}
+            goToNext={() => setActiveStep(EARN_SWAP_STEPS.SWAP_CONFIRM)}
+          />
+        );
+      }
     }
-  }
+  };
+
+  return (
+    <Sheet
+      open
+      onOpenChange={(isOpen) => {
+        if (!isOpen) {
+          onCancel();
+        }
+      }}
+    >
+      <SheetContent
+        side="bottom"
+        // `className` is forwarded to the overlay as well as the content by our
+        // shadcn wrapper, so `.EarnSwapSheet` styles are scoped by data-slot —
+        // the overlay has to keep its dim scrim so the picker shows through.
+        className="EarnSwapSheet"
+        // The amount screen focuses its own input; letting radix focus the
+        // first tabbable element would steal that.
+        onOpenAutoFocus={(e) => e.preventDefault()}
+        aria-describedby={undefined}
+        data-testid="earn-swap-sheet"
+      >
+        <ScreenReaderOnly>
+          <SheetTitle>{t("Swap")}</SheetTitle>
+        </ScreenReaderOnly>
+        {/* Sheet-level rather than per-step: the submitting/success step has no
+            header of its own, and every step's X means the same thing. */}
+        <button
+          type="button"
+          className="EarnSwapSheet__close"
+          onClick={onCancel}
+          aria-label={t("Close")}
+          data-testid="earn-swap-close"
+        >
+          <Icon.XClose />
+        </button>
+        <div className="EarnSwapSheet__body">{renderStep()}</div>
+      </SheetContent>
+    </Sheet>
+  );
 };

@@ -69,6 +69,13 @@ export const NotEnoughTokenSheet = ({
     );
   };
 
+  // Two routes of equal weight get the side-by-side treatment in the design,
+  // with the transfer route demoted to a text button under an "or". A single
+  // route keeps the stacked full-width pair.
+  const showBothPrimaries = showBuy && showSwap;
+  const transferLabel = t("Transfer from another account");
+  const goToTransfer = () => navigateTo(ROUTES.viewPublicKey, navigate);
+
   return (
     <div className="NotEnoughTokenSheet" data-testid="earn-not-enough-sheet">
       <div className="NotEnoughTokenSheet__header">
@@ -102,44 +109,86 @@ export const NotEnoughTokenSheet = ({
       </div>
 
       <div className="NotEnoughTokenSheet__actions">
-        {showBuy && (
-          <Button
-            size="md"
-            variant="secondary"
-            isFullWidth
-            isRounded
-            onClick={() => openOnramp()}
-            data-testid="earn-not-enough-buy"
-          >
-            {showSwap
-              ? t("Buy {{code}}", { code: option.code })
-              : t("Buy with Coinbase")}
-          </Button>
-        )}
+        {showBothPrimaries ? (
+          <>
+            <div className="NotEnoughTokenSheet__actions-row">
+              <Button
+                size="md"
+                variant="secondary"
+                isFullWidth
+                isRounded
+                onClick={() => openOnramp()}
+                data-testid="earn-not-enough-buy"
+              >
+                {t("Buy {{code}}", { code: option.code })}
+              </Button>
+              <Button
+                size="md"
+                variant="secondary"
+                isFullWidth
+                isRounded
+                onClick={onSwap}
+                data-testid="earn-not-enough-swap"
+              >
+                {t("Swap for {{code}}", { code: option.code })}
+              </Button>
+            </div>
 
-        {showSwap && (
-          <Button
-            size="md"
-            variant={showBuy ? "tertiary" : "secondary"}
-            isFullWidth
-            isRounded
-            onClick={onSwap}
-            data-testid="earn-not-enough-swap"
-          >
-            {t("Swap for {{code}}", { code: option.code })}
-          </Button>
-        )}
+            <div className="NotEnoughTokenSheet__or">
+              <span>{t("or")}</span>
+            </div>
 
-        <Button
-          size="md"
-          variant="tertiary"
-          isFullWidth
-          isRounded
-          onClick={() => navigateTo(ROUTES.viewPublicKey, navigate)}
-          data-testid="earn-not-enough-transfer"
-        >
-          {t("Transfer from another account")}
-        </Button>
+            <button
+              type="button"
+              className="NotEnoughTokenSheet__text-action"
+              onClick={goToTransfer}
+              data-testid="earn-not-enough-transfer"
+            >
+              {transferLabel}
+            </button>
+          </>
+        ) : (
+          <>
+            {showBuy && (
+              <Button
+                size="md"
+                variant="secondary"
+                isFullWidth
+                isRounded
+                onClick={() => openOnramp()}
+                data-testid="earn-not-enough-buy"
+              >
+                {t("Buy with Coinbase")}
+              </Button>
+            )}
+
+            {showSwap && (
+              <Button
+                size="md"
+                variant="secondary"
+                isFullWidth
+                isRounded
+                onClick={onSwap}
+                data-testid="earn-not-enough-swap"
+              >
+                {t("Swap for {{code}}", { code: option.code })}
+              </Button>
+            )}
+
+            {/* Outlined under a primary route; filled when transferring is the
+                only thing the account can do. */}
+            <Button
+              size="md"
+              variant={showBuy || showSwap ? "tertiary" : "secondary"}
+              isFullWidth
+              isRounded
+              onClick={goToTransfer}
+              data-testid="earn-not-enough-transfer"
+            >
+              {transferLabel}
+            </Button>
+          </>
+        )}
       </div>
     </div>
   );

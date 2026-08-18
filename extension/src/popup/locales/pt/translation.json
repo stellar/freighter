@@ -465,6 +465,7 @@
   "Operation": "Operação",
   "Operations": "Operações",
   "Optional": "Opcional",
+  "or": "ou",
   "Order is incorrect, try again": "A ordem está incorreta, tente novamente",
   "Overridden response": "Resposta substituída",
   "Override Blockaid security responses for testing different security states (DEV only)": "Substituir respostas de segurança do Blockaid para testar diferentes estados de segurança (apenas DEV)",

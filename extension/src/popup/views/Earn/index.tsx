@@ -138,14 +138,14 @@ export const Earn = () => {
   // "Transaction failed" and emit payment.failed instead of swap.failed. Setting
   // the flag here means neither useIsSwap nor its other caller has to change.
   useEffect(() => {
-    const isSwapStep = activeStep === STEPS.SWAP;
-    const search = isSwapStep ? "?swap=true" : "";
-    if (window.location.hash.includes("?swap=true") === isSwapStep) {
+    const isSwapOpen = swapTarget !== null;
+    const search = isSwapOpen ? "?swap=true" : "";
+    if (window.location.hash.includes("?swap=true") === isSwapOpen) {
       return;
     }
     navigate({ pathname: ROUTES.earn, search }, { replace: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeStep]);
+  }, [swapTarget]);
 
   // Emit a screen-view metric only once per step transition.
   useEffect(() => {
@@ -204,8 +204,9 @@ export const Earn = () => {
               if (!target) {
                 return;
               }
+              // No step change: the swap opens as a sheet over the picker, which
+              // stays the active step underneath it.
               setSwapTarget(target);
-              goToStep(STEPS.SWAP, "from-bottom");
             }}
           />
         );
@@ -226,43 +227,6 @@ export const Earn = () => {
           <EarnSubmit
             xdr={submission.transactionSimulation.preparedTransaction || ""}
             onExit={closeEarnFlow}
-          />
-        );
-      case STEPS.SWAP:
-        if (!swapTarget) {
-          return null;
-        }
-        return (
-          <EarnSwap
-            destinationAsset={swapTarget.canonical}
-            destinationTokenDetails={swapTarget.details}
-            onCancel={() => {
-              setSwapTarget(null);
-              dispatch(saveDestinationAsset(""));
-              dispatch(saveDestinationTokenDetails(null));
-              goToStep(STEPS.CHOOSE_TOKEN, "dismiss");
-            }}
-            onDone={({ fromCode, toCode }) => {
-              setSwapTarget(null);
-              dispatch(saveDestinationAsset(""));
-              dispatch(saveDestinationTokenDetails(null));
-              toast.custom(
-                () => (
-                  <Notification
-                    variant="success"
-                    title={t("{{from}} has been swapped to {{to}}", {
-                      from: fromCode,
-                      to: toCode,
-                    })}
-                  />
-                ),
-                { id: "earn-swap-success" },
-              );
-              // The picker stayed mounted underneath, so it needs an explicit
-              // nudge to pick up the balance the swap just created.
-              setPickerRefreshKey((key) => key + 1);
-              goToStep(STEPS.CHOOSE_TOKEN, "dismiss");
-            }}
           />
         );
       default:
@@ -291,6 +255,41 @@ export const Earn = () => {
           </div>
         );
       })}
+
+      {/* A sheet rather than a step: the design keeps the picker visible behind
+          the swap, and the sheet portals to the body, so it cannot be hidden by
+          a `display: none` step wrapper. */}
+      {swapTarget && (
+        <EarnSwap
+          destinationAsset={swapTarget.canonical}
+          destinationTokenDetails={swapTarget.details}
+          onCancel={() => {
+            setSwapTarget(null);
+            dispatch(saveDestinationAsset(""));
+            dispatch(saveDestinationTokenDetails(null));
+          }}
+          onDone={({ fromCode, toCode }) => {
+            setSwapTarget(null);
+            dispatch(saveDestinationAsset(""));
+            dispatch(saveDestinationTokenDetails(null));
+            toast.custom(
+              () => (
+                <Notification
+                  variant="success"
+                  title={t("{{from}} has been swapped to {{to}}", {
+                    from: fromCode,
+                    to: toCode,
+                  })}
+                />
+              ),
+              { id: "earn-swap-success" },
+            );
+            // The picker stayed mounted underneath, so it needs an explicit
+            // nudge to pick up the balance the swap just created.
+            setPickerRefreshKey((key) => key + 1);
+          }}
+        />
+      )}
     </div>
   );
 };
