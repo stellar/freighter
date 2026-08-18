@@ -235,8 +235,8 @@ export const Account = () => {
       resolvedData?.publicKey
     ] ?? [];
 
-  // The Tokens tab dictates which kind of Add button both tabs use, so that they
-  // never show two different styles. It is showing its own inline CTA exactly
+  // The Tokens tab dictates which kind of Add button the Collectibles tab uses,
+  // so the two match wherever they can. It is carrying its own inline CTA exactly
   // when it renders the unfunded empty state: a funded account shows its assets
   // instead, and a failed fetch shows an error, in which case the Tokens tab has
   // no CTA of either kind and Collectibles falls back to the pill.

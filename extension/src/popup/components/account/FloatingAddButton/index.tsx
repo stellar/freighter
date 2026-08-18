@@ -13,9 +13,10 @@ interface FloatingAddButtonProps {
   isFunded: boolean;
   /**
    * Whether the Collectibles empty state is currently carrying its own Add
-   * action. It takes its cue from the Tokens tab, so that both tabs offer the
-   * same kind of button, and only that tab knows whether it has an empty state
-   * to put one in.
+   * action, in which case the pill stands down on that tab. Passed in because it
+   * depends on things this component cannot see: whether the Tokens tab is
+   * showing its unfunded empty state, and whether the Collectibles tab has an
+   * empty state to host a button at all.
    */
   isCollectiblesCtaInline: boolean;
 }
@@ -35,7 +36,8 @@ export const FloatingAddButton = ({
     return null;
   }
 
-  // Same reasoning on the other tab, which follows this one's lead.
+  // Same reasoning on the Collectibles tab, whose empty state takes its cue from
+  // the Tokens one so that the two never offer different kinds of button.
   if (!isTokensTab && isCollectiblesCtaInline) {
     return null;
   }

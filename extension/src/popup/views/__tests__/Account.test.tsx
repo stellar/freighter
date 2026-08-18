@@ -1427,10 +1427,10 @@ describe("Account view", () => {
     // real browser instead; a unit assertion could not fail.
   });
 
-  // The Tokens tab dictates the button style for both tabs, and that decision
-  // lives in this view rather than in the components it feeds, so it has to be
-  // pinned here: the component suites take it as a literal prop and cannot catch
-  // it drifting.
+  // The Tokens tab dictates which button style the Collectibles tab uses, and
+  // that decision lives in this view rather than in the components it feeds, so
+  // it has to be pinned here: the component suites take it as a literal prop and
+  // cannot catch it drifting.
   describe("Add CTA placement across the two tabs", () => {
     const renderWithHoldings = async ({
       collections,

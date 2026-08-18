@@ -225,8 +225,9 @@ const CollectionsList = ({
 
 /**
  * Whether the Collectibles tab has anything to show. Exported because Home
- * decides between the inline empty-state CTAs and the floating pill from both
- * tabs at once, and has to read "empty" exactly the way this tab does.
+ * decides whether this tab's Add action goes inline or stays in the floating
+ * pill, and an inline one needs the empty state below to host it -- so that
+ * decision has to read "empty" exactly the way this tab does.
  */
 export const hasVisibleCollections = (collections: Collection[]) =>
   collections.some((c) => c.collection && !c.error);
@@ -270,8 +271,9 @@ export const AccountCollectibles = ({
           <div className="AccountCollectibles__empty__subtitle">
             {t("Collectibles you own will appear here.")}
           </div>
-          {/* Matches the Tokens empty state: when both tabs are empty each one
-              carries its own Add action and the floating pill stands down. */}
+          {/* Set while the Tokens tab is showing its own unfunded empty state,
+              so that both tabs offer the same kind of button. The pill stands
+              down on this tab while it does. */}
           {hasInlineCta && (
             <div className="AccountCollectibles__empty__cta">
               <Button

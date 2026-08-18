@@ -43,8 +43,9 @@ describe("Collectibles empty-state CTA", () => {
     ).toBeInTheDocument();
   });
 
-  // The floating pill covers both tabs once either one has something to show,
-  // so the inline CTA has to stand down rather than double up on it.
+  // Home clears this whenever the pill is the one carrying this tab's Add action
+  // -- the Tokens tab is not showing its empty state, or this tab has
+  // collectibles to show -- so the empty state must not double up on it.
   it("drops the CTA when the floating pill is showing instead", () => {
     renderCollectibles({ hasInlineCta: false });
 

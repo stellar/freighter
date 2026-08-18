@@ -3,9 +3,10 @@ import type { BrowserContext, Page } from "@playwright/test";
 import { test, expect } from "./test-fixtures";
 import { loginToTestAccount } from "./helpers/login";
 
-// The Tokens tab decides which kind of Add button both tabs use, so these cover
-// the Collectibles side following its lead. The Tokens side is unchanged and is
-// covered in addAsset.test.ts.
+// The Tokens tab decides which kind of Add button the Collectibles tab uses, so
+// these cover the Collectibles side following its lead -- including the one case
+// where it cannot. The Tokens side is unchanged from master and is covered in
+// addAsset.test.ts.
 
 const stubUnfundedBalances = async (page: Page) => {
   await page.route("**/account-balances/**", async (route) => {
