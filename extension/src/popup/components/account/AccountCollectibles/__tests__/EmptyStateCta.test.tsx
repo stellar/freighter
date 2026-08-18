@@ -10,9 +10,11 @@ import { NotFundedMessage } from "popup/components/account/NotFundedMessage";
 const renderCollectibles = ({
   collections = [] as Collection[],
   hasInlineCta,
+  isCollectibleHidden = () => false,
 }: {
   collections?: Collection[];
   hasInlineCta: boolean;
+  isCollectibleHidden?: (collectionAddress: string, tokenId: string) => boolean;
 }) =>
   render(
     <Wrapper
@@ -28,7 +30,7 @@ const renderCollectibles = ({
         collections={collections}
         hasInlineCta={hasInlineCta}
         refreshHiddenCollectibles={() => Promise.resolve()}
-        isCollectibleHidden={() => false}
+        isCollectibleHidden={isCollectibleHidden}
       />
     </Wrapper>,
   );
@@ -63,6 +65,54 @@ describe("Collectibles empty-state CTA", () => {
     expect(
       screen.queryByTestId("add-collectible-inline-btn"),
     ).not.toBeInTheDocument();
+  });
+
+  // Hiding the last collectible used to leave the tab blank: the grid dropped
+  // every collection while this component still thought it had something to
+  // show, so neither the grid nor the empty state rendered.
+  describe("when every collectible is hidden", () => {
+    it("falls back to the empty state rather than rendering nothing", () => {
+      renderCollectibles({
+        collections: mockCollectibles,
+        hasInlineCta: false,
+        isCollectibleHidden: () => true,
+      });
+
+      expect(screen.getByText("No collectibles yet")).toBeInTheDocument();
+      expect(screen.queryAllByTestId("account-collectible")).toHaveLength(0);
+    });
+
+    it("still offers the inline CTA when it is the one carrying the action", () => {
+      renderCollectibles({
+        collections: mockCollectibles,
+        hasInlineCta: true,
+        isCollectibleHidden: () => true,
+      });
+
+      expect(
+        screen.getByTestId("add-collectible-inline-btn"),
+      ).toBeInTheDocument();
+    });
+
+    // Only the collections whose every collectible is hidden drop out, so one
+    // visible collectible anywhere still means a grid.
+    it("keeps the grid while any collectible is still visible", () => {
+      const [firstCollection] = mockCollectibles;
+      const visibleAddress = firstCollection.collection!.address;
+
+      renderCollectibles({
+        collections: mockCollectibles,
+        hasInlineCta: true,
+        isCollectibleHidden: (collectionAddress) =>
+          collectionAddress !== visibleAddress,
+      });
+
+      expect(screen.queryByText("No collectibles yet")).not.toBeInTheDocument();
+      expect(
+        screen.queryByTestId("add-collectible-inline-btn"),
+      ).not.toBeInTheDocument();
+      expect(screen.queryAllByTestId("account-collectible")).toHaveLength(1);
+    });
   });
 
   // The two empty states sit side by side as tabs, so their CTAs have to be the

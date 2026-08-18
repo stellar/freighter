@@ -224,13 +224,30 @@ const CollectionsList = ({
 };
 
 /**
- * Whether the Collectibles tab has anything to show. Exported because Home
- * decides whether this tab's Add action goes inline or stays in the floating
- * pill, and an inline one needs the empty state below to host it -- so that
- * decision has to read "empty" exactly the way this tab does.
+ * Whether the Collectibles tab has anything to show.
+ *
+ * Deliberately mirrors what CollectionsList above actually renders, hidden
+ * filter included: it drops a collection once every collectible in it is
+ * hidden, so counting a collection as visible on `collection && !error` alone
+ * left the tab blank -- no grid and no empty state -- once the last one was
+ * hidden.
+ *
+ * Exported because Home decides whether this tab's Add action goes inline or
+ * stays in the floating pill, and an inline one needs the empty state below to
+ * host it, so that decision has to read "empty" exactly the way this tab does.
  */
-export const hasVisibleCollections = (collections: Collection[]) =>
-  collections.some((c) => c.collection && !c.error);
+export const hasVisibleCollections = (
+  collections: Collection[],
+  isCollectibleHidden: (collectionAddress: string, tokenId: string) => boolean,
+) =>
+  collections.some(
+    ({ collection, error }) =>
+      collection &&
+      !error &&
+      collection.collectibles.some(
+        (item) => !isCollectibleHidden(collection.address, item.tokenId),
+      ),
+  );
 
 interface AccountCollectiblesProps {
   collections: Collection[];
@@ -249,7 +266,10 @@ export const AccountCollectibles = ({
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  const hasValidCollections = hasVisibleCollections(collections);
+  const hasValidCollections = hasVisibleCollections(
+    collections,
+    isCollectibleHidden,
+  );
 
   return (
     <div className="AccountCollectibles" data-testid="account-collectibles">

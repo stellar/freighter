@@ -248,7 +248,8 @@ export const Account = () => {
   // so the tab is never left without a way to add one. `hasVisibleCollections`
   // is the same predicate that pane switches on, so the two cannot disagree.
   const isCollectiblesCtaInline =
-    isTokensEmptyStateShown && !hasVisibleCollections(collections);
+    isTokensEmptyStateShown &&
+    !hasVisibleCollections(collections, isCollectibleHidden);
 
   return (
     <>

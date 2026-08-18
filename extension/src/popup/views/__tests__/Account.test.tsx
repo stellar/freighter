@@ -1584,6 +1584,42 @@ describe("Account view", () => {
       expect(pillTestIds()).toEqual(["add-collectible-btn"]);
     });
 
+    // Hiding the last collectible leaves that tab showing its empty state rather
+    // than a blank pane, so the CTA has to move inline with it. That only works
+    // because Home feeds isCollectibleHidden into the same predicate the pane
+    // switches on; reading "empty" any other way puts the two out of step.
+    it("gives Collectibles the inline CTA when every collectible is hidden", async () => {
+      const hidden: Record<string, string> = {};
+      mockCollectibles.forEach(({ collection }) => {
+        collection!.collectibles.forEach((item: { tokenId: string }) => {
+          hidden[`${collection!.address}:${item.tokenId}`] = "hidden";
+        });
+      });
+      const hiddenSpy = jest
+        .spyOn(ApiInternal, "getHiddenCollectibles")
+        .mockImplementation(() =>
+          Promise.resolve({ hiddenCollectibles: hidden, error: "" } as any),
+        );
+
+      const spy = await renderWithHoldings({
+        collections: mockCollectibles,
+        isFunded: false,
+      });
+      await switchToCollectibles();
+
+      // Awaited before restoring: the hidden set arrives from an async fetch.
+      await waitFor(() => {
+        expect(screen.getByText("No collectibles yet")).toBeInTheDocument();
+      });
+      spy.mockRestore();
+      hiddenSpy.mockRestore();
+
+      expect(
+        screen.getByTestId("add-collectible-inline-btn"),
+      ).toBeInTheDocument();
+      expect(pillTestIds()).toEqual([]);
+    });
+
     // A failed balances fetch leaves Tokens with no CTA of either kind, so there
     // is no style for Collectibles to match and it falls back to the pill.
     it("falls back to the Collectibles pill when the balances fetch failed", async () => {
