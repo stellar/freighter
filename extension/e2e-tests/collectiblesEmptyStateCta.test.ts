@@ -131,11 +131,10 @@ test("Collectibles keeps the pill when it has collectibles to show", async ({
 });
 
 // The collectibles request resolves after balances, and until it does an empty
-// list is indistinguishable from an account that owns none. Reading it as "none"
-// put the inline CTA on this tab and then moved the action out to the pill once
-// the collectibles turned up. This holds the response open so that window is
-// wide enough to assert in.
-test("Collectibles offers no CTA until the request resolves", async ({
+// list is indistinguishable from an account that owns none. So the tab spins
+// rather than claiming the latter and then popping the real content in. This
+// holds the response open so that window is wide enough to assert in.
+test("Collectibles shows a spinner until the request resolves", async ({
   page,
   extensionId,
   context,
@@ -187,12 +186,13 @@ test("Collectibles offers no CTA until the request resolves", async ({
   await expect(page.getByTestId("account-view")).toBeVisible();
   await page.getByTestId("account-tab-collectibles").click();
 
-  // The empty state paints while the request is still outstanding...
-  await expect(page.getByText("No collectibles yet")).toBeVisible({
+  // A spinner while the request is outstanding -- not the empty state, which
+  // would claim the account owns none, and not an action either, since which kind
+  // it wants is not known yet.
+  await expect(page.getByTestId("account-collectibles-loader")).toBeVisible({
     timeout: 20000,
   });
-  // ...but carries no CTA, and no pill has appeared in its place either. This is
-  // the assertion that fails if an unresolved list is read as "owns none".
+  await expect(page.getByText("No collectibles yet")).toHaveCount(0);
   await expect(page.getByTestId("add-collectible-inline-btn")).toHaveCount(0);
   await expect(page.getByTestId("add-collectible-btn")).toHaveCount(0);
 
@@ -201,5 +201,6 @@ test("Collectibles offers no CTA until the request resolves", async ({
   await expect(page.getByTestId("add-collectible-btn")).toBeVisible({
     timeout: 20000,
   });
+  await expect(page.getByTestId("account-collectibles-loader")).toHaveCount(0);
   await expect(page.getByTestId("add-collectible-inline-btn")).toHaveCount(0);
 });

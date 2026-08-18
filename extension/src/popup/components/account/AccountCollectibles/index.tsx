@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Button, Icon } from "@stellar/design-system";
+import { Button, Icon, Loader } from "@stellar/design-system";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import { Collection } from "@shared/api/types/types";
@@ -252,6 +252,12 @@ export const hasVisibleCollections = (
 interface AccountCollectiblesProps {
   collections: Collection[];
   hasInlineCta: boolean;
+  /**
+   * The collectibles request has not resolved yet. Distinct from having none:
+   * `collections` is empty in both cases, and rendering the empty state here
+   * would tell the account it owns nothing while the answer is still in flight.
+   */
+  isLoading: boolean;
   refreshHiddenCollectibles: () => Promise<void>;
   isCollectibleHidden: (collectionAddress: string, tokenId: string) => boolean;
   onClickCollectible?: (selectedCollectible: SelectedCollectible) => void;
@@ -260,6 +266,7 @@ interface AccountCollectiblesProps {
 export const AccountCollectibles = ({
   collections,
   hasInlineCta,
+  isLoading,
   refreshHiddenCollectibles,
   isCollectibleHidden,
 }: AccountCollectiblesProps) => {
@@ -270,6 +277,19 @@ export const AccountCollectibles = ({
     collections,
     isCollectibleHidden,
   );
+
+  if (isLoading) {
+    return (
+      <div className="AccountCollectibles" data-testid="account-collectibles">
+        <div
+          className="AccountCollectibles__loader"
+          data-testid="account-collectibles-loader"
+        >
+          <Loader size="2rem" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="AccountCollectibles" data-testid="account-collectibles">

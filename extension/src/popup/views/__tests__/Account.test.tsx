@@ -1624,11 +1624,11 @@ describe("Account view", () => {
     });
 
     // The collectibles request resolves after balances, and until it does an empty
-    // `collections` is indistinguishable from an account that owns none. Reading
-    // it as "none" put the inline CTA on the Collectibles tab and then swapped it
-    // for the pill, so neither is offered until the answer is in. Tokens, which
-    // never reads the collectibles state, is unaffected throughout.
-    it("offers no Collectibles CTA until the request resolves", async () => {
+    // `collections` is indistinguishable from an account that owns none. That tab
+    // shows a spinner rather than an empty state claiming the latter, and offers
+    // no action until it is known which kind it wants. Tokens, which never reads
+    // the collectibles state, is unaffected throughout.
+    it("shows a spinner and no CTA on Collectibles until the request resolves", async () => {
       const spy = await renderWithHoldings({
         collections: [],
         isFunded: false,
@@ -1643,6 +1643,10 @@ describe("Account view", () => {
       await switchToCollectibles();
       spy.mockRestore();
 
+      expect(
+        screen.getByTestId("account-collectibles-loader"),
+      ).toBeInTheDocument();
+      expect(screen.queryByText("No collectibles yet")).not.toBeInTheDocument();
       expect(
         screen.queryByTestId("add-collectible-inline-btn"),
       ).not.toBeInTheDocument();
@@ -1664,6 +1668,11 @@ describe("Account view", () => {
       await switchToCollectibles();
       spy.mockRestore();
 
+      // Not spinning: there is no payload to read the loaded flag from and the
+      // collectibles result was discarded, so waiting would never end.
+      expect(
+        screen.queryByTestId("account-collectibles-loader"),
+      ).not.toBeInTheDocument();
       expect(
         screen.queryByTestId("add-collectible-inline-btn"),
       ).not.toBeInTheDocument();

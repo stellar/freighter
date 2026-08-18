@@ -10,10 +10,12 @@ import { NotFundedMessage } from "popup/components/account/NotFundedMessage";
 const renderCollectibles = ({
   collections = [] as Collection[],
   hasInlineCta,
+  isLoading = false,
   isCollectibleHidden = () => false,
 }: {
   collections?: Collection[];
   hasInlineCta: boolean;
+  isLoading?: boolean;
   isCollectibleHidden?: (collectionAddress: string, tokenId: string) => boolean;
 }) =>
   render(
@@ -29,6 +31,7 @@ const renderCollectibles = ({
       <AccountCollectibles
         collections={collections}
         hasInlineCta={hasInlineCta}
+        isLoading={isLoading}
         refreshHiddenCollectibles={() => Promise.resolve()}
         isCollectibleHidden={isCollectibleHidden}
       />
@@ -65,6 +68,44 @@ describe("Collectibles empty-state CTA", () => {
     expect(
       screen.queryByTestId("add-collectible-inline-btn"),
     ).not.toBeInTheDocument();
+  });
+
+  // An empty `collections` means "owns none" only once the request has resolved.
+  // Rendering the empty state before then claims something untrue and then pops
+  // the real content in, so the tab shows a spinner until the answer is in.
+  describe("while loading", () => {
+    it("shows a spinner instead of the empty state", () => {
+      renderCollectibles({ hasInlineCta: false, isLoading: true });
+
+      expect(
+        screen.getByTestId("account-collectibles-loader"),
+      ).toBeInTheDocument();
+      expect(screen.queryByText("No collectibles yet")).not.toBeInTheDocument();
+    });
+
+    // Nothing to add to yet, and no empty state to host a button.
+    it("offers no inline CTA even when it would otherwise carry one", () => {
+      renderCollectibles({ hasInlineCta: true, isLoading: true });
+
+      expect(
+        screen.queryByTestId("add-collectible-inline-btn"),
+      ).not.toBeInTheDocument();
+    });
+
+    // The grid would be equally premature: the list is empty because nothing has
+    // arrived, not because there is nothing to show.
+    it("shows the spinner rather than a partial grid", () => {
+      renderCollectibles({
+        collections: mockCollectibles,
+        hasInlineCta: false,
+        isLoading: true,
+      });
+
+      expect(
+        screen.getByTestId("account-collectibles-loader"),
+      ).toBeInTheDocument();
+      expect(screen.queryAllByTestId("account-collectible")).toHaveLength(0);
+    });
   });
 
   // Hiding the last collectible used to leave the tab blank: the grid dropped

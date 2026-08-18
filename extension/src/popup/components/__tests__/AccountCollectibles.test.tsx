@@ -63,6 +63,7 @@ describe("AccountCollectibles", () => {
         <AccountCollectibles
           collections={mockCollectibles}
           hasInlineCta={false}
+          isLoading={false}
           refreshHiddenCollectibles={mockRefreshHiddenCollectibles}
           isCollectibleHidden={mockIsCollectibleHidden}
         />
@@ -178,6 +179,7 @@ describe("AccountCollectibles", () => {
         <AccountCollectibles
           collections={mockCollectibles}
           hasInlineCta={false}
+          isLoading={false}
           refreshHiddenCollectibles={mockRefreshHiddenCollectibles}
           isCollectibleHidden={mockIsCollectibleHidden}
         />
@@ -243,6 +245,7 @@ describe("AccountCollectibles", () => {
         <AccountCollectibles
           collections={[]}
           hasInlineCta={false}
+          isLoading={false}
           refreshHiddenCollectibles={mockRefreshHiddenCollectibles}
           isCollectibleHidden={mockIsCollectibleHidden}
         />
@@ -292,6 +295,7 @@ describe("AccountCollectibles", () => {
             { error: { collectionAddress: "test", errorMessage: "test" } },
           ]}
           hasInlineCta={false}
+          isLoading={false}
           refreshHiddenCollectibles={mockRefreshHiddenCollectibles}
           isCollectibleHidden={mockIsCollectibleHidden}
         />
@@ -412,6 +416,7 @@ describe("AccountCollectibles", () => {
         <AccountCollectibles
           collections={partialMockCollectibles}
           hasInlineCta={false}
+          isLoading={false}
           refreshHiddenCollectibles={mockRefreshHiddenCollectibles}
           isCollectibleHidden={mockIsCollectibleHidden}
         />
