@@ -80,7 +80,9 @@ export function useGetSwapFromData(getBalancesOptions: {
         filteredBalances: balances.balances,
         publicKey,
         networkDetails,
-        tokenPrices: fetchedTokenPrices.tokenPrices,
+        // The price fetch reports failure with null; the field is declared
+        // non-null, so normalize here rather than leaking it downstream.
+        tokenPrices: fetchedTokenPrices.tokenPrices || {},
         applicationState: appData.account.applicationState,
       } as SwapFrom;
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });

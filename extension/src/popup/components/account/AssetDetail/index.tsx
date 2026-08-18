@@ -32,7 +32,11 @@ import {
   settingsSelector,
 } from "popup/ducks/settings";
 import StellarLogo from "popup/assets/stellar-logo.png";
-import { formatAmount, roundUsdValue } from "popup/helpers/formatters";
+import {
+  NO_FIAT_VALUE,
+  formatAmount,
+  roundUsdValue,
+} from "popup/helpers/formatters";
 import { Loading } from "popup/components/Loading";
 import { AccountBalances } from "helpers/hooks/useGetBalances";
 import { title } from "helpers/transaction";
@@ -376,7 +380,7 @@ export const AssetDetail = ({
                             .toString(),
                         ),
                       )}`
-                    : "--"}
+                    : NO_FIAT_VALUE}
                 </div>
               </div>
             </div>
