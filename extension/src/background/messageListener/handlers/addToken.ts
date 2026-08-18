@@ -25,7 +25,7 @@ export const addToken = async ({
   tokenQueue: TokenQueue;
   responseQueue: ResponseQueue<AddTokenResponse>;
 }) => {
-  const { uuid } = request;
+  const { uuid, isTrustlineBacked } = request;
 
   if (!uuid) {
     captureException("addToken: missing uuid in request");
@@ -60,7 +60,21 @@ export const addToken = async ({
         : undefined;
 
     if (tokenResponse && typeof tokenResponse.response === "function") {
-      tokenResponse.response(!response.error);
+      // Storage failed. For SAC/classic tokens a trustline was already
+      // submitted and succeeded on-chain (the real operation), so don't
+      // decline the dApp over a local write failure. SEP-41 tokens have no
+      // trustline — this write is the whole operation — so surface it.
+      // isTrustlineBacked is set by the popup, which already knows for
+      // certain — a network call here to re-derive it could itself fail and
+      // wrongly decline a successful SAC trustline.
+      const hasError = Boolean(response.error) && !isTrustlineBacked;
+
+      tokenResponse.response(!hasError);
+
+      if (hasError) {
+        return { error: response.error };
+      }
+
       return {};
     }
 

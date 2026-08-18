@@ -54,6 +54,14 @@ export const stubFeatureFlags = async (context: BrowserContext) => {
   });
 };
 
+export const stubRpcHealth = async (context: BrowserContext) => {
+  await context.route("*/**/rpc-health**", async (route) => {
+    await route.fulfill({
+      json: { status: "healthy" },
+    });
+  });
+};
+
 export const stubSubscriptionAccount = async (context: BrowserContext) => {
   await context.route("*/**/subscription/account", async (route) => {
     await route.fulfill({
@@ -231,6 +239,26 @@ export const stubFederation = async (page: Page) => {
   });
 };
 
+/**
+ * Overrides the default federation stub to return a custom response.
+ * Useful for testing SEP-0002 memo fields. Must be called inside stubOverrides
+ * after loginToTestAccount has already registered the default routes.
+ */
+export const stubFederationWithMemo = async (
+  page: Page,
+  response: {
+    account_id: string;
+    memo?: string;
+    memo_type?: string;
+    stellar_address?: string;
+  },
+) => {
+  await page.unroute("**/federation**");
+  await page.route("**/federation**", async (route) => {
+    await route.fulfill({ json: response });
+  });
+};
+
 export const stubDefaultAccountBalances = async (page: Page) => {
   await page.route("**/account-balances/**", async (route) => {
     const json = {
@@ -331,7 +359,7 @@ export const stubScanDapp = async (context: BrowserContext) => {
     const json = {
       data: {
         status: "hit",
-        url: "https://docs.freighter.app/docs/playground/setallowed/",
+        url: "https://play.freighter.app/#/extension/playground/setAllowed",
         scan_start_time: "2025-07-04T08:58:59.350000",
         scan_end_time: "2025-07-04T09:02:37.766000",
         malicious_score: 0,
@@ -372,7 +400,7 @@ export const stubScanDappMalicious = async (context: BrowserContext) => {
     const json = {
       data: {
         status: "hit",
-        url: "https://docs.freighter.app/docs/playground/setallowed/",
+        url: "https://play.freighter.app/#/extension/playground/setAllowed",
         scan_start_time: "2025-07-04T08:58:59.350000",
         scan_end_time: "2025-07-04T09:02:37.766000",
         malicious_score: 0.95,
@@ -528,25 +556,33 @@ export const stubScanAssetSuspicious = async (page: Page | BrowserContext) => {
  * This simulates when BlockAid confirms an asset is safe
  */
 export const stubScanAssetSafe = async (page: Page | BrowserContext) => {
+  const benign = {
+    result_type: "Benign",
+    malicious_score: "0.0",
+    attack_types: {},
+    chain: "stellar",
+    address: "",
+    metadata: {
+      type: "",
+    },
+    fees: {},
+    features: [],
+    trading_limits: {},
+    financial_stats: {},
+  };
   await page.route("**/scan-asset**", async (route) => {
-    const json = {
-      data: {
-        result_type: "Benign",
-        malicious_score: "0.0",
-        attack_types: {},
-        chain: "stellar",
-        address: "",
-        metadata: {
-          type: "",
-        },
-        fees: {},
-        features: [],
-        trading_limits: {},
-        financial_stats: {},
-      },
-      error: null,
-    };
-    await route.fulfill({ json });
+    const url = new URL(route.request().url());
+    // The swap flow scans via the bulk endpoint, whose response is shaped
+    // { data: { results: { [assetId]: ... } } } rather than a single result.
+    if (url.pathname.includes("scan-asset-bulk")) {
+      const results: Record<string, typeof benign> = {};
+      url.searchParams.getAll("asset_ids").forEach((id) => {
+        results[id] = { ...benign, address: id };
+      });
+      await route.fulfill({ json: { data: { results }, error: null } });
+      return;
+    }
+    await route.fulfill({ json: { data: benign, error: null } });
   });
 };
 
@@ -631,6 +667,192 @@ export const stubIsSac = async (page: Page | BrowserContext) => {
   });
 };
 
+/**
+ * SAC variant of stubIsSac — returns isSacContract: true so the AddToken view
+ * routes through the ChangeTrustInternal review instead of silently resolving.
+ * Use together with stubSacTokenDetails so token-details returns a "CODE:G…"
+ * name that satisfies StrKey.isValidEd25519PublicKey(assetIssuer).
+ */
+export const stubIsSacTrue = async (page: Page | BrowserContext) => {
+  await page.route("**/is-sac-contract**", async (route) => {
+    const json = {
+      isSacContract: true,
+    };
+    await route.fulfill({ json });
+  });
+};
+
+// The G-address used across the e2e suite as the SAC issuer.
+export const SAC_ISSUER =
+  "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY";
+
+// The SAC contract id derived from Asset("E2E", SAC_ISSUER). Using this (not
+// TEST_TOKEN_ADDRESS) is required so isAssetSac() in useGetChangeTrustData
+// verifies correctly and builds the XDR.
+export const SAC_CONTRACT_ID =
+  "CAMGWOMKYNKCWGHXTU6A7OYW3O6O4UFMHSMQDSIA2WSD6M6U6GSAJASN";
+
+/**
+ * Stubs token-details so the SAC token's name is "E2E:<SAC_ISSUER>".
+ * useTokenLookup splits on ":" to extract the issuer, and AddToken checks
+ * StrKey.isValidEd25519PublicKey(assetIssuer) to gate the SAC review branch.
+ */
+export const stubSacTokenDetails = async (page: Page | BrowserContext) => {
+  await page.route("**/token-details/**", async (route) => {
+    await route.fulfill({
+      json: {
+        name: `E2E:${SAC_ISSUER}`,
+        decimals: 7,
+        symbol: "E2E",
+      },
+    });
+  });
+};
+
+/**
+ * Injects the SAC-classification fetch stubs (is-sac-contract + token-details,
+ * and optionally the verified asset-list) via context.addInitScript so they run
+ * before the popup's own page script. context.route() can't reliably intercept
+ * these because the popup fetches them before CDP request routing attaches — the
+ * SAC add-token e2e tests all depend on this window.fetch override running
+ * first. Pass `withAssetList: true` to additionally stub the asset-list so
+ * getVerifiedTokens() finds SAC_CONTRACT_ID and marks the token verified.
+ */
+export const stubSacViaInitScript = async (
+  context: BrowserContext,
+  { withAssetList = false }: { withAssetList?: boolean } = {},
+) => {
+  await context.addInitScript(
+    ({
+      sacIssuer,
+      sacContractId,
+      injectAssetList,
+    }: {
+      sacIssuer: string;
+      sacContractId: string;
+      injectAssetList: boolean;
+    }) => {
+      const origFetch = (window as Window & typeof globalThis).fetch.bind(
+        window,
+      );
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (window as any).fetch = function (input: any, init: any) {
+        const url: string =
+          typeof input === "string"
+            ? input
+            : input instanceof URL
+              ? input.href
+              : (input?.url ?? "");
+        if (url.includes("/is-sac-contract/")) {
+          return Promise.resolve(
+            new Response(JSON.stringify({ isSacContract: true }), {
+              status: 200,
+              headers: { "Content-Type": "application/json" },
+            }),
+          );
+        }
+        if (url.includes("/token-details/")) {
+          return Promise.resolve(
+            new Response(
+              JSON.stringify({
+                name: `E2E:${sacIssuer}`,
+                symbol: "E2E",
+                decimals: 7,
+              }),
+              {
+                status: 200,
+                headers: { "Content-Type": "application/json" },
+              },
+            ),
+          );
+        }
+        if (injectAssetList && url.includes("/asset-list/")) {
+          return Promise.resolve(
+            new Response(
+              JSON.stringify({
+                name: "StellarExpert Top 50",
+                provider: "StellarExpert",
+                description: "Verified asset list",
+                version: "1.0",
+                network: "testnet",
+                feedback: "https://stellar.expert",
+                assets: [
+                  {
+                    code: "E2E",
+                    issuer: sacIssuer,
+                    contract: sacContractId,
+                    name: "E2E Token",
+                    org: "unknown",
+                    domain: "example.com",
+                    decimals: 7,
+                  },
+                ],
+              }),
+              {
+                status: 200,
+                headers: { "Content-Type": "application/json" },
+              },
+            ),
+          );
+        }
+        return origFetch(input, init);
+      };
+    },
+    {
+      sacIssuer: SAC_ISSUER,
+      sacContractId: SAC_CONTRACT_ID,
+      injectAssetList: withAssetList,
+    },
+  );
+};
+
+/**
+ * Delays ONLY the ADD_TOKEN background round-trip (the popup→background
+ * chrome.runtime.sendMessage triggered by dispatch(addToken)). This is a local
+ * extension-messaging call, not a network request, so context.route() can't
+ * touch it — we monkey-patch the sender side. The delay gives a same-tick
+ * "click Done the moment Success renders" a real chance to race ahead of
+ * response(true) if Done doesn't await it.
+ */
+export const delayAddTokenRoundTrip = async (
+  context: BrowserContext,
+  delayMs = 1000,
+) => {
+  await context.addInitScript((ADD_TOKEN_DELAY_MS: number) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const chromeApi = (window as any).chrome;
+    if (!chromeApi?.runtime?.sendMessage) {
+      return;
+    }
+    const nativeSendMessage = chromeApi.runtime.sendMessage.bind(
+      chromeApi.runtime,
+    );
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    chromeApi.runtime.sendMessage = (...args: any[]) => {
+      const msg = args[0];
+      if (!msg || msg.type !== "ADD_TOKEN") {
+        return nativeSendMessage(...args);
+      }
+      const lastArg = args[args.length - 1];
+      if (typeof lastArg === "function") {
+        const callback = lastArg;
+        const callArgs = args.slice(0, -1);
+        setTimeout(
+          () => nativeSendMessage(...callArgs, callback),
+          ADD_TOKEN_DELAY_MS,
+        );
+        return undefined;
+      }
+      return new Promise((resolve) => {
+        setTimeout(
+          () => resolve(nativeSendMessage(...args)),
+          ADD_TOKEN_DELAY_MS,
+        );
+      });
+    };
+  }, delayMs);
+};
+
 export const stubTokenDetails = async (page: Page | BrowserContext) => {
   await page.route("**/token-details/**", async (route) => {
     const url = route.request().url();
@@ -656,7 +878,11 @@ export const stubTokenDetails = async (page: Page | BrowserContext) => {
 };
 
 export const stubTokenPrices = async (page: Page | BrowserContext) => {
-  await page.route("**/token-prices", async (route) => {
+  // token-prices is fetched from the background service worker (#2879), so it
+  // must be intercepted on the BrowserContext; page.route only sees the popup.
+  // Accept either a Page or a Context and normalize to the context.
+  const ctx = "context" in page ? page.context() : page;
+  await ctx.route("**/token-prices*", async (route) => {
     const request = route.request();
 
     let tokenIds = [] as string[];
@@ -872,6 +1098,45 @@ export const stubAccountBalancesWithUSDC = async (page: Page) => {
   });
 };
 
+/**
+ * Stubs the `/account-history/` endpoint with the provided records using both
+ * an in-page `window.fetch` override (via `addInitScript`) and a
+ * `context.route` network fallback. Playwright's route interception alone does
+ * not reliably catch fetch requests made from Chrome extension popup pages in
+ * CI headless mode; the init script guarantees the response.
+ */
+export const stubAccountHistoryWith = async (
+  page: Page,
+  context: BrowserContext,
+  records: object[],
+) => {
+  await page.addInitScript((data: object[]) => {
+    const origFetch = window.fetch.bind(window);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (window as any).fetch = function (input: any, init: any) {
+      const urlStr: string =
+        typeof input === "string"
+          ? input
+          : input instanceof URL
+            ? input.href
+            : (input.url ?? "");
+      if (urlStr.includes("/account-history/")) {
+        return Promise.resolve(
+          new Response(JSON.stringify(data), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          }),
+        );
+      }
+      return origFetch(input, init);
+    };
+  }, records);
+
+  await context.route("*/**/account-history/*", async (route) => {
+    await route.fulfill({ json: records });
+  });
+};
+
 export const stubAccountHistory = async (context: BrowserContext) => {
   await context.route("**/account-history/**", async (route) => {
     const json = [
@@ -997,6 +1262,11 @@ export const stubAccountHistory = async (context: BrowserContext) => {
 
 export const stubCollectibles = async (
   page: Page,
+  // The /collectibles list is fetched from the background service worker
+  // (#2879), so it must be intercepted with context.route; page.route only
+  // sees the popup. tokenMetadata below is fetched by the popup, so it stays
+  // on page.route.
+  context: BrowserContext,
   shouldFailRefreshMetadata?: boolean,
 ) => {
   let tokenMetadataCount = 0;
@@ -1110,7 +1380,7 @@ export const stubCollectibles = async (
     };
     await route.fulfill({ json });
   });
-  await page.route("**/collectibles**", async (route) => {
+  await context.route("**/collectibles**", async (route) => {
     const json = {
       data: {
         collections: [
@@ -1188,7 +1458,11 @@ export const stubCollectibles = async (
   });
 };
 
-export const stubCollectiblesUnsuccessfulMetadata = async (page: Page) => {
+export const stubCollectiblesUnsuccessfulMetadata = async (
+  page: Page,
+  // See stubCollectibles: /collectibles is a background fetch (context.route).
+  context: BrowserContext,
+) => {
   await page.route("**/tokenMetadata/1", async (route) => {
     const json = {
       name: "Stellar Frog 1",
@@ -1226,7 +1500,7 @@ export const stubCollectiblesUnsuccessfulMetadata = async (page: Page) => {
     await route.fulfill({ json, status: 404 });
   });
 
-  await page.route("**/collectibles**", async (route) => {
+  await context.route("**/collectibles**", async (route) => {
     const json = {
       data: {
         collections: [
@@ -1364,7 +1638,7 @@ export const stubDiscoverProtocols = async (
   page: Page,
   payload: typeof DISCOVER_PROTOCOLS_STUB = DISCOVER_PROTOCOLS_STUB,
 ) => {
-  await page.route("**/protocols", async (route) => {
+  await page.context().route("**/protocols", async (route) => {
     await route.fulfill({ json: payload });
   });
 };
@@ -1378,7 +1652,7 @@ export const stubDiscoverProtocolsError = async (
   page: Page,
   status: number = 500,
 ) => {
-  await page.route("**/protocols", async (route) => {
+  await page.context().route("**/protocols", async (route) => {
     await route.fulfill({
       status,
       json: { error: "Simulated protocols fetch error" },
@@ -2823,6 +3097,9 @@ export const stubAllExternalApis = async (
   // Feature flags
   await stubFeatureFlags(context);
 
+  // RPC health is fetched by the background service worker
+  await stubRpcHealth(context);
+
   // Subscription account
   await stubSubscriptionAccount(context);
 
@@ -2856,7 +3133,7 @@ export const stubAllExternalApis = async (
   await stubDefaultAccountBalances(page);
 
   // Collectibles
-  await stubCollectibles(page);
+  await stubCollectibles(page, context);
 
   // Discover protocols
   await stubDiscoverProtocols(page);
@@ -3085,5 +3362,42 @@ export const stubMaintenanceBannerVariant = async (
     maintenance_banner: {
       payload: rawPayload,
     },
+  });
+};
+
+/**
+ * Stubs the asset-list endpoint so that the given contractId appears as a
+ * verified token. This causes getVerifiedTokens() to return a non-empty array,
+ * which sets isVerifiedToken=true in AddToken so the verification chip shows
+ * "Verified" instead of "Unverified".
+ *
+ * Use page.route() (popup-level) for SEP-41 tokens and context.addInitScript()
+ * for the SAC flow (where the popup is created before page.route() can fire).
+ *
+ * @param page - Playwright Page or BrowserContext to attach the route to
+ * @param contractId - The contract address that should appear as verified
+ */
+export const stubVerifiedToken = async (
+  page: Page | BrowserContext,
+  contractId: string,
+) => {
+  const verifiedAssetList = {
+    ...STELLAR_EXPERT_ASSET_LIST_JSON,
+    assets: [
+      ...STELLAR_EXPERT_ASSET_LIST_JSON.assets,
+      {
+        code: "E2E",
+        issuer: "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
+        contract: contractId,
+        name: "E2E Token",
+        org: "unknown",
+        domain: "example.com",
+        decimals: 7,
+      },
+    ],
+  };
+
+  await page.route("*/**/testnet/asset-list/**", async (route) => {
+    await route.fulfill({ json: verifiedAssetList });
   });
 };

@@ -102,6 +102,9 @@ test("Import 12 word wallet", async ({ page }) => {
   await expect(
     page.getByText("Import wallet from recovery phrase"),
   ).toBeVisible();
+  await expect(
+    page.getByText("You can also paste the phrase in the first box."),
+  ).toBeVisible();
 
   for (let i = 1; i <= TEST_MNEMONIC_12_WORDS.length; i++) {
     await page
@@ -140,13 +143,16 @@ test("Import 12 word wallet by pasting", async ({ page, context }) => {
   await expect(
     page.getByText("Import wallet from recovery phrase"),
   ).toBeVisible();
+  await expect(
+    page.getByText("You can also paste the phrase in the first box."),
+  ).toBeVisible();
 
   await page.evaluate((argMnemonic) => {
     return navigator.clipboard.writeText(argMnemonic.join(" "));
   }, TEST_MNEMONIC_12_WORDS);
 
   // paste text from clipboard
-  await page.locator("#MnemonicPhrase-1").press("Meta+v");
+  await page.locator("#MnemonicPhrase-1").press("ControlOrMeta+v");
 
   await expectPageToHaveScreenshot(
     {
@@ -182,6 +188,9 @@ test("Import 24 word wallet", async ({ page }) => {
 
   await expect(
     page.getByText("Import wallet from recovery phrase"),
+  ).toBeVisible();
+  await expect(
+    page.getByText("You can also paste the phrase in the first box."),
   ).toBeVisible();
   await page.locator(".RecoverAccount__phrase-toggle > label").click();
 
@@ -250,6 +259,9 @@ test("Import 24 word wallet by pasting", async ({ page, context }) => {
   await expect(
     page.getByText("Import wallet from recovery phrase"),
   ).toBeVisible();
+  await expect(
+    page.getByText("You can also paste the phrase in the first box."),
+  ).toBeVisible();
 
   await page.evaluate(() =>
     navigator.clipboard.writeText(
@@ -283,7 +295,7 @@ test("Import 24 word wallet by pasting", async ({ page, context }) => {
   );
 
   // paste text from clipboard
-  await page.locator("#MnemonicPhrase-1").press("Meta+v");
+  await page.locator("#MnemonicPhrase-1").press("ControlOrMeta+v");
 
   await expectPageToHaveScreenshot(
     {
@@ -494,6 +506,9 @@ test("Logout and import new account", async ({
   await expect(
     newPage.getByText("Import wallet from recovery phrase"),
   ).toBeVisible();
+  await expect(
+    newPage.getByText("You can also paste the phrase in the first box."),
+  ).toBeVisible();
 
   const TEST_WORDS = generateMnemonic({ entropyBits: 128 }).split(" ");
 
@@ -581,7 +596,7 @@ test("Overwrites account when user abandons mnemonic phrase confirmation", async
   );
   await page.getByTestId("account-view-account-name").click();
 
-  expect(page.getByTestId("wallet-row-select")).toHaveCount(1);
+  await expect(page.getByTestId("wallet-row-select")).toHaveCount(1);
 
   await page.getByTestId("BackButton").click();
   await page.getByTestId("account-options-dropdown").click();

@@ -17,6 +17,8 @@ import {
 } from "@shared/api/types/account-balance";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { getAssetSacAddress } from "@shared/helpers/soroban/token";
+import { LP_IDENTIFIER } from "./account";
+import { NO_FIAT_VALUE, formatFiatAmount } from "./formatters";
 import { isContractId } from "./soroban";
 
 export const isClassicBalance = (balance: AssetType): balance is ClassicAsset =>
@@ -32,7 +34,7 @@ export const isNativeBalance = (balance: AssetType): balance is NativeAsset =>
 
 export const findAssetBalance = (
   balances: AssetType[],
-  asset: Asset | { issuer: string; code: string },
+  asset: Asset | { issuer?: string; code: string },
 ) => {
   if (isAsset(asset) && asset.isNative()) {
     return balances.find(
@@ -60,7 +62,7 @@ export const findAssetBalance = (
 };
 
 export const getBalanceByAsset = (
-  asset: Asset | { issuer: string; code: string },
+  asset: Asset | { issuer?: string; code: string },
   balances: AssetType[],
 ) => {
   const code = asset.code;
@@ -195,6 +197,72 @@ export const getPriceDeltaColor = (delta: BigNumber) => {
   return "";
 };
 
+/**
+ * Returns a stable identity key for a balance. Two balances refer to the
+ * same on-chain asset iff they share this key. Used by display logic
+ * that needs to track balance identity across re-fetches (e.g.
+ * `useStableSortedBalances`).
+ *
+ * Uses the same conventions as the rest of the codebase:
+ * - LP shares: `<poolId>:lp` (the established `LP_IDENTIFIER` suffix).
+ * - Native, classic, and Soroban tokens: `getCanonicalFromAsset(code,
+ *   issuer.key)`. For Soroban balances, `issuer.key` is the contract ID,
+ *   so this produces `CODE:CONTRACT_ID` consistent with what the price
+ *   map, `getAssetFromCanonical`, and the swap/send `prices[asset]`
+ *   lookups all use.
+ */
+export const getBalanceCanonicalKey = (b: AssetType): string => {
+  if ("liquidityPoolId" in b) return `${b.liquidityPoolId}${LP_IDENTIFIER}`;
+  if ("token" in b) {
+    return getCanonicalFromAsset(
+      b.token.code,
+      "issuer" in b.token ? b.token.issuer.key : undefined,
+    );
+  }
+  return "";
+};
+
+/**
+ * Re-orders balances for display by descending USD value.
+ *
+ * Only native + classic G-issuer assets receive prices from the indexer
+ * (Soroban, custom tokens, and LP shares are filtered out upstream — see
+ * `getTokenPrices` in `@shared/api/internal.ts`). Unpriced balances keep
+ * the relative order produced by `sortBalances` and sort below all
+ * priced balances. A `currentPrice` of `"0"` is a valid USD value and
+ * keeps the asset in the priced group; a malformed `currentPrice` is
+ * treated as unpriced.
+ */
+export const sortBalancesByValue = (
+  balances: AssetType[],
+  prices: ApiTokenPrices | null | undefined,
+): AssetType[] => {
+  if (!prices || Object.keys(prices).length === 0) {
+    return balances;
+  }
+
+  const usdValueOf = (b: AssetType): BigNumber | null => {
+    if (!("token" in b)) return null;
+    const canonical = getBalanceCanonicalKey(b);
+    const priceStr = prices[canonical]?.currentPrice;
+    if (priceStr === undefined || priceStr === null || priceStr === "") {
+      return null;
+    }
+    const value = new BigNumber(priceStr).multipliedBy(b.total);
+    return value.isFinite() ? value : null;
+  };
+
+  return balances
+    .map((b, i) => ({ b, i, v: usdValueOf(b) }))
+    .sort((a, z) => {
+      if (a.v && z.v) return z.v.comparedTo(a.v) || a.i - z.i;
+      if (a.v) return -1;
+      if (z.v) return 1;
+      return a.i - z.i;
+    })
+    .map((x) => x.b);
+};
+
 export const getTotalUsd = (prices: ApiTokenPrices, balances: AssetType[]) => {
   return Object.keys(prices).reduce((prev, curr) => {
     const asset = getAssetFromCanonical(curr);
@@ -209,4 +277,47 @@ export const getTotalUsd = (prices: ApiTokenPrices, balances: AssetType[]) => {
     );
     return currentUsdBalance.plus(prev);
   }, new BigNumber(0));
+};
+
+/**
+ * Picks what to show for an account's total USD value.
+ *
+ * Zero and "no value" are different answers. Zero is a fact when there is
+ * nothing to value; the placeholder means the total could not be determined.
+ */
+export const getTotalUsdLabel = ({
+  hasError,
+  hasPriceFeed,
+  isFunded,
+  tokenPrices,
+  totalUsd,
+}: {
+  /** Account data failed to load. */
+  hasError: boolean;
+  /** Whether the network prices tokens at all. */
+  hasPriceFeed: boolean;
+  isFunded: boolean;
+  tokenPrices?: ApiTokenPrices | null;
+  /** Omit where no total was computed; the branches that ignore it win. */
+  totalUsd?: BigNumber;
+}) => {
+  // Balances are unknown, so any figure would be a claim rather than a total.
+  if (hasError) {
+    return NO_FIAT_VALUE;
+  }
+
+  // Nothing to value: the network prices no tokens, or the account holds
+  // none. A bare formatFiatAmount() is "$0.00" — a real zero, not a stand-in
+  // for a total that could not be read.
+  if (!hasPriceFeed || !isFunded) {
+    return formatFiatAmount();
+  }
+
+  // A funded account on a network that prices tokens, yet nothing priced —
+  // the total exists but could not be read.
+  if (!tokenPrices || Object.keys(tokenPrices).length === 0) {
+    return NO_FIAT_VALUE;
+  }
+
+  return formatFiatAmount(totalUsd?.toString());
 };

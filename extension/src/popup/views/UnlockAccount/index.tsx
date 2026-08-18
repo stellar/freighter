@@ -1,8 +1,8 @@
 import { Button } from "@stellar/design-system";
 import get from "lodash/get";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import { newTabHref } from "helpers/urls";
@@ -12,9 +12,11 @@ import { openTab } from "popup/helpers/navigate";
 import { View } from "popup/basics/layout/View";
 import {
   confirmPassword,
+  hasPrivateKeySelector,
   loadLastUsedAccount,
 } from "popup/ducks/accountServices";
 import { EnterPassword } from "popup/components/EnterPassword";
+import { reconcileAnalyticsUserId } from "helpers/metrics";
 
 import "./styles.scss";
 import { AppDispatch } from "popup/App";
@@ -30,14 +32,32 @@ export const UnlockAccount = () => {
   const [accountAddress, setAccountAddress] = useState("");
 
   const dispatch = useDispatch<AppDispatch>();
+  const hasPrivateKey = useSelector(hasPrivateKeySelector);
+  // Track the initial auth state so we don't auto-navigate if the
+  // component happens to mount while the wallet is already unlocked
+  // (e.g. a stale `/unlock-account` route). We only redirect on the
+  // false → true transition that signals an unlock just happened
+  // (either via this surface's password submit or via a cross-surface
+  // SESSION_UNLOCKED broadcast saving fresh auth state).
+  const wasLockedOnMount = useRef(!hasPrivateKey);
 
   const handleSubmit = async (password: string) => {
-    const res = await dispatch(confirmPassword(password));
-    if (confirmPassword.fulfilled.match(res) && res.payload.publicKey) {
-      // skip this location in history, we won't need to come back here after unlocking account
-      navigate(`${destination}${queryParams}`, { replace: true });
+    const response = await dispatch(confirmPassword(password));
+    // Navigation is handled by the `hasPrivateKey` effect below so
+    // that both password-submit and cross-surface SESSION_UNLOCKED
+    // broadcasts converge on the same destination.
+    if (confirmPassword.fulfilled.match(response)) {
+      // Fire-and-forget: adopt the auth-derived analytics/Sentry user id
+      // now that the session is unlocked. Never blocks the unlock flow.
+      void reconcileAnalyticsUserId();
     }
   };
+
+  useEffect(() => {
+    if (wasLockedOnMount.current && hasPrivateKey) {
+      navigate(`${destination}${queryParams}`, { replace: true });
+    }
+  }, [hasPrivateKey, destination, queryParams, navigate]);
 
   useEffect(() => {
     const fetchLastUsedAccount = async () => {

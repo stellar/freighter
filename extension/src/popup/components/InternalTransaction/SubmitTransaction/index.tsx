@@ -69,6 +69,7 @@ export const SendingTransaction = ({
       amount,
       asset,
       destination,
+      recipientName,
       destinationAsset,
       destinationAmount,
     },
@@ -79,6 +80,8 @@ export const SendingTransaction = ({
   const dstAsset = destinationAsset
     ? getAssetFromCanonical(destinationAsset)
     : null;
+  const destinationDisplayLabel =
+    recipientName || truncatedPublicKey(destination);
 
   const { state: submissionState, fetchData } = useSubmitTxData({
     publicKey,
@@ -137,7 +140,14 @@ export const SendingTransaction = ({
   const isSuccess = submissionState.state === RequestState.SUCCESS;
   const assetIcon = icons[asset]!;
   const assetIcons = asset !== "native" ? { [asset]: assetIcon } : {};
-  const dstAssetIcon = icons[destinationAsset]!;
+  // A new (not-yet-held) destination token has no entry in the icon cache, so
+  // fall back to the iconUrl carried on the picked token's details — the same
+  // source the picker and review screen use — so the icon persists through the
+  // Swapping/Swapped! states instead of showing a broken image.
+  const dstAssetIcon =
+    icons[destinationAsset] ||
+    transactionData.destinationTokenDetails?.iconUrl ||
+    "";
   const dstAssetIcons =
     destinationAsset !== "native" ? { [destinationAsset]: dstAssetIcon } : {};
 
@@ -303,7 +313,7 @@ export const SendingTransaction = ({
                           {`${t("to")} `}
                         </span>
                         <span className="SendingTransaction__Summary__Description__Label">
-                          {truncatedPublicKey(destination)}
+                          {destinationDisplayLabel}
                         </span>
                       </>
                     )}
@@ -335,7 +345,7 @@ export const SendingTransaction = ({
                           className="SendingTransaction__Summary__Description__Label"
                           data-testid="sending-transaction-summary-description-label-destination-address"
                         >
-                          {truncatedPublicKey(destination)}
+                          {destinationDisplayLabel}
                         </span>
                       </>
                     )}

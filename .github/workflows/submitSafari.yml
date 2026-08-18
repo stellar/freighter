@@ -62,7 +62,9 @@ jobs:
       - run:
           yarn setup && yarn build:freighter-api && yarn
           build:extension:production --env AMPLITUDE_KEY="${{
-          secrets.AMPLITUDE_KEY }}" SENTRY_KEY="${{ secrets.SENTRY_KEY }}"
+          secrets.AMPLITUDE_KEY }}" AMPLITUDE_EXPERIMENT_DEPLOYMENT_KEY="${{
+          secrets.AMPLITUDE_EXPERIMENT_DEPLOYMENT_KEY }}" SENTRY_KEY="${{
+          secrets.SENTRY_KEY }}"
       - name: Convert extension to Xcode project
         run:
           xcrun safari-web-extension-converter ./extension/build

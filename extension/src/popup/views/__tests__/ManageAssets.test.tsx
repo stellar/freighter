@@ -38,6 +38,7 @@ import { Wrapper, mockAccounts } from "../../__testHelpers__";
 import { ManageAssets } from "../ManageAssets";
 import { SettingsState } from "@shared/api/types";
 import { DEFAULT_ASSETS_LISTS } from "@shared/constants/soroban/asset-list";
+import { DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES } from "@shared/constants/autoLock";
 
 const mockXDR =
   "AAAAAgAAAADaBSz5rQFDZHNdV8//w/Yiy11vE1ZxGJ8QD8j7HUtNEwAAAGQAAAAAAAAAAQAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAQAAAADaBSz5rQFDZHNdV8//w/Yiy11vE1ZxGJ8QD8j7HUtNEwAAAAAAAAAAAvrwgAAAAAAAAAABHUtNEwAAAEBY/jSiXJNsA2NpiXrOi6Ll6RiIY7v8QZEEZviM8HmmzeI4FBP9wGZm7YMorQue+DK9KI5BEXDt3hi0VOA9gD8A";
@@ -126,6 +127,7 @@ jest.spyOn(UseNetworkFees, "useNetworkFees").mockImplementation(() => ({
   recommendedFee: "0.00001",
   networkCongestion: UseNetworkFees.NetworkCongestion.MEDIUM,
   fetchData: () => Promise.resolve({ recommendedFee: "00.1" }),
+  isLoading: false,
 }));
 
 jest.spyOn(SearchAsset, "searchAsset").mockImplementation(({ asset }) => {
@@ -330,6 +332,7 @@ jest.spyOn(ApiInternal, "loadSettings").mockImplementation(() =>
     isNonSSLEnabled: false,
     experimentalFeaturesState: SettingsState.SUCCESS,
     assetsLists: DEFAULT_ASSETS_LISTS,
+    autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
   }),
 );
 
@@ -529,173 +532,6 @@ describe.skip("Manage assets", () => {
     ]);
   });
 
-  it("show error view when removing asset with balance", async () => {
-    jest.spyOn(global, "fetch").mockImplementation(() =>
-      Promise.resolve({
-        ok: false,
-        json: async () => ({
-          extras: {
-            envelope_xdr:
-              "AAAAAgAAAABngBTmbmUycqG2cAMHcomSR80dRzGtKzxM6gb3yySD5AAPQkAAAYjdAAAA9gAAAAEAAAAAAAAAAAAAAABmXjffAAAAAAAAAAEAAAAAAAAABgAAAAFVU0RDAAAAACYFzNOyHT8GgwiyzcOOhwLtCctwM/RiSnrFp7JOe8xeAAAAAAAAAAAAAAAAAAAAAcskg+QAAABAA/rRMU+KKsxCX1pDBuCvYDz+eQTCsY9bzgPU4J+Xe3vOWUa8YOzWlL3N3zlxHVx9hsB7a8dpSXMSAINjjsY4Dg==",
-            result_codes: { operations: ["op_invalid_limit"] },
-          },
-        }),
-      } as any),
-    );
-
-    await initView(true);
-
-    await waitFor(() => {
-      expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
-        "Manage assets",
-      );
-    });
-    await waitFor(() => {
-      expect(screen.getByTestId("ChooseAssetWrapper")).toBeDefined();
-    });
-
-    const addedTrustlines = screen.queryAllByTestId("ManageAssetRow");
-    const ellipsisButton = screen.getByTestId(
-      "ManageAssetRowButton__ellipsis-SRT",
-    );
-
-    await waitFor(async () => {
-      fireEvent.click(ellipsisButton);
-      const removeButton = within(addedTrustlines[1]).getByTestId(
-        "ManageAssetRowButton",
-      );
-      expect(removeButton).toHaveTextContent("Remove asset");
-      expect(removeButton).toBeEnabled();
-      fireEvent.click(removeButton);
-    });
-
-    await waitFor(() => {
-      screen.getByTestId("TrustlineError__error");
-      expect(screen.getByTestId("TrustlineError__error")).toHaveTextContent(
-        "This asset has a balance",
-      );
-    });
-  });
-
-  it("show error view when removing asset with buying liabilities", async () => {
-    jest.spyOn(global, "fetch").mockImplementation(() =>
-      Promise.resolve({
-        ok: false,
-        json: async () => ({
-          extras: {
-            envelope_xdr:
-              "AAAAAgAAAABngBTmbmUycqG2cAMHcomSR80dRzGtKzxM6gb3yySD5AAPQkAAAYjdAAAA9gAAAAEAAAAAAAAAAAAAAABmXjffAAAAAAAAAAEAAAAAAAAABgAAAAFVU0RDAAAAACYFzNOyHT8GgwiyzcOOhwLtCctwM/RiSnrFp7JOe8xeAAAAAAAAAAAAAAAAAAAAAcskg+QAAABAA/rRMU+KKsxCX1pDBuCvYDz+eQTCsY9bzgPU4J+Xe3vOWUa8YOzWlL3N3zlxHVx9hsB7a8dpSXMSAINjjsY4Dg==",
-            result_codes: { operations: ["op_invalid_limit"] },
-          },
-        }),
-      } as any),
-    );
-
-    jest
-      .spyOn(ApiInternal, "getAccountIndexerBalances")
-      .mockImplementation(() =>
-        Promise.resolve({
-          balances: {
-            "USDC:GATALTGTWIOT6BUDBCZM3Q4OQ4BO2COLOAZ7IYSKPLC2PMSOPPGF5V56": {
-              token: {
-                code: "USDC",
-                issuer: {
-                  key: "GATALTGTWIOT6BUDBCZM3Q4OQ4BO2COLOAZ7IYSKPLC2PMSOPPGF5V56",
-                },
-              },
-              total: new BigNumber("111"),
-              available: new BigNumber("111"),
-              buyingLiabilities: "1",
-            },
-            native: {
-              token: { type: "native", code: "XLM" },
-              total: new BigNumber("222"),
-              available: new BigNumber("222"),
-            },
-            "SRT:GCDNJUBQSX7AJWLJACMJ7I4BC3Z47BQUTMHEICZLE6MU4KQBRYG5JY6B": {
-              token: {
-                code: "SRT",
-                issuer: {
-                  key: "GCDNJUBQSX7AJWLJACMJ7I4BC3Z47BQUTMHEICZLE6MU4KQBRYG5JY6B",
-                },
-              },
-              total: new BigNumber("0"),
-              available: new BigNumber("0"),
-            },
-          } as any as Balances,
-          isFunded: true,
-          subentryCount: 1,
-        }),
-      );
-
-    await initView(true, false, {
-      balances: {
-        "USDC:GATALTGTWIOT6BUDBCZM3Q4OQ4BO2COLOAZ7IYSKPLC2PMSOPPGF5V56": {
-          token: {
-            code: "USDC",
-            issuer: {
-              key: "GATALTGTWIOT6BUDBCZM3Q4OQ4BO2COLOAZ7IYSKPLC2PMSOPPGF5V56",
-            },
-          },
-          total: new BigNumber("111"),
-          available: new BigNumber("111"),
-          buyingLiabilities: "1",
-        },
-        native: {
-          token: { type: "native", code: "XLM" },
-          total: new BigNumber("222"),
-          available: new BigNumber("222"),
-        },
-        "SRT:GCDNJUBQSX7AJWLJACMJ7I4BC3Z47BQUTMHEICZLE6MU4KQBRYG5JY6B": {
-          token: {
-            code: "SRT",
-            issuer: {
-              key: "GCDNJUBQSX7AJWLJACMJ7I4BC3Z47BQUTMHEICZLE6MU4KQBRYG5JY6B",
-            },
-          },
-          total: new BigNumber("0"),
-          available: new BigNumber("0"),
-        },
-      } as any as Balances,
-      isFunded: true,
-      subentryCount: 1,
-    });
-
-    await waitFor(() => {
-      expect(screen.getByTestId("AppHeaderPageTitle")).toHaveTextContent(
-        "Manage assets",
-      );
-    });
-    await waitFor(() => {
-      expect(screen.getByTestId("ChooseAssetWrapper")).toBeDefined();
-    });
-
-    const addedTrustlines = screen.queryAllByTestId("ManageAssetRow");
-    const ellipsisButton = screen.getByTestId(
-      "ManageAssetRowButton__ellipsis-SRT",
-    );
-
-    await waitFor(async () => {
-      fireEvent.click(ellipsisButton);
-      const removeButton = within(addedTrustlines[1]).getByTestId(
-        "ManageAssetRowButton",
-      );
-      expect(removeButton).toHaveTextContent("Remove asset");
-      expect(removeButton).toBeEnabled();
-      fireEvent.click(removeButton);
-    });
-
-    await waitFor(() => {
-      screen.getByTestId("TrustlineError__error");
-      expect(screen.getByTestId("TrustlineError__error")).toHaveTextContent(
-        "This asset has buying liabilities",
-      );
-      expect(screen.getByTestId("TrustlineError__body")).toHaveTextContent(
-        "You still have a buying liability of 1",
-      );
-    });
-  });
-
   it("show warning when adding an asset with warnings", async () => {
     await initView();
 
@@ -857,7 +693,7 @@ describe.skip("Manage assets", () => {
       const addedTrustlines = screen.queryAllByTestId("ManageAssetRow");
       const verificationBadge = screen.getByTestId("asset-on-list");
 
-      expect(verificationBadge).toHaveTextContent("On your lists");
+      expect(verificationBadge).toHaveTextContent("Verified");
 
       expect(addedTrustlines.length).toBe(1);
       expect(
@@ -902,7 +738,7 @@ describe.skip("Manage assets", () => {
       const addedTrustlines = screen.queryAllByTestId("ManageAssetRow");
       const verificationBadge = screen.getByTestId("not-asset-on-list");
 
-      expect(verificationBadge).toHaveTextContent("Not on your lists");
+      expect(verificationBadge).toHaveTextContent("Unverified");
 
       expect(addedTrustlines.length).toBe(1);
       expect(

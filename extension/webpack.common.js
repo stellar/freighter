@@ -47,6 +47,18 @@ const commonConfig = (
   },
   resolve: {
     extensions: [".ts", ".tsx", ".js"],
+    alias: {
+      // Strip Amplitude's autocapture plugin from the bundle. It statically
+      // pulls in "visual tagging" / "background capture" code that loads
+      // remotely-hosted scripts from cdn.amplitude.com, which gets the build
+      // rejected by the Chrome Web Store / Firefox AMO. We run with
+      // `autocapture: false` so this code is dead anyway. See the stub for the
+      // full rationale.
+      "@amplitude/plugin-autocapture-browser": path.resolve(
+        __dirname,
+        "./webpack/amplitude-autocapture-stub.js",
+      ),
+    },
     plugins: [
       new TsconfigPathsPlugin({
         configFile: path.resolve(__dirname, "./tsconfig.json"),

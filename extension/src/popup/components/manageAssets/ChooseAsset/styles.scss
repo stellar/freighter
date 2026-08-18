@@ -1,4 +1,8 @@
 .ChooseAsset {
+  &__fetch-fail {
+    padding: pxToRem(16px);
+  }
+
   &__close-btn {
     color: var(--sds-clr-gray-10);
   }

@@ -13,11 +13,21 @@ import { truncateString } from "helpers/stellar";
 
 import "./styles.scss";
 
-interface AuthEntriesProps {
-  invocations: xdr.SorobanAuthorizedInvocation[];
+export interface AuthEntryDisplay {
+  invocation: xdr.SorobanAuthorizedInvocation;
+  /**
+   * The address whose authorization the entry's credentials represent.
+   * Present for address credentials (incl. CAP-71 ADDRESS_V2 /
+   * ADDRESS_WITH_DELEGATES); absent for source-account credentials.
+   */
+  boundAddress?: string;
 }
 
-export const AuthEntries = ({ invocations }: AuthEntriesProps) => {
+interface AuthEntriesProps {
+  entries: AuthEntryDisplay[];
+}
+
+export const AuthEntries = ({ entries }: AuthEntriesProps) => {
   const { t } = useTranslation();
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
 
@@ -25,7 +35,7 @@ export const AuthEntries = ({ invocations }: AuthEntriesProps) => {
     setExpandedIndex((prev) => (prev === index ? null : index));
   };
 
-  const renderAuthEntry = (invocation: xdr.SorobanAuthorizedInvocation) => {
+  const renderAuthEntry = ({ invocation, boundAddress }: AuthEntryDisplay) => {
     const details = getInvocationDetails(invocation);
 
     const renderDetailTitle = (detail: InvocationArgs) => {
@@ -146,6 +156,22 @@ export const AuthEntries = ({ invocations }: AuthEntriesProps) => {
 
     return (
       <>
+        {boundAddress && (
+          <div
+            className="AuthEntry__InfoBlock"
+            data-testid="AuthEntry__BoundAddress"
+          >
+            <KeyValueList
+              operationKey={t("Authorized address")}
+              operationValue={
+                <CopyValue
+                  value={boundAddress}
+                  displayValue={truncateString(boundAddress)}
+                />
+              }
+            />
+          </div>
+        )}
         {details.map((detail, ind) => (
           <div
             className="AuthEntryContainer"
@@ -185,9 +211,9 @@ export const AuthEntries = ({ invocations }: AuthEntriesProps) => {
         <Icon.Key01 />
         <span>{t("Authorizations")}</span>
       </div>
-      {invocations.map((invocation) => (
-        <React.Fragment key={invocation.toXDR("raw").toString()}>
-          {renderAuthEntry(invocation)}
+      {entries.map((entry) => (
+        <React.Fragment key={entry.invocation.toXDR("raw").toString()}>
+          {renderAuthEntry(entry)}
         </React.Fragment>
       ))}
     </div>

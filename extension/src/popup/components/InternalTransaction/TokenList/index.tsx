@@ -1,5 +1,6 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import { Icon } from "@stellar/design-system";
 import BigNumber from "bignumber.js";
 import classnames from "classnames";
 
@@ -10,7 +11,12 @@ import {
 import { getCanonicalFromAsset } from "helpers/stellar";
 import { ApiTokenPrices, AssetIcons } from "@shared/api/types";
 import { getAvailableBalance } from "popup/helpers/soroban";
-import { formatAmount, roundUsdValue } from "popup/helpers/formatters";
+import {
+  NO_FIAT_VALUE,
+  formatAmount,
+  roundUsdValue,
+} from "popup/helpers/formatters";
+import { sortBalancesByValue } from "popup/helpers/balance";
 import { AssetIcon } from "popup/components/account/AccountAssets";
 import { title } from "helpers/transaction";
 
@@ -34,22 +40,30 @@ export const TokenList = ({
   isShowingHeader,
 }: TokenListProps) => {
   const { t } = useTranslation();
+  const sortedTokens = useMemo(
+    () => sortBalancesByValue(tokens, tokenPrices),
+    [tokens, tokenPrices],
+  );
   return (
     <div
       className={classnames("TokenList__Assets", {
         "TokenList__Assets--no-header": !isShowingHeader,
       })}
+      data-testid="token-list"
     >
-      {!tokens.length ? (
+      {!sortedTokens.length ? (
         <div className="TokenList__Assets__empty">
           {`${t("You have no assets added.")} ${t("Get started by adding an asset.")}`}
         </div>
       ) : (
         <>
           {isShowingHeader && (
-            <div className="TokenList__Assets__Header">{t("Your Tokens")}</div>
+            <div className="TokenList__Assets__Header">
+              <Icon.Coins03 />
+              {t("Tokens")}
+            </div>
           )}
-          {tokens
+          {sortedTokens
             .filter(
               (
                 balance,
@@ -72,6 +86,8 @@ export const TokenList = ({
                   ? balance.token.issuer.key
                   : undefined;
               const isContract = "contractId" in balance;
+              const isNative =
+                "type" in balance.token && balance.token.type === "native";
               const canonical = getCanonicalFromAsset(code, issuerKey);
               const icon = icons[canonical];
               const availableBalance = getAvailableBalance({
@@ -101,13 +117,13 @@ export const TokenList = ({
                     />
                     <div className="TokenList__AssetRow__Title">
                       <div className="TokenList__AssetRow__Title__Heading">
-                        {title(balance)}
+                        {isNative ? t("Stellar Lumens") : title(balance)}
                       </div>
                       <div
                         className="TokenList__AssetRow__Title__Total"
                         data-testid={`${code}-balance`}
                       >
-                        {displayTotal}
+                        {displayTotal} {code}
                       </div>
                     </div>
                   </div>
@@ -120,7 +136,7 @@ export const TokenList = ({
                               .toString(),
                           ),
                         )}`
-                      : "--"}
+                      : NO_FIAT_VALUE}
                   </div>
                 </div>
               );

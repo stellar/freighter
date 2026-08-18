@@ -33,6 +33,7 @@ import {
   NetworkDetails,
 } from "@shared/constants/stellar";
 import { getSdk } from "@shared/helpers/stellar";
+import { getSerializableTransaction } from "background/helpers/transactionInfo";
 
 import { MessageResponder } from "background/types";
 import { STELLAR_EXPERT_MEMO_REQUIRED_ACCOUNTS_URL } from "background/constants/apiUrls";
@@ -58,6 +59,7 @@ import {
   MessageToSign,
   EntryToSign,
 } from "helpers/urls";
+import { toSignatureBuffer } from "helpers/stellar";
 
 import { FlaggedKeys, TransactionInfo } from "types/transactions";
 
@@ -437,7 +439,11 @@ export const freighterApiMessageListener = (
       const uuid = crypto.randomUUID();
 
       const transactionInfo = {
-        transaction,
+        // Serialize only the fields the popup reads. Embedding the live
+        // stellar-sdk Transaction breaks `encodeObject`'s JSON.stringify on
+        // v16+ txs that carry native BigInt fields (e.g. V2 precondition
+        // minSeqAge). The popup rebuilds the full tx from `transactionXdr`.
+        transaction: getSerializableTransaction(transaction),
         transactionXdr,
         tab,
         url: tabUrl,
@@ -562,18 +568,20 @@ export const freighterApiMessageListener = (
         }
 
         const response = (
-          signedBlob: SignBlobResponse,
+          signedBlob: SignBlobResponse | string,
           signerAddress?: string,
         ) => {
           if (signedBlob) {
+            const signature = toSignatureBuffer(signedBlob);
+
             if (apiVersion && semver.gte(apiVersion, "4.0.0")) {
               safeResolve({
-                signedBlob: signedBlob.toString("base64"),
+                signedBlob: signature.toString("base64"),
                 signerAddress,
               });
               return;
             }
-            safeResolve({ signedBlob, signerAddress });
+            safeResolve({ signedBlob: signature, signerAddress });
             return;
           }
 

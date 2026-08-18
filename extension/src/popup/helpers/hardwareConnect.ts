@@ -1,11 +1,5 @@
-import {
-  FeeBumpTransaction,
-  Memo,
-  MemoType,
-  Operation,
-  Transaction,
-  StrKey,
-} from "stellar-sdk";
+import { FeeBumpTransaction, Transaction, StrKey } from "stellar-sdk";
+import semver from "semver";
 import {
   ConfigurableWalletType,
   WalletType,
@@ -18,6 +12,35 @@ import LedgerApi from "@ledgerhq/hw-app-str";
 
 import LedgerLogo from "popup/assets/ledger-logo.png";
 /* end Ledger imports */
+
+// SEP-53 message signing (APDU 0x0C) landed in the Ledger Stellar app v6.0.0.
+// Older apps reject the instruction with INS_NOT_SUPPORTED, which reads as an
+// opaque transport error, so we check the version up front instead.
+export const MIN_SIGN_MESSAGE_APP_VERSION = "6.0.0";
+
+// Sentinel thrown by hardwareSignMessage and mapped to a user-facing string in
+// parseWalletError.
+export const UNSUPPORTED_SIGN_MESSAGE_APP_ERROR =
+  "SIGN_MESSAGE_APP_VERSION_UNSUPPORTED";
+
+// Sentinel thrown when the attached device derives a different key than the
+// account the user is approving with. See the check in HardwareSign, which
+// reads the device key before signing and refuses outright.
+export const MISMATCHED_HARDWARE_ACCOUNT_ERROR = "MISMATCHED_HARDWARE_ACCOUNT";
+
+// Sentinel raised when a returned signature does not verify against the key we
+// are about to report as the signer. Distinct from the mismatch above: that one
+// is a key we read and compared, this one is a signature we cannot attribute.
+// A device swapped between connections is only one cause — a device whose
+// SEP-53 digest disagrees with encodeSep53Message, or one that returns a
+// malformed signature, lands here too, and for those the correct device is
+// already attached. See the verification in signWithHardwareWallet.
+export const UNVERIFIED_SIGN_MESSAGE_ERROR =
+  "SIGN_MESSAGE_SIGNATURE_UNVERIFIED";
+
+// Sentinel thrown when a message exceeds the device's own byte limit, which
+// getAppConfiguration reports alongside the version.
+export const OVERSIZED_SIGN_MESSAGE_ERROR = "SIGN_MESSAGE_TOO_LARGE";
 
 /*
  ** HELPER METHODS
@@ -78,7 +101,7 @@ export const getWalletPublicKey: GetWalletPublicKey = {
 
 interface HardwareSignParams {
   bipPath?: string;
-  tx: Transaction<Memo<MemoType>, Operation[]> | FeeBumpTransaction;
+  tx: Transaction | FeeBumpTransaction;
   isHashSigningEnabled?: boolean;
 }
 
@@ -139,6 +162,58 @@ export const hardwareSignAuth: HardwareSignAuth = {
     const ledgerApi = new LedgerApi(transport);
 
     const result = await ledgerApi.signSorobanAuthorization(bipPath, auth);
+    return result.signature;
+  },
+};
+
+interface HardwareSignMessageParams {
+  bipPath?: string;
+  message: string;
+}
+
+type HardwareSignMessage = {
+  [key in ConfigurableWalletType]: ({
+    bipPath,
+    message,
+  }: HardwareSignMessageParams) => Promise<Buffer>;
+};
+
+/*
+ * Returns a SEP-53 message signature from the hardware wallet
+ * @param {string} bipPath - The bip path to pass to the API (optional).
+ * @param {string} message - The message that will be signed by the wallet.
+ * @returns {Buffer} A signature over the SEP-53 encoded message.
+ */
+export const hardwareSignMessage: HardwareSignMessage = {
+  [WalletType.LEDGER]: async ({
+    bipPath = "",
+    message,
+  }: HardwareSignMessageParams) => {
+    const transport = await connectToLedgerTransport();
+    const ledgerApi = new LedgerApi(transport);
+
+    // An unparseable version is not a reason to refuse — fall through and let
+    // the device answer, since it rejects the instruction itself if too old.
+    const { version, maxDataSize } = await ledgerApi.getAppConfiguration();
+    if (
+      semver.valid(version) &&
+      semver.lt(version, MIN_SIGN_MESSAGE_APP_VERSION)
+    ) {
+      throw new Error(UNSUPPORTED_SIGN_MESSAGE_APP_ERROR);
+    }
+
+    // The device applies the SEP-53 prefix and hashing itself and displays the
+    // message for review, so it receives the raw UTF-8 bytes. The resulting
+    // signature matches what encodeSep53Message produces for a local key.
+    const messageBytes = Buffer.from(message, "utf8");
+
+    // Older apps do not report maxDataSize; when they do, checking it here
+    // turns the device's opaque 0xb004 rejection into an actionable message.
+    if (maxDataSize && messageBytes.length > maxDataSize) {
+      throw new Error(OVERSIZED_SIGN_MESSAGE_ERROR);
+    }
+
+    const result = await ledgerApi.signMessage(bipPath, messageBytes);
     return result.signature;
   },
 };
@@ -217,8 +292,47 @@ export const parseWalletError: ParseWalletError = {
         "Connect device to computer and open the Stellar app on it",
       );
     }
+    // Declining on the device is the one "error" every hardware user will hit
+    // deliberately. hw-app-str funnels the deny status word (0x6985) through a
+    // shared remapErrors for every sign call, so this covers transactions and
+    // auth entries as well as messages — none of which were translated before,
+    // because the branch below matches a string the pinned library never
+    // throws. Kept anyway in case an older app or transport still produces it.
+    if (message.indexOf("User refused the request") > -1) {
+      return i18n.t("Request rejected on your device.");
+    }
     if (message.indexOf("Transaction approval request was rejected") > -1) {
       return i18n.t("Transaction Rejected");
+    }
+    // Raised by the preflight in hardwareSignMessage. Deliberately not matched
+    // on the device's generic INS_NOT_SUPPORTED (0x6d00) status word: that fires
+    // for any instruction the app does not know — signing a Soroban auth entry
+    // on an older app, or a Stellar APDU sent while another app is open — and
+    // this parser is shared by every Ledger flow.
+    if (message.indexOf(UNSUPPORTED_SIGN_MESSAGE_APP_ERROR) > -1) {
+      return i18n.t(
+        "Update the Stellar app on your Ledger to version {{version}} or later to sign messages.",
+        { version: MIN_SIGN_MESSAGE_APP_VERSION },
+      );
+    }
+    if (message.indexOf(OVERSIZED_SIGN_MESSAGE_ERROR) > -1) {
+      return i18n.t(
+        "This message is too large for your Ledger to display. Ask the site for a shorter message.",
+      );
+    }
+    if (message.indexOf(MISMATCHED_HARDWARE_ACCOUNT_ERROR) > -1) {
+      return i18n.t(
+        "The connected device does not match the selected account. Connect the device this account was added from and try again.",
+      );
+    }
+    // Deliberately does not tell the user to connect a different device: the
+    // signature may well have come from the right one. Retrying covers a device
+    // swapped between connections, updating covers an app whose SEP-53 digest
+    // disagrees with ours.
+    if (message.indexOf(UNVERIFIED_SIGN_MESSAGE_ERROR) > -1) {
+      return i18n.t(
+        "The signature returned by your Ledger could not be verified. Disconnect any other devices and try again. If this keeps happening, update the Stellar app on your Ledger.",
+      );
     }
     return message;
   },

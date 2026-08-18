@@ -81,7 +81,7 @@ test.describe("BlockAid Scan - Suspicious States", () => {
     ).toBeVisible({ timeout: 10000 });
 
     // Click on the warning banner to view blockaid details
-    await page.getByText("This asset was flagged as suspicious").click();
+    await page.getByText("This token was flagged as suspicious").click();
 
     // Wait for pane animation to finish
     await page.waitForTimeout(1000);
@@ -109,9 +109,8 @@ test.describe("BlockAid Scan - Suspicious States", () => {
     });
 
     await page.getByTestId("nav-link-send").click();
-    await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
-
-    await page.getByTestId("address-tile").click();
+    await expect(page.getByTestId("token-list")).toBeVisible();
+    await page.getByTestId("SendRow-native").click();
     await page
       .getByTestId("send-to-input")
       .fill("GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF");
@@ -254,33 +253,21 @@ test.describe("BlockAid Scan - Suspicious States", () => {
     });
 
     await page.getByTestId("nav-link-swap").click();
-    await expect(page.getByTestId("AppHeaderPageTitle")).toContainText("Swap");
+    await expect(page.getByTestId("swap-sell-card")).toBeVisible();
 
-    await page.getByTestId("swap-src-asset-tile").click();
-    await expect(page.getByTestId("AppHeaderPageTitle")).toContainText(
-      "Swap from",
-    );
-    await expect(page.getByText(/XLM/)).toBeVisible();
-    await page.getByTestId("XLM-balance").click();
-
-    await page.getByTestId("swap-dst-asset-tile").click({ force: true });
+    // Source defaults to XLM; pick the held USDC as the destination.
+    await page
+      .getByTestId("swap-receive-card")
+      .getByTestId("send-amount-edit-dest-asset")
+      .click({ force: true });
     await expect(page.getByText("Swap to")).toBeVisible();
-    await expect(page.getByText(/USDC/)).toBeVisible();
-    await page.getByTestId("USDC-balance").click();
+    await page.getByTestId("SwapTokenRow-USDC").click();
 
-    await expect(page.getByTestId("AppHeaderPageTitle")).toContainText("Swap");
-    await expect(page.getByTestId("send-amount-amount-input")).toBeVisible({
-      timeout: 10000,
-    });
-
-    await page.getByTestId("send-amount-amount-input").fill("10");
-
-    const continueButton = page
-      .getByRole("button", { name: "Continue" })
-      .or(page.getByText("Review swap"));
-    await expect(continueButton).toBeEnabled({ timeout: 30000 });
-
-    await continueButton.click({ force: true });
+    await page
+      .getByTestId("swap-sell-card")
+      .getByTestId("send-amount-amount-input")
+      .fill("10");
+    await page.getByTestId("swap-amount-btn-continue").click({ force: true });
 
     // Should be on review pane with warning banner visible
     await expect(
@@ -323,9 +310,8 @@ test.describe("BlockAid Scan - Suspicious States", () => {
 
     // Go to send payment to an M-address (requires memo)
     await page.getByTestId("nav-link-send").click();
-    await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
-
-    await page.getByTestId("address-tile").click();
+    await expect(page.getByTestId("token-list")).toBeVisible();
+    await page.getByTestId("SendRow-native").click();
     await page
       .getByTestId("send-to-input")
       .fill("GA6SXIZIKLJHCZI2KEOBEUUOFMM4JUPPM2UTWX6STAWT25JWIEUFIMFF");

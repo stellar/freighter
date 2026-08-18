@@ -1,15 +1,16 @@
 import { useReducer } from "react";
-import { Federation } from "stellar-sdk";
+import { Federation, StrKey } from "stellar-sdk";
 import { FormikErrors } from "formik";
 import debounce from "lodash/debounce";
-import * as Sentry from "@sentry/browser";
+import { captureException } from "@sentry/browser";
 import i18n from "popup/helpers/localizationConfig";
+import { FederationMemoType } from "popup/helpers/federationMemo";
 
 import { initialState, isError, reducer } from "helpers/request";
 import { AccountBalances, useGetBalances } from "helpers/hooks/useGetBalances";
 import { loadRecentAddresses } from "@shared/api/internal";
 import { getBaseAccount } from "popup/helpers/account";
-import { isFederationAddress, isMainnet } from "helpers/stellar";
+import { isFederationAddress, isMainnet, isSameAccount } from "helpers/stellar";
 import { isContractId } from "popup/helpers/soroban";
 import {
   AppDataType,
@@ -25,6 +26,8 @@ interface ResolvedSendToData {
   destinationBalances?: AccountBalances;
   validatedAddress: string;
   fedAddress: string;
+  federationMemo: string;
+  federationMemoType: FederationMemoType | "";
   applicationState: APPLICATION_STATE;
   publicKey: string;
   networkDetails: NetworkDetails;
@@ -34,21 +37,39 @@ type SendToData = NeedsReRoute | ResolvedSendToData;
 
 export const getAddressFromInput = async (userInput: string) => {
   if (isFederationAddress(userInput)) {
+    let fedResp;
     try {
-      const fedResp = await Federation.Server.resolve(userInput);
-      return {
-        validatedAddress: fedResp.account_id,
-        fedAddress: userInput,
-      };
+      fedResp = await Federation.Server.resolve(userInput);
     } catch (error) {
-      Sentry.captureException(`Failed to fetch toml for ${userInput}`);
+      captureException(error);
       throw new Error(i18n.t("Failed to resolve federated address"));
     }
+
+    if (!StrKey.isValidEd25519PublicKey(fedResp.account_id)) {
+      throw new Error(i18n.t("Federation server returned an invalid address"));
+    }
+
+    const rawMemoType = fedResp.memo_type ?? "";
+    const memoType = (Object.values(FederationMemoType) as string[]).includes(
+      rawMemoType,
+    )
+      ? (rawMemoType as FederationMemoType)
+      : ("" as const);
+    const memo = fedResp.memo != null ? String(fedResp.memo) : "";
+
+    return {
+      validatedAddress: fedResp.account_id,
+      fedAddress: userInput,
+      federationMemo: memo,
+      federationMemoType: memoType,
+    };
   }
 
   return {
     validatedAddress: userInput,
     fedAddress: "",
+    federationMemo: "",
+    federationMemoType: "" as const,
   };
 };
 
@@ -72,8 +93,20 @@ function useSendToData() {
       _isMainnet: boolean,
     ) => {
       try {
-        const { validatedAddress, fedAddress } =
-          await getAddressFromInput(userInput);
+        const {
+          validatedAddress,
+          fedAddress,
+          federationMemo,
+          federationMemoType,
+        } = await getAddressFromInput(userInput);
+
+        // Block self-sends. isSameAccount resolves muxed (M...) addresses to
+        // their base (G...) account, so sending to one of your own muxed
+        // addresses is caught too - as is a federation address that resolves to
+        // your own account (validatedAddress is the resolved G... here).
+        if (isSameAccount(validatedAddress, publicKey)) {
+          throw new Error(i18n.t("You cannot send to yourself"));
+        }
 
         const { recentAddresses } = await loadRecentAddresses({
           activePublicKey: publicKey,
@@ -84,6 +117,8 @@ function useSendToData() {
           recentAddresses,
           validatedAddress,
           fedAddress,
+          federationMemo,
+          federationMemoType,
           applicationState,
           publicKey,
           networkDetails,
@@ -142,6 +177,8 @@ function useSendToData() {
         recentAddresses: [],
         validatedAddress: "",
         fedAddress: "",
+        federationMemo: "",
+        federationMemoType: "",
         applicationState,
         publicKey,
         networkDetails,
@@ -168,6 +205,8 @@ function useSendToData() {
       recentAddresses,
       validatedAddress: "",
       fedAddress: "",
+      federationMemo: "",
+      federationMemoType: "",
       applicationState,
       publicKey,
       networkDetails,

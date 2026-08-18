@@ -10,8 +10,10 @@ test("View Allow List selector", async ({ page, extensionId, context }) => {
   await pageTwo.waitForLoadState();
 
   const popupPromise = page.context().waitForEvent("page");
-  await pageTwo.goto("https://docs.freighter.app/docs/playground/setAllowed");
-  await pageTwo.getByText("Set Allowed Status").click();
+  await pageTwo.goto(
+    "https://play.freighter.app/#/extension/playground/setAllowed",
+  );
+  await pageTwo.getByText("Set Allowed").click();
 
   const popup = await popupPromise;
 
@@ -21,7 +23,7 @@ test("View Allow List selector", async ({ page, extensionId, context }) => {
   await expect(popup.getByText("Connection Request")).toBeVisible();
   await popup.getByTestId("grant-access-connect-button").click();
 
-  await expect(page.getByText("No connected apps found")).toBeVisible();
+  await expect(page.getByText("Nothing connected yet")).toBeVisible();
 
   await expectPageToHaveScreenshot({
     page,
@@ -32,7 +34,7 @@ test("View Allow List selector", async ({ page, extensionId, context }) => {
   const title = page.getByTestId("AppHeaderPageTitle");
   await expect(title).toBeVisible();
   await expect(title).toHaveText("Connected apps");
-  await expect(page.getByText("docs.freighter.app")).toBeVisible();
+  await expect(page.getByText("play.freighter.app")).toBeVisible();
 
   await expectPageToHaveScreenshot({
     page,
@@ -44,7 +46,7 @@ test("View Allow List selector", async ({ page, extensionId, context }) => {
     .getByTestId("manage-connected-apps-select")
     .selectOption("Main Net");
 
-  await expect(page.getByText("No connected apps found")).toBeVisible();
+  await expect(page.getByText("Nothing connected yet")).toBeVisible();
 
   await expectPageToHaveScreenshot({
     page,
@@ -56,7 +58,7 @@ test("View Allow List selector", async ({ page, extensionId, context }) => {
 
   await page.getByTestId("account-view-account-name").click();
   await page.getByTestId("add-wallet").click();
-  await page.getByText("Create new wallet").click();
+  await page.getByText("Create a new wallet").click();
 
   await page.locator("#password-input").fill(PASSWORD);
   await page.getByText("Create New Address").click();
@@ -67,10 +69,55 @@ test("View Allow List selector", async ({ page, extensionId, context }) => {
   await page.getByTestId("network-selector-open").click();
   await page.getByText("Connected apps").click();
 
-  await expect(page.getByText("No connected apps found")).toBeVisible();
+  await expect(page.getByText("Nothing connected yet")).toBeVisible();
 
   await expectPageToHaveScreenshot({
     page,
     screenshot: "allowlist-empty.png",
   });
+});
+
+test("Disconnecting apps shows a success toast", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  test.slow();
+  await loginToTestAccount({ page, extensionId, context });
+
+  const pageTwo = await page.context().newPage();
+  await pageTwo.waitForLoadState();
+
+  // Connects play.freighter.app to the current network, so the Connected apps
+  // view has a row to disconnect.
+  const grantAccess = async () => {
+    const popupPromise = page.context().waitForEvent("page");
+    await pageTwo.goto(
+      "https://play.freighter.app/#/extension/playground/setAllowed",
+    );
+    await pageTwo.getByText("Set Allowed").click();
+    const popup = await popupPromise;
+    await expect(popup.getByText("Connection Request")).toBeVisible();
+    await popup.getByTestId("grant-access-connect-button").click();
+  };
+
+  await page.getByTestId("network-selector-open").click();
+  await page.getByText("Connected apps").click();
+  await grantAccess();
+  await page.reload();
+  await expect(page.getByText("play.freighter.app")).toBeVisible();
+
+  // Removing a single app names it in the toast.
+  await page.locator(".ManageConnectedApps__row .Button").first().click();
+  await expect(page.getByText("play.freighter.app disconnected")).toBeVisible();
+  await expect(page.getByText("Nothing connected yet")).toBeVisible();
+
+  // "Disconnect all" reports the batch instead of naming each app.
+  await grantAccess();
+  await page.reload();
+  await expect(page.getByText("play.freighter.app")).toBeVisible();
+
+  await page.getByTestId("disconnect-all").click();
+  await expect(page.getByText("All apps disconnected")).toBeVisible();
+  await expect(page.getByText("Nothing connected yet")).toBeVisible();
 });

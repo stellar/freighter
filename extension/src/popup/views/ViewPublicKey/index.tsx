@@ -1,61 +1,37 @@
-import React, { useEffect, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import React, { useEffect, useRef } from "react";
+import { useSelector } from "react-redux";
 import { QRCodeSVG } from "qrcode.react";
-import { Formik, Field, FieldProps, Form, useFormikContext } from "formik";
-import { object as YupObject, string as YupString } from "yup";
-import {
-  Icon,
-  Input,
-  CopyText,
-  Button,
-  Notification,
-} from "@stellar/design-system";
+import { Icon, Button, Notification } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
-
-import { isCustomNetwork } from "@shared/helpers/stellar";
+import { Navigate, useLocation } from "react-router-dom";
+import { toast } from "sonner";
 
 import { emitMetric } from "helpers/metrics";
 import { truncatedPublicKey } from "helpers/stellar";
-
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { openTab } from "popup/helpers/navigate";
 import { View } from "popup/basics/layout/View";
-import {
-  accountNameSelector,
-  updateAccountName,
-} from "popup/ducks/accountServices";
-
-import "./styles.scss";
-import { AppDispatch } from "popup/App";
+import { accountNameSelector } from "popup/ducks/accountServices";
 import { AppDataType, useGetAppData } from "helpers/hooks/useGetAppData";
 import { RequestState } from "constants/request";
 import { Loading } from "popup/components/Loading";
+import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
 import { newTabHref } from "helpers/urls";
-import { Navigate, useLocation } from "react-router-dom";
 import { reRouteOnboarding } from "popup/helpers/route";
+
+import StellarLogo from "popup/assets/stellar-logo.png";
+
+import "./styles.scss";
 
 export const ViewPublicKey = () => {
   const { t } = useTranslation();
   const location = useLocation();
-  const [isEditingName, setIsEditingName] = useState(false);
   const accountName = useSelector(accountNameSelector);
   const { state, fetchData } = useGetAppData();
-
-  const EditNameButton = () => {
-    const { submitForm } = useFormikContext();
-
-    return isEditingName ? (
-      <button onClick={() => submitForm()}>
-        <Icon.Check />
-      </button>
-    ) : (
-      <button onClick={() => setIsEditingName(true)}>
-        <Icon.Edit01 />
-      </button>
-    );
-  };
-
-  const dispatch = useDispatch<AppDispatch>();
+  // Holds the currently-shown copy-toast's id (see copyAddress below for why
+  // this can't be a stable id). Declared here, above the early returns, so
+  // this hook always runs regardless of which branch this render takes.
+  const lastToastIdRef = useRef<string | number | null>(null);
 
   useEffect(() => {
     const getData = async () => {
@@ -106,73 +82,62 @@ export const ViewPublicKey = () => {
   });
 
   const { publicKey } = state.data.account;
-  const { networkDetails } = state.data.settings;
 
-  interface FormValue {
-    accountName: string;
-  }
-
-  const initialValues: FormValue = {
-    accountName,
+  // Dismiss-then-create with a fresh id, so repeated taps replace rather than
+  // stack. Do NOT switch to a stable id: sonner's create() updates an existing
+  // entry, but dismiss() never removes it, so after a swipe the update targets
+  // an unmounted toast and nothing renders.
+  const showToast = (render: (id: string | number) => React.ReactElement) => {
+    if (lastToastIdRef.current !== null) {
+      toast.dismiss(lastToastIdRef.current);
+    }
+    lastToastIdRef.current = toast.custom(render);
   };
 
-  const handleSubmit = async (values: FormValue) => {
-    const { accountName: newAccountName } = values;
-    if (accountName !== newAccountName) {
-      await dispatch(
-        updateAccountName({ accountName: newAccountName, publicKey }),
-      );
-      emitMetric(METRIC_NAMES.viewPublicKeyAccountRenamed);
+  const copyAddress = async () => {
+    try {
+      await navigator.clipboard.writeText(publicKey);
+      emitMetric(METRIC_NAMES.accountPublicKeyCopied);
+      showToast(() => (
+        <Notification
+          variant="success"
+          title={t("Address {{address}} copied!", {
+            address: truncatedPublicKey(publicKey),
+          })}
+        />
+      ));
+    } catch {
+      showToast(() => (
+        <Notification
+          variant="error"
+          title={t("Couldn’t copy your wallet address")}
+        />
+      ));
     }
-    setIsEditingName(false);
   };
 
   return (
     <React.Fragment>
-      <Formik
-        initialValues={initialValues}
-        onSubmit={handleSubmit}
-        validationSchema={YupObject().shape({
-          accountName: YupString().max(24, t("max of 24 characters allowed")),
-        })}
-      >
-        {({ errors }) => (
-          <>
-            <View.AppHeader
-              hasBackButton
-              centerContent={
-                isEditingName ? (
-                  <Form className="ViewPublicKey__form">
-                    <Field name="accountName">
-                      {({ field }: FieldProps) => (
-                        <Input
-                          fieldSize="md"
-                          autoComplete="off"
-                          id="accountName"
-                          placeholder={accountName}
-                          {...field}
-                          error={errors.accountName}
-                        />
-                      )}
-                    </Field>
-                  </Form>
-                ) : (
-                  <div className="ViewPublicKey__account-name-display">
-                    {accountName}
-                  </div>
-                )
-              }
-              rightContent={
-                <div className="ViewPublicKey--account-name-div">
-                  <EditNameButton />
-                </div>
-              }
-            />
-          </>
-        )}
-      </Formik>
+      <View.AppHeader hasBackButton customBackIcon={<Icon.X />} />
       <View.Content>
         <div className="ViewPublicKey__content">
+          <div className="ViewPublicKey__account">
+            <div className="ViewPublicKey__account__identicon">
+              <IdenticonImg publicKey={publicKey} />
+            </div>
+            <div className="ViewPublicKey__account__text">
+              <div
+                className="ViewPublicKey__account__name"
+                data-testid="view-public-key-account-name"
+              >
+                {accountName}
+              </div>
+              <div className="ViewPublicKey__account__address">
+                {truncatedPublicKey(publicKey)}
+              </div>
+            </div>
+          </div>
+
           <div className="ViewPublicKey__qr-code">
             <QRCodeSVG
               value={publicKey}
@@ -182,39 +147,32 @@ export const ViewPublicKey = () => {
               }}
             />
           </div>
-          <div className="ViewPublicKey__address-copy-label">
-            {t("Wallet Address")}
-          </div>
-          <div className="ViewPublicKey__address-copy">
-            {truncatedPublicKey(publicKey)}
-          </div>
-          <div className="ViewPublicKey__copy-btn">
-            <CopyText textToCopy={publicKey} doneLabel={t("Copied!")}>
-              <Button size="md" variant="tertiary" isRounded>
-                {t("COPY")}
-              </Button>
-            </CopyText>
+
+          <div className="ViewPublicKey__network-chip">
+            <img src={StellarLogo} alt="" />
+            <span>{t("Stellar")}</span>
           </div>
         </div>
       </View.Content>
       <View.Footer>
-        <div className="ViewPublicKey__external-link">
-          {!isCustomNetwork(networkDetails) ? (
-            <Button
-              size="lg"
-              isFullWidth
-              isRounded
-              variant="tertiary"
-              onClick={() => {
-                openTab(
-                  `https://stellar.expert/explorer/${networkDetails.network.toLowerCase()}/account/${publicKey}`,
-                );
-                emitMetric(METRIC_NAMES.viewPublicKeyClickedStellarExpert);
-              }}
-            >
-              {t("View on")} stellar.expert
-            </Button>
-          ) : null}
+        <div className="ViewPublicKey__footer">
+          <div className="ViewPublicKey__footer__caption">
+            {t("This address supports Stellar network.")}
+          </div>
+          {/* account.public_key_copied carries no source and never the raw
+              key. Emitted from copyAddress only once the clipboard write
+              succeeds, so failed copies aren't counted. */}
+          <Button
+            size="lg"
+            variant="secondary"
+            isFullWidth
+            isRounded
+            icon={<Icon.Copy01 />}
+            iconPosition="left"
+            onClick={copyAddress}
+          >
+            {t("Copy wallet address")}
+          </Button>
         </div>
       </View.Footer>
     </React.Fragment>

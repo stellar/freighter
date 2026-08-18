@@ -1,8 +1,50 @@
+import BigNumber from "bignumber.js";
 import { truncatedPublicKey } from "helpers/stellar";
 import { CLASSIC_ASSET_DECIMALS } from "./soroban";
 
 // remove non digits and decimal
 export const cleanAmount = (s: string) => s.replace(/[^0-9.]/g, "");
+
+export const normalizeNumericString = (value: string) => {
+  const cleaned = cleanAmount(value);
+  let hasDecimal = false;
+  let normalized = "";
+
+  for (const char of cleaned) {
+    if (char === ".") {
+      if (hasDecimal) {
+        continue;
+      }
+      hasDecimal = true;
+    }
+    normalized += char;
+  }
+
+  return normalized;
+};
+
+export const getValidBigNumber = (value: string): BigNumber | null => {
+  const cleanedValue = normalizeNumericString(value);
+
+  if (!cleanedValue || cleanedValue === ".") {
+    return null;
+  }
+
+  let numericValue: BigNumber;
+  try {
+    numericValue = new BigNumber(cleanedValue);
+  } catch {
+    return null;
+  }
+
+  return numericValue.isNaN() ? null : numericValue;
+};
+
+export const isValidPositiveAmount = (value: string) => {
+  const numericValue = getValidBigNumber(value);
+
+  return Boolean(numericValue && numericValue.gt(0));
+};
 
 // This assumes the specific formatting being done is Intl.NumberFormat of decimal type,
 // other formats may not work out of the box
@@ -44,6 +86,11 @@ export const formatAmountPreserveCursor = (
   const decimal = new Intl.NumberFormat("en-US", { style: "decimal" });
   const maxDigits = 12;
   const cleaned = cleanAmount(val);
+  // Return early so a fully-cleared field stays empty: Number("") === 0 would
+  // otherwise force a non-erasable "0". Callers treat "" as their zero value.
+  if (cleaned === "") {
+    return { amount: "", newCursor: 0 };
+  }
   // add commas to pre decimal digits
   if (cleaned.indexOf(".") !== -1) {
     const parts = cleaned.split(".");
@@ -111,6 +158,39 @@ export const scrubPathGkey = (route: string, url: string) => {
 
 export const roundUsdValue = (fullValue: string) =>
   (Math.floor(parseFloat(fullValue) * 100) / 100).toFixed(2);
+
+/**
+ * Shown in place of a USD amount that cannot be determined — no price for the
+ * token, or a total that could not be read.
+ *
+ * Distinct from "$0.00", which asserts a known zero. Prefer that wherever the
+ * absence of value is a fact rather than a gap: an unfunded account, or a
+ * network that prices no tokens.
+ */
+export const NO_FIAT_VALUE = "--";
+
+/**
+ * Formats a USD amount for display. Anything that is not a finite number —
+ * `undefined`, `null`, or the empty string some callers use for "no value" —
+ * formats as "$0.00", so a bare `formatFiatAmount()` is how callers write
+ * that zero.
+ *
+ * The zero states a real total: nothing held, or a network that prices no
+ * tokens. Where a total exists but could not be determined, use
+ * {@link NO_FIAT_VALUE} instead — `getTotalUsdLabel` chooses between them.
+ *
+ * The non-numeric guard is explicit rather than a default parameter, which
+ * would cover `undefined` alone and let `""` through as "$NaN".
+ *
+ * @example formatFiatAmount("1149.234") // "$1,149.23"
+ * @example formatFiatAmount("")         // "$0.00"
+ * @example formatFiatAmount()           // "$0.00"
+ */
+export const formatFiatAmount = (value?: string | null) => {
+  const parsed = parseFloat(value ?? "");
+
+  return `$${formatAmount(roundUsdValue(Number.isFinite(parsed) ? parsed.toString() : "0"))}`;
+};
 
 export const capitalize = (str: string) => {
   return str.charAt(0).toUpperCase() + str.slice(1);

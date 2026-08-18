@@ -14,6 +14,7 @@ interface FormValue {
 
 interface EditMemoProps {
   memo: string;
+  memoType?: string;
   onClose: () => void;
   onSubmit: (args: FormValue) => void;
   disabled?: boolean;
@@ -22,6 +23,7 @@ interface EditMemoProps {
 
 export const EditMemo = ({
   memo,
+  memoType,
   onClose,
   onSubmit,
   disabled = false,
@@ -29,7 +31,7 @@ export const EditMemo = ({
 }: EditMemoProps) => {
   const { t } = useTranslation();
   const [localMemo, setLocalMemo] = React.useState(memo);
-  const { error: memoError } = useValidateMemo(localMemo);
+  const { error: memoError } = useValidateMemo(localMemo, memoType);
 
   const initialValues: FormValue = {
     memo,

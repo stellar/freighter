@@ -5,14 +5,18 @@ import {
 } from "@shared/api/types/message-request";
 import { captureException } from "@sentry/browser";
 
-export const handleSignedHwPayload = ({
+import { SessionTimer } from "background/helpers/session";
+
+export const handleSignedHwPayload = async ({
   request,
   responseQueue,
+  sessionTimer,
 }: {
   request: HandleSignedHWPayloadMessage;
   responseQueue: ResponseQueue<SignedHwPayloadResponse>;
+  sessionTimer: SessionTimer;
 }) => {
-  const { signedPayload, uuid } = request;
+  const { signedPayload, signerAddress, uuid } = request;
 
   if (!uuid) {
     captureException("handleSignedHwPayload: missing uuid in request");
@@ -29,7 +33,13 @@ export const handleSignedHwPayload = ({
     transactionResponse &&
     typeof transactionResponse.response === "function"
   ) {
-    transactionResponse.response(signedPayload);
+    // A user just completed a hardware-wallet signature — that is a
+    // real user action, so extend the idle session. We only rearm on
+    // the success branch; a malformed request or a missing queue
+    // entry is never a legitimate signal of user presence and must
+    // not be allowed to extend the deadline.
+    await sessionTimer.resetSession();
+    transactionResponse.response(signedPayload, signerAddress);
     return {};
   }
 

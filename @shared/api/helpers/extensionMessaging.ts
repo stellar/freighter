@@ -71,17 +71,19 @@ export const sendMessageToContentScript = (msg: Msg): Promise<Response> => {
   });
 };
 
-export const sendMessageToBackground = async (msg: Msg): Promise<Response> => {
+export const sendMessageToBackground = async <T = Response>(
+  msg: Msg,
+): Promise<T> => {
   let res;
 
   if (DEV_SERVER) {
     // treat this as an external call because we're making the call from the browser, not the popup
     res = await sendMessageToContentScript(msg);
   } else {
-    res = (await browser.runtime.sendMessage(msg)) as Response;
+    res = await browser.runtime.sendMessage(msg);
   }
 
-  return res as Response;
+  return res as T;
 };
 
 export const FreighterApiNodeError = {

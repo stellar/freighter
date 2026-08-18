@@ -78,6 +78,7 @@ describe("useGetAssetDomainsWithBalances (cached path)", () => {
   const preloadedState = {
     auth: {
       publicKey: TEST_PUBLIC_KEY,
+      hasPrivateKey: true,
     },
     cache: {
       balanceData: {

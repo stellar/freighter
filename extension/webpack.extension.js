@@ -1,12 +1,13 @@
 const { merge } = require("webpack-merge");
 const webpack = require("webpack");
-const I18nextWebpackPlugin = require("i18next-scanner-webpack");
+const I18nextWebpackPlugin = require("i18next-scanner-webpack").default;
 const { commonConfig } = require("./webpack.common.js");
 const Dotenv = require("dotenv-webpack");
 const dotenv = require("dotenv");
 const { sentryWebpackPlugin } = require("@sentry/webpack-plugin");
 const SpeedMeasurePlugin = require("speed-measure-webpack-plugin");
 const TerserPlugin = require("terser-webpack-plugin");
+const packageJson = require("./package.json");
 
 // Load .env file and validate required variables (skip in CI - secrets are handled separately)
 dotenv.config();
@@ -67,6 +68,7 @@ const prodConfig = (
     plugins: [
       new webpack.DefinePlugin({
         DEV_SERVER: false,
+        DEV_SERVER_URL: JSON.stringify(""),
         DEV_EXTENSION: !env.PRODUCTION,
       }),
       ...(env.TRANSLATIONS
@@ -86,7 +88,12 @@ const prodConfig = (
                 keepRemoved: true,
                 removeUnusedKeys: false,
                 keySeparator: false,
+                // i18next-parser (wrapped by i18next-scanner-webpack) uses
+                // `namespaceSeparator`, not `nsSeparator`. Without this, a key
+                // containing ": " (e.g. "Maximum spendable: {{amount}}") is
+                // split into a stray namespace file. Keep both names set.
                 nsSeparator: false,
+                namespaceSeparator: false,
                 func: {
                   list: ["t", "i18next.t", "i18n.t"],
                   extensions: [".ts", ".tsx"],
@@ -97,9 +104,12 @@ const prodConfig = (
         : []),
       new Dotenv({ systemvars: true }),
       sentryWebpackPlugin({
-        org: env.SENTRY_ORG,
-        project: env.SENTRY_PROJECT,
-        authToken: env.SENTRY_KEY,
+        org: process.env.SENTRY_ORG,
+        project: process.env.SENTRY_PROJECT,
+        authToken: process.env.SENTRY_AUTH_TOKEN,
+        release: {
+          name: `freighter@${packageJson.version}`,
+        },
       }),
     ],
     // This if to fine tune logged output. Since this is an extension, not a

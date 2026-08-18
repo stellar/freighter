@@ -603,6 +603,23 @@ const authSlice = createSlice({
     saveApplicationState(state, action) {
       state.applicationState = action.payload;
     },
+    /**
+     * Called when the background broadcasts that the wallet has been
+     * locked (e.g., the idle auto-lock alarm fired). Mirrors the
+     * background's `timeoutAccountAccess` reset on the popup side so
+     * that route guards (`VerifiedAccountRoute`, `useGetAppData`) see
+     * `hasPrivateKey: false` immediately instead of after the next
+     * data refetch. Public/private-key-derived state is cleared;
+     * `applicationState` is left untouched so `<UnlockAccountRoute>`
+     * still renders `<UnlockAccount>` rather than `<Welcome>`.
+     */
+    lockAccount(state) {
+      state.hasPrivateKey = false;
+      state.publicKey = "";
+      state.allAccounts = [];
+      state.bipPath = "";
+      state.tokenIdList = [];
+    },
   },
   extraReducers: (builder) => {
     builder.addCase(createAccount.fulfilled, (state, action) => {
@@ -990,6 +1007,7 @@ export const {
   saveAccount,
   saveAccountError,
   saveApplicationState,
+  lockAccount,
 } = authSlice.actions;
 
 export { reducer };

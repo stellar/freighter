@@ -1,0 +1,89 @@
+@use "../../styles/utils.scss" as *;
+
+.BalanceRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  // 12px top + bottom, so adjacent rows land on frame 9567-17044's 24px gap
+  // without an extra margin between them.
+  padding: pxToRem(12px) 0;
+  color: var(--sds-clr-gray-12);
+  font-size: 1rem;
+  line-height: 1.5rem;
+
+  &--clickable {
+    cursor: pointer;
+  }
+
+  &__left {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    font-weight: var(--sds-fw-medium);
+    // No `gap`: icon-to-text spacing already comes from AssetIcon's
+    // `margin-right` (AccountAssets `&__asset--logo`), and would stack.
+  }
+
+  &__value {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__code {
+    font-size: pxToRem(14px);
+    line-height: pxToRem(20px);
+    font-weight: var(--sds-fw-medium);
+    color: var(--sds-clr-gray-12);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+  }
+
+  &__amount {
+    font-size: pxToRem(12px);
+    line-height: pxToRem(18px);
+    font-weight: var(--sds-fw-medium);
+    color: var(--sds-clr-gray-11);
+  }
+
+  &__right {
+    min-width: 0;
+    font-weight: var(--sds-fw-regular);
+    text-align: right;
+  }
+
+  &__fiat {
+    font-size: pxToRem(14px);
+    line-height: pxToRem(20px);
+    font-weight: var(--sds-fw-medium);
+    color: var(--sds-clr-gray-12);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+  }
+
+  &__delta {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+    font-size: pxToRem(12px);
+    line-height: pxToRem(18px);
+    font-weight: var(--sds-fw-medium);
+
+    // No color here — the modifiers below carry it, via
+    // `getPriceDeltaColor()` in index.tsx. A color on `&__delta` itself would
+    // flatten gains and losses together.
+    &.positive {
+      color: var(--sds-clr-green-09);
+    }
+
+    // Zero deltas are `negative` too, so this stays gray: only gains get color.
+    &.negative {
+      color: var(--sds-clr-gray-11);
+    }
+  }
+}

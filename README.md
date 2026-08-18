@@ -15,10 +15,12 @@ This repo is constructed using yarn workspaces and consists of the 4 sections:
 
 ## Prerequisites
 
-You will need
+- Node (>= 22): https://nodejs.org/en/download/ (use `nvm use` — the repo has
+  `.nvmrc`)
+- Yarn 4.10.0: `corepack enable && corepack prepare yarn@4.10.0 --activate`
 
-- Node (>=21): https://nodejs.org/en/download/
-- Yarn (v1.22.5 or newer): https://classic.yarnpkg.com/en/docs/install
+For a complete setup guide including LLM-assisted quick setup, see
+[CONTRIBUTING.MD](CONTRIBUTING.MD).
 
 ## Build the extension
 
@@ -50,9 +52,15 @@ INDEXER_V2_URL=your_backend_v2_prod_url_here
 
 ```
 
-These URLs should point to your deployment of Freighter backend. For more details on
-backend configuration, see
+These URLs should point to your deployment of Freighter backend. For more
+details on backend configuration, see
 [extension/README.md](extension/README.md#configure-the-backend).
+
+If you're running the backends locally, follow the setup instructions in
+[stellar/freighter-backend](https://github.com/stellar/freighter-backend) (V1)
+and
+[stellar/freighter-backend-v2](https://github.com/stellar/freighter-backend-v2)
+(V2).
 
 ## Starting a dev environment
 

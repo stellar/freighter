@@ -1,8 +1,8 @@
 import React, { useEffect } from "react";
-import { Icon, IconButton } from "@stellar/design-system";
+import { Badge, Icon, IconButton } from "@stellar/design-system";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
-import { Operation, xdr } from "stellar-sdk";
+import { OperationRecord, Signer, xdr } from "stellar-sdk";
 
 import {
   FLAG_TYPES,
@@ -16,6 +16,7 @@ import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { truncateString, truncatedPoolId } from "helpers/stellar";
 import { scanAsset } from "popup/helpers/blockaid";
 import { addressToString, getCreateContractArgs } from "popup/helpers/soroban";
+import { CopyValue } from "popup/components/CopyValue";
 import {
   KeyValueClaimants,
   KeyValueInvokeHostFn,
@@ -52,6 +53,35 @@ const MemoRequiredWarning = ({
   ) : null;
 };
 
+// A neutral gray pill used for "cleared"/"deleted" states in the technical
+// operation view — easier to scan at a glance than a parenthetical string.
+const StatusBadge = ({ children }: { children: string }) => (
+  <Badge variant="tertiary" size="sm">
+    {children}
+  </Badge>
+);
+
+const MasterKeyDisableWarning = () => {
+  const { t } = useTranslation();
+
+  // Rendered as a full-width banner (not a KeyValueList row) so the message
+  // wraps instead of being truncated in the right-aligned value column.
+  return (
+    <div
+      className="Operations__warning"
+      data-testid="MasterKeyDisableWarning"
+      role="alert"
+    >
+      <Icon.AlertTriangle aria-hidden="true" />
+      <span>
+        {t(
+          "This transaction disables your account's master key. You may permanently lose access to this account unless another signer with sufficient weight is added.",
+        )}
+      </span>
+    </div>
+  );
+};
+
 const DestinationWarning = ({
   destination,
   flaggedKeys,
@@ -75,14 +105,37 @@ const DestinationWarning = ({
   );
 };
 
+// On Stellar a non-native asset is identified by (code, issuer), not by code
+// alone, so the signing UI must show the issuer for any value-bearing asset to
+// let the user distinguish a legitimate asset from a look-alike using the same
+// code. Native XLM has no issuer, so nothing is rendered for it. Mirrors the
+// issuer row already shown by changeTrust (KeyValueLine) and PathList.
+const KeyValueAssetIssuer = ({ issuer }: { issuer?: string }) => {
+  const { t } = useTranslation();
+
+  return issuer ? (
+    <KeyValueList
+      operationKey={t("Asset Issuer")}
+      operationValue={
+        <CopyValue value={issuer} displayValue={truncateString(issuer)} />
+      }
+    />
+  ) : null;
+};
+
 export const Operations = ({
   flaggedKeys,
   isMemoRequired,
-  operations = [] as Operation[],
+  operations = [] as OperationRecord[],
+  scanAssets = true,
 }: {
   flaggedKeys: FlaggedKeys;
   isMemoRequired: boolean;
-  operations: Operation[];
+  operations: OperationRecord[];
+  // The dapp-signing flow self-scans each op's assets for its own badges. The
+  // internal Send/Swap review already scans these assets, so it passes
+  // scanAssets={false} to avoid duplicate Blockaid requests.
+  scanAssets?: boolean;
 }) => {
   const { t } = useTranslation();
 
@@ -96,10 +149,34 @@ export const Operations = ({
     "8": "Authorization Clawback Enabled",
   };
 
-  const RenderOpByType = ({ op }: { op: Operation }) => {
+  // Account flags are a bitmask, so a combined value (e.g. REVOCABLE |
+  // CLAWBACK = 10) is not a key in AuthorizationMapToDisplay. Decode each known
+  // bit individually so combined flags are never rendered as a blank value, and
+  // surface any remaining (unrecognized) bits so a future protocol flag isn't
+  // silently hidden when combined with a known one.
+  const decodeAuthorizationFlags = (bits: number) => {
+    const labels: string[] = [];
+    let remaining = bits;
+    Object.entries(AuthorizationMapToDisplay).forEach(([bit, label]) => {
+      const value = Number(bit);
+      if ((bits & value) !== 0) {
+        labels.push(t(label));
+        remaining &= ~value;
+      }
+    });
+    if (remaining !== 0) {
+      labels.push(t("Unknown ({{bits}})", { bits: remaining }));
+    }
+    return labels.join(", ");
+  };
+
+  const RenderOpByType = ({ op }: { op: OperationRecord }) => {
     const networkDetails = useSelector(settingsNetworkDetailsSelector);
 
     useEffect(() => {
+      if (!scanAssets) {
+        return;
+      }
       const scan = async () => {
         let sendAsset;
         let destAsset;
@@ -173,23 +250,27 @@ export const Operations = ({
               isMemoRequired={isMemoRequired}
             />
             <KeyValueList
-              operationKey={t("Asset Code")}
+              operationKey={t("Token Code")}
               operationValue={asset.code}
             />
-            <KeyValueList operationKey={t("Amount")} operationValue={amount} />
+            <KeyValueAssetIssuer issuer={asset.issuer} />
+            <KeyValueList
+              operationKey={t("Amount")}
+              operationValue={`${amount} ${asset.code}`}
+            />
           </>
         );
       }
 
       case "pathPaymentStrictReceive": {
-        const { sendAsset, sendMax, destination, destAsset, destAmount, path } =
-          op;
+        const { sendAsset, sendMax, destination, destAsset, destAmount } = op;
         return (
           <>
             <KeyValueList
               operationKey={t("Asset Code")}
               operationValue={sendAsset.code}
             />
+            <KeyValueAssetIssuer issuer={sendAsset.issuer} />
             <KeyValueList
               operationKey={t("Send Max")}
               operationValue={sendMax}
@@ -207,27 +288,27 @@ export const Operations = ({
               operationKey={t("Destination Asset")}
               operationValue={destAsset.code}
             />
+            <KeyValueAssetIssuer issuer={destAsset.issuer} />
             <KeyValueList
               operationKey={t("Destination Amount")}
               operationValue={destAmount}
             />
-            <PathList paths={path} />
           </>
         );
       }
 
       case "pathPaymentStrictSend": {
-        const { sendAsset, sendAmount, destination, destAsset, destMin, path } =
-          op;
+        const { sendAsset, sendAmount, destination, destAsset, destMin } = op;
         return (
           <>
             <KeyValueList
-              operationKey={t("Asset Code")}
+              operationKey={t("Token Code")}
               operationValue={sendAsset.code}
             />
+            <KeyValueAssetIssuer issuer={sendAsset.issuer} />
             <KeyValueList
               operationKey={t("Send Amount")}
-              operationValue={sendAmount}
+              operationValue={`${sendAmount} ${sendAsset.code}`}
             />
             <KeyValueWithPublicKey
               operationKey={t("Destination")}
@@ -238,15 +319,15 @@ export const Operations = ({
               flaggedKeys={flaggedKeys}
               isMemoRequired={isMemoRequired}
             />
-            <KeyValueWithPublicKey
-              operationKey={t("Destination Asset")}
+            <KeyValueList
+              operationKey={t("Destination Token")}
               operationValue={destAsset.code}
             />
+            <KeyValueAssetIssuer issuer={destAsset.issuer} />
             <KeyValueList
               operationKey={t("Destination Minimum")}
-              operationValue={destMin}
+              operationValue={`${destMin} ${destAsset.code}`}
             />
-            <PathList paths={path} />
           </>
         );
       }
@@ -259,11 +340,13 @@ export const Operations = ({
               operationKey={t("Buying")}
               operationValue={buying.code}
             />
+            <KeyValueAssetIssuer issuer={buying.issuer} />
             <KeyValueList operationKey={t("Amount")} operationValue={amount} />
             <KeyValueList
               operationKey={t("Selling")}
               operationValue={selling.code}
             />
+            <KeyValueAssetIssuer issuer={selling.issuer} />
             <KeyValueList operationKey={t("Price")} operationValue={price} />
           </>
         );
@@ -281,10 +364,12 @@ export const Operations = ({
               operationKey={t("Selling")}
               operationValue={selling.code}
             />
+            <KeyValueAssetIssuer issuer={selling.issuer} />
             <KeyValueList
               operationKey={t("Buying")}
               operationValue={buying.code}
             />
+            <KeyValueAssetIssuer issuer={buying.issuer} />
             <KeyValueList operationKey={t("Amount")} operationValue={amount} />
             <KeyValueList operationKey={t("Price")} operationValue={price} />
           </>
@@ -303,6 +388,7 @@ export const Operations = ({
               operationKey={t("Buying")}
               operationValue={buying.code}
             />
+            <KeyValueAssetIssuer issuer={buying.issuer} />
             <KeyValueList
               operationKey={t("Buy Amount")}
               operationValue={buyAmount}
@@ -311,6 +397,7 @@ export const Operations = ({
               operationKey={t("Selling")}
               operationValue={selling.code}
             />
+            <KeyValueAssetIssuer issuer={selling.issuer} />
             <KeyValueList operationKey={t("Price")} operationValue={price} />
           </>
         );
@@ -330,55 +417,64 @@ export const Operations = ({
         } = op;
         return (
           <>
-            {signer && <KeyValueSigner signer={signer} />}
+            {signer && (
+              // v16 types the parsed setOptions signer as the builder opts
+              // type; at runtime it is a parsed Signer (Buffer-backed fields).
+              <KeyValueSigner signer={signer as unknown as Signer} />
+            )}
             {inflationDest && (
               <KeyValueWithPublicKey
                 operationKey={t("Inflation Destination")}
                 operationValue={inflationDest}
               />
             )}
-            {homeDomain && (
+            {homeDomain !== undefined && (
               <KeyValueList
                 operationKey={t("Home Domain")}
-                operationValue={homeDomain}
+                operationValue={
+                  homeDomain === "" ? (
+                    <StatusBadge>{t("Cleared")}</StatusBadge>
+                  ) : (
+                    homeDomain
+                  )
+                }
               />
             )}
-            {highThreshold && (
+            {highThreshold !== undefined && (
               <KeyValueList
                 operationKey={t("High Threshold")}
-                operationValue={highThreshold?.toString()}
+                operationValue={highThreshold.toString()}
               />
             )}
-            {medThreshold && (
+            {medThreshold !== undefined && (
               <KeyValueList
                 operationKey={t("Medium Threshold")}
-                operationValue={medThreshold?.toString()}
+                operationValue={medThreshold.toString()}
               />
             )}
-            {lowThreshold && (
+            {lowThreshold !== undefined && (
               <KeyValueList
                 operationKey={t("Low Threshold")}
-                operationValue={lowThreshold?.toString()}
+                operationValue={lowThreshold.toString()}
               />
             )}
-            {masterWeight && (
+            {masterWeight !== undefined && (
               <KeyValueList
                 operationKey={t("Master Weight")}
-                operationValue={masterWeight?.toString()}
+                operationValue={masterWeight.toString()}
               />
             )}
-            {setFlags && (
+            {masterWeight === 0 && <MasterKeyDisableWarning />}
+            {setFlags !== undefined && (
               <KeyValueList
                 operationKey={t("Set Flags")}
-                operationValue={AuthorizationMapToDisplay[setFlags?.toString()]}
+                operationValue={decodeAuthorizationFlags(setFlags)}
               />
             )}
-            {clearFlags && (
+            {clearFlags !== undefined && (
               <KeyValueList
                 operationKey={t("Clear Flags")}
-                operationValue={
-                  AuthorizationMapToDisplay[clearFlags.toString()]
-                }
+                operationValue={decodeAuthorizationFlags(clearFlags)}
               />
             )}
           </>
@@ -435,15 +531,23 @@ export const Operations = ({
 
       case "manageData": {
         const { name, value } = op;
+        // A null/undefined value means the data entry is being deleted; an
+        // empty value decodes to a zero-length buffer. Always render the row so
+        // a deletion is never silently hidden from the approval screen.
+        const isDeletingEntry = value === undefined || value === null;
         return (
           <>
             <KeyValueList operationKey={t("Name")} operationValue={name} />
-            {value && (
-              <KeyValueList
-                operationKey={t("Value")}
-                operationValue={value?.toString()}
-              />
-            )}
+            <KeyValueList
+              operationKey={t("Value")}
+              operationValue={
+                isDeletingEntry ? (
+                  <StatusBadge>{t("Deleted")}</StatusBadge>
+                ) : (
+                  value.toString()
+                )
+              }
+            />
           </>
         );
       }
@@ -463,6 +567,7 @@ export const Operations = ({
               operationKey={t("Asset Code")}
               operationValue={asset.code}
             />
+            <KeyValueAssetIssuer issuer={asset.issuer} />
             <KeyValueList operationKey={t("Amount")} operationValue={amount} />
             <KeyValueClaimants claimants={claimants} />
           </>
@@ -506,6 +611,7 @@ export const Operations = ({
               operationKey={t("Asset Code")}
               operationValue={asset.code}
             />
+            <KeyValueAssetIssuer issuer={asset.issuer} />
             <KeyValueList operationKey={t("Amount")} operationValue={amount} />
             <KeyValueWithPublicKey
               operationKey={t("From")}
@@ -537,22 +643,35 @@ export const Operations = ({
               operationKey={t("Asset Code")}
               operationValue={asset.code}
             />
-            {flags.authorized && (
+            <KeyValueAssetIssuer issuer={asset.issuer} />
+            {/*
+              A flag present in the decoded `flags` object is being changed:
+              `true` enables it, `false` *clears* it. Use a presence check so a
+              cleared flag is never hidden, and render the value explicitly — a
+              raw boolean is not rendered by React.
+            */}
+            {flags.authorized !== undefined && (
               <KeyValueList
                 operationKey={t(FLAG_TYPES.authorized)}
-                operationValue={flags.authorized}
+                operationValue={flags.authorized ? t("Enabled") : t("Disabled")}
               />
             )}
-            {flags.authorizedToMaintainLiabilities && (
+            {flags.authorizedToMaintainLiabilities !== undefined && (
               <KeyValueList
                 operationKey={t(FLAG_TYPES.authorizedToMaintainLiabilities)}
-                operationValue={flags.authorizedToMaintainLiabilities}
+                operationValue={
+                  flags.authorizedToMaintainLiabilities
+                    ? t("Enabled")
+                    : t("Disabled")
+                }
               />
             )}
-            {flags.clawbackEnabled && (
+            {flags.clawbackEnabled !== undefined && (
               <KeyValueList
                 operationKey={t(FLAG_TYPES.clawbackEnabled)}
-                operationValue={flags.clawbackEnabled}
+                operationValue={
+                  flags.clawbackEnabled ? t("Enabled") : t("Disabled")
+                }
               />
             )}
           </>
@@ -626,12 +745,8 @@ export const Operations = ({
       case "restoreFootprint":
       case "inflation":
       default: {
-        // OperationType is missing some types
-        // Issue: https://github.com/stellar/js-stellar-base/issues/728
-        const type = op.type as string;
-        if (type === "revokeTrustlineSponsorship") {
-          const _op = op as unknown as Operation.RevokeTrustlineSponsorship;
-          const { account, asset } = _op;
+        if (op.type === "revokeTrustlineSponsorship") {
+          const { account, asset } = op;
           return (
             <>
               <KeyValueWithPublicKey
@@ -653,9 +768,8 @@ export const Operations = ({
             </>
           );
         }
-        if (type === "revokeAccountSponsorship") {
-          const _op = op as unknown as Operation.RevokeAccountSponsorship;
-          const { account } = _op;
+        if (op.type === "revokeAccountSponsorship") {
+          const { account } = op;
           return (
             <KeyValueWithPublicKey
               operationKey={t("Account")}
@@ -663,9 +777,8 @@ export const Operations = ({
             />
           );
         }
-        if (type === "revokeOfferSponsorship") {
-          const _op = op as unknown as Operation.RevokeOfferSponsorship;
-          const { seller, offerId } = _op;
+        if (op.type === "revokeOfferSponsorship") {
+          const { seller, offerId } = op;
           return (
             <>
               <KeyValueWithPublicKey
@@ -679,9 +792,8 @@ export const Operations = ({
             </>
           );
         }
-        if (type === "revokeDataSponsorship") {
-          const _op = op as unknown as Operation.RevokeDataSponsorship;
-          const { account, name } = _op;
+        if (op.type === "revokeDataSponsorship") {
+          const { account, name } = op;
           return (
             <>
               <KeyValueWithPublicKey
@@ -692,10 +804,8 @@ export const Operations = ({
             </>
           );
         }
-        if (type === "revokeClaimableBalanceSponsorship") {
-          const _op =
-            op as unknown as Operation.RevokeClaimableBalanceSponsorship;
-          const { balanceId } = _op;
+        if (op.type === "revokeClaimableBalanceSponsorship") {
+          const { balanceId } = op;
           return (
             <KeyValueList
               operationKey={t("Balance ID")}
@@ -703,12 +813,11 @@ export const Operations = ({
             />
           );
         }
-        if (type === "revokeSignerSponsorship") {
-          const _op = op as unknown as Operation.RevokeSignerSponsorship;
-          const { account, signer } = _op;
+        if (op.type === "revokeSignerSponsorship") {
+          const { account, signer } = op;
           return (
             <>
-              <KeyValueSignerKeyOptions signer={signer} />
+              <KeyValueSignerKeyOptions signer={signer as unknown as Signer} />
               <KeyValueWithPublicKey
                 operationKey={t("Account")}
                 operationValue={account}
@@ -721,10 +830,13 @@ export const Operations = ({
     }
   };
 
-  const RenderOpArgsByType = ({ op }: { op: Operation }) => {
+  const RenderOpArgsByType = ({ op }: { op: OperationRecord }) => {
     const networkDetails = useSelector(settingsNetworkDetailsSelector);
 
     useEffect(() => {
+      if (!scanAssets) {
+        return;
+      }
       const scan = async () => {
         let sendAsset;
         let destAsset;
@@ -853,7 +965,9 @@ export const Operations = ({
           >
             <div className="Operations--header">
               <Icon.Cube02 />
-              <span>{OPERATION_TYPES[type] || type}</span>
+              <span>
+                {OPERATION_TYPES[type as keyof typeof OPERATION_TYPES] || type}
+              </span>
             </div>
             <div className="Operations--item">
               {sourceVal && (
@@ -864,6 +978,10 @@ export const Operations = ({
               )}
               <RenderOpByType op={op} />
             </div>
+            {(op.type === "pathPaymentStrictSend" ||
+              op.type === "pathPaymentStrictReceive") && (
+              <PathList paths={op.path} />
+            )}
             {type === "invokeHostFunction" && (
               <>
                 <div className="Operations--header">

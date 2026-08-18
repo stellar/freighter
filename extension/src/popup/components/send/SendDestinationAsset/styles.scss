@@ -4,10 +4,21 @@
   display: flex;
   flex-direction: column;
 
-  &__tab-buttons {
+  &__collectibles-section {
+    margin-top: pxToRem(16);
+  }
+
+  &__collectibles-heading {
     display: flex;
+    align-items: center;
     font-size: pxToRem(14);
     line-height: pxToRem(20);
-    gap: pxToRem(16);
+    font-weight: 600;
+    padding: pxToRem(8) 0;
+    color: var(--sds-clr-gray-11);
+
+    svg {
+      margin-right: pxToRem(4px);
+    }
   }
 }

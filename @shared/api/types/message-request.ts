@@ -9,8 +9,10 @@ import {
   BalanceToMigrate,
   IssuerKey,
   CollectibleKey,
+  TrendingAsset,
 } from "./types";
 import { AssetsListItem } from "@shared/constants/soroban/asset-list";
+import { AutoLockTimeoutMinutes } from "@shared/constants/autoLock";
 
 export interface TokenToAdd {
   domain: string;
@@ -212,12 +214,18 @@ export interface RejectAccessMessage extends BaseMessage {
 export interface HandleSignedHWPayloadMessage extends BaseMessage {
   type: SERVICE_TYPES.HANDLE_SIGNED_HW_PAYLOAD;
   signedPayload: string | Buffer<ArrayBufferLike>;
+  // The device-derived address that produced the signature. SEP-53 consumers
+  // need it to verify the signature they get back.
+  signerAddress?: string;
   uuid: string;
 }
 
 export interface AddTokenMessage extends BaseMessage {
   type: SERVICE_TYPES.ADD_TOKEN;
   uuid: string;
+  // Set by the popup, which already knows whether this went through the SAC
+  // trustline review or the plain SEP-41 path.
+  isTrustlineBacked?: boolean;
 }
 
 export interface SignTransactionMessage extends BaseMessage {
@@ -282,6 +290,11 @@ export interface SaveSettingsMessage extends BaseMessage {
   isMemoValidationEnabled: boolean;
   isDataSharingAllowed: boolean;
   isOpenSidebarByDefault: boolean;
+  autoLockTimeoutMinutes: AutoLockTimeoutMinutes;
+}
+
+export interface UserActivityMessage extends BaseMessage {
+  type: SERVICE_TYPES.USER_ACTIVITY;
 }
 
 export interface SaveExperimentalFeaturesMessage extends BaseMessage {
@@ -317,6 +330,19 @@ export interface CacheAssetIconMessage extends BaseMessage {
   type: SERVICE_TYPES.CACHE_ASSET_ICON;
   assetCanonical: string;
   iconUrl: string;
+}
+
+export interface GetCachedSwapTopTokensMessage extends BaseMessage {
+  type: SERVICE_TYPES.GET_CACHED_SWAP_TOP_TOKENS;
+  network: string;
+}
+
+export interface CacheSwapTopTokensMessage extends BaseMessage {
+  type: SERVICE_TYPES.CACHE_SWAP_TOP_TOKENS;
+  network: string;
+  // Pass-through cache: the background stores these as-is and never reads
+  // individual token fields.
+  tokens: TrendingAsset[];
 }
 
 export interface GetCachedDomainMessage extends BaseMessage {
@@ -402,14 +428,6 @@ export interface GetHiddenAssetsMessage extends BaseMessage {
   type: SERVICE_TYPES.GET_HIDDEN_ASSETS;
 }
 
-export interface GetMobileAppBannerDismissedMessage extends BaseMessage {
-  type: SERVICE_TYPES.GET_MOBILE_APP_BANNER_DISMISSED;
-}
-
-export interface DismissMobileAppBannerMessage extends BaseMessage {
-  type: SERVICE_TYPES.DISMISS_MOBILE_APP_BANNER;
-}
-
 export interface GetRecentProtocolsMessage extends BaseMessage {
   type: SERVICE_TYPES.GET_RECENT_PROTOCOLS;
 }
@@ -476,6 +494,18 @@ export interface RejectSigningRequestMessage extends BaseMessage {
   uuid: string;
 }
 
+export interface FetchBackendV2Message {
+  activePublicKey: string | null;
+  type: SERVICE_TYPES.FETCH_BACKEND_V2;
+  method: string;
+  path: string;
+  body?: string;
+}
+
+export interface GetAnalyticsUserIdMessage extends BaseMessage {
+  type: SERVICE_TYPES.GET_ANALYTICS_USER_ID;
+}
+
 export type ServiceMessageRequest =
   | FundAccountMessage
   | CreateAccountMessage
@@ -518,6 +548,8 @@ export type ServiceMessageRequest =
   | GetCachedAssetIconListMessage
   | GetCachedAssetIconMessage
   | CacheAssetIconMessage
+  | GetCachedSwapTopTokensMessage
+  | CacheSwapTopTokensMessage
   | GetCachedDomainMessage
   | CacheDomainMessage
   | GetMemoRequiredAccountsMessage
@@ -533,8 +565,6 @@ export type ServiceMessageRequest =
   | GetIsAccountMismatchMessage
   | ChangeAssetVisibilityMessage
   | GetHiddenAssetsMessage
-  | GetMobileAppBannerDismissedMessage
-  | DismissMobileAppBannerMessage
   | GetRecentProtocolsMessage
   | AddRecentProtocolMessage
   | ClearRecentProtocolsMessage
@@ -547,4 +577,7 @@ export type ServiceMessageRequest =
   | GetHiddenCollectiblesMessage
   | MarkQueueActiveMessage
   | OpenSidebarMessage
-  | RejectSigningRequestMessage;
+  | RejectSigningRequestMessage
+  | UserActivityMessage
+  | FetchBackendV2Message
+  | GetAnalyticsUserIdMessage;

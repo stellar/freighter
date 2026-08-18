@@ -18,6 +18,7 @@ import * as urlHelpers from "../../../helpers/urls";
 import { ROUTES } from "popup/constants/routes";
 import * as ApiInternal from "@shared/api/internal";
 import { DEFAULT_ASSETS_LISTS } from "@shared/constants/soroban/asset-list";
+import { DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES } from "@shared/constants/autoLock";
 import { CUSTOM_NETWORK } from "@shared/helpers/stellar";
 
 const mockLoadAccount = () =>
@@ -53,6 +54,7 @@ const mockLoadSettings = () =>
     isNonSSLEnabled: false,
     experimentalFeaturesState: SettingsState.SUCCESS,
     assetsLists: DEFAULT_ASSETS_LISTS,
+    autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
   });
 
 describe("Grant Access view", () => {
@@ -99,6 +101,7 @@ describe("Grant Access view", () => {
             applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
             publicKey:
               "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF",
+            hasPrivateKey: true,
             allAccounts: mockAccounts,
           },
           settings: {
@@ -141,6 +144,7 @@ describe("Grant Access view", () => {
             applicationState: ApplicationState.PASSWORD_CREATED,
             publicKey:
               "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF",
+            hasPrivateKey: true,
             allAccounts: mockAccounts,
           },
           settings: {
@@ -162,6 +166,7 @@ describe("Grant Access view", () => {
     jest.spyOn(global, "fetch").mockImplementation(() =>
       Promise.resolve({
         ok: true,
+        headers: { get: () => "application/json" },
         json: async () => ({ data: { status: "miss" }, error: null }),
       } as any),
     );
@@ -175,10 +180,11 @@ describe("Grant Access view", () => {
             applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
             publicKey:
               "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF",
+            hasPrivateKey: true,
             allAccounts: mockAccounts,
           },
           settings: {
-            networkDetails: TESTNET_NETWORK_DETAILS,
+            networkDetails: MAINNET_NETWORK_DETAILS,
             networksList: DEFAULT_NETWORKS,
           },
         }}
@@ -190,7 +196,7 @@ describe("Grant Access view", () => {
     await waitFor(() => screen.getByTestId("grant-access-view"));
     expect(screen.getByTestId("grant-access-view")).toBeDefined();
     await waitFor(() =>
-      expect(screen.getByTestId("blockaid-miss-label")).toBeDefined(),
+      expect(screen.getByTestId("domain-scan-blockaid-banner")).toBeDefined(),
     );
   });
 
@@ -198,6 +204,7 @@ describe("Grant Access view", () => {
     jest.spyOn(global, "fetch").mockImplementation(() =>
       Promise.resolve({
         ok: true,
+        headers: { get: () => "application/json" },
         json: async () => ({
           data: { status: "hit", is_malicious: true },
           error: null,
@@ -214,48 +221,7 @@ describe("Grant Access view", () => {
             applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
             publicKey:
               "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF",
-            allAccounts: mockAccounts,
-          },
-          settings: {
-            networkDetails: TESTNET_NETWORK_DETAILS,
-            networksList: DEFAULT_NETWORKS,
-          },
-        }}
-      >
-        <GrantAccess />
-      </Wrapper>,
-    );
-
-    await waitFor(() => screen.getByTestId("grant-access-view"));
-    expect(screen.getByTestId("grant-access-view")).toBeDefined();
-    await waitFor(() =>
-      expect(screen.getByTestId("blockaid-malicious-label")).toBeDefined(),
-    );
-  });
-
-  it("shows unable to scan label when scan site returns an error on Mainnet", async () => {
-    jest.spyOn(blockAidHelpers, "useScanSite").mockImplementation(() => {
-      return {
-        error: null,
-        isLoading: false,
-        data: {
-          is_malicious: true,
-        } as BlockAidScanSiteResult,
-        scanSite: (_url: string) => {
-          throw new Error("Failed to scan site");
-        },
-      };
-    });
-
-    render(
-      <Wrapper
-        routes={[ROUTES.welcome]}
-        state={{
-          auth: {
-            error: null,
-            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
-            publicKey:
-              "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF",
+            hasPrivateKey: true,
             allAccounts: mockAccounts,
           },
           settings: {
@@ -271,13 +237,17 @@ describe("Grant Access view", () => {
     await waitFor(() => screen.getByTestId("grant-access-view"));
     expect(screen.getByTestId("grant-access-view")).toBeDefined();
     await waitFor(() =>
-      expect(screen.getByTestId("blockaid-unable-to-scan-label")).toBeDefined(),
+      expect(screen.getByTestId("domain-scan-blockaid-banner")).toBeDefined(),
     );
-    expect(
-      screen.getByTestId("grant-access-connect-anyway-button"),
-    ).toBeDefined();
   });
-  it("shows unable to scan label when on custom network", async () => {
+
+  it("shows unable to scan label when scan site returns an error on Mainnet", async () => {
+    jest
+      .spyOn(global, "fetch")
+      .mockImplementation(() =>
+        Promise.reject(new Error("Failed to scan site")),
+      );
+
     render(
       <Wrapper
         routes={[ROUTES.welcome]}
@@ -287,6 +257,49 @@ describe("Grant Access view", () => {
             applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
             publicKey:
               "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF",
+            hasPrivateKey: true,
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: MAINNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+          },
+        }}
+      >
+        <GrantAccess />
+      </Wrapper>,
+    );
+
+    await waitFor(() => screen.getByTestId("grant-access-view"));
+    expect(screen.getByTestId("grant-access-view")).toBeDefined();
+    await waitFor(() =>
+      expect(screen.getByTestId("domain-scan-blockaid-banner")).toBeDefined(),
+    );
+    expect(
+      screen.getByTestId("grant-access-connect-anyway-button"),
+    ).toBeDefined();
+  });
+  it("suppresses Blockaid site warnings on custom networks (Mainnet-only feature)", async () => {
+    // Stub `fetch` to a benign success so that, if the network gate ever
+    // regresses and a `/scan-dapp` (or any other) call leaks through, the
+    // test doesn't attempt a real network request and become flaky in CI.
+    // The assertion below still verifies no `/scan-dapp` call was made.
+    const fetchSpy = jest.spyOn(global, "fetch").mockResolvedValue({
+      ok: true,
+      status: 200,
+      headers: new Headers({ "content-type": "application/json" }),
+      json: async () => ({}),
+    } as Response);
+    render(
+      <Wrapper
+        routes={[ROUTES.welcome]}
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
+            publicKey:
+              "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF",
+            hasPrivateKey: true,
             allAccounts: mockAccounts,
           },
           settings: {
@@ -314,12 +327,16 @@ describe("Grant Access view", () => {
 
     await waitFor(() => screen.getByTestId("grant-access-view"));
     expect(screen.getByTestId("grant-access-view")).toBeDefined();
-    await waitFor(() =>
-      expect(screen.getByTestId("blockaid-unable-to-scan-label")).toBeDefined(),
-    );
+    // No Blockaid label should be rendered, and the dapp scan endpoint should
+    // never be called on a non-Mainnet network.
+    expect(screen.queryByTestId("blockaid-unable-to-scan-label")).toBeNull();
+    expect(screen.queryByTestId("blockaid-malicious-label")).toBeNull();
+    expect(screen.queryByTestId("blockaid-miss-label")).toBeNull();
     expect(
-      screen.getByTestId("grant-access-connect-anyway-button"),
-    ).toBeDefined();
+      fetchSpy.mock.calls.some(
+        ([url]) => typeof url === "string" && url.includes("/scan-dapp"),
+      ),
+    ).toBe(false);
   });
   it("shows unable to scan label when scan site API returns an error", async () => {
     jest.spyOn(global, "fetch").mockImplementation(() =>
@@ -338,6 +355,7 @@ describe("Grant Access view", () => {
             applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
             publicKey:
               "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF",
+            hasPrivateKey: true,
             allAccounts: mockAccounts,
           },
           settings: {
@@ -353,7 +371,7 @@ describe("Grant Access view", () => {
     await waitFor(() => screen.getByTestId("grant-access-view"));
     expect(screen.getByTestId("grant-access-view")).toBeDefined();
     await waitFor(() =>
-      expect(screen.getByTestId("blockaid-unable-to-scan-label")).toBeDefined(),
+      expect(screen.getByTestId("domain-scan-blockaid-banner")).toBeDefined(),
     );
     expect(
       screen.getByTestId("grant-access-connect-anyway-button"),

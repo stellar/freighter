@@ -28,15 +28,23 @@ import {
 import { NETWORKS, NetworkDetails } from "@shared/constants/stellar";
 import { ConfigurableWalletType } from "@shared/constants/hardwareWallet";
 import { isCustomNetwork } from "@shared/helpers/stellar";
+import { BlockaidWarning, SecurityLevel } from "popup/constants/blockaid";
 
-import { getCanonicalFromAsset } from "helpers/stellar";
+import { encodeSep53Message, getCanonicalFromAsset } from "helpers/stellar";
 import { INDEXER_URL } from "@shared/constants/mercury";
 import { horizonGetBestPath } from "popup/helpers/horizonGetBestPath";
+import { isQuoteExpiredError } from "popup/helpers/quoteExpiry";
 import {
   soroswapGetBestPath,
   getSoroswapTokens as getSoroswapTokensService,
 } from "popup/helpers/sorobanSwap";
-import { hardwareSign, hardwareSignAuth } from "popup/helpers/hardwareConnect";
+import {
+  hardwareSign,
+  hardwareSignAuth,
+  hardwareSignMessage,
+  UNVERIFIED_SIGN_MESSAGE_ERROR,
+} from "popup/helpers/hardwareConnect";
+import type { FederationMemoType } from "popup/helpers/federationMemo";
 import { AppState } from "popup/App";
 import { publicKeySelector } from "./accountServices";
 
@@ -216,6 +224,7 @@ export const signWithHardwareWallet = createAsyncThunk<
     walletType: ConfigurableWalletType;
     isHashSigningEnabled: boolean;
     isSignSorobanAuthorization?: boolean;
+    isSignMessage?: boolean;
   },
   { rejectValue: ErrorMessage }
 >(
@@ -229,9 +238,54 @@ export const signWithHardwareWallet = createAsyncThunk<
       walletType,
       isHashSigningEnabled,
       isSignSorobanAuthorization,
+      isSignMessage,
     },
     thunkApi,
   ) => {
+    // SEP-53 messages ride in `transactionXDR` as raw text, the same way auth
+    // entries ride in it as base64 — the field is the generic payload carrier
+    // for the hardware signing overlay.
+    if (isSignMessage) {
+      try {
+        const signature = await hardwareSignMessage[walletType]({
+          bipPath,
+          message: transactionXDR,
+        });
+
+        // `publicKey` was read over a separate device connection —
+        // connectToLedgerTransport closes and reopens the transport on every
+        // call — so the device that signed is not necessarily the one that was
+        // checked. Verify the signature against the key we are about to report
+        // as the signer instead of assuming the same device answered twice.
+        // This also pins the device's SEP-53 digest to encodeSep53Message: if
+        // they ever disagreed, signing fails here rather than returning a
+        // signature no verifier can check.
+        //
+        // Both of those land on the same boolean, and from here they are
+        // indistinguishable — so this reports "could not verify" rather than
+        // MISMATCHED_HARDWARE_ACCOUNT_ERROR. That sentinel belongs to the
+        // pre-sign check in HardwareSign, which has actually compared two keys
+        // and can honestly tell the user to connect a different device.
+        const isFromExpectedSigner = Keypair.fromPublicKey(publicKey).verify(
+          encodeSep53Message(transactionXDR),
+          signature,
+        );
+        if (!isFromExpectedSigner) {
+          return thunkApi.rejectWithValue({
+            errorMessage: UNVERIFIED_SIGN_MESSAGE_ERROR,
+          });
+        }
+
+        // A Buffer does not survive the JSON serialization that
+        // `runtime.sendMessage` applies on the way to the background script, so
+        // the signature travels as base64 and is decoded there.
+        return signature.toString("base64");
+      } catch (e) {
+        const message = e instanceof Error ? e.message : JSON.stringify(e);
+        return thunkApi.rejectWithValue({ errorMessage: message });
+      }
+    }
+
     if (isSignSorobanAuthorization) {
       try {
         const auth = Buffer.from(transactionXDR, "base64");
@@ -415,20 +469,45 @@ export enum ShowOverlayStatus {
   IN_PROGRESS = "IN_PROGRESS",
 }
 
+export interface DestinationTokenDetails {
+  // e.g. "AQUA" / "XLM" — lets the banner, review rows, and warnings render
+  // without re-parsing the canonical destinationAsset string.
+  tokenCode: string;
+  // true when the user has no trustline for this destination yet.
+  requiresTrustline: boolean;
+  // 7 for classic assets.
+  decimals: number;
+  // omitted for native XLM.
+  issuer?: string;
+  // from the pick-time Blockaid bulk scan.
+  securityLevel?: SecurityLevel;
+  // friendly per-feature Blockaid reasons from the pick-time token scan, shown
+  // in the review's "Do not proceed" pane alongside the tx-scan reasons.
+  securityWarnings?: BlockaidWarning[];
+  // from the search/Popular record, before balances hydrate.
+  iconUrl?: string;
+  // USD spot price from the stellar.expert search result, used as a fallback
+  // for the "You receive" fiat when /token-prices has no entry. No 24h %.
+  spotPrice?: number;
+}
+
 interface TransactionData {
   amount: string;
   amountUsd: string;
   asset: string;
   decimals?: number;
   destination: string;
+  recipientName: string;
   federationAddress: string;
   transactionFee: string;
   transactionTimeout: number;
   memo?: string;
+  memoType?: FederationMemoType | "";
   destinationAsset: string;
   destinationDecimals?: number;
   destinationAmount: string;
   destinationIcon: string;
+  destinationTokenDetails: DestinationTokenDetails | null;
   path: string[];
   allowedSlippage: string;
   isToken: boolean;
@@ -443,6 +522,10 @@ interface TransactionData {
     name: string;
     image: string;
   };
+  // Fee the user explicitly saved via EditSettings this session.
+  // Persisted in Redux so it survives SendAmount unmount/remount (e.g. when
+  // the user navigates to pick a recipient and returns).
+  manualTransactionFee: string | null;
 }
 
 interface HardwareWalletData {
@@ -465,6 +548,10 @@ interface InitialState {
     | SorobanRpc.Api.SendTransactionResponse
     | null;
   error: ErrorMessage | undefined;
+  // Set when a swap submission fails because the frozen quote no longer clears
+  // on-chain (op_under_dest_min / op_too_few_offers). Drives the recover-and-
+  // retry flow instead of the terminal SubmitFail screen.
+  isSwapQuoteExpired: boolean;
   transactionData: TransactionData;
   transactionSimulation: {
     response: SorobanRpc.Api.SimulateTransactionSuccessResponse | null;
@@ -482,20 +569,24 @@ export const initialState: InitialState = {
   submitStatus: ActionStatus.IDLE,
   response: null,
   error: undefined,
+  isSwapQuoteExpired: false,
   transactionData: {
     amount: "0",
     amountUsd: "0.00",
     asset: "native",
     destination: "",
+    recipientName: "",
     federationAddress: "",
     transactionFee: "",
     transactionTimeout: 180,
     memo: "",
+    memoType: "",
     destinationAsset: "",
     destinationAmount: "",
     destinationIcon: "",
+    destinationTokenDetails: null,
     path: [],
-    allowedSlippage: "1",
+    allowedSlippage: "2",
     isCollectible: false,
     collectibleData: {
       collectionName: "",
@@ -508,6 +599,7 @@ export const initialState: InitialState = {
     isMergeSelected: false,
     balancesToMigrate: [] as BalanceToMigrate[],
     isSoroswap: false,
+    manualTransactionFee: null,
   },
   transactionSimulation: {
     response: null,
@@ -534,8 +626,14 @@ const transactionSubmissionSlice = createSlice({
     resetSubmitStatus: (state) => {
       state.submitStatus = initialState.submitStatus;
     },
+    clearSwapQuoteExpired: (state) => {
+      state.isSwapQuoteExpired = false;
+    },
     saveDestination: (state, action) => {
       state.transactionData.destination = action.payload;
+    },
+    saveRecipientName: (state, action) => {
+      state.transactionData.recipientName = action.payload;
     },
     saveFederationAddress: (state, action) => {
       state.transactionData.federationAddress = action.payload;
@@ -552,11 +650,23 @@ const transactionSubmissionSlice = createSlice({
     saveTransactionFee: (state, action) => {
       state.transactionData.transactionFee = action.payload;
     },
+    saveManualTransactionFee: (state, action) => {
+      state.transactionData.manualTransactionFee = action.payload;
+    },
     saveTransactionTimeout: (state, action) => {
       state.transactionData.transactionTimeout = action.payload;
     },
-    saveMemo: (state, action) => {
-      state.transactionData.memo = action.payload;
+    saveMemoAndType: (
+      state,
+      action: {
+        payload: {
+          memo: string;
+          memoType?: FederationMemoType | "";
+        };
+      },
+    ) => {
+      state.transactionData.memo = action.payload.memo;
+      state.transactionData.memoType = action.payload.memoType ?? "";
     },
     saveDestinationAsset: (state, action) => {
       state.transactionData.destinationAsset = action.payload;
@@ -631,6 +741,12 @@ const transactionSubmissionSlice = createSlice({
       state.transactionData.destinationAmount =
         action.payload.destinationAmount;
     },
+    saveDestinationTokenDetails: (
+      state,
+      action: { payload: DestinationTokenDetails | null },
+    ) => {
+      state.transactionData.destinationTokenDetails = action.payload;
+    },
   },
   extraReducers: (builder) => {
     builder.addCase(submitFreighterTransaction.pending, (state) => {
@@ -639,6 +755,10 @@ const transactionSubmissionSlice = createSlice({
     builder.addCase(submitFreighterTransaction.rejected, (state, action) => {
       state.submitStatus = ActionStatus.ERROR;
       state.error = action.payload;
+      // Flag a swap quote-expiry so the Swap flow recovers (refetch + retry)
+      // instead of dead-ending in SubmitFail. These op codes only arise from
+      // swap path payments, so this is a no-op for sends.
+      state.isSwapQuoteExpired = isQuoteExpiredError(action.payload);
     });
     builder.addCase(submitFreighterTransaction.fulfilled, (state, action) => {
       state.submitStatus = ActionStatus.SUCCESS;
@@ -740,14 +860,17 @@ const transactionSubmissionSlice = createSlice({
 export const {
   resetSubmission,
   resetSubmitStatus,
+  clearSwapQuoteExpired,
   saveDestination,
+  saveRecipientName,
   saveFederationAddress,
   saveAmount,
   saveAmountUsd,
   saveAsset,
   saveTransactionFee,
+  saveManualTransactionFee,
   saveTransactionTimeout,
-  saveMemo,
+  saveMemoAndType,
   saveDestinationAsset,
   saveDestinationIcon,
   saveIsSoroswap,
@@ -764,6 +887,7 @@ export const {
   saveIsMergeSelected,
   saveBalancesToMigrate,
   saveSwapBestPath,
+  saveDestinationTokenDetails,
 } = transactionSubmissionSlice.actions;
 export const { reducer } = transactionSubmissionSlice;
 
@@ -778,3 +902,7 @@ export const transactionDataSelector = (state: {
 export const isPathPaymentSelector = (state: {
   transactionSubmission: InitialState;
 }) => state.transactionSubmission.transactionData.destinationAsset !== "";
+
+export const destinationTokenDetailsSelector = (state: {
+  transactionSubmission: InitialState;
+}) => state.transactionSubmission.transactionData.destinationTokenDetails;

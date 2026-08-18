@@ -70,6 +70,15 @@ export const DEFAULT_NETWORKS: Array<NetworkDetails> = [
   TESTNET_NETWORK_DETAILS,
 ];
 
+// Default swap destination ("You receive") per network. Only networks listed
+// here get a default; on custom networks the picker starts empty.
+export const DEFAULT_SWAP_DEST_CANONICAL: Partial<Record<NETWORKS, string>> = {
+  [NETWORKS.PUBLIC]:
+    "USDC:GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN",
+  [NETWORKS.TESTNET]:
+    "USDC:GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
+};
+
 export const BASE_RESERVE = 0.5 as const;
 export const BASE_RESERVE_MIN_COUNT = 2 as const;
 
@@ -77,4 +86,12 @@ export const PASSPHRASE_TO_NETWORK_NAME: Record<string, string> = {
   [Networks.PUBLIC]: NETWORK_NAMES.PUBNET,
   [Networks.TESTNET]: NETWORK_NAMES.TESTNET,
   [FUTURENET_NETWORK_DETAILS.networkPassphrase]: NETWORK_NAMES.FUTURENET,
+};
+
+// The token-prices endpoint only supports pubnet and testnet. This map is the
+// single source of truth for which passphrases resolve to a price-supported
+// network; anything not listed here is skipped by getTokenPrices.
+export const PASSPHRASE_TO_PRICE_NETWORK: Record<string, NETWORKS> = {
+  [Networks.PUBLIC]: NETWORKS.PUBLIC,
+  [Networks.TESTNET]: NETWORKS.TESTNET,
 };

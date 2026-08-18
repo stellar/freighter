@@ -12,6 +12,8 @@ import { ROUTES } from "popup/constants/routes";
 import { LoadingBackground } from "popup/basics/LoadingBackground";
 import { View } from "popup/basics/layout/View";
 import { isActiveNetwork } from "helpers/stellar";
+import { emitMetric } from "helpers/metrics";
+import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { navigateTo, openTab, openSidebar } from "popup/helpers/navigate";
 import { newTabHref } from "helpers/urls";
 import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
@@ -25,9 +27,9 @@ import { signOut } from "popup/ducks/accountServices";
 import { AccountHeaderModal } from "popup/components/account/AccountHeaderModal";
 import { NetworkIcon } from "popup/components/manageNetwork/NetworkIcon";
 import { NetworkDetails } from "@shared/constants/stellar";
-import { MobileAppBanner } from "popup/components/account/MobileAppBanner";
 import { AccountTabs } from "popup/components/account/AccountTabs";
 import { MaintenanceBanner } from "popup/components/MaintenanceBanner";
+import { getNetworkDisplayName } from "./getNetworkDisplayName";
 
 import "./styles.scss";
 
@@ -42,8 +44,6 @@ interface AccountHeaderProps {
   }) => Promise<void>;
   publicKey: string;
   roundedTotalBalanceUsd: string;
-  refreshHiddenCollectibles: () => Promise<void>;
-  isCollectibleHidden: (collectionAddress: string, tokenId: string) => boolean;
   onDiscoverClick: () => void;
 }
 
@@ -55,11 +55,14 @@ export const AccountHeader = ({
   onClickRow,
   publicKey,
   roundedTotalBalanceUsd,
-  refreshHiddenCollectibles,
-  isCollectibleHidden,
   onDiscoverClick,
 }: AccountHeaderProps) => {
   const { t } = useTranslation();
+  const networkDisplayNames = {
+    mainnet: t("Mainnet"),
+    testnet: t("Testnet"),
+    futurenet: t("Futurenet"),
+  };
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const networksList = useSelector(settingsNetworksListSelector);
   const [isNetworkSelectorOpen, setIsNetworkSelectorOpen] = useState(false);
@@ -227,6 +230,21 @@ export const AccountHeader = ({
                 </AccountHeaderModal>
               </div>
 
+              <div data-testid="nav-link-account-history">
+                <NavButton
+                  showBorder
+                  title={t("View history")}
+                  id="nav-btn-history"
+                  icon={<Icon.ClockRewind />}
+                  onClick={() => {
+                    emitMetric(METRIC_NAMES.historyFullHistoryOpened, {
+                      source: "account_header",
+                    });
+                    navigateTo(ROUTES.accountHistory, navigate);
+                  }}
+                />
+              </div>
+
               <div
                 className="AccountHeader__dropdown"
                 data-testid="network-selector-open"
@@ -262,7 +280,10 @@ export const AccountHeader = ({
                           >
                             <NetworkIcon index={i} />
                             <div className="AccountHeader__network-copy">
-                              {n.networkName}
+                              {getNetworkDisplayName(
+                                n.networkName,
+                                networkDisplayNames,
+                              )}
                             </div>
                             {isActiveNetwork(n, networkDetails) ? (
                               <div className="AccountHeader__network-selector__check">
@@ -335,7 +356,7 @@ export const AccountHeader = ({
           </div>
         }
       >
-        <View.Inset hasVerticalBorder hasBottomBorder>
+        <View.Inset hasVerticalBorder>
           <div
             className="AccountHeader__account-info"
             data-testid="account-header"
@@ -369,7 +390,7 @@ export const AccountHeader = ({
                     <div className="AccountHeader__actions__btn">
                       <Icon.Plus />
                     </div>
-                    <Text as="div" size="sm" weight="medium">
+                    <Text as="div" size="xs" weight="medium">
                       {t("Add")}
                     </Text>
                   </div>
@@ -379,7 +400,7 @@ export const AccountHeader = ({
                     <div className="AccountHeader__actions__btn">
                       <Icon.ArrowUp />
                     </div>
-                    <Text as="div" size="sm" weight="medium">
+                    <Text as="div" size="xs" weight="medium">
                       {t("Send")}
                     </Text>
                   </div>
@@ -387,28 +408,14 @@ export const AccountHeader = ({
                 <NavLink to={ROUTES.swap} data-testid="nav-link-swap">
                   <div className="AccountHeader__actions__column">
                     <div className="AccountHeader__actions__btn">
-                      <Icon.RefreshCcw05 />
+                      <Icon.RefreshCw02 />
                     </div>
-                    <Text as="div" size="sm" weight="medium">
+                    <Text as="div" size="xs" weight="medium">
                       {t("Swap")}
                     </Text>
                   </div>
                 </NavLink>
-                <NavLink
-                  to={ROUTES.accountHistory}
-                  data-testid="nav-link-account-history"
-                >
-                  <div className="AccountHeader__actions__column">
-                    <div className="AccountHeader__actions__btn">
-                      <Icon.ClockRewind />
-                    </div>
-                    <Text as="div" size="sm" weight="medium">
-                      {t("History")}
-                    </Text>
-                  </div>
-                </NavLink>
               </div>
-              <MobileAppBanner />
               {isBackgroundActive
                 ? createPortal(
                     <LoadingBackground
@@ -425,10 +432,7 @@ export const AccountHeader = ({
                 : null}
             </div>
           </div>
-          <AccountTabs
-            refreshHiddenCollectibles={refreshHiddenCollectibles}
-            isCollectibleHidden={isCollectibleHidden}
-          />
+          <AccountTabs />
         </View.Inset>
       </View.AppHeader>
     </>

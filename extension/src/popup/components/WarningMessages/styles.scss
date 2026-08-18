@@ -603,6 +603,26 @@
   }
 }
 
+// "Not on your lists" banner — brand lilac, distinct from the amber ScanMiss.
+// Sizing/spacing inherit from .ScanLabel to stay consistent with the other
+// banners (the mobile Figma's smaller type scale doesn't apply to extension).
+.ScanAssetList {
+  color: var(--sds-clr-lilac-11);
+  background-color: var(--sds-clr-lilac-03);
+
+  .Icon .WarningMessage__icon {
+    color: var(--sds-clr-lilac-09);
+  }
+
+  .Message {
+    font-weight: var(--font-weight-medium);
+  }
+
+  .ScanLabel__Action svg {
+    color: var(--sds-clr-lilac-11);
+  }
+}
+
 .BlockaidWarningModal {
   height: 100vh;
   width: 100vw;
@@ -796,7 +816,6 @@
 
   &__DetailRowError {
     display: flex;
-    overflow: scroll;
 
     &:first-child {
       padding-top: pxToRem(8px);
@@ -811,6 +830,14 @@
       height: 16px;
       color: var(--sds-clr-red-09);
       margin-right: pxToRem(8px);
+    }
+
+    // Wrap long reasons instead of scrolling/clipping them.
+    span {
+      flex: 3;
+      word-break: break-word;
+      font-size: pxToRem(16px);
+      font-weight: 500;
     }
   }
 }

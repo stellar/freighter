@@ -32,6 +32,15 @@ export const encodeSep53Message = (message: string) => {
   return hash(encodedMessage);
 };
 
+/*
+ * Normalizes a signature that reached the background script by either route.
+ * Local keys sign in the background and produce a Buffer directly; hardware
+ * wallets sign in the popup, so their signature is base64-encoded to survive
+ * the JSON serialization that `runtime.sendMessage` applies in transit.
+ */
+export const toSignatureBuffer = (signature: Buffer | string) =>
+  typeof signature === "string" ? Buffer.from(signature, "base64") : signature;
+
 export const truncateString = (str: string, charCount = 4) =>
   str ? `${str.slice(0, charCount)}…${str.slice(-charCount)}` : "";
 
@@ -82,7 +91,7 @@ export const getTransactionInfo = (search: string) => {
 };
 
 export function isAsset(
-  value: Asset | { code: string; issuer: string },
+  value: Asset | { code: string; issuer?: string },
 ): value is Asset {
   return (value as Asset).getIssuer !== undefined;
 }
@@ -143,6 +152,38 @@ export const getBaseAccount = (muxedAddress: string): string | null => {
     console.error("Error extracting base account:", error);
     return null;
   }
+};
+
+/**
+ * Compares two Stellar addresses, treating a muxed account (M...) as equal to
+ * its base account (G...).
+ *
+ * Horizon and Soroban can surface the recipient of a payment/transfer as a muxed
+ * (M...) address, while the wallet only ever knows its own base (G...) public key.
+ * A strict `===` comparison between the two formats always fails, which would
+ * misclassify payments received to a muxed address as "sent". Normalizing both
+ * sides to their base account before comparing avoids that.
+ *
+ * @param addressA First address (G..., M..., C..., or empty)
+ * @param addressB Second address (G..., M..., C..., or empty)
+ * @returns True if both addresses resolve to the same base account
+ */
+export const isSameAccount = (
+  addressA?: string | null,
+  addressB?: string | null,
+): boolean => {
+  if (!addressA || !addressB) {
+    return false;
+  }
+
+  const baseA = getBaseAccount(addressA);
+  const baseB = getBaseAccount(addressB);
+
+  if (!baseA || !baseB) {
+    return false;
+  }
+
+  return baseA === baseB;
 };
 
 /**

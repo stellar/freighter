@@ -1,0 +1,53 @@
+@use "../../styles/utils.scss" as *;
+
+.AutoLockTimer {
+  display: flex;
+  flex-direction: column;
+  padding: pxToRem(16px);
+  border-radius: pxToRem(16px);
+  background-color: var(--sds-clr-gray-02);
+
+  &__option {
+    align-items: center;
+    background: none;
+    border: none;
+    color: var(--sds-clr-gray-12);
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    padding: pxToRem(16px) 0;
+    text-align: left;
+    width: 100%;
+    font-size: pxToRem(14px);
+    font-weight: 500;
+    line-height: pxToRem(20px);
+
+    &:not(:last-child) {
+      border-bottom: 1px solid var(--sds-clr-gray-06);
+    }
+
+    &:first-child {
+      padding-top: 0;
+    }
+
+    &:last-child {
+      padding-bottom: 0;
+    }
+
+    &--disabled {
+      cursor: default;
+      opacity: 0.6;
+    }
+
+    &__label {
+      flex: 1;
+    }
+
+    &__check {
+      flex-shrink: 0;
+      height: pxToRem(20px);
+      width: pxToRem(20px);
+      color: var(--sds-clr-gray-12);
+    }
+  }
+}

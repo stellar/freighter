@@ -123,11 +123,15 @@ export const recoverAccount = async ({
             privateKey,
           };
 
+          // Not `imported`. These are derived from the recovery phrase we
+          // just took, at derivation indices 1..n — the same thing
+          // `addAccount` produces, which stores them unflagged. "Imported"
+          // is reserved for accounts brought in from a secret key, which
+          // the phrase cannot re-derive.
           await storeAccount({
             password,
             keyPair: newKeyPair,
             mnemonicPhrase: recoverMnemonic,
-            imported: true,
             sessionStore,
             localStore,
             keyManager,
@@ -151,7 +155,7 @@ export const recoverAccount = async ({
     });
 
     // start the timer now that we have active private key
-    sessionTimer.startSession();
+    await sessionTimer.startSession();
   }
 
   const currentState = sessionStore.getState();

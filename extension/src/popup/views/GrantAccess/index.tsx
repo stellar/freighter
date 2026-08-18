@@ -100,7 +100,7 @@ export const GrantAccess = () => {
   const { publicKey, networkDetails } = state.data;
 
   const rejectAndClose = () => {
-    dispatch(rejectAccess({ uuid }));
+    dispatch(rejectAccess({ uuid, url }));
     window.close();
   };
 
@@ -117,6 +117,7 @@ export const GrantAccess = () => {
   const { isMalicious, isUnableToScan } = getSiteSecurityStates(
     scanData,
     blockaidOverrideState,
+    networkDetails,
   );
 
   const shouldShowWarning = isMalicious || isUnableToScan;
@@ -144,7 +145,6 @@ export const GrantAccess = () => {
               domain={domain}
               isMalicious={isMalicious}
               isUnableToScan={isUnableToScan}
-              scanStatus={scanData?.status}
               onClick={() => setActivePaneIndex(1)}
               subject={t(
                 `Allow ${domain} to view your wallet address, balance, activity and request approval for transactions`,

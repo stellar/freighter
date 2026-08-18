@@ -77,7 +77,7 @@ export const createAccount = async ({
 
   const currentState = sessionStore.getState();
 
-  sessionTimer.startSession();
+  await sessionTimer.startSession();
   const hasPrivateKeySelector = buildHasPrivateKeySelector(localStore);
 
   return {

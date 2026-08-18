@@ -99,7 +99,7 @@ function useGetSignAuthEntryData(accountToSign?: string, url?: string) {
       dispatch({ type: "FETCH_DATA_SUCCESS", payload: initialPayload });
 
       // Fetch scan data asynchronously without blocking UI
-      scanSite(initialPayload);
+      scanSite(initialPayload, networkDetails);
 
       return initialPayload;
     } catch (error) {

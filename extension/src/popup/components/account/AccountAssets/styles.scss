@@ -1,6 +1,9 @@
 $loader-dark-color: #191b22;
 $loader-light-color: #444961;
 
+// This file holds no list-container rule: AccountAssets returns a fragment, so
+// there's no element to hang one on. Row spacing lives in BalanceRow's own
+// padding, the list's top offset in `.AccountView__assets-wrapper`.
 .AccountAssets {
   &__asset {
     align-items: center;
@@ -16,8 +19,13 @@ $loader-light-color: #444961;
 
     &--logo {
       margin-right: 1rem;
-      max-width: 2rem;
-      max-height: 2rem;
+      // Fixed square rather than max-width/height so non-square source logos are
+      // cropped to a circle by object-fit: cover instead of rendering as an
+      // ellipse.
+      width: 2rem;
+      height: 2rem;
+      min-width: 2rem;
+      flex-shrink: 0;
       position: relative;
 
       img {

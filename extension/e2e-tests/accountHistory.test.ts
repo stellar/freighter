@@ -1,7 +1,12 @@
 import { test, expect, expectPageToHaveScreenshot } from "./test-fixtures";
 import { loginToTestAccount } from "./helpers/login";
 import { TEST_M_ADDRESS } from "./helpers/test-token";
-import { stubAccountBalances, stubTokenDetails } from "./helpers/stubs";
+import {
+  stubAccountBalances,
+  stubAccountBalancesWithUSDC,
+  stubAccountHistoryWith,
+  stubTokenDetails,
+} from "./helpers/stubs";
 import {
   TransactionBuilder,
   Operation,
@@ -20,6 +25,59 @@ test("View Account History", async ({ page, extensionId, context }) => {
     page,
     screenshot: "account-history.png",
   });
+});
+
+test("Classifies a payment received to a muxed (M...) address as Received", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  // Horizon reports a payment received to the wallet's muxed address with the
+  // base (G...) account in `to` and the muxed (M...) account in `to_muxed`.
+  // The test account is GDF32...ZEFY; MDF32...LVH4 is one of its muxed forms.
+  const TEST_ACCOUNT_MUXED =
+    "MDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWYAAAAAAAAAAAFLVH4";
+  const SENDER = "GCKUVXILBNYS4FDNWCGCYSJBY2PBQ4KAW2M5CODRVJPUFM62IJFH67J2";
+
+  const mockAccountHistoryData = [
+    {
+      amount: "5.0000000",
+      asset_type: "native",
+      created_at: "2025-03-21T22:28:46Z",
+      from: SENDER,
+      id: "164007621169153",
+      paging_token: "164007621169153",
+      source_account: SENDER,
+      to: "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
+      to_muxed: TEST_ACCOUNT_MUXED,
+      to_muxed_id: "42",
+      transaction_attr: {
+        operation_count: 1,
+      },
+      transaction_hash:
+        "686601028de9ddf40a1c24461a6a9c0415d60a39255c35eccad0b52ac1e700a6",
+      transaction_successful: true,
+      type: "payment",
+      type_i: 1,
+    },
+  ];
+
+  const stubOverrides = async () => {
+    await stubAccountHistoryWith(page, context, mockAccountHistoryData);
+  };
+
+  await loginToTestAccount({ page, extensionId, context, stubOverrides });
+  await page.getByTestId("nav-link-account-history").click();
+
+  const amountCell = page.getByTestId("history-item-amount-component");
+  await expect(amountCell).toContainText("Mar 21", { timeout: 30000 });
+
+  // The received payment must show a positive amount and a "Received" action,
+  // not a negative "Sent" amount.
+  await expect(amountCell).toContainText("+5");
+  await expect(amountCell).toContainText("XLM");
+  await expect(amountCell).toHaveClass(/credit/);
+  await expect(page.getByText("Received")).toBeVisible();
 });
 
 test("View failed transaction", async ({ page, extensionId, context }) => {
@@ -47,36 +105,7 @@ test("View failed transaction", async ({ page, extensionId, context }) => {
   ];
 
   const stubOverrides = async () => {
-    // Use addInitScript to patch window.fetch directly in the extension page.
-    // Playwright's route interception (context.route/page.route) does not reliably
-    // intercept fetch requests made from Chrome extension popup pages in CI headless mode.
-    // addInitScript injects code before page scripts run and is guaranteed to work.
-    await page.addInitScript((data: object[]) => {
-      const origFetch = window.fetch.bind(window);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (window as any).fetch = function (input: any, init: any) {
-        const urlStr: string =
-          typeof input === "string"
-            ? input
-            : input instanceof URL
-              ? input.href
-              : (input.url ?? "");
-        if (urlStr.includes("/account-history/")) {
-          return Promise.resolve(
-            new Response(JSON.stringify(data), {
-              status: 200,
-              headers: { "Content-Type": "application/json" },
-            }),
-          );
-        }
-        return origFetch(input, init);
-      };
-    }, mockAccountHistoryData);
-
-    // Also register context.route as a network-level fallback
-    await context.route("*/**/account-history/*", async (route) => {
-      await route.fulfill({ json: mockAccountHistoryData });
-    });
+    await stubAccountHistoryWith(page, context, mockAccountHistoryData);
   };
 
   await loginToTestAccount({ page, extensionId, context, stubOverrides });
@@ -99,6 +128,126 @@ test("View failed transaction", async ({ page, extensionId, context }) => {
     screenshot: "failed-transaction.png",
   });
 });
+test("Orders failed transactions by date alongside successful ones", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  // The backend can return failed and successful operations in separate
+  // groupings. Interleave failed and successful transactions out of order to
+  // verify the client re-sorts by created_at desc and that a more recent failed
+  // transaction still appears at the top.
+  const mockAccountHistoryData = [
+    {
+      amount: "0.0010000",
+      asset_code: "USDC",
+      asset_issuer: "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
+      asset_type: "credit_alphanum4",
+      created_at: "2025-03-10T22:28:46Z",
+      from: "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
+      id: "164007621169100",
+      paging_token: "164007621169100",
+      source_account:
+        "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
+      to: "GCKUVXILBNYS4FDNWCGCYSJBY2PBQ4KAW2M5CODRVJPUFM62IJFH67J2",
+      transaction_attr: {},
+      transaction_hash:
+        "111101028de9ddf40a1c24461a6a9c0415d60a39255c35eccad0b52ac1e700a5",
+      transaction_successful: false,
+      type: "payment",
+      type_i: 1,
+    },
+    {
+      amount: "1.0000000",
+      asset_code: "USDC",
+      asset_issuer: "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
+      asset_type: "credit_alphanum4",
+      created_at: "2025-03-25T22:28:46Z",
+      from: "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
+      id: "164007621169200",
+      paging_token: "164007621169200",
+      source_account:
+        "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
+      to: "GCKUVXILBNYS4FDNWCGCYSJBY2PBQ4KAW2M5CODRVJPUFM62IJFH67J2",
+      transaction_attr: {},
+      transaction_hash:
+        "222201028de9ddf40a1c24461a6a9c0415d60a39255c35eccad0b52ac1e700a5",
+      transaction_successful: true,
+      type: "payment",
+      type_i: 1,
+    },
+    {
+      amount: "0.0050000",
+      asset_code: "USDC",
+      asset_issuer: "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
+      asset_type: "credit_alphanum4",
+      created_at: "2025-03-26T22:28:46Z",
+      from: "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
+      id: "164007621169300",
+      paging_token: "164007621169300",
+      source_account:
+        "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
+      to: "GCKUVXILBNYS4FDNWCGCYSJBY2PBQ4KAW2M5CODRVJPUFM62IJFH67J2",
+      transaction_attr: {},
+      transaction_hash:
+        "333301028de9ddf40a1c24461a6a9c0415d60a39255c35eccad0b52ac1e700a5",
+      transaction_successful: false,
+      type: "payment",
+      type_i: 1,
+    },
+  ];
+
+  const stubOverrides = async () => {
+    await stubAccountBalancesWithUSDC(page);
+    await stubAccountHistoryWith(page, context, mockAccountHistoryData);
+  };
+
+  await loginToTestAccount({ page, extensionId, context, stubOverrides });
+  await page.getByTestId("nav-link-account-history").click();
+
+  // The amount component contains both the formatted amount and the date.
+  const historyAmountCells = page.getByTestId("history-item-amount-component");
+  await expect(historyAmountCells.first()).toBeVisible({ timeout: 30000 });
+  await expect(historyAmountCells).toHaveCount(3);
+
+  // Items should be ordered by created_at desc regardless of the order returned
+  // by the API — a more recent failed transaction must still appear at the top.
+  await expect(historyAmountCells.nth(0)).toContainText("Mar 26");
+  await expect(historyAmountCells.nth(1)).toContainText("Mar 25");
+  await expect(historyAmountCells.nth(2)).toContainText("Mar 10");
+
+  const historyItemLabels = page.getByTestId("history-item-label");
+  await expect(historyItemLabels.nth(0)).toHaveText("Transaction Failed");
+  await expect(historyItemLabels.nth(2)).toHaveText("Transaction Failed");
+
+  // Now verify the same ordering inside the asset (USDC) detail view.
+  await page.getByTestId("BackButton").click();
+  await expect(page.getByTestId("account-view")).toBeVisible({
+    timeout: 10000,
+  });
+  await page
+    .getByTestId("account-assets-item")
+    .filter({ hasText: "USDC" })
+    .click();
+  await expect(page.getByTestId("AssetDetail__list")).toBeVisible({
+    timeout: 10000,
+  });
+
+  const assetDetailList = page.getByTestId("AssetDetail__list");
+  const assetHistoryAmountCells = assetDetailList.getByTestId(
+    "history-item-amount-component",
+  );
+  await expect(assetHistoryAmountCells).toHaveCount(3);
+  await expect(assetHistoryAmountCells.nth(0)).toContainText("Mar 26");
+  await expect(assetHistoryAmountCells.nth(1)).toContainText("Mar 25");
+  await expect(assetHistoryAmountCells.nth(2)).toContainText("Mar 10");
+
+  const assetHistoryItemLabels =
+    assetDetailList.getByTestId("history-item-label");
+  await expect(assetHistoryItemLabels.nth(0)).toHaveText("Transaction Failed");
+  await expect(assetHistoryItemLabels.nth(2)).toHaveText("Transaction Failed");
+});
+
 test("Hide create claimable balance spam", async ({
   page,
   extensionId,

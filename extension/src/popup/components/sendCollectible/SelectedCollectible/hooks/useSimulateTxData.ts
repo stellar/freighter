@@ -8,12 +8,12 @@ import { initialState, reducer } from "helpers/request";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { stroopToXlm } from "helpers/stellar";
 import { getBaseAccount } from "popup/helpers/account";
+import { getCurrentTransactionFee } from "popup/helpers/fees";
 import {
   CLASSIC_ASSET_DECIMALS,
   formatTokenAmount,
 } from "popup/helpers/soroban";
 import { simulateSendCollectible } from "@shared/api/internal";
-import { BlockAidScanTxResult } from "@shared/api/types";
 import {
   saveSimulation,
   saveTransactionFee,
@@ -21,11 +21,9 @@ import {
 } from "popup/ducks/transactionSubmission";
 import { AppDispatch, AppState } from "popup/App";
 import { useScanTx } from "popup/helpers/blockaid";
+import { SimulateTxData, SimulateResult } from "types/transactions";
 
-export interface SimulateTxData {
-  transactionXdr: string;
-  scanResult?: BlockAidScanTxResult | null;
-}
+export type { SimulateTxData };
 
 const simulateTx = async ({
   options,
@@ -75,6 +73,8 @@ const simulateTx = async ({
   return {
     payload: response,
     recommendedFee: baseFee.plus(new BigNumber(minResourceFee)).toString(),
+    inclusionFee: baseFee.toString(),
+    resourceFee: minResourceFee,
   };
 };
 
@@ -107,8 +107,10 @@ function useSimulateTxData({
       const currentTransactionData = transactionDataSelector(
         store.getState() as AppState,
       );
-      const currentTransactionFee =
-        currentTransactionData.transactionFee || transactionFee;
+      const currentTransactionFee = getCurrentTransactionFee({
+        currentTransactionFee: currentTransactionData.transactionFee,
+        fallbackTransactionFee: transactionFee,
+      });
 
       const payload = { transactionXdr: "" } as SimulateTxData;
       let destinationAccount = await getBaseAccount(destination);
@@ -150,6 +152,13 @@ function useSimulateTxData({
         }),
       );
 
+      if (simResponse.inclusionFee !== undefined) {
+        payload.inclusionFee = simResponse.inclusionFee;
+      }
+      if (simResponse.resourceFee !== undefined) {
+        payload.resourceFee = simResponse.resourceFee;
+      }
+
       const scanUrlstub = "internal";
 
       payload.transactionXdr = simResponse.payload?.preparedTransaction!;
@@ -160,17 +169,15 @@ function useSimulateTxData({
       );
 
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });
-      return payload;
+      return { ok: true, data: payload } as SimulateResult;
     } catch (error) {
-      dispatch({
-        type: "FETCH_DATA_ERROR",
-        payload:
-          "We had an issue retrieving your transaction details. Please try again.",
-      });
+      const errorMessage =
+        "We had an issue retrieving your transaction details. Please try again.";
+      dispatch({ type: "FETCH_DATA_ERROR", payload: errorMessage });
       captureException(
         `error simulating collectible transaction: ${JSON.stringify(error)}`,
       );
-      return error;
+      return { ok: false, error: errorMessage } as SimulateResult;
     }
   };
 

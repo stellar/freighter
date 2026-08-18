@@ -1,8 +1,7 @@
-import { useReducer } from "react";
+import { useReducer, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import BigNumber from "bignumber.js";
 import {
-  Account,
   Asset,
   BASE_FEE,
   Memo,
@@ -19,6 +18,8 @@ import {
   xlmToStroop,
 } from "helpers/stellar";
 import { computeDestMinWithSlippage } from "helpers/transaction";
+import { buildChangeTrustOperation } from "popup/helpers/getManageAssetXDR";
+import { getSdk } from "@shared/helpers/stellar";
 
 import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 import {
@@ -27,8 +28,9 @@ import {
   transactionDataSelector,
 } from "popup/ducks/transactionSubmission";
 import { useScanTx } from "popup/helpers/blockaid";
-import { BlockAidScanTxResult } from "@shared/api/types";
+import { BlockAidScanTxResult, ErrorMessage } from "@shared/api/types";
 import { horizonGetBestPath } from "popup/helpers/horizonGetBestPath";
+import { isQuoteExpiredError } from "popup/helpers/quoteExpiry";
 import { isContractId } from "popup/helpers/soroban";
 import { formatAmount, roundUsdValue } from "popup/helpers/formatters";
 import { AppDispatch } from "popup/App";
@@ -45,8 +47,8 @@ const UNKNOWN_ERROR_DISPLAY =
 
 export const getSwapErrorMessage = (
   error: unknown,
-  sourceAsset: { issuer: string },
-  destAsset: { issuer: string },
+  sourceAsset: { issuer?: string },
+  destAsset: { issuer?: string },
 ): string => {
   // Surface known error messages first, regardless of asset type
   const errorStr =
@@ -74,13 +76,51 @@ interface SimulationParams {
   transactionFee: string;
   transactionTimeout: number;
   memo?: string;
+  // Derived from balances by the caller (a swap is a self path-payment, so the
+  // sender needs the destination trustline). Keyed off holdings rather than
+  // the pick-time snapshot so defaulted/deep-linked destinations — which never
+  // went through the picker — build the changeTrust op too.
+  destRequiresTrustline: boolean;
 }
 
 export interface SimulateTxData {
   transactionXdr: string;
   dstAmountPriceUsd: string;
   scanResult?: BlockAidScanTxResult | null;
+  destMin?: string;
 }
+
+export const MIN_PER_OP_FEE = 100; // network minimum, stroops
+
+export const getPerOpBaseFee = (totalFee: string, opCount: number): string => {
+  const totalStroops = xlmToStroop(totalFee);
+  const perOp = totalStroops.dividedBy(opCount);
+  return BigNumber.max(perOp, new BigNumber(MIN_PER_OP_FEE))
+    .integerValue(BigNumber.ROUND_FLOOR)
+    .toFixed();
+};
+
+// Total swap fee shown/charged. A new-trustline swap is two ops (changeTrust
+// + pathPaymentStrictSend), so the recommended default scales with op count —
+// each op pays the recommended fee. A user-set custom fee is treated as the
+// total and split per op at build time (getPerOpBaseFee).
+export const getSwapTotalFee = ({
+  recommendedFee,
+  customFee,
+  opCount,
+}: {
+  recommendedFee: string;
+  customFee?: string;
+  opCount: number;
+}): string => {
+  if (customFee) {
+    return customFee;
+  }
+  if (!recommendedFee) {
+    return recommendedFee;
+  }
+  return new BigNumber(recommendedFee).times(opCount).toFixed();
+};
 
 const getOperation = (
   sourceAsset: Asset | { code: string; issuer: string },
@@ -105,7 +145,7 @@ const getOperation = (
   });
 };
 
-const getBuiltTx = async (
+export const getBuiltTx = async (
   publicKey: string,
   opData: {
     sourceAsset: Asset | { code: string; issuer: string };
@@ -114,6 +154,7 @@ const getBuiltTx = async (
     allowedSlippage: string;
     destinationAmount: string;
     path: string[];
+    requiresTrustline: boolean;
   },
   fee: string,
   transactionTimeout: number,
@@ -127,12 +168,38 @@ const getBuiltTx = async (
     allowedSlippage,
     destinationAmount,
     path,
+    requiresTrustline,
   } = opData;
   const server = stellarSdkServer(
     networkDetails.networkUrl,
     networkDetails.networkPassphrase,
   );
-  const sourceAccount: Account = await server.loadAccount(publicKey);
+  const sourceAccount = await server.loadAccount(publicKey);
+
+  const opCount = requiresTrustline ? 2 : 1;
+
+  const destIssuer = destAsset.issuer;
+  if (requiresTrustline && !destIssuer) {
+    throw new Error(
+      "Cannot add a trustline for a destination token without an issuer",
+    );
+  }
+
+  const transaction = new TransactionBuilder(sourceAccount, {
+    fee: getPerOpBaseFee(fee, opCount),
+    networkPassphrase: networkDetails.networkPassphrase,
+  });
+
+  if (requiresTrustline && destIssuer) {
+    const Sdk = getSdk(networkDetails.networkPassphrase);
+    transaction.addOperation(
+      buildChangeTrustOperation({
+        assetCode: destAsset.code,
+        assetIssuer: destIssuer,
+        sdk: Sdk,
+      }),
+    );
+  }
 
   const operation = getOperation(
     sourceAsset,
@@ -143,13 +210,7 @@ const getBuiltTx = async (
     path,
     publicKey,
   );
-
-  const transaction = new TransactionBuilder(sourceAccount, {
-    fee: xlmToStroop(fee).toFixed(),
-    networkPassphrase: networkDetails.networkPassphrase,
-  })
-    .addOperation(operation)
-    .setTimeout(transactionTimeout);
+  transaction.addOperation(operation).setTimeout(transactionTimeout);
 
   if (memo) {
     transaction.addMemo(Memo.text(memo));
@@ -167,7 +228,11 @@ function useSimulateTxData({
   networkDetails: NetworkDetails;
   simParams: SimulationParams;
 }) {
-  const { memo } = useSelector(transactionDataSelector);
+  const {
+    memo,
+    path: storedPath,
+    destinationAmount: storedDestinationAmount,
+  } = useSelector(transactionDataSelector);
   const reduxDispatch = useDispatch<AppDispatch>();
 
   const { scanTx } = useScanTx();
@@ -175,6 +240,10 @@ function useSimulateTxData({
     reducer<SimulateTxData, string>,
     initialState,
   );
+  // Separate from reducer state so the view retains the expired-quote flag
+  // across re-fetches. Set on Horizon op_under_dest_min / op_too_few_offers
+  // errors; consumed by the quote-expired metric + Notification in SwapAmount.
+  const [isQuoteExpired, setIsQuoteExpired] = useState(false);
 
   const fetchData = async ({
     amount,
@@ -184,6 +253,7 @@ function useSimulateTxData({
     destinationRate?: string;
   }) => {
     dispatch({ type: "FETCH_DATA_START" });
+    setIsQuoteExpired(false);
     try {
       const payload = { transactionXdr: "" } as SimulateTxData;
       const { allowedSlippage, sourceAsset, destAsset, transactionTimeout } =
@@ -193,30 +263,41 @@ function useSimulateTxData({
         simParams.transactionFee || stroopToXlm(BASE_FEE),
       );
 
-      const bestPath = await horizonGetBestPath({
-        amount,
-        sourceAsset: getCanonicalFromAsset(
-          sourceAsset.code,
-          sourceAsset.issuer,
-        ),
-        destAsset: getCanonicalFromAsset(destAsset.code, destAsset.issuer),
-        networkDetails,
-      });
+      // Reuse the quote the live "You receive" preview already surfaced (its
+      // path + destination amount are in Redux) instead of re-fetching, so the
+      // reviewed amount matches exactly what the user saw — no last-moment jump.
+      // Any drift by submit time is bounded by destMin (slippage) and recovered
+      // via the quote-expiry flow. Only fetch a fresh path when no live quote
+      // exists yet (path may legitimately be empty for a direct swap).
+      let destinationAmount = storedDestinationAmount;
+      let path: string[] = storedPath || [];
 
-      if (!bestPath?.destination_amount) {
-        throw new Error(ERROR_TO_DISPLAY.NO_PATH_FOUND);
-      }
+      if (!destinationAmount || new BigNumber(destinationAmount).lte(0)) {
+        const bestPath = await horizonGetBestPath({
+          amount,
+          sourceAsset: getCanonicalFromAsset(
+            sourceAsset.code,
+            sourceAsset.issuer,
+          ),
+          destAsset: getCanonicalFromAsset(destAsset.code, destAsset.issuer),
+          networkDetails,
+        });
 
-      const destinationAmount = bestPath.destination_amount;
-      // store in canonical form for easier use
-      const path: string[] = [];
-      bestPath.path.forEach((p) => {
-        if (!p.asset_code && !p.asset_issuer) {
-          path.push(p.asset_type);
-        } else {
-          path.push(getCanonicalFromAsset(p.asset_code, p.asset_issuer));
+        if (!bestPath?.destination_amount) {
+          throw new Error(ERROR_TO_DISPLAY.NO_PATH_FOUND);
         }
-      });
+
+        destinationAmount = bestPath.destination_amount;
+        // store in canonical form for easier use
+        path = [];
+        bestPath.path.forEach((p) => {
+          if (!p.asset_code && !p.asset_issuer) {
+            path.push(p.asset_type);
+          } else {
+            path.push(getCanonicalFromAsset(p.asset_code, p.asset_issuer));
+          }
+        });
+      }
       if (destinationRate) {
         payload.dstAmountPriceUsd = formatAmount(
           roundUsdValue(
@@ -235,6 +316,7 @@ function useSimulateTxData({
           destinationAmount,
           allowedSlippage,
           path,
+          requiresTrustline: simParams.destRequiresTrustline,
         },
         baseFee.toString(),
         transactionTimeout,
@@ -262,6 +344,7 @@ function useSimulateTxData({
       const { sourceAsset, destAsset } = simParams;
       const payload = getSwapErrorMessage(error, sourceAsset, destAsset);
 
+      setIsQuoteExpired(isQuoteExpiredError(error as ErrorMessage | undefined));
       dispatch({ type: "FETCH_DATA_ERROR", payload });
       return error;
     }
@@ -270,6 +353,7 @@ function useSimulateTxData({
   return {
     state,
     fetchData,
+    isQuoteExpired,
   };
 }
 

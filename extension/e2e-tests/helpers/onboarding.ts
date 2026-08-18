@@ -33,6 +33,9 @@ export const startImportWalletFlow = async ({
   await expect(
     page.getByText("Import wallet from recovery phrase"),
   ).toBeVisible();
+  await expect(
+    page.getByText("You can also paste the phrase in the first box."),
+  ).toBeVisible();
 };
 
 /**

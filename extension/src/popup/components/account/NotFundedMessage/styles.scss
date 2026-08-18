@@ -1,11 +1,66 @@
-.NotFunded {
-  width: 100%;
+@use "../../../styles/utils.scss" as *;
 
-  &__link {
-    margin-left: 1.5rem;
+.NotFunded {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: pxToRem(8px);
+  // 24px above per Figma (empty-state content sits 24px under the tab strip);
+  // the roomier bottom keeps the copy clear of the floating add pill.
+  padding: pxToRem(24px) pxToRem(16px) pxToRem(48px);
+
+  &__badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    // Per frame 9711:3008. Figma expresses it as 11.429px padding around the
+    // glyph; fixing the outer box keeps the circle exact whatever the glyph is.
+    width: pxToRem(40px);
+    height: pxToRem(40px);
+    border-radius: 50%;
+    background-color: var(--sds-clr-gray-03);
+    color: var(--sds-clr-gray-09);
+    margin-bottom: pxToRem(8px);
+
+    // SDS icons carry width/height="24" attributes, so they need sizing here.
+    svg {
+      width: pxToRem(17.143px);
+      height: pxToRem(17.143px);
+    }
   }
 
-  &__spacer {
-    height: 0.75rem;
+  &__title {
+    color: var(--sds-clr-gray-12);
+    font-size: pxToRem(16px);
+    font-weight: var(--sds-fw-medium);
+    line-height: pxToRem(24px);
+  }
+
+  &__body {
+    color: var(--sds-clr-gray-11);
+    font-size: pxToRem(14px);
+    font-weight: var(--sds-fw-regular);
+    line-height: pxToRem(20px);
+    margin-bottom: pxToRem(8px);
+  }
+
+  // One step up from `__body`'s 400, in the primary text color.
+  &__amount {
+    color: var(--sds-clr-gray-12);
+    font-weight: var(--sds-fw-medium);
+  }
+
+  .Button {
+    font-weight: var(--sds-fw-semi-bold);
+  }
+
+  &__link {
+    color: var(--sds-clr-lilac-11);
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
   }
 }

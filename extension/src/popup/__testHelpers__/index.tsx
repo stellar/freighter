@@ -25,6 +25,14 @@ export const TEST_PUBLIC_KEY =
 export const TEST_CANONICAL =
   "DT:CCXVDIGMR6WTXZQX2OEVD6YM6AYCYPXPQ7YYH6OZMRS7U6VD3AVHNGBJ";
 
+// Classic G-issuer canonical present in `mockBalances`. Use this when a test
+// needs an asset that production `getTokenPrices` would actually price —
+// `TEST_CANONICAL` (DT) has a contract-ID issuer and is filtered out by
+// `isContractId` in `@shared/api/internal.ts`, so it can never carry a real
+// indexer price.
+export const TEST_USDC_CANONICAL =
+  "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM";
+
 const rootReducer = combineReducers({
   auth,
   settings,
@@ -74,9 +82,12 @@ export const Wrapper: React.FunctionComponent<any> = ({
 };
 
 export const mockPrices = {
-  [TEST_CANONICAL]: {
-    currentPrice: "0.0008344636737229707",
-    percentagePriceChange24h: "3.975563218688548378",
+  // `TEST_CANONICAL` (DT) has a contract-ID issuer and is filtered out by
+  // production `getTokenPrices` (`@shared/api/internal.ts` →
+  // `isContractId(asset.issuer)`), so it is intentionally absent here.
+  [TEST_USDC_CANONICAL]: {
+    currentPrice: "1",
+    percentagePriceChange24h: "0.50",
   },
   native: {
     currentPrice: "0.27633884304166495",

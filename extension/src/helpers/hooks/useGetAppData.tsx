@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import * as Sentry from "@sentry/browser";
 
 import { initialState, reducer } from "../request";
-import { storeAccountMetricsData } from "../metrics";
+import { reconcileAnalyticsUserId, storeAccountMetricsData } from "../metrics";
 import {
   loadAccount,
   loadBackendSettings,
@@ -55,13 +55,21 @@ function useGetAppData() {
     dispatch({ type: "FETCH_DATA_START" });
     reduxDispatch(saveApplicationState(APPLICATION_STATE.APPLICATION_LOADING));
     try {
-      if (useCache && currentAccount.publicKey) {
+      if (
+        useCache &&
+        currentAccount.publicKey &&
+        currentAccount.hasPrivateKey
+      ) {
         const payload = {
           type: "resolved",
           account: currentAccount,
           settings: currentSettings,
         } as ResolvedData;
         dispatch({ type: "FETCH_DATA_SUCCESS", payload });
+        // Fire-and-forget: reconcile the analytics/Sentry user id against
+        // the background's auth-derived id now that app data has resolved
+        // for an already-unlocked session.
+        void reconcileAnalyticsUserId();
         return payload;
       }
       const account = await loadAccount();
@@ -74,6 +82,7 @@ function useGetAppData() {
 
       if (
         !account.publicKey ||
+        !account.hasPrivateKey ||
         account.applicationState === APPLICATION_STATE.APPLICATION_STARTED
       ) {
         const hasOnboarded =
@@ -101,6 +110,10 @@ function useGetAppData() {
         settings: { ...settings, ...backendSettings },
       } as ResolvedData;
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });
+      // Fire-and-forget: reconcile the analytics/Sentry user id against the
+      // background's auth-derived id now that app data has resolved
+      // post-unlock. Idempotent and never throws.
+      void reconcileAnalyticsUserId();
 
       return payload;
     } catch (error) {

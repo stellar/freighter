@@ -1,4 +1,4 @@
-import { combineReducers } from "redux";
+import { combineReducers, Store } from "redux";
 import { configureStore } from "@reduxjs/toolkit";
 
 import { sessionSlice } from "background/ducks/session";
@@ -29,11 +29,15 @@ const rootReducer = combineReducers({
   session: sessionSlice.reducer,
 });
 
-type RootState = ReturnType<typeof rootReducer>;
-
-function saveStore(state: RootState) {
-  const serializedState = JSON.stringify(state);
-  sessionStore.setItem(REDUX_STORE_KEY, serializedState);
+export async function flushSessionStore(storeToFlush: Store): Promise<void> {
+  try {
+    const serializedState = JSON.stringify(storeToFlush.getState());
+    await sessionStore.setItem(REDUX_STORE_KEY, serializedState);
+  } catch (_error) {
+    // Best-effort only: Firefox and some test environments do not expose
+    // storage.session, and the existing subscribe-based persistence also
+    // ignores those failures.
+  }
 }
 
 const store = configureStore({
@@ -56,7 +60,9 @@ export const buildStore = async () => {
       preloadedState: reduxState,
     });
 
-    hydratedStore.subscribe(() => saveStore(hydratedStore.getState()));
+    hydratedStore.subscribe(() => {
+      void flushSessionStore(hydratedStore);
+    });
     return hydratedStore;
   }
 

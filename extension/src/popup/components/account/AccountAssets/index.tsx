@@ -1,5 +1,6 @@
 import React, { useEffect, useState, memo } from "react";
 import { useSelector } from "react-redux";
+import { useLocation, useNavigate } from "react-router-dom";
 import isEmpty from "lodash/isEmpty";
 import { Asset, Horizon } from "stellar-sdk";
 import BigNumber from "bignumber.js";
@@ -12,7 +13,10 @@ import { AccountBalances } from "helpers/hooks/useGetBalances";
 import { getCanonicalFromAsset } from "helpers/stellar";
 import { isSorobanIssuer } from "popup/helpers/account";
 import { formatTokenAmount } from "popup/helpers/soroban";
-import { useIsAssetSuspicious } from "popup/helpers/blockaid";
+import {
+  useIsAssetSuspicious,
+  useIsAssetMalicious,
+} from "popup/helpers/blockaid";
 import { formatAmount, roundUsdValue } from "popup/helpers/formatters";
 
 import {
@@ -28,8 +32,9 @@ import { transactionSubmissionSelector } from "popup/ducks/transactionSubmission
 import { ScamAssetIcon } from "popup/components/account/ScamAssetIcon";
 import ImageMissingIcon from "popup/assets/image-missing.svg?react";
 import IconSoroban from "popup/assets/icon-soroban.svg?react";
-import { getPriceDeltaColor } from "popup/helpers/balance";
 import { AccountHistoryData } from "popup/views/Account/hooks/useGetAccountHistoryData";
+import { ROUTES } from "popup/constants/routes";
+import { BalanceRow } from "popup/components/BalanceRow";
 
 import "./styles.scss";
 import { AssetDetail } from "../AssetDetail";
@@ -49,12 +54,13 @@ export const SorobanTokenIcon = ({ noMargin }: { noMargin?: boolean }) => (
 interface AssetIconProps {
   assetIcons: AssetIcons;
   code: string;
-  issuerKey: string;
+  issuerKey?: string;
   retryAssetIconFetch?: (arg: { key: string; code: string }) => void;
   isLPShare?: boolean;
   isSorobanToken?: boolean;
   icon?: string | null;
   isSuspicious?: boolean;
+  isMalicious?: boolean;
   isModal?: boolean;
 }
 
@@ -63,7 +69,8 @@ const shouldAssetIconSkipUpdate = (
   nextProps: AssetIconProps,
 ) =>
   isEqual(prevProps.assetIcons, nextProps.assetIcons) &&
-  prevProps.isSuspicious === nextProps.isSuspicious;
+  prevProps.isSuspicious === nextProps.isSuspicious &&
+  prevProps.isMalicious === nextProps.isMalicious;
 
 export const AssetIcon = memo(
   ({
@@ -75,6 +82,7 @@ export const AssetIcon = memo(
     isSorobanToken = false,
     icon,
     isSuspicious = false,
+    isMalicious = true,
     isModal = false,
   }: AssetIconProps) => {
     /*
@@ -135,7 +143,7 @@ export const AssetIcon = memo(
           data-testid="AccountAssets__asset--loading"
           className="AccountAssets__asset--logo AccountAssets__asset--loading"
         >
-          <ScamAssetIcon isScamAsset={isSuspicious} />
+          <ScamAssetIcon isScamAsset={isSuspicious} isMalicious={isMalicious} />
         </div>
       );
     }
@@ -155,7 +163,7 @@ export const AssetIcon = memo(
           src={isXlm ? StellarLogo : imgSrc}
           onError={() => {
             if (retryAssetIconFetch) {
-              retryAssetIconFetch({ key: issuerKey, code });
+              retryAssetIconFetch({ key: issuerKey ?? "", code });
             }
             // we tried to load an image path but it failed, so show the broken image icon here
             setHasError(true);
@@ -165,7 +173,7 @@ export const AssetIcon = memo(
             setIsLoading(false);
           }}
         />
-        <ScamAssetIcon isScamAsset={isSuspicious} />
+        <ScamAssetIcon isScamAsset={isSuspicious} isMalicious={isMalicious} />
       </div>
     ) : (
       // the image path wasn't found, show a default broken image icon
@@ -175,7 +183,7 @@ export const AssetIcon = memo(
         }`}
       >
         <ImageMissingIcon />
-        <ScamAssetIcon isScamAsset={isSuspicious} />
+        <ScamAssetIcon isScamAsset={isSuspicious} isMalicious={isMalicious} />
       </div>
     );
   },
@@ -195,15 +203,48 @@ export const AccountAssets = ({
   assetPrices,
   historyData,
 }: AccountAssetsProps) => {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [assetIcons, setAssetIcons] = useState(inputAssetIcons);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const [hasIconFetchRetried, setHasIconFetchRetried] = useState(false);
   const isAssetSuspicious = useIsAssetSuspicious();
+  const isAssetMalicious = useIsAssetMalicious();
   const [selectedAsset, setSelectedAsset] = useState<string>("");
+
+  const clearAssetDetailQueryParams = () => {
+    const params = new URLSearchParams(location.search);
+    if (!params.has("asset_detail") && !params.has("return_to")) {
+      return;
+    }
+
+    params.delete("asset_detail");
+    params.delete("return_to");
+    params.delete("return_asset");
+    params.delete("return_collection_address");
+    params.delete("return_collectible_token_id");
+
+    navigate(
+      {
+        pathname: ROUTES.account,
+        search: params.toString() ? `?${params.toString()}` : "",
+      },
+      { replace: true },
+    );
+  };
 
   useEffect(() => {
     setAssetIcons(inputAssetIcons);
   }, [inputAssetIcons]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const assetDetail = params.get("asset_detail");
+
+    if (assetDetail) {
+      setSelectedAsset(assetDetail);
+    }
+  }, [location.search]);
 
   const retryAssetIconFetch = async ({
     key,
@@ -283,6 +324,7 @@ export const AccountAssets = ({
         const assetPrice = assetPrices ? assetPrices[canonicalAsset] : null;
 
         const isSuspicious = isAssetSuspicious((rb as Balance).blockaidData);
+        const isMalicious = isAssetMalicious((rb as Balance).blockaidData);
 
         const amountVal =
           "contractId" in rb && "decimals" in rb
@@ -292,83 +334,41 @@ export const AccountAssets = ({
         return (
           <Sheet
             open={selectedAsset === canonicalAsset}
-            onOpenChange={(open) => !open && setSelectedAsset("")}
+            onOpenChange={(open) => {
+              if (!open) {
+                setSelectedAsset("");
+                clearAssetDetailQueryParams();
+              }
+            }}
             key={canonicalAsset}
           >
-            <div
+            <BalanceRow
               data-testid="account-assets-item"
-              className={`AccountAssets__asset ${
-                !isLP ? "AccountAssets__asset--has-detail" : ""
-              }`}
-              onClick={isLP ? () => null : () => handleClick(canonicalAsset)}
-            >
-              <div className="AccountAssets__copy-left">
-                <AssetIcon
-                  assetIcons={assetIcons}
-                  code={code}
-                  issuerKey={issuer?.key}
-                  retryAssetIconFetch={retryAssetIconFetch}
-                  isLPShare={"liquidityPoolId" in rb && !!rb.liquidityPoolId}
-                  isSuspicious={isSuspicious}
-                />
-                <div className="asset-native-value">
-                  <span className="asset-code">{code}</span>
-                  <div
-                    className="asset-native-amount"
-                    data-testid="asset-amount"
-                  >
-                    {formatAmount(amountVal)}
-                  </div>
-                </div>
-              </div>
-              {assetPrice ? (
-                <div className="AccountAssets__copy-right">
-                  <div
-                    className="asset-usd-amount"
-                    data-testid={`asset-amount-${canonicalAsset}`}
-                  >
-                    $
-                    {formatAmount(
+              code={code}
+              issuerKey={issuer?.key}
+              assetIcons={assetIcons}
+              isSuspicious={isSuspicious}
+              isMalicious={isMalicious}
+              isLPShare={"liquidityPoolId" in rb && !!rb.liquidityPoolId}
+              retryAssetIconFetch={retryAssetIconFetch}
+              amount={formatAmount(amountVal)}
+              fiatAmount={
+                assetPrice
+                  ? `$${formatAmount(
                       roundUsdValue(
                         new BigNumber(assetPrice.currentPrice)
                           .multipliedBy(rb.total)
                           .toString(),
                       ),
-                    )}
-                  </div>
-                  {assetPrice.percentagePriceChange24h ? (
-                    <div
-                      data-testid={`asset-price-delta-${canonicalAsset}`}
-                      className={`asset-value-delta ${getPriceDeltaColor(
-                        new BigNumber(
-                          roundUsdValue(assetPrice.percentagePriceChange24h),
-                        ),
-                      )}
-                    `}
-                    >
-                      {formatAmount(
-                        roundUsdValue(assetPrice.percentagePriceChange24h),
-                      )}
-                      %
-                    </div>
-                  ) : (
-                    <div
-                      data-testid={`asset-price-delta-${canonicalAsset}`}
-                      className="asset-value-delta"
-                    >
-                      --
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div
-                  data-testid={`asset-price-delta-${canonicalAsset}`}
-                  className="asset-value-delta"
-                >
-                  --
-                </div>
-              )}
-            </div>
+                    )}`
+                  : null
+              }
+              percentChange={assetPrice?.percentagePriceChange24h ?? null}
+              amountTestId="asset-amount"
+              fiatTestId={`asset-amount-${canonicalAsset}`}
+              deltaTestId={`asset-price-delta-${canonicalAsset}`}
+              onClick={isLP ? undefined : () => handleClick(canonicalAsset)}
+            />
             <SheetContent
               onOpenAutoFocus={(e) => e.preventDefault()}
               aria-describedby={undefined}
@@ -382,7 +382,10 @@ export const AccountAssets = ({
                 accountBalances={balances}
                 historyData={historyData}
                 selectedAsset={canonicalAsset}
-                handleClose={() => setSelectedAsset("")}
+                handleClose={() => {
+                  setSelectedAsset("");
+                  clearAssetDetailQueryParams();
+                }}
               />
             </SheetContent>
           </Sheet>

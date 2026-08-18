@@ -32,7 +32,11 @@ import {
   settingsSelector,
 } from "popup/ducks/settings";
 import StellarLogo from "popup/assets/stellar-logo.png";
-import { formatAmount, roundUsdValue } from "popup/helpers/formatters";
+import {
+  NO_FIAT_VALUE,
+  formatAmount,
+  roundUsdValue,
+} from "popup/helpers/formatters";
 import { Loading } from "popup/components/Loading";
 import { AccountBalances } from "helpers/hooks/useGetBalances";
 import { title } from "helpers/transaction";
@@ -120,7 +124,8 @@ export const AssetDetail = ({
   const [optionsOpen, setOptionsOpen] = React.useState(false);
   const activeOptionsRef = useRef<HTMLDivElement>(null);
   const isNative = selectedAsset === "native";
-  const tokenPrices = cachedTokenPrices[publicKey] || null;
+  const tokenPrices =
+    cachedTokenPrices[networkDetails.networkPassphrase]?.[publicKey] || null;
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -375,7 +380,7 @@ export const AssetDetail = ({
                             .toString(),
                         ),
                       )}`
-                    : "--"}
+                    : NO_FIAT_VALUE}
                 </div>
               </div>
             </div>
@@ -407,7 +412,7 @@ export const AssetDetail = ({
                 isRounded
                 isFullWidth
                 onClick={() => {
-                  const queryParams = `?asset=${encodeURIComponent(selectedAsset)}`;
+                  const queryParams = `?asset=${encodeURIComponent(selectedAsset)}&return_to=asset_detail&return_asset=${encodeURIComponent(selectedAsset)}`;
                   navigateTo(ROUTES.sendPayment, navigate, queryParams);
                 }}
               >

@@ -9,23 +9,28 @@ import { toast } from "sonner";
 import {
   settingsSorobanSupportedSelector,
   settingsSelector,
+  settingsNetworkDetailsSelector,
 } from "popup/ducks/settings";
 import { View } from "popup/basics/layout/View";
-import { accountNameSelector } from "popup/ducks/accountServices";
+import {
+  accountNameSelector,
+  publicKeySelector,
+} from "popup/ducks/accountServices";
 import { openTab } from "popup/helpers/navigate";
 import { isFullscreenMode } from "popup/helpers/isFullscreenMode";
-import { isMainnet } from "helpers/stellar";
+import { useSwapTopTokensPrewarm } from "popup/helpers/useSwapTopTokensPrewarm";
 
 import { AccountAssets } from "popup/components/account/AccountAssets";
 import { AccountCollectibles } from "popup/components/account/AccountCollectibles";
 import { AccountHeader } from "popup/components/account/AccountHeader";
+import { FloatingAddButton } from "popup/components/account/FloatingAddButton";
 import { useHiddenCollectibles } from "popup/components/account/hooks/useHiddenCollectibles";
 import { Loading } from "popup/components/Loading";
 import { NotFundedMessage } from "popup/components/account/NotFundedMessage";
-import { formatAmount, roundUsdValue } from "popup/helpers/formatters";
 
+import { isMainnet } from "helpers/stellar";
 import { newTabHref } from "helpers/urls";
-import { getTotalUsd } from "popup/helpers/balance";
+import { getTotalUsd, getTotalUsdLabel } from "popup/helpers/balance";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { reRouteOnboarding } from "popup/helpers/route";
 import { AppDataType } from "helpers/hooks/useGetAppData";
@@ -38,6 +43,7 @@ import {
   useGetIcons,
   RequestState as IconsRequestState,
 } from "./hooks/useGetIcons";
+import { useStableSortedBalances } from "./hooks/useStableSortedBalances";
 import { AccountTabsContext, TabsList } from "./contexts/activeTabContext";
 
 import {
@@ -57,6 +63,11 @@ export const Account = () => {
   const isSorobanSuported = useSelector(settingsSorobanSupportedSelector);
   const { userNotification } = useSelector(settingsSelector);
   const currentAccountName = useSelector(accountNameSelector);
+  // Fallback for the error state, where the fetch yields no data. The account
+  // name already came from Redux, so without this the header rendered a named
+  // account with a blank identicon (and a copy button holding "").
+  const reduxPublicKey = useSelector(publicKeySelector);
+  const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const { activeTab } = useContext(AccountTabsContext);
   const [isDiscoverOpen, setIsDiscoverOpen] = useState(false);
 
@@ -75,6 +86,10 @@ export const Account = () => {
   const { state: iconsData, fetchData: fetchIconsData } = useGetIcons();
   const { refreshHiddenCollectibles, isCollectibleHidden } =
     useHiddenCollectibles();
+
+  // Warm the swap top-tokens cache in the background so the first Swap entry
+  // paints Popular instantly; no-op on testnet / when already cached.
+  useSwapTopTokensPrewarm();
 
   const previousAccountBalancesRef = useRef<AccountBalances | null>(null);
   const sorobanErrorShownRef = useRef(false);
@@ -111,6 +126,20 @@ export const Account = () => {
     accountData.data.type === AppDataType.RESOLVED
       ? accountData.data?.isScanAppended
       : false;
+
+  // Derive `balances` and `tokenPrices` *before* the early returns below
+  // so that `useStableSortedBalances` is called unconditionally on every
+  // render (Rules of Hooks). When `accountData` is in `RequestState.ERROR`
+  // its reducer sets `data: null`, so `accountBalances` is null and we
+  // pass an empty list — the helpers below stay safe and the error UI
+  // farther down can still render.
+  const balances = accountBalances?.balances ?? [];
+  const tokenPrices =
+    accountData.state === RequestState.SUCCESS &&
+    accountData.data.type === AppDataType.RESOLVED
+      ? accountData.data?.tokenPrices
+      : undefined;
+  const sortedBalances = useStableSortedBalances(balances, tokenPrices);
 
   useEffect(() => {
     const getData = async () => {
@@ -177,15 +206,17 @@ export const Account = () => {
       ? iconsData?.data?.icons
       : {};
 
-  const tokenPrices = resolvedData?.tokenPrices || {};
-  const balances = resolvedData?.balances.balances!;
-  const totalBalanceUsd = getTotalUsd(tokenPrices, balances);
-  const roundedTotalBalanceUsd =
-    !hasError &&
-    isMainnet(resolvedData!.networkDetails) &&
-    resolvedData?.tokenPrices
-      ? `$${formatAmount(roundUsdValue(totalBalanceUsd.toString()))}`
-      : "";
+  const totalBalanceUsd = getTotalUsd(tokenPrices ?? {}, balances);
+  // The hero is never hidden; see getTotalUsdLabel for which of a total, a
+  // zero or the placeholder it shows. The network comes from Redux because
+  // `resolvedData` is null once the fetch has failed.
+  const roundedTotalBalanceUsd = getTotalUsdLabel({
+    hasError,
+    hasPriceFeed: isMainnet(networkDetails),
+    isFunded: !!resolvedData?.balances?.isFunded,
+    tokenPrices,
+    totalUsd: totalBalanceUsd,
+  });
 
   const activeAllowList =
     resolvedData?.allowList?.[resolvedData?.networkDetails?.networkName]?.[
@@ -197,7 +228,7 @@ export const Account = () => {
       <AccountHeader
         allowList={activeAllowList}
         currentAccountName={currentAccountName}
-        publicKey={resolvedData?.publicKey || ""}
+        publicKey={resolvedData?.publicKey || reduxPublicKey}
         onAllowListRemove={refreshAppData}
         onClickRow={async (updatedValues: {
           publicKey?: string;
@@ -211,8 +242,6 @@ export const Account = () => {
         }}
         roundedTotalBalanceUsd={roundedTotalBalanceUsd}
         isFunded={!!resolvedData?.balances?.isFunded}
-        refreshHiddenCollectibles={refreshHiddenCollectibles}
-        isCollectibleHidden={isCollectibleHidden}
         onDiscoverClick={() => setIsDiscoverOpen(true)}
       />
       <View.Content hasNoPadding>
@@ -270,18 +299,37 @@ export const Account = () => {
           <MultiPaneSlider
             activeIndex={Object.values(TabsList).indexOf(activeTab)}
             panes={[
-              resolvedData?.balances?.isFunded && !hasError && (
+              resolvedData?.balances?.isFunded && !hasError ? (
                 <div
                   className="AccountView__assets-wrapper"
                   data-testid="account-assets"
                 >
                   <AccountAssets
-                    balances={resolvedData.balances}
+                    balances={{
+                      ...resolvedData.balances,
+                      balances: sortedBalances,
+                    }}
                     historyData={historyData.data}
-                    assetPrices={tokenPrices}
+                    assetPrices={tokenPrices ?? {}}
                     assetIcons={resolvedIcons}
                   />
                 </div>
+              ) : (
+                !hasError &&
+                !resolvedData?.balances?.error?.horizon && (
+                  <NotFundedMessage
+                    canUseFriendbot={
+                      !!resolvedData!.networkDetails.friendbotUrl
+                    }
+                    publicKey={resolvedData?.publicKey || ""}
+                    reloadBalances={() =>
+                      fetchData({
+                        useAppDataCache: true,
+                        shouldForceBalancesRefresh: true,
+                      })
+                    }
+                  />
+                )
               ),
               <div data-testid="account-collectibles">
                 <AccountCollectibles
@@ -294,22 +342,15 @@ export const Account = () => {
           />
         </div>
       </View.Content>
-      {!resolvedData?.balances?.isFunded &&
-        !hasError &&
-        !resolvedData?.balances?.error?.horizon && (
-          <View.Footer>
-            <NotFundedMessage
-              canUseFriendbot={!!resolvedData!.networkDetails.friendbotUrl}
-              publicKey={resolvedData?.publicKey || ""}
-              reloadBalances={() =>
-                fetchData({
-                  useAppDataCache: true,
-                  shouldForceBalancesRefresh: true,
-                })
-              }
-            />
-          </View.Footer>
-        )}
+      {/*
+        Kept a sibling of View.Content for readability only — the pill is
+        `position: fixed`, so with no transform/filter ancestor its containing
+        block is the viewport and nesting depth doesn't affect where it lands.
+        On Home nothing here is a scroll container: AccountView overrides
+        View.Content and its inset to `overflow: visible`, so the document
+        itself is the scrollport (document.scrollingElement === html).
+      */}
+      <FloatingAddButton isFunded={!!resolvedData?.balances?.isFunded} />
       <Sheet
         open={isDiscoverOpen}
         onOpenChange={(open) => !open && setIsDiscoverOpen(false)}

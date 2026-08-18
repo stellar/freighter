@@ -8,9 +8,8 @@ import {
   useGetAppData,
 } from "helpers/hooks/useGetAppData";
 import { isMainnet } from "helpers/stellar";
-import { getTotalUsd } from "popup/helpers/balance";
+import { getTotalUsd, getTotalUsdLabel } from "popup/helpers/balance";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
-import { formatAmount, roundUsdValue } from "popup/helpers/formatters";
 import { AccountBalances, useGetBalances } from "helpers/hooks/useGetBalances";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { useGetTokenPrices } from "helpers/hooks/useGetTokenPrices";
@@ -71,13 +70,18 @@ function useGetWalletsData() {
               `Error loading account balances in wallets data - ${balances.message}`,
             );
             return {
-              [account.publicKey]: `$${formatAmount(roundUsdValue("0.00"))}`,
+              [account.publicKey]: getTotalUsdLabel({
+                hasError: true,
+                hasPriceFeed: isMainnetNetwork,
+                isFunded: false,
+              }),
             };
           }
 
           const prices = await fetchTokenPrices({
             publicKey: account.publicKey,
             balances: balances.balances,
+            networkDetails,
             useCache: true,
           });
           const totalPriceUsd = getTotalUsd(
@@ -85,14 +89,24 @@ function useGetWalletsData() {
             balances.balances,
           );
           return {
-            [account.publicKey]: `$${formatAmount(roundUsdValue(totalPriceUsd.toString()))}`,
+            [account.publicKey]: getTotalUsdLabel({
+              hasError: false,
+              hasPriceFeed: isMainnetNetwork,
+              isFunded: !!balances.isFunded,
+              tokenPrices: prices.tokenPrices,
+              totalUsd: totalPriceUsd,
+            }),
           };
         } catch (error) {
           captureException(
             `error loading account balances and token prices in wallets data - ${error}`,
           );
           return {
-            [account.publicKey]: "",
+            [account.publicKey]: getTotalUsdLabel({
+              hasError: true,
+              hasPriceFeed: isMainnetNetwork,
+              isFunded: false,
+            }),
           };
         }
       }),
@@ -129,6 +143,19 @@ function useGetWalletsData() {
         applicationState: appData.account.applicationState,
         isFetchingTokenPrices: isMainnetNetwork,
       } as ResolvedData;
+
+      if (!isMainnetNetwork) {
+        // No feed here, so nothing is fetched and every account's total is a
+        // known zero. Filled in so the row never has to infer a missing entry.
+        const noFeedLabel = getTotalUsdLabel({
+          hasError: false,
+          hasPriceFeed: false,
+          isFunded: false,
+        });
+        payload.accountValue = Object.fromEntries(
+          allAccounts.map((account) => [account.publicKey, noFeedLabel]),
+        );
+      }
 
       if (isMainnetNetwork) {
         for (let i = 0; i < allAccounts.length; i += BATCH_SIZE) {

@@ -3,6 +3,8 @@
 .Operations {
   display: flex;
   flex-direction: column;
+  // 14px keeps long operation values from truncating prematurely.
+  font-size: pxToRem(14px);
 
   &--header {
     display: flex;
@@ -133,6 +135,32 @@
       font-size: 0.75rem;
       line-height: 1.5rem;
       flex-direction: column;
+    }
+  }
+
+  &__warning {
+    display: flex;
+    align-items: flex-start;
+    gap: pxToRem(8px);
+    margin-top: pxToRem(4px);
+    padding: pxToRem(12px);
+    border-radius: pxToRem(12px);
+    line-height: 1.5rem;
+    color: var(--sds-clr-red-11);
+    background-color: var(--sds-clr-red-03);
+    border: 1px solid var(--sds-clr-red-06);
+
+    svg {
+      flex-shrink: 0;
+      width: pxToRem(16px);
+      height: pxToRem(16px);
+      margin-top: pxToRem(4px);
+    }
+
+    span {
+      min-width: 0;
+      white-space: normal;
+      overflow-wrap: anywhere;
     }
   }
 }

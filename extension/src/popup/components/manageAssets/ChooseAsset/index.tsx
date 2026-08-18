@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import { useSelector } from "react-redux";
 import { Link, Navigate, useLocation } from "react-router-dom";
-import { Button, Icon, Loader } from "@stellar/design-system";
+import { Button, Icon, Loader, Notification } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
 import { ROUTES } from "popup/constants/routes";
@@ -66,6 +66,19 @@ export const ChooseAsset = ({
   }
 
   const hasError = domainState.state === RequestState.ERROR;
+  if (hasError) {
+    return (
+      <div
+        className="ChooseAsset__fetch-fail"
+        data-testid="choose-asset-fetch-fail"
+      >
+        <Notification variant="error" title={t("Failed to load assets.")}>
+          {t("Your assets could not be fetched at this time.")}
+        </Notification>
+      </div>
+    );
+  }
+
   if (domainState.data?.type === AppDataType.REROUTE) {
     if (domainState.data.shouldOpenTab) {
       openTab(newTabHref(domainState.data.routeTarget));
@@ -80,21 +93,20 @@ export const ChooseAsset = ({
     );
   }
 
-  if (!hasError) {
-    reRouteOnboarding({
-      type: domainState.data.type,
-      applicationState: domainState.data?.applicationState,
-      state: domainState.state,
-    });
-  }
+  // Past the ERROR and REROUTE guards, domainState holds resolved data.
+  const data = domainState.data;
+
+  reRouteOnboarding({
+    type: data.type,
+    applicationState: data.applicationState,
+    state: domainState.state,
+  });
 
   return (
     <React.Fragment>
       <SubviewHeader
         title={t("Your assets")}
-        customBackIcon={
-          !domainState.data?.isManagingAssets ? <Icon.X /> : undefined
-        }
+        customBackIcon={!data.isManagingAssets ? <Icon.X /> : undefined}
         customBackAction={goBack}
         rightButton={
           showHideAssets ? (
@@ -115,7 +127,7 @@ export const ChooseAsset = ({
       />
       <View.Content hasNoTopPadding>
         <div className="ChooseAsset__wrapper" data-testid="ChooseAssetWrapper">
-          {!domainState.data?.domains.length ? (
+          {!data.domains.length ? (
             <div className="ChooseAsset__empty">
               <p>
                 {`${t("You have no assets added.")} ${t("Get started by adding an asset.")}`}
@@ -124,23 +136,21 @@ export const ChooseAsset = ({
           ) : (
             <div
               className={`ChooseAsset__assets${
-                domainState.data.isManagingAssets && isSorobanSuported
-                  ? "--short"
-                  : ""
+                data.isManagingAssets && isSorobanSuported ? "--short" : ""
               }`}
               ref={ManageAssetRowsWrapperRef}
             >
-              {domainState.data.isManagingAssets ? (
+              {data.isManagingAssets ? (
                 <ManageAssetRows
                   shouldSplitAssetsByVerificationStatus={false}
-                  verifiedAssetRows={domainState.data.domains}
+                  verifiedAssetRows={data.domains}
                   unverifiedAssetRows={[]}
-                  balances={domainState.data.balances}
+                  balances={data.balances}
                 />
               ) : (
                 <SelectAssetRows
-                  assetRows={domainState.data.domains}
-                  balances={domainState.data.balances}
+                  assetRows={data.domains}
+                  balances={data.balances}
                   onSelect={goBack}
                 />
               )}
@@ -148,7 +158,7 @@ export const ChooseAsset = ({
           )}
         </div>
       </View.Content>
-      {domainState.data?.isManagingAssets && (
+      {data.isManagingAssets && (
         <View.Footer isInline allowWrap>
           <div className="ChooseAsset__button">
             <Link to={ROUTES.searchAsset}>

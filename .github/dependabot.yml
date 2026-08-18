@@ -13,6 +13,11 @@ updates:
       day: "sunday"
       time: "02:00"
     open-pull-requests-limit: 2
+    # Mirror the Yarn `npmMinimalAgeGate: 7d` in .yarnrc.yml so Dependabot does
+    # not open PRs (or lock versions) that `yarn install` would then reject for
+    # being younger than 7 days. Note: security updates ignore cooldown.
+    cooldown:
+      default-days: 7
     groups:
       minor-and-patch:
         applies-to: version-updates
@@ -23,6 +28,10 @@ updates:
         applies-to: version-updates
         update-types:
           - "major"
+      security:
+        applies-to: security-updates
+        patterns:
+          - "*"
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
@@ -33,4 +42,7 @@ updates:
     groups:
       all-actions:
         applies-to: version-updates
+        patterns: ["*"]
+      actions-security:
+        applies-to: security-updates
         patterns: ["*"]

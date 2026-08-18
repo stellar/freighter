@@ -1,8 +1,5 @@
 import {
   Transaction,
-  Memo,
-  MemoType,
-  Operation,
   rpc as SorobanRpc,
   scValToNative,
   BASE_FEE,
@@ -11,7 +8,7 @@ import { NetworkDetails } from "@shared/constants/stellar";
 import { getSdk } from "@shared/helpers/stellar";
 
 export const simulateTx = async <ArgType>(
-  tx: Transaction<Memo<MemoType>, Operation[]>,
+  tx: Transaction,
   server: SorobanRpc.Server,
 ): Promise<ArgType> => {
   const simulatedTX = await server.simulateTransaction(tx);

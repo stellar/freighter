@@ -16,7 +16,9 @@ import { NetworkDetails } from "@shared/constants/stellar";
 import { emitMetric } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { getAssetFromCanonical, isMainnet } from "helpers/stellar";
+import { getSdk } from "@shared/helpers/stellar";
 import { AssetIcons } from "@shared/api/types";
+import { allAccountsSelector } from "popup/ducks/accountServices";
 
 interface SubmitTxData {
   status: "success" | "error";
@@ -41,6 +43,7 @@ function useSubmitTxData({
     initialState,
   );
   const submission = useSelector(transactionSubmissionSelector);
+  const allAccounts = useSelector(allAccountsSelector);
   const { fetchData: fetchBalances } = useGetBalances({
     showHidden: false,
     includeIcons: false,
@@ -50,7 +53,14 @@ function useSubmitTxData({
   });
 
   const {
-    transactionData: { asset, destination, federationAddress },
+    transactionData: {
+      asset,
+      destination,
+      federationAddress,
+      destinationAsset,
+      isCollectible,
+      collectibleData,
+    },
     transactionSimulation,
   } = submission;
   const sourceAsset = getAssetFromCanonical(asset);
@@ -87,14 +97,63 @@ function useSubmitTxData({
       );
 
       if (submitFreighterTransaction.fulfilled.match(submitResp)) {
-        if (!isSwap) {
-          await reduxDispatch(
-            addRecentAddress({ address: federationAddress || destination }),
+        // NB: `transaction.submitted` is intentionally NOT emitted here. It is a
+        // dApp *sign-and-submit* event, and the extension dApp API only
+        // signs-and-returns (no submit path), so there's no conformant emit.
+        // Internal broadcasts are already captured by the payment/swap/
+        // collectible_send `.completed` events below.
+        if (isSwap) {
+          // Post-confirmation swap telemetry: the swap actually settled. A
+          // routed/path payment settles here too — its outcome is a swap.
+          emitMetric(METRIC_NAMES.swapCompleted, {
+            from_asset_code: sourceAsset.code,
+            to_asset_code: getAssetFromCanonical(destinationAsset).code,
+          });
+          // Trustline added only once the combined changeTrust +
+          // pathPaymentStrictSend transaction confirmed it. Gate on the
+          // submitted transaction itself rather than the pick-time snapshot —
+          // a defaulted/deep-linked destination has no snapshot, but the
+          // changeTrust op it confirmed is right there in the XDR.
+          const Sdk = getSdk(networkDetails.networkPassphrase);
+          const submittedTx = Sdk.TransactionBuilder.fromXDR(
+            signedXDR,
+            networkDetails.networkPassphrase,
           );
+          const changeTrustOp =
+            "operations" in submittedTx
+              ? submittedTx.operations.find((op) => op.type === "changeTrust")
+              : undefined;
+          if (changeTrustOp && "line" in changeTrustOp) {
+            const { line } = changeTrustOp;
+            emitMetric(METRIC_NAMES.swapTrustlineAdded, {
+              asset_code: "code" in line ? line.code : undefined,
+              asset_issuer: "issuer" in line ? line.issuer : undefined,
+            });
+          }
+        } else {
+          const isSelfOwnedDestination = (allAccounts ?? []).some(
+            (account) => account.publicKey === destination,
+          );
+
+          if (!isSelfOwnedDestination) {
+            await reduxDispatch(
+              addRecentAddress({ address: federationAddress || destination }),
+            );
+          }
+
+          if (isCollectible) {
+            emitMetric(METRIC_NAMES.collectibleSendCompleted, {
+              collection_address: collectibleData.collectionAddress,
+              token_id: collectibleData.tokenId,
+            });
+          } else {
+            // Direct (non-routed) payment outcome.
+            emitMetric(METRIC_NAMES.paymentCompleted, {
+              payment_type: "payment",
+              asset_code: sourceAsset.code,
+            });
+          }
         }
-        emitMetric(METRIC_NAMES.sendPaymentSuccess, {
-          sourceAsset: sourceAsset.code,
-        });
 
         // After successful submission, re-fetch balances and collectibles to get their latest values
 

@@ -36,10 +36,12 @@ import {
   mockPrices,
   TEST_CANONICAL,
   TEST_PUBLIC_KEY,
+  TEST_USDC_CANONICAL,
 } from "../../__testHelpers__";
 import { Account } from "../Account";
 import { ROUTES } from "popup/constants/routes";
 import { DEFAULT_ASSETS_LISTS } from "@shared/constants/soroban/asset-list";
+import { DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES } from "@shared/constants/autoLock";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import * as AccountDataHooks from "../../views/Account/hooks/useGetAccountData";
 import { RequestState } from "helpers/hooks/fetchHookInterface";
@@ -241,6 +243,7 @@ jest.spyOn(ApiInternal, "loadSettings").mockImplementation(() =>
     isNonSSLEnabled: false,
     experimentalFeaturesState: SettingsState.SUCCESS,
     assetsLists: DEFAULT_ASSETS_LISTS,
+    autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
   }),
 );
 
@@ -266,6 +269,7 @@ jest.mock("helpers/metrics", () => ({
   emitMetric: jest.fn(),
   initAmplitude: jest.fn(),
   metricsMiddleware: jest.fn(),
+  reconcileAnalyticsUserId: jest.fn().mockResolvedValue(undefined),
 }));
 
 jest.mock("popup/ducks/accountServices", () => {
@@ -887,6 +891,7 @@ describe("Account view", () => {
         isNonSSLEnabled: false,
         experimentalFeaturesState: SettingsState.SUCCESS,
         assetsLists: DEFAULT_ASSETS_LISTS,
+        autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
       }),
     );
 
@@ -941,6 +946,7 @@ describe("Account view", () => {
         isNonSSLEnabled: false,
         experimentalFeaturesState: SettingsState.SUCCESS,
         assetsLists: DEFAULT_ASSETS_LISTS,
+        autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
       }),
     );
     jest
@@ -974,18 +980,30 @@ describe("Account view", () => {
     await waitFor(async () => {
       const assetNodes = screen.getAllByTestId("account-assets-item");
       expect(assetNodes.length).toEqual(3);
+      // Classic G-issuer asset (USDC) carries the priced-row assertion;
+      // production `getTokenPrices` only returns prices for these.
       expect(
-        screen.getByTestId(`asset-amount-${TEST_CANONICAL}`),
-      ).toHaveTextContent("$834,463.67");
+        screen.getByTestId(`asset-amount-${TEST_USDC_CANONICAL}`),
+      ).toHaveTextContent("$100.00");
       expect(
-        screen.getByTestId(`asset-price-delta-${TEST_CANONICAL}`),
-      ).toHaveTextContent("3.97%");
+        screen.getByTestId(`asset-price-delta-${TEST_USDC_CANONICAL}`),
+      ).toHaveTextContent("0.50%");
       expect(screen.getByTestId(`asset-amount-native`)).toHaveTextContent(
         "$13.81",
       );
       expect(screen.getByTestId(`asset-price-delta-native`)).toHaveTextContent(
         "1.09%",
       );
+      // Contract-ID issuers are filtered out by production `getTokenPrices`
+      // (`@shared/api/internal.ts` → `isContractId`), so DT can never carry
+      // an indexer price. The row still renders, but with no USD amount
+      // node and a "--" delta.
+      expect(
+        screen.queryByTestId(`asset-amount-${TEST_CANONICAL}`),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.getByTestId(`asset-price-delta-${TEST_CANONICAL}`),
+      ).toHaveTextContent("--");
     });
   });
 
@@ -1013,15 +1031,16 @@ describe("Account view", () => {
         isNonSSLEnabled: false,
         experimentalFeaturesState: SettingsState.SUCCESS,
         assetsLists: DEFAULT_ASSETS_LISTS,
+        autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
       }),
     );
     jest
       .spyOn(ApiInternal, "getAccountBalances")
       .mockImplementation(() => Promise.resolve(mockBalances));
 
-    jest.spyOn(ApiInternal, "getTokenPrices").mockImplementation(() => {
-      throw new Error("Failed to fetch prices");
-    });
+    jest
+      .spyOn(ApiInternal, "getTokenPrices")
+      .mockRejectedValueOnce(new Error("Failed to fetch prices"));
 
     render(
       <Wrapper
@@ -1046,18 +1065,181 @@ describe("Account view", () => {
     await waitFor(async () => {
       const assetNodes = screen.getAllByTestId("account-assets-item");
       expect(assetNodes.length).toEqual(3);
+      // When prices are unavailable, no row renders a USD `asset-amount-*`
+      // node and every row's delta reads "--".
       expect(
         screen.queryByTestId(`asset-amount-${TEST_CANONICAL}`),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByTestId(`asset-amount-${TEST_USDC_CANONICAL}`),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByTestId("asset-amount-native"),
       ).not.toBeInTheDocument();
       expect(screen.getByTestId("asset-price-delta-native")).toHaveTextContent(
         "--",
       );
       expect(
-        screen.getByTestId(`asset-price-delta-${TEST_CANONICAL}`),
+        screen.getByTestId(`asset-price-delta-${TEST_USDC_CANONICAL}`),
       ).toHaveTextContent("--");
       expect(
+        screen.getByTestId(`asset-price-delta-${TEST_CANONICAL}`),
+      ).toHaveTextContent("--");
+      // Mainnet prices failed, so the total is unknown rather than zero —
+      // the hero reports that the same way the token rows above do.
+      expect(
         screen.queryByTestId("account-view-total-balance"),
-      ).toBeEmptyDOMElement();
+      ).toHaveTextContent("--");
+    });
+  });
+
+  it("orders balances by USD value descending when prices are available", async () => {
+    jest.spyOn(ApiInternal, "loadSettings").mockImplementation(() =>
+      Promise.resolve({
+        networkDetails: MAINNET_NETWORK_DETAILS,
+        networksList: DEFAULT_NETWORKS,
+        hiddenAssets: {},
+        allowList: ApiInternal.DEFAULT_ALLOW_LIST,
+        error: "",
+        isDataSharingAllowed: false,
+        isMemoValidationEnabled: false,
+        isHideDustEnabled: true,
+        isOpenSidebarByDefault: false,
+        settingsState: SettingsState.SUCCESS,
+        isSorobanPublicEnabled: false,
+        isRpcHealthy: true,
+        userNotification: {
+          enabled: false,
+          message: "",
+        },
+        isExperimentalModeEnabled: false,
+        isHashSigningEnabled: false,
+        isNonSSLEnabled: false,
+        experimentalFeaturesState: SettingsState.SUCCESS,
+        assetsLists: DEFAULT_ASSETS_LISTS,
+        autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
+      }),
+    );
+    jest
+      .spyOn(ApiInternal, "getAccountBalances")
+      .mockImplementation(() => Promise.resolve(mockBalances));
+    // The production indexer (`getTokenPrices` in `@shared/api/internal.ts`)
+    // filters out contract-ID issuers via `isContractId(asset.issuer)`, so
+    // `DT` (which has a `C…` issuer in `mockBalances`) cannot be priced in
+    // real usage. Price the classic G-issuer assets instead — `USDC`
+    // (large value) and native `XLM` — so the ordering scenario under test
+    // matches what users actually see.
+    const realisticPrices = {
+      ["USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM"]: {
+        currentPrice: "1.00",
+        percentagePriceChange24h: "0",
+      },
+      native: {
+        currentPrice: "0.27633884304166495",
+        percentagePriceChange24h: "1.09899728516430811",
+      },
+    };
+    jest
+      .spyOn(ApiInternal, "getTokenPrices")
+      .mockImplementation(() => Promise.resolve(realisticPrices));
+
+    render(
+      <Wrapper
+        routes={[ROUTES.account]}
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
+            publicKey: "G1",
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: MAINNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+          },
+        }}
+      >
+        <Account />
+      </Wrapper>,
+    );
+
+    // mockBalances + realisticPrices: USDC (100 * $1 = $100), XLM
+    // (50 * ~$0.276 = ~$13.81), DT (unpriced — contract-ID issuer is
+    // filtered out by the production pricing API). Expected order:
+    // USDC, XLM, DT (unpriced last).
+    await waitFor(() => {
+      const assetNodes = screen.getAllByTestId("account-assets-item");
+      expect(assetNodes.length).toEqual(3);
+      expect(assetNodes[0]).toHaveTextContent("USDC");
+      // XLM's row shows the "Stellar Lumens" display name, not its code.
+      expect(assetNodes[1]).toHaveTextContent("Stellar Lumens");
+      expect(assetNodes[2]).toHaveTextContent("DT");
+    });
+  });
+
+  it("preserves the default balance order when token prices fail to load", async () => {
+    jest.spyOn(ApiInternal, "loadSettings").mockImplementation(() =>
+      Promise.resolve({
+        networkDetails: MAINNET_NETWORK_DETAILS,
+        networksList: DEFAULT_NETWORKS,
+        hiddenAssets: {},
+        allowList: ApiInternal.DEFAULT_ALLOW_LIST,
+        error: "",
+        isDataSharingAllowed: false,
+        isMemoValidationEnabled: false,
+        isHideDustEnabled: true,
+        isOpenSidebarByDefault: false,
+        settingsState: SettingsState.SUCCESS,
+        isSorobanPublicEnabled: false,
+        isRpcHealthy: true,
+        userNotification: {
+          enabled: false,
+          message: "",
+        },
+        isExperimentalModeEnabled: false,
+        isHashSigningEnabled: false,
+        isNonSSLEnabled: false,
+        experimentalFeaturesState: SettingsState.SUCCESS,
+        assetsLists: DEFAULT_ASSETS_LISTS,
+        autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
+      }),
+    );
+    jest
+      .spyOn(ApiInternal, "getAccountBalances")
+      .mockImplementation(() => Promise.resolve(mockBalances));
+    jest
+      .spyOn(ApiInternal, "getTokenPrices")
+      .mockRejectedValueOnce(new Error("Failed to fetch prices"));
+
+    render(
+      <Wrapper
+        routes={[ROUTES.account]}
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
+            publicKey: "G1",
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: MAINNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+          },
+        }}
+      >
+        <Account />
+      </Wrapper>,
+    );
+
+    // With no prices, sortBalancesByValue is a no-op; the existing
+    // sortBalances output is XLM (native unshifted to top), then DT, USDC.
+    await waitFor(() => {
+      const assetNodes = screen.getAllByTestId("account-assets-item");
+      expect(assetNodes.length).toEqual(3);
+      // XLM's row shows the "Stellar Lumens" display name, not its code.
+      expect(assetNodes[0]).toHaveTextContent("Stellar Lumens");
+      expect(assetNodes[1]).toHaveTextContent("DT");
+      expect(assetNodes[2]).toHaveTextContent("USDC");
     });
   });
 
@@ -1086,15 +1268,16 @@ describe("Account view", () => {
         isNonSSLEnabled: false,
         experimentalFeaturesState: SettingsState.SUCCESS,
         assetsLists: DEFAULT_ASSETS_LISTS,
+        autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
       }),
     );
     const getAccountBalancesSpy = jest
       .spyOn(ApiInternal, "getAccountBalances")
       .mockImplementation(() => Promise.resolve(mockBalances));
 
-    jest.spyOn(ApiInternal, "getTokenPrices").mockImplementation(() => {
-      throw new Error("Failed to fetch prices");
-    });
+    jest
+      .spyOn(ApiInternal, "getTokenPrices")
+      .mockRejectedValueOnce(new Error("Failed to fetch prices"));
 
     render(
       <Wrapper
@@ -1125,6 +1308,121 @@ describe("Account view", () => {
     // Fast-forward 30 seconds
     jest.advanceTimersByTime(30000);
     expect(getAccountBalancesSpy).toHaveBeenCalledTimes(3);
+  });
+
+  // An unfunded account holds nothing, so zero is its real total even on a
+  // network that prices tokens — the dash is reserved for a total that could
+  // not be read.
+  it("shows $0.00 for an unfunded Mainnet account rather than a dash", async () => {
+    const accountDataSpy = jest
+      .spyOn(AccountDataHooks, "useGetAccountData")
+      .mockReturnValue({
+        state: {
+          state: RequestState.SUCCESS,
+          error: null,
+          data: {
+            type: AppDataType.RESOLVED,
+            publicKey: TEST_PUBLIC_KEY,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
+            networkDetails: MAINNET_NETWORK_DETAILS,
+            allowList: ApiInternal.DEFAULT_ALLOW_LIST,
+            isScanAppended: true,
+            collectibles: { collections: [] },
+            // No holdings, so nothing is priced either.
+            balances: { balances: [], isFunded: false, subentryCount: 0 },
+            tokenPrices: {},
+          },
+        },
+        fetchData: jest.fn(),
+        refreshAppData: jest.fn(),
+      } as any);
+
+    render(
+      <Wrapper
+        routes={[ROUTES.account]}
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
+            publicKey: TEST_PUBLIC_KEY,
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: MAINNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+          },
+        }}
+      >
+        <Account />
+      </Wrapper>,
+    );
+
+    await waitFor(() => {
+      expect(
+        screen.getByTestId("account-view-total-balance"),
+      ).toBeInTheDocument();
+    });
+
+    accountDataSpy.mockRestore();
+
+    expect(screen.getByTestId("account-view-total-balance")).toHaveTextContent(
+      "$0.00",
+    );
+  });
+
+  it("renders the error notification without crashing when account data is in ERROR state", async () => {
+    const accountDataSpy = jest
+      .spyOn(AccountDataHooks, "useGetAccountData")
+      .mockReturnValue({
+        state: {
+          state: RequestState.ERROR,
+          data: null,
+          error: new Error("boom"),
+        },
+        fetchData: jest.fn(),
+        refreshAppData: jest.fn(),
+      });
+
+    render(
+      <Wrapper
+        routes={[ROUTES.account]}
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
+            publicKey: TEST_PUBLIC_KEY,
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: MAINNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+          },
+        }}
+      >
+        <Account />
+      </Wrapper>,
+    );
+
+    await waitFor(() => {
+      expect(
+        screen.getByText("Failed to fetch your account balances."),
+      ).toBeInTheDocument();
+    });
+
+    // Restored before asserting: a failure after this point would otherwise
+    // leave useGetAccountData mocked for every later test in this file.
+    accountDataSpy.mockRestore();
+
+    // Balances are unknown here, not zero, so the hero shows the same dash
+    // the token rows use while the notification above carries the failure.
+    expect(screen.getByTestId("account-view-total-balance")).toHaveTextContent(
+      "--",
+    );
+
+    // Deliberately no identicon assertion here: jsdom has no canvas, so
+    // createStellarIdenticon().toDataURL() returns the same constant for
+    // every key — including "". The header's identicon fix is verified in a
+    // real browser instead; a unit assertion could not fail.
   });
 
   it("handles abandoned onboarding in password created step", async () => {

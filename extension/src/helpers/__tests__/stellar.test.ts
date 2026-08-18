@@ -6,6 +6,8 @@ import {
   stroopToXlm,
   xlmToStroop,
   encodeSep53Message,
+  isSameAccount,
+  toSignatureBuffer,
 } from "../stellar";
 import * as urls from "../urls";
 
@@ -117,10 +119,69 @@ describe("xlmToStroop", () => {
   });
 });
 
+describe("isSameAccount", () => {
+  // GAJV... and its muxed forms (memo ids 1 and 12345) share the same base account
+  const BASE_G = "GAJVUHQV535IYW25XBTWTCUXNHLQN4F2PGIPOOX4DDKL2UPNXUHWU7B3";
+  const MUXED_1 =
+    "MAJVUHQV535IYW25XBTWTCUXNHLQN4F2PGIPOOX4DDKL2UPNXUHWUAAAAAAAAAAAAGPZI";
+  const MUXED_12345 =
+    "MAJVUHQV535IYW25XBTWTCUXNHLQN4F2PGIPOOX4DDKL2UPNXUHWUAAAAAAAAABQHFISM";
+  const OTHER_G = "GBE5XHPAMKKVHJJB6CWOFXIIAWKEJ7SSUNUMYFISYR47HOKIJ6JRA43Y";
+  const CONTRACT_ID =
+    "CAAQCAIBAEAQCAIBAEAQCAIBAEAQCAIBAEAQCAIBAEAQCAIBAEAQC526";
+
+  it("returns true for two identical base (G...) addresses", () => {
+    expect(isSameAccount(BASE_G, BASE_G)).toBe(true);
+  });
+
+  it("returns true when a muxed (M...) address resolves to the base (G...) account", () => {
+    expect(isSameAccount(MUXED_1, BASE_G)).toBe(true);
+    expect(isSameAccount(BASE_G, MUXED_1)).toBe(true);
+  });
+
+  it("returns true for two muxed addresses sharing the same base account", () => {
+    expect(isSameAccount(MUXED_1, MUXED_12345)).toBe(true);
+  });
+
+  it("returns false for different base accounts", () => {
+    expect(isSameAccount(BASE_G, OTHER_G)).toBe(false);
+  });
+
+  it("returns false when comparing a contract id against a G address", () => {
+    expect(isSameAccount(CONTRACT_ID, BASE_G)).toBe(false);
+  });
+
+  it("returns false for empty or nullish inputs", () => {
+    expect(isSameAccount("", BASE_G)).toBe(false);
+    expect(isSameAccount(BASE_G, "")).toBe(false);
+    expect(isSameAccount(undefined, BASE_G)).toBe(false);
+    expect(isSameAccount(BASE_G, undefined)).toBe(false);
+    expect(isSameAccount("", "")).toBe(false);
+  });
+});
+
 describe("encodeSep53Message", () => {
   test("should encode a simple ascii message", () => {
     const message = "Hello, World!";
     const expected = "1S61nAa7UQ0GWZf/kwdwaO7QpIbCAhW14C4asNLr6l8=";
     expect(encodeSep53Message(message).toString("base64")).toEqual(expected);
+  });
+});
+
+describe("toSignatureBuffer", () => {
+  const signature = Buffer.from("a-signature-from-a-device");
+
+  test("should pass a Buffer through untouched", () => {
+    expect(toSignatureBuffer(signature)).toBe(signature);
+  });
+
+  test("should decode a base64 signature from a hardware wallet", () => {
+    expect(toSignatureBuffer(signature.toString("base64"))).toEqual(signature);
+  });
+
+  test("should round-trip back to the same base64 either way", () => {
+    const base64 = signature.toString("base64");
+    expect(toSignatureBuffer(base64).toString("base64")).toEqual(base64);
+    expect(toSignatureBuffer(signature).toString("base64")).toEqual(base64);
   });
 });

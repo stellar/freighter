@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 
 import { stroopToXlm } from "helpers/stellar";
 import { CopyValue } from "popup/components/CopyValue";
+import { TruncatedMemo } from "popup/components/TruncatedMemo";
 
 import "./styles.scss";
 
@@ -50,16 +51,23 @@ export const Summary = (props: SummaryProps) => {
         </div>
         <p className="TxInfoBlock__value">{props.sequenceNumber}</p>
       </div>
-      <div className="TxInfoBlock" data-testid="MemoBlock">
-        <div className="TxInfoBlock__title">
-          <p>{t("Memo")}</p>
+      {props.memo && props.memo.value ? (
+        <div className="TxInfoBlock" data-testid="MemoBlock">
+          <div className="TxInfoBlock__title">
+            <p>{t("Memo")}</p>
+          </div>
+          <span className="TxInfoBlock__value TxInfoBlock__value--memo">
+            <TruncatedMemo
+              inline
+              memo={props.memo.value}
+              className="TxInfoBlock__memo"
+            />
+            <span className="TxInfoBlock__memoType">
+              {`(${getMemoLabel(props.memo.type)})`}
+            </span>
+          </span>
         </div>
-        <p className="TxInfoBlock__value">
-          {props.memo && props.memo.value
-            ? `${props.memo.value} (${getMemoLabel(props.memo.type)})`
-            : `${t("None")} (${getMemoLabel("none")})`}
-        </p>
-      </div>
+      ) : null}
       <div className="TxInfoBlock">
         <div className="TxInfoBlock__title">
           <p>{t("XDR")}</p>
