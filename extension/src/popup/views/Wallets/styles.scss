@@ -135,13 +135,15 @@
     padding-left: 0;
   }
 
-  // The chip. The plus glyph uses `stroke="currentColor"`, inheriting
-  // whatever `color` it finds — which would otherwise be the button's own
-  // (lighter) text color above. Setting `color` here keeps it the spec's
-  // more saturated fill purple.
+  // The chip. Sized to the list rows' 40px avatars so the two circles read as
+  // one column — with the 16px gap above, that also lines the "Add wallet"
+  // label up with each row's name. The plus glyph uses `stroke="currentColor"`,
+  // inheriting whatever `color` it finds — which would otherwise be the
+  // button's own (lighter) text color above. Setting `color` here keeps it the
+  // spec's more saturated fill purple.
   .Button__icon {
-    width: #{pxToRem(34px)};
-    height: #{pxToRem(34px)};
+    width: #{pxToRem(40px)};
+    height: #{pxToRem(40px)};
     flex-shrink: 0;
     border-radius: 100px;
     background-color: var(--sds-clr-lilac-02);
@@ -151,8 +153,20 @@
     justify-content: center;
 
     svg {
-      width: #{pxToRem(14px)};
-      height: #{pxToRem(14px)};
+      width: #{pxToRem(16px)};
+      height: #{pxToRem(16px)};
+    }
+
+    // Must target the path, not the svg. SDS ships these through SVGR, so the
+    // path keeps its own `stroke-width="2"` presentation attribute -- which
+    // loses to a rule matching the path, but beats a value inherited from the
+    // svg.
+    //
+    // The value is 3, not 2, because the viewBox is 24x24 while the glyph
+    // renders at 16px: strokes scale by 2/3, so 3 user units draw as 2px.
+    // Same treatment as FloatingAddButton's plus.
+    svg path {
+      stroke-width: 3;
     }
   }
 
