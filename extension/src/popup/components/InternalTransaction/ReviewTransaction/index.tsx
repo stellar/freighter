@@ -101,6 +101,11 @@ interface ReviewTxProps {
   // Friendly per-feature reasons from the source token scan, listed in the
   // expandable Blockaid pane alongside the transaction-scan reasons.
   sourceTokenSecurityWarnings?: BlockaidWarning[];
+  // Balances-derived "this swap adds a trustline" flag. The pick-time snapshot
+  // above is absent for defaulted/deep-linked destinations, so callers that
+  // derive the flag from holdings pass it here; when omitted, the snapshot's
+  // flag applies (legacy behavior).
+  requiresTrustline?: boolean;
 }
 
 export const ReviewTx = ({
@@ -119,6 +124,7 @@ export const ReviewTx = ({
   destinationTokenDetails,
   sourceTokenSecurityLevel,
   sourceTokenSecurityWarnings,
+  requiresTrustline: requiresTrustlineProp,
 }: ReviewTxProps) => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
@@ -311,7 +317,13 @@ export const ReviewTx = ({
   const [isOnFeesPane, setIsOnFeesPane] = useState(false);
   const [isOnMemoPane, setIsOnMemoPane] = useState(false);
 
-  const requiresTrustline = !!destinationTokenDetails?.requiresTrustline;
+  const requiresTrustline =
+    requiresTrustlineProp ?? !!destinationTokenDetails?.requiresTrustline;
+  // A defaulted/deep-linked destination has no pick-time snapshot, so the
+  // banner/sheet token code falls back to the destination canonical.
+  const trustlineTokenCode =
+    destinationTokenDetails?.tokenCode ||
+    (dstAsset ? getAssetFromCanonical(dstAsset.canonical).code : "");
   const [isOnTrustlinePane, setIsOnTrustlinePane] = useState(false);
 
   // Extract contract ID for custom tokens or collectibles
@@ -470,7 +482,7 @@ export const ReviewTx = ({
         )}
         {requiresTrustline && (
           <TrustlineBanner
-            tokenCode={destinationTokenDetails!.tokenCode}
+            tokenCode={trustlineTokenCode}
             onClick={() => setIsOnTrustlinePane(true)}
           />
         )}
@@ -683,7 +695,7 @@ export const ReviewTx = ({
               modal and appear in place. */}
           {isOnTrustlinePane ? (
             <TrustlineInfoSheet
-              tokenCode={destinationTokenDetails?.tokenCode || ""}
+              tokenCode={trustlineTokenCode}
               onClose={() => setIsOnTrustlinePane(false)}
             />
           ) : isOnBlockaidSheet ? (

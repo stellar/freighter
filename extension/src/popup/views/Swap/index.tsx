@@ -29,7 +29,12 @@ import {
 import { navigateTo } from "popup/helpers/navigate";
 import { ROUTES } from "popup/constants/routes";
 import { resetSimulation } from "popup/ducks/token-payment";
+import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { getAssetFromCanonical } from "helpers/stellar";
+import {
+  DEFAULT_SWAP_DEST_CANONICAL,
+  NETWORKS,
+} from "@shared/constants/stellar";
 
 // Each swap sub-step emits the consolidated `screen.viewed` event; the step's
 // identity lives in `screen_name`, declared as a literal below.
@@ -70,6 +75,7 @@ export const Swap = () => {
 
   const submission = useSelector(transactionSubmissionSelector);
   const { transactionSimulation, transactionData } = submission;
+  const networkDetails = useSelector(settingsNetworkDetailsSelector);
 
   // Quote expired at submit (op_under_dest_min / op_too_few_offers): recover to
   // the review screen with a fresh quote instead of dead-ending in SubmitFail.
@@ -85,7 +91,8 @@ export const Swap = () => {
     // from_asset_code/to_asset_code match mobile rather than being canonical ids.
     emitMetric(METRIC_NAMES.swapQuoteExpired, {
       from_asset_code: getAssetFromCanonical(transactionData.asset).code,
-      to_asset_code: getAssetFromCanonical(transactionData.destinationAsset).code,
+      to_asset_code: getAssetFromCanonical(transactionData.destinationAsset)
+        .code,
       result_code: getQuoteExpiredOperationCodes(submission.error).join(", "),
     });
     // Clear only the ERROR status (keep the transaction data + the
@@ -96,6 +103,11 @@ export const Swap = () => {
   }, [isQuoteExpiredAtSubmit]);
 
   const [inputType, setInputType] = useState<InputType>("crypto");
+  // Children fetch in their own mount effects, and React runs child effects
+  // before this parent effect — so hold rendering until the reset + defaults
+  // below have landed in Redux, or the first fetch reads the pre-reset state
+  // (e.g. no destination default → no destination price/icon on first load).
+  const [areDefaultsApplied, setAreDefaultsApplied] = useState(false);
 
   useEffect(() => {
     dispatch(resetSimulation());
@@ -107,31 +119,44 @@ export const Swap = () => {
     const destinationAssetParam = params.get("destination_asset");
 
     // Pre-populate source asset if provided and valid, otherwise default to native
+    let sourceAsset = "native";
     if (sourceAssetParam) {
       try {
         getAssetFromCanonical(sourceAssetParam);
-        dispatch(saveAsset(sourceAssetParam));
+        sourceAsset = sourceAssetParam;
       } catch {
         // Invalid source asset param, use default
-        dispatch(saveAsset("native"));
-        dispatch(saveIsToken(false));
       }
-    } else {
-      // Set default asset to native if not provided
-      dispatch(saveAsset("native"));
+    }
+    dispatch(saveAsset(sourceAsset));
+    if (sourceAsset === "native") {
       dispatch(saveIsToken(false));
     }
 
-    // Pre-populate destination asset if provided and valid
+    // Pre-populate destination asset if provided and valid; otherwise default
+    // to the network's USDC — or to native when the flow starts from USDC
+    // itself (e.g. the USDC asset-details screen), so the sides never collide.
+    let destinationAsset = "";
     if (destinationAssetParam) {
       try {
         getAssetFromCanonical(destinationAssetParam);
-        dispatch(saveDestinationAsset(destinationAssetParam));
+        destinationAsset = destinationAssetParam;
       } catch {
         // Invalid destination asset param, ignore
       }
     }
-  }, [dispatch, location.search]);
+    if (!destinationAsset) {
+      const defaultDest =
+        DEFAULT_SWAP_DEST_CANONICAL[networkDetails.network as NETWORKS];
+      if (defaultDest) {
+        destinationAsset = defaultDest === sourceAsset ? "native" : defaultDest;
+      }
+    }
+    if (destinationAsset) {
+      dispatch(saveDestinationAsset(destinationAsset));
+    }
+    setAreDefaultsApplied(true);
+  }, [dispatch, location.search, networkDetails.network]);
 
   const renderStep = (step: STEPS) => {
     switch (step) {
@@ -234,6 +259,10 @@ export const Swap = () => {
       }
     }
   };
+
+  if (!areDefaultsApplied) {
+    return null;
+  }
 
   return renderStep(activeStep);
 };

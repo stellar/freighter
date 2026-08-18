@@ -70,6 +70,15 @@ export const DEFAULT_NETWORKS: Array<NetworkDetails> = [
   TESTNET_NETWORK_DETAILS,
 ];
 
+// Default swap destination ("You receive") per network. Only networks listed
+// here get a default; on custom networks the picker starts empty.
+export const DEFAULT_SWAP_DEST_CANONICAL: Partial<Record<NETWORKS, string>> = {
+  [NETWORKS.PUBLIC]:
+    "USDC:GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN",
+  [NETWORKS.TESTNET]:
+    "USDC:GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
+};
+
 export const BASE_RESERVE = 0.5 as const;
 export const BASE_RESERVE_MIN_COUNT = 2 as const;
 

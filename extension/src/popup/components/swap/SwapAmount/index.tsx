@@ -37,6 +37,7 @@ import { openTab } from "popup/helpers/navigate";
 import { newTabHref } from "helpers/urls";
 import { reRouteOnboarding } from "popup/helpers/route";
 import { getAvailableBalance } from "popup/helpers/soroban";
+import { getBalanceCanonicalKey } from "popup/helpers/balance";
 import { useBlockaidOverrideState } from "popup/helpers/blockaid";
 import { AppDispatch } from "popup/App";
 import { emitMetric } from "helpers/metrics";
@@ -117,17 +118,6 @@ export const SwapAmount = ({
     transactionFee,
     transactionTimeout,
   } = transactionData;
-  // A new-trustline swap is two ops; scale the recommended default fee by op
-  // count so each op pays the recommended fee (a custom fee is the total and
-  // is split per op at build time).
-  const swapOpCount = transactionData.destinationTokenDetails?.requiresTrustline
-    ? 2
-    : 1;
-  const fee = getSwapTotalFee({
-    recommendedFee,
-    customFee: transactionFee,
-    opCount: swapOpCount,
-  });
   // The source can be in the "(+) Select" (empty) state — e.g. after a
   // direction swap whose destination was unset or a non-held token.
   const srcAsset = asset ? getAssetFromCanonical(asset) : null;
@@ -144,6 +134,35 @@ export const SwapAmount = ({
     destinationAsset,
     asset,
   );
+
+  // A swap is a self path-payment, so the sender needs a trustline for the
+  // destination. Derived from holdings (like the picker derives held-ness)
+  // rather than the pick-time snapshot, so a defaulted or deep-linked
+  // destination — which never went through the picker — is covered too.
+  // Checked against the UNFILTERED balances: visibility is a display
+  // preference, and a hidden held asset must not get a redundant changeTrust
+  // (doubled fee, false reserve preflight, trustline limit reset to default).
+  // Empty until balances resolve; every consumer (fee count, reserve
+  // preflight, simulation) only acts post-resolve, behind the spinner.
+  const heldBalances =
+    swapAmountData.data?.type === AppDataType.RESOLVED
+      ? (swapAmountData.data.userBalances.unfilteredBalances ??
+        swapAmountData.data.userBalances.balances)
+      : [];
+  const destRequiresTrustline =
+    Boolean(destinationAsset) &&
+    heldBalances.length > 0 &&
+    !heldBalances.some((b) => getBalanceCanonicalKey(b) === destinationAsset);
+
+  // A new-trustline swap is two ops; scale the recommended default fee by op
+  // count so each op pays the recommended fee (a custom fee is the total and
+  // is split per op at build time).
+  const swapOpCount = destRequiresTrustline ? 2 : 1;
+  const fee = getSwapTotalFee({
+    recommendedFee,
+    customFee: transactionFee,
+    opCount: swapOpCount,
+  });
   const {
     state: simulationState,
     fetchData: fetchSimulationData,
@@ -160,6 +179,7 @@ export const SwapAmount = ({
       transactionFee: fee,
       transactionTimeout,
       memo,
+      destRequiresTrustline,
     },
   });
 
@@ -193,8 +213,7 @@ export const SwapAmount = ({
       destinationRate: dstAssetPrice,
     });
     const needsReserve = shouldShowXlmReservePreflight({
-      requiresTrustline:
-        transactionData.destinationTokenDetails?.requiresTrustline ?? false,
+      requiresTrustline: destRequiresTrustline,
       sourceIsXlm: asset === "native",
       spendableXlm: getAvailableBalance({
         assetCanonical: "native",
@@ -371,6 +390,7 @@ export const SwapAmount = ({
     networkDetails,
     inputType,
     isLiveQuoteLoading,
+    destRequiresTrustline,
   });
 
   const handleSwapForReserve = async () => {
@@ -858,6 +878,10 @@ export const SwapAmount = ({
             destinationTokenDetails={transactionData.destinationTokenDetails}
             sourceTokenSecurityLevel={sourceTokenSecurityLevel}
             sourceTokenSecurityWarnings={sourceTokenSecurityWarnings}
+            // Balances-derived, so the trustline disclosure also renders for
+            // defaulted/deep-linked destinations that have no pick-time
+            // snapshot — the same flag that made getBuiltTx add the op.
+            requiresTrustline={destRequiresTrustline}
           />
         ) : (
           <></>
