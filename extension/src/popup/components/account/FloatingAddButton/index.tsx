@@ -9,21 +9,32 @@ import { useActiveTab } from "popup/components/account/AccountTabs/hooks/useActi
 
 import "./styles.scss";
 
+/**
+ * Where the Collectibles tab's Add action lives.
+ *
+ * - "inline": its empty state is carrying the action, so the pill stands down.
+ * - "pill": the pill is the action.
+ * - "pending": the collectibles request has not resolved, so it is not yet known
+ *   which of the two it will be. Distinct from "pill" on purpose -- an empty
+ *   `collections` reads the same before the request lands as it does when the
+ *   account owns none, and guessing puts an action on screen only to move it a
+ *   moment later.
+ */
+export type CollectiblesCta = "inline" | "pill" | "pending";
+
 interface FloatingAddButtonProps {
   isFunded: boolean;
   /**
-   * Whether the Collectibles empty state is currently carrying its own Add
-   * action, in which case the pill stands down on that tab. Passed in because it
-   * depends on things this component cannot see: whether the Tokens tab is
-   * showing its unfunded empty state, and whether the Collectibles tab has an
-   * empty state to host a button at all.
+   * Passed in because it depends on things this component cannot see: whether the
+   * Tokens tab is showing its unfunded empty state, whether the Collectibles tab
+   * has an empty state to host a button at all, and whether that is known yet.
    */
-  isCollectiblesCtaInline: boolean;
+  collectiblesCta: CollectiblesCta;
 }
 
 export const FloatingAddButton = ({
   isFunded,
-  isCollectiblesCtaInline,
+  collectiblesCta,
 }: FloatingAddButtonProps) => {
   const { t } = useTranslation();
   const { activeTab } = useActiveTab();
@@ -37,8 +48,9 @@ export const FloatingAddButton = ({
   }
 
   // Same reasoning on the Collectibles tab, whose empty state takes its cue from
-  // the Tokens one so that the two never offer different kinds of button.
-  if (!isTokensTab && isCollectiblesCtaInline) {
+  // the Tokens one so that the two never offer different kinds of button -- and
+  // nothing at all until it is known which of the two this is.
+  if (!isTokensTab && collectiblesCta !== "pill") {
     return null;
   }
 

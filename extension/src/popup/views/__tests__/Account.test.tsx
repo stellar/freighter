@@ -1435,10 +1435,12 @@ describe("Account view", () => {
     const renderWithHoldings = async ({
       collections,
       isFunded,
+      hasLoadedCollectibles = true,
       requestState = RequestState.SUCCESS,
     }: {
       collections: any[];
       isFunded: boolean;
+      hasLoadedCollectibles?: boolean;
       requestState?: RequestState;
     }) => {
       const accountDataSpy = jest
@@ -1463,6 +1465,7 @@ describe("Account view", () => {
                     allowList: ApiInternal.DEFAULT_ALLOW_LIST,
                     isScanAppended: true,
                     collectibles: { collections },
+                    hasLoadedCollectibles,
                     // `isFunded` is the only part of this the CTA decision
                     // reads, and the list is post-normalisation here (this
                     // mocks the hook, not the network), so an empty array is
@@ -1617,6 +1620,32 @@ describe("Account view", () => {
       expect(
         screen.getByTestId("add-collectible-inline-btn"),
       ).toBeInTheDocument();
+      expect(pillTestIds()).toEqual([]);
+    });
+
+    // The collectibles request resolves after balances, and until it does an empty
+    // `collections` is indistinguishable from an account that owns none. Reading
+    // it as "none" put the inline CTA on the Collectibles tab and then swapped it
+    // for the pill, so neither is offered until the answer is in. Tokens, which
+    // never reads the collectibles state, is unaffected throughout.
+    it("offers no Collectibles CTA until the request resolves", async () => {
+      const spy = await renderWithHoldings({
+        collections: [],
+        isFunded: false,
+        hasLoadedCollectibles: false,
+      });
+
+      // Tokens still carries its own action, exactly as it does once loaded.
+      expect(
+        screen.getByTestId("not-funded").querySelectorAll("button"),
+      ).toHaveLength(1);
+
+      await switchToCollectibles();
+      spy.mockRestore();
+
+      expect(
+        screen.queryByTestId("add-collectible-inline-btn"),
+      ).not.toBeInTheDocument();
       expect(pillTestIds()).toEqual([]);
     });
 

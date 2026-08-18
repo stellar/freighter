@@ -3,7 +3,10 @@ import { render, screen } from "@testing-library/react";
 
 import { MAINNET_NETWORK_DETAILS } from "@shared/constants/stellar";
 import { Wrapper } from "popup/__testHelpers__";
-import { FloatingAddButton } from "popup/components/account/FloatingAddButton";
+import {
+  CollectiblesCta,
+  FloatingAddButton,
+} from "popup/components/account/FloatingAddButton";
 import {
   AccountTabsContext,
   TabsList,
@@ -12,11 +15,11 @@ import {
 const renderPill = ({
   activeTab,
   isFunded,
-  isCollectiblesCtaInline,
+  collectiblesCta,
 }: {
   activeTab: TabsList;
   isFunded: boolean;
-  isCollectiblesCtaInline: boolean;
+  collectiblesCta: CollectiblesCta;
 }) =>
   render(
     <Wrapper
@@ -33,7 +36,7 @@ const renderPill = ({
       >
         <FloatingAddButton
           isFunded={isFunded}
-          isCollectiblesCtaInline={isCollectiblesCtaInline}
+          collectiblesCta={collectiblesCta}
         />
       </AccountTabsContext.Provider>
     </Wrapper>,
@@ -45,7 +48,7 @@ describe("FloatingAddButton", () => {
       renderPill({
         activeTab: TabsList.TOKENS,
         isFunded: true,
-        isCollectiblesCtaInline: false,
+        collectiblesCta: "pill",
       });
 
       expect(screen.getByTestId("add-token-btn")).toHaveTextContent(
@@ -58,7 +61,7 @@ describe("FloatingAddButton", () => {
       const { container } = renderPill({
         activeTab: TabsList.TOKENS,
         isFunded: false,
-        isCollectiblesCtaInline: true,
+        collectiblesCta: "inline",
       });
 
       expect(container).toBeEmptyDOMElement();
@@ -70,7 +73,7 @@ describe("FloatingAddButton", () => {
       renderPill({
         activeTab: TabsList.COLLECTIBLES,
         isFunded: true,
-        isCollectiblesCtaInline: false,
+        collectiblesCta: "pill",
       });
 
       expect(screen.getByTestId("add-collectible-btn")).toHaveTextContent(
@@ -84,10 +87,35 @@ describe("FloatingAddButton", () => {
       const { container } = renderPill({
         activeTab: TabsList.COLLECTIBLES,
         isFunded: false,
-        isCollectiblesCtaInline: true,
+        collectiblesCta: "inline",
       });
 
       expect(container).toBeEmptyDOMElement();
+    });
+
+    // Until the collectibles request resolves it is not known whether this tab
+    // will host the action itself, so the pill waits rather than appearing and
+    // then being replaced by the inline CTA.
+    it("stands down while the placement is still pending", () => {
+      const { container } = renderPill({
+        activeTab: TabsList.COLLECTIBLES,
+        isFunded: false,
+        collectiblesCta: "pending",
+      });
+
+      expect(container).toBeEmptyDOMElement();
+    });
+
+    // The Tokens tab is unaffected by any of this -- it never reads the
+    // collectibles state.
+    it("still offers Add token while the placement is pending", () => {
+      renderPill({
+        activeTab: TabsList.TOKENS,
+        isFunded: true,
+        collectiblesCta: "pending",
+      });
+
+      expect(screen.getByTestId("add-token-btn")).toBeInTheDocument();
     });
 
     // An unfunded account can still hold collectibles, in which case this tab has
@@ -97,7 +125,7 @@ describe("FloatingAddButton", () => {
       renderPill({
         activeTab: TabsList.COLLECTIBLES,
         isFunded: false,
-        isCollectiblesCtaInline: false,
+        collectiblesCta: "pill",
       });
 
       expect(screen.getByTestId("add-collectible-btn")).toBeInTheDocument();

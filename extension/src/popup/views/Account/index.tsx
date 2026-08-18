@@ -26,7 +26,10 @@ import {
   hasVisibleCollections,
 } from "popup/components/account/AccountCollectibles";
 import { AccountHeader } from "popup/components/account/AccountHeader";
-import { FloatingAddButton } from "popup/components/account/FloatingAddButton";
+import {
+  CollectiblesCta,
+  FloatingAddButton,
+} from "popup/components/account/FloatingAddButton";
 import { useHiddenCollectibles } from "popup/components/account/hooks/useHiddenCollectibles";
 import { Loading } from "popup/components/Loading";
 import { NotFundedMessage } from "popup/components/account/NotFundedMessage";
@@ -247,9 +250,24 @@ export const Account = () => {
   // an empty state to put one in -- with collectibles on screen the pill stays,
   // so the tab is never left without a way to add one. `hasVisibleCollections`
   // is the same predicate that pane switches on, so the two cannot disagree.
-  const isCollectiblesCtaInline =
+  //
+  // Until the collectibles request resolves neither answer is known: `collections`
+  // is an empty list both before it lands and when the account owns none, so
+  // reading it as "none" would offer the inline CTA and then move the action out
+  // to the pill a moment later. It stays "pending" until the answer is in.
+  // Guarded on `resolvedData` rather than the flag alone: a failed balances fetch
+  // leaves no payload to read it from, and waiting on a request whose result was
+  // thrown away would strand that tab with no way to add a collectible at all.
+  // It keeps the pill there, as it did before this rule existed.
+  let collectiblesCta: CollectiblesCta = "pill";
+  if (resolvedData && !resolvedData.hasLoadedCollectibles) {
+    collectiblesCta = "pending";
+  } else if (
     isTokensEmptyStateShown &&
-    !hasVisibleCollections(collections, isCollectibleHidden);
+    !hasVisibleCollections(collections, isCollectibleHidden)
+  ) {
+    collectiblesCta = "inline";
+  }
 
   return (
     <>
@@ -355,7 +373,7 @@ export const Account = () => {
               <div data-testid="account-collectibles">
                 <AccountCollectibles
                   collections={collections}
-                  hasInlineCta={isCollectiblesCtaInline}
+                  hasInlineCta={collectiblesCta === "inline"}
                   refreshHiddenCollectibles={refreshHiddenCollectibles}
                   isCollectibleHidden={isCollectibleHidden}
                 />
@@ -374,7 +392,7 @@ export const Account = () => {
       */}
       <FloatingAddButton
         isFunded={isFunded}
-        isCollectiblesCtaInline={isCollectiblesCtaInline}
+        collectiblesCta={collectiblesCta}
       />
       <Sheet
         open={isDiscoverOpen}

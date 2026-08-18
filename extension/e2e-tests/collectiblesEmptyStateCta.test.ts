@@ -129,3 +129,77 @@ test("Collectibles keeps the pill when it has collectibles to show", async ({
   });
   await expect(page.getByTestId("add-collectible-inline-btn")).toHaveCount(0);
 });
+
+// The collectibles request resolves after balances, and until it does an empty
+// list is indistinguishable from an account that owns none. Reading it as "none"
+// put the inline CTA on this tab and then moved the action out to the pill once
+// the collectibles turned up. This holds the response open so that window is
+// wide enough to assert in.
+test("Collectibles offers no CTA until the request resolves", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  test.slow();
+  await loginToTestAccount({
+    page,
+    extensionId,
+    context,
+    stubOverrides: async () => {
+      await stubUnfundedBalances(page);
+      await context.route("**/collectibles**", async (route) => {
+        await new Promise((resolve) => setTimeout(resolve, 4000));
+        await route.fulfill({
+          json: {
+            data: {
+              collections: [
+                {
+                  collection: {
+                    address:
+                      "CCTYMI5ME6NFJC675P2CHNVG467YQJQ5E4TWP5RAPYYNKWK7DIUUDENN",
+                    name: "Stellar Frogs",
+                    symbol: "SFROG",
+                    collectibles: [
+                      {
+                        owner:
+                          "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
+                        token_id: "1",
+                        token_uri: "https://nftcalendar.io/tokenMetadata/1",
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        });
+      });
+    },
+  });
+
+  await expect(page.getByTestId("account-view")).toBeVisible({
+    timeout: 30000,
+  });
+  // Mainnet: the later scanned-balances dispatch is what used to reveal the
+  // collectibles, and with it the swap this guards against.
+  await page.getByTestId("network-selector-open").click();
+  await page.getByText("Mainnet").click();
+  await expect(page.getByTestId("account-view")).toBeVisible();
+  await page.getByTestId("account-tab-collectibles").click();
+
+  // The empty state paints while the request is still outstanding...
+  await expect(page.getByText("No collectibles yet")).toBeVisible({
+    timeout: 20000,
+  });
+  // ...but carries no CTA, and no pill has appeared in its place either. This is
+  // the assertion that fails if an unresolved list is read as "owns none".
+  await expect(page.getByTestId("add-collectible-inline-btn")).toHaveCount(0);
+  await expect(page.getByTestId("add-collectible-btn")).toHaveCount(0);
+
+  // Once it resolves this tab has collectibles to show, so the pill is the action
+  // -- and it only appears at all because their arrival is dispatched.
+  await expect(page.getByTestId("add-collectible-btn")).toBeVisible({
+    timeout: 20000,
+  });
+  await expect(page.getByTestId("add-collectible-inline-btn")).toHaveCount(0);
+});

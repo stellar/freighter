@@ -33,6 +33,13 @@ interface ResolvedAccountData {
   applicationState: APPLICATION_STATE;
   isScanAppended: boolean;
   collectibles: Collectibles;
+  /**
+   * False until the collectibles request resolves. `collections` is an empty list
+   * both before it lands and when the account genuinely owns none, so anything
+   * that has to tell those apart -- Home decides where the Collectibles tab's Add
+   * action goes from it -- needs this rather than the list length.
+   */
+  hasLoadedCollectibles: boolean;
 }
 
 type AccountData = NeedsReRoute | ResolvedAccountData;
@@ -91,6 +98,14 @@ function useGetAccountData(options: {
       const allowList = appData.settings.allowList;
       const isMainnetNetwork = isMainnet(networkDetails);
 
+      // Started here rather than after the first dispatch, and deliberately not
+      // awaited yet: until it resolves the Collectibles tab cannot say where its
+      // Add action belongs, so running it alongside the balances fetch keeps that
+      // gap short. It needs only the key and network, both already known.
+      const collectiblesRequest = isCustomNetwork(networkDetails)
+        ? Promise.resolve({ collections: [] } as Collectibles)
+        : fetchCollectibles({ publicKey, networkDetails });
+
       // let's fetch *just* the balances (without Blockaid scan results) to quickly be able to show the user their balances
       const balancesResult = await fetchBalances(
         publicKey,
@@ -113,6 +128,7 @@ function useGetAccountData(options: {
         networkDetails,
         isScanAppended: false,
         collectibles: { collections: [] },
+        hasLoadedCollectibles: false,
       } as ResolvedAccountData;
 
       if (isMainnetNetwork) {
@@ -132,13 +148,13 @@ function useGetAccountData(options: {
 
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });
 
-      if (!isCustomNetwork(networkDetails)) {
-        const collectiblesResult = await fetchCollectibles({
-          publicKey,
-          networkDetails,
-        });
-        payload.collectibles = collectiblesResult;
-      }
+      payload.collectibles = await collectiblesRequest;
+      payload.hasLoadedCollectibles = true;
+      // Dispatched, not just assigned: the reducer holds this very object, so
+      // mutating it changes what a later render reads but schedules no render of
+      // its own. Without this the Collectibles tab kept waiting on a result that
+      // had already arrived until some unrelated dispatch happened to land.
+      dispatch({ type: "FETCH_DATA_SUCCESS", payload: { ...payload } });
 
       if (isMainnetNetwork) {
         // now that the UI has renderered, on Mainnet, let's make an additional call to fetch the balances with the Blockaid scan results included
