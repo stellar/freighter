@@ -65,11 +65,14 @@ const authorizedInvocation = (
   });
 
 // Rebuild the transaction the way an assembling backend does: reuse the invoked
-// host function verbatim and attach the given auth entries.
+// host function verbatim (or tamper with it), set a fee, and attach auth entries.
 const buildPreparedXdr = (
   built: Transaction,
   auth: xdr.SorobanAuthorizationEntry[],
-  { tamperFunc = false }: { tamperFunc?: boolean } = {},
+  {
+    tamperFunc = false,
+    fee = BASE_FEE,
+  }: { tamperFunc?: boolean; fee?: string } = {},
 ): string => {
   const originalOp = built.operations[0];
   if (originalOp.type !== "invokeHostFunction") {
@@ -90,25 +93,55 @@ const buildPreparedXdr = (
   const op = Operation.invokeHostFunction({ func, auth });
 
   const builder = new TransactionBuilder(new Account(SOURCE, "0"), {
-    fee: BASE_FEE,
+    fee,
     networkPassphrase: NETWORK,
   });
   return builder.addOperation(op).setTimeout(0).build().toXDR();
 };
 
+const rootTransferInvocation = (
+  subInvocations: xdr.SorobanAuthorizedInvocation[] = [],
+) =>
+  authorizedInvocation(
+    COLLECTION,
+    "transfer",
+    [
+      new Address(SOURCE).toScVal(),
+      new Address(DESTINATION).toScVal(),
+      xdr.ScVal.scvU32(TOKEN_ID),
+    ],
+    subInvocations,
+  );
+
 const sourceAccountAuth = (subInvocations: xdr.SorobanAuthorizedInvocation[]) =>
   new xdr.SorobanAuthorizationEntry({
     credentials: xdr.SorobanCredentials.sorobanCredentialsSourceAccount(),
-    rootInvocation: authorizedInvocation(
-      COLLECTION,
-      "transfer",
-      [
-        new Address(SOURCE).toScVal(),
-        new Address(DESTINATION).toScVal(),
-        xdr.ScVal.scvU32(TOKEN_ID),
-      ],
-      subInvocations,
+    rootInvocation: rootTransferInvocation(subInvocations),
+  });
+
+const addressCredentialsAuth = () =>
+  new xdr.SorobanAuthorizationEntry({
+    credentials: xdr.SorobanCredentials.sorobanCredentialsAddress(
+      new xdr.SorobanAddressCredentials({
+        address: new Address(ATTACKER).toScAddress(),
+        nonce: xdr.Int64.fromString("0"),
+        signatureExpirationLedger: 0,
+        signature: xdr.ScVal.scvVoid(),
+      }),
     ),
+    rootInvocation: rootTransferInvocation(),
+  });
+
+const verify = (
+  built: Transaction,
+  preparedXdr: string,
+  maxResourceFee = "0",
+) =>
+  verifyFlatTransferPreparedTransaction({
+    builtTransaction: built,
+    preparedTransactionXdr: preparedXdr,
+    networkPassphrase: NETWORK,
+    maxResourceFee,
   });
 
 describe("verifyFlatTransferPreparedTransaction", () => {
@@ -116,26 +149,23 @@ describe("verifyFlatTransferPreparedTransaction", () => {
     const built = buildFlatTransfer();
     const preparedXdr = buildPreparedXdr(built, [sourceAccountAuth([])]);
 
-    expect(() =>
-      verifyFlatTransferPreparedTransaction({
-        builtTransaction: built,
-        preparedTransactionXdr: preparedXdr,
-        networkPassphrase: NETWORK,
-      }),
-    ).not.toThrow();
+    expect(() => verify(built, preparedXdr)).not.toThrow();
   });
 
   it("accepts a transfer with no auth entries at all", () => {
     const built = buildFlatTransfer();
     const preparedXdr = buildPreparedXdr(built, []);
 
-    expect(() =>
-      verifyFlatTransferPreparedTransaction({
-        builtTransaction: built,
-        preparedTransactionXdr: preparedXdr,
-        networkPassphrase: NETWORK,
-      }),
-    ).not.toThrow();
+    expect(() => verify(built, preparedXdr)).not.toThrow();
+  });
+
+  it("accepts a fee raised by up to the simulated resource fee", () => {
+    const built = buildFlatTransfer(); // fee = BASE_FEE (100)
+    const preparedXdr = buildPreparedXdr(built, [sourceAccountAuth([])], {
+      fee: "600",
+    });
+
+    expect(() => verify(built, preparedXdr, "500")).not.toThrow();
   });
 
   it("rejects sub-invocations injected under the source-account entry", () => {
@@ -153,13 +183,9 @@ describe("verifyFlatTransferPreparedTransaction", () => {
     ]);
     const preparedXdr = buildPreparedXdr(built, [sourceAccountAuth([drain])]);
 
-    expect(() =>
-      verifyFlatTransferPreparedTransaction({
-        builtTransaction: built,
-        preparedTransactionXdr: preparedXdr,
-        networkPassphrase: NETWORK,
-      }),
-    ).toThrow(PreparedTransactionMismatchError);
+    expect(() => verify(built, preparedXdr)).toThrow(
+      PreparedTransactionMismatchError,
+    );
   });
 
   it("rejects a tampered invoked host function (different arguments)", () => {
@@ -168,12 +194,22 @@ describe("verifyFlatTransferPreparedTransaction", () => {
       tamperFunc: true,
     });
 
-    expect(() =>
-      verifyFlatTransferPreparedTransaction({
-        builtTransaction: built,
-        preparedTransactionXdr: preparedXdr,
-        networkPassphrase: NETWORK,
-      }),
-    ).toThrow(/host function/);
+    expect(() => verify(built, preparedXdr)).toThrow(/host function/);
+  });
+
+  it("rejects a fee larger than the built fee plus the simulated resource fee", () => {
+    const built = buildFlatTransfer(); // fee = BASE_FEE (100)
+    const preparedXdr = buildPreparedXdr(built, [sourceAccountAuth([])], {
+      fee: "100000000",
+    });
+
+    expect(() => verify(built, preparedXdr, "500")).toThrow(/fee/);
+  });
+
+  it("rejects non-source-account (address) credentials", () => {
+    const built = buildFlatTransfer();
+    const preparedXdr = buildPreparedXdr(built, [addressCredentialsAuth()]);
+
+    expect(() => verify(built, preparedXdr)).toThrow(/source-account/);
   });
 });

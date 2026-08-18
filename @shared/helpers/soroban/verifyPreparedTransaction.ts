@@ -1,3 +1,4 @@
+import BigNumber from "bignumber.js";
 import { Transaction, TransactionBuilder, xdr } from "stellar-sdk";
 
 /**
@@ -11,21 +12,33 @@ export class PreparedTransactionMismatchError extends Error {
   }
 }
 
+// Decode a transaction to its XDR body so individual fields can be compared
+// without depending on SDK accessor shapes.
+const txBody = (transactionXdr: string): xdr.Transaction =>
+  xdr.TransactionEnvelope.fromXDR(transactionXdr, "base64").v1().tx();
+
 /**
- * Verify that a backend-assembled `preparedTransaction` still matches the flat
+ * Verify that a backend-assembled `preparedTransactionXdr` still matches the flat
  * Soroban transfer the wallet built, before it is signed.
  *
  * When the wallet builds a transfer with no authorization entries and delegates
- * simulation and assembly to a backend, the authorization entries are derived
- * from simulating the target contract rather than constructed by the wallet.
- * The wallet is the only party that knows the intended call, so it must confirm
- * the assembled transaction still matches that intent before signing.
+ * simulation and assembly to a backend, the authorization entries, resource fee,
+ * and Soroban resource data are derived from simulating the target contract
+ * rather than constructed by the wallet. The wallet is the only party that knows
+ * the intended call, so it must confirm the assembled transaction still matches
+ * that intent before signing.
  *
- * For a flat transfer we refuse to sign anything where:
- *  - the invoked host function is not byte-identical to what we built (simulation
- *    may only add fee / sorobanData / auth, never change the call), or
- *  - any auth entry is not source-account credentials, or
- *  - any auth entry authorizes sub-invocations below the root.
+ * Assembly is only allowed to change three things: the transaction `fee` (raising
+ * it by at most the simulated resource fee), the Soroban resource data
+ * (`ext` / sorobanData), and the operation's authorization entries. Everything
+ * else must be identical to what the wallet built. Concretely we refuse to sign
+ * when:
+ *  - the operation set is not the single invokeHostFunction we built, or its host
+ *    function (contract, function, args) is not byte-identical, or
+ *  - any other envelope field (source, sequence, memo, preconditions) differs, or
+ *  - the fee exceeds the built fee plus the simulated resource fee, or
+ *  - any auth entry is not source-account credentials, or authorizes
+ *    sub-invocations below the root.
  *
  * A flat transfer never legitimately needs sub-invocations. Flows that do (e.g.
  * swaps) must not use this helper — they need effect-bounded verification.
@@ -34,10 +47,13 @@ export const verifyFlatTransferPreparedTransaction = ({
   builtTransaction,
   preparedTransactionXdr,
   networkPassphrase,
+  maxResourceFee,
 }: {
   builtTransaction: Transaction;
   preparedTransactionXdr: string;
   networkPassphrase: string;
+  // The resource fee reported by simulation and shown to the user, in stroops.
+  maxResourceFee: string;
 }): void => {
   const prepared = TransactionBuilder.fromXDR(
     preparedTransactionXdr,
@@ -69,11 +85,44 @@ export const verifyFlatTransferPreparedTransaction = ({
   }
 
   // The invoked host function — contract, function name, and arguments — must be
-  // exactly what the wallet constructed. Simulation is only allowed to add
-  // fee / sorobanData / auth, never to alter the call itself.
+  // exactly what the wallet constructed.
   if (builtOp.func.toXDR("base64") !== preparedOp.func.toXDR("base64")) {
     throw new PreparedTransactionMismatchError(
       "invoked host function does not match the transaction the wallet built",
+    );
+  }
+
+  // Every other envelope field must be identical to what the wallet built. Only
+  // fee, sorobanData (ext), and the operation's auth are allowed to change during
+  // assembly, and those are checked separately below.
+  const builtBody = txBody(builtTransaction.toXDR());
+  const preparedBody = txBody(preparedTransactionXdr);
+  const envelopeFields: [
+    string,
+    (tx: xdr.Transaction) => { toXDR(format: "base64"): string },
+  ][] = [
+    ["source account", (tx) => tx.sourceAccount()],
+    ["sequence number", (tx) => tx.seqNum()],
+    ["memo", (tx) => tx.memo()],
+    ["preconditions", (tx) => tx.cond()],
+  ];
+  envelopeFields.forEach(([label, get]) => {
+    if (get(builtBody).toXDR("base64") !== get(preparedBody).toXDR("base64")) {
+      throw new PreparedTransactionMismatchError(
+        `${label} does not match the transaction the wallet built`,
+      );
+    }
+  });
+
+  // The fee may only be raised by the simulated resource fee that the user was
+  // shown. A larger fee means the signed envelope authorizes spending more than
+  // the review screen displayed.
+  const maxFee = new BigNumber(builtTransaction.fee).plus(
+    maxResourceFee || "0",
+  );
+  if (new BigNumber(prepared.fee).isGreaterThan(maxFee)) {
+    throw new PreparedTransactionMismatchError(
+      "fee exceeds the built fee plus the simulated resource fee",
     );
   }
 

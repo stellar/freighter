@@ -2213,16 +2213,20 @@ export const simulateSendCollectible = async (args: {
     };
   };
 
-  // The backend derives this transaction's authorization entries from simulating
-  // the target contract, not from what the wallet built. Confirm the assembled
-  // transaction still matches the flat transfer we intended before it can be
-  // signed, so no additional authorization can ride along on the user's
-  // source-account signature.
-  verifyFlatTransferPreparedTransaction({
-    builtTransaction: transaction,
-    preparedTransactionXdr: simulationResponse.response.preparedTransaction,
-    networkPassphrase: networkDetails.networkPassphrase,
-  });
+  // The backend derives this transaction's authorization entries, fee, and
+  // resource data from simulating the target contract, not from what the wallet
+  // built. Confirm the assembled transaction still matches the flat transfer we
+  // intended before it can be signed, so no additional authorization or fee can
+  // ride along on the user's source-account signature.
+  if (simulationResponse.ok) {
+    verifyFlatTransferPreparedTransaction({
+      builtTransaction: transaction,
+      preparedTransactionXdr: simulationResponse.response.preparedTransaction,
+      networkPassphrase: networkDetails.networkPassphrase,
+      maxResourceFee:
+        simulationResponse.response.simulationResponse.minResourceFee,
+    });
+  }
 
   return simulationResponse;
 };
