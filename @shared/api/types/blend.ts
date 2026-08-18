@@ -84,6 +84,13 @@ export interface ApiBlendCatalogPool {
   borrowed_usd: number | null;
   interest_apy: number | null;
   net_apy: number | null;
+  /**
+   * Optional, unlike its siblings: the backend does not serve this field yet.
+   * wallet-backend's GraphQL has it (`BlendPool.backstopUsd`) but the v2
+   * backend's pool mapper drops it, so it arrives absent rather than null.
+   * Absent and null both mean "unavailable" to the UI.
+   */
+  backstop_usd?: number | null;
   reserves: ApiBlendCatalogReserve[];
 }
 
@@ -122,6 +129,15 @@ export interface BlendCatalogPool {
   interestApy: number | null;
   /** As `interestApy`, plus BLND emissions. Supply-side, not netted against borrow. */
   netApy: number | null;
+  /**
+   * USD value of this pool's own backstop deposit — its share of the Comet
+   * BLND:USDC LP, priced at the LP rate — not the backstop module's total, and
+   * not the account's own backstop position (see `ApiBlendBackstopRow`).
+   *
+   * Null while the field is unserved or unpriceable; `0` is a real zero, for a
+   * pool with no backstop deposits.
+   */
+  backstopUsd: number | null;
   reserves: BlendCatalogReserve[];
 }
 

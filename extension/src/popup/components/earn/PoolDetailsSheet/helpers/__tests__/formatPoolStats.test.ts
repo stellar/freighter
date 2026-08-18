@@ -7,6 +7,8 @@ describe("formatCompactUsd", () => {
 
   it("renders billions compactly", () => {
     expect(formatCompactUsd(1530000000)).toBe("$1.53B");
+    // The Backstop figure in the design.
+    expect(formatCompactUsd(1530000)).toBe("$1.53M");
   });
 
   it("renders thousands compactly", () => {

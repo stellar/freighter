@@ -20,15 +20,27 @@
   display: flex;
   flex-direction: column;
 
-  // The ribbon sits behind the card's top edge, so the card overlaps it.
+  // A tab above the card, per Figma 9448:29159: inset 16px each side so the
+  // card's own rounded corners sit outside it, 22px tall (2px padding on an
+  // 18px line), and flush with the card rather than tucked behind it.
+  //
+  // Colours are the design's Colors/Green/10 on Colors/Green/4 — a brighter
+  // fill with dark green text, where this previously used green-08 on green-01
+  // and read as muted.
   &__ribbon {
     align-self: center;
-    background: var(--sds-clr-green-08);
-    color: var(--sds-clr-green-01);
-    border-radius: pxToRem(8) pxToRem(8) 0 0;
-    padding: pxToRem(4) pxToRem(12) pxToRem(10);
-    margin-bottom: pxToRem(-6);
-    width: calc(100% - #{pxToRem(40)});
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--sds-clr-green-10);
+    color: var(--sds-clr-green-04);
+    border-radius: pxToRem(16) pxToRem(16) 0 0;
+    // Fixed at the design's 22px rather than padding a line box: SDS's xs size
+    // carries a 20px line-height where the design's Text/XS/500 is 18px, which
+    // left the tab 2px tall.
+    height: pxToRem(22);
+    padding: 0 pxToRem(12);
+    width: calc(100% - #{pxToRem(32)});
     text-align: center;
   }
 
@@ -37,32 +49,68 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: pxToRem(12);
+    gap: pxToRem(16);
     width: 100%;
-    padding: pxToRem(14) pxToRem(16);
+    padding: pxToRem(12) pxToRem(16);
     border: none;
     cursor: pointer;
     text-align: left;
     background: var(--sds-clr-gray-03);
-    border-radius: pxToRem(12);
+    // 16px, matching the ribbon's top corners (Figma 9448:29161).
+    border-radius: pxToRem(16);
+  }
+
+  // 40px here, against the 32px this icon takes elsewhere in the flow
+  // (Figma I9448:29162;4603:1212).
+  .PoolIcon {
+    width: pxToRem(40);
+    height: pxToRem(40);
+    border-radius: pxToRem(4);
   }
 
   // The row is space-between with three children now, so the identity claims the
   // slack and keeps the icon beside it rather than at the opposite edge.
   &__identity {
     margin-right: auto;
+  }
+
+  // Both lines are Text/SM/500: 14px on a 20px line, which keeps the two-line
+  // block at the design's 40px. SDS's own sm class sets a 22px line-height, so
+  // these are qualified by the parent to win on specificity rather than relying
+  // on stylesheet order.
+  &__identity &__name,
+  &__identity &__provider {
+    line-height: pxToRem(20);
+  }
+
+  // Default/Text/Primary; this line inherited the secondary colour before, which
+  // is most of why the card read as muted against the design.
+  &__name {
+    color: var(--sds-clr-gray-12);
+  }
+
+  // Default/Text/Secondary.
+  &__provider {
     color: var(--sds-clr-gray-11);
   }
 
+  // 34px on Default/Background/Primary with a 14px glyph (Figma
+  // I9448:29162;4603:1304), where this was a 28px circle on gray-05.
   &__chevron {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: pxToRem(28);
-    height: pxToRem(28);
+    flex: none;
+    width: pxToRem(34);
+    height: pxToRem(34);
     border-radius: 50%;
-    background: var(--sds-clr-gray-05);
+    background: var(--sds-clr-gray-01);
     color: var(--sds-clr-gray-11);
+
+    svg {
+      width: pxToRem(14);
+      height: pxToRem(14);
+    }
   }
 }
 

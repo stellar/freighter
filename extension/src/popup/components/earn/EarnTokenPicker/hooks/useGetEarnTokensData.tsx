@@ -9,6 +9,7 @@ import { getCombinedAssetListData } from "@shared/api/helpers/token-list";
 import { getBlendPoolId } from "@shared/constants/blend";
 import { getCanonicalFromAsset } from "@shared/helpers/stellar";
 import {
+  getCatalogAssetIdentity,
   getCatalogIconKey,
   getCatalogIssuer,
   resolveEarnAssetIcons,
@@ -164,30 +165,33 @@ export function useGetEarnTokensData() {
         // friendly name.
         const balanceCode =
           balance && "token" in balance ? balance.token.code : "";
-        // The canonical's code half is a usable display code when the catalog
-        // reports no symbol and the account holds none of the asset.
-        const nameCode = getCatalogIssuer(option.name)
-          ? option.name!.split(":")[0]
-          : "";
+        // Covers the two codes the catalog can imply rather than state: the code
+        // half of a classic asset's canonical, and "XLM" for native, which is
+        // reported with a null symbol *and* a null name and so is recognisable
+        // only by its SAC. Without it an account holding no XLM had no code to
+        // fall back on and the row rendered a truncated contract address.
+        const catalogCode = getCatalogAssetIdentity({
+          symbol: option.symbol,
+          name: option.name,
+          assetId: option.assetId,
+          networkDetails,
+        }).code;
         const code =
           option.symbol ||
           balanceCode ||
-          nameCode ||
+          catalogCode ||
           `${option.assetId.slice(0, 4)}…`;
 
         // Icons are keyed by canonical. `balances.icons` only holds entries for
         // assets the account actually has, so a zero-balance reserve resolves
-        // nothing here and gets its icon fetched below. XLM is the exception: it
-        // is keyed "native" whether or not it is held.
-        const canonical =
-          !issuer && code === "XLM"
-            ? "native"
-            : getCatalogIconKey({
-                code,
-                issuer,
-                assetId: option.assetId,
-                networkDetails,
-              });
+        // nothing here and gets its icon fetched below. Native is the exception:
+        // keyed "native" whether or not it is held, and its logo is bundled.
+        const canonical = getCatalogIconKey({
+          code,
+          issuer,
+          assetId: option.assetId,
+          networkDetails,
+        });
 
         const row: EarnTokenOption = {
           assetId: option.assetId,

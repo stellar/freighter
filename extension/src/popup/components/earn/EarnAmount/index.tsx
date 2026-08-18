@@ -294,6 +294,9 @@ export const EarnAmount = ({ goBack, onConfirm }: EarnAmountProps) => {
               code: selected?.code || "",
             })}
             isAmountTooHigh={isAmountTooHigh}
+            // The design turns the amount red rather than adding a message row:
+            // the CTA below already reads "Insufficient funds".
+            invalidAmountStyle="amount"
             maxSpendableText={formatAmount(maxDepositable)}
             cryptoDecimals={decimals}
             onAmountChange={({ amount: next }) =>

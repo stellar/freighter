@@ -86,6 +86,14 @@ interface SwapAmountProps {
   goToEditSrc: () => void;
   goToEditDst: () => void;
   /**
+   * Pins the receive side: the token was chosen on the screen before (the Earn
+   * deposit picker), and changing it here would buy something the pool does not
+   * accept. The pill renders as a label rather than a dead dropdown, and the
+   * direction toggle becomes decorative — flipping would move the pinned token
+   * to the sell side.
+   */
+  isDestinationLocked?: boolean;
+  /**
    * Laid out for a bottom sheet rather than a screen (the Earn swap branch):
    * the host sheet owns the dismiss X, so the header's left slot carries the
    * settings control that would otherwise sit above the CTA.
@@ -99,6 +107,7 @@ export const SwapAmount = ({
   goBack,
   goToNext,
   goToEditSrc,
+  isDestinationLocked = false,
   isSheetLayout = false,
   goToEditDst,
 }: SwapAmountProps) => {
@@ -702,40 +711,52 @@ export const SwapAmount = ({
                     }}
                   />
                 </div>
-                {/* The seam and the notch sitting on it are part of the card
-                    pair's shape, so they always render. */}
+                {/* The seam and its notch are part of the card pair's shape, so
+                    they render either way; with the destination pinned there is
+                    simply nothing to press. */}
                 <div
                   className="SwapAsset__direction"
                   data-testid="swap-direction-chevron"
                 >
-                  <button
-                    type="button"
-                    className="SwapAsset__direction-btn"
-                    aria-label={t("Swap direction")}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      emitMetric(METRIC_NAMES.swapDirectionToggled);
-                      const prevSrc = asset;
-                      // A non-held destination can't become the source, so reset
-                      // it to "(+) Select" instead of moving it into the sell
-                      // slot; otherwise swap the two positions normally.
-                      dispatch(
-                        saveAsset(destinationIsNonHeld ? "" : destinationAsset),
-                      );
-                      dispatch(saveDestinationAsset(prevSrc));
-                      // The new destination (old source) and new source are both
-                      // held/classic or empty — neither carries trustline/contract
-                      // metadata.
-                      dispatch(saveDestinationTokenDetails(null));
-                      dispatch(saveIsToken(false));
-                      // The amount was denominated in the old source token; reset
-                      // it whenever the source token changes.
-                      dispatch(saveAmount(DEFAULT_AMOUNT));
-                      dispatch(saveAmountUsd(DEFAULT_AMOUNT_USD));
-                    }}
-                  >
-                    <Icon.ChevronDown />
-                  </button>
+                  {isDestinationLocked ? (
+                    <div
+                      className="SwapAsset__direction-btn SwapAsset__direction-btn--static"
+                      aria-hidden="true"
+                    >
+                      <Icon.ChevronDown />
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      className="SwapAsset__direction-btn"
+                      aria-label={t("Swap direction")}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        emitMetric(METRIC_NAMES.swapDirectionToggled);
+                        const prevSrc = asset;
+                        // A non-held destination can't become the source, so reset
+                        // it to "(+) Select" instead of moving it into the sell
+                        // slot; otherwise swap the two positions normally.
+                        dispatch(
+                          saveAsset(
+                            destinationIsNonHeld ? "" : destinationAsset,
+                          ),
+                        );
+                        dispatch(saveDestinationAsset(prevSrc));
+                        // The new destination (old source) and new source are both
+                        // held/classic or empty — neither carries trustline/contract
+                        // metadata.
+                        dispatch(saveDestinationTokenDetails(null));
+                        dispatch(saveIsToken(false));
+                        // The amount was denominated in the old source token; reset
+                        // it whenever the source token changes.
+                        dispatch(saveAmount(DEFAULT_AMOUNT));
+                        dispatch(saveAmountUsd(DEFAULT_AMOUNT_USD));
+                      }}
+                    >
+                      <Icon.ChevronDown />
+                    </button>
+                  )}
                 </div>
                 <div
                   className="SwapAsset__cards"
@@ -778,6 +799,7 @@ export const SwapAmount = ({
                       code: dstAsset ? dstAsset.code : "",
                     })}
                     isAmountTooHigh={false}
+                    isAssetLocked={isDestinationLocked}
                     isReadOnly
                     autoFocus={false}
                     cryptoDecimals={7}

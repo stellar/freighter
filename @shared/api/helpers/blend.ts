@@ -72,6 +72,9 @@ const mapCatalogPool = (pool: ApiBlendCatalogPool): BlendCatalogPool => ({
   borrowedUsd: pool.borrowed_usd,
   interestApy: pool.interest_apy,
   netApy: pool.net_apy,
+  // Normalised to null while the backend still omits the field, so callers have
+  // one "unavailable" case to render rather than two.
+  backstopUsd: pool.backstop_usd ?? null,
   reserves: (pool.reserves || []).map(mapCatalogReserve),
 });
 
@@ -108,7 +111,8 @@ export const getBlendEarnOptions = async ({
 
 /**
  * The full pool catalog — unfiltered by the earn allowlist. Used for the pool
- * details sheet's Lending Interest / Current Net APY / Supplied / Borrowed rows.
+ * details sheet's Lending Interest / Current Net APY / Supplied / Borrowed /
+ * Backstop rows.
  */
 export const getBlendPools = async ({
   networkDetails,

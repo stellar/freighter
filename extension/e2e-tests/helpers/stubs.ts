@@ -3482,6 +3482,7 @@ export const stubBlendEarn = async (
               borrowed_usd: 16150000,
               interest_apy: 0.0424,
               net_apy: 0.1694,
+              backstop_usd: 1530000,
               reserves: [
                 {
                   asset_id: XLM_SAC,

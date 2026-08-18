@@ -3,6 +3,7 @@ import { Button, Icon, Text } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 
+import { EARN_FLOW_QUERY } from "popup/constants/earn";
 import { ROUTES } from "popup/constants/routes";
 import { navigateTo } from "popup/helpers/navigate";
 import { useGetOnrampToken } from "helpers/hooks/useGetOnrampToken";
@@ -74,7 +75,9 @@ export const NetworkFeeSheet = ({
           variant="tertiary"
           isFullWidth
           isRounded
-          onClick={() => navigateTo(ROUTES.viewPublicKey, navigate)}
+          onClick={() =>
+            navigateTo(ROUTES.viewPublicKey, navigate, EARN_FLOW_QUERY)
+          }
           data-testid="earn-network-fee-transfer"
         >
           {t("Transfer from another account")}

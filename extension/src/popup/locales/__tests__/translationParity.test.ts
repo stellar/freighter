@@ -54,6 +54,7 @@ const earnKeys = [
   "Accepted tokens",
   "Supplied",
   "Borrowed",
+  "Backstop",
   "You are depositing",
   "Position",
   "Current APY",

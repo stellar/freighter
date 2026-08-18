@@ -165,6 +165,7 @@ describe("getBlendPools", () => {
               borrowed_usd: 16150000,
               interest_apy: 0.0424,
               net_apy: 0.1694,
+              backstop_usd: 1530000,
               reserves: [
                 {
                   asset_id: USDC_SAC,
@@ -191,6 +192,7 @@ describe("getBlendPools", () => {
 
     expect(pool.interestApy).toBe(0.0424);
     expect(pool.netApy).toBe(0.1694);
+    expect(pool.backstopUsd).toBe(1530000);
     expect(pool.status).toBe("ACTIVE");
     expect(pool.reserves[0]).toEqual({
       assetId: USDC_SAC,
@@ -207,6 +209,39 @@ describe("getBlendPools", () => {
       priceUsd: 1,
     });
   });
+
+  it.each([
+    ["omitted", {}],
+    ["null", { backstop_usd: null }],
+  ])(
+    "maps a %s backstop to null rather than undefined or zero",
+    async (_label, backstop) => {
+      mockedSend.mockResolvedValue({
+        status: 200,
+        body: {
+          data: {
+            pools: [
+              {
+                id: POOL_ID,
+                name: "Fixed Pool v2",
+                status: "ACTIVE",
+                supplied_usd: 50050000,
+                borrowed_usd: 16150000,
+                interest_apy: 0.0424,
+                net_apy: 0.1694,
+                ...backstop,
+                reserves: [],
+              },
+            ],
+          },
+        },
+      });
+
+      const [pool] = await getBlendPools({ networkDetails });
+
+      expect(pool.backstopUsd).toBeNull();
+    },
+  );
 
   it("throws on a non-200", async () => {
     mockedSend.mockResolvedValue({ status: 503, body: {} });

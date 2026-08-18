@@ -7,7 +7,7 @@
  *  3. "Not enough X" sheet — EURC (swap/transfer, no Buy: not Coinbase-listed)
  *  4. "Not enough X" sheet — USDC (buy + swap + transfer)
  *  5. Held-token happy path: amount -> Max -> review -> confirm -> Deposited!
- *  6. Pool details sheet, and that it carries no Backstop row
+ *  6. Pool details sheet, including its Backstop row
  *  7. Earn tile hidden on an unsupported network
  *
  * Stub URL shapes (all registered by stubBlendEarn):
@@ -34,6 +34,7 @@
  *  - earn-amount-btn-continue  EarnAmount/index.tsx
  *  - earn-pool-card            EarnAmount/PoolCard.tsx
  *  - earn-pool-details-sheet   PoolDetailsSheet/index.tsx
+ *  - earn-pool-backstop        PoolDetailsSheet/index.tsx
  *  - earn-review               EarnReview/index.tsx
  *  - earn-review-confirm       EarnReview/index.tsx
  *  - earn-submit               EarnSubmit/index.tsx
@@ -208,7 +209,7 @@ test("depositing a held token reaches the success screen", async ({
 // ---------------------------------------------------------------------------
 // 6. Pool details sheet
 // ---------------------------------------------------------------------------
-test("pool details sheet shows market stats and omits Backstop", async ({
+test("pool details sheet shows market stats including Backstop", async ({
   page,
   extensionId,
   context,
@@ -232,9 +233,10 @@ test("pool details sheet shows market stats and omits Backstop", async ({
   await expect(page.getByTestId("earn-pool-supplied")).toContainText("$50.05M");
   await expect(page.getByTestId("earn-pool-borrowed")).toContainText("$16.15M");
 
-  // Deliberately absent: the catalog exposes no backstop_usd, and a hardcoded
-  // figure would misrepresent the pool's insurance.
-  await expect(sheet).not.toContainText("Backstop");
+  // Rendered from backstop_usd when the catalog supplies it; "--" otherwise, so
+  // the row never implies a pool has no insurance when the value is simply
+  // unavailable.
+  await expect(page.getByTestId("earn-pool-backstop")).toContainText("$1.53M");
 });
 
 // ---------------------------------------------------------------------------

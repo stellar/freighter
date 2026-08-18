@@ -69,13 +69,25 @@
     }
   }
 
-  // Overlapping stack, matching the design's accepted-token cluster.
+  // Overlapping stack, matching the design's accepted-token cluster: 16px icons
+  // on a 12px stride (Figma 9448:19027), which is also what lets four of them
+  // fit the row's slot. AssetIcon's own 2rem is sized for the account's balance
+  // list, so it is overridden here and nowhere else.
   &__tokens {
     display: flex;
     align-items: center;
 
+    .AccountAssets__asset--logo {
+      width: pxToRem(16);
+      height: pxToRem(16);
+      min-width: pxToRem(16);
+      // The class also carries a 1rem right margin for the balance list, which
+      // would cancel the overlap below and leave a 12px gap instead.
+      margin-right: 0;
+    }
+
     > * + * {
-      margin-left: pxToRem(-8);
+      margin-left: pxToRem(-4);
     }
   }
 }

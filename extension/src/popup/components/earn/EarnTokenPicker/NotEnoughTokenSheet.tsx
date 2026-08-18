@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { getCanonicalFromAsset } from "@shared/helpers/stellar";
 import { AssetIcon } from "popup/components/account/AccountAssets";
 import { ROUTES } from "popup/constants/routes";
-import { NotEnoughVariant } from "popup/constants/earn";
+import { EARN_FLOW_QUERY, NotEnoughVariant } from "popup/constants/earn";
 import { navigateTo } from "popup/helpers/navigate";
 import { useGetOnrampToken } from "helpers/hooks/useGetOnrampToken";
 
@@ -75,7 +75,8 @@ export const NotEnoughTokenSheet = ({
   // route keeps the stacked full-width pair.
   const showBothPrimaries = showBuy && showSwap;
   const transferLabel = t("Transfer from another account");
-  const goToTransfer = () => navigateTo(ROUTES.viewPublicKey, navigate);
+  const goToTransfer = () =>
+    navigateTo(ROUTES.viewPublicKey, navigate, EARN_FLOW_QUERY);
 
   return (
     <div className="NotEnoughTokenSheet" data-testid="earn-not-enough-sheet">

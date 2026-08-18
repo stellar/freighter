@@ -1,7 +1,11 @@
 import { Asset, Networks } from "stellar-sdk";
 
 import { NetworkDetails } from "@shared/constants/stellar";
-import { getCatalogIconKey, getCatalogIssuer } from "../earnAssetIcons";
+import {
+  getCatalogAssetIdentity,
+  getCatalogIconKey,
+  getCatalogIssuer,
+} from "../earnAssetIcons";
 
 const USDC_ISSUER = "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN";
 const networkDetails = {
@@ -57,5 +61,64 @@ describe("getCatalogIconKey", () => {
         networkDetails,
       }),
     ).toBe("");
+  });
+});
+
+describe("getCatalogAssetIdentity", () => {
+  const USDC_SAC = "CCW67TSZV3SSS2HXMBQ5JFGCKJNXKZM7UQUWUZPUTHXSTZLEO7SJMI75";
+
+  // The reported bug: the live catalog gives native XLM a null symbol and a null
+  // name, so an account holding no XLM had nothing to name the row with and it
+  // rendered a truncated contract address instead.
+  it("names native XLM from its SAC when the catalog reports nothing", () => {
+    expect(
+      getCatalogAssetIdentity({
+        symbol: null,
+        name: null,
+        assetId: Asset.native().contractId(Networks.PUBLIC),
+        networkDetails,
+      }),
+    ).toEqual({
+      code: "XLM",
+      issuer: undefined,
+      canonical: "native",
+      isNative: true,
+    });
+  });
+
+  it("prefers the reported symbol", () => {
+    const identity = getCatalogAssetIdentity({
+      symbol: "USDC",
+      name: `USDC:${USDC_ISSUER}`,
+      assetId: USDC_SAC,
+      networkDetails,
+    });
+    expect(identity.code).toBe("USDC");
+    expect(identity.issuer).toBe(USDC_ISSUER);
+    expect(identity.canonical).toBe(`USDC:${USDC_ISSUER}`);
+    expect(identity.isNative).toBe(false);
+  });
+
+  it("falls back to the canonical's code half when the symbol is missing", () => {
+    const identity = getCatalogAssetIdentity({
+      symbol: null,
+      name: `USDC:${USDC_ISSUER}`,
+      assetId: USDC_SAC,
+      networkDetails,
+    });
+    expect(identity.code).toBe("USDC");
+    expect(identity.canonical).toBe(`USDC:${USDC_ISSUER}`);
+  });
+
+  it("leaves an unnameable asset without a code or key", () => {
+    const identity = getCatalogAssetIdentity({
+      symbol: null,
+      name: null,
+      assetId: USDC_SAC,
+      networkDetails,
+    });
+    expect(identity.code).toBe("");
+    expect(identity.canonical).toBe("");
+    expect(identity.isNative).toBe(false);
   });
 });

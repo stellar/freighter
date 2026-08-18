@@ -36,10 +36,22 @@ export const PoolCard = ({ poolName, apy, onOpenDetails }: PoolCardProps) => {
       >
         <PoolIcon />
         <div className="PoolCard__identity">
-          <Text as="div" size="sm" weight="medium">
+          {/* Both lines are Text/SM/500 in the design; only their colour
+              differs — primary for the pool, secondary for the provider. */}
+          <Text
+            as="div"
+            size="sm"
+            weight="medium"
+            addlClassName="PoolCard__name"
+          >
             {poolName || t("Blend pool")}
           </Text>
-          <Text as="div" size="xs">
+          <Text
+            as="div"
+            size="sm"
+            weight="medium"
+            addlClassName="PoolCard__provider"
+          >
             {t("by Blend")}
           </Text>
         </div>

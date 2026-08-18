@@ -1,4 +1,13 @@
 /**
+ * Marks a shared screen as having been reached from Earn, via
+ * `?flow=<EARN_FLOW_PARAM>`. Lets the wallet-address screen carry the titled
+ * chrome the Earn design asks for without changing its other five callers.
+ */
+export const EARN_FLOW_PARAM = "earn";
+
+export const EARN_FLOW_QUERY = `?flow=${EARN_FLOW_PARAM}`;
+
+/**
  * Steps in the Earn deposit flow.
  *
  * Modelled on Send (`constants/send-payment.ts`) rather than Swap: every visited
@@ -31,7 +40,6 @@ export enum STEPS {
 export enum EARN_SWAP_STEPS {
   AMOUNT = "earn-swap-amount",
   SET_FROM_ASSET = "earn-swap-from-asset",
-  SET_TO_ASSET = "earn-swap-to-asset",
   SWAP_CONFIRM = "earn-swap-confirm",
 }
 

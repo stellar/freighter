@@ -50,9 +50,8 @@ interface EarnSwapProps {
  *
  * Owns its own sub-step state so the token picker underneath stays mounted, and
  * so the sub-state resets for free when the branch unmounts. The receive side is
- * seeded with the token the deposit needs — the reason for entering here — but
- * stays editable, so both amount-card dropdowns open their own picker with only
- * the opposite side's token filtered out.
+ * pinned to the token the deposit needs — chosen on the picker, the whole point
+ * of entering here — so only the sell side has a picker.
  *
  * Presented as a bottom sheet over the still-visible token picker, per the
  * design. Not a SlideupModal: those self-measure via scrollHeight, which breaks
@@ -127,9 +126,7 @@ export const EarnSwap = ({
         return (
           <SwapAsset
             selectionType="source"
-            // Read from redux rather than the entry prop: the receive side is
-            // editable, so the token to exclude is whatever it holds now.
-            hiddenAssets={[transactionData.destinationAsset]}
+            hiddenAssets={[destinationAsset]}
             // A real step back to the amount sheet, so an arrow rather than the
             // X the standalone Swap route uses — the sheet owns the X.
             backIcon={<Icon.ArrowLeft />}
@@ -139,45 +136,10 @@ export const EarnSwap = ({
               dispatch(saveIsToken(isContract));
               dispatch(saveAmount("0"));
               dispatch(saveAmountUsd("0.00"));
-              // Can't swap a token for itself: if it matches the current
-              // destination, reset the destination to "(+) Select".
-              if (canonical === transactionData.destinationAsset) {
-                dispatch(saveDestinationAsset(""));
-                dispatch(saveDestinationTokenDetails(null));
-              }
               emitMetric(METRIC_NAMES.swapSourceSelected, {
                 asset_code: getAssetFromCanonical(canonical).code,
                 asset_issuer: getAssetFromCanonical(canonical).issuer,
                 source: "balances",
-              });
-              setActiveStep(EARN_SWAP_STEPS.AMOUNT);
-            }}
-          />
-        );
-      }
-
-      case EARN_SWAP_STEPS.SET_TO_ASSET: {
-        return (
-          <SwapAsset
-            selectionType="destination"
-            hiddenAssets={[transactionData.asset]}
-            backIcon={<Icon.ArrowLeft />}
-            goBack={() => setActiveStep(EARN_SWAP_STEPS.AMOUNT)}
-            onClickAsset={(canonical, isContract, details) => {
-              dispatch(saveDestinationAsset(canonical));
-              dispatch(saveIsToken(isContract));
-              dispatch(saveDestinationTokenDetails(details ?? null));
-              // Mirror of the source handler above.
-              if (canonical === transactionData.asset) {
-                dispatch(saveAsset(""));
-                dispatch(saveAmount("0"));
-                dispatch(saveAmountUsd("0.00"));
-              }
-              emitMetric(METRIC_NAMES.swapDestinationSelected, {
-                asset_code: details?.tokenCode,
-                asset_issuer: details?.issuer,
-                requires_trustline: details?.requiresTrustline,
-                source: details?.source,
               });
               setActiveStep(EARN_SWAP_STEPS.AMOUNT);
             }}
@@ -191,12 +153,16 @@ export const EarnSwap = ({
           <SwapAmount
             inputType={inputType}
             setInputType={setInputType}
+            isDestinationLocked
             // In the sheet the X dismisses the whole branch, so the header's
             // left slot carries the settings control instead of a back button.
             isSheetLayout
             goBack={onCancel}
             goToEditSrc={() => setActiveStep(EARN_SWAP_STEPS.SET_FROM_ASSET)}
-            goToEditDst={() => setActiveStep(EARN_SWAP_STEPS.SET_TO_ASSET)}
+            // Unreachable while the destination is pinned — the receive pill is
+            // a label, not a control — but the prop is required; point it at the
+            // source picker rather than leaving a silent no-op behind.
+            goToEditDst={() => setActiveStep(EARN_SWAP_STEPS.SET_FROM_ASSET)}
             goToNext={() => setActiveStep(EARN_SWAP_STEPS.SWAP_CONFIRM)}
           />
         );

@@ -51,8 +51,10 @@ const StatRow = ({
  * Pool description and market stats, opened from the pool card on the amount
  * screen.
  *
- * No Backstop row: the backend's pool catalog does not expose `backstop_usd`,
- * and a stale hardcoded figure would misrepresent the pool's actual insurance.
+ * The Backstop row renders whatever the catalog reports, and "--" until a
+ * backend serves `backstop_usd` — the v2 backend drops the field its own
+ * upstream provides. Never a hardcoded figure, which would misrepresent the
+ * pool's actual insurance.
  */
 export const PoolDetailsSheet = ({ pool, onClose }: PoolDetailsSheetProps) => {
   const { t } = useTranslation();
@@ -149,6 +151,11 @@ export const PoolDetailsSheet = ({ pool, onClose }: PoolDetailsSheetProps) => {
           label={t("Borrowed")}
           value={formatCompactUsd(pool.borrowedUsd)}
           testId="earn-pool-borrowed"
+        />
+        <StatRow
+          label={t("Backstop")}
+          value={formatCompactUsd(pool.backstopUsd)}
+          testId="earn-pool-backstop"
         />
       </div>
 
