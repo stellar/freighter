@@ -147,10 +147,13 @@ test("Collectible simulation falls back to BASE_FEE on first mount when Redux tr
         return;
       }
       simulateTxCallCount += 1;
+      // Echo the submitted transaction back as the prepared transaction, the way
+      // the real backend assembles the same tx. verifyFlatTransferPreparedTransaction
+      // rejects a prepared transaction that does not match the one the wallet built.
+      const body = JSON.parse(route.request().postData() || "{}");
       await route.fulfill({
         json: {
-          preparedTransaction:
-            "AAAAAgAAAABngBTmbmUycqG2cAMHcomSR80dRzGtKzxM6gb3yySD5AACQ3sCjnUGAAABkQAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAGAAAAAAAAAABp4YjrCeaVIvf6/Qjtqbnv4gmHScnZ/YgfjDVWV8aKUEAAAAIdHJhbnNmZXIAAAADAAAAEgAAAAAAAAAAZ4AU5m5lMnKhtnADB3KJkkfNHUcxrSs8TOoG98skg+QAAAASAAAAAAAAAABVZkfzT8IUCc68cala6hWfNx8vR5j+La0nQf3V+7AGYwAAAAMAAAACAAAAAQAAAAAAAAAAAAAAAaeGI6wnmlSL3+v0I7am57+IJh0nJ2f2IH4w1VlfGilBAAAACHRyYW5zZmVyAAAAAwAAABIAAAAAAAAAAGeAFOZuZTJyobZwAwdyiZJHzR1HMa0rPEzqBvfLJIPkAAAAEgAAAAAAAAAAVWZH80/CFAnOvHGpWuoVnzcfL0eY/i2tJ0H91fuwBmMAAAADAAAAAgAAAAA=",
+          preparedTransaction: body.xdr,
           simulationResponse: { minResourceFee: "100" },
         },
       });
