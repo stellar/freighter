@@ -76,6 +76,11 @@ interface SimulationParams {
   transactionFee: string;
   transactionTimeout: number;
   memo?: string;
+  // Derived from balances by the caller (a swap is a self path-payment, so the
+  // sender needs the destination trustline). Keyed off holdings rather than
+  // the pick-time snapshot so defaulted/deep-linked destinations — which never
+  // went through the picker — build the changeTrust op too.
+  destRequiresTrustline: boolean;
 }
 
 export interface SimulateTxData {
@@ -86,13 +91,6 @@ export interface SimulateTxData {
 }
 
 export const MIN_PER_OP_FEE = 100; // network minimum, stroops
-
-type DestinationTokenDetails = {
-  tokenCode: string;
-  requiresTrustline: boolean;
-  decimals: number;
-  issuer?: string;
-} | null;
 
 export const getPerOpBaseFee = (totalFee: string, opCount: number): string => {
   const totalStroops = xlmToStroop(totalFee);
@@ -156,7 +154,7 @@ export const getBuiltTx = async (
     allowedSlippage: string;
     destinationAmount: string;
     path: string[];
-    destinationTokenDetails: DestinationTokenDetails;
+    requiresTrustline: boolean;
   },
   fee: string,
   transactionTimeout: number,
@@ -170,7 +168,7 @@ export const getBuiltTx = async (
     allowedSlippage,
     destinationAmount,
     path,
-    destinationTokenDetails,
+    requiresTrustline,
   } = opData;
   const server = stellarSdkServer(
     networkDetails.networkUrl,
@@ -178,10 +176,10 @@ export const getBuiltTx = async (
   );
   const sourceAccount = await server.loadAccount(publicKey);
 
-  const requiresTrustline = !!destinationTokenDetails?.requiresTrustline;
   const opCount = requiresTrustline ? 2 : 1;
 
-  if (requiresTrustline && !destinationTokenDetails?.issuer) {
+  const destIssuer = destAsset.issuer;
+  if (requiresTrustline && !destIssuer) {
     throw new Error(
       "Cannot add a trustline for a destination token without an issuer",
     );
@@ -192,12 +190,12 @@ export const getBuiltTx = async (
     networkPassphrase: networkDetails.networkPassphrase,
   });
 
-  if (requiresTrustline) {
+  if (requiresTrustline && destIssuer) {
     const Sdk = getSdk(networkDetails.networkPassphrase);
     transaction.addOperation(
       buildChangeTrustOperation({
-        assetCode: destinationTokenDetails!.tokenCode,
-        assetIssuer: destinationTokenDetails!.issuer!,
+        assetCode: destAsset.code,
+        assetIssuer: destIssuer,
         sdk: Sdk,
       }),
     );
@@ -232,7 +230,6 @@ function useSimulateTxData({
 }) {
   const {
     memo,
-    destinationTokenDetails,
     path: storedPath,
     destinationAmount: storedDestinationAmount,
   } = useSelector(transactionDataSelector);
@@ -319,7 +316,7 @@ function useSimulateTxData({
           destinationAmount,
           allowedSlippage,
           path,
-          destinationTokenDetails,
+          requiresTrustline: simParams.destRequiresTrustline,
         },
         baseFee.toString(),
         transactionTimeout,
