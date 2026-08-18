@@ -1,16 +1,18 @@
 import { useReducer } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import BigNumber from "bignumber.js";
-import { StrKey } from "stellar-sdk";
 
 import { NetworkDetails } from "@shared/constants/stellar";
 import { getBlendEarnOptions, getBlendPools } from "@shared/api/helpers/blend";
 import { BlendCatalogPool } from "@shared/api/types/blend";
-import { Balances } from "@shared/api/types/backend-api";
-import { getAssetIcons } from "@shared/api/internal";
 import { getCombinedAssetListData } from "@shared/api/helpers/token-list";
 import { getBlendPoolId } from "@shared/constants/blend";
 import { getCanonicalFromAsset } from "@shared/helpers/stellar";
+import {
+  getCatalogIconKey,
+  getCatalogIssuer,
+  resolveEarnAssetIcons,
+} from "popup/components/earn/helpers/earnAssetIcons";
 import { AppDispatch } from "popup/App";
 import { settingsSelector } from "popup/ducks/settings";
 import {
@@ -146,18 +148,10 @@ export function useGetEarnTokensData() {
             ? balance.token.issuer.key
             : undefined;
 
-        // A zero-balance reserve has no balance to take an issuer from, but the
-        // catalog puts the canonical in `name` for classic assets
-        // ("USDC:GA5ZSEJY…"). That is the only issuer available without
-        // resolving the SAC, and without it the row can build no icon key at
-        // all. Shape-guarded so an unexpected `name` cannot yield a bogus
-        // canonical.
-        const nameParts = option.name ? option.name.split(":") : [];
-        const issuerFromName =
-          nameParts.length === 2 && StrKey.isValidEd25519PublicKey(nameParts[1])
-            ? nameParts[1]
-            : undefined;
-        const issuer = balanceIssuer || issuerFromName;
+        // A zero-balance reserve has no balance to take an issuer from; the
+        // catalog's `name` is the only other source. Without it the row can
+        // build no icon key at all.
+        const issuer = balanceIssuer || getCatalogIssuer(option.name);
 
         // `symbol` is null for native XLM on the live catalog (verified against
         // dev), so it cannot be the only source of the display code — taking it
@@ -172,7 +166,9 @@ export function useGetEarnTokensData() {
           balance && "token" in balance ? balance.token.code : "";
         // The canonical's code half is a usable display code when the catalog
         // reports no symbol and the account holds none of the asset.
-        const nameCode = nameParts.length === 2 ? nameParts[0] : "";
+        const nameCode = getCatalogIssuer(option.name)
+          ? option.name!.split(":")[0]
+          : "";
         const code =
           option.symbol ||
           balanceCode ||
@@ -183,12 +179,15 @@ export function useGetEarnTokensData() {
         // assets the account actually has, so a zero-balance reserve resolves
         // nothing here and gets its icon fetched below. XLM is the exception: it
         // is keyed "native" whether or not it is held.
-        let canonical = "";
-        if (issuer) {
-          canonical = getCanonicalFromAsset(code, issuer);
-        } else if (code === "XLM") {
-          canonical = "native";
-        }
+        const canonical =
+          !issuer && code === "XLM"
+            ? "native"
+            : getCatalogIconKey({
+                code,
+                issuer,
+                assetId: option.assetId,
+                networkDetails,
+              });
 
         const row: EarnTokenOption = {
           assetId: option.assetId,
@@ -223,25 +222,11 @@ export function useGetEarnTokensData() {
           ? cachedTokenLists
           : await getCombinedAssetListData({ networkDetails, assetsLists });
 
-        // getAssetIcons only reads each entry's `token` and `contractId`, so a
-        // partial record is enough; BalanceMap's required `native` key and the
-        // amount fields would be noise here.
-        const iconLookupBalances = rowsMissingIcons.reduce(
-          (acc, row) => ({
-            ...acc,
-            [getCanonicalFromAsset(row.code, row.issuer!)]: {
-              token: { code: row.code, issuer: { key: row.issuer! } },
-              contractId: row.assetId,
-            },
-          }),
-          {},
-        ) as unknown as Balances;
-
-        const fetchedIcons = await getAssetIcons({
-          balances: iconLookupBalances,
+        const fetchedIcons = await resolveEarnAssetIcons({
+          assets: rowsMissingIcons,
           networkDetails,
-          assetsListsData,
           cachedIcons,
+          assetsListsData,
         });
 
         rowsMissingIcons.forEach((row) => {

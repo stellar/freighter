@@ -279,7 +279,11 @@ export const EarnAmount = ({ goBack, onConfirm }: EarnAmountProps) => {
             amountUsd=""
             amountFontSizeClass={getAmountFontSizeClass(amount)}
             assetCode={selected?.code || ""}
-            assetIcons={{}}
+            // The account's icon map, not an empty one: AssetIcon reads empty as
+            // "lookup still in flight" and holds a loader, which only looked
+            // right while XLM — whose logo is bundled and skips the lookup — was
+            // the sole depositable token.
+            assetIcons={data.balances.icons || {}}
             assetIssuerKey={selected?.issuer}
             fiatLineText={buildFiatLineText({
               hasAsset: Boolean(asset),
@@ -336,6 +340,9 @@ export const EarnAmount = ({ goBack, onConfirm }: EarnAmountProps) => {
           pool={pool}
           assetCode={selected?.code || ""}
           assetIssuer={selected?.issuer}
+          // Without this the sheet builds an empty icon map, which AssetIcon
+          // reads as a lookup in flight and answers with a spinner.
+          assetIcon={data.balances.icons?.[asset]}
           amount={amount}
           amountUsd={priceValueUsd}
           apy={selectedAssetApy}

@@ -3,6 +3,7 @@ import { Button, Icon, Text } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 
+import { getCanonicalFromAsset } from "@shared/helpers/stellar";
 import { AssetIcon } from "popup/components/account/AccountAssets";
 import { ROUTES } from "popup/constants/routes";
 import { NotEnoughVariant } from "popup/constants/earn";
@@ -80,7 +81,13 @@ export const NotEnoughTokenSheet = ({
     <div className="NotEnoughTokenSheet" data-testid="earn-not-enough-sheet">
       <div className="NotEnoughTokenSheet__header">
         <AssetIcon
-          assetIcons={option.iconUrl ? { [option.code]: option.iconUrl } : {}}
+          // Keyed by canonical, which is how AssetIcon looks an asset up, and
+          // always populated: an empty map reads as "still fetching" there, so a
+          // token whose icon never resolved would spin instead of falling back.
+          assetIcons={{
+            [getCanonicalFromAsset(option.code, option.issuer)]:
+              option.iconUrl ?? null,
+          }}
           code={option.code}
           issuerKey={option.issuer}
           icon={option.iconUrl || undefined}

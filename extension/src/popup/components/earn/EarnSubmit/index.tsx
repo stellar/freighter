@@ -24,6 +24,7 @@ import {
   transactionSubmissionSelector,
 } from "popup/ducks/transactionSubmission";
 import { earnSelector } from "popup/ducks/earn";
+import { iconsSelector } from "popup/ducks/cache";
 
 import { useSubmitEarnTxData } from "./hooks/useSubmitEarnTxData";
 
@@ -53,6 +54,7 @@ export const EarnSubmit = ({ xdr, onExit }: EarnSubmitProps) => {
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const hardwareWalletType = useSelector(hardwareWalletTypeSelector);
   const { pool } = useSelector(earnSelector);
+  const cachedIcons = useSelector(iconsSelector);
 
   const { amount, asset } = submission.transactionData;
   const srcAsset = getAssetFromCanonical(asset);
@@ -167,8 +169,12 @@ export const EarnSubmit = ({ xdr, onExit }: EarnSubmitProps) => {
 
           <div className="EarnSubmit__summary">
             <div className="EarnSubmit__icons">
+              {/* The cached icon map rather than an empty one, which AssetIcon
+                  reads as a lookup in flight. Warm by the time the flow reaches
+                  here: the deposited asset is held, so the picker and amount
+                  screens have both resolved it. */}
               <AssetIcon
-                assetIcons={{}}
+                assetIcons={cachedIcons}
                 code={srcAsset.code}
                 issuerKey={srcAsset.issuer}
               />

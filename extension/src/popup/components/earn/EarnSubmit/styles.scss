@@ -41,6 +41,12 @@
     align-items: center;
     gap: pxToRem(10);
     color: var(--sds-clr-gray-09);
+
+    // Same as the review row: the gap owns the spacing, so AssetIcon's list-row
+    // margin would otherwise leave the chevron off-centre between the two icons.
+    .AccountAssets__asset--logo {
+      margin-right: 0;
+    }
   }
 
   &__footer {

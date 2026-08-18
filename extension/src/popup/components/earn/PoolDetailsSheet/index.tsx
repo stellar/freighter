@@ -1,10 +1,15 @@
 import React from "react";
 import { Button, Icon, Text } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
+import { useSelector } from "react-redux";
 
 import { BlendCatalogPool } from "@shared/api/types/blend";
 import { AssetIcon } from "popup/components/account/AccountAssets";
+import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { PoolIcon } from "popup/components/earn/PoolIcon";
+import { getCatalogAssetIdentity } from "popup/components/earn/helpers/earnAssetIcons";
+
+import { usePoolReserveIcons } from "./hooks/usePoolReserveIcons";
 
 import { getPoolDescription } from "./poolDescriptions";
 import { formatCompactUsd, formatRate } from "./helpers/formatPoolStats";
@@ -52,6 +57,8 @@ const StatRow = ({
 export const PoolDetailsSheet = ({ pool, onClose }: PoolDetailsSheetProps) => {
   const { t } = useTranslation();
   const description = getPoolDescription(pool.id);
+  const networkDetails = useSelector(settingsNetworkDetailsSelector);
+  const reserveIcons = usePoolReserveIcons(pool);
 
   return (
     <div className="PoolDetailsSheet" data-testid="earn-pool-details-sheet">
@@ -111,13 +118,26 @@ export const PoolDetailsSheet = ({ pool, onClose }: PoolDetailsSheetProps) => {
             {t("Accepted tokens")}
           </Text>
           <div className="PoolDetailsSheet__tokens">
-            {pool.reserves.map((reserve) => (
-              <AssetIcon
-                key={reserve.assetId}
-                assetIcons={{}}
-                code={reserve.symbol || ""}
-              />
-            ))}
+            {pool.reserves.map((reserve) => {
+              // The catalog reports native XLM with no symbol and no name, so
+              // the identity has to be derived rather than read straight off the
+              // reserve — AssetIcon needs a code to recognise XLM and an issuer
+              // to look anything else up.
+              const { code, issuer } = getCatalogAssetIdentity({
+                symbol: reserve.symbol,
+                name: reserve.name,
+                assetId: reserve.assetId,
+                networkDetails,
+              });
+              return (
+                <AssetIcon
+                  key={reserve.assetId}
+                  assetIcons={reserveIcons}
+                  code={code}
+                  issuerKey={issuer}
+                />
+              );
+            })}
           </div>
         </div>
         <StatRow
