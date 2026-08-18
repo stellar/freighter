@@ -21,7 +21,10 @@ import { isFullscreenMode } from "popup/helpers/isFullscreenMode";
 import { useSwapTopTokensPrewarm } from "popup/helpers/useSwapTopTokensPrewarm";
 
 import { AccountAssets } from "popup/components/account/AccountAssets";
-import { AccountCollectibles } from "popup/components/account/AccountCollectibles";
+import {
+  AccountCollectibles,
+  hasVisibleCollections,
+} from "popup/components/account/AccountCollectibles";
 import { AccountHeader } from "popup/components/account/AccountHeader";
 import { FloatingAddButton } from "popup/components/account/FloatingAddButton";
 import { useHiddenCollectibles } from "popup/components/account/hooks/useHiddenCollectibles";
@@ -206,6 +209,15 @@ export const Account = () => {
       ? iconsData?.data?.icons
       : {};
 
+  const isFunded = !!resolvedData?.balances?.isFunded;
+  const canUseFriendbot = !!resolvedData?.networkDetails?.friendbotUrl;
+  const collections = resolvedData?.collectibles?.collections ?? [];
+  const reloadBalances = () =>
+    fetchData({
+      useAppDataCache: true,
+      shouldForceBalancesRefresh: true,
+    });
+
   const totalBalanceUsd = getTotalUsd(tokenPrices ?? {}, balances);
   // The hero is never hidden; see getTotalUsdLabel for which of a total, a
   // zero or the placeholder it shows. The network comes from Redux because
@@ -213,7 +225,7 @@ export const Account = () => {
   const roundedTotalBalanceUsd = getTotalUsdLabel({
     hasError,
     hasPriceFeed: isMainnet(networkDetails),
-    isFunded: !!resolvedData?.balances?.isFunded,
+    isFunded,
     tokenPrices,
     totalUsd: totalBalanceUsd,
   });
@@ -222,6 +234,26 @@ export const Account = () => {
     resolvedData?.allowList?.[resolvedData?.networkDetails?.networkName]?.[
       resolvedData?.publicKey
     ] ?? [];
+
+  // The Tokens tab dictates which kind of Add button Collectibles uses, so the
+  // two match wherever they can. It carries its own inline CTA exactly when it
+  // renders the unfunded empty state.
+  const isTokensEmptyStateShown =
+    !isFunded && !hasError && !resolvedData?.balances?.error?.horizon;
+
+  // An empty `collections` means "owns none" only once the request lands, so that
+  // tab spins until it does. Guarded on `resolvedData`: a failed fetch discards
+  // the result, and waiting on it would spin forever.
+  const isCollectiblesLoading =
+    !!resolvedData && !resolvedData.hasLoadedCollectibles;
+
+  // Only where there is an empty state to host it -- with collectibles on screen
+  // the pill stays, so that tab always has some way to add one. Same predicate
+  // that pane switches on, so the two cannot disagree.
+  const isCollectiblesCtaInline =
+    !isCollectiblesLoading &&
+    isTokensEmptyStateShown &&
+    !hasVisibleCollections(collections, isCollectibleHidden);
 
   return (
     <>
@@ -241,7 +273,7 @@ export const Account = () => {
           });
         }}
         roundedTotalBalanceUsd={roundedTotalBalanceUsd}
-        isFunded={!!resolvedData?.balances?.isFunded}
+        isFunded={isFunded}
         onDiscoverClick={() => setIsDiscoverOpen(true)}
       />
       <View.Content hasNoPadding>
@@ -318,22 +350,17 @@ export const Account = () => {
                 !hasError &&
                 !resolvedData?.balances?.error?.horizon && (
                   <NotFundedMessage
-                    canUseFriendbot={
-                      !!resolvedData!.networkDetails.friendbotUrl
-                    }
+                    canUseFriendbot={canUseFriendbot}
                     publicKey={resolvedData?.publicKey || ""}
-                    reloadBalances={() =>
-                      fetchData({
-                        useAppDataCache: true,
-                        shouldForceBalancesRefresh: true,
-                      })
-                    }
+                    reloadBalances={reloadBalances}
                   />
                 )
               ),
               <div data-testid="account-collectibles">
                 <AccountCollectibles
-                  collections={accountData.data?.collectibles.collections || []}
+                  collections={collections}
+                  hasInlineCta={isCollectiblesCtaInline}
+                  isLoading={isCollectiblesLoading}
                   refreshHiddenCollectibles={refreshHiddenCollectibles}
                   isCollectibleHidden={isCollectibleHidden}
                 />
@@ -350,7 +377,11 @@ export const Account = () => {
         View.Content and its inset to `overflow: visible`, so the document
         itself is the scrollport (document.scrollingElement === html).
       */}
-      <FloatingAddButton isFunded={!!resolvedData?.balances?.isFunded} />
+      <FloatingAddButton
+        isFunded={isFunded}
+        isCollectiblesCtaInline={isCollectiblesCtaInline}
+        isCollectiblesLoading={isCollectiblesLoading}
+      />
       <Sheet
         open={isDiscoverOpen}
         onOpenChange={(open) => !open && setIsDiscoverOpen(false)}

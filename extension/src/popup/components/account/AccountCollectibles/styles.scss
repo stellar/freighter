@@ -26,6 +26,17 @@
     }
   }
 
+  // Reserves the height the empty state occupies without its CTA -- badge 40 +
+  // 8 margin + 8 column gap + 24 title + 8 gap + 20 subtitle -- so resolving into
+  // that state does not shift the tab under the reader.
+  &__loader {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: pxToRem(108px);
+    color: var(--sds-clr-gray-09);
+  }
+
   &__empty {
     display: flex;
     flex-direction: column;
@@ -67,6 +78,18 @@
       font-size: pxToRem(14px);
       font-weight: var(--sds-fw-regular);
       line-height: pxToRem(20px);
+    }
+
+    // Sits 16px under the copy, like "Add XLM" does: 8px of the column's own
+    // gap plus 8px here. Carried by the wrapper rather than a margin on
+    // `__subtitle` so the CTA-less empty state keeps its original spacing.
+    &__cta {
+      margin-top: pxToRem(8px);
+    }
+
+    // Same weight bump the Tokens empty state gives its funding button.
+    .Button {
+      font-weight: var(--sds-fw-semi-bold);
     }
   }
 
