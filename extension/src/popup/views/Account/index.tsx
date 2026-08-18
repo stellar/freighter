@@ -235,32 +235,21 @@ export const Account = () => {
       resolvedData?.publicKey
     ] ?? [];
 
-  // The Tokens tab dictates which kind of Add button the Collectibles tab uses,
-  // so the two match wherever they can. It is carrying its own inline CTA exactly
-  // when it renders the unfunded empty state: a funded account shows its assets
-  // instead, and a failed fetch shows an error, in which case the Tokens tab has
-  // no CTA of either kind and Collectibles falls back to the pill.
+  // The Tokens tab dictates which kind of Add button Collectibles uses, so the
+  // two match wherever they can. It carries its own inline CTA exactly when it
+  // renders the unfunded empty state.
   const isTokensEmptyStateShown =
     !isFunded && !hasError && !resolvedData?.balances?.error?.horizon;
 
-  // Collectibles follows that lead, but can only host an inline CTA when it has
-  // an empty state to put one in -- with collectibles on screen the pill stays,
-  // so the tab is never left without a way to add one. `hasVisibleCollections`
-  // is the same predicate that pane switches on, so the two cannot disagree.
-  //
-  // While the collectibles request is outstanding that tab shows a spinner: an
-  // empty `collections` reads the same before it lands as it does when the account
-  // owns none, and rendering the empty state would claim the latter.
-  //
-  // Guarded on `resolvedData` rather than the flag alone -- a failed balances
-  // fetch leaves no payload to read it from, and spinning on a request whose
-  // result was thrown away would leave that tab loading forever. It falls through
-  // to the empty state and the pill there, as it did before this rule existed.
+  // An empty `collections` means "owns none" only once the request lands, so that
+  // tab spins until it does. Guarded on `resolvedData`: a failed fetch discards
+  // the result, and waiting on it would spin forever.
   const isCollectiblesLoading =
     !!resolvedData && !resolvedData.hasLoadedCollectibles;
 
-  // Deferred until loaded for the same reason: guessing early would offer the
-  // inline CTA and then move the action out to the pill a moment later.
+  // Only where there is an empty state to host it -- with collectibles on screen
+  // the pill stays, so that tab always has some way to add one. Same predicate
+  // that pane switches on, so the two cannot disagree.
   const isCollectiblesCtaInline =
     !isCollectiblesLoading &&
     isTokensEmptyStateShown &&
