@@ -92,6 +92,16 @@ export const verifyFlatTransferPreparedTransaction = ({
     );
   }
 
+  // The operation source determines the source-account credential identity, so it
+  // is part of the wallet's intent and must not be changed during assembly. The
+  // wallet builds the operation with no explicit source (it inherits the tx
+  // source), so both must be undefined here.
+  if (builtOp.source !== preparedOp.source) {
+    throw new PreparedTransactionMismatchError(
+      "operation source does not match the transaction the wallet built",
+    );
+  }
+
   // Every other envelope field must be identical to what the wallet built. Only
   // fee, sorobanData (ext), and the operation's auth are allowed to change during
   // assembly, and those are checked separately below.
@@ -116,18 +126,30 @@ export const verifyFlatTransferPreparedTransaction = ({
 
   // The fee may only be raised by the simulated resource fee that the user was
   // shown. A larger fee means the signed envelope authorizes spending more than
-  // the review screen displayed.
-  const maxFee = new BigNumber(builtTransaction.fee).plus(
-    maxResourceFee || "0",
-  );
+  // the review screen displayed. Validate the resource fee first: a non-finite
+  // or negative value would otherwise make the ceiling non-finite and pass any
+  // fee.
+  const resourceFee = new BigNumber(maxResourceFee || "0");
+  if (
+    !resourceFee.isFinite() ||
+    !resourceFee.isInteger() ||
+    resourceFee.isNegative()
+  ) {
+    throw new PreparedTransactionMismatchError(
+      "simulated resource fee is not a valid non-negative integer",
+    );
+  }
+  const maxFee = new BigNumber(builtTransaction.fee).plus(resourceFee);
   if (new BigNumber(prepared.fee).isGreaterThan(maxFee)) {
     throw new PreparedTransactionMismatchError(
       "fee exceeds the built fee plus the simulated resource fee",
     );
   }
 
-  // Every auth entry must be covered by the plain source-account signature and
-  // must not authorize anything beneath the root invocation.
+  // Every auth entry must be covered by the plain source-account signature, must
+  // authorize exactly the transfer we invoked (not some other contract call), and
+  // must not authorize anything beneath that root invocation.
+  const intendedCall = builtOp.func.invokeContract().toXDR("base64");
   const auths = preparedOp.auth || [];
   for (const auth of auths) {
     if (
@@ -136,6 +158,21 @@ export const verifyFlatTransferPreparedTransaction = ({
     ) {
       throw new PreparedTransactionMismatchError(
         "authorization entry is not source-account credentials",
+      );
+    }
+
+    const rootFunction = auth.rootInvocation().function();
+    if (
+      rootFunction.switch() !==
+      xdr.SorobanAuthorizedFunctionType.sorobanAuthorizedFunctionTypeContractFn()
+    ) {
+      throw new PreparedTransactionMismatchError(
+        "authorization root is not a contract-function call",
+      );
+    }
+    if (rootFunction.contractFn().toXDR("base64") !== intendedCall) {
+      throw new PreparedTransactionMismatchError(
+        "authorization root does not match the invoked transfer",
       );
     }
 

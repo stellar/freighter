@@ -72,7 +72,8 @@ const buildPreparedXdr = (
   {
     tamperFunc = false,
     fee = BASE_FEE,
-  }: { tamperFunc?: boolean; fee?: string } = {},
+    opSource,
+  }: { tamperFunc?: boolean; fee?: string; opSource?: string } = {},
 ): string => {
   const originalOp = built.operations[0];
   if (originalOp.type !== "invokeHostFunction") {
@@ -90,7 +91,7 @@ const buildPreparedXdr = (
       )
     : originalOp.func;
 
-  const op = Operation.invokeHostFunction({ func, auth });
+  const op = Operation.invokeHostFunction({ func, auth, source: opSource });
 
   const builder = new TransactionBuilder(new Account(SOURCE, "0"), {
     fee,
@@ -130,6 +131,23 @@ const addressCredentialsAuth = () =>
       }),
     ),
     rootInvocation: rootTransferInvocation(),
+  });
+
+// A source-account auth entry whose root invocation is an unrelated contract
+// call (a token transfer to the attacker) with no sub-invocations.
+const unrelatedRootAuth = () =>
+  new xdr.SorobanAuthorizationEntry({
+    credentials: xdr.SorobanCredentials.sorobanCredentialsSourceAccount(),
+    rootInvocation: authorizedInvocation(SAC, "transfer", [
+      new Address(SOURCE).toScVal(),
+      new Address(ATTACKER).toScVal(),
+      xdr.ScVal.scvI128(
+        new xdr.Int128Parts({
+          hi: xdr.Int64.fromString("0"),
+          lo: xdr.Uint64.fromString("99884944477"),
+        }),
+      ),
+    ]),
   });
 
 const verify = (
@@ -211,5 +229,32 @@ describe("verifyFlatTransferPreparedTransaction", () => {
     const preparedXdr = buildPreparedXdr(built, [addressCredentialsAuth()]);
 
     expect(() => verify(built, preparedXdr)).toThrow(/source-account/);
+  });
+
+  it("rejects a source-account auth entry whose root is an unrelated call", () => {
+    const built = buildFlatTransfer();
+    const preparedXdr = buildPreparedXdr(built, [unrelatedRootAuth()]);
+
+    expect(() => verify(built, preparedXdr)).toThrow(/authorization root/);
+  });
+
+  it("rejects a changed operation source", () => {
+    const built = buildFlatTransfer();
+    const preparedXdr = buildPreparedXdr(built, [sourceAccountAuth([])], {
+      opSource: ATTACKER,
+    });
+
+    expect(() => verify(built, preparedXdr)).toThrow(/operation source/);
+  });
+
+  it("rejects a non-finite simulated resource fee (fee ceiling cannot fail open)", () => {
+    const built = buildFlatTransfer();
+    const preparedXdr = buildPreparedXdr(built, [sourceAccountAuth([])], {
+      fee: "100000000",
+    });
+
+    expect(() => verify(built, preparedXdr, "Infinity")).toThrow(
+      /resource fee/,
+    );
   });
 });
