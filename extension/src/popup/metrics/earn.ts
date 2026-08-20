@@ -90,6 +90,27 @@ export const trackEarnSwapCompleted = ({
   });
 };
 
+/**
+ * The deposit could not cover its own network fee. Two shapes, told apart by
+ * `reason`: `no_xlm` is an account with no spendable XLM at all, which gets the
+ * buy/swap sheet; `fee_not_covered` is an amount that leaves less XLM than the
+ * simulated resource fee, which gets an inline message asking for a smaller
+ * deposit. Deliberately one event — both are the same drop-off — but the remedy
+ * differs, so the funnel needs to tell them apart.
+ */
+export const trackEarnXlmFeeInsufficientShown = ({
+  assetCode,
+  reason,
+}: {
+  assetCode: string;
+  reason: "no_xlm" | "fee_not_covered";
+}) => {
+  emitMetric(METRIC_NAMES.earnXlmFeeInsufficientShown, {
+    asset_code: assetCode,
+    reason,
+  });
+};
+
 export const trackEarnSimulationFailed = ({
   assetCode,
   reasonCode,

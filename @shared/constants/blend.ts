@@ -23,16 +23,3 @@ export const getBlendPoolId = (networkDetails: NetworkDetails) =>
  */
 export const isEarnSupportedNetwork = (networkDetails: NetworkDetails) =>
   Boolean(getBlendPoolId(networkDetails));
-
-/**
- * XLM held back from a Max deposit to cover the transaction's resource fee.
- *
- * `getAvailableBalance` only subtracts the *inclusion* fee (~0.00001 XLM), but a
- * Blend `submit` is dominated by its resource fee — measured at 546,395 stroops
- * (~0.0546 XLM) against the live pool, roughly 5,000x the inclusion fee. Without
- * this buffer a Max deposit of XLM simulates into an insufficient-balance error.
- *
- * The buffer is deliberately generous; Review re-checks against the real
- * `minResourceFee` once simulation returns and clamps if it still does not fit.
- */
-export const BLEND_DEPOSIT_XLM_FEE_BUFFER = "0.5";

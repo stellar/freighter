@@ -33,6 +33,7 @@ import { scrubStrKeys } from "helpers/stellarStrKey";
 import {
   trackEarnPercentAmountSelected,
   trackEarnSimulationFailed,
+  trackEarnXlmFeeInsufficientShown,
 } from "popup/metrics/earn";
 import {
   saveAmount,
@@ -51,7 +52,8 @@ import { PoolCard } from "./PoolCard";
 import { NetworkFeeSheet } from "./NetworkFeeSheet";
 import {
   getEarnCtaState,
-  getMaxDepositAmount,
+  getXlmFeeShortfall,
+  isInsufficientBalanceFailure,
   needsXlmForFee,
 } from "./helpers/earnCtaState";
 import { getPercentageDepositAmount } from "./helpers/depositAmount";
@@ -161,8 +163,10 @@ export const EarnAmount = ({ goBack, onConfirm }: EarnAmountProps) => {
       )
     : null;
 
-  // Nets out the base reserve and the inclusion fee. The resource fee is far
-  // larger for a Blend submit and is handled by getMaxDepositAmount's buffer.
+  // Nets out the base reserve and the inclusion fee. A Blend submit's resource
+  // fee is far larger, but nothing is held back for it here: the whole balance
+  // stays depositable and handleContinue checks the measured fee once simulation
+  // reports it.
   const availableBalance = asset
     ? getAvailableBalance({
         assetCanonical: asset,
@@ -172,15 +176,11 @@ export const EarnAmount = ({ goBack, onConfirm }: EarnAmountProps) => {
     : "0";
 
   const isXlm = asset === "native";
-  const maxDepositable = getMaxDepositAmount({
-    availableBalance,
-    isXlm,
-  });
 
   const enteredAmount = new BigNumber(cleanAmount(amount || "0"));
-  const isAmountTooHigh = enteredAmount.gt(new BigNumber(maxDepositable));
+  const isAmountTooHigh = enteredAmount.gt(new BigNumber(availableBalance));
   const cta = getEarnCtaState({
-    availableBalanceIsZero: new BigNumber(maxDepositable).lte(0),
+    availableBalanceIsZero: new BigNumber(availableBalance).lte(0),
     amountIsZero: enteredAmount.lte(0),
     isAmountTooHigh,
   });
@@ -206,8 +206,9 @@ export const EarnAmount = ({ goBack, onConfirm }: EarnAmountProps) => {
     // Checked after the CTA gate, so an unaffordable XLM deposit reads as
     // "Insufficient funds" rather than as a missing-fee problem.
     if (needsXlmForFee({ spendableXlm, fee: recommendedFee })) {
-      emitMetric(METRIC_NAMES.earnXlmFeeInsufficientShown, {
-        asset_code: selected?.code,
+      trackEarnXlmFeeInsufficientShown({
+        assetCode: selected?.code || "",
+        reason: "no_xlm",
       });
       setIsFeeSheetOpen(true);
       return;
@@ -233,7 +234,7 @@ export const EarnAmount = ({ goBack, onConfirm }: EarnAmountProps) => {
         )
         .catch(() => dispatch(saveCurrentPositionTokens("0")));
 
-      await simulate({
+      const simulation = await simulate({
         publicKey: data.publicKey,
         assetId: selectedAssetId,
         amount,
@@ -242,6 +243,32 @@ export const EarnAmount = ({ goBack, onConfirm }: EarnAmountProps) => {
         transactionFee: recommendedFee,
         transactionTimeout,
       });
+
+      // Simulation is the first place the resource fee is known, so an XLM
+      // deposit that leaves nothing for it is caught here rather than by holding
+      // a guessed buffer back from the balance. The submission would otherwise
+      // fail with txINSUFFICIENT_BALANCE after the user had already signed.
+      const shortfall = isXlm
+        ? getXlmFeeShortfall({
+            spendableXlm,
+            amount: enteredAmount.toFixed(),
+            resourceFee: simulation.resourceFee || "0",
+          })
+        : "0";
+
+      if (new BigNumber(shortfall).gt(0)) {
+        trackEarnXlmFeeInsufficientShown({
+          assetCode: selected?.code || "",
+          reason: "fee_not_covered",
+        });
+        setSimulationError(
+          t(
+            "Not enough XLM left for the network fee. Reduce your deposit by at least {{amount}} XLM.",
+            { amount: formatAmount(shortfall) },
+          ),
+        );
+        return;
+      }
 
       setIsReviewOpen(true);
     } catch (error) {
@@ -253,7 +280,17 @@ export const EarnAmount = ({ goBack, onConfirm }: EarnAmountProps) => {
         assetCode: selected?.code || "",
         reasonCode: scrubStrKeys(message) || "unknown",
       });
-      setSimulationError(message);
+      // A balance rejection on an XLM deposit is the fee, not the amount: the
+      // CTA already gates anything above the spendable balance, so what is left
+      // is a deposit that cannot also pay for itself. Every other rejection is
+      // the pool's own and reads better in its own words.
+      setSimulationError(
+        isXlm && isInsufficientBalanceFailure(message)
+          ? t(
+              "Not enough XLM to cover the network fee. Try depositing a smaller amount.",
+            )
+          : message,
+      );
     } finally {
       setIsSimulating(false);
     }
@@ -325,7 +362,7 @@ export const EarnAmount = ({ goBack, onConfirm }: EarnAmountProps) => {
             // The design turns the amount red rather than adding a message row:
             // the CTA below already reads "Insufficient funds".
             invalidAmountStyle="amount"
-            maxSpendableText={formatAmount(maxDepositable)}
+            maxSpendableText={formatAmount(availableBalance)}
             cryptoDecimals={decimals}
             onAmountChange={({ amount: next }) =>
               dispatch(saveAmount(next === "" ? DEFAULT_AMOUNT : next))
@@ -358,7 +395,11 @@ export const EarnAmount = ({ goBack, onConfirm }: EarnAmountProps) => {
               });
               dispatch(
                 saveAmount(
-                  getPercentageDepositAmount({ maxDepositable, pct, decimals }),
+                  getPercentageDepositAmount({
+                    maxDepositable: availableBalance,
+                    pct,
+                    decimals,
+                  }),
                 ),
               );
             }}

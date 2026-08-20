@@ -56,6 +56,8 @@ export const METRIC_NAMES = {
   earnPoolDetailsOpened: "earn.pool_details_opened",
   // A percentage shortcut on the amount screen; `percent: 100` is Max.
   earnMaxAmountSelected: "earn.max_amount_selected",
+  // The deposit cannot cover its own network fee; `reason` separates an account
+  // with no spendable XLM from an amount that leaves less than the resource fee.
   earnXlmFeeInsufficientShown: "earn.xlm_fee_insufficient_shown",
   earnSimulationFailed: "earn.simulation_failed",
   earnDepositCompleted: "earn.deposit_completed",

@@ -449,6 +449,8 @@
   "None": "Nenhum",
   "Not enough {{code}}": "{{code}} insuficiente",
   "Not enough XLM for network fees": "XLM insuficiente para taxas de rede",
+  "Not enough XLM left for the network fee. Reduce your deposit by at least {{amount}} XLM.": "Não há XLM suficiente para a taxa de rede. Reduza seu depósito em pelo menos {{amount}} XLM.",
+  "Not enough XLM to cover the network fee. Try depositing a smaller amount.": "Não há XLM suficiente para cobrir a taxa de rede. Tente depositar um valor menor.",
   "Not funded": "Não financiado",
   "Not migrated": "Não migrado",
   "Note that you will need to reload this tab to load any account changes that happen outside this session.": "Observe que você precisará recarregar esta aba para carregar quaisquer alterações de conta que aconteçam fora desta sessão.",

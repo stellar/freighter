@@ -1,7 +1,5 @@
 import BigNumber from "bignumber.js";
 
-import { BLEND_DEPOSIT_XLM_FEE_BUFFER } from "@shared/constants/blend";
-
 /**
  * Pure CTA state machine for the deposit amount screen. Precedence matters:
  * each guard short-circuits, so the label reflects the most specific blocker.
@@ -55,31 +53,45 @@ export const needsXlmForFee = ({
 }) => new BigNumber(spendableXlm).lt(new BigNumber(fee));
 
 /**
- * Spendable amount to offer for a Max deposit.
+ * How much XLM a deposit is short of its own network fee, or "0" if it fits.
  *
- * `getAvailableBalance` subtracts the base reserve and the *inclusion* fee, but
- * a Blend `submit` is dominated by its resource fee — measured at ~0.0546 XLM
- * against the live pool, roughly 5,000x the inclusion fee. Depositing the raw
- * available balance of XLM therefore simulates into an insufficient-balance
- * error. Hold back a buffer; Review re-checks against the real `minResourceFee`
- * once simulation returns.
+ * A Blend `submit` is dominated by its resource fee — ~0.0546 XLM against the
+ * live pool, roughly 5,000x the inclusion fee — and that figure is only known
+ * once simulation returns. Rather than hold a guessed buffer back from the
+ * balance (which locks XLM the user may well want to deposit), the deposit
+ * screen offers the whole spendable balance and checks the *measured* fee here,
+ * after simulation and before the review sheet.
  *
- * Only XLM needs this — for any other asset the fee is paid from a separate
- * balance, and the shortfall surfaces through the network-fee sheet instead.
+ * `spendableXlm` is expected to come from `getAvailableBalance`, which already
+ * nets out the base reserve and the inclusion fee, so only the resource fee is
+ * left to cover.
+ *
+ * Only XLM deposits can be short this way: for any other asset the fee comes
+ * out of an untouched XLM balance.
  */
-export const getMaxDepositAmount = ({
-  availableBalance,
-  isXlm,
+export const getXlmFeeShortfall = ({
+  spendableXlm,
+  amount,
+  resourceFee,
 }: {
-  availableBalance: string;
-  isXlm: boolean;
+  spendableXlm: string;
+  /** Cleaned deposit amount — no group separators. */
+  amount: string;
+  /** `minResourceFee` from simulation, in XLM. */
+  resourceFee: string;
 }) => {
-  const available = new BigNumber(availableBalance);
-  if (!isXlm) {
-    return available.toFixed();
-  }
-  return BigNumber.max(
-    available.minus(new BigNumber(BLEND_DEPOSIT_XLM_FEE_BUFFER)),
-    new BigNumber(0),
-  ).toFixed();
+  const remaining = new BigNumber(spendableXlm).minus(new BigNumber(amount));
+  const shortfall = new BigNumber(resourceFee).minus(remaining);
+  return BigNumber.max(shortfall, new BigNumber(0)).toFixed();
 };
+
+/**
+ * Does a failed simulation read as "this account cannot cover the transfer"?
+ *
+ * Deliberately narrow: the Stellar Asset Contract's BalanceError (contract error
+ * #10) and the classic insufficient-balance result code are the only signals
+ * that mean the amount itself is the problem. Everything else — supply caps, a
+ * frozen pool, a stale oracle — must keep surfacing the pool's own message.
+ */
+export const isInsufficientBalanceFailure = (message: string) =>
+  /Error\(Contract, #10\)|insufficient[ _]balance/i.test(message);

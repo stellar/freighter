@@ -449,6 +449,8 @@
   "None": "None",
   "Not enough {{code}}": "Not enough {{code}}",
   "Not enough XLM for network fees": "Not enough XLM for network fees",
+  "Not enough XLM left for the network fee. Reduce your deposit by at least {{amount}} XLM.": "Not enough XLM left for the network fee. Reduce your deposit by at least {{amount}} XLM.",
+  "Not enough XLM to cover the network fee. Try depositing a smaller amount.": "Not enough XLM to cover the network fee. Try depositing a smaller amount.",
   "Not funded": "Not funded",
   "Not migrated": "Not migrated",
   "Note that you will need to reload this tab to load any account changes that happen outside this session.": "Note that you will need to reload this tab to load any account changes that happen outside this session.",

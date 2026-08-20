@@ -46,6 +46,8 @@ const earnKeys = [
   "Review deposit",
   "Insufficient funds",
   "You need some XLM for network fee",
+  "Not enough XLM left for the network fee. Reduce your deposit by at least {{amount}} XLM.",
+  "Not enough XLM to cover the network fee. Try depositing a smaller amount.",
   "Add XLM to your wallet to continue",
   "Transaction failed. Try again.",
   "Pool Details",

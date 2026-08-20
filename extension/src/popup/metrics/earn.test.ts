@@ -12,6 +12,7 @@ import {
   trackEarnSimulationFailed,
   trackEarnSwapCompleted,
   trackEarnTokenSelected,
+  trackEarnXlmFeeInsufficientShown,
 } from "./earn";
 
 jest.mock("helpers/metrics", () => ({
@@ -90,6 +91,25 @@ describe("Earn funnel metrics", () => {
         from_asset_code: "XLM",
         to_asset_code: "USDC",
       },
+    );
+  });
+
+  it("tells the two XLM-fee shortfalls apart", () => {
+    // Same drop-off, different remedy: one account has no XLM at all and gets
+    // the buy/swap sheet, the other allocated it all to the deposit.
+    trackEarnXlmFeeInsufficientShown({ assetCode: "USDC", reason: "no_xlm" });
+    expect(mockEmitMetric).toHaveBeenCalledWith(
+      METRIC_NAMES.earnXlmFeeInsufficientShown,
+      { asset_code: "USDC", reason: "no_xlm" },
+    );
+
+    trackEarnXlmFeeInsufficientShown({
+      assetCode: "XLM",
+      reason: "fee_not_covered",
+    });
+    expect(mockEmitMetric).toHaveBeenCalledWith(
+      METRIC_NAMES.earnXlmFeeInsufficientShown,
+      { asset_code: "XLM", reason: "fee_not_covered" },
     );
   });
 

@@ -1,10 +1,7 @@
-import BigNumber from "bignumber.js";
-
-import { BLEND_DEPOSIT_XLM_FEE_BUFFER } from "@shared/constants/blend";
-
 import {
   getEarnCtaState,
-  getMaxDepositAmount,
+  getXlmFeeShortfall,
+  isInsufficientBalanceFailure,
   needsXlmForFee,
 } from "../earnCtaState";
 
@@ -78,40 +75,80 @@ describe("needsXlmForFee", () => {
   });
 });
 
-describe("getMaxDepositAmount", () => {
-  it("returns the full available balance for a non-XLM asset", () => {
-    // The fee comes out of a different balance, so nothing is held back.
-    expect(getMaxDepositAmount({ availableBalance: "500", isXlm: false })).toBe(
-      "500",
-    );
-  });
-
-  it("holds back the resource-fee buffer for XLM", () => {
-    // getAvailableBalance only nets out the inclusion fee (~0.00001 XLM); the
-    // resource fee is ~0.0546 XLM and would otherwise blow the simulation.
-    expect(getMaxDepositAmount({ availableBalance: "100", isXlm: true })).toBe(
-      new BigNumber(100).minus(BLEND_DEPOSIT_XLM_FEE_BUFFER).toFixed(),
-    );
-  });
-
-  it("floors at zero rather than going negative", () => {
-    expect(getMaxDepositAmount({ availableBalance: "0.1", isXlm: true })).toBe(
-      "0",
-    );
-  });
-
-  it("returns zero when the buffer exactly consumes the balance", () => {
+describe("getXlmFeeShortfall", () => {
+  it("is zero when the deposit leaves more than the resource fee", () => {
     expect(
-      getMaxDepositAmount({
-        availableBalance: BLEND_DEPOSIT_XLM_FEE_BUFFER,
-        isXlm: true,
+      getXlmFeeShortfall({
+        spendableXlm: "100",
+        amount: "50",
+        resourceFee: "0.0546395",
+      }),
+    ).toBe("0");
+  });
+
+  it("reports the shortfall when the whole spendable balance is deposited", () => {
+    // The full balance is depositable — nothing is held back — so the entire
+    // resource fee is missing.
+    expect(
+      getXlmFeeShortfall({
+        spendableXlm: "100",
+        amount: "100",
+        resourceFee: "0.0546395",
+      }),
+    ).toBe("0.0546395");
+  });
+
+  it("reports only the part of the fee that is not covered", () => {
+    expect(
+      getXlmFeeShortfall({
+        spendableXlm: "100",
+        amount: "99.99",
+        resourceFee: "0.0546395",
+      }),
+    ).toBe("0.0446395");
+  });
+
+  it("is zero when the remainder exactly covers the fee", () => {
+    expect(
+      getXlmFeeShortfall({
+        spendableXlm: "100",
+        amount: "99.9453605",
+        resourceFee: "0.0546395",
       }),
     ).toBe("0");
   });
 
   it("does not lose precision on a large balance", () => {
     expect(
-      getMaxDepositAmount({ availableBalance: "1691.6912345", isXlm: true }),
-    ).toBe("1691.1912345");
+      getXlmFeeShortfall({
+        spendableXlm: "1691.6912345",
+        amount: "1691.6912345",
+        resourceFee: "0.0546395",
+      }),
+    ).toBe("0.0546395");
+  });
+});
+
+describe("isInsufficientBalanceFailure", () => {
+  it("matches the asset contract's BalanceError", () => {
+    expect(
+      isInsufficientBalanceFailure(
+        "host invocation failed: HostError: Error(Contract, #10)",
+      ),
+    ).toBe(true);
+  });
+
+  it("matches a classic insufficient-balance result code", () => {
+    expect(isInsufficientBalanceFailure("tx_insufficient_balance")).toBe(true);
+    expect(isInsufficientBalanceFailure("txINSUFFICIENT_BALANCE")).toBe(true);
+  });
+
+  it("leaves the pool's own rejections alone", () => {
+    // Supply cap, frozen pool, stale oracle — these must keep surfacing their
+    // own message rather than being retold as a fee problem.
+    expect(
+      isInsufficientBalanceFailure("HostError: Error(Contract, #1206)"),
+    ).toBe(false);
+    expect(isInsufficientBalanceFailure("pool is frozen")).toBe(false);
   });
 });
