@@ -478,6 +478,7 @@
   "Password": "Password",
   "Path": "Path",
   "Payment token logo": "Payment token logo",
+  "Permissionless lending pool with no admin. Collateral factors, interest curves, and supported assets are locked at deployment.": "Permissionless lending pool with no admin. Collateral factors, interest curves, and supported assets are locked at deployment.",
   "Pin Freighter to the toolbar": "Pin Freighter to the toolbar",
   "Please check if the network information is correct and try again.": "Please check if the network information is correct and try again.",
   "Please check the asset code or address.": "Please check the asset code or address.",

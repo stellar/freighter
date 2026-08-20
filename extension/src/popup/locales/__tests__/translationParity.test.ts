@@ -51,6 +51,10 @@ const earnKeys = [
   "Add XLM to your wallet to continue",
   "Transaction failed. Try again.",
   "Pool Details",
+  // Reached through a lookup table rather than a literal `t()` argument, so the
+  // scanner cannot see it — the one earn string that has to be listed here to
+  // stay extracted. See PoolDetailsSheet/poolDescriptions.ts.
+  "Permissionless lending pool with no admin. Collateral factors, interest curves, and supported assets are locked at deployment.",
   "Lending Interest",
   "Current Net APY",
   "Accepted tokens",

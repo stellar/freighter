@@ -478,6 +478,7 @@
   "Password": "Senha",
   "Path": "Caminho",
   "Payment token logo": "Logotipo do token de pagamento",
+  "Permissionless lending pool with no admin. Collateral factors, interest curves, and supported assets are locked at deployment.": "Pool de empréstimo sem permissão e sem administrador. Fatores de garantia, curvas de juros e ativos compatíveis são fixados na implantação.",
   "Pin Freighter to the toolbar": "Fixar Freighter na toolbar",
   "Please check if the network information is correct and try again.": "Por favor, verifique se as informações da rede estão corretas e tente novamente.",
   "Please check the asset code or address.": "Por favor, verifique o código do ativo ou endereço.",
