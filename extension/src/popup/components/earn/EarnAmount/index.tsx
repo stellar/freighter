@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import BigNumber from "bignumber.js";
 import { Button, Loader, Notification, Text } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
@@ -27,8 +27,13 @@ import {
 } from "popup/helpers/formatters";
 import { getAssetDecimals, getAvailableBalance } from "popup/helpers/soroban";
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
-import { emitMetric } from "helpers/metrics";
+import { emitMetric, emitScreenViewed } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
+import { scrubStrKeys } from "helpers/stellarStrKey";
+import {
+  trackEarnPercentAmountSelected,
+  trackEarnSimulationFailed,
+} from "popup/metrics/earn";
 import {
   saveAmount,
   transactionDataSelector,
@@ -88,11 +93,28 @@ export const EarnAmount = ({ goBack, onConfirm }: EarnAmountProps) => {
   const [isSimulating, setIsSimulating] = useState(false);
   const [simulationError, setSimulationError] = useState("");
   const [isReviewOpen, setIsReviewOpen] = useState(false);
+  const hasEmittedReviewView = useRef(false);
 
   useEffect(() => {
     fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // The review sheet is the flow's `confirm` step — the last screen before a
+  // signature. It is a sheet rather than a step, so the Earn view's step effect
+  // never sees it. The ref clears on close so correcting the amount and
+  // reviewing again counts as a second view, but a re-render does not.
+  useEffect(() => {
+    if (!isReviewOpen) {
+      hasEmittedReviewView.current = false;
+      return;
+    }
+    if (hasEmittedReviewView.current) {
+      return;
+    }
+    hasEmittedReviewView.current = true;
+    emitScreenViewed("earn_review", { flow: "earn", step: "confirm" });
+  }, [isReviewOpen]);
 
   if (state.data?.type === AppDataType.REROUTE) {
     if (state.data.shouldOpenTab) {
@@ -223,9 +245,15 @@ export const EarnAmount = ({ goBack, onConfirm }: EarnAmountProps) => {
 
       setIsReviewOpen(true);
     } catch (error) {
-      setSimulationError(
-        error instanceof Error ? error.message : String(error),
-      );
+      const message = error instanceof Error ? error.message : String(error);
+      // A simulation failure is the deposit's own pre-flight rejection — the
+      // same analytical unit as `payment.simulation_failed`, and never reaching
+      // the network means it has no result codes to key on, only this message.
+      trackEarnSimulationFailed({
+        assetCode: selected?.code || "",
+        reasonCode: scrubStrKeys(message) || "unknown",
+      });
+      setSimulationError(message);
     } finally {
       setIsSimulating(false);
     }
@@ -323,13 +351,17 @@ export const EarnAmount = ({ goBack, onConfirm }: EarnAmountProps) => {
           )}
 
           <PercentageButtons
-            onSelect={(pct) =>
+            onSelect={(pct) => {
+              trackEarnPercentAmountSelected({
+                assetCode: selected?.code || "",
+                percent: pct,
+              });
               dispatch(
                 saveAmount(
                   getPercentageDepositAmount({ maxDepositable, pct, decimals }),
                 ),
-              )
-            }
+              );
+            }}
           />
         </div>
       </View.Content>

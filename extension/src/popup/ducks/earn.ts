@@ -45,6 +45,14 @@ export interface EarnState {
    * AMOUNT — component state would be torn down in between.
    */
   lastSubmitFailed: boolean;
+  /**
+   * True once the swap branch has produced a balance during this flow — the
+   * `via_swap` dimension on `earn.deposit_completed`.
+   *
+   * Lives here because the swap happens in the picker and the deposit metric is
+   * emitted from the submit hook, two screens and one `resetSubmission()` apart.
+   */
+  didSwapInFlow: boolean;
 }
 
 export const initialState: EarnState = {
@@ -54,6 +62,7 @@ export const initialState: EarnState = {
   currentPositionTokens: "0",
   hasSeenIntro: null,
   lastSubmitFailed: false,
+  didSwapInFlow: false,
 };
 
 const earnSlice = createSlice({
@@ -78,6 +87,9 @@ const earnSlice = createSlice({
     setEarnSubmitFailed: (state, action: { payload: boolean }) => {
       state.lastSubmitFailed = action.payload;
     },
+    setDidSwapInFlow: (state, action: { payload: boolean }) => {
+      state.didSwapInFlow = action.payload;
+    },
     /**
      * Resets everything except `hasSeenIntro` — that flag is persisted in the
      * background store and re-reading it on every flow entry would reintroduce
@@ -97,6 +109,7 @@ export const {
   saveCurrentPositionTokens,
   setEarnIntroSeen,
   setEarnSubmitFailed,
+  setDidSwapInFlow,
   resetEarn,
 } = earnSlice.actions;
 

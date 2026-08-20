@@ -39,10 +39,31 @@ export const METRIC_NAMES = {
   swapFailed: "swap.failed",
 
   // -- Earn ----------------------------------------------------------------
+  // In funnel order. The stage-to-stage drop-off is read from `screen.viewed`
+  // (earn_intro → earn_select_token → earn_amount → earn_review →
+  // earn_processing → earn_success); the events below carry what a screen name
+  // cannot — which asset and pool, which remedy an unfunded user picked, and why
+  // an attempt ended. Emitted through popup/metrics/earn.ts, never inline.
+  earnTokenSelected: "earn.token_selected",
+  // A supported token the account holds none of was tapped; `variant` is the set
+  // of remedies the sheet actually offered.
+  earnBalanceInsufficientShown: "earn.balance_insufficient_shown",
+  // Which remedy was chosen on that sheet: buy | swap | transfer.
+  earnFundingActionSelected: "earn.funding_action_selected",
+  // The swap-within-earn branch settled. Distinct from `swap.completed`, which
+  // the reused Swap components emit and cannot attribute to Earn.
+  earnSwapCompleted: "earn.swap_completed",
+  earnPoolDetailsOpened: "earn.pool_details_opened",
+  // A percentage shortcut on the amount screen; `percent: 100` is Max.
+  earnMaxAmountSelected: "earn.max_amount_selected",
+  earnXlmFeeInsufficientShown: "earn.xlm_fee_insufficient_shown",
+  earnSimulationFailed: "earn.simulation_failed",
   earnDepositCompleted: "earn.deposit_completed",
   earnDepositFailed: "earn.deposit_failed",
-  earnPoolDetailsOpened: "earn.pool_details_opened",
-  earnXlmFeeInsufficientShown: "earn.xlm_fee_insufficient_shown",
+  // Closed while the submission was still in flight. The flow stops following
+  // the result there, so this marks an outcome that no completed/failed event
+  // will ever report.
+  earnDepositAbandoned: "earn.deposit_abandoned",
 
   // -- Collectibles --------------------------------------------------------
   collectibleSendCompleted: "collectible_send.completed",

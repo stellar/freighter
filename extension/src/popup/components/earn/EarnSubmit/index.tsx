@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { Button, Icon, Loader, Text } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
@@ -25,6 +25,8 @@ import {
 } from "popup/ducks/transactionSubmission";
 import { earnSelector } from "popup/ducks/earn";
 import { iconsSelector } from "popup/ducks/cache";
+import { emitScreenViewed } from "helpers/metrics";
+import { trackEarnDepositAbandoned } from "popup/metrics/earn";
 
 import { useSubmitEarnTxData } from "./hooks/useSubmitEarnTxData";
 
@@ -53,7 +55,7 @@ export const EarnSubmit = ({ xdr, onExit }: EarnSubmitProps) => {
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const hardwareWalletType = useSelector(hardwareWalletTypeSelector);
-  const { pool } = useSelector(earnSelector);
+  const { pool, selectedAssetApy, didSwapInFlow } = useSelector(earnSelector);
   const cachedIcons = useSelector(iconsSelector);
 
   const { amount, asset } = submission.transactionData;
@@ -66,12 +68,39 @@ export const EarnSubmit = ({ xdr, onExit }: EarnSubmitProps) => {
     xdr,
     isHardwareWallet: !!hardwareWalletType,
     assetCode: srcAsset.code,
+    poolId: pool?.id || "",
+    apy: selectedAssetApy,
+    viaSwap: didSwapInFlow,
   });
+
+  // Derived above the hardware-overlay branch so the effects below stay in the
+  // same order on every render.
+  const isSuccess =
+    submissionState.state === RequestState.SUCCESS &&
+    submission.submitStatus !== ActionStatus.ERROR;
+  const isLoading = !isSuccess;
+
+  const hasEmittedSuccessView = useRef(false);
 
   useEffect(() => {
     fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Two screens in the funnel, not one: this component is "Depositing" and then
+  // "Deposited!", and only it can see the transition. The Earn view's step
+  // effect therefore has no entry for DEPOSIT_CONFIRM.
+  useEffect(() => {
+    emitScreenViewed("earn_processing", { flow: "earn", step: "processing" });
+  }, []);
+
+  useEffect(() => {
+    if (!isSuccess || hasEmittedSuccessView.current) {
+      return;
+    }
+    hasEmittedSuccessView.current = true;
+    emitScreenViewed("earn_success", { flow: "earn", step: "success" });
+  }, [isSuccess]);
 
   if (
     submission.hardwareWalletData?.status === ShowOverlayStatus.IN_PROGRESS &&
@@ -85,11 +114,6 @@ export const EarnSubmit = ({ xdr, onExit }: EarnSubmitProps) => {
       />
     );
   }
-
-  const isSuccess =
-    submissionState.state === RequestState.SUCCESS &&
-    submission.submitStatus !== ActionStatus.ERROR;
-  const isLoading = !isSuccess;
 
   return (
     <View data-testid="earn-submit">
@@ -110,7 +134,15 @@ export const EarnSubmit = ({ xdr, onExit }: EarnSubmitProps) => {
                   isFullWidth
                   isRounded
                   variant="tertiary"
-                  onClick={onExit}
+                  onClick={() => {
+                    // The only record that this deposit has an outcome nobody
+                    // will report: the flow stops following it here.
+                    trackEarnDepositAbandoned({
+                      assetCode: srcAsset.code,
+                      poolId: pool?.id || "",
+                    });
+                    onExit();
+                  }}
                   data-testid="earn-submit-close"
                 >
                   {t("Close")}

@@ -9,6 +9,7 @@ import { ROUTES } from "popup/constants/routes";
 import { EARN_FLOW_QUERY, NotEnoughVariant } from "popup/constants/earn";
 import { navigateTo } from "popup/helpers/navigate";
 import { useGetOnrampToken } from "helpers/hooks/useGetOnrampToken";
+import { trackEarnFundingActionSelected } from "popup/metrics/earn";
 
 import { EarnTokenOption } from "./hooks/useGetEarnTokensData";
 
@@ -75,8 +76,25 @@ export const NotEnoughTokenSheet = ({
   // route keeps the stacked full-width pair.
   const showBothPrimaries = showBuy && showSwap;
   const transferLabel = t("Transfer from another account");
-  const goToTransfer = () =>
+
+  // Each route reports itself before it leaves: Buy opens a tab, Transfer
+  // navigates away, and Swap replaces the sheet, so this is the last frame in
+  // which the choice is still attributable to the Earn funnel.
+  const handleBuy = () => {
+    trackEarnFundingActionSelected({ assetCode: option.code, action: "buy" });
+    openOnramp();
+  };
+  const handleSwap = () => {
+    trackEarnFundingActionSelected({ assetCode: option.code, action: "swap" });
+    onSwap();
+  };
+  const goToTransfer = () => {
+    trackEarnFundingActionSelected({
+      assetCode: option.code,
+      action: "transfer",
+    });
     navigateTo(ROUTES.viewPublicKey, navigate, EARN_FLOW_QUERY);
+  };
 
   return (
     <div className="NotEnoughTokenSheet" data-testid="earn-not-enough-sheet">
@@ -125,7 +143,7 @@ export const NotEnoughTokenSheet = ({
                 variant="secondary"
                 isFullWidth
                 isRounded
-                onClick={() => openOnramp()}
+                onClick={handleBuy}
                 data-testid="earn-not-enough-buy"
               >
                 {t("Buy {{code}}", { code: option.code })}
@@ -135,7 +153,7 @@ export const NotEnoughTokenSheet = ({
                 variant="secondary"
                 isFullWidth
                 isRounded
-                onClick={onSwap}
+                onClick={handleSwap}
                 data-testid="earn-not-enough-swap"
               >
                 {t("Swap for {{code}}", { code: option.code })}
@@ -163,7 +181,7 @@ export const NotEnoughTokenSheet = ({
                 variant="secondary"
                 isFullWidth
                 isRounded
-                onClick={() => openOnramp()}
+                onClick={handleBuy}
                 data-testid="earn-not-enough-buy"
               >
                 {t("Buy with Coinbase")}
@@ -176,7 +194,7 @@ export const NotEnoughTokenSheet = ({
                 variant="secondary"
                 isFullWidth
                 isRounded
-                onClick={onSwap}
+                onClick={handleSwap}
                 data-testid="earn-not-enough-swap"
               >
                 {t("Swap for {{code}}", { code: option.code })}

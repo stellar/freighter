@@ -12,6 +12,7 @@ import { AppDataType } from "helpers/hooks/useGetAppData";
 import { newTabHref } from "helpers/urls";
 import { openTab } from "popup/helpers/navigate";
 import { formatAmount } from "popup/helpers/formatters";
+import { trackEarnBalanceInsufficientShown } from "popup/metrics/earn";
 
 import { NotEnoughTokenSheet } from "./NotEnoughTokenSheet";
 import {
@@ -115,6 +116,25 @@ export const EarnTokenPicker = ({
 
   const data = state.data as ResolvedEarnTokens;
 
+  // A zero-balance token is excluded from `hasSwappableBalance` by its own
+  // canonical, but it holds none of it anyway, so the assetId is a safe stand-in
+  // for a canonical we would otherwise have to resolve from the SAC.
+  const resolveNotEnoughVariant = (option: EarnTokenOption) =>
+    getNotEnoughVariant({
+      isOnrampable: isOnrampableAsset(option.code, data.networkDetails),
+      isSwappable: hasSwappableBalance(data.balances.balances, option.assetId),
+    });
+
+  const openNotEnoughSheet = (option: EarnTokenOption) => {
+    // The same resolver the sheet renders from, so the reported variant can
+    // never disagree with the buttons the user was actually shown.
+    trackEarnBalanceInsufficientShown({
+      assetCode: option.code,
+      variant: resolveNotEnoughVariant(option),
+    });
+    setNotEnoughToken(option);
+  };
+
   const renderRow = (option: EarnTokenOption, isHeld: boolean) => (
     <BalanceRow
       key={option.assetId}
@@ -124,26 +144,14 @@ export const EarnTokenPicker = ({
       amount={`${formatAmount(option.total)} ${option.code}`}
       rightSlot={<ApyBadge apy={option.apy} code={option.code} />}
       onClick={() =>
-        isHeld ? onSelect(option, data) : setNotEnoughToken(option)
+        isHeld ? onSelect(option, data) : openNotEnoughSheet(option)
       }
       data-testid={`earn-token-row-${option.code}`}
     />
   );
 
-  // A zero-balance token is excluded from `hasSwappableBalance` by its own
-  // canonical, but it holds none of it anyway, so the assetId is a safe stand-in
-  // for a canonical we would otherwise have to resolve from the SAC.
   const notEnoughVariant = notEnoughToken
-    ? getNotEnoughVariant({
-        isOnrampable: isOnrampableAsset(
-          notEnoughToken.code,
-          data.networkDetails,
-        ),
-        isSwappable: hasSwappableBalance(
-          data.balances.balances,
-          notEnoughToken.assetId,
-        ),
-      })
+    ? resolveNotEnoughVariant(notEnoughToken)
     : null;
 
   return (

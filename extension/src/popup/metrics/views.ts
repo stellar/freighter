@@ -168,7 +168,9 @@ const SCREEN_BY_ROUTE: Partial<Record<ROUTES, ScreenDef>> = {
  * double-count. Mobile has no send_payment container either (RFC #2883, D8).
  *
  * Earn is a container for the same reason — earn_intro / earn_select_token /
- * earn_amount / earn_confirm come from the Earn flow's own step effect.
+ * earn_amount come from the Earn flow's own step effect, and earn_review /
+ * earn_processing / earn_success from the screens that own them (the review
+ * sheet and EarnSubmit).
  */
 export const ROUTES_WITHOUT_SCREEN_VIEW = new Set<string>([
   ROUTES.sendPayment,

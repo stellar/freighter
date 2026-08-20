@@ -1,0 +1,178 @@
+import { emitMetric } from "helpers/metrics";
+import { NotEnoughVariant } from "popup/constants/earn";
+import { METRIC_NAMES } from "popup/constants/metricsNames";
+
+import {
+  trackEarnBalanceInsufficientShown,
+  trackEarnDepositAbandoned,
+  trackEarnDepositCompleted,
+  trackEarnDepositFailed,
+  trackEarnFundingActionSelected,
+  trackEarnPercentAmountSelected,
+  trackEarnSimulationFailed,
+  trackEarnSwapCompleted,
+  trackEarnTokenSelected,
+} from "./earn";
+
+jest.mock("helpers/metrics", () => ({
+  emitMetric: jest.fn(),
+}));
+
+const mockEmitMetric = emitMetric as jest.MockedFunction<typeof emitMetric>;
+
+const POOL_ID = "CAJJZSGMMM3PD7N33TAPHGBUGTB43OC73HVIK2L2G6BNGGGYOSSYBXBD";
+
+describe("Earn funnel metrics", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("reports the token selection with its pool and rate", () => {
+    trackEarnTokenSelected({
+      assetCode: "USDC",
+      poolId: POOL_ID,
+      apy: 0.1694,
+    });
+
+    expect(mockEmitMetric).toHaveBeenCalledWith(
+      METRIC_NAMES.earnTokenSelected,
+      {
+        asset_code: "USDC",
+        pool_id: POOL_ID,
+        apy: 0.1694,
+      },
+    );
+  });
+
+  it("keeps a null rate null rather than coercing it to zero", () => {
+    trackEarnTokenSelected({ assetCode: "EURC", poolId: POOL_ID, apy: null });
+
+    expect(mockEmitMetric).toHaveBeenCalledWith(
+      METRIC_NAMES.earnTokenSelected,
+      {
+        asset_code: "EURC",
+        pool_id: POOL_ID,
+        apy: null,
+      },
+    );
+  });
+
+  it("reports the insufficient-balance sheet with the variant shown", () => {
+    trackEarnBalanceInsufficientShown({
+      assetCode: "EURC",
+      variant: NotEnoughVariant.SWAP_OR_TRANSFER,
+    });
+
+    expect(mockEmitMetric).toHaveBeenCalledWith(
+      METRIC_NAMES.earnBalanceInsufficientShown,
+      { asset_code: "EURC", variant: "swap-or-transfer" },
+    );
+  });
+
+  it.each(["buy", "swap", "transfer"] as const)(
+    "reports the %s remedy",
+    (action) => {
+      trackEarnFundingActionSelected({ assetCode: "USDC", action });
+
+      expect(mockEmitMetric).toHaveBeenCalledWith(
+        METRIC_NAMES.earnFundingActionSelected,
+        { asset_code: "USDC", action },
+      );
+    },
+  );
+
+  it("reports an in-earn swap separately from swap.completed", () => {
+    trackEarnSwapCompleted({ fromAssetCode: "XLM", toAssetCode: "USDC" });
+
+    expect(mockEmitMetric).toHaveBeenCalledWith(
+      METRIC_NAMES.earnSwapCompleted,
+      {
+        from_asset_code: "XLM",
+        to_asset_code: "USDC",
+      },
+    );
+  });
+
+  it("reports a simulation failure with its reason", () => {
+    trackEarnSimulationFailed({
+      assetCode: "XLM",
+      reasonCode: "simulation failed",
+    });
+
+    expect(mockEmitMetric).toHaveBeenCalledWith(
+      METRIC_NAMES.earnSimulationFailed,
+      { asset_code: "XLM", reason_code: "simulation failed" },
+    );
+  });
+
+  it("reports Max as percent 100", () => {
+    trackEarnPercentAmountSelected({ assetCode: "XLM", percent: 100 });
+
+    expect(mockEmitMetric).toHaveBeenCalledWith(
+      METRIC_NAMES.earnMaxAmountSelected,
+      { asset_code: "XLM", percent: 100 },
+    );
+  });
+
+  it("reports a deposit left in flight", () => {
+    trackEarnDepositAbandoned({ assetCode: "USDC", poolId: POOL_ID });
+
+    expect(mockEmitMetric).toHaveBeenCalledWith(
+      METRIC_NAMES.earnDepositAbandoned,
+      { asset_code: "USDC", pool_id: POOL_ID },
+    );
+  });
+
+  it("reports a completed deposit with its swap attribution", () => {
+    trackEarnDepositCompleted({
+      assetCode: "USDC",
+      poolId: POOL_ID,
+      apy: 0.1694,
+      viaSwap: true,
+    });
+
+    expect(mockEmitMetric).toHaveBeenCalledWith(
+      METRIC_NAMES.earnDepositCompleted,
+      {
+        asset_code: "USDC",
+        pool_id: POOL_ID,
+        apy: 0.1694,
+        via_swap: true,
+      },
+    );
+  });
+
+  it("carries no amount or fiat value on the deposit events", () => {
+    trackEarnDepositCompleted({
+      assetCode: "USDC",
+      poolId: POOL_ID,
+      apy: 0.1694,
+      viaSwap: false,
+    });
+
+    const [, body] = mockEmitMetric.mock.calls[0];
+    expect(Object.keys(body || {})).toEqual([
+      "asset_code",
+      "pool_id",
+      "apy",
+      "via_swap",
+    ]);
+  });
+
+  it("reports a failed deposit with a result code", () => {
+    trackEarnDepositFailed({
+      assetCode: "USDC",
+      poolId: POOL_ID,
+      reasonCode: "op_underfunded",
+    });
+
+    expect(mockEmitMetric).toHaveBeenCalledWith(
+      METRIC_NAMES.earnDepositFailed,
+      {
+        asset_code: "USDC",
+        pool_id: POOL_ID,
+        reason_code: "op_underfunded",
+      },
+    );
+  });
+});

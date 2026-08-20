@@ -3,11 +3,12 @@ import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 
 import { getCanonicalFromAsset } from "@shared/helpers/stellar";
+import { getAssetFromCanonical } from "helpers/stellar";
 import { ROUTES } from "popup/constants/routes";
 import { STEPS } from "popup/constants/earn";
 import { navigateTo } from "popup/helpers/navigate";
 import { emitScreenViewed, ScreenViewedProps } from "helpers/metrics";
-import { ActionStatus } from "@shared/api/types";
+import { ActionStatus, ErrorMessage } from "@shared/api/types";
 import {
   resetSubmission,
   resetSubmitStatus,
@@ -17,14 +18,21 @@ import {
   transactionSubmissionSelector,
 } from "popup/ducks/transactionSubmission";
 import {
+  earnSelector,
   resetEarn,
   saveEarnPool,
   saveSelectedAssetApy,
   saveSelectedAssetId,
+  setDidSwapInFlow,
   setEarnSubmitFailed,
 } from "popup/ducks/earn";
-import { emitMetric } from "helpers/metrics";
-import { METRIC_NAMES } from "popup/constants/metricsNames";
+import { scrubStrKeys } from "helpers/stellarStrKey";
+import { getResultCodes } from "popup/helpers/parseTransaction";
+import {
+  trackEarnDepositFailed,
+  trackEarnSwapCompleted,
+  trackEarnTokenSelected,
+} from "popup/metrics/earn";
 import { EarnIntro } from "popup/components/earn/EarnIntro";
 import { useEarnIntroSeen } from "popup/components/earn/EarnIntro/hooks/useEarnIntroSeen";
 import { EarnTokenPicker } from "popup/components/earn/EarnTokenPicker";
@@ -49,6 +57,11 @@ type EnterAnim = "from-bottom" | "from-right" | "from-left";
  * Screen-view metric per step. Names are kept in sync with freighter-mobile so
  * the Earn funnel joins cross-platform (RFC #2883); SWAP is absent because the
  * swap branch emits its own screens.
+ *
+ * DEPOSIT_CONFIRM is absent too: it is two screens in the funnel — `processing`
+ * while in flight, then `success` — and only EarnSubmit can see that
+ * transition, so it owns both of its screen views. The `confirm` step is the
+ * review sheet, emitted by EarnAmount.
  */
 const EARN_SCREEN_BY_STEP: Partial<
   Record<STEPS, { screen_name: string } & ScreenViewedProps>
@@ -56,11 +69,23 @@ const EARN_SCREEN_BY_STEP: Partial<
   [STEPS.INTRO]: { screen_name: "earn_intro", flow: "earn" },
   [STEPS.CHOOSE_TOKEN]: { screen_name: "earn_select_token", flow: "earn" },
   [STEPS.AMOUNT]: { screen_name: "earn_amount", flow: "earn" },
-  [STEPS.DEPOSIT_CONFIRM]: {
-    screen_name: "earn_confirm",
-    flow: "earn",
-    step: "confirm",
-  },
+};
+
+/**
+ * The `reason_code` for a failed deposit: the operation or transaction result
+ * code when the attempt reached the network, otherwise the error message — a
+ * rejected signature never gets result codes, and "unknown" for every one of
+ * those would collapse the failure modes we most want to tell apart. Scrubbed,
+ * because an error message can quote an address.
+ */
+const getFailureReasonCode = (error: ErrorMessage | undefined) => {
+  const resultCodes = getResultCodes(error);
+  return (
+    resultCodes.operations?.[0] ||
+    resultCodes.transaction ||
+    scrubStrKeys(error?.errorMessage) ||
+    "unknown"
+  );
 };
 
 export const Earn = () => {
@@ -69,6 +94,7 @@ export const Earn = () => {
   const { t } = useTranslation();
   const { hasSeenIntro, dismissIntro } = useEarnIntroSeen();
   const submission = useSelector(transactionSubmissionSelector);
+  const { pool } = useSelector(earnSelector);
 
   // Start on CHOOSE_TOKEN and only fall back to the interstitial once the
   // persisted flag has actually resolved to false. Defaulting to INTRO instead
@@ -120,11 +146,21 @@ export const Earn = () => {
   // A failed submission returns to the amount screen with a banner rather than
   // showing a terminal failure state — the design has no SubmitFail for Earn,
   // and the amount is the only place the user can act on the failure.
+  //
+  // This is the flow's single source of `earn.deposit_failed`. Every way a
+  // deposit can fail — a rejected signature, a rejected submit — lands in
+  // `submitStatus: ERROR` (see transactionSubmission's extraReducers), so the
+  // submit hook must not emit its own failure event or the two would double
+  // count.
   useEffect(() => {
     if (submission.submitStatus !== ActionStatus.ERROR) {
       return;
     }
-    emitMetric(METRIC_NAMES.earnDepositFailed);
+    trackEarnDepositFailed({
+      assetCode: getAssetFromCanonical(submission.transactionData.asset).code,
+      poolId: pool?.id || "",
+      reasonCode: getFailureReasonCode(submission.error),
+    });
     dispatch(setEarnSubmitFailed(true));
     // Keeps transactionData and the simulation so the amount screen comes back
     // populated and the user can retry without re-entering anything.
@@ -179,6 +215,11 @@ export const Earn = () => {
             refreshKey={pickerRefreshKey}
             onClose={closeEarnFlow}
             onSelect={(option, resolved) => {
+              trackEarnTokenSelected({
+                assetCode: option.code,
+                poolId: option.poolId,
+                apy: option.apy,
+              });
               dispatch(saveEarnPool(resolved.pool));
               dispatch(saveSelectedAssetApy(option.apy));
               dispatch(saveSelectedAssetId(option.assetId));
@@ -269,6 +310,13 @@ export const Earn = () => {
             dispatch(saveDestinationTokenDetails(null));
           }}
           onDone={({ fromCode, toCode }) => {
+            trackEarnSwapCompleted({
+              fromAssetCode: fromCode,
+              toAssetCode: toCode,
+            });
+            // Read back at deposit time as `via_swap`, which is how we tell a
+            // deposit the swap branch made possible from one that needed nothing.
+            dispatch(setDidSwapInFlow(true));
             setSwapTarget(null);
             dispatch(saveDestinationAsset(""));
             dispatch(saveDestinationTokenDetails(null));

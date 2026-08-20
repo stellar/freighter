@@ -5,9 +5,8 @@ import { captureException } from "@sentry/browser";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { AppDispatch } from "popup/App";
 import { initialState, isError, reducer } from "helpers/request";
-import { emitMetric } from "helpers/metrics";
 import { isMainnet } from "helpers/stellar";
-import { METRIC_NAMES } from "popup/constants/metricsNames";
+import { trackEarnDepositCompleted } from "popup/metrics/earn";
 import { AccountBalances, useGetBalances } from "helpers/hooks/useGetBalances";
 import {
   signFreighterSorobanTransaction,
@@ -28,6 +27,10 @@ interface SubmitEarnTxData {
  * Hardware wallets skip the in-page signing step; the prepared XDR is already
  * signed by the time this runs (the deposit's auth carries source-account
  * credentials, so the envelope signature covers it — no auth-entry round trip).
+ *
+ * Emits the deposit's success event only. Failures are emitted once, by the Earn
+ * view's `submitStatus: ERROR` effect — every path out of here that can fail
+ * rejects one of the transactionSubmission thunks, and those set that status.
  */
 export function useSubmitEarnTxData({
   isHardwareWallet,
@@ -35,12 +38,18 @@ export function useSubmitEarnTxData({
   publicKey,
   xdr,
   assetCode,
+  poolId,
+  apy,
+  viaSwap,
 }: {
   isHardwareWallet: boolean;
   networkDetails: NetworkDetails;
   publicKey: string;
   xdr: string;
   assetCode: string;
+  poolId: string;
+  apy: number | null;
+  viaSwap: boolean;
 }) {
   const reduxDispatch = useDispatch<AppDispatch>();
   const [state, dispatch] = useReducer(
@@ -66,11 +75,19 @@ export function useSubmitEarnTxData({
         );
 
         if (
-          signFreighterSorobanTransaction.fulfilled.match(res) &&
-          res.payload.signedTransaction
+          !signFreighterSorobanTransaction.fulfilled.match(res) ||
+          !res.payload.signedTransaction
         ) {
-          signedXDR = res.payload.signedTransaction;
+          // Submitting `xdr` unsigned would fail on the network anyway, but as a
+          // *second* failure: the rejected sign thunk has already set
+          // submitStatus to ERROR, the flow has already stepped back to the
+          // amount screen, and the late submit rejection would trip that effect
+          // a second time — a duplicate earn.deposit_failed for one attempt.
+          dispatch({ type: "FETCH_DATA_ERROR", payload: res.payload });
+          return res.payload;
         }
+
+        signedXDR = res.payload.signedTransaction;
       }
 
       const submitResp = await reduxDispatch(
@@ -82,8 +99,11 @@ export function useSubmitEarnTxData({
       );
 
       if (submitFreighterSorobanTransaction.fulfilled.match(submitResp)) {
-        emitMetric(METRIC_NAMES.earnDepositCompleted, {
-          asset_code: assetCode,
+        trackEarnDepositCompleted({
+          assetCode,
+          poolId,
+          apy,
+          viaSwap,
         });
 
         // The deposit moved funds out of the account, so refresh balances. A
