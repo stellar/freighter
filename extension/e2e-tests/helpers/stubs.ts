@@ -3406,15 +3406,72 @@ export const stubVerifiedToken = async (
 };
 
 /**
+ * A prepared Soroban envelope for `submit` on the mainnet Fixed pool, sourced by
+ * the e2e test account. Generated with the SDK rather than hand-trimmed, so it
+ * round-trips through `TransactionBuilder.fromXDR` under both network
+ * passphrases.
+ */
+const EARN_PREPARED_TX_XDR =
+  "AAAAAgAAAADLvQoIbFw9k0tgjZoOrLTuJJY9kHFYp/YAEAlt/xirbAASM1YAAAAASZYC0wAAAAEAAAAAAAAAAAAAAABqh3mXAAAAAAAAAAEAAAAAAAAAGAAAAAAAAAABEpzIzGM28f273MDzmDQ0w824X9nqhWl6N4LTGNh0pYAAAAAGc3VibWl0AAAAAAAEAAAAEgAAAAAAAAAAy70KCGxcPZNLYI2aDqy07iSWPZBxWKf2ABAJbf8Yq2wAAAASAAAAAAAAAADLvQoIbFw9k0tgjZoOrLTuJJY9kHFYp/YAEAlt/xirbAAAABIAAAAAAAAAAMu9CghsXD2TS2CNmg6stO4klj2QcVin9gAQCW3/GKtsAAAAEAAAAAEAAAABAAAAEQAAAAEAAAADAAAADwAAAAdhZGRyZXNzAAAAABIAAAABJbT82FmuwvpjSEOMSJs8PBDJi20hvk/TyzDLaJU++XcAAAAPAAAABmFtb3VudAAAAAAACgAAAAAAAAAAAAAAADuaygAAAAAPAAAADHJlcXVlc3RfdHlwZQAAAAMAAAACAAAAAAAAAAEAAAAAAAAAAAAAAAAAHoSAAAATiAAAC7gAAAAAAAhWWwAAAAA=";
+
+/**
+ * Earn-scoped override for the deposit's simulation.
+ *
+ * The shared `stubBackendSimulateTx` returns a placeholder `preparedTransaction`
+ * that is not a decodable envelope. Specs that never sign it are unaffected, but
+ * the Earn deposit hands that XDR to `signFreighterSorobanTransaction`, whose
+ * background handler does `TransactionBuilder.fromXDR(...).sign(...)` — so the
+ * placeholder throws and the flow lands on "Transaction failed. Try again."
+ * instead of the submit screen.
+ *
+ * This returns a real prepared Soroban envelope: `submit` on the mainnet Fixed
+ * pool, sourced by the test account, carrying sorobanData. Registered on the
+ * PAGE, because /simulate-tx is a backend-v1 endpoint the popup fetches directly
+ * — and registered after `stubAllExternalApis` so it wins the route match.
+ *
+ * `minResourceFee` is the pool's real ~0.0546 XLM rather than the shared stub's
+ * token 100 stroops, so the post-simulation fee guard is exercised at a
+ * realistic magnitude.
+ */
+export const stubEarnSimulateTx = async (page: Page) => {
+  await page.route("**/simulate-tx**", async (route) => {
+    await route.fulfill({
+      json: {
+        preparedTransaction: EARN_PREPARED_TX_XDR,
+        simulationResponse: {
+          minResourceFee: "546395",
+          cost: {
+            cpuInsns: "2000000",
+            memBytes: "5000",
+          },
+          latestLedger: "10000",
+        },
+      },
+    });
+  });
+};
+
+/**
  * Stubs the three Blend endpoints the Earn flow reads.
  *
  * Asset ids are the real mainnet SACs so `getBalanceByKey` resolves them the
  * way it does in production — XLM via its native-SAC special case, the rest via
  * classic-SAC derivation. Using placeholder contract ids would make every token
  * look unheld and silently collapse the "In your account" section.
+ *
+ * All three are backend-v2 endpoints, so the popup only sends a message and the
+ * actual fetch happens in the background service worker (#2879): `blend.ts` ->
+ * `fetchBackendV2` -> `callBackendV2`. They must therefore be intercepted with
+ * `context.route`; `page.route` only sees the popup and would let every request
+ * through to the real INDEXER_V2_URL, leaving the picker on its error state.
+ *
+ * `**\/accounts/positions**` does not collide with the page-level
+ * `**\/accounts/**` in `stubHorizonAccounts`: that one only ever sees Horizon's
+ * `loadAccount` from the popup, and this one only ever sees the service worker's
+ * positions POST.
  */
 export const stubBlendEarn = async (
-  page: Page,
+  context: BrowserContext,
   {
     positions = [],
   }: {
@@ -3437,7 +3494,7 @@ export const stubBlendEarn = async (
     supplied_usd: 50050000,
   });
 
-  await page.route("**/protocols/blend/earn-options**", async (route) => {
+  await context.route("**/protocols/blend/earn-options**", async (route) => {
     await route.fulfill({
       json: {
         data: {
@@ -3472,7 +3529,7 @@ export const stubBlendEarn = async (
     });
   });
 
-  await page.route("**/protocols/blend/pools**", async (route) => {
+  await context.route("**/protocols/blend/pools**", async (route) => {
     await route.fulfill({
       json: {
         data: {
@@ -3509,7 +3566,7 @@ export const stubBlendEarn = async (
     });
   });
 
-  await page.route("**/accounts/positions**", async (route) => {
+  await context.route("**/accounts/positions**", async (route) => {
     await route.fulfill({ json: { data: positions } });
   });
 };
