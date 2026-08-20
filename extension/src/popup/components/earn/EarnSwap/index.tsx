@@ -11,6 +11,10 @@ import {
   ScreenReaderOnly,
 } from "popup/basics/shadcn/Sheet";
 import { EARN_SWAP_STEPS } from "popup/constants/earn";
+import {
+  DEFAULT_AMOUNT,
+  DEFAULT_AMOUNT_USD,
+} from "popup/components/amount/constants";
 import { InputType } from "helpers/transaction";
 import { emitMetric, emitScreenViewed } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
@@ -18,7 +22,7 @@ import { getAssetFromCanonical } from "helpers/stellar";
 import { TransactionConfirm } from "popup/components/InternalTransaction/SubmitTransaction";
 import { SwapAsset } from "popup/components/swap/SwapAsset";
 import { SwapAmount } from "popup/components/swap/SwapAmount";
-import { useSwapSubmitQuoteExpiry } from "popup/components/swap/SwapAmount/hooks/useSwapSubmitQuoteExpiry";
+import { useSwapSubmitQuoteExpiry } from "popup/components/swap/hooks/useSwapSubmitQuoteExpiry";
 import { resetSimulation } from "popup/ducks/token-payment";
 import {
   DestinationTokenDetails,
@@ -85,8 +89,8 @@ export const EarnSwap = ({
     dispatch(resetSimulation());
     dispatch(saveAsset("native"));
     dispatch(saveIsToken(false));
-    dispatch(saveAmount("0"));
-    dispatch(saveAmountUsd("0.00"));
+    dispatch(saveAmount(DEFAULT_AMOUNT));
+    dispatch(saveAmountUsd(DEFAULT_AMOUNT_USD));
     dispatch(saveDestinationAsset(destinationAsset));
     dispatch(saveDestinationTokenDetails(destinationTokenDetails));
     emitScreenViewed("earn_swap_amount", { flow: "earn" });

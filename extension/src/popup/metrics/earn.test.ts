@@ -1,4 +1,6 @@
 import { emitMetric } from "helpers/metrics";
+import { BLEND_FIXED_POOL_IDS } from "@shared/constants/blend";
+import { NETWORKS } from "@shared/constants/stellar";
 import { NotEnoughVariant } from "popup/constants/earn";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 
@@ -21,7 +23,7 @@ jest.mock("helpers/metrics", () => ({
 
 const mockEmitMetric = emitMetric as jest.MockedFunction<typeof emitMetric>;
 
-const POOL_ID = "CAJJZSGMMM3PD7N33TAPHGBUGTB43OC73HVIK2L2G6BNGGGYOSSYBXBD";
+const POOL_ID = BLEND_FIXED_POOL_IDS[NETWORKS.PUBLIC]!;
 
 describe("Earn funnel metrics", () => {
   beforeEach(() => {

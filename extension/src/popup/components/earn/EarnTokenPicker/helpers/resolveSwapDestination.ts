@@ -59,7 +59,9 @@ export const resolveSwapDestination = async ({
       // The account holds none of it, so if it is a classic asset there is no
       // trustline yet — Swap bundles the changeTrust when this is true.
       requiresTrustline: canonical !== "native",
-      decimals: option.decimals || CLASSIC_ASSET_DECIMALS,
+      // `??`, matching the picker: `||` would rewrite a genuine 0-decimal
+      // token to 7.
+      decimals: option.decimals ?? CLASSIC_ASSET_DECIMALS,
       issuer,
       // Carry the row's icon across: the swap screens read the destination's
       // logo from here precisely because a non-held token is absent from the

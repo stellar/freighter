@@ -8,11 +8,15 @@ import { AssetIcon } from "popup/components/account/AccountAssets";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { PoolIcon } from "popup/components/earn/PoolIcon";
 import { getCatalogAssetIdentity } from "popup/components/earn/helpers/earnAssetIcons";
+import { StatRow } from "popup/components/earn/StatRow";
 
 import { usePoolReserveIcons } from "./hooks/usePoolReserveIcons";
 
 import { getPoolDescription } from "./poolDescriptions";
-import { formatCompactUsd, formatRate } from "./helpers/formatPoolStats";
+import {
+  formatCompactUsd,
+  formatRate,
+} from "popup/components/earn/helpers/formatPoolStats";
 
 import "./styles.scss";
 
@@ -20,32 +24,6 @@ interface PoolDetailsSheetProps {
   pool: BlendCatalogPool;
   onClose: () => void;
 }
-
-const StatRow = ({
-  label,
-  value,
-  isPositive = false,
-  testId,
-}: {
-  label: string;
-  value: string;
-  isPositive?: boolean;
-  testId: string;
-}) => (
-  <div className="PoolDetailsSheet__row">
-    <Text as="div" size="sm">
-      {label}
-    </Text>
-    <div
-      className={`PoolDetailsSheet__row-value ${
-        isPositive ? "PoolDetailsSheet__row-value--positive" : ""
-      }`}
-      data-testid={testId}
-    >
-      {value}
-    </div>
-  </div>
-);
 
 /**
  * Pool description and market stats, opened from the pool card on the amount
@@ -115,33 +93,33 @@ export const PoolDetailsSheet = ({ pool, onClose }: PoolDetailsSheetProps) => {
       </div>
 
       <div className="PoolDetailsSheet__group">
-        <div className="PoolDetailsSheet__row">
-          <Text as="div" size="sm">
-            {t("Accepted tokens")}
-          </Text>
-          <div className="PoolDetailsSheet__tokens">
-            {pool.reserves.map((reserve) => {
-              // The catalog reports native XLM with no symbol and no name, so
-              // the identity has to be derived rather than read straight off the
-              // reserve — AssetIcon needs a code to recognise XLM and an issuer
-              // to look anything else up.
-              const { code, issuer } = getCatalogAssetIdentity({
-                symbol: reserve.symbol,
-                name: reserve.name,
-                assetId: reserve.assetId,
-                networkDetails,
-              });
-              return (
-                <AssetIcon
-                  key={reserve.assetId}
-                  assetIcons={reserveIcons}
-                  code={code}
-                  issuerKey={issuer}
-                />
-              );
-            })}
-          </div>
-        </div>
+        <StatRow
+          label={t("Accepted tokens")}
+          value={
+            <div className="PoolDetailsSheet__tokens">
+              {pool.reserves.map((reserve) => {
+                // The catalog reports native XLM with no symbol and no name, so
+                // the identity has to be derived rather than read straight off
+                // the reserve — AssetIcon needs a code to recognise XLM and an
+                // issuer to look anything else up.
+                const { code, issuer } = getCatalogAssetIdentity({
+                  symbol: reserve.symbol,
+                  name: reserve.name,
+                  assetId: reserve.assetId,
+                  networkDetails,
+                });
+                return (
+                  <AssetIcon
+                    key={reserve.assetId}
+                    assetIcons={reserveIcons}
+                    code={code}
+                    issuerKey={issuer}
+                  />
+                );
+              })}
+            </div>
+          }
+        />
         <StatRow
           label={t("Supplied")}
           value={formatCompactUsd(pool.suppliedUsd)}

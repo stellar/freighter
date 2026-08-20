@@ -47,28 +47,6 @@
     padding: 0 pxToRem(16);
   }
 
-  &__row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: pxToRem(12);
-    padding: pxToRem(14) 0;
-    color: var(--sds-clr-gray-11);
-
-    & + & {
-      border-top: 1px solid var(--sds-clr-gray-06);
-    }
-  }
-
-  &__row-value {
-    color: var(--sds-clr-gray-12);
-    font-weight: 500;
-
-    &--positive {
-      color: var(--sds-clr-green-11);
-    }
-  }
-
   // Overlapping stack, matching the design's accepted-token cluster: 16px icons
   // on a 12px stride (Figma 9448:19027), which is also what lets four of them
   // fit the row's slot. AssetIcon's own 2rem is sized for the account's balance

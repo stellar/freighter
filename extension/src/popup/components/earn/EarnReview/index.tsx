@@ -22,7 +22,8 @@ import { PoolIcon } from "popup/components/earn/PoolIcon";
 import { AssetIcon } from "popup/components/account/AccountAssets";
 import { getAuthEntryBoundAddress } from "popup/helpers/soroban";
 import { formatAmount } from "popup/helpers/formatters";
-import { formatRate } from "popup/components/earn/PoolDetailsSheet/helpers/formatPoolStats";
+import { formatRate } from "popup/components/earn/helpers/formatPoolStats";
+import { StatRow } from "popup/components/earn/StatRow";
 
 import { formatProjection, projectEarnings } from "./helpers/projectEarnings";
 
@@ -48,32 +49,6 @@ interface EarnReviewProps {
   onCancel: () => void;
   onConfirm: () => void;
 }
-
-const Row = ({
-  label,
-  value,
-  isPositive = false,
-  testId,
-}: {
-  label: string;
-  value: React.ReactNode;
-  isPositive?: boolean;
-  testId?: string;
-}) => (
-  <div className="EarnReview__row">
-    <Text as="div" size="sm">
-      {label}
-    </Text>
-    <div
-      className={`EarnReview__row-value ${
-        isPositive ? "EarnReview__row-value--positive" : ""
-      }`}
-      data-testid={testId}
-    >
-      {value}
-    </div>
-  </div>
-);
 
 /**
  * The gate before signing: what is being deposited, where, what it becomes, and
@@ -254,7 +229,7 @@ export const EarnReview = ({
       </div>
 
       <div className="EarnReview__group EarnReview__group--rows">
-        <Row
+        <StatRow
           label={t("Position")}
           testId="earn-review-position"
           value={
@@ -267,13 +242,13 @@ export const EarnReview = ({
             </>
           }
         />
-        <Row
+        <StatRow
           label={t("Current APY")}
           value={formatRate(apy)}
           isPositive
           testId="earn-review-apy"
         />
-        <Row
+        <StatRow
           label={t("Monthly earnings (est.)")}
           testId="earn-review-monthly"
           value={
@@ -286,7 +261,7 @@ export const EarnReview = ({
             </>
           }
         />
-        <Row
+        <StatRow
           label={t("Yearly earnings (est.)")}
           testId="earn-review-yearly"
           value={

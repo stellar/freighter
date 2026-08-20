@@ -18,7 +18,9 @@ import {
  * with a fresh quote, instead of dead-ending in SubmitFail.
  *
  * Extracted from the Swap route so the Earn flow's embedded swap gets the same
- * recovery — a swap that dead-ends there would strand the user mid-deposit.
+ * recovery — a swap that dead-ends there would strand the user mid-deposit. Both
+ * callers host the swap steps rather than being SwapAmount itself, which is why
+ * this sits beside the swap components rather than inside one of them.
  *
  * Returns `isQuoteExpiredAtSubmit` so the caller can render nothing on the
  * frame the recovery runs, keeping SubmitFail from flashing before the step

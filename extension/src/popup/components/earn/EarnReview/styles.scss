@@ -42,29 +42,6 @@
     padding: pxToRem(6) 0 0 pxToRem(10);
   }
 
-  &__row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: pxToRem(12);
-    padding: pxToRem(14) 0;
-    color: var(--sds-clr-gray-11);
-
-    & + & {
-      border-top: 1px solid var(--sds-clr-gray-06);
-    }
-  }
-
-  &__row-value {
-    color: var(--sds-clr-gray-12);
-    font-weight: 500;
-    text-align: right;
-
-    &--positive {
-      color: var(--sds-clr-green-11);
-    }
-  }
-
   // The "before" half of a before -> after pair is de-emphasised so the
   // resulting value reads as the answer.
   &__before {

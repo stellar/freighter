@@ -66,6 +66,11 @@ import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { SlideupModal } from "popup/components/SlideupModal";
 import { AmountCard } from "popup/components/amount/AmountCard";
 import { PercentageButtons } from "popup/components/amount/PercentageButtons";
+import {
+  DEFAULT_AMOUNT,
+  DEFAULT_AMOUNT_USD,
+} from "popup/components/amount/constants";
+import { getPercentageAmount } from "popup/components/amount/helpers/percentageAmount";
 import { shouldShowXlmReservePreflight } from "popup/helpers/xlmReserve";
 import { horizonGetBestReceivePath } from "popup/helpers/horizonGetBestPath";
 import { XlmReserveSheet } from "popup/components/swap/XlmReserveSheet";
@@ -75,8 +80,6 @@ import { EditSlippage } from "./EditSlippage";
 import "./styles.scss";
 
 // Canonical "zero" values for the swap amount and its USD equivalent.
-const DEFAULT_AMOUNT = "0";
-const DEFAULT_AMOUNT_USD = "0.00";
 
 interface SwapAmountProps {
   inputType: InputType;
@@ -833,12 +836,11 @@ export const SwapAmount = ({
                       // the committed amount is identical in crypto and fiat
                       // display. In fiat mode the fiat field mirrors it (rounded
                       // to cents) for display only.
-                      const pctAmount = new BigNumber(
-                        cleanAmount(availableBalance),
-                      )
-                        .multipliedBy(new BigNumber(pct).dividedBy(100))
-                        .decimalPlaces(assetDecimals)
-                        .toString();
+                      const pctAmount = getPercentageAmount({
+                        availableBalance: cleanAmount(availableBalance),
+                        pct,
+                        decimals: assetDecimals,
+                      });
                       formik.setFieldValue("amount", pctAmount);
                       dispatch(saveAmount(pctAmount));
                       if (inputType === "fiat" && assetPrice) {

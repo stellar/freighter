@@ -2,7 +2,7 @@ import React from "react";
 import { Icon, Text } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
-import { formatRate } from "popup/components/earn/PoolDetailsSheet/helpers/formatPoolStats";
+import { formatRate } from "popup/components/earn/helpers/formatPoolStats";
 import { PoolIcon } from "popup/components/earn/PoolIcon";
 
 interface PoolCardProps {

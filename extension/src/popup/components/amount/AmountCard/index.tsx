@@ -131,6 +131,22 @@ export const AmountCard = ({
     securityLevel === SecurityLevel.SUSPICIOUS;
   const isMalicious = securityLevel === SecurityLevel.MALICIOUS;
 
+  // The icon-plus-code pair is identical whether the pill is a button or the
+  // locked label, and only the chevron differs.
+  const assetPill = (
+    <>
+      <AssetIcon
+        assetIcons={assetIssuerKey || assetCode !== "XLM" ? assetIcons : {}}
+        code={assetCode}
+        issuerKey={assetIssuerKey}
+        icon={assetIcon}
+        isSuspicious={isSuspicious}
+        isMalicious={isMalicious}
+      />
+      <span className="AmountCard__asset-code">{assetCode}</span>
+    </>
+  );
+
   const isAmountShownInvalid =
     isAmountTooHigh && invalidAmountStyle === "amount";
   const fontClass = `AmountCard__input-amount AmountCard__${amountFontSizeClass}${
@@ -256,17 +272,7 @@ export const AmountCard = ({
             className="AmountCard__asset-selector-inline AmountCard__asset-selector-inline--locked"
             data-testid="send-amount-dest-asset-locked"
           >
-            <AssetIcon
-              assetIcons={
-                assetIssuerKey || assetCode !== "XLM" ? assetIcons : {}
-              }
-              code={assetCode}
-              issuerKey={assetIssuerKey}
-              icon={assetIcon}
-              isSuspicious={isSuspicious}
-              isMalicious={isMalicious}
-            />
-            <span className="AmountCard__asset-code">{assetCode}</span>
+            {assetPill}
           </div>
         ) : (
           <button
@@ -280,17 +286,7 @@ export const AmountCard = ({
           >
             {assetCode ? (
               <>
-                <AssetIcon
-                  assetIcons={
-                    assetIssuerKey || assetCode !== "XLM" ? assetIcons : {}
-                  }
-                  code={assetCode}
-                  issuerKey={assetIssuerKey}
-                  icon={assetIcon}
-                  isSuspicious={isSuspicious}
-                  isMalicious={isMalicious}
-                />
-                <span className="AmountCard__asset-code">{assetCode}</span>
+                {assetPill}
                 <Icon.ChevronDown />
               </>
             ) : (

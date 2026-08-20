@@ -1,6 +1,7 @@
 import { Asset, Networks } from "stellar-sdk";
 
 import { NetworkDetails } from "@shared/constants/stellar";
+import { PUBLIC_SACS } from "@shared/constants/sac";
 import {
   getCatalogAssetIdentity,
   getCatalogIconKey,
@@ -37,7 +38,7 @@ describe("getCatalogIconKey", () => {
       getCatalogIconKey({
         code: "USDC",
         issuer: USDC_ISSUER,
-        assetId: "CCW67TSZV3SSS2HXMBQ5JFGCKJNXKZM7UQUWUZPUTHXSTZLEO7SJMI75",
+        assetId: PUBLIC_SACS.USDC!,
         networkDetails,
       }),
     ).toBe(`USDC:${USDC_ISSUER}`);
@@ -57,7 +58,7 @@ describe("getCatalogIconKey", () => {
     expect(
       getCatalogIconKey({
         code: "",
-        assetId: "CCW67TSZV3SSS2HXMBQ5JFGCKJNXKZM7UQUWUZPUTHXSTZLEO7SJMI75",
+        assetId: PUBLIC_SACS.USDC!,
         networkDetails,
       }),
     ).toBe("");
@@ -65,7 +66,7 @@ describe("getCatalogIconKey", () => {
 });
 
 describe("getCatalogAssetIdentity", () => {
-  const USDC_SAC = "CCW67TSZV3SSS2HXMBQ5JFGCKJNXKZM7UQUWUZPUTHXSTZLEO7SJMI75";
+  const USDC_SAC = PUBLIC_SACS.USDC!;
 
   // The reported bug: the live catalog gives native XLM a null symbol and a null
   // name, so an account holding no XLM had nothing to name the row with and it

@@ -4,6 +4,7 @@ import {
   MAINNET_NETWORK_DETAILS,
   TESTNET_NETWORK_DETAILS,
 } from "@shared/constants/stellar";
+import { PUBLIC_SACS } from "@shared/constants/sac";
 import { NotEnoughVariant } from "popup/constants/earn";
 
 import {
@@ -84,17 +85,9 @@ describe("hasSwappableBalance", () => {
 
   it("ignores Soroban-only balances", () => {
     // Swap builds a classic pathPaymentStrictSend and rejects contract assets.
-    expect(
-      hasSwappableBalance(
-        [
-          soroban(
-            "CCW67TSZV3SSS2HXMBQ5JFGCKJNXKZM7UQUWUZPUTHXSTZLEO7SJMI75",
-            "9",
-          ),
-        ],
-        target,
-      ),
-    ).toBe(false);
+    expect(hasSwappableBalance([soroban(PUBLIC_SACS.USDC!, "9")], target)).toBe(
+      false,
+    );
   });
 
   it("is false for an empty account", () => {

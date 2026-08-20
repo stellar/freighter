@@ -2,10 +2,19 @@
  * Marks a shared screen as having been reached from Earn, via
  * `?flow=<EARN_FLOW_PARAM>`. Lets the wallet-address screen carry the titled
  * chrome the Earn design asks for without changing its other five callers.
+ *
+ * The key is a constant so the screens that append it and the screens that read
+ * it cannot drift apart — a renamed key would otherwise silently stop matching.
  */
+export const FLOW_QUERY_KEY = "flow";
+
 export const EARN_FLOW_PARAM = "earn";
 
-export const EARN_FLOW_QUERY = `?flow=${EARN_FLOW_PARAM}`;
+export const EARN_FLOW_QUERY = `?${FLOW_QUERY_KEY}=${EARN_FLOW_PARAM}`;
+
+/** Was this screen reached from the Earn flow? Takes a `location.search`. */
+export const isEarnFlowSearch = (search: string) =>
+  new URLSearchParams(search).get(FLOW_QUERY_KEY) === EARN_FLOW_PARAM;
 
 /**
  * Steps in the Earn deposit flow.

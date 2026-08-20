@@ -5,6 +5,9 @@ import {
 } from "../blend";
 import { sendMessageToBackground } from "../extensionMessaging";
 import { SERVICE_TYPES } from "@shared/constants/services";
+import { BLEND_FIXED_POOL_IDS } from "@shared/constants/blend";
+import { PUBLIC_SACS } from "@shared/constants/sac";
+import { NETWORKS } from "@shared/constants/stellar";
 
 jest.mock("../extensionMessaging");
 jest.mock("@sentry/browser", () => ({ captureException: jest.fn() }));
@@ -12,9 +15,9 @@ jest.mock("@sentry/browser", () => ({ captureException: jest.fn() }));
 const mockedSend = sendMessageToBackground as jest.Mock;
 const networkDetails = { network: "PUBLIC" } as never;
 
-const POOL_ID = "CAJJZSGMMM3PD7N33TAPHGBUGTB43OC73HVIK2L2G6BNGGGYOSSYBXBD";
-const USDC_SAC = "CCW67TSZV3SSS2HXMBQ5JFGCKJNXKZM7UQUWUZPUTHXSTZLEO7SJMI75";
-const XLM_SAC = "CAS3J7GYLGXMF6TDJBBYYSE3HQ6BBSMLNUQ34T6TZMYMW2EVH34XOWMA";
+const POOL_ID = BLEND_FIXED_POOL_IDS[NETWORKS.PUBLIC]!;
+const USDC_SAC = PUBLIC_SACS.USDC!;
+const XLM_SAC = PUBLIC_SACS.XLM;
 const PUBLIC_KEY = "GAX2VVWVHU5YQY5J3NJBXKHI3FFKZN54BE6GRJCWSIKSBZTQWJJNJMPC";
 
 beforeEach(() => {

@@ -11,7 +11,7 @@ import { truncatedPublicKey } from "helpers/stellar";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { openTab } from "popup/helpers/navigate";
 import { View } from "popup/basics/layout/View";
-import { EARN_FLOW_PARAM } from "popup/constants/earn";
+import { isEarnFlowSearch } from "popup/constants/earn";
 import { accountNameSelector } from "popup/ducks/accountServices";
 import { AppDataType, useGetAppData } from "helpers/hooks/useGetAppData";
 import { RequestState } from "constants/request";
@@ -30,8 +30,7 @@ export const ViewPublicKey = () => {
   const navigate = useNavigate();
   // The Earn flow marks itself so this shared screen can carry its chrome
   // without changing how every other caller looks.
-  const isEarnFlow =
-    new URLSearchParams(location.search).get("flow") === EARN_FLOW_PARAM;
+  const isEarnFlow = isEarnFlowSearch(location.search);
   const accountName = useSelector(accountNameSelector);
   const { state, fetchData } = useGetAppData();
   // Holds the currently-shown copy-toast's id (see copyAddress below for why

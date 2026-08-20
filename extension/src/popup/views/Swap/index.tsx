@@ -12,7 +12,7 @@ import { TransactionConfirm } from "popup/components/InternalTransaction/SubmitT
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { SwapAsset } from "popup/components/swap/SwapAsset";
 import { SwapAmount } from "popup/components/swap/SwapAmount";
-import { useSwapSubmitQuoteExpiry } from "popup/components/swap/SwapAmount/hooks/useSwapSubmitQuoteExpiry";
+import { useSwapSubmitQuoteExpiry } from "popup/components/swap/hooks/useSwapSubmitQuoteExpiry";
 import { AppDispatch } from "popup/App";
 import {
   resetSubmission,

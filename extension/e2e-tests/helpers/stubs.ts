@@ -1,5 +1,8 @@
 import { BrowserContext, Page } from "@playwright/test";
 import { USDC_TOKEN_ADDRESS, TEST_TOKEN_ADDRESS } from "./test-token";
+import { BLEND_FIXED_POOL_IDS } from "@shared/constants/blend";
+import { PUBLIC_SACS } from "@shared/constants/sac";
+import { NETWORKS } from "@shared/constants/stellar";
 
 export const createAssetObject = (assetCode: string | null, issuer: string) => {
   if (!assetCode || assetCode === "XLM") {
@@ -3418,10 +3421,10 @@ export const stubBlendEarn = async (
     positions?: unknown[];
   } = {},
 ) => {
-  const XLM_SAC = "CAS3J7GYLGXMF6TDJBBYYSE3HQ6BBSMLNUQ34T6TZMYMW2EVH34XOWMA";
-  const USDC_SAC = "CCW67TSZV3SSS2HXMBQ5JFGCKJNXKZM7UQUWUZPUTHXSTZLEO7SJMI75";
-  const EURC_SAC = "CDTKPWPLOURQA2SGTKTUQOWRCBZEORB4BWBOMJ3D3ZTQQSGE5F6JBQLV";
-  const POOL_ID = "CAJJZSGMMM3PD7N33TAPHGBUGTB43OC73HVIK2L2G6BNGGGYOSSYBXBD";
+  const { XLM: XLM_SAC, USDC: USDC_SAC, EURC: EURC_SAC } = PUBLIC_SACS;
+  // The same constant the flow filters on, so a pool-id change cannot leave the
+  // stub serving an offer the picker silently discards.
+  const POOL_ID = BLEND_FIXED_POOL_IDS[NETWORKS.PUBLIC]!;
 
   const offer = (supplyApy: number) => ({
     id: POOL_ID,

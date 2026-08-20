@@ -9,6 +9,7 @@ import { View } from "popup/basics/layout/View";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { AmountCard } from "popup/components/amount/AmountCard";
 import { PercentageButtons } from "popup/components/amount/PercentageButtons";
+import { DEFAULT_AMOUNT } from "popup/components/amount/constants";
 import {
   buildFiatLineText,
   getAmountFontSizeClass,
@@ -56,7 +57,7 @@ import {
   isInsufficientBalanceFailure,
   needsXlmForFee,
 } from "./helpers/earnCtaState";
-import { getPercentageDepositAmount } from "./helpers/depositAmount";
+import { getPercentageAmount } from "popup/components/amount/helpers/percentageAmount";
 import {
   ResolvedEarnAmount,
   useGetEarnAmountData,
@@ -64,8 +65,6 @@ import {
 import { useSimulateEarnDeposit } from "./hooks/useSimulateEarnDeposit";
 
 import "./styles.scss";
-
-const DEFAULT_AMOUNT = "0";
 
 interface EarnAmountProps {
   goBack: () => void;
@@ -395,8 +394,8 @@ export const EarnAmount = ({ goBack, onConfirm }: EarnAmountProps) => {
               });
               dispatch(
                 saveAmount(
-                  getPercentageDepositAmount({
-                    maxDepositable: availableBalance,
+                  getPercentageAmount({
+                    availableBalance,
                     pct,
                     decimals,
                   }),
