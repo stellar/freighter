@@ -101,6 +101,13 @@ export const EarnAmount = ({ goBack, onConfirm }: EarnAmountProps) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // A different asset means the previous asset's rejection no longer describes
+  // anything: the amount and simulation have been cleared with it. The screen
+  // stays mounted while the picker is up, so nothing tears this state down.
+  useEffect(() => {
+    setSimulationError("");
+  }, [asset]);
+
   // The review sheet is the flow's `confirm` step — the last screen before a
   // signature. It is a sheet rather than a step, so the Earn view's step effect
   // never sees it. The ref clears on close so correcting the amount and

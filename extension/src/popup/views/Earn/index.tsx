@@ -20,6 +20,7 @@ import {
 import {
   earnSelector,
   resetEarn,
+  saveCurrentPositionTokens,
   saveEarnPool,
   saveSelectedAssetApy,
   saveSelectedAssetId,
@@ -94,7 +95,7 @@ export const Earn = () => {
   const { t } = useTranslation();
   const { hasSeenIntro, dismissIntro } = useEarnIntroSeen();
   const submission = useSelector(transactionSubmissionSelector);
-  const { pool } = useSelector(earnSelector);
+  const { pool, selectedAssetId } = useSelector(earnSelector);
 
   // Start on CHOOSE_TOKEN and only fall back to the interstitial once the
   // persisted flag has actually resolved to false. Defaulting to INTRO instead
@@ -220,6 +221,19 @@ export const Earn = () => {
                 poolId: option.poolId,
                 apy: option.apy,
               });
+              // Picking a different asset invalidates everything the last
+              // one configured — the amount, its simulation and prepared XDR,
+              // the fetched position, a previous failure banner. Only a real
+              // change clears it, so backing out of the amount screen and
+              // re-picking the same asset returns to the amount already
+              // entered. The amount screen clears its own simulation error off
+              // the same asset change; it stays mounted behind the picker, so
+              // nothing here can reach its component state.
+              if (option.assetId !== selectedAssetId) {
+                dispatch(resetSubmission());
+                dispatch(saveCurrentPositionTokens("0"));
+                dispatch(setEarnSubmitFailed(false));
+              }
               dispatch(saveEarnPool(resolved.pool));
               dispatch(saveSelectedAssetApy(option.apy));
               dispatch(saveSelectedAssetId(option.assetId));

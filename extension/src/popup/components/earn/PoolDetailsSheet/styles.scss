@@ -6,11 +6,33 @@
   flex-direction: column;
   gap: pxToRem(12);
 
+  // The stat rows grow as the pool gains fields, and SlideupModal sizes itself
+  // to its content's scrollHeight — so without a cap here the sheet runs to the
+  // top of the popup with nothing to scroll. Capped like `.EarnReview--details`,
+  // with the header and the Close button pinned and only the body scrolling.
+  max-height: 85vh;
+
   &__header {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
     gap: pxToRem(12);
+    flex: none;
+  }
+
+  &__body {
+    flex: 1;
+    // Without this a flex item refuses to shrink below its content height, and
+    // the overflow never engages.
+    min-height: 0;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(12);
+  }
+
+  > .Button {
+    flex: none;
   }
 
   &__identity {
