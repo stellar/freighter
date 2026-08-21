@@ -359,7 +359,10 @@ export const SignMessage = () => {
             </div>
           )}
         </View.Content>
-        <View.Footer>
+        {/* The default footer is a fixed 80px, which this footer's warning line
+            plus button row overflows — the text then spills up over the content
+            pane. Size to content so it grows instead. */}
+        <View.Footer customHeight="auto">
           {!shouldShowWarning && (
             <span className="SignMessage__Warning">
               {t("Only confirm if you trust this site")}
