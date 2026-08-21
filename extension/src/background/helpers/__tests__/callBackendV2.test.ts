@@ -1,5 +1,5 @@
 import { Buffer } from "buffer";
-import { Keypair } from "stellar-sdk";
+import { Keypair, xdr } from "stellar-sdk";
 
 import * as Sentry from "@sentry/browser";
 
@@ -30,7 +30,7 @@ describe("callBackendV2", () => {
       .spyOn(sessionMod, "getEncryptedTemporaryData")
       .mockResolvedValue(VECTOR_MNEMONIC);
     jest.spyOn(deriveMod, "deriveAuthKeypair").mockResolvedValue({
-      userId: KP.rawPublicKey().toString("hex"),
+      userId: xdr.encodeBytes(KP.rawPublicKey(), "hex"),
       keypair: KP,
     });
 
@@ -90,7 +90,7 @@ describe("callBackendV2", () => {
     const derive = jest
       .spyOn(deriveMod, "deriveAuthKeypair")
       .mockResolvedValue({
-        userId: KP.rawPublicKey().toString("hex"),
+        userId: xdr.encodeBytes(KP.rawPublicKey(), "hex"),
         keypair: KP,
       });
     const fetchImpl = jest
@@ -142,7 +142,7 @@ describe("callBackendV2", () => {
       .spyOn(sessionMod, "getEncryptedTemporaryData")
       .mockResolvedValue(VECTOR_MNEMONIC);
     jest.spyOn(deriveMod, "deriveAuthKeypair").mockResolvedValue({
-      userId: KP.rawPublicKey().toString("hex"),
+      userId: xdr.encodeBytes(KP.rawPublicKey(), "hex"),
       keypair: KP,
     });
 

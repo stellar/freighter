@@ -125,7 +125,7 @@ test("Send persists inputs and submits to network", async ({
   expect(submitTxResponseJson.memo).toBe("test memo");
   expect(submitTxResponseJson.max_fee).toBe("900");
 
-  const tx = TransactionBuilder.fromXDR(
+  const tx = TransactionBuilder.fromXdr(
     submitTxResponseJson.envelope_xdr,
     "Test SDF Network ; September 2015",
   );

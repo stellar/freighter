@@ -257,7 +257,7 @@ function useGetSignTxData(
       }
 
       // Always fetch icons for changeTrust operations (regardless of includeIcons flag)
-      const transaction = TransactionBuilder.fromXDR(
+      const transaction = TransactionBuilder.fromXdr(
         scanOptions.xdr,
         networkDetails.networkPassphrase,
       );

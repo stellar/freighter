@@ -163,7 +163,7 @@ describe("AuthEntry", () => {
         new ScInt(100).toI128(),
       ],
       contractAddress: xdr.ScAddress.scAddressTypeContract(
-        StrKey.decodeContract(CONTRACT) as any,
+        new xdr.ContractId(StrKey.decodeContract(CONTRACT)),
       ),
     });
 

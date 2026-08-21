@@ -115,7 +115,7 @@ function useSubmitTxData({
           // a defaulted/deep-linked destination has no snapshot, but the
           // changeTrust op it confirmed is right there in the XDR.
           const Sdk = getSdk(networkDetails.networkPassphrase);
-          const submittedTx = Sdk.TransactionBuilder.fromXDR(
+          const submittedTx = Sdk.TransactionBuilder.fromXdr(
             signedXDR,
             networkDetails.networkPassphrase,
           );
