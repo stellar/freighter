@@ -380,7 +380,7 @@ test("History row displays muxed address extracted from XDR for payment", async 
       .setTimeout(30)
       .build();
 
-    const envelopeXdr = tx.toXDR();
+    const envelopeXdr = tx.toXdr();
     // Stub account history BEFORE login to ensure it catches all requests
     // (returns both base G address and muxed M address)
     await context.route("**/account-history/**", async (route) => {
@@ -480,7 +480,7 @@ test.skip("History row displays address extracted from XDR for createAccount", a
     .setTimeout(30)
     .build();
 
-  const envelopeXdr = tx.toXDR();
+  const envelopeXdr = tx.toXdr();
 
   await stubAccountBalances(page);
   await loginToTestAccount({ page, extensionId, context });
@@ -562,7 +562,7 @@ test("History row displays regular G address when no muxed address in XDR", asyn
     .setTimeout(30)
     .build();
 
-  const envelopeXdr = tx.toXDR();
+  const envelopeXdr = tx.toXdr();
 
   const stubOverrides = async () => {
     // Stub account history

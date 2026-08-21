@@ -176,7 +176,7 @@ export const AuthEntries = ({ entries }: AuthEntriesProps) => {
           <div
             className="AuthEntryContainer"
             data-testid="AuthEntryContainer"
-            key={`${invocation.toXDR("raw").toString()}-${ind}`}
+            key={`${invocation.toXdr("raw").toString()}-${ind}`}
           >
             <div
               className="AuthEntryBtn"
@@ -212,7 +212,7 @@ export const AuthEntries = ({ entries }: AuthEntriesProps) => {
         <span>{t("Authorizations")}</span>
       </div>
       {entries.map((entry) => (
-        <React.Fragment key={entry.invocation.toXDR("raw").toString()}>
+        <React.Fragment key={entry.invocation.toXdr("raw").toString()}>
           {renderAuthEntry(entry)}
         </React.Fragment>
       ))}

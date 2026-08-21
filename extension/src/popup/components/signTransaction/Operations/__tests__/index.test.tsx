@@ -43,7 +43,7 @@ const decodeOperation = (operation: xdr.Operation) => {
     .setTimeout(0)
     .build();
 
-  return TransactionBuilder.fromXDR(tx.toXDR(), Networks.TESTNET)
+  return TransactionBuilder.fromXdr(tx.toXdr(), Networks.TESTNET)
     .operations as Operation[];
 };
 

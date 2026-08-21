@@ -1,4 +1,5 @@
 import BigNumber from "bignumber.js";
+import { xdr } from "stellar-sdk";
 import { truncatedPublicKey } from "helpers/stellar";
 import { CLASSIC_ASSET_DECIMALS } from "./soroban";
 
@@ -143,8 +144,8 @@ export const formatAmount = (val: string) => {
   return formattedWholeVal;
 };
 
-export const formattedBuffer = (data: Buffer) =>
-  truncatedPublicKey(Buffer.from(data).toString("hex").toUpperCase());
+export const formattedBuffer = (data: Uint8Array) =>
+  truncatedPublicKey(xdr.encodeBytes(data, "hex").toUpperCase());
 
 export const scrubPathGkey = (route: string, url: string) => {
   try {

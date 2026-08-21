@@ -33,7 +33,7 @@ const buildTestnetXdr = () => {
     )
     .setTimeout(30)
     .build()
-    .toXDR();
+    .toXdr();
 };
 
 const swapProps = {

@@ -176,7 +176,7 @@ describe("Operations KeyVal", () => {
         const func = xdr.HostFunction.hostFunctionTypeInvokeContract(
           new xdr.InvokeContractArgs({
             contractAddress: xdr.ScAddress.scAddressTypeContract(
-              StrKey.decodeContract(CONTRACT) as any,
+              new xdr.ContractId(StrKey.decodeContract(CONTRACT)),
             ),
             functionName: Buffer.from("transfer"),
             args: [],
