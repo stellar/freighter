@@ -167,6 +167,15 @@ export const Earn = () => {
     // populated and the user can retry without re-entering anything.
     dispatch(resetSubmitStatus());
     goToStep(STEPS.AMOUNT, "dismiss");
+    // Unvisit the terminal rather than leaning on renderStep's blanking. Every
+    // visited step stays mounted, so a step that is merely blanked while
+    // submitStatus is ERROR returns the instant resetSubmitStatus clears the
+    // flag — remounting EarnSubmit, whose mount effect submits the same envelope
+    // again, and again. A real retry re-adds the step through goToStep.
+    setVisitedSteps((currentSteps) => ({
+      ...currentSteps,
+      [STEPS.DEPOSIT_CONFIRM]: false,
+    }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [submission.submitStatus]);
 

@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import BigNumber from "bignumber.js";
 import { Button, Icon, Text } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
+import { useDispatch, useSelector } from "react-redux";
 import {
   Operation,
   OperationRecord,
@@ -16,6 +17,7 @@ import { State } from "constants/request";
 import { SimulateTxData } from "types/transactions";
 import { AuthEntries } from "popup/components/AuthEntry";
 import { FeesPane } from "popup/components/InternalTransaction/FeesPane";
+import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
 import { Summary } from "popup/views/SignTransaction/Preview/Summary";
 import { Details } from "popup/views/SignTransaction/Preview/Details";
 import { PoolIcon } from "popup/components/earn/PoolIcon";
@@ -24,6 +26,12 @@ import { getAuthEntryBoundAddress } from "popup/helpers/soroban";
 import { formatAmount } from "popup/helpers/formatters";
 import { formatRate } from "popup/components/earn/helpers/formatPoolStats";
 import { StatRow } from "popup/components/earn/StatRow";
+import { hardwareWalletTypeSelector } from "popup/ducks/accountServices";
+import {
+  ShowOverlayStatus,
+  startHwSign,
+  transactionSubmissionSelector,
+} from "popup/ducks/transactionSubmission";
 
 import { formatProjection, projectEarnings } from "./helpers/projectEarnings";
 
@@ -75,10 +83,40 @@ export const EarnReview = ({
   onConfirm,
 }: EarnReviewProps) => {
   const { t } = useTranslation();
+  const dispatch = useDispatch();
   const [isOnDetailsPane, setIsOnDetailsPane] = useState(false);
   const [isOnFeesPane, setIsOnFeesPane] = useState(false);
 
+  const hardwareWalletType = useSelector(hardwareWalletTypeSelector);
+  const isHardwareWallet = !!hardwareWalletType;
+  const {
+    hardwareWalletData: { status: hwStatus },
+  } = useSelector(transactionSubmissionSelector);
+
   const preparedXdr = simulationState.data?.transactionXdr;
+
+  /*
+   * Same shape as ReviewTx's onConfirmTx: a hardware wallet signs here, on the
+   * review, and only advances the flow once the device has answered. Confirm
+   * must not step to the deposit terminal first — that screen submits on mount,
+   * and with nothing signed it would post an unsigned envelope.
+   *
+   * Branching on the wallet alone, not on having an XDR: with no envelope to
+   * sign the overlay stalls on "Connect device", which is a visible dead end,
+   * where falling through would post an empty envelope instead.
+   */
+  const onConfirmTx = () => {
+    if (isHardwareWallet) {
+      dispatch(
+        startHwSign({
+          transactionXDR: preparedXdr || "",
+          shouldSubmit: true,
+        }),
+      );
+      return;
+    }
+    onConfirm();
+  };
 
   const detailTx = React.useMemo(() => {
     if (!preparedXdr) {
@@ -182,6 +220,23 @@ export const EarnReview = ({
           />
         </div>
       </div>
+    );
+  }
+
+  /*
+   * Replaces the review body while the device is signing, the way ReviewTx does
+   * inside Send's review modal. HardwareSign writes the signed envelope back
+   * over transactionSimulation.preparedTransaction and then calls onSubmit, so
+   * the deposit terminal it advances to reads the signed XDR from redux.
+   */
+  if (hwStatus === ShowOverlayStatus.IN_PROGRESS && hardwareWalletType) {
+    return (
+      <HardwareSign
+        isInternal
+        walletType={hardwareWalletType}
+        onSubmit={onConfirm}
+        onCancel={onCancel}
+      />
     );
   }
 
@@ -313,7 +368,7 @@ export const EarnReview = ({
           variant="secondary"
           isRounded
           isFullWidth
-          onClick={onConfirm}
+          onClick={onConfirmTx}
           data-testid="earn-review-confirm"
         >
           {t("Confirm")}

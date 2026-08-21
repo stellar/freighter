@@ -1,5 +1,5 @@
 import { useReducer } from "react";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { captureException } from "@sentry/browser";
 
 import { NetworkDetails } from "@shared/constants/stellar";
@@ -11,6 +11,7 @@ import { AccountBalances, useGetBalances } from "helpers/hooks/useGetBalances";
 import {
   signFreighterSorobanTransaction,
   submitFreighterSorobanTransaction,
+  transactionSubmissionSelector,
 } from "popup/ducks/transactionSubmission";
 
 interface SubmitEarnTxData {
@@ -24,9 +25,15 @@ interface SubmitEarnTxData {
  * the *classic* thunks, and it registers the destination as a recent address —
  * which for a deposit is the pool contract, not somewhere anyone sends funds.
  *
- * Hardware wallets skip the in-page signing step; the prepared XDR is already
- * signed by the time this runs (the deposit's auth carries source-account
- * credentials, so the envelope signature covers it — no auth-entry round trip).
+ * Hardware wallets skip the in-page signing step because they have already
+ * signed: EarnReview's Confirm dispatches `startHwSign`, and HardwareSign writes
+ * the signed envelope back over `transactionSimulation.preparedTransaction`
+ * before the flow steps here. Only the envelope needs signing — the deposit's
+ * auth carries source-account credentials, so there is no auth-entry round trip.
+ *
+ * That signed envelope is read from redux rather than from the `xdr` prop, the
+ * same way the shared `useSubmitTxData` does it: it is the value the hardware
+ * overlay actually wrote, and reading it here cannot go stale.
  *
  * Emits the deposit's success event only. Failures are emitted once, by the Earn
  * view's `submitStatus: ERROR` effect — every path out of here that can fail
@@ -52,6 +59,7 @@ export function useSubmitEarnTxData({
   viaSwap: boolean;
 }) {
   const reduxDispatch = useDispatch<AppDispatch>();
+  const { transactionSimulation } = useSelector(transactionSubmissionSelector);
   const [state, dispatch] = useReducer(
     reducer<SubmitEarnTxData, unknown>,
     initialState,
@@ -64,7 +72,7 @@ export function useSubmitEarnTxData({
   const fetchData = async () => {
     dispatch({ type: "FETCH_DATA_START" });
     try {
-      let signedXDR = xdr;
+      let signedXDR = transactionSimulation.preparedTransaction || xdr;
 
       if (!isHardwareWallet) {
         const res = await reduxDispatch(

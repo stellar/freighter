@@ -7,7 +7,6 @@ import { ActionStatus } from "@shared/api/types";
 import { View } from "popup/basics/layout/View";
 import { AssetIcon } from "popup/components/account/AccountAssets";
 import { PoolIcon } from "popup/components/earn/PoolIcon";
-import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
 import { RequestState } from "constants/request";
 import { getAssetFromCanonical } from "helpers/stellar";
 import { isCustomNetwork } from "@shared/helpers/stellar";
@@ -19,10 +18,7 @@ import {
   publicKeySelector,
 } from "popup/ducks/accountServices";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
-import {
-  ShowOverlayStatus,
-  transactionSubmissionSelector,
-} from "popup/ducks/transactionSubmission";
+import { transactionSubmissionSelector } from "popup/ducks/transactionSubmission";
 import { earnSelector } from "popup/ducks/earn";
 import { iconsSelector } from "popup/ducks/cache";
 import { emitScreenViewed } from "helpers/metrics";
@@ -55,7 +51,8 @@ export const EarnSubmit = ({ xdr, onExit }: EarnSubmitProps) => {
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const hardwareWalletType = useSelector(hardwareWalletTypeSelector);
-  const { pool, selectedAssetApy, didSwapInFlow } = useSelector(earnSelector);
+  const { pool, selectedAssetApy, didSwapInFlow, lastSubmitFailed } =
+    useSelector(earnSelector);
   const cachedIcons = useSelector(iconsSelector);
 
   const { amount, asset } = submission.transactionData;
@@ -73,8 +70,6 @@ export const EarnSubmit = ({ xdr, onExit }: EarnSubmitProps) => {
     viaSwap: didSwapInFlow,
   });
 
-  // Derived above the hardware-overlay branch so the effects below stay in the
-  // same order on every render.
   const isSuccess =
     submissionState.state === RequestState.SUCCESS &&
     submission.submitStatus !== ActionStatus.ERROR;
@@ -83,6 +78,14 @@ export const EarnSubmit = ({ xdr, onExit }: EarnSubmitProps) => {
   const hasEmittedSuccessView = useRef(false);
 
   useEffect(() => {
+    // A failed deposit drops this step and returns to the amount screen (the
+    // Earn view's submitStatus effect). Should anything remount this component
+    // while that failure still stands, submitting would replay the envelope the
+    // network just rejected — so refuse. A real retry runs through
+    // EarnAmount's handleContinue, which clears the flag first.
+    if (lastSubmitFailed) {
+      return;
+    }
     fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -101,19 +104,6 @@ export const EarnSubmit = ({ xdr, onExit }: EarnSubmitProps) => {
     hasEmittedSuccessView.current = true;
     emitScreenViewed("earn_success", { flow: "earn", step: "success" });
   }, [isSuccess]);
-
-  if (
-    submission.hardwareWalletData?.status === ShowOverlayStatus.IN_PROGRESS &&
-    hardwareWalletType
-  ) {
-    return (
-      <HardwareSign
-        isInternal
-        walletType={hardwareWalletType}
-        onSubmit={fetchData}
-      />
-    );
-  }
 
   return (
     <View data-testid="earn-submit">
