@@ -22,7 +22,7 @@ import { transactionSubmissionSelector } from "popup/ducks/transactionSubmission
 import { earnSelector } from "popup/ducks/earn";
 import { iconsSelector } from "popup/ducks/cache";
 import { emitScreenViewed } from "helpers/metrics";
-import { trackEarnDepositAbandoned } from "popup/metrics/earn";
+import { trackEarnDepositDismissed } from "popup/metrics/earn";
 
 import { useSubmitEarnTxData } from "./hooks/useSubmitEarnTxData";
 
@@ -41,9 +41,11 @@ interface EarnSubmitProps {
  * uses for Sending/Sent.
  *
  * Close is offered while in flight because a Soroban submission can outlast the
- * popup. The result is deliberately not tracked afterwards: the outcome shows up
- * in the refreshed balances and in history, and following it would mean owning
- * an in-flight submission outside the popup, which nothing does today.
+ * user's patience. It abandons the *screen*, not the deposit: the envelope has
+ * already been submitted and nothing cancels it, so the submit hook's
+ * continuation — which outlives this component — still reports the outcome. What
+ * Close gives up is watching it, which is what `trackEarnDepositDismissed`
+ * records.
  */
 export const EarnSubmit = ({ xdr, onExit }: EarnSubmitProps) => {
   const { t } = useTranslation();
@@ -125,9 +127,11 @@ export const EarnSubmit = ({ xdr, onExit }: EarnSubmitProps) => {
                   isRounded
                   variant="tertiary"
                   onClick={() => {
-                    // The only record that this deposit has an outcome nobody
-                    // will report: the flow stops following it here.
-                    trackEarnDepositAbandoned({
+                    // A UX signal, not an outcome — the deposit is in flight and
+                    // useSubmitEarnTxData still emits its completed/failed event
+                    // from a closure this unmount does not touch. Only closing
+                    // the popup outright loses the outcome.
+                    trackEarnDepositDismissed({
                       assetCode: srcAsset.code,
                       poolId: pool?.id || "",
                     });

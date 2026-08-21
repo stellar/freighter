@@ -1,5 +1,6 @@
 import React from "react";
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 
 import { WalletType } from "@shared/constants/hardwareWallet";
 import { TESTNET_NETWORK_DETAILS } from "@shared/constants/stellar";
@@ -9,6 +10,7 @@ import {
   initialState as transactionSubmissionInitialState,
   ShowOverlayStatus,
 } from "popup/ducks/transactionSubmission";
+import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { Wrapper } from "popup/__testHelpers__";
 
 const TEST_PUBLIC_KEY =
@@ -41,6 +43,40 @@ jest.mock("helpers/metrics", () => ({
 }));
 
 const mockFetch = jest.fn();
+
+const { emitMetric } =
+  jest.requireMock<typeof import("helpers/metrics")>("helpers/metrics");
+
+const emittedMetricNames = () =>
+  (emitMetric as jest.Mock).mock.calls.map(([name]) => name);
+
+/**
+ * A submission that has left but not landed, which is the only window in which
+ * Close is offered. Resolve the returned deferred to settle it.
+ */
+const holdSubmission = () => {
+  let settle: (value: unknown) => void = () => {};
+  mockFetch.mockImplementation((url: string) => {
+    if (!String(url).includes("/submit-tx")) {
+      return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
+    }
+    return new Promise((resolve) => {
+      settle = resolve;
+    });
+  });
+  return {
+    succeed: () =>
+      settle({
+        ok: true,
+        json: () => Promise.resolve({ status: "PENDING", hash: "abc123" }),
+      }),
+    fail: () =>
+      settle({
+        ok: false,
+        json: () => Promise.resolve({ extras: { result_codes: {} } }),
+      }),
+  };
+};
 
 const renderSubmit = ({
   xdr,
@@ -151,6 +187,59 @@ describe("EarnSubmit", () => {
     await waitFor(() => expect(submittedXdrs()).toEqual([HW_SIGNED_XDR]));
     expect(screen.queryByTestId("HardwareSign__internal")).toBeNull();
     expect(screen.getByTestId("earn-submit")).toBeDefined();
+  });
+
+  it("still reports the outcome of a deposit the user stopped watching", async () => {
+    // Close navigates back to the account view; it does not close the popup, so
+    // this hook's continuation keeps running. The dismissal is a UX signal, and
+    // the completion that follows it is the truth — the deposit did land.
+    const submission = holdSubmission();
+    const { unmount } = renderSubmit({ xdr: "AAAA-unsigned" });
+
+    const close = await screen.findByTestId("earn-submit-close");
+    await userEvent.click(close);
+    // What the Earn view does with onExit: this screen goes away.
+    unmount();
+
+    expect(emittedMetricNames()).toContain(METRIC_NAMES.earnDepositDismissed);
+    expect(emittedMetricNames()).not.toContain(
+      METRIC_NAMES.earnDepositCompleted,
+    );
+
+    await act(async () => {
+      submission.succeed();
+    });
+
+    await waitFor(() =>
+      expect(emittedMetricNames()).toContain(METRIC_NAMES.earnDepositCompleted),
+    );
+    expect(
+      emittedMetricNames().filter(
+        (name) => name === METRIC_NAMES.earnDepositCompleted,
+      ),
+    ).toHaveLength(1);
+  });
+
+  it("reports a failure that lands after the screen is gone", async () => {
+    // The gap this closes: the Earn view owned earn.deposit_failed, and it
+    // unmounts on close — so a post-close failure was silent while a post-close
+    // success was not, biasing the funnel toward success.
+    const submission = holdSubmission();
+    const { unmount } = renderSubmit({ xdr: "AAAA-unsigned" });
+
+    await userEvent.click(await screen.findByTestId("earn-submit-close"));
+    unmount();
+
+    await act(async () => {
+      submission.fail();
+    });
+
+    await waitFor(() =>
+      expect(emittedMetricNames()).toContain(METRIC_NAMES.earnDepositFailed),
+    );
+    expect(emittedMetricNames()).not.toContain(
+      METRIC_NAMES.earnDepositCompleted,
+    );
   });
 
   it("does not resubmit an envelope the network already rejected", async () => {

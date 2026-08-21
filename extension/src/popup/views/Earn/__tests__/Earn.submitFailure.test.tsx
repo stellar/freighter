@@ -2,6 +2,7 @@ import React from "react";
 import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
+import { ActionStatus } from "@shared/api/types";
 import { TESTNET_NETWORK_DETAILS } from "@shared/constants/stellar";
 import { Earn } from "popup/views/Earn";
 import { initialState as earnInitialState } from "popup/ducks/earn";
@@ -160,12 +161,76 @@ describe("Earn deposit failure", () => {
       expect(screen.queryByTestId("stub-deposit-terminal")).toBeNull(),
     );
     expect(mockDepositMounts).toHaveBeenCalledTimes(1);
-    expect(trackEarnDepositFailed).toHaveBeenCalledTimes(1);
+    // Not this view's event to emit: the deposit step's own failures come from
+    // useSubmitEarnTxData, whose continuation survives the user closing the
+    // screen. (The terminal is stubbed here, so nothing emits at all.)
+    expect(trackEarnDepositFailed).not.toHaveBeenCalled();
 
     // Give any loop a chance to run: the old code cycled on every state change.
     await new Promise((resolve) => setTimeout(resolve, 50));
     expect(mockDepositMounts).toHaveBeenCalledTimes(1);
-    expect(trackEarnDepositFailed).toHaveBeenCalledTimes(1);
+    expect(trackEarnDepositFailed).not.toHaveBeenCalled();
+  });
+
+  it("emits the failure for a rejection that never reached the terminal", async () => {
+    // A device-rejected signature at the review sheet: the flow is still on the
+    // amount step, so no submit hook exists to own the event and this view emits
+    // it. The split by step is what keeps the two from double counting.
+    renderEarn();
+    await userEvent.click(screen.getByTestId("stub-pick-token"));
+
+    act(() => {
+      getTestStore()!.dispatch(
+        submitFreighterSorobanTransaction.rejected(
+          null,
+          "req-1",
+          {
+            publicKey: TEST_PUBLIC_KEY,
+            signedXDR: "AAAA-prepared",
+            networkDetails: TESTNET_NETWORK_DETAILS,
+          },
+          { errorMessage: "User declined access" },
+        ),
+      );
+    });
+
+    await waitFor(() =>
+      expect(trackEarnDepositFailed).toHaveBeenCalledTimes(1),
+    );
+    expect(trackEarnDepositFailed).toHaveBeenCalledWith(
+      expect.objectContaining({ reasonCode: "User declined access" }),
+    );
+  });
+
+  it("ignores an error status left behind by a previous flow", async () => {
+    // Closing the in-flight screen navigates away and resets the submission,
+    // but does not cancel the submit — a late rejection writes ERROR back into
+    // a store the flow has already left. Re-entering Earn must not read that as
+    // its own failure: it would emit against an empty asset and drop the fresh
+    // flow onto the amount screen with nothing selected.
+    render(
+      <Wrapper
+        routes={["/earn"]}
+        state={{
+          auth: { allAccounts: [TEST_PUBLIC_KEY], publicKey: TEST_PUBLIC_KEY },
+          settings: { networkDetails: TESTNET_NETWORK_DETAILS },
+          transactionSubmission: {
+            ...transactionSubmissionInitialState,
+            submitStatus: ActionStatus.ERROR,
+            error: { errorMessage: "tx_bad_auth" },
+          },
+          earn: { ...earnInitialState, hasSeenIntro: true },
+        }}
+      >
+        <Earn />
+      </Wrapper>,
+    );
+
+    expect(await screen.findByTestId("stub-pick-token")).toBeDefined();
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(trackEarnDepositFailed).not.toHaveBeenCalled();
+    // Still on the picker, not bounced to the amount screen.
+    expect(screen.queryByTestId("stub-confirm-amount")).toBeNull();
   });
 
   it("mounts the terminal again when the user retries", async () => {

@@ -6,7 +6,7 @@ import { METRIC_NAMES } from "popup/constants/metricsNames";
 
 import {
   trackEarnBalanceInsufficientShown,
-  trackEarnDepositAbandoned,
+  trackEarnDepositDismissed,
   trackEarnDepositCompleted,
   trackEarnDepositFailed,
   trackEarnFundingActionSelected,
@@ -136,11 +136,11 @@ describe("Earn funnel metrics", () => {
     );
   });
 
-  it("reports a deposit left in flight", () => {
-    trackEarnDepositAbandoned({ assetCode: "USDC", poolId: POOL_ID });
+  it("reports an in-flight deposit the user stopped watching", () => {
+    trackEarnDepositDismissed({ assetCode: "USDC", poolId: POOL_ID });
 
     expect(mockEmitMetric).toHaveBeenCalledWith(
-      METRIC_NAMES.earnDepositAbandoned,
+      METRIC_NAMES.earnDepositDismissed,
       { asset_code: "USDC", pool_id: POOL_ID },
     );
   });

@@ -2,11 +2,16 @@ import { useReducer } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { captureException } from "@sentry/browser";
 
+import { ErrorMessage } from "@shared/api/types";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { AppDispatch } from "popup/App";
 import { initialState, isError, reducer } from "helpers/request";
 import { isMainnet } from "helpers/stellar";
-import { trackEarnDepositCompleted } from "popup/metrics/earn";
+import {
+  trackEarnDepositCompleted,
+  trackEarnDepositFailed,
+} from "popup/metrics/earn";
+import { getFailureReasonCode } from "popup/components/earn/helpers/failureReasonCode";
 import { AccountBalances, useGetBalances } from "helpers/hooks/useGetBalances";
 import {
   signFreighterSorobanTransaction,
@@ -35,9 +40,16 @@ interface SubmitEarnTxData {
  * same way the shared `useSubmitTxData` does it: it is the value the hardware
  * overlay actually wrote, and reading it here cannot go stale.
  *
- * Emits the deposit's success event only. Failures are emitted once, by the Earn
- * view's `submitStatus: ERROR` effect — every path out of here that can fail
- * rejects one of the transactionSubmission thunks, and those set that status.
+ * Emits this step's outcome — completed or failed — rather than leaving failures
+ * to the Earn view's `submitStatus: ERROR` effect. Close is offered while the
+ * deposit is in flight, and it navigates back to the account view rather than
+ * closing the popup: the view unmounts but this continuation keeps running, so an
+ * outcome emitted from the view would be reported for successes and silently lost
+ * for failures. Emitted here, both survive.
+ *
+ * The Earn view's effect still owns failures that happen before the flow reaches
+ * this screen (a device-rejected signature at review) and still owns the UI
+ * response to a failure; it skips its own emit while this step is active.
  */
 export function useSubmitEarnTxData({
   isHardwareWallet,
@@ -69,6 +81,13 @@ export function useSubmitEarnTxData({
     includeIcons: false,
   });
 
+  const trackDepositFailed = (error: ErrorMessage | undefined) =>
+    trackEarnDepositFailed({
+      assetCode,
+      poolId,
+      reasonCode: getFailureReasonCode(error),
+    });
+
   const fetchData = async () => {
     dispatch({ type: "FETCH_DATA_START" });
     try {
@@ -88,9 +107,14 @@ export function useSubmitEarnTxData({
         ) {
           // Submitting `xdr` unsigned would fail on the network anyway, but as a
           // *second* failure: the rejected sign thunk has already set
-          // submitStatus to ERROR, the flow has already stepped back to the
-          // amount screen, and the late submit rejection would trip that effect
-          // a second time — a duplicate earn.deposit_failed for one attempt.
+          // submitStatus to ERROR and the flow has already stepped back to the
+          // amount screen, so the late submit rejection would report a second
+          // earn.deposit_failed for one attempt.
+          trackDepositFailed(
+            signFreighterSorobanTransaction.rejected.match(res)
+              ? res.payload
+              : undefined,
+          );
           dispatch({ type: "FETCH_DATA_ERROR", payload: res.payload });
           return res.payload;
         }
@@ -106,7 +130,13 @@ export function useSubmitEarnTxData({
         }),
       );
 
-      if (submitFreighterSorobanTransaction.fulfilled.match(submitResp)) {
+      if (!submitFreighterSorobanTransaction.fulfilled.match(submitResp)) {
+        trackDepositFailed(
+          submitFreighterSorobanTransaction.rejected.match(submitResp)
+            ? submitResp.payload
+            : undefined,
+        );
+      } else {
         trackEarnDepositCompleted({
           assetCode,
           poolId,

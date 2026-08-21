@@ -8,7 +8,7 @@ import { ROUTES } from "popup/constants/routes";
 import { STEPS } from "popup/constants/earn";
 import { navigateTo } from "popup/helpers/navigate";
 import { emitScreenViewed, ScreenViewedProps } from "helpers/metrics";
-import { ActionStatus, ErrorMessage } from "@shared/api/types";
+import { ActionStatus } from "@shared/api/types";
 import {
   resetSubmission,
   resetSubmitStatus,
@@ -27,13 +27,12 @@ import {
   setDidSwapInFlow,
   setEarnSubmitFailed,
 } from "popup/ducks/earn";
-import { scrubStrKeys } from "helpers/stellarStrKey";
-import { getResultCodes } from "popup/helpers/parseTransaction";
 import {
   trackEarnDepositFailed,
   trackEarnSwapCompleted,
   trackEarnTokenSelected,
 } from "popup/metrics/earn";
+import { getFailureReasonCode } from "popup/components/earn/helpers/failureReasonCode";
 import { EarnIntro } from "popup/components/earn/EarnIntro";
 import { useEarnIntroSeen } from "popup/components/earn/EarnIntro/hooks/useEarnIntroSeen";
 import { EarnTokenPicker } from "popup/components/earn/EarnTokenPicker";
@@ -72,23 +71,6 @@ const EARN_SCREEN_BY_STEP: Partial<
   [STEPS.AMOUNT]: { screen_name: "earn_amount", flow: "earn" },
 };
 
-/**
- * The `reason_code` for a failed deposit: the operation or transaction result
- * code when the attempt reached the network, otherwise the error message — a
- * rejected signature never gets result codes, and "unknown" for every one of
- * those would collapse the failure modes we most want to tell apart. Scrubbed,
- * because an error message can quote an address.
- */
-const getFailureReasonCode = (error: ErrorMessage | undefined) => {
-  const resultCodes = getResultCodes(error);
-  return (
-    resultCodes.operations?.[0] ||
-    resultCodes.transaction ||
-    scrubStrKeys(error?.errorMessage) ||
-    "unknown"
-  );
-};
-
 export const Earn = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -116,6 +98,7 @@ export const Earn = () => {
 
   const hasResolvedIntro = useRef(false);
   const lastEmittedStep = useRef<STEPS | null>(null);
+  const isFirstSubmitStatusRun = useRef(true);
 
   const goToStep = (next: STEPS, anim: EnterAnim | "dismiss") => {
     setEnterAnim(anim === "dismiss" ? "from-bottom" : anim);
@@ -148,20 +131,35 @@ export const Earn = () => {
   // showing a terminal failure state — the design has no SubmitFail for Earn,
   // and the amount is the only place the user can act on the failure.
   //
-  // This is the flow's single source of `earn.deposit_failed`. Every way a
-  // deposit can fail — a rejected signature, a rejected submit — lands in
-  // `submitStatus: ERROR` (see transactionSubmission's extraReducers), so the
-  // submit hook must not emit its own failure event or the two would double
-  // count.
+  // Every way a deposit can fail lands in `submitStatus: ERROR` (see
+  // transactionSubmission's extraReducers), so this effect owns the UI response
+  // to all of them. It does *not* own all of the metric: the submit step's own
+  // failures are emitted by useSubmitEarnTxData, whose continuation outlives the
+  // in-flight screen the user is invited to close. Emitting here as well would
+  // double count, so the emit is skipped while that step is active. What is left
+  // for this effect is everything that fails earlier — a device-rejected
+  // signature at the review sheet, which never reaches DEPOSIT_CONFIRM.
   useEffect(() => {
+    if (isFirstSubmitStatusRun.current) {
+      // Whatever the status was at mount cannot belong to this flow: a fresh
+      // flow has not submitted anything yet. It is the leftover of a deposit
+      // abandoned in a previous visit, whose thunk settled after
+      // `closeEarnFlow` had already reset the submission — acting on it would
+      // report a failure against an empty asset and drop this flow onto the
+      // amount screen with nothing selected. The mount effect above clears it.
+      isFirstSubmitStatusRun.current = false;
+      return;
+    }
     if (submission.submitStatus !== ActionStatus.ERROR) {
       return;
     }
-    trackEarnDepositFailed({
-      assetCode: getAssetFromCanonical(submission.transactionData.asset).code,
-      poolId: pool?.id || "",
-      reasonCode: getFailureReasonCode(submission.error),
-    });
+    if (activeStep !== STEPS.DEPOSIT_CONFIRM) {
+      trackEarnDepositFailed({
+        assetCode: getAssetFromCanonical(submission.transactionData.asset).code,
+        poolId: pool?.id || "",
+        reasonCode: getFailureReasonCode(submission.error),
+      });
+    }
     dispatch(setEarnSubmitFailed(true));
     // Keeps transactionData and the simulation so the amount screen comes back
     // populated and the user can retry without re-entering anything.

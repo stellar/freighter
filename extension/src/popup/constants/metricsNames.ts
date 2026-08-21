@@ -62,10 +62,11 @@ export const METRIC_NAMES = {
   earnSimulationFailed: "earn.simulation_failed",
   earnDepositCompleted: "earn.deposit_completed",
   earnDepositFailed: "earn.deposit_failed",
-  // Closed while the submission was still in flight. The flow stops following
-  // the result there, so this marks an outcome that no completed/failed event
-  // will ever report.
-  earnDepositAbandoned: "earn.deposit_abandoned",
+  // The in-flight screen was closed before the submission settled. The deposit
+  // itself is not abandoned — it was already submitted — so a completed/failed
+  // event for the same attempt normally still follows. Only closing the popup
+  // outright loses the outcome.
+  earnDepositDismissed: "earn.deposit_processing_dismissed",
 
   // -- Collectibles --------------------------------------------------------
   collectibleSendCompleted: "collectible_send.completed",

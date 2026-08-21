@@ -139,18 +139,24 @@ export const trackEarnPercentAmountSelected = ({
 };
 
 /**
- * Close pressed while the deposit was still in flight. The flow deliberately
- * does not follow the submission after that, so this event is the only record
- * that an outcome exists which no `completed`/`failed` event will report.
+ * Close pressed while the deposit was still in flight — the user stopped
+ * watching, not the deposit. By the time that button renders the envelope is
+ * already being signed and submitted, and nothing cancels it; the submit hook's
+ * continuation outlives the screen, so `deposit_completed` or `deposit_failed`
+ * for the same attempt normally follows this event.
+ *
+ * A UX signal, then, not an outcome: how often the wait outlasts the user's
+ * patience. The outcome is genuinely missing only when the popup itself is
+ * closed, which kills the page before either event can be emitted.
  */
-export const trackEarnDepositAbandoned = ({
+export const trackEarnDepositDismissed = ({
   assetCode,
   poolId,
 }: {
   assetCode: string;
   poolId: string;
 }) => {
-  emitMetric(METRIC_NAMES.earnDepositAbandoned, {
+  emitMetric(METRIC_NAMES.earnDepositDismissed, {
     asset_code: assetCode,
     pool_id: poolId,
   });
@@ -176,6 +182,14 @@ export const trackEarnDepositCompleted = ({
   });
 };
 
+/**
+ * Two emitters, split by where the failure happened: the submit hook owns its
+ * own sign/submit rejections — its closure outlives the in-flight screen, so the
+ * failure is still reported after the user closes it — and the Earn view owns
+ * everything that fails earlier, a device-rejected signature at review being the
+ * one that matters. Neither can see the other's failures, so they cannot double
+ * count.
+ */
 export const trackEarnDepositFailed = ({
   assetCode,
   poolId,

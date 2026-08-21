@@ -60,7 +60,9 @@ describe("METRIC_NAMES domain-event catalog", () => {
     expect(METRIC_NAMES.earnSimulationFailed).toBe("earn.simulation_failed");
     expect(METRIC_NAMES.earnDepositCompleted).toBe("earn.deposit_completed");
     expect(METRIC_NAMES.earnDepositFailed).toBe("earn.deposit_failed");
-    expect(METRIC_NAMES.earnDepositAbandoned).toBe("earn.deposit_abandoned");
+    expect(METRIC_NAMES.earnDepositDismissed).toBe(
+      "earn.deposit_processing_dismissed",
+    );
   });
 
   it("names collectible-send and transaction-submission events", () => {
