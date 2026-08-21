@@ -18,16 +18,22 @@ updates:
     # being younger than 7 days. Note: security updates ignore cooldown.
     cooldown:
       default-days: 7
+    # Do not open version-update PRs for major bumps -- they are almost always
+    # breaking-change migrations that don't belong in routine currency churn
+    # (mirrors freighter-mobile's security-only posture). Minor/patch currency
+    # is unaffected, and per GitHub docs an `ignore` update-type only applies
+    # to version updates -- Dependabot SECURITY updates are still created for
+    # major bumps when a vulnerability requires one.
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-major"
     groups:
       minor-and-patch:
         applies-to: version-updates
         update-types:
           - "patch"
           - "minor"
-      major:
-        applies-to: version-updates
-        update-types:
-          - "major"
       security:
         applies-to: security-updates
         patterns:
