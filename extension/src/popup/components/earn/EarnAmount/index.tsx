@@ -222,33 +222,35 @@ export const EarnAmount = ({ goBack, onConfirm }: EarnAmountProps) => {
 
     setIsSimulating(true);
     try {
-      // The existing position is the "before" half of Review's 0.00 -> N row.
-      // Fetched alongside the simulation and deliberately non-fatal: a stale
-      // before-value must never block a deposit that is otherwise valid.
-      getBlendSuppliedTokens({
+      // The existing position is the "before" half of Review's 0.00 -> N row,
+      // and it also feeds both earnings projections. Awaited with the simulation
+      // so the sheet opens with a settled before-value rather than flipping
+      // three rows under the user when the slower of the two lands. Still
+      // non-fatal: a failed lookup resolves to "0" instead of rejecting, so it
+      // can never block a deposit that is otherwise valid.
+      const positionPromise = getBlendSuppliedTokens({
         publicKey: data.publicKey,
         poolId: destination,
         assetId: selectedAssetId,
         networkDetails: data.networkDetails,
       })
-        .then((raw) =>
-          dispatch(
-            saveCurrentPositionTokens(
-              formatTokenAmount(new BigNumber(raw), decimals),
-            ),
-          ),
-        )
-        .catch(() => dispatch(saveCurrentPositionTokens("0")));
+        .then((raw) => formatTokenAmount(new BigNumber(raw), decimals))
+        .catch(() => "0");
 
-      const simulation = await simulate({
-        publicKey: data.publicKey,
-        assetId: selectedAssetId,
-        amount,
-        decimals,
-        networkDetails: data.networkDetails,
-        transactionFee: recommendedFee,
-        transactionTimeout,
-      });
+      const [simulation, position] = await Promise.all([
+        simulate({
+          publicKey: data.publicKey,
+          assetId: selectedAssetId,
+          amount,
+          decimals,
+          networkDetails: data.networkDetails,
+          transactionFee: recommendedFee,
+          transactionTimeout,
+        }),
+        positionPromise,
+      ]);
+
+      dispatch(saveCurrentPositionTokens(position));
 
       // Simulation is the first place the resource fee is known, so a deposit
       // that leaves nothing for it is caught here rather than by holding a
