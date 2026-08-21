@@ -8,6 +8,7 @@ import {
   getCatalogAssetIdentity,
   resolveEarnAssetIcons,
 } from "popup/components/earn/helpers/earnAssetIcons";
+import { getAcceptedReserves } from "popup/components/earn/helpers/poolReserves";
 import {
   iconsSelector,
   saveIconsForBalances,
@@ -44,8 +45,9 @@ export const usePoolReserveIcons = (pool: BlendCatalogPool | null) => {
     let isActive = true;
 
     const resolve = async () => {
-      const reserves = pool?.reserves || [];
-      const assets = reserves
+      // Exactly what the sheet renders — a disabled reserve is never drawn, so
+      // resolving its icon would be a TOML round-trip for nothing.
+      const assets = getAcceptedReserves(pool)
         .map((reserve) => ({
           assetId: reserve.assetId,
           ...getCatalogAssetIdentity({

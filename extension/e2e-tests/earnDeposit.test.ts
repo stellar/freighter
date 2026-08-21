@@ -298,6 +298,15 @@ test("pool details sheet shows market stats including Backstop", async ({
   // the row never implies a pool has no insurance when the value is simply
   // unavailable.
   await expect(page.getByTestId("earn-pool-backstop")).toContainText("$1.53M");
+
+  // Only the pool's enabled reserves count as accepted tokens. The stubbed
+  // catalog carries three — XLM, USDC, and a disabled AQUA — and Blend rejects
+  // a deposit into a disabled reserve, so the cluster must show two icons.
+  await expect(
+    page
+      .getByTestId("earn-pool-accepted-tokens")
+      .locator(".PoolDetailsSheet__tokens > *"),
+  ).toHaveCount(2);
 });
 
 // ---------------------------------------------------------------------------

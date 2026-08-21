@@ -3479,6 +3479,10 @@ export const stubBlendEarn = async (
   } = {},
 ) => {
   const { XLM: XLM_SAC, USDC: USDC_SAC, EURC: EURC_SAC } = PUBLIC_SACS;
+  // A reserve the pool carries but earn-options never offers, so it exists only
+  // to exercise the disabled-reserve path. Its real mainnet SAC, derived the
+  // same way as PUBLIC_SACS.
+  const AQUA_SAC = "CAUIKL3IYGMERDRUN6YSCLWVAKIFG5Q4YJHUKM4S4NJZQIA3BAS6OJPK";
   // The same constant the flow filters on, so a pool-id change cannot leave the
   // stub serving an offer the picker silently discards.
   const POOL_ID = BLEND_FIXED_POOL_IDS[NETWORKS.PUBLIC]!;
@@ -3543,6 +3547,12 @@ export const stubBlendEarn = async (
               interest_apy: 0.0424,
               net_apy: 0.1694,
               backstop_usd: 1530000,
+              // The pools catalog reports every reserve with its own `enabled`
+              // flag, disabled ones included — unlike earn-options above, which
+              // the backend derives with the disabled reserves already dropped.
+              // AQUA is here as the disabled case: the sheet's accepted-token
+              // cluster must leave it out, since Blend rejects a deposit into a
+              // disabled reserve.
               reserves: [
                 {
                   asset_id: XLM_SAC,
@@ -3557,6 +3567,34 @@ export const stubBlendEarn = async (
                   supplied_usd: 50050000,
                   borrowed_usd: 16150000,
                   price_usd: 0.15,
+                },
+                {
+                  asset_id: USDC_SAC,
+                  symbol: "USDC",
+                  name: "USDC:GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN",
+                  decimals: 7,
+                  enabled: true,
+                  utilization: 0.71,
+                  supply_apy: 0.1694,
+                  borrow_apy: 0.22,
+                  emissions_supply_apr: null,
+                  supplied_usd: 12000000,
+                  borrowed_usd: 8500000,
+                  price_usd: 1,
+                },
+                {
+                  asset_id: AQUA_SAC,
+                  symbol: "AQUA",
+                  name: "AQUA:GBNZILSTVQZ4R7IKQDGHYGY2QXL5QOFJYQMXPKWRRM5PAV7Y4M67AQUA",
+                  decimals: 7,
+                  enabled: false,
+                  utilization: 0,
+                  supply_apy: 0,
+                  borrow_apy: 0,
+                  emissions_supply_apr: null,
+                  supplied_usd: 0,
+                  borrowed_usd: 0,
+                  price_usd: null,
                 },
               ],
             },

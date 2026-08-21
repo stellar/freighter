@@ -8,6 +8,7 @@ import { AssetIcon } from "popup/components/account/AccountAssets";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { PoolIcon } from "popup/components/earn/PoolIcon";
 import { getCatalogAssetIdentity } from "popup/components/earn/helpers/earnAssetIcons";
+import { getAcceptedReserves } from "popup/components/earn/helpers/poolReserves";
 import { StatRow } from "popup/components/earn/StatRow";
 
 import { usePoolReserveIcons } from "./hooks/usePoolReserveIcons";
@@ -33,12 +34,17 @@ interface PoolDetailsSheetProps {
  * backend serves `backstop_usd` — the v2 backend drops the field its own
  * upstream provides. Never a hardcoded figure, which would misrepresent the
  * pool's actual insurance.
+ *
+ * "Accepted tokens" shows only the pool's enabled reserves. The catalog reports
+ * disabled ones too, but Blend rejects a deposit into them, and the token
+ * picker behind this sheet has already dropped them — see `getAcceptedReserves`.
  */
 export const PoolDetailsSheet = ({ pool, onClose }: PoolDetailsSheetProps) => {
   const { t } = useTranslation();
   const description = getPoolDescription(pool.id);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const reserveIcons = usePoolReserveIcons(pool);
+  const acceptedReserves = getAcceptedReserves(pool);
 
   return (
     <div className="PoolDetailsSheet" data-testid="earn-pool-details-sheet">
@@ -99,29 +105,36 @@ export const PoolDetailsSheet = ({ pool, onClose }: PoolDetailsSheetProps) => {
         <div className="PoolDetailsSheet__group">
           <StatRow
             label={t("Accepted tokens")}
+            testId="earn-pool-accepted-tokens"
             value={
-              <div className="PoolDetailsSheet__tokens">
-                {pool.reserves.map((reserve) => {
-                  // The catalog reports native XLM with no symbol and no name,
-                  // so the identity has to be derived rather than read straight
-                  // off the reserve — AssetIcon needs a code to recognise XLM
-                  // and an issuer to look anything else up.
-                  const { code, issuer } = getCatalogAssetIdentity({
-                    symbol: reserve.symbol,
-                    name: reserve.name,
-                    assetId: reserve.assetId,
-                    networkDetails,
-                  });
-                  return (
-                    <AssetIcon
-                      key={reserve.assetId}
-                      assetIcons={reserveIcons}
-                      code={code}
-                      issuerKey={issuer}
-                    />
-                  );
-                })}
-              </div>
+              // "--" rather than an empty cluster when nothing is depositable,
+              // the same unavailable marker the USD and rate rows below use.
+              !acceptedReserves.length ? (
+                "--"
+              ) : (
+                <div className="PoolDetailsSheet__tokens">
+                  {acceptedReserves.map((reserve) => {
+                    // The catalog reports native XLM with no symbol and no
+                    // name, so the identity has to be derived rather than read
+                    // straight off the reserve — AssetIcon needs a code to
+                    // recognise XLM and an issuer to look anything else up.
+                    const { code, issuer } = getCatalogAssetIdentity({
+                      symbol: reserve.symbol,
+                      name: reserve.name,
+                      assetId: reserve.assetId,
+                      networkDetails,
+                    });
+                    return (
+                      <AssetIcon
+                        key={reserve.assetId}
+                        assetIcons={reserveIcons}
+                        code={code}
+                        issuerKey={issuer}
+                      />
+                    );
+                  })}
+                </div>
+              )
             }
           />
           <StatRow
