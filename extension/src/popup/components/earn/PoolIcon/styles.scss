@@ -1,0 +1,10 @@
+@use "../../../styles/utils.scss" as *;
+
+// The protocol marks carry their own colour, so no plate behind them — matching
+// the design, where the pool icon sits directly on the card.
+.PoolIcon {
+  width: pxToRem(32);
+  height: pxToRem(32);
+  flex: none;
+  display: block;
+}

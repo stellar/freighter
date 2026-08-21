@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useLocation } from "react-router-dom";
-import { ActionStatus } from "@shared/api/types";
 import { STEPS } from "popup/constants/swap";
 import {
   emitMetric,
@@ -11,13 +10,12 @@ import {
 import { InputType } from "helpers/transaction";
 import { TransactionConfirm } from "popup/components/InternalTransaction/SubmitTransaction";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
-import { getQuoteExpiredOperationCodes } from "popup/helpers/quoteExpiry";
 import { SwapAsset } from "popup/components/swap/SwapAsset";
 import { SwapAmount } from "popup/components/swap/SwapAmount";
+import { useSwapSubmitQuoteExpiry } from "popup/components/swap/hooks/useSwapSubmitQuoteExpiry";
 import { AppDispatch } from "popup/App";
 import {
   resetSubmission,
-  resetSubmitStatus,
   saveAmount,
   saveAmountUsd,
   saveAsset,
@@ -77,30 +75,9 @@ export const Swap = () => {
   const { transactionSimulation, transactionData } = submission;
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
 
-  // Quote expired at submit (op_under_dest_min / op_too_few_offers): recover to
-  // the review screen with a fresh quote instead of dead-ending in SubmitFail.
-  const isQuoteExpiredAtSubmit =
-    submission.submitStatus === ActionStatus.ERROR &&
-    submission.isSwapQuoteExpired;
-  useEffect(() => {
-    if (!isQuoteExpiredAtSubmit) {
-      return;
-    }
-    // Amounts intentionally dropped (parity with swap.completed/failed, which
-    // carry no amounts). Assets are bare codes (getAssetFromCanonical) so
-    // from_asset_code/to_asset_code match mobile rather than being canonical ids.
-    emitMetric(METRIC_NAMES.swapQuoteExpired, {
-      from_asset_code: getAssetFromCanonical(transactionData.asset).code,
-      to_asset_code: getAssetFromCanonical(transactionData.destinationAsset)
-        .code,
-      result_code: getQuoteExpiredOperationCodes(submission.error).join(", "),
-    });
-    // Clear only the ERROR status (keep the transaction data + the
-    // isSwapQuoteExpired flag, which drives the amount-screen notification).
-    dispatch(resetSubmitStatus());
-    setActiveStep(STEPS.AMOUNT);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isQuoteExpiredAtSubmit]);
+  const { isQuoteExpiredAtSubmit } = useSwapSubmitQuoteExpiry({
+    onRecover: () => setActiveStep(STEPS.AMOUNT),
+  });
 
   const [inputType, setInputType] = useState<InputType>("crypto");
   // Children fetch in their own mount effects, and React runs child effects

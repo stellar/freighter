@@ -3,7 +3,7 @@ import { useSelector } from "react-redux";
 import { QRCodeSVG } from "qrcode.react";
 import { Icon, Button, Notification } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
-import { Navigate, useLocation } from "react-router-dom";
+import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 import { emitMetric } from "helpers/metrics";
@@ -11,6 +11,7 @@ import { truncatedPublicKey } from "helpers/stellar";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { openTab } from "popup/helpers/navigate";
 import { View } from "popup/basics/layout/View";
+import { isEarnFlowSearch } from "popup/constants/earn";
 import { accountNameSelector } from "popup/ducks/accountServices";
 import { AppDataType, useGetAppData } from "helpers/hooks/useGetAppData";
 import { RequestState } from "constants/request";
@@ -26,6 +27,10 @@ import "./styles.scss";
 export const ViewPublicKey = () => {
   const { t } = useTranslation();
   const location = useLocation();
+  const navigate = useNavigate();
+  // The Earn flow marks itself so this shared screen can carry its chrome
+  // without changing how every other caller looks.
+  const isEarnFlow = isEarnFlowSearch(location.search);
   const accountName = useSelector(accountNameSelector);
   const { state, fetchData } = useGetAppData();
   // Holds the currently-shown copy-toast's id (see copyAddress below for why
@@ -118,7 +123,31 @@ export const ViewPublicKey = () => {
 
   return (
     <React.Fragment>
-      <View.AppHeader hasBackButton customBackIcon={<Icon.X />} />
+      {/* Only the Earn flow gets the titled, sheet-style chrome the design
+          specifies for it; the five other entry points keep the plain left X
+          they have always had. */}
+      <View.AppHeader
+        pageTitle={
+          isEarnFlow ? (
+            <span className="ViewPublicKey__title">{t("Receive funds")}</span>
+          ) : undefined
+        }
+        hasBackButton={!isEarnFlow}
+        customBackIcon={<Icon.X />}
+        rightContent={
+          isEarnFlow ? (
+            <button
+              type="button"
+              className="ViewPublicKey__close"
+              onClick={() => navigate(-1)}
+              aria-label={t("Close")}
+              data-testid="view-public-key-close"
+            >
+              <Icon.XClose />
+            </button>
+          ) : undefined
+        }
+      />
       <View.Content>
         <div className="ViewPublicKey__content">
           <div className="ViewPublicKey__account">
@@ -156,9 +185,6 @@ export const ViewPublicKey = () => {
       </View.Content>
       <View.Footer>
         <div className="ViewPublicKey__footer">
-          <div className="ViewPublicKey__footer__caption">
-            {t("This address supports Stellar network.")}
-          </div>
           {/* account.public_key_copied carries no source and never the raw
               key. Emitted from copyAddress only once the clipboard write
               succeeds, so failed copies aren't counted. */}

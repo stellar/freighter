@@ -33,9 +33,24 @@ export interface AmountCardProps {
   hasUsdPrice?: boolean;
   fiatLineText: string;
   isAmountTooHigh: boolean;
+  /**
+   * How an over-limit amount is shown. "message" (the default) keeps the inline
+   * "Insufficient balance…" row. "amount" turns the amount itself red and leaves
+   * the card's height alone, which is what the Earn deposit design specifies —
+   * there the CTA already reads "Insufficient funds", so the row would only say
+   * it twice.
+   */
+  invalidAmountStyle?: "message" | "amount";
   /** Pre-formatted max-spendable amount shown in the insufficient-balance
    * error (e.g. "123.23"); the token code is taken from assetCode. */
   maxSpendableText?: string;
+  /**
+   * The asset cannot be changed from this card, so the pill renders as a plain
+   * label — no chevron, not focusable. Used by the Earn swap sheet, where the
+   * receive token was chosen on the screen before and swapping it here would
+   * buy something the pool does not accept.
+   */
+  isAssetLocked?: boolean;
   isReadOnly?: boolean;
   autoFocus?: boolean;
   /** Optional handle to the amount input so a parent can focus it (e.g. the
@@ -69,7 +84,9 @@ export const AmountCard = ({
   hasUsdPrice = true,
   fiatLineText,
   isAmountTooHigh,
+  invalidAmountStyle = "message",
   maxSpendableText = "",
+  isAssetLocked = false,
   isReadOnly = false,
   autoFocus = true,
   amountInputRef,
@@ -114,7 +131,27 @@ export const AmountCard = ({
     securityLevel === SecurityLevel.SUSPICIOUS;
   const isMalicious = securityLevel === SecurityLevel.MALICIOUS;
 
-  const fontClass = `AmountCard__input-amount AmountCard__${amountFontSizeClass}`;
+  // The icon-plus-code pair is identical whether the pill is a button or the
+  // locked label, and only the chevron differs.
+  const assetPill = (
+    <>
+      <AssetIcon
+        assetIcons={assetIssuerKey || assetCode !== "XLM" ? assetIcons : {}}
+        code={assetCode}
+        issuerKey={assetIssuerKey}
+        icon={assetIcon}
+        isSuspicious={isSuspicious}
+        isMalicious={isMalicious}
+      />
+      <span className="AmountCard__asset-code">{assetCode}</span>
+    </>
+  );
+
+  const isAmountShownInvalid =
+    isAmountTooHigh && invalidAmountStyle === "amount";
+  const fontClass = `AmountCard__input-amount AmountCard__${amountFontSizeClass}${
+    isAmountShownInvalid ? " AmountCard__input-amount--invalid" : ""
+  }`;
 
   return (
     <div className="AmountCard">
@@ -230,37 +267,36 @@ export const AmountCard = ({
               <div className={fontClass}>--</div>
             ))}
         </div>
-        <button
-          type="button"
-          className={`AmountCard__asset-selector-inline${
-            assetCode ? "" : " AmountCard__asset-selector-inline--empty"
-          }`}
-          onClick={onSelectAsset}
-          data-testid="send-amount-edit-dest-asset"
-          aria-label={assetCode ? t("Change asset") : t("Select")}
-        >
-          {assetCode ? (
-            <>
-              <AssetIcon
-                assetIcons={
-                  assetIssuerKey || assetCode !== "XLM" ? assetIcons : {}
-                }
-                code={assetCode}
-                issuerKey={assetIssuerKey}
-                icon={assetIcon}
-                isSuspicious={isSuspicious}
-                isMalicious={isMalicious}
-              />
-              <span className="AmountCard__asset-code">{assetCode}</span>
-              <Icon.ChevronDown />
-            </>
-          ) : (
-            <>
-              <span className="AmountCard__asset-code">{t("Select")}</span>
-              <Icon.ChevronDown />
-            </>
-          )}
-        </button>
+        {isAssetLocked ? (
+          <div
+            className="AmountCard__asset-selector-inline AmountCard__asset-selector-inline--locked"
+            data-testid="send-amount-dest-asset-locked"
+          >
+            {assetPill}
+          </div>
+        ) : (
+          <button
+            type="button"
+            className={`AmountCard__asset-selector-inline${
+              assetCode ? "" : " AmountCard__asset-selector-inline--empty"
+            }`}
+            onClick={onSelectAsset}
+            data-testid="send-amount-edit-dest-asset"
+            aria-label={assetCode ? t("Change asset") : t("Select")}
+          >
+            {assetCode ? (
+              <>
+                {assetPill}
+                <Icon.ChevronDown />
+              </>
+            ) : (
+              <>
+                <span className="AmountCard__asset-code">{t("Select")}</span>
+                <Icon.ChevronDown />
+              </>
+            )}
+          </button>
+        )}
       </div>
 
       {/* The fiat line is always shown (callers pass "$0.00"/"--" when there is
@@ -278,6 +314,13 @@ export const AmountCard = ({
               isRounded
               variant="tertiary"
               data-testid="amount-fiat-toggle"
+              // Do not take focus from the amount input. Pressing this fires a
+              // blur that a parent tracking focus reads as the user leaving the
+              // field — the swap CTA disables itself only while the input is
+              // focused, so it would flash enabled for a frame before the
+              // re-mounted input (crypto and fiat are separate inputs, each
+              // autoFocused) takes focus back.
+              onMouseDown={(e) => e.preventDefault()}
               onClick={(e) => {
                 e.preventDefault();
                 onToggleInputType();
@@ -289,7 +332,7 @@ export const AmountCard = ({
         </div>
       </div>
 
-      {isAmountTooHigh && (
+      {isAmountTooHigh && invalidAmountStyle === "message" && (
         <div className="AmountCard__invalid-state">
           <Icon.AlertCircle />
           <span>

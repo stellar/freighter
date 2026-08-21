@@ -1,0 +1,53 @@
+@use "../../../styles/utils.scss" as *;
+
+.EarnIntro {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+
+  // Artwork fills the space above the copy. Placeholder until design ships the
+  // final asset; the flex-grow keeps the copy block anchored to the bottom
+  // regardless of the artwork's eventual intrinsic size.
+  &__art {
+    position: relative;
+    flex: 1 1 auto;
+    min-height: pxToRem(160);
+    background: var(--sds-clr-gray-04);
+    border-bottom-left-radius: pxToRem(16);
+    border-bottom-right-radius: pxToRem(16);
+  }
+
+  &__close {
+    position: absolute;
+    top: pxToRem(16);
+    right: pxToRem(16);
+    width: pxToRem(32);
+    height: pxToRem(32);
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    background: var(--sds-clr-gray-08);
+    color: var(--sds-clr-gray-12);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  &__content {
+    flex: 0 0 auto;
+    padding: pxToRem(24);
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(12);
+  }
+
+  &__title {
+    text-align: center;
+  }
+
+  &__body {
+    text-align: center;
+    color: var(--sds-clr-gray-11);
+    margin-bottom: pxToRem(12);
+  }
+}

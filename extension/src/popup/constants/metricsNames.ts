@@ -38,6 +38,36 @@ export const METRIC_NAMES = {
   swapCompleted: "swap.completed",
   swapFailed: "swap.failed",
 
+  // -- Earn ----------------------------------------------------------------
+  // In funnel order. The stage-to-stage drop-off is read from `screen.viewed`
+  // (earn_intro → earn_select_token → earn_amount → earn_review →
+  // earn_processing → earn_success); the events below carry what a screen name
+  // cannot — which asset and pool, which remedy an unfunded user picked, and why
+  // an attempt ended. Emitted through popup/metrics/earn.ts, never inline.
+  earnTokenSelected: "earn.token_selected",
+  // A supported token the account holds none of was tapped; `variant` is the set
+  // of remedies the sheet actually offered.
+  earnBalanceInsufficientShown: "earn.balance_insufficient_shown",
+  // Which remedy was chosen on that sheet: buy | swap | transfer.
+  earnFundingActionSelected: "earn.funding_action_selected",
+  // The swap-within-earn branch settled. Distinct from `swap.completed`, which
+  // the reused Swap components emit and cannot attribute to Earn.
+  earnSwapCompleted: "earn.swap_completed",
+  earnPoolDetailsOpened: "earn.pool_details_opened",
+  // A percentage shortcut on the amount screen; `percent: 100` is Max.
+  earnMaxAmountSelected: "earn.max_amount_selected",
+  // The deposit cannot cover its own network fee; `reason` separates an account
+  // with no spendable XLM from an amount that leaves less than the resource fee.
+  earnXlmFeeInsufficientShown: "earn.xlm_fee_insufficient_shown",
+  earnSimulationFailed: "earn.simulation_failed",
+  earnDepositCompleted: "earn.deposit_completed",
+  earnDepositFailed: "earn.deposit_failed",
+  // The in-flight screen was closed before the submission settled. The deposit
+  // itself is not abandoned — it was already submitted — so a completed/failed
+  // event for the same attempt normally still follows. Only closing the popup
+  // outright loses the outcome.
+  earnDepositDismissed: "earn.deposit_processing_dismissed",
+
   // -- Collectibles --------------------------------------------------------
   collectibleSendCompleted: "collectible_send.completed",
   collectibleSendFailed: "collectible_send.failed",
@@ -81,7 +111,8 @@ export const METRIC_NAMES = {
     "onboarding.recovery_phrase_confirm_failed",
   // Not emitted on extension: the create-account recovery-phrase screens have
   // no Back affordance to instrument. Mobile emits it; kept for a shared catalog.
-  onboardingRecoveryPhraseBackClicked: "onboarding.recovery_phrase_back_clicked",
+  onboardingRecoveryPhraseBackClicked:
+    "onboarding.recovery_phrase_back_clicked",
   onboardingCompleted: "onboarding.completed",
 
   // -- Account recovery / management --------------------------------------

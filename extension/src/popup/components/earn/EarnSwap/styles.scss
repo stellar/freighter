@@ -1,0 +1,93 @@
+@use "../../../styles/utils.scss" as *;
+
+// The swap branch is a bottom sheet over the still-visible token picker. The
+// container rules are scoped by data-slot because our shadcn Sheet forwards
+// `className` to the overlay as well, and the overlay must keep its dim scrim
+// rather than take a solid background and a height.
+[data-slot="sheet-content"].EarnSwapSheet {
+  background: var(--sds-clr-gray-01);
+  border-radius: 1.5rem 1.5rem 0 0;
+  box-shadow: 0 1rem 1.5rem rgba(0, 0, 0, 0.24);
+  // Deliberately not `overflow: hidden`. The slide-in animation transforms this
+  // element, which makes it the containing block for the review SlideupModal
+  // that SwapAmount nests inside it — clipping here would cut that sheet off.
+  // `__body` does the clipping instead, and the header inset carries the
+  // rounded top corners.
+
+  // 90% of the 600px popup. One height for every sub-step: the screens reused
+  // from the Swap route pin their footer, so a shorter per-step sheet would push
+  // their content into a scroll.
+  height: 90dvh;
+  max-height: pxToRem(540);
+
+  // Nothing inside the sheet is a full-height screen any more.
+  .View {
+    height: 100%;
+    min-height: 0;
+  }
+
+  // The vertical rules belong to the fullscreen layout; inside the sheet they
+  // would draw down over the rounded corners.
+  .View__inset--vertical-border {
+    border-left: 0;
+    border-right: 0;
+  }
+
+  // Follow whichever inset paints first rather than assuming a header: the
+  // submitting/success step renders only View.Content, and `--scroll-shadows`
+  // gives that inset an opaque background that would otherwise square off the
+  // sheet's rounded top corners.
+  .EarnSwapSheet__body > :first-child .View__inset:first-of-type {
+    border-radius: 1.5rem 1.5rem 0 0;
+  }
+
+  // Leave room for the sheet's own X so a long title cannot run under it.
+  .View__header__box--right {
+    min-width: pxToRem(32);
+  }
+}
+
+.EarnSwapSheet__close {
+  position: absolute;
+  // Centred on the 56px header row, whether or not the step draws one.
+  top: pxToRem(12);
+  right: 1rem;
+  z-index: 1;
+  width: pxToRem(32);
+  height: pxToRem(32);
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  background: var(--sds-clr-gray-04);
+  color: var(--sds-clr-gray-11);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.EarnSwapSheet__body {
+  // Mirrors `.Earn__step`: the reused screens render a bare header + content
+  // pair with no `.View` wrapper of their own.
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  // These screens have no `.View` ancestor inside the sheet, so the chrome
+  // variables `.View` normally declares have to be set here — without them the
+  // padding rules that reference them collapse to zero, which is what left the
+  // CTA flush against the sheet's bottom edge.
+  //
+  // Values are measured off the Figma sheet (node 9459:47811, 360x436): a 32px
+  // header row 24px below the top edge (56px total), a 12px gap from the header
+  // to the sell card, and 24px under the CTA.
+  --View-header-height: #{pxToRem(56)};
+  --View-inset-padding-top: #{pxToRem(12)};
+  --View-footer-padding-bottom: #{pxToRem(24)};
+}
+
+// The seam notch is 40px in this sheet (Figma node 9459:48064). The standalone
+// Swap route keeps the shared 30px until design confirms the two should match.
+.EarnSwapSheet__body .SwapAsset__direction-btn {
+  width: pxToRem(40);
+  height: pxToRem(40);
+}

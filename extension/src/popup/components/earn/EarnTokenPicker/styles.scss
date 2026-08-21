@@ -1,0 +1,121 @@
+@use "../../../styles/utils.scss" as *;
+
+.EarnTokenPicker {
+  display: flex;
+  flex-direction: column;
+  gap: pxToRem(4);
+
+  &__section-title {
+    color: var(--sds-clr-gray-12);
+    margin-top: pxToRem(12);
+    margin-bottom: pxToRem(4);
+
+    &:first-child {
+      margin-top: 0;
+    }
+  }
+
+  &__apy {
+    background: var(--sds-clr-green-04);
+    color: var(--sds-clr-green-11);
+    border-radius: pxToRem(16);
+    padding: pxToRem(4) pxToRem(10);
+    font-size: pxToRem(14);
+    font-weight: 500;
+    white-space: nowrap;
+  }
+
+  &__loader {
+    display: flex;
+    justify-content: center;
+    padding-top: pxToRem(48);
+  }
+
+  &__disclaimer {
+    color: var(--sds-clr-gray-10);
+    padding-top: pxToRem(12);
+  }
+}
+
+.NotEnoughTokenSheet {
+  padding: pxToRem(24);
+  display: flex;
+  flex-direction: column;
+  gap: pxToRem(8);
+
+  &__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+  }
+
+  &__close {
+    width: pxToRem(32);
+    height: pxToRem(32);
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    background: var(--sds-clr-gray-04);
+    color: var(--sds-clr-gray-11);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  &__title {
+    margin-top: pxToRem(8);
+  }
+
+  &__body {
+    color: var(--sds-clr-gray-11);
+    margin-bottom: pxToRem(12);
+  }
+
+  &__actions {
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(8);
+  }
+
+  // Buy and Swap share the row evenly (152px each of 312 with an 8px gap in the
+  // design), so neither is sized by its label length.
+  &__actions-row {
+    display: flex;
+    gap: pxToRem(8);
+
+    > * {
+      flex: 1;
+      min-width: 0;
+    }
+  }
+
+  // A hairline either side of the word, matching the design's 20px divider row.
+  &__or {
+    display: flex;
+    align-items: center;
+    gap: pxToRem(8);
+    height: pxToRem(20);
+    color: var(--sds-clr-gray-11);
+    font-size: pxToRem(14);
+
+    &::before,
+    &::after {
+      content: "";
+      flex: 1;
+      height: 1px;
+      background: var(--sds-clr-gray-06);
+    }
+  }
+
+  // The transfer route under two equal options is a text button, not a pill.
+  &__text-action {
+    height: pxToRem(36);
+    padding: 0;
+    border: none;
+    background: none;
+    cursor: pointer;
+    color: var(--sds-clr-gray-11);
+    font-size: pxToRem(14);
+    font-weight: var(--font-weight-medium);
+  }
+}

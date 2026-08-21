@@ -1,0 +1,124 @@
+@use "../../../styles/utils.scss" as *;
+
+.EarnReview {
+  padding: pxToRem(20);
+  display: flex;
+  flex-direction: column;
+  gap: pxToRem(12);
+
+  &__group {
+    background: var(--sds-clr-gray-03);
+    border-radius: pxToRem(12);
+    padding: pxToRem(16);
+    color: var(--sds-clr-gray-11);
+
+    &--rows {
+      padding: 0 pxToRem(16);
+    }
+  }
+
+  &__asset {
+    display: flex;
+    align-items: center;
+    gap: pxToRem(12);
+    padding-top: pxToRem(8);
+
+    // AssetIcon carries a 1rem right margin for the account's list rows. Here
+    // the row's own gap does the spacing, and leaving the margin in place pushes
+    // the amount 16px further right than the pool row below it.
+    .AccountAssets__asset--logo {
+      margin-right: 0;
+    }
+  }
+
+  &__amount {
+    color: var(--sds-clr-gray-12);
+    font-size: pxToRem(16);
+    font-weight: 500;
+  }
+
+  &__chevrons {
+    color: var(--sds-clr-gray-09);
+    padding: pxToRem(6) 0 0 pxToRem(10);
+  }
+
+  // The "before" half of a before -> after pair is de-emphasised so the
+  // resulting value reads as the answer.
+  &__before {
+    color: var(--sds-clr-gray-09);
+    font-weight: 400;
+  }
+
+  &__details-btn {
+    display: flex;
+    align-items: center;
+    gap: pxToRem(8);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: pxToRem(12) pxToRem(4);
+    color: var(--sds-clr-lilac-11);
+  }
+
+  // The details pane carries the whole invocation — auth entries plus every
+  // contract parameter — so it routinely outgrows the popup. SlideupModal sizes
+  // itself to its content's scrollHeight, so without a cap here the sheet runs
+  // off the viewport with nothing to scroll. Capped like `.ReviewTx`, with the
+  // header pinned and only the body scrolling.
+  &--details {
+    max-height: 85vh;
+  }
+
+  &__details-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: pxToRem(8);
+    color: var(--sds-clr-gray-12);
+    flex: none;
+  }
+
+  &__details-body {
+    flex: 1;
+    // Without this a flex item refuses to shrink below its content height, and
+    // the overflow never engages.
+    min-height: 0;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(12);
+  }
+
+  &__close {
+    width: pxToRem(32);
+    height: pxToRem(32);
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    background: var(--sds-clr-gray-04);
+    color: var(--sds-clr-gray-11);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  &__actions {
+    display: flex;
+    align-items: center;
+    gap: pxToRem(8);
+  }
+
+  &__settings {
+    flex: 0 0 auto;
+    width: pxToRem(40);
+    height: pxToRem(40);
+    border-radius: 50%;
+    border: 1px solid var(--sds-clr-gray-06);
+    cursor: pointer;
+    background: none;
+    color: var(--sds-clr-gray-11);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}

@@ -1,0 +1,93 @@
+@use "../../../styles/utils.scss" as *;
+
+.PoolDetailsSheet {
+  padding: pxToRem(24);
+  display: flex;
+  flex-direction: column;
+  gap: pxToRem(12);
+
+  // The stat rows grow as the pool gains fields, and SlideupModal sizes itself
+  // to its content's scrollHeight — so without a cap here the sheet runs to the
+  // top of the popup with nothing to scroll. Capped like `.EarnReview--details`,
+  // with the header and the Close button pinned and only the body scrolling.
+  max-height: 85vh;
+
+  &__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: pxToRem(12);
+    flex: none;
+  }
+
+  &__body {
+    flex: 1;
+    // Without this a flex item refuses to shrink below its content height, and
+    // the overflow never engages.
+    min-height: 0;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(12);
+  }
+
+  > .Button {
+    flex: none;
+  }
+
+  &__identity {
+    color: var(--sds-clr-gray-11);
+    // Keeps the icon adjacent to the name instead of at the opposite edge of the
+    // space-between header.
+    margin-right: auto;
+  }
+
+  &__close {
+    flex: 0 0 auto;
+    width: pxToRem(32);
+    height: pxToRem(32);
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    background: var(--sds-clr-gray-04);
+    color: var(--sds-clr-gray-11);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  &__description {
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(4);
+    color: var(--sds-clr-gray-11);
+  }
+
+  &__group {
+    background: var(--sds-clr-gray-03);
+    border-radius: pxToRem(12);
+    padding: 0 pxToRem(16);
+  }
+
+  // Overlapping stack, matching the design's accepted-token cluster: 16px icons
+  // on a 12px stride (Figma 9448:19027), which is also what lets four of them
+  // fit the row's slot. AssetIcon's own 2rem is sized for the account's balance
+  // list, so it is overridden here and nowhere else.
+  &__tokens {
+    display: flex;
+    align-items: center;
+
+    .AccountAssets__asset--logo {
+      width: pxToRem(16);
+      height: pxToRem(16);
+      min-width: pxToRem(16);
+      // The class also carries a 1rem right margin for the balance list, which
+      // would cancel the overlap below and leave a 12px gap instead.
+      margin-right: 0;
+    }
+
+    > * + * {
+      margin-left: pxToRem(-4);
+    }
+  }
+}

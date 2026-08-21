@@ -72,6 +72,13 @@
     &:hover {
       background-color: var(--sds-clr-gray-04);
     }
+
+    // Rendered in place of the button when the direction cannot be flipped: the
+    // seam still needs its notch, but there is nothing to press.
+    &--static {
+      cursor: default;
+      pointer-events: none;
+    }
   }
 
   &__percentage-buttons {
@@ -203,6 +210,25 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: pxToRem(12px);
+
+    // In a sheet the fee readout is gone, so the lone slippage pill would
+    // otherwise sit under the amount card's left edge.
+    &--sheet {
+      justify-content: flex-end;
+    }
+  }
+
+  // Bare icon in the sheet header's left slot; the circled X opposite it belongs
+  // to the sheet, not to this screen.
+  &__header-settings {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: none;
+    background: none;
+    cursor: pointer;
+    color: var(--sds-clr-gray-11);
   }
 
   &__settings-fee-display {
