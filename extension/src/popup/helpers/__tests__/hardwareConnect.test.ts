@@ -95,7 +95,7 @@ describe("hardwareSign", () => {
   it("should sign a transaction", async () => {
     const signature = await hardwareSign[WalletType.LEDGER]({
       bipPath: "bip",
-      tx: StellarSDK.TransactionBuilder.fromXDR(
+      tx: StellarSDK.TransactionBuilder.fromXdr(
         "AAAAAgAAAACdtkcf/ACLqOtoQjsJLphTtyieRSEnb9pnqaf7WLws3QAAAGQDAtjKAAAACAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAABgAAAAFVU0RDAAAAADuZETgO/piLoKiQDrHP5E82b32+lGvtB3JA9/Yk3xXFf/////////8AAAAAAAAAAA==",
         TESTNET_NETWORK_DETAILS.networkPassphrase,
       ),
@@ -107,7 +107,7 @@ describe("hardwareSign", () => {
   it("should sign a hash", async () => {
     const signature = await hardwareSign[WalletType.LEDGER]({
       bipPath: "bip",
-      tx: StellarSDK.TransactionBuilder.fromXDR(
+      tx: StellarSDK.TransactionBuilder.fromXdr(
         "AAAAAgAAAACdtkcf/ACLqOtoQjsJLphTtyieRSEnb9pnqaf7WLws3QAAAGQDAtjKAAAACAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAABgAAAAFVU0RDAAAAADuZETgO/piLoKiQDrHP5E82b32+lGvtB3JA9/Yk3xXFf/////////8AAAAAAAAAAA==",
         TESTNET_NETWORK_DETAILS.networkPassphrase,
       ),

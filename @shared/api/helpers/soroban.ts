@@ -7,7 +7,6 @@ import {
   contract,
   StrKey,
 } from "stellar-sdk";
-import { XdrReader } from "@stellar/js-xdr";
 
 export interface TokenArgsDisplay {
   contractId: string;
@@ -448,7 +447,7 @@ export const valueToI128String = (value: xdr.ScVal) =>
 
 // How do we decode these in a more generic way?
 export const decodei128 = (b64: string) => {
-  const value = xdr.ScVal.fromXDR(b64, "base64");
+  const value = xdr.ScVal.fromXdr(b64, "base64");
   try {
     return valueToI128String(value);
   } catch (error) {
@@ -458,10 +457,12 @@ export const decodei128 = (b64: string) => {
 };
 
 export const decodeStr = (b64: string) =>
-  xdr.ScVal.fromXDR(b64, "base64").str().toString();
+  xdr
+    .expectUnionVariant(xdr.ScVal.fromXdr(b64, "base64"), "scvString")
+    .str.toString();
 
 export const decodeU32 = (b64: string) =>
-  xdr.ScVal.fromXDR(b64, "base64").u32();
+  xdr.expectUnionVariant(xdr.ScVal.fromXdr(b64, "base64"), "scvU32").u32;
 
 export const numberToI128 = (value: number): xdr.ScVal =>
   new ScInt(value).toI128();
@@ -471,10 +472,10 @@ export const getLedgerKeyContractCode = (contractId: string) => {
     new xdr.LedgerKeyContractData({
       contract: new Address(contractId).toScAddress(),
       key: xdr.ScVal.scvLedgerKeyContractInstance(),
-      durability: xdr.ContractDataDurability.persistent(),
+      durability: xdr.ContractDataDurability.persistent,
     }),
   );
-  return ledgerKey.toXDR("base64");
+  return ledgerKey.toXdr("base64");
 };
 
 export const getLedgerEntries = async (
@@ -509,43 +510,36 @@ export const getLedgerEntries = async (
 };
 
 export const getLedgerKeyWasmId = (contractLedgerEntryData: string) => {
-  const contractCodeWasmHash = xdr.LedgerEntryData.fromXDR(
-    contractLedgerEntryData,
-    "base64",
-  )
-    .contractData()
-    .val()
-    .instance()
-    .executable()
-    .wasmHash();
+  const contractData = xdr.expectUnionVariant(
+    xdr.LedgerEntryData.fromXdr(contractLedgerEntryData, "base64"),
+    "contractData",
+  ).contractData;
+  const contractCodeWasmHash = xdr.expectUnionVariant(
+    xdr.expectUnionVariant(contractData.val, "scvContractInstance").instance
+      .executable,
+    "contractExecutableWasm",
+  ).wasmHash;
   const ledgerKey = xdr.LedgerKey.contractCode(
     new xdr.LedgerKeyContractCode({
       hash: contractCodeWasmHash,
     }),
   );
-  return ledgerKey.toXDR("base64");
+  return ledgerKey.toXdr("base64");
 };
 
 export const parseWasmXdr = async (xdrContents: string) => {
-  const wasmBuffer = xdr.LedgerEntryData.fromXDR(xdrContents, "base64")
-    .contractCode()
-    .code();
-  const wasmBytes = new Uint8Array(
-    wasmBuffer.buffer as ArrayBuffer,
-    wasmBuffer.byteOffset,
-    wasmBuffer.byteLength,
-  );
-  const wasmModule = await WebAssembly.compile(wasmBytes);
-  const reader = new XdrReader(
-    Buffer.from(
-      WebAssembly.Module.customSections(wasmModule, "contractspecv0")[0],
-    ),
+  const wasmBytes = xdr.expectUnionVariant(
+    xdr.LedgerEntryData.fromXdr(xdrContents, "base64"),
+    "contractCode",
+  ).contractCode.code;
+  const wasmModule = await WebAssembly.compile(new Uint8Array(wasmBytes));
+  const specSection = new Uint8Array(
+    WebAssembly.Module.customSections(wasmModule, "contractspecv0")[0],
   );
 
-  const specs = [];
-  do {
-    specs.push(xdr.ScSpecEntry.read(reader));
-  } while (!reader.eof);
+  // v17: `xdr.ScSpecEntry.read(reader)` is gone along with the exported
+  // js-xdr Reader; `decodeStream` walks the back-to-back entries instead.
+  const specs = xdr.decodeStream(xdr.ScSpecEntry, specSection);
   const contractSpec = new contract.Spec(specs);
   return contractSpec.jsonSchema();
 };

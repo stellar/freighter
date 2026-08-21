@@ -20,7 +20,7 @@ describe("scValByType", () => {
     expect(parsedAccountAddress).toEqual(ACCOUNT);
 
     const scAddressContract = xdr.ScAddress.scAddressTypeContract(
-      StrKey.decodeContract(CONTRACT),
+      new xdr.ContractId(StrKey.decodeContract(CONTRACT)),
     );
     const contractAddress = xdr.ScVal.scvAddress(scAddressContract);
     const parsedContractAddress = scValByType(contractAddress);
@@ -44,7 +44,7 @@ describe("scValByType", () => {
     const parsedContractError = scValByType(scvContractError);
     expect(parsedContractError).toEqual(contractErrorCode);
 
-    const scErrorCode = xdr.ScErrorCode.scecArithDomain();
+    const scErrorCode = xdr.ScErrorCode.scecArithDomain;
     const wasmError = xdr.ScError.sceWasmVm(scErrorCode);
     const scvWasmError = xdr.ScVal.scvError(wasmError);
     const parsedWasmError = scValByType(scvWasmError);
@@ -52,20 +52,20 @@ describe("scValByType", () => {
   });
   it("should render number types as strings", () => {
     const num = 1;
-    const scvInt64 = xdr.ScVal.scvI64(new xdr.Int64(num));
+    const scvInt64 = xdr.ScVal.scvI64(BigInt(num));
     const parsedInt = scValByType(scvInt64);
     expect(parsedInt).toEqual(num.toString());
   });
   it("should render ledger keys as strings", () => {
     const nonce = 1;
-    const nonceKey = new xdr.ScNonceKey({ nonce });
+    const nonceKey = new xdr.ScNonceKey({ nonce: BigInt(nonce) });
     const ledgerKey = xdr.ScVal.scvLedgerKeyNonce(nonceKey);
     const parsedLedgerKey = scValByType(ledgerKey);
     expect(parsedLedgerKey).toEqual(nonce.toString());
 
     const ledgerKeyContractInstance = xdr.ScVal.scvLedgerKeyContractInstance();
     const parsedInstance = scValByType(ledgerKeyContractInstance);
-    expect(parsedInstance).toEqual(undefined);
+    expect(parsedInstance).toEqual(null);
   });
   it("should render maps and vectors as JSON strings", () => {
     const key = "key";
@@ -73,7 +73,7 @@ describe("scValByType", () => {
     const xdrMap = xdr.ScVal.scvMap([
       new xdr.ScMapEntry({
         key: xdr.ScVal.scvString(key),
-        val: xdr.ScVal.scvU64(new xdr.Uint64(value)),
+        val: xdr.ScVal.scvU64(BigInt(value)),
       }),
     ]);
     const parsedMap = scValByType(xdrMap);

@@ -278,8 +278,11 @@ export const signWithHardwareWallet = createAsyncThunk<
 
         // A Buffer does not survive the JSON serialization that
         // `runtime.sendMessage` applies on the way to the background script, so
-        // the signature travels as base64 and is decoded there.
-        return signature.toString("base64");
+        // the signature travels as base64 and is decoded there. Encode via
+        // xdr.encodeBytes: as of SDK v17 the signature may be a plain
+        // Uint8Array, whose `toString("base64")` silently yields
+        // comma-joined decimals.
+        return xdr.encodeBytes(signature, "base64");
       } catch (e) {
         const message = e instanceof Error ? e.message : JSON.stringify(e);
         return thunkApi.rejectWithValue({ errorMessage: message });
@@ -304,7 +307,7 @@ export const signWithHardwareWallet = createAsyncThunk<
     }
 
     try {
-      const tx = TransactionBuilder.fromXDR(transactionXDR, networkPassphrase);
+      const tx = TransactionBuilder.fromXdr(transactionXDR, networkPassphrase);
 
       const signature = await hardwareSign[walletType]({
         bipPath,
@@ -320,7 +323,7 @@ export const signWithHardwareWallet = createAsyncThunk<
 
       tx.signatures.push(decoratedSignature);
 
-      return tx.toXDR();
+      return tx.toXdr();
     } catch (e) {
       const message = e instanceof Error ? e.message : JSON.stringify(e);
       return thunkApi.rejectWithValue({ errorMessage: message });

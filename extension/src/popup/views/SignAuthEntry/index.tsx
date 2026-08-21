@@ -129,7 +129,7 @@ export const SignAuthEntry = () => {
   // showing any signing UI. An unparseable entry is rejected immediately.
   let preimage: xdr.HashIdPreimage;
   try {
-    preimage = xdr.HashIdPreimage.fromXDR(params.entry, "base64");
+    preimage = xdr.HashIdPreimage.fromXdr(params.entry, "base64");
   } catch (_e) {
     return (
       <WarningMessage
@@ -149,12 +149,16 @@ export const SignAuthEntry = () => {
   let sorobanAuth: ReturnType<typeof parseAuthEntryPreimage>;
   try {
     sorobanAuth = parseAuthEntryPreimage(preimage);
-    const embeddedNetworkId = sorobanAuth.networkId();
+    // v17: `networkId` is a `Hash` wrapper (not a Buffer), so compare via
+    // its structural `equals` rather than Buffer.equals.
+    const embeddedNetworkId = sorobanAuth.networkId;
     const entryNetworkName =
       Object.entries(PASSPHRASE_TO_NETWORK_NAME).find(([passphrase]) =>
-        hash(Buffer.from(passphrase)).equals(embeddedNetworkId),
+        embeddedNetworkId.equals(new xdr.Hash(hash(Buffer.from(passphrase)))),
       )?.[1] ?? params.networkPassphrase;
-    const expectedNetworkId = hash(Buffer.from(networkPassphrase));
+    const expectedNetworkId = new xdr.Hash(
+      hash(Buffer.from(networkPassphrase)),
+    );
     if (!embeddedNetworkId.equals(expectedNetworkId)) {
       return (
         <WarningMessage
@@ -200,7 +204,7 @@ export const SignAuthEntry = () => {
   // mismatch is — signing it is not supported for now.
   const boundAddress =
     sorobanAuth instanceof xdr.HashIdPreimageSorobanAuthorizationWithAddress
-      ? Address.fromScAddress(sorobanAuth.address()).toString()
+      ? Address.fromScAddress(sorobanAuth.address).toString()
       : undefined;
 
   if (boundAddress && boundAddress !== publicKey) {
@@ -231,7 +235,7 @@ export const SignAuthEntry = () => {
   const favicon = getSiteFavicon(domain);
   const validDomain = isDomainValid ? punycodedDomain : `xn-${punycodedDomain}`;
 
-  const invocation = sorobanAuth.invocation();
+  const invocation = sorobanAuth.invocation;
 
   return isPasswordRequired ? (
     <VerifyAccount
