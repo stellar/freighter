@@ -64,6 +64,10 @@
   }
 
   &__Warning {
+    // The footer clears 36px below the buttons (24px footer padding + the 12px
+    // Actions margin). The content pane's own bottom padding contributes 24px
+    // above this line, so add 12px to match, keeping the line evenly inset.
+    margin-top: pxToRem(12px);
     color: var(--sds-clr-gray-10);
     text-align: center;
     font-size: pxToRem(14px);
