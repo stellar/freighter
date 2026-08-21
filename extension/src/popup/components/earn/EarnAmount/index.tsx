@@ -250,29 +250,40 @@ export const EarnAmount = ({ goBack, onConfirm }: EarnAmountProps) => {
         transactionTimeout,
       });
 
-      // Simulation is the first place the resource fee is known, so an XLM
-      // deposit that leaves nothing for it is caught here rather than by holding
-      // a guessed buffer back from the balance. The submission would otherwise
+      // Simulation is the first place the resource fee is known, so a deposit
+      // that leaves nothing for it is caught here rather than by holding a
+      // guessed buffer back from the balance. The submission would otherwise
       // fail with txINSUFFICIENT_BALANCE after the user had already signed.
-      const shortfall = isXlm
-        ? getXlmFeeShortfall({
-            spendableXlm,
-            amount: enteredAmount.toFixed(),
-            resourceFee: simulation.resourceFee || "0",
-          })
-        : "0";
+      //
+      // The fee is XLM-only, so the remainder it comes out of is whatever an XLM
+      // deposit leaves behind — or, for any other asset, the whole untouched
+      // spendable balance. The pre-simulation gate above is only inclusion-fee
+      // sized, which a Blend submit's resource fee dwarfs by ~5,000x, so a
+      // non-XLM deposit is just as capable of being short here.
+      const shortfall = getXlmFeeShortfall({
+        spendableXlm,
+        amount: isXlm ? enteredAmount.toFixed() : "0",
+        resourceFee: simulation.resourceFee || "0",
+      });
 
       if (new BigNumber(shortfall).gt(0)) {
         trackEarnXlmFeeInsufficientShown({
           assetCode: selected?.code || "",
           reason: "fee_not_covered",
         });
-        setSimulationError(
-          t(
-            "Not enough XLM left for the network fee. Reduce your deposit by at least {{amount}} XLM.",
-            { amount: formatAmount(shortfall) },
-          ),
-        );
+        // Only an XLM deposit can trade amount for fee. For anything else the
+        // deposit is not competing with the fee at all, so the remedy is more
+        // XLM — the same sheet the pre-simulation gate opens.
+        if (isXlm) {
+          setSimulationError(
+            t(
+              "Not enough XLM left for the network fee. Reduce your deposit by at least {{amount}} XLM.",
+              { amount: formatAmount(shortfall) },
+            ),
+          );
+        } else {
+          setIsFeeSheetOpen(true);
+        }
         return;
       }
 

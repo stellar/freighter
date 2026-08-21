@@ -48,7 +48,7 @@ export const NetworkFeeSheet = ({
       </div>
 
       <Text as="h2" size="lg" weight="semi-bold">
-        {t("You need some XLM for network fee")}
+        {t("You need some XLM for the network fee")}
       </Text>
 
       <div className="NetworkFeeSheet__body">

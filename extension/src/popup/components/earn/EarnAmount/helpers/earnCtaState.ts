@@ -43,6 +43,10 @@ export const getEarnCtaState = ({
  * IS XLM, an unaffordable amount should read as insufficient funds on the
  * button, and this sheet should only fire for an otherwise-affordable amount
  * that leaves no fee headroom.
+ *
+ * `fee` is the inclusion fee, which is all that is known before simulation, so
+ * clearing this bar does not mean the account can pay the whole fee — see
+ * `getXlmFeeShortfall` for the post-simulation check that covers the rest.
  */
 export const needsXlmForFee = ({
   spendableXlm,
@@ -66,8 +70,12 @@ export const needsXlmForFee = ({
  * nets out the base reserve and the inclusion fee, so only the resource fee is
  * left to cover.
  *
- * Only XLM deposits can be short this way: for any other asset the fee comes
- * out of an untouched XLM balance.
+ * The fee is always paid in XLM, so this applies whichever asset is being
+ * deposited — only the remainder it comes out of differs. Pass `amount: "0"`
+ * for a non-XLM deposit: the XLM balance is untouched, so the whole spendable
+ * balance is what the fee has to fit inside. An account can be short either
+ * way, and `needsXlmForFee` cannot catch it: that gate runs before simulation,
+ * when only the inclusion fee is known.
  */
 export const getXlmFeeShortfall = ({
   spendableXlm,
@@ -75,7 +83,10 @@ export const getXlmFeeShortfall = ({
   resourceFee,
 }: {
   spendableXlm: string;
-  /** Cleaned deposit amount — no group separators. */
+  /**
+   * Cleaned deposit amount — no group separators. "0" when the deposit asset is
+   * not XLM, since none of the XLM balance is being spent on the deposit.
+   */
   amount: string;
   /** `minResourceFee` from simulation, in XLM. */
   resourceFee: string;

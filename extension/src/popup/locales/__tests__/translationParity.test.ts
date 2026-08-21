@@ -45,7 +45,7 @@ const earnKeys = [
   "by Blend",
   "Review deposit",
   "Insufficient funds",
-  "You need some XLM for network fee",
+  "You need some XLM for the network fee",
   "Not enough XLM left for the network fee. Reduce your deposit by at least {{amount}} XLM.",
   "Not enough XLM to cover the network fee. Try depositing a smaller amount.",
   "Add XLM to your wallet to continue",

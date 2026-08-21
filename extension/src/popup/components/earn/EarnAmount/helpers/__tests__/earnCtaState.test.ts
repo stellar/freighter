@@ -73,6 +73,17 @@ describe("needsXlmForFee", () => {
   it("is true for an account with no spendable XLM at all", () => {
     expect(needsXlmForFee({ spendableXlm: "0", fee: "0.0000100" })).toBe(true);
   });
+
+  it("clears on the inclusion fee alone, well below a Blend resource fee", () => {
+    // The whole bar this gate can set before simulation. `fee` here is a real
+    // pubnet recommendedFee (the mode of max_fee bids, ~0.0119 XLM, not the
+    // 0.00001 base fee), and it is still a fifth of a Blend submit's resource
+    // fee — which is why getXlmFeeShortfall has to run for every asset
+    // afterwards rather than only for XLM deposits.
+    expect(needsXlmForFee({ spendableXlm: "0.02", fee: "0.0118720" })).toBe(
+      false,
+    );
+  });
 });
 
 describe("getXlmFeeShortfall", () => {
@@ -126,6 +137,31 @@ describe("getXlmFeeShortfall", () => {
         resourceFee: "0.0546395",
       }),
     ).toBe("0.0546395");
+  });
+
+  it("measures a non-XLM deposit against the whole untouched balance", () => {
+    // amount "0" is how a non-XLM deposit is expressed: the XLM balance is not
+    // being spent, so the entire spendable balance has to absorb the fee. This
+    // spendable figure deliberately sits above a real recommendedFee, so the
+    // account clears needsXlmForFee and this is the only thing standing between
+    // it and a txINSUFFICIENT_BALANCE after signing.
+    expect(
+      getXlmFeeShortfall({
+        spendableXlm: "0.02",
+        amount: "0",
+        resourceFee: "0.0546395",
+      }),
+    ).toBe("0.0346395");
+  });
+
+  it("clears a non-XLM deposit whose XLM balance covers the fee", () => {
+    expect(
+      getXlmFeeShortfall({
+        spendableXlm: "5",
+        amount: "0",
+        resourceFee: "0.0546395",
+      }),
+    ).toBe("0");
   });
 });
 
