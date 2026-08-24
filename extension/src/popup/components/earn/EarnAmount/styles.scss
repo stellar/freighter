@@ -24,16 +24,18 @@
   // card's own rounded corners sit outside it, 22px tall (2px padding on an
   // 18px line), and flush with the card rather than tucked behind it.
   //
-  // Colours are the design's Colors/Green/10 on Colors/Green/4 — a brighter
-  // fill with dark green text, where this previously used green-08 on green-01
-  // and read as muted.
+  // Colours are the design's Success/background/secondary under Colors/Green/9
+  // (Figma 12607:42852) — a pale fill carrying mid-green text, which reads as a
+  // quiet annotation on the card rather than competing with the picker's APY
+  // pills. Those pills keep the saturated green-10 fill; they are a value the
+  // user is choosing between, this is a label on a choice already made.
   &__ribbon {
     align-self: center;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: var(--sds-clr-green-10);
-    color: var(--sds-clr-green-04);
+    background: var(--sds-clr-green-02);
+    color: var(--sds-clr-green-09);
     border-radius: pxToRem(16) pxToRem(16) 0 0;
     // Fixed at the design's 22px rather than padding a line box: SDS's xs size
     // carries a 20px line-height where the design's Text/XS/500 is 18px, which
