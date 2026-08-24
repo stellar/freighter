@@ -1178,11 +1178,16 @@ export const getAssetIcons = async ({
   networkDetails,
   assetsListsData,
   cachedIcons,
+  additionalAssetIds,
 }: {
   balances: Balances;
   networkDetails?: NetworkDetails;
   assetsListsData?: AssetListResponse[];
   cachedIcons: Record<string, string | null>;
+  // Canonicals to resolve alongside the held balances, even when the account
+  // doesn't hold them (e.g. the swap flow's default destination). Mirrors
+  // getTokenPrices' additionalAssetIds.
+  additionalAssetIds?: string[];
 }) => {
   const assetIcons = {} as { [code: string]: string | null };
   const skipLookup = !assetsListsData || !networkDetails;
@@ -1239,6 +1244,39 @@ export const getAssetIcons = async ({
         // we assign null here if we checked all sources and still don't have the icon
         assetIcons[canonical] = icon || null;
       }
+    }
+  }
+
+  // Unheld extras run the same cache -> token lists -> issuer-toml chain as
+  // the held balances above (toml via the shared domainsToFetch batch below).
+  for (const canonical of additionalAssetIds || []) {
+    const [code, key] = canonical.split(":");
+    if (!key || canonical in assetIcons) {
+      // native (no issuer segment) or already covered by a held balance
+      continue;
+    }
+
+    const cachedIcon = cachedIcons[canonical];
+    if (cachedIcon) {
+      assetIcons[canonical] = cachedIcon;
+      continue;
+    }
+    if (cachedIcon === null || skipLookup) {
+      continue;
+    }
+
+    const tokenListIcon = await getIconFromTokenLists({
+      issuerId: isContractId(key) ? undefined : key,
+      contractId: isContractId(key) ? key : undefined,
+      code,
+      assetsListsData,
+    });
+    if (tokenListIcon.icon) {
+      assetIcons[canonical] = tokenListIcon.icon;
+    } else if (!isContractId(key)) {
+      domainsToFetch.push({ key, code });
+    } else {
+      assetIcons[canonical] = null;
     }
   }
 
@@ -1374,15 +1412,18 @@ export const grantAccess = async ({
 
 export const handleSignedHwPayload = async ({
   signedPayload,
+  signerAddress,
   uuid,
 }: {
   signedPayload: string | Buffer;
+  signerAddress?: string;
   uuid: string;
 }): Promise<void> => {
   try {
     await sendMessageToBackground({
       activePublicKey: null,
       signedPayload,
+      signerAddress,
       uuid,
       type: SERVICE_TYPES.HANDLE_SIGNED_HW_PAYLOAD,
     });
@@ -2038,34 +2079,6 @@ export const getTokenIds = async ({
   }
 
   return tokenIdList;
-};
-
-export const getMobileAppBannerDismissed = async (): Promise<boolean> => {
-  const { isDismissed, error } = await sendMessageToBackground({
-    activePublicKey: null,
-    type: SERVICE_TYPES.GET_MOBILE_APP_BANNER_DISMISSED,
-  });
-
-  if (error) {
-    return false;
-  }
-
-  return !!isDismissed;
-};
-
-export const dismissMobileAppBanner = async (): Promise<{
-  isDismissed: boolean;
-}> => {
-  const { isDismissed, error } = await sendMessageToBackground({
-    activePublicKey: null,
-    type: SERVICE_TYPES.DISMISS_MOBILE_APP_BANNER,
-  });
-
-  if (error) {
-    throw new Error(error);
-  }
-
-  return { isDismissed: !!isDismissed };
 };
 
 export const removeTokenId = async ({

@@ -102,9 +102,12 @@ describe("useGetWalletsData", () => {
       await result.current.fetchData();
     });
     expect(result.current.state.state).toBe<RequestState>(RequestState.SUCCESS);
+    // Nothing is fetched off Mainnet, but every account still gets a label so
+    // the row never has to interpret a missing entry.
     expect(result.current.state.data).toEqual({
       publicKey,
       allAccounts: mockAccounts,
+      accountValue: { G1: "$0.00", G2: "$0.00", L1: "$0.00" },
       isFetchingTokenPrices: false,
       type: AppDataType.RESOLVED,
       applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,

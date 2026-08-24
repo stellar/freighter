@@ -123,13 +123,12 @@ test("Add a collectible to an account", async ({
   test.slow();
   await loginToTestAccount({ page, extensionId, context, stubOverrides });
   await page.getByTestId("network-selector-open").click();
-  await page.getByText("Main Net").click();
+  await page.getByText("Mainnet").click();
 
   // add the collectible
   await expect(page.getByTestId("account-view")).toBeVisible();
   await page.getByTestId("account-tab-collectibles").click();
-  await page.getByTestId("account-tabs-manage-btn-collectibles").click();
-  await page.getByText("Add manually").click();
+  await page.getByTestId("add-collectible-btn").click();
   await expect(page.getByTestId("AppHeaderPageTitle")).toHaveText(
     "Add Collectible",
   );

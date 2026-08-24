@@ -1,4 +1,5 @@
 import { InputType } from "helpers/transaction";
+import { NO_FIAT_VALUE } from "popup/helpers/formatters";
 
 /**
  * Sizes the displayed amount by its digit count. Each card passes its OWN value
@@ -22,7 +23,7 @@ export const getAmountFontSizeClass = (
 
 /**
  * Builds a card's fiat/secondary line: "$0.00" when no token is picked, the USD
- * value (or "--" when the token has no price) in crypto mode, or the converted
+ * value (or NO_FIAT_VALUE when the token has no price) in crypto mode, or the converted
  * "<amount> <code>" in fiat mode. Shared by the sell and receive cards.
  */
 export const buildFiatLineText = ({
@@ -44,7 +45,7 @@ export const buildFiatLineText = ({
     return "$0.00";
   }
   if (inputType === "crypto") {
-    return price ? `$${priceUsd || "0.00"}` : "--";
+    return price ? `$${priceUsd || "0.00"}` : NO_FIAT_VALUE;
   }
   return `${cryptoAmount || "0"} ${code}`;
 };

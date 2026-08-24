@@ -16,6 +16,7 @@ import { NetworkDetails } from "@shared/constants/stellar";
 import { emitMetric } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { getAssetFromCanonical, isMainnet } from "helpers/stellar";
+import { getSdk } from "@shared/helpers/stellar";
 import { AssetIcons } from "@shared/api/types";
 import { allAccountsSelector } from "popup/ducks/accountServices";
 
@@ -57,7 +58,6 @@ function useSubmitTxData({
       destination,
       federationAddress,
       destinationAsset,
-      destinationTokenDetails,
       isCollectible,
       collectibleData,
     },
@@ -110,11 +110,24 @@ function useSubmitTxData({
             to_asset_code: getAssetFromCanonical(destinationAsset).code,
           });
           // Trustline added only once the combined changeTrust +
-          // pathPaymentStrictSend transaction confirmed it.
-          if (destinationTokenDetails?.requiresTrustline) {
+          // pathPaymentStrictSend transaction confirmed it. Gate on the
+          // submitted transaction itself rather than the pick-time snapshot —
+          // a defaulted/deep-linked destination has no snapshot, but the
+          // changeTrust op it confirmed is right there in the XDR.
+          const Sdk = getSdk(networkDetails.networkPassphrase);
+          const submittedTx = Sdk.TransactionBuilder.fromXDR(
+            signedXDR,
+            networkDetails.networkPassphrase,
+          );
+          const changeTrustOp =
+            "operations" in submittedTx
+              ? submittedTx.operations.find((op) => op.type === "changeTrust")
+              : undefined;
+          if (changeTrustOp && "line" in changeTrustOp) {
+            const { line } = changeTrustOp;
             emitMetric(METRIC_NAMES.swapTrustlineAdded, {
-              asset_code: destinationTokenDetails.tokenCode,
-              asset_issuer: destinationTokenDetails.issuer,
+              asset_code: "code" in line ? line.code : undefined,
+              asset_issuer: "issuer" in line ? line.issuer : undefined,
             });
           }
         } else {

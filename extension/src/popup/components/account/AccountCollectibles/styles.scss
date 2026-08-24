@@ -26,16 +26,71 @@
     }
   }
 
-  &__empty {
+  // Reserves the height the empty state occupies without its CTA -- badge 40 +
+  // 8 margin + 8 column gap + 24 title + 8 gap + 20 subtitle -- so resolving into
+  // that state does not shift the tab under the reader.
+  &__loader {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: pxToRem(8px);
-    color: var(--sds-clr-gray-11);
-    font-size: pxToRem(14px);
-    font-weight: var(--sds-fw-medium);
-    line-height: pxToRem(20px);
+    min-height: pxToRem(108px);
+    color: var(--sds-clr-gray-09);
+  }
+
+  &__empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     text-align: center;
+    gap: pxToRem(8px);
+    // No padding of its own: `.AccountCollectibles` already contributes the
+    // 24px Figma puts between the tab strip and the empty state, which is also
+    // what `.NotFunded` uses, so switching tabs doesn't shift the empty state.
+    padding-top: 0;
+
+    &__badge {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      // Same badge as the unfunded tokens state, per frame 9569:35981.
+      width: pxToRem(40px);
+      height: pxToRem(40px);
+      border-radius: 50%;
+      background-color: var(--sds-clr-gray-03);
+      color: var(--sds-clr-gray-09);
+      margin-bottom: pxToRem(8px);
+
+      svg {
+        width: pxToRem(17.143px);
+        height: pxToRem(17.143px);
+      }
+    }
+
+    &__title {
+      color: var(--sds-clr-gray-12);
+      font-size: pxToRem(16px);
+      font-weight: var(--sds-fw-medium);
+      line-height: pxToRem(24px);
+    }
+
+    &__subtitle {
+      color: var(--sds-clr-gray-11);
+      font-size: pxToRem(14px);
+      font-weight: var(--sds-fw-regular);
+      line-height: pxToRem(20px);
+    }
+
+    // Sits 16px under the copy, like "Add XLM" does: 8px of the column's own
+    // gap plus 8px here. Carried by the wrapper rather than a margin on
+    // `__subtitle` so the CTA-less empty state keeps its original spacing.
+    &__cta {
+      margin-top: pxToRem(8px);
+    }
+
+    // Same weight bump the Tokens empty state gives its funding button.
+    .Button {
+      font-weight: var(--sds-fw-semi-bold);
+    }
   }
 
   &__list {
@@ -49,30 +104,78 @@
     flex-direction: column;
     gap: pxToRem(12px);
 
+    // A real <button> so the collapse toggle is keyboard-reachable and exposes
+    // `aria-expanded`; these resets strip the UA styling it brings with it.
     &__header {
-      color: var(--sds-clr-gray-11);
       display: flex;
-      font-weight: var(--sds-fw-medium);
       justify-content: space-between;
       align-items: center;
+      cursor: pointer;
+      width: 100%;
+      padding: 0;
+      border: 0;
+      background: none;
+      appearance: none;
+      font: inherit;
+      color: inherit;
+      text-align: left;
 
       &__name {
+        color: var(--sds-clr-gray-12);
+        font-size: pxToRem(14px);
+        font-weight: var(--sds-fw-medium);
+        line-height: pxToRem(20px);
+      }
+
+      &__right {
         display: flex;
         align-items: center;
-        gap: pxToRem(6px);
+        gap: pxToRem(8px);
+        color: var(--sds-clr-gray-11);
+
+        // 12px per frame 9569:36836, in the title's color rather than this
+        // row's muted gray. Scoped to the svg (SDS icons stroke with
+        // `currentColor`) so the count badge keeps its own color regardless.
+        svg {
+          width: pxToRem(12px);
+          height: pxToRem(12px);
+          color: var(--sds-clr-gray-12);
+        }
+      }
+
+      &__count {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        // Equal min-width and height make one digit a circle; more digits grow
+        // into a pill. 24px is the badge's natural height in frame 9569:36835,
+        // border included — SDS sets `box-sizing: border-box` app-wide.
+        min-width: pxToRem(24px);
+        height: pxToRem(24px);
+        padding: 0 pxToRem(6px);
+        // gray-06 == the design's `--default/border/primary`.
+        border: 1px solid var(--sds-clr-gray-06);
+        border-radius: pxToRem(100px);
+        background-color: var(--sds-clr-gray-03);
+        color: var(--sds-clr-gray-11);
+        font-size: pxToRem(12px);
+        font-weight: var(--sds-fw-medium);
       }
     }
 
     &__grid {
       display: grid;
-      gap: pxToRem(12px);
-      grid-template-columns: repeat(auto-fill, pxToRem(150px));
+      gap: pxToRem(16px);
+      // `1fr` rather than a fixed `auto-fill` track: the popup has only 312px
+      // of content width, so fixed tracks drop to one column when the gap grows.
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       font-size: 0;
 
       &__item {
         cursor: pointer;
         aspect-ratio: 1/1;
         overflow: hidden;
+        border-radius: pxToRem(12px);
 
         &--hidden {
           opacity: 0.5;
