@@ -3,6 +3,7 @@ import { Icon } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 
+import { ActionStatus } from "@shared/api/types";
 import { AppDispatch } from "popup/App";
 import {
   Sheet,
@@ -105,6 +106,20 @@ export const EarnSwap = ({
     onDone({ fromCode, toCode });
   };
 
+  // The sheet's X, its scrim and Escape are shared by every step, but the steps
+  // do not all mean the same thing by a dismissal. Once the swap has succeeded
+  // it is a completion, not a cancellation: the balance behind the sheet has
+  // changed, and routing it to `onCancel` drops the picker's refresh, the
+  // completion metric and the `via_swap` attribution on the floor, leaving the
+  // picker offering a token at the balance it had before the swap.
+  const dismiss = () => {
+    if (submission.submitStatus === ActionStatus.SUCCESS) {
+      finish();
+      return;
+    }
+    onCancel();
+  };
+
   const renderStep = () => {
     switch (activeStep) {
       case EARN_SWAP_STEPS.SWAP_CONFIRM: {
@@ -179,7 +194,7 @@ export const EarnSwap = ({
       open
       onOpenChange={(isOpen) => {
         if (!isOpen) {
-          onCancel();
+          dismiss();
         }
       }}
     >
@@ -199,11 +214,12 @@ export const EarnSwap = ({
           <SheetTitle>{t("Swap")}</SheetTitle>
         </ScreenReaderOnly>
         {/* Sheet-level rather than per-step: the submitting/success step has no
-            header of its own, and every step's X means the same thing. */}
+            header of its own. What the X *means* is not the same on every step
+            though — see `dismiss`. */}
         <button
           type="button"
           className="EarnSwapSheet__close"
-          onClick={onCancel}
+          onClick={dismiss}
           aria-label={t("Close")}
           data-testid="earn-swap-close"
         >
