@@ -35,6 +35,7 @@
  *  - earn-intro                EarnIntro/index.tsx
  *  - earn-intro-start          EarnIntro/index.tsx
  *  - earn-token-picker         EarnTokenPicker/index.tsx
+ *  - earn-token-picker-close   EarnTokenPicker/index.tsx
  *  - earn-token-row-<CODE>     EarnTokenPicker/index.tsx
  *  - earn-apy-<CODE>           EarnTokenPicker/index.tsx
  *  - earn-not-enough-sheet     NotEnoughTokenSheet.tsx
@@ -88,8 +89,13 @@ test("Earn tile opens the interstitial once, then goes straight to the picker", 
   // Leave and re-enter: the dismissal is persisted in the background store, so
   // the interstitial must not reappear. Close via the header's X by its own
   // testid rather than the first button in the subtree — the picker's rows are
-  // buttons too, so `.first()` is only incidentally the close control.
-  await page.getByTestId("earn-token-picker").getByTestId("BackButton").click();
+  // buttons too, so `.first()` is only incidentally the close control. The
+  // picker owns that X directly; it no longer goes through SubviewHeader, so
+  // there is no BackButton to reach for.
+  await page
+    .getByTestId("earn-token-picker")
+    .getByTestId("earn-token-picker-close")
+    .click();
   await expect(page.getByTestId("account-view")).toBeVisible({
     timeout: 30000,
   });
@@ -120,13 +126,14 @@ test("token picker splits held from supported and shows each rate", async ({
   await openEarnFlow(page);
 
   // The test account holds only XLM, so XLM is the sole held row and the other
-  // two reserves fall into "Supported tokens". Scoped to the picker: the Earn
-  // view keeps every visited step mounted, so the intro's "Deposit supported
-  // tokens into DeFi pools..." blurb is still in the DOM and an unscoped
-  // getByText would match both.
+  // two reserves fall into "Other supported assets" — the heading only reads
+  // "Supported tokens" when nothing is held, where there is no "other" to be
+  // other than. Scoped to the picker: the Earn view keeps every visited step
+  // mounted, and the intro and the picker now share a subtitle, so an unscoped
+  // getByText would match both screens.
   const picker = page.getByTestId("earn-token-picker");
-  await expect(picker.getByText("In your account")).toBeVisible();
-  await expect(picker.getByText("Supported tokens")).toBeVisible();
+  await expect(picker.getByText("In your wallet")).toBeVisible();
+  await expect(picker.getByText("Other supported assets")).toBeVisible();
 
   await expect(page.getByTestId("earn-token-row-XLM")).toBeVisible();
   await expect(page.getByTestId("earn-token-row-USDC")).toBeVisible();
@@ -136,7 +143,9 @@ test("token picker splits held from supported and shows each rate", async ({
   await expect(page.getByTestId("earn-apy-EURC")).toContainText("10.59%");
 
   await expect(
-    page.getByText("APY is an estimate", { exact: false }),
+    picker.getByText("APY may change based on protocol conditions.", {
+      exact: false,
+    }),
   ).toBeVisible();
 });
 

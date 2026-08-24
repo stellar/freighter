@@ -3457,7 +3457,7 @@ export const stubEarnSimulateTx = async (page: Page) => {
  * Asset ids are the real mainnet SACs so `getBalanceByKey` resolves them the
  * way it does in production — XLM via its native-SAC special case, the rest via
  * classic-SAC derivation. Using placeholder contract ids would make every token
- * look unheld and silently collapse the "In your account" section.
+ * look unheld and silently collapse the "In your wallet" section.
  *
  * All three are backend-v2 endpoints, so the popup only sends a message and the
  * actual fetch happens in the background service worker (#2879): `blend.ts` ->

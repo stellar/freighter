@@ -55,9 +55,12 @@ export interface ResolvedEarnTokens {
   publicKey: string;
   networkDetails: NetworkDetails;
   balances: AccountBalances;
-  /** Pool-supported assets the account holds — the "In your account" section. */
+  /** Pool-supported assets the account holds — the "In your wallet" section. */
   held: EarnTokenOption[];
-  /** Pool-supported assets at zero — the "Supported tokens" section. */
+  /**
+   * Pool-supported assets at zero — the second section, headed "Other supported
+   * assets" when something is held and "Supported tokens" when nothing is.
+   */
   supported: EarnTokenOption[];
   pool: BlendCatalogPool | null;
 }
@@ -70,7 +73,7 @@ export type EarnTokens = NeedsReRoute | ResolvedEarnTokens;
  * A null `supplyApy` means no fresh oracle price, so the whole rate is unknown.
  * A null `emissionsSupplyApr` means the stream exists but cannot be priced —
  * treated as zero here, which understates rather than blanking an otherwise
- * known rate. The screen's "*APY is an estimate" footnote covers the gap.
+ * known rate. The screen's "APY may change" footnote covers the gap.
  */
 const headlineApy = (
   supplyApy: number | null,
