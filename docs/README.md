@@ -1,10 +1,12 @@
 # Freighter Docs
 
-This website is built using [Docusaurus 2](https://v2.docusaurus.io/), a modern static website generator.
+This website is built using [Docusaurus 2](https://v2.docusaurus.io/), a modern
+static website generator.
 
 ### Local Development
 
-First build `@stellar/freighter-api` (a dependency of this project) by cd'ing to `@stellar/freighter-api` and running `yarn build`.
+First build `@stellar/freighter-api` (a dependency of this project) by cd'ing to
+`@stellar/freighter-api` and running `yarn build`.
 
 Then, come back to this directory and run:
 
@@ -12,4 +14,7 @@ Then, come back to this directory and run:
 $ yarn start
 ```
 
-This command starts a local development server and open up a browser window. Most changes are reflected live without having to restart the server.
+This command starts a local development server and open up a browser window.
+Most changes are reflected live without having to restart the server.
+
+<!-- PR Preview pipeline verification — this line exists only to trigger a preview build and will not be merged. -->
