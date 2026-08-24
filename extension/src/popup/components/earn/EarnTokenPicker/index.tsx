@@ -3,8 +3,8 @@ import { Icon, Loader, Text } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 import { Navigate } from "react-router-dom";
 
-import { View } from "popup/basics/layout/View";
-import { SubviewHeader } from "popup/components/SubviewHeader";
+import BlendLogo from "popup/assets/blend-logo.svg";
+import EarnGlow from "popup/assets/earn-glow.svg";
 import { BalanceRow } from "popup/components/BalanceRow";
 import { SlideupModal } from "popup/components/SlideupModal";
 import { RequestState } from "constants/request";
@@ -41,14 +41,90 @@ interface EarnTokenPickerProps {
   refreshKey?: number;
 }
 
-/** Green pill showing the pool's headline rate for an asset. */
-const ApyBadge = ({ apy, code }: { apy: number | null; code: string }) => (
-  <div className="EarnTokenPicker__apy" data-testid={`earn-apy-${code}`}>
-    {/* A null rate means no fresh oracle price — genuinely unknown, and
-        distinct from a rate that really is zero. */}
-    {apy === null ? "--" : `${formatAmount((apy * 100).toFixed(2))}%*`}
-  </div>
-);
+/** Solid green pill showing the pool's headline rate for an asset. */
+const ApyBadge = ({ apy, code }: { apy: number | null; code: string }) => {
+  const { t } = useTranslation();
+
+  return (
+    <div className="EarnTokenPicker__apy" data-testid={`earn-apy-${code}`}>
+      {/* A null rate means no fresh oracle price — genuinely unknown, and
+          distinct from a rate that really is zero. */}
+      {apy === null
+        ? "--"
+        : t("{{rate}}% APY", {
+            rate: formatAmount((apy * 100).toFixed(2)),
+          })}
+    </div>
+  );
+};
+
+/**
+ * The screen's chrome: close affordance, protocol badge and title. Shared by
+ * the loading and error states so neither shifts the header when the list
+ * resolves.
+ */
+const PickerShell = ({
+  onClose,
+  children,
+  contentFooter,
+  "data-testid": dataTestId,
+}: {
+  onClose: () => void;
+  children: React.ReactNode;
+  contentFooter?: React.ReactNode;
+  "data-testid": string;
+}) => {
+  const { t } = useTranslation();
+
+  return (
+    <div className="EarnTokenPicker" data-testid={dataTestId}>
+      <img className="EarnTokenPicker__glow" src={EarnGlow} alt="" />
+
+      <div className="EarnTokenPicker__header">
+        <button
+          type="button"
+          className="EarnTokenPicker__close"
+          onClick={onClose}
+          aria-label={t("Close")}
+          data-testid="earn-token-picker-close"
+        >
+          <Icon.XClose />
+        </button>
+      </div>
+
+      <div className="EarnTokenPicker__content">
+        <div className="EarnTokenPicker__intro">
+          {/* Not translated: the protocol's own name. */}
+          <div className="EarnTokenPicker__protocol">
+            <img
+              className="EarnTokenPicker__protocol-icon"
+              src={BlendLogo}
+              alt=""
+            />
+            <Text as="div" size="md" weight="medium">
+              Blend
+            </Text>
+          </div>
+
+          <div className="EarnTokenPicker__copy">
+            <Text as="h1" size="lg" weight="medium">
+              {t("Choose an asset")}
+            </Text>
+            <div className="EarnTokenPicker__subtitle">
+              <Text as="p" size="sm" weight="regular">
+                {t("Supply assets to Blend and earn variable yield.")}
+              </Text>
+            </div>
+          </div>
+        </div>
+
+        {children}
+      </div>
+
+      {contentFooter}
+    </div>
+  );
+};
 
 export const EarnTokenPicker = ({
   onClose,
@@ -82,35 +158,21 @@ export const EarnTokenPicker = ({
 
   if (isLoading) {
     return (
-      <View data-testid="earn-token-picker-loading">
-        <SubviewHeader
-          title={t("Choose Token to earn")}
-          customBackAction={onClose}
-          customBackIcon={<Icon.X />}
-        />
-        <View.Content>
-          <div className="EarnTokenPicker__loader">
-            <Loader size="2rem" />
-          </div>
-        </View.Content>
-      </View>
+      <PickerShell onClose={onClose} data-testid="earn-token-picker-loading">
+        <div className="EarnTokenPicker__loader">
+          <Loader size="2rem" />
+        </div>
+      </PickerShell>
     );
   }
 
   if (state.state === RequestState.ERROR) {
     return (
-      <View data-testid="earn-token-picker-error">
-        <SubviewHeader
-          title={t("Choose Token to earn")}
-          customBackAction={onClose}
-          customBackIcon={<Icon.X />}
-        />
-        <View.Content>
-          <Text as="p" size="sm">
-            {t("We couldn’t load earnable tokens. Please try again.")}
-          </Text>
-        </View.Content>
-      </View>
+      <PickerShell onClose={onClose} data-testid="earn-token-picker-error">
+        <Text as="p" size="sm">
+          {t("We couldn’t load earnable tokens. Please try again.")}
+        </Text>
+      </PickerShell>
     );
   }
 
@@ -150,52 +212,69 @@ export const EarnTokenPicker = ({
     />
   );
 
+  const renderSection = (
+    title: string,
+    options: EarnTokenOption[],
+    isHeld: boolean,
+  ) => (
+    <div className="EarnTokenPicker__section">
+      <div className="EarnTokenPicker__section-title">
+        <Text as="div" size="md" weight="medium">
+          {title}
+        </Text>
+      </div>
+      <div className="EarnTokenPicker__rows">
+        {options.map((option) => renderRow(option, isHeld))}
+      </div>
+    </div>
+  );
+
   const notEnoughVariant = notEnoughToken
     ? resolveNotEnoughVariant(notEnoughToken)
     : null;
 
+  const hasHeld = data.held.length > 0;
+
   return (
-    <View data-testid="earn-token-picker">
-      <SubviewHeader
-        title={t("Choose Token to earn")}
-        customBackAction={onClose}
-        customBackIcon={<Icon.X />}
-      />
-      <View.Content
+    <>
+      <PickerShell
+        onClose={onClose}
+        data-testid="earn-token-picker"
         contentFooter={
           <div className="EarnTokenPicker__disclaimer">
-            <Text as="p" size="xs">
-              {t(
-                "*APY is an estimate based on current protocol conditions and changes with market activity. It is not guaranteed by Freighter, SDF, or the protocol.",
-              )}
+            <Text as="p" size="sm" weight="regular">
+              {t("APY may change based on protocol conditions.")}
             </Text>
           </div>
         }
       >
-        <div className="EarnTokenPicker">
-          {data.held.length > 0 && (
-            <>
-              <div className="EarnTokenPicker__section-title">
-                <Text as="div" size="md" weight="medium">
-                  {t("In your account")}
+        <div className="EarnTokenPicker__sections">
+          {hasHeld ? (
+            renderSection(t("In your wallet"), data.held, true)
+          ) : (
+            <div
+              className="EarnTokenPicker__empty"
+              data-testid="earn-token-empty"
+            >
+              <Text as="div" size="md" weight="medium">
+                {t("No supported assets in your wallet")}
+              </Text>
+              <div className="EarnTokenPicker__empty-body">
+                <Text as="p" size="sm" weight="regular">
+                  {t("Add a supported asset to start earning.")}
                 </Text>
               </div>
-              {data.held.map((option) => renderRow(option, true))}
-            </>
+            </div>
           )}
-
-          {data.supported.length > 0 && (
-            <>
-              <div className="EarnTokenPicker__section-title">
-                <Text as="div" size="md" weight="medium">
-                  {t("Supported tokens")}
-                </Text>
-              </div>
-              {data.supported.map((option) => renderRow(option, false))}
-            </>
-          )}
+          {data.supported.length > 0 &&
+            renderSection(
+              // Nothing is held, so there is no "other" to be other than.
+              hasHeld ? t("Other supported assets") : t("Supported tokens"),
+              data.supported,
+              false,
+            )}
         </div>
-      </View.Content>
+      </PickerShell>
 
       <SlideupModal
         isModalOpen={Boolean(notEnoughToken)}
@@ -221,6 +300,6 @@ export const EarnTokenPicker = ({
           <div />
         )}
       </SlideupModal>
-    </View>
+    </>
   );
 };
