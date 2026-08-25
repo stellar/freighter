@@ -3,6 +3,7 @@ import { loginToTestAccount } from "./helpers/login";
 import { USDC_TOKEN_ADDRESS } from "./helpers/test-token";
 import {
   stubAccountBalances,
+  stubAccountBalancesV2,
   stubAccountHistory,
   stubTokenDetails,
   stubTokenPrices,
@@ -130,6 +131,10 @@ test("Tokens tab add button is absent for an unfunded account", async ({
           },
         });
       });
+      // v2 is the default balances source and stubAllExternalApis already
+      // registered a funded fixture for it, so the v1 override alone leaves
+      // the account looking funded. A null fixture serves is_funded: false.
+      await stubAccountBalancesV2(page, () => null);
     },
   });
   await expect(page.getByTestId("account-view")).toBeVisible({
