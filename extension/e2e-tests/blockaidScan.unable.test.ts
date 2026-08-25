@@ -6,6 +6,7 @@ import {
 } from "./helpers/dAppSessionHelper";
 import {
   stubAccountBalances,
+  stubAccountBalancesV2,
   stubAccountHistory,
   stubAssetSearch,
   stubScanAssetUnableToScan,
@@ -33,33 +34,34 @@ test.describe("BlockAid Scan - Unable to Scan States", () => {
         await stubScanAssetUnableToScan(page);
         await stubAssetSearch(page);
         // Mock mainnet check - asset scanning only works on mainnet
-        await page.route("**/account-balances/*", async (route) => {
-          const json = {
-            balances: {
-              native: {
-                token: { type: "native", code: "XLM" },
-                total: "100",
-                available: "100",
-                blockaidData: {
-                  result_type: "Benign",
-                  malicious_score: "0.0",
-                  attack_types: {},
-                  chain: "stellar",
-                  address: "",
-                  metadata: { type: "" },
-                  fees: {},
-                  features: [],
-                  trading_limits: {},
-                  financial_stats: {},
-                },
+        const json = {
+          balances: {
+            native: {
+              token: { type: "native", code: "XLM" },
+              total: "100",
+              available: "100",
+              blockaidData: {
+                result_type: "Benign",
+                malicious_score: "0.0",
+                attack_types: {},
+                chain: "stellar",
+                address: "",
+                metadata: { type: "" },
+                fees: {},
+                features: [],
+                trading_limits: {},
+                financial_stats: {},
               },
             },
-            isFunded: true,
-            subentryCount: 0,
-            error: { horizon: null, soroban: null },
-          };
+          },
+          isFunded: true,
+          subentryCount: 0,
+          error: { horizon: null, soroban: null },
+        };
+        await page.route("**/account-balances/*", async (route) => {
           await route.fulfill({ json });
         });
+        await stubAccountBalancesV2(page, json);
       },
     });
 
@@ -184,59 +186,60 @@ test.describe("BlockAid Scan - Unable to Scan States", () => {
       context,
       stubOverrides: async () => {
         // Set up account balances with XLM and USDC tokens
+        const balancesJson = {
+          balances: {
+            [`USDC:${USDC_ISSUER}`]: {
+              token: {
+                type: "credit_alphanum4",
+                code: "USDC",
+                issuer: {
+                  key: USDC_ISSUER,
+                },
+              },
+              sellingLiabilities: "0",
+              buyingLiabilities: "0",
+              total: "100",
+              limit: "922337203685.4775807",
+              available: "100",
+              blockaidData: null, // Unable to scan (not used anymore since we only scan transactions)
+            },
+            native: {
+              token: {
+                type: "native",
+                code: "XLM",
+              },
+              total: "999",
+              available: "999",
+              sellingLiabilities: "0",
+              buyingLiabilities: "0",
+              minimumBalance: "1",
+              blockaidData: {
+                result_type: "Benign",
+                malicious_score: "0.0",
+                attack_types: {},
+                chain: "stellar",
+                address: "",
+                metadata: {
+                  type: "",
+                },
+                fees: {},
+                features: [],
+                trading_limits: {},
+                financial_stats: {},
+              },
+            },
+          },
+          isFunded: true,
+          subentryCount: 0,
+          error: {
+            horizon: null,
+            soroban: null,
+          },
+        };
         await page.route("*/**/account-balances/*", async (route) => {
-          const json = {
-            balances: {
-              [`USDC:${USDC_ISSUER}`]: {
-                token: {
-                  type: "credit_alphanum4",
-                  code: "USDC",
-                  issuer: {
-                    key: USDC_ISSUER,
-                  },
-                },
-                sellingLiabilities: "0",
-                buyingLiabilities: "0",
-                total: "100",
-                limit: "922337203685.4775807",
-                available: "100",
-                blockaidData: null, // Unable to scan (not used anymore since we only scan transactions)
-              },
-              native: {
-                token: {
-                  type: "native",
-                  code: "XLM",
-                },
-                total: "999",
-                available: "999",
-                sellingLiabilities: "0",
-                buyingLiabilities: "0",
-                minimumBalance: "1",
-                blockaidData: {
-                  result_type: "Benign",
-                  malicious_score: "0.0",
-                  attack_types: {},
-                  chain: "stellar",
-                  address: "",
-                  metadata: {
-                    type: "",
-                  },
-                  fees: {},
-                  features: [],
-                  trading_limits: {},
-                  financial_stats: {},
-                },
-              },
-            },
-            isFunded: true,
-            subentryCount: 0,
-            error: {
-              horizon: null,
-              soroban: null,
-            },
-          };
-          await route.fulfill({ json });
+          await route.fulfill({ json: balancesJson });
         });
+        await stubAccountBalancesV2(page, balancesJson);
 
         // Mock swap path finding endpoint (Horizon path payment)
         await page.route("**/paths**", async (route) => {

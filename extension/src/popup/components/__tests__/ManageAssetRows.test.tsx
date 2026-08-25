@@ -1017,4 +1017,99 @@ describe("ManageAssetRows", () => {
       expect(screen.queryByText("Confirm anyway")).not.toBeInTheDocument();
     });
   });
+
+  describe("custom token remove affordance", () => {
+    const TOKEN_CONTRACT =
+      "CDMLFMKMMD7MWZP3FKUBZPVHTUEDLSX4BYGYKH4GCESXYHS3IHQ4EIG4";
+
+    const tokenBalance = {
+      token: { code: "TKN", issuer: { key: TOKEN_CONTRACT } },
+      contractId: TOKEN_CONTRACT,
+      total: "0",
+      available: "0",
+      symbol: "TKN",
+      name: "My Token",
+      decimals: 7,
+    } as unknown as AssetType;
+
+    const renderTokenRow = (localOnlyTokenIds?: string[]) => {
+      jest.spyOn(SorobanHelpers, "isAssetSac").mockImplementation(() => false);
+
+      render(
+        <Wrapper
+          routes={[ROUTES.manageAssets]}
+          state={{
+            auth: {
+              hasPrivateKey: true,
+              allAccounts: [
+                {
+                  hardwareWalletType: "",
+                  imported: false,
+                  name: "Account 1",
+                  publicKey:
+                    "GBKWMR7TJ7BBICOOXRY2SWXKCWPTOHZPI6MP4LNNE5A73VP3WADGG3CH",
+                },
+              ],
+              publicKey:
+                "GBKWMR7TJ7BBICOOXRY2SWXKCWPTOHZPI6MP4LNNE5A73VP3WADGG3CH",
+            },
+            settings: {
+              networkDetails: TESTNET_NETWORK_DETAILS,
+            },
+          }}
+        >
+          <ManageAssetRows
+            balances={{
+              balances: [mockBalances?.balances?.native as any, tokenBalance],
+              isFunded: true,
+              subentryCount: 1,
+              localOnlyTokenIds,
+            }}
+            verifiedAssetRows={[
+              {
+                code: "TKN",
+                issuer: TOKEN_CONTRACT,
+                contract: TOKEN_CONTRACT,
+                domain: "token.com",
+                image: "icon.png",
+              },
+            ]}
+            unverifiedAssetRows={[]}
+            header="header text"
+          />
+        </Wrapper>,
+      );
+    };
+
+    it("offers Remove asset for a token held only in the local list", async () => {
+      renderTokenRow([TOKEN_CONTRACT]);
+
+      // an added asset shows the ellipsis menu rather than the Add button
+      await waitFor(() =>
+        screen.getByTestId("ManageAssetRowButton__ellipsis-TKN"),
+      );
+      fireEvent.click(screen.getByTestId("ManageAssetRowButton__ellipsis-TKN"));
+
+      await waitFor(() => {
+        expect(screen.getByText("Copy address")).toBeInTheDocument();
+        expect(screen.getByText("Remove asset")).toBeInTheDocument();
+      });
+    });
+
+    it("hides Remove asset for a token the backend returns on its own", async () => {
+      // Not in localOnlyTokenIds: dropping the local entry would not stop the
+      // backend returning it, so the token is hide-only.
+      renderTokenRow([]);
+
+      await waitFor(() =>
+        screen.getByTestId("ManageAssetRowButton__ellipsis-TKN"),
+      );
+      fireEvent.click(screen.getByTestId("ManageAssetRowButton__ellipsis-TKN"));
+
+      await waitFor(() => {
+        expect(screen.getByText("Copy address")).toBeInTheDocument();
+      });
+      expect(screen.queryByText("Remove asset")).not.toBeInTheDocument();
+    });
+  });
 });

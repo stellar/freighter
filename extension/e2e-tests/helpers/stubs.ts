@@ -58,7 +58,11 @@ export const stubFeatureFlags = async (context: BrowserContext) => {
 };
 
 export const stubRpcHealth = async (context: BrowserContext) => {
-  await context.route("*/**/rpc-health**", async (route) => {
+  // rpc-health is a freighter-backend-v2 call made from the background
+  // service worker (#2879), so it must be intercepted on the BrowserContext.
+  // Without this stub an unreachable backend surfaces a "Soroban is
+  // temporarily experiencing issues" toast that intercepts pointer events.
+  await context.route("**/rpc-health**", async (route) => {
     await route.fulfill({
       json: { status: "healthy" },
     });
@@ -263,44 +267,45 @@ export const stubFederationWithMemo = async (
 };
 
 export const stubDefaultAccountBalances = async (page: Page) => {
-  await page.route("**/account-balances/**", async (route) => {
-    const json = {
-      balances: {
-        native: {
-          token: {
-            type: "native",
-            code: "XLM",
+  const json = {
+    balances: {
+      native: {
+        token: {
+          type: "native",
+          code: "XLM",
+        },
+        total: "10000.0000000",
+        available: "10000.0000000",
+        sellingLiabilities: "0",
+        buyingLiabilities: "0",
+        minimumBalance: "1",
+        blockaidData: {
+          result_type: "Benign",
+          malicious_score: "0.0",
+          attack_types: {},
+          chain: "stellar",
+          address: "",
+          metadata: {
+            type: "",
           },
-          total: "10000.0000000",
-          available: "10000.0000000",
-          sellingLiabilities: "0",
-          buyingLiabilities: "0",
-          minimumBalance: "1",
-          blockaidData: {
-            result_type: "Benign",
-            malicious_score: "0.0",
-            attack_types: {},
-            chain: "stellar",
-            address: "",
-            metadata: {
-              type: "",
-            },
-            fees: {},
-            features: [],
-            trading_limits: {},
-            financial_stats: {},
-          },
+          fees: {},
+          features: [],
+          trading_limits: {},
+          financial_stats: {},
         },
       },
-      isFunded: true,
-      subentryCount: 0,
-      error: {
-        horizon: null,
-        soroban: null,
-      },
-    };
+    },
+    isFunded: true,
+    subentryCount: 0,
+    error: {
+      horizon: null,
+      soroban: null,
+    },
+  };
+  await page.route("**/account-balances/**", async (route) => {
     await route.fulfill({ json });
   });
+  await stubAccountBalancesV2(page, json);
 };
 
 export const stubMercuryTransactions = async (page: Page) => {
@@ -920,185 +925,334 @@ export const stubTokenPrices = async (page: Page | BrowserContext) => {
   });
 };
 
+// ---------------------------------------------------------------------------
+// freighter-backend-v2 `POST /accounts/balances` stub.
+//
+// The extension defaults to the v2 balances endpoint (use_balances_v2), so
+// every test that stubs `**/account-balances/**` (the v1 GET) also needs the
+// v2 route stubbed or the request escapes to the real beta backend.
+// ---------------------------------------------------------------------------
+
+interface V1BalancesFixture {
+  // The v1-style mapped fixture shape every balances stub in this file
+  // already declares; extra fields (blockaidData, error) are ignored.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  balances: { [key: string]: any };
+  isFunded?: boolean;
+  subentryCount?: number;
+}
+
+/**
+ * Converts a v1-style mapped balance entry into the v2 wire balance for the
+ * same asset, so each stub defines its fixture data once and serves both
+ * endpoints. Classification mirrors what mapAccountBalancesV2 consumes:
+ * `native` key → NATIVE, `:lp` suffix → LIQUIDITY_POOL, `contractId` without
+ * a classic trustline type → SEP41, everything else → CLASSIC. The server
+ * derives `key`/`token` per entry, so the stub emits them alongside `total`.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const toV2WireBalance = (key: string, entry: any) => {
+  if (key === "native") {
+    return {
+      token_type: "NATIVE",
+      token_id: "native",
+      key: "native",
+      token: { type: "native", code: "XLM" },
+      total: entry.total,
+      available: entry.available,
+      minimum_balance: entry.minimumBalance || "1",
+      buying_liabilities: entry.buyingLiabilities || "0",
+      selling_liabilities: entry.sellingLiabilities || "0",
+    };
+  }
+  if (key.endsWith(":lp")) {
+    return {
+      token_type: "LIQUIDITY_POOL",
+      token_id: key,
+      key,
+      total: entry.total,
+      available: entry.available,
+      liquidity_pool_id: entry.liquidityPoolId || key.slice(0, -3),
+      reserves: entry.reserves || [],
+    };
+  }
+  const trustlineType = entry.token?.type as string | undefined;
+  if (entry.contractId && !trustlineType?.startsWith("credit")) {
+    const symbol = entry.symbol || entry.token?.code;
+    return {
+      token_type: "SEP41",
+      token_id: entry.contractId,
+      key,
+      token: { code: symbol, issuer: { key: entry.contractId } },
+      total: entry.total,
+      available: entry.available,
+      symbol,
+      name: entry.name || entry.token?.code,
+      decimals: entry.decimals ?? 7,
+    };
+  }
+  const [keyCode, keyIssuer] = key.split(":");
+  const code = entry.token?.code || keyCode;
+  const issuer = entry.token?.issuer?.key || keyIssuer;
+  const type = trustlineType || "credit_alphanum4";
+  return {
+    token_type: "CLASSIC",
+    token_id: key,
+    key,
+    token: { type, code, issuer: { key: issuer } },
+    total: entry.total,
+    available: entry.available,
+    code,
+    issuer,
+    type,
+    limit: entry.limit || "922337203685.4775807",
+    buying_liabilities: entry.buyingLiabilities || "0",
+    selling_liabilities: entry.sellingLiabilities || "0",
+    is_authorized: true,
+    is_authorized_to_maintain_liabilities: true,
+  };
+};
+
+/**
+ * Registers the freighter-backend-v2 `POST /accounts/balances` route. Like
+ * token-prices, v2 balances are fetched from the background service worker
+ * (#2879), so the route must be registered on the BrowserContext; page.route
+ * only sees the popup.
+ *
+ * Accepts either a single v1-style fixture (served for every address in the
+ * POST body) or a resolver called with each requested address and the
+ * `network` query param (e.g. "TESTNET"). A null fixture serves the address
+ * as unfunded (`is_funded: false`, empty balances) — the backend always
+ * includes every requested address in the fan-out result, and the client
+ * rejects responses that omit one as malformed.
+ */
+export const stubAccountBalancesV2 = async (
+  page: Page | BrowserContext,
+  fixture:
+    | V1BalancesFixture
+    | ((address: string, network: string) => V1BalancesFixture | null),
+) => {
+  const ctx = "context" in page ? page.context() : page;
+  const resolveAccount =
+    typeof fixture === "function" ? fixture : () => fixture;
+
+  await ctx.route("**/accounts/balances*", async (route) => {
+    const network =
+      new URL(route.request().url()).searchParams.get("network") || "";
+    let addresses: string[] = [];
+    try {
+      const body = route.request().postDataJSON();
+      addresses = body?.addresses || [];
+    } catch (e) {
+      console.error("Failed to parse POST body for accounts/balances", e);
+    }
+
+    const data = addresses.map((address) => {
+      const account = resolveAccount(address, network);
+      if (!account) {
+        return {
+          address,
+          is_funded: false,
+          subentry_count: 0,
+          balances: [],
+        };
+      }
+      return {
+        address,
+        is_funded: account.isFunded ?? true,
+        subentry_count: account.subentryCount ?? 0,
+        balances: Object.entries(account.balances).map(([key, entry]) =>
+          toV2WireBalance(key, entry),
+        ),
+      };
+    });
+
+    await route.fulfill({ json: { data } });
+  });
+};
+
 export const stubAccountBalances = async (page: Page, xlmBalance?: string) => {
-  await page.route("**/account-balances/**", async (route) => {
-    const json = {
-      balances: {
-        native: {
-          token: {
-            type: "native",
-            code: "XLM",
+  const json = {
+    balances: {
+      native: {
+        token: {
+          type: "native",
+          code: "XLM",
+        },
+        total: xlmBalance || "9697.8556678",
+        available: xlmBalance || "9697.8556678",
+        sellingLiabilities: "0",
+        buyingLiabilities: "0",
+        minimumBalance: "1",
+        blockaidData: {
+          result_type: "Benign",
+          malicious_score: "0.0",
+          attack_types: {},
+          chain: "stellar",
+          address: "",
+          metadata: {
+            type: "",
           },
-          total: xlmBalance || "9697.8556678",
-          available: xlmBalance || "9697.8556678",
-          sellingLiabilities: "0",
-          buyingLiabilities: "0",
-          minimumBalance: "1",
-          blockaidData: {
-            result_type: "Benign",
-            malicious_score: "0.0",
-            attack_types: {},
-            chain: "stellar",
-            address: "",
-            metadata: {
-              type: "",
-            },
-            fees: {},
-            features: [],
-            trading_limits: {},
-            financial_stats: {},
-          },
+          fees: {},
+          features: [],
+          trading_limits: {},
+          financial_stats: {},
         },
       },
-      isFunded: true,
-      subentryCount: 0,
-      error: {
-        horizon: null,
-        soroban: null,
-      },
-    };
+    },
+    isFunded: true,
+    subentryCount: 0,
+    error: {
+      horizon: null,
+      soroban: null,
+    },
+  };
+  await page.route("**/account-balances/**", async (route) => {
     await route.fulfill({ json });
   });
+  await stubAccountBalancesV2(page, json);
 };
 
 export const stubAccountBalancesE2e = async (page: Page) => {
   const e2eAssetCode = `E2E:${TEST_TOKEN_ADDRESS}`;
+  const json = {
+    balances: {
+      native: {
+        token: {
+          type: "native",
+          code: "XLM",
+        },
+        total: "9697.8556678",
+        available: "9697.8556678",
+        sellingLiabilities: "0",
+        buyingLiabilities: "0",
+        minimumBalance: "1",
+        blockaidData: {
+          result_type: "Benign",
+          malicious_score: "0.0",
+          attack_types: {},
+          chain: "stellar",
+          address: "",
+          metadata: {
+            type: "",
+          },
+          fees: {},
+          features: [],
+          trading_limits: {},
+          financial_stats: {},
+        },
+      },
+      [e2eAssetCode]: {
+        token: {
+          code: "E2E",
+          issuer: {
+            key: TEST_TOKEN_ADDRESS,
+          },
+        },
+        contractId: TEST_TOKEN_ADDRESS,
+        symbol: "E2E",
+        decimals: 3,
+        total: "100000099976",
+        available: "100000099976",
+        blockaidData: {
+          result_type: "Benign",
+          malicious_score: "0.0",
+          attack_types: {},
+          chain: "stellar",
+          address: "",
+          metadata: {
+            type: "",
+          },
+          fees: {},
+          features: [],
+          trading_limits: {},
+          financial_stats: {},
+        },
+      },
+    },
+    isFunded: true,
+    subentryCount: 0,
+    error: {
+      horizon: null,
+      soroban: null,
+    },
+  };
   await page.route("**/account-balances/**", async (route) => {
-    const json = {
-      balances: {
-        native: {
-          token: {
-            type: "native",
-            code: "XLM",
-          },
-          total: "9697.8556678",
-          available: "9697.8556678",
-          sellingLiabilities: "0",
-          buyingLiabilities: "0",
-          minimumBalance: "1",
-          blockaidData: {
-            result_type: "Benign",
-            malicious_score: "0.0",
-            attack_types: {},
-            chain: "stellar",
-            address: "",
-            metadata: {
-              type: "",
-            },
-            fees: {},
-            features: [],
-            trading_limits: {},
-            financial_stats: {},
-          },
-        },
-        [e2eAssetCode]: {
-          token: {
-            code: "E2E",
-            issuer: {
-              key: TEST_TOKEN_ADDRESS,
-            },
-          },
-          contractId: TEST_TOKEN_ADDRESS,
-          symbol: "E2E",
-          decimals: 3,
-          total: "100000099976",
-          available: "100000099976",
-          blockaidData: {
-            result_type: "Benign",
-            malicious_score: "0.0",
-            attack_types: {},
-            chain: "stellar",
-            address: "",
-            metadata: {
-              type: "",
-            },
-            fees: {},
-            features: [],
-            trading_limits: {},
-            financial_stats: {},
-          },
-        },
-      },
-      isFunded: true,
-      subentryCount: 0,
-      error: {
-        horizon: null,
-        soroban: null,
-      },
-    };
     await route.fulfill({ json });
   });
+  await stubAccountBalancesV2(page, json);
 };
 
 export const stubAccountBalancesWithUSDC = async (page: Page) => {
+  const json = {
+    balances: {
+      native: {
+        token: {
+          type: "native",
+          code: "XLM",
+        },
+        total: "9697.8556678",
+        available: "9697.8556678",
+        sellingLiabilities: "0",
+        buyingLiabilities: "0",
+        minimumBalance: "1",
+        blockaidData: {
+          result_type: "Benign",
+          malicious_score: "0.0",
+          attack_types: {},
+          chain: "stellar",
+          address: "",
+          metadata: {
+            type: "",
+          },
+          fees: {},
+          features: [],
+          trading_limits: {},
+          financial_stats: {},
+        },
+      },
+      "USDC:GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5": {
+        token: {
+          type: "credit_alphanum4",
+          code: "USDC",
+          issuer: {
+            key: "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
+          },
+        },
+        contractId: USDC_TOKEN_ADDRESS,
+        total: "1000.0000000",
+        available: "1000.0000000",
+        sellingLiabilities: "0",
+        buyingLiabilities: "0",
+        limit: "922337203685.4775807",
+        blockaidData: {
+          result_type: "Benign",
+          malicious_score: "0.0",
+          attack_types: {},
+          chain: "stellar",
+          address:
+            "USDC-GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
+          metadata: {
+            type: "",
+          },
+          fees: {},
+          features: [],
+          trading_limits: {},
+          financial_stats: {},
+        },
+      },
+    },
+    isFunded: true,
+    subentryCount: 1,
+    error: {
+      horizon: null,
+      soroban: null,
+    },
+  };
   await page.route("**/account-balances/**", async (route) => {
-    const json = {
-      balances: {
-        native: {
-          token: {
-            type: "native",
-            code: "XLM",
-          },
-          total: "9697.8556678",
-          available: "9697.8556678",
-          sellingLiabilities: "0",
-          buyingLiabilities: "0",
-          minimumBalance: "1",
-          blockaidData: {
-            result_type: "Benign",
-            malicious_score: "0.0",
-            attack_types: {},
-            chain: "stellar",
-            address: "",
-            metadata: {
-              type: "",
-            },
-            fees: {},
-            features: [],
-            trading_limits: {},
-            financial_stats: {},
-          },
-        },
-        "USDC:GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5": {
-          token: {
-            type: "credit_alphanum4",
-            code: "USDC",
-            issuer: {
-              key: "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
-            },
-          },
-          contractId: USDC_TOKEN_ADDRESS,
-          total: "1000.0000000",
-          available: "1000.0000000",
-          sellingLiabilities: "0",
-          buyingLiabilities: "0",
-          limit: "922337203685.4775807",
-          blockaidData: {
-            result_type: "Benign",
-            malicious_score: "0.0",
-            attack_types: {},
-            chain: "stellar",
-            address:
-              "USDC-GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
-            metadata: {
-              type: "",
-            },
-            fees: {},
-            features: [],
-            trading_limits: {},
-            financial_stats: {},
-          },
-        },
-      },
-      isFunded: true,
-      subentryCount: 1,
-      error: {
-        horizon: null,
-        soroban: null,
-      },
-    };
     await route.fulfill({ json });
   });
+  await stubAccountBalancesV2(page, json);
 };
 
 /**
@@ -2994,6 +3148,74 @@ export const stubAccountBalancesWithUnfundedDestination = async (
     };
   },
 ) => {
+  // Default sender balances
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const balances: { [key: string]: any } = {
+    native: {
+      token: {
+        type: "native",
+        code: "XLM",
+      },
+      total: "9697.8556678",
+      available: "9697.8556678",
+      sellingLiabilities: "0",
+      buyingLiabilities: "0",
+      minimumBalance: "1",
+      blockaidData: {
+        result_type: "Benign",
+        malicious_score: "0.0",
+        attack_types: {},
+        chain: "stellar",
+        address: "",
+        metadata: {
+          type: "",
+        },
+        fees: {},
+        features: [],
+        trading_limits: {},
+        financial_stats: {},
+      },
+    },
+  };
+
+  // Add custom sender assets if provided
+  if (senderAssets) {
+    Object.entries(senderAssets).forEach(([key, asset]) => {
+      balances[key] = {
+        token: {
+          type: asset.type || "credit_alphanum4",
+          code: asset.code,
+          ...(asset.issuer && { issuer: { key: asset.issuer } }),
+        },
+        total: asset.total,
+        available: asset.available,
+        sellingLiabilities: "0",
+        buyingLiabilities: "0",
+        ...(asset.limit && { limit: asset.limit }),
+        blockaidData: {
+          result_type: "Benign",
+          malicious_score: "0.0",
+          attack_types: {},
+          chain: "stellar",
+          address: `${asset.code}${asset.issuer ? "-" + asset.issuer : ""}`,
+          metadata: {
+            type: "",
+          },
+          fees: {},
+          features: [],
+          trading_limits: {},
+          financial_stats: {},
+        },
+      };
+    });
+  }
+
+  const senderFixture = {
+    balances,
+    isFunded: true,
+    subentryCount: Object.keys(balances).length - 1,
+  };
+
   await page.route("**/account-balances/**", async (route) => {
     const url = new URL(route.request().url());
     const address = url.pathname.split("/").pop();
@@ -3012,71 +3234,8 @@ export const stubAccountBalancesWithUnfundedDestination = async (
       return route.fulfill({ json });
     }
 
-    // Default sender balances
-    const balances: { [key: string]: any } = {
-      native: {
-        token: {
-          type: "native",
-          code: "XLM",
-        },
-        total: "9697.8556678",
-        available: "9697.8556678",
-        sellingLiabilities: "0",
-        buyingLiabilities: "0",
-        minimumBalance: "1",
-        blockaidData: {
-          result_type: "Benign",
-          malicious_score: "0.0",
-          attack_types: {},
-          chain: "stellar",
-          address: "",
-          metadata: {
-            type: "",
-          },
-          fees: {},
-          features: [],
-          trading_limits: {},
-          financial_stats: {},
-        },
-      },
-    };
-
-    // Add custom sender assets if provided
-    if (senderAssets) {
-      Object.entries(senderAssets).forEach(([key, asset]) => {
-        balances[key] = {
-          token: {
-            type: asset.type || "credit_alphanum4",
-            code: asset.code,
-            ...(asset.issuer && { issuer: { key: asset.issuer } }),
-          },
-          total: asset.total,
-          available: asset.available,
-          sellingLiabilities: "0",
-          buyingLiabilities: "0",
-          ...(asset.limit && { limit: asset.limit }),
-          blockaidData: {
-            result_type: "Benign",
-            malicious_score: "0.0",
-            attack_types: {},
-            chain: "stellar",
-            address: `${asset.code}${asset.issuer ? "-" + asset.issuer : ""}`,
-            metadata: {
-              type: "",
-            },
-            fees: {},
-            features: [],
-            trading_limits: {},
-            financial_stats: {},
-          },
-        };
-      });
-    }
-
     const json = {
-      balances,
-      isFunded: true,
-      subentryCount: Object.keys(balances).length - 1,
+      ...senderFixture,
       error: {
         horizon: null,
         soroban: null,
@@ -3084,6 +3243,12 @@ export const stubAccountBalancesWithUnfundedDestination = async (
     };
     await route.fulfill({ json });
   });
+
+  // v2 fan-out: the unfunded destination is served with is_funded=false and
+  // empty balances, matching the real backend's account-not-found shape.
+  await stubAccountBalancesV2(page, (address) =>
+    address === unfundedDestination ? null : senderFixture,
+  );
 };
 
 /**
@@ -3152,6 +3317,7 @@ export const stubAllExternalApis = async (
 
   // Backend settings and health checks
   await stubBackendSettingsEndpoint(page);
+  await stubRpcHealth(context);
 
   // Ledger keys accounts
   await stubLedgerKeysAccounts(page);

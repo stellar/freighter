@@ -152,4 +152,30 @@ test("Can add a token returned as contract ID from Stellar Expert search", async
 
   // Confirm the add
   await page.getByRole("button", { name: "Confirm" }).click();
+
+  // Back out of the search screen to "Your assets". The token now shows the
+  // ellipsis menu rather than an "Add" button, which only happens when it is
+  // present in balances — and the balances API does not return it, because the
+  // account holds no balance for it. It is there purely from the locally saved
+  // contract ID (injectLocalTokenBalances).
+  await page.getByTestId("BackButton").click();
+  await expect(page.getByText("Your assets")).toBeVisible({ timeout: 10000 });
+
+  // Balance rows label a contract token with its symbol, not its name.
+  const addedRow = getAssetRow(page, "E2E");
+  await expect(addedRow).toBeVisible();
+  await addedRow.getByTestId("ManageAssetRowButton__ellipsis-E2E").click();
+
+  // On screen only because of the local list, so it stays removable. A token
+  // the backend returns on its own would offer Copy address alone.
+  await expect(page.getByText("Remove asset")).toBeVisible();
+  await expect(page.getByText("Copy address")).toBeVisible();
+
+  // ...and it renders on the account's balances list. The dropdown's overlay
+  // would swallow the back click, so dismiss it the way the UI does.
+  await page.locator(".ManageAssetRowButton__dropdown__background").click();
+  await page.getByTestId("BackButton").click();
+  await expect(
+    page.getByTestId("account-assets-item").filter({ hasText: "E2E" }).first(),
+  ).toBeVisible({ timeout: 10000 });
 });

@@ -11,7 +11,7 @@ import { captureException } from "@sentry/browser";
 import React, { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Navigate, useLocation } from "react-router-dom";
-import { useSelector } from "react-redux";
+import { useSelector, useStore } from "react-redux";
 import { BASE_FEE, StellarToml } from "stellar-sdk";
 import { isMainnet, stroopToXlm, truncateString } from "helpers/stellar";
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
@@ -22,7 +22,9 @@ import { getIconUrlFromIssuer } from "@shared/api/helpers/getIconUrlFromIssuer";
 
 import { newTabHref, parsedSearchParam, TokenToAdd } from "helpers/urls";
 
+import { AppState } from "popup/App";
 import { rejectToken, addToken } from "popup/ducks/access";
+import { balancesV2Selector } from "popup/ducks/remoteConfig";
 import { isNonSSLEnabledSelector } from "popup/ducks/settings";
 import { useSetupAddTokenFlow } from "popup/helpers/useSetupAddTokenFlow";
 import {
@@ -85,6 +87,7 @@ export const AddToken = () => {
   useMarkQueueActive(uuid);
 
   const { t } = useTranslation();
+  const store = useStore<AppState>();
   const isNonSSLEnabled = useSelector(isNonSSLEnabledSelector);
 
   const [assetRows, setAssetRows] = useState([] as ManageAssetCurrency[]);
@@ -395,6 +398,10 @@ export const AddToken = () => {
           hydratedNetworkDetails,
           isMainnet(hydratedNetworkDetails),
           true,
+          // Read the flag from the store at call time (not a render-captured
+          // value) so a freshly resolved Amplitude flag isn't missed — mirrors
+          // useGetBalances.
+          balancesV2Selector(store.getState()),
         );
 
         const balances = accountBalances.balances;
@@ -428,6 +435,9 @@ export const AddToken = () => {
           setHasClassicTrustlineResolved(true);
         }
       } catch (e) {
+        // Fail open: a failed lookup resolves to "no trustline" so the flow
+        // stays usable. Being wrong costs a redundant changeTrust (a no-op
+        // plus a base fee), which beats blocking the add on a transient error.
         if (isMounted) {
           setHasClassicTrustline(false);
           setIsClassicTrustlineLoading(false);
@@ -441,12 +451,15 @@ export const AddToken = () => {
     return () => {
       isMounted = false;
     };
+    // `store` is a stable reference from useStore, so listing it satisfies
+    // exhaustive-deps without re-running the check.
   }, [
     assetCode,
     assetIssuer,
     hydratedNetworkDetails,
     hydratedPublicKey,
     isSac,
+    store,
   ]);
 
   if (

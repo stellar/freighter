@@ -1,5 +1,5 @@
 import { useReducer } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch, useSelector, useStore } from "react-redux";
 
 import {
   getAccountBalances,
@@ -20,7 +20,8 @@ import { filterHiddenBalances, sortBalances } from "popup/helpers/account";
 import { AssetType } from "@shared/api/types/account-balance";
 import { settingsSelector } from "popup/ducks/settings";
 import { getCombinedAssetListData } from "@shared/api/helpers/token-list";
-import { AppDispatch } from "popup/App";
+import { AppDispatch, AppState } from "popup/App";
+import { balancesV2Selector } from "popup/ducks/remoteConfig";
 import {
   balancesSelector,
   iconsSelector,
@@ -64,6 +65,7 @@ export interface AccountBalances {
   isFunded: AccountBalancesInterface["isFunded"];
   subentryCount: AccountBalancesInterface["subentryCount"];
   error?: AccountBalancesInterface["error"];
+  localOnlyTokenIds?: AccountBalancesInterface["localOnlyTokenIds"];
   icons?: AssetIcons;
 }
 
@@ -75,6 +77,7 @@ function useGetBalances(options: {
   additionalIconAssetIds?: string[];
 }) {
   const reduxDispatch = useDispatch<AppDispatch>();
+  const store = useStore<AppState>();
   const [state, dispatch] = useReducer(
     reducer<AccountBalances, unknown>,
     initialState,
@@ -105,6 +108,10 @@ function useGetBalances(options: {
               networkDetails,
               isMainnet,
               shouldSkipScan,
+              // Read the flag from the store at call time (not a
+              // render-captured value) so a freshly resolved Amplitude flag
+              // isn't missed — mirrors useGetTokenPrices.
+              balancesV2Selector(store.getState()),
             );
 
       const { balances, unfilteredBalances } = await formatBalances({
@@ -116,6 +123,7 @@ function useGetBalances(options: {
         isFunded: accountBalances.isFunded,
         subentryCount: accountBalances.subentryCount,
         error: accountBalances.error,
+        localOnlyTokenIds: accountBalances.localOnlyTokenIds,
         balances,
         unfilteredBalances,
       } as AccountBalances;
