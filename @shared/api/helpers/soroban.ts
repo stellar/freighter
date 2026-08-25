@@ -527,21 +527,17 @@ export const getLedgerKeyWasmId = (contractLedgerEntryData: string) => {
   return ledgerKey.toXdr("base64");
 };
 
-export const parseWasmXdr = async (xdrContents: string) => {
+export const parseWasmXdr = (xdrContents: string) => {
   const wasmBytes = xdr.expectUnionVariant(
     xdr.LedgerEntryData.fromXdr(xdrContents, "base64"),
     "contractCode",
   ).contractCode.code;
-  const wasmModule = await WebAssembly.compile(new Uint8Array(wasmBytes));
-  const specSection = new Uint8Array(
-    WebAssembly.Module.customSections(wasmModule, "contractspecv0")[0],
-  );
 
-  // v17: `xdr.ScSpecEntry.read(reader)` is gone along with the exported
-  // js-xdr Reader; `decodeStream` walks the back-to-back entries instead.
-  const specs = xdr.decodeStream(xdr.ScSpecEntry, specSection);
-  const contractSpec = new contract.Spec(specs);
-  return contractSpec.jsonSchema();
+  // v17: `Spec.fromWasm` walks the wasm's `contractspecv0` custom section and
+  // decodes the ScSpecEntry stream itself, so we don't need WebAssembly.compile
+  // to read a custom section. Note the constructor is not equivalent — it
+  // treats a Uint8Array as an already-extracted spec stream.
+  return contract.Spec.fromWasm(wasmBytes).jsonSchema();
 };
 
 export const getContractSpec = async (
