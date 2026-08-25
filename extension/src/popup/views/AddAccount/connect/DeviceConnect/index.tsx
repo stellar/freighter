@@ -103,7 +103,7 @@ export const DeviceConnect = () => {
       <FullscreenStyle />
       <div className="DeviceConnect">
         <div className="DeviceConnect__header">
-          {t("Connect {walletType}", { walletType })}
+          {t("Connect {{walletType}}", { walletType })}
         </div>
         <div className="DeviceConnect__caption">
           {walletConnectSuccessful
@@ -114,7 +114,7 @@ export const DeviceConnect = () => {
           <img
             className="DeviceConnect__img"
             src={walletConnectSuccessful ? LedgerConnected : Ledger}
-            alt={t("Connect {walletType}", { walletType })}
+            alt={t("Connect {{walletType}}", { walletType })}
           />
         </div>
 

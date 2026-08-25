@@ -18,6 +18,7 @@ import {
   getAssetFromCanonical,
   getCanonicalFromAsset,
   isFederationAddress,
+  isMainnet,
   isMuxedAccount,
   isTestnet,
 } from "helpers/stellar";
@@ -242,6 +243,18 @@ export const getStellarExpertUrl = (networkDetails: NetworkDetails) =>
   `https://stellar.expert/explorer/${
     isTestnet(networkDetails) ? "testnet" : "public"
   }`;
+
+/**
+ * stellar.expert serves only the public and test networks — there is no
+ * Futurenet or standalone explorer.
+ *
+ * Gate every stellar.expert link on this. `getStellarExpertUrl` falls through
+ * to `/public` for anything that isn't testnet, so on Futurenet an ungated
+ * link renders a *mainnet* lookup for a non-mainnet account: wrong data, and
+ * silent about it.
+ */
+export const isStellarExpertSupported = (networkDetails: NetworkDetails) =>
+  isMainnet(networkDetails) || isTestnet(networkDetails);
 
 export const getApiStellarExpertUrl = (networkDetails: NetworkDetails) =>
   `https://api.stellar.expert/explorer/${

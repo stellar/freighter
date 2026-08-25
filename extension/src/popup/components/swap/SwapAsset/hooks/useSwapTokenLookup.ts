@@ -95,8 +95,11 @@ export const EMPTY_RESULT: SwapTokenLookupResult = {
 const heldToRecord = (
   balance: AssetType,
   icons: Record<string, string | null> = {},
-  tokenPrices: ApiTokenPrices = {},
+  // Nullable, and normalized below rather than defaulted: a default parameter
+  // only fires on undefined, and the price fetch reports failure with null.
+  maybeTokenPrices?: ApiTokenPrices | null,
 ): SwapTokenRecord | null => {
+  const tokenPrices = maybeTokenPrices ?? {};
   // Classic-only: swaps run over the Classic path, so the "Your tokens" list
   // shows native + classic assets only. Exclude liquidity-pool shares (no token)
   // and custom Soroban contract tokens (carry a contractId).
@@ -154,11 +157,11 @@ const heldToRecord = (
 export const balancesToHeldRecords = ({
   balances,
   icons = {},
-  tokenPrices = {},
+  tokenPrices,
 }: {
   balances: AssetType[];
   icons?: Record<string, string | null>;
-  tokenPrices?: ApiTokenPrices;
+  tokenPrices?: ApiTokenPrices | null;
 }): SwapTokenRecord[] =>
   // Sort by descending fiat value, matching the account-home balances list.
   sortBalancesByValue(balances, tokenPrices)
@@ -205,7 +208,7 @@ export const buildSwapSections = ({
   searchResults = [],
   isFallback = false,
   icons = {},
-  tokenPrices = {},
+  tokenPrices,
 }: {
   searchTerm: string;
   balances: AssetType[];
@@ -218,7 +221,7 @@ export const buildSwapSections = ({
   searchResults?: ManageAssetCurrency[];
   isFallback?: boolean;
   icons?: Record<string, string | null>;
-  tokenPrices?: ApiTokenPrices;
+  tokenPrices?: ApiTokenPrices | null;
 }): SwapTokenLookupResult => {
   const term = searchTerm.trim().toLowerCase();
   const isSearch = term.length > 0;
@@ -519,7 +522,7 @@ export const useSwapTokenLookup = () => {
     publicKey: string;
     networkDetails: NetworkDetails;
     icons?: Record<string, string | null>;
-    tokenPrices?: ApiTokenPrices;
+    tokenPrices?: ApiTokenPrices | null;
   }): Promise<void> => {
     // Cancel any in-flight request
     abortControllerRef.current?.abort();

@@ -9,24 +9,31 @@ import { toast } from "sonner";
 import {
   settingsSorobanSupportedSelector,
   settingsSelector,
+  settingsNetworkDetailsSelector,
 } from "popup/ducks/settings";
 import { View } from "popup/basics/layout/View";
-import { accountNameSelector } from "popup/ducks/accountServices";
+import {
+  accountNameSelector,
+  publicKeySelector,
+} from "popup/ducks/accountServices";
 import { openTab } from "popup/helpers/navigate";
 import { isFullscreenMode } from "popup/helpers/isFullscreenMode";
-import { isMainnet } from "helpers/stellar";
 import { useSwapTopTokensPrewarm } from "popup/helpers/useSwapTopTokensPrewarm";
 
 import { AccountAssets } from "popup/components/account/AccountAssets";
-import { AccountCollectibles } from "popup/components/account/AccountCollectibles";
+import {
+  AccountCollectibles,
+  hasVisibleCollections,
+} from "popup/components/account/AccountCollectibles";
 import { AccountHeader } from "popup/components/account/AccountHeader";
+import { FloatingAddButton } from "popup/components/account/FloatingAddButton";
 import { useHiddenCollectibles } from "popup/components/account/hooks/useHiddenCollectibles";
 import { Loading } from "popup/components/Loading";
 import { NotFundedMessage } from "popup/components/account/NotFundedMessage";
-import { formatAmount, roundUsdValue } from "popup/helpers/formatters";
 
+import { isMainnet } from "helpers/stellar";
 import { newTabHref } from "helpers/urls";
-import { getTotalUsd } from "popup/helpers/balance";
+import { getTotalUsd, getTotalUsdLabel } from "popup/helpers/balance";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { reRouteOnboarding } from "popup/helpers/route";
 import { AppDataType } from "helpers/hooks/useGetAppData";
@@ -59,6 +66,11 @@ export const Account = () => {
   const isSorobanSuported = useSelector(settingsSorobanSupportedSelector);
   const { userNotification } = useSelector(settingsSelector);
   const currentAccountName = useSelector(accountNameSelector);
+  // Fallback for the error state, where the fetch yields no data. The account
+  // name already came from Redux, so without this the header rendered a named
+  // account with a blank identicon (and a copy button holding "").
+  const reduxPublicKey = useSelector(publicKeySelector);
+  const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const { activeTab } = useContext(AccountTabsContext);
   const [isDiscoverOpen, setIsDiscoverOpen] = useState(false);
 
@@ -197,25 +209,58 @@ export const Account = () => {
       ? iconsData?.data?.icons
       : {};
 
+  const isFunded = !!resolvedData?.balances?.isFunded;
+  const canUseFriendbot = !!resolvedData?.networkDetails?.friendbotUrl;
+  const collections = resolvedData?.collectibles?.collections ?? [];
+  const reloadBalances = () =>
+    fetchData({
+      useAppDataCache: true,
+      shouldForceBalancesRefresh: true,
+    });
+
   const totalBalanceUsd = getTotalUsd(tokenPrices ?? {}, balances);
-  const roundedTotalBalanceUsd =
-    !hasError &&
-    isMainnet(resolvedData!.networkDetails) &&
-    resolvedData?.tokenPrices
-      ? `$${formatAmount(roundUsdValue(totalBalanceUsd.toString()))}`
-      : "";
+  // The hero is never hidden; see getTotalUsdLabel for which of a total, a
+  // zero or the placeholder it shows. The network comes from Redux because
+  // `resolvedData` is null once the fetch has failed.
+  const roundedTotalBalanceUsd = getTotalUsdLabel({
+    hasError,
+    hasPriceFeed: isMainnet(networkDetails),
+    isFunded,
+    tokenPrices,
+    totalUsd: totalBalanceUsd,
+  });
 
   const activeAllowList =
     resolvedData?.allowList?.[resolvedData?.networkDetails?.networkName]?.[
       resolvedData?.publicKey
     ] ?? [];
 
+  // The Tokens tab dictates which kind of Add button Collectibles uses, so the
+  // two match wherever they can. It carries its own inline CTA exactly when it
+  // renders the unfunded empty state.
+  const isTokensEmptyStateShown =
+    !isFunded && !hasError && !resolvedData?.balances?.error?.horizon;
+
+  // An empty `collections` means "owns none" only once the request lands, so that
+  // tab spins until it does. Guarded on `resolvedData`: a failed fetch discards
+  // the result, and waiting on it would spin forever.
+  const isCollectiblesLoading =
+    !!resolvedData && !resolvedData.hasLoadedCollectibles;
+
+  // Only where there is an empty state to host it -- with collectibles on screen
+  // the pill stays, so that tab always has some way to add one. Same predicate
+  // that pane switches on, so the two cannot disagree.
+  const isCollectiblesCtaInline =
+    !isCollectiblesLoading &&
+    isTokensEmptyStateShown &&
+    !hasVisibleCollections(collections, isCollectibleHidden);
+
   return (
     <>
       <AccountHeader
         allowList={activeAllowList}
         currentAccountName={currentAccountName}
-        publicKey={resolvedData?.publicKey || ""}
+        publicKey={resolvedData?.publicKey || reduxPublicKey}
         onAllowListRemove={refreshAppData}
         onClickRow={async (updatedValues: {
           publicKey?: string;
@@ -228,9 +273,7 @@ export const Account = () => {
           });
         }}
         roundedTotalBalanceUsd={roundedTotalBalanceUsd}
-        isFunded={!!resolvedData?.balances?.isFunded}
-        refreshHiddenCollectibles={refreshHiddenCollectibles}
-        isCollectibleHidden={isCollectibleHidden}
+        isFunded={isFunded}
         onDiscoverClick={() => setIsDiscoverOpen(true)}
       />
       <View.Content hasNoPadding>
@@ -307,22 +350,17 @@ export const Account = () => {
                 !hasError &&
                 !resolvedData?.balances?.error?.horizon && (
                   <NotFundedMessage
-                    canUseFriendbot={
-                      !!resolvedData!.networkDetails.friendbotUrl
-                    }
+                    canUseFriendbot={canUseFriendbot}
                     publicKey={resolvedData?.publicKey || ""}
-                    reloadBalances={() =>
-                      fetchData({
-                        useAppDataCache: true,
-                        shouldForceBalancesRefresh: true,
-                      })
-                    }
+                    reloadBalances={reloadBalances}
                   />
                 )
               ),
               <div data-testid="account-collectibles">
                 <AccountCollectibles
-                  collections={accountData.data?.collectibles.collections || []}
+                  collections={collections}
+                  hasInlineCta={isCollectiblesCtaInline}
+                  isLoading={isCollectiblesLoading}
                   refreshHiddenCollectibles={refreshHiddenCollectibles}
                   isCollectibleHidden={isCollectibleHidden}
                 />
@@ -331,6 +369,19 @@ export const Account = () => {
           />
         </div>
       </View.Content>
+      {/*
+        Kept a sibling of View.Content for readability only — the pill is
+        `position: fixed`, so with no transform/filter ancestor its containing
+        block is the viewport and nesting depth doesn't affect where it lands.
+        On Home nothing here is a scroll container: AccountView overrides
+        View.Content and its inset to `overflow: visible`, so the document
+        itself is the scrollport (document.scrollingElement === html).
+      */}
+      <FloatingAddButton
+        isFunded={isFunded}
+        isCollectiblesCtaInline={isCollectiblesCtaInline}
+        isCollectiblesLoading={isCollectiblesLoading}
+      />
       <Sheet
         open={isDiscoverOpen}
         onOpenChange={(open) => !open && setIsDiscoverOpen(false)}

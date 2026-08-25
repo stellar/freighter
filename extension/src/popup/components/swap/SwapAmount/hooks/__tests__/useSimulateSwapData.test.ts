@@ -76,10 +76,10 @@ describe("getSwapTotalFee", () => {
 });
 
 describe("getBuiltTx", () => {
-  it("builds a single pathPaymentStrictSend when not a new token", async () => {
+  it("builds a single pathPaymentStrictSend for a held destination", async () => {
     const builder = await getBuiltTx(
       PUBLIC_KEY,
-      { ...baseOpData, destinationTokenDetails: null },
+      { ...baseOpData, requiresTrustline: false },
       "0.00001",
       180,
       TESTNET_NETWORK_DETAILS,
@@ -91,18 +91,10 @@ describe("getBuiltTx", () => {
     expect(builder.baseFee).toBe("100"); // 1 op, full total
   });
 
-  it("prepends changeTrust as op[0] for a new token", async () => {
+  it("prepends changeTrust as op[0] for an unheld destination", async () => {
     const builder = await getBuiltTx(
       PUBLIC_KEY,
-      {
-        ...baseOpData,
-        destinationTokenDetails: {
-          tokenCode: "USDC",
-          requiresTrustline: true,
-          decimals: 7,
-          issuer: USDC_ISSUER,
-        },
-      },
+      { ...baseOpData, requiresTrustline: true },
       "0.0002",
       180,
       TESTNET_NETWORK_DETAILS,
@@ -111,21 +103,21 @@ describe("getBuiltTx", () => {
     const ops = tx.operations;
     expect(ops).toHaveLength(2);
     expect(ops[0].type).toBe("changeTrust");
+    expect((ops[0] as { line: Asset }).line).toEqual(
+      new Asset("USDC", USDC_ISSUER),
+    );
     expect(ops[1].type).toBe("pathPaymentStrictSend");
     expect(builder.baseFee).toBe("1000"); // 0.0002 XLM / 2 ops
   });
 
-  it("throws when requiresTrustline but issuer is missing", async () => {
+  it("throws when requiresTrustline but the destination has no issuer", async () => {
     await expect(
       getBuiltTx(
         PUBLIC_KEY,
         {
           ...baseOpData,
-          destinationTokenDetails: {
-            tokenCode: "USDC",
-            requiresTrustline: true,
-            decimals: 7,
-          },
+          destAsset: Asset.native(),
+          requiresTrustline: true,
         },
         "0.0002",
         180,

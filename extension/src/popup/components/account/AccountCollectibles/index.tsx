@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Icon } from "@stellar/design-system";
+import { Button, Icon, Loader } from "@stellar/design-system";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import { Collection } from "@shared/api/types/types";
+import { navigateTo } from "popup/helpers/navigate";
 import {
   ScreenReaderOnly,
   Sheet,
@@ -222,8 +223,41 @@ const CollectionsList = ({
   );
 };
 
+/**
+ * Whether the Collectibles tab has anything to show.
+ *
+ * Deliberately mirrors what CollectionsList above actually renders, hidden
+ * filter included: it drops a collection once every collectible in it is
+ * hidden, so counting a collection as visible on `collection && !error` alone
+ * left the tab blank -- no grid and no empty state -- once the last one was
+ * hidden.
+ *
+ * Exported because Home decides whether this tab's Add action goes inline or
+ * stays in the floating pill, and an inline one needs the empty state below to
+ * host it, so that decision has to read "empty" exactly the way this tab does.
+ */
+export const hasVisibleCollections = (
+  collections: Collection[],
+  isCollectibleHidden: (collectionAddress: string, tokenId: string) => boolean,
+) =>
+  collections.some(
+    ({ collection, error }) =>
+      collection &&
+      !error &&
+      collection.collectibles.some(
+        (item) => !isCollectibleHidden(collection.address, item.tokenId),
+      ),
+  );
+
 interface AccountCollectiblesProps {
   collections: Collection[];
+  hasInlineCta: boolean;
+  /**
+   * The collectibles request has not resolved yet. Distinct from having none:
+   * `collections` is empty in both cases, and rendering the empty state here
+   * would tell the account it owns nothing while the answer is still in flight.
+   */
+  isLoading: boolean;
   refreshHiddenCollectibles: () => Promise<void>;
   isCollectibleHidden: (collectionAddress: string, tokenId: string) => boolean;
   onClickCollectible?: (selectedCollectible: SelectedCollectible) => void;
@@ -231,13 +265,31 @@ interface AccountCollectiblesProps {
 
 export const AccountCollectibles = ({
   collections,
+  hasInlineCta,
+  isLoading,
   refreshHiddenCollectibles,
   isCollectibleHidden,
 }: AccountCollectiblesProps) => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
 
-  // Check if there are any valid collections with collectibles
-  const hasValidCollections = collections.some((c) => c.collection && !c.error);
+  const hasValidCollections = hasVisibleCollections(
+    collections,
+    isCollectibleHidden,
+  );
+
+  if (isLoading) {
+    return (
+      <div className="AccountCollectibles" data-testid="account-collectibles">
+        <div
+          className="AccountCollectibles__loader"
+          data-testid="account-collectibles-loader"
+        >
+          <Loader size="2rem" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="AccountCollectibles" data-testid="account-collectibles">
@@ -259,6 +311,23 @@ export const AccountCollectibles = ({
           <div className="AccountCollectibles__empty__subtitle">
             {t("Collectibles you own will appear here.")}
           </div>
+          {/* Set while the Tokens tab is showing its own unfunded empty state,
+              so that both tabs offer the same kind of button. The pill stands
+              down on this tab while it does. */}
+          {hasInlineCta && (
+            <div className="AccountCollectibles__empty__cta">
+              <Button
+                type="button"
+                variant="secondary"
+                size="lg"
+                isRounded
+                onClick={() => navigateTo(ROUTES.addCollectibles, navigate)}
+                data-testid="add-collectible-inline-btn"
+              >
+                {t("Add collectible")}
+              </Button>
+            </div>
+          )}
         </div>
       )}
     </div>

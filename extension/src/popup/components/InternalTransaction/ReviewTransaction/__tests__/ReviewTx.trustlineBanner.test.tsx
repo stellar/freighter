@@ -76,6 +76,43 @@ describe("ReviewTx trustline banner", () => {
     ).toBeInTheDocument();
   });
 
+  it("renders the banner from the balances-derived flag when there is no pick-time snapshot (defaulted destination)", () => {
+    render(
+      <Wrapper state={{}} routes={["/"]}>
+        <ReviewTx
+          {...baseProps}
+          destinationTokenDetails={null}
+          requiresTrustline
+        />
+      </Wrapper>,
+    );
+    // Token code falls back to the destination canonical (AQUA).
+    const banner = screen.getByTestId("review-tx-trustline-banner");
+    expect(banner).toBeInTheDocument();
+    fireEvent.click(banner);
+    expect(screen.getByTestId("trustline-info-sheet")).toBeInTheDocument();
+  });
+
+  it("lets the balances-derived flag override a stale snapshot", () => {
+    render(
+      <Wrapper state={{}} routes={["/"]}>
+        <ReviewTx
+          {...baseProps}
+          destinationTokenDetails={{
+            tokenCode: "AQUA",
+            requiresTrustline: true,
+            decimals: 7,
+            issuer: "GBNZILSTVQZ4R7IKQDGHYGY2QXL5QOFJYQMXPKWRRM5PAV7Y4M67AQUA",
+          }}
+          requiresTrustline={false}
+        />
+      </Wrapper>,
+    );
+    expect(
+      screen.queryByTestId("review-tx-trustline-banner"),
+    ).not.toBeInTheDocument();
+  });
+
   it("does not render the banner when no trustline is required", () => {
     render(
       <Wrapper state={{}} routes={["/"]}>

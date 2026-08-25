@@ -29,7 +29,7 @@ export const AddWallet = ({ onBack }: AddWalletProps) => {
       link: ROUTES.importAccount,
     },
     {
-      icon: <Icon.ShieldPlus />,
+      icon: <Icon.UsbFlashDrive />,
       title: t("Connect a hardware wallet"),
       description: t("Add a wallet from a hardware wallet"),
       link: ROUTES.connectWallet,

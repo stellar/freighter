@@ -106,7 +106,7 @@ export const SwapAsset = ({
             : {};
         const tokenPrices =
           resolvedFrom?.type === AppDataType.RESOLVED
-            ? resolvedFrom.tokenPrices
+            ? resolvedFrom.tokenPrices || {}
             : {};
         // The lookup is starting now (the debounce gap is over): hand the
         // loading indicator off to isLoading, which clears at the first
@@ -187,7 +187,7 @@ export const SwapAsset = ({
       publicKey: resolvedFrom.publicKey,
       networkDetails,
       icons: resolvedFrom.balances.icons,
-      tokenPrices: resolvedFrom.tokenPrices,
+      tokenPrices: resolvedFrom.tokenPrices || {},
     });
     // Re-run when the held balances resolve OR the network changes, so the
     // Popular list is re-fetched on a Mainnet/Testnet switch. lookupFetchData

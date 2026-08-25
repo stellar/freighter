@@ -32,6 +32,15 @@ export const encodeSep53Message = (message: string) => {
   return hash(encodedMessage);
 };
 
+/*
+ * Normalizes a signature that reached the background script by either route.
+ * Local keys sign in the background and produce a Buffer directly; hardware
+ * wallets sign in the popup, so their signature is base64-encoded to survive
+ * the JSON serialization that `runtime.sendMessage` applies in transit.
+ */
+export const toSignatureBuffer = (signature: Buffer | string) =>
+  typeof signature === "string" ? Buffer.from(signature, "base64") : signature;
+
 export const truncateString = (str: string, charCount = 4) =>
   str ? `${str.slice(0, charCount)}…${str.slice(-charCount)}` : "";
 

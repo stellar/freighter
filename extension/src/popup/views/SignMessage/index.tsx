@@ -90,7 +90,6 @@ export const SignMessage = () => {
     handleApprove,
     hwStatus,
     rejectAndClose,
-    isHardwareWallet,
     setIsPasswordRequired,
     verifyPasswordThenSign,
     hardwareWalletType,
@@ -140,23 +139,6 @@ export const SignMessage = () => {
       applicationState: signMessageState.data.applicationState,
       state: signMessageState.state,
     });
-  }
-
-  if (isHardwareWallet) {
-    return (
-      <WarningMessage
-        variant={WarningMessageVariant.warning}
-        handleCloseClick={() => window.close()}
-        isActive
-        header={t("Unsupported signing method")}
-      >
-        <p>
-          {t(
-            "Signing arbitrary data with a hardware wallet is currently not supported.",
-          )}
-        </p>
-      </WarningMessage>
-    );
   }
 
   if (blobNetworkPassphrase && blobNetworkPassphrase !== networkPassphrase) {
@@ -229,7 +211,11 @@ export const SignMessage = () => {
   ) : (
     <>
       {hwStatus === ShowOverlayStatus.IN_PROGRESS && hardwareWalletType && (
-        <HardwareSign walletType={hardwareWalletType} uuid={message.uuid} />
+        <HardwareSign
+          walletType={hardwareWalletType}
+          isSignMessage
+          uuid={message.uuid}
+        />
       )}
       <React.Fragment>
         <View.Content>
@@ -373,7 +359,10 @@ export const SignMessage = () => {
             </div>
           )}
         </View.Content>
-        <View.Footer>
+        {/* The default footer is a fixed 80px, which this footer's warning line
+            plus button row overflows — the text then spills up over the content
+            pane. Size to content so it grows instead. */}
+        <View.Footer customHeight="auto">
           {!shouldShowWarning && (
             <span className="SignMessage__Warning">
               {t("Only confirm if you trust this site")}

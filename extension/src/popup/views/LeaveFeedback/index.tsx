@@ -24,12 +24,6 @@ export const LeaveFeedback = () => {
           </ListNavLink>
           <ListNavLink
             icon={<Icon.Link01 />}
-            href="https://discord.gg/zcdNVJUYqN"
-          >
-            {t("Join community Discord")}
-          </ListNavLink>
-          <ListNavLink
-            icon={<Icon.Link01 />}
             href="https://github.com/stellar/freighter/issues"
           >
             {t("Report issue on Github")}

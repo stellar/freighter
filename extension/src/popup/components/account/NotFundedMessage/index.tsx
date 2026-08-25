@@ -55,26 +55,17 @@ export const NotFundedMessage = ({
         </a>
       </div>
 
-      <Button
-        variant="secondary"
-        size="md"
-        isRounded
-        onClick={() =>
-          isMainnet(networkDetails)
-            ? navigateTo(ROUTES.addFunds, navigate, "?isAddXlm=true")
-            : navigateTo(ROUTES.viewPublicKey, navigate)
-        }
-      >
-        {t("Add XLM")}
-      </Button>
-
-      {canUseFriendbot && (
+      {/* One funding action, not two stacked. Where a friendbot exists it is
+          the way to fund the account, so it replaces "Add XLM" rather than
+          sitting under it — and wears the same style, since it is now the
+          primary action of this empty state rather than a secondary offer. */}
+      {canUseFriendbot ? (
         <Formik initialValues={{}} onSubmit={handleFundAccount}>
           {({ isSubmitting }) => (
             <Form>
               <Button
-                variant="tertiary"
-                size="md"
+                variant="secondary"
+                size="lg"
                 isRounded
                 isLoading={isSubmitting}
               >
@@ -83,6 +74,19 @@ export const NotFundedMessage = ({
             </Form>
           )}
         </Formik>
+      ) : (
+        <Button
+          variant="secondary"
+          size="lg"
+          isRounded
+          onClick={() =>
+            isMainnet(networkDetails)
+              ? navigateTo(ROUTES.addFunds, navigate, "?isAddXlm=true")
+              : navigateTo(ROUTES.viewPublicKey, navigate)
+          }
+        >
+          {t("Add XLM")}
+        </Button>
       )}
     </div>
   );

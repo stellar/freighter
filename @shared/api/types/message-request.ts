@@ -214,6 +214,9 @@ export interface RejectAccessMessage extends BaseMessage {
 export interface HandleSignedHWPayloadMessage extends BaseMessage {
   type: SERVICE_TYPES.HANDLE_SIGNED_HW_PAYLOAD;
   signedPayload: string | Buffer<ArrayBufferLike>;
+  // The device-derived address that produced the signature. SEP-53 consumers
+  // need it to verify the signature they get back.
+  signerAddress?: string;
   uuid: string;
 }
 
@@ -425,14 +428,6 @@ export interface GetHiddenAssetsMessage extends BaseMessage {
   type: SERVICE_TYPES.GET_HIDDEN_ASSETS;
 }
 
-export interface GetMobileAppBannerDismissedMessage extends BaseMessage {
-  type: SERVICE_TYPES.GET_MOBILE_APP_BANNER_DISMISSED;
-}
-
-export interface DismissMobileAppBannerMessage extends BaseMessage {
-  type: SERVICE_TYPES.DISMISS_MOBILE_APP_BANNER;
-}
-
 export interface GetRecentProtocolsMessage extends BaseMessage {
   type: SERVICE_TYPES.GET_RECENT_PROTOCOLS;
 }
@@ -570,8 +565,6 @@ export type ServiceMessageRequest =
   | GetIsAccountMismatchMessage
   | ChangeAssetVisibilityMessage
   | GetHiddenAssetsMessage
-  | GetMobileAppBannerDismissedMessage
-  | DismissMobileAppBannerMessage
   | GetRecentProtocolsMessage
   | AddRecentProtocolMessage
   | ClearRecentProtocolsMessage

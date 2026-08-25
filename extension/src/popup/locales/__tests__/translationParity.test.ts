@@ -36,3 +36,44 @@ describe("swap i18n parity", () => {
     });
   });
 });
+
+// i18next only interpolates {{double}} braces. A single-brace placeholder type
+// checks, passes review, and ships a literal "{walletType}" to the user — which
+// is exactly how the hardware-wallet headers read until this was fixed.
+const SINGLE_BRACE_PLACEHOLDER = /(?<!\{)\{(?!\{)[^{}]+\}(?!\})/;
+
+// Pre-existing and unrelated to hardware wallets: SSLWarningMessage
+// (WarningMessages/index.tsx) passes `values={{ url }}` against a `{url}` key,
+// so the domain never renders. Left alone here to keep this PR to one concern —
+// allowlisted so the check still blocks *new* instances.
+const KNOWN_SINGLE_BRACE = [
+  "The website <1>{url}</1> does not use an SSL certificate.",
+  "O site <1>{url}</1> não usa um certificado SSL.",
+];
+
+const findSingleBracePlaceholders = (bundle: Record<string, string>) =>
+  Object.entries(bundle)
+    .flatMap(([key, value]) => [key, value])
+    .filter((str) => SINGLE_BRACE_PLACEHOLDER.test(str))
+    .filter((str) => !KNOWN_SINGLE_BRACE.includes(str));
+
+describe("i18n placeholder syntax", () => {
+  it.each([
+    ["en", en],
+    ["pt", pt],
+  ])("uses {{double}} braces for every placeholder in %s", (_name, bundle) => {
+    expect(
+      findSingleBracePlaceholders(bundle as Record<string, string>),
+    ).toEqual([]);
+  });
+
+  it("detects a single-brace placeholder", () => {
+    // Guards the guard: a regex that matches nothing would pass the checks
+    // above no matter what shipped.
+    expect(
+      findSingleBracePlaceholders({
+        "Connect {walletType}": "Conectar {walletType}",
+      }),
+    ).toEqual(["Connect {walletType}", "Conectar {walletType}"]);
+  });
+});

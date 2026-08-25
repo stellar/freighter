@@ -40,20 +40,28 @@ const formatBalances = async ({
   balances: NonNullable<BalanceMap>;
   showHidden: boolean;
 }) => {
+  const unfilteredBalances = sortBalances(balances);
   if (!showHidden) {
     const hiddenAssets = await getHiddenAssets({
       activePublicKey: publicKey,
     });
-    return sortBalances(
-      filterHiddenBalances(balances, hiddenAssets.hiddenAssets),
-    );
-  } else {
-    return sortBalances(balances);
+    return {
+      balances: sortBalances(
+        filterHiddenBalances(balances, hiddenAssets.hiddenAssets),
+      ),
+      unfilteredBalances,
+    };
   }
+  return { balances: unfilteredBalances, unfilteredBalances };
 };
 
 export interface AccountBalances {
   balances: AssetType[];
+  // `balances` with no visibility filtering. Hidden assets are a display
+  // preference; anything that feeds transaction construction (e.g. "does a
+  // trustline already exist?") must consult this list, or a hidden held asset
+  // reads as unheld.
+  unfilteredBalances?: AssetType[];
   isFunded: AccountBalancesInterface["isFunded"];
   subentryCount: AccountBalancesInterface["subentryCount"];
   error?: AccountBalancesInterface["error"];
@@ -64,6 +72,9 @@ export interface AccountBalances {
 function useGetBalances(options: {
   showHidden: boolean;
   includeIcons: boolean;
+  // Canonicals to resolve icons for alongside the held balances (e.g. the
+  // swap flow's default destination, which the account may not hold).
+  additionalIconAssetIds?: string[];
 }) {
   const reduxDispatch = useDispatch<AppDispatch>();
   const store = useStore<AppState>();
@@ -103,16 +114,18 @@ function useGetBalances(options: {
               balancesV2Selector(store.getState()),
             );
 
+      const { balances, unfilteredBalances } = await formatBalances({
+        publicKey,
+        balances: accountBalances.balances as NonNullable<BalanceMap>,
+        showHidden: options.showHidden,
+      });
       const payload = {
         isFunded: accountBalances.isFunded,
         subentryCount: accountBalances.subentryCount,
         error: accountBalances.error,
         localOnlyTokenIds: accountBalances.localOnlyTokenIds,
-        balances: await formatBalances({
-          publicKey,
-          balances: accountBalances.balances as NonNullable<BalanceMap>,
-          showHidden: options.showHidden,
-        }),
+        balances,
+        unfilteredBalances,
       } as AccountBalances;
 
       if (options.includeIcons) {
@@ -137,6 +150,7 @@ function useGetBalances(options: {
           networkDetails,
           assetsListsData,
           cachedIcons: cachedIconsFromCache,
+          additionalAssetIds: options.additionalIconAssetIds,
         });
         payload.icons = icons;
         reduxDispatch(saveTokenLists(assetsListsData));

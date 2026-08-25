@@ -37,6 +37,7 @@ export type AssetDomains = NeedsReRoute | ResolvedAssetDomains;
 export function useGetAssetDomainsWithBalances(getBalancesOptions: {
   showHidden: boolean;
   includeIcons: boolean;
+  additionalIconAssetIds?: string[];
 }) {
   const reduxDispatch = useDispatch<AppDispatch>();
   const isSwap = useIsSwap();
