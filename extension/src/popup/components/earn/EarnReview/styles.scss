@@ -108,6 +108,30 @@
     gap: pxToRem(8);
   }
 
+  // The "Confirm anyway" acknowledgement shown under the action row once
+  // Blockaid has flagged the deposit. Matches `.ReviewTx__TextAction` so the
+  // demoted confirm reads the same here as it does on the Send/Swap review.
+  &__text-action {
+    width: 100%;
+    border: none;
+    background: none;
+    font-family: var(--sds-ff-base);
+    font-weight: 600;
+    font-size: pxToRem(14);
+    line-height: pxToRem(20);
+    padding: pxToRem(8) 0;
+    cursor: pointer;
+    text-align: center;
+
+    &--default {
+      color: var(--sds-clr-gray-09);
+    }
+
+    &--error {
+      color: var(--sds-clr-red-11);
+    }
+  }
+
   &__settings {
     flex: 0 0 auto;
     width: pxToRem(40);

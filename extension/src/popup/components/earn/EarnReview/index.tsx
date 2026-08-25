@@ -15,13 +15,21 @@ import { BlendCatalogPool } from "@shared/api/types/blend";
 import { OPERATION_TYPES } from "constants/transaction";
 import { State } from "constants/request";
 import { SimulateTxData } from "types/transactions";
+import { SecurityLevel } from "popup/constants/blockaid";
 import { AuthEntries } from "popup/components/AuthEntry";
+import { BlockaidBanner } from "popup/components/BlockaidBanner";
+import { BlockAidScanExpanded } from "popup/components/WarningMessages";
 import { FeesPane } from "popup/components/InternalTransaction/FeesPane";
 import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
 import { Summary } from "popup/views/SignTransaction/Preview/Summary";
 import { Details } from "popup/views/SignTransaction/Preview/Details";
 import { PoolIcon } from "popup/components/earn/PoolIcon";
 import { AssetIcon } from "popup/components/account/AccountAssets";
+import {
+  getTransactionSecurityLevel,
+  useBlockaidOverrideState,
+  useShouldTreatTxAsUnableToScan,
+} from "popup/helpers/blockaid";
 import { getAuthEntryBoundAddress } from "popup/helpers/soroban";
 import { formatAmount } from "popup/helpers/formatters";
 import { formatRate } from "popup/components/earn/helpers/formatPoolStats";
@@ -86,6 +94,7 @@ export const EarnReview = ({
   const dispatch = useDispatch();
   const [isOnDetailsPane, setIsOnDetailsPane] = useState(false);
   const [isOnFeesPane, setIsOnFeesPane] = useState(false);
+  const [isOnBlockaidSheet, setIsOnBlockaidSheet] = useState(false);
 
   const hardwareWalletType = useSelector(hardwareWalletTypeSelector);
   const isHardwareWallet = !!hardwareWalletType;
@@ -94,6 +103,32 @@ export const EarnReview = ({
   } = useSelector(transactionSubmissionSelector);
 
   const preparedXdr = simulationState.data?.transactionXdr;
+
+  /*
+   * The Blockaid verdict on the deposit the user is about to sign. Only the
+   * transaction scan applies here — Earn's reserves come from the backend's
+   * allowlist and there is no counterparty token to scan — so this reads
+   * getTransactionSecurityLevel directly instead of merging several verdicts
+   * the way the swap review does.
+   *
+   * shouldTreatTxAsUnableToScan carries the network gate, so off-mainnet (where
+   * the scan is a no-op and comes back null) never warns.
+   */
+  const txScanResult = simulationState.data?.scanResult;
+  const shouldTreatTxAsUnableToScan = useShouldTreatTxAsUnableToScan();
+  const blockaidOverrideState = useBlockaidOverrideState();
+  const securityLevel = getTransactionSecurityLevel(
+    txScanResult,
+    shouldTreatTxAsUnableToScan(txScanResult),
+    blockaidOverrideState,
+  );
+  const isMalicious = securityLevel === SecurityLevel.MALICIOUS;
+  // Matches ReviewTx's gate: a flagged transaction AND one that couldn't be
+  // scanned both demote Confirm to an explicit "Confirm anyway".
+  const shouldShowTxWarning =
+    isMalicious ||
+    securityLevel === SecurityLevel.SUSPICIOUS ||
+    securityLevel === SecurityLevel.UNABLE_TO_SCAN;
 
   /*
    * Same shape as ReviewTx's onConfirmTx: a hardware wallet signs here, on the
@@ -240,8 +275,102 @@ export const EarnReview = ({
     );
   }
 
+  /*
+   * Shared by the review body and the Blockaid sheet, so acknowledging a
+   * warning is possible from either. Two states, mirroring ReviewTx's
+   * ActionButtons: a clean transaction keeps Cancel + Confirm, and a flagged
+   * one promotes Cancel into the Confirm slot and demotes confirmation to a
+   * "Confirm anyway" text button below the row.
+   *
+   * Built here rather than reusing ReviewTx's ActionButtons, which hardcodes
+   * the Send/Swap CTA copy and takes memo props this flow has none of.
+   */
+  const actions = (
+    <>
+      <div className="EarnReview__actions">
+        <button
+          type="button"
+          className="EarnReview__settings"
+          aria-label={t("Fee settings")}
+          data-testid="earn-review-fees-btn"
+          onClick={() => setIsOnFeesPane(true)}
+        >
+          <Icon.Settings04 />
+        </button>
+        {/* Cancel is the recommended action once a warning is up, so it takes
+            over the Confirm slot's weight — destructive for a malicious
+            verdict, secondary otherwise, exactly as ReviewTx does. */}
+        <Button
+          size="md"
+          variant={
+            !shouldShowTxWarning
+              ? "tertiary"
+              : isMalicious
+                ? "destructive"
+                : "secondary"
+          }
+          isRounded
+          isFullWidth
+          onClick={onCancel}
+          data-testid="earn-review-cancel"
+        >
+          {t("Cancel")}
+        </Button>
+        {!shouldShowTxWarning && (
+          <Button
+            size="md"
+            variant="secondary"
+            isRounded
+            isFullWidth
+            onClick={onConfirmTx}
+            data-testid="earn-review-confirm"
+          >
+            {t("Confirm")}
+          </Button>
+        )}
+      </div>
+      {shouldShowTxWarning && (
+        <button
+          type="button"
+          className={`EarnReview__text-action EarnReview__text-action--${
+            isMalicious ? "error" : "default"
+          }`}
+          data-testid="earn-review-confirm-anyway"
+          onClick={onConfirmTx}
+        >
+          {t("Confirm anyway")}
+        </button>
+      )}
+    </>
+  );
+
+  /*
+   * The "Do not proceed" detail sheet, listing Blockaid's reasons. Rendered
+   * after the hardware check above so that confirming from this sheet with a
+   * device connected swaps in HardwareSign instead of leaving the sheet up.
+   */
+  if (isOnBlockaidSheet) {
+    return (
+      <div className="EarnReview" data-testid="earn-review-blockaid-pane">
+        <BlockAidScanExpanded
+          scanResult={txScanResult}
+          onClose={() => setIsOnBlockaidSheet(false)}
+        />
+        {actions}
+      </div>
+    );
+  }
+
   return (
     <div className="EarnReview" data-testid="earn-review">
+      {securityLevel && shouldShowTxWarning ? (
+        <BlockaidBanner
+          securityLevel={securityLevel}
+          entity="transaction"
+          onClick={() => setIsOnBlockaidSheet(true)}
+          dataTestId="earn-review-blockaid-warning"
+        />
+      ) : null}
       <div className="EarnReview__group">
         <Text as="div" size="sm">
           {t("You are depositing")}
@@ -343,37 +472,7 @@ export const EarnReview = ({
         </button>
       )}
 
-      <div className="EarnReview__actions">
-        <button
-          type="button"
-          className="EarnReview__settings"
-          aria-label={t("Fee settings")}
-          data-testid="earn-review-fees-btn"
-          onClick={() => setIsOnFeesPane(true)}
-        >
-          <Icon.Settings04 />
-        </button>
-        <Button
-          size="md"
-          variant="tertiary"
-          isRounded
-          isFullWidth
-          onClick={onCancel}
-          data-testid="earn-review-cancel"
-        >
-          {t("Cancel")}
-        </Button>
-        <Button
-          size="md"
-          variant="secondary"
-          isRounded
-          isFullWidth
-          onClick={onConfirmTx}
-          data-testid="earn-review-confirm"
-        >
-          {t("Confirm")}
-        </Button>
-      </div>
+      {actions}
     </div>
   );
 };
