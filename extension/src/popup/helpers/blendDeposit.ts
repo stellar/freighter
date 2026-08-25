@@ -67,6 +67,9 @@ export const buildAndSimulateBlendDeposit = async ({
     // Blend takes the amount in the asset's smallest unit. toFixed(0) because
     // an i128 cannot carry a fraction, and exponential notation would not parse.
     amount: parseTokenAmount(amount, decimals).toFixed(0),
+    // request_type 2 (SupplyCollateral), not 0 (Supply): the position lands in
+    // the pool's `collateral_tokens` rather than `supply_tokens`, so it counts
+    // as collateral and the user's borrowing power stays open.
     requestType: BlendRequestType.SupplyCollateral,
     networkPassphrase: networkDetails.networkPassphrase,
   });
