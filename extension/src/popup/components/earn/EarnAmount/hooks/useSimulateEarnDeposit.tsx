@@ -13,6 +13,8 @@ import { useScanTx } from "popup/helpers/blockaid";
 import { buildAndSimulateBlendDeposit } from "popup/helpers/blendDeposit";
 import { saveSimulation } from "popup/ducks/transactionSubmission";
 
+const scanUrlstub = "internal";
+
 interface SimulateEarnDepositParams {
   publicKey: string;
   /** The reserve's asset contract address. */
@@ -57,9 +59,9 @@ export function useSimulateEarnDeposit() {
       // signs — not the pre-assembly build.
       const scanResult = await scanTx(
         preparedTransaction,
-        // Internal flows have no originating dApp; the pool contract is the
-        // subject, so attribute the scan to it.
-        params.assetId,
+        // Blockaid's `url` is the originating dApp's URL. An in-wallet deposit
+        // has no originating dApp, so use the same stub Send and Swap pass.
+        scanUrlstub,
         params.networkDetails,
       );
 
