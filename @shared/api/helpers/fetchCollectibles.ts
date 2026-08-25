@@ -8,6 +8,7 @@ import {
 import { NetworkDetails } from "@shared/constants/stellar";
 import { fetchMetadataJson } from "./fetchMetadataJson";
 import { fetchBackendV2 } from "./fetchBackendV2";
+import { redactErrorBody } from "./redactErrorBody";
 
 /**
  * Fetches metadata for a collectible from its token URI.
@@ -98,7 +99,7 @@ export const fetchCollectibles = async ({
 
     if (status !== 200) {
       captureException(
-        `Failed to fetch collectibles - ${status}: ${JSON.stringify(body)}`,
+        `Failed to fetch collectibles - ${status}: ${redactErrorBody(body)}`,
       );
       throw new Error(`Failed to fetch collectibles - ${status}`);
     }

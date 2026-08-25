@@ -5,6 +5,8 @@ import {
   TESTNET_NETWORK_DETAILS,
 } from "@shared/constants/stellar";
 import { SERVICE_TYPES } from "@shared/constants/services";
+import { captureException } from "@sentry/browser";
+
 import { sendMessageToBackground } from "../helpers/extensionMessaging";
 
 jest.mock("@sentry/browser", () => ({
@@ -19,6 +21,10 @@ jest.mock("../helpers/extensionMessaging");
 const mockedSend = sendMessageToBackground as jest.Mock;
 
 const PUBLIC_KEY = "GACCOUNTPUBLICKEY";
+// A real 56-char StrKey, needed where the scrubber's pattern must actually
+// match (PUBLIC_KEY above is a short stand-in that no scrubber would catch).
+const REAL_PUBLIC_KEY =
+  "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KJ5JS6ZJ7DHNTGKFEUJ";
 
 // Mirrors the live snake_case wire format of the deployed v2 API.
 const v2Account = {
@@ -109,10 +115,14 @@ const backendV2Message = () =>
 // The Blockaid bulk scan (v1 indexer) is still a direct fetch.
 const mockFetch = jest.fn();
 
+const mockedCapture = captureException as jest.Mock;
+const capturedMessages = () => mockedCapture.mock.calls.map(([msg]) => msg);
+
 describe("getAccountBalancesV2", () => {
   beforeEach(() => {
     mockedSend.mockReset();
     mockFetch.mockReset();
+    mockedCapture.mockReset();
     global.fetch = mockFetch as any;
   });
 
@@ -149,6 +159,13 @@ describe("getAccountBalancesV2", () => {
     ).rejects.toThrow(
       `v2 balances response is missing the requested account ${PUBLIC_KEY}`,
     );
+
+    // The thrown Error is never reported (useGetBalances rethrows without a
+    // capture, and the ErrorBoundary only reports componentStack), so the
+    // response body has to reach Sentry from this capture or not at all.
+    expect(capturedMessages()).toEqual([
+      'v2 balances response is missing the requested account - 200: {"data":[]}',
+    ]);
   });
 
   it("bulk-scans scannable assets and merges blockaidData on mainnet", async () => {
@@ -294,6 +311,12 @@ describe("getAccountBalancesV2", () => {
         networkDetails: TESTNET_NETWORK_DETAILS,
       }),
     ).rejects.toThrow();
+
+    // Status alone can't distinguish a backend outage from a bad request, so
+    // the server's explanation has to travel with it.
+    expect(capturedMessages()).toEqual([
+      'Failed to fetch account balances v2 - 500: {"message":"boom","statusCode":500}',
+    ]);
   });
 
   it("throws on a 200 with no data payload", async () => {
@@ -305,6 +328,32 @@ describe("getAccountBalancesV2", () => {
         networkDetails: TESTNET_NETWORK_DETAILS,
       }),
     ).rejects.toThrow();
+
+    expect(capturedMessages()).toEqual([
+      "Failed to fetch account balances v2 - 200: {}",
+    ]);
+  });
+
+  it("scrubs addresses out of the reported body", async () => {
+    // The failure guard also fires on a 200 whose shape drifted, where `body`
+    // is the full address-keyed balances payload. Sentry's beforeSend only
+    // rewrites request URLs, never message strings, so the redaction has to
+    // happen at the capture site.
+    mockBackendV2({
+      status: 200,
+      body: { accounts: [{ address: REAL_PUBLIC_KEY }] },
+    });
+
+    await expect(
+      getAccountBalancesV2({
+        publicKey: REAL_PUBLIC_KEY,
+        networkDetails: TESTNET_NETWORK_DETAILS,
+      }),
+    ).rejects.toThrow();
+
+    const [message] = capturedMessages();
+    expect(message).toContain("G***");
+    expect(message).not.toContain(REAL_PUBLIC_KEY);
   });
 });
 

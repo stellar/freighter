@@ -89,6 +89,7 @@ import { sendMessageToBackground } from "./helpers/extensionMessaging";
 import { fetchBackendV2 } from "./helpers/fetchBackendV2";
 import { getIconUrlFromIssuer } from "./helpers/getIconUrlFromIssuer";
 import { getLedgerKeyAccounts } from "./helpers/getLedgerKeyAccounts";
+import { redactErrorBody } from "./helpers/redactErrorBody";
 import { stellarSdkServer, submitTx } from "./helpers/stellarSdkServer";
 import { getIconFromTokenLists } from "./helpers/getIconFromTokenList";
 import { mapAccountBalancesV2 } from "./helpers/mapAccountBalancesV2";
@@ -634,7 +635,10 @@ export const getAccountBalancesV2 = async ({
 }): Promise<AccountBalancesInterface> => {
   // Multi-address fan-out endpoint; the extension fetches one account at a
   // time. Addresses travel in the POST body, so the URL carries no G-address
-  // (no Sentry scrubbing needed, unlike the v1 GET path).
+  // (unlike the v1 GET path, which needs the beforeSend URL scrubber). The
+  // *response* does key its results by address, so bodies reported to Sentry
+  // below go through redactErrorBody — beforeSend only rewrites request URLs,
+  // never message strings.
   //
   // This is a freighter-backend-v2 call, so it goes through the background
   // chokepoint (callBackendV2), which attaches the per-request JWT (#2879).
@@ -652,7 +656,11 @@ export const getAccountBalancesV2 = async ({
   const parsedResponse = body as { data?: V2AccountBalances[] };
   if (status !== 200 || !parsedResponse?.data) {
     const _err = JSON.stringify(body);
-    captureException(`Failed to fetch account balances v2 - ${status}`);
+    captureException(
+      `Failed to fetch account balances v2 - ${status}: ${redactErrorBody(
+        body,
+      )}`,
+    );
     throw new Error(_err);
   }
 
@@ -665,7 +673,9 @@ export const getAccountBalancesV2 = async ({
   // wallet as empty.
   if (!account) {
     captureException(
-      `v2 balances response is missing the requested account - ${status}`,
+      `v2 balances response is missing the requested account - ${status}: ${redactErrorBody(
+        body,
+      )}`,
     );
     throw new Error(
       `v2 balances response is missing the requested account ${publicKey}`,
@@ -762,7 +772,9 @@ export const getTokenPrices = async (
     const parsed = body as { data?: ApiTokenPrices };
     if (status !== 200 || !parsed?.data) {
       const _err = JSON.stringify(body);
-      captureException(`Failed to fetch token prices - ${status}: ${_err}`);
+      captureException(
+        `Failed to fetch token prices - ${status}: ${redactErrorBody(body)}`,
+      );
       throw new Error(_err);
     }
 
