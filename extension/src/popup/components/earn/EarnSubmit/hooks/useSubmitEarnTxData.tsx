@@ -136,31 +136,33 @@ export function useSubmitEarnTxData({
             ? submitResp.payload
             : undefined,
         );
-      } else {
-        trackEarnDepositCompleted({
-          assetCode,
-          poolId,
-          apy,
-          viaSwap,
-        });
+        dispatch({ type: "FETCH_DATA_ERROR", payload: submitResp.payload });
+        return submitResp.payload;
+      }
 
-        // The deposit moved funds out of the account, so refresh balances. A
-        // failure here does not affect the deposit itself — log and move on
-        // rather than reporting a successful submission as an error.
-        const balancesResult = await fetchBalances(
-          publicKey,
-          isMainnet(networkDetails),
-          networkDetails,
-          false,
+      trackEarnDepositCompleted({
+        assetCode,
+        poolId,
+        apy,
+        viaSwap,
+      });
+
+      // The deposit moved funds out of the account, so refresh balances. A
+      // failure here does not affect the deposit itself — log and move on
+      // rather than reporting a successful submission as an error.
+      const balancesResult = await fetchBalances(
+        publicKey,
+        isMainnet(networkDetails),
+        networkDetails,
+        false,
+      );
+
+      if (isError<AccountBalances>(balancesResult)) {
+        captureException(
+          `Failed to fetch balances after earn deposit - ${JSON.stringify(
+            balancesResult.message,
+          )} ${networkDetails.network}`,
         );
-
-        if (isError<AccountBalances>(balancesResult)) {
-          captureException(
-            `Failed to fetch balances after earn deposit - ${JSON.stringify(
-              balancesResult.message,
-            )} ${networkDetails.network}`,
-          );
-        }
       }
 
       const payload: SubmitEarnTxData = { status: "success" };

@@ -1,10 +1,18 @@
 import React from "react";
-import { act, render, screen, waitFor } from "@testing-library/react";
+import {
+  act,
+  render,
+  renderHook,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 import { WalletType } from "@shared/constants/hardwareWallet";
 import { TESTNET_NETWORK_DETAILS } from "@shared/constants/stellar";
+import { RequestState } from "constants/request";
 import { EarnSubmit } from "popup/components/earn/EarnSubmit";
+import { useSubmitEarnTxData } from "popup/components/earn/EarnSubmit/hooks/useSubmitEarnTxData";
 import { initialState as earnInitialState } from "popup/ducks/earn";
 import {
   initialState as transactionSubmissionInitialState,
@@ -78,14 +86,54 @@ const holdSubmission = () => {
   };
 };
 
+/**
+ * The store the flow hands this screen: an amount and asset already chosen, the
+ * prepared envelope parked on `transactionSimulation`. Shared with the hook-level
+ * tests below, which render the hook against the same state the component sees.
+ */
+const makeState = ({
+  xdr,
+  hardwareWalletType = WalletType.NONE,
+  hwStatus = ShowOverlayStatus.IDLE,
+  lastSubmitFailed = false,
+}: {
+  xdr: string;
+  hardwareWalletType?: WalletType;
+  hwStatus?: ShowOverlayStatus;
+  lastSubmitFailed?: boolean;
+}) => ({
+  auth: {
+    allAccounts: [{ publicKey: TEST_PUBLIC_KEY, hardwareWalletType }],
+    publicKey: TEST_PUBLIC_KEY,
+    bipPath: "44'/148'/0'",
+  },
+  settings: {
+    networkDetails: TESTNET_NETWORK_DETAILS,
+    isHashSigningEnabled: false,
+  },
+  transactionSubmission: {
+    ...transactionSubmissionInitialState,
+    transactionData: {
+      ...transactionSubmissionInitialState.transactionData,
+      amount: "0.5",
+      asset: "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
+    },
+    transactionSimulation: { response: null, preparedTransaction: xdr },
+    hardwareWalletData: {
+      status: hwStatus,
+      transactionXDR: hwStatus === ShowOverlayStatus.IDLE ? "" : xdr,
+      shouldSubmit: true,
+    },
+  },
+  earn: { ...earnInitialState, pool: { id: POOL_ID }, lastSubmitFailed },
+});
+
 const renderSubmit = ({
   xdr,
   // Defaults to `xdr`; pass separately to model the render the flow actually
   // performs, where the prop was captured before the device signed.
   xdrProp = xdr,
-  hardwareWalletType = WalletType.NONE,
-  hwStatus = ShowOverlayStatus.IDLE,
-  lastSubmitFailed = false,
+  ...stateOverrides
 }: {
   xdr: string;
   xdrProp?: string;
@@ -94,36 +142,7 @@ const renderSubmit = ({
   lastSubmitFailed?: boolean;
 }) =>
   render(
-    <Wrapper
-      routes={["/"]}
-      state={{
-        auth: {
-          allAccounts: [{ publicKey: TEST_PUBLIC_KEY, hardwareWalletType }],
-          publicKey: TEST_PUBLIC_KEY,
-          bipPath: "44'/148'/0'",
-        },
-        settings: {
-          networkDetails: TESTNET_NETWORK_DETAILS,
-          isHashSigningEnabled: false,
-        },
-        transactionSubmission: {
-          ...transactionSubmissionInitialState,
-          transactionData: {
-            ...transactionSubmissionInitialState.transactionData,
-            amount: "0.5",
-            asset:
-              "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
-          },
-          transactionSimulation: { response: null, preparedTransaction: xdr },
-          hardwareWalletData: {
-            status: hwStatus,
-            transactionXDR: hwStatus === ShowOverlayStatus.IDLE ? "" : xdr,
-            shouldSubmit: true,
-          },
-        },
-        earn: { ...earnInitialState, pool: { id: POOL_ID }, lastSubmitFailed },
-      }}
-    >
+    <Wrapper routes={["/"]} state={makeState({ xdr, ...stateOverrides })}>
       <EarnSubmit xdr={xdrProp} onExit={jest.fn()} />
     </Wrapper>,
   );
@@ -252,5 +271,76 @@ describe("EarnSubmit", () => {
     );
     expect(submittedXdrs()).toEqual([]);
     expect(mockSignSoroban).not.toHaveBeenCalled();
+  });
+});
+/**
+ * The screen ands the hook's state together with redux `submitStatus`, and the
+ * Earn view unmounts this step outright on a failure — so a wrong state here is
+ * invisible through the DOM. These drive the hook directly to assert the signal
+ * itself, which is what the screen's guards would otherwise be covering for.
+ */
+describe("useSubmitEarnTxData", () => {
+  const originalFetch = global.fetch;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockSignSoroban.mockResolvedValue({
+      signedTransaction: SOFTWARE_SIGNED_XDR,
+    });
+    global.fetch = mockFetch as unknown as typeof global.fetch;
+  });
+
+  afterAll(() => {
+    global.fetch = originalFetch;
+  });
+
+  const renderSubmitHook = (xdr: string) =>
+    renderHook(
+      () =>
+        useSubmitEarnTxData({
+          isHardwareWallet: false,
+          networkDetails: TESTNET_NETWORK_DETAILS,
+          publicKey: TEST_PUBLIC_KEY,
+          xdr,
+          assetCode: "USDC",
+          poolId: POOL_ID,
+          apy: 0.05,
+          viaSwap: false,
+        }),
+      {
+        wrapper: ({ children }: { children: React.ReactNode }) => (
+          <Wrapper routes={["/"]} state={makeState({ xdr })}>
+            {children}
+          </Wrapper>
+        ),
+      },
+    );
+
+  it("reports an error state when the network rejects the submission", async () => {
+    mockFetch.mockResolvedValue({
+      ok: false,
+      json: () => Promise.resolve({ extras: { result_codes: {} } }),
+    });
+    const { result } = renderSubmitHook("AAAA-unsigned");
+
+    await act(async () => {
+      await result.current.fetchData();
+    });
+
+    expect(result.current.state.state).toBe(RequestState.ERROR);
+  });
+
+  it("reports a success state when the submission lands", async () => {
+    mockFetch.mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ status: "PENDING", hash: "abc123" }),
+    });
+    const { result } = renderSubmitHook("AAAA-unsigned");
+
+    await act(async () => {
+      await result.current.fetchData();
+    });
+
+    expect(result.current.state.state).toBe(RequestState.SUCCESS);
   });
 });
