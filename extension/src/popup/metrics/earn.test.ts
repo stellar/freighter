@@ -136,6 +136,15 @@ describe("Earn funnel metrics", () => {
     );
   });
 
+  it.each([25, 50, 75])(
+    "does not report a %i%% shortcut as a set-max",
+    (percent) => {
+      trackEarnPercentAmountSelected({ assetCode: "XLM", percent });
+
+      expect(mockEmitMetric).not.toHaveBeenCalled();
+    },
+  );
+
   it("reports an in-flight deposit the user stopped watching", () => {
     trackEarnDepositDismissed({ assetCode: "USDC", poolId: POOL_ID });
 

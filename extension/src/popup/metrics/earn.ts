@@ -124,7 +124,17 @@ export const trackEarnSimulationFailed = ({
   });
 };
 
-/** A percentage shortcut on the amount screen; `percent: 100` is Max. */
+/**
+ * The Max tap on the amount screen. Called for every percentage shortcut, but
+ * only 100 emits: a 25/50/75 tap is not a set-max, and an event named
+ * `max_amount_selected` that also fires for partials makes anything keyed on
+ * the name alone (dashboards, funnels, alerting) count partials as Max usage.
+ *
+ * Send and Swap gate identically (RFC #2883, D5) and so does mobile — the
+ * max-amount action fires on the max tap only, on send, swap and earn alike.
+ * If Earn ever needs partial-shortcut usage, add a separately named event
+ * rather than widening this one.
+ */
 export const trackEarnPercentAmountSelected = ({
   assetCode,
   percent,
@@ -132,6 +142,10 @@ export const trackEarnPercentAmountSelected = ({
   assetCode: string;
   percent: number;
 }) => {
+  if (percent !== 100) {
+    return;
+  }
+
   emitMetric(METRIC_NAMES.earnMaxAmountSelected, {
     asset_code: assetCode,
     percent,

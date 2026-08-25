@@ -54,7 +54,9 @@ export const METRIC_NAMES = {
   // the reused Swap components emit and cannot attribute to Earn.
   earnSwapCompleted: "earn.swap_completed",
   earnPoolDetailsOpened: "earn.pool_details_opened",
-  // A percentage shortcut on the amount screen; `percent: 100` is Max.
+  // The Max tap on the amount screen, and only that tap — the 25/50/75
+  // shortcuts emit nothing, matching Send, Swap and mobile (RFC #2883, D5).
+  // `percent` is always 100; it is kept for payload symmetry with mobile.
   earnMaxAmountSelected: "earn.max_amount_selected",
   // The deposit cannot cover its own network fee; `reason` separates an account
   // with no spendable XLM from an amount that leaves less than the resource fee.
