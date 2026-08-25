@@ -23,6 +23,11 @@ export const removeTokenId = async ({
   await localStore.setItem(TOKEN_ID_LIST, {
     ...tokenIdsList,
     [network]: {
+      // Spread the network bucket, not just the outer map: without this,
+      // removing a token for one account drops every other account's custom
+      // token list on that network (the add path spreads it — see
+      // helpers/add-token-contract-id.ts).
+      ...tokenIdsByNetwork,
       [keyId]: updatedTokenIdList,
     },
   });

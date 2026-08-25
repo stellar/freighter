@@ -50,15 +50,24 @@ export const login = async ({
   await expect(page.getByTestId("network-selector-open")).toBeVisible({
     timeout: 10000,
   });
+  // Register the balances-response listener BEFORE the network-selection
+  // clicks: clicking "Test Net" starts the request, and a context-routed v2
+  // stub can respond before a later-registered waitForEvent exists, leaving
+  // this helper blocked forever. Matches both the v1 GET (/account-balances/)
+  // and the v2 POST (/accounts/balances); v2 is fetched from the background
+  // service worker, whose responses only surface on the context, not the page.
+  const balancesPromise = page
+    .context()
+    .waitForEvent(
+      "response",
+      (response) =>
+        (response.url().includes("/account-balances/") ||
+          response.url().includes("/accounts/balances")) &&
+        response.url().includes("network=TESTNET"),
+    );
+
   await page.getByTestId("network-selector-open").click();
   await page.getByText("Testnet").click();
-
-  // Wait for account-balances API call with TESTNET network param before clicking
-  const balancesPromise = page.waitForResponse(
-    (response) =>
-      response.url().includes("/account-balances/") &&
-      response.url().includes("network=TESTNET"),
-  );
 
   // Wait for the balances API call to complete
   await balancesPromise;

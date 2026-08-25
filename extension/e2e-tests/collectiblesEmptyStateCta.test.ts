@@ -2,6 +2,7 @@ import type { BrowserContext, Page } from "@playwright/test";
 
 import { test, expect } from "./test-fixtures";
 import { loginToTestAccount } from "./helpers/login";
+import { stubAccountBalancesV2 } from "./helpers/stubs";
 
 // The Tokens tab decides which kind of Add button the Collectibles tab uses, so
 // these cover the Collectibles side following its lead -- including the one case
@@ -19,6 +20,10 @@ const stubUnfundedBalances = async (page: Page) => {
       },
     });
   });
+  // v2 is the default balances source and stubAllExternalApis already
+  // registered a funded fixture for it, so the v1 override alone leaves the
+  // account looking funded. A null fixture serves is_funded: false.
+  await stubAccountBalancesV2(page, () => null);
 };
 
 // /collectibles is fetched by the background worker, so it needs context.route;

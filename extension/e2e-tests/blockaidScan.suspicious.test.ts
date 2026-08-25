@@ -2,6 +2,7 @@ import { test, expect } from "./test-fixtures";
 import { loginToTestAccount } from "./helpers/login";
 import {
   stubAccountBalances,
+  stubAccountBalancesV2,
   stubAccountHistory,
   stubTokenDetails,
   stubTokenPrices,
@@ -29,33 +30,34 @@ test.describe("BlockAid Scan - Suspicious States", () => {
         await stubScanAssetSuspicious(page);
         await stubAssetSearch(page);
         // Mock mainnet balances so asset scan proceeds (scanning only runs on mainnet)
-        await page.route("**/account-balances/*", async (route) => {
-          const json = {
-            balances: {
-              native: {
-                token: { type: "native", code: "XLM" },
-                total: "100",
-                available: "100",
-                blockaidData: {
-                  result_type: "Benign",
-                  malicious_score: "0.0",
-                  attack_types: {},
-                  chain: "stellar",
-                  address: "",
-                  metadata: { type: "" },
-                  fees: {},
-                  features: [],
-                  trading_limits: {},
-                  financial_stats: {},
-                },
+        const balancesJson = {
+          balances: {
+            native: {
+              token: { type: "native", code: "XLM" },
+              total: "100",
+              available: "100",
+              blockaidData: {
+                result_type: "Benign",
+                malicious_score: "0.0",
+                attack_types: {},
+                chain: "stellar",
+                address: "",
+                metadata: { type: "" },
+                fees: {},
+                features: [],
+                trading_limits: {},
+                financial_stats: {},
               },
             },
-            isFunded: true,
-            subentryCount: 0,
-            error: { horizon: null, soroban: null },
-          };
-          await route.fulfill({ json });
+          },
+          isFunded: true,
+          subentryCount: 0,
+          error: { horizon: null, soroban: null },
+        };
+        await page.route("**/account-balances/*", async (route) => {
+          await route.fulfill({ json: balancesJson });
         });
+        await stubAccountBalancesV2(page, balancesJson);
       },
     });
 
@@ -155,68 +157,69 @@ test.describe("BlockAid Scan - Suspicious States", () => {
       extensionId,
       context,
       stubOverrides: async () => {
+        const balancesJson = {
+          balances: {
+            [`USDC:${USDC_ISSUER}`]: {
+              token: {
+                type: "credit_alphanum4",
+                code: "USDC",
+                issuer: {
+                  key: USDC_ISSUER,
+                },
+              },
+              sellingLiabilities: "0",
+              buyingLiabilities: "0",
+              total: "100",
+              limit: "922337203685.4775807",
+              available: "100",
+              blockaidData: {
+                result_type: "Warning",
+                malicious_score: "0.5",
+                attack_types: {},
+                chain: "stellar",
+                address: "",
+                metadata: { type: "" },
+                fees: {},
+                features: [],
+                trading_limits: {},
+                financial_stats: {},
+              },
+            },
+            native: {
+              token: {
+                type: "native",
+                code: "XLM",
+              },
+              total: "999",
+              available: "999",
+              sellingLiabilities: "0",
+              buyingLiabilities: "0",
+              minimumBalance: "1",
+              blockaidData: {
+                result_type: "Benign",
+                malicious_score: "0.0",
+                attack_types: {},
+                chain: "stellar",
+                address: "",
+                metadata: { type: "" },
+                fees: {},
+                features: [],
+                trading_limits: {},
+                financial_stats: {},
+              },
+            },
+          },
+          isFunded: true,
+          subentryCount: 0,
+          error: {
+            horizon: null,
+            soroban: null,
+          },
+        };
         await page.route("*/**/account-balances/*", async (route) => {
-          const json = {
-            balances: {
-              [`USDC:${USDC_ISSUER}`]: {
-                token: {
-                  type: "credit_alphanum4",
-                  code: "USDC",
-                  issuer: {
-                    key: USDC_ISSUER,
-                  },
-                },
-                sellingLiabilities: "0",
-                buyingLiabilities: "0",
-                total: "100",
-                limit: "922337203685.4775807",
-                available: "100",
-                blockaidData: {
-                  result_type: "Warning",
-                  malicious_score: "0.5",
-                  attack_types: {},
-                  chain: "stellar",
-                  address: "",
-                  metadata: { type: "" },
-                  fees: {},
-                  features: [],
-                  trading_limits: {},
-                  financial_stats: {},
-                },
-              },
-              native: {
-                token: {
-                  type: "native",
-                  code: "XLM",
-                },
-                total: "999",
-                available: "999",
-                sellingLiabilities: "0",
-                buyingLiabilities: "0",
-                minimumBalance: "1",
-                blockaidData: {
-                  result_type: "Benign",
-                  malicious_score: "0.0",
-                  attack_types: {},
-                  chain: "stellar",
-                  address: "",
-                  metadata: { type: "" },
-                  fees: {},
-                  features: [],
-                  trading_limits: {},
-                  financial_stats: {},
-                },
-              },
-            },
-            isFunded: true,
-            subentryCount: 0,
-            error: {
-              horizon: null,
-              soroban: null,
-            },
-          };
-          await route.fulfill({ json });
+          await route.fulfill({ json: balancesJson });
         });
+        await stubAccountBalancesV2(page, balancesJson);
 
         await page.route("**/paths**", async (route) => {
           const url = new URL(route.request().url());

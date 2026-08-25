@@ -3,6 +3,7 @@ import { captureException } from "@sentry/browser";
 import { LedgerKeyAccounts, LedgerKeyAccount } from "../types";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { fetchBackendV2 } from "./fetchBackendV2";
+import { redactErrorBody } from "./redactErrorBody";
 
 export const getLedgerKeyAccounts = async ({
   accountList,
@@ -22,7 +23,7 @@ export const getLedgerKeyAccounts = async ({
 
     if (status !== 200) {
       captureException(
-        `Failed to fetch ledger key accounts - ${status}: ${JSON.stringify(body)}`,
+        `Failed to fetch ledger key accounts - ${status}: ${redactErrorBody(body)}`,
       );
       return fetchedAccounts;
     }
