@@ -123,11 +123,19 @@ export const EarnReview = ({
     blockaidOverrideState,
   );
   const isMalicious = securityLevel === SecurityLevel.MALICIOUS;
-  // Matches ReviewTx's gate: a flagged transaction AND one that couldn't be
-  // scanned both demote Confirm to an explicit "Confirm anyway".
+  const isSuspicious = securityLevel === SecurityLevel.SUSPICIOUS;
+  /*
+   * Two independent gates, because unable-to-scan is weaker than a verdict.
+   *
+   * The banner shows for all three states — the user should know the scan came
+   * back empty. The action row only recolors for an actual finding, so a scan
+   * Blockaid simply couldn't complete never tints the buttons. This is a
+   * deliberate split from ReviewTx, which folds unable-to-scan into one flag
+   * and lets it demote Confirm.
+   */
   const shouldShowTxWarning =
     isMalicious ||
-    securityLevel === SecurityLevel.SUSPICIOUS ||
+    isSuspicious ||
     securityLevel === SecurityLevel.UNABLE_TO_SCAN;
 
   /*
@@ -277,38 +285,49 @@ export const EarnReview = ({
 
   /*
    * Shared by the review body and the Blockaid sheet, so acknowledging a
-   * warning is possible from either. Two states, mirroring ReviewTx's
-   * ActionButtons: a clean transaction keeps Cancel + Confirm, and a flagged
-   * one promotes Cancel into the Confirm slot and demotes confirmation to a
-   * "Confirm anyway" text button below the row.
+   * warning is possible from either. The row keeps the same three slots in
+   * every state — fee settings, Cancel, Confirm — and a Blockaid verdict only
+   * recolors it. Confirm stays a real button rather than dropping to a text
+   * link, so the flagged layout matches the clean one.
+   *
+   * `warningTone` tracks BlockaidBanner's severity colors (red for malicious,
+   * amber for suspicious) so a tinted row always matches the banner above it.
+   * It is null for unable-to-scan, which shows the banner alone.
    *
    * Built here rather than reusing ReviewTx's ActionButtons, which hardcodes
    * the Send/Swap CTA copy and takes memo props this flow has none of.
    */
+  const warningTone = isMalicious
+    ? "malicious"
+    : isSuspicious
+      ? "caution"
+      : null;
+
   const actions = (
-    <>
-      <div className="EarnReview__actions">
-        <button
-          type="button"
-          className="EarnReview__settings"
-          aria-label={t("Fee settings")}
-          data-testid="earn-review-fees-btn"
-          onClick={() => setIsOnFeesPane(true)}
-        >
-          <Icon.Settings04 />
-        </button>
-        {/* Cancel is the recommended action once a warning is up, so it takes
-            over the Confirm slot's weight — destructive for a malicious
-            verdict, secondary otherwise, exactly as ReviewTx does. */}
+    <div className="EarnReview__actions">
+      <button
+        type="button"
+        className="EarnReview__settings"
+        aria-label={t("Fee settings")}
+        data-testid="earn-review-fees-btn"
+        onClick={() => setIsOnFeesPane(true)}
+      >
+        <Icon.Settings04 />
+      </button>
+      {/* Cancel is the recommended action once a warning is up, so it takes on
+          the filled weight in the severity color. The tone lives on the
+          wrapper, not on Button: SDS spreads incoming props after its own
+          className, so passing one through would wipe the base Button classes.
+          Its colors are custom properties, so overriding them on an ancestor
+          carries hover, focus and disabled along for free. */}
+      <div
+        className={`EarnReview__action${
+          warningTone ? ` EarnReview__action--cancel-${warningTone}` : ""
+        }`}
+      >
         <Button
           size="md"
-          variant={
-            !shouldShowTxWarning
-              ? "tertiary"
-              : isMalicious
-                ? "destructive"
-                : "secondary"
-          }
+          variant={warningTone === "malicious" ? "destructive" : "tertiary"}
           isRounded
           isFullWidth
           onClick={onCancel}
@@ -316,32 +335,26 @@ export const EarnReview = ({
         >
           {t("Cancel")}
         </Button>
-        {!shouldShowTxWarning && (
-          <Button
-            size="md"
-            variant="secondary"
-            isRounded
-            isFullWidth
-            onClick={onConfirmTx}
-            data-testid="earn-review-confirm"
-          >
-            {t("Confirm")}
-          </Button>
-        )}
       </div>
-      {shouldShowTxWarning && (
-        <button
-          type="button"
-          className={`EarnReview__text-action EarnReview__text-action--${
-            isMalicious ? "error" : "default"
-          }`}
-          data-testid="earn-review-confirm-anyway"
+      {/* Confirm stays reachable but is demoted to an outline in the severity
+          color, which is what the old "Confirm anyway" text link conveyed. */}
+      <div
+        className={`EarnReview__action${
+          warningTone ? ` EarnReview__action--confirm-${warningTone}` : ""
+        }`}
+      >
+        <Button
+          size="md"
+          variant="secondary"
+          isRounded
+          isFullWidth
           onClick={onConfirmTx}
+          data-testid="earn-review-confirm"
         >
-          {t("Confirm anyway")}
-        </button>
-      )}
-    </>
+          {t("Confirm")}
+        </Button>
+      </div>
+    </div>
   );
 
   /*
@@ -363,14 +376,6 @@ export const EarnReview = ({
 
   return (
     <div className="EarnReview" data-testid="earn-review">
-      {securityLevel && shouldShowTxWarning ? (
-        <BlockaidBanner
-          securityLevel={securityLevel}
-          entity="transaction"
-          onClick={() => setIsOnBlockaidSheet(true)}
-          dataTestId="earn-review-blockaid-warning"
-        />
-      ) : null}
       <div className="EarnReview__group">
         <Text as="div" size="sm">
           {t("You are depositing")}
@@ -411,6 +416,18 @@ export const EarnReview = ({
           </div>
         </div>
       </div>
+
+      {/* Sits between the deposit card and the position rows rather than at the
+          top of the view, so the warning reads against the deposit it is about
+          — the same placement the swap review uses. */}
+      {securityLevel && shouldShowTxWarning ? (
+        <BlockaidBanner
+          securityLevel={securityLevel}
+          entity="transaction"
+          onClick={() => setIsOnBlockaidSheet(true)}
+          dataTestId="earn-review-blockaid-warning"
+        />
+      ) : null}
 
       <div className="EarnReview__group EarnReview__group--rows">
         <StatRow

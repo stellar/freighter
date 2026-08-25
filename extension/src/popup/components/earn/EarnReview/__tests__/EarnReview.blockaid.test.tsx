@@ -109,15 +109,19 @@ describe("EarnReview Blockaid transaction verdict", () => {
     expect(
       screen.queryByTestId("earn-review-blockaid-warning"),
     ).not.toBeInTheDocument();
+    // No warning tone on either action: the clean row is the untinted one.
+    expect(screen.getByTestId("earn-review-confirm").parentElement).toHaveClass(
+      "EarnReview__action",
+    );
     expect(
-      screen.queryByTestId("earn-review-confirm-anyway"),
-    ).not.toBeInTheDocument();
+      screen.getByTestId("earn-review-confirm").parentElement?.className,
+    ).not.toMatch(/confirm-(malicious|caution)/);
 
     await userEvent.click(screen.getByTestId("earn-review-confirm"));
     expect(onConfirm).toHaveBeenCalled();
   });
 
-  it("warns and demotes Confirm for a malicious transaction", async () => {
+  it("recolors the action row for a malicious transaction", async () => {
     // The regression this closes: the scan verdict was computed and discarded,
     // so a flagged deposit confirmed on a plain primary button.
     const onConfirm = jest.fn();
@@ -129,39 +133,81 @@ describe("EarnReview Blockaid transaction verdict", () => {
     expect(
       screen.getByTestId("earn-review-blockaid-warning"),
     ).toHaveTextContent("This transaction was flagged as malicious");
-    expect(screen.queryByTestId("earn-review-confirm")).not.toBeInTheDocument();
-    // The warned row keeps the fee gear — the acknowledgement is appended
-    // below it rather than replacing the row.
+    // The row keeps all three slots in the warned state — only the colors
+    // change, so Confirm stays a button rather than dropping to a text link.
     expect(screen.getByTestId("earn-review-fees-btn")).toBeInTheDocument();
+    expect(screen.getByTestId("earn-review-cancel")).toHaveClass(
+      "Button--destructive",
+    );
+    expect(screen.getByTestId("earn-review-confirm").parentElement).toHaveClass(
+      "EarnReview__action--confirm-malicious",
+    );
 
-    await userEvent.click(screen.getByTestId("earn-review-confirm-anyway"));
+    await userEvent.click(screen.getByTestId("earn-review-confirm"));
     expect(onConfirm).toHaveBeenCalled();
   });
 
-  it("warns and demotes Confirm for a suspicious transaction", () => {
+  it("places the banner between the deposit card and the position rows", () => {
+    // Placement is the point of the layout, not decoration: the warning has to
+    // sit against the deposit it describes rather than at the top of the view,
+    // matching the swap review. DOM order is what carries that.
+    renderReview({ scanResult: { validation: { result_type: "Malicious" } } });
+
+    const amount = screen.getByTestId("earn-review-amount");
+    const banner = screen.getByTestId("earn-review-blockaid-warning");
+    const position = screen.getByTestId("earn-review-position");
+
+    /* eslint-disable no-bitwise */
+    expect(
+      amount.compareDocumentPosition(banner) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      banner.compareDocumentPosition(position) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    /* eslint-enable no-bitwise */
+  });
+
+  it("recolors the action row in amber for a suspicious transaction", () => {
     renderReview({ scanResult: { validation: { result_type: "Warning" } } });
 
     expect(
       screen.getByTestId("earn-review-blockaid-warning"),
     ).toHaveTextContent("This transaction was flagged as suspicious");
-    expect(screen.queryByTestId("earn-review-confirm")).not.toBeInTheDocument();
-    expect(
-      screen.getByTestId("earn-review-confirm-anyway"),
-    ).toBeInTheDocument();
+    // Amber rather than red, tracking BlockaidBanner's own severity split.
+    expect(screen.getByTestId("earn-review-cancel").parentElement).toHaveClass(
+      "EarnReview__action--cancel-caution",
+    );
+    expect(screen.getByTestId("earn-review-confirm").parentElement).toHaveClass(
+      "EarnReview__action--confirm-caution",
+    );
   });
 
-  it("treats an absent scan on mainnet as unable-to-scan and gates on it", () => {
-    // Mirrors ReviewTx: a deposit Blockaid could not scan still requires the
-    // explicit acknowledgement rather than silently confirming.
-    renderReview({ scanResult: null });
+  it("shows the banner alone when the scan could not complete", async () => {
+    // Unable-to-scan is weaker than a verdict: the banner tells the user the
+    // scan came back empty, but with nothing actually flagged the action row
+    // stays neutral. Deliberately unlike ReviewTx, which tints on this state.
+    const onConfirm = jest.fn();
+    renderReview({ scanResult: null, onConfirm });
 
     expect(
       screen.getByTestId("earn-review-blockaid-warning"),
     ).toHaveTextContent("Proceed with caution");
-    expect(screen.queryByTestId("earn-review-confirm")).not.toBeInTheDocument();
+    expect(screen.getByTestId("earn-review-cancel")).toHaveClass(
+      "Button--tertiary",
+    );
+    expect(screen.getByTestId("earn-review-confirm")).toHaveClass(
+      "Button--secondary",
+    );
     expect(
-      screen.getByTestId("earn-review-confirm-anyway"),
-    ).toBeInTheDocument();
+      screen.getByTestId("earn-review-confirm").parentElement?.className,
+    ).not.toMatch(/confirm-(malicious|caution)/);
+    expect(
+      screen.getByTestId("earn-review-cancel").parentElement?.className,
+    ).not.toMatch(/cancel-(malicious|caution)/);
+
+    await userEvent.click(screen.getByTestId("earn-review-confirm"));
+    expect(onConfirm).toHaveBeenCalled();
   });
 
   it("opens the reasons sheet from the banner and returns to the review", async () => {
@@ -188,10 +234,8 @@ describe("EarnReview Blockaid transaction verdict", () => {
     expect(pane).toHaveTextContent(
       "An identified malicious address is associated with the token.",
     );
-    // The acknowledgement is reachable from the sheet too, not just the body.
-    expect(
-      screen.getByTestId("earn-review-confirm-anyway"),
-    ).toBeInTheDocument();
+    // The action row is reachable from the sheet too, not just the body.
+    expect(screen.getByTestId("earn-review-confirm")).toBeInTheDocument();
 
     await userEvent.click(screen.getByTestId("blockaid-details-close"));
     expect(await screen.findByTestId("earn-review")).toBeInTheDocument();

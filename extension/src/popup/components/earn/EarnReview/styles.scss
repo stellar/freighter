@@ -108,28 +108,74 @@
     gap: pxToRem(8);
   }
 
-  // The "Confirm anyway" acknowledgement shown under the action row once
-  // Blockaid has flagged the deposit. Matches `.ReviewTx__TextAction` so the
-  // demoted confirm reads the same here as it does on the Send/Swap review.
-  &__text-action {
-    width: 100%;
-    border: none;
-    background: none;
-    font-family: var(--sds-ff-base);
-    font-weight: 600;
-    font-size: pxToRem(14);
-    line-height: pxToRem(20);
-    padding: pxToRem(8) 0;
-    cursor: pointer;
-    text-align: center;
+  // Wrapper around each action Button. SDS Button spreads incoming props after
+  // its own `className`, so a className passed to it replaces the base
+  // `Button Button--*` classes outright — hence the tone class lives here
+  // instead.
+  //
+  // The tones work by overriding the `--Button-color-*` custom properties the
+  // SDS variants are themselves built from, which keeps hover, focus and
+  // disabled states consistent without restating them. They must be declared
+  // on the `.Button` element rather than inherited from this wrapper: SDS sets
+  // those properties in `.Button--secondary` etc. on the button itself, and an
+  // element's own declaration beats a value inherited from an ancestor no
+  // matter how specific the ancestor's selector is.
+  &__action {
+    flex: 1 1 0;
+    min-width: 0;
+  }
 
-    &--default {
-      color: var(--sds-clr-gray-09);
-    }
+  // Filled Cancel for a suspicious / unable-to-scan verdict. Malicious uses the
+  // SDS `destructive` variant directly and needs no override; SDS has no amber
+  // variant, so this mirrors `destructive`'s token set in amber.
+  &__action--cancel-caution .Button {
+    --Button-color-text-default: var(--sds-clr-white);
+    --Button-color-icon-default: var(--sds-clr-white);
+    --Button-color-background-default: var(--sds-clr-amber-09);
+    --Button-color-border-default: var(--sds-clr-amber-09);
+    --Button-color-text-hover: var(--sds-clr-white);
+    --Button-color-icon-hover: var(--sds-clr-white);
+    --Button-color-background-hover: var(--sds-clr-amber-10);
+    --Button-color-border-hover: var(--sds-clr-amber-10);
+    --Button-color-text-active: var(--sds-clr-white);
+    --Button-color-icon-active: var(--sds-clr-white);
+    --Button-color-background-active: var(--sds-clr-amber-10);
+    --Button-color-border-active: var(--sds-clr-amber-10);
+    --Button-box-shadow-color: var(--sds-clr-amber-06);
+  }
 
-    &--error {
-      color: var(--sds-clr-red-11);
-    }
+  // Outlined Confirm, in the severity color. Transparent fill against a
+  // severity border and label, so Cancel stays the visually recommended action.
+  &__action--confirm-malicious .Button {
+    --Button-color-text-default: var(--sds-clr-red-11);
+    --Button-color-icon-default: var(--sds-clr-red-11);
+    --Button-color-background-default: transparent;
+    --Button-color-border-default: var(--sds-clr-red-07);
+    --Button-color-text-hover: var(--sds-clr-red-11);
+    --Button-color-icon-hover: var(--sds-clr-red-11);
+    --Button-color-background-hover: var(--sds-clr-red-03);
+    --Button-color-border-hover: var(--sds-clr-red-08);
+    --Button-color-text-active: var(--sds-clr-red-11);
+    --Button-color-icon-active: var(--sds-clr-red-11);
+    --Button-color-background-active: var(--sds-clr-red-03);
+    --Button-color-border-active: var(--sds-clr-red-08);
+    --Button-box-shadow-color: var(--sds-clr-red-06);
+  }
+
+  &__action--confirm-caution .Button {
+    --Button-color-text-default: var(--sds-clr-amber-11);
+    --Button-color-icon-default: var(--sds-clr-amber-11);
+    --Button-color-background-default: transparent;
+    --Button-color-border-default: var(--sds-clr-amber-07);
+    --Button-color-text-hover: var(--sds-clr-amber-11);
+    --Button-color-icon-hover: var(--sds-clr-amber-11);
+    --Button-color-background-hover: var(--sds-clr-amber-03);
+    --Button-color-border-hover: var(--sds-clr-amber-08);
+    --Button-color-text-active: var(--sds-clr-amber-11);
+    --Button-color-icon-active: var(--sds-clr-amber-11);
+    --Button-color-background-active: var(--sds-clr-amber-03);
+    --Button-color-border-active: var(--sds-clr-amber-08);
+    --Button-box-shadow-color: var(--sds-clr-amber-06);
   }
 
   &__settings {
