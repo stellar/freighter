@@ -564,18 +564,20 @@ export function buildInvocationTree(root: xdr.SorobanAuthorizedInvocation) {
             owner: Address.fromScAddress(executableOwner).toString(),
             tag: tag.toString(),
           };
-          // The preimage arm is independent of the executable arm, so only
-          // read it when it is a shape we can describe.
-          if (preimage.type === "contractIdPreimageFromAddress") {
-            const details = preimage.fromAddress;
-            output.args.externalRef.address = Address.fromScAddress(
-              details.address,
-            ).toString();
-            output.args.externalRef.salt = xdr.encodeBytes(
-              details.salt.toBytes(),
-              "hex",
+          // External references derive the contract ID from address + salt.
+          if (preimage.type !== "contractIdPreimageFromAddress") {
+            throw new Error(
+              `creation function appears invalid: an external-ref executable is paired with ${preimage.type} (should be external-ref+address)`,
             );
           }
+          const details = preimage.fromAddress;
+          output.args.externalRef.address = Address.fromScAddress(
+            details.address,
+          ).toString();
+          output.args.externalRef.salt = xdr.encodeBytes(
+            details.salt.toBytes(),
+            "hex",
+          );
           if (isCreateV2) {
             const v2Args = _inner as xdr.CreateContractArgsV2;
             output.args.constructorArgs = v2Args.constructorArgs;
