@@ -212,3 +212,49 @@
     }
   }
 }
+
+// Task 2 (PoolCard) -- the Positions tab's new one-row-per-pool card, Figma
+// node 9808-30558. `get_design_context` and `get_variable_defs` both failed
+// for that node ("No node could be found... make sure the document
+// containing the node is the active tab") across repeated retries with the
+// Figma desktop app open: its active tab held a different frame ("Review",
+// node 12897:69076) in the same file, and every 9808-series node
+// (9808-30558 here, and 9808-30015 tried as a control) came back
+// unreachable the same way. `get_screenshot` failed identically, so there
+// was no visual reference either -- not even an eyeballed layout.
+//
+// Given that, and given this pass's explicit instruction not to derive or
+// invent design-token numbers, this block intentionally carries NO padding,
+// radius, background, type-scale or colour values -- every one of those
+// needs the real node. It only resets the `<button>` chrome so `.PoolCard`
+// behaves like a plain clickable row instead of a native button (no
+// visible border/background, left-aligned, pointer cursor, inherits
+// typography) -- a semantic default, not a value read off the design.
+//
+// Selectors are scoped under `.AccountPositions` rather than written as a
+// bare `.PoolCard` rule: `popup/components/earn/EarnAmount/styles.scss`
+// already defines a *different* `.PoolCard` (the deposit flow's own pool
+// card, with its own `&__body`/`&__identity` etc.) and this codebase's SCSS
+// compiles into one global, unscoped stylesheet (no CSS Modules -- see
+// `extension/webpack.common.js`'s `css-loader` rule). An unscoped
+// `.PoolCard` here would collide with that unrelated rule at equal
+// specificity, with the winner decided only by import order. The compound
+// selector avoids that: `.AccountPositions .PoolCard` never resolves to the
+// same specificity as EarnAmount's bare `.PoolCard`, and this component is
+// always rendered inside `.AccountPositions` (see `index.tsx`), so the
+// selector still matches every real render.
+//
+// A follow-up pass MUST pull 9808-30558 for real (padding, radius,
+// background, the three type scales, and the gain's green) once the Figma
+// desktop app's active tab can reach it, and fill in the rules below.
+.AccountPositions .PoolCard {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  border: none;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
