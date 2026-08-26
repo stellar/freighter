@@ -30,6 +30,27 @@ const wrapper = ({ children }: { children: React.ReactNode }) => (
   </Wrapper>
 );
 
+// Preloads the cache slice with one entry for TEST_PUBLIC_KEY on Testnet, so
+// the cache-hit/cache-stale branches can be exercised without a live fetch.
+const wrapperWithCachedEntry =
+  (entry: typeof positions & { updatedAt: number }) =>
+  ({ children }: { children: React.ReactNode }) => (
+    <Wrapper
+      state={{
+        cache: {
+          positionsData: {
+            [TESTNET_NETWORK_DETAILS.network]: {
+              [TEST_PUBLIC_KEY]: entry,
+            },
+          },
+        },
+      }}
+      routes={["/"]}
+    >
+      {children}
+    </Wrapper>
+  );
+
 beforeEach(() => mockedGet.mockReset());
 
 describe("useGetPositions", () => {
@@ -98,5 +119,46 @@ describe("useGetPositions", () => {
     });
 
     expect(result.current.state.state).toBe("ERROR");
+  });
+
+  it("serves a fresh cache entry without calling the API", async () => {
+    const cachedEntry = { ...positions, updatedAt: Date.now() };
+    const { result } = renderHook(() => useGetPositions({ useCache: true }), {
+      wrapper: wrapperWithCachedEntry(cachedEntry),
+    });
+
+    let resolved;
+    await act(async () => {
+      resolved = await result.current.fetchData({
+        publicKey: TEST_PUBLIC_KEY,
+        networkDetails: TESTNET_NETWORK_DETAILS,
+      });
+    });
+
+    expect(mockedGet).not.toHaveBeenCalled();
+    expect(resolved).toEqual(cachedEntry);
+  });
+
+  it("refetches when the cached entry is stale", async () => {
+    mockedGet.mockResolvedValue(positions);
+    // Outside the 3-minute isCacheValid window.
+    const staleEntry = { ...positions, updatedAt: Date.now() - 200000 };
+    const { result } = renderHook(() => useGetPositions({ useCache: true }), {
+      wrapper: wrapperWithCachedEntry(staleEntry),
+    });
+
+    let resolved;
+    await act(async () => {
+      resolved = await result.current.fetchData({
+        publicKey: TEST_PUBLIC_KEY,
+        networkDetails: TESTNET_NETWORK_DETAILS,
+      });
+    });
+
+    expect(mockedGet).toHaveBeenCalledWith({
+      publicKey: TEST_PUBLIC_KEY,
+      networkDetails: TESTNET_NETWORK_DETAILS,
+    });
+    expect(resolved).toEqual(positions);
   });
 });

@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useReducer } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch, useStore } from "react-redux";
 import { captureException } from "@sentry/browser";
 
 import { getBlendPositions } from "@shared/api/helpers/blend";
@@ -8,7 +8,7 @@ import { isEarnSupportedNetwork } from "@shared/constants/blend";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { State } from "constants/request";
 import { initialState, isCacheValid, reducer } from "helpers/request";
-import { AppDispatch } from "popup/App";
+import { AppDispatch, AppState } from "popup/App";
 import { positionsSelector, savePositions } from "popup/ducks/cache";
 
 export interface FetchPositionsParams {
@@ -43,7 +43,7 @@ function useGetPositions({ useCache = true }: { useCache?: boolean } = {}) {
     initialState,
   );
   const reduxDispatch = useDispatch<AppDispatch>();
-  const cached = useSelector(positionsSelector);
+  const store = useStore<AppState>();
 
   const fetchData = useCallback(
     async ({
@@ -61,6 +61,13 @@ function useGetPositions({ useCache = true }: { useCache?: boolean } = {}) {
         return empty;
       }
 
+      // Read the cache at call time rather than subscribing to it with
+      // `useSelector`. `savePositions` always replaces `positionsData` with a
+      // new object (Immer, on every write, for any network/publicKey), so a
+      // subscription would give `fetchData` a new identity on every positions
+      // write anywhere in the app — defeating the memoization below. Matches
+      // `useGetCollectibles`, which reads its cache the same way.
+      const cached = positionsSelector(store.getState());
       const entry = cached[networkDetails.network]?.[publicKey];
       if (useCache && entry && isCacheValid(entry)) {
         dispatch({ type: "FETCH_DATA_SUCCESS", payload: entry });
@@ -83,7 +90,9 @@ function useGetPositions({ useCache = true }: { useCache?: boolean } = {}) {
         throw errorObj;
       }
     },
-    [useCache, cached, reduxDispatch],
+    // `store` is a stable reference from useStore, so listing it satisfies
+    // exhaustive-deps without re-running the check.
+    [useCache, reduxDispatch, store],
   );
 
   return useMemo(() => ({ state, fetchData }), [state, fetchData]);
