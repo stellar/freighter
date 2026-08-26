@@ -26,7 +26,11 @@ const ON_VARIANT_VALUES = ["on", "true", "enabled", "yes"];
  * Boolean flags — variant value is checked against ON_VARIANT_VALUES.
  * Add flag names here as new boolean flags are introduced.
  */
-const BOOLEAN_FLAGS = ["use_token_prices_v2", "use_balances_v2"] as const;
+const BOOLEAN_FLAGS = [
+  "use_token_prices_v2",
+  "use_balances_v2",
+  "earn_deposit",
+] as const;
 
 /**
  * Version flags — variant value is parsed from underscore format (1_2_3 → 1.2.3).
@@ -88,6 +92,8 @@ const initialState: RemoteConfigState = {
   // Defaults to v2; Amplitude can flip it off to roll back to the v1
   // account-balances endpoint without a release.
   use_balances_v2: true,
+  // Defaults to off; Amplitude turns it on to expose the Earn entry point.
+  earn_deposit: false,
   maintenance_banner: { enabled: false, payload: undefined },
   maintenance_screen: { enabled: false, payload: undefined },
 };
@@ -239,6 +245,15 @@ export const tokenPricesV2Selector = createSelector(
 export const balancesV2Selector = createSelector(
   remoteConfigSelector,
   (rc) => rc.use_balances_v2,
+);
+
+/**
+ * Returns whether the Earn deposit flow should be exposed. Defaults to false
+ * so the entry point stays hidden until Amplitude turns the flag on.
+ */
+export const earnDepositSelector = createSelector(
+  remoteConfigSelector,
+  (rc) => rc.earn_deposit,
 );
 
 /**

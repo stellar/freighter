@@ -3664,6 +3664,16 @@ export const stubBlendEarn = async (
     supplied_usd: 50050000,
   });
 
+  // The Earn tile is gated on the `earn_deposit` Amplitude flag, which defaults
+  // to off. Serve it as "on" from the Experiment vardata endpoint so the entry
+  // point renders. Context-scoped like the rest of the Earn stubs so it is in
+  // place before the popup's first flag fetch.
+  await context.route(AMPLITUDE_EXPERIMENT_VARDATA_ROUTE, async (route) => {
+    await route.fulfill({
+      json: { earn_deposit: { key: "on", value: "on" } },
+    });
+  });
+
   await context.route("**/protocols/blend/earn-options**", async (route) => {
     await route.fulfill({
       json: {

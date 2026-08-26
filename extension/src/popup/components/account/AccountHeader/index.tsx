@@ -24,6 +24,7 @@ import {
   settingsNetworksListSelector,
 } from "popup/ducks/settings";
 import { signOut } from "popup/ducks/accountServices";
+import { earnDepositSelector } from "popup/ducks/remoteConfig";
 import { AccountHeaderModal } from "popup/components/account/AccountHeaderModal";
 import { NetworkIcon } from "popup/components/manageNetwork/NetworkIcon";
 import { NetworkDetails } from "@shared/constants/stellar";
@@ -66,6 +67,7 @@ export const AccountHeader = ({
   };
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const networksList = useSelector(settingsNetworksListSelector);
+  const isEarnDepositEnabled = useSelector(earnDepositSelector);
   const [isNetworkSelectorOpen, setIsNetworkSelectorOpen] = useState(false);
   const [isAccountOptionsOpen, setIsAccountOptionsOpen] = useState(false);
   const navigate = useNavigate();
@@ -416,7 +418,8 @@ export const AccountHeader = ({
                     </Text>
                   </div>
                 </NavLink>
-                {isEarnSupportedNetwork(networkDetails) ? (
+                {isEarnDepositEnabled &&
+                isEarnSupportedNetwork(networkDetails) ? (
                   <NavLink to={ROUTES.earn} data-testid="nav-link-earn">
                     <div className="AccountHeader__actions__column">
                       <div className="AccountHeader__actions__btn">
