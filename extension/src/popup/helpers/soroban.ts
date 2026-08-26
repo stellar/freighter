@@ -562,7 +562,7 @@ export function buildInvocationTree(root: xdr.SorobanAuthorizedInvocation) {
           output.args.type = "externalRef";
           output.args.externalRef = {
             owner: Address.fromScAddress(executableOwner).toString(),
-            tag: tag.toString(),
+            tag: tag.toJson(),
           };
           // External references derive the contract ID from address + salt.
           if (preimage.type !== "contractIdPreimageFromAddress") {
