@@ -11,7 +11,7 @@ import { RequestState } from "constants/request";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { newTabHref } from "helpers/urls";
 import { openTab } from "popup/helpers/navigate";
-import { formatAmount } from "popup/helpers/formatters";
+import { NO_FIAT_VALUE, formatAmount } from "popup/helpers/formatters";
 import { trackEarnBalanceInsufficientShown } from "popup/metrics/earn";
 
 import { NotEnoughTokenSheet } from "./NotEnoughTokenSheet";
@@ -50,7 +50,7 @@ const ApyBadge = ({ apy, code }: { apy: number | null; code: string }) => {
       {/* A null rate means no fresh oracle price — genuinely unknown, and
           distinct from a rate that really is zero. */}
       {apy === null
-        ? "--"
+        ? NO_FIAT_VALUE
         : t("{{rate}}% APY", {
             rate: formatAmount((apy * 100).toFixed(2)),
           })}

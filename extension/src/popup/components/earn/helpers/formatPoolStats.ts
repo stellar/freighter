@@ -1,5 +1,7 @@
 import BigNumber from "bignumber.js";
 
+import { NO_FIAT_VALUE } from "popup/helpers/formatters";
+
 /**
  * Compact USD for pool-scale figures — "$50.05M" rather than "$50,050,000".
  *
@@ -8,7 +10,7 @@ import BigNumber from "bignumber.js";
  */
 export const formatCompactUsd = (value: number | null): string => {
   if (value === null) {
-    return "--";
+    return NO_FIAT_VALUE;
   }
 
   const amount = new BigNumber(value);
@@ -36,4 +38,6 @@ export const formatCompactUsd = (value: number | null): string => {
  * "0.00%". Never conflate the two.
  */
 export const formatRate = (rate: number | null): string =>
-  rate === null ? "--" : `${new BigNumber(rate).times(100).toFormat(2)}%`;
+  rate === null
+    ? NO_FIAT_VALUE
+    : `${new BigNumber(rate).times(100).toFormat(2)}%`;

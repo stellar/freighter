@@ -31,7 +31,7 @@ import {
   useShouldTreatTxAsUnableToScan,
 } from "popup/helpers/blockaid";
 import { getAuthEntryBoundAddress } from "popup/helpers/soroban";
-import { formatAmount } from "popup/helpers/formatters";
+import { NO_FIAT_VALUE, formatAmount } from "popup/helpers/formatters";
 import { formatRate } from "popup/components/earn/helpers/formatPoolStats";
 import { StatRow } from "popup/components/earn/StatRow";
 import { hardwareWalletTypeSelector } from "popup/ducks/accountServices";
@@ -395,7 +395,9 @@ export const EarnReview = ({
               {formatAmount(amount)} {assetCode}
             </div>
             <Text as="div" size="sm">
-              {amountUsd === null ? "--" : `$${formatAmount(amountUsd)}`}
+              {amountUsd === null
+                ? NO_FIAT_VALUE
+                : `$${formatAmount(amountUsd)}`}
             </Text>
           </div>
         </div>

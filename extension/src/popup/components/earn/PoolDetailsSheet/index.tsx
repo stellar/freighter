@@ -5,6 +5,7 @@ import { useSelector } from "react-redux";
 
 import { BlendCatalogPool } from "@shared/api/types/blend";
 import { AssetIcon } from "popup/components/account/AccountAssets";
+import { NO_FIAT_VALUE } from "popup/helpers/formatters";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { PoolIcon } from "popup/components/earn/PoolIcon";
 import { getCatalogAssetIdentity } from "popup/components/earn/helpers/earnAssetIcons";
@@ -110,7 +111,7 @@ export const PoolDetailsSheet = ({ pool, onClose }: PoolDetailsSheetProps) => {
               // "--" rather than an empty cluster when nothing is depositable,
               // the same unavailable marker the USD and rate rows below use.
               !acceptedReserves.length ? (
-                "--"
+                NO_FIAT_VALUE
               ) : (
                 <div className="PoolDetailsSheet__tokens">
                   {acceptedReserves.map((reserve) => {
