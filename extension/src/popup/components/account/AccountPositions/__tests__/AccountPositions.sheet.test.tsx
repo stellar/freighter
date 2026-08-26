@@ -8,7 +8,9 @@ import { AccountPositions } from "popup/components/account/AccountPositions";
 import { TEST_PUBLIC_KEY, Wrapper } from "popup/__testHelpers__";
 
 const POOL_ID = "CAJJZSGMMM3PD7N33TAPHGBUGTB43OC73HVIK2L2G6BNGGGYOSSYBXBD";
+const POOL_ID_2 = "CBKJ2R5UM6VXAYXHQPUW3ZO5RRP5FS3XPBOZFQ2Q4WFXA3Y3XZATV3XM";
 const USDC_SAC = "CCW67TSZV3SSS2HXMBQ5JFGCKJNXKZM7UQUWUZPUTHXSTZLEO7SJMI75";
+const XLM_SAC = "CAS3J7GYLGXMF6TDJBBYYSE3HQ6BBSMLNUQ34T6TZMYMW2EVH34XOWMA";
 
 const supply = (over: Record<string, unknown> = {}) => ({
   assetId: USDC_SAC,
@@ -50,6 +52,15 @@ const withSupply = (rows: unknown[]) =>
   }) as never;
 
 const onePosition = withSupply([supply()]);
+const twoAssetPositions = withSupply([
+  supply({
+    assetId: XLM_SAC,
+    symbol: null,
+    name: null,
+    usdValue: 120.04,
+  }),
+  supply(),
+]);
 
 const pool = {
   id: POOL_ID,
@@ -62,6 +73,39 @@ const pool = {
   backstopUsd: 1530000,
   reserves: [],
 } as never as BlendCatalogPool;
+
+const pool2 = { ...pool, id: POOL_ID_2, name: "Variable Pool" };
+
+// Two independent pool positions -- for the stale-modal regression below,
+// which needs a second pool to switch to after closing the first.
+const twoPoolPositions = {
+  address: TEST_PUBLIC_KEY,
+  totalValueUsd: 1120.28,
+  netApy: 0.16,
+  positions: [
+    {
+      protocol: "blend",
+      id: POOL_ID,
+      name: "Fixed Pool v2",
+      netUsd: 620.16,
+      suppliedUsd: 620.16,
+      borrowedUsd: 0,
+      netApy: 0.16,
+      blend: { supply: [supply()], borrow: [] },
+    },
+    {
+      protocol: "blend",
+      id: POOL_ID_2,
+      name: "Variable Pool",
+      netUsd: 500.12,
+      suppliedUsd: 500.12,
+      borrowedUsd: 0,
+      netApy: 0.1,
+      blend: { supply: [supply()], borrow: [] },
+    },
+  ],
+  backstop: [],
+} as never;
 
 const renderTab = (
   props: Partial<React.ComponentProps<typeof AccountPositions>>,
@@ -114,5 +158,55 @@ describe("AccountPositions pool sheet", () => {
     fireEvent.click(screen.getByTestId(`pool-card-${POOL_ID}`));
 
     expect(await screen.findByTestId("my-position-sheet")).toBeInTheDocument();
+  });
+
+  it("About pool opens the sheet with no tabs", async () => {
+    renderTab({ positions: twoAssetPositions, pools: [pool] });
+
+    fireEvent.click(screen.getByTestId(`pool-card-${POOL_ID}`));
+    fireEvent.click(await screen.findByTestId("my-position-about-pool"));
+
+    expect(
+      await screen.findByTestId("earn-pool-details-sheet"),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByTestId("earn-pool-details-tabs"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("a supplied asset opens the sheet on Your position", async () => {
+    renderTab({ positions: twoAssetPositions, pools: [pool] });
+
+    fireEvent.click(screen.getByTestId(`pool-card-${POOL_ID}`));
+    fireEvent.click(await screen.findByTestId("position-row-USDC"));
+
+    expect(
+      await screen.findByTestId("earn-position-panel"),
+    ).toBeInTheDocument();
+    expect(screen.getByTestId("earn-pool-details-tabs")).toBeInTheDocument();
+  });
+
+  it("does not carry a stale pool-details view into the next pool's My position", async () => {
+    // Open pool A's My position, open About pool inside it, then close My
+    // position without closing the nested sheet first. If closing My
+    // position didn't also clear that nested state, it would reappear the
+    // moment ANY pool card is tapped next -- including pool B's, over a
+    // position it was never about.
+    renderTab({ positions: twoPoolPositions, pools: [pool, pool2] });
+
+    fireEvent.click(screen.getByTestId(`pool-card-${POOL_ID}`));
+    fireEvent.click(await screen.findByTestId("my-position-about-pool"));
+    expect(
+      await screen.findByTestId("earn-pool-details-sheet"),
+    ).toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId("my-position-close"));
+    expect(screen.queryByTestId("my-position-sheet")).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId(`pool-card-${POOL_ID_2}`));
+    expect(await screen.findByTestId("my-position-sheet")).toBeInTheDocument();
+    expect(
+      screen.queryByTestId("earn-pool-details-sheet"),
+    ).not.toBeInTheDocument();
   });
 });

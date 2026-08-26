@@ -16,6 +16,8 @@ import {
   SheetTitle,
   ScreenReaderOnly,
 } from "popup/basics/shadcn/Sheet";
+import { SlideupModal } from "popup/components/SlideupModal";
+import { PoolDetailsSheet } from "popup/components/earn/PoolDetailsSheet";
 import { PoolCard } from "./PoolCard";
 import { MyPosition } from "./MyPosition";
 import { EmptyState } from "./EmptyState";
@@ -72,16 +74,25 @@ export const AccountPositions = ({
   bestApy,
   onStartEarning,
   pools,
-  // Unused for now: the deposit funnel it feeds is wired up from inside
-  // My position (Task 4), not this tab. Kept on the props (see
-  // AccountPositionsProps) rather than destructured, so it isn't flagged as
-  // an unused binding under this repo's noUnusedParameters.
+  onDeposit,
 }: AccountPositionsProps) => {
   const { t } = useTranslation();
   // Which pool's My position sheet is open, if any. Declared unconditionally,
   // ahead of the early returns below, because Rules of Hooks forbids a hook
   // call that only some renders reach.
   const [selectedPoolId, setSelectedPoolId] = useState<string | null>(null);
+  // What the pool-details modal nested inside My position is showing, if
+  // anything. Cleared whenever My position itself closes (see
+  // `closeMyPosition`) -- otherwise this survives to the next pool card tap
+  // and reopens over a position it was never about.
+  const [sheetMode, setSheetMode] = useState<
+    { kind: "about" } | { kind: "asset"; row: PositionTokenRow } | null
+  >(null);
+
+  const closeMyPosition = () => {
+    setSelectedPoolId(null);
+    setSheetMode(null);
+  };
 
   if (isLoading) {
     return (
@@ -149,7 +160,7 @@ export const AccountPositions = ({
 
       <Sheet
         open={Boolean(selectedPosition)}
-        onOpenChange={(open) => !open && setSelectedPoolId(null)}
+        onOpenChange={(open) => !open && closeMyPosition()}
       >
         <SheetContent
           onOpenAutoFocus={(e) => e.preventDefault()}
@@ -166,13 +177,37 @@ export const AccountPositions = ({
               pool={selectedPool}
               assetIcons={assetIcons}
               networkDetails={networkDetails}
-              onClose={() => setSelectedPoolId(null)}
-              // Task 5 wires these to the pool-details sheet; this task only
-              // has to keep MyPosition's now-required props satisfied.
-              onAboutPool={() => {}}
-              onSelectAsset={() => {}}
+              onClose={closeMyPosition}
+              onAboutPool={() => setSheetMode({ kind: "about" })}
+              onSelectAsset={(row) => setSheetMode({ kind: "asset", row })}
             />
           )}
+          <SlideupModal
+            isModalOpen={Boolean(sheetMode && selectedPool)}
+            setIsModalOpen={() => setSheetMode(null)}
+            hasBackdrop
+          >
+            {sheetMode && selectedPool && selectedPosition ? (
+              <PoolDetailsSheet
+                pool={selectedPool}
+                position={selectedPosition}
+                focusedAssetId={
+                  sheetMode.kind === "asset" ? sheetMode.row.assetId : undefined
+                }
+                overviewOnly={sheetMode.kind === "about"}
+                assetIcons={assetIcons}
+                defaultTab="your_position"
+                onClose={() => setSheetMode(null)}
+                onDeposit={
+                  sheetMode.kind === "asset"
+                    ? () => onDeposit(sheetMode.row, selectedPool)
+                    : undefined
+                }
+              />
+            ) : (
+              <div />
+            )}
+          </SlideupModal>
         </SheetContent>
       </Sheet>
     </div>

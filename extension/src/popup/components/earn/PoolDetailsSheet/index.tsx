@@ -40,6 +40,9 @@ interface PoolDetailsSheetProps {
   /** Fires only on a tap that changes the tab, never on mount. */
   onTabChange?: (tab: PoolDetailsTab) => void;
   assetIcons?: AssetIcons;
+  /** Hide the tab strip and show Overview alone, even when a position exists.
+   *  "About pool" asks about the pool, not about the user's stake in it. */
+  overviewOnly?: boolean;
 }
 
 /**
@@ -149,6 +152,13 @@ const OverviewBody = ({ pool }: { pool: BlendCatalogPool }) => {
  * swaps the footer button from Close to Deposit — the two are separate knobs
  * because Task 11 opens this sheet mid-deposit with a position already on
  * file but no Deposit action of its own to offer.
+ *
+ * `overviewOnly` is a third configuration layered on top of both: the
+ * account may well hold a position, but "About pool" asked about the pool,
+ * not the stake in it. It gates `hasPosition` itself, so the tab strip hides
+ * and the Overview pane renders through the same path a genuinely
+ * position-less account takes — no separate branch — and the CTA stays
+ * Close even when `onDeposit` is supplied.
  */
 export const PoolDetailsSheet = ({
   pool,
@@ -159,12 +169,13 @@ export const PoolDetailsSheet = ({
   defaultTab,
   onTabChange,
   assetIcons = {},
+  overviewOnly,
 }: PoolDetailsSheetProps) => {
   const { t } = useTranslation();
 
-  const hasPosition = Boolean(
-    position && hasResolvableSupply({ position, focusedAssetId }),
-  );
+  const hasPosition =
+    !overviewOnly &&
+    Boolean(position && hasResolvableSupply({ position, focusedAssetId }));
   const [activeTab, setActiveTab] = React.useState<PoolDetailsTab>(
     defaultTab ?? "your_position",
   );
@@ -225,9 +236,9 @@ export const PoolDetailsSheet = ({
         variant="tertiary"
         isFullWidth
         isRounded
-        onClick={onDeposit ?? onClose}
+        onClick={!overviewOnly && onDeposit ? onDeposit : onClose}
       >
-        {onDeposit ? t("Deposit") : t("Close")}
+        {!overviewOnly && onDeposit ? t("Deposit") : t("Close")}
       </Button>
     </div>
   );

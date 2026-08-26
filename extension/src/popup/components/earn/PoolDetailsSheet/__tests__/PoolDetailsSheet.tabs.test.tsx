@@ -130,4 +130,24 @@ describe("PoolDetailsSheet", () => {
     fireEvent.click(screen.getByText("Overview"));
     expect(onTabChange).toHaveBeenCalledTimes(1);
   });
+
+  it("hides the tabs and shows Overview alone when overviewOnly is set", () => {
+    // "About pool" asks about the pool. The account may well have a position,
+    // but that is not what was asked.
+    renderSheet({ position, overviewOnly: true, onDeposit: jest.fn() });
+
+    expect(
+      screen.queryByTestId("earn-pool-details-tabs"),
+    ).not.toBeInTheDocument();
+    expect(screen.getByTestId("earn-pool-interest-apy")).toBeInTheDocument();
+    expect(screen.queryByTestId("earn-position-panel")).not.toBeInTheDocument();
+  });
+
+  it("keeps the CTA as Close in overviewOnly, even with a deposit handler", () => {
+    const onDeposit = jest.fn();
+    renderSheet({ position, overviewOnly: true, onDeposit });
+
+    expect(screen.getByText("Close")).toBeInTheDocument();
+    expect(screen.queryByText("Deposit")).not.toBeInTheDocument();
+  });
 });
