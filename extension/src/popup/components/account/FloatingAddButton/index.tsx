@@ -1,9 +1,13 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
+import { useSelector } from "react-redux";
 import { Icon } from "@stellar/design-system";
 import { Link } from "react-router-dom";
 
+import { isEarnSupportedNetwork } from "@shared/constants/blend";
 import { ROUTES } from "popup/constants/routes";
+import { earnDepositSelector } from "popup/ducks/remoteConfig";
+import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { TabsList } from "popup/views/Account/contexts/activeTabContext";
 import { useActiveTab } from "popup/components/account/AccountTabs/hooks/useActiveTab";
 
@@ -32,15 +36,30 @@ export const FloatingAddButton = ({
 }: FloatingAddButtonProps) => {
   const { t } = useTranslation();
   const { activeTab } = useActiveTab();
+  const isEarnDepositEnabled = useSelector(earnDepositSelector);
+  const networkDetails = useSelector(settingsNetworkDetailsSelector);
 
-  // Nothing is "added" on this tab: positions come from depositing through
-  // Earn, not from a picker this pill would open. The empty state gets its
-  // own "Start Earning" CTA in Task 7. An explicit early return rather than
-  // folding this into the Tokens/Collectibles ternary below, so a future
-  // fourth tab fails loudly instead of silently inheriting the Collectibles
-  // branch the way Positions itself briefly did.
+  // Positions has its own pill -- Deposit, not Add: a position is opened by
+  // depositing through Earn, not by picking something from a list. Gated on
+  // the same flag and network as Home's Earn tile, so every route into the
+  // deposit flow appears and disappears together. An explicit early return
+  // rather than folding this into the Tokens/Collectibles ternary below, so a
+  // future fourth tab fails loudly instead of silently inheriting the
+  // Collectibles branch the way Positions itself briefly did.
   if (activeTab === TabsList.POSITIONS) {
-    return null;
+    if (!isEarnDepositEnabled || !isEarnSupportedNetwork(networkDetails)) {
+      return null;
+    }
+    return (
+      <Link
+        className="FloatingAddButton"
+        to={ROUTES.earn}
+        data-testid="deposit-btn"
+      >
+        <Icon.Plus />
+        <span className="FloatingAddButton__label">{t("Deposit")}</span>
+      </Link>
+    );
   }
 
   const isTokensTab = activeTab === TabsList.TOKENS;

@@ -1,10 +1,14 @@
 import React from "react";
 import { Button } from "@stellar/design-system";
 import { useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 
+import { isEarnSupportedNetwork } from "@shared/constants/blend";
 import { ROUTES } from "popup/constants/routes";
 import { EARN_SOURCE, EARN_SOURCE_KEY } from "popup/constants/earn";
+import { earnDepositSelector } from "popup/ducks/remoteConfig";
+import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { navigateTo } from "popup/helpers/navigate";
 import { formatRate } from "popup/components/earn/helpers/formatPoolStats";
 import { formatAmount } from "popup/helpers/formatters";
@@ -38,6 +42,10 @@ export const EmptyState = ({
 }: EmptyStateProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const isEarnDepositEnabled = useSelector(earnDepositSelector);
+  const networkDetails = useSelector(settingsNetworkDetailsSelector);
+  const canDeposit =
+    isEarnDepositEnabled && isEarnSupportedNetwork(networkDetails);
   const hasProjection = projectedUsd !== null || bestApy !== null;
 
   return (
@@ -73,25 +81,27 @@ export const EmptyState = ({
         </div>
       )}
 
-      <div className="AccountPositions__empty__cta">
-        <Button
-          type="button"
-          variant="secondary"
-          size="lg"
-          isRounded
-          onClick={() => {
-            onStartEarning();
-            navigateTo(
-              ROUTES.earn,
-              navigate,
-              `?${EARN_SOURCE_KEY}=${EARN_SOURCE.POSITIONS_EMPTY}`,
-            );
-          }}
-          data-testid="account-positions-start-earning"
-        >
-          {t("Start Earning")}
-        </Button>
-      </div>
+      {canDeposit && (
+        <div className="AccountPositions__empty__cta">
+          <Button
+            type="button"
+            variant="secondary"
+            size="lg"
+            isRounded
+            onClick={() => {
+              onStartEarning();
+              navigateTo(
+                ROUTES.earn,
+                navigate,
+                `?${EARN_SOURCE_KEY}=${EARN_SOURCE.POSITIONS_EMPTY}`,
+              );
+            }}
+            data-testid="account-positions-start-earning"
+          >
+            {t("Start Earning")}
+          </Button>
+        </div>
+      )}
     </div>
   );
 };

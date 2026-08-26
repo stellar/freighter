@@ -9,16 +9,18 @@ import {
   TabsList,
 } from "popup/views/Account/contexts/activeTabContext";
 
-const renderPill = ({
+const renderButton = ({
   activeTab,
   isFunded,
   isCollectiblesCtaInline = false,
   isCollectiblesLoading = false,
+  state,
 }: {
   activeTab: TabsList;
   isFunded: boolean;
   isCollectiblesCtaInline?: boolean;
   isCollectiblesLoading?: boolean;
+  state?: Record<string, unknown>;
 }) =>
   render(
     <Wrapper
@@ -28,6 +30,7 @@ const renderPill = ({
           networkDetails: MAINNET_NETWORK_DETAILS,
           networksList: [MAINNET_NETWORK_DETAILS],
         },
+        ...state,
       }}
     >
       <AccountTabsContext.Provider
@@ -45,7 +48,7 @@ const renderPill = ({
 describe("FloatingAddButton", () => {
   describe("Tokens tab", () => {
     it("offers Add token once the account is funded", () => {
-      renderPill({
+      renderButton({
         activeTab: TabsList.TOKENS,
         isFunded: true,
         isCollectiblesCtaInline: false,
@@ -58,7 +61,7 @@ describe("FloatingAddButton", () => {
 
     // Unchanged behaviour: the unfunded empty state carries "Add XLM" itself.
     it("stands down while the account is unfunded", () => {
-      const { container } = renderPill({
+      const { container } = renderButton({
         activeTab: TabsList.TOKENS,
         isFunded: false,
         isCollectiblesCtaInline: true,
@@ -75,22 +78,37 @@ describe("FloatingAddButton", () => {
     // funded account with collectibles neither loading nor showing an inline
     // CTA (the two props below), the pill fell through to "Add collectible"
     // while the user was looking at the Positions pane. Positions has no add
-    // flow of its own -- a position comes from depositing through Earn.
-    it("never renders, regardless of funded state or the collectibles props", () => {
-      const { container } = renderPill({
+    // flow of its own -- a position comes from depositing through Earn. This
+    // pill offers Deposit instead, gated on the same flag and network as
+    // Home's Earn tile.
+    it("offers Deposit on the Positions tab when the flag is on", () => {
+      renderButton({
         activeTab: TabsList.POSITIONS,
         isFunded: true,
         isCollectiblesCtaInline: false,
         isCollectiblesLoading: false,
+        state: { remoteConfig: { earn_deposit: true } },
       });
 
-      expect(container).toBeEmptyDOMElement();
+      expect(screen.getByTestId("deposit-btn")).toHaveTextContent("Deposit");
+    });
+
+    it("renders nothing on the Positions tab when the flag is off", () => {
+      renderButton({
+        activeTab: TabsList.POSITIONS,
+        isFunded: true,
+        isCollectiblesCtaInline: false,
+        isCollectiblesLoading: false,
+        state: { remoteConfig: { earn_deposit: false } },
+      });
+
+      expect(screen.queryByTestId("deposit-btn")).not.toBeInTheDocument();
     });
   });
 
   describe("Collectibles tab", () => {
     it("offers Add collectible when its empty state is not carrying the CTA", () => {
-      renderPill({
+      renderButton({
         activeTab: TabsList.COLLECTIBLES,
         isFunded: true,
         isCollectiblesCtaInline: false,
@@ -104,7 +122,7 @@ describe("FloatingAddButton", () => {
     // The half that makes the two tabs agree: with Tokens showing its inline
     // CTA, this tab shows one too, so the pill would be a second call to action.
     it("stands down when its empty state is carrying the CTA", () => {
-      const { container } = renderPill({
+      const { container } = renderButton({
         activeTab: TabsList.COLLECTIBLES,
         isFunded: false,
         isCollectiblesCtaInline: true,
@@ -117,7 +135,7 @@ describe("FloatingAddButton", () => {
     // wants is not known yet, so the pill waits rather than appearing and then
     // being replaced by the inline CTA.
     it("stands down while that tab is still loading", () => {
-      const { container } = renderPill({
+      const { container } = renderButton({
         activeTab: TabsList.COLLECTIBLES,
         isFunded: false,
         isCollectiblesLoading: true,
@@ -129,7 +147,7 @@ describe("FloatingAddButton", () => {
     // The Tokens tab is unaffected by any of this -- it never reads the
     // collectibles state.
     it("still offers Add token while Collectibles is loading", () => {
-      renderPill({
+      renderButton({
         activeTab: TabsList.TOKENS,
         isFunded: true,
         isCollectiblesLoading: true,
@@ -142,7 +160,7 @@ describe("FloatingAddButton", () => {
     // no empty state to host a CTA and must keep the pill rather than lose its
     // only way to add one.
     it("keeps the pill while unfunded if there is no inline CTA to replace it", () => {
-      renderPill({
+      renderButton({
         activeTab: TabsList.COLLECTIBLES,
         isFunded: false,
         isCollectiblesCtaInline: false,

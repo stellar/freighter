@@ -74,11 +74,21 @@ const pool = {
   reserves: [],
 } as never as BlendCatalogPool;
 
+const defaultState = {
+  settings: {
+    networkDetails: MAINNET_NETWORK_DETAILS,
+    networksList: [MAINNET_NETWORK_DETAILS],
+  },
+};
+
 const renderTab = (
-  props: Partial<React.ComponentProps<typeof AccountPositions>>,
-) =>
-  render(
-    <Wrapper state={{}} routes={["/"]}>
+  props: Partial<React.ComponentProps<typeof AccountPositions>> & {
+    state?: Record<string, unknown>;
+  },
+) => {
+  const { state, ...componentProps } = props;
+  return render(
+    <Wrapper state={{ ...defaultState, ...state }} routes={["/"]}>
       <AccountPositions
         positions={null}
         isLoading={false}
@@ -90,10 +100,11 @@ const renderTab = (
         onStartEarning={() => {}}
         pools={[]}
         onDeposit={() => {}}
-        {...props}
+        {...componentProps}
       />
     </Wrapper>,
   );
+};
 
 describe("AccountPositions", () => {
   beforeEach(() => {
@@ -148,6 +159,22 @@ describe("AccountPositions", () => {
     expect(
       screen.queryByTestId("account-positions-projection"),
     ).not.toBeInTheDocument();
+  });
+
+  it("hides Start Earning when the flag is off but keeps the projection", () => {
+    renderTab({
+      positions: noPositions,
+      projectedUsd: "89.32",
+      bestApy: 0.1694,
+      state: { remoteConfig: { earn_deposit: false } },
+    });
+
+    expect(
+      screen.queryByTestId("account-positions-start-earning"),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByTestId("account-positions-projection"),
+    ).toBeInTheDocument();
   });
 
   it("renders one card per pool, not per supplied token", () => {

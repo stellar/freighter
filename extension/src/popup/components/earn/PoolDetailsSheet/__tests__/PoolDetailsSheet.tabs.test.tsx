@@ -1,6 +1,7 @@
 import React from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 
+import { MAINNET_NETWORK_DETAILS } from "@shared/constants/stellar";
 import { PoolDetailsSheet } from "popup/components/earn/PoolDetailsSheet";
 import { Wrapper } from "popup/__testHelpers__";
 
@@ -52,9 +53,19 @@ const position = {
   blend: { supply: [usdcSupply], borrow: [] },
 } as never;
 
-const renderSheet = (props = {}) =>
+const defaultState = {
+  settings: {
+    networkDetails: MAINNET_NETWORK_DETAILS,
+    networksList: [MAINNET_NETWORK_DETAILS],
+  },
+};
+
+const renderSheet = ({
+  state,
+  ...props
+}: { state?: Record<string, unknown> } & Record<string, unknown> = {}) =>
   render(
-    <Wrapper state={{}} routes={["/"]}>
+    <Wrapper state={{ ...defaultState, ...state }} routes={["/"]}>
       <PoolDetailsSheet pool={pool} onClose={jest.fn()} {...props} />
     </Wrapper>,
   );
@@ -100,6 +111,17 @@ describe("PoolDetailsSheet", () => {
 
     fireEvent.click(screen.getByText("Deposit"));
     expect(onDeposit).toHaveBeenCalled();
+  });
+
+  it("falls back to Close when the deposit flag is off", () => {
+    renderSheet({
+      position,
+      onDeposit: jest.fn(),
+      state: { remoteConfig: { earn_deposit: false } },
+    });
+
+    expect(screen.getByText("Close")).toBeInTheDocument();
+    expect(screen.queryByText("Deposit")).not.toBeInTheDocument();
   });
 
   it("labels the rate APY, not APR", () => {

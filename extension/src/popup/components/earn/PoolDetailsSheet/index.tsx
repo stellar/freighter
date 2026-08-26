@@ -1,11 +1,15 @@
 import React from "react";
 import { Button, Icon, Text } from "@stellar/design-system";
+import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 
 import { AssetIcons } from "@shared/api/types";
 import { BlendCatalogPool, PoolPosition } from "@shared/api/types/blend";
+import { isEarnSupportedNetwork } from "@shared/constants/blend";
 import { PoolIcon } from "popup/components/earn/PoolIcon";
 import { BLEND_LENDING_DOCS_URL } from "popup/constants/externalLinks";
+import { earnDepositSelector } from "popup/ducks/remoteConfig";
+import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { openTab } from "popup/helpers/navigate";
 import { hasResolvableSupply } from "popup/components/earn/helpers/positionSummary";
 import { StatRow } from "popup/components/earn/StatRow";
@@ -172,10 +176,20 @@ export const PoolDetailsSheet = ({
   overviewOnly,
 }: PoolDetailsSheetProps) => {
   const { t } = useTranslation();
+  const isEarnDepositEnabled = useSelector(earnDepositSelector);
+  const networkDetails = useSelector(settingsNetworkDetailsSelector);
 
   const hasPosition =
     !overviewOnly &&
     Boolean(position && hasResolvableSupply({ position, focusedAssetId }));
+  // Gated on the same flag and network as every other route into the deposit
+  // flow -- a pool this account cannot deposit into should not offer to,
+  // even mid-flow with a handler already on hand.
+  const canDeposit =
+    !overviewOnly &&
+    Boolean(onDeposit) &&
+    isEarnDepositEnabled &&
+    isEarnSupportedNetwork(networkDetails);
   const [activeTab, setActiveTab] = React.useState<PoolDetailsTab>(
     defaultTab ?? "your_position",
   );
@@ -236,9 +250,9 @@ export const PoolDetailsSheet = ({
         variant="tertiary"
         isFullWidth
         isRounded
-        onClick={!overviewOnly && onDeposit ? onDeposit : onClose}
+        onClick={canDeposit ? onDeposit : onClose}
       >
-        {!overviewOnly && onDeposit ? t("Deposit") : t("Close")}
+        {canDeposit ? t("Deposit") : t("Close")}
       </Button>
     </div>
   );
