@@ -23,6 +23,16 @@ describe("formatAccountUsd", () => {
   it("groups thousands", () => {
     expect(formatAccountUsd(1234567)).toBe("$1,234,567.00");
   });
+
+  it("renders an exact-cent value at its own cent, not one cent low", () => {
+    // roundUsdValue floors via floating-point multiplication: 1.15 * 100 ===
+    // 114.99999999999999, so Math.floor lands on 114 and the value renders
+    // "$1.14". formatAccountUsd must not inherit that -- it does its own
+    // truncation via BigNumber, which is exact.
+    expect(formatAccountUsd(1.15)).toBe("$1.15");
+    expect(formatAccountUsd(0.29)).toBe("$0.29");
+    expect(formatAccountUsd(2.01)).toBe("$2.01");
+  });
 });
 
 describe("formatCompactUsd", () => {
