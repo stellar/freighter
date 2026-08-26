@@ -63,6 +63,61 @@ const earnAmountData = {
   tokenPrices: { [TEST_USDC_CANONICAL]: { currentPrice: "1" } },
 };
 
+// The deposit's destination pool — real enough to render the pool card and
+// the details sheet it opens (Task 11).
+const pool = {
+  id: POOL_ID,
+  name: "Fixed Pool v2",
+  status: "ACTIVE",
+  suppliedUsd: 50050000,
+  borrowedUsd: 16150000,
+  interestApy: 0.0424,
+  netApy: 0.1694,
+  backstopUsd: 1530000,
+  reserves: [],
+} as never;
+
+const usdcSupply = {
+  assetId: USDC_SAC,
+  symbol: "USDC",
+  name: `USDC:${USDC_ISSUER}`,
+  decimals: 7,
+  suppliedTokens: "0",
+  collateralTokens: RAW_POSITION,
+  totalTokens: RAW_POSITION,
+  usdValue: 100,
+  apy: 0.1694,
+  emissionsApr: 0,
+  interestEarned: "0",
+  interestEarnedUsd: 0,
+  claimableBlnd: "0",
+  claimableUsd: null,
+  priceUsd: 1,
+};
+
+// The cached shape `positionsSelector` returns for an account that already
+// supplies `pool` — keyed into the store under `cache.positionsData` by the
+// new tests below.
+const existingPosition = {
+  address: TEST_PUBLIC_KEY,
+  totalValueUsd: 100,
+  netApy: 0.1694,
+  positions: [
+    {
+      protocol: "blend",
+      id: POOL_ID,
+      name: "Fixed Pool v2",
+      netUsd: 100,
+      suppliedUsd: 100,
+      borrowedUsd: 0,
+      netApy: 0.1694,
+      blend: { supply: [usdcSupply], borrow: [] },
+    },
+  ],
+  backstop: [],
+  updatedAt: Date.now(),
+} as never;
+
 /**
  * A promise the test settles by hand. This is what makes the race deterministic:
  * the position lookup always loses to the simulation, which is the ordering the
@@ -78,7 +133,9 @@ const makeDeferred = () => {
   return { promise, resolve, reject };
 };
 
-const renderAmount = () =>
+// `overrides.cache` seeds `state.cache` — used by the position-tab tests
+// below to control what `positionsSelector` reads without a network request.
+const renderEarnAmount = (overrides: { cache?: any } = {}) =>
   render(
     <Wrapper
       state={
@@ -95,13 +152,12 @@ const renderAmount = () =>
           },
           earn: {
             ...earnInitialState,
-            // Left null so the pool card and its details sheet stay out of the
-            // way; the review sheet falls back to "Blend pool".
-            pool: null,
+            pool,
             selectedAssetId: USDC_SAC,
             selectedAssetApy: 0.05,
             currentPositionTokens: "0",
           },
+          cache: overrides.cache,
         } as any
       }
       routes={["/"]}
@@ -151,7 +207,7 @@ describe("EarnAmount position lookup", () => {
     const position = makeDeferred();
     (getBlendSuppliedTokens as jest.Mock).mockReturnValue(position.promise);
 
-    renderAmount();
+    renderEarnAmount();
 
     await act(async () => {
       fireEvent.click(screen.getByTestId("earn-amount-btn-continue"));
@@ -179,7 +235,7 @@ describe("EarnAmount position lookup", () => {
       new Error("positions 500"),
     );
 
-    renderAmount();
+    renderEarnAmount();
 
     await act(async () => {
       fireEvent.click(screen.getByTestId("earn-amount-btn-continue"));
@@ -193,5 +249,38 @@ describe("EarnAmount position lookup", () => {
     expect(
       screen.queryByTestId("earn-amount-fail-banner"),
     ).not.toBeInTheDocument();
+  });
+
+  it("shows the Your position tab when the account already supplies this pool", async () => {
+    // The requirement is that the tab appears wherever the sheet appears, not
+    // only on the Positions tab — a repeat depositor should see their stake.
+    renderEarnAmount({
+      cache: {
+        positionsData: { TESTNET: { [TEST_PUBLIC_KEY]: existingPosition } },
+      },
+    });
+
+    fireEvent.click(screen.getByTestId("earn-pool-card"));
+
+    expect(
+      await screen.findByTestId("earn-pool-details-tabs"),
+    ).toBeInTheDocument();
+    // Opened on Overview: the user tapped the POOL card, so pool info is what
+    // they asked for.
+    expect(screen.getByTestId("earn-pool-interest-apy")).toBeInTheDocument();
+  });
+
+  it("stays untabbed with a Close button for a first-time depositor", async () => {
+    renderEarnAmount({ cache: { positionsData: {} } });
+
+    fireEvent.click(screen.getByTestId("earn-pool-card"));
+
+    expect(
+      await screen.findByTestId("earn-pool-details-sheet"),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByTestId("earn-pool-details-tabs"),
+    ).not.toBeInTheDocument();
+    expect(screen.getByText("Close")).toBeInTheDocument();
   });
 });

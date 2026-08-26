@@ -46,6 +46,7 @@ import {
   saveCurrentPositionTokens,
   setEarnSubmitFailed,
 } from "popup/ducks/earn";
+import { positionsSelector } from "popup/ducks/cache";
 import { getBlendSuppliedTokens } from "@shared/api/helpers/blend";
 import { formatTokenAmount } from "popup/helpers/soroban";
 
@@ -88,6 +89,7 @@ export const EarnAmount = ({ goBack, onConfirm }: EarnAmountProps) => {
   } = useSelector(earnSelector);
   const { state: simulationState, simulate } = useSimulateEarnDeposit();
   const { recommendedFee } = useNetworkFees();
+  const cachedPositions = useSelector(positionsSelector);
 
   const [isPoolSheetOpen, setIsPoolSheetOpen] = useState(false);
   const [isFeeSheetOpen, setIsFeeSheetOpen] = useState(false);
@@ -155,6 +157,12 @@ export const EarnAmount = ({ goBack, onConfirm }: EarnAmountProps) => {
   }
 
   const data = state.data as ResolvedEarnAmount;
+  // Read from the cache Home already filled rather than issuing a request:
+  // the flow is only reachable from Home, which fetches positions on load.
+  const poolPosition =
+    cachedPositions[data.networkDetails.network]?.[
+      data.publicKey
+    ]?.positions.find((p) => p.id === pool?.id) ?? null;
   const selected = asset ? getAssetFromCanonical(asset) : null;
   const decimals = getAssetDecimals(asset, data.balances, true);
 
@@ -468,6 +476,12 @@ export const EarnAmount = ({ goBack, onConfirm }: EarnAmountProps) => {
         {pool ? (
           <PoolDetailsSheet
             pool={pool}
+            position={poolPosition}
+            focusedAssetId={selectedAssetId}
+            assetIcons={data.balances.icons || {}}
+            // The pool card was tapped, so pool information is what was asked
+            // for. A Positions row opens on the other tab.
+            defaultTab="overview"
             onClose={() => setIsPoolSheetOpen(false)}
           />
         ) : (
