@@ -1438,7 +1438,7 @@ describe("Account view", () => {
   // helpers/request.ts), so `resolvedData?.hasPositionsError` alone can never
   // see the failure -- the view-level `hasError` has to reach
   // AccountPositions too, or the Positions tab falls through to its empty
-  // state instead (C1).
+  // state instead.
   it("shows the positions error state rather than 'no positions' when the account fetch fails", async () => {
     const accountDataSpy = jest
       .spyOn(AccountDataHooks, "useGetAccountData")

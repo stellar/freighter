@@ -143,14 +143,11 @@ const renderTab = (
 /**
  * Covers the tab's route into My position through a tapped pool card.
  *
- * Before this task, this file exercised the tab->PoolDetailsSheet path
- * directly (its own tabs, its Deposit button, the metrics that path fired).
- * That content now lives one level down, inside My position, and My position
- * only ships its shell in this task -- PoolDetailsSheet is nested inside it,
- * and the deposit funnel re-pointed at the asset rows, starting in Task 4.
- * Those assertions move there; what is left here is the part Task 3 actually
- * owns: My position opens for the tapped pool, whether or not the catalog
- * carries a matching entry for it.
+ * PoolDetailsSheet -- its own tabs, its Deposit button, the metrics that path
+ * fires -- is nested one level down inside My position, and is covered by
+ * PoolDetailsSheet's own tests plus MyPosition.test.tsx. What this file owns:
+ * My position opens for the tapped pool, whether or not the catalog carries a
+ * matching entry for it.
  */
 describe("AccountPositions pool sheet", () => {
   it("opens My position when a pool card is tapped, with a matching catalog pool", async () => {

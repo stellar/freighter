@@ -32,8 +32,8 @@ interface EmptyStateProps {
  * rather than rendering blank.
  *
  * The CTA's navigation lives here, in one place, rather than behind a prop —
- * which is why Task 12 only had to touch this one call site to add the
- * `source` query param the deposit funnel attributes back to this CTA.
+ * so the `source` query param the deposit funnel attributes back to this CTA
+ * only needed one call site to change.
  */
 export const EmptyState = ({
   projectedUsd,

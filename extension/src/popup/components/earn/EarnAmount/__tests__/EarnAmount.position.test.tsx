@@ -64,7 +64,7 @@ const earnAmountData = {
 };
 
 // The deposit's destination pool — real enough to render the pool card and
-// the details sheet it opens (Task 11).
+// the details sheet it opens.
 const pool = {
   id: POOL_ID,
   name: "Fixed Pool v2",

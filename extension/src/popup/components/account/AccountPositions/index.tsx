@@ -69,9 +69,9 @@ interface AccountPositionsProps {
  * `AccountView__fetch-fail` notification, which sits above the slider and would
  * push a banner across the Tokens and Collectibles tabs too.
  *
- * Lists one card per pool (Task 3) rather than one row per supplied token --
- * the token-shaped rows now live one level down, inside the My position sheet
- * a tapped card opens (Task 4).
+ * Lists one card per pool rather than one row per supplied token -- the
+ * token-shaped rows now live one level down, inside the My position sheet a
+ * tapped card opens.
  */
 export const AccountPositions = ({
   positions,

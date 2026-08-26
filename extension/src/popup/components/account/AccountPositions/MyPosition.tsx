@@ -34,9 +34,9 @@ interface MyPositionProps {
 /**
  * One pool position in full: its totals, and the assets supplied to it.
  *
- * Rendered in place by the Positions tab as a bottom sheet (R2), the same way the
+ * Rendered in place by the Positions tab as a bottom sheet, the same way the
  * Tokens tab opens AssetDetail — so the tab stays mounted underneath and
- * dismissal costs nothing. An X rather than a back arrow (R3), matching AssetDetail
+ * dismissal costs nothing. An X rather than a back arrow, matching AssetDetail
  * and CollectibleDetail.
  *
  * The totals header uses `getPoolPositionSummary` (pool-scoped: this

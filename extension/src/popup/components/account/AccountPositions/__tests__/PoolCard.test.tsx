@@ -52,12 +52,10 @@ describe("PoolCard", () => {
     expect(screen.getByTestId("pool-card-value-CAJJ")).toHaveTextContent(
       "$1,284.32",
     );
-    // The brief's fixture math (31.75 / (1284.32 - 31.75)) works out to
-    // 0.025347..., which formatRate's half-up rounding renders as "2.53%",
-    // not the brief's literal "2.54%" -- verified independently with
-    // BigNumber and by running this test against the real, already-committed
-    // Task 1 getPoolPositionSummary. Trusting the actual code's output here
-    // per this task's own instruction to do so on a brief/code conflict.
+    // 31.75 / (1284.32 - 31.75) works out to 0.025347..., which formatRate's
+    // half-up rounding renders as "2.53%" -- verified independently with
+    // BigNumber, and against getPoolPositionSummary's actual output rather
+    // than hand-rounded expectations.
     expect(screen.getByTestId("pool-card-gain-CAJJ")).toHaveTextContent(
       "2.53%",
     );

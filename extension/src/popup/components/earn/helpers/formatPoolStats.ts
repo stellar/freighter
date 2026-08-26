@@ -74,7 +74,7 @@ export const formatRate = (rate: number | null): string =>
  * as zero, which understates rather than blanks an otherwise known rate.
  *
  * One implementation so that a future decision to blank the rate on null
- * emissions instead cannot silently miss a call site (I5).
+ * emissions instead cannot silently miss a call site.
  */
 export const headlineApy = (
   rate: number | null,

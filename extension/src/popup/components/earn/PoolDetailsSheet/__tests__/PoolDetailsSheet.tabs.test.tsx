@@ -90,7 +90,7 @@ describe("PoolDetailsSheet", () => {
     expect(screen.getByText("Overview")).toBeInTheDocument();
   });
 
-  it("renders untabbed when focusedAssetId names an asset the position doesn't hold (I2)", () => {
+  it("renders untabbed when focusedAssetId names an asset the position doesn't hold", () => {
     // EarnAmount always names the asset it is depositing. A mismatch means the
     // account has no position in THAT asset yet -- the same "no position"
     // treatment as the no-position case above, not a tab with an empty panel.

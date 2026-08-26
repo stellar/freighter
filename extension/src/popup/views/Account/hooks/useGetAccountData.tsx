@@ -164,7 +164,7 @@ function useGetAccountData(options: {
 
       // Same treatment as positions: started before the balances await so its
       // round trip overlaps balances/collectibles/positions instead of adding
-      // to the critical path in front of the Blockaid rescan below (I3). Only
+      // to the critical path in front of the Blockaid rescan below. Only
       // fetched where Earn exists at all; landed once positions has resolved,
       // alongside the pools dispatch below.
       const poolsRequest = isEarnSupportedNetwork(networkDetails)
@@ -242,7 +242,7 @@ function useGetAccountData(options: {
 
       // Landed here (not yet awaited when it was started, above) and, for
       // earnOptions, only ever STARTED once we know it applies -- neither sits
-      // in front of the Blockaid rescan below (I3).
+      // in front of the Blockaid rescan below.
       let earnOptionsRequest: Promise<BlendEarnAssetOption[]> | null = null;
       if (isEarnSupportedNetwork(networkDetails)) {
         // Unlike earnOptions below, fetched regardless of whether the account
@@ -288,8 +288,8 @@ function useGetAccountData(options: {
           // (helpers/request.ts: `data: action.payload`), so a throwaway local
           // here is only safe as long as nothing dispatches from `payload`
           // again afterward. The earnOptions landing below can now run after
-          // this block (I3), and a `{ ...payload }` there would otherwise
-          // silently revert these two fields right after the scan lands.
+          // this block, and a `{ ...payload }` there would otherwise silently
+          // revert these two fields right after the scan lands.
           payload.balances = balancesResult as AccountBalances;
           payload.isScanAppended = true;
           dispatch({ type: "FETCH_DATA_SUCCESS", payload: { ...payload } });

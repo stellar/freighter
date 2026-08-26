@@ -60,7 +60,7 @@ describe("getBestEarnApy", () => {
     expect(getBestEarnApy([option(USDC_SAC, [], "USDC")])).toBeNull();
   });
 
-  it("skips a pool with no priced rate rather than treating it as zero (T7-c)", () => {
+  it("skips a pool with no priced rate rather than treating it as zero", () => {
     // Null is "unknown", not "zero" — the card must not promise 0% by folding
     // an unpriced pool into the comparison. Mixed with a priced pool so the
     // skip branch is actually exercised, not just the empty-array case above.

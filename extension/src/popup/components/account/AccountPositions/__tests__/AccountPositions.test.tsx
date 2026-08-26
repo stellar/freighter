@@ -181,10 +181,10 @@ describe("AccountPositions", () => {
     // twoAssetPositions holds ONE pool with TWO supplied assets. The old tab
     // showed two rows; the pool-shaped tab shows one card.
     //
-    // PoolCard (Task 2) also carries `pool-card-value-*`, `pool-card-gain-*`
-    // and `pool-card-apy-*` child testids, all of which start with
-    // "pool-card-" too -- so the card root is matched by its id ending
-    // exactly at the pool id, not merely starting with the shared prefix.
+    // PoolCard also carries `pool-card-value-*`, `pool-card-gain-*` and
+    // `pool-card-apy-*` child testids, all of which start with "pool-card-"
+    // too -- so the card root is matched by its id ending exactly at the pool
+    // id, not merely starting with the shared prefix.
     renderTab({ positions: twoAssetPositions });
 
     expect(screen.getAllByTestId(/^pool-card-[A-Z0-9]+$/)).toHaveLength(1);

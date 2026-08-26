@@ -30,10 +30,10 @@ const renderRow = (
   );
 
 /**
- * PositionRow (moved out of the tab in Task 3) now relocates into MyPosition
- * (Task 4), which drops the interest-gain column -- that figure now lives in
- * MyPosition's own pool-level header instead, covered by MyPosition.test.tsx.
- * The value, rate and click-handler coverage below still applies unchanged.
+ * PositionRow now lives inside MyPosition, which drops the interest-gain
+ * column -- that figure lives in MyPosition's own pool-level header instead,
+ * covered by MyPosition.test.tsx. The value, rate and click-handler coverage
+ * below still applies unchanged.
  */
 describe("PositionRow", () => {
   it("renders an unavailable value as -- rather than zero", () => {

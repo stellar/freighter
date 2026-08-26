@@ -133,7 +133,7 @@ describe("getPositionSummary", () => {
     expect(result.deposits[0].code).toBe("USDC");
   });
 
-  it("resolves to an empty scope when the focused asset matches nothing, instead of the first row (I2)", () => {
+  it("resolves to an empty scope when the focused asset matches nothing, instead of the first row", () => {
     // EarnAmount always names the asset it is depositing, so a mismatch means
     // the account has no position in THAT asset yet -- not "no asset was
     // named". Falling back to supply[0] would show a different asset's
@@ -148,7 +148,7 @@ describe("getPositionSummary", () => {
     expect(result.estYearlyUsd).toBeNull();
   });
 
-  describe("principal out of range (C2)", () => {
+  describe("principal out of range", () => {
     it("reports no principal reading for a fully-exited row, rather than a negative figure", () => {
       // total_tokens is the CURRENT balance; a fully-exited row still carries
       // its lifetime interest_earned, so total_tokens - interest_earned goes
@@ -216,7 +216,7 @@ describe("hasResolvableSupply", () => {
     );
   });
 
-  it("is false when the focused asset matches nothing (I2)", () => {
+  it("is false when the focused asset matches nothing", () => {
     expect(
       hasResolvableSupply({
         position: position([usdcSupply]),

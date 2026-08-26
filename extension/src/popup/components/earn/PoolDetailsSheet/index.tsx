@@ -151,11 +151,11 @@ const OverviewBody = ({ pool }: { pool: BlendCatalogPool }) => {
  * and a Close button. Only supplying `position` AND a resolvable supply row —
  * see `hasResolvableSupply` — turns on the pill tab strip and lets the sheet
  * open on either tab; a `focusedAssetId` that names an asset the position
- * doesn't hold (I2) is treated the same as no position at all, rather than
+ * doesn't hold is treated the same as no position at all, rather than
  * showing a "Your position" tab with nothing in it. `onDeposit` independently
  * swaps the footer button from Close to Deposit — the two are separate knobs
- * because Task 11 opens this sheet mid-deposit with a position already on
- * file but no Deposit action of its own to offer.
+ * because the deposit flow opens this sheet mid-deposit with a position
+ * already on file but no Deposit action of its own to offer.
  *
  * `overviewOnly` is a third configuration layered on top of both: the
  * account may well hold a position, but "About pool" asked about the pool,

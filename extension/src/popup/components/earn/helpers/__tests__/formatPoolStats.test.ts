@@ -5,7 +5,7 @@ import {
 } from "../formatPoolStats";
 
 describe("formatAccountUsd", () => {
-  it("renders a four-figure balance in full, never compact (I1)", () => {
+  it("renders a four-figure balance in full, never compact", () => {
     // formatCompactUsd goes compact at $1,000, dropping cents from a personal
     // balance ("$1.50K" for $1,500) -- account-scale money always shows in full.
     expect(formatAccountUsd(1500)).toBe("$1,500.00");
