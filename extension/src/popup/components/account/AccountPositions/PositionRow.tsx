@@ -8,6 +8,7 @@ import {
   formatAccountUsd,
   formatRate,
 } from "popup/components/earn/helpers/formatPoolStats";
+import { NO_FIAT_VALUE } from "popup/helpers/formatters";
 
 interface PositionRowProps {
   row: PositionTokenRow;
@@ -47,7 +48,7 @@ export const PositionRow = ({ row, assetIcons, onClick }: PositionRowProps) => {
           data-testid={`position-apy-${row.code}`}
         >
           {row.apy === null
-            ? "--"
+            ? NO_FIAT_VALUE
             : t("{{rate}} APY", { rate: formatRate(row.apy) })}
         </span>
       }
@@ -63,7 +64,9 @@ export const PositionRow = ({ row, assetIcons, onClick }: PositionRowProps) => {
             className={`PositionRow__gain ${isPositiveGain ? "PositionRow__gain--positive" : ""}`}
             data-testid={`position-gain-${row.code}`}
           >
-            {isGainKnown ? `+${formatAccountUsd(row.interestEarnedUsd)}` : "--"}
+            {isGainKnown
+              ? `+${formatAccountUsd(row.interestEarnedUsd)}`
+              : NO_FIAT_VALUE}
           </div>
         </>
       }

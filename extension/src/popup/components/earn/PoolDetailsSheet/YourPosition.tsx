@@ -13,7 +13,7 @@ import {
   formatRate,
 } from "popup/components/earn/helpers/formatPoolStats";
 import { formatProjection } from "popup/components/earn/EarnReview/helpers/projectEarnings";
-import { formatAmount } from "popup/helpers/formatters";
+import { NO_FIAT_VALUE, formatAmount } from "popup/helpers/formatters";
 import {
   PositionAssetRow,
   getPositionSummary,
@@ -50,7 +50,7 @@ const AssetLine = ({
         data-testid={`earn-position-${isGain ? "earnings" : "deposit"}-usd-${row.code}`}
       >
         {row.usd === null
-          ? "--"
+          ? NO_FIAT_VALUE
           : `${isGain ? "+" : ""}${formatAccountUsd(row.usd)}`}
       </div>
       <div className="PoolDetailsSheet__asset-line__tokens">
