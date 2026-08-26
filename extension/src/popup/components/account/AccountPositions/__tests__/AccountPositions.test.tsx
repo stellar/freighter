@@ -54,6 +54,16 @@ const twoAssetPositions = withSupply([
 ]);
 const unpricedPositions = withSupply([supply({ usdValue: null })]);
 
+// The null/zero/positive boundary on interestEarnedUsd: a positive figure is
+// a real gain (colored), a flat zero is real but not a gain (shown, not
+// colored), and null is unavailable (shown as --, not colored either).
+const positiveGainPositions = withSupply([supply()]);
+const zeroGainPositions = withSupply([supply({ interestEarnedUsd: 0 })]);
+const unavailableGainPositions = withSupply([
+  supply({ interestEarnedUsd: null }),
+]);
+const unavailableRatePositions = withSupply([supply({ apy: null })]);
+
 const renderTab = (
   props: Partial<React.ComponentProps<typeof AccountPositions>>,
 ) =>
@@ -119,5 +129,50 @@ describe("AccountPositions", () => {
     renderTab({ positions: unpricedPositions });
 
     expect(screen.getByTestId("position-value-USDC")).toHaveTextContent("--");
+  });
+
+  it("colors a real interest gain and shows the amount", () => {
+    renderTab({ positions: positiveGainPositions });
+
+    const gain = screen.getByTestId("position-gain-USDC");
+    expect(gain).toHaveClass("PositionRow__gain--positive");
+    expect(gain).toHaveTextContent("+$0.12");
+  });
+
+  it("shows a flat-zero interest gain without coloring it like a real gain", () => {
+    renderTab({ positions: zeroGainPositions });
+
+    const gain = screen.getByTestId("position-gain-USDC");
+    expect(gain).not.toHaveClass("PositionRow__gain--positive");
+    expect(gain).toHaveTextContent("+$0.00");
+  });
+
+  it("renders an unavailable interest gain as -- without coloring it", () => {
+    renderTab({ positions: unavailableGainPositions });
+
+    const gain = screen.getByTestId("position-gain-USDC");
+    expect(gain).not.toHaveClass("PositionRow__gain--positive");
+    expect(gain).toHaveTextContent("--");
+  });
+
+  it("routes the rate line through translation (not the bare fallback) when the rate is available", () => {
+    renderTab({ positions: positiveGainPositions });
+
+    // react-i18next's t() is mocked in this test env to echo its key
+    // untouched (config/jest/setupTests.tsx) rather than interpolate --
+    // formatRate's own tests cover the actual "16.94%" formatting. This just
+    // proves the available-rate branch (through t()) is taken instead of the
+    // bare "--" fallback.
+    expect(screen.getByTestId("position-apy-USDC")).toHaveTextContent(
+      "{{rate}} APY",
+    );
+  });
+
+  it("renders the rate line as a bare -- when the rate is unavailable, not '-- APY'", () => {
+    renderTab({ positions: unavailableRatePositions });
+
+    const apy = screen.getByTestId("position-apy-USDC");
+    expect(apy).toHaveTextContent("--");
+    expect(apy).not.toHaveTextContent("APY");
   });
 });

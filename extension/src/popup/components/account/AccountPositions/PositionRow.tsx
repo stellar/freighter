@@ -23,7 +23,10 @@ interface PositionRowProps {
  */
 export const PositionRow = ({ row, assetIcons, onClick }: PositionRowProps) => {
   const { t } = useTranslation();
-  const hasGain = row.interestEarnedUsd !== null;
+  // True once a real interest figure exists, including a literal zero -- this
+  // means "the value is known", not "there was a gain". Drives the +$X vs --
+  // text only; color is the separate, stricter check below.
+  const isGainKnown = row.interestEarnedUsd !== null;
   // Mirrors BalanceRow__delta's own rule: a flat zero is real but is not a
   // gain, so it stays neutral like the unavailable case — only a strictly
   // positive figure earns the green.
@@ -37,8 +40,13 @@ export const PositionRow = ({ row, assetIcons, onClick }: PositionRowProps) => {
       assetIcons={assetIcons}
       amount=""
       amountSlot={
-        <span className="PositionRow__apy">
-          {t("{{rate}} APY", { rate: formatRate(row.apy) })}
+        <span
+          className="PositionRow__apy"
+          data-testid={`position-apy-${row.code}`}
+        >
+          {row.apy === null
+            ? "--"
+            : t("{{rate}} APY", { rate: formatRate(row.apy) })}
         </span>
       }
       rightSlot={
@@ -55,7 +63,7 @@ export const PositionRow = ({ row, assetIcons, onClick }: PositionRowProps) => {
             className={`PositionRow__gain ${isPositiveGain ? "PositionRow__gain--positive" : ""}`}
             data-testid={`position-gain-${row.code}`}
           >
-            {hasGain
+            {isGainKnown
               ? `+$${formatAmount(roundUsdValue(String(row.interestEarnedUsd)))}`
               : "--"}
           </div>
