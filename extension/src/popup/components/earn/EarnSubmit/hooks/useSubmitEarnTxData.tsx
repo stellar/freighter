@@ -18,6 +18,7 @@ import {
   submitFreighterSorobanTransaction,
   transactionSubmissionSelector,
 } from "popup/ducks/transactionSubmission";
+import { earnSelector } from "popup/ducks/earn";
 
 interface SubmitEarnTxData {
   status: "success";
@@ -72,6 +73,9 @@ export function useSubmitEarnTxData({
 }) {
   const reduxDispatch = useDispatch<AppDispatch>();
   const { transactionSimulation } = useSelector(transactionSubmissionSelector);
+  // Read directly rather than added as a prop, so EarnSubmit itself needs no
+  // change to hand it through.
+  const { source } = useSelector(earnSelector);
   const [state, dispatch] = useReducer(
     reducer<SubmitEarnTxData, unknown>,
     initialState,
@@ -86,6 +90,7 @@ export function useSubmitEarnTxData({
       assetCode,
       poolId,
       reasonCode: getFailureReasonCode(error),
+      source,
     });
 
   const fetchData = async () => {
@@ -145,6 +150,7 @@ export function useSubmitEarnTxData({
         poolId,
         apy,
         viaSwap,
+        source,
       });
 
       // The deposit moved funds out of the account, so refresh balances. A

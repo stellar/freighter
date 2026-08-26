@@ -15,6 +15,12 @@ import {
 } from "popup/components/earn/helpers/positionRows";
 import { PoolDetailsSheet } from "popup/components/earn/PoolDetailsSheet";
 import { SlideupModal } from "popup/components/SlideupModal";
+import { EARN_SOURCE } from "popup/constants/earn";
+import {
+  trackEarnPoolDetailsOpened,
+  trackEarnPoolDetailsTabSelected,
+} from "popup/metrics/earn";
+import { trackPositionRowSelected } from "popup/metrics/positions";
 import { PositionRow } from "./PositionRow";
 import { EmptyState } from "./EmptyState";
 
@@ -32,8 +38,6 @@ interface AccountPositionsProps {
   hasError: boolean;
   assetIcons: AssetIcons;
   networkDetails: NetworkDetails;
-  /** A row was clicked; opens that position's pool-details sheet (Task 10). */
-  onSelectRow: (row: PositionTokenRow) => void;
   /** Empty state's annual projection in USD; null when there is nothing to total. */
   projectedUsd: string | null;
   /** Empty state's fallback figure — the best rate on offer; null when unknown too. */
@@ -64,7 +68,6 @@ export const AccountPositions = ({
   hasError,
   assetIcons,
   networkDetails,
-  onSelectRow,
   projectedUsd,
   bestApy,
   onStartEarning,
@@ -138,7 +141,15 @@ export const AccountPositions = ({
             row={row}
             assetIcons={assetIcons}
             onClick={() => {
-              onSelectRow(row);
+              trackPositionRowSelected({
+                poolId: row.poolId,
+                protocol: row.protocol,
+                assetCode: row.code,
+              });
+              trackEarnPoolDetailsOpened({
+                poolId: row.poolId,
+                source: EARN_SOURCE.POSITION_ROW,
+              });
               setSelected(row);
             }}
           />
@@ -159,6 +170,13 @@ export const AccountPositions = ({
             defaultTab="your_position"
             onClose={() => setSelected(null)}
             onDeposit={() => onDeposit(selected, selectedPool)}
+            onTabChange={(tab) =>
+              trackEarnPoolDetailsTabSelected({
+                poolId: selectedPool.id,
+                tab,
+                source: EARN_SOURCE.POSITION_ROW,
+              })
+            }
           />
         ) : (
           <div />

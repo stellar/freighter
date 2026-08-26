@@ -5,6 +5,15 @@ import { MAINNET_NETWORK_DETAILS } from "@shared/constants/stellar";
 import { AccountPositions } from "popup/components/account/AccountPositions";
 import { TEST_PUBLIC_KEY, Wrapper } from "popup/__testHelpers__";
 
+jest.mock("popup/metrics/positions", () => ({
+  trackPositionRowSelected: jest.fn(),
+  trackPositionsEmptyCtaSelected: jest.fn(),
+}));
+
+const { trackPositionRowSelected } = jest.requireMock<
+  typeof import("popup/metrics/positions")
+>("popup/metrics/positions");
+
 const POOL_ID = "CAJJZSGMMM3PD7N33TAPHGBUGTB43OC73HVIK2L2G6BNGGGYOSSYBXBD";
 const USDC_SAC = "CCW67TSZV3SSS2HXMBQ5JFGCKJNXKZM7UQUWUZPUTHXSTZLEO7SJMI75";
 const XLM_SAC = "CAS3J7GYLGXMF6TDJBBYYSE3HQ6BBSMLNUQ34T6TZMYMW2EVH34XOWMA";
@@ -83,7 +92,6 @@ const renderTab = (
         hasError={false}
         assetIcons={{}}
         networkDetails={MAINNET_NETWORK_DETAILS}
-        onSelectRow={() => {}}
         projectedUsd={null}
         bestApy={null}
         onStartEarning={() => {}}
@@ -95,6 +103,10 @@ const renderTab = (
   );
 
 describe("AccountPositions", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
   it("spins while the request is in flight", () => {
     renderTab({ isLoading: true });
 
@@ -145,17 +157,26 @@ describe("AccountPositions", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("renders one row per supplied token, each opening its pool", () => {
-    const onSelectRow = jest.fn();
-    renderTab({ positions: twoAssetPositions, onSelectRow });
+  it("renders one row per supplied token", () => {
+    renderTab({ positions: twoAssetPositions });
 
     expect(screen.getByTestId("position-row-USDC")).toBeInTheDocument();
     expect(screen.getByTestId("position-row-XLM")).toBeInTheDocument();
+  });
+
+  it("reports a row tap with the pool it belongs to", () => {
+    // The sheet itself opens from AccountPositions' own state (see
+    // AccountPositions.sheet.test.tsx); this only covers the analytics side of
+    // the same tap.
+    renderTab({ positions: twoAssetPositions });
 
     fireEvent.click(screen.getByTestId("position-row-USDC"));
-    expect(onSelectRow).toHaveBeenCalledWith(
-      expect.objectContaining({ code: "USDC", poolId: POOL_ID }),
-    );
+
+    expect(trackPositionRowSelected).toHaveBeenCalledWith({
+      poolId: POOL_ID,
+      protocol: "blend",
+      assetCode: "USDC",
+    });
   });
 
   it("renders an unavailable value as -- rather than zero", () => {

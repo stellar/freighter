@@ -13,6 +13,7 @@ import { TESTNET_NETWORK_DETAILS } from "@shared/constants/stellar";
 import { RequestState } from "constants/request";
 import { EarnSubmit } from "popup/components/earn/EarnSubmit";
 import { useSubmitEarnTxData } from "popup/components/earn/EarnSubmit/hooks/useSubmitEarnTxData";
+import { EarnSource } from "popup/constants/earn";
 import { initialState as earnInitialState } from "popup/ducks/earn";
 import {
   initialState as transactionSubmissionInitialState,
@@ -96,11 +97,13 @@ const makeState = ({
   hardwareWalletType = WalletType.NONE,
   hwStatus = ShowOverlayStatus.IDLE,
   lastSubmitFailed = false,
+  source = earnInitialState.source,
 }: {
   xdr: string;
   hardwareWalletType?: WalletType;
   hwStatus?: ShowOverlayStatus;
   lastSubmitFailed?: boolean;
+  source?: EarnSource;
 }) => ({
   auth: {
     allAccounts: [{ publicKey: TEST_PUBLIC_KEY, hardwareWalletType }],
@@ -125,7 +128,12 @@ const makeState = ({
       shouldSubmit: true,
     },
   },
-  earn: { ...earnInitialState, pool: { id: POOL_ID }, lastSubmitFailed },
+  earn: {
+    ...earnInitialState,
+    pool: { id: POOL_ID },
+    lastSubmitFailed,
+    source,
+  },
 });
 
 const renderSubmit = ({
@@ -140,6 +148,7 @@ const renderSubmit = ({
   hardwareWalletType?: WalletType;
   hwStatus?: ShowOverlayStatus;
   lastSubmitFailed?: boolean;
+  source?: EarnSource;
 }) =>
   render(
     <Wrapper routes={["/"]} state={makeState({ xdr, ...stateOverrides })}>
@@ -271,6 +280,20 @@ describe("EarnSubmit", () => {
     );
     expect(submittedXdrs()).toEqual([]);
     expect(mockSignSoroban).not.toHaveBeenCalled();
+  });
+
+  it("attributes a completed deposit to where the flow started", async () => {
+    // The submit hook is two screens and one resetSubmission() away from
+    // wherever the flow began, so it reads `source` off the earn slice rather
+    // than receiving it as a prop — see ducks/earn's `source` field.
+    renderSubmit({ xdr: "AAAA-unsigned", source: "position_row" });
+
+    await waitFor(() =>
+      expect(emitMetric).toHaveBeenCalledWith(
+        METRIC_NAMES.earnDepositCompleted,
+        expect.objectContaining({ source: "position_row" }),
+      ),
+    );
   });
 });
 /**

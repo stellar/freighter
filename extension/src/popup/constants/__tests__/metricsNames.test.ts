@@ -53,6 +53,9 @@ describe("METRIC_NAMES domain-event catalog", () => {
     );
     expect(METRIC_NAMES.earnSwapCompleted).toBe("earn.swap_completed");
     expect(METRIC_NAMES.earnPoolDetailsOpened).toBe("earn.pool_details_opened");
+    expect(METRIC_NAMES.earnPoolDetailsTabSelected).toBe(
+      "earn.pool_details_tab_selected",
+    );
     expect(METRIC_NAMES.earnMaxAmountSelected).toBe("earn.max_amount_selected");
     expect(METRIC_NAMES.earnXlmFeeInsufficientShown).toBe(
       "earn.xlm_fee_insufficient_shown",
@@ -62,6 +65,13 @@ describe("METRIC_NAMES domain-event catalog", () => {
     expect(METRIC_NAMES.earnDepositFailed).toBe("earn.deposit_failed");
     expect(METRIC_NAMES.earnDepositDismissed).toBe(
       "earn.deposit_processing_dismissed",
+    );
+  });
+
+  it("names the positions-tab events (the top of the deposit funnel)", () => {
+    expect(METRIC_NAMES.positionRowSelected).toBe("positions.row_selected");
+    expect(METRIC_NAMES.positionsEmptyCtaSelected).toBe(
+      "positions.empty_cta_selected",
     );
   });
 

@@ -34,6 +34,38 @@ export const isEarnPrefillSearch = (search: string) =>
   new URLSearchParams(search).get(EARN_PREFILL_KEY) === "1";
 
 /**
+ * Where a deposit flow began. Carried on the deposit outcomes so a deposit
+ * started from Home's Earn button can be told from one started on the Positions
+ * tab.
+ *
+ * Same shape as DISCOVER_SOURCE in popup/metrics/discover.ts — a const object
+ * and a derived union, emitted as `source`.
+ */
+export const EARN_SOURCE = {
+  HOME: "home",
+  POSITION_ROW: "position_row",
+  POSITIONS_EMPTY: "positions_empty",
+} as const;
+
+export type EarnSource = (typeof EARN_SOURCE)[keyof typeof EARN_SOURCE];
+
+export const EARN_SOURCE_KEY = "source";
+
+/**
+ * Which entry point opened the flow. Read once at mount by `views/Earn` — the
+ * view rewrites its own search when the swap branch opens and closes, so a
+ * later read finds nothing. An unrecognised or absent value means Home, which
+ * is the entry point that passes no param at all.
+ */
+export const getEarnSourceFromSearch = (search: string): EarnSource => {
+  const value = new URLSearchParams(search).get(EARN_SOURCE_KEY);
+  return value === EARN_SOURCE.POSITION_ROW ||
+    value === EARN_SOURCE.POSITIONS_EMPTY
+    ? value
+    : EARN_SOURCE.HOME;
+};
+
+/**
  * Steps in the Earn deposit flow.
  *
  * Modelled on Send (`constants/send-payment.ts`) rather than Swap: every visited

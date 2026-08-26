@@ -5,7 +5,11 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { getCanonicalFromAsset } from "@shared/helpers/stellar";
 import { getAssetFromCanonical } from "helpers/stellar";
 import { ROUTES } from "popup/constants/routes";
-import { isEarnPrefillSearch, STEPS } from "popup/constants/earn";
+import {
+  getEarnSourceFromSearch,
+  isEarnPrefillSearch,
+  STEPS,
+} from "popup/constants/earn";
 import { navigateTo } from "popup/helpers/navigate";
 import { emitScreenViewed, ScreenViewedProps } from "helpers/metrics";
 import { ActionStatus } from "@shared/api/types";
@@ -22,6 +26,7 @@ import {
   resetEarn,
   saveCurrentPositionTokens,
   saveEarnPool,
+  saveEarnSource,
   saveSelectedAssetApy,
   saveSelectedAssetId,
   setDidSwapInFlow,
@@ -78,11 +83,14 @@ export const Earn = () => {
   const { t } = useTranslation();
   const { hasSeenIntro, dismissIntro } = useEarnIntroSeen();
   const submission = useSelector(transactionSubmissionSelector);
-  const { pool, selectedAssetId } = useSelector(earnSelector);
+  const { pool, selectedAssetId, source } = useSelector(earnSelector);
 
   // Read once at mount: the view rewrites its own search when the swap branch
   // opens and closes, so the flag is gone by the time any later render looks.
   const isPrefilled = useRef(isEarnPrefillSearch(location.search)).current;
+  // Same reasoning as isPrefilled above, and it also self-corrects when the
+  // user leaves by browser-back without closeEarnFlow running its resetEarn().
+  const earnSource = useRef(getEarnSourceFromSearch(location.search)).current;
 
   // Start on CHOOSE_TOKEN and only fall back to the interstitial once the
   // persisted flag has actually resolved to false. Defaulting to INTRO instead
@@ -121,6 +129,10 @@ export const Earn = () => {
     dispatch(resetSubmission());
     navigateTo(ROUTES.account, navigate);
   };
+
+  useEffect(() => {
+    dispatch(saveEarnSource(earnSource));
+  }, [dispatch, earnSource]);
 
   useEffect(() => {
     // A prefilled entry arrives with transactionData already populated by the
@@ -173,6 +185,7 @@ export const Earn = () => {
         assetCode: getAssetFromCanonical(submission.transactionData.asset).code,
         poolId: pool?.id || "",
         reasonCode: getFailureReasonCode(submission.error),
+        source,
       });
     }
     dispatch(setEarnSubmitFailed(true));

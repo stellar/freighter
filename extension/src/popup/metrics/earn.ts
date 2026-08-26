@@ -1,6 +1,7 @@
 import { emitMetric } from "helpers/metrics";
-import { NotEnoughVariant } from "popup/constants/earn";
+import { EarnSource, NotEnoughVariant } from "popup/constants/earn";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
+import { PoolDetailsTab } from "popup/components/earn/PoolDetailsSheet/Tabs";
 
 /**
  * Emitters for the Earn deposit funnel.
@@ -87,6 +88,35 @@ export const trackEarnSwapCompleted = ({
   emitMetric(METRIC_NAMES.earnSwapCompleted, {
     from_asset_code: fromAssetCode,
     to_asset_code: toAssetCode,
+  });
+};
+
+export const trackEarnPoolDetailsOpened = ({
+  poolId,
+  source,
+}: {
+  poolId: string;
+  source: EarnSource;
+}) => {
+  emitMetric(METRIC_NAMES.earnPoolDetailsOpened, {
+    pool_id: poolId,
+    source,
+  });
+};
+
+export const trackEarnPoolDetailsTabSelected = ({
+  poolId,
+  tab,
+  source,
+}: {
+  poolId: string;
+  tab: PoolDetailsTab;
+  source: EarnSource;
+}) => {
+  emitMetric(METRIC_NAMES.earnPoolDetailsTabSelected, {
+    pool_id: poolId,
+    tab,
+    source,
   });
 };
 
@@ -181,18 +211,22 @@ export const trackEarnDepositCompleted = ({
   poolId,
   apy,
   viaSwap,
+  source,
 }: {
   assetCode: string;
   poolId: string;
   apy: number | null;
   /** The deposited balance was created by the swap branch in this same flow. */
   viaSwap: boolean;
+  /** Where the flow began — Home's Earn button or a Positions row/empty CTA. */
+  source: EarnSource;
 }) => {
   emitMetric(METRIC_NAMES.earnDepositCompleted, {
     asset_code: assetCode,
     pool_id: poolId,
     apy,
     via_swap: viaSwap,
+    source,
   });
 };
 
@@ -208,14 +242,18 @@ export const trackEarnDepositFailed = ({
   assetCode,
   poolId,
   reasonCode,
+  source,
 }: {
   assetCode: string;
   poolId: string;
   reasonCode: string;
+  /** Where the flow began — Home's Earn button or a Positions row/empty CTA. */
+  source: EarnSource;
 }) => {
   emitMetric(METRIC_NAMES.earnDepositFailed, {
     asset_code: assetCode,
     pool_id: poolId,
     reason_code: reasonCode,
+    source,
   });
 };

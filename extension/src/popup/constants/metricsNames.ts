@@ -53,7 +53,12 @@ export const METRIC_NAMES = {
   // The swap-within-earn branch settled. Distinct from `swap.completed`, which
   // the reused Swap components emit and cannot attribute to Earn.
   earnSwapCompleted: "earn.swap_completed",
+  // The pool details sheet was opened, and which entry point opened it.
   earnPoolDetailsOpened: "earn.pool_details_opened",
+  // A tap that CHANGED the sheet's tab. Never emitted for the default tab, and
+  // never for a tap on the tab already active — either would inflate the count
+  // with no-ops and make "did anyone open Overview?" unanswerable.
+  earnPoolDetailsTabSelected: "earn.pool_details_tab_selected",
   // The Max tap on the amount screen, and only that tap — the 25/50/75
   // shortcuts emit nothing, matching Send, Swap and mobile (RFC #2883, D5).
   // `percent` is always 100; it is kept for payload symmetry with mobile.
@@ -69,6 +74,13 @@ export const METRIC_NAMES = {
   // event for the same attempt normally still follows. Only closing the popup
   // outright loses the outcome.
   earnDepositDismissed: "earn.deposit_processing_dismissed",
+
+  // -- Positions -----------------------------------------------------------
+  // The Home tab listing the account's supplied tokens. `earn.*` events cover
+  // what happens after one of these leads into the deposit flow; the `source`
+  // dimension on the deposit outcomes is what joins the two.
+  positionRowSelected: "positions.row_selected",
+  positionsEmptyCtaSelected: "positions.empty_cta_selected",
 
   // -- Collectibles --------------------------------------------------------
   collectibleSendCompleted: "collectible_send.completed",

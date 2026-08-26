@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
 import { ROUTES } from "popup/constants/routes";
+import { EARN_SOURCE, EARN_SOURCE_KEY } from "popup/constants/earn";
 import { navigateTo } from "popup/helpers/navigate";
 import { formatRate } from "popup/components/earn/helpers/formatPoolStats";
 import { formatAmount } from "popup/helpers/formatters";
@@ -13,7 +14,7 @@ interface EmptyStateProps {
   projectedUsd: string | null;
   /** Best rate on offer — the fallback figure, and null when even that is unknown. */
   bestApy: number | null;
-  /** Fired when the CTA is pressed, before it navigates to Earn (Task 12 wires this up). */
+  /** Fired when the CTA is pressed, before it navigates to Earn. */
   onStartEarning: () => void;
 }
 
@@ -27,8 +28,8 @@ interface EmptyStateProps {
  * rather than rendering blank.
  *
  * The CTA's navigation lives here, in one place, rather than behind a prop —
- * Task 12 only has to touch this one call site to add its analytics `source`
- * query param.
+ * which is why Task 12 only had to touch this one call site to add the
+ * `source` query param the deposit funnel attributes back to this CTA.
  */
 export const EmptyState = ({
   projectedUsd,
@@ -80,7 +81,11 @@ export const EmptyState = ({
           isRounded
           onClick={() => {
             onStartEarning();
-            navigateTo(ROUTES.earn, navigate);
+            navigateTo(
+              ROUTES.earn,
+              navigate,
+              `?${EARN_SOURCE_KEY}=${EARN_SOURCE.POSITIONS_EMPTY}`,
+            );
           }}
           data-testid="account-positions-start-earning"
         >

@@ -57,7 +57,12 @@ import { AppDataType } from "helpers/hooks/useGetAppData";
 import { AccountBalances } from "helpers/hooks/useGetBalances";
 import { MultiPaneSlider } from "popup/components/SlidingPaneSwitcher";
 import { ROUTES } from "popup/constants/routes";
-import { EARN_PREFILL_QUERY } from "popup/constants/earn";
+import {
+  EARN_PREFILL_QUERY,
+  EARN_SOURCE,
+  EARN_SOURCE_KEY,
+} from "popup/constants/earn";
+import { trackPositionsEmptyCtaSelected } from "popup/metrics/positions";
 
 import { useGetAccountData, RequestState } from "./hooks/useGetAccountData";
 import { useGetAccountHistoryData } from "./hooks/useGetAccountHistoryData";
@@ -314,7 +319,11 @@ export const Account = () => {
     // routes the flow down the Soroban path rather than the classic one.
     dispatch(saveDestination(row.poolId));
     dispatch(saveIsToken(true));
-    navigateTo(ROUTES.earn, navigate, EARN_PREFILL_QUERY);
+    navigateTo(
+      ROUTES.earn,
+      navigate,
+      `${EARN_PREFILL_QUERY}&${EARN_SOURCE_KEY}=${EARN_SOURCE.POSITION_ROW}`,
+    );
   };
 
   return (
@@ -425,13 +434,9 @@ export const Account = () => {
                   hasError={!!resolvedData?.hasPositionsError}
                   assetIcons={resolvedIcons}
                   networkDetails={networkDetails}
-                  // The pool-details sheet opens from inside AccountPositions
-                  // itself (Task 10); reserved for a future analytics hook.
-                  onSelectRow={() => {}}
                   projectedUsd={projection.usd}
                   bestApy={projection.bestApy}
-                  // Task 12 wires this to an analytics event.
-                  onStartEarning={() => {}}
+                  onStartEarning={trackPositionsEmptyCtaSelected}
                   pools={resolvedData?.pools ?? []}
                   onDeposit={onDepositFromPosition}
                 />

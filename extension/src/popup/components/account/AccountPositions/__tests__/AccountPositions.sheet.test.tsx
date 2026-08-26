@@ -9,7 +9,11 @@ import { AccountPositions } from "popup/components/account/AccountPositions";
 import { PositionTokenRow } from "popup/components/earn/helpers/positionRows";
 import { TEST_PUBLIC_KEY, Wrapper, getTestStore } from "popup/__testHelpers__";
 import { ROUTES } from "popup/constants/routes";
-import { EARN_PREFILL_QUERY } from "popup/constants/earn";
+import {
+  EARN_PREFILL_QUERY,
+  EARN_SOURCE,
+  EARN_SOURCE_KEY,
+} from "popup/constants/earn";
 import { navigateTo } from "popup/helpers/navigate";
 import {
   resetSubmission,
@@ -22,6 +26,24 @@ import {
   saveSelectedAssetApy,
   saveSelectedAssetId,
 } from "popup/ducks/earn";
+
+jest.mock("popup/metrics/positions", () => ({
+  trackPositionRowSelected: jest.fn(),
+  trackPositionsEmptyCtaSelected: jest.fn(),
+}));
+
+jest.mock("popup/metrics/earn", () => ({
+  ...jest.requireActual("popup/metrics/earn"),
+  trackEarnPoolDetailsOpened: jest.fn(),
+  trackEarnPoolDetailsTabSelected: jest.fn(),
+}));
+
+const { trackPositionRowSelected } = jest.requireMock<
+  typeof import("popup/metrics/positions")
+>("popup/metrics/positions");
+
+const { trackEarnPoolDetailsOpened, trackEarnPoolDetailsTabSelected } =
+  jest.requireMock<typeof import("popup/metrics/earn")>("popup/metrics/earn");
 
 const POOL_ID = "CAJJZSGMMM3PD7N33TAPHGBUGTB43OC73HVIK2L2G6BNGGGYOSSYBXBD";
 const USDC_SAC = "CCW67TSZV3SSS2HXMBQ5JFGCKJNXKZM7UQUWUZPUTHXSTZLEO7SJMI75";
@@ -100,7 +122,11 @@ const onDeposit = (row: PositionTokenRow, depositPool: BlendCatalogPool) => {
   store.dispatch(saveAsset(getCanonicalFromAsset(row.code, row.issuer)));
   store.dispatch(saveDestination(row.poolId));
   store.dispatch(saveIsToken(true));
-  navigateTo(ROUTES.earn, mockNavigate, EARN_PREFILL_QUERY);
+  navigateTo(
+    ROUTES.earn,
+    mockNavigate,
+    `${EARN_PREFILL_QUERY}&${EARN_SOURCE_KEY}=${EARN_SOURCE.POSITION_ROW}`,
+  );
 };
 
 const renderTab = (
@@ -114,7 +140,6 @@ const renderTab = (
         hasError={false}
         assetIcons={{}}
         networkDetails={MAINNET_NETWORK_DETAILS}
-        onSelectRow={() => {}}
         projectedUsd={null}
         bestApy={null}
         onStartEarning={() => {}}
@@ -126,6 +151,10 @@ const renderTab = (
   );
 
 describe("AccountPositions pool sheet", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
   it("opens the pool sheet on Your position when a row is tapped", async () => {
     renderTab({ positions: twoAssetPositions, pools: [pool] });
 
@@ -138,6 +167,32 @@ describe("AccountPositions pool sheet", () => {
     expect(screen.getByTestId("earn-position-balance")).toHaveTextContent(
       "$500.12",
     );
+    // Both the funnel's top-of-page tap and the sheet it opens are attributed
+    // to the Positions row that started this flow.
+    expect(trackPositionRowSelected).toHaveBeenCalledWith({
+      poolId: POOL_ID,
+      protocol: "blend",
+      assetCode: "USDC",
+    });
+    expect(trackEarnPoolDetailsOpened).toHaveBeenCalledWith({
+      poolId: POOL_ID,
+      source: "position_row",
+    });
+  });
+
+  it("attributes a tab switch on the sheet to the position row that opened it", async () => {
+    renderTab({ positions: twoAssetPositions, pools: [pool] });
+
+    fireEvent.click(screen.getByTestId("position-row-USDC"));
+    fireEvent.click(
+      await screen.findByTestId("earn-pool-details-tab-overview"),
+    );
+
+    expect(trackEarnPoolDetailsTabSelected).toHaveBeenCalledWith({
+      poolId: POOL_ID,
+      tab: "overview",
+      source: "position_row",
+    });
   });
 
   it("prefills the deposit and lands on the amount screen", async () => {
@@ -156,7 +211,7 @@ describe("AccountPositions pool sheet", () => {
       POOL_ID,
     );
     expect(mockNavigate).toHaveBeenCalledWith(
-      expect.stringContaining("/earn?prefill=1"),
+      expect.stringContaining("/earn?prefill=1&source=position_row"),
     );
   });
 });

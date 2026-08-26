@@ -1,6 +1,7 @@
 import { createSlice } from "@reduxjs/toolkit";
 
 import { BlendCatalogPool } from "@shared/api/types/blend";
+import { EARN_SOURCE, EarnSource } from "popup/constants/earn";
 
 /**
  * Earn-domain state that has no home in `transactionSubmission`.
@@ -53,6 +54,19 @@ export interface EarnState {
    * emitted from the submit hook, two screens and one `resetSubmission()` apart.
    */
   didSwapInFlow: boolean;
+  /**
+   * Where this deposit flow began — Home's Earn button or a Positions row/empty
+   * CTA. The `source` dimension on `earn.deposit_completed` / `earn.deposit_failed`.
+   *
+   * Lives here for the same reason `didSwapInFlow` does: those outcomes are
+   * emitted from the submit hook and from the Earn view's submit-status effect,
+   * both several screens and one `resetSubmission()` away from wherever the flow
+   * actually started. `views/Earn` sets it once at mount from the URL (see
+   * `getEarnSourceFromSearch`) rather than a caller dispatching it before
+   * navigating, because that view rewrites its own search string when the swap
+   * branch opens and closes, which would carry away a flag set any other way.
+   */
+  source: EarnSource;
 }
 
 export const initialState: EarnState = {
@@ -63,6 +77,7 @@ export const initialState: EarnState = {
   hasSeenIntro: null,
   lastSubmitFailed: false,
   didSwapInFlow: false,
+  source: EARN_SOURCE.HOME,
 };
 
 const earnSlice = createSlice({
@@ -90,6 +105,9 @@ const earnSlice = createSlice({
     setDidSwapInFlow: (state, action: { payload: boolean }) => {
       state.didSwapInFlow = action.payload;
     },
+    saveEarnSource: (state, action: { payload: EarnSource }) => {
+      state.source = action.payload;
+    },
     /**
      * Resets everything except `hasSeenIntro` — that flag is persisted in the
      * background store and re-reading it on every flow entry would reintroduce
@@ -110,6 +128,7 @@ export const {
   setEarnIntroSeen,
   setEarnSubmitFailed,
   setDidSwapInFlow,
+  saveEarnSource,
   resetEarn,
 } = earnSlice.actions;
 
