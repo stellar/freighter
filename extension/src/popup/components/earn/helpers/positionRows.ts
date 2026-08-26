@@ -5,6 +5,7 @@ import { NetworkDetails } from "@shared/constants/stellar";
 import { CLASSIC_ASSET_DECIMALS } from "popup/helpers/soroban";
 
 import { getCatalogAssetIdentity } from "./earnAssetIcons";
+import { headlineApy } from "./formatPoolStats";
 
 /** One row on the Positions tab. */
 export interface PositionTokenRow {
@@ -22,18 +23,6 @@ export interface PositionTokenRow {
   apy: number | null;
   interestEarnedUsd: number | null;
 }
-
-/**
- * The headline rate is supply interest plus BLND emissions.
- *
- * A null `apy` means no fresh oracle price, so the whole rate is unknown. A null
- * `emissionsApr` means the stream exists but cannot be priced — treated as zero,
- * which understates rather than blanking an otherwise known rate. Identical to
- * `headlineApy` in useGetEarnTokensData; kept separate because the two read
- * different payloads.
- */
-const headlineApy = (apy: number | null, emissionsApr: number | null) =>
-  apy === null ? null : apy + (emissionsApr ?? 0);
 
 const toRow = ({
   row,
@@ -71,6 +60,7 @@ const toRow = ({
       .dividedBy(new BigNumber(10).pow(decimals))
       .toFixed(),
     suppliedUsd: row.usdValue,
+    // headlineApy: the null-is-not-zero exception -- see formatPoolStats.ts.
     apy: headlineApy(row.apy, row.emissionsApr),
     interestEarnedUsd: row.interestEarnedUsd,
   };

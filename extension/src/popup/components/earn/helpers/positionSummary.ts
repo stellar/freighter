@@ -6,6 +6,7 @@ import { CLASSIC_ASSET_DECIMALS } from "popup/helpers/soroban";
 import { projectEarnings } from "popup/components/earn/EarnReview/helpers/projectEarnings";
 
 import { getCatalogAssetIdentity } from "./earnAssetIcons";
+import { headlineApy } from "./formatPoolStats";
 
 export type PositionScope = "supply" | "pool";
 
@@ -119,9 +120,6 @@ const toEarningsRow = (
   };
 };
 
-const headlineApy = (apy: number | null, emissionsApr: number | null) =>
-  apy === null ? null : apy + (emissionsApr ?? 0);
-
 /**
  * The rows this summary is scoped to. The ONLY place the focused-asset
  * resolution rule lives — `getPositionSummary` and `hasResolvableSupply`
@@ -197,6 +195,7 @@ export const getPositionSummary = ({
 
   const currentBalanceUsd =
     scope === "pool" ? position.netUsd : (rows[0]?.usdValue ?? null);
+  // headlineApy: the null-is-not-zero exception -- see formatPoolStats.ts.
   const apy =
     scope === "pool"
       ? position.netApy

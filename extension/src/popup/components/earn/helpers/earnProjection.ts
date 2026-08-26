@@ -7,19 +7,20 @@ import { NetworkDetails } from "@shared/constants/stellar";
 import { getBalanceByKey } from "popup/helpers/balance";
 
 import { getCatalogAssetIdentity } from "./earnAssetIcons";
+import { headlineApy } from "./formatPoolStats";
 
 /**
  * The headline rate for one catalog option: the best pool's supply APY plus
- * its emissions. A pool with no fresh price (`supplyApy === null`) is
- * skipped rather than folded in as zero. Null when the option has no priced
- * pool at all.
+ * its emissions (`headlineApy` in formatPoolStats.ts owns the null-is-not-zero
+ * exception). A pool with no fresh price is skipped rather than folded in as
+ * zero. Null when the option has no priced pool at all.
  */
 const bestApyForOption = (option: BlendEarnAssetOption): number | null =>
   option.pools.reduce<number | null>((best, pool) => {
-    if (pool.supplyApy === null) {
+    const rate = headlineApy(pool.supplyApy, pool.emissionsSupplyApr);
+    if (rate === null) {
       return best;
     }
-    const rate = pool.supplyApy + (pool.emissionsSupplyApr ?? 0);
     return best === null || rate > best ? rate : best;
   }, null);
 

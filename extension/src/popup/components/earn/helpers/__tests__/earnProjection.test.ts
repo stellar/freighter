@@ -9,7 +9,11 @@ const USDC_SAC = PUBLIC_SACS.USDC!;
 const XLM_SAC = PUBLIC_SACS.XLM;
 const USDC_ISSUER = "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN";
 
-const option = (assetId: string, apys: number[], symbol: string | null) => ({
+const option = (
+  assetId: string,
+  apys: (number | null)[],
+  symbol: string | null,
+) => ({
   assetId,
   symbol,
   name: symbol ? `${symbol}:${USDC_ISSUER}` : null,
@@ -50,9 +54,23 @@ describe("getBestEarnApy", () => {
     ).toBeCloseTo(0.1694);
   });
 
-  it("returns null when no pool has a priced rate", () => {
-    // Null is "unknown", not "zero" — the card must not promise 0%.
+  it("returns null when the option has no pools at all", () => {
+    // Empty `pools` exercises the reduce's own initial value, not the
+    // pool.supplyApy === null skip branch below -- see that test instead.
     expect(getBestEarnApy([option(USDC_SAC, [], "USDC")])).toBeNull();
+  });
+
+  it("skips a pool with no priced rate rather than treating it as zero (T7-c)", () => {
+    // Null is "unknown", not "zero" — the card must not promise 0% by folding
+    // an unpriced pool into the comparison. Mixed with a priced pool so the
+    // skip branch is actually exercised, not just the empty-array case above.
+    expect(
+      getBestEarnApy([option(USDC_SAC, [null, 0.1694], "USDC")]),
+    ).toBeCloseTo(0.1694);
+  });
+
+  it("returns null when every pool has an unpriced rate", () => {
+    expect(getBestEarnApy([option(USDC_SAC, [null, null], "USDC")])).toBeNull();
   });
 });
 

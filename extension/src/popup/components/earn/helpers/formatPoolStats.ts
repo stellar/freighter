@@ -55,3 +55,19 @@ export const formatRate = (rate: number | null): string =>
   rate === null
     ? NO_FIAT_VALUE
     : `${new BigNumber(rate).times(100).toFormat(2)}%`;
+
+/**
+ * The headline rate is supply interest plus BLND emissions. This is the
+ * branch's ONE deliberate exception to "null is not zero" (see the other
+ * helpers on this file, and every call site's own comment): a null `rate`
+ * means no fresh oracle price, so the whole rate is unknown and stays null.
+ * A null `emissions` means the stream exists but cannot be priced — treated
+ * as zero, which understates rather than blanks an otherwise known rate.
+ *
+ * One implementation so that a future decision to blank the rate on null
+ * emissions instead cannot silently miss a call site (I5).
+ */
+export const headlineApy = (
+  rate: number | null,
+  emissions: number | null,
+): number | null => (rate === null ? null : rate + (emissions ?? 0));
