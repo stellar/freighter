@@ -457,6 +457,91 @@ export const KeyValueInvokeHostFnArgs = ({
   );
 };
 
+/**
+ * Explains that a CAP-85 externally managed executable is not pinned by the
+ * transaction being signed. Rendered as a full-width banner so the text wraps
+ * instead of being truncated in the right-aligned value column.
+ */
+export const ExternalExecutableNote = () => {
+  const { t } = useTranslation();
+
+  return (
+    <div className="ExecutableNote" data-testid="ExternalExecutableNote">
+      <Icon.InfoCircle aria-hidden="true" />
+      <span>
+        {t(
+          "This contract's code is managed by the owner contract above and can change after you sign.",
+        )}
+      </span>
+    </div>
+  );
+};
+
+/**
+ * Renders the executable of a contract-creation host function. CAP-85
+ * (protocol 28) adds a third arm whose code lives behind a reference into
+ * another contract's storage -- we show the owner and tag that identify the
+ * reference, and deliberately no wasm hash, because the owner can change the
+ * code the reference resolves to after this transaction is signed.
+ */
+const ExecutableDetails = ({
+  executable,
+}: {
+  executable: xdr.ContractExecutable;
+}) => {
+  const { t } = useTranslation();
+
+  const wasmHash =
+    executable.type === "contractExecutableWasm"
+      ? xdr.encodeBytes(executable.wasmHash.toBytes(), "hex")
+      : null;
+  const externalRef =
+    executable.type === "contractExecutableExternalRef"
+      ? executable.externalRef
+      : null;
+  const externalRefOwner = externalRef
+    ? addressToString(externalRef.executableOwner)
+    : null;
+
+  return (
+    <>
+      <KeyValueList
+        operationKey={t("Executable Type")}
+        operationValue={executable.type}
+      />
+      {wasmHash && (
+        <KeyValueList
+          operationKey={t("Executable Wasm Hash")}
+          operationValue={
+            <CopyValue
+              value={wasmHash}
+              displayValue={truncateString(wasmHash, 8)}
+            />
+          }
+        />
+      )}
+      {externalRef && externalRefOwner && (
+        <>
+          <KeyValueList
+            operationKey={t("Executable Owner")}
+            operationValue={
+              <CopyValue
+                value={externalRefOwner}
+                displayValue={truncateString(externalRefOwner)}
+              />
+            }
+          />
+          <KeyValueList
+            operationKey={t("Executable Tag")}
+            operationValue={externalRef.tag.toString()}
+          />
+          <ExternalExecutableNote />
+        </>
+      )}
+    </>
+  );
+};
+
 export const KeyValueInvokeHostFn = ({
   op,
 }: {
@@ -474,11 +559,6 @@ export const KeyValueInvokeHostFn = ({
         const preimage = createContractArgs.contractIdPreimage;
         const executable = createContractArgs.executable;
         const createV2Args = createContractArgs.constructorArgs;
-        const executableType = executable.type;
-        const wasmHash =
-          executable.type === "contractExecutableWasm"
-            ? xdr.encodeBytes(executable.wasmHash.toBytes(), "hex")
-            : null;
 
         if (preimage.type === "contractIdPreimageFromAddress") {
           const preimageFromAddress = preimage.fromAddress;
@@ -511,21 +591,7 @@ export const KeyValueInvokeHostFn = ({
                     />
                   }
                 />
-                <KeyValueList
-                  operationKey={t("Executable Type")}
-                  operationValue={executableType}
-                />
-                {wasmHash && (
-                  <KeyValueList
-                    operationKey={t("Executable Wasm Hash")}
-                    operationValue={
-                      <CopyValue
-                        value={wasmHash}
-                        displayValue={truncateString(wasmHash, 8)}
-                      />
-                    }
-                  />
-                )}
+                <ExecutableDetails executable={executable} />
               </>
             );
           }
@@ -549,21 +615,7 @@ export const KeyValueInvokeHostFn = ({
                   />
                 }
               />
-              <KeyValueList
-                operationKey={t("Executable Type")}
-                operationValue={executableType}
-              />
-              {wasmHash && (
-                <KeyValueList
-                  operationKey={t("Executable Wasm Hash")}
-                  operationValue={
-                    <CopyValue
-                      value={wasmHash}
-                      displayValue={truncateString(wasmHash, 8)}
-                    />
-                  }
-                />
-              )}
+              <ExecutableDetails executable={executable} />
               {createV2Args && <KeyValueInvokeHostFnArgs args={createV2Args} />}
             </>
           );
@@ -614,21 +666,7 @@ export const KeyValueInvokeHostFn = ({
               </>
             ) : null}
 
-            <KeyValueList
-              operationKey={t("Executable Type")}
-              operationValue={executableType}
-            />
-            {wasmHash && (
-              <KeyValueList
-                operationKey={t("Executable Wasm Hash")}
-                operationValue={
-                  <CopyValue
-                    value={wasmHash}
-                    displayValue={truncateString(wasmHash, 8)}
-                  />
-                }
-              />
-            )}
+            <ExecutableDetails executable={executable} />
             {createV2Args && <KeyValueInvokeHostFnArgs args={createV2Args} />}
           </>
         );

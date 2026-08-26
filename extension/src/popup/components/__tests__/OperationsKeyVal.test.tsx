@@ -12,6 +12,9 @@ import {
 } from "@shared/constants/stellar";
 import { ROUTES } from "popup/constants/routes";
 
+const OWNER_CONTRACT =
+  "CA3D5KRYM6CB7OWQ6TWYRR3Z4T7GNZLKERYNZGGA5SOAOPIFY6YQGAXE";
+
 describe("Operations KeyVal", () => {
   describe("InvokeHostFunction", () => {
     afterAll(() => {
@@ -146,6 +149,63 @@ describe("Operations KeyVal", () => {
         "[data-testid='OperationKeyVal__value']",
       );
       expect(execTypeValue).toHaveTextContent("contractExecutableStellarAsset");
+    });
+
+    it("renders create contract with a CAP-85 external executable ref", async () => {
+      const tag = "v2";
+      const func = xdr.HostFunction.hostFunctionTypeCreateContractV2(
+        new xdr.CreateContractArgsV2({
+          contractIdPreimage:
+            xdr.ContractIdPreimage.contractIdPreimageFromAddress(
+              new xdr.ContractIdPreimageFromAddress({
+                address: new Address(TEST_PUBLIC_KEY).toScAddress(),
+                salt: Buffer.alloc(32),
+              }),
+            ),
+          executable: xdr.ContractExecutable.contractExecutableExternalRef(
+            new xdr.ContractExecutableExternalRef({
+              executableOwner: new Address(OWNER_CONTRACT).toScAddress(),
+              tag,
+            }),
+          ),
+          constructorArgs: [],
+        }),
+      );
+
+      const op = {
+        func,
+      } as Operation.InvokeHostFunction;
+
+      render(<KeyValueInvokeHostFn op={op} />);
+      await waitFor(() => screen.getAllByTestId("OperationKeyVal"));
+
+      const execType = screen.getByText("Executable Type");
+      expect(
+        execType.parentNode?.querySelector(
+          "[data-testid='OperationKeyVal__value']",
+        ),
+      ).toHaveTextContent("contractExecutableExternalRef");
+
+      const ownerLabel = screen.getByText("Executable Owner");
+      expect(
+        ownerLabel.parentNode?.querySelector(
+          "[data-testid='OperationKeyVal__value']",
+        ),
+      ).toHaveTextContent("CA3D…GAXE");
+
+      const tagLabel = screen.getByText("Executable Tag");
+      expect(
+        tagLabel.parentNode?.querySelector(
+          "[data-testid='OperationKeyVal__value']",
+        ),
+      ).toHaveTextContent(tag);
+
+      // A ref pins no code, so there must be no wasm hash claiming otherwise,
+      // and the note must say so explicitly.
+      expect(
+        screen.queryByText("Executable Wasm Hash"),
+      ).not.toBeInTheDocument();
+      expect(screen.getByTestId("ExternalExecutableNote")).toBeInTheDocument();
     });
 
     describe("invoke contract - Contract ID truncation", () => {

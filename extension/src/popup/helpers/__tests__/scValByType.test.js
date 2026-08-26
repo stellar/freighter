@@ -100,4 +100,10 @@ describe("scValByType", () => {
     const parsedVoid = scValByType(scvNull);
     expect(parsedVoid).toEqual(null);
   });
+  it("should render a CAP-85 executable tag as a string", () => {
+    const tag = "v2";
+    const scvTag = xdr.ScVal.scvExecutableTag(tag);
+    const parsedTag = scValByType(scvTag);
+    expect(parsedTag).toEqual(tag);
+  });
 });

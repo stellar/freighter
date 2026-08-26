@@ -1,4 +1,5 @@
 import BigNumber from "bignumber.js";
+import { captureException } from "@sentry/browser";
 import {
   Address,
   Asset,
@@ -555,6 +556,33 @@ export function buildInvocationTree(root: xdr.SorobanAuthorizedInvocation) {
           break;
         }
 
+        case "contractExecutableExternalRef": {
+          const { executableOwner, tag } = exec.externalRef;
+
+          output.args.type = "externalRef";
+          output.args.externalRef = {
+            owner: Address.fromScAddress(executableOwner).toString(),
+            tag: tag.toString(),
+          };
+          // The preimage arm is independent of the executable arm, so only
+          // read it when it is a shape we can describe.
+          if (preimage.type === "contractIdPreimageFromAddress") {
+            const details = preimage.fromAddress;
+            output.args.externalRef.address = Address.fromScAddress(
+              details.address,
+            ).toString();
+            output.args.externalRef.salt = xdr.encodeBytes(
+              details.salt.toBytes(),
+              "hex",
+            );
+          }
+          if (isCreateV2) {
+            const v2Args = _inner as xdr.CreateContractArgsV2;
+            output.args.constructorArgs = v2Args.constructorArgs;
+          }
+          break;
+        }
+
         default:
           throw new Error(`unknown creation type: ${JSON.stringify(exec)}`);
       }
@@ -601,6 +629,10 @@ export const scValByType = (scVal: xdr.ScVal) => {
 
     case "scvError": {
       return scVal.error.value;
+    }
+
+    case "scvExecutableTag": {
+      return scVal.executableTag.toString();
     }
 
     case "scvTimepoint":
@@ -735,9 +767,16 @@ export function getInvocationDetails(
   const invocations = [] as InvocationArgs[];
 
   walkInvocationTree(invocation, (inv) => {
-    const args = getInvocationArgs(inv);
-    if (args) {
-      invocations.push(args);
+    try {
+      const args = getInvocationArgs(inv);
+      if (args) {
+        invocations.push(args);
+      }
+    } catch (error) {
+      // An invocation we cannot decode must not take down the whole signing
+      // view -- surface it so the user sees that something was unreadable.
+      captureException(error);
+      invocations.push({ type: "unrecognized" });
     }
 
     return null;
@@ -767,7 +806,33 @@ export interface FnArgsCreateSac {
   args?: xdr.ScVal[];
 }
 
-export type InvocationArgs = FnArgsInvoke | FnArgsCreateWasm | FnArgsCreateSac;
+/**
+ * A CAP-85 (protocol 28) contract creation whose executable is a reference
+ * into another contract's storage rather than a wasm hash. `owner` and `tag`
+ * identify the reference; the code behind it is chosen by the owner at
+ * invocation time and can change after this entry is signed, so there is
+ * deliberately no wasm hash here.
+ */
+export interface FnArgsCreateExternalRef {
+  type: "externalRef";
+  owner: string;
+  tag: string;
+  address?: string;
+  salt?: string;
+  args?: xdr.ScVal[];
+}
+
+/** An invocation whose contents we could not decode. */
+export interface FnArgsUnrecognized {
+  type: "unrecognized";
+}
+
+export type InvocationArgs =
+  | FnArgsInvoke
+  | FnArgsCreateWasm
+  | FnArgsCreateSac
+  | FnArgsCreateExternalRef
+  | FnArgsUnrecognized;
 
 const isInvocationArg = (
   invocation: InvocationArgs | undefined,
@@ -837,6 +902,34 @@ export function getInvocationArgs(
           }
 
           return sacDetails;
+        }
+
+        case "contractExecutableExternalRef": {
+          const { executableOwner, tag } = exec.externalRef;
+          const refDetails = {
+            type: "externalRef",
+            owner: Address.fromScAddress(executableOwner).toString(),
+            tag: tag.toString(),
+          } as FnArgsCreateExternalRef;
+
+          // CAP-85 refs are expected to deploy from an address, but the
+          // preimage arm is independent of the executable arm -- only read it
+          // when it is a shape we can describe.
+          if (preimage.type === "contractIdPreimageFromAddress") {
+            const details = preimage.fromAddress;
+            refDetails.address = Address.fromScAddress(
+              details.address,
+            ).toString();
+            refDetails.salt = xdr.encodeBytes(details.salt.toBytes(), "hex");
+          }
+
+          if (isCreateV2) {
+            refDetails.args = (
+              _invocation as xdr.CreateContractArgsV2
+            ).constructorArgs;
+          }
+
+          return refDetails;
         }
 
         default:

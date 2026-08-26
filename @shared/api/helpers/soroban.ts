@@ -514,9 +514,22 @@ export const getLedgerKeyWasmId = (contractLedgerEntryData: string) => {
     xdr.LedgerEntryData.fromXdr(contractLedgerEntryData, "base64"),
     "contractData",
   ).contractData;
+  const executable = xdr.expectUnionVariant(
+    contractData.val,
+    "scvContractInstance",
+  ).instance.executable;
+
+  // A CAP-85 (protocol 28) external reference has no wasm hash of its own --
+  // resolving one needs an extra RPC round trip against the owner contract, so
+  // callers that only want a contract spec degrade instead.
+  if (executable.type === "contractExecutableExternalRef") {
+    throw new Error(
+      "Contract executable is an external reference; no wasm hash is available",
+    );
+  }
+
   const contractCodeWasmHash = xdr.expectUnionVariant(
-    xdr.expectUnionVariant(contractData.val, "scvContractInstance").instance
-      .executable,
+    executable,
     "contractExecutableWasm",
   ).wasmHash;
   const ledgerKey = xdr.LedgerKey.contractCode(
