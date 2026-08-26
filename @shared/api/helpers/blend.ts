@@ -38,6 +38,17 @@ import {
  * rather than relying on the error.
  */
 
+/**
+ * TEMPORARY — remove before opening the PR (one `git revert` of this commit).
+ *
+ * Prints each Blend payload in full while the Positions UI is being built
+ * against fields it does not consume yet.
+ */
+const debugLogBlendResponse = (label: string, body: unknown) => {
+  // eslint-disable-next-line no-console
+  console.log(`[blend] ${label}`, JSON.stringify(body, null, 2));
+};
+
 const mapEarnPool = (pool: ApiBlendEarnPool): BlendEarnPool => ({
   id: pool.id,
   name: pool.name,
@@ -180,6 +191,8 @@ export const getBlendEarnOptions = async ({
     throw new Error(_err);
   }
 
+  debugLogBlendResponse("earn-options", parsed.data);
+
   return (parsed.data.options || []).map(mapEarnAssetOption);
 };
 
@@ -204,6 +217,8 @@ export const getBlendPools = async ({
     captureException(`Failed to fetch Blend pools - ${status}: ${_err}`);
     throw new Error(_err);
   }
+
+  debugLogBlendResponse("pools", parsed.data);
 
   return (parsed.data.pools || []).map(mapCatalogPool);
 };
@@ -239,6 +254,8 @@ export const getBlendPositions = async ({
     captureException(`Failed to fetch Blend positions - ${status}: ${_err}`);
     throw new Error(_err);
   }
+
+  debugLogBlendResponse("positions", parsed.data);
 
   const entry = parsed.data[0];
   if (!entry) {
