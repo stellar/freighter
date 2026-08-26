@@ -282,12 +282,17 @@ function useGetAccountData(options: {
             false, // don't skip the Blockaid scan,
           );
 
-          const scannedPayload = {
-            ...payload,
-            balances: balancesResult,
-            isScanAppended: true,
-          } as ResolvedAccountData;
-          dispatch({ type: "FETCH_DATA_SUCCESS", payload: scannedPayload });
+          // Mutated onto `payload` itself -- the same pattern every other
+          // section above uses -- rather than a throwaway `scannedPayload`
+          // local. The reducer fully replaces state per dispatch
+          // (helpers/request.ts: `data: action.payload`), so a throwaway local
+          // here is only safe as long as nothing dispatches from `payload`
+          // again afterward. The earnOptions landing below can now run after
+          // this block (I3), and a `{ ...payload }` there would otherwise
+          // silently revert these two fields right after the scan lands.
+          payload.balances = balancesResult as AccountBalances;
+          payload.isScanAppended = true;
+          dispatch({ type: "FETCH_DATA_SUCCESS", payload: { ...payload } });
         } catch (e) {
           captureException(`Error fetching scanned balances on Account - ${e}`);
         }
