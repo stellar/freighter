@@ -553,7 +553,7 @@ const ExecutableDetails = ({
           />
           <KeyValueList
             operationKey={t("Executable Tag")}
-            operationValue={externalRef.tag.toString()}
+            operationValue={externalRef.tag.toJson()}
           />
           <ExternalExecutableNote />
         </>
