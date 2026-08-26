@@ -103,4 +103,154 @@
     border-radius: pxToRem(12);
     padding: 0 pxToRem(16);
   }
+
+  // Figma nodes 9921-53991 (Your position) / 9921-53775 (Overview) could not be
+  // pulled for this pass -- the desktop app was unreachable -- so nothing below
+  // is a read-off value. Every size/color is either carried over from this same
+  // file's own `&__group`/`&__close` vocabulary or borrowed from the closest
+  // analogue elsewhere in the app, per-rule notes give the donor. A later visual
+  // pass should confirm every value here against the real nodes; see the task
+  // report for the full sweep list.
+
+  // No segmented control exists in SDS or elsewhere in this codebase (the
+  // closest siblings are AccountTabs, an underline strip, and EarnTokenPicker's
+  // ApyBadge, a solid rate badge that is not a control at all) -- so this pill
+  // track is new. `pxToRem(100)` for full rounding is that ApyBadge's own
+  // convention (`EarnTokenPicker__apy`), reused here as this codebase's
+  // established "how we draw a pill" value rather than a guessed number.
+  &__tabs {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: pxToRem(4);
+    padding: pxToRem(4);
+    background: var(--sds-clr-gray-03);
+    border-radius: pxToRem(100);
+  }
+
+  &__tab {
+    flex: 1;
+    height: pxToRem(32);
+    border: none;
+    cursor: pointer;
+    background: none;
+    border-radius: pxToRem(100);
+    // Same 14px/20px/semi-bold this app already uses for its one other tab
+    // affordance (`AccountTabs__tab-item`) -- only the active treatment differs,
+    // a filled pill here rather than an underline.
+    font-size: pxToRem(14);
+    line-height: pxToRem(20);
+    font-weight: var(--sds-fw-semi-bold);
+    color: var(--sds-clr-gray-11);
+
+    &--active {
+      // `--sds-clr-gray-04` is this exact file's own "raised control" surface
+      // (`&__close`'s circle), reused so the active pill reads as pressed
+      // against the `&__tabs` track (`--sds-clr-gray-03`, one step darker) the
+      // same way that button reads as raised against the sheet behind it.
+      background: var(--sds-clr-gray-04);
+      color: var(--sds-clr-gray-12);
+    }
+  }
+
+  &__position {
+    display: flex;
+    flex-direction: column;
+    // This file's own established rhythm (`.PoolDetailsSheet`, `&__body`).
+    gap: pxToRem(12);
+
+    &__header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: pxToRem(12);
+      // Background/radius/padding borrowed from this exact feature's own
+      // closest "headline figure in a card" precedent,
+      // `AccountPositions__empty__projection` -- see that file's note.
+      background: var(--sds-clr-gray-03);
+      border-radius: pxToRem(12);
+      padding: pxToRem(16);
+    }
+
+    &__rate {
+      text-align: right;
+    }
+
+    // One step up from `EarnStatRow__value`'s 14px, short of
+    // `AccountHeader__total-usd-balance`'s 32px page-level hero -- the same
+    // reasoning `AccountPositions__empty__projection__figure` already used for
+    // a card-level headline figure, and the same 24px/32px/medium scale.
+    &__balance,
+    &__apy {
+      font-size: pxToRem(24);
+      line-height: pxToRem(32);
+      font-weight: var(--sds-fw-medium);
+    }
+
+    &__balance {
+      color: var(--sds-clr-gray-12);
+    }
+
+    // Unconditionally green, matching how EarnReview's own "Current APY"
+    // StatRow passes `isPositive` unconditionally -- a rate in this feature
+    // always reads as a gain, never as a plain figure.
+    &__apy {
+      color: var(--sds-clr-green-11);
+    }
+  }
+
+  // One row of a deposits/earnings list -- same shape as BalanceRow (icon,
+  // code, right-aligned stacked figures), so the figures below mirror
+  // `BalanceRow__fiat`/`BalanceRow__amount`'s type scale rather than inventing
+  // a new one. `AssetIcon`'s built-in right margin is cancelled the same way
+  // `EarnReview__asset` already cancels it, since the row's own `gap` does that
+  // spacing instead.
+  &__asset-line {
+    display: flex;
+    align-items: center;
+    gap: pxToRem(12);
+    padding: pxToRem(12) 0;
+
+    .AccountAssets__asset--logo {
+      margin-right: 0;
+    }
+
+    &__figures {
+      margin-left: auto;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+    }
+
+    // `&__usd` and `&__usd--gain` are mutually exclusive on the element (never
+    // combined), so the shared type scale is declared once for both selectors
+    // rather than relying on nesting to inherit it.
+    &__usd,
+    &__usd--gain {
+      font-size: pxToRem(14);
+      line-height: pxToRem(20);
+      font-weight: var(--sds-fw-medium);
+    }
+
+    &__usd {
+      color: var(--sds-clr-gray-12);
+    }
+
+    // green-11, not green-09: green-09 (`BalanceRow__delta.positive`) is this
+    // app's shade for a 24h price-change indicator, a different thing than an
+    // earned amount. green-11 is what this exact feature already uses for a
+    // dollar gain (`PositionRow__gain--positive`) and a rate
+    // (`EarnStatRow__value--positive`) alike -- see AccountPositions/styles.scss
+    // for the fuller reasoning.
+    &__usd--gain {
+      color: var(--sds-clr-green-11);
+    }
+
+    &__tokens {
+      font-size: pxToRem(12);
+      line-height: pxToRem(18);
+      font-weight: var(--sds-fw-medium);
+      color: var(--sds-clr-gray-11);
+    }
+  }
 }
