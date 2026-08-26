@@ -920,16 +920,18 @@ export function getInvocationArgs(
             tag: tag.toString(),
           } as FnArgsCreateExternalRef;
 
-          // CAP-85 refs are expected to deploy from an address, but the
-          // preimage arm is independent of the executable arm -- only read it
-          // when it is a shape we can describe.
-          if (preimage.type === "contractIdPreimageFromAddress") {
-            const details = preimage.fromAddress;
-            refDetails.address = Address.fromScAddress(
-              details.address,
-            ).toString();
-            refDetails.salt = xdr.encodeBytes(details.salt.toBytes(), "hex");
+          // An external-ref executable derives its contract ID from a deployer
+          // address and salt, so an asset preimage is invalid.
+          if (preimage.type !== "contractIdPreimageFromAddress") {
+            throw new Error(
+              `creation function appears invalid: an external-ref executable is paired with ${preimage.type} (should be external-ref+address)`,
+            );
           }
+          const details = preimage.fromAddress;
+          refDetails.address = Address.fromScAddress(
+            details.address,
+          ).toString();
+          refDetails.salt = xdr.encodeBytes(details.salt.toBytes(), "hex");
 
           if (isCreateV2) {
             refDetails.args = (
