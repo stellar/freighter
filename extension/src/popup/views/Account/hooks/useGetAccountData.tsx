@@ -5,8 +5,15 @@ import { RequestState } from "constants/request";
 import { initialState, isError, reducer } from "helpers/request";
 import { AccountBalances, useGetBalances } from "helpers/hooks/useGetBalances";
 import { useGetCollectibles } from "helpers/hooks/useGetCollectibles";
+import { useGetPositions } from "helpers/hooks/useGetPositions";
 import { isMainnet } from "helpers/stellar";
 import { AllowList, ApiTokenPrices } from "@shared/api/types";
+import { getBlendEarnOptions } from "@shared/api/helpers/blend";
+import {
+  AccountPositions,
+  BlendEarnAssetOption,
+} from "@shared/api/types/blend";
+import { isEarnSupportedNetwork } from "@shared/constants/blend";
 import {
   AppDataType,
   NeedsReRoute,
@@ -40,6 +47,28 @@ interface ResolvedAccountData {
    * action goes from it -- needs this rather than the list length.
    */
   hasLoadedCollectibles: boolean;
+  positions: AccountPositions | null;
+  /**
+   * False until the positions request settles. `positions` is empty both before
+   * it lands and when the account genuinely holds none, so anything that has to
+   * tell those apart -- the Positions tab decides between a spinner and its
+   * empty state from it -- needs this rather than the list length.
+   */
+  hasLoadedPositions: boolean;
+  /**
+   * The positions request rejected. Distinct from an empty result: the tab
+   * renders an error rather than claiming the account holds nothing.
+   */
+  hasPositionsError: boolean;
+  /**
+   * Earn catalog, fetched only once positions land empty -- it exists purely to
+   * price the empty state's "you could earn up to" projection. Null otherwise.
+   *
+   * Fetched here rather than by the empty-state component because MultiPaneSlider
+   * unmounts inactive panes, so a component-owned fetch would re-request on
+   * every tab switch.
+   */
+  earnOptions: BlendEarnAssetOption[] | null;
 }
 
 type AccountData = NeedsReRoute | ResolvedAccountData;
@@ -60,6 +89,7 @@ function useGetAccountData(options: {
   const { fetchData: fetchCollectibles } = useGetCollectibles({
     useCache: true,
   });
+  const { fetchData: fetchPositions } = useGetPositions({ useCache: true });
 
   const fetchData = async ({
     useAppDataCache = true,
@@ -106,6 +136,11 @@ function useGetAccountData(options: {
         ? Promise.resolve({ collections: [] } as Collectibles)
         : fetchCollectibles({ publicKey, networkDetails });
 
+      // Same treatment as collectibles: started before the balances await and
+      // deliberately not awaited yet, so the Positions tab's spinner is as short
+      // as it can be. It needs only the key and network, both already known.
+      const positionsRequest = fetchPositions({ publicKey, networkDetails });
+
       // let's fetch *just* the balances (without Blockaid scan results) to quickly be able to show the user their balances
       const balancesResult = await fetchBalances(
         publicKey,
@@ -129,6 +164,10 @@ function useGetAccountData(options: {
         isScanAppended: false,
         collectibles: { collections: [] },
         hasLoadedCollectibles: false,
+        positions: null,
+        hasLoadedPositions: false,
+        hasPositionsError: false,
+        earnOptions: null,
       } as ResolvedAccountData;
 
       if (isMainnetNetwork) {
@@ -155,6 +194,35 @@ function useGetAccountData(options: {
       // its own. Without this the Collectibles tab kept waiting on a result that
       // had already arrived until some unrelated dispatch happened to land.
       dispatch({ type: "FETCH_DATA_SUCCESS", payload: { ...payload } });
+
+      try {
+        payload.positions = await positionsRequest;
+      } catch (error) {
+        // Non-fatal for the rest of Home: balances and collectibles are already
+        // on screen. Only the Positions tab changes what it renders.
+        payload.hasPositionsError = true;
+        captureException(`Error fetching positions on Account - ${error}`);
+      }
+      payload.hasLoadedPositions = true;
+      // Dispatched rather than only assigned, for the reason spelled out on the
+      // collectibles dispatch above: the reducer holds this very object.
+      dispatch({ type: "FETCH_DATA_SUCCESS", payload: { ...payload } });
+
+      // Only the empty state needs the catalog, and only to price its
+      // projection. Skipped entirely for an account that already has positions.
+      if (
+        isEarnSupportedNetwork(networkDetails) &&
+        !payload.hasPositionsError &&
+        !payload.positions?.positions.length
+      ) {
+        try {
+          payload.earnOptions = await getBlendEarnOptions({ networkDetails });
+          dispatch({ type: "FETCH_DATA_SUCCESS", payload: { ...payload } });
+        } catch (error) {
+          // The card degrades to hidden; nothing else depends on this.
+          captureException(`Error fetching earn options on Account - ${error}`);
+        }
+      }
 
       if (isMainnetNetwork) {
         // now that the UI has renderered, on Mainnet, let's make an additional call to fetch the balances with the Blockaid scan results included
@@ -265,10 +333,24 @@ function useGetAccountData(options: {
           false,
         );
 
+        let refreshedPositions = resolvedData.positions;
+        let refreshedPositionsError = false;
+        try {
+          refreshedPositions = await fetchPositions({
+            publicKey,
+            networkDetails,
+          });
+        } catch (error) {
+          refreshedPositionsError = true;
+          captureException(`Error refreshing positions on Account - ${error}`);
+        }
+
         const payload = {
           ...state.data,
           balances: balancesResult,
           isScanAppended: true,
+          positions: refreshedPositions,
+          hasPositionsError: refreshedPositionsError,
         } as AccountData;
         dispatch({ type: "FETCH_DATA_SUCCESS", payload });
       } catch (error) {
@@ -276,7 +358,7 @@ function useGetAccountData(options: {
       }
     }, 30000);
     return () => clearInterval(interval);
-  }, [_isMainnet, state.data, fetchBalances]);
+  }, [_isMainnet, state.data, fetchBalances, fetchPositions]);
 
   return {
     state,
