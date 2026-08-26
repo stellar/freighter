@@ -4,6 +4,7 @@
   "{{appName}} disconnected": "{{appName}} desconectado",
   "{{domain}} is not currently connected to Freighter": "{{domain}} não está atualmente conectado ao Freighter",
   "{{from}} has been swapped to {{to}}": "{{from}} foi trocado por {{to}}",
+  "{{rate}} APY": "{{rate}} APY",
   "{{rate}}% APY": "{{rate}}% APY",
   "* All Stellar accounts must maintain a minimum balance of lumens.": "* Todas as contas Stellar devem manter um saldo mínimo de lumens.",
   "0.5 XLM required": "0,5 XLM necessários",

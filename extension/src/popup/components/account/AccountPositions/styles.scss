@@ -67,4 +67,60 @@
       line-height: pxToRem(20px);
     }
   }
+
+  // Plain stack -- BalanceRow's own 12px top+bottom padding (BalanceRow/styles.scss)
+  // already supplies the rhythm between rows, matching how AccountAssets stacks
+  // its BalanceRows with no extra container gap.
+  &__list {
+    display: flex;
+    flex-direction: column;
+  }
+}
+
+// PositionRow has no existing Figma sibling (unlike the states above, which
+// mirror AccountCollectibles): it wraps BalanceRow and colours the two figures
+// Task 5's states never needed. No node could be pulled for this pass, so
+// nothing here is a read-off value -- every size/weight is inherited from or
+// copied off BalanceRow/styles.scss, and both greens are tokens already used
+// elsewhere for a gain (BalanceRow__delta.positive, EarnStatRow__value--positive).
+// A later visual pass should confirm placement, size and which of the two
+// greens belongs on which figure against the real node.
+.PositionRow {
+  // Sits inside BalanceRow's own `&__amount` div (the `amountSlot` prop), so
+  // font-size/line-height/font-weight already come from `.BalanceRow__amount`
+  // by inheritance -- only the color needs to change, from that rule's gray-11
+  // to a green. Matches `.BalanceRow__delta.positive`'s shade: both are a
+  // secondary-line rate/delta figure on a BalanceRow-shaped row.
+  &__apy {
+    color: var(--sds-clr-green-09);
+  }
+
+  // Replaces BalanceRow's default right-side pair (`rightSlot`), so unlike
+  // `&__apy` above these get no styling for free and repeat their donor
+  // rule's size/weight explicitly.
+
+  // Primary right-side line, matching `.BalanceRow__fiat`. Not one of the two
+  // coloured figures -- a supplied total, not a gain -- so it stays neutral.
+  &__value {
+    font-size: pxToRem(14px);
+    line-height: pxToRem(20px);
+    font-weight: var(--sds-fw-medium);
+    color: var(--sds-clr-gray-12);
+  }
+
+  // Secondary right-side line, matching `.BalanceRow__delta`'s size/weight
+  // AND its positive/neutral split: gray by default, green only once a real
+  // (possibly zero) interest figure exists -- an unavailable "--" must not
+  // read as a gain. Colored like `EarnStatRow__value--positive` rather than
+  // `&__apy`'s shade: this is an earned-interest *value*, not a rate.
+  &__gain {
+    font-size: pxToRem(12px);
+    line-height: pxToRem(18px);
+    font-weight: var(--sds-fw-medium);
+    color: var(--sds-clr-gray-11);
+
+    &--positive {
+      color: var(--sds-clr-green-11);
+    }
+  }
 }

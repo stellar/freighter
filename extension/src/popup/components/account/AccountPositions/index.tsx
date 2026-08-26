@@ -3,6 +3,14 @@ import { Loader, Notification } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
 import { AccountPositions as AccountPositionsData } from "@shared/api/types/blend";
+import { AssetIcons } from "@shared/api/types";
+import { NetworkDetails } from "@shared/constants/stellar";
+
+import {
+  PositionTokenRow,
+  toPositionTokenRows,
+} from "popup/components/earn/helpers/positionRows";
+import { PositionRow } from "./PositionRow";
 
 import "./styles.scss";
 
@@ -16,6 +24,10 @@ interface AccountPositionsProps {
   isLoading: boolean;
   /** The request rejected. Renders instead of the empty state, never beside it. */
   hasError: boolean;
+  assetIcons: AssetIcons;
+  networkDetails: NetworkDetails;
+  /** A row was clicked; opens that position's pool-details sheet (Task 10). */
+  onSelectRow: (row: PositionTokenRow) => void;
 }
 
 /**
@@ -31,15 +43,12 @@ interface AccountPositionsProps {
  * push a banner across the Tokens and Collectibles tabs too.
  */
 export const AccountPositions = ({
-  // Not read yet: Task 6 adds the rows list this decides between and Task 7
-  // the empty state's projection card. Renamed rather than dropped so the
-  // prop surface here matches `AccountPositionsProps` exactly for those two
-  // tasks to extend; the underscore keeps `noUnusedParameters` quiet in the
-  // meantime (same convention as `accountToSign: _accountToSign` in
-  // views/SignTransaction/index.tsx).
-  positions: _positions,
+  positions,
   isLoading,
   hasError,
+  assetIcons,
+  networkDetails,
+  onSelectRow,
 }: AccountPositionsProps) => {
   const { t } = useTranslation();
 
@@ -74,18 +83,37 @@ export const AccountPositions = ({
     );
   }
 
+  const rows = toPositionTokenRows({ positions, networkDetails });
+
+  if (!rows.length) {
+    return (
+      <div className="AccountPositions" data-testid="account-positions">
+        {/* The empty state's projection card arrives in Task 7. */}
+        <div className="AccountPositions__empty">
+          <div className="AccountPositions__empty__title">
+            {t("No positions yet")}
+          </div>
+          <div className="AccountPositions__empty__subtitle">
+            {t(
+              "Put your crypto to work and earn rewards while keeping track of your positions.",
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="AccountPositions" data-testid="account-positions">
-      {/* Rows arrive in Task 6; the empty state's projection card in Task 7. */}
-      <div className="AccountPositions__empty">
-        <div className="AccountPositions__empty__title">
-          {t("No positions yet")}
-        </div>
-        <div className="AccountPositions__empty__subtitle">
-          {t(
-            "Put your crypto to work and earn rewards while keeping track of your positions.",
-          )}
-        </div>
+      <div className="AccountPositions__list">
+        {rows.map((row) => (
+          <PositionRow
+            key={`${row.poolId}-${row.assetId}`}
+            row={row}
+            assetIcons={assetIcons}
+            onClick={() => onSelectRow(row)}
+          />
+        ))}
       </div>
     </div>
   );

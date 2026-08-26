@@ -376,6 +376,10 @@ export const Account = () => {
                   positions={resolvedData?.positions ?? null}
                   isLoading={!!resolvedData && !resolvedData.hasLoadedPositions}
                   hasError={!!resolvedData?.hasPositionsError}
+                  assetIcons={resolvedIcons}
+                  networkDetails={networkDetails}
+                  // Task 10 opens the pool-details sheet from here.
+                  onSelectRow={() => {}}
                 />
               </div>,
               <div data-testid="account-collectibles">
