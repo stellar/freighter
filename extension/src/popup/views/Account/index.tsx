@@ -25,6 +25,7 @@ import {
   AccountCollectibles,
   hasVisibleCollections,
 } from "popup/components/account/AccountCollectibles";
+import { AccountPositions } from "popup/components/account/AccountPositions";
 import { AccountHeader } from "popup/components/account/AccountHeader";
 import { FloatingAddButton } from "popup/components/account/FloatingAddButton";
 import { useHiddenCollectibles } from "popup/components/account/hooks/useHiddenCollectibles";
@@ -35,6 +36,7 @@ import { isMainnet } from "helpers/stellar";
 import { newTabHref } from "helpers/urls";
 import { getTotalUsd, getTotalUsdLabel } from "popup/helpers/balance";
 import { NetworkDetails } from "@shared/constants/stellar";
+import { isEarnSupportedNetwork } from "@shared/constants/blend";
 import { reRouteOnboarding } from "popup/helpers/route";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { AccountBalances } from "helpers/hooks/useGetBalances";
@@ -71,7 +73,20 @@ export const Account = () => {
   // account with a blank identicon (and a copy button holding "").
   const reduxPublicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
-  const { activeTab } = useContext(AccountTabsContext);
+  const { activeTab, setActiveTab } = useContext(AccountTabsContext);
+
+  // The Positions button is hidden where Earn is unsupported. Switching networks
+  // while that tab is active would otherwise leave the pane on screen with no
+  // button to switch away from it.
+  useEffect(() => {
+    if (
+      activeTab === TabsList.POSITIONS &&
+      !isEarnSupportedNetwork(networkDetails)
+    ) {
+      setActiveTab(TabsList.TOKENS);
+    }
+  }, [activeTab, networkDetails, setActiveTab]);
+
   const [isDiscoverOpen, setIsDiscoverOpen] = useState(false);
 
   const isFullscreenModeEnabled = isFullscreenMode();
@@ -356,6 +371,13 @@ export const Account = () => {
                   />
                 )
               ),
+              <div data-testid="account-positions-pane">
+                <AccountPositions
+                  positions={resolvedData?.positions ?? null}
+                  isLoading={!!resolvedData && !resolvedData.hasLoadedPositions}
+                  hasError={!!resolvedData?.hasPositionsError}
+                />
+              </div>,
               <div data-testid="account-collectibles">
                 <AccountCollectibles
                   collections={collections}

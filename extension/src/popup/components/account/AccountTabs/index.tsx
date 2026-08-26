@@ -12,6 +12,7 @@ import classnames from "classnames";
 import { TabsList } from "popup/views/Account/contexts/activeTabContext";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { isCustomNetwork } from "@shared/helpers/stellar";
+import { isEarnSupportedNetwork } from "@shared/constants/blend";
 
 import { useActiveTab } from "./hooks/useActiveTab";
 
@@ -28,6 +29,7 @@ export const TabButtons = () => {
 
   const tabLabels: Record<string, string> = {
     tokens: t("Tokens"),
+    positions: t("Positions"),
     collectibles: t("Collectibles"),
   };
 
@@ -35,6 +37,15 @@ export const TabButtons = () => {
     <>
       {Object.values(TabsList).map((tab) => {
         if (tab === TabsList.COLLECTIBLES && isCustomNetwork(networkDetails)) {
+          return null;
+        }
+
+        // Earn, and therefore any position, exists only where we have an
+        // allowlisted pool.
+        if (
+          tab === TabsList.POSITIONS &&
+          !isEarnSupportedNetwork(networkDetails)
+        ) {
           return null;
         }
 

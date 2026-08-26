@@ -1,0 +1,70 @@
+@use "../../../styles/utils.scss" as *;
+
+// Figma node 9808-30015 (the empty state) could not be pulled for this pass --
+// the desktop app was unreachable -- so every value below is carried over
+// from AccountCollectibles/styles.scss rather than read off the design. See
+// the per-rule notes for provenance; a later visual pass should verify each
+// one against the real node.
+.AccountPositions {
+  // Mirrors the top-level `.AccountCollectibles` rule: flex column, the 24px
+  // gap Figma puts between siblings, and vertical-only padding since
+  // `.multi-pane-slider__pane` (views/Account/styles.scss) already supplies
+  // this pane's horizontal gutter.
+  display: flex;
+  flex-direction: column;
+  gap: pxToRem(24px);
+  padding: pxToRem(24px) 0;
+
+  // Mirrors `.AccountCollectibles__loader` exactly, min-height included --
+  // that value reserves the collectibles empty state's height (badge + title
+  // + subtitle) so resolving into it doesn't shift the tab under the reader.
+  // Positions' empty state has no badge and Task 7 adds a projection card on
+  // top of it, so this number will need to be re-derived once that lands;
+  // carried over as-is for now rather than guessed.
+  &__loader {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: pxToRem(108px);
+    color: var(--sds-clr-gray-09);
+  }
+
+  // No AccountCollectibles precedent: that tab swallows its failures and has
+  // no error state of its own. Left with no rules of its own -- `Notification`
+  // brings its own visual treatment, and `.AccountView__fetch-fail`'s
+  // left/right margins (views/Account/styles.scss) are not a fit here since
+  // those exist to compensate for `View.Content`'s disabled inset, a problem
+  // this pane doesn't have.
+  &__error {
+  }
+
+  &__empty {
+    // Mirrors `.AccountCollectibles__empty`'s layout rules (badge- and
+    // CTA-specific ones dropped -- this state has neither): centered flex
+    // column, the 8px gap between title and subtitle, no padding-top of its
+    // own since `.AccountPositions` above already contributes the 24px gap
+    // under the tab strip.
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: pxToRem(8px);
+    padding-top: 0;
+
+    // Mirrors `.AccountCollectibles__empty__title` exactly.
+    &__title {
+      color: var(--sds-clr-gray-12);
+      font-size: pxToRem(16px);
+      font-weight: var(--sds-fw-medium);
+      line-height: pxToRem(24px);
+    }
+
+    // Mirrors `.AccountCollectibles__empty__subtitle` exactly.
+    &__subtitle {
+      color: var(--sds-clr-gray-11);
+      font-size: pxToRem(14px);
+      font-weight: var(--sds-fw-regular);
+      line-height: pxToRem(20px);
+    }
+  }
+}
