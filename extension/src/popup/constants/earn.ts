@@ -17,6 +17,23 @@ export const isEarnFlowSearch = (search: string) =>
   new URLSearchParams(search).get(FLOW_QUERY_KEY) === EARN_FLOW_PARAM;
 
 /**
+ * Marks an Earn entry that arrives with the deposit already configured — from a
+ * Positions row, where the pool and token are both known.
+ *
+ * It has to travel in the URL rather than in Redux: `views/Earn` runs
+ * `resetSubmission()` on mount, and that returns the whole slice to
+ * `initialState`, so a prefill dispatched before navigating would be wiped
+ * before the first render.
+ */
+export const EARN_PREFILL_KEY = "prefill";
+
+export const EARN_PREFILL_QUERY = `?${EARN_PREFILL_KEY}=1`;
+
+/** Did this Earn entry arrive prefilled? Takes a `location.search`. */
+export const isEarnPrefillSearch = (search: string) =>
+  new URLSearchParams(search).get(EARN_PREFILL_KEY) === "1";
+
+/**
  * Steps in the Earn deposit flow.
  *
  * Modelled on Send (`constants/send-payment.ts`) rather than Swap: every visited

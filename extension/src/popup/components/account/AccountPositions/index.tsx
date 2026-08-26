@@ -1,8 +1,11 @@
-import React from "react";
+import React, { useState } from "react";
 import { Loader, Notification } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
-import { AccountPositions as AccountPositionsData } from "@shared/api/types/blend";
+import {
+  AccountPositions as AccountPositionsData,
+  BlendCatalogPool,
+} from "@shared/api/types/blend";
 import { AssetIcons } from "@shared/api/types";
 import { NetworkDetails } from "@shared/constants/stellar";
 
@@ -10,6 +13,8 @@ import {
   PositionTokenRow,
   toPositionTokenRows,
 } from "popup/components/earn/helpers/positionRows";
+import { PoolDetailsSheet } from "popup/components/earn/PoolDetailsSheet";
+import { SlideupModal } from "popup/components/SlideupModal";
 import { PositionRow } from "./PositionRow";
 import { EmptyState } from "./EmptyState";
 
@@ -35,6 +40,10 @@ interface AccountPositionsProps {
   bestApy: number | null;
   /** Empty state's CTA was pressed, before it navigates to Earn. */
   onStartEarning: () => void;
+  /** The catalog backing the pool-details sheet opened from a tapped row. */
+  pools: BlendCatalogPool[];
+  /** Deposit tapped inside that sheet, with the row and its resolved pool. */
+  onDeposit: (row: PositionTokenRow, pool: BlendCatalogPool) => void;
 }
 
 /**
@@ -59,8 +68,14 @@ export const AccountPositions = ({
   projectedUsd,
   bestApy,
   onStartEarning,
+  pools,
+  onDeposit,
 }: AccountPositionsProps) => {
   const { t } = useTranslation();
+  // Which row's pool sheet is open, if any. Declared unconditionally, ahead of
+  // the early returns below, because Rules of Hooks forbids a hook call that
+  // only some renders reach.
+  const [selected, setSelected] = useState<PositionTokenRow | null>(null);
 
   if (isLoading) {
     return (
@@ -107,6 +122,13 @@ export const AccountPositions = ({
     );
   }
 
+  // Resolved from the tapped row's id rather than held directly, so the sheet
+  // always renders the catalog's live figures instead of a snapshot taken at
+  // click time.
+  const selectedPool = pools.find((p) => p.id === selected?.poolId) ?? null;
+  const selectedPosition =
+    positions?.positions.find((p) => p.id === selected?.poolId) ?? null;
+
   return (
     <div className="AccountPositions" data-testid="account-positions">
       <div className="AccountPositions__list">
@@ -115,10 +137,33 @@ export const AccountPositions = ({
             key={`${row.poolId}-${row.assetId}`}
             row={row}
             assetIcons={assetIcons}
-            onClick={() => onSelectRow(row)}
+            onClick={() => {
+              onSelectRow(row);
+              setSelected(row);
+            }}
           />
         ))}
       </div>
+
+      <SlideupModal
+        isModalOpen={Boolean(selected && selectedPool)}
+        setIsModalOpen={() => setSelected(null)}
+        hasBackdrop
+      >
+        {selected && selectedPool ? (
+          <PoolDetailsSheet
+            pool={selectedPool}
+            position={selectedPosition}
+            focusedAssetId={selected.assetId}
+            assetIcons={assetIcons}
+            defaultTab="your_position"
+            onClose={() => setSelected(null)}
+            onDeposit={() => onDeposit(selected, selectedPool)}
+          />
+        ) : (
+          <div />
+        )}
+      </SlideupModal>
     </div>
   );
 };

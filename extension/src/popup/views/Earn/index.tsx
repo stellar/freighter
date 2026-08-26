@@ -1,11 +1,11 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 import { getCanonicalFromAsset } from "@shared/helpers/stellar";
 import { getAssetFromCanonical } from "helpers/stellar";
 import { ROUTES } from "popup/constants/routes";
-import { STEPS } from "popup/constants/earn";
+import { isEarnPrefillSearch, STEPS } from "popup/constants/earn";
 import { navigateTo } from "popup/helpers/navigate";
 import { emitScreenViewed, ScreenViewedProps } from "helpers/metrics";
 import { ActionStatus } from "@shared/api/types";
@@ -74,18 +74,28 @@ const EARN_SCREEN_BY_STEP: Partial<
 export const Earn = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
   const { t } = useTranslation();
   const { hasSeenIntro, dismissIntro } = useEarnIntroSeen();
   const submission = useSelector(transactionSubmissionSelector);
   const { pool, selectedAssetId } = useSelector(earnSelector);
 
+  // Read once at mount: the view rewrites its own search when the swap branch
+  // opens and closes, so the flag is gone by the time any later render looks.
+  const isPrefilled = useRef(isEarnPrefillSearch(location.search)).current;
+
   // Start on CHOOSE_TOKEN and only fall back to the interstitial once the
   // persisted flag has actually resolved to false. Defaulting to INTRO instead
   // would flash it for every returning user while the background round-trip is
   // in flight.
-  const [activeStep, setActiveStep] = useState<STEPS>(STEPS.CHOOSE_TOKEN);
+  const [activeStep, setActiveStep] = useState<STEPS>(
+    isPrefilled ? STEPS.AMOUNT : STEPS.CHOOSE_TOKEN,
+  );
   const [visitedSteps, setVisitedSteps] = useState<Record<STEPS, boolean>>(
-    () => ({ [STEPS.CHOOSE_TOKEN]: true }) as Record<STEPS, boolean>,
+    () =>
+      (isPrefilled
+        ? { [STEPS.CHOOSE_TOKEN]: true, [STEPS.AMOUNT]: true }
+        : { [STEPS.CHOOSE_TOKEN]: true }) as Record<STEPS, boolean>,
   );
   const [enterAnim, setEnterAnim] = useState<EnterAnim>("from-bottom");
   // The picker stays mounted across the swap branch, so it needs an explicit
@@ -96,7 +106,7 @@ export const Earn = () => {
     details: DestinationTokenDetails;
   } | null>(null);
 
-  const hasResolvedIntro = useRef(false);
+  const hasResolvedIntro = useRef(isPrefilled);
   const lastEmittedStep = useRef<STEPS | null>(null);
   const isFirstSubmitStatusRun = useRef(true);
 
@@ -113,8 +123,13 @@ export const Earn = () => {
   };
 
   useEffect(() => {
+    // A prefilled entry arrives with transactionData already populated by the
+    // caller; resetting would discard the asset and destination it just set.
+    if (isPrefilled) {
+      return;
+    }
     dispatch(resetSubmission());
-  }, [dispatch]);
+  }, [dispatch, isPrefilled]);
 
   useEffect(() => {
     if (hasResolvedIntro.current || hasSeenIntro === null) {

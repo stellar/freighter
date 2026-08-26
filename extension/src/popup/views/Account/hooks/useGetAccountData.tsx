@@ -8,9 +8,10 @@ import { useGetCollectibles } from "helpers/hooks/useGetCollectibles";
 import { useGetPositions } from "helpers/hooks/useGetPositions";
 import { isMainnet } from "helpers/stellar";
 import { AllowList, ApiTokenPrices } from "@shared/api/types";
-import { getBlendEarnOptions } from "@shared/api/helpers/blend";
+import { getBlendEarnOptions, getBlendPools } from "@shared/api/helpers/blend";
 import {
   AccountPositions,
+  BlendCatalogPool,
   BlendEarnAssetOption,
 } from "@shared/api/types/blend";
 import { isEarnSupportedNetwork } from "@shared/constants/blend";
@@ -69,6 +70,13 @@ interface ResolvedAccountData {
    * every tab switch.
    */
   earnOptions: BlendEarnAssetOption[] | null;
+  /**
+   * The full pool catalog, fetched alongside positions -- it backs the
+   * pool-details sheet a Positions row opens, so unlike `earnOptions` it is
+   * needed precisely when the account already holds positions, not only when
+   * it doesn't.
+   */
+  pools: BlendCatalogPool[];
 }
 
 type AccountData = NeedsReRoute | ResolvedAccountData;
@@ -175,6 +183,7 @@ function useGetAccountData(options: {
         hasLoadedPositions: false,
         hasPositionsError: false,
         earnOptions: null,
+        pools: [],
       } as ResolvedAccountData;
 
       if (isMainnetNetwork) {
@@ -215,19 +224,35 @@ function useGetAccountData(options: {
       // collectibles dispatch above: the reducer holds this very object.
       dispatch({ type: "FETCH_DATA_SUCCESS", payload: { ...payload } });
 
-      // Only the empty state needs the catalog, and only to price its
-      // projection. Skipped entirely for an account that already has positions.
-      if (
-        isEarnSupportedNetwork(networkDetails) &&
-        !payload.hasPositionsError &&
-        !payload.positions?.positions.length
-      ) {
+      if (isEarnSupportedNetwork(networkDetails)) {
+        // Unlike earnOptions below, fetched regardless of whether the account
+        // has positions -- it backs the pool-details sheet a Positions row
+        // opens, so it is needed precisely when positions exist, not only
+        // when they don't.
         try {
-          payload.earnOptions = await getBlendEarnOptions({ networkDetails });
+          payload.pools = await getBlendPools({ networkDetails });
           dispatch({ type: "FETCH_DATA_SUCCESS", payload: { ...payload } });
         } catch (error) {
-          // The card degrades to hidden; nothing else depends on this.
-          captureException(`Error fetching earn options on Account - ${error}`);
+          captureException(`Error fetching pools on Account - ${error}`);
+        }
+
+        // Only the empty state needs the catalog, and only to price its
+        // projection. Skipped entirely for an account that already has positions.
+        if (
+          !payload.hasPositionsError &&
+          !payload.positions?.positions.length
+        ) {
+          try {
+            payload.earnOptions = await getBlendEarnOptions({
+              networkDetails,
+            });
+            dispatch({ type: "FETCH_DATA_SUCCESS", payload: { ...payload } });
+          } catch (error) {
+            // The card degrades to hidden; nothing else depends on this.
+            captureException(
+              `Error fetching earn options on Account - ${error}`,
+            );
+          }
         }
       }
 

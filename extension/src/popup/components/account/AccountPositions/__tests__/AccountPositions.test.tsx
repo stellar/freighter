@@ -87,6 +87,8 @@ const renderTab = (
         projectedUsd={null}
         bestApy={null}
         onStartEarning={() => {}}
+        pools={[]}
+        onDeposit={() => {}}
         {...props}
       />
     </Wrapper>,
