@@ -7,6 +7,7 @@ import { BlendCatalogPool, PoolPosition } from "@shared/api/types/blend";
 import { PoolIcon } from "popup/components/earn/PoolIcon";
 import { BLEND_LENDING_DOCS_URL } from "popup/constants/externalLinks";
 import { openTab } from "popup/helpers/navigate";
+import { hasResolvableSupply } from "popup/components/earn/helpers/positionSummary";
 import { StatRow } from "popup/components/earn/StatRow";
 import {
   formatCompactUsd,
@@ -140,12 +141,14 @@ const OverviewBody = ({ pool }: { pool: BlendCatalogPool }) => {
  *
  * Purely additive over the pre-positions sheet: with no `position` prop this
  * renders exactly as it always has — no tab strip, the Overview body alone,
- * and a Close button. Only supplying `position` (a real one, with at least one
- * supplied row) turns on the pill tab strip and lets the sheet open on either
- * tab. `onDeposit` independently swaps the footer button from Close to
- * Deposit — the two are separate knobs because Task 11 opens this sheet
- * mid-deposit with a position already on file but no Deposit action of its
- * own to offer.
+ * and a Close button. Only supplying `position` AND a resolvable supply row —
+ * see `hasResolvableSupply` — turns on the pill tab strip and lets the sheet
+ * open on either tab; a `focusedAssetId` that names an asset the position
+ * doesn't hold (I2) is treated the same as no position at all, rather than
+ * showing a "Your position" tab with nothing in it. `onDeposit` independently
+ * swaps the footer button from Close to Deposit — the two are separate knobs
+ * because Task 11 opens this sheet mid-deposit with a position already on
+ * file but no Deposit action of its own to offer.
  */
 export const PoolDetailsSheet = ({
   pool,
@@ -159,7 +162,9 @@ export const PoolDetailsSheet = ({
 }: PoolDetailsSheetProps) => {
   const { t } = useTranslation();
 
-  const hasPosition = Boolean(position?.blend?.supply?.length);
+  const hasPosition = Boolean(
+    position && hasResolvableSupply({ position, focusedAssetId }),
+  );
   const [activeTab, setActiveTab] = React.useState<PoolDetailsTab>(
     defaultTab ?? "your_position",
   );

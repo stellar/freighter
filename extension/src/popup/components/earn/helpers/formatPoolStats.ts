@@ -1,6 +1,20 @@
 import BigNumber from "bignumber.js";
 
-import { NO_FIAT_VALUE } from "popup/helpers/formatters";
+import { NO_FIAT_VALUE, formatAmount, roundUsdValue } from "popup/helpers/formatters";
+
+/**
+ * Account-scale USD — "$1,500.00", never compact. `formatCompactUsd` below is
+ * for pool-scale figures and goes compact at $1,000, which drops the cents
+ * from a personal balance ("$1.50K" for a $1,500 position). This is the
+ * single rounding rule for account-scale money: truncates via `roundUsdValue`
+ * rather than the half-up rounding `toFormat` uses, so a row and a sheet
+ * showing the same balance can never disagree (I1).
+ *
+ * Returns NO_FIAT_VALUE for null — no fresh price for this account's token, not a
+ * real zero.
+ */
+export const formatAccountUsd = (value: number | null): string =>
+  value === null ? NO_FIAT_VALUE : `$${formatAmount(roundUsdValue(String(value)))}`;
 
 /**
  * Compact USD for pool-scale figures — "$50.05M" rather than "$50,050,000".

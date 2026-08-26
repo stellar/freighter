@@ -1,6 +1,6 @@
 import { MAINNET_NETWORK_DETAILS } from "@shared/constants/stellar";
 import { PUBLIC_SACS } from "@shared/constants/sac";
-import { getPositionSummary } from "../positionSummary";
+import { getPositionSummary, hasResolvableSupply } from "../positionSummary";
 
 const networkDetails = MAINNET_NETWORK_DETAILS;
 const USDC_SAC = PUBLIC_SACS.USDC!;
@@ -134,6 +134,72 @@ describe("getPositionSummary — supply scope", () => {
 
     expect(result.deposits[0].code).toBe("USDC");
   });
+
+  it("resolves to an empty scope when the focused asset matches nothing, instead of the first row (I2)", () => {
+    // EarnAmount always names the asset it is depositing, so a mismatch means
+    // the account has no position in THAT asset yet -- not "no asset was
+    // named". Falling back to supply[0] would show a different asset's
+    // figures under this asset's headers.
+    const result = summary("UNRELATED_ASSET_ID_NOT_IN_SUPPLY");
+
+    expect(result.currentBalanceUsd).toBeNull();
+    expect(result.apy).toBeNull();
+    expect(result.deposits).toEqual([]);
+    expect(result.earnings).toEqual([]);
+    expect(result.estMonthlyUsd).toBeNull();
+    expect(result.estYearlyUsd).toBeNull();
+  });
+
+  describe("principal out of range (C2)", () => {
+    it("reports no principal reading for a fully-exited row, rather than a negative figure", () => {
+      // total_tokens is the CURRENT balance; a fully-exited row still carries
+      // its lifetime interest_earned, so total_tokens - interest_earned goes
+      // negative even though nothing is wrong with the payload.
+      const result = summary(USDC_SAC, [
+        { ...usdcSupply, totalTokens: "0", collateralTokens: "0", usdValue: 0 },
+      ]);
+
+      expect(result.deposits[0].tokens).toBe("0");
+      expect(result.deposits[0].usd).toBeNull();
+      // Untouched by the guard: earnings still reports the real lifetime
+      // interest, and the header balance still reads the real (zero) total.
+      expect(result.earnings[0].usd).toBeCloseTo(0.12);
+      expect(result.currentBalanceUsd).toBe(0);
+    });
+
+    it("reports no principal reading for an over-withdrawn row, rather than a negative figure", () => {
+      // The review's concrete failure: supply 1,000 USDC, accrue 50, withdraw
+      // 1,020 -> total_tokens = 30, interest_earned = 50.
+      const result = summary(USDC_SAC, [
+        {
+          ...usdcSupply,
+          totalTokens: "300000000",
+          interestEarned: "500000000",
+          usdValue: 30,
+          interestEarnedUsd: 50,
+        },
+      ]);
+
+      expect(result.deposits[0].tokens).toBe("0");
+      expect(result.deposits[0].usd).toBeNull();
+      expect(result.earnings[0].usd).toBe(50);
+      expect(result.currentBalanceUsd).toBe(30);
+    });
+
+    it("treats an exact match as a real zero principal, not an out-of-range guard", () => {
+      // Off-by-one guard: interestEarned === totalTokens is a genuinely (not
+      // negatively) exhausted principal -- the comparison is strictly
+      // greater-than, so this must NOT trip the same guard as an actual
+      // over-withdrawal. usdValue/interestEarnedUsd are untouched here, so a
+      // real (non-null) usd figure proves the guard did not fire.
+      const result = summary(USDC_SAC, [
+        { ...usdcSupply, totalTokens: "1234000", interestEarned: "1234000" },
+      ]);
+
+      expect(result.deposits[0].tokens).toBe("0");
+      expect(result.deposits[0].usd).not.toBeNull();
+    });
+  });
 });
 
 describe("getPositionSummary — pool scope", () => {
@@ -150,5 +216,35 @@ describe("getPositionSummary — pool scope", () => {
     expect(result.earnings).toHaveLength(2);
     // One pair of Est. rows, from the pool total — never one pair per asset.
     expect(result.estYearlyUsd).toBe("99.20");
+  });
+});
+
+describe("hasResolvableSupply", () => {
+  it("is true when the focused asset matches a supplied row", () => {
+    expect(
+      hasResolvableSupply({
+        position: position([usdcSupply]),
+        focusedAssetId: USDC_SAC,
+      }),
+    ).toBe(true);
+  });
+
+  it("is true when no asset was named, falling back to the first row", () => {
+    expect(hasResolvableSupply({ position: position([usdcSupply]) })).toBe(
+      true,
+    );
+  });
+
+  it("is false when the focused asset matches nothing (I2)", () => {
+    expect(
+      hasResolvableSupply({
+        position: position([usdcSupply]),
+        focusedAssetId: XLM_SAC,
+      }),
+    ).toBe(false);
+  });
+
+  it("is false when the position has no supply rows at all", () => {
+    expect(hasResolvableSupply({ position: position([]) })).toBe(false);
   });
 });

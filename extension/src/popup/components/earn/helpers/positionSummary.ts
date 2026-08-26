@@ -71,18 +71,33 @@ const toDepositRow = (
   networkDetails: NetworkDetails,
 ): PositionAssetRow => {
   const { code, issuer, decimals } = identity(row, networkDetails);
-  const principalRaw = new BigNumber(row.totalTokens)
-    .minus(row.interestEarned)
-    .toFixed(0);
+  const totalTokens = new BigNumber(row.totalTokens);
+  const interestEarned = new BigNumber(row.interestEarned);
+
+  const usdOutOfRange =
+    row.usdValue !== null &&
+    row.interestEarnedUsd !== null &&
+    row.interestEarnedUsd > row.usdValue;
+
+  // `interestEarned` is lifetime; `totalTokens` is the current balance (see
+  // the comment above). A fully-exited position, or any over-withdrawal,
+  // makes this subtraction negative -- a real payload state, not a bug: the
+  // principal assumption this row depends on simply does not hold for it, so
+  // report "no principal reading" (0 tokens, null usd) rather than a
+  // negative balance no other figure on the card would agree with.
+  const isOutOfRange =
+    interestEarned.isGreaterThan(totalTokens) || usdOutOfRange;
 
   return {
     assetId: row.assetId,
     code,
     issuer,
     decimals,
-    tokens: scale(principalRaw, decimals),
+    tokens: isOutOfRange
+      ? "0"
+      : scale(totalTokens.minus(interestEarned).toFixed(0), decimals),
     usd:
-      row.usdValue === null || row.interestEarnedUsd === null
+      isOutOfRange || row.usdValue === null || row.interestEarnedUsd === null
         ? null
         : new BigNumber(row.usdValue).minus(row.interestEarnedUsd).toNumber(),
   };
@@ -108,6 +123,57 @@ const headlineApy = (apy: number | null, emissionsApr: number | null) =>
   apy === null ? null : apy + (emissionsApr ?? 0);
 
 /**
+ * The rows this summary is scoped to. The ONLY place the focused-asset
+ * resolution rule lives — `getPositionSummary` and `hasResolvableSupply`
+ * both call this rather than each encoding their own idea of a match.
+ *
+ * `focusedAssetId` genuinely absent (undefined) falls back to the first
+ * supplied row: the sheet can be opened from a pool card that names no
+ * asset, and a guess at the position the account most likely means beats an
+ * empty panel. A `focusedAssetId` that is PRESENT but matches no supplied
+ * row is a mismatch, not an absence -- `EarnAmount` always names the asset
+ * it is depositing, so this fires when the account has no position in that
+ * asset yet. Falling back to `supply[0]` there would show a different
+ * asset's figures under this asset's headers, so it resolves to an empty
+ * scope instead.
+ */
+const resolveRows = ({
+  position,
+  focusedAssetId,
+  scope,
+}: {
+  position: PoolPosition;
+  focusedAssetId?: string;
+  scope: PositionScope;
+}): BlendSupplyRow[] => {
+  const supply = position.blend?.supply || [];
+  if (scope === "pool") {
+    return supply;
+  }
+  if (focusedAssetId === undefined) {
+    return [supply[0]].filter(Boolean);
+  }
+  const match = supply.find((row) => row.assetId === focusedAssetId);
+  return match ? [match] : [];
+};
+
+/**
+ * Whether `getPositionSummary` would resolve to any row at all, for this same
+ * `position`/`focusedAssetId`/`scope`. `PoolDetailsSheet` uses this to decide
+ * whether "Your position" has anything to show, so it never renders a tab
+ * whose panel would be empty (see `resolveRows`).
+ */
+export const hasResolvableSupply = ({
+  position,
+  focusedAssetId,
+  scope = POSITION_SUMMARY_SCOPE,
+}: {
+  position: PoolPosition;
+  focusedAssetId?: string;
+  scope?: PositionScope;
+}): boolean => resolveRows({ position, focusedAssetId, scope }).length > 0;
+
+/**
  * The sheet's "Your position" figures, for one supplied asset or for the whole
  * pool. The ONLY place this derivation lives — the component renders whatever
  * comes back and knows nothing about scope.
@@ -127,16 +193,7 @@ export const getPositionSummary = ({
   networkDetails: NetworkDetails;
   scope?: PositionScope;
 }): PositionSummary => {
-  const supply = position.blend?.supply || [];
-  const rows =
-    scope === "pool"
-      ? supply
-      : // Falls back to the first supplied row: the sheet can be opened from a
-        // pool card that names no asset, and an empty panel would be worse than
-        // the position the account most likely means.
-        [
-          supply.find((row) => row.assetId === focusedAssetId) || supply[0],
-        ].filter(Boolean);
+  const rows = resolveRows({ position, focusedAssetId, scope });
 
   const currentBalanceUsd =
     scope === "pool" ? position.netUsd : (rows[0]?.usdValue ?? null);

@@ -4,8 +4,10 @@ import { useTranslation } from "react-i18next";
 import { AssetIcons } from "@shared/api/types";
 import { BalanceRow } from "popup/components/BalanceRow";
 import { PositionTokenRow } from "popup/components/earn/helpers/positionRows";
-import { formatRate } from "popup/components/earn/helpers/formatPoolStats";
-import { formatAmount, roundUsdValue } from "popup/helpers/formatters";
+import {
+  formatAccountUsd,
+  formatRate,
+} from "popup/components/earn/helpers/formatPoolStats";
 
 interface PositionRowProps {
   row: PositionTokenRow;
@@ -55,17 +57,13 @@ export const PositionRow = ({ row, assetIcons, onClick }: PositionRowProps) => {
             className="PositionRow__value"
             data-testid={`position-value-${row.code}`}
           >
-            {row.suppliedUsd === null
-              ? "--"
-              : `$${formatAmount(roundUsdValue(String(row.suppliedUsd)))}`}
+            {formatAccountUsd(row.suppliedUsd)}
           </div>
           <div
             className={`PositionRow__gain ${isPositiveGain ? "PositionRow__gain--positive" : ""}`}
             data-testid={`position-gain-${row.code}`}
           >
-            {isGainKnown
-              ? `+$${formatAmount(roundUsdValue(String(row.interestEarnedUsd)))}`
-              : "--"}
+            {isGainKnown ? `+${formatAccountUsd(row.interestEarnedUsd)}` : "--"}
           </div>
         </>
       }

@@ -79,6 +79,21 @@ describe("PoolDetailsSheet", () => {
     expect(screen.getByText("Overview")).toBeInTheDocument();
   });
 
+  it("renders untabbed when focusedAssetId names an asset the position doesn't hold (I2)", () => {
+    // EarnAmount always names the asset it is depositing. A mismatch means the
+    // account has no position in THAT asset yet -- the same "no position"
+    // treatment as the no-position case above, not a tab with an empty panel.
+    const XLM_SAC = "CAS3J7GYLGXMF6TDJBBYYSE3HQ6BBSMLNUQ34T6TZMYMW2EVH34XOWMA";
+    renderSheet({ position, focusedAssetId: XLM_SAC, onDeposit: jest.fn() });
+
+    expect(
+      screen.queryByTestId("earn-pool-details-tabs"),
+    ).not.toBeInTheDocument();
+    // Falls through to the Overview body, same as the no-position case.
+    expect(screen.getByTestId("earn-pool-interest-apy")).toBeInTheDocument();
+    expect(screen.queryByTestId("earn-position-panel")).not.toBeInTheDocument();
+  });
+
   it("swaps Close for Deposit only when a deposit handler is supplied", () => {
     const onDeposit = jest.fn();
     renderSheet({ position, onDeposit });

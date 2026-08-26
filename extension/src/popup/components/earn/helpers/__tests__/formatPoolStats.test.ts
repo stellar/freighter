@@ -1,4 +1,29 @@
-import { formatCompactUsd, formatRate } from "../formatPoolStats";
+import {
+  formatAccountUsd,
+  formatCompactUsd,
+  formatRate,
+} from "../formatPoolStats";
+
+describe("formatAccountUsd", () => {
+  it("renders a four-figure balance in full, never compact (I1)", () => {
+    // formatCompactUsd goes compact at $1,000, dropping cents from a personal
+    // balance ("$1.50K" for $1,500) -- account-scale money always shows in full.
+    expect(formatAccountUsd(1500)).toBe("$1,500.00");
+  });
+
+  it("truncates rather than rounds, matching the Positions row it was factored out of", () => {
+    expect(formatAccountUsd(500.125)).toBe("$500.12");
+  });
+
+  it("distinguishes an unavailable value from zero", () => {
+    expect(formatAccountUsd(null)).toBe("--");
+    expect(formatAccountUsd(0)).toBe("$0.00");
+  });
+
+  it("groups thousands", () => {
+    expect(formatAccountUsd(1234567)).toBe("$1,234,567.00");
+  });
+});
 
 describe("formatCompactUsd", () => {
   it("renders millions compactly", () => {

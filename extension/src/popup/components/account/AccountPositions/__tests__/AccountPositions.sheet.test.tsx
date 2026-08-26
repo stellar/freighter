@@ -180,6 +180,26 @@ describe("AccountPositions pool sheet", () => {
     });
   });
 
+  it("agrees with the row on a personal-scale USD figure, shown in full rather than compact (I1)", async () => {
+    // formatCompactUsd goes compact at $1,000 ("$1.50K"), dropping cents from
+    // a personal balance -- see formatAccountUsd's docstring. The row and the
+    // sheet must read the exact same figure for the exact same position.
+    renderTab({
+      positions: withSupply([supply({ usdValue: 1500 })]),
+      pools: [pool],
+    });
+
+    expect(screen.getByTestId("position-value-USDC")).toHaveTextContent(
+      "$1,500.00",
+    );
+
+    fireEvent.click(screen.getByTestId("position-row-USDC"));
+
+    expect(
+      await screen.findByTestId("earn-position-balance"),
+    ).toHaveTextContent("$1,500.00");
+  });
+
   it("attributes a tab switch on the sheet to the position row that opened it", async () => {
     renderTab({ positions: twoAssetPositions, pools: [pool] });
 

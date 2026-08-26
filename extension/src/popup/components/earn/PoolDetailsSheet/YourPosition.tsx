@@ -9,7 +9,7 @@ import { AssetIcon } from "popup/components/account/AccountAssets";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { StatRow } from "popup/components/earn/StatRow";
 import {
-  formatCompactUsd,
+  formatAccountUsd,
   formatRate,
 } from "popup/components/earn/helpers/formatPoolStats";
 import { formatProjection } from "popup/components/earn/EarnReview/helpers/projectEarnings";
@@ -51,7 +51,7 @@ const AssetLine = ({
       >
         {row.usd === null
           ? "--"
-          : `${isGain ? "+" : ""}${formatCompactUsd(row.usd)}`}
+          : `${isGain ? "+" : ""}${formatAccountUsd(row.usd)}`}
       </div>
       <div className="PoolDetailsSheet__asset-line__tokens">
         {`${formatAmount(row.tokens)} ${row.code}`}
@@ -95,7 +95,7 @@ export const YourPosition = ({
             className="PoolDetailsSheet__position__balance"
             data-testid="earn-position-balance"
           >
-            {formatCompactUsd(summary.currentBalanceUsd)}
+            {formatAccountUsd(summary.currentBalanceUsd)}
           </div>
         </div>
         <div className="PoolDetailsSheet__position__rate">
