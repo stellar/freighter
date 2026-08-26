@@ -37,6 +37,7 @@ import { newTabHref } from "helpers/urls";
 import { getTotalUsd, getTotalUsdLabel } from "popup/helpers/balance";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { isEarnSupportedNetwork } from "@shared/constants/blend";
+import { projectAnnualEarnings } from "popup/components/earn/helpers/earnProjection";
 import { reRouteOnboarding } from "popup/helpers/route";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { AccountBalances } from "helpers/hooks/useGetBalances";
@@ -270,6 +271,16 @@ export const Account = () => {
     isTokensEmptyStateShown &&
     !hasVisibleCollections(collections, isCollectibleHidden);
 
+  // Feeds the Positions tab's empty-state card. `earnOptions` is only ever
+  // fetched once positions land empty (useGetAccountData), so this is a no-op
+  // the rest of the time.
+  const projection = projectAnnualEarnings({
+    options: resolvedData?.earnOptions ?? null,
+    balances,
+    tokenPrices,
+    networkDetails,
+  });
+
   return (
     <>
       <AccountHeader
@@ -380,6 +391,10 @@ export const Account = () => {
                   networkDetails={networkDetails}
                   // Task 10 opens the pool-details sheet from here.
                   onSelectRow={() => {}}
+                  projectedUsd={projection.usd}
+                  bestApy={projection.bestApy}
+                  // Task 12 wires this to an analytics event.
+                  onStartEarning={() => {}}
                 />
               </div>,
               <div data-testid="account-collectibles">

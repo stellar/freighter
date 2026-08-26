@@ -1,10 +1,12 @@
 @use "../../../styles/utils.scss" as *;
 
-// Figma node 9808-30015 (the empty state) could not be pulled for this pass --
-// the desktop app was unreachable -- so every value below is carried over
-// from AccountCollectibles/styles.scss rather than read off the design. See
-// the per-rule notes for provenance; a later visual pass should verify each
-// one against the real node.
+// Figma node 9808-30015 (the empty state) could not be pulled for this pass,
+// nor the Task 7 pass that added the projection card below it -- the desktop
+// app was unreachable both times -- so every value below is either carried
+// over from AccountCollectibles/styles.scss or, where noted, borrowed from
+// the closest analogue elsewhere in this codebase, rather than read off the
+// design. See the per-rule notes for provenance; a later visual pass should
+// verify each one against the real node.
 .AccountPositions {
   // Mirrors the top-level `.AccountCollectibles` rule: flex column, the 24px
   // gap Figma puts between siblings, and vertical-only padding since
@@ -39,11 +41,12 @@
   }
 
   &__empty {
-    // Mirrors `.AccountCollectibles__empty`'s layout rules (badge- and
-    // CTA-specific ones dropped -- this state has neither): centered flex
-    // column, the 8px gap between title and subtitle, no padding-top of its
-    // own since `.AccountPositions` above already contributes the 24px gap
-    // under the tab strip.
+    // Mirrors `.AccountCollectibles__empty`'s layout rules (badge-specific
+    // ones dropped -- this state has none): centered flex column, the 8px
+    // gap between title and subtitle, no padding-top of its own since
+    // `.AccountPositions` above already contributes the 24px gap under the
+    // tab strip. Task 7 adds the projection card and CTA below, both laid
+    // out with the same column and gap.
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -65,6 +68,83 @@
       font-size: pxToRem(14px);
       font-weight: var(--sds-fw-regular);
       line-height: pxToRem(20px);
+    }
+
+    // The "you could earn up to" card (Task 7). No Figma sibling exists for
+    // this element at all -- unlike every other rule in this file, there is
+    // no donor to mirror -- so background/radius/padding are borrowed from
+    // `EarnReview__group` (EarnReview/styles.scss), the Earn domain's own
+    // card that wraps a set of labeled figures, rather than invented from
+    // nothing. `align-self: stretch` fills the row instead of shrink-wrapping
+    // to the text, matching how that donor card sits full-width in its own
+    // (non-centered) layout. Every value here needs a real Figma pass.
+    &__projection {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      align-self: stretch;
+      gap: pxToRem(4px);
+      // 8px of the column's own gap above plus 16px here lands the card 24px
+      // under the subtitle -- this codebase's standard "new section" gap
+      // (`.AccountPositions`'s own top-level gap, `.AccountCollectibles`'s
+      // too) -- distinct from the tighter 8px between the closely-related
+      // title/subtitle pair above.
+      margin-top: pxToRem(16px);
+      padding: pxToRem(16px);
+      border-radius: pxToRem(12px);
+      background: var(--sds-clr-gray-03);
+
+      &__label {
+        color: var(--sds-clr-gray-11);
+        font-size: pxToRem(14px);
+        font-weight: var(--sds-fw-regular);
+        line-height: pxToRem(20px);
+      }
+
+      // Wraps the coloured figure plus the trailing "/year on your tokens"
+      // text at this smaller size, so the figure alone reads as the
+      // callout -- same "small caption around a big number" shape as
+      // AccountHeader's own total-balance treatment.
+      &__value {
+        color: var(--sds-clr-gray-11);
+        font-size: pxToRem(14px);
+        font-weight: var(--sds-fw-regular);
+        line-height: pxToRem(20px);
+      }
+
+      // One step up from `&__value`'s 14px body size -- big enough to read as
+      // the card's headline, short of `AccountHeader__total-usd-balance`'s
+      // 32px page-level hero.
+      //
+      // green-11 rather than green-09: this figure is either a dollar gain or
+      // a rate depending on what's held, and green-11 is the shade already
+      // covering both cases elsewhere in this exact feature --
+      // `PositionRow__gain--positive` (a dollar figure) and
+      // `EarnStatRow__value--positive` (a rate, e.g. EarnReview's "Current
+      // APY" row) both use it, as does `HistoryItem`'s received-amount
+      // colour. green-09 elsewhere in the app (`BalanceRow__delta.positive`,
+      // `AssetDetail__delta.positive`) is reserved specifically for a 24h
+      // price-change indicator, a different thing than either branch this
+      // figure can show.
+      &__figure {
+        color: var(--sds-clr-green-11);
+        font-size: pxToRem(24px);
+        font-weight: var(--sds-fw-medium);
+        line-height: pxToRem(32px);
+      }
+    }
+
+    // Mirrors `.AccountCollectibles__empty__cta` exactly: 8px of the
+    // column's own gap plus 8px here lands the button 16px under whatever
+    // sits above it (the projection card when shown, the subtitle when not).
+    &__cta {
+      margin-top: pxToRem(8px);
+    }
+
+    // Same weight bump every other empty-state CTA in this codebase gives its
+    // button (AccountCollectibles, NotFundedMessage).
+    .Button {
+      font-weight: var(--sds-fw-semi-bold);
     }
   }
 

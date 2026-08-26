@@ -11,6 +11,7 @@ import {
   toPositionTokenRows,
 } from "popup/components/earn/helpers/positionRows";
 import { PositionRow } from "./PositionRow";
+import { EmptyState } from "./EmptyState";
 
 import "./styles.scss";
 
@@ -28,6 +29,12 @@ interface AccountPositionsProps {
   networkDetails: NetworkDetails;
   /** A row was clicked; opens that position's pool-details sheet (Task 10). */
   onSelectRow: (row: PositionTokenRow) => void;
+  /** Empty state's annual projection in USD; null when there is nothing to total. */
+  projectedUsd: string | null;
+  /** Empty state's fallback figure — the best rate on offer; null when unknown too. */
+  bestApy: number | null;
+  /** Empty state's CTA was pressed, before it navigates to Earn. */
+  onStartEarning: () => void;
 }
 
 /**
@@ -49,6 +56,9 @@ export const AccountPositions = ({
   assetIcons,
   networkDetails,
   onSelectRow,
+  projectedUsd,
+  bestApy,
+  onStartEarning,
 }: AccountPositionsProps) => {
   const { t } = useTranslation();
 
@@ -88,17 +98,11 @@ export const AccountPositions = ({
   if (!rows.length) {
     return (
       <div className="AccountPositions" data-testid="account-positions">
-        {/* The empty state's projection card arrives in Task 7. */}
-        <div className="AccountPositions__empty">
-          <div className="AccountPositions__empty__title">
-            {t("No positions yet")}
-          </div>
-          <div className="AccountPositions__empty__subtitle">
-            {t(
-              "Put your crypto to work and earn rewards while keeping track of your positions.",
-            )}
-          </div>
-        </div>
+        <EmptyState
+          projectedUsd={projectedUsd}
+          bestApy={bestApy}
+          onStartEarning={onStartEarning}
+        />
       </div>
     );
   }

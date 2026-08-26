@@ -54,6 +54,14 @@ const twoAssetPositions = withSupply([
 ]);
 const unpricedPositions = withSupply([supply({ usdValue: null })]);
 
+const noPositions = {
+  address: TEST_PUBLIC_KEY,
+  totalValueUsd: null,
+  netApy: null,
+  positions: [],
+  backstop: [],
+} as never;
+
 // The null/zero/positive boundary on interestEarnedUsd: a positive figure is
 // a real gain (colored), a flat zero is real but not a gain (shown, not
 // colored), and null is unavailable (shown as --, not colored either).
@@ -76,6 +84,9 @@ const renderTab = (
         assetIcons={{}}
         networkDetails={MAINNET_NETWORK_DETAILS}
         onSelectRow={() => {}}
+        projectedUsd={null}
+        bestApy={null}
+        onStartEarning={() => {}}
         {...props}
       />
     </Wrapper>,
@@ -99,17 +110,37 @@ describe("AccountPositions", () => {
   });
 
   it("shows the empty state once a request lands with nothing", () => {
-    renderTab({
-      positions: {
-        address: TEST_PUBLIC_KEY,
-        totalValueUsd: null,
-        netApy: null,
-        positions: [],
-        backstop: [],
-      },
-    });
+    renderTab({ positions: noPositions });
 
     expect(screen.getByText("No positions yet")).toBeInTheDocument();
+  });
+
+  it("promises a dollar figure when the account holds depositable tokens", () => {
+    renderTab({
+      positions: noPositions,
+      projectedUsd: "89.32",
+      bestApy: 0.1694,
+    });
+
+    expect(
+      screen.getByTestId("account-positions-projection"),
+    ).toHaveTextContent("$89.32");
+  });
+
+  it("promises the ceiling rate when it holds none", () => {
+    renderTab({ positions: noPositions, projectedUsd: null, bestApy: 0.1694 });
+
+    expect(
+      screen.getByTestId("account-positions-projection"),
+    ).toHaveTextContent("16.94%");
+  });
+
+  it("omits the card entirely when neither figure is known", () => {
+    renderTab({ positions: noPositions, projectedUsd: null, bestApy: null });
+
+    expect(
+      screen.queryByTestId("account-positions-projection"),
+    ).not.toBeInTheDocument();
   });
 
   it("renders one row per supplied token, each opening its pool", () => {
