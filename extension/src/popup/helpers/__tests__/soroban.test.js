@@ -180,6 +180,47 @@ describe("getInvocationArgs", () => {
       salt: "0".repeat(64),
     });
   });
+  it("explains which executable/preimage pairing was invalid when it throws", () => {
+    const assetPreimage = xdr.ContractIdPreimage.contractIdPreimageFromAsset(
+      xdr.Asset.assetTypeNative(),
+    );
+    const addressPreimage =
+      xdr.ContractIdPreimage.contractIdPreimageFromAddress(
+        new xdr.ContractIdPreimageFromAddress({
+          address: new Address(TEST_PUBLIC_KEY).toScAddress(),
+          salt: Buffer.alloc(32),
+        }),
+      );
+
+    const build = (executable, contractIdPreimage) =>
+      new xdr.SorobanAuthorizedInvocation({
+        function:
+          xdr.SorobanAuthorizedFunction.sorobanAuthorizedFunctionTypeCreateContractHostFn(
+            new xdr.CreateContractArgs({ contractIdPreimage, executable }),
+          ),
+        subInvocations: [],
+      });
+
+    // wasm code must be deployed from an address, never derived from an asset
+    expect(() =>
+      getInvocationArgs(
+        build(
+          xdr.ContractExecutable.contractExecutableWasm(Buffer.alloc(32)),
+          assetPreimage,
+        ),
+      ),
+    ).toThrow(/wasm executable.*contractIdPreimageFromAsset/);
+
+    // and a SAC is only ever derived from an asset
+    expect(() =>
+      getInvocationArgs(
+        build(
+          xdr.ContractExecutable.contractExecutableStellarAsset(),
+          addressPreimage,
+        ),
+      ),
+    ).toThrow(/Stellar asset executable.*contractIdPreimageFromAddress/);
+  });
   it("marks an invocation it cannot parse as unrecognized instead of throwing", () => {
     // A wasm executable paired with an asset preimage is decodable XDR but a
     // nonsensical combination -- the kind of thing a future protocol arm or a

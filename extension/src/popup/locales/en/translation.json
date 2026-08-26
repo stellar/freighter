@@ -636,7 +636,7 @@
   "This authorization is for {{address}}.": "This authorization is for {{address}}.",
   "This can be used to sign arbitrary transaction hashes without having to decode them first.": "This can be used to sign arbitrary transaction hashes without having to decode them first.",
   "This collectible is hidden": "This collectible is hidden",
-  "This contract's code is managed by the owner contract above and can change after you sign.": "This contract's code is managed by the owner contract above and can change after you sign.",
+  "This contract's code is managed by the executable owner and can change after you sign.": "This contract's code is managed by the executable owner and can change after you sign.",
   "This is not a valid contract id.": "This is not a valid contract id.",
   "This message is too large for your Ledger to display. Ask the site for a shorter message.": "This message is too large for your Ledger to display. Ask the site for a shorter message.",
   "This site does not appear safe for the following reasons": "This site does not appear safe for the following reasons",

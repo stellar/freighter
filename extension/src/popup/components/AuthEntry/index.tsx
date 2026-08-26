@@ -164,6 +164,7 @@ export const AuthEntries = ({ entries }: AuthEntriesProps) => {
                 <span>{t("Contract creation")}</span>
               </div>
               <div className="AuthEntry__InfoBlock">
+                <ExternalExecutableNote />
                 {detail.address && (
                   <KeyValueList
                     operationKey={t("Contract Address")}
@@ -194,7 +195,6 @@ export const AuthEntries = ({ entries }: AuthEntriesProps) => {
                     operationValue={truncateString(detail.salt)}
                   />
                 )}
-                <ExternalExecutableNote />
                 {detail.args && <KeyValueInvokeHostFnArgs args={detail.args} />}
               </div>
             </React.Fragment>
