@@ -82,9 +82,9 @@ const toDepositRow = (
     decimals,
     tokens: scale(principalRaw, decimals),
     usd:
-      row.usdValue === null
+      row.usdValue === null || row.interestEarnedUsd === null
         ? null
-        : row.usdValue - (row.interestEarnedUsd ?? 0),
+        : new BigNumber(row.usdValue).minus(row.interestEarnedUsd).toNumber(),
   };
 };
 

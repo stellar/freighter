@@ -89,6 +89,27 @@ describe("getPositionSummary — supply scope", () => {
     expect(result.earnings[0].tokens).toBe("0.1234");
   });
 
+  it("keeps deposit usd null when interest usd is unknown, instead of crediting the whole balance as principal", () => {
+    // interestEarnedUsd is nullable independently of usdValue. Defaulting it
+    // to 0 here would show the full balance as principal on the Deposits
+    // card while the Earnings card shows "--" for that same asset — two
+    // displayed numbers that no longer sum to the displayed Current Balance.
+    const result = summary(USDC_SAC, [
+      { ...usdcSupply, interestEarnedUsd: null },
+    ]);
+
+    expect(result.deposits[0].usd).toBeNull();
+    expect(result.earnings[0].usd).toBeNull();
+  });
+
+  it("keeps deposit usd and projections null when the balance itself is unknown", () => {
+    const result = summary(USDC_SAC, [{ ...usdcSupply, usdValue: null }]);
+
+    expect(result.deposits[0].usd).toBeNull();
+    expect(result.estYearlyUsd).toBeNull();
+    expect(result.estMonthlyUsd).toBeNull();
+  });
+
   it("projects once from the scoped balance and rate", () => {
     const result = summary(USDC_SAC);
 
