@@ -28,12 +28,21 @@ export interface PoolPositionSummary {
  * that put in 1252.57 and now holds 1284.32 has gained 2.54% of what it
  * committed, not 2.47% of what it now has. Same convention the sheet already
  * uses for deposits.
+ *
+ * Borrows are deliberately not surfaced on this screen: `totalUsd` is the
+ * SUPPLIED side (`position.suppliedUsd`), not `netUsd` ("supplied minus
+ * borrowed"). The rows this total heads list supplied assets only, so a
+ * borrow-carrying position would otherwise show a header that disagrees with
+ * its own list — e.g. $1,000 supplied and $400 borrowed nets to a $600
+ * header sitting above a list that reads $1,000. `netUsd` is used only as a
+ * fallback for the (currently theoretical) case where `suppliedUsd` itself is
+ * unpriced but `netUsd` is not.
  */
 export const getPoolPositionSummary = (
   position: PoolPosition,
 ): PoolPositionSummary => {
   const supply = position.blend?.supply || [];
-  const totalUsd = position.netUsd ?? null;
+  const totalUsd = position.suppliedUsd ?? position.netUsd ?? null;
 
   // A position with no detail at all has UNKNOWN interest, not zero — the
   // difference `[].reduce(…, 0)` would silently erase. A position whose detail

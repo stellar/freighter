@@ -70,8 +70,10 @@ describe("getPoolPositionSummary", () => {
   });
 
   it("keeps an unpriced pool total from producing a gain", () => {
+    // totalUsd now comes from suppliedUsd (falling back to netUsd), so both
+    // must be null to exercise the unpriced-total path.
     const result = getPoolPositionSummary(
-      position([supply()], { netUsd: null }),
+      position([supply()], { suppliedUsd: null, netUsd: null }),
     );
 
     expect(result.totalUsd).toBeNull();
@@ -82,7 +84,10 @@ describe("getPoolPositionSummary", () => {
     // A position that is entirely accrued interest: total equals interest, so
     // principal is 0 and the ratio is undefined.
     const result = getPoolPositionSummary(
-      position([supply({ interestEarnedUsd: 50 })], { netUsd: 50 }),
+      position([supply({ interestEarnedUsd: 50 })], {
+        suppliedUsd: 50,
+        netUsd: 50,
+      }),
     );
 
     expect(result.gainPercent).toBeNull();
@@ -103,6 +108,29 @@ describe("getPoolPositionSummary", () => {
     const result = getPoolPositionSummary(position([]));
 
     expect(result.interestUsd).toBe(0);
+  });
+
+  it("totals the supplied side, not net-of-borrow, when the pool carries a borrow", () => {
+    // The screen that shows this total lists supplied assets directly
+    // beneath it -- $1,000 USDC supplied, $400 borrowed in the same pool
+    // nets to $600, which would disagree with a list that reads $1,000.
+    const result = getPoolPositionSummary(
+      position([supply({ usdValue: 1000, interestEarnedUsd: 0 })], {
+        netUsd: 600,
+        suppliedUsd: 1000,
+        borrowedUsd: 400,
+      }),
+    );
+
+    expect(result.totalUsd).toBe(1000);
+  });
+
+  it("falls back to netUsd only when suppliedUsd itself is unpriced", () => {
+    const result = getPoolPositionSummary(
+      position([supply()], { netUsd: 1284.32, suppliedUsd: null }),
+    );
+
+    expect(result.totalUsd).toBe(1284.32);
   });
 
   it("handles a position carrying no blend detail", () => {
