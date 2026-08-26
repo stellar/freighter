@@ -8,7 +8,7 @@ import {
   LiquidityPoolAsset,
   nativeToScVal,
   Operation,
-  Signer,
+  OperationRecord,
   StrKey,
   xdr,
 } from "stellar-sdk";
@@ -148,11 +148,20 @@ export const KeyValueInvocation = ({
   );
 };
 
-export const KeyValueSigner = ({ signer }: { signer: Signer }) => {
+/**
+ * The signer shape a `setOptions` operation carries. Like {@link RevokeSignerKey}
+ * its hash fields are `Uint8Array | string`, so it must not be narrowed to
+ * `Signer` either -- even though this path returns real bytes today.
+ */
+type SetOptionsSignerKey = NonNullable<
+  Extract<OperationRecord, { type: "setOptions" }>["signer"]
+>;
+
+export const KeyValueSigner = ({ signer }: { signer: SetOptionsSignerKey }) => {
   const { t } = useTranslation();
 
   function renderSignerType() {
-    if ("ed25519PublicKey" in signer) {
+    if (signer.ed25519PublicKey) {
       return (
         <KeyValueWithPublicKey
           operationKey={t("Signer")}
@@ -161,7 +170,7 @@ export const KeyValueSigner = ({ signer }: { signer: Signer }) => {
       );
     }
 
-    if ("sha256Hash" in signer) {
+    if (signer.sha256Hash) {
       return (
         <KeyValueList
           operationKey={t("Signer")}
@@ -170,7 +179,7 @@ export const KeyValueSigner = ({ signer }: { signer: Signer }) => {
       );
     }
 
-    if ("preAuthTx" in signer) {
+    if (signer.preAuthTx) {
       return (
         <KeyValueList
           operationKey={t("Signer")}
@@ -179,7 +188,7 @@ export const KeyValueSigner = ({ signer }: { signer: Signer }) => {
       );
     }
 
-    if ("ed25519SignedPayload" in signer) {
+    if (signer.ed25519SignedPayload) {
       return (
         <KeyValueList
           operationKey={t("Signer")}
@@ -345,10 +354,21 @@ export const KeyValueClaimants = ({ claimants }: { claimants: Claimant[] }) => {
   );
 };
 
-export const KeyValueSignerKeyOptions = ({ signer }: { signer: Signer }) => {
+/**
+ * The signer shape a `revokeSignerSponsorship` operation carries. Unlike
+ * `setOptions`' `Signer`, its hash fields are `Uint8Array | string` -- which is
+ * the truth at runtime, so this must not be narrowed to `Signer`.
+ */
+type RevokeSignerKey = Operation.RevokeSignerSponsorship["signer"];
+
+export const KeyValueSignerKeyOptions = ({
+  signer,
+}: {
+  signer: RevokeSignerKey;
+}) => {
   const { t } = useTranslation();
 
-  if ("ed25519PublicKey" in signer) {
+  if (signer.ed25519PublicKey) {
     return (
       <KeyValueWithPublicKey
         operationKey={t("Signer Key")}
@@ -357,7 +377,7 @@ export const KeyValueSignerKeyOptions = ({ signer }: { signer: Signer }) => {
     );
   }
 
-  if ("sha256Hash" in signer) {
+  if (signer.sha256Hash) {
     return (
       <KeyValueList
         operationKey={t("Signer Sha256 Hash")}
@@ -366,7 +386,7 @@ export const KeyValueSignerKeyOptions = ({ signer }: { signer: Signer }) => {
     );
   }
 
-  if ("preAuthTx" in signer) {
+  if (signer.preAuthTx) {
     return (
       <KeyValueList
         operationKey={t("Pre Auth Transaction")}
@@ -375,7 +395,7 @@ export const KeyValueSignerKeyOptions = ({ signer }: { signer: Signer }) => {
     );
   }
 
-  if ("ed25519SignedPayload" in signer) {
+  if (signer.ed25519SignedPayload) {
     return (
       <KeyValueList
         operationKey={t("Signed Payload")}

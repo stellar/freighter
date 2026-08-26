@@ -1,9 +1,21 @@
 import React from "react";
 import { render, waitFor, screen, cleanup } from "@testing-library/react";
-import { Address, Keypair, Operation, StrKey, xdr } from "stellar-sdk";
+import {
+  Account,
+  Address,
+  Keypair,
+  Networks,
+  Operation,
+  StrKey,
+  TransactionBuilder,
+  xdr,
+} from "stellar-sdk";
 
 import { mockAccounts, TEST_PUBLIC_KEY, Wrapper } from "popup/__testHelpers__";
-import { KeyValueInvokeHostFn } from "../signTransaction/Operations/KeyVal";
+import {
+  KeyValueInvokeHostFn,
+  KeyValueSignerKeyOptions,
+} from "../signTransaction/Operations/KeyVal";
 import * as internalApi from "@shared/api/internal";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import {
@@ -305,6 +317,61 @@ describe("Operations KeyVal", () => {
           "Operations__pair--value-expanded",
         );
       });
+    });
+  });
+
+  describe("KeyValueSignerKeyOptions", () => {
+    // SDK 17's revokeSignerSponsorship arm returns sha256Hash / preAuthTx as
+    // hex strings rather than bytes, so decode a real op instead of hand-rolling
+    // the shape.
+    const decodeRevokeSignerOp = (signer: {
+      sha256Hash?: any;
+      preAuthTx?: any;
+    }) => {
+      const tx = new TransactionBuilder(new Account(TEST_PUBLIC_KEY, "0"), {
+        fee: "100",
+        networkPassphrase: Networks.TESTNET,
+      })
+        .addOperation(
+          Operation.revokeSignerSponsorship({
+            account: TEST_PUBLIC_KEY,
+            signer: signer as any,
+          }),
+        )
+        .setTimeout(0)
+        .build();
+
+      return TransactionBuilder.fromXdr(
+        tx.toEnvelope().toXdr("base64"),
+        Networks.TESTNET,
+      ).operations[0] as Operation.RevokeSignerSponsorship;
+    };
+
+    const readValue = (label: string) =>
+      screen
+        .getByText(label)
+        .parentNode?.querySelector("[data-testid='OperationKeyVal__value']");
+
+    it("renders a sha256Hash signer key as its true hex value", async () => {
+      const op = decodeRevokeSignerOp({
+        sha256Hash: new Uint8Array(32).fill(0xab),
+      });
+
+      render(<KeyValueSignerKeyOptions signer={op.signer} />);
+      await waitFor(() => screen.getAllByTestId("OperationKeyVal"));
+
+      expect(readValue("Signer Sha256 Hash")).toHaveTextContent("ABAB…ABAB");
+    });
+
+    it("renders a preAuthTx signer key as its true hex value", async () => {
+      const op = decodeRevokeSignerOp({
+        preAuthTx: new Uint8Array(32).fill(0xcd),
+      });
+
+      render(<KeyValueSignerKeyOptions signer={op.signer} />);
+      await waitFor(() => screen.getAllByTestId("OperationKeyVal"));
+
+      expect(readValue("Pre Auth Transaction")).toHaveTextContent("CDCD…CDCD");
     });
   });
 });

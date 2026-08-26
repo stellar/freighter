@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import { Badge, Icon, IconButton } from "@stellar/design-system";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
-import { OperationRecord, Signer, xdr } from "stellar-sdk";
+import { OperationRecord, xdr } from "stellar-sdk";
 
 import {
   FLAG_TYPES,
@@ -417,11 +417,7 @@ export const Operations = ({
         } = op;
         return (
           <>
-            {signer && (
-              // v16 types the parsed setOptions signer as the builder opts
-              // type; at runtime it is a parsed Signer (Buffer-backed fields).
-              <KeyValueSigner signer={signer as unknown as Signer} />
-            )}
+            {signer && <KeyValueSigner signer={signer} />}
             {inflationDest && (
               <KeyValueWithPublicKey
                 operationKey={t("Inflation Destination")}
@@ -819,7 +815,7 @@ export const Operations = ({
           const { account, signer } = op;
           return (
             <>
-              <KeyValueSignerKeyOptions signer={signer as unknown as Signer} />
+              <KeyValueSignerKeyOptions signer={signer} />
               <KeyValueWithPublicKey
                 operationKey={t("Account")}
                 operationValue={account}
