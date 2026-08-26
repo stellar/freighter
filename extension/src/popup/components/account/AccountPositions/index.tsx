@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Loader, Notification } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
@@ -103,6 +103,29 @@ export const AccountPositions = ({
     setSheetMode(null);
   };
 
+  // Resolved from the tapped card's id rather than held directly, so the sheet
+  // always renders the catalog's live figures instead of a snapshot taken at
+  // click time. Computed unconditionally, ahead of the early returns, so the
+  // effect below can watch it on every render.
+  const poolPositions = positions?.positions ?? [];
+  const selectedPosition =
+    poolPositions.find((p) => p.id === selectedPoolId) ?? null;
+
+  // A 30-second refresh tick can drop the selected pool from `positions`
+  // (closed, drained, etc.) without any user interaction. Radix's Sheet is
+  // controlled by `open={Boolean(selectedPosition)}`, so the sheet closes on
+  // its own the moment that happens -- but `selectedPoolId` and `sheetMode`
+  // stay set. If the pool reappears on a later tick, `selectedPosition`
+  // becomes truthy again and the sheet reopens by itself, nested modal
+  // restored, with no tap from the account. Clear both the moment the
+  // selection stops resolving to a live position.
+  useEffect(() => {
+    if (selectedPoolId !== null && selectedPosition === null) {
+      setSelectedPoolId(null);
+      setSheetMode(null);
+    }
+  }, [selectedPoolId, selectedPosition]);
+
   if (isLoading) {
     return (
       <div className="AccountPositions" data-testid="account-positions">
@@ -134,8 +157,6 @@ export const AccountPositions = ({
     );
   }
 
-  const poolPositions = positions?.positions ?? [];
-
   if (!poolPositions.length) {
     return (
       <div className="AccountPositions" data-testid="account-positions">
@@ -148,11 +169,6 @@ export const AccountPositions = ({
     );
   }
 
-  // Resolved from the tapped card's id rather than held directly, so the sheet
-  // always renders the catalog's live figures instead of a snapshot taken at
-  // click time.
-  const selectedPosition =
-    poolPositions.find((p) => p.id === selectedPoolId) ?? null;
   const selectedPool = pools.find((p) => p.id === selectedPoolId) ?? null;
 
   return (
@@ -189,7 +205,6 @@ export const AccountPositions = ({
           {selectedPosition && (
             <MyPosition
               position={selectedPosition}
-              pool={selectedPool}
               assetIcons={assetIcons}
               networkDetails={networkDetails}
               onClose={closeMyPosition}

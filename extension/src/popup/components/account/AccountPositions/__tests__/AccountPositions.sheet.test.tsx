@@ -76,34 +76,46 @@ const pool = {
 
 const pool2 = { ...pool, id: POOL_ID_2, name: "Variable Pool" };
 
+const poolAPosition = {
+  protocol: "blend",
+  id: POOL_ID,
+  name: "Fixed Pool v2",
+  netUsd: 620.16,
+  suppliedUsd: 620.16,
+  borrowedUsd: 0,
+  netApy: 0.16,
+  blend: { supply: [supply()], borrow: [] },
+};
+const poolBPosition = {
+  protocol: "blend",
+  id: POOL_ID_2,
+  name: "Variable Pool",
+  netUsd: 500.12,
+  suppliedUsd: 500.12,
+  borrowedUsd: 0,
+  netApy: 0.1,
+  blend: { supply: [supply()], borrow: [] },
+};
+
 // Two independent pool positions -- for the stale-modal regression below,
 // which needs a second pool to switch to after closing the first.
 const twoPoolPositions = {
   address: TEST_PUBLIC_KEY,
   totalValueUsd: 1120.28,
   netApy: 0.16,
-  positions: [
-    {
-      protocol: "blend",
-      id: POOL_ID,
-      name: "Fixed Pool v2",
-      netUsd: 620.16,
-      suppliedUsd: 620.16,
-      borrowedUsd: 0,
-      netApy: 0.16,
-      blend: { supply: [supply()], borrow: [] },
-    },
-    {
-      protocol: "blend",
-      id: POOL_ID_2,
-      name: "Variable Pool",
-      netUsd: 500.12,
-      suppliedUsd: 500.12,
-      borrowedUsd: 0,
-      netApy: 0.1,
-      blend: { supply: [supply()], borrow: [] },
-    },
-  ],
+  positions: [poolAPosition, poolBPosition],
+  backstop: [],
+} as never;
+
+// The 30-second refresh tick's view of the world once POOL_ID has dropped out
+// -- e.g. closed, drained, or otherwise no longer carrying a position --
+// while POOL_ID_2 is unaffected. Used to simulate that tick landing while My
+// position is open for POOL_ID.
+const withoutFirstPool = {
+  address: TEST_PUBLIC_KEY,
+  totalValueUsd: poolBPosition.netUsd,
+  netApy: poolBPosition.netApy,
+  positions: [poolBPosition],
   backstop: [],
 } as never;
 
@@ -184,6 +196,11 @@ describe("AccountPositions pool sheet", () => {
       await screen.findByTestId("earn-position-panel"),
     ).toBeInTheDocument();
     expect(screen.getByTestId("earn-pool-details-tabs")).toBeInTheDocument();
+    // Pins the panel to the tapped asset, not the pool's other row: USDC's
+    // 500.12 here, never XLM's 120.04.
+    expect(screen.getByTestId("earn-position-balance")).toHaveTextContent(
+      "$500.12",
+    );
   });
 
   it("does not carry a stale pool-details view into the next pool's My position", async () => {
@@ -208,5 +225,51 @@ describe("AccountPositions pool sheet", () => {
     expect(
       screen.queryByTestId("earn-pool-details-sheet"),
     ).not.toBeInTheDocument();
+  });
+
+  it("does not reopen My position on its own when a refresh tick brings the pool back", async () => {
+    // Radix's Sheet is controlled by `open={Boolean(selectedPosition)}`. A
+    // 30-second refresh tick that drops the selected pool closes the sheet
+    // declaratively -- Radix's own onOpenChange never fires for that, so
+    // nothing clears `selectedPoolId` unless the component does it itself. If
+    // it didn't, the pool reappearing on a later tick would flip
+    // `selectedPosition` truthy again and the sheet would reopen with no tap
+    // from the account.
+    const { rerender } = renderTab({
+      positions: twoPoolPositions,
+      pools: [pool, pool2],
+    });
+
+    fireEvent.click(screen.getByTestId(`pool-card-${POOL_ID}`));
+    expect(await screen.findByTestId("my-position-sheet")).toBeInTheDocument();
+
+    const rerenderTab = (
+      props: Partial<React.ComponentProps<typeof AccountPositions>>,
+    ) =>
+      rerender(
+        <Wrapper state={{}} routes={["/"]}>
+          <AccountPositions
+            positions={null}
+            isLoading={false}
+            hasError={false}
+            assetIcons={{}}
+            networkDetails={MAINNET_NETWORK_DETAILS}
+            projectedUsd={null}
+            bestApy={null}
+            onStartEarning={() => {}}
+            pools={[pool, pool2]}
+            onDeposit={() => {}}
+            {...props}
+          />
+        </Wrapper>,
+      );
+
+    // The tick that drops POOL_ID.
+    rerenderTab({ positions: withoutFirstPool });
+    expect(screen.queryByTestId("my-position-sheet")).not.toBeInTheDocument();
+
+    // The tick that brings it back.
+    rerenderTab({ positions: twoPoolPositions });
+    expect(screen.queryByTestId("my-position-sheet")).not.toBeInTheDocument();
   });
 });
