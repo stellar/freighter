@@ -76,9 +76,13 @@ export const METRIC_NAMES = {
   earnDepositDismissed: "earn.deposit_processing_dismissed",
 
   // -- Positions -----------------------------------------------------------
-  // The Home tab listing the account's supplied tokens. `earn.*` events cover
+  // The Home tab listing the account's supplied pools. `earn.*` events cover
   // what happens after one of these leads into the deposit flow; the `source`
   // dimension on the deposit outcomes is what joins the two.
+  // A pool card on the Positions tab was tapped, opening that pool's position.
+  // Distinct from `positions.row_selected`, which is now one level deeper — the
+  // supplied-asset row inside it.
+  positionPoolSelected: "positions.pool_selected",
   positionRowSelected: "positions.row_selected",
   positionsEmptyCtaSelected: "positions.empty_cta_selected",
 

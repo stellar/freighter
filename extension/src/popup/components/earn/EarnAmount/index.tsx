@@ -31,6 +31,7 @@ import { useNetworkFees } from "popup/helpers/useNetworkFees";
 import { emitScreenViewed } from "helpers/metrics";
 import { scrubStrKeys } from "helpers/stellarStrKey";
 import {
+  POOL_DETAILS_SOURCE,
   trackEarnPercentAmountSelected,
   trackEarnPoolDetailsOpened,
   trackEarnPoolDetailsTabSelected,
@@ -87,7 +88,6 @@ export const EarnAmount = ({ goBack, onConfirm }: EarnAmountProps) => {
     selectedAssetId,
     lastSubmitFailed,
     currentPositionTokens,
-    source,
   } = useSelector(earnSelector);
   const { state: simulationState, simulate } = useSimulateEarnDeposit();
   const { recommendedFee } = useNetworkFees();
@@ -408,7 +408,10 @@ export const EarnAmount = ({ goBack, onConfirm }: EarnAmountProps) => {
               poolName={pool.name}
               apy={selectedAssetApy}
               onOpenDetails={() => {
-                trackEarnPoolDetailsOpened({ poolId: pool.id, source });
+                trackEarnPoolDetailsOpened({
+                  poolId: pool.id,
+                  source: POOL_DETAILS_SOURCE.EARN_AMOUNT,
+                });
                 setIsPoolSheetOpen(true);
               }}
             />
@@ -484,7 +487,11 @@ export const EarnAmount = ({ goBack, onConfirm }: EarnAmountProps) => {
             defaultTab="overview"
             onClose={() => setIsPoolSheetOpen(false)}
             onTabChange={(tab) =>
-              trackEarnPoolDetailsTabSelected({ poolId: pool.id, tab, source })
+              trackEarnPoolDetailsTabSelected({
+                poolId: pool.id,
+                tab,
+                source: POOL_DETAILS_SOURCE.EARN_AMOUNT,
+              })
             }
           />
         ) : (

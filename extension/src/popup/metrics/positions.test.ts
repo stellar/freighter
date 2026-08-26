@@ -1,6 +1,7 @@
 import { emitMetric } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import {
+  trackPoolSelected,
   trackPositionRowSelected,
   trackPositionsEmptyCtaSelected,
 } from "popup/metrics/positions";
@@ -10,6 +11,15 @@ const mocked = emitMetric as jest.Mock;
 beforeEach(() => mocked.mockReset());
 
 describe("positions metrics", () => {
+  it("reports a pool card tap", () => {
+    trackPoolSelected({ poolId: "CAJJ", protocol: "blend" });
+
+    expect(mocked).toHaveBeenCalledWith(METRIC_NAMES.positionPoolSelected, {
+      pool_id: "CAJJ",
+      protocol: "blend",
+    });
+  });
+
   it("reports a row tap with the pool it belongs to", () => {
     trackPositionRowSelected({
       poolId: "CAJJ",

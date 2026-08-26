@@ -5,6 +5,7 @@ import { Icon } from "@stellar/design-system";
 import { Link } from "react-router-dom";
 
 import { isEarnSupportedNetwork } from "@shared/constants/blend";
+import { EARN_SOURCE, EARN_SOURCE_KEY } from "popup/constants/earn";
 import { ROUTES } from "popup/constants/routes";
 import { earnDepositSelector } from "popup/ducks/remoteConfig";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
@@ -53,7 +54,7 @@ export const FloatingAddButton = ({
     return (
       <Link
         className="FloatingAddButton"
-        to={ROUTES.earn}
+        to={`${ROUTES.earn}?${EARN_SOURCE_KEY}=${EARN_SOURCE.POSITIONS_PILL}`}
         data-testid="deposit-btn"
       >
         <Icon.Plus />

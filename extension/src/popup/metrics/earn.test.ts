@@ -120,6 +120,15 @@ describe("Earn funnel metrics", () => {
     );
   });
 
+  it("reports a sheet opened from About pool", () => {
+    trackEarnPoolDetailsOpened({ poolId: POOL_ID, source: "about_pool" });
+
+    expect(mockEmitMetric).toHaveBeenCalledWith(
+      METRIC_NAMES.earnPoolDetailsOpened,
+      { pool_id: POOL_ID, source: "about_pool" },
+    );
+  });
+
   it("tells the two XLM-fee shortfalls apart", () => {
     // Same drop-off, different remedy: one account has no XLM at all and gets
     // the buy/swap sheet, the other allocated it all to the deposit.

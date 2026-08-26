@@ -45,6 +45,8 @@ export const EARN_SOURCE = {
   HOME: "home",
   POSITION_ROW: "position_row",
   POSITIONS_EMPTY: "positions_empty",
+  /** The Positions tab's floating Deposit pill (FloatingAddButton). */
+  POSITIONS_PILL: "positions_pill",
 } as const;
 
 export type EarnSource = (typeof EARN_SOURCE)[keyof typeof EARN_SOURCE];
@@ -60,7 +62,8 @@ export const EARN_SOURCE_KEY = "source";
 export const getEarnSourceFromSearch = (search: string): EarnSource => {
   const value = new URLSearchParams(search).get(EARN_SOURCE_KEY);
   return value === EARN_SOURCE.POSITION_ROW ||
-    value === EARN_SOURCE.POSITIONS_EMPTY
+    value === EARN_SOURCE.POSITIONS_EMPTY ||
+    value === EARN_SOURCE.POSITIONS_PILL
     ? value
     : EARN_SOURCE.HOME;
 };

@@ -18,6 +18,15 @@ import {
 } from "popup/basics/shadcn/Sheet";
 import { SlideupModal } from "popup/components/SlideupModal";
 import { PoolDetailsSheet } from "popup/components/earn/PoolDetailsSheet";
+import {
+  POOL_DETAILS_SOURCE,
+  trackEarnPoolDetailsOpened,
+  trackEarnPoolDetailsTabSelected,
+} from "popup/metrics/earn";
+import {
+  trackPoolSelected,
+  trackPositionRowSelected,
+} from "popup/metrics/positions";
 import { PoolCard } from "./PoolCard";
 import { MyPosition } from "./MyPosition";
 import { EmptyState } from "./EmptyState";
@@ -153,7 +162,13 @@ export const AccountPositions = ({
           <PoolCard
             key={position.id}
             position={position}
-            onClick={() => setSelectedPoolId(position.id)}
+            onClick={() => {
+              trackPoolSelected({
+                poolId: position.id,
+                protocol: position.protocol,
+              });
+              setSelectedPoolId(position.id);
+            }}
           />
         ))}
       </div>
@@ -178,8 +193,25 @@ export const AccountPositions = ({
               assetIcons={assetIcons}
               networkDetails={networkDetails}
               onClose={closeMyPosition}
-              onAboutPool={() => setSheetMode({ kind: "about" })}
-              onSelectAsset={(row) => setSheetMode({ kind: "asset", row })}
+              onAboutPool={() => {
+                trackEarnPoolDetailsOpened({
+                  poolId: selectedPosition.id,
+                  source: POOL_DETAILS_SOURCE.ABOUT_POOL,
+                });
+                setSheetMode({ kind: "about" });
+              }}
+              onSelectAsset={(row) => {
+                trackPositionRowSelected({
+                  poolId: selectedPosition.id,
+                  protocol: selectedPosition.protocol,
+                  assetCode: row.code,
+                });
+                trackEarnPoolDetailsOpened({
+                  poolId: selectedPosition.id,
+                  source: POOL_DETAILS_SOURCE.POSITION_ROW,
+                });
+                setSheetMode({ kind: "asset", row });
+              }}
             />
           )}
           <SlideupModal
@@ -198,6 +230,16 @@ export const AccountPositions = ({
                 assetIcons={assetIcons}
                 defaultTab="your_position"
                 onClose={() => setSheetMode(null)}
+                onTabChange={(tab) =>
+                  trackEarnPoolDetailsTabSelected({
+                    poolId: selectedPosition.id,
+                    tab,
+                    source:
+                      sheetMode.kind === "about"
+                        ? POOL_DETAILS_SOURCE.ABOUT_POOL
+                        : POOL_DETAILS_SOURCE.POSITION_ROW,
+                  })
+                }
                 onDeposit={
                   sheetMode.kind === "asset"
                     ? () => onDeposit(sheetMode.row, selectedPool)

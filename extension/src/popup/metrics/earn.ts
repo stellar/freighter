@@ -21,6 +21,21 @@ import { PoolDetailsTab } from "popup/components/earn/PoolDetailsSheet/Tabs";
 /** Which remedy the user chose on the "Not enough X" sheet. */
 export type EarnFundingAction = "buy" | "swap" | "transfer";
 
+/**
+ * Where the pool sheet was opened from. Deliberately NOT `EarnSource`: "About
+ * pool" opens this sheet but can never start a deposit, so folding it into the
+ * deposit-attribution vocabulary would put a non-deposit value in a dimension
+ * that exists to attribute deposits.
+ */
+export const POOL_DETAILS_SOURCE = {
+  EARN_AMOUNT: "earn_amount",
+  POSITION_ROW: "position_row",
+  ABOUT_POOL: "about_pool",
+} as const;
+
+export type PoolDetailsSource =
+  (typeof POOL_DETAILS_SOURCE)[keyof typeof POOL_DETAILS_SOURCE];
+
 export const trackEarnTokenSelected = ({
   assetCode,
   poolId,
@@ -96,7 +111,7 @@ export const trackEarnPoolDetailsOpened = ({
   source,
 }: {
   poolId: string;
-  source: EarnSource;
+  source: PoolDetailsSource;
 }) => {
   emitMetric(METRIC_NAMES.earnPoolDetailsOpened, {
     pool_id: poolId,
@@ -111,7 +126,7 @@ export const trackEarnPoolDetailsTabSelected = ({
 }: {
   poolId: string;
   tab: PoolDetailsTab;
-  source: EarnSource;
+  source: PoolDetailsSource;
 }) => {
   emitMetric(METRIC_NAMES.earnPoolDetailsTabSelected, {
     pool_id: poolId,

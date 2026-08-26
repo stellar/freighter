@@ -69,6 +69,7 @@ describe("METRIC_NAMES domain-event catalog", () => {
   });
 
   it("names the positions-tab events (the top of the deposit funnel)", () => {
+    expect(METRIC_NAMES.positionPoolSelected).toBe("positions.pool_selected");
     expect(METRIC_NAMES.positionRowSelected).toBe("positions.row_selected");
     expect(METRIC_NAMES.positionsEmptyCtaSelected).toBe(
       "positions.empty_cta_selected",
