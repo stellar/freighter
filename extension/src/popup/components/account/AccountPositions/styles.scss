@@ -20,9 +20,10 @@
   // Mirrors `.AccountCollectibles__loader` exactly, min-height included --
   // that value reserves the collectibles empty state's height (badge + title
   // + subtitle) so resolving into it doesn't shift the tab under the reader.
-  // Positions' empty state has no badge and Task 7 adds a projection card on
-  // top of it, so this number will need to be re-derived once that lands;
-  // carried over as-is for now rather than guessed.
+  // Positions' empty state has no badge but, as of Task 7, has a projection
+  // card and CTA that the Collectibles state doesn't reserve room for -- this
+  // number still needs to be re-derived (still carried over as-is rather than
+  // guessed) once real dimensions exist for those.
   &__loader {
     display: flex;
     align-items: center;
