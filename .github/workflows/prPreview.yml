@@ -93,6 +93,7 @@ jobs:
         env:
           FREIGHTER_CONFIG_DEPLOY_KEY:
             ${{ secrets.FREIGHTER_CONFIG_DEPLOY_KEY }}
+          GH_META_TOKEN: ${{ github.token }}
         run: |
           set -uo pipefail
           KEY_FILE="$(mktemp)"
@@ -121,7 +122,15 @@ jobs:
           # cert), write them to a temp known_hosts, and require
           # StrictHostKeyChecking=yes. If we can't obtain the keys, degrade to
           # staging rather than fall back to unverified host trust.
-          if ! curl -fsS --max-time 15 https://api.github.com/meta \
+          # Authenticated and retried, because a failure here silently costs
+          # the preview its sandbox targeting. Unauthenticated api.github.com
+          # allows 60 requests/hour PER IP and runners share egress addresses,
+          # so a busy pool exhausts it and this 403s. The job token raises the
+          # limit to 5000/hour and returns an identical response (verified:
+          # same ssh_keys either way). Retries cover transient blips.
+          if ! curl -fsS --max-time 15 --retry 3 --retry-delay 2 --retry-connrefused \
+               -H "Authorization: Bearer ${GH_META_TOKEN}" \
+               https://api.github.com/meta \
                | jq -r '.ssh_keys[] | "github.com \(.)"' > "$KNOWN_HOSTS" \
              || [ ! -s "$KNOWN_HOSTS" ]; then
             echo "config_available=false" >> "$GITHUB_OUTPUT"
