@@ -45,6 +45,8 @@ interface ViewAppHeaderProps {
   customBackIcon?: React.ReactNode;
   isAccountHeader?: boolean;
   children?: React.ReactNode;
+  /** Forwarded to the back button itself, not this header's own container. */
+  backButtonTestId?: string;
 }
 
 const ViewAppHeader: React.FC<ViewAppHeaderProps> = ({
@@ -59,6 +61,7 @@ const ViewAppHeader: React.FC<ViewAppHeaderProps> = ({
   customBackIcon,
   children,
   isAccountHeader = false,
+  backButtonTestId,
   ...props
 }: ViewAppHeaderProps) => (
   <div className="View__header" {...props}>
@@ -74,6 +77,7 @@ const ViewAppHeader: React.FC<ViewAppHeaderProps> = ({
           <BackButton
             customBackAction={customBackAction}
             customBackIcon={customBackIcon}
+            data-testid={backButtonTestId}
           />
         ) : null}
 

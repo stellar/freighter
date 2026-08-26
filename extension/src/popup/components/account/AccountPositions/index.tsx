@@ -9,19 +9,15 @@ import {
 import { AssetIcons } from "@shared/api/types";
 import { NetworkDetails } from "@shared/constants/stellar";
 
+import { PositionTokenRow } from "popup/components/earn/helpers/positionRows";
 import {
-  PositionTokenRow,
-  toPositionTokenRows,
-} from "popup/components/earn/helpers/positionRows";
-import { PoolDetailsSheet } from "popup/components/earn/PoolDetailsSheet";
-import { SlideupModal } from "popup/components/SlideupModal";
-import { EARN_SOURCE } from "popup/constants/earn";
-import {
-  trackEarnPoolDetailsOpened,
-  trackEarnPoolDetailsTabSelected,
-} from "popup/metrics/earn";
-import { trackPositionRowSelected } from "popup/metrics/positions";
-import { PositionRow } from "./PositionRow";
+  Sheet,
+  SheetContent,
+  SheetTitle,
+  ScreenReaderOnly,
+} from "popup/basics/shadcn/Sheet";
+import { PoolCard } from "./PoolCard";
+import { MyPosition } from "./MyPosition";
 import { EmptyState } from "./EmptyState";
 
 import "./styles.scss";
@@ -44,7 +40,7 @@ interface AccountPositionsProps {
   bestApy: number | null;
   /** Empty state's CTA was pressed, before it navigates to Earn. */
   onStartEarning: () => void;
-  /** The catalog backing the pool-details sheet opened from a tapped row. */
+  /** The catalog backing the pool-details sheet My position can open. */
   pools: BlendCatalogPool[];
   /** Deposit tapped inside that sheet, with the row and its resolved pool. */
   onDeposit: (row: PositionTokenRow, pool: BlendCatalogPool) => void;
@@ -61,6 +57,10 @@ interface AccountPositionsProps {
  * The error renders inside the pane rather than through the view's
  * `AccountView__fetch-fail` notification, which sits above the slider and would
  * push a banner across the Tokens and Collectibles tabs too.
+ *
+ * Lists one card per pool (Task 3) rather than one row per supplied token --
+ * the token-shaped rows now live one level down, inside the My position sheet
+ * a tapped card opens (Task 4).
  */
 export const AccountPositions = ({
   positions,
@@ -72,13 +72,16 @@ export const AccountPositions = ({
   bestApy,
   onStartEarning,
   pools,
-  onDeposit,
+  // Unused for now: the deposit funnel it feeds is wired up from inside
+  // My position (Task 4), not this tab. Kept on the props (see
+  // AccountPositionsProps) rather than destructured, so it isn't flagged as
+  // an unused binding under this repo's noUnusedParameters.
 }: AccountPositionsProps) => {
   const { t } = useTranslation();
-  // Which row's pool sheet is open, if any. Declared unconditionally, ahead of
-  // the early returns below, because Rules of Hooks forbids a hook call that
-  // only some renders reach.
-  const [selected, setSelected] = useState<PositionTokenRow | null>(null);
+  // Which pool's My position sheet is open, if any. Declared unconditionally,
+  // ahead of the early returns below, because Rules of Hooks forbids a hook
+  // call that only some renders reach.
+  const [selectedPoolId, setSelectedPoolId] = useState<string | null>(null);
 
   if (isLoading) {
     return (
@@ -111,9 +114,9 @@ export const AccountPositions = ({
     );
   }
 
-  const rows = toPositionTokenRows({ positions, networkDetails });
+  const poolPositions = positions?.positions ?? [];
 
-  if (!rows.length) {
+  if (!poolPositions.length) {
     return (
       <div className="AccountPositions" data-testid="account-positions">
         <EmptyState
@@ -125,63 +128,49 @@ export const AccountPositions = ({
     );
   }
 
-  // Resolved from the tapped row's id rather than held directly, so the sheet
+  // Resolved from the tapped card's id rather than held directly, so the sheet
   // always renders the catalog's live figures instead of a snapshot taken at
   // click time.
-  const selectedPool = pools.find((p) => p.id === selected?.poolId) ?? null;
   const selectedPosition =
-    positions?.positions.find((p) => p.id === selected?.poolId) ?? null;
+    poolPositions.find((p) => p.id === selectedPoolId) ?? null;
+  const selectedPool = pools.find((p) => p.id === selectedPoolId) ?? null;
 
   return (
     <div className="AccountPositions" data-testid="account-positions">
       <div className="AccountPositions__list">
-        {rows.map((row) => (
-          <PositionRow
-            key={`${row.poolId}-${row.assetId}`}
-            row={row}
-            assetIcons={assetIcons}
-            onClick={() => {
-              trackPositionRowSelected({
-                poolId: row.poolId,
-                protocol: row.protocol,
-                assetCode: row.code,
-              });
-              trackEarnPoolDetailsOpened({
-                poolId: row.poolId,
-                source: EARN_SOURCE.POSITION_ROW,
-              });
-              setSelected(row);
-            }}
+        {poolPositions.map((position) => (
+          <PoolCard
+            key={position.id}
+            position={position}
+            onClick={() => setSelectedPoolId(position.id)}
           />
         ))}
       </div>
 
-      <SlideupModal
-        isModalOpen={Boolean(selected && selectedPool)}
-        setIsModalOpen={() => setSelected(null)}
-        hasBackdrop
+      <Sheet
+        open={Boolean(selectedPosition)}
+        onOpenChange={(open) => !open && setSelectedPoolId(null)}
       >
-        {selected && selectedPool ? (
-          <PoolDetailsSheet
-            pool={selectedPool}
-            position={selectedPosition}
-            focusedAssetId={selected.assetId}
-            assetIcons={assetIcons}
-            defaultTab="your_position"
-            onClose={() => setSelected(null)}
-            onDeposit={() => onDeposit(selected, selectedPool)}
-            onTabChange={(tab) =>
-              trackEarnPoolDetailsTabSelected({
-                poolId: selectedPool.id,
-                tab,
-                source: EARN_SOURCE.POSITION_ROW,
-              })
-            }
-          />
-        ) : (
-          <div />
-        )}
-      </SlideupModal>
+        <SheetContent
+          onOpenAutoFocus={(e) => e.preventDefault()}
+          aria-describedby={undefined}
+          side="bottom"
+          className="AccountPositions__my-position__wrapper"
+        >
+          <ScreenReaderOnly>
+            <SheetTitle>{t("My position")}</SheetTitle>
+          </ScreenReaderOnly>
+          {selectedPosition && (
+            <MyPosition
+              position={selectedPosition}
+              pool={selectedPool}
+              assetIcons={assetIcons}
+              networkDetails={networkDetails}
+              onClose={() => setSelectedPoolId(null)}
+            />
+          )}
+        </SheetContent>
+      </Sheet>
     </div>
   );
 };

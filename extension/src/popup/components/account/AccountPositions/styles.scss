@@ -162,6 +162,15 @@
     display: flex;
     flex-direction: column;
   }
+
+  // Mirrors `AccountAssets__asset-detail__wrapper` exactly (same SheetContent
+  // host, same need for an opaque background over whatever the tab underneath
+  // is showing) -- see that file for the donor rule.
+  &__my-position__wrapper {
+    background: var(--sds-clr-gray-01);
+    height: 100%;
+    width: 100%;
+  }
 }
 
 // PositionRow has no existing Figma sibling (unlike the states above, which

@@ -3,53 +3,12 @@ import { render, screen, fireEvent } from "@testing-library/react";
 
 import { MAINNET_NETWORK_DETAILS } from "@shared/constants/stellar";
 import { BlendCatalogPool } from "@shared/api/types/blend";
-import { getCanonicalFromAsset } from "@shared/helpers/stellar";
 
 import { AccountPositions } from "popup/components/account/AccountPositions";
-import { PositionTokenRow } from "popup/components/earn/helpers/positionRows";
-import { TEST_PUBLIC_KEY, Wrapper, getTestStore } from "popup/__testHelpers__";
-import { ROUTES } from "popup/constants/routes";
-import {
-  EARN_PREFILL_QUERY,
-  EARN_SOURCE,
-  EARN_SOURCE_KEY,
-} from "popup/constants/earn";
-import { navigateTo } from "popup/helpers/navigate";
-import {
-  resetSubmission,
-  saveAsset,
-  saveDestination,
-  saveIsToken,
-} from "popup/ducks/transactionSubmission";
-import {
-  saveEarnPool,
-  saveSelectedAssetApy,
-  saveSelectedAssetId,
-} from "popup/ducks/earn";
-
-jest.mock("popup/metrics/positions", () => ({
-  trackPositionRowSelected: jest.fn(),
-  trackPositionsEmptyCtaSelected: jest.fn(),
-}));
-
-jest.mock("popup/metrics/earn", () => ({
-  ...jest.requireActual("popup/metrics/earn"),
-  trackEarnPoolDetailsOpened: jest.fn(),
-  trackEarnPoolDetailsTabSelected: jest.fn(),
-}));
-
-const { trackPositionRowSelected } = jest.requireMock<
-  typeof import("popup/metrics/positions")
->("popup/metrics/positions");
-
-const { trackEarnPoolDetailsOpened, trackEarnPoolDetailsTabSelected } =
-  jest.requireMock<typeof import("popup/metrics/earn")>("popup/metrics/earn");
+import { TEST_PUBLIC_KEY, Wrapper } from "popup/__testHelpers__";
 
 const POOL_ID = "CAJJZSGMMM3PD7N33TAPHGBUGTB43OC73HVIK2L2G6BNGGGYOSSYBXBD";
 const USDC_SAC = "CCW67TSZV3SSS2HXMBQ5JFGCKJNXKZM7UQUWUZPUTHXSTZLEO7SJMI75";
-const XLM_SAC = "CAS3J7GYLGXMF6TDJBBYYSE3HQ6BBSMLNUQ34T6TZMYMW2EVH34XOWMA";
-
-const mockNavigate = jest.fn();
 
 const supply = (over: Record<string, unknown> = {}) => ({
   assetId: USDC_SAC,
@@ -90,10 +49,7 @@ const withSupply = (rows: unknown[]) =>
     backstop: [],
   }) as never;
 
-const twoAssetPositions = withSupply([
-  supply(),
-  supply({ assetId: XLM_SAC, symbol: null, name: null, usdValue: 120.04 }),
-]);
+const onePosition = withSupply([supply()]);
 
 const pool = {
   id: POOL_ID,
@@ -106,28 +62,6 @@ const pool = {
   backstopUsd: 1530000,
   reserves: [],
 } as never as BlendCatalogPool;
-
-/**
- * Mirrors `views/Account`'s `onDepositFromPosition` exactly — the same six
- * dispatches plus the prefilled navigate — run here against the store
- * `Wrapper` stashes (see `getTestStore`) rather than by importing the view,
- * since that handler is a local function there, not an exported unit.
- */
-const onDeposit = (row: PositionTokenRow, depositPool: BlendCatalogPool) => {
-  const store = getTestStore()!;
-  store.dispatch(resetSubmission());
-  store.dispatch(saveEarnPool(depositPool));
-  store.dispatch(saveSelectedAssetApy(row.apy));
-  store.dispatch(saveSelectedAssetId(row.assetId));
-  store.dispatch(saveAsset(getCanonicalFromAsset(row.code, row.issuer)));
-  store.dispatch(saveDestination(row.poolId));
-  store.dispatch(saveIsToken(true));
-  navigateTo(
-    ROUTES.earn,
-    mockNavigate,
-    `${EARN_PREFILL_QUERY}&${EARN_SOURCE_KEY}=${EARN_SOURCE.POSITION_ROW}`,
-  );
-};
 
 const renderTab = (
   props: Partial<React.ComponentProps<typeof AccountPositions>>,
@@ -144,94 +78,41 @@ const renderTab = (
         bestApy={null}
         onStartEarning={() => {}}
         pools={[]}
-        onDeposit={onDeposit}
+        onDeposit={() => {}}
         {...props}
       />
     </Wrapper>,
   );
 
+/**
+ * Covers the tab's route into My position through a tapped pool card.
+ *
+ * Before this task, this file exercised the tab->PoolDetailsSheet path
+ * directly (its own tabs, its Deposit button, the metrics that path fired).
+ * That content now lives one level down, inside My position, and My position
+ * only ships its shell in this task -- PoolDetailsSheet is nested inside it,
+ * and the deposit funnel re-pointed at the asset rows, starting in Task 4.
+ * Those assertions move there; what is left here is the part Task 3 actually
+ * owns: My position opens for the tapped pool, whether or not the catalog
+ * carries a matching entry for it.
+ */
 describe("AccountPositions pool sheet", () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
+  it("opens My position when a pool card is tapped, with a matching catalog pool", async () => {
+    renderTab({ positions: onePosition, pools: [pool] });
+
+    fireEvent.click(screen.getByTestId(`pool-card-${POOL_ID}`));
+
+    expect(await screen.findByTestId("my-position-sheet")).toBeInTheDocument();
   });
 
-  it("opens the pool sheet on Your position when a row is tapped", async () => {
-    renderTab({ positions: twoAssetPositions, pools: [pool] });
+  it("still opens My position when the catalog has no matching pool", async () => {
+    // `pool` on MyPositionProps is `BlendCatalogPool | null` for exactly this
+    // reason: the position itself comes from `positions`, independent of
+    // whether the (separately fetched) catalog has caught up with it yet.
+    renderTab({ positions: onePosition, pools: [] });
 
-    fireEvent.click(screen.getByTestId("position-row-USDC"));
+    fireEvent.click(screen.getByTestId(`pool-card-${POOL_ID}`));
 
-    expect(
-      await screen.findByTestId("earn-pool-details-sheet"),
-    ).toBeInTheDocument();
-    expect(screen.getByTestId("earn-position-panel")).toBeInTheDocument();
-    expect(screen.getByTestId("earn-position-balance")).toHaveTextContent(
-      "$500.12",
-    );
-    // Both the funnel's top-of-page tap and the sheet it opens are attributed
-    // to the Positions row that started this flow.
-    expect(trackPositionRowSelected).toHaveBeenCalledWith({
-      poolId: POOL_ID,
-      protocol: "blend",
-      assetCode: "USDC",
-    });
-    expect(trackEarnPoolDetailsOpened).toHaveBeenCalledWith({
-      poolId: POOL_ID,
-      source: "position_row",
-    });
-  });
-
-  it("agrees with the row on a personal-scale USD figure, shown in full rather than compact (I1)", async () => {
-    // formatCompactUsd goes compact at $1,000 ("$1.50K"), dropping cents from
-    // a personal balance -- see formatAccountUsd's docstring. The row and the
-    // sheet must read the exact same figure for the exact same position.
-    renderTab({
-      positions: withSupply([supply({ usdValue: 1500 })]),
-      pools: [pool],
-    });
-
-    expect(screen.getByTestId("position-value-USDC")).toHaveTextContent(
-      "$1,500.00",
-    );
-
-    fireEvent.click(screen.getByTestId("position-row-USDC"));
-
-    expect(
-      await screen.findByTestId("earn-position-balance"),
-    ).toHaveTextContent("$1,500.00");
-  });
-
-  it("attributes a tab switch on the sheet to the position row that opened it", async () => {
-    renderTab({ positions: twoAssetPositions, pools: [pool] });
-
-    fireEvent.click(screen.getByTestId("position-row-USDC"));
-    fireEvent.click(
-      await screen.findByTestId("earn-pool-details-tab-overview"),
-    );
-
-    expect(trackEarnPoolDetailsTabSelected).toHaveBeenCalledWith({
-      poolId: POOL_ID,
-      tab: "overview",
-      source: "position_row",
-    });
-  });
-
-  it("prefills the deposit and lands on the amount screen", async () => {
-    renderTab({ positions: twoAssetPositions, pools: [pool] });
-
-    fireEvent.click(screen.getByTestId("position-row-USDC"));
-    fireEvent.click(await screen.findByText("Deposit"));
-
-    // `Wrapper` stashes its store; getTestStore() is how the other suites read it.
-    const state = getTestStore()!.getState();
-    expect(state.earn.selectedAssetId).toBe(USDC_SAC);
-    // `pool` is typed `BlendCatalogPool | null`; optional-chained rather than
-    // asserted so a regression fails on a clear mismatch, not a thrown TypeError.
-    expect(state.earn.pool?.id).toBe(POOL_ID);
-    expect(state.transactionSubmission.transactionData.destination).toBe(
-      POOL_ID,
-    );
-    expect(mockNavigate).toHaveBeenCalledWith(
-      expect.stringContaining("/earn?prefill=1&source=position_row"),
-    );
+    expect(await screen.findByTestId("my-position-sheet")).toBeInTheDocument();
   });
 });

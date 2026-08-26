@@ -13,6 +13,8 @@ interface SubviewHeaderProps {
   rightButton?: React.ReactNode;
   /** Sits in the left slot, after the back button if there is one. */
   leftButton?: React.ReactNode;
+  /** Forwarded to the back/close button itself, not this header's container. */
+  "data-testid"?: string;
 }
 
 export const SubviewHeader = ({
@@ -23,6 +25,7 @@ export const SubviewHeader = ({
   hasBackButton = true,
   rightButton,
   leftButton,
+  "data-testid": dataTestId,
 }: SubviewHeaderProps) => (
   <View.AppHeader
     pageTitle={title}
@@ -32,5 +35,6 @@ export const SubviewHeader = ({
     hasBackButton={hasBackButton}
     customBackAction={customBackAction}
     customBackIcon={customBackIcon}
+    backButtonTestId={dataTestId}
   />
 );
