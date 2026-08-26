@@ -139,7 +139,14 @@ function useGetAccountData(options: {
       // Same treatment as collectibles: started before the balances await and
       // deliberately not awaited yet, so the Positions tab's spinner is as short
       // as it can be. It needs only the key and network, both already known.
-      const positionsRequest = fetchPositions({ publicKey, networkDetails });
+      // `useCache` mirrors the balances call just below: an account/network
+      // switch (`shouldForceBalancesRefresh`) must not serve the previous
+      // account's cached positions.
+      const positionsRequest = fetchPositions({
+        publicKey,
+        networkDetails,
+        useCache: !shouldForceBalancesRefresh,
+      });
 
       // let's fetch *just* the balances (without Blockaid scan results) to quickly be able to show the user their balances
       const balancesResult = await fetchBalances(
@@ -336,9 +343,12 @@ function useGetAccountData(options: {
         let refreshedPositions = resolvedData.positions;
         let refreshedPositionsError = false;
         try {
+          // Unlike the initial load, this must hit the network every tick —
+          // the whole point of the interval is a fresh read.
           refreshedPositions = await fetchPositions({
             publicKey,
             networkDetails,
+            useCache: false,
           });
         } catch (error) {
           refreshedPositionsError = true;

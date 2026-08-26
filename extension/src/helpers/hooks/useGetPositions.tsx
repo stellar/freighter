@@ -14,6 +14,15 @@ import { positionsSelector, savePositions } from "popup/ducks/cache";
 export interface FetchPositionsParams {
   publicKey: string;
   networkDetails: NetworkDetails;
+  /**
+   * Per-call override for the hook-level `useCache` option, falling back to it
+   * when omitted. Same initial-load-vs-refresh split `useGetBalances` covers
+   * with its positional `useCache` argument: a cached initial load wants the 3
+   * minute window, but the 30s refresh interval and an account/network switch
+   * need a guaranteed network hit, and both share this one hook instance (and
+   * so its one hook-level default) with the initial load.
+   */
+  useCache?: boolean;
 }
 
 /** What an account with nothing supplied looks like, and the short-circuit
@@ -49,8 +58,13 @@ function useGetPositions({ useCache = true }: { useCache?: boolean } = {}) {
     async ({
       publicKey,
       networkDetails,
+      useCache: useCacheOverride,
     }: FetchPositionsParams): Promise<AccountPositions> => {
       dispatch({ type: "FETCH_DATA_START" });
+
+      // The per-call value wins when the caller passes one; otherwise fall
+      // back to the hook-level default from construction.
+      const shouldUseCache = useCacheOverride ?? useCache;
 
       // Earn only exists where we have an allowlisted pool, and the backend
       // 400s on any network outside PUBLIC/TESTNET. Resolve locally rather
@@ -69,7 +83,7 @@ function useGetPositions({ useCache = true }: { useCache?: boolean } = {}) {
       // `useGetCollectibles`, which reads its cache the same way.
       const cached = positionsSelector(store.getState());
       const entry = cached[networkDetails.network]?.[publicKey];
-      if (useCache && entry && isCacheValid(entry)) {
+      if (shouldUseCache && entry && isCacheValid(entry)) {
         dispatch({ type: "FETCH_DATA_SUCCESS", payload: entry });
         return entry;
       }

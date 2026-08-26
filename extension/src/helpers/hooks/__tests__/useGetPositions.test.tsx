@@ -139,6 +139,32 @@ describe("useGetPositions", () => {
     expect(resolved).toEqual(cachedEntry);
   });
 
+  it("bypasses a fresh cache entry when the call overrides useCache to false", async () => {
+    // The lever the 30s refresh interval and an account/network switch rely
+    // on: even with a hook-level `useCache: true` and a fresh entry, a
+    // per-call `useCache: false` must still reach the network.
+    mockedGet.mockResolvedValue(positions);
+    const cachedEntry = { ...positions, updatedAt: Date.now() };
+    const { result } = renderHook(() => useGetPositions({ useCache: true }), {
+      wrapper: wrapperWithCachedEntry(cachedEntry),
+    });
+
+    let resolved;
+    await act(async () => {
+      resolved = await result.current.fetchData({
+        publicKey: TEST_PUBLIC_KEY,
+        networkDetails: TESTNET_NETWORK_DETAILS,
+        useCache: false,
+      });
+    });
+
+    expect(mockedGet).toHaveBeenCalledWith({
+      publicKey: TEST_PUBLIC_KEY,
+      networkDetails: TESTNET_NETWORK_DETAILS,
+    });
+    expect(resolved).toEqual(positions);
+  });
+
   it("refetches when the cached entry is stale", async () => {
     mockedGet.mockResolvedValue(positions);
     // Outside the 3-minute isCacheValid window.
