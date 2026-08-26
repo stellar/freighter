@@ -30,25 +30,25 @@ export const PoolCard = ({ position, onClick }: PoolCardProps) => {
   return (
     <button
       type="button"
-      className="PoolCard"
+      className="PositionsPoolCard"
       onClick={onClick}
       data-testid={`pool-card-${position.id}`}
     >
       <PoolIcon />
-      <div className="PoolCard__body">
-        <Text as="div" size="sm" addlClassName="PoolCard__identity">
+      <div className="PositionsPoolCard__body">
+        <Text as="div" size="sm" addlClassName="PositionsPoolCard__identity">
           {position.name || t("Blend pool")}
-          <span className="PoolCard__protocol">{` · ${t("Blend")}`}</span>
+          <span className="PositionsPoolCard__protocol">{` · ${t("Blend")}`}</span>
         </Text>
-        <div className="PoolCard__figures">
+        <div className="PositionsPoolCard__figures">
           <span
-            className="PoolCard__value"
+            className="PositionsPoolCard__value"
             data-testid={`pool-card-value-${position.id}`}
           >
             {formatAccountUsd(summary.totalUsd)}
           </span>
           <span
-            className="PoolCard__gain"
+            className="PositionsPoolCard__gain"
             data-testid={`pool-card-gain-${position.id}`}
           >
             {summary.gainPercent === null
@@ -57,10 +57,12 @@ export const PoolCard = ({ position, onClick }: PoolCardProps) => {
           </span>
         </div>
         <div
-          className="PoolCard__apy"
+          className="PositionsPoolCard__apy"
           data-testid={`pool-card-apy-${position.id}`}
         >
-          {t("{{rate}} APY", { rate: formatRate(summary.apy) })}
+          {summary.apy === null
+            ? NO_FIAT_VALUE
+            : t("{{rate}} APY", { rate: formatRate(summary.apy) })}
         </div>
       </div>
     </button>

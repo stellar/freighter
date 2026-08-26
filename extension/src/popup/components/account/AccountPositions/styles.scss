@@ -231,23 +231,28 @@
 // visible border/background, left-aligned, pointer cursor, inherits
 // typography) -- a semantic default, not a value read off the design.
 //
-// Selectors are scoped under `.AccountPositions` rather than written as a
-// bare `.PoolCard` rule: `popup/components/earn/EarnAmount/styles.scss`
-// already defines a *different* `.PoolCard` (the deposit flow's own pool
-// card, with its own `&__body`/`&__identity` etc.) and this codebase's SCSS
-// compiles into one global, unscoped stylesheet (no CSS Modules -- see
-// `extension/webpack.common.js`'s `css-loader` rule). An unscoped
-// `.PoolCard` here would collide with that unrelated rule at equal
-// specificity, with the winner decided only by import order. The compound
-// selector avoids that: `.AccountPositions .PoolCard` never resolves to the
-// same specificity as EarnAmount's bare `.PoolCard`, and this component is
-// always rendered inside `.AccountPositions` (see `index.tsx`), so the
-// selector still matches every real render.
+// Named `.PositionsPoolCard`, not `.PoolCard`:
+// `popup/components/earn/EarnAmount/styles.scss` already defines a bare
+// `.PoolCard` (the deposit flow's own, differently-shaped pool card, with
+// its own `&__body`/`&__identity`/etc.), and this codebase's SCSS compiles
+// into one global, unscoped stylesheet (no CSS Modules -- see
+// `extension/webpack.common.js`'s `css-loader` rule). An earlier version of
+// this block reused `.PoolCard` and tried to out-scope the collision with
+// `.AccountPositions .PoolCard` (higher specificity than the bare rule) --
+// that only wins the cascade for properties BOTH rules declare. Anything
+// EarnAmount's `.PoolCard` sets that this block didn't (its
+// `flex-direction: column`, its `.PoolIcon { width/height/border-radius }`,
+// its `&__identity { margin-right: auto }`) still applied here, since a
+// compound selector doesn't stop a property from a lower-specificity rule
+// simply because it's absent from the higher-specificity one. Renaming the
+// whole class tree removes the collision outright rather than requiring
+// this block to mirror every property EarnAmount's rule happens to set,
+// today or in the future.
 //
 // A follow-up pass MUST pull 9808-30558 for real (padding, radius,
 // background, the three type scales, and the gain's green) once the Figma
 // desktop app's active tab can reach it, and fill in the rules below.
-.AccountPositions .PoolCard {
+.PositionsPoolCard {
   display: flex;
   align-items: center;
   width: 100%;

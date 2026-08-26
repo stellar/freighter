@@ -99,4 +99,12 @@ describe("PoolCard", () => {
       "Blend pool",
     );
   });
+
+  it("renders the rate line as a bare -- when the APY is unavailable, not '-- APY'", () => {
+    renderCard({ position: position({ netApy: null }) });
+
+    const apy = screen.getByTestId("pool-card-apy-CAJJ");
+    expect(apy).toHaveTextContent("--");
+    expect(apy).not.toHaveTextContent("APY");
+  });
 });
