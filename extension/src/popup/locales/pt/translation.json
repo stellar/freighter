@@ -636,7 +636,7 @@
   "This authorization is for {{address}}.": "Esta autorização é para {{address}}.",
   "This can be used to sign arbitrary transaction hashes without having to decode them first.": "Isso pode ser usado para assinar hashes de transação arbitrários sem precisar decodificá-los primeiro.",
   "This collectible is hidden": "Este colecionável está oculto",
-  "This contract's code is managed by the owner contract above and can change after you sign.": "O código deste contrato é gerenciado pelo contrato proprietário acima e pode mudar depois que você assinar.",
+  "This contract's code is managed by the executable owner and can change after you sign.": "O código deste contrato é gerenciado pelo proprietário do executável e pode mudar depois que você assinar.",
   "This is not a valid contract id.": "Este não é um ID de contrato válido.",
   "This message is too large for your Ledger to display. Ask the site for a shorter message.": "Esta mensagem é grande demais para o seu Ledger exibir. Peça ao site uma mensagem mais curta.",
   "This site does not appear safe for the following reasons": "Este site não parece seguro pelos seguintes motivos",

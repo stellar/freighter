@@ -865,10 +865,15 @@ export function getInvocationArgs(
 
       switch (exec.type) {
         case "contractExecutableWasm": {
-          const details = xdr.expectUnionVariant(
-            preimage,
-            "contractIdPreimageFromAddress",
-          ).fromAddress;
+          // A wasm executable must be paired with an address preimage: the
+          // contract id is derived from deployer + salt. The two arms are
+          // independent in XDR, so the invalid pairings are representable.
+          if (preimage.type !== "contractIdPreimageFromAddress") {
+            throw new Error(
+              `creation function appears invalid: a wasm executable is paired with ${preimage.type} (should be wasm+address or token+asset)`,
+            );
+          }
+          const details = preimage.fromAddress;
 
           const contractDetails = {
             type: "wasm",
@@ -887,12 +892,15 @@ export function getInvocationArgs(
         }
 
         case "contractExecutableStellarAsset": {
+          // A SAC is only ever derived from the asset it wraps.
+          if (preimage.type !== "contractIdPreimageFromAsset") {
+            throw new Error(
+              `creation function appears invalid: a Stellar asset executable is paired with ${preimage.type} (should be wasm+address or token+asset)`,
+            );
+          }
           const sacDetails = {
             type: "sac",
-            asset: Asset.fromOperation(
-              xdr.expectUnionVariant(preimage, "contractIdPreimageFromAsset")
-                .fromAsset,
-            ).toString(),
+            asset: Asset.fromOperation(preimage.fromAsset).toString(),
           } as FnArgsCreateSac;
 
           if (isCreateV2) {

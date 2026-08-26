@@ -470,7 +470,7 @@ export const ExternalExecutableNote = () => {
       <Icon.InfoCircle aria-hidden="true" />
       <span>
         {t(
-          "This contract's code is managed by the owner contract above and can change after you sign.",
+          "This contract's code is managed by the executable owner and can change after you sign.",
         )}
       </span>
     </div>
