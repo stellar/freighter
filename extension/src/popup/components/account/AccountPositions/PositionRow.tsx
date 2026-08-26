@@ -24,6 +24,11 @@ interface PositionRowProps {
 export const PositionRow = ({ row, assetIcons, onClick }: PositionRowProps) => {
   const { t } = useTranslation();
   const hasGain = row.interestEarnedUsd !== null;
+  // Mirrors BalanceRow__delta's own rule: a flat zero is real but is not a
+  // gain, so it stays neutral like the unavailable case — only a strictly
+  // positive figure earns the green.
+  const isPositiveGain =
+    row.interestEarnedUsd !== null && row.interestEarnedUsd > 0;
 
   return (
     <BalanceRow
@@ -47,7 +52,7 @@ export const PositionRow = ({ row, assetIcons, onClick }: PositionRowProps) => {
               : `$${formatAmount(roundUsdValue(String(row.suppliedUsd)))}`}
           </div>
           <div
-            className={`PositionRow__gain ${hasGain ? "PositionRow__gain--positive" : ""}`}
+            className={`PositionRow__gain ${isPositiveGain ? "PositionRow__gain--positive" : ""}`}
             data-testid={`position-gain-${row.code}`}
           >
             {hasGain

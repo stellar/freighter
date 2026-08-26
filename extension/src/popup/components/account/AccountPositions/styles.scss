@@ -109,10 +109,11 @@
   }
 
   // Secondary right-side line, matching `.BalanceRow__delta`'s size/weight
-  // AND its positive/neutral split: gray by default, green only once a real
-  // (possibly zero) interest figure exists -- an unavailable "--" must not
-  // read as a gain. Colored like `EarnStatRow__value--positive` rather than
-  // `&__apy`'s shade: this is an earned-interest *value*, not a rate.
+  // AND its positive/neutral split: gray by default, green only for a
+  // strictly positive figure -- an unavailable "--" or a flat zero must not
+  // read as a gain, same as a zero % delta staying gray there. Colored like
+  // `EarnStatRow__value--positive` rather than `&__apy`'s shade: this is an
+  // earned-interest *value*, not a rate.
   &__gain {
     font-size: pxToRem(12px);
     line-height: pxToRem(18px);
