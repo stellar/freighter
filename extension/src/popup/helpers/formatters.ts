@@ -1,4 +1,5 @@
 import BigNumber from "bignumber.js";
+import { xdr } from "stellar-sdk";
 import { truncatedPublicKey } from "helpers/stellar";
 import { CLASSIC_ASSET_DECIMALS } from "./soroban";
 
@@ -143,8 +144,22 @@ export const formatAmount = (val: string) => {
   return formattedWholeVal;
 };
 
-export const formattedBuffer = (data: Buffer) =>
-  truncatedPublicKey(Buffer.from(data).toString("hex").toUpperCase());
+/**
+ * Renders a hash for display as truncated uppercase hex.
+ *
+ * Accepts a string as well as bytes because the SDK is inconsistent: the
+ * `revokeSponsorship` signer arm returns `sha256Hash` / `preAuthTx` as
+ * already-hex strings (`convertXdrSignerKeyToObject`), while `setOptions`
+ * returns real `Uint8Array`s. A string is passed through rather than re-encoded
+ * -- encoding it again would hex the ASCII of the hex.
+ */
+export const formattedBuffer = (data: Uint8Array | string) =>
+  truncatedPublicKey(
+    (typeof data === "string"
+      ? data
+      : xdr.encodeBytes(data, "hex")
+    ).toUpperCase(),
+  );
 
 export const scrubPathGkey = (route: string, url: string) => {
   try {

@@ -20,7 +20,54 @@
     }
   }
 
+  &__Warning {
+    display: flex;
+    align-items: flex-start;
+    gap: pxToRem(8px);
+    margin-top: pxToRem(4px);
+    padding: pxToRem(12px);
+    border-radius: pxToRem(12px);
+    line-height: 1.5rem;
+    color: var(--sds-clr-red-11);
+    background-color: var(--sds-clr-red-03);
+    border: 1px solid var(--sds-clr-red-06);
+
+    svg {
+      flex-shrink: 0;
+      width: pxToRem(16px);
+      height: pxToRem(16px);
+      margin-top: pxToRem(4px);
+    }
+  }
+
   &__InfoBlock {
+    // The executable note leads the block here (rather than trailing the rows
+    // as it does in the Operations view), so it carries its spacing below.
+    > .ExecutableNote {
+      margin-top: 0;
+      margin-bottom: pxToRem(12px);
+    }
+
+    // Only the top-level Parameters block needs separating; the invoke case
+    // nests it inside _Inner, which already provides its own spacing.
+    > .Operations__pair--invoke {
+      margin-top: pxToRem(12px);
+    }
+
+    .Operations--header {
+      display: flex;
+      align-items: center;
+      color: var(--sds-clr-gray-11);
+      margin-bottom: pxToRem(12px);
+
+      svg {
+        flex-shrink: 0;
+        width: pxToRem(16px);
+        height: pxToRem(16px);
+        margin-right: pxToRem(8px);
+      }
+    }
+
     &_Inner {
       padding: pxToRem(12px) pxToRem(16px);
       border-radius: pxToRem(16px);
@@ -167,6 +214,7 @@
 
 .AuthEntryContent {
   width: 100%;
+  padding-top: pxToRem(12px);
   animation: fadeIn 0.2s ease-in-out;
 }
 

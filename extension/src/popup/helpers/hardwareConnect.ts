@@ -126,9 +126,14 @@ export const hardwareSign: HardwareSign = {
   }: HardwareSignParams) => {
     const transport = await connectToLedgerTransport();
     const ledgerApi = new LedgerApi(transport);
+    // @ledgerhq/hw-app-str still types these as Buffer; the SDK now hands
+    // back Uint8Array, so re-wrap at the boundary.
     const result = isHashSigningEnabled
-      ? await ledgerApi.signHash(bipPath, tx.hash())
-      : await ledgerApi.signTransaction(bipPath, tx.signatureBase());
+      ? await ledgerApi.signHash(bipPath, Buffer.from(tx.hash()))
+      : await ledgerApi.signTransaction(
+          bipPath,
+          Buffer.from(tx.signatureBase()),
+        );
 
     return result.signature;
   },

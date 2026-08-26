@@ -3,7 +3,7 @@ import * as Sentry from "@sentry/browser";
 import { Action, Middleware } from "redux";
 import { PayloadAction } from "@reduxjs/toolkit";
 import { Location } from "react-router-dom";
-import { hash } from "stellar-sdk";
+import { hash, xdr } from "stellar-sdk";
 
 import browser from "webextension-polyfill";
 
@@ -452,7 +452,7 @@ export const getAccountIdHash = (publicKey: string): string => {
   const cached = accountIdHashCache.get(publicKey);
   if (cached) return cached;
   try {
-    const digest = hash(Buffer.from(publicKey, "utf8")).toString("hex");
+    const digest = xdr.encodeBytes(hash(Buffer.from(publicKey, "utf8")), "hex");
     accountIdHashCache.set(publicKey, digest);
     return digest;
   } catch {

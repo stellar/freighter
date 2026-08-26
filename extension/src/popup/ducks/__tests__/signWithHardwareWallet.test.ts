@@ -1,5 +1,5 @@
 import { configureStore } from "@reduxjs/toolkit";
-import { Keypair } from "stellar-sdk";
+import { Keypair, xdr } from "stellar-sdk";
 
 import {
   ConfigurableWalletType,
@@ -66,7 +66,7 @@ describe("signWithHardwareWallet isSignMessage", () => {
     expect(signWithHardwareWallet.fulfilled.match(res)).toBe(true);
     // Base64 rather than a Buffer, because runtime.sendMessage JSON-serializes
     // the payload on the way to the background script.
-    expect(res.payload).toBe(signature.toString("base64"));
+    expect(res.payload).toBe(xdr.encodeBytes(signature, "base64"));
     expect(typeof res.payload).toBe("string");
   });
 

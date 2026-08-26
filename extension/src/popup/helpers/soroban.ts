@@ -1,4 +1,5 @@
 import BigNumber from "bignumber.js";
+import { captureException } from "@sentry/browser";
 import {
   Address,
   Asset,
@@ -350,9 +351,21 @@ export const parseTokenAmount = (value: string, decimals: number) => {
   return wholeValue.shiftedBy(decimals).plus(fractionValue);
 };
 
+/**
+ * Narrows an ScVal to its SCV_ADDRESS arm.
+ *
+ * Pre-v17 the generated arm accessor (`scVal.address()`) threw when the union
+ * carried a different arm; `expectUnionVariant` preserves that contract now
+ * that arms are plain properties on variant classes.
+ *
+ * @throws TypeError if the value is not an SCV_ADDRESS
+ */
+export const scValToAddress = (scVal: xdr.ScVal): xdr.ScAddress =>
+  xdr.expectUnionVariant(scVal, "scvAddress").address;
+
 export const addressToString = (address: xdr.ScAddress) => {
-  if (address.switch().name === "scAddressTypeAccount") {
-    return StrKey.encodeEd25519PublicKey(address.accountId().ed25519());
+  if (address.type === "scAddressTypeAccount") {
+    return StrKey.encodeEd25519PublicKey(address.accountId.ed25519.toBytes());
   }
 
   return Address.fromScAddress(address).toString();
@@ -366,7 +379,7 @@ export const getArgsForTokenInvocation = (
   let amount: bigint | number | undefined;
   let from = "";
   let to = "";
-  const thirdArgType = args[2].switch();
+  const thirdArgType = args[2].type;
 
   switch (fnName) {
     case SorobanTokenInterface.transfer:
@@ -377,17 +390,17 @@ export const getArgsForTokenInvocation = (
       // by the type of the 3rd argument.
       // Token transfer - (from: Address, to: Address, amount: i128)
       // Collectible transfer - (from: Address, to: Address, tokenId: u32)
-      if (thirdArgType === xdr.ScValType.scvI128()) {
+      if (thirdArgType === "scvI128") {
         amount = scValToNative(args[2]);
       }
-      if (thirdArgType === xdr.ScValType.scvU32()) {
+      if (thirdArgType === "scvU32") {
         tokenId = scValToNative(args[2]);
       }
-      from = addressToString(args[0].address());
-      to = addressToString(args[1].address());
+      from = addressToString(scValToAddress(args[0]));
+      to = addressToString(scValToAddress(args[1]));
       break;
     case SorobanTokenInterface.mint:
-      to = addressToString(args[0].address());
+      to = addressToString(scValToAddress(args[0]));
       amount = scValToNative(args[1]);
       break;
     default:
@@ -403,22 +416,17 @@ const isSorobanOp = (operation: HorizonOperation) =>
 export const getInvocationArgsFromInvokeHostFn = (
   hostFn: Operation.InvokeHostFunction,
 ): HostFnInvocationArgs | null => {
-  if (!hostFn?.func?.invokeContract) {
+  const func = hostFn?.func;
+  if (!func || func.type !== "hostFunctionTypeInvokeContract") {
     return null;
   }
 
-  let invokedContract: xdr.InvokeContractArgs;
+  const invokedContract: xdr.InvokeContractArgs = func.invokeContract;
 
-  try {
-    invokedContract = hostFn.func.invokeContract();
-  } catch (e) {
-    return null;
-  }
+  const contractId = addressToString(invokedContract.contractAddress);
 
-  const contractId = addressToString(invokedContract.contractAddress());
-
-  const fnName = invokedContract.functionName().toString();
-  const args = invokedContract.args();
+  const fnName = invokedContract.functionName.toString();
+  const args = invokedContract.args;
 
   if (
     fnName !== SorobanTokenInterface.transfer &&
@@ -451,7 +459,7 @@ export const getAttrsFromSorobanHorizonOp = (
     return null;
   }
 
-  const txEnvelope = TransactionBuilder.fromXDR(
+  const txEnvelope = TransactionBuilder.fromXdr(
     operation.transaction_attr.envelope_xdr as string,
     networkDetails.networkPassphrase,
   ) as Transaction;
@@ -470,18 +478,18 @@ export interface InvocationTree {
 }
 
 export function buildInvocationTree(root: xdr.SorobanAuthorizedInvocation) {
-  const fn = root.function();
+  const fn = root.function;
   const output = {} as InvocationTree;
-  const inner = fn.value();
+  const inner = fn.value;
 
-  switch (fn.switch().name) {
+  switch (fn.type) {
     case "sorobanAuthorizedFunctionTypeContractFn": {
-      const _inner = inner as xdr.InvokeContractArgs;
+      const _inner = fn.contractFn;
       output.type = "execute";
       output.args = {
-        source: Address.fromScAddress(_inner.contractAddress()).toString(),
-        function: _inner.functionName().toString(),
-        args: _inner.args().map((arg) => scValToNative(arg)),
+        source: Address.fromScAddress(_inner.contractAddress).toString(),
+        function: _inner.functionName.toString(),
+        args: _inner.args.map((arg) => scValToNative(arg)),
       };
       break;
     }
@@ -489,48 +497,48 @@ export function buildInvocationTree(root: xdr.SorobanAuthorizedInvocation) {
     case "sorobanAuthorizedFunctionTypeCreateContractHostFn":
     case "sorobanAuthorizedFunctionTypeCreateContractV2HostFn": {
       const isCreateV2 =
-        fn.switch().name ===
-        "sorobanAuthorizedFunctionTypeCreateContractV2HostFn";
-      const _inner = inner as xdr.CreateContractArgs | xdr.CreateContractArgsV2;
+        fn.type === "sorobanAuthorizedFunctionTypeCreateContractV2HostFn";
+      const _inner: xdr.CreateContractArgs | xdr.CreateContractArgsV2 =
+        fn.type === "sorobanAuthorizedFunctionTypeCreateContractV2HostFn"
+          ? fn.createContractV2HostFn
+          : fn.createContractHostFn;
       output.type = "create";
       output.args = {} as {
         type: string;
         wasm: any;
       };
 
-      const [exec, preimage] = [
-        _inner.executable(),
-        _inner.contractIdPreimage(),
-      ];
+      const exec = _inner.executable;
+      const preimage = _inner.contractIdPreimage;
 
-      switch (exec.switch().name) {
+      switch (exec.type) {
         case "contractExecutableWasm": {
           // A WASM executable must be paired with an address preimage.
-          if (preimage.switch().name !== "contractIdPreimageFromAddress") {
+          if (preimage.type !== "contractIdPreimageFromAddress") {
             throw new Error(
               `creation function appears invalid: ${JSON.stringify(
                 inner,
               )} (should be wasm+address or token+asset)`,
             );
           }
-          const details = preimage.fromAddress();
+          const details = preimage.fromAddress;
 
           output.args.type = "wasm";
           output.args.wasm = {
-            salt: details.salt().toString("hex"),
-            hash: exec.wasmHash().toString("hex"),
-            address: Address.fromScAddress(details.address()).toString(),
+            salt: xdr.encodeBytes(details.salt.toBytes(), "hex"),
+            hash: xdr.encodeBytes(exec.wasmHash.toBytes(), "hex"),
+            address: Address.fromScAddress(details.address).toString(),
           };
           if (isCreateV2) {
             const v2Args = _inner as xdr.CreateContractArgsV2;
-            output.args.constructorArgs = v2Args.constructorArgs();
+            output.args.constructorArgs = v2Args.constructorArgs;
           }
           break;
         }
 
         case "contractExecutableStellarAsset": {
           // A SAC executable must be paired with an asset preimage.
-          if (preimage.switch().name !== "contractIdPreimageFromAsset") {
+          if (preimage.type !== "contractIdPreimageFromAsset") {
             throw new Error(
               `creation function appears invalid: ${JSON.stringify(
                 inner,
@@ -539,11 +547,38 @@ export function buildInvocationTree(root: xdr.SorobanAuthorizedInvocation) {
           }
           output.args.type = "sac";
           output.args.asset = Asset.fromOperation(
-            preimage.fromAsset(),
+            preimage.fromAsset,
           ).toString();
           if (isCreateV2) {
             const v2Args = _inner as xdr.CreateContractArgsV2;
-            output.args.constructorArgs = v2Args.constructorArgs();
+            output.args.constructorArgs = v2Args.constructorArgs;
+          }
+          break;
+        }
+
+        case "contractExecutableExternalRef": {
+          const { executableOwner, tag } = exec.externalRef;
+
+          output.args.type = "externalRef";
+          output.args.externalRef = {
+            owner: Address.fromScAddress(executableOwner).toString(),
+            tag: tag.toString(),
+          };
+          // The preimage arm is independent of the executable arm, so only
+          // read it when it is a shape we can describe.
+          if (preimage.type === "contractIdPreimageFromAddress") {
+            const details = preimage.fromAddress;
+            output.args.externalRef.address = Address.fromScAddress(
+              details.address,
+            ).toString();
+            output.args.externalRef.salt = xdr.encodeBytes(
+              details.salt.toBytes(),
+              "hex",
+            );
+          }
+          if (isCreateV2) {
+            const v2Args = _inner as xdr.CreateContractArgsV2;
+            output.args.constructorArgs = v2Args.constructorArgs;
           }
           break;
         }
@@ -557,71 +592,73 @@ export function buildInvocationTree(root: xdr.SorobanAuthorizedInvocation) {
 
     default:
       throw new Error(
-        `unknown invocation type (${fn.switch()}): ${JSON.stringify(fn)}`,
+        `unknown invocation type (${(fn as xdr.SorobanAuthorizedFunction).type}): ${JSON.stringify(fn)}`,
       );
   }
 
-  output.invocations = root.subInvocations().map((i) => buildInvocationTree(i));
+  output.invocations = root.subInvocations.map((i) => buildInvocationTree(i));
   return output;
 }
 
 export const scValByType = (scVal: xdr.ScVal) => {
-  switch (scVal.switch()) {
-    case xdr.ScValType.scvAddress(): {
-      const address = scVal.address();
-      const addressType = address.switch();
-      if (addressType.name === "scAddressTypeAccount") {
-        return StrKey.encodeEd25519PublicKey(address.accountId().ed25519());
+  switch (scVal.type) {
+    case "scvAddress": {
+      const address = scVal.address;
+      if (address.type === "scAddressTypeAccount") {
+        return StrKey.encodeEd25519PublicKey(
+          address.accountId.ed25519.toBytes(),
+        );
       }
       return addressToString(address);
     }
 
-    case xdr.ScValType.scvBool(): {
-      return scVal.b();
+    case "scvBool": {
+      return scVal.b;
     }
 
-    case xdr.ScValType.scvBytes(): {
-      return scVal
-        .bytes()
-        .toJSON()
-        .data.map((d) => d.toString(16).padStart(2, "0"))
-        .join("");
+    case "scvBytes": {
+      return xdr.encodeBytes(scVal.bytes.toBytes(), "hex");
     }
 
-    case xdr.ScValType.scvContractInstance(): {
-      const instance = scVal.instance();
-      return instance.executable().wasmHash()?.toString();
+    case "scvContractInstance": {
+      const executable = scVal.instance.executable;
+      return executable.type === "contractExecutableWasm"
+        ? xdr.encodeBytes(executable.wasmHash.toBytes(), "hex")
+        : undefined;
     }
 
-    case xdr.ScValType.scvError(): {
-      const error = scVal.error();
-      return error.value();
+    case "scvError": {
+      return scVal.error.value;
     }
 
-    case xdr.ScValType.scvTimepoint():
-    case xdr.ScValType.scvDuration():
-    case xdr.ScValType.scvI128():
-    case xdr.ScValType.scvI256():
-    case xdr.ScValType.scvI32():
-    case xdr.ScValType.scvI64():
-    case xdr.ScValType.scvU128():
-    case xdr.ScValType.scvU256():
-    case xdr.ScValType.scvU32():
-    case xdr.ScValType.scvU64(): {
+    case "scvExecutableTag": {
+      return scVal.executableTag.toString();
+    }
+
+    case "scvTimepoint":
+    case "scvDuration":
+    case "scvI128":
+    case "scvI256":
+    case "scvI32":
+    case "scvI64":
+    case "scvU128":
+    case "scvU256":
+    case "scvU32":
+    case "scvU64": {
       return scValToNative(scVal).toString();
     }
 
-    case xdr.ScValType.scvLedgerKeyNonce():
-    case xdr.ScValType.scvLedgerKeyContractInstance(): {
-      if (scVal.switch().name === "scvLedgerKeyNonce") {
-        const val = scVal.nonceKey().nonce();
-        return val.toString();
-      }
-      return scVal.value();
+    case "scvLedgerKeyNonce": {
+      return scVal.nonceKey.nonce.toString();
     }
 
-    case xdr.ScValType.scvVec():
-    case xdr.ScValType.scvMap(): {
+    case "scvLedgerKeyContractInstance": {
+      // void arm — carries no payload
+      return null;
+    }
+
+    case "scvVec":
+    case "scvMap": {
       return JSON.stringify(
         scValToNative(scVal),
         (_, val) => (typeof val === "bigint" ? val.toString() : val),
@@ -629,16 +666,18 @@ export const scValByType = (scVal: xdr.ScVal) => {
       );
     }
 
-    case xdr.ScValType.scvString():
-    case xdr.ScValType.scvSymbol(): {
+    case "scvString":
+    case "scvSymbol": {
       const native = scValToNative(scVal);
-      if (native.constructor === "Uint8Array") {
-        return native.toString();
+      // v17: scValToNative returns Uint8Array (not a lossy string) when the
+      // XDR string/symbol payload is not valid UTF-8.
+      if (native instanceof Uint8Array) {
+        return xdr.encodeBytes(native, "hex");
       }
       return native;
     }
 
-    case xdr.ScValType.scvVoid(): {
+    case "scvVoid": {
       return null;
     }
 
@@ -662,18 +701,18 @@ export function parseAuthEntryPreimage(
 ):
   | xdr.HashIdPreimageSorobanAuthorization
   | xdr.HashIdPreimageSorobanAuthorizationWithAddress {
-  switch (preimage.switch()) {
-    case xdr.EnvelopeType.envelopeTypeSorobanAuthorization():
-      return preimage.sorobanAuthorization();
+  switch (preimage.type) {
+    case "envelopeTypeSorobanAuthorization":
+      return preimage.sorobanAuthorization;
 
     // CAP-71 (protocol 27): same payload plus the SCAddress the signature
     // is bound to
-    case xdr.EnvelopeType.envelopeTypeSorobanAuthorizationWithAddress():
-      return preimage.sorobanAuthorizationWithAddress();
+    case "envelopeTypeSorobanAuthorizationWithAddress":
+      return preimage.sorobanAuthorizationWithAddress;
 
     default:
       throw new Error(
-        `unsupported authorization envelope type: ${preimage.switch().name}`,
+        `unsupported authorization envelope type: ${preimage.type}`,
       );
   }
 }
@@ -696,14 +735,13 @@ export function parseAuthEntryPreimage(
 export function getAddressCredentials(
   credentials: xdr.SorobanCredentials,
 ): xdr.SorobanAddressCredentials | null {
-  switch (credentials.switch().value) {
-    case xdr.SorobanCredentialsType.sorobanCredentialsAddress().value:
-      return credentials.address();
-    case xdr.SorobanCredentialsType.sorobanCredentialsAddressV2().value:
-      return credentials.addressV2();
-    case xdr.SorobanCredentialsType.sorobanCredentialsAddressWithDelegates()
-      .value:
-      return credentials.addressWithDelegates().addressCredentials();
+  switch (credentials.type) {
+    case "sorobanCredentialsAddress":
+      return credentials.address;
+    case "sorobanCredentialsAddressV2":
+      return credentials.addressV2;
+    case "sorobanCredentialsAddressWithDelegates":
+      return credentials.addressWithDelegates.addressCredentials;
     default:
       return null;
   }
@@ -717,9 +755,9 @@ export function getAddressCredentials(
 export function getAuthEntryBoundAddress(
   entry: xdr.SorobanAuthorizationEntry,
 ): string | undefined {
-  const addressCredentials = getAddressCredentials(entry.credentials());
+  const addressCredentials = getAddressCredentials(entry.credentials);
   return addressCredentials
-    ? Address.fromScAddress(addressCredentials.address()).toString()
+    ? Address.fromScAddress(addressCredentials.address).toString()
     : undefined;
 }
 
@@ -729,9 +767,16 @@ export function getInvocationDetails(
   const invocations = [] as InvocationArgs[];
 
   walkInvocationTree(invocation, (inv) => {
-    const args = getInvocationArgs(inv);
-    if (args) {
-      invocations.push(args);
+    try {
+      const args = getInvocationArgs(inv);
+      if (args) {
+        invocations.push(args);
+      }
+    } catch (error) {
+      // An invocation we cannot decode must not take down the whole signing
+      // view -- surface it so the user sees that something was unreadable.
+      captureException(error);
+      invocations.push({ type: "unrecognized" });
     }
 
     return null;
@@ -761,7 +806,33 @@ export interface FnArgsCreateSac {
   args?: xdr.ScVal[];
 }
 
-export type InvocationArgs = FnArgsInvoke | FnArgsCreateWasm | FnArgsCreateSac;
+/**
+ * A CAP-85 (protocol 28) contract creation whose executable is a reference
+ * into another contract's storage rather than a wasm hash. `owner` and `tag`
+ * identify the reference; the code behind it is chosen by the owner at
+ * invocation time and can change after this entry is signed, so there is
+ * deliberately no wasm hash here.
+ */
+export interface FnArgsCreateExternalRef {
+  type: "externalRef";
+  owner: string;
+  tag: string;
+  address?: string;
+  salt?: string;
+  args?: xdr.ScVal[];
+}
+
+/** An invocation whose contents we could not decode. */
+export interface FnArgsUnrecognized {
+  type: "unrecognized";
+}
+
+export type InvocationArgs =
+  | FnArgsInvoke
+  | FnArgsCreateWasm
+  | FnArgsCreateSac
+  | FnArgsCreateExternalRef
+  | FnArgsUnrecognized;
 
 const isInvocationArg = (
   invocation: InvocationArgs | undefined,
@@ -770,63 +841,103 @@ const isInvocationArg = (
 export function getInvocationArgs(
   invocation: xdr.SorobanAuthorizedInvocation,
 ): InvocationArgs | undefined {
-  const fn = invocation.function();
+  const fn = invocation.function;
 
-  switch (fn.switch().name) {
+  switch (fn.type) {
     case "sorobanAuthorizedFunctionTypeContractFn": {
-      const _invocation = fn.contractFn();
-      const contractId = addressToString(_invocation.contractAddress());
-      const fnName = _invocation.functionName().toString();
-      const args = _invocation.args();
+      const _invocation = fn.contractFn;
+      const contractId = addressToString(_invocation.contractAddress);
+      const fnName = _invocation.functionName.toString();
+      const args = _invocation.args;
       return { fnName, contractId, args, type: "invoke" };
     }
 
     case "sorobanAuthorizedFunctionTypeCreateContractHostFn":
     case "sorobanAuthorizedFunctionTypeCreateContractV2HostFn": {
       const isCreateV2 =
-        fn.switch().name ===
-        "sorobanAuthorizedFunctionTypeCreateContractV2HostFn";
-      const _invocation = isCreateV2
-        ? fn.createContractV2HostFn()
-        : fn.createContractHostFn();
-      const [exec, preimage] = [
-        _invocation.executable(),
-        _invocation.contractIdPreimage(),
-      ];
+        fn.type === "sorobanAuthorizedFunctionTypeCreateContractV2HostFn";
+      const _invocation: xdr.CreateContractArgs | xdr.CreateContractArgsV2 =
+        fn.type === "sorobanAuthorizedFunctionTypeCreateContractV2HostFn"
+          ? fn.createContractV2HostFn
+          : fn.createContractHostFn;
+      const exec = _invocation.executable;
+      const preimage = _invocation.contractIdPreimage;
 
-      switch (exec.switch().name) {
+      switch (exec.type) {
         case "contractExecutableWasm": {
-          const details = preimage.fromAddress();
+          // A wasm executable must be paired with an address preimage: the
+          // contract id is derived from deployer + salt. The two arms are
+          // independent in XDR, so the invalid pairings are representable.
+          if (preimage.type !== "contractIdPreimageFromAddress") {
+            throw new Error(
+              `creation function appears invalid: a wasm executable is paired with ${preimage.type} (should be wasm+address or token+asset)`,
+            );
+          }
+          const details = preimage.fromAddress;
 
           const contractDetails = {
             type: "wasm",
-            salt: details.salt().toString("hex"),
-            hash: exec.wasmHash().toString("hex"),
-            address: Address.fromScAddress(details.address()).toString(),
+            salt: xdr.encodeBytes(details.salt.toBytes(), "hex"),
+            hash: xdr.encodeBytes(exec.wasmHash.toBytes(), "hex"),
+            address: Address.fromScAddress(details.address).toString(),
           } as FnArgsCreateWasm;
 
           if (isCreateV2) {
             contractDetails.args = (
               _invocation as xdr.CreateContractArgsV2
-            ).constructorArgs();
+            ).constructorArgs;
           }
 
           return contractDetails;
         }
 
         case "contractExecutableStellarAsset": {
+          // A SAC is only ever derived from the asset it wraps.
+          if (preimage.type !== "contractIdPreimageFromAsset") {
+            throw new Error(
+              `creation function appears invalid: a Stellar asset executable is paired with ${preimage.type} (should be wasm+address or token+asset)`,
+            );
+          }
           const sacDetails = {
             type: "sac",
-            asset: Asset.fromOperation(preimage.fromAsset()).toString(),
+            asset: Asset.fromOperation(preimage.fromAsset).toString(),
           } as FnArgsCreateSac;
 
           if (isCreateV2) {
             sacDetails.args = (
               _invocation as xdr.CreateContractArgsV2
-            ).constructorArgs();
+            ).constructorArgs;
           }
 
           return sacDetails;
+        }
+
+        case "contractExecutableExternalRef": {
+          const { executableOwner, tag } = exec.externalRef;
+          const refDetails = {
+            type: "externalRef",
+            owner: Address.fromScAddress(executableOwner).toString(),
+            tag: tag.toString(),
+          } as FnArgsCreateExternalRef;
+
+          // CAP-85 refs are expected to deploy from an address, but the
+          // preimage arm is independent of the executable arm -- only read it
+          // when it is a shape we can describe.
+          if (preimage.type === "contractIdPreimageFromAddress") {
+            const details = preimage.fromAddress;
+            refDetails.address = Address.fromScAddress(
+              details.address,
+            ).toString();
+            refDetails.salt = xdr.encodeBytes(details.salt.toBytes(), "hex");
+          }
+
+          if (isCreateV2) {
+            refDetails.args = (
+              _invocation as xdr.CreateContractArgsV2
+            ).constructorArgs;
+          }
+
+          return refDetails;
         }
 
         default:
@@ -841,20 +952,23 @@ export function getInvocationArgs(
 }
 
 export const getCreateContractArgs = (hostFn: xdr.HostFunction) => {
-  if (
-    hostFn.switch() !== xdr.HostFunctionType.hostFunctionTypeCreateContractV2()
-  ) {
-    const args = hostFn.createContract();
+  if (hostFn.type !== "hostFunctionTypeCreateContractV2") {
+    // Pre-v17 the generated `createContract()` arm accessor threw for any
+    // other host function type; keep that contract.
+    const args = xdr.expectUnionVariant(
+      hostFn,
+      "hostFunctionTypeCreateContract",
+    ).createContract;
     return {
-      contractIdPreimage: args.contractIdPreimage(),
-      executable: args.executable(),
+      contractIdPreimage: args.contractIdPreimage,
+      executable: args.executable,
     };
   }
-  const argsV2 = hostFn.createContractV2();
+  const argsV2 = hostFn.createContractV2;
   return {
-    contractIdPreimage: argsV2.contractIdPreimage(),
-    executable: argsV2.executable(),
-    constructorArgs: argsV2.constructorArgs(),
+    contractIdPreimage: argsV2.contractIdPreimage,
+    executable: argsV2.executable,
+    constructorArgs: argsV2.constructorArgs,
   };
 };
 

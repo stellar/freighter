@@ -1,6 +1,6 @@
 import { Buffer } from "buffer";
 import { mnemonicToSeedSync, validateMnemonic, wordlists } from "bip39";
-import { Keypair } from "stellar-sdk";
+import { Keypair, xdr } from "stellar-sdk";
 
 /**
  * Versioned domain-separation salt for the backend auth keypair. The `-v1`
@@ -66,6 +66,6 @@ export const deriveAuthKeypair = async (
 ): Promise<{ userId: string; keypair: Keypair }> => {
   const authSeed = await deriveAuthSeed(mnemonic);
   const keypair = Keypair.fromRawEd25519Seed(Buffer.from(authSeed));
-  const userId = keypair.rawPublicKey().toString("hex");
+  const userId = xdr.encodeBytes(keypair.rawPublicKey(), "hex");
   return { userId, keypair };
 };

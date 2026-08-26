@@ -323,7 +323,7 @@ function useSimulateTxData({
         networkDetails,
         memo,
       );
-      const xdr = transaction.build().toXDR();
+      const xdr = transaction.build().toXdr();
       payload.transactionXdr = xdr;
       payload.scanResult = await scanTx(xdr, scanUrlstub, networkDetails);
       reduxDispatch(
