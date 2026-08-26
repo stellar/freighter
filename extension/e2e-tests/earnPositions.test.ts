@@ -9,7 +9,8 @@
  *     resulting URL is the cheapest guard against that regression.
  *  2. A pool card: opens the "My position" sheet, showing the pool's total.
  *  3. About pool: opens the pool-details sheet with the tab strip hidden.
- *  4. Deposit from a supplied-asset row: lands on the amount screen.
+ *  4. Deposit from a supplied-asset row: lands on the amount screen
+ *     prefilled with the tapped token.
  *
  * The redesign added a pool-first "My position" sheet between the Positions
  * tab and the pool-details sheet — every path below is one click deeper than
@@ -54,6 +55,10 @@
  *  - earn-pool-details-sheet          PoolDetailsSheet/index.tsx
  *  - earn-pool-details-tabs           PoolDetailsSheet/Tabs.tsx
  *  - earn-pool-card                   EarnAmount/PoolCard.tsx
+ *  - send-amount-edit-dest-asset      amount/AmountCard/index.tsx (shared with
+ *    Send/Swap — earn-token-code does not exist on the amount screen; this is
+ *    the established id those other specs already use to assert the selected
+ *    token)
  *  - earn                             views/Earn/index.tsx (root)
  *
  * Execution: `yarn test:e2e earnPositions.test.ts` from repo root.
@@ -185,4 +190,7 @@ test("Deposit from a supplied asset lands on the amount screen prefilled", async
     .click();
 
   await expect(page.getByTestId("earn-pool-card")).toBeVisible();
+  await expect(page.getByTestId("send-amount-edit-dest-asset")).toContainText(
+    "USDC",
+  );
 });
