@@ -10,6 +10,7 @@ import BigNumber from "bignumber.js";
 
 import {
   getInvocationArgs,
+  getInvocationDetails,
   buildInvocationTree,
   getAvailableBalance,
   getDecimalsForAsset,
@@ -49,6 +50,9 @@ describe("isAssetSac", () => {
     expect(isSac).toBe(false);
   });
 });
+
+const OWNER_CONTRACT =
+  "CA3D5KRYM6CB7OWQ6TWYRR3Z4T7GNZLKERYNZGGA5SOAOPIFY6YQGAXE";
 
 describe("getInvocationArgs", () => {
   it("can parse a create contract v1 xdr class", () => {
@@ -104,6 +108,105 @@ describe("getInvocationArgs", () => {
       asset: `${assetCode}:${TEST_PUBLIC_KEY}`,
       args: args.constructorArgs,
     });
+  });
+  it("can parse a create contract v2 xdr with a CAP-85 external executable ref", () => {
+    const tag = "v2";
+    const externalRef = new xdr.ContractExecutableExternalRef({
+      executableOwner: new Address(OWNER_CONTRACT).toScAddress(),
+      tag,
+    });
+    const args = new xdr.CreateContractArgsV2({
+      contractIdPreimage: xdr.ContractIdPreimage.contractIdPreimageFromAddress(
+        new xdr.ContractIdPreimageFromAddress({
+          address: new Address(TEST_PUBLIC_KEY).toScAddress(),
+          salt: Buffer.alloc(32),
+        }),
+      ),
+      executable:
+        xdr.ContractExecutable.contractExecutableExternalRef(externalRef),
+      constructorArgs: [new Address(TEST_PUBLIC_KEY).toScVal()],
+    });
+    const authorizedFn =
+      xdr.SorobanAuthorizedFunction.sorobanAuthorizedFunctionTypeCreateContractV2HostFn(
+        args,
+      );
+    const authorizedInvocation = new xdr.SorobanAuthorizedInvocation({
+      function: authorizedFn,
+      subInvocations: [],
+    });
+    const invocationArgs = getInvocationArgs(authorizedInvocation);
+    expect(invocationArgs).toEqual({
+      type: "externalRef",
+      owner: OWNER_CONTRACT,
+      tag,
+      address: TEST_PUBLIC_KEY,
+      salt: "0".repeat(64),
+      args: args.constructorArgs,
+    });
+  });
+  it("builds an invocation tree for a CAP-85 external executable ref", () => {
+    const tag = "v2";
+    const args = new xdr.CreateContractArgsV2({
+      contractIdPreimage: xdr.ContractIdPreimage.contractIdPreimageFromAddress(
+        new xdr.ContractIdPreimageFromAddress({
+          address: new Address(TEST_PUBLIC_KEY).toScAddress(),
+          salt: Buffer.alloc(32),
+        }),
+      ),
+      executable: xdr.ContractExecutable.contractExecutableExternalRef(
+        new xdr.ContractExecutableExternalRef({
+          executableOwner: new Address(OWNER_CONTRACT).toScAddress(),
+          tag,
+        }),
+      ),
+      constructorArgs: [],
+    });
+    const authorizedFn =
+      xdr.SorobanAuthorizedFunction.sorobanAuthorizedFunctionTypeCreateContractV2HostFn(
+        args,
+      );
+    const authorizedInvocation = new xdr.SorobanAuthorizedInvocation({
+      function: authorizedFn,
+      subInvocations: [],
+    });
+
+    const tree = buildInvocationTree(authorizedInvocation);
+    expect(tree.type).toEqual("create");
+    expect(tree.args.type).toEqual("externalRef");
+    expect(tree.args.externalRef).toEqual({
+      owner: OWNER_CONTRACT,
+      tag,
+      address: TEST_PUBLIC_KEY,
+      salt: "0".repeat(64),
+    });
+  });
+  it("marks an invocation it cannot parse as unrecognized instead of throwing", () => {
+    // A wasm executable paired with an asset preimage is decodable XDR but a
+    // nonsensical combination -- the kind of thing a future protocol arm or a
+    // hostile dApp could produce. It must not crash the review UI.
+    const assetType = new xdr.AlphaNum4({
+      assetCode: "KHL",
+      issuer: Keypair.fromPublicKey(TEST_PUBLIC_KEY).xdrAccountId(),
+    });
+    const args = new xdr.CreateContractArgs({
+      contractIdPreimage: xdr.ContractIdPreimage.contractIdPreimageFromAsset(
+        xdr.Asset.assetTypeCreditAlphanum4(assetType),
+      ),
+      executable: xdr.ContractExecutable.contractExecutableWasm(
+        Buffer.alloc(32),
+      ),
+    });
+    const authorizedFn =
+      xdr.SorobanAuthorizedFunction.sorobanAuthorizedFunctionTypeCreateContractHostFn(
+        args,
+      );
+    const authorizedInvocation = new xdr.SorobanAuthorizedInvocation({
+      function: authorizedFn,
+      subInvocations: [],
+    });
+    expect(getInvocationDetails(authorizedInvocation)).toEqual([
+      { type: "unrecognized" },
+    ]);
   });
   it("can parse a create contract v2 xdr for the deployer pattern", () => {
     const xdr =
