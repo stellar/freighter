@@ -1432,6 +1432,68 @@ describe("Account view", () => {
     // real browser instead; a unit assertion could not fail.
   });
 
+  // AccountPositions' own file comment states the invariant: "a position is
+  // money, so 'we could not load this' must never render as 'you have
+  // none'." A failed account fetch discards `resolvedData` entirely (see
+  // helpers/request.ts), so `resolvedData?.hasPositionsError` alone can never
+  // see the failure -- the view-level `hasError` has to reach
+  // AccountPositions too, or the Positions tab falls through to its empty
+  // state instead (C1).
+  it("shows the positions error state rather than 'no positions' when the account fetch fails", async () => {
+    const accountDataSpy = jest
+      .spyOn(AccountDataHooks, "useGetAccountData")
+      .mockReturnValue({
+        state: {
+          state: RequestState.ERROR,
+          data: null,
+          error: new Error("boom"),
+        },
+        fetchData: jest.fn(),
+        refreshAppData: jest.fn(),
+      });
+
+    render(
+      <Wrapper
+        routes={[ROUTES.account]}
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
+            publicKey: TEST_PUBLIC_KEY,
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: MAINNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+          },
+        }}
+      >
+        {/* Router supplies this in the app; without it the Positions tab
+            button has no working setActiveTab to switch onto. */}
+        <ActiveTabProvider>
+          <Account />
+        </ActiveTabProvider>
+      </Wrapper>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("account-view")).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByTestId("account-tab-positions"));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("account-positions-error")).toBeInTheDocument();
+    });
+
+    // Restored before asserting, as the ERROR-state test above does.
+    accountDataSpy.mockRestore();
+
+    expect(
+      screen.queryByTestId("account-positions-empty"),
+    ).not.toBeInTheDocument();
+  });
+
   // The Tokens tab dictates which button style the Collectibles tab uses, and
   // that decision lives in this view rather than in the components it feeds, so
   // it has to be pinned here: the component suites take it as a literal prop and

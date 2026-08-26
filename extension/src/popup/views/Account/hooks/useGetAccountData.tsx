@@ -155,6 +155,22 @@ function useGetAccountData(options: {
         networkDetails,
         useCache: !shouldForceBalancesRefresh,
       });
+      // Marks the promise handled without changing what `await positionsRequest`
+      // throws below: it is first awaited several `await`s later (inside its own
+      // try/catch), and a rejection landing in that gap would otherwise fire
+      // Sentry's `unhandledrejection` handler on top of the deliberate
+      // `captureException` call there.
+      positionsRequest.catch(() => {});
+
+      // Same treatment as positions: started before the balances await so its
+      // round trip overlaps balances/collectibles/positions instead of adding
+      // to the critical path in front of the Blockaid rescan below (I3). Only
+      // fetched where Earn exists at all; landed once positions has resolved,
+      // alongside the pools dispatch below.
+      const poolsRequest = isEarnSupportedNetwork(networkDetails)
+        ? getBlendPools({ networkDetails })
+        : null;
+      poolsRequest?.catch(() => {});
 
       // let's fetch *just* the balances (without Blockaid scan results) to quickly be able to show the user their balances
       const balancesResult = await fetchBalances(
@@ -224,16 +240,24 @@ function useGetAccountData(options: {
       // collectibles dispatch above: the reducer holds this very object.
       dispatch({ type: "FETCH_DATA_SUCCESS", payload: { ...payload } });
 
+      // Landed here (not yet awaited when it was started, above) and, for
+      // earnOptions, only ever STARTED once we know it applies -- neither sits
+      // in front of the Blockaid rescan below (I3).
+      let earnOptionsRequest: Promise<BlendEarnAssetOption[]> | null = null;
       if (isEarnSupportedNetwork(networkDetails)) {
         // Unlike earnOptions below, fetched regardless of whether the account
         // has positions -- it backs the pool-details sheet a Positions row
         // opens, so it is needed precisely when positions exist, not only
-        // when they don't.
-        try {
-          payload.pools = await getBlendPools({ networkDetails });
-          dispatch({ type: "FETCH_DATA_SUCCESS", payload: { ...payload } });
-        } catch (error) {
-          captureException(`Error fetching pools on Account - ${error}`);
+        // when they don't. By the time this await runs, poolsRequest has had
+        // the whole balances/collectibles/positions round trip to resolve, so
+        // this rarely waits at all.
+        if (poolsRequest) {
+          try {
+            payload.pools = await poolsRequest;
+            dispatch({ type: "FETCH_DATA_SUCCESS", payload: { ...payload } });
+          } catch (error) {
+            captureException(`Error fetching pools on Account - ${error}`);
+          }
         }
 
         // Only the empty state needs the catalog, and only to price its
@@ -242,17 +266,8 @@ function useGetAccountData(options: {
           !payload.hasPositionsError &&
           !payload.positions?.positions.length
         ) {
-          try {
-            payload.earnOptions = await getBlendEarnOptions({
-              networkDetails,
-            });
-            dispatch({ type: "FETCH_DATA_SUCCESS", payload: { ...payload } });
-          } catch (error) {
-            // The card degrades to hidden; nothing else depends on this.
-            captureException(
-              `Error fetching earn options on Account - ${error}`,
-            );
-          }
+          earnOptionsRequest = getBlendEarnOptions({ networkDetails });
+          earnOptionsRequest.catch(() => {});
         }
       }
 
@@ -275,6 +290,16 @@ function useGetAccountData(options: {
           dispatch({ type: "FETCH_DATA_SUCCESS", payload: scannedPayload });
         } catch (e) {
           captureException(`Error fetching scanned balances on Account - ${e}`);
+        }
+      }
+
+      if (earnOptionsRequest) {
+        try {
+          payload.earnOptions = await earnOptionsRequest;
+          dispatch({ type: "FETCH_DATA_SUCCESS", payload: { ...payload } });
+        } catch (error) {
+          // The card degrades to hidden; nothing else depends on this.
+          captureException(`Error fetching earn options on Account - ${error}`);
         }
       }
 
@@ -385,7 +410,13 @@ function useGetAccountData(options: {
           balances: balancesResult,
           isScanAppended: true,
           positions: refreshedPositions,
-          hasPositionsError: refreshedPositionsError,
+          // Only surfaced when there is no prior data left to keep showing --
+          // otherwise a single flaky tick would flip the Positions tab from
+          // rows to an error banner and back every 30s even though the last
+          // good read is still sitting right here in `refreshedPositions`.
+          // Initial-load failures are untouched: `fetchData` above sets this
+          // unconditionally, since there is nothing prior to fall back to.
+          hasPositionsError: refreshedPositionsError && !resolvedData.positions,
         } as AccountData;
         dispatch({ type: "FETCH_DATA_SUCCESS", payload });
       } catch (error) {

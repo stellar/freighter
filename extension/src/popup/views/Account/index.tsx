@@ -431,7 +431,13 @@ export const Account = () => {
                 <AccountPositions
                   positions={resolvedData?.positions ?? null}
                   isLoading={!!resolvedData && !resolvedData.hasLoadedPositions}
-                  hasError={!!resolvedData?.hasPositionsError}
+                  // A failed account fetch (hasError) discards `resolvedData`
+                  // entirely (see helpers/request.ts), so hasPositionsError
+                  // alone would never see it -- and AccountPositions would
+                  // fall through to its empty state, telling the account it
+                  // holds nothing when the truth is "unknown". A position is
+                  // money; see that component's own file comment.
+                  hasError={hasError || !!resolvedData?.hasPositionsError}
                   assetIcons={resolvedIcons}
                   networkDetails={networkDetails}
                   projectedUsd={projection.usd}
