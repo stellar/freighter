@@ -24,6 +24,7 @@ export const Tabs = ({ active, onSelect }: TabsProps) => {
     <div
       className="PoolDetailsSheet__tabs"
       data-testid="earn-pool-details-tabs"
+      role="tablist"
     >
       {tabs.map((tab) => (
         <button
