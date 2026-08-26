@@ -107,7 +107,11 @@ describe("PoolDetailsSheet", () => {
 
   it("swaps Close for Deposit only when a deposit handler is supplied", () => {
     const onDeposit = jest.fn();
-    renderSheet({ position, onDeposit });
+    renderSheet({
+      position,
+      onDeposit,
+      state: { remoteConfig: { earn_deposit: true } },
+    });
 
     fireEvent.click(screen.getByText("Deposit"));
     expect(onDeposit).toHaveBeenCalled();
