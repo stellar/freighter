@@ -1,5 +1,5 @@
 import React from "react";
-import { Icon } from "@stellar/design-system";
+import { Icon, Text } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
 import { AssetIcons } from "@shared/api/types";
@@ -7,6 +7,18 @@ import { BlendCatalogPool, PoolPosition } from "@shared/api/types/blend";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { View } from "popup/basics/layout/View";
+import { PoolIcon } from "popup/components/earn/PoolIcon";
+import {
+  formatAccountUsd,
+  formatRate,
+} from "popup/components/earn/helpers/formatPoolStats";
+import { getPoolPositionSummary } from "popup/components/earn/helpers/poolPositionSummary";
+import {
+  PositionTokenRow,
+  toPositionTokenRows,
+} from "popup/components/earn/helpers/positionRows";
+import { NO_FIAT_VALUE } from "popup/helpers/formatters";
+import { PositionRow } from "./PositionRow";
 
 interface MyPositionProps {
   position: PoolPosition;
@@ -15,6 +27,10 @@ interface MyPositionProps {
   assetIcons: AssetIcons;
   networkDetails: NetworkDetails;
   onClose: () => void;
+  /** "About pool" tapped -- opens the sheet with tabs hidden. */
+  onAboutPool: () => void;
+  /** A supplied-asset row tapped -- opens the sheet on Your position. */
+  onSelectAsset: (row: PositionTokenRow) => void;
 }
 
 /**
@@ -24,14 +40,38 @@ interface MyPositionProps {
  * Tokens tab opens AssetDetail — so the tab stays mounted underneath and
  * dismissal costs nothing. An X rather than a back arrow (R3), matching AssetDetail
  * and CollectibleDetail.
+ *
+ * The totals header uses `getPoolPositionSummary` (pool-scoped: this
+ * account's total and lifetime interest across the whole pool), while the
+ * supplied-asset list below it uses `toPositionTokenRows` (token-scoped: one
+ * row per asset, no gain column — that figure lives here in the header
+ * instead, so it is never shown twice).
  */
-// `position`, `pool`, `assetIcons` and `networkDetails` are part of the public
-// interface Task 4 fills the body with, but this task's shell has nothing to
-// do with them yet -- destructuring only `onClose` here (rather than the
-// brief's full destructure) avoids a `noUnusedParameters` build failure on
-// bindings this task never reads.
-export const MyPosition = ({ onClose }: MyPositionProps) => {
+// `pool` is part of the public interface -- Task 5 threads it through
+// `onAboutPool`'s caller to open the pool-details sheet -- but this
+// component's own body never reads it directly, so it is intentionally left
+// off the destructure (rather than bound and unused) to satisfy this repo's
+// noUnusedLocals build check.
+export const MyPosition = ({
+  position,
+  assetIcons,
+  networkDetails,
+  onClose,
+  onAboutPool,
+  onSelectAsset,
+}: MyPositionProps) => {
   const { t } = useTranslation();
+  const summary = getPoolPositionSummary(position);
+  const rows = toPositionTokenRows({
+    positions: {
+      address: "",
+      totalValueUsd: null,
+      netApy: null,
+      positions: [position],
+      backstop: [],
+    },
+    networkDetails,
+  });
 
   return (
     <View data-testid="my-position-sheet">
@@ -41,9 +81,52 @@ export const MyPosition = ({ onClose }: MyPositionProps) => {
         customBackAction={onClose}
         data-testid="my-position-close"
       />
-      {/* Totals, About pool and the supplied-asset list arrive in Task 4. */}
       <View.Content>
-        <div className="MyPosition" data-testid="my-position-body" />
+        <div className="MyPosition" data-testid="my-position-body">
+          <div className="MyPosition__identity">
+            <div className="MyPosition__chip">
+              <PoolIcon />
+              <Text as="span" size="sm">
+                {t("Blend")}
+              </Text>
+            </div>
+            <button
+              type="button"
+              className="MyPosition__about"
+              onClick={onAboutPool}
+              data-testid="my-position-about-pool"
+            >
+              {t("About pool")}
+              <Icon.ChevronRight />
+            </button>
+          </div>
+
+          <Text as="div" size="sm" addlClassName="MyPosition__pool-name">
+            {position.name || t("Blend pool")}
+          </Text>
+          <div className="MyPosition__total" data-testid="my-position-total">
+            {formatAccountUsd(summary.totalUsd)}
+          </div>
+          <div className="MyPosition__gain" data-testid="my-position-gain">
+            {summary.interestUsd === null || summary.gainPercent === null
+              ? NO_FIAT_VALUE
+              : `+${formatAccountUsd(summary.interestUsd)} (${formatRate(summary.gainPercent)})`}
+          </div>
+
+          <Text as="div" size="xs" addlClassName="MyPosition__section-title">
+            {t("Supplied asset")}
+          </Text>
+          <div className="MyPosition__assets">
+            {rows.map((row) => (
+              <PositionRow
+                key={row.assetId}
+                row={row}
+                assetIcons={assetIcons}
+                onClick={() => onSelectAsset(row)}
+              />
+            ))}
+          </div>
+        </div>
       </View.Content>
     </View>
   );

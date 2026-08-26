@@ -30,42 +30,16 @@ const renderRow = (
   );
 
 /**
- * PositionRow (moved out of the tab in Task 3, but left untouched -- it
- * relocates into MyPosition in Task 4) previously had this coverage only
- * through AccountPositions.test.tsx, exercised via the tab. Removing the
- * token-row tab tests dropped that coverage along with the DOM they asserted
- * on. Reinstated here directly against PositionRow, which is simpler than
- * the old tab-level setup and doesn't depend on what wraps it.
+ * PositionRow (moved out of the tab in Task 3) now relocates into MyPosition
+ * (Task 4), which drops the interest-gain column -- that figure now lives in
+ * MyPosition's own pool-level header instead, covered by MyPosition.test.tsx.
+ * The value, rate and click-handler coverage below still applies unchanged.
  */
 describe("PositionRow", () => {
   it("renders an unavailable value as -- rather than zero", () => {
     renderRow({ row: row({ suppliedUsd: null }) });
 
     expect(screen.getByTestId("position-value-USDC")).toHaveTextContent("--");
-  });
-
-  it("colors a real interest gain and shows the amount", () => {
-    renderRow({ row: row({ interestEarnedUsd: 0.12 }) });
-
-    const gain = screen.getByTestId("position-gain-USDC");
-    expect(gain).toHaveClass("PositionRow__gain--positive");
-    expect(gain).toHaveTextContent("+$0.12");
-  });
-
-  it("shows a flat-zero interest gain without coloring it like a real gain", () => {
-    renderRow({ row: row({ interestEarnedUsd: 0 }) });
-
-    const gain = screen.getByTestId("position-gain-USDC");
-    expect(gain).not.toHaveClass("PositionRow__gain--positive");
-    expect(gain).toHaveTextContent("+$0.00");
-  });
-
-  it("renders an unavailable interest gain as -- without coloring it", () => {
-    renderRow({ row: row({ interestEarnedUsd: null }) });
-
-    const gain = screen.getByTestId("position-gain-USDC");
-    expect(gain).not.toHaveClass("PositionRow__gain--positive");
-    expect(gain).toHaveTextContent("--");
   });
 
   it("routes the rate line through translation (not the bare fallback) when the rate is available", () => {

@@ -17,24 +17,17 @@ interface PositionRowProps {
 }
 
 /**
- * One supplied token on the Positions tab.
+ * One supplied token, shown inside the My position sheet.
  *
  * Wraps BalanceRow rather than restating it, so icon resolution, the XLM
- * display name, code truncation and the click affordance all stay in one place.
- * Both of the row's coloured figures go through slots: the rate under the code
- * via `amountSlot`, the value and gain via `rightSlot`.
+ * display name, code truncation and the click affordance all stay in one
+ * place. The rate goes through `amountSlot`; the value alone goes through
+ * `rightSlot` — the interest-gain figure that used to sit beside it here now
+ * lives one level up, in the My position header, so showing it at both
+ * levels would invite the reader to add the two together.
  */
 export const PositionRow = ({ row, assetIcons, onClick }: PositionRowProps) => {
   const { t } = useTranslation();
-  // True once a real interest figure exists, including a literal zero -- this
-  // means "the value is known", not "there was a gain". Drives the +$X vs --
-  // text only; color is the separate, stricter check below.
-  const isGainKnown = row.interestEarnedUsd !== null;
-  // Mirrors BalanceRow__delta's own rule: a flat zero is real but is not a
-  // gain, so it stays neutral like the unavailable case — only a strictly
-  // positive figure earns the green.
-  const isPositiveGain =
-    row.interestEarnedUsd !== null && row.interestEarnedUsd > 0;
 
   return (
     <BalanceRow
@@ -53,22 +46,12 @@ export const PositionRow = ({ row, assetIcons, onClick }: PositionRowProps) => {
         </span>
       }
       rightSlot={
-        <>
-          <div
-            className="PositionRow__value"
-            data-testid={`position-value-${row.code}`}
-          >
-            {formatAccountUsd(row.suppliedUsd)}
-          </div>
-          <div
-            className={`PositionRow__gain ${isPositiveGain ? "PositionRow__gain--positive" : ""}`}
-            data-testid={`position-gain-${row.code}`}
-          >
-            {isGainKnown
-              ? `+${formatAccountUsd(row.interestEarnedUsd)}`
-              : NO_FIAT_VALUE}
-          </div>
-        </>
+        <div
+          className="PositionRow__value"
+          data-testid={`position-value-${row.code}`}
+        >
+          {formatAccountUsd(row.suppliedUsd)}
+        </div>
       }
       onClick={onClick}
       data-testid={`position-row-${row.code}`}

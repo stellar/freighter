@@ -167,6 +167,10 @@ export const AccountPositions = ({
               assetIcons={assetIcons}
               networkDetails={networkDetails}
               onClose={() => setSelectedPoolId(null)}
+              // Task 5 wires these to the pool-details sheet; this task only
+              // has to keep MyPosition's now-required props satisfied.
+              onAboutPool={() => {}}
+              onSelectAsset={() => {}}
             />
           )}
         </SheetContent>

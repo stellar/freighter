@@ -174,13 +174,12 @@
 }
 
 // PositionRow has no existing Figma sibling (unlike the states above, which
-// mirror AccountCollectibles): it wraps BalanceRow and colours the two figures
-// Task 5's states never needed. No node could be pulled for this pass, so
-// nothing here is a read-off value -- every size/weight is inherited from or
-// copied off BalanceRow/styles.scss, and both greens are tokens already used
-// elsewhere for a gain (BalanceRow__delta.positive, EarnStatRow__value--positive).
-// A later visual pass should confirm placement, size and which of the two
-// greens belongs on which figure against the real node.
+// mirror AccountCollectibles): it wraps BalanceRow and colours its rate figure
+// green. No node could be pulled for this pass, so nothing here is a read-off
+// value -- every size/weight is inherited from or copied off
+// BalanceRow/styles.scss, and the green is a token already used elsewhere for
+// a gain (BalanceRow__delta.positive, EarnStatRow__value--positive). A later
+// visual pass should confirm placement and size against the real node.
 .PositionRow {
   // Sits inside BalanceRow's own `&__amount` div (the `amountSlot` prop), so
   // font-size/line-height/font-weight already come from `.BalanceRow__amount`
@@ -191,34 +190,19 @@
     color: var(--sds-clr-green-09);
   }
 
-  // Replaces BalanceRow's default right-side pair (`rightSlot`), so unlike
-  // `&__apy` above these get no styling for free and repeat their donor
-  // rule's size/weight explicitly.
+  // Replaces BalanceRow's default right-side slot (`rightSlot`), so unlike
+  // `&__apy` above this gets no styling for free and repeats its donor
+  // rule's size/weight explicitly. The interest-gain figure that used to sit
+  // beside this (a second, coloured `rightSlot` line) moved up to MyPosition's
+  // own header (Task 4) -- see that file's `&__gain` for its replacement.
 
-  // Primary right-side line, matching `.BalanceRow__fiat`. Not one of the two
-  // coloured figures -- a supplied total, not a gain -- so it stays neutral.
+  // Primary (now only) right-side line, matching `.BalanceRow__fiat`. Not a
+  // coloured figure -- a supplied total, not a gain -- so it stays neutral.
   &__value {
     font-size: pxToRem(14px);
     line-height: pxToRem(20px);
     font-weight: var(--sds-fw-medium);
     color: var(--sds-clr-gray-12);
-  }
-
-  // Secondary right-side line, matching `.BalanceRow__delta`'s size/weight
-  // AND its positive/neutral split: gray by default, green only for a
-  // strictly positive figure -- an unavailable "--" or a flat zero must not
-  // read as a gain, same as a zero % delta staying gray there. Colored like
-  // `EarnStatRow__value--positive` rather than `&__apy`'s shade: this is an
-  // earned-interest *value*, not a rate.
-  &__gain {
-    font-size: pxToRem(12px);
-    line-height: pxToRem(18px);
-    font-weight: var(--sds-fw-medium);
-    color: var(--sds-clr-gray-11);
-
-    &--positive {
-      color: var(--sds-clr-green-11);
-    }
   }
 }
 
@@ -271,4 +255,81 @@
   cursor: pointer;
   font: inherit;
   color: inherit;
+}
+
+// Task 4 (MyPosition) -- the sheet's body: totals header, "About pool" pill,
+// and the relocated supplied-asset list. Figma node 9956-72252. This pass's
+// desktop app had a different document as its active tab (confirmed by the
+// operator, not just a retry failure), so `get_design_context` was never
+// attempted and no node here was read off the design at all -- unlike the
+// PositionRow/PositionsPoolCard blocks above, which at least got the
+// existing donor rules or a documented failed-retry history.
+//
+// Every rule below is therefore structural only: flex direction, gap
+// direction (row vs column) and which piece sits on which side -- no padding,
+// radius, background, type scale, or colour beyond what a later visual pass
+// will need to fill in wholesale. A follow-up MUST pull 9956-72252 (the Blend
+// chip, the "About pool" pill, the totals type scale, the gain colour, and
+// the supplied-asset card treatment) and reconcile every value here, the same
+// way Task 2/3's own TODO comments describe for their nodes.
+.MyPosition {
+  display: flex;
+  flex-direction: column;
+
+  &__identity {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  // The Blend protocol chip (icon + "Blend" label). Row layout only --
+  // spacing between the icon and label needs the real node.
+  &__chip {
+    display: flex;
+    align-items: center;
+  }
+
+  // The "About pool" pill -- reset to a plain inline button (no native
+  // border/background) so it reads as a tappable link/pill rather than a
+  // default `<button>`, matching every other button-as-row treatment in this
+  // file (`.PositionsPoolCard` above, `AccountAssets`' own asset rows).
+  &__about {
+    display: flex;
+    align-items: center;
+    border: none;
+    background: none;
+    cursor: pointer;
+    font: inherit;
+    color: inherit;
+  }
+
+  // Pool name above the total. `Text`'s own `size="sm"` prop already supplies
+  // type scale; no rule of its own needed until the node says otherwise.
+  &__pool-name {
+  }
+
+  &__total {
+    // Placeholder weight only, so the total reads as the headline figure
+    // ahead of a real type-scale pass -- no size/line-height/colour token
+    // chosen without the node.
+    font-weight: var(--sds-fw-medium);
+  }
+
+  // Mirrors `PositionRow__gain`'s old positive/neutral split conceptually
+  // (this is where that figure moved to), but the colour split itself needs
+  // the real node -- left neutral for now rather than guessing which green.
+  &__gain {
+    color: var(--sds-clr-gray-11);
+  }
+
+  // "Supplied asset" section label above the list. `Text`'s own `size="xs"`
+  // prop already supplies type scale; no rule of its own needed until the
+  // node says otherwise.
+  &__section-title {
+  }
+
+  &__assets {
+    display: flex;
+    flex-direction: column;
+  }
 }
