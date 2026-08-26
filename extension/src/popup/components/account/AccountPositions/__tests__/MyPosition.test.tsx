@@ -55,7 +55,6 @@ const renderScreen = (props = {}) =>
     <Wrapper state={{}} routes={["/"]}>
       <MyPosition
         position={position}
-        pool={null}
         assetIcons={{}}
         networkDetails={MAINNET_NETWORK_DETAILS}
         onClose={jest.fn()}

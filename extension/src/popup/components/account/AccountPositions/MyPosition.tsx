@@ -3,7 +3,7 @@ import { Icon, Text } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
 import { AssetIcons } from "@shared/api/types";
-import { BlendCatalogPool, PoolPosition } from "@shared/api/types/blend";
+import { PoolPosition } from "@shared/api/types/blend";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { View } from "popup/basics/layout/View";
@@ -22,8 +22,6 @@ import { PositionRow } from "./PositionRow";
 
 interface MyPositionProps {
   position: PoolPosition;
-  /** The catalog entry, for the pool-details sheet this screen can open. */
-  pool: BlendCatalogPool | null;
   assetIcons: AssetIcons;
   networkDetails: NetworkDetails;
   onClose: () => void;
@@ -47,11 +45,6 @@ interface MyPositionProps {
  * row per asset, no gain column — that figure lives here in the header
  * instead, so it is never shown twice).
  */
-// `pool` is part of the public interface -- Task 5 threads it through
-// `onAboutPool`'s caller to open the pool-details sheet -- but this
-// component's own body never reads it directly, so it is intentionally left
-// off the destructure (rather than bound and unused) to satisfy this repo's
-// noUnusedLocals build check.
 export const MyPosition = ({
   position,
   assetIcons,
