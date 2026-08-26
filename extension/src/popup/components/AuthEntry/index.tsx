@@ -5,6 +5,7 @@ import { xdr } from "stellar-sdk";
 
 import { getInvocationDetails, InvocationArgs } from "popup/helpers/soroban";
 import {
+  ExternalExecutableNote,
   KeyValueInvokeHostFnArgs,
   KeyValueList,
 } from "popup/components/signTransaction/Operations/KeyVal";
@@ -44,8 +45,12 @@ export const AuthEntries = ({ entries }: AuthEntriesProps) => {
           return <span>{detail.fnName}</span>;
         }
         case "sac":
-        case "wasm": {
+        case "wasm":
+        case "externalRef": {
           return <span>{t("Contract creation")}</span>;
+        }
+        case "unrecognized": {
+          return <span>{t("Unrecognized invocation")}</span>;
         }
         default: {
           return null;
@@ -148,6 +153,69 @@ export const AuthEntries = ({ entries }: AuthEntriesProps) => {
             </React.Fragment>
           );
         }
+        case "externalRef": {
+          return (
+            <React.Fragment key={`${detail.owner}-${detail.tag}`}>
+              <div
+                className="AuthEntry__TitleRow"
+                data-testid="AuthEntry__CreateExternalRefInvocation"
+              >
+                <Icon.CodeSnippet01 />
+                <span>{t("Contract creation")}</span>
+              </div>
+              <div className="AuthEntry__InfoBlock">
+                <ExternalExecutableNote />
+                {detail.address && (
+                  <KeyValueList
+                    operationKey={t("Contract Address")}
+                    operationValue={
+                      <CopyValue
+                        value={detail.address}
+                        displayValue={truncateString(detail.address)}
+                      />
+                    }
+                  />
+                )}
+                <KeyValueList
+                  operationKey={t("Executable Owner")}
+                  operationValue={
+                    <CopyValue
+                      value={detail.owner}
+                      displayValue={truncateString(detail.owner)}
+                    />
+                  }
+                />
+                <KeyValueList
+                  operationKey={t("Executable Tag")}
+                  operationValue={detail.tag}
+                />
+                {detail.salt && (
+                  <KeyValueList
+                    operationKey={t("Salt")}
+                    operationValue={truncateString(detail.salt)}
+                  />
+                )}
+                {detail.args && <KeyValueInvokeHostFnArgs args={detail.args} />}
+              </div>
+            </React.Fragment>
+          );
+        }
+        case "unrecognized": {
+          return (
+            <div
+              className="AuthEntry__Warning"
+              data-testid="AuthEntry__UnrecognizedInvocation"
+              role="alert"
+            >
+              <Icon.AlertTriangle aria-hidden="true" />
+              <span>
+                {t(
+                  "Freighter could not read this authorization. Do not sign unless you trust this site.",
+                )}
+              </span>
+            </div>
+          );
+        }
         default: {
           return null;
         }
@@ -176,7 +244,7 @@ export const AuthEntries = ({ entries }: AuthEntriesProps) => {
           <div
             className="AuthEntryContainer"
             data-testid="AuthEntryContainer"
-            key={`${invocation.toXDR("raw").toString()}-${ind}`}
+            key={`${invocation.toXdr("raw").toString()}-${ind}`}
           >
             <div
               className="AuthEntryBtn"
@@ -212,7 +280,7 @@ export const AuthEntries = ({ entries }: AuthEntriesProps) => {
         <span>{t("Authorizations")}</span>
       </div>
       {entries.map((entry) => (
-        <React.Fragment key={entry.invocation.toXDR("raw").toString()}>
+        <React.Fragment key={entry.invocation.toXdr("raw").toString()}>
           {renderAuthEntry(entry)}
         </React.Fragment>
       ))}

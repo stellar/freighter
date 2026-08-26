@@ -343,7 +343,7 @@ describe("SignTransactions", () => {
       }),
     );
 
-    const transaction = TransactionBuilder.fromXDR(
+    const transaction = TransactionBuilder.fromXdr(
       transactions.classic,
       Networks.PUBLIC,
     ) as Transaction;
@@ -459,7 +459,7 @@ describe("SignTransactions", () => {
         autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
       }),
     );
-    const transaction = TransactionBuilder.fromXDR(
+    const transaction = TransactionBuilder.fromXdr(
       transactions.classic,
       Networks.TESTNET,
     ) as Transaction;
@@ -600,7 +600,7 @@ describe("SignTransactions", () => {
       }),
     );
 
-    const transaction = TransactionBuilder.fromXDR(
+    const transaction = TransactionBuilder.fromXdr(
       transactions.classic,
       Networks.PUBLIC,
     ) as Transaction;
@@ -714,7 +714,7 @@ describe("SignTransactions", () => {
         autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
       }),
     );
-    const transaction = TransactionBuilder.fromXDR(
+    const transaction = TransactionBuilder.fromXdr(
       transactions.classic,
       Networks.TESTNET,
     ) as Transaction;
@@ -837,7 +837,7 @@ describe("SignTransactions", () => {
         autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
       }),
     );
-    const transaction = TransactionBuilder.fromXDR(
+    const transaction = TransactionBuilder.fromXdr(
       transactions.classic,
       Networks.TESTNET,
     ) as Transaction;
@@ -960,7 +960,7 @@ describe("SignTransactions", () => {
         autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
       }),
     );
-    const transaction = TransactionBuilder.fromXDR(
+    const transaction = TransactionBuilder.fromXdr(
       transactions.classic,
       Networks.TESTNET,
     ) as Transaction;
@@ -1077,7 +1077,7 @@ describe("SignTransactions", () => {
         autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
       }),
     );
-    const transaction = TransactionBuilder.fromXDR(
+    const transaction = TransactionBuilder.fromXdr(
       transactions.classic,
       Networks.TESTNET,
     ) as Transaction;
@@ -1201,7 +1201,7 @@ describe("SignTransactions", () => {
       }),
     );
 
-    const transaction = TransactionBuilder.fromXDR(
+    const transaction = TransactionBuilder.fromXdr(
       transactions.classic,
       Networks.PUBLIC,
     ) as Transaction;
@@ -1340,7 +1340,7 @@ describe("SignTransactions", () => {
         autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
       }),
     );
-    const transaction = TransactionBuilder.fromXDR(
+    const transaction = TransactionBuilder.fromXdr(
       transactions.classic,
       Networks.TESTNET,
     ) as Transaction;
@@ -1515,7 +1515,7 @@ describe("SignTransactions", () => {
         autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
       }),
     );
-    const transaction = TransactionBuilder.fromXDR(
+    const transaction = TransactionBuilder.fromXdr(
       transactions.classic,
       Networks.TESTNET,
     ) as Transaction;
@@ -1682,7 +1682,7 @@ describe("SignTransactions", () => {
         autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
       }),
     );
-    const transaction = TransactionBuilder.fromXDR(
+    const transaction = TransactionBuilder.fromXdr(
       transactions.classic,
       Networks.TESTNET,
     ) as Transaction;

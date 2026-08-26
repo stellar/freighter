@@ -368,7 +368,7 @@ export const freighterApiMessageListener = (
       const Sdk = getSdk(currentNetworkPassphrase);
       const { tab, url: tabUrl = "" } = sender;
 
-      const transaction = Sdk.TransactionBuilder.fromXDR(
+      const transaction = Sdk.TransactionBuilder.fromXdr(
         transactionXdr,
         networkPassphrase || Sdk.Networks[network as keyof typeof Sdk.Networks],
       );
@@ -576,7 +576,9 @@ export const freighterApiMessageListener = (
 
             if (apiVersion && semver.gte(apiVersion, "4.0.0")) {
               safeResolve({
-                signedBlob: signature.toString("base64"),
+                // xdr.encodeBytes rather than .toString("base64"): a plain
+                // Uint8Array would silently encode as comma-joined decimals.
+                signedBlob: StellarSdk.xdr.encodeBytes(signature, "base64"),
                 signerAddress,
               });
               return;

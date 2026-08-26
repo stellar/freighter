@@ -25,7 +25,7 @@ export const signFreighterTransaction = async ({
 
   const Sdk = getSdk(network);
 
-  const transaction = Sdk.TransactionBuilder.fromXDR(transactionXDR, network);
+  const transaction = Sdk.TransactionBuilder.fromXdr(transactionXDR, network);
   const keyId = (await localStore.getItem(KEY_ID)) || "";
   let privateKey = "";
   try {
@@ -43,7 +43,7 @@ export const signFreighterTransaction = async ({
   if (privateKey.length) {
     const sourceKeys = Sdk.Keypair.fromSecret(privateKey);
     transaction.sign(sourceKeys);
-    return { signedTransaction: transaction.toXDR() };
+    return { signedTransaction: transaction.toXdr() };
   }
 
   return { error: "Session timed out" };

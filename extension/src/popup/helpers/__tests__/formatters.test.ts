@@ -2,6 +2,7 @@ import BigNumber from "bignumber.js";
 import {
   formatAmountPreserveCursor,
   formatFiatAmount,
+  formattedBuffer,
   getValidBigNumber,
   isValidPositiveAmount,
   normalizeNumericString,
@@ -173,5 +174,24 @@ describe("formatFiatAmount", () => {
     expect(formatFiatAmount("")).toBe("$0.00");
     expect(formatFiatAmount(null)).toBe("$0.00");
     expect(formatFiatAmount("not a number")).toBe("$0.00");
+  });
+});
+
+describe("formattedBuffer", () => {
+  const bytes = new Uint8Array(32).fill(0xab);
+  const hex = "ab".repeat(32);
+
+  it("renders raw bytes as truncated uppercase hex", () => {
+    expect(formattedBuffer(bytes)).toBe("ABAB\u2026ABAB");
+  });
+
+  it("passes through a string that is already hex", () => {
+    // SDK 17's revokeSignerSponsorship arm hands us hex strings, not bytes,
+    // for sha256Hash / preAuthTx signer keys.
+    expect(formattedBuffer(hex)).toBe("ABAB\u2026ABAB");
+  });
+
+  it("renders bytes and their hex string identically", () => {
+    expect(formattedBuffer(hex)).toBe(formattedBuffer(bytes));
   });
 });

@@ -25,7 +25,7 @@ import { ROUTES } from "popup/constants/routes";
 
 const TEST_TX = {
   signatureBase: () => "signatureBase",
-  toXDR: () => "toXDR",
+  toXdr: () => "toXDR",
   _networkPassphrase: "Test SDF Network ; September 2015",
   _tx: {},
   signatures: [],
@@ -62,15 +62,20 @@ jest.mock("stellar-sdk", () => {
         "GBKWMR7TJ7BBICOOXRY2SWXKCWPTOHZPI6MP4LNNE5A73VP3WADGG3CH",
     },
     TransactionBuilder: {
-      fromXDR: () => TEST_TX as any,
+      fromXdr: () => TEST_TX as any,
     },
     Keypair: {
       fromPublicKey: () => ({
-        signatureHint: () => "signatureHint",
+        // v17: xdr.SignatureHint is a 4-byte, hex-encoding BytesValue that
+        // validates its input — a placeholder string throws "invalid hex
+        // input" rather than passing through as it did on v16.
+        signatureHint: () => new Uint8Array([1, 2, 3, 4]),
       }),
     },
     xdr: {
       DecoratedSignature: original.xdr.DecoratedSignature,
+      encodeBytes: original.xdr.encodeBytes,
+      decodeBytes: original.xdr.decodeBytes,
     },
   };
 });
@@ -93,7 +98,9 @@ jest.mock("@ledgerhq/hw-app-str", () => {
         Promise.resolve({
           rawPublicKey: jest.fn(),
         }),
-      signTransaction: () => Promise.resolve({ signature: "L1" }),
+      // v17: xdr.Signature validates its input too, so hand back bytes.
+      signTransaction: () =>
+        Promise.resolve({ signature: new Uint8Array(64).fill(1) }),
     };
   });
 });
