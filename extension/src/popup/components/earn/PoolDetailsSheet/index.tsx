@@ -1,21 +1,12 @@
 import React from "react";
 import { Button, Icon, Text } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
 
 import { BlendCatalogPool } from "@shared/api/types/blend";
-import { AssetIcon } from "popup/components/account/AccountAssets";
-import { NO_FIAT_VALUE } from "popup/helpers/formatters";
-import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { PoolIcon } from "popup/components/earn/PoolIcon";
 import { BLEND_LENDING_DOCS_URL } from "popup/constants/externalLinks";
 import { openTab } from "popup/helpers/navigate";
-import { getCatalogAssetIdentity } from "popup/components/earn/helpers/earnAssetIcons";
-import { getAcceptedReserves } from "popup/components/earn/helpers/poolReserves";
 import { StatRow } from "popup/components/earn/StatRow";
-
-import { usePoolReserveIcons } from "./hooks/usePoolReserveIcons";
-
 import {
   formatCompactUsd,
   formatRate,
@@ -41,16 +32,9 @@ interface PoolDetailsSheetProps {
  * it describes what supplying to a Blend pool does, and makes no claim about a
  * specific deployment. "View pool details" carries the pool-specific detail out
  * to Blend's docs instead.
- *
- * "Accepted tokens" shows only the pool's enabled reserves. The catalog reports
- * disabled ones too, but Blend rejects a deposit into them, and the token
- * picker behind this sheet has already dropped them — see `getAcceptedReserves`.
  */
 export const PoolDetailsSheet = ({ pool, onClose }: PoolDetailsSheetProps) => {
   const { t } = useTranslation();
-  const networkDetails = useSelector(settingsNetworkDetailsSelector);
-  const reserveIcons = usePoolReserveIcons(pool);
-  const acceptedReserves = getAcceptedReserves(pool);
 
   return (
     <div className="PoolDetailsSheet" data-testid="earn-pool-details-sheet">
@@ -80,10 +64,20 @@ export const PoolDetailsSheet = ({ pool, onClose }: PoolDetailsSheetProps) => {
         data-testid="earn-pool-details-body"
       >
         <div className="PoolDetailsSheet__description">
-          <Text as="div" size="xs">
+          <Text
+            as="div"
+            size="sm"
+            weight="medium"
+            addlClassName="PoolDetailsSheet__section-title"
+          >
             {t("Description")}
           </Text>
-          <Text as="p" size="sm">
+          {/* A div, not a p: the SDS theme gives `p:not(:last-child)` a 1.5rem
+              bottom margin at a specificity that beats `.Text`, so the copy
+              grew a 24px gap the moment the link was added below it. The theme
+              also forces `p` to 16px/28px — `md` is the same 16px at the
+              design's 24px leading. */}
+          <Text as="div" size="md">
             {t(
               "Deposit supported assets into this Blend pool to earn yield. APY may change over time. Withdraw anytime.",
             )}
@@ -99,18 +93,23 @@ export const PoolDetailsSheet = ({ pool, onClose }: PoolDetailsSheetProps) => {
           </button>
         </div>
 
-        <Text as="div" size="xs">
-          {t("Pool Details")}
+        <Text
+          as="div"
+          size="sm"
+          weight="medium"
+          addlClassName="PoolDetailsSheet__section-title"
+        >
+          {t("Pool Performance")}
         </Text>
 
         <div className="PoolDetailsSheet__group">
           <StatRow
-            label={t("Lending Interest")}
+            label={t("Interest")}
             value={formatRate(pool.interestApy)}
             testId="earn-pool-interest-apy"
           />
           <StatRow
-            label={t("Current Net APY")}
+            label={t("Net APY")}
             value={formatRate(pool.netApy)}
             isPositive
             testId="earn-pool-net-apy"
@@ -118,40 +117,6 @@ export const PoolDetailsSheet = ({ pool, onClose }: PoolDetailsSheetProps) => {
         </div>
 
         <div className="PoolDetailsSheet__group">
-          <StatRow
-            label={t("Accepted tokens")}
-            testId="earn-pool-accepted-tokens"
-            value={
-              // "--" rather than an empty cluster when nothing is depositable,
-              // the same unavailable marker the USD and rate rows below use.
-              !acceptedReserves.length ? (
-                NO_FIAT_VALUE
-              ) : (
-                <div className="PoolDetailsSheet__tokens">
-                  {acceptedReserves.map((reserve) => {
-                    // The catalog reports native XLM with no symbol and no
-                    // name, so the identity has to be derived rather than read
-                    // straight off the reserve — AssetIcon needs a code to
-                    // recognise XLM and an issuer to look anything else up.
-                    const { code, issuer } = getCatalogAssetIdentity({
-                      symbol: reserve.symbol,
-                      name: reserve.name,
-                      assetId: reserve.assetId,
-                      networkDetails,
-                    });
-                    return (
-                      <AssetIcon
-                        key={reserve.assetId}
-                        assetIcons={reserveIcons}
-                        code={code}
-                        issuerKey={issuer}
-                      />
-                    );
-                  })}
-                </div>
-              )
-            }
-          />
           <StatRow
             label={t("Supplied")}
             value={formatCompactUsd(pool.suppliedUsd)}

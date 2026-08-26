@@ -93,7 +93,7 @@ const initialState: RemoteConfigState = {
   // account-balances endpoint without a release.
   use_balances_v2: true,
   // Defaults to off; Amplitude turns it on to expose the Earn entry point.
-  earn_deposit: false,
+  earn_deposit: true,
   maintenance_banner: { enabled: false, payload: undefined },
   maintenance_screen: { enabled: false, payload: undefined },
 };
