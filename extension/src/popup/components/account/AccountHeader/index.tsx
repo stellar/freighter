@@ -27,6 +27,7 @@ import { signOut } from "popup/ducks/accountServices";
 import { earnDepositSelector } from "popup/ducks/remoteConfig";
 import { AccountHeaderModal } from "popup/components/account/AccountHeaderModal";
 import { NetworkIcon } from "popup/components/manageNetwork/NetworkIcon";
+import IconEarn from "popup/assets/icon-earn.svg?react";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { isEarnSupportedNetwork } from "@shared/constants/blend";
 import { AccountTabs } from "popup/components/account/AccountTabs";
@@ -423,7 +424,7 @@ export const AccountHeader = ({
                   <NavLink to={ROUTES.earn} data-testid="nav-link-earn">
                     <div className="AccountHeader__actions__column">
                       <div className="AccountHeader__actions__btn">
-                        <Icon.Asterisk01 />
+                        <IconEarn />
                       </div>
                       <Text as="div" size="xs" weight="medium">
                         {t("Earn")}
