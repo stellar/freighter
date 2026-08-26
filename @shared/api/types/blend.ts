@@ -220,3 +220,87 @@ export interface ApiAccountPositions {
   positions: ApiPoolPosition[];
   backstop: ApiBlendBackstopRow[];
 }
+
+export interface BlendSupplyRow {
+  assetId: string;
+  symbol: string | null;
+  name: string | null;
+  decimals: number | null;
+  /** Plain-supply portion, collateral portion, and their sum. All raw units. */
+  suppliedTokens: string;
+  collateralTokens: string;
+  totalTokens: string;
+  usdValue: number | null;
+  apy: number | null;
+  /** 0 means no emissions stream; null means an active stream that cannot be priced. */
+  emissionsApr: number | null;
+  /** Lifetime interest, raw token units. */
+  interestEarned: string;
+  interestEarnedUsd: number | null;
+  claimableBlnd: string;
+  claimableUsd: number | null;
+  priceUsd: number | null;
+}
+
+export interface BlendBorrowRow {
+  assetId: string;
+  symbol: string | null;
+  name: string | null;
+  decimals: number | null;
+  borrowedTokens: string;
+  usdValue: number | null;
+  apy: number | null;
+  emissionsApr: number | null;
+  priceUsd: number | null;
+}
+
+export interface BlendQ4WRow {
+  amount: string;
+  lpTokens: string;
+  usdValue: number | null;
+  /** Unix seconds. */
+  expiration: number;
+}
+
+export interface BlendBackstopRow {
+  poolId: string;
+  poolName: string | null;
+  /** Active (non-queued) shares, raw units. */
+  shares: string;
+  /** The whole deposit including queued withdrawals, raw units. */
+  lpTokens: string;
+  usdValue: number | null;
+  claimableBlnd: string;
+  claimableUsd: number | null;
+  q4w: BlendQ4WRow[];
+}
+
+export interface BlendPositionDetail {
+  supply: BlendSupplyRow[];
+  borrow: BlendBorrowRow[];
+}
+
+export interface PoolPosition {
+  /** "blend" for every pool today; the field exists so more protocols are additive. */
+  protocol: string;
+  /** The pool's contract address. */
+  id: string;
+  name: string | null;
+  /** Supplied minus borrowed. */
+  netUsd: number | null;
+  suppliedUsd: number | null;
+  borrowedUsd: number | null;
+  netApy: number | null;
+  /** Absent for a protocol other than Blend, or before the detail is ingested. */
+  blend?: BlendPositionDetail;
+}
+
+export interface AccountPositions {
+  address: string;
+  /** Sum of every pool's netUsd — null if ANY pool is null. */
+  totalValueUsd: number | null;
+  /** Supplied-USD-weighted mean across pools. */
+  netApy: number | null;
+  positions: PoolPosition[];
+  backstop: BlendBackstopRow[];
+}
