@@ -8,13 +8,14 @@ import { AssetIcon } from "popup/components/account/AccountAssets";
 import { NO_FIAT_VALUE } from "popup/helpers/formatters";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { PoolIcon } from "popup/components/earn/PoolIcon";
+import { BLEND_LENDING_DOCS_URL } from "popup/constants/externalLinks";
+import { openTab } from "popup/helpers/navigate";
 import { getCatalogAssetIdentity } from "popup/components/earn/helpers/earnAssetIcons";
 import { getAcceptedReserves } from "popup/components/earn/helpers/poolReserves";
 import { StatRow } from "popup/components/earn/StatRow";
 
 import { usePoolReserveIcons } from "./hooks/usePoolReserveIcons";
 
-import { getPoolDescription } from "./poolDescriptions";
 import {
   formatCompactUsd,
   formatRate,
@@ -36,13 +37,17 @@ interface PoolDetailsSheetProps {
  * upstream provides. Never a hardcoded figure, which would misrepresent the
  * pool's actual insurance.
  *
+ * The description is one string for every pool rather than a per-pool lookup:
+ * it describes what supplying to a Blend pool does, and makes no claim about a
+ * specific deployment. "View pool details" carries the pool-specific detail out
+ * to Blend's docs instead.
+ *
  * "Accepted tokens" shows only the pool's enabled reserves. The catalog reports
  * disabled ones too, but Blend rejects a deposit into them, and the token
  * picker behind this sheet has already dropped them — see `getAcceptedReserves`.
  */
 export const PoolDetailsSheet = ({ pool, onClose }: PoolDetailsSheetProps) => {
   const { t } = useTranslation();
-  const description = getPoolDescription(pool.id);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const reserveIcons = usePoolReserveIcons(pool);
   const acceptedReserves = getAcceptedReserves(pool);
@@ -74,16 +79,25 @@ export const PoolDetailsSheet = ({ pool, onClose }: PoolDetailsSheetProps) => {
         className="PoolDetailsSheet__body"
         data-testid="earn-pool-details-body"
       >
-        {description && (
-          <div className="PoolDetailsSheet__description">
-            <Text as="div" size="xs">
-              {t("Description")}
-            </Text>
-            <Text as="p" size="sm">
-              {description}
-            </Text>
-          </div>
-        )}
+        <div className="PoolDetailsSheet__description">
+          <Text as="div" size="xs">
+            {t("Description")}
+          </Text>
+          <Text as="p" size="sm">
+            {t(
+              "Deposit supported assets into this Blend pool to earn yield. APY may change over time. Withdraw anytime.",
+            )}
+          </Text>
+          <button
+            type="button"
+            className="PoolDetailsSheet__docs-link"
+            onClick={() => openTab(BLEND_LENDING_DOCS_URL)}
+            data-testid="earn-pool-docs-link"
+          >
+            {t("View pool details")}
+            <Icon.LinkExternal01 />
+          </button>
+        </div>
 
         <Text as="div" size="xs">
           {t("Pool Details")}

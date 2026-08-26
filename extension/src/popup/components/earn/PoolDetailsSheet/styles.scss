@@ -63,6 +63,30 @@
     color: var(--sds-clr-gray-11);
   }
 
+  // "View pool details", opening Blend's lending docs in a new tab. A button
+  // rather than an anchor: the popup navigates by `openTab`, and an <a href>
+  // would replace the popup's own document.
+  &__docs-link {
+    display: flex;
+    align-items: center;
+    align-self: flex-start;
+    gap: pxToRem(4);
+    margin-top: pxToRem(4);
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--sds-clr-lilac-11);
+    font-size: pxToRem(14);
+    font-weight: var(--sds-fw-medium);
+    line-height: pxToRem(20);
+    cursor: pointer;
+
+    svg {
+      width: pxToRem(16);
+      height: pxToRem(16);
+    }
+  }
+
   &__group {
     background: var(--sds-clr-gray-03);
     border-radius: pxToRem(12);
