@@ -8,15 +8,6 @@ import { projectEarnings } from "popup/components/earn/EarnReview/helpers/projec
 import { getCatalogAssetIdentity } from "./earnAssetIcons";
 import { headlineApy } from "./formatPoolStats";
 
-export type PositionScope = "supply" | "pool";
-
-/**
- * v1 renders one supplied asset — the row the user tapped. Flip to "pool" to
- * aggregate every supply row in the position; `deposits` and `earnings` are
- * already arrays, so nothing in the sheet has to change. See design doc Q1.
- */
-export const POSITION_SUMMARY_SCOPE: PositionScope = "supply";
-
 export interface PositionAssetRow {
   assetId: string;
   code: string;
@@ -29,7 +20,7 @@ export interface PositionAssetRow {
 
 export interface PositionSummary {
   currentBalanceUsd: number | null;
-  /** Headline rate: apy + emissions, or the pool's netApy under pool scope. */
+  /** Headline rate: apy + emissions. */
   apy: number | null;
   deposits: PositionAssetRow[];
   earnings: PositionAssetRow[];
@@ -138,16 +129,11 @@ const toEarningsRow = (
 const resolveRows = ({
   position,
   focusedAssetId,
-  scope,
 }: {
   position: PoolPosition;
   focusedAssetId?: string;
-  scope: PositionScope;
 }): BlendSupplyRow[] => {
   const supply = position.blend?.supply || [];
-  if (scope === "pool") {
-    return supply;
-  }
   if (focusedAssetId === undefined) {
     return [supply[0]].filter(Boolean);
   }
@@ -157,49 +143,38 @@ const resolveRows = ({
 
 /**
  * Whether `getPositionSummary` would resolve to any row at all, for this same
- * `position`/`focusedAssetId`/`scope`. `PoolDetailsSheet` uses this to decide
- * whether "Your position" has anything to show, so it never renders a tab
- * whose panel would be empty (see `resolveRows`).
+ * `position`/`focusedAssetId`. `PoolDetailsSheet` uses this to decide whether
+ * "Your position" has anything to show, so it never renders a tab whose panel
+ * would be empty (see `resolveRows`).
  */
 export const hasResolvableSupply = ({
   position,
   focusedAssetId,
-  scope = POSITION_SUMMARY_SCOPE,
 }: {
   position: PoolPosition;
   focusedAssetId?: string;
-  scope?: PositionScope;
-}): boolean => resolveRows({ position, focusedAssetId, scope }).length > 0;
+}): boolean => resolveRows({ position, focusedAssetId }).length > 0;
 
 /**
- * The sheet's "Your position" figures, for one supplied asset or for the whole
- * pool. The ONLY place this derivation lives — the component renders whatever
- * comes back and knows nothing about scope.
+ * The sheet's "Your position" figures for one supplied asset.
  *
- * The two Est. rows are computed once from the scoped balance and rate, never
- * once per asset: that is how the design draws them, inside the earnings card
- * below a divider.
+ * Pool-level totals are a different surface with a different helper — see
+ * `getPoolPositionSummary`. This one never aggregates.
  */
 export const getPositionSummary = ({
   position,
   focusedAssetId,
   networkDetails,
-  scope = POSITION_SUMMARY_SCOPE,
 }: {
   position: PoolPosition;
   focusedAssetId?: string;
   networkDetails: NetworkDetails;
-  scope?: PositionScope;
 }): PositionSummary => {
-  const rows = resolveRows({ position, focusedAssetId, scope });
+  const rows = resolveRows({ position, focusedAssetId });
 
-  const currentBalanceUsd =
-    scope === "pool" ? position.netUsd : (rows[0]?.usdValue ?? null);
+  const currentBalanceUsd = rows[0]?.usdValue ?? null;
   // headlineApy: the null-is-not-zero exception -- see formatPoolStats.ts.
-  const apy =
-    scope === "pool"
-      ? position.netApy
-      : headlineApy(rows[0]?.apy ?? null, rows[0]?.emissionsApr ?? null);
+  const apy = headlineApy(rows[0]?.apy ?? null, rows[0]?.emissionsApr ?? null);
 
   const deposits = rows.map((row) => toDepositRow(row, networkDetails));
   const earnings = rows.map((row) => toEarningsRow(row, networkDetails));

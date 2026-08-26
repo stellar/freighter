@@ -49,7 +49,7 @@ const position = (supply: unknown[]) =>
     blend: { supply, borrow: [] },
   }) as never;
 
-describe("getPositionSummary — supply scope", () => {
+describe("getPositionSummary", () => {
   const summary = (
     focusedAssetId: string,
     supply: unknown[] = [usdcSupply, xlmSupply],
@@ -58,7 +58,6 @@ describe("getPositionSummary — supply scope", () => {
       position: position(supply),
       focusedAssetId,
       networkDetails,
-      scope: "supply",
     });
 
   it("scopes every figure to the focused asset", () => {
@@ -129,7 +128,6 @@ describe("getPositionSummary — supply scope", () => {
     const result = getPositionSummary({
       position: position([usdcSupply, xlmSupply]),
       networkDetails,
-      scope: "supply",
     });
 
     expect(result.deposits[0].code).toBe("USDC");
@@ -199,23 +197,6 @@ describe("getPositionSummary — supply scope", () => {
       expect(result.deposits[0].tokens).toBe("0");
       expect(result.deposits[0].usd).not.toBeNull();
     });
-  });
-});
-
-describe("getPositionSummary — pool scope", () => {
-  it("aggregates every supplied row under the pool's own totals", () => {
-    const result = getPositionSummary({
-      position: position([usdcSupply, xlmSupply]),
-      networkDetails,
-      scope: "pool",
-    });
-
-    expect(result.currentBalanceUsd).toBe(620.16);
-    expect(result.apy).toBeCloseTo(0.16);
-    expect(result.deposits).toHaveLength(2);
-    expect(result.earnings).toHaveLength(2);
-    // One pair of Est. rows, from the pool total — never one pair per asset.
-    expect(result.estYearlyUsd).toBe("99.20");
   });
 });
 
