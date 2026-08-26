@@ -68,6 +68,26 @@ describe("FloatingAddButton", () => {
     });
   });
 
+  describe("Positions tab", () => {
+    // Regression case: before the Positions tab existed, `!isTokensTab` meant
+    // exactly "Collectibles". Inserting a third `TabsList` member without an
+    // explicit guard here made it mean "Positions or Collectibles", and for a
+    // funded account with collectibles neither loading nor showing an inline
+    // CTA (the two props below), the pill fell through to "Add collectible"
+    // while the user was looking at the Positions pane. Positions has no add
+    // flow of its own -- a position comes from depositing through Earn.
+    it("never renders, regardless of funded state or the collectibles props", () => {
+      const { container } = renderPill({
+        activeTab: TabsList.POSITIONS,
+        isFunded: true,
+        isCollectiblesCtaInline: false,
+        isCollectiblesLoading: false,
+      });
+
+      expect(container).toBeEmptyDOMElement();
+    });
+  });
+
   describe("Collectibles tab", () => {
     it("offers Add collectible when its empty state is not carrying the CTA", () => {
       renderPill({

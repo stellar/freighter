@@ -11,6 +11,7 @@ import {
   TESTNET_NETWORK_DETAILS,
   DEFAULT_NETWORKS,
   MAINNET_NETWORK_DETAILS,
+  FUTURENET_NETWORK_DETAILS,
 } from "@shared/constants/stellar";
 import { Balances } from "@shared/api/types/backend-api";
 import * as ApiInternal from "@shared/api/internal";
@@ -46,7 +47,11 @@ import { DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES } from "@shared/constants/autoLock";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import * as AccountDataHooks from "../../views/Account/hooks/useGetAccountData";
 import { RequestState } from "helpers/hooks/fetchHookInterface";
-import { ActiveTabProvider } from "../Account/contexts/activeTabContext";
+import {
+  ActiveTabProvider,
+  AccountTabsContext,
+  TabsList,
+} from "../Account/contexts/activeTabContext";
 
 const mockHistoryOperations = {
   operations: [
@@ -1678,6 +1683,74 @@ describe("Account view", () => {
       ).not.toBeInTheDocument();
       expect(pillTestIds()).toEqual(["add-collectible-btn"]);
     });
+  });
+
+  // Spec D14: switching to a network where Earn is unsupported while the
+  // Positions tab is active must not strand the user there -- the very
+  // button that tab needs to leave from is what just disappeared.
+  // `isEarnSupportedNetwork` is true only for PUBLIC and TESTNET, so
+  // Futurenet is what triggers this. Supplies `AccountTabsContext` directly,
+  // rather than `ActiveTabProvider` (which always starts on Tokens), so the
+  // guard's precondition -- already on Positions -- holds from the first
+  // render; the effect runs identically whether that became true on mount or
+  // from a later network switch, so this exercises the same branch either way.
+  it("resets from Positions to Tokens on an earn-unsupported network", async () => {
+    const accountDataSpy = jest
+      .spyOn(AccountDataHooks, "useGetAccountData")
+      .mockReturnValue({
+        state: {
+          state: RequestState.SUCCESS,
+          error: null,
+          data: {
+            type: AppDataType.RESOLVED,
+            publicKey: TEST_PUBLIC_KEY,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
+            networkDetails: FUTURENET_NETWORK_DETAILS,
+            allowList: ApiInternal.DEFAULT_ALLOW_LIST,
+            isScanAppended: true,
+            collectibles: { collections: [] },
+            balances: { balances: [], isFunded: true, subentryCount: 0 },
+            tokenPrices: {},
+          },
+        },
+        fetchData: jest.fn(),
+        refreshAppData: jest.fn(),
+      } as any);
+
+    const setActiveTab = jest.fn();
+
+    render(
+      <Wrapper
+        routes={[ROUTES.account]}
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
+            publicKey: TEST_PUBLIC_KEY,
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: FUTURENET_NETWORK_DETAILS,
+            networksList: [...DEFAULT_NETWORKS, FUTURENET_NETWORK_DETAILS],
+          },
+        }}
+      >
+        <AccountTabsContext.Provider
+          value={{ activeTab: TabsList.POSITIONS, setActiveTab }}
+        >
+          <Account />
+        </AccountTabsContext.Provider>
+      </Wrapper>,
+    );
+
+    await waitFor(() => {
+      expect(setActiveTab).toHaveBeenCalledWith(TabsList.TOKENS);
+    });
+
+    // Restored before the next test: a failure after this point would
+    // otherwise leave useGetAccountData mocked for every later test in this
+    // file, exactly as it briefly did before this line was added.
+    accountDataSpy.mockRestore();
   });
 
   it("handles abandoned onboarding in password created step", async () => {

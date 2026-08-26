@@ -1,7 +1,8 @@
 /**
  * @fileoverview AccountTabs renders the Home screen's tab row. Adding tokens and
  * collectibles is handled by FloatingAddButton; hidden collectibles are reached
- * from the Add Collectible screen.
+ * from the Add Collectible screen. Positions has no add flow of its own -- a
+ * position is opened by depositing through Earn, not through this row.
  */
 
 import React from "react";
@@ -20,7 +21,8 @@ import "./styles.scss";
 
 /**
  * Tab navigation for the account view. Hides the collectibles tab on custom
- * networks, where collectibles are unsupported.
+ * networks, where collectibles are unsupported, and the positions tab on any
+ * network where Earn is unsupported (every network but PUBLIC and TESTNET).
  */
 export const TabButtons = () => {
   const { t } = useTranslation();

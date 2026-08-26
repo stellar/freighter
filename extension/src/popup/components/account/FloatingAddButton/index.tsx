@@ -33,6 +33,16 @@ export const FloatingAddButton = ({
   const { t } = useTranslation();
   const { activeTab } = useActiveTab();
 
+  // Nothing is "added" on this tab: positions come from depositing through
+  // Earn, not from a picker this pill would open. The empty state gets its
+  // own "Start Earning" CTA in Task 7. An explicit early return rather than
+  // folding this into the Tokens/Collectibles ternary below, so a future
+  // fourth tab fails loudly instead of silently inheriting the Collectibles
+  // branch the way Positions itself briefly did.
+  if (activeTab === TabsList.POSITIONS) {
+    return null;
+  }
+
   const isTokensTab = activeTab === TabsList.TOKENS;
 
   // The unfunded Tokens empty state carries its own "Add XLM" action, so the
