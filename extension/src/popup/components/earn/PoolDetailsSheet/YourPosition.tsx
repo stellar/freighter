@@ -61,12 +61,13 @@ const AssetLine = ({
 );
 
 /**
- * The account's stake in this pool.
+ * The account's stake in this pool, scoped to one supplied asset.
  *
- * Every figure comes from `getPositionSummary`, which owns the supply-vs-pool
- * scope decision — this component renders whatever it returns and never asks
- * which scope produced it. `deposits` and `earnings` are lists precisely so
- * pool scope needs no change here.
+ * Every figure comes from `getPositionSummary`, which is unconditionally
+ * supply-scoped and never aggregates — see its own doc comment. `deposits`
+ * and `earnings` stay lists because resolution can come back empty (a
+ * focused asset that matches no supplied row) as well as with one row; this
+ * component maps over them rather than assuming either shape.
  */
 export const YourPosition = ({
   position,
@@ -138,8 +139,8 @@ export const YourPosition = ({
             isGain
           />
         ))}
-        {/* One pair of rows for the whole panel, from the scoped balance and
-            rate — not one pair per asset. */}
+        {/* One pair of rows for the whole panel, from the position's balance
+            and rate — not one pair per earnings row. */}
         <StatRow
           label={t("Est. monthly earnings")}
           value={formatProjection(summary.estMonthlyUsd)}

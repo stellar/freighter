@@ -86,7 +86,6 @@ describe("getPoolPositionSummary", () => {
     );
 
     expect(result.gainPercent).toBeNull();
-    expect(Number.isFinite(result.gainPercent as number)).toBe(false);
   });
 
   it("reports zero interest as a real zero, not unknown", () => {
