@@ -120,13 +120,19 @@
       // green-11 rather than green-09: this figure is either a dollar gain or
       // a rate depending on what's held, and green-11 is the shade already
       // covering both cases elsewhere in this exact feature --
-      // `PositionRow__gain--positive` (a dollar figure) and
+      // `PositionRow__gain--positive` below (a dollar figure) and
       // `EarnStatRow__value--positive` (a rate, e.g. EarnReview's "Current
       // APY" row) both use it, as does `HistoryItem`'s received-amount
-      // colour. green-09 elsewhere in the app (`BalanceRow__delta.positive`,
-      // `AssetDetail__delta.positive`) is reserved specifically for a 24h
-      // price-change indicator, a different thing than either branch this
-      // figure can show.
+      // colour.
+      //
+      // Not a settled app-wide rule, though: green-09 is not exclusively "the
+      // 24h price-change shade" (`BalanceRow__delta.positive`,
+      // `AssetDetail__delta.positive`) -- `PositionRow__apy`, below in this
+      // very file, colours a supply APY -- the rate branch this figure can
+      // also show -- that same green-09. That is an unresolved counter-example,
+      // not a precedent this choice overrides: a later visual pass should
+      // reconcile which green a supply APY gets across the feature (see also
+      // `PoolDetailsSheet__position__apy`, the same open question).
       &__figure {
         color: var(--sds-clr-green-11);
         font-size: pxToRem(24px);

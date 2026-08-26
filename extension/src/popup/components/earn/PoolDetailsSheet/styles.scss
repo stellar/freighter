@@ -236,12 +236,19 @@
       color: var(--sds-clr-gray-12);
     }
 
-    // green-11, not green-09: green-09 (`BalanceRow__delta.positive`) is this
-    // app's shade for a 24h price-change indicator, a different thing than an
-    // earned amount. green-11 is what this exact feature already uses for a
-    // dollar gain (`PositionRow__gain--positive`) and a rate
-    // (`EarnStatRow__value--positive`) alike -- see AccountPositions/styles.scss
-    // for the fuller reasoning.
+    // green-11: the tiebreaker is internal consistency within this same
+    // sheet -- its own Overview tab already colours "Current Net APY" green-11
+    // via `EarnStatRow__value--positive` -- and with `PositionRow__gain--positive`
+    // (AccountPositions/styles.scss), which colours the same kind of figure, a
+    // dollar gain, the same shade elsewhere in this feature.
+    //
+    // Not a settled app-wide rule, though: green-09 is not exclusively "the
+    // 24h price-change shade" (`BalanceRow__delta.positive`) -- in that same
+    // AccountPositions/styles.scss, `PositionRow__apy` colours a supply APY,
+    // the same kind of figure as this panel's own `&__apy` above, green-09.
+    // That is an unresolved counter-example, not a precedent this choice
+    // overrides. The design pass must pick one green for a supply APY across
+    // the feature; see the Figma sweep list in the task report.
     &__usd--gain {
       color: var(--sds-clr-green-11);
     }
