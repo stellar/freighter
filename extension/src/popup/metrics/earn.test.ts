@@ -11,6 +11,8 @@ import {
   trackEarnDepositFailed,
   trackEarnFundingActionSelected,
   trackEarnPercentAmountSelected,
+  trackEarnPoolDetailsOpened,
+  trackEarnPoolDetailsTabSelected,
   trackEarnSimulationFailed,
   trackEarnSwapCompleted,
   trackEarnTokenSelected,
@@ -96,6 +98,37 @@ describe("Earn funnel metrics", () => {
     );
   });
 
+  it("reports the pool details sheet opening with its source", () => {
+    trackEarnPoolDetailsOpened({ poolId: POOL_ID, source: "position_row" });
+
+    expect(mockEmitMetric).toHaveBeenCalledWith(
+      METRIC_NAMES.earnPoolDetailsOpened,
+      { pool_id: POOL_ID, source: "position_row" },
+    );
+  });
+
+  it("reports a tab switch on the pool details sheet", () => {
+    trackEarnPoolDetailsTabSelected({
+      poolId: POOL_ID,
+      tab: "overview",
+      source: "position_row",
+    });
+
+    expect(mockEmitMetric).toHaveBeenCalledWith(
+      METRIC_NAMES.earnPoolDetailsTabSelected,
+      { pool_id: POOL_ID, tab: "overview", source: "position_row" },
+    );
+  });
+
+  it("reports a sheet opened from About pool", () => {
+    trackEarnPoolDetailsOpened({ poolId: POOL_ID, source: "about_pool" });
+
+    expect(mockEmitMetric).toHaveBeenCalledWith(
+      METRIC_NAMES.earnPoolDetailsOpened,
+      { pool_id: POOL_ID, source: "about_pool" },
+    );
+  });
+
   it("tells the two XLM-fee shortfalls apart", () => {
     // Same drop-off, different remedy: one account has no XLM at all and gets
     // the buy/swap sheet, the other allocated it all to the deposit.
@@ -160,6 +193,7 @@ describe("Earn funnel metrics", () => {
       poolId: POOL_ID,
       apy: 0.1694,
       viaSwap: true,
+      source: "position_row",
     });
 
     expect(mockEmitMetric).toHaveBeenCalledWith(
@@ -169,6 +203,7 @@ describe("Earn funnel metrics", () => {
         pool_id: POOL_ID,
         apy: 0.1694,
         via_swap: true,
+        source: "position_row",
       },
     );
   });
@@ -179,6 +214,7 @@ describe("Earn funnel metrics", () => {
       poolId: POOL_ID,
       apy: 0.1694,
       viaSwap: false,
+      source: "home",
     });
 
     const [, body] = mockEmitMetric.mock.calls[0];
@@ -187,6 +223,7 @@ describe("Earn funnel metrics", () => {
       "pool_id",
       "apy",
       "via_swap",
+      "source",
     ]);
   });
 
@@ -195,6 +232,7 @@ describe("Earn funnel metrics", () => {
       assetCode: "USDC",
       poolId: POOL_ID,
       reasonCode: "op_underfunded",
+      source: "positions_empty",
     });
 
     expect(mockEmitMetric).toHaveBeenCalledWith(
@@ -203,6 +241,7 @@ describe("Earn funnel metrics", () => {
         asset_code: "USDC",
         pool_id: POOL_ID,
         reason_code: "op_underfunded",
+        source: "positions_empty",
       },
     );
   });

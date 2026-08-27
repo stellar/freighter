@@ -16,8 +16,22 @@
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
-    gap: pxToRem(12);
+    // Icon-to-name gap. `&__identity`'s own `margin-right: auto` handles the
+    // space to the close button independently of this value.
+    gap: pxToRem(6);
     flex: none;
+    // 12px (this file's own gap, between the header and whatever follows —
+    // the tab strip when a position exists, the body otherwise) + 4px here =
+    // 16px, node 9965-62123's own "Top Nav" bottom padding.
+    margin-bottom: pxToRem(4);
+
+    .PoolIcon {
+      // `PoolIcon` is 32px by default elsewhere in this flow (the deposit
+      // screen's pool card, the review/terminal summaries), but this header
+      // wants a 38px mark -- scoped here rather than resized globally.
+      width: pxToRem(38);
+      height: pxToRem(38);
+    }
   }
 
   &__body {
@@ -36,10 +50,19 @@
   }
 
   &__identity {
-    color: var(--sds-clr-gray-11);
     // Keeps the icon adjacent to the name instead of at the opposite edge of the
-    // space-between header.
+    // space-between header. The pool name itself inherits `body`'s own
+    // gray-12, matching node 9965-62123/9808-34747's primary-coloured title;
+    // only the tagline below needs its own colour.
     margin-right: auto;
+  }
+
+  // "by Blend". Text/XS/400 -- `size="xs"` on the `Text` element supplies the
+  // 12px scale; this line-height corrects SDS's own `xs` (20px) down to the
+  // node's 18px, matching `&__section-title` below's identical correction.
+  &__tagline {
+    color: var(--sds-clr-gray-11);
+    line-height: pxToRem(18);
   }
 
   &__close {
@@ -49,7 +72,9 @@
     border-radius: 50%;
     border: none;
     cursor: pointer;
-    background: var(--sds-clr-gray-04);
+    // Default/Background/Tertiary in nodes 9965-62123 and 9808-34747, both of
+    // which draw this circle -- gray-03, not gray-04.
+    background: var(--sds-clr-gray-03);
     color: var(--sds-clr-gray-11);
     display: flex;
     align-items: center;
@@ -102,5 +127,189 @@
     background: var(--sds-clr-gray-03);
     border-radius: pxToRem(12);
     padding: 0 pxToRem(16);
+  }
+
+  // Figma node 9965-62123 ("Your position" tab); 9808-34747 (Overview,
+  // maintained separately) renders the same header/tabs chrome and
+  // corroborates the values below.
+
+  // The pill track. Node 9965-62123's "Tabs": background-primary (one shade
+  // darker than `&__group`'s tertiary), 6px padding and corner radius, 8px
+  // gap -- a much less rounded segmented control than the pill this block
+  // used to draw.
+  &__tabs {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: pxToRem(8);
+    padding: pxToRem(6);
+    background: var(--sds-clr-gray-01);
+    border-radius: pxToRem(6);
+  }
+
+  &__tab {
+    flex: 1;
+    // Vertical centering via flex, not padding: this codebase has no
+    // `box-sizing: border-box` reset, so combining an explicit height with
+    // vertical padding would overflow past 32px.
+    height: pxToRem(32);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    cursor: pointer;
+    background: none;
+    border-radius: pxToRem(6);
+    padding: 0 pxToRem(10);
+    font-size: pxToRem(14);
+    line-height: pxToRem(20);
+    font-weight: var(--sds-fw-semi-bold);
+    color: var(--sds-clr-gray-11);
+
+    &--active {
+      // Brand/State/Primary in the node -- `--sds-clr-lilac-04` in this dark
+      // theme -- with Brand/Text/Primary (lilac-11) label text, not the
+      // gray-04/gray-12 "raised control" pair this used to draw.
+      background: var(--sds-clr-lilac-04);
+      color: var(--sds-clr-lilac-11);
+    }
+  }
+
+  &__position {
+    display: flex;
+    flex-direction: column;
+    // Matches both the total-to-gain gap inside `&__header` below and the
+    // pool-name-to-card gap inside each deposits/earnings group -- the two
+    // 8px gaps this flat structure can reproduce exactly. Wider gaps (e.g.
+    // ahead of "Your earnings") get their own margin-top below.
+    gap: pxToRem(8);
+
+    // Every bare `size="xs"` Text under this panel ("Current Balance", "Earn
+    // APY", "Your deposits", "Your earnings") is Text/XS/500 in the node --
+    // medium weight, 18px line-height -- while SDS's own `xs` defaults to
+    // regular at 20px. Scoped to `.Text--xs` (the class the `Text` component
+    // itself applies for `size="xs"`) so all four correct together without a
+    // class on each element.
+    .Text--xs {
+      font-weight: var(--sds-fw-medium);
+      line-height: pxToRem(18);
+    }
+
+    &__header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: pxToRem(12);
+      // 8px (this block's own gap) + 16px = 24px, the node's own gap ahead
+      // of "Your deposits". No background/radius/padding: the node draws
+      // this row as plain text directly on the sheet, not a card.
+      margin-bottom: pxToRem(16);
+    }
+
+    &__rate {
+      text-align: right;
+    }
+
+    // "$500.12" -- Text/XL/500: 20px medium, 28px line-height.
+    &__balance {
+      font-size: pxToRem(20);
+      line-height: pxToRem(28);
+      font-weight: var(--sds-fw-medium);
+      color: var(--sds-clr-gray-12);
+    }
+
+    // "16.94%" -- Text/MD/600: 16px semi-bold, 24px line-height. Unconditionally
+    // green, matching how EarnReview's own "Current APY" StatRow passes
+    // `isPositive` unconditionally -- a rate in this feature always reads as
+    // a gain, never as a plain figure.
+    //
+    // green-11: node 9808-30558 defines `Success/Text/Primary` = #4cc38a,
+    // which is `--sds-clr-green-11` in this dark theme -- the shade this
+    // feature's gains and rates use throughout (see `PositionRow__apy` and
+    // `PositionsPoolCard__gain`, AccountPositions/styles.scss).
+    &__apy {
+      font-size: pxToRem(16);
+      line-height: pxToRem(24);
+      font-weight: var(--sds-fw-semi-bold);
+      color: var(--sds-clr-green-11);
+    }
+  }
+
+  // "Your deposits" needs no rule of its own: it sits right after
+  // `&__position__header`'s own margin-bottom, and the gap down to its card
+  // is exactly `&__position`'s own 8px base gap.
+
+  // "Your earnings" -- one group below "Your deposits", so it (and the card
+  // that follows it) need the Filled frame's 12px gap rather than the base
+  // 8px.
+  &__earnings-label {
+    margin-top: pxToRem(4); // 8px (own gap) + 4px = 12px
+
+    + .PoolDetailsSheet__group {
+      margin-top: pxToRem(4); // 8px + 4px = 12px
+    }
+  }
+
+  // One row of a deposits/earnings list -- same shape as BalanceRow (icon,
+  // code, right-aligned stacked figures), so the figures below mirror
+  // `BalanceRow__fiat`/`BalanceRow__amount`'s type scale rather than inventing
+  // a new one. `AssetIcon`'s built-in right margin is cancelled the same way
+  // `EarnReview__asset` already cancels it, since the row's own `gap` does that
+  // spacing instead.
+  &__asset-line {
+    display: flex;
+    align-items: center;
+    gap: pxToRem(12);
+    padding: pxToRem(12) 0;
+
+    .AccountAssets__asset--logo {
+      margin-right: 0;
+    }
+
+    // Node 9965-62123 draws a divider between the earnings row and "Est.
+    // monthly earnings" below it. `EarnStatRow`'s own `& + &` rule already
+    // draws one between the two stat rows that follow (StatRow/styles.scss),
+    // but that selector only fires between two `.EarnStatRow`s -- it can't
+    // reach the boundary above the first one. Added here, scoped to this
+    // file, rather than in the shared `StatRow` component.
+    & + .EarnStatRow {
+      border-top: 1px solid var(--sds-clr-gray-06);
+    }
+
+    &__figures {
+      margin-left: auto;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+    }
+
+    // `&__usd` and `&__usd--gain` are mutually exclusive on the element (never
+    // combined), so the shared type scale is declared once for both selectors
+    // rather than relying on nesting to inherit it.
+    &__usd,
+    &__usd--gain {
+      font-size: pxToRem(14);
+      line-height: pxToRem(20);
+      font-weight: var(--sds-fw-medium);
+    }
+
+    &__usd {
+      color: var(--sds-clr-gray-12);
+    }
+
+    // green-11: node 9808-30558 defines `Success/Text/Primary` = #4cc38a,
+    // which is `--sds-clr-green-11` in this dark theme -- the shade this
+    // feature's gains and rates use throughout (see `PositionRow__apy` and
+    // `PositionsPoolCard__gain`, AccountPositions/styles.scss).
+    &__usd--gain {
+      color: var(--sds-clr-green-11);
+    }
+
+    &__tokens {
+      font-size: pxToRem(12);
+      line-height: pxToRem(18);
+      font-weight: var(--sds-fw-medium);
+      color: var(--sds-clr-gray-11);
+    }
   }
 }

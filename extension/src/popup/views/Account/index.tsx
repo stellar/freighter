@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useContext, useState } from "react";
-import { Navigate, useLocation } from "react-router-dom";
-import { useSelector } from "react-redux";
+import { Navigate, useLocation, useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
 import { Notification } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 import { isEqual } from "lodash";
@@ -16,7 +16,18 @@ import {
   accountNameSelector,
   publicKeySelector,
 } from "popup/ducks/accountServices";
-import { openTab } from "popup/helpers/navigate";
+import {
+  resetSubmission,
+  saveAsset,
+  saveDestination,
+  saveIsToken,
+} from "popup/ducks/transactionSubmission";
+import {
+  saveEarnPool,
+  saveSelectedAssetApy,
+  saveSelectedAssetId,
+} from "popup/ducks/earn";
+import { navigateTo, openTab } from "popup/helpers/navigate";
 import { isFullscreenMode } from "popup/helpers/isFullscreenMode";
 import { useSwapTopTokensPrewarm } from "popup/helpers/useSwapTopTokensPrewarm";
 
@@ -25,6 +36,7 @@ import {
   AccountCollectibles,
   hasVisibleCollections,
 } from "popup/components/account/AccountCollectibles";
+import { AccountPositions } from "popup/components/account/AccountPositions";
 import { AccountHeader } from "popup/components/account/AccountHeader";
 import { FloatingAddButton } from "popup/components/account/FloatingAddButton";
 import { useHiddenCollectibles } from "popup/components/account/hooks/useHiddenCollectibles";
@@ -32,13 +44,25 @@ import { Loading } from "popup/components/Loading";
 import { NotFundedMessage } from "popup/components/account/NotFundedMessage";
 
 import { isMainnet } from "helpers/stellar";
+import { getCanonicalFromAsset } from "@shared/helpers/stellar";
 import { newTabHref } from "helpers/urls";
 import { getTotalUsd, getTotalUsdLabel } from "popup/helpers/balance";
 import { NetworkDetails } from "@shared/constants/stellar";
+import { isEarnSupportedNetwork } from "@shared/constants/blend";
+import { BlendCatalogPool } from "@shared/api/types/blend";
+import { projectAnnualEarnings } from "popup/components/earn/helpers/earnProjection";
+import { PositionTokenRow } from "popup/components/earn/helpers/positionRows";
 import { reRouteOnboarding } from "popup/helpers/route";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { AccountBalances } from "helpers/hooks/useGetBalances";
 import { MultiPaneSlider } from "popup/components/SlidingPaneSwitcher";
+import { ROUTES } from "popup/constants/routes";
+import {
+  EARN_PREFILL_QUERY,
+  EARN_SOURCE,
+  EARN_SOURCE_KEY,
+} from "popup/constants/earn";
+import { trackPositionsEmptyCtaSelected } from "popup/metrics/positions";
 
 import { useGetAccountData, RequestState } from "./hooks/useGetAccountData";
 import { useGetAccountHistoryData } from "./hooks/useGetAccountHistoryData";
@@ -62,6 +86,8 @@ import "./styles.scss";
 
 export const Account = () => {
   const { t } = useTranslation();
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
   const location = useLocation();
   const isSorobanSuported = useSelector(settingsSorobanSupportedSelector);
   const { userNotification } = useSelector(settingsSelector);
@@ -71,7 +97,20 @@ export const Account = () => {
   // account with a blank identicon (and a copy button holding "").
   const reduxPublicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
-  const { activeTab } = useContext(AccountTabsContext);
+  const { activeTab, setActiveTab } = useContext(AccountTabsContext);
+
+  // The Positions button is hidden where Earn is unsupported. Switching networks
+  // while that tab is active would otherwise leave the pane on screen with no
+  // button to switch away from it.
+  useEffect(() => {
+    if (
+      activeTab === TabsList.POSITIONS &&
+      !isEarnSupportedNetwork(networkDetails)
+    ) {
+      setActiveTab(TabsList.TOKENS);
+    }
+  }, [activeTab, networkDetails, setActiveTab]);
+
   const [isDiscoverOpen, setIsDiscoverOpen] = useState(false);
 
   const isFullscreenModeEnabled = isFullscreenMode();
@@ -255,6 +294,38 @@ export const Account = () => {
     isTokensEmptyStateShown &&
     !hasVisibleCollections(collections, isCollectibleHidden);
 
+  // Feeds the Positions tab's empty-state card. `earnOptions` is only ever
+  // fetched once positions land empty (useGetAccountData), so this is a no-op
+  // the rest of the time.
+  const projection = projectAnnualEarnings({
+    options: resolvedData?.earnOptions ?? null,
+    balances,
+    tokenPrices,
+    networkDetails,
+  });
+
+  const onDepositFromPosition = (
+    row: PositionTokenRow,
+    pool: BlendCatalogPool,
+  ) => {
+    // The same sequence EarnTokenPicker.onSelect runs. Kept in step with it:
+    // the amount screen reads all six values and renders blank without any one.
+    dispatch(resetSubmission());
+    dispatch(saveEarnPool(pool));
+    dispatch(saveSelectedAssetApy(row.apy));
+    dispatch(saveSelectedAssetId(row.assetId));
+    dispatch(saveAsset(getCanonicalFromAsset(row.code, row.issuer)));
+    // The pool contract is the transaction's destination; isContractId() on it
+    // routes the flow down the Soroban path rather than the classic one.
+    dispatch(saveDestination(row.poolId));
+    dispatch(saveIsToken(true));
+    navigateTo(
+      ROUTES.earn,
+      navigate,
+      `${EARN_PREFILL_QUERY}&${EARN_SOURCE_KEY}=${EARN_SOURCE.POSITION_ROW}`,
+    );
+  };
+
   return (
     <>
       <AccountHeader
@@ -356,6 +427,26 @@ export const Account = () => {
                   />
                 )
               ),
+              <div data-testid="account-positions-pane">
+                <AccountPositions
+                  positions={resolvedData?.positions ?? null}
+                  isLoading={!!resolvedData && !resolvedData.hasLoadedPositions}
+                  // A failed account fetch (hasError) discards `resolvedData`
+                  // entirely (see helpers/request.ts), so hasPositionsError
+                  // alone would never see it -- and AccountPositions would
+                  // fall through to its empty state, telling the account it
+                  // holds nothing when the truth is "unknown". A position is
+                  // money; see that component's own file comment.
+                  hasError={hasError || !!resolvedData?.hasPositionsError}
+                  assetIcons={resolvedIcons}
+                  networkDetails={networkDetails}
+                  projectedUsd={projection.usd}
+                  bestApy={projection.bestApy}
+                  onStartEarning={trackPositionsEmptyCtaSelected}
+                  pools={resolvedData?.pools ?? []}
+                  onDeposit={onDepositFromPosition}
+                />
+              </div>,
               <div data-testid="account-collectibles">
                 <AccountCollectibles
                   collections={collections}

@@ -2,6 +2,7 @@ import React, { createContext, useState } from "react";
 
 export enum TabsList {
   TOKENS = "tokens",
+  POSITIONS = "positions",
   COLLECTIBLES = "collectibles",
 }
 

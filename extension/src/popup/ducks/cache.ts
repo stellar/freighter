@@ -1,5 +1,6 @@
 import { createSelector, createSlice } from "@reduxjs/toolkit";
 import { AccountBalancesInterface } from "@shared/api/types/backend-api";
+import { AccountPositions } from "@shared/api/types/blend";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { AssetListResponse } from "@shared/constants/soroban/asset-list";
 import { HistoryResponse } from "helpers/hooks/useGetHistory";
@@ -54,6 +55,12 @@ type SaveCollectionsPayload = {
   collections: Collection[];
 };
 
+type SavePositionsPayload = {
+  publicKey: PublicKey;
+  networkDetails: NetworkDetails;
+  positions: AccountPositions;
+};
+
 type SavePopularTokensPayload = {
   networkDetails: NetworkDetails;
   tokens: TrendingAsset[];
@@ -91,6 +98,12 @@ interface InitialState {
   popularTokens: {
     [network: string]: { tokens: TrendingAsset[]; updatedAt: number };
   };
+  positionsData: {
+    [network: string]: Record<
+      PublicKey,
+      AccountPositions & { updatedAt: number }
+    >;
+  };
 }
 
 const initialState: InitialState = {
@@ -103,6 +116,7 @@ const initialState: InitialState = {
   tokenPrices: {},
   collections: {},
   popularTokens: {},
+  positionsData: {},
 };
 
 const cacheSlice = createSlice({
@@ -118,6 +132,7 @@ const cacheSlice = createSlice({
       state.historyData = {};
       state.tokenPrices = {};
       state.popularTokens = {};
+      state.positionsData = {};
     },
     saveBalancesForAccount(state, action: { payload: SaveBalancesPayload }) {
       state.balanceData = {
@@ -198,6 +213,18 @@ const cacheSlice = createSlice({
         },
       };
     },
+    savePositions(state, action: { payload: SavePositionsPayload }) {
+      state.positionsData = {
+        ...state.positionsData,
+        [action.payload.networkDetails.network]: {
+          ...(state.positionsData[action.payload.networkDetails.network] || {}),
+          [action.payload.publicKey]: {
+            ...action.payload.positions,
+            updatedAt: Date.now(),
+          },
+        },
+      };
+    },
     clearCollectiblesForAccount(
       state,
       action: { payload: ClearBalancesPayload },
@@ -249,6 +276,8 @@ export const collectionsSelector = (state: { cache: InitialState }) =>
   state.cache.collections;
 export const popularTokensSelector = (state: { cache: InitialState }) =>
   state.cache.popularTokens;
+export const positionsSelector = (state: { cache: InitialState }) =>
+  state.cache.positionsData;
 
 export const { reducer } = cacheSlice;
 export const {
@@ -264,4 +293,5 @@ export const {
   clearBalancesForAccount,
   clearCollectiblesForAccount,
   savePopularTokens,
+  savePositions,
 } = cacheSlice.actions;

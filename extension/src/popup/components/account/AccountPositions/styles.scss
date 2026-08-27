@@ -1,0 +1,418 @@
+@use "../../../styles/utils.scss" as *;
+
+// Figma node 9808-30015 (the empty state, "Positions/emtpy"), pulled once the
+// design file was reachable again. Values below are read off that node; see
+// the per-rule notes for anything the node left unspecified.
+.AccountPositions {
+  // Mirrors the top-level `.AccountCollectibles` rule: flex column, the 24px
+  // gap Figma puts between siblings, and vertical-only padding since
+  // `.multi-pane-slider__pane` (views/Account/styles.scss) already supplies
+  // this pane's horizontal gutter.
+  display: flex;
+  flex-direction: column;
+  gap: pxToRem(24px);
+  padding: pxToRem(24px) 0;
+
+  // Mirrors `.AccountCollectibles__loader` exactly, min-height included --
+  // that value reserves the collectibles empty state's height (badge + title
+  // + subtitle) so resolving into it doesn't shift the tab under the reader.
+  // Positions' empty state has no badge but, as of Task 7, has a projection
+  // card and CTA that the Collectibles state doesn't reserve room for -- this
+  // number still needs to be re-derived (still carried over as-is rather than
+  // guessed) once real dimensions exist for those.
+  &__loader {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: pxToRem(108px);
+    color: var(--sds-clr-gray-09);
+  }
+
+  // No node covers a fetch-failure state -- Figma has nothing between "loaded"
+  // and "empty" -- so this stays unstyled. `Notification` brings its own
+  // visual treatment, and `.AccountView__fetch-fail`'s left/right margins
+  // (views/Account/styles.scss) are not a fit here since those exist to
+  // compensate for `View.Content`'s disabled inset, a problem this pane
+  // doesn't have.
+
+  &__empty {
+    // Node 9808-30015: the title/subtitle pair sits centered with a 6px gap;
+    // no padding-top of its own since `.AccountPositions` above already
+    // contributes the 24px gap under the tab strip.
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: pxToRem(6px);
+    padding-top: 0;
+
+    &__title {
+      color: var(--sds-clr-gray-12);
+      font-size: pxToRem(14px);
+      font-weight: var(--sds-fw-medium);
+      line-height: pxToRem(20px);
+    }
+
+    &__subtitle {
+      color: var(--sds-clr-gray-11);
+      font-size: pxToRem(12px);
+      font-weight: var(--sds-fw-regular);
+      line-height: pxToRem(18px);
+    }
+
+    // The "you could earn up to" card. Node 9808-30015's "Row".
+    &__projection {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      align-self: stretch;
+      gap: pxToRem(4px);
+      // 6px of the column's own gap above plus 6px here lands the card 12px
+      // under the subtitle, the node's own gap between the text block and
+      // this card.
+      margin-top: pxToRem(6px);
+      padding: pxToRem(12px) pxToRem(16px);
+      border-radius: pxToRem(16px);
+      background: var(--sds-clr-gray-03);
+
+      &__label {
+        color: var(--sds-clr-gray-12);
+        font-size: pxToRem(12px);
+        font-weight: var(--sds-fw-medium);
+        line-height: pxToRem(18px);
+      }
+
+      // Wraps the coloured figure plus the trailing "/year on your tokens"
+      // text -- the node keeps both at the same small size as the label
+      // above; there is no "big number" treatment here.
+      &__value {
+        color: var(--sds-clr-gray-11);
+        font-size: pxToRem(12px);
+        font-weight: var(--sds-fw-medium);
+        line-height: pxToRem(18px);
+      }
+
+      // green-11: node 9808-30558 defines `Success/Text/Primary` = #4cc38a,
+      // which is `--sds-clr-green-11` in this dark theme -- the shade this
+      // whole feature's gains and rates now use (see `PositionRow__apy` and
+      // `PositionsPoolCard__gain` below, and `MyPosition__gain`).
+      &__figure {
+        color: var(--sds-clr-green-11);
+        font-size: pxToRem(12px);
+        font-weight: var(--sds-fw-medium);
+        line-height: pxToRem(18px);
+      }
+    }
+
+    // 6px of the column's own gap plus 6px here lands the button 12px under
+    // whatever sits above it (the projection card when shown, the subtitle
+    // when not) -- the node's own gap value once more.
+    &__cta {
+      margin-top: pxToRem(6px);
+    }
+
+    // Same weight bump every other empty-state CTA in this codebase gives its
+    // button (AccountCollectibles, NotFundedMessage).
+    .Button {
+      font-weight: var(--sds-fw-semi-bold);
+    }
+  }
+
+  // One `PositionsPoolCard` per pool. Node 9808-30558 shows only a single
+  // pool, so the inter-card gap isn't directly observable there; 8px matches
+  // the card's own internal vertical padding (see `.PositionsPoolCard`
+  // below) rather than being invented from nothing. Worth confirming once a
+  // multi-pool state exists in Figma.
+  &__list {
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(8px);
+  }
+
+  // Mirrors `AccountAssets__asset-detail__wrapper` exactly (same SheetContent
+  // host, same need for an opaque background over whatever the tab underneath
+  // is showing) -- see that file for the donor rule.
+  &__my-position__wrapper {
+    background: var(--sds-clr-gray-01);
+    height: 100%;
+    width: 100%;
+  }
+}
+
+// PositionRow wraps BalanceRow inside the My position sheet and colours its
+// rate figure green. Figma node 9956-72252's supplied-asset rows (e.g. "1.87%
+// APY") give the treatment: Text/XS/400 (12px regular, 18px line-height) in
+// `Success/Text/Primary`.
+.PositionRow {
+  // Sits inside BalanceRow's own `&__amount` div (the `amountSlot` prop), so
+  // font-size/line-height already come from `.BalanceRow__amount` by
+  // inheritance -- but that rule's font-weight is medium, and the node wants
+  // this line regular, so weight needs its own override too.
+  //
+  // green-11: node 9808-30558 defines `Success/Text/Primary` = #4cc38a, which
+  // is `--sds-clr-green-11` in this dark theme -- the shade this feature's
+  // gains and rates use throughout (see `PositionsPoolCard__gain` and
+  // `MyPosition__gain` below).
+  &__apy {
+    color: var(--sds-clr-green-11);
+    font-weight: var(--sds-fw-regular);
+  }
+
+  // Replaces BalanceRow's default right-side slot (`rightSlot`), so unlike
+  // `&__apy` above this gets no styling for free and repeats its donor
+  // rule's size/weight explicitly. The interest-gain figure that used to sit
+  // beside this (a second, coloured `rightSlot` line) moved up to MyPosition's
+  // own header -- see that file's `&__gain` for its replacement.
+
+  // Primary (now only) right-side line, matching `.BalanceRow__fiat`. Not a
+  // coloured figure -- a supplied total, not a gain -- so it stays neutral.
+  // Matches node 9956-72252's "$784.20"/"$500.12" figures (14px medium,
+  // primary).
+  &__value {
+    font-size: pxToRem(14px);
+    line-height: pxToRem(20px);
+    font-weight: var(--sds-fw-medium);
+    color: var(--sds-clr-gray-12);
+  }
+}
+
+// The Positions tab's one-row-per-pool card, Figma node 9808-30558's "Row".
+//
+// Named `.PositionsPoolCard`, not `.PoolCard`:
+// `popup/components/earn/EarnAmount/styles.scss` already defines a bare
+// `.PoolCard` (the deposit flow's own, differently-shaped pool card, with
+// its own `&__body`/`&__identity`/etc.), and this codebase's SCSS compiles
+// into one global, unscoped stylesheet (no CSS Modules -- see
+// `extension/webpack.common.js`'s `css-loader` rule). An earlier version of
+// this block reused `.PoolCard` and tried to out-scope the collision with
+// `.AccountPositions .PoolCard` (higher specificity than the bare rule) --
+// that only wins the cascade for properties BOTH rules declare. Anything
+// EarnAmount's `.PoolCard` sets that this block didn't (its
+// `flex-direction: column`, its `.PoolIcon { width/height/border-radius }`,
+// its `&__identity { margin-right: auto }`) still applied here, since a
+// compound selector doesn't stop a property from a lower-specificity rule
+// simply because it's absent from the higher-specificity one. Renaming the
+// whole class tree removes the collision outright rather than requiring
+// this block to mirror every property EarnAmount's rule happens to set,
+// today or in the future.
+.PositionsPoolCard {
+  display: flex;
+  align-items: center;
+  gap: pxToRem(12px);
+  width: 100%;
+  padding: pxToRem(8px) pxToRem(12px);
+  border: none;
+  border-radius: pxToRem(16px);
+  background: var(--sds-clr-gray-03);
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+
+  // `PoolIcon` is already 32px square by default (`PoolIcon/styles.scss`),
+  // matching the node's 32px "dApp" icon exactly -- no override needed here.
+
+  &__body {
+    display: flex;
+    flex: 1;
+    min-width: 0;
+    flex-direction: column;
+    gap: pxToRem(2px);
+  }
+
+  // "Fixed Pool v2 · Blend". Text/XS/400 (12px regular, 18px line-height);
+  // the pool name inherits this row's own `color: inherit` (primary), and
+  // only the " · Blend" suffix needs its own secondary colour.
+  &__identity {
+    font-size: pxToRem(12px);
+    font-weight: var(--sds-fw-regular);
+    line-height: pxToRem(18px);
+  }
+
+  &__protocol {
+    color: var(--sds-clr-gray-11);
+  }
+
+  &__figures {
+    display: flex;
+    align-items: center;
+    gap: pxToRem(4px);
+  }
+
+  // "$1,284.32". Text/SM/500 (14px medium, 20px line-height), primary.
+  &__value {
+    font-size: pxToRem(14px);
+    font-weight: var(--sds-fw-medium);
+    line-height: pxToRem(20px);
+    color: var(--sds-clr-gray-12);
+  }
+
+  // "+2.54%". Same Text/SM/500 scale as `&__value`, at 80% opacity over
+  // green-11 -- the node applies `opacity-80` on top of the colour itself,
+  // not a lighter green token.
+  //
+  // green-11: node 9808-30558 defines `Success/Text/Primary` = #4cc38a,
+  // which is `--sds-clr-green-11` in this dark theme -- the shade this
+  // feature's gains and rates use throughout (see `PositionRow__apy` and
+  // `MyPosition__gain`).
+  &__gain {
+    font-size: pxToRem(14px);
+    font-weight: var(--sds-fw-medium);
+    line-height: pxToRem(20px);
+    color: var(--sds-clr-green-11);
+    opacity: 0.8;
+  }
+
+  // "10.23% APY". Text/XS/500 (12px medium, 18px line-height), secondary.
+  &__apy {
+    font-size: pxToRem(12px);
+    font-weight: var(--sds-fw-medium);
+    line-height: pxToRem(18px);
+    color: var(--sds-clr-gray-11);
+  }
+}
+
+// The My position sheet's body: totals header, "About pool" pill, and the
+// supplied-asset list. Figma node 9956-72252.
+//
+// The node nests the pool name under the Blend chip, in a narrower left
+// column beside the "About pool" pill (its own row's left-hand group), not
+// as a full-width line below the whole identity row the way the JSX renders
+// it (`&__pool-name` is a flat sibling of `&__identity`, not nested inside
+// it). Moving it would mean restructuring MyPosition.tsx's markup, which is
+// out of scope for this pass -- see the task report. The gap values below
+// pick the closest achievable rhythm within the existing flat structure
+// instead of the node's exact nesting.
+.MyPosition {
+  display: flex;
+  flex-direction: column;
+  // Base rhythm: matches both the chip-to-pool-name gap inside the node's own
+  // identity row and the total-to-gain gap inside its totals block -- the
+  // two 8px gaps this flat structure can reproduce exactly. The elements
+  // that need more get their own margin-top below.
+  gap: pxToRem(8px);
+
+  &__identity {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  // The Blend protocol chip (icon + "Blend" label). Bg gray-03, 32px tall,
+  // pill-free 8px corners, px-10/py-4, 4px gap between icon and label.
+  // `PoolIcon` is 32px by default elsewhere in this feature but the chip
+  // wants a 16px mark, so it's scoped down here rather than resized
+  // globally (every other caller -- the deposit screen's pool card, the
+  // pool details header -- wants the larger size).
+  &__chip {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: pxToRem(4px);
+    // Vertical centering via flex, not padding: this codebase has no
+    // `box-sizing: border-box` reset, so combining an explicit height with
+    // vertical padding would overflow past 32px.
+    height: pxToRem(32px);
+    padding: 0 pxToRem(10px);
+    border-radius: pxToRem(8px);
+    background: var(--sds-clr-gray-03);
+
+    .PoolIcon {
+      width: pxToRem(16px);
+      height: pxToRem(16px);
+      border-radius: pxToRem(4px);
+    }
+  }
+
+  // "Blend" label inside the chip -- Text/SM/500, so the `Text` component's
+  // own `weight="medium"` prop carries the type scale; no rule needed here.
+
+  // The "About pool" pill -- reset to a plain inline button (no native
+  // border/background), then styled as its own outlined pill: bg
+  // background-primary, 1px border-primary, full rounding, px-10/py-6,
+  // 4px gap to the chevron, Text/SM/600.
+  &__about {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: pxToRem(4px);
+    height: pxToRem(32px);
+    padding: 0 pxToRem(10px);
+    border: 1px solid var(--sds-clr-gray-06);
+    border-radius: pxToRem(100px);
+    background: var(--sds-clr-gray-01);
+    font-size: pxToRem(14px);
+    font-weight: var(--sds-fw-semi-bold);
+    line-height: pxToRem(20px);
+    cursor: pointer;
+    color: inherit;
+
+    svg {
+      width: pxToRem(14px);
+      height: pxToRem(14px);
+    }
+  }
+
+  // Pool name above the total -- Text/SM/500, secondary. `Text`'s own
+  // `size="sm"` prop supplies the 14px scale; `weight="medium"` and this
+  // colour are the two things it doesn't default to.
+  &__pool-name {
+    color: var(--sds-clr-gray-11);
+  }
+
+  // "$1,284.32" -- Display/XS/400: 24px regular (not medium), -4%
+  // letter-spacing, matching `AccountHeader__total-usd-balance`'s own
+  // tracking convention at this smaller size.
+  &__total {
+    margin-top: pxToRem(4px); // 8px (own gap) + 4px = 12px under the pool name
+    font-size: pxToRem(24px);
+    font-weight: var(--sds-fw-regular);
+    line-height: pxToRem(32px);
+    letter-spacing: pxToRem(-0.96px);
+    color: var(--sds-clr-gray-12);
+  }
+
+  // "+31.75 (2.54%)" -- Text/SM/500, green.
+  //
+  // green-11: node 9808-30558 defines `Success/Text/Primary` = #4cc38a,
+  // which is `--sds-clr-green-11` in this dark theme -- the shade this
+  // feature's gains and rates use throughout (see `PositionRow__apy` and
+  // `PositionsPoolCard__gain`).
+  &__gain {
+    font-size: pxToRem(14px);
+    font-weight: var(--sds-fw-medium);
+    line-height: pxToRem(20px);
+    color: var(--sds-clr-green-11);
+  }
+
+  // "Supplied asset" section label -- Text/SM/500, primary. `size="sm"` on
+  // the `Text` element supplies the 14px scale but not this 20px
+  // line-height (SDS's own `sm` is 22px) or the medium weight.
+  &__section-title {
+    margin-top: pxToRem(16px); // 8px (own gap) + 16px = 24px, the node's own
+    // gap ahead of the "Supplied asset" section.
+    line-height: pxToRem(20px);
+  }
+
+  // One `PositionRow` per supplied asset. The node draws each as its own
+  // bg-tertiary, rounded-12 card (px-12/py-8) rather than a plain BalanceRow
+  // list; scoped onto `.BalanceRow` here (PositionRow's root, via
+  // `BalanceRow/index.tsx`) rather than PositionRow's own markup, so no
+  // component changes are needed to get the card look. The node's 40px
+  // asset icon and 12px icon-to-text gap are `AssetIcon`'s own, shared,
+  // fixed-32px sizing (`AccountAssets/styles.scss`) -- not resized here for
+  // the same reason `PoolIcon` isn't above: every other `AssetIcon` caller
+  // (the Tokens tab, EarnReview, the pool details sheet) wants the smaller
+  // size. See the task report.
+  &__assets {
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(12px);
+
+    .BalanceRow {
+      padding: pxToRem(8px) pxToRem(12px);
+      border-radius: pxToRem(12px);
+      background: var(--sds-clr-gray-03);
+    }
+  }
+}

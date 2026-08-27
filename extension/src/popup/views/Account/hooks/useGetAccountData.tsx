@@ -5,8 +5,16 @@ import { RequestState } from "constants/request";
 import { initialState, isError, reducer } from "helpers/request";
 import { AccountBalances, useGetBalances } from "helpers/hooks/useGetBalances";
 import { useGetCollectibles } from "helpers/hooks/useGetCollectibles";
+import { useGetPositions } from "helpers/hooks/useGetPositions";
 import { isMainnet } from "helpers/stellar";
 import { AllowList, ApiTokenPrices } from "@shared/api/types";
+import { getBlendEarnOptions, getBlendPools } from "@shared/api/helpers/blend";
+import {
+  AccountPositions,
+  BlendCatalogPool,
+  BlendEarnAssetOption,
+} from "@shared/api/types/blend";
+import { isEarnSupportedNetwork } from "@shared/constants/blend";
 import {
   AppDataType,
   NeedsReRoute,
@@ -40,6 +48,35 @@ interface ResolvedAccountData {
    * action goes from it -- needs this rather than the list length.
    */
   hasLoadedCollectibles: boolean;
+  positions: AccountPositions | null;
+  /**
+   * False until the positions request settles. `positions` is empty both before
+   * it lands and when the account genuinely holds none, so anything that has to
+   * tell those apart -- the Positions tab decides between a spinner and its
+   * empty state from it -- needs this rather than the list length.
+   */
+  hasLoadedPositions: boolean;
+  /**
+   * The positions request rejected. Distinct from an empty result: the tab
+   * renders an error rather than claiming the account holds nothing.
+   */
+  hasPositionsError: boolean;
+  /**
+   * Earn catalog, fetched only once positions land empty -- it exists purely to
+   * price the empty state's "you could earn up to" projection. Null otherwise.
+   *
+   * Fetched here rather than by the empty-state component because MultiPaneSlider
+   * unmounts inactive panes, so a component-owned fetch would re-request on
+   * every tab switch.
+   */
+  earnOptions: BlendEarnAssetOption[] | null;
+  /**
+   * The full pool catalog, fetched alongside positions -- it backs the
+   * pool-details sheet a Positions row opens, so unlike `earnOptions` it is
+   * needed precisely when the account already holds positions, not only when
+   * it doesn't.
+   */
+  pools: BlendCatalogPool[];
 }
 
 type AccountData = NeedsReRoute | ResolvedAccountData;
@@ -60,6 +97,7 @@ function useGetAccountData(options: {
   const { fetchData: fetchCollectibles } = useGetCollectibles({
     useCache: true,
   });
+  const { fetchData: fetchPositions } = useGetPositions({ useCache: true });
 
   const fetchData = async ({
     useAppDataCache = true,
@@ -106,6 +144,34 @@ function useGetAccountData(options: {
         ? Promise.resolve({ collections: [] } as Collectibles)
         : fetchCollectibles({ publicKey, networkDetails });
 
+      // Same treatment as collectibles: started before the balances await and
+      // deliberately not awaited yet, so the Positions tab's spinner is as short
+      // as it can be. It needs only the key and network, both already known.
+      // `useCache` mirrors the balances call just below: an account/network
+      // switch (`shouldForceBalancesRefresh`) must not serve the previous
+      // account's cached positions.
+      const positionsRequest = fetchPositions({
+        publicKey,
+        networkDetails,
+        useCache: !shouldForceBalancesRefresh,
+      });
+      // Marks the promise handled without changing what `await positionsRequest`
+      // throws below: it is first awaited several `await`s later (inside its own
+      // try/catch), and a rejection landing in that gap would otherwise fire
+      // Sentry's `unhandledrejection` handler on top of the deliberate
+      // `captureException` call there.
+      positionsRequest.catch(() => {});
+
+      // Same treatment as positions: started before the balances await so its
+      // round trip overlaps balances/collectibles/positions instead of adding
+      // to the critical path in front of the Blockaid rescan below. Only
+      // fetched where Earn exists at all; landed once positions has resolved,
+      // alongside the pools dispatch below.
+      const poolsRequest = isEarnSupportedNetwork(networkDetails)
+        ? getBlendPools({ networkDetails })
+        : null;
+      poolsRequest?.catch(() => {});
+
       // let's fetch *just* the balances (without Blockaid scan results) to quickly be able to show the user their balances
       const balancesResult = await fetchBalances(
         publicKey,
@@ -129,6 +195,11 @@ function useGetAccountData(options: {
         isScanAppended: false,
         collectibles: { collections: [] },
         hasLoadedCollectibles: false,
+        positions: null,
+        hasLoadedPositions: false,
+        hasPositionsError: false,
+        earnOptions: null,
+        pools: [],
       } as ResolvedAccountData;
 
       if (isMainnetNetwork) {
@@ -156,6 +227,50 @@ function useGetAccountData(options: {
       // had already arrived until some unrelated dispatch happened to land.
       dispatch({ type: "FETCH_DATA_SUCCESS", payload: { ...payload } });
 
+      try {
+        payload.positions = await positionsRequest;
+      } catch (error) {
+        // Non-fatal for the rest of Home: balances and collectibles are already
+        // on screen. Only the Positions tab changes what it renders.
+        payload.hasPositionsError = true;
+        captureException(`Error fetching positions on Account - ${error}`);
+      }
+      payload.hasLoadedPositions = true;
+      // Dispatched rather than only assigned, for the reason spelled out on the
+      // collectibles dispatch above: the reducer holds this very object.
+      dispatch({ type: "FETCH_DATA_SUCCESS", payload: { ...payload } });
+
+      // Landed here (not yet awaited when it was started, above) and, for
+      // earnOptions, only ever STARTED once we know it applies -- neither sits
+      // in front of the Blockaid rescan below.
+      let earnOptionsRequest: Promise<BlendEarnAssetOption[]> | null = null;
+      if (isEarnSupportedNetwork(networkDetails)) {
+        // Unlike earnOptions below, fetched regardless of whether the account
+        // has positions -- it backs the pool-details sheet a Positions row
+        // opens, so it is needed precisely when positions exist, not only
+        // when they don't. By the time this await runs, poolsRequest has had
+        // the whole balances/collectibles/positions round trip to resolve, so
+        // this rarely waits at all.
+        if (poolsRequest) {
+          try {
+            payload.pools = await poolsRequest;
+            dispatch({ type: "FETCH_DATA_SUCCESS", payload: { ...payload } });
+          } catch (error) {
+            captureException(`Error fetching pools on Account - ${error}`);
+          }
+        }
+
+        // Only the empty state needs the catalog, and only to price its
+        // projection. Skipped entirely for an account that already has positions.
+        if (
+          !payload.hasPositionsError &&
+          !payload.positions?.positions.length
+        ) {
+          earnOptionsRequest = getBlendEarnOptions({ networkDetails });
+          earnOptionsRequest.catch(() => {});
+        }
+      }
+
       if (isMainnetNetwork) {
         // now that the UI has renderered, on Mainnet, let's make an additional call to fetch the balances with the Blockaid scan results included
         try {
@@ -167,14 +282,29 @@ function useGetAccountData(options: {
             false, // don't skip the Blockaid scan,
           );
 
-          const scannedPayload = {
-            ...payload,
-            balances: balancesResult,
-            isScanAppended: true,
-          } as ResolvedAccountData;
-          dispatch({ type: "FETCH_DATA_SUCCESS", payload: scannedPayload });
+          // Mutated onto `payload` itself -- the same pattern every other
+          // section above uses -- rather than a throwaway `scannedPayload`
+          // local. The reducer fully replaces state per dispatch
+          // (helpers/request.ts: `data: action.payload`), so a throwaway local
+          // here is only safe as long as nothing dispatches from `payload`
+          // again afterward. The earnOptions landing below can now run after
+          // this block, and a `{ ...payload }` there would otherwise silently
+          // revert these two fields right after the scan lands.
+          payload.balances = balancesResult as AccountBalances;
+          payload.isScanAppended = true;
+          dispatch({ type: "FETCH_DATA_SUCCESS", payload: { ...payload } });
         } catch (e) {
           captureException(`Error fetching scanned balances on Account - ${e}`);
+        }
+      }
+
+      if (earnOptionsRequest) {
+        try {
+          payload.earnOptions = await earnOptionsRequest;
+          dispatch({ type: "FETCH_DATA_SUCCESS", payload: { ...payload } });
+        } catch (error) {
+          // The card degrades to hidden; nothing else depends on this.
+          captureException(`Error fetching earn options on Account - ${error}`);
         }
       }
 
@@ -265,10 +395,33 @@ function useGetAccountData(options: {
           false,
         );
 
+        let refreshedPositions = resolvedData.positions;
+        let refreshedPositionsError = false;
+        try {
+          // Unlike the initial load, this must hit the network every tick —
+          // the whole point of the interval is a fresh read.
+          refreshedPositions = await fetchPositions({
+            publicKey,
+            networkDetails,
+            useCache: false,
+          });
+        } catch (error) {
+          refreshedPositionsError = true;
+          captureException(`Error refreshing positions on Account - ${error}`);
+        }
+
         const payload = {
           ...state.data,
           balances: balancesResult,
           isScanAppended: true,
+          positions: refreshedPositions,
+          // Only surfaced when there is no prior data left to keep showing --
+          // otherwise a single flaky tick would flip the Positions tab from
+          // rows to an error banner and back every 30s even though the last
+          // good read is still sitting right here in `refreshedPositions`.
+          // Initial-load failures are untouched: `fetchData` above sets this
+          // unconditionally, since there is nothing prior to fall back to.
+          hasPositionsError: refreshedPositionsError && !resolvedData.positions,
         } as AccountData;
         dispatch({ type: "FETCH_DATA_SUCCESS", payload });
       } catch (error) {
@@ -276,7 +429,7 @@ function useGetAccountData(options: {
       }
     }, 30000);
     return () => clearInterval(interval);
-  }, [_isMainnet, state.data, fetchBalances]);
+  }, [_isMainnet, state.data, fetchBalances, fetchPositions]);
 
   return {
     state,

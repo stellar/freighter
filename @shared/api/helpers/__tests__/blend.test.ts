@@ -1,6 +1,7 @@
 import {
   getBlendEarnOptions,
   getBlendPools,
+  getBlendPositions,
   getBlendSuppliedTokens,
 } from "../blend";
 import { sendMessageToBackground } from "../extensionMessaging";
@@ -381,6 +382,207 @@ describe("getBlendSuppliedTokens", () => {
 
   it("throws on a non-200 so the caller can fall back", async () => {
     mockedSend.mockResolvedValue({ status: 500, body: {} });
+
+    await expect(call()).rejects.toThrow();
+  });
+});
+
+describe("getBlendPositions", () => {
+  const call = () =>
+    getBlendPositions({ publicKey: PUBLIC_KEY, networkDetails });
+
+  it("POSTs the address with the network in the path", async () => {
+    // The query must live in `path` — authedFetch signs pathname + search.
+    mockedSend.mockResolvedValue({
+      status: 200,
+      body: { data: [{ address: PUBLIC_KEY, positions: [], backstop: [] }] },
+    });
+
+    await call();
+
+    expect(mockedSend).toHaveBeenCalledWith({
+      type: SERVICE_TYPES.FETCH_BACKEND_V2,
+      activePublicKey: null,
+      method: "POST",
+      path: "/accounts/positions?network=PUBLIC",
+      body: JSON.stringify({ addresses: [PUBLIC_KEY] }),
+    });
+  });
+
+  it("maps snake_case wire fields to camelCase", async () => {
+    mockedSend.mockResolvedValue({
+      status: 200,
+      body: {
+        data: [
+          {
+            address: PUBLIC_KEY,
+            total_value_usd: 500.12,
+            net_apy: 0.1694,
+            positions: [
+              {
+                protocol: "blend",
+                id: POOL_ID,
+                name: "Fixed Pool v2",
+                net_usd: 500.12,
+                supplied_usd: 500.12,
+                borrowed_usd: 0,
+                net_apy: 0.1694,
+                blend: {
+                  supply: [
+                    {
+                      asset_id: USDC_SAC,
+                      symbol: "USDC",
+                      name: "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
+                      decimals: 7,
+                      supplied_tokens: "0",
+                      collateral_tokens: "5001223000",
+                      total_tokens: "5001223000",
+                      usd_value: 500.12,
+                      apy: 0.1694,
+                      emissions_apr: 0,
+                      interest_earned: "1234000",
+                      interest_earned_usd: 0.12,
+                      claimable_blnd: "0",
+                      claimable_usd: null,
+                      price_usd: 1.0,
+                    },
+                  ],
+                  borrow: [],
+                },
+              },
+            ],
+            backstop: [],
+          },
+        ],
+      },
+    });
+
+    const result = await call();
+
+    expect(result.totalValueUsd).toBe(500.12);
+    expect(result.positions[0].id).toBe(POOL_ID);
+    expect(result.positions[0].netUsd).toBe(500.12);
+    const supply = result.positions[0].blend!.supply[0];
+    expect(supply.assetId).toBe(USDC_SAC);
+    expect(supply.totalTokens).toBe("5001223000");
+    expect(supply.interestEarnedUsd).toBe(0.12);
+    expect(supply.emissionsApr).toBe(0);
+  });
+
+  it("preserves null as unavailable rather than coalescing to zero", async () => {
+    mockedSend.mockResolvedValue({
+      status: 200,
+      body: {
+        data: [
+          {
+            address: PUBLIC_KEY,
+            total_value_usd: null,
+            net_apy: null,
+            positions: [
+              {
+                protocol: "blend",
+                id: POOL_ID,
+                name: null,
+                net_usd: null,
+                supplied_usd: null,
+                borrowed_usd: null,
+                net_apy: null,
+                blend: { supply: [], borrow: [] },
+              },
+            ],
+            backstop: [],
+          },
+        ],
+      },
+    });
+
+    const result = await call();
+
+    expect(result.totalValueUsd).toBeNull();
+    expect(result.positions[0].netApy).toBeNull();
+  });
+
+  it("returns an empty result when the batch carries no entry for the address", async () => {
+    // The contract guarantees one entry per requested address; an empty result
+    // is the right degradation if that ever slips, not a throw.
+    mockedSend.mockResolvedValue({ status: 200, body: { data: [] } });
+
+    const result = await call();
+
+    expect(result).toEqual({
+      address: PUBLIC_KEY,
+      totalValueUsd: null,
+      netApy: null,
+      positions: [],
+      backstop: [],
+    });
+  });
+
+  it("tolerates a pool row carrying no blend detail", async () => {
+    mockedSend.mockResolvedValue({
+      status: 200,
+      body: {
+        data: [
+          {
+            address: PUBLIC_KEY,
+            positions: [{ protocol: "blend", id: POOL_ID }],
+            backstop: [],
+          },
+        ],
+      },
+    });
+
+    const result = await call();
+
+    expect(result.positions[0].blend).toBeUndefined();
+  });
+
+  it("maps backstop rows including their q4w queue", async () => {
+    mockedSend.mockResolvedValue({
+      status: 200,
+      body: {
+        data: [
+          {
+            address: PUBLIC_KEY,
+            positions: [],
+            backstop: [
+              {
+                pool_id: POOL_ID,
+                pool_name: "Fixed Pool v2",
+                shares: "100",
+                lp_tokens: "120",
+                usd_value: 12.5,
+                claimable_blnd: "3",
+                claimable_usd: null,
+                q4w: [
+                  {
+                    amount: "20",
+                    lp_tokens: "20",
+                    usd_value: 2.1,
+                    expiration: 1790000000,
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    });
+
+    const result = await call();
+
+    expect(result.backstop[0].poolId).toBe(POOL_ID);
+    expect(result.backstop[0].q4w[0].expiration).toBe(1790000000);
+  });
+
+  it("throws on a non-200", async () => {
+    mockedSend.mockResolvedValue({ status: 500, body: {} });
+
+    await expect(call()).rejects.toThrow();
+  });
+
+  it("throws when a 200 carries no data payload", async () => {
+    mockedSend.mockResolvedValue({ status: 200, body: {} });
 
     await expect(call()).rejects.toThrow();
   });

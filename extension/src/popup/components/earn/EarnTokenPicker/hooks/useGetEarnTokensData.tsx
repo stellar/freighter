@@ -14,6 +14,7 @@ import {
   getCatalogIssuer,
   resolveEarnAssetIcons,
 } from "popup/components/earn/helpers/earnAssetIcons";
+import { headlineApy } from "popup/components/earn/helpers/formatPoolStats";
 import { AppDispatch } from "popup/App";
 import { settingsSelector } from "popup/ducks/settings";
 import {
@@ -66,19 +67,6 @@ export interface ResolvedEarnTokens {
 }
 
 export type EarnTokens = NeedsReRoute | ResolvedEarnTokens;
-
-/**
- * The earn headline is supply interest plus BLND emissions.
- *
- * A null `supplyApy` means no fresh oracle price, so the whole rate is unknown.
- * A null `emissionsSupplyApr` means the stream exists but cannot be priced —
- * treated as zero here, which understates rather than blanking an otherwise
- * known rate. The screen's "APY may change" footnote covers the gap.
- */
-const headlineApy = (
-  supplyApy: number | null,
-  emissionsSupplyApr: number | null,
-) => (supplyApy === null ? null : supplyApy + (emissionsSupplyApr ?? 0));
 
 export function useGetEarnTokensData() {
   const [state, dispatch] = useReducer(
