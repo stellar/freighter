@@ -82,7 +82,7 @@ test("Positions tab shows the empty state and enters Earn", async ({
     page,
     extensionId,
     context,
-    stubOverrides: () => stubBlendEarn(context),
+    stubOverrides: () => stubBlendEarn(page, context),
   });
 
   await page.getByTestId("account-tab-positions").click();
@@ -113,7 +113,7 @@ test("a pool card opens My position", async ({
     extensionId,
     context,
     stubOverrides: () =>
-      stubBlendEarn(context, { positions: positionsFixture() }),
+      stubBlendEarn(page, context, { positions: positionsFixture() }),
   });
 
   await page.getByTestId("account-tab-positions").click();
@@ -141,7 +141,7 @@ test("About pool opens the sheet with no tabs", async ({
     extensionId,
     context,
     stubOverrides: () =>
-      stubBlendEarn(context, { positions: positionsFixture() }),
+      stubBlendEarn(page, context, { positions: positionsFixture() }),
   });
 
   await page.getByTestId("account-tab-positions").click();
@@ -170,7 +170,7 @@ test("Deposit from a supplied asset lands on the amount screen prefilled", async
     extensionId,
     context,
     stubOverrides: () =>
-      stubBlendEarn(context, { positions: positionsFixture() }),
+      stubBlendEarn(page, context, { positions: positionsFixture() }),
   });
 
   await page.getByTestId("account-tab-positions").click();

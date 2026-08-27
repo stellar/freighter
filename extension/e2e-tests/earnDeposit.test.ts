@@ -17,8 +17,13 @@
  *  - positions:     "** /accounts/positions**"
  *  These three are backend-v2 endpoints, which the background service worker
  *  fetches rather than the popup, so page.route never sees them — hence
- *  stubBlendEarn(context), and hence passing it through loginToTestAccount's
- *  stubOverrides so it is registered before the popup navigates.
+ *  context.route for those three inside stubBlendEarn. The fourth route it
+ *  registers, the `earn_deposit` Amplitude vardata stub, is PAGE-scoped in
+ *  effect too: stubBlendEarn takes `page` and reloads once every route is in
+ *  place, because loginToTestAccount's stubOverrides runs after page.goto has
+ *  already navigated — by then the popup's one-shot flag fetch has typically
+ *  already fired and failed against the real (unreachable) endpoint, so
+ *  registering the route alone is too late without the reload.
  *
  *  The deposit's build and broadcast go through "** /simulate-tx**" and
  *  "** /submit-tx**" instead. Those stay PAGE-scoped: they are backend-v1
@@ -80,7 +85,7 @@ test("Earn tile opens the interstitial once, then goes straight to the picker", 
     page,
     extensionId,
     context,
-    stubOverrides: () => stubBlendEarn(context),
+    stubOverrides: () => stubBlendEarn(page, context),
   });
   await switchToMainnet(page);
 
@@ -120,7 +125,7 @@ test("token picker splits held from supported and shows each rate", async ({
     page,
     extensionId,
     context,
-    stubOverrides: () => stubBlendEarn(context),
+    stubOverrides: () => stubBlendEarn(page, context),
   });
   await switchToMainnet(page);
   await openEarnFlow(page);
@@ -163,7 +168,7 @@ test("zero-balance EURC offers swap and transfer but not buy", async ({
     page,
     extensionId,
     context,
-    stubOverrides: () => stubBlendEarn(context),
+    stubOverrides: () => stubBlendEarn(page, context),
   });
   await switchToMainnet(page);
   await openEarnFlow(page);
@@ -192,7 +197,7 @@ test("zero-balance USDC offers buy, swap and transfer", async ({
     page,
     extensionId,
     context,
-    stubOverrides: () => stubBlendEarn(context),
+    stubOverrides: () => stubBlendEarn(page, context),
   });
   await switchToMainnet(page);
   await openEarnFlow(page);
@@ -222,7 +227,7 @@ test("depositing a held token reaches the success screen", async ({
     extensionId,
     context,
     stubOverrides: async () => {
-      await stubBlendEarn(context);
+      await stubBlendEarn(page, context);
       // Only this test signs and broadcasts, so it is the only one that needs a
       // decodable prepared XDR out of /simulate-tx.
       await stubEarnSimulateTx(page);
@@ -286,7 +291,7 @@ test("pool details sheet shows market stats including Backstop", async ({
     page,
     extensionId,
     context,
-    stubOverrides: () => stubBlendEarn(context),
+    stubOverrides: () => stubBlendEarn(page, context),
   });
   await switchToMainnet(page);
   await openEarnFlow(page);
@@ -328,7 +333,7 @@ test("Earn tile is hidden on a custom network with no allowlisted pool", async (
     page,
     extensionId,
     context,
-    stubOverrides: () => stubBlendEarn(context),
+    stubOverrides: () => stubBlendEarn(page, context),
   });
 
   await expect(page.getByTestId("nav-link-earn")).toBeVisible();

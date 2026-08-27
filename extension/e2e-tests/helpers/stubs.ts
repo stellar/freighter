@@ -3685,8 +3685,22 @@ export const stubEarnSimulateTx = async (page: Page) => {
  * `**\/accounts/**` in `stubHorizonAccounts`: that one only ever sees Horizon's
  * `loadAccount` from the popup, and this one only ever sees the service worker's
  * positions POST.
+ *
+ * Callers reach this through `loginToTestAccount`'s `stubOverrides`, which runs
+ * AFTER `page.goto` has already navigated to the popup — so `useRemoteConfig`'s
+ * one-shot `fetchFeatureFlags` (dispatched from `App.tsx` on mount) has, in
+ * practice, already fired and rejected (no real Amplitude deployment in test)
+ * before the `earn_deposit` vardata route below is even registered, leaving the
+ * flag at its default. A route registered after the fact never intercepts a
+ * request that was already sent. This mirrors exactly the timing
+ * `stubExperimentVariants` documents above for the maintenance-screen flags,
+ * and takes the same fix: reload once every route is in place so the popup
+ * remounts and refetches with the stub live. `loginToTestAccount` hasn't
+ * touched the DOM yet at this point (still the pre-"I already have a wallet"
+ * screen) so the reload is a no-op for wallet state.
  */
 export const stubBlendEarn = async (
+  page: Page,
   context: BrowserContext,
   {
     positions = [],
@@ -3716,8 +3730,10 @@ export const stubBlendEarn = async (
 
   // The Earn tile is gated on the `earn_deposit` Amplitude flag, which defaults
   // to off. Serve it as "on" from the Experiment vardata endpoint so the entry
-  // point renders. Context-scoped like the rest of the Earn stubs so it is in
-  // place before the popup's first flag fetch.
+  // point renders. Context-scoped like the rest of the Earn stubs, and — per
+  // this function's own doc comment above — followed by a reload so it is
+  // actually in place for the popup's flag fetch rather than just registered
+  // after the fact.
   await context.route(AMPLITUDE_EXPERIMENT_VARDATA_ROUTE, async (route) => {
     await route.fulfill({
       json: { earn_deposit: { key: "on", value: "on" } },
@@ -3833,6 +3849,12 @@ export const stubBlendEarn = async (
   await context.route("**/accounts/positions**", async (route) => {
     await route.fulfill({ json: { data: positions } });
   });
+
+  // Every route above is context-scoped and therefore survives the reload.
+  // Force a fresh popup mount so `useRemoteConfig` re-dispatches
+  // `fetchFeatureFlags` and this time hits the `earn_deposit` stub instead of
+  // the real (unreachable) Amplitude endpoint it raced on the first load.
+  await page.reload({ waitUntil: "domcontentloaded" });
 };
 
 /**
