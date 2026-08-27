@@ -157,7 +157,7 @@ export const ReviewTx = ({
       return null;
     }
     try {
-      const parsed = TransactionBuilder.fromXDR(
+      const parsed = TransactionBuilder.fromXdr(
         transactionXdr,
         networkDetails.networkPassphrase,
       );
@@ -662,7 +662,7 @@ export const ReviewTx = ({
           entries={
             (detailTx.operations[0] as Operation.InvokeHostFunction).auth?.map(
               (authEntry) => ({
-                invocation: authEntry.rootInvocation(),
+                invocation: authEntry.rootInvocation,
                 boundAddress: getAuthEntryBoundAddress(authEntry),
               }),
             ) || []

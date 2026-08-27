@@ -8,7 +8,7 @@ import {
   LiquidityPoolAsset,
   nativeToScVal,
   Operation,
-  Signer,
+  OperationRecord,
   StrKey,
   xdr,
 } from "stellar-sdk";
@@ -148,11 +148,20 @@ export const KeyValueInvocation = ({
   );
 };
 
-export const KeyValueSigner = ({ signer }: { signer: Signer }) => {
+/**
+ * The signer shape a `setOptions` operation carries. Like {@link RevokeSignerKey}
+ * its hash fields are `Uint8Array | string`, so it must not be narrowed to
+ * `Signer` either -- even though this path returns real bytes today.
+ */
+type SetOptionsSignerKey = NonNullable<
+  Extract<OperationRecord, { type: "setOptions" }>["signer"]
+>;
+
+export const KeyValueSigner = ({ signer }: { signer: SetOptionsSignerKey }) => {
   const { t } = useTranslation();
 
   function renderSignerType() {
-    if ("ed25519PublicKey" in signer) {
+    if (signer.ed25519PublicKey) {
       return (
         <KeyValueWithPublicKey
           operationKey={t("Signer")}
@@ -161,7 +170,7 @@ export const KeyValueSigner = ({ signer }: { signer: Signer }) => {
       );
     }
 
-    if ("sha256Hash" in signer) {
+    if (signer.sha256Hash) {
       return (
         <KeyValueList
           operationKey={t("Signer")}
@@ -170,7 +179,7 @@ export const KeyValueSigner = ({ signer }: { signer: Signer }) => {
       );
     }
 
-    if ("preAuthTx" in signer) {
+    if (signer.preAuthTx) {
       return (
         <KeyValueList
           operationKey={t("Signer")}
@@ -179,7 +188,7 @@ export const KeyValueSigner = ({ signer }: { signer: Signer }) => {
       );
     }
 
-    if ("ed25519SignedPayload" in signer) {
+    if (signer.ed25519SignedPayload) {
       return (
         <KeyValueList
           operationKey={t("Signer")}
@@ -245,12 +254,12 @@ export const KeyValueClaimants = ({ claimants }: { claimants: Claimant[] }) => {
     predicate: xdr.ClaimPredicate,
     hideKey: boolean = false,
   ): React.ReactNode {
-    switch (predicate.switch().name) {
+    switch (predicate.type) {
       case "claimPredicateUnconditional": {
         return (
           <KeyValueList
             operationKey={hideKey ? "" : t("Predicate")}
-            operationValue={CLAIM_PREDICATES[predicate.switch().name]}
+            operationValue={CLAIM_PREDICATES[predicate.type]}
           />
         );
       }
@@ -260,9 +269,9 @@ export const KeyValueClaimants = ({ claimants }: { claimants: Claimant[] }) => {
           <>
             <KeyValueList
               operationKey={hideKey ? "" : t("Predicate")}
-              operationValue={CLAIM_PREDICATES[predicate.switch().name]}
+              operationValue={CLAIM_PREDICATES[predicate.type]}
             />
-            {predicate.andPredicates().map((p) => claimPredicateValue(p, true))}
+            {predicate.andPredicates.map((p) => claimPredicateValue(p, true))}
           </>
         );
       }
@@ -272,11 +281,11 @@ export const KeyValueClaimants = ({ claimants }: { claimants: Claimant[] }) => {
           <>
             <KeyValueList
               operationKey={hideKey ? "" : t("Predicate")}
-              operationValue={CLAIM_PREDICATES[predicate.switch().name]}
+              operationValue={CLAIM_PREDICATES[predicate.type]}
             />
             <KeyValueList
               operationKey=""
-              operationValue={predicate.absBefore().toString()}
+              operationValue={predicate.absBefore.toString()}
             />
           </>
         );
@@ -287,24 +296,24 @@ export const KeyValueClaimants = ({ claimants }: { claimants: Claimant[] }) => {
           <>
             <KeyValueList
               operationKey={hideKey ? "" : t("Predicate")}
-              operationValue={CLAIM_PREDICATES[predicate.switch().name]}
+              operationValue={CLAIM_PREDICATES[predicate.type]}
             />
             <KeyValueList
               operationKey=""
-              operationValue={predicate.relBefore().toString()}
+              operationValue={predicate.relBefore.toString()}
             />
           </>
         );
       }
 
       case "claimPredicateNot": {
-        const not = predicate.notPredicate();
+        const not = predicate.notPredicate;
         if (not) {
           return (
             <>
               <KeyValueList
                 operationKey={hideKey ? "" : t("Predicate")}
-                operationValue={CLAIM_PREDICATES[predicate.switch().name]}
+                operationValue={CLAIM_PREDICATES[predicate.type]}
               />
               {claimPredicateValue(not, true)}
             </>
@@ -318,9 +327,9 @@ export const KeyValueClaimants = ({ claimants }: { claimants: Claimant[] }) => {
           <>
             <KeyValueList
               operationKey={hideKey ? "" : t("Predicate")}
-              operationValue={CLAIM_PREDICATES[predicate.switch().name]}
+              operationValue={CLAIM_PREDICATES[predicate.type]}
             />
-            {predicate.orPredicates().map((p) => claimPredicateValue(p, true))}
+            {predicate.orPredicates.map((p) => claimPredicateValue(p, true))}
           </>
         );
       }
@@ -333,9 +342,7 @@ export const KeyValueClaimants = ({ claimants }: { claimants: Claimant[] }) => {
   return (
     <>
       {claimants.map((claimant, i) => (
-        <React.Fragment
-          key={claimant.destination + claimant.predicate.switch().name}
-        >
+        <React.Fragment key={claimant.destination + claimant.predicate.type}>
           <KeyValueWithPublicKey
             operationKey={t(`Destination #${i + 1}`)}
             operationValue={claimant.destination}
@@ -347,10 +354,21 @@ export const KeyValueClaimants = ({ claimants }: { claimants: Claimant[] }) => {
   );
 };
 
-export const KeyValueSignerKeyOptions = ({ signer }: { signer: Signer }) => {
+/**
+ * The signer shape a `revokeSignerSponsorship` operation carries. Unlike
+ * `setOptions`' `Signer`, its hash fields are `Uint8Array | string` -- which is
+ * the truth at runtime, so this must not be narrowed to `Signer`.
+ */
+type RevokeSignerKey = Operation.RevokeSignerSponsorship["signer"];
+
+export const KeyValueSignerKeyOptions = ({
+  signer,
+}: {
+  signer: RevokeSignerKey;
+}) => {
   const { t } = useTranslation();
 
-  if ("ed25519PublicKey" in signer) {
+  if (signer.ed25519PublicKey) {
     return (
       <KeyValueWithPublicKey
         operationKey={t("Signer Key")}
@@ -359,7 +377,7 @@ export const KeyValueSignerKeyOptions = ({ signer }: { signer: Signer }) => {
     );
   }
 
-  if ("sha256Hash" in signer) {
+  if (signer.sha256Hash) {
     return (
       <KeyValueList
         operationKey={t("Signer Sha256 Hash")}
@@ -368,7 +386,7 @@ export const KeyValueSignerKeyOptions = ({ signer }: { signer: Signer }) => {
     );
   }
 
-  if ("preAuthTx" in signer) {
+  if (signer.preAuthTx) {
     return (
       <KeyValueList
         operationKey={t("Pre Auth Transaction")}
@@ -377,7 +395,7 @@ export const KeyValueSignerKeyOptions = ({ signer }: { signer: Signer }) => {
     );
   }
 
-  if ("ed25519SignedPayload" in signer) {
+  if (signer.ed25519SignedPayload) {
     return (
       <KeyValueList
         operationKey={t("Signed Payload")}
@@ -442,7 +460,7 @@ export const KeyValueInvokeHostFnArgs = ({
       )}
       <div className="OperationParameters" data-testid="OperationParameters">
         {args.map((arg, ind) => (
-          <CopyText textToCopy={scValByType(arg)} key={arg.toXDR().toString()}>
+          <CopyText textToCopy={scValByType(arg)} key={arg.toXdr("base64")}>
             <div className="Parameters">
               <div className="ParameterKey" data-testid="ParameterKey">
                 {argNames[ind] && argNames[ind]}
@@ -459,6 +477,91 @@ export const KeyValueInvokeHostFnArgs = ({
   );
 };
 
+/**
+ * Explains that a CAP-85 externally managed executable is not pinned by the
+ * transaction being signed. Rendered as a full-width banner so the text wraps
+ * instead of being truncated in the right-aligned value column.
+ */
+export const ExternalExecutableNote = () => {
+  const { t } = useTranslation();
+
+  return (
+    <div className="ExecutableNote" data-testid="ExternalExecutableNote">
+      <Icon.InfoCircle aria-hidden="true" />
+      <span>
+        {t(
+          "This contract's code is managed by the executable owner and can change after you sign.",
+        )}
+      </span>
+    </div>
+  );
+};
+
+/**
+ * Renders the executable of a contract-creation host function. CAP-85
+ * (protocol 28) adds a third arm whose code lives behind a reference into
+ * another contract's storage -- we show the owner and tag that identify the
+ * reference, and deliberately no wasm hash, because the owner can change the
+ * code the reference resolves to after this transaction is signed.
+ */
+const ExecutableDetails = ({
+  executable,
+}: {
+  executable: xdr.ContractExecutable;
+}) => {
+  const { t } = useTranslation();
+
+  const wasmHash =
+    executable.type === "contractExecutableWasm"
+      ? xdr.encodeBytes(executable.wasmHash.toBytes(), "hex")
+      : null;
+  const externalRef =
+    executable.type === "contractExecutableExternalRef"
+      ? executable.externalRef
+      : null;
+  const externalRefOwner = externalRef
+    ? addressToString(externalRef.executableOwner)
+    : null;
+
+  return (
+    <>
+      <KeyValueList
+        operationKey={t("Executable Type")}
+        operationValue={executable.type}
+      />
+      {wasmHash && (
+        <KeyValueList
+          operationKey={t("Executable Wasm Hash")}
+          operationValue={
+            <CopyValue
+              value={wasmHash}
+              displayValue={truncateString(wasmHash, 8)}
+            />
+          }
+        />
+      )}
+      {externalRef && externalRefOwner && (
+        <>
+          <KeyValueList
+            operationKey={t("Executable Owner")}
+            operationValue={
+              <CopyValue
+                value={externalRefOwner}
+                displayValue={truncateString(externalRefOwner)}
+              />
+            }
+          />
+          <KeyValueList
+            operationKey={t("Executable Tag")}
+            operationValue={externalRef.tag.toJson()}
+          />
+          <ExternalExecutableNote />
+        </>
+      )}
+    </>
+  );
+};
+
 export const KeyValueInvokeHostFn = ({
   op,
 }: {
@@ -469,25 +572,25 @@ export const KeyValueInvokeHostFn = ({
   const hostfn = op.func;
 
   function renderDetails() {
-    switch (hostfn.switch()) {
-      case xdr.HostFunctionType.hostFunctionTypeCreateContractV2():
-      case xdr.HostFunctionType.hostFunctionTypeCreateContract(): {
+    switch (hostfn.type) {
+      case "hostFunctionTypeCreateContractV2":
+      case "hostFunctionTypeCreateContract": {
         const createContractArgs = getCreateContractArgs(hostfn);
         const preimage = createContractArgs.contractIdPreimage;
         const executable = createContractArgs.executable;
         const createV2Args = createContractArgs.constructorArgs;
-        const executableType = executable.switch().name;
-        const wasmHash = executable.wasmHash();
 
-        if (preimage.switch().name === "contractIdPreimageFromAddress") {
-          const preimageFromAddress = preimage.fromAddress();
-          const address = preimageFromAddress.address();
-          const salt = preimageFromAddress.salt().toString("hex");
+        if (preimage.type === "contractIdPreimageFromAddress") {
+          const preimageFromAddress = preimage.fromAddress;
+          const address = preimageFromAddress.address;
+          const salt = xdr.encodeBytes(
+            preimageFromAddress.salt.toBytes(),
+            "hex",
+          );
 
-          const addressType = address.switch();
-          if (addressType.name === "scAddressTypeAccount") {
+          if (address.type === "scAddressTypeAccount") {
             const accountId = StrKey.encodeEd25519PublicKey(
-              address.accountId().ed25519(),
+              address.accountId.ed25519.toBytes(),
             );
             return (
               <>
@@ -508,24 +611,7 @@ export const KeyValueInvokeHostFn = ({
                     />
                   }
                 />
-                <KeyValueList
-                  operationKey={t("Executable Type")}
-                  operationValue={executableType}
-                />
-                {executable.wasmHash() && (
-                  <KeyValueList
-                    operationKey={t("Executable Wasm Hash")}
-                    operationValue={
-                      <CopyValue
-                        value={wasmHash.toString("hex")}
-                        displayValue={truncateString(
-                          wasmHash.toString("hex"),
-                          8,
-                        )}
-                      />
-                    }
-                  />
-                )}
+                <ExecutableDetails executable={executable} />
               </>
             );
           }
@@ -549,29 +635,15 @@ export const KeyValueInvokeHostFn = ({
                   />
                 }
               />
-              <KeyValueList
-                operationKey={t("Executable Type")}
-                operationValue={executableType}
-              />
-              {executable.wasmHash() && (
-                <KeyValueList
-                  operationKey={t("Executable Wasm Hash")}
-                  operationValue={
-                    <CopyValue
-                      value={wasmHash.toString("hex")}
-                      displayValue={truncateString(wasmHash.toString("hex"), 8)}
-                    />
-                  }
-                />
-              )}
+              <ExecutableDetails executable={executable} />
               {createV2Args && <KeyValueInvokeHostFnArgs args={createV2Args} />}
             </>
           );
         }
 
         // contractIdPreimageFromAsset
-        const preimageFromAsset = preimage.fromAsset();
-        const preimageValue = preimageFromAsset.value()!;
+        const preimageFromAsset = preimage.fromAsset;
+        const preimageValue = preimageFromAsset.value!;
 
         return (
           <>
@@ -579,25 +651,33 @@ export const KeyValueInvokeHostFn = ({
               operationKey={t("Type")}
               operationValue={t("Create Contract")}
             />
-            {preimageFromAsset.switch().name === "assetTypeCreditAlphanum4" ||
-            preimageFromAsset.switch().name === "assetTypeCreditAlphanum12" ? (
+            {preimageFromAsset.type === "assetTypeCreditAlphanum4" ||
+            preimageFromAsset.type === "assetTypeCreditAlphanum12" ? (
               <>
                 <KeyValueList
                   operationKey={t("Asset Code")}
-                  operationValue={(preimageValue as xdr.AlphaNum12)
-                    .assetCode()
-                    .toString()}
+                  operationValue={
+                    // v17: BytesValue.toString() base64-encodes; toJson()
+                    // yields the trimmed ASCII asset code.
+                    (
+                      preimageValue as xdr.AlphaNum12
+                    ).assetCode.toJson() as string
+                  }
                 />
                 <KeyValueList
                   operationKey={t("Issuer")}
                   operationValue={
                     <CopyValue
                       value={StrKey.encodeEd25519PublicKey(
-                        (preimageValue as xdr.AlphaNum12).issuer().ed25519(),
+                        (
+                          preimageValue as xdr.AlphaNum12
+                        ).issuer.ed25519.toBytes(),
                       )}
                       displayValue={truncateString(
                         StrKey.encodeEd25519PublicKey(
-                          (preimageValue as xdr.AlphaNum12).issuer().ed25519(),
+                          (
+                            preimageValue as xdr.AlphaNum12
+                          ).issuer.ed25519.toBytes(),
                         ),
                       )}
                     />
@@ -606,31 +686,17 @@ export const KeyValueInvokeHostFn = ({
               </>
             ) : null}
 
-            <KeyValueList
-              operationKey={t("Executable Type")}
-              operationValue={executableType}
-            />
-            {executable.wasmHash() && (
-              <KeyValueList
-                operationKey={t("Executable Wasm Hash")}
-                operationValue={
-                  <CopyValue
-                    value={wasmHash.toString("hex")}
-                    displayValue={truncateString(wasmHash.toString("hex"), 8)}
-                  />
-                }
-              />
-            )}
+            <ExecutableDetails executable={executable} />
             {createV2Args && <KeyValueInvokeHostFnArgs args={createV2Args} />}
           </>
         );
       }
 
-      case xdr.HostFunctionType.hostFunctionTypeInvokeContract(): {
-        const invocation = hostfn.invokeContract();
-        const contractId = addressToString(invocation.contractAddress());
+      case "hostFunctionTypeInvokeContract": {
+        const invocation = hostfn.invokeContract;
+        const contractId = addressToString(invocation.contractAddress);
 
-        const fnName = invocation.functionName().toString();
+        const fnName = invocation.functionName.toString();
 
         return (
           <>
@@ -667,8 +733,8 @@ export const KeyValueInvokeHostFn = ({
         );
       }
 
-      case xdr.HostFunctionType.hostFunctionTypeUploadContractWasm(): {
-        const wasmHash = hash(hostfn.value() as Buffer);
+      case "hostFunctionTypeUploadContractWasm": {
+        const wasmHash = hash(hostfn.wasm);
         return (
           <>
             <KeyValueList
@@ -677,7 +743,10 @@ export const KeyValueInvokeHostFn = ({
             />
             <KeyValueList
               operationKey={t("Wasm Hash")}
-              operationValue={truncateString(wasmHash.toString("hex"), 8)}
+              operationValue={truncateString(
+                xdr.encodeBytes(wasmHash, "hex"),
+                8,
+              )}
             />
           </>
         );
