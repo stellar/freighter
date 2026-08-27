@@ -79,7 +79,7 @@ export const MyPosition = ({
           <div className="MyPosition__identity">
             <div className="MyPosition__chip">
               <PoolIcon />
-              <Text as="span" size="sm">
+              <Text as="span" size="sm" weight="medium">
                 {t("Blend")}
               </Text>
             </div>
@@ -94,7 +94,12 @@ export const MyPosition = ({
             </button>
           </div>
 
-          <Text as="div" size="sm" addlClassName="MyPosition__pool-name">
+          <Text
+            as="div"
+            size="sm"
+            weight="medium"
+            addlClassName="MyPosition__pool-name"
+          >
             {position.name || t("Blend pool")}
           </Text>
           <div className="MyPosition__total" data-testid="my-position-total">
@@ -106,7 +111,12 @@ export const MyPosition = ({
               : `+${formatAccountUsd(summary.interestUsd)} (${formatRate(summary.gainPercent)})`}
           </div>
 
-          <Text as="div" size="xs" addlClassName="MyPosition__section-title">
+          <Text
+            as="div"
+            size="sm"
+            weight="medium"
+            addlClassName="MyPosition__section-title"
+          >
             {t("Supplied asset")}
           </Text>
           <div className="MyPosition__assets">

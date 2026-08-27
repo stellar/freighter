@@ -272,24 +272,25 @@
   }
 }
 
-// Task 4 (MyPosition) -- the sheet's body: totals header, "About pool" pill,
-// and the relocated supplied-asset list. Figma node 9956-72252. This pass's
-// desktop app had a different document as its active tab (confirmed by the
-// operator, not just a retry failure), so `get_design_context` was never
-// attempted and no node here was read off the design at all -- unlike the
-// PositionRow/PositionsPoolCard blocks above, which at least got the
-// existing donor rules or a documented failed-retry history.
+// The My position sheet's body: totals header, "About pool" pill, and the
+// supplied-asset list. Figma node 9956-72252.
 //
-// Every rule below is therefore structural only: flex direction, gap
-// direction (row vs column) and which piece sits on which side -- no padding,
-// radius, background, type scale, or colour beyond what a later visual pass
-// will need to fill in wholesale. A follow-up MUST pull 9956-72252 (the Blend
-// chip, the "About pool" pill, the totals type scale, the gain colour, and
-// the supplied-asset card treatment) and reconcile every value here, the same
-// way Task 2/3's own TODO comments describe for their nodes.
+// The node nests the pool name under the Blend chip, in a narrower left
+// column beside the "About pool" pill (its own row's left-hand group), not
+// as a full-width line below the whole identity row the way the JSX renders
+// it (`&__pool-name` is a flat sibling of `&__identity`, not nested inside
+// it). Moving it would mean restructuring MyPosition.tsx's markup, which is
+// out of scope for this pass -- see the task report. The gap values below
+// pick the closest achievable rhythm within the existing flat structure
+// instead of the node's exact nesting.
 .MyPosition {
   display: flex;
   flex-direction: column;
+  // Base rhythm: matches both the chip-to-pool-name gap inside the node's own
+  // identity row and the total-to-gain gap inside its totals block -- the
+  // two 8px gaps this flat structure can reproduce exactly. The elements
+  // that need more get their own margin-top below.
+  gap: pxToRem(8px);
 
   &__identity {
     display: flex;
@@ -297,54 +298,121 @@
     justify-content: space-between;
   }
 
-  // The Blend protocol chip (icon + "Blend" label). Row layout only --
-  // spacing between the icon and label needs the real node.
+  // The Blend protocol chip (icon + "Blend" label). Bg gray-03, 32px tall,
+  // pill-free 8px corners, px-10/py-4, 4px gap between icon and label.
+  // `PoolIcon` is 32px by default elsewhere in this feature but the chip
+  // wants a 16px mark, so it's scoped down here rather than resized
+  // globally (every other caller -- the deposit screen's pool card, the
+  // pool details header -- wants the larger size).
   &__chip {
     display: flex;
     align-items: center;
+    justify-content: center;
+    gap: pxToRem(4px);
+    // Vertical centering via flex, not padding: this codebase has no
+    // `box-sizing: border-box` reset, so combining an explicit height with
+    // vertical padding would overflow past 32px.
+    height: pxToRem(32px);
+    padding: 0 pxToRem(10px);
+    border-radius: pxToRem(8px);
+    background: var(--sds-clr-gray-03);
+
+    .PoolIcon {
+      width: pxToRem(16px);
+      height: pxToRem(16px);
+      border-radius: pxToRem(4px);
+    }
   }
 
+  // "Blend" label inside the chip -- Text/SM/500, so the `Text` component's
+  // own `weight="medium"` prop carries the type scale; no rule needed here.
+
   // The "About pool" pill -- reset to a plain inline button (no native
-  // border/background) so it reads as a tappable link/pill rather than a
-  // default `<button>`, matching every other button-as-row treatment in this
-  // file (`.PositionsPoolCard` above, `AccountAssets`' own asset rows).
+  // border/background), then styled as its own outlined pill: bg
+  // background-primary, 1px border-primary, full rounding, px-10/py-6,
+  // 4px gap to the chevron, Text/SM/600.
   &__about {
     display: flex;
     align-items: center;
-    border: none;
-    background: none;
+    justify-content: center;
+    gap: pxToRem(4px);
+    height: pxToRem(32px);
+    padding: 0 pxToRem(10px);
+    border: 1px solid var(--sds-clr-gray-06);
+    border-radius: pxToRem(100px);
+    background: var(--sds-clr-gray-01);
+    font-size: pxToRem(14px);
+    font-weight: var(--sds-fw-semi-bold);
+    line-height: pxToRem(20px);
     cursor: pointer;
-    font: inherit;
     color: inherit;
+
+    svg {
+      width: pxToRem(14px);
+      height: pxToRem(14px);
+    }
   }
 
-  // Pool name above the total. `Text`'s own `size="sm"` prop already supplies
-  // type scale; no rule of its own needed until the node says otherwise.
+  // Pool name above the total -- Text/SM/500, secondary. `Text`'s own
+  // `size="sm"` prop supplies the 14px scale; `weight="medium"` and this
+  // colour are the two things it doesn't default to.
   &__pool-name {
-  }
-
-  &__total {
-    // Placeholder weight only, so the total reads as the headline figure
-    // ahead of a real type-scale pass -- no size/line-height/colour token
-    // chosen without the node.
-    font-weight: var(--sds-fw-medium);
-  }
-
-  // Mirrors `PositionRow__gain`'s old positive/neutral split conceptually
-  // (this is where that figure moved to), but the colour split itself needs
-  // the real node -- left neutral for now rather than guessing which green.
-  &__gain {
     color: var(--sds-clr-gray-11);
   }
 
-  // "Supplied asset" section label above the list. `Text`'s own `size="xs"`
-  // prop already supplies type scale; no rule of its own needed until the
-  // node says otherwise.
-  &__section-title {
+  // "$1,284.32" -- Display/XS/400: 24px regular (not medium), -4%
+  // letter-spacing, matching `AccountHeader__total-usd-balance`'s own
+  // tracking convention at this smaller size.
+  &__total {
+    margin-top: pxToRem(4px); // 8px (own gap) + 4px = 12px under the pool name
+    font-size: pxToRem(24px);
+    font-weight: var(--sds-fw-regular);
+    line-height: pxToRem(32px);
+    letter-spacing: pxToRem(-0.96px);
+    color: var(--sds-clr-gray-12);
   }
 
+  // "+31.75 (2.54%)" -- Text/SM/500, green.
+  //
+  // green-11: node 9808-30558 defines `Success/Text/Primary` = #4cc38a,
+  // which is `--sds-clr-green-11` in this dark theme -- the shade this
+  // feature's gains and rates use throughout (see `PositionRow__apy` and
+  // `PositionsPoolCard__gain`).
+  &__gain {
+    font-size: pxToRem(14px);
+    font-weight: var(--sds-fw-medium);
+    line-height: pxToRem(20px);
+    color: var(--sds-clr-green-11);
+  }
+
+  // "Supplied asset" section label -- Text/SM/500, primary. `size="sm"` on
+  // the `Text` element supplies the 14px scale but not this 20px
+  // line-height (SDS's own `sm` is 22px) or the medium weight.
+  &__section-title {
+    margin-top: pxToRem(16px); // 8px (own gap) + 16px = 24px, the node's own
+    // gap ahead of the "Supplied asset" section.
+    line-height: pxToRem(20px);
+  }
+
+  // One `PositionRow` per supplied asset. The node draws each as its own
+  // bg-tertiary, rounded-12 card (px-12/py-8) rather than a plain BalanceRow
+  // list; scoped onto `.BalanceRow` here (PositionRow's root, via
+  // `BalanceRow/index.tsx`) rather than PositionRow's own markup, so no
+  // component changes are needed to get the card look. The node's 40px
+  // asset icon and 12px icon-to-text gap are `AssetIcon`'s own, shared,
+  // fixed-32px sizing (`AccountAssets/styles.scss`) -- not resized here for
+  // the same reason `PoolIcon` isn't above: every other `AssetIcon` caller
+  // (the Tokens tab, EarnReview, the pool details sheet) wants the smaller
+  // size. See the task report.
   &__assets {
     display: flex;
     flex-direction: column;
+    gap: pxToRem(12px);
+
+    .BalanceRow {
+      padding: pxToRem(8px) pxToRem(12px);
+      border-radius: pxToRem(12px);
+      background: var(--sds-clr-gray-03);
+    }
   }
 }
