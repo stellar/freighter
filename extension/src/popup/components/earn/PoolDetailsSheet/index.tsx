@@ -210,10 +210,10 @@ export const PoolDetailsSheet = ({
       <div className="PoolDetailsSheet__header">
         <PoolIcon />
         <div className="PoolDetailsSheet__identity">
-          <Text as="div" size="md" weight="semi-bold">
+          <Text as="div" size="sm" weight="medium">
             {pool.name || t("Blend pool")}
           </Text>
-          <Text as="div" size="sm">
+          <Text as="div" size="xs" addlClassName="PoolDetailsSheet__tagline">
             {t("by Blend")}
           </Text>
         </div>

@@ -127,7 +127,7 @@ export const YourPosition = ({
         ))}
       </div>
 
-      <Text as="div" size="xs">
+      <Text as="div" size="xs" addlClassName="PoolDetailsSheet__earnings-label">
         {t("Your earnings")}
       </Text>
       <div className="PoolDetailsSheet__group">
