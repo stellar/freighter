@@ -145,8 +145,8 @@ describe("buildCommonContext (four-bucket property model)", () => {
     );
   });
 
-  it("stamps schema_version '2'", () => {
-    expect(buildCommonContext({} as never).schema_version).toBe("2");
+  it("stamps schema_version '3'", () => {
+    expect(buildCommonContext({} as never).schema_version).toBe("3");
   });
 
   it("emits the reshaped event-level bucket", () => {
@@ -212,7 +212,7 @@ describe("buildCommonContext (four-bucket property model)", () => {
     expect(ctx).not.toHaveProperty("account_funded");
     expect(ctx).not.toHaveProperty("is_hardware_account");
     // non-account context is still present
-    expect(ctx).toMatchObject({ schema_version: "2", network: "TESTNET" });
+    expect(ctx).toMatchObject({ schema_version: "3", network: "TESTNET" });
     expect(ctx.surface).toBeDefined();
   });
 
@@ -524,7 +524,7 @@ describe("emitScreenViewed (screen.viewed consolidation)", () => {
     expect(body).toMatchObject({
       screen_name: "send_payment_amount",
       flow: "send",
-      schema_version: "2",
+      schema_version: "3",
     });
     // surface comes from the Slice-A common context (getSurface()).
     expect(body.surface).toBeDefined();
@@ -610,7 +610,7 @@ describe("app.opened", () => {
     expect(call![1]).toMatchObject({
       connection_type: "wifi",
       effective_type: "4g",
-      schema_version: "2",
+      schema_version: "3",
     });
     expect(call![1].surface).toBeDefined();
   });

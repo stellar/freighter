@@ -1,6 +1,7 @@
 import { useReducer } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { captureException } from "@sentry/browser";
+import BigNumber from "bignumber.js";
 
 import { initialState, reducer, isError } from "helpers/request";
 import { AppDispatch } from "popup/App";
@@ -15,16 +16,68 @@ import { useGetCollectibles } from "helpers/hooks/useGetCollectibles";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { emitMetric } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
-import { getAssetFromCanonical, isMainnet } from "helpers/stellar";
+import {
+  getAssetFromCanonical,
+  getCanonicalFromAsset,
+  isMainnet,
+} from "helpers/stellar";
 import { getSdk } from "@shared/helpers/stellar";
 import { AssetIcons } from "@shared/api/types";
 import { allAccountsSelector } from "popup/ducks/accountServices";
+import { balancesSelector, tokenPricesSelector } from "popup/ducks/cache";
+import { tokenPricesV2Selector } from "popup/ducks/remoteConfig";
+import { getResultCodes } from "popup/helpers/parseTransaction";
+import {
+  classifyAssetIdentity,
+  computeExecutionSlippagePct,
+  computeUsdSlippagePct,
+  deriveLegUsd,
+  getFailureCategory,
+  LegUsdResult,
+} from "helpers/usdVolume";
+import {
+  ConfirmationPriceSnapshot,
+  startConfirmationPriceSnapshot,
+} from "helpers/confirmationPriceSnapshot";
+import {
+  findPathPaymentStrictSendIndex,
+  getSettledPathPaymentStrictSendAmount,
+} from "helpers/transactionResult";
 
 interface SubmitTxData {
   status: "success" | "error";
   icons: AssetIcons;
   error?: string;
 }
+
+/**
+ * The `amount_usd`-family properties are named identically on all four
+ * terminal events (TR-2) so `SUM(amount_usd)` works across event names.
+ * Everything else about a leg (its identity, its token amount) is named
+ * differently per event (`asset_*`/`amount` for payment, `from_asset_*`/
+ * `from_amount` for swap) and is added by each call site instead.
+ */
+const buildSourceLegUsdProps = (
+  tokenAmount: string,
+  priceStr: string | undefined,
+  snapshot: ConfirmationPriceSnapshot,
+): { leg: LegUsdResult; usdProps: Record<string, unknown> } => {
+  const leg = deriveLegUsd(tokenAmount, priceStr);
+  return {
+    leg,
+    usdProps: {
+      amount_usd_status: leg.status,
+      ...(leg.status === "ok"
+        ? {
+            amount_usd: leg.value,
+            amount_usd_rate: leg.rate,
+            amount_usd_source: snapshot.source,
+            amount_usd_price_freshness: snapshot.freshness,
+          }
+        : {}),
+    },
+  };
+};
 
 function useSubmitTxData({
   isHardwareWallet,
@@ -44,6 +97,9 @@ function useSubmitTxData({
   );
   const submission = useSelector(transactionSubmissionSelector);
   const allAccounts = useSelector(allAccountsSelector);
+  const allBalancesCache = useSelector(balancesSelector);
+  const allTokenPricesCache = useSelector(tokenPricesSelector);
+  const useTokenPricesV2 = useSelector(tokenPricesV2Selector);
   const { fetchData: fetchBalances } = useGetBalances({
     showHidden: false,
     includeIcons: false,
@@ -55,9 +111,11 @@ function useSubmitTxData({
   const {
     transactionData: {
       asset,
+      amount,
       destination,
       federationAddress,
       destinationAsset,
+      destinationAmount,
       isCollectible,
       collectibleData,
     },
@@ -71,6 +129,52 @@ function useSubmitTxData({
       const payload = {
         status: "success",
       } as SubmitTxData;
+
+      // Everything the volume telemetry needs is snapshotted here, at
+      // confirmation, before signing/submission — amounts and prices are
+      // frozen together and carried to whichever terminal event fires
+      // (TR-15). Skipped entirely for collectible sends (unpriced, TR out of
+      // scope).
+      const accountBalances =
+        allBalancesCache[networkDetails.network]?.[publicKey]?.balances ??
+        null;
+      const sourceIdentity = !isCollectible
+        ? classifyAssetIdentity(
+            sourceAsset.code,
+            sourceAsset.issuer,
+            networkDetails.networkPassphrase,
+            accountBalances,
+          )
+        : null;
+      const destAssetParsed =
+        isSwap && !isCollectible
+          ? getAssetFromCanonical(destinationAsset)
+          : null;
+      const destIdentity = destAssetParsed
+        ? classifyAssetIdentity(
+            destAssetParsed.code,
+            destAssetParsed.issuer,
+            networkDetails.networkPassphrase,
+            accountBalances,
+          )
+        : null;
+
+      const cachedDisplayPrices =
+        allTokenPricesCache[networkDetails.networkPassphrase]?.[publicKey] ??
+        null;
+      const snapshotHandle = sourceIdentity
+        ? startConfirmationPriceSnapshot({
+            canonicalIds: [
+              getCanonicalFromAsset(sourceIdentity.code, sourceIdentity.issuer),
+              ...(destIdentity
+                ? [getCanonicalFromAsset(destIdentity.code, destIdentity.issuer)]
+                : []),
+            ],
+            networkDetails,
+            useV2: useTokenPricesV2,
+            cachedDisplayPrices,
+          })
+        : null;
 
       let signedXDR = transactionSimulation.preparedTransaction!;
       if (!isHardwareWallet) {
@@ -103,22 +207,102 @@ function useSubmitTxData({
         // Internal broadcasts are already captured by the payment/swap/
         // collectible_send `.completed` events below.
         if (isSwap) {
+          // Parsed lazily, here, rather than hoisted above: `signedXDR` is a
+          // placeholder in some call sites/tests when a swap never actually
+          // reaches submission, and this parse is only ever needed for a
+          // settled swap.
+          const Sdk = getSdk(networkDetails.networkPassphrase);
+          const submittedTx = Sdk.TransactionBuilder.fromXDR(
+            signedXDR,
+            networkDetails.networkPassphrase,
+          );
+
+          const snapshot = snapshotHandle!.resolve();
+          const sourceCanonical = getCanonicalFromAsset(
+            sourceIdentity!.code,
+            sourceIdentity!.issuer,
+          );
+          const destCanonical = getCanonicalFromAsset(
+            destIdentity!.code,
+            destIdentity!.issuer,
+          );
+          const sourceUsd = buildSourceLegUsdProps(
+            amount,
+            snapshot.pricesById?.[sourceCanonical]?.currentPrice,
+            snapshot,
+          );
+
+          // Settled destination amount, read from the transaction result —
+          // never the quote (TR-26). A user navigating away before the
+          // result is readable (TR-29's `not_observed`) has no extension
+          // analogue: Horizon's response already carries `result_xdr`
+          // synchronously, so a missing/unparseable read here is a genuine
+          // derivation failure, reported as `error` rather than
+          // `not_observed`.
+          const opIndex = findPathPaymentStrictSendIndex(submittedTx);
+          const settledDestAmount = getSettledPathPaymentStrictSendAmount(
+            submitResp.payload.result_xdr,
+            opIndex,
+          );
+          const destUsd: LegUsdResult | null =
+            settledDestAmount !== null
+              ? deriveLegUsd(
+                  settledDestAmount,
+                  snapshot.pricesById?.[destCanonical]?.currentPrice,
+                )
+              : null;
+
+          const executionSlippagePct =
+            settledDestAmount !== null
+              ? computeExecutionSlippagePct(
+                  destinationAmount || undefined,
+                  settledDestAmount,
+                )
+              : undefined;
+          const usdSlippagePct =
+            sourceUsd.leg.status === "ok" &&
+            destUsd?.status === "ok" &&
+            sourceUsd.leg.value !== 0
+              ? computeUsdSlippagePct(sourceUsd.leg.unrounded!, destUsd.unrounded!)
+              : undefined;
+
           // Post-confirmation swap telemetry: the swap actually settled. A
           // routed/path payment settles here too — its outcome is a swap.
           emitMetric(METRIC_NAMES.swapCompleted, {
             from_asset_code: sourceAsset.code,
             to_asset_code: getAssetFromCanonical(destinationAsset).code,
+            ...(sourceIdentity!.issuer
+              ? { from_asset_issuer: sourceIdentity!.issuer }
+              : {}),
+            from_asset_type: sourceIdentity!.type,
+            ...(destIdentity!.issuer
+              ? { to_asset_issuer: destIdentity!.issuer }
+              : {}),
+            to_asset_type: destIdentity!.type,
+            from_amount: new BigNumber(amount || 0).toNumber(),
+            ...(destinationAmount
+              ? { to_amount_quoted: new BigNumber(destinationAmount).toNumber() }
+              : {}),
+            ...(settledDestAmount !== null
+              ? { to_amount: settledDestAmount.toNumber() }
+              : {}),
+            to_amount_usd_status: destUsd?.status ?? "error",
+            ...(destUsd?.status === "ok"
+              ? { to_amount_usd: destUsd.value, to_amount_usd_rate: destUsd.rate }
+              : {}),
+            ...(usdSlippagePct !== undefined
+              ? { usd_slippage_pct: usdSlippagePct }
+              : {}),
+            ...(executionSlippagePct !== undefined
+              ? { execution_slippage_pct: executionSlippagePct }
+              : {}),
+            ...sourceUsd.usdProps,
           });
           // Trustline added only once the combined changeTrust +
           // pathPaymentStrictSend transaction confirmed it. Gate on the
           // submitted transaction itself rather than the pick-time snapshot —
           // a defaulted/deep-linked destination has no snapshot, but the
           // changeTrust op it confirmed is right there in the XDR.
-          const Sdk = getSdk(networkDetails.networkPassphrase);
-          const submittedTx = Sdk.TransactionBuilder.fromXDR(
-            signedXDR,
-            networkDetails.networkPassphrase,
-          );
           const changeTrustOp =
             "operations" in submittedTx
               ? submittedTx.operations.find((op) => op.type === "changeTrust")
@@ -147,10 +331,26 @@ function useSubmitTxData({
               token_id: collectibleData.tokenId,
             });
           } else {
+            const snapshot = snapshotHandle!.resolve();
+            const sourceCanonical = getCanonicalFromAsset(
+              sourceIdentity!.code,
+              sourceIdentity!.issuer,
+            );
+            const sourceUsd = buildSourceLegUsdProps(
+              amount,
+              snapshot.pricesById?.[sourceCanonical]?.currentPrice,
+              snapshot,
+            );
             // Direct (non-routed) payment outcome.
             emitMetric(METRIC_NAMES.paymentCompleted, {
               payment_type: "payment",
               asset_code: sourceAsset.code,
+              ...(sourceIdentity!.issuer
+                ? { asset_issuer: sourceIdentity!.issuer }
+                : {}),
+              asset_type: sourceIdentity!.type,
+              amount: new BigNumber(amount || 0).toNumber(),
+              ...sourceUsd.usdProps,
             });
           }
         }
@@ -177,6 +377,79 @@ function useSubmitTxData({
               balancesResult.message,
             )} ${networkDetails.network}`,
           );
+        }
+      } else if (submitFreighterTransaction.rejected.match(submitResp)) {
+        // Submission was attempted and we're reacting to its outcome — the
+        // single, centralized failure-emit site (fixes the old effect-based
+        // double-emit-on-remount bug in SubmitFail). A pre-submission failure
+        // (signing, simulation) never reaches here, since nothing above this
+        // point calls submitFreighterTransaction.
+        const error = submitResp.payload;
+        const resultCodes = getResultCodes(error);
+        const reasonCode =
+          resultCodes.operations?.[0] || resultCodes.transaction || "unknown";
+        const failureCategory = getFailureCategory(error, reasonCode);
+
+        if (isCollectible) {
+          emitMetric(METRIC_NAMES.collectibleSendFailed, {
+            reason_code: reasonCode,
+          });
+        } else if (isSwap) {
+          const snapshot = snapshotHandle!.resolve();
+          const sourceCanonical = getCanonicalFromAsset(
+            sourceIdentity!.code,
+            sourceIdentity!.issuer,
+          );
+          const sourceUsd = buildSourceLegUsdProps(
+            amount,
+            snapshot.pricesById?.[sourceCanonical]?.currentPrice,
+            snapshot,
+          );
+          // TR-30: swap.failed carries no destination amount/USD at all —
+          // identity only. This is also the sole emit point for a quote
+          // expiring at submit (op_under_dest_min / op_too_few_offers):
+          // failure_category: "slippage" falls out of the same mapping used
+          // for every other rejection, so no special case is needed here or
+          // in the Swap view's separate swap.quote_expired recovery flow
+          // (TR-70).
+          emitMetric(METRIC_NAMES.swapFailed, {
+            from_asset_code: getAssetFromCanonical(asset).code,
+            to_asset_code: getAssetFromCanonical(destinationAsset).code,
+            ...(sourceIdentity!.issuer
+              ? { from_asset_issuer: sourceIdentity!.issuer }
+              : {}),
+            from_asset_type: sourceIdentity!.type,
+            ...(destIdentity!.issuer
+              ? { to_asset_issuer: destIdentity!.issuer }
+              : {}),
+            to_asset_type: destIdentity!.type,
+            reason_code: reasonCode,
+            failure_category: failureCategory,
+            ...sourceUsd.usdProps,
+          });
+        } else {
+          const snapshot = snapshotHandle!.resolve();
+          const sourceCanonical = getCanonicalFromAsset(
+            sourceIdentity!.code,
+            sourceIdentity!.issuer,
+          );
+          const sourceUsd = buildSourceLegUsdProps(
+            amount,
+            snapshot.pricesById?.[sourceCanonical]?.currentPrice,
+            snapshot,
+          );
+          emitMetric(METRIC_NAMES.paymentFailed, {
+            payment_type: "payment",
+            asset_code: sourceAsset.code,
+            ...(sourceIdentity!.issuer
+              ? { asset_issuer: sourceIdentity!.issuer }
+              : {}),
+            asset_type: sourceIdentity!.type,
+            amount: new BigNumber(amount || 0).toNumber(),
+            reason_code: reasonCode,
+            failure_category: failureCategory,
+            ...sourceUsd.usdProps,
+          });
         }
       }
 
