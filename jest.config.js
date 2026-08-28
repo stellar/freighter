@@ -1,5 +1,8 @@
 // Packages shipped as ESM that Jest must transform (babel) rather than skip.
-// stellar-sdk v16 is ESM-first and re-exports ESM-only deps (@noble/*, js-xdr).
+// stellar-sdk v17 is ESM-first and its CJS build `require()`s ESM-only deps
+// (@noble/*, js-xdr, @exodus/bytes, uint8array-extras) — Node 22.12+ supports
+// that natively, but Jest's CJS module registry does not, so babel has to
+// transform them here.
 const esModules = [
   "@stellar/design-system",
   "stellar-hd-wallet",
@@ -9,8 +12,10 @@ const esModules = [
   "@noble/hashes",
   "@noble/curves",
   "@noble/ed25519",
+  "@exodus/bytes",
   "eventsource",
   "uint8array-extras",
+  "smol-toml",
   "feaxios",
 ];
 

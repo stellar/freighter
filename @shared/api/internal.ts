@@ -1682,7 +1682,7 @@ export const submitFreighterTransaction = ({
   networkDetails: NetworkDetails;
 }) => {
   const Sdk = getSdk(networkDetails.networkPassphrase);
-  const tx = Sdk.TransactionBuilder.fromXDR(
+  const tx = Sdk.TransactionBuilder.fromXdr(
     signedXDR,
     networkDetails.networkPassphrase,
   );
@@ -1704,7 +1704,7 @@ export const submitFreighterSorobanTransaction = async ({
   let tx = {} as Transaction | FeeBumpTransaction;
   const Sdk = getSdk(networkDetails.networkPassphrase);
   try {
-    tx = Sdk.TransactionBuilder.fromXDR(
+    tx = Sdk.TransactionBuilder.fromXdr(
       signedXDR,
       networkDetails.networkPassphrase,
     );
@@ -1725,7 +1725,7 @@ export const submitFreighterSorobanTransaction = async ({
   const response = await server.sendTransaction(tx);
 
   if (response.errorResult) {
-    throw new Error(response.errorResult.result().toString());
+    throw new Error(response.errorResult.result.toString());
   }
 
   if (response.status === SendTxStatus.Pending) {
@@ -2320,7 +2320,7 @@ export const simulateSendCollectible = async (args: {
   );
 
   const simulationResponse = (await simulateTransaction({
-    xdr: transaction.toXDR(),
+    xdr: transaction.toXdr(),
     networkDetails: networkDetails,
   })) as {
     ok: boolean;
@@ -2385,7 +2385,7 @@ export const simulateTokenTransfer = async (args: {
       simulationResponse,
     )
       .build()
-      .toXDR();
+      .toXdr();
 
     return {
       ok: true,

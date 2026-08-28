@@ -126,3 +126,27 @@
     }
   }
 }
+
+// Informational note attached to a contract executable (e.g. a CAP-85
+// externally managed executable). Full-width so the text wraps rather than
+// being truncated in the right-aligned value column.
+.ExecutableNote {
+  display: flex;
+  align-items: flex-start;
+  gap: pxToRem(8px);
+  margin-top: pxToRem(4px);
+  padding: pxToRem(12px);
+  border-radius: pxToRem(12px);
+  line-height: 1.5rem;
+  font-size: pxToRem(14px);
+  color: var(--sds-clr-gray-11);
+  background-color: var(--sds-clr-gray-03);
+  border: 1px solid var(--sds-clr-gray-06);
+
+  svg {
+    flex-shrink: 0;
+    width: pxToRem(16px);
+    height: pxToRem(16px);
+    margin-top: pxToRem(4px);
+  }
+}

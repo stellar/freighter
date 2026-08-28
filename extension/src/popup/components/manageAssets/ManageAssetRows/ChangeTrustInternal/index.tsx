@@ -169,7 +169,7 @@ export const ChangeTrustInternal = ({
   const icons = { [canonical]: asset.image };
 
   let sequence = "";
-  const transaction = TransactionBuilder.fromXDR(
+  const transaction = TransactionBuilder.fromXdr(
     xdrDefined,
     networkDetails.networkPassphrase,
   ) as Transaction;

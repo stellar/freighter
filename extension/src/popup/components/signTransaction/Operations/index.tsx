@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import { Badge, Icon, IconButton } from "@stellar/design-system";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
-import { OperationRecord, Signer, xdr } from "stellar-sdk";
+import { OperationRecord, xdr } from "stellar-sdk";
 
 import {
   FLAG_TYPES,
@@ -417,11 +417,7 @@ export const Operations = ({
         } = op;
         return (
           <>
-            {signer && (
-              // v16 types the parsed setOptions signer as the builder opts
-              // type; at runtime it is a parsed Signer (Buffer-backed fields).
-              <KeyValueSigner signer={signer as unknown as Signer} />
-            )}
+            {signer && <KeyValueSigner signer={signer} />}
             {inflationDest && (
               <KeyValueWithPublicKey
                 operationKey={t("Inflation Destination")}
@@ -544,7 +540,9 @@ export const Operations = ({
                 isDeletingEntry ? (
                   <StatusBadge>{t("Deleted")}</StatusBadge>
                 ) : (
-                  value.toString()
+                  // v17: `value` is a Uint8Array; `toString()` would render
+                  // comma-joined decimals rather than the data-entry text.
+                  new TextDecoder().decode(value)
                 )
               }
             />
@@ -817,7 +815,7 @@ export const Operations = ({
           const { account, signer } = op;
           return (
             <>
-              <KeyValueSignerKeyOptions signer={signer as unknown as Signer} />
+              <KeyValueSignerKeyOptions signer={signer} />
               <KeyValueWithPublicKey
                 operationKey={t("Account")}
                 operationValue={account}
@@ -876,19 +874,18 @@ export const Operations = ({
         const hostfn = op.func;
 
         function renderDetails() {
-          switch (hostfn.switch()) {
-            case xdr.HostFunctionType.hostFunctionTypeCreateContractV2():
-            case xdr.HostFunctionType.hostFunctionTypeCreateContract(): {
+          switch (hostfn.type) {
+            case "hostFunctionTypeCreateContractV2":
+            case "hostFunctionTypeCreateContract": {
               const createContractArgs = getCreateContractArgs(hostfn);
               const preimage = createContractArgs.contractIdPreimage;
               const createV2Args = createContractArgs.constructorArgs;
 
-              if (preimage.switch().name === "contractIdPreimageFromAddress") {
-                const preimageFromAddress = preimage.fromAddress();
-                const address = preimageFromAddress.address();
+              if (preimage.type === "contractIdPreimageFromAddress") {
+                const preimageFromAddress = preimage.fromAddress;
+                const address = preimageFromAddress.address;
 
-                const addressType = address.switch();
-                if (addressType.name === "scAddressTypeAccount") {
+                if (address.type === "scAddressTypeAccount") {
                   return (
                     createV2Args && (
                       <KeyValueInvokeHostFnArgs args={createV2Args} />
@@ -914,11 +911,11 @@ export const Operations = ({
               );
             }
 
-            case xdr.HostFunctionType.hostFunctionTypeInvokeContract(): {
-              const invocation = hostfn.invokeContract();
-              const contractId = addressToString(invocation.contractAddress());
-              const fnName = invocation.functionName().toString();
-              const args = invocation.args();
+            case "hostFunctionTypeInvokeContract": {
+              const invocation = hostfn.invokeContract;
+              const contractId = addressToString(invocation.contractAddress);
+              const fnName = invocation.functionName.toString();
+              const args = invocation.args;
 
               return (
                 <KeyValueInvokeHostFnArgs
@@ -930,8 +927,10 @@ export const Operations = ({
               );
             }
 
-            case xdr.HostFunctionType.hostFunctionTypeUploadContractWasm(): {
-              const wasm = hostfn.wasm().toString();
+            case "hostFunctionTypeUploadContractWasm": {
+              // v17: `wasm` is a Uint8Array, whose `toString()` would render
+              // comma-joined decimals — encode it explicitly.
+              const wasm = xdr.encodeBytes(hostfn.wasm, "hex");
               return (
                 <KeyValueList operationKey={t("wasm")} operationValue={wasm} />
               );
