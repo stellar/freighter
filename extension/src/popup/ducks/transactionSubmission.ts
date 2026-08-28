@@ -116,13 +116,8 @@ export const submitFreighterTransaction = createAsyncThunk<
         return txRes;
       } catch (e) {
         const message = e instanceof Error ? e.message : JSON.stringify(e);
-        // stellar-sdk's Horizon errors carry the problem-details body (the
-        // shape getResultCodes/failure-telemetry expect) directly on
-        // `.response` - forward it, or classification silently degrades to
-        // "unknown"/"transport" for every custom-network rejection.
         return thunkApi.rejectWithValue({
           errorMessage: message,
-          response: (e as any)?.response,
         });
       }
     } else {

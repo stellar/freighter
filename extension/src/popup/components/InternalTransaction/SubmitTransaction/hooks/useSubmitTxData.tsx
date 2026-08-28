@@ -119,7 +119,6 @@ function useSubmitTxData({
       destinationAmount,
       isCollectible,
       collectibleData,
-      destinationTokenDetails,
     },
     transactionSimulation,
   } = submission;
@@ -161,34 +160,16 @@ function useSubmitTxData({
           )
         : null;
 
-      const destCanonical = destIdentity
-        ? getCanonicalFromAsset(destIdentity.code, destIdentity.issuer)
-        : null;
-      const baseDisplayPrices =
+      const cachedDisplayPrices =
         allTokenPricesCache[networkDetails.networkPassphrase]?.[publicKey] ??
         null;
-      // A non-held destination token has no /token-prices entry, so the
-      // receive card's own USD estimate falls back to the stellar.expert spot
-      // price captured when the token was picked (mirrors
-      // getSwapDerivedData's mainnet-only fallback). Fold that same fallback
-      // in here, or a snapshot that degrades to cached_display would
-      // under-report a price the user actually saw on screen.
-      const destSpotPrice = destinationTokenDetails?.spotPrice;
-      const cachedDisplayPrices =
-        destCanonical &&
-        isMainnet(networkDetails) &&
-        destSpotPrice != null &&
-        !baseDisplayPrices?.[destCanonical]
-          ? {
-              ...baseDisplayPrices,
-              [destCanonical]: { currentPrice: String(destSpotPrice) },
-            }
-          : baseDisplayPrices;
       snapshotHandle = sourceIdentity
         ? startConfirmationPriceSnapshot({
             canonicalIds: [
               getCanonicalFromAsset(sourceIdentity.code, sourceIdentity.issuer),
-              ...(destCanonical ? [destCanonical] : []),
+              ...(destIdentity
+                ? [getCanonicalFromAsset(destIdentity.code, destIdentity.issuer)]
+                : []),
             ],
             networkDetails,
             useV2: useTokenPricesV2,
