@@ -58,4 +58,34 @@ describe("parseLinkedText", () => {
       { text: "Visit http://example.com/x today" },
     ]);
   });
+
+  it("keeps balanced parentheses inside a bare URL", () => {
+    expect(
+      parseLinkedText(
+        "See https://en.wikipedia.org/wiki/Function_(mathematics) for details.",
+      ),
+    ).toEqual([
+      { text: "See " },
+      {
+        text: "https://en.wikipedia.org/wiki/Function_(mathematics)",
+        url: "https://en.wikipedia.org/wiki/Function_(mathematics)",
+      },
+      { text: " for details." },
+    ]);
+  });
+
+  it("keeps balanced parentheses inside a markdown-style URL", () => {
+    expect(
+      parseLinkedText(
+        "See [Function](https://en.wikipedia.org/wiki/Function_(mathematics)) for details.",
+      ),
+    ).toEqual([
+      { text: "See " },
+      {
+        text: "Function",
+        url: "https://en.wikipedia.org/wiki/Function_(mathematics)",
+      },
+      { text: " for details." },
+    ]);
+  });
 });

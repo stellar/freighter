@@ -94,6 +94,11 @@
 
     a {
       color: var(--sds-clr-lilac-11);
+      // The global `a { text-decoration: none; }` reset means color alone
+      // isn't enough to distinguish a link from surrounding text - restore
+      // an underline so links embedded in prose remain visible without
+      // relying on color perception.
+      text-decoration: underline;
     }
   }
 }

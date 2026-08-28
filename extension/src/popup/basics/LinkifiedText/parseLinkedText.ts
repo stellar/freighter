@@ -3,12 +3,14 @@ export interface LinkedTextSegment {
   url?: string;
 }
 
-// Matches markdown-style `[text](https://...)` links, or a bare
-// `https://` URL. Deliberately restricted to https - no other scheme
-// (e.g. `http:`, `javascript:`) is ever recognized as a link, matching the
-// isSafeHttpsUrl convention used elsewhere for protocol.websiteUrl.
-const LINK_PATTERN =
-  /\[([^\]]+)]\((https:\/\/[^\s)]+)\)|(https:\/\/[^\s<>()[\]]+)/g;
+// Only https:// is ever recognized as a link - no other scheme (e.g.
+// `http:`, `javascript:`) matches, matching the isSafeHttpsUrl convention
+// used elsewhere for protocol.websiteUrl.
+const HTTPS_PREFIX = "https://";
+
+// A markdown link opener (`[label](`) ending exactly where a `https://`
+// occurrence begins, e.g. matched against the text preceding the URL.
+const MARKDOWN_OPENER_PATTERN = /\[([^\]]+)]\($/;
 
 const TRAILING_PUNCTUATION = /[.,!?;:]+$/;
 
@@ -25,6 +27,46 @@ const splitTrailingPunctuation = (
   };
 };
 
+// Extends a URL starting at `start` as far as possible, allowing balanced
+// parentheses inside it (e.g. https://en.wikipedia.org/wiki/Function_(maths))
+// so a legitimate paren in the URL path isn't mistaken for markdown/prose
+// punctuation. An unmatched closing paren ends the URL instead of being
+// consumed by it, since it's almost always the boundary of a markdown link
+// or the prose wrapping a link in parens.
+const findUrlEnd = (text: string, start: number): number => {
+  let depth = 0;
+  let index = start;
+
+  while (index < text.length) {
+    const char = text[index];
+    if (/[\s<>[\]]/.test(char)) {
+      break;
+    }
+    if (char === "(") {
+      depth += 1;
+    } else if (char === ")") {
+      if (depth === 0) {
+        break;
+      }
+      depth -= 1;
+    }
+    index += 1;
+  }
+
+  return index;
+};
+
+const matchMarkdownOpener = (
+  text: string,
+  httpsIndex: number,
+): { labelStart: number; label: string } | null => {
+  const match = text.slice(0, httpsIndex).match(MARKDOWN_OPENER_PATTERN);
+  if (!match) {
+    return null;
+  }
+  return { labelStart: httpsIndex - match[0].length, label: match[1] };
+};
+
 /**
  * Parses plain text for markdown-style links (`[text](https://...)`) and
  * bare `https://` URLs, returning an ordered list of segments to render.
@@ -37,31 +79,46 @@ const splitTrailingPunctuation = (
  */
 export const parseLinkedText = (text: string): LinkedTextSegment[] => {
   const segments: LinkedTextSegment[] = [];
-  let lastIndex = 0;
+  let cursor = 0;
 
-  for (const match of text.matchAll(LINK_PATTERN)) {
-    const [full, markdownText, markdownUrl, bareUrl] = match;
-    const start = match.index ?? 0;
-
-    if (start > lastIndex) {
-      segments.push({ text: text.slice(lastIndex, start) });
+  while (cursor < text.length) {
+    const httpsIndex = text.indexOf(HTTPS_PREFIX, cursor);
+    if (httpsIndex === -1) {
+      segments.push({ text: text.slice(cursor) });
+      break;
     }
 
-    if (markdownText && markdownUrl) {
-      segments.push({ text: markdownText, url: markdownUrl });
-    } else if (bareUrl) {
-      const { url, trailing } = splitTrailingPunctuation(bareUrl);
-      segments.push({ text: url, url });
-      if (trailing) {
-        segments.push({ text: trailing });
+    const opener = matchMarkdownOpener(text, httpsIndex);
+    if (opener) {
+      const urlEnd = findUrlEnd(text, httpsIndex);
+      if (text[urlEnd] === ")") {
+        if (opener.labelStart > cursor) {
+          segments.push({ text: text.slice(cursor, opener.labelStart) });
+        }
+        segments.push({
+          text: opener.label,
+          url: text.slice(httpsIndex, urlEnd),
+        });
+        cursor = urlEnd + 1;
+        continue;
       }
     }
 
-    lastIndex = start + full.length;
-  }
+    const urlEnd = findUrlEnd(text, httpsIndex);
+    const { url, trailing } = splitTrailingPunctuation(
+      text.slice(httpsIndex, urlEnd),
+    );
 
-  if (lastIndex < text.length) {
-    segments.push({ text: text.slice(lastIndex) });
+    if (httpsIndex > cursor) {
+      segments.push({ text: text.slice(cursor, httpsIndex) });
+    }
+    segments.push({ text: url, url });
+    cursor = httpsIndex + url.length;
+
+    if (trailing) {
+      segments.push({ text: trailing });
+      cursor += trailing.length;
+    }
   }
 
   return segments;
