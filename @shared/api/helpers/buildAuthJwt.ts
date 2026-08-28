@@ -1,5 +1,5 @@
 import { Buffer } from "buffer";
-import { Keypair } from "stellar-sdk";
+import { Keypair, xdr } from "stellar-sdk";
 
 /** Platform tag recorded in the JWT `iss` claim (logging/metrics on the server). */
 export const ISS = "freighter-extension";
@@ -54,7 +54,7 @@ export const buildAuthJwt = async ({
 }: BuildAuthJwtParams): Promise<string> => {
   const iat = Math.floor((now ?? Date.now()) / 1000);
   const payload = {
-    sub: keypair.rawPublicKey().toString("hex"),
+    sub: xdr.encodeBytes(keypair.rawPublicKey(), "hex"),
     iss: ISS,
     iat,
     exp: iat + JWT_LIFETIME_SECONDS,

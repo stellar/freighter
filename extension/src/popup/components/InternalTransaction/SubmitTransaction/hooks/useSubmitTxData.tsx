@@ -214,7 +214,7 @@ function useSubmitTxData({
           // reaches submission, and this parse is only ever needed for a
           // settled swap.
           const Sdk = getSdk(networkDetails.networkPassphrase);
-          const submittedTx = Sdk.TransactionBuilder.fromXDR(
+          const submittedTx = Sdk.TransactionBuilder.fromXdr(
             signedXDR,
             networkDetails.networkPassphrase,
           );

@@ -1,5 +1,5 @@
 import { Buffer } from "buffer";
-import { Keypair } from "stellar-sdk";
+import { Keypair, xdr } from "stellar-sdk";
 
 import { buildAuthJwt, ISS, JWT_LIFETIME_SECONDS } from "../buildAuthJwt";
 
@@ -36,7 +36,7 @@ describe("buildAuthJwt", () => {
       now: NOW,
     });
     const claims = decodeSegment(jwt.split(".")[1]);
-    expect(claims.sub).toBe(KP.rawPublicKey().toString("hex"));
+    expect(claims.sub).toBe(xdr.encodeBytes(KP.rawPublicKey(), "hex"));
     expect(claims.iss).toBe(ISS);
     expect(claims.iat).toBe(Math.floor(NOW / 1000));
     expect((claims.exp as number) - (claims.iat as number)).toBe(

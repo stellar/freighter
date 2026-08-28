@@ -1,9 +1,21 @@
 import React from "react";
 import { render, waitFor, screen, cleanup } from "@testing-library/react";
-import { Address, Keypair, Operation, StrKey, xdr } from "stellar-sdk";
+import {
+  Account,
+  Address,
+  Keypair,
+  Networks,
+  Operation,
+  StrKey,
+  TransactionBuilder,
+  xdr,
+} from "stellar-sdk";
 
 import { mockAccounts, TEST_PUBLIC_KEY, Wrapper } from "popup/__testHelpers__";
-import { KeyValueInvokeHostFn } from "../signTransaction/Operations/KeyVal";
+import {
+  KeyValueInvokeHostFn,
+  KeyValueSignerKeyOptions,
+} from "../signTransaction/Operations/KeyVal";
 import * as internalApi from "@shared/api/internal";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import {
@@ -11,6 +23,9 @@ import {
   DEFAULT_NETWORKS,
 } from "@shared/constants/stellar";
 import { ROUTES } from "popup/constants/routes";
+
+const OWNER_CONTRACT =
+  "CA3D5KRYM6CB7OWQ6TWYRR3Z4T7GNZLKERYNZGGA5SOAOPIFY6YQGAXE";
 
 describe("Operations KeyVal", () => {
   describe("InvokeHostFunction", () => {
@@ -148,6 +163,63 @@ describe("Operations KeyVal", () => {
       expect(execTypeValue).toHaveTextContent("contractExecutableStellarAsset");
     });
 
+    it("renders create contract with a CAP-85 external executable ref", async () => {
+      const tag = "v2";
+      const func = xdr.HostFunction.hostFunctionTypeCreateContractV2(
+        new xdr.CreateContractArgsV2({
+          contractIdPreimage:
+            xdr.ContractIdPreimage.contractIdPreimageFromAddress(
+              new xdr.ContractIdPreimageFromAddress({
+                address: new Address(TEST_PUBLIC_KEY).toScAddress(),
+                salt: Buffer.alloc(32),
+              }),
+            ),
+          executable: xdr.ContractExecutable.contractExecutableExternalRef(
+            new xdr.ContractExecutableExternalRef({
+              executableOwner: new Address(OWNER_CONTRACT).toScAddress(),
+              tag,
+            }),
+          ),
+          constructorArgs: [],
+        }),
+      );
+
+      const op = {
+        func,
+      } as Operation.InvokeHostFunction;
+
+      render(<KeyValueInvokeHostFn op={op} />);
+      await waitFor(() => screen.getAllByTestId("OperationKeyVal"));
+
+      const execType = screen.getByText("Executable Type");
+      expect(
+        execType.parentNode?.querySelector(
+          "[data-testid='OperationKeyVal__value']",
+        ),
+      ).toHaveTextContent("contractExecutableExternalRef");
+
+      const ownerLabel = screen.getByText("Executable Owner");
+      expect(
+        ownerLabel.parentNode?.querySelector(
+          "[data-testid='OperationKeyVal__value']",
+        ),
+      ).toHaveTextContent("CA3D…GAXE");
+
+      const tagLabel = screen.getByText("Executable Tag");
+      expect(
+        tagLabel.parentNode?.querySelector(
+          "[data-testid='OperationKeyVal__value']",
+        ),
+      ).toHaveTextContent(tag);
+
+      // A ref pins no code, so there must be no wasm hash claiming otherwise,
+      // and the note must say so explicitly.
+      expect(
+        screen.queryByText("Executable Wasm Hash"),
+      ).not.toBeInTheDocument();
+      expect(screen.getByTestId("ExternalExecutableNote")).toBeInTheDocument();
+    });
+
     describe("invoke contract - Contract ID truncation", () => {
       const CONTRACT =
         "CA3D5KRYM6CB7OWQ6TWYRR3Z4T7GNZLKERYNZGGA5SOAOPIFY6YQGAXE";
@@ -176,7 +248,7 @@ describe("Operations KeyVal", () => {
         const func = xdr.HostFunction.hostFunctionTypeInvokeContract(
           new xdr.InvokeContractArgs({
             contractAddress: xdr.ScAddress.scAddressTypeContract(
-              StrKey.decodeContract(CONTRACT) as any,
+              new xdr.ContractId(StrKey.decodeContract(CONTRACT)),
             ),
             functionName: Buffer.from("transfer"),
             args: [],
@@ -245,6 +317,61 @@ describe("Operations KeyVal", () => {
           "Operations__pair--value-expanded",
         );
       });
+    });
+  });
+
+  describe("KeyValueSignerKeyOptions", () => {
+    // SDK 17's revokeSignerSponsorship arm returns sha256Hash / preAuthTx as
+    // hex strings rather than bytes, so decode a real op instead of hand-rolling
+    // the shape.
+    const decodeRevokeSignerOp = (signer: {
+      sha256Hash?: any;
+      preAuthTx?: any;
+    }) => {
+      const tx = new TransactionBuilder(new Account(TEST_PUBLIC_KEY, "0"), {
+        fee: "100",
+        networkPassphrase: Networks.TESTNET,
+      })
+        .addOperation(
+          Operation.revokeSignerSponsorship({
+            account: TEST_PUBLIC_KEY,
+            signer: signer as any,
+          }),
+        )
+        .setTimeout(0)
+        .build();
+
+      return TransactionBuilder.fromXdr(
+        tx.toEnvelope().toXdr("base64"),
+        Networks.TESTNET,
+      ).operations[0] as Operation.RevokeSignerSponsorship;
+    };
+
+    const readValue = (label: string) =>
+      screen
+        .getByText(label)
+        .parentNode?.querySelector("[data-testid='OperationKeyVal__value']");
+
+    it("renders a sha256Hash signer key as its true hex value", async () => {
+      const op = decodeRevokeSignerOp({
+        sha256Hash: new Uint8Array(32).fill(0xab),
+      });
+
+      render(<KeyValueSignerKeyOptions signer={op.signer} />);
+      await waitFor(() => screen.getAllByTestId("OperationKeyVal"));
+
+      expect(readValue("Signer Sha256 Hash")).toHaveTextContent("ABAB…ABAB");
+    });
+
+    it("renders a preAuthTx signer key as its true hex value", async () => {
+      const op = decodeRevokeSignerOp({
+        preAuthTx: new Uint8Array(32).fill(0xcd),
+      });
+
+      render(<KeyValueSignerKeyOptions signer={op.signer} />);
+      await waitFor(() => screen.getAllByTestId("OperationKeyVal"));
+
+      expect(readValue("Pre Auth Transaction")).toHaveTextContent("CDCD…CDCD");
     });
   });
 });

@@ -10,6 +10,7 @@ import BigNumber from "bignumber.js";
 
 import {
   getInvocationArgs,
+  getInvocationDetails,
   buildInvocationTree,
   getAvailableBalance,
   getDecimalsForAsset,
@@ -50,11 +51,14 @@ describe("isAssetSac", () => {
   });
 });
 
+const OWNER_CONTRACT =
+  "CA3D5KRYM6CB7OWQ6TWYRR3Z4T7GNZLKERYNZGGA5SOAOPIFY6YQGAXE";
+
 describe("getInvocationArgs", () => {
   it("can parse a create contract v1 xdr class", () => {
     const assetCode = "KHL";
     const assetType = new xdr.AlphaNum4({
-      assetCode: Buffer.from(assetCode),
+      assetCode: assetCode,
       issuer: Keypair.fromPublicKey(TEST_PUBLIC_KEY).xdrAccountId(),
     });
     const args = new xdr.CreateContractArgs({
@@ -80,7 +84,7 @@ describe("getInvocationArgs", () => {
   it("can parse a create contract v2 xdr class", () => {
     const assetCode = "KHL";
     const assetType = new xdr.AlphaNum4({
-      assetCode: Buffer.from(assetCode),
+      assetCode: assetCode,
       issuer: Keypair.fromPublicKey(TEST_PUBLIC_KEY).xdrAccountId(),
     });
     const args = new xdr.CreateContractArgsV2({
@@ -102,19 +106,159 @@ describe("getInvocationArgs", () => {
     expect(invocationArgs).toEqual({
       type: "sac",
       asset: `${assetCode}:${TEST_PUBLIC_KEY}`,
-      args: args.constructorArgs(),
+      args: args.constructorArgs,
     });
+  });
+  it("can parse a create contract v2 xdr with a CAP-85 external executable ref", () => {
+    const tag = "v2";
+    const externalRef = new xdr.ContractExecutableExternalRef({
+      executableOwner: new Address(OWNER_CONTRACT).toScAddress(),
+      tag,
+    });
+    const args = new xdr.CreateContractArgsV2({
+      contractIdPreimage: xdr.ContractIdPreimage.contractIdPreimageFromAddress(
+        new xdr.ContractIdPreimageFromAddress({
+          address: new Address(TEST_PUBLIC_KEY).toScAddress(),
+          salt: Buffer.alloc(32),
+        }),
+      ),
+      executable:
+        xdr.ContractExecutable.contractExecutableExternalRef(externalRef),
+      constructorArgs: [new Address(TEST_PUBLIC_KEY).toScVal()],
+    });
+    const authorizedFn =
+      xdr.SorobanAuthorizedFunction.sorobanAuthorizedFunctionTypeCreateContractV2HostFn(
+        args,
+      );
+    const authorizedInvocation = new xdr.SorobanAuthorizedInvocation({
+      function: authorizedFn,
+      subInvocations: [],
+    });
+    const invocationArgs = getInvocationArgs(authorizedInvocation);
+    expect(invocationArgs).toEqual({
+      type: "externalRef",
+      owner: OWNER_CONTRACT,
+      tag,
+      address: TEST_PUBLIC_KEY,
+      salt: "0".repeat(64),
+      args: args.constructorArgs,
+    });
+  });
+  it("builds an invocation tree for a CAP-85 external executable ref", () => {
+    const tag = "v2";
+    const args = new xdr.CreateContractArgsV2({
+      contractIdPreimage: xdr.ContractIdPreimage.contractIdPreimageFromAddress(
+        new xdr.ContractIdPreimageFromAddress({
+          address: new Address(TEST_PUBLIC_KEY).toScAddress(),
+          salt: Buffer.alloc(32),
+        }),
+      ),
+      executable: xdr.ContractExecutable.contractExecutableExternalRef(
+        new xdr.ContractExecutableExternalRef({
+          executableOwner: new Address(OWNER_CONTRACT).toScAddress(),
+          tag,
+        }),
+      ),
+      constructorArgs: [],
+    });
+    const authorizedFn =
+      xdr.SorobanAuthorizedFunction.sorobanAuthorizedFunctionTypeCreateContractV2HostFn(
+        args,
+      );
+    const authorizedInvocation = new xdr.SorobanAuthorizedInvocation({
+      function: authorizedFn,
+      subInvocations: [],
+    });
+
+    const tree = buildInvocationTree(authorizedInvocation);
+    expect(tree.type).toEqual("create");
+    expect(tree.args.type).toEqual("externalRef");
+    expect(tree.args.externalRef).toEqual({
+      owner: OWNER_CONTRACT,
+      tag,
+      address: TEST_PUBLIC_KEY,
+      salt: "0".repeat(64),
+    });
+  });
+  it("explains which executable/preimage pairing was invalid when it throws", () => {
+    const assetPreimage = xdr.ContractIdPreimage.contractIdPreimageFromAsset(
+      xdr.Asset.assetTypeNative(),
+    );
+    const addressPreimage =
+      xdr.ContractIdPreimage.contractIdPreimageFromAddress(
+        new xdr.ContractIdPreimageFromAddress({
+          address: new Address(TEST_PUBLIC_KEY).toScAddress(),
+          salt: Buffer.alloc(32),
+        }),
+      );
+
+    const build = (executable, contractIdPreimage) =>
+      new xdr.SorobanAuthorizedInvocation({
+        function:
+          xdr.SorobanAuthorizedFunction.sorobanAuthorizedFunctionTypeCreateContractHostFn(
+            new xdr.CreateContractArgs({ contractIdPreimage, executable }),
+          ),
+        subInvocations: [],
+      });
+
+    // wasm code must be deployed from an address, never derived from an asset
+    expect(() =>
+      getInvocationArgs(
+        build(
+          xdr.ContractExecutable.contractExecutableWasm(Buffer.alloc(32)),
+          assetPreimage,
+        ),
+      ),
+    ).toThrow(/wasm executable.*contractIdPreimageFromAsset/);
+
+    // and a SAC is only ever derived from an asset
+    expect(() =>
+      getInvocationArgs(
+        build(
+          xdr.ContractExecutable.contractExecutableStellarAsset(),
+          addressPreimage,
+        ),
+      ),
+    ).toThrow(/Stellar asset executable.*contractIdPreimageFromAddress/);
+  });
+  it("marks an invocation it cannot parse as unrecognized instead of throwing", () => {
+    // A wasm executable paired with an asset preimage is decodable XDR but a
+    // nonsensical combination -- the kind of thing a future protocol arm or a
+    // hostile dApp could produce. It must not crash the review UI.
+    const assetType = new xdr.AlphaNum4({
+      assetCode: "KHL",
+      issuer: Keypair.fromPublicKey(TEST_PUBLIC_KEY).xdrAccountId(),
+    });
+    const args = new xdr.CreateContractArgs({
+      contractIdPreimage: xdr.ContractIdPreimage.contractIdPreimageFromAsset(
+        xdr.Asset.assetTypeCreditAlphanum4(assetType),
+      ),
+      executable: xdr.ContractExecutable.contractExecutableWasm(
+        Buffer.alloc(32),
+      ),
+    });
+    const authorizedFn =
+      xdr.SorobanAuthorizedFunction.sorobanAuthorizedFunctionTypeCreateContractHostFn(
+        args,
+      );
+    const authorizedInvocation = new xdr.SorobanAuthorizedInvocation({
+      function: authorizedFn,
+      subInvocations: [],
+    });
+    expect(getInvocationDetails(authorizedInvocation)).toEqual([
+      { type: "unrecognized" },
+    ]);
   });
   it("can parse a create contract v2 xdr for the deployer pattern", () => {
     const xdr =
       "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";
-    const tx = TransactionBuilder.fromXDR(
+    const tx = TransactionBuilder.fromXdr(
       xdr,
       TESTNET_NETWORK_DETAILS.networkPassphrase,
     );
     const op = tx.operations[0];
     for (const authEntry of op.auth || []) {
-      const rootInvocation = authEntry.rootInvocation();
+      const rootInvocation = authEntry.rootInvocation;
       const tree = buildInvocationTree(rootInvocation);
       expect(tree.type).toEqual("execute");
       expect(tree.args.source).toEqual(

@@ -63,7 +63,7 @@ const buildSwapXdr = (): string =>
     )
     .setTimeout(0)
     .build()
-    .toXDR();
+    .toXdr();
 
 /** Horizon TransactionResult XDR whose single op settled a
  * pathPaymentStrictSend for `stroops`. */
@@ -72,8 +72,8 @@ const buildResultXdr = (stroops: string): string => {
     destination: xdr.PublicKey.publicKeyTypeEd25519(
       Keypair.random().rawPublicKey(),
     ),
-    asset: new Asset("USDC", USDC_ISSUER).toXDRObject(),
-    amount: xdr.Int64.fromString(stroops),
+    asset: new Asset("USDC", USDC_ISSUER).toXdrObject(),
+    amount: BigInt(stroops),
   });
   const opResult = xdr.OperationResult.opInner(
     xdr.OperationResultTr.pathPaymentStrictSend(
@@ -86,10 +86,10 @@ const buildResultXdr = (stroops: string): string => {
     ),
   );
   return new xdr.TransactionResult({
-    feeCharged: xdr.Int64.fromString("100"),
+    feeCharged: BigInt("100"),
     result: xdr.TransactionResultResult.txSuccess([opResult]),
     ext: new xdr.TransactionResultExt(0),
-  }).toXDR("base64");
+  }).toXdr("base64");
 };
 
 const makeState = ({

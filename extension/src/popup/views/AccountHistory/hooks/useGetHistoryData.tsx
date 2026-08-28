@@ -302,7 +302,7 @@ const extractDestinationFromXDR = async (
   }
 
   try {
-    const tx = TransactionBuilder.fromXDR(
+    const tx = TransactionBuilder.fromXdr(
       txEnvelopeXdr,
       networkDetails.networkPassphrase,
     );

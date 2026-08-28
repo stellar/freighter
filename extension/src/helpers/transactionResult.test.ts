@@ -25,8 +25,8 @@ const buildPathPaymentSuccessResultXdr = (
   );
   const simple = new xdr.SimplePaymentResult({
     destination,
-    asset: Asset.native().toXDRObject(),
-    amount: xdr.Int64.fromString(stroops),
+    asset: Asset.native().toXdrObject(),
+    amount: BigInt(stroops),
   });
   const success = new xdr.PathPaymentStrictSendResultSuccess({
     offers: [],
@@ -46,11 +46,11 @@ const buildPathPaymentSuccessResultXdr = (
   );
 
   const txResult = new xdr.TransactionResult({
-    feeCharged: xdr.Int64.fromString("100"),
+    feeCharged: BigInt("100"),
     result: xdr.TransactionResultResult.txSuccess(results),
     ext: new xdr.TransactionResultExt(0),
   });
-  return txResult.toXDR("base64");
+  return txResult.toXdr("base64");
 };
 
 describe("getSettledPathPaymentStrictSendAmount", () => {
@@ -93,12 +93,12 @@ describe("getSettledPathPaymentStrictSendAmount", () => {
       ),
     );
     const txResult = new xdr.TransactionResult({
-      feeCharged: xdr.Int64.fromString("100"),
+      feeCharged: BigInt("100"),
       result: xdr.TransactionResultResult.txFailed([failedResult]),
       ext: new xdr.TransactionResultExt(0),
     });
     expect(
-      getSettledPathPaymentStrictSendAmount(txResult.toXDR("base64"), 0),
+      getSettledPathPaymentStrictSendAmount(txResult.toXdr("base64"), 0),
     ).toBeNull();
   });
 });

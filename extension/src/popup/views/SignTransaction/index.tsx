@@ -14,6 +14,7 @@ import {
   Asset,
   LiquidityPoolAsset,
   getLiquidityPoolId,
+  xdr,
 } from "stellar-sdk";
 
 import { isNonSSLEnabledSelector } from "popup/ducks/settings";
@@ -181,7 +182,7 @@ export const SignTransaction = () => {
     isSiteMalicious || isSiteSuspicious || isSiteUnableToScan;
 
   // rebuild transaction to get Transaction prototypes
-  const transaction = TransactionBuilder.fromXDR(
+  const transaction = TransactionBuilder.fromXdr(
     transactionXdr,
     _networkPassphrase as string,
   );
@@ -592,7 +593,7 @@ export const SignTransaction = () => {
                           (
                             _tx.operations[0] as Operation.InvokeHostFunction
                           ).auth?.map((authEntry) => ({
-                            invocation: authEntry.rootInvocation(),
+                            invocation: authEntry.rootInvocation,
                             boundAddress: getAuthEntryBoundAddress(authEntry),
                           })) || []
                         }
@@ -814,7 +815,7 @@ export const Trustline = ({ operations, icons }: TrustlineProps) => {
       return (
         <>
           <AssetIcon assetIcons={{}} code={""} issuerKey={""} isLPShare />
-          {poolId.toString("hex")}
+          {xdr.encodeBytes(poolId, "hex")}
         </>
       );
     };

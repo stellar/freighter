@@ -93,13 +93,15 @@ jobs:
         env:
           FREIGHTER_CONFIG_DEPLOY_KEY:
             ${{ secrets.FREIGHTER_CONFIG_DEPLOY_KEY }}
+          GH_META_TOKEN: ${{ github.token }}
         run: |
           set -uo pipefail
           KEY_FILE="$(mktemp)"
           KNOWN_HOSTS="$(mktemp)"
+          META_JSON="$(mktemp)"
           CLONE_DIR="$(mktemp -d)"
           CONFIG_OUT="${RUNNER_TEMP}/freighter-config.json"
-          cleanup() { rm -f "$KEY_FILE" "$KNOWN_HOSTS"; rm -rf "$CLONE_DIR"; }
+          cleanup() { rm -f "$KEY_FILE" "$KNOWN_HOSTS" "$META_JSON"; rm -rf "$CLONE_DIR"; }
           trap cleanup EXIT
 
           if [ -z "${FREIGHTER_CONFIG_DEPLOY_KEY}" ]; then
@@ -111,19 +113,49 @@ jobs:
           printf '%s\n' "${FREIGHTER_CONFIG_DEPLOY_KEY}" > "$KEY_FILE"
           chmod 600 "$KEY_FILE"
 
-          # Pin GitHub's SSH host keys instead of trusting-on-first-use. On an
-          # ephemeral runner every connection is "first contact", so
-          # StrictHostKeyChecking=accept-new offers no MITM protection — a
-          # network impersonator could serve an attacker-controlled config.json
-          # whose URLs would be baked into the preview. Fetch GitHub's published
-          # host keys from the meta API over TLS-authenticated HTTPS (always
-          # current — no hardcoded key to rot; a MITM can't forge api.github.com's
-          # cert), write them to a temp known_hosts, and require
-          # StrictHostKeyChecking=yes. If we can't obtain the keys, degrade to
-          # staging rather than fall back to unverified host trust.
-          if ! curl -fsS --max-time 15 https://api.github.com/meta \
-               | jq -r '.ssh_keys[] | "github.com \(.)"' > "$KNOWN_HOSTS" \
-             || [ ! -s "$KNOWN_HOSTS" ]; then
+          # Fetch to a FILE, not a pipe. curl can only discard the partial body
+          # of a failed transfer when the target is a file — with a pipe it
+          # re-sends the whole body on retry, jq receives partial+full, and the
+          # parse fails anyway. Piped retries buy nothing here.
+          #
+          # --retry-all-errors because curl's default "transient" set is
+          # timeouts plus 408/429/5xx. GitHub answers a rate limit with 403,
+          # which is precisely the failure this is meant to survive, and plain
+          # --retry makes exactly one attempt against it.
+          #
+          # --retry-max-time bounds the total wait: curl honours Retry-After
+          # over --retry-delay, and GitHub's secondary limits send values in the
+          # tens of seconds, so an unbounded retry could stall this optional
+          # step for minutes. --max-time is per-attempt and resets on retry, so
+          # it cannot bound this on its own.
+          #
+          # Authenticated first, then anonymous. /meta needs no auth, so the
+          # token is upside for rate limits — GITHUB_TOKEN gets 1,000 req/hour
+          # per REPOSITORY (shared with every other workflow here and with the
+          # gh calls later in this one) instead of 60/hour per runner IP shared
+          # across the whole pool. But authenticating introduces failures the
+          # anonymous request cannot have: an empty or rejected token, or org IP
+          # allow-lists that apply to authenticated calls only. The two draw on
+          # different buckets, so trying both is strictly better than either.
+          fetch_meta() {
+            if [ -n "${1:-}" ]; then
+              curl -fsS --max-time 15 --retry 3 --retry-delay 2 --retry-max-time 40 \
+                --retry-all-errors -H "Authorization: Bearer $1" \
+                -o "$META_JSON" https://api.github.com/meta
+            else
+              curl -fsS --max-time 15 --retry 3 --retry-delay 2 --retry-max-time 40 \
+                --retry-all-errors -o "$META_JSON" https://api.github.com/meta
+            fi
+          }
+
+          if fetch_meta "${GH_META_TOKEN:-}"; then
+            :
+          elif fetch_meta ""; then
+            echo "::warning::Authenticated api.github.com/meta fetch failed; anonymous fetch succeeded"
+          fi
+          jq -r '.ssh_keys[] | "github.com \(.)"' "$META_JSON" > "$KNOWN_HOSTS" 2>/dev/null || true
+
+          if [ ! -s "$KNOWN_HOSTS" ]; then
             echo "config_available=false" >> "$GITHUB_OUTPUT"
             echo "::warning::Could not fetch GitHub SSH host keys; falling back to staging"
             exit 0

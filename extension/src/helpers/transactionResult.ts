@@ -38,25 +38,25 @@ export const getSettledPathPaymentStrictSendAmount = (
     return null;
   }
   try {
-    const txResult = xdr.TransactionResult.fromXDR(resultXdr, "base64");
-    const innerResult = txResult.result();
+    const txResult = xdr.TransactionResult.fromXdr(resultXdr, "base64");
+    const innerResult = txResult.result;
 
     // A fee-bump transaction's per-operation results live one level down, in
     // the inner transaction's own result.
     const opResults =
-      innerResult.switch().name === "txFeeBumpInnerSuccess" ||
-      innerResult.switch().name === "txFeeBumpInnerFailed"
-        ? innerResult.innerResultPair().result().result().results()
-        : innerResult.results();
+      innerResult.type === "txFeeBumpInnerSuccess" ||
+      innerResult.type === "txFeeBumpInnerFailed"
+        ? innerResult.innerResultPair.result.result.results
+        : innerResult.results;
 
     const opResult = opResults[operationIndex];
     if (!opResult) {
       return null;
     }
 
-    const pathResult = opResult.tr().pathPaymentStrictSendResult();
-    const success = pathResult.success();
-    const stroops = success.last().amount();
+    const pathResult = opResult.tr.pathPaymentStrictSendResult;
+    const success = pathResult.success;
+    const stroops = success.last.amount;
 
     return new BigNumber(stroops.toString()).dividedBy(1e7);
   } catch {

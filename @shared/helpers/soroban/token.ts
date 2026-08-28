@@ -118,20 +118,20 @@ export const isSacContractExecutable = async (
     );
 
     const instance = new Contract(contractId).getFootprint();
-    const ledgerKeyContractCode = instance.toXDR("base64");
+    const ledgerKeyContractCode = instance.toXdr("base64");
 
     const { entries } = await server.getLedgerEntries(
-      xdr.LedgerKey.fromXDR(ledgerKeyContractCode, "base64"),
+      xdr.LedgerKey.fromXdr(ledgerKeyContractCode, "base64"),
     );
 
     if (entries && entries.length) {
       const parsed = entries[0].val;
-      const executable = parsed.contractData().val().instance().executable();
+      const executable = xdr.expectUnionVariant(
+        xdr.expectUnionVariant(parsed, "contractData").contractData.val,
+        "scvContractInstance",
+      ).instance.executable;
 
-      return (
-        executable.switch().name ===
-        xdr.ContractExecutableType.contractExecutableStellarAsset().name
-      );
+      return executable.type === "contractExecutableStellarAsset";
     }
     throw new Error("Contract not found in the ledger entries");
   }

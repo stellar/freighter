@@ -618,7 +618,7 @@ function useSimulateTxData({
           memoToUse,
           currentMemoType,
         );
-        const xdr = transaction.build().toXDR();
+        const xdr = transaction.build().toXdr();
         payload.transactionXdr = xdr;
         payload.scanResult = applyExpectedToFailReason({
           scanResult: await scanTx(xdr, scanUrlstub, networkDetails),

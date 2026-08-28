@@ -1,4 +1,5 @@
 import BigNumber from "bignumber.js";
+import { xdr } from "stellar-sdk";
 import {
   getTransactionInfo,
   truncatedPublicKey,
@@ -164,7 +165,9 @@ describe("encodeSep53Message", () => {
   test("should encode a simple ascii message", () => {
     const message = "Hello, World!";
     const expected = "1S61nAa7UQ0GWZf/kwdwaO7QpIbCAhW14C4asNLr6l8=";
-    expect(encodeSep53Message(message).toString("base64")).toEqual(expected);
+    expect(xdr.encodeBytes(encodeSep53Message(message), "base64")).toEqual(
+      expected,
+    );
   });
 });
 
