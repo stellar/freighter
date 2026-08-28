@@ -144,9 +144,9 @@ describe("classifyAssetIdentity", () => {
     const sacAddress = new Asset("USDC", issuer).contractId(network);
     const balances = makeBalanceMap("USDC", issuer);
 
-    expect(classifyAssetIdentity("USDC", sacAddress, network, balances)).toEqual(
-      { code: "USDC", issuer, type: "classic" },
-    );
+    expect(
+      classifyAssetIdentity("USDC", sacAddress, network, balances),
+    ).toEqual({ code: "USDC", issuer, type: "classic" });
   });
 
   it("reports a contract with no matching classic balance as Soroban-native", () => {
@@ -189,24 +189,53 @@ describe("getFailureCategory", () => {
     }) as unknown as ErrorMessage;
 
   it("maps slippage-related op codes (also covers quote-expired-at-submit)", () => {
-    expect(getFailureCategory(horizonError(["op_under_dest_min"]), "op_under_dest_min")).toBe(
-      "slippage",
-    );
-    expect(getFailureCategory(horizonError(["op_too_few_offers"]), "op_too_few_offers")).toBe(
-      "slippage",
-    );
+    expect(
+      getFailureCategory(
+        horizonError(["op_under_dest_min"]),
+        "op_under_dest_min",
+      ),
+    ).toBe("slippage");
+    expect(
+      getFailureCategory(
+        horizonError(["op_too_few_offers"]),
+        "op_too_few_offers",
+      ),
+    ).toBe("slippage");
   });
 
   it("maps balance, trustline, destination, sequence, auth, and fee codes", () => {
-    expect(getFailureCategory(horizonError(["op_underfunded"]), "op_underfunded")).toBe("balance");
-    expect(getFailureCategory(horizonError(["op_no_trust"]), "op_no_trust")).toBe("trustline");
     expect(
-      getFailureCategory(horizonError(["op_no_destination"]), "op_no_destination"),
+      getFailureCategory(horizonError(["op_underfunded"]), "op_underfunded"),
+    ).toBe("balance");
+    expect(
+      getFailureCategory(horizonError(["op_no_trust"]), "op_no_trust"),
+    ).toBe("trustline");
+    expect(
+      getFailureCategory(horizonError(["op_src_no_trust"]), "op_src_no_trust"),
+    ).toBe("trustline");
+    expect(
+      getFailureCategory(
+        horizonError(["op_src_not_authorized"]),
+        "op_src_not_authorized",
+      ),
+    ).toBe("trustline");
+    expect(
+      getFailureCategory(
+        horizonError(["op_no_destination"]),
+        "op_no_destination",
+      ),
     ).toBe("destination");
-    expect(getFailureCategory(horizonError([], "tx_bad_seq"), "tx_bad_seq")).toBe("sequence");
-    expect(getFailureCategory(horizonError([], "tx_bad_auth"), "tx_bad_auth")).toBe("auth");
     expect(
-      getFailureCategory(horizonError([], "tx_insufficient_fee"), "tx_insufficient_fee"),
+      getFailureCategory(horizonError([], "tx_bad_seq"), "tx_bad_seq"),
+    ).toBe("sequence");
+    expect(
+      getFailureCategory(horizonError([], "tx_bad_auth"), "tx_bad_auth"),
+    ).toBe("auth");
+    expect(
+      getFailureCategory(
+        horizonError([], "tx_insufficient_fee"),
+        "tx_insufficient_fee",
+      ),
     ).toBe("fee");
   });
 
@@ -235,11 +264,21 @@ describe("getFailureCategory", () => {
         errorMessage: "failed",
         response: { status, title: "problem" },
       }) as unknown as ErrorMessage;
-    expect(getFailureCategory(statusOnlyError(503), "unknown")).toBe("transport");
-    expect(getFailureCategory(statusOnlyError(504), "unknown")).toBe("transport");
-    expect(getFailureCategory(statusOnlyError(408), "unknown")).toBe("transport");
-    expect(getFailureCategory(statusOnlyError(429), "unknown")).toBe("transport");
-    expect(getFailureCategory(statusOnlyError(403), "unknown")).toBe("transport");
+    expect(getFailureCategory(statusOnlyError(503), "unknown")).toBe(
+      "transport",
+    );
+    expect(getFailureCategory(statusOnlyError(504), "unknown")).toBe(
+      "transport",
+    );
+    expect(getFailureCategory(statusOnlyError(408), "unknown")).toBe(
+      "transport",
+    );
+    expect(getFailureCategory(statusOnlyError(429), "unknown")).toBe(
+      "transport",
+    );
+    expect(getFailureCategory(statusOnlyError(403), "unknown")).toBe(
+      "transport",
+    );
     // A definitive 4xx rejection without result codes stays unknown.
     expect(getFailureCategory(statusOnlyError(400), "unknown")).toBe("unknown");
   });
