@@ -168,7 +168,12 @@ function useSubmitTxData({
             canonicalIds: [
               getCanonicalFromAsset(sourceIdentity.code, sourceIdentity.issuer),
               ...(destIdentity
-                ? [getCanonicalFromAsset(destIdentity.code, destIdentity.issuer)]
+                ? [
+                    getCanonicalFromAsset(
+                      destIdentity.code,
+                      destIdentity.issuer,
+                    ),
+                  ]
                 : []),
             ],
             networkDetails,
@@ -260,10 +265,13 @@ function useSubmitTxData({
                   settledDestAmount,
                 )
               : undefined;
+          // Gate on both legs pricing "ok" only - computeUsdSlippagePct
+          // already checks the unrounded source value for an actual zero.
+          // Gating on the *rounded* value here would drop slippage for any
+          // swap whose source leg rounds to $0.00 (e.g. $0.003) despite
+          // being genuinely nonzero.
           const usdSlippagePct =
-            sourceUsd.leg.status === "ok" &&
-            destUsd?.status === "ok" &&
-            sourceUsd.leg.value !== 0
+            sourceUsd.leg.status === "ok" && destUsd?.status === "ok"
               ? computeUsdSlippagePct(
                   sourceUsd.leg.unrounded!,
                   destUsd.unrounded!,

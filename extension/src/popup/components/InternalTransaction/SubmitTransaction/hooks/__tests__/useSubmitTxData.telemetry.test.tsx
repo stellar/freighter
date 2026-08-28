@@ -336,6 +336,34 @@ describe("useSubmitTxData terminal-event telemetry", () => {
     expect(props).not.toHaveProperty("to_amount_quoted");
   });
 
+  it("payment.failed falls back to the transaction-level code when no operation ran (tx_bad_seq)", async () => {
+    jest
+      .spyOn(ApiInternal, "getTokenPrices")
+      .mockResolvedValue({ native: { currentPrice: "0.5" } });
+    mockSubmitRejected({
+      status: 400,
+      title: "Transaction Failed",
+      extras: {
+        result_codes: {
+          transaction: "tx_bad_seq",
+          operations: [],
+        },
+      },
+    });
+
+    const { result } = renderSubmitHook(makeState({ asset: "native" }));
+    await act(async () => {
+      await result.current.fetchData({ isSwap: false });
+    });
+
+    expect(emitted(METRIC_NAMES.paymentFailed)).toEqual(
+      expect.objectContaining({
+        reason_code: "tx_bad_seq",
+        failure_category: "sequence",
+      }),
+    );
+  });
+
   it("payment.failed classifies an answered-without-a-verdict 5xx as transport", async () => {
     jest
       .spyOn(ApiInternal, "getTokenPrices")
