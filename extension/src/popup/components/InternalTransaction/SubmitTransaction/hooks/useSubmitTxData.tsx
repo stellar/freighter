@@ -37,6 +37,7 @@ import {
 } from "helpers/usdVolume";
 import {
   ConfirmationPriceSnapshot,
+  ConfirmationSnapshotHandle,
   startConfirmationPriceSnapshot,
 } from "helpers/confirmationPriceSnapshot";
 import {
@@ -125,6 +126,8 @@ function useSubmitTxData({
 
   const fetchData = async ({ isSwap }: { isSwap: boolean }) => {
     dispatch({ type: "FETCH_DATA_START" });
+    // Declared outside the try so the catch can cancel it (TR-11).
+    let snapshotHandle: ConfirmationSnapshotHandle | null = null;
     try {
       const payload = {
         status: "success",
@@ -162,7 +165,7 @@ function useSubmitTxData({
       const cachedDisplayPrices =
         allTokenPricesCache[networkDetails.networkPassphrase]?.[publicKey] ??
         null;
-      const snapshotHandle = sourceIdentity
+      snapshotHandle = sourceIdentity
         ? startConfirmationPriceSnapshot({
             canonicalIds: [
               getCanonicalFromAsset(sourceIdentity.code, sourceIdentity.issuer),
@@ -423,6 +426,9 @@ function useSubmitTxData({
               ? { to_asset_issuer: destIdentity!.issuer }
               : {}),
             to_asset_type: destIdentity!.type,
+            // The failed event still carries the source token amount (TR-1);
+            // only destination amounts/USD are absent on swap.failed (TR-30).
+            from_amount: new BigNumber(amount || 0).toNumber(),
             reason_code: reasonCode,
             failure_category: failureCategory,
             ...sourceUsd.usdProps,
@@ -456,6 +462,11 @@ function useSubmitTxData({
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });
       return payload;
     } catch (error) {
+      // Pre-submission failure (or a throw after the terminal event already
+      // emitted): no terminal event will consume the snapshot, so cancel the
+      // price fetch immediately rather than letting it outlive the flow
+      // (TR-11, TR-71). Idempotent and safe after resolve().
+      snapshotHandle?.cancel();
       dispatch({ type: "FETCH_DATA_ERROR", payload: error });
       return error;
     }

@@ -51,7 +51,31 @@ describe("startConfirmationPriceSnapshot", () => {
     });
   });
 
-  it("degrades to a null snapshot (not a throw) when the fetch rejects", async () => {
+  it("falls back to the cached display prices when the fetch rejects (TR-11)", async () => {
+    jest
+      .spyOn(ApiInternal, "getTokenPrices")
+      .mockRejectedValue(new Error("network down"));
+
+    const handle = startConfirmationPriceSnapshot({
+      canonicalIds: ["native"],
+      networkDetails: TESTNET_NETWORK_DETAILS,
+      useV2: true,
+      cachedDisplayPrices: { native: { currentPrice: "0.1" } },
+    });
+
+    await flushMicrotasks();
+
+    // A rejected fetch degrades exactly like a still-pending one: coverage
+    // takes priority over freshness, and the degradation is visible via
+    // `cached_display` rather than reported as unpriced legs.
+    expect(handle.resolve()).toEqual({
+      pricesById: { native: { currentPrice: "0.1" } },
+      freshness: "cached_display",
+      source: "token_prices_v2",
+    });
+  });
+
+  it("degrades to a null snapshot (not a throw) when the fetch rejects and no display price is cached", async () => {
     jest
       .spyOn(ApiInternal, "getTokenPrices")
       .mockRejectedValue(new Error("network down"));
@@ -67,9 +91,53 @@ describe("startConfirmationPriceSnapshot", () => {
 
     expect(handle.resolve()).toEqual({
       pricesById: null,
-      freshness: "confirmation_fetch",
+      freshness: "cached_display",
       source: "token_prices_v2",
     });
+  });
+
+  it("aborts a still-pending fetch at resolve() so the request cannot outlive the flow (TR-11)", () => {
+    let capturedSignal: AbortSignal | undefined;
+    jest
+      .spyOn(ApiInternal, "getTokenPrices")
+      .mockImplementation((_tokens, _network, _useV2, signal) => {
+        capturedSignal = signal;
+        return new Promise(() => {});
+      });
+
+    const handle = startConfirmationPriceSnapshot({
+      canonicalIds: ["native"],
+      networkDetails: TESTNET_NETWORK_DETAILS,
+      useV2: false,
+      cachedDisplayPrices: null,
+    });
+
+    expect(capturedSignal?.aborted).toBe(false);
+    handle.resolve();
+    expect(capturedSignal?.aborted).toBe(true);
+  });
+
+  it("cancel() aborts the fetch without producing a snapshot (pre-submission failure, TR-11)", () => {
+    let capturedSignal: AbortSignal | undefined;
+    jest
+      .spyOn(ApiInternal, "getTokenPrices")
+      .mockImplementation((_tokens, _network, _useV2, signal) => {
+        capturedSignal = signal;
+        return new Promise(() => {});
+      });
+
+    const handle = startConfirmationPriceSnapshot({
+      canonicalIds: ["native"],
+      networkDetails: TESTNET_NETWORK_DETAILS,
+      useV2: false,
+      cachedDisplayPrices: null,
+    });
+
+    handle.cancel();
+    expect(capturedSignal?.aborted).toBe(true);
+    // Idempotent, and safe to combine with a later resolve().
+    handle.cancel();
+    expect(handle.resolve().freshness).toBe("cached_display");
   });
 
   it("never consults a late-arriving result after resolve() already ran (TR-13)", async () => {

@@ -228,4 +228,19 @@ describe("getFailureCategory", () => {
     expect(getFailureCategory(networkError, "unknown")).toBe("transport");
     expect(getFailureCategory(undefined, "unknown")).toBe("transport");
   });
+
+  it("maps an answer that carries no verdict — 5xx/408/429/403 without result_codes — to transport, not unknown (TR-72)", () => {
+    const statusOnlyError = (status: number): ErrorMessage =>
+      ({
+        errorMessage: "failed",
+        response: { status, title: "problem" },
+      }) as unknown as ErrorMessage;
+    expect(getFailureCategory(statusOnlyError(503), "unknown")).toBe("transport");
+    expect(getFailureCategory(statusOnlyError(504), "unknown")).toBe("transport");
+    expect(getFailureCategory(statusOnlyError(408), "unknown")).toBe("transport");
+    expect(getFailureCategory(statusOnlyError(429), "unknown")).toBe("transport");
+    expect(getFailureCategory(statusOnlyError(403), "unknown")).toBe("transport");
+    // A definitive 4xx rejection without result codes stays unknown.
+    expect(getFailureCategory(statusOnlyError(400), "unknown")).toBe("unknown");
+  });
 });

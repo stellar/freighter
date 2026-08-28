@@ -238,12 +238,24 @@ const isDefiniteProtocolAnswer = (error: ErrorMessage | undefined): boolean => {
 };
 
 /**
+ * True when the HTTP status is one that never judges the transaction itself:
+ * the outcome is undetermined (5xx — the submission may still have been
+ * ingested; 408 — timed out) or the request was turned away before Horizon
+ * evaluated it (429 rate limit, 403 proxy rejection). Per §7.1 these are
+ * `transport`, not `unknown`: a body arrived, but no verdict did.
+ */
+const isNoVerdictHttpStatus = (status: number): boolean =>
+  status >= 500 || status === 408 || status === 429 || status === 403;
+
+/**
  * Maps a Horizon `reason_code` to a bounded `failure_category` (§7.1). Bucket
- * assignment prioritizes `transport` (submission never got a protocol answer)
- * over the reason-code table, since a `reason_code` of `"unknown"` is
- * ambiguous between "Horizon answered with something we don't recognize" and
- * "we never heard back at all" — the two are distinguished by whether a
- * protocol answer was actually present.
+ * assignment prioritizes `transport` (submission never got a verdict on the
+ * transaction) over the reason-code table, since a `reason_code` of
+ * `"unknown"` is ambiguous between "Horizon rejected it with something we
+ * don't recognize" and "we never got a verdict at all". `transport` covers
+ * both no-answer (network/fetch exception) and answered-without-a-verdict
+ * (5xx/408/429/403 with no `result_codes`); `unknown` is reserved for a
+ * definitive 4xx rejection that carried no result codes (TR-72).
  */
 export const getFailureCategory = (
   error: ErrorMessage | undefined,
@@ -253,6 +265,11 @@ export const getFailureCategory = (
     return "transport";
   }
   if (reasonCode === "unknown") {
+    const status = (error?.response as { status?: unknown } | undefined)
+      ?.status;
+    if (typeof status === "number" && isNoVerdictHttpStatus(status)) {
+      return "transport";
+    }
     return "unknown";
   }
   return REASON_CODE_TO_FAILURE_CATEGORY[reasonCode] ?? "protocol_other";
