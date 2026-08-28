@@ -89,5 +89,11 @@
 
   &__description {
     color: var(--sds-clr-gray-12);
+    white-space: pre-line;
+    word-break: break-word;
+
+    a {
+      color: var(--sds-clr-lilac-11);
+    }
   }
 }
