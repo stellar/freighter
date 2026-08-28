@@ -53,7 +53,7 @@ interface SubmitTxData {
 
 /**
  * The `amount_usd`-family properties are named identically on all four
- * terminal events (TR-2) so `SUM(amount_usd)` works across event names.
+ * terminal events so `SUM(amount_usd)` works across event names.
  * Everything else about a leg (its identity, its token amount) is named
  * differently per event (`asset_*`/`amount` for payment, `from_asset_*`/
  * `from_amount` for swap) and is added by each call site instead.
@@ -126,7 +126,7 @@ function useSubmitTxData({
 
   const fetchData = async ({ isSwap }: { isSwap: boolean }) => {
     dispatch({ type: "FETCH_DATA_START" });
-    // Declared outside the try so the catch can cancel it (TR-11).
+    // Declared outside the try so the catch can cancel it.
     let snapshotHandle: ConfirmationSnapshotHandle | null = null;
     try {
       const payload = {
@@ -135,9 +135,8 @@ function useSubmitTxData({
 
       // Everything the volume telemetry needs is snapshotted here, at
       // confirmation, before signing/submission — amounts and prices are
-      // frozen together and carried to whichever terminal event fires
-      // (TR-15). Skipped entirely for collectible sends (unpriced, TR out of
-      // scope).
+      // frozen together and carried to whichever terminal event fires.
+      // Skipped entirely for collectible sends (unpriced, out of scope).
       const accountBalances =
         allBalancesCache[networkDetails.network]?.[publicKey]?.balances ??
         null;
@@ -236,9 +235,9 @@ function useSubmitTxData({
           );
 
           // Settled destination amount, read from the transaction result —
-          // never the quote (TR-26). A user navigating away before the
-          // result is readable (TR-29's `not_observed`) has no extension
-          // analogue: Horizon's response already carries `result_xdr`
+          // never the quote. A user navigating away before the result is
+          // readable (`not_observed`) has no extension analogue: Horizon's
+          // response already carries `result_xdr`
           // synchronously, so a missing/unparseable read here is a genuine
           // derivation failure, reported as `error` rather than
           // `not_observed`.
@@ -408,13 +407,12 @@ function useSubmitTxData({
             snapshot.pricesById?.[sourceCanonical]?.currentPrice,
             snapshot,
           );
-          // TR-30: swap.failed carries no destination amount/USD at all —
-          // identity only. This is also the sole emit point for a quote
-          // expiring at submit (op_under_dest_min / op_too_few_offers):
+          // swap.failed carries no destination amount/USD at all — identity
+          // only. This is also the sole emit point for a quote expiring at
+          // submit (op_under_dest_min / op_too_few_offers):
           // failure_category: "slippage" falls out of the same mapping used
           // for every other rejection, so no special case is needed here or
-          // in the Swap view's separate swap.quote_expired recovery flow
-          // (TR-70).
+          // in the Swap view's separate swap.quote_expired recovery flow.
           emitMetric(METRIC_NAMES.swapFailed, {
             from_asset_code: getAssetFromCanonical(asset).code,
             to_asset_code: getAssetFromCanonical(destinationAsset).code,
@@ -426,8 +424,8 @@ function useSubmitTxData({
               ? { to_asset_issuer: destIdentity!.issuer }
               : {}),
             to_asset_type: destIdentity!.type,
-            // The failed event still carries the source token amount (TR-1);
-            // only destination amounts/USD are absent on swap.failed (TR-30).
+            // The failed event still carries the source token amount;
+            // only destination amounts/USD are absent on swap.failed.
             from_amount: new BigNumber(amount || 0).toNumber(),
             reason_code: reasonCode,
             failure_category: failureCategory,
@@ -464,8 +462,8 @@ function useSubmitTxData({
     } catch (error) {
       // Pre-submission failure (or a throw after the terminal event already
       // emitted): no terminal event will consume the snapshot, so cancel the
-      // price fetch immediately rather than letting it outlive the flow
-      // (TR-11, TR-71). Idempotent and safe after resolve().
+      // price fetch immediately rather than letting it outlive the flow.
+      // Idempotent and safe after resolve().
       snapshotHandle?.cancel();
       dispatch({ type: "FETCH_DATA_ERROR", payload: error });
       return error;

@@ -260,7 +260,7 @@ describe("useSubmitTxData terminal-event telemetry", () => {
       await result.current.fetchData({ isSwap: true });
     });
 
-    // TR-9: one request, both legs' canonical ids.
+    // One request, both legs' canonical ids.
     expect(getTokenPricesSpy).toHaveBeenCalledTimes(1);
     expect(getTokenPricesSpy.mock.calls[0][0]).toEqual([
       "native",
@@ -291,7 +291,7 @@ describe("useSubmitTxData terminal-event telemetry", () => {
     });
   });
 
-  it("swap.failed carries from_amount (TR-1), failure_category: slippage for a submit-time quote expiry (TR-70), and no destination amounts (TR-30)", async () => {
+  it("swap.failed carries from_amount, failure_category: slippage for a submit-time quote expiry, and no destination amounts", async () => {
     jest
       .spyOn(ApiInternal, "getTokenPrices")
       .mockResolvedValue({ native: { currentPrice: "0.5" } });
@@ -336,7 +336,7 @@ describe("useSubmitTxData terminal-event telemetry", () => {
     expect(props).not.toHaveProperty("to_amount_quoted");
   });
 
-  it("payment.failed classifies an answered-without-a-verdict 5xx as transport (TR-72)", async () => {
+  it("payment.failed classifies an answered-without-a-verdict 5xx as transport", async () => {
     jest
       .spyOn(ApiInternal, "getTokenPrices")
       .mockResolvedValue({ native: { currentPrice: "0.5" } });
@@ -358,7 +358,7 @@ describe("useSubmitTxData terminal-event telemetry", () => {
     );
   });
 
-  it("emits no_price (never 0) when the snapshot holds no price for the leg (TR-40, TR-41)", async () => {
+  it("emits no_price (never 0) when the snapshot holds no price for the leg", async () => {
     jest.spyOn(ApiInternal, "getTokenPrices").mockResolvedValue({});
     mockSubmitOk(buildResultXdr("880000000"));
 

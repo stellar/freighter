@@ -121,7 +121,7 @@ describe("classifyAssetIdentity", () => {
     });
   });
 
-  it("collapses XLM moved via the native SAC to native, not soroban (TR-52)", () => {
+  it("collapses XLM moved via the native SAC to native, not soroban", () => {
     const nativeSac = Asset.native().contractId(network);
     expect(classifyAssetIdentity("XLM", nativeSac, network)).toEqual({
       code: "XLM",
@@ -139,7 +139,7 @@ describe("classifyAssetIdentity", () => {
       },
     }) as unknown as BalanceMap;
 
-  it("collapses a classic asset moved via its SAC back to classic, by derivation against a held balance (TR-51/53)", () => {
+  it("collapses a classic asset moved via its SAC back to classic, by derivation against a held balance", () => {
     const issuer = Keypair.random().publicKey();
     const sacAddress = new Asset("USDC", issuer).contractId(network);
     const balances = makeBalanceMap("USDC", issuer);
@@ -149,7 +149,7 @@ describe("classifyAssetIdentity", () => {
     );
   });
 
-  it("reports a contract with no matching classic balance as Soroban-native (TR-52)", () => {
+  it("reports a contract with no matching classic balance as Soroban-native", () => {
     const unrelatedIssuer = Keypair.random().publicKey();
     const sacAddress = new Asset("SHRIMP", unrelatedIssuer).contractId(network);
 
@@ -188,7 +188,7 @@ describe("getFailureCategory", () => {
       },
     }) as unknown as ErrorMessage;
 
-  it("maps slippage-related op codes (also covers TR-70's quote-expired-at-submit)", () => {
+  it("maps slippage-related op codes (also covers quote-expired-at-submit)", () => {
     expect(getFailureCategory(horizonError(["op_under_dest_min"]), "op_under_dest_min")).toBe(
       "slippage",
     );
@@ -220,7 +220,7 @@ describe("getFailureCategory", () => {
     expect(getFailureCategory(horizonError([]), "unknown")).toBe("unknown");
   });
 
-  it("maps to transport when there was no protocol answer at all (TR-72)", () => {
+  it("maps to transport when there was no protocol answer at all", () => {
     const networkError = {
       errorMessage: "Failed to fetch",
       response: new TypeError("Failed to fetch"),
@@ -229,7 +229,7 @@ describe("getFailureCategory", () => {
     expect(getFailureCategory(undefined, "unknown")).toBe("transport");
   });
 
-  it("maps an answer that carries no verdict — 5xx/408/429/403 without result_codes — to transport, not unknown (TR-72)", () => {
+  it("maps an answer that carries no verdict — 5xx/408/429/403 without result_codes — to transport, not unknown", () => {
     const statusOnlyError = (status: number): ErrorMessage =>
       ({
         errorMessage: "failed",

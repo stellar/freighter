@@ -5,7 +5,7 @@ import { Transaction, FeeBumpTransaction, xdr } from "stellar-sdk";
  * Locates a `pathPaymentStrictSend` operation's position within a built
  * transaction. Operations and their per-operation results are always
  * positionally aligned, so this index is what selects the right entry out of
- * the decoded transaction result (TR-26).
+ * the decoded transaction result.
  */
 export const findPathPaymentStrictSendIndex = (
   transaction: Transaction | FeeBumpTransaction,
@@ -20,15 +20,15 @@ export const findPathPaymentStrictSendIndex = (
 
 /**
  * Reads the *settled* destination amount of a `pathPaymentStrictSend`
- * operation from a transaction's Horizon result XDR (TR-26) — never the
- * quote. Returns whole units (classic/native assets are always 7 decimals,
- * and swap legs are always native or classic, TR-50).
+ * operation from a transaction's Horizon result XDR — never the quote.
+ * Returns whole units (classic/native assets are always 7 decimals, and
+ * swap legs are always native or classic).
  *
  * Returns `null` for anything that isn't a clean success read: the
  * transaction/operation didn't succeed, the operation at `operationIndex`
  * wasn't a pathPaymentStrictSend, or the XDR couldn't be parsed. Callers
- * treat `null` as `to_amount_usd_status: "error"` (TR-41) — this never
- * throws out of a telemetry path.
+ * treat `null` as `to_amount_usd_status: "error"` — this never throws out
+ * of a telemetry path.
  */
 export const getSettledPathPaymentStrictSendAmount = (
   resultXdr: string,

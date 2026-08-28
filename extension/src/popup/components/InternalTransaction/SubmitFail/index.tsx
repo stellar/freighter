@@ -30,7 +30,7 @@ interface ErrorDetails {
 
 // NB: paymentFailed / swapFailed / collectibleSendFailed are NOT emitted here.
 // They used to be, from an effect keyed on `error`/`asset`/etc — but that
-// re-fires on every remount (double-counting attempted volume, TR-61).
+// re-fires on every remount (double-counting attempted volume).
 // useSubmitTxData's fetchData is the single, centralized emit site for every
 // terminal event (success and failure alike): it already has the
 // confirmation price snapshot and the transaction result in scope, and it

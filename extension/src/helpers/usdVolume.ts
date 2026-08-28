@@ -8,7 +8,7 @@ import { getAssetSacAddress } from "@shared/helpers/soroban/token";
 import { getCanonicalFromAsset } from "helpers/stellar";
 
 // ---------------------------------------------------------------------------
-// Rounding (TR-19 to TR-23)
+// Rounding
 // ---------------------------------------------------------------------------
 
 /**
@@ -21,26 +21,26 @@ export const roundHalfUp2dp = (value: BigNumber.Value): number =>
   new BigNumber(value).decimalPlaces(2, BigNumber.ROUND_HALF_UP).toNumber();
 
 // ---------------------------------------------------------------------------
-// Per-leg USD derivation (TR-16, TR-24, TR-40 to TR-45)
+// Per-leg USD derivation
 // ---------------------------------------------------------------------------
 
 export type LegUsdStatus = "ok" | "no_price" | "error";
 
 export interface LegUsdResult {
   status: LegUsdStatus;
-  /** Rounded to 2dp (TR-19). Present only when status === "ok". */
+  /** Rounded to 2dp. Present only when status === "ok". */
   value?: number;
-  /** Unrounded value, used for slippage math (TR-33) — never emitted directly. */
+  /** Unrounded value, used for slippage math — never emitted directly. */
   unrounded?: BigNumber;
-  /** Snapshot price per unit actually used (TR-24). */
+  /** Snapshot price per unit actually used. */
   rate?: number;
 }
 
 /**
  * Derives a leg's USD value from its token amount and the snapshot price for
- * its canonical id. A missing price is `no_price` (TR-41); a price that
- * produces a non-finite result is `error`. Never emits 0 for a missing price
- * (TR-40) — that status is `no_price`/`error`, not a value of 0.
+ * its canonical id. A missing price is `no_price`; a price that produces a
+ * non-finite result is `error`. Never emits 0 for a missing price — that
+ * status is `no_price`/`error`, not a value of 0.
  */
 export const deriveLegUsd = (
   tokenAmount: BigNumber.Value | undefined,
@@ -68,14 +68,14 @@ export const deriveLegUsd = (
 };
 
 // ---------------------------------------------------------------------------
-// Slippage (TR-33 to TR-39)
+// Slippage
 // ---------------------------------------------------------------------------
 
 /**
  * `(destUsd - sourceUsd) / sourceUsd * 100`, from unrounded leg values,
- * rounded only at the end (TR-33). Negative when the user received less USD
- * value than they gave up. `undefined` when the source value is zero (no
- * ratio) — callers additionally gate this on both legs pricing `ok` (TR-34).
+ * rounded only at the end. Negative when the user received less USD value
+ * than they gave up. `undefined` when the source value is zero (no ratio) —
+ * callers additionally gate this on both legs pricing `ok`.
  */
 export const computeUsdSlippagePct = (
   sourceUnrounded: BigNumber,
@@ -92,8 +92,8 @@ export const computeUsdSlippagePct = (
 };
 
 /**
- * `(settled - quoted) / quoted * 100`, token-denominated and price-independent
- * (TR-38). `undefined` when no quote amount was captured or it was zero.
+ * `(settled - quoted) / quoted * 100`, token-denominated and price-independent.
+ * `undefined` when no quote amount was captured or it was zero.
  */
 export const computeExecutionSlippagePct = (
   quotedAmount: BigNumber.Value | undefined,
@@ -115,7 +115,7 @@ export const computeExecutionSlippagePct = (
 };
 
 // ---------------------------------------------------------------------------
-// Asset identity + SAC collapse (TR-46 to TR-55)
+// Asset identity + SAC collapse
 // ---------------------------------------------------------------------------
 
 export type AssetKind = "native" | "classic" | "soroban";
@@ -129,11 +129,11 @@ export interface AssetIdentity {
 
 /**
  * Classifies an asset for telemetry, collapsing a classic asset moved via its
- * SAC back to its classic identity (§5.1). Classification is by derivation,
- * not heuristic: a `C…` address is only collapsed when it matches the SAC
- * address derived from a *known* classic asset with the same code — either
- * native XLM, or a classic balance the account itself holds (`balances`).
- * A `C…` address with no such match is genuinely Soroban-native (TR-52).
+ * SAC back to its classic identity. Classification is by derivation, not
+ * heuristic: a `C…` address is only collapsed when it matches the SAC address
+ * derived from a *known* classic asset with the same code — either native
+ * XLM, or a classic balance the account itself holds (`balances`). A `C…`
+ * address with no such match is genuinely Soroban-native.
  */
 export const classifyAssetIdentity = (
   code: string,
@@ -186,7 +186,7 @@ export const classifyAssetIdentity = (
 };
 
 // ---------------------------------------------------------------------------
-// Failure classification (§7.1, TR-68, TR-69, TR-72)
+// Failure classification
 // ---------------------------------------------------------------------------
 
 export type FailureCategory =
@@ -225,9 +225,9 @@ const REASON_CODE_TO_FAILURE_CATEGORY: Record<string, FailureCategory> = {
 /**
  * True when `error.response` looks like an actual protocol answer (a Horizon
  * problem+json body, carrying `extras`/`status`/`title`) rather than a raw
- * network/fetch exception. Distinguishes `transport` (TR-72 — no definitive
- * outcome at all) from every other category, which all require Horizon to
- * have actually answered.
+ * network/fetch exception. Distinguishes `transport` (no definitive outcome
+ * at all) from every other category, which all require Horizon to have
+ * actually answered.
  */
 const isDefiniteProtocolAnswer = (error: ErrorMessage | undefined): boolean => {
   const response = error?.response as unknown;
@@ -241,21 +241,21 @@ const isDefiniteProtocolAnswer = (error: ErrorMessage | undefined): boolean => {
  * True when the HTTP status is one that never judges the transaction itself:
  * the outcome is undetermined (5xx — the submission may still have been
  * ingested; 408 — timed out) or the request was turned away before Horizon
- * evaluated it (429 rate limit, 403 proxy rejection). Per §7.1 these are
- * `transport`, not `unknown`: a body arrived, but no verdict did.
+ * evaluated it (429 rate limit, 403 proxy rejection). These are `transport`,
+ * not `unknown`: a body arrived, but no verdict did.
  */
 const isNoVerdictHttpStatus = (status: number): boolean =>
   status >= 500 || status === 408 || status === 429 || status === 403;
 
 /**
- * Maps a Horizon `reason_code` to a bounded `failure_category` (§7.1). Bucket
+ * Maps a Horizon `reason_code` to a bounded `failure_category`. Bucket
  * assignment prioritizes `transport` (submission never got a verdict on the
  * transaction) over the reason-code table, since a `reason_code` of
  * `"unknown"` is ambiguous between "Horizon rejected it with something we
  * don't recognize" and "we never got a verdict at all". `transport` covers
  * both no-answer (network/fetch exception) and answered-without-a-verdict
  * (5xx/408/429/403 with no `result_codes`); `unknown` is reserved for a
- * definitive 4xx rejection that carried no result codes (TR-72).
+ * definitive 4xx rejection that carried no result codes.
  */
 export const getFailureCategory = (
   error: ErrorMessage | undefined,

@@ -15,35 +15,35 @@ export interface ConfirmationPriceSnapshot {
 export interface ConfirmationSnapshotHandle {
   /**
    * Freezes and returns the snapshot for a terminal event. Call exactly once,
-   * at terminal status (TR-11). If the fetch already succeeded, uses its
-   * result (`confirmation_fetch`); otherwise — still pending, rejected, or
-   * cancelled — the fetch is aborted and its result, even if it lands later,
-   * is never consulted again (TR-13), and this falls back to the prices
-   * already cached for the on-screen display estimate (`cached_display`).
+   * at terminal status. If the fetch already succeeded, uses its result
+   * (`confirmation_fetch`); otherwise — still pending, rejected, or cancelled
+   * — the fetch is aborted and its result, even if it lands later, is never
+   * consulted again, and this falls back to the prices already cached for the
+   * on-screen display estimate (`cached_display`).
    */
   resolve(): ConfirmationPriceSnapshot;
   /**
    * Aborts the fetch and discards its result without producing a snapshot.
    * For a confirmation attempt that ends before submission — no terminal
-   * event will consume the snapshot, so the request is cancelled immediately
-   * (TR-11). Idempotent, and safe after `resolve()`.
+   * event will consume the snapshot, so the request is cancelled immediately.
+   * Idempotent, and safe after `resolve()`.
    */
   cancel(): void;
 }
 
 /**
- * Issues ONE price fetch covering every leg's canonical id (TR-9), started at
- * confirmation and never blocking signing/submission (TR-10) — callers do
- * not await this. `cachedDisplayPrices` is the price map already held for the
- * on-screen fiat estimate, captured by the caller at this same moment: it
- * must reflect "the price already shown to the user for this transaction"
- * (TR-11), not whatever the cache holds later when `resolve()` is called.
+ * Issues ONE price fetch covering every leg's canonical id, started at
+ * confirmation and never blocking signing/submission — callers do not await
+ * this. `cachedDisplayPrices` is the price map already held for the on-screen
+ * fiat estimate, captured by the caller at this same moment: it must reflect
+ * "the price already shown to the user for this transaction", not whatever
+ * the cache holds later when `resolve()` is called.
  *
  * Cancellation is a real network abort on the v1 endpoint (a direct fetch).
  * The v2 endpoint runs in the background service worker across a message
  * boundary the AbortSignal cannot cross, so there cancellation is best-effort:
  * the request is skipped if already aborted, and a result that arrives after
- * abort is discarded (TR-13) even though the HTTP itself ran to completion.
+ * abort is discarded even though the HTTP itself ran to completion.
  */
 export const startConfirmationPriceSnapshot = ({
   canonicalIds,
@@ -63,10 +63,10 @@ export const startConfirmationPriceSnapshot = ({
   let fetchedPrices: ApiTokenPrices | null = null;
 
   // Never an unhandled rejection: a failed fetch degrades to cached_display
-  // exactly like one that's merely still pending at resolve() time (TR-11).
+  // exactly like one that's merely still pending at resolve() time.
   getTokenPrices(canonicalIds, networkDetails, useV2, controller.signal)
     .then((result) => {
-      // A result landing after abort is discarded, never consulted (TR-13).
+      // A result landing after abort is discarded, never consulted.
       if (!controller.signal.aborted) {
         fetchedPrices = result;
         succeeded = true;
@@ -75,7 +75,7 @@ export const startConfirmationPriceSnapshot = ({
     .catch(() => {
       // Rejected (network error, non-2xx, or aborted): fall back to the
       // display-cache price at resolve() time rather than reporting the legs
-      // unpriced — coverage takes priority over freshness (TR-11).
+      // unpriced — coverage takes priority over freshness.
       succeeded = false;
     });
 
@@ -89,7 +89,7 @@ export const startConfirmationPriceSnapshot = ({
         };
       }
       // Pending, rejected, or cancelled: abort so the request cannot outlive
-      // the flow that needed it (TR-11), and close on the display cache.
+      // the flow that needed it, and close on the display cache.
       controller.abort();
       return {
         pricesById: cachedDisplayPrices,

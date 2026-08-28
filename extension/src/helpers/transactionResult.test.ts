@@ -54,7 +54,7 @@ const buildPathPaymentSuccessResultXdr = (
 };
 
 describe("getSettledPathPaymentStrictSendAmount", () => {
-  it("reads the settled destination amount in whole units (TR-26)", () => {
+  it("reads the settled destination amount in whole units", () => {
     const resultXdr = buildPathPaymentSuccessResultXdr("50000000", 0, 1);
     const amount = getSettledPathPaymentStrictSendAmount(resultXdr, 0);
     expect(amount?.toString()).toBe("5");

@@ -31,7 +31,7 @@ describe("startConfirmationPriceSnapshot", () => {
     });
   });
 
-  it("falls back to the cached display prices when the fetch hasn't settled yet (cached_display, TR-11)", () => {
+  it("falls back to the cached display prices when the fetch hasn't settled yet (cached_display)", () => {
     // Never resolves within this test — resolve() is called before any await.
     jest
       .spyOn(ApiInternal, "getTokenPrices")
@@ -51,7 +51,7 @@ describe("startConfirmationPriceSnapshot", () => {
     });
   });
 
-  it("falls back to the cached display prices when the fetch rejects (TR-11)", async () => {
+  it("falls back to the cached display prices when the fetch rejects", async () => {
     jest
       .spyOn(ApiInternal, "getTokenPrices")
       .mockRejectedValue(new Error("network down"));
@@ -96,7 +96,7 @@ describe("startConfirmationPriceSnapshot", () => {
     });
   });
 
-  it("aborts a still-pending fetch at resolve() so the request cannot outlive the flow (TR-11)", () => {
+  it("aborts a still-pending fetch at resolve() so the request cannot outlive the flow", () => {
     let capturedSignal: AbortSignal | undefined;
     jest
       .spyOn(ApiInternal, "getTokenPrices")
@@ -117,7 +117,7 @@ describe("startConfirmationPriceSnapshot", () => {
     expect(capturedSignal?.aborted).toBe(true);
   });
 
-  it("cancel() aborts the fetch without producing a snapshot (pre-submission failure, TR-11)", () => {
+  it("cancel() aborts the fetch without producing a snapshot (pre-submission failure)", () => {
     let capturedSignal: AbortSignal | undefined;
     jest
       .spyOn(ApiInternal, "getTokenPrices")
@@ -140,7 +140,7 @@ describe("startConfirmationPriceSnapshot", () => {
     expect(handle.resolve().freshness).toBe("cached_display");
   });
 
-  it("never consults a late-arriving result after resolve() already ran (TR-13)", async () => {
+  it("never consults a late-arriving result after resolve() already ran", async () => {
     let resolveFetch!: (value: ApiTokenPrices) => void;
     jest.spyOn(ApiInternal, "getTokenPrices").mockImplementation(
       () =>
