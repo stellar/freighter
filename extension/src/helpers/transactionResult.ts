@@ -10,12 +10,11 @@ import { Transaction, FeeBumpTransaction, xdr } from "stellar-sdk";
 export const findPathPaymentStrictSendIndex = (
   transaction: Transaction | FeeBumpTransaction,
 ): number => {
-  if (!("operations" in transaction)) {
-    return -1;
-  }
-  return transaction.operations.findIndex(
-    (op) => op.type === "pathPaymentStrictSend",
-  );
+  const operations =
+    "innerTransaction" in transaction
+      ? transaction.innerTransaction.operations
+      : transaction.operations;
+  return operations.findIndex((op) => op.type === "pathPaymentStrictSend");
 };
 
 /**

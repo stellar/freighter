@@ -119,6 +119,7 @@ function useSubmitTxData({
       destinationAmount,
       isCollectible,
       collectibleData,
+      destinationTokenDetails,
     },
     transactionSimulation,
   } = submission;
@@ -138,8 +139,7 @@ function useSubmitTxData({
       // frozen together and carried to whichever terminal event fires.
       // Skipped entirely for collectible sends (unpriced, out of scope).
       const accountBalances =
-        allBalancesCache[networkDetails.network]?.[publicKey]?.balances ??
-        null;
+        allBalancesCache[networkDetails.network]?.[publicKey]?.balances ?? null;
       const sourceIdentity = !isCollectible
         ? classifyAssetIdentity(
             sourceAsset.code,
@@ -161,16 +161,34 @@ function useSubmitTxData({
           )
         : null;
 
-      const cachedDisplayPrices =
+      const destCanonical = destIdentity
+        ? getCanonicalFromAsset(destIdentity.code, destIdentity.issuer)
+        : null;
+      const baseDisplayPrices =
         allTokenPricesCache[networkDetails.networkPassphrase]?.[publicKey] ??
         null;
+      // A non-held destination token has no /token-prices entry, so the
+      // receive card's own USD estimate falls back to the stellar.expert spot
+      // price captured when the token was picked (mirrors
+      // getSwapDerivedData's mainnet-only fallback). Fold that same fallback
+      // in here, or a snapshot that degrades to cached_display would
+      // under-report a price the user actually saw on screen.
+      const destSpotPrice = destinationTokenDetails?.spotPrice;
+      const cachedDisplayPrices =
+        destCanonical &&
+        isMainnet(networkDetails) &&
+        destSpotPrice != null &&
+        !baseDisplayPrices?.[destCanonical]
+          ? {
+              ...baseDisplayPrices,
+              [destCanonical]: { currentPrice: String(destSpotPrice) },
+            }
+          : baseDisplayPrices;
       snapshotHandle = sourceIdentity
         ? startConfirmationPriceSnapshot({
             canonicalIds: [
               getCanonicalFromAsset(sourceIdentity.code, sourceIdentity.issuer),
-              ...(destIdentity
-                ? [getCanonicalFromAsset(destIdentity.code, destIdentity.issuer)]
-                : []),
+              ...(destCanonical ? [destCanonical] : []),
             ],
             networkDetails,
             useV2: useTokenPricesV2,
@@ -265,7 +283,10 @@ function useSubmitTxData({
             sourceUsd.leg.status === "ok" &&
             destUsd?.status === "ok" &&
             sourceUsd.leg.value !== 0
-              ? computeUsdSlippagePct(sourceUsd.leg.unrounded!, destUsd.unrounded!)
+              ? computeUsdSlippagePct(
+                  sourceUsd.leg.unrounded!,
+                  destUsd.unrounded!,
+                )
               : undefined;
 
           // Post-confirmation swap telemetry: the swap actually settled. A
@@ -283,14 +304,19 @@ function useSubmitTxData({
             to_asset_type: destIdentity!.type,
             from_amount: new BigNumber(amount || 0).toNumber(),
             ...(destinationAmount
-              ? { to_amount_quoted: new BigNumber(destinationAmount).toNumber() }
+              ? {
+                  to_amount_quoted: new BigNumber(destinationAmount).toNumber(),
+                }
               : {}),
             ...(settledDestAmount !== null
               ? { to_amount: settledDestAmount.toNumber() }
               : {}),
             to_amount_usd_status: destUsd?.status ?? "error",
             ...(destUsd?.status === "ok"
-              ? { to_amount_usd: destUsd.value, to_amount_usd_rate: destUsd.rate }
+              ? {
+                  to_amount_usd: destUsd.value,
+                  to_amount_usd_rate: destUsd.rate,
+                }
               : {}),
             ...(usdSlippagePct !== undefined
               ? { usd_slippage_pct: usdSlippagePct }
@@ -388,8 +414,15 @@ function useSubmitTxData({
         // point calls submitFreighterTransaction.
         const error = submitResp.payload;
         const resultCodes = getResultCodes(error);
+        // A swap prepending a changeTrust operation reports one code per
+        // operation (e.g. ["op_success", "op_under_dest_min"]) - the first
+        // code that actually explains the failure isn't always index 0.
         const reasonCode =
-          resultCodes.operations?.[0] || resultCodes.transaction || "unknown";
+          resultCodes.operations?.find(
+            (code) => code !== "op_success" && code !== "op_not_attempted",
+          ) ||
+          resultCodes.transaction ||
+          "unknown";
         const failureCategory = getFailureCategory(error, reasonCode);
 
         if (isCollectible) {
