@@ -48,7 +48,7 @@ const buildPathPaymentSuccessResultXdr = (
   const txResult = new xdr.TransactionResult({
     feeCharged: BigInt("100"),
     result: xdr.TransactionResultResult.txSuccess(results),
-    ext: new xdr.TransactionResultExt(0),
+    ext: xdr.TransactionResultExt.v0(),
   });
   return txResult.toXdr("base64");
 };
@@ -62,9 +62,9 @@ describe("getSettledPathPaymentStrictSendAmount", () => {
 
   it("selects the operation by index when preceded by other operations (e.g. a changeTrust)", () => {
     const resultXdr = buildPathPaymentSuccessResultXdr("12345000", 1, 2);
-    expect(getSettledPathPaymentStrictSendAmount(resultXdr, 1)?.toString()).toBe(
-      "1.2345",
-    );
+    expect(
+      getSettledPathPaymentStrictSendAmount(resultXdr, 1)?.toString(),
+    ).toBe("1.2345");
     // The other operation at index 0 is a plain payment success, not a path
     // payment — reading it as one fails cleanly rather than misreading data.
     expect(getSettledPathPaymentStrictSendAmount(resultXdr, 0)).toBeNull();
@@ -77,12 +77,11 @@ describe("getSettledPathPaymentStrictSendAmount", () => {
   });
 
   it("returns null (never throws) for garbage XDR", () => {
-    expect(getSettledPathPaymentStrictSendAmount("not-valid-xdr", 0)).toBeNull();
     expect(
-      getSettledPathPaymentStrictSendAmount(
-        undefined as unknown as string,
-        0,
-      ),
+      getSettledPathPaymentStrictSendAmount("not-valid-xdr", 0),
+    ).toBeNull();
+    expect(
+      getSettledPathPaymentStrictSendAmount(undefined as unknown as string, 0),
     ).toBeNull();
   });
 
@@ -95,7 +94,7 @@ describe("getSettledPathPaymentStrictSendAmount", () => {
     const txResult = new xdr.TransactionResult({
       feeCharged: BigInt("100"),
       result: xdr.TransactionResultResult.txFailed([failedResult]),
-      ext: new xdr.TransactionResultExt(0),
+      ext: xdr.TransactionResultExt.v0(),
     });
     expect(
       getSettledPathPaymentStrictSendAmount(txResult.toXdr("base64"), 0),

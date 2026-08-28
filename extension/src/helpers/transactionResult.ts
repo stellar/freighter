@@ -43,18 +43,32 @@ export const getSettledPathPaymentStrictSendAmount = (
 
     // A fee-bump transaction's per-operation results live one level down, in
     // the inner transaction's own result.
-    const opResults =
+    const innerTxResult =
       innerResult.type === "txFeeBumpInnerSuccess" ||
       innerResult.type === "txFeeBumpInnerFailed"
-        ? innerResult.innerResultPair.result.result.results
-        : innerResult.results;
+        ? innerResult.innerResultPair.result.result
+        : innerResult;
+
+    if (
+      innerTxResult.type !== "txSuccess" &&
+      innerTxResult.type !== "txFailed"
+    ) {
+      return null;
+    }
+    const opResults = innerTxResult.results;
 
     const opResult = opResults[operationIndex];
-    if (!opResult) {
+    if (!opResult || opResult.type !== "opInner") {
+      return null;
+    }
+    if (opResult.tr.type !== "pathPaymentStrictSend") {
       return null;
     }
 
     const pathResult = opResult.tr.pathPaymentStrictSendResult;
+    if (pathResult.type !== "pathPaymentStrictSendSuccess") {
+      return null;
+    }
     const success = pathResult.success;
     const stroops = success.last.amount;
 

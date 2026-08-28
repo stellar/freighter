@@ -88,7 +88,7 @@ const buildResultXdr = (stroops: string): string => {
   return new xdr.TransactionResult({
     feeCharged: BigInt("100"),
     result: xdr.TransactionResultResult.txSuccess([opResult]),
-    ext: new xdr.TransactionResultExt(0),
+    ext: xdr.TransactionResultExt.v0(),
   }).toXdr("base64");
 };
 
