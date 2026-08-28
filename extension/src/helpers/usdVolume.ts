@@ -134,6 +134,19 @@ export interface AssetIdentity {
  * derived from a *known* classic asset with the same code — either native
  * XLM, or a classic balance the account itself holds (`balances`). A `C…`
  * address with no such match is genuinely Soroban-native.
+ *
+ * This means correctness depends on the caller only ever passing a `C…`
+ * address for an asset the account actually holds (so its classic form is
+ * findable in `balances`), or on `balances` being fresh. A SAC-wrapped
+ * classic asset the account does NOT hold — passed as a raw `C…` issuer —
+ * will be misreported as `soroban` rather than `classic`, with no signal
+ * that anything went wrong. Today's callers satisfy this: the source leg is
+ * always drawn from a held-balance picker, and the swap destination leg is
+ * always pre-normalized to a classic `G…` issuer before it reaches this
+ * function (the destination picker's classic-only filter, and the
+ * hardcoded default). If a future caller can supply a `C…` destination for
+ * an asset not in `balances` — e.g. a raw `destination_asset` query param —
+ * this function will not catch the misclassification.
  */
 export const classifyAssetIdentity = (
   code: string,
