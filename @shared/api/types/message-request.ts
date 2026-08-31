@@ -428,6 +428,14 @@ export interface GetHiddenAssetsMessage extends BaseMessage {
   type: SERVICE_TYPES.GET_HIDDEN_ASSETS;
 }
 
+export interface GetUsdt0LaunchBannerDismissedMessage extends BaseMessage {
+  type: SERVICE_TYPES.GET_USDT0_LAUNCH_BANNER_DISMISSED;
+}
+
+export interface DismissUsdt0LaunchBannerMessage extends BaseMessage {
+  type: SERVICE_TYPES.DISMISS_USDT0_LAUNCH_BANNER;
+}
+
 export interface GetRecentProtocolsMessage extends BaseMessage {
   type: SERVICE_TYPES.GET_RECENT_PROTOCOLS;
 }
@@ -565,6 +573,8 @@ export type ServiceMessageRequest =
   | GetIsAccountMismatchMessage
   | ChangeAssetVisibilityMessage
   | GetHiddenAssetsMessage
+  | GetUsdt0LaunchBannerDismissedMessage
+  | DismissUsdt0LaunchBannerMessage
   | GetRecentProtocolsMessage
   | AddRecentProtocolMessage
   | ClearRecentProtocolsMessage

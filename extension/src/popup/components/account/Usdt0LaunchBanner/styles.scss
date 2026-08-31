@@ -1,0 +1,100 @@
+@use "../../../styles/utils.scss" as *;
+
+.Usdt0LaunchBanner {
+  position: relative;
+  background: #002d19;
+  border-radius: pxToRem(12px);
+  padding: pxToRem(16px);
+  // No horizontal offsets: this sits in `AccountHeader__account-info__details`,
+  // which spans the full content column, so the banner stretches to match the
+  // action tiles and tab strip.
+  margin-bottom: pxToRem(16px);
+  margin-top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: pxToRem(12px);
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+
+  &:hover {
+    opacity: 0.9;
+  }
+
+  &__content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    gap: pxToRem(12px);
+    max-width: 100%;
+    margin: 0 auto;
+  }
+
+  &__text {
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(2px);
+    flex: 1;
+  }
+
+  &__title {
+    color: var(--sds-clr-gray-12);
+    margin: 0;
+    font-size: pxToRem(14px);
+  }
+
+  &__subtitle {
+    color: var(--sds-clr-gray-11);
+    margin: 0;
+    font-size: pxToRem(12px);
+  }
+
+  &__logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+
+    img {
+      width: pxToRem(38px);
+      height: pxToRem(38px);
+      object-fit: cover;
+      border-radius: pxToRem(8px);
+      box-shadow: 0 pxToRem(4px) pxToRem(10px) 0 rgba(0, 0, 0, 0.25);
+    }
+  }
+
+  &__dismiss {
+    position: absolute;
+    top: pxToRem(8px);
+    right: pxToRem(8px);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: pxToRem(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--sds-clr-gray-12);
+    border-radius: pxToRem(16px);
+    z-index: 10;
+    pointer-events: auto;
+
+    &:hover {
+      opacity: 1;
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    svg {
+      width: pxToRem(16px);
+      height: pxToRem(16px);
+    }
+  }
+
+  &__sheet {
+    background: var(--sds-clr-gray-01);
+    height: 100%;
+    width: 100%;
+  }
+}

@@ -1,0 +1,188 @@
+@use "../../../../styles/utils.scss" as *;
+
+.Usdt0LaunchSheet {
+  position: relative;
+  height: 100%;
+  width: 100%;
+  background: var(--sds-clr-gray-01);
+  overflow: hidden;
+
+  &__background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: pxToRem(429px);
+    pointer-events: none;
+
+    &__gradient {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: pxToRem(377px);
+      background: linear-gradient(180deg, #002d19 0%, #161616 100%);
+    }
+
+    &__arcs {
+      position: absolute;
+      top: pxToRem(77px);
+      left: 50%;
+      transform: translateX(-50%);
+      width: pxToRem(395px);
+      height: pxToRem(180px);
+      max-width: none;
+    }
+
+    &__fade {
+      position: absolute;
+      top: pxToRem(73px);
+      left: 0;
+      right: 0;
+      height: pxToRem(356px);
+      background: linear-gradient(
+        180deg,
+        rgba(22, 23, 23, 0) 4.7%,
+        #151616 44.67%
+      );
+    }
+
+    &__overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: pxToRem(356px);
+      background: linear-gradient(
+        180deg,
+        rgba(22, 23, 23, 0) 4.7%,
+        rgba(21, 22, 22, 0.78) 44.67%
+      );
+    }
+
+    &__lockup {
+      position: absolute;
+      top: pxToRem(135px);
+      left: 50%;
+      transform: translateX(-50%);
+      width: pxToRem(165px);
+      height: auto;
+    }
+  }
+
+  &__content {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: pxToRem(24px) 0;
+    gap: pxToRem(32px);
+  }
+
+  &__header {
+    display: flex;
+    align-items: center;
+    padding: 0 pxToRem(24px);
+  }
+
+  &__close {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--sds-clr-gray-12);
+
+    svg {
+      width: pxToRem(24px);
+      height: pxToRem(24px);
+    }
+  }
+
+  &__body {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    gap: pxToRem(32px);
+    padding: 0 pxToRem(24px);
+  }
+
+  &__heading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: pxToRem(4px);
+    text-align: center;
+    width: 100%;
+  }
+
+  &__title {
+    font-size: pxToRem(24px);
+    line-height: pxToRem(32px);
+    font-weight: var(--sds-fw-medium);
+    letter-spacing: -0.04em;
+    color: var(--sds-clr-gray-12);
+  }
+
+  &__description {
+    color: var(--sds-clr-gray-11);
+    margin: 0;
+  }
+
+  &__features {
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(16px);
+    width: 100%;
+  }
+
+  &__feature {
+    display: flex;
+    align-items: center;
+    gap: pxToRem(12px);
+
+    &__icon {
+      width: pxToRem(32px);
+      height: pxToRem(32px);
+      flex-shrink: 0;
+      background: #222222;
+      border-radius: pxToRem(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--sds-clr-gray-11);
+
+      svg {
+        width: pxToRem(14px);
+        height: pxToRem(14px);
+      }
+    }
+
+    &__text {
+      display: flex;
+      flex-direction: column;
+      gap: pxToRem(2px);
+      flex: 1;
+      min-width: 0;
+    }
+
+    &__title {
+      color: var(--sds-clr-gray-12);
+      margin: 0;
+    }
+
+    &__description {
+      color: var(--sds-clr-gray-11);
+      margin: 0;
+    }
+  }
+
+  &__footer {
+    padding: 0 pxToRem(24px);
+  }
+}

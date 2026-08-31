@@ -2199,6 +2199,34 @@ export const getTokenIds = async ({
   return tokenIdList;
 };
 
+export const getUsdt0LaunchBannerDismissed = async (): Promise<boolean> => {
+  const { isDismissed, error } = await sendMessageToBackground({
+    activePublicKey: null,
+    type: SERVICE_TYPES.GET_USDT0_LAUNCH_BANNER_DISMISSED,
+  });
+
+  if (error) {
+    return false;
+  }
+
+  return !!isDismissed;
+};
+
+export const dismissUsdt0LaunchBanner = async (): Promise<{
+  isDismissed: boolean;
+}> => {
+  const { isDismissed, error } = await sendMessageToBackground({
+    activePublicKey: null,
+    type: SERVICE_TYPES.DISMISS_USDT0_LAUNCH_BANNER,
+  });
+
+  if (error) {
+    throw new Error(error);
+  }
+
+  return { isDismissed: !!isDismissed };
+};
+
 export const removeTokenId = async ({
   activePublicKey,
   contractId,
