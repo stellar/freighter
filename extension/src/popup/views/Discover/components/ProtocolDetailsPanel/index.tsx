@@ -3,6 +3,7 @@ import { Icon, Text } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
 import { ProtocolEntry } from "@shared/api/types";
+import { LinkifiedText } from "popup/basics/LinkifiedText";
 import { trackDiscoverProtocolDetailsViewed } from "popup/metrics/discover";
 
 import "./styles.scss";
@@ -101,7 +102,7 @@ export const ProtocolDetailsPanel = ({
         </div>
         <div className="ProtocolDetailsPanel__description">
           <Text as="div" size="sm" weight="regular">
-            {protocol.description}
+            <LinkifiedText text={protocol.description} />
           </Text>
         </div>
       </div>
