@@ -3,9 +3,13 @@ import { Asset, Networks } from "stellar-sdk";
 
 import { ErrorMessage } from "@shared/api/types";
 import { BalanceMap } from "@shared/api/types/backend-api";
+import { AssetType } from "@shared/api/types/account-balance";
 import { isContractId } from "@shared/api/helpers/soroban";
-import { getAssetSacAddress } from "@shared/helpers/soroban/token";
-import { getCanonicalFromAsset } from "helpers/stellar";
+import {
+  findAddressBalance,
+  isClassicBalance,
+  isSorobanBalance,
+} from "popup/helpers/balance";
 
 // ---------------------------------------------------------------------------
 // Rounding
@@ -167,28 +171,20 @@ export const classifyAssetIdentity = (
       return { code, type: "native" };
     }
 
-    const classicMatch = Object.values(balances ?? {}).find(
-      (balance): boolean => {
-        if (!balance.token || !("issuer" in balance.token)) {
-          return false;
-        }
-        const classicIssuer = balance.token.issuer.key;
-        if (isContractId(classicIssuer) || balance.token.code !== code) {
-          return false;
-        }
-        const canonical = getCanonicalFromAsset(
-          balance.token.code,
-          classicIssuer,
-        );
-        return (
-          getAssetSacAddress(canonical, networkPassphrase as Networks) ===
-          issuer
-        );
-      },
+    // Reuses the same SAC-collapse derivation the balance pickers use
+    // (`findAddressBalance`) instead of re-deriving it here, so a future fix
+    // to SAC matching only needs to land in one place. `isSorobanBalance` is
+    // still needed alongside `isClassicBalance`: a Soroban balance's token
+    // also carries `issuer`, so a direct contractId match on a genuine
+    // Soroban/SEP-41 holding would otherwise structurally pass as "classic".
+    const match = findAddressBalance(
+      Object.values(balances ?? {}) as unknown as AssetType[],
+      issuer,
+      networkPassphrase as Networks,
     );
 
-    if (classicMatch && "issuer" in classicMatch.token) {
-      return { code, issuer: classicMatch.token.issuer.key, type: "classic" };
+    if (match && isClassicBalance(match) && !isSorobanBalance(match)) {
+      return { code, issuer: match.token.issuer.key, type: "classic" };
     }
   } catch {
     // Derivation failed (e.g. an invalid code) — fall through and report the

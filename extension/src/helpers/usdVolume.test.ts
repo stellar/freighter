@@ -192,6 +192,30 @@ describe("classifyAssetIdentity", () => {
     ).toEqual({ code: "USDC", issuer, type: "classic" });
   });
 
+  it("does not collapse a genuine Soroban/SEP-41 balance whose token also carries an issuer", () => {
+    // A locally-injected non-classic token is stored with the contract ID in
+    // both `contractId` and `token.issuer.key` (see injectLocalTokenBalances)
+    // - it directly contractId-matches, but must not be misread as classic
+    // just because its token also has an "issuer" field.
+    const contractId = new Asset(
+      "SHRIMP",
+      Keypair.random().publicKey(),
+    ).contractId(network);
+    const balances = {
+      native: { token: { type: "native", code: "XLM" } },
+      [`SHRIMP:${contractId}`]: {
+        token: { code: "SHRIMP", issuer: { key: contractId } },
+        contractId,
+        total: new BigNumber(0),
+        available: new BigNumber(0),
+      },
+    } as unknown as BalanceMap;
+
+    expect(
+      classifyAssetIdentity("SHRIMP", contractId, network, balances),
+    ).toEqual({ code: "SHRIMP", issuer: contractId, type: "soroban" });
+  });
+
   it("does not collapse against a held balance with a different code", () => {
     const heldIssuer = Keypair.random().publicKey();
     const otherIssuer = Keypair.random().publicKey();

@@ -1,6 +1,8 @@
 import BigNumber from "bignumber.js";
 import { Transaction, FeeBumpTransaction, xdr } from "stellar-sdk";
 
+import { stroopToXlm } from "helpers/stellar";
+
 /**
  * Locates a `pathPaymentStrictSend` operation's position within a built
  * transaction. Operations and their per-operation results are always
@@ -71,7 +73,7 @@ export const getSettledPathPaymentStrictSendAmount = (
     const success = pathResult.success;
     const stroops = success.last.amount;
 
-    return new BigNumber(stroops.toString()).dividedBy(1e7);
+    return stroopToXlm(new BigNumber(stroops.toString()));
   } catch {
     return null;
   }
