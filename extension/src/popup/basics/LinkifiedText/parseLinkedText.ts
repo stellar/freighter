@@ -8,9 +8,12 @@ export interface LinkedTextSegment {
 // used elsewhere for protocol.websiteUrl.
 const HTTPS_PREFIX = "https://";
 
-// A markdown link opener (`[label](`) ending exactly where a `https://`
-// occurrence begins, e.g. matched against the text preceding the URL.
-const MARKDOWN_OPENER_PATTERN = /\[([^\]]+)]\($/;
+// Characters that always end a URL, whether or not it's inside a markdown
+// link: whitespace, angle brackets, square brackets (markdown syntax), and
+// quotes (prose delimiters - a quoted URL shouldn't swallow the closing
+// quote). Parentheses are handled separately in findUrlEnd, since a URL may
+// legitimately contain balanced ones (e.g. a Wikipedia article title).
+const URL_BOUNDARY_CHAR = /[\s<>[\]"']/;
 
 const TRAILING_PUNCTUATION = /[.,!?;:]+$/;
 
@@ -39,7 +42,7 @@ const findUrlEnd = (text: string, start: number): number => {
 
   while (index < text.length) {
     const char = text[index];
-    if (/[\s<>[\]]/.test(char)) {
+    if (URL_BOUNDARY_CHAR.test(char)) {
       break;
     }
     if (char === "(") {
@@ -56,15 +59,50 @@ const findUrlEnd = (text: string, start: number): number => {
   return index;
 };
 
-const matchMarkdownOpener = (
+interface MarkdownLink {
+  label: string;
+  url: string;
+  end: number;
+}
+
+// Tries to parse a complete markdown link `[label](https://...)` starting
+// at the `[` found at `openIndex`. Returns null if it isn't one - e.g. no
+// matching `]`, the label itself contains an unescaped `[` (meaning
+// `openIndex` isn't the real opening bracket - see the "nested brackets"
+// test case), or there's no `(https://...)` immediately after the `]`.
+// Parsing forward like this (rather than scanning backward from a `https://`
+// occurrence) means a label that itself contains a URL - e.g.
+// `[https://a.example](https://b.example)` - is handled as a single link
+// instead of the label's URL being matched as a stray bare link first.
+const tryParseMarkdownLink = (
   text: string,
-  httpsIndex: number,
-): { labelStart: number; label: string } | null => {
-  const match = text.slice(0, httpsIndex).match(MARKDOWN_OPENER_PATTERN);
-  if (!match) {
+  openIndex: number,
+): MarkdownLink | null => {
+  const closeBracket = text.indexOf("]", openIndex + 1);
+  if (closeBracket === -1) {
     return null;
   }
-  return { labelStart: httpsIndex - match[0].length, label: match[1] };
+
+  const label = text.slice(openIndex + 1, closeBracket);
+  if (label.includes("[")) {
+    return null;
+  }
+
+  if (text[closeBracket + 1] !== "(") {
+    return null;
+  }
+
+  const urlStart = closeBracket + 2;
+  if (!text.startsWith(HTTPS_PREFIX, urlStart)) {
+    return null;
+  }
+
+  const urlEnd = findUrlEnd(text, urlStart);
+  if (text[urlEnd] !== ")") {
+    return null;
+  }
+
+  return { label, url: text.slice(urlStart, urlEnd), end: urlEnd + 1 };
 };
 
 /**
@@ -79,29 +117,38 @@ const matchMarkdownOpener = (
  */
 export const parseLinkedText = (text: string): LinkedTextSegment[] => {
   const segments: LinkedTextSegment[] = [];
-  let cursor = 0;
+  let emitted = 0;
+  let searchFrom = 0;
 
-  while (cursor < text.length) {
-    const httpsIndex = text.indexOf(HTTPS_PREFIX, cursor);
-    if (httpsIndex === -1) {
-      segments.push({ text: text.slice(cursor) });
-      break;
-    }
+  while (searchFrom < text.length) {
+    const bracketIndex = text.indexOf("[", searchFrom);
+    const httpsIndex = text.indexOf(HTTPS_PREFIX, searchFrom);
 
-    const opener = matchMarkdownOpener(text, httpsIndex);
-    if (opener) {
-      const urlEnd = findUrlEnd(text, httpsIndex);
-      if (text[urlEnd] === ")") {
-        if (opener.labelStart > cursor) {
-          segments.push({ text: text.slice(cursor, opener.labelStart) });
+    if (
+      bracketIndex !== -1 &&
+      (httpsIndex === -1 || bracketIndex < httpsIndex)
+    ) {
+      const link = tryParseMarkdownLink(text, bracketIndex);
+      if (link) {
+        if (bracketIndex > emitted) {
+          segments.push({ text: text.slice(emitted, bracketIndex) });
         }
-        segments.push({
-          text: opener.label,
-          url: text.slice(httpsIndex, urlEnd),
-        });
-        cursor = urlEnd + 1;
+        segments.push({ text: link.label, url: link.url });
+        emitted = link.end;
+        searchFrom = link.end;
         continue;
       }
+
+      // Not a complete markdown link - this "[" is just literal text.
+      // Keep it pending and resume searching right after it (e.g. it may
+      // be a stray bracket preceding the real link, per the nested-bracket
+      // test case).
+      searchFrom = bracketIndex + 1;
+      continue;
+    }
+
+    if (httpsIndex === -1) {
+      break;
     }
 
     const urlEnd = findUrlEnd(text, httpsIndex);
@@ -109,16 +156,22 @@ export const parseLinkedText = (text: string): LinkedTextSegment[] => {
       text.slice(httpsIndex, urlEnd),
     );
 
-    if (httpsIndex > cursor) {
-      segments.push({ text: text.slice(cursor, httpsIndex) });
+    if (httpsIndex > emitted) {
+      segments.push({ text: text.slice(emitted, httpsIndex) });
     }
     segments.push({ text: url, url });
-    cursor = httpsIndex + url.length;
+    emitted = httpsIndex + url.length;
+    searchFrom = emitted;
 
     if (trailing) {
       segments.push({ text: trailing });
-      cursor += trailing.length;
+      emitted += trailing.length;
+      searchFrom = emitted;
     }
+  }
+
+  if (emitted < text.length) {
+    segments.push({ text: text.slice(emitted) });
   }
 
   return segments;
