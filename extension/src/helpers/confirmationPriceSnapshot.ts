@@ -2,8 +2,15 @@ import { getTokenPrices } from "@shared/api/internal";
 import { ApiTokenPrices } from "@shared/api/types";
 import { NetworkDetails } from "@shared/constants/stellar";
 
-export type PriceSource = "token_prices_v1" | "token_prices_v2";
-export type PriceFreshness = "confirmation_fetch" | "cached_display";
+export enum PriceSource {
+  TokenPricesV1 = "token_prices_v1",
+  TokenPricesV2 = "token_prices_v2",
+}
+
+export enum PriceFreshness {
+  ConfirmationFetch = "confirmation_fetch",
+  CachedDisplay = "cached_display",
+}
 
 export interface ConfirmationPriceSnapshot {
   /** Prices by canonical id. `null` when no snapshot could be produced. */
@@ -56,7 +63,9 @@ export const startConfirmationPriceSnapshot = ({
   useV2: boolean;
   cachedDisplayPrices: ApiTokenPrices | null;
 }): ConfirmationSnapshotHandle => {
-  const source: PriceSource = useV2 ? "token_prices_v2" : "token_prices_v1";
+  const source: PriceSource = useV2
+    ? PriceSource.TokenPricesV2
+    : PriceSource.TokenPricesV1;
 
   const controller = new AbortController();
   let succeeded = false;
@@ -81,19 +90,27 @@ export const startConfirmationPriceSnapshot = ({
 
   return {
     resolve: () => {
-      if (succeeded) {
+      // A 200 can still omit a requested id (e.g. a non-held destination
+      // token /token-prices has no entry for). A partial result isn't
+      // trustworthy enough to use even for the ids it does cover, so it's
+      // treated the same as no result at all: fall back to the display
+      // cache wholesale rather than merging.
+      const isComplete =
+        succeeded && canonicalIds.every((id) => fetchedPrices?.[id] != null);
+      if (isComplete) {
         return {
           pricesById: fetchedPrices,
-          freshness: "confirmation_fetch",
+          freshness: PriceFreshness.ConfirmationFetch,
           source,
         };
       }
-      // Pending, rejected, or cancelled: abort so the request cannot outlive
-      // the flow that needed it, and close on the display cache.
+      // Pending, rejected, incomplete, or cancelled: abort so the request
+      // cannot outlive the flow that needed it, and close on the display
+      // cache.
       controller.abort();
       return {
         pricesById: cachedDisplayPrices,
-        freshness: "cached_display",
+        freshness: PriceFreshness.CachedDisplay,
         source,
       };
     },

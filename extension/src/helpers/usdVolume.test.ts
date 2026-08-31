@@ -4,11 +4,14 @@ import { Asset, Keypair, Networks } from "stellar-sdk";
 import { BalanceMap } from "@shared/api/types/backend-api";
 import { ErrorMessage } from "@shared/api/types";
 import {
+  AssetKind,
   classifyAssetIdentity,
   computeExecutionSlippagePct,
   computeUsdSlippagePct,
   deriveLegUsd,
+  FailureCategory,
   getFailureCategory,
+  LegUsdStatus,
   roundHalfUp2dp,
 } from "./usdVolume";
 
@@ -31,35 +34,41 @@ describe("roundHalfUp2dp", () => {
 
 describe("deriveLegUsd", () => {
   it("is no_price when no price is held for the asset", () => {
-    expect(deriveLegUsd("10", undefined)).toEqual({ status: "no_price" });
+    expect(deriveLegUsd("10", undefined)).toEqual({
+      status: LegUsdStatus.NoPrice,
+    });
     expect(deriveLegUsd("10", null as unknown as undefined)).toEqual({
-      status: "no_price",
+      status: LegUsdStatus.NoPrice,
     });
   });
 
   it("is ok and rounds half-up when a price is held", () => {
     const result = deriveLegUsd("10.5", "1.999");
-    expect(result.status).toBe("ok");
+    if (result.status !== LegUsdStatus.Ok) {
+      throw new Error(`expected ok, got ${result.status}`);
+    }
     expect(result.value).toBe(20.99); // 10.5 * 1.999 = 20.9895 -> half-up -> 20.99
     expect(result.rate).toBe(1.999);
-    expect(result.unrounded?.toString()).toBe("20.9895");
+    expect(result.unrounded.toString()).toBe("20.9895");
   });
 
   it("never emits 0 for a missing price — that's no_price, not a real zero", () => {
     const result = deriveLegUsd("0", undefined);
-    expect(result.status).toBe("no_price");
-    expect(result.value).toBeUndefined();
+    expect(result.status).toBe(LegUsdStatus.NoPrice);
+    expect("value" in result).toBe(false);
   });
 
   it("emits a real 0.00 for a genuine zero-value transfer when priced", () => {
     const result = deriveLegUsd("0", "1.5");
-    expect(result.status).toBe("ok");
+    if (result.status !== LegUsdStatus.Ok) {
+      throw new Error(`expected ok, got ${result.status}`);
+    }
     expect(result.value).toBe(0);
   });
 
   it("is error when the derivation produces a non-finite result", () => {
-    expect(deriveLegUsd("not-a-number", "1.5").status).toBe("error");
-    expect(deriveLegUsd("10", "not-a-number").status).toBe("error");
+    expect(deriveLegUsd("not-a-number", "1.5").status).toBe(LegUsdStatus.Error);
+    expect(deriveLegUsd("10", "not-a-number").status).toBe(LegUsdStatus.Error);
   });
 });
 
@@ -108,7 +117,7 @@ describe("classifyAssetIdentity", () => {
   it("classifies native XLM with no issuer", () => {
     expect(classifyAssetIdentity("XLM", undefined, network)).toEqual({
       code: "XLM",
-      type: "native",
+      type: AssetKind.Native,
     });
   });
 
@@ -117,7 +126,7 @@ describe("classifyAssetIdentity", () => {
     expect(classifyAssetIdentity("USDC", issuer, network)).toEqual({
       code: "USDC",
       issuer,
-      type: "classic",
+      type: AssetKind.Classic,
     });
   });
 
@@ -125,7 +134,7 @@ describe("classifyAssetIdentity", () => {
     const nativeSac = Asset.native().contractId(network);
     expect(classifyAssetIdentity("XLM", nativeSac, network)).toEqual({
       code: "XLM",
-      type: "native",
+      type: AssetKind.Native,
     });
   });
 
@@ -146,7 +155,7 @@ describe("classifyAssetIdentity", () => {
 
     expect(
       classifyAssetIdentity("USDC", sacAddress, network, balances),
-    ).toEqual({ code: "USDC", issuer, type: "classic" });
+    ).toEqual({ code: "USDC", issuer, type: AssetKind.Classic });
   });
 
   it("reports a contract with no matching classic balance as Soroban-native", () => {
@@ -159,7 +168,7 @@ describe("classifyAssetIdentity", () => {
     ).toEqual({
       code: "SHRIMP",
       issuer: sacAddress,
-      type: "soroban",
+      type: AssetKind.Soroban,
     });
   });
 
@@ -189,7 +198,7 @@ describe("classifyAssetIdentity", () => {
 
     expect(
       classifyAssetIdentity("USDC", sacAddress, network, balances),
-    ).toEqual({ code: "USDC", issuer, type: "classic" });
+    ).toEqual({ code: "USDC", issuer, type: AssetKind.Classic });
   });
 
   it("does not collapse a genuine Soroban/SEP-41 balance whose token also carries an issuer", () => {
@@ -213,7 +222,11 @@ describe("classifyAssetIdentity", () => {
 
     expect(
       classifyAssetIdentity("SHRIMP", contractId, network, balances),
-    ).toEqual({ code: "SHRIMP", issuer: contractId, type: "soroban" });
+    ).toEqual({
+      code: "SHRIMP",
+      issuer: contractId,
+      type: AssetKind.Soroban,
+    });
   });
 
   it("does not collapse against a held balance with a different code", () => {
@@ -224,7 +237,7 @@ describe("classifyAssetIdentity", () => {
 
     expect(
       classifyAssetIdentity("EUROC", sacAddress, network, balances),
-    ).toEqual({ code: "EUROC", issuer: sacAddress, type: "soroban" });
+    ).toEqual({ code: "EUROC", issuer: sacAddress, type: AssetKind.Soroban });
   });
 });
 
@@ -247,59 +260,61 @@ describe("getFailureCategory", () => {
         horizonError(["op_under_dest_min"]),
         "op_under_dest_min",
       ),
-    ).toBe("slippage");
+    ).toBe(FailureCategory.Slippage);
     expect(
       getFailureCategory(
         horizonError(["op_too_few_offers"]),
         "op_too_few_offers",
       ),
-    ).toBe("slippage");
+    ).toBe(FailureCategory.Slippage);
   });
 
   it("maps balance, trustline, destination, sequence, auth, and fee codes", () => {
     expect(
       getFailureCategory(horizonError(["op_underfunded"]), "op_underfunded"),
-    ).toBe("balance");
+    ).toBe(FailureCategory.Balance);
     expect(
       getFailureCategory(horizonError(["op_no_trust"]), "op_no_trust"),
-    ).toBe("trustline");
+    ).toBe(FailureCategory.Trustline);
     expect(
       getFailureCategory(horizonError(["op_src_no_trust"]), "op_src_no_trust"),
-    ).toBe("trustline");
+    ).toBe(FailureCategory.Trustline);
     expect(
       getFailureCategory(
         horizonError(["op_src_not_authorized"]),
         "op_src_not_authorized",
       ),
-    ).toBe("trustline");
+    ).toBe(FailureCategory.Trustline);
     expect(
       getFailureCategory(
         horizonError(["op_no_destination"]),
         "op_no_destination",
       ),
-    ).toBe("destination");
+    ).toBe(FailureCategory.Destination);
     expect(
       getFailureCategory(horizonError([], "tx_bad_seq"), "tx_bad_seq"),
-    ).toBe("sequence");
+    ).toBe(FailureCategory.Sequence);
     expect(
       getFailureCategory(horizonError([], "tx_bad_auth"), "tx_bad_auth"),
-    ).toBe("auth");
+    ).toBe(FailureCategory.Auth);
     expect(
       getFailureCategory(
         horizonError([], "tx_insufficient_fee"),
         "tx_insufficient_fee",
       ),
-    ).toBe("fee");
+    ).toBe(FailureCategory.Fee);
   });
 
   it("maps an unmapped Horizon code to protocol_other", () => {
     expect(getFailureCategory(horizonError([], "tx_failed"), "tx_failed")).toBe(
-      "protocol_other",
+      FailureCategory.ProtocolOther,
     );
   });
 
   it("maps the 'unknown' sentinel to unknown when Horizon did answer", () => {
-    expect(getFailureCategory(horizonError([]), "unknown")).toBe("unknown");
+    expect(getFailureCategory(horizonError([]), "unknown")).toBe(
+      FailureCategory.Unknown,
+    );
   });
 
   it("maps to transport when there was no protocol answer at all", () => {
@@ -307,8 +322,12 @@ describe("getFailureCategory", () => {
       errorMessage: "Failed to fetch",
       response: new TypeError("Failed to fetch"),
     } as unknown as ErrorMessage;
-    expect(getFailureCategory(networkError, "unknown")).toBe("transport");
-    expect(getFailureCategory(undefined, "unknown")).toBe("transport");
+    expect(getFailureCategory(networkError, "unknown")).toBe(
+      FailureCategory.Transport,
+    );
+    expect(getFailureCategory(undefined, "unknown")).toBe(
+      FailureCategory.Transport,
+    );
   });
 
   it("maps an answer that carries no verdict — 5xx/408/429/403 without result_codes — to transport, not unknown", () => {
@@ -318,21 +337,23 @@ describe("getFailureCategory", () => {
         response: { status, title: "problem" },
       }) as unknown as ErrorMessage;
     expect(getFailureCategory(statusOnlyError(503), "unknown")).toBe(
-      "transport",
+      FailureCategory.Transport,
     );
     expect(getFailureCategory(statusOnlyError(504), "unknown")).toBe(
-      "transport",
+      FailureCategory.Transport,
     );
     expect(getFailureCategory(statusOnlyError(408), "unknown")).toBe(
-      "transport",
+      FailureCategory.Transport,
     );
     expect(getFailureCategory(statusOnlyError(429), "unknown")).toBe(
-      "transport",
+      FailureCategory.Transport,
     );
     expect(getFailureCategory(statusOnlyError(403), "unknown")).toBe(
-      "transport",
+      FailureCategory.Transport,
     );
     // A definitive 4xx rejection without result codes stays unknown.
-    expect(getFailureCategory(statusOnlyError(400), "unknown")).toBe("unknown");
+    expect(getFailureCategory(statusOnlyError(400), "unknown")).toBe(
+      FailureCategory.Unknown,
+    );
   });
 });

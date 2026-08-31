@@ -1,7 +1,11 @@
 import * as ApiInternal from "@shared/api/internal";
 import { ApiTokenPrices } from "@shared/api/types";
 import { TESTNET_NETWORK_DETAILS } from "@shared/constants/stellar";
-import { startConfirmationPriceSnapshot } from "./confirmationPriceSnapshot";
+import {
+  PriceFreshness,
+  PriceSource,
+  startConfirmationPriceSnapshot,
+} from "./confirmationPriceSnapshot";
 
 const flushMicrotasks = () => new Promise((resolve) => setTimeout(resolve, 0));
 
@@ -26,8 +30,32 @@ describe("startConfirmationPriceSnapshot", () => {
 
     expect(handle.resolve()).toEqual({
       pricesById: { native: { currentPrice: "0.5" } },
-      freshness: "confirmation_fetch",
-      source: "token_prices_v2",
+      freshness: PriceFreshness.ConfirmationFetch,
+      source: PriceSource.TokenPricesV2,
+    });
+  });
+
+  it("falls back wholesale to the display cache when the fetch only covers some of the requested ids", async () => {
+    // A 200 that omits the swap destination (e.g. a non-held token
+    // /token-prices has no entry for) - a partial result isn't trusted even
+    // for the ids it does cover.
+    jest
+      .spyOn(ApiInternal, "getTokenPrices")
+      .mockResolvedValue({ native: { currentPrice: "0.5" } });
+
+    const handle = startConfirmationPriceSnapshot({
+      canonicalIds: ["native", "USDC:ISSUER"],
+      networkDetails: TESTNET_NETWORK_DETAILS,
+      useV2: true,
+      cachedDisplayPrices: { native: { currentPrice: "0.1" } },
+    });
+
+    await flushMicrotasks();
+
+    expect(handle.resolve()).toEqual({
+      pricesById: { native: { currentPrice: "0.1" } },
+      freshness: PriceFreshness.CachedDisplay,
+      source: PriceSource.TokenPricesV2,
     });
   });
 
@@ -46,8 +74,8 @@ describe("startConfirmationPriceSnapshot", () => {
 
     expect(handle.resolve()).toEqual({
       pricesById: { native: { currentPrice: "0.1" } },
-      freshness: "cached_display",
-      source: "token_prices_v1",
+      freshness: PriceFreshness.CachedDisplay,
+      source: PriceSource.TokenPricesV1,
     });
   });
 
@@ -70,8 +98,8 @@ describe("startConfirmationPriceSnapshot", () => {
     // `cached_display` rather than reported as unpriced legs.
     expect(handle.resolve()).toEqual({
       pricesById: { native: { currentPrice: "0.1" } },
-      freshness: "cached_display",
-      source: "token_prices_v2",
+      freshness: PriceFreshness.CachedDisplay,
+      source: PriceSource.TokenPricesV2,
     });
   });
 
@@ -91,8 +119,8 @@ describe("startConfirmationPriceSnapshot", () => {
 
     expect(handle.resolve()).toEqual({
       pricesById: null,
-      freshness: "cached_display",
-      source: "token_prices_v2",
+      freshness: PriceFreshness.CachedDisplay,
+      source: PriceSource.TokenPricesV2,
     });
   });
 
@@ -137,7 +165,7 @@ describe("startConfirmationPriceSnapshot", () => {
     expect(capturedSignal?.aborted).toBe(true);
     // Idempotent, and safe to combine with a later resolve().
     handle.cancel();
-    expect(handle.resolve().freshness).toBe("cached_display");
+    expect(handle.resolve().freshness).toBe(PriceFreshness.CachedDisplay);
   });
 
   it("never consults a late-arriving result after resolve() already ran", async () => {
@@ -158,7 +186,7 @@ describe("startConfirmationPriceSnapshot", () => {
 
     // Not settled yet — this is the snapshot the terminal event uses.
     const frozen = handle.resolve();
-    expect(frozen.freshness).toBe("cached_display");
+    expect(frozen.freshness).toBe(PriceFreshness.CachedDisplay);
 
     // The fetch resolves only after the snapshot was already frozen.
     resolveFetch({ native: { currentPrice: "999" } });
@@ -168,8 +196,8 @@ describe("startConfirmationPriceSnapshot", () => {
     // *first* frozen snapshot (already returned above) never changes.
     expect(frozen).toEqual({
       pricesById: { native: { currentPrice: "0.2" } },
-      freshness: "cached_display",
-      source: "token_prices_v2",
+      freshness: PriceFreshness.CachedDisplay,
+      source: PriceSource.TokenPricesV2,
     });
   });
 });

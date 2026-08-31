@@ -34,6 +34,7 @@ import {
   deriveLegUsd,
   getFailureCategory,
   LegUsdResult,
+  LegUsdStatus,
 } from "helpers/usdVolume";
 import {
   ConfirmationPriceSnapshot,
@@ -68,7 +69,7 @@ const buildSourceLegUsdProps = (
     leg,
     usdProps: {
       amount_usd_status: leg.status,
-      ...(leg.status === "ok"
+      ...(leg.status === LegUsdStatus.Ok
         ? {
             amount_usd: leg.value,
             amount_usd_rate: leg.rate,
@@ -182,7 +183,10 @@ function useSubmitTxData({
           })
         : null;
 
-      let signedXDR = transactionSimulation.preparedTransaction!;
+      if (!transactionSimulation.preparedTransaction) {
+        throw new Error("Cannot submit: no prepared transaction");
+      }
+      let signedXDR = transactionSimulation.preparedTransaction;
       if (!isHardwareWallet) {
         const res = await reduxDispatch(
           signFreighterTransaction({
@@ -213,6 +217,15 @@ function useSubmitTxData({
         // Internal broadcasts are already captured by the payment/swap/
         // collectible_send `.completed` events below.
         if (isSwap) {
+          // A swap is never a collectible send, so these were computed above:
+          // sourceIdentity/destIdentity require !isCollectible, snapshotHandle
+          // requires sourceIdentity.
+          if (!sourceIdentity || !destIdentity || !snapshotHandle) {
+            throw new Error(
+              "Missing identity/snapshot data for swap telemetry",
+            );
+          }
+
           // Parsed lazily, here, rather than hoisted above: `signedXDR` is a
           // placeholder in some call sites/tests when a swap never actually
           // reaches submission, and this parse is only ever needed for a
@@ -223,14 +236,14 @@ function useSubmitTxData({
             networkDetails.networkPassphrase,
           );
 
-          const snapshot = snapshotHandle!.resolve();
+          const snapshot = snapshotHandle.resolve();
           const sourceCanonical = getCanonicalFromAsset(
-            sourceIdentity!.code,
-            sourceIdentity!.issuer,
+            sourceIdentity.code,
+            sourceIdentity.issuer,
           );
           const destCanonical = getCanonicalFromAsset(
-            destIdentity!.code,
-            destIdentity!.issuer,
+            destIdentity.code,
+            destIdentity.issuer,
           );
           const sourceUsd = buildSourceLegUsdProps(
             amount,
@@ -266,12 +279,12 @@ function useSubmitTxData({
                 )
               : undefined;
           const usdSlippagePct =
-            sourceUsd.leg.status === "ok" &&
-            destUsd?.status === "ok" &&
+            sourceUsd.leg.status === LegUsdStatus.Ok &&
+            destUsd?.status === LegUsdStatus.Ok &&
             sourceUsd.leg.value !== 0
               ? computeUsdSlippagePct(
-                  sourceUsd.leg.unrounded!,
-                  destUsd.unrounded!,
+                  sourceUsd.leg.unrounded,
+                  destUsd.unrounded,
                 )
               : undefined;
 
@@ -280,14 +293,14 @@ function useSubmitTxData({
           emitMetric(METRIC_NAMES.swapCompleted, {
             from_asset_code: sourceAsset.code,
             to_asset_code: getAssetFromCanonical(destinationAsset).code,
-            ...(sourceIdentity!.issuer
-              ? { from_asset_issuer: sourceIdentity!.issuer }
+            ...(sourceIdentity.issuer
+              ? { from_asset_issuer: sourceIdentity.issuer }
               : {}),
-            from_asset_type: sourceIdentity!.type,
-            ...(destIdentity!.issuer
-              ? { to_asset_issuer: destIdentity!.issuer }
+            from_asset_type: sourceIdentity.type,
+            ...(destIdentity.issuer
+              ? { to_asset_issuer: destIdentity.issuer }
               : {}),
-            to_asset_type: destIdentity!.type,
+            to_asset_type: destIdentity.type,
             from_amount: new BigNumber(amount || 0).toNumber(),
             ...(destinationAmount
               ? {
@@ -297,8 +310,8 @@ function useSubmitTxData({
             ...(settledDestAmount !== null
               ? { to_amount: settledDestAmount.toNumber() }
               : {}),
-            to_amount_usd_status: destUsd?.status ?? "error",
-            ...(destUsd?.status === "ok"
+            to_amount_usd_status: destUsd?.status ?? LegUsdStatus.Error,
+            ...(destUsd?.status === LegUsdStatus.Ok
               ? {
                   to_amount_usd: destUsd.value,
                   to_amount_usd_rate: destUsd.rate,
@@ -345,10 +358,18 @@ function useSubmitTxData({
               token_id: collectibleData.tokenId,
             });
           } else {
-            const snapshot = snapshotHandle!.resolve();
+            // A non-collectible, non-swap send always has these computed
+            // above (sourceIdentity/snapshotHandle require !isCollectible).
+            if (!sourceIdentity || !snapshotHandle) {
+              throw new Error(
+                "Missing identity/snapshot data for payment telemetry",
+              );
+            }
+
+            const snapshot = snapshotHandle.resolve();
             const sourceCanonical = getCanonicalFromAsset(
-              sourceIdentity!.code,
-              sourceIdentity!.issuer,
+              sourceIdentity.code,
+              sourceIdentity.issuer,
             );
             const sourceUsd = buildSourceLegUsdProps(
               amount,
@@ -359,10 +380,10 @@ function useSubmitTxData({
             emitMetric(METRIC_NAMES.paymentCompleted, {
               payment_type: "payment",
               asset_code: sourceAsset.code,
-              ...(sourceIdentity!.issuer
-                ? { asset_issuer: sourceIdentity!.issuer }
+              ...(sourceIdentity.issuer
+                ? { asset_issuer: sourceIdentity.issuer }
                 : {}),
-              asset_type: sourceIdentity!.type,
+              asset_type: sourceIdentity.type,
               amount: new BigNumber(amount || 0).toNumber(),
               ...sourceUsd.usdProps,
             });
@@ -416,10 +437,16 @@ function useSubmitTxData({
             reason_code: reasonCode,
           });
         } else if (isSwap) {
-          const snapshot = snapshotHandle!.resolve();
+          if (!sourceIdentity || !destIdentity || !snapshotHandle) {
+            throw new Error(
+              "Missing identity/snapshot data for swap telemetry",
+            );
+          }
+
+          const snapshot = snapshotHandle.resolve();
           const sourceCanonical = getCanonicalFromAsset(
-            sourceIdentity!.code,
-            sourceIdentity!.issuer,
+            sourceIdentity.code,
+            sourceIdentity.issuer,
           );
           const sourceUsd = buildSourceLegUsdProps(
             amount,
@@ -435,14 +462,14 @@ function useSubmitTxData({
           emitMetric(METRIC_NAMES.swapFailed, {
             from_asset_code: getAssetFromCanonical(asset).code,
             to_asset_code: getAssetFromCanonical(destinationAsset).code,
-            ...(sourceIdentity!.issuer
-              ? { from_asset_issuer: sourceIdentity!.issuer }
+            ...(sourceIdentity.issuer
+              ? { from_asset_issuer: sourceIdentity.issuer }
               : {}),
-            from_asset_type: sourceIdentity!.type,
-            ...(destIdentity!.issuer
-              ? { to_asset_issuer: destIdentity!.issuer }
+            from_asset_type: sourceIdentity.type,
+            ...(destIdentity.issuer
+              ? { to_asset_issuer: destIdentity.issuer }
               : {}),
-            to_asset_type: destIdentity!.type,
+            to_asset_type: destIdentity.type,
             // The failed event still carries the source token amount;
             // only destination amounts/USD are absent on swap.failed.
             from_amount: new BigNumber(amount || 0).toNumber(),
@@ -451,10 +478,16 @@ function useSubmitTxData({
             ...sourceUsd.usdProps,
           });
         } else {
-          const snapshot = snapshotHandle!.resolve();
+          if (!sourceIdentity || !snapshotHandle) {
+            throw new Error(
+              "Missing identity/snapshot data for payment telemetry",
+            );
+          }
+
+          const snapshot = snapshotHandle.resolve();
           const sourceCanonical = getCanonicalFromAsset(
-            sourceIdentity!.code,
-            sourceIdentity!.issuer,
+            sourceIdentity.code,
+            sourceIdentity.issuer,
           );
           const sourceUsd = buildSourceLegUsdProps(
             amount,
@@ -464,10 +497,10 @@ function useSubmitTxData({
           emitMetric(METRIC_NAMES.paymentFailed, {
             payment_type: "payment",
             asset_code: sourceAsset.code,
-            ...(sourceIdentity!.issuer
-              ? { asset_issuer: sourceIdentity!.issuer }
+            ...(sourceIdentity.issuer
+              ? { asset_issuer: sourceIdentity.issuer }
               : {}),
-            asset_type: sourceIdentity!.type,
+            asset_type: sourceIdentity.type,
             amount: new BigNumber(amount || 0).toNumber(),
             reason_code: reasonCode,
             failure_category: failureCategory,

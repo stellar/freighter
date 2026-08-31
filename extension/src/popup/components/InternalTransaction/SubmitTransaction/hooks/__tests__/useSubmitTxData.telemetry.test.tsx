@@ -292,9 +292,12 @@ describe("useSubmitTxData terminal-event telemetry", () => {
   });
 
   it("swap.failed carries from_amount, failure_category: slippage for a submit-time quote expiry, and no destination amounts", async () => {
-    jest
-      .spyOn(ApiInternal, "getTokenPrices")
-      .mockResolvedValue({ native: { currentPrice: "0.5" } });
+    // Both legs priced (not the partial-fetch case, which has its own
+    // coverage) - this test is about reason_code/failure_category.
+    jest.spyOn(ApiInternal, "getTokenPrices").mockResolvedValue({
+      native: { currentPrice: "0.5" },
+      [USDC_CANONICAL]: { currentPrice: "1.0" },
+    });
     mockSubmitRejected({
       status: 400,
       title: "Transaction Failed",
