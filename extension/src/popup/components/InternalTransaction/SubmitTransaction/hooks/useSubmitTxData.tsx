@@ -187,10 +187,15 @@ function useSubmitTxData({
           })
         : null;
 
-      if (!transactionSimulation.preparedTransaction) {
-        throw new Error("Cannot submit: no prepared transaction");
-      }
-      let signedXDR = transactionSimulation.preparedTransaction;
+      // Not a non-null assertion and not a guard: `preparedTransaction` is
+      // legitimately null for a classic payment (simulateTx's "classic" arm
+      // returns a fee and no payload at all — the built XDR arrives via the
+      // `xdr` prop instead). It only holds a value for a Soroban/token
+      // transfer, or for a hardware wallet, where HardwareSign stores the
+      // already-signed XDR there. Everywhere else the signing step below
+      // replaces it, so `?? ""` — the same fallback Send/index.tsx uses on
+      // this field — is the honest starting value.
+      let signedXDR = transactionSimulation.preparedTransaction ?? "";
       if (!isHardwareWallet) {
         const res = await reduxDispatch(
           signFreighterTransaction({

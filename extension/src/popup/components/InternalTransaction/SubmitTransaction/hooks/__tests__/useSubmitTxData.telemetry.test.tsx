@@ -106,12 +106,15 @@ const makeState = ({
   amount = "100",
   destinationAmount = "",
   tokenPrices = {},
+  preparedTransaction = buildSwapXdr(),
 }: {
   asset: string;
   destinationAsset?: string;
   amount?: string;
   destinationAmount?: string;
   tokenPrices?: Record<string, { currentPrice: string }>;
+  /** Null for a classic payment — see the regression test below. */
+  preparedTransaction?: string | null;
 }) => ({
   auth: {
     // The destination is "self-owned" so the addRecentAddress thunk (and its
@@ -136,7 +139,7 @@ const makeState = ({
     },
     transactionSimulation: {
       ...txSubmissionInitialState.transactionSimulation,
-      preparedTransaction: buildSwapXdr(),
+      preparedTransaction,
     },
   },
 });
@@ -413,6 +416,35 @@ describe("useSubmitTxData terminal-event telemetry", () => {
     expect(props.amount_usd_status).toBe("no_price");
     expect(props).not.toHaveProperty("amount_usd");
     expect(props).not.toHaveProperty("amount_usd_rate");
+  });
+
+  it("still submits (and emits) a classic payment, which has no prepared transaction", async () => {
+    // Regression: simulateTx's "classic" arm returns a fee and no payload, so
+    // transactionSimulation.preparedTransaction is null for every classic
+    // payment — the built XDR reaches the hook via the `xdr` prop and the
+    // signing step supplies signedXDR. Guarding on preparedTransaction here
+    // threw before signing and broke the whole classic send flow.
+    jest
+      .spyOn(ApiInternal, "getTokenPrices")
+      .mockResolvedValue({ native: { currentPrice: "0.5" } });
+    mockSubmitOk(buildResultXdr("880000000"));
+
+    const { result } = renderSubmitHook(
+      makeState({ asset: "native", preparedTransaction: null }),
+    );
+    await act(async () => {
+      await result.current.fetchData({ isSwap: false });
+    });
+
+    expect(emitted(METRIC_NAMES.paymentCompleted)).toEqual(
+      expect.objectContaining({
+        payment_type: "payment",
+        asset_code: "XLM",
+        amount: 100,
+        amount_usd_status: "ok",
+        amount_usd: 50,
+      }),
+    );
   });
 
   it("emits no volume telemetry for a payment on a custom network", async () => {
