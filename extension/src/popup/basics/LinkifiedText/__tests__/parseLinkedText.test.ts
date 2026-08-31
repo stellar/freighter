@@ -114,4 +114,31 @@ describe("parseLinkedText", () => {
       { text: '" now.' },
     ]);
   });
+
+  it("does not linkify a malformed bare URL with no host", () => {
+    expect(parseLinkedText("See https:// for syntax")).toEqual([
+      { text: "See https:// for syntax" },
+    ]);
+    expect(parseLinkedText("See https://?query for syntax")).toEqual([
+      { text: "See https://?query for syntax" },
+    ]);
+  });
+
+  it("does not linkify a malformed markdown URL with no host", () => {
+    expect(parseLinkedText("[bad](https://)")).toEqual([
+      { text: "[bad](https://)" },
+    ]);
+  });
+
+  it("keeps square brackets inside a markdown destination", () => {
+    expect(
+      parseLinkedText(
+        "Search [tags](https://example.com/search?tag[]=security) here.",
+      ),
+    ).toEqual([
+      { text: "Search " },
+      { text: "tags", url: "https://example.com/search?tag[]=security" },
+      { text: " here." },
+    ]);
+  });
 });

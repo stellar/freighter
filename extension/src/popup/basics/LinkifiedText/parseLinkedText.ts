@@ -8,12 +8,18 @@ export interface LinkedTextSegment {
 // used elsewhere for protocol.websiteUrl.
 const HTTPS_PREFIX = "https://";
 
-// Characters that always end a URL, whether or not it's inside a markdown
-// link: whitespace, angle brackets, square brackets (markdown syntax), and
-// quotes (prose delimiters - a quoted URL shouldn't swallow the closing
-// quote). Parentheses are handled separately in findUrlEnd, since a URL may
+// Characters that always end a URL: whitespace, angle brackets, and quotes
+// (prose delimiters - a quoted URL shouldn't swallow the closing quote).
+// Parentheses are handled separately in findUrlEnd, since a URL may
 // legitimately contain balanced ones (e.g. a Wikipedia article title).
-const URL_BOUNDARY_CHAR = /[\s<>[\]"']/;
+const BARE_URL_BOUNDARY_CHAR = /[\s<>[\]"']/;
+
+// Inside a markdown link's `(https://...)` destination, square brackets are
+// valid URL characters (e.g. the common `?tag[]=value` query syntax) - only
+// the balanced closing paren, whitespace, angle brackets, or a quote can end
+// it. Brackets are excluded from a *bare* URL's boundary set above only to
+// avoid ambiguity with an immediately following markdown link.
+const MARKDOWN_URL_BOUNDARY_CHAR = /[\s<>"']/;
 
 const TRAILING_PUNCTUATION = /[.,!?;:]+$/;
 
@@ -30,19 +36,34 @@ const splitTrailingPunctuation = (
   };
 };
 
-// Extends a URL starting at `start` as far as possible, allowing balanced
-// parentheses inside it (e.g. https://en.wikipedia.org/wiki/Function_(maths))
-// so a legitimate paren in the URL path isn't mistaken for markdown/prose
-// punctuation. An unmatched closing paren ends the URL instead of being
-// consumed by it, since it's almost always the boundary of a markdown link
-// or the prose wrapping a link in parens.
-const findUrlEnd = (text: string, start: number): number => {
+// A candidate is only treated as a link if it's an actual parseable https
+// URL with a host - e.g. bare "https://" or "https://?query" (no host) are
+// rejected and left as plain text, matching the isSafeHttpsUrl convention
+// used elsewhere for protocol.websiteUrl. The original text is still used
+// for display/navigation (never `url.href`), since the WHATWG URL parser
+// normalizes some inputs (e.g. adding a trailing slash to a bare origin).
+const isValidHttpsUrl = (candidate: string): boolean => {
+  try {
+    return new URL(candidate).protocol === "https:";
+  } catch {
+    return false;
+  }
+};
+
+// Extends a URL starting at `start` as far as possible per `boundary`,
+// allowing balanced parentheses inside it (e.g.
+// https://en.wikipedia.org/wiki/Function_(maths)) so a legitimate paren in
+// the URL path isn't mistaken for markdown/prose punctuation. An unmatched
+// closing paren ends the URL instead of being consumed by it, since it's
+// almost always the boundary of a markdown link or the prose wrapping a
+// link in parens.
+const findUrlEnd = (text: string, start: number, boundary: RegExp): number => {
   let depth = 0;
   let index = start;
 
   while (index < text.length) {
     const char = text[index];
-    if (URL_BOUNDARY_CHAR.test(char)) {
+    if (boundary.test(char)) {
       break;
     }
     if (char === "(") {
@@ -69,7 +90,8 @@ interface MarkdownLink {
 // at the `[` found at `openIndex`. Returns null if it isn't one - e.g. no
 // matching `]`, the label itself contains an unescaped `[` (meaning
 // `openIndex` isn't the real opening bracket - see the "nested brackets"
-// test case), or there's no `(https://...)` immediately after the `]`.
+// test case), there's no `(https://...)` immediately after the `]`, or the
+// URL itself isn't a valid https URL with a host.
 // Parsing forward like this (rather than scanning backward from a `https://`
 // occurrence) means a label that itself contains a URL - e.g.
 // `[https://a.example](https://b.example)` - is handled as a single link
@@ -97,12 +119,17 @@ const tryParseMarkdownLink = (
     return null;
   }
 
-  const urlEnd = findUrlEnd(text, urlStart);
+  const urlEnd = findUrlEnd(text, urlStart, MARKDOWN_URL_BOUNDARY_CHAR);
   if (text[urlEnd] !== ")") {
     return null;
   }
 
-  return { label, url: text.slice(urlStart, urlEnd), end: urlEnd + 1 };
+  const url = text.slice(urlStart, urlEnd);
+  if (!isValidHttpsUrl(url)) {
+    return null;
+  }
+
+  return { label, url, end: urlEnd + 1 };
 };
 
 /**
@@ -151,10 +178,17 @@ export const parseLinkedText = (text: string): LinkedTextSegment[] => {
       break;
     }
 
-    const urlEnd = findUrlEnd(text, httpsIndex);
+    const urlEnd = findUrlEnd(text, httpsIndex, BARE_URL_BOUNDARY_CHAR);
     const { url, trailing } = splitTrailingPunctuation(
       text.slice(httpsIndex, urlEnd),
     );
+
+    if (!isValidHttpsUrl(url)) {
+      // Not a real URL (e.g. bare "https://" with no host) - leave it as
+      // plain text and keep scanning past the prefix.
+      searchFrom = httpsIndex + HTTPS_PREFIX.length;
+      continue;
+    }
 
     if (httpsIndex > emitted) {
       segments.push({ text: text.slice(emitted, httpsIndex) });
