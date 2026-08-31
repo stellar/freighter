@@ -169,7 +169,7 @@ export const classifyAssetIdentity = (
 
     const classicMatch = Object.values(balances ?? {}).find(
       (balance): boolean => {
-        if (!("issuer" in balance.token)) {
+        if (!balance.token || !("issuer" in balance.token)) {
           return false;
         }
         const classicIssuer = balance.token.issuer.key;

@@ -163,6 +163,35 @@ describe("classifyAssetIdentity", () => {
     });
   });
 
+  it("skips a liquidity-pool entry (no token field) instead of throwing", () => {
+    const issuer = Keypair.random().publicKey();
+    const sacAddress = new Asset("USDC", issuer).contractId(network);
+    // The LP entry is iterated before the real match, so a naive
+    // `"issuer" in balance.token` throws on it (no `token` field at all)
+    // before ever reaching the matching classic balance below.
+    const balances = {
+      native: { token: { type: "native", code: "XLM" } },
+      "POOLID:lp": {
+        liquidityPoolId: "POOLID",
+        total: new BigNumber(0),
+        available: new BigNumber(0),
+      },
+      [`USDC:${issuer}`]: {
+        token: {
+          type: "credit_alphanum4",
+          code: "USDC",
+          issuer: { key: issuer },
+        },
+        total: new BigNumber(0),
+        available: new BigNumber(0),
+      },
+    } as unknown as BalanceMap;
+
+    expect(
+      classifyAssetIdentity("USDC", sacAddress, network, balances),
+    ).toEqual({ code: "USDC", issuer, type: "classic" });
+  });
+
   it("does not collapse against a held balance with a different code", () => {
     const heldIssuer = Keypair.random().publicKey();
     const otherIssuer = Keypair.random().publicKey();
