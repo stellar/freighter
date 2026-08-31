@@ -10,7 +10,11 @@ import {
   xdr,
 } from "stellar-sdk";
 
-import { MAINNET_NETWORK_DETAILS } from "@shared/constants/stellar";
+import {
+  MAINNET_NETWORK_DETAILS,
+  NetworkDetails,
+} from "@shared/constants/stellar";
+import { CUSTOM_NETWORK } from "@shared/helpers/stellar";
 import * as ApiInternal from "@shared/api/internal";
 import { makeDummyStore } from "popup/__testHelpers__";
 import { initialState as txSubmissionInitialState } from "popup/ducks/transactionSubmission";
@@ -43,6 +47,10 @@ const DESTINATION = Keypair.random().publicKey();
 const USDC_ISSUER = Keypair.random().publicKey();
 const USDC_CANONICAL = `USDC:${USDC_ISSUER}`;
 const PASSPHRASE = MAINNET_NETWORK_DETAILS.networkPassphrase;
+const CUSTOM_NETWORK_DETAILS: NetworkDetails = {
+  ...MAINNET_NETWORK_DETAILS,
+  network: CUSTOM_NETWORK,
+};
 
 /** A real signed-shape swap transaction, so the settled-amount parse in the
  * swap.completed path runs against genuine XDR. */
@@ -133,7 +141,10 @@ const makeState = ({
   },
 });
 
-const renderSubmitHook = (state: ReturnType<typeof makeState>) => {
+const renderSubmitHook = (
+  state: ReturnType<typeof makeState>,
+  networkDetails: NetworkDetails = MAINNET_NETWORK_DETAILS,
+) => {
   const store = makeDummyStore(state);
   const wrapper = ({ children }: { children: React.ReactNode }) => (
     <Provider store={store}>{children}</Provider>
@@ -142,7 +153,7 @@ const renderSubmitHook = (state: ReturnType<typeof makeState>) => {
     () =>
       useSubmitTxData({
         isHardwareWallet: false,
-        networkDetails: MAINNET_NETWORK_DETAILS,
+        networkDetails,
         publicKey: PUBLIC_KEY,
         xdr: buildSwapXdr(),
       }),
@@ -402,5 +413,98 @@ describe("useSubmitTxData terminal-event telemetry", () => {
     expect(props.amount_usd_status).toBe("no_price");
     expect(props).not.toHaveProperty("amount_usd");
     expect(props).not.toHaveProperty("amount_usd_rate");
+  });
+
+  it("emits no volume telemetry for a payment on a custom network", async () => {
+    jest
+      .spyOn(ApiInternal, "getTokenPrices")
+      .mockResolvedValue({ native: { currentPrice: "0.5" } });
+    mockSubmitOk(buildResultXdr("880000000"));
+
+    const { result } = renderSubmitHook(
+      makeState({ asset: "native" }),
+      CUSTOM_NETWORK_DETAILS,
+    );
+    await act(async () => {
+      await result.current.fetchData({ isSwap: false });
+    });
+
+    expect(emitMetric).not.toHaveBeenCalled();
+  });
+
+  it("emits no volume telemetry for a failed payment on a custom network", async () => {
+    jest
+      .spyOn(ApiInternal, "getTokenPrices")
+      .mockResolvedValue({ native: { currentPrice: "0.5" } });
+    mockSubmitRejected({
+      status: 400,
+      title: "Transaction Failed",
+      extras: {
+        result_codes: { transaction: "tx_bad_seq", operations: [] },
+      },
+    });
+
+    const { result } = renderSubmitHook(
+      makeState({ asset: "native" }),
+      CUSTOM_NETWORK_DETAILS,
+    );
+    await act(async () => {
+      await result.current.fetchData({ isSwap: false });
+    });
+
+    expect(emitMetric).not.toHaveBeenCalled();
+  });
+
+  it("emits no volume telemetry for a swap on a custom network", async () => {
+    jest.spyOn(ApiInternal, "getTokenPrices").mockResolvedValue({
+      native: { currentPrice: "0.5" },
+      [USDC_CANONICAL]: { currentPrice: "0.55" },
+    });
+    mockSubmitOk(buildResultXdr("880000000"));
+
+    const { result } = renderSubmitHook(
+      makeState({
+        asset: "native",
+        destinationAsset: USDC_CANONICAL,
+        destinationAmount: "90",
+      }),
+      CUSTOM_NETWORK_DETAILS,
+    );
+    await act(async () => {
+      await result.current.fetchData({ isSwap: true });
+    });
+
+    expect(emitMetric).not.toHaveBeenCalled();
+  });
+
+  it("emits no volume telemetry for a failed swap on a custom network", async () => {
+    jest.spyOn(ApiInternal, "getTokenPrices").mockResolvedValue({
+      native: { currentPrice: "0.5" },
+      [USDC_CANONICAL]: { currentPrice: "1.0" },
+    });
+    mockSubmitRejected({
+      status: 400,
+      title: "Transaction Failed",
+      extras: {
+        result_codes: {
+          transaction: "tx_failed",
+          operations: ["op_under_dest_min"],
+        },
+      },
+    });
+
+    const { result } = renderSubmitHook(
+      makeState({
+        asset: "native",
+        destinationAsset: USDC_CANONICAL,
+        destinationAmount: "90",
+      }),
+      CUSTOM_NETWORK_DETAILS,
+    );
+    await act(async () => {
+      await result.current.fetchData({ isSwap: true });
+    });
+
+    expect(emitMetric).not.toHaveBeenCalled();
   });
 });
