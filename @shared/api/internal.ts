@@ -726,6 +726,12 @@ export const getTokenPrices = async (
   // release. A default silently opts new callers into v2 and defeats the
   // kill switch.
   useV2: boolean,
+  // Cancels the request when the caller no longer needs the answer (e.g. the
+  // confirmation price snapshot's terminal-status deadline). A true network
+  // abort on the v1 path; the v2 request runs in the background service
+  // worker across a message boundary the signal cannot cross, so there it
+  // only skips a not-yet-sent request and rejects a no-longer-wanted result.
+  signal?: AbortSignal,
 ): Promise<ApiTokenPrices> => {
   // NOTE: API does not accept LP IDs or custom tokens
   const filteredTokens = tokens.filter((tokenId) => {
@@ -758,6 +764,10 @@ export const getTokenPrices = async (
       return {};
     }
 
+    if (signal?.aborted) {
+      throw new DOMException("token-prices request aborted", "AbortError");
+    }
+
     // Query lives in the path so callBackendV2 signs the JWT's methodAndPath
     // over the server's full request-target (path + query) — see #2879.
     const { status, body } = await fetchBackendV2({
@@ -765,6 +775,12 @@ export const getTokenPrices = async (
       path: `/token-prices?network=${priceNetwork}`,
       body: requestBody,
     });
+
+    // The background request cannot be cancelled mid-flight (see `signal`
+    // param doc); reject a result nobody wants instead of returning it.
+    if (signal?.aborted) {
+      throw new DOMException("token-prices request aborted", "AbortError");
+    }
 
     // Mirror getDiscoverData: a 200 without a `data` payload is still a
     // failure — returning undefined would violate the Promise<ApiTokenPrices>
@@ -789,6 +805,7 @@ export const getTokenPrices = async (
       "Content-Type": "application/json",
     },
     body: requestBody,
+    signal,
   };
   const response = await fetch(url.href, options);
   const parsedResponse = (await response.json()) as { data: ApiTokenPrices };
