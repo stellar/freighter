@@ -121,8 +121,13 @@ let hasInitialized = false;
  */
 const AMPLITUDE_FLUSH_INTERVAL_MS = 500;
 
-/** Schema generation marker for the new cross-platform property model. */
-export const SCHEMA_VERSION = "2";
+/**
+ * Schema generation marker for the cross-platform property model. Bumped to
+ * "3" for the swap/send USD volume telemetry: without a bump, an event with
+ * no `amount_usd` is ambiguous between a pre-change client and a post-change
+ * client that genuinely had no price.
+ */
+export const SCHEMA_VERSION = "3";
 
 /** Maps the internal account type to the RFC's wire value for `account_type`. */
 const ACCOUNT_TYPE_WIRE: Record<AccountType, string> = {
