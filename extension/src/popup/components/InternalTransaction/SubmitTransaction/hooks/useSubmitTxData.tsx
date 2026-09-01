@@ -22,7 +22,7 @@ import {
   isMainnet,
 } from "helpers/stellar";
 import { getSdk, isCustomNetwork } from "@shared/helpers/stellar";
-import { AssetIcons } from "@shared/api/types";
+import { AssetIcons, ErrorMessage } from "@shared/api/types";
 import { allAccountsSelector } from "popup/ducks/accountServices";
 import { balancesSelector, tokenPricesSelector } from "popup/ducks/cache";
 import { tokenPricesV2Selector } from "popup/ducks/remoteConfig";
@@ -51,6 +51,14 @@ interface SubmitTxData {
   icons: AssetIcons;
   error?: string;
 }
+
+/**
+ * `reason_code` for a terminal event that never reached the network, so there
+ * is no Horizon result code to report. Deliberately the same bounded literal
+ * the post-submission path falls back to rather than the raw signing-error
+ * text, which would give `reason_code` unbounded cardinality.
+ */
+const PRE_SUBMISSION_REASON_CODE = "unknown";
 
 /**
  * The `amount_usd`-family properties are named identically on all four
@@ -134,12 +142,11 @@ function useSubmitTxData({
         status: "success",
       } as SubmitTxData;
 
-      // Everything the volume telemetry needs is snapshotted here, at
-      // confirmation, before signing/submission — amounts and prices are
-      // frozen together and carried to whichever terminal event fires.
-      // Skipped entirely for collectible sends (unpriced, out of scope) and
-      // for custom networks (not real economic activity, shouldn't pollute
-      // volume metrics).
+      // Asset identities for the volume telemetry. Classified up front (the
+      // price snapshot they feed starts after signing, below). Skipped
+      // entirely for collectible sends (unpriced, out of scope) and for custom
+      // networks (not real economic activity, shouldn't pollute volume
+      // metrics).
       const isCustom = isCustomNetwork(networkDetails);
       const accountBalances =
         allBalancesCache[networkDetails.network]?.[publicKey]?.balances ?? null;
@@ -165,6 +172,86 @@ function useSubmitTxData({
           )
         : null;
 
+      // Not a non-null assertion and not a guard: `preparedTransaction` is
+      // legitimately null for a classic payment (simulateTx's "classic" arm
+      // returns a fee and no payload at all — the built XDR arrives via the
+      // `xdr` prop instead). It only holds a value for a Soroban/token
+      // transfer, or for a hardware wallet, where HardwareSign stores the
+      // already-signed XDR there. Everywhere else the signing step below
+      // replaces it, so `?? ""` — the same fallback Send/index.tsx uses on
+      // this field — is the honest starting value.
+      let signedXDR = transactionSimulation.preparedTransaction ?? "";
+      // Tracked explicitly rather than inferred from `signedXDR` being empty:
+      // on the Soroban/token path a failed signature leaves `signedXDR`
+      // holding the *unsigned* prepared XDR, which is truthy.
+      let isSigned = isHardwareWallet && !!signedXDR;
+      let signingError: ErrorMessage | undefined;
+      if (!isHardwareWallet) {
+        const res = await reduxDispatch(
+          signFreighterTransaction({
+            transactionXDR: xdr,
+            network: networkDetails.networkPassphrase,
+          }),
+        );
+        if (
+          signFreighterTransaction.fulfilled.match(res) &&
+          res.payload.signedTransaction
+        ) {
+          signedXDR = res.payload.signedTransaction;
+          isSigned = true;
+        } else {
+          signingError = signFreighterTransaction.rejected.match(res)
+            ? res.payload
+            : undefined;
+        }
+      }
+
+      if (!isSigned) {
+        // Pre-submission failure: signing rejected, or a hardware flow arrived
+        // without a signed XDR. Submitting anyway is what this guard exists to
+        // prevent — the transaction never left the device, so it has no
+        // attempted volume and no meaningful Horizon result code. The terminal
+        // event still fires (this is the flow's outcome and the funnel counts
+        // on it), but carries only its pre-existing failure properties.
+        //
+        // `signFreighterTransaction.rejected` has already put Redux in
+        // ActionStatus.ERROR with the real signing error, so TransactionConfirm
+        // renders SubmitFail exactly as before — and now shows that error
+        // instead of one manufactured by submitting a bad XDR.
+        if (!isCustom) {
+          if (isCollectible) {
+            emitMetric(METRIC_NAMES.collectibleSendFailed, {
+              reason_code: PRE_SUBMISSION_REASON_CODE,
+            });
+          } else if (isSwap) {
+            emitMetric(METRIC_NAMES.swapFailed, {
+              from_asset_code: getAssetFromCanonical(asset).code,
+              to_asset_code: getAssetFromCanonical(destinationAsset).code,
+              reason_code: PRE_SUBMISSION_REASON_CODE,
+            });
+          } else {
+            emitMetric(METRIC_NAMES.paymentFailed, {
+              payment_type: "payment",
+              asset_code: sourceAsset.code,
+              reason_code: PRE_SUBMISSION_REASON_CODE,
+            });
+          }
+        }
+
+        const error =
+          signingError ??
+          ({ errorMessage: "Failed to sign transaction" } as ErrorMessage);
+        dispatch({ type: "FETCH_DATA_ERROR", payload: error });
+        return error;
+      }
+
+      // Everything the volume telemetry needs is snapshotted here — after
+      // signing succeeded and immediately before submission, so the prices sit
+      // as close as possible to the transaction's actual execution time.
+      // Amounts and prices are frozen together and carried to whichever
+      // terminal event fires. Skipped entirely for collectible sends (unpriced,
+      // out of scope) and for custom networks (not real economic activity,
+      // shouldn't pollute volume metrics).
       const cachedDisplayPrices =
         allTokenPricesCache[networkDetails.networkPassphrase]?.[publicKey] ??
         null;
@@ -186,30 +273,6 @@ function useSubmitTxData({
             cachedDisplayPrices,
           })
         : null;
-
-      // Not a non-null assertion and not a guard: `preparedTransaction` is
-      // legitimately null for a classic payment (simulateTx's "classic" arm
-      // returns a fee and no payload at all — the built XDR arrives via the
-      // `xdr` prop instead). It only holds a value for a Soroban/token
-      // transfer, or for a hardware wallet, where HardwareSign stores the
-      // already-signed XDR there. Everywhere else the signing step below
-      // replaces it, so `?? ""` — the same fallback Send/index.tsx uses on
-      // this field — is the honest starting value.
-      let signedXDR = transactionSimulation.preparedTransaction ?? "";
-      if (!isHardwareWallet) {
-        const res = await reduxDispatch(
-          signFreighterTransaction({
-            transactionXDR: xdr,
-            network: networkDetails.networkPassphrase,
-          }),
-        );
-        if (
-          signFreighterTransaction.fulfilled.match(res) &&
-          res.payload.signedTransaction
-        ) {
-          signedXDR = res.payload.signedTransaction;
-        }
-      }
 
       const submitResp = await reduxDispatch(
         submitFreighterTransaction({
