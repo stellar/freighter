@@ -279,7 +279,10 @@
 
   &__actions {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    // Auto columns rather than a fixed count: the Earn tile only renders on
+    // networks with an allowlisted Blend pool, so the row is 3 or 4 wide.
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
     margin-top: pxToRem(8px);
     gap: pxToRem(8px);
     // Figma's Balance frame closes with 24px, and the tab strip below adds no

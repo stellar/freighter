@@ -5,6 +5,7 @@ import {
   AssetListResponse,
   AssetListReponseItem,
 } from "@shared/constants/soroban/asset-list";
+import { SACS } from "@shared/constants/sac";
 
 import { getApiStellarExpertUrl } from "popup/helpers/account";
 import { getCombinedAssetListData } from "@shared/api/helpers/token-list";
@@ -43,13 +44,13 @@ export const getNativeContractDetails = (networkDetails: NetworkDetails) => {
     case NETWORKS.PUBLIC:
       return {
         ...NATIVE_CONTRACT_DEFAULTS,
-        contract: "CAS3J7GYLGXMF6TDJBBYYSE3HQ6BBSMLNUQ34T6TZMYMW2EVH34XOWMA",
+        contract: SACS[NETWORKS.PUBLIC].XLM,
         issuer: "GDMTVHLWJTHSUDMZVVMXXH6VJHA2ZV3HNG5LYNAZ6RTWB7GISM6PGTUV",
       };
     case NETWORKS.TESTNET:
       return {
         ...NATIVE_CONTRACT_DEFAULTS,
-        contract: "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC",
+        contract: SACS[NETWORKS.TESTNET].XLM,
         issuer: "",
       };
     default:

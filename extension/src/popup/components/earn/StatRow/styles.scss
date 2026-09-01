@@ -1,0 +1,24 @@
+@use "../../../styles/utils.scss" as *;
+
+.EarnStatRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: pxToRem(12);
+  padding: pxToRem(14) 0;
+  color: var(--sds-clr-gray-11);
+
+  & + & {
+    border-top: 1px solid var(--sds-clr-gray-06);
+  }
+
+  &__value {
+    color: var(--sds-clr-gray-12);
+    font-weight: 500;
+    text-align: right;
+
+    &--positive {
+      color: var(--sds-clr-green-11);
+    }
+  }
+}

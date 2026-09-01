@@ -115,12 +115,23 @@
     color: var(--sds-clr-gray-12);
     min-height: pxToRem(36px);
 
-    &:hover {
+    // Only the interactive pill reacts to the pointer; the locked variant is a
+    // label. Written as an exclusion rather than an undo inside `--locked`, so
+    // the resting colour above is not duplicated and cannot drift from it.
+    &:hover:not(#{&}--locked) {
       background-color: var(--sds-clr-gray-06);
     }
 
     &--empty {
       padding: pxToRem(4px) pxToRem(8px) pxToRem(4px) pxToRem(10px);
+    }
+
+    // A locked pill is a label, not a control: no chevron in the markup, no
+    // pointer affordance suggesting one is missing, and the trailing padding the
+    // chevron used to provide.
+    &--locked {
+      cursor: default;
+      padding-right: pxToRem(12px);
     }
 
     .AccountAssets__asset--logo {
@@ -201,6 +212,12 @@
         box-shadow: none !important;
       }
     }
+  }
+
+  // Error/Text/Primary. Used instead of the message row when the caller asks for
+  // the amount itself to carry the invalid state.
+  &__input-amount--invalid {
+    color: var(--sds-clr-red-11);
   }
 
   &__invalid-state {

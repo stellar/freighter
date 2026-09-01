@@ -33,6 +33,7 @@ import { ROUTES } from "popup/constants/routes";
 
 // Importing the module registers the navigate handler via registerHandler.
 import "popup/metrics/views";
+import { ROUTES_WITHOUT_SCREEN_VIEW } from "popup/metrics/views";
 
 type NavHandler = (state: unknown, action: unknown) => void;
 
@@ -142,9 +143,11 @@ describe("views navigate handler → screen.viewed", () => {
     const screenRoutes = Object.values(ROUTES).filter(
       (r) =>
         r !== ROUTES.manageAssetsListsModifyAssetList &&
-        // The send route is an intentional non-emit container (D8); its
-        // per-step screens are emitted by the Send flow's step effect.
-        r !== ROUTES.sendPayment,
+        // Container routes (send, earn) intentionally emit nothing (D8) — their
+        // per-step screens come from the flow's own step effect. Read the real
+        // set rather than restating it, so adding a container can't silently
+        // drift this test out of sync.
+        !ROUTES_WITHOUT_SCREEN_VIEW.has(r),
     );
     const names: string[] = [];
     screenRoutes.forEach((pathname) => {

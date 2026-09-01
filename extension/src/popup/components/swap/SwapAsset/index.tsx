@@ -44,6 +44,12 @@ interface SwapAssetProps {
     details?: SwapPickerSelection,
   ) => void;
   goBack: () => void;
+  /**
+   * Defaults to an X, which is what dismissing the picker means on the Swap
+   * route. A flow that reaches the picker from a screen the user should land
+   * back on — the Earn swap sheet — passes an arrow instead.
+   */
+  backIcon?: React.ReactNode;
 }
 
 export const SwapAsset = ({
@@ -51,6 +57,7 @@ export const SwapAsset = ({
   hiddenAssets,
   onClickAsset,
   goBack,
+  backIcon = <Icon.X />,
 }: SwapAssetProps) => {
   const { t } = useTranslation();
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
@@ -272,7 +279,7 @@ export const SwapAsset = ({
         title={<span>{title}</span>}
         hasBackButton
         customBackAction={goBack}
-        customBackIcon={<Icon.X />}
+        customBackIcon={backIcon}
       />
       <View.Content hasTopInput>
         <FormRows>

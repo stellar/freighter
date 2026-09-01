@@ -1,0 +1,165 @@
+@use "../../../styles/utils.scss" as *;
+
+.EarnAmount {
+  display: flex;
+  flex-direction: column;
+  gap: pxToRem(12);
+
+  &__error {
+    margin-bottom: pxToRem(4);
+  }
+
+  &__loader {
+    display: flex;
+    justify-content: center;
+    padding-top: pxToRem(48);
+  }
+}
+
+.PoolCard {
+  display: flex;
+  flex-direction: column;
+
+  // A tab above the card, per Figma 9448:29159: inset 16px each side so the
+  // card's own rounded corners sit outside it, 22px tall (2px padding on an
+  // 18px line), and flush with the card rather than tucked behind it.
+  //
+  // Colours are the design's Success/background/secondary under Colors/Green/9
+  // (Figma 12607:42852) — a pale fill carrying mid-green text, which reads as a
+  // quiet annotation on the card rather than competing with the picker's APY
+  // pills. Those pills keep the saturated green-10 fill; they are a value the
+  // user is choosing between, this is a label on a choice already made.
+  &__ribbon {
+    align-self: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--sds-clr-green-02);
+    color: var(--sds-clr-green-09);
+    border-radius: pxToRem(16) pxToRem(16) 0 0;
+    // Fixed at the design's 22px rather than padding a line box: SDS's xs size
+    // carries a 20px line-height where the design's Text/XS/500 is 18px, which
+    // left the tab 2px tall.
+    height: pxToRem(22);
+    padding: 0 pxToRem(12);
+    width: calc(100% - #{pxToRem(32)});
+    text-align: center;
+  }
+
+  &__body {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: pxToRem(16);
+    width: 100%;
+    padding: pxToRem(12) pxToRem(16);
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    background: var(--sds-clr-gray-03);
+    // 16px, matching the ribbon's top corners (Figma 9448:29161).
+    border-radius: pxToRem(16);
+  }
+
+  // 40px here, against the 32px this icon takes elsewhere in the flow
+  // (Figma I9448:29162;4603:1212).
+  .PoolIcon {
+    width: pxToRem(40);
+    height: pxToRem(40);
+    border-radius: pxToRem(4);
+  }
+
+  // The row is space-between with three children now, so the identity claims the
+  // slack and keeps the icon beside it rather than at the opposite edge.
+  &__identity {
+    margin-right: auto;
+  }
+
+  // Both lines are Text/SM/500: 14px on a 20px line, which keeps the two-line
+  // block at the design's 40px. SDS's own sm class sets a 22px line-height, so
+  // these are qualified by the parent to win on specificity rather than relying
+  // on stylesheet order.
+  &__identity &__name,
+  &__identity &__provider {
+    line-height: pxToRem(20);
+  }
+
+  // Default/Text/Primary; this line inherited the secondary colour before, which
+  // is most of why the card read as muted against the design.
+  &__name {
+    color: var(--sds-clr-gray-12);
+  }
+
+  // Default/Text/Secondary.
+  &__provider {
+    color: var(--sds-clr-gray-11);
+  }
+
+  // 34px on Default/Background/Primary with a 14px glyph (Figma
+  // I9448:29162;4603:1304), where this was a 28px circle on gray-05.
+  &__chevron {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: pxToRem(34);
+    height: pxToRem(34);
+    border-radius: 50%;
+    background: var(--sds-clr-gray-01);
+    color: var(--sds-clr-gray-11);
+
+    svg {
+      width: pxToRem(14);
+      height: pxToRem(14);
+    }
+  }
+}
+
+.NetworkFeeSheet {
+  padding: pxToRem(24);
+  display: flex;
+  flex-direction: column;
+  gap: pxToRem(8);
+
+  &__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+  }
+
+  &__badge {
+    width: pxToRem(32);
+    height: pxToRem(32);
+    border-radius: pxToRem(8);
+    background: var(--sds-clr-gray-04);
+    color: var(--sds-clr-gray-12);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  &__close {
+    width: pxToRem(32);
+    height: pxToRem(32);
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    background: var(--sds-clr-gray-04);
+    color: var(--sds-clr-gray-11);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  &__body {
+    color: var(--sds-clr-gray-11);
+    margin-bottom: pxToRem(12);
+  }
+
+  &__actions {
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(8);
+  }
+}

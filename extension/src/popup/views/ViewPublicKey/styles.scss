@@ -86,13 +86,28 @@
     flex-direction: column;
     gap: pxToRem(12px);
     width: 100%;
+  }
 
-    &__caption {
-      color: var(--sds-clr-gray-11);
-      font-size: pxToRem(14px);
-      font-weight: var(--font-weight-regular);
-      line-height: pxToRem(20px);
-      text-align: center;
-    }
+  // Text/MD/500 per the design (Figma 9457:46306): 16px/24px, weight 500. The
+  // shared app header hard-codes its title at 14px, which is 2px short.
+  &__title {
+    font-size: pxToRem(16);
+    font-weight: var(--font-weight-medium);
+    line-height: pxToRem(24);
+    color: var(--sds-clr-gray-12);
+  }
+
+  // Matches the circular close on the Earn sheets this screen is reached from.
+  &__close {
+    width: pxToRem(32);
+    height: pxToRem(32);
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    background: var(--sds-clr-gray-04);
+    color: var(--sds-clr-gray-11);
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 }

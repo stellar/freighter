@@ -57,7 +57,7 @@ import { validateSwapAmount } from "./helpers/swapAmountValidation";
 import {
   getAmountFontSizeClass,
   buildFiatLineText,
-} from "./helpers/swapAmountDisplay";
+} from "popup/components/amount/helpers/amountDisplay";
 import { getAvailableBalanceFontSizePx } from "popup/components/amount/fontScale";
 import { useSwapQuoteExpiry } from "./hooks/useSwapQuoteExpiry";
 import { useSwapDestinationScan } from "./hooks/useSwapDestinationScan";
@@ -66,6 +66,11 @@ import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { SlideupModal } from "popup/components/SlideupModal";
 import { AmountCard } from "popup/components/amount/AmountCard";
 import { PercentageButtons } from "popup/components/amount/PercentageButtons";
+import {
+  DEFAULT_AMOUNT,
+  DEFAULT_AMOUNT_USD,
+} from "popup/components/amount/constants";
+import { getPercentageAmount } from "popup/components/amount/helpers/percentageAmount";
 import { shouldShowXlmReservePreflight } from "popup/helpers/xlmReserve";
 import { horizonGetBestReceivePath } from "popup/helpers/horizonGetBestPath";
 import { XlmReserveSheet } from "popup/components/swap/XlmReserveSheet";
@@ -75,8 +80,6 @@ import { EditSlippage } from "./EditSlippage";
 import "./styles.scss";
 
 // Canonical "zero" values for the swap amount and its USD equivalent.
-const DEFAULT_AMOUNT = "0";
-const DEFAULT_AMOUNT_USD = "0.00";
 
 interface SwapAmountProps {
   inputType: InputType;
@@ -85,6 +88,20 @@ interface SwapAmountProps {
   goToNext: () => void;
   goToEditSrc: () => void;
   goToEditDst: () => void;
+  /**
+   * Pins the receive side: the token was chosen on the screen before (the Earn
+   * deposit picker), and changing it here would buy something the pool does not
+   * accept. The pill renders as a label rather than a dead dropdown, and the
+   * direction toggle becomes decorative — flipping would move the pinned token
+   * to the sell side.
+   */
+  isDestinationLocked?: boolean;
+  /**
+   * Laid out for a bottom sheet rather than a screen (the Earn swap branch):
+   * the host sheet owns the dismiss X, so the header's left slot carries the
+   * settings control that would otherwise sit above the CTA.
+   */
+  isSheetLayout?: boolean;
 }
 
 export const SwapAmount = ({
@@ -93,6 +110,8 @@ export const SwapAmount = ({
   goBack,
   goToNext,
   goToEditSrc,
+  isDestinationLocked = false,
+  isSheetLayout = false,
   goToEditDst,
 }: SwapAmountProps) => {
   const { t } = useTranslation();
@@ -490,21 +509,43 @@ export const SwapAmount = ({
     <>
       <SubviewHeader
         title={<span>{t("Swap")}</span>}
-        hasBackButton
+        hasBackButton={!isSheetLayout}
         customBackAction={goBack}
+        leftButton={
+          isSheetLayout ? (
+            <button
+              type="button"
+              className="SwapAsset__header-settings"
+              onClick={() => setIsEditingSettings(true)}
+              aria-label={t("Swap Settings")}
+              data-testid="swap-amount-header-settings"
+            >
+              <Icon.Settings04 />
+            </button>
+          ) : undefined
+        }
       />
       <View.Content
         contentFooter={
           <div className="SwapAsset__btn-continue">
-            <div className="SwapAsset__settings-row">
-              <div className="SwapAsset__settings-fee-display">
-                <span className="SwapAsset__settings-fee-display__label">
-                  {t("Fee")}:
-                </span>
-                {/* The network fee is always denominated in XLM, regardless of
-                    whether the amount is being entered in crypto or fiat. */}
-                <span>{`${fee} XLM`}</span>
-              </div>
+            <div
+              className={`SwapAsset__settings-row ${
+                isSheetLayout ? "SwapAsset__settings-row--sheet" : ""
+              }`}
+            >
+              {/* In a sheet the fee readout and the settings button move out:
+                  the fee is shown on the review sheet and edited from the header,
+                  which leaves slippage as the only footer control. */}
+              {!isSheetLayout && (
+                <div className="SwapAsset__settings-fee-display">
+                  <span className="SwapAsset__settings-fee-display__label">
+                    {t("Fee")}:
+                  </span>
+                  {/* The network fee is always denominated in XLM, regardless of
+                      whether the amount is being entered in crypto or fiat. */}
+                  <span>{`${fee} XLM`}</span>
+                </div>
+              )}
               <div className="SwapAsset__settings-options">
                 <Button
                   type="button"
@@ -515,15 +556,17 @@ export const SwapAmount = ({
                 >
                   {`${t("Slippage")}: ${allowedSlippage}%`}
                 </Button>
-                <Button
-                  type="button"
-                  size="md"
-                  isRounded
-                  variant="tertiary"
-                  onClick={() => setIsEditingSettings(true)}
-                >
-                  <Icon.Settings01 />
-                </Button>
+                {!isSheetLayout && (
+                  <Button
+                    type="button"
+                    size="md"
+                    isRounded
+                    variant="tertiary"
+                    onClick={() => setIsEditingSettings(true)}
+                  >
+                    <Icon.Settings01 />
+                  </Button>
+                )}
               </div>
             </div>
             <Button
@@ -671,38 +714,52 @@ export const SwapAmount = ({
                     }}
                   />
                 </div>
+                {/* The seam and its notch are part of the card pair's shape, so
+                    they render either way; with the destination pinned there is
+                    simply nothing to press. */}
                 <div
                   className="SwapAsset__direction"
                   data-testid="swap-direction-chevron"
                 >
-                  <button
-                    type="button"
-                    className="SwapAsset__direction-btn"
-                    aria-label={t("Swap direction")}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      emitMetric(METRIC_NAMES.swapDirectionToggled);
-                      const prevSrc = asset;
-                      // A non-held destination can't become the source, so reset
-                      // it to "(+) Select" instead of moving it into the sell
-                      // slot; otherwise swap the two positions normally.
-                      dispatch(
-                        saveAsset(destinationIsNonHeld ? "" : destinationAsset),
-                      );
-                      dispatch(saveDestinationAsset(prevSrc));
-                      // The new destination (old source) and new source are both
-                      // held/classic or empty — neither carries trustline/contract
-                      // metadata.
-                      dispatch(saveDestinationTokenDetails(null));
-                      dispatch(saveIsToken(false));
-                      // The amount was denominated in the old source token; reset
-                      // it whenever the source token changes.
-                      dispatch(saveAmount(DEFAULT_AMOUNT));
-                      dispatch(saveAmountUsd(DEFAULT_AMOUNT_USD));
-                    }}
-                  >
-                    <Icon.ChevronDown />
-                  </button>
+                  {isDestinationLocked ? (
+                    <div
+                      className="SwapAsset__direction-btn SwapAsset__direction-btn--static"
+                      aria-hidden="true"
+                    >
+                      <Icon.ChevronDown />
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      className="SwapAsset__direction-btn"
+                      aria-label={t("Swap direction")}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        emitMetric(METRIC_NAMES.swapDirectionToggled);
+                        const prevSrc = asset;
+                        // A non-held destination can't become the source, so reset
+                        // it to "(+) Select" instead of moving it into the sell
+                        // slot; otherwise swap the two positions normally.
+                        dispatch(
+                          saveAsset(
+                            destinationIsNonHeld ? "" : destinationAsset,
+                          ),
+                        );
+                        dispatch(saveDestinationAsset(prevSrc));
+                        // The new destination (old source) and new source are both
+                        // held/classic or empty — neither carries trustline/contract
+                        // metadata.
+                        dispatch(saveDestinationTokenDetails(null));
+                        dispatch(saveIsToken(false));
+                        // The amount was denominated in the old source token; reset
+                        // it whenever the source token changes.
+                        dispatch(saveAmount(DEFAULT_AMOUNT));
+                        dispatch(saveAmountUsd(DEFAULT_AMOUNT_USD));
+                      }}
+                    >
+                      <Icon.ChevronDown />
+                    </button>
+                  )}
                 </div>
                 <div
                   className="SwapAsset__cards"
@@ -745,6 +802,7 @@ export const SwapAmount = ({
                       code: dstAsset ? dstAsset.code : "",
                     })}
                     isAmountTooHigh={false}
+                    isAssetLocked={isDestinationLocked}
                     isReadOnly
                     autoFocus={false}
                     cryptoDecimals={7}
@@ -778,12 +836,11 @@ export const SwapAmount = ({
                       // the committed amount is identical in crypto and fiat
                       // display. In fiat mode the fiat field mirrors it (rounded
                       // to cents) for display only.
-                      const pctAmount = new BigNumber(
-                        cleanAmount(availableBalance),
-                      )
-                        .multipliedBy(new BigNumber(pct).dividedBy(100))
-                        .decimalPlaces(assetDecimals)
-                        .toString();
+                      const pctAmount = getPercentageAmount({
+                        availableBalance: cleanAmount(availableBalance),
+                        pct,
+                        decimals: assetDecimals,
+                      });
                       formik.setFieldValue("amount", pctAmount);
                       dispatch(saveAmount(pctAmount));
                       if (inputType === "fiat" && assetPrice) {

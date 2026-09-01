@@ -187,6 +187,17 @@ npx playwright show-trace test-results/[test-name]/trace.zip
 
 - Check that stub functions are properly defined in test setup
 - Ensure routes are registered before navigation
+- Check the **scope**: `page.route` only intercepts requests made by the popup.
+  Anything the background service worker fetches — which is every
+  freighter-backend-v2 endpoint, since those go through `fetchBackendV2` ->
+  `callBackendV2` — needs `context.route` instead. A `page.route` on one of
+  those silently never fires and the request goes to the real backend. Stubs
+  taking a `BrowserContext` (`stubRpcHealth`, `stubAccountHistory`,
+  `stubBlendEarn`, ...) are the ones in this category; backend-v1 and Horizon
+  endpoints the popup fetches directly stay on `page.route`.
+- When an assertion fails, read `test-results/<test-dir>/error-context.md` — it
+  includes a snapshot of the rendered page, which usually names the state the
+  component fell into (a loading or error view) rather than leaving you to guess.
 
 ## Writing New Tests
 

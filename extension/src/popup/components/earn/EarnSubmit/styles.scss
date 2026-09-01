@@ -1,0 +1,64 @@
+@use "../../../styles/utils.scss" as *;
+
+.EarnSubmit {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: pxToRem(24);
+  padding-top: pxToRem(72);
+
+  &__title {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: pxToRem(12);
+    color: var(--sds-clr-gray-12);
+    font-size: pxToRem(18);
+    font-weight: 500;
+
+    &-success {
+      color: var(--sds-clr-green-11);
+      width: pxToRem(28);
+      height: pxToRem(28);
+    }
+  }
+
+  &__summary {
+    width: 100%;
+    background: var(--sds-clr-gray-03);
+    border-radius: pxToRem(12);
+    padding: pxToRem(20) pxToRem(16);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: pxToRem(12);
+    color: var(--sds-clr-gray-11);
+    text-align: center;
+  }
+
+  &__icons {
+    display: flex;
+    align-items: center;
+    gap: pxToRem(10);
+    color: var(--sds-clr-gray-09);
+
+    // Same as the review row: the gap owns the spacing, so AssetIcon's list-row
+    // margin would otherwise leave the chevron off-centre between the two icons.
+    .AccountAssets__asset--logo {
+      margin-right: 0;
+    }
+  }
+
+  &__footer {
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(8);
+
+    &-note {
+      color: var(--sds-clr-gray-10);
+      font-size: pxToRem(12);
+      text-align: center;
+      padding-bottom: pxToRem(4);
+    }
+  }
+}

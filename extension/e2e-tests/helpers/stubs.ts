@@ -1,5 +1,8 @@
 import { BrowserContext, Page } from "@playwright/test";
 import { USDC_TOKEN_ADDRESS, TEST_TOKEN_ADDRESS } from "./test-token";
+import { BLEND_FIXED_POOL_IDS } from "@shared/constants/blend";
+import { PUBLIC_SACS } from "@shared/constants/sac";
+import { NETWORKS } from "@shared/constants/stellar";
 
 export const createAssetObject = (assetCode: string | null, issuer: string) => {
   if (!assetCode || assetCode === "XLM") {
@@ -3565,5 +3568,219 @@ export const stubVerifiedToken = async (
 
   await page.route("*/**/testnet/asset-list/**", async (route) => {
     await route.fulfill({ json: verifiedAssetList });
+  });
+};
+
+/**
+ * A prepared Soroban envelope for `submit` on the mainnet Fixed pool, sourced by
+ * the e2e test account. Generated with the SDK rather than hand-trimmed, so it
+ * round-trips through `TransactionBuilder.fromXDR` under both network
+ * passphrases.
+ */
+const EARN_PREPARED_TX_XDR =
+  "AAAAAgAAAADLvQoIbFw9k0tgjZoOrLTuJJY9kHFYp/YAEAlt/xirbAASM1YAAAAASZYC0wAAAAEAAAAAAAAAAAAAAABqh3mXAAAAAAAAAAEAAAAAAAAAGAAAAAAAAAABEpzIzGM28f273MDzmDQ0w824X9nqhWl6N4LTGNh0pYAAAAAGc3VibWl0AAAAAAAEAAAAEgAAAAAAAAAAy70KCGxcPZNLYI2aDqy07iSWPZBxWKf2ABAJbf8Yq2wAAAASAAAAAAAAAADLvQoIbFw9k0tgjZoOrLTuJJY9kHFYp/YAEAlt/xirbAAAABIAAAAAAAAAAMu9CghsXD2TS2CNmg6stO4klj2QcVin9gAQCW3/GKtsAAAAEAAAAAEAAAABAAAAEQAAAAEAAAADAAAADwAAAAdhZGRyZXNzAAAAABIAAAABJbT82FmuwvpjSEOMSJs8PBDJi20hvk/TyzDLaJU++XcAAAAPAAAABmFtb3VudAAAAAAACgAAAAAAAAAAAAAAADuaygAAAAAPAAAADHJlcXVlc3RfdHlwZQAAAAMAAAACAAAAAAAAAAEAAAAAAAAAAAAAAAAAHoSAAAATiAAAC7gAAAAAAAhWWwAAAAA=";
+
+/**
+ * Earn-scoped override for the deposit's simulation.
+ *
+ * The shared `stubBackendSimulateTx` returns a placeholder `preparedTransaction`
+ * that is not a decodable envelope. Specs that never sign it are unaffected, but
+ * the Earn deposit hands that XDR to `signFreighterSorobanTransaction`, whose
+ * background handler does `TransactionBuilder.fromXDR(...).sign(...)` — so the
+ * placeholder throws and the flow lands on "Transaction failed. Try again."
+ * instead of the submit screen.
+ *
+ * This returns a real prepared Soroban envelope: `submit` on the mainnet Fixed
+ * pool, sourced by the test account, carrying sorobanData. Registered on the
+ * PAGE, because /simulate-tx is a backend-v1 endpoint the popup fetches directly
+ * — and registered after `stubAllExternalApis` so it wins the route match.
+ *
+ * `minResourceFee` is the pool's real ~0.0546 XLM rather than the shared stub's
+ * token 100 stroops, so the post-simulation fee guard is exercised at a
+ * realistic magnitude.
+ */
+export const stubEarnSimulateTx = async (page: Page) => {
+  await page.route("**/simulate-tx**", async (route) => {
+    await route.fulfill({
+      json: {
+        preparedTransaction: EARN_PREPARED_TX_XDR,
+        simulationResponse: {
+          minResourceFee: "546395",
+          cost: {
+            cpuInsns: "2000000",
+            memBytes: "5000",
+          },
+          latestLedger: "10000",
+        },
+      },
+    });
+  });
+};
+
+/**
+ * Stubs the three Blend endpoints the Earn flow reads.
+ *
+ * Asset ids are the real mainnet SACs so `getBalanceByKey` resolves them the
+ * way it does in production — XLM via its native-SAC special case, the rest via
+ * classic-SAC derivation. Using placeholder contract ids would make every token
+ * look unheld and silently collapse the "In your wallet" section.
+ *
+ * All three are backend-v2 endpoints, so the popup only sends a message and the
+ * actual fetch happens in the background service worker (#2879): `blend.ts` ->
+ * `fetchBackendV2` -> `callBackendV2`. They must therefore be intercepted with
+ * `context.route`; `page.route` only sees the popup and would let every request
+ * through to the real INDEXER_V2_URL, leaving the picker on its error state.
+ *
+ * `**\/accounts/positions**` does not collide with the page-level
+ * `**\/accounts/**` in `stubHorizonAccounts`: that one only ever sees Horizon's
+ * `loadAccount` from the popup, and this one only ever sees the service worker's
+ * positions POST.
+ */
+export const stubBlendEarn = async (
+  context: BrowserContext,
+  {
+    positions = [],
+  }: {
+    positions?: unknown[];
+  } = {},
+) => {
+  const { XLM: XLM_SAC, USDC: USDC_SAC, EURC: EURC_SAC } = PUBLIC_SACS;
+  // A reserve the pool carries but earn-options never offers, so it exists only
+  // to exercise the disabled-reserve path. Its real mainnet SAC, derived the
+  // same way as PUBLIC_SACS.
+  const AQUA_SAC = "CAUIKL3IYGMERDRUN6YSCLWVAKIFG5Q4YJHUKM4S4NJZQIA3BAS6OJPK";
+  // The same constant the flow filters on, so a pool-id change cannot leave the
+  // stub serving an offer the picker silently discards.
+  const POOL_ID = BLEND_FIXED_POOL_IDS[NETWORKS.PUBLIC]!;
+
+  const offer = (supplyApy: number) => ({
+    id: POOL_ID,
+    // The live pool is named "Fixed", not "Fixed Pool v2".
+    name: "Fixed",
+    supply_apy: supplyApy,
+    // Null rather than 0 for USDC/EURC: on the live pool only XLM has a
+    // supply-side BLND stream, so this mirrors what the backend returns.
+    emissions_supply_apr: null,
+    supplied_usd: 50050000,
+  });
+
+  // The Earn tile is gated on the `earn_deposit` Amplitude flag, which defaults
+  // to off. Serve it as "on" from the Experiment vardata endpoint so the entry
+  // point renders. Context-scoped like the rest of the Earn stubs so it is in
+  // place before the popup's first flag fetch.
+  await context.route(AMPLITUDE_EXPERIMENT_VARDATA_ROUTE, async (route) => {
+    await route.fulfill({
+      json: { earn_deposit: { key: "on", value: "on" } },
+    });
+  });
+
+  await context.route("**/protocols/blend/earn-options**", async (route) => {
+    await route.fulfill({
+      json: {
+        data: {
+          options: [
+            {
+              asset_id: USDC_SAC,
+              symbol: "USDC",
+              name: "USD Coin",
+              decimals: 7,
+              pools: [offer(0.1694)],
+            },
+            {
+              // Native XLM really does come back with a null symbol and name
+              // from the live catalog — verified against dev. Hardcoding "XLM"
+              // here hid a bug where the row rendered with no token code.
+              asset_id: XLM_SAC,
+              symbol: null,
+              name: null,
+              decimals: 7,
+              pools: [offer(0.0002)],
+            },
+            {
+              asset_id: EURC_SAC,
+              symbol: "EURC",
+              name: "Euro Coin",
+              decimals: 7,
+              pools: [offer(0.1059)],
+            },
+          ],
+        },
+      },
+    });
+  });
+
+  await context.route("**/protocols/blend/pools**", async (route) => {
+    await route.fulfill({
+      json: {
+        data: {
+          pools: [
+            {
+              id: POOL_ID,
+              name: "Fixed",
+              status: "ACTIVE",
+              supplied_usd: 50050000,
+              borrowed_usd: 16150000,
+              interest_apy: 0.0424,
+              net_apy: 0.1694,
+              backstop_usd: 1530000,
+              // The pools catalog reports every reserve with its own `enabled`
+              // flag, disabled ones included — unlike earn-options above, which
+              // the backend derives with the disabled reserves already dropped.
+              // AQUA is here as the disabled case: the sheet's accepted-token
+              // cluster must leave it out, since Blend rejects a deposit into a
+              // disabled reserve.
+              reserves: [
+                {
+                  asset_id: XLM_SAC,
+                  symbol: null,
+                  name: null,
+                  decimals: 7,
+                  enabled: true,
+                  utilization: 0.32,
+                  supply_apy: 0.0002,
+                  borrow_apy: 0.09,
+                  emissions_supply_apr: 0.0001,
+                  supplied_usd: 50050000,
+                  borrowed_usd: 16150000,
+                  price_usd: 0.15,
+                },
+                {
+                  asset_id: USDC_SAC,
+                  symbol: "USDC",
+                  name: "USDC:GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN",
+                  decimals: 7,
+                  enabled: true,
+                  utilization: 0.71,
+                  supply_apy: 0.1694,
+                  borrow_apy: 0.22,
+                  emissions_supply_apr: null,
+                  supplied_usd: 12000000,
+                  borrowed_usd: 8500000,
+                  price_usd: 1,
+                },
+                {
+                  asset_id: AQUA_SAC,
+                  symbol: "AQUA",
+                  name: "AQUA:GBNZILSTVQZ4R7IKQDGHYGY2QXL5QOFJYQMXPKWRRM5PAV7Y4M67AQUA",
+                  decimals: 7,
+                  enabled: false,
+                  utilization: 0,
+                  supply_apy: 0,
+                  borrow_apy: 0,
+                  emissions_supply_apr: null,
+                  supplied_usd: 0,
+                  borrowed_usd: 0,
+                  price_usd: null,
+                },
+              ],
+            },
+          ],
+        },
+      },
+    });
+  });
+
+  await context.route("**/accounts/positions**", async (route) => {
+    await route.fulfill({ json: { data: positions } });
   });
 };

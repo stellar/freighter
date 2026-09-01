@@ -77,4 +77,57 @@ describe("SwapAmount layout", () => {
     expect(chevron.compareDocumentPosition(receive) & following).toBeTruthy();
     expect(receive.compareDocumentPosition(pct) & following).toBeTruthy();
   });
+
+  it("offers a receive-asset picker by default", () => {
+    render(
+      <Wrapper state={{}} routes={["/"]}>
+        <SwapAmount
+          inputType="crypto"
+          setInputType={jest.fn()}
+          goBack={jest.fn()}
+          goToNext={jest.fn()}
+          goToEditSrc={jest.fn()}
+          goToEditDst={jest.fn()}
+        />
+      </Wrapper>,
+    );
+
+    const receive = screen.getByTestId("swap-receive-card");
+    expect(
+      receive.querySelector("[data-testid='send-amount-edit-dest-asset']"),
+    ).not.toBeNull();
+  });
+
+  // The Earn swap pins the receive token, chosen on the picker before it. The
+  // pill must be a label, not a control: a dropdown that silently does nothing
+  // reads as broken, and one that works would buy a token the pool rejects.
+  it("renders the receive asset as a label when the destination is locked", () => {
+    render(
+      <Wrapper state={{}} routes={["/"]}>
+        <SwapAmount
+          inputType="crypto"
+          setInputType={jest.fn()}
+          goBack={jest.fn()}
+          goToNext={jest.fn()}
+          goToEditSrc={jest.fn()}
+          goToEditDst={jest.fn()}
+          isDestinationLocked
+        />
+      </Wrapper>,
+    );
+
+    const receive = screen.getByTestId("swap-receive-card");
+    expect(
+      receive.querySelector("[data-testid='send-amount-edit-dest-asset']"),
+    ).toBeNull();
+    expect(
+      receive.querySelector("[data-testid='send-amount-dest-asset-locked']"),
+    ).not.toBeNull();
+    // The sell side keeps its picker.
+    expect(
+      screen
+        .getByTestId("swap-sell-card")
+        .querySelector("[data-testid='send-amount-edit-dest-asset']"),
+    ).not.toBeNull();
+  });
 });

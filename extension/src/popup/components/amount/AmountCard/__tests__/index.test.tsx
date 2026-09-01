@@ -78,6 +78,43 @@ describe("AmountCard", () => {
     ).toBeInTheDocument();
   });
 
+  // The Earn deposit design carries the invalid state on the amount instead: its
+  // CTA already reads "Insufficient funds", and a message row would also grow
+  // the card past the design's fixed height.
+  it("reddens the amount instead of adding a row when asked to", () => {
+    render(
+      <Wrapper state={{}} routes={["/"]}>
+        <AmountCard
+          {...baseProps}
+          isAmountTooHigh
+          maxSpendableText="12.34"
+          invalidAmountStyle="amount"
+        />
+      </Wrapper>,
+    );
+
+    expect(
+      screen.queryByText(
+        "Insufficient balance. Maximum spendable: {{amount}} {{symbol}}",
+      ),
+    ).not.toBeInTheDocument();
+    expect(screen.getByTestId("send-amount-amount-input").className).toContain(
+      "AmountCard__input-amount--invalid",
+    );
+  });
+
+  it("leaves the amount unstyled when it is within balance", () => {
+    render(
+      <Wrapper state={{}} routes={["/"]}>
+        <AmountCard {...baseProps} invalidAmountStyle="amount" />
+      </Wrapper>,
+    );
+
+    expect(
+      screen.getByTestId("send-amount-amount-input").className,
+    ).not.toContain("AmountCard__input-amount--invalid");
+  });
+
   it("shows the fiat line but no input-type toggle when read-only", () => {
     render(
       <Wrapper state={{}} routes={["/"]}>

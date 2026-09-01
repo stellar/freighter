@@ -1,0 +1,169 @@
+@use "../../../styles/utils.scss" as *;
+
+// Figma: Freighter-Mobile 13701:332277 "Blend intro (first time user)".
+.EarnIntro {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: pxToRem(24);
+  // The glow bleeds past every edge, so the view clips horizontally. Vertically
+  // it scrolls instead of clipping: at the longest translations the column runs
+  // a little past 600px, and pushing the CTA below the fold degrades far better
+  // than truncating the last feature mid-sentence.
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+// The blurred green ellipse behind the Blend mark. In the mock its centre sits
+// 40px above the logo's centre, which lands it here: 24 (top padding) + 24
+// (close icon) + 24 (header gap) + 24 (content offset) + 44 (half the logo)
+// - 40. Kept as the exported asset rather than a CSS gradient so the falloff
+// matches the design's 100px gaussian exactly.
+.EarnIntro__glow {
+  position: absolute;
+  left: 50%;
+  top: pxToRem(100);
+  transform: translate(-50%, -50%);
+  width: pxToRem(664);
+  height: pxToRem(664);
+  max-width: none;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.EarnIntro__header {
+  position: relative;
+  z-index: 1;
+  flex: 0 0 auto;
+  display: flex;
+  padding-bottom: pxToRem(24);
+}
+
+.EarnIntro__close {
+  width: pxToRem(24);
+  height: pxToRem(24);
+  padding: 0;
+  border: none;
+  cursor: pointer;
+  background: transparent;
+  color: var(--sds-clr-gray-12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  svg {
+    width: pxToRem(24);
+    height: pxToRem(24);
+  }
+}
+
+// Grows to absorb the space between the copy and the footer button, matching
+// the mock's top-anchored column with the CTA pinned to the bottom. Never
+// shrinks: overflow is the view's to scroll, not this column's to clip.
+.EarnIntro__content {
+  position: relative;
+  z-index: 1;
+  flex: 1 0 auto;
+  margin-top: pxToRem(24);
+  display: flex;
+  flex-direction: column;
+  gap: pxToRem(40);
+}
+
+.EarnIntro__intro {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: pxToRem(32);
+}
+
+.EarnIntro__logo {
+  width: pxToRem(88);
+  height: pxToRem(88);
+  display: block;
+}
+
+// No gap between the two: the mock stacks them flush and lets the line heights
+// do the spacing.
+.EarnIntro__copy {
+  width: 100%;
+  text-align: center;
+}
+
+// Figma's Text/SM/400 is 14/20; SDS's Text--sm is 14/22. The mock is the
+// authority for this screen, whose vertical rhythm is built on the tighter
+// leading — see also .EarnIntro__feature__body.
+.EarnIntro__subtitle {
+  color: var(--sds-clr-gray-11);
+
+  // Outruns SDS's own .Text--sm rule, which inheritance cannot.
+  .Text {
+    line-height: pxToRem(20);
+  }
+}
+
+.EarnIntro__features {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: pxToRem(32);
+}
+
+.EarnIntro__feature {
+  display: flex;
+  align-items: center;
+  gap: pxToRem(12);
+
+  // SDS gives every `li` a "-" marker; the design has none.
+  &::before {
+    content: none !important;
+  }
+}
+
+.EarnIntro__feature__icon {
+  flex: 0 0 auto;
+  width: pxToRem(40);
+  height: pxToRem(40);
+  border-radius: pxToRem(5);
+  background: var(--sds-clr-gray-03);
+  color: var(--sds-clr-gray-09);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  svg {
+    width: pxToRem(18);
+    height: pxToRem(18);
+  }
+}
+
+.EarnIntro__feature__copy {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: pxToRem(2);
+}
+
+.EarnIntro__feature__body {
+  color: var(--sds-clr-gray-11);
+
+  .Text {
+    line-height: pxToRem(20);
+  }
+}
+
+.EarnIntro__footer {
+  position: relative;
+  z-index: 1;
+  flex: 0 0 auto;
+  padding-top: pxToRem(24);
+}

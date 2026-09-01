@@ -2727,6 +2727,32 @@ export const dismissDiscoverWelcome = async (): Promise<boolean> => {
   return !!hasSeenDiscoverWelcome;
 };
 
+export const getHasSeenEarnIntro = async (): Promise<boolean> => {
+  const { hasSeenEarnIntro, error } = await sendMessageToBackground({
+    activePublicKey: null,
+    type: SERVICE_TYPES.GET_EARN_INTRO_SEEN,
+  });
+
+  if (error) {
+    throw new Error(error);
+  }
+
+  return !!hasSeenEarnIntro;
+};
+
+export const dismissEarnIntro = async (): Promise<boolean> => {
+  const { hasSeenEarnIntro, error } = await sendMessageToBackground({
+    activePublicKey: null,
+    type: SERVICE_TYPES.DISMISS_EARN_INTRO,
+  });
+
+  if (error) {
+    throw new Error(error);
+  }
+
+  return !!hasSeenEarnIntro;
+};
+
 export const getCachedSwapTopTokens = async (
   network: string,
 ): Promise<{ tokens: TrendingAsset[]; updatedAt: number } | null> => {

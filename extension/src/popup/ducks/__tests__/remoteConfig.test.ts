@@ -7,6 +7,7 @@ import {
   isRemoteConfigInitializedSelector,
   tokenPricesV2Selector,
   balancesV2Selector,
+  earnDepositSelector,
   reducer,
 } from "../remoteConfig";
 import {
@@ -423,5 +424,30 @@ describe("remoteConfig selectors", () => {
     const store = makeStore();
     await store.dispatch(fetchFeatureFlags());
     expect(balancesV2Selector(store.getState())).toBe(false);
+  });
+
+  it("earnDepositSelector defaults to false", () => {
+    const store = makeStore();
+    expect(earnDepositSelector(store.getState())).toBe(false);
+  });
+
+  it("earnDepositSelector stays false when Amplitude omits the flag", async () => {
+    (getExperimentClient as jest.Mock).mockReturnValue(makeClient());
+
+    const store = makeStore();
+    await store.dispatch(fetchFeatureFlags());
+    expect(earnDepositSelector(store.getState())).toBe(false);
+  });
+
+  it("earnDepositSelector turns true when the variant is on", async () => {
+    (getExperimentClient as jest.Mock).mockReturnValue(
+      makeClient({
+        earn_deposit: { value: "on" },
+      }),
+    );
+
+    const store = makeStore();
+    await store.dispatch(fetchFeatureFlags());
+    expect(earnDepositSelector(store.getState())).toBe(true);
   });
 });

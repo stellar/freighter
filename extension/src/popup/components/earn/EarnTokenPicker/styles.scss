@@ -1,0 +1,323 @@
+@use "../../../styles/utils.scss" as *;
+
+// Figma: Freighter-Mobile 13717:332943 "Choose an asset". Structured like
+// EarnIntro rather than View/SubviewHeader — the design's header is a bare
+// close icon with the title in the body, which View's centred app header
+// cannot express.
+.EarnTokenPicker {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: pxToRem(24);
+  // Both axes, deliberately. The glow is absolutely positioned and its box runs
+  // past the bottom edge; with only `overflow-x: hidden`, `overflow-y` computes
+  // to `auto` and that bleed becomes 217px of phantom scroll under the pinned
+  // disclaimer. Nothing here scrolls but `&__content`.
+  overflow: hidden;
+
+  // The same ellipse EarnIntro uses, at the design's 0.7 alpha and anchored to
+  // the bottom of the screen instead of the top: its centre sits 115px above
+  // the frame's safe bottom in the mock.
+  &__glow {
+    position: absolute;
+    left: 50%;
+    bottom: pxToRem(115);
+    transform: translate(-50%, 50%);
+    width: pxToRem(664);
+    height: pxToRem(664);
+    max-width: none;
+    opacity: 0.7;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  &__header {
+    position: relative;
+    z-index: 1;
+    flex: 0 0 auto;
+    display: flex;
+    padding-bottom: pxToRem(24);
+  }
+
+  &__close {
+    width: pxToRem(24);
+    height: pxToRem(24);
+    padding: 0;
+    border: none;
+    cursor: pointer;
+    background: transparent;
+    color: var(--sds-clr-gray-12);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    svg {
+      width: pxToRem(24);
+      height: pxToRem(24);
+    }
+  }
+
+  // Scrolls on its own so the disclaimer stays pinned, matching the mock where
+  // the footnote sits outside the list's frame.
+  &__content {
+    position: relative;
+    z-index: 1;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(40);
+
+    // View.Content hid its scrollbar and faded its scroll edge; this screen no
+    // longer goes through it, so both come along by hand. A mask rather than a
+    // background gradient, which would wipe the glow sitting behind the fade.
+    scrollbar-width: none;
+    -webkit-mask-image: linear-gradient(
+      to bottom,
+      #000 calc(100% - #{pxToRem(16)}),
+      transparent
+    );
+    mask-image: linear-gradient(
+      to bottom,
+      #000 calc(100% - #{pxToRem(16)}),
+      transparent
+    );
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+
+  &__intro {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: pxToRem(8);
+  }
+
+  &__protocol {
+    display: flex;
+    align-items: center;
+    gap: pxToRem(4);
+    height: pxToRem(32);
+    padding: pxToRem(4) pxToRem(10);
+    border-radius: pxToRem(8);
+    background: var(--sds-clr-gray-03);
+    color: var(--sds-clr-gray-12);
+  }
+
+  &__protocol-icon {
+    width: pxToRem(20);
+    height: pxToRem(20);
+    border-radius: pxToRem(4);
+    display: block;
+    flex: none;
+  }
+
+  &__copy {
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(4);
+  }
+
+  &__subtitle {
+    color: var(--sds-clr-gray-11);
+
+    // Figma's Text/SM/400 is 14/20; SDS's Text--sm is 14/22. Outruns SDS's own
+    // rule, which inheritance cannot.
+    .Text {
+      line-height: pxToRem(20);
+    }
+  }
+
+  // Stands in for the held section when the account holds none of the pool's
+  // reserves. Figma 13701:332629.
+  &__empty {
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(4);
+    color: var(--sds-clr-gray-12);
+  }
+
+  &__empty-body {
+    color: var(--sds-clr-gray-11);
+
+    .Text {
+      line-height: pxToRem(20);
+    }
+  }
+
+  &__sections {
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(24);
+  }
+
+  &__section {
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(12);
+  }
+
+  &__section-title {
+    color: var(--sds-clr-gray-12);
+  }
+
+  &__rows {
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(12);
+  }
+
+  // The shared row supplies the structure the mock draws — icon, code over
+  // balance, right slot — so only the card treatment and type scale differ.
+  .BalanceRow {
+    padding: pxToRem(12) pxToRem(16);
+    border-radius: pxToRem(16);
+    background: var(--sds-clr-gray-03);
+  }
+
+  .BalanceRow__code {
+    font-size: pxToRem(16);
+    line-height: pxToRem(24);
+  }
+
+  .BalanceRow__amount {
+    font-size: pxToRem(14);
+    line-height: pxToRem(20);
+  }
+
+  // 40px in the mock, against the shared component's 32. Its 1rem margin-right
+  // is already the mock's 16px icon-to-text gap, so no gap is added here.
+  .AccountAssets__asset--logo {
+    width: pxToRem(40);
+    height: pxToRem(40);
+    min-width: pxToRem(40);
+
+    // The mock's 1px ring, drawn over the artwork rather than around it so the
+    // icon keeps its 40px box.
+    &::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      border: 1px solid var(--sds-clr-gray-06);
+      pointer-events: none;
+    }
+  }
+
+  &__apy {
+    background: var(--sds-clr-green-10);
+    color: var(--sds-clr-green-04);
+    border-radius: pxToRem(100);
+    padding: pxToRem(6) pxToRem(12);
+    font-size: pxToRem(14);
+    line-height: pxToRem(20);
+    font-weight: var(--sds-fw-medium);
+    white-space: nowrap;
+  }
+
+  &__loader {
+    display: flex;
+    justify-content: center;
+    padding-top: pxToRem(48);
+  }
+
+  &__disclaimer {
+    position: relative;
+    z-index: 1;
+    flex: 0 0 auto;
+    padding-top: pxToRem(24);
+    text-align: center;
+    color: var(--sds-clr-gray-11);
+
+    .Text {
+      line-height: pxToRem(20);
+    }
+  }
+}
+
+.NotEnoughTokenSheet {
+  padding: pxToRem(24);
+  display: flex;
+  flex-direction: column;
+  gap: pxToRem(8);
+
+  &__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+  }
+
+  &__close {
+    width: pxToRem(32);
+    height: pxToRem(32);
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    background: var(--sds-clr-gray-04);
+    color: var(--sds-clr-gray-11);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  &__title {
+    margin-top: pxToRem(8);
+  }
+
+  &__body {
+    color: var(--sds-clr-gray-11);
+    margin-bottom: pxToRem(12);
+  }
+
+  &__actions {
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(8);
+  }
+
+  // Buy and Swap share the row evenly (152px each of 312 with an 8px gap in the
+  // design), so neither is sized by its label length.
+  &__actions-row {
+    display: flex;
+    gap: pxToRem(8);
+
+    > * {
+      flex: 1;
+      min-width: 0;
+    }
+  }
+
+  // A hairline either side of the word, matching the design's 20px divider row.
+  &__or {
+    display: flex;
+    align-items: center;
+    gap: pxToRem(8);
+    height: pxToRem(20);
+    color: var(--sds-clr-gray-11);
+    font-size: pxToRem(14);
+
+    &::before,
+    &::after {
+      content: "";
+      flex: 1;
+      height: 1px;
+      background: var(--sds-clr-gray-06);
+    }
+  }
+
+  // The transfer route under two equal options is a text button, not a pill.
+  &__text-action {
+    height: pxToRem(36);
+    padding: 0;
+    border: none;
+    background: none;
+    cursor: pointer;
+    color: var(--sds-clr-gray-11);
+    font-size: pxToRem(14);
+    font-weight: var(--font-weight-medium);
+  }
+}

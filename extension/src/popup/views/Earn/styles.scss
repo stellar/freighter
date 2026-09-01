@@ -1,0 +1,75 @@
+// Step transition animations for the Earn flow. Mirrors Send/styles.scss:
+// modally-presented steps (X close) rise from below, pushed steps (back arrow)
+// slide in from the right, and going back slides from the left. Subtle offset +
+// opacity rather than a full slide, which reads better in a popup this small.
+
+.Earn {
+  position: relative;
+  height: 100%;
+}
+
+.Earn__step {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.Earn__step--hidden {
+  display: none;
+}
+
+.Earn__step--from-bottom {
+  animation: earnStepFromBottom 0.22s ease-out;
+}
+
+.Earn__step--from-right {
+  animation: earnStepFromRight 0.22s ease-out;
+}
+
+.Earn__step--from-left {
+  animation: earnStepFromLeft 0.22s ease-out;
+}
+
+@keyframes earnStepFromBottom {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes earnStepFromRight {
+  from {
+    opacity: 0;
+    transform: translateX(14px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes earnStepFromLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-14px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .Earn__step--from-bottom,
+  .Earn__step--from-right,
+  .Earn__step--from-left {
+    animation: none;
+  }
+}
