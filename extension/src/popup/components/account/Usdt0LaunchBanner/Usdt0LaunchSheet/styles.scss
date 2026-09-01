@@ -129,7 +129,10 @@
     color: var(--sds-clr-gray-12);
   }
 
-  &__description {
+  // `& &__x` doubles up the specificity so these rules beat SDS's own
+  // `.Text` / `.Text--*` declarations (same 0-1-0 specificity otherwise,
+  // leaving the winner to stylesheet order)
+  & &__description {
     color: var(--sds-clr-gray-11);
     margin: 0;
     line-height: pxToRem(18px);
@@ -173,13 +176,13 @@
       min-width: 0;
     }
 
-    &__title {
+    & &__title {
       color: var(--sds-clr-gray-12);
       margin: 0;
       line-height: pxToRem(20px);
     }
 
-    &__description {
+    & &__description {
       color: var(--sds-clr-gray-11);
       margin: 0;
       line-height: pxToRem(18px);
