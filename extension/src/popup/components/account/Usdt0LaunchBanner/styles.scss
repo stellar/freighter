@@ -14,14 +14,20 @@
   align-items: center;
   justify-content: space-between;
   gap: pxToRem(12px);
-  cursor: pointer;
   transition: opacity 0.2s ease;
 
   &:hover {
     opacity: 0.9;
   }
 
+  // The launch surface is a real <button> so the sheet is reachable by
+  // keyboard — reset the user-agent button chrome
   &__content {
+    background: none;
+    border: none;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -29,6 +35,7 @@
     gap: pxToRem(12px);
     max-width: 100%;
     margin: 0 auto;
+    padding: 0;
   }
 
   &__text {

@@ -46,7 +46,7 @@ export const Usdt0LaunchSheet = ({ onClose }: Usdt0LaunchSheetProps) => {
             type="button"
             className="Usdt0LaunchSheet__close"
             onClick={onClose}
-            aria-label="Close"
+            aria-label={t("Close")}
             data-testid="usdt0-launch-sheet-close"
           >
             <Icon.X />

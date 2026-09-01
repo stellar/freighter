@@ -41,8 +41,7 @@ export const Usdt0LaunchBanner = () => {
     checkDismissedStatus();
   }, []);
 
-  const handleDismiss = async (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleDismiss = async () => {
     try {
       const { isDismissed } = await dismissUsdt0LaunchBanner();
       setIsDismissed(isDismissed);
@@ -62,12 +61,13 @@ export const Usdt0LaunchBanner = () => {
 
   return (
     <>
-      <div
-        className="Usdt0LaunchBanner"
-        data-testid="usdt0-launch-banner"
-        onClick={handleBannerClick}
-      >
-        <div className="Usdt0LaunchBanner__content">
+      <div className="Usdt0LaunchBanner" data-testid="usdt0-launch-banner">
+        <button
+          type="button"
+          className="Usdt0LaunchBanner__content"
+          onClick={handleBannerClick}
+          data-testid="usdt0-launch-banner-open"
+        >
           <div className="Usdt0LaunchBanner__logo">
             <img src={Usdt0Logo} alt="USDT0 logo" />
           </div>
@@ -89,12 +89,12 @@ export const Usdt0LaunchBanner = () => {
               {t("Cross-chain access to USDT")}
             </Text>
           </div>
-        </div>
+        </button>
         <button
           type="button"
           className="Usdt0LaunchBanner__dismiss"
           onClick={handleDismiss}
-          aria-label="Dismiss banner"
+          aria-label={t("Dismiss banner")}
           data-testid="usdt0-launch-banner-dismiss"
         >
           <Icon.X />
