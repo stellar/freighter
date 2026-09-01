@@ -3,13 +3,13 @@ import { ApiTokenPrices } from "@shared/api/types";
 import { NetworkDetails } from "@shared/constants/stellar";
 
 export enum PriceSource {
-  TokenPricesV1 = "token_prices_v1",
-  TokenPricesV2 = "token_prices_v2",
+  TOKEN_PRICES_V1 = "token_prices_v1",
+  TOKEN_PRICES_V2 = "token_prices_v2",
 }
 
 export enum PriceFreshness {
-  ConfirmationFetch = "confirmation_fetch",
-  CachedDisplay = "cached_display",
+  CONFIRMATION_FETCH = "confirmation_fetch",
+  CACHED_DISPLAY = "cached_display",
 }
 
 export interface ConfirmationPriceSnapshot {
@@ -64,8 +64,8 @@ export const startConfirmationPriceSnapshot = ({
   cachedDisplayPrices: ApiTokenPrices | null;
 }): ConfirmationSnapshotHandle => {
   const source: PriceSource = useV2
-    ? PriceSource.TokenPricesV2
-    : PriceSource.TokenPricesV1;
+    ? PriceSource.TOKEN_PRICES_V2
+    : PriceSource.TOKEN_PRICES_V1;
 
   const controller = new AbortController();
   let succeeded = false;
@@ -100,7 +100,7 @@ export const startConfirmationPriceSnapshot = ({
       if (isComplete) {
         return {
           pricesById: fetchedPrices,
-          freshness: PriceFreshness.ConfirmationFetch,
+          freshness: PriceFreshness.CONFIRMATION_FETCH,
           source,
         };
       }
@@ -110,7 +110,7 @@ export const startConfirmationPriceSnapshot = ({
       controller.abort();
       return {
         pricesById: cachedDisplayPrices,
-        freshness: PriceFreshness.CachedDisplay,
+        freshness: PriceFreshness.CACHED_DISPLAY,
         source,
       };
     },

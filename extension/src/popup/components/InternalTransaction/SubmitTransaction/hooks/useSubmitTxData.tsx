@@ -69,7 +69,7 @@ const buildSourceLegUsdProps = (
     leg,
     usdProps: {
       amount_usd_status: leg.status,
-      ...(leg.status === LegUsdStatus.Ok
+      ...(leg.status === LegUsdStatus.OK
         ? {
             amount_usd: leg.value,
             amount_usd_rate: leg.rate,
@@ -289,8 +289,8 @@ function useSubmitTxData({
                   )
                 : undefined;
             const usdSlippagePct =
-              sourceUsd.leg.status === LegUsdStatus.Ok &&
-              destUsd?.status === LegUsdStatus.Ok &&
+              sourceUsd.leg.status === LegUsdStatus.OK &&
+              destUsd?.status === LegUsdStatus.OK &&
               sourceUsd.leg.value !== 0
                 ? computeUsdSlippagePct(
                     sourceUsd.leg.unrounded,
@@ -322,8 +322,8 @@ function useSubmitTxData({
               ...(settledDestAmount !== null
                 ? { to_amount: settledDestAmount.toNumber() }
                 : {}),
-              to_amount_usd_status: destUsd?.status ?? LegUsdStatus.Error,
-              ...(destUsd?.status === LegUsdStatus.Ok
+              to_amount_usd_status: destUsd?.status ?? LegUsdStatus.ERROR,
+              ...(destUsd?.status === LegUsdStatus.OK
                 ? {
                     to_amount_usd: destUsd.value,
                     to_amount_usd_rate: destUsd.rate,

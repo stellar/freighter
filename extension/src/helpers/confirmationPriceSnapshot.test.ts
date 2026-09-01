@@ -30,8 +30,8 @@ describe("startConfirmationPriceSnapshot", () => {
 
     expect(handle.resolve()).toEqual({
       pricesById: { native: { currentPrice: "0.5" } },
-      freshness: PriceFreshness.ConfirmationFetch,
-      source: PriceSource.TokenPricesV2,
+      freshness: PriceFreshness.CONFIRMATION_FETCH,
+      source: PriceSource.TOKEN_PRICES_V2,
     });
   });
 
@@ -54,8 +54,8 @@ describe("startConfirmationPriceSnapshot", () => {
 
     expect(handle.resolve()).toEqual({
       pricesById: { native: { currentPrice: "0.1" } },
-      freshness: PriceFreshness.CachedDisplay,
-      source: PriceSource.TokenPricesV2,
+      freshness: PriceFreshness.CACHED_DISPLAY,
+      source: PriceSource.TOKEN_PRICES_V2,
     });
   });
 
@@ -74,8 +74,8 @@ describe("startConfirmationPriceSnapshot", () => {
 
     expect(handle.resolve()).toEqual({
       pricesById: { native: { currentPrice: "0.1" } },
-      freshness: PriceFreshness.CachedDisplay,
-      source: PriceSource.TokenPricesV1,
+      freshness: PriceFreshness.CACHED_DISPLAY,
+      source: PriceSource.TOKEN_PRICES_V1,
     });
   });
 
@@ -98,8 +98,8 @@ describe("startConfirmationPriceSnapshot", () => {
     // `cached_display` rather than reported as unpriced legs.
     expect(handle.resolve()).toEqual({
       pricesById: { native: { currentPrice: "0.1" } },
-      freshness: PriceFreshness.CachedDisplay,
-      source: PriceSource.TokenPricesV2,
+      freshness: PriceFreshness.CACHED_DISPLAY,
+      source: PriceSource.TOKEN_PRICES_V2,
     });
   });
 
@@ -119,8 +119,8 @@ describe("startConfirmationPriceSnapshot", () => {
 
     expect(handle.resolve()).toEqual({
       pricesById: null,
-      freshness: PriceFreshness.CachedDisplay,
-      source: PriceSource.TokenPricesV2,
+      freshness: PriceFreshness.CACHED_DISPLAY,
+      source: PriceSource.TOKEN_PRICES_V2,
     });
   });
 
@@ -165,7 +165,7 @@ describe("startConfirmationPriceSnapshot", () => {
     expect(capturedSignal?.aborted).toBe(true);
     // Idempotent, and safe to combine with a later resolve().
     handle.cancel();
-    expect(handle.resolve().freshness).toBe(PriceFreshness.CachedDisplay);
+    expect(handle.resolve().freshness).toBe(PriceFreshness.CACHED_DISPLAY);
   });
 
   it("never consults a late-arriving result after resolve() already ran", async () => {
@@ -186,7 +186,7 @@ describe("startConfirmationPriceSnapshot", () => {
 
     // Not settled yet — this is the snapshot the terminal event uses.
     const frozen = handle.resolve();
-    expect(frozen.freshness).toBe(PriceFreshness.CachedDisplay);
+    expect(frozen.freshness).toBe(PriceFreshness.CACHED_DISPLAY);
 
     // The fetch resolves only after the snapshot was already frozen.
     resolveFetch({ native: { currentPrice: "999" } });
@@ -196,8 +196,8 @@ describe("startConfirmationPriceSnapshot", () => {
     // *first* frozen snapshot (already returned above) never changes.
     expect(frozen).toEqual({
       pricesById: { native: { currentPrice: "0.2" } },
-      freshness: PriceFreshness.CachedDisplay,
-      source: PriceSource.TokenPricesV2,
+      freshness: PriceFreshness.CACHED_DISPLAY,
+      source: PriceSource.TOKEN_PRICES_V2,
     });
   });
 });

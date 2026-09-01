@@ -29,13 +29,13 @@ export const roundHalfUp2dp = (value: BigNumber.Value): number =>
 // ---------------------------------------------------------------------------
 
 export enum LegUsdStatus {
-  Ok = "ok",
-  NoPrice = "no_price",
-  Error = "error",
+  OK = "ok",
+  NO_PRICE = "no_price",
+  ERROR = "error",
 }
 
 interface LegUsdOk {
-  status: LegUsdStatus.Ok;
+  status: LegUsdStatus.OK;
   /** Rounded to 2dp. */
   value: number;
   /** Unrounded value, used for slippage math — never emitted directly. */
@@ -45,7 +45,7 @@ interface LegUsdOk {
 }
 
 interface LegUsdUnpriced {
-  status: LegUsdStatus.NoPrice | LegUsdStatus.Error;
+  status: LegUsdStatus.NO_PRICE | LegUsdStatus.ERROR;
 }
 
 export type LegUsdResult = LegUsdOk | LegUsdUnpriced;
@@ -61,23 +61,23 @@ export const deriveLegUsd = (
   pricePerUnit: string | undefined | null,
 ): LegUsdResult => {
   if (pricePerUnit === undefined || pricePerUnit === null) {
-    return { status: LegUsdStatus.NoPrice };
+    return { status: LegUsdStatus.NO_PRICE };
   }
   try {
     const amount = new BigNumber(tokenAmount ?? NaN);
     const price = new BigNumber(pricePerUnit);
     const unrounded = amount.multipliedBy(price);
     if (!unrounded.isFinite() || !price.isFinite()) {
-      return { status: LegUsdStatus.Error };
+      return { status: LegUsdStatus.ERROR };
     }
     return {
-      status: LegUsdStatus.Ok,
+      status: LegUsdStatus.OK,
       value: roundHalfUp2dp(unrounded),
       unrounded,
       rate: price.toNumber(),
     };
   } catch {
-    return { status: LegUsdStatus.Error };
+    return { status: LegUsdStatus.ERROR };
   }
 };
 
@@ -133,9 +133,9 @@ export const computeExecutionSlippagePct = (
 // ---------------------------------------------------------------------------
 
 export enum AssetKind {
-  Native = "native",
-  Classic = "classic",
-  Soroban = "soroban",
+  NATIVE = "native",
+  CLASSIC = "classic",
+  SOROBAN = "soroban",
 }
 
 export interface AssetIdentity {
@@ -173,16 +173,16 @@ export const classifyAssetIdentity = (
   balances?: BalanceMap | null,
 ): AssetIdentity => {
   if (!issuer) {
-    return { code, type: AssetKind.Native };
+    return { code, type: AssetKind.NATIVE };
   }
 
   if (!isContractId(issuer)) {
-    return { code, issuer, type: AssetKind.Classic };
+    return { code, issuer, type: AssetKind.CLASSIC };
   }
 
   try {
     if (Asset.native().contractId(networkPassphrase) === issuer) {
-      return { code, type: AssetKind.Native };
+      return { code, type: AssetKind.NATIVE };
     }
 
     // Reuses the same SAC-collapse derivation the balance pickers use
@@ -201,7 +201,7 @@ export const classifyAssetIdentity = (
       return {
         code,
         issuer: match.token.issuer.key,
-        type: AssetKind.Classic,
+        type: AssetKind.CLASSIC,
       };
     }
   } catch {
@@ -209,7 +209,7 @@ export const classifyAssetIdentity = (
     // contract as Soroban-native rather than throwing out of a telemetry path.
   }
 
-  return { code, issuer, type: AssetKind.Soroban };
+  return { code, issuer, type: AssetKind.SOROBAN };
 };
 
 // ---------------------------------------------------------------------------
@@ -217,39 +217,39 @@ export const classifyAssetIdentity = (
 // ---------------------------------------------------------------------------
 
 export enum FailureCategory {
-  Slippage = "slippage",
-  Fee = "fee",
-  Balance = "balance",
-  Trustline = "trustline",
-  Destination = "destination",
-  Sequence = "sequence",
-  Auth = "auth",
-  Transport = "transport",
-  ProtocolOther = "protocol_other",
-  Unknown = "unknown",
+  SLIPPAGE = "slippage",
+  FEE = "fee",
+  BALANCE = "balance",
+  TRUSTLINE = "trustline",
+  DESTINATION = "destination",
+  SEQUENCE = "sequence",
+  AUTH = "auth",
+  TRANSPORT = "transport",
+  PROTOCOL_OTHER = "protocol_other",
+  UNKNOWN = "unknown",
 }
 
 const REASON_CODE_TO_FAILURE_CATEGORY: Record<string, FailureCategory> = {
-  op_under_dest_min: FailureCategory.Slippage,
-  op_too_few_offers: FailureCategory.Slippage,
-  tx_insufficient_fee: FailureCategory.Fee,
-  op_underfunded: FailureCategory.Balance,
-  tx_insufficient_balance: FailureCategory.Balance,
-  op_low_reserve: FailureCategory.Balance,
-  op_no_trust: FailureCategory.Trustline,
-  op_src_no_trust: FailureCategory.Trustline,
-  op_line_full: FailureCategory.Trustline,
-  op_not_authorized: FailureCategory.Trustline,
-  op_src_not_authorized: FailureCategory.Trustline,
-  op_no_issuer: FailureCategory.Trustline,
-  op_invalid_limit: FailureCategory.Trustline,
-  op_no_destination: FailureCategory.Destination,
-  tx_bad_seq: FailureCategory.Sequence,
-  tx_too_late: FailureCategory.Sequence,
-  tx_too_early: FailureCategory.Sequence,
-  tx_bad_auth: FailureCategory.Auth,
-  tx_bad_auth_extra: FailureCategory.Auth,
-  tx_no_source_account: FailureCategory.Auth,
+  op_under_dest_min: FailureCategory.SLIPPAGE,
+  op_too_few_offers: FailureCategory.SLIPPAGE,
+  tx_insufficient_fee: FailureCategory.FEE,
+  op_underfunded: FailureCategory.BALANCE,
+  tx_insufficient_balance: FailureCategory.BALANCE,
+  op_low_reserve: FailureCategory.BALANCE,
+  op_no_trust: FailureCategory.TRUSTLINE,
+  op_src_no_trust: FailureCategory.TRUSTLINE,
+  op_line_full: FailureCategory.TRUSTLINE,
+  op_not_authorized: FailureCategory.TRUSTLINE,
+  op_src_not_authorized: FailureCategory.TRUSTLINE,
+  op_no_issuer: FailureCategory.TRUSTLINE,
+  op_invalid_limit: FailureCategory.TRUSTLINE,
+  op_no_destination: FailureCategory.DESTINATION,
+  tx_bad_seq: FailureCategory.SEQUENCE,
+  tx_too_late: FailureCategory.SEQUENCE,
+  tx_too_early: FailureCategory.SEQUENCE,
+  tx_bad_auth: FailureCategory.AUTH,
+  tx_bad_auth_extra: FailureCategory.AUTH,
+  tx_no_source_account: FailureCategory.AUTH,
 };
 
 /**
@@ -292,17 +292,18 @@ export const getFailureCategory = (
   reasonCode: string,
 ): FailureCategory => {
   if (!isDefiniteProtocolAnswer(error)) {
-    return FailureCategory.Transport;
+    return FailureCategory.TRANSPORT;
   }
   if (reasonCode === "unknown") {
     const status = (error?.response as { status?: unknown } | undefined)
       ?.status;
     if (typeof status === "number" && isNoVerdictHttpStatus(status)) {
-      return FailureCategory.Transport;
+      return FailureCategory.TRANSPORT;
     }
-    return FailureCategory.Unknown;
+    return FailureCategory.UNKNOWN;
   }
   return (
-    REASON_CODE_TO_FAILURE_CATEGORY[reasonCode] ?? FailureCategory.ProtocolOther
+    REASON_CODE_TO_FAILURE_CATEGORY[reasonCode] ??
+    FailureCategory.PROTOCOL_OTHER
   );
 };

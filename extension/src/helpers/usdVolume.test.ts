@@ -35,16 +35,16 @@ describe("roundHalfUp2dp", () => {
 describe("deriveLegUsd", () => {
   it("is no_price when no price is held for the asset", () => {
     expect(deriveLegUsd("10", undefined)).toEqual({
-      status: LegUsdStatus.NoPrice,
+      status: LegUsdStatus.NO_PRICE,
     });
     expect(deriveLegUsd("10", null as unknown as undefined)).toEqual({
-      status: LegUsdStatus.NoPrice,
+      status: LegUsdStatus.NO_PRICE,
     });
   });
 
   it("is ok and rounds half-up when a price is held", () => {
     const result = deriveLegUsd("10.5", "1.999");
-    if (result.status !== LegUsdStatus.Ok) {
+    if (result.status !== LegUsdStatus.OK) {
       throw new Error(`expected ok, got ${result.status}`);
     }
     expect(result.value).toBe(20.99); // 10.5 * 1.999 = 20.9895 -> half-up -> 20.99
@@ -54,21 +54,21 @@ describe("deriveLegUsd", () => {
 
   it("never emits 0 for a missing price — that's no_price, not a real zero", () => {
     const result = deriveLegUsd("0", undefined);
-    expect(result.status).toBe(LegUsdStatus.NoPrice);
+    expect(result.status).toBe(LegUsdStatus.NO_PRICE);
     expect("value" in result).toBe(false);
   });
 
   it("emits a real 0.00 for a genuine zero-value transfer when priced", () => {
     const result = deriveLegUsd("0", "1.5");
-    if (result.status !== LegUsdStatus.Ok) {
+    if (result.status !== LegUsdStatus.OK) {
       throw new Error(`expected ok, got ${result.status}`);
     }
     expect(result.value).toBe(0);
   });
 
   it("is error when the derivation produces a non-finite result", () => {
-    expect(deriveLegUsd("not-a-number", "1.5").status).toBe(LegUsdStatus.Error);
-    expect(deriveLegUsd("10", "not-a-number").status).toBe(LegUsdStatus.Error);
+    expect(deriveLegUsd("not-a-number", "1.5").status).toBe(LegUsdStatus.ERROR);
+    expect(deriveLegUsd("10", "not-a-number").status).toBe(LegUsdStatus.ERROR);
   });
 });
 
@@ -117,7 +117,7 @@ describe("classifyAssetIdentity", () => {
   it("classifies native XLM with no issuer", () => {
     expect(classifyAssetIdentity("XLM", undefined, network)).toEqual({
       code: "XLM",
-      type: AssetKind.Native,
+      type: AssetKind.NATIVE,
     });
   });
 
@@ -126,7 +126,7 @@ describe("classifyAssetIdentity", () => {
     expect(classifyAssetIdentity("USDC", issuer, network)).toEqual({
       code: "USDC",
       issuer,
-      type: AssetKind.Classic,
+      type: AssetKind.CLASSIC,
     });
   });
 
@@ -134,7 +134,7 @@ describe("classifyAssetIdentity", () => {
     const nativeSac = Asset.native().contractId(network);
     expect(classifyAssetIdentity("XLM", nativeSac, network)).toEqual({
       code: "XLM",
-      type: AssetKind.Native,
+      type: AssetKind.NATIVE,
     });
   });
 
@@ -155,7 +155,7 @@ describe("classifyAssetIdentity", () => {
 
     expect(
       classifyAssetIdentity("USDC", sacAddress, network, balances),
-    ).toEqual({ code: "USDC", issuer, type: AssetKind.Classic });
+    ).toEqual({ code: "USDC", issuer, type: AssetKind.CLASSIC });
   });
 
   it("reports a contract with no matching classic balance as Soroban-native", () => {
@@ -168,7 +168,7 @@ describe("classifyAssetIdentity", () => {
     ).toEqual({
       code: "SHRIMP",
       issuer: sacAddress,
-      type: AssetKind.Soroban,
+      type: AssetKind.SOROBAN,
     });
   });
 
@@ -198,7 +198,7 @@ describe("classifyAssetIdentity", () => {
 
     expect(
       classifyAssetIdentity("USDC", sacAddress, network, balances),
-    ).toEqual({ code: "USDC", issuer, type: AssetKind.Classic });
+    ).toEqual({ code: "USDC", issuer, type: AssetKind.CLASSIC });
   });
 
   it("does not collapse a genuine Soroban/SEP-41 balance whose token also carries an issuer", () => {
@@ -225,7 +225,7 @@ describe("classifyAssetIdentity", () => {
     ).toEqual({
       code: "SHRIMP",
       issuer: contractId,
-      type: AssetKind.Soroban,
+      type: AssetKind.SOROBAN,
     });
   });
 
@@ -237,7 +237,7 @@ describe("classifyAssetIdentity", () => {
 
     expect(
       classifyAssetIdentity("EUROC", sacAddress, network, balances),
-    ).toEqual({ code: "EUROC", issuer: sacAddress, type: AssetKind.Soroban });
+    ).toEqual({ code: "EUROC", issuer: sacAddress, type: AssetKind.SOROBAN });
   });
 });
 
@@ -260,60 +260,60 @@ describe("getFailureCategory", () => {
         horizonError(["op_under_dest_min"]),
         "op_under_dest_min",
       ),
-    ).toBe(FailureCategory.Slippage);
+    ).toBe(FailureCategory.SLIPPAGE);
     expect(
       getFailureCategory(
         horizonError(["op_too_few_offers"]),
         "op_too_few_offers",
       ),
-    ).toBe(FailureCategory.Slippage);
+    ).toBe(FailureCategory.SLIPPAGE);
   });
 
   it("maps balance, trustline, destination, sequence, auth, and fee codes", () => {
     expect(
       getFailureCategory(horizonError(["op_underfunded"]), "op_underfunded"),
-    ).toBe(FailureCategory.Balance);
+    ).toBe(FailureCategory.BALANCE);
     expect(
       getFailureCategory(horizonError(["op_no_trust"]), "op_no_trust"),
-    ).toBe(FailureCategory.Trustline);
+    ).toBe(FailureCategory.TRUSTLINE);
     expect(
       getFailureCategory(horizonError(["op_src_no_trust"]), "op_src_no_trust"),
-    ).toBe(FailureCategory.Trustline);
+    ).toBe(FailureCategory.TRUSTLINE);
     expect(
       getFailureCategory(
         horizonError(["op_src_not_authorized"]),
         "op_src_not_authorized",
       ),
-    ).toBe(FailureCategory.Trustline);
+    ).toBe(FailureCategory.TRUSTLINE);
     expect(
       getFailureCategory(
         horizonError(["op_no_destination"]),
         "op_no_destination",
       ),
-    ).toBe(FailureCategory.Destination);
+    ).toBe(FailureCategory.DESTINATION);
     expect(
       getFailureCategory(horizonError([], "tx_bad_seq"), "tx_bad_seq"),
-    ).toBe(FailureCategory.Sequence);
+    ).toBe(FailureCategory.SEQUENCE);
     expect(
       getFailureCategory(horizonError([], "tx_bad_auth"), "tx_bad_auth"),
-    ).toBe(FailureCategory.Auth);
+    ).toBe(FailureCategory.AUTH);
     expect(
       getFailureCategory(
         horizonError([], "tx_insufficient_fee"),
         "tx_insufficient_fee",
       ),
-    ).toBe(FailureCategory.Fee);
+    ).toBe(FailureCategory.FEE);
   });
 
   it("maps an unmapped Horizon code to protocol_other", () => {
     expect(getFailureCategory(horizonError([], "tx_failed"), "tx_failed")).toBe(
-      FailureCategory.ProtocolOther,
+      FailureCategory.PROTOCOL_OTHER,
     );
   });
 
   it("maps the 'unknown' sentinel to unknown when Horizon did answer", () => {
     expect(getFailureCategory(horizonError([]), "unknown")).toBe(
-      FailureCategory.Unknown,
+      FailureCategory.UNKNOWN,
     );
   });
 
@@ -323,10 +323,10 @@ describe("getFailureCategory", () => {
       response: new TypeError("Failed to fetch"),
     } as unknown as ErrorMessage;
     expect(getFailureCategory(networkError, "unknown")).toBe(
-      FailureCategory.Transport,
+      FailureCategory.TRANSPORT,
     );
     expect(getFailureCategory(undefined, "unknown")).toBe(
-      FailureCategory.Transport,
+      FailureCategory.TRANSPORT,
     );
   });
 
@@ -337,23 +337,23 @@ describe("getFailureCategory", () => {
         response: { status, title: "problem" },
       }) as unknown as ErrorMessage;
     expect(getFailureCategory(statusOnlyError(503), "unknown")).toBe(
-      FailureCategory.Transport,
+      FailureCategory.TRANSPORT,
     );
     expect(getFailureCategory(statusOnlyError(504), "unknown")).toBe(
-      FailureCategory.Transport,
+      FailureCategory.TRANSPORT,
     );
     expect(getFailureCategory(statusOnlyError(408), "unknown")).toBe(
-      FailureCategory.Transport,
+      FailureCategory.TRANSPORT,
     );
     expect(getFailureCategory(statusOnlyError(429), "unknown")).toBe(
-      FailureCategory.Transport,
+      FailureCategory.TRANSPORT,
     );
     expect(getFailureCategory(statusOnlyError(403), "unknown")).toBe(
-      FailureCategory.Transport,
+      FailureCategory.TRANSPORT,
     );
     // A definitive 4xx rejection without result codes stays unknown.
     expect(getFailureCategory(statusOnlyError(400), "unknown")).toBe(
-      FailureCategory.Unknown,
+      FailureCategory.UNKNOWN,
     );
   });
 });
