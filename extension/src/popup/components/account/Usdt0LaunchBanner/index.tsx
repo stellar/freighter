@@ -76,7 +76,7 @@ export const Usdt0LaunchBanner = () => {
               as="div"
               size="sm"
               weight="medium"
-              className="Usdt0LaunchBanner__title"
+              addlClassName="Usdt0LaunchBanner__title"
             >
               {t("USDT0 is live on Stellar")}
             </Text>
@@ -84,7 +84,7 @@ export const Usdt0LaunchBanner = () => {
               as="div"
               size="xs"
               weight="medium"
-              className="Usdt0LaunchBanner__subtitle"
+              addlClassName="Usdt0LaunchBanner__subtitle"
             >
               {t("Cross-chain access to USDT")}
             </Text>

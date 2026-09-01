@@ -57,11 +57,13 @@ export const Usdt0LaunchSheet = ({ onClose }: Usdt0LaunchSheetProps) => {
             <div className="Usdt0LaunchSheet__title">
               {t("USDT0 is now on Stellar")}
             </div>
+            {/* global.scss forces `p` color to inherit (!important), which
+                would defeat the muted gray — render as div like the rows */}
             <Text
-              as="p"
+              as="div"
               size="xs"
               weight="regular"
-              className="Usdt0LaunchSheet__description"
+              addlClassName="Usdt0LaunchSheet__description"
             >
               {t(
                 "Move USDT across supported networks and access it on Stellar with USDT0.",
@@ -78,7 +80,7 @@ export const Usdt0LaunchSheet = ({ onClose }: Usdt0LaunchSheetProps) => {
                   as="div"
                   size="sm"
                   weight="medium"
-                  className="Usdt0LaunchSheet__feature__title"
+                  addlClassName="Usdt0LaunchSheet__feature__title"
                 >
                   {t("Move across networks")}
                 </Text>
@@ -86,7 +88,7 @@ export const Usdt0LaunchSheet = ({ onClose }: Usdt0LaunchSheetProps) => {
                   as="div"
                   size="xs"
                   weight="regular"
-                  className="Usdt0LaunchSheet__feature__description"
+                  addlClassName="Usdt0LaunchSheet__feature__description"
                 >
                   {t("Transfer USDT between Stellar and supported networks.")}
                 </Text>
@@ -101,7 +103,7 @@ export const Usdt0LaunchSheet = ({ onClose }: Usdt0LaunchSheetProps) => {
                   as="div"
                   size="sm"
                   weight="medium"
-                  className="Usdt0LaunchSheet__feature__title"
+                  addlClassName="Usdt0LaunchSheet__feature__title"
                 >
                   {t("1:1 backed, unified liquidity")}
                 </Text>
@@ -109,7 +111,7 @@ export const Usdt0LaunchSheet = ({ onClose }: Usdt0LaunchSheetProps) => {
                   as="div"
                   size="xs"
                   weight="regular"
-                  className="Usdt0LaunchSheet__feature__description"
+                  addlClassName="Usdt0LaunchSheet__feature__description"
                 >
                   {t(
                     "USDT0 is backed 1:1 by USDT, without fragmented wrapped versions.",

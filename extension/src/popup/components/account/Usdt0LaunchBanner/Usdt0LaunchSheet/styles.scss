@@ -132,6 +132,8 @@
   &__description {
     color: var(--sds-clr-gray-11);
     margin: 0;
+    // Figma: Text/XS 12/18 — SDS Text--xs line-height is 20px
+    line-height: pxToRem(18px);
   }
 
   &__features {
@@ -174,11 +176,15 @@
     &__title {
       color: var(--sds-clr-gray-12);
       margin: 0;
+      // Figma: Text/SM 14/20 — SDS Text--sm line-height is 22px
+      line-height: pxToRem(20px);
     }
 
     &__description {
       color: var(--sds-clr-gray-11);
       margin: 0;
+      // Figma: Text/XS 12/18 — SDS Text--xs line-height is 20px
+      line-height: pxToRem(18px);
     }
   }
 
