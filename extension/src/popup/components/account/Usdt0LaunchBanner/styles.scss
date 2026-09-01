@@ -38,21 +38,12 @@
     flex: 1;
   }
 
-  // `& &__x` doubles up the specificity so these rules beat SDS's own
-  // `.Text` / `.Text--*` declarations (same 0-1-0 specificity otherwise,
-  // leaving the winner to stylesheet order)
-  & &__title {
+  &__title {
     color: var(--sds-clr-gray-12);
-    margin: 0;
-    font-size: pxToRem(14px);
-    line-height: pxToRem(20px);
   }
 
-  & &__subtitle {
+  &__subtitle {
     color: var(--sds-clr-gray-11);
-    margin: 0;
-    font-size: pxToRem(12px);
-    line-height: pxToRem(18px);
   }
 
   &__logo {
