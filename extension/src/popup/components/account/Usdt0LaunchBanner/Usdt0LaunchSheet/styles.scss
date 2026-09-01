@@ -107,9 +107,14 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: flex-end;
+    // Content flows right below the hero art instead of anchoring to the
+    // bottom, so taller viewports (sidebar mode) leave the extra space
+    // between the features and the footer button. The top padding clears
+    // the absolutely-positioned hero (arcs end 257px from the sheet top,
+    // the body starts at 80px), reproducing the 600px-popup layout.
+    justify-content: flex-start;
+    padding: pxToRem(188px) pxToRem(24px) 0;
     gap: pxToRem(32px);
-    padding: 0 pxToRem(24px);
   }
 
   &__heading {
