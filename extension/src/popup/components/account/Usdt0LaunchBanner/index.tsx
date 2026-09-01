@@ -69,7 +69,10 @@ export const Usdt0LaunchBanner = () => {
           data-testid="usdt0-launch-banner-open"
         >
           <div className="Usdt0LaunchBanner__logo">
-            <img src={Usdt0Logo} alt={t("USDT0 logo")} />
+            {/* Decorative inside the labeled launch button — the title text
+                already names USDT0, so a non-empty alt would only add noise
+                to the button's accessible name */}
+            <img src={Usdt0Logo} alt="" />
           </div>
           <div className="Usdt0LaunchBanner__text">
             <Text
