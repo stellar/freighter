@@ -121,7 +121,7 @@ export const Usdt0LaunchSheet = ({ onClose }: Usdt0LaunchSheetProps) => {
         </div>
         <div className="Usdt0LaunchSheet__footer">
           <Button
-            size="md"
+            size="lg"
             variant="secondary"
             isFullWidth
             isRounded
