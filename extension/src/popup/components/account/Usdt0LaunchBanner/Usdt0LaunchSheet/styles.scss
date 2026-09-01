@@ -134,6 +134,7 @@
     margin: 0;
     // Figma: Text/XS 12/18 — SDS Text--xs line-height is 20px
     line-height: pxToRem(18px);
+    padding: 0 pxToRem(20px);
   }
 
   &__features {
