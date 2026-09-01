@@ -15,6 +15,7 @@ import {
   NetworkDetails,
 } from "@shared/constants/stellar";
 import { CUSTOM_NETWORK } from "@shared/helpers/stellar";
+import { ActionStatus } from "@shared/api/types";
 import * as ApiInternal from "@shared/api/internal";
 import { makeDummyStore } from "popup/__testHelpers__";
 import { initialState as txSubmissionInitialState } from "popup/ducks/transactionSubmission";
@@ -147,21 +148,25 @@ const makeState = ({
 const renderSubmitHook = (
   state: ReturnType<typeof makeState>,
   networkDetails: NetworkDetails = MAINNET_NETWORK_DETAILS,
+  { isHardwareWallet = false }: { isHardwareWallet?: boolean } = {},
 ) => {
   const store = makeDummyStore(state);
   const wrapper = ({ children }: { children: React.ReactNode }) => (
     <Provider store={store}>{children}</Provider>
   );
-  return renderHook(
+  const rendered = renderHook(
     () =>
       useSubmitTxData({
-        isHardwareWallet: false,
+        isHardwareWallet,
         networkDetails,
         publicKey: PUBLIC_KEY,
         xdr: buildSwapXdr(),
       }),
     { wrapper },
   );
+  // The store is a real one over rootReducer, so submitStatus is observable —
+  // it is what TransactionConfirm switches on to render SubmitFail.
+  return { ...rendered, store };
 };
 
 const mockSubmitOk = (resultXdr: string) => {
@@ -628,6 +633,73 @@ describe("useSubmitTxData terminal-event telemetry", () => {
         await result.current.fetchData({ isSwap: false });
       });
 
+      expect(fetchSpy).not.toHaveBeenCalled();
+    });
+
+    it("puts the flow into ActionStatus.ERROR so SubmitFail renders (signature threw)", async () => {
+      mockSigningFailure();
+
+      const { result, store } = renderSubmitHook(
+        makeState({ asset: "native" }),
+      );
+      await act(async () => {
+        await result.current.fetchData({ isSwap: false });
+      });
+
+      // TransactionConfirm switches on submitStatus to decide between
+      // SendingTransaction and SubmitFail.
+      expect(store.getState().transactionSubmission.submitStatus).toBe(
+        ActionStatus.ERROR,
+      );
+    });
+
+    it("reaches ERROR even when signing resolves fulfilled with an empty payload", async () => {
+      // No rejected action is dispatched on this path, so the reducer never
+      // sets the status — without setSubmitError the view would sit on
+      // PENDING and strand the user on the sending spinner.
+      jest
+        .spyOn(ApiInternal, "signFreighterTransaction")
+        .mockResolvedValue({ signedTransaction: "" });
+      const fetchSpy = jest.fn();
+      global.fetch = fetchSpy as unknown as typeof fetch;
+
+      const { result, store } = renderSubmitHook(
+        makeState({ asset: "native" }),
+      );
+      await act(async () => {
+        await result.current.fetchData({ isSwap: false });
+      });
+
+      expect(store.getState().transactionSubmission.submitStatus).toBe(
+        ActionStatus.ERROR,
+      );
+      expect(fetchSpy).not.toHaveBeenCalled();
+      expect(emitted(METRIC_NAMES.paymentFailed)).toEqual({
+        payment_type: "payment",
+        asset_code: "XLM",
+        reason_code: "unknown",
+      });
+    });
+
+    it("reaches ERROR for a hardware flow that arrives with no signed XDR", async () => {
+      // Hardware skips the signing dispatch entirely (HardwareSign stores the
+      // signed XDR in preparedTransaction), so nothing sets the status here
+      // either.
+      const fetchSpy = jest.fn();
+      global.fetch = fetchSpy as unknown as typeof fetch;
+
+      const { result, store } = renderSubmitHook(
+        makeState({ asset: "native", preparedTransaction: null }),
+        MAINNET_NETWORK_DETAILS,
+        { isHardwareWallet: true },
+      );
+      await act(async () => {
+        await result.current.fetchData({ isSwap: false });
+      });
+
+      expect(store.getState().transactionSubmission.submitStatus).toBe(
+        ActionStatus.ERROR,
+      );
       expect(fetchSpy).not.toHaveBeenCalled();
     });
 

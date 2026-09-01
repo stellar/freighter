@@ -629,6 +629,19 @@ const transactionSubmissionSlice = createSlice({
     resetSubmitStatus: (state) => {
       state.submitStatus = initialState.submitStatus;
     },
+    /**
+     * Puts the flow into its failed state without a submission having been
+     * attempted. `submitFreighterTransaction.rejected` covers the ordinary
+     * case, and `signFreighterTransaction.rejected` covers a signature that
+     * threw — but a sign that resolves *fulfilled* with an empty payload, and
+     * a hardware flow that arrives with no signed XDR, dispatch neither, so
+     * without this the view stays on ActionStatus.PENDING and the user is
+     * stranded on the sending spinner instead of reaching SubmitFail.
+     */
+    setSubmitError: (state, action: { payload: ErrorMessage | undefined }) => {
+      state.submitStatus = ActionStatus.ERROR;
+      state.error = action.payload;
+    },
     clearSwapQuoteExpired: (state) => {
       state.isSwapQuoteExpired = false;
     },
@@ -863,6 +876,7 @@ const transactionSubmissionSlice = createSlice({
 export const {
   resetSubmission,
   resetSubmitStatus,
+  setSubmitError,
   clearSwapQuoteExpired,
   saveDestination,
   saveRecipientName,

@@ -7,6 +7,7 @@ import { initialState, reducer, isError } from "helpers/request";
 import { AppDispatch } from "popup/App";
 import {
   addRecentAddress,
+  setSubmitError,
   signFreighterTransaction,
   submitFreighterTransaction,
   transactionSubmissionSelector,
@@ -214,10 +215,18 @@ function useSubmitTxData({
         // event still fires (this is the flow's outcome and the funnel counts
         // on it), but carries only its pre-existing failure properties.
         //
-        // `signFreighterTransaction.rejected` has already put Redux in
-        // ActionStatus.ERROR with the real signing error, so TransactionConfirm
-        // renders SubmitFail exactly as before — and now shows that error
-        // instead of one manufactured by submitting a bad XDR.
+        // The ordinary case — a signature that threw — has already been put
+        // into ActionStatus.ERROR by `signFreighterTransaction.rejected`, so
+        // TransactionConfirm renders SubmitFail as before, now showing that
+        // real error instead of one manufactured by submitting a bad XDR.
+        //
+        // The two paths that dispatch no rejected action — a sign that
+        // resolves fulfilled with an empty payload, and a hardware flow with
+        // no signed XDR — would otherwise leave Redux on PENDING and strand
+        // the user on the sending spinner, since nothing downstream sets the
+        // status any more. `setSubmitError` closes that: it is idempotent
+        // with the reducer above (same status, same error) on the path where
+        // both run.
         if (!isCustom) {
           if (isCollectible) {
             emitMetric(METRIC_NAMES.collectibleSendFailed, {
@@ -241,6 +250,7 @@ function useSubmitTxData({
         const error =
           signingError ??
           ({ errorMessage: "Failed to sign transaction" } as ErrorMessage);
+        reduxDispatch(setSubmitError(error));
         dispatch({ type: "FETCH_DATA_ERROR", payload: error });
         return error;
       }
