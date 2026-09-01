@@ -4,7 +4,6 @@
   position: relative;
   background: #002d19;
   border-radius: pxToRem(12px);
-  padding: pxToRem(16px);
   // No horizontal offsets: this sits in `AccountHeader__account-info__details`,
   // which spans the full content column, so the banner stretches to match the
   // action tiles and tab strip.
@@ -21,10 +20,13 @@
   }
 
   // The launch surface is a real <button> so the sheet is reachable by
-  // keyboard — reset the user-agent button chrome
+  // keyboard — reset the user-agent button chrome. It carries the card's
+  // 16px padding so the entire card (minus the dismiss button) is a
+  // click target, matching the whole-card hover cue.
   &__content {
     background: none;
     border: none;
+    border-radius: inherit;
     font: inherit;
     text-align: left;
     cursor: pointer;
@@ -35,7 +37,7 @@
     gap: pxToRem(12px);
     max-width: 100%;
     margin: 0 auto;
-    padding: 0;
+    padding: pxToRem(16px);
   }
 
   &__text {

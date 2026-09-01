@@ -69,7 +69,7 @@ export const Usdt0LaunchBanner = () => {
           data-testid="usdt0-launch-banner-open"
         >
           <div className="Usdt0LaunchBanner__logo">
-            <img src={Usdt0Logo} alt="USDT0 logo" />
+            <img src={Usdt0Logo} alt={t("USDT0 logo")} />
           </div>
           <div className="Usdt0LaunchBanner__text">
             <Text

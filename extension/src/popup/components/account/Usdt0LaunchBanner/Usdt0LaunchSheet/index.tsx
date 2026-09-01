@@ -37,7 +37,7 @@ export const Usdt0LaunchSheet = ({ onClose }: Usdt0LaunchSheetProps) => {
         <img
           className="Usdt0LaunchSheet__background__lockup"
           src={Usdt0Lockup}
-          alt="USDT0"
+          alt={t("USDT0")}
         />
       </div>
       <div className="Usdt0LaunchSheet__content">
