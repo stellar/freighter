@@ -76,13 +76,21 @@ export const firstLoadableIconUrl = async (
 ): Promise<string | undefined> => {
   const deadline = Date.now() + budgetMs;
 
-  for (const url of urls) {
+  for (let index = 0; index < urls.length; index += 1) {
     const remaining = deadline - Date.now();
     if (remaining <= 0) {
       return undefined;
     }
-    if (await probe(url, remaining)) {
-      return url;
+
+    // Split what's left evenly across the candidates still to try, rather than
+    // offering the whole remainder to the next one. A throttled host that never
+    // answers would otherwise spend the entire budget and starve a healthy
+    // candidate behind it — the very failure this is here to prevent. A
+    // candidate that answers quickly leaves its unused share to the rest.
+    const share = Math.ceil(remaining / (urls.length - index));
+
+    if (await probe(urls[index], share)) {
+      return urls[index];
     }
   }
 

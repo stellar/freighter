@@ -56,7 +56,7 @@ describe("cacheAssetIcon", () => {
       request: {
         assetCanonical: CANONICAL,
         iconUrl: null,
-      } as unknown as CacheAssetIconMessage,
+      } as CacheAssetIconMessage,
       localStore,
     });
 

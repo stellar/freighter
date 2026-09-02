@@ -66,7 +66,7 @@ describe("firstLoadableIconUrl", () => {
     expect(probe).toHaveBeenCalledTimes(1);
   });
 
-  it("hands each probe only the budget that is left", async () => {
+  it("never hands a probe more time than the budget has left", async () => {
     const probe = jest.fn(async () => {
       await new Promise((resolve) => setTimeout(resolve, 20));
       return false;
@@ -74,9 +74,9 @@ describe("firstLoadableIconUrl", () => {
 
     await firstLoadableIconUrl([A, B], { budgetMs: 200, probe });
 
-    const [, firstTimeout] = probe.mock.calls[0];
-    const [, secondTimeout] = probe.mock.calls[1];
-    expect(secondTimeout).toBeLessThan(firstTimeout as number);
+    for (const [, timeoutMs] of probe.mock.calls) {
+      expect(timeoutMs).toBeLessThanOrEqual(200);
+    }
   });
 });
 
@@ -195,5 +195,40 @@ describe("mapWithConcurrency", () => {
 
   it("keeps icon lookups concurrent enough to stay off the critical path", () => {
     expect(ICON_LOOKUP_CONCURRENCY).toBeGreaterThan(1);
+  });
+});
+
+describe("firstLoadableIconUrl candidate fairness", () => {
+  it("still attempts a later candidate when an earlier one uses its whole slice", async () => {
+    // The reported bug is a throttled gateway. If the first candidate can spend
+    // the entire budget hanging, a healthy second candidate is never reached —
+    // which is the failure this whole change exists to prevent.
+    const probe = jest.fn(async (url: string, timeoutMs: number) => {
+      if (url === A) {
+        await new Promise((resolve) => setTimeout(resolve, timeoutMs));
+        return false;
+      }
+      return true;
+    });
+
+    const result = await firstLoadableIconUrl([A, B], {
+      budgetMs: 200,
+      probe,
+    });
+
+    expect(result).toEqual(B);
+    expect(probe).toHaveBeenCalledTimes(2);
+  });
+
+  it("shares the budget out so every candidate gets a turn", async () => {
+    const probe = jest.fn(async () => false);
+
+    await firstLoadableIconUrl([A, B, C], { budgetMs: 300, probe });
+
+    expect(probe).toHaveBeenCalledTimes(3);
+    // The first candidate is held to a share rather than the whole budget;
+    // candidates that answer instantly leave their unused time to the rest.
+    const [, firstTimeout] = probe.mock.calls[0];
+    expect(firstTimeout).toBeLessThan(300);
   });
 });

@@ -329,7 +329,10 @@ export interface GetCachedAssetIconMessage extends BaseMessage {
 export interface CacheAssetIconMessage extends BaseMessage {
   type: SERVICE_TYPES.CACHE_ASSET_ICON;
   assetCanonical: string;
-  iconUrl: string;
+  // null clears the entry rather than storing a "no icon" verdict — see
+  // cacheAssetIcon. Senders and the handler have to agree on that, so it is
+  // part of the type rather than something callers cast their way past.
+  iconUrl: string | null;
 }
 
 export interface GetCachedSwapTopTokensMessage extends BaseMessage {
