@@ -15,6 +15,7 @@ import {
   NetworkDetails,
 } from "@shared/constants/stellar";
 import { CUSTOM_NETWORK } from "@shared/helpers/stellar";
+import { ActionStatus } from "@shared/api/types";
 import * as ApiInternal from "@shared/api/internal";
 import { makeDummyStore } from "popup/__testHelpers__";
 import { initialState as txSubmissionInitialState } from "popup/ducks/transactionSubmission";
@@ -147,21 +148,25 @@ const makeState = ({
 const renderSubmitHook = (
   state: ReturnType<typeof makeState>,
   networkDetails: NetworkDetails = MAINNET_NETWORK_DETAILS,
+  { isHardwareWallet = false }: { isHardwareWallet?: boolean } = {},
 ) => {
   const store = makeDummyStore(state);
   const wrapper = ({ children }: { children: React.ReactNode }) => (
     <Provider store={store}>{children}</Provider>
   );
-  return renderHook(
+  const rendered = renderHook(
     () =>
       useSubmitTxData({
-        isHardwareWallet: false,
+        isHardwareWallet,
         networkDetails,
         publicKey: PUBLIC_KEY,
         xdr: buildSwapXdr(),
       }),
     { wrapper },
   );
+  // The store is a real one over rootReducer, so submitStatus is observable —
+  // it is what TransactionConfirm switches on to render SubmitFail.
+  return { ...rendered, store };
 };
 
 const mockSubmitOk = (resultXdr: string) => {
@@ -538,5 +543,180 @@ describe("useSubmitTxData terminal-event telemetry", () => {
     });
 
     expect(emitMetric).not.toHaveBeenCalled();
+  });
+  describe("pre-submission (signing) failure", () => {
+    const mockSigningFailure = () =>
+      jest
+        .spyOn(ApiInternal, "signFreighterTransaction")
+        .mockRejectedValue(new Error("Incorrect password"));
+
+    it("emits payment.failed with its failure properties and no volume data", async () => {
+      mockSigningFailure();
+      jest
+        .spyOn(ApiInternal, "getTokenPrices")
+        .mockResolvedValue({ native: { currentPrice: "0.5" } });
+
+      const { result } = renderSubmitHook(makeState({ asset: "native" }));
+      await act(async () => {
+        await result.current.fetchData({ isSwap: false });
+      });
+
+      const props = emitted(METRIC_NAMES.paymentFailed);
+      expect(props).toEqual({
+        payment_type: "payment",
+        asset_code: "XLM",
+        reason_code: "unknown",
+      });
+      // The transaction never left the device, so it has no attempted volume.
+      expect(props).not.toHaveProperty("amount");
+      expect(props).not.toHaveProperty("amount_usd");
+      expect(props).not.toHaveProperty("amount_usd_status");
+      // ...and it is emphatically not a transport failure, which per the
+      // catalog reads as "unresolved — may have settled".
+      expect(props).not.toHaveProperty("failure_category");
+    });
+
+    it("emits swap.failed with both asset codes and no volume data", async () => {
+      mockSigningFailure();
+      jest.spyOn(ApiInternal, "getTokenPrices").mockResolvedValue({
+        native: { currentPrice: "0.5" },
+        [USDC_CANONICAL]: { currentPrice: "1.0" },
+      });
+
+      const { result } = renderSubmitHook(
+        makeState({
+          asset: "native",
+          destinationAsset: USDC_CANONICAL,
+          destinationAmount: "90",
+        }),
+      );
+      await act(async () => {
+        await result.current.fetchData({ isSwap: true });
+      });
+
+      expect(emitted(METRIC_NAMES.swapFailed)).toEqual({
+        from_asset_code: "XLM",
+        to_asset_code: "USDC",
+        reason_code: "unknown",
+      });
+    });
+
+    it("does not submit a classic payment whose signature failed", async () => {
+      mockSigningFailure();
+      const fetchSpy = jest.fn();
+      global.fetch = fetchSpy as unknown as typeof fetch;
+
+      const { result } = renderSubmitHook(
+        // preparedTransaction: null is the classic-payment shape, where a
+        // failed signature used to leave signedXDR as "" and submit it.
+        makeState({ asset: "native", preparedTransaction: null }),
+      );
+      await act(async () => {
+        await result.current.fetchData({ isSwap: false });
+      });
+
+      expect(fetchSpy).not.toHaveBeenCalled();
+    });
+
+    it("does not submit the UNSIGNED prepared XDR when a token transfer's signature failed", async () => {
+      mockSigningFailure();
+      const fetchSpy = jest.fn();
+      global.fetch = fetchSpy as unknown as typeof fetch;
+
+      const { result } = renderSubmitHook(
+        // A Soroban/token transfer carries a prepared XDR, so `signedXDR` is
+        // truthy even when signing failed — the guard has to key off whether
+        // signing actually succeeded, not off the XDR being empty.
+        makeState({ asset: "native", preparedTransaction: buildSwapXdr() }),
+      );
+      await act(async () => {
+        await result.current.fetchData({ isSwap: false });
+      });
+
+      expect(fetchSpy).not.toHaveBeenCalled();
+    });
+
+    it("puts the flow into ActionStatus.ERROR so SubmitFail renders (signature threw)", async () => {
+      mockSigningFailure();
+
+      const { result, store } = renderSubmitHook(
+        makeState({ asset: "native" }),
+      );
+      await act(async () => {
+        await result.current.fetchData({ isSwap: false });
+      });
+
+      // TransactionConfirm switches on submitStatus to decide between
+      // SendingTransaction and SubmitFail.
+      expect(store.getState().transactionSubmission.submitStatus).toBe(
+        ActionStatus.ERROR,
+      );
+    });
+
+    it("reaches ERROR even when signing resolves fulfilled with an empty payload", async () => {
+      // No rejected action is dispatched on this path, so the reducer never
+      // sets the status — without setSubmitError the view would sit on
+      // PENDING and strand the user on the sending spinner.
+      jest
+        .spyOn(ApiInternal, "signFreighterTransaction")
+        .mockResolvedValue({ signedTransaction: "" });
+      const fetchSpy = jest.fn();
+      global.fetch = fetchSpy as unknown as typeof fetch;
+
+      const { result, store } = renderSubmitHook(
+        makeState({ asset: "native" }),
+      );
+      await act(async () => {
+        await result.current.fetchData({ isSwap: false });
+      });
+
+      expect(store.getState().transactionSubmission.submitStatus).toBe(
+        ActionStatus.ERROR,
+      );
+      expect(fetchSpy).not.toHaveBeenCalled();
+      expect(emitted(METRIC_NAMES.paymentFailed)).toEqual({
+        payment_type: "payment",
+        asset_code: "XLM",
+        reason_code: "unknown",
+      });
+    });
+
+    it("reaches ERROR for a hardware flow that arrives with no signed XDR", async () => {
+      // Hardware skips the signing dispatch entirely (HardwareSign stores the
+      // signed XDR in preparedTransaction), so nothing sets the status here
+      // either.
+      const fetchSpy = jest.fn();
+      global.fetch = fetchSpy as unknown as typeof fetch;
+
+      const { result, store } = renderSubmitHook(
+        makeState({ asset: "native", preparedTransaction: null }),
+        MAINNET_NETWORK_DETAILS,
+        { isHardwareWallet: true },
+      );
+      await act(async () => {
+        await result.current.fetchData({ isSwap: false });
+      });
+
+      expect(store.getState().transactionSubmission.submitStatus).toBe(
+        ActionStatus.ERROR,
+      );
+      expect(fetchSpy).not.toHaveBeenCalled();
+    });
+
+    it("issues no confirmation price fetch when signing fails", async () => {
+      mockSigningFailure();
+      const pricesSpy = jest
+        .spyOn(ApiInternal, "getTokenPrices")
+        .mockResolvedValue({ native: { currentPrice: "0.5" } });
+
+      const { result } = renderSubmitHook(makeState({ asset: "native" }));
+      await act(async () => {
+        await result.current.fetchData({ isSwap: false });
+      });
+
+      // The snapshot starts only once signing has succeeded, so a signing
+      // failure never issues a price request it would just have to abort.
+      expect(pricesSpy).not.toHaveBeenCalled();
+    });
   });
 });
