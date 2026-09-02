@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 
 import { ROUTES } from "popup/constants/routes";
 import { navigateTo, openTab } from "popup/helpers/navigate";
+import { BackButton } from "popup/basics/buttons/BackButton";
 import Usdt0Arcs from "popup/assets/usdt0-arcs.svg";
 import Usdt0Lockup from "popup/assets/usdt0-lockup.svg";
 
@@ -49,15 +50,21 @@ export const Usdt0LaunchSheet = ({ onClose }: Usdt0LaunchSheetProps) => {
       </div>
       <div className="Usdt0LaunchSheet__content">
         <div className="Usdt0LaunchSheet__header">
-          <button
-            type="button"
-            className="Usdt0LaunchSheet__close"
-            onClick={onClose}
-            aria-label={t("Close")}
-            data-testid="usdt0-launch-sheet-close"
-          >
-            <Icon.X />
-          </button>
+          {/* Same BackButton as the QR code screen's X, supplied as a real
+              <button> so it stays keyboard-accessible */}
+          <BackButton
+            customBackAction={onClose}
+            customButtonComponent={
+              <button
+                type="button"
+                className="BackButton Usdt0LaunchSheet__close"
+                aria-label={t("Close")}
+                data-testid="usdt0-launch-sheet-close"
+              >
+                <Icon.X />
+              </button>
+            }
+          />
         </div>
         <div className="Usdt0LaunchSheet__body">
           <div className="Usdt0LaunchSheet__heading">
