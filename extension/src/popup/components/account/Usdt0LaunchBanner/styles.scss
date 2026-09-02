@@ -7,8 +7,11 @@
   // No horizontal offsets: this sits in `AccountHeader__account-info__details`,
   // which spans the full content column, so the banner stretches to match the
   // action tiles and tab strip.
-  margin-bottom: pxToRem(16px);
-  margin-top: 0;
+  margin-bottom: pxToRem(8px);
+  // Pulls the banner halfway into the action tiles' 24px bottom padding —
+  // that padding also sets the tiles -> tabs gap when the banner is
+  // dismissed, so it can't be reduced globally.
+  margin-top: pxToRem(-12px);
   display: flex;
   align-items: center;
   justify-content: space-between;
