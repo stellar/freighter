@@ -39,12 +39,17 @@ export interface ConfirmationSnapshotHandle {
 }
 
 /**
- * Issues ONE price fetch covering every leg's canonical id, started at
- * confirmation and never blocking signing/submission — callers do not await
- * this. `cachedDisplayPrices` is the price map already held for the on-screen
- * fiat estimate, captured by the caller at this same moment: it must reflect
- * "the price already shown to the user for this transaction", not whatever
- * the cache holds later when `resolve()` is called.
+ * Issues ONE price fetch covering every leg's canonical id, started once
+ * signing has succeeded and immediately before submission — as close to the
+ * transaction's execution as the flow allows — and never blocking submission,
+ * since callers do not await this. `cachedDisplayPrices` is the price map
+ * already held for the on-screen fiat estimate, captured by the caller at
+ * this same moment, and is the fallback `resolve()` closes on when the fetch
+ * has not landed by terminal status. Because the snapshot starts after
+ * signing, that map is the display cache as of the start of submission rather
+ * than as of the confirm tap — a password prompt or hardware approval in
+ * between can have let it refresh. Either way it must be captured here, not
+ * read later when `resolve()` is called.
  *
  * Cancellation is a real network abort on the v1 endpoint (a direct fetch).
  * The v2 endpoint runs in the background service worker across a message

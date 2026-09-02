@@ -35,9 +35,11 @@ interface ErrorDetails {
 // emitted here. They used to be, from an effect keyed on `error`/`asset`/etc
 // — but that re-fires on every remount (double-counting attempted volume).
 // useSubmitTxData's fetchData is the single, centralized emit site for every
-// terminal event (success and failure alike): it already has the
-// confirmation price snapshot and the transaction result in scope, and it
-// runs exactly once per submission attempt.
+// terminal event (success and failure alike), and it runs exactly once per
+// confirmation attempt. For a submitted transaction it has the confirmation
+// price snapshot and the transaction result in scope, so its events carry
+// volume; its pre-submission failure path deliberately emits without either,
+// since nothing reached the network to have volume or a result.
 export const SubmitFail = () => {
   const { error } = useSelector(transactionSubmissionSelector);
   const isSwap = useIsSwap();
