@@ -285,10 +285,18 @@ jest.mock("popup/ducks/accountServices", () => {
 });
 
 describe("Account view", () => {
+  // Only the icon test stubs the probe. clearAllMocks wipes call history but
+  // keeps the implementation, so without an explicit restore that stub would
+  // outlive its test and quietly stand in for the real thing in every case
+  // after it, making the suite order-dependent.
+  let probeSpy: jest.SpyInstance | undefined;
+
   afterAll(() => {
     jest.clearAllMocks();
   });
   afterEach(() => {
+    probeSpy?.mockRestore();
+    probeSpy = undefined;
     jest.useRealTimers();
     jest.clearAllMocks();
   });
@@ -504,7 +512,7 @@ describe("Account view", () => {
     // jsdom images never fire load or error, so stand in for the browser and
     // say the first candidate renders. This test is about which source an icon
     // comes from; iconProbe.test.ts covers the loading itself.
-    jest
+    probeSpy = jest
       .spyOn(IconProbe, "firstLoadableIconUrl")
       .mockImplementation(async (urls: string[]) => urls[0]);
     const getIconUrlFromIssuerSpy = jest
