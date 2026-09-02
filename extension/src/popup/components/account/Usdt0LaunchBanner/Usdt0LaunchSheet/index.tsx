@@ -4,11 +4,14 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 
 import { ROUTES } from "popup/constants/routes";
-import { navigateTo } from "popup/helpers/navigate";
+import { navigateTo, openTab } from "popup/helpers/navigate";
 import Usdt0Arcs from "popup/assets/usdt0-arcs.svg";
 import Usdt0Lockup from "popup/assets/usdt0-lockup.svg";
 
 import "./styles.scss";
+
+const USDT0_BRIDGE_URL =
+  "https://usdt0.to/transfer?source=ethereum&destination=stellar&token=usdt0";
 
 interface Usdt0LaunchSheetProps {
   onClose: () => void;
@@ -18,9 +21,13 @@ export const Usdt0LaunchSheet = ({ onClose }: Usdt0LaunchSheetProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  const handleTransferClick = () => {
+  const handleReceiveClick = () => {
     onClose();
-    navigateTo(ROUTES.addFunds, navigate);
+    navigateTo(ROUTES.viewPublicKey, navigate);
+  };
+
+  const handleBridgeClick = () => {
+    openTab(USDT0_BRIDGE_URL);
   };
 
   return (
@@ -65,9 +72,7 @@ export const Usdt0LaunchSheet = ({ onClose }: Usdt0LaunchSheetProps) => {
               weight="regular"
               addlClassName="Usdt0LaunchSheet__description"
             >
-              {t(
-                "Move USDT across supported networks and access it on Stellar with USDT0.",
-              )}
+              {t("Access USDT liquidity on Stellar with USDT0.")}
             </Text>
           </div>
           <div className="Usdt0LaunchSheet__features">
@@ -90,7 +95,7 @@ export const Usdt0LaunchSheet = ({ onClose }: Usdt0LaunchSheetProps) => {
                   weight="regular"
                   addlClassName="Usdt0LaunchSheet__feature__description"
                 >
-                  {t("Transfer USDT between Stellar and supported networks.")}
+                  {t("Transfer USDT0 between Stellar and supported networks.")}
                 </Text>
               </div>
             </div>
@@ -113,9 +118,7 @@ export const Usdt0LaunchSheet = ({ onClose }: Usdt0LaunchSheetProps) => {
                   weight="regular"
                   addlClassName="Usdt0LaunchSheet__feature__description"
                 >
-                  {t(
-                    "USDT0 is backed 1:1 by USDT, without fragmented wrapped versions.",
-                  )}
+                  {t("USDT0 is backed 1:1 by USDT.")}
                 </Text>
               </div>
             </div>
@@ -127,11 +130,20 @@ export const Usdt0LaunchSheet = ({ onClose }: Usdt0LaunchSheetProps) => {
             variant="secondary"
             isFullWidth
             isRounded
-            onClick={handleTransferClick}
-            data-testid="usdt0-launch-sheet-transfer"
+            onClick={handleReceiveClick}
+            data-testid="usdt0-launch-sheet-receive"
           >
-            {t("Transfer USDT0")}
+            {t("Receive USDT0")}
           </Button>
+          <button
+            type="button"
+            className="Usdt0LaunchSheet__bridge"
+            onClick={handleBridgeClick}
+            data-testid="usdt0-launch-sheet-bridge"
+          >
+            {t("Bridge to Stellar")}
+            <Icon.LinkExternal01 />
+          </button>
         </div>
       </div>
     </div>
