@@ -263,6 +263,61 @@ export const stubFederationWithMemo = async (
   });
 };
 
+/**
+ * Builds the v1 balance entry the indexer returns for a contract ID handed to
+ * it as a `contract_ids` hint, shaped the way `injectLocalTokenBalances` builds
+ * the same entry on the v2 path so both endpoints render identically.
+ */
+const contractHintBalance = (contractId: string) => {
+  const { symbol, name, decimals } =
+    contractId === TEST_TOKEN_ADDRESS
+      ? { symbol: "E2E", name: "E2E Token", decimals: 3 }
+      : { symbol: "native", name: "native", decimals: 7 };
+
+  return {
+    key: `${symbol}:${contractId}`,
+    balance: {
+      token: { code: symbol, issuer: { key: contractId } },
+      contractId,
+      symbol,
+      name,
+      decimals,
+      // The hint exists precisely because the account holds no balance for the
+      // token; the indexer still resolves and returns it at zero.
+      total: "0",
+      available: "0",
+      blockaidData: undefined,
+    },
+  };
+};
+
+/**
+ * Fulfils the v1 account-balances GET, merging in a balance for every
+ * `contract_ids` query param the request carries. The real v1 backend resolves
+ * those hints server-side, which is the only way a locally added contract token
+ * reaches the balances view on v1 — the v2 path merges them client-side in
+ * `injectLocalTokenBalances` instead. A stub that ignored them would make any
+ * locally added token invisible whenever `use_balances_v2` is off.
+ */
+const fulfillV1Balances = async (
+  route: Parameters<Parameters<Page["route"]>[1]>[0],
+  json: { balances: { [key: string]: unknown } },
+) => {
+  const contractIds = new URL(route.request().url()).searchParams.getAll(
+    "contract_ids",
+  );
+
+  const balances = { ...json.balances };
+  for (const contractId of contractIds) {
+    const { key, balance } = contractHintBalance(contractId);
+    if (!balances[key]) {
+      balances[key] = balance;
+    }
+  }
+
+  await route.fulfill({ json: { ...json, balances } });
+};
+
 export const stubDefaultAccountBalances = async (page: Page) => {
   const json = {
     balances: {
@@ -300,7 +355,7 @@ export const stubDefaultAccountBalances = async (page: Page) => {
     },
   };
   await page.route("**/account-balances/**", async (route) => {
-    await route.fulfill({ json });
+    await fulfillV1Balances(route, json);
   });
   await stubAccountBalancesV2(page, json);
 };
