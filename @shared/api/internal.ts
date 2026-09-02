@@ -91,7 +91,8 @@ import { getIconUrlFromIssuer } from "./helpers/getIconUrlFromIssuer";
 import { getLedgerKeyAccounts } from "./helpers/getLedgerKeyAccounts";
 import { redactErrorBody } from "./helpers/redactErrorBody";
 import { stellarSdkServer, submitTx } from "./helpers/stellarSdkServer";
-import { getIconFromTokenLists } from "./helpers/getIconFromTokenList";
+import { getIconCandidatesFromTokenLists } from "./helpers/getIconFromTokenList";
+import { firstLoadableIconUrl } from "./helpers/iconProbe";
 import { mapAccountBalancesV2 } from "./helpers/mapAccountBalancesV2";
 import { addBlockaidScanResults } from "./helpers/addBlockaidScanResults";
 import { injectLocalTokenBalances } from "./helpers/injectLocalTokenBalances";
@@ -1291,6 +1292,51 @@ export const getAssetIconCache = async ({
   we'll store it in the background's storage and then use this cache for future lookups.
 */
 
+/**
+ * Persists an icon url we have confirmed renders. Only proven urls reach the
+ * cache, so a later read can be trusted without re-probing.
+ */
+const cacheAssetIconUrl = async (assetCanonical: string, iconUrl: string) =>
+  sendMessageToBackground({
+    activePublicKey: null,
+    assetCanonical,
+    iconUrl,
+    type: SERVICE_TYPES.CACHE_ASSET_ICON,
+  });
+
+/**
+ * Resolves the icon for one asset from the user's token lists by loading each
+ * url the lists offer and keeping the first that renders. Returns undefined
+ * when the lists offer nothing that works, which sends the caller on to the
+ * issuer-toml fallback.
+ */
+const resolveIconFromTokenLists = async ({
+  issuerId,
+  contractId,
+  code,
+  assetsListsData,
+}: {
+  issuerId?: string;
+  contractId?: string;
+  code: string;
+  assetsListsData: AssetListResponse[];
+}) => {
+  const { candidates, canonicalAsset } = getIconCandidatesFromTokenLists({
+    issuerId,
+    contractId,
+    code,
+    assetsListsData,
+  });
+
+  const icon = await firstLoadableIconUrl(candidates);
+  if (!icon || !canonicalAsset) {
+    return undefined;
+  }
+
+  await cacheAssetIconUrl(canonicalAsset, icon);
+  return { icon, canonicalAsset };
+};
+
 export const getAssetIcons = async ({
   balances,
   networkDetails,
@@ -1343,13 +1389,13 @@ export const getAssetIcons = async ({
 
         if (!icon) {
           // if we don't have the icon, we try to get it from the token lists
-          const tokenListIcon = await getIconFromTokenLists({
+          const tokenListIcon = await resolveIconFromTokenLists({
             issuerId: key,
             contractId,
             code,
-            assetsListsData,
+            assetsListsData: assetsListsData!,
           });
-          if (tokenListIcon.icon && tokenListIcon.canonicalAsset) {
+          if (tokenListIcon) {
             icon = tokenListIcon.icon;
             canonical = tokenListIcon.canonicalAsset;
           } else {
@@ -1383,13 +1429,13 @@ export const getAssetIcons = async ({
       continue;
     }
 
-    const tokenListIcon = await getIconFromTokenLists({
+    const tokenListIcon = await resolveIconFromTokenLists({
       issuerId: isContractId(key) ? undefined : key,
       contractId: isContractId(key) ? key : undefined,
       code,
-      assetsListsData,
+      assetsListsData: assetsListsData!,
     });
-    if (tokenListIcon.icon) {
+    if (tokenListIcon) {
       assetIcons[canonical] = tokenListIcon.icon;
     } else if (!isContractId(key)) {
       domainsToFetch.push({ key, code });
@@ -1413,8 +1459,21 @@ export const getAssetIcons = async ({
           code,
           networkDetails,
           homeDomain: assetDomains[key],
-        }).then((icon) => {
-          assetIcons[canonical] = icon || null;
+        }).then(async (icon) => {
+          // The toml's url gets the same "does it actually render" treatment
+          // as the token-list candidates. getIconUrlFromIssuer caches whatever
+          // the toml claims, so a url that fails here is cleared again rather
+          // than left behind for the next load to trust.
+          const usableIcon = await firstLoadableIconUrl(icon ? [icon] : []);
+          if (!usableIcon && icon) {
+            await sendMessageToBackground({
+              activePublicKey: null,
+              assetCanonical: canonical,
+              iconUrl: null,
+              type: SERVICE_TYPES.CACHE_ASSET_ICON,
+            });
+          }
+          assetIcons[canonical] = usableIcon || null;
         });
 
         iconsToFetch.push(fetchIcon);
@@ -1427,32 +1486,69 @@ export const getAssetIcons = async ({
   return assetIcons;
 };
 
+/**
+ * Re-resolves an asset icon after its <img> failed to load.
+ *
+ * Runs the same source chain getAssetIcons uses — token lists first, issuer
+ * TOML second — with the url that just failed removed from the running, so the
+ * caller can never be handed back the same broken src. Everything still
+ * standing is loaded before it is offered, so a retry only ever returns a url
+ * that renders.
+ */
 export const retryAssetIcon = async ({
   key,
   code,
   assetIcons,
   networkDetails,
   activePublicKey,
+  assetsListsData = [],
 }: {
   key: string;
   code: string;
   assetIcons: { [code: string]: string | null };
   networkDetails: NetworkDetails;
   activePublicKey: string | null;
+  assetsListsData?: AssetListResponse[];
 }) => {
+  const canonical = `${code}:${key}`;
+  const failedIcon = assetIcons[canonical];
   const newAssetIcons = { ...assetIcons };
+
   try {
+    // Drop the cached url before looking again: getIconUrlFromIssuer consults
+    // this cache first, so leaving it in place would just hand back the url
+    // that already failed. cacheAssetIcon deletes the entry on a falsy url
+    // rather than storing null, so this clears without blacklisting the asset.
     await sendMessageToBackground({
       activePublicKey,
-      assetCanonical: `${code}:${key}`,
+      assetCanonical: canonical,
       iconUrl: null,
       type: SERVICE_TYPES.CACHE_ASSET_ICON,
     });
   } catch (e) {
     return assetIcons;
   }
-  const icon = await getIconUrlFromIssuer({ key, code, networkDetails });
-  newAssetIcons[`${code}:${key}`] = icon;
+
+  const { candidates } = getIconCandidatesFromTokenLists({
+    issuerId: key,
+    code,
+    assetsListsData,
+  });
+  const tokenListIcon = await firstLoadableIconUrl(
+    candidates.filter((candidate) => candidate !== failedIcon),
+  );
+  if (tokenListIcon) {
+    await cacheAssetIconUrl(canonical, tokenListIcon);
+    newAssetIcons[canonical] = tokenListIcon;
+    return newAssetIcons;
+  }
+
+  const tomlIcon = await getIconUrlFromIssuer({ key, code, networkDetails });
+  const usableTomlIcon =
+    tomlIcon && tomlIcon !== failedIcon
+      ? await firstLoadableIconUrl([tomlIcon])
+      : undefined;
+  newAssetIcons[canonical] = usableTomlIcon || "";
   return newAssetIcons;
 };
 

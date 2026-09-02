@@ -1,25 +1,47 @@
-import {
-  AssetListReponseItem,
-  AssetListResponse,
-} from "@shared/constants/soroban/asset-list";
+import { AssetListResponse } from "@shared/constants/soroban/asset-list";
 import { getCanonicalFromAsset } from "@shared/helpers/stellar";
 
 import { sendMessageToBackground } from "./extensionMessaging";
 import { SERVICE_TYPES } from "../../constants/services";
 
-export const getIconFromTokenLists = async ({
-  issuerId,
-  contractId,
-  code,
-  assetsListsData,
-}: {
+interface TokenListLookup {
   issuerId?: string;
   contractId?: string;
   code: string;
   assetsListsData: AssetListResponse[];
-}) => {
-  let verifiedToken = {} as AssetListReponseItem;
+}
+
+/**
+ * Collects every icon url the user's asset lists offer for one asset.
+ *
+ * An asset commonly appears on more than one list with a different icon url on
+ * each, and any of those urls can be dead. Returning all of them lets the
+ * caller pick one that actually loads (see firstLoadableIconUrl) instead of
+ * committing to whichever list happened to come first. List order is preserved
+ * so it decides the order candidates are tried, not which one wins.
+ *
+ * Pure: no caching, no messaging. The caller caches the url it settles on.
+ */
+export const getIconCandidatesFromTokenLists = ({
+  issuerId,
+  contractId,
+  code,
+  assetsListsData,
+}: TokenListLookup) => {
+  const candidates = [] as string[];
   let canonicalAsset = undefined as string | undefined;
+
+  const addCandidate = (icon: string, assetKey: string) => {
+    if (!canonicalAsset) {
+      canonicalAsset = getCanonicalFromAsset(code, assetKey);
+    }
+    // The same icon can be listed by several providers; probing it twice would
+    // just spend the budget re-confirming the same answer.
+    if (!candidates.includes(icon)) {
+      candidates.push(icon);
+    }
+  };
+
   for (const data of assetsListsData) {
     const list = data.assets;
     if (list) {
@@ -27,9 +49,8 @@ export const getIconFromTokenLists = async ({
         if (contractId) {
           const regex = new RegExp(contractId, "i");
           if (record.contract && record.contract.match(regex) && record.icon) {
-            verifiedToken = record;
-            canonicalAsset = getCanonicalFromAsset(code, contractId);
-            break;
+            addCandidate(record.icon, contractId);
+            continue;
           }
         }
 
@@ -40,25 +61,45 @@ export const getIconFromTokenLists = async ({
           record.code === code &&
           record.icon
         ) {
-          verifiedToken = record;
-          canonicalAsset = getCanonicalFromAsset(code, issuerId);
-          break;
+          addCandidate(record.icon, issuerId);
         }
       }
     }
   }
 
-  if (verifiedToken?.icon) {
+  return { candidates, canonicalAsset };
+};
+
+/**
+ * Single-icon lookup for callers that render an icon directly without probing
+ * it (asset search, sign-transaction rows, history rows). Takes the first
+ * candidate and caches it.
+ */
+export const getIconFromTokenLists = async ({
+  issuerId,
+  contractId,
+  code,
+  assetsListsData,
+}: TokenListLookup) => {
+  const { candidates, canonicalAsset } = getIconCandidatesFromTokenLists({
+    issuerId,
+    contractId,
+    code,
+    assetsListsData,
+  });
+  const icon = candidates[0];
+
+  if (icon) {
     await sendMessageToBackground({
       activePublicKey: null,
       assetCanonical: `${code}:${contractId || issuerId}`,
-      iconUrl: verifiedToken?.icon,
+      iconUrl: icon,
       type: SERVICE_TYPES.CACHE_ASSET_ICON,
     });
   }
 
   return {
-    icon: verifiedToken?.icon,
+    icon,
     canonicalAsset,
   };
 };

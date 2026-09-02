@@ -28,6 +28,7 @@ import {
 
 import StellarLogo from "popup/assets/stellar-logo.png";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
+import { tokensListsSelector } from "popup/ducks/cache";
 import { transactionSubmissionSelector } from "popup/ducks/transactionSubmission";
 import { ScamAssetIcon } from "popup/components/account/ScamAssetIcon";
 import ImageMissingIcon from "popup/assets/image-missing.svg?react";
@@ -207,6 +208,7 @@ export const AccountAssets = ({
   const location = useLocation();
   const [assetIcons, setAssetIcons] = useState(inputAssetIcons);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
+  const cachedTokenLists = useSelector(tokensListsSelector);
   const [hasIconFetchRetried, setHasIconFetchRetried] = useState(false);
   const isAssetSuspicious = useIsAssetSuspicious();
   const isAssetMalicious = useIsAssetMalicious();
@@ -264,6 +266,10 @@ export const AccountAssets = ({
         code,
         assetIcons,
         networkDetails,
+        // Session cache of the user's asset lists, populated by the balances
+        // fetch. Empty on a cold popup, in which case the retry degrades to
+        // the issuer-TOML lookup it used to do exclusively.
+        assetsListsData: cachedTokenLists,
       });
       setAssetIcons(res);
       setHasIconFetchRetried(true);

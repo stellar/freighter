@@ -5,6 +5,8 @@ import {
   TESTNET_NETWORK_DETAILS,
 } from "@shared/constants/stellar";
 import * as GetLedgerKeyAccounts from "../helpers/getLedgerKeyAccounts";
+import * as GetIconUrlFromIssuer from "../helpers/getIconUrlFromIssuer";
+import * as IconProbe from "../helpers/iconProbe";
 import * as internalApi from "../internal";
 import { sendMessageToBackground } from "@shared/api/helpers/extensionMessaging";
 import { SERVICE_TYPES } from "@shared/constants/services";
@@ -390,6 +392,233 @@ describe("internalApi", () => {
         iconUrl: "i",
         isTrending: true,
       });
+    });
+  });
+  describe("retryAssetIcon", () => {
+    const KEY = "GATISXX6BZ6NC7IKQBY37CJD4SOZL3CYZJWXEDG6JVIY4WBS6KXJHN6Q";
+    const CODE = "USDT0";
+    const CANONICAL = `${CODE}:${KEY}`;
+    const FAILED_ICON = "https://ipfs.io/ipfs/bafkreidead";
+    const OTHER_DEAD_ICON = "https://also-dead.example/icon.png";
+    const LIVE_ICON = "https://docs.usdt0.to/downloads/usdt0/icon.png";
+    const TOML_ICON = "https://usdt0.to/icon.png";
+
+    const listWith = (icon: string, provider: string) =>
+      ({
+        name: "Test list",
+        description: "",
+        network: "public",
+        version: "1.0",
+        provider,
+        assets: [
+          {
+            code: CODE,
+            issuer: KEY,
+            name: CODE,
+            org: CODE,
+            domain: "usdt0.to",
+            icon,
+            decimals: 7,
+          },
+        ],
+      }) as any;
+
+    /** Stands in for the browser: only the named urls render. */
+    const onlyLoads = (...loadable: string[]) =>
+      jest
+        .spyOn(IconProbe, "firstLoadableIconUrl")
+        .mockImplementation(async (urls: string[]) =>
+          urls.find((url) => loadable.includes(url)),
+        );
+
+    const retry = (
+      assetsListsData: unknown[],
+      failedIcon: string = FAILED_ICON,
+    ) =>
+      internalApi.retryAssetIcon({
+        activePublicKey: null,
+        key: KEY,
+        code: CODE,
+        assetIcons: { [CANONICAL]: failedIcon },
+        networkDetails: MAINNET_NETWORK_DETAILS,
+        assetsListsData: assetsListsData as any,
+      });
+
+    it("settles on a candidate that loads", async () => {
+      onlyLoads(LIVE_ICON);
+
+      const result = await retry([
+        listWith(OTHER_DEAD_ICON, "A"),
+        listWith(LIVE_ICON, "B"),
+      ]);
+
+      expect(result[CANONICAL]).toEqual(LIVE_ICON);
+    });
+
+    it("never re-offers the url that just failed, even if it would load", async () => {
+      // The url rendered once and is cached; it is failing now. Handing it
+      // back would just re-render the same broken image.
+      onlyLoads(FAILED_ICON, LIVE_ICON);
+
+      const result = await retry([
+        listWith(FAILED_ICON, "A"),
+        listWith(LIVE_ICON, "B"),
+      ]);
+
+      expect(result[CANONICAL]).toEqual(LIVE_ICON);
+    });
+
+    it("falls back to the issuer TOML when the lists offer nothing else", async () => {
+      onlyLoads(TOML_ICON);
+      jest
+        .spyOn(GetIconUrlFromIssuer, "getIconUrlFromIssuer")
+        .mockResolvedValue(TOML_ICON);
+
+      const result = await retry([listWith(FAILED_ICON, "A")]);
+
+      expect(result[CANONICAL]).toEqual(TOML_ICON);
+    });
+
+    it("clears the icon when no source offers anything that loads", async () => {
+      onlyLoads();
+      jest
+        .spyOn(GetIconUrlFromIssuer, "getIconUrlFromIssuer")
+        .mockResolvedValue(TOML_ICON);
+
+      const result = await retry([listWith(FAILED_ICON, "A")]);
+
+      expect(result[CANONICAL]).toEqual("");
+    });
+  });
+
+  describe("getAssetIcons", () => {
+    const KEY = "GATISXX6BZ6NC7IKQBY37CJD4SOZL3CYZJWXEDG6JVIY4WBS6KXJHN6Q";
+    const CODE = "USDT0";
+    const CANONICAL = `${CODE}:${KEY}`;
+    const DEAD_ICON = "https://ipfs.io/ipfs/bafkreidead";
+    const LIVE_ICON = "https://docs.usdt0.to/downloads/usdt0/icon.png";
+    const TOML_ICON = "https://usdt0.to/icon.png";
+
+    const balances = {
+      [CANONICAL]: {
+        token: { code: CODE, issuer: { key: KEY } },
+      },
+    } as any;
+
+    const listWith = (icon: string, provider: string) =>
+      ({
+        name: "Test list",
+        description: "",
+        network: "public",
+        version: "1.0",
+        provider,
+        assets: [
+          {
+            code: CODE,
+            issuer: KEY,
+            name: CODE,
+            org: CODE,
+            domain: "usdt0.to",
+            icon,
+            decimals: 7,
+          },
+        ],
+      }) as any;
+
+    /** Stands in for the browser: only `loadable` renders. */
+    const onlyLoads = (loadable: string) =>
+      jest
+        .spyOn(IconProbe, "firstLoadableIconUrl")
+        .mockImplementation(async (urls: string[]) =>
+          urls.find((url) => url === loadable),
+        );
+
+    it("uses the candidate that loads rather than the one listed first", async () => {
+      onlyLoads(LIVE_ICON);
+
+      const icons = await internalApi.getAssetIcons({
+        balances,
+        networkDetails: MAINNET_NETWORK_DETAILS,
+        assetsListsData: [listWith(DEAD_ICON, "A"), listWith(LIVE_ICON, "B")],
+        cachedIcons: {},
+      });
+
+      expect(icons[CANONICAL]).toEqual(LIVE_ICON);
+    });
+
+    it("caches the icon it settled on, not the one it rejected", async () => {
+      onlyLoads(LIVE_ICON);
+
+      await internalApi.getAssetIcons({
+        balances,
+        networkDetails: MAINNET_NETWORK_DETAILS,
+        assetsListsData: [listWith(DEAD_ICON, "A"), listWith(LIVE_ICON, "B")],
+        cachedIcons: {},
+      });
+
+      expect(mockedSend).toHaveBeenCalledWith({
+        activePublicKey: null,
+        assetCanonical: CANONICAL,
+        iconUrl: LIVE_ICON,
+        type: SERVICE_TYPES.CACHE_ASSET_ICON,
+      });
+    });
+
+    it("falls back to the issuer TOML when no list candidate loads", async () => {
+      onlyLoads(TOML_ICON);
+      jest
+        .spyOn(GetLedgerKeyAccounts, "getLedgerKeyAccounts")
+        .mockResolvedValue({
+          [KEY]: { home_domain: "usdt0.to" },
+        } as any);
+      jest
+        .spyOn(GetIconUrlFromIssuer, "getIconUrlFromIssuer")
+        .mockResolvedValue(TOML_ICON);
+
+      const icons = await internalApi.getAssetIcons({
+        balances,
+        networkDetails: MAINNET_NETWORK_DETAILS,
+        assetsListsData: [listWith(DEAD_ICON, "A")],
+        cachedIcons: {},
+      });
+
+      expect(icons[CANONICAL]).toEqual(TOML_ICON);
+    });
+
+    it("discards an issuer TOML icon that does not load", async () => {
+      // Nothing renders, including the toml's own url.
+      onlyLoads("https://nothing-loads.example/icon.png");
+      jest
+        .spyOn(GetLedgerKeyAccounts, "getLedgerKeyAccounts")
+        .mockResolvedValue({
+          [KEY]: { home_domain: "usdt0.to" },
+        } as any);
+      jest
+        .spyOn(GetIconUrlFromIssuer, "getIconUrlFromIssuer")
+        .mockResolvedValue(TOML_ICON);
+
+      const icons = await internalApi.getAssetIcons({
+        balances,
+        networkDetails: MAINNET_NETWORK_DETAILS,
+        assetsListsData: [listWith(DEAD_ICON, "A")],
+        cachedIcons: {},
+      });
+
+      expect(icons[CANONICAL]).toBeNull();
+    });
+
+    it("trusts an already-cached icon without re-probing it", async () => {
+      const probe = jest.spyOn(IconProbe, "firstLoadableIconUrl");
+
+      const icons = await internalApi.getAssetIcons({
+        balances,
+        networkDetails: MAINNET_NETWORK_DETAILS,
+        assetsListsData: [listWith(LIVE_ICON, "A")],
+        cachedIcons: { [CANONICAL]: LIVE_ICON },
+      });
+
+      expect(icons[CANONICAL]).toEqual(LIVE_ICON);
+      expect(probe).not.toHaveBeenCalled();
     });
   });
 });
