@@ -19,12 +19,29 @@ export const getCachedAssetIconList = async ({
     // and the fresh lookup overwrites the stale entry.
     //
     // TODO: this is a read-side workaround, not the real fix. It hides bad data
-    // rather than stopping it being written, and it permanently rules out ever
-    // storing a legitimate null here — which we may well want, since an asset
-    // with genuinely no icon currently re-runs the whole lookup chain (token
-    // lists, then Horizon, then the issuer's stellar.toml) on every cold popup
-    // open. A durable negative cache with a TTL is the sane answer to that, and
-    // this filter would silently swallow it.
+    // rather than stopping it being written, and it rules out ever storing a
+    // meaningful null here.
+    //
+    // Retrying is the point: it is how an asset that got stuck gets its icon
+    // back. But the retry is not free, and for an asset with no icon anywhere
+    // it repeats forever without ever succeeding. Each attempt costs a
+    // token-list scan and, when that finds nothing, one batched Horizon call
+    // covering every such issuer plus a stellar.toml fetch for each issuer that
+    // publishes a home domain. (USDT0 stops at the Horizon call: its issuer
+    // publishes no home domain and, with its master key at weight 0, never
+    // can.)
+    //
+    // That cost is newly paid by the flows that load balances with icons —
+    // swap, send, manage assets, history — which previously skipped a
+    // null-marked asset outright. The Account view's own icon hook already
+    // retried regardless, since it passes an empty cache to its lookup pass, so
+    // nothing changes there. Redux holds the only in-session memo and starts
+    // empty on every popup open, so nothing suppresses the retry across opens
+    // either.
+    //
+    // A negative cache that survives the popup, with a TTL so it expires rather
+    // than latching, is the sane way to stop the endless retry — and this
+    // filter would silently swallow one.
     //
     // To fix properly, in order:
     //   1. Stop persisting nulls: retryAssetIcon sends `iconUrl: null` meaning
