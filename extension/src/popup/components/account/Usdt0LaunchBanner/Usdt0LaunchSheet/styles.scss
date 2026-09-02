@@ -114,11 +114,11 @@
     //
     // The top padding is what fits the three footer actions in the 600px
     // popup without scrolling: 80 (header) + 64 (two 32px column gaps) +
-    // 128 (footer) + 24 (bottom padding) = 296px of chrome, plus 212px of
-    // copy, leaves 92px. The USDT0 lockup stays put — it belongs to the
+    // 136 (footer) + 24 (bottom padding) = 304px of chrome, plus 212px of
+    // copy, leaves 84px. The USDT0 lockup stays put — it belongs to the
     // absolutely-positioned hero.
     justify-content: flex-start;
-    padding: pxToRem(88px) pxToRem(24px) 0;
+    padding: pxToRem(80px) pxToRem(24px) 0;
     gap: pxToRem(32px);
   }
 
@@ -203,7 +203,9 @@
   }
 
   // Borderless text button per design — no SDS Button variant is
-  // transparent, so it's hand-rolled like the close button
+  // transparent, so it's hand-rolled like the close button, mirroring the
+  // SDS `lg` metrics (40px tall, 8px/12px padding, 14/22 text) of the two
+  // buttons above it
   &__transfer {
     background: none;
     border: none;
@@ -213,13 +215,14 @@
     justify-content: center;
     gap: pxToRem(4px);
     width: 100%;
-    padding: pxToRem(6px) pxToRem(12px);
+    height: pxToRem(40px);
+    padding: pxToRem(8px) pxToRem(12px);
     border-radius: pxToRem(100px);
     color: var(--sds-clr-gray-12);
     font-family: inherit;
     font-size: pxToRem(14px);
     font-weight: var(--sds-fw-semi-bold);
-    line-height: pxToRem(20px);
+    line-height: pxToRem(22px);
 
     &:hover {
       background: rgba(255, 255, 255, 0.1);
