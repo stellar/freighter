@@ -4,9 +4,6 @@ import {
   canLoadIcon,
   firstLoadableIconUrl,
   mapWithConcurrency,
-  memoizedCanLoadIcon,
-  warmIconProbeCache,
-  __resetIconProbeCache,
 } from "../iconProbe";
 
 const A = "https://a.example/icon.png";
@@ -198,117 +195,5 @@ describe("mapWithConcurrency", () => {
 
   it("keeps icon lookups concurrent enough to stay off the critical path", () => {
     expect(ICON_LOOKUP_CONCURRENCY).toBeGreaterThan(1);
-  });
-});
-
-describe("memoizedCanLoadIcon", () => {
-  const originalImage = global.Image;
-
-  const stubImage = (outcome: "load" | "error") => {
-    const attempts = { count: 0 };
-    (global as any).Image = class {
-      onload: (() => void) | null = null;
-      onerror: (() => void) | null = null;
-      set src(_value: string) {
-        attempts.count += 1;
-        setTimeout(() => {
-          if (outcome === "load") {
-            this.onload?.();
-          } else {
-            this.onerror?.();
-          }
-        }, 0);
-      }
-    };
-    return attempts;
-  };
-
-  beforeEach(() => __resetIconProbeCache());
-  afterEach(() => {
-    (global as any).Image = originalImage;
-  });
-
-  it("loads a given url only once per session", async () => {
-    // History renders the same asset across many rows; re-loading its icon for
-    // every row would put the whole budget on screen repeatedly.
-    const attempts = stubImage("load");
-
-    await memoizedCanLoadIcon(A, 100);
-    await memoizedCanLoadIcon(A, 100);
-    await memoizedCanLoadIcon(A, 100);
-
-    expect(attempts.count).toEqual(1);
-  });
-
-  it("remembers a url that failed, so a dead icon is not retried per row", async () => {
-    const attempts = stubImage("error");
-
-    await expect(memoizedCanLoadIcon(A, 100)).resolves.toBe(false);
-    await expect(memoizedCanLoadIcon(A, 100)).resolves.toBe(false);
-
-    expect(attempts.count).toEqual(1);
-  });
-
-  it("keeps separate verdicts per url", async () => {
-    stubImage("load");
-
-    await expect(memoizedCanLoadIcon(A, 100)).resolves.toBe(true);
-    await expect(memoizedCanLoadIcon(B, 100)).resolves.toBe(true);
-  });
-
-  it("shares one in-flight load between concurrent callers", async () => {
-    const attempts = stubImage("load");
-
-    await Promise.all([
-      memoizedCanLoadIcon(A, 100),
-      memoizedCanLoadIcon(A, 100),
-    ]);
-
-    expect(attempts.count).toEqual(1);
-  });
-});
-
-describe("warmIconProbeCache", () => {
-  const originalImage = global.Image;
-
-  const stubImage = () => {
-    const attempts = { count: 0 };
-    (global as any).Image = class {
-      onload: (() => void) | null = null;
-      onerror: (() => void) | null = null;
-      set src(_value: string) {
-        attempts.count += 1;
-        setTimeout(() => this.onload?.(), 0);
-      }
-    };
-    return attempts;
-  };
-
-  beforeEach(() => __resetIconProbeCache());
-  afterEach(() => {
-    (global as any).Image = originalImage;
-  });
-
-  it("leaves later lookups of the same urls with nothing left to load", async () => {
-    // Views that resolve icons row by row can warm every url up front, so the
-    // per-row lookups become memo hits instead of serial round-trips.
-    const attempts = stubImage();
-
-    await warmIconProbeCache([A, B, A]);
-    const before = attempts.count;
-
-    await memoizedCanLoadIcon(A, 100);
-    await memoizedCanLoadIcon(B, 100);
-
-    expect(before).toEqual(2);
-    expect(attempts.count).toEqual(2);
-  });
-
-  it("ignores an empty list", async () => {
-    const attempts = stubImage();
-
-    await warmIconProbeCache([]);
-
-    expect(attempts.count).toEqual(0);
   });
 });

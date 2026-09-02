@@ -23,6 +23,7 @@ import { HorizonOperation, Response, SettingsState } from "@shared/api/types";
 import * as TokenListHelpers from "@shared/api/helpers/token-list";
 import * as GetIconFromTokenList from "@shared/api/helpers/getIconFromTokenList";
 import * as GetIconUrlFromIssuer from "@shared/api/helpers/getIconUrlFromIssuer";
+import * as IconProbe from "@shared/api/helpers/iconProbe";
 import * as RouteHelpers from "popup/helpers/route";
 import * as GetLedgerKeyAccounts from "@shared/api/helpers/getLedgerKeyAccounts";
 import * as UseGetCollectibles from "helpers/hooks/useGetCollectibles";
@@ -38,7 +39,6 @@ import {
   TEST_CANONICAL,
   TEST_PUBLIC_KEY,
   TEST_USDC_CANONICAL,
-  stubIconProbe,
 } from "../../__testHelpers__";
 import { Account } from "../Account";
 import { ROUTES } from "popup/constants/routes";
@@ -497,11 +497,16 @@ describe("Account view", () => {
       isFunded: true,
       subentryCount: 1,
     };
-    const getIconFromTokenListSpy = jest.spyOn(
+    const getIconCandidatesSpy = jest.spyOn(
       GetIconFromTokenList,
-      "getIconFromTokenLists",
+      "getIconCandidatesFromTokenLists",
     );
-    stubIconProbe();
+    // jsdom images never fire load or error, so stand in for the browser and
+    // say the first candidate renders. This test is about which source an icon
+    // comes from; iconProbe.test.ts covers the loading itself.
+    jest
+      .spyOn(IconProbe, "firstLoadableIconUrl")
+      .mockImplementation(async (urls: string[]) => urls[0]);
     const getIconUrlFromIssuerSpy = jest
       .spyOn(GetIconUrlFromIssuer, "getIconUrlFromIssuer")
       .mockImplementationOnce(() =>
@@ -592,13 +597,13 @@ describe("Account view", () => {
       expect(
         screen.getByTestId("AccountAssets__asset--loading-FOO"),
       ).toContainHTML("<img alt='FOO logo' src='http://domain.com/foo.png' />");
-      expect(getIconFromTokenListSpy).toHaveBeenCalledWith({
+      expect(getIconCandidatesSpy).toHaveBeenCalledWith({
         issuerId: "GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
         contractId: undefined,
         code: "FOO",
         assetsListsData: assetsListsData,
       });
-      expect(getIconFromTokenListSpy).toHaveBeenCalledTimes(2);
+      expect(getIconCandidatesSpy).toHaveBeenCalledTimes(2);
 
       expect(getIconUrlFromIssuerSpy).toHaveBeenCalledTimes(1);
 

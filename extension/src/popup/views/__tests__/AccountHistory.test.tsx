@@ -43,7 +43,6 @@ jest.mock("popup/App", () => ({
 
 // Import the mocked store so we can update it
 import { store } from "popup/App";
-import { stubIconProbe } from "popup/__testHelpers__";
 
 jest.mock("stellar-sdk", () => {
   const original = jest.requireActual("stellar-sdk");
@@ -145,10 +144,6 @@ jest
   .mockImplementation(() => Promise.resolve({} as any));
 
 describe("AccountHistory", () => {
-  beforeEach(() => {
-    stubIconProbe();
-  });
-
   beforeEach(() => {
     // Update mock to use test store's getState
     (store.getState as jest.Mock).mockImplementation(() => {

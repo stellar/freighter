@@ -18,7 +18,6 @@ import { reducer as tokenPaymentSimulation } from "popup/ducks/token-payment";
 import { reducer as remoteConfig } from "popup/ducks/remoteConfig";
 import { WalletType } from "@shared/constants/hardwareWallet";
 import { Account } from "@shared/api/types";
-import * as IconProbe from "@shared/api/helpers/iconProbe";
 
 export const TEST_PUBLIC_KEY =
   "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF";
@@ -457,23 +456,3 @@ export const mockCollectibles = [
     },
   },
 ];
-
-/**
- * Stands in for the browser when a test renders asset icons.
- *
- * Icon resolution confirms a url renders by loading it in an <img>. jsdom
- * images never fire load or error, so without this every candidate runs out its
- * budget and the icon silently never arrives — which surfaces as a missing
- * element rather than anything that points at icons. Call this in any test that
- * renders a view with asset icons.
- *
- * By default the first candidate renders; pass urls to name the ones that do.
- */
-export const stubIconProbe = (...loadable: string[]) => {
-  jest
-    .spyOn(IconProbe, "firstLoadableIconUrl")
-    .mockImplementation(async (urls: string[]) =>
-      loadable.length ? urls.find((url) => loadable.includes(url)) : urls[0],
-    );
-  jest.spyOn(IconProbe, "warmIconProbeCache").mockResolvedValue(undefined);
-};

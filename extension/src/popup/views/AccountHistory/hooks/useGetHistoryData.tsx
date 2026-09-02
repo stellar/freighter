@@ -78,11 +78,7 @@ import {
   getCollectibleName,
 } from "popup/components/account/CollectibleInfo";
 import { AssetListResponse } from "@shared/constants/soroban/asset-list";
-import {
-  getIconCandidatesFromTokenLists,
-  getIconFromTokenLists,
-} from "@shared/api/helpers/getIconFromTokenList";
-import { warmIconProbeCache } from "@shared/api/helpers/iconProbe";
+import { getIconFromTokenLists } from "@shared/api/helpers/getIconFromTokenList";
 import IconSoroban from "popup/assets/icon-soroban.svg?react";
 import { batchFetchCollectibles } from "helpers/utils/collectibles/collectiblesBatchFetcher";
 import { ContractIdentifier } from "helpers/utils/collectibles/collectiblesCache";
@@ -1082,14 +1078,8 @@ export const getOperationDependencies = async (
   networkDetails: NetworkDetails,
   publicKey: string,
   homeDomains: { [assetIssuer: string]: string | null },
-  cachedTokenLists: AssetListResponse[] = [],
 ) => {
   const domainsToFetch = new Set<string>();
-  // Candidate icon urls for every asset on the page. Resolving an icon now
-  // loads it to confirm it renders, and rows resolve one at a time, so we warm
-  // them all in one concurrent batch here and let the per-row lookups hit the
-  // memo instead of paying a round-trip each.
-  const iconUrlsToWarm = [] as string[];
   // Collect all collectible contract IDs and token IDs for batch fetching
   const collectibleContracts = new Map<string, Set<string>>();
 
@@ -1111,25 +1101,6 @@ export const getOperationDependencies = async (
       if (sourceAssetIssuer && !homeDomains[sourceAssetIssuer]) {
         domainsToFetch.add(sourceAssetIssuer);
       }
-
-      if (cachedTokenLists.length) {
-        const sourceAssetCode =
-          "source_asset_code" in operation ? operation.source_asset_code : "";
-        for (const [code, issuer] of [
-          [operation.asset_code, assetIssuer],
-          [sourceAssetCode, sourceAssetIssuer],
-        ] as [string | undefined, string | undefined][]) {
-          if (code && issuer) {
-            iconUrlsToWarm.push(
-              ...getIconCandidatesFromTokenLists({
-                issuerId: issuer,
-                code,
-                assetsListsData: cachedTokenLists,
-              }).candidates,
-            );
-          }
-        }
-      }
     }
 
     // Collect collectible contracts in the same loop
@@ -1150,8 +1121,6 @@ export const getOperationDependencies = async (
       }
     }
   }
-
-  await warmIconProbeCache(iconUrlsToWarm);
 
   const domainsArr = Array.from(domainsToFetch);
   if (domainsArr.length > 0) {
@@ -1229,7 +1198,6 @@ const createHistorySections = async (
       networkDetails,
       publicKey,
       homeDomains,
-      cachedTokenLists,
     );
   return operations.reduce(
     async (

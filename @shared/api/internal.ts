@@ -91,10 +91,7 @@ import { getIconUrlFromIssuer } from "./helpers/getIconUrlFromIssuer";
 import { getLedgerKeyAccounts } from "./helpers/getLedgerKeyAccounts";
 import { redactErrorBody } from "./helpers/redactErrorBody";
 import { stellarSdkServer, submitTx } from "./helpers/stellarSdkServer";
-import {
-  getIconCandidatesFromTokenLists,
-  getIconFromTokenLists,
-} from "./helpers/getIconFromTokenList";
+import { getIconCandidatesFromTokenLists } from "./helpers/getIconFromTokenList";
 import {
   ICON_LOOKUP_CONCURRENCY,
   firstLoadableIconUrl,
@@ -1316,6 +1313,51 @@ export const getAssetIconCache = async ({
   we'll store it in the background's storage and then use this cache for future lookups.
 */
 
+/**
+ * Persists an icon url we have confirmed renders. Only proven urls reach the
+ * cache, so a later read can be trusted without re-probing.
+ */
+const cacheAssetIconUrl = async (assetCanonical: string, iconUrl: string) =>
+  sendMessageToBackground({
+    activePublicKey: null,
+    assetCanonical,
+    iconUrl,
+    type: SERVICE_TYPES.CACHE_ASSET_ICON,
+  });
+
+/**
+ * Resolves the icon for one asset from the user's token lists by loading each
+ * url the lists offer and keeping the first that renders. Returns undefined
+ * when the lists offer nothing that works, which sends the caller on to the
+ * issuer-toml fallback.
+ */
+const resolveIconFromTokenLists = async ({
+  issuerId,
+  contractId,
+  code,
+  assetsListsData,
+}: {
+  issuerId?: string;
+  contractId?: string;
+  code: string;
+  assetsListsData: AssetListResponse[];
+}) => {
+  const { candidates, canonicalAsset } = getIconCandidatesFromTokenLists({
+    issuerId,
+    contractId,
+    code,
+    assetsListsData,
+  });
+
+  const icon = await firstLoadableIconUrl(candidates);
+  if (!icon || !canonicalAsset) {
+    return undefined;
+  }
+
+  await cacheAssetIconUrl(canonicalAsset, icon);
+  return { icon, canonicalAsset };
+};
+
 export const getAssetIcons = async ({
   balances,
   networkDetails,
@@ -1387,7 +1429,7 @@ export const getAssetIcons = async ({
       needsLookup,
       ICON_LOOKUP_CONCURRENCY,
       ({ key, code, contractId }) =>
-        getIconFromTokenLists({
+        resolveIconFromTokenLists({
           issuerId: key,
           contractId,
           code,
@@ -1397,7 +1439,7 @@ export const getAssetIcons = async ({
 
     needsLookup.forEach(({ key, code, canonical }, index) => {
       const resolved = resolvedIcons[index];
-      if (resolved.icon && resolved.canonicalAsset) {
+      if (resolved) {
         assetIcons[resolved.canonicalAsset] = resolved.icon;
         return;
       }
@@ -1426,13 +1468,13 @@ export const getAssetIcons = async ({
       continue;
     }
 
-    const tokenListIcon = await getIconFromTokenLists({
+    const tokenListIcon = await resolveIconFromTokenLists({
       issuerId: isContractId(key) ? undefined : key,
       contractId: isContractId(key) ? key : undefined,
       code,
       assetsListsData: assetsListsData!,
     });
-    if (tokenListIcon.icon) {
+    if (tokenListIcon) {
       assetIcons[canonical] = tokenListIcon.icon;
     } else if (!isContractId(key)) {
       domainsToFetch.push({ key, code });
@@ -1539,12 +1581,7 @@ export const retryAssetIcon = async ({
     candidates.filter((candidate) => candidate !== failedIcon),
   );
   if (tokenListIcon) {
-    await sendMessageToBackground({
-      activePublicKey,
-      assetCanonical: canonical,
-      iconUrl: tokenListIcon,
-      type: SERVICE_TYPES.CACHE_ASSET_ICON,
-    });
+    await cacheAssetIconUrl(canonical, tokenListIcon);
     newAssetIcons[canonical] = tokenListIcon;
     return newAssetIcons;
   }
