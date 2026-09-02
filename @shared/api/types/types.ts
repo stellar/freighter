@@ -430,6 +430,11 @@ export interface ApiTokenPrices {
 }
 
 export interface ProtocolEntry {
+  /**
+   * Rendered via LinkifiedText (popup/basics/LinkifiedText): supports
+   * markdown-style `[text](https://...)` links and bare `https://` URLs,
+   * which render as clickable links. No other markdown/HTML is parsed.
+   */
   description: string;
   iconUrl: string;
   name: string;
