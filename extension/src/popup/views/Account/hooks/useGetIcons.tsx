@@ -12,6 +12,7 @@ import {
   saveIconsForBalances,
   saveTokenLists,
   tokensListsSelector,
+  iconsSelector,
 } from "popup/ducks/cache";
 import {
   settingsNetworkDetailsSelector,
@@ -36,6 +37,9 @@ function useGetIcons() {
   );
   const cachedBalances = useSelector(balancesSelector);
   const cachedTokenLists = useSelector(tokensListsSelector);
+  // The session's own record of what has already been resolved — including the
+  // nulls that mark an asset as having no icon anywhere.
+  const sessionIcons = useSelector(iconsSelector);
   const { assetsLists } = useSelector(settingsSelector);
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
@@ -63,7 +67,11 @@ function useGetIcons() {
         balances: assetsWithoutIcons,
         networkDetails,
         assetsListsData,
-        cachedIcons: {},
+        // Account re-runs this hook on every balances change. Passing the
+        // session's icons means an asset already found to have no icon
+        // anywhere is not put through the whole chain again — token lists,
+        // then Horizon, then the issuer's toml — on each of those passes.
+        cachedIcons: sessionIcons,
       });
       payload.icons = { ...assetsWithIcons, ...updatedIcons };
       reduxDispatch(saveIconsForBalances({ icons: updatedIcons }));
