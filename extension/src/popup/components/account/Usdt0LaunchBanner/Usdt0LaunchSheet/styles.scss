@@ -5,7 +5,11 @@
   height: 100%;
   width: 100%;
   background: var(--sds-clr-gray-01);
-  overflow: hidden;
+  // Clip the oversized hero art horizontally, but keep a vertical scroll
+  // path so the footer CTAs stay reachable in short viewports (squat
+  // sidebar windows, high zoom)
+  overflow-x: hidden;
+  overflow-y: auto;
 
   &__background {
     position: absolute;
@@ -74,7 +78,9 @@
     position: relative;
     display: flex;
     flex-direction: column;
-    height: 100%;
+    // Fills the sheet but may grow past it, scrolling the root, when the
+    // viewport is shorter than the content
+    min-height: 100%;
     padding-bottom: pxToRem(24px);
     gap: pxToRem(32px);
   }
@@ -96,8 +102,9 @@
   }
 
   &__body {
+    // Stretches in tall viewports but never shrinks below its content, so
+    // a short viewport grows the column into a scroll instead of clipping
     flex: 1;
-    min-height: 0;
     display: flex;
     flex-direction: column;
     align-items: center;
