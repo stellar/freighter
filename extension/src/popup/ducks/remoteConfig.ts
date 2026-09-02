@@ -235,7 +235,8 @@ export const tokenPricesV2Selector = createSelector(
 
 /**
  * Returns whether the v2 account-balances endpoint should be used. Defaults
- * to true; Amplitude can flip the flag off to roll back to the v1 endpoint.
+ * to false while the balances-v2 work is in progress; Amplitude can flip the
+ * flag on to opt into the v2 endpoint.
  */
 export const balancesV2Selector = createSelector(
   remoteConfigSelector,

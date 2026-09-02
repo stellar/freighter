@@ -401,7 +401,7 @@ describe("remoteConfig selectors", () => {
     expect(tokenPricesV2Selector(store.getState())).toBe(false);
   });
 
-  it("balancesV2Selector stays true when the variant is on", async () => {
+  it("balancesV2Selector turns true when the variant is on", async () => {
     (getExperimentClient as jest.Mock).mockReturnValue(
       makeClient({
         use_balances_v2: { value: "on" },
@@ -413,7 +413,7 @@ describe("remoteConfig selectors", () => {
     expect(balancesV2Selector(store.getState())).toBe(true);
   });
 
-  it("balancesV2Selector rolls back to false when the variant is off", async () => {
+  it("balancesV2Selector stays false when the variant is off", async () => {
     (getExperimentClient as jest.Mock).mockReturnValue(
       makeClient({
         use_balances_v2: { value: "off" },
