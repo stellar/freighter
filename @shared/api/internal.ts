@@ -2088,7 +2088,7 @@ export const getUsdt0LaunchBannerDismissed = async (): Promise<boolean> => {
   });
 
   if (error) {
-    return false;
+    throw new Error(error);
   }
 
   return !!isDismissed;
