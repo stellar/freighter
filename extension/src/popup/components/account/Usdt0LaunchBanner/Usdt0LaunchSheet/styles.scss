@@ -110,13 +110,15 @@
     align-items: center;
     // Content flows right below the hero art instead of anchoring to the
     // bottom, so taller viewports (sidebar mode) leave the extra space
-    // between the features and the footer buttons. The top padding clears
-    // the absolutely-positioned hero (arcs end 257px from the sheet top,
-    // the body starts at 112px after the 80px header and 32px gap),
-    // reproducing the 600px-popup layout with the design's 32px clearance
-    // above the footer.
+    // between the features and the footer buttons.
+    //
+    // The top padding is what fits the three footer actions in the 600px
+    // popup without scrolling: 80 (header) + 64 (two 32px column gaps) +
+    // 128 (footer) + 24 (bottom padding) = 296px of chrome, plus 212px of
+    // copy, leaves 92px. The USDT0 lockup stays put — it belongs to the
+    // absolutely-positioned hero.
     justify-content: flex-start;
-    padding: pxToRem(148px) pxToRem(24px) 0;
+    padding: pxToRem(88px) pxToRem(24px) 0;
     gap: pxToRem(32px);
   }
 
@@ -211,7 +213,7 @@
     justify-content: center;
     gap: pxToRem(4px);
     width: 100%;
-    padding: pxToRem(8px) pxToRem(12px);
+    padding: pxToRem(6px) pxToRem(12px);
     border-radius: pxToRem(100px);
     color: var(--sds-clr-gray-12);
     font-family: inherit;
