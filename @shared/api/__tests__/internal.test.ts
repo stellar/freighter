@@ -771,6 +771,27 @@ describe("internalApi", () => {
       expect(probes).toBeLessThan(24);
     });
 
+    it("prefers the earlier list's icon even when a later list also has one", async () => {
+      // The reported bug, in the shape it actually occurred: USDT0 is on the
+      // Soroswap list (a direct https icon that browsers can load) and on the
+      // LOBSTR list (an ipfs.io gateway url that answers curl but 403s a
+      // browser User-Agent). Resolution used to keep whichever list it read
+      // last, which handed the <img> the url browsers cannot load.
+      onlyLoads(LIVE_ICON, DEAD_ICON);
+
+      const icons = await internalApi.getAssetIcons({
+        balances,
+        networkDetails: MAINNET_NETWORK_DETAILS,
+        assetsListsData: [
+          listWith(LIVE_ICON, "Soroswap Protocol"),
+          listWith(DEAD_ICON, "LOBSTR"),
+        ],
+        cachedIcons: {},
+      });
+
+      expect(icons[CANONICAL]).toEqual(LIVE_ICON);
+    });
+
     it("trusts an already-cached icon without re-probing it", async () => {
       const probe = jest.spyOn(IconProbe, "firstLoadableIconUrl");
 

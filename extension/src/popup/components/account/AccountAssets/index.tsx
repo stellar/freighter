@@ -106,6 +106,16 @@ export const AssetIcon = memo(
     const { soroswapTokens } = useSelector(transactionSubmissionSelector);
 
     const canonicalAsset = assetIcons[getCanonicalFromAsset(code, issuerKey)];
+
+    // A different url is a fresh attempt, so drop any previous failure.
+    // retryAssetIconFetch resolves a replacement and pushes it down through
+    // assetIcons; without this the error latches for the life of the component
+    // and the broken-image glyph wins over the icon we just found, leaving the
+    // retry with nothing to show until the popup is reopened.
+    useEffect(() => {
+      setHasError(false);
+    }, [canonicalAsset, icon]);
+
     let imgSrc = hasError ? ImageMissingIcon : canonicalAsset || "";
     if (icon) {
       imgSrc = icon;
