@@ -8,6 +8,7 @@ import { TESTNET_NETWORK_DETAILS } from "@shared/constants/stellar";
 import { DEFAULT_ASSETS_LISTS } from "@shared/constants/soroban/asset-list";
 import { getCanonicalFromAsset } from "helpers/stellar";
 import * as ExtensionMessaging from "@shared/api/helpers/extensionMessaging";
+import { SERVICE_TYPES } from "@shared/constants/services";
 
 const VERIFIED_TOKEN_CONTRACT = validAssetList.assets[0].contract;
 const VERIFIED_TOKEN_ISSUER = validAssetList.assets[0].issuer;
@@ -150,5 +151,26 @@ describe("getIconCandidatesFromTokenLists", () => {
 
     expect(candidates).toEqual([]);
     expect(canonicalAsset).toBeUndefined();
+  });
+});
+
+describe("getIconFromTokenLists cache isolation", () => {
+  it("does not write its unprobed pick into the shared icon cache", async () => {
+    // getAssetIcons trusts a truthy cache hit without re-loading it, so a url
+    // this path never loaded must not land there — otherwise a visit to asset
+    // search or a history row can hand the account view a dead icon.
+    const sendSpy = jest.spyOn(ExtensionMessaging, "sendMessageToBackground");
+    sendSpy.mockClear();
+
+    await getIconFromTokenLists({
+      issuerId: VERIFIED_TOKEN_ISSUER,
+      code: VERIFIED_TOKEN_CODE,
+      assetsListsData: [validAssetList],
+    });
+
+    const cacheWrites = sendSpy.mock.calls.filter(
+      ([message]) => message?.type === SERVICE_TYPES.CACHE_ASSET_ICON,
+    );
+    expect(cacheWrites).toEqual([]);
   });
 });

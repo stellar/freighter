@@ -13,6 +13,7 @@ import {
   NETWORKS_LIST_ID,
   STORAGE_VERSION,
   TOKEN_ID_LIST,
+  CACHED_ASSET_ICONS_ID,
 } from "constants/localStorageTypes";
 import * as DataStorage from "../dataStorage";
 import * as DataStorageAccess from "../dataStorageAccess";
@@ -221,5 +222,38 @@ describe("Storage migrations", () => {
     const storedVersion = await mockStorage.get(STORAGE_VERSION);
     expect(storedAssetList[ASSETS_LISTS_ID]).toEqual(DEFAULT_ASSETS_LISTS);
     expect(storedVersion[STORAGE_VERSION]).toEqual("4.1.0");
+  });
+  describe("dropNullAssetIconCacheEntries", () => {
+    const LIVE =
+      "USDC:GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN";
+    const BROKEN =
+      "USDT0:GATISXX6BZ6NC7IKQBY37CJD4SOZL3CYZJWXEDG6JVIY4WBS6KXJHN6Q";
+    const ICON_URL = "https://centre.io/usdc.png";
+
+    it("removes nulls left by the old retry path while keeping real icons", async () => {
+      // A null here used to mean "never look for this icon again", and it was
+      // written to disk, so wallets that hit the bug stay iconless forever
+      // unless the entry is swept.
+      await mockStorage.set({
+        [CACHED_ASSET_ICONS_ID]: { [LIVE]: ICON_URL, [BROKEN]: null },
+      });
+
+      await DataStorage.dropNullAssetIconCacheEntries();
+
+      const stored = await mockStorage.get(CACHED_ASSET_ICONS_ID);
+      expect(stored[CACHED_ASSET_ICONS_ID]).toEqual({ [LIVE]: ICON_URL });
+    });
+
+    it("does not run again once the storage version has passed it", async () => {
+      await mockStorage.set({ [STORAGE_VERSION]: "99.0.0" });
+      await mockStorage.set({
+        [CACHED_ASSET_ICONS_ID]: { [BROKEN]: null },
+      });
+
+      await DataStorage.dropNullAssetIconCacheEntries();
+
+      const stored = await mockStorage.get(CACHED_ASSET_ICONS_ID);
+      expect(stored[CACHED_ASSET_ICONS_ID]).toEqual({ [BROKEN]: null });
+    });
   });
 });

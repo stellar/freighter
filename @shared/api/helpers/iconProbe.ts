@@ -88,3 +88,42 @@ export const firstLoadableIconUrl = async (
 
   return undefined;
 };
+
+/**
+ * How many assets resolve their icon at once.
+ *
+ * Icon resolution sits on the balances render path (useGetBalances awaits it
+ * before dispatching), so resolving one asset at a time would add a real image
+ * round-trip per asset to what used to be an in-memory scan. Running them
+ * concurrently keeps the wall-clock cost close to a single asset's rather than
+ * the sum, while the limit stops a large wallet from opening a connection per
+ * held asset at once.
+ */
+export const ICON_LOOKUP_CONCURRENCY = 8;
+
+/**
+ * Promise.all with a ceiling on how many run at once. Results come back in
+ * input order regardless of which finished first.
+ */
+export const mapWithConcurrency = async <T, R>(
+  items: T[],
+  limit: number,
+  fn: (item: T) => Promise<R>,
+): Promise<R[]> => {
+  const results = new Array<R>(items.length);
+  let next = 0;
+
+  const runWorker = async () => {
+    while (next < items.length) {
+      const index = next;
+      next += 1;
+      results[index] = await fn(items[index]);
+    }
+  };
+
+  await Promise.all(
+    Array.from({ length: Math.min(limit, items.length) }, runWorker),
+  );
+
+  return results;
+};

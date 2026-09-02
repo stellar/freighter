@@ -1,7 +1,9 @@
 import {
   ICON_LOAD_BUDGET_MS,
+  ICON_LOOKUP_CONCURRENCY,
   canLoadIcon,
   firstLoadableIconUrl,
+  mapWithConcurrency,
 } from "../iconProbe";
 
 const A = "https://a.example/icon.png";
@@ -136,5 +138,62 @@ describe("ICON_LOAD_BUDGET_MS", () => {
     // cold DNS + TLS for a ~8KB png.
     expect(ICON_LOAD_BUDGET_MS).toBeGreaterThanOrEqual(1000);
     expect(ICON_LOAD_BUDGET_MS).toBeLessThanOrEqual(1500);
+  });
+});
+
+describe("mapWithConcurrency", () => {
+  const settleAfter = (ms: number) =>
+    new Promise((resolve) => setTimeout(resolve, ms));
+
+  it("returns results in input order, not completion order", async () => {
+    const results = await mapWithConcurrency([30, 10, 20], 3, async (delay) => {
+      await settleAfter(delay);
+      return delay;
+    });
+
+    expect(results).toEqual([30, 10, 20]);
+  });
+
+  it("never runs more than the limit at once", async () => {
+    let inFlight = 0;
+    let peak = 0;
+
+    await mapWithConcurrency(
+      Array.from({ length: 12 }, (_, i) => i),
+      3,
+      async () => {
+        inFlight += 1;
+        peak = Math.max(peak, inFlight);
+        await settleAfter(5);
+        inFlight -= 1;
+        return null;
+      },
+    );
+
+    expect(peak).toEqual(3);
+  });
+
+  it("runs every item even when there are more items than workers", async () => {
+    const seen: number[] = [];
+
+    await mapWithConcurrency([1, 2, 3, 4, 5], 2, async (item) => {
+      seen.push(item);
+      return item;
+    });
+
+    expect(seen.sort()).toEqual([1, 2, 3, 4, 5]);
+  });
+
+  it("handles an empty list without spawning workers", async () => {
+    const fn = jest.fn();
+
+    const results = await mapWithConcurrency([], 4, fn);
+
+    expect(results).toEqual([]);
+    expect(fn).not.toHaveBeenCalled();
+  });
+
+  it("keeps icon lookups concurrent enough to stay off the critical path", () => {
+    expect(ICON_LOOKUP_CONCURRENCY).toBeGreaterThan(1);
   });
 });

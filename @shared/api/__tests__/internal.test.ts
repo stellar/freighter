@@ -479,6 +479,67 @@ describe("internalApi", () => {
       expect(result[CANONICAL]).toEqual(TOML_ICON);
     });
 
+    it("clears the TOML url it rejected, so the next load does not trust it", async () => {
+      // getIconUrlFromIssuer caches whatever the toml claims before we get to
+      // load it. Leaving a rejected url there would have getAssetIcons serve it
+      // straight from cache next time, recreating the loop this all fixes.
+      onlyLoads();
+      jest
+        .spyOn(GetIconUrlFromIssuer, "getIconUrlFromIssuer")
+        .mockResolvedValue(TOML_ICON);
+      mockedSend.mockClear();
+
+      await retry([listWith(FAILED_ICON, "A")]);
+
+      const clears = mockedSend.mock.calls.filter(
+        ([message]) =>
+          message?.type === SERVICE_TYPES.CACHE_ASSET_ICON &&
+          message?.assetCanonical === CANONICAL &&
+          !message?.iconUrl,
+      );
+      // One before the lookup, one to undo what getIconUrlFromIssuer cached.
+      expect(clears).toHaveLength(2);
+    });
+
+    it("matches contract assets against the lists by contract id, not issuer", async () => {
+      // AccountAssets passes a soroban balance's contractId as `key`, and the
+      // lists key those entries by `contract` — so looking them up as an issuer
+      // never matches and getIconUrlFromIssuer bails on its ed25519 guard.
+      const CONTRACT =
+        "CBSJZEIO5C7KC2SF3MKSNXXJSW5G3VTNBX4ATMKUI3B2MR4JKM4R26YF";
+      onlyLoads(LIVE_ICON);
+
+      const result = await internalApi.retryAssetIcon({
+        activePublicKey: null,
+        key: CONTRACT,
+        code: CODE,
+        assetIcons: { [`${CODE}:${CONTRACT}`]: FAILED_ICON },
+        networkDetails: MAINNET_NETWORK_DETAILS,
+        assetsListsData: [
+          {
+            name: "Test list",
+            description: "",
+            network: "public",
+            version: "1.0",
+            provider: "A",
+            assets: [
+              {
+                code: CODE,
+                contract: CONTRACT,
+                name: CODE,
+                org: CODE,
+                domain: "usdt0.to",
+                icon: LIVE_ICON,
+                decimals: 7,
+              },
+            ],
+          },
+        ] as any,
+      });
+
+      expect(result[`${CODE}:${CONTRACT}`]).toEqual(LIVE_ICON);
+    });
+
     it("clears the icon when no source offers anything that loads", async () => {
       onlyLoads();
       jest
@@ -605,6 +666,58 @@ describe("internalApi", () => {
       });
 
       expect(icons[CANONICAL]).toBeNull();
+    });
+
+    it("resolves icons for many assets concurrently, not one after another", async () => {
+      // getAssetIcons is awaited before the balances render, so serial probes
+      // would add an image round-trip per asset to a previously instant scan.
+      let inFlight = 0;
+      let peak = 0;
+      jest
+        .spyOn(IconProbe, "firstLoadableIconUrl")
+        .mockImplementation(async (urls: string[]) => {
+          inFlight += 1;
+          peak = Math.max(peak, inFlight);
+          await new Promise((resolve) => setTimeout(resolve, 5));
+          inFlight -= 1;
+          return urls[0];
+        });
+
+      const manyBalances: any = {};
+      const manyLists: any[] = [];
+      for (let i = 0; i < 6; i++) {
+        const issuer = `GISSUER${i}`;
+        manyBalances[`AST${i}:${issuer}`] = {
+          token: { code: `AST${i}`, issuer: { key: issuer } },
+        };
+        manyLists.push({
+          name: "Test list",
+          description: "",
+          network: "public",
+          version: "1.0",
+          provider: `P${i}`,
+          assets: [
+            {
+              code: `AST${i}`,
+              issuer,
+              name: `AST${i}`,
+              org: `AST${i}`,
+              domain: "example.com",
+              icon: `https://example.com/${i}.png`,
+              decimals: 7,
+            },
+          ],
+        });
+      }
+
+      await internalApi.getAssetIcons({
+        balances: manyBalances,
+        networkDetails: MAINNET_NETWORK_DETAILS,
+        assetsListsData: manyLists,
+        cachedIcons: {},
+      });
+
+      expect(peak).toBeGreaterThan(1);
     });
 
     it("trusts an already-cached icon without re-probing it", async () => {

@@ -1,9 +1,6 @@
 import { AssetListResponse } from "@shared/constants/soroban/asset-list";
 import { getCanonicalFromAsset } from "@shared/helpers/stellar";
 
-import { sendMessageToBackground } from "./extensionMessaging";
-import { SERVICE_TYPES } from "../../constants/services";
-
 interface TokenListLookup {
   issuerId?: string;
   contractId?: string;
@@ -71,9 +68,18 @@ export const getIconCandidatesFromTokenLists = ({
 };
 
 /**
- * Single-icon lookup for callers that render an icon directly without probing
- * it (asset search, sign-transaction rows, history rows). Takes the first
- * candidate and caches it.
+ * Single-icon lookup for callers that render an icon directly without loading
+ * it first (asset search, sign-transaction rows, history rows). Takes the first
+ * candidate, since it has to commit to one url without knowing if it works.
+ *
+ * Deliberately does NOT write to the shared icon cache. getAssetIcons trusts a
+ * truthy cache hit without re-loading it, so seeding that cache from here — with
+ * a url nothing has confirmed renders — would let a visit to asset search or a
+ * history row hand the account view a dead icon and undo the whole point of
+ * probing. These callers render what they get and leave the cache to
+ * getAssetIcons, which only stores urls it has watched load.
+ *
+ * Async purely to keep the signature stable for existing callers.
  */
 export const getIconFromTokenLists = async ({
   issuerId,
@@ -87,19 +93,9 @@ export const getIconFromTokenLists = async ({
     code,
     assetsListsData,
   });
-  const icon = candidates[0];
-
-  if (icon) {
-    await sendMessageToBackground({
-      activePublicKey: null,
-      assetCanonical: `${code}:${contractId || issuerId}`,
-      iconUrl: icon,
-      type: SERVICE_TYPES.CACHE_ASSET_ICON,
-    });
-  }
 
   return {
-    icon,
+    icon: candidates[0],
     canonicalAsset,
   };
 };

@@ -14,6 +14,7 @@ import {
   IS_HIDE_DUST_ENABLED_ID,
   ALLOWLIST_ID,
   LAST_USED_ACCOUNT,
+  CACHED_ASSET_ICONS_ID,
 } from "constants/localStorageTypes";
 import {
   DEFAULT_NETWORKS,
@@ -377,6 +378,36 @@ export const migratePubnetRpcUrl = async () => {
   }
 };
 
+/**
+ * Sweeps nulls out of the persisted asset-icon cache.
+ *
+ * The old retry path cleared a broken icon by writing `null` here, and
+ * getAssetIcons reads a cached `null` as "already looked, don't look again".
+ * Because this store is on disk, that verdict outlived the session: a wallet
+ * whose icon url failed once rendered no icon ever again, and could not
+ * recover on its own (with no icon there is no <img>, so nothing fires the
+ * onError that would trigger a retry).
+ *
+ * cacheAssetIcon no longer writes nulls, so this only has to clean up entries
+ * left by earlier versions.
+ */
+export const dropNullAssetIconCacheEntries = async () => {
+  const localStore = dataStorageAccess(browserLocalStorage);
+  const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
+
+  if (shouldRunMigration({ storageVersion, migrationVersion: "5.46.0" })) {
+    const assetIconCache =
+      (await localStore.getItem(CACHED_ASSET_ICONS_ID)) || {};
+
+    const cleaned = Object.fromEntries(
+      Object.entries(assetIconCache).filter(([, iconUrl]) => iconUrl),
+    );
+    await localStore.setItem(CACHED_ASSET_ICONS_ID, cleaned);
+
+    await migrateDataStorageVersion("5.46.0");
+  }
+};
+
 export const versionedMigration = async () => {
   // sequentially call migrations in order to enforce smooth schema upgrades
 
@@ -392,6 +423,7 @@ export const versionedMigration = async () => {
   await removeStellarExpertData();
   await migrateAllowlistToKeyNetworkSchema();
   await migratePubnetRpcUrl();
+  await dropNullAssetIconCacheEntries();
 };
 
 // Updates storage version

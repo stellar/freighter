@@ -92,7 +92,11 @@ import { getLedgerKeyAccounts } from "./helpers/getLedgerKeyAccounts";
 import { redactErrorBody } from "./helpers/redactErrorBody";
 import { stellarSdkServer, submitTx } from "./helpers/stellarSdkServer";
 import { getIconCandidatesFromTokenLists } from "./helpers/getIconFromTokenList";
-import { firstLoadableIconUrl } from "./helpers/iconProbe";
+import {
+  ICON_LOOKUP_CONCURRENCY,
+  firstLoadableIconUrl,
+  mapWithConcurrency,
+} from "./helpers/iconProbe";
 import { mapAccountBalancesV2 } from "./helpers/mapAccountBalancesV2";
 import { addBlockaidScanResults } from "./helpers/addBlockaidScanResults";
 import { injectLocalTokenBalances } from "./helpers/injectLocalTokenBalances";
@@ -1358,57 +1362,75 @@ export const getAssetIcons = async ({
   const domainsToFetch = [] as { key: string; code: string }[];
 
   if (balances) {
-    const balanceValues = Object.values(balances);
+    // First pass is cache-only and synchronous: it settles every balance we
+    // already have an answer for and collects the rest. Nothing here touches
+    // the network, so the common case (a warm cache) costs what it always did.
+    const needsLookup = [] as {
+      key: string;
+      code: string;
+      contractId?: string;
+      canonical: string;
+    }[];
 
-    for (let i = 0; i < balanceValues.length; i++) {
-      let icon = "";
-      const { token, contractId } = balanceValues[i];
-      if (token && "issuer" in token) {
-        const {
-          issuer: { key },
-          code,
-        } = token;
-
-        let canonical = getCanonicalFromAsset(code, key);
-        const cachedIcon = cachedIcons[canonical];
-        if (cachedIcon) {
-          assetIcons[canonical] = cachedIcon;
-          continue;
-        }
-
-        if (cachedIcon === null) {
-          // if we've tried to fetch this icon before and it wasn't found, we marked it as null
-          // don't bother trying to fetch it again
-          // this null value is only stored in Redux, so we will re-try on next app reload
-          continue;
-        }
-
-        if (skipLookup) {
-          continue;
-        }
-
-        if (!icon) {
-          // if we don't have the icon, we try to get it from the token lists
-          const tokenListIcon = await resolveIconFromTokenLists({
-            issuerId: key,
-            contractId,
-            code,
-            assetsListsData: assetsListsData!,
-          });
-          if (tokenListIcon) {
-            icon = tokenListIcon.icon;
-            canonical = tokenListIcon.canonicalAsset;
-          } else {
-            // if we still don't have the icon, we try to get it from the issuer,
-            // aggregate the missing icons and we'll fetch all the domains at once
-            domainsToFetch.push({ key, code });
-          }
-        }
-
-        // we assign null here if we checked all sources and still don't have the icon
-        assetIcons[canonical] = icon || null;
+    for (const balance of Object.values(balances)) {
+      const { token, contractId } = balance;
+      if (!token || !("issuer" in token)) {
+        continue;
       }
+
+      const {
+        issuer: { key },
+        code,
+      } = token;
+      const canonical = getCanonicalFromAsset(code, key);
+      const cachedIcon = cachedIcons[canonical];
+
+      if (cachedIcon) {
+        assetIcons[canonical] = cachedIcon;
+        continue;
+      }
+
+      if (cachedIcon === null) {
+        // We looked for this icon earlier in the session and came up empty.
+        // Only Redux holds these nulls now — cacheAssetIcon no longer persists
+        // one — so the search starts fresh on the next app load.
+        continue;
+      }
+
+      if (skipLookup) {
+        continue;
+      }
+
+      needsLookup.push({ key, code, contractId, canonical });
     }
+
+    // Second pass loads candidate icons, which is real network work. It runs
+    // concurrently because getAssetIcons is awaited before the balances render:
+    // one asset at a time would put an image round-trip per asset in front of
+    // the user, instead of roughly one asset's worth for the whole wallet.
+    const resolvedIcons = await mapWithConcurrency(
+      needsLookup,
+      ICON_LOOKUP_CONCURRENCY,
+      ({ key, code, contractId }) =>
+        resolveIconFromTokenLists({
+          issuerId: key,
+          contractId,
+          code,
+          assetsListsData: assetsListsData!,
+        }),
+    );
+
+    needsLookup.forEach(({ key, code, canonical }, index) => {
+      const resolved = resolvedIcons[index];
+      if (resolved) {
+        assetIcons[resolved.canonicalAsset] = resolved.icon;
+        return;
+      }
+      // Nothing in the lists worked, so fall through to the issuer's toml.
+      // Those are batched below; null holds the slot until then.
+      domainsToFetch.push({ key, code });
+      assetIcons[canonical] = null;
+    });
   }
 
   // Unheld extras run the same cache -> token lists -> issuer-toml chain as
@@ -1529,8 +1551,12 @@ export const retryAssetIcon = async ({
     return assetIcons;
   }
 
+  // Soroban balances arrive with their contract id as `key`, and the lists key
+  // those entries by `contract` — mirror the split getAssetIcons uses so they
+  // match at all.
   const { candidates } = getIconCandidatesFromTokenLists({
-    issuerId: key,
+    issuerId: isContractId(key) ? undefined : key,
+    contractId: isContractId(key) ? key : undefined,
     code,
     assetsListsData,
   });
@@ -1548,6 +1574,20 @@ export const retryAssetIcon = async ({
     tomlIcon && tomlIcon !== failedIcon
       ? await firstLoadableIconUrl([tomlIcon])
       : undefined;
+
+  if (tomlIcon && !usableTomlIcon) {
+    // getIconUrlFromIssuer caches the toml's url as soon as it reads it, before
+    // anything has confirmed it renders. Undo that: getAssetIcons trusts a
+    // truthy cache hit without re-loading it, so a rejected url left behind
+    // would be served straight back on the next open.
+    await sendMessageToBackground({
+      activePublicKey,
+      assetCanonical: canonical,
+      iconUrl: null,
+      type: SERVICE_TYPES.CACHE_ASSET_ICON,
+    });
+  }
+
   newAssetIcons[canonical] = usableTomlIcon || "";
   return newAssetIcons;
 };
