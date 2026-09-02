@@ -109,11 +109,12 @@
     align-items: center;
     // Content flows right below the hero art instead of anchoring to the
     // bottom, so taller viewports (sidebar mode) leave the extra space
-    // between the features and the footer button. The top padding clears
+    // between the features and the footer buttons. The top padding clears
     // the absolutely-positioned hero (arcs end 257px from the sheet top,
-    // the body starts at 80px), reproducing the 600px-popup layout.
+    // the body starts at 80px), reproducing the 600px-popup layout with
+    // the design's 32px clearance above the footer.
     justify-content: flex-start;
-    padding: pxToRem(188px) pxToRem(24px) 0;
+    padding: pxToRem(180px) pxToRem(24px) 0;
     gap: pxToRem(32px);
   }
 
