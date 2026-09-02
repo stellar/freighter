@@ -11,7 +11,8 @@ import Usdt0Lockup from "popup/assets/usdt0-lockup.svg";
 
 import "./styles.scss";
 
-const USDT0_BRIDGE_URL =
+const USDT0_SWAP_URL = "https://www.sushi.com/stellar/swap";
+const USDT0_TRANSFER_URL =
   "https://usdt0.to/transfer?source=ethereum&destination=stellar&token=usdt0";
 
 interface Usdt0LaunchSheetProps {
@@ -22,13 +23,17 @@ export const Usdt0LaunchSheet = ({ onClose }: Usdt0LaunchSheetProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
+  const handleSwapClick = () => {
+    openTab(USDT0_SWAP_URL);
+  };
+
   const handleReceiveClick = () => {
     onClose();
     navigateTo(ROUTES.viewPublicKey, navigate);
   };
 
-  const handleBridgeClick = () => {
-    openTab(USDT0_BRIDGE_URL);
+  const handleTransferClick = () => {
+    openTab(USDT0_TRANSFER_URL);
   };
 
   return (
@@ -137,6 +142,18 @@ export const Usdt0LaunchSheet = ({ onClose }: Usdt0LaunchSheetProps) => {
             variant="secondary"
             isFullWidth
             isRounded
+            icon={<Icon.ArrowUpRight />}
+            iconPosition="right"
+            onClick={handleSwapClick}
+            data-testid="usdt0-launch-sheet-swap"
+          >
+            {t("Swap to USDT0")}
+          </Button>
+          <Button
+            size="lg"
+            variant="tertiary"
+            isFullWidth
+            isRounded
             onClick={handleReceiveClick}
             data-testid="usdt0-launch-sheet-receive"
           >
@@ -144,12 +161,12 @@ export const Usdt0LaunchSheet = ({ onClose }: Usdt0LaunchSheetProps) => {
           </Button>
           <button
             type="button"
-            className="Usdt0LaunchSheet__bridge"
-            onClick={handleBridgeClick}
-            data-testid="usdt0-launch-sheet-bridge"
+            className="Usdt0LaunchSheet__transfer"
+            onClick={handleTransferClick}
+            data-testid="usdt0-launch-sheet-transfer"
           >
-            {t("Bridge to Stellar")}
-            <Icon.LinkExternal01 />
+            {t("Transfer to Stellar")}
+            <Icon.ArrowUpRight />
           </button>
         </div>
       </div>
