@@ -28,6 +28,7 @@ export const HIDDEN_ASSETS = "hiddenAssets";
 export const HIDDEN_COLLECTIBLES = "hiddenCollectibles";
 export const TEMPORARY_STORE_ID = "temporaryStore";
 export const TEMPORARY_STORE_EXTRA_ID = "temporaryStoreExtra";
+export const USDT0_LAUNCH_BANNER_DISMISSED = "usdt0LaunchBannerDismissed";
 export const OVERRIDDEN_BLOCKAID_RESPONSE_ID = "overriddenBlockaidResponse";
 export const COLLECTIBLES_ID = "collectibles";
 export const IS_OPEN_SIDEBAR_BY_DEFAULT_ID = "isOpenSidebarByDefault";
