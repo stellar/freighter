@@ -63,6 +63,35 @@ export const canLoadIcon: IconProbe = (url, timeoutMs) =>
   });
 
 /**
+ * Verdicts for urls already loaded this session, including the in-flight
+ * promise so concurrent callers share one load.
+ *
+ * Icon resolution runs per row in views like history, where the same asset
+ * appears many times: without this, one asset's icon would be loaded — and a
+ * dead one would burn the full budget — once per row. Failures are remembered
+ * too, for exactly that reason; the cost is that a url which fails once is
+ * treated as dead until the popup is reopened, the same trade the in-session
+ * icon memo in getAssetIcons already makes.
+ */
+const probeResults = new Map<string, Promise<boolean>>();
+
+/** Test-only: clear the memo between cases. */
+export const __resetIconProbeCache = () => {
+  probeResults.clear();
+};
+
+export const memoizedCanLoadIcon: IconProbe = (url, timeoutMs) => {
+  const existing = probeResults.get(url);
+  if (existing) {
+    return existing;
+  }
+
+  const pending = canLoadIcon(url, timeoutMs);
+  probeResults.set(url, pending);
+  return pending;
+};
+
+/**
  * Returns the first candidate that loads, or undefined if none do before the
  * shared budget runs out. Candidates are tried in order, and probing stops as
  * soon as one succeeds.
@@ -71,7 +100,7 @@ export const firstLoadableIconUrl = async (
   urls: string[],
   {
     budgetMs = ICON_LOAD_BUDGET_MS,
-    probe = canLoadIcon,
+    probe = memoizedCanLoadIcon,
   }: { budgetMs?: number; probe?: IconProbe } = {},
 ): Promise<string | undefined> => {
   const deadline = Date.now() + budgetMs;
@@ -126,4 +155,20 @@ export const mapWithConcurrency = async <T, R>(
   );
 
   return results;
+};
+
+/**
+ * Loads a batch of candidate urls up front so later per-url lookups are memo
+ * hits.
+ *
+ * For views that resolve icons row by row (account history walks every
+ * operation), warming the whole page's candidates at once turns what would be
+ * a serial round-trip per row into one concurrent batch. Deduped, since the
+ * same asset usually appears in many rows.
+ */
+export const warmIconProbeCache = async (urls: string[]) => {
+  const distinct = Array.from(new Set(urls));
+  await mapWithConcurrency(distinct, ICON_LOOKUP_CONCURRENCY, (url) =>
+    memoizedCanLoadIcon(url, ICON_LOAD_BUDGET_MS),
+  );
 };

@@ -27,6 +27,10 @@ import { ManageAssetCurrency } from "popup/components/manageAssets/ManageAssetRo
 import { NetworkDetails } from "@shared/constants/stellar";
 import { getCombinedAssetListData } from "@shared/api/helpers/token-list";
 import { getIconFromTokenLists } from "@shared/api/helpers/getIconFromTokenList";
+import {
+  ICON_LOOKUP_CONCURRENCY,
+  mapWithConcurrency,
+} from "@shared/api/helpers/iconProbe";
 import { tokensListsSelector, saveTokenLists } from "popup/ducks/cache";
 import { AssetListResponse } from "@shared/constants/soroban/asset-list";
 import { AppDispatch, store } from "popup/App";
@@ -424,21 +428,27 @@ const useAssetLookup = () => {
       }
     }
 
-    for (const assetRow of assetRows) {
-      const key = assetRow.issuer!;
-      const code = assetRow.code!;
-      if (!assetRow.image) {
-        const tokenListIcon = await getIconFromTokenLists({
-          issuerId: key,
+    // Resolving an icon now loads it to check it renders, so a search returning
+    // a screenful of results would otherwise pay that round-trip once per row,
+    // in series, before anything is shown.
+    const rowsNeedingIcons = assetRows.filter((assetRow) => !assetRow.image);
+    const rowIcons = await mapWithConcurrency(
+      rowsNeedingIcons,
+      ICON_LOOKUP_CONCURRENCY,
+      (assetRow) =>
+        getIconFromTokenLists({
+          issuerId: assetRow.issuer!,
           contractId: assetRow.contract,
-          code,
+          code: assetRow.code!,
           assetsListsData,
-        });
-        if (tokenListIcon.icon && tokenListIcon.canonicalAsset) {
-          assetRow.image = tokenListIcon.icon;
-        }
+        }),
+    );
+    rowsNeedingIcons.forEach((assetRow, index) => {
+      const { icon, canonicalAsset } = rowIcons[index];
+      if (icon && canonicalAsset) {
+        assetRow.image = icon;
       }
-    }
+    });
 
     const { verifiedAssets, unverifiedAssets } =
       await splitVerifiedAssetCurrency({

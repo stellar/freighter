@@ -1,6 +1,10 @@
 import { AssetListResponse } from "@shared/constants/soroban/asset-list";
 import { getCanonicalFromAsset } from "@shared/helpers/stellar";
 
+import { sendMessageToBackground } from "./extensionMessaging";
+import { firstLoadableIconUrl } from "./iconProbe";
+import { SERVICE_TYPES } from "../../constants/services";
+
 interface TokenListLookup {
   issuerId?: string;
   contractId?: string;
@@ -68,18 +72,13 @@ export const getIconCandidatesFromTokenLists = ({
 };
 
 /**
- * Single-icon lookup for callers that render an icon directly without loading
- * it first (asset search, sign-transaction rows, history rows). Takes the first
- * candidate, since it has to commit to one url without knowing if it works.
+ * Resolves one asset's icon from the user's token lists: gathers every url the
+ * lists offer, loads them in turn, and keeps the first that renders. Returns an
+ * undefined icon when nothing works, which sends the caller to its own fallback
+ * (usually the issuer's SEP-1 toml).
  *
- * Deliberately does NOT write to the shared icon cache. getAssetIcons trusts a
- * truthy cache hit without re-loading it, so seeding that cache from here — with
- * a url nothing has confirmed renders — would let a visit to asset search or a
- * history row hand the account view a dead icon and undo the whole point of
- * probing. These callers render what they get and leave the cache to
- * getAssetIcons, which only stores urls it has watched load.
- *
- * Async purely to keep the signature stable for existing callers.
+ * Only a url confirmed to render is written to the shared icon cache, so every
+ * other surface can trust a cache hit without loading it again.
  */
 export const getIconFromTokenLists = async ({
   issuerId,
@@ -94,8 +93,19 @@ export const getIconFromTokenLists = async ({
     assetsListsData,
   });
 
+  const icon = await firstLoadableIconUrl(candidates);
+
+  if (icon && canonicalAsset) {
+    await sendMessageToBackground({
+      activePublicKey: null,
+      assetCanonical: canonicalAsset,
+      iconUrl: icon,
+      type: SERVICE_TYPES.CACHE_ASSET_ICON,
+    });
+  }
+
   return {
-    icon: candidates[0],
+    icon,
     canonicalAsset,
   };
 };

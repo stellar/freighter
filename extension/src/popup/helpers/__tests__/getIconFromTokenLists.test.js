@@ -9,6 +9,7 @@ import { DEFAULT_ASSETS_LISTS } from "@shared/constants/soroban/asset-list";
 import { getCanonicalFromAsset } from "helpers/stellar";
 import * as ExtensionMessaging from "@shared/api/helpers/extensionMessaging";
 import { SERVICE_TYPES } from "@shared/constants/services";
+import * as IconProbe from "@shared/api/helpers/iconProbe";
 
 const VERIFIED_TOKEN_CONTRACT = validAssetList.assets[0].contract;
 const VERIFIED_TOKEN_ISSUER = validAssetList.assets[0].issuer;
@@ -25,6 +26,19 @@ const EXPECTED_ICON_URL = validAssetList.assets[0].icon;
   jest
     .spyOn(TokenListHelpers, "getCombinedAssetListData")
     .mockImplementation(() => Promise.resolve([validAssetList])));
+
+// jsdom images never fire load or error, so stand in for the browser. By
+// default the first candidate renders; individual tests narrow this.
+const onlyLoads = (...loadable) =>
+  jest
+    .spyOn(IconProbe, "firstLoadableIconUrl")
+    .mockImplementation(async (urls) =>
+      loadable.length ? urls.find((url) => loadable.includes(url)) : urls[0],
+    );
+
+beforeEach(() => {
+  onlyLoads();
+});
 
 describe("getIconFromTokenLists", () => {
   it("should return an icon if an asset is in a token list by contract ID", async () => {
@@ -60,12 +74,7 @@ describe("getIconFromTokenLists", () => {
   });
 });
 
-// getIconFromTokenLists is the un-probed single-icon path used by callers that
-// render an icon directly (asset search, sign-transaction, history). It has to
-// commit to one url without loading it, so it takes the first match. Icon
-// selection for balances does not work this way - see getAssetIcons, which
-// probes every candidate and keeps whichever renders.
-describe("getIconFromTokenLists single-icon fallback", () => {
+describe("getIconFromTokenLists candidate selection", () => {
   const laterList = {
     ...validAssetList,
     provider: "Later Provider",
@@ -77,7 +86,7 @@ describe("getIconFromTokenLists single-icon fallback", () => {
     ],
   };
 
-  it("commits to the first matching list when matched by issuer", async () => {
+  it("uses the first candidate when it loads, matched by issuer", async () => {
     const { icon } = await getIconFromTokenLists({
       issuerId: VERIFIED_TOKEN_ISSUER,
       code: VERIFIED_TOKEN_CODE,
@@ -87,7 +96,7 @@ describe("getIconFromTokenLists single-icon fallback", () => {
     expect(icon).toEqual(EXPECTED_ICON_URL);
   });
 
-  it("commits to the first matching list when matched by contract ID", async () => {
+  it("uses the first candidate when it loads, matched by contract ID", async () => {
     const { icon } = await getIconFromTokenLists({
       contractId: VERIFIED_TOKEN_CONTRACT,
       code: VERIFIED_TOKEN_CODE,
@@ -154,18 +163,66 @@ describe("getIconCandidatesFromTokenLists", () => {
   });
 });
 
-describe("getIconFromTokenLists cache isolation", () => {
-  it("does not write its unprobed pick into the shared icon cache", async () => {
-    // getAssetIcons trusts a truthy cache hit without re-loading it, so a url
-    // this path never loaded must not land there — otherwise a visit to asset
-    // search or a history row can hand the account view a dead icon.
+describe("getIconFromTokenLists probing", () => {
+  const deadList = {
+    ...validAssetList,
+    provider: "Dead Provider",
+    assets: [
+      { ...validAssetList.assets[0], icon: "https://dead.example/icon.png" },
+    ],
+  };
+
+  it("skips a candidate that does not load and uses the next one", async () => {
+    onlyLoads(EXPECTED_ICON_URL);
+
+    const { icon } = await getIconFromTokenLists({
+      issuerId: VERIFIED_TOKEN_ISSUER,
+      code: VERIFIED_TOKEN_CODE,
+      assetsListsData: [deadList, validAssetList],
+    });
+
+    expect(icon).toEqual(EXPECTED_ICON_URL);
+  });
+
+  it("returns no icon when nothing on the lists loads", async () => {
+    onlyLoads("https://nothing-loads.example/icon.png");
+
+    const { icon } = await getIconFromTokenLists({
+      issuerId: VERIFIED_TOKEN_ISSUER,
+      code: VERIFIED_TOKEN_CODE,
+      assetsListsData: [deadList, validAssetList],
+    });
+
+    expect(icon).toBeUndefined();
+  });
+
+  it("caches the icon it confirmed, so other views can trust it", async () => {
+    onlyLoads(EXPECTED_ICON_URL);
     const sendSpy = jest.spyOn(ExtensionMessaging, "sendMessageToBackground");
     sendSpy.mockClear();
 
     await getIconFromTokenLists({
       issuerId: VERIFIED_TOKEN_ISSUER,
       code: VERIFIED_TOKEN_CODE,
-      assetsListsData: [validAssetList],
+      assetsListsData: [deadList, validAssetList],
+    });
+
+    const cacheWrites = sendSpy.mock.calls.filter(
+      ([message]) => message?.type === SERVICE_TYPES.CACHE_ASSET_ICON,
+    );
+    expect(cacheWrites).toHaveLength(1);
+    expect(cacheWrites[0][0].iconUrl).toEqual(EXPECTED_ICON_URL);
+  });
+
+  it("does not cache anything when no candidate loads", async () => {
+    onlyLoads("https://nothing-loads.example/icon.png");
+    const sendSpy = jest.spyOn(ExtensionMessaging, "sendMessageToBackground");
+    sendSpy.mockClear();
+
+    await getIconFromTokenLists({
+      issuerId: VERIFIED_TOKEN_ISSUER,
+      code: VERIFIED_TOKEN_CODE,
+      assetsListsData: [deadList],
     });
 
     const cacheWrites = sendSpy.mock.calls.filter(
