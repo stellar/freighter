@@ -720,6 +720,57 @@ describe("internalApi", () => {
       expect(peak).toBeGreaterThan(1);
     });
 
+    it("stops probing once the whole lookup has spent its budget", async () => {
+      // Concurrency bounds how many assets resolve at once, not how long the
+      // pass takes: with enough uncached assets the waves add up, and
+      // useGetBalances awaits all of them before the balances render.
+      let probes = 0;
+      jest
+        .spyOn(IconProbe, "firstLoadableIconUrl")
+        .mockImplementation(async (urls: string[]) => {
+          probes += 1;
+          await new Promise((resolve) => setTimeout(resolve, 20));
+          return urls[0];
+        });
+
+      const manyBalances: any = {};
+      const manyLists: any[] = [];
+      for (let i = 0; i < 24; i++) {
+        const issuer = `GISSUER${i}`;
+        manyBalances[`AST${i}:${issuer}`] = {
+          token: { code: `AST${i}`, issuer: { key: issuer } },
+        };
+        manyLists.push({
+          name: "Test list",
+          description: "",
+          network: "public",
+          version: "1.0",
+          provider: `P${i}`,
+          assets: [
+            {
+              code: `AST${i}`,
+              issuer,
+              name: `AST${i}`,
+              org: `AST${i}`,
+              domain: "example.com",
+              icon: `https://example.com/${i}.png`,
+              decimals: 7,
+            },
+          ],
+        });
+      }
+
+      await internalApi.getAssetIcons({
+        balances: manyBalances,
+        networkDetails: MAINNET_NETWORK_DETAILS,
+        assetsListsData: manyLists,
+        cachedIcons: {},
+        lookupBudgetMs: 30,
+      });
+
+      expect(probes).toBeLessThan(24);
+    });
+
     it("trusts an already-cached icon without re-probing it", async () => {
       const probe = jest.spyOn(IconProbe, "firstLoadableIconUrl");
 

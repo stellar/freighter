@@ -107,6 +107,21 @@ export const firstLoadableIconUrl = async (
  * the sum, while the limit stops a large wallet from opening a connection per
  * held asset at once.
  */
+/**
+ * Ceiling on how long the whole token-list pass may spend, across every asset.
+ *
+ * ICON_LOOKUP_CONCURRENCY bounds how many assets resolve at once, not how long
+ * the pass takes: a wallet holding more uncached assets than the limit resolves
+ * them in waves, and each wave can spend the full per-asset budget. Since
+ * getAssetIcons is awaited before the balances render, enough waves against a
+ * dead host would hold the balances behind a visibly long wait.
+ *
+ * Assets not reached in time simply fall through to the issuer-toml stage,
+ * which runs in one parallel batch rather than in waves, and are looked up
+ * again on the next load.
+ */
+export const ICON_LOOKUP_TOTAL_BUDGET_MS = 4000;
+
 export const ICON_LOOKUP_CONCURRENCY = 8;
 
 /**

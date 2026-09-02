@@ -94,6 +94,7 @@ import { stellarSdkServer, submitTx } from "./helpers/stellarSdkServer";
 import { getIconCandidatesFromTokenLists } from "./helpers/getIconFromTokenList";
 import {
   ICON_LOOKUP_CONCURRENCY,
+  ICON_LOOKUP_TOTAL_BUDGET_MS,
   firstLoadableIconUrl,
   mapWithConcurrency,
 } from "./helpers/iconProbe";
@@ -1364,6 +1365,7 @@ export const getAssetIcons = async ({
   assetsListsData,
   cachedIcons,
   additionalAssetIds,
+  lookupBudgetMs = ICON_LOOKUP_TOTAL_BUDGET_MS,
 }: {
   balances: Balances;
   networkDetails?: NetworkDetails;
@@ -1373,6 +1375,7 @@ export const getAssetIcons = async ({
   // doesn't hold them (e.g. the swap flow's default destination). Mirrors
   // getTokenPrices' additionalAssetIds.
   additionalAssetIds?: string[];
+  lookupBudgetMs?: number;
 }) => {
   const assetIcons = {} as { [code: string]: string | null };
   const skipLookup = !assetsListsData || !networkDetails;
@@ -1425,16 +1428,24 @@ export const getAssetIcons = async ({
     // concurrently because getAssetIcons is awaited before the balances render:
     // one asset at a time would put an image round-trip per asset in front of
     // the user, instead of roughly one asset's worth for the whole wallet.
+    const lookupDeadline = Date.now() + lookupBudgetMs;
     const resolvedIcons = await mapWithConcurrency(
       needsLookup,
       ICON_LOOKUP_CONCURRENCY,
       ({ key, code, contractId }) =>
-        resolveIconFromTokenLists({
-          issuerId: key,
-          contractId,
-          code,
-          assetsListsData: assetsListsData!,
-        }),
+        // Concurrency caps how many resolve at once, not how long the pass
+        // takes: more uncached assets than the limit means waves, and each
+        // wave can spend the full per-asset budget. Anything not reached in
+        // time falls through to the toml stage below, which runs as a single
+        // parallel batch rather than in waves.
+        Date.now() >= lookupDeadline
+          ? Promise.resolve(undefined)
+          : resolveIconFromTokenLists({
+              issuerId: key,
+              contractId,
+              code,
+              assetsListsData: assetsListsData!,
+            }),
     );
 
     needsLookup.forEach(({ key, code, canonical }, index) => {
