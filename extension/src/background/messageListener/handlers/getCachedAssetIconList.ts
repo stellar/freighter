@@ -35,9 +35,10 @@ export const getCachedAssetIconList = async ({
     // swap, send, manage assets, history — which previously skipped a
     // null-marked asset outright. The Account view's own icon hook already
     // retried regardless, since it passes an empty cache to its lookup pass, so
-    // nothing changes there. Redux holds the only in-session memo and starts
-    // empty on every popup open, so nothing suppresses the retry across opens
-    // either.
+    // nothing changes there. And nothing suppresses the retry from one popup to
+    // the next: closing the popup tears it down, taking Redux — the only record
+    // of what this session already resolved — with it, so every open starts
+    // from nothing.
     //
     // A negative cache that survives the popup, with a TTL so it expires rather
     // than latching, is the sane way to stop the endless retry — and this
