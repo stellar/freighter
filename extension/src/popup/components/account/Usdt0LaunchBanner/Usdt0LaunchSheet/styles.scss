@@ -130,12 +130,8 @@
     color: var(--sds-clr-gray-12);
   }
 
-  // `& &__description` doubles up the specificity so the padding beats
-  // SDS's `.Text { padding: 0 }` reset (same 0-1-0 specificity otherwise,
-  // leaving the winner to stylesheet order)
-  & &__description {
+  &__description {
     color: var(--sds-clr-gray-11);
-    padding: 0 pxToRem(20px);
   }
 
   &__features {
