@@ -925,9 +925,10 @@ export const stubTokenPrices = async (page: Page | BrowserContext) => {
 // ---------------------------------------------------------------------------
 // freighter-backend-v2 `POST /accounts/balances` stub.
 //
-// The extension defaults to the v2 balances endpoint (use_balances_v2), so
-// every test that stubs `**/account-balances/**` (the v1 GET) also needs the
-// v2 route stubbed or the request escapes to the real beta backend.
+// The extension can be flipped onto the v2 balances endpoint (use_balances_v2)
+// from Amplitude, so every test that stubs `**/account-balances/**` (the v1
+// GET) also stubs the v2 route or the request escapes to the real beta
+// backend.
 // ---------------------------------------------------------------------------
 
 interface V1BalancesFixture {

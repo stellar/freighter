@@ -79,9 +79,9 @@ describe("remoteConfig duck — initial state", () => {
     expect(getState(store).use_token_prices_v2).toBe(true);
   });
 
-  it("defaults use_balances_v2 to true", () => {
+  it("defaults use_balances_v2 to false", () => {
     const store = makeStore();
-    expect(getState(store).use_balances_v2).toBe(true);
+    expect(getState(store).use_balances_v2).toBe(false);
   });
 
   it("has both maintenance flags disabled with no payload by default", () => {
