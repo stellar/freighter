@@ -1,0 +1,175 @@
+import React from "react";
+import { Button, Icon, Text } from "@stellar/design-system";
+import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
+
+import { ROUTES } from "popup/constants/routes";
+import { navigateTo, openTab } from "popup/helpers/navigate";
+import { BackButton } from "popup/basics/buttons/BackButton";
+import Usdt0Arcs from "popup/assets/usdt0-arcs.svg";
+import Usdt0Lockup from "popup/assets/usdt0-lockup.svg";
+
+import "./styles.scss";
+
+const USDT0_SWAP_URL = "https://www.sushi.com/stellar/swap";
+const USDT0_TRANSFER_URL =
+  "https://usdt0.to/transfer?source=ethereum&destination=stellar&token=usdt0";
+
+interface Usdt0LaunchSheetProps {
+  onClose: () => void;
+}
+
+export const Usdt0LaunchSheet = ({ onClose }: Usdt0LaunchSheetProps) => {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+
+  const handleSwapClick = () => {
+    openTab(USDT0_SWAP_URL);
+  };
+
+  const handleReceiveClick = () => {
+    onClose();
+    navigateTo(ROUTES.viewPublicKey, navigate);
+  };
+
+  const handleTransferClick = () => {
+    openTab(USDT0_TRANSFER_URL);
+  };
+
+  return (
+    <div className="Usdt0LaunchSheet" data-testid="usdt0-launch-sheet">
+      <div className="Usdt0LaunchSheet__background">
+        <div className="Usdt0LaunchSheet__background__gradient" />
+        <img
+          className="Usdt0LaunchSheet__background__arcs"
+          src={Usdt0Arcs}
+          alt=""
+        />
+        <div className="Usdt0LaunchSheet__background__fade" />
+        <div className="Usdt0LaunchSheet__background__overlay" />
+        <img
+          className="Usdt0LaunchSheet__background__lockup"
+          src={Usdt0Lockup}
+          alt={t("USDT0")}
+        />
+      </div>
+      <div className="Usdt0LaunchSheet__content">
+        <div className="Usdt0LaunchSheet__header">
+          {/* Same BackButton as the QR code screen's X, supplied as a real
+              <button> so it stays keyboard-accessible */}
+          <BackButton
+            customBackAction={onClose}
+            customButtonComponent={
+              <button
+                type="button"
+                className="BackButton Usdt0LaunchSheet__close"
+                aria-label={t("Close")}
+                data-testid="usdt0-launch-sheet-close"
+              >
+                <Icon.X />
+              </button>
+            }
+          />
+        </div>
+        <div className="Usdt0LaunchSheet__body">
+          <div className="Usdt0LaunchSheet__heading">
+            <div className="Usdt0LaunchSheet__title">
+              {t("USDT0 is now on Stellar")}
+            </div>
+            {/* global.scss forces `p` color to inherit (!important), which
+                would defeat the muted gray — render as div like the rows */}
+            <Text
+              as="div"
+              size="xs"
+              weight="regular"
+              addlClassName="Usdt0LaunchSheet__description"
+            >
+              {t("Access USDT liquidity on Stellar with USDT0.")}
+            </Text>
+          </div>
+          <div className="Usdt0LaunchSheet__features">
+            <div className="Usdt0LaunchSheet__feature">
+              <div className="Usdt0LaunchSheet__feature__icon">
+                <Icon.Asterisk01 />
+              </div>
+              <div className="Usdt0LaunchSheet__feature__text">
+                <Text
+                  as="div"
+                  size="sm"
+                  weight="medium"
+                  addlClassName="Usdt0LaunchSheet__feature__title"
+                >
+                  {t("Move across networks")}
+                </Text>
+                <Text
+                  as="div"
+                  size="xs"
+                  weight="regular"
+                  addlClassName="Usdt0LaunchSheet__feature__description Usdt0LaunchSheet__feature__description--inset"
+                >
+                  {t("Transfer USDT0 between Stellar and supported networks.")}
+                </Text>
+              </div>
+            </div>
+            <div className="Usdt0LaunchSheet__feature">
+              <div className="Usdt0LaunchSheet__feature__icon">
+                <Icon.Asterisk01 />
+              </div>
+              <div className="Usdt0LaunchSheet__feature__text">
+                <Text
+                  as="div"
+                  size="sm"
+                  weight="medium"
+                  addlClassName="Usdt0LaunchSheet__feature__title"
+                >
+                  {t("1:1 backed, unified liquidity")}
+                </Text>
+                <Text
+                  as="div"
+                  size="xs"
+                  weight="regular"
+                  addlClassName="Usdt0LaunchSheet__feature__description"
+                >
+                  {t("USDT0 is backed 1:1 by USDT.")}
+                </Text>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="Usdt0LaunchSheet__footer">
+          <Button
+            size="lg"
+            variant="secondary"
+            isFullWidth
+            isRounded
+            icon={<Icon.ArrowUpRight />}
+            iconPosition="right"
+            onClick={handleSwapClick}
+            data-testid="usdt0-launch-sheet-swap"
+          >
+            {t("Swap to USDT0")}
+          </Button>
+          <Button
+            size="lg"
+            variant="tertiary"
+            isFullWidth
+            isRounded
+            onClick={handleReceiveClick}
+            data-testid="usdt0-launch-sheet-receive"
+          >
+            {t("Receive USDT0")}
+          </Button>
+          <button
+            type="button"
+            className="Usdt0LaunchSheet__transfer"
+            onClick={handleTransferClick}
+            data-testid="usdt0-launch-sheet-transfer"
+          >
+            {t("Transfer to Stellar")}
+            <Icon.ArrowUpRight />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
