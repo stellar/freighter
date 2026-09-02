@@ -100,7 +100,7 @@ export const Usdt0LaunchSheet = ({ onClose }: Usdt0LaunchSheetProps) => {
                   as="div"
                   size="xs"
                   weight="regular"
-                  addlClassName="Usdt0LaunchSheet__feature__description"
+                  addlClassName="Usdt0LaunchSheet__feature__description Usdt0LaunchSheet__feature__description--inset"
                 >
                   {t("Transfer USDT0 between Stellar and supported networks.")}
                 </Text>

@@ -178,6 +178,12 @@
     &__description {
       color: var(--sds-clr-gray-11);
     }
+
+    // Wraps "supported networks." together onto the second line. Doubled
+    // selector so the padding beats SDS's `.Text { padding: 0 }` reset.
+    & &__description--inset {
+      padding-right: pxToRem(20px);
+    }
   }
 
   &__footer {
