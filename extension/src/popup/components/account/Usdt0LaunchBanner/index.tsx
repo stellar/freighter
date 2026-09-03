@@ -31,8 +31,10 @@ export const Usdt0LaunchBanner = () => {
         const dismissed = await getUsdt0LaunchBannerDismissed();
         setIsDismissed(dismissed);
       } catch (error) {
+        // Default to hiding the banner on messaging failure so we never
+        // re-show it to a user who has already dismissed it.
         captureException(error);
-        setIsDismissed(false);
+        setIsDismissed(true);
       } finally {
         setIsLoading(false);
       }
@@ -62,10 +64,17 @@ export const Usdt0LaunchBanner = () => {
   return (
     <>
       <div className="Usdt0LaunchBanner" data-testid="usdt0-launch-banner">
+        {/* The sheet this opens is a Radix dialog whose Root is a sibling
+          of this button, so Radix's own Sheet.Trigger can't reach it from
+          here. These mirror what that trigger would emit; aria-controls is
+          omitted because the id is generated inside the portal and isn't
+          knowable at this level. */}
         <button
           type="button"
           className="Usdt0LaunchBanner__content"
           onClick={handleBannerClick}
+          aria-haspopup="dialog"
+          aria-expanded={isSheetOpen}
           data-testid="usdt0-launch-banner-open"
         >
           <div className="Usdt0LaunchBanner__logo">
