@@ -90,6 +90,8 @@ import { modifyAssetsList } from "./handlers/modifyAssetsList";
 import { getIsAccountMismatch } from "./handlers/getIsAccountMismatch";
 import { changeAssetVisibility } from "./handlers/changeAssetVisibility";
 import { getHiddenAssets } from "./handlers/getHiddenAssets";
+import { getUsdt0LaunchBannerDismissed } from "./handlers/getUsdt0LaunchBannerDismissed";
+import { dismissUsdt0LaunchBanner } from "./handlers/dismissUsdt0LaunchBanner";
 import { loadBackendSettings } from "./handlers/loadBackendSettings";
 import { saveBlockaidOverrideState } from "./handlers/saveDebugOverride";
 import { getBlockaidOverrideState } from "./handlers/getDebugOverride";
@@ -576,6 +578,16 @@ export const popupMessageListener = (
     }
     case SERVICE_TYPES.GET_HIDDEN_ASSETS: {
       return getHiddenAssets({
+        localStore,
+      });
+    }
+    case SERVICE_TYPES.GET_USDT0_LAUNCH_BANNER_DISMISSED: {
+      return getUsdt0LaunchBannerDismissed({
+        localStore,
+      });
+    }
+    case SERVICE_TYPES.DISMISS_USDT0_LAUNCH_BANNER: {
+      return dismissUsdt0LaunchBanner({
         localStore,
       });
     }
