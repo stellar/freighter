@@ -20,7 +20,11 @@ export const getIconFromTokenLists = async ({
 }) => {
   let verifiedToken = {} as AssetListReponseItem;
   let canonicalAsset = undefined as string | undefined;
-  for (const data of assetsListsData) {
+  // The lists arrive in the user's configured order, which is a priority order:
+  // the first list carrying the asset wins. Without the labeled break below the
+  // outer loop runs to completion and the LAST matching list silently overwrites
+  // earlier, higher-priority entries.
+  listLoop: for (const data of assetsListsData) {
     const list = data.assets;
     if (list) {
       for (const record of list) {
@@ -29,7 +33,7 @@ export const getIconFromTokenLists = async ({
           if (record.contract && record.contract.match(regex) && record.icon) {
             verifiedToken = record;
             canonicalAsset = getCanonicalFromAsset(code, contractId);
-            break;
+            break listLoop;
           }
         }
 
@@ -42,7 +46,7 @@ export const getIconFromTokenLists = async ({
         ) {
           verifiedToken = record;
           canonicalAsset = getCanonicalFromAsset(code, issuerId);
-          break;
+          break listLoop;
         }
       }
     }

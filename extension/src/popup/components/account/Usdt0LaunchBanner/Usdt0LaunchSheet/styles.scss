@@ -1,0 +1,236 @@
+@use "../../../../styles/utils.scss" as *;
+
+.Usdt0LaunchSheet {
+  position: relative;
+  height: 100%;
+  width: 100%;
+  background: var(--sds-clr-gray-01);
+  // Clip the oversized hero art horizontally, but keep a vertical scroll
+  // path so the footer CTAs stay reachable in short viewports (squat
+  // sidebar windows, high zoom)
+  overflow-x: hidden;
+  overflow-y: auto;
+
+  &__background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: pxToRem(429px);
+    pointer-events: none;
+
+    &__gradient {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: pxToRem(377px);
+      background: linear-gradient(180deg, #002d19 0%, #161616 100%);
+    }
+
+    &__arcs {
+      position: absolute;
+      top: pxToRem(77px);
+      left: 50%;
+      transform: translateX(-50%);
+      width: pxToRem(395px);
+      height: pxToRem(180px);
+      max-width: none;
+    }
+
+    &__fade {
+      position: absolute;
+      top: pxToRem(73px);
+      left: 0;
+      right: 0;
+      height: pxToRem(356px);
+      background: linear-gradient(
+        180deg,
+        rgba(22, 23, 23, 0) 4.7%,
+        #151616 44.67%
+      );
+    }
+
+    &__overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: pxToRem(356px);
+      background: linear-gradient(
+        180deg,
+        rgba(22, 23, 23, 0) 4.7%,
+        rgba(21, 22, 22, 0.78) 44.67%
+      );
+    }
+
+    &__lockup {
+      position: absolute;
+      top: pxToRem(135px);
+      left: 50%;
+      transform: translateX(-50%);
+      width: pxToRem(165px);
+      height: auto;
+    }
+  }
+
+  &__content {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    // Fills the sheet but may grow past it, scrolling the root, when the
+    // viewport is shorter than the content
+    min-height: 100%;
+    padding-bottom: pxToRem(24px);
+    gap: pxToRem(32px);
+  }
+
+  // Mirrors the View app header metrics (80px tall, 24px inset) so the X
+  // sits exactly where the QR code screen's does
+  &__header {
+    display: flex;
+    align-items: center;
+    min-height: pxToRem(80px);
+    padding: 0 pxToRem(24px);
+  }
+
+  // The BackButton class supplies the geometry; a <button> just needs the
+  // user-agent chrome stripped to render like the QR screen's div
+  &__close {
+    background: none;
+    border: none;
+  }
+
+  &__body {
+    // Stretches in tall viewports but never shrinks below its content, so
+    // a short viewport grows the column into a scroll instead of clipping
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    // Content flows right below the hero art instead of anchoring to the
+    // bottom, so taller viewports (sidebar mode) leave the extra space
+    // between the features and the footer buttons.
+    //
+    // The top padding is what fits the three footer actions in the 600px
+    // popup without scrolling: 80 (header) + 64 (two 32px column gaps) +
+    // 136 (footer) + 24 (bottom padding) = 304px of chrome, plus 212px of
+    // copy, leaves 84px. The USDT0 lockup stays put — it belongs to the
+    // absolutely-positioned hero.
+    justify-content: flex-start;
+    padding: pxToRem(80px) pxToRem(24px) 0;
+    gap: pxToRem(32px);
+  }
+
+  &__heading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: pxToRem(4px);
+    text-align: center;
+    width: 100%;
+  }
+
+  &__title {
+    font-size: pxToRem(24px);
+    line-height: pxToRem(32px);
+    font-weight: var(--sds-fw-medium);
+    letter-spacing: -0.04em;
+    color: var(--sds-clr-gray-12);
+  }
+
+  &__description {
+    color: var(--sds-clr-gray-11);
+  }
+
+  &__features {
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(16px);
+    width: 100%;
+  }
+
+  &__feature {
+    display: flex;
+    align-items: center;
+    gap: pxToRem(12px);
+
+    &__icon {
+      width: pxToRem(32px);
+      height: pxToRem(32px);
+      flex-shrink: 0;
+      background: #222222;
+      border-radius: pxToRem(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--sds-clr-gray-11);
+
+      svg {
+        width: pxToRem(14px);
+        height: pxToRem(14px);
+      }
+    }
+
+    &__text {
+      display: flex;
+      flex-direction: column;
+      gap: pxToRem(2px);
+      flex: 1;
+      min-width: 0;
+    }
+
+    &__title {
+      color: var(--sds-clr-gray-12);
+    }
+
+    &__description {
+      color: var(--sds-clr-gray-11);
+    }
+
+    // Wraps "supported networks." together onto the second line. Doubled
+    // selector so the padding beats SDS's `.Text { padding: 0 }` reset.
+    & &__description--inset {
+      padding-right: pxToRem(20px);
+    }
+  }
+
+  &__footer {
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(8px);
+    padding: 0 pxToRem(24px);
+  }
+
+  // Borderless text button per design — no SDS Button variant is
+  // transparent, so it's hand-rolled like the close button, mirroring the
+  // SDS `lg` metrics (40px tall, 8px/12px padding, 14/22 text) of the two
+  // buttons above it
+  &__transfer {
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: pxToRem(4px);
+    width: 100%;
+    height: pxToRem(40px);
+    padding: pxToRem(8px) pxToRem(12px);
+    border-radius: pxToRem(100px);
+    color: var(--sds-clr-gray-12);
+    font-family: inherit;
+    font-size: pxToRem(14px);
+    font-weight: var(--sds-fw-semi-bold);
+    line-height: pxToRem(22px);
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    svg {
+      width: pxToRem(16px);
+      height: pxToRem(16px);
+    }
+  }
+}
