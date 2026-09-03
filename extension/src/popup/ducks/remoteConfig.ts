@@ -85,9 +85,10 @@ const initialState: RemoteConfigState = {
   // Defaults to v2; Amplitude can flip it off to roll back to the v1
   // token-prices endpoint without a release.
   use_token_prices_v2: true,
-  // Defaults to v2; Amplitude can flip it off to roll back to the v1
-  // account-balances endpoint without a release.
-  use_balances_v2: true,
+  // Defaults to v1 while the balances-v2 work is still in progress; Amplitude
+  // can flip it on to opt into the v2 account-balances endpoint without a
+  // release.
+  use_balances_v2: false,
   maintenance_banner: { enabled: false, payload: undefined },
   maintenance_screen: { enabled: false, payload: undefined },
 };
@@ -234,7 +235,8 @@ export const tokenPricesV2Selector = createSelector(
 
 /**
  * Returns whether the v2 account-balances endpoint should be used. Defaults
- * to true; Amplitude can flip the flag off to roll back to the v1 endpoint.
+ * to false while the balances-v2 work is in progress; Amplitude can flip the
+ * flag on to opt into the v2 endpoint.
  */
 export const balancesV2Selector = createSelector(
   remoteConfigSelector,
