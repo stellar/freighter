@@ -1,4 +1,6 @@
-import { searchAsset } from "../searchAsset";
+import { Networks } from "stellar-sdk";
+
+import { searchAsset, getNativeContractDetails } from "../searchAsset";
 import { NetworkDetails } from "@shared/constants/stellar";
 
 const MAINNET: NetworkDetails = {
@@ -36,5 +38,25 @@ describe("searchAsset", () => {
     await expect(
       searchAsset({ asset: "usdc", networkDetails: MAINNET }),
     ).rejects.toThrow("Bad Gateway");
+  });
+});
+
+describe("getNativeContractDetails", () => {
+  it("keeps the published mainnet contract address", () => {
+    expect(
+      getNativeContractDetails({
+        network: "PUBLIC",
+        networkPassphrase: Networks.PUBLIC,
+      } as never).contract,
+    ).toBe("CAS3J7GYLGXMF6TDJBBYYSE3HQ6BBSMLNUQ34T6TZMYMW2EVH34XOWMA");
+  });
+
+  it("returns a contract address on a network the table omitted", () => {
+    expect(
+      getNativeContractDetails({
+        network: "FUTURENET",
+        networkPassphrase: Networks.FUTURENET,
+      } as never).contract,
+    ).toMatch(/^C[A-Z2-7]{55}$/);
   });
 });

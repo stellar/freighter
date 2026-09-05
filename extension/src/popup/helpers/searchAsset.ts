@@ -5,6 +5,7 @@ import {
   AssetListResponse,
   AssetListReponseItem,
 } from "@shared/constants/soroban/asset-list";
+import { getNativeContractId } from "@shared/helpers/assetIdentity";
 
 import { getApiStellarExpertUrl } from "popup/helpers/account";
 import { getCombinedAssetListData } from "@shared/api/helpers/token-list";
@@ -39,21 +40,20 @@ export const getNativeContractDetails = (networkDetails: NetworkDetails) => {
     icon: "",
     org: "",
   };
+
+  // The native SAC address derives deterministically from the network
+  // passphrase, which keeps every network correct by construction.
+  const contract = getNativeContractId(networkDetails.networkPassphrase);
+
   switch (networkDetails.network as keyof typeof NETWORKS) {
     case NETWORKS.PUBLIC:
       return {
         ...NATIVE_CONTRACT_DEFAULTS,
-        contract: "CAS3J7GYLGXMF6TDJBBYYSE3HQ6BBSMLNUQ34T6TZMYMW2EVH34XOWMA",
+        contract,
         issuer: "GDMTVHLWJTHSUDMZVVMXXH6VJHA2ZV3HNG5LYNAZ6RTWB7GISM6PGTUV",
       };
-    case NETWORKS.TESTNET:
-      return {
-        ...NATIVE_CONTRACT_DEFAULTS,
-        contract: "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC",
-        issuer: "",
-      };
     default:
-      return { ...NATIVE_CONTRACT_DEFAULTS, contract: "", issuer: "" };
+      return { ...NATIVE_CONTRACT_DEFAULTS, contract, issuer: "" };
   }
 };
 
