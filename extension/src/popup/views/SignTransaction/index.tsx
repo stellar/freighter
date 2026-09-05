@@ -60,7 +60,7 @@ import {
 import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
 import { Loading } from "popup/components/Loading";
 import { VerifyAccount } from "popup/views/VerifyAccount";
-import { NativeAsset } from "@shared/api/types/account-balance";
+import { hasEnoughXlmForFee } from "popup/helpers/balance";
 
 import { RequestState } from "constants/request";
 import { useGetSignTxData } from "./hooks/useGetSignTxData";
@@ -371,12 +371,7 @@ export const SignTransaction = () => {
   // Check if user has enough XLM for the fee - skip warning if balances unavailable
   const balances = signTxState.data?.balances;
   const hasEnoughXlm = balances
-    ? balances.balances.some(
-        (balance) =>
-          "token" in balance &&
-          balance.token.code === "XLM" &&
-          (balance as NativeAsset).available.gt(stroopToXlm(_fee as string)),
-      )
+    ? hasEnoughXlmForFee(balances.balances, stroopToXlm(_fee as string))
     : true; // If balances unavailable, assume user can proceed
 
   if (

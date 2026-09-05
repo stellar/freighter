@@ -316,3 +316,17 @@ export const getTotalUsdLabel = ({
 
   return formatFiatAmount(totalUsd?.toString());
 };
+
+/**
+ * True when the account holds enough native lumens to cover `feeXlm`.
+ *
+ * Only the native balance can pay a fee, so this is anchored on the balance's
+ * type rather than its code.
+ */
+export const hasEnoughXlmForFee = (
+  balances: AssetType[],
+  feeXlm: BigNumber,
+): boolean =>
+  balances.some(
+    (balance) => isNativeBalance(balance) && balance.available.gt(feeXlm),
+  );

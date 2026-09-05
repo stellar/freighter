@@ -3,7 +3,7 @@ import { Asset, Networks } from "stellar-sdk";
 
 import { AssetType } from "@shared/api/types/account-balance";
 import { NetworkDetails } from "@shared/constants/stellar";
-import { getBalanceByKey } from "popup/helpers/balance";
+import { getBalanceByKey, hasEnoughXlmForFee } from "popup/helpers/balance";
 
 const XLM_CODED_ISSUER =
   "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN";
@@ -57,5 +57,21 @@ describe("getBalanceByKey", () => {
     expect(getBalanceByKey(wrappedSac, balances, networkDetails)).toBe(
       xlmCodedClassicBalance,
     );
+  });
+});
+
+describe("hasEnoughXlmForFee", () => {
+  const fee = new BigNumber("0.00001");
+
+  it("is true when the native balance covers the fee", () => {
+    expect(hasEnoughXlmForFee([nativeBalance], fee)).toBe(true);
+  });
+
+  it("is false when only a classic asset sharing the native code covers it", () => {
+    expect(hasEnoughXlmForFee([xlmCodedClassicBalance], fee)).toBe(false);
+  });
+
+  it("is false when there are no balances", () => {
+    expect(hasEnoughXlmForFee([], fee)).toBe(false);
   });
 });
