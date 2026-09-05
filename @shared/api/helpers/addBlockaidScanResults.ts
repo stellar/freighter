@@ -2,6 +2,7 @@ import { captureException } from "@sentry/browser";
 
 import { INDEXER_URL } from "@shared/constants/mercury";
 import { NETWORKS, NetworkDetails } from "@shared/constants/stellar";
+import { isNativeAssetId } from "@shared/helpers/assetIdentity";
 import { defaultBlockaidScanAssetResult } from "@shared/helpers/stellar";
 import { BlockAidScanAssetResult } from "../types";
 import { AccountBalancesInterface, BalanceMap } from "../types/backend-api";
@@ -37,7 +38,7 @@ export const addBlockaidScanResults = async (
   // swap the separator: `CODE-ISSUER` (same convention as v1 and the
   // standalone path).
   const scannableIds = keys.filter(
-    (key) => key !== "native" && !key.includes(":lp"),
+    (key) => !isNativeAssetId(key) && !key.includes(":lp"),
   );
 
   if (
