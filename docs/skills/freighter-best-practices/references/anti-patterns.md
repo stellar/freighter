@@ -169,3 +169,54 @@ If leaving a TODO, create a GitHub issue and reference it:
 ```
 
 This ensures TODOs are tracked and not forgotten.
+
+## 11. Identifying Assets by Code
+
+An asset's identity is the pair `(code, issuer)` -- or, for a contract token,
+its contract id. Asset codes are not unique: more than one asset can share a
+code, so a bare code comparison never establishes that two assets are the same
+asset, or that an asset is the native lumen.
+
+```typescript
+// WRONG: a code alone doesn't identify the asset
+if (token.code === "XLM") { ... }
+
+// CORRECT: use the predicate for what you're holding
+if (isNativeAsset(asset)) { ... }
+```
+
+Use the predicate that matches what you have in hand:
+
+| What you hold                                             | Use                                               |
+| --------------------------------------------------------- | ------------------------------------------------- |
+| an SDK `Asset`, or `{ code, issuer }`                     | `isNativeAsset(asset)`                            |
+| a balance object                                          | `isNativeBalance(balance)`                        |
+| a canonical id, a Horizon `asset_type`, or a `token.type` | `isNativeAssetId(id)`                             |
+| a contract id                                             | `isNativeContract(contractId, networkPassphrase)` |
+| the native contract id itself                             | `getNativeContractId(networkPassphrase)`          |
+| a raw code and issuer, with nothing better available      | `isNativeAssetPair(code, issuer)`                 |
+
+All of these live in `@shared/helpers/assetIdentity.ts`.
+
+Nativeness is only half of it. For anything else that identifies an asset --
+equality, map keys, list membership, or a user-visible label -- use the full
+canonical from `getCanonicalFromAsset(code, issuer)` in
+`@shared/helpers/stellar.ts`, never a bare code. A review row that renders an
+amount and a code identifies two different assets identically.
+
+### ESLint Enforcement
+
+The local plugin at `config/eslint-plugin-asset-identity/` enforces this:
+
+- **Rule:** `asset-identity/no-asset-code-comparison` (error level)
+- **What it does:** reports a `===`/`!==` comparison with a native sentinel
+  (`"XLM"`, `"native"`, `NATIVE_TOKEN_CODE`, `HORIZON_NATIVE_ASSET_TYPE`) on
+  either side. ESLint runs inside the webpack build, so a violation fails
+  `yarn build:extension`.
+- **What it can't do:** it cannot tell which predicate a given shape needs, so
+  choosing the wrong one still passes lint. Treat it as a safety net, not a
+  guarantee.
+
+Do not add an `eslint-disable` for this rule. `@shared/helpers/assetIdentity.ts`
+is exempt because it is the module that defines the predicates; every other site
+goes through them.

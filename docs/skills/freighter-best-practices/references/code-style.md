@@ -19,13 +19,15 @@ The project uses Prettier (`.prettierrc.yaml`) with the following settings:
 Flat config (`eslint.config.js`) with:
 
 - **Parser:** `@typescript-eslint/parser`
-- **Plugins:** React, React Hooks, JSX A11y, Import, TypeScript ESLint
+- **Plugins:** React, React Hooks, JSX A11y, Import, TypeScript ESLint, Asset
+  Identity (local, `config/eslint-plugin-asset-identity/`)
 - **Key rules:**
   - `semi` -- error (semicolons required)
   - `react-hooks/rules-of-hooks` -- error
   - `react-hooks/exhaustive-deps` -- warn
   - `react/prop-types` -- off (TypeScript replaces prop-types)
   - `import/no-unresolved` -- warn
+  - `asset-identity/no-asset-code-comparison` -- error
 
 ## Import Ordering
 
@@ -175,6 +177,15 @@ shared messages.
 
 All `browser.storage` keys must use constants from
 `extension/src/constants/localStorageTypes.ts` — never hardcoded strings.
+
+### Asset Identifiers
+
+Never identify an asset with a bare code. Asset codes are not unique, so `"XLM"`
+identifies neither the native lumen nor any single asset. Use the predicates in
+`@shared/helpers/assetIdentity.ts` for nativeness, and
+`getCanonicalFromAsset(code, issuer)` for identity. See
+[Anti-Patterns 11](./anti-patterns.md) for the full convention; the
+`asset-identity/no-asset-code-comparison` ESLint rule enforces it.
 
 ### Action Type Strings
 
