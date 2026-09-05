@@ -15,6 +15,7 @@ import {
   SorobanAsset,
 } from "@shared/api/types/account-balance";
 import { NetworkDetails } from "@shared/constants/stellar";
+import { isNativeBalance } from "@shared/helpers/assetIdentity";
 import { getAssetSacAddress } from "@shared/helpers/soroban/token";
 import { LP_IDENTIFIER } from "./account";
 import { NO_FIAT_VALUE, formatFiatAmount } from "./formatters";
@@ -98,8 +99,8 @@ export const getBalanceByKey = (
       "contractId" in balance && contractId === balance.contractId;
 
     try {
-      // if xlm, check for a SAC match
-      if ("token" in balance && balance.token.code === "XLM") {
+      // if this is the native balance, check for a SAC match
+      if (isNativeBalance(balance)) {
         const matchesSac =
           Asset.native().contractId(networkDetails.networkPassphrase) ===
           contractId;
