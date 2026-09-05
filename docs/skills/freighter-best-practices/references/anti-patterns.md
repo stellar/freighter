@@ -209,12 +209,15 @@ amount and a code identifies two different assets identically.
 The local plugin at `config/eslint-plugin-asset-identity/` enforces this:
 
 - **Rule:** `asset-identity/no-asset-code-comparison` (error level)
-- **What it does:** reports a `===`/`!==` comparison with a native sentinel
-  (`"XLM"`, `"native"`, or the identifier names `NATIVE_TOKEN_CODE` and
-  `HORIZON_NATIVE_ASSET_TYPE`) on either side. The last two name no constant
-  that exists anywhere in this codebase today -- they're there so that code
-  ported over from the mobile app, which does define them, is covered as soon as
-  it lands.
+- **What it does:** reports a `===`/`!==` comparison with a native sentinel on
+  either side: `"XLM"`, `"native"`, the SDK's own native code
+  (`Asset.native().code` / `Asset.native().getCode()`), or the identifier names
+  `NATIVE_TOKEN_CODE` and `HORIZON_NATIVE_ASSET_TYPE`. The last two name no
+  constant that exists anywhere in this codebase today -- they're there so that
+  code ported over from the mobile app, which does define them, is covered as
+  soon as it lands. Comparing a contract id against
+  `Asset.native().contractId(passphrase)` is _not_ reported: in contract space
+  that is the sound check.
 - **Enforcement scope:** `yarn build:extension` runs ESLint via
   `eslint-webpack-plugin`, whose lint glob is derived from the webpack context.
   That context is `<repo>/extension` under `yarn workspace extension build`, so

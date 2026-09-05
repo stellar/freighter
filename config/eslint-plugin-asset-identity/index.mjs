@@ -1,5 +1,6 @@
 // Values that name the native asset by themselves: the display code, the
-// identifier the codebase uses for it, and the constants that hold them.
+// identifier the codebase uses for it, the constants that hold them, and the
+// SDK's own native code (`Asset.native().code`).
 //
 // An asset's identity is the pair (code, issuer) — or, for a contract token,
 // its contract id — so comparing anything directly against one of these is
@@ -16,6 +17,43 @@ const NATIVE_IDENTIFIER_NAMES = [
 const unwrapChain = (node) =>
   node.type === "ChainExpression" ? node.expression : node;
 
+// `X.native()` — the SDK's own native asset object, whatever `X` is
+// (`Asset.native()`, `StellarSdk.Asset.native()`, ...).
+const isSdkNativeCall = (rawNode) => {
+  const node = unwrapChain(rawNode);
+  return (
+    node.type === "CallExpression" &&
+    node.callee.type === "MemberExpression" &&
+    !node.callee.computed &&
+    node.callee.property.name === "native"
+  );
+};
+
+// The native display code read off the SDK object: `Asset.native().code` or
+// `Asset.native().getCode()`. Both evaluate to the bare code, so comparing
+// against them is the literal-"XLM" defect in a different spelling.
+//
+// `Asset.native().contractId(passphrase)` is deliberately NOT treated as a
+// sentinel: comparing a contract id against the derived native contract is the
+// sound check in contract space, and the codebase relies on it.
+const isSdkNativeCode = (node) => {
+  if (
+    node.type === "MemberExpression" &&
+    !node.computed &&
+    node.property.name === "code"
+  ) {
+    return isSdkNativeCall(node.object);
+  }
+
+  return (
+    node.type === "CallExpression" &&
+    node.callee.type === "MemberExpression" &&
+    !node.callee.computed &&
+    node.callee.property.name === "getCode" &&
+    isSdkNativeCall(node.callee.object)
+  );
+};
+
 const isNativeSentinel = (rawNode) => {
   const node = unwrapChain(rawNode);
 
@@ -27,9 +65,14 @@ const isNativeSentinel = (rawNode) => {
     return true;
   }
 
-  return (
-    node.type === "Identifier" && NATIVE_IDENTIFIER_NAMES.includes(node.name)
-  );
+  if (
+    node.type === "Identifier" &&
+    NATIVE_IDENTIFIER_NAMES.includes(node.name)
+  ) {
+    return true;
+  }
+
+  return isSdkNativeCode(node);
 };
 
 /** @type {import("eslint").Rule.RuleModule} */
