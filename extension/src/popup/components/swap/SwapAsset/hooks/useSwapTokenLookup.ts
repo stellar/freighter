@@ -13,8 +13,8 @@ import { initialState, reducer } from "helpers/request";
 import { RequestState } from "constants/request";
 import { isMainnet, isTestnet, getCanonicalFromAsset } from "helpers/stellar";
 import {
-  isNativeAssetId,
   isNativeAssetPair,
+  isNativeBalance,
 } from "@shared/helpers/assetIdentity";
 import { ManageAssetCurrency } from "popup/components/manageAssets/ManageAssetRows";
 import { BlockaidWarning, SecurityLevel } from "popup/constants/blockaid";
@@ -115,9 +115,7 @@ const heldToRecord = (
     type?: string;
     issuer?: { key: string };
   };
-  const isNative =
-    isNativeAssetId(token.type) ||
-    isNativeAssetPair(token.code, token.issuer?.key);
+  const isNative = isNativeBalance(balance);
   const code = isNative ? "XLM" : token.code;
   const issuer = isNative ? "" : token.issuer?.key || "";
   const canonical = isNative ? "native" : getCanonicalFromAsset(code, issuer);

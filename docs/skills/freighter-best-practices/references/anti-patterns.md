@@ -210,13 +210,33 @@ The local plugin at `config/eslint-plugin-asset-identity/` enforces this:
 
 - **Rule:** `asset-identity/no-asset-code-comparison` (error level)
 - **What it does:** reports a `===`/`!==` comparison with a native sentinel
-  (`"XLM"`, `"native"`, `NATIVE_TOKEN_CODE`, `HORIZON_NATIVE_ASSET_TYPE`) on
-  either side. ESLint runs inside the webpack build, so a violation fails
-  `yarn build:extension`.
-- **What it can't do:** it cannot tell which predicate a given shape needs, so
-  choosing the wrong one still passes lint. Treat it as a safety net, not a
-  guarantee.
+  (`"XLM"`, `"native"`, or the identifier names `NATIVE_TOKEN_CODE` and
+  `HORIZON_NATIVE_ASSET_TYPE`) on either side. The last two name no constant
+  that exists anywhere in this codebase today -- they're there so that code
+  ported over from the mobile app, which does define them, is covered as soon as
+  it lands.
+- **Enforcement scope:** `yarn build:extension` runs ESLint via
+  `eslint-webpack-plugin`, whose lint glob is derived from the webpack context.
+  That context is `<repo>/extension` under `yarn workspace extension build`, so
+  the build gate only covers `extension/` -- a violation there fails the build.
+  `@shared/`, the tree the predicates themselves live in, is not covered by that
+  gate: today it's only checked when ESLint is run directly from the repo root,
+  and there is no root `lint` script that does that automatically. Closing that
+  gap is a follow-up, not something the current setup already provides.
+- **What it can't do:**
+  - It cannot tell which predicate a given shape needs, so choosing the wrong
+    one still passes lint.
+  - It only visits `===`/`!==` binary expressions, so it is silent on loose
+    equality (`==` / `!=`), `switch` / `case "native"`, template literals
+    (`` code === `native` ``), `.includes()` / `.indexOf()` / `.startsWith()` /
+    `Object.is()`, and a sentinel hoisted into a local constant
+    (`const N = "native"; token.type === N`).
+
+  Treat it as a safety net, not a guarantee.
 
 Do not add an `eslint-disable` for this rule. `@shared/helpers/assetIdentity.ts`
-is exempt because it is the module that defines the predicates; every other site
-goes through them.
+is exempt in `eslint.config.js` as a belt-and-braces safeguard, not a necessity
+-- that module compares against its own local constants (`NATIVE_ASSET_ID`,
+`NATIVE_ASSET_CODE`), which aren't in the rule's identifier list, so the rule
+would not fire there regardless. The exemption is deliberate, self-documenting
+policy: keep it.

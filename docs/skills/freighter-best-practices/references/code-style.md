@@ -184,8 +184,10 @@ Never identify an asset with a bare code. Asset codes are not unique, so `"XLM"`
 identifies neither the native lumen nor any single asset. Use the predicates in
 `@shared/helpers/assetIdentity.ts` for nativeness, and
 `getCanonicalFromAsset(code, issuer)` for identity. See
-[Anti-Patterns 11](./anti-patterns.md) for the full convention; the
-`asset-identity/no-asset-code-comparison` ESLint rule enforces it.
+[Anti-Patterns 11](./anti-patterns.md#11-identifying-assets-by-code) for the
+full convention. The `asset-identity/no-asset-code-comparison` ESLint rule
+catches native-sentinel comparisons; it doesn't check identity, so using
+`getCanonicalFromAsset` is not something lint enforces for you.
 
 ### Action Type Strings
 
