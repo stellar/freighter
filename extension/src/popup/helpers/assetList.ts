@@ -82,6 +82,20 @@ interface GetAssetListsForAssetParams {
   cachedAssetLists?: AssetListResponse[];
 }
 
+/**
+ * True when `asset` and `item` name the same asset.
+ *
+ * Both halves of an identity are optional on these records, so each comparison
+ * requires its own side to actually be present — two absent values are not a
+ * match.
+ */
+export const assetMatchesListItem = (
+  asset: { issuer?: string; contract?: string },
+  item: { issuer?: string; contract?: string },
+): boolean =>
+  (!!asset.issuer && asset.issuer === item.issuer) ||
+  (!!asset.contract && asset.contract === item.contract);
+
 export const getAssetListsForAsset = async ({
   asset,
   assetsListsDetails,
@@ -105,10 +119,7 @@ export const getAssetListsForAsset = async ({
 
   return Object.entries(validatedAssets)
     .filter(([_, items]) =>
-      items.some(
-        ({ issuer, contract }) =>
-          asset.issuer === issuer || asset.contract === contract,
-      ),
+      items.some((item) => assetMatchesListItem(asset, item)),
     )
     .map(([name]) => name);
 };

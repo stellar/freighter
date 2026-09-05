@@ -3,7 +3,7 @@ import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 
 import { getIconUrlFromIssuer } from "@shared/api/helpers/getIconUrlFromIssuer";
-import { ClassicAsset, NativeAsset } from "@shared/api/types/account-balance";
+import { isNativeAssetId } from "@shared/helpers/assetIdentity";
 
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { CopyValue } from "popup/components/CopyValue";
@@ -15,10 +15,8 @@ import "./styles.scss";
 interface AssetNetworkInfoProps {
   assetIssuer: string;
   assetCode: string;
-  assetType:
-    | NativeAsset["token"]["type"]
-    | ClassicAsset["token"]["type"]
-    | null;
+  /** Horizon `asset_type` value (e.g. "native", "credit_alphanum4"), or null. */
+  assetType: string | null;
   assetDomain: string;
   contractId?: string;
 }
@@ -57,7 +55,7 @@ export const AssetNetworkInfo = ({
   }, [assetCode, assetIssuer, networkDetails]);
 
   const decideNetworkIcon = () => {
-    if (networkIconUrl || assetType === "native") {
+    if (networkIconUrl || isNativeAssetId(assetType)) {
       return (
         <img src={networkIconUrl || StellarLogo} alt={t("Network icon")} />
       );

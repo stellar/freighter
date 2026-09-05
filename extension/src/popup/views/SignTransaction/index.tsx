@@ -35,6 +35,7 @@ import {
   isMuxedAccount,
   stroopToXlm,
 } from "helpers/stellar";
+import { isNativeAssetPair } from "@shared/helpers/assetIdentity";
 import { decodeMemo } from "popup/helpers/parseTransaction";
 import { useIsDomainListedAllowed } from "popup/helpers/useIsDomainListedAllowed";
 import { openTab } from "popup/helpers/navigate";
@@ -60,7 +61,7 @@ import {
 import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
 import { Loading } from "popup/components/Loading";
 import { VerifyAccount } from "popup/views/VerifyAccount";
-import { NativeAsset } from "@shared/api/types/account-balance";
+import { hasEnoughXlmForFee } from "popup/helpers/balance";
 
 import { RequestState } from "constants/request";
 import { useGetSignTxData } from "./hooks/useGetSignTxData";
@@ -371,12 +372,7 @@ export const SignTransaction = () => {
   // Check if user has enough XLM for the fee - skip warning if balances unavailable
   const balances = signTxState.data?.balances;
   const hasEnoughXlm = balances
-    ? balances.balances.some(
-        (balance) =>
-          "token" in balance &&
-          balance.token.code === "XLM" &&
-          (balance as NativeAsset).available.gt(stroopToXlm(_fee as string)),
-      )
+    ? hasEnoughXlmForFee(balances.balances, stroopToXlm(_fee as string))
     : true; // If balances unavailable, assume user can proceed
 
   if (
@@ -759,7 +755,7 @@ const AssetDiffs = ({ assetDiffs, icons }: AssetDiffsProps) => {
       <div className="SignTransaction__AssetDiffRow">
         <div className="SignTransaction__AssetDiffRow__Asset">
           <AssetIcon
-            assetIcons={code !== "XLM" ? icons : {}}
+            assetIcons={!isNativeAssetPair(code, issuer) ? icons : {}}
             code={code}
             issuerKey={issuer}
           />
@@ -802,7 +798,7 @@ export const Trustline = ({ operations, icons }: TrustlineProps) => {
         return (
           <>
             <AssetIcon
-              assetIcons={code !== "XLM" ? icons : {}}
+              assetIcons={!isNativeAssetPair(code, issuer) ? icons : {}}
               code={code}
               issuerKey={issuer}
             />

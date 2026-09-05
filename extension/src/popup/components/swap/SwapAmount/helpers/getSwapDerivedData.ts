@@ -8,6 +8,7 @@ import {
   roundUsdValue,
 } from "popup/helpers/formatters";
 import { getAssetFromCanonical, isMainnet } from "helpers/stellar";
+import { isNativeAssetId } from "@shared/helpers/assetIdentity";
 import { getAssetDecimals, getAvailableBalance } from "popup/helpers/soroban";
 import {
   findAssetBalance,
@@ -129,7 +130,7 @@ export const getSwapDerivedData = ({
   // insufficient-balance check.
   const availableBalance = deductNewTrustlineReserve({
     spendable: baseAvailableBalance,
-    sourceIsXlm: asset === "native",
+    sourceIsXlm: isNativeAssetId(asset),
     // The unfiltered-balances flag, NOT destinationIsNonHeld: a hidden held
     // destination builds no changeTrust, so no reserve should be withheld.
     requiresTrustline: destRequiresTrustline,
@@ -139,7 +140,7 @@ export const getSwapDerivedData = ({
   // "Swap for 0.5 XLM" reserve-recovery affordance on the XlmReserveSheet.
   // The sell side is the current source when it's already a non-XLM
   // classic token; otherwise the largest held non-XLM classic balance.
-  const sourceIsNonXlmClassic = !!asset && asset !== "native";
+  const sourceIsNonXlmClassic = !!asset && !isNativeAssetId(asset);
 
   // Source token Blockaid verdict (from its held balance), passed to the review
   // gate so a flagged sell token also warns. XLM is never scanned.

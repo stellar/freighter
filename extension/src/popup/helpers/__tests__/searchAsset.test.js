@@ -1,3 +1,5 @@
+import { Networks } from "stellar-sdk";
+
 import { validAssetList } from "popup/__testHelpers__";
 import * as SearchAsset from "../searchAsset";
 import {
@@ -49,7 +51,10 @@ describe("searchAsset", () => {
 
   it("should getNativeContractDetails for Mainnet", () => {
     expect(
-      SearchAsset.getNativeContractDetails({ network: "PUBLIC" }),
+      SearchAsset.getNativeContractDetails({
+        network: "PUBLIC",
+        networkPassphrase: Networks.PUBLIC,
+      }),
     ).toStrictEqual({
       contract: "CAS3J7GYLGXMF6TDJBBYYSE3HQ6BBSMLNUQ34T6TZMYMW2EVH34XOWMA",
       issuer: "GDMTVHLWJTHSUDMZVVMXXH6VJHA2ZV3HNG5LYNAZ6RTWB7GISM6PGTUV",
@@ -62,7 +67,10 @@ describe("searchAsset", () => {
   });
   it("should getNativeContractDetails for Testnet", () => {
     expect(
-      SearchAsset.getNativeContractDetails({ network: "TESTNET" }),
+      SearchAsset.getNativeContractDetails({
+        network: "TESTNET",
+        networkPassphrase: Networks.TESTNET,
+      }),
     ).toStrictEqual({
       contract: "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC",
       issuer: "",
@@ -73,16 +81,22 @@ describe("searchAsset", () => {
       org: "",
     });
   });
-  it("should not getNativeContractDetails for non-Mainnet and non-Testnet", () => {
+  it("should derive getNativeContractDetails for a network the table doesn't cover", () => {
+    // The contract address is now derived from the passphrase rather than
+    // read from a table, so a network outside PUBLIC/TESTNET gets a real
+    // address instead of the empty string the table used to fall back to.
     expect(
-      SearchAsset.getNativeContractDetails({ network: "foo" }),
+      SearchAsset.getNativeContractDetails({
+        network: "FUTURENET",
+        networkPassphrase: Networks.FUTURENET,
+      }),
     ).toStrictEqual({
       code: "XLM",
       decimals: 7,
       domain: "https://stellar.org",
       icon: "",
       org: "",
-      contract: "",
+      contract: "CB64D3G7SM2RTH6JSGG34DDTFTQ5CFDKVDZJZSODMCX4NJ2HV2KN7OHT",
       issuer: "",
     });
   });

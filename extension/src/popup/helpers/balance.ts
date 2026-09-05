@@ -12,10 +12,13 @@ import {
   AssetType,
   ClassicAsset,
   LiquidityPoolShareAsset,
-  NativeAsset,
   SorobanAsset,
 } from "@shared/api/types/account-balance";
 import { NetworkDetails } from "@shared/constants/stellar";
+import {
+  isNativeAssetId,
+  isNativeBalance,
+} from "@shared/helpers/assetIdentity";
 import { getAssetSacAddress } from "@shared/helpers/soroban/token";
 import { LP_IDENTIFIER } from "./account";
 import { NO_FIAT_VALUE, formatFiatAmount } from "./formatters";
@@ -27,22 +30,14 @@ export const isClassicBalance = (balance: AssetType): balance is ClassicAsset =>
 export const isSorobanBalance = (balance: AssetType): balance is SorobanAsset =>
   "contractId" in balance;
 
-export const isNativeBalance = (balance: AssetType): balance is NativeAsset =>
-  "token" in balance &&
-  "type" in balance.token &&
-  balance.token.type === "native";
-
 export const findAssetBalance = (
   balances: AssetType[],
   asset: Asset | { issuer?: string; code: string },
 ) => {
   if (isAsset(asset) && asset.isNative()) {
-    return balances.find(
-      (balance) =>
-        "token" in balance &&
-        "type" in balance.token &&
-        balance.token.type === "native",
-    ) as Exclude<AssetType, SorobanAsset | LiquidityPoolShareAsset> | undefined;
+    return balances.find((balance) => isNativeBalance(balance)) as
+      | Exclude<AssetType, SorobanAsset | LiquidityPoolShareAsset>
+      | undefined;
   }
   if (isContractId(asset.issuer)) {
     return balances.find(
@@ -69,8 +64,8 @@ export const getBalanceByAsset = (
   const issuer = asset.issuer;
 
   return balances.find((balance) => {
-    if ("token" in balance && "type" in balance.token && !issuer) {
-      return balance.token.type === "native";
+    if (!issuer) {
+      return isNativeBalance(balance);
     }
     if (isContractId(issuer)) {
       return "contractId" in balance && balance.contractId === issuer;
@@ -104,8 +99,8 @@ export const getBalanceByKey = (
       "contractId" in balance && contractId === balance.contractId;
 
     try {
-      // if xlm, check for a SAC match
-      if ("token" in balance && balance.token.code === "XLM") {
+      // if this is the native balance, check for a SAC match
+      if (isNativeBalance(balance)) {
         const matchesSac =
           Asset.native().contractId(networkDetails.networkPassphrase) ===
           contractId;
@@ -148,13 +143,8 @@ export const findAddressBalance = (
   address: string,
   network: Networks,
 ) => {
-  if (address === "native") {
-    return balances.find(
-      (balance) =>
-        "token" in balance &&
-        "type" in balance.token &&
-        balance.token.type === "native",
-    );
+  if (isNativeAssetId(address)) {
+    return balances.find((balance) => isNativeBalance(balance));
   }
   if (isContractId(address)) {
     // first check for contract ID match, then check for SAC match
@@ -321,3 +311,17 @@ export const getTotalUsdLabel = ({
 
   return formatFiatAmount(totalUsd?.toString());
 };
+
+/**
+ * True when the account holds enough native lumens to cover `feeXlm`.
+ *
+ * Only the native balance can pay a fee, so this is anchored on the balance's
+ * type rather than its code.
+ */
+export const hasEnoughXlmForFee = (
+  balances: AssetType[],
+  feeXlm: BigNumber,
+): boolean =>
+  balances.some(
+    (balance) => isNativeBalance(balance) && balance.available.gt(feeXlm),
+  );

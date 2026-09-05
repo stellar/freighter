@@ -30,6 +30,7 @@ import {
 } from "popup/helpers/formatters";
 import { useGetSwapAmountData } from "./hooks/useGetSwapAmountData";
 import { getAssetFromCanonical } from "helpers/stellar";
+import { isNativeAssetId } from "@shared/helpers/assetIdentity";
 import { RequestState } from "constants/request";
 import { Loading } from "popup/components/Loading";
 import { AppDataType } from "helpers/hooks/useGetAppData";
@@ -214,7 +215,7 @@ export const SwapAmount = ({
     });
     const needsReserve = shouldShowXlmReservePreflight({
       requiresTrustline: destRequiresTrustline,
-      sourceIsXlm: asset === "native",
+      sourceIsXlm: isNativeAssetId(asset),
       spendableXlm: getAvailableBalance({
         assetCanonical: "native",
         balances: sendData.userBalances.balances,
@@ -607,7 +608,9 @@ export const SwapAmount = ({
                     assetCode={srcAsset ? srcAsset.code : ""}
                     assetIcon={assetIcon}
                     assetIcons={
-                      asset && asset !== "native" ? { [asset]: assetIcon } : {}
+                      asset && !isNativeAssetId(asset)
+                        ? { [asset]: assetIcon }
+                        : {}
                     }
                     assetIssuerKey={srcAsset?.issuer}
                     // Carry the sell token's Blockaid verdict onto its pill so a
@@ -723,7 +726,7 @@ export const SwapAmount = ({
                     assetCode={dstAsset ? dstAsset.code : ""}
                     assetIcon={dstAssetIcon}
                     assetIcons={
-                      destinationAsset && destinationAsset !== "native"
+                      destinationAsset && !isNativeAssetId(destinationAsset)
                         ? { [destinationAsset]: dstAssetIcon }
                         : {}
                     }

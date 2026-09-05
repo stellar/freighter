@@ -18,6 +18,10 @@ import { scrubStrKeys } from "helpers/stellarStrKey";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { NetworkDetails } from "@shared/constants/stellar";
 import {
+  getNativeContractId,
+  isNativeAssetId,
+} from "@shared/helpers/assetIdentity";
+import {
   getAssetFromCanonical,
   isMuxedAccount,
   stroopToXlm,
@@ -36,6 +40,7 @@ import {
 import { simulateTokenTransfer } from "@shared/api/internal";
 import type { BlockAidScanTxResult } from "@shared/api/types";
 import { getAssetSacAddress } from "@shared/helpers/soroban/token";
+import { isNativeAsset } from "@shared/helpers/assetIdentity";
 import {
   saveSimulation,
   saveTransactionFee,
@@ -118,7 +123,7 @@ export const getExpectedToFailReason = ({
     return null;
   }
 
-  if (assetCanonical !== "native") {
+  if (!isNativeAssetId(assetCanonical)) {
     return t("Blockaid unfunded destination");
   }
 
@@ -175,7 +180,7 @@ const applyExpectedToFailReason = ({
   } as BlockAidScanTxResult;
 };
 
-const getOperation = (
+export const getOperation = (
   sourceAsset: Asset | { code: string; issuer: string },
   destAsset: Asset | { code: string; issuer: string },
   amount: string,
@@ -204,8 +209,8 @@ const getOperation = (
     });
   }
 
-  // create account if unfunded and sending xlm
-  if (!isFunded && sourceAsset.code === Asset.native().code) {
+  // create account if unfunded and sending the native asset
+  if (!isFunded && isNativeAsset(sourceAsset)) {
     let createAccountDestination = destination;
     if (isMuxedAccount(destination)) {
       // encode muxed account to address
@@ -386,7 +391,7 @@ function getAssetAddress(
   destination: string,
   networkDetails: NetworkDetails,
 ) {
-  if (asset === "native") {
+  if (isNativeAssetId(asset)) {
     return asset;
   }
   if (
@@ -510,10 +515,9 @@ function useSimulateTxData({
       if (!assetBalance) {
         throw new Error("asset balance not found");
       }
-      const tokenAddress =
-        currentAssetAddress === "native"
-          ? Asset.native().contractId(networkDetails.networkPassphrase)
-          : currentAssetAddress;
+      const tokenAddress = isNativeAssetId(currentAssetAddress)
+        ? getNativeContractId(networkDetails.networkPassphrase)
+        : currentAssetAddress;
       const parsedAmount = parseTokenAmount(
         cleanAmount(currentAmount),
         Number("decimals" in assetBalance ? assetBalance.decimals : 7),
