@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 
 import { NetworkDetails } from "@shared/constants/stellar";
 import { Balance } from "@shared/api/types";
-import { isNativeAssetPair } from "@shared/helpers/assetIdentity";
+import { isNativeBalance } from "@shared/helpers/assetIdentity";
 import { initialState, isError, reducer } from "helpers/request";
 
 import { ManageAssetCurrency } from "popup/components/manageAssets/ManageAssetRows";
@@ -112,7 +112,7 @@ export function useGetAssetDomainsWithBalances(getBalancesOptions: {
           continue;
         }
 
-        if (!isNativeAssetPair(code, issuer.key)) {
+        if (!isNativeBalance(balance)) {
           let domain = "";
 
           const cachedHomeDomain =
