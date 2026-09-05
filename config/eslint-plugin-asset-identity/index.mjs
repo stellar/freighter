@@ -32,6 +32,7 @@ const isNativeSentinel = (rawNode) => {
   );
 };
 
+/** @type {import("eslint").Rule.RuleModule} */
 const noAssetCodeComparison = {
   meta: {
     type: "problem",
