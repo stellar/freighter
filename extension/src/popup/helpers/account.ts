@@ -12,6 +12,7 @@ import { Balances, BalanceMap } from "@shared/api/types/backend-api";
 import { AssetType } from "@shared/api/types/account-balance";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { SorobanTokenInterface } from "@shared/constants/soroban/token";
+import { isNativeAssetId } from "@shared/helpers/assetIdentity";
 export { isSorobanIssuer } from "@shared/helpers/stellar";
 
 import {
@@ -125,6 +126,47 @@ export interface AssetOperations {
   [key: string]: OperationDataRow[];
 }
 
+/**
+ * True when `operation` moves the asset that `assetKey` identifies.
+ *
+ * The two sides identify assets in different spaces: `assetKey` is a canonical
+ * identifier, while a Horizon operation carries an asset type alongside a
+ * code/issuer pair. Each arm therefore tests in its own space rather than
+ * comparing a code against a type.
+ */
+export const operationMatchesAssetKey = (
+  assetKey: string,
+  operation: HorizonOperation,
+): boolean => {
+  const asset = getAssetFromCanonical(assetKey);
+  const isNativeKey = isNativeAssetId(assetKey);
+
+  const matchesAsset = isNativeKey
+    ? "asset_type" in operation && isNativeAssetId(operation.asset_type)
+    : "asset_code" in operation &&
+      "asset_issuer" in operation &&
+      operation.asset_code === asset.code &&
+      operation.asset_issuer === asset.issuer;
+
+  if (matchesAsset) {
+    return true;
+  }
+
+  if (
+    !("source_asset_type" in operation) &&
+    !("source_asset_code" in operation)
+  ) {
+    return false;
+  }
+
+  return isNativeKey
+    ? "source_asset_type" in operation &&
+        isNativeAssetId(operation.source_asset_type)
+    : "source_asset_issuer" in operation &&
+        operation.source_asset_code === asset.code &&
+        operation.source_asset_issuer === asset.issuer;
+};
+
 export const sortOperationsByAsset = async ({
   balances,
   operations,
@@ -196,27 +238,8 @@ export const sortOperationsByAsset = async ({
     );
     if (getIsPayment(op.type)) {
       Object.keys(assetOperationMap).forEach((assetKey) => {
-        const asset = getAssetFromCanonical(assetKey);
-        const assetCode = asset.code === "XLM" ? "native" : asset.code;
-        const assetIssuer = asset.issuer;
-
-        if (
-          ("asset_code" in op &&
-            "asset_issuer" in op &&
-            op.asset_code === assetCode &&
-            op.asset_issuer === assetIssuer) ||
-          ("asset_type" in op && op.asset_type === assetCode)
-        ) {
+        if (operationMatchesAssetKey(assetKey, op)) {
           assetOperationMap[assetKey].push(opRowData);
-        } else if ("source_asset_type" in op || "source_asset_code" in op) {
-          if (
-            ("source_asset_type" in op && op.source_asset_type === assetCode) ||
-            (op.source_asset_code === assetCode &&
-              "source_asset_issuer" in op &&
-              op.source_asset_issuer === assetIssuer)
-          ) {
-            assetOperationMap[assetKey].push(opRowData);
-          }
         }
       });
     }
