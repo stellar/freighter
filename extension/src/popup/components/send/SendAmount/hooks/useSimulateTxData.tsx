@@ -36,6 +36,7 @@ import {
 import { simulateTokenTransfer } from "@shared/api/internal";
 import type { BlockAidScanTxResult } from "@shared/api/types";
 import { getAssetSacAddress } from "@shared/helpers/soroban/token";
+import { isNativeAsset } from "@shared/helpers/assetIdentity";
 import {
   saveSimulation,
   saveTransactionFee,
@@ -175,7 +176,7 @@ const applyExpectedToFailReason = ({
   } as BlockAidScanTxResult;
 };
 
-const getOperation = (
+export const getOperation = (
   sourceAsset: Asset | { code: string; issuer: string },
   destAsset: Asset | { code: string; issuer: string },
   amount: string,
@@ -204,8 +205,8 @@ const getOperation = (
     });
   }
 
-  // create account if unfunded and sending xlm
-  if (!isFunded && sourceAsset.code === Asset.native().code) {
+  // create account if unfunded and sending the native asset
+  if (!isFunded && isNativeAsset(sourceAsset)) {
     let createAccountDestination = destination;
     if (isMuxedAccount(destination)) {
       // encode muxed account to address
