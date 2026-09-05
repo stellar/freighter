@@ -19,6 +19,7 @@ import {
   formatDomain,
   getAssetFromCanonical,
 } from "helpers/stellar";
+import { isNativeAssetPair } from "@shared/helpers/assetIdentity";
 import { AccountBalances } from "helpers/hooks/useGetBalances";
 import { getTokenBalance, isContractId } from "popup/helpers/soroban";
 import { isSorobanBalance, getBalanceByAsset } from "popup/helpers/balance";
@@ -126,7 +127,11 @@ export const SelectAssetRows = ({
                 }}
               >
                 <AssetIcon
-                  assetIcons={code !== "XLM" ? { [canonical]: image } : {}}
+                  assetIcons={
+                    !isNativeAssetPair(code, issuer)
+                      ? { [canonical]: image }
+                      : {}
+                  }
                   code={code}
                   issuerKey={issuer}
                   icon={icon}

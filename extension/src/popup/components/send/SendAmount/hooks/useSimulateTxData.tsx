@@ -18,6 +18,10 @@ import { scrubStrKeys } from "helpers/stellarStrKey";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { NetworkDetails } from "@shared/constants/stellar";
 import {
+  getNativeContractId,
+  isNativeAssetId,
+} from "@shared/helpers/assetIdentity";
+import {
   getAssetFromCanonical,
   isMuxedAccount,
   stroopToXlm,
@@ -119,7 +123,7 @@ export const getExpectedToFailReason = ({
     return null;
   }
 
-  if (assetCanonical !== "native") {
+  if (!isNativeAssetId(assetCanonical)) {
     return t("Blockaid unfunded destination");
   }
 
@@ -387,7 +391,7 @@ function getAssetAddress(
   destination: string,
   networkDetails: NetworkDetails,
 ) {
-  if (asset === "native") {
+  if (isNativeAssetId(asset)) {
     return asset;
   }
   if (
@@ -511,10 +515,9 @@ function useSimulateTxData({
       if (!assetBalance) {
         throw new Error("asset balance not found");
       }
-      const tokenAddress =
-        currentAssetAddress === "native"
-          ? Asset.native().contractId(networkDetails.networkPassphrase)
-          : currentAssetAddress;
+      const tokenAddress = isNativeAssetId(currentAssetAddress)
+        ? getNativeContractId(networkDetails.networkPassphrase)
+        : currentAssetAddress;
       const parsedAmount = parseTokenAmount(
         cleanAmount(currentAmount),
         Number("decimals" in assetBalance ? assetBalance.decimals : 7),

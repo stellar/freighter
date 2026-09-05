@@ -9,6 +9,10 @@ import {
   LiquidityPoolShareAsset,
 } from "@shared/api/types/account-balance";
 import { getCanonicalFromAsset } from "helpers/stellar";
+import {
+  isNativeAssetPair,
+  isNativeBalance,
+} from "@shared/helpers/assetIdentity";
 import { ApiTokenPrices, AssetIcons } from "@shared/api/types";
 import { getAvailableBalance } from "popup/helpers/soroban";
 import {
@@ -86,8 +90,7 @@ export const TokenList = ({
                   ? balance.token.issuer.key
                   : undefined;
               const isContract = "contractId" in balance;
-              const isNative =
-                "type" in balance.token && balance.token.type === "native";
+              const isNative = isNativeBalance(balance);
               const canonical = getCanonicalFromAsset(code, issuerKey);
               const icon = icons[canonical];
               const availableBalance = getAvailableBalance({
@@ -109,7 +112,11 @@ export const TokenList = ({
                 >
                   <div className="TokenList__AssetRow__Body">
                     <AssetIcon
-                      assetIcons={code !== "XLM" ? { [canonical]: icon } : {}}
+                      assetIcons={
+                        !isNativeAssetPair(code, issuerKey)
+                          ? { [canonical]: icon }
+                          : {}
+                      }
                       code={code}
                       issuerKey={issuerKey!}
                       icon={icon}
