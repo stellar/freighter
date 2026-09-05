@@ -15,7 +15,10 @@ import {
   SorobanAsset,
 } from "@shared/api/types/account-balance";
 import { NetworkDetails } from "@shared/constants/stellar";
-import { isNativeBalance } from "@shared/helpers/assetIdentity";
+import {
+  isNativeAssetId,
+  isNativeBalance,
+} from "@shared/helpers/assetIdentity";
 import { getAssetSacAddress } from "@shared/helpers/soroban/token";
 import { LP_IDENTIFIER } from "./account";
 import { NO_FIAT_VALUE, formatFiatAmount } from "./formatters";
@@ -32,12 +35,9 @@ export const findAssetBalance = (
   asset: Asset | { issuer?: string; code: string },
 ) => {
   if (isAsset(asset) && asset.isNative()) {
-    return balances.find(
-      (balance) =>
-        "token" in balance &&
-        "type" in balance.token &&
-        balance.token.type === "native",
-    ) as Exclude<AssetType, SorobanAsset | LiquidityPoolShareAsset> | undefined;
+    return balances.find((balance) => isNativeBalance(balance)) as
+      | Exclude<AssetType, SorobanAsset | LiquidityPoolShareAsset>
+      | undefined;
   }
   if (isContractId(asset.issuer)) {
     return balances.find(
@@ -64,8 +64,8 @@ export const getBalanceByAsset = (
   const issuer = asset.issuer;
 
   return balances.find((balance) => {
-    if ("token" in balance && "type" in balance.token && !issuer) {
-      return balance.token.type === "native";
+    if (!issuer) {
+      return isNativeBalance(balance);
     }
     if (isContractId(issuer)) {
       return "contractId" in balance && balance.contractId === issuer;
@@ -143,13 +143,8 @@ export const findAddressBalance = (
   address: string,
   network: Networks,
 ) => {
-  if (address === "native") {
-    return balances.find(
-      (balance) =>
-        "token" in balance &&
-        "type" in balance.token &&
-        balance.token.type === "native",
-    );
+  if (isNativeAssetId(address)) {
+    return balances.find((balance) => isNativeBalance(balance));
   }
   if (isContractId(address)) {
     // first check for contract ID match, then check for SAC match

@@ -24,7 +24,10 @@ import { AccountBalances } from "helpers/hooks/useGetBalances";
 import { getAssetFromCanonical, getCanonicalFromAsset } from "helpers/stellar";
 import { findAssetBalance, isSorobanBalance } from "./balance";
 import { getSdk } from "@shared/helpers/stellar";
-import { isNativeContract } from "@shared/helpers/assetIdentity";
+import {
+  isNativeAssetId,
+  isNativeContract,
+} from "@shared/helpers/assetIdentity";
 import { AssetType } from "@shared/api/types/account-balance";
 import { getNativeContractDetails } from "./searchAsset";
 import { getTokenDetails } from "@shared/api/internal";
@@ -220,7 +223,7 @@ export const getContractIdFromTokenId = (
   tokenId: string,
   networkDetails: NetworkDetails,
 ): string | undefined => {
-  if (tokenId === "native") {
+  if (isNativeAssetId(tokenId)) {
     return getNativeContractDetails(networkDetails).contract;
   }
 

@@ -12,7 +12,10 @@ import { Balances, BalanceMap } from "@shared/api/types/backend-api";
 import { AssetType } from "@shared/api/types/account-balance";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { SorobanTokenInterface } from "@shared/constants/soroban/token";
-import { isNativeAssetId } from "@shared/helpers/assetIdentity";
+import {
+  isNativeAssetId,
+  isNativeBalance,
+} from "@shared/helpers/assetIdentity";
 export { isSorobanIssuer } from "@shared/helpers/stellar";
 
 import {
@@ -48,7 +51,7 @@ export const sortBalances = (
 
   // put XLM at the top of the balance list, LP shares last
   Object.entries(balances).forEach(([k, v]) => {
-    if (k === "native") {
+    if (isNativeAssetId(k)) {
       collection.unshift(v);
     } else if (k.includes(LP_IDENTIFIER)) {
       lpBalances.push(v);
@@ -88,7 +91,7 @@ export const getIsDustPayment = (
 ) =>
   getIsPayment(operation.type) &&
   "asset_type" in operation &&
-  operation.asset_type === "native" &&
+  isNativeAssetId(operation.asset_type) &&
   "to" in operation &&
   operation.to === publicKey &&
   "amount" in operation &&
@@ -299,11 +302,7 @@ export const getAvailableBalance = ({
   if (!balance) {
     return availBalance;
   }
-  if (
-    "token" in balance &&
-    "type" in balance.token &&
-    balance.token.type === "native"
-  ) {
+  if (isNativeBalance(balance)) {
     // take base reserve into account for XLM payments
     const baseReserve = (2 + subentryCount) * 0.5;
 
@@ -373,7 +372,7 @@ export const filterHiddenBalances = (
 ) => {
   const balanceKeys = Object.keys(balances);
   const hiddenKeys = balanceKeys.filter((key) => {
-    if (key === "native") {
+    if (isNativeAssetId(key)) {
       return false;
     }
     const [code, issuer] = key.split(":");
