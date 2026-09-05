@@ -14,9 +14,10 @@ import {
 } from "popup/ducks/settings";
 import {
   getVerifiedTokens,
-  getNativeContractDetails,
+  buildNativeAssetRow,
   VerifiedTokenRecord,
 } from "popup/helpers/searchAsset";
+import { isNativeContract } from "@shared/helpers/assetIdentity";
 import { scanAsset, useIsAssetSuspicious } from "popup/helpers/blockaid";
 import { isAssetSac } from "popup/helpers/soroban";
 import { ManageAssetCurrency } from "popup/components/manageAssets/ManageAssetRows";
@@ -69,22 +70,15 @@ export const useTokenLookup = ({
         setIsVerificationInfoShowing(false);
         setAssetRows([]);
 
-        const nativeContractDetails =
-          getNativeContractDetails(lookupNetworkDetails);
         let verifiedTokens = [] as VerifiedTokenRecord[];
 
         // step around verification for native contract and unverifiable networks
-        if (nativeContractDetails.contract === contractId) {
+        if (
+          isNativeContract(contractId, lookupNetworkDetails.networkPassphrase)
+        ) {
           // override our rules for verification for XLM
           setIsVerificationInfoShowing(false);
-          setAssetRows([
-            {
-              code: nativeContractDetails.code,
-              contract: contractId,
-              issuer: contractId,
-              domain: nativeContractDetails.domain,
-            },
-          ]);
+          setAssetRows([buildNativeAssetRow(lookupNetworkDetails)]);
           return;
         }
 

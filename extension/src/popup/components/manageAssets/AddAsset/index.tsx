@@ -12,7 +12,8 @@ import { isSacContractExecutable } from "@shared/helpers/soroban/token";
 import { FormRows } from "popup/basics/Forms";
 import { settingsSelector } from "popup/ducks/settings";
 import { tokensListsSelector } from "popup/ducks/cache";
-import { getNativeContractDetails } from "popup/helpers/searchAsset";
+import { buildNativeAssetRow } from "popup/helpers/searchAsset";
+import { isNativeContract } from "@shared/helpers/assetIdentity";
 import {
   getAssetListsForAsset,
   splitVerifiedAssetCurrency,
@@ -100,20 +101,12 @@ export const AddAsset = () => {
     setVerifiedAssetRows([]);
     setUnverifiedAssetRows([]);
 
-    const nativeContractDetails = getNativeContractDetails(networkDetails);
-
     // step around verification for native contract and unverifiable networks
 
-    if (nativeContractDetails.contract === contractId) {
+    if (isNativeContract(contractId, networkDetails.networkPassphrase)) {
       // override our rules for verification for XLM
       setIsVerificationInfoShowing(false);
-      setVerifiedAssetRows([
-        {
-          code: nativeContractDetails.code,
-          issuer: contractId,
-          domain: nativeContractDetails.domain,
-        },
-      ]);
+      setVerifiedAssetRows([buildNativeAssetRow(networkDetails)]);
       setIsSearching(false);
       return;
     }
