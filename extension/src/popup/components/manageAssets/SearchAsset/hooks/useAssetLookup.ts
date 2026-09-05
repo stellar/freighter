@@ -9,8 +9,10 @@ import { INDEXER_URL } from "@shared/constants/mercury";
 import { BlockAidScanAssetResult } from "@shared/api/types";
 import {
   buildNativeAssetRow,
+  mapStellarExpertRecord,
   searchAsset,
   getVerifiedTokens,
+  StellarExpertAssetRecord,
   VerifiedTokenRecord,
 } from "popup/helpers/searchAsset";
 import { splitVerifiedAssetCurrency } from "popup/helpers/assetList";
@@ -31,20 +33,6 @@ import { getIconFromTokenLists } from "@shared/api/helpers/getIconFromTokenList"
 import { tokensListsSelector, saveTokenLists } from "popup/ducks/cache";
 import { AssetListResponse } from "@shared/constants/soroban/asset-list";
 import { AppDispatch, store } from "popup/App";
-
-interface AssetRecord {
-  asset: string;
-  domain?: string;
-  code?: string;
-  token_name?: string;
-  decimals?: number;
-  tomlInfo?: {
-    image?: string;
-    code?: string;
-    issuer?: string;
-    name?: string;
-  };
-}
 
 interface AssetLookupDetails {
   isVerifiedToken: boolean;
@@ -292,27 +280,9 @@ const useAssetLookup = () => {
       throw new Error("Failed to fetch Stellar Expert data");
     });
 
-    return resJson._embedded.records.map((record: AssetRecord) => {
-      if (isContractId(record.asset)) {
-        return {
-          code: record.code || record.tomlInfo?.code || "",
-          issuer: record.asset,
-          contract: record.asset,
-          domain: record.domain ?? null,
-          image: record.tomlInfo?.image,
-          name: record.token_name || record.tomlInfo?.name,
-          decimals: record.decimals,
-          isSuspicious: false,
-        };
-      }
-      return {
-        code: record.asset.split("-")[0],
-        issuer: record.asset.split("-")[1],
-        domain: record.domain ?? null,
-        image: record.tomlInfo?.image,
-        isSuspicious: false,
-      };
-    });
+    return resJson._embedded.records.map((record: StellarExpertAssetRecord) =>
+      mapStellarExpertRecord(record, networkDetails),
+    );
   };
 
   /*

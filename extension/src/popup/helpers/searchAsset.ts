@@ -5,7 +5,11 @@ import {
   AssetListResponse,
   AssetListReponseItem,
 } from "@shared/constants/soroban/asset-list";
-import { getNativeContractId } from "@shared/helpers/assetIdentity";
+import {
+  getNativeContractId,
+  isNativeAssetPair,
+} from "@shared/helpers/assetIdentity";
+import { isContractId } from "@shared/api/helpers/soroban";
 
 import { getApiStellarExpertUrl } from "popup/helpers/account";
 import { getCombinedAssetListData } from "@shared/api/helpers/token-list";
@@ -176,5 +180,64 @@ export const buildNativeAssetRow = (networkDetails: NetworkDetails) => {
     contract: nativeContractDetails.contract,
     domain: nativeContractDetails.domain,
     name: nativeContractDetails.code,
+  };
+};
+
+/**
+ * A record from stellar.expert's asset search. Issued assets arrive as
+ * `CODE-ISSUER-TYPE`, contract tokens as their contract id, and the native
+ * asset as its bare code with no issuer and no domain.
+ */
+export interface StellarExpertAssetRecord {
+  asset: string;
+  domain?: string;
+  code?: string;
+  token_name?: string;
+  decimals?: number;
+  tomlInfo?: {
+    image?: string;
+    code?: string;
+    issuer?: string;
+    name?: string;
+  };
+}
+
+/**
+ * Maps a stellar.expert search record to an asset row.
+ *
+ * The native asset's record carries only its code, so its row is built from
+ * the network's own native details instead — that gives it its contract id,
+ * which is how the verified-list split and the held-balance check recognise
+ * it. Every other record carries its identity (issuer or contract id) itself.
+ */
+export const mapStellarExpertRecord = (
+  record: StellarExpertAssetRecord,
+  networkDetails: NetworkDetails,
+) => {
+  if (isContractId(record.asset)) {
+    return {
+      code: record.code || record.tomlInfo?.code || "",
+      issuer: record.asset,
+      contract: record.asset,
+      domain: record.domain ?? null,
+      image: record.tomlInfo?.image,
+      name: record.token_name || record.tomlInfo?.name,
+      decimals: record.decimals,
+      isSuspicious: false,
+    };
+  }
+
+  const [code, issuer] = record.asset.split("-");
+
+  if (isNativeAssetPair(code, issuer)) {
+    return { ...buildNativeAssetRow(networkDetails), isSuspicious: false };
+  }
+
+  return {
+    code,
+    issuer,
+    domain: record.domain ?? null,
+    image: record.tomlInfo?.image,
+    isSuspicious: false,
   };
 };
