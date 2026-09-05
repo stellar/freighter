@@ -83,6 +83,7 @@ import IconSoroban from "popup/assets/icon-soroban.svg?react";
 import { batchFetchCollectibles } from "helpers/utils/collectibles/collectiblesBatchFetcher";
 import { ContractIdentifier } from "helpers/utils/collectibles/collectiblesCache";
 import {
+  isNativeAssetId,
   isNativeAssetPair,
   isNativeContract,
 } from "@shared/helpers/assetIdentity";
@@ -457,7 +458,7 @@ const processAssetBalanceChanges = async (
     let assetCode: string;
     let assetIssuer: string | null = null;
 
-    if (change.asset_type === "native") {
+    if (isNativeAssetId(change.asset_type)) {
       assetCode = "XLM";
       assetIssuer = null;
     } else {

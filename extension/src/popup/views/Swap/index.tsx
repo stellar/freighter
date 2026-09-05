@@ -31,6 +31,7 @@ import { ROUTES } from "popup/constants/routes";
 import { resetSimulation } from "popup/ducks/token-payment";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { getAssetFromCanonical } from "helpers/stellar";
+import { isNativeAssetId } from "@shared/helpers/assetIdentity";
 import {
   DEFAULT_SWAP_DEST_CANONICAL,
   NETWORKS,
@@ -129,7 +130,7 @@ export const Swap = () => {
       }
     }
     dispatch(saveAsset(sourceAsset));
-    if (sourceAsset === "native") {
+    if (isNativeAssetId(sourceAsset)) {
       dispatch(saveIsToken(false));
     }
 
