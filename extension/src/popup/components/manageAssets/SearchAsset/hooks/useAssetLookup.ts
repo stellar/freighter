@@ -4,10 +4,11 @@ import { captureException } from "@sentry/browser";
 
 import { getTokenDetails } from "@shared/api/internal";
 import { isSacContractExecutable } from "@shared/helpers/soroban/token";
+import { isNativeContract } from "@shared/helpers/assetIdentity";
 import { INDEXER_URL } from "@shared/constants/mercury";
 import { BlockAidScanAssetResult } from "@shared/api/types";
 import {
-  getNativeContractDetails,
+  buildNativeAssetRow,
   searchAsset,
   getVerifiedTokens,
   VerifiedTokenRecord,
@@ -165,23 +166,14 @@ const useAssetLookup = () => {
   ) => {
     let assetRows = [] as ManageAssetCurrency[];
 
-    const nativeContractDetails = getNativeContractDetails(networkDetails);
     let verifiedTokens = [] as VerifiedTokenRecord[];
 
     // we already have native contract info, so just load it statically
-    if (nativeContractDetails.contract === contractId) {
+    if (isNativeContract(contractId, networkDetails.networkPassphrase)) {
       // override our rules for verification for XLM
       isVerificationInfoShowing = false;
 
-      assetRows = [
-        {
-          code: nativeContractDetails.code,
-          issuer: nativeContractDetails.issuer,
-          contract: contractId,
-          domain: nativeContractDetails.domain,
-          name: `${nativeContractDetails.code}:${nativeContractDetails.issuer}`,
-        },
-      ];
+      assetRows = [buildNativeAssetRow(networkDetails)];
 
       return assetRows;
     }

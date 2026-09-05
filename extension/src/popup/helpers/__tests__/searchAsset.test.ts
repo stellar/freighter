@@ -1,7 +1,12 @@
 import { Networks } from "stellar-sdk";
 
-import { searchAsset, getNativeContractDetails } from "../searchAsset";
+import {
+  searchAsset,
+  getNativeContractDetails,
+  buildNativeAssetRow,
+} from "../searchAsset";
 import { NetworkDetails } from "@shared/constants/stellar";
+import { getCanonicalFromAsset } from "@shared/helpers/stellar";
 
 const MAINNET: NetworkDetails = {
   network: "PUBLIC",
@@ -58,5 +63,28 @@ describe("getNativeContractDetails", () => {
         networkPassphrase: Networks.FUTURENET,
       } as never).contract,
     ).toMatch(/^C[A-Z2-7]{55}$/);
+  });
+});
+
+describe("buildNativeAssetRow", () => {
+  const mainnet = {
+    network: "PUBLIC",
+    networkPassphrase: Networks.PUBLIC,
+  } as never;
+
+  it("carries no issuer, because the native asset has none", () => {
+    expect(buildNativeAssetRow(mainnet).issuer).toBe("");
+  });
+
+  it("produces the native canonical identifier", () => {
+    const row = buildNativeAssetRow(mainnet);
+
+    expect(getCanonicalFromAsset(row.code, row.issuer)).toBe("native");
+  });
+
+  it("carries the native contract address", () => {
+    expect(buildNativeAssetRow(mainnet).contract).toBe(
+      "CAS3J7GYLGXMF6TDJBBYYSE3HQ6BBSMLNUQ34T6TZMYMW2EVH34XOWMA",
+    );
   });
 });

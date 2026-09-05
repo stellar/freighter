@@ -159,3 +159,22 @@ export const getVerifiedTokens = async ({
 
   return verifiedTokens;
 };
+
+/**
+ * The search-result row for the native asset.
+ *
+ * The native asset has no issuer, so the row carries none. That keeps the
+ * canonical identifier built from this row equal to the native identifier,
+ * which is what lets it match the held native balance.
+ */
+export const buildNativeAssetRow = (networkDetails: NetworkDetails) => {
+  const nativeContractDetails = getNativeContractDetails(networkDetails);
+
+  return {
+    code: nativeContractDetails.code,
+    issuer: "",
+    contract: nativeContractDetails.contract,
+    domain: nativeContractDetails.domain,
+    name: nativeContractDetails.code,
+  };
+};
