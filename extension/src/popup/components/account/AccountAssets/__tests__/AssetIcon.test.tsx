@@ -45,4 +45,57 @@ describe("AssetIcon", () => {
       FETCHED_ICON,
     );
   });
+
+  // The component is memoised with a custom comparator. When only the asset's
+  // identity changes on a surviving instance — the icon map staying deeply
+  // equal — the comparator must still let the render through, or the previous
+  // asset's logo stays on screen.
+  describe("re-rendering a surviving instance with a new asset identity", () => {
+    const wrap = (props: {
+      code: string;
+      issuerKey?: string;
+      assetIcons: Record<string, string>;
+    }) => (
+      <Wrapper state={{}} routes={["/"]}>
+        <AssetIcon {...props} />
+      </Wrapper>
+    );
+
+    it("re-renders when the native asset becomes a classic asset using the native code", () => {
+      const { rerender } = renderIcon({ code: "XLM", assetIcons: {} });
+      expect(screen.getByAltText("XLM logo")).toHaveAttribute(
+        "src",
+        BUNDLED_LOGO,
+      );
+
+      rerender(
+        wrap({ code: "XLM", issuerKey: XLM_CODED_ISSUER, assetIcons: {} }),
+      );
+
+      // Same (empty) icon map, different identity: no bundled logo any more —
+      // the icon now has to be looked up, so the loading state shows.
+      expect(screen.queryByAltText("XLM logo")).not.toBeInTheDocument();
+      expect(
+        screen.getByTestId("AccountAssets__asset--loading"),
+      ).toBeInTheDocument();
+    });
+
+    it("re-renders when a classic asset using the native code becomes the native asset", () => {
+      const { rerender } = renderIcon({
+        code: "XLM",
+        issuerKey: XLM_CODED_ISSUER,
+        assetIcons: {},
+      });
+      expect(
+        screen.getByTestId("AccountAssets__asset--loading"),
+      ).toBeInTheDocument();
+
+      rerender(wrap({ code: "XLM", assetIcons: {} }));
+
+      expect(screen.getByAltText("XLM logo")).toHaveAttribute(
+        "src",
+        BUNDLED_LOGO,
+      );
+    });
+  });
 });

@@ -63,11 +63,23 @@ interface AssetIconProps {
   isModal?: boolean;
 }
 
+// Skip a re-render only when nothing that affects the rendered icon changed.
+// `assetIcons` is compared deeply because callers build it per render; the
+// retry callback is left out because its identity is unstable and it does not
+// affect what is rendered. Every other prop feeds the render — the asset's
+// identity (code + issuer) decides between the bundled native logo, a Soroban
+// placeholder and an icon lookup — so each has to be compared.
 const shouldAssetIconSkipUpdate = (
   prevProps: AssetIconProps,
   nextProps: AssetIconProps,
 ) =>
   isEqual(prevProps.assetIcons, nextProps.assetIcons) &&
+  prevProps.code === nextProps.code &&
+  prevProps.issuerKey === nextProps.issuerKey &&
+  prevProps.icon === nextProps.icon &&
+  prevProps.isLPShare === nextProps.isLPShare &&
+  prevProps.isSorobanToken === nextProps.isSorobanToken &&
+  prevProps.isModal === nextProps.isModal &&
   prevProps.isSuspicious === nextProps.isSuspicious &&
   prevProps.isMalicious === nextProps.isMalicious;
 
