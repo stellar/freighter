@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { Button, CopyText, Icon, Link, Loader } from "@stellar/design-system";
 
 import { NetworkDetails } from "@shared/constants/stellar";
+import { isNativeBalance } from "@shared/helpers/assetIdentity";
 import IconEllipsis from "popup/assets/icon-ellipsis.svg";
 import {
   displaySorobanId,
@@ -43,7 +44,6 @@ import { title } from "helpers/transaction";
 import {
   getBalanceByAsset,
   getPriceDeltaColor,
-  isNativeBalance,
   isSorobanBalance,
 } from "popup/helpers/balance";
 import { CopyValue } from "popup/components/CopyValue";

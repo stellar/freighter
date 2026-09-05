@@ -12,7 +12,6 @@ import {
   AssetType,
   ClassicAsset,
   LiquidityPoolShareAsset,
-  NativeAsset,
   SorobanAsset,
 } from "@shared/api/types/account-balance";
 import { NetworkDetails } from "@shared/constants/stellar";
@@ -26,11 +25,6 @@ export const isClassicBalance = (balance: AssetType): balance is ClassicAsset =>
 
 export const isSorobanBalance = (balance: AssetType): balance is SorobanAsset =>
   "contractId" in balance;
-
-export const isNativeBalance = (balance: AssetType): balance is NativeAsset =>
-  "token" in balance &&
-  "type" in balance.token &&
-  balance.token.type === "native";
 
 export const findAssetBalance = (
   balances: AssetType[],

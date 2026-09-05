@@ -2,12 +2,9 @@ import BigNumber from "bignumber.js";
 
 import { BASE_RESERVE } from "@shared/constants/stellar";
 import { AssetType } from "@shared/api/types/account-balance";
+import { isNativeBalance } from "@shared/helpers/assetIdentity";
 import { getCanonicalFromAsset } from "@shared/helpers/stellar";
-import {
-  isClassicBalance,
-  isNativeBalance,
-  isSorobanBalance,
-} from "popup/helpers/balance";
+import { isClassicBalance, isSorobanBalance } from "popup/helpers/balance";
 
 // Pre-flight: does a NEW-token swap risk failing on-chain because the source
 // account can't cover the extra 0.5 XLM trustline reserve?
