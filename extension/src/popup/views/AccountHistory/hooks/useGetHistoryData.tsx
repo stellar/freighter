@@ -82,6 +82,10 @@ import { getIconFromTokenLists } from "@shared/api/helpers/getIconFromTokenList"
 import IconSoroban from "popup/assets/icon-soroban.svg?react";
 import { batchFetchCollectibles } from "helpers/utils/collectibles/collectiblesBatchFetcher";
 import { ContractIdentifier } from "helpers/utils/collectibles/collectiblesCache";
+import {
+  isNativeAssetPair,
+  isNativeContract,
+} from "@shared/helpers/assetIdentity";
 
 export type HistorySection = {
   monthYear: string; // in format {month}:{year}
@@ -467,17 +471,16 @@ const processAssetBalanceChanges = async (
     const destination = isCredit ? change.from : change.to;
 
     // Get asset icon
-    const icon =
-      assetCode === "XLM"
-        ? StellarLogo
-        : await getIconUrl({
-            key: assetIssuer || "",
-            code: assetCode,
-            networkDetails,
-            homeDomains,
-            icons,
-            cachedTokenLists,
-          });
+    const icon = isNativeAssetPair(assetCode, assetIssuer)
+      ? StellarLogo
+      : await getIconUrl({
+          key: assetIssuer || "",
+          code: assetCode,
+          networkDetails,
+          homeDomains,
+          icons,
+          cachedTokenLists,
+        });
 
     // Fetch decimals based on whether it's a Soroban contract
     let decimals: number;
@@ -635,28 +638,26 @@ export const getRowDataByOpType = async (
       ? formatAmount(new BigNumber(srcAmount).toString())
       : null;
 
-    const destIcon =
-      destAssetCode === "XLM"
-        ? StellarLogo
-        : await getIconUrl({
-            key: assetIssuer || "",
-            code: destAssetCode || "",
-            networkDetails,
-            homeDomains,
-            icons,
-            cachedTokenLists,
-          });
-    const sourceIcon =
-      srcAssetCode === "XLM"
-        ? StellarLogo
-        : await getIconUrl({
-            key: sourceAssetIssuer || "",
-            code: srcAssetCode || "",
-            networkDetails,
-            homeDomains,
-            icons,
-            cachedTokenLists,
-          });
+    const destIcon = isNativeAssetPair(destAssetCode, assetIssuer)
+      ? StellarLogo
+      : await getIconUrl({
+          key: assetIssuer || "",
+          code: destAssetCode || "",
+          networkDetails,
+          homeDomains,
+          icons,
+          cachedTokenLists,
+        });
+    const sourceIcon = isNativeAssetPair(srcAssetCode, sourceAssetIssuer)
+      ? StellarLogo
+      : await getIconUrl({
+          key: sourceAssetIssuer || "",
+          code: srcAssetCode || "",
+          networkDetails,
+          homeDomains,
+          icons,
+          cachedTokenLists,
+        });
 
     return {
       action: "Swapped",
@@ -702,17 +703,16 @@ export const getRowDataByOpType = async (
     const nonLabelAmount = formatAmount(new BigNumber(amount!).toString());
     const formattedAmount = `${paymentDifference}${nonLabelAmount} ${destAssetCode}`;
 
-    const destIcon =
-      destAssetCode === "XLM"
-        ? StellarLogo
-        : await getIconUrl({
-            key: assetIssuer || "",
-            code: destAssetCode || "",
-            networkDetails,
-            homeDomains,
-            icons,
-            cachedTokenLists,
-          });
+    const destIcon = isNativeAssetPair(destAssetCode, assetIssuer)
+      ? StellarLogo
+      : await getIconUrl({
+          key: assetIssuer || "",
+          code: destAssetCode || "",
+          networkDetails,
+          homeDomains,
+          icons,
+          cachedTokenLists,
+        });
 
     return {
       action: isReceiving ? i18n.t("Received") : i18n.t("Sent"),
@@ -864,7 +864,10 @@ export const getRowDataByOpType = async (
           }
 
           const { symbol, decimals } = tokenDetailsResponse!;
-          const isNative = symbol === "native";
+          const isNative = isNativeContract(
+            attrs.contractId,
+            networkDetails.networkPassphrase,
+          );
           const code = isNative ? "XLM" : symbol;
           const formattedTokenAmount = formatTokenAmount(
             new BigNumber(attrs.amount),
