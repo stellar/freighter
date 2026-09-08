@@ -42,7 +42,7 @@ describe("NotFundedMessage token activation", () => {
     );
 
     expect(screen.getByTestId("activate-with-token")).toHaveTextContent(
-      "Activate with USDC",
+      "Activate with 25 USDC",
     );
     expect(
       screen.getByRole("button", { name: "Fund with Friendbot" }),

@@ -37,13 +37,13 @@ describe("reserve bootstrap options", () => {
           id: "usdc-big",
           asset: USDC,
           amount: "10.0000000",
-          claimants: [{ destination: CLAIMANT }],
+          claimants: [{ destination: CLAIMANT, predicate: { unconditional: true } }],
         },
         {
           id: "usdc-small",
           asset: USDC,
           amount: "25.0000000",
-          claimants: [{ destination: CLAIMANT }],
+          claimants: [{ destination: CLAIMANT, predicate: { unconditional: true } }],
         },
         {
           id: "eurc",
@@ -78,11 +78,29 @@ describe("reserve bootstrap options", () => {
           id: "1",
           asset: USDC,
           amount: "1",
-          claimants: [{ destination: CLAIMANT }],
+          claimants: [
+            { destination: CLAIMANT, predicate: { unconditional: true } },
+          ],
         },
         CLAIMANT,
       ),
     ).toBe(true);
+    expect(
+      canClaimBalance(
+        {
+          id: "1",
+          asset: USDC,
+          amount: "1",
+          claimants: [
+            {
+              destination: CLAIMANT,
+              predicate: { abs_before: "2020-01-01T00:00:00Z" } as any,
+            },
+          ],
+        },
+        CLAIMANT,
+      ),
+    ).toBe(false);
     expect(
       canClaimBalance(
         { id: "1", asset: USDC, amount: "1", claimants: [] },

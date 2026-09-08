@@ -391,6 +391,7 @@ function useSimulateTxData({
         reduxDispatch(
           saveSimulation({
             preparedTransaction: xdr,
+            reserveQuote: null,
           }),
         );
       }

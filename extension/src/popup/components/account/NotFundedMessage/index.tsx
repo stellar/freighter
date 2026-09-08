@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation, Trans } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { Button, Icon } from "@stellar/design-system";
+import BigNumber from "bignumber.js";
 import { Formik, Form } from "formik";
 
 import { fundAccount } from "popup/ducks/accountServices";
@@ -51,6 +52,9 @@ export const NotFundedMessage = ({
   }, [feeAsset, options]);
 
   const selected = options.find((option) => option.asset === feeAsset);
+  const sendMax = selected
+    ? new BigNumber(selected.available).toFixed()
+    : "";
   const locked = isActivating;
 
   const handleFundAccount = async () => {
@@ -111,8 +115,8 @@ export const NotFundedMessage = ({
       <div className="NotFunded__body">
         {selected ? (
           <Trans
-            i18nKey="This address already has <bold>{{asset}}</bold> waiting. Activate the wallet with that — reserves and the network fee come out of it. No XLM needed."
-            values={{ asset: selected.code }}
+            i18nKey="This address already has <bold>{{amount}} {{asset}}</bold> waiting. Activate the wallet with that — reserves and the network fee come out of it, never more than that amount. No XLM needed."
+            values={{ asset: selected.code, amount: sendMax }}
             components={{ bold: <strong className="NotFunded__amount" /> }}
           />
         ) : (
@@ -164,7 +168,7 @@ export const NotFundedMessage = ({
             onClick={() => void handleActivate()}
             data-testid="activate-with-token"
           >
-            {`${t("Activate with")} ${selected.code}`}
+            {`${t("Activate with")} ${sendMax} ${selected.code}`}
           </Button>
         ) : null}
 

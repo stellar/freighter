@@ -71,6 +71,22 @@ describe("reserve fee assets", () => {
     ).toBe("0");
   });
 
+  it("does not subtract the reserve twice when available is already spendable", () => {
+    expect(
+      nativeAvailableFromBalances([
+        {
+          token: { type: "native", code: "XLM" },
+          available: new BigNumber("0.5"),
+          total: new BigNumber("2"),
+          buyingLiabilities: "0",
+          sellingLiabilities: "0",
+          minimumBalance: "1.5",
+          blockaidData: {} as any,
+        },
+      ] as any),
+    ).toBe("0.5");
+  });
+
   it("treats zero spendable XLM as unable to pay the native fee", () => {
     expect(
       canPayFeeInXlm({ nativeAvailable: "0", requiredFeeXlm: "0.00001" }),

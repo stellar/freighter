@@ -26,7 +26,20 @@ function xdrWithOps(ops: ReturnType<typeof Operation.payment>[]) {
 }
 
 describe("tokenFeeCodeFromXdr", () => {
-  it("reads USDC from a sponsored payment", () => {
+  it("reads the fee token from a strict-receive", () => {
+    const xdr = xdrWithOps([
+      Operation.pathPaymentStrictReceive({
+        sendAsset: new Asset("USDC", ISSUER),
+        sendMax: "1",
+        destination: DEST.publicKey(),
+        destAsset: Asset.native(),
+        destAmount: "0.1",
+      }),
+    ]);
+    expect(tokenFeeCodeFromXdr(xdr, Networks.TESTNET)).toBe("USDC");
+  });
+
+  it("ignores a plain token payment", () => {
     const xdr = xdrWithOps([
       Operation.payment({
         destination: DEST.publicKey(),
@@ -34,7 +47,20 @@ describe("tokenFeeCodeFromXdr", () => {
         amount: "1",
       }),
     ]);
-    expect(tokenFeeCodeFromXdr(xdr, Networks.TESTNET)).toBe("USDC");
+    expect(tokenFeeCodeFromXdr(xdr, Networks.TESTNET)).toBeNull();
+  });
+
+  it("ignores a strict-send swap", () => {
+    const xdr = xdrWithOps([
+      Operation.pathPaymentStrictSend({
+        sendAsset: new Asset("USDC", ISSUER),
+        sendAmount: "1",
+        destination: DEST.publicKey(),
+        destAsset: Asset.native(),
+        destMin: "0.1",
+      }),
+    ]);
+    expect(tokenFeeCodeFromXdr(xdr, Networks.TESTNET)).toBeNull();
   });
 
   it("is silent on a native-only payment", () => {

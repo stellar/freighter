@@ -13,8 +13,13 @@ import { ReserveSendError } from "./send";
 import { NATIVE_FEE_ASSET } from "./types";
 import type { ReserveFeeDisplay, ReserveOp, Quote } from "./types";
 
+export interface HorizonClaimPredicate {
+  unconditional?: boolean;
+}
+
 export interface HorizonClaimant {
   destination: string;
+  predicate?: HorizonClaimPredicate;
 }
 
 export interface HorizonClaimableBalance {
@@ -57,9 +62,11 @@ export function canClaimBalance(
   record: HorizonClaimableBalance,
   claimant: string,
 ): boolean {
-  return (record.claimants || []).some(
-    (entry) => entry.destination === claimant,
-  );
+  return (record.claimants || []).some((entry) => {
+    if (entry.destination !== claimant) return false;
+    const predicate = entry.predicate;
+    return predicate == null || predicate.unconditional === true;
+  });
 }
 
 export function pickBootstrapOptions({

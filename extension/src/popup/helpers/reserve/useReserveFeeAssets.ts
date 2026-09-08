@@ -22,14 +22,16 @@ export function useReserveFeeAssets({
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
+    setAccepted([]);
     if (!enabled || !isReserveNetwork(networkPassphrase)) {
+      setIsLoading(false);
       return;
     }
 
     let cancelled = false;
     const client = createReserveClient(networkPassphrase);
     if (!client) {
-      setAccepted([]);
+      setIsLoading(false);
       return;
     }
 

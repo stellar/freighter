@@ -27,9 +27,7 @@ export function canPayFeeInXlm({
 export function nativeAvailableFromBalances(balances: AssetType[]): string {
   const native = balances.find(isNativeBalance);
   if (!native) return "0";
-  // `available` is total minus selling liabilities. The reserve is still
-  // locked, so spendable for a fee is available minus minimumBalance.
-  const spendable = new BigNumber(native.available || 0).minus(
+  const spendable = new BigNumber(native.total || 0).minus(
     native.minimumBalance || 0,
   );
   return spendable.gt(0) ? spendable.toString() : "0";
