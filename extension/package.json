@@ -17,6 +17,7 @@
   "dependencies": {
     "@amplitude/analytics-browser": "2.44.4",
     "@amplitude/experiment-js-client": "1.21.2",
+    "@cavos/reserve": "0.1.2",
     "@ledgerhq/hw-app-str": "7.7.4",
     "@ledgerhq/hw-transport-webhid": "6.35.4",
     "@radix-ui/react-dialog": "1.1.16",

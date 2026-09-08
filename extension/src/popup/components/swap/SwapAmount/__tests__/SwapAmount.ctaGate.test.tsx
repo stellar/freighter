@@ -240,11 +240,11 @@ describe("SwapAmount CTA gate", () => {
     expect(btn).toHaveTextContent("Enter an amount");
   });
 
-  it("disables the CTA with a fee warning when a non-XLM swap lacks XLM for fees", async () => {
+  it("disables the CTA with a fee warning when a non-XLM swap pays the fee in XLM it does not have", async () => {
     jest
       .spyOn(XlmReserve, "shouldShowXlmReservePreflight")
       .mockReturnValue(false);
-    // Hold USDC but no XLM, so the network fee can't be paid.
+    // Hold USDC but no XLM, and the user is paying the network fee in XLM.
     jest.spyOn(UseGetSwapAmountData, "useGetSwapAmountData").mockReturnValue({
       state: {
         state: RequestState.SUCCESS,
@@ -266,6 +266,7 @@ describe("SwapAmount CTA gate", () => {
                 destinationAmount: "5",
                 allowedSlippage: "2",
                 transactionFee: "",
+                feeAsset: "native",
                 destinationTokenDetails: null,
               },
             },
@@ -286,6 +287,53 @@ describe("SwapAmount CTA gate", () => {
     const btn = screen.getByTestId("swap-amount-btn-continue");
     expect(btn).toBeDisabled();
     expect(btn).toHaveTextContent("Not enough XLM for network fees");
+  });
+
+  it("does not require spendable XLM when the swap fee is paid in a token", async () => {
+    jest
+      .spyOn(XlmReserve, "shouldShowXlmReservePreflight")
+      .mockReturnValue(false);
+    jest.spyOn(UseGetSwapAmountData, "useGetSwapAmountData").mockReturnValue({
+      state: {
+        state: RequestState.SUCCESS,
+        data: { ...swapData, userBalances: { balances: [usdcBalance] } },
+        error: null,
+      },
+      fetchData: jest.fn().mockResolvedValue(undefined),
+    } as any);
+    render(
+      <Wrapper
+        state={
+          {
+            transactionSubmission: {
+              transactionData: {
+                asset: `USDC:${USDC_ISSUER}`,
+                amount: "5",
+                amountUsd: "0.00",
+                destinationAsset: "native",
+                destinationAmount: "5",
+                allowedSlippage: "2",
+                transactionFee: "",
+                feeAsset: `USDC:${USDC_ISSUER}`,
+                destinationTokenDetails: null,
+              },
+            },
+          } as any
+        }
+        routes={["/"]}
+      >
+        <SwapAmount
+          inputType="crypto"
+          setInputType={jest.fn()}
+          goBack={jest.fn()}
+          goToNext={jest.fn()}
+          goToEditSrc={jest.fn()}
+          goToEditDst={jest.fn()}
+        />
+      </Wrapper>,
+    );
+    const btn = screen.getByTestId("swap-amount-btn-continue");
+    expect(btn).not.toHaveTextContent("Not enough XLM for network fees");
   });
 
   it("does NOT open the reserve sheet when shouldShowXlmReservePreflight returns false", async () => {

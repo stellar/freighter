@@ -1,0 +1,24 @@
+@use "../../../styles/utils.scss" as *;
+
+.FeeAssetSelect {
+  appearance: none;
+  flex-shrink: 0;
+  height: pxToRem(40px);
+  max-width: pxToRem(88px);
+  padding: 0 pxToRem(28px) 0 pxToRem(12px);
+  border: 1px solid var(--sds-clr-gray-06);
+  border-radius: pxToRem(100px);
+  background-color: transparent;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12' fill='none'><path d='M3 4.5L6 7.5L9 4.5' stroke='%23a0a0a0' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  color: var(--sds-clr-gray-12);
+  font-size: pxToRem(14px);
+  line-height: 1;
+  cursor: pointer;
+
+  &:focus {
+    outline: 2px solid var(--sds-clr-lilac-09);
+    outline-offset: 1px;
+  }
+}

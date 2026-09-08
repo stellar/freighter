@@ -22,6 +22,7 @@ import {
   pickBestNonXlmClassicCanonical,
 } from "popup/helpers/xlmReserve";
 import { InputType } from "helpers/transaction";
+import { withholdFeeFromSend } from "popup/helpers/reserve";
 import { getSwapCtaState } from "./swapCtaState";
 import { ResolvedSwapAmountData } from "../hooks/useGetSwapAmountData";
 
@@ -57,6 +58,8 @@ interface GetSwapDerivedDataParams {
   // the reserve math; distinct from destinationIsNonHeld below, which is a
   // display-list concept for the direction toggle.
   destRequiresTrustline: boolean;
+  /** When not native, the CTA does not require spendable XLM. */
+  feeAsset?: string;
 }
 
 /**
@@ -80,6 +83,7 @@ export const getSwapDerivedData = ({
   inputType,
   isLiveQuoteLoading,
   destRequiresTrustline,
+  feeAsset = "native",
 }: GetSwapDerivedDataParams) => {
   const sendData = data;
   const assetIcon = sendData.icons[asset];
@@ -117,22 +121,28 @@ export const getSwapDerivedData = ({
   const dstPriceValueUsd = dstAssetPrice
     ? formatUsdValue(dstAssetPrice, destinationAmount || "0")
     : null;
+  const paysFeeInToken = Boolean(feeAsset && feeAsset !== "native");
   const baseAvailableBalance = asset
     ? getAvailableBalance({
         assetCanonical: asset,
         balances: sendData.userBalances.balances,
-        recommendedFee: fee,
+        recommendedFee: paysFeeInToken ? "0" : fee,
       })
     : "0";
   // When swapping XLM into a new token, reserve the 0.5 XLM trustline bump
   // up-front so it's excluded from Max / percentage buttons and the
-  // insufficient-balance check.
-  const availableBalance = deductNewTrustlineReserve({
-    spendable: baseAvailableBalance,
-    sourceIsXlm: asset === "native",
-    // The unfiltered-balances flag, NOT destinationIsNonHeld: a hidden held
-    // destination builds no changeTrust, so no reserve should be withheld.
-    requiresTrustline: destRequiresTrustline,
+  // insufficient-balance check. Reserve-sponsored swaps pay that reserve in
+  // the fee token, so nothing is withheld from the sell amount.
+  const availableBalance = withholdFeeFromSend({
+    spendable: deductNewTrustlineReserve({
+      spendable: baseAvailableBalance,
+      sourceIsXlm: asset === "native",
+      // The unfiltered-balances flag, NOT destinationIsNonHeld: a hidden held
+      // destination builds no changeTrust, so no reserve should be withheld.
+      requiresTrustline: destRequiresTrustline && !paysFeeInToken,
+    }),
+    feeAsset,
+    sendAsset: asset,
   });
   const displayTotal = `${formatAmount(availableBalance)}`;
 
@@ -198,6 +208,7 @@ export const getSwapDerivedData = ({
     recommendedFee: "0",
   });
   const insufficientXlmForFees =
+    !paysFeeInToken &&
     sourceIsNonXlmClassic &&
     new BigNumber(xlmSpendableForFees).lt(new BigNumber(fee));
 

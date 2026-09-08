@@ -168,5 +168,28 @@ describe("FeesPane", () => {
         `${BASE_FEE} XLM`,
       );
     });
+
+    it("shows the quoted token fee when the user pays gas in a token", () => {
+      render(
+        <FeesPane
+          fee={BASE_FEE}
+          simulationState={{
+            state: RequestState.SUCCESS,
+            data: {
+              transactionXdr: "xdr",
+              reserveFee: { amount: "0.012", code: "USDC", asset: "USDC:G" },
+            },
+            error: null,
+          }}
+          onClose={mockOnClose}
+        />,
+      );
+      expect(screen.getByTestId("review-tx-total-fee")).toHaveTextContent(
+        "0.012 USDC",
+      );
+      expect(screen.getByTestId("review-tx-fees-description")).toHaveTextContent(
+        "Fees description token",
+      );
+    });
   });
 });

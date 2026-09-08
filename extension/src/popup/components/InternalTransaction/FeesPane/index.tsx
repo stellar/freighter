@@ -27,12 +27,16 @@ export const FeesPane = ({
 
   // Derive the total from live simulation data when available so the Total
   // Fee row stays accurate if a simulation completes while the pane is open.
+  const reserveFee = simulationState.data?.reserveFee;
   const liveTotal =
     isSoroban && !isError && simulationState.data?.inclusionFee
       ? new BigNumber(simulationState.data.inclusionFee)
           .plus(simulationState.data.resourceFee ?? "0")
           .toFixed()
       : fee;
+  const totalLabel = reserveFee
+    ? `${reserveFee.amount} ${reserveFee.code}`
+    : `${liveTotal} XLM`;
 
   return (
     <div className="FeesPane" data-testid="review-tx-fees-pane">
@@ -104,7 +108,7 @@ export const FeesPane = ({
             className="FeesPane__Card__Row__Value FeesPane__Card__Row__Value--total"
             data-testid="review-tx-total-fee"
           >
-            {isError ? "—" : `${liveTotal} XLM`}
+            {isError ? "—" : totalLabel}
           </Text>
         </div>
       </div>
@@ -114,9 +118,11 @@ export const FeesPane = ({
         className="FeesPane__Description"
         data-testid="review-tx-fees-description"
       >
-        {isSoroban
-          ? t("Fees description soroban")
-          : t("Fees description classic")}
+        {reserveFee
+          ? t("Fees description token", { asset: reserveFee.code })
+          : isSoroban
+            ? t("Fees description soroban")
+            : t("Fees description classic")}
       </Text>
     </div>
   );

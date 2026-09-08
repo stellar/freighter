@@ -58,6 +58,7 @@ const commonConfig = (
         __dirname,
         "./webpack/amplitude-autocapture-stub.js",
       ),
+      "@stellar/stellar-sdk": require.resolve("stellar-sdk"),
     },
     plugins: [
       new TsconfigPathsPlugin({

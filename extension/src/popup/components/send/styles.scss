@@ -165,8 +165,10 @@
   &__settings-fee-display {
     display: flex;
     align-items: center;
-    gap: pxToRem(4px);
+    gap: pxToRem(6px);
     font-size: pxToRem(14px);
+    line-height: 1.2;
+    white-space: nowrap;
 
     // Match the Swap flow: the "Fee:" label is muted gray, not primary text.
     &__label {

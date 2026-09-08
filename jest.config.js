@@ -4,6 +4,7 @@
 // that natively, but Jest's CJS module registry does not, so babel has to
 // transform them here.
 const esModules = [
+  "@cavos/reserve",
   "@stellar/design-system",
   "stellar-hd-wallet",
   "stellar-sdk",
@@ -39,6 +40,7 @@ const jsdomTests = {
   },
   transformIgnorePatterns: [`/node_modules/(?!${esModules.join("|")})`],
   moduleNameMapper: {
+    "^@stellar/stellar-sdk$": "stellar-sdk",
     "\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$":
       "<rootDir>/config/jest/__mocks__/fileMock.ts",
     "^.+\\.svg\\?(react)(.+)?$": "<rootDir>/config/jest/__mocks__/fileMock.ts",

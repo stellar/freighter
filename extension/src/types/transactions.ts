@@ -11,6 +11,11 @@ export interface SimulateTxData {
   scanResult?: BlockAidScanTxResult | null;
   inclusionFee?: string;
   resourceFee?: string;
+  reserveFee?: {
+    amount: string;
+    code: string;
+    asset: string;
+  };
 }
 
 export type SimulateResult =

@@ -1922,6 +1922,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@cavos/reserve@npm:0.1.2":
+  version: 0.1.2
+  resolution: "@cavos/reserve@npm:0.1.2"
+  peerDependencies:
+    "@stellar/stellar-sdk": ">=12"
+  checksum: 10c0/2628c07d4590a6953f6ad7389978e9423ea94dcc0a4f662d621b235fc07591bd9c963aef665add2615f80ae9f2d9499dbf6dafd77c603c94a3a98f3c81d73af2
+  languageName: node
+  linkType: hard
+
 "@colors/colors@npm:1.5.0":
   version: 1.5.0
   resolution: "@colors/colors@npm:1.5.0"
@@ -12320,6 +12329,7 @@ __metadata:
   dependencies:
     "@amplitude/analytics-browser": "npm:2.44.4"
     "@amplitude/experiment-js-client": "npm:1.21.2"
+    "@cavos/reserve": "npm:0.1.2"
     "@lavamoat/allow-scripts": "npm:5.1.0"
     "@ledgerhq/hw-app-str": "npm:7.7.4"
     "@ledgerhq/hw-transport-webhid": "npm:6.35.4"

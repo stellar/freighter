@@ -84,6 +84,7 @@ import { AuthEntries } from "popup/components/AuthEntry";
 import { TruncatedMemo } from "popup/components/TruncatedMemo";
 import { Summary } from "./Preview/Summary";
 import { Details } from "./Preview/Details";
+import { tokenFeeCodeFromXdr } from "popup/helpers/reserve/signFee";
 
 import "./styles.scss";
 
@@ -378,11 +379,23 @@ export const SignTransaction = () => {
           (balance as NativeAsset).available.gt(stroopToXlm(_fee as string)),
       )
     : true; // If balances unavailable, assume user can proceed
+  // Bootstrap / fee-bump: this account is only a co-signer. The sponsor is
+  // the source and pays the XLM fee, so a 0-XLM wallet is expected.
+  const signerPaysFee =
+    "innerTransaction" in transaction
+      ? transaction.feeSource === currentAccount.publicKey
+      : transaction.source === currentAccount.publicKey;
+  const tokenFeeCode = tokenFeeCodeFromXdr(
+    transactionXdr,
+    _networkPassphrase as string,
+  );
 
   if (
     currentAccount.publicKey &&
+    signerPaysFee &&
     !hasEnoughXlm &&
-    !hasAcceptedInsufficientFee
+    !hasAcceptedInsufficientFee &&
+    !tokenFeeCode
   ) {
     return (
       <WarningMessage
@@ -492,6 +505,16 @@ export const SignTransaction = () => {
                     </div>
                   </div>
                   {renderBanner()}
+                  {tokenFeeCode ? (
+                    <p
+                      data-testid="SponsoredFeeNotice"
+                      className="SignTransaction__SponsoredFee"
+                    >
+                      {t("Network fee will be paid in {{asset}}", {
+                        asset: tokenFeeCode,
+                      })}
+                    </p>
+                  ) : null}
                   {assetDiffs && (
                     <AssetDiffs
                       icons={signTxState.data?.icons || {}}
@@ -530,7 +553,9 @@ export const SignTransaction = () => {
                       </div>
                       <div className="SignTransaction__Metadata__Value">
                         <span>
-                          {`${formatTokenAmount(new BigNumber(_fee), CLASSIC_ASSET_DECIMALS)} XLM `}
+                          {tokenFeeCode
+                            ? t("Paid in {{asset}}", { asset: tokenFeeCode })
+                            : `${formatTokenAmount(new BigNumber(_fee), CLASSIC_ASSET_DECIMALS)} XLM `}
                         </span>
                       </div>
                     </div>

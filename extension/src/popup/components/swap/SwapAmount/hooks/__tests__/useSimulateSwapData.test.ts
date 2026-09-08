@@ -8,6 +8,7 @@ import {
   ERROR_TO_DISPLAY,
 } from "../useSimulateSwapData";
 import { TESTNET_NETWORK_DETAILS } from "@shared/constants/stellar";
+import { ReserveSendError } from "popup/helpers/reserve";
 
 jest.mock("@shared/api/helpers/stellarSdkServer", () => ({
   stellarSdkServer: () => ({
@@ -216,5 +217,16 @@ describe("getSwapErrorMessage", () => {
     expect(result).toBe(
       "We had an issue retrieving your transaction details. Please try again.",
     );
+  });
+
+  it("surfaces a Reserve send error instead of the generic fallback", () => {
+    const result = getSwapErrorMessage(
+      new ReserveSendError("Could not quote a fee in {{asset}}.", {
+        asset: "USDC",
+      }),
+      classicAsset,
+      classicAsset,
+    );
+    expect(result).toBe("Could not quote a fee in USDC.");
   });
 });
