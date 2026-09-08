@@ -21,16 +21,6 @@
     padding-top: 1rem;
   }
 
-  &__SponsoredFee {
-    margin: 0;
-    padding: 0.75rem 1rem;
-    border-radius: 0.5rem;
-    background: var(--sds-clr-gray-02);
-    color: var(--sds-clr-gray-12);
-    font-size: 0.875rem;
-    line-height: 1.35;
-  }
-
   &__BlockaidDetails {
     // No own margin: the header above (TitleRow margin-bottom) and the card
     // below (Metadata margin-top) already supply the popup's standard spacing,

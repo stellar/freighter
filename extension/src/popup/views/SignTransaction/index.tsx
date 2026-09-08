@@ -84,8 +84,6 @@ import { AuthEntries } from "popup/components/AuthEntry";
 import { TruncatedMemo } from "popup/components/TruncatedMemo";
 import { Summary } from "./Preview/Summary";
 import { Details } from "./Preview/Details";
-import { tokenFeeCodeFromXdr } from "popup/helpers/reserve/signFee";
-
 import "./styles.scss";
 
 export const SignTransaction = () => {
@@ -385,17 +383,12 @@ export const SignTransaction = () => {
     "innerTransaction" in transaction
       ? transaction.feeSource === currentAccount.publicKey
       : transaction.source === currentAccount.publicKey;
-  const tokenFeeCode = tokenFeeCodeFromXdr(
-    transactionXdr,
-    _networkPassphrase as string,
-  );
 
   if (
     currentAccount.publicKey &&
     signerPaysFee &&
     !hasEnoughXlm &&
-    !hasAcceptedInsufficientFee &&
-    !tokenFeeCode
+    !hasAcceptedInsufficientFee
   ) {
     return (
       <WarningMessage
@@ -505,16 +498,6 @@ export const SignTransaction = () => {
                     </div>
                   </div>
                   {renderBanner()}
-                  {tokenFeeCode ? (
-                    <p
-                      data-testid="SponsoredFeeNotice"
-                      className="SignTransaction__SponsoredFee"
-                    >
-                      {t("Network fee will be paid in {{asset}}", {
-                        asset: tokenFeeCode,
-                      })}
-                    </p>
-                  ) : null}
                   {assetDiffs && (
                     <AssetDiffs
                       icons={signTxState.data?.icons || {}}
@@ -553,9 +536,7 @@ export const SignTransaction = () => {
                       </div>
                       <div className="SignTransaction__Metadata__Value">
                         <span>
-                          {tokenFeeCode
-                            ? t("Paid in {{asset}}", { asset: tokenFeeCode })
-                            : `${formatTokenAmount(new BigNumber(_fee), CLASSIC_ASSET_DECIMALS)} XLM `}
+                          {`${formatTokenAmount(new BigNumber(_fee), CLASSIC_ASSET_DECIMALS)} XLM `}
                         </span>
                       </div>
                     </div>
