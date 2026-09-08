@@ -765,9 +765,7 @@ export const SendAmount = ({
                     !isAmountInputValid ||
                     isAmountTooHigh ||
                     isMuxedAddressWithoutMemoSupport ||
-                    ((isToken ||
-                      isCollectible ||
-                      Boolean(feeAsset && feeAsset !== NATIVE_FEE_ASSET)) &&
+                    ((isToken || isCollectible) &&
                       simulationState.state === RequestState.ERROR)
                   }
                   isLoading={simulationState.state === RequestState.LOADING}

@@ -9,12 +9,14 @@ export function tokenFeeCodeFromXdr(
     const inner =
       "innerTransaction" in parsed ? parsed.innerTransaction : parsed;
     if (!(inner instanceof Transaction)) return null;
+    if (inner.operations.length < 2) return null;
 
     for (const op of inner.operations) {
       if (
         op.type === "pathPaymentStrictReceive" &&
         op.sendAsset &&
-        !op.sendAsset.isNative()
+        !op.sendAsset.isNative() &&
+        op.destAsset?.isNative()
       ) {
         return op.sendAsset.code;
       }
