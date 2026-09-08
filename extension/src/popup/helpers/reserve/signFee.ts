@@ -9,19 +9,25 @@ export function tokenFeeCodeFromXdr(
     const inner =
       "innerTransaction" in parsed ? parsed.innerTransaction : parsed;
     if (!(inner instanceof Transaction)) return null;
-    if (inner.operations.length < 2) return null;
+
+    let began = false;
+    let ended = false;
+    let feeCode: string | null = null;
 
     for (const op of inner.operations) {
+      if (op.type === "beginSponsoringFutureReserves") began = true;
+      if (op.type === "endSponsoringFutureReserves") ended = true;
       if (
         op.type === "pathPaymentStrictReceive" &&
         op.sendAsset &&
         !op.sendAsset.isNative() &&
         op.destAsset?.isNative()
       ) {
-        return op.sendAsset.code;
+        feeCode = op.sendAsset.code;
       }
     }
-    return null;
+
+    return began && ended && feeCode ? feeCode : null;
   } catch {
     return null;
   }

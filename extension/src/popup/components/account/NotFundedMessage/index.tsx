@@ -6,8 +6,13 @@ import { Button, Icon } from "@stellar/design-system";
 import BigNumber from "bignumber.js";
 import { Formik, Form } from "formik";
 
-import { fundAccount } from "popup/ducks/accountServices";
-import { signFreighterTransaction } from "popup/ducks/transactionSubmission";
+import { fundAccount, hardwareWalletTypeSelector } from "popup/ducks/accountServices";
+import {
+  ShowOverlayStatus,
+  signFreighterTransaction,
+  startHwSign,
+  transactionSubmissionSelector,
+} from "popup/ducks/transactionSubmission";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { ROUTES } from "popup/constants/routes";
 import { XLM_RESERVE_HELP_URL } from "popup/constants/externalLinks";
@@ -18,6 +23,8 @@ import {
   quoteAndBuildBootstrap,
   useReserveBootstrap,
 } from "popup/helpers/reserve";
+import type { Quote } from "popup/helpers/reserve";
+import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
 import { AppDispatch } from "popup/App";
 import { isMainnet } from "helpers/stellar";
 
@@ -36,6 +43,10 @@ export const NotFundedMessage = ({
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
+  const hardwareWalletType = useSelector(hardwareWalletTypeSelector);
+  const {
+    hardwareWalletData: { status: hwStatus },
+  } = useSelector(transactionSubmissionSelector);
   const { options, isLoading } = useReserveBootstrap({
     publicKey,
     horizonUrl: networkDetails.networkUrl,
@@ -45,6 +56,7 @@ export const NotFundedMessage = ({
   const [feeAsset, setFeeAsset] = useState("");
   const [isActivating, setIsActivating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pendingQuote, setPendingQuote] = useState<Quote | null>(null);
 
   useEffect(() => {
     if (options.some((option) => option.asset === feeAsset)) return;
@@ -62,16 +74,41 @@ export const NotFundedMessage = ({
     await reloadBalances();
   };
 
+  const submitActivation = async (quote: Quote, signedXdr: string) => {
+    const client = createReserveClient(networkDetails.networkPassphrase);
+    if (!client) {
+      throw new Error(
+        t("Could not activate this wallet with {{asset}}.", {
+          asset: selected?.code ?? "",
+        }),
+      );
+    }
+    await client.submit(quote, signedXdr);
+    await reloadBalances();
+  };
+
   const handleActivate = async () => {
     if (!selected || locked) return;
     setIsActivating(true);
     setError(null);
+    let handedToHardware = false;
     try {
       const built = await quoteAndBuildBootstrap({
         publicKey,
         option: selected,
         networkPassphrase: networkDetails.networkPassphrase,
       });
+      if (hardwareWalletType) {
+        setPendingQuote(built.quote);
+        dispatch(
+          startHwSign({
+            transactionXDR: built.xdr,
+            shouldSubmit: false,
+          }),
+        );
+        handedToHardware = true;
+        return;
+      }
       const signed = await dispatch(
         signFreighterTransaction({
           transactionXDR: built.xdr,
@@ -81,16 +118,7 @@ export const NotFundedMessage = ({
       if (signFreighterTransaction.rejected.match(signed)) {
         throw new Error(t("Could not sign the activation transaction."));
       }
-      const client = createReserveClient(networkDetails.networkPassphrase);
-      if (!client) {
-        throw new Error(
-          t("Could not activate this wallet with {{asset}}.", {
-            asset: selected.code,
-          }),
-        );
-      }
-      await client.submit(built.quote, signed.payload.signedTransaction);
-      await reloadBalances();
+      await submitActivation(built.quote, signed.payload.signedTransaction);
     } catch (e) {
       if (e instanceof ReserveSendError) {
         setError(t(e.i18nKey, e.i18nParams));
@@ -98,9 +126,47 @@ export const NotFundedMessage = ({
         setError(e instanceof Error ? e.message : String(e));
       }
     } finally {
+      if (!handedToHardware) setIsActivating(false);
+    }
+  };
+
+  const handleHardwareSigned = async (signedPayload?: string | Buffer) => {
+    const signedXdr =
+      typeof signedPayload === "string"
+        ? signedPayload
+        : signedPayload
+          ? signedPayload.toString("base64")
+          : "";
+    try {
+      if (!pendingQuote || !signedXdr) {
+        throw new Error(t("Could not sign the activation transaction."));
+      }
+      await submitActivation(pendingQuote, signedXdr);
+    } catch (e) {
+      if (e instanceof ReserveSendError) {
+        setError(t(e.i18nKey, e.i18nParams));
+      } else {
+        setError(e instanceof Error ? e.message : String(e));
+      }
+    } finally {
+      setPendingQuote(null);
       setIsActivating(false);
     }
   };
+
+  if (hwStatus === ShowOverlayStatus.IN_PROGRESS && hardwareWalletType) {
+    return (
+      <HardwareSign
+        isInternal
+        walletType={hardwareWalletType}
+        onSubmit={handleHardwareSigned}
+        onCancel={() => {
+          setPendingQuote(null);
+          setIsActivating(false);
+        }}
+      />
+    );
+  }
 
   return (
     <div className="NotFunded" data-testid="not-funded">

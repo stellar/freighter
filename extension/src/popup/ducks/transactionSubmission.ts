@@ -758,10 +758,34 @@ const transactionSubmissionSlice = createSlice({
       state.transactionData.collectibleData = action.payload;
     },
 
-    saveSimulation: (state, action) => {
+    saveSimulation: (
+      state,
+      action: {
+        payload: {
+          response?:
+            | SorobanRpc.Api.SimulateTransactionSuccessResponse
+            | string
+            | null;
+          preparedTransaction?: string | null;
+          reserveQuote?: Quote | null;
+        };
+      },
+    ) => {
+      const { payload } = action;
+      // HardwareSign only writes the signed XDR so SubmitTransaction can
+      // reuse the quote. Any other simulation replaces it, even if the
+      // caller omitted `reserveQuote`.
+      const isHwSignedXdrPatch =
+        payload.preparedTransaction != null &&
+        !("response" in payload) &&
+        !("reserveQuote" in payload);
+
       state.transactionSimulation = {
         ...state.transactionSimulation,
-        ...action.payload,
+        ...payload,
+        reserveQuote: isHwSignedXdrPatch
+          ? state.transactionSimulation.reserveQuote
+          : (payload.reserveQuote ?? null),
       };
     },
     startHwConnect: (state) => {

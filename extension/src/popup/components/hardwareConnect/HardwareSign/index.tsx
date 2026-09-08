@@ -45,7 +45,7 @@ export const HardwareSign = ({
   walletType: ConfigurableWalletType;
   isSignSorobanAuthorization?: boolean;
   isSignMessage?: boolean;
-  onSubmit?: () => void;
+  onSubmit?: (signedPayload?: string | Buffer) => void;
   isInternal?: boolean;
   onCancel?: () => void;
   uuid?: string;
@@ -151,7 +151,7 @@ export const HardwareSign = ({
         }
         closeOverlay();
         if (onSubmit) {
-          onSubmit();
+          onSubmit(res.payload);
         }
       } else {
         setHardwareConnectSuccessful(false);

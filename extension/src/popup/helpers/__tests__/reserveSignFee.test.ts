@@ -26,7 +26,29 @@ function xdrWithOps(ops: ReturnType<typeof Operation.payment>[]) {
 }
 
 describe("tokenFeeCodeFromXdr", () => {
-  it("reads the fee token from a Reserve inner tx", () => {
+  it("reads the fee token from a sponsored Reserve inner tx", () => {
+    const xdr = xdrWithOps([
+      Operation.beginSponsoringFutureReserves({
+        sponsoredId: SRC.publicKey(),
+      }),
+      Operation.payment({
+        destination: DEST.publicKey(),
+        asset: new Asset("USDC", ISSUER),
+        amount: "1",
+      }),
+      Operation.endSponsoringFutureReserves(),
+      Operation.pathPaymentStrictReceive({
+        sendAsset: new Asset("USDC", ISSUER),
+        sendMax: "1",
+        destination: DEST.publicKey(),
+        destAsset: Asset.native(),
+        destAmount: "0.1",
+      }),
+    ]);
+    expect(tokenFeeCodeFromXdr(xdr, Networks.TESTNET)).toBe("USDC");
+  });
+
+  it("ignores a dApp payment plus strict-receive without sponsorship", () => {
     const xdr = xdrWithOps([
       Operation.payment({
         destination: DEST.publicKey(),
@@ -41,7 +63,7 @@ describe("tokenFeeCodeFromXdr", () => {
         destAmount: "0.1",
       }),
     ]);
-    expect(tokenFeeCodeFromXdr(xdr, Networks.TESTNET)).toBe("USDC");
+    expect(tokenFeeCodeFromXdr(xdr, Networks.TESTNET)).toBeNull();
   });
 
   it("ignores a lone dApp strict-receive", () => {

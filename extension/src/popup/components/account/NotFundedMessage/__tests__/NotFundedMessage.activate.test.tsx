@@ -16,6 +16,20 @@ const mockOption = {
   balanceId: "00".repeat(36),
 };
 
+jest.mock("popup/components/hardwareConnect/HardwareSign", () => ({
+  HardwareSign: ({
+    onSubmit,
+  }: {
+    onSubmit?: (signed?: string) => void;
+  }) => (
+    <div data-testid="HardwareSign__internal">
+      <button type="button" onClick={() => onSubmit?.("HW_SIGNED")}>
+        sign-hw
+      </button>
+    </div>
+  ),
+}));
+
 jest.mock("popup/helpers/reserve", () => {
   const actual = jest.requireActual("popup/helpers/reserve");
   return {
@@ -34,11 +48,28 @@ import { NotFundedMessage } from "popup/components/account/NotFundedMessage";
 
 const publicKey = "GDF3ZEFYPUBLICKEYFORTESTINGONLYAAAAAAAAAAAAAAAAAAAAAAAAA";
 
-function renderActivate(reloadBalances = jest.fn().mockResolvedValue(undefined)) {
+function renderActivate({
+  reloadBalances = jest.fn().mockResolvedValue(undefined),
+  hardware = false,
+}: {
+  reloadBalances?: jest.Mock;
+  hardware?: boolean;
+} = {}) {
   render(
     <Wrapper
       routes={["/"]}
       state={{
+        auth: {
+          publicKey,
+          allAccounts: [
+            {
+              publicKey,
+              name: "Test",
+              imported: hardware,
+              hardwareWalletType: hardware ? "Ledger" : "",
+            },
+          ],
+        },
         settings: {
           networkDetails: TESTNET_NETWORK_DETAILS,
           networksList: [TESTNET_NETWORK_DETAILS],
@@ -117,6 +148,29 @@ describe("NotFundedMessage token activation", () => {
       "Could not sign the activation transaction.",
     );
     expect(submit).not.toHaveBeenCalled();
+  });
+
+  it("routes hardware accounts through the hardware overlay", async () => {
+    const user = userEvent.setup();
+    const reloadBalances = renderActivate({ hardware: true });
+    const submit = jest.fn().mockResolvedValue({ hash: "h", ledger: 1 });
+    (reserve.quoteAndBuildBootstrap as jest.Mock).mockResolvedValue({
+      xdr: "XDR",
+      quote: { id: "q" },
+      fee: { amount: "0.01", code: "USDC", asset: USDC },
+    });
+    (reserve.createReserveClient as jest.Mock).mockReturnValue({ submit });
+    const sign = jest.spyOn(ApiInternal, "signFreighterTransaction");
+
+    await user.click(screen.getByTestId("activate-with-token"));
+
+    expect(sign).not.toHaveBeenCalled();
+    expect(screen.getByTestId("HardwareSign__internal")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "sign-hw" }));
+
+    expect(submit).toHaveBeenCalledWith({ id: "q" }, "HW_SIGNED");
+    expect(reloadBalances).toHaveBeenCalled();
   });
 
   it("shows a quote error without signing", async () => {
