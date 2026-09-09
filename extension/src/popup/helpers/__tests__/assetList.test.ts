@@ -12,10 +12,17 @@ const ISSUER = "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN";
 const CONTRACT = "CCV3NAKLIBBNSJNNTV2AZVRX6VODUDWK4TVYILE5MW6R45SSQJS5VCAM";
 
 describe("assetMatchesListItem", () => {
-  it("matches on a shared issuer", () => {
-    expect(assetMatchesListItem({ issuer: ISSUER }, { issuer: ISSUER })).toBe(
-      true,
-    );
+  // Issuer-alone matching is the long-standing behaviour of the verified-list
+  // membership tests, tracked in stellar/wallet-eng-monorepo#76. Pinned here as
+  // current behaviour, not as the intended contract — a fix for that issue is
+  // expected to require the code to match too, and to change this expectation.
+  it("matches on a shared issuer, without comparing the code", () => {
+    expect(
+      assetMatchesListItem(
+        { issuer: ISSUER },
+        { issuer: ISSUER, contract: undefined },
+      ),
+    ).toBe(true);
   });
 
   it("matches on a shared contract", () => {

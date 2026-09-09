@@ -83,11 +83,16 @@ interface GetAssetListsForAssetParams {
 }
 
 /**
- * True when `asset` and `item` name the same asset.
+ * True when `asset` and `item` share an issuer, or share a contract id.
  *
  * Both halves of an identity are optional on these records, so each comparison
  * requires its own side to actually be present — two absent values are not a
  * match.
+ *
+ * Note this is not full identity: a classic asset is the pair (code, issuer),
+ * and matching on the issuer alone accepts a different asset from the same
+ * issuer. That is the long-standing behaviour of the verified-list membership
+ * tests, tracked in stellar/wallet-eng-monorepo#76; this helper preserves it.
  */
 export const assetMatchesListItem = (
   asset: { issuer?: string; contract?: string },
