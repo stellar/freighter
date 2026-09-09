@@ -180,19 +180,51 @@ export const makeDisplayableBalances = async (
 
 export const isSorobanIssuer = (issuer: string) => !issuer.startsWith("G");
 
+/**
+ * Splits a canonical identifier into its code and issuer halves.
+ *
+ * The split is on the last colon: an issuer is a `G…` or `C…` StrKey, or the
+ * liquidity-pool sentinel, none of which contains a colon — whereas a contract
+ * token's symbol is whatever the contract reports and may. Without a
+ * separator the whole string is the code and the issuer is empty.
+ */
+export const splitCanonical = (
+  canonical: string,
+): { code: string; issuer: string } => {
+  const separator = canonical.lastIndexOf(":");
+  if (separator === -1) {
+    return { code: canonical, issuer: "" };
+  }
+  return {
+    code: canonical.slice(0, separator),
+    issuer: canonical.slice(separator + 1),
+  };
+};
+
+/**
+ * Resolves a canonical identifier to an asset.
+ *
+ * A contract token or a liquidity-pool share comes back as the plain
+ * `{ code, issuer }` shape; a classic asset comes back as an SDK `Asset`, whose
+ * constructor validates the code and issuer. Anything else — including an
+ * issuer half that is empty or not a StrKey — is rejected here, at the parse
+ * boundary, rather than flowing on as a plausible-looking asset.
+ */
 export const getAssetFromCanonical = (canonical: string) => {
   if (isNativeAssetId(canonical)) {
     return StellarSdk.Asset.native();
   }
-  if (canonical.includes(":")) {
-    const [code, issuer] = canonical.split(":");
 
-    if (isSorobanIssuer(issuer)) {
-      return {
-        code,
-        issuer,
-      };
-    }
+  const { code, issuer } = splitCanonical(canonical);
+  if (!issuer) {
+    throw new Error(`invalid asset canonical id: ${canonical}`);
+  }
+
+  if (StellarSdk.StrKey.isValidContract(issuer) || issuer === LP_ISSUER_KEY) {
+    return { code, issuer };
+  }
+
+  if (StellarSdk.StrKey.isValidEd25519PublicKey(issuer)) {
     return new StellarSdk.Asset(code, issuer);
   }
 

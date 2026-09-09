@@ -1,4 +1,5 @@
 import { Federation, Horizon, MuxedAccount } from "stellar-sdk";
+import { splitCanonical } from "@shared/helpers/stellar";
 import { BigNumber } from "bignumber.js";
 import {
   Account,
@@ -375,7 +376,7 @@ export const filterHiddenBalances = (
     if (isNativeAssetId(key)) {
       return false;
     }
-    const [code, issuer] = key.split(":");
+    const { code, issuer } = splitCanonical(key);
     if (!issuer) {
       return true;
     }

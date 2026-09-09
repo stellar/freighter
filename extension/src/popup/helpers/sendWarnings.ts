@@ -1,4 +1,5 @@
 import { isContractId } from "@shared/api/helpers/soroban";
+import { splitCanonical } from "@shared/helpers/stellar";
 import { isNativeAssetId } from "@shared/helpers/assetIdentity";
 
 /**
@@ -34,7 +35,7 @@ export const shouldCheckUnfundedDestinationWarning = ({
   }
 
   if (assetCanonical && !isNativeAssetId(assetCanonical)) {
-    const [, issuer] = assetCanonical.split(":");
+    const { issuer } = splitCanonical(assetCanonical);
     if (issuer && isContractId(issuer)) {
       return false;
     }

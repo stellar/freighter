@@ -3,6 +3,10 @@ import { Asset, Networks } from "stellar-sdk";
 
 import { AssetType } from "@shared/api/types/account-balance";
 import {
+  getAssetFromCanonical,
+  getCanonicalFromAsset,
+} from "@shared/helpers/stellar";
+import {
   getNativeContractId,
   isNativeAsset,
   isNativeAssetId,
@@ -108,6 +112,12 @@ describe("isNativeAsset", () => {
         issuer: "CCV3NAKLIBBNSJNNTV2AZVRX6VODUDWK4TVYILE5MW6R45SSQJS5VCAM",
       }),
     ).toBe(false);
+  });
+
+  it("rejects a contract token whose symbol contains a colon", () => {
+    const contract = "CAS3J7GYLGXMF6TDJBBYYSE3HQ6BBSMLNUQ34T6TZMYMW2EVH34XOWMA";
+    const canonical = getCanonicalFromAsset("XLM:", contract);
+    expect(isNativeAsset(getAssetFromCanonical(canonical))).toBe(false);
   });
 });
 

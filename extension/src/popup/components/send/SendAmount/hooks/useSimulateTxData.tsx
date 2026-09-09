@@ -1,4 +1,5 @@
 import { useReducer } from "react";
+import { splitCanonical } from "@shared/helpers/stellar";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector, useStore } from "react-redux";
 import BigNumber from "bignumber.js";
@@ -403,8 +404,7 @@ function getAssetAddress(
       networkDetails.networkPassphrase as Networks,
     );
   }
-  const [_, issuer] = asset.split(":");
-  return issuer;
+  return splitCanonical(asset).issuer;
 }
 
 function useSimulateTxData({

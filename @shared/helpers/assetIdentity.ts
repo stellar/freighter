@@ -50,9 +50,11 @@ export const isNativeBalance = (balance: AssetType): balance is NativeAsset =>
  * True only for the native asset.
  *
  * `getAssetFromCanonical` returns an SDK `Asset` for classic assets and a plain
- * `{ code, issuer }` for Soroban issuers, so both shapes arrive here. The SDK's
- * own `isNative()` is authoritative when present; the plain shape only ever
- * carries a `C…` issuer, which the pair test correctly rejects.
+ * `{ code, issuer }` for contract tokens and liquidity-pool shares, so both
+ * shapes arrive here. The SDK's own `isNative()` is authoritative when present.
+ * The plain shape's issuer is a validated `C…` address or the pool sentinel —
+ * never empty, which the parser rejects — so the pair test correctly rejects
+ * it.
  *
  * Narrowing on the method rather than `instanceof` keeps this correct across
  * the `stellar-sdk` / `stellar-sdk-next` dual-package split.
