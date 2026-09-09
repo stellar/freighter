@@ -100,6 +100,44 @@ describe("getSettledPathPaymentStrictSendAmount", () => {
       getSettledPathPaymentStrictSendAmount(txResult.toXdr("base64"), 0),
     ).toBeNull();
   });
+
+  it("returns null when the path payment succeeded but a later operation failed", () => {
+    // Stellar transactions are atomic: a txFailed result still reports the
+    // earlier operation's own success, but that path payment was rolled back
+    // and nothing settled. Reading the amount out of it would report volume
+    // for a swap that never happened.
+    const settledPathPayment = xdr.OperationResult.opInner(
+      xdr.OperationResultTr.pathPaymentStrictSend(
+        xdr.PathPaymentStrictSendResult.pathPaymentStrictSendSuccess(
+          new xdr.PathPaymentStrictSendResultSuccess({
+            offers: [],
+            last: new xdr.SimplePaymentResult({
+              destination: xdr.PublicKey.publicKeyTypeEd25519(
+                Keypair.random().rawPublicKey(),
+              ),
+              asset: Asset.native().toXdrObject(),
+              amount: BigInt("50000000"),
+            }),
+          }),
+        ),
+      ),
+    );
+    const laterFailedOp = xdr.OperationResult.opInner(
+      xdr.OperationResultTr.payment(xdr.PaymentResult.paymentUnderfunded()),
+    );
+    const txResult = new xdr.TransactionResult({
+      feeCharged: BigInt("100"),
+      result: xdr.TransactionResultResult.txFailed([
+        settledPathPayment,
+        laterFailedOp,
+      ]),
+      ext: xdr.TransactionResultExt.v0(),
+    });
+
+    expect(
+      getSettledPathPaymentStrictSendAmount(txResult.toXdr("base64"), 0),
+    ).toBeNull();
+  });
 });
 
 describe("findPathPaymentStrictSendIndex", () => {

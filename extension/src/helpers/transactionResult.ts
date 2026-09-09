@@ -50,10 +50,12 @@ export const getSettledPathPaymentStrictSendAmount = (
         ? innerResult.innerResultPair.result.result
         : innerResult;
 
-    if (
-      innerTxResult.type !== "txSuccess" &&
-      innerTxResult.type !== "txFailed"
-    ) {
+    // txSuccess only. A `txFailed` result still carries per-operation
+    // results, and an operation that succeeded before a later one failed
+    // reports its own success there — but Stellar transactions are atomic, so
+    // that path payment was rolled back and nothing settled. Reading an
+    // amount out of it would report volume for a swap that never happened.
+    if (innerTxResult.type !== "txSuccess") {
       return null;
     }
     const opResults = innerTxResult.results;
