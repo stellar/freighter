@@ -125,8 +125,14 @@ describe("NotFundedMessage token activation", () => {
         "Activate with 0.34 USDC",
       ),
     );
+    const previewQuotes = (reserve.quoteAndBuildBootstrap as jest.Mock).mock
+      .calls.length;
+    expect(previewQuotes).toBeGreaterThan(0);
     await user.click(screen.getByTestId("activate-with-token"));
 
+    expect(
+      (reserve.quoteAndBuildBootstrap as jest.Mock).mock.calls.length,
+    ).toBeGreaterThan(previewQuotes);
     expect(reserve.quoteAndBuildBootstrap).toHaveBeenCalledWith({
       publicKey,
       option: mockOption,
@@ -170,8 +176,13 @@ describe("NotFundedMessage token activation", () => {
         "Activate with 0.34 USDC",
       ),
     );
+    const previewQuotes = (reserve.quoteAndBuildBootstrap as jest.Mock).mock
+      .calls.length;
     await user.click(screen.getByTestId("activate-with-token"));
 
+    expect(
+      (reserve.quoteAndBuildBootstrap as jest.Mock).mock.calls.length,
+    ).toBeGreaterThan(previewQuotes);
     expect(sign).not.toHaveBeenCalled();
     expect(screen.getByTestId("HardwareSign__internal")).toBeInTheDocument();
 

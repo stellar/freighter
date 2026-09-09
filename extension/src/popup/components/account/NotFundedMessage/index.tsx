@@ -145,14 +145,14 @@ export const NotFundedMessage = ({
     setError(null);
     let handedToHardware = false;
     try {
-      const built =
-        prepared ??
-        (await quoteAndBuildBootstrap({
-          publicKey,
-          option: selected,
-          networkPassphrase: networkDetails.networkPassphrase,
-        }));
-      if (!prepared) setPrepared(built);
+      // Quotes expire. The mount quote is only for the button label;
+      // sign against a fresh quote on every click, including retries.
+      const built = await quoteAndBuildBootstrap({
+        publicKey,
+        option: selected,
+        networkPassphrase: networkDetails.networkPassphrase,
+      });
+      setPrepared(built);
       if (hardwareWalletType) {
         setPendingQuote(built.quote);
         dispatch(
