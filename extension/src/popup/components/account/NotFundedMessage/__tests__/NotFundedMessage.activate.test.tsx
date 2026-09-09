@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 import { TESTNET_NETWORK_DETAILS } from "@shared/constants/stellar";
@@ -89,13 +89,21 @@ function renderActivate({
 describe("NotFundedMessage token activation", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    (reserve.quoteAndBuildBootstrap as jest.Mock).mockResolvedValue({
+      xdr: "XDR",
+      quote: { id: "q" },
+      fee: { amount: "0.34", code: "USDC", asset: USDC },
+    });
   });
 
-  it("offers Activate with the waiting token without leaving Freighter", () => {
+  it("offers Activate with the quoted ceiling, not the waiting balance", async () => {
     renderActivate();
 
-    expect(screen.getByTestId("activate-with-token")).toHaveTextContent(
-      "Activate with 25 USDC",
+    expect(
+      await screen.findByTestId("activate-with-token"),
+    ).toHaveTextContent("Activate with 0.34 USDC");
+    expect(screen.getByTestId("activate-with-token")).not.toHaveTextContent(
+      "25 USDC",
     );
     expect(
       screen.getByRole("button", { name: "Fund with Friendbot" }),
@@ -107,16 +115,16 @@ describe("NotFundedMessage token activation", () => {
     const user = userEvent.setup();
     const reloadBalances = renderActivate();
     const submit = jest.fn().mockResolvedValue({ hash: "h", ledger: 1 });
-    (reserve.quoteAndBuildBootstrap as jest.Mock).mockResolvedValue({
-      xdr: "XDR",
-      quote: { id: "q" },
-      fee: { amount: "0.01", code: "USDC", asset: USDC },
-    });
     (reserve.createReserveClient as jest.Mock).mockReturnValue({ submit });
     jest.spyOn(ApiInternal, "signFreighterTransaction").mockResolvedValue({
       signedTransaction: "SIGNED",
     } as any);
 
+    await waitFor(() =>
+      expect(screen.getByTestId("activate-with-token")).toHaveTextContent(
+        "Activate with 0.34 USDC",
+      ),
+    );
     await user.click(screen.getByTestId("activate-with-token"));
 
     expect(reserve.quoteAndBuildBootstrap).toHaveBeenCalledWith({
@@ -132,16 +140,16 @@ describe("NotFundedMessage token activation", () => {
     const user = userEvent.setup();
     renderActivate();
     const submit = jest.fn();
-    (reserve.quoteAndBuildBootstrap as jest.Mock).mockResolvedValue({
-      xdr: "XDR",
-      quote: { id: "q" },
-      fee: { amount: "0.01", code: "USDC", asset: USDC },
-    });
     (reserve.createReserveClient as jest.Mock).mockReturnValue({ submit });
     jest
       .spyOn(ApiInternal, "signFreighterTransaction")
       .mockRejectedValue(new Error("nope"));
 
+    await waitFor(() =>
+      expect(screen.getByTestId("activate-with-token")).toHaveTextContent(
+        "Activate with 0.34 USDC",
+      ),
+    );
     await user.click(screen.getByTestId("activate-with-token"));
 
     expect(await screen.findByTestId("activate-error")).toHaveTextContent(
@@ -154,14 +162,14 @@ describe("NotFundedMessage token activation", () => {
     const user = userEvent.setup();
     const reloadBalances = renderActivate({ hardware: true });
     const submit = jest.fn().mockResolvedValue({ hash: "h", ledger: 1 });
-    (reserve.quoteAndBuildBootstrap as jest.Mock).mockResolvedValue({
-      xdr: "XDR",
-      quote: { id: "q" },
-      fee: { amount: "0.01", code: "USDC", asset: USDC },
-    });
     (reserve.createReserveClient as jest.Mock).mockReturnValue({ submit });
     const sign = jest.spyOn(ApiInternal, "signFreighterTransaction");
 
+    await waitFor(() =>
+      expect(screen.getByTestId("activate-with-token")).toHaveTextContent(
+        "Activate with 0.34 USDC",
+      ),
+    );
     await user.click(screen.getByTestId("activate-with-token"));
 
     expect(sign).not.toHaveBeenCalled();
@@ -174,16 +182,13 @@ describe("NotFundedMessage token activation", () => {
   });
 
   it("shows a quote error without signing", async () => {
-    const user = userEvent.setup();
-    renderActivate();
     (reserve.quoteAndBuildBootstrap as jest.Mock).mockRejectedValue(
       new ReserveSendError("Could not activate this wallet with {{asset}}.", {
         asset: "USDC",
       }),
     );
+    renderActivate();
     const sign = jest.spyOn(ApiInternal, "signFreighterTransaction");
-
-    await user.click(screen.getByTestId("activate-with-token"));
 
     expect(await screen.findByTestId("activate-error")).toHaveTextContent(
       "Could not activate this wallet with {{asset}}.",

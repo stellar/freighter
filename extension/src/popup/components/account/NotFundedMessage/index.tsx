@@ -23,7 +23,7 @@ import {
   quoteAndBuildBootstrap,
   useReserveBootstrap,
 } from "popup/helpers/reserve";
-import type { Quote } from "popup/helpers/reserve";
+import type { Quote, ReserveFeeDisplay } from "popup/helpers/reserve";
 import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
 import { AppDispatch } from "popup/App";
 import { isMainnet } from "helpers/stellar";
@@ -55,8 +55,14 @@ export const NotFundedMessage = ({
   });
   const [feeAsset, setFeeAsset] = useState("");
   const [isActivating, setIsActivating] = useState(false);
+  const [isQuoting, setIsQuoting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pendingQuote, setPendingQuote] = useState<Quote | null>(null);
+  const [prepared, setPrepared] = useState<{
+    xdr: string;
+    quote: Quote;
+    fee: ReserveFeeDisplay;
+  } | null>(null);
 
   useEffect(() => {
     if (options.some((option) => option.asset === feeAsset)) return;
@@ -64,10 +70,56 @@ export const NotFundedMessage = ({
   }, [feeAsset, options]);
 
   const selected = options.find((option) => option.asset === feeAsset);
-  const sendMax = selected
+  const waiting = selected
     ? new BigNumber(selected.available).toFixed()
     : "";
+  const sendMax = prepared?.fee.amount ?? "";
   const locked = isActivating;
+
+  useEffect(() => {
+    if (!selected) {
+      setPrepared(null);
+      setIsQuoting(false);
+      return;
+    }
+
+    let cancelled = false;
+    setPrepared(null);
+    setIsQuoting(true);
+    setError(null);
+
+    void quoteAndBuildBootstrap({
+      publicKey,
+      option: selected,
+      networkPassphrase: networkDetails.networkPassphrase,
+    })
+      .then((built) => {
+        if (cancelled) return;
+        setPrepared(built);
+      })
+      .catch((e) => {
+        if (cancelled) return;
+        if (e instanceof ReserveSendError) {
+          setError(t(e.i18nKey, e.i18nParams));
+        } else {
+          setError(e instanceof Error ? e.message : String(e));
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setIsQuoting(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    networkDetails.networkPassphrase,
+    publicKey,
+    selected?.asset,
+    selected?.available,
+    selected?.balanceId,
+    t,
+  ]);
 
   const handleFundAccount = async () => {
     await dispatch(fundAccount({ publicKey }));
@@ -93,11 +145,14 @@ export const NotFundedMessage = ({
     setError(null);
     let handedToHardware = false;
     try {
-      const built = await quoteAndBuildBootstrap({
-        publicKey,
-        option: selected,
-        networkPassphrase: networkDetails.networkPassphrase,
-      });
+      const built =
+        prepared ??
+        (await quoteAndBuildBootstrap({
+          publicKey,
+          option: selected,
+          networkPassphrase: networkDetails.networkPassphrase,
+        }));
+      if (!prepared) setPrepared(built);
       if (hardwareWalletType) {
         setPendingQuote(built.quote);
         dispatch(
@@ -182,7 +237,7 @@ export const NotFundedMessage = ({
         {selected ? (
           <Trans
             i18nKey="This address already has <bold>{{amount}} {{asset}}</bold> waiting. Activate the wallet with that — reserves and the network fee come out of it, never more than that amount. No XLM needed."
-            values={{ asset: selected.code, amount: sendMax }}
+            values={{ asset: selected.code, amount: waiting }}
             components={{ bold: <strong className="NotFunded__amount" /> }}
           />
         ) : (
@@ -229,12 +284,14 @@ export const NotFundedMessage = ({
             variant="secondary"
             size="lg"
             isRounded
-            disabled={locked}
-            isLoading={isActivating || isLoading}
+            disabled={locked || isQuoting}
+            isLoading={isActivating || isLoading || isQuoting}
             onClick={() => void handleActivate()}
             data-testid="activate-with-token"
           >
-            {`${t("Activate with")} ${sendMax} ${selected.code}`}
+            {sendMax
+              ? `${t("Activate with")} ${sendMax} ${selected.code}`
+              : `${t("Activate with")} ${selected.code}`}
           </Button>
         ) : null}
 
