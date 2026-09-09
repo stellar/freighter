@@ -1,5 +1,6 @@
 import { useReducer, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { useTranslation } from "react-i18next";
 import BigNumber from "bignumber.js";
 import {
   Asset,
@@ -34,6 +35,12 @@ import { isQuoteExpiredError } from "popup/helpers/quoteExpiry";
 import { isContractId } from "popup/helpers/soroban";
 import { formatAmount, roundUsdValue } from "popup/helpers/formatters";
 import { AppDispatch } from "popup/App";
+import {
+  ReserveSendError,
+  quoteAndBuildReserveSwap,
+  shouldUseReserve,
+} from "popup/helpers/reserve";
+import type { ReserveFeeDisplay } from "popup/helpers/reserve";
 
 const scanUrlstub = "internal";
 
@@ -49,7 +56,19 @@ export const getSwapErrorMessage = (
   error: unknown,
   sourceAsset: { issuer?: string },
   destAsset: { issuer?: string },
+  translate?: (key: string, params?: Record<string, string>) => string,
 ): string => {
+  if (error instanceof ReserveSendError) {
+    if (translate) {
+      return translate(error.i18nKey, error.i18nParams);
+    }
+    if (!error.i18nParams) return error.i18nKey;
+    return Object.entries(error.i18nParams).reduce(
+      (acc, [key, value]) =>
+        acc.replace(new RegExp(`\\{\\{${key}\\}\\}`, "g"), value),
+      error.i18nKey,
+    );
+  }
   // Surface known error messages first, regardless of asset type
   const errorStr =
     error instanceof Error
@@ -81,6 +100,8 @@ interface SimulationParams {
   // the pick-time snapshot so defaulted/deep-linked destinations — which never
   // went through the picker — build the changeTrust op too.
   destRequiresTrustline: boolean;
+  feeAsset: string;
+  feeTokenAvailable: string;
 }
 
 export interface SimulateTxData {
@@ -88,6 +109,7 @@ export interface SimulateTxData {
   dstAmountPriceUsd: string;
   scanResult?: BlockAidScanTxResult | null;
   destMin?: string;
+  reserveFee?: ReserveFeeDisplay;
 }
 
 export const MIN_PER_OP_FEE = 100; // network minimum, stroops
@@ -228,6 +250,7 @@ function useSimulateTxData({
   networkDetails: NetworkDetails;
   simParams: SimulationParams;
 }) {
+  const { t } = useTranslation();
   const {
     memo,
     path: storedPath,
@@ -307,30 +330,73 @@ function useSimulateTxData({
           ),
         );
       }
-      const transaction = await getBuiltTx(
-        publicKey,
-        {
-          sourceAsset,
-          destAsset,
-          amount,
+
+      const useReserve = shouldUseReserve({
+        feeAsset: simParams.feeAsset,
+        networkPassphrase: networkDetails.networkPassphrase,
+        isPathPayment: false,
+        isCollectible: false,
+      });
+
+      let xdr: string;
+      if (useReserve) {
+        const sendAsset = getCanonicalFromAsset(
+          sourceAsset.code,
+          sourceAsset.issuer,
+        );
+        const destAssetCanonical = getCanonicalFromAsset(
+          destAsset.code,
+          destAsset.issuer,
+        );
+        const built = await quoteAndBuildReserveSwap({
+          publicKey,
+          sendAsset,
+          sendAmount: amount,
+          destAsset: destAssetCanonical,
           destinationAmount,
           allowedSlippage,
           path,
           requiresTrustline: simParams.destRequiresTrustline,
-        },
-        baseFee.toString(),
-        transactionTimeout,
-        networkDetails,
-        memo,
-      );
-      const xdr = transaction.build().toXdr();
+          feeAsset: simParams.feeAsset,
+          feeTokenAvailable: simParams.feeTokenAvailable,
+          memo,
+          networkPassphrase: networkDetails.networkPassphrase,
+        });
+        xdr = built.xdr;
+        payload.reserveFee = built.fee;
+        reduxDispatch(
+          saveSimulation({
+            preparedTransaction: xdr,
+            reserveQuote: built.quote,
+          }),
+        );
+      } else {
+        const transaction = await getBuiltTx(
+          publicKey,
+          {
+            sourceAsset,
+            destAsset,
+            amount,
+            destinationAmount,
+            allowedSlippage,
+            path,
+            requiresTrustline: simParams.destRequiresTrustline,
+          },
+          baseFee.toString(),
+          transactionTimeout,
+          networkDetails,
+          memo,
+        );
+        xdr = transaction.build().toXdr();
+        reduxDispatch(
+          saveSimulation({
+            preparedTransaction: xdr,
+            reserveQuote: null,
+          }),
+        );
+      }
       payload.transactionXdr = xdr;
       payload.scanResult = await scanTx(xdr, scanUrlstub, networkDetails);
-      reduxDispatch(
-        saveSimulation({
-          preparedTransaction: xdr,
-        }),
-      );
       reduxDispatch(
         saveSwapBestPath({
           path,
@@ -342,7 +408,7 @@ function useSimulateTxData({
       return payload;
     } catch (error) {
       const { sourceAsset, destAsset } = simParams;
-      const payload = getSwapErrorMessage(error, sourceAsset, destAsset);
+      const payload = getSwapErrorMessage(error, sourceAsset, destAsset, t);
 
       setIsQuoteExpired(isQuoteExpiredError(error as ErrorMessage | undefined));
       dispatch({ type: "FETCH_DATA_ERROR", payload });

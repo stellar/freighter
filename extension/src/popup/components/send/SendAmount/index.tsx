@@ -44,7 +44,16 @@ import {
   saveManualTransactionFee,
   saveTransactionTimeout,
   saveAmountUsd,
+  saveFeeAsset,
 } from "popup/ducks/transactionSubmission";
+import { FeeAssetSelect } from "popup/components/send/FeeAssetSelect";
+import {
+  NATIVE_FEE_ASSET,
+  feeRowAmount,
+  resolveFeeAsset,
+  useReserveFeeAssets,
+  withholdFeeFromSend,
+} from "popup/helpers/reserve";
 import { Loading } from "popup/components/Loading";
 import { TX_SEND_MAX } from "popup/constants/transaction";
 import { getBalanceByAsset, getBalanceByKey } from "popup/helpers/balance";
@@ -127,6 +136,7 @@ export const SendAmount = ({
     isCollectible,
     collectibleData,
     manualTransactionFee,
+    feeAsset,
   } = transactionData;
   const fee = transactionFee || recommendedFee;
 
@@ -176,6 +186,22 @@ export const SendAmount = ({
       includeIcons: true,
     },
     destination,
+  );
+
+  const resolvedBalances =
+    sendAmountData.state === RequestState.SUCCESS &&
+    sendAmountData.data?.type === AppDataType.RESOLVED
+      ? sendAmountData.data.userBalances.balances
+      : [];
+  const isClassicPayment = !isToken && !isCollectible;
+  const { options: feeAssetOptions } = useReserveFeeAssets({
+    balances: resolvedBalances,
+    requiredFeeXlm: fee,
+    networkPassphrase: networkDetails.networkPassphrase,
+    enabled: isClassicPayment,
+  });
+  const showFeeAssetPicker = feeAssetOptions.some(
+    (option) => option.asset !== NATIVE_FEE_ASSET,
   );
 
   // Tracks the dest+asset pair that simulation was last triggered for, so we
@@ -329,7 +355,8 @@ export const SendAmount = ({
     // saveTransactionFee again with the simulated total fee. The dispatch
     // above resets to the inclusion fee so the simulation starts from a clean
     // base; the one inside fetchSimulationData overwrites it with the result.
-    if (simResult.ok || (!isToken && !isCollectible)) {
+    const isReserveFee = Boolean(feeAsset && feeAsset !== NATIVE_FEE_ASSET);
+    if (simResult.ok || (!isToken && !isCollectible && !isReserveFee)) {
       setIsReviewingTx(true);
     }
   };
@@ -374,6 +401,17 @@ export const SendAmount = ({
     getData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (!isClassicPayment || feeAssetOptions.length === 0) {
+      return;
+    }
+    const current = feeAsset || NATIVE_FEE_ASSET;
+    const next = resolveFeeAsset({ options: feeAssetOptions, current });
+    if (next !== current) {
+      dispatch(saveFeeAsset(next));
+    }
+  }, [dispatch, feeAsset, feeAssetOptions, isClassicPayment]);
 
   useEffect(() => {
     formik.setValues({
@@ -518,10 +556,15 @@ export const SendAmount = ({
     : null;
   const supportsUsd = isMainnet(data.networkDetails) && assetPrice;
 
-  const availableBalance = getAvailableBalance({
-    assetCanonical: asset,
-    balances: sendData.userBalances.balances,
-    recommendedFee: fee,
+  const availableBalance = withholdFeeFromSend({
+    spendable: getAvailableBalance({
+      assetCanonical: asset,
+      balances: sendData.userBalances.balances,
+      recommendedFee:
+        feeAsset && feeAsset !== NATIVE_FEE_ASSET ? "0" : fee,
+    }),
+    feeAsset: feeAsset || NATIVE_FEE_ASSET,
+    sendAsset: asset,
   });
   const displayTotal =
     assetBalance && "decimals" in assetBalance
@@ -616,8 +659,24 @@ export const SendAmount = ({
                     : (isToken || isCollectible) &&
                         simulationState.state === RequestState.LOADING
                       ? t("Calculating...")
-                      : `${fee} ${t("XLM")}`}
+                      : feeRowAmount({
+                          reserveFee: simulationState.data?.reserveFee,
+                          showPicker: showFeeAssetPicker,
+                          nativeFee: fee,
+                          nativeCode: t("XLM"),
+                        })}
                 </span>
+                {showFeeAssetPicker ? (
+                  <FeeAssetSelect
+                    options={feeAssetOptions}
+                    value={
+                      feeAssetOptions.some((option) => option.asset === feeAsset)
+                        ? feeAsset
+                        : feeAssetOptions[0].asset
+                    }
+                    onChange={(next) => dispatch(saveFeeAsset(next))}
+                  />
+                ) : null}
               </div>
               <div className="SendAmount__settings-row">
                 <Button
@@ -687,7 +746,9 @@ export const SendAmount = ({
               </>
             ) : (
               <>
-                {(isToken || isCollectible) &&
+                {(isToken ||
+                  isCollectible ||
+                  (feeAsset && feeAsset !== NATIVE_FEE_ASSET)) &&
                 simulationState.state === RequestState.ERROR ? (
                   <Notification
                     variant="error"

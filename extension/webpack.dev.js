@@ -54,7 +54,7 @@ const devConfig = (env = {}) => ({
       /webextension-polyfill/,
       path.resolve(__dirname, "../config/shims/webextension-polyfill.ts"),
     ),
-    new Dotenv(),
+    new Dotenv({ systemvars: true }),
   ],
 });
 

@@ -20,10 +20,13 @@ export const test = base.extend<{
   language: "en",
   context: async ({ viewportSize }, use) => {
     const pathToExtension = path.join(__dirname, "../build");
+    const headed = process.env.HEADED === "true";
+    const slowMo = Number(process.env.SLOWMO || (headed ? 350 : 0));
     const context = await chromium.launchPersistentContext("", {
       headless: false,
+      slowMo: Number.isFinite(slowMo) ? slowMo : 0,
       args: [
-        `--headless=new`,
+        ...(headed ? [] : [`--headless=new`]),
         `--disable-extensions-except=${pathToExtension}`,
         `--load-extension=${pathToExtension}`,
       ],

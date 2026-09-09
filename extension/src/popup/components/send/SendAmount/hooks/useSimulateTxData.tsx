@@ -41,7 +41,12 @@ import {
   saveTransactionFee,
   transactionDataSelector,
 } from "popup/ducks/transactionSubmission";
-import { findAddressBalance } from "popup/helpers/balance";
+import { findAddressBalance, findAssetBalance } from "popup/helpers/balance";
+import {
+  ReserveSendError,
+  quoteAndBuildReservePayment,
+  shouldUseReserve,
+} from "popup/helpers/reserve";
 import { AppDispatch, AppState } from "popup/App";
 import { useScanTx } from "popup/helpers/blockaid";
 import { cleanAmount } from "popup/helpers/formatters";
@@ -418,8 +423,15 @@ function useSimulateTxData({
   const { t } = useTranslation();
   const reduxDispatch = useDispatch<AppDispatch>();
   const store = useStore();
-  const { asset, amount, transactionFee, memo, memoType, isCollectible } =
-    useSelector(transactionDataSelector);
+  const {
+    asset,
+    amount,
+    transactionFee,
+    memo,
+    memoType,
+    isCollectible,
+    feeAsset,
+  } = useSelector(transactionDataSelector);
 
   const { scanTx } = useScanTx();
   const [state, dispatch] = useReducer(
@@ -451,6 +463,7 @@ function useSimulateTxData({
         currentTransactionFee: currentTransactionData.transactionFee,
         fallbackTransactionFee: transactionFee,
       });
+      const currentFeeAsset = currentTransactionData.feeAsset || feeAsset || "native";
       // Derive asset objects directly from fresh Redux state so the XDR and
       // expectedToFailReason logic always use the same asset values.
       const freshSourceAsset = getAssetFromCanonical(currentAsset);
@@ -567,11 +580,21 @@ function useSimulateTxData({
         simResponse.payload && "simulationTransaction" in simResponse.payload
           ? simResponse.payload?.simulationTransaction
           : "";
+      const useReserve =
+        simParams.type === "classic" &&
+        shouldUseReserve({
+          feeAsset: currentFeeAsset,
+          networkPassphrase: networkDetails.networkPassphrase,
+          isPathPayment: simParams.isPathPayment,
+          isCollectible,
+        });
+
       reduxDispatch(saveTransactionFee(simResponse.recommendedFee));
       reduxDispatch(
         saveSimulation({
           preparedTransaction: simResponse.payload?.preparedTransaction,
           response: simulationResponse,
+          reserveQuote: null,
         }),
       );
 
@@ -598,32 +621,67 @@ function useSimulateTxData({
         // Use currentTransactionFee (fresh from Redux) instead of simResponse.recommendedFee
         // For classic transactions, simResponse.recommendedFee is just the recommendedFee we passed in
         const feeToUse = currentTransactionFee || simResponse.recommendedFee;
-        const transaction = await getBuiltTx(
-          publicKey,
-          {
-            sourceAsset: freshSourceAsset,
-            destAsset: freshDestAsset,
-            amount: cleanAmount(currentAmount),
-            destinationAmount,
+
+        if (useReserve) {
+          const feeBalance = findAssetBalance(
+            balancesResult.balances,
+            getAssetFromCanonical(currentFeeAsset),
+          );
+          const built = await quoteAndBuildReservePayment({
+            publicKey,
             destination,
-            allowedSlippage,
-            path,
-            isPathPayment,
-            isSwap,
-            isFunded: destBalancesResult.isFunded!,
-          },
-          feeToUse,
-          transactionTimeout,
-          networkDetails,
-          memoToUse,
-          currentMemoType,
-        );
-        const xdr = transaction.build().toXdr();
-        payload.transactionXdr = xdr;
-        payload.scanResult = applyExpectedToFailReason({
-          scanResult: await scanTx(xdr, scanUrlstub, networkDetails),
-          expectedToFailReason,
-        });
+            sendAsset: currentAsset,
+            sendAmount: currentAmount,
+            feeAsset: currentFeeAsset,
+            feeTokenAvailable:
+              feeBalance && "available" in feeBalance
+                ? feeBalance.available.toString()
+                : "0",
+            isDestinationFunded: destBalancesResult.isFunded === true,
+            memo: memoToUse,
+            networkPassphrase: networkDetails.networkPassphrase,
+          });
+          payload.transactionXdr = built.xdr;
+          payload.reserveFee = built.fee;
+          reduxDispatch(
+            saveSimulation({
+              preparedTransaction: null,
+              response: null,
+              reserveQuote: built.quote,
+            }),
+          );
+          payload.scanResult = applyExpectedToFailReason({
+            scanResult: await scanTx(built.xdr, scanUrlstub, networkDetails),
+            expectedToFailReason,
+          });
+        } else {
+          const transaction = await getBuiltTx(
+            publicKey,
+            {
+              sourceAsset: freshSourceAsset,
+              destAsset: freshDestAsset,
+              amount: cleanAmount(currentAmount),
+              destinationAmount,
+              destination,
+              allowedSlippage,
+              path,
+              isPathPayment,
+              isSwap,
+              isFunded: destBalancesResult.isFunded!,
+            },
+            feeToUse,
+            transactionTimeout,
+            networkDetails,
+            memoToUse,
+            currentMemoType,
+          );
+          const xdr = transaction.build().toXdr();
+          payload.transactionXdr = xdr;
+          payload.scanResult = applyExpectedToFailReason({
+            scanResult: await scanTx(xdr, scanUrlstub, networkDetails),
+            expectedToFailReason,
+          });
+        }
       }
 
       if (simParams.type === "soroban") {
@@ -655,7 +713,9 @@ function useSimulateTxData({
             : "unknown",
       });
       const errorMessage =
-        "We had an issue retrieving your transaction details. Please try again.";
+        error instanceof ReserveSendError
+          ? t(error.i18nKey, error.i18nParams)
+          : "We had an issue retrieving your transaction details. Please try again.";
       dispatch({ type: "FETCH_DATA_ERROR", payload: errorMessage });
       return { ok: false, error: errorMessage } as SimulateResult;
     }

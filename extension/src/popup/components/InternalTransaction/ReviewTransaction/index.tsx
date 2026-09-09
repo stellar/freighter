@@ -534,7 +534,9 @@ export const ReviewTx = ({
             >
               <Icon.InfoCircle />
             </button>
-            {fee} XLM
+            {simulationState.data?.reserveFee
+              ? `${simulationState.data.reserveFee.amount} ${simulationState.data.reserveFee.code}`
+              : `${fee} XLM`}
           </div>
         </div>
         {/* The raw XDR is in the "Transaction details" sheet (Summary),

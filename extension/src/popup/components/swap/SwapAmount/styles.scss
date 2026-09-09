@@ -202,12 +202,19 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: pxToRem(8px);
     margin-bottom: pxToRem(12px);
+    min-width: 0;
   }
 
   &__settings-fee-display {
     display: flex;
+    align-items: center;
+    gap: pxToRem(6px);
+    min-width: 0;
     font-size: pxToRem(14px);
+    line-height: 1.2;
+    white-space: nowrap;
 
     svg {
       margin-right: pxToRem(6px);
@@ -218,15 +225,24 @@
 
     &__label {
       color: var(--sds-clr-gray-11);
-      margin-right: pxToRem(6px);
+      flex-shrink: 0;
+    }
+
+    &__value {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
   }
 
   &__settings-options {
     display: flex;
+    align-items: center;
+    gap: pxToRem(6px);
+    flex-shrink: 0;
 
-    .Button:first-child {
-      margin-right: pxToRem(6px);
+    .Button {
+      white-space: nowrap;
     }
   }
 

@@ -84,7 +84,6 @@ import { AuthEntries } from "popup/components/AuthEntry";
 import { TruncatedMemo } from "popup/components/TruncatedMemo";
 import { Summary } from "./Preview/Summary";
 import { Details } from "./Preview/Details";
-
 import "./styles.scss";
 
 export const SignTransaction = () => {
@@ -378,9 +377,16 @@ export const SignTransaction = () => {
           (balance as NativeAsset).available.gt(stroopToXlm(_fee as string)),
       )
     : true; // If balances unavailable, assume user can proceed
+  // Bootstrap / fee-bump: this account is only a co-signer. The sponsor is
+  // the source and pays the XLM fee, so a 0-XLM wallet is expected.
+  const signerPaysFee =
+    "innerTransaction" in transaction
+      ? transaction.feeSource === currentAccount.publicKey
+      : transaction.source === currentAccount.publicKey;
 
   if (
     currentAccount.publicKey &&
+    signerPaysFee &&
     !hasEnoughXlm &&
     !hasAcceptedInsufficientFee
   ) {

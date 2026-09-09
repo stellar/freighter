@@ -20,6 +20,7 @@ import {
   saveIsToken,
   saveTransactionFee,
   saveTransactionTimeout,
+  saveFeeAsset,
   clearSwapQuoteExpired,
   transactionSubmissionSelector,
 } from "popup/ducks/transactionSubmission";
@@ -37,7 +38,14 @@ import { openTab } from "popup/helpers/navigate";
 import { newTabHref } from "helpers/urls";
 import { reRouteOnboarding } from "popup/helpers/route";
 import { getAvailableBalance } from "popup/helpers/soroban";
-import { getBalanceCanonicalKey } from "popup/helpers/balance";
+import { getBalanceCanonicalKey, findAssetBalance } from "popup/helpers/balance";
+import { FeeAssetSelect } from "popup/components/send/FeeAssetSelect";
+import {
+  NATIVE_FEE_ASSET,
+  feeRowAmount,
+  resolveFeeAsset,
+  useReserveFeeAssets,
+} from "popup/helpers/reserve";
 import { useBlockaidOverrideState } from "popup/helpers/blockaid";
 import { AppDispatch } from "popup/App";
 import { emitMetric } from "helpers/metrics";
@@ -117,6 +125,7 @@ export const SwapAmount = ({
     path,
     transactionFee,
     transactionTimeout,
+    feeAsset,
   } = transactionData;
   // The source can be in the "(+) Select" (empty) state — e.g. after a
   // direction swap whose destination was unset or a non-held token.
@@ -163,6 +172,30 @@ export const SwapAmount = ({
     customFee: transactionFee,
     opCount: swapOpCount,
   });
+  const resolvedSwapBalances =
+    swapAmountData.data?.type === AppDataType.RESOLVED
+      ? swapAmountData.data.userBalances.balances
+      : [];
+  const { options: feeAssetOptions } = useReserveFeeAssets({
+    balances: resolvedSwapBalances,
+    requiredFeeXlm: fee,
+    networkPassphrase: networkDetails.networkPassphrase,
+    enabled: !isToken,
+  });
+  const showFeeAssetPicker = feeAssetOptions.some(
+    (option) => option.asset !== NATIVE_FEE_ASSET,
+  );
+  const feeBalance =
+    feeAsset && feeAsset !== NATIVE_FEE_ASSET
+      ? findAssetBalance(
+          resolvedSwapBalances,
+          getAssetFromCanonical(feeAsset),
+        )
+      : undefined;
+  const feeTokenAvailable =
+    feeBalance && "available" in feeBalance
+      ? feeBalance.available.toString()
+      : "0";
   const {
     state: simulationState,
     fetchData: fetchSimulationData,
@@ -180,6 +213,8 @@ export const SwapAmount = ({
       transactionTimeout,
       memo,
       destRequiresTrustline,
+      feeAsset: feeAsset || NATIVE_FEE_ASSET,
+      feeTokenAvailable,
     },
   });
 
@@ -212,15 +247,20 @@ export const SwapAmount = ({
       amount: cleanedAmount,
       destinationRate: dstAssetPrice,
     });
-    const needsReserve = shouldShowXlmReservePreflight({
-      requiresTrustline: destRequiresTrustline,
-      sourceIsXlm: asset === "native",
-      spendableXlm: getAvailableBalance({
-        assetCanonical: "native",
-        balances: sendData.userBalances.balances,
-        recommendedFee: fee,
-      }),
-    });
+    const payingFeeInToken = Boolean(
+      feeAsset && feeAsset !== NATIVE_FEE_ASSET,
+    );
+    const needsReserve =
+      !payingFeeInToken &&
+      shouldShowXlmReservePreflight({
+        requiresTrustline: destRequiresTrustline,
+        sourceIsXlm: asset === "native",
+        spendableXlm: getAvailableBalance({
+          assetCanonical: "native",
+          balances: sendData.userBalances.balances,
+          recommendedFee: fee,
+        }),
+      });
     if (needsReserve) {
       emitMetric(METRIC_NAMES.swapXlmReserveInsufficientShown);
       setIsXlmReserveOpen(true);
@@ -257,6 +297,13 @@ export const SwapAmount = ({
     getData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (isToken || feeAssetOptions.length === 0) return;
+    const current = feeAsset || NATIVE_FEE_ASSET;
+    const next = resolveFeeAsset({ options: feeAssetOptions, current });
+    if (next !== current) dispatch(saveFeeAsset(next));
+  }, [dispatch, feeAsset, feeAssetOptions, isToken]);
 
   // Recover a destination token's Blockaid verdict when it was picked before
   // the async picker scan landed, persisting it onto the stored destination
@@ -391,6 +438,7 @@ export const SwapAmount = ({
     inputType,
     isLiveQuoteLoading,
     destRequiresTrustline,
+    feeAsset,
   });
 
   const handleSwapForReserve = async () => {
@@ -501,9 +549,29 @@ export const SwapAmount = ({
                 <span className="SwapAsset__settings-fee-display__label">
                   {t("Fee")}:
                 </span>
-                {/* The network fee is always denominated in XLM, regardless of
-                    whether the amount is being entered in crypto or fiat. */}
-                <span>{`${fee} XLM`}</span>
+                <span
+                  className="SwapAsset__settings-fee-display__value"
+                  data-testid="swap-amount-fee-display"
+                >
+                  {feeRowAmount({
+                    reserveFee: simulationState.data?.reserveFee,
+                    showPicker: showFeeAssetPicker,
+                    nativeFee: fee,
+                  })}
+                </span>
+                {showFeeAssetPicker ? (
+                  <FeeAssetSelect
+                    options={feeAssetOptions}
+                    value={
+                      feeAssetOptions.some(
+                        (option) => option.asset === feeAsset,
+                      )
+                        ? feeAsset
+                        : feeAssetOptions[0].asset
+                    }
+                    onChange={(next) => dispatch(saveFeeAsset(next))}
+                  />
+                ) : null}
               </div>
               <div className="SwapAsset__settings-options">
                 <Button
@@ -511,9 +579,10 @@ export const SwapAmount = ({
                   size="md"
                   isRounded
                   variant="tertiary"
+                  aria-label={`${t("Slippage")}: ${allowedSlippage}%`}
                   onClick={() => setIsEditingSlippage(true)}
                 >
-                  {`${t("Slippage")}: ${allowedSlippage}%`}
+                  {`${t("Slippage")} ${allowedSlippage}%`}
                 </Button>
                 <Button
                   type="button"

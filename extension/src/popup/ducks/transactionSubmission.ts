@@ -7,6 +7,8 @@ import {
 } from "stellar-sdk";
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
+import { createReserveClient } from "popup/helpers/reserve";
+import type { Quote } from "popup/helpers/reserve";
 import {
   signFreighterTransaction as internalSignFreighterTransaction,
   signFreighterSorobanTransaction as internalSignFreighterSorobanTransaction,
@@ -106,6 +108,30 @@ export const submitFreighterTransaction = createAsyncThunk<
 >(
   "submitFreighterTransaction",
   async ({ signedXDR, networkDetails }, thunkApi) => {
+    const reserveQuote =
+      thunkApi.getState().transactionSubmission.transactionSimulation
+        .reserveQuote;
+    if (reserveQuote) {
+      try {
+        const client = createReserveClient(networkDetails.networkPassphrase);
+        if (!client) {
+          return thunkApi.rejectWithValue({
+            errorMessage: "Reserve is not configured",
+          });
+        }
+        const result = await client.submit(reserveQuote, signedXDR);
+        return {
+          hash: result.hash,
+          ledger: result.ledger,
+        } as Horizon.HorizonApi.TransactionResponse;
+      } catch (e) {
+        const message = e instanceof Error ? e.message : JSON.stringify(e);
+        return thunkApi.rejectWithValue({
+          errorMessage: message,
+        });
+      }
+    }
+
     if (isCustomNetwork(networkDetails)) {
       try {
         const txRes = await internalSubmitFreighterTransaction({
@@ -529,6 +555,9 @@ interface TransactionData {
   // Persisted in Redux so it survives SendAmount unmount/remount (e.g. when
   // the user navigates to pick a recipient and returns).
   manualTransactionFee: string | null;
+  // Canonical asset the user chose to pay the network fee with (`native` or
+  // `CODE:ISSUER`). A non-native pick is submitted through Reserve.
+  feeAsset: string;
 }
 
 interface HardwareWalletData {
@@ -559,6 +588,7 @@ interface InitialState {
   transactionSimulation: {
     response: SorobanRpc.Api.SimulateTransactionSuccessResponse | null;
     preparedTransaction: string | null;
+    reserveQuote: Quote | null;
   };
   soroswapTokens: SoroswapToken[];
   assetSelect: {
@@ -603,10 +633,12 @@ export const initialState: InitialState = {
     balancesToMigrate: [] as BalanceToMigrate[],
     isSoroswap: false,
     manualTransactionFee: null,
+    feeAsset: "native",
   },
   transactionSimulation: {
     response: null,
     preparedTransaction: null,
+    reserveQuote: null,
   },
   hardwareWalletData: {
     status: ShowOverlayStatus.IDLE,
@@ -669,6 +701,9 @@ const transactionSubmissionSlice = createSlice({
     saveManualTransactionFee: (state, action) => {
       state.transactionData.manualTransactionFee = action.payload;
     },
+    saveFeeAsset: (state, action: { payload: string }) => {
+      state.transactionData.feeAsset = action.payload;
+    },
     saveTransactionTimeout: (state, action) => {
       state.transactionData.transactionTimeout = action.payload;
     },
@@ -723,8 +758,35 @@ const transactionSubmissionSlice = createSlice({
       state.transactionData.collectibleData = action.payload;
     },
 
-    saveSimulation: (state, action) => {
-      state.transactionSimulation = action.payload;
+    saveSimulation: (
+      state,
+      action: {
+        payload: {
+          response?:
+            | SorobanRpc.Api.SimulateTransactionSuccessResponse
+            | string
+            | null;
+          preparedTransaction?: string | null;
+          reserveQuote?: Quote | null;
+        };
+      },
+    ) => {
+      const { payload } = action;
+      // HardwareSign only writes the signed XDR so SubmitTransaction can
+      // reuse the quote. Any other simulation replaces it, even if the
+      // caller omitted `reserveQuote`.
+      const isHwSignedXdrPatch =
+        payload.preparedTransaction != null &&
+        !("response" in payload) &&
+        !("reserveQuote" in payload);
+
+      state.transactionSimulation = {
+        ...state.transactionSimulation,
+        ...payload,
+        reserveQuote: isHwSignedXdrPatch
+          ? state.transactionSimulation.reserveQuote
+          : (payload.reserveQuote ?? null),
+      };
     },
     startHwConnect: (state) => {
       state.hardwareWalletData.status = ShowOverlayStatus.IN_PROGRESS;
@@ -886,6 +948,7 @@ export const {
   saveAsset,
   saveTransactionFee,
   saveManualTransactionFee,
+  saveFeeAsset,
   saveTransactionTimeout,
   saveMemoAndType,
   saveDestinationAsset,

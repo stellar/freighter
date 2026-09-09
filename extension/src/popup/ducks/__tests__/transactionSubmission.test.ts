@@ -8,6 +8,7 @@ import {
   clearSwapQuoteExpired,
   resetSubmitStatus,
   resetSubmission,
+  saveSimulation,
   submitFreighterTransaction,
   initialState,
   DestinationTokenDetails,
@@ -79,6 +80,53 @@ describe("transactionSubmission destinationTokenDetails", () => {
 
   it("starts with destinationTokenDetails null in initialState", () => {
     expect(initialState.transactionData.destinationTokenDetails).toBeNull();
+  });
+});
+
+describe("transactionSubmission saveSimulation reserveQuote", () => {
+  it("drops a stale quote when a later sim omits reserveQuote", () => {
+    const store = makeStore();
+    store.dispatch(
+      saveSimulation({
+        preparedTransaction: "RESERVE_XDR",
+        response: null,
+        reserveQuote: { id: "q" } as any,
+      }),
+    );
+    store.dispatch(
+      saveSimulation({
+        preparedTransaction: "COLLECTIBLE_XDR",
+        response: "",
+      }),
+    );
+
+    expect(
+      store.getState().transactionSubmission.transactionSimulation.reserveQuote,
+    ).toBeNull();
+  });
+
+  it("keeps the quote when HardwareSign only patches the signed XDR", () => {
+    const store = makeStore();
+    store.dispatch(
+      saveSimulation({
+        preparedTransaction: "UNSIGNED",
+        response: null,
+        reserveQuote: { id: "q" } as any,
+      }),
+    );
+    store.dispatch(
+      saveSimulation({
+        preparedTransaction: "SIGNED",
+      }),
+    );
+
+    expect(
+      store.getState().transactionSubmission.transactionSimulation.reserveQuote,
+    ).toEqual({ id: "q" });
+    expect(
+      store.getState().transactionSubmission.transactionSimulation
+        .preparedTransaction,
+    ).toBe("SIGNED");
   });
 });
 
