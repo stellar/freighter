@@ -44,7 +44,7 @@ export const isNativeAssetPair = (
 export const isNativeBalance = (balance: AssetType): balance is NativeAsset =>
   "token" in balance &&
   "type" in balance.token &&
-  isNativeAssetId(balance.token.type as unknown as string);
+  isNativeAssetId(balance.token.type);
 
 /**
  * True only for the native asset.
