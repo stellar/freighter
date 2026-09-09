@@ -21,9 +21,9 @@ import {
 const XLM_CODED_ISSUER =
   "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN";
 
-// The published native SAC addresses. Pinned rather than re-derived, so these
-// tests also assert that deriving from the passphrase reproduces the values
-// getNativeContractDetails hardcodes before Task 8 removes them.
+// The published native SAC addresses, pinned rather than re-derived, so these
+// tests assert that deriving from the passphrase reproduces the known-good
+// values rather than just agreeing with themselves.
 const NATIVE_SAC_PUBLIC =
   "CAS3J7GYLGXMF6TDJBBYYSE3HQ6BBSMLNUQ34T6TZMYMW2EVH34XOWMA";
 const NATIVE_SAC_TESTNET =
@@ -130,7 +130,7 @@ describe("getNativeContractId", () => {
     expect(getNativeContractId(Networks.TESTNET)).toBe(NATIVE_SAC_TESTNET);
   });
 
-  it("returns a real address on a network the old lookup table omitted", () => {
+  it("derives a distinct address on FUTURENET", () => {
     const futurenet = getNativeContractId(Networks.FUTURENET);
     expect(futurenet).toMatch(/^C[A-Z2-7]{55}$/);
     expect(futurenet).not.toBe(NATIVE_SAC_PUBLIC);

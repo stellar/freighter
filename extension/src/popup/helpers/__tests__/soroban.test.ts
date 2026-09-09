@@ -9,7 +9,7 @@ const futurenetDetails = {
 } as NetworkDetails;
 
 describe("isAssetSac", () => {
-  it("recognises the native contract on a network the old table omitted", () => {
+  it("recognises the native contract on FUTURENET", () => {
     expect(
       isAssetSac({
         asset: {

@@ -81,10 +81,9 @@ describe("searchAsset", () => {
       org: "",
     });
   });
-  it("should derive getNativeContractDetails for a network the table doesn't cover", () => {
-    // The contract address is now derived from the passphrase rather than
-    // read from a table, so a network outside PUBLIC/TESTNET gets a real
-    // address instead of the empty string the table used to fall back to.
+  it("derives the native contract address on FUTURENET", () => {
+    // The contract address is derived from the network passphrase, so every
+    // network gets a real address.
     expect(
       SearchAsset.getNativeContractDetails({
         network: "FUTURENET",

@@ -57,7 +57,7 @@ describe("getNativeContractDetails", () => {
     ).toBe("CAS3J7GYLGXMF6TDJBBYYSE3HQ6BBSMLNUQ34T6TZMYMW2EVH34XOWMA");
   });
 
-  it("returns a contract address on a network the table omitted", () => {
+  it("returns a derived contract address on FUTURENET", () => {
     expect(
       getNativeContractDetails({
         network: "FUTURENET",
