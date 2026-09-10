@@ -6,6 +6,10 @@ import { useNavigate } from "react-router-dom";
 import { Button, CopyText, Icon, Link, Loader } from "@stellar/design-system";
 
 import { NetworkDetails } from "@shared/constants/stellar";
+import {
+  isNativeAssetId,
+  isNativeBalance,
+} from "@shared/helpers/assetIdentity";
 import IconEllipsis from "popup/assets/icon-ellipsis.svg";
 import {
   displaySorobanId,
@@ -43,7 +47,6 @@ import { title } from "helpers/transaction";
 import {
   getBalanceByAsset,
   getPriceDeltaColor,
-  isNativeBalance,
   isSorobanBalance,
 } from "popup/helpers/balance";
 import { CopyValue } from "popup/components/CopyValue";
@@ -123,7 +126,7 @@ export const AssetDetail = ({
   const { isHideDustEnabled } = useSelector(settingsSelector);
   const [optionsOpen, setOptionsOpen] = React.useState(false);
   const activeOptionsRef = useRef<HTMLDivElement>(null);
-  const isNative = selectedAsset === "native";
+  const isNative = isNativeAssetId(selectedAsset);
   const tokenPrices =
     cachedTokenPrices[networkDetails.networkPassphrase]?.[publicKey] || null;
 
@@ -152,12 +155,9 @@ export const AssetDetail = ({
   ) as Exclude<AssetType, LiquidityPoolShareAsset>;
 
   const icons = assetIcons || {};
-  const assetIconUrl =
-    "token" in selectedBalance &&
-    "type" in selectedBalance.token &&
-    selectedBalance.token.type === "native"
-      ? StellarLogo
-      : icons[selectedAsset];
+  const assetIconUrl = isNativeBalance(selectedBalance)
+    ? StellarLogo
+    : icons[selectedAsset];
   const assetPrice = tokenPrices ? tokenPrices[selectedAsset] : null;
   const assetIssuer = selectedBalance
     ? getIssuerFromBalance(selectedBalance)

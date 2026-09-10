@@ -7,6 +7,7 @@ import jsxA11y from "eslint-plugin-jsx-a11y";
 import importPlugin from "eslint-plugin-import";
 import eslintPluginPrettierRecommended from "eslint-plugin-prettier/recommended";
 import globals from "globals";
+import assetIdentity from "./config/eslint-plugin-asset-identity/index.mjs";
 
 export default [
   js.configs.recommended,
@@ -55,6 +56,7 @@ export default [
       "jsx-a11y": jsxA11y,
       import: importPlugin,
       eslintPluginPrettierRecommended,
+      "asset-identity": assetIdentity,
     },
     settings: {
       react: { version: "detect" },
@@ -93,6 +95,14 @@ export default [
       // ~42 existing violations) is tracked as a separate follow-up.
       "no-useless-assignment": "off",
       "preserve-caught-error": "off",
+
+      "asset-identity/no-asset-code-comparison": "error",
+    },
+  },
+  {
+    files: ["@shared/helpers/assetIdentity.ts"],
+    rules: {
+      "asset-identity/no-asset-code-comparison": "off",
     },
   },
 ];

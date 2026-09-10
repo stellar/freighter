@@ -8,6 +8,7 @@ import {
   getCanonicalFromAsset,
   truncateString,
 } from "helpers/stellar";
+import { isNativeAssetPair } from "@shared/helpers/assetIdentity";
 import { AssetIcon } from "popup/components/account/AccountAssets";
 import { isAssetVisible } from "popup/helpers/settings";
 import { AssetVisibilityData } from "../AssetVisibility/hooks/useGetAssetData";
@@ -105,7 +106,9 @@ export const ToggleAssetRow = ({
   return (
     <>
       <AssetIcon
-        assetIcons={code !== "XLM" ? { [canonicalAsset]: image } : {}}
+        assetIcons={
+          !isNativeAssetPair(code, issuer) ? { [canonicalAsset]: image } : {}
+        }
         code={code}
         issuerKey={issuer}
         isSuspicious={isSuspicious}
