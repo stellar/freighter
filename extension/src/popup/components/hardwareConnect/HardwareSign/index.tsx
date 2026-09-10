@@ -26,11 +26,13 @@ import { WalletErrorBlock } from "popup/views/AddAccount/connect/DeviceConnect";
 import {
   getWalletPublicKey,
   parseWalletError,
+  isDeviceRefusalError,
   MISMATCHED_HARDWARE_ACCOUNT_ERROR,
 } from "popup/helpers/hardwareConnect";
 import {
   emitSigningApproved,
   emitSigningFailed,
+  emitSigningRejected,
   SigningKind,
 } from "popup/metrics/signing";
 import LedgerSigning from "popup/assets/ledger-signing.png";
@@ -98,6 +100,25 @@ export const HardwareSign = ({
   // key types derive `reason_code` identically.
   const errorMessage = (e: unknown): string =>
     e instanceof Error ? e.message : JSON.stringify(e);
+
+  /**
+   * Reports a hardware signing error as either a rejection or a failure.
+   *
+   * Declining on the device is a user decision, so it lands on the same
+   * `*_rejected` event as pressing reject in the popup — a rejection carries no
+   * `reason_code`, because there is no fault to report. Everything else is a
+   * runtime failure and keeps its scrubbed reason.
+   */
+  const emitSigningError = (e: unknown): void => {
+    if (!isDappSigningRequest) {
+      return;
+    }
+    if (isDeviceRefusalError(e)) {
+      emitSigningRejected(signingKind, url);
+      return;
+    }
+    emitSigningFailed(signingKind, errorMessage(e), url);
+  };
 
   const closeOverlay = () => {
     if (hardwareConnectRef.current) {
@@ -195,9 +216,7 @@ export const HardwareSign = ({
         }
       } else {
         setHardwareConnectSuccessful(false);
-        if (isDappSigningRequest) {
-          emitSigningFailed(signingKind, res.payload?.errorMessage, url);
-        }
+        emitSigningError(res.payload?.errorMessage);
         setConnectError(
           parseWalletError[walletType](res.payload?.errorMessage || ""),
         );
@@ -205,13 +224,11 @@ export const HardwareSign = ({
       setHardwareWalletIsSigning(false);
     } catch (e) {
       setHardwareWalletIsSigning(false);
-      // Covers every throw in the block above: no device attached, the
-      // mismatched-account refusal, and a handleSignedHwPayload failure after a
-      // good signature. All three are runtime failures on the software path
-      // too, so they land on the same `*_failed` event.
-      if (isDappSigningRequest) {
-        emitSigningFailed(signingKind, errorMessage(e), url);
-      }
+      // Covers every throw in the block above: the user declining on the
+      // device, no device attached, the mismatched-account refusal, and a
+      // handleSignedHwPayload failure after a good signature. emitSigningError
+      // splits the decline (a user decision) from the rest (runtime failures).
+      emitSigningError(e);
       setConnectError(parseWalletError[walletType](e));
     }
     setIsDetecting(false);

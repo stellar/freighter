@@ -75,8 +75,9 @@ export const emitSigningApproved = (kind: SigningKind, url?: string): void => {
 };
 
 /**
- * The user cancelled the request. A user decision, never a runtime error — see
- * emitSigningFailed for that. A rejection carries no `reason_code`.
+ * The user declined the request — by pressing reject in the popup, or by
+ * declining on a hardware device. Both are the same decision, so both land
+ * here. A rejection carries no `reason_code`: nothing went wrong.
  */
 export const emitSigningRejected = (kind: SigningKind, url?: string): void => {
   emitMetric(REJECTED_EVENT[kind], {
@@ -86,9 +87,14 @@ export const emitSigningRejected = (kind: SigningKind, url?: string): void => {
 };
 
 /**
- * Signing threw. `reason_code` carries the scrubbed message: a signing error
- * can embed a G…/S… key and Amplitude is a third-party sink not covered by
- * Sentry's beforeSend. Falls back to "unknown" so the property is never absent.
+ * Signing threw for a reason the user did not choose: a locked wallet, a key
+ * that does not decrypt, a malformed payload, a missing or wrong hardware
+ * device, a transport fault. A user declining is NOT a failure — that is
+ * emitSigningRejected.
+ *
+ * `reason_code` carries the scrubbed message: a signing error can embed a
+ * G…/S… key and Amplitude is a third-party sink not covered by Sentry's
+ * beforeSend. Falls back to "unknown" so the property is never absent.
  * No-ops for `transaction` (see FAILED_EVENT).
  */
 export const emitSigningFailed = (

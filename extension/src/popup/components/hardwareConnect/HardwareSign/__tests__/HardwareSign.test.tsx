@@ -278,6 +278,47 @@ describe("HardwareSign message signing telemetry", () => {
     });
   });
 
+  it("emits signing.message_rejected when the user declines on the device", async () => {
+    // A decline is a user decision, not a fault. hw-app-str raises
+    // StellarUserRefusedError for the deny status word, so this must land on
+    // the same event as pressing reject in the popup — and carry no
+    // reason_code, since there is nothing to report.
+    mockGetWalletPublicKey.mockResolvedValue(TEST_PUBLIC_KEY);
+    mockHardwareSignMessage.mockRejectedValue(
+      new Error("User refused the request"),
+    );
+
+    renderOverlay();
+
+    await waitFor(() => {
+      expect(mockEmitMetric).toHaveBeenCalledWith("signing.message_rejected", {
+        message_type: "blob",
+        origin: "example.com",
+      });
+    });
+    expect(mockEmitMetric).not.toHaveBeenCalledWith(
+      "signing.message_failed",
+      expect.anything(),
+    );
+  });
+
+  it("still reports a decline as a rejection on the legacy message", async () => {
+    // Older apps and transports worded the same decision differently.
+    mockGetWalletPublicKey.mockResolvedValue(TEST_PUBLIC_KEY);
+    mockHardwareSignMessage.mockRejectedValue(
+      new Error("Transaction approval request was rejected"),
+    );
+
+    renderOverlay();
+
+    await waitFor(() => {
+      expect(mockEmitMetric).toHaveBeenCalledWith("signing.message_rejected", {
+        message_type: "blob",
+        origin: "example.com",
+      });
+    });
+  });
+
   it("emits signing.message_failed when the device derives a different account", async () => {
     mockGetWalletPublicKey.mockResolvedValue(OTHER_PUBLIC_KEY);
 
