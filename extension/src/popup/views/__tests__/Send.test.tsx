@@ -1,11 +1,18 @@
 import React from "react";
-import { render, waitFor, fireEvent, screen } from "@testing-library/react";
+import {
+  render,
+  waitFor,
+  fireEvent,
+  screen,
+  act,
+} from "@testing-library/react";
 
 import {
   Wrapper,
   mockBalances,
   mockTestnetBalances,
   mockAccounts,
+  getTestStore,
 } from "../../__testHelpers__";
 import * as ApiInternal from "@shared/api/internal";
 import * as UseNetworkFees from "popup/helpers/useNetworkFees";
@@ -22,7 +29,10 @@ import {
 import { APPLICATION_STATE as ApplicationState } from "@shared/constants/applicationState";
 import { ROUTES } from "popup/constants/routes";
 import { Send } from "popup/views/Send";
-import { initialState as transactionSubmissionInitialState } from "popup/ducks/transactionSubmission";
+import {
+  initialState as transactionSubmissionInitialState,
+  submitFreighterTransaction,
+} from "popup/ducks/transactionSubmission";
 import * as AccountServices from "popup/ducks/accountServices";
 import * as CheckSuspiciousAsset from "popup/helpers/checkForSuspiciousAsset";
 import * as RouteHelpers from "popup/helpers/route";
@@ -299,10 +309,13 @@ describe("Send", () => {
     );
 
     await waitFor(() => {
-      expect(emitScreenViewedMock).toHaveBeenCalledWith("send_payment_success", {
-        flow: "send",
-        step: "success",
-      });
+      expect(emitScreenViewedMock).toHaveBeenCalledWith(
+        "send_payment_success",
+        {
+          flow: "send",
+          step: "success",
+        },
+      );
     });
 
     // Emitted exactly once for the successful submission, never as a duplicate.
@@ -310,6 +323,64 @@ describe("Send", () => {
       (c) => c[0] === "send_payment_success",
     );
     expect(successCalls).toHaveLength(1);
+  });
+
+  it("emits send_payment_processing again when the user retries after a failure", async () => {
+    // The guards reset on ERROR as well as IDLE. A retry goes ERROR ->
+    // PENDING without passing through IDLE, because returning from the failure
+    // screen does not reset the submission. Guarding on IDLE alone dropped
+    // every retried attempt.
+    //
+    // This suite does not clear the emit mock between tests, and an earlier
+    // test already emits this screen name, so start from a clean count.
+    emitScreenViewedMock.mockClear();
+
+    render(
+      <Wrapper
+        routes={[ROUTES.sendPayment]}
+        state={{
+          auth: {
+            error: null,
+            hasPrivateKey: true,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
+            publicKey,
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: MAINNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+          },
+          transactionSubmission: {
+            ...transactionSubmissionInitialState,
+            accountBalances: mockBalances,
+          },
+          tokenPaymentSimulation: tokenPaymentActions.initialState,
+        }}
+      >
+        <Send />
+      </Wrapper>,
+    );
+
+    await waitFor(() => expect(emitScreenViewedMock).toHaveBeenCalled());
+
+    const store = getTestStore()!;
+    const dispatchStatus = (type: string, payload?: unknown) =>
+      act(() => {
+        store.dispatch({ type, payload } as never);
+      });
+
+    dispatchStatus(submitFreighterTransaction.pending.type);
+    dispatchStatus(submitFreighterTransaction.rejected.type, {
+      errorMessage: "op_underfunded",
+    });
+    dispatchStatus(submitFreighterTransaction.pending.type);
+
+    await waitFor(() => {
+      const processingCalls = emitScreenViewedMock.mock.calls.filter(
+        (c) => c[0] === "send_payment_processing",
+      );
+      expect(processingCalls).toHaveLength(2);
+    });
   });
 
   it("starts on the token picker step when no asset is pre-selected", async () => {

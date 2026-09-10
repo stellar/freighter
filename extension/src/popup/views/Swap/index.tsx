@@ -42,13 +42,11 @@ import {
 const SWAP_SCREEN_BY_STEP: Partial<
   Record<STEPS, { screen_name: string } & ScreenViewedProps>
 > = {
-  [STEPS.SWAP_CONFIRM]: {
-    screen_name: "swap_confirm",
-    flow: "swap",
-    // Canonical cross-platform stage (RFC #2883): mobile tags this screen
-    // step:"confirm"; keep them in sync so `step` is funnel-able across both.
-    step: "confirm",
-  },
+  // STEPS.SWAP_CONFIRM is deliberately absent. It renders the submitting
+  // screen, which the user only reaches after approving, so it is not the
+  // `confirm` stage — SwapAmount's review modal is, and it emits
+  // `swap_confirm` itself. This screen's own stages are covered by the
+  // submitStatus effect below (processing, then success).
   [STEPS.SET_DST_ASSET]: { screen_name: "swap_to_asset", flow: "swap" },
   [STEPS.AMOUNT]: { screen_name: "swap_amount", flow: "swap" },
   [STEPS.CONFIRM_AMOUNT]: { screen_name: "swap_amount_review", flow: "swap" },
@@ -61,6 +59,8 @@ export const Swap = () => {
   const location = useLocation();
   const [activeStep, setActiveStep] = useState(STEPS.AMOUNT);
   const lastEmittedStep = useRef<STEPS | null>(null);
+  const hasEmittedProcessing = useRef(false);
+  const hasEmittedSuccess = useRef(false);
 
   // Emit a screen-view metric only once per step transition.
   useEffect(() => {
@@ -75,6 +75,36 @@ export const Swap = () => {
   }, [activeStep]);
 
   const submission = useSelector(transactionSubmissionSelector);
+
+  // The in-flight submission and its terminal success are internal states of
+  // the submitting screen rather than distinct steps/routes, so emit their
+  // `screen.viewed` here as the submission status advances. Mirrors the send
+  // flow's effect so both internal flows report the same stages. Each emits
+  // once per submission; the guards reset on IDLE and on ERROR, so a retry
+  // after a failure re-emits.
+  useEffect(() => {
+    if (submission.submitStatus === ActionStatus.PENDING) {
+      if (!hasEmittedProcessing.current) {
+        hasEmittedProcessing.current = true;
+        emitScreenViewed("swap_processing", {
+          flow: "swap",
+          step: "processing",
+        });
+      }
+    } else if (submission.submitStatus === ActionStatus.SUCCESS) {
+      if (!hasEmittedSuccess.current) {
+        hasEmittedSuccess.current = true;
+        emitScreenViewed("swap_success", { flow: "swap", step: "success" });
+      }
+    } else if (
+      submission.submitStatus === ActionStatus.IDLE ||
+      submission.submitStatus === ActionStatus.ERROR
+    ) {
+      hasEmittedProcessing.current = false;
+      hasEmittedSuccess.current = false;
+    }
+  }, [submission.submitStatus]);
+
   const { transactionSimulation, transactionData } = submission;
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
 

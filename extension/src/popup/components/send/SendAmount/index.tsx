@@ -17,7 +17,7 @@ import {
   isMuxedAccount,
 } from "helpers/stellar";
 import { NetworkCongestion } from "popup/helpers/useNetworkFees";
-import { emitMetric } from "helpers/metrics";
+import { emitMetric, emitScreenViewed } from "helpers/metrics";
 import { trackSendFeeBreakdownOpened } from "popup/metrics/send";
 import {
   getAssetDecimals,
@@ -188,6 +188,19 @@ export const SendAmount = ({
   const [isEditingSettings, setIsEditingSettings] = React.useState(false);
   const [isShowingFeesPane, setIsShowingFeesPane] = React.useState(false);
   const [isReviewingTx, setIsReviewingTx] = React.useState(false);
+
+  // The review modal is the `confirm` stage: the user can see the transaction
+  // and has not decided yet. Emitted from an effect rather than the four
+  // handlers that open it, so every entry point counts once. Reopening the
+  // modal is a new view and emits again, matching mobile's review sheet.
+  useEffect(() => {
+    if (isReviewingTx) {
+      emitScreenViewed("send_payment_confirm", {
+        flow: "send",
+        step: "confirm",
+      });
+    }
+  }, [isReviewingTx]);
   const [contractSupportsMuxed, setContractSupportsMuxed] = React.useState<
     boolean | null
   >(null);
