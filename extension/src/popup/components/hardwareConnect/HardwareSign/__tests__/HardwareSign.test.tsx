@@ -1,7 +1,13 @@
 import React from "react";
 import { render, screen, waitFor } from "@testing-library/react";
 
-import { Keypair } from "stellar-sdk";
+import {
+  Account,
+  Asset,
+  Keypair,
+  Operation,
+  TransactionBuilder,
+} from "stellar-sdk";
 
 import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
 import { Wrapper } from "popup/__testHelpers__";
@@ -20,6 +26,7 @@ const OTHER_PUBLIC_KEY = Keypair.fromRawEd25519Seed(
 
 const mockGetWalletPublicKey = jest.fn();
 const mockHardwareSignMessage = jest.fn();
+const mockHardwareSign = jest.fn();
 
 jest.mock("popup/helpers/hardwareConnect", () => {
   const actual = jest.requireActual("popup/helpers/hardwareConnect");
@@ -30,6 +37,9 @@ jest.mock("popup/helpers/hardwareConnect", () => {
     },
     hardwareSignMessage: {
       Ledger: (...args: unknown[]) => mockHardwareSignMessage(...args),
+    },
+    hardwareSign: {
+      Ledger: (...args: unknown[]) => mockHardwareSign(...args),
     },
   };
 });
@@ -236,6 +246,7 @@ describe("HardwareSign message signing telemetry", () => {
     await waitFor(() => {
       expect(mockEmitMetric).toHaveBeenCalledWith("signing.message_approved", {
         message_type: "blob",
+        source: "dapp_api",
         origin: "example.com",
       });
     });
@@ -254,6 +265,7 @@ describe("HardwareSign message signing telemetry", () => {
     await waitFor(() => {
       expect(mockEmitMetric).toHaveBeenCalledWith("signing.message_failed", {
         message_type: "blob",
+        source: "dapp_api",
         reason_code: "Request expired",
         origin: "example.com",
       });
@@ -272,6 +284,7 @@ describe("HardwareSign message signing telemetry", () => {
     await waitFor(() => {
       expect(mockEmitMetric).toHaveBeenCalledWith("signing.message_failed", {
         message_type: "blob",
+        source: "dapp_api",
         reason_code: "No device selected",
         origin: "example.com",
       });
@@ -293,6 +306,7 @@ describe("HardwareSign message signing telemetry", () => {
     await waitFor(() => {
       expect(mockEmitMetric).toHaveBeenCalledWith("signing.message_rejected", {
         message_type: "blob",
+        source: "dapp_api",
         origin: "example.com",
       });
     });
@@ -314,6 +328,7 @@ describe("HardwareSign message signing telemetry", () => {
     await waitFor(() => {
       expect(mockEmitMetric).toHaveBeenCalledWith("signing.message_rejected", {
         message_type: "blob",
+        source: "dapp_api",
         origin: "example.com",
       });
     });
@@ -329,6 +344,7 @@ describe("HardwareSign message signing telemetry", () => {
         "signing.message_failed",
         expect.objectContaining({
           message_type: "blob",
+          source: "dapp_api",
           origin: "example.com",
         }),
       );
@@ -343,13 +359,15 @@ describe("HardwareSign message signing telemetry", () => {
     await waitFor(() => {
       expect(mockEmitMetric).toHaveBeenCalledWith("signing.message_approved", {
         message_type: "blob",
+        source: "dapp_api",
       });
     });
   });
 
-  it("emits no signing event for an internal flow", async () => {
-    // Internal send/swap/trustline steps report their outcome as
-    // payment.completed / swap.completed / asset.added instead.
+  it("emits no signing event for an internal message flow", async () => {
+    // Internal flows never sign a message — they sign transactions, and that
+    // branch reports `source: "internal"` (covered below). A message flow
+    // with no uuid reaches neither branch, so it stays silent.
     mockGetWalletPublicKey.mockResolvedValue(TEST_PUBLIC_KEY);
 
     renderOverlay({ isInternal: true, uuid: undefined, url: undefined });
@@ -358,5 +376,105 @@ describe("HardwareSign message signing telemetry", () => {
       expect(mockHardwareSignMessage).toHaveBeenCalled();
     });
     expect(mockEmitMetric).not.toHaveBeenCalled();
+  });
+});
+
+describe("HardwareSign internal transaction telemetry", () => {
+  // An internal send, swap or trustline change signs here, not in
+  // useSubmitTxData — that hook only receives the signed XDR. So this is the
+  // only place an internal hardware signing outcome can be reported.
+  const buildTxXdr = () =>
+    new TransactionBuilder(new Account(TEST_PUBLIC_KEY, "0"), {
+      fee: "100",
+      networkPassphrase: TESTNET_NETWORK_DETAILS.networkPassphrase,
+    })
+      .addOperation(
+        Operation.payment({
+          destination: OTHER_PUBLIC_KEY,
+          asset: Asset.native(),
+          amount: "1",
+        }),
+      )
+      .setTimeout(30)
+      .build()
+      .toXDR();
+
+  const renderInternalTransaction = () =>
+    render(
+      <Wrapper
+        routes={["/"]}
+        state={{
+          auth: {
+            allAccounts: [TEST_PUBLIC_KEY],
+            publicKey: TEST_PUBLIC_KEY,
+            bipPath: "44'/148'/0'",
+          },
+          settings: {
+            networkDetails: TESTNET_NETWORK_DETAILS,
+            isHashSigningEnabled: false,
+          },
+          transactionSubmission: {
+            ...transactionSubmissionInitialState,
+            hardwareWalletData: {
+              ...transactionSubmissionInitialState.hardwareWalletData,
+              transactionXDR: buildTxXdr(),
+              // The internal flows submit after signing; the dApp prompts do not.
+              shouldSubmit: true,
+            },
+          },
+        }}
+      >
+        <HardwareSign isInternal walletType={WalletType.LEDGER} />
+      </Wrapper>,
+    );
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockGetWalletPublicKey.mockResolvedValue(TEST_PUBLIC_KEY);
+    mockHardwareSign.mockResolvedValue(Buffer.alloc(64, 7));
+  });
+
+  it("reports an internal approval with no origin once the device signs", async () => {
+    renderInternalTransaction();
+
+    await waitFor(() => {
+      expect(mockEmitMetric).toHaveBeenCalledWith(
+        "signing.transaction_approved",
+        { source: "internal" },
+      );
+    });
+  });
+
+  it("reports an internal rejection when the user declines on the device", async () => {
+    // This is the case that was invisible: a decline during an internal send
+    // produced no event at all, because the flow never advances to the
+    // submission hook.
+    mockHardwareSign.mockRejectedValue(new Error("User refused the request"));
+
+    renderInternalTransaction();
+
+    await waitFor(() => {
+      expect(mockEmitMetric).toHaveBeenCalledWith(
+        "signing.transaction_rejected",
+        { source: "internal" },
+      );
+    });
+    expect(mockEmitMetric).not.toHaveBeenCalledWith(
+      "signing.transaction_approved",
+      expect.anything(),
+    );
+  });
+
+  it("reports an internal failure when the device is missing", async () => {
+    mockGetWalletPublicKey.mockRejectedValue(new Error("No device selected"));
+
+    renderInternalTransaction();
+
+    await waitFor(() => {
+      expect(mockEmitMetric).toHaveBeenCalledWith(
+        "signing.transaction_failed",
+        { source: "internal", reason_code: "No device selected" },
+      );
+    });
   });
 });

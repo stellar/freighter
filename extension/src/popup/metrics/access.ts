@@ -65,22 +65,28 @@ registerHandler<AppState>(rejectToken.fulfilled, (_state, action) => {
 // popup/metrics/signing and the HardwareSign overlay); both key types emit
 // through the same helpers so the two paths cannot drift apart.
 registerHandler<AppState>(signTransaction.fulfilled, (_state, action) => {
-  emitSigningApproved("transaction", argUrl(action));
+  emitSigningApproved("transaction", {
+    source: "dapp_api",
+    url: argUrl(action),
+  });
 });
 registerHandler<AppState>(rejectTransaction.fulfilled, (_state, action) => {
-  emitSigningRejected("transaction", argUrl(action));
+  emitSigningRejected("transaction", {
+    source: "dapp_api",
+    url: argUrl(action),
+  });
 });
 registerHandler<AppState>(signBlob.fulfilled, (_state, action) => {
-  emitSigningApproved("message", argUrl(action));
+  emitSigningApproved("message", { source: "dapp_api", url: argUrl(action) });
 });
 registerHandler<AppState>(rejectBlob.fulfilled, (_state, action) => {
-  emitSigningRejected("message", argUrl(action));
+  emitSigningRejected("message", { source: "dapp_api", url: argUrl(action) });
 });
 registerHandler<AppState>(signEntry.fulfilled, (_state, action) => {
-  emitSigningApproved("authEntry", argUrl(action));
+  emitSigningApproved("authEntry", { source: "dapp_api", url: argUrl(action) });
 });
 registerHandler<AppState>(rejectAuthEntry.fulfilled, (_state, action) => {
-  emitSigningRejected("authEntry", argUrl(action));
+  emitSigningRejected("authEntry", { source: "dapp_api", url: argUrl(action) });
 });
 
 // Runtime signing FAILURE paths — distinct from the user-cancel
@@ -93,8 +99,22 @@ const rejectedError = (action: {
 }): string | undefined => action.error?.message || action.payload?.errorMessage;
 
 registerHandler<AppState>(signBlob.rejected, (_state, action) => {
-  emitSigningFailed("message", rejectedError(action), argUrl(action));
+  emitSigningFailed("message", rejectedError(action), {
+    source: "dapp_api",
+    url: argUrl(action),
+  });
 });
 registerHandler<AppState>(signEntry.rejected, (_state, action) => {
-  emitSigningFailed("authEntry", rejectedError(action), argUrl(action));
+  emitSigningFailed("authEntry", rejectedError(action), {
+    source: "dapp_api",
+    url: argUrl(action),
+  });
+});
+// The transaction family now has a failure event too, so a dApp transaction
+// that throws while signing reports an outcome instead of going silent.
+registerHandler<AppState>(signTransaction.rejected, (_state, action) => {
+  emitSigningFailed("transaction", rejectedError(action), {
+    source: "dapp_api",
+    url: argUrl(action),
+  });
 });

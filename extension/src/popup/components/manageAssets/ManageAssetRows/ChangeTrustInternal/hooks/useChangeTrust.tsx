@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 
 import { initialState, reducer } from "helpers/request";
 import { AppDispatch } from "popup/App";
+import { emitSigningApproved, emitSigningFailed } from "popup/metrics/signing";
 import {
   signFreighterTransaction,
   submitFreighterTransaction,
@@ -97,10 +98,18 @@ function useGetChangeTrust() {
       );
 
       if (signFreighterTransaction.rejected.match(res)) {
+        // Signing threw. The user already approved, so this is a fault, not a
+        // decision. Reported with the same event every other signing path
+        // uses; `source` marks it as wallet-composed.
+        emitSigningFailed("transaction", res.payload?.errorMessage, {
+          source: "internal",
+        });
         throw new Error(t("failed to sign transaction"));
       }
 
       if (signFreighterTransaction.fulfilled.match(res)) {
+        emitSigningApproved("transaction", { source: "internal" });
+
         const submitResp = await reduxDispatch(
           submitFreighterTransaction({
             publicKey,

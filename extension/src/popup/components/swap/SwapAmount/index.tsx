@@ -42,6 +42,7 @@ import { getBalanceCanonicalKey } from "popup/helpers/balance";
 import { useBlockaidOverrideState } from "popup/helpers/blockaid";
 import { AppDispatch } from "popup/App";
 import { emitMetric, emitScreenViewed } from "helpers/metrics";
+import { emitSigningRejected } from "popup/metrics/signing";
 import { InputType } from "helpers/transaction";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { XLM_RESERVE_HELP_URL } from "popup/constants/externalLinks";
@@ -865,7 +866,13 @@ export const SwapAmount = ({
             assetIcon={assetIcon}
             fee={fee}
             networkDetails={networkDetails}
-            onCancel={() => setIsReviewingTx(false)}
+            onCancel={() => {
+              // Backing out of the review is the internal equivalent of
+              // pressing reject on a dApp prompt, so it reports the same
+              // event. A rejection carries no reason_code.
+              emitSigningRejected("transaction", { source: "internal" });
+              setIsReviewingTx(false);
+            }}
             // The trustline-added + swap-success metrics fire post-confirmation
             // (in useSubmitTxData), once the swap actually settles — not here at
             // review time.

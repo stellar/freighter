@@ -34,6 +34,7 @@ import {
   emitSigningFailed,
   emitSigningRejected,
   SigningKind,
+  SigningSource,
 } from "popup/metrics/signing";
 import LedgerSigning from "popup/assets/ledger-signing.png";
 import Ledger from "popup/assets/ledger.png";
@@ -83,12 +84,18 @@ export const HardwareSign = ({
   const [connectError, setConnectError] = useState("");
 
   // The overlay serves both the dApp signing prompts and the internal
-  // send/swap/trustline flows. Only the dApp prompts have a signing.* event to
-  // emit: internal flows report their outcome as payment.completed /
-  // swap.completed / asset.added from useSubmitTxData instead. A dApp request
-  // is the one that carries a `uuid` (the pending-request id) and is not
-  // rendered inline as an internal step.
+  // send/swap/trustline flows. Both report signing, and `source` separates
+  // them. A dApp request is the one that carries a `uuid` (the pending-request
+  // id) and is not rendered inline as an internal step.
   const isDappSigningRequest = !isInternal && !!uuid;
+  const signingSource: SigningSource = isDappSigningRequest
+    ? "dapp_api"
+    : "internal";
+  // An internal flow has no dApp, so it carries no origin.
+  const signingProps = {
+    source: signingSource,
+    ...(isDappSigningRequest ? { url } : {}),
+  };
   const signingKind: SigningKind = isSignMessage
     ? "message"
     : isSignSorobanAuthorization
@@ -110,14 +117,11 @@ export const HardwareSign = ({
    * runtime failure and keeps its scrubbed reason.
    */
   const emitSigningError = (e: unknown): void => {
-    if (!isDappSigningRequest) {
-      return;
-    }
     if (isDeviceRefusalError(e)) {
-      emitSigningRejected(signingKind, url);
+      emitSigningRejected(signingKind, signingProps);
       return;
     }
-    emitSigningFailed(signingKind, errorMessage(e), url);
+    emitSigningFailed(signingKind, errorMessage(e), signingProps);
   };
 
   const closeOverlay = () => {
@@ -180,6 +184,11 @@ export const HardwareSign = ({
       // should support saving signed xdr for SubmitTransaction to submit
       if (signWithHardwareWallet.fulfilled.match(res)) {
         if (shouldSubmit && !isSignSorobanAuthorization && !isSignMessage) {
+          // The internal branch: the device produced a signature and the flow
+          // carries it to submission. This is where an internal hardware
+          // signing succeeds — useSubmitTxData only receives the result, so it
+          // cannot report it.
+          emitSigningApproved(signingKind, signingProps);
           dispatch(
             saveSimulation({
               preparedTransaction: res.payload,
@@ -207,7 +216,7 @@ export const HardwareSign = ({
           // handleSignedHwPayload just did. Emitting when the device returned a
           // signature would count an approval that never reached the dApp.
           if (isDappSigningRequest) {
-            emitSigningApproved(signingKind, url);
+            emitSigningApproved(signingKind, signingProps);
           }
         }
         closeOverlay();

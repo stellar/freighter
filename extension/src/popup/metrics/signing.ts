@@ -6,14 +6,32 @@ import { getUrlHostname } from "helpers/urls";
 /**
  * The three signing requests a dApp can make of the extension.
  *
- * Software keys sign inside the `popup/ducks/access` thunks, so their events
- * are emitted by the redux handlers in `popup/metrics/access.ts`. Hardware keys
- * never reach those thunks — `useSetupSigningFlow` diverts them to the
- * HardwareSign overlay — so that component emits its own events. Both paths
- * emit through this module so one signing request produces the same event name
- * and the same property set whichever key type signed it.
+ * Every signing path emits through this module, so one signing request
+ * produces the same event name and the same property set wherever it ran:
+ * the dApp thunks in `popup/metrics/access.ts`, the HardwareSign overlay, the
+ * internal submission hook, and the trustline flow.
  */
 export type SigningKind = "transaction" | "message" | "authEntry";
+
+/**
+ * Where a signing request came from.
+ *
+ * `dapp_api` is a website asking through the injected API. `internal` is a
+ * transaction the wallet composed itself — a send, a swap, a collectible send,
+ * or a trustline change. Both origins emit the same events with the same
+ * properties, so one query counts all signing and `source` splits it. The
+ * token add and remove events already use `dapp_api` this way.
+ */
+export type SigningSource = "dapp_api" | "internal";
+
+interface SigningEventOptions {
+  source: SigningSource;
+  /**
+   * The requesting dApp's URL. Internal transactions have no origin, so they
+   * omit it and the `origin` property stays off the payload.
+   */
+  url?: string;
+}
 
 /**
  * The dApp origin, normalized to the bare hostname so it matches mobile's
@@ -48,28 +66,24 @@ const REJECTED_EVENT: Record<SigningKind, string> = {
 };
 
 /**
- * Runtime-failure events, kept distinct from the user-cancel `*_rejected`
- * events above.
- *
- * `transaction` is deliberately `null`. The shared cross-platform catalog has
- * no transaction runtime-failure member — METRIC_NAMES stops at
- * `signingTransactionBlocked`, and `access.ts` registers no
- * `signTransaction.rejected` handler — so a software transaction failure emits
- * nothing today. The hardware path must match that exactly, so it emits
- * nothing too. The key is spelled out rather than omitted to make the gap
- * explicit: adding `signing.transaction_failed` is a catalog change that has to
- * land on both key types at once.
+ * Runtime-failure events, kept distinct from the user-decline `*_rejected`
+ * events above. Every kind has one, so a signing attempt always reports an
+ * outcome: approved, rejected, or failed.
  */
-const FAILED_EVENT: Record<SigningKind, string | null> = {
-  transaction: null,
+const FAILED_EVENT: Record<SigningKind, string> = {
+  transaction: METRIC_NAMES.signingTransactionFailed,
   message: METRIC_NAMES.signingMessageFailed,
   authEntry: METRIC_NAMES.signingAuthEntryFailed,
 };
 
-/** The user approved the request and signing completed. */
-export const emitSigningApproved = (kind: SigningKind, url?: string): void => {
+/** The user approved the request and signing produced a signature. */
+export const emitSigningApproved = (
+  kind: SigningKind,
+  { source, url }: SigningEventOptions,
+): void => {
   emitMetric(APPROVED_EVENT[kind], {
     ...KIND_PROPS[kind],
+    source,
     ...originProps(url),
   });
 };
@@ -79,9 +93,13 @@ export const emitSigningApproved = (kind: SigningKind, url?: string): void => {
  * declining on a hardware device. Both are the same decision, so both land
  * here. A rejection carries no `reason_code`: nothing went wrong.
  */
-export const emitSigningRejected = (kind: SigningKind, url?: string): void => {
+export const emitSigningRejected = (
+  kind: SigningKind,
+  { source, url }: SigningEventOptions,
+): void => {
   emitMetric(REJECTED_EVENT[kind], {
     ...KIND_PROPS[kind],
+    source,
     ...originProps(url),
   });
 };
@@ -99,16 +117,12 @@ export const emitSigningRejected = (kind: SigningKind, url?: string): void => {
  */
 export const emitSigningFailed = (
   kind: SigningKind,
-  error?: string,
-  url?: string,
+  error: string | undefined,
+  { source, url }: SigningEventOptions,
 ): void => {
-  const event = FAILED_EVENT[kind];
-  if (!event) {
-    return;
-  }
-
-  emitMetric(event, {
+  emitMetric(FAILED_EVENT[kind], {
     ...KIND_PROPS[kind],
+    source,
     reason_code: scrubStrKeys(error) || "unknown",
     ...originProps(url),
   });

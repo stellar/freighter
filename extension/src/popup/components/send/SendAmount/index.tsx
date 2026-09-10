@@ -18,6 +18,7 @@ import {
 } from "helpers/stellar";
 import { NetworkCongestion } from "popup/helpers/useNetworkFees";
 import { emitMetric, emitScreenViewed } from "helpers/metrics";
+import { emitSigningRejected } from "popup/metrics/signing";
 import { trackSendFeeBreakdownOpened } from "popup/metrics/send";
 import {
   getAssetDecimals,
@@ -974,7 +975,13 @@ export const SendAmount = ({
             assetIcon={assetIcon}
             fee={fee}
             networkDetails={data.networkDetails}
-            onCancel={() => setIsReviewingTx(false)}
+            onCancel={() => {
+              // Backing out of the review is the internal equivalent of
+              // pressing reject on a dApp prompt, so it reports the same
+              // event. A rejection carries no reason_code.
+              emitSigningRejected("transaction", { source: "internal" });
+              setIsReviewingTx(false);
+            }}
             onConfirm={goToNext}
             onAddMemo={() => {
               setIsReviewingTx(false);
