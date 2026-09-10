@@ -182,7 +182,7 @@ export const AccountHeader = ({
                       onClick={(e) => signOutAndClose(e)}
                     >
                       <Text as="div" size="sm" weight="medium">
-                        {t("Lock Freighter")}
+                        {t("Lock Varial")}
                       </Text>
                       <div className="AccountHeader__options__item__icon">
                         <Icon.Lock01 />

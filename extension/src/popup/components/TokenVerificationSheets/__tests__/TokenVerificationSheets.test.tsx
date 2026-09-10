@@ -13,7 +13,7 @@ describe("Token info sheets", () => {
     expect(screen.getByText("Verified token")).toBeInTheDocument();
     expect(
       screen.getByText(
-        "Freighter uses asset lists to verify assets before interactions. You can define your own assets lists in Settings.",
+        "Varial uses asset lists to verify assets before interactions. You can define your own assets lists in Settings.",
       ),
     ).toBeInTheDocument();
   });

@@ -273,7 +273,7 @@ test("should not sign transaction when not allowed", async ({
 
   await expect(
     txPopup.getByText(
-      "play.freighter.app is not currently connected to Freighter",
+      "play.freighter.app is not currently connected to Varial",
     ),
   ).toBeVisible();
   await expect(txPopup.getByTestId("sign-transaction-sign")).toBeDisabled();
@@ -1094,9 +1094,7 @@ test("should not add a SEP-41 token when the domain is not allowed", async ({
   const popup = await popupPromise;
 
   await expect(
-    popup.getByText(
-      "play.freighter.app is not currently connected to Freighter",
-    ),
+    popup.getByText("play.freighter.app is not currently connected to Varial"),
   ).toBeVisible();
   await expect(popup.getByTestId("add-token-approve")).toBeDisabled();
   await expectPageToHaveScreenshot({
@@ -1333,7 +1331,7 @@ test("should block signing an auth entry bound to a different account", async ({
   const popup = await popupPromise;
 
   await expect(
-    popup.getByText("Freighter is set to a different account"),
+    popup.getByText("Varial is set to a different account"),
   ).toBeVisible();
   await expect(
     popup.getByText(

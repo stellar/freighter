@@ -147,7 +147,7 @@ export const DomainNotAllowedWarningMessage = ({
           <Icon.InfoSquare className="WarningMessage__icon" />
         </div>
         <p className="Message">
-          {t("{{domain}} is not currently connected to Freighter", { domain })}
+          {t("{{domain}} is not currently connected to Varial", { domain })}
         </p>
       </div>
     </div>
@@ -614,7 +614,7 @@ export const SSLWarningMessage = ({ url }: { url: string }) => {
           components={[<strong key="0">{url}</strong>]}
           values={{ url }}
         />
-        {` ${t("For additional safety Freighter only works with websites that provide an SSL certificate by default.")} `}
+        {` ${t("For additional safety Varial only works with websites that provide an SSL certificate by default.")} `}
         {`${t("You may enable connection to domains that do not use an SSL certificate in Settings &gt; Security &gt; Advanced settings.")} `}
       </p>
     </WarningMessage>

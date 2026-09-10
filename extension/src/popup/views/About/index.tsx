@@ -33,13 +33,11 @@ export const About = () => {
       <View.Content hasNoTopPadding>
         <div className="About">
           <div>
-            <img alt={t("Freighter logo")} src={FreighterLogo} />
+            <img alt={t("Varial logo")} src={FreighterLogo} />
           </div>
           <div className="About__body">
             <div className="About__info">
-              {t(
-                "Freighter is a non-custodial wallet for the Stellar blockchain",
-              )}
+              {t("Varial is a non-custodial wallet for the Stellar blockchain")}
             </div>
             <div className="About__links-header">{t("Links")}</div>
             <AboutLink url="freighter.app" />

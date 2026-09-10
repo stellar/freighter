@@ -16,7 +16,7 @@ export const FullscreenSuccessMessage = () => {
     <>
       <div className="FullscreenSuccessMessage__pin">
         <div className="FullscreenSuccessMessage__pin__row">
-          {t("Pin Freighter to the toolbar")}
+          {t("Pin Varial to the toolbar")}
         </div>
         <div className="FullscreenSuccessMessage__pin__row">
           <div className="FullscreenSuccessMessage__pin__row__gradient"></div>
@@ -26,10 +26,10 @@ export const FullscreenSuccessMessage = () => {
         </div>
         <div className="FullscreenSuccessMessage__pin__row">
           <div className="FullscreenSuccessMessage__pin__row__logo">
-            <img src={LogoWelcome} alt={t("Freighter logo")} />
+            <img src={LogoWelcome} alt={t("Varial logo")} />
           </div>
           <div className="FullscreenSuccessMessage__pin__row__text">
-            {t("Freighter - Stellar Wallet")}
+            {t("Varial - Stellar Wallet")}
           </div>
           <div className="FullscreenSuccessMessage__pin__row__pin-icon">
             <Icon.Pin01 />
@@ -45,7 +45,7 @@ export const FullscreenSuccessMessage = () => {
                 <div className="FullscreenSuccessMessage__text">
                   <Text as="p" size="md">
                     {t(
-                      "To access your wallet, click Freighter from your browser Extensions browser menu.",
+                      "To access your wallet, click Varial from your browser Extensions browser menu.",
                     )}
                   </Text>
                 </div>
@@ -58,7 +58,7 @@ export const FullscreenSuccessMessage = () => {
                   </div>
                   <div className="FullscreenSuccessMessage__infoBlock__row__text">
                     {t(
-                      "Always check the domain of websites you’re using Freighter with",
+                      "Always check the domain of websites you’re using Varial with",
                     )}
                   </div>
                 </div>
@@ -68,7 +68,7 @@ export const FullscreenSuccessMessage = () => {
                   </div>
                   <div className="FullscreenSuccessMessage__infoBlock__row__text">
                     {t(
-                      "Freighter cannot recover your account if you lose your recovery phrase, so keep it safe",
+                      "Varial cannot recover your account if you lose your recovery phrase, so keep it safe",
                     )}
                   </div>
                 </div>

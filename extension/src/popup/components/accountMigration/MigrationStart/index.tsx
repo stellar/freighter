@@ -38,9 +38,9 @@ export const MigrationStart = () => {
       <MigrationBody hasWarning>
         <MigrationParagraph>
           {`${t(
-            "At the end of this process, Freighter will only display accounts related to the new backup phrase.",
+            "At the end of this process, Varial will only display accounts related to the new backup phrase.",
           )} ${t(
-            "You’ll still be able to import your current backup phrase into Freighter and control current accounts as long as they were not merged into the new accounts.",
+            "You’ll still be able to import your current backup phrase into Varial and control current accounts as long as they were not merged into the new accounts.",
           )}`}
         </MigrationParagraph>
         <Notification title={t("Important, Please Read")} variant="warning">
@@ -61,7 +61,7 @@ export const MigrationStart = () => {
       <MigrationBody>
         <MigrationParagraph>
           {t(
-            "In this process, Freighter will create a new backup phrase for you and migrate your lumens, trustlines, and assets to the new account.",
+            "In this process, Varial will create a new backup phrase for you and migrate your lumens, trustlines, and assets to the new account.",
           )}
         </MigrationParagraph>
         <MigrationParagraph>

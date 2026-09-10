@@ -11,7 +11,7 @@ test.beforeEach(async ({ page, extensionId, context }) => {
 test("Smoke test: Portuguese translations are loaded", async ({ page }) => {
   // Verify welcome page shows Portuguese text
   await page.locator(".Welcome__column").waitFor();
-  await expect(page.getByText("Carteira Freighter")).toBeVisible();
+  await expect(page.getByText("Carteira Varial")).toBeVisible();
   await expect(page.getByText("Criar nova carteira")).toBeVisible();
   await expect(page.getByText("Já tenho uma carteira")).toBeVisible();
 });
@@ -64,10 +64,10 @@ test("Smoke test: Portuguese translations for common UI elements", async ({
   await page.goto(`chrome-extension://${extensionId}/index.html`);
 
   // Verify key Portuguese translations are present
-  await expect(page.getByText("Carteira Freighter")).toBeVisible();
+  await expect(page.getByText("Carteira Varial")).toBeVisible();
 
   // Check that English text is NOT visible (to ensure PT is actually being used)
-  const englishText = page.getByText("Freighter Wallet");
+  const englishText = page.getByText("Varial Wallet");
   await expect(englishText)
     .not.toBeVisible({ timeout: 1000 })
     .catch(() => {

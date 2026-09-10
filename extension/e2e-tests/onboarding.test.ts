@@ -32,7 +32,7 @@ test.beforeEach(async ({ page, extensionId }) => {
 
 test("Welcome page loads", async ({ page }) => {
   await page.locator(".Welcome__column").waitFor();
-  await expect(page.getByText("Freighter Wallet")).toBeVisible();
+  await expect(page.getByText("Varial Wallet")).toBeVisible();
   await expect(page.getByText("Create new wallet")).toBeVisible();
   await expect(page.getByText("I already have a wallet")).toBeVisible();
   await expectPageToHaveScreenshot({ page, screenshot: "welcome-page.png" });
@@ -418,7 +418,7 @@ test("Logout and create new account", async ({
   const newPage = await newPagePromise;
   await expect(
     newPage.getByText(
-      "You are overwriting an existing account. You will permanently lose access to the account currently stored in Freighter.",
+      "You are overwriting an existing account. You will permanently lose access to the account currently stored in Varial.",
     ),
   ).toBeVisible();
   await expectPageToHaveScreenshot({
@@ -490,7 +490,7 @@ test("Logout and import new account", async ({
   const newPage = await newPagePromise;
   await expect(
     newPage.getByText(
-      "You are overwriting an existing account. You will permanently lose access to the account currently stored in Freighter.",
+      "You are overwriting an existing account. You will permanently lose access to the account currently stored in Varial.",
     ),
   ).toBeVisible();
   await expectPageToHaveScreenshot({
@@ -567,7 +567,7 @@ test("Overwrites account when user abandons mnemonic phrase confirmation", async
 
   await expect(
     page.getByText(
-      "You previously did not complete onboarding. You will permanently lose access to the account you started to create in Freighter.",
+      "You previously did not complete onboarding. You will permanently lose access to the account you started to create in Varial.",
     ),
   ).toBeVisible();
 
@@ -640,7 +640,7 @@ test("Overwrites account when user abandons after password creation", async ({
 
   await expect(
     page.getByText(
-      "You previously did not complete onboarding. You will permanently lose access to the account you started to create in Freighter.",
+      "You previously did not complete onboarding. You will permanently lose access to the account you started to create in Varial.",
     ),
   ).toBeVisible();
 

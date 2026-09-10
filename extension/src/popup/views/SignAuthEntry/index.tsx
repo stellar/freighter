@@ -165,7 +165,7 @@ export const SignAuthEntry = () => {
           variant={WarningMessageVariant.warning}
           handleCloseClick={() => rejectAndClose()}
           isActive
-          header={`${t("Freighter is set to")} ${networkName}`}
+          header={`${t("Varial is set to")} ${networkName}`}
         >
           <p>
             {entryNetworkName
@@ -213,7 +213,7 @@ export const SignAuthEntry = () => {
         variant={WarningMessageVariant.warning}
         handleCloseClick={() => rejectAndClose()}
         isActive
-        header={t("Freighter is set to a different account")}
+        header={t("Varial is set to a different account")}
       >
         <p>
           {t("This authorization is for {{address}}.", {

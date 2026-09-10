@@ -77,7 +77,7 @@ export const UnlockAccount = () => {
       <EnterPassword
         accountAddress={accountAddress}
         title={t("Welcome back")}
-        description={t("Enter password to unlock Freighter")}
+        description={t("Enter password to unlock Varial")}
         onConfirm={handleSubmit}
         confirmButtonTitle={t("Unlock")}
       />

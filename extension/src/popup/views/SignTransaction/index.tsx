@@ -350,7 +350,7 @@ export const SignTransaction = () => {
         variant={WarningMessageVariant.warning}
         handleCloseClick={() => window.close()}
         isActive
-        header={`${t("Freighter is set to")} ${networkName}`}
+        header={`${t("Varial is set to")} ${networkName}`}
       >
         <p>
           {`${t("The transaction you’re trying to sign is on")} `}
@@ -638,7 +638,7 @@ export const SignTransaction = () => {
                       </div>
                       <div>
                         {t(
-                          "Freighter automatically disabled the option to sign this transaction.",
+                          "Varial automatically disabled the option to sign this transaction.",
                         )}
                       </div>
                       <div>

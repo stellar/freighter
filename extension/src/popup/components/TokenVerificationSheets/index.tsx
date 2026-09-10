@@ -27,7 +27,7 @@ export const VerifiedTokenInfoSheet = ({ isOpen, onClose }: InfoSheetProps) => {
       actionLabel={t("Close")}
     >
       {t(
-        "Freighter uses asset lists to verify assets before interactions. You can define your own assets lists in Settings.",
+        "Varial uses asset lists to verify assets before interactions. You can define your own assets lists in Settings.",
       )}
     </InfoBottomSheet>
   );

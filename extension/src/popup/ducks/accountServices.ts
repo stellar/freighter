@@ -735,7 +735,7 @@ const authSlice = createSlice({
     });
     builder.addCase(makeAccountActive.rejected, (state, action) => {
       const {
-        message = i18n.t("Freighter was unable to switch to this account"),
+        message = i18n.t("Varial was unable to switch to this account"),
       } = action.error;
 
       return {
@@ -756,7 +756,7 @@ const authSlice = createSlice({
     });
     builder.addCase(updateAccountName.rejected, (state, action) => {
       const {
-        message = i18n.t("Freighter was unable update this account’s name"),
+        message = i18n.t("Varial was unable to update this account’s name"),
       } = action.error;
 
       return {

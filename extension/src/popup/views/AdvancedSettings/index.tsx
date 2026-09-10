@@ -204,7 +204,7 @@ export const AdvancedSettings = () => {
               isLoading={isLoading}
               isToggled={initialValues.isNonSSLEnabledValue}
               toggleId="isNonSSLEnabledValue"
-              description={`${t("Allow Freighter to connect to domains that do not have an SSL certificate on Mainnet.")} ${t("SSL certificates provide an encrypted network connection and also provide proof of ownership of the domain.")} ${t("Use caution when connecting to domains without an SSL certificate.")}`}
+              description={`${t("Allow Varial to connect to domains that do not have an SSL certificate on Mainnet.")} ${t("SSL certificates provide an encrypted network connection and also provide proof of ownership of the domain.")} ${t("Use caution when connecting to domains without an SSL certificate.")}`}
             />
           </Form>
         </View.Content>

@@ -533,7 +533,7 @@ export const AddToken = () => {
         variant={WarningMessageVariant.warning}
         handleCloseClick={() => window.close()}
         isActive
-        header={`${t("Freighter is set to")} ${networkName}`}
+        header={`${t("Varial is set to")} ${networkName}`}
       >
         <p>
           {t("The token you’re trying to add is on")} {entryNetworkPassphrase}.

@@ -23,7 +23,7 @@ const ViewHeader: React.FC = ({ ...props }) => {
         <div className="View__header__box View__header__box--center full">
           <img
             className="View__header__logo"
-            alt={t("Freighter logo")}
+            alt={t("Varial logo")}
             src={FreighterLogo}
           />
         </div>

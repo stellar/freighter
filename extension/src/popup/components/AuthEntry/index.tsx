@@ -210,7 +210,7 @@ export const AuthEntries = ({ entries }: AuthEntriesProps) => {
               <Icon.AlertTriangle aria-hidden="true" />
               <span>
                 {t(
-                  "Freighter could not read this authorization. Do not sign unless you trust this site.",
+                  "Varial could not read this authorization. Do not sign unless you trust this site.",
                 )}
               </span>
             </div>

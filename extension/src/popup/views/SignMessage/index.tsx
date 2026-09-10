@@ -147,7 +147,7 @@ export const SignMessage = () => {
         variant={WarningMessageVariant.warning}
         handleCloseClick={() => window.close()}
         isActive
-        header={`${t("Freighter is set to")} ${networkName}`}
+        header={`${t("Varial is set to")} ${networkName}`}
       >
         <p>
           {`${t("The requester expects you to sign this message on")} ${PASSPHRASE_TO_NETWORK_NAME[blobNetworkPassphrase] ?? blobNetworkPassphrase}.`}
