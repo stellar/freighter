@@ -28,6 +28,11 @@ import {
   parseWalletError,
   MISMATCHED_HARDWARE_ACCOUNT_ERROR,
 } from "popup/helpers/hardwareConnect";
+import {
+  emitSigningApproved,
+  emitSigningFailed,
+  SigningKind,
+} from "popup/metrics/signing";
 import LedgerSigning from "popup/assets/ledger-signing.png";
 import Ledger from "popup/assets/ledger.png";
 
@@ -41,6 +46,7 @@ export const HardwareSign = ({
   isInternal = false,
   onCancel,
   uuid,
+  url,
 }: {
   walletType: ConfigurableWalletType;
   isSignSorobanAuthorization?: boolean;
@@ -49,6 +55,12 @@ export const HardwareSign = ({
   isInternal?: boolean;
   onCancel?: () => void;
   uuid?: string;
+  /**
+   * The requesting dApp's URL, threaded from the signing views so the signing
+   * events carry the same `origin` the software-key path emits. Absent on the
+   * internal (send/swap/trustline) flows, which have no dApp.
+   */
+  url?: string;
 }) => {
   const dispatch = useDispatch<AppDispatch>();
   const { t } = useTranslation();
@@ -67,6 +79,25 @@ export const HardwareSign = ({
   // attempt that runs on mount — otherwise a device that fails immediately
   // leaves the overlay sitting on "Connect device to computer" with no reason.
   const [connectError, setConnectError] = useState("");
+
+  // The overlay serves both the dApp signing prompts and the internal
+  // send/swap/trustline flows. Only the dApp prompts have a signing.* event to
+  // emit: internal flows report their outcome as payment.completed /
+  // swap.completed / asset.added from useSubmitTxData instead. A dApp request
+  // is the one that carries a `uuid` (the pending-request id) and is not
+  // rendered inline as an internal step.
+  const isDappSigningRequest = !isInternal && !!uuid;
+  const signingKind: SigningKind = isSignMessage
+    ? "message"
+    : isSignSorobanAuthorization
+      ? "authEntry"
+      : "transaction";
+
+  // Mirrors the software path's error extraction (`action.error.message`).
+  // Scrubbing and the "unknown" fallback belong to emitSigningFailed, so both
+  // key types derive `reason_code` identically.
+  const errorMessage = (e: unknown): string =>
+    e instanceof Error ? e.message : JSON.stringify(e);
 
   const closeOverlay = () => {
     if (hardwareConnectRef.current) {
@@ -148,6 +179,15 @@ export const HardwareSign = ({
             signerAddress: isSignMessage ? publicKey : undefined,
             uuid,
           });
+
+          // Emitted here, not on signWithHardwareWallet.fulfilled: the software
+          // path's approval event fires once the background has accepted the
+          // signed payload and resolved the dApp's request, and that is what
+          // handleSignedHwPayload just did. Emitting when the device returned a
+          // signature would count an approval that never reached the dApp.
+          if (isDappSigningRequest) {
+            emitSigningApproved(signingKind, url);
+          }
         }
         closeOverlay();
         if (onSubmit) {
@@ -155,6 +195,9 @@ export const HardwareSign = ({
         }
       } else {
         setHardwareConnectSuccessful(false);
+        if (isDappSigningRequest) {
+          emitSigningFailed(signingKind, res.payload?.errorMessage, url);
+        }
         setConnectError(
           parseWalletError[walletType](res.payload?.errorMessage || ""),
         );
@@ -162,6 +205,13 @@ export const HardwareSign = ({
       setHardwareWalletIsSigning(false);
     } catch (e) {
       setHardwareWalletIsSigning(false);
+      // Covers every throw in the block above: no device attached, the
+      // mismatched-account refusal, and a handleSignedHwPayload failure after a
+      // good signature. All three are runtime failures on the software path
+      // too, so they land on the same `*_failed` event.
+      if (isDappSigningRequest) {
+        emitSigningFailed(signingKind, errorMessage(e), url);
+      }
       setConnectError(parseWalletError[walletType](e));
     }
     setIsDetecting(false);

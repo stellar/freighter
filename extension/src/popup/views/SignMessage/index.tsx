@@ -215,6 +215,7 @@ export const SignMessage = () => {
           walletType={hardwareWalletType}
           isSignMessage
           uuid={message.uuid}
+          url={url}
         />
       )}
       <React.Fragment>

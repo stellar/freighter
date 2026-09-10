@@ -458,7 +458,7 @@ export const SignTransaction = () => {
   ) : (
     <>
       {hwStatus === ShowOverlayStatus.IN_PROGRESS && hardwareWalletType && (
-        <HardwareSign walletType={hardwareWalletType} uuid={uuid} />
+        <HardwareSign walletType={hardwareWalletType} uuid={uuid} url={url} />
       )}
       <div data-testid="SignTransaction" className="SignTransaction">
         {isOnBlockaidSheet ? (
