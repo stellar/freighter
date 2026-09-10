@@ -12,6 +12,10 @@ import { AssetType } from "@shared/api/types/account-balance";
 import { initialState, reducer } from "helpers/request";
 import { RequestState } from "constants/request";
 import { isMainnet, isTestnet, getCanonicalFromAsset } from "helpers/stellar";
+import {
+  isNativeAssetPair,
+  isNativeBalance,
+} from "@shared/helpers/assetIdentity";
 import { ManageAssetCurrency } from "popup/components/manageAssets/ManageAssetRows";
 import { BlockaidWarning, SecurityLevel } from "popup/constants/blockaid";
 import { searchAsset } from "popup/helpers/searchAsset";
@@ -111,8 +115,7 @@ const heldToRecord = (
     type?: string;
     issuer?: { key: string };
   };
-  const isNative =
-    token.type === "native" || (token.code === "XLM" && !token.issuer);
+  const isNative = isNativeBalance(balance);
   const code = isNative ? "XLM" : token.code;
   const issuer = isNative ? "" : token.issuer?.key || "";
   const canonical = isNative ? "native" : getCanonicalFromAsset(code, issuer);
@@ -175,7 +178,7 @@ const currencyToRecord = (
   asset: ManageAssetCurrency,
   isHeld: boolean,
 ): SwapTokenRecord => {
-  const isNative = asset.code === "XLM" && !asset.issuer;
+  const isNative = isNativeAssetPair(asset.code, asset.issuer);
   const canonical = isNative
     ? "native"
     : getCanonicalFromAsset(asset.code || "", asset.issuer || "");

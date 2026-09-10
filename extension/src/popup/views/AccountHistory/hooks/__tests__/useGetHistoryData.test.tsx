@@ -1,3 +1,5 @@
+import { Asset, Networks } from "stellar-sdk";
+
 import { TESTNET_NETWORK_DETAILS } from "@shared/constants/stellar";
 import { SorobanTokenInterface } from "@shared/constants/soroban/token";
 import { HistoryItemOperation } from "popup/components/accountHistory/HistoryItem";
@@ -218,5 +220,58 @@ describe("getRowDataByOpType - Soroban asset balance changes muxed classificatio
 
     expect(row.metadata.isReceiving).toBe(true);
     expect(row.amount).toMatch(/^\+/);
+  });
+});
+
+const NON_NATIVE_CONTRACT =
+  "CCV3NAKLIBBNSJNNTV2AZVRX6VODUDWK4TVYILE5MW6R45SSQJS5VCAM";
+
+describe("getRowDataByOpType - Soroban transfer identity", () => {
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  // A contract's symbol() is self-reported, so it cannot establish which asset
+  // the contract is. Only the contract address can.
+  it("does not label a contract as the native asset because it reports that symbol", async () => {
+    jest.spyOn(sorobanHelpers, "getAttrsFromSorobanHorizonOp").mockReturnValue({
+      fnName: SorobanTokenInterface.transfer,
+      contractId: NON_NATIVE_CONTRACT,
+      amount: "10000000",
+      from: COUNTERPARTY,
+      to: PUBLIC_KEY,
+    } as any);
+    fetchTokenDetails.mockResolvedValue({ symbol: "native", decimals: 7 });
+
+    // asset_issuer as a contract id keeps icon resolution offline in tests
+    const operation = buildInvokeHostFnOperation({
+      asset_issuer: NON_NATIVE_CONTRACT,
+    });
+    const row = await callGetRowData(operation);
+
+    expect(row.amount).not.toContain("XLM");
+  });
+
+  it("labels the native contract as the native asset", async () => {
+    const nativeContractId = Asset.native().contractId(
+      TESTNET_NETWORK_DETAILS.networkPassphrase as Networks,
+    );
+
+    jest.spyOn(sorobanHelpers, "getAttrsFromSorobanHorizonOp").mockReturnValue({
+      fnName: SorobanTokenInterface.transfer,
+      contractId: nativeContractId,
+      amount: "10000000",
+      from: COUNTERPARTY,
+      to: PUBLIC_KEY,
+    } as any);
+    fetchTokenDetails.mockResolvedValue({ symbol: "native", decimals: 7 });
+
+    // asset_issuer as a contract id keeps icon resolution offline in tests
+    const operation = buildInvokeHostFnOperation({
+      asset_issuer: nativeContractId,
+    });
+    const row = await callGetRowData(operation);
+
+    expect(row.amount).toContain("XLM");
   });
 });

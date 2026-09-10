@@ -5,6 +5,11 @@ import {
   AssetListResponse,
   AssetListReponseItem,
 } from "@shared/constants/soroban/asset-list";
+import {
+  getNativeContractId,
+  isNativeAssetPair,
+} from "@shared/helpers/assetIdentity";
+import { isContractId } from "@shared/api/helpers/soroban";
 
 import { getApiStellarExpertUrl } from "popup/helpers/account";
 import { getCombinedAssetListData } from "@shared/api/helpers/token-list";
@@ -39,21 +44,20 @@ export const getNativeContractDetails = (networkDetails: NetworkDetails) => {
     icon: "",
     org: "",
   };
+
+  // The native SAC address derives deterministically from the network
+  // passphrase, which keeps every network correct by construction.
+  const contract = getNativeContractId(networkDetails.networkPassphrase);
+
   switch (networkDetails.network as keyof typeof NETWORKS) {
     case NETWORKS.PUBLIC:
       return {
         ...NATIVE_CONTRACT_DEFAULTS,
-        contract: "CAS3J7GYLGXMF6TDJBBYYSE3HQ6BBSMLNUQ34T6TZMYMW2EVH34XOWMA",
+        contract,
         issuer: "GDMTVHLWJTHSUDMZVVMXXH6VJHA2ZV3HNG5LYNAZ6RTWB7GISM6PGTUV",
       };
-    case NETWORKS.TESTNET:
-      return {
-        ...NATIVE_CONTRACT_DEFAULTS,
-        contract: "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC",
-        issuer: "",
-      };
     default:
-      return { ...NATIVE_CONTRACT_DEFAULTS, contract: "", issuer: "" };
+      return { ...NATIVE_CONTRACT_DEFAULTS, contract, issuer: "" };
   }
 };
 
@@ -158,4 +162,82 @@ export const getVerifiedTokens = async ({
   }
 
   return verifiedTokens;
+};
+
+/**
+ * The search-result row for the native asset.
+ *
+ * The native asset has no issuer, so the row carries none. That keeps the
+ * canonical identifier built from this row equal to the native identifier,
+ * which is what lets it match the held native balance.
+ */
+export const buildNativeAssetRow = (networkDetails: NetworkDetails) => {
+  const nativeContractDetails = getNativeContractDetails(networkDetails);
+
+  return {
+    code: nativeContractDetails.code,
+    issuer: "",
+    contract: nativeContractDetails.contract,
+    domain: nativeContractDetails.domain,
+    name: nativeContractDetails.code,
+  };
+};
+
+/**
+ * A record from stellar.expert's asset search. Issued assets arrive as
+ * `CODE-ISSUER-TYPE`, contract tokens as their contract id, and the native
+ * asset as its bare code with no issuer and no domain.
+ */
+export interface StellarExpertAssetRecord {
+  asset: string;
+  domain?: string;
+  code?: string;
+  token_name?: string;
+  decimals?: number;
+  tomlInfo?: {
+    image?: string;
+    code?: string;
+    issuer?: string;
+    name?: string;
+  };
+}
+
+/**
+ * Maps a stellar.expert search record to an asset row.
+ *
+ * The native asset's record carries only its code, so its row is built from
+ * the network's own native details instead — that gives it its contract id,
+ * which is how the verified-list split and the held-balance check recognise
+ * it. Every other record carries its identity (issuer or contract id) itself.
+ */
+export const mapStellarExpertRecord = (
+  record: StellarExpertAssetRecord,
+  networkDetails: NetworkDetails,
+) => {
+  if (isContractId(record.asset)) {
+    return {
+      code: record.code || record.tomlInfo?.code || "",
+      issuer: record.asset,
+      contract: record.asset,
+      domain: record.domain ?? null,
+      image: record.tomlInfo?.image,
+      name: record.token_name || record.tomlInfo?.name,
+      decimals: record.decimals,
+      isSuspicious: false,
+    };
+  }
+
+  const [code, issuer] = record.asset.split("-");
+
+  if (isNativeAssetPair(code, issuer)) {
+    return { ...buildNativeAssetRow(networkDetails), isSuspicious: false };
+  }
+
+  return {
+    code,
+    issuer,
+    domain: record.domain ?? null,
+    image: record.tomlInfo?.image,
+    isSuspicious: false,
+  };
 };
