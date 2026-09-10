@@ -35,6 +35,7 @@ import {
   getSdk,
   isCustomNetwork,
   makeDisplayableBalances,
+  splitCanonical,
   xlmToStroop,
 } from "@shared/helpers/stellar";
 import {
@@ -1385,7 +1386,7 @@ export const getAssetIcons = async ({
   // Unheld extras run the same cache -> token lists -> issuer-toml chain as
   // the held balances above (toml via the shared domainsToFetch batch below).
   for (const canonical of additionalAssetIds || []) {
-    const [code, key] = canonical.split(":");
+    const { code, issuer: key } = splitCanonical(canonical);
     if (!key || canonical in assetIcons) {
       // native (no issuer segment) or already covered by a held balance
       continue;

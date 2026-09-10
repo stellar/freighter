@@ -4,12 +4,15 @@ import { captureException } from "@sentry/browser";
 
 import { getTokenDetails } from "@shared/api/internal";
 import { isSacContractExecutable } from "@shared/helpers/soroban/token";
+import { isNativeContract } from "@shared/helpers/assetIdentity";
 import { INDEXER_URL } from "@shared/constants/mercury";
 import { BlockAidScanAssetResult } from "@shared/api/types";
 import {
-  getNativeContractDetails,
+  buildNativeAssetRow,
+  mapStellarExpertRecord,
   searchAsset,
   getVerifiedTokens,
+  StellarExpertAssetRecord,
   VerifiedTokenRecord,
 } from "popup/helpers/searchAsset";
 import { splitVerifiedAssetCurrency } from "popup/helpers/assetList";
@@ -30,20 +33,6 @@ import { getIconFromTokenLists } from "@shared/api/helpers/getIconFromTokenList"
 import { tokensListsSelector, saveTokenLists } from "popup/ducks/cache";
 import { AssetListResponse } from "@shared/constants/soroban/asset-list";
 import { AppDispatch, store } from "popup/App";
-
-interface AssetRecord {
-  asset: string;
-  domain?: string;
-  code?: string;
-  token_name?: string;
-  decimals?: number;
-  tomlInfo?: {
-    image?: string;
-    code?: string;
-    issuer?: string;
-    name?: string;
-  };
-}
 
 interface AssetLookupDetails {
   isVerifiedToken: boolean;
@@ -165,23 +154,14 @@ const useAssetLookup = () => {
   ) => {
     let assetRows = [] as ManageAssetCurrency[];
 
-    const nativeContractDetails = getNativeContractDetails(networkDetails);
     let verifiedTokens = [] as VerifiedTokenRecord[];
 
     // we already have native contract info, so just load it statically
-    if (nativeContractDetails.contract === contractId) {
+    if (isNativeContract(contractId, networkDetails.networkPassphrase)) {
       // override our rules for verification for XLM
       isVerificationInfoShowing = false;
 
-      assetRows = [
-        {
-          code: nativeContractDetails.code,
-          issuer: nativeContractDetails.issuer,
-          contract: contractId,
-          domain: nativeContractDetails.domain,
-          name: `${nativeContractDetails.code}:${nativeContractDetails.issuer}`,
-        },
-      ];
+      assetRows = [buildNativeAssetRow(networkDetails)];
 
       return assetRows;
     }
@@ -300,27 +280,9 @@ const useAssetLookup = () => {
       throw new Error("Failed to fetch Stellar Expert data");
     });
 
-    return resJson._embedded.records.map((record: AssetRecord) => {
-      if (isContractId(record.asset)) {
-        return {
-          code: record.code || record.tomlInfo?.code || "",
-          issuer: record.asset,
-          contract: record.asset,
-          domain: record.domain ?? null,
-          image: record.tomlInfo?.image,
-          name: record.token_name || record.tomlInfo?.name,
-          decimals: record.decimals,
-          isSuspicious: false,
-        };
-      }
-      return {
-        code: record.asset.split("-")[0],
-        issuer: record.asset.split("-")[1],
-        domain: record.domain ?? null,
-        image: record.tomlInfo?.image,
-        isSuspicious: false,
-      };
-    });
+    return resJson._embedded.records.map((record: StellarExpertAssetRecord) =>
+      mapStellarExpertRecord(record, networkDetails),
+    );
   };
 
   /*

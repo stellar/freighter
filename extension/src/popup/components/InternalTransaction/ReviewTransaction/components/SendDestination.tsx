@@ -1,6 +1,7 @@
 import React from "react";
 import { Asset } from "stellar-sdk";
 import { NetworkDetails } from "@shared/constants/stellar";
+import { isNativeAssetId } from "@shared/helpers/assetIdentity";
 import { isMainnet } from "helpers/stellar";
 import { AssetIcon } from "popup/components/account/AccountAssets";
 import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
@@ -36,7 +37,7 @@ export const SendDestination: React.FC<SendDestinationProps> = ({
       <>
         <AssetIcon
           assetIcons={
-            dstAsset.canonical !== "native"
+            !isNativeAssetId(dstAsset.canonical)
               ? { [dstAsset.canonical]: dstAsset.icon }
               : {}
           }

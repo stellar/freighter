@@ -10,6 +10,7 @@ import { LoadingBackground } from "popup/basics/LoadingBackground";
 import { View } from "popup/basics/layout/View";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { AppDispatch } from "popup/App";
+import { isNativeAssetId } from "@shared/helpers/assetIdentity";
 import {
   getAssetFromCanonical,
   isMainnet,
@@ -768,7 +769,7 @@ export const SendAmount = ({
                     assetCode={parsedSourceAsset.code}
                     assetIcon={assetIcon}
                     assetIcons={
-                      asset !== "native" ? { [asset]: assetIcon } : {}
+                      !isNativeAssetId(asset) ? { [asset]: assetIcon } : {}
                     }
                     assetIssuerKey={srcAsset.issuer}
                     supportsUsd={Boolean(supportsUsd)}

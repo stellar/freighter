@@ -1,4 +1,6 @@
 import { isContractId } from "@shared/api/helpers/soroban";
+import { splitCanonical } from "@shared/helpers/stellar";
+import { isNativeAssetId } from "@shared/helpers/assetIdentity";
 
 /**
  * Returns true when the "destination is unfunded" warning rule applies to
@@ -32,8 +34,8 @@ export const shouldCheckUnfundedDestinationWarning = ({
     return false;
   }
 
-  if (assetCanonical && assetCanonical !== "native") {
-    const [, issuer] = assetCanonical.split(":");
+  if (assetCanonical && !isNativeAssetId(assetCanonical)) {
+    const { issuer } = splitCanonical(assetCanonical);
     if (issuer && isContractId(issuer)) {
       return false;
     }

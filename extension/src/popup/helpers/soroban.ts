@@ -23,7 +23,11 @@ import {
 import { AccountBalances } from "helpers/hooks/useGetBalances";
 import { getAssetFromCanonical, getCanonicalFromAsset } from "helpers/stellar";
 import { findAssetBalance, isSorobanBalance } from "./balance";
-import { getSdk } from "@shared/helpers/stellar";
+import { getSdk, splitCanonical } from "@shared/helpers/stellar";
+import {
+  isNativeAssetId,
+  isNativeContract,
+} from "@shared/helpers/assetIdentity";
 import { AssetType } from "@shared/api/types/account-balance";
 import { getNativeContractDetails } from "./searchAsset";
 import { getTokenDetails } from "@shared/api/internal";
@@ -219,7 +223,7 @@ export const getContractIdFromTokenId = (
   tokenId: string,
   networkDetails: NetworkDetails,
 ): string | undefined => {
-  if (tokenId === "native") {
+  if (isNativeAssetId(tokenId)) {
     return getNativeContractDetails(networkDetails).contract;
   }
 
@@ -228,12 +232,11 @@ export const getContractIdFromTokenId = (
     return tokenId;
   }
 
-  // Check if it's SYMBOL:CONTRACTID format (Soroban token)
-  // Split by : and check if the second part is a contract ID
-  const parts = tokenId.split(":");
-  if (parts.length === 2 && isContractId(parts[1])) {
-    // This is a Soroban token in SYMBOL:CONTRACTID format
-    return parts[1];
+  // SYMBOL:CONTRACTID format (Soroban token). The symbol may itself contain
+  // a colon, so read the issuer half from the last separator.
+  const { issuer } = splitCanonical(tokenId);
+  if (isContractId(issuer)) {
+    return issuer;
   }
 
   // Classic token format: CODE:ISSUER (no contract ID)
@@ -985,9 +988,10 @@ export const isSacContract = (
   if (name.includes(":")) {
     try {
       return (
-        new Sdk.Asset(...(name.split(":") as [string, string])).contractId(
-          networkPassphrase,
-        ) === contractId
+        new Sdk.Asset(
+          splitCanonical(name).code,
+          splitCanonical(name).issuer,
+        ).contractId(networkPassphrase) === contractId
       );
     } catch (error) {
       return false;
@@ -1022,10 +1026,8 @@ export const isAssetSac = ({
     return false;
   }
 
-  const nativeContract = getNativeContractDetails(networkDetails);
-
-  // Check if it's the native XLM contract
-  if (asset.contract === nativeContract.contract) {
+  // Check if it's the native contract
+  if (isNativeContract(asset.contract, networkDetails.networkPassphrase)) {
     return true;
   }
 
