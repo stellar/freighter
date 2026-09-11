@@ -23,6 +23,10 @@ import * as XlmReserve from "popup/helpers/xlmReserve";
 jest.mock("helpers/metrics", () => ({
   ...jest.requireActual("helpers/metrics"),
   emitMetric: jest.fn(),
+  // Opening the review modal emits the `confirm` screen view. The real
+  // emitScreenViewed runs buildCommonContext, which reads Redux slices this
+  // suite's minimal store does not provide, so stub it too.
+  emitScreenViewed: jest.fn(),
 }));
 
 // The quote-expired notice is a sonner toast; assert it fires rather than

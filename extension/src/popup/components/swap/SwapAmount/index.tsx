@@ -41,7 +41,12 @@ import { getAvailableBalance } from "popup/helpers/soroban";
 import { getBalanceCanonicalKey } from "popup/helpers/balance";
 import { useBlockaidOverrideState } from "popup/helpers/blockaid";
 import { AppDispatch } from "popup/App";
-import { emitMetric } from "helpers/metrics";
+import { emitMetric, emitScreenViewed } from "helpers/metrics";
+import {
+  emitSigningRejected,
+  SigningKind,
+  SigningSource,
+} from "popup/metrics/signing";
 import { InputType } from "helpers/transaction";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { XLM_RESERVE_HELP_URL } from "popup/constants/externalLinks";
@@ -187,6 +192,33 @@ export const SwapAmount = ({
   const [isEditingSlippage, setIsEditingSlippage] = useState(false);
   const [isEditingSettings, setIsEditingSettings] = useState(false);
   const [isReviewingTx, setIsReviewingTx] = React.useState(false);
+
+  // True while the review is open, and true once the user approves. See the
+  // equivalent refs in SendAmount.
+  const wasReviewingRef = useRef(false);
+  const skipRejectionRef = useRef(false);
+
+  // Reports the `confirm` stage when the review opens, and a rejection when
+  // the user leaves it without approving — see the equivalent effect in
+  // SendAmount for why this is keyed on the open state.
+  useEffect(() => {
+    if (isReviewingTx) {
+      wasReviewingRef.current = true;
+      skipRejectionRef.current = false;
+      emitScreenViewed("swap_confirm", { flow: "swap", step: "confirm" });
+      return;
+    }
+    if (!wasReviewingRef.current) {
+      return;
+    }
+    wasReviewingRef.current = false;
+    if (skipRejectionRef.current) {
+      return;
+    }
+    emitSigningRejected(SigningKind.Transaction, {
+      source: SigningSource.Internal,
+    });
+  }, [isReviewingTx]);
   const [isXlmReserveOpen, setIsXlmReserveOpen] = useState(false);
   // Tracks focus on the sell input so the "Enter an amount" CTA can disable
   // itself while the input is focused. The extension has no virtual keyboard,
@@ -861,7 +893,10 @@ export const SwapAmount = ({
             // The trustline-added + swap-success metrics fire post-confirmation
             // (in useSubmitTxData), once the swap actually settles — not here at
             // review time.
-            onConfirm={goToNext}
+            onConfirm={() => {
+              skipRejectionRef.current = true;
+              goToNext();
+            }}
             sendAmount={amount}
             // Show the same fiat figure the amount screen displayed: the
             // entered dollars in fiat mode, the computed USD of the crypto
