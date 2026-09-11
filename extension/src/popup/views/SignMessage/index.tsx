@@ -37,7 +37,7 @@ import { Loading } from "popup/components/Loading";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { openTab } from "popup/helpers/navigate";
 import { useSetupSigningFlow } from "popup/helpers/useSetupSigningFlow";
-import { rejectTransaction, signBlob } from "popup/ducks/access";
+import { rejectBlob, signBlob } from "popup/ducks/access";
 import { publicKeySelector } from "popup/ducks/accountServices";
 import { reRouteOnboarding } from "popup/helpers/route";
 import { getSiteFavicon } from "popup/helpers/getSiteFavicon";
@@ -94,7 +94,7 @@ export const SignMessage = () => {
     verifyPasswordThenSign,
     hardwareWalletType,
   } = useSetupSigningFlow(
-    rejectTransaction,
+    rejectBlob,
     signBlob,
     message.message,
     message.uuid,

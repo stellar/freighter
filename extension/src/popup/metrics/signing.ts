@@ -113,7 +113,6 @@ export const emitSigningRejected = (
  * `reason_code` carries the scrubbed message: a signing error can embed a
  * G…/S… key and Amplitude is a third-party sink not covered by Sentry's
  * beforeSend. Falls back to "unknown" so the property is never absent.
- * No-ops for `transaction` (see FAILED_EVENT).
  */
 export const emitSigningFailed = (
   kind: SigningKind,

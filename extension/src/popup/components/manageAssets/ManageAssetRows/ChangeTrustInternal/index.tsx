@@ -26,6 +26,8 @@ import {
   useBlockaidOverrideState,
   getAssetSecurityLevel,
 } from "popup/helpers/blockaid";
+import { emitSigningRejected } from "popup/metrics/signing";
+
 import { useGetChangeTrustData } from "./hooks/useChangeTrustData";
 import { Fee } from "./Settings/Fee";
 import { Timeout } from "./Settings/Timeout";
@@ -373,6 +375,17 @@ export const ChangeTrustInternal = ({
     </>
   );
 
+  /**
+   * Reports a rejection, then leaves the review.
+   *
+   * Wired only to the review's Cancel buttons. `onCancel` also serves as the
+   * success and close fallback further down, and those are not rejections.
+   */
+  const onCancelReview = () => {
+    emitSigningRejected("transaction", { source: "internal" });
+    onCancel();
+  };
+
   const renderBlockaidWarningButtons = () => (
     <>
       <Button
@@ -380,7 +393,7 @@ export const ChangeTrustInternal = ({
         isRounded
         size="lg"
         variant={isMalicious ? "destructive" : "secondary"}
-        onClick={onCancel}
+        onClick={onCancelReview}
       >
         {t("Cancel")}
       </Button>
@@ -415,7 +428,7 @@ export const ChangeTrustInternal = ({
         isRounded
         size="lg"
         variant="tertiary"
-        onClick={onCancel}
+        onClick={onCancelReview}
       >
         {t("Cancel")}
       </Button>
