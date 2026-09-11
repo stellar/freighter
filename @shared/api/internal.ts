@@ -1546,6 +1546,33 @@ export const grantAccess = async ({
   }
 };
 
+/**
+ * Reads a reportable message out of a background `{ error }` payload.
+ *
+ * The background returns whatever it caught, so the value is a string on some
+ * paths and an Error on others. `JSON.stringify` renders an Error as "{}",
+ * which reaches telemetry as a reason code with no information, so read the
+ * usual message fields first.
+ */
+const backgroundErrorMessage = (error: unknown): string => {
+  if (typeof error === "string") {
+    return error;
+  }
+  if (error && typeof error === "object") {
+    const { message, errorMessage } = error as {
+      message?: unknown;
+      errorMessage?: unknown;
+    };
+    if (typeof message === "string" && message) {
+      return message;
+    }
+    if (typeof errorMessage === "string" && errorMessage) {
+      return errorMessage;
+    }
+  }
+  return "Unknown error";
+};
+
 export const handleSignedHwPayload = async ({
   signedPayload,
   signerAddress,
@@ -1571,9 +1598,7 @@ export const handleSignedHwPayload = async ({
     // resolved, and telemetry recorded an approval that never happened.
     // Surface both kinds of failure so the caller can report the real outcome.
     if (res && res.error) {
-      throw new Error(
-        typeof res.error === "string" ? res.error : JSON.stringify(res.error),
-      );
+      throw new Error(backgroundErrorMessage(res.error));
     }
   } catch (e) {
     console.error(e);
@@ -1623,9 +1648,7 @@ export const signTransaction = async ({
     // resolved, and telemetry recorded an approval that never happened.
     // Surface both kinds of failure so the caller can report the real outcome.
     if (res && res.error) {
-      throw new Error(
-        typeof res.error === "string" ? res.error : JSON.stringify(res.error),
-      );
+      throw new Error(backgroundErrorMessage(res.error));
     }
   } catch (e) {
     console.error(e);
@@ -1657,9 +1680,7 @@ export const signBlob = async ({
     // resolved, and telemetry recorded an approval that never happened.
     // Surface both kinds of failure so the caller can report the real outcome.
     if (res && res.error) {
-      throw new Error(
-        typeof res.error === "string" ? res.error : JSON.stringify(res.error),
-      );
+      throw new Error(backgroundErrorMessage(res.error));
     }
   } catch (e) {
     console.error(e);
@@ -1688,9 +1709,7 @@ export const signAuthEntry = async ({
     // resolved, and telemetry recorded an approval that never happened.
     // Surface both kinds of failure so the caller can report the real outcome.
     if (res && res.error) {
-      throw new Error(
-        typeof res.error === "string" ? res.error : JSON.stringify(res.error),
-      );
+      throw new Error(backgroundErrorMessage(res.error));
     }
   } catch (e) {
     console.error(e);

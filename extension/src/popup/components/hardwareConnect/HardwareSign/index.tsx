@@ -105,8 +105,14 @@ export const HardwareSign = ({
   // Mirrors the software path's error extraction (`action.error.message`).
   // Scrubbing and the "unknown" fallback belong to emitSigningFailed, so both
   // key types derive `reason_code` identically.
-  const errorMessage = (e: unknown): string =>
-    e instanceof Error ? e.message : JSON.stringify(e);
+  const errorMessage = (e: unknown): string => {
+    if (typeof e === "string") {
+      // The rejected-thunk branch passes the message directly. Stringifying it
+      // would wrap the reason code in quotes.
+      return e;
+    }
+    return e instanceof Error ? e.message : JSON.stringify(e);
+  };
 
   /**
    * Reports a hardware signing error as either a rejection or a failure.

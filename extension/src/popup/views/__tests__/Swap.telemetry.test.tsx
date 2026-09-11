@@ -195,6 +195,20 @@ describe("Swap flow stage telemetry", () => {
     });
   });
 
+  it("ignores a terminal status left in the store by an earlier submission", async () => {
+    // The submission status outlives the view, so a mount that finds a stale
+    // terminal status would report a stage the user never reached.
+    getTestStore()?.dispatch({
+      type: submitFreighterTransaction.fulfilled.type,
+    } as never);
+
+    renderSwap();
+    await waitFor(() => expect(emitScreenViewedMock).toHaveBeenCalled());
+
+    expect(callsFor("swap_success")).toHaveLength(0);
+    expect(callsFor("swap_processing")).toHaveLength(0);
+  });
+
   it("does not emit the submitting screen as the confirm stage", async () => {
     // `confirm` belongs to the review modal, which the user sees before
     // deciding. The submitting screen is reached only after approval.

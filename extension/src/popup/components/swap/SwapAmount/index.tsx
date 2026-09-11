@@ -189,12 +189,29 @@ export const SwapAmount = ({
   const [isEditingSettings, setIsEditingSettings] = useState(false);
   const [isReviewingTx, setIsReviewingTx] = React.useState(false);
 
-  // The review modal is the `confirm` stage — see the equivalent effect in
-  // SendAmount.
+  // True while the review is open, and true once the user approves. See the
+  // equivalent refs in SendAmount.
+  const wasReviewingRef = useRef(false);
+  const skipRejectionRef = useRef(false);
+
+  // Reports the `confirm` stage when the review opens, and a rejection when
+  // the user leaves it without approving — see the equivalent effect in
+  // SendAmount for why this is keyed on the open state.
   useEffect(() => {
     if (isReviewingTx) {
+      wasReviewingRef.current = true;
+      skipRejectionRef.current = false;
       emitScreenViewed("swap_confirm", { flow: "swap", step: "confirm" });
+      return;
     }
+    if (!wasReviewingRef.current) {
+      return;
+    }
+    wasReviewingRef.current = false;
+    if (skipRejectionRef.current) {
+      return;
+    }
+    emitSigningRejected("transaction", { source: "internal" });
   }, [isReviewingTx]);
   const [isXlmReserveOpen, setIsXlmReserveOpen] = useState(false);
   // Tracks focus on the sell input so the "Enter an amount" CTA can disable
@@ -866,17 +883,14 @@ export const SwapAmount = ({
             assetIcon={assetIcon}
             fee={fee}
             networkDetails={networkDetails}
-            onCancel={() => {
-              // Backing out of the review is the internal equivalent of
-              // pressing reject on a dApp prompt, so it reports the same
-              // event. A rejection carries no reason_code.
-              emitSigningRejected("transaction", { source: "internal" });
-              setIsReviewingTx(false);
-            }}
+            onCancel={() => setIsReviewingTx(false)}
             // The trustline-added + swap-success metrics fire post-confirmation
             // (in useSubmitTxData), once the swap actually settles — not here at
             // review time.
-            onConfirm={goToNext}
+            onConfirm={() => {
+              skipRejectionRef.current = true;
+              goToNext();
+            }}
             sendAmount={amount}
             // Show the same fiat figure the amount screen displayed: the
             // entered dollars in fiat mode, the computed USD of the crypto

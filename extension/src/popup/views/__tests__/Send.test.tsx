@@ -39,7 +39,6 @@ import * as RouteHelpers from "popup/helpers/route";
 import * as tokenPaymentActions from "popup/ducks/token-payment";
 import * as GetIconHelper from "@shared/api/helpers/getIconUrlFromIssuer";
 import { WalletType } from "@shared/constants/hardwareWallet";
-import { ActionStatus } from "@shared/api/types";
 import { emitScreenViewed } from "helpers/metrics";
 
 jest.mock("lodash/debounce", () => jest.fn((fn) => fn));
@@ -254,7 +253,6 @@ describe("Send", () => {
           transactionSubmission: {
             ...transactionSubmissionInitialState,
             accountBalances: mockBalances,
-            submitStatus: ActionStatus.PENDING,
           },
           tokenPaymentSimulation: tokenPaymentActions.initialState,
         }}
@@ -262,6 +260,15 @@ describe("Send", () => {
         <Send />
       </Wrapper>,
     );
+
+    // Drive a real transition. A status seeded at mount is the stale-store
+    // case the emit now ignores on purpose.
+    await waitFor(() => expect(emitScreenViewedMock).toHaveBeenCalled());
+    act(() => {
+      getTestStore()!.dispatch({
+        type: submitFreighterTransaction.pending.type,
+      } as never);
+    });
 
     await waitFor(() => {
       expect(emitScreenViewedMock).toHaveBeenCalledWith(
@@ -299,7 +306,6 @@ describe("Send", () => {
           transactionSubmission: {
             ...transactionSubmissionInitialState,
             accountBalances: mockBalances,
-            submitStatus: ActionStatus.SUCCESS,
           },
           tokenPaymentSimulation: tokenPaymentActions.initialState,
         }}
@@ -307,6 +313,17 @@ describe("Send", () => {
         <Send />
       </Wrapper>,
     );
+
+    await waitFor(() => expect(emitScreenViewedMock).toHaveBeenCalled());
+    act(() => {
+      const store = getTestStore()!;
+      store.dispatch({
+        type: submitFreighterTransaction.pending.type,
+      } as never);
+      store.dispatch({
+        type: submitFreighterTransaction.fulfilled.type,
+      } as never);
+    });
 
     await waitFor(() => {
       expect(emitScreenViewedMock).toHaveBeenCalledWith(

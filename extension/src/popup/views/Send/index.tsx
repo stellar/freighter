@@ -189,6 +189,11 @@ export const Send = () => {
   const lastEmittedStep = useRef<STEPS | null>(null);
   const hasEmittedProcessing = useRef(false);
   const hasEmittedSuccess = useRef(false);
+  // The submission status lives in the store, so it outlives this component.
+  // A mount that finds a stale terminal status would report a stage the user
+  // never reached, so wait until the status has been seen idle. The reset
+  // this component dispatches on mount guarantees that happens.
+  const hasSeenIdle = useRef(false);
 
   const goToStep = (
     next: STEPS,
@@ -227,6 +232,9 @@ export const Send = () => {
   // emits once per submission; reset when the status clears so a subsequent
   // send re-emits.
   useEffect(() => {
+    if (!hasSeenIdle.current && submission.submitStatus !== ActionStatus.IDLE) {
+      return;
+    }
     if (submission.submitStatus === ActionStatus.PENDING) {
       if (!hasEmittedProcessing.current) {
         hasEmittedProcessing.current = true;
@@ -251,6 +259,7 @@ export const Send = () => {
       // passing through IDLE (the user returns via goBack, which does not
       // reset the submission), so guarding on IDLE alone silently dropped
       // every retried attempt's `processing` stage.
+      hasSeenIdle.current = true;
       hasEmittedProcessing.current = false;
       hasEmittedSuccess.current = false;
     }

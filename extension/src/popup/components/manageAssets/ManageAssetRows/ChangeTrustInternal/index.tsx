@@ -98,6 +98,21 @@ export const ChangeTrustInternal = ({
   const [activeBodyContent, setActiveBodyContent] = useState(
     ActiveBodyContent.details,
   );
+  // True once the user approves. This component renders only while the
+  // trustline review is open, so anything else that unmounts it is the user
+  // leaving without deciding — including the enclosing modal's backdrop,
+  // which no button handler sees.
+  const hasApprovedRef = useRef(false);
+
+  useEffect(
+    () => () => {
+      if (!hasApprovedRef.current) {
+        emitSigningRejected("transaction", { source: "internal" });
+      }
+    },
+    [],
+  );
+
   const { t } = useTranslation();
 
   // Check override state (takes precedence, dev mode only)
@@ -375,17 +390,6 @@ export const ChangeTrustInternal = ({
     </>
   );
 
-  /**
-   * Reports a rejection, then leaves the review.
-   *
-   * Wired only to the review's Cancel buttons. `onCancel` also serves as the
-   * success and close fallback further down, and those are not rejections.
-   */
-  const onCancelReview = () => {
-    emitSigningRejected("transaction", { source: "internal" });
-    onCancel();
-  };
-
   const renderBlockaidWarningButtons = () => (
     <>
       <Button
@@ -393,7 +397,7 @@ export const ChangeTrustInternal = ({
         isRounded
         size="lg"
         variant={isMalicious ? "destructive" : "secondary"}
-        onClick={onCancelReview}
+        onClick={onCancel}
       >
         {t("Cancel")}
       </Button>
@@ -428,7 +432,7 @@ export const ChangeTrustInternal = ({
         isRounded
         size="lg"
         variant="tertiary"
-        onClick={onCancelReview}
+        onClick={onCancel}
       >
         {t("Cancel")}
       </Button>
@@ -437,7 +441,10 @@ export const ChangeTrustInternal = ({
         isFullWidth
         isRounded
         size="lg"
-        onClick={() => setActiveBodyContent(ActiveBodyContent.submitTx)}
+        onClick={() => {
+          hasApprovedRef.current = true;
+          setActiveBodyContent(ActiveBodyContent.submitTx);
+        }}
       >
         {t("Confirm")}
       </Button>

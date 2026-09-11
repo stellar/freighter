@@ -189,18 +189,38 @@ export const SendAmount = ({
   const [isEditingSettings, setIsEditingSettings] = React.useState(false);
   const [isShowingFeesPane, setIsShowingFeesPane] = React.useState(false);
   const [isReviewingTx, setIsReviewingTx] = React.useState(false);
+  // True while the review is open, so closing it can be told apart from the
+  // first render. True once the user approves, or leaves to edit the memo,
+  // so neither is reported as a rejection.
+  const wasReviewingRef = useRef(false);
+  const skipRejectionRef = useRef(false);
 
-  // The review modal is the `confirm` stage: the user can see the transaction
-  // and has not decided yet. Emitted from an effect rather than the four
-  // handlers that open it, so every entry point counts once. Reopening the
-  // modal is a new view and emits again, matching mobile's review sheet.
+  /**
+   * Reports the review stages: the `confirm` stage when the review opens, and
+   * a rejection when the user leaves it without approving.
+   *
+   * Keyed on the review's open state rather than the Cancel button, because
+   * the user can also leave through the modal's backdrop, and that never
+   * reaches a button handler.
+   */
   useEffect(() => {
     if (isReviewingTx) {
+      wasReviewingRef.current = true;
+      skipRejectionRef.current = false;
       emitScreenViewed("send_payment_confirm", {
         flow: "send",
         step: "confirm",
       });
+      return;
     }
+    if (!wasReviewingRef.current) {
+      return;
+    }
+    wasReviewingRef.current = false;
+    if (skipRejectionRef.current) {
+      return;
+    }
+    emitSigningRejected("transaction", { source: "internal" });
   }, [isReviewingTx]);
   const [contractSupportsMuxed, setContractSupportsMuxed] = React.useState<
     boolean | null
@@ -975,15 +995,14 @@ export const SendAmount = ({
             assetIcon={assetIcon}
             fee={fee}
             networkDetails={data.networkDetails}
-            onCancel={() => {
-              // Backing out of the review is the internal equivalent of
-              // pressing reject on a dApp prompt, so it reports the same
-              // event. A rejection carries no reason_code.
-              emitSigningRejected("transaction", { source: "internal" });
-              setIsReviewingTx(false);
+            onCancel={() => setIsReviewingTx(false)}
+            onConfirm={() => {
+              skipRejectionRef.current = true;
+              goToNext();
             }}
-            onConfirm={goToNext}
             onAddMemo={() => {
+              // Leaving to edit the memo is not a decision on the transaction.
+              skipRejectionRef.current = true;
               setIsReviewingTx(false);
               setMemoEditingContext(MemoEditingContext.Review);
               setIsEditingMemo(true);

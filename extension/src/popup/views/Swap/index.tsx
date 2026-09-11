@@ -61,6 +61,11 @@ export const Swap = () => {
   const lastEmittedStep = useRef<STEPS | null>(null);
   const hasEmittedProcessing = useRef(false);
   const hasEmittedSuccess = useRef(false);
+  // The submission status lives in the store, so it outlives this component.
+  // A mount that finds a stale terminal status would report a stage the user
+  // never reached, so wait until the status has been seen idle. The reset
+  // this component dispatches on mount guarantees that happens.
+  const hasSeenIdle = useRef(false);
 
   // Emit a screen-view metric only once per step transition.
   useEffect(() => {
@@ -75,35 +80,6 @@ export const Swap = () => {
   }, [activeStep]);
 
   const submission = useSelector(transactionSubmissionSelector);
-
-  // The in-flight submission and its terminal success are internal states of
-  // the submitting screen rather than distinct steps/routes, so emit their
-  // `screen.viewed` here as the submission status advances. Mirrors the send
-  // flow's effect so both internal flows report the same stages. Each emits
-  // once per submission; the guards reset on IDLE and on ERROR, so a retry
-  // after a failure re-emits.
-  useEffect(() => {
-    if (submission.submitStatus === ActionStatus.PENDING) {
-      if (!hasEmittedProcessing.current) {
-        hasEmittedProcessing.current = true;
-        emitScreenViewed("swap_processing", {
-          flow: "swap",
-          step: "processing",
-        });
-      }
-    } else if (submission.submitStatus === ActionStatus.SUCCESS) {
-      if (!hasEmittedSuccess.current) {
-        hasEmittedSuccess.current = true;
-        emitScreenViewed("swap_success", { flow: "swap", step: "success" });
-      }
-    } else if (
-      submission.submitStatus === ActionStatus.IDLE ||
-      submission.submitStatus === ActionStatus.ERROR
-    ) {
-      hasEmittedProcessing.current = false;
-      hasEmittedSuccess.current = false;
-    }
-  }, [submission.submitStatus]);
 
   const { transactionSimulation, transactionData } = submission;
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
@@ -188,6 +164,39 @@ export const Swap = () => {
     }
     setAreDefaultsApplied(true);
   }, [dispatch, location.search, networkDetails.network]);
+
+  // The in-flight submission and its terminal success are internal states of
+  // the submitting screen rather than distinct steps/routes, so emit their
+  // `screen.viewed` here as the submission status advances. Mirrors the send
+  // flow's effect so both internal flows report the same stages. Each emits
+  // once per submission; the guards reset on IDLE and on ERROR, so a retry
+  // after a failure re-emits.
+  useEffect(() => {
+    if (!hasSeenIdle.current && submission.submitStatus !== ActionStatus.IDLE) {
+      return;
+    }
+    if (submission.submitStatus === ActionStatus.PENDING) {
+      if (!hasEmittedProcessing.current) {
+        hasEmittedProcessing.current = true;
+        emitScreenViewed("swap_processing", {
+          flow: "swap",
+          step: "processing",
+        });
+      }
+    } else if (submission.submitStatus === ActionStatus.SUCCESS) {
+      if (!hasEmittedSuccess.current) {
+        hasEmittedSuccess.current = true;
+        emitScreenViewed("swap_success", { flow: "swap", step: "success" });
+      }
+    } else if (
+      submission.submitStatus === ActionStatus.IDLE ||
+      submission.submitStatus === ActionStatus.ERROR
+    ) {
+      hasSeenIdle.current = true;
+      hasEmittedProcessing.current = false;
+      hasEmittedSuccess.current = false;
+    }
+  }, [submission.submitStatus]);
 
   const renderStep = (step: STEPS) => {
     switch (step) {
