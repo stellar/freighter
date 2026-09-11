@@ -84,12 +84,16 @@ export const makeDisplayableBalances = async (
       }
     }
 
-    try {
-      const response = await fetch(url.href);
-      const data = await response.json();
-      blockaidScanResults = data.data.results;
-    } catch (e) {
-      console.error(e);
+    // Skip the scan entirely when there is nothing to scan: an empty token
+    // list makes the Blockaid call error out and wastes rate limit.
+    if (url.searchParams.has("asset_ids")) {
+      try {
+        const response = await fetch(url.href);
+        const data = await response.json();
+        blockaidScanResults = data.data.results;
+      } catch (e) {
+        console.error(e);
+      }
     }
   }
 
