@@ -21,7 +21,12 @@ import { makeDummyStore } from "popup/__testHelpers__";
 import { initialState as txSubmissionInitialState } from "popup/ducks/transactionSubmission";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { emitMetric } from "helpers/metrics";
-import { emitSigningApproved, emitSigningFailed } from "popup/metrics/signing";
+import {
+  emitSigningApproved,
+  emitSigningFailed,
+  SigningKind,
+  SigningSource,
+} from "popup/metrics/signing";
 import { useSubmitTxData } from "../useSubmitTxData";
 
 // The emit site is the unit under test — emitMetric itself is mocked so no
@@ -36,6 +41,7 @@ jest.mock("helpers/metrics", () => ({
 // reach emitMetric — this suite asserts on the terminal event and counts
 // calls, and a signing event landing in the same mock would break that.
 jest.mock("popup/metrics/signing", () => ({
+  ...jest.requireActual("popup/metrics/signing"),
   emitSigningApproved: jest.fn(),
   emitSigningFailed: jest.fn(),
 }));
@@ -573,9 +579,10 @@ describe("useSubmitTxData terminal-event telemetry", () => {
         await result.current.fetchData({ isSwap: false });
       });
 
-      expect(emitSigningApproved).toHaveBeenCalledWith("transaction", {
-        source: "internal",
-      });
+      expect(emitSigningApproved).toHaveBeenCalledWith(
+        SigningKind.Transaction,
+        { source: SigningSource.Internal },
+      );
       expect(emitSigningFailed).not.toHaveBeenCalled();
     });
 
@@ -590,9 +597,9 @@ describe("useSubmitTxData terminal-event telemetry", () => {
       });
 
       expect(emitSigningFailed).toHaveBeenCalledWith(
-        "transaction",
+        SigningKind.Transaction,
         expect.anything(),
-        { source: "internal" },
+        { source: SigningSource.Internal },
       );
       expect(emitSigningApproved).not.toHaveBeenCalled();
     });

@@ -6,6 +6,8 @@ import {
   emitSigningFailed,
   emitSigningRejected,
   originProps,
+  SigningKind,
+  SigningSource,
 } from "../signing";
 
 jest.mock("helpers/metrics", () => ({
@@ -15,8 +17,8 @@ jest.mock("helpers/metrics", () => ({
 const mockEmitMetric = emitMetric as jest.MockedFunction<typeof emitMetric>;
 
 const DAPP_URL = "https://example.com/app?foo=bar";
-const DAPP = { source: "dapp_api" as const, url: DAPP_URL };
-const INTERNAL = { source: "internal" as const };
+const DAPP = { source: SigningSource.DappApi, url: DAPP_URL };
+const INTERNAL = { source: SigningSource.Internal };
 
 describe("originProps", () => {
   beforeEach(() => jest.clearAllMocks());
@@ -39,9 +41,13 @@ describe("emitSigningApproved", () => {
   beforeEach(() => jest.clearAllMocks());
 
   it.each([
-    ["transaction", METRIC_NAMES.signingTransactionApproved, {}],
-    ["message", METRIC_NAMES.signingMessageApproved, { message_type: "blob" }],
-    ["authEntry", METRIC_NAMES.signingAuthEntryApproved, {}],
+    [SigningKind.Transaction, METRIC_NAMES.signingTransactionApproved, {}],
+    [
+      SigningKind.Message,
+      METRIC_NAMES.signingMessageApproved,
+      { message_type: "blob" },
+    ],
+    [SigningKind.AuthEntry, METRIC_NAMES.signingAuthEntryApproved, {}],
   ] as const)(
     "emits the %s approval for a dApp request",
     (kind, name, extra) => {
@@ -49,7 +55,7 @@ describe("emitSigningApproved", () => {
 
       expect(mockEmitMetric).toHaveBeenCalledWith(name, {
         ...extra,
-        source: "dapp_api",
+        source: SigningSource.DappApi,
         origin: "example.com",
       });
     },
@@ -58,11 +64,11 @@ describe("emitSigningApproved", () => {
   it("emits an internal approval with no origin", () => {
     // An internal transaction has no dApp, so `origin` stays off the payload
     // and `source` is what separates it from a website request.
-    emitSigningApproved("transaction", INTERNAL);
+    emitSigningApproved(SigningKind.Transaction, INTERNAL);
 
     expect(mockEmitMetric).toHaveBeenCalledWith(
       METRIC_NAMES.signingTransactionApproved,
-      { source: "internal" },
+      { source: SigningSource.Internal },
     );
   });
 });
@@ -71,26 +77,30 @@ describe("emitSigningRejected", () => {
   beforeEach(() => jest.clearAllMocks());
 
   it.each([
-    ["transaction", METRIC_NAMES.signingTransactionRejected, {}],
-    ["message", METRIC_NAMES.signingMessageRejected, { message_type: "blob" }],
-    ["authEntry", METRIC_NAMES.signingAuthEntryRejected, {}],
+    [SigningKind.Transaction, METRIC_NAMES.signingTransactionRejected, {}],
+    [
+      SigningKind.Message,
+      METRIC_NAMES.signingMessageRejected,
+      { message_type: "blob" },
+    ],
+    [SigningKind.AuthEntry, METRIC_NAMES.signingAuthEntryRejected, {}],
   ] as const)("emits the %s rejection", (kind, name, extra) => {
     emitSigningRejected(kind, DAPP);
 
     // A rejection is a user decision, so it never carries a reason_code.
     expect(mockEmitMetric).toHaveBeenCalledWith(name, {
       ...extra,
-      source: "dapp_api",
+      source: SigningSource.DappApi,
       origin: "example.com",
     });
   });
 
   it("emits an internal rejection with no origin", () => {
-    emitSigningRejected("transaction", INTERNAL);
+    emitSigningRejected(SigningKind.Transaction, INTERNAL);
 
     expect(mockEmitMetric).toHaveBeenCalledWith(
       METRIC_NAMES.signingTransactionRejected,
-      { source: "internal" },
+      { source: SigningSource.Internal },
     );
   });
 });
@@ -99,9 +109,13 @@ describe("emitSigningFailed", () => {
   beforeEach(() => jest.clearAllMocks());
 
   it.each([
-    ["transaction", METRIC_NAMES.signingTransactionFailed, {}],
-    ["message", METRIC_NAMES.signingMessageFailed, { message_type: "blob" }],
-    ["authEntry", METRIC_NAMES.signingAuthEntryFailed, {}],
+    [SigningKind.Transaction, METRIC_NAMES.signingTransactionFailed, {}],
+    [
+      SigningKind.Message,
+      METRIC_NAMES.signingMessageFailed,
+      { message_type: "blob" },
+    ],
+    [SigningKind.AuthEntry, METRIC_NAMES.signingAuthEntryFailed, {}],
   ] as const)(
     "emits the %s failure with a reason_code",
     (kind, name, extra) => {
@@ -109,7 +123,7 @@ describe("emitSigningFailed", () => {
 
       expect(mockEmitMetric).toHaveBeenCalledWith(name, {
         ...extra,
-        source: "dapp_api",
+        source: SigningSource.DappApi,
         reason_code: "Device error",
         origin: "example.com",
       });
@@ -117,11 +131,11 @@ describe("emitSigningFailed", () => {
   );
 
   it("emits an internal failure with no origin", () => {
-    emitSigningFailed("transaction", "op_underfunded", INTERNAL);
+    emitSigningFailed(SigningKind.Transaction, "op_underfunded", INTERNAL);
 
     expect(mockEmitMetric).toHaveBeenCalledWith(
       METRIC_NAMES.signingTransactionFailed,
-      { source: "internal", reason_code: "op_underfunded" },
+      { source: SigningSource.Internal, reason_code: "op_underfunded" },
     );
   });
 
@@ -129,7 +143,7 @@ describe("emitSigningFailed", () => {
     // Amplitude is a third-party sink not covered by Sentry's beforeSend, and
     // a signing error can echo the account it tried to sign as.
     emitSigningFailed(
-      "message",
+      SigningKind.Message,
       "cannot sign as GBRPYHIL2CI3FNQ4BXLFMNDLFJUNPU2HY3ZMFSHONUCEOASW7QC7OX2H",
       DAPP,
     );
@@ -139,13 +153,13 @@ describe("emitSigningFailed", () => {
   });
 
   it("falls back to unknown when there is no message", () => {
-    emitSigningFailed("message", undefined, DAPP);
+    emitSigningFailed(SigningKind.Message, undefined, DAPP);
 
     expect(mockEmitMetric).toHaveBeenCalledWith(
       METRIC_NAMES.signingMessageFailed,
       {
         message_type: "blob",
-        source: "dapp_api",
+        source: SigningSource.DappApi,
         reason_code: "unknown",
         origin: "example.com",
       },

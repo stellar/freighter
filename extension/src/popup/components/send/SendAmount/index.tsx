@@ -18,7 +18,11 @@ import {
 } from "helpers/stellar";
 import { NetworkCongestion } from "popup/helpers/useNetworkFees";
 import { emitMetric, emitScreenViewed } from "helpers/metrics";
-import { emitSigningRejected } from "popup/metrics/signing";
+import {
+  emitSigningRejected,
+  SigningKind,
+  SigningSource,
+} from "popup/metrics/signing";
 import { trackSendFeeBreakdownOpened } from "popup/metrics/send";
 import {
   getAssetDecimals,
@@ -220,7 +224,9 @@ export const SendAmount = ({
     if (skipRejectionRef.current) {
       return;
     }
-    emitSigningRejected("transaction", { source: "internal" });
+    emitSigningRejected(SigningKind.Transaction, {
+      source: SigningSource.Internal,
+    });
   }, [isReviewingTx]);
   const [contractSupportsMuxed, setContractSupportsMuxed] = React.useState<
     boolean | null

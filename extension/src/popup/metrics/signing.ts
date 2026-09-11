@@ -11,7 +11,11 @@ import { getUrlHostname } from "helpers/urls";
  * the dApp thunks in `popup/metrics/access.ts`, the HardwareSign overlay, the
  * internal submission hook, and the trustline flow.
  */
-export type SigningKind = "transaction" | "message" | "authEntry";
+export enum SigningKind {
+  Transaction = "transaction",
+  Message = "message",
+  AuthEntry = "authEntry",
+}
 
 /**
  * Where a signing request came from.
@@ -22,7 +26,10 @@ export type SigningKind = "transaction" | "message" | "authEntry";
  * properties, so one query counts all signing and `source` splits it. The
  * token add and remove events already use `dapp_api` this way.
  */
-export type SigningSource = "dapp_api" | "internal";
+export enum SigningSource {
+  DappApi = "dapp_api",
+  Internal = "internal",
+}
 
 interface SigningEventOptions {
   source: SigningSource;
@@ -48,21 +55,21 @@ export const originProps = (url?: string): { origin?: string } => {
  * is the constant "blob" (mobile emits the same constant).
  */
 const KIND_PROPS: Record<SigningKind, Record<string, unknown>> = {
-  transaction: {},
-  message: { message_type: "blob" },
-  authEntry: {},
+  [SigningKind.Transaction]: {},
+  [SigningKind.Message]: { message_type: "blob" },
+  [SigningKind.AuthEntry]: {},
 };
 
 const APPROVED_EVENT: Record<SigningKind, string> = {
-  transaction: METRIC_NAMES.signingTransactionApproved,
-  message: METRIC_NAMES.signingMessageApproved,
-  authEntry: METRIC_NAMES.signingAuthEntryApproved,
+  [SigningKind.Transaction]: METRIC_NAMES.signingTransactionApproved,
+  [SigningKind.Message]: METRIC_NAMES.signingMessageApproved,
+  [SigningKind.AuthEntry]: METRIC_NAMES.signingAuthEntryApproved,
 };
 
 const REJECTED_EVENT: Record<SigningKind, string> = {
-  transaction: METRIC_NAMES.signingTransactionRejected,
-  message: METRIC_NAMES.signingMessageRejected,
-  authEntry: METRIC_NAMES.signingAuthEntryRejected,
+  [SigningKind.Transaction]: METRIC_NAMES.signingTransactionRejected,
+  [SigningKind.Message]: METRIC_NAMES.signingMessageRejected,
+  [SigningKind.AuthEntry]: METRIC_NAMES.signingAuthEntryRejected,
 };
 
 /**
@@ -71,9 +78,9 @@ const REJECTED_EVENT: Record<SigningKind, string> = {
  * outcome: approved, rejected, or failed.
  */
 const FAILED_EVENT: Record<SigningKind, string> = {
-  transaction: METRIC_NAMES.signingTransactionFailed,
-  message: METRIC_NAMES.signingMessageFailed,
-  authEntry: METRIC_NAMES.signingAuthEntryFailed,
+  [SigningKind.Transaction]: METRIC_NAMES.signingTransactionFailed,
+  [SigningKind.Message]: METRIC_NAMES.signingMessageFailed,
+  [SigningKind.AuthEntry]: METRIC_NAMES.signingAuthEntryFailed,
 };
 
 /** The user approved the request and signing produced a signature. */

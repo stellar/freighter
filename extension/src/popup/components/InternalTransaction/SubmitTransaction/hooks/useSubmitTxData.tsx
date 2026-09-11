@@ -17,7 +17,12 @@ import { useGetCollectibles } from "helpers/hooks/useGetCollectibles";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { emitMetric } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
-import { emitSigningApproved, emitSigningFailed } from "popup/metrics/signing";
+import {
+  emitSigningApproved,
+  emitSigningFailed,
+  SigningKind,
+  SigningSource,
+} from "popup/metrics/signing";
 import {
   getAssetFromCanonical,
   getCanonicalFromAsset,
@@ -218,9 +223,13 @@ function useSubmitTxData({
         // HardwareSign overlay, which reports that attempt itself; this hook
         // only receives the result, so emitting here would double-count.
         if (!isHardwareWallet) {
-          emitSigningFailed("transaction", signingError?.errorMessage, {
-            source: "internal",
-          });
+          emitSigningFailed(
+            SigningKind.Transaction,
+            signingError?.errorMessage,
+            {
+              source: SigningSource.Internal,
+            },
+          );
         }
 
         // Pre-submission failure: signing rejected, or a hardware flow arrived
@@ -275,7 +284,9 @@ function useSubmitTxData({
       // Software keys only — the overlay owns the hardware attempt (see the
       // unsigned branch above).
       if (!isHardwareWallet) {
-        emitSigningApproved("transaction", { source: "internal" });
+        emitSigningApproved(SigningKind.Transaction, {
+          source: SigningSource.Internal,
+        });
       }
 
       // Everything the volume telemetry needs is snapshotted here — after

@@ -42,7 +42,11 @@ import { getBalanceCanonicalKey } from "popup/helpers/balance";
 import { useBlockaidOverrideState } from "popup/helpers/blockaid";
 import { AppDispatch } from "popup/App";
 import { emitMetric, emitScreenViewed } from "helpers/metrics";
-import { emitSigningRejected } from "popup/metrics/signing";
+import {
+  emitSigningRejected,
+  SigningKind,
+  SigningSource,
+} from "popup/metrics/signing";
 import { InputType } from "helpers/transaction";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { XLM_RESERVE_HELP_URL } from "popup/constants/externalLinks";
@@ -211,7 +215,9 @@ export const SwapAmount = ({
     if (skipRejectionRef.current) {
       return;
     }
-    emitSigningRejected("transaction", { source: "internal" });
+    emitSigningRejected(SigningKind.Transaction, {
+      source: SigningSource.Internal,
+    });
   }, [isReviewingTx]);
   const [isXlmReserveOpen, setIsXlmReserveOpen] = useState(false);
   // Tracks focus on the sell input so the "Enter an amount" CTA can disable

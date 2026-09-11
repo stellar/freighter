@@ -18,6 +18,8 @@ import {
   emitSigningFailed,
   emitSigningRejected,
   originProps,
+  SigningKind,
+  SigningSource,
 } from "popup/metrics/signing";
 import { AppState } from "popup/App";
 
@@ -50,14 +52,14 @@ registerHandler<AppState>(addToken.fulfilled, (_state, action) => {
   // source is fixed. Distinguishes it from mobile's manual add (source:manage_assets).
   emitMetric(METRIC_NAMES.assetAddResponded, {
     decision: "confirm",
-    source: "dapp_api",
+    source: SigningSource.DappApi,
     ...assetCodeProps(action),
   });
 });
 registerHandler<AppState>(rejectToken.fulfilled, (_state, action) => {
   emitMetric(METRIC_NAMES.assetAddResponded, {
     decision: "reject",
-    source: "dapp_api",
+    source: SigningSource.DappApi,
     ...assetCodeProps(action),
   });
 });
@@ -65,28 +67,40 @@ registerHandler<AppState>(rejectToken.fulfilled, (_state, action) => {
 // popup/metrics/signing and the HardwareSign overlay); both key types emit
 // through the same helpers so the two paths cannot drift apart.
 registerHandler<AppState>(signTransaction.fulfilled, (_state, action) => {
-  emitSigningApproved("transaction", {
-    source: "dapp_api",
+  emitSigningApproved(SigningKind.Transaction, {
+    source: SigningSource.DappApi,
     url: argUrl(action),
   });
 });
 registerHandler<AppState>(rejectTransaction.fulfilled, (_state, action) => {
-  emitSigningRejected("transaction", {
-    source: "dapp_api",
+  emitSigningRejected(SigningKind.Transaction, {
+    source: SigningSource.DappApi,
     url: argUrl(action),
   });
 });
 registerHandler<AppState>(signBlob.fulfilled, (_state, action) => {
-  emitSigningApproved("message", { source: "dapp_api", url: argUrl(action) });
+  emitSigningApproved(SigningKind.Message, {
+    source: SigningSource.DappApi,
+    url: argUrl(action),
+  });
 });
 registerHandler<AppState>(rejectBlob.fulfilled, (_state, action) => {
-  emitSigningRejected("message", { source: "dapp_api", url: argUrl(action) });
+  emitSigningRejected(SigningKind.Message, {
+    source: SigningSource.DappApi,
+    url: argUrl(action),
+  });
 });
 registerHandler<AppState>(signEntry.fulfilled, (_state, action) => {
-  emitSigningApproved("authEntry", { source: "dapp_api", url: argUrl(action) });
+  emitSigningApproved(SigningKind.AuthEntry, {
+    source: SigningSource.DappApi,
+    url: argUrl(action),
+  });
 });
 registerHandler<AppState>(rejectAuthEntry.fulfilled, (_state, action) => {
-  emitSigningRejected("authEntry", { source: "dapp_api", url: argUrl(action) });
+  emitSigningRejected(SigningKind.AuthEntry, {
+    source: SigningSource.DappApi,
+    url: argUrl(action),
+  });
 });
 
 // Runtime signing FAILURE paths — distinct from the user-cancel
@@ -99,22 +113,22 @@ const rejectedError = (action: {
 }): string | undefined => action.error?.message || action.payload?.errorMessage;
 
 registerHandler<AppState>(signBlob.rejected, (_state, action) => {
-  emitSigningFailed("message", rejectedError(action), {
-    source: "dapp_api",
+  emitSigningFailed(SigningKind.Message, rejectedError(action), {
+    source: SigningSource.DappApi,
     url: argUrl(action),
   });
 });
 registerHandler<AppState>(signEntry.rejected, (_state, action) => {
-  emitSigningFailed("authEntry", rejectedError(action), {
-    source: "dapp_api",
+  emitSigningFailed(SigningKind.AuthEntry, rejectedError(action), {
+    source: SigningSource.DappApi,
     url: argUrl(action),
   });
 });
 // The transaction family now has a failure event too, so a dApp transaction
 // that throws while signing reports an outcome instead of going silent.
 registerHandler<AppState>(signTransaction.rejected, (_state, action) => {
-  emitSigningFailed("transaction", rejectedError(action), {
-    source: "dapp_api",
+  emitSigningFailed(SigningKind.Transaction, rejectedError(action), {
+    source: SigningSource.DappApi,
     url: argUrl(action),
   });
 });

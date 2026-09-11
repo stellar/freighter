@@ -89,18 +89,18 @@ export const HardwareSign = ({
   // id) and is not rendered inline as an internal step.
   const isDappSigningRequest = !isInternal && !!uuid;
   const signingSource: SigningSource = isDappSigningRequest
-    ? "dapp_api"
-    : "internal";
+    ? SigningSource.DappApi
+    : SigningSource.Internal;
   // An internal flow has no dApp, so it carries no origin.
   const signingProps = {
     source: signingSource,
     ...(isDappSigningRequest ? { url } : {}),
   };
   const signingKind: SigningKind = isSignMessage
-    ? "message"
+    ? SigningKind.Message
     : isSignSorobanAuthorization
-      ? "authEntry"
-      : "transaction";
+      ? SigningKind.AuthEntry
+      : SigningKind.Transaction;
 
   // Mirrors the software path's error extraction (`action.error.message`).
   // Scrubbing and the "unknown" fallback belong to emitSigningFailed, so both

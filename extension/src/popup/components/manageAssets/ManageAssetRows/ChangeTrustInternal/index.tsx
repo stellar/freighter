@@ -26,7 +26,11 @@ import {
   useBlockaidOverrideState,
   getAssetSecurityLevel,
 } from "popup/helpers/blockaid";
-import { emitSigningRejected } from "popup/metrics/signing";
+import {
+  emitSigningRejected,
+  SigningKind,
+  SigningSource,
+} from "popup/metrics/signing";
 
 import { useGetChangeTrustData } from "./hooks/useChangeTrustData";
 import { Fee } from "./Settings/Fee";
@@ -107,11 +111,25 @@ export const ChangeTrustInternal = ({
   useEffect(
     () => () => {
       if (!hasApprovedRef.current) {
-        emitSigningRejected("transaction", { source: "internal" });
+        emitSigningRejected(SigningKind.Transaction, {
+          source: SigningSource.Internal,
+        });
       }
     },
     [],
   );
+
+  /**
+   * Approves the review and moves to the submit step.
+   *
+   * Every route to that step goes through here, including the one behind the
+   * Blockaid warning. A route that skipped the latch would report an approval
+   * and then a rejection for the same transaction.
+   */
+  const onApproveReview = () => {
+    hasApprovedRef.current = true;
+    setActiveBodyContent(ActiveBodyContent.submitTx);
+  };
 
   const { t } = useTranslation();
 
@@ -408,7 +426,7 @@ export const ChangeTrustInternal = ({
         }`}
         onClick={(e) => {
           e.preventDefault();
-          setActiveBodyContent(ActiveBodyContent.submitTx);
+          onApproveReview();
         }}
       >
         {t("Confirm anyway")}
@@ -441,10 +459,7 @@ export const ChangeTrustInternal = ({
         isFullWidth
         isRounded
         size="lg"
-        onClick={() => {
-          hasApprovedRef.current = true;
-          setActiveBodyContent(ActiveBodyContent.submitTx);
-        }}
+        onClick={onApproveReview}
       >
         {t("Confirm")}
       </Button>
