@@ -111,7 +111,13 @@ export const HardwareSign = ({
       // would wrap the reason code in quotes.
       return e;
     }
-    return e instanceof Error ? e.message : JSON.stringify(e);
+    if (e instanceof Error) {
+      return e.message;
+    }
+    // `JSON.stringify` returns undefined for a value it cannot represent, so
+    // fall back to the empty string. `emitSigningFailed` turns that into
+    // "unknown".
+    return JSON.stringify(e) ?? "";
   };
 
   /**
