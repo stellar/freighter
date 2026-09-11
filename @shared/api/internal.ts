@@ -1546,6 +1546,33 @@ export const grantAccess = async ({
   }
 };
 
+/**
+ * Reads a reportable message out of a background `{ error }` payload.
+ *
+ * The background returns whatever it caught, so the value is a string on some
+ * paths and an Error on others. `JSON.stringify` renders an Error as "{}",
+ * which reaches telemetry as a reason code with no information, so read the
+ * usual message fields first.
+ */
+const backgroundErrorMessage = (error: unknown): string => {
+  if (typeof error === "string") {
+    return error;
+  }
+  if (error && typeof error === "object") {
+    const { message, errorMessage } = error as {
+      message?: unknown;
+      errorMessage?: unknown;
+    };
+    if (typeof message === "string" && message) {
+      return message;
+    }
+    if (typeof errorMessage === "string" && errorMessage) {
+      return errorMessage;
+    }
+  }
+  return "Unknown error";
+};
+
 export const handleSignedHwPayload = async ({
   signedPayload,
   signerAddress,
@@ -1556,15 +1583,26 @@ export const handleSignedHwPayload = async ({
   uuid: string;
 }): Promise<void> => {
   try {
-    await sendMessageToBackground({
+    const res = await sendMessageToBackground<{
+      error?: unknown;
+    }>({
       activePublicKey: null,
       signedPayload,
       signerAddress,
       uuid,
       type: SERVICE_TYPES.HANDLE_SIGNED_HW_PAYLOAD,
     });
+
+    // The background answers with `{ error }` rather than throwing, so a
+    // signing failure previously looked identical to success: the caller
+    // resolved, and telemetry recorded an approval that never happened.
+    // Surface both kinds of failure so the caller can report the real outcome.
+    if (res && res.error) {
+      throw new Error(backgroundErrorMessage(res.error));
+    }
   } catch (e) {
     console.error(e);
+    throw e;
   }
 };
 
@@ -1597,13 +1635,24 @@ export const signTransaction = async ({
   uuid: string;
 }): Promise<void> => {
   try {
-    await sendMessageToBackground({
+    const res = await sendMessageToBackground<{
+      error?: unknown;
+    }>({
       activePublicKey,
       uuid,
       type: SERVICE_TYPES.SIGN_TRANSACTION,
     });
+
+    // The background answers with `{ error }` rather than throwing, so a
+    // signing failure previously looked identical to success: the caller
+    // resolved, and telemetry recorded an approval that never happened.
+    // Surface both kinds of failure so the caller can report the real outcome.
+    if (res && res.error) {
+      throw new Error(backgroundErrorMessage(res.error));
+    }
   } catch (e) {
     console.error(e);
+    throw e;
   }
 };
 
@@ -1617,14 +1666,25 @@ export const signBlob = async ({
   uuid: string;
 }): Promise<void> => {
   try {
-    await sendMessageToBackground({
+    const res = await sendMessageToBackground<{
+      error?: unknown;
+    }>({
       apiVersion,
       activePublicKey,
       uuid,
       type: SERVICE_TYPES.SIGN_BLOB,
     });
+
+    // The background answers with `{ error }` rather than throwing, so a
+    // signing failure previously looked identical to success: the caller
+    // resolved, and telemetry recorded an approval that never happened.
+    // Surface both kinds of failure so the caller can report the real outcome.
+    if (res && res.error) {
+      throw new Error(backgroundErrorMessage(res.error));
+    }
   } catch (e) {
     console.error(e);
+    throw e;
   }
 };
 
@@ -1636,13 +1696,24 @@ export const signAuthEntry = async ({
   uuid: string;
 }): Promise<void> => {
   try {
-    await sendMessageToBackground({
+    const res = await sendMessageToBackground<{
+      error?: unknown;
+    }>({
       activePublicKey,
       uuid,
       type: SERVICE_TYPES.SIGN_AUTH_ENTRY,
     });
+
+    // The background answers with `{ error }` rather than throwing, so a
+    // signing failure previously looked identical to success: the caller
+    // resolved, and telemetry recorded an approval that never happened.
+    // Surface both kinds of failure so the caller can report the real outcome.
+    if (res && res.error) {
+      throw new Error(backgroundErrorMessage(res.error));
+    }
   } catch (e) {
     console.error(e);
+    throw e;
   }
 };
 

@@ -43,13 +43,11 @@ const SEND_SCREEN_BY_STEP: Partial<
     flow: "send",
   },
   [STEPS.AMOUNT]: { screen_name: "send_payment_amount", flow: "send" },
-  [STEPS.PAYMENT_CONFIRM]: {
-    screen_name: "send_payment_confirm",
-    flow: "send",
-    // Canonical cross-platform stage (RFC #2883): mobile tags this screen
-    // step:"confirm"; keep them in sync so `step` is funnel-able across both.
-    step: "confirm",
-  },
+  // STEPS.PAYMENT_CONFIRM is deliberately absent. It renders the submitting
+  // screen, which the user only reaches after approving, so it is not the
+  // `confirm` stage — SendAmount's review modal is, and it emits
+  // `send_payment_confirm` itself. This screen's own stages are already
+  // covered by the submitStatus effect below (processing, then success).
   [STEPS.DESTINATION]: { screen_name: "send_payment_to", flow: "send" },
 };
 
@@ -191,6 +189,11 @@ export const Send = () => {
   const lastEmittedStep = useRef<STEPS | null>(null);
   const hasEmittedProcessing = useRef(false);
   const hasEmittedSuccess = useRef(false);
+  // The submission status lives in the store, so it outlives this component.
+  // A mount that finds a stale terminal status would report a stage the user
+  // never reached, so wait until the status has been seen idle. The reset
+  // this component dispatches on mount guarantees that happens.
+  const hasSeenIdle = useRef(false);
 
   const goToStep = (
     next: STEPS,
@@ -229,6 +232,9 @@ export const Send = () => {
   // emits once per submission; reset when the status clears so a subsequent
   // send re-emits.
   useEffect(() => {
+    if (!hasSeenIdle.current && submission.submitStatus !== ActionStatus.IDLE) {
+      return;
+    }
     if (submission.submitStatus === ActionStatus.PENDING) {
       if (!hasEmittedProcessing.current) {
         hasEmittedProcessing.current = true;
@@ -245,7 +251,15 @@ export const Send = () => {
           step: "success",
         });
       }
-    } else if (submission.submitStatus === ActionStatus.IDLE) {
+    } else if (
+      submission.submitStatus === ActionStatus.IDLE ||
+      submission.submitStatus === ActionStatus.ERROR
+    ) {
+      // Reset on ERROR as well as IDLE. A retry goes ERROR -> PENDING without
+      // passing through IDLE (the user returns via goBack, which does not
+      // reset the submission), so guarding on IDLE alone silently dropped
+      // every retried attempt's `processing` stage.
+      hasSeenIdle.current = true;
       hasEmittedProcessing.current = false;
       hasEmittedSuccess.current = false;
     }

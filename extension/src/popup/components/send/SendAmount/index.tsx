@@ -17,7 +17,12 @@ import {
   isMuxedAccount,
 } from "helpers/stellar";
 import { NetworkCongestion } from "popup/helpers/useNetworkFees";
-import { emitMetric } from "helpers/metrics";
+import { emitMetric, emitScreenViewed } from "helpers/metrics";
+import {
+  emitSigningRejected,
+  SigningKind,
+  SigningSource,
+} from "popup/metrics/signing";
 import { trackSendFeeBreakdownOpened } from "popup/metrics/send";
 import {
   getAssetDecimals,
@@ -188,6 +193,41 @@ export const SendAmount = ({
   const [isEditingSettings, setIsEditingSettings] = React.useState(false);
   const [isShowingFeesPane, setIsShowingFeesPane] = React.useState(false);
   const [isReviewingTx, setIsReviewingTx] = React.useState(false);
+  // True while the review is open, so closing it can be told apart from the
+  // first render. True once the user approves, or leaves to edit the memo,
+  // so neither is reported as a rejection.
+  const wasReviewingRef = useRef(false);
+  const skipRejectionRef = useRef(false);
+
+  /**
+   * Reports the review stages: the `confirm` stage when the review opens, and
+   * a rejection when the user leaves it without approving.
+   *
+   * Keyed on the review's open state rather than the Cancel button, because
+   * the user can also leave through the modal's backdrop, and that never
+   * reaches a button handler.
+   */
+  useEffect(() => {
+    if (isReviewingTx) {
+      wasReviewingRef.current = true;
+      skipRejectionRef.current = false;
+      emitScreenViewed("send_payment_confirm", {
+        flow: "send",
+        step: "confirm",
+      });
+      return;
+    }
+    if (!wasReviewingRef.current) {
+      return;
+    }
+    wasReviewingRef.current = false;
+    if (skipRejectionRef.current) {
+      return;
+    }
+    emitSigningRejected(SigningKind.Transaction, {
+      source: SigningSource.Internal,
+    });
+  }, [isReviewingTx]);
   const [contractSupportsMuxed, setContractSupportsMuxed] = React.useState<
     boolean | null
   >(null);
@@ -962,8 +1002,13 @@ export const SendAmount = ({
             fee={fee}
             networkDetails={data.networkDetails}
             onCancel={() => setIsReviewingTx(false)}
-            onConfirm={goToNext}
+            onConfirm={() => {
+              skipRejectionRef.current = true;
+              goToNext();
+            }}
             onAddMemo={() => {
+              // Leaving to edit the memo is not a decision on the transaction.
+              skipRejectionRef.current = true;
               setIsReviewingTx(false);
               setMemoEditingContext(MemoEditingContext.Review);
               setIsEditingMemo(true);

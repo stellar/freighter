@@ -26,6 +26,12 @@ import {
   useBlockaidOverrideState,
   getAssetSecurityLevel,
 } from "popup/helpers/blockaid";
+import {
+  emitSigningRejected,
+  SigningKind,
+  SigningSource,
+} from "popup/metrics/signing";
+
 import { useGetChangeTrustData } from "./hooks/useChangeTrustData";
 import { Fee } from "./Settings/Fee";
 import { Timeout } from "./Settings/Timeout";
@@ -96,6 +102,35 @@ export const ChangeTrustInternal = ({
   const [activeBodyContent, setActiveBodyContent] = useState(
     ActiveBodyContent.details,
   );
+  // True once the user approves. This component renders only while the
+  // trustline review is open, so anything else that unmounts it is the user
+  // leaving without deciding — including the enclosing modal's backdrop,
+  // which no button handler sees.
+  const hasApprovedRef = useRef(false);
+
+  useEffect(
+    () => () => {
+      if (!hasApprovedRef.current) {
+        emitSigningRejected(SigningKind.Transaction, {
+          source: SigningSource.Internal,
+        });
+      }
+    },
+    [],
+  );
+
+  /**
+   * Approves the review and moves to the submit step.
+   *
+   * Every route to that step goes through here, including the one behind the
+   * Blockaid warning. A route that skipped the latch would report an approval
+   * and then a rejection for the same transaction.
+   */
+  const onApproveReview = () => {
+    hasApprovedRef.current = true;
+    setActiveBodyContent(ActiveBodyContent.submitTx);
+  };
+
   const { t } = useTranslation();
 
   // Check override state (takes precedence, dev mode only)
@@ -391,7 +426,7 @@ export const ChangeTrustInternal = ({
         }`}
         onClick={(e) => {
           e.preventDefault();
-          setActiveBodyContent(ActiveBodyContent.submitTx);
+          onApproveReview();
         }}
       >
         {t("Confirm anyway")}
@@ -424,7 +459,7 @@ export const ChangeTrustInternal = ({
         isFullWidth
         isRounded
         size="lg"
-        onClick={() => setActiveBodyContent(ActiveBodyContent.submitTx)}
+        onClick={onApproveReview}
       >
         {t("Confirm")}
       </Button>

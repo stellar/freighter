@@ -17,6 +17,56 @@ describe("internalApi", () => {
     jest.clearAllMocks();
     jest.restoreAllMocks();
   });
+  describe("signing wrappers surface failure", () => {
+    // The background answers with `{ error }` rather than throwing. These
+    // wrappers used to discard both that answer and any transport exception,
+    // so a failed signing resolved like a success and telemetry recorded an
+    // approval that never happened.
+    const SIGNERS = [
+      [
+        "signTransaction",
+        () => internalApi.signTransaction({ activePublicKey: "G1", uuid: "u" }),
+      ],
+      [
+        "signBlob",
+        () => internalApi.signBlob({ activePublicKey: "G1", uuid: "u" }),
+      ],
+      [
+        "signAuthEntry",
+        () => internalApi.signAuthEntry({ activePublicKey: "G1", uuid: "u" }),
+      ],
+      [
+        "handleSignedHwPayload",
+        () =>
+          internalApi.handleSignedHwPayload({ signedPayload: "x", uuid: "u" }),
+      ],
+    ] as const;
+
+    it.each(SIGNERS)(
+      "%s rejects when the background reports an error",
+      async (_name, call) => {
+        mockedSend.mockResolvedValue({ error: "Transaction not found" });
+
+        await expect(call()).rejects.toThrow("Transaction not found");
+      },
+    );
+
+    it.each(SIGNERS)(
+      "%s rejects when the message transport throws",
+      async (_name, call) => {
+        mockedSend.mockRejectedValue(new Error("Receiving end does not exist"));
+
+        await expect(call()).rejects.toThrow("Receiving end does not exist");
+      },
+    );
+
+    it.each(SIGNERS)("%s resolves on success", async (_name, call) => {
+      mockedSend.mockResolvedValue({});
+
+      await expect(call()).resolves.toBeUndefined();
+    });
+  });
+
   describe("getAssetDomains", () => {
     it("should return a list of domains from a list of issuers", async () => {
       jest
