@@ -3,7 +3,13 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { Federation } from "stellar-sdk";
 import { SendTo } from "..";
-import { saveDestination } from "popup/ducks/transactionSubmission";
+import {
+  saveDestination,
+  saveFederationAddress,
+  saveMemoAndType,
+} from "popup/ducks/transactionSubmission";
+import * as Soran from "popup/helpers/soran";
+import { FederationMemoType } from "popup/helpers/federationMemo";
 
 const mockPayer = "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF";
 const mockAlice = "GBHKTFVBDUA6RYP5JM4SPZ76OXYAAHV4QHUOFV4S4TK342FMVGPHA2WN";
@@ -196,4 +202,36 @@ it("does not start a superseded debounced lookup after selecting a recent", asyn
   expect(resolve).toHaveBeenCalledTimes(1);
   expect(resolve).toHaveBeenCalledWith("bob*example.com");
   expect(next).toHaveBeenCalledTimes(1);
+});
+
+it("settles a recent Soran name clicked before its matching input debounce", async () => {
+  const resolve = jest.spyOn(Soran, "resolveSoranName").mockResolvedValue({
+    name: "alice.nova",
+    address: mockAlice,
+    memo: "hello",
+    memoType: FederationMemoType.Text,
+  });
+  const { next } = await mount();
+  await act(async () => {
+    fireEvent.change(screen.getByTestId("send-to-input"), {
+      target: { value: "alice.nova" },
+    });
+  });
+  await click("alice.nova");
+  await act(async () => {
+    await jest.advanceTimersByTimeAsync(400);
+  });
+
+  expect(resolve).toHaveBeenCalledTimes(1);
+  expect(screen.getByTestId("send-to-suggestion-button")).toBeInTheDocument();
+  await act(async () => {
+    fireEvent.click(screen.getByTestId("send-to-btn-continue"));
+  });
+  expect(next).toHaveBeenCalledTimes(1);
+  expect(saveDestination).toHaveBeenCalledWith(mockAlice);
+  expect(saveFederationAddress).toHaveBeenCalledWith("alice.nova");
+  expect(saveMemoAndType).toHaveBeenCalledWith({
+    memo: "hello",
+    memoType: FederationMemoType.Text,
+  });
 });

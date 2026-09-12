@@ -2,6 +2,9 @@ import {
   assertSoranTransactionRoute,
   getSoranTokenAmount,
   unsupportedSoranMuxed,
+  unsupportedSoranMemo,
+  UnsupportedSoranMuxedError,
+  UnsupportedSoranMemoError,
 } from "popup/helpers/soranTransaction";
 import { useReducer } from "react";
 import { splitCanonical } from "@shared/helpers/stellar";
@@ -65,6 +68,7 @@ import {
 } from "helpers/muxedAddress";
 import { SimulateTxData, SimulateResult } from "types/transactions";
 import { getCurrentTransactionFee } from "popup/helpers/fees";
+import { useSoranSimulationGuard } from "popup/helpers/useSoranSimulationGuard";
 
 export type { SimulateTxData, SimulateResult };
 
@@ -435,6 +439,11 @@ function useSimulateTxData({
   const store = useStore();
   const { asset, amount, transactionFee, memo, memoType, isCollectible } =
     useSelector(transactionDataSelector);
+  const simulationGuard = useSoranSimulationGuard({
+    publicKey,
+    destination,
+    networkDetails,
+  });
 
   const { scanTx } = useScanTx();
   const [state, dispatch] = useReducer(
@@ -452,6 +461,7 @@ function useSimulateTxData({
   });
 
   const fetchData = async () => {
+    const request = simulationGuard.beginRequest();
     dispatch({ type: "FETCH_DATA_START" });
     try {
       // Read memo and transactionFee from Redux state inside fetchData to get the latest values
@@ -472,11 +482,10 @@ function useSimulateTxData({
           },
           networkDetails,
         );
+        request.assertCurrent();
         // The token transfer backend cannot preserve typed transaction memos.
         if (simParams.type === "soroban" && currentMemo) {
-          throw new Error(
-            t("This token transfer cannot preserve the Soran memo"),
-          );
+          throw unsupportedSoranMemo();
         }
       }
       const currentAmount = currentTransactionData.amount || amount;
@@ -580,12 +589,13 @@ function useSimulateTxData({
             sorobanMemo = "";
           }
         } catch (error) {
-          if (isSoranPayment) throw error;
+          if (isSoranPayment) throw unsupportedSoranMuxed();
           // If we can't determine muxed destination, use original destination
           console.error("Error determining muxed destination:", error);
         }
       }
 
+      request.assertCurrent();
       const simResponse = await simulateTx({
         type: simParams.type,
         recommendedFee: currentTransactionFee,
@@ -604,6 +614,7 @@ function useSimulateTxData({
           },
         },
       });
+      request.assertCurrent();
       if (isSoranPayment && simParams.type === "soroban") {
         assertSoranTransactionRoute(
           simResponse.payload?.preparedTransaction || "",
@@ -613,20 +624,31 @@ function useSimulateTxData({
             memoType: currentMemoType || "",
           },
           networkDetails,
-          { publicKey, asset: currentAsset, expectedTokenAmount },
+          {
+            publicKey,
+            asset: currentAsset,
+            expectedTokenAmount,
+            expectedFee: getSoranTokenAmount(
+              simResponse.recommendedFee,
+              CLASSIC_ASSET_DECIMALS,
+            ),
+          },
         );
       }
       const simulationResponse =
         simResponse.payload && "simulationTransaction" in simResponse.payload
           ? simResponse.payload?.simulationTransaction
           : "";
-      reduxDispatch(saveTransactionFee(simResponse.recommendedFee));
-      reduxDispatch(
-        saveSimulation({
-          preparedTransaction: simResponse.payload?.preparedTransaction,
-          response: simulationResponse,
-        }),
-      );
+      const saveSimulationResult = () => {
+        reduxDispatch(saveTransactionFee(simResponse.recommendedFee));
+        reduxDispatch(
+          saveSimulation({
+            preparedTransaction: simResponse.payload?.preparedTransaction,
+            response: simulationResponse,
+          }),
+        );
+      };
+      if (!isSoranPayment) saveSimulationResult();
 
       if (simResponse.inclusionFee !== undefined) {
         payload.inclusionFee = simResponse.inclusionFee;
@@ -676,6 +698,19 @@ function useSimulateTxData({
         );
         const xdr = transaction.build().toXdr();
         payload.transactionXdr = xdr;
+        request.assertCurrent();
+        if (isSoranPayment) {
+          assertSoranTransactionRoute(
+            xdr,
+            {
+              address: destination,
+              memo: currentMemo || "",
+              memoType: currentMemoType || "",
+            },
+            networkDetails,
+            { publicKey, asset: currentAsset },
+          );
+        }
         payload.scanResult = applyExpectedToFailReason({
           scanResult: await scanTx(xdr, scanUrlstub, networkDetails),
           expectedToFailReason,
@@ -694,21 +729,18 @@ function useSimulateTxData({
         });
       }
 
-      if (isSoranPayment && simParams.type === "classic") {
-        assertSoranTransactionRoute(
-          payload.transactionXdr,
-          {
-            address: destination,
-            memo: currentMemo || "",
-            memoType: currentMemoType || "",
-          },
-          networkDetails,
-          { publicKey, asset: currentAsset },
-        );
-      }
+      request.assertCurrent();
+      if (isSoranPayment) saveSimulationResult();
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });
       return { ok: true, data: payload } as SimulateResult;
     } catch (error) {
+      if (!request.isCurrent()) {
+        return {
+          ok: false,
+          error:
+            "We had an issue retrieving your transaction details. Please try again.",
+        } as SimulateResult;
+      }
       // Report the real cause here (the generic user-facing string below is not
       // a useful reason_code). Matches mobile's payment.simulation_failed.
       // `network` is NOT hand-added — it rides on buildCommonContext. (Mobile
@@ -723,14 +755,17 @@ function useSimulateTxData({
             : "unknown",
       });
       const errorMessage =
-        "We had an issue retrieving your transaction details. Please try again.";
+        error instanceof UnsupportedSoranMuxedError ||
+        error instanceof UnsupportedSoranMemoError
+          ? error.message
+          : "We had an issue retrieving your transaction details. Please try again.";
       dispatch({ type: "FETCH_DATA_ERROR", payload: errorMessage });
       return { ok: false, error: errorMessage } as SimulateResult;
     }
   };
 
   return {
-    state,
+    state: simulationGuard.isCurrent() ? state : initialState,
     fetchData,
   };
 }

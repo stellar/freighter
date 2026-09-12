@@ -940,6 +940,69 @@ describe("Soran reviewed transaction binding at submission", () => {
   });
 
   describe.each([false, true])("hardware wallet: %s", (isHardwareWallet) => {
+    it.each([false, true])(
+      "validates a Soran path payment when the caller sets isSwap (altered: %s)",
+      async (altered) => {
+        const reviewed = buildTransaction(
+          Operation.pathPaymentStrictSend(pathPayment),
+        );
+        const signed = buildTransaction(
+          Operation.pathPaymentStrictSend({
+            ...pathPayment,
+            sendAmount: altered ? "101" : pathPayment.sendAmount,
+          }),
+        );
+        signed.sign(SOURCE_KEYPAIR);
+        const signedXdr = signed.toXDR();
+        const state = makeState({
+          asset: USDC_CANONICAL,
+          destinationAsset: "native",
+          destinationAmount: "90",
+          preparedTransaction: isHardwareWallet ? signedXdr : null,
+        });
+        state.transactionSubmission.transactionData.federationAddress =
+          "alice.nova";
+        jest
+          .spyOn(ApiInternal, "signFreighterTransaction")
+          .mockResolvedValue({ signedTransaction: signedXdr });
+        const { result, store } = renderSubmitHook(
+          state,
+          MAINNET_NETWORK_DETAILS,
+          { isHardwareWallet, transactionXdr: reviewed.toXDR() },
+        );
+
+        await act(async () => {
+          await result.current.fetchData({ isSwap: true });
+        });
+
+        expect(Soran.verifySoranDestination).toHaveBeenCalledWith(
+          "alice.nova",
+          { address: DESTINATION, memo: "", memoType: "" },
+          MAINNET_NETWORK_DETAILS,
+        );
+        if (altered) {
+          expect(global.fetch).not.toHaveBeenCalled();
+          expect(ApiInternal.saveSoranPaymentName).not.toHaveBeenCalled();
+          expect(store.getState().transactionSubmission.submitStatus).toBe(
+            ActionStatus.ERROR,
+          );
+        } else {
+          expect(global.fetch).toHaveBeenCalled();
+          expect(ApiInternal.saveSoranPaymentName).toHaveBeenCalledWith(
+            PUBLIC_KEY,
+            expect.objectContaining({
+              name: "alice.nova",
+              destination: DESTINATION,
+              transactionHash: Buffer.from(signed.hash()).toString("hex"),
+            }),
+          );
+          expect(store.getState().transactionSubmission.submitStatus).toBe(
+            ActionStatus.SUCCESS,
+          );
+        }
+      },
+    );
+
     it.each([
       {
         change: "payment amount",

@@ -422,8 +422,14 @@ export const SendTo = ({
                       // Re-enter the normal resolution flow, including errors and network checks.
                       if (isSoranName(address)) {
                         formik.setFieldValue("destination", address);
-                        if (formik.values.destination === address)
-                          await fetchData(address, {});
+                        if (formik.values.destination === address) {
+                          setDebouncedDestination(address);
+                          const errors = await formik.validateForm({
+                            destination: address,
+                          });
+                          if (selectionId !== selectionIdRef.current) return;
+                          await fetchData(address, errors);
+                        }
                         return;
                       }
                       const result = await fetchData(address, {});

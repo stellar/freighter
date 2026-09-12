@@ -24,6 +24,8 @@ export interface SoranTransactionContext {
   // Exact base units calculated locally before accepting a simulation. Later
   // signing checks can bind the already validated reviewed transaction instead.
   expectedTokenAmount?: bigint;
+  // Total fee displayed for the simulation, in stroops.
+  expectedFee?: bigint;
 }
 
 const MAX_SORAN_TOKEN_AMOUNT = new BigNumber(
@@ -57,12 +59,27 @@ export const getSoranTokenAmount = (
   }
 };
 
-export const unsupportedSoranMuxed = () =>
-  new Error(
-    i18n.t(
-      "This transfer cannot preserve the Soran muxed address. Choose another recipient.",
-    ),
-  );
+export class UnsupportedSoranMuxedError extends Error {
+  constructor() {
+    super(
+      i18n.t(
+        "This transfer cannot preserve the Soran muxed address. Choose another recipient.",
+      ),
+    );
+    this.name = "UnsupportedSoranMuxedError";
+  }
+}
+
+export const unsupportedSoranMuxed = () => new UnsupportedSoranMuxedError();
+
+export class UnsupportedSoranMemoError extends Error {
+  constructor() {
+    super(i18n.t("This token transfer cannot preserve the Soran memo"));
+    this.name = "UnsupportedSoranMemoError";
+  }
+}
+
+export const unsupportedSoranMemo = () => new UnsupportedSoranMemoError();
 
 const expectedContract = (
   context: SoranTransactionContext,
@@ -98,6 +115,11 @@ export const assertSoranTransactionRoute = (
       !(tx instanceof Transaction) ||
       tx.operations.length !== 1 ||
       tx.source !== context.publicKey
+    )
+      throw mismatch();
+    if (
+      context.expectedFee !== undefined &&
+      BigInt(tx.fee) !== context.expectedFee
     )
       throw mismatch();
     if (reviewedTransactionXdr !== undefined) {

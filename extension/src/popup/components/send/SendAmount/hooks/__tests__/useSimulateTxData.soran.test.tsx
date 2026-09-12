@@ -7,6 +7,7 @@ import {
   Address,
   Contract,
   Keypair,
+  MuxedAccount,
   TransactionBuilder,
   nativeToScVal,
   rpc,
@@ -18,9 +19,19 @@ import { RequestState } from "constants/request";
 import { AccountBalances } from "helpers/hooks/useGetBalances";
 import * as MuxedAddress from "helpers/muxedAddress";
 import { makeDummyStore } from "popup/__testHelpers__";
-import { initialState as submissionInitialState } from "popup/ducks/transactionSubmission";
+import {
+  initialState as submissionInitialState,
+  saveAmount,
+  saveCollectibleData,
+  saveFederationAddress,
+  saveMemoAndType,
+} from "popup/ducks/transactionSubmission";
+import { useSimulateTxData as useCollectibleSimulation } from "popup/components/sendCollectible/SelectedCollectible/hooks/useSimulateTxData";
 import * as AccountHelpers from "popup/helpers/account";
 import * as Soran from "popup/helpers/soran";
+import i18n from "popup/helpers/localizationConfig";
+import portugueseTranslations from "popup/locales/pt/translation.json";
+import { FederationMemoType } from "popup/helpers/federationMemo";
 import { SimulateResult, useSimulateTxData } from "../useSimulateTxData";
 
 const mockFetchBalances = jest.fn();
@@ -42,9 +53,9 @@ const RECIPIENT = Keypair.random().publicKey();
 const CONTRACT = "CCVKI6UYJDO34LO4D653IXCTPBGJOHJSJGSIOB4A46IH4ULNHS2MPQL7";
 const NETWORK = TESTNET_NETWORK_DETAILS;
 
-const buildTransfer = (amount: bigint) =>
+const buildTransfer = (amount: bigint, fee = "200") =>
   new TransactionBuilder(new Account(PAYER, "0"), {
-    fee: "100",
+    fee,
     networkPassphrase: NETWORK.networkPassphrase,
   })
     .addOperation(
@@ -59,7 +70,29 @@ const buildTransfer = (amount: bigint) =>
     .build()
     .toXDR();
 
-const renderSimulation = (amount: string, decimals: number) => {
+const buildCollectibleTransfer = (tokenId: number, fee = "200") =>
+  new TransactionBuilder(new Account(PAYER, "0"), {
+    fee,
+    networkPassphrase: NETWORK.networkPassphrase,
+  })
+    .addOperation(
+      new Contract(CONTRACT).call(
+        "transfer",
+        new Address(PAYER).toScVal(),
+        new Address(RECIPIENT).toScVal(),
+        nativeToScVal(tokenId, { type: "u32" }),
+      ),
+    )
+    .setTimeout(0)
+    .build()
+    .toXDR();
+
+const renderSimulation = (
+  amount: string,
+  decimals: number,
+  destination = RECIPIENT,
+  isCollectible = false,
+) => {
   const balances: AccountBalances = {
     isFunded: true,
     subentryCount: 0,
@@ -83,24 +116,34 @@ const renderSimulation = (amount: string, decimals: number) => {
         ...submissionInitialState.transactionData,
         asset: `TOKEN:${CONTRACT}`,
         amount,
-        destination: RECIPIENT,
+        destination,
         federationAddress: "alice.nova",
+        isCollectible,
+        collectibleData: {
+          ...submissionInitialState.transactionData.collectibleData,
+          collectionAddress: CONTRACT,
+          tokenId: 1,
+        },
       },
     },
   });
   const wrapper = ({ children }: { children: React.ReactNode }) => (
     <Provider store={store}>{children}</Provider>
   );
+  const useSimulation = isCollectible
+    ? useCollectibleSimulation
+    : useSimulateTxData;
   const rendered = renderHook(
-    () =>
-      useSimulateTxData({
-        publicKey: PAYER,
-        destination: RECIPIENT,
-        networkDetails: NETWORK,
+    (props) =>
+      useSimulation({
+        ...props,
         simParams: { type: "soroban", xdr: "" },
         isMainnet: false,
       }),
-    { wrapper },
+    {
+      wrapper,
+      initialProps: { publicKey: PAYER, destination, networkDetails: NETWORK },
+    },
   );
   return { ...rendered, store };
 };
@@ -255,4 +298,346 @@ describe("Soran token amount validation before review", () => {
       ).toBeNull();
     },
   );
+});
+
+const deferred = <Value,>() => {
+  let resolve!: (value: Value) => void;
+  let reject!: (error: Error) => void;
+  const promise = new Promise<Value>((done, fail) => {
+    resolve = done;
+    reject = fail;
+  });
+  return { promise, resolve, reject };
+};
+
+describe("Soran simulation request freshness", () => {
+  beforeEach(() => {
+    jest.spyOn(Soran, "verifySoranDestination").mockResolvedValue(undefined);
+    jest.spyOn(AccountHelpers, "getBaseAccount").mockResolvedValue(RECIPIENT);
+    jest.spyOn(MuxedAddress, "checkIsMuxedSupported").mockResolvedValue(false);
+    mockScanTx.mockResolvedValue(null);
+  });
+  afterEach(() => {
+    jest.restoreAllMocks();
+    mockFetchBalances.mockReset();
+    mockScanTx.mockReset();
+  });
+
+  const response = (units: bigint) => ({
+    ok: true,
+    response: {
+      preparedTransaction: buildTransfer(units),
+      simulationResponse: {
+        minResourceFee: "100",
+      } as rpc.Api.SimulateTransactionSuccessResponse,
+    },
+  });
+
+  it.each(["amount", "payer", "destination", "network", "unmount"])(
+    "discards a prepared transaction after changing %s",
+    async (change) => {
+      const pending = deferred<ReturnType<typeof response>>();
+      jest
+        .spyOn(ApiInternal, "simulateTokenTransfer")
+        .mockReturnValue(pending.promise);
+      const { result, store, rerender, unmount } = renderSimulation("1", 7);
+      let request!: Promise<SimulateResult>;
+      await act(async () => {
+        request = result.current.fetchData();
+      });
+      expect(ApiInternal.simulateTokenTransfer).toHaveBeenCalledTimes(1);
+      act(() => {
+        if (change === "amount") store.dispatch(saveAmount("2"));
+        else if (change === "unmount") unmount();
+        else
+          rerender({
+            publicKey: change === "payer" ? RECIPIENT : PAYER,
+            destination: change === "destination" ? PAYER : RECIPIENT,
+            networkDetails:
+              change === "network"
+                ? { ...NETWORK, sorobanRpcUrl: "https://other.example/rpc" }
+                : NETWORK,
+          });
+      });
+      await act(async () => {
+        pending.resolve(response(BigInt(10000000)));
+        expect(await request).toMatchObject({ ok: false });
+      });
+      expect(mockScanTx).not.toHaveBeenCalled();
+      expect(
+        store.getState().transactionSubmission.transactionSimulation
+          .preparedTransaction,
+      ).toBeNull();
+      if (change !== "unmount") expect(result.current.state.data).toBeNull();
+    },
+  );
+
+  it("does not save or expose a response changed while scanning", async () => {
+    mockSimulation(BigInt(10000000));
+    const scan = deferred<null>();
+    mockScanTx.mockReturnValue(scan.promise);
+    const { result, store } = renderSimulation("1", 7);
+    let request!: Promise<SimulateResult>;
+    await act(async () => {
+      request = result.current.fetchData();
+    });
+    expect(mockScanTx).toHaveBeenCalledTimes(1);
+    expect(
+      store.getState().transactionSubmission.transactionSimulation
+        .preparedTransaction,
+    ).toBeNull();
+    act(() => {
+      store.dispatch(saveAmount("2"));
+    });
+    await act(async () => {
+      scan.resolve(null);
+      expect(await request).toMatchObject({ ok: false });
+    });
+    expect(result.current.state.data).toBeNull();
+    expect(
+      store.getState().transactionSubmission.transactionSimulation
+        .preparedTransaction,
+    ).toBeNull();
+  });
+
+  it.each([false, true])(
+    "preserves a newer simulation when an older request finishes (error: %s)",
+    async (fails) => {
+      const older = deferred<ReturnType<typeof response>>();
+      jest
+        .spyOn(ApiInternal, "simulateTokenTransfer")
+        .mockReturnValueOnce(older.promise)
+        .mockResolvedValueOnce(response(BigInt(20000000)));
+      const { result, store } = renderSimulation("1", 7);
+      let first!: Promise<SimulateResult>;
+      await act(async () => {
+        first = result.current.fetchData();
+      });
+      act(() => {
+        store.dispatch(saveAmount("2"));
+      });
+      await act(async () => {
+        expect(await result.current.fetchData()).toMatchObject({ ok: true });
+      });
+      const latest = result.current.state.data;
+      const saved =
+        store.getState().transactionSubmission.transactionSimulation;
+      await act(async () => {
+        if (fails) older.reject(new Error("untrusted stale error"));
+        else older.resolve(response(BigInt(10000000)));
+        expect(await first).toMatchObject({ ok: false });
+      });
+      expect(result.current.state.data).toEqual(latest);
+      expect(
+        store.getState().transactionSubmission.transactionSimulation,
+      ).toEqual(saved);
+    },
+  );
+
+  it("hides an accepted review when its amount changes", async () => {
+    mockSimulation(BigInt(10000000));
+    const { result, store } = renderSimulation("1", 7);
+    await act(async () => {
+      await result.current.fetchData();
+    });
+    expect(result.current.state.state).toBe(RequestState.SUCCESS);
+    act(() => {
+      store.dispatch(saveAmount("2"));
+    });
+    expect(result.current.state.data).toBeNull();
+  });
+
+  it("prevents an older direct-address simulation from overwriting a Soran review", async () => {
+    const older = deferred<ReturnType<typeof response>>();
+    jest
+      .spyOn(ApiInternal, "simulateTokenTransfer")
+      .mockReturnValueOnce(older.promise)
+      .mockResolvedValueOnce(response(BigInt(20000000)));
+    const { result, store } = renderSimulation("1", 7);
+    act(() => {
+      store.dispatch(saveFederationAddress(""));
+    });
+    let first!: Promise<SimulateResult>;
+    await act(async () => {
+      first = result.current.fetchData();
+    });
+    act(() => {
+      store.dispatch(saveAmount("2"));
+      store.dispatch(saveFederationAddress("alice.nova"));
+    });
+    await act(async () => {
+      expect(await result.current.fetchData()).toMatchObject({ ok: true });
+    });
+    const latest = result.current.state.data;
+    const saved = store.getState().transactionSubmission.transactionSimulation;
+    await act(async () => {
+      older.resolve(response(BigInt(10000000)));
+      expect(await first).toMatchObject({ ok: false });
+    });
+    expect(result.current.state.data).toEqual(latest);
+    expect(
+      store.getState().transactionSubmission.transactionSimulation,
+    ).toEqual(saved);
+  });
+
+  it("discards a collectible simulation after selecting another token ID", async () => {
+    const transaction = buildCollectibleTransfer(1);
+    const pending = deferred<ReturnType<typeof response>>();
+    jest
+      .spyOn(ApiInternal, "simulateSendCollectible")
+      .mockReturnValue(pending.promise);
+    const { result, store } = renderSimulation("1", 7, RECIPIENT, true);
+    let request!: Promise<SimulateResult>;
+    await act(async () => {
+      request = result.current.fetchData();
+    });
+    act(() => {
+      store.dispatch(
+        saveCollectibleData({
+          ...store.getState().transactionSubmission.transactionData
+            .collectibleData,
+          tokenId: 2,
+        }),
+      );
+    });
+    await act(async () => {
+      pending.resolve({
+        ...response(BigInt(1)),
+        response: {
+          ...response(BigInt(1)).response,
+          preparedTransaction: transaction,
+        },
+      });
+      expect(await request).toMatchObject({ ok: false });
+    });
+    expect(mockScanTx).not.toHaveBeenCalled();
+    expect(result.current.state.data).toBeNull();
+    expect(
+      store.getState().transactionSubmission.transactionSimulation
+        .preparedTransaction,
+    ).toBeNull();
+  });
+
+  describe.each([false, true])("collectible: %s", (isCollectible) => {
+    it.each(["100", "200", "300"])(
+      "checks the prepared fee %s against the reviewed fee",
+      async (fee) => {
+        const preparedTransaction = isCollectible
+          ? buildCollectibleTransfer(1, fee)
+          : buildTransfer(BigInt(10000000), fee);
+        jest
+          .spyOn(
+            ApiInternal,
+            isCollectible ? "simulateSendCollectible" : "simulateTokenTransfer",
+          )
+          .mockResolvedValue({
+            ...response(BigInt(10000000)),
+            response: {
+              ...response(BigInt(10000000)).response,
+              preparedTransaction,
+            },
+          });
+        const { result, store } = renderSimulation(
+          "1",
+          7,
+          RECIPIENT,
+          isCollectible,
+        );
+        await act(async () => {
+          expect(await result.current.fetchData()).toMatchObject({
+            ok: fee === "200",
+          });
+        });
+        if (fee === "200") {
+          expect(mockScanTx).toHaveBeenCalledTimes(1);
+          expect(
+            store.getState().transactionSubmission.transactionSimulation
+              .preparedTransaction,
+          ).toBe(preparedTransaction);
+        } else {
+          expect(mockScanTx).not.toHaveBeenCalled();
+          expect(result.current.state.data).toBeNull();
+          expect(
+            store.getState().transactionSubmission.transactionSimulation
+              .preparedTransaction,
+          ).toBeNull();
+        }
+      },
+    );
+  });
+});
+
+it("shows the Portuguese Soran error for an unsupported muxed token recipient", async () => {
+  const locale = jest
+    .requireActual<typeof import("i18next")>("i18next")
+    .createInstance();
+  await locale.init({
+    lng: "pt-BR",
+    resources: { pt: { translation: portugueseTranslations } },
+  });
+  jest.spyOn(i18n, "t").mockImplementation(locale.t);
+  jest.spyOn(Soran, "verifySoranDestination").mockResolvedValue(undefined);
+  jest.spyOn(AccountHelpers, "getBaseAccount").mockResolvedValue(RECIPIENT);
+  jest.spyOn(MuxedAddress, "checkIsMuxedSupported").mockResolvedValue(false);
+  const { simulate } = mockSimulation(BigInt(10000000));
+  const muxed = new MuxedAccount(new Account(RECIPIENT, "0"), "42").accountId();
+  const { result, store } = renderSimulation("1", 7, muxed);
+  try {
+    let response: SimulateResult | undefined;
+    await act(async () => {
+      response = await result.current.fetchData();
+    });
+    const message =
+      "Esta transferência não pode preservar o endereço muxed Soran. Escolha outro destinatário.";
+    expect(response).toEqual({ ok: false, error: message });
+    expect(result.current.state).toMatchObject({
+      state: RequestState.ERROR,
+      error: message,
+    });
+    expect(simulate).not.toHaveBeenCalled();
+    expect(
+      store.getState().transactionSubmission.transactionSimulation
+        .preparedTransaction,
+    ).toBeNull();
+  } finally {
+    jest.restoreAllMocks();
+    mockFetchBalances.mockReset();
+    mockScanTx.mockReset();
+  }
+});
+
+it("shows the Portuguese Soran error when a token cannot preserve the required memo", async () => {
+  const locale = jest
+    .requireActual<typeof import("i18next")>("i18next")
+    .createInstance();
+  await locale.init({
+    lng: "pt-BR",
+    resources: { pt: { translation: portugueseTranslations } },
+  });
+  jest.spyOn(i18n, "t").mockImplementation(locale.t);
+  jest.spyOn(Soran, "verifySoranDestination").mockResolvedValue(undefined);
+  const { simulate } = mockSimulation(BigInt(10000000));
+  const { result, store } = renderSimulation("1", 7);
+  act(() => {
+    store.dispatch(
+      saveMemoAndType({ memo: "hello", memoType: FederationMemoType.Text }),
+    );
+  });
+  try {
+    await act(async () => {
+      expect(await result.current.fetchData()).toEqual({
+        ok: false,
+        error:
+          portugueseTranslations[
+            "This token transfer cannot preserve the Soran memo"
+          ],
+      });
+    });
+    expect(simulate).not.toHaveBeenCalled();
+    expect(result.current.state.data).toBeNull();
+  } finally {
+    jest.restoreAllMocks();
+    mockFetchBalances.mockReset();
+    mockScanTx.mockReset();
+  }
 });

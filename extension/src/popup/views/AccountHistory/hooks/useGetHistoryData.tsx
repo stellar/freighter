@@ -916,7 +916,7 @@ export const getRowDataByOpType = async (
       // otherwise, we treat this as a collectible transfer
       try {
         // if the tokenId is not present, we can't fetch the collectible; return generic invocation
-        if (!attrs.tokenId) {
+        if (attrs.tokenId === undefined) {
           return genericInvocation;
         }
 
@@ -967,13 +967,6 @@ export const getRowDataByOpType = async (
       // receiving some XLM to create(fund) your own account
       const isReceiving = !isCreateExternalAccount;
 
-      // Extract destination from XDR for createAccount (may be muxed if sent to muxed address)
-      const actualDestination = await extractDestinationFromXDR(
-        txEnvelopeXdr,
-        networkDetails,
-        account || "",
-      );
-
       const paymentDifference = isReceiving ? "+" : "-";
       const nonLabelAmount = formatAmount(
         new BigNumber(startingBalance!).toString(),
@@ -990,8 +983,8 @@ export const getRowDataByOpType = async (
           ...baseMetadata,
           isReceiving,
           nonLabelAmount,
-          to: actualDestination,
-          from,
+          to: account,
+          from: operation.funder,
         },
         rowIcon: (
           <div className="HistoryItem__icon__bordered">
@@ -1120,7 +1113,7 @@ export const getOperationDependencies = async (
       if (
         attrs &&
         attrs.fnName === SorobanCollectibleInterface.transfer &&
-        attrs.tokenId &&
+        attrs.tokenId !== undefined &&
         !attrs.amount
       ) {
         const contractId = attrs.contractId;

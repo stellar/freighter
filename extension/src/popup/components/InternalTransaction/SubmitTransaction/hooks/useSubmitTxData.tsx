@@ -154,7 +154,7 @@ function useSubmitTxData({
         status: "success",
       } as SubmitTxData;
 
-      const isSoranPayment = !isSwap && isSoranName(federationAddress || "");
+      const isSoranPayment = isSoranName(federationAddress || "");
       const expectedSoranRoute = {
         address: destination,
         memo: memo || "",

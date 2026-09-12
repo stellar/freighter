@@ -1,12 +1,37 @@
-import { Account, Asset, MuxedAccount, Networks } from "stellar-sdk";
+import {
+  Account,
+  Address,
+  Asset,
+  Contract,
+  MuxedAccount,
+  Networks,
+  Operation,
+  TransactionBuilder,
+  nativeToScVal,
+} from "stellar-sdk";
 
 import { TESTNET_NETWORK_DETAILS } from "@shared/constants/stellar";
 import { SorobanTokenInterface } from "@shared/constants/soroban/token";
 import { HistoryItemOperation } from "popup/components/accountHistory/HistoryItem";
 import * as sorobanHelpers from "popup/helpers/soroban";
 import { AssetType } from "@shared/api/types/account-balance";
+import { fetchCollectibles } from "@shared/api/helpers/fetchCollectibles";
 import { getHistoryCounterparty } from "popup/helpers/soranHistory";
-import { getRowDataByOpType, CollectibleLookupMap } from "../useGetHistoryData";
+import {
+  getOperationDependencies,
+  getRowDataByOpType,
+  CollectibleLookupMap,
+} from "../useGetHistoryData";
+
+jest.mock("@shared/api/helpers/fetchCollectibles", () => ({
+  fetchCollectibles: jest.fn(),
+}));
+jest.mock("popup/App", () => ({
+  store: {
+    getState: () => ({ cache: { collections: {} } }),
+    dispatch: jest.fn(),
+  },
+}));
 
 // Base account owned by the wallet and its muxed (M...) forms.
 const PUBLIC_KEY = "GAJVUHQV535IYW25XBTWTCUXNHLQN4F2PGIPOOX4DDKL2UPNXUHWU7B3";
@@ -140,6 +165,57 @@ describe("getRowDataByOpType - classic payment muxed classification", () => {
 
     expect(row.action).toBe("Sent");
   });
+});
+
+describe("account creation history naming", () => {
+  it.each([
+    { funder: COUNTERPARTY, account: PUBLIC_KEY, withOtherPayment: false },
+    { funder: PUBLIC_KEY, account: COUNTERPARTY, withOtherPayment: false },
+    { funder: COUNTERPARTY, account: PUBLIC_KEY, withOtherPayment: true },
+    { funder: PUBLIC_KEY, account: COUNTERPARTY, withOtherPayment: true },
+  ])(
+    "uses the funder and account belonging to this operation: %j",
+    async ({ funder, account, withOtherPayment }) => {
+      const tx = new TransactionBuilder(new Account(funder, "0"), {
+        networkPassphrase: TESTNET_NETWORK_DETAILS.networkPassphrase,
+        fee: "100",
+      });
+      if (withOtherPayment) {
+        tx.addOperation(
+          Operation.payment({
+            destination:
+              "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF",
+            asset: Asset.native(),
+            amount: "1",
+          }),
+        );
+      }
+      tx.addOperation(
+        Operation.createAccount({ destination: account, startingBalance: "5" }),
+      );
+      const row = await callGetRowData({
+        ...buildInvokeHostFnOperation(),
+        type: "create_account",
+        type_i: 0,
+        account,
+        funder,
+        starting_balance: "5",
+        isCreateExternalAccount: account !== PUBLIC_KEY,
+        transaction_attr: {
+          ...buildInvokeHostFnOperation().transaction_attr,
+          operation_count: withOtherPayment ? 2 : 1,
+          envelope_xdr: tx.setTimeout(0).build().toXDR(),
+        },
+      } as HistoryItemOperation);
+
+      expect(row.metadata.to).toBe(account);
+      expect(row.metadata.from).toBe(funder);
+      expect(getHistoryCounterparty(row)).toEqual({
+        address: COUNTERPARTY,
+        isReceiving: account === PUBLIC_KEY,
+      });
+    },
+  );
 });
 
 describe("getRowDataByOpType - Soroban token transfer muxed classification", () => {
@@ -300,41 +376,59 @@ it("preserves a muxed sender and transaction reference for history naming", asyn
 describe("collectible history naming", () => {
   afterEach(() => jest.restoreAllMocks());
 
+  const collectibleOperation = (from: string, to: string, tokenId: number) => {
+    const envelopeXdr = new TransactionBuilder(new Account(from, "0"), {
+      networkPassphrase: TESTNET_NETWORK_DETAILS.networkPassphrase,
+      fee: "100",
+    })
+      .addOperation(
+        new Contract(CONTRACT_ID).call(
+          SorobanTokenInterface.transfer,
+          new Address(from).toScVal(),
+          new Address(to).toScVal(),
+          nativeToScVal(tokenId, { type: "u32" }),
+        ),
+      )
+      .setTimeout(0)
+      .build()
+      .toXDR();
+    return buildInvokeHostFnOperation({
+      transaction_attr: {
+        operation_count: 1,
+        fee_charged: "100",
+        memo: "",
+        envelope_xdr: envelopeXdr,
+      },
+    });
+  };
+  const collectible = (owner: string, tokenId: number) => ({
+    collectionAddress: CONTRACT_ID,
+    collectionName: "Test collection",
+    tokenId: tokenId.toString(),
+    owner,
+    tokenUri: "",
+    metadata: null,
+  });
+
   it.each([
-    { from: COUNTERPARTY, to: PUBLIC_KEY, isReceiving: true },
-    { from: PUBLIC_KEY, to: COUNTERPARTY, isReceiving: false },
+    { from: COUNTERPARTY, to: PUBLIC_KEY, isReceiving: true, tokenId: 0 },
+    { from: PUBLIC_KEY, to: COUNTERPARTY, isReceiving: false, tokenId: 0 },
+    { from: COUNTERPARTY, to: PUBLIC_KEY, isReceiving: true, tokenId: 1 },
+    { from: PUBLIC_KEY, to: COUNTERPARTY, isReceiving: false, tokenId: 1 },
   ])(
     "preserves the sender and direction: %j",
-    async ({ from, to, isReceiving }) => {
-      jest
-        .spyOn(sorobanHelpers, "getAttrsFromSorobanHorizonOp")
-        .mockReturnValue({
-          fnName: SorobanTokenInterface.transfer,
-          contractId: CONTRACT_ID,
-          from,
-          to,
-          tokenId: 1,
-        });
+    async ({ from, to, isReceiving, tokenId }) => {
       const collectibles: CollectibleLookupMap = new Map([
-        [
-          `${CONTRACT_ID}:1`,
-          {
-            collectionAddress: CONTRACT_ID,
-            collectionName: "Test collection",
-            tokenId: "1",
-            owner: to,
-            tokenUri: "",
-            metadata: null,
-          },
-        ],
+        [`${CONTRACT_ID}:${tokenId}`, collectible(to, tokenId)],
       ]);
       const row = await callGetRowData(
-        buildInvokeHostFnOperation(),
+        collectibleOperation(from, to, tokenId),
         [],
         collectibles,
       );
       expect(row.metadata).toMatchObject({
         isCollectibleTransfer: true,
+        collectionTokenId: tokenId.toString(),
         from,
         to,
         isReceiving,
@@ -345,6 +439,69 @@ describe("collectible history naming", () => {
       });
     },
   );
+
+  it.each([
+    { from: COUNTERPARTY, to: PUBLIC_KEY, isReceiving: true },
+    { from: PUBLIC_KEY, to: COUNTERPARTY, isReceiving: false },
+  ])(
+    "fetches token zero through the batch dependency pipeline: %j",
+    async ({ from, to, isReceiving }) => {
+      const fetch = jest.mocked(fetchCollectibles);
+      fetch.mockClear();
+      fetch.mockResolvedValue([
+        {
+          collection: {
+            address: CONTRACT_ID,
+            name: "Test collection",
+            symbol: "TEST",
+            collectibles: [collectible(to, 0)],
+          },
+        },
+      ]);
+      const op = collectibleOperation(from, to, 0);
+      const { collectibleLookup } = await getOperationDependencies(
+        [op],
+        TESTNET_NETWORK_DETAILS,
+        PUBLIC_KEY,
+        {},
+      );
+      expect(fetch).toHaveBeenCalledWith({
+        publicKey: PUBLIC_KEY,
+        networkDetails: TESTNET_NETWORK_DETAILS,
+        contracts: [{ id: CONTRACT_ID, token_ids: ["0"] }],
+      });
+      expect(collectibleLookup.get(`${CONTRACT_ID}:0`)).toEqual(
+        collectible(to, 0),
+      );
+      const row = await callGetRowData(op, [], collectibleLookup);
+      expect(row.amount).toBe("#0");
+      expect(getHistoryCounterparty(row)).toEqual({
+        address: COUNTERPARTY,
+        isReceiving,
+      });
+    },
+  );
+
+  it("does not fetch or name a collectible without a token ID", async () => {
+    jest.spyOn(sorobanHelpers, "getAttrsFromSorobanHorizonOp").mockReturnValue({
+      fnName: SorobanTokenInterface.transfer,
+      contractId: CONTRACT_ID,
+      from: COUNTERPARTY,
+      to: PUBLIC_KEY,
+    });
+    jest.mocked(fetchCollectibles).mockClear();
+    const op = buildInvokeHostFnOperation();
+    const { collectibleLookup } = await getOperationDependencies(
+      [op],
+      TESTNET_NETWORK_DETAILS,
+      PUBLIC_KEY,
+      {},
+    );
+    expect(fetchCollectibles).not.toHaveBeenCalled();
+    const row = await callGetRowData(op, [], collectibleLookup);
+    expect(row.metadata.isCollectibleTransfer).toBeUndefined();
+    expect(getHistoryCounterparty(row)).toBeUndefined();
+  });
 });
 
 describe("token transfer history naming without asset balance changes", () => {

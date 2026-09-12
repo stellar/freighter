@@ -27,6 +27,8 @@ import { initialState as submissionInitialState } from "popup/ducks/transactionS
 import { makeDummyStore } from "popup/__testHelpers__";
 import * as api from "@shared/api/internal";
 import * as soran from "popup/helpers/soran";
+import i18n from "popup/helpers/localizationConfig";
+import portugueseTranslations from "popup/locales/pt/translation.json";
 
 jest.mock("webextension-polyfill", () => ({
   __esModule: true,
@@ -236,7 +238,15 @@ it("rejects account creation that would drop a Soran muxed ID", async () => {
   ).toThrow(/cannot preserve/);
 });
 
-it("rejects a collectible muxed route before requesting simulation", async () => {
+it("shows the Portuguese muxed error before requesting collectible simulation", async () => {
+  const locale = jest
+    .requireActual<typeof import("i18next")>("i18next")
+    .createInstance();
+  await locale.init({
+    lng: "pt-BR",
+    resources: { pt: { translation: portugueseTranslations } },
+  });
+  jest.spyOn(i18n, "t").mockImplementation(locale.t);
   mockLookup(muxed);
   expect(await soran.resolveSoranName("mux.nova", network)).toMatchObject({
     address: muxed,
@@ -274,7 +284,10 @@ it("rejects a collectible muxed route before requesting simulation", async () =>
   await act(async () => {
     response = await result.current.fetchData();
   });
-  expect(response).toMatchObject({ ok: false });
+  const message =
+    "Esta transferência não pode preservar o endereço muxed Soran. Escolha outro destinatário.";
+  expect(response).toEqual({ ok: false, error: message });
+  expect(result.current.state.error).toBe(message);
   expect(simulate).not.toHaveBeenCalled();
 });
 

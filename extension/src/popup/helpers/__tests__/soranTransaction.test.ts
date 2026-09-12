@@ -15,6 +15,10 @@ import { TESTNET_NETWORK_DETAILS as network } from "@shared/constants/stellar";
 import {
   assertSoranTransactionRoute,
   getSoranTokenAmount,
+  unsupportedSoranMemo,
+  UnsupportedSoranMemoError,
+  unsupportedSoranMuxed,
+  UnsupportedSoranMuxedError,
 } from "../soranTransaction";
 
 const payer = Keypair.random().publicKey();
@@ -67,6 +71,28 @@ const transfer = (
     new Address(to).toScVal(),
     value,
   );
+
+it("identifies the trusted muxed-transfer error without inspecting untrusted messages", () => {
+  const error = unsupportedSoranMuxed();
+  expect(error).toBeInstanceOf(UnsupportedSoranMuxedError);
+  expect(error.message).toBe(
+    "This transfer cannot preserve the Soran muxed address. Choose another recipient.",
+  );
+  expect(new Error(error.message)).not.toBeInstanceOf(
+    UnsupportedSoranMuxedError,
+  );
+});
+
+it("identifies the trusted memo-transfer error without inspecting untrusted messages", () => {
+  const error = unsupportedSoranMemo();
+  expect(error).toBeInstanceOf(UnsupportedSoranMemoError);
+  expect(error.message).toBe(
+    "This token transfer cannot preserve the Soran memo",
+  );
+  expect(new Error(error.message)).not.toBeInstanceOf(
+    UnsupportedSoranMemoError,
+  );
+});
 
 it.each([recipient, muxed])(
   "accepts a complete classic destination and derives the history hash: %s",
@@ -734,5 +760,49 @@ describe("calculating exact Soran token amounts", () => {
     Number.MAX_SAFE_INTEGER,
   ])("rejects invalid decimals %s", (decimals) => {
     expect(() => getSoranTokenAmount("1", decimals)).toThrow(/does not match/);
+  });
+});
+
+describe("binding the prepared fee to the fee shown for review", () => {
+  const prepared = (fee: string) =>
+    new TransactionBuilder(new Account(payer, "0"), {
+      fee,
+      networkPassphrase: network.networkPassphrase,
+    })
+      .addOperation(transfer())
+      .setTimeout(0)
+      .build()
+      .toXDR();
+
+  it("accepts the exact total fee in stroops", () => {
+    expect(() =>
+      assertSoranTransactionRoute(prepared("200"), route(), network, {
+        ...context,
+        expectedTokenAmount: BigInt(10),
+        expectedFee: BigInt(200),
+      }),
+    ).not.toThrow();
+  });
+
+  it.each(["100", "300"])(
+    "rejects a header fee of %s when review shows 200 stroops",
+    (fee) => {
+      expect(() =>
+        assertSoranTransactionRoute(prepared(fee), route(), network, {
+          ...context,
+          expectedTokenAmount: BigInt(10),
+          expectedFee: BigInt(200),
+        }),
+      ).toThrow(/does not match/);
+    },
+  );
+
+  it("preserves validation without a simulation fee expectation", () => {
+    expect(() =>
+      assertSoranTransactionRoute(prepared("300"), route(), network, {
+        ...context,
+        expectedTokenAmount: BigInt(10),
+      }),
+    ).not.toThrow();
   });
 });
