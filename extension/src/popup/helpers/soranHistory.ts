@@ -20,6 +20,11 @@ export const getHistoryCounterparty = (operation: OperationDataRow | null) => {
     metadata.isCollectibleTransfer ||
     metadata.type === "create_account"
   ) {
+    if (
+      metadata.isCollectibleTransfer &&
+      typeof metadata.isReceiving !== "boolean"
+    )
+      return undefined;
     const address = metadata.isReceiving ? metadata.from : metadata.to;
     return address
       ? {

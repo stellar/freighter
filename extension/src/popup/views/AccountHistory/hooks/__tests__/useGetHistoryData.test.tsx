@@ -5,7 +5,8 @@ import { SorobanTokenInterface } from "@shared/constants/soroban/token";
 import { HistoryItemOperation } from "popup/components/accountHistory/HistoryItem";
 import * as sorobanHelpers from "popup/helpers/soroban";
 import { AssetType } from "@shared/api/types/account-balance";
-import { getRowDataByOpType } from "../useGetHistoryData";
+import { getHistoryCounterparty } from "popup/helpers/soranHistory";
+import { getRowDataByOpType, CollectibleLookupMap } from "../useGetHistoryData";
 
 // Base account owned by the wallet and its muxed (M...) forms.
 const PUBLIC_KEY = "GAJVUHQV535IYW25XBTWTCUXNHLQN4F2PGIPOOX4DDKL2UPNXUHWU7B3";
@@ -51,6 +52,7 @@ const CONTRACT_ID = "CAAQCAIBAEAQCAIBAEAQCAIBAEAQCAIBAEAQCAIBAEAQCAIBAEAQC526";
 const callGetRowData = (
   operation: HistoryItemOperation,
   balances: AssetType[] = [],
+  collectibles: CollectibleLookupMap = new Map(),
 ) =>
   getRowDataByOpType(
     PUBLIC_KEY,
@@ -60,7 +62,7 @@ const callGetRowData = (
     {},
     fetchTokenDetails,
     {},
-    new Map(),
+    collectibles,
     [],
   );
 
@@ -293,4 +295,54 @@ it("preserves a muxed sender and transaction reference for history naming", asyn
     memo: "hello",
     publicKey: PUBLIC_KEY,
   });
+});
+
+describe("collectible history naming", () => {
+  afterEach(() => jest.restoreAllMocks());
+
+  it.each([
+    { from: COUNTERPARTY, to: PUBLIC_KEY, isReceiving: true },
+    { from: PUBLIC_KEY, to: COUNTERPARTY, isReceiving: false },
+  ])(
+    "preserves the sender and direction: %j",
+    async ({ from, to, isReceiving }) => {
+      jest
+        .spyOn(sorobanHelpers, "getAttrsFromSorobanHorizonOp")
+        .mockReturnValue({
+          fnName: SorobanTokenInterface.transfer,
+          contractId: CONTRACT_ID,
+          from,
+          to,
+          tokenId: 1,
+        });
+      const collectibles: CollectibleLookupMap = new Map([
+        [
+          `${CONTRACT_ID}:1`,
+          {
+            collectionAddress: CONTRACT_ID,
+            collectionName: "Test collection",
+            tokenId: "1",
+            owner: to,
+            tokenUri: "",
+            metadata: null,
+          },
+        ],
+      ]);
+      const row = await callGetRowData(
+        buildInvokeHostFnOperation(),
+        [],
+        collectibles,
+      );
+      expect(row.metadata).toMatchObject({
+        isCollectibleTransfer: true,
+        from,
+        to,
+        isReceiving,
+      });
+      expect(getHistoryCounterparty(row)).toEqual({
+        address: COUNTERPARTY,
+        isReceiving,
+      });
+    },
+  );
 });

@@ -64,3 +64,28 @@ it.each(["en-GB", "en-US", "pt-BR"])(
 );
 it("handles an unavailable timestamp", () =>
   expect(formatHistoryTimestamp("bad")).toBe("—"));
+
+it.each([
+  { from: "sender", to: "me", isReceiving: true, address: "sender" },
+  { from: "me", to: "recipient", isReceiving: false, address: "recipient" },
+])("selects the collectible counterparty: %j", ({ address, ...metadata }) => {
+  expect(
+    getHistoryCounterparty(
+      operation({ isCollectibleTransfer: true, ...metadata }),
+    ),
+  ).toEqual({ address, isReceiving: metadata.isReceiving });
+});
+it.each([
+  { from: "sender", to: "me" },
+  { to: "me", isReceiving: true },
+  { from: "me", isReceiving: false },
+])(
+  "omits a collectible name when direction or counterparty is missing: %j",
+  (metadata) => {
+    expect(
+      getHistoryCounterparty(
+        operation({ isCollectibleTransfer: true, ...metadata }),
+      ),
+    ).toBeUndefined();
+  },
+);

@@ -22,7 +22,7 @@ export const SORAN_TESTNET_LOOKUP =
 const SORAN_TESTNET_REGISTRY =
   "CCSORANDPQINYOYB5SVO45WJP2LBBYKC72HHUIRVXB4J6RUZKDAUW7G4";
 const READ_SOURCE = "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF";
-const RPC_TIMEOUT_SECONDS = 20;
+const RPC_TIMEOUT_MS = 20_000;
 const READ_TIMEOUT_SECONDS = 30;
 const DESTINATION_ABI = 2;
 const MAX_MEMO_BYTES = 28;
@@ -156,9 +156,9 @@ export const createSoranReader = (networkDetails: NetworkDetails) => {
   ) {
     throw new Error("Unsupported Soran network");
   }
-  const server = new rpc.Server(networkDetails.sorobanRpcUrl, {
-    timeout: RPC_TIMEOUT_SECONDS,
-  });
+  const server = new rpc.Server(networkDetails.sorobanRpcUrl);
+  // SDK v17 reads transport timeouts from the HTTP client, in milliseconds.
+  server.httpClient.defaults.timeout = RPC_TIMEOUT_MS;
   return async (method: string, args: xdr.ScVal[] = []) => {
     const tx = new TransactionBuilder(new Account(READ_SOURCE, "0"), {
       fee: BASE_FEE,

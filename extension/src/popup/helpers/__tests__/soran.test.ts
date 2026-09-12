@@ -4,6 +4,7 @@ import {
   MAINNET_NETWORK_DETAILS,
 } from "@shared/constants/stellar";
 import {
+  createSoranReader,
   decodeSoranDestination,
   normalizeSoranName,
   resolveSoranName,
@@ -186,4 +187,49 @@ describe("direct Soroban reads", () => {
       ),
     ).rejects.toThrow("payment details changed");
   });
+});
+
+describe("Soran RPC transport timeout", () => {
+  beforeEach(() => jest.useFakeTimers());
+  afterEach(() => {
+    jest.restoreAllMocks();
+    jest.useRealTimers();
+  });
+
+  it.each(["resolve_destination", "primary_names"])(
+    "aborts a stalled %s request after 20 seconds, not 20 milliseconds",
+    async (method) => {
+      // Make native timeout signals controllable by Jest's clock.
+      jest.spyOn(AbortSignal, "timeout").mockImplementation((milliseconds) => {
+        const controller = new AbortController();
+        setTimeout(
+          () => controller.abort(new DOMException("Timed out", "TimeoutError")),
+          milliseconds,
+        );
+        return controller.signal;
+      });
+      const fetchMock = jest.spyOn(globalThis, "fetch").mockImplementation(
+        (_url, options) =>
+          new Promise((_resolve, reject) => {
+            options?.signal?.addEventListener("abort", () =>
+              reject(options.signal?.reason),
+            );
+          }),
+      );
+      // Exercise the real SDK HTTP transport; only the network is stubbed.
+      const read = createSoranReader(TESTNET_NETWORK_DETAILS);
+      const rejected = jest.fn();
+      const result = read(method).catch(rejected);
+      await jest.advanceTimersByTimeAsync(19_999);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(rejected).not.toHaveBeenCalled();
+      await jest.advanceTimersByTimeAsync(1);
+      expect(rejected).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: expect.stringMatching(/timeout of 20000\s?ms exceeded/),
+        }),
+      );
+      await result;
+    },
+  );
 });
