@@ -1,3 +1,5 @@
+import { useSoranHistoryName } from "popup/hooks/useSoranHistoryName";
+import { formatHistoryTimestamp } from "popup/helpers/soranHistory";
 import React, { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Button, Icon, Text } from "@stellar/design-system";
@@ -33,7 +35,11 @@ export const TransactionDetail = ({
   activeOperation: OperationDataRow | null;
   networkDetails: NetworkDetails;
 }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const { currentName, usedName } = useSoranHistoryName(
+    activeOperation,
+    networkDetails,
+  );
   // Get memo disabled state using the helper
   // For history, we don't have contractId, so we pass undefined
   // The helper will still correctly disable memo for M addresses
@@ -56,22 +62,6 @@ export const TransactionDetail = ({
   if (!activeOperation) {
     return <></>;
   }
-
-  const createdAtDateInstance = new Date(
-    Date.parse(activeOperation.metadata.createdAt),
-  );
-  const createdAtLocalStrArr = createdAtDateInstance
-    .toLocaleString()
-    .split(" ");
-  const createdAtTime = `${createdAtLocalStrArr[1]
-    .split(":")
-    .slice(0, 2)
-    .join(":")} ${createdAtLocalStrArr[2]}`;
-  const createdAtDateStr = createdAtDateInstance
-    .toDateString()
-    .split(" ")
-    .slice(1)
-    .join(" ");
 
   const stellarExpertUrl = getStellarExpertUrl(networkDetails);
   const { feeCharged, memo } = activeOperation.metadata;
@@ -238,7 +228,24 @@ export const TransactionDetail = ({
               className="AssetDiff__value"
               data-testid="AssetDiff__to-from-address"
             >
-              <KeyIdenticon publicKey={toFromAddress} isSmall />
+              <div className="TransactionDetailModal__counterparty">
+                {currentName && (
+                  <>
+                    <div className="TransactionDetailModal__soran-caption">
+                      {toFromAddress.startsWith("G") && memo
+                        ? t("Current account name")
+                        : t("Current Soran name")}
+                    </div>
+                    <div
+                      className="TransactionDetailModal__soran-name"
+                      data-testid="transaction-current-soran-name"
+                    >
+                      {currentName}
+                    </div>
+                  </>
+                )}
+                <KeyIdenticon publicKey={toFromAddress} isSmall isCopyAllowed />
+              </div>
             </div>
           </div>
         )}
@@ -330,7 +337,10 @@ export const TransactionDetail = ({
                   className="TransactionDetailModal__subtitle-date"
                   data-testid="TransactionDetailModal__subtitle-date"
                 >
-                  {createdAtDateStr} &bull; {createdAtTime}
+                  {formatHistoryTimestamp(
+                    activeOperation.metadata.createdAt,
+                    i18n?.resolvedLanguage,
+                  )}
                 </div>
               </>
             </Text>
@@ -353,6 +363,16 @@ export const TransactionDetail = ({
       data-testid="TransactionDetailModal"
     >
       {renderBody(activeOperation)}
+      {usedName && (
+        <div
+          className="TransactionDetailModal__saved-name"
+          data-testid="transaction-used-soran-name"
+        >
+          <span>{t("Name used for this payment")}</span>
+          <strong>{usedName}</strong>
+          <span>{t("Saved on this device when you sent the payment.")}</span>
+        </div>
+      )}
       <div className="TransactionDetailModal__metadata">
         <div className="Metadata">
           <div className="Metadata__label">

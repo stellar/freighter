@@ -379,6 +379,7 @@ export type HorizonOperation = Horizon.ServerApi.OperationRecord & {
       [key: string]: any;
     };
   };
+  from_muxed?: string;
   to_muxed?: string;
   to?: string;
   from?: string;

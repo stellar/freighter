@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+import { useSoranHistoryName } from "popup/hooks/useSoranHistoryName";
 import React from "react";
 import { Icon, Text } from "@stellar/design-system";
 
@@ -70,8 +72,14 @@ interface HistoryItemProps {
 
 export const HistoryItem = ({
   operation,
+  networkDetails,
   setActiveHistoryDetailId,
 }: HistoryItemProps) => {
+  const { t } = useTranslation();
+  const { currentName, usedName } = useSoranHistoryName(
+    operation,
+    networkDetails,
+  );
   return (
     <div
       data-testid="history-item"
@@ -101,6 +109,21 @@ export const HistoryItem = ({
                 <ActionIcon actionType={operation.actionIcon} />
                 {operation.action}
               </Text>
+              {(usedName || currentName) && (
+                <div
+                  className="HistoryItem__soran-name"
+                  title={
+                    usedName
+                      ? t("Name used for this payment")
+                      : t("Current Soran name")
+                  }
+                  data-testid="history-item-soran-name"
+                >
+                  {usedName
+                    ? t("Sent using {{name}}", { name: usedName })
+                    : currentName}
+                </div>
+              )}
             </Text>
           </div>
           <div

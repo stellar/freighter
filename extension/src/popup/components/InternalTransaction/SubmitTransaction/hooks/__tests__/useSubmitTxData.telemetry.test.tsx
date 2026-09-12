@@ -16,6 +16,7 @@ import {
 } from "@shared/constants/stellar";
 import { CUSTOM_NETWORK } from "@shared/helpers/stellar";
 import { ActionStatus } from "@shared/api/types";
+import * as Soran from "popup/helpers/soran";
 import * as ApiInternal from "@shared/api/internal";
 import { makeDummyStore } from "popup/__testHelpers__";
 import { initialState as txSubmissionInitialState } from "popup/ducks/transactionSubmission";
@@ -164,7 +165,10 @@ const makeState = ({
 const renderSubmitHook = (
   state: ReturnType<typeof makeState>,
   networkDetails: NetworkDetails = MAINNET_NETWORK_DETAILS,
-  { isHardwareWallet = false }: { isHardwareWallet?: boolean } = {},
+  {
+    isHardwareWallet = false,
+    transactionXdr = buildSwapXdr(),
+  }: { isHardwareWallet?: boolean; transactionXdr?: string } = {},
 ) => {
   const store = makeDummyStore(state);
   const wrapper = ({ children }: { children: React.ReactNode }) => (
@@ -176,7 +180,7 @@ const renderSubmitHook = (
         isHardwareWallet,
         networkDetails,
         publicKey: PUBLIC_KEY,
-        xdr: buildSwapXdr(),
+        xdr: transactionXdr,
       }),
     { wrapper },
   );
@@ -799,4 +803,98 @@ describe("useSubmitTxData terminal-event telemetry", () => {
       expect(pricesSpy).not.toHaveBeenCalled();
     });
   });
+});
+
+describe("Soran payment revalidation", () => {
+  afterEach(() => jest.restoreAllMocks());
+
+  it.each([false, true])(
+    "blocks changed instructions before submission (hardware: %s)",
+    async (isHardwareWallet) => {
+      const state = makeState({ asset: "native" });
+      state.transactionSubmission.transactionData.federationAddress =
+        "alice.nova";
+      const verify = jest
+        .spyOn(Soran, "verifySoranDestination")
+        .mockRejectedValue(
+          new Error(
+            "Soran payment details changed. Select the recipient again.",
+          ),
+        );
+      const sign = jest.spyOn(ApiInternal, "signFreighterTransaction");
+      const submit = jest.spyOn(ApiInternal, "submitFreighterTransaction");
+      const { result, store } = renderSubmitHook(
+        state,
+        MAINNET_NETWORK_DETAILS,
+        { isHardwareWallet },
+      );
+      await act(async () => {
+        await result.current.fetchData({ isSwap: false });
+      });
+      expect(verify).toHaveBeenCalledWith(
+        "alice.nova",
+        {
+          address: DESTINATION,
+          memo: "",
+          memoType: "",
+        },
+        MAINNET_NETWORK_DETAILS,
+      );
+      expect(sign).not.toHaveBeenCalled();
+      expect(submit).not.toHaveBeenCalled();
+      expect(store.getState().transactionSubmission.submitStatus).toBe(
+        ActionStatus.ERROR,
+      );
+    },
+  );
+});
+
+describe("Soran successful-payment annotations", () => {
+  afterEach(() => jest.restoreAllMocks());
+  it.each([true, false])(
+    "records only successful sends (success: %s)",
+    async (success) => {
+      const payment = new TransactionBuilder(new Account(PUBLIC_KEY, "0"), {
+        fee: "100",
+        networkPassphrase: PASSPHRASE,
+      })
+        .addOperation(
+          Operation.payment({
+            destination: DESTINATION,
+            asset: Asset.native(),
+            amount: "100",
+          }),
+        )
+        .setTimeout(0)
+        .build();
+      const state = makeState({ asset: "native" });
+      state.transactionSubmission.transactionData.federationAddress =
+        "alice.nova";
+      jest.spyOn(Soran, "verifySoranDestination").mockResolvedValue(undefined);
+      jest
+        .spyOn(ApiInternal, "signFreighterTransaction")
+        .mockResolvedValue({ signedTransaction: payment.toXDR() });
+      const save = jest
+        .spyOn(ApiInternal, "saveSoranPaymentName")
+        .mockResolvedValue({ saved: true });
+      if (success) mockSubmitOk(buildResultXdr("880000000"));
+      else mockSubmitRejected({ status: 400, detail: "failed" });
+      const { result } = renderSubmitHook(state, MAINNET_NETWORK_DETAILS, {
+        transactionXdr: payment.toXDR(),
+      });
+      await act(async () => {
+        await result.current.fetchData({ isSwap: false });
+      });
+      if (success)
+        expect(save).toHaveBeenCalledWith(
+          PUBLIC_KEY,
+          expect.objectContaining({
+            name: "alice.nova",
+            destination: DESTINATION,
+            transactionHash: Buffer.from(payment.hash()).toString("hex"),
+          }),
+        );
+      else expect(save).not.toHaveBeenCalled();
+    },
+  );
 });

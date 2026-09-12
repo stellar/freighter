@@ -1,3 +1,5 @@
+import { isSoranName, verifySoranDestination } from "popup/helpers/soran";
+import { assertSoranTransactionRoute } from "popup/helpers/soranTransaction";
 import React, { useState, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
@@ -72,6 +74,7 @@ export const HardwareSign = ({
     useSelector(settingsSelector);
   const {
     hardwareWalletData: { transactionXDR, shouldSubmit },
+    transactionData,
   } = useSelector(transactionSubmissionSelector);
   const bipPath = useSelector(bipPathSelector);
   const activePublicKey = useSelector(publicKeySelector);
@@ -157,6 +160,30 @@ export const HardwareSign = ({
     setIsDetecting(true);
     setConnectError("");
     try {
+      if (
+        isInternal &&
+        !isSignMessage &&
+        !isSignSorobanAuthorization &&
+        isSoranName(transactionData.federationAddress || "")
+      ) {
+        const expected = {
+          address: transactionData.destination,
+          memo: transactionData.memo || "",
+          memoType: transactionData.memoType || "",
+        };
+        await verifySoranDestination(
+          transactionData.federationAddress,
+          expected,
+          networkDetails,
+        );
+        assertSoranTransactionRoute(transactionXDR, expected, networkDetails, {
+          publicKey: activePublicKey,
+          asset: transactionData.asset,
+          isCollectible: transactionData.isCollectible,
+          collectionAddress: transactionData.collectibleData.collectionAddress,
+          tokenId: transactionData.collectibleData.tokenId,
+        });
+      }
       const publicKey = await getWalletPublicKey[walletType](bipPath);
 
       // A transaction signed by the wrong device fails on its own — the

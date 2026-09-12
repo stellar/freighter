@@ -275,3 +275,22 @@ describe("getRowDataByOpType - Soroban transfer identity", () => {
     expect(row.amount).toContain("XLM");
   });
 });
+
+it("preserves a muxed sender and transaction reference for history naming", async () => {
+  const op = buildPaymentOperation({ to: PUBLIC_KEY, from: COUNTERPARTY });
+  op.from_muxed = new (await import("stellar-sdk")).MuxedAccount(
+    new (await import("stellar-sdk")).Account(COUNTERPARTY, "0"),
+    "42",
+  ).accountId();
+  op.transaction_attr.hash = "a".repeat(64);
+  op.transaction_attr.memo_type = "text";
+  op.transaction_attr.memo = "hello";
+  const row = await callGetRowData(op);
+  expect(row.metadata).toMatchObject({
+    from: op.from_muxed,
+    transactionHash: "a".repeat(64),
+    memoType: "text",
+    memo: "hello",
+    publicKey: PUBLIC_KEY,
+  });
+});

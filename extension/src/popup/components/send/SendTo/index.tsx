@@ -41,10 +41,11 @@ import {
   saveRecipientName,
   transactionDataSelector,
 } from "popup/ducks/transactionSubmission";
+import { isSoranName, normalizeSoranName } from "popup/helpers/soran";
 import type { FederationMemoType } from "popup/helpers/federationMemo";
 
 import { RequestState } from "constants/request";
-import { useSendToData, getAddressFromInput } from "./hooks/useSendToData";
+import { useSendToData } from "./hooks/useSendToData";
 
 import { openTab } from "popup/helpers/navigate";
 import { newTabHref } from "helpers/urls";
@@ -134,7 +135,7 @@ export const SendTo = ({
   );
   const allAccounts = useSelector(allAccountsSelector);
   const activePublicKey = useSelector(publicKeySelector);
-  const { state: sendDataState, fetchData } = useSendToData();
+  const { state: sendDataState, fetchData } = useSendToData({ isCollectible });
   const [debouncedDestination, setDebouncedDestination] = useState(
     federationAddress || destination || "",
   );
@@ -177,7 +178,8 @@ export const SendTo = ({
     onSubmit: () => {
       if (
         sendDataState.state === RequestState.SUCCESS &&
-        sendDataState.data.type === AppDataType.RESOLVED
+        sendDataState.data.type === AppDataType.RESOLVED &&
+        isCurrentResolution
       ) {
         handleContinue(
           sendDataState.data.validatedAddress,
@@ -193,7 +195,8 @@ export const SendTo = ({
     validate: (values) => {
       if (
         isValidPublicKey(values.destination) ||
-        isContractId(values.destination)
+        isContractId(values.destination) ||
+        isSoranName(values.destination)
       ) {
         return {};
       }
@@ -238,6 +241,15 @@ export const SendTo = ({
   const resolvedSendData = isResolvedSuggestionData(sendDataState.data)
     ? sendDataState.data
     : null;
+
+  const isCurrentResolution = Boolean(
+    resolvedSendData &&
+    !isLoading &&
+    isSearchSettled &&
+    (resolvedSendData.fedAddress || resolvedSendData.validatedAddress) ===
+      (normalizeSoranName(formik.values.destination) ||
+        formik.values.destination),
+  );
 
   // Track whether any successful fetch has completed (used for initial spinner).
   const hasLoadedOnceRef = useRef(false);
@@ -299,7 +311,7 @@ export const SendTo = ({
             autoComplete="off"
             id="destination-input"
             name="destination"
-            placeholder={t("Enter address")}
+            placeholder={t("Enter address or Soran name")}
             onChange={formik.handleChange}
             value={formik.values.destination}
             leftElement={<Icon.UserCircle />}
@@ -321,7 +333,7 @@ export const SendTo = ({
             debouncedDestination !== "" &&
             isSearchSettled && (
               <div>
-                {formik.isValid && resolvedSendData ? (
+                {formik.isValid && resolvedSendData && isCurrentResolution ? (
                   <>
                     {shouldShowAccountDoesntExistWarning({
                       assetCanonical: asset,
@@ -355,6 +367,8 @@ export const SendTo = ({
                         />
                       </div>
                       <span>
+                        {isSoranName(resolvedSendData.fedAddress) &&
+                          `${resolvedSendData.fedAddress} · `}
                         {truncatedPublicKey(resolvedSendData.validatedAddress)}
                       </span>
                     </button>
@@ -380,30 +394,26 @@ export const SendTo = ({
                     type="button"
                     data-testid="recent-address-button"
                     onClick={async () => {
-                      const addressFromInput =
-                        await getAddressFromInput(address);
-                      // A recent that resolves to the active account (e.g. a
-                      // federation address the synchronous list filter can't
-                      // resolve) is a self-send. Don't continue - surface the
-                      // error through the normal input flow instead.
+                      // Re-enter the normal resolution flow, including errors and network checks.
+                      if (isSoranName(address)) {
+                        formik.setFieldValue("destination", address);
+                        return;
+                      }
+                      const result = await fetchData(address, {});
                       if (
-                        isSameAccount(
-                          addressFromInput.validatedAddress,
-                          activePublicKey,
-                        )
+                        !isResolvedSuggestionData(result) ||
+                        isSameAccount(result.validatedAddress, activePublicKey)
                       ) {
                         formik.setFieldValue("destination", address);
                         return;
                       }
                       emitMetric(METRIC_NAMES.paymentRecipientRecentSelected);
-                      await fetchData(address, {});
                       handleContinue(
-                        addressFromInput.validatedAddress,
-                        addressFromInput.fedAddress,
+                        result.validatedAddress,
+                        result.fedAddress,
                         {
-                          federationMemo: addressFromInput.federationMemo,
-                          federationMemoType:
-                            addressFromInput.federationMemoType,
+                          federationMemo: result.federationMemo,
+                          federationMemoType: result.federationMemoType,
                         },
                       );
                     }}
@@ -413,7 +423,7 @@ export const SendTo = ({
                       <IdenticonImg publicKey={address} />
                     </div>
                     <span>
-                      {isFederationAddress(address)
+                      {isFederationAddress(address) || isSoranName(address)
                         ? address
                         : truncatedPublicKey(address)}
                     </span>
@@ -463,7 +473,7 @@ export const SendTo = ({
       <View.Footer>
         {!isLoading &&
         !hasError &&
-        isSearchSettled &&
+        isCurrentResolution &&
         formik.values.destination &&
         formik.isValid ? (
           <Button

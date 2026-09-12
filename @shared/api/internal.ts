@@ -1,3 +1,4 @@
+import { SoranPaymentName, SoranPaymentReference } from "./types/soran";
 import { captureException } from "@sentry/browser";
 import {
   Address,
@@ -2875,3 +2876,23 @@ export const cacheSwapTopTokens = async (
     throw new Error(error);
   }
 };
+
+export const saveSoranPaymentName = (
+  activePublicKey: string,
+  payment: SoranPaymentName,
+): Promise<{ saved: boolean }> =>
+  sendMessageToBackground({
+    activePublicKey,
+    payment,
+    type: SERVICE_TYPES.SAVE_SORAN_PAYMENT_NAME,
+  });
+
+export const getSoranPaymentName = (
+  activePublicKey: string,
+  payment: SoranPaymentReference,
+): Promise<{ name: string | null }> =>
+  sendMessageToBackground({
+    activePublicKey,
+    payment,
+    type: SERVICE_TYPES.GET_SORAN_PAYMENT_NAME,
+  });

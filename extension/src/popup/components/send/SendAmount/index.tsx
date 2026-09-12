@@ -9,6 +9,7 @@ import { useTranslation } from "react-i18next";
 import { LoadingBackground } from "popup/basics/LoadingBackground";
 import { View } from "popup/basics/layout/View";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
+import { isSoranName } from "popup/helpers/soran";
 import { AppDispatch } from "popup/App";
 import { isNativeAssetId } from "@shared/helpers/assetIdentity";
 import {
@@ -305,6 +306,12 @@ export const SendAmount = ({
 
   // Get memo disabled state using the helper
   const memoDisabledState = React.useMemo(() => {
+    if (isSoranName(federationAddress || "")) {
+      return {
+        isMemoDisabled: true,
+        memoDisabledMessage: t("The memo is set by the Soran name"),
+      };
+    }
     if (!destination) {
       return { isMemoDisabled: false, memoDisabledMessage: undefined };
     }
@@ -315,7 +322,14 @@ export const SendAmount = ({
       networkDetails,
       t,
     });
-  }, [destination, contractId, contractSupportsMuxed, networkDetails, t]);
+  }, [
+    destination,
+    contractId,
+    contractSupportsMuxed,
+    networkDetails,
+    federationAddress,
+    t,
+  ]);
 
   const { isMemoDisabled, memoDisabledMessage } = memoDisabledState;
 

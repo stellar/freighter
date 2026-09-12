@@ -1,3 +1,9 @@
+import {
+  assertSoranTransactionRoute,
+  unsupportedSoranMuxed,
+} from "popup/helpers/soranTransaction";
+import { isSoranName, verifySoranDestination } from "popup/helpers/soran";
+import { StrKey } from "stellar-sdk";
 import { useReducer } from "react";
 import { useDispatch, useSelector, useStore } from "react-redux";
 import BigNumber from "bignumber.js";
@@ -107,6 +113,17 @@ function useSimulateTxData({
       const currentTransactionData = transactionDataSelector(
         store.getState() as AppState,
       );
+      const soranName = currentTransactionData.federationAddress || "";
+      const isSoranPayment = isSoranName(soranName);
+      if (isSoranPayment) {
+        if (StrKey.isValidMed25519PublicKey(destination))
+          throw unsupportedSoranMuxed();
+        await verifySoranDestination(
+          soranName,
+          { address: destination, memo: "", memoType: "" },
+          networkDetails,
+        );
+      }
       const currentTransactionFee = getCurrentTransactionFee({
         currentTransactionFee: currentTransactionData.transactionFee,
         fallbackTransactionFee: transactionFee,
@@ -168,6 +185,20 @@ function useSimulateTxData({
         networkDetails,
       );
 
+      if (isSoranPayment) {
+        assertSoranTransactionRoute(
+          payload.transactionXdr,
+          { address: destination, memo: "", memoType: "" },
+          networkDetails,
+          {
+            publicKey,
+            asset: currentTransactionData.asset,
+            isCollectible: true,
+            collectionAddress: collectibleData.collectionAddress,
+            tokenId: collectibleData.tokenId,
+          },
+        );
+      }
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });
       return { ok: true, data: payload } as SimulateResult;
     } catch (error) {
