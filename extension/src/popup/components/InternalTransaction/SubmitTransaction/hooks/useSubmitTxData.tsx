@@ -167,13 +167,17 @@ function useSubmitTxData({
         collectionAddress: collectibleData.collectionAddress,
         tokenId: collectibleData.tokenId,
       };
-      const validateSoranEnvelope = (envelope: string) => {
+      const validateSoranEnvelope = (
+        envelope: string,
+        reviewedTransactionXdr?: string,
+      ) => {
         try {
           return assertSoranTransactionRoute(
             envelope,
             expectedSoranRoute,
             networkDetails,
             soranContext,
+            reviewedTransactionXdr,
           );
         } catch (error) {
           reduxDispatch(
@@ -193,11 +197,7 @@ function useSubmitTxData({
             },
             networkDetails,
           );
-          validateSoranEnvelope(
-            isHardwareWallet
-              ? transactionSimulation.preparedTransaction || ""
-              : xdr,
-          );
+          validateSoranEnvelope(xdr);
         } catch (error) {
           reduxDispatch(
             setSubmitError({ errorMessage: (error as Error).message }),
@@ -375,10 +375,10 @@ function useSubmitTxData({
           })
         : null;
 
-      // Validate the signer/device output as well as the unsigned input. This
-      // is the exact envelope submitted and the source of the history reference.
+      // The xdr prop is the original reviewed transaction for both software
+      // and hardware wallets. The signer may add signatures, not change its body.
       const soranPaymentReference = isSoranPayment
-        ? validateSoranEnvelope(signedXDR)
+        ? validateSoranEnvelope(signedXDR, xdr)
         : undefined;
       const submitResp = await reduxDispatch(
         submitFreighterTransaction({

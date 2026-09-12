@@ -160,29 +160,35 @@ export const HardwareSign = ({
     setIsDetecting(true);
     setConnectError("");
     try {
-      if (
+      const isSoranPayment =
         isInternal &&
         !isSignMessage &&
         !isSignSorobanAuthorization &&
-        isSoranName(transactionData.federationAddress || "")
-      ) {
-        const expected = {
-          address: transactionData.destination,
-          memo: transactionData.memo || "",
-          memoType: transactionData.memoType || "",
-        };
+        isSoranName(transactionData.federationAddress || "");
+      const expected = {
+        address: transactionData.destination,
+        memo: transactionData.memo || "",
+        memoType: transactionData.memoType || "",
+      };
+      const soranContext = {
+        publicKey: activePublicKey,
+        asset: transactionData.asset,
+        isCollectible: transactionData.isCollectible,
+        collectionAddress: transactionData.collectibleData.collectionAddress,
+        tokenId: transactionData.collectibleData.tokenId,
+      };
+      if (isSoranPayment) {
         await verifySoranDestination(
           transactionData.federationAddress,
           expected,
           networkDetails,
         );
-        assertSoranTransactionRoute(transactionXDR, expected, networkDetails, {
-          publicKey: activePublicKey,
-          asset: transactionData.asset,
-          isCollectible: transactionData.isCollectible,
-          collectionAddress: transactionData.collectibleData.collectionAddress,
-          tokenId: transactionData.collectibleData.tokenId,
-        });
+        assertSoranTransactionRoute(
+          transactionXDR,
+          expected,
+          networkDetails,
+          soranContext,
+        );
       }
       const publicKey = await getWalletPublicKey[walletType](bipPath);
 
@@ -222,6 +228,15 @@ export const HardwareSign = ({
       );
       // should support saving signed xdr for SubmitTransaction to submit
       if (signWithHardwareWallet.fulfilled.match(res)) {
+        if (isSoranPayment) {
+          assertSoranTransactionRoute(
+            typeof res.payload === "string" ? res.payload : "",
+            expected,
+            networkDetails,
+            soranContext,
+            transactionXDR,
+          );
+        }
         if (shouldSubmit && !isSignSorobanAuthorization && !isSignMessage) {
           // The internal branch: the device produced a signature and the flow
           // carries it to submission. This is where an internal hardware

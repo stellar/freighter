@@ -57,6 +57,7 @@ export const assertSoranTransactionRoute = (
   expected: Omit<SoranDestination, "memoType"> & { memoType: string },
   network: NetworkDetails,
   context: SoranTransactionContext,
+  reviewedTransactionXdr?: string,
 ) => {
   try {
     const tx = TransactionBuilder.fromXDR(
@@ -70,6 +71,21 @@ export const assertSoranTransactionRoute = (
       tx.source !== context.publicKey
     )
       throw mismatch();
+    if (reviewedTransactionXdr !== undefined) {
+      const reviewed = TransactionBuilder.fromXDR(
+        reviewedTransactionXdr,
+        network.networkPassphrase,
+      );
+      // Signing may add envelope signatures, but must preserve the entire
+      // reviewed transaction body, including amounts, assets, paths and fees.
+      if (
+        !(reviewed instanceof Transaction) ||
+        !Buffer.from(tx.signatureBase()).equals(
+          Buffer.from(reviewed.signatureBase()),
+        )
+      )
+        throw mismatch();
+    }
     if (!["", "text", "id", "hash"].includes(expected.memoType))
       throw mismatch();
     const memo = expected.memoType
@@ -122,7 +138,6 @@ export const assertSoranTransactionRoute = (
       switch (op.type) {
         case "payment":
         case "pathPaymentStrictSend":
-        case "pathPaymentStrictReceive":
           destination = op.destination;
           break;
         case "createAccount":

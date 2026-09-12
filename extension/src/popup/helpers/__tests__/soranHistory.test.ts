@@ -56,7 +56,11 @@ it("uses one unambiguous contract transfer and omits multi-party calls, swaps an
 it.each(["en-GB", "en-US", "pt-BR"])(
   "formats valid dates in %s without assuming AM/PM",
   (locale) => {
-    const result = formatHistoryTimestamp("2026-09-12T09:58:00Z", locale);
+    const date = new Date(2026, 8, 12, 9, 58);
+    const result = formatHistoryTimestamp(date.toISOString(), locale);
+    expect(result.split(" • ")[1]).toBe(
+      locale === "en-US" ? "09:58 AM" : "09:58",
+    );
     expect(result).toContain("2026");
     expect(result).toContain(" • ");
     expect(result).not.toMatch(/undefined|Invalid|NaN/);

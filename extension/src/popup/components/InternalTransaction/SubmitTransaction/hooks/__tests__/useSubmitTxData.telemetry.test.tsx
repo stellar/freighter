@@ -60,7 +60,8 @@ jest.mock("helpers/hooks/useGetCollectibles", () => ({
   }),
 }));
 
-const PUBLIC_KEY = Keypair.random().publicKey();
+const SOURCE_KEYPAIR = Keypair.random();
+const PUBLIC_KEY = SOURCE_KEYPAIR.publicKey();
 const DESTINATION = Keypair.random().publicKey();
 const USDC_ISSUER = Keypair.random().publicKey();
 const USDC_CANONICAL = `USDC:${USDC_ISSUER}`;
@@ -897,4 +898,208 @@ describe("Soran successful-payment annotations", () => {
       else expect(save).not.toHaveBeenCalled();
     },
   );
+});
+
+describe("Soran reviewed transaction binding at submission", () => {
+  const buildTransaction = (operation: xdr.Operation) =>
+    new TransactionBuilder(new Account(PUBLIC_KEY, "0"), {
+      fee: "100",
+      networkPassphrase: PASSPHRASE,
+    })
+      .addOperation(operation)
+      .setTimeout(0)
+      .build();
+  const payment = {
+    destination: DESTINATION,
+    asset: new Asset("USDC", USDC_ISSUER),
+    amount: "100",
+  };
+  const pathPayment = {
+    destination: DESTINATION,
+    sendAsset: new Asset("USDC", USDC_ISSUER),
+    sendAmount: "100",
+    destAsset: Asset.native(),
+    destMin: "90",
+    path: [],
+  };
+
+  beforeEach(() => {
+    jest.spyOn(Soran, "verifySoranDestination").mockResolvedValue(undefined);
+    jest.spyOn(ApiInternal, "getTokenPrices").mockResolvedValue({});
+    jest
+      .spyOn(ApiInternal, "saveSoranPaymentName")
+      .mockResolvedValue({ saved: true });
+    mockSubmitOk(buildResultXdr("880000000"));
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+    (emitMetric as jest.Mock).mockClear();
+    (emitSigningApproved as jest.Mock).mockClear();
+    (emitSigningFailed as jest.Mock).mockClear();
+  });
+
+  describe.each([false, true])("hardware wallet: %s", (isHardwareWallet) => {
+    it.each([
+      {
+        change: "payment amount",
+        reviewed: Operation.payment(payment),
+        altered: Operation.payment({ ...payment, amount: "101" }),
+      },
+      {
+        change: "payment asset issuer",
+        reviewed: Operation.payment(payment),
+        altered: Operation.payment({
+          ...payment,
+          asset: new Asset("USDC", PUBLIC_KEY),
+        }),
+      },
+      {
+        change: "payment replaced by account creation",
+        reviewed: Operation.payment(payment),
+        altered: Operation.createAccount({
+          destination: DESTINATION,
+          startingBalance: "100",
+        }),
+      },
+      {
+        change: "path-payment destination minimum",
+        reviewed: Operation.pathPaymentStrictSend(pathPayment),
+        altered: Operation.pathPaymentStrictSend({
+          ...pathPayment,
+          destMin: "1",
+        }),
+      },
+      {
+        change: "path-payment source asset",
+        reviewed: Operation.pathPaymentStrictSend(pathPayment),
+        altered: Operation.pathPaymentStrictSend({
+          ...pathPayment,
+          sendAsset: Asset.native(),
+        }),
+      },
+      {
+        change: "path-payment intermediate asset",
+        reviewed: Operation.pathPaymentStrictSend(pathPayment),
+        altered: Operation.pathPaymentStrictSend({
+          ...pathPayment,
+          path: [new Asset("EUR", USDC_ISSUER)],
+        }),
+      },
+      {
+        change: "strict-send replaced by strict-receive",
+        reviewed: Operation.pathPaymentStrictSend(pathPayment),
+        altered: Operation.pathPaymentStrictReceive({
+          destination: DESTINATION,
+          sendAsset: pathPayment.sendAsset,
+          sendMax: pathPayment.sendAmount,
+          destAsset: pathPayment.destAsset,
+          destAmount: pathPayment.destMin,
+          path: [],
+        }),
+      },
+    ])("rejects a signer changing $change", async ({ reviewed, altered }) => {
+      const reviewedTransaction = buildTransaction(reviewed);
+      const signedTransaction = buildTransaction(altered);
+      signedTransaction.sign(SOURCE_KEYPAIR);
+      const signedXdr = signedTransaction.toXDR();
+      const state = makeState({
+        asset: USDC_CANONICAL,
+        preparedTransaction: isHardwareWallet ? signedXdr : null,
+      });
+      state.transactionSubmission.transactionData.federationAddress =
+        "alice.nova";
+      const sign = jest
+        .spyOn(ApiInternal, "signFreighterTransaction")
+        .mockResolvedValue({ signedTransaction: signedXdr });
+      // HardwareSign clears its overlay XDR before this submission step.
+      expect(
+        state.transactionSubmission.hardwareWalletData.transactionXDR,
+      ).toBe("");
+      const { result, store } = renderSubmitHook(
+        state,
+        MAINNET_NETWORK_DETAILS,
+        {
+          isHardwareWallet,
+          transactionXdr: reviewedTransaction.toXDR(),
+        },
+      );
+
+      await act(async () => {
+        await result.current.fetchData({ isSwap: false });
+      });
+
+      if (isHardwareWallet) expect(sign).not.toHaveBeenCalled();
+      else
+        expect(sign).toHaveBeenCalledWith({
+          transactionXDR: reviewedTransaction.toXDR(),
+          network: PASSPHRASE,
+          activePublicKey: PUBLIC_KEY,
+        });
+      expect(global.fetch).not.toHaveBeenCalled();
+      expect(ApiInternal.saveSoranPaymentName).not.toHaveBeenCalled();
+      expect(store.getState().transactionSubmission.submitStatus).toBe(
+        ActionStatus.ERROR,
+      );
+    });
+
+    it.each([
+      { type: "payment", operation: Operation.payment(payment) },
+      {
+        type: "path payment",
+        operation: Operation.pathPaymentStrictSend(pathPayment),
+      },
+    ])(
+      "submits an unchanged $type with a new signature",
+      async ({ operation }) => {
+        const transaction = buildTransaction(operation);
+        const reviewedXdr = transaction.toXDR();
+        transaction.sign(SOURCE_KEYPAIR);
+        const signedXdr = transaction.toXDR();
+        expect(signedXdr).not.toBe(reviewedXdr);
+        const state = makeState({
+          asset: USDC_CANONICAL,
+          preparedTransaction: isHardwareWallet ? signedXdr : null,
+        });
+        state.transactionSubmission.transactionData.federationAddress =
+          "alice.nova";
+        jest
+          .spyOn(ApiInternal, "signFreighterTransaction")
+          .mockResolvedValue({ signedTransaction: signedXdr });
+        const { result, store } = renderSubmitHook(
+          state,
+          MAINNET_NETWORK_DETAILS,
+          {
+            isHardwareWallet,
+            transactionXdr: reviewedXdr,
+          },
+        );
+
+        await act(async () => {
+          await result.current.fetchData({ isSwap: false });
+        });
+
+        expect(global.fetch).toHaveBeenCalledWith(
+          expect.stringContaining("/submit-tx"),
+          expect.objectContaining({
+            body: JSON.stringify({
+              signed_xdr: signedXdr,
+              network_passphrase: PASSPHRASE,
+            }),
+          }),
+        );
+        expect(ApiInternal.saveSoranPaymentName).toHaveBeenCalledWith(
+          PUBLIC_KEY,
+          expect.objectContaining({
+            name: "alice.nova",
+            destination: DESTINATION,
+            transactionHash: Buffer.from(transaction.hash()).toString("hex"),
+          }),
+        );
+        expect(store.getState().transactionSubmission.submitStatus).toBe(
+          ActionStatus.SUCCESS,
+        );
+      },
+    );
+  });
 });

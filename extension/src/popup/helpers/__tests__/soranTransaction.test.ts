@@ -352,3 +352,213 @@ describe.each(["TOKEN", "foo:bar", "foo:bar:baz"])(
     );
   },
 );
+
+describe("binding the signed transaction to the reviewed transaction", () => {
+  const usd = new Asset("USD", other);
+  const pathParams = {
+    sendAsset: Asset.native(),
+    sendAmount: "1",
+    destination: recipient,
+    destAsset: usd,
+    destMin: "0.9",
+    path: [new Asset("EUR", other)],
+  };
+  const pathPayment = () => Operation.pathPaymentStrictSend(pathParams);
+
+  it.each([
+    ["payment", () => payment()],
+    ["path payment", pathPayment],
+    [
+      "account creation",
+      () =>
+        Operation.createAccount({
+          destination: recipient,
+          startingBalance: "1",
+        }),
+    ],
+    ["contract transfer", () => transfer()],
+  ] as const)(
+    "allows only signature additions to a reviewed %s",
+    (_, operation) => {
+      const tx = build(operation());
+      tx.sign(Keypair.random());
+      const reviewedXdr = tx.toXDR();
+      tx.sign(Keypair.random());
+
+      expect(
+        assertSoranTransactionRoute(
+          tx.toXDR(),
+          route(),
+          network,
+          context,
+          reviewedXdr,
+        ).transactionHash,
+      ).toBe(Buffer.from(tx.hash()).toString("hex"));
+    },
+  );
+
+  it.each([
+    [
+      "amount",
+      () =>
+        Operation.payment({
+          destination: recipient,
+          asset: Asset.native(),
+          amount: "2",
+        }),
+    ],
+    [
+      "asset",
+      () =>
+        Operation.payment({
+          destination: recipient,
+          asset: usd,
+          amount: "1",
+        }),
+    ],
+    [
+      "operation type to account creation",
+      () =>
+        Operation.createAccount({
+          destination: recipient,
+          startingBalance: "1",
+        }),
+    ],
+    ["operation type to a path payment", pathPayment],
+    ["operation type to a contract transfer", () => transfer()],
+  ] as const)("rejects changing the reviewed payment's %s", (_, operation) => {
+    expect(() =>
+      assertSoranTransactionRoute(
+        build(operation()).toXDR(),
+        route(),
+        network,
+        context,
+        build().toXDR(),
+      ),
+    ).toThrow(/does not match/);
+  });
+
+  it.each([
+    ["send amount", { sendAmount: "2" }],
+    ["send asset", { sendAsset: usd }],
+    ["destination asset", { destAsset: Asset.native() }],
+    ["minimum received amount", { destMin: "0.1" }],
+    ["path", { path: [] as Asset[] }],
+  ] as const)(
+    "rejects changing the reviewed path payment's %s",
+    (_, changes) => {
+      expect(() =>
+        assertSoranTransactionRoute(
+          build(
+            Operation.pathPaymentStrictSend({ ...pathParams, ...changes }),
+          ).toXDR(),
+          route(),
+          network,
+          context,
+          build(pathPayment()).toXDR(),
+        ),
+      ).toThrow(/does not match/);
+    },
+  );
+
+  it.each([
+    ["fee", "200", "0"],
+    ["sequence", "100", "1"],
+  ] as const)(
+    "rejects changing the reviewed transaction's %s",
+    (_, fee, sequence) => {
+      const changed = new TransactionBuilder(new Account(payer, sequence), {
+        fee,
+        networkPassphrase: network.networkPassphrase,
+      })
+        .addOperation(payment())
+        .setTimeout(0)
+        .build();
+      expect(() =>
+        assertSoranTransactionRoute(
+          changed.toXDR(),
+          route(),
+          network,
+          context,
+          build().toXDR(),
+        ),
+      ).toThrow(/does not match/);
+    },
+  );
+
+  it("rejects a changed memo even when it matches the current route", () => {
+    expect(() =>
+      assertSoranTransactionRoute(
+        build(payment(), Memo.text("changed")).toXDR(),
+        route(recipient, "changed", "text"),
+        network,
+        context,
+        build().toXDR(),
+      ),
+    ).toThrow(/does not match/);
+  });
+
+  it("rejects changing a contract transfer to another positive amount", () => {
+    expect(() =>
+      assertSoranTransactionRoute(
+        build(
+          transfer(
+            recipient,
+            payer,
+            contract,
+            "transfer",
+            nativeToScVal(BigInt(20), { type: "i128" }),
+          ),
+        ).toXDR(),
+        route(),
+        network,
+        context,
+        build(transfer()).toXDR(),
+      ),
+    ).toThrow(/does not match/);
+  });
+
+  it.each([
+    ["empty", (): string => ""],
+    ["malformed", (): string => "invalid"],
+    [
+      "fee bump",
+      () =>
+        TransactionBuilder.buildFeeBumpTransaction(
+          payer,
+          "100",
+          build(),
+          network.networkPassphrase,
+        ).toXDR(),
+    ],
+  ] as const)("rejects a supplied %s reviewed transaction", (_, reference) => {
+    expect(() =>
+      assertSoranTransactionRoute(
+        build().toXDR(),
+        route(),
+        network,
+        context,
+        reference(),
+      ),
+    ).toThrow(/does not match/);
+  });
+
+  it("rejects strict-receive payments even without a reviewed reference", () => {
+    const strictReceive = Operation.pathPaymentStrictReceive({
+      sendAsset: Asset.native(),
+      sendMax: "1",
+      destination: recipient,
+      destAsset: usd,
+      destAmount: "0.9",
+      path: [],
+    });
+    expect(() =>
+      assertSoranTransactionRoute(
+        build(strictReceive).toXDR(),
+        route(),
+        network,
+        context,
+      ),
+    ).toThrow(/does not match/);
+  });
+});
