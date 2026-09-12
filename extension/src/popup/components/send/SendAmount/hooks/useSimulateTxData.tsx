@@ -1,3 +1,8 @@
+import {
+  assertSoranTransactionRoute,
+  getSoranTokenAmount,
+  unsupportedSoranMuxed,
+} from "popup/helpers/soranTransaction";
 import { useReducer } from "react";
 import { splitCanonical } from "@shared/helpers/stellar";
 import { useTranslation } from "react-i18next";
@@ -18,6 +23,7 @@ import { emitMetric } from "helpers/metrics";
 import { scrubStrKeys } from "helpers/stellarStrKey";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { NetworkDetails } from "@shared/constants/stellar";
+import { isSoranName, verifySoranDestination } from "popup/helpers/soran";
 import {
   getNativeContractId,
   isNativeAssetId,
@@ -193,6 +199,7 @@ export const getOperation = (
   isSwap: boolean,
   isFunded: boolean,
   publicKey: string,
+  preserveMuxedDestination = false,
 ) => {
   // path payment or swap
   if (isPathPayment || isSwap) {
@@ -214,6 +221,7 @@ export const getOperation = (
   if (!isFunded && isNativeAsset(sourceAsset)) {
     let createAccountDestination = destination;
     if (isMuxedAccount(destination)) {
+      if (preserveMuxedDestination) throw unsupportedSoranMuxed();
       // encode muxed account to address
       createAccountDestination = extractBaseAddress(destination);
     }
@@ -249,6 +257,7 @@ const getBuiltTx = async (
   networkDetails: NetworkDetails,
   memo?: string,
   memoType?: string,
+  preserveMuxedDestination = false,
 ) => {
   const {
     sourceAsset,
@@ -280,6 +289,7 @@ const getBuiltTx = async (
       isSwap,
       isFunded,
       publicKey,
+      preserveMuxedDestination,
     );
     const transaction = new TransactionBuilder(sourceAccount, {
       fee: xlmToStroop(fee).toFixed(),
@@ -450,6 +460,25 @@ function useSimulateTxData({
       );
       const currentMemo = currentTransactionData.memo || memo;
       const currentMemoType = currentTransactionData.memoType || memoType;
+      const soranName = currentTransactionData.federationAddress || "";
+      const isSoranPayment = isSoranName(soranName);
+      if (isSoranPayment) {
+        await verifySoranDestination(
+          soranName,
+          {
+            address: destination,
+            memo: currentMemo || "",
+            memoType: currentMemoType || "",
+          },
+          networkDetails,
+        );
+        // The token transfer backend cannot preserve typed transaction memos.
+        if (simParams.type === "soroban" && currentMemo) {
+          throw new Error(
+            t("This token transfer cannot preserve the Soran memo"),
+          );
+        }
+      }
       const currentAmount = currentTransactionData.amount || amount;
       const currentAsset = currentTransactionData.asset || asset;
       const currentTransactionFee = getCurrentTransactionFee({
@@ -518,9 +547,16 @@ function useSimulateTxData({
       const tokenAddress = isNativeAssetId(currentAssetAddress)
         ? getNativeContractId(networkDetails.networkPassphrase)
         : currentAssetAddress;
+      const tokenDecimals = Number(
+        "decimals" in assetBalance ? assetBalance.decimals : 7,
+      );
+      const expectedTokenAmount =
+        isSoranPayment && simParams.type === "soroban"
+          ? getSoranTokenAmount(cleanAmount(currentAmount), tokenDecimals)
+          : undefined;
       const parsedAmount = parseTokenAmount(
         cleanAmount(currentAmount),
-        Number("decimals" in assetBalance ? assetBalance.decimals : 7),
+        tokenDecimals,
       );
 
       // For Soroban transfers, check if contract supports muxed and determine final destination
@@ -544,6 +580,7 @@ function useSimulateTxData({
             sorobanMemo = "";
           }
         } catch (error) {
+          if (isSoranPayment) throw error;
           // If we can't determine muxed destination, use original destination
           console.error("Error determining muxed destination:", error);
         }
@@ -567,6 +604,18 @@ function useSimulateTxData({
           },
         },
       });
+      if (isSoranPayment && simParams.type === "soroban") {
+        assertSoranTransactionRoute(
+          simResponse.payload?.preparedTransaction || "",
+          {
+            address: destination,
+            memo: currentMemo || "",
+            memoType: currentMemoType || "",
+          },
+          networkDetails,
+          { publicKey, asset: currentAsset, expectedTokenAmount },
+        );
+      }
       const simulationResponse =
         simResponse.payload && "simulationTransaction" in simResponse.payload
           ? simResponse.payload?.simulationTransaction
@@ -598,7 +647,9 @@ function useSimulateTxData({
           memo: simParamsMemo,
         } = simParams;
         // Use memo from Redux state if simParams doesn't have one, otherwise use simParams memo
-        const memoToUse = simParamsMemo || currentMemo;
+        const memoToUse = isSoranPayment
+          ? currentMemo
+          : simParamsMemo || currentMemo;
         // Use currentTransactionFee (fresh from Redux) instead of simResponse.recommendedFee
         // For classic transactions, simResponse.recommendedFee is just the recommendedFee we passed in
         const feeToUse = currentTransactionFee || simResponse.recommendedFee;
@@ -621,6 +672,7 @@ function useSimulateTxData({
           networkDetails,
           memoToUse,
           currentMemoType,
+          isSoranPayment,
         );
         const xdr = transaction.build().toXdr();
         payload.transactionXdr = xdr;
@@ -642,6 +694,18 @@ function useSimulateTxData({
         });
       }
 
+      if (isSoranPayment && simParams.type === "classic") {
+        assertSoranTransactionRoute(
+          payload.transactionXdr,
+          {
+            address: destination,
+            memo: currentMemo || "",
+            memoType: currentMemoType || "",
+          },
+          networkDetails,
+          { publicKey, asset: currentAsset },
+        );
+      }
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });
       return { ok: true, data: payload } as SimulateResult;
     } catch (error) {

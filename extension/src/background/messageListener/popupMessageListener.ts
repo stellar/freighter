@@ -1,3 +1,7 @@
+import {
+  saveSoranPaymentName,
+  getSoranPaymentName,
+} from "./handlers/soranPaymentNames";
 import browser from "webextension-polyfill";
 import { Store } from "redux";
 import {
@@ -417,6 +421,14 @@ export const popupMessageListener = (
         sessionStore,
       });
     }
+    case SERVICE_TYPES.SAVE_SORAN_PAYMENT_NAME:
+      if (!isFromExtensionPage && !isFromDevServer)
+        return { error: "Unauthorized" };
+      return saveSoranPaymentName({ request, localStore });
+    case SERVICE_TYPES.GET_SORAN_PAYMENT_NAME:
+      if (!isFromExtensionPage && !isFromDevServer)
+        return { error: "Unauthorized" };
+      return getSoranPaymentName({ request, localStore });
     case SERVICE_TYPES.ADD_RECENT_ADDRESS: {
       return addRecentAddress({
         request,

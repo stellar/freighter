@@ -1,11 +1,12 @@
-import { Asset, Networks } from "stellar-sdk";
+import { Account, Asset, MuxedAccount, Networks } from "stellar-sdk";
 
 import { TESTNET_NETWORK_DETAILS } from "@shared/constants/stellar";
 import { SorobanTokenInterface } from "@shared/constants/soroban/token";
 import { HistoryItemOperation } from "popup/components/accountHistory/HistoryItem";
 import * as sorobanHelpers from "popup/helpers/soroban";
 import { AssetType } from "@shared/api/types/account-balance";
-import { getRowDataByOpType } from "../useGetHistoryData";
+import { getHistoryCounterparty } from "popup/helpers/soranHistory";
+import { getRowDataByOpType, CollectibleLookupMap } from "../useGetHistoryData";
 
 // Base account owned by the wallet and its muxed (M...) forms.
 const PUBLIC_KEY = "GAJVUHQV535IYW25XBTWTCUXNHLQN4F2PGIPOOX4DDKL2UPNXUHWU7B3";
@@ -51,6 +52,7 @@ const CONTRACT_ID = "CAAQCAIBAEAQCAIBAEAQCAIBAEAQCAIBAEAQCAIBAEAQCAIBAEAQC526";
 const callGetRowData = (
   operation: HistoryItemOperation,
   balances: AssetType[] = [],
+  collectibles: CollectibleLookupMap = new Map(),
 ) =>
   getRowDataByOpType(
     PUBLIC_KEY,
@@ -60,7 +62,7 @@ const callGetRowData = (
     {},
     fetchTokenDetails,
     {},
-    new Map(),
+    collectibles,
     [],
   );
 
@@ -274,4 +276,134 @@ describe("getRowDataByOpType - Soroban transfer identity", () => {
 
     expect(row.amount).toContain("XLM");
   });
+});
+
+it("preserves a muxed sender and transaction reference for history naming", async () => {
+  const op = buildPaymentOperation({ to: PUBLIC_KEY, from: COUNTERPARTY });
+  op.from_muxed = new (await import("stellar-sdk")).MuxedAccount(
+    new (await import("stellar-sdk")).Account(COUNTERPARTY, "0"),
+    "42",
+  ).accountId();
+  op.transaction_attr.hash = "a".repeat(64);
+  op.transaction_attr.memo_type = "text";
+  op.transaction_attr.memo = "hello";
+  const row = await callGetRowData(op);
+  expect(row.metadata).toMatchObject({
+    from: op.from_muxed,
+    transactionHash: "a".repeat(64),
+    memoType: "text",
+    memo: "hello",
+    publicKey: PUBLIC_KEY,
+  });
+});
+
+describe("collectible history naming", () => {
+  afterEach(() => jest.restoreAllMocks());
+
+  it.each([
+    { from: COUNTERPARTY, to: PUBLIC_KEY, isReceiving: true },
+    { from: PUBLIC_KEY, to: COUNTERPARTY, isReceiving: false },
+  ])(
+    "preserves the sender and direction: %j",
+    async ({ from, to, isReceiving }) => {
+      jest
+        .spyOn(sorobanHelpers, "getAttrsFromSorobanHorizonOp")
+        .mockReturnValue({
+          fnName: SorobanTokenInterface.transfer,
+          contractId: CONTRACT_ID,
+          from,
+          to,
+          tokenId: 1,
+        });
+      const collectibles: CollectibleLookupMap = new Map([
+        [
+          `${CONTRACT_ID}:1`,
+          {
+            collectionAddress: CONTRACT_ID,
+            collectionName: "Test collection",
+            tokenId: "1",
+            owner: to,
+            tokenUri: "",
+            metadata: null,
+          },
+        ],
+      ]);
+      const row = await callGetRowData(
+        buildInvokeHostFnOperation(),
+        [],
+        collectibles,
+      );
+      expect(row.metadata).toMatchObject({
+        isCollectibleTransfer: true,
+        from,
+        to,
+        isReceiving,
+      });
+      expect(getHistoryCounterparty(row)).toEqual({
+        address: COUNTERPARTY,
+        isReceiving,
+      });
+    },
+  );
+});
+
+describe("token transfer history naming without asset balance changes", () => {
+  afterEach(() => jest.restoreAllMocks());
+
+  const muxedCounterparty = new MuxedAccount(
+    new Account(COUNTERPARTY, "0"),
+    "42",
+  ).accountId();
+  it.each([
+    {
+      from: COUNTERPARTY,
+      to: PUBLIC_KEY,
+      isReceiving: true,
+      address: COUNTERPARTY,
+    },
+    {
+      from: PUBLIC_KEY,
+      to: COUNTERPARTY,
+      isReceiving: false,
+      address: COUNTERPARTY,
+    },
+    {
+      from: muxedCounterparty,
+      to: MY_MUXED,
+      isReceiving: true,
+      address: muxedCounterparty,
+    },
+    {
+      from: PUBLIC_KEY,
+      to: muxedCounterparty,
+      isReceiving: false,
+      address: muxedCounterparty,
+    },
+  ])(
+    "preserves direction and complete counterparty: %j",
+    async ({ from, to, isReceiving, address }) => {
+      jest
+        .spyOn(sorobanHelpers, "getAttrsFromSorobanHorizonOp")
+        .mockReturnValue({
+          fnName: SorobanTokenInterface.transfer,
+          contractId: CONTRACT_ID,
+          from,
+          to,
+          amount: 10000000,
+        });
+      fetchTokenDetails.mockResolvedValue({ symbol: "TEST", decimals: 7 });
+      const row = await callGetRowData(
+        buildInvokeHostFnOperation({ asset_issuer: CONTRACT_ID }),
+      );
+
+      expect(row.action).toBe(isReceiving ? "Received" : "Sent");
+      expect(row.metadata).toMatchObject({
+        isTokenTransfer: true,
+        from,
+        to,
+        isReceiving,
+      });
+      expect(getHistoryCounterparty(row)).toEqual({ address, isReceiving });
+    },
+  );
 });

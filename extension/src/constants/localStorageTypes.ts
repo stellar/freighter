@@ -36,3 +36,5 @@ export const METRICS_USER_ID = "metrics_user_id";
 export const RECENT_PROTOCOLS = "recentProtocols";
 export const HAS_SEEN_DISCOVER_WELCOME = "hasSeenDiscoverWelcome";
 export const AUTO_LOCK_TIMEOUT_MINUTES_ID = "autoLockTimeoutMinutes";
+
+export const SORAN_PAYMENT_NAMES = "soranPaymentNames";

@@ -1,9 +1,10 @@
-import { useReducer } from "react";
+import { unsupportedSoranMuxed } from "popup/helpers/soranTransaction";
+import { useCallback, useEffect, useReducer, useRef } from "react";
 import { Federation, StrKey } from "stellar-sdk";
 import { FormikErrors } from "formik";
-import debounce from "lodash/debounce";
 import { captureException } from "@sentry/browser";
 import i18n from "popup/helpers/localizationConfig";
+import { isSoranName, resolveSoranName } from "popup/helpers/soran";
 import { FederationMemoType } from "popup/helpers/federationMemo";
 
 import { initialState, isError, reducer } from "helpers/request";
@@ -35,7 +36,22 @@ interface ResolvedSendToData {
 
 type SendToData = NeedsReRoute | ResolvedSendToData;
 
-export const getAddressFromInput = async (userInput: string) => {
+export const getAddressFromInput = async (
+  userInput: string,
+  networkDetails?: NetworkDetails,
+) => {
+  // The existing name/memo fields also carry canonical Soran payment instructions.
+  if (isSoranName(userInput)) {
+    if (!networkDetails)
+      throw new Error(i18n.t("Soran lookup requires a Soroban RPC URL"));
+    const result = await resolveSoranName(userInput, networkDetails);
+    return {
+      validatedAddress: result.address,
+      fedAddress: result.name,
+      federationMemo: result.memo,
+      federationMemoType: result.memoType,
+    };
+  }
   if (isFederationAddress(userInput)) {
     let fedResp;
     try {
@@ -73,7 +89,7 @@ export const getAddressFromInput = async (userInput: string) => {
   };
 };
 
-function useSendToData() {
+function useSendToData({ isCollectible = false } = {}) {
   const [state, dispatch] = useReducer(
     reducer<SendToData, unknown>,
     initialState,
@@ -84,71 +100,89 @@ function useSendToData() {
     includeIcons: false,
   });
 
-  const debouncedFetch = debounce(
-    async (
-      userInput: string,
-      publicKey: string,
-      applicationState: APPLICATION_STATE,
-      networkDetails: NetworkDetails,
-      _isMainnet: boolean,
-    ) => {
-      try {
-        const {
-          validatedAddress,
-          fedAddress,
-          federationMemo,
-          federationMemoType,
-        } = await getAddressFromInput(userInput);
+  const requestIdRef = useRef(0);
+  const cancelPendingRequest = useCallback(() => {
+    requestIdRef.current += 1;
+  }, []);
+  useEffect(() => cancelPendingRequest, [cancelPendingRequest]);
+  const resolveInput = async (
+    requestId: number,
+    userInput: string,
+    publicKey: string,
+    applicationState: APPLICATION_STATE,
+    networkDetails: NetworkDetails,
+    _isMainnet: boolean,
+  ) => {
+    try {
+      const {
+        validatedAddress,
+        fedAddress,
+        federationMemo,
+        federationMemoType,
+      } = await getAddressFromInput(userInput, networkDetails);
 
-        // Block self-sends. isSameAccount resolves muxed (M...) addresses to
-        // their base (G...) account, so sending to one of your own muxed
-        // addresses is caught too - as is a federation address that resolves to
-        // your own account (validatedAddress is the resolved G... here).
-        if (isSameAccount(validatedAddress, publicKey)) {
-          throw new Error(i18n.t("You cannot send to yourself"));
-        }
-
-        const { recentAddresses } = await loadRecentAddresses({
-          activePublicKey: publicKey,
-        });
-
-        const payload = {
-          type: AppDataType.RESOLVED,
-          recentAddresses,
-          validatedAddress,
-          fedAddress,
-          federationMemo,
-          federationMemoType,
-          applicationState,
-          publicKey,
-          networkDetails,
-        } as ResolvedSendToData;
-
-        let destinationAccount = await getBaseAccount(validatedAddress);
-        if (destinationAccount && !isContractId(destinationAccount)) {
-          const destinationBalances = await fetchBalances(
-            destinationAccount,
-            _isMainnet,
-            networkDetails,
-            true,
-            true,
-          );
-          if (isError<AccountBalances>(destinationBalances)) {
-            throw new Error(destinationBalances.message);
-          }
-
-          payload.destinationBalances = destinationBalances;
-        }
-
-        dispatch({ type: "FETCH_DATA_SUCCESS", payload });
-        return payload;
-      } catch (error) {
-        dispatch({ type: "FETCH_DATA_ERROR", payload: error });
-        return error;
+      if (
+        isCollectible &&
+        isSoranName(userInput) &&
+        StrKey.isValidMed25519PublicKey(validatedAddress)
+      ) {
+        throw unsupportedSoranMuxed();
       }
-    },
-    0,
-  );
+      if (isCollectible && isSoranName(userInput) && federationMemo) {
+        throw new Error(
+          i18n.t("This token transfer cannot preserve the Soran memo"),
+        );
+      }
+
+      // Block self-sends. isSameAccount resolves muxed (M...) addresses to
+      // their base (G...) account, so sending to one of your own muxed
+      // addresses is caught too - as is a federation address that resolves to
+      // your own account (validatedAddress is the resolved G... here).
+      if (isSameAccount(validatedAddress, publicKey)) {
+        throw new Error(i18n.t("You cannot send to yourself"));
+      }
+
+      const { recentAddresses } = await loadRecentAddresses({
+        activePublicKey: publicKey,
+      });
+
+      const payload = {
+        type: AppDataType.RESOLVED,
+        recentAddresses,
+        validatedAddress,
+        fedAddress,
+        federationMemo,
+        federationMemoType,
+        applicationState,
+        publicKey,
+        networkDetails,
+      } as ResolvedSendToData;
+
+      let destinationAccount = await getBaseAccount(validatedAddress);
+      if (destinationAccount && !isContractId(destinationAccount)) {
+        const destinationBalances = await fetchBalances(
+          destinationAccount,
+          _isMainnet,
+          networkDetails,
+          true,
+          true,
+        );
+        if (isError<AccountBalances>(destinationBalances)) {
+          throw new Error(destinationBalances.message);
+        }
+
+        payload.destinationBalances = destinationBalances;
+      }
+
+      if (requestId !== requestIdRef.current) return;
+      dispatch({ type: "FETCH_DATA_SUCCESS", payload });
+      return payload;
+    } catch (error) {
+      if (requestId !== requestIdRef.current) return;
+      dispatch({ type: "FETCH_DATA_ERROR", payload: error });
+      return error;
+    }
+  };
 
   const fetchData = async (
     userInput: string,
@@ -156,8 +190,10 @@ function useSendToData() {
       destination: string;
     }>,
   ) => {
+    const requestId = ++requestIdRef.current;
     dispatch({ type: "FETCH_DATA_START" });
     const appData = await fetchAppData(true);
+    if (requestId !== requestIdRef.current) return;
     if (isError(appData)) {
       throw new Error(appData.message);
     }
@@ -188,7 +224,8 @@ function useSendToData() {
     }
 
     if (userInput) {
-      return debouncedFetch(
+      return resolveInput(
+        requestId,
         userInput,
         publicKey,
         applicationState,
@@ -211,6 +248,7 @@ function useSendToData() {
       publicKey,
       networkDetails,
     } as ResolvedSendToData;
+    if (requestId !== requestIdRef.current) return;
     dispatch({ type: "FETCH_DATA_SUCCESS", payload });
     return payload;
   };
@@ -218,6 +256,7 @@ function useSendToData() {
   return {
     state,
     fetchData,
+    cancelPendingRequest,
   };
 }
 

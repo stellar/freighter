@@ -1,3 +1,5 @@
+import { assertSoranTransactionRoute } from "popup/helpers/soranTransaction";
+import { saveSoranPaymentName } from "@shared/api/internal";
 import { useReducer } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { captureException } from "@sentry/browser";
@@ -15,6 +17,7 @@ import {
 import { AccountBalances, useGetBalances } from "helpers/hooks/useGetBalances";
 import { useGetCollectibles } from "helpers/hooks/useGetCollectibles";
 import { NetworkDetails } from "@shared/constants/stellar";
+import { isSoranName, verifySoranDestination } from "popup/helpers/soran";
 import { emitMetric } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import {
@@ -131,6 +134,8 @@ function useSubmitTxData({
       amount,
       destination,
       federationAddress,
+      memo,
+      memoType,
       destinationAsset,
       destinationAmount,
       isCollectible,
@@ -148,6 +153,58 @@ function useSubmitTxData({
       const payload = {
         status: "success",
       } as SubmitTxData;
+
+      const isSoranPayment = !isSwap && isSoranName(federationAddress || "");
+      const expectedSoranRoute = {
+        address: destination,
+        memo: memo || "",
+        memoType: memoType || "",
+      };
+      const soranContext = {
+        publicKey,
+        asset,
+        isCollectible,
+        collectionAddress: collectibleData.collectionAddress,
+        tokenId: collectibleData.tokenId,
+      };
+      const validateSoranEnvelope = (
+        envelope: string,
+        reviewedTransactionXdr?: string,
+      ) => {
+        try {
+          return assertSoranTransactionRoute(
+            envelope,
+            expectedSoranRoute,
+            networkDetails,
+            soranContext,
+            reviewedTransactionXdr,
+          );
+        } catch (error) {
+          reduxDispatch(
+            setSubmitError({ errorMessage: (error as Error).message }),
+          );
+          throw error;
+        }
+      };
+      if (isSoranPayment) {
+        try {
+          await verifySoranDestination(
+            federationAddress,
+            {
+              address: destination,
+              memo: memo || "",
+              memoType: memoType || "",
+            },
+            networkDetails,
+          );
+          validateSoranEnvelope(xdr);
+        } catch (error) {
+          reduxDispatch(
+            setSubmitError({ errorMessage: (error as Error).message }),
+          );
+          throw error;
+        }
+      }
 
       // Asset identities for the volume telemetry. Classified up front (the
       // price snapshot they feed starts after signing, below). Skipped
@@ -318,6 +375,11 @@ function useSubmitTxData({
           })
         : null;
 
+      // The xdr prop is the original reviewed transaction for both software
+      // and hardware wallets. The signer may add signatures, not change its body.
+      const soranPaymentReference = isSoranPayment
+        ? validateSoranEnvelope(signedXDR, xdr)
+        : undefined;
       const submitResp = await reduxDispatch(
         submitFreighterTransaction({
           publicKey,
@@ -327,6 +389,14 @@ function useSubmitTxData({
       );
 
       if (submitFreighterTransaction.fulfilled.match(submitResp)) {
+        if (soranPaymentReference) {
+          // Recording a local label must never turn a confirmed payment into
+          // a failed send or prompt the user to submit it again.
+          void saveSoranPaymentName(publicKey, {
+            name: federationAddress!.trim().toLowerCase(),
+            ...soranPaymentReference,
+          }).catch(() => undefined);
+        }
         // NB: `transaction.submitted` is intentionally NOT emitted here. It is a
         // dApp *sign-and-submit* event, and the extension dApp API only
         // signs-and-returns (no submit path), so there's no conformant emit.

@@ -602,6 +602,9 @@ export const getRowDataByOpType = async (
   const baseMetadata = {
     createdAt,
     feeCharged: fee_charged,
+    transactionHash: operation.transaction_hash || transaction_attr.hash,
+    memoType: transaction_attr.memo_type,
+    publicKey,
     memo,
     type,
     isDustPayment: operation.isDustPayment,
@@ -692,7 +695,7 @@ export const getRowDataByOpType = async (
 
   if (isPayment) {
     const destination = to_muxed || to || "";
-    const sender = from || "";
+    const sender = operation.from_muxed || from || "";
 
     // default to Sent if a payment to self.
     // isSameAccount resolves muxed (M...) addresses to their base (G...) account,
@@ -897,6 +900,8 @@ export const getRowDataByOpType = async (
               destAssetCode: code,
               isInvokeHostFn,
               isTokenTransfer: true,
+              from: attrs.from,
+              isReceiving,
               nonLabelAmount: `${formattedTokenAmount} ${code}`,
               to: actualDestination,
             },
@@ -933,7 +938,9 @@ export const getRowDataByOpType = async (
             ...baseMetadata,
             isInvokeHostFn,
             isCollectibleTransfer: true,
+            from: attrs.from,
             to: actualDestination,
+            isReceiving,
             amount: `#${collectible.tokenId}`,
             collectionName: collectible.collectionName,
             collectionTokenId: collectible.tokenId,

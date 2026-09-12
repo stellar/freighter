@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { StrKey } from "stellar-sdk";
 import { useFormik } from "formik";
@@ -41,10 +41,11 @@ import {
   saveRecipientName,
   transactionDataSelector,
 } from "popup/ducks/transactionSubmission";
+import { isSoranName, normalizeSoranName } from "popup/helpers/soran";
 import type { FederationMemoType } from "popup/helpers/federationMemo";
 
 import { RequestState } from "constants/request";
-import { useSendToData, getAddressFromInput } from "./hooks/useSendToData";
+import { useSendToData } from "./hooks/useSendToData";
 
 import { openTab } from "popup/helpers/navigate";
 import { newTabHref } from "helpers/urls";
@@ -134,7 +135,20 @@ export const SendTo = ({
   );
   const allAccounts = useSelector(allAccountsSelector);
   const activePublicKey = useSelector(publicKeySelector);
-  const { state: sendDataState, fetchData } = useSendToData();
+  const {
+    state: sendDataState,
+    fetchData,
+    cancelPendingRequest,
+  } = useSendToData({ isCollectible });
+  const selectionIdRef = useRef(0);
+  const destinationTimeoutRef = useRef<
+    ReturnType<typeof setTimeout> | undefined
+  >(undefined);
+  const cancelPendingSelection = useCallback(() => {
+    clearTimeout(destinationTimeoutRef.current);
+    cancelPendingRequest();
+    return ++selectionIdRef.current;
+  }, [cancelPendingRequest]);
   const [debouncedDestination, setDebouncedDestination] = useState(
     federationAddress || destination || "",
   );
@@ -155,6 +169,7 @@ export const SendTo = ({
       federationMemoType?: FederationMemoType | "";
     } = {},
   ) => {
+    cancelPendingSelection();
     dispatch(saveDestination(validatedDestination));
     dispatch(saveDestinationAsset(""));
     dispatch(saveFederationAddress(validatedFedAdress || ""));
@@ -177,7 +192,8 @@ export const SendTo = ({
     onSubmit: () => {
       if (
         sendDataState.state === RequestState.SUCCESS &&
-        sendDataState.data.type === AppDataType.RESOLVED
+        sendDataState.data.type === AppDataType.RESOLVED &&
+        isCurrentResolution
       ) {
         handleContinue(
           sendDataState.data.validatedAddress,
@@ -193,7 +209,8 @@ export const SendTo = ({
     validate: (values) => {
       if (
         isValidPublicKey(values.destination) ||
-        isContractId(values.destination)
+        isContractId(values.destination) ||
+        isSoranName(values.destination)
       ) {
         return {};
       }
@@ -215,19 +232,20 @@ export const SendTo = ({
   };
 
   useEffect(() => {
-    const timeoutId = setTimeout(async () => {
+    const selectionId = selectionIdRef.current;
+    destinationTimeoutRef.current = setTimeout(async () => {
       setDebouncedDestination(formik.values.destination);
       const errors = await formik.validateForm(formik.values);
+      if (selectionId !== selectionIdRef.current) return;
       await fetchData(formik.values.destination, errors);
     }, DESTINATION_DEBOUNCE_MS);
 
     return () => {
-      clearTimeout(timeoutId);
+      cancelPendingSelection();
     };
-    // fetchData and formik.validateForm are stable refs — omitting intentionally
-    // to avoid re-triggering the debounce when only those refs change identity.
+    // Request-state updates must not restart the recipient-input debounce.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [formik.values.destination]);
+  }, [formik.values.destination, cancelPendingSelection]);
 
   const hasError = sendDataState.state === RequestState.ERROR;
   const isLoading =
@@ -238,6 +256,15 @@ export const SendTo = ({
   const resolvedSendData = isResolvedSuggestionData(sendDataState.data)
     ? sendDataState.data
     : null;
+
+  const isCurrentResolution = Boolean(
+    resolvedSendData &&
+    !isLoading &&
+    isSearchSettled &&
+    (resolvedSendData.fedAddress || resolvedSendData.validatedAddress) ===
+      (normalizeSoranName(formik.values.destination) ||
+        formik.values.destination),
+  );
 
   // Track whether any successful fetch has completed (used for initial spinner).
   const hasLoadedOnceRef = useRef(false);
@@ -291,7 +318,13 @@ export const SendTo = ({
 
   return (
     <React.Fragment>
-      <SubviewHeader title={t("Send to")} customBackAction={goBack} />
+      <SubviewHeader
+        title={t("Send to")}
+        customBackAction={() => {
+          cancelPendingSelection();
+          goBack();
+        }}
+      />
       <View.Content hasTopInput>
         <FormRows>
           <Input
@@ -299,8 +332,11 @@ export const SendTo = ({
             autoComplete="off"
             id="destination-input"
             name="destination"
-            placeholder={t("Enter address")}
-            onChange={formik.handleChange}
+            placeholder={t("Enter address or Soran name")}
+            onChange={(event) => {
+              cancelPendingSelection();
+              formik.handleChange(event);
+            }}
             value={formik.values.destination}
             leftElement={<Icon.UserCircle />}
             data-testid="send-to-input"
@@ -321,7 +357,7 @@ export const SendTo = ({
             debouncedDestination !== "" &&
             isSearchSettled && (
               <div>
-                {formik.isValid && resolvedSendData ? (
+                {formik.isValid && resolvedSendData && isCurrentResolution ? (
                   <>
                     {shouldShowAccountDoesntExistWarning({
                       assetCanonical: asset,
@@ -355,6 +391,8 @@ export const SendTo = ({
                         />
                       </div>
                       <span>
+                        {isSoranName(resolvedSendData.fedAddress) &&
+                          `${resolvedSendData.fedAddress} · `}
                         {truncatedPublicKey(resolvedSendData.validatedAddress)}
                       </span>
                     </button>
@@ -380,30 +418,34 @@ export const SendTo = ({
                     type="button"
                     data-testid="recent-address-button"
                     onClick={async () => {
-                      const addressFromInput =
-                        await getAddressFromInput(address);
-                      // A recent that resolves to the active account (e.g. a
-                      // federation address the synchronous list filter can't
-                      // resolve) is a self-send. Don't continue - surface the
-                      // error through the normal input flow instead.
+                      const selectionId = cancelPendingSelection();
+                      // Re-enter the normal resolution flow, including errors and network checks.
+                      if (isSoranName(address)) {
+                        formik.setFieldValue("destination", address);
+                        if (formik.values.destination === address)
+                          await fetchData(address, {});
+                        return;
+                      }
+                      const result = await fetchData(address, {});
                       if (
-                        isSameAccount(
-                          addressFromInput.validatedAddress,
-                          activePublicKey,
-                        )
+                        selectionId !== selectionIdRef.current ||
+                        result === undefined
+                      )
+                        return;
+                      if (
+                        !isResolvedSuggestionData(result) ||
+                        isSameAccount(result.validatedAddress, activePublicKey)
                       ) {
                         formik.setFieldValue("destination", address);
                         return;
                       }
                       emitMetric(METRIC_NAMES.paymentRecipientRecentSelected);
-                      await fetchData(address, {});
                       handleContinue(
-                        addressFromInput.validatedAddress,
-                        addressFromInput.fedAddress,
+                        result.validatedAddress,
+                        result.fedAddress,
                         {
-                          federationMemo: addressFromInput.federationMemo,
-                          federationMemoType:
-                            addressFromInput.federationMemoType,
+                          federationMemo: result.federationMemo,
+                          federationMemoType: result.federationMemoType,
                         },
                       );
                     }}
@@ -413,7 +455,7 @@ export const SendTo = ({
                       <IdenticonImg publicKey={address} />
                     </div>
                     <span>
-                      {isFederationAddress(address)
+                      {isFederationAddress(address) || isSoranName(address)
                         ? address
                         : truncatedPublicKey(address)}
                     </span>
@@ -436,7 +478,13 @@ export const SendTo = ({
                         type="button"
                         data-testid="my-account-button"
                         onClick={async () => {
-                          await fetchData(account.publicKey, {});
+                          const selectionId = cancelPendingSelection();
+                          const result = await fetchData(account.publicKey, {});
+                          if (
+                            selectionId !== selectionIdRef.current ||
+                            !isResolvedSuggestionData(result)
+                          )
+                            return;
                           handleContinue(account.publicKey, undefined, {
                             recipientName: account.name || "",
                           });
@@ -463,7 +511,7 @@ export const SendTo = ({
       <View.Footer>
         {!isLoading &&
         !hasError &&
-        isSearchSettled &&
+        isCurrentResolution &&
         formik.values.destination &&
         formik.isValid ? (
           <Button
