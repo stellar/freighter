@@ -144,7 +144,7 @@ it("ignores an older lookup that completes after the next recipient", async () =
   });
   await act(async () => {
     finishFirst(payment);
-    await first;
+    expect(await first).toBeUndefined();
   });
   expect(result.current.state.data).toMatchObject({
     validatedAddress: G,
@@ -172,3 +172,29 @@ it("rejects collectible muxed destinations before balance loading", async () => 
   );
   expect(mockFetchBalances).not.toHaveBeenCalled();
 });
+
+it.each([false, true])(
+  "returns no result after cancellation (lookup failure: %s)",
+  async (fails) => {
+    let finish!: () => void;
+    resolve.mockImplementationOnce(
+      () =>
+        new Promise((done, reject) => {
+          finish = () =>
+            fails ? reject(new Error("late error")) : done(payment);
+        }),
+    );
+    const { result } = renderHook(() => useSendToData());
+    let pending!: Promise<unknown>;
+    await act(async () => {
+      pending = result.current.fetchData("alice.nova", {});
+    });
+    act(() => result.current.cancelPendingRequest());
+    await act(async () => {
+      finish();
+      expect(await pending).toBeUndefined();
+    });
+    expect(result.current.state.state).not.toBe(RequestState.SUCCESS);
+    expect(result.current.state.state).not.toBe(RequestState.ERROR);
+  },
+);

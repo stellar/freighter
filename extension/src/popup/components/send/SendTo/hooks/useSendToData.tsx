@@ -1,5 +1,5 @@
 import { unsupportedSoranMuxed } from "popup/helpers/soranTransaction";
-import { useReducer, useRef } from "react";
+import { useCallback, useEffect, useReducer, useRef } from "react";
 import { Federation, StrKey } from "stellar-sdk";
 import { FormikErrors } from "formik";
 import { captureException } from "@sentry/browser";
@@ -101,6 +101,10 @@ function useSendToData({ isCollectible = false } = {}) {
   });
 
   const requestIdRef = useRef(0);
+  const cancelPendingRequest = useCallback(() => {
+    requestIdRef.current += 1;
+  }, []);
+  useEffect(() => cancelPendingRequest, [cancelPendingRequest]);
   const resolveInput = async (
     requestId: number,
     userInput: string,
@@ -170,12 +174,12 @@ function useSendToData({ isCollectible = false } = {}) {
         payload.destinationBalances = destinationBalances;
       }
 
-      if (requestId === requestIdRef.current)
-        dispatch({ type: "FETCH_DATA_SUCCESS", payload });
+      if (requestId !== requestIdRef.current) return;
+      dispatch({ type: "FETCH_DATA_SUCCESS", payload });
       return payload;
     } catch (error) {
-      if (requestId === requestIdRef.current)
-        dispatch({ type: "FETCH_DATA_ERROR", payload: error });
+      if (requestId !== requestIdRef.current) return;
+      dispatch({ type: "FETCH_DATA_ERROR", payload: error });
       return error;
     }
   };
@@ -244,15 +248,15 @@ function useSendToData({ isCollectible = false } = {}) {
       publicKey,
       networkDetails,
     } as ResolvedSendToData;
-    if (requestId === requestIdRef.current) {
-      dispatch({ type: "FETCH_DATA_SUCCESS", payload });
-    }
+    if (requestId !== requestIdRef.current) return;
+    dispatch({ type: "FETCH_DATA_SUCCESS", payload });
     return payload;
   };
 
   return {
     state,
     fetchData,
+    cancelPendingRequest,
   };
 }
 

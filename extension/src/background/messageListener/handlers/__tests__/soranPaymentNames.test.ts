@@ -137,3 +137,43 @@ it("contains storage failures without failing a successful payment", async () =>
     await getSoranPaymentName({ request: readRequest, localStore }),
   ).toEqual({ name: null });
 });
+
+it.each([false, true])(
+  "waits for an earlier pending save (storage failure: %s)",
+  async (fails) => {
+    let finish!: () => void;
+    let started!: () => void;
+    const writing = new Promise<void>((resolve) => {
+      started = resolve;
+    });
+    const gate = new Promise<void>((resolve) => {
+      finish = resolve;
+    });
+    jest
+      .mocked(localStore.setItem)
+      .mockImplementationOnce(async (key, value) => {
+        started();
+        await gate;
+        if (fails) throw new Error("disk error");
+        data[key] = value;
+      });
+    const save = saveSoranPaymentName({ request: saveRequest, localStore });
+    await writing;
+    const readFinished = jest.fn();
+    const read = getSoranPaymentName({ request: readRequest, localStore }).then(
+      readFinished,
+    );
+    await Promise.resolve();
+    await Promise.resolve();
+    const earlyReads = readFinished.mock.calls.length;
+    const storageReads = jest.mocked(localStore.getItem).mock.calls.length;
+    finish();
+    await Promise.all([save, read]);
+    expect(earlyReads).toBe(0);
+    // Only the save may read storage before its write completes.
+    expect(storageReads).toBe(1);
+    expect(readFinished).toHaveBeenCalledWith({
+      name: fails ? null : "alice.nova",
+    });
+  },
+);

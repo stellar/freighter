@@ -77,6 +77,7 @@ export const getSoranPaymentName = async ({
     if (!validReference(request.activePublicKey, request.payment))
       return { name: null };
     const key = soranPaymentKey(request.activePublicKey!, request.payment);
+    await writes;
     const stored: StoredName[] =
       (await localStore.getItem(SORAN_PAYMENT_NAMES)) || [];
     const name = stored.find((item) => item.key === key)?.name;
