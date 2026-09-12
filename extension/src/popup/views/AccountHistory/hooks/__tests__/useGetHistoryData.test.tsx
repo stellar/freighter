@@ -1,4 +1,4 @@
-import { Asset, Networks } from "stellar-sdk";
+import { Account, Asset, MuxedAccount, Networks } from "stellar-sdk";
 
 import { TESTNET_NETWORK_DETAILS } from "@shared/constants/stellar";
 import { SorobanTokenInterface } from "@shared/constants/soroban/token";
@@ -343,6 +343,67 @@ describe("collectible history naming", () => {
         address: COUNTERPARTY,
         isReceiving,
       });
+    },
+  );
+});
+
+describe("token transfer history naming without asset balance changes", () => {
+  afterEach(() => jest.restoreAllMocks());
+
+  const muxedCounterparty = new MuxedAccount(
+    new Account(COUNTERPARTY, "0"),
+    "42",
+  ).accountId();
+  it.each([
+    {
+      from: COUNTERPARTY,
+      to: PUBLIC_KEY,
+      isReceiving: true,
+      address: COUNTERPARTY,
+    },
+    {
+      from: PUBLIC_KEY,
+      to: COUNTERPARTY,
+      isReceiving: false,
+      address: COUNTERPARTY,
+    },
+    {
+      from: muxedCounterparty,
+      to: MY_MUXED,
+      isReceiving: true,
+      address: muxedCounterparty,
+    },
+    {
+      from: PUBLIC_KEY,
+      to: muxedCounterparty,
+      isReceiving: false,
+      address: muxedCounterparty,
+    },
+  ])(
+    "preserves direction and complete counterparty: %j",
+    async ({ from, to, isReceiving, address }) => {
+      jest
+        .spyOn(sorobanHelpers, "getAttrsFromSorobanHorizonOp")
+        .mockReturnValue({
+          fnName: SorobanTokenInterface.transfer,
+          contractId: CONTRACT_ID,
+          from,
+          to,
+          amount: 10000000,
+        });
+      fetchTokenDetails.mockResolvedValue({ symbol: "TEST", decimals: 7 });
+      const row = await callGetRowData(
+        buildInvokeHostFnOperation({ asset_issuer: CONTRACT_ID }),
+      );
+
+      expect(row.action).toBe(isReceiving ? "Received" : "Sent");
+      expect(row.metadata).toMatchObject({
+        isTokenTransfer: true,
+        from,
+        to,
+        isReceiving,
+      });
+      expect(getHistoryCounterparty(row)).toEqual({ address, isReceiving });
     },
   );
 });

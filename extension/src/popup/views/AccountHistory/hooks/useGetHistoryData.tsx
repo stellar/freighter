@@ -900,6 +900,8 @@ export const getRowDataByOpType = async (
               destAssetCode: code,
               isInvokeHostFn,
               isTokenTransfer: true,
+              from: attrs.from,
+              isReceiving,
               nonLabelAmount: `${formattedTokenAmount} ${code}`,
               to: actualDestination,
             },

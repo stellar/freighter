@@ -17,11 +17,12 @@ export const getHistoryCounterparty = (operation: OperationDataRow | null) => {
   }
   if (
     metadata.isPayment ||
+    metadata.isTokenTransfer ||
     metadata.isCollectibleTransfer ||
     metadata.type === "create_account"
   ) {
     if (
-      metadata.isCollectibleTransfer &&
+      (metadata.isTokenTransfer || metadata.isCollectibleTransfer) &&
       typeof metadata.isReceiving !== "boolean"
     )
       return undefined;

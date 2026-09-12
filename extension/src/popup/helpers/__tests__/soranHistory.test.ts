@@ -89,3 +89,50 @@ it.each([
     ).toBeUndefined();
   },
 );
+
+describe("token transfer history naming without asset balance changes", () => {
+  it.each([
+    { from: "sender", to: "me", isReceiving: true, address: "sender" },
+    { from: "me", to: "recipient", isReceiving: false, address: "recipient" },
+  ])("selects the counterparty: %j", ({ address, ...metadata }) => {
+    expect(
+      getHistoryCounterparty(
+        operation({
+          isInvokeHostFn: true,
+          isTokenTransfer: true,
+          ...metadata,
+        }),
+      ),
+    ).toEqual({ address, isReceiving: metadata.isReceiving });
+  });
+
+  it.each([
+    { from: "sender", to: "me" },
+    { to: "me", isReceiving: true },
+    { from: "me", isReceiving: false },
+    {
+      from: "me",
+      to: "recipient",
+      isReceiving: false,
+      transactionFailed: true,
+    },
+    { from: "me", to: "recipient", isReceiving: false, isSwap: true },
+    {
+      from: "me",
+      to: "recipient",
+      isReceiving: false,
+      hasAssetDiffs: true,
+      assetDiffs: [{ destination: "first" }, { destination: "second" }],
+    },
+  ])("omits a name for incomplete or ambiguous transfers: %j", (metadata) => {
+    expect(
+      getHistoryCounterparty(
+        operation({
+          isInvokeHostFn: true,
+          isTokenTransfer: true,
+          ...metadata,
+        }),
+      ),
+    ).toBeUndefined();
+  });
+});
