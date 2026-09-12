@@ -11,6 +11,7 @@ import {
   TransactionBuilder,
   nativeToScVal,
   rpc,
+  scValToNative,
 } from "stellar-sdk";
 
 import * as ApiInternal from "@shared/api/internal";
@@ -53,7 +54,7 @@ const RECIPIENT = Keypair.random().publicKey();
 const CONTRACT = "CCVKI6UYJDO34LO4D653IXCTPBGJOHJSJGSIOB4A46IH4ULNHS2MPQL7";
 const NETWORK = TESTNET_NETWORK_DETAILS;
 
-const buildTransfer = (amount: bigint, fee = "200") =>
+const buildTransfer = (amount: bigint, fee = "200", destination = RECIPIENT) =>
   new TransactionBuilder(new Account(PAYER, "0"), {
     fee,
     networkPassphrase: NETWORK.networkPassphrase,
@@ -62,7 +63,7 @@ const buildTransfer = (amount: bigint, fee = "200") =>
       new Contract(CONTRACT).call(
         "transfer",
         new Address(PAYER).toScVal(),
-        new Address(RECIPIENT).toScVal(),
+        new Address(destination).toScVal(),
         nativeToScVal(amount, { type: "i128" }),
       ),
     )
@@ -148,8 +149,8 @@ const renderSimulation = (
   return { ...rendered, store };
 };
 
-const mockSimulation = (amount: bigint) => {
-  const preparedTransaction = buildTransfer(amount);
+const mockSimulation = (amount: bigint, destination = RECIPIENT) => {
+  const preparedTransaction = buildTransfer(amount, "200", destination);
   const simulate = jest
     .spyOn(ApiInternal, "simulateTokenTransfer")
     .mockResolvedValue({
@@ -204,6 +205,11 @@ describe("Soran token amount validation before review", () => {
       });
 
       expect(simulate).toHaveBeenCalledTimes(1);
+      expect(simulate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          params: expect.objectContaining({ amount: units.toString() }),
+        }),
+      );
       expect(response).toMatchObject({
         ok: true,
         data: { transactionXdr: preparedTransaction },
@@ -296,6 +302,106 @@ describe("Soran token amount validation before review", () => {
         store.getState().transactionSubmission.transactionSimulation
           .preparedTransaction,
       ).toBeNull();
+    },
+  );
+});
+
+describe("Soran simulation through the API boundary", () => {
+  beforeEach(() => {
+    jest.spyOn(Soran, "verifySoranDestination").mockResolvedValue(undefined);
+    jest.spyOn(AccountHelpers, "getBaseAccount").mockResolvedValue(RECIPIENT);
+    jest
+      .spyOn(rpc.Server.prototype, "getAccount")
+      .mockImplementation(async () => new Account(PAYER, "0"));
+    mockScanTx.mockResolvedValue(null);
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+    mockFetchBalances.mockReset();
+    mockScanTx.mockReset();
+  });
+
+  it.each([
+    { amount: "9007199254740993", decimals: 0, altered: false },
+    { amount: "900719925.4740993", decimals: 7, altered: false },
+    { amount: "9007199254740993", decimals: 0, altered: true },
+    { amount: "900719925.4740993", decimals: 7, altered: true },
+  ])(
+    "preserves $amount through XDR and rejects altered responses ($altered)",
+    async ({ amount, decimals, altered }) => {
+      jest
+        .spyOn(MuxedAddress, "checkIsMuxedSupported")
+        .mockResolvedValue(false);
+      let postedUnits: bigint | undefined;
+      const fetch = jest
+        .spyOn(global, "fetch")
+        .mockImplementation(async (_url, options) => {
+          const body = JSON.parse(options?.body as string);
+          const transaction = TransactionBuilder.fromXDR(
+            body.xdr,
+            body.network_passphrase,
+          );
+          const operation = transaction.operations[0];
+          if (
+            operation.type !== "invokeHostFunction" ||
+            operation.func.type !== "hostFunctionTypeInvokeContract"
+          )
+            throw new Error("Expected a contract transfer");
+          postedUnits = scValToNative(operation.func.invokeContract.args[2]);
+          return {
+            ok: true,
+            json: async () => ({
+              preparedTransaction: buildTransfer(
+                postedUnits! + (altered ? BigInt(1) : BigInt(0)),
+              ),
+              simulationResponse: { minResourceFee: "100" },
+            }),
+          } as Response;
+        });
+      const { result, store } = renderSimulation(amount, decimals);
+      let response: SimulateResult | undefined;
+      await act(async () => {
+        response = await result.current.fetchData();
+      });
+      expect(fetch).toHaveBeenCalledWith(
+        expect.stringContaining("/simulate-tx"),
+        expect.any(Object),
+      );
+      expect(postedUnits).toBe(BigInt("9007199254740993"));
+      expect(response).toMatchObject({ ok: !altered });
+      if (altered) {
+        expect(mockScanTx).not.toHaveBeenCalled();
+        expect(result.current.state.data).toBeNull();
+        expect(
+          store.getState().transactionSubmission.transactionSimulation
+            .preparedTransaction,
+        ).toBeNull();
+      } else {
+        expect(result.current.state.state).toBe(RequestState.SUCCESS);
+        expect(mockScanTx).toHaveBeenCalledTimes(1);
+      }
+    },
+  );
+
+  it.each([RECIPIENT, CONTRACT])(
+    "preserves an ordinary recipient %s when the mux-capability lookup fails",
+    async (destination) => {
+      const spec = jest
+        .spyOn(ApiInternal, "getContractSpec")
+        .mockRejectedValue(new Error("Temporary capability lookup failure"));
+      const { simulate } = mockSimulation(BigInt(10000000), destination);
+      const { result } = renderSimulation("1", 7, destination);
+      await act(async () => {
+        expect(await result.current.fetchData()).toMatchObject({ ok: true });
+      });
+      expect(spec).toHaveBeenCalledTimes(1);
+      expect(simulate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          params: expect.objectContaining({ destination }),
+        }),
+      );
+      expect(result.current.state.state).toBe(RequestState.SUCCESS);
     },
   );
 });

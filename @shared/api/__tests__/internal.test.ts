@@ -1,4 +1,15 @@
-import { Networks } from "stellar-sdk";
+import {
+  Account,
+  Address,
+  MuxedAccount,
+  Networks,
+  SorobanDataBuilder,
+  Transaction,
+  TransactionBuilder,
+  nativeToScVal,
+  rpc,
+  scValToNative,
+} from "stellar-sdk";
 import {
   FUTURENET_NETWORK_DETAILS,
   MAINNET_NETWORK_DETAILS,
@@ -8,6 +19,7 @@ import * as GetLedgerKeyAccounts from "../helpers/getLedgerKeyAccounts";
 import * as internalApi from "../internal";
 import { sendMessageToBackground } from "@shared/api/helpers/extensionMessaging";
 import { SERVICE_TYPES } from "@shared/constants/services";
+import { CUSTOM_NETWORK } from "@shared/helpers/stellar";
 
 jest.mock("@shared/api/helpers/extensionMessaging");
 const mockedSend = sendMessageToBackground as jest.Mock;
@@ -193,6 +205,166 @@ describe("internalApi", () => {
           }),
         }),
       );
+    });
+
+    const payer = "GBHKTFVBDUA6RYP5JM4SPZ76OXYAAHV4QHUOFV4S4TK342FMVGPHA2WN";
+    const recipient =
+      "GBES5UHJYI445RV4XBGWHZOMBW4RYXBHOX47ZNZAJZAH2WP42ZEP2DYQ";
+    const contract = "CCVKI6UYJDO34LO4D653IXCTPBGJOHJSJGSIOB4A46IH4ULNHS2MPQL7";
+    const muxed = new MuxedAccount(
+      new Account(recipient, "0"),
+      "18446744073709551615",
+    ).accountId();
+
+    const expectTransfer = (
+      transaction: Transaction,
+      destination: string,
+      amount: string,
+    ) => {
+      expect(transaction.source).toBe(payer);
+      expect(transaction.sequence).toBe("124");
+      expect(transaction.signatures).toHaveLength(0);
+      expect(transaction.operations).toHaveLength(1);
+      const operation = transaction.operations[0];
+      if (
+        operation.type !== "invokeHostFunction" ||
+        operation.func.type !== "hostFunctionTypeInvokeContract"
+      ) {
+        throw new Error("Expected a token transfer");
+      }
+      const invocation = operation.func.invokeContract;
+      expect(Address.fromScAddress(invocation.contractAddress).toString()).toBe(
+        contract,
+      );
+      expect(invocation.functionName.toString()).toBe("transfer");
+      expect(invocation.args).toHaveLength(3);
+      expect(Address.fromScVal(invocation.args[0]).toString()).toBe(payer);
+      expect(Address.fromScVal(invocation.args[1]).toString()).toBe(
+        destination,
+      );
+      expect(scValToNative(invocation.args[2])).toBe(BigInt(amount));
+    };
+
+    describe.each([
+      { route: "classic", destination: recipient },
+      { route: "muxed", destination: muxed },
+      { route: "contract", destination: contract },
+    ])("exact $route transfer", ({ destination }) => {
+      it.each(["9007199254740993", "170141183460469231731687303715884105727"])(
+        "encodes %s into the submitted simulation XDR without numeric rounding",
+        async (amount) => {
+          const account = jest
+            .spyOn(rpc.Server.prototype, "getAccount")
+            .mockResolvedValue(new Account(payer, "123"));
+          const submit = jest.spyOn(rpc.Server.prototype, "sendTransaction");
+          const simulationResponse = {
+            preparedTransaction: "prepared-xdr",
+            simulationResponse: { minResourceFee: "100" },
+          };
+          const fetchSpy = jest.spyOn(global, "fetch").mockResolvedValue({
+            ok: true,
+            json: async () => simulationResponse,
+          } as Response);
+
+          const result = await internalApi.simulateTokenTransfer({
+            address: contract,
+            publicKey: payer,
+            memo: "",
+            params: { publicKey: payer, destination, amount },
+            networkDetails: TESTNET_NETWORK_DETAILS,
+            transactionFee: "0.00001",
+          });
+
+          expect(account).toHaveBeenCalledWith(payer);
+          expect(fetchSpy).toHaveBeenCalledTimes(1);
+          const [url, options] = fetchSpy.mock.calls[0];
+          expect(url).toEqual(expect.stringContaining("/simulate-tx"));
+          const body = JSON.parse(options!.body as string);
+          expect(body.network_passphrase).toBe(
+            TESTNET_NETWORK_DETAILS.networkPassphrase,
+          );
+          expect(body).not.toHaveProperty("params");
+          const transaction = TransactionBuilder.fromXDR(
+            body.xdr,
+            body.network_passphrase,
+          );
+          expect(transaction).toBeInstanceOf(Transaction);
+          expectTransfer(transaction as Transaction, destination, amount);
+          expect(transaction.fee).toBe("100");
+          expect(result).toEqual({ ok: true, response: simulationResponse });
+          expect(submit).not.toHaveBeenCalled();
+        },
+      );
+    });
+
+    it.each(["9007199254740993", 10])(
+      "keeps custom-network RPC simulation exact for %s",
+      async (amount) => {
+        jest
+          .spyOn(rpc.Server.prototype, "getAccount")
+          .mockResolvedValue(new Account(payer, "123"));
+        const simulate = jest
+          .spyOn(rpc.Server.prototype, "simulateTransaction")
+          .mockResolvedValue({
+            _parsed: true,
+            id: "simulation",
+            latestLedger: 1,
+            minResourceFee: "100",
+            events: [],
+            transactionData: new SorobanDataBuilder().setResourceFee("100"),
+            result: { auth: [], retval: nativeToScVal(null) },
+          });
+        const fetchSpy = jest.spyOn(global, "fetch");
+        const networkDetails = {
+          ...TESTNET_NETWORK_DETAILS,
+          network: CUSTOM_NETWORK,
+        };
+        const result = await internalApi.simulateTokenTransfer({
+          address: contract,
+          publicKey: payer,
+          params: { publicKey: payer, destination: muxed, amount },
+          networkDetails,
+          transactionFee: "0.00001",
+        });
+        expect(result.ok).toBe(true);
+        expect(simulate).toHaveBeenCalledTimes(1);
+        expectTransfer(
+          simulate.mock.calls[0][0] as Transaction,
+          muxed,
+          String(amount),
+        );
+        const prepared = TransactionBuilder.fromXDR(
+          result.response.preparedTransaction,
+          networkDetails.networkPassphrase,
+        );
+        expectTransfer(prepared as Transaction, muxed, String(amount));
+        expect(prepared.fee).toBe("200");
+        expect(fetchSpy).not.toHaveBeenCalled();
+      },
+    );
+
+    it("rejects an exact transfer without RPC configuration before network access", async () => {
+      const fetchSpy = jest.spyOn(global, "fetch").mockResolvedValue({
+        ok: true,
+        json: async () => ({}),
+      } as Response);
+      await expect(
+        internalApi.simulateTokenTransfer({
+          address: contract,
+          publicKey: payer,
+          params: {
+            publicKey: payer,
+            destination: recipient,
+            amount: "9007199254740993",
+          },
+          networkDetails: {
+            ...TESTNET_NETWORK_DETAILS,
+            sorobanRpcUrl: undefined,
+          },
+          transactionFee: "0.00001",
+        }),
+      ).rejects.toThrow();
+      expect(fetchSpy).not.toHaveBeenCalled();
     });
   });
 

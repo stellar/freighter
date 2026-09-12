@@ -2458,7 +2458,7 @@ export const simulateTokenTransfer = async (args: {
   params: {
     publicKey: string;
     destination: string;
-    amount: number;
+    amount: number | string;
   };
   networkDetails: NetworkDetails;
   transactionFee: string;
@@ -2472,7 +2472,8 @@ export const simulateTokenTransfer = async (args: {
   const { address, publicKey, memo, params, networkDetails, transactionFee } =
     args;
 
-  if (isCustomNetwork(networkDetails)) {
+  const isCustom = isCustomNetwork(networkDetails);
+  if (isCustom || typeof params.amount === "string") {
     if (!networkDetails.sorobanRpcUrl) {
       throw new SorobanRpcNotSupportedError();
     }
@@ -2493,6 +2494,14 @@ export const simulateTokenTransfer = async (args: {
       new XdrLargeInt("i128", params.amount).toI128(), // amount
     ];
     const transaction = transfer(address, transferParams, memo, builder);
+    if (!isCustom) {
+      // Carry exact integer amounts in XDR instead of the numeric token endpoint.
+      // This reuses the same simulation API as collectible transfers.
+      return simulateTransaction({
+        xdr: transaction.toXdr(),
+        networkDetails,
+      });
+    }
     // TODO: type narrow instead of cast
     const simulationResponse = (await server.simulateTransaction(
       transaction,
@@ -2531,7 +2540,7 @@ export const simulateTokenTransfer = async (args: {
     pub_key: publicKey,
     memo: memo || "", // Backend requires memo as string, use empty string if undefined
     fee: xlmToStroop(transactionFee).toFixed(),
-    params,
+    params: { ...params, amount: params.amount },
     network_passphrase: networkDetails.networkPassphrase,
   };
 
