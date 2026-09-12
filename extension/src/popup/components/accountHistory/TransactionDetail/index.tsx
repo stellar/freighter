@@ -339,7 +339,7 @@ export const TransactionDetail = ({
                 >
                   {formatHistoryTimestamp(
                     activeOperation.metadata.createdAt,
-                    i18n?.resolvedLanguage,
+                    i18n?.language,
                   )}
                 </div>
               </>

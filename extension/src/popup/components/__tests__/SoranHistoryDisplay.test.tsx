@@ -1,23 +1,29 @@
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { render as renderComponent, screen } from "@testing-library/react";
+import { createInstance, type i18n } from "i18next";
+import { I18nextProvider } from "react-i18next";
 import { TESTNET_NETWORK_DETAILS } from "@shared/constants/stellar";
 import { HistoryItem } from "popup/components/accountHistory/HistoryItem";
 import { TransactionDetail } from "popup/components/accountHistory/TransactionDetail";
 import { useSoranHistoryName } from "popup/hooks/useSoranHistoryName";
+import englishTranslations from "popup/locales/en/translation.json";
+import portugueseTranslations from "popup/locales/pt/translation.json";
 import type { OperationDataRow } from "popup/views/AccountHistory/hooks/useGetHistoryData";
 
-jest.mock("react-i18next", () => ({
-  useTranslation: () => ({
-    t: (key: string, options?: { name?: string }) =>
-      key.replace("{{name}}", options?.name || ""),
-    i18n: { resolvedLanguage: "en-GB" },
-  }),
-}));
+jest.unmock("i18next");
+jest.unmock("i18next-browser-languagedetector");
+jest.unmock("i18next-resources-to-backend");
+jest.unmock("react-i18next");
 
 jest.mock("popup/hooks/useSoranHistoryName", () => ({
   useSoranHistoryName: jest.fn(),
 }));
 const names = jest.mocked(useSoranHistoryName);
+let localeInstance: i18n;
+const render = (component: React.ReactElement) =>
+  renderComponent(
+    <I18nextProvider i18n={localeInstance}>{component}</I18nextProvider>,
+  );
 const destination = "GBES5UHJYI445RV4XBGWHZOMBW4RYXBHOX47ZNZAJZAH2WP42ZEP2DYQ";
 const operation: OperationDataRow = {
   id: "123",
@@ -39,11 +45,52 @@ const operation: OperationDataRow = {
     memo: "hello",
   },
 };
-beforeEach(() =>
+beforeEach(async () => {
+  localeInstance = createInstance();
+  await localeInstance.init({
+    lng: "en-GB",
+    fallbackLng: "en",
+    resources: {
+      en: { translation: englishTranslations },
+      pt: { translation: portugueseTranslations },
+    },
+  });
   names.mockReturnValue({
     currentName: "current.nova",
     usedName: "original.nova",
-  }),
+  });
+});
+
+it.each([
+  { locale: "en-GB", translationLanguage: "en", expectedTime: "09:58" },
+  { locale: "en-US", translationLanguage: "en", expectedTime: "09:58 AM" },
+  { locale: "pt-BR", translationLanguage: "pt", expectedTime: "09:58" },
+])(
+  "preserves the $locale clock when translations fall back to $translationLanguage",
+  async ({ locale, translationLanguage, expectedTime }) => {
+    await localeInstance.changeLanguage(locale);
+    expect(localeInstance.language).toBe(locale);
+    expect(localeInstance.resolvedLanguage).toBe(translationLanguage);
+
+    render(
+      <TransactionDetail
+        activeOperation={{
+          ...operation,
+          metadata: {
+            ...operation.metadata,
+            createdAt: new Date(2026, 8, 12, 9, 58).toISOString(),
+          },
+        }}
+        networkDetails={TESTNET_NETWORK_DETAILS}
+      />,
+    );
+
+    const timestamp = screen.getByTestId(
+      "TransactionDetailModal__subtitle-date",
+    ).textContent;
+    expect(timestamp?.split(" • ")[1]).toBe(expectedTime);
+    expect(timestamp).not.toContain("undefined");
+  },
 );
 it("labels a historical name separately while retaining the address and memo", () => {
   render(
