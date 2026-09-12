@@ -17,7 +17,7 @@
   "types": "build/@stellar/freighter-api/src/index.d.ts",
   "dependencies": {
     "buffer": "6.0.3",
-    "semver": "7.8.4"
+    "semver": "7.8.5"
   },
   "devDependencies": {
     "@lavamoat/allow-scripts": "5.1.0"
