@@ -272,3 +272,83 @@ it("rejects malformed envelopes and fee bumps", () => {
     assertSoranTransactionRoute(bump.toXDR(), route(), network, context),
   ).toThrow();
 });
+
+describe.each(["TOKEN", "foo:bar", "foo:bar:baz"])(
+  "contract token symbol %s",
+  (symbol) => {
+    const tokenContext = { ...context, asset: `${symbol}:${contract}` };
+
+    it("accepts a transfer through the exact contract", () => {
+      expect(() =>
+        assertSoranTransactionRoute(
+          build(transfer()).toXDR(),
+          route(),
+          network,
+          tokenContext,
+        ),
+      ).not.toThrow();
+    });
+
+    it("rejects a transfer through a different contract", () => {
+      const wrongContract = new Asset("USD", other).contractId(
+        network.networkPassphrase,
+      );
+      expect(() =>
+        assertSoranTransactionRoute(
+          build(transfer(recipient, payer, wrongContract)).toXDR(),
+          route(),
+          network,
+          tokenContext,
+        ),
+      ).toThrow(/does not match/);
+    });
+
+    it.each([
+      ["payment", () => payment()],
+      [
+        "pathPaymentStrictSend",
+        () =>
+          Operation.pathPaymentStrictSend({
+            sendAsset: Asset.native(),
+            sendAmount: "1",
+            destination: recipient,
+            destAsset: Asset.native(),
+            destMin: "1",
+            path: [],
+          }),
+      ],
+      [
+        "pathPaymentStrictReceive",
+        () =>
+          Operation.pathPaymentStrictReceive({
+            sendAsset: Asset.native(),
+            sendMax: "1",
+            destination: recipient,
+            destAsset: Asset.native(),
+            destAmount: "1",
+            path: [],
+          }),
+      ],
+      [
+        "createAccount",
+        () =>
+          Operation.createAccount({
+            destination: recipient,
+            startingBalance: "1",
+          }),
+      ],
+    ] as const)(
+      "rejects substitution with %s to the same recipient",
+      (_, operation) => {
+        expect(() =>
+          assertSoranTransactionRoute(
+            build(operation()).toXDR(),
+            route(),
+            network,
+            tokenContext,
+          ),
+        ).toThrow(/does not match/);
+      },
+    );
+  },
+);

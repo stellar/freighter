@@ -9,6 +9,7 @@ import {
 } from "stellar-sdk";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { isNativeAssetId } from "@shared/helpers/assetIdentity";
+import { splitCanonical } from "@shared/helpers/stellar";
 import { buildMemoFromFederation } from "./federationMemo";
 import { SoranDestination } from "./soran";
 import i18n from "./localizationConfig";
@@ -41,7 +42,7 @@ const expectedContract = (
   if (context.isCollectible) return context.collectionAddress;
   if (isNativeAssetId(context.asset))
     return Asset.native().contractId(passphrase);
-  const [code, issuer] = context.asset.split(":");
+  const { code, issuer } = splitCanonical(context.asset);
   return StrKey.isValidContract(issuer || "")
     ? issuer
     : new Asset(code, issuer).contractId(passphrase);
@@ -115,7 +116,7 @@ export const assertSoranTransactionRoute = (
       // Contract assets and collectibles must never be replaced with a classic payment.
       if (
         context.isCollectible ||
-        StrKey.isValidContract(context.asset.split(":")[1] || "")
+        StrKey.isValidContract(splitCanonical(context.asset).issuer)
       )
         throw mismatch();
       switch (op.type) {
