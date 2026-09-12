@@ -1,5 +1,6 @@
 import {
   assertSoranTransactionRoute,
+  getSoranTokenAmount,
   unsupportedSoranMuxed,
 } from "popup/helpers/soranTransaction";
 import { useReducer } from "react";
@@ -546,9 +547,16 @@ function useSimulateTxData({
       const tokenAddress = isNativeAssetId(currentAssetAddress)
         ? getNativeContractId(networkDetails.networkPassphrase)
         : currentAssetAddress;
+      const tokenDecimals = Number(
+        "decimals" in assetBalance ? assetBalance.decimals : 7,
+      );
+      const expectedTokenAmount =
+        isSoranPayment && simParams.type === "soroban"
+          ? getSoranTokenAmount(cleanAmount(currentAmount), tokenDecimals)
+          : undefined;
       const parsedAmount = parseTokenAmount(
         cleanAmount(currentAmount),
-        Number("decimals" in assetBalance ? assetBalance.decimals : 7),
+        tokenDecimals,
       );
 
       // For Soroban transfers, check if contract supports muxed and determine final destination
@@ -596,6 +604,18 @@ function useSimulateTxData({
           },
         },
       });
+      if (isSoranPayment && simParams.type === "soroban") {
+        assertSoranTransactionRoute(
+          simResponse.payload?.preparedTransaction || "",
+          {
+            address: destination,
+            memo: currentMemo || "",
+            memoType: currentMemoType || "",
+          },
+          networkDetails,
+          { publicKey, asset: currentAsset, expectedTokenAmount },
+        );
+      }
       const simulationResponse =
         simResponse.payload && "simulationTransaction" in simResponse.payload
           ? simResponse.payload?.simulationTransaction
@@ -674,7 +694,7 @@ function useSimulateTxData({
         });
       }
 
-      if (isSoranPayment) {
+      if (isSoranPayment && simParams.type === "classic") {
         assertSoranTransactionRoute(
           payload.transactionXdr,
           {

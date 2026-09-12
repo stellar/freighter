@@ -1,3 +1,4 @@
+import BigNumber from "bignumber.js";
 import {
   Address,
   Asset,
@@ -20,7 +21,14 @@ export interface SoranTransactionContext {
   isCollectible?: boolean;
   collectionAddress?: string;
   tokenId?: number | null;
+  // Exact base units calculated locally before accepting a simulation. Later
+  // signing checks can bind the already validated reviewed transaction instead.
+  expectedTokenAmount?: bigint;
 }
+
+const MAX_SORAN_TOKEN_AMOUNT = new BigNumber(
+  "170141183460469231731687303715884105727",
+);
 
 const mismatch = () =>
   new Error(
@@ -28,6 +36,27 @@ const mismatch = () =>
       "Transaction does not match the Soran payment details. Select the recipient again.",
     ),
   );
+
+export const getSoranTokenAmount = (
+  amount: string,
+  decimals: number,
+): bigint => {
+  try {
+    if (!Number.isSafeInteger(decimals) || decimals < 0) throw mismatch();
+    const baseUnits = new BigNumber(amount).shiftedBy(decimals);
+    if (
+      !baseUnits.isFinite() ||
+      !baseUnits.isInteger() ||
+      !baseUnits.gt(0) ||
+      baseUnits.gt(MAX_SORAN_TOKEN_AMOUNT)
+    )
+      throw mismatch();
+    return BigInt(baseUnits.toFixed(0));
+  } catch {
+    throw mismatch();
+  }
+};
+
 export const unsupportedSoranMuxed = () =>
   new Error(
     i18n.t(
@@ -99,6 +128,11 @@ export const assertSoranTransactionRoute = (
       throw mismatch();
     const op = tx.operations[0];
     if (op.source && op.source !== context.publicKey) throw mismatch();
+    if (
+      context.expectedTokenAmount !== undefined &&
+      (op.type !== "invokeHostFunction" || context.isCollectible)
+    )
+      throw mismatch();
     let destination: string;
     if (op.type === "invokeHostFunction") {
       if (
@@ -126,8 +160,16 @@ export const assertSoranTransactionRoute = (
           scValToNative(value) !== context.tokenId
         )
           throw mismatch();
-      } else if (value.type !== "scvI128" || scValToNative(value) <= BigInt(0))
-        throw mismatch();
+      } else {
+        if (value.type !== "scvI128") throw mismatch();
+        const amount = scValToNative(value);
+        if (
+          amount <= BigInt(0) ||
+          (context.expectedTokenAmount !== undefined &&
+            amount !== context.expectedTokenAmount)
+        )
+          throw mismatch();
+      }
     } else {
       // Contract assets and collectibles must never be replaced with a classic payment.
       if (

@@ -12,7 +12,10 @@ import {
   xdr,
 } from "stellar-sdk";
 import { TESTNET_NETWORK_DETAILS as network } from "@shared/constants/stellar";
-import { assertSoranTransactionRoute } from "../soranTransaction";
+import {
+  assertSoranTransactionRoute,
+  getSoranTokenAmount,
+} from "../soranTransaction";
 
 const payer = Keypair.random().publicKey();
 const recipient = Keypair.random().publicKey();
@@ -560,5 +563,176 @@ describe("binding the signed transaction to the reviewed transaction", () => {
         context,
       ),
     ).toThrow(/does not match/);
+  });
+});
+
+describe("binding a simulated token transfer to the selected amount", () => {
+  const validateAmount = (value: xdr.ScVal, expectedTokenAmount: bigint) =>
+    assertSoranTransactionRoute(
+      build(transfer(recipient, payer, contract, "transfer", value)).toXDR(),
+      route(),
+      network,
+      { ...context, expectedTokenAmount },
+    );
+
+  it.each(["10", "9007199254740993"])(
+    "accepts the exact selected base-unit amount %s",
+    (amount) => {
+      expect(() =>
+        validateAmount(
+          nativeToScVal(BigInt(amount), { type: "i128" }),
+          BigInt(amount),
+        ),
+      ).not.toThrow();
+    },
+  );
+
+  it.each([
+    ["increased", "11"],
+    ["decreased", "9"],
+  ])("rejects an %s simulated amount", (_, amount) => {
+    expect(() =>
+      validateAmount(
+        nativeToScVal(BigInt(amount), { type: "i128" }),
+        BigInt(10),
+      ),
+    ).toThrow(/does not match/);
+  });
+
+  it("rejects a rounded response above Number.MAX_SAFE_INTEGER", () => {
+    expect(() =>
+      validateAmount(
+        nativeToScVal(BigInt("9007199254740992"), { type: "i128" }),
+        BigInt("9007199254740993"),
+      ),
+    ).toThrow(/does not match/);
+  });
+
+  it.each(["0", "-1"])("rejects a simulated amount of %s", (amount) => {
+    expect(() =>
+      validateAmount(
+        nativeToScVal(BigInt(amount), { type: "i128" }),
+        BigInt(amount),
+      ),
+    ).toThrow(/does not match/);
+  });
+
+  it.each(["0", "-1"])("rejects a selected amount of %s", (amount) => {
+    expect(() =>
+      validateAmount(
+        nativeToScVal(BigInt(10), { type: "i128" }),
+        BigInt(amount),
+      ),
+    ).toThrow(/does not match/);
+  });
+
+  it("rejects the correct amount encoded with the wrong integer type", () => {
+    expect(() =>
+      validateAmount(nativeToScVal(BigInt(10), { type: "u128" }), BigInt(10)),
+    ).toThrow(/does not match/);
+  });
+
+  it("rejects substituting a classic payment for an expected token transfer", () => {
+    expect(() =>
+      assertSoranTransactionRoute(build().toXDR(), route(), network, {
+        ...context,
+        expectedTokenAmount: BigInt(10000000),
+      }),
+    ).toThrow(/does not match/);
+  });
+
+  it("continues validating collectible token IDs independently of fungible amounts", () => {
+    const collectibleContext = {
+      ...context,
+      isCollectible: true,
+      collectionAddress: contract,
+      tokenId: 42,
+    };
+    const collectibleXdr = (tokenId: number) =>
+      build(
+        transfer(
+          recipient,
+          payer,
+          contract,
+          "transfer",
+          nativeToScVal(tokenId, { type: "u32" }),
+        ),
+      ).toXDR();
+
+    expect(() =>
+      assertSoranTransactionRoute(
+        collectibleXdr(42),
+        route(),
+        network,
+        collectibleContext,
+      ),
+    ).not.toThrow();
+    expect(() =>
+      assertSoranTransactionRoute(
+        collectibleXdr(43),
+        route(),
+        network,
+        collectibleContext,
+      ),
+    ).toThrow(/does not match/);
+    expect(() =>
+      assertSoranTransactionRoute(collectibleXdr(42), route(), network, {
+        ...collectibleContext,
+        expectedTokenAmount: BigInt(10),
+      }),
+    ).toThrow(/does not match/);
+  });
+});
+
+describe("calculating exact Soran token amounts", () => {
+  it.each([
+    ["1", 0, "1"],
+    ["1.0000000", 0, "1"],
+    ["1.25", 7, "12500000"],
+    ["0.0000001", 7, "1"],
+    ["900719925.4740993", 7, "9007199254740993"],
+    [
+      "170141183460469231731687303715884105727",
+      0,
+      "170141183460469231731687303715884105727",
+    ],
+  ] as const)(
+    "scales %s by %s decimals without rounding",
+    (amount, decimals, expected) => {
+      expect(getSoranTokenAmount(amount, decimals)).toBe(BigInt(expected));
+    },
+  );
+
+  it.each([
+    ["0.00000001", 7],
+    ["1.12345678", 7],
+    ["1.5", 0],
+    ["0", 7],
+    ["-1", 7],
+    ["NaN", 7],
+    ["Infinity", 7],
+    ["", 7],
+    ["invalid", 7],
+    ["170141183460469231731687303715884105728", 0],
+    ["170141183460469231731687303715884105727", 1],
+    ["1e1000000", 7],
+  ] as const)(
+    "rejects an invalid or unrepresentable amount %s at %s decimals",
+    (amount, decimals) => {
+      expect(() => getSoranTokenAmount(amount, decimals)).toThrow(
+        /does not match/,
+      );
+    },
+  );
+
+  it.each([
+    -1,
+    1.5,
+    NaN,
+    Infinity,
+    Number.MAX_SAFE_INTEGER + 1,
+    Number.MAX_SAFE_INTEGER,
+  ])("rejects invalid decimals %s", (decimals) => {
+    expect(() => getSoranTokenAmount("1", decimals)).toThrow(/does not match/);
   });
 });
