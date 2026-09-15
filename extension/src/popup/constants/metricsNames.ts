@@ -1,3 +1,5 @@
+// §N refs: wallet-eng-monorepo/design-docs/token-price-graphs/token-price-graphs-design.md
+
 export const METRIC_NAMES = {
   // Domain (action/outcome) event catalog, shared cross-platform.
   //
@@ -56,6 +58,17 @@ export const METRIC_NAMES = {
   discoverProtocolOpenedFromDetails: "discover.protocol_opened_from_details",
   discoverWelcomeModalViewed: "discover.welcome_modal_viewed",
 
+  // -- Token price chart ----------------------------------------------------
+  // Fired when the price-history fetch resolves (`has_data` known) — not a
+  // screen view; `screen.viewed` (asset_detail) covers that. Props are a
+  // frozen cross-platform fixture: snake_case, `range` verbatim, `low_volume`
+  // only when true.
+  tokenChartLoaded: "token_chart.loaded",
+  // Per range shown, unlike `loaded` (per network fetch, ~once per open thanks
+  // to warming). Answers "which chart did they look at / was it empty".
+  tokenChartViewed: "token_chart.viewed",
+  tokenChartRangeChanged: "token_chart.range_changed",
+
   // -- Assets / trustlines -------------------------------------------------
   assetAdded: "asset.added",
   assetRemoved: "asset.removed",
@@ -81,7 +94,8 @@ export const METRIC_NAMES = {
     "onboarding.recovery_phrase_confirm_failed",
   // Not emitted on extension: the create-account recovery-phrase screens have
   // no Back affordance to instrument. Mobile emits it; kept for a shared catalog.
-  onboardingRecoveryPhraseBackClicked: "onboarding.recovery_phrase_back_clicked",
+  onboardingRecoveryPhraseBackClicked:
+    "onboarding.recovery_phrase_back_clicked",
   onboardingCompleted: "onboarding.completed",
 
   // -- Account recovery / management --------------------------------------

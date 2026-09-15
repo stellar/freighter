@@ -129,6 +129,7 @@ function useSubmitTxData({
       destinationAmount,
       isCollectible,
       collectibleData,
+      swapSource,
     },
     transactionSimulation,
   } = submission;
@@ -409,6 +410,9 @@ function useSubmitTxData({
                 ? { execution_slippage_pct: executionSlippagePct }
                 : {}),
               ...sourceUsd.usdProps,
+              // Entry-point tag, present only when the swap flow was entered
+              // from the token detail view (`source: "token_details"`).
+              ...(swapSource ? { source: swapSource } : {}),
             });
             // Trustline added only once the combined changeTrust +
             // pathPaymentStrictSend transaction confirmed it. Gate on the

@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useLocation } from "react-router-dom";
 import { ActionStatus } from "@shared/api/types";
-import { STEPS } from "popup/constants/swap";
+import { STEPS, isSwapSource } from "popup/constants/swap";
 import {
   emitMetric,
   emitScreenViewed,
@@ -24,6 +24,7 @@ import {
   saveDestinationAsset,
   saveDestinationTokenDetails,
   saveIsToken,
+  saveSwapSource,
   transactionSubmissionSelector,
 } from "popup/ducks/transactionSubmission";
 import { navigateTo } from "popup/helpers/navigate";
@@ -131,6 +132,12 @@ export const Swap = () => {
     dispatch(saveAsset(sourceAsset));
     if (sourceAsset === "native") {
       dispatch(saveIsToken(false));
+    }
+
+    // Whitelisted so arbitrary query values never reach analytics.
+    const sourceParam = params.get("source");
+    if (isSwapSource(sourceParam)) {
+      dispatch(saveSwapSource(sourceParam));
     }
 
     // Pre-populate destination asset if provided and valid; otherwise default
