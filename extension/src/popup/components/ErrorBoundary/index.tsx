@@ -25,7 +25,12 @@ export class ErrorBoundary extends Component<
 
   componentDidCatch(error: Error, info: { componentStack: string }) {
     this.setState({ errorString: error.toString() });
-    captureException(info.componentStack);
+    // The Error itself, not `info.componentStack`. Passing the stack string
+    // made every boundary-caught crash arrive in Sentry as an opaque message
+    // with no type, no error message and no stack trace — the three things
+    // that make one diagnosable. The component stack is still useful, so it
+    // rides along as context.
+    captureException(error, { extra: { componentStack: info.componentStack } });
   }
 
   render() {
