@@ -4,6 +4,13 @@ import { Provider } from "react-redux";
 import { renderHook, act } from "@testing-library/react";
 import { useGetTokenPrices } from "../hooks/useGetTokenPrices";
 import { makeDummyStore } from "popup/__testHelpers__";
+import { reducer as remoteConfigReducer } from "popup/ducks/remoteConfig";
+
+// Flags settled, as in a running popup once `fetchFeatureFlags` has resolved.
+const SETTLED_REMOTE_CONFIG = {
+  ...remoteConfigReducer(undefined, { type: "@@init" }),
+  isInitialized: true,
+};
 import { defaultBlockaidScanAssetResult } from "@shared/helpers/stellar";
 import { RequestState } from "constants/request";
 import {
@@ -29,6 +36,7 @@ describe("useGetTokenPrices", () => {
         }),
       );
     const preloadedState = {
+      remoteConfig: SETTLED_REMOTE_CONFIG,
       cache: {
         tokenPrices: {},
       },
@@ -84,6 +92,7 @@ describe("useGetTokenPrices", () => {
         }),
       );
     const preloadedState = {
+      remoteConfig: SETTLED_REMOTE_CONFIG,
       cache: {
         tokenPrices: {
           [MAINNET_NETWORK_DETAILS.networkPassphrase]: {
@@ -149,6 +158,7 @@ describe("useGetTokenPrices", () => {
         }),
       );
     const preloadedState = {
+      remoteConfig: SETTLED_REMOTE_CONFIG,
       cache: {
         tokenPrices: {
           [MAINNET_NETWORK_DETAILS.networkPassphrase]: {
@@ -213,6 +223,7 @@ describe("useGetTokenPrices", () => {
         }),
       );
     const preloadedState = {
+      remoteConfig: SETTLED_REMOTE_CONFIG,
       cache: {
         tokenPrices: {
           [MAINNET_NETWORK_DETAILS.networkPassphrase]: {
@@ -292,6 +303,7 @@ describe("useGetTokenPrices", () => {
         }),
       );
     const preloadedState = {
+      remoteConfig: SETTLED_REMOTE_CONFIG,
       cache: {
         tokenPrices: {
           [customPubnet.networkPassphrase]: {
@@ -357,6 +369,7 @@ describe("useGetTokenPrices", () => {
         }),
       );
     const preloadedState = {
+      remoteConfig: SETTLED_REMOTE_CONFIG,
       cache: {
         tokenPrices: {},
       },
@@ -395,6 +408,7 @@ describe("useGetTokenPrices", () => {
       );
     // Valid cache that only covers native — the extra destination id is missing.
     const preloadedState = {
+      remoteConfig: SETTLED_REMOTE_CONFIG,
       cache: {
         tokenPrices: {
           [MAINNET_NETWORK_DETAILS.networkPassphrase]: {
@@ -455,7 +469,10 @@ describe("useGetTokenPrices", () => {
         }),
       )
       .mockImplementationOnce(() => Promise.reject(new Error("boom")));
-    const preloadedState = { cache: { tokenPrices: {} } };
+    const preloadedState = {
+      remoteConfig: SETTLED_REMOTE_CONFIG,
+      cache: { tokenPrices: {} },
+    };
 
     const store = makeDummyStore(preloadedState);
     const Wrapper =
@@ -510,6 +527,7 @@ describe("useGetTokenPrices", () => {
         }),
       );
     const preloadedState = {
+      remoteConfig: SETTLED_REMOTE_CONFIG,
       cache: {
         tokenPrices: {
           [MAINNET_NETWORK_DETAILS.networkPassphrase]: {

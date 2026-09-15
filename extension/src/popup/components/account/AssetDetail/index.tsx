@@ -40,6 +40,8 @@ import {
 import { Loading } from "popup/components/Loading";
 import { AccountBalances } from "helpers/hooks/useGetBalances";
 import { title } from "helpers/transaction";
+import { getTokenType, TokenType } from "popup/helpers/token";
+import { PriceDirection } from "popup/components/account/TokenPriceChart/constants";
 import {
   getBalanceByAsset,
   getPriceDeltaColor,
@@ -54,12 +56,22 @@ import {
 import { OperationDataRow } from "popup/views/AccountHistory/hooks/useGetHistoryData";
 import { navigateTo } from "popup/helpers/navigate";
 import { ROUTES } from "popup/constants/routes";
+import { SwapSource } from "popup/constants/swap";
 import { AccountHistoryData } from "popup/views/Account/hooks/useGetAccountHistoryData";
 import { publicKeySelector } from "popup/ducks/accountServices";
 import { iconsSelector, tokenPricesSelector } from "popup/ducks/cache";
+import { tokenPriceHistoryEnabledSelector } from "popup/ducks/remoteConfig";
+import {
+  RangeDeltaState,
+  TokenPriceChart,
+} from "popup/components/account/TokenPriceChart";
+import { AssetAbout } from "popup/components/account/AssetAbout";
+import { TokenStats } from "popup/components/account/TokenStats";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 
 import "./styles.scss";
+
+// §N refs: wallet-eng-monorepo/design-docs/token-price-graphs/token-price-graphs-design.md
 
 const AssetDetailOperations = ({
   filteredAssetOperations,
@@ -120,8 +132,16 @@ export const AssetDetail = ({
   const publicKey = useSelector(publicKeySelector);
   const cachedTokenPrices = useSelector(tokenPricesSelector);
   const assetIcons = useSelector(iconsSelector);
+  const isPriceHistoryEnabled = useSelector(tokenPriceHistoryEnabledSelector);
   const { isHideDustEnabled } = useSelector(settingsSelector);
   const [optionsOpen, setOptionsOpen] = React.useState(false);
+  // The chart section owns the range and the fetch; it reports the selected
+  // range's delta up. Starts on the placeholder until the mount fetch resolves.
+  const [rangeDelta, setRangeDelta] = useState<RangeDeltaState>({
+    isLoading: true,
+    text: "",
+    colorClass: PriceDirection.Neutral,
+  });
   const activeOptionsRef = useRef<HTMLDivElement>(null);
   const isNative = selectedAsset === "native";
   const tokenPrices =
@@ -213,13 +233,27 @@ export const AssetDetail = ({
     return <Loading />;
   }
 
+  const isLpShare = "liquidityPoolId" in selectedBalance;
+
+  // Chart + stats are mainnet-only; elsewhere the header keeps its 24h delta.
+  // LP shares are excluded: `<pool-id>:lp` is not priceable (getTokenPrices
+  // strips it), so the section would fire seven doomed requests and the About
+  // card would misclassify it as classic.
+  // Remount the scoped sections when the token or network changes in place,
+  // so no render carries the previous scope's series, stats or delta under
+  // the new identity (and `token_chart.viewed` cannot fire for the old data).
+  // Prefixed per child: identical keys on siblings send React's reconciler
+  // into a loop.
+  const scopeKey = `${networkDetails.networkPassphrase}/${selectedAsset}`;
+  const isChartShown =
+    isPriceHistoryEnabled && isMainnet(networkDetails) && !isLpShare;
+
   const isStellarExpertSupported =
     isMainnet(networkDetails) || isTestnet(networkDetails);
   const stellarExpertAssetLinkSlug = isSorobanBalance(selectedBalance)
     ? `contract/${selectedBalance.contractId}`
     : `asset/${selectedAsset.replace(":", "-")}`;
 
-  const isLpShare = "liquidityPoolId" in selectedBalance;
   const hasBalance =
     selectedBalance?.total &&
     new BigNumber(selectedBalance.total).isGreaterThan(0);
@@ -312,14 +346,24 @@ export const AssetDetail = ({
               ) : null}
             </div>
             <div className="AssetDetail__title">
+              {/* The native asset shows its NAME here, not its code — the
+                  balance list (BalanceRow) and the token picker (TokenList)
+                  both already do, and this header was the one place still
+                  reading "XLM". `title()` cannot own this: it is a plain
+                  helper with no access to `t`, and the name is translatable. */}
               {isLpShare && "liquidityPoolId" in selectedBalance
                 ? `LP: ${truncateString(selectedBalance.liquidityPoolId as string, 12)}`
-                : title(
-                    selectedBalance as Exclude<
-                      AssetType,
-                      LiquidityPoolShareAsset
-                    >,
-                  ) || assetDomain}
+                : (getTokenType(
+                    selectedAsset,
+                    networkDetails.networkPassphrase,
+                  ) === TokenType.Native
+                    ? t("Stellar Lumens")
+                    : title(
+                        selectedBalance as Exclude<
+                          AssetType,
+                          LiquidityPoolShareAsset
+                        >,
+                      )) || assetDomain}
             </div>
             {"contractId" in selectedBalance ? (
               <div className="AssetDetail__subtitle">
@@ -341,19 +385,45 @@ export const AssetDetail = ({
                   )}`
                 : null}
             </div>
-            {assetPrice && assetPrice.percentagePriceChange24h ? (
+            {isChartShown ? (
+              /* The view's one delta, reported by the chart section. Rendered in
+                 every state so the price and chart never shift. */
+              <div
+                className={`AssetDetail__delta AssetDetail__delta--range ${rangeDelta.colorClass}`}
+                data-testid="AssetDetail__delta"
+              >
+                {rangeDelta.isLoading ? (
+                  <span
+                    className="AssetDetail__delta-ghost"
+                    aria-hidden="true"
+                  />
+                ) : (
+                  rangeDelta.text
+                )}
+              </div>
+            ) : assetPrice && assetPrice.percentagePriceChange24h ? (
               <div
                 className={`AssetDetail__delta ${getPriceDeltaColor(
                   new BigNumber(
                     roundUsdValue(assetPrice.percentagePriceChange24h),
                   ),
                 )}`}
+                data-testid="AssetDetail__delta"
               >
                 {formatAmount(
                   roundUsdValue(assetPrice.percentagePriceChange24h),
                 )}
                 %
               </div>
+            ) : null}
+            {isChartShown ? (
+              <TokenPriceChart
+                key={`chart-${scopeKey}`}
+                token={selectedAsset}
+                networkDetails={networkDetails}
+                fallback24hPercent={assetPrice?.percentagePriceChange24h}
+                onDeltaChange={setRangeDelta}
+              />
             ) : null}
             <div className="AssetDetail__balance-info">
               <div
@@ -384,6 +454,21 @@ export const AssetDetail = ({
                 </div>
               </div>
             </div>
+            {isChartShown ? (
+              <AssetAbout
+                key={`about-${scopeKey}`}
+                token={selectedAsset}
+                assetDomain={assetDomain}
+                networkPassphrase={networkDetails.networkPassphrase}
+              />
+            ) : null}
+            {isChartShown ? (
+              <TokenStats
+                key={`stats-${scopeKey}`}
+                token={selectedAsset}
+                networkDetails={networkDetails}
+              />
+            ) : null}
             {filteredAssetOperations === null ? (
               <div
                 className="AssetDetail__list AssetDetail__list--loading"
@@ -427,7 +512,8 @@ export const AssetDetail = ({
                 isRounded
                 isFullWidth
                 onClick={() => {
-                  const queryParams = `?source_asset=${encodeURIComponent(selectedAsset)}`;
+                  // `source` tags swap.completed with its entry point.
+                  const queryParams = `?source_asset=${encodeURIComponent(selectedAsset)}&source=${SwapSource.TokenDetails}`;
                   navigateTo(ROUTES.swap, navigate, queryParams);
                 }}
               >

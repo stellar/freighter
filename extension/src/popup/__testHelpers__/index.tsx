@@ -19,6 +19,8 @@ import { reducer as remoteConfig } from "popup/ducks/remoteConfig";
 import { WalletType } from "@shared/constants/hardwareWallet";
 import { Account } from "@shared/api/types";
 
+// §N refs: wallet-eng-monorepo/design-docs/token-price-graphs/token-price-graphs-design.md
+
 export const TEST_PUBLIC_KEY =
   "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF";
 
@@ -82,9 +84,8 @@ export const Wrapper: React.FunctionComponent<any> = ({
 };
 
 export const mockPrices = {
-  // `TEST_CANONICAL` (DT) has a contract-ID issuer and is filtered out by
-  // production `getTokenPrices` (`@shared/api/internal.ts` →
-  // `isContractId(asset.issuer)`), so it is intentionally absent here.
+  // `TEST_CANONICAL` (DT) has a contract-ID issuer; these fixtures predate the
+  // predicate split and the legacy path still filters it, so it stays absent.
   [TEST_USDC_CANONICAL]: {
     currentPrice: "1",
     percentagePriceChange24h: "0.50",

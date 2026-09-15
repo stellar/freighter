@@ -1,13 +1,24 @@
 import React from "react";
-import { render, waitFor, screen } from "@testing-library/react";
+import { Asset } from "stellar-sdk";
+import { render, waitFor, screen, act } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import BigNumber from "bignumber.js";
 
 import { AssetDetail } from "popup/components/account/AssetDetail";
 import { ROUTES } from "popup/constants/routes";
-import { TESTNET_NETWORK_DETAILS } from "@shared/constants/stellar";
+import {
+  MAINNET_NETWORK_DETAILS,
+  TESTNET_NETWORK_DETAILS,
+} from "@shared/constants/stellar";
 import { APPLICATION_STATE as ApplicationState } from "@shared/constants/applicationState";
 import * as ApiInternal from "@shared/api/internal";
+import {
+  densePoints,
+  makeHistory,
+} from "@shared/api/__tests__/fixtures/tokenPriceHistory";
 import { mockAccounts, Wrapper, mockBalances } from "popup/__testHelpers__";
+import { resetCacheWriteClaims } from "helpers/cacheWrites";
+import { RANGE_SWITCH_DEBOUNCE_MS } from "popup/components/account/TokenPriceChart/constants";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 
 const mockHistoryData = {
@@ -56,6 +67,12 @@ jest
   .mockImplementation(() => Promise.resolve({} as any));
 
 describe("AssetDetail", () => {
+  // The in-flight request map is module scope; a test that leaves a request
+  // parked must not hand it to the next test's mount fetch.
+  afterEach(() => {
+    resetCacheWriteClaims();
+  });
+
   it("renders asset detail", async () => {
     jest
       .spyOn(ApiInternal, "getAccountBalances")
@@ -115,6 +132,11 @@ describe("AssetDetail", () => {
     );
     await waitFor(() => screen.getByTestId("AssetDetail"));
     expect(screen.getByTestId("AssetDetail")).toBeDefined();
+
+    // The native asset's NAME, not its code. The balance list and the token
+    // picker both already show "Stellar Lumens"; this header was the one
+    // place still reading "XLM".
+    expect(screen.getByText("Stellar Lumens")).toBeInTheDocument();
   });
   it("should hide dust payment if configured", async () => {
     const props = {
@@ -616,6 +638,427 @@ describe("AssetDetail", () => {
       await waitFor(() => screen.getByTestId("AssetDetail"));
       expect(screen.queryByTestId("asset-detail-swap-button")).toBeNull();
       expect(screen.queryByTestId("asset-detail-send-button")).toBeNull();
+    });
+  });
+
+  describe("token price chart gating", () => {
+    const makeProps = () =>
+      ({
+        handleClose: () => null,
+        accountBalances: {
+          balances: [
+            {
+              available: new BigNumber(10),
+              token: { type: "native", code: "XLM" },
+              total: new BigNumber(10),
+            },
+          ],
+        },
+        selectedAsset: "native",
+        setIsDetailViewShowing: () => null,
+        historyData: mockHistoryData,
+      }) as any;
+
+    const makeState = (networkDetails: any, isChartEnabled: boolean) => ({
+      auth: {
+        error: null,
+        applicationState: ApplicationState.PASSWORD_CREATED,
+        publicKey: "G1",
+        allAccounts: mockAccounts,
+      },
+      settings: {
+        networkDetails,
+      },
+      remoteConfig: {
+        // The flag only counts once the Experiment fetch has settled — the
+        // selector treats "not yet known" as off so the kill switch fails
+        // closed.
+        isInitialized: true,
+        use_token_price_history: isChartEnabled,
+      },
+    });
+
+    it("renders the chart section on mainnet with the flag on", async () => {
+      render(
+        <Wrapper
+          routes={[ROUTES.account]}
+          state={makeState(MAINNET_NETWORK_DETAILS, true)}
+        >
+          <AssetDetail {...makeProps()} />
+        </Wrapper>,
+      );
+
+      await waitFor(() => screen.getByTestId("AssetDetail"));
+      expect(screen.getByTestId("TokenPriceChart")).toBeInTheDocument();
+      // The About card ships behind the same flag.
+      expect(screen.getByTestId("AssetAbout")).toBeInTheDocument();
+    });
+
+    it("titles XLM's SAC 'Stellar Lumens' when it arrives as a contract balance", async () => {
+      // Contract balances canonicalize `symbol:contractId`, so the native SAC
+      // reaches this view as `XLM:C…` with NO native token type. A check on
+      // the balance shape titles it "XLM" while About says "Native".
+      const sac = Asset.native().contractId(
+        MAINNET_NETWORK_DETAILS.networkPassphrase,
+      );
+      const props = {
+        ...makeProps(),
+        accountBalances: {
+          balances: [
+            {
+              token: { code: "XLM", issuer: { key: sac } },
+              contractId: sac,
+              total: new BigNumber(10),
+              available: new BigNumber(10),
+              decimals: 7,
+              name: "Stellar Lumens",
+              symbol: "XLM",
+            },
+          ],
+        } as any,
+        selectedAsset: `XLM:${sac}`,
+      };
+
+      render(
+        <Wrapper
+          routes={[ROUTES.account]}
+          state={makeState(MAINNET_NETWORK_DETAILS, true)}
+        >
+          <AssetDetail {...props} />
+        </Wrapper>,
+      );
+
+      await waitFor(() => screen.getByTestId("AssetDetail"));
+      expect(screen.getByText("Stellar Lumens")).toBeInTheDocument();
+    });
+
+    it("stays hidden until the flag fetch settles — the switch fails closed", async () => {
+      // `use_token_price_history` defaults to true and the app renders before
+      // the Experiment fetch resolves. Reading the flag bare would mount the
+      // section and fire its requests during exactly the window an incident
+      // response is trying to stop them.
+      const state = makeState(MAINNET_NETWORK_DETAILS, true);
+      state.remoteConfig.isInitialized = false;
+
+      render(
+        <Wrapper routes={[ROUTES.account]} state={state}>
+          <AssetDetail {...makeProps()} />
+        </Wrapper>,
+      );
+
+      await waitFor(() => screen.getByTestId("AssetDetail"));
+      expect(screen.queryByTestId("TokenPriceChart")).toBeNull();
+      expect(screen.queryByTestId("AssetAbout")).toBeNull();
+    });
+
+    it("hides the chart section entirely off mainnet", async () => {
+      render(
+        <Wrapper
+          routes={[ROUTES.account]}
+          state={makeState(TESTNET_NETWORK_DETAILS, true)}
+        >
+          <AssetDetail {...makeProps()} />
+        </Wrapper>,
+      );
+
+      await waitFor(() => screen.getByTestId("AssetDetail"));
+      expect(screen.queryByTestId("TokenPriceChart")).toBeNull();
+      // Stats are mainnet-only too.
+      expect(screen.queryByTestId("TokenStats")).toBeNull();
+    });
+
+    it("hides the chart section when the kill switch is off", async () => {
+      render(
+        <Wrapper
+          routes={[ROUTES.account]}
+          state={makeState(MAINNET_NETWORK_DETAILS, false)}
+        >
+          <AssetDetail {...makeProps()} />
+        </Wrapper>,
+      );
+
+      await waitFor(() => screen.getByTestId("AssetDetail"));
+      expect(screen.queryByTestId("TokenPriceChart")).toBeNull();
+      expect(screen.queryByTestId("AssetAbout")).toBeNull();
+      expect(screen.queryByTestId("TokenStats")).toBeNull();
+    });
+  });
+
+  // The detail view shows exactly one delta, in the header under the price,
+  // and it follows the chart's selected timeframe. These tests drive the real
+  // wiring: the chart section owns the range and the fetch, the header
+  // renders what it reports.
+  describe("header delta", () => {
+    const HISTORY_1D = makeHistory({ points: densePoints(97) });
+    // The Figma's losing day: `-$0.0602 (12.12%)`, drawn red.
+    const HISTORY_1D_NEGATIVE = makeHistory({
+      change: { absolute: "-0.060200", percent: "-12.12" },
+      points: densePoints(97, { startPrice: 0.26, priceStep: -0.001 }),
+    });
+    const HISTORY_1Y = makeHistory({
+      range: "1Y",
+      resolutionSeconds: 86400,
+      change: { absolute: "0.060200", percent: "32.12" },
+      points: densePoints(122, { stepSeconds: 86400 }),
+    });
+
+    // The 24h figure the header shows today, and the 1D error fallback.
+    const NATIVE_PRICE = {
+      currentPrice: "0.276338",
+      percentagePriceChange24h: "1.09",
+    };
+
+    const historySpy = jest.spyOn(ApiInternal, "getTokenPriceHistory");
+    const statsSpy = jest.spyOn(ApiInternal, "getTokenStats");
+
+    beforeEach(() => {
+      historySpy.mockReset();
+      // The stats card is not under test; resolve it empty so it renders
+      // nothing instead of hanging on an unlistened background message.
+      statsSpy.mockReset().mockResolvedValue({} as any);
+    });
+
+    afterEach(() => {
+      resetCacheWriteClaims();
+      jest.useRealTimers();
+    });
+
+    const makeProps = () =>
+      ({
+        handleClose: () => null,
+        accountBalances: {
+          balances: [
+            {
+              available: new BigNumber(10),
+              token: { type: "native", code: "XLM" },
+              total: new BigNumber(10),
+            },
+          ],
+        },
+        selectedAsset: "native",
+        historyData: mockHistoryData,
+      }) as any;
+
+    const makeState = ({
+      networkDetails = MAINNET_NETWORK_DETAILS,
+      isChartEnabled = true,
+      price = NATIVE_PRICE as Record<string, string> | null,
+    } = {}) => ({
+      auth: {
+        error: null,
+        applicationState: ApplicationState.PASSWORD_CREATED,
+        publicKey: "G1",
+        allAccounts: mockAccounts,
+      },
+      settings: { networkDetails },
+      remoteConfig: {
+        isInitialized: true,
+        use_token_price_history: isChartEnabled,
+      },
+      cache: {
+        tokenPrices: {
+          [networkDetails.networkPassphrase]: {
+            G1: price ? { native: price } : {},
+          },
+        },
+      },
+    });
+
+    const renderDetail = (state: ReturnType<typeof makeState>) =>
+      render(
+        <Wrapper routes={[ROUTES.account]} state={state}>
+          <AssetDetail {...makeProps()} />
+        </Wrapper>,
+      );
+
+    const delta = () => screen.getByTestId("AssetDetail__delta");
+    // Fake-timer runs cannot use `waitFor`; settle the mount fetch's promise
+    // chain by hand instead.
+    const flush = async () => {
+      await act(async () => {
+        await Promise.resolve();
+        await Promise.resolve();
+      });
+    };
+
+    it("shows the selected range's delta, and it is the only delta on the view", async () => {
+      historySpy.mockResolvedValue(HISTORY_1D);
+      renderDetail(makeState());
+
+      await waitFor(() => expect(delta().textContent).toBe("+$0.0014 (0.86%)"));
+      // The chart's three-state palette, not `getPriceDeltaColor`.
+      expect(delta().className).toContain("positive");
+      // The chart section draws none of its own.
+      expect(screen.queryByTestId("TokenPriceChart__delta")).toBeNull();
+      expect(screen.getAllByTestId("AssetDetail__delta")).toHaveLength(1);
+      // One fetch for the range on screen: the header reads the state the
+      // chart already fetched, and reporting the delta upward must not send
+      // the section round again. Counted per range, because the deferred warm
+      // pass legitimately fetches the other five behind it.
+      await flush();
+      expect(
+        historySpy.mock.calls.filter(([{ range }]) => range === "1D"),
+      ).toHaveLength(1);
+    });
+
+    it("paints a losing range red — header delta and chart artwork", async () => {
+      historySpy.mockResolvedValue(HISTORY_1D_NEGATIVE);
+      renderDetail(makeState());
+
+      await waitFor(() =>
+        expect(delta().textContent).toBe("-$0.0602 (12.12%)"),
+      );
+      // The chart's three-state palette, not `getPriceDeltaColor`: a falling
+      // range is negative here, and the header's `--range` styling paints
+      // that red rather than the legacy branch's grey.
+      expect(delta().className).toContain("AssetDetail__delta--range");
+      expect(delta().className).toContain("negative");
+      // ...and the chart under it is red too, not green.
+      expect(screen.getByTestId("TokenPriceChart__svg")).toHaveClass(
+        "LineChart--negative",
+      );
+    });
+
+    it("follows the selected timeframe — 1D to 1Y", async () => {
+      historySpy.mockImplementation(({ range }) =>
+        Promise.resolve(range === "1Y" ? HISTORY_1Y : HISTORY_1D),
+      );
+      renderDetail(makeState());
+
+      await waitFor(() => expect(delta().textContent).toBe("+$0.0014 (0.86%)"));
+
+      const user = userEvent.setup();
+      await user.click(screen.getByRole("tab", { name: "1Y" }));
+
+      await waitFor(
+        () => expect(delta().textContent).toBe("+$0.0602 (32.12%)"),
+        { timeout: 3000 },
+      );
+      // The spot price is live, not per-timeframe.
+      expect(screen.getByText("$0.27")).toBeInTheDocument();
+    });
+
+    it("shows the placeholder for an uncached range, never the previous number", async () => {
+      jest.useFakeTimers();
+      historySpy.mockImplementation(({ range }) =>
+        range === "1Y" ? new Promise(() => {}) : Promise.resolve(HISTORY_1D),
+      );
+      renderDetail(makeState());
+      await flush();
+      expect(delta().textContent).toBe("+$0.0014 (0.86%)");
+
+      const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
+      await user.click(screen.getByRole("tab", { name: "1Y" }));
+
+      // Not one timer advanced: the switch flips the header to the skeleton
+      // pill immediately, rather than leaving 1D's number under the 1Y tab.
+      expect(delta().textContent).toBe("");
+      expect(delta().querySelector(".AssetDetail__delta-ghost")).not.toBeNull();
+
+      await act(async () => {
+        jest.advanceTimersByTime(RANGE_SWITCH_DEBOUNCE_MS + 50);
+        await Promise.resolve();
+      });
+      expect(delta().textContent).toBe("");
+    });
+
+    it("shows no delta text when the range carries no change", async () => {
+      historySpy.mockResolvedValue(
+        makeHistory({ points: densePoints(97), change: null }),
+      );
+      renderDetail(makeState());
+
+      // No number, no placeholder — and the row is still there holding its
+      // line, so withholding a delta cannot move the chart below it.
+      await waitFor(() =>
+        expect(delta().querySelector(".AssetDetail__delta-ghost")).toBeNull(),
+      );
+      expect(screen.getByTestId("TokenPriceChart__polyline")).toBeDefined();
+      expect(delta().textContent).toBe("");
+      expect(delta().className).toContain("AssetDetail__delta--range");
+    });
+
+    it("falls back to the 24h percentage when 1D fails", async () => {
+      historySpy.mockRejectedValue(new Error("backend down"));
+      renderDetail(makeState());
+
+      await waitFor(() => expect(delta().textContent).toBe("+1.09%"));
+      // Percent only: the absolute is never derived from a percentage.
+      expect(delta().textContent).not.toContain("$");
+    });
+
+    it("shows no number when a range other than 1D fails", async () => {
+      historySpy.mockImplementation(({ range }) =>
+        range === "1D"
+          ? Promise.resolve(HISTORY_1D)
+          : Promise.reject(new Error("backend down")),
+      );
+      renderDetail(makeState());
+
+      await waitFor(() => expect(delta().textContent).toBe("+$0.0014 (0.86%)"));
+
+      const user = userEvent.setup();
+      await user.click(screen.getByRole("tab", { name: "1Y" }));
+
+      // A 24h figure under a 1Y selector is the wrong timeframe, so the
+      // delta renders empty — the row keeps its reserved height, but carries
+      // no text and no error copy.
+      await waitFor(() => expect(delta().textContent).toBe(""), {
+        timeout: 3000,
+      });
+      expect(delta().textContent).not.toContain("1.09");
+    });
+
+    describe("with the chart not rendered", () => {
+      // The regression surface: off the chart path the header delta is the
+      // 24h percentage it has always been, `getPriceDeltaColor` and all.
+      it("keeps today's 24h delta off mainnet", async () => {
+        renderDetail(makeState({ networkDetails: TESTNET_NETWORK_DETAILS }));
+
+        await waitFor(() => screen.getByTestId("AssetDetail"));
+        expect(screen.queryByTestId("TokenPriceChart")).toBeNull();
+        expect(delta().textContent).toBe("1.09%");
+        expect(delta().className).toContain("positive");
+        expect(delta().className).not.toContain("AssetDetail__delta--range");
+        expect(delta().querySelector(".AssetDetail__delta-ghost")).toBeNull();
+        // Nothing fetches price history off the chart path — not the selected
+        // range and not the deferred warm pass, which lives inside the gated
+        // section and so cannot run on a network with no chart.
+        expect(historySpy).not.toHaveBeenCalled();
+      });
+
+      it("keeps today's 24h delta with the flag off", async () => {
+        renderDetail(makeState({ isChartEnabled: false }));
+
+        await waitFor(() => screen.getByTestId("AssetDetail"));
+        expect(screen.queryByTestId("TokenPriceChart")).toBeNull();
+        expect(delta().textContent).toBe("1.09%");
+        // Flag off: no fetch and no warm pass either.
+        expect(historySpy).not.toHaveBeenCalled();
+      });
+
+      it("keeps `getPriceDeltaColor`'s zero mapping untouched", async () => {
+        // `getPriceDeltaColor` paints a flat zero "negative" — a documented
+        // bug that other surfaces share. Only the chart path is allowed to
+        // stop going through it, so pin the old behavior here.
+        renderDetail(
+          makeState({
+            isChartEnabled: false,
+            price: { currentPrice: "0.276338", percentagePriceChange24h: "0" },
+          }),
+        );
+
+        await waitFor(() => screen.getByTestId("AssetDetail"));
+        expect(delta().textContent).toBe("0.00%");
+        expect(delta().className).toContain("negative");
+      });
+
+      it("renders no delta row at all when the token has no 24h figure", async () => {
+        renderDetail(makeState({ isChartEnabled: false, price: null }));
+
+        await waitFor(() => screen.getByTestId("AssetDetail"));
+        expect(screen.queryByTestId("AssetDetail__delta")).toBeNull();
+      });
     });
   });
 });

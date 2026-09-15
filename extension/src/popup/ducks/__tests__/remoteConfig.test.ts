@@ -376,7 +376,9 @@ describe("remoteConfig selectors", () => {
     expect(isRemoteConfigInitializedSelector(store.getState())).toBe(false);
   });
 
-  it("tokenPricesV2Selector defaults to true", () => {
+  it("tokenPricesV2Selector reads its default before the flags settle", () => {
+    // Unlike the chart kill switch, this one picks the backend for a cached
+    // load: failing closed would pin a v1 partial result for the session.
     const store = makeStore();
     expect(tokenPricesV2Selector(store.getState())).toBe(true);
   });

@@ -26,7 +26,11 @@ const ON_VARIANT_VALUES = ["on", "true", "enabled", "yes"];
  * Boolean flags — variant value is checked against ON_VARIANT_VALUES.
  * Add flag names here as new boolean flags are introduced.
  */
-const BOOLEAN_FLAGS = ["use_token_prices_v2", "use_balances_v2"] as const;
+const BOOLEAN_FLAGS = [
+  "use_token_prices_v2",
+  "use_balances_v2",
+  "use_token_price_history",
+] as const;
 
 /**
  * Version flags — variant value is parsed from underscore format (1_2_3 → 1.2.3).
@@ -89,6 +93,9 @@ const initialState: RemoteConfigState = {
   // can flip it on to opt into the v2 account-balances endpoint without a
   // release.
   use_balances_v2: false,
+  // Token price-history chart on AssetDetail. Ships ON — a kill switch, not
+  // launch choreography (§11 of the token-price-graphs design).
+  use_token_price_history: true,
   maintenance_banner: { enabled: false, payload: undefined },
   maintenance_screen: { enabled: false, payload: undefined },
 };
@@ -185,6 +192,16 @@ const remoteConfigSelector = (state: { remoteConfig: RemoteConfigState }) =>
   state.remoteConfig;
 
 /**
+ * A default-ON flag read fail-closed: off until `fetchFeatureFlags` settles.
+ * The app renders before that, so a bare read would run the feature during
+ * the first few hundred ms of exactly the incident the switch is for.
+ * `isInitialized` is set on failure too, so Amplitude being down can't wedge
+ * the feature off.
+ */
+const killSwitchSelector = (flag: (typeof BOOLEAN_FLAGS)[number]) =>
+  createSelector(remoteConfigSelector, (rc) => rc.isInitialized && rc[flag]);
+
+/**
  * Returns the maintenance banner flag state (enabled + resolved content).
  * Payload parsing happens here so the Redux store stays generic.
  */
@@ -230,6 +247,12 @@ export const maintenanceScreenSelector = createSelector(
  */
 export const tokenPricesV2Selector = createSelector(
   remoteConfigSelector,
+  // Deliberately NOT through `killSwitchSelector`. That factory gates whether
+  // a feature MOUNTS, which has no lasting effect; this flag picks the backend
+  // for a load whose result is cached. If it were read fail-closed, a
+  // pre-settle Account load would go to v1, which filters contract tokens, and
+  // the partial result would sit in the prices cache with nothing to retry it
+  // once the flags settled — Soroban assets stuck on "--" beside a v2 chart.
   (rc) => rc.use_token_prices_v2,
 );
 
@@ -241,6 +264,11 @@ export const tokenPricesV2Selector = createSelector(
 export const balancesV2Selector = createSelector(
   remoteConfigSelector,
   (rc) => rc.use_balances_v2,
+);
+
+/** Kill switch for the AssetDetail chart/stats/about section. Defaults to true. */
+export const tokenPriceHistoryEnabledSelector = killSwitchSelector(
+  "use_token_price_history",
 );
 
 /**

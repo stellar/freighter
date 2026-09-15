@@ -18,6 +18,7 @@ import { CUSTOM_NETWORK } from "@shared/helpers/stellar";
 import { ActionStatus } from "@shared/api/types";
 import * as ApiInternal from "@shared/api/internal";
 import { makeDummyStore } from "popup/__testHelpers__";
+import { reducer as remoteConfigReducer } from "popup/ducks/remoteConfig";
 import { initialState as txSubmissionInitialState } from "popup/ducks/transactionSubmission";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { emitMetric } from "helpers/metrics";
@@ -122,6 +123,11 @@ const makeState = ({
     // backend call) is skipped — recent-address bookkeeping isn't telemetry.
     allAccounts: [{ publicKey: DESTINATION, name: "t", imported: false }],
     publicKey: PUBLIC_KEY,
+  },
+  // Flags settled, as in a running popup once `fetchFeatureFlags` has resolved.
+  remoteConfig: {
+    ...remoteConfigReducer(undefined, { type: "@@init" }),
+    isInitialized: true,
   },
   cache: {
     balanceData: {},

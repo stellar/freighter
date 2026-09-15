@@ -9,6 +9,13 @@ import {
   TEST_PUBLIC_KEY,
   mockAccounts,
 } from "popup/__testHelpers__";
+import { reducer as remoteConfigReducer } from "popup/ducks/remoteConfig";
+
+// Flags settled, as in a running popup once `fetchFeatureFlags` has resolved.
+const SETTLED_REMOTE_CONFIG = {
+  ...remoteConfigReducer(undefined, { type: "@@init" }),
+  isInitialized: true,
+};
 import { RequestState } from "constants/request";
 import * as ApiInternal from "@shared/api/internal";
 import {
@@ -115,6 +122,7 @@ describe("useGetWalletsData", () => {
   });
   it("should return wallets data and token prices on Mainnet", async () => {
     const mainnetPreloadedState = {
+      remoteConfig: SETTLED_REMOTE_CONFIG,
       auth: {
         publicKey: "G1",
         hasPrivateKey: true,
@@ -169,6 +177,7 @@ describe("useGetWalletsData", () => {
   it("should return wallets data and token prices on Mainnet in batches", async () => {
     const getTokenPricesSpy = jest.spyOn(ApiInternal, "getTokenPrices");
     const mainnetPreloadedState = {
+      remoteConfig: SETTLED_REMOTE_CONFIG,
       auth: {
         publicKey: "G1",
         hasPrivateKey: true,
