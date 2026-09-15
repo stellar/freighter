@@ -1,5 +1,7 @@
 @use "../../../styles/utils.scss" as *;
 
+// §N refs: wallet-eng-monorepo/design-docs/token-price-graphs/token-price-graphs-design.md
+
 .AssetDetail {
   &__wrapper {
     position: relative;
@@ -8,7 +10,9 @@
   &__balance-info {
     display: flex;
     flex-direction: column;
-    padding: pxToRem(16px);
+    // 12px vertical / 16px horizontal, per the design: the card is 97 tall
+    // with rows at y=12-36 and y=61-85.
+    padding: pxToRem(12px) pxToRem(16px);
     border-radius: #{pxToRem(12px)};
     border: 1px solid var(--sds-clr-gray-06);
     margin-top: pxToRem(24px);
@@ -41,8 +45,10 @@
     }
   }
 
+  // 8px below the 40px icon, per the design (icon bottom y=40, title top
+  // y=48 in the Token header frame).
   &__title {
-    margin-top: pxToRem(4px);
+    margin-top: pxToRem(8px);
     color: var(--sds-clr-gray-09);
   }
 
@@ -51,13 +57,24 @@
     font-size: pxToRem(12px);
   }
 
+  // Display/SM from the design system: 32/40, regular, -4% tracking. Same
+  // token as AccountHeader__total-usd-balance, whose -1.28px is that -4%
+  // resolved against 32px — kept in px rather than em to match it exactly.
   &__price {
-    margin-top: pxToRem(10px);
-    font-size: pxToRem(24px);
+    margin-top: pxToRem(12px);
+    font-size: pxToRem(32px);
+    font-weight: var(--sds-fw-regular);
+    letter-spacing: pxToRem(-1.28px);
+    line-height: pxToRem(40px);
   }
 
+  // Text/MD from the design system: 16/24. Applies to both delta paths — the
+  // legacy 24h figure and the chart's per-range delta below — so the header
+  // reads the same whether or not the chart is shown.
   &__delta {
-    margin-top: pxToRem(4px);
+    font-size: pxToRem(16px);
+    line-height: pxToRem(24px);
+    margin-top: pxToRem(8px);
     &.positive {
       color: var(--sds-clr-green-09);
     }
@@ -65,6 +82,44 @@
     &.negative {
       color: var(--sds-clr-gray-11);
     }
+
+    // The chart section's palette has a neutral; `getPriceDeltaColor`, which
+    // the non-chart path still goes through, does not — it paints a flat zero
+    // "negative".
+    &.neutral {
+      color: var(--sds-clr-gray-11);
+    }
+
+    // The delta that follows the selected timeframe. It has to occupy its
+    // line box in every state — loading, no coverage, and loaded — or landing
+    // data and range switches would move the chart and the selector under it.
+    // An empty div collapses to zero height, so the line is reserved
+    // explicitly.
+    &--range {
+      // Size and line-height come from `&__delta` above; only the reserved
+      // row is this path's own concern, and it tracks that line box.
+      min-height: pxToRem(24px);
+
+      // Red is scoped to this path deliberately. The chart section reports a
+      // three-state direction, where "negative" means a genuine loss and
+      // matches the chart's own red artwork. The `.negative` above stays grey
+      // for the legacy branch, whose `getPriceDeltaColor` also labels a flat
+      // zero "negative" — reconciling the two is the §13 follow-up.
+      &.negative {
+        color: var(--sds-clr-red-09);
+      }
+    }
+  }
+
+  // The Figma "Data loading" skeleton pill standing in for the delta text,
+  // fading out to the right as the design draws it.
+  &__delta-ghost {
+    background: linear-gradient(to right, var(--sds-clr-gray-03), transparent);
+    border-radius: pxToRem(8px);
+    display: inline-block;
+    height: pxToRem(14px);
+    vertical-align: middle;
+    width: pxToRem(112px);
   }
 
   &__list {
