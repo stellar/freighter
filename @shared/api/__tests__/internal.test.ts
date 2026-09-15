@@ -8,6 +8,9 @@ import * as GetLedgerKeyAccounts from "../helpers/getLedgerKeyAccounts";
 import * as internalApi from "../internal";
 import { sendMessageToBackground } from "@shared/api/helpers/extensionMessaging";
 import { SERVICE_TYPES } from "@shared/constants/services";
+import { makeHistory } from "./fixtures/tokenPriceHistory";
+
+// §N refs: wallet-eng-monorepo/design-docs/token-price-graphs/token-price-graphs-design.md
 
 jest.mock("@shared/api/helpers/extensionMessaging");
 const mockedSend = sendMessageToBackground as jest.Mock;
@@ -154,7 +157,10 @@ describe("internalApi", () => {
 
     const sentMessage = () => mockedSend.mock.calls[0][0];
 
-    it("excludes contract-ID issuers from the indexer request", async () => {
+    it("includes contract tokens (SYMBOL:CONTRACTID) in the v2 request", async () => {
+      // The Go backend prices SEP-41 tokens; only the legacy Node backend
+      // errors on them. Without this, a priced contract token would show a
+      // live chart under a `--` header price (§4.1).
       mockSendOk();
 
       await internalApi.getTokenPrices(
@@ -171,10 +177,13 @@ describe("internalApi", () => {
       expect(body.tokens).toEqual([
         "native",
         "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
+        "DT:CCXVDIGMR6WTXZQX2OEVD6YM6AYCYPXPQ7YYH6OZMRS7U6VD3AVHNGBJ",
       ]);
     });
 
-    it("excludes liquidity-pool IDs from the indexer request", async () => {
+    it("excludes liquidity-pool IDs from the v2 request", async () => {
+      // LP shares are never priceable; the LP half of the old predicate is
+      // unconditional on both paths.
       mockSendOk();
 
       await internalApi.getTokenPrices(
@@ -185,6 +194,35 @@ describe("internalApi", () => {
 
       const body = JSON.parse(sentMessage().body as string);
       expect(body.tokens).toEqual(["native"]);
+    });
+
+    it("still filters custom tokens AND LP ids on the legacy (v1) path", async () => {
+      // The rollback path calls the old Node backend, which errors on custom
+      // tokens — the custom-token half of the predicate lives only here.
+      const fetchSpy = jest.spyOn(global, "fetch").mockResolvedValue({
+        ok: true,
+        json: jest.fn().mockResolvedValue({ data: {} }),
+      } as unknown as Response);
+
+      await internalApi.getTokenPrices(
+        [
+          "native",
+          "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
+          "DT:CCXVDIGMR6WTXZQX2OEVD6YM6AYCYPXPQ7YYH6OZMRS7U6VD3AVHNGBJ",
+          "abc123:lp",
+        ],
+        MAINNET_NETWORK_DETAILS,
+        false,
+      );
+
+      expect(mockedSend).not.toHaveBeenCalled();
+      const requestBody = JSON.parse(
+        (fetchSpy.mock.calls[0][1] as RequestInit).body as string,
+      );
+      expect(requestBody.tokens).toEqual([
+        "native",
+        "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
+      ]);
     });
 
     it("targets the v2 chokepoint with the network query param", async () => {
@@ -237,13 +275,12 @@ describe("internalApi", () => {
     });
 
     it("skips the request when every token is filtered out", async () => {
+      // Only LP shares are filtered on the v2 path now, so an all-LP input is
+      // the empty case.
       mockSendOk();
 
       const prices = await internalApi.getTokenPrices(
-        [
-          "abc123:lp",
-          "DT:CCXVDIGMR6WTXZQX2OEVD6YM6AYCYPXPQ7YYH6OZMRS7U6VD3AVHNGBJ",
-        ],
+        ["abc123:lp", "def456:lp"],
         MAINNET_NETWORK_DETAILS,
         true,
       );
@@ -337,10 +374,12 @@ describe("internalApi", () => {
       expect(fetchSpy).toHaveBeenCalled();
     });
 
-    it("does NOT skip when every token is filtered out (unlike v2)", async () => {
+    it("skips the request when every token is filtered out, like v2", async () => {
+      // `{ tokens: [] }` is a 400 on the legacy backend too; a lone Soroban
+      // swap destination must not surface as an error on every screen open.
       const fetchSpy = mockFetchOk();
 
-      await internalApi.getTokenPrices(
+      const result = await internalApi.getTokenPrices(
         [
           "abc123:lp",
           "DT:CCXVDIGMR6WTXZQX2OEVD6YM6AYCYPXPQ7YYH6OZMRS7U6VD3AVHNGBJ",
@@ -349,10 +388,274 @@ describe("internalApi", () => {
         false,
       );
 
-      expect(fetchSpy).toHaveBeenCalled();
-      const requestInit = fetchSpy.mock.calls[0][1] as RequestInit;
-      const body = JSON.parse(requestInit.body as string);
-      expect(body.tokens).toEqual([]);
+      expect(fetchSpy).not.toHaveBeenCalled();
+      expect(result).toEqual({});
+    });
+  });
+
+  describe("getTokenPriceHistory", () => {
+    // Frozen §6.1 wire contract — the backend may not exist yet, so these
+    // fixtures ARE the contract. Numbers are strings; no data is 200 with
+    // points: [] and change: null, never a 404.
+    const historyPayload = makeHistory({
+      points: [{ t: 1786636800, p: "0.158900" }],
+    });
+
+    it("requests the endpoint with token, network, and range in the path query", async () => {
+      mockedSend.mockResolvedValue({
+        status: 200,
+        body: { data: historyPayload },
+      });
+
+      await internalApi.getTokenPriceHistory({
+        token: "native",
+        range: "1D",
+        networkDetails: MAINNET_NETWORK_DETAILS,
+      });
+
+      // Query string must live inside `path`: the background chokepoint signs
+      // the JWT over pathname + search (#2879).
+      expect(mockedSend).toHaveBeenCalledWith({
+        type: SERVICE_TYPES.FETCH_BACKEND_V2,
+        activePublicKey: null,
+        method: "GET",
+        path: "/token-price-history?token=native&network=PUBLIC&range=1D",
+      });
+    });
+
+    it("URL-encodes contract-token identifiers (SYMBOL:CONTRACTID)", async () => {
+      mockedSend.mockResolvedValue({
+        status: 200,
+        body: {
+          data: { ...historyPayload, token: "DT:CCXVDIGMR6WT", range: "1W" },
+        },
+      });
+
+      await internalApi.getTokenPriceHistory({
+        token: "DT:CCXVDIGMR6WT",
+        range: "1W",
+        networkDetails: MAINNET_NETWORK_DETAILS,
+      });
+
+      expect(mockedSend.mock.calls[0][0].path).toBe(
+        "/token-price-history?token=DT%3ACCXVDIGMR6WT&network=PUBLIC&range=1W",
+      );
+    });
+
+    it("returns the payload from a 200 response", async () => {
+      mockedSend.mockResolvedValue({
+        status: 200,
+        body: { data: historyPayload },
+      });
+
+      const result = await internalApi.getTokenPriceHistory({
+        token: "native",
+        range: "1D",
+        networkDetails: MAINNET_NETWORK_DETAILS,
+      });
+
+      expect(result).toEqual(historyPayload);
+    });
+
+    it("resolves (not throws) an empty series — no data is a valid outcome", async () => {
+      const emptyPayload = {
+        ...historyPayload,
+        range: "1H",
+        points: [],
+        change: null,
+        lowVolume: null,
+      };
+      mockedSend.mockResolvedValue({
+        status: 200,
+        body: { data: emptyPayload },
+      });
+
+      const result = await internalApi.getTokenPriceHistory({
+        token: "native",
+        range: "1H",
+        networkDetails: MAINNET_NETWORK_DETAILS,
+      });
+
+      expect(result).toEqual(emptyPayload);
+    });
+
+    it("throws on a non-200 response", async () => {
+      mockedSend.mockResolvedValue({
+        status: 503,
+        body: { error: "upstream down" },
+      });
+
+      await expect(
+        internalApi.getTokenPriceHistory({
+          token: "native",
+          range: "1D",
+          networkDetails: MAINNET_NETWORK_DETAILS,
+        }),
+      ).rejects.toThrow();
+    });
+
+    it("throws on a 200 with no data payload", async () => {
+      mockedSend.mockResolvedValue({ status: 200, body: {} });
+
+      await expect(
+        internalApi.getTokenPriceHistory({
+          token: "native",
+          range: "1D",
+          networkDetails: MAINNET_NETWORK_DETAILS,
+        }),
+      ).rejects.toThrow();
+    });
+
+    // A malformed series reaches `Intl.DateTimeFormat` when the accessible
+    // label is built and throws during render, where the app-level
+    // ErrorBoundary replaces the whole popup. Reject it at the boundary.
+    it.each([
+      ["a non-finite timestamp", { points: [{ t: NaN, p: "1.0" }] }],
+      ["a non-positive resolutionSeconds", { resolutionSeconds: 0 }],
+      // Every label downstream prints these with a "$".
+      ["another currency", { currency: "EUR" }],
+      ["a missing currency", { currency: undefined }],
+      // `null` means "verdict unavailable" and warns; missing would read as
+      // false and silence the notice.
+      ["a missing lowVolume", { lowVolume: undefined }],
+      // A stringly verdict would read as falsy and silence the banner.
+      ["a stringly lowVolume", { lowVolume: "false" }],
+      // Nullable, not optional: present on every payload, `null` only when
+      // the coverage guard rejected the window. A missing field produces an
+      // empty header indistinguishable from the legitimate null.
+      ["a missing change", { change: undefined }],
+      // The header prints one sign, from the percent, in front of both
+      // halves — so this would render a $1 loss as "+$1.00 (2.00%)".
+      [
+        "a change whose halves disagree on sign",
+        { change: { absolute: "-1", percent: "2" } },
+      ],
+    ])("throws on %s", async (_label, overrides) => {
+      mockedSend.mockResolvedValue({
+        status: 200,
+        body: { data: { ...historyPayload, ...overrides } },
+      });
+
+      await expect(
+        internalApi.getTokenPriceHistory({
+          token: "native",
+          range: "1D",
+          networkDetails: MAINNET_NETWORK_DETAILS,
+        }),
+      ).rejects.toThrow();
+    });
+
+    it("accepts a zero half against a non-zero one — that is ordinary rounding", async () => {
+      const rounded = {
+        ...historyPayload,
+        change: { absolute: "0", percent: "-0.01" },
+      };
+      mockedSend.mockResolvedValue({ status: 200, body: { data: rounded } });
+
+      await expect(
+        internalApi.getTokenPriceHistory({
+          token: "native",
+          range: "1D",
+          networkDetails: MAINNET_NETWORK_DETAILS,
+        }),
+      ).resolves.toEqual(rounded);
+    });
+
+    it("throws on unsupported networks instead of sending a request", async () => {
+      await expect(
+        internalApi.getTokenPriceHistory({
+          token: "native",
+          range: "1D",
+          networkDetails: FUTURENET_NETWORK_DETAILS,
+        }),
+      ).rejects.toThrow();
+      expect(mockedSend).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("getTokenStats", () => {
+    it("requests the endpoint with token and network in the path query", async () => {
+      mockedSend.mockResolvedValue({
+        status: 200,
+        body: {
+          data: {
+            token: "native",
+            supplyOnStellar: "105443902087.3472865",
+            holders: 9926520,
+          },
+        },
+      });
+
+      const result = await internalApi.getTokenStats({
+        token: "native",
+        networkDetails: MAINNET_NETWORK_DETAILS,
+      });
+
+      expect(mockedSend).toHaveBeenCalledWith({
+        type: SERVICE_TYPES.FETCH_BACKEND_V2,
+        activePublicKey: null,
+        method: "GET",
+        path: "/token-stats?token=native&network=PUBLIC",
+      });
+      expect(result).toEqual({
+        token: "native",
+        supplyOnStellar: "105443902087.3472865",
+        holders: 9926520,
+      });
+    });
+
+    it("passes through per-asset field omissions — absent fields stay absent", async () => {
+      mockedSend.mockResolvedValue({
+        status: 200,
+        body: { data: { token: "DT:CCXVDIGMR6WT" } },
+      });
+
+      const result = await internalApi.getTokenStats({
+        token: "DT:CCXVDIGMR6WT",
+        networkDetails: MAINNET_NETWORK_DETAILS,
+      });
+
+      expect(result).toEqual({ token: "DT:CCXVDIGMR6WT" });
+      expect("supplyOnStellar" in result).toBe(false);
+      expect("holders" in result).toBe(false);
+    });
+
+    // `formatStatValue` rounds down, so 1.9 would render a plausible "1".
+    it("throws on a fractional holders count", async () => {
+      mockedSend.mockResolvedValue({
+        status: 200,
+        body: {
+          data: { token: "native", supplyOnStellar: "12", holders: 1.9 },
+        },
+      });
+
+      await expect(
+        internalApi.getTokenStats({
+          token: "native",
+          networkDetails: MAINNET_NETWORK_DETAILS,
+        }),
+      ).rejects.toThrow();
+    });
+
+    it("throws on a non-200 response", async () => {
+      mockedSend.mockResolvedValue({ status: 500, body: null });
+
+      await expect(
+        internalApi.getTokenStats({
+          token: "native",
+          networkDetails: MAINNET_NETWORK_DETAILS,
+        }),
+      ).rejects.toThrow();
+    });
+
+    it("throws on unsupported networks instead of sending a request", async () => {
+      await expect(
+        internalApi.getTokenStats({
+          token: "native",
+          networkDetails: FUTURENET_NETWORK_DETAILS,
+        }),
+      ).rejects.toThrow();
+      expect(mockedSend).not.toHaveBeenCalled();
     });
   });
 
