@@ -43,7 +43,7 @@ describe("AuthEntry", () => {
         definitions: {
           create: {
             properties: {
-              args: ["admin"],
+              args: { properties: { admin: {} }, required: ["admin"] },
             },
           },
         },
@@ -165,14 +165,18 @@ describe("AuthEntry", () => {
     const parameterKeys = screen.getAllByTestId("ParameterKey");
     const parameterValues = screen.getAllByTestId("ParameterValue");
 
+    // An auth's args need not be the function's declared parameters --
+    // require_auth_for_args can substitute an arbitrary list under the same
+    // contract and function name -- so no spec is fetched and the rows render
+    // unlabelled. See stellar/freighter#2196.
     expect(parameterKeys).toHaveLength(1);
-    expect(parameterKeys[0]).toHaveTextContent("");
+    expect(parameterKeys[0].textContent).toBe("");
 
     expect(parameterValues).toHaveLength(1);
     expect(parameterValues[0]).toHaveTextContent(TEST_PUBLIC_KEY);
   });
 
-  it("renders auth entries for invoke contract args", async () => {
+  it("never labels auth entry args from the contract spec (#2196)", async () => {
     const CONTRACT = "CA3D5KRYM6CB7OWQ6TWYRR3Z4T7GNZLKERYNZGGA5SOAOPIFY6YQGAXE";
     const args = new xdr.InvokeContractArgs({
       functionName: Buffer.from("transfer"),
@@ -230,10 +234,14 @@ describe("AuthEntry", () => {
     const parameterKeys = screen.getAllByTestId("ParameterKey");
     const parameterValues = screen.getAllByTestId("ParameterValue");
 
+    // An auth's args need not be the function's declared parameters --
+    // require_auth_for_args can substitute an arbitrary list under the same
+    // contract and function name -- so no spec is fetched and the rows render
+    // unlabelled. See stellar/freighter#2196.
     expect(parameterKeys).toHaveLength(3);
-    expect(parameterKeys[0]).toHaveTextContent("");
-    expect(parameterKeys[1]).toHaveTextContent("");
-    expect(parameterKeys[2]).toHaveTextContent("");
+    expect(parameterKeys[0].textContent).toBe("");
+    expect(parameterKeys[1].textContent).toBe("");
+    expect(parameterKeys[2].textContent).toBe("");
 
     expect(parameterValues).toHaveLength(3);
     expect(parameterValues[0]).toHaveTextContent(TEST_PUBLIC_KEY);

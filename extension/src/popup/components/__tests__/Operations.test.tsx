@@ -31,7 +31,10 @@ describe("Operations", () => {
         definitions: {
           transfer: {
             properties: {
-              args: { required: ["from", "to", "amount"] },
+              args: {
+                properties: { from: {}, to: {}, amount: {} },
+                required: ["from", "to", "amount"],
+              },
             },
           },
         },
@@ -190,16 +193,126 @@ describe("Operations", () => {
         );
       expect(invocationContractValue).toHaveTextContent("CA3D…GAXE");
 
+      // No spec means no trustworthy names, so rows render unlabelled rather
+      // than borrowing a label from somewhere else. (textContent, not
+      // toHaveTextContent: jest-dom matches an empty string against anything.)
       expect(parameterKeys).toHaveLength(3);
-      expect(parameterKeys[0]).not.toHaveTextContent("from");
-      expect(parameterKeys[1]).not.toHaveTextContent("to");
-      expect(parameterKeys[2]).not.toHaveTextContent("amount");
+      expect(parameterKeys[0].textContent).toBe("");
+      expect(parameterKeys[1].textContent).toBe("");
+      expect(parameterKeys[2].textContent).toBe("");
 
       expect(parameterValues).toHaveLength(3);
       expect(parameterValues[0]).toHaveTextContent(TEST_PUBLIC_KEY);
       expect(parameterValues[1]).toHaveTextContent(TEST_PUBLIC_KEY);
       expect(parameterValues[2]).toHaveTextContent("100");
     });
+
+    it("keeps every label on its own value when a middle parameter is optional", async () => {
+      // gauge_schedule_reward(router, distributor, gauge,
+      // start_at: Option<u64>, duration, tps). `required` omits start_at, so
+      // indexing it positionally used to slide every later label up one row.
+      jest.spyOn(internalApi, "getContractSpec").mockImplementation(() => {
+        return Promise.resolve({
+          definitions: {
+            gauge_schedule_reward: {
+              properties: {
+                args: {
+                  properties: {
+                    router: {},
+                    distributor: {},
+                    gauge: {},
+                    start_at: {},
+                    duration: {},
+                    tps: {},
+                  },
+                  required: [
+                    "router",
+                    "distributor",
+                    "gauge",
+                    "duration",
+                    "tps",
+                  ],
+                },
+              },
+            },
+          },
+        });
+      });
+
+      const CONTRACT =
+        "CA3D5KRYM6CB7OWQ6TWYRR3Z4T7GNZLKERYNZGGA5SOAOPIFY6YQGAXE";
+      const START_AT = 1750000000;
+      const DURATION = 604800;
+      const TPS = 42;
+
+      const func = xdr.HostFunction.hostFunctionTypeInvokeContract(
+        new xdr.InvokeContractArgs({
+          contractAddress: xdr.ScAddress.scAddressTypeContract(
+            new xdr.ContractId(StrKey.decodeContract(CONTRACT)),
+          ),
+          functionName: Buffer.from("gauge_schedule_reward"),
+          args: [
+            new Address(CONTRACT).toScVal(),
+            new Address(TEST_PUBLIC_KEY).toScVal(),
+            new Address(CONTRACT).toScVal(),
+            new ScInt(START_AT).toU64(),
+            new ScInt(DURATION).toU64(),
+            new ScInt(TPS).toI128(),
+          ],
+        }),
+      );
+
+      const op = {
+        auth: [],
+        func,
+        type: "invokeHostFunction",
+      } as Operation.InvokeHostFunction;
+
+      render(
+        <Wrapper
+          routes={[ROUTES.signTransaction]}
+          state={{
+            auth: {
+              error: null,
+              applicationState: APPLICATION_STATE.PASSWORD_CREATED,
+              TEST_PUBLIC_KEY,
+              allAccounts: mockAccounts,
+              hasPrivateKey: true,
+            },
+            settings: {
+              networkDetails: TESTNET_NETWORK_DETAILS,
+              networksList: DEFAULT_NETWORKS,
+              isSorobanPublicEnabled: true,
+              isRpcHealthy: true,
+            },
+          }}
+        >
+          <Operations
+            operations={[op]}
+            flaggedKeys={{}}
+            isMemoRequired={false}
+          />
+        </Wrapper>,
+      );
+
+      await waitFor(() => screen.getAllByTestId("ParameterKey"));
+      const parameterKeys = screen.getAllByTestId("ParameterKey");
+      const parameterValues = screen.getAllByTestId("ParameterValue");
+
+      expect(parameterKeys).toHaveLength(6);
+      expect(parameterKeys[0]).toHaveTextContent("router");
+      expect(parameterKeys[1]).toHaveTextContent("distributor");
+      expect(parameterKeys[2]).toHaveTextContent("gauge");
+      expect(parameterKeys[3]).toHaveTextContent("start_at");
+      expect(parameterKeys[4]).toHaveTextContent("duration");
+      expect(parameterKeys[5]).toHaveTextContent("tps");
+
+      // The timestamp must sit under start_at, not under duration.
+      expect(parameterValues[3]).toHaveTextContent(String(START_AT));
+      expect(parameterValues[4]).toHaveTextContent(String(DURATION));
+      expect(parameterValues[5]).toHaveTextContent(String(TPS));
+    });
+
     it("renders changeTrust operation", async () => {
       const assetCode = "KHL3";
       const op = {

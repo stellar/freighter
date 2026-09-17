@@ -979,6 +979,66 @@ export const getCreateContractArgs = (hostFn: xdr.HostFunction) => {
   };
 };
 
+interface ContractFnArgsSchema {
+  properties?: Record<string, unknown>;
+  required?: string[];
+}
+
+// V8 hoists integer-like keys to the front of `Object.keys` and sorts them
+// numerically, so their presence alone means the key order is not insertion
+// order. No Rust identifier looks like this, but the spec section is
+// author-controlled metadata and can hold any string.
+const INTEGER_LIKE_KEY = /^(0|[1-9]\d*)$/;
+
+const isSubsequence = (candidate: string[], sequence: string[]) => {
+  let cursor = 0;
+  for (const name of sequence) {
+    if (name === candidate[cursor]) {
+      cursor += 1;
+    }
+  }
+  return cursor === candidate.length;
+};
+
+/**
+ * Argument names for a contract function, in declaration order, or `null` when
+ * the spec cannot be trusted to supply them.
+ *
+ * The ordered parameter list is `properties.args.properties`, never `required`:
+ * `Spec.jsonSchema()` follows JSON Schema semantics, so an `Option<T>`
+ * parameter is left out of `required` and every name after it would attach to
+ * the wrong value. `required` is still useful as an order witness — it is
+ * emitted in declaration order and survives JSON as an array, so if it is not a
+ * subsequence of the keys we read, those keys came back in an order the
+ * contract did not declare — a re-serializer that sorted them, say — and no
+ * name is trustworthy.
+ */
+export const getContractFnArgNames = (
+  spec: Record<string, any> | undefined,
+  fnName: string,
+  argCount: number,
+): string[] | null => {
+  const argsSchema = spec?.definitions?.[fnName]?.properties?.args as
+    | ContractFnArgsSchema
+    | undefined;
+  const names = Object.keys(argsSchema?.properties || {});
+
+  if (names.length !== argCount) {
+    return null;
+  }
+
+  if (names.some((name) => INTEGER_LIKE_KEY.test(name))) {
+    return null;
+  }
+
+  const required = argsSchema?.required;
+  if (Array.isArray(required) && !isSubsequence(required, names)) {
+    return null;
+  }
+
+  return names;
+};
+
 export const isSacContract = (
   name: string,
   contractId: string,

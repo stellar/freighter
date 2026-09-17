@@ -24,6 +24,7 @@ import { formattedBuffer } from "popup/helpers/formatters";
 
 import {
   addressToString,
+  getContractFnArgNames,
   getCreateContractArgs,
   InvocationTree,
   scValByType,
@@ -421,30 +422,47 @@ export const KeyValueInvokeHostFnArgs = ({
 }) => {
   const { t } = useTranslation();
   const [isLoading, setLoading] = React.useState(true);
-  const [argNames, setArgNames] = React.useState([] as string[]);
+  const [argNames, setArgNames] = React.useState<string[] | null>(null);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
+  const argCount = args.length;
 
   React.useEffect(() => {
+    // A resolved fetch must never label a different invocation than the one it
+    // was issued for, so drop the names up front and ignore a response that
+    // arrives after the inputs moved on.
+    let isCurrent = true;
+    setArgNames(null);
+
     async function getSpec(id: string, name: string) {
       try {
         const spec = await getContractSpec({ contractId: id, networkDetails });
-        const { definitions } = spec;
-        const invocationSpec = definitions[name];
-        const argNamesPositional = invocationSpec.properties?.args
-          ?.required as string[];
-        setArgNames(argNamesPositional);
+        if (!isCurrent) {
+          return;
+        }
+        setArgNames(getContractFnArgNames(spec, name, argCount));
         setLoading(false);
       } catch (error) {
-        setLoading(false);
+        if (isCurrent) {
+          setLoading(false);
+        }
       }
     }
 
+    // An auth entry is never labelled from the contract spec. Its args are not
+    // the function's declared parameters: `require_auth_for_args` substitutes
+    // an arbitrary list under the same contract and function name, and the
+    // arity can match, so the length check in `getContractFnArgNames` does not
+    // catch it. Those rows render unlabelled. See stellar/freighter#2196.
     if (contractId && fnName && !isAuthEntry) {
       getSpec(contractId, fnName);
     } else {
       setLoading(false);
     }
-  }, [contractId, fnName, networkDetails, isAuthEntry]);
+
+    return () => {
+      isCurrent = false;
+    };
+  }, [contractId, fnName, networkDetails, isAuthEntry, argCount]);
 
   return isLoading ? (
     <div className="Operations__pair--invoke" data-testid="OperationKeyVal">
@@ -463,7 +481,7 @@ export const KeyValueInvokeHostFnArgs = ({
           <CopyText textToCopy={scValByType(arg)} key={arg.toXdr("base64")}>
             <div className="Parameters">
               <div className="ParameterKey" data-testid="ParameterKey">
-                {argNames[ind] && argNames[ind]}
+                {argNames?.[ind]}
                 <Icon.Copy01 />
               </div>
               <div className="ParameterValue" data-testid="ParameterValue">

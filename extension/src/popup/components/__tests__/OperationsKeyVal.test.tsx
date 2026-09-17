@@ -38,7 +38,7 @@ describe("Operations KeyVal", () => {
         definitions: {
           create: {
             properties: {
-              args: ["admin"],
+              args: { properties: { admin: {} }, required: ["admin"] },
             },
           },
         },
