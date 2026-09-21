@@ -1,6 +1,7 @@
 import {
   Address,
   Keypair,
+  nativeToScVal,
   Operation,
   scValToNative,
   TransactionBuilder,
@@ -10,6 +11,7 @@ import BigNumber from "bignumber.js";
 
 import {
   getInvocationArgs,
+  getInvocationArgsFromInvokeHostFn,
   getInvocationDetails,
   buildInvocationTree,
   getAvailableBalance,
@@ -356,6 +358,144 @@ describe("getInvocationArgs", () => {
       recommendedFee: ".11",
     });
     expect(availableBalance).toEqual("100");
+  });
+});
+
+// A function name and a CAP-85 executable tag are byte strings, not guaranteed
+// text. Decoding them leniently renders every invalid byte as U+FFFD, so two
+// distinct signed payloads collapse to one screen string on the approval view.
+describe("signing-screen display fidelity", () => {
+  /** "transfer" with one trailing byte that cannot begin a UTF-8 sequence. */
+  const invalidFnName = (suffix) =>
+    new Uint8Array([...Buffer.from("transfer"), suffix]);
+  const INVALID_FN_HEX = "7472616e73666572ff";
+
+  const contractFn = (functionName, args = []) =>
+    new xdr.InvokeContractArgs({
+      contractAddress: new Address(OWNER_CONTRACT).toScAddress(),
+      functionName,
+      args,
+    });
+
+  const contractFnInvocation = (functionName, args = []) =>
+    new xdr.SorobanAuthorizedInvocation({
+      function:
+        xdr.SorobanAuthorizedFunction.sorobanAuthorizedFunctionTypeContractFn(
+          contractFn(functionName, args),
+        ),
+      subInvocations: [],
+    });
+
+  const externalRefInvocation = (tag) =>
+    new xdr.SorobanAuthorizedInvocation({
+      function:
+        xdr.SorobanAuthorizedFunction.sorobanAuthorizedFunctionTypeCreateContractV2HostFn(
+          new xdr.CreateContractArgsV2({
+            contractIdPreimage:
+              xdr.ContractIdPreimage.contractIdPreimageFromAddress(
+                new xdr.ContractIdPreimageFromAddress({
+                  address: new Address(TEST_PUBLIC_KEY).toScAddress(),
+                  salt: Buffer.alloc(32),
+                }),
+              ),
+            executable: xdr.ContractExecutable.contractExecutableExternalRef(
+              new xdr.ContractExecutableExternalRef({
+                executableOwner: new Address(OWNER_CONTRACT).toScAddress(),
+                tag,
+              }),
+            ),
+            constructorArgs: [],
+          }),
+        ),
+      subInvocations: [],
+    });
+
+  it("renders a non-UTF-8 function name as labelled hex in an invocation tree", () => {
+    const tree = buildInvocationTree(contractFnInvocation(invalidFnName(0xff)));
+    expect(tree.args.function).toEqual(`symbol(0x${INVALID_FN_HEX})`);
+    expect(tree.args.function).not.toContain("�");
+  });
+
+  it("does not collapse two distinct non-UTF-8 function names", () => {
+    const first = buildInvocationTree(
+      contractFnInvocation(invalidFnName(0xff)),
+    );
+    const second = buildInvocationTree(
+      contractFnInvocation(invalidFnName(0xfe)),
+    );
+    expect(first.args.function).not.toEqual(second.args.function);
+  });
+
+  it("carries the signed ScVal args through the invocation tree untouched", () => {
+    // Decoding args to natives here used to force the render layer to
+    // re-encode them with `nativeToScVal`, a round trip that re-types map keys.
+    const arg = xdr.ScVal.scvMap([
+      new xdr.ScMapEntry({
+        key: xdr.ScVal.scvU32(1),
+        val: xdr.ScVal.scvString("one"),
+      }),
+    ]);
+    const tree = buildInvocationTree(
+      contractFnInvocation(Buffer.from("transfer"), [arg]),
+    );
+    expect(tree.args.args).toHaveLength(1);
+    expect(tree.args.args[0].toXdr("base64")).toEqual(arg.toXdr("base64"));
+  });
+
+  it("renders a non-UTF-8 function name as labelled hex in invocation args", () => {
+    const args = getInvocationArgs(contractFnInvocation(invalidFnName(0xff)));
+    expect(args.fnName).toEqual(`symbol(0x${INVALID_FN_HEX})`);
+    expect(args.fnName).not.toContain("�");
+
+    const other = getInvocationArgs(contractFnInvocation(invalidFnName(0xfe)));
+    expect(args.fnName).not.toEqual(other.fnName);
+  });
+
+  it("renders a non-UTF-8 CAP-85 executable tag as labelled hex", () => {
+    const tagBytes = (suffix) => new Uint8Array([...Buffer.from("v2"), suffix]);
+    const args = getInvocationArgs(externalRefInvocation(tagBytes(0xff)));
+    expect(args.tag).toEqual("tag(0x7632ff)");
+    expect(args.tag).not.toContain("�");
+
+    const other = getInvocationArgs(externalRefInvocation(tagBytes(0xfe)));
+    expect(args.tag).not.toEqual(other.tag);
+  });
+
+  it("treats a non-UTF-8 function name as not a token invocation", () => {
+    const op = Operation.fromXDRObject(
+      Operation.invokeHostFunction({
+        func: xdr.HostFunction.hostFunctionTypeInvokeContract(
+          contractFn(invalidFnName(0xff), []),
+        ),
+        auth: [],
+      }),
+    );
+    // A binary name can never be one of the token interfaces, so this must
+    // bail out rather than match on a lossily decoded string or throw.
+    expect(getInvocationArgsFromInvokeHostFn(op)).toBeNull();
+  });
+
+  it("still recognises a valid token transfer", () => {
+    const from = Keypair.random().publicKey();
+    const to = Keypair.random().publicKey();
+    const op = Operation.fromXDRObject(
+      Operation.invokeHostFunction({
+        func: xdr.HostFunction.hostFunctionTypeInvokeContract(
+          contractFn(Buffer.from("transfer"), [
+            nativeToScVal(from, { type: "address" }),
+            nativeToScVal(to, { type: "address" }),
+            nativeToScVal(BigInt(100), { type: "i128" }),
+          ]),
+        ),
+        auth: [],
+      }),
+    );
+    expect(getInvocationArgsFromInvokeHostFn(op)).toMatchObject({
+      fnName: "transfer",
+      from,
+      to,
+      amount: BigInt(100),
+    });
   });
 });
 

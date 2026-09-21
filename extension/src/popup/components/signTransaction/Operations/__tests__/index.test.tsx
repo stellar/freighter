@@ -3,6 +3,7 @@ import { render, screen } from "@testing-library/react";
 import { Provider } from "react-redux";
 import {
   Account,
+  Address,
   Asset,
   BASE_FEE,
   Networks,
@@ -20,6 +21,13 @@ import { Operations } from "../index";
 // effect can never reach the network in the test environment.
 jest.mock("popup/helpers/blockaid", () => ({
   scanAsset: jest.fn().mockResolvedValue(undefined),
+}));
+
+// A contract-call render looks up the contract spec to label its parameters.
+// There is no network here, so fail the lookup — the component falls back to
+// unlabelled positional parameters, which is what we are asserting on.
+jest.mock("@shared/api/internal", () => ({
+  getContractSpec: jest.fn().mockRejectedValue(new Error("no spec in tests")),
 }));
 
 // Build a setOptions transaction with the bundled SDK, serialize it to XDR and
@@ -261,5 +269,74 @@ describe("Operations — clawback asset identity", () => {
 
     expect(rowValue("Asset Code")).toBe("USDC");
     expect(hasKey("Asset Issuer")).toBe(true);
+  });
+});
+
+describe("Operations — Soroban contract-call parameters", () => {
+  const CONTRACT = StrKey.encodeContract(Buffer.alloc(32, 3));
+
+  const invokeContract = (args: xdr.ScVal[], functionName = "configure") =>
+    decodeOperation(
+      Operation.invokeHostFunction({
+        func: xdr.HostFunction.hostFunctionTypeInvokeContract(
+          new xdr.InvokeContractArgs({
+            contractAddress: new Address(CONTRACT).toScAddress(),
+            functionName: Buffer.from(functionName),
+            args,
+          }),
+        ),
+        auth: [],
+      }),
+    );
+
+  const mapEntry = (key: xdr.ScVal, val: xdr.ScVal) =>
+    new xdr.ScMapEntry({ key, val });
+
+  it("renders every entry of a struct-keyed map, not just the last one", async () => {
+    const structKey = (id: number) =>
+      xdr.ScVal.scvMap([
+        mapEntry(xdr.ScVal.scvSymbol("id"), xdr.ScVal.scvU32(id)),
+      ]);
+    const mapArg = xdr.ScVal.scvMap(
+      [0, 1, 2, 3].map((id) =>
+        mapEntry(structKey(id), xdr.ScVal.scvString(`v${id}`)),
+      ),
+    );
+
+    renderOps(invokeContract([mapArg]));
+
+    const params = await screen.findByTestId("OperationParameters");
+    // Decoding this map to a JS object collapsed all four signed entries into
+    // a single `[object Object]` key.
+    expect(params.textContent).toContain('{ id: 0 }: "v0"');
+    expect(params.textContent).toContain('{ id: 1 }: "v1"');
+    expect(params.textContent).toContain('{ id: 2 }: "v2"');
+    expect(params.textContent).toContain('{ id: 3 }: "v3"');
+    expect(params.textContent).not.toContain("[object Object]");
+  });
+
+  it("renders both entries of a map whose keys collide as strings", async () => {
+    const mapArg = xdr.ScVal.scvMap([
+      mapEntry(xdr.ScVal.scvU64(BigInt(1)), xdr.ScVal.scvString("from-u64")),
+      mapEntry(xdr.ScVal.scvString("1"), xdr.ScVal.scvString("from-string")),
+    ]);
+
+    renderOps(invokeContract([mapArg]));
+
+    const params = await screen.findByTestId("OperationParameters");
+    expect(params.textContent).toContain('1: "from-u64"');
+    expect(params.textContent).toContain('"1": "from-string"');
+  });
+
+  it("renders a non-UTF-8 string argument as labelled hex", async () => {
+    const stringArg = xdr.ScVal.scvString(
+      new Uint8Array([...Buffer.from("alice"), 0xff]),
+    );
+
+    renderOps(invokeContract([stringArg]));
+
+    const params = await screen.findByTestId("OperationParameters");
+    expect(params.textContent).toContain("string(0x616c696365ff)");
+    expect(params.textContent).not.toContain("�");
   });
 });

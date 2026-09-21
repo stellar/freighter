@@ -15,7 +15,10 @@ import { FlaggedKeys } from "types/transactions";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { truncateString, truncatedPoolId } from "helpers/stellar";
 import { scanAsset } from "popup/helpers/blockaid";
-import { addressToString, getCreateContractArgs } from "popup/helpers/soroban";
+import {
+  addressToString,
+  getCreateContractArgs,
+} from "popup/helpers/soroban";
 import { CopyValue } from "popup/components/CopyValue";
 import {
   ContractSpecNote,

@@ -6,7 +6,6 @@ import {
   Claimant,
   hash,
   LiquidityPoolAsset,
-  nativeToScVal,
   Operation,
   OperationRecord,
   StrKey,
@@ -28,6 +27,7 @@ import {
   getCreateContractArgs,
   InvocationTree,
   scValByType,
+  xdrStringToDisplay,
 } from "popup/helpers/soroban";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 
@@ -81,7 +81,7 @@ const InvocationByType = ({ _invocation }: { _invocation: InvocationTree }) => {
             operationValue={_invocation.args.function}
           />
           <KeyValueInvokeHostFnArgs
-            args={_invocation.args.args.map(nativeToScVal)}
+            args={_invocation.args.args}
             fnName={_invocation.args.function}
             contractId={_invocation.args.source}
           />
@@ -794,7 +794,7 @@ export const KeyValueInvokeHostFn = ({
         const invocation = hostfn.invokeContract;
         const contractId = addressToString(invocation.contractAddress);
 
-        const fnName = invocation.functionName.toString();
+        const fnName = xdrStringToDisplay(invocation.functionName, "symbol");
 
         return (
           <>
