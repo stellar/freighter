@@ -113,8 +113,13 @@
 
   &--inspectable {
     cursor: crosshair;
-    // The browser must not turn a horizontal drag into a scroll/pan.
-    touch-action: none;
+    // Vertical scrolling must keep working over the chart — the detail view is
+    // taller than the popup — so only the horizontal axis is claimed here: a
+    // horizontal drag becomes an inspect, a vertical one still scrolls the
+    // view. When the browser claims the vertical pan it fires `pointercancel`,
+    // which already clears the inspection; that is this platform's equivalent
+    // of mobile's "movement before the long-press fails the pan".
+    touch-action: pan-y;
   }
 
   &__guide {

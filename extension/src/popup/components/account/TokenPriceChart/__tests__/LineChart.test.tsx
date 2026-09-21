@@ -271,6 +271,95 @@ describe("drag to inspect", () => {
     expect(onInspectMove).not.toHaveBeenCalled();
   });
 
+  it("captures the pointer, so moves keep arriving once it leaves the svg", () => {
+    // jsdom has no pointer capture at all; define it for this test only, or
+    // the component's `typeof … === "function"` guard skips it silently.
+    const setPointerCapture = jest.fn();
+    (
+      SVGElement.prototype as unknown as { setPointerCapture: jest.Mock }
+    ).setPointerCapture = setPointerCapture;
+
+    try {
+      renderInspectable({ onInspectStart: jest.fn() });
+      fireEvent.pointerDown(screen.getByTestId("TokenPriceChart__svg"), {
+        clientX: 200,
+        pointerId: 7,
+      });
+
+      expect(setPointerCapture).toHaveBeenCalledWith(7);
+    } finally {
+      delete (SVGElement.prototype as unknown as Record<string, unknown>)
+        .setPointerCapture;
+    }
+  });
+
+  it("ignores a second pointer while one is already inspecting", () => {
+    // A second finger (or a pen landing beside a thumb) must not restart the
+    // activation — that would emit a second `brushed` — and releasing it must
+    // not end a drag it never owned.
+    const onInspectStart = jest.fn();
+    const onInspectMove = jest.fn();
+    const onInspectEnd = jest.fn();
+    renderInspectable({ onInspectStart, onInspectMove, onInspectEnd });
+    const svg = screen.getByTestId("TokenPriceChart__svg");
+
+    fireEvent.pointerDown(svg, { clientX: 200, pointerId: 1 });
+    expect(onInspectStart).toHaveBeenCalledTimes(1);
+
+    fireEvent.pointerDown(svg, { clientX: 640, pointerId: 2 });
+    expect(onInspectStart).toHaveBeenCalledTimes(1);
+    fireEvent.pointerUp(svg, { pointerId: 2 });
+    expect(onInspectEnd).not.toHaveBeenCalled();
+
+    // The first pointer still owns the drag, and its release still ends it.
+    fireEvent.pointerMove(svg, { clientX: 640, pointerId: 1 });
+    expect(onInspectMove).toHaveBeenCalledWith(3);
+    fireEvent.pointerUp(svg, { pointerId: 1 });
+    expect(onInspectEnd).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps reporting moves after the parent clears the inspected index", () => {
+    // A series change mid-drag (a range switch, a refetch landing) makes the
+    // parent drop the index. The drag is still under the finger, so the next
+    // move has to re-snap into the new series rather than going dead.
+    const onInspectMove = jest.fn();
+    const { rerender } = renderInspectable({
+      onInspectStart: jest.fn(),
+      onInspectMove,
+      inspectedIndex: 1,
+    });
+    const svg = screen.getByTestId("TokenPriceChart__svg");
+    fireEvent.pointerDown(svg, { clientX: 200, pointerId: 1 });
+
+    rerender(
+      <LineChart
+        points={points}
+        resolutionSeconds={900}
+        nowSeconds={20000}
+        direction={PriceDirection.Positive}
+        label="Price chart"
+        inspectedIndex={null}
+        onInspectStart={jest.fn()}
+        onInspectMove={onInspectMove}
+      />,
+    );
+    fireEvent.pointerMove(svg, { clientX: 640, pointerId: 1 });
+
+    expect(onInspectMove).toHaveBeenCalledWith(3);
+  });
+
+  it("lostpointercapture ends the inspection", () => {
+    // The browser can take capture away mid-drag (a context menu, a claimed
+    // scroll). Without this the pointer is gone and the inspection would stay
+    // frozen on screen.
+    const onInspectEnd = jest.fn();
+    renderInspectable({ onInspectStart: jest.fn(), onInspectEnd });
+    const svg = screen.getByTestId("TokenPriceChart__svg");
+    fireEvent.pointerDown(svg, { clientX: 200, pointerId: 1 });
+    fireEvent.lostPointerCapture(svg, { pointerId: 1 });
+    expect(onInspectEnd).toHaveBeenCalledTimes(1);
+  });
+
   it("pointercancel ends the inspection", () => {
     const onInspectEnd = jest.fn();
     renderInspectable({ inspectedIndex: 1, onInspectEnd });
@@ -285,9 +374,19 @@ describe("drag to inspect", () => {
     const guide = screen.getByTestId("TokenPriceChart__inspect-guide");
     expect(Number(guide.getAttribute("x1"))).toBeCloseTo(106.67, 1);
     expect(guide.getAttribute("stroke-dasharray")).toBe("4 4");
+    // Figma's 8px inspected dot, inside a 2px background ring — larger than
+    // the 6px end dot it replaces.
     expect(
-      screen.getByTestId("TokenPriceChart__inspect-dot"),
-    ).toBeInTheDocument();
+      screen
+        .getByTestId("TokenPriceChart__inspect-dot")
+        .getAttribute("stroke-width"),
+    ).toBe("8");
+    expect(
+      screen
+        .getByTestId("TokenPriceChart__svg")
+        .querySelector(".LineChart__inspect-ring")
+        ?.getAttribute("stroke-width"),
+    ).toBe("12");
     expect(screen.queryByTestId("TokenPriceChart__end-dot")).toBeNull();
     const tooltip = screen.getByTestId("TokenPriceChart__inspect-tooltip");
     expect(tooltip).toHaveTextContent("$1.10");

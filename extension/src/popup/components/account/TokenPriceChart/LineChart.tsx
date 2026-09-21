@@ -9,6 +9,7 @@ import {
   CHART_VIEWBOX_HEIGHT,
   END_DOT_RADIUS,
   CHART_VIEWBOX_WIDTH,
+  INSPECT_DOT_RADIUS,
   INSPECT_DOT_RING_WIDTH,
   INSPECT_TOOLTIP_FLIP_RATIO,
   PriceDirection,
@@ -319,11 +320,27 @@ export const LineChart = React.memo(function LineChart({
   // the target geometry, whose indices are the points' indices.
   const inspectedCoord = isInspecting ? coordinates[inspectedIndex] : undefined;
 
+  // The pointer currently driving the inspection, or null when none is down.
+  // It is both the activation lock (a second finger cannot restart or hijack a
+  // live drag) and the "pointer is down" state the move handler gates on — one
+  // ref rather than two, so the two can never disagree. Deliberately NOT the
+  // `inspectedIndex` prop: the parent clears that when the series changes
+  // mid-drag, and a drag that outlives a range switch must be able to re-snap
+  // into the new series rather than going dead under the finger.
+  const activePointerIdRef = useRef<number | null>(null);
+
   const handlePointerDown = (event: React.PointerEvent<SVGSVGElement>) => {
     if (!onInspectStart || xs.length < 2) {
       return;
     }
+    // A second pointer while one is already inspecting is ignored outright:
+    // restarting the activation would emit a second `brushed` and hand the
+    // drag to a finger that never armed it.
+    if (activePointerIdRef.current !== null) {
+      return;
+    }
     event.preventDefault();
+    activePointerIdRef.current = event.pointerId;
     // Keep receiving moves after the pointer leaves the svg; jsdom lacks it.
     if (typeof event.currentTarget.setPointerCapture === "function") {
       event.currentTarget.setPointerCapture(event.pointerId);
@@ -331,12 +348,28 @@ export const LineChart = React.memo(function LineChart({
     onInspectStart(nearestCoordinateIndex(xs, toViewBoxX(event)));
   };
   const handlePointerMove = (event: React.PointerEvent<SVGSVGElement>) => {
-    if (!isInspecting || !onInspectMove) {
+    // Idle (no pointer down) or a pointer that is not the active one: ignored.
+    if (activePointerIdRef.current !== event.pointerId || !onInspectMove) {
       return;
     }
     onInspectMove(nearestCoordinateIndex(xs, toViewBoxX(event)));
   };
-  const handlePointerEnd = () => {
+  /**
+   * End of the activation: `pointerup`, `pointercancel` (the browser claimed
+   * the gesture as a scroll) and `lostpointercapture` (capture taken away by
+   * anything else) all land here, and clearing is idempotent so overlapping
+   * ones cost nothing. A pointer OTHER than the active one cannot end someone
+   * else's drag; an end with no pointer tracked still clears, so a state the
+   * component never armed can always be released.
+   */
+  const handlePointerEnd = (event: React.PointerEvent<SVGSVGElement>) => {
+    if (
+      activePointerIdRef.current !== null &&
+      activePointerIdRef.current !== event.pointerId
+    ) {
+      return;
+    }
+    activePointerIdRef.current = null;
     onInspectEnd?.();
   };
 
@@ -374,6 +407,7 @@ export const LineChart = React.memo(function LineChart({
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerEnd}
         onPointerCancel={handlePointerEnd}
+        onLostPointerCapture={handlePointerEnd}
       >
         <defs>
           <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
@@ -421,7 +455,7 @@ export const LineChart = React.memo(function LineChart({
               d={`M${inspectedCoord.x},${inspectedCoord.y} h0.01`}
               fill="none"
               className="LineChart__inspect-ring"
-              strokeWidth={(END_DOT_RADIUS + INSPECT_DOT_RING_WIDTH) * 2}
+              strokeWidth={(INSPECT_DOT_RADIUS + INSPECT_DOT_RING_WIDTH) * 2}
               strokeLinecap="round"
               vectorEffect="non-scaling-stroke"
             />
@@ -429,7 +463,7 @@ export const LineChart = React.memo(function LineChart({
               d={`M${inspectedCoord.x},${inspectedCoord.y} h0.01`}
               fill="none"
               stroke="currentColor"
-              strokeWidth={END_DOT_RADIUS * 2}
+              strokeWidth={INSPECT_DOT_RADIUS * 2}
               strokeLinecap="round"
               vectorEffect="non-scaling-stroke"
               data-testid="TokenPriceChart__inspect-dot"
