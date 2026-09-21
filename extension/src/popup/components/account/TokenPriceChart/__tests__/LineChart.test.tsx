@@ -2,12 +2,18 @@ import React from "react";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 
 import { ApiTokenPriceHistoryPoint } from "@shared/api/types";
+import { installPointerEventPolyfill } from "popup/__testHelpers__/pointerEvents";
 import { LineChart, getPlottedRangeEnd } from "../LineChart";
 import {
   CHART_MORPH_DURATION_MS,
   CHART_VIEWBOX_WIDTH,
   PriceDirection,
 } from "../constants";
+
+// jest-fixed-jsdom has no PointerEvent; without this, fireEvent.pointerDown/
+// pointerMove below would silently drop clientX/pointerId. Installed once at
+// module scope, before any render.
+installPointerEventPolyfill();
 
 const getPolylinePoints = () =>
   screen.getByTestId("TokenPriceChart__polyline").getAttribute("points") || "";
