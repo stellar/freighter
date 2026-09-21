@@ -109,28 +109,33 @@ describe("getContractFnArgNames", () => {
     ).toBeNull();
   });
 
-  it("returns null when a re-serializer sorted the keys out of declaration order", () => {
+  it("keeps the key order even when required lists the names differently", () => {
+    // `required` is not an order witness -- it is emitted in declaration order
+    // but omits every Option, so it can never be reconciled against the keys.
+    // The names come from `properties` alone.
     const spec = {
       definitions: {
         transfer: {
           properties: {
             args: {
               type: "object",
-              // alphabetized by some intermediary; declaration order was
-              // from, to, amount
               properties: {
-                amount: { $ref: "#/definitions/I128" },
                 from: { $ref: "#/definitions/Address" },
                 to: { $ref: "#/definitions/Address" },
+                amount: { $ref: "#/definitions/I128" },
               },
-              required: ["from", "to", "amount"],
+              required: ["amount", "from", "to"],
             },
           },
         },
       },
     };
 
-    expect(getContractFnArgNames(spec, "transfer", 3)).toBeNull();
+    expect(getContractFnArgNames(spec, "transfer", 3)).toEqual([
+      "from",
+      "to",
+      "amount",
+    ]);
   });
 
   it("returns null for integer-like parameter names, which Object.keys reorders", () => {

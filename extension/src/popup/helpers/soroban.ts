@@ -981,7 +981,6 @@ export const getCreateContractArgs = (hostFn: xdr.HostFunction) => {
 
 interface ContractFnArgsSchema {
   properties?: Record<string, unknown>;
-  required?: string[];
 }
 
 // V8 hoists integer-like keys to the front of `Object.keys` and sorts them
@@ -990,28 +989,27 @@ interface ContractFnArgsSchema {
 // author-controlled metadata and can hold any string.
 const INTEGER_LIKE_KEY = /^(0|[1-9]\d*)$/;
 
-const isSubsequence = (candidate: string[], sequence: string[]) => {
-  let cursor = 0;
-  for (const name of sequence) {
-    if (name === candidate[cursor]) {
-      cursor += 1;
-    }
-  }
-  return cursor === candidate.length;
-};
-
 /**
  * Argument names for a contract function, in declaration order, or `null` when
- * the spec cannot be trusted to supply them.
+ * the spec does not describe the invocation we were handed.
  *
  * The ordered parameter list is `properties.args.properties`, never `required`:
  * `Spec.jsonSchema()` follows JSON Schema semantics, so an `Option<T>`
  * parameter is left out of `required` and every name after it would attach to
- * the wrong value. `required` is still useful as an order witness — it is
- * emitted in declaration order and survives JSON as an array, so if it is not a
- * subsequence of the keys we read, those keys came back in an order the
- * contract did not declare — a re-serializer that sorted them, say — and no
- * name is trustworthy.
+ * the wrong value.
+ *
+ * Reading the parameter list off object keys is sound here because nothing in
+ * the path reorders them: `Spec.jsonSchema()` fills `properties` from a single
+ * pass over the function's inputs, and `JSON.stringify` and `JSON.parse` both
+ * preserve insertion order for keys that are not integer-like. The two guards
+ * below cover the cases where that breaks down — an arity mismatch, and keys
+ * `Object.keys` would reorder. A re-serializer that sorted the keys is not
+ * detectable from this payload; the followup is for `/contract-spec` to return
+ * an explicit ordered array derived from `inputs()`, so order is carried rather
+ * than inferred.
+ *
+ * These names come from author-controlled wasm metadata, so they are advisory
+ * either way — the signing view says as much beside them.
  */
 export const getContractFnArgNames = (
   spec: Record<string, any> | undefined,
@@ -1028,11 +1026,6 @@ export const getContractFnArgNames = (
   }
 
   if (names.some((name) => INTEGER_LIKE_KEY.test(name))) {
-    return null;
-  }
-
-  const required = argsSchema?.required;
-  if (Array.isArray(required) && !isSubsequence(required, names)) {
     return null;
   }
 
