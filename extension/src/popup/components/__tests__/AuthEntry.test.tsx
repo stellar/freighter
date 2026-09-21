@@ -245,6 +245,10 @@ describe("AuthEntry", () => {
 
     expect(parameterValues).toHaveLength(3);
     expect(parameterValues[0]).toHaveTextContent(TEST_PUBLIC_KEY);
+
+    // These rows carry no spec-derived claim, so they carry no disclaimer
+    // about one either.
+    expect(screen.queryByTestId("ContractSpecNote")).not.toBeInTheDocument();
   });
 
   it("renders auth entries for a CAP-85 external executable ref", async () => {

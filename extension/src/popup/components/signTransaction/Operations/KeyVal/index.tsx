@@ -407,24 +407,26 @@ export const KeyValueSignerKeyOptions = ({
   return <></>;
 };
 
-export const KeyValueInvokeHostFnArgs = ({
-  args,
+/**
+ * Resolves an invocation's parameter names from the contract spec. A hook so
+ * that the component owning the "Parameters" heading can look the names up
+ * once -- it renders the spec note that belongs beside that heading, and hands
+ * the same names to the rows below.
+ */
+export const useContractArgNames = ({
   contractId,
   fnName,
-  showHeader = true,
+  argCount,
   isAuthEntry = false,
 }: {
-  args: xdr.ScVal[];
   contractId?: string;
   fnName?: string;
-  showHeader?: boolean;
+  argCount: number;
   isAuthEntry?: boolean;
 }) => {
-  const { t } = useTranslation();
   const [isLoading, setLoading] = React.useState(true);
   const [argNames, setArgNames] = React.useState<string[] | null>(null);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
-  const argCount = args.length;
 
   React.useEffect(() => {
     // A resolved fetch must never label a different invocation than the one it
@@ -464,6 +466,58 @@ export const KeyValueInvokeHostFnArgs = ({
     };
   }, [contractId, fnName, networkDetails, isAuthEntry, argCount]);
 
+  return { argNames, isLoading };
+};
+
+/**
+ * Qualifies spec-derived parameter names: the spec is author-controlled wasm
+ * metadata that nothing validates against the implementation, so a name is the
+ * contract's claim about its own parameter, not a verified fact. It renders
+ * with the "Parameters" heading, between the heading and the card of rows, so
+ * it reads as a note on the section rather than as a row inside it.
+ */
+export const ContractSpecNote = () => {
+  const { t } = useTranslation();
+
+  return (
+    <div className="ContractSpecNote" data-testid="ContractSpecNote">
+      {t(
+        "Parameter names are based on the contract spec and may not reflect actual contract behavior.",
+      )}
+    </div>
+  );
+};
+
+export const KeyValueInvokeHostFnArgs = ({
+  args,
+  contractId,
+  fnName,
+  showHeader = true,
+  isAuthEntry = false,
+  argNames: resolvedArgNames,
+  isLoadingArgNames = false,
+}: {
+  args: xdr.ScVal[];
+  contractId?: string;
+  fnName?: string;
+  showHeader?: boolean;
+  isAuthEntry?: boolean;
+  // A caller that renders the heading itself resolves the names (it owns the
+  // spec note beside that heading) and passes them here instead of the
+  // contract id, so the spec is fetched once for the section.
+  argNames?: string[] | null;
+  isLoadingArgNames?: boolean;
+}) => {
+  const { t } = useTranslation();
+  const ownSpec = useContractArgNames({
+    contractId,
+    fnName,
+    argCount: args.length,
+    isAuthEntry,
+  });
+  const argNames = resolvedArgNames ?? ownSpec.argNames;
+  const isLoading = isLoadingArgNames || ownSpec.isLoading;
+
   return isLoading ? (
     <div className="Operations__pair--invoke" data-testid="OperationKeyVal">
       <Loader size="1rem" />
@@ -476,6 +530,9 @@ export const KeyValueInvokeHostFnArgs = ({
           <span>{t("Parameters")}</span>
         </div>
       )}
+      {/* The note goes wherever the heading goes, and only once names
+      resolved -- auth entries and failed lookups have nothing to qualify. */}
+      {showHeader && !!argNames?.length && <ContractSpecNote />}
       <div className="OperationParameters" data-testid="OperationParameters">
         {args.map((arg, ind) => (
           <CopyText textToCopy={scValByType(arg)} key={arg.toXdr("base64")}>

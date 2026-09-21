@@ -134,6 +134,10 @@ test.describe("contract argument labels", () => {
     await expect(values.nth(3)).toHaveText(String(START_AT));
     await expect(values.nth(4)).toHaveText(String(DURATION));
     await expect(values.nth(5)).toHaveText(String(TPS));
+
+    // The names are the contract author's own metadata, which nothing checks
+    // against the implementation, so they are shown as a claim.
+    await expect(popup.getByTestId("ContractSpecNote")).toBeVisible();
   });
 
   test("renders unlabelled rows when the spec cannot be fetched", async ({
@@ -162,6 +166,8 @@ test.describe("contract argument labels", () => {
     for (let i = 0; i < 6; i++) {
       await expect(keys.nth(i)).toHaveText("");
     }
+
+    await expect(popup.getByTestId("ContractSpecNote")).toHaveCount(0);
   });
 
   test("renders an all-optional function instead of crashing the popup", async ({
@@ -213,6 +219,7 @@ test.describe("contract argument labels", () => {
     await expect(popup.getByTestId("ParameterKey").nth(3)).toHaveText(
       /start_at/,
     );
+    await expect(popup.getByTestId("ContractSpecNote")).toBeVisible();
   });
 
   test("never labels auth entry args from the contract spec (#2196)", async ({
@@ -265,5 +272,17 @@ test.describe("contract argument labels", () => {
       .getByTestId("ParameterKey");
     await expect(operationKeys.nth(0)).toHaveText(/router/);
     await expect(operationKeys.nth(3)).toHaveText(/start_at/);
+
+    // Same asymmetry for the disclaimer: it belongs to the labelled list, not
+    // to the auth rows that were deliberately left unlabelled.
+    await expect(
+      popup
+        .getByTestId("AuthEntryContent")
+        .first()
+        .getByTestId("ContractSpecNote"),
+    ).toHaveCount(0);
+    await expect(
+      popup.getByTestId("DetailsBody").getByTestId("ContractSpecNote"),
+    ).toBeVisible();
   });
 });

@@ -119,6 +119,15 @@ describe("Operations", () => {
       expect(parameterValues[0]).toHaveTextContent(TEST_PUBLIC_KEY);
       expect(parameterValues[1]).toHaveTextContent(TEST_PUBLIC_KEY);
       expect(parameterValues[2]).toHaveTextContent("100");
+
+      // Names came from the spec, so they are qualified as the contract's own
+      // claim rather than presented as verified. The note qualifies the whole
+      // section, so it sits between the "Parameters" heading and the card of
+      // rows rather than inside the card.
+      const specNote = screen.getByTestId("ContractSpecNote");
+      expect(specNote.previousElementSibling).toHaveTextContent("Parameters");
+      expect(specNote.nextElementSibling).toHaveClass("Operations--item");
+      expect(specNote.closest(".Operations--item")).toBeNull();
     });
 
     it("renders transfer operations if contract spec is not available", async () => {
@@ -205,6 +214,9 @@ describe("Operations", () => {
       expect(parameterValues[0]).toHaveTextContent(TEST_PUBLIC_KEY);
       expect(parameterValues[1]).toHaveTextContent(TEST_PUBLIC_KEY);
       expect(parameterValues[2]).toHaveTextContent("100");
+
+      // Nothing was labelled, so there is no claim to disclaim.
+      expect(screen.queryByTestId("ContractSpecNote")).not.toBeInTheDocument();
     });
 
     it("keeps every label on its own value when a middle parameter is optional", async () => {
@@ -311,6 +323,8 @@ describe("Operations", () => {
       expect(parameterValues[3]).toHaveTextContent(String(START_AT));
       expect(parameterValues[4]).toHaveTextContent(String(DURATION));
       expect(parameterValues[5]).toHaveTextContent(String(TPS));
+
+      expect(screen.getByTestId("ContractSpecNote")).toBeInTheDocument();
     });
 
     it("renders changeTrust operation", async () => {
