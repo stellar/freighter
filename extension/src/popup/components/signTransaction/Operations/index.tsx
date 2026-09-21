@@ -15,7 +15,11 @@ import { FlaggedKeys } from "types/transactions";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { truncateString, truncatedPoolId } from "helpers/stellar";
 import { scanAsset } from "popup/helpers/blockaid";
-import { addressToString, getCreateContractArgs } from "popup/helpers/soroban";
+import {
+  addressToString,
+  getCreateContractArgs,
+  xdrStringToDisplay,
+} from "popup/helpers/soroban";
 import { CopyValue } from "popup/components/CopyValue";
 import {
   KeyValueClaimants,
@@ -914,7 +918,10 @@ export const Operations = ({
             case "hostFunctionTypeInvokeContract": {
               const invocation = hostfn.invokeContract;
               const contractId = addressToString(invocation.contractAddress);
-              const fnName = invocation.functionName.toString();
+              const fnName = xdrStringToDisplay(
+                invocation.functionName,
+                "symbol",
+              );
               const args = invocation.args;
 
               return (
