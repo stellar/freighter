@@ -281,6 +281,9 @@ export const AssetDetail = ({
   const isShowingSwap = !isSorobanAsset && !isLpShare;
   const isShowingSend = hasBalance;
 
+  // See the `AssetDetail__price` div below for why this falls back to spot.
+  const headerPrice = rangeDelta.inspectedPrice ?? assetPrice?.currentPrice;
+
   return activeAssetId ? (
     <SlideupModal
       isModalOpen={activeOperation !== null}
@@ -397,12 +400,15 @@ export const AssetDetail = ({
                 />
               </div>
             ) : null}
-            <div className="AssetDetail__price">
-              {assetPrice && assetPrice.currentPrice
+            {/* Spot, or the inspected point's close while a drag-to-inspect is
+                in progress — same formatter either way (Phase 3). */}
+            <div
+              className="AssetDetail__price"
+              data-testid="AssetDetail__price"
+            >
+              {headerPrice
                 ? `$${formatAmount(
-                    roundUsdValue(
-                      new BigNumber(assetPrice.currentPrice).toString(),
-                    ),
+                    roundUsdValue(new BigNumber(headerPrice).toString()),
                   )}`
                 : null}
             </div>

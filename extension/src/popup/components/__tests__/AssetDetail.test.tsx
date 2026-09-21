@@ -1,6 +1,12 @@
 import React from "react";
 import { Asset } from "stellar-sdk";
-import { render, waitFor, screen, act } from "@testing-library/react";
+import {
+  render,
+  waitFor,
+  screen,
+  act,
+  fireEvent,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import BigNumber from "bignumber.js";
 
@@ -17,9 +23,14 @@ import {
   makeHistory,
 } from "@shared/api/__tests__/fixtures/tokenPriceHistory";
 import { mockAccounts, Wrapper, mockBalances } from "popup/__testHelpers__";
+import { installPointerEventPolyfill } from "popup/__testHelpers__/pointerEvents";
 import { resetCacheWriteClaims } from "helpers/cacheWrites";
 import { RANGE_SWITCH_DEBOUNCE_MS } from "popup/components/account/TokenPriceChart/constants";
 import { AppDataType } from "helpers/hooks/useGetAppData";
+
+// jest-fixed-jsdom has no PointerEvent; without this, fireEvent.pointerDown/
+// pointerUp below would silently drop clientX/pointerId.
+installPointerEventPolyfill();
 
 const mockHistoryData = {
   type: AppDataType.RESOLVED,
@@ -945,6 +956,52 @@ describe("AssetDetail", () => {
       expect(
         historySpy.mock.calls.filter(([{ range }]) => range === "1D"),
       ).toHaveLength(1);
+    });
+
+    it("shows the inspected point's price in the header while dragging, and spot again on release", async () => {
+      // 3 evenly-spaced buckets → bucket ends 0, 900, 1800 → viewBox x 0, 160,
+      // 320 (§ getChartCoordinates), independent of `resolutionSeconds`.
+      const INSPECTABLE_HISTORY = makeHistory({
+        points: [
+          { t: 0, p: "0.20" },
+          { t: 900, p: "0.22" },
+          { t: 1800, p: "0.26" },
+        ],
+        resolutionSeconds: 900,
+        change: { absolute: "0.06", percent: "30.00" },
+      });
+      historySpy.mockResolvedValue(INSPECTABLE_HISTORY);
+      renderDetail(
+        makeState({
+          price: { currentPrice: "0.30", percentagePriceChange24h: "1.09" },
+        }),
+      );
+
+      await waitFor(() => expect(delta().textContent).toBe("+$0.06 (30.00%)"));
+
+      jest
+        .spyOn(SVGElement.prototype, "getBoundingClientRect")
+        .mockReturnValue({
+          left: 0,
+          width: 640,
+          top: 0,
+          height: 280,
+        } as DOMRect);
+      const svg = await screen.findByTestId("TokenPriceChart__svg");
+
+      // 640px-wide element → clientX 320 is viewBox x 160 → nearest is index 1
+      // (x=160) exactly.
+      fireEvent.pointerDown(svg, { clientX: 320, pointerId: 1 });
+      expect(screen.getByTestId("AssetDetail__price")).toHaveTextContent(
+        "$0.22",
+      );
+      expect(delta()).toHaveTextContent("+$0.02 (10.00%)");
+
+      fireEvent.pointerUp(svg, { pointerId: 1 });
+      expect(screen.getByTestId("AssetDetail__price")).toHaveTextContent(
+        "$0.30",
+      );
+      expect(delta()).toHaveTextContent("+$0.06 (30.00%)");
     });
 
     it("paints a losing range red — header delta and chart artwork", async () => {
