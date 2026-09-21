@@ -96,7 +96,8 @@ const CANONICAL_FIXTURE = [
       range: "1W",
     },
   },
-  // Once per drag-to-inspect activation, never per move.
+  // Once per drag-to-inspect activation, on its FIRST move. A bare click
+  // emits nothing at all (asserted below).
   { event: "token_chart.brushed", props: { range: "1W" } },
 ];
 
@@ -104,6 +105,10 @@ describe("token_chart analytics payloads (frozen cross-platform fixture)", () =>
   afterEach(() => {
     mockedSend.mockReset();
     mockedEmitMetric.mockReset();
+    // The `getBoundingClientRect` spy below is installed on a shared
+    // prototype; left in place it would hand every later test in this file a
+    // 320-wide SVG.
+    jest.restoreAllMocks();
   });
 
   it("emits payloads that deep-equal the canonical fixture", async () => {
@@ -196,6 +201,22 @@ describe("token_chart analytics payloads (frozen cross-platform fixture)", () =>
     });
     fireEvent.pointerUp(screen.getByTestId("TokenPriceChart__svg"), {
       pointerId: 1,
+    });
+
+    expect(mockedEmitMetric.mock.calls).toEqual(
+      CANONICAL_FIXTURE.map((fixture) => [fixture.event, fixture.props]),
+    );
+
+    // A bare click is not a brush: pointerdown still moves the artwork, the
+    // tooltip and the header, but with no movement there was no drag to
+    // report — matching mobile, where a long-press-armed pan that never moves
+    // never activates.
+    fireEvent.pointerDown(screen.getByTestId("TokenPriceChart__svg"), {
+      clientX: 10,
+      pointerId: 2,
+    });
+    fireEvent.pointerUp(screen.getByTestId("TokenPriceChart__svg"), {
+      pointerId: 2,
     });
 
     expect(mockedEmitMetric.mock.calls).toEqual(

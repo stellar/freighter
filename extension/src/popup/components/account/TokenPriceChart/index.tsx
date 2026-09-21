@@ -249,9 +249,18 @@ export const TokenPriceChart = ({
   const chartTabIdPrefix = `${idBase}-chart-tab`;
   const [selectedRange, setSelectedRange] =
     useState<TokenPriceHistoryRangeValue>(TokenPriceHistoryRange.OneDay);
-  // The snapped index of the point the user is dragging over, or null when no
-  // drag-to-inspect is active.
-  const [inspectedIndex, setInspectedIndex] = useState<number | null>(null);
+  // The point under the pointer, stored WITH the series it was snapped on, so
+  // the index can never be read against a series it does not describe. A range
+  // switch or a refetch makes the stored inspection inert on the very same
+  // render that swaps the series in — derived, not an effect, so there is no
+  // window in which a stale index picks a point out of the new series.
+  const [inspected, setInspected] = useState<{
+    history: ApiTokenPriceHistory;
+    index: number;
+  } | null>(null);
+  // Whether `token_chart.brushed` has already been emitted for the activation
+  // in progress. Reset on start and end, so it is exactly once per drag.
+  const brushedThisActivationRef = useRef(false);
   const { state, fetchData, warmRange, isRangeCached, startLoading } =
     useGetTokenPriceHistory();
   const isFirstFetchRef = useRef(true);
@@ -444,19 +453,29 @@ export const TokenPriceChart = ({
     });
   }, [token, networkDetails, history, viewedRange, isLoading]);
 
-  // A new series ends the inspection: the index would describe another point
-  // (a different range, or the same range refetched) rather than the one the
-  // user was dragging over.
-  useEffect(() => {
-    setInspectedIndex(null);
-  }, [chartHistory]);
-
   const handleInspectStart = useCallback(
     (index: number) => {
-      setInspectedIndex(index);
+      // Not `brushed` yet: a bare click (down then up, no movement) is not a
+      // drag, and mobile's long-press-armed pan would never have activated on
+      // it. The first move of this activation emits the event.
+      brushedThisActivationRef.current = false;
       if (chartHistory) {
-        // Once per activation, never per move (§7.5) — the payload is the
-        // plotted series' range, not `selectedRange`, which can lead it.
+        setInspected({ history: chartHistory, index });
+      }
+    },
+    [chartHistory],
+  );
+  const handleInspectMove = useCallback(
+    (index: number) => {
+      if (!chartHistory) {
+        return;
+      }
+      setInspected({ history: chartHistory, index });
+      if (!brushedThisActivationRef.current) {
+        brushedThisActivationRef.current = true;
+        // Once per activation, on the first real drag and never per move
+        // (§7.5) — the payload is the plotted series' range, not
+        // `selectedRange`, which can lead it.
         emitMetric(METRIC_NAMES.tokenChartBrushed, {
           range: chartHistory.range,
         });
@@ -464,16 +483,18 @@ export const TokenPriceChart = ({
     },
     [chartHistory],
   );
-  const handleInspectMove = useCallback(
-    (index: number) => setInspectedIndex(index),
-    [],
-  );
-  const handleInspectEnd = useCallback(() => setInspectedIndex(null), []);
+  const handleInspectEnd = useCallback(() => {
+    brushedThisActivationRef.current = false;
+    setInspected(null);
+  }, []);
 
+  // Inert the moment the series changes underneath it: `inspected.history` is
+  // the exact object the index was snapped against.
   const inspectedPoint =
-    chartHistory && inspectedIndex !== null
-      ? (chartHistory.points[inspectedIndex] ?? null)
+    inspected && chartHistory && inspected.history === chartHistory
+      ? (chartHistory.points[inspected.index] ?? null)
       : null;
+  const inspectedIndex = inspectedPoint ? (inspected?.index ?? null) : null;
   // The one client-side delta (D8 exception): close-to-close from the first
   // plotted point to the inspected one, through the same formatting path as
   // the server's `change`.

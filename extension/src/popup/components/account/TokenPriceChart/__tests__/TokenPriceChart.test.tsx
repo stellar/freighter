@@ -19,6 +19,7 @@ import {
 import { makeDummyStore } from "popup/__testHelpers__";
 import { installPointerEventPolyfill } from "popup/__testHelpers__/pointerEvents";
 import { resetCacheWriteClaims } from "helpers/cacheWrites";
+import { emitMetric } from "helpers/metrics";
 import {
   RangeDeltaState,
   TokenPriceChart,
@@ -43,6 +44,11 @@ const mockedSend = sendMessageToBackground as jest.Mock;
 jest.mock("helpers/metrics", () => ({
   emitMetric: jest.fn(),
 }));
+const mockedEmitMetric = emitMetric as jest.Mock;
+const brushedCalls = () =>
+  mockedEmitMetric.mock.calls.filter(
+    ([event]) => event === "token_chart.brushed",
+  );
 
 // 97 points — a full 1D series, comfortably past the sparse threshold.
 const HISTORY_1D = makeHistory({ points: densePoints(97) });
@@ -129,6 +135,7 @@ describe("TokenPriceChart", () => {
   beforeEach(() => {
     reportedDelta = null;
     reportCount = 0;
+    mockedEmitMetric.mockClear();
   });
 
   afterEach(() => {
@@ -1037,6 +1044,101 @@ describe("TokenPriceChart", () => {
       // ...but the ARTWORK keeps the range's (positive) direction.
       expect(chartClass()).toContain("LineChart--positive");
       expect(chartClass()).not.toContain("LineChart--negative");
+    });
+
+    it("fires token_chart.brushed on the first MOVE of an activation, not on the click", async () => {
+      respondByRange({ "1D": INSPECTABLE_HISTORY });
+      renderChart();
+
+      await waitFor(() =>
+        expect(screen.getByTestId("TokenPriceChart__polyline")).toBeDefined(),
+      );
+
+      mockRect();
+      const svg = screen.getByTestId("TokenPriceChart__svg");
+
+      // Pointerdown alone: the artwork, the tooltip and the reported price all
+      // follow it, but nothing is reported to analytics — a tap is not a drag.
+      fireEvent.pointerDown(svg, { clientX: 320, pointerId: 1 });
+      expect(
+        screen.getByTestId("TokenPriceChart__inspect-tooltip"),
+      ).toBeDefined();
+      expect(reportedDelta?.inspectedPrice).toBe("0.22");
+      expect(brushedCalls()).toHaveLength(0);
+
+      fireEvent.pointerMove(svg, { clientX: 640, pointerId: 1 });
+      expect(brushedCalls()).toEqual([
+        ["token_chart.brushed", { range: "1D" }],
+      ]);
+
+      // Still exactly one for the rest of the activation.
+      fireEvent.pointerMove(svg, { clientX: 0, pointerId: 1 });
+      fireEvent.pointerUp(svg, { pointerId: 1 });
+      expect(brushedCalls()).toHaveLength(1);
+    });
+
+    it("a bare click emits nothing, and two drags emit two brushed events", async () => {
+      respondByRange({ "1D": INSPECTABLE_HISTORY });
+      renderChart();
+
+      await waitFor(() =>
+        expect(screen.getByTestId("TokenPriceChart__polyline")).toBeDefined(),
+      );
+
+      mockRect();
+      const svg = screen.getByTestId("TokenPriceChart__svg");
+
+      fireEvent.pointerDown(svg, { clientX: 320, pointerId: 1 });
+      fireEvent.pointerUp(svg, { pointerId: 1 });
+      expect(brushedCalls()).toHaveLength(0);
+
+      const drag = (pointerId: number) => {
+        fireEvent.pointerDown(svg, { clientX: 0, pointerId });
+        fireEvent.pointerMove(svg, { clientX: 320, pointerId });
+        fireEvent.pointerMove(svg, { clientX: 640, pointerId });
+        fireEvent.pointerUp(svg, { pointerId });
+      };
+      drag(2);
+      drag(3);
+
+      // Per ACTIVATION, so a second drag is a second event — the ref is reset
+      // at both ends of an activation, not once per mount.
+      expect(brushedCalls()).toEqual([
+        ["token_chart.brushed", { range: "1D" }],
+        ["token_chart.brushed", { range: "1D" }],
+      ]);
+    });
+
+    it("unmounting mid-drag tears down cleanly", async () => {
+      // The pointer is still down and captured when the section goes away (a
+      // kill-switch flip, a back navigation). Nothing may set state on the
+      // unmounted tree, and the last thing the parent heard must not be left
+      // standing as the header's price — see AssetDetail's own test for the
+      // other half of that.
+      respondByRange({ "1D": INSPECTABLE_HISTORY });
+      const { unmount } = renderChart();
+
+      await waitFor(() =>
+        expect(screen.getByTestId("TokenPriceChart__polyline")).toBeDefined(),
+      );
+
+      mockRect();
+      const svg = screen.getByTestId("TokenPriceChart__svg");
+      const errorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+      const warnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
+
+      fireEvent.pointerDown(svg, { clientX: 320, pointerId: 1 });
+      fireEvent.pointerMove(svg, { clientX: 640, pointerId: 1 });
+      expect(reportedDelta?.inspectedPrice).toBe("0.26");
+
+      unmount();
+
+      expect(errorSpy).not.toHaveBeenCalled();
+      expect(warnSpy).not.toHaveBeenCalled();
+      // The section cannot report a release it is no longer mounted for: the
+      // last report it made still carries the inspected price, which is why
+      // the detail view resets its own copy when the chart goes away.
+      expect(reportedDelta?.inspectedPrice).toBe("0.26");
     });
 
     it("a range switch clears the inspection", async () => {
