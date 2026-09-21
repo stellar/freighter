@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import { BigNumber } from "bignumber.js";
 import { useTranslation } from "react-i18next";
@@ -83,7 +83,10 @@ const LOADING_DELTA: RangeDeltaState = {
   inspectedPrice: null,
 };
 
-const AssetDetailOperations = ({
+// Memoised: drag-to-inspect reports a new price and delta per SNAPPED point,
+// so this whole view re-renders on every pointer move over the chart, and the
+// operations list has nothing to do with any of it.
+const AssetDetailOperations = React.memo(function AssetDetailOperations({
   filteredAssetOperations,
   accountBalances,
   publicKey,
@@ -95,7 +98,7 @@ const AssetDetailOperations = ({
   publicKey: string;
   networkDetails: NetworkDetails;
   setActiveAssetId: (id: string) => void;
-}) => {
+}) {
   const { t } = useTranslation();
   return (
     <>
@@ -121,6 +124,15 @@ const AssetDetailOperations = ({
       )}
     </>
   );
+});
+
+/** What the header shows before the chart section reports anything — and what
+ * it must fall back to the moment that section goes away. */
+const INITIAL_RANGE_DELTA: RangeDeltaState = {
+  isLoading: true,
+  text: "",
+  colorClass: PriceDirection.Neutral,
+  inspectedPrice: null,
 };
 
 interface AssetDetailProps {
@@ -222,34 +234,9 @@ export const AssetDetail = ({
     assetIssuer,
   });
 
-  if (historyData?.type === AppDataType.REROUTE) {
-    return null;
-  }
-
-  const assetOperations =
-    historyData?.operationsByAsset?.[selectedAsset] || null;
-
-  let filteredAssetOperations = null;
-  let activeOperation = null;
-
-  if (assetOperations) {
-    filteredAssetOperations = assetOperations.filter((operation) => {
-      if (operation.metadata.isDustPayment && isHideDustEnabled) {
-        return false;
-      }
-
-      return true;
-    });
-    activeOperation =
-      filteredAssetOperations.find((op) => op.id === activeAssetId) || null;
-  }
-
-  if (assetIssuer && !assetDomain && !assetError && !isSorobanAsset) {
-    // if we have an asset issuer, wait until we have the asset domain before continuing
-    return <Loading />;
-  }
-
-  const isLpShare = "liquidityPoolId" in selectedBalance;
+  const isLpShare = Boolean(
+    selectedBalance && "liquidityPoolId" in selectedBalance,
+  );
 
   // Chart + stats are mainnet-only; elsewhere the header keeps its 24h delta.
   // LP shares are excluded: `<pool-id>:lp` is not priceable (getTokenPrices
@@ -269,6 +256,38 @@ export const AssetDetail = ({
     setRangeDelta({ scope: scopeKey, delta: LOADING_DELTA });
   }
 
+  // Narrowed by hand rather than by the `REROUTE` early return below: this has
+  // to sit above it to be a hook, and a reroute has no operations anyway.
+  const assetOperations =
+    historyData && historyData.type !== AppDataType.REROUTE
+      ? historyData.operationsByAsset?.[selectedAsset] || null
+      : null;
+
+  // Memoised for the same reason `AssetDetailOperations` is: a fresh array on
+  // every pointer move over the chart would defeat the memo it feeds.
+  const filteredAssetOperations = useMemo(
+    () =>
+      assetOperations
+        ? assetOperations.filter(
+            (operation) =>
+              !(operation.metadata.isDustPayment && isHideDustEnabled),
+          )
+        : null,
+    [assetOperations, isHideDustEnabled],
+  );
+
+  if (historyData?.type === AppDataType.REROUTE) {
+    return null;
+  }
+
+  const activeOperation =
+    filteredAssetOperations?.find((op) => op.id === activeAssetId) || null;
+
+  if (assetIssuer && !assetDomain && !assetError && !isSorobanAsset) {
+    // if we have an asset issuer, wait until we have the asset domain before continuing
+    return <Loading />;
+  }
+
   const isStellarExpertSupported =
     isMainnet(networkDetails) || isTestnet(networkDetails);
   const stellarExpertAssetLinkSlug = isSorobanBalance(selectedBalance)
@@ -282,7 +301,13 @@ export const AssetDetail = ({
   const isShowingSend = hasBalance;
 
   // See the `AssetDetail__price` div below for why this falls back to spot.
-  const headerPrice = rangeDelta.inspectedPrice ?? assetPrice?.currentPrice;
+  // Guarded on `isChartShown` as well as on the reported value: an inspected
+  // price only ever means anything while the chart that produced it is on
+  // screen, and the guard holds even in the render before the reset effect
+  // above has run.
+  const headerPrice =
+    (isChartShown ? shownDelta.inspectedPrice : null) ??
+    assetPrice?.currentPrice;
 
   return activeAssetId ? (
     <SlideupModal

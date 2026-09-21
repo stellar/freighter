@@ -1004,6 +1004,69 @@ describe("AssetDetail", () => {
       expect(delta()).toHaveTextContent("+$0.06 (30.00%)");
     });
 
+    it("falls back to spot when the chart unmounts mid-drag", async () => {
+      // The kill switch flips (or the token/network changes) while a finger is
+      // still down. The chart section unmounts without ever reporting the
+      // release, so the header has to drop the inspected price on its own —
+      // otherwise the view is left showing a price that is not spot and a
+      // delta describing a chart that is gone.
+      const INSPECTABLE_HISTORY = makeHistory({
+        points: [
+          { t: 0, p: "0.20" },
+          { t: 900, p: "0.22" },
+          { t: 1800, p: "0.26" },
+        ],
+        resolutionSeconds: 900,
+        change: { absolute: "0.06", percent: "30.00" },
+      });
+      historySpy.mockResolvedValue(INSPECTABLE_HISTORY);
+      const price = { currentPrice: "0.30", percentagePriceChange24h: "1.09" };
+      const { rerender } = renderDetail(makeState({ price }));
+
+      await waitFor(() => expect(delta().textContent).toBe("+$0.06 (30.00%)"));
+
+      const rectSpy = jest
+        .spyOn(SVGElement.prototype, "getBoundingClientRect")
+        .mockReturnValue({
+          left: 0,
+          width: 640,
+          top: 0,
+          height: 280,
+        } as DOMRect);
+
+      try {
+        fireEvent.pointerDown(await screen.findByTestId("TokenPriceChart__svg"), {
+          clientX: 320,
+          pointerId: 1,
+        });
+        expect(screen.getByTestId("AssetDetail__price")).toHaveTextContent(
+          "$0.22",
+        );
+
+        // No pointerup: the section goes away underneath the drag.
+        rerender(
+          <Wrapper
+            routes={[ROUTES.account]}
+            state={makeState({ isChartEnabled: false, price })}
+          >
+            <AssetDetail {...makeProps()} />
+          </Wrapper>,
+        );
+
+        await waitFor(() =>
+          expect(screen.queryByTestId("TokenPriceChart")).toBeNull(),
+        );
+        expect(screen.getByTestId("AssetDetail__price")).toHaveTextContent(
+          "$0.30",
+        );
+        // And the range delta is gone with it — the 24h figure is what this
+        // view shows without a chart.
+        expect(delta().textContent).toBe("1.09%");
+      } finally {
+        rectSpy.mockRestore();
+      }
+    });
+
     it("paints a losing range red — header delta and chart artwork", async () => {
       historySpy.mockResolvedValue(HISTORY_1D_NEGATIVE);
       renderDetail(makeState());
