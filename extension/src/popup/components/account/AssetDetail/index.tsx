@@ -80,6 +80,7 @@ const LOADING_DELTA: RangeDeltaState = {
   isLoading: true,
   text: "",
   colorClass: PriceDirection.Neutral,
+  inspectedPrice: null,
 };
 
 const AssetDetailOperations = ({

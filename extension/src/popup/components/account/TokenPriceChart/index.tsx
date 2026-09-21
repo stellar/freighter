@@ -26,6 +26,7 @@ import { hasChartData } from "popup/helpers/tokenPriceHistory";
 import { RequestState } from "constants/request";
 
 import { ChartGhost } from "./ChartGhost";
+import { computeInspectedChange } from "./inspect";
 import {
   LineChart,
   getChartCoordinates,
@@ -213,6 +214,9 @@ export interface RangeDeltaState {
   text: string;
   /** Three-state palette: a gain is green, a loss red, a flat range neutral. */
   colorClass: SignedPercent["colorClass"];
+  /** The inspected point's raw price while a drag-to-inspect is active; the
+   * header shows it in place of spot. Null otherwise. */
+  inspectedPrice: string | null;
 }
 
 interface TokenPriceChartProps {
@@ -245,6 +249,9 @@ export const TokenPriceChart = ({
   const chartTabIdPrefix = `${idBase}-chart-tab`;
   const [selectedRange, setSelectedRange] =
     useState<TokenPriceHistoryRangeValue>(TokenPriceHistoryRange.OneDay);
+  // The snapped index of the point the user is dragging over, or null when no
+  // drag-to-inspect is active.
+  const [inspectedIndex, setInspectedIndex] = useState<number | null>(null);
   const { state, fetchData, warmRange, isRangeCached, startLoading } =
     useGetTokenPriceHistory();
   const isFirstFetchRef = useRef(true);
@@ -402,6 +409,13 @@ export const TokenPriceChart = ({
   const hasChart =
     !isLoading && !isError && Boolean(history && hasChartData(history.points));
 
+  // The drawn series, or null. Everything derived below keys off this one
+  // reference, so the derivations recompute when a fetch lands rather than on
+  // every render of the parent detail view. Declared ahead of the delta
+  // computation so the inspect derivations (which also key off it) can
+  // precede it.
+  const chartHistory = hasChart ? history : null;
+
   /**
    * One per (token, range) shown, cache hits included. Keyed off the series'
    * own range so a mid-switch render cannot mis-attribute. Deduped per visit.
@@ -430,25 +444,82 @@ export const TokenPriceChart = ({
     });
   }, [token, networkDetails, history, viewedRange, isLoading]);
 
+  // A new series ends the inspection: the index would describe another point
+  // (a different range, or the same range refetched) rather than the one the
+  // user was dragging over.
+  useEffect(() => {
+    setInspectedIndex(null);
+  }, [chartHistory]);
+
+  const handleInspectStart = useCallback(
+    (index: number) => {
+      setInspectedIndex(index);
+      if (chartHistory) {
+        // Once per activation, never per move (§7.5) — the payload is the
+        // plotted series' range, not `selectedRange`, which can lead it.
+        emitMetric(METRIC_NAMES.tokenChartBrushed, {
+          range: chartHistory.range,
+        });
+      }
+    },
+    [chartHistory],
+  );
+  const handleInspectMove = useCallback(
+    (index: number) => setInspectedIndex(index),
+    [],
+  );
+  const handleInspectEnd = useCallback(() => setInspectedIndex(null), []);
+
+  const inspectedPoint =
+    chartHistory && inspectedIndex !== null
+      ? (chartHistory.points[inspectedIndex] ?? null)
+      : null;
+  // The one client-side delta (D8 exception): close-to-close from the first
+  // plotted point to the inspected one, through the same formatting path as
+  // the server's `change`.
+  const inspectedChange =
+    chartHistory && inspectedPoint
+      ? computeInspectedChange(chartHistory.points[0], inspectedPoint)
+      : null;
+
   // Off the drawable series, not the raw response: the backend computes
   // `change` from a single point, and a signed delta above "No price data"
   // would contradict it.
-  const change = hasChart && history ? history.change : null;
+  const rangeChange = hasChart && history ? history.change : null;
   // Parsed once: the direction and the dollar figure must read the same
   // number, and a second parse is a second chance for them to disagree.
-  const changeAbsolute = change ? new BigNumber(change.absolute) : null;
-  const rangePercent = change
-    ? formatSignedPercent(new BigNumber(change.percent), changeAbsolute)
+  const rangeAbsolute = rangeChange
+    ? new BigNumber(rangeChange.absolute)
     : null;
-  // The same direction colours the delta text and the artwork, so they can
-  // never disagree. No `change` draws neutral.
+  const rangePercent = rangeChange
+    ? formatSignedPercent(new BigNumber(rangeChange.percent), rangeAbsolute)
+    : null;
+  // The artwork keeps the RANGE's direction even while inspecting: a drag
+  // that dips below the open must not flip the whole chart's colour, only
+  // the delta text that describes the inspected point. No `change` draws
+  // neutral.
   const chartDirection: PriceDirection =
     rangePercent?.colorClass ?? PriceDirection.Neutral;
 
-  // Display `change`, never recompute it. On error, 1D falls back to the
-  // existing 24h percent (no absolute — never derived from a percent); other
-  // ranges show nothing. Deliberately no copy in the empty case: the design
-  // draws the row empty and mobile does the same; the min-height holds it open.
+  // The delta the header prints: the inspected point's close-to-close while a
+  // drag is in progress, otherwise the server's `change` verbatim. Never
+  // recomputed outside of the one client-side exception above.
+  const displayedChange = inspectedChange ?? rangeChange;
+  const changeAbsolute = displayedChange
+    ? new BigNumber(displayedChange.absolute)
+    : null;
+  const displayedPercent = displayedChange
+    ? formatSignedPercent(
+        new BigNumber(displayedChange.percent),
+        changeAbsolute,
+      )
+    : null;
+
+  // Display `displayedChange`, never recompute it further. On error, 1D falls
+  // back to the existing 24h percent (no absolute — never derived from a
+  // percent); other ranges show nothing. Deliberately no copy in the empty
+  // case: the design draws the row empty and mobile does the same; the
+  // min-height holds it open.
   let deltaText = "";
   let deltaColorClass: RangeDeltaState["colorClass"] = PriceDirection.Neutral;
   if (isError) {
@@ -458,31 +529,30 @@ export const TokenPriceChart = ({
       deltaColorClass = fallback.colorClass;
       deltaText = fallback.text;
     }
-  } else if (changeAbsolute && rangePercent) {
-    deltaColorClass = rangePercent.colorClass;
+  } else if (changeAbsolute && displayedPercent) {
+    deltaColorClass = displayedPercent.colorClass;
     const formattedAbsolute = formatChartPrice(changeAbsolute);
     // A sub-cent move formats to "0.00"; signing that reads as a gain the number
     // denies, so the percentage stands alone and carries the sign.
     deltaText = isFormattedZero(formattedAbsolute)
-      ? rangePercent.text
-      : `${rangePercent.sign}$${formattedAbsolute} (${rangePercent.formatted}%)`;
+      ? displayedPercent.text
+      : `${displayedPercent.sign}$${formattedAbsolute} (${displayedPercent.formatted}%)`;
   }
 
-  // Deps are the three rendered primitives, so this fires on a delta change,
-  // not on every parent re-render (which would loop through the parent's
-  // setState). `FETCH_DATA_START` clears `data`, so nothing stale escapes.
+  // Deps are primitives, so this fires on a delta change, not on every parent
+  // re-render (which would loop through the parent's setState).
+  // `FETCH_DATA_START` clears `data`, so nothing stale escapes.
+  // `inspectedPoint?.p` rather than `inspectedPoint`: the point object is a
+  // fresh reference from `chartHistory.points`, so keying on it would fire
+  // on every render while inspecting the same index.
   useEffect(() => {
     onDeltaChange({
       isLoading,
       text: deltaText,
       colorClass: deltaColorClass,
+      inspectedPrice: inspectedPoint?.p ?? null,
     });
-  }, [onDeltaChange, isLoading, deltaText, deltaColorClass]);
-
-  // The drawn series, or null. Everything derived below keys off this one
-  // reference, so the derivations recompute when a fetch lands rather than on
-  // every render of the parent detail view.
-  const chartHistory = hasChart ? history : null;
+  }, [onDeltaChange, isLoading, deltaText, deltaColorClass, inspectedPoint?.p]);
 
   const noticeVariant = useMemo(
     () =>
@@ -628,6 +698,15 @@ export const TokenPriceChart = ({
                 nowSeconds={nowSeconds}
                 direction={chartDirection}
                 label={chartLabel}
+                inspectedIndex={inspectedIndex}
+                inspectedLabel={
+                  inspectedPoint
+                    ? `$${formatChartPrice(new BigNumber(inspectedPoint.p))}`
+                    : undefined
+                }
+                onInspectStart={handleInspectStart}
+                onInspectMove={handleInspectMove}
+                onInspectEnd={handleInspectEnd}
               />
             </>
           ) : (

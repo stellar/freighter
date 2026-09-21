@@ -1,7 +1,14 @@
 import React from "react";
 import { Provider } from "react-redux";
-import { render, screen, waitFor, act } from "@testing-library/react";
+import {
+  render,
+  screen,
+  waitFor,
+  act,
+  fireEvent,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { BigNumber } from "bignumber.js";
 
 import { MAINNET_NETWORK_DETAILS } from "@shared/constants/stellar";
 import { sendMessageToBackground } from "@shared/api/helpers/extensionMessaging";
@@ -10,18 +17,25 @@ import {
   makeHistory,
 } from "@shared/api/__tests__/fixtures/tokenPriceHistory";
 import { makeDummyStore } from "popup/__testHelpers__";
+import { installPointerEventPolyfill } from "popup/__testHelpers__/pointerEvents";
 import { resetCacheWriteClaims } from "helpers/cacheWrites";
 import {
   RangeDeltaState,
   TokenPriceChart,
+  formatChartPrice,
 } from "popup/components/account/TokenPriceChart";
 import {
   CHART_HEIGHT_PX,
   CHART_MORPH_DURATION_MS,
   RANGE_SWITCH_DEBOUNCE_MS,
+  PriceDirection,
 } from "popup/components/account/TokenPriceChart/constants";
 
 // §N refs: wallet-eng-monorepo/design-docs/token-price-graphs/token-price-graphs-design.md
+
+// jest-fixed-jsdom has no PointerEvent; without this, fireEvent.pointerDown/
+// pointerMove/pointerUp below would silently drop clientX/pointerId.
+installPointerEventPolyfill();
 
 jest.mock("@shared/api/helpers/extensionMessaging");
 const mockedSend = sendMessageToBackground as jest.Mock;
@@ -255,6 +269,7 @@ describe("TokenPriceChart", () => {
       isLoading: false,
       text: "+$0.0014 (0.86%)",
       colorClass: "positive",
+      inspectedPrice: null,
     });
   });
 
@@ -528,6 +543,7 @@ describe("TokenPriceChart", () => {
         isLoading: false,
         text: "",
         colorClass: "neutral",
+        inspectedPrice: null,
       }),
     );
     expect(screen.queryByTestId("TokenPriceChart__polyline")).toBeNull();
@@ -549,6 +565,7 @@ describe("TokenPriceChart", () => {
       isLoading: false,
       text: "",
       colorClass: "neutral",
+      inspectedPrice: null,
     });
     // No delta means no direction: the artwork is neutral, never coloured off
     // a series the payload declined to characterise.
@@ -573,6 +590,7 @@ describe("TokenPriceChart", () => {
       isLoading: false,
       text: "+0.05%",
       colorClass: "positive",
+      inspectedPrice: null,
     });
   });
 
@@ -591,6 +609,7 @@ describe("TokenPriceChart", () => {
       isLoading: false,
       text: "-$0.0602 (12.12%)",
       colorClass: "negative",
+      inspectedPrice: null,
     });
     // Colour never carries the meaning alone (§7.4): the sign stays in the
     // text.
@@ -637,6 +656,7 @@ describe("TokenPriceChart", () => {
       isLoading: false,
       text: "+$0.000020 (0.00%)",
       colorClass: "positive",
+      inspectedPrice: null,
     });
     // One direction drives everything: the artwork takes the delta's, so this
     // token's chart is green rather than the grey it used to draw.
@@ -661,6 +681,7 @@ describe("TokenPriceChart", () => {
       isLoading: false,
       text: "-$0.000020 (0.00%)",
       colorClass: "negative",
+      inspectedPrice: null,
     });
     expect(chartClass()).toContain("LineChart--negative");
     expect(chartClass()).not.toContain("LineChart--neutral");
@@ -683,6 +704,7 @@ describe("TokenPriceChart", () => {
       isLoading: false,
       text: "0.00%",
       colorClass: "neutral",
+      inspectedPrice: null,
     });
     expect(chartClass()).toContain("LineChart--neutral");
     expect(chartClass()).not.toContain("LineChart--negative");
@@ -765,6 +787,7 @@ describe("TokenPriceChart", () => {
         isLoading: true,
         text: "",
         colorClass: "neutral",
+        inspectedPrice: null,
       });
       unmount();
       resetCacheWriteClaims();
@@ -851,6 +874,7 @@ describe("TokenPriceChart", () => {
       isLoading: false,
       text: "+1.09%",
       colorClass: "positive",
+      inspectedPrice: null,
     });
   });
 
@@ -905,5 +929,147 @@ describe("TokenPriceChart", () => {
     expect(screen.getByTestId("TokenPriceChart__canvas").contains(region)).toBe(
       false,
     );
+  });
+
+  describe("drag to inspect", () => {
+    // 3 evenly-spaced buckets → bucket ends 900, 1800, 2700 → viewBox x 0,
+    // 160, 320 (§ getChartCoordinates), independent of `resolutionSeconds`.
+    const INSPECTABLE_HISTORY = makeHistory({
+      points: [
+        { t: 0, p: "0.20" },
+        { t: 900, p: "0.22" },
+        { t: 1800, p: "0.26" },
+      ],
+      resolutionSeconds: 900,
+      change: { absolute: "0.06", percent: "30.00" },
+    });
+
+    const mockRect = () =>
+      jest
+        .spyOn(SVGElement.prototype, "getBoundingClientRect")
+        .mockReturnValue({
+          left: 0,
+          width: 640,
+          top: 0,
+          height: 280,
+        } as DOMRect);
+
+    afterEach(() => jest.restoreAllMocks());
+
+    it("while inspecting, reports the inspected price and the close-to-close delta, then reverts on release", async () => {
+      respondByRange({ "1D": INSPECTABLE_HISTORY });
+      renderChart();
+
+      await waitFor(() =>
+        expect(screen.getByTestId("TokenPriceChart__polyline")).toBeDefined(),
+      );
+
+      mockRect();
+      const svg = screen.getByTestId("TokenPriceChart__svg");
+
+      // 640px-wide element → clientX 320 is viewBox x 160 → nearest is index 1
+      // (x=160) exactly.
+      fireEvent.pointerDown(svg, { clientX: 320, pointerId: 1 });
+      expect(reportedDelta).toEqual({
+        isLoading: false,
+        text: "+$0.02 (10.00%)",
+        colorClass: PriceDirection.Positive,
+        inspectedPrice: "0.22",
+      });
+
+      fireEvent.pointerUp(svg, { pointerId: 1 });
+      expect(reportedDelta).toEqual({
+        isLoading: false,
+        text: "+$0.06 (30.00%)",
+        colorClass: PriceDirection.Positive,
+        inspectedPrice: null,
+      });
+    });
+
+    it("the tooltip shows the inspected point's price through the axis-label formatter", async () => {
+      respondByRange({ "1D": INSPECTABLE_HISTORY });
+      renderChart();
+
+      await waitFor(() =>
+        expect(screen.getByTestId("TokenPriceChart__polyline")).toBeDefined(),
+      );
+
+      mockRect();
+      fireEvent.pointerDown(screen.getByTestId("TokenPriceChart__svg"), {
+        clientX: 320,
+        pointerId: 1,
+      });
+
+      expect(
+        screen.getByTestId("TokenPriceChart__inspect-tooltip"),
+      ).toHaveTextContent(`$${formatChartPrice(new BigNumber("0.22"))}`);
+    });
+
+    it("the chart colour stays the RANGE's direction while inspecting a point below the open", async () => {
+      // Rising overall (0.20 → 0.30, range change positive) but the middle
+      // point dips below the open — the inspected delta from it is negative.
+      respondByRange({
+        "1D": makeHistory({
+          points: [
+            { t: 0, p: "0.20" },
+            { t: 900, p: "0.18" },
+            { t: 1800, p: "0.30" },
+          ],
+          resolutionSeconds: 900,
+          change: { absolute: "0.10", percent: "50.00" },
+        }),
+      });
+      renderChart();
+
+      await waitFor(() =>
+        expect(screen.getByTestId("TokenPriceChart__polyline")).toBeDefined(),
+      );
+      expect(chartClass()).toContain("LineChart--positive");
+
+      mockRect();
+      fireEvent.pointerDown(screen.getByTestId("TokenPriceChart__svg"), {
+        clientX: 320,
+        pointerId: 1,
+      });
+
+      // The delta TEXT follows the inspected (negative) change...
+      expect(reportedDelta?.colorClass).toBe(PriceDirection.Negative);
+      // ...but the ARTWORK keeps the range's (positive) direction.
+      expect(chartClass()).toContain("LineChart--positive");
+      expect(chartClass()).not.toContain("LineChart--negative");
+    });
+
+    it("a range switch clears the inspection", async () => {
+      jest.useFakeTimers();
+      respondByRange({ "1D": INSPECTABLE_HISTORY, "1W": HISTORY_1W });
+      renderChart();
+
+      await act(async () => {
+        await Promise.resolve();
+      });
+
+      mockRect();
+      fireEvent.pointerDown(screen.getByTestId("TokenPriceChart__svg"), {
+        clientX: 320,
+        pointerId: 1,
+      });
+      expect(
+        screen.getByTestId("TokenPriceChart__inspect-tooltip"),
+      ).toBeDefined();
+
+      const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
+      await user.click(screen.getByRole("tab", { name: "1W" }));
+      await act(async () => {
+        jest.advanceTimersByTime(RANGE_SWITCH_DEBOUNCE_MS + 50);
+        await Promise.resolve();
+      });
+
+      expect(
+        screen.queryByTestId("TokenPriceChart__inspect-tooltip"),
+      ).toBeNull();
+      expect(reportedDelta).toEqual(
+        expect.objectContaining({ inspectedPrice: null }),
+      );
+    });
   });
 });
