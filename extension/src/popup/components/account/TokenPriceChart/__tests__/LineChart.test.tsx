@@ -1,5 +1,5 @@
 import React from "react";
-import { act, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 
 import { ApiTokenPriceHistoryPoint } from "@shared/api/types";
 import { LineChart, getPlottedRangeEnd } from "../LineChart";
@@ -189,6 +189,119 @@ describe("LineChart", () => {
     expect(screen.getByRole("img")).toHaveAccessibleName(
       "Price chart, 1D: Aug 25 to Aug 26, +0.86%",
     );
+  });
+});
+
+describe("drag to inspect", () => {
+  // bucket ends 900, 1800, 2700, 3600 → x 0, 106.67, 213.33, 320
+  const points = [
+    { t: 0, p: "1.00" },
+    { t: 900, p: "1.10" },
+    { t: 1800, p: "1.05" },
+    { t: 2700, p: "1.20" },
+  ];
+  const renderInspectable = (
+    props: Partial<React.ComponentProps<typeof LineChart>> = {},
+  ) =>
+    render(
+      <LineChart
+        points={points}
+        resolutionSeconds={900}
+        nowSeconds={20000}
+        direction={PriceDirection.Positive}
+        label="Price chart"
+        {...props}
+      />,
+    );
+
+  beforeEach(() => {
+    jest
+      .spyOn(SVGElement.prototype, "getBoundingClientRect")
+      .mockReturnValue({ left: 0, width: 640, top: 0, height: 280 } as DOMRect);
+  });
+  afterEach(() => jest.restoreAllMocks());
+
+  it("pointerdown reports the snapped index (viewBox space, not client px), moves report on every pointermove, up ends", () => {
+    const onInspectStart = jest.fn();
+    const onInspectMove = jest.fn();
+    const onInspectEnd = jest.fn();
+    const { rerender } = renderInspectable({
+      onInspectStart,
+      onInspectMove,
+      onInspectEnd,
+    });
+    const svg = screen.getByTestId("TokenPriceChart__svg");
+
+    // 640px wide element → clientX 200 is viewBox x 100 → nearest 106.67 → index 1
+    fireEvent.pointerDown(svg, { clientX: 200, pointerId: 1 });
+    expect(onInspectStart).toHaveBeenCalledWith(1);
+
+    rerender(
+      <LineChart
+        points={points}
+        resolutionSeconds={900}
+        nowSeconds={20000}
+        direction={PriceDirection.Positive}
+        label="Price chart"
+        inspectedIndex={1}
+        onInspectStart={onInspectStart}
+        onInspectMove={onInspectMove}
+        onInspectEnd={onInspectEnd}
+      />,
+    );
+    fireEvent.pointerMove(svg, { clientX: 640, pointerId: 1 });
+    expect(onInspectMove).toHaveBeenCalledWith(3);
+    fireEvent.pointerUp(svg, { pointerId: 1 });
+    expect(onInspectEnd).toHaveBeenCalledTimes(1);
+  });
+
+  it("ignores pointermove while idle", () => {
+    const onInspectMove = jest.fn();
+    renderInspectable({ onInspectMove });
+    fireEvent.pointerMove(screen.getByTestId("TokenPriceChart__svg"), {
+      clientX: 100,
+      pointerId: 1,
+    });
+    expect(onInspectMove).not.toHaveBeenCalled();
+  });
+
+  it("pointercancel ends the inspection", () => {
+    const onInspectEnd = jest.fn();
+    renderInspectable({ inspectedIndex: 1, onInspectEnd });
+    fireEvent.pointerCancel(screen.getByTestId("TokenPriceChart__svg"), {
+      pointerId: 1,
+    });
+    expect(onInspectEnd).toHaveBeenCalledTimes(1);
+  });
+
+  it("draws the guide, dot and tooltip at the inspected point and hides the end dot", () => {
+    renderInspectable({ inspectedIndex: 1, inspectedLabel: "$1.10" });
+    const guide = screen.getByTestId("TokenPriceChart__inspect-guide");
+    expect(Number(guide.getAttribute("x1"))).toBeCloseTo(106.67, 1);
+    expect(guide.getAttribute("stroke-dasharray")).toBe("4 4");
+    expect(
+      screen.getByTestId("TokenPriceChart__inspect-dot"),
+    ).toBeInTheDocument();
+    expect(screen.queryByTestId("TokenPriceChart__end-dot")).toBeNull();
+    const tooltip = screen.getByTestId("TokenPriceChart__inspect-tooltip");
+    expect(tooltip).toHaveTextContent("$1.10");
+    expect(tooltip).toHaveAttribute("aria-hidden", "true");
+    expect(tooltip.className).toContain("LineChart__tooltip--left");
+    expect(parseFloat(tooltip.style.left)).toBeCloseTo(33.33, 1);
+  });
+
+  it("flips the tooltip to the right of the guide near the left edge", () => {
+    renderInspectable({ inspectedIndex: 0, inspectedLabel: "$1.00" });
+    expect(
+      screen.getByTestId("TokenPriceChart__inspect-tooltip").className,
+    ).toContain("LineChart__tooltip--right");
+  });
+
+  it("draws nothing extra when idle", () => {
+    renderInspectable();
+    expect(screen.queryByTestId("TokenPriceChart__inspect-guide")).toBeNull();
+    expect(screen.queryByTestId("TokenPriceChart__inspect-tooltip")).toBeNull();
+    expect(screen.getByTestId("TokenPriceChart__end-dot")).toBeInTheDocument();
   });
 });
 

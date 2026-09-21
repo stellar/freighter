@@ -9,8 +9,11 @@ import {
   CHART_VIEWBOX_HEIGHT,
   END_DOT_RADIUS,
   CHART_VIEWBOX_WIDTH,
+  INSPECT_DOT_RING_WIDTH,
+  INSPECT_TOOLTIP_FLIP_RATIO,
   PriceDirection,
 } from "./constants";
+import { nearestCoordinateIndex } from "./inspect";
 
 // §N refs: wallet-eng-monorepo/design-docs/token-price-graphs/token-price-graphs-design.md
 
@@ -25,6 +28,13 @@ interface LineChartProps {
   direction: PriceDirection;
   /** Text alternative: "Price chart, {range}: {start} to {end}, {delta}". */
   label: string;
+  /** Index into `points` under the pointer, or null/undefined when idle. */
+  inspectedIndex?: number | null;
+  /** Tooltip text for the inspected point (formatted by the parent). */
+  inspectedLabel?: string;
+  onInspectStart?: (index: number) => void;
+  onInspectMove?: (index: number) => void;
+  onInspectEnd?: () => void;
 }
 
 const round = (value: number) => Math.round(value * 100) / 100;
@@ -262,9 +272,23 @@ const useMorphedCoordinates = (target: ChartCoordinate[]) => {
   return displayed;
 };
 
+/** Pointer position → viewBox x. The svg is stretched to the popup width. */
+const toViewBoxX = (event: React.PointerEvent<SVGSVGElement>): number => {
+  const rect = event.currentTarget.getBoundingClientRect();
+  if (rect.width === 0) {
+    return 0;
+  }
+  return ((event.clientX - rect.left) / rect.width) * CHART_VIEWBOX_WIDTH;
+};
+
 /**
  * Memoised: the parent re-renders on unrelated state (price polls, menu) and
  * none of these props change between fetches.
+ *
+ * Drag-to-inspect is pointer-only (§7.4): pointerdown arms, capture keeps
+ * moves flowing, up/cancel clears. Keyboard users keep everything shown by
+ * default — chart, per-range delta, label — and lose arbitrary-point
+ * inspection specifically; focusable guide as a follow-up.
  */
 export const LineChart = React.memo(function LineChart({
   points,
@@ -272,6 +296,11 @@ export const LineChart = React.memo(function LineChart({
   nowSeconds,
   direction,
   label,
+  inspectedIndex,
+  inspectedLabel,
+  onInspectStart,
+  onInspectMove,
+  onInspectEnd,
 }: LineChartProps) {
   // Memoised on the series itself, so the morph effect fires on a real change
   // of geometry rather than on every render.
@@ -280,6 +309,42 @@ export const LineChart = React.memo(function LineChart({
     [points, resolutionSeconds, nowSeconds],
   );
   const coordinates = useMorphedCoordinates(targetCoordinates);
+
+  const xs = useMemo(
+    () => targetCoordinates.map((c) => c.x),
+    [targetCoordinates],
+  );
+  const isInspecting = inspectedIndex !== null && inspectedIndex !== undefined;
+  // The dot rides the DISPLAYED (possibly morphing) geometry; the snap uses
+  // the target geometry, whose indices are the points' indices.
+  const inspectedCoord = isInspecting ? coordinates[inspectedIndex] : undefined;
+
+  const handlePointerDown = (event: React.PointerEvent<SVGSVGElement>) => {
+    if (!onInspectStart || xs.length < 2) {
+      return;
+    }
+    event.preventDefault();
+    // Keep receiving moves after the pointer leaves the svg; jsdom lacks it.
+    if (typeof event.currentTarget.setPointerCapture === "function") {
+      event.currentTarget.setPointerCapture(event.pointerId);
+    }
+    onInspectStart(nearestCoordinateIndex(xs, toViewBoxX(event)));
+  };
+  const handlePointerMove = (event: React.PointerEvent<SVGSVGElement>) => {
+    if (!isInspecting || !onInspectMove) {
+      return;
+    }
+    onInspectMove(nearestCoordinateIndex(xs, toViewBoxX(event)));
+  };
+  const handlePointerEnd = () => {
+    onInspectEnd?.();
+  };
+
+  const tooltipPlacement =
+    inspectedCoord &&
+    inspectedCoord.x / CHART_VIEWBOX_WIDTH < INSPECT_TOOLTIP_FLIP_RATIO
+      ? "right"
+      : "left";
 
   const linePoints = coordinates
     .map((coord) => `${coord.x},${coord.y}`)
@@ -294,53 +359,104 @@ export const LineChart = React.memo(function LineChart({
   const gradientId = `${useId()}-gradient`;
 
   return (
-    <svg
-      className={`LineChart LineChart--${direction}`}
-      viewBox={`0 0 ${CHART_VIEWBOX_WIDTH} ${CHART_VIEWBOX_HEIGHT}`}
-      preserveAspectRatio="none"
-      // Every series ends at x=320 and the end dot extends 3 units past it;
-      // the UA default (`overflow: hidden` on inline svg) would halve the dot.
-      overflow="visible"
-      role="img"
-      aria-label={label}
-      data-testid="TokenPriceChart__svg"
-    >
-      <defs>
-        <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="currentColor" stopOpacity="0.16" />
-          <stop offset="1" stopColor="currentColor" stopOpacity="0" />
-        </linearGradient>
-      </defs>
-      <polygon
-        points={fillPoints}
-        fill={`url(#${gradientId})`}
-        stroke="none"
-        data-testid="TokenPriceChart__fill"
-      />
-      <polyline
-        data-testid="TokenPriceChart__polyline"
-        points={linePoints}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinejoin="round"
-        strokeLinecap="round"
-        vectorEffect="non-scaling-stroke"
-      />
-      {/* The dot is a (near) zero-length stroke with round caps under
+    <>
+      <svg
+        className={`LineChart LineChart--${direction}${onInspectStart ? " LineChart--inspectable" : ""}`}
+        viewBox={`0 0 ${CHART_VIEWBOX_WIDTH} ${CHART_VIEWBOX_HEIGHT}`}
+        preserveAspectRatio="none"
+        // Every series ends at x=320 and the end dot extends 3 units past it;
+        // the UA default (`overflow: hidden` on inline svg) would halve the dot.
+        overflow="visible"
+        role="img"
+        aria-label={label}
+        data-testid="TokenPriceChart__svg"
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerEnd}
+        onPointerCancel={handlePointerEnd}
+      >
+        <defs>
+          <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stopColor="currentColor" stopOpacity="0.16" />
+            <stop offset="1" stopColor="currentColor" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        <polygon
+          points={fillPoints}
+          fill={`url(#${gradientId})`}
+          stroke="none"
+          data-testid="TokenPriceChart__fill"
+        />
+        <polyline
+          data-testid="TokenPriceChart__polyline"
+          points={linePoints}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinejoin="round"
+          strokeLinecap="round"
+          vectorEffect="non-scaling-stroke"
+        />
+        {/* The dot is a (near) zero-length stroke with round caps under
           `non-scaling-stroke`: the stroke outline is built in screen space,
           so it stays a circle however the outer svg is stretched. A nested
           viewport would not — its aspect handling runs in the already
           stretched user space. */}
-      <path
-        d={`M${endPoint.x},${endPoint.y} h0.01`}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth={END_DOT_RADIUS * 2}
-        strokeLinecap="round"
-        vectorEffect="non-scaling-stroke"
-        data-testid="TokenPriceChart__end-dot"
-      />
-    </svg>
+        {inspectedCoord ? (
+          <>
+            <line
+              x1={inspectedCoord.x}
+              x2={inspectedCoord.x}
+              y1={0}
+              y2={CHART_VIEWBOX_HEIGHT}
+              className="LineChart__guide"
+              strokeDasharray="4 4"
+              strokeWidth="1"
+              vectorEffect="non-scaling-stroke"
+              data-testid="TokenPriceChart__inspect-guide"
+            />
+            {/* Ring first (background colour), dot on top — both zero-length
+              round-capped strokes, as the end dot is. */}
+            <path
+              d={`M${inspectedCoord.x},${inspectedCoord.y} h0.01`}
+              fill="none"
+              className="LineChart__inspect-ring"
+              strokeWidth={(END_DOT_RADIUS + INSPECT_DOT_RING_WIDTH) * 2}
+              strokeLinecap="round"
+              vectorEffect="non-scaling-stroke"
+            />
+            <path
+              d={`M${inspectedCoord.x},${inspectedCoord.y} h0.01`}
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={END_DOT_RADIUS * 2}
+              strokeLinecap="round"
+              vectorEffect="non-scaling-stroke"
+              data-testid="TokenPriceChart__inspect-dot"
+            />
+          </>
+        ) : (
+          <path
+            d={`M${endPoint.x},${endPoint.y} h0.01`}
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={END_DOT_RADIUS * 2}
+            strokeLinecap="round"
+            vectorEffect="non-scaling-stroke"
+            data-testid="TokenPriceChart__end-dot"
+          />
+        )}
+      </svg>
+      {inspectedCoord && inspectedLabel ? (
+        <div
+          className={`LineChart__tooltip LineChart__tooltip--${tooltipPlacement}`}
+          style={{ left: `${(inspectedCoord.x / CHART_VIEWBOX_WIDTH) * 100}%` }}
+          aria-hidden="true"
+          data-testid="TokenPriceChart__inspect-tooltip"
+        >
+          {inspectedLabel}
+        </div>
+      ) : null}
+    </>
   );
 });

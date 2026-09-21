@@ -110,6 +110,60 @@
   &--neutral {
     color: var(--sds-clr-gray-09);
   }
+
+  &--inspectable {
+    cursor: crosshair;
+    // The browser must not turn a horizontal drag into a scroll/pan.
+    touch-action: none;
+  }
+
+  &__guide {
+    stroke: var(--sds-clr-gray-06);
+  }
+
+  &__inspect-ring {
+    stroke: var(--sds-clr-gray-01);
+  }
+
+  // Figma "Drag to inspect": inverted pill, Text/XS/600, 8x12 padding, an 8px
+  // gap to the guide, tip pointing at it. Top of the plot band.
+  &__tooltip {
+    background: var(--sds-clr-gray-12);
+    border-radius: pxToRem(8px);
+    color: var(--sds-clr-gray-01);
+    font-size: pxToRem(12px);
+    font-weight: 600;
+    line-height: pxToRem(18px);
+    padding: pxToRem(8px) pxToRem(12px);
+    pointer-events: none;
+    position: absolute;
+    top: 0;
+    white-space: nowrap;
+
+    &::after {
+      border: pxToRem(4px) solid transparent;
+      content: "";
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+
+    &--left {
+      transform: translateX(calc(-100% - #{pxToRem(8px)}));
+      &::after {
+        border-left-color: var(--sds-clr-gray-12);
+        left: 100%;
+      }
+    }
+
+    &--right {
+      transform: translateX(pxToRem(8px));
+      &::after {
+        border-right-color: var(--sds-clr-gray-12);
+        right: 100%;
+      }
+    }
+  }
 }
 
 .TimeframeSelector {

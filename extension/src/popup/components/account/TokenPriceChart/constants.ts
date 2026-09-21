@@ -10,6 +10,11 @@ export const CHART_VIEWBOX_HEIGHT = 140;
 /** Vertical inset so the line and end-dot never clip at the extremes. */
 export const CHART_VERTICAL_PADDING = 8;
 
+/** Drag-to-inspect (Phase 3): background ring around the inspected dot. */
+export const INSPECT_DOT_RING_WIDTH = 2;
+/** Left of this fraction of the width the tooltip flips to the guide's right. */
+export const INSPECT_TOOLTIP_FLIP_RATIO = 0.3;
+
 /** Rendered height of the chart area — shared by the skeleton, the empty
  * placeholder, and the drawn chart so state changes never shift layout. */
 export const CHART_HEIGHT_PX = 140;
