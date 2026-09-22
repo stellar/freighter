@@ -131,7 +131,9 @@
   }
 
   // Figma "Drag to inspect": inverted pill, Text/XS/600, 8x12 padding, an 8px
-  // gap to the guide, tip pointing at it. Top of the plot band.
+  // gap to the guide, tip pointing at it. Vertically centred on the
+  // inspected dot — `top` is set inline, per point, by `inspectTooltipTop`,
+  // which also clamps it inside the plot band.
   &__tooltip {
     background: var(--sds-clr-gray-12);
     border-radius: pxToRem(8px);
@@ -142,7 +144,6 @@
     padding: pxToRem(8px) pxToRem(12px);
     pointer-events: none;
     position: absolute;
-    top: 0;
     white-space: nowrap;
 
     &::after {

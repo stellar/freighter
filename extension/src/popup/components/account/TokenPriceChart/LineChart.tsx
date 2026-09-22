@@ -12,6 +12,7 @@ import {
   INSPECT_DOT_RADIUS,
   INSPECT_DOT_RING_WIDTH,
   INSPECT_TOOLTIP_FLIP_RATIO,
+  INSPECT_TOOLTIP_HEIGHT_PX,
   PriceDirection,
 } from "./constants";
 import { nearestCoordinateIndex } from "./inspect";
@@ -283,6 +284,22 @@ const toViewBoxX = (event: React.PointerEvent<SVGSVGElement>): number => {
 };
 
 /**
+ * `top` (viewBox/px, the two coincide — see `CHART_VIEWBOX_HEIGHT` and
+ * `CHART_HEIGHT_PX`) for the inspect tooltip pill, centred on the inspected
+ * dot's y so the pill's tip (the `::after` at 50%) points at it. Clamped to
+ * stay inside the plot band, so the pill never overhangs into the label rows
+ * above or below it — at that clamp the tip still points at the dot's x but
+ * is no longer vertically centred on it, which is the Figma's own behaviour
+ * near the top (its example dot sits near the top edge and the pill sits
+ * flush with the band rather than centred on the dot).
+ */
+export const inspectTooltipTop = (y: number): number =>
+  Math.min(
+    Math.max(y - INSPECT_TOOLTIP_HEIGHT_PX / 2, 0),
+    CHART_VIEWBOX_HEIGHT - INSPECT_TOOLTIP_HEIGHT_PX,
+  );
+
+/**
  * Memoised: the parent re-renders on unrelated state (price polls, menu) and
  * none of these props change between fetches.
  *
@@ -484,7 +501,10 @@ export const LineChart = React.memo(function LineChart({
       {inspectedCoord && inspectedLabel ? (
         <div
           className={`LineChart__tooltip LineChart__tooltip--${tooltipPlacement}`}
-          style={{ left: `${(inspectedCoord.x / CHART_VIEWBOX_WIDTH) * 100}%` }}
+          style={{
+            left: `${(inspectedCoord.x / CHART_VIEWBOX_WIDTH) * 100}%`,
+            top: `${inspectTooltipTop(inspectedCoord.y)}px`,
+          }}
           aria-hidden="true"
           data-testid="TokenPriceChart__inspect-tooltip"
         >

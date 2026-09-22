@@ -20,6 +20,13 @@ export const INSPECT_DOT_RING_WIDTH = 2;
 export const INSPECT_DOT_RADIUS = 4;
 /** Left of this fraction of the width the tooltip flips to the guide's right. */
 export const INSPECT_TOOLTIP_FLIP_RATIO = 0.3;
+/**
+ * Rendered height of the inspect tooltip pill, in px: 18px line-height
+ * (Text/XS/600) plus 8px top/bottom padding, twice — 18 + 2 * 8 = 34. Keep
+ * this in step with `.LineChart__tooltip` in styles.scss; it is used to
+ * vertically centre the pill on the inspected dot.
+ */
+export const INSPECT_TOOLTIP_HEIGHT_PX = 34;
 
 /** Rendered height of the chart area — shared by the skeleton, the empty
  * placeholder, and the drawn chart so state changes never shift layout. */

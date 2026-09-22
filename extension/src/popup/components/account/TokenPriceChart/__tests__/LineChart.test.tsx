@@ -3,7 +3,7 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 
 import { ApiTokenPriceHistoryPoint } from "@shared/api/types";
 import { installPointerEventPolyfill } from "popup/__testHelpers__/pointerEvents";
-import { LineChart, getPlottedRangeEnd } from "../LineChart";
+import { LineChart, getPlottedRangeEnd, inspectTooltipTop } from "../LineChart";
 import {
   CHART_MORPH_DURATION_MS,
   CHART_VIEWBOX_WIDTH,
@@ -393,6 +393,16 @@ describe("drag to inspect", () => {
     expect(tooltip).toHaveAttribute("aria-hidden", "true");
     expect(tooltip.className).toContain("LineChart__tooltip--left");
     expect(parseFloat(tooltip.style.left)).toBeCloseTo(33.33, 1);
+    // Index 1 (p="1.10") plots at y=70 — read straight off the inspect dot's
+    // path so this stays honest if the fixture's geometry ever changes.
+    const dotY = Number(
+      screen
+        .getByTestId("TokenPriceChart__inspect-dot")
+        .getAttribute("d")
+        ?.match(/^M[\d.]+,([\d.]+)/)?.[1],
+    );
+    expect(dotY).toBeCloseTo(70, 1);
+    expect(parseFloat(tooltip.style.top)).toBe(inspectTooltipTop(dotY));
   });
 
   it("flips the tooltip to the right of the guide near the left edge", () => {
@@ -407,6 +417,20 @@ describe("drag to inspect", () => {
     expect(screen.queryByTestId("TokenPriceChart__inspect-guide")).toBeNull();
     expect(screen.queryByTestId("TokenPriceChart__inspect-tooltip")).toBeNull();
     expect(screen.getByTestId("TokenPriceChart__end-dot")).toBeInTheDocument();
+  });
+});
+
+describe("inspectTooltipTop", () => {
+  it("centres the pill on a mid-band dot", () => {
+    expect(inspectTooltipTop(70)).toBe(53);
+  });
+
+  it("clamps to the top of the plot band for a dot near the top edge", () => {
+    expect(inspectTooltipTop(5)).toBe(0);
+  });
+
+  it("clamps to the bottom of the plot band for a dot near the bottom edge", () => {
+    expect(inspectTooltipTop(139)).toBe(106);
   });
 });
 
