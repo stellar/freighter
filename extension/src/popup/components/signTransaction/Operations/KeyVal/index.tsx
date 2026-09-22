@@ -408,6 +408,18 @@ export const KeyValueSignerKeyOptions = ({
 };
 
 /**
+ * The state of a spec lookup. One value rather than a name list beside a
+ * loading flag, because the two have to move together: an unlabelled row means
+ * "the spec had nothing to say about this parameter", and a lookup that is
+ * still in flight must not be able to say that. Separate pieces of state let a
+ * refetch clear the names while the flag stayed down, which reads to the
+ * consumer as a resolved-but-empty lookup.
+ */
+type SpecLookup =
+  | { status: "loading" }
+  | { status: "done"; argNames: string[] | null };
+
+/**
  * Resolves an invocation's parameter names from the contract spec. A hook so
  * that the component owning the "Parameters" heading can look the names up
  * once -- it renders the spec note that belongs beside that heading, and hands
@@ -424,16 +436,18 @@ export const useContractArgNames = ({
   argCount: number;
   isAuthEntry?: boolean;
 }) => {
-  const [isLoading, setLoading] = React.useState(true);
-  const [argNames, setArgNames] = React.useState<string[] | null>(null);
+  const [lookup, setLookup] = React.useState<SpecLookup>({ status: "loading" });
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
 
   React.useEffect(() => {
     // A resolved fetch must never label a different invocation than the one it
     // was issued for, so drop the names up front and ignore a response that
-    // arrives after the inputs moved on.
+    // arrives after the inputs moved on. Dropping them is a return to the
+    // loading state, not a result: the effect re-runs on a settings refresh
+    // that only changed `networkDetails`' identity, and the rows have to show
+    // the loader across that refetch rather than silently losing their labels.
     let isCurrent = true;
-    setArgNames(null);
+    setLookup({ status: "loading" });
 
     async function getSpec(id: string, name: string) {
       try {
@@ -441,11 +455,13 @@ export const useContractArgNames = ({
         if (!isCurrent) {
           return;
         }
-        setArgNames(getContractFnArgNames(spec, name, argCount));
-        setLoading(false);
+        setLookup({
+          status: "done",
+          argNames: getContractFnArgNames(spec, name, argCount),
+        });
       } catch (error) {
         if (isCurrent) {
-          setLoading(false);
+          setLookup({ status: "done", argNames: null });
         }
       }
     }
@@ -458,7 +474,7 @@ export const useContractArgNames = ({
     if (contractId && fnName && !isAuthEntry) {
       getSpec(contractId, fnName);
     } else {
-      setLoading(false);
+      setLookup({ status: "done", argNames: null });
     }
 
     return () => {
@@ -466,7 +482,10 @@ export const useContractArgNames = ({
     };
   }, [contractId, fnName, networkDetails, isAuthEntry, argCount]);
 
-  return { argNames, isLoading };
+  return {
+    argNames: lookup.status === "done" ? lookup.argNames : null,
+    isLoading: lookup.status === "loading",
+  };
 };
 
 /**

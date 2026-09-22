@@ -1,5 +1,5 @@
 import React from "react";
-import { render, waitFor, screen } from "@testing-library/react";
+import { act, render, waitFor, screen } from "@testing-library/react";
 import {
   Address,
   Asset,
@@ -10,10 +10,16 @@ import {
   ScInt,
 } from "stellar-sdk";
 
-import { mockAccounts, TEST_PUBLIC_KEY, Wrapper } from "popup/__testHelpers__";
+import {
+  getTestStore,
+  mockAccounts,
+  TEST_PUBLIC_KEY,
+  Wrapper,
+} from "popup/__testHelpers__";
 import { Operations } from "../signTransaction/Operations";
 import * as internalApi from "@shared/api/internal";
 import { ROUTES } from "popup/constants/routes";
+import { saveSettingsAction } from "popup/ducks/settings";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import {
   TESTNET_NETWORK_DETAILS,
@@ -339,6 +345,131 @@ describe("Operations", () => {
         ),
       ).toEqual([]);
       consoleError.mockRestore();
+    });
+
+    it("shows the loader rather than dropping labels when the spec is refetched", async () => {
+      // The signing popup can receive a settings refresh while it is mounted:
+      // `grantAccess` dispatches `saveSettingsAction` fire-and-forget, and in
+      // sidebar mode the same React tree carries over from the grant into the
+      // signing view. That writes a fresh `networkDetails` object with
+      // identical values, which re-runs the lookup. The names must not simply
+      // vanish -- unlabelled rows mean "the spec had nothing to say", and a
+      // refetch in flight is not that.
+      const SPEC = {
+        definitions: {
+          transfer: {
+            properties: {
+              args: {
+                properties: { from: {}, to: {}, amount: {} },
+                required: ["from", "to", "amount"],
+              },
+            },
+          },
+        },
+      };
+
+      let resolveRefetch: (spec: typeof SPEC) => void = () => {};
+      let calls = 0;
+      const getContractSpec = jest
+        .spyOn(internalApi, "getContractSpec")
+        .mockImplementation(() => {
+          calls += 1;
+          // Hold the refetch open so the in-flight state can be observed
+          // instead of raced.
+          return calls === 1
+            ? Promise.resolve(SPEC)
+            : new Promise((resolve) => {
+                resolveRefetch = resolve;
+              });
+        });
+
+      const CONTRACT =
+        "CA3D5KRYM6CB7OWQ6TWYRR3Z4T7GNZLKERYNZGGA5SOAOPIFY6YQGAXE";
+
+      const func = xdr.HostFunction.hostFunctionTypeInvokeContract(
+        new xdr.InvokeContractArgs({
+          contractAddress: xdr.ScAddress.scAddressTypeContract(
+            new xdr.ContractId(StrKey.decodeContract(CONTRACT)),
+          ),
+          functionName: Buffer.from("transfer"),
+          args: [
+            new Address(TEST_PUBLIC_KEY).toScVal(),
+            new Address(TEST_PUBLIC_KEY).toScVal(),
+            new ScInt(100).toI128(),
+          ],
+        }),
+      );
+
+      const op = {
+        auth: [],
+        func,
+        type: "invokeHostFunction",
+      } as Operation.InvokeHostFunction;
+
+      render(
+        <Wrapper
+          routes={[ROUTES.signTransaction]}
+          state={{
+            auth: {
+              error: null,
+              applicationState: APPLICATION_STATE.PASSWORD_CREATED,
+              TEST_PUBLIC_KEY,
+              allAccounts: mockAccounts,
+              hasPrivateKey: true,
+            },
+            settings: {
+              networkDetails: TESTNET_NETWORK_DETAILS,
+              networksList: DEFAULT_NETWORKS,
+              isSorobanPublicEnabled: true,
+              isRpcHealthy: true,
+            },
+          }}
+        >
+          <Operations
+            operations={[op]}
+            flaggedKeys={{}}
+            isMemoRequired={false}
+          />
+        </Wrapper>,
+      );
+
+      await waitFor(() => screen.getAllByTestId("ParameterKey"));
+      expect(screen.getAllByTestId("ParameterKey")[0]).toHaveTextContent(
+        "from",
+      );
+
+      // Same values, new object -- exactly what a settings reload produces.
+      const store = getTestStore()!;
+      act(() => {
+        store.dispatch(
+          saveSettingsAction({
+            ...store.getState().settings,
+            networkDetails: { ...TESTNET_NETWORK_DETAILS },
+          }),
+        );
+      });
+
+      expect(calls).toBe(2);
+      // Back in the loading state: the rows and the note are gone together
+      // with the names, and the loader stands in for the whole section.
+      expect(
+        screen.queryByTestId("OperationParameters"),
+      ).not.toBeInTheDocument();
+      expect(screen.queryAllByTestId("ParameterKey")).toHaveLength(0);
+      expect(screen.queryByTestId("ContractSpecNote")).not.toBeInTheDocument();
+
+      await act(async () => {
+        resolveRefetch(SPEC);
+      });
+
+      const parameterKeys = screen.getAllByTestId("ParameterKey");
+      expect(parameterKeys).toHaveLength(3);
+      expect(parameterKeys[0]).toHaveTextContent("from");
+      expect(parameterKeys[1]).toHaveTextContent("to");
+      expect(parameterKeys[2]).toHaveTextContent("amount");
+      expect(screen.getByTestId("ContractSpecNote")).toBeInTheDocument();
+
+      getContractSpec.mockRestore();
     });
 
     it("renders changeTrust operation", async () => {
