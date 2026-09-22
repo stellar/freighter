@@ -251,6 +251,11 @@ describe("Operations", () => {
         });
       });
 
+      // router and gauge are the same address, so a row key derived from the
+      // argument's value would collide and let React pair a label with the
+      // wrong value on the re-render that resolves the names.
+      const consoleError = jest.spyOn(console, "error");
+
       const CONTRACT =
         "CA3D5KRYM6CB7OWQ6TWYRR3Z4T7GNZLKERYNZGGA5SOAOPIFY6YQGAXE";
       const START_AT = 1750000000;
@@ -325,6 +330,15 @@ describe("Operations", () => {
       expect(parameterValues[5]).toHaveTextContent(String(TPS));
 
       expect(screen.getByTestId("ContractSpecNote")).toBeInTheDocument();
+
+      expect(
+        consoleError.mock.calls.filter((call) =>
+          call.some(
+            (arg) => typeof arg === "string" && arg.includes("same key"),
+          ),
+        ),
+      ).toEqual([]);
+      consoleError.mockRestore();
     });
 
     it("renders changeTrust operation", async () => {

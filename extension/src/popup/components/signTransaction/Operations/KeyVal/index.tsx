@@ -534,8 +534,12 @@ export const KeyValueInvokeHostFnArgs = ({
       resolved -- auth entries and failed lookups have nothing to qualify. */}
       {showHeader && !!argNames?.length && <ContractSpecNote />}
       <div className="OperationParameters" data-testid="OperationParameters">
+        {/* Keyed by position: two arguments can hold the same value (a
+        self-transfer passes the same address twice), and the value alone
+        would give those rows the same key. The list only ever renders in
+        call order, so the index is both stable and unique. */}
         {args.map((arg, ind) => (
-          <CopyText textToCopy={scValByType(arg)} key={arg.toXdr("base64")}>
+          <CopyText textToCopy={scValByType(arg)} key={`arg-${ind}`}>
             <div className="Parameters">
               <div className="ParameterKey" data-testid="ParameterKey">
                 {argNames?.[ind]}
