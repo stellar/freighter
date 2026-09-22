@@ -979,8 +979,23 @@ export const getCreateContractArgs = (hostFn: xdr.HostFunction) => {
   };
 };
 
-interface ContractFnArgsSchema {
+/**
+ * The slice of a `Spec.jsonSchema()` payload the wallet actually reads. These
+ * describe the `/contract-spec` response rather than validate it: the payload
+ * is author-controlled JSON, so every field is optional and the runtime guards
+ * below stay responsible for rejecting a shape that only looks right.
+ */
+export interface ContractFnArgsSchema {
   properties?: Record<string, unknown>;
+  required?: string[];
+}
+
+export interface ContractFnDefinition {
+  properties?: { args?: ContractFnArgsSchema };
+}
+
+export interface ContractSpecSchema {
+  definitions?: Record<string, ContractFnDefinition | undefined>;
 }
 
 // V8 hoists integer-like keys to the front of `Object.keys` and sorts them
@@ -1012,14 +1027,13 @@ const INTEGER_LIKE_KEY = /^(0|[1-9]\d*)$/;
  * either way — the signing view says as much beside them.
  */
 export const getContractFnArgNames = (
-  spec: Record<string, any> | undefined,
+  spec: ContractSpecSchema | undefined,
   fnName: string,
   argCount: number,
 ): string[] | null => {
-  const argsSchema = spec?.definitions?.[fnName]?.properties?.args as
-    | ContractFnArgsSchema
-    | undefined;
-  const names = Object.keys(argsSchema?.properties || {});
+  const names = Object.keys(
+    spec?.definitions?.[fnName]?.properties?.args?.properties || {},
+  );
 
   if (names.length !== argCount) {
     return null;
