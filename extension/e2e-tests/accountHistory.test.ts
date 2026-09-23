@@ -436,7 +436,7 @@ test("History row displays muxed address extracted from XDR for payment", async 
   await page.getByTestId("history-item").nth(0).click();
 
   // Verify muxed address is displayed (from to_muxed field in API response)
-  const dstAmount = page.getByTestId("KeyIdenticonKey");
+  const dstAmount = page.getByTestId("AssetDiff__to-from-address");
   await expect(dstAmount).toBeVisible({ timeout: 10000 });
   expect(await dstAmount.textContent()).toContain(TEST_M_ADDRESS.slice(0, 4));
 
@@ -618,7 +618,7 @@ test("History row displays regular G address when no muxed address in XDR", asyn
   await page.getByTestId("history-item").first().click();
 
   // Verify G address is displayed
-  const dstAmount = page.getByTestId("KeyIdenticonKey");
+  const dstAmount = page.getByTestId("AssetDiff__to-from-address");
   await expect(dstAmount).toBeVisible({ timeout: 10000 });
   expect(await dstAmount.textContent()).toContain(G_ADDRESS.slice(0, 4));
 

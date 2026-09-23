@@ -9,6 +9,7 @@ import {
   TransactionBuilder,
 } from "stellar-sdk";
 
+import * as Soran from "popup/helpers/soran";
 import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
 import { Wrapper } from "popup/__testHelpers__";
 import { WalletType } from "@shared/constants/hardwareWallet";
@@ -399,7 +400,7 @@ describe("HardwareSign internal transaction telemetry", () => {
       .build()
       .toXDR();
 
-  const renderInternalTransaction = () =>
+  const renderInternalTransaction = (soranDestination?: string) =>
     render(
       <Wrapper
         routes={["/"]}
@@ -415,6 +416,12 @@ describe("HardwareSign internal transaction telemetry", () => {
           },
           transactionSubmission: {
             ...transactionSubmissionInitialState,
+            transactionData: {
+              ...transactionSubmissionInitialState.transactionData,
+              asset: "native",
+              destination: soranDestination || "",
+              federationAddress: soranDestination ? "alice.nova" : "",
+            },
             hardwareWalletData: {
               ...transactionSubmissionInitialState.hardwareWalletData,
               transactionXDR: buildTxXdr(),
@@ -432,6 +439,40 @@ describe("HardwareSign internal transaction telemetry", () => {
     jest.clearAllMocks();
     mockGetWalletPublicKey.mockResolvedValue(TEST_PUBLIC_KEY);
     mockHardwareSign.mockResolvedValue(Buffer.alloc(64, 7));
+  });
+
+  it("blocks a mismatched Soran envelope before contacting the hardware device", async () => {
+    const verify = jest
+      .spyOn(Soran, "verifySoranDestination")
+      .mockResolvedValue(undefined);
+    try {
+      renderInternalTransaction(TEST_PUBLIC_KEY);
+      await waitFor(() =>
+        expect(
+          screen.getByText(
+            /Transaction does not match the Soran payment details/,
+          ),
+        ).toBeDefined(),
+      );
+      expect(verify).toHaveBeenCalled();
+      expect(mockGetWalletPublicKey).not.toHaveBeenCalled();
+      expect(mockHardwareSign).not.toHaveBeenCalled();
+    } finally {
+      verify.mockRestore();
+    }
+  });
+
+  it("allows a matching Soran envelope to reach the device", async () => {
+    const verify = jest
+      .spyOn(Soran, "verifySoranDestination")
+      .mockResolvedValue(undefined);
+    try {
+      renderInternalTransaction(OTHER_PUBLIC_KEY);
+      await waitFor(() => expect(mockHardwareSign).toHaveBeenCalled());
+      expect(verify).toHaveBeenCalled();
+    } finally {
+      verify.mockRestore();
+    }
   });
 
   it("reports an internal approval with no origin once the device signs", async () => {

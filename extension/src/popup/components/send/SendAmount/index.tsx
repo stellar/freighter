@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch, useSelector, useStore } from "react-redux";
 import { Navigate, useLocation } from "react-router-dom";
 import BigNumber from "bignumber.js";
 import { useFormik } from "formik";
@@ -9,7 +9,8 @@ import { useTranslation } from "react-i18next";
 import { LoadingBackground } from "popup/basics/LoadingBackground";
 import { View } from "popup/basics/layout/View";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
-import { AppDispatch } from "popup/App";
+import { isSoranName } from "popup/helpers/soran";
+import { AppDispatch, AppState } from "popup/App";
 import { isNativeAssetId } from "@shared/helpers/assetIdentity";
 import {
   getAssetFromCanonical,
@@ -42,6 +43,7 @@ import {
 } from "popup/helpers/formatters";
 import {
   transactionSubmissionSelector,
+  transactionDataSelector,
   saveAmount,
   saveAsset,
   saveIsToken,
@@ -118,6 +120,7 @@ export const SendAmount = ({
   const { t } = useTranslation();
   const location = useLocation();
   const dispatch = useDispatch<AppDispatch>();
+  const store = useStore<AppState>();
   const { transactionData } = useSelector(transactionSubmissionSelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const {
@@ -135,6 +138,7 @@ export const SendAmount = ({
     manualTransactionFee,
   } = transactionData;
   const fee = transactionFee || recommendedFee;
+  const isSoranPayment = isSoranName(federationAddress || "");
 
   // Persist the last-known inclusion fee across re-simulations so the
   // EditSettings input never jumps back to the total fee while LOADING
@@ -198,6 +202,18 @@ export const SendAmount = ({
   // so neither is reported as a rejection.
   const wasReviewingRef = useRef(false);
   const skipRejectionRef = useRef(false);
+  const isReviewingSoranRef = useRef(false);
+
+  useEffect(() => {
+    if (
+      isReviewingTx &&
+      (isReviewingSoranRef.current || isSoranPayment) &&
+      simulationState.state !== RequestState.SUCCESS
+    ) {
+      skipRejectionRef.current = true;
+      setIsReviewingTx(false);
+    }
+  }, [isReviewingTx, isSoranPayment, simulationState.state]);
 
   /**
    * Reports the review stages: the `confirm` stage when the review opens, and
@@ -305,6 +321,12 @@ export const SendAmount = ({
 
   // Get memo disabled state using the helper
   const memoDisabledState = React.useMemo(() => {
+    if (isSoranName(federationAddress || "")) {
+      return {
+        isMemoDisabled: true,
+        memoDisabledMessage: t("The memo is set by the Soran name"),
+      };
+    }
     if (!destination) {
       return { isMemoDisabled: false, memoDisabledMessage: undefined };
     }
@@ -315,7 +337,14 @@ export const SendAmount = ({
       networkDetails,
       t,
     });
-  }, [destination, contractId, contractSupportsMuxed, networkDetails, t]);
+  }, [
+    destination,
+    contractId,
+    contractSupportsMuxed,
+    networkDetails,
+    federationAddress,
+    t,
+  ]);
 
   const { isMemoDisabled, memoDisabledMessage } = memoDisabledState;
 
@@ -361,16 +390,21 @@ export const SendAmount = ({
       dispatch(saveTransactionFee(fee));
     }
     const simResult = await fetchSimulationData();
-    // For Soroban, only open the review modal on success — on failure the fee
-    // display shows the error state and the user can retry.
-    // For classic sends, always proceed to review: ReviewTx already handles the
-    // error UI for RequestState.ERROR, so blocking navigation would leave the
-    // user with no feedback path.
+    const currentIsSoranPayment = isSoranName(
+      transactionDataSelector(store.getState()).federationAddress || "",
+    );
+    // Soroban and named Soran sends require a successful simulation. Their
+    // errors appear on the amount screen so the user can retry. Unnamed classic
+    // sends retain the review's existing error display.
     // Note: for Soroban, fetchSimulationData internally dispatches
     // saveTransactionFee again with the simulated total fee. The dispatch
     // above resets to the inclusion fee so the simulation starts from a clean
     // base; the one inside fetchSimulationData overwrites it with the result.
-    if (simResult.ok || (!isToken && !isCollectible)) {
+    if (
+      simResult.ok ||
+      (!isToken && !isCollectible && !isSoranPayment && !currentIsSoranPayment)
+    ) {
+      isReviewingSoranRef.current = isSoranPayment || currentIsSoranPayment;
       setIsReviewingTx(true);
     }
   };
@@ -699,7 +733,7 @@ export const SendAmount = ({
             </div>
             {isCollectible ? (
               <>
-                {(isToken || isCollectible) &&
+                {(isToken || isCollectible || isSoranPayment) &&
                 simulationState.state === RequestState.ERROR ? (
                   <Notification
                     variant="error"
@@ -714,7 +748,8 @@ export const SendAmount = ({
                   disabled={
                     !destination ||
                     isMuxedAddressWithoutMemoSupport ||
-                    simulationState.state === RequestState.ERROR
+                    (!isSoranPayment &&
+                      simulationState.state === RequestState.ERROR)
                   }
                   isLoading={simulationState.state === RequestState.LOADING}
                   data-testid="send-collectible-btn-continue"
@@ -728,7 +763,7 @@ export const SendAmount = ({
               </>
             ) : (
               <>
-                {(isToken || isCollectible) &&
+                {(isToken || isCollectible || isSoranPayment) &&
                 simulationState.state === RequestState.ERROR ? (
                   <Notification
                     variant="error"
@@ -745,7 +780,8 @@ export const SendAmount = ({
                     !isAmountInputValid ||
                     isAmountTooHigh ||
                     isMuxedAddressWithoutMemoSupport ||
-                    ((isToken || isCollectible) &&
+                    (!isSoranPayment &&
+                      (isToken || isCollectible) &&
                       simulationState.state === RequestState.ERROR)
                   }
                   isLoading={simulationState.state === RequestState.LOADING}

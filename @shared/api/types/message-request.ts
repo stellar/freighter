@@ -1,3 +1,4 @@
+import { SoranPaymentName, SoranPaymentReference } from "./soran";
 import { Transaction } from "stellar-sdk";
 import browser from "webextension-polyfill";
 
@@ -259,6 +260,16 @@ export interface SignFreighterSorobanTransactionMessage extends BaseMessage {
   type: SERVICE_TYPES.SIGN_FREIGHTER_SOROBAN_TRANSACTION;
   network: string;
   transactionXDR: string;
+}
+
+export interface SaveSoranPaymentNameMessage extends BaseMessage {
+  type: SERVICE_TYPES.SAVE_SORAN_PAYMENT_NAME;
+  payment: SoranPaymentName;
+}
+
+export interface GetSoranPaymentNameMessage extends BaseMessage {
+  type: SERVICE_TYPES.GET_SORAN_PAYMENT_NAME;
+  payment: SoranPaymentReference;
 }
 
 export interface AddRecentAddressMessage extends BaseMessage {
@@ -543,6 +554,8 @@ export type ServiceMessageRequest =
   | RejectTransactionMessage
   | SignFreighterTransactionMessage
   | SignFreighterSorobanTransactionMessage
+  | SaveSoranPaymentNameMessage
+  | GetSoranPaymentNameMessage
   | AddRecentAddressMessage
   | LoadRecentAddressesMessage
   | LoadLastAccountUsedMessage

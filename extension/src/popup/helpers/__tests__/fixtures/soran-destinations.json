@@ -1,0 +1,262 @@
+{
+  "source": "https://docs.soran.domains/reference/vectors/lookup-returns-v1.json",
+  "valid": [
+    {
+      "id": "direct-g-none",
+      "returnType": "PaymentDestination",
+      "xdrBase64": "AAAAEAAAAAEAAAACAAAADwAAAAZEaXJlY3QAAAAAABEAAAABAAAAAgAAAA8AAAAHYWRkcmVzcwAAAAASAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8AAAAEbWVtbwAAABAAAAABAAAAAQAAAA8AAAAETm9uZQ==",
+      "expectedDestination": {
+        "address": "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF",
+        "memo": "",
+        "memoType": ""
+      }
+    },
+    {
+      "id": "direct-g-id-zero",
+      "returnType": "PaymentDestination",
+      "xdrBase64": "AAAAEAAAAAEAAAACAAAADwAAAAZEaXJlY3QAAAAAABEAAAABAAAAAgAAAA8AAAAHYWRkcmVzcwAAAAASAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8AAAAEbWVtbwAAABAAAAABAAAAAgAAAA8AAAACSWQAAAAAAAUAAAAAAAAAAA==",
+      "expectedDestination": {
+        "address": "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF",
+        "memo": "0",
+        "memoType": "id"
+      }
+    },
+    {
+      "id": "direct-g-id-77",
+      "returnType": "PaymentDestination",
+      "xdrBase64": "AAAAEAAAAAEAAAACAAAADwAAAAZEaXJlY3QAAAAAABEAAAABAAAAAgAAAA8AAAAHYWRkcmVzcwAAAAASAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8AAAAEbWVtbwAAABAAAAABAAAAAgAAAA8AAAACSWQAAAAAAAUAAAAAAAAATQ==",
+      "expectedDestination": {
+        "address": "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF",
+        "memo": "77",
+        "memoType": "id"
+      }
+    },
+    {
+      "id": "direct-g-id-max",
+      "returnType": "PaymentDestination",
+      "xdrBase64": "AAAAEAAAAAEAAAACAAAADwAAAAZEaXJlY3QAAAAAABEAAAABAAAAAgAAAA8AAAAHYWRkcmVzcwAAAAASAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8AAAAEbWVtbwAAABAAAAABAAAAAgAAAA8AAAACSWQAAAAAAAX//////////w==",
+      "expectedDestination": {
+        "address": "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF",
+        "memo": "18446744073709551615",
+        "memoType": "id"
+      }
+    },
+    {
+      "id": "direct-g-text",
+      "returnType": "PaymentDestination",
+      "xdrBase64": "AAAAEAAAAAEAAAACAAAADwAAAAZEaXJlY3QAAAAAABEAAAABAAAAAgAAAA8AAAAHYWRkcmVzcwAAAAASAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8AAAAEbWVtbwAAABAAAAABAAAAAgAAAA8AAAAEVGV4dAAAAA4AAAAKaW52b2ljZS03NwAA",
+      "expectedDestination": {
+        "address": "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF",
+        "memo": "invoice-77",
+        "memoType": "text"
+      }
+    },
+    {
+      "id": "direct-g-text-utf8-boundary",
+      "returnType": "PaymentDestination",
+      "xdrBase64": "AAAAEAAAAAEAAAACAAAADwAAAAZEaXJlY3QAAAAAABEAAAABAAAAAgAAAA8AAAAHYWRkcmVzcwAAAAASAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8AAAAEbWVtbwAAABAAAAABAAAAAgAAAA8AAAAEVGV4dAAAAA4AAAAc8J+YgPCfmIDwn5iA8J+YgPCfmIDwn5iA8J+YgA==",
+      "expectedDestination": {
+        "address": "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF",
+        "memo": "😀😀😀😀😀😀😀",
+        "memoType": "text"
+      }
+    },
+    {
+      "id": "direct-g-text-leading-bom",
+      "returnType": "PaymentDestination",
+      "xdrBase64": "AAAAEAAAAAEAAAACAAAADwAAAAZEaXJlY3QAAAAAABEAAAABAAAAAgAAAA8AAAAHYWRkcmVzcwAAAAASAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8AAAAEbWVtbwAAABAAAAABAAAAAgAAAA8AAAAEVGV4dAAAAA4AAAAH77u/bWVtbwA=",
+      "expectedDestination": {
+        "address": "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF",
+        "memo": "﻿memo",
+        "memoType": "text"
+      }
+    },
+    {
+      "id": "direct-g-hash",
+      "returnType": "PaymentDestination",
+      "xdrBase64": "AAAAEAAAAAEAAAACAAAADwAAAAZEaXJlY3QAAAAAABEAAAABAAAAAgAAAA8AAAAHYWRkcmVzcwAAAAASAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8AAAAEbWVtbwAAABAAAAABAAAAAgAAAA8AAAAESGFzaAAAAA0AAAAgAAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8=",
+      "expectedDestination": {
+        "address": "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF",
+        "memo": "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8=",
+        "memoType": "hash"
+      }
+    },
+    {
+      "id": "direct-c-none",
+      "returnType": "PaymentDestination",
+      "xdrBase64": "AAAAEAAAAAEAAAACAAAADwAAAAZEaXJlY3QAAAAAABEAAAABAAAAAgAAAA8AAAAHYWRkcmVzcwAAAAASAAAAAeTogbACVb7Sujx9sTA+Z1uESOygZh8SGNCzvHzpGhx4AAAADwAAAARtZW1vAAAAEAAAAAEAAAABAAAADwAAAAROb25l",
+      "expectedDestination": {
+        "address": "CDSORANQAJK35UV2HR63CMB6M5NYISHMUBTB6EQY2CZ3Y7HJDIOHRJWA",
+        "memo": "",
+        "memoType": ""
+      }
+    },
+    {
+      "id": "muxed-0",
+      "returnType": "PaymentDestination",
+      "xdrBase64": "AAAAEAAAAAEAAAACAAAADwAAAAVNdXhlZAAAAAAAABEAAAABAAAAAgAAAA8AAAAHYWNjb3VudAAAAAASAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8AAAACaWQAAAAAAAUAAAAAAAAAAA==",
+      "expectedMuxed": {
+        "account": "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF",
+        "id": "0"
+      }
+    },
+    {
+      "id": "muxed-420",
+      "returnType": "PaymentDestination",
+      "xdrBase64": "AAAAEAAAAAEAAAACAAAADwAAAAVNdXhlZAAAAAAAABEAAAABAAAAAgAAAA8AAAAHYWNjb3VudAAAAAASAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8AAAACaWQAAAAAAAUAAAAAAAABpA==",
+      "expectedMuxed": {
+        "account": "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF",
+        "id": "420"
+      }
+    },
+    {
+      "id": "muxed-18446744073709551615",
+      "returnType": "PaymentDestination",
+      "xdrBase64": "AAAAEAAAAAEAAAACAAAADwAAAAVNdXhlZAAAAAAAABEAAAABAAAAAgAAAA8AAAAHYWNjb3VudAAAAAASAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8AAAACaWQAAAAAAAX//////////w==",
+      "expectedMuxed": {
+        "account": "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF",
+        "id": "18446744073709551615"
+      }
+    }
+  ],
+  "invalid": [
+    {
+      "id": "missing-destination",
+      "returnType": "PaymentDestination",
+      "reason": "Void is not a payment instruction",
+      "xdrBase64": "AAAAAQ=="
+    },
+    {
+      "id": "unknown-destination",
+      "returnType": "PaymentDestination",
+      "reason": "Unknown enum tag",
+      "xdrBase64": "AAAAEAAAAAEAAAACAAAADwAAAAVPdGhlcgAAAAAAABEAAAABAAAAAgAAAA8AAAAHYWRkcmVzcwAAAAASAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8AAAAEbWVtbwAAABAAAAABAAAAAQAAAA8AAAAETm9uZQ=="
+    },
+    {
+      "id": "string-tag",
+      "returnType": "PaymentDestination",
+      "reason": "Variant tag must be an XDR Symbol",
+      "xdrBase64": "AAAAEAAAAAEAAAACAAAADgAAAAZEaXJlY3QAAAAAABEAAAABAAAAAgAAAA8AAAAHYWRkcmVzcwAAAAASAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8AAAAEbWVtbwAAABAAAAABAAAAAQAAAA8AAAAETm9uZQ=="
+    },
+    {
+      "id": "missing-payload",
+      "returnType": "PaymentDestination",
+      "reason": "Direct needs one payload",
+      "xdrBase64": "AAAAEAAAAAEAAAABAAAADwAAAAZEaXJlY3QAAA=="
+    },
+    {
+      "id": "extra-payload",
+      "returnType": "PaymentDestination",
+      "reason": "Direct cannot have extra values",
+      "xdrBase64": "AAAAEAAAAAEAAAADAAAADwAAAAZEaXJlY3QAAAAAABEAAAABAAAAAgAAAA8AAAAHYWRkcmVzcwAAAAASAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8AAAAEbWVtbwAAABAAAAABAAAAAQAAAA8AAAAETm9uZQAAAAMAAAAA"
+    },
+    {
+      "id": "void-memo",
+      "returnType": "PaymentDestination",
+      "reason": "Void is not explicit Memo::None",
+      "xdrBase64": "AAAAEAAAAAEAAAACAAAADwAAAAZEaXJlY3QAAAAAABEAAAABAAAAAgAAAA8AAAAHYWRkcmVzcwAAAAASAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8AAAAEbWVtbwAAAAE="
+    },
+    {
+      "id": "none-with-value",
+      "returnType": "PaymentDestination",
+      "reason": "None cannot carry a value",
+      "xdrBase64": "AAAAEAAAAAEAAAACAAAADwAAAAZEaXJlY3QAAAAAABEAAAABAAAAAgAAAA8AAAAHYWRkcmVzcwAAAAASAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8AAAAEbWVtbwAAABAAAAABAAAAAgAAAA8AAAAETm9uZQAAAAMAAAAA"
+    },
+    {
+      "id": "id-u32",
+      "returnType": "PaymentDestination",
+      "reason": "Id must use u64 even for small values",
+      "xdrBase64": "AAAAEAAAAAEAAAACAAAADwAAAAZEaXJlY3QAAAAAABEAAAABAAAAAgAAAA8AAAAHYWRkcmVzcwAAAAASAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8AAAAEbWVtbwAAABAAAAABAAAAAgAAAA8AAAACSWQAAAAAAAMAAABN"
+    },
+    {
+      "id": "id-negative",
+      "returnType": "PaymentDestination",
+      "reason": "Negative IDs are invalid",
+      "xdrBase64": "AAAAEAAAAAEAAAACAAAADwAAAAZEaXJlY3QAAAAAABEAAAABAAAAAgAAAA8AAAAHYWRkcmVzcwAAAAASAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8AAAAEbWVtbwAAABAAAAABAAAAAgAAAA8AAAACSWQAAAAAAAb//////////w=="
+    },
+    {
+      "id": "text-empty",
+      "returnType": "PaymentDestination",
+      "reason": "Text must contain at least one byte",
+      "xdrBase64": "AAAAEAAAAAEAAAACAAAADwAAAAZEaXJlY3QAAAAAABEAAAABAAAAAgAAAA8AAAAHYWRkcmVzcwAAAAASAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8AAAAEbWVtbwAAABAAAAABAAAAAgAAAA8AAAAEVGV4dAAAAA4AAAAA"
+    },
+    {
+      "id": "text-too-long",
+      "returnType": "PaymentDestination",
+      "reason": "Text exceeds 28 UTF-8 bytes",
+      "xdrBase64": "AAAAEAAAAAEAAAACAAAADwAAAAZEaXJlY3QAAAAAABEAAAABAAAAAgAAAA8AAAAHYWRkcmVzcwAAAAASAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8AAAAEbWVtbwAAABAAAAABAAAAAgAAAA8AAAAEVGV4dAAAAA4AAAAg8J+YgPCfmIDwn5iA8J+YgPCfmIDwn5iA8J+YgPCfmIA="
+    },
+    {
+      "id": "text-invalid-utf8",
+      "returnType": "PaymentDestination",
+      "reason": "Text must be valid UTF-8",
+      "xdrBase64": "AAAAEAAAAAEAAAACAAAADwAAAAZEaXJlY3QAAAAAABEAAAABAAAAAgAAAA8AAAAHYWRkcmVzcwAAAAASAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8AAAAEbWVtbwAAABAAAAABAAAAAgAAAA8AAAAEVGV4dAAAAA4AAAAB/wAAAA=="
+    },
+    {
+      "id": "hash-too-short",
+      "returnType": "PaymentDestination",
+      "reason": "Hash must contain 32 bytes",
+      "xdrBase64": "AAAAEAAAAAEAAAACAAAADwAAAAZEaXJlY3QAAAAAABEAAAABAAAAAgAAAA8AAAAHYWRkcmVzcwAAAAASAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8AAAAEbWVtbwAAABAAAAABAAAAAgAAAA8AAAAESGFzaAAAAA0AAAAfAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+    },
+    {
+      "id": "contract-with-memo",
+      "returnType": "PaymentDestination",
+      "reason": "C destinations support None only",
+      "xdrBase64": "AAAAEAAAAAEAAAACAAAADwAAAAZEaXJlY3QAAAAAABEAAAABAAAAAgAAAA8AAAAHYWRkcmVzcwAAAAASAAAAAeTogbACVb7Sujx9sTA+Z1uESOygZh8SGNCzvHzpGhx4AAAADwAAAARtZW1vAAAAEAAAAAEAAAACAAAADwAAAAJJZAAAAAAABQAAAAAAAABN"
+    },
+    {
+      "id": "string-address",
+      "returnType": "PaymentDestination",
+      "reason": "Address must use XDR Address, not an address-shaped string",
+      "xdrBase64": "AAAAEAAAAAEAAAACAAAADwAAAAZEaXJlY3QAAAAAABEAAAABAAAAAgAAAA8AAAAHYWRkcmVzcwAAAAAOAAAAOEdBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBV0hGAAAADwAAAARtZW1vAAAAEAAAAAEAAAABAAAADwAAAAROb25l"
+    },
+    {
+      "id": "extra-field",
+      "returnType": "PaymentDestination",
+      "reason": "Direct requires exactly address and memo",
+      "xdrBase64": "AAAAEAAAAAEAAAACAAAADwAAAAZEaXJlY3QAAAAAABEAAAABAAAAAwAAAA8AAAAHYWRkcmVzcwAAAAASAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8AAAAFZXh0cmEAAAAAAAAAAAAAAAAAAA8AAAAEbWVtbwAAABAAAAABAAAAAQAAAA8AAAAETm9uZQ=="
+    },
+    {
+      "id": "duplicate-field",
+      "returnType": "PaymentDestination",
+      "reason": "Duplicate field names are invalid",
+      "xdrBase64": "AAAAEAAAAAEAAAACAAAADwAAAAZEaXJlY3QAAAAAABEAAAABAAAAAwAAAA8AAAAHYWRkcmVzcwAAAAASAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8AAAAHYWRkcmVzcwAAAAASAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8AAAAEbWVtbwAAABAAAAABAAAAAQAAAA8AAAAETm9uZQ=="
+    },
+    {
+      "id": "unordered-fields",
+      "returnType": "PaymentDestination",
+      "reason": "Field-symbol map must use canonical order",
+      "xdrBase64": "AAAAEAAAAAEAAAACAAAADwAAAAZEaXJlY3QAAAAAABEAAAABAAAAAgAAAA8AAAAEbWVtbwAAABAAAAABAAAAAQAAAA8AAAAETm9uZQAAAA8AAAAHYWRkcmVzcwAAAAASAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+    },
+    {
+      "id": "string-field-key",
+      "returnType": "PaymentDestination",
+      "reason": "Field key must be an XDR Symbol",
+      "xdrBase64": "AAAAEAAAAAEAAAACAAAADwAAAAZEaXJlY3QAAAAAABEAAAABAAAAAgAAAA4AAAAHYWRkcmVzcwAAAAASAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8AAAAEbWVtbwAAABAAAAABAAAAAQAAAA8AAAAETm9uZQ=="
+    },
+    {
+      "id": "muxed-contract-base",
+      "returnType": "PaymentDestination",
+      "reason": "Muxed base must be a G account",
+      "xdrBase64": "AAAAEAAAAAEAAAACAAAADwAAAAVNdXhlZAAAAAAAABEAAAABAAAAAgAAAA8AAAAHYWNjb3VudAAAAAASAAAAAeTogbACVb7Sujx9sTA+Z1uESOygZh8SGNCzvHzpGhx4AAAADwAAAAJpZAAAAAAABQAAAAAAAAGk"
+    },
+    {
+      "id": "muxed-u32-id",
+      "returnType": "PaymentDestination",
+      "reason": "Routing ID must use u64",
+      "xdrBase64": "AAAAEAAAAAEAAAACAAAADwAAAAVNdXhlZAAAAAAAABEAAAABAAAAAgAAAA8AAAAHYWNjb3VudAAAAAASAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8AAAACaWQAAAAAAAMAAAGk"
+    },
+    {
+      "id": "muxed-separate-memo",
+      "returnType": "PaymentDestination",
+      "reason": "Muxed has no separate memo field",
+      "xdrBase64": "AAAAEAAAAAEAAAACAAAADwAAAAVNdXhlZAAAAAAAABEAAAABAAAAAwAAAA8AAAAHYWNjb3VudAAAAAASAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8AAAACaWQAAAAAAAUAAAAAAAABpAAAAA8AAAAEbWVtbwAAABAAAAABAAAAAQAAAA8AAAAETm9uZQ=="
+    },
+    {
+      "id": "truncated-xdr",
+      "returnType": "PaymentDestination",
+      "reason": "Truncated XDR is invalid",
+      "xdrBase64": "AAAAEAAAAAEAAAACAAAADwAAAAZEaXJlY3QAAAAAABEAAAABAAAAAgAAAA8AAAAHYWRkcmVzcwAAAAASAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8AAAAEbWVtbwAAABAAAAABAAAAAQAAAA8AAAAE"
+    }
+  ]
+}

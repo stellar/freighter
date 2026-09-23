@@ -602,6 +602,9 @@ export const getRowDataByOpType = async (
   const baseMetadata = {
     createdAt,
     feeCharged: fee_charged,
+    transactionHash: operation.transaction_hash || transaction_attr.hash,
+    memoType: transaction_attr.memo_type,
+    publicKey,
     memo,
     type,
     isDustPayment: operation.isDustPayment,
@@ -692,7 +695,7 @@ export const getRowDataByOpType = async (
 
   if (isPayment) {
     const destination = to_muxed || to || "";
-    const sender = from || "";
+    const sender = operation.from_muxed || from || "";
 
     // default to Sent if a payment to self.
     // isSameAccount resolves muxed (M...) addresses to their base (G...) account,
@@ -897,6 +900,8 @@ export const getRowDataByOpType = async (
               destAssetCode: code,
               isInvokeHostFn,
               isTokenTransfer: true,
+              from: attrs.from,
+              isReceiving,
               nonLabelAmount: `${formattedTokenAmount} ${code}`,
               to: actualDestination,
             },
@@ -911,7 +916,7 @@ export const getRowDataByOpType = async (
       // otherwise, we treat this as a collectible transfer
       try {
         // if the tokenId is not present, we can't fetch the collectible; return generic invocation
-        if (!attrs.tokenId) {
+        if (attrs.tokenId === undefined) {
           return genericInvocation;
         }
 
@@ -933,7 +938,9 @@ export const getRowDataByOpType = async (
             ...baseMetadata,
             isInvokeHostFn,
             isCollectibleTransfer: true,
+            from: attrs.from,
             to: actualDestination,
+            isReceiving,
             amount: `#${collectible.tokenId}`,
             collectionName: collectible.collectionName,
             collectionTokenId: collectible.tokenId,
@@ -960,13 +967,6 @@ export const getRowDataByOpType = async (
       // receiving some XLM to create(fund) your own account
       const isReceiving = !isCreateExternalAccount;
 
-      // Extract destination from XDR for createAccount (may be muxed if sent to muxed address)
-      const actualDestination = await extractDestinationFromXDR(
-        txEnvelopeXdr,
-        networkDetails,
-        account || "",
-      );
-
       const paymentDifference = isReceiving ? "+" : "-";
       const nonLabelAmount = formatAmount(
         new BigNumber(startingBalance!).toString(),
@@ -983,8 +983,8 @@ export const getRowDataByOpType = async (
           ...baseMetadata,
           isReceiving,
           nonLabelAmount,
-          to: actualDestination,
-          from,
+          to: account,
+          from: operation.funder,
         },
         rowIcon: (
           <div className="HistoryItem__icon__bordered">
@@ -1113,7 +1113,7 @@ export const getOperationDependencies = async (
       if (
         attrs &&
         attrs.fnName === SorobanCollectibleInterface.transfer &&
-        attrs.tokenId &&
+        attrs.tokenId !== undefined &&
         !attrs.amount
       ) {
         const contractId = attrs.contractId;
