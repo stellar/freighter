@@ -30,11 +30,11 @@ import {
   transfer,
 } from "@shared/helpers/soroban/token";
 import {
-  getAssetFromCanonical,
   getCanonicalFromAsset,
   getSdk,
   isCustomNetwork,
   makeDisplayableBalances,
+  splitCanonical,
   xlmToStroop,
 } from "@shared/helpers/stellar";
 import {
@@ -799,10 +799,12 @@ export const getTokenPrices = async (
 
   // v1 (legacy) path — direct fetch to the v1 indexer, not a backend-v2 call.
   // NOTE: the old Node backend does not accept custom tokens, so the
-  // custom-token half of the split predicate applies here only.
+  // custom-token half of the split predicate applies here only. Not
+  // `getAssetFromCanonical`: it splits on the first colon and throws on a
+  // bare contract id.
   const legacyTokens = nonLpTokens.filter((tokenId) => {
-    const asset = getAssetFromCanonical(tokenId);
-    return !isContractId(asset.issuer);
+    const { issuer } = splitCanonical(tokenId);
+    return !isContractId(issuer || tokenId);
   });
   // Same empty-batch guard as the v2 path: `{ tokens: [] }` is a 400 here too.
   if (!legacyTokens.length) {

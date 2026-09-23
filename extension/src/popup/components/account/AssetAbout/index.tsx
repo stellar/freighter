@@ -2,7 +2,8 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { Icon } from "@stellar/design-system";
 
-import { getTokenType, splitCanonical, TokenType } from "popup/helpers/token";
+import { splitCanonical } from "@shared/helpers/stellar";
+import { getTokenType, TokenType } from "popup/helpers/token";
 import { truncateString } from "helpers/stellar";
 import { InfoRow, InfoRowCard } from "popup/components/account/InfoRowCard";
 

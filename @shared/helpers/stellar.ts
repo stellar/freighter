@@ -176,6 +176,27 @@ export const makeDisplayableBalances = async (
 
 export const isSorobanIssuer = (issuer: string) => !issuer.startsWith("G");
 
+/**
+ * Splits a canonical identifier into its code and issuer halves.
+ *
+ * The split is on the last colon: an issuer is a `G…` or `C…` StrKey, or the
+ * liquidity-pool sentinel, none of which contains a colon — whereas a contract
+ * token's symbol is whatever the contract reports and may. Without a
+ * separator the whole string is the code and the issuer is empty.
+ */
+export const splitCanonical = (
+  canonical: string,
+): { code: string; issuer: string } => {
+  const separator = canonical.lastIndexOf(":");
+  if (separator === -1) {
+    return { code: canonical, issuer: "" };
+  }
+  return {
+    code: canonical.slice(0, separator),
+    issuer: canonical.slice(separator + 1),
+  };
+};
+
 export const getAssetFromCanonical = (canonical: string) => {
   if (canonical === "native") {
     return StellarSdk.Asset.native();

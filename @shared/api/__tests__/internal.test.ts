@@ -362,6 +362,29 @@ describe("internalApi", () => {
       expect(body.tokens).toEqual(["native"]);
     });
 
+    it.each([
+      [
+        "a symbol containing a colon",
+        "A:B:CCXVDIGMR6WTXZQX2OEVD6YM6AYCYPXPQ7YYH6OZMRS7U6VD3AVHNGBJ",
+      ],
+      [
+        "a bare contract id",
+        "CCXVDIGMR6WTXZQX2OEVD6YM6AYCYPXPQ7YYH6OZMRS7U6VD3AVHNGBJ",
+      ],
+    ])("filters a contract token given as %s", async (_label, token) => {
+      const fetchSpy = mockFetchOk();
+
+      await internalApi.getTokenPrices(
+        ["native", token],
+        MAINNET_NETWORK_DETAILS,
+        false,
+      );
+
+      const requestInit = fetchSpy.mock.calls[0][1] as RequestInit;
+      const body = JSON.parse(requestInit.body as string);
+      expect(body.tokens).toEqual(["native"]);
+    });
+
     it("does NOT skip unsupported networks (unlike v2)", async () => {
       const fetchSpy = mockFetchOk();
 
