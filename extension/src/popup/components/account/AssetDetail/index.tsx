@@ -44,6 +44,11 @@ import {
 } from "popup/basics/shadcn/Popover";
 import { changeAssetVisibility } from "@shared/api/internal";
 import { saveHiddenAssets } from "popup/ducks/hiddenAssets";
+import { getIsRemovable } from "popup/helpers/balance";
+import { isAssetSac } from "popup/helpers/soroban";
+import { ChangeTrustInternal } from "popup/components/manageAssets/ManageAssetRows/ChangeTrustInternal";
+import { ToggleTokenInternal } from "popup/components/manageAssets/ManageAssetRows/ToggleTokenInternal";
+import { InfoBottomSheet } from "popup/components/InfoBottomSheet";
 import { AppDispatch } from "popup/App";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { View } from "popup/basics/layout/View";
@@ -146,6 +151,13 @@ export const AssetDetail = ({
 
   const reduxDispatch = useDispatch<AppDispatch>();
   const [isHiding, setIsHiding] = useState(false);
+  // Which body this sheet is showing. The remove flow renders in place rather
+  // than in a nested SlideupModal: SlideupModal is z-30 against this Radix
+  // Sheet's z-50, and View sets id="layout-view" on every instance, so
+  // ManageAssetRows' portal target would resolve to Home's View, outside the
+  // sheet entirely.
+  const [body, setBody] = useState<"detail" | "remove">("detail");
+  const [isBalanceWarningOpen, setIsBalanceWarningOpen] = useState(false);
 
   const handleHideAsset = async () => {
     setIsHiding(true);
@@ -265,6 +277,38 @@ export const AssetDetail = ({
     : `asset/${selectedAsset.replace(":", "-")}`;
 
   const isLpShare = "liquidityPoolId" in selectedBalance;
+
+  const assetContract = isSorobanBalance(selectedBalance)
+    ? selectedBalance.contractId
+    : "";
+  const isSac = assetContract
+    ? isAssetSac({
+        asset: {
+          code: canonical.code,
+          issuer: canonical.issuer,
+          contract: assetContract,
+        },
+        networkDetails,
+      })
+    : false;
+  const isRemovable = getIsRemovable({
+    contract: assetContract,
+    isSac,
+    isNative: isNativeBalance(selectedBalance),
+    isLiquidityPool: isLpShare,
+    localOnlyTokenIds: accountBalances.localOnlyTokenIds,
+  });
+  // Same split ManageAssetRows uses: a classic asset or SAC closes a trustline,
+  // a custom token just leaves the local token list.
+  const shouldChangeTrust = !assetContract || isSac;
+  const removeAsset = {
+    code: canonical.code,
+    // Only a native balance has no issuer, and native is never removable.
+    issuer: canonical.issuer || "",
+    image: assetIconUrl || null,
+    domain: assetDomain || null,
+    contract: assetContract || undefined,
+  };
   const hasBalance =
     selectedBalance?.total &&
     new BigNumber(selectedBalance.total).isGreaterThan(0);
@@ -353,6 +397,30 @@ export const AssetDetail = ({
                           {t("Hide {{code}}", { code: canonical.code })}
                         </div>
                         <Icon.EyeOff />
+                      </div>
+                    </div>
+                  ) : null}
+                  {isRemovable ? (
+                    <div className="AssetDetail__options-actions__row AssetDetail__options-actions__row--destructive">
+                      <div
+                        className="action"
+                        onClick={() => {
+                          setOptionsOpen(false);
+                          // Closing a trustline requires a zero balance, so
+                          // entering the flow with one held could only ever
+                          // fail on submit. Explain instead.
+                          if (shouldChangeTrust && hasBalance) {
+                            setIsBalanceWarningOpen(true);
+                            return;
+                          }
+                          setBody("remove");
+                        }}
+                        data-testid="asset-detail-remove-button"
+                      >
+                        <div className="AssetDetail__options-actions__label">
+                          {t("Remove")}
+                        </div>
+                        <Icon.MinusCircle />
                       </div>
                     </div>
                   ) : null}
@@ -551,6 +619,59 @@ export const AssetDetail = ({
             </div>
           </SlideupModal>
         )}
+        <SlideupModal
+          isModalOpen={body === "remove"}
+          setIsModalOpen={() => setBody("detail")}
+        >
+          {/* Gated on the same flag rather than always mounted:
+              ChangeTrustInternal emits signing.rejected on unmount unless it
+              was approved, and SlideupModal renders its children even while
+              closed -- so an ungated copy would fire a spurious rejection
+              every time this sheet closed. Mirrors ManageAssetRows. */}
+          <>
+            {body === "remove" && shouldChangeTrust && (
+              <div className="AssetDetail__remove-sheet">
+                <ChangeTrustInternal
+                  asset={removeAsset}
+                  addTrustline={false}
+                  networkDetails={networkDetails}
+                  publicKey={publicKey}
+                  onCancel={() => setBody("detail")}
+                  onSuccess={handleClose}
+                  // Fills the fixed-height wrapper above rather than sizing to
+                  // its content, so the footer pins and the body scrolls. Also
+                  // drops the "you can close this tab" hint, which is only
+                  // meaningful in the standalone popup.
+                  isFullHeight
+                />
+              </div>
+            )}
+            {body === "remove" && !shouldChangeTrust && (
+              <ToggleTokenInternal
+                asset={{ ...removeAsset, isTrustlineActive: true }}
+                networkDetails={networkDetails}
+                publicKey={publicKey}
+                onCancel={() => setBody("detail")}
+                source="asset_detail"
+              />
+            )}
+          </>
+        </SlideupModal>
+
+        <InfoBottomSheet
+          isOpen={isBalanceWarningOpen}
+          icon={<Icon.MinusCircle />}
+          badgeVariant="destructive"
+          title={t("Token still has a balance")}
+          actionLabel={t("Got it")}
+          onClose={() => setIsBalanceWarningOpen(false)}
+          data-testid="asset-detail-balance-warning"
+          closeTestId="asset-detail-balance-warning-close"
+        >
+          {t(
+            "You can't remove this token yet. To remove a token, your balance for this token must be 0. You must send or sell the remaining balance before trying again.",
+          )}
+        </InfoBottomSheet>
       </View>
     </React.Fragment>
   );

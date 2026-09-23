@@ -692,7 +692,8 @@ describe("AssetDetail", () => {
         selectedAsset: "native",
       });
 
-      await waitFor(() => screen.getByTestId("asset-detail-send-button"));
+      fireEvent.click(await screen.findByAltText("asset options"));
+      await screen.findByText("Stellar.expert");
       expect(
         screen.queryByTestId("asset-detail-hide-button"),
       ).not.toBeInTheDocument();
@@ -728,6 +729,202 @@ describe("AssetDetail", () => {
       await waitFor(() => expect(handleClose).toHaveBeenCalled());
 
       changeAssetVisibility.mockRestore();
+    });
+  });
+
+  describe("Remove asset", () => {
+    const renderDetail = (props: any) =>
+      render(
+        <Wrapper
+          routes={[ROUTES.account]}
+          state={{
+            auth: {
+              error: null,
+              applicationState: ApplicationState.PASSWORD_CREATED,
+              publicKey: "G1",
+              allAccounts: mockAccounts,
+            },
+            settings: { networkDetails: TESTNET_NETWORK_DETAILS },
+          }}
+        >
+          <AssetDetail {...props} />
+        </Wrapper>,
+      );
+
+    const classicProps = {
+      handleClose: () => null,
+      accountBalances: {
+        balances: [
+          {
+            available: new BigNumber(10),
+            token: {
+              code: "USDC",
+              issuer: {
+                key: "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN",
+              },
+            },
+            total: new BigNumber(10),
+          },
+        ],
+      } as any,
+      assetOperations: [] as any,
+      selectedAsset:
+        "USDC:GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN",
+      setSelectedAsset: () => null,
+      historyData: mockHistoryData,
+    };
+
+    it("offers Remove for a classic asset", async () => {
+      renderDetail(classicProps);
+
+      fireEvent.click(await screen.findByAltText("asset options"));
+      await waitFor(() =>
+        expect(screen.getByTestId("asset-detail-remove-button")).toBeVisible(),
+      );
+    });
+
+    it("does not offer Remove for native XLM", async () => {
+      // Native has no trustline to close, so a changeTrust could not succeed.
+      renderDetail({
+        ...classicProps,
+        accountBalances: {
+          balances: [
+            {
+              available: new BigNumber(10),
+              token: { type: "native", code: "XLM" },
+              total: new BigNumber(10),
+            },
+          ],
+        } as any,
+        selectedAsset: "native",
+      });
+
+      fireEvent.click(await screen.findByAltText("asset options"));
+      // Stellar.expert is present for native on testnet, so this waits for the
+      // menu to actually be open before asserting Remove is absent from it.
+      await screen.findByText("Stellar.expert");
+      expect(
+        screen.queryByTestId("asset-detail-remove-button"),
+      ).not.toBeInTheDocument();
+    });
+
+    it("does not offer Remove for a liquidity pool share", async () => {
+      // LP shares are exited by withdrawing from the pool, not by closing a
+      // trustline. The canonical carries the ":lp" issuer marker.
+      const liquidityPoolId =
+        "67260c4c1807b262ff851b0a3fe141194936bb0215b2f77447f1df11998eabb9";
+      renderDetail({
+        ...classicProps,
+        accountBalances: {
+          balances: [
+            {
+              liquidityPoolId,
+              total: new BigNumber(100),
+              available: new BigNumber(100),
+              limit: "1000",
+              reserves: [
+                { asset: "XLM:native", amount: "1000" },
+                {
+                  asset:
+                    "USDC:GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
+                  amount: "1000",
+                },
+              ],
+            },
+          ],
+        } as any,
+        selectedAsset: `${liquidityPoolId}:lp`,
+      });
+
+      fireEvent.click(await screen.findByAltText("asset options"));
+      await screen.findByText("Stellar.expert");
+      expect(
+        screen.queryByTestId("asset-detail-remove-button"),
+      ).not.toBeInTheDocument();
+    });
+
+    // ChangeTrustInternal emits signing.rejected on unmount unless it was
+    // approved, so it must not be mounted alongside the detail body -- every
+    // sheet close would emit a rejection for users who never opened the flow.
+    it("does not mount the remove flow until Remove is chosen", async () => {
+      renderDetail(classicProps);
+
+      await waitFor(() => screen.getByTestId("AssetDetail"));
+      expect(
+        screen.queryByTestId("ChangeTrustInternal"),
+      ).not.toBeInTheDocument();
+    });
+
+    // A changeTrust that zeroes the limit is rejected while the trustline still
+    // holds a balance, so entering the flow could only ever fail on submit.
+    it("warns instead of starting the remove flow when a balance is held", async () => {
+      renderDetail(classicProps);
+
+      fireEvent.click(await screen.findByAltText("asset options"));
+      fireEvent.click(await screen.findByTestId("asset-detail-remove-button"));
+
+      const warning = await screen.findByTestId("asset-detail-balance-warning");
+      // SlideupModal always renders its children; open state is the class.
+      await waitFor(() =>
+        expect(warning.closest(".SlideupModal")).toHaveClass("open"),
+      );
+      expect(
+        screen.getByTestId("asset-detail-balance-warning"),
+      ).toHaveTextContent("Token still has a balance");
+      // Still on the detail body, not the remove flow.
+      expect(screen.getByTestId("AssetDetail")).toBeInTheDocument();
+    });
+
+    it("leaves the warning closed when the balance is zero", async () => {
+      renderDetail({
+        ...classicProps,
+        accountBalances: {
+          balances: [
+            {
+              available: new BigNumber(0),
+              token: {
+                code: "USDC",
+                issuer: {
+                  key: "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN",
+                },
+              },
+              total: new BigNumber(0),
+            },
+          ],
+        } as any,
+      });
+
+      fireEvent.click(await screen.findByAltText("asset options"));
+      const warning = screen.getByTestId("asset-detail-balance-warning");
+      expect(warning.closest(".SlideupModal")).toHaveClass("closed");
+    });
+
+    // The confirm-transaction view belongs in a bottom sheet over the detail,
+    // not as a full-screen takeover of it.
+    it("opens the remove flow in a bottom sheet", async () => {
+      renderDetail({
+        ...classicProps,
+        accountBalances: {
+          balances: [
+            {
+              available: new BigNumber(0),
+              token: {
+                code: "USDC",
+                issuer: {
+                  key: "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN",
+                },
+              },
+              total: new BigNumber(0),
+            },
+          ],
+        } as any,
+      });
+
+      fireEvent.click(await screen.findByAltText("asset options"));
+      fireEvent.click(await screen.findByTestId("asset-detail-remove-button"));
+
+      const flow = await screen.findByTestId("ChangeTrustInternal");
+      expect(flow.closest(".SlideupModal")).toHaveClass("open");
     });
   });
 });

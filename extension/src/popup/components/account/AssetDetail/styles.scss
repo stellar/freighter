@@ -249,6 +249,16 @@
     cursor: pointer;
   }
 
+  // One height for every stage of the remove flow -- loading, details, the
+  // fee/timeout/memo panes and submit -- so the sheet does not resize under
+  // the user as panes change. Capped by the sheet's own ceiling so sidebar and
+  // fullscreen still behave.
+  &__remove-sheet {
+    display: flex;
+    flex-direction: column;
+    height: min(var(--slideup-modal--max-height), #{pxToRem(420px)});
+  }
+
   // Positioning is owned by Radix's popper wrapper, not this element: the
   // content renders through a portal at body level, so the absolute
   // top/right this used to carry resolved against the document instead of
@@ -294,6 +304,14 @@
     &__label {
       font-size: 0.875rem;
       font-weight: var(--font-weight-medium);
+    }
+
+    // Remove is destructive, per the designs.
+    &__row--destructive {
+      .action,
+      .action svg {
+        color: var(--sds-clr-red-11);
+      }
     }
 
     &__background {
