@@ -10,6 +10,10 @@ import {
   NetworkDetails,
 } from "@shared/constants/stellar";
 import { INDEXER_URL } from "@shared/constants/mercury";
+import {
+  isNativeAssetId,
+  isNativeAssetPair,
+} from "@shared/helpers/assetIdentity";
 
 export const CUSTOM_NETWORK = "STANDALONE";
 export const LP_ISSUER_KEY = "lp";
@@ -75,7 +79,7 @@ export const makeDisplayableBalances = async (
     const url = new URL(`${INDEXER_URL}/scan-asset-bulk`);
     for (const balance of balances) {
       const balanceId = getBalanceIdentifier(balance);
-      if (balanceId !== "native" && !balanceId.includes(":lp")) {
+      if (!isNativeAssetId(balanceId) && !balanceId.includes(":lp")) {
         url.searchParams.append("asset_ids", balanceId.replace(":", "-"));
       }
     }
@@ -109,7 +113,7 @@ export const makeDisplayableBalances = async (
       buyingLiabilities = new BigNumber(balance.buying_liabilities).toString();
     }
 
-    if (identifier === "native") {
+    if (isNativeAssetId(identifier)) {
       // define the native balance line later
 
       displayableBalances.native = {
@@ -197,19 +201,30 @@ export const splitCanonical = (
   };
 };
 
+/**
+ * Resolves a canonical identifier to an asset.
+ *
+ * A contract token or a liquidity-pool share comes back as the plain
+ * `{ code, issuer }` shape; a classic asset comes back as an SDK `Asset`, whose
+ * constructor validates the code and issuer. Anything else — including an
+ * issuer half that is empty or not a StrKey — is rejected here, at the parse
+ * boundary, rather than flowing on as a plausible-looking asset.
+ */
 export const getAssetFromCanonical = (canonical: string) => {
-  if (canonical === "native") {
+  if (isNativeAssetId(canonical)) {
     return StellarSdk.Asset.native();
   }
-  if (canonical.includes(":")) {
-    const [code, issuer] = canonical.split(":");
 
-    if (isSorobanIssuer(issuer)) {
-      return {
-        code,
-        issuer,
-      };
-    }
+  const { code, issuer } = splitCanonical(canonical);
+  if (!issuer) {
+    throw new Error(`invalid asset canonical id: ${canonical}`);
+  }
+
+  if (StellarSdk.StrKey.isValidContract(issuer) || issuer === LP_ISSUER_KEY) {
+    return { code, issuer };
+  }
+
+  if (StellarSdk.StrKey.isValidEd25519PublicKey(issuer)) {
     return new StellarSdk.Asset(code, issuer);
   }
 
@@ -220,7 +235,7 @@ export const getCanonicalFromAsset = (
   assetCode: string,
   assetIssuer?: string,
 ) => {
-  if (assetCode === "XLM" && !assetIssuer) {
+  if (isNativeAssetPair(assetCode, assetIssuer)) {
     return "native";
   }
   if (!assetIssuer) {

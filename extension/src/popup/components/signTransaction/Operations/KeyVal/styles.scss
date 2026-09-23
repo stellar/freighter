@@ -150,3 +150,15 @@
     margin-top: pxToRem(4px);
   }
 }
+
+// Qualifies the parameter names below it: they come from the contract spec,
+// which no one validates against the contract's code. Sits between the
+// "Parameters" heading and the card of rows, so it annotates the section
+// rather than reading as a row inside it -- hence a plain line, not a boxed
+// warning. Its bottom margin collapses with the card's own top margin.
+.ContractSpecNote {
+  font-size: pxToRem(14px);
+  line-height: pxToRem(20px);
+  color: var(--sds-clr-gray-11);
+  margin-bottom: pxToRem(12px);
+}

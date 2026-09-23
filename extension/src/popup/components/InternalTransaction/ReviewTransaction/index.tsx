@@ -26,6 +26,7 @@ import {
   truncatedFedAddress,
   truncatedPublicKey,
 } from "helpers/stellar";
+import { isNativeAssetId } from "@shared/helpers/assetIdentity";
 import {
   getContractIdFromTransactionData,
   getAuthEntryBoundAddress,
@@ -185,7 +186,9 @@ export const ReviewTx = ({
   const dest = dstAsset ? getAssetFromCanonical(dstAsset.canonical) : null;
   // A destination asset is only present on swaps; Send has a recipient address.
   const isSwap = !!dstAsset;
-  const assetIcons = srcAsset !== "native" ? { [srcAsset]: assetIcon } : {};
+  const assetIcons = !isNativeAssetId(srcAsset)
+    ? { [srcAsset]: assetIcon }
+    : {};
   const truncatedDest = federationAddress
     ? truncatedFedAddress(federationAddress)
     : truncatedPublicKey(destination);

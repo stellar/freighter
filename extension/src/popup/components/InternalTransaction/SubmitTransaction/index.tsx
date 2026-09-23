@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { Button, Icon, Loader } from "@stellar/design-system";
 
 import { isCustomNetwork } from "@shared/helpers/stellar";
+import { isNativeAssetId } from "@shared/helpers/assetIdentity";
 import { ActionStatus } from "@shared/api/types";
 import { RequestState } from "constants/request";
 import { getAssetFromCanonical, truncatedPublicKey } from "helpers/stellar";
@@ -139,7 +140,7 @@ export const SendingTransaction = ({
     submissionState.state === RequestState.LOADING;
   const isSuccess = submissionState.state === RequestState.SUCCESS;
   const assetIcon = icons[asset]!;
-  const assetIcons = asset !== "native" ? { [asset]: assetIcon } : {};
+  const assetIcons = !isNativeAssetId(asset) ? { [asset]: assetIcon } : {};
   // A new (not-yet-held) destination token has no entry in the icon cache, so
   // fall back to the iconUrl carried on the picked token's details — the same
   // source the picker and review screen use — so the icon persists through the
@@ -148,8 +149,9 @@ export const SendingTransaction = ({
     icons[destinationAsset] ||
     transactionData.destinationTokenDetails?.iconUrl ||
     "";
-  const dstAssetIcons =
-    destinationAsset !== "native" ? { [destinationAsset]: dstAssetIcon } : {};
+  const dstAssetIcons = !isNativeAssetId(destinationAsset)
+    ? { [destinationAsset]: dstAssetIcon }
+    : {};
 
   if (
     submitAccountState.state == RequestState.IDLE ||

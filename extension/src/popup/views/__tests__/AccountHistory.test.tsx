@@ -6,6 +6,7 @@ import {
   screen,
   fireEvent,
 } from "@testing-library/react";
+import { Asset, Networks } from "stellar-sdk";
 import {
   APPLICATION_STATE,
   APPLICATION_STATE as ApplicationState,
@@ -747,8 +748,17 @@ describe("AccountHistory", () => {
   });
 
   it("uses icons from token lists for Soroban token transfer transactions", async () => {
+    // This fixture models a contract that reports the symbol "TEST" — row
+    // identity is decided by contract address, not by that self-reported
+    // symbol, so the address here must not be the native SAC for this test's
+    // network or the row would (correctly) render as the native lumen instead.
     const contractId =
-      "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC";
+      "CCV3NAKLIBBNSJNNTV2AZVRX6VODUDWK4TVYILE5MW6R45SSQJS5VCAM";
+    expect(contractId).not.toBe(
+      Asset.native().contractId(
+        TESTNET_NETWORK_DETAILS.networkPassphrase as Networks,
+      ),
+    );
     const tokenSymbol = "TEST";
     const tokenListIconUrl = "https://example.com/token-transfer-icon.png";
     const tokenList: AssetListResponse = {

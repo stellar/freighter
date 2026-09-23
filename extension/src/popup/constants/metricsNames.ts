@@ -138,6 +138,11 @@ export const METRIC_NAMES = {
   // -- Signing -------------------------------------------------------------
   signingTransactionApproved: "signing.transaction_approved",
   signingTransactionRejected: "signing.transaction_rejected",
+  // Signing threw for a reason the user did not choose. Kept distinct from
+  // `rejected`, which is the user declining — in the popup or on a hardware
+  // device. Mirrors the message and auth-entry families, which have carried
+  // both halves of this split from the start.
+  signingTransactionFailed: "signing.transaction_failed",
   signingTransactionBlocked: "signing.transaction_blocked",
   signingAuthEntryApproved: "signing.auth_entry_approved",
   signingAuthEntryRejected: "signing.auth_entry_rejected",

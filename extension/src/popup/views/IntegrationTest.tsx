@@ -293,19 +293,38 @@ export const IntegrationTest = () => {
 
       runAsserts("grantAccess", () => {});
 
-      await handleSignedHwPayload({
-        signedPayload: "",
-        uuid: "integration-test",
-      });
+      // The signing wrappers report a background failure by rejecting. This
+      // run uses a placeholder request id, which no queue entry matches, so
+      // each call rejects by design. Swallow it here: the check is that the
+      // call completes its round trip, not that the signing succeeds.
+      const expectSigningFailure = async (
+        name: string,
+        call: () => Promise<void>,
+      ) => {
+        let rejected = false;
+        try {
+          await call();
+        } catch {
+          rejected = true;
+        }
+        runAsserts(name, () => {
+          assertEq(rejected, true);
+        });
+      };
 
-      runAsserts("handleSignedHwPayload", () => {});
+      await expectSigningFailure("handleSignedHwPayload", () =>
+        handleSignedHwPayload({
+          signedPayload: "",
+          uuid: "integration-test",
+        }),
+      );
 
-      await signTransaction({
-        activePublicKey: testPublicKey,
-        uuid: "integration-test",
-      });
-
-      runAsserts("signTransaction", () => {});
+      await expectSigningFailure("signTransaction", () =>
+        signTransaction({
+          activePublicKey: testPublicKey,
+          uuid: "integration-test",
+        }),
+      );
 
       res = await signFreighterTransaction({
         activePublicKey: testPublicKey,

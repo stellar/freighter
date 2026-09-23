@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 
 import { AssetIcon } from "popup/components/account/AccountAssets";
 import { SelectionTile } from "popup/components/SelectionTile";
+import { isNativeAssetId } from "@shared/helpers/assetIdentity";
 
 interface AssetTileProps {
   asset: {
@@ -40,7 +41,7 @@ export const AssetTile = ({
         icon={
           <AssetIcon
             assetIcons={
-              asset.canonical !== "native"
+              !isNativeAssetId(asset.canonical)
                 ? { [asset.canonical]: assetIcon }
                 : {}
             }

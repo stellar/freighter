@@ -7,6 +7,7 @@ import {
   hardwareSign,
   hardwareSignAuth,
   hardwareSignMessage,
+  isDeviceRefusalError,
   parseWalletError,
   MIN_SIGN_MESSAGE_APP_VERSION,
   UNSUPPORTED_SIGN_MESSAGE_APP_ERROR,
@@ -302,5 +303,40 @@ describe("parseWalletError", () => {
     );
 
     expect(message).toBe("Some other device failure");
+  });
+});
+
+describe("isDeviceRefusalError", () => {
+  // Telemetry uses this to tell a user decision from a fault: a decline is
+  // reported as a rejection, everything else as a failure.
+  it("recognises the refusal hw-app-str raises for the deny status word", () => {
+    expect(isDeviceRefusalError(new Error("User refused the request"))).toBe(
+      true,
+    );
+  });
+
+  it("recognises the wording older apps and transports produced", () => {
+    expect(
+      isDeviceRefusalError(
+        new Error("Transaction approval request was rejected"),
+      ),
+    ).toBe(true);
+  });
+
+  it("does not treat a missing device as a refusal", () => {
+    expect(isDeviceRefusalError(new Error("No device selected"))).toBe(false);
+  });
+
+  it("does not treat the mismatched-account sentinel as a refusal", () => {
+    // The wallet refuses here, not the user.
+    expect(
+      isDeviceRefusalError(new Error(MISMATCHED_HARDWARE_ACCOUNT_ERROR)),
+    ).toBe(false);
+  });
+
+  it("handles a non-Error value without throwing", () => {
+    expect(isDeviceRefusalError("User refused the request")).toBe(true);
+    expect(isDeviceRefusalError(undefined)).toBe(false);
+    expect(isDeviceRefusalError(null)).toBe(false);
   });
 });
