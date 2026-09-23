@@ -1,3 +1,5 @@
+@use "../../../styles/utils.scss" as *;
+
 .ChooseAsset {
   &__fetch-fail {
     padding: pxToRem(16px);

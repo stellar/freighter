@@ -1,5 +1,5 @@
 import React from "react";
-import { render, waitFor, screen } from "@testing-library/react";
+import { render, waitFor, screen, fireEvent } from "@testing-library/react";
 import BigNumber from "bignumber.js";
 
 import { AssetDetail } from "popup/components/account/AssetDetail";
@@ -616,6 +616,118 @@ describe("AssetDetail", () => {
       await waitFor(() => screen.getByTestId("AssetDetail"));
       expect(screen.queryByTestId("asset-detail-swap-button")).toBeNull();
       expect(screen.queryByTestId("asset-detail-send-button")).toBeNull();
+    });
+  });
+
+  describe("Hide asset", () => {
+    const renderDetail = (props: any) =>
+      render(
+        <Wrapper
+          routes={[ROUTES.account]}
+          state={{
+            auth: {
+              error: null,
+              applicationState: ApplicationState.PASSWORD_CREATED,
+              publicKey: "G1",
+              allAccounts: mockAccounts,
+            },
+            settings: { networkDetails: TESTNET_NETWORK_DETAILS },
+          }}
+        >
+          <AssetDetail {...props} />
+        </Wrapper>,
+      );
+
+    const classicAsset = {
+      handleClose: () => null,
+      accountBalances: {
+        balances: [
+          {
+            available: new BigNumber(10),
+            token: {
+              code: "USDC",
+              issuer: {
+                key: "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN",
+              },
+            },
+            total: new BigNumber(10),
+          },
+        ],
+      } as any,
+      assetOperations: [] as any,
+      selectedAsset:
+        "USDC:GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN",
+      setSelectedAsset: () => null,
+      historyData: mockHistoryData,
+    };
+
+    it("offers Hide for a classic asset", async () => {
+      renderDetail(classicAsset);
+
+      fireEvent.click(await screen.findByAltText("asset options"));
+      await waitFor(() =>
+        expect(screen.getByTestId("asset-detail-hide-button")).toBeVisible(),
+      );
+      // Translations resolve to empty strings under test, so the label falls
+      // back to the raw key; the interpolated code is not observable here.
+      expect(screen.getByTestId("asset-detail-hide-button")).toHaveTextContent(
+        "Hide",
+      );
+    });
+
+    it("does not offer Hide for native XLM", async () => {
+      // filterHiddenBalances never hides native, so offering it would be a
+      // no-op the user could not undo.
+      renderDetail({
+        ...classicAsset,
+        accountBalances: {
+          balances: [
+            {
+              available: new BigNumber(10),
+              token: { type: "native", code: "XLM" },
+              total: new BigNumber(10),
+            },
+          ],
+        } as any,
+        selectedAsset: "native",
+      });
+
+      await waitFor(() => screen.getByTestId("asset-detail-send-button"));
+      expect(
+        screen.queryByTestId("asset-detail-hide-button"),
+      ).not.toBeInTheDocument();
+    });
+
+    it("hides the asset and closes the sheet", async () => {
+      const changeAssetVisibility = jest
+        .spyOn(ApiInternal, "changeAssetVisibility")
+        .mockResolvedValue({
+          hiddenAssets: {
+            "USDC:GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN":
+              "hidden",
+          },
+          error: "",
+        } as any);
+      const handleClose = jest.fn();
+
+      renderDetail({ ...classicAsset, handleClose });
+
+      fireEvent.click(await screen.findByAltText("asset options"));
+      fireEvent.click(await screen.findByTestId("asset-detail-hide-button"));
+
+      await waitFor(() =>
+        expect(changeAssetVisibility).toHaveBeenCalledWith({
+          assetKey:
+            "USDC:GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN",
+          assetVisibility: "hidden",
+          activePublicKey: "G1",
+        }),
+      );
+      // The row is gone from the list behind the sheet, so there is nothing
+      // left to return to.
+      await waitFor(() => expect(handleClose).toHaveBeenCalled());
+
+      changeAssetVisibility.mockRestore();
     });
   });
 });

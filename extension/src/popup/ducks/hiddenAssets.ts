@@ -13,9 +13,14 @@ interface InitialState {
    * Mirrors the background store's `[network][publicKey]` shape, so switching
    * account or network needs no invalidation -- it is simply a different key.
    *
-   * This is a mirror of durable background state. Nothing else writes
-   * HIDDEN_ASSETS, so the mirror cannot go stale; if that ever stops being
-   * true, this slice has to be invalidated on the other writer.
+   * This is a mirror of durable background state, and the account list filters
+   * against it, so EVERY caller of `changeAssetVisibility` must dispatch
+   * `saveHiddenAssets` with the map it gets back. A write that only reaches the
+   * background leaves the mirror stale, and the asset stays wrongly hidden (or
+   * shown) until the popup is reloaded.
+   *
+   * Current writers: AssetDetail (hide), HiddenAssets (unhide), and
+   * AssetVisibility's useGetAssetData (the Toggle Assets screen).
    */
   hiddenAssets: Record<NetworkName, Record<PublicKey, HiddenAssetsMap>>;
 }

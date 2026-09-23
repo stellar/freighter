@@ -1,9 +1,17 @@
-import React, { useEffect, useRef, useState } from "react";
-import { useSelector } from "react-redux";
+import React, { useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { BigNumber } from "bignumber.js";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
-import { Button, CopyText, Icon, Link, Loader } from "@stellar/design-system";
+import {
+  Button,
+  CopyText,
+  Icon,
+  Link,
+  Loader,
+  Notification,
+} from "@stellar/design-system";
 
 import { NetworkDetails } from "@shared/constants/stellar";
 import {
@@ -29,6 +37,14 @@ import {
 import { HistoryItem } from "popup/components/accountHistory/HistoryItem";
 import { TransactionDetail } from "popup/components/accountHistory/TransactionDetail";
 import { SlideupModal } from "popup/components/SlideupModal";
+import {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+} from "popup/basics/shadcn/Popover";
+import { changeAssetVisibility } from "@shared/api/internal";
+import { saveHiddenAssets } from "popup/ducks/hiddenAssets";
+import { AppDispatch } from "popup/App";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { View } from "popup/basics/layout/View";
 import {
@@ -125,28 +141,57 @@ export const AssetDetail = ({
   const assetIcons = useSelector(iconsSelector);
   const { isHideDustEnabled } = useSelector(settingsSelector);
   const [optionsOpen, setOptionsOpen] = React.useState(false);
-  const activeOptionsRef = useRef<HTMLDivElement>(null);
   const isNative = isNativeAssetId(selectedAsset);
+  const canonical = getAssetFromCanonical(selectedAsset);
+
+  const reduxDispatch = useDispatch<AppDispatch>();
+  const [isHiding, setIsHiding] = useState(false);
+
+  const handleHideAsset = async () => {
+    setIsHiding(true);
+    try {
+      const { hiddenAssets, error } = await changeAssetVisibility({
+        assetKey: selectedAsset,
+        assetVisibility: "hidden",
+        activePublicKey: publicKey,
+      });
+
+      if (error) {
+        throw new Error(error);
+      }
+
+      reduxDispatch(
+        saveHiddenAssets({
+          publicKey,
+          networkName: networkDetails.networkName,
+          hiddenAssets,
+        }),
+      );
+      setOptionsOpen(false);
+      // The asset is gone from the list behind this sheet, so there is nothing
+      // left to return to.
+      handleClose();
+      toast.custom(() => (
+        <Notification
+          variant="success"
+          title={t("{{code}} hidden", { code: canonical.code })}
+        />
+      ));
+    } catch (e) {
+      setOptionsOpen(false);
+      toast.custom(() => (
+        <Notification
+          variant="error"
+          title={t("Unable to hide {{code}}", { code: canonical.code })}
+        />
+      ));
+    } finally {
+      setIsHiding(false);
+    }
+  };
+
   const tokenPrices =
     cachedTokenPrices[networkDetails.networkPassphrase]?.[publicKey] || null;
-
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (
-        activeOptionsRef.current &&
-        !activeOptionsRef.current.contains(event.target as Node)
-      ) {
-        setOptionsOpen(false);
-      }
-    }
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [activeOptionsRef]);
-
-  const canonical = getAssetFromCanonical(selectedAsset);
   const isSorobanAsset = canonical.issuer && isSorobanIssuer(canonical.issuer);
 
   const selectedBalance = getBalanceByAsset(
@@ -244,59 +289,75 @@ export const AssetDetail = ({
           customBackIcon={<Icon.X />}
           customBackAction={handleClose}
           rightButton={
+            // Native XLM has no address to copy and cannot be hidden
+            // (filterHiddenBalances always keeps it), so on a network without
+            // stellar.expert it would be an empty menu.
             !isStellarExpertSupported &&
             isNativeBalance(selectedBalance) ? null : (
-              <>
-                <div
+              <Popover open={optionsOpen} onOpenChange={setOptionsOpen}>
+                <PopoverTrigger
+                  asChild
                   className="AssetDetail__options"
                   onClick={() => setOptionsOpen(true)}
                 >
                   <img src={IconEllipsis} alt={t("asset options")} />
-                </div>
-                {optionsOpen ? (
-                  <div
-                    className="AssetDetail__options-actions"
-                    ref={activeOptionsRef}
-                  >
-                    {!isNativeBalance(selectedBalance) ? (
-                      <div className="AssetDetail__options-actions__row">
-                        <CopyText
-                          textToCopy={
-                            isSorobanBalance(selectedBalance)
-                              ? selectedBalance.contractId
-                              : selectedBalance.token.issuer.key
-                          }
-                        >
-                          <div className="action">
-                            <div className="AssetDetail__options-actions__label">
-                              {t("Copy address")}
-                            </div>
-                            <Icon.Copy01 />
+                </PopoverTrigger>
+                <PopoverContent
+                  align="end"
+                  className="AssetDetail__options-actions"
+                >
+                  {!isNativeBalance(selectedBalance) && !isLpShare ? (
+                    <div className="AssetDetail__options-actions__row">
+                      <CopyText
+                        textToCopy={
+                          isSorobanBalance(selectedBalance)
+                            ? selectedBalance.contractId
+                            : selectedBalance.token.issuer.key
+                        }
+                      >
+                        <div className="action">
+                          <div className="AssetDetail__options-actions__label">
+                            {t("Copy address")}
                           </div>
-                        </CopyText>
+                          <Icon.Copy01 />
+                        </div>
+                      </CopyText>
+                    </div>
+                  ) : null}
+                  {isStellarExpertSupported ? (
+                    <div className="AssetDetail__options-actions__row">
+                      <Link
+                        className="action link"
+                        variant="secondary"
+                        rel="noreferrer"
+                        target="_blank"
+                        href={`https://stellar.expert/explorer/${networkDetails.network.toLowerCase()}/${stellarExpertAssetLinkSlug}`}
+                      >
+                        <>
+                          <div className="AssetDetail__options-actions__label">
+                            Stellar.expert
+                          </div>
+                          <Icon.LinkExternal01 />
+                        </>
+                      </Link>
+                    </div>
+                  ) : null}
+                  {!isNativeBalance(selectedBalance) && !isLpShare ? (
+                    <div className="AssetDetail__options-actions__row">
+                      <div
+                        className="action"
+                        onClick={isHiding ? undefined : handleHideAsset}
+                        data-testid="asset-detail-hide-button"
+                      >
+                        <div className="AssetDetail__options-actions__label">
+                          {t("Hide {{code}}", { code: canonical.code })}
+                        </div>
+                        <Icon.EyeOff />
                       </div>
-                    ) : null}
-                    {isStellarExpertSupported ? (
-                      <div className="AssetDetail__options-actions__row">
-                        <Link
-                          className="action link"
-                          variant="secondary"
-                          rel="noreferrer"
-                          target="_blank"
-                          href={`https://stellar.expert/explorer/${networkDetails.network.toLowerCase()}/${stellarExpertAssetLinkSlug}`}
-                        >
-                          <>
-                            <div className="AssetDetail__options-actions__label">
-                              Stellar.expert
-                            </div>
-                            <Icon.LinkExternal01 />
-                          </>
-                        </Link>
-                      </div>
-                    ) : null}
-                  </div>
-                ) : null}
-              </>
+                    </div>
+                  ) : null}
+                </PopoverContent>
+              </Popover>
             )
           }
         />

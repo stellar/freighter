@@ -1,4 +1,5 @@
 import { useReducer } from "react";
+import { useDispatch, useSelector } from "react-redux";
 
 import { RequestState } from "constants/request";
 import { initialState, isError, reducer } from "helpers/request";
@@ -15,6 +16,9 @@ import {
 } from "@shared/api/internal";
 import { AppDataType, NeedsReRoute } from "helpers/hooks/useGetAppData";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
+import { AppDispatch } from "popup/App";
+import { saveHiddenAssets } from "popup/ducks/hiddenAssets";
+import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 
 export interface ResolvedAssetVisibilityData {
   type: AppDataType.RESOLVED;
@@ -36,6 +40,8 @@ function useGetAssetData(options: {
     reducer<AssetVisibilityData, unknown>,
     initialState,
   );
+  const reduxDispatch = useDispatch<AppDispatch>();
+  const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const { fetchData: fetchDomainsWithBalances } =
     useGetAssetDomainsWithBalances(options);
 
@@ -93,6 +99,17 @@ function useGetAssetData(options: {
     if (error) {
       throw new Error(error);
     }
+
+    // Keep the redux mirror in step. Every writer has to do this: the account
+    // list filters against the mirror, so a write that only lands in the
+    // background leaves an asset wrongly hidden (or shown) until a reload.
+    reduxDispatch(
+      saveHiddenAssets({
+        publicKey,
+        networkName: networkDetails.networkName,
+        hiddenAssets,
+      }),
+    );
 
     const payload = {
       ...state.data,
