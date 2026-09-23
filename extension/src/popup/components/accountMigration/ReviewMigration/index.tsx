@@ -5,6 +5,7 @@ import { Badge, Button, Checkbox, Loader } from "@stellar/design-system";
 import { Horizon } from "stellar-sdk";
 import { getAccountInfo, getMigratableAccounts } from "@shared/api/internal";
 import { BalanceToMigrate } from "@shared/api/types";
+import { isNativeAssetId } from "@shared/helpers/assetIdentity";
 import { useTranslation } from "react-i18next";
 import { BigNumber } from "bignumber.js";
 import { Field, FieldProps, Form, Formik, useFormikContext } from "formik";
@@ -78,14 +79,14 @@ const isReadyToMigrate = ({
 }) =>
   Boolean(
     xlmBalance &&
-      !dataEntries &&
-      !isSigner &&
-      calculateSenderMinBalance({
-        minBalance,
-        recommendedFee,
-        trustlineBalancesLength,
-        isMergeSelected,
-      }) < new BigNumber(xlmBalance).minus(minBalance),
+    !dataEntries &&
+    !isSigner &&
+    calculateSenderMinBalance({
+      minBalance,
+      recommendedFee,
+      trustlineBalancesLength,
+      isMergeSelected,
+    }) < new BigNumber(xlmBalance).minus(minBalance),
   );
 
 type AccountListItemRow = AccountToMigrate & { isReadyToMigrate: boolean };
@@ -287,7 +288,7 @@ export const ReviewMigration = () => {
             account.balances[account.balances.length - 1].balance;
           const dataEntries = Object.keys(account.data_attr).length;
           const trustlineBalances = account.balances.filter(
-            ({ asset_type: assetType }) => assetType !== "native",
+            ({ asset_type: assetType }) => !isNativeAssetId(assetType),
           );
 
           acctItem = {

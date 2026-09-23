@@ -10,7 +10,11 @@ import {
 import { buildSorobanServer } from "@shared/helpers/soroban/server";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { INDEXER_URL } from "@shared/constants/mercury";
-import { getSdk, isCustomNetwork } from "@shared/helpers/stellar";
+import {
+  getSdk,
+  isCustomNetwork,
+  splitCanonical,
+} from "@shared/helpers/stellar";
 import { simulateTx } from "./server";
 import { SorobanRpcNotSupportedError } from "../../constants/errors";
 
@@ -178,7 +182,6 @@ export const getAssetSacAddress = (
   network: Networks,
 ) => {
   const Sdk = getSdk(network);
-  return new Sdk.Asset(
-    ...(canonicalName.split(":") as [string, string]),
-  ).contractId(network);
+  const { code, issuer } = splitCanonical(canonicalName);
+  return new Sdk.Asset(code, issuer).contractId(network);
 };

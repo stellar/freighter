@@ -21,6 +21,12 @@ import { makeDummyStore } from "popup/__testHelpers__";
 import { initialState as txSubmissionInitialState } from "popup/ducks/transactionSubmission";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { emitMetric } from "helpers/metrics";
+import {
+  emitSigningApproved,
+  emitSigningFailed,
+  SigningKind,
+  SigningSource,
+} from "popup/metrics/signing";
 import { useSubmitTxData } from "../useSubmitTxData";
 
 // The emit site is the unit under test — emitMetric itself is mocked so no
@@ -28,6 +34,16 @@ import { useSubmitTxData } from "../useSubmitTxData";
 jest.mock("helpers/metrics", () => ({
   ...jest.requireActual("helpers/metrics"),
   emitMetric: jest.fn(),
+}));
+
+// The signing events are a separate contract with their own suite
+// (popup/metrics/__tests__/signing.test.ts). Mock the helpers so they do not
+// reach emitMetric — this suite asserts on the terminal event and counts
+// calls, and a signing event landing in the same mock would break that.
+jest.mock("popup/metrics/signing", () => ({
+  ...jest.requireActual("popup/metrics/signing"),
+  emitSigningApproved: jest.fn(),
+  emitSigningFailed: jest.fn(),
 }));
 
 // Post-success refetches are outside the telemetry contract; stub them so the
@@ -205,6 +221,8 @@ describe("useSubmitTxData terminal-event telemetry", () => {
   afterEach(() => {
     jest.restoreAllMocks();
     (emitMetric as jest.Mock).mockClear();
+    (emitSigningApproved as jest.Mock).mockClear();
+    (emitSigningFailed as jest.Mock).mockClear();
   });
 
   it("payment.completed carries identity, token amount, and the source-leg USD family (confirmation_fetch)", async () => {
@@ -544,6 +562,68 @@ describe("useSubmitTxData terminal-event telemetry", () => {
 
     expect(emitMetric).not.toHaveBeenCalled();
   });
+  describe("internal signing events", () => {
+    // Internal transactions report signing with the same events a dApp
+    // request uses; `source` separates the two. Without these, a wallet-
+    // composed transaction reported nothing for the signing action.
+    const mockSigningFailure = () =>
+      jest
+        .spyOn(ApiInternal, "signFreighterTransaction")
+        .mockRejectedValue(new Error("Incorrect password"));
+
+    it("reports an approval once a software key produces a signature", async () => {
+      mockSubmitOk(buildResultXdr("880000000"));
+
+      const { result } = renderSubmitHook(makeState({ asset: "native" }));
+      await act(async () => {
+        await result.current.fetchData({ isSwap: false });
+      });
+
+      expect(emitSigningApproved).toHaveBeenCalledWith(
+        SigningKind.Transaction,
+        { source: SigningSource.Internal },
+      );
+      expect(emitSigningFailed).not.toHaveBeenCalled();
+    });
+
+    it("reports a failure when signing throws", async () => {
+      // The user already approved at the review screen, so a signing error is
+      // a fault, never a decision.
+      mockSigningFailure();
+
+      const { result } = renderSubmitHook(makeState({ asset: "native" }));
+      await act(async () => {
+        await result.current.fetchData({ isSwap: false });
+      });
+
+      expect(emitSigningFailed).toHaveBeenCalledWith(
+        SigningKind.Transaction,
+        expect.anything(),
+        { source: SigningSource.Internal },
+      );
+      expect(emitSigningApproved).not.toHaveBeenCalled();
+    });
+
+    it("reports nothing for a hardware flow, which the overlay owns", async () => {
+      // A hardware device signs in the HardwareSign overlay, which reports
+      // that attempt itself. This hook only receives the result, so emitting
+      // here would double-count.
+      mockSubmitOk(buildResultXdr("880000000"));
+
+      const { result } = renderSubmitHook(
+        makeState({ asset: "native" }),
+        MAINNET_NETWORK_DETAILS,
+        { isHardwareWallet: true },
+      );
+      await act(async () => {
+        await result.current.fetchData({ isSwap: false });
+      });
+
+      expect(emitSigningApproved).not.toHaveBeenCalled();
+      expect(emitSigningFailed).not.toHaveBeenCalled();
+    });
+  });
+
   describe("pre-submission (signing) failure", () => {
     const mockSigningFailure = () =>
       jest

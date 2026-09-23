@@ -30,7 +30,9 @@ describe("METRIC_NAMES domain-event catalog", () => {
   it("names swap events (routed/path-payment outcomes settle here too)", () => {
     expect(METRIC_NAMES.swapPickerOpened).toBe("swap.picker_opened");
     expect(METRIC_NAMES.swapSourceSelected).toBe("swap.source_selected");
-    expect(METRIC_NAMES.swapDestinationSelected).toBe("swap.destination_selected");
+    expect(METRIC_NAMES.swapDestinationSelected).toBe(
+      "swap.destination_selected",
+    );
     expect(METRIC_NAMES.swapDirectionToggled).toBe("swap.direction_toggled");
     expect(METRIC_NAMES.swapTrustlineAdded).toBe("swap.trustline_added");
     expect(METRIC_NAMES.swapXlmReserveInsufficientShown).toBe(
@@ -94,6 +96,9 @@ describe("METRIC_NAMES domain-event catalog", () => {
     expect(METRIC_NAMES.signingTransactionRejected).toBe(
       "signing.transaction_rejected",
     );
+    expect(METRIC_NAMES.signingTransactionFailed).toBe(
+      "signing.transaction_failed",
+    );
     expect(METRIC_NAMES.signingTransactionBlocked).toBe(
       "signing.transaction_blocked",
     );
@@ -106,8 +111,12 @@ describe("METRIC_NAMES domain-event catalog", () => {
     expect(METRIC_NAMES.signingAuthEntryFailed).toBe(
       "signing.auth_entry_failed",
     );
-    expect(METRIC_NAMES.signingMessageApproved).toBe("signing.message_approved");
-    expect(METRIC_NAMES.signingMessageRejected).toBe("signing.message_rejected");
+    expect(METRIC_NAMES.signingMessageApproved).toBe(
+      "signing.message_approved",
+    );
+    expect(METRIC_NAMES.signingMessageRejected).toBe(
+      "signing.message_rejected",
+    );
     expect(METRIC_NAMES.signingMessageFailed).toBe("signing.message_failed");
   });
 

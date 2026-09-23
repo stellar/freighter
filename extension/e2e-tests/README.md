@@ -235,7 +235,7 @@ await expectPageToHaveScreenshot({
 
 **Snapshot files** are stored in directories alongside test files:
 
-- `sendPayment.test.ts` → `sendPayment.test.ts-snapshots/`
+- `onboarding.test.ts` → `onboarding.test.ts-snapshots/`
 - `addAsset.test.ts` → `addAsset.test.ts-snapshots/`
 
 ### Updating Snapshots
@@ -249,7 +249,7 @@ yarn test:e2e --update-snapshots
 Or update snapshots for a specific test:
 
 ```bash
-yarn test:e2e sendPayment.test.ts --update-snapshots
+yarn test:e2e onboarding.test.ts --update-snapshots
 ```
 
 ### Reviewing Snapshot Changes
@@ -327,4 +327,4 @@ Tests run automatically in CI with:
 
 - [Playwright Documentation](https://playwright.dev/)
 - [Freighter Extension README](../README.md)
-- [Test Snapshots](./sendPayment.test.ts-snapshots/) - Visual regression test baselines
+- [Test Snapshots](./onboarding.test.ts-snapshots/) - Visual regression test baselines
