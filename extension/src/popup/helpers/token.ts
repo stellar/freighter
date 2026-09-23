@@ -13,13 +13,28 @@ export enum TokenType {
 /**
  * Local until the mirror catches up. stellar/freighter#3000 merged to PUBLIC
  * master on 2026-09-10 and adds `isNativeAssetId` / `isNativeContract` in
- * `@shared/helpers/assetIdentity`, plus the `asset-identity/
- * no-asset-code-comparison` lint rule that rejects this comparison — but
- * neither exists on `rebrand/varial` (the private mirror is behind public
- * master), so importing them here would not compile. Swap both helpers for
- * the shared ones in the same change that syncs the mirror.
+ * `@shared/helpers/assetIdentity`, `splitCanonical` in `@shared/helpers/stellar`,
+ * plus the `asset-identity/no-asset-code-comparison` lint rule that rejects
+ * this comparison — but none exists on `rebrand/varial` (the private mirror is
+ * behind public master), so importing them here would not compile. Swap these
+ * helpers for the shared ones in the same change that syncs the mirror.
  */
 const isNativeCanonicalId = (token: string): boolean => token === "native";
+
+/** Splits on the LAST colon: a contract token's symbol may contain one, an
+ * issuer never does. Same contract as public master's `splitCanonical`. */
+export const splitCanonical = (
+  canonical: string,
+): { code: string; issuer: string } => {
+  const separator = canonical.lastIndexOf(":");
+  if (separator === -1) {
+    return { code: canonical, issuer: "" };
+  }
+  return {
+    code: canonical.slice(0, separator),
+    issuer: canonical.slice(separator + 1),
+  };
+};
 
 /** True when a contract id IS the native lumen's SAC, derived from the
  * passphrase rather than compared to a literal. */
@@ -41,8 +56,8 @@ export const getTokenType = (
   if (isNativeCanonicalId(token)) {
     return TokenType.Native;
   }
-  const [, issuer] = token.split(":");
-  const candidate = issuer ?? token;
+  const { issuer } = splitCanonical(token);
+  const candidate = issuer || token;
   if (isContractId(candidate)) {
     if (isNativeContractId(candidate, networkPassphrase)) {
       return TokenType.Native;
@@ -69,7 +84,7 @@ export const getChartAssetIdentity = (
     return { asset_code: Asset.native().code, token_type };
   }
   if (token.includes(":")) {
-    const [code, issuer] = token.split(":");
+    const { code, issuer } = splitCanonical(token);
     return {
       ...(code ? { asset_code: code } : {}),
       ...(issuer ? { asset_issuer: issuer } : {}),

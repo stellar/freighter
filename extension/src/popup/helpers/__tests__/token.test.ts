@@ -49,6 +49,17 @@ describe("getChartAssetIdentity", () => {
     });
   });
 
+  // A contract token's symbol is whatever the contract reports, colons
+  // included; the issuer never contains one, so the split is on the last.
+  it("splits SYMBOL:CONTRACTID on the last colon when the symbol has one", () => {
+    expect(getTokenType(`A:B:${CONTRACT_ID}`, PUBNET)).toBe("soroban");
+    expect(getChartAssetIdentity(`A:B:${CONTRACT_ID}`, PUBNET)).toEqual({
+      asset_code: "A:B",
+      asset_issuer: CONTRACT_ID,
+      token_type: "soroban",
+    });
+  });
+
   it("without a network, the SAC stays soroban — the documented opt-in", () => {
     expect(getTokenType(`XLM:${NATIVE_SAC}`)).toBe("soroban");
     expect(getChartAssetIdentity(`XLM:${NATIVE_SAC}`)).toEqual({

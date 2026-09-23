@@ -50,6 +50,21 @@ describe("AssetAbout", () => {
     expect(screen.queryByText("Domain")).toBeNull();
   });
 
+  it("finds the contract id of a token whose symbol contains a colon", () => {
+    render(
+      <AssetAbout
+        networkPassphrase={PUBNET_PASSPHRASE}
+        token={`A:B:${CONTRACT_ID}`}
+        assetDomain=""
+      />,
+    );
+
+    expect(screen.getByTestId("AssetAbout__issuer").textContent).toBe(
+      "IssuerCCXV…NGBJ",
+    );
+    expect(screen.getByText("Soroban")).toBeInTheDocument();
+  });
+
   it("classifies a bare contract id as Soroban, like the analytics dimension", () => {
     // Both client forms of a contract token exist; the About card must agree
     // with `getTokenType` (which drives `token_type` on token_chart.loaded)

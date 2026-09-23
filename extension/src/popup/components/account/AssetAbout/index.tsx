@@ -2,7 +2,7 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { Icon } from "@stellar/design-system";
 
-import { getTokenType, TokenType } from "popup/helpers/token";
+import { getTokenType, splitCanonical, TokenType } from "popup/helpers/token";
 import { truncateString } from "helpers/stellar";
 import { InfoRow, InfoRowCard } from "popup/components/account/InfoRowCard";
 
@@ -36,12 +36,12 @@ export const AssetAbout = ({
 
   // Gate on the resolved type, not the id's shape: XLM's own SAC arrives as
   // `XLM:<contract id>` and has no issuer to show. Otherwise the issuer is
-  // after the colon, or the bare contract id is its own issuer.
-  const [, afterColon] = token.split(":");
+  // after the last colon, or the bare contract id is its own issuer.
+  const { issuer: afterColon } = splitCanonical(token);
   const issuer =
     tokenType === TokenType.Native
       ? ""
-      : (afterColon ?? (tokenType === TokenType.Soroban ? token : ""));
+      : afterColon || (tokenType === TokenType.Soroban ? token : "");
 
   const rows: InfoRow[] = [];
   if (issuer) {
