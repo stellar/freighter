@@ -2,7 +2,6 @@ import React, { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, NavLink } from "react-router-dom";
 import { createPortal } from "react-dom";
-import browser from "webextension-polyfill";
 
 import { Icon, Text, NavButton, CopyText } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
@@ -14,8 +13,7 @@ import { View } from "popup/basics/layout/View";
 import { isActiveNetwork } from "helpers/stellar";
 import { emitMetric } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
-import { navigateTo, openTab, openSidebar } from "popup/helpers/navigate";
-import { newTabHref } from "helpers/urls";
+import { navigateTo } from "popup/helpers/navigate";
 import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
 import { PunycodedDomain } from "popup/components/PunycodedDomain";
 import {
@@ -23,7 +21,6 @@ import {
   settingsNetworkDetailsSelector,
   settingsNetworksListSelector,
 } from "popup/ducks/settings";
-import { signOut } from "popup/ducks/accountServices";
 import { AccountHeaderModal } from "popup/components/account/AccountHeaderModal";
 import { NetworkIcon } from "popup/components/manageNetwork/NetworkIcon";
 import { NetworkDetails } from "@shared/constants/stellar";
@@ -86,13 +83,6 @@ export const AccountHeader = ({
 
   const isBackgroundActive = isNetworkSelectorOpen || isAccountOptionsOpen;
 
-  const signOutAndClose = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    await dispatch(signOut());
-    navigateTo(ROUTES.unlockAccount, navigate);
-  };
-
   const latestConnection = allowList.at(-1);
 
   return (
@@ -154,46 +144,6 @@ export const AccountHeader = ({
                       </Text>
                       <div className="AccountHeader__options__item__icon">
                         <Icon.Settings01 />
-                      </div>
-                    </div>
-
-                    <hr className="AccountHeader__list-divider" />
-                    <div
-                      className="AccountHeader__options__item"
-                      onClick={(e) => signOutAndClose(e)}
-                    >
-                      <Text as="div" size="sm" weight="medium">
-                        {t("Lock Freighter")}
-                      </Text>
-                      <div className="AccountHeader__options__item__icon">
-                        <Icon.Lock01 />
-                      </div>
-                    </div>
-                    {(typeof globalThis.chrome?.sidePanel?.open ===
-                      "function" ||
-                      typeof (browser as any)?.sidebarAction?.open ===
-                        "function") && (
-                      <div
-                        className="AccountHeader__options__item"
-                        onClick={() => openSidebar()}
-                      >
-                        <Text as="div" size="sm" weight="medium">
-                          {t("Sidebar mode")}
-                        </Text>
-                        <div className="AccountHeader__options__item__icon">
-                          <Icon.LayoutRight />
-                        </div>
-                      </div>
-                    )}
-                    <div
-                      className="AccountHeader__options__item"
-                      onClick={() => openTab(newTabHref(ROUTES.account))}
-                    >
-                      <Text as="div" size="sm" weight="medium">
-                        {t("Fullscreen mode")}
-                      </Text>
-                      <div className="AccountHeader__options__item__icon">
-                        <Icon.Expand05 />
                       </div>
                     </div>
 

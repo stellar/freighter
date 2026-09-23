@@ -55,7 +55,7 @@ test("Adding token on Futurenet", async ({ page, extensionId, context }) => {
 
   await page.getByTestId("account-options-dropdown").click();
   await page.getByText("Settings").click();
-  await page.getByText("Security").click();
+  await page.getByRole("link", { name: "Security" }).click();
   await page.getByText("Advanced settings").click();
   await page.getByText("I understand, continue").click();
   await page.getByTestId("isExperimentalModeEnabledValue").click();

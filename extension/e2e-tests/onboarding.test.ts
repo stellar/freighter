@@ -601,7 +601,7 @@ test("Overwrites account when user abandons mnemonic phrase confirmation", async
   await page.getByTestId("BackButton").click();
   await page.getByTestId("account-options-dropdown").click();
   await page.getByText("Settings").click();
-  await page.getByText("Security").click();
+  await page.getByRole("link", { name: "Security" }).click();
   await page.getByText("Show recovery phrase").click();
 
   await page.locator("#password").fill(PASSWORD);
@@ -673,7 +673,7 @@ test("Overwrites account when user abandons after password creation", async ({
   await page.getByTestId("BackButton").click();
   await page.getByTestId("account-options-dropdown").click();
   await page.getByText("Settings").click();
-  await page.getByText("Security").click();
+  await page.getByRole("link", { name: "Security" }).click();
   await page.getByText("Show recovery phrase").click();
 
   await page.locator("#password").fill(PASSWORD);
@@ -700,7 +700,7 @@ test("Password input is auto focused on Show recovery phrase screen", async ({
   await loginToTestAccount({ page, extensionId, context });
   await page.getByTestId("account-options-dropdown").click();
   await page.getByText("Settings").click();
-  await page.getByText("Security").click();
+  await page.getByRole("link", { name: "Security" }).click();
   await page.getByText("Show recovery phrase").click();
   await expect(page.locator("#password")).toBeFocused();
 });

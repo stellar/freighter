@@ -1,11 +1,29 @@
 @use "../../styles/utils.scss" as *;
 
 .Settings {
-  display: flex;
-  flex-direction: column;
-  background-color: var(--sds-clr-gray-02);
-  border-radius: pxToRem(16px);
-  padding: pxToRem(16px);
+  &__group {
+    display: flex;
+    flex-direction: column;
+
+    &:not(:first-child) {
+      margin-top: pxToRem(16px);
+    }
+
+    &__label {
+      color: var(--sds-clr-gray-11);
+      font-size: pxToRem(12px);
+      line-height: pxToRem(18px);
+      margin-bottom: pxToRem(8px);
+    }
+
+    &__rows {
+      display: flex;
+      flex-direction: column;
+      background-color: var(--sds-clr-gray-02);
+      border-radius: pxToRem(16px);
+      padding: pxToRem(16px);
+    }
+  }
 
   &__header {
     margin-bottom: 2rem;
@@ -47,14 +65,27 @@
     width: 1.25rem;
     height: 1.25rem;
 
+    svg {
+      width: 1.25rem;
+      height: 1.25rem;
+      color: var(--sds-clr-gray-09);
+    }
+
     &__preferences,
     &__whatsNew {
       stroke: var(--sds-clr-gray-09);
     }
   }
 
-  &__logout {
-    color: var(--sds-clr-red-09);
+  // Action rows carry no chevron, so they need the link colour and cursor that
+  // ListNavLink would otherwise supply.
+  &__action {
+    color: var(--sds-clr-gray-12);
     cursor: pointer;
+    width: 100%;
+
+    &--destructive {
+      color: var(--sds-clr-red-09);
+    }
   }
 }
