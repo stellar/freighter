@@ -3,6 +3,7 @@ import type { BrowserContext, Page } from "@playwright/test";
 import { test, expect } from "./test-fixtures";
 import { loginToTestAccount } from "./helpers/login";
 import { stubAccountBalancesV2 } from "./helpers/stubs";
+import { switchNetwork } from "./helpers/network";
 
 // The Tokens tab decides which kind of Add button the Collectibles tab uses, so
 // these cover the Collectibles side following its lead -- including the one case
@@ -186,8 +187,7 @@ test("Collectibles shows a spinner until the request resolves", async ({
   });
   // Mainnet: the later scanned-balances dispatch is what used to reveal the
   // collectibles, and with it the swap this guards against.
-  await page.getByTestId("network-selector-open").click();
-  await page.getByText("Mainnet").click();
+  await switchNetwork(page, "Mainnet");
   await expect(page.getByTestId("account-view")).toBeVisible();
   await page.getByTestId("account-tab-collectibles").click();
 

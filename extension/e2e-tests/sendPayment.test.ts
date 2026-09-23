@@ -13,6 +13,7 @@ import {
   stubScanTxWithUnfundedNonNativeWarning,
   stubScanTx,
 } from "./helpers/stubs";
+import { goToAddAsset, goToManageAssets } from "./helpers/assets";
 
 const MUXED_ACCOUNT_ADDRESS =
   "MCQ7EGW7VXHI4AKJAFADOIHCSK2OCVA42KUETUK5LQ3LVSEQEEKP6AAAAAAAAAAAAFLVY";
@@ -677,10 +678,7 @@ test.fixme("Send SAC to C address", async ({ page, extensionId, context }) => {
   await loginToTestAccount({ page, extensionId, context });
 
   // add USDC asset
-  await page.getByTestId("account-options-dropdown").click();
-  await page.getByText("Manage assets").click({ force: true });
-
-  await page.getByText("Add an asset").click({ force: true });
+  await goToAddAsset(page);
   await page
     .getByTestId("search-asset-input")
     .fill("GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5");
@@ -761,8 +759,7 @@ test.fixme("Send SAC to C address", async ({ page, extensionId, context }) => {
   });
 
   // remove USDC
-  await page.getByTestId("account-options-dropdown").click();
-  await page.getByText("Manage assets").click({ force: true });
+  await goToManageAssets(page);
   await page.getByTestId("ManageAssetRowButton__ellipsis-USDC").click();
   await page.getByText("Remove asset").click({ force: true });
 
@@ -1337,8 +1334,7 @@ test.afterAll(async ({ page, extensionId, context }) => {
     test.slow();
     await loginToTestAccount({ page, extensionId, context });
 
-    await page.getByTestId("account-options-dropdown").click();
-    await page.getByText("Manage assets").click({ force: true });
+    await goToManageAssets(page);
 
     await page.getByTestId("ManageAssetRowButton__ellipsis-USDC").click();
     await page.getByText("Remove asset").click();

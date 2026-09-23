@@ -8,6 +8,7 @@ import {
   stubAssetSearchWithContractId,
   stubAccountBalancesE2e,
 } from "./helpers/stubs";
+import { goToAddAsset } from "./helpers/assets";
 
 /**
  * Helper to locate a ManageAssetRow by its exact asset code.
@@ -37,13 +38,7 @@ test("Stellar Expert contract ID result shows as already added", async ({
     },
   });
 
-  await page.getByTestId("account-options-dropdown").click();
-  const manageAssets = page.getByText("Manage assets");
-  await expect(manageAssets).toBeVisible();
-  await manageAssets.click();
-
-  await expect(page.getByText("Your assets")).toBeVisible({ timeout: 10000 });
-  await page.getByText("Add an asset").click({ force: true });
+  await goToAddAsset(page);
 
   await page.getByTestId("search-asset-input").fill("E2E");
 
@@ -77,13 +72,7 @@ test("Stellar Expert contract ID result shows Add when not owned", async ({
     },
   });
 
-  await page.getByTestId("account-options-dropdown").click();
-  const manageAssets = page.getByText("Manage assets");
-  await expect(manageAssets).toBeVisible();
-  await manageAssets.click();
-
-  await expect(page.getByText("Your assets")).toBeVisible({ timeout: 10000 });
-  await page.getByText("Add an asset").click({ force: true });
+  await goToAddAsset(page);
 
   await page.getByTestId("search-asset-input").fill("E2E");
 
@@ -121,6 +110,9 @@ test("Can add a token returned as contract ID from Stellar Expert search", async
     },
   });
 
+  // This test asserts on the Manage assets list itself (the per-row menu and
+  // the back-navigation into it), so it keeps the long way round rather than
+  // the Tokens tab pill. It is rewritten when that screen is retired.
   await page.getByTestId("account-options-dropdown").click();
   const manageAssets = page.getByText("Manage assets");
   await expect(manageAssets).toBeVisible();

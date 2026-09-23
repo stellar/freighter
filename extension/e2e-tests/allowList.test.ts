@@ -1,5 +1,6 @@
 import { expect, test, expectPageToHaveScreenshot } from "./test-fixtures";
 import { loginToTestAccount, PASSWORD } from "./helpers/login";
+import { goToConnectedApps } from "./helpers/network";
 
 test("View Allow List selector", async ({ page, extensionId, context }) => {
   test.slow();
@@ -17,8 +18,7 @@ test("View Allow List selector", async ({ page, extensionId, context }) => {
 
   const popup = await popupPromise;
 
-  await page.getByTestId("network-selector-open").click();
-  await page.getByText("Connected apps").click();
+  await goToConnectedApps(page);
 
   await expect(popup.getByText("Connection Request")).toBeVisible();
   await popup.getByTestId("grant-access-connect-button").click();
@@ -66,8 +66,7 @@ test("View Allow List selector", async ({ page, extensionId, context }) => {
   await expect(page.getByTestId("account-view")).toBeVisible({
     timeout: 10000,
   });
-  await page.getByTestId("network-selector-open").click();
-  await page.getByText("Connected apps").click();
+  await goToConnectedApps(page);
 
   await expect(page.getByText("Nothing connected yet")).toBeVisible();
 
@@ -101,8 +100,7 @@ test("Disconnecting apps shows a success toast", async ({
     await popup.getByTestId("grant-access-connect-button").click();
   };
 
-  await page.getByTestId("network-selector-open").click();
-  await page.getByText("Connected apps").click();
+  await goToConnectedApps(page);
   await grantAccess();
   await page.reload();
   await expect(page.getByText("play.freighter.app")).toBeVisible();

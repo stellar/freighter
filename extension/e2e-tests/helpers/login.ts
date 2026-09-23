@@ -2,6 +2,7 @@ import StellarHDWallet from "stellar-hd-wallet";
 import { Page, BrowserContext } from "@playwright/test";
 import { expect } from "../test-fixtures";
 import { stubAllExternalApis } from "./stubs";
+import { switchNetwork } from "./network";
 
 const { generateMnemonic } = StellarHDWallet;
 
@@ -66,8 +67,7 @@ export const login = async ({
         response.url().includes("network=TESTNET"),
     );
 
-  await page.getByTestId("network-selector-open").click();
-  await page.getByText("Testnet").click();
+  await switchNetwork(page, "Testnet");
 
   // Wait for the balances API call to complete
   await balancesPromise;
@@ -164,16 +164,14 @@ export const loginToTestAccount = async ({
   await expect(page.getByTestId("network-selector-open")).toBeVisible({
     timeout: 50000,
   });
-  await page.getByTestId("network-selector-open").click();
-  await page.getByText("Testnet").click();
+  await switchNetwork(page, "Testnet");
   await expect(page.getByTestId("account-view")).toBeVisible({
     timeout: 30000,
   });
 };
 
 export const switchToMainnet = async (page: Page) => {
-  await page.getByTestId("network-selector-open").click();
-  await page.getByText("Mainnet").click();
+  await switchNetwork(page, "Mainnet");
   await expect(page.getByTestId("network-selector-open")).toContainText(
     "Mainnet",
     { timeout: 30000 },

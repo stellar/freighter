@@ -1,6 +1,7 @@
 import { test, expect, expectPageToHaveScreenshot } from "../test-fixtures";
 import { loginToTestAccount } from "../helpers/login";
 import { TEST_TOKEN_ADDRESS } from "../helpers/test-token";
+import { goToAddAsset, goToManageAssets } from "../helpers/assets";
 
 // test.beforeEach(async ({ page, context }) => {
 //   if (!process.env.IS_INTEGRATION_MODE) {
@@ -19,10 +20,7 @@ test("Adding classic asset on Testnet", async ({
   test.slow();
   await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
 
-  await page.getByTestId("account-options-dropdown").click();
-  await page.getByText("Manage assets").click();
-  await expect(page.getByText("Your assets")).toBeVisible();
-  await page.getByText("Add an asset").click({ force: true });
+  await goToAddAsset(page);
   await page
     .getByTestId("search-asset-input")
     .fill("GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5");
@@ -86,9 +84,7 @@ test("Adding and removing unverified Soroban token", async ({
 }) => {
   await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
 
-  await page.getByTestId("account-options-dropdown").click();
-  await page.getByText("Manage assets").click();
-  await expect(page.getByText("Your assets")).toBeVisible();
+  await goToManageAssets(page);
   await expectPageToHaveScreenshot({
     page,
     screenshot: "manage-assets-page.png",
@@ -145,9 +141,7 @@ test("Adding and removing unverified Soroban token", async ({
     await expect(page.getByText("E2E")).toBeVisible();
 
     // now go back and remove this asset
-    await page.getByTestId("account-options-dropdown").click();
-    await page.getByText("Manage assets").click();
-    await expect(page.getByText("Your assets")).toBeVisible();
+    await goToManageAssets(page);
     // Non-SAC contract tokens display their name (displayCode), so the E2E
     // token's code cell reads "E2E Token", not "E2E".
     await expect(page.getByTestId("ManageAssetCode")).toHaveText("E2E Token");
@@ -181,8 +175,7 @@ test.afterAll(async ({ page, extensionId, context }) => {
     test.slow();
     await loginToTestAccount({ page, extensionId, context });
 
-    await page.getByTestId("account-options-dropdown").click();
-    await page.getByText("Manage assets").click();
+    await goToManageAssets(page);
 
     await page.getByTestId("ManageAssetRowButton__ellipsis-USDC").click();
     await page.getByText("Remove asset").click();
