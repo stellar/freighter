@@ -1,6 +1,10 @@
 import { Asset } from "stellar-sdk";
 
 import { isContractId } from "@shared/api/helpers/soroban";
+import {
+  isNativeAssetId,
+  isNativeContract,
+} from "@shared/helpers/assetIdentity";
 import { splitCanonical } from "@shared/helpers/stellar";
 
 // §N refs: wallet-eng-monorepo/design-docs/token-price-graphs/token-price-graphs-design.md
@@ -12,26 +16,6 @@ export enum TokenType {
 }
 
 /**
- * Local until the mirror catches up. stellar/freighter#3000 merged to PUBLIC
- * master on 2026-09-10 and adds `isNativeAssetId` / `isNativeContract` in
- * `@shared/helpers/assetIdentity`, plus the `asset-identity/
- * no-asset-code-comparison` lint rule that rejects this comparison — but
- * neither exists on `rebrand/varial` (the private mirror is behind public
- * master), so importing them here would not compile. Swap both helpers for
- * the shared ones in the same change that syncs the mirror.
- */
-const isNativeCanonicalId = (token: string): boolean => token === "native";
-
-/** True when a contract id IS the native lumen's SAC, derived from the
- * passphrase rather than compared to a literal. */
-const isNativeContractId = (
-  contractId: string,
-  networkPassphrase?: string,
-): boolean =>
-  !!networkPassphrase &&
-  contractId === Asset.native().contractId(networkPassphrase);
-
-/**
  * Both contract forms are soroban EXCEPT XLM's own SAC, which is a contract id
  * by shape but IS the native asset.
  */
@@ -39,13 +23,13 @@ export const getTokenType = (
   token: string,
   networkPassphrase?: string,
 ): TokenType => {
-  if (isNativeCanonicalId(token)) {
+  if (isNativeAssetId(token)) {
     return TokenType.Native;
   }
   const { issuer } = splitCanonical(token);
   const candidate = issuer || token;
   if (isContractId(candidate)) {
-    if (isNativeContractId(candidate, networkPassphrase)) {
+    if (networkPassphrase && isNativeContract(candidate, networkPassphrase)) {
       return TokenType.Native;
     }
     return TokenType.Soroban;

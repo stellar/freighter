@@ -475,6 +475,52 @@ describe("AssetDetail", () => {
       expect(screen.getByTestId("asset-detail-send-button")).toBeVisible();
     });
 
+    it("finds the balance of a contract token whose symbol contains a colon", async () => {
+      const contractId =
+        "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABSC4";
+      const props = {
+        handleClose: () => null,
+        accountBalances: {
+          balances: [
+            {
+              token: { code: "A:B", issuer: { key: contractId } },
+              contractId,
+              total: new BigNumber(100),
+              decimals: 7,
+              name: "Colon Token",
+              symbol: "A:B",
+            },
+          ],
+        } as any,
+        assetOperations: [] as any,
+        selectedAsset: `A:B:${contractId}`,
+        historyData: mockHistoryData,
+      };
+
+      render(
+        <Wrapper
+          routes={[ROUTES.account]}
+          state={{
+            auth: {
+              error: null,
+              applicationState: ApplicationState.PASSWORD_CREATED,
+              publicKey: "G1",
+              allAccounts: mockAccounts,
+            },
+            settings: {
+              networkDetails: TESTNET_NETWORK_DETAILS,
+            },
+          }}
+        >
+          <AssetDetail {...props} />
+        </Wrapper>,
+      );
+
+      await waitFor(() => screen.getByTestId("AssetDetail"));
+      // The send button renders only when the selected balance was found.
+      expect(screen.getByTestId("asset-detail-send-button")).toBeVisible();
+    });
+
     it("should show both buttons for classic asset with balance", async () => {
       const props = {
         handleClose: () => null,
