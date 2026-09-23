@@ -1,18 +1,53 @@
+// The sheet is inset from the left, right and bottom edges, so `translateY(100%)`
+// no longer clears the viewport on its own: it would leave the card's top edge
+// sitting in the bottom gutter, fading in and out on every open and close. Travel
+// the inset and the shadow spread as well.
+$exit-transform: translateY(
+  calc(
+    100% + var(--slideup-modal--inset-bottom) +
+      var(--slideup-modal--exit-clearance)
+  )
+);
+
 .SlideupModal {
   background: var(--sds-clr-gray-01);
-  border-radius: 1.5rem 1.5rem 0 0;
-  box-shadow: 0 1rem 1.5rem rgba(0, 0, 0, 0.24);
+  border-radius: var(--slideup-modal--radius);
+  // Ambient rather than bottom-offset: the old `0 1rem 1.5rem` was tuned for a
+  // flush sheet, whose +16px Y offset pushed the shadow off the bottom of the
+  // viewport. Inset, that same shadow paints a hard band in the gutter.
+  box-shadow: 0 0.5rem 2rem rgba(var(--color-shadow-rgb), 0.4);
+  // Width derives from left/right, so padding must not widen the card.
+  box-sizing: border-box;
+
   position: fixed;
-  bottom: 0;
-  left: 0;
-  width: 100%;
+  left: var(--slideup-modal--gutter);
+  right: var(--slideup-modal--gutter);
+  bottom: var(--slideup-modal--inset-bottom);
+  // Over-constrained absolute positioning resolves into the auto margins, which
+  // centers the card without a translateX -- keeping the animated transform a
+  // pure translateY so the exit calc above stays simple.
+  margin-inline: auto;
+  max-width: var(--slideup-modal--max-width);
   z-index: var(--z-index-modal);
 
   /* Start hidden/offscreen and invisible */
-  transform: translateY(100%);
+  transform: $exit-transform;
   opacity: 0;
   pointer-events: none;
-  overflow: hidden;
+
+  // `height` is set inline from the measured content; this is the ceiling. Past
+  // it the sheet scrolls internally rather than growing off the top of the
+  // viewport, which is what the per-site 85vh/80vh caps used to paper over.
+  max-height: var(--slideup-modal--max-height);
+  overflow-y: auto;
+  overflow-x: hidden;
+  // Don't chain scroll to the scrollable Home document behind the backdrop.
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
 
   transition:
     transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
@@ -20,9 +55,11 @@
     height 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   will-change: transform, opacity, height;
 
+  // Kill the inset's vertical borders, which View adds at >=850px; the card
+  // supplies its own edge. No radius needed here -- the card's overflow clips
+  // descendants to its rounded corners.
   .View__inset {
     border: 0;
-    border-radius: 1.5rem 1.5rem 0 0;
   }
 }
 
@@ -35,7 +72,7 @@
 }
 
 .SlideupModal.closed {
-  transform: translateY(100%);
+  transform: $exit-transform;
   opacity: 0;
   pointer-events: none;
   // `visibility: hidden` is required for Playwright's checkVisibility() to detect
@@ -54,7 +91,15 @@
     visibility 0s linear 0.2s;
 }
 
-.SlideupModal + .LoadingBackground--isFullScreen.LoadingBackground--active {
+// A floating card leaves a visible gap on all four sides, so the backdrop is
+// now part of the sheet's frame rather than something behind it: it must cover
+// the whole viewport unconditionally, and sit directly beneath the card. This
+// raises it from z-index 1 to 29, so it now also dims the floating add button
+// (10) and tooltips (20) -- which is correct modal behaviour, but it moves pixels.
+.SlideupModal + .LoadingBackground--active {
   position: fixed;
+  inset: 0;
+  height: 100%;
+  width: 100%;
   z-index: calc(var(--z-index-modal) - 1);
 }

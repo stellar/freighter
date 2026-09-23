@@ -213,7 +213,15 @@ export const ManageAssetRows = ({
               )}
             </>
           </SlideupModal>,
-          document.getElementById("layout-view")!,
+          // Portaled into the app's View rather than the body so the sheet
+          // inherits the .View-scoped cascade that ChangeTrustInternal's
+          // View.Content relies on for its padding and scroll region.
+          // Geometry does not depend on this: .View is position:relative with
+          // z-index:auto, so it is neither a containing block for the sheet's
+          // position:fixed nor a stacking context. That invariant is load
+          // bearing -- if #layout-view ever gains transform, filter or
+          // contain:paint, the sheet starts positioning against it instead.
+          document.getElementById("layout-view") ?? document.body,
         )}
       </div>
     </>

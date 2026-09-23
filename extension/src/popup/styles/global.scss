@@ -26,6 +26,28 @@
   --z-index-tooltip: 20;
   --z-index-modal: 30;
   --z-index-maintenance-screen: 100;
+
+  // Floating bottom sheet geometry.
+  //
+  // --app--bottom-offset is owned by the app shell: it is the height of any
+  // persistent bottom chrome the sheet must clear. It is the ONLY contract
+  // between the sheet and the bottom tab bar, which sets it to the bar height.
+  --app--bottom-offset: 0rem;
+  --slideup-modal--gutter: 0.5rem;
+  --slideup-modal--inset-bottom: calc(
+    var(--app--bottom-offset) + var(--slideup-modal--gutter)
+  );
+  --slideup-modal--radius: 1.5rem;
+  // Matches .View__inset's max-width so the sheet's edges line up with the
+  // content column in fullscreen instead of stretching the full 1100px.
+  --slideup-modal--max-width: 53rem;
+  --slideup-modal--top-gap: 3rem;
+  --slideup-modal--max-height: calc(
+    100dvh - var(--slideup-modal--inset-bottom) - var(--slideup-modal--top-gap)
+  );
+  // Extra travel on exit so the box-shadow, which paints outside the border
+  // box, also clears the viewport instead of bleeding into the bottom gutter.
+  --slideup-modal--exit-clearance: 2.5rem;
 }
 
 html,

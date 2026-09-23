@@ -133,11 +133,7 @@ export const MaintenanceBanner: React.FC = () => {
       </div>
 
       {activeContent.modal && (
-        <SlideupModal
-          isModalOpen={isModalOpen}
-          setIsModalOpen={setIsModalOpen}
-          hasBackdrop
-        >
+        <SlideupModal isModalOpen={isModalOpen} setIsModalOpen={setIsModalOpen}>
           <View.Inset>
             <div
               className="MaintenanceBanner__modal"
