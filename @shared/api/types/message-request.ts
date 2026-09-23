@@ -7,7 +7,7 @@ import { NetworkDetails } from "@shared/constants/stellar";
 import {
   AssetVisibility,
   BalanceToMigrate,
-  IssuerKey,
+  AssetKey,
   CollectibleKey,
   TrendingAsset,
 } from "./types";
@@ -419,7 +419,7 @@ export interface GetIsAccountMismatchMessage extends BaseMessage {
 export interface ChangeAssetVisibilityMessage extends BaseMessage {
   type: SERVICE_TYPES.CHANGE_ASSET_VISIBILITY;
   assetVisibility: {
-    issuer: IssuerKey;
+    assetKey: AssetKey;
     visibility: AssetVisibility;
   };
 }

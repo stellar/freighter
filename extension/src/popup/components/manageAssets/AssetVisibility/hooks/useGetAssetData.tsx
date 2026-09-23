@@ -4,7 +4,7 @@ import { RequestState } from "constants/request";
 import { initialState, isError, reducer } from "helpers/request";
 import { AccountBalances } from "helpers/hooks/useGetBalances";
 import { ManageAssetCurrency } from "../../ManageAssetRows";
-import { IssuerKey, AssetVisibility } from "@shared/api/types";
+import { AssetKey, AssetVisibility } from "@shared/api/types";
 import {
   AssetDomains,
   useGetAssetDomainsWithBalances,
@@ -21,7 +21,7 @@ export interface ResolvedAssetVisibilityData {
   balances: AccountBalances;
   domains: ManageAssetCurrency[];
   isManagingAssets: boolean;
-  hiddenAssets: Record<IssuerKey, AssetVisibility>;
+  hiddenAssets: Record<AssetKey, AssetVisibility>;
   publicKey: string;
   applicationState: APPLICATION_STATE;
 }
@@ -76,16 +76,16 @@ function useGetAssetData(options: {
   };
 
   const changeAssetVisibility = async ({
-    issuer,
+    assetKey,
     visibility,
     publicKey,
   }: {
-    issuer: IssuerKey;
+    assetKey: AssetKey;
     visibility: AssetVisibility;
     publicKey: string;
   }) => {
     const { hiddenAssets, error } = await internalChangeAssetVisibility({
-      assetIssuer: issuer,
+      assetKey,
       assetVisibility: visibility,
       activePublicKey: publicKey,
     });

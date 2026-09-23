@@ -13,6 +13,7 @@ import {
   IS_BLOCKAID_ANNOUNCED_ID,
   IS_HIDE_DUST_ENABLED_ID,
   ALLOWLIST_ID,
+  HIDDEN_ASSETS,
   LAST_USED_ACCOUNT,
 } from "constants/localStorageTypes";
 import {
@@ -340,6 +341,56 @@ export const migrateAllowlistToKeyNetworkSchema = async () => {
   }
 };
 
+export const migrateHiddenAssetsToKeyNetworkSchema = async () => {
+  const localStore = dataStorageAccess(browserLocalStorage);
+  const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
+
+  if (shouldRunMigration({ storageVersion, migrationVersion: "5.46.0" })) {
+    const empty = {
+      [NETWORK_NAMES.PUBNET]: {},
+      [NETWORK_NAMES.TESTNET]: {},
+      [NETWORK_NAMES.FUTURENET]: {},
+    };
+    let hiddenAssetsByKey: Record<string, unknown> = empty;
+
+    try {
+      const currentHiddenAssets = await localStore.getItem(HIDDEN_ASSETS);
+      const lastUsedAccount = await localStore.getItem(LAST_USED_ACCOUNT);
+
+      // The old value was a single flat { [assetKey]: visibility } map shared by
+      // every account on every network. Assign it to the active account on all
+      // three networks: the user hid these deliberately, very often to bury a
+      // spam airdrop, so dropping them is a visible regression -- but spreading
+      // them to accounts they never touched would widen the very bug this
+      // migration exists to fix, with no one-step undo.
+      if (currentHiddenAssets && lastUsedAccount) {
+        const isAlreadyMigrated = !Object.values(currentHiddenAssets).some(
+          (value) => typeof value === "string",
+        );
+
+        if (!isAlreadyMigrated) {
+          const byAccount = {
+            [lastUsedAccount as string]: currentHiddenAssets,
+          };
+          hiddenAssetsByKey = {
+            [NETWORK_NAMES.PUBNET]: byAccount,
+            [NETWORK_NAMES.TESTNET]: byAccount,
+            [NETWORK_NAMES.FUTURENET]: byAccount,
+          };
+        } else {
+          hiddenAssetsByKey = currentHiddenAssets;
+        }
+      }
+    } catch (error) {
+      hiddenAssetsByKey = empty;
+    }
+
+    await localStore.setItem(HIDDEN_ASSETS, hiddenAssetsByKey);
+
+    await migrateDataStorageVersion("5.46.0");
+  }
+};
+
 export const migratePubnetRpcUrl = async () => {
   const localStore = dataStorageAccess(browserLocalStorage);
   const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
@@ -392,6 +443,7 @@ export const versionedMigration = async () => {
   await removeStellarExpertData();
   await migrateAllowlistToKeyNetworkSchema();
   await migratePubnetRpcUrl();
+  await migrateHiddenAssetsToKeyNetworkSchema();
 };
 
 // Updates storage version

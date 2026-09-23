@@ -57,7 +57,7 @@ import {
   IndexerSettings,
   SettingsState,
   ExperimentalFeatures,
-  IssuerKey,
+  AssetKey,
   AssetVisibility,
   ApiTokenPrices,
   HorizonOperation,
@@ -2604,7 +2604,7 @@ export const getHiddenAssets = async ({
 }) => {
   let response = {
     error: "",
-    hiddenAssets: {} as Record<IssuerKey, AssetVisibility>,
+    hiddenAssets: {} as Record<AssetKey, AssetVisibility>,
   };
 
   response = await sendMessageToBackground({
@@ -2616,23 +2616,23 @@ export const getHiddenAssets = async ({
 };
 
 export const changeAssetVisibility = async ({
-  assetIssuer,
+  assetKey,
   assetVisibility,
   activePublicKey,
 }: {
-  assetIssuer: IssuerKey;
+  assetKey: AssetKey;
   assetVisibility: AssetVisibility;
   activePublicKey: string;
 }) => {
   let response = {
     error: "",
-    hiddenAssets: {} as Record<IssuerKey, AssetVisibility>,
+    hiddenAssets: {} as Record<AssetKey, AssetVisibility>,
   };
 
   response = await sendMessageToBackground({
     type: SERVICE_TYPES.CHANGE_ASSET_VISIBILITY,
     assetVisibility: {
-      issuer: assetIssuer,
+      assetKey,
       visibility: assetVisibility,
     },
     activePublicKey,

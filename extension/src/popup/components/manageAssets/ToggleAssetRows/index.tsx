@@ -2,7 +2,7 @@ import React from "react";
 import { Toggle } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
-import { AssetVisibility, IssuerKey } from "@shared/api/types";
+import { AssetVisibility, AssetKey } from "@shared/api/types";
 import {
   formatDomain,
   getCanonicalFromAsset,
@@ -18,12 +18,12 @@ import "./styles.scss";
 
 interface ToggleAssetRowsProps {
   assetRows: ManageAssetCurrency[];
-  hiddenAssets: Record<IssuerKey, AssetVisibility>;
+  hiddenAssets: Record<AssetKey, AssetVisibility>;
   changeAssetVisibility: ({
-    issuer,
+    assetKey,
     visibility,
   }: {
-    issuer: IssuerKey;
+    assetKey: AssetKey;
     visibility: AssetVisibility;
   }) => Promise<AssetVisibilityData>;
 }
@@ -33,11 +33,11 @@ export const ToggleAssetRows = ({
   hiddenAssets,
   changeAssetVisibility,
 }: ToggleAssetRowsProps) => {
-  const handleIsVisibleChange = async (issuer: IssuerKey) => {
-    const visibility = isAssetVisible(hiddenAssets, issuer)
+  const handleIsVisibleChange = async (assetKey: AssetKey) => {
+    const visibility = isAssetVisible(hiddenAssets, assetKey)
       ? "hidden"
       : "visible";
-    await changeAssetVisibility({ issuer, visibility });
+    await changeAssetVisibility({ assetKey, visibility });
   };
 
   return (

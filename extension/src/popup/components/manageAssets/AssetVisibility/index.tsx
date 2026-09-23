@@ -10,7 +10,7 @@ import { settingsSorobanSupportedSelector } from "popup/ducks/settings";
 
 import {
   AssetVisibility as AssetVisibilityType,
-  IssuerKey,
+  AssetKey,
 } from "@shared/api/types";
 import { RequestState } from "constants/request";
 import { resetSubmission } from "popup/ducks/transactionSubmission";
@@ -116,14 +116,14 @@ export const AssetVisibility = () => {
                 assetRows={data.domains}
                 hiddenAssets={data.hiddenAssets}
                 changeAssetVisibility={async ({
-                  issuer,
+                  assetKey,
                   visibility,
                 }: {
-                  issuer: IssuerKey;
+                  assetKey: AssetKey;
                   visibility: AssetVisibilityType;
                 }) => {
                   return await changeAssetVisibility({
-                    issuer,
+                    assetKey,
                     visibility,
                     publicKey: data.publicKey,
                   });

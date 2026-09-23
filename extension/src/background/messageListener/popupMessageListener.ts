@@ -578,6 +578,7 @@ export const popupMessageListener = (
     }
     case SERVICE_TYPES.GET_HIDDEN_ASSETS: {
       return getHiddenAssets({
+        request,
         localStore,
       });
     }

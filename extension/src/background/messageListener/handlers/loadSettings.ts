@@ -17,6 +17,7 @@ import {
   AUTO_LOCK_TIMEOUT_MINUTES_ID,
   DATA_SHARING_ID,
   IS_OPEN_SIDEBAR_BY_DEFAULT_ID,
+  LAST_USED_ACCOUNT,
 } from "constants/localStorageTypes";
 import { getHiddenAssets } from "../helpers/get-hidden-assets";
 
@@ -39,7 +40,12 @@ export const loadSettings = async ({
   const autoLockTimeoutMinutes = coerceAutoLockTimeoutMinutes(
     await localStore.getItem(AUTO_LOCK_TIMEOUT_MINUTES_ID),
   );
-  const { hiddenAssets } = await getHiddenAssets({ localStore });
+  const { networkName } = await getNetworkDetails({ localStore });
+  const { hiddenAssets } = await getHiddenAssets({
+    localStore,
+    publicKey: ((await localStore.getItem(LAST_USED_ACCOUNT)) as string) || "",
+    networkName,
+  });
   const overriddenBlockaidResponse = await getOverriddenBlockaidResponse({
     localStore,
   });
