@@ -9,6 +9,7 @@ import { Balances } from "@shared/api/types/backend-api";
 import { reducer as auth } from "popup/ducks/accountServices";
 import { reducer as settings } from "popup/ducks/settings";
 import { reducer as cache } from "popup/ducks/cache";
+import { reducer as hiddenAssets } from "popup/ducks/hiddenAssets";
 import { defaultBlockaidScanAssetResult } from "@shared/helpers/stellar";
 import {
   reducer as transactionSubmission,
@@ -39,6 +40,7 @@ const rootReducer = combineReducers({
   transactionSubmission,
   tokenPaymentSimulation,
   cache,
+  hiddenAssets,
   remoteConfig,
 });
 

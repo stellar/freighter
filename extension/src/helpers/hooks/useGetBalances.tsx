@@ -23,6 +23,11 @@ import { getCombinedAssetListData } from "@shared/api/helpers/token-list";
 import { AppDispatch, AppState } from "popup/App";
 import { balancesV2Selector } from "popup/ducks/remoteConfig";
 import {
+  HiddenAssetsMap,
+  saveHiddenAssets,
+  selectHiddenAssetsFor,
+} from "popup/ducks/hiddenAssets";
+import {
   balancesSelector,
   iconsSelector,
   saveBalancesForAccount,
@@ -31,24 +36,19 @@ import {
   tokensListsSelector,
 } from "popup/ducks/cache";
 
-const formatBalances = async ({
-  publicKey,
+const formatBalances = ({
   balances,
   showHidden,
+  hiddenAssets,
 }: {
-  publicKey: string;
   balances: NonNullable<BalanceMap>;
   showHidden: boolean;
+  hiddenAssets: HiddenAssetsMap;
 }) => {
   const unfilteredBalances = sortBalances(balances);
   if (!showHidden) {
-    const hiddenAssets = await getHiddenAssets({
-      activePublicKey: publicKey,
-    });
     return {
-      balances: sortBalances(
-        filterHiddenBalances(balances, hiddenAssets.hiddenAssets),
-      ),
+      balances: sortBalances(filterHiddenBalances(balances, hiddenAssets)),
       unfilteredBalances,
     };
   }
@@ -114,10 +114,33 @@ function useGetBalances(options: {
               balancesV2Selector(store.getState()),
             );
 
-      const { balances, unfilteredBalances } = await formatBalances({
+      // Read the visibility map from the store rather than messaging the
+      // background on every call -- same call-time read as balancesV2Selector
+      // above, so an account switch isn't served a render-captured value.
+      // `undefined` means this account/network has never been loaded, which is
+      // not the same as "nothing hidden": without the one-shot fetch a cold
+      // popup would render hidden assets for a frame.
+      let hiddenAssets = selectHiddenAssetsFor(
+        store.getState(),
+        networkDetails.networkName,
         publicKey,
+      );
+      if (!options.showHidden && !hiddenAssets) {
+        const fetched = await getHiddenAssets({ activePublicKey: publicKey });
+        hiddenAssets = fetched.hiddenAssets;
+        reduxDispatch(
+          saveHiddenAssets({
+            publicKey,
+            networkName: networkDetails.networkName,
+            hiddenAssets,
+          }),
+        );
+      }
+
+      const { balances, unfilteredBalances } = formatBalances({
         balances: accountBalances.balances as NonNullable<BalanceMap>,
         showHidden: options.showHidden,
+        hiddenAssets: hiddenAssets || {},
       });
       const payload = {
         isFunded: accountBalances.isFunded,
