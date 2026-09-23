@@ -18,6 +18,12 @@ import { NetworkDetails } from "@shared/constants/stellar";
 import { emitMetric } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import {
+  emitSigningApproved,
+  emitSigningFailed,
+  SigningKind,
+  SigningSource,
+} from "popup/metrics/signing";
+import {
   getAssetFromCanonical,
   getCanonicalFromAsset,
   isMainnet,
@@ -208,6 +214,24 @@ function useSubmitTxData({
       }
 
       if (!isSigned) {
+        // Signing did not produce a signature. This is always a fault, never
+        // a user decision: the user already approved at the review screen,
+        // and a hardware decline never reaches here — the overlay keeps the
+        // user on it, so the flow does not advance.
+        //
+        // Reported only for software keys. A hardware device signs in the
+        // HardwareSign overlay, which reports that attempt itself; this hook
+        // only receives the result, so emitting here would double-count.
+        if (!isHardwareWallet) {
+          emitSigningFailed(
+            SigningKind.Transaction,
+            signingError?.errorMessage,
+            {
+              source: SigningSource.Internal,
+            },
+          );
+        }
+
         // Pre-submission failure: signing rejected, or a hardware flow arrived
         // without a signed XDR. Submitting anyway is what this guard exists to
         // prevent — the transaction never left the device, so it has no
@@ -253,6 +277,16 @@ function useSubmitTxData({
         reduxDispatch(setSubmitError(error));
         dispatch({ type: "FETCH_DATA_ERROR", payload: error });
         return error;
+      }
+
+      // A signature exists, so the signing action succeeded. Reported with
+      // the same event the dApp path uses; `source` separates the two.
+      // Software keys only — the overlay owns the hardware attempt (see the
+      // unsigned branch above).
+      if (!isHardwareWallet) {
+        emitSigningApproved(SigningKind.Transaction, {
+          source: SigningSource.Internal,
+        });
       }
 
       // Everything the volume telemetry needs is snapshotted here — after

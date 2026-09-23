@@ -42,6 +42,31 @@ export const UNVERIFIED_SIGN_MESSAGE_ERROR =
 // getAppConfiguration reports alongside the version.
 export const OVERSIZED_SIGN_MESSAGE_ERROR = "SIGN_MESSAGE_TOO_LARGE";
 
+// Messages that mean the user declined on the device rather than something
+// going wrong. hw-app-str raises StellarUserRefusedError("User refused the
+// request") for the deny status word (0x6985) on every sign call; the second
+// string is what older apps and transports produced for the same decision.
+// Kept next to parseWalletError, which matches the same two strings, so the
+// two never drift apart.
+const DEVICE_REFUSAL_MESSAGES = [
+  "User refused the request",
+  "Transaction approval request was rejected",
+];
+
+/**
+ * True when a hardware error is the user declining on the device.
+ *
+ * A decline is a user decision, so telemetry reports it as a rejection, the
+ * same as pressing reject in the popup. Every other hardware error — no device
+ * attached, a transport fault, the wrong device, an app too old — is a failure
+ * the user did not choose. Matching on the message is the only signal
+ * available: the deny status word reaches us already wrapped in an Error.
+ */
+export const isDeviceRefusalError = (error: unknown): boolean => {
+  const message = error instanceof Error ? error.message : String(error ?? "");
+  return DEVICE_REFUSAL_MESSAGES.some((refusal) => message.includes(refusal));
+};
+
 /*
  ** HELPER METHODS
  */

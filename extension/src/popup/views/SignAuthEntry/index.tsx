@@ -250,6 +250,7 @@ export const SignAuthEntry = () => {
           walletType={hardwareWalletType}
           isSignSorobanAuthorization
           uuid={params.uuid}
+          url={params.url}
         />
       )}
       <React.Fragment>

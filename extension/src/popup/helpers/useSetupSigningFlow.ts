@@ -47,10 +47,16 @@ export function useSetupSigningFlow(
     hardwareWalletData: { status: hwStatus },
   } = useSelector(transactionSubmissionSelector);
 
-  // Approval/rejection telemetry is emitted per signing type by the redux
-  // handlers in popup/metrics/access.ts (signing.transaction_*,
-  // signing.message_*, signing.auth_entry_*), keyed off the specific
-  // sign/reject thunk this flow dispatches — so no generic event fires here.
+  // Approval/rejection telemetry is emitted per signing type (signing.transaction_*,
+  // signing.message_*, signing.auth_entry_*) — so no generic event fires here.
+  // Which component emits depends on the branch signAndClose() takes below:
+  //   - software keys: the redux handlers in popup/metrics/access.ts, keyed off
+  //     the specific sign/reject thunk this flow dispatches.
+  //   - hardware keys: the HardwareSign overlay, since startHwSign bypasses the
+  //     sign thunk entirely and those handlers would never fire.
+  // Both paths emit through popup/metrics/signing so the schemas stay identical.
+  // Rejection is shared: rejectAndClose dispatches the reject thunk for both
+  // key types, so the *_rejected events come from access.ts either way.
   const rejectAndClose = () => {
     dispatch(reject({ uuid, url }));
     window.close();

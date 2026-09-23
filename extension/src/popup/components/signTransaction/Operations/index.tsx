@@ -18,6 +18,7 @@ import { scanAsset } from "popup/helpers/blockaid";
 import { addressToString, getCreateContractArgs } from "popup/helpers/soroban";
 import { CopyValue } from "popup/components/CopyValue";
 import {
+  ContractSpecNote,
   KeyValueClaimants,
   KeyValueInvokeHostFn,
   KeyValueInvokeHostFnArgs,
@@ -27,6 +28,7 @@ import {
   KeyValueSignerKeyOptions,
   KeyValueWithPublicKey,
   PathList,
+  useContractArgNames,
 } from "./KeyVal";
 
 import "./styles.scss";
@@ -121,6 +123,52 @@ const KeyValueAssetIssuer = ({ issuer }: { issuer?: string }) => {
       }
     />
   ) : null;
+};
+
+/**
+ * The parameters section of an invoke-host-function operation: the heading,
+ * the note qualifying spec-derived names, and the card of rows. The note sits
+ * between the heading and the card, so the spec lookup happens here and the
+ * names it resolves are handed down to the rows -- one lookup for both.
+ */
+const OperationParametersSection = ({
+  op,
+  renderArgs,
+}: {
+  op: OperationRecord;
+  renderArgs: (spec: {
+    argNames: string[] | null;
+    isLoadingArgNames: boolean;
+  }) => React.ReactNode;
+}) => {
+  const { t } = useTranslation();
+  // Only a contract invocation has declared parameters to name; every other
+  // host function renders its args unlabelled, so it has nothing to qualify.
+  const invocation =
+    op.type === "invokeHostFunction" &&
+    op.func.type === "hostFunctionTypeInvokeContract"
+      ? op.func.invokeContract
+      : undefined;
+  const { argNames, isLoading } = useContractArgNames({
+    contractId: invocation
+      ? addressToString(invocation.contractAddress)
+      : undefined,
+    fnName: invocation?.functionName.toString(),
+    argCount: invocation?.args.length ?? 0,
+  });
+
+  return (
+    <>
+      <div className="Operations--header">
+        <Icon.BracketsEllipses />
+        <span>{t("Parameters")}</span>
+      </div>
+      {!!argNames?.length && <ContractSpecNote />}
+      <div className="Operations--item">
+        {renderArgs({ argNames, isLoadingArgNames: isLoading })}
+      </div>
+    </>
+  );
 };
 
 export const Operations = ({
@@ -828,7 +876,17 @@ export const Operations = ({
     }
   };
 
-  const RenderOpArgsByType = ({ op }: { op: OperationRecord }) => {
+  const RenderOpArgsByType = ({
+    op,
+    argNames = null,
+    isLoadingArgNames = false,
+  }: {
+    op: OperationRecord;
+    // Resolved once by OperationParametersSection above, which needs them to
+    // decide whether the spec note belongs beside the heading.
+    argNames?: string[] | null;
+    isLoadingArgNames?: boolean;
+  }) => {
     const networkDetails = useSelector(settingsNetworkDetailsSelector);
 
     useEffect(() => {
@@ -912,16 +970,13 @@ export const Operations = ({
             }
 
             case "hostFunctionTypeInvokeContract": {
-              const invocation = hostfn.invokeContract;
-              const contractId = addressToString(invocation.contractAddress);
-              const fnName = invocation.functionName.toString();
-              const args = invocation.args;
+              const args = hostfn.invokeContract.args;
 
               return (
                 <KeyValueInvokeHostFnArgs
                   args={args}
-                  contractId={contractId}
-                  fnName={fnName}
+                  argNames={argNames}
+                  isLoadingArgNames={isLoadingArgNames}
                   showHeader={false}
                 />
               );
@@ -982,15 +1037,10 @@ export const Operations = ({
               <PathList paths={op.path} />
             )}
             {type === "invokeHostFunction" && (
-              <>
-                <div className="Operations--header">
-                  <Icon.BracketsEllipses />
-                  <span>{t("Parameters")}</span>
-                </div>
-                <div className="Operations--item">
-                  <RenderOpArgsByType op={op} />
-                </div>
-              </>
+              <OperationParametersSection
+                op={op}
+                renderArgs={(spec) => <RenderOpArgsByType op={op} {...spec} />}
+              />
             )}
           </div>
         );

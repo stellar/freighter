@@ -17,7 +17,7 @@ export interface NativeAsset {
 
 export interface ClassicAsset {
   token: {
-    type: Omit<SdkAssetType, "native">;
+    type: Exclude<SdkAssetType, "native">;
     code: string;
     issuer: { key: string };
   };
