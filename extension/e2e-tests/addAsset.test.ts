@@ -9,7 +9,7 @@ import {
   stubTokenPrices,
   stubAllExternalApis,
 } from "./helpers/stubs";
-import { goToAddAsset, goToManageAssets } from "./helpers/assets";
+import { goToAddAsset, startRemoveAsset } from "./helpers/assets";
 
 // The page navigation after clicking 'Manage Assets' doesn't complete reliably.
 // 'Your assets' text never appears even with long timeouts and waitForLoadState.
@@ -37,9 +37,7 @@ test.fixme("Adding Soroban verified token", async ({
     timeout: 30000,
   });
 
-  await goToManageAssets(page);
-  await page.getByTestId("ManageAssetRowButton__ellipsis-USDC").click();
-  await page.getByText("Remove asset").click();
+  await startRemoveAsset(page, "USDC");
 
   await expect(page.getByTestId("account-view")).toBeVisible({
     timeout: 30000,
@@ -144,10 +142,7 @@ test.afterAll(async ({ page, extensionId, context }) => {
     test.slow();
     await loginToTestAccount({ page, extensionId, context });
 
-    await goToManageAssets(page);
-
-    await page.getByTestId("ManageAssetRowButton__ellipsis-USDC").click();
-    await page.getByText("Remove asset").click();
+    await startRemoveAsset(page, "USDC");
     await expect(page.getByTestId("account-view")).toBeVisible({
       timeout: 30000,
     });

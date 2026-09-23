@@ -13,7 +13,7 @@ import {
   stubScanTxWithUnfundedNonNativeWarning,
   stubScanTx,
 } from "./helpers/stubs";
-import { goToAddAsset, goToManageAssets } from "./helpers/assets";
+import { goToAddAsset, startRemoveAsset } from "./helpers/assets";
 
 const MUXED_ACCOUNT_ADDRESS =
   "MCQ7EGW7VXHI4AKJAFADOIHCSK2OCVA42KUETUK5LQ3LVSEQEEKP6AAAAAAAAAAAAFLVY";
@@ -759,9 +759,7 @@ test.fixme("Send SAC to C address", async ({ page, extensionId, context }) => {
   });
 
   // remove USDC
-  await goToManageAssets(page);
-  await page.getByTestId("ManageAssetRowButton__ellipsis-USDC").click();
-  await page.getByText("Remove asset").click({ force: true });
+  await startRemoveAsset(page, "USDC");
 
   await expect(page.getByTestId("account-view")).toBeVisible({
     timeout: 30000,
@@ -1334,10 +1332,7 @@ test.afterAll(async ({ page, extensionId, context }) => {
     test.slow();
     await loginToTestAccount({ page, extensionId, context });
 
-    await goToManageAssets(page);
-
-    await page.getByTestId("ManageAssetRowButton__ellipsis-USDC").click();
-    await page.getByText("Remove asset").click();
+    await startRemoveAsset(page, "USDC");
     await expect(page.getByTestId("account-view")).toBeVisible({
       timeout: 30000,
     });

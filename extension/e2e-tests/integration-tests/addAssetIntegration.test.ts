@@ -1,7 +1,7 @@
-import { test, expect, expectPageToHaveScreenshot } from "../test-fixtures";
+import { test, expect } from "../test-fixtures";
 import { loginToTestAccount } from "../helpers/login";
 import { TEST_TOKEN_ADDRESS } from "../helpers/test-token";
-import { goToAddAsset, goToManageAssets } from "../helpers/assets";
+import { goToAddAsset, startRemoveAsset } from "../helpers/assets";
 
 // test.beforeEach(async ({ page, context }) => {
 //   if (!process.env.IS_INTEGRATION_MODE) {
@@ -84,12 +84,7 @@ test("Adding and removing unverified Soroban token", async ({
 }) => {
   await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
 
-  await goToManageAssets(page);
-  await expectPageToHaveScreenshot({
-    page,
-    screenshot: "manage-assets-page.png",
-  });
-  await page.getByText("Add an asset").click({ force: true });
+  await goToAddAsset(page);
   await page.getByTestId("search-asset-input").fill(TEST_TOKEN_ADDRESS);
   const notOnLists = page.getByTestId("not-asset-on-list");
   const onLists = page.getByTestId("asset-on-list");
@@ -141,15 +136,7 @@ test("Adding and removing unverified Soroban token", async ({
     await expect(page.getByText("E2E")).toBeVisible();
 
     // now go back and remove this asset
-    await goToManageAssets(page);
-    // Non-SAC contract tokens display their name (displayCode), so the E2E
-    // token's code cell reads "E2E Token", not "E2E".
-    await expect(page.getByTestId("ManageAssetCode")).toHaveText("E2E Token");
-    await expect(page.getByTestId("ManageAssetDomain")).toHaveText(
-      "Stellar Network",
-    );
-    await page.getByTestId("ManageAssetRowButton__ellipsis-E2E").click();
-    await page.getByText("Remove asset").click();
+    await startRemoveAsset(page, "E2E");
     await expect(page.getByTestId("ToggleToken__asset-code")).toHaveText(
       truncateString(TEST_TOKEN_ADDRESS),
     );
@@ -175,10 +162,7 @@ test.afterAll(async ({ page, extensionId, context }) => {
     test.slow();
     await loginToTestAccount({ page, extensionId, context });
 
-    await goToManageAssets(page);
-
-    await page.getByTestId("ManageAssetRowButton__ellipsis-USDC").click();
-    await page.getByText("Remove asset").click();
+    await startRemoveAsset(page, "USDC");
     await page.getByRole("button", { name: "Confirm" }).click();
     await page.getByText("Done").click();
     await expect(page.getByTestId("account-view")).toBeVisible({

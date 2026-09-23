@@ -7,7 +7,13 @@ import { ROUTES } from "popup/constants/routes";
 import { TESTNET_NETWORK_DETAILS } from "@shared/constants/stellar";
 import { APPLICATION_STATE as ApplicationState } from "@shared/constants/applicationState";
 import * as ApiInternal from "@shared/api/internal";
-import { mockAccounts, Wrapper, mockBalances } from "popup/__testHelpers__";
+import {
+  mockAccounts,
+  Wrapper,
+  mockBalances,
+  getTestStore,
+} from "popup/__testHelpers__";
+import { selectHiddenAssetsFor } from "popup/ducks/hiddenAssets";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 
 const mockHistoryData = {
@@ -727,6 +733,23 @@ describe("AssetDetail", () => {
       // The row is gone from the list behind the sheet, so there is nothing
       // left to return to.
       await waitFor(() => expect(handleClose).toHaveBeenCalled());
+
+      // The account list filters against the redux mirror, so a write that
+      // only reaches the background leaves the asset visible until a reload.
+      // This invariant is documented on the slice; it previously had coverage
+      // only through the Toggle Assets screen, which has been retired.
+      await waitFor(() =>
+        expect(
+          selectHiddenAssetsFor(
+            getTestStore()!.getState() as any,
+            TESTNET_NETWORK_DETAILS.networkName,
+            "G1",
+          ),
+        ).toEqual({
+          "USDC:GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN":
+            "hidden",
+        }),
+      );
 
       changeAssetVisibility.mockRestore();
     });

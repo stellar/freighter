@@ -1,23 +1,24 @@
 import React from "react";
-import { Routes, Route, useNavigate } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 
-import { ChooseAsset } from "popup/components/manageAssets/ChooseAsset";
 import { SearchAsset } from "popup/components/manageAssets/SearchAsset";
 import { AddAsset } from "popup/components/manageAssets/AddAsset";
-import { AssetVisibility } from "popup/components/manageAssets/AssetVisibility";
 import { ROUTES } from "popup/constants/routes";
 import { getPathFromRoute } from "popup/helpers/route";
 
+/**
+ * Host for the add-asset routes. The "Manage assets" screen itself is retired --
+ * assets are added from the Tokens tab pill, and hidden or removed from Asset
+ * Details -- but these two routes still live under its path and are reached from
+ * Home, so the router stays.
+ *
+ * The index redirects rather than 404s: the popup restores its last route on
+ * reopen, so a popup left on /manage-assets would otherwise come back blank.
+ */
 export const ManageAssets = () => {
-  const navigate = useNavigate();
-
   const manageAssetsBasePath = "/manage-assets/";
   const searchAssetsPath = getPathFromRoute({
     fullRoute: ROUTES.searchAsset,
-    basePath: manageAssetsBasePath,
-  });
-  const assetVisibility = getPathFromRoute({
-    fullRoute: ROUTES.assetVisibility,
     basePath: manageAssetsBasePath,
   });
   const addAssetsPath = getPathFromRoute({
@@ -26,16 +27,10 @@ export const ManageAssets = () => {
   });
 
   return (
-    <>
-      <Routes>
-        <Route
-          index
-          element={<ChooseAsset goBack={() => navigate(-1)} showHideAssets />}
-        ></Route>
-        <Route path={searchAssetsPath} element={<SearchAsset />}></Route>
-        <Route path={assetVisibility} element={<AssetVisibility />}></Route>
-        <Route path={addAssetsPath} element={<AddAsset />}></Route>
-      </Routes>
-    </>
+    <Routes>
+      <Route index element={<Navigate to={ROUTES.account} replace />}></Route>
+      <Route path={searchAssetsPath} element={<SearchAsset />}></Route>
+      <Route path={addAssetsPath} element={<AddAsset />}></Route>
+    </Routes>
   );
 };

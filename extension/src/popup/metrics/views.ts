@@ -112,7 +112,6 @@ const SCREEN_BY_ROUTE: Partial<Record<ROUTES, ScreenDef>> = {
   [ROUTES.addCollectibles]: { screen_name: "add_collectibles", flow: "assets" },
   [ROUTES.manageAssets]: { screen_name: "manage_assets", flow: "assets" },
   [ROUTES.searchAsset]: { screen_name: "search_asset", flow: "assets" },
-  [ROUTES.assetVisibility]: { screen_name: "asset_visibility", flow: "assets" },
   [ROUTES.addAsset]: { screen_name: "add_asset_manually", flow: "assets" },
   [ROUTES.swap]: { screen_name: "swap", flow: "swap" },
   [ROUTES.manageNetwork]: { screen_name: "manage_network", flow: "settings" },

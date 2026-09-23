@@ -23,21 +23,28 @@ export const goToAddAsset = async (page: Page) => {
 };
 
 /**
- * Open the Manage assets list.
- *
- * Only for specs that need the list itself (e.g. the per-row remove menu).
- * Anything that just wants to add an asset should use {@link goToAddAsset}.
- * Kept in one place so retiring the screen is a single-file change.
+ * Open an asset's detail sheet from the balances list on Home.
  */
-export const goToManageAssets = async (page: Page) => {
+export const openAssetDetails = async (page: Page, code: string) => {
   await expect(page.getByTestId("account-view")).toBeVisible({
     timeout: 30000,
   });
-  await page.getByTestId("account-options-dropdown").click();
-  // The dropdown animates open over 300ms; clicking before the item is
-  // visible lands on nothing, even with force.
-  const manageAssets = page.getByText("Manage assets");
-  await expect(manageAssets).toBeVisible();
-  await manageAssets.click({ force: true });
-  await expect(page.getByText("Your assets")).toBeVisible({ timeout: 10000 });
+  await page
+    .getByTestId("account-assets-item")
+    .filter({ hasText: code })
+    .first()
+    .click();
+  await expect(page.getByTestId("AssetDetail")).toBeVisible({ timeout: 20000 });
+};
+
+/**
+ * Start removing an asset from its detail sheet.
+ *
+ * Replaces the per-row menu on the retired Manage assets screen. Leaves the
+ * caller on the confirm step so it can drive the rest of the flow.
+ */
+export const startRemoveAsset = async (page: Page, code: string) => {
+  await openAssetDetails(page, code);
+  await page.getByAltText("asset options").click();
+  await page.getByTestId("asset-detail-remove-button").click({ force: true });
 };

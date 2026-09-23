@@ -42,7 +42,6 @@ export enum ROUTES {
   addCollectibles = "/add-collectibles",
   manageAssets = "/manage-assets",
   searchAsset = "/manage-assets/search-asset",
-  assetVisibility = "/manage-assets/asset-visibility",
   addAsset = "/manage-assets/add-asset",
   manageNetwork = "/manage-network",
   addNetwork = "/manage-network/add-network",

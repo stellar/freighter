@@ -19,8 +19,7 @@ interface InitialState {
    * background leaves the mirror stale, and the asset stays wrongly hidden (or
    * shown) until the popup is reloaded.
    *
-   * Current writers: AssetDetail (hide), HiddenAssets (unhide), and
-   * AssetVisibility's useGetAssetData (the Toggle Assets screen).
+   * Current writers: AssetDetail (hide) and HiddenAssets (unhide).
    */
   hiddenAssets: Record<NetworkName, Record<PublicKey, HiddenAssetsMap>>;
 }

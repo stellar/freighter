@@ -37,7 +37,6 @@ import "./styles.scss";
 interface AccountHeaderProps {
   allowList: string[];
   currentAccountName: string;
-  isFunded: boolean;
   onAllowListRemove: () => void;
   onClickRow: (updatedValues: {
     publicKey?: string;
@@ -51,7 +50,6 @@ interface AccountHeaderProps {
 export const AccountHeader = ({
   allowList,
   currentAccountName,
-  isFunded,
   onAllowListRemove,
   onClickRow,
   publicKey,
@@ -135,23 +133,6 @@ export const AccountHeader = ({
                         <Icon.Copy01 />
                       </div>
                     </div>
-                    {isFunded && (
-                      <div
-                        className="AccountHeader__options__item"
-                        onClick={() => {
-                          // dispatch(saveAssetSelectType(AssetSelectType.MANAGE));
-                          navigateTo(ROUTES.manageAssets, navigate);
-                        }}
-                      >
-                        <Text as="div" size="sm" weight="medium">
-                          {t("Manage assets")}
-                        </Text>
-                        <div className="AccountHeader__options__item__icon">
-                          <Icon.Coins03 />
-                        </div>
-                      </div>
-                    )}
-
                     <div
                       className="AccountHeader__options__item"
                       onClick={() => navigateTo(ROUTES.viewPublicKey, navigate)}

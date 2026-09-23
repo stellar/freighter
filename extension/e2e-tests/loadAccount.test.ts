@@ -10,7 +10,6 @@ import {
   stubCollectibles,
   stubCollectiblesUnsuccessfulMetadata,
 } from "./helpers/stubs";
-import { goToManageAssets } from "./helpers/assets";
 import { switchNetwork } from "./helpers/network";
 
 // XLM-only fixture served on both the v1 and v2 balances endpoints.
@@ -216,7 +215,10 @@ test("Switches account without password prompt", async ({
   await page.getByTestId("account-view-account-name").click();
   await page.getByText("Account 2").click();
 
-  await goToManageAssets(page);
+  // Smoke check that the switched-to account renders its own balances.
+  await expect(page.getByTestId("account-assets")).toBeVisible({
+    timeout: 30000,
+  });
 });
 
 test("Can't change settings on a stale window", async ({
