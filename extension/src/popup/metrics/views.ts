@@ -67,10 +67,6 @@ const SCREEN_BY_ROUTE: Partial<Record<ROUTES, ScreenDef>> = {
     screen_name: "mnemonic_phrase",
     flow: "onboarding",
   },
-  [ROUTES.mnemonicPhraseConfirm]: {
-    screen_name: "confirm_mnemonic_phrase",
-    flow: "onboarding",
-  },
   [ROUTES.unlockAccount]: { screen_name: "unlock_account", flow: "security" },
   [ROUTES.verifyAccount]: { screen_name: "verify_account", flow: "security" },
   [ROUTES.mnemonicPhraseConfirmed]: {
@@ -167,7 +163,19 @@ const SCREEN_BY_ROUTE: Partial<Record<ROUTES, ScreenDef>> = {
  * by the Send flow's step effect, so tracking the bare container here would only
  * double-count. Mobile has no send_payment container either (RFC #2883, D8).
  */
-const ROUTES_WITHOUT_SCREEN_VIEW = new Set<string>([ROUTES.sendPayment]);
+export const ROUTES_WITHOUT_SCREEN_VIEW = new Set<string>([
+  ROUTES.sendPayment,
+  // Redirects, not screens. The design-parity restructure turned these three
+  // into `<Navigate to={ROUTES.account} replace />` -- the paths survive only so
+  // a popup restoring its last location lands on Home. Emitting for them would
+  // report a screen nobody saw and then immediately report `account` as well,
+  // double-counting every redirect. Their SCREEN_BY_ROUTE entries stay: the
+  // handler `captureException`s on an uncatalogued path, and views.test.ts
+  // asserts a mapping exists for every ROUTES value.
+  ROUTES.manageAssets,
+  ROUTES.manageConnectedApps,
+  ROUTES.wallets,
+]);
 
 /** Builds the screen.viewed props object, dropping any undefined flow/step. */
 const screenProps = (

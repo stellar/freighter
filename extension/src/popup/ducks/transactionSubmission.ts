@@ -509,7 +509,6 @@ interface TransactionData {
   destinationAsset: string;
   destinationDecimals?: number;
   destinationAmount: string;
-  destinationIcon: string;
   destinationTokenDetails: DestinationTokenDetails | null;
   path: string[];
   allowedSlippage: string;
@@ -576,7 +575,6 @@ export const initialState: InitialState = {
     memoType: "",
     destinationAsset: "",
     destinationAmount: "",
-    destinationIcon: "",
     destinationTokenDetails: null,
     path: [],
     allowedSlippage: "2",
@@ -672,9 +670,6 @@ const transactionSubmissionSlice = createSlice({
     },
     saveDestinationAsset: (state, action) => {
       state.transactionData.destinationAsset = action.payload;
-    },
-    saveDestinationIcon: (state, action) => {
-      state.transactionData.destinationIcon = action.payload;
     },
     saveIsSoroswap: (state, action) => {
       state.transactionData.isSoroswap = action.payload;
@@ -869,7 +864,6 @@ export const {
   saveTransactionTimeout,
   saveMemoAndType,
   saveDestinationAsset,
-  saveDestinationIcon,
   saveIsSoroswap,
   saveAllowedSlippage,
   saveIsToken,

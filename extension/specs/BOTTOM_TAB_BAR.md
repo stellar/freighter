@@ -54,8 +54,11 @@ export const shouldShowTabBar = (pathname: string): boolean => ...
 ```
 
 An **allow-list, not a deny-list**: default-off means the 21 footer-owning
-screens need no changes and cannot regress. The mode predicates stay in `Layout`
-so `shouldShowTabBar` remains pure and unit-testable.
+screens need no changes and cannot regress. `shouldShowTabBar` is a pure
+function of the path; `Layout` carries no window-mode predicate, because the bar
+is wanted in popup, sidebar and fullscreen alike and signing popups are already
+outside the allow-list. If a mode ever needs to opt out, that check belongs in
+`Layout` so the predicate stays pure.
 
 All three paths are exact — no splats — so string equality is sufficient.
 Contrast with `manageAssets`, `swap` and `send`, which are splat routes; none is
@@ -122,15 +125,27 @@ which is reactive.
 
 ## Interaction With the Floating Sheet
 
-The only contract between the tab bar and `SlideupModal` is one custom property:
+**The sheet covers the bar, by design.** In the mocks the Connected Apps modal
+spans y=274–592 while the nav occupies 540–600, and the account sheet ends the
+same 8px off the window bottom — the sheet's gutter is measured from the window,
+not from the bar. `--slideup-modal--inset-bottom` is therefore the gutter alone.
 
-```scss
---app--bottom-offset: 3.75rem; /* set by the shell when the bar is visible */
-```
+This originally read as a contract in which `SlideupModal` derived its inset from
+`--app--bottom-offset` and lifted above the bar. **That never worked, and it was
+not what the designs wanted either.** A custom property whose value contains
+`var()` is substituted at computed-value time on the element where it is
+declared, so `--slideup-modal--inset-bottom` — declared on `:root` — froze
+against `:root`'s `--app--bottom-offset: 0rem` and inherited already-resolved;
+re-declaring the input on `.View--has-tab-bar` could never re-trigger it.
+Measured on Home with a sheet open: the sheet inherits
+`--app--bottom-offset: 3.75rem` correctly, but its
+`--slideup-modal--inset-bottom` reads `calc( 0rem + 0.5rem )` and its computed
+`bottom` is `8px`.
 
-`SlideupModal` derives its bottom inset, its `max-height` and its exit transform
-from that token, so the sheet lifts above the bar and shrinks its ceiling
-automatically. Nothing else is shared; either change can land first.
+`--app--bottom-offset` survives for the consumers that read it **directly on
+their own element**, where substitution does work: `FloatingAddButton` and
+Home's pane padding. Anything new that needs to clear the bar must read it the
+same way, never through another `:root`-level property.
 
 ## The Floating Add Button
 
@@ -170,9 +185,11 @@ navigate handler `captureException`s on every visit. **Delete
 already emits `screen.viewed` from a mount effect, so leaving both doubles every
 Discover open.
 
-`METRIC_NAMES.historyFullHistoryOpened` keeps firing but its `source` changes
-from `"account_header"` to `"tab_bar"` — any dashboard filtering the old value
-goes to zero.
+`METRIC_NAMES.historyFullHistoryOpened` is **retired**, not re-sourced: the bar
+emits `navigation.tab_selected` with `tab: "history"`, from which the old event
+is fully derivable, so emitting both would double-count. The name is kept in the
+catalog with a comment; any dashboard filtering it needs repointing at
+`navigation.tab_selected`.
 
 ## Testing Notes
 

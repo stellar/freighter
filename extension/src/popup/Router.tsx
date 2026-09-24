@@ -163,9 +163,11 @@ const Layout = () => {
     return <AppError>{error}</AppError>;
   }
 
-  // Mode checks live here rather than in shouldShowTabBar: standalone dApp
-  // signing popups open directly onto signing routes, which are not in the
-  // allow-list, so they need no special case -- but the predicate stays pure.
+  // No window-mode check is needed: the bar is wanted in popup, sidebar and
+  // fullscreen alike, and standalone dApp signing popups open directly onto
+  // signing routes, which the allow-list already excludes. If a mode ever does
+  // need to opt out, that predicate belongs here rather than in
+  // shouldShowTabBar, which stays pure and unit-testable.
   const hasTabBar = shouldShowTabBar(location.pathname);
 
   return (

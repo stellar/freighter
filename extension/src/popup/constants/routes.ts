@@ -20,7 +20,6 @@ export enum ROUTES {
   signAuthEntry = "/sign-auth-entry",
   grantAccess = "/grant-access",
   mnemonicPhrase = "/mnemonic-phrase",
-  mnemonicPhraseConfirm = "/mnemonic-phrase/confirm",
   mnemonicPhraseConfirmed = "/mnemonic-phrase-confirmed",
   unlockAccount = "/unlock-account",
   verifyAccount = "/verify-account",

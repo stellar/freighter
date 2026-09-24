@@ -242,8 +242,10 @@
   // padded out from under it. Home overrides View__content/__inset to
   // `overflow: visible` and pads its panes instead, so it is handled there.
   //
-  // --app--bottom-offset is what the floating sheet reads; raising it here is
-  // the entire contract between the two.
+  // Raising --app--bottom-offset here is what lets descendants clear the bar.
+  // Only consumers that read it directly on their own element see it -- see the
+  // note in global.scss. The floating sheet is not one of them, by design: it
+  // covers the bar.
   &--has-tab-bar {
     --app--bottom-offset: var(--tab-bar--height);
 

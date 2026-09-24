@@ -27,22 +27,28 @@
   --z-index-modal: 30;
   --z-index-maintenance-screen: 100;
 
-  // Bottom tab bar. --app--bottom-offset is what the floating sheet reads; the
-  // shell raises it to the bar height on the routes that show the bar, so the
-  // sheet lifts above it without either side knowing about the other.
+  // Bottom tab bar.
   --tab-bar--height: 3.75rem;
   --z-index--tab-bar: 15;
 
+  // --app--bottom-offset is the height of whatever persistent bottom chrome the
+  // shell is showing; `.View--has-tab-bar` raises it to the bar height.
+  //
+  // Read it DIRECTLY on the element that needs the clearance -- see
+  // FloatingAddButton, which rides above the bar. Never derive another
+  // :root-level custom property from it. A custom property whose value contains
+  // var() is substituted at computed-value time *on the element where it is
+  // declared*, so anything built from it here freezes against the 0rem below
+  // and inherits already-resolved; the shell's override can never reach it.
+  --app--bottom-offset: 0rem;
+
   // Floating bottom sheet geometry.
   //
-  // --app--bottom-offset is owned by the app shell: it is the height of any
-  // persistent bottom chrome the sheet must clear. It is the ONLY contract
-  // between the sheet and the bottom tab bar, which sets it to the bar height.
-  --app--bottom-offset: 0rem;
+  // The sheet is deliberately not one of those consumers: the designs run it to
+  // an 8px gutter off the window and let it cover the tab bar, so its inset is
+  // the gutter alone.
   --slideup-modal--gutter: 0.5rem;
-  --slideup-modal--inset-bottom: calc(
-    var(--app--bottom-offset) + var(--slideup-modal--gutter)
-  );
+  --slideup-modal--inset-bottom: var(--slideup-modal--gutter);
   --slideup-modal--radius: 1.5rem;
   // Matches .View__inset's max-width so the sheet's edges line up with the
   // content column in fullscreen instead of stretching the full 1100px.
