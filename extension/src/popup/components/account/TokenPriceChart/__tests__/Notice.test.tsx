@@ -197,3 +197,19 @@ describe("TokenPriceChart notices", () => {
     ).toBe("low-volume");
   });
 });
+
+describe("notice placement", () => {
+  it("renders the notice region below the timeframe selector", async () => {
+    await renderChartWith(historyWith({ lowVolume: true }));
+
+    const polyline = screen.getByTestId("TokenPriceChart__polyline");
+    const selectorTab = screen.getByTestId("TokenPriceChart__range-1D");
+    const notice = screen.getByTestId("TokenPriceChart__notice");
+    expect(notice.textContent).toContain("Low trading volume");
+    // eslint-disable-next-line no-bitwise
+    const follows = (a: Node, b: Node) =>
+      !!(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(follows(polyline, selectorTab)).toBe(true);
+    expect(follows(selectorTab, notice)).toBe(true);
+  });
+});

@@ -17,7 +17,7 @@
   // tree, and a live region that appears together with its first text is not
   // reliably announced. Instead, cancel the flex gap it would otherwise take.
   &__notice:empty {
-    margin-bottom: pxToRem(-24px);
+    margin-top: pxToRem(-24px);
   }
 
   &__canvas {
