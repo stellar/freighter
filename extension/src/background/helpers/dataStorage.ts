@@ -14,6 +14,7 @@ import {
   IS_HIDE_DUST_ENABLED_ID,
   ALLOWLIST_ID,
   HIDDEN_ASSETS,
+  HIDDEN_COLLECTIBLES,
   LAST_USED_ACCOUNT,
 } from "constants/localStorageTypes";
 import {
@@ -391,6 +392,60 @@ export const migrateHiddenAssetsToKeyNetworkSchema = async () => {
   }
 };
 
+export const migrateHiddenCollectiblesToKeyNetworkSchema = async () => {
+  const localStore = dataStorageAccess(browserLocalStorage);
+  const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
+
+  // 5.47.0, not 5.46.0: `shouldRunMigration` is `semver.lt`, so reusing the
+  // version the hidden-assets migration already wrote would skip this entirely
+  // for anyone who has run that one.
+  if (shouldRunMigration({ storageVersion, migrationVersion: "5.47.0" })) {
+    const empty = {
+      [NETWORK_NAMES.PUBNET]: {},
+      [NETWORK_NAMES.TESTNET]: {},
+      [NETWORK_NAMES.FUTURENET]: {},
+    };
+    let hiddenCollectiblesByKey: Record<string, unknown> = empty;
+
+    try {
+      const currentHiddenCollectibles =
+        await localStore.getItem(HIDDEN_COLLECTIBLES);
+      const lastUsedAccount = await localStore.getItem(LAST_USED_ACCOUNT);
+
+      // Same reasoning as the hidden-assets migration: the old value was a
+      // single flat { [collectibleKey]: visibility } map shared by every
+      // account on every network. Assign it to the active account on all three
+      // networks -- dropping deliberate hides is a visible regression, but
+      // spreading them to accounts the user never touched would widen the very
+      // bug this migration exists to fix.
+      if (currentHiddenCollectibles && lastUsedAccount) {
+        const isAlreadyMigrated = !Object.values(
+          currentHiddenCollectibles,
+        ).some((value) => typeof value === "string");
+
+        if (!isAlreadyMigrated) {
+          const byAccount = {
+            [lastUsedAccount as string]: currentHiddenCollectibles,
+          };
+          hiddenCollectiblesByKey = {
+            [NETWORK_NAMES.PUBNET]: byAccount,
+            [NETWORK_NAMES.TESTNET]: byAccount,
+            [NETWORK_NAMES.FUTURENET]: byAccount,
+          };
+        } else {
+          hiddenCollectiblesByKey = currentHiddenCollectibles;
+        }
+      }
+    } catch (error) {
+      hiddenCollectiblesByKey = empty;
+    }
+
+    await localStore.setItem(HIDDEN_COLLECTIBLES, hiddenCollectiblesByKey);
+
+    await migrateDataStorageVersion("5.47.0");
+  }
+};
+
 export const migratePubnetRpcUrl = async () => {
   const localStore = dataStorageAccess(browserLocalStorage);
   const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
@@ -444,6 +499,7 @@ export const versionedMigration = async () => {
   await migrateAllowlistToKeyNetworkSchema();
   await migratePubnetRpcUrl();
   await migrateHiddenAssetsToKeyNetworkSchema();
+  await migrateHiddenCollectiblesToKeyNetworkSchema();
 };
 
 // Updates storage version

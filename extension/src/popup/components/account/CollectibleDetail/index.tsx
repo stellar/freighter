@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { Button, Icon, Notification } from "@stellar/design-system";
+import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 
 import { RequestState } from "constants/request";
@@ -21,6 +22,8 @@ import { collectionsSelector } from "popup/ducks/cache";
 import { ROUTES } from "popup/constants/routes";
 import { changeCollectibleVisibility } from "@shared/api/internal";
 import { AssetVisibility } from "@shared/api/types/types";
+import { AppDispatch } from "popup/App";
+import { saveHiddenCollectibles } from "popup/ducks/hiddenCollectibles";
 
 import { useCollectibleDetail } from "./hooks/useCollectibleDetail";
 import {
@@ -62,6 +65,7 @@ export const CollectibleDetail = ({
   );
   const { state, fetchData: fetchCollectibleMetadata } = useCollectibleDetail();
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
+  const reduxDispatch = useDispatch<AppDispatch>();
 
   if (!collectible) {
     return (
@@ -101,14 +105,41 @@ export const CollectibleDetail = ({
 
   const handleToggleCollectibleVisibility = async () => {
     const collectibleKey = `${selectedCollectible.collectionAddress}:${selectedCollectible.tokenId}`;
-    await changeCollectibleVisibility({
+    const { hiddenCollectibles, error } = await changeCollectibleVisibility({
       collectibleKey,
       collectibleVisibility: isHidden
         ? "visible"
         : ("hidden" as AssetVisibility),
       activePublicKey: publicKey || "",
     });
+
     setIsPopoverOpen(false);
+
+    // This used to discard the response entirely, so a failed write closed the
+    // sheet exactly as a successful one did.
+    if (error) {
+      toast.custom(() => (
+        <Notification
+          variant="error"
+          title={
+            isHidden
+              ? t("Unable to show this collectible")
+              : t("Unable to hide this collectible")
+          }
+        />
+      ));
+      return;
+    }
+
+    // The grid filters against the redux mirror, so a write that only reaches
+    // the background would leave the collectible wrongly hidden until reload.
+    reduxDispatch(
+      saveHiddenCollectibles({
+        publicKey,
+        networkName: networkDetails.networkName,
+        hiddenCollectibles,
+      }),
+    );
     handleItemClose();
   };
 

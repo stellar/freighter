@@ -617,6 +617,7 @@ export const popupMessageListener = (
     }
     case SERVICE_TYPES.GET_HIDDEN_COLLECTIBLES: {
       return getHiddenCollectibles({
+        request,
         localStore,
       });
     }
