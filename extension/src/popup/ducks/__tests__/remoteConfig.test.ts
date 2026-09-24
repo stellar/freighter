@@ -7,6 +7,7 @@ import {
   isRemoteConfigInitializedSelector,
   tokenPricesV2Selector,
   balancesV2Selector,
+  tokenPriceHistoryEnabledSelector,
   reducer,
 } from "../remoteConfig";
 import {
@@ -425,5 +426,43 @@ describe("remoteConfig selectors", () => {
     const store = makeStore();
     await store.dispatch(fetchFeatureFlags());
     expect(balancesV2Selector(store.getState())).toBe(false);
+  });
+
+  describe("tokenPriceHistoryEnabledSelector (kill switch, fails closed)", () => {
+    it("is false before the flags settle, although the flag defaults to true", () => {
+      const store = makeStore();
+      expect(getState(store).use_token_price_history).toBe(true);
+      expect(tokenPriceHistoryEnabledSelector(store.getState())).toBe(false);
+    });
+
+    it("is true once the flags settle with the flag omitted", async () => {
+      (getExperimentClient as jest.Mock).mockReturnValue(makeClient());
+
+      const store = makeStore();
+      await store.dispatch(fetchFeatureFlags());
+      expect(tokenPriceHistoryEnabledSelector(store.getState())).toBe(true);
+    });
+
+    it("is false when the variant is off", async () => {
+      (getExperimentClient as jest.Mock).mockReturnValue(
+        makeClient({ use_token_price_history: { value: "off" } }),
+      );
+
+      const store = makeStore();
+      await store.dispatch(fetchFeatureFlags());
+      expect(tokenPriceHistoryEnabledSelector(store.getState())).toBe(false);
+    });
+
+    it("is true when the flag fetch rejects — an unreachable Amplitude cannot wedge it off", async () => {
+      (getExperimentClient as jest.Mock).mockReturnValue({
+        fetch: jest.fn().mockRejectedValue(new Error("Network error")),
+        all: jest.fn().mockReturnValue({}),
+      });
+
+      const store = makeStore();
+      await store.dispatch(fetchFeatureFlags());
+      expect(getState(store).isInitialized).toBe(true);
+      expect(tokenPriceHistoryEnabledSelector(store.getState())).toBe(true);
+    });
   });
 });
