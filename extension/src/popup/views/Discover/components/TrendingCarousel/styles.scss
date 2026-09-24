@@ -9,6 +9,13 @@
     display: flex;
     gap: pxToRem(16);
     overflow-x: auto;
+    // Keep the 288px cards out of the document's min-content width. The
+    // extension popup has no viewport -- Chrome sizes the window to fit the
+    // content without horizontal scrolling -- so this row reported ~900px and
+    // Discover opened more than twice as wide as every other screen. It was
+    // masked while Discover rendered inside a fixed-position sheet, which
+    // never contributed to document flow.
+    contain: inline-size;
     scroll-behavior: smooth;
     -ms-overflow-style: none;
     scrollbar-width: none;

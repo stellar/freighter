@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
 import { Button, Icon, Notification, Select } from "@stellar/design-system";
-import { Navigate, useLocation } from "react-router-dom";
+import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 import { saveAllowList } from "popup/ducks/settings";
@@ -11,6 +11,8 @@ import { PunycodedDomain } from "popup/components/PunycodedDomain";
 import { NetworkIcon } from "popup/components/manageNetwork/NetworkIcon";
 
 import { View } from "popup/basics/layout/View";
+import { ROUTES } from "popup/constants/routes";
+import { navigateTo } from "popup/helpers/navigate";
 import { RemoveButton } from "popup/basics/buttons/RemoveButton";
 import { AppDispatch } from "popup/App";
 import { AppDataType, useGetAppData } from "helpers/hooks/useGetAppData";
@@ -19,23 +21,16 @@ import { Loading } from "popup/components/Loading";
 import { openTab } from "popup/helpers/navigate";
 import { newTabHref } from "helpers/urls";
 import { reRouteOnboarding } from "popup/helpers/route";
-import {
-  ScreenReaderOnly,
-  Sheet,
-  SheetContent,
-  SheetTitle,
-} from "popup/basics/shadcn/Sheet";
-import { Discover } from "popup/views/Discover";
 
 import "./styles.scss";
 
 export const ManageConnectedApps = () => {
   const dispatch = useDispatch<AppDispatch>();
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const location = useLocation();
   const [selectedNetworkName, setSelectedNetworkName] = useState("");
   const [selectedAllowlist, setSelectedAllowlist] = useState<string[]>([]);
-  const [isDiscoverOpen, setIsDiscoverOpen] = useState(false);
 
   const { state, fetchData } = useGetAppData();
 
@@ -250,7 +245,7 @@ export const ManageConnectedApps = () => {
                 size="lg"
                 variant="secondary"
                 isRounded
-                onClick={() => setIsDiscoverOpen(true)}
+                onClick={() => navigateTo(ROUTES.discover, navigate)}
                 data-testid="go-to-discover"
               >
                 {t("Go to Discover")}
@@ -259,22 +254,6 @@ export const ManageConnectedApps = () => {
           )}
         </div>
       </View.Content>
-      <Sheet
-        open={isDiscoverOpen}
-        onOpenChange={(open) => !open && setIsDiscoverOpen(false)}
-      >
-        <SheetContent
-          onOpenAutoFocus={(e) => e.preventDefault()}
-          aria-describedby={undefined}
-          side="bottom"
-          className="ManageConnectedApps__discover-sheet"
-        >
-          <ScreenReaderOnly>
-            <SheetTitle>{t("Discover")}</SheetTitle>
-          </ScreenReaderOnly>
-          <Discover onClose={() => setIsDiscoverOpen(false)} />
-        </SheetContent>
-      </Sheet>
     </React.Fragment>
   );
 };

@@ -1,5 +1,4 @@
 import React from "react";
-import { Icon } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
 import { DiscoverData, ProtocolEntry } from "@shared/api/types";
@@ -14,7 +13,6 @@ interface DiscoverHomeProps {
   trendingItems: DiscoverData;
   recentItems: DiscoverData;
   dappsItems: DiscoverData;
-  onClose: () => void;
   onExpandRecent: () => void;
   onExpandDapps: () => void;
   onCardClick: (protocol: ProtocolEntry) => void;
@@ -28,7 +26,6 @@ export const DiscoverHome = ({
   trendingItems,
   recentItems,
   dappsItems,
-  onClose,
   onExpandRecent,
   onExpandDapps,
   onCardClick,
@@ -40,12 +37,8 @@ export const DiscoverHome = ({
   const { t } = useTranslation();
 
   return (
-    <View>
-      <SubviewHeader
-        title={t("Discover")}
-        customBackIcon={<Icon.X />}
-        customBackAction={onClose}
-      />
+    <>
+      <SubviewHeader title={t("Discover")} />
       <View.Content hasNoTopPadding>
         <div className="DiscoverHome__sections">
           <TrendingCarousel items={trendingItems} onCardClick={onCardClick} />
@@ -74,6 +67,6 @@ export const DiscoverHome = ({
           </div>
         )}
       </View.Content>
-    </View>
+    </>
   );
 };

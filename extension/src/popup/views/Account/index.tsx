@@ -1,5 +1,5 @@
-import React, { useEffect, useRef, useContext, useState } from "react";
-import { Navigate, useLocation } from "react-router-dom";
+import React, { useEffect, useRef, useContext } from "react";
+import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { Notification } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
@@ -12,11 +12,12 @@ import {
   settingsNetworkDetailsSelector,
 } from "popup/ducks/settings";
 import { View } from "popup/basics/layout/View";
+import { ROUTES } from "popup/constants/routes";
 import {
   accountNameSelector,
   publicKeySelector,
 } from "popup/ducks/accountServices";
-import { openTab } from "popup/helpers/navigate";
+import { navigateTo, openTab } from "popup/helpers/navigate";
 import { isFullscreenMode } from "popup/helpers/isFullscreenMode";
 import { useSwapTopTokensPrewarm } from "popup/helpers/useSwapTopTokensPrewarm";
 
@@ -49,19 +50,12 @@ import {
 import { useStableSortedBalances } from "./hooks/useStableSortedBalances";
 import { AccountTabsContext, TabsList } from "./contexts/activeTabContext";
 
-import {
-  Sheet,
-  SheetContent,
-  ScreenReaderOnly,
-  SheetTitle,
-} from "popup/basics/shadcn/Sheet";
-import { Discover } from "popup/views/Discover";
-
 import "popup/metrics/authServices";
 import "./styles.scss";
 
 export const Account = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const location = useLocation();
   const isSorobanSuported = useSelector(settingsSorobanSupportedSelector);
   const { userNotification } = useSelector(settingsSelector);
@@ -72,7 +66,6 @@ export const Account = () => {
   const reduxPublicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const { activeTab } = useContext(AccountTabsContext);
-  const [isDiscoverOpen, setIsDiscoverOpen] = useState(false);
 
   const isFullscreenModeEnabled = isFullscreenMode();
   const {
@@ -273,7 +266,7 @@ export const Account = () => {
           });
         }}
         roundedTotalBalanceUsd={roundedTotalBalanceUsd}
-        onDiscoverClick={() => setIsDiscoverOpen(true)}
+        onDiscoverClick={() => navigateTo(ROUTES.discover, navigate)}
       />
       <View.Content hasNoPadding>
         <div className="AccountView" data-testid="account-view">
@@ -381,22 +374,6 @@ export const Account = () => {
         isCollectiblesCtaInline={isCollectiblesCtaInline}
         isCollectiblesLoading={isCollectiblesLoading}
       />
-      <Sheet
-        open={isDiscoverOpen}
-        onOpenChange={(open) => !open && setIsDiscoverOpen(false)}
-      >
-        <SheetContent
-          onOpenAutoFocus={(e) => e.preventDefault()}
-          aria-describedby={undefined}
-          side="bottom"
-          className="AccountView__discover-sheet"
-        >
-          <ScreenReaderOnly>
-            <SheetTitle>{t("Discover")}</SheetTitle>
-          </ScreenReaderOnly>
-          <Discover onClose={() => setIsDiscoverOpen(false)} />
-        </SheetContent>
-      </Sheet>
     </>
   );
 };

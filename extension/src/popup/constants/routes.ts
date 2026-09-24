@@ -9,6 +9,7 @@ export enum ROUTES {
   connectWalletPlugin = "/account/connect/plugin",
   connectDevice = "/account/connect/device",
   accountHistory = "/account-history",
+  discover = "/discover",
   sendPayment = "/account/sendPayment",
   swap = "/swap",
   addAccount = "/add-account",

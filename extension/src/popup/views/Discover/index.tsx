@@ -1,12 +1,11 @@
-import React, { useCallback, useEffect, useState } from "react";
-import { Icon, Notification } from "@stellar/design-system";
+import React, { useCallback, useState } from "react";
+import { Notification } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 import { captureException } from "@sentry/browser";
 import { toast } from "sonner";
 
 import { ProtocolEntry } from "@shared/api/types";
 import {
-  trackDiscoverViewed,
   trackDiscoverProtocolOpened,
   trackDiscoverProtocolOpenedFromDetails,
   DiscoverSource,
@@ -30,7 +29,6 @@ import { ExpandedDapps } from "./components/ExpandedDapps";
 import { ProtocolDetailsPanel } from "./components/ProtocolDetailsPanel";
 import { DiscoverWelcomeModal } from "./components/DiscoverWelcomeModal";
 import { DiscoverError } from "./components/DiscoverError";
-import "./styles.scss";
 
 type DiscoverView = "main" | "recent" | "dapps";
 
@@ -42,11 +40,7 @@ const isSafeHttpsUrl = (url: string): boolean => {
   }
 };
 
-interface DiscoverProps {
-  onClose?: () => void;
-}
-
-export const Discover = ({ onClose = () => {} }: DiscoverProps) => {
+export const Discover = () => {
   const { t } = useTranslation();
   const [activeView, setActiveView] = useState<DiscoverView>("main");
   const [selectedProtocol, setSelectedProtocol] =
@@ -74,10 +68,6 @@ export const Discover = ({ onClose = () => {} }: DiscoverProps) => {
     retry,
   } = useDiscoverData();
   const { showWelcome, dismissWelcome } = useDiscoverWelcome();
-
-  useEffect(() => {
-    trackDiscoverViewed();
-  }, []);
 
   const handleOpenProtocol = useCallback(
     async (protocol: ProtocolEntry, source: DiscoverSource) => {
@@ -157,38 +147,27 @@ export const Discover = ({ onClose = () => {} }: DiscoverProps) => {
   }, [refreshRecent, notifyError, t]);
 
   if (isLoading) {
-    return (
-      <div className="Discover">
-        <Loading />
-      </div>
-    );
+    return <Loading />;
   }
 
   if (error) {
     return (
-      <div className="Discover">
-        <View>
-          <SubviewHeader
-            title={t("Discover")}
-            customBackIcon={<Icon.X />}
-            customBackAction={onClose}
-          />
-          <View.Content hasNoTopPadding>
-            <DiscoverError onRetry={retry} />
-          </View.Content>
-        </View>
-      </div>
+      <>
+        <SubviewHeader title={t("Discover")} />
+        <View.Content hasNoTopPadding>
+          <DiscoverError onRetry={retry} />
+        </View.Content>
+      </>
     );
   }
 
   return (
-    <div className="Discover">
+    <>
       {activeView === "main" && (
         <DiscoverHome
           trendingItems={trendingItems}
           recentItems={recentItems}
           dappsItems={dappsItems}
-          onClose={onClose}
           onExpandRecent={() => setActiveView("recent")}
           onExpandDapps={() => setActiveView("dapps")}
           onCardClick={(p: ProtocolEntry) =>
@@ -254,6 +233,6 @@ export const Discover = ({ onClose = () => {} }: DiscoverProps) => {
       </SlideupModal>
 
       {showWelcome && <DiscoverWelcomeModal onDismiss={dismissWelcome} />}
-    </div>
+    </>
   );
 };

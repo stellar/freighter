@@ -41,6 +41,7 @@ interface ScreenDef {
 const SCREEN_BY_ROUTE: Partial<Record<ROUTES, ScreenDef>> = {
   [ROUTES.welcome]: { screen_name: "welcome", flow: "onboarding" },
   [ROUTES.account]: { screen_name: "account", flow: "assets" },
+  [ROUTES.discover]: { screen_name: "discover", flow: "discovery" },
   [ROUTES.accountHistory]: { screen_name: "account_history", flow: "history" },
   [ROUTES.addAccount]: { screen_name: "add_account", flow: "onboarding" },
   [ROUTES.importAccount]: { screen_name: "import_account", flow: "onboarding" },

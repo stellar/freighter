@@ -54,6 +54,7 @@ import { AutoLockTimer } from "popup/views/AutoLockTimer";
 import { About } from "popup/views/About";
 import { Send } from "popup/views/Send";
 import { ManageAssets } from "popup/views/ManageAssets";
+import { Discover } from "popup/views/Discover";
 import { AddCollectibles } from "popup/views/AddCollectibles";
 import { VerifyAccount } from "popup/views/VerifyAccount";
 import { Swap } from "popup/views/Swap";
@@ -187,6 +188,7 @@ export const Router = () => (
             </ActiveTabProvider>
           }
         ></Route>
+        <Route path={ROUTES.discover} element={<Discover />}></Route>
         <Route
           path={ROUTES.accountHistory}
           element={<AccountHistory />}
@@ -295,10 +297,7 @@ export const Router = () => (
           path={ROUTES.advancedSettings}
           element={<AdvancedSettings />}
         ></Route>
-        <Route
-          path={ROUTES.autoLockTimer}
-          element={<AutoLockTimer />}
-        ></Route>
+        <Route path={ROUTES.autoLockTimer} element={<AutoLockTimer />}></Route>
         <Route path={ROUTES.addFunds} element={<AddFunds />} />
         <Route path={ROUTES.wallets} element={<Wallets />} />
 
