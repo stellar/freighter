@@ -30,7 +30,6 @@ import {
   transfer,
 } from "@shared/helpers/soroban/token";
 import {
-  getAssetFromCanonical,
   getCanonicalFromAsset,
   getSdk,
   isCustomNetwork,
@@ -60,6 +59,9 @@ import {
   IssuerKey,
   AssetVisibility,
   ApiTokenPrices,
+  ApiTokenPriceHistory,
+  ApiTokenStats,
+  TokenPriceHistoryRange,
   HorizonOperation,
   UserNotification,
   CollectibleContract,
@@ -734,13 +736,10 @@ export const getTokenPrices = async (
   // only skips a not-yet-sent request and rejects a no-longer-wanted result.
   signal?: AbortSignal,
 ): Promise<ApiTokenPrices> => {
-  // NOTE: API does not accept LP IDs or custom tokens
-  const filteredTokens = tokens.filter((tokenId) => {
-    const asset = getAssetFromCanonical(tokenId);
-    return !tokenId.includes(":lp") && !isContractId(asset.issuer);
-  });
-
-  const requestBody = JSON.stringify({ tokens: filteredTokens });
+  // LP shares are never priceable (an LP id fails parsing at the batch
+  // endpoint), so they are stripped on both paths. Custom tokens are only
+  // stripped for the old Node backend; the Go backend prices SEP-41 tokens.
+  const nonLpTokens = tokens.filter((tokenId) => !tokenId.includes(":lp"));
 
   // The v2 token-prices endpoint is a freighter-backend-v2 call, so it goes
   // through the background chokepoint (callBackendV2), which attaches the
@@ -761,7 +760,7 @@ export const getTokenPrices = async (
     }
     // Nothing priceable left after filtering, so skip the request rather than
     // POST an empty tokens array and risk a 4xx that surfaces as an error.
-    if (!filteredTokens.length) {
+    if (!nonLpTokens.length) {
       return {};
     }
 
@@ -774,7 +773,7 @@ export const getTokenPrices = async (
     const { status, body } = await fetchBackendV2({
       method: "POST",
       path: `/token-prices?network=${priceNetwork}`,
-      body: requestBody,
+      body: JSON.stringify({ tokens: nonLpTokens }),
     });
 
     // The background request cannot be cancelled mid-flight (see `signal`
@@ -799,13 +798,27 @@ export const getTokenPrices = async (
   }
 
   // v1 (legacy) path — direct fetch to the v1 indexer, not a backend-v2 call.
+  // NOTE: the old Node backend does not accept custom tokens, so the
+  // custom-token half of the split predicate applies here only. Not
+  // `getAssetFromCanonical`: it throws on a bare contract id, which would
+  // fail the whole batch.
+  const legacyTokens = nonLpTokens.filter((tokenId) => {
+    const { issuer } = splitCanonical(tokenId);
+    return !isContractId(issuer || tokenId);
+  });
+  // Same empty-batch guard as the v2 path: `{ tokens: [] }` is a 400 here too.
+  if (!legacyTokens.length) {
+    return {};
+  }
   const url = new URL(`${INDEXER_URL}/token-prices`);
   const options = {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: requestBody,
+    // The legacy backend rejects custom tokens, so this path sends the
+    // custom-filtered list; the v2 path above sends `nonLpTokens`.
+    body: JSON.stringify({ tokens: legacyTokens }),
     signal,
   };
   const response = await fetch(url.href, options);
@@ -820,6 +833,265 @@ export const getTokenPrices = async (
   }
 
   return parsedResponse.data;
+};
+
+/**
+ * `buildPath` must return the full path INCLUDING the query string:
+ * `callBackendV2` signs the JWT over the whole request-target (#2879).
+ */
+const getBackendV2Json = async <T>({
+  buildPath,
+  networkDetails,
+  label,
+}: {
+  buildPath: (priceNetwork: string) => string;
+  networkDetails: NetworkDetails;
+  /** Human-readable subject used in both error messages, e.g. "token stats". */
+  label: string;
+}): Promise<T> => {
+  const priceNetwork =
+    PASSPHRASE_TO_PRICE_NETWORK[networkDetails.networkPassphrase];
+  if (!priceNetwork) {
+    throw new Error(
+      `${label} is not supported on ${networkDetails.networkName}`,
+    );
+  }
+
+  const { status, body } = await fetchBackendV2({
+    method: "GET",
+    path: buildPath(priceNetwork),
+  });
+
+  const parsed = body as { data?: T };
+  if (status !== 200 || !parsed?.data) {
+    throw new Error(
+      `Failed to fetch ${label} - ${status}: ${redactErrorBody(body)}`,
+    );
+  }
+  return parsed.data;
+};
+
+/** No data is a 200 with `points: []` and `change: null`, never an error. */
+/**
+ * A `t` (or range end) that `Date` cannot represent would throw inside
+ * `Intl.DateTimeFormat` during render and take down the whole popup via the
+ * ErrorBoundary; rejecting here turns it into an ordinary fetch failure.
+ */
+/**
+ * Unix seconds `Date` can represent. Finite is not enough: `Date` covers
+ * ±8.64e15 ms, and `Intl.DateTimeFormat#format` throws beyond that.
+ */
+const isFormattableUnixSeconds = (value: unknown): value is number =>
+  typeof value === "number" &&
+  Number.isFinite(new Date(value * 1000).getTime());
+
+/**
+ * The response must be for the request that asked for it. The backend echoes
+ * the token key (and range) verbatim; a well-formed body for another asset or
+ * range would otherwise be cached under this key and drawn under this tab.
+ * Same rule as the v2 balances client's requested-account check.
+ */
+const assertEchoes = <T extends object>(
+  label: string,
+  expected: Partial<Record<keyof T, string>>,
+  data: T,
+) => {
+  for (const [field, want] of Object.entries(expected) as [keyof T, string][]) {
+    const got: unknown = data?.[field];
+    if (got !== want) {
+      throw new Error(
+        `${label}: response ${String(field)} ${String(got)} does not match requested ${want}`,
+      );
+    }
+  }
+};
+
+/** A decimal string the chart can do arithmetic on — not merely non-empty. */
+const isNumericString = (value: unknown): value is string =>
+  typeof value === "string" &&
+  value.trim() !== "" &&
+  new BigNumber(value).isFinite();
+
+/**
+ * A quantity that cannot be negative — a price, a supply, a holder count.
+ * `formatChartPrice` takes `abs()` before formatting, so a negative close
+ * would be plotted against a normalized scale and then LABELLED as a positive
+ * dollar amount: a malformed payload rendered as plausible market data. A
+ * range `change` is the exception and is checked with `isNumericString`,
+ * since a fall is legitimately negative.
+ */
+const isNonNegativeNumericString = (value: unknown): value is string =>
+  isNumericString(value) && !new BigNumber(value).isNegative();
+
+const assertDrawableSeries = (data: ApiTokenPriceHistory) => {
+  if (!Array.isArray(data?.points)) {
+    throw new Error("token price history: points is not an array");
+  }
+  // `resolutionSeconds` is added to the last timestamp to label the range's
+  // end, so a non-finite value throws in Intl exactly as a bad `t` does.
+  if (
+    !(Number.isFinite(data?.resolutionSeconds) && data.resolutionSeconds > 0)
+  ) {
+    throw new Error(
+      `token price history: non-positive or non-finite resolutionSeconds (${String(
+        data?.resolutionSeconds,
+      )})`,
+    );
+  }
+  // Every label downstream prints these values with a "$". A payload in
+  // another currency would be cached and displayed as dollars, so the wire
+  // contract's USD is enforced here rather than assumed.
+  if (data?.currency !== "USD") {
+    throw new Error(
+      `token price history: unexpected currency (${String(data?.currency)})`,
+    );
+  }
+  // `null` means "verdict unavailable" and shows a warning; a missing or
+  // stringly value would read as `false` and silence it.
+  if (data?.lowVolume !== null && typeof data?.lowVolume !== "boolean") {
+    throw new Error(
+      `token price history: malformed lowVolume (${String(data?.lowVolume)})`,
+    );
+  }
+  const bad = data.points.findIndex(
+    (point) =>
+      !isFormattableUnixSeconds(point?.t) ||
+      !isNonNegativeNumericString(point?.p),
+  );
+  if (bad !== -1) {
+    throw new Error(
+      `token price history: malformed point at index ${bad} (t=${String(
+        data.points[bad]?.t,
+      )}, p=${String(data.points[bad]?.p)})`,
+    );
+  }
+  // `getChartCoordinates` takes the FIRST bucket end as the x origin and
+  // normalizes every point against it, clamping only the last. A series that
+  // goes backwards — [200, 100, 300] — therefore yields a negative x and a
+  // line that doubles back, cached and drawn rather than failing. Equal
+  // timestamps collapse to one x, which the geometry already handles, so only
+  // a strict decrease is rejected. Mirrors mobile's guard.
+  const outOfOrder = data.points.findIndex(
+    (point, index) => index > 0 && point.t < data.points[index - 1].t,
+  );
+  if (outOfOrder !== -1) {
+    throw new Error(
+      `token price history: points out of chronological order at index ${outOfOrder} (${String(
+        data.points[outOfOrder - 1]?.t,
+      )} then ${String(data.points[outOfOrder]?.t)})`,
+    );
+  }
+  const last = data.points[data.points.length - 1];
+  if (last && !isFormattableUnixSeconds(last.t + data.resolutionSeconds)) {
+    throw new Error(
+      `token price history: range end outside Date range (t=${String(
+        last.t,
+      )}, resolutionSeconds=${String(data.resolutionSeconds)})`,
+    );
+  }
+  // `change` is NULLABLE, not optional: the §6.1 contract has it present on
+  // every payload, `null` when the §4.2 coverage guard rejects the window.
+  // `!= null` would wave through a missing field as though the backend had
+  // deliberately declined to compute a change, and the empty header that
+  // produces is indistinguishable from the legitimate null — cached, and
+  // silently wrong. Same rule the `lowVolume` verdict above is held to.
+  if (data.change === undefined) {
+    throw new Error("token price history: missing change");
+  }
+
+  if (data.change !== null) {
+    if (
+      !isNumericString(data.change.absolute) ||
+      !isNumericString(data.change.percent)
+    ) {
+      throw new Error(
+        `token price history: malformed change (absolute=${String(
+          data.change.absolute,
+        )}, percent=${String(data.change.percent)})`,
+      );
+    }
+    // The header prints ONE sign, taken from the percent, in front of both
+    // halves — the dollar term is rendered by magnitude. So a payload whose
+    // two halves disagree would not be rejected, it would be silently
+    // restated: `absolute: "-1", percent: "2"` reads as "+$1.00 (2.00%)", a
+    // loss shown as a gain. Either may be zero while the other is not, which
+    // is ordinary rounding on a small move.
+    const absoluteChange = new BigNumber(data.change.absolute);
+    const percentChange = new BigNumber(data.change.percent);
+    if (
+      !absoluteChange.isZero() &&
+      !percentChange.isZero() &&
+      absoluteChange.isNegative() !== percentChange.isNegative()
+    ) {
+      throw new Error(
+        `token price history: change halves disagree on sign (absolute=${data.change.absolute}, percent=${data.change.percent})`,
+      );
+    }
+  }
+};
+
+export const getTokenPriceHistory = async ({
+  token,
+  range,
+  networkDetails,
+}: {
+  token: string;
+  range: `${TokenPriceHistoryRange}`;
+  networkDetails: NetworkDetails;
+}): Promise<ApiTokenPriceHistory> => {
+  const data = await getBackendV2Json<ApiTokenPriceHistory>({
+    networkDetails,
+    label: "token price history",
+    buildPath: (priceNetwork) =>
+      `/token-price-history?token=${encodeURIComponent(
+        token,
+      )}&network=${priceNetwork}&range=${range}`,
+  });
+  assertEchoes("token price history", { token, range }, data);
+  assertDrawableSeries(data);
+  return data;
+};
+
+/**
+ * Absent fields are the contract; present ones must be numeric, or the card
+ * renders a literal "NaN" row (`BigNumber.DEBUG` is unset, so nothing throws).
+ */
+const assertTokenStats = (data: ApiTokenStats) => {
+  if (
+    data?.supplyOnStellar !== undefined &&
+    !isNonNegativeNumericString(data.supplyOnStellar)
+  ) {
+    throw new Error(
+      `token stats: malformed supplyOnStellar (${String(data.supplyOnStellar)})`,
+    );
+  }
+  if (
+    data?.holders !== undefined &&
+    !(Number.isSafeInteger(data.holders) && data.holders >= 0)
+  ) {
+    // A holder count is a whole number of accounts. `formatStatValue` rounds
+    // down, so a fractional 1.9 would render as a plausible "1".
+    throw new Error(`token stats: malformed holders (${String(data.holders)})`);
+  }
+};
+
+/** Fields may be absent per-asset; callers render only the rows present. */
+export const getTokenStats = async ({
+  token,
+  networkDetails,
+}: {
+  token: string;
+  networkDetails: NetworkDetails;
+}): Promise<ApiTokenStats> => {
+  const data = await getBackendV2Json<ApiTokenStats>({
+    networkDetails,
+    label: "token stats",
+    buildPath: (priceNetwork) =>
+      `/token-stats?token=${encodeURIComponent(token)}&network=${priceNetwork}`,
+  });
+  assertEchoes("token stats", { token }, data);
+  assertTokenStats(data);
+  return data;
 };
 
 export const getDiscoverData = async (): Promise<DiscoverData> => {

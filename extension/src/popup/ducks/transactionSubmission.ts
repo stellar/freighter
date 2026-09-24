@@ -5,7 +5,7 @@ import {
   TransactionBuilder,
   xdr,
 } from "stellar-sdk";
-import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+import { PayloadAction, createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
 import {
   signFreighterTransaction as internalSignFreighterTransaction,
@@ -29,6 +29,7 @@ import { NETWORKS, NetworkDetails } from "@shared/constants/stellar";
 import { ConfigurableWalletType } from "@shared/constants/hardwareWallet";
 import { isCustomNetwork } from "@shared/helpers/stellar";
 import { BlockaidWarning, SecurityLevel } from "popup/constants/blockaid";
+import { SwapSource } from "popup/constants/swap";
 
 import { encodeSep53Message, getCanonicalFromAsset } from "helpers/stellar";
 import { INDEXER_URL } from "@shared/constants/mercury";
@@ -529,6 +530,9 @@ interface TransactionData {
   // Persisted in Redux so it survives SendAmount unmount/remount (e.g. when
   // the user navigates to pick a recipient and returns).
   manualTransactionFee: string | null;
+  // Analytics-only: where the swap flow was entered from (`source` on
+  // swap.completed). Reset with the rest of the submission on Swap mount.
+  swapSource: SwapSource | null;
 }
 
 interface HardwareWalletData {
@@ -603,6 +607,7 @@ export const initialState: InitialState = {
     balancesToMigrate: [] as BalanceToMigrate[],
     isSoroswap: false,
     manualTransactionFee: null,
+    swapSource: null,
   },
   transactionSimulation: {
     response: null,
@@ -692,6 +697,9 @@ const transactionSubmissionSlice = createSlice({
     },
     saveIsSoroswap: (state, action) => {
       state.transactionData.isSoroswap = action.payload;
+    },
+    saveSwapSource: (state, action: PayloadAction<SwapSource | null>) => {
+      state.transactionData.swapSource = action.payload;
     },
     saveAllowedSlippage: (state, action) => {
       state.transactionData.allowedSlippage = action.payload;
@@ -891,6 +899,7 @@ export const {
   saveDestinationAsset,
   saveDestinationIcon,
   saveIsSoroswap,
+  saveSwapSource,
   saveAllowedSlippage,
   saveIsToken,
   saveIsCollectible,

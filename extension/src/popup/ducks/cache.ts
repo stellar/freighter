@@ -4,7 +4,12 @@ import { NetworkDetails } from "@shared/constants/stellar";
 import { AssetListResponse } from "@shared/constants/soroban/asset-list";
 import { HistoryResponse } from "helpers/hooks/useGetHistory";
 import { TokenDetailsResponse } from "helpers/hooks/useTokenDetails";
-import { ApiTokenPrices, Collection } from "@shared/api/types";
+import {
+  ApiTokenPriceHistory,
+  ApiTokenPrices,
+  ApiTokenStats,
+  Collection,
+} from "@shared/api/types";
 import { TrendingAsset } from "popup/helpers/trendingAssets";
 
 type AssetCode = string;
@@ -62,6 +67,27 @@ type SavePopularTokensPayload = {
 // ~30-min staleness window for the Popular list Redux cache.
 export const POPULAR_TOKENS_STALE_MS = 30 * 60 * 1000;
 
+// Flat 5-minute validity for every range; the store dies with the popup.
+export const PRICE_HISTORY_STALE_MS = 5 * 60 * 1000;
+
+// Same 5-minute window as the price-history cache: the Token Stats card
+// mounts on every AssetDetail open, and its fields (supply, holders) move on
+// the order of hours. In-memory popup-session lifetime only.
+export const TOKEN_STATS_STALE_MS = 5 * 60 * 1000;
+
+type SaveTokenStatsPayload = {
+  networkDetails: NetworkDetails;
+  token: string;
+  stats: ApiTokenStats;
+};
+
+type SaveTokenPriceHistoryPayload = {
+  networkDetails: NetworkDetails;
+  token: string;
+  range: string;
+  history: ApiTokenPriceHistory;
+};
+
 interface InitialState {
   balanceData: {
     [network: string]: Record<
@@ -91,6 +117,24 @@ interface InitialState {
   popularTokens: {
     [network: string]: { tokens: TrendingAsset[]; updatedAt: number };
   };
+  // network passphrase → token → range, so custom networks sharing a
+  // passphrase resolve consistently and mainnet data never leaks elsewhere.
+  tokenPriceHistory: {
+    [networkPassphrase: string]: {
+      [token: string]: Record<
+        string,
+        ApiTokenPriceHistory & { updatedAt: number }
+      >;
+    };
+  };
+  // Session cache for the Token Stats card, keyed network → token. Keyed by
+  // networkPassphrase for the same reason as tokenPriceHistory.
+  tokenStats: {
+    [networkPassphrase: string]: Record<
+      string,
+      ApiTokenStats & { updatedAt: number }
+    >;
+  };
 }
 
 const initialState: InitialState = {
@@ -103,6 +147,8 @@ const initialState: InitialState = {
   tokenPrices: {},
   collections: {},
   popularTokens: {},
+  tokenPriceHistory: {},
+  tokenStats: {},
 };
 
 const cacheSlice = createSlice({
@@ -118,6 +164,8 @@ const cacheSlice = createSlice({
       state.historyData = {};
       state.tokenPrices = {};
       state.popularTokens = {};
+      state.tokenPriceHistory = {};
+      state.tokenStats = {};
     },
     saveBalancesForAccount(state, action: { payload: SaveBalancesPayload }) {
       state.balanceData = {
@@ -208,6 +256,44 @@ const cacheSlice = createSlice({
         ];
       }
     },
+    saveTokenPriceHistory(
+      state,
+      action: { payload: SaveTokenPriceHistoryPayload },
+    ) {
+      const { networkPassphrase } = action.payload.networkDetails;
+      const { token, range, history } = action.payload;
+      // `|| {}` guards partially-preloaded test stores; production always has
+      // the full initial state.
+      const allHistory = state.tokenPriceHistory || {};
+      const forNetwork = allHistory[networkPassphrase] || {};
+      state.tokenPriceHistory = {
+        ...allHistory,
+        [networkPassphrase]: {
+          ...forNetwork,
+          [token]: {
+            ...forNetwork[token],
+            [range]: {
+              ...history,
+              updatedAt: Date.now(),
+            },
+          },
+        },
+      };
+    },
+    saveTokenStats(state, action: { payload: SaveTokenStatsPayload }) {
+      const { networkPassphrase } = action.payload.networkDetails;
+      const { token, stats } = action.payload;
+      // `|| {}` guards partially-preloaded test stores; production always has
+      // the full initial state.
+      const allStats = state.tokenStats || {};
+      state.tokenStats = {
+        ...allStats,
+        [networkPassphrase]: {
+          ...allStats[networkPassphrase],
+          [token]: { ...stats, updatedAt: Date.now() },
+        },
+      };
+    },
     savePopularTokens(state, action: { payload: SavePopularTokensPayload }) {
       state.popularTokens = {
         ...state.popularTokens,
@@ -249,6 +335,10 @@ export const collectionsSelector = (state: { cache: InitialState }) =>
   state.cache.collections;
 export const popularTokensSelector = (state: { cache: InitialState }) =>
   state.cache.popularTokens;
+export const tokenPriceHistorySelector = (state: { cache: InitialState }) =>
+  state.cache.tokenPriceHistory;
+export const tokenStatsSelector = (state: { cache: InitialState }) =>
+  state.cache.tokenStats;
 
 export const { reducer } = cacheSlice;
 export const {
@@ -264,4 +354,6 @@ export const {
   clearBalancesForAccount,
   clearCollectiblesForAccount,
   savePopularTokens,
+  saveTokenPriceHistory,
+  saveTokenStats,
 } = cacheSlice.actions;

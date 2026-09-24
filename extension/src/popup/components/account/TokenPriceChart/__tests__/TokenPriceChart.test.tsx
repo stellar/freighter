@@ -1,0 +1,909 @@
+import React from "react";
+import { Provider } from "react-redux";
+import { render, screen, waitFor, act } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+
+import { MAINNET_NETWORK_DETAILS } from "@shared/constants/stellar";
+import { sendMessageToBackground } from "@shared/api/helpers/extensionMessaging";
+import {
+  densePoints,
+  makeHistory,
+} from "@shared/api/__tests__/fixtures/tokenPriceHistory";
+import { makeDummyStore } from "popup/__testHelpers__";
+import { resetCacheWriteClaims } from "helpers/cacheWrites";
+import {
+  RangeDeltaState,
+  TokenPriceChart,
+} from "popup/components/account/TokenPriceChart";
+import {
+  CHART_HEIGHT_PX,
+  CHART_MORPH_DURATION_MS,
+  RANGE_SWITCH_DEBOUNCE_MS,
+} from "popup/components/account/TokenPriceChart/constants";
+
+// §N refs: wallet-eng-monorepo/design-docs/token-price-graphs/token-price-graphs-design.md
+
+jest.mock("@shared/api/helpers/extensionMessaging");
+const mockedSend = sendMessageToBackground as jest.Mock;
+
+jest.mock("helpers/metrics", () => ({
+  emitMetric: jest.fn(),
+}));
+
+// 97 points — a full 1D series, comfortably past the sparse threshold.
+const HISTORY_1D = makeHistory({ points: densePoints(97) });
+
+const HISTORY_1W = makeHistory({
+  range: "1W",
+  resolutionSeconds: 3600,
+  change: { absolute: "0.020000", percent: "12.50" },
+  points: densePoints(169, {
+    startT: 1786000000,
+    stepSeconds: 3600,
+    startPrice: 0.16,
+  }),
+});
+
+const EMPTY_1H = makeHistory({
+  range: "1H",
+  resolutionSeconds: 300,
+  lowVolume: null,
+  change: null,
+  points: [],
+});
+
+// A losing day: the Figma's `-$0.0602 (12.12%)` frame. Points fall so the
+// series matches the sign of its `change`.
+const HISTORY_1D_NEGATIVE = makeHistory({
+  change: { absolute: "-0.060200", percent: "-12.12" },
+  points: densePoints(97, { startPrice: 0.26, priceStep: -0.001 }),
+});
+
+const respondByRange = (byRange: Record<string, unknown>) => {
+  mockedSend.mockImplementation(({ path }: { path: string }) => {
+    const match = /range=([A-Z0-9]+)/.exec(path);
+    const range = match ? match[1] : "";
+    // A range the test says nothing about never answers. The deferred warm
+    // pass (see warmRanges.test.tsx) walks the ranges in selector order and
+    // waits for each, so an unstubbed range parks the queue there rather than
+    // quietly caching ranges a test's premise needs uncached.
+    if (!(range in byRange)) {
+      return new Promise(() => {});
+    }
+    return Promise.resolve({ status: 200, body: { data: byRange[range] } });
+  });
+};
+
+/** Requests issued for one range. Warming means the total call count is no
+ * longer a proxy for "did this switch go to the network" — the range is. */
+const requestCountForRange = (range: string) =>
+  mockedSend.mock.calls.filter(([{ path }]) => path.includes(`range=${range}`))
+    .length;
+
+// The section no longer draws a delta: it reports the selected range's one to
+// the detail header, which renders it under the price. These tests assert the
+// reported value — the same object `AssetDetail` puts on screen.
+let reportedDelta: RangeDeltaState | null = null;
+let reportCount = 0;
+const deltaText = () => reportedDelta?.text ?? "";
+// The chart's artwork colour: the direction class on the SVG root, which
+// `currentColor` carries to the polyline, the gradient fill and the end dot.
+const chartClass = () =>
+  screen.getByTestId("TokenPriceChart__svg").getAttribute("class") ?? "";
+// Stable, like the `useState` setter the detail view passes: the report is an
+// effect dependency, so a fresh closure per render would refire it per render.
+const handleDelta = (delta: RangeDeltaState) => {
+  reportedDelta = delta;
+  reportCount += 1;
+};
+
+const renderChart = () => {
+  const store = makeDummyStore({});
+  return render(
+    <Provider store={store}>
+      <TokenPriceChart
+        token="native"
+        networkDetails={MAINNET_NETWORK_DETAILS}
+        fallback24hPercent="1.09"
+        onDeltaChange={handleDelta}
+      />
+    </Provider>,
+  );
+};
+
+describe("TokenPriceChart", () => {
+  beforeEach(() => {
+    reportedDelta = null;
+    reportCount = 0;
+  });
+
+  afterEach(() => {
+    mockedSend.mockReset();
+    jest.useRealTimers();
+    resetCacheWriteClaims();
+  });
+
+  it("puts each price label over the point it describes", async () => {
+    // A series that peaks EARLY: pinned to fixed corners the high label lands
+    // above the low point, which reads as a mislabelled chart.
+    respondByRange({
+      "1D": {
+        ...HISTORY_1D,
+        points: [
+          { t: 1786636800, p: "1.14" },
+          { t: 1786637700, p: "1.15" },
+          { t: 1786638600, p: "1.145" },
+          { t: 1786639500, p: "1.10" },
+        ],
+      },
+    });
+    renderChart();
+
+    await waitFor(() =>
+      expect(screen.getByTestId("TokenPriceChart__polyline")).toBeDefined(),
+    );
+
+    const leftPercent = (testId: string) => {
+      const span = screen
+        .getByTestId(testId)
+        .querySelector(".TokenPriceChart__axis-label-text") as HTMLElement;
+      return parseFloat(span.style.left);
+    };
+
+    // High is the 2nd of 4 points (early); low is the last (far right).
+    const high = leftPercent("TokenPriceChart__axis-high");
+    const low = leftPercent("TokenPriceChart__axis-low");
+    expect(high).toBeLessThan(50);
+    expect(low).toBeGreaterThan(50);
+    expect(high).toBeLessThan(low);
+  });
+
+  it("keeps an edge label inside the plot instead of hanging it half outside", async () => {
+    // A monotonic series — a token that only climbed — puts one extreme at
+    // x=0 and the other at the far edge. A constant translateX(-50%) there
+    // leaves half of "$1.10" outside the popup, so the shift has to scale
+    // with the position: none at the left edge, all of it at the right.
+    respondByRange({
+      "1D": {
+        ...HISTORY_1D,
+        points: [
+          { t: 1786636800, p: "1.10" },
+          { t: 1786637700, p: "1.20" },
+          { t: 1786638600, p: "1.30" },
+        ],
+      },
+    });
+    renderChart();
+
+    await waitFor(() =>
+      expect(screen.getByTestId("TokenPriceChart__polyline")).toBeDefined(),
+    );
+
+    const placement = (testId: string) => {
+      const span = screen
+        .getByTestId(testId)
+        .querySelector(".TokenPriceChart__axis-label-text") as HTMLElement;
+      return { left: span.style.left, transform: span.style.transform };
+    };
+
+    // Low is the first point (x = 0): flush left, no shift at all.
+    expect(placement("TokenPriceChart__axis-low")).toEqual({
+      left: "0%",
+      transform: "translateX(-0%)",
+    });
+    // High is the last (x = the full width): shifted its entire width back,
+    // so its right edge — not its centre — sits on the point.
+    expect(placement("TokenPriceChart__axis-high")).toEqual({
+      left: "100%",
+      transform: "translateX(-100%)",
+    });
+  });
+
+  it("keeps the price labels out of the plot, in rows above and below it", async () => {
+    // Regression: the labels were absolute overlays inside the canvas, the low
+    // one left-aligned — so a series whose minimum sat near the left edge ran
+    // straight into "$0.1794" underneath it.
+    respondByRange({ "1D": HISTORY_1D });
+    renderChart();
+
+    await waitFor(() =>
+      expect(screen.getByTestId("TokenPriceChart__polyline")).toBeDefined(),
+    );
+
+    const canvas = screen.getByTestId("TokenPriceChart__canvas");
+    const high = screen.getByTestId("TokenPriceChart__axis-high");
+    const low = screen.getByTestId("TokenPriceChart__axis-low");
+
+    expect(canvas.contains(high)).toBe(false);
+    expect(canvas.contains(low)).toBe(false);
+    // Both carry a price, and the high row precedes the canvas while the low
+    // row follows it.
+    expect(high.textContent).toContain("$");
+    expect(low.textContent).toContain("$");
+    const plot = high.parentElement!;
+    const order = Array.from(plot.children);
+    expect(order.indexOf(high)).toBeLessThan(order.indexOf(canvas));
+    expect(order.indexOf(low)).toBeGreaterThan(order.indexOf(canvas));
+  });
+
+  it("draws no delta of its own — the detail header owns the only one", async () => {
+    respondByRange({ "1D": HISTORY_1D });
+    renderChart();
+
+    await waitFor(() =>
+      expect(screen.getByTestId("TokenPriceChart__polyline")).toBeDefined(),
+    );
+
+    expect(screen.queryByTestId("TokenPriceChart__delta")).toBeNull();
+    const section = screen.getByTestId("TokenPriceChart");
+    expect(section.textContent).not.toContain("%");
+    expect(
+      section.querySelectorAll(".TokenPriceChart__delta-ghost"),
+    ).toHaveLength(0);
+  });
+
+  it("reports the per-range delta for the header", async () => {
+    respondByRange({ "1D": HISTORY_1D });
+    renderChart();
+
+    await waitFor(() =>
+      expect(screen.getByTestId("TokenPriceChart__polyline")).toBeDefined(),
+    );
+
+    // Absolute + percent, sign in the text, never recomputed.
+    expect(reportedDelta).toEqual({
+      isLoading: false,
+      text: "+$0.0014 (0.86%)",
+      colorClass: "positive",
+    });
+  });
+
+  it("reports the delta only when it changes, not on every render", async () => {
+    // The header holds the reported delta in state, so a report per render
+    // would set that state per render and spin. A clean load has exactly two
+    // states to report: loading, then the landed delta.
+    respondByRange({ "1D": HISTORY_1D });
+    const store = makeDummyStore({});
+    const user = userEvent.setup();
+
+    // Stands in for the detail view re-rendering around the section — which
+    // is exactly what handling the report makes it do.
+    const Harness = () => {
+      const [, bump] = React.useState(0);
+      return (
+        <Provider store={store}>
+          <button
+            type="button"
+            data-testid="bump"
+            onClick={() => bump((n) => n + 1)}
+          />
+          <TokenPriceChart
+            token="native"
+            networkDetails={MAINNET_NETWORK_DETAILS}
+            fallback24hPercent="1.09"
+            onDeltaChange={handleDelta}
+          />
+        </Provider>
+      );
+    };
+    render(<Harness />);
+
+    await waitFor(() =>
+      expect(screen.getByTestId("TokenPriceChart__polyline")).toBeDefined(),
+    );
+    expect(reportCount).toBe(2);
+
+    await user.click(screen.getByTestId("bump"));
+    await user.click(screen.getByTestId("bump"));
+    expect(reportCount).toBe(2);
+  });
+
+  it("renders a tablist selector with all six ranges", async () => {
+    respondByRange({ "1D": HISTORY_1D });
+    renderChart();
+
+    await waitFor(() =>
+      expect(screen.getByRole("tablist")).toBeInTheDocument(),
+    );
+
+    const tabs = screen.getAllByRole("tab");
+    expect(tabs.map((tab) => tab.textContent)).toEqual([
+      "1H",
+      "1D",
+      "1W",
+      "1M",
+      "1Y",
+      "ALL",
+    ]);
+    expect(
+      tabs.find((tab) => tab.getAttribute("aria-selected") === "true")
+        ?.textContent,
+    ).toBe("1D");
+  });
+
+  it("keeps the timeframe selector visible on a per-range empty result", async () => {
+    jest.useFakeTimers();
+    respondByRange({ "1D": HISTORY_1D, "1H": EMPTY_1H });
+    renderChart();
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(screen.getByTestId("TokenPriceChart__polyline")).toBeDefined();
+
+    // Switch to a range with no data.
+    const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
+    await user.click(screen.getByRole("tab", { name: "1H" }));
+
+    // The switch is debounced ~250ms before fetching.
+    await act(async () => {
+      jest.advanceTimersByTime(300);
+      await Promise.resolve();
+    });
+
+    expect(screen.getByTestId("TokenPriceChart__empty")).toBeDefined();
+    expect(screen.queryByTestId("TokenPriceChart__polyline")).toBeNull();
+    // The selector never hides — a thin asset can have data on other ranges.
+    expect(screen.getByRole("tablist")).toBeInTheDocument();
+    expect(
+      screen
+        .getAllByRole("tab")
+        .find((tab) => tab.getAttribute("aria-selected") === "true")
+        ?.textContent,
+    ).toBe("1H");
+  });
+
+  it("shows the loading ghost the instant an uncached range is selected", async () => {
+    jest.useFakeTimers();
+    respondByRange({ "1D": HISTORY_1D, "1W": HISTORY_1W });
+    renderChart();
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(screen.getByTestId("TokenPriceChart__polyline")).toBeDefined();
+    expect(screen.getByRole("img")).toBeDefined();
+
+    const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
+    await user.click(screen.getByRole("tab", { name: "1W" }));
+
+    // Timers have NOT advanced: the fetch is still inside the 250ms debounce.
+    // The 1W tab is already selected, so 1D's polyline and delta must be gone.
+    // Rendering them here puts the previous range's data under the new range's
+    // tab — and under a chart aria-label that names the new range.
+    expect(
+      screen
+        .getAllByRole("tab")
+        .find((tab) => tab.getAttribute("aria-selected") === "true")
+        ?.textContent,
+    ).toBe("1W");
+    expect(screen.getByTestId("TokenPriceChart__loading")).toBeDefined();
+    expect(screen.queryByTestId("TokenPriceChart__polyline")).toBeNull();
+    // The header is told the delta is loading, so it draws its placeholder —
+    // it must never be handed 1D's numbers under the 1W tab.
+    expect(reportedDelta?.isLoading).toBe(true);
+    expect(deltaText()).not.toMatch(/[$%\d]/);
+    // No labelled chart image exists while its range's data is not displayed.
+    expect(screen.queryByRole("img")).toBeNull();
+
+    // The debounce still gates the network call, and 1W lands normally.
+    await act(async () => {
+      jest.advanceTimersByTime(RANGE_SWITCH_DEBOUNCE_MS + 50);
+      await Promise.resolve();
+    });
+    expect(screen.getByTestId("TokenPriceChart__polyline")).toBeDefined();
+    expect(screen.getByRole("img")).toBeDefined();
+    expect(deltaText()).toContain("12.50%");
+  });
+
+  it("renders a cached range immediately — no debounce, no request", async () => {
+    jest.useFakeTimers();
+    respondByRange({ "1D": HISTORY_1D, "1W": HISTORY_1W });
+    renderChart();
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
+    await user.click(screen.getByRole("tab", { name: "1W" }));
+    await act(async () => {
+      jest.advanceTimersByTime(RANGE_SWITCH_DEBOUNCE_MS + 50);
+      await Promise.resolve();
+    });
+    expect(requestCountForRange("1W")).toBe(1);
+    expect(deltaText()).toContain("12.50%");
+
+    // Back to 1D, still inside the 5-minute session cache. The debounce exists
+    // to coalesce network calls; a switch that makes none must not wait on it.
+    await user.click(screen.getByRole("tab", { name: "1D" }));
+
+    // Not a single timer advanced.
+    expect(screen.queryByTestId("TokenPriceChart__loading")).toBeNull();
+    expect(screen.getByTestId("TokenPriceChart__polyline")).toBeDefined();
+    expect(deltaText()).toContain("0.86%");
+    expect(requestCountForRange("1D")).toBe(1);
+
+    // ...and the settled state after the window elapses is still the cached
+    // range, with no request issued for it.
+    await act(async () => {
+      jest.advanceTimersByTime(RANGE_SWITCH_DEBOUNCE_MS + 50);
+      await Promise.resolve();
+    });
+    expect(requestCountForRange("1D")).toBe(1);
+    expect(requestCountForRange("1W")).toBe(1);
+    expect(deltaText()).toContain("0.86%");
+  });
+
+  it("morphs the line on a cached switch, never during a fetch", async () => {
+    // The two halves of the morph contract, on the real switching path: a
+    // cache hit tweens (which is the fast switching worth smoothing), and an
+    // uncached one still shows the ghost and then paints the new series
+    // directly — the previous range's line is never held under the new tab.
+    jest.useFakeTimers();
+    const pendingFrames = new Map<number, FrameRequestCallback>();
+    let nextFrameId = 0;
+    const originalRaf = window.requestAnimationFrame;
+    const originalCancelRaf = window.cancelAnimationFrame;
+    window.requestAnimationFrame = ((callback: FrameRequestCallback) => {
+      nextFrameId += 1;
+      pendingFrames.set(nextFrameId, callback);
+      return nextFrameId;
+    }) as typeof window.requestAnimationFrame;
+    window.cancelAnimationFrame = ((id: number) => {
+      pendingFrames.delete(id);
+    }) as unknown as typeof window.cancelAnimationFrame;
+    const flushFrame = (timestamp: number) => {
+      const due = [...pendingFrames.values()];
+      pendingFrames.clear();
+      act(() => {
+        due.forEach((callback) => callback(timestamp));
+      });
+    };
+    const linePoints = () =>
+      screen.getByTestId("TokenPriceChart__polyline").getAttribute("points");
+
+    try {
+      respondByRange({ "1D": HISTORY_1D, "1W": HISTORY_1W });
+      renderChart();
+      await act(async () => {
+        await Promise.resolve();
+      });
+      // First load: the settled geometry, painted directly.
+      const points1D = linePoints();
+      expect(pendingFrames.size).toBe(0);
+
+      const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
+
+      // Uncached: the chart drops to the ghost, so there is no line on screen
+      // to morph from and nothing is scheduled.
+      await user.click(screen.getByRole("tab", { name: "1W" }));
+      expect(screen.queryByTestId("TokenPriceChart__polyline")).toBeNull();
+      expect(pendingFrames.size).toBe(0);
+
+      await act(async () => {
+        jest.advanceTimersByTime(RANGE_SWITCH_DEBOUNCE_MS + 50);
+        await Promise.resolve();
+      });
+      const points1W = linePoints();
+      expect(points1W).not.toBe(points1D);
+      expect(pendingFrames.size).toBe(0);
+
+      // Cached: no ghost, and the line is still the outgoing shape with a
+      // morph scheduled rather than 1D's geometry already cut in.
+      await user.click(screen.getByRole("tab", { name: "1D" }));
+      expect(screen.queryByTestId("TokenPriceChart__loading")).toBeNull();
+      expect(linePoints()).toBe(points1W);
+      expect(pendingFrames.size).toBe(1);
+
+      // Mid-morph: neither shape, at 1D's own x positions.
+      flushFrame(0);
+      expect(linePoints()).not.toBe(points1W);
+      expect(linePoints()).not.toBe(points1D);
+
+      // Settled: exactly the geometry the first 1D render drew.
+      flushFrame(CHART_MORPH_DURATION_MS);
+      expect(linePoints()).toBe(points1D);
+      expect(pendingFrames.size).toBe(0);
+    } finally {
+      window.requestAnimationFrame = originalRaf;
+      window.cancelAnimationFrame = originalCancelRaf;
+    }
+  });
+
+  it("reports no delta for a one-point series, even when change is present", async () => {
+    // The backend computes `change` from a single point; a signed delta above
+    // "No price data for this period" would contradict the canvas.
+    respondByRange({
+      "1D": {
+        ...HISTORY_1D,
+        points: [HISTORY_1D.points[0]],
+        change: { absolute: "0.020000", percent: "12.50" },
+      },
+    });
+    renderChart();
+
+    await waitFor(() =>
+      expect(reportedDelta).toEqual({
+        isLoading: false,
+        text: "",
+        colorClass: "neutral",
+      }),
+    );
+    expect(screen.queryByTestId("TokenPriceChart__polyline")).toBeNull();
+  });
+
+  it("reports no delta when change is null with points present", async () => {
+    respondByRange({
+      "1D": { ...HISTORY_1D, change: null },
+    });
+    renderChart();
+
+    await waitFor(() =>
+      expect(screen.getByTestId("TokenPriceChart__polyline")).toBeDefined(),
+    );
+
+    // Settled with nothing to show — not loading, so the header draws an
+    // empty row rather than holding its placeholder forever.
+    expect(reportedDelta).toEqual({
+      isLoading: false,
+      text: "",
+      colorClass: "neutral",
+    });
+    // No delta means no direction: the artwork is neutral, never coloured off
+    // a series the payload declined to characterise.
+    expect(chartClass()).toContain("LineChart--neutral");
+  });
+
+  it("shows the percentage alone when the dollar figure rounds to zero", async () => {
+    // A sub-cent move on a cheap token: the percent is real, the formatted
+    // absolute is not. Signing and colouring a "$0.00" off the percent renders
+    // a green "+$0.00" that claims a gain the dollar figure denies.
+    respondByRange({
+      "1D": { ...HISTORY_1D, change: { absolute: "0", percent: "0.05" } },
+    });
+    renderChart();
+
+    await waitFor(() =>
+      expect(screen.getByTestId("TokenPriceChart__polyline")).toBeDefined(),
+    );
+
+    // The percent keeps its own sign and colour.
+    expect(reportedDelta).toEqual({
+      isLoading: false,
+      text: "+0.05%",
+      colorClass: "positive",
+    });
+  });
+
+  // The three-state palette: the sign of `change.percent` colours the delta
+  // text AND the chart artwork together, as the Figma draws them. This
+  // supersedes the two-state rule the design doc's §B.2 still describes.
+  it("renders a negative range red — delta and chart artwork together", async () => {
+    respondByRange({ "1D": HISTORY_1D_NEGATIVE });
+    renderChart();
+
+    await waitFor(() =>
+      expect(screen.getByTestId("TokenPriceChart__polyline")).toBeDefined(),
+    );
+
+    expect(reportedDelta).toEqual({
+      isLoading: false,
+      text: "-$0.0602 (12.12%)",
+      colorClass: "negative",
+    });
+    // Colour never carries the meaning alone (§7.4): the sign stays in the
+    // text.
+    expect(deltaText().startsWith("-")).toBe(true);
+    // ...and the chart is red too, not the green it used to draw under a
+    // falling series.
+    expect(chartClass()).toContain("LineChart--negative");
+    expect(chartClass()).not.toContain("LineChart--positive");
+  });
+
+  it("keeps a positive range green — delta and chart artwork together", async () => {
+    respondByRange({ "1D": HISTORY_1D });
+    renderChart();
+
+    await waitFor(() =>
+      expect(screen.getByTestId("TokenPriceChart__polyline")).toBeDefined(),
+    );
+
+    expect(reportedDelta?.colorClass).toBe("positive");
+    expect(chartClass()).toContain("LineChart--positive");
+  });
+
+  // The backend rounds `change.percent` to two decimals so the 1D value equals
+  // `percentagePriceChange24h` exactly (§D8), so a real-but-tiny move arrives
+  // as `percent: "0"` with a live `absolute` — USDC over 1D. Direction falls
+  // back to the absolute there, or the dollar figure says the price moved
+  // while its sign, its colour and the line all say flat.
+  it("signs a rising range off the absolute when the percent rounds to zero", async () => {
+    respondByRange({
+      "1D": {
+        ...HISTORY_1D,
+        change: { absolute: "0.000019827880302", percent: "0" },
+      },
+    });
+    renderChart();
+
+    await waitFor(() =>
+      expect(screen.getByTestId("TokenPriceChart__polyline")).toBeDefined(),
+    );
+
+    // The shape is unchanged — the sign is carried once, by the dollar term,
+    // and the parenthesised percent stays magnitude-only.
+    expect(reportedDelta).toEqual({
+      isLoading: false,
+      text: "+$0.000020 (0.00%)",
+      colorClass: "positive",
+    });
+    // One direction drives everything: the artwork takes the delta's, so this
+    // token's chart is green rather than the grey it used to draw.
+    expect(chartClass()).toContain("LineChart--positive");
+    expect(chartClass()).not.toContain("LineChart--neutral");
+  });
+
+  it("signs a falling range off the absolute when the percent rounds to zero", async () => {
+    respondByRange({
+      "1D": {
+        ...HISTORY_1D,
+        change: { absolute: "-0.000019827880302", percent: "0" },
+      },
+    });
+    renderChart();
+
+    await waitFor(() =>
+      expect(screen.getByTestId("TokenPriceChart__polyline")).toBeDefined(),
+    );
+
+    expect(reportedDelta).toEqual({
+      isLoading: false,
+      text: "-$0.000020 (0.00%)",
+      colorClass: "negative",
+    });
+    expect(chartClass()).toContain("LineChart--negative");
+    expect(chartClass()).not.toContain("LineChart--neutral");
+  });
+
+  it("renders a genuinely flat range as neutral with no sign", async () => {
+    respondByRange({
+      "1D": { ...HISTORY_1D, change: { absolute: "0", percent: "0" } },
+    });
+    renderChart();
+
+    await waitFor(() =>
+      expect(screen.getByTestId("TokenPriceChart__polyline")).toBeDefined(),
+    );
+
+    // A flat range is neutral, never the `getPriceDeltaColor` "negative" the
+    // rest of the popup would paint a zero — a zero move is not a loss, so
+    // the three-state palette must not inherit that bug.
+    expect(reportedDelta).toEqual({
+      isLoading: false,
+      text: "0.00%",
+      colorClass: "neutral",
+    });
+    expect(chartClass()).toContain("LineChart--neutral");
+    expect(chartClass()).not.toContain("LineChart--negative");
+  });
+
+  describe("loading state", () => {
+    // The fetch never settles, so the component stays in RequestState.LOADING.
+    const renderLoading = () => {
+      mockedSend.mockImplementation(() => new Promise(() => {}));
+      return renderChart();
+    };
+
+    it("renders the blurred chart ghost, not a flat block", () => {
+      renderLoading();
+
+      const loading = screen.getByTestId("TokenPriceChart__loading");
+      expect(loading.className).not.toContain("TokenPriceChart__skeleton");
+
+      // Chart-shaped artwork, drawn with the chart's own SVG idiom: gradient
+      // fill polygon under a stroked polyline.
+      const ghost = screen.getByTestId("TokenPriceChart__ghost");
+      expect(ghost.tagName.toLowerCase()).toBe("svg");
+      expect(ghost.querySelector("polyline")).not.toBeNull();
+      expect(ghost.querySelector("polygon")).not.toBeNull();
+      expect(loading.contains(ghost)).toBe(true);
+
+      // ...and it is decorative art, never the data path.
+      expect(screen.queryByTestId("TokenPriceChart__polyline")).toBeNull();
+      expect(screen.queryByTestId("TokenPriceChart__svg")).toBeNull();
+    });
+
+    it("keeps the timeframe selector crisp and interactive while loading", () => {
+      renderLoading();
+
+      const tabs = screen.getAllByRole("tab");
+      expect(tabs).toHaveLength(6);
+      tabs.forEach((tab) => expect(tab).toBeEnabled());
+
+      // The selector is a sibling of the blurred layer, never inside it.
+      expect(
+        screen
+          .getByTestId("TokenPriceChart__loading")
+          .contains(screen.getByRole("tablist")),
+      ).toBe(false);
+    });
+
+    it("holds the chart height while loading — no layout shift", async () => {
+      const { unmount } = renderLoading();
+      const loadingHeight = screen.getByTestId("TokenPriceChart__canvas").style
+        .height;
+      unmount();
+      // The parked request would otherwise be joined by the remount (same
+      // key, still "in flight"); a real one settles, this mock never does.
+      resetCacheWriteClaims();
+
+      respondByRange({ "1D": HISTORY_1D });
+      renderChart();
+      await waitFor(() =>
+        expect(screen.getByTestId("TokenPriceChart__polyline")).toBeDefined(),
+      );
+
+      expect(loadingHeight).toBe(`${CHART_HEIGHT_PX}px`);
+      expect(screen.getByTestId("TokenPriceChart__canvas").style.height).toBe(
+        loadingHeight,
+      );
+    });
+
+    it("keeps the same rows while loading so nothing below them shifts", async () => {
+      // The section is a flex column, so a row that appears only once data
+      // lands pushes the canvas AND the timeframe selector down with it. The
+      // canvas holding its own height is not enough: every row above the
+      // selector has to exist in both states.
+      const { unmount } = renderLoading();
+      const loadingRows = Array.from(
+        screen.getByTestId("TokenPriceChart").children,
+      ).map((child) => child.getAttribute("data-testid"));
+
+      // The header is told to hold its placeholder, not a stale number.
+      expect(reportedDelta).toEqual({
+        isLoading: true,
+        text: "",
+        colorClass: "neutral",
+      });
+      unmount();
+      resetCacheWriteClaims();
+
+      respondByRange({ "1D": HISTORY_1D });
+      renderChart();
+      await waitFor(() =>
+        expect(screen.getByTestId("TokenPriceChart__polyline")).toBeDefined(),
+      );
+
+      const loadedRows = Array.from(
+        screen.getByTestId("TokenPriceChart").children,
+      ).map((child) => child.getAttribute("data-testid"));
+
+      expect(loadingRows).toEqual(loadedRows);
+    });
+
+    it("hides the ghost from assistive tech and reports the chart busy", () => {
+      renderLoading();
+
+      expect(
+        screen
+          .getByTestId("TokenPriceChart__ghost")
+          .getAttribute("aria-hidden"),
+      ).toBe("true");
+      expect(
+        screen.getByTestId("TokenPriceChart__canvas").getAttribute("aria-busy"),
+      ).toBe("true");
+      expect(
+        screen.getByRole("status", { name: "Loading price chart" }),
+      ).toBeInTheDocument();
+
+      // A blurred ghost is not a chart image — nothing announces as one.
+      expect(screen.queryByRole("img")).toBeNull();
+    });
+
+    it("clears aria-busy once the series lands", async () => {
+      respondByRange({ "1D": HISTORY_1D });
+      renderChart();
+
+      await waitFor(() =>
+        expect(screen.getByTestId("TokenPriceChart__polyline")).toBeDefined(),
+      );
+      expect(
+        screen.getByTestId("TokenPriceChart__canvas").getAttribute("aria-busy"),
+      ).toBe("false");
+      // The loading region unmounts. The notice's own `role="status"` region
+      // stays mounted and empty — see the live-region test above.
+      expect(
+        screen.queryByRole("status", { name: "Loading price chart" }),
+      ).toBeNull();
+    });
+
+    it("renders no price text at all while loading", () => {
+      renderLoading();
+
+      // A wallet must never draw invented prices, even blurred: no axis
+      // labels, no delta, no currency anywhere in the section.
+      const section = screen.getByTestId("TokenPriceChart");
+      expect(section.textContent).not.toContain("$");
+      // The label rows still exist — they hold the section's height across
+      // states — but carry no text until a series lands.
+      expect(screen.getByTestId("TokenPriceChart__axis-high").textContent).toBe(
+        "",
+      );
+      expect(screen.getByTestId("TokenPriceChart__axis-low").textContent).toBe(
+        "",
+      );
+      // ...and nothing numeric is handed to the header either.
+      expect(deltaText()).not.toMatch(/[$%\d]/);
+    });
+  });
+
+  it("falls back to the 24h delta on a 1D fetch error", async () => {
+    mockedSend.mockResolvedValue({ status: 503, body: { error: "down" } });
+    renderChart();
+
+    await waitFor(() =>
+      expect(screen.getByTestId("TokenPriceChart__empty")).toBeDefined(),
+    );
+
+    // Percent only: the absolute must never be derived from the percentage.
+    expect(reportedDelta).toEqual({
+      isLoading: false,
+      text: "+1.09%",
+      colorClass: "positive",
+    });
+  });
+
+  it("reports no number when a range other than 1D fails", async () => {
+    jest.useFakeTimers();
+    mockedSend.mockImplementation(({ path }: { path: string }) =>
+      path.includes("range=1D")
+        ? Promise.resolve({ status: 200, body: { data: HISTORY_1D } })
+        : Promise.resolve({ status: 503, body: { error: "down" } }),
+    );
+    renderChart();
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
+    await user.click(screen.getByRole("tab", { name: "1Y" }));
+    await act(async () => {
+      jest.advanceTimersByTime(RANGE_SWITCH_DEBOUNCE_MS + 50);
+      await Promise.resolve();
+    });
+
+    // A 24h figure under a 1Y selector is the wrong timeframe, so no number
+    // is shown at all.
+    expect(deltaText()).toBe("");
+    expect(deltaText()).not.toContain("1.09");
+  });
+
+  it("announces the reliability notice through a live region outside the busy panel", async () => {
+    // The notice is inserted after the fetch settles. It sits outside the
+    // `aria-busy` canvas, so with no live region a screen-reader user resting
+    // on the timeframe selector is never told the price data is unreliable.
+    respondByRange({
+      "1D": makeHistory({ points: densePoints(97), lowVolume: true }),
+    });
+    renderChart();
+
+    // The region is in the DOM from the first render — before there is
+    // anything to announce — so the insertion is a content change, not a
+    // region that appears together with its own text.
+    const region = screen.getByTestId("TokenPriceChart__notice");
+    expect(region.getAttribute("role")).toBe("status");
+    expect(region.children).toHaveLength(0);
+
+    await waitFor(() =>
+      expect(screen.getByTestId("TokenChartNotice")).toBeDefined(),
+    );
+    expect(region.contains(screen.getByTestId("TokenChartNotice"))).toBe(true);
+    // Not nested in the panel `aria-busy` is applied to: AT defers a busy
+    // region's announcements.
+    expect(screen.getByTestId("TokenPriceChart__canvas").contains(region)).toBe(
+      false,
+    );
+  });
+});

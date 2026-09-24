@@ -1,0 +1,165 @@
+@use "../../../styles/utils.scss" as *;
+
+.TokenPriceChart {
+  display: flex;
+  flex-direction: column;
+  // 24px between the plot block and the timeframe selector, per the design
+  // (plot frame ends y=200.47, badges start y=224.47).
+  gap: pxToRem(24px);
+  margin-top: pxToRem(16px);
+  width: 100%;
+
+  // The section draws no delta: the view's only one lives in the detail
+  // header, under the price (`AssetDetail__delta--range`).
+
+  // The always-mounted live region for the reliability notice. It must stay
+  // rendered while empty — `display: none` drops it from the accessibility
+  // tree, and a live region that appears together with its first text is not
+  // reliably announced. Instead, cancel the flex gap it would otherwise take.
+  &__notice:empty {
+    margin-bottom: pxToRem(-24px);
+  }
+
+  &__canvas {
+    position: relative;
+    width: 100%;
+  }
+
+  // The Figma "Data loading" state: the chart's own artwork behind a 10px
+  // blur. Static by design — a pulsing blurred chart reads as a rendering
+  // glitch, and the blur alone already says "not ready".
+  //
+  // A literal px, deliberately not `pxToRem`: `blur()` takes a Gaussian
+  // standard deviation, which is what mobile's Skia `Blur` sigma of 10 is
+  // too. In rem it would ride the user's root font size and drift off both
+  // the design and the other platform.
+  &__loading {
+    filter: blur(10px);
+    height: 100%;
+    width: 100%;
+  }
+
+  &__ghost {
+    color: var(--sds-clr-green-09);
+    display: block;
+    height: 100%;
+    width: 100%;
+  }
+
+  &__placeholder {
+    align-items: center;
+    color: var(--sds-clr-gray-11);
+    display: flex;
+    font-size: pxToRem(14px);
+    height: 100%;
+    justify-content: center;
+    width: 100%;
+  }
+
+  // The label rows and the plot are one block with no gap between them, so
+  // the section's 12px column gap separates the block from its neighbours
+  // rather than pushing the labels away from the chart they describe.
+  &__plot {
+    display: flex;
+    flex-direction: column;
+  }
+
+  // Rows above and below the plot, never overlaid on it. Overlaying put the
+  // left-aligned low label directly under a series whose minimum sat at the
+  // left edge, so the line ran into its own label. The rows render in every
+  // state (empty without a series) to hold the section's height.
+  &__axis-label {
+    color: var(--sds-clr-gray-09);
+    font-size: pxToRem(14px);
+    height: pxToRem(20px);
+    line-height: pxToRem(20px);
+    pointer-events: none;
+    // The row is the positioning context; the text inside sits over the point
+    // it describes. Pinned to fixed corners the high label landed above the
+    // LOW point whenever a series peaked early, which reads as mislabelled.
+    position: relative;
+  }
+
+  &__axis-label-text {
+    position: absolute;
+    // `left` and `transform` are both set inline, per label, by
+    // `axisLabelPosition` — the shift has to scale with the position to keep
+    // an edge extreme inside the plot, and only the component knows where the
+    // point is. Nothing here may override them.
+    max-width: 100%;
+    white-space: nowrap;
+  }
+}
+
+.LineChart {
+  display: block;
+  height: 100%;
+  width: 100%;
+
+  // One colour per direction, inherited by every mark in the SVG: the
+  // polyline stroke, the gradient fill's stops and the end dot are all
+  // `currentColor`, so a losing range draws entirely red.
+  &--positive {
+    color: var(--sds-clr-green-09);
+  }
+
+  &--negative {
+    color: var(--sds-clr-red-09);
+  }
+
+  &--neutral {
+    color: var(--sds-clr-gray-09);
+  }
+}
+
+.TimeframeSelector {
+  display: flex;
+  gap: pxToRem(8px);
+  width: 100%;
+
+  &__tab {
+    background: none;
+    border: 1px solid transparent;
+    border-radius: pxToRem(100px);
+    color: var(--sds-clr-gray-11);
+    cursor: pointer;
+    flex: 1 0 0;
+    font-size: pxToRem(14px);
+    font-weight: var(--sds-fw-semi-bold);
+    line-height: pxToRem(20px);
+    padding: pxToRem(2px) pxToRem(8px);
+    text-align: center;
+
+    &--selected {
+      border-color: var(--sds-clr-gray-06);
+      color: var(--sds-clr-gray-12);
+    }
+  }
+}
+
+.TokenChartNotice {
+  // Styled after the Blockaid banners' amber info block
+  // (WarningMessage__infoBlock--warning).
+  background-color: var(--sds-clr-amber-03);
+  border-radius: pxToRem(16px);
+  color: var(--sds-clr-amber-11);
+  font-size: pxToRem(14px);
+  padding: pxToRem(16px) pxToRem(12px);
+
+  &__header {
+    align-items: center;
+    display: flex;
+    font-weight: var(--sds-fw-semi-bold);
+    gap: pxToRem(10px);
+  }
+
+  &__icon {
+    height: pxToRem(16px);
+    width: pxToRem(16px);
+  }
+
+  &__body {
+    line-height: pxToRem(20px);
+    margin-top: pxToRem(4px);
+  }
+}
