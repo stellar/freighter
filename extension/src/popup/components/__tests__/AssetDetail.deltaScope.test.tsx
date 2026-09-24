@@ -4,7 +4,10 @@ import BigNumber from "bignumber.js";
 
 import { AssetDetail } from "popup/components/account/AssetDetail";
 import { ROUTES } from "popup/constants/routes";
-import { MAINNET_NETWORK_DETAILS } from "@shared/constants/stellar";
+import {
+  MAINNET_NETWORK_DETAILS,
+  TESTNET_NETWORK_DETAILS,
+} from "@shared/constants/stellar";
 import { APPLICATION_STATE as ApplicationState } from "@shared/constants/applicationState";
 import * as ApiInternal from "@shared/api/internal";
 import { mockAccounts, Wrapper } from "popup/__testHelpers__";
@@ -66,14 +69,14 @@ const makeProps = (selectedAsset: string) =>
     historyData: { type: AppDataType.RESOLVED, operationsByAsset: {} },
   }) as any;
 
-const state = {
+const makeState = (networkDetails = MAINNET_NETWORK_DETAILS) => ({
   auth: {
     error: null,
     applicationState: ApplicationState.PASSWORD_CREATED,
     publicKey: "G1",
     allAccounts: mockAccounts,
   },
-  settings: { networkDetails: MAINNET_NETWORK_DETAILS },
+  settings: { networkDetails },
   remoteConfig: { isInitialized: true, use_token_price_history: true },
   cache: {
     tokenPrices: {
@@ -82,7 +85,8 @@ const state = {
       },
     },
   },
-};
+});
+const state = makeState();
 
 describe("AssetDetail header delta scope", () => {
   afterEach(() => {
@@ -120,6 +124,39 @@ describe("AssetDetail header delta scope", () => {
     expect(delta().className).not.toContain(PriceDirection.Positive);
 
     // Let the stats card's resolved fetch land inside act.
+    await act(async () => {
+      await Promise.resolve();
+    });
+  });
+
+  it("drops the delta when the chart is hidden, so returning to the scope shows the placeholder", async () => {
+    const renderWith = (s: ReturnType<typeof makeState>) => (
+      <Wrapper routes={[ROUTES.account]} state={s}>
+        <AssetDetail {...makeProps("native")} />
+      </Wrapper>
+    );
+    const { rerender } = render(renderWith(makeState()));
+    const delta = () => screen.getByTestId("AssetDetail__delta");
+
+    act(() => {
+      reportDelta!({
+        isLoading: false,
+        text: "+$0.0602 (32.12%)",
+        colorClass: PriceDirection.Positive,
+      });
+    });
+    expect(delta().textContent).toBe("+$0.0602 (32.12%)");
+
+    // Off mainnet the chart unmounts; back on mainnet it remounts on its
+    // default range and has reported nothing yet.
+    rerender(renderWith(makeState(TESTNET_NETWORK_DETAILS)));
+    expect(screen.queryByTestId("TokenPriceChart")).toBeNull();
+    rerender(renderWith(makeState()));
+
+    expect(screen.getByTestId("TokenPriceChart")).toBeInTheDocument();
+    expect(delta().textContent).toBe("");
+    expect(delta().querySelector(".AssetDetail__delta-ghost")).not.toBeNull();
+
     await act(async () => {
       await Promise.resolve();
     });

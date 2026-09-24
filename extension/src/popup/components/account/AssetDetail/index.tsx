@@ -261,6 +261,12 @@ export const AssetDetail = ({
   // into a loop.
   const isChartShown =
     isPriceHistoryEnabled && isMainnet(networkDetails) && !isLpShare;
+  // The scope tag cannot tell a remount from a return: hiding the chart and
+  // showing it again for the same scope would revive the delta under the
+  // remounted chart's default range. Drop it while the chart is hidden.
+  if (!isChartShown && rangeDelta.delta !== LOADING_DELTA) {
+    setRangeDelta({ scope: scopeKey, delta: LOADING_DELTA });
+  }
 
   const isStellarExpertSupported =
     isMainnet(networkDetails) || isTestnet(networkDetails);
