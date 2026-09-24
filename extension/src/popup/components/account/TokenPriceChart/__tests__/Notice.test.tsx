@@ -45,6 +45,9 @@ const renderChartWith = async (history: ApiTokenPriceHistory) => {
   );
 };
 
+const NOW = 1790000000;
+const TWO_WEEKS = 1209600;
+
 describe("getNoticeVariant precedence", () => {
   it("picks low-volume over limited-data when both hold", () => {
     // The common case: low volume causes the sparseness. The safety copy
@@ -54,6 +57,8 @@ describe("getNoticeVariant precedence", () => {
         lowVolume: true,
         points: densePoints(5),
         range: "1D",
+        resolutionSeconds: 900,
+        nowSeconds: NOW,
       }),
     ).toBe(TokenChartNoticeVariant.LowVolume);
   });
@@ -65,6 +70,8 @@ describe("getNoticeVariant precedence", () => {
         lowVolume: false,
         points: densePoints(31),
         range: "1D",
+        resolutionSeconds: 900,
+        nowSeconds: NOW,
       }),
     ).toBe(TokenChartNoticeVariant.LimitedData);
     // 1H expects 12: five points is a normal chart there.
@@ -73,6 +80,8 @@ describe("getNoticeVariant precedence", () => {
         lowVolume: false,
         points: densePoints(5),
         range: "1H",
+        resolutionSeconds: 900,
+        nowSeconds: NOW,
       }),
     ).toBeNull();
   });
@@ -83,8 +92,47 @@ describe("getNoticeVariant precedence", () => {
         lowVolume: null,
         points: densePoints(97),
         range: "1D",
+        resolutionSeconds: 900,
+        nowSeconds: NOW,
       }),
     ).toBe(TokenChartNoticeVariant.VerdictUnavailable);
+  });
+
+  it("does not flag ALL for a young token with an unbroken history", () => {
+    // USDY's shape: 27 two-week buckets since launch, none missing. Against
+    // the fixed 277 it read as 10% coverage.
+    expect(
+      getNoticeVariant({
+        lowVolume: false,
+        points: densePoints(27, {
+          startT: NOW - 27 * TWO_WEEKS,
+          stepSeconds: TWO_WEEKS,
+        }),
+        range: "ALL",
+        resolutionSeconds: TWO_WEEKS,
+        nowSeconds: NOW,
+      }),
+    ).toBeNull();
+  });
+
+  it("still flags ALL when a token's own history has gaps", () => {
+    // First bucket ~3 years back (78 buckets to now), only 10 of them traded.
+    const points = [
+      { t: NOW - 78 * TWO_WEEKS, p: "1" },
+      ...densePoints(9, {
+        startT: NOW - 9 * TWO_WEEKS,
+        stepSeconds: TWO_WEEKS,
+      }),
+    ];
+    expect(
+      getNoticeVariant({
+        lowVolume: false,
+        points,
+        range: "ALL",
+        resolutionSeconds: TWO_WEEKS,
+        nowSeconds: NOW,
+      }),
+    ).toBe(TokenChartNoticeVariant.LimitedData);
   });
 
   it("returns nothing for a dense, above-threshold series", () => {
@@ -93,6 +141,8 @@ describe("getNoticeVariant precedence", () => {
         lowVolume: false,
         points: densePoints(97),
         range: "1D",
+        resolutionSeconds: 900,
+        nowSeconds: NOW,
       }),
     ).toBeNull();
   });

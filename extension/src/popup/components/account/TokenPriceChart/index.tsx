@@ -484,6 +484,14 @@ export const TokenPriceChart = ({
   // every render of the parent detail view.
   const chartHistory = hasChart ? history : null;
 
+  // One clock read per fetched series. Reading `Date.now()` inline in the JSX
+  // handed `LineChart` a new prop value on every render and defeated its
+  // memoisation; the clamp target only needs to be "now, as of this series".
+  const nowSeconds = useMemo(
+    () => (chartHistory ? Math.floor(Date.now() / 1000) : 0),
+    [chartHistory],
+  );
+
   const noticeVariant = useMemo(
     () =>
       chartHistory
@@ -491,17 +499,11 @@ export const TokenPriceChart = ({
             lowVolume: chartHistory.lowVolume,
             points: chartHistory.points,
             range: chartHistory.range,
+            resolutionSeconds: chartHistory.resolutionSeconds,
+            nowSeconds,
           })
         : null,
-    [chartHistory],
-  );
-
-  // One clock read per fetched series. Reading `Date.now()` inline in the JSX
-  // handed `LineChart` a new prop value on every render and defeated its
-  // memoisation; the clamp target only needs to be "now, as of this series".
-  const nowSeconds = useMemo(
-    () => (chartHistory ? Math.floor(Date.now() / 1000) : 0),
-    [chartHistory],
+    [chartHistory, nowSeconds],
   );
 
   // Axis labels come from returned points, not the requested window (§B.5),
