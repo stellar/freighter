@@ -800,8 +800,8 @@ export const getTokenPrices = async (
   // v1 (legacy) path — direct fetch to the v1 indexer, not a backend-v2 call.
   // NOTE: the old Node backend does not accept custom tokens, so the
   // custom-token half of the split predicate applies here only. Not
-  // `getAssetFromCanonical`: it splits on the first colon and throws on a
-  // bare contract id.
+  // `getAssetFromCanonical`: it throws on a bare contract id, which would
+  // fail the whole batch.
   const legacyTokens = nonLpTokens.filter((tokenId) => {
     const { issuer } = splitCanonical(tokenId);
     return !isContractId(issuer || tokenId);
