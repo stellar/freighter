@@ -95,7 +95,9 @@ export const AccountHistory = () => {
 
   return (
     <>
-      <View.AppHeader hasBackButton pageTitle={t("History")} />
+      {/* A tab root has nowhere to go back to: the tab bar navigates with
+          `replace`, so `navigate(-1)` would skip past Home entirely. */}
+      <View.AppHeader pageTitle={t("History")} />
       <View.Content hasNoTopPadding hasNoBottomPadding>
         <div className="AccountHistory" data-testid="AccountHistory">
           {!hasError &&

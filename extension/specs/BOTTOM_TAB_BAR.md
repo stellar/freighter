@@ -91,6 +91,13 @@ Tabs navigate with `<NavLink replace end>`.
   which fires `fetchData({ useAppDataCache: false })` — a full account refetch
   for a tap that should do nothing.
 
+**A tab root must not render a back button.** `replace` overwrites the entry the
+user came from, so `navigate(-1)` on a tab root skips past Home to whatever
+preceded it (usually the unlock screen). Both non-Home tabs therefore drop it:
+`Discover` passes `hasBackButton={false}` to `SubviewHeader`, and
+`AccountHistory` omits `hasBackButton` on `View.AppHeader`. The tab bar is the
+only way between tab roots.
+
 Home navigates to bare `ROUTES.account` with no query string. `ActiveTabProvider`
 is mounted inside the `/` route element, so `activeTab` is local to that mount
 and resets to `TOKENS` on every Home entry regardless; carrying `?tab=` would

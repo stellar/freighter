@@ -212,7 +212,7 @@ test.describe("Discover critical flows (stubbed)", () => {
     expect(await minContentWidth()).toBe(onHome);
   });
 
-  test("can navigate back out of Discover", async ({
+  test("leaves Discover via the Home tab", async ({
     page,
     extensionId,
     context,
@@ -223,11 +223,11 @@ test.describe("Discover critical flows (stubbed)", () => {
     await page.getByTestId("discover-welcome-dismiss").click();
     await expect(page.getByTestId("trending-carousel")).toBeVisible();
 
-    // Discover is a route rather than a Radix sheet now, so Escape no longer
-    // dismisses it; the header's back button is the way out. It becomes a tab
-    // root when the bottom tab bar lands, at which point there is no back at
-    // all and this asserts the Home tab instead.
-    await page.getByTestId("BackButton").click();
+    // Discover is a tab root: no back button, and Escape no longer dismisses
+    // it either now that it is a route rather than a Radix sheet. The tab bar
+    // is the way out.
+    await expect(page.getByTestId("BackButton")).toHaveCount(0);
+    await page.getByTestId("nav-link-account").click();
     await expect(page.getByTestId("trending-carousel")).not.toBeVisible();
     await expect(page.getByTestId("account-view")).toBeVisible();
   });
