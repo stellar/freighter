@@ -7,7 +7,7 @@ import { ROUTES } from "popup/constants/routes";
 import { navigateTo } from "popup/helpers/navigate";
 import { View } from "popup/basics/layout/View";
 
-import LogoWelcome from "popup/assets/logo-freighter-welcome-2.svg";
+import LogoWelcome from "popup/assets/logo-varial.svg";
 
 import "./styles.scss";
 

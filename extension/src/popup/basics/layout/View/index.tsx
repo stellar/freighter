@@ -2,7 +2,7 @@ import React, { createContext, useContext } from "react";
 import { Text } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
-import FreighterLogo from "popup/assets/logo-freighter-welcome-2.svg";
+import VarialLockup from "popup/assets/logo-varial-lockup.svg";
 import { BackButton } from "popup/basics/buttons/BackButton";
 import { addStyleClasses } from "popup/helpers/addStyleClasses";
 
@@ -24,7 +24,7 @@ const ViewHeader: React.FC = ({ ...props }) => {
           <img
             className="View__header__logo"
             alt={t("Varial logo")}
-            src={FreighterLogo}
+            src={VarialLockup}
           />
         </div>
       </ViewInset>

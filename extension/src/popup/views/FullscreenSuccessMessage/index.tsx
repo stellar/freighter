@@ -5,7 +5,7 @@ import { Text, Icon } from "@stellar/design-system";
 import { Onboarding, OnboardingModal } from "popup/components/Onboarding";
 import { View } from "popup/basics/layout/View";
 
-import LogoWelcome from "popup/assets/logo-freighter-welcome-2.svg";
+import LogoWelcome from "popup/assets/logo-varial.svg";
 
 import "./styles.scss";
 
