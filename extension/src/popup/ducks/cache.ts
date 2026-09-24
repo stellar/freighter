@@ -225,6 +225,14 @@ const cacheSlice = createSlice({
     // the previous network's results until the in-memory store is reset.
     builder.addCase("settings/changeNetwork/fulfilled", (state) => {
       state.tokenLists = [];
+      // Balances and history are network-keyed, so switching away and back
+      // would otherwise re-serve whatever was cached for that network. The
+      // header's network switcher used to force a refresh on every change
+      // (`shouldForceBalancesRefresh`); it is gone, and switching now happens
+      // in Settings, so the guarantee moves here where every entry point gets
+      // it.
+      state.balanceData = {};
+      state.historyData = {};
     });
   },
 });

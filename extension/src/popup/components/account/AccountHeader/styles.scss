@@ -1,5 +1,39 @@
 @use "../../../styles/utils.scss" as *;
 
+// The account header's top row: the account chip on the left, the QR and
+// connected-apps buttons on the right, and no page title between them.
+//
+// `isAccountHeader` is set by AccountHeader alone, so these rules are scoped to
+// it in practice even though the class is owned by View. Without them the three
+// header boxes each take `flex: 1` from `View__inset--inline`, which would give
+// the empty centre box a third of a 360px row and squeeze the chip.
+.View__inset--account-header {
+  align-items: center;
+
+  .View__header__box--left {
+    flex: 1 1 auto;
+    min-width: 0;
+    justify-content: flex-start;
+    // Keep the account name out of the document's min-content width. The
+    // extension popup has no viewport -- Chrome sizes the window to fit its
+    // content -- so a long wallet name widened the popup itself: 24 characters
+    // took it from 360px to 572px. Neither `min-width: 0` nor a zero
+    // flex-basis helps, because the intrinsic-sizing pass still walks into the
+    // text; only containment stops it. `flex-grow: 1` still hands this box the
+    // space left over by the buttons, so the chip fills the row and
+    // ellipsizes. Same failure and fix as the Discover carousel.
+    contain: inline-size;
+  }
+
+  .View__header__box--center {
+    display: none;
+  }
+
+  .View__header__box--right {
+    flex: 0 0 auto;
+  }
+}
+
 .AccountHeader {
   display: flex;
   flex-direction: row;
@@ -7,132 +41,27 @@
   align-items: center;
   height: 5rem;
 
-  &__wallets {
-    position: absolute;
+  &__icon-btns {
     display: flex;
-    flex-direction: column;
-    height: 100vh;
-    min-width: var(--popup--width);
-    width: 100%;
-    background: var(--sds-clr-gray-01);
-    z-index: var(--z-index-modal);
-  }
+    gap: pxToRem(8px);
 
-  &__icon-btn {
-    // Styles all three nav circles (options / history / networks) from one
-    // place. The history button is not wrapped in `__dropdown`, so keying off
-    // that class left it at the SDS NavButton default while its neighbours
-    // were overridden.
-    &__left {
-      display: flex;
-      gap: pxToRem(8px);
-
-      button {
-        width: pxToRem(32);
-        height: pxToRem(32);
-
-        svg {
-          width: pxToRem(16);
-          height: pxToRem(16);
-          stroke: var(--sds-clr-base-01);
-        }
-      }
-    }
-  }
-
-  &__right-button {
-    cursor: pointer;
-    display: flex;
-    flex-flow: row nowrap;
-    align-items: center;
-    justify-content: center;
-    border: 1px solid var(--sds-clr-gray-06);
-    border-radius: pxToRem(100px);
-    height: pxToRem(32);
-    width: pxToRem(32);
-
-    &--with-label {
-      padding: pxToRem(6) pxToRem(10);
-      height: auto;
-      width: auto;
-      display: flex;
-      gap: pxToRem(4);
-      font-size: pxToRem(14);
-      font-weight: var(--sds-fw-semi-bold);
-    }
-
-    svg {
-      color: var(--sds-clr-gray-09);
-    }
-  }
-
-  &__network-copy {
-    font-size: pxToRem(14px);
-    line-height: 1.5rem;
-    font-weight: var(--font-weight-medium);
-    white-space: nowrap;
-  }
-
-  &__network-selector {
-    display: flex;
-    flex-direction: column;
-    gap: pxToRem(4px);
-    margin: 0 0 pxToRem(12px) 0;
-
-    &__row {
-      cursor: pointer;
-      display: flex;
-      flex-flow: row nowrap;
-      align-items: center;
-      width: 100%;
-    }
-
-    &__check {
-      flex-grow: 2;
-      display: flex;
-      justify-content: flex-end;
+    button {
+      width: pxToRem(32);
+      height: pxToRem(32);
 
       svg {
-        height: pxToRem(20px);
-        width: pxToRem(20px);
+        width: pxToRem(16);
+        height: pxToRem(16);
+        stroke: var(--sds-clr-base-01);
       }
-    }
-  }
-
-  &__account-name {
-    color: var(--sds-clr-gray-11);
-    font-weight: var(--sds-fw-medium);
-  }
-
-  &__account-dropdown-modal {
-    left: 50%;
-    transform: translate(-50%, 0);
-    top: pxToRem(24);
-  }
-
-  &__account-dropdown {
-    border-radius: pxToRem(6px);
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    max-height: calc(100vh - 1.5rem);
-    overflow: hidden;
-    width: pxToRem(310px);
-
-    li::before {
-      content: none !important;
-    }
-
-    .View__inset--scroll-shadows {
-      --bgRGB: 22, 22, 24;
     }
   }
 
   &__account-info {
     display: flex;
     justify-content: space-around;
-    // Figma's Balance frame carries 24px of top padding, putting the account
-    // row 48px below the nav buttons (which end at 56px in an 80px header).
+    // Figma's Balance frame carries 24px of top padding, putting the balance
+    // row below the header's 72px top strip.
     padding-top: pxToRem(24px);
 
     // Full width so the action tiles below span the whole row; without it this
@@ -144,125 +73,6 @@
       gap: pxToRem(8px);
       width: 100%;
     }
-  }
-
-  &__name-key-display {
-    align-items: center;
-    display: flex;
-    flex-direction: row;
-    justify-content: center;
-    gap: pxToRem(6px);
-    font-size: pxToRem(14px);
-    line-height: pxToRem(20px);
-    cursor: pointer;
-
-    // The chevron is the only svg in this row.
-    > svg {
-      width: pxToRem(12);
-      height: pxToRem(12);
-      stroke: var(--sds-clr-gray-09);
-    }
-
-    .Tooltip {
-      padding: 0.125rem 0.375rem;
-    }
-  }
-
-  &__identicon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: pxToRem(16);
-    height: pxToRem(16);
-    background: var(--sds-clr-gray-03);
-    border-radius: pxToRem(100);
-
-    img {
-      width: pxToRem(8);
-      height: pxToRem(8);
-    }
-  }
-
-  &__account-list-item {
-    padding: pxToRem(12px) pxToRem(24px);
-
-    &__link {
-      color: var(--sds-clr-gray-12);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    &__row {
-      display: flex;
-      align-items: center;
-    }
-
-    &__link-copy {
-      margin-left: pxToRem(16px);
-      font-size: 0.875rem;
-      line-height: 1.5rem;
-    }
-
-    &__icon {
-      color: var(--sds-clr-gray-09);
-      display: flex;
-      align-items: center;
-      width: pxToRem(20px);
-      height: pxToRem(20px);
-      justify-content: center;
-    }
-
-    &__arrow {
-      color: var(--sds-clr-gray-09);
-      display: flex;
-    }
-  }
-
-  &__options {
-    left: pxToRem(24px);
-    top: pxToRem(64px);
-    width: pxToRem(180);
-
-    &__item {
-      align-items: center;
-      border-radius: pxToRem(4);
-      cursor: pointer;
-      display: flex;
-      justify-content: space-between;
-      padding: #{pxToRem(6px)} #{pxToRem(8px)};
-
-      &__icon {
-        display: flex;
-
-        svg {
-          stroke: var(--sds-clr-gray-09);
-        }
-      }
-
-      &:hover {
-        background: var(--sds-clr-gray-04);
-      }
-    }
-  }
-
-  &__networks {
-    width: pxToRem(180);
-    top: pxToRem(64px);
-    left: pxToRem(64px);
-  }
-
-  &__img-cube-icon {
-    width: 0.875rem;
-    height: 1rem;
-  }
-
-  &__list-divider {
-    border: none;
-    height: 1px;
-    background: var(--sds-clr-gray-03);
-    border-radius: 1rem;
-    margin-top: 0;
   }
 
   &__total-usd-balance {
@@ -329,62 +139,5 @@
         stroke-width: 2;
       }
     }
-  }
-
-  &__allow-list-item {
-    display: flex;
-    justify-content: space-between;
-    border-radius: pxToRem(4);
-
-    &:hover {
-      background: var(--sds-clr-gray-04);
-    }
-
-    .PunycodedDomain {
-      flex: 7;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-
-      &__domain {
-        font-size: 0.875rem;
-        line-height: 1.375rem;
-      }
-
-      &__favicon {
-        width: 24px;
-        height: 24px;
-        border-radius: 50%;
-      }
-
-      &__favicon-container {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        overflow: visible;
-      }
-    }
-
-    .allow-list-remove {
-      flex: 1;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      background: none;
-      color: var(--sds-clr-red-09);
-      border: none;
-      cursor: pointer;
-
-      svg {
-        width: 16px;
-        height: 16px;
-      }
-    }
-  }
-
-  &__dropdown {
-    display: flex;
-    align-items: center;
-    justify-content: center;
   }
 }

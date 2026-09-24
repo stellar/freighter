@@ -27,7 +27,6 @@ import { Account } from "popup/views/Account";
 import { AccountHistory } from "popup/views/AccountHistory";
 import { AccountCreator } from "popup/views/AccountCreator";
 import { AddAccount } from "popup/views/AddAccount/AddAccount";
-import { ManageConnectedApps } from "popup/views/ManageConnectedApps";
 import { ManageAssetsLists } from "popup/views/ManageAssetsLists";
 import { ImportAccount } from "popup/views/AddAccount/ImportAccount";
 import { SelectHardwareWallet } from "popup/views/AddAccount/connect/SelectHardwareWallet";
@@ -64,7 +63,6 @@ import { ManageNetwork } from "popup/views/ManageNetwork";
 import { LeaveFeedback } from "popup/views/LeaveFeedback";
 import { AccountMigration } from "popup/views/AccountMigration";
 import { AddFunds } from "popup/views/AddFunds";
-import { Wallets } from "popup/views/Wallets";
 import { ConfirmSidebarRequest } from "popup/views/ConfirmSidebarRequest";
 
 import { DEV_SERVER } from "@shared/constants/services";
@@ -290,9 +288,12 @@ export const Router = () => (
           path={`${ROUTES.manageNetwork}/*`}
           element={<ManageNetwork />}
         ></Route>
+        {/* Both of these are sheets on Home now. The route strings stay so a
+            popup restoring its last location lands on Home rather than a blank
+            screen. */}
         <Route
           path={ROUTES.manageConnectedApps}
-          element={<ManageConnectedApps />}
+          element={<Navigate to={ROUTES.account} replace />}
         ></Route>
         <Route
           path={`${ROUTES.manageAssetsLists}/*`}
@@ -308,7 +309,10 @@ export const Router = () => (
         ></Route>
         <Route path={ROUTES.autoLockTimer} element={<AutoLockTimer />}></Route>
         <Route path={ROUTES.addFunds} element={<AddFunds />} />
-        <Route path={ROUTES.wallets} element={<Wallets />} />
+        <Route
+          path={ROUTES.wallets}
+          element={<Navigate to={ROUTES.account} replace />}
+        />
 
         {DEV_SERVER && (
           <>

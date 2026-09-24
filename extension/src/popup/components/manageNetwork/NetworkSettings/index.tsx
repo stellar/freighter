@@ -91,6 +91,7 @@ export const NetworkSettings = () => {
       <View.Content hasNoTopPadding>
         <div className="NetworkSettings">
           <Select
+            data-testid="network-settings-select"
             fieldSize="md"
             id="select"
             label={t("Current Network")}

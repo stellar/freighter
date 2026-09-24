@@ -1,6 +1,6 @@
 import { expect, test, expectPageToHaveScreenshot } from "./test-fixtures";
 import { loginToTestAccount, PASSWORD } from "./helpers/login";
-import { goToConnectedApps } from "./helpers/network";
+import { goToConnectedApps, switchNetwork } from "./helpers/network";
 
 test("View Allow List selector", async ({ page, extensionId, context }) => {
   test.slow();
@@ -30,21 +30,25 @@ test("View Allow List selector", async ({ page, extensionId, context }) => {
     screenshot: "allowlist-empty.png",
   });
 
-  await page.reload();
-  const title = page.getByTestId("AppHeaderPageTitle");
-  await expect(title).toBeVisible();
-  await expect(title).toHaveText("Connected apps");
-  await expect(page.getByText("play.freighter.app")).toBeVisible();
+  // Reopening the sheet re-reads app data, which is how the connection just
+  // granted reaches it.
+  await page.getByTestId("ConnectedAppsSheet__close").click();
+  await goToConnectedApps(page);
+  await expect(
+    page.getByTestId("ConnectedAppsSheet").getByText("play.freighter.app"),
+  ).toBeVisible();
 
   await expectPageToHaveScreenshot({
     page,
     screenshot: "allowlist-populated.png",
   });
 
-  // confirm allowlist is divided by network
-  await page
-    .getByTestId("manage-connected-apps-select")
-    .selectOption("Main Net");
+  // Confirm the allow list is divided by network. The sheet only ever shows
+  // the active network now, so this switches in Settings rather than picking
+  // a network from a dropdown on the screen itself.
+  await page.getByTestId("ConnectedAppsSheet__close").click();
+  await switchNetwork(page, "Mainnet");
+  await goToConnectedApps(page);
 
   await expect(page.getByText("Nothing connected yet")).toBeVisible();
 
@@ -54,7 +58,8 @@ test("View Allow List selector", async ({ page, extensionId, context }) => {
   });
 
   // create a new account and confirm the allowlist is divided by account
-  await page.getByTestId("BackButton").click();
+  await page.getByTestId("ConnectedAppsSheet__close").click();
+  await switchNetwork(page, "Testnet");
 
   await page.getByTestId("account-view-account-name").click();
   await page.getByTestId("add-wallet").click();
@@ -102,18 +107,26 @@ test("Disconnecting apps shows a success toast", async ({
 
   await goToConnectedApps(page);
   await grantAccess();
-  await page.reload();
-  await expect(page.getByText("play.freighter.app")).toBeVisible();
+  // Close and reopen rather than reload: opening the sheet is what re-reads
+  // the allow list.
+  await page.getByTestId("ConnectedAppsSheet__close").click();
+  await goToConnectedApps(page);
+  await expect(
+    page.getByTestId("ConnectedAppsSheet").getByText("play.freighter.app"),
+  ).toBeVisible();
 
   // Removing a single app names it in the toast.
-  await page.locator(".ManageConnectedApps__row .Button").first().click();
+  await page.locator(".ConnectedAppsSheet__row .Button").first().click();
   await expect(page.getByText("play.freighter.app disconnected")).toBeVisible();
   await expect(page.getByText("Nothing connected yet")).toBeVisible();
 
   // "Disconnect all" reports the batch instead of naming each app.
   await grantAccess();
-  await page.reload();
-  await expect(page.getByText("play.freighter.app")).toBeVisible();
+  await page.getByTestId("ConnectedAppsSheet__close").click();
+  await goToConnectedApps(page);
+  await expect(
+    page.getByTestId("ConnectedAppsSheet").getByText("play.freighter.app"),
+  ).toBeVisible();
 
   await page.getByTestId("disconnect-all").click();
   await expect(page.getByText("All apps disconnected")).toBeVisible();

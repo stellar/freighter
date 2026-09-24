@@ -10,6 +10,7 @@ import {
   stubAllExternalApis,
 } from "./helpers/stubs";
 import { goToAddAsset, startRemoveAsset } from "./helpers/assets";
+import { goToSettings } from "./helpers/network";
 
 // The page navigation after clicking 'Manage Assets' doesn't complete reliably.
 // 'Your assets' text never appears even with long timeouts and waitForLoadState.
@@ -53,8 +54,7 @@ test("Adding token on Futurenet", async ({ page, extensionId, context }) => {
   test.slow();
   await loginToTestAccount({ page, extensionId, context });
 
-  await page.getByTestId("account-options-dropdown").click();
-  await page.getByText("Settings").click();
+  await goToSettings(page);
   await page.getByRole("link", { name: "Security" }).click();
   await page.getByText("Advanced settings").click();
   await page.getByText("I understand, continue").click();

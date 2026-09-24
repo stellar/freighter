@@ -1,101 +1,37 @@
-@use "../../styles/utils.scss" as *;
+@use "../../../styles/utils.scss" as *;
 
-.ManageConnectedApps {
+.ConnectedAppsSheet {
   display: flex;
   flex-direction: column;
+  padding: pxToRem(24px);
   gap: pxToRem(16px);
-  // Lets `&__wrapper` fill the leftover height so "Disconnect all" pins to
-  // the bottom instead of trailing the list.
-  height: 100%;
 
-  &__network-pill {
-    position: relative;
+  &__header {
     display: flex;
     align-items: center;
-    gap: pxToRem(4px);
-    width: fit-content;
-    // The view has no top padding, so without this the pill sits flush against
-    // `.View__inset` (`overflow: auto`) and its 4px focus ring gets clipped.
-    margin-top: pxToRem(4px);
-    background-color: var(--sds-clr-gray-01);
-    border: 1px solid var(--sds-clr-gray-06);
-    border-radius: pxToRem(8px);
-    padding: pxToRem(8px) pxToRem(12px);
+    justify-content: space-between;
+  }
+
+  &__title {
+    font-size: pxToRem(16px);
+    font-weight: var(--sds-fw-medium);
+    color: var(--sds-clr-gray-12);
+  }
+
+  &__close {
+    display: flex;
+    align-items: center;
+    background: none;
+    border: 0;
+    padding: 0;
     cursor: pointer;
-
-    // NetworkIcon ships a margin-right for other call sites; the pill uses
-    // its own gap instead.
-    .NetworkIcon {
-      margin-right: 0;
-
-      // SDS's stroke-width of 2 in a 24 viewBox thins to ~1.3px at the 16px
-      // rendered here, too light next to the semi-bold label. Scoped to the
-      // pill so other NetworkIcon call sites keep the default.
-      svg {
-        stroke-width: 2.5;
-      }
-    }
-
-    &__label {
-      color: var(--sds-clr-gray-12);
-      font-size: pxToRem(14px);
-      font-weight: var(--sds-fw-semi-bold);
-      line-height: pxToRem(20px);
-      white-space: nowrap;
-    }
-
-    &__chevron {
-      width: pxToRem(16px);
-      height: pxToRem(16px);
-      color: var(--sds-clr-gray-09);
-      flex-shrink: 0;
-    }
-
-    // The real <select> is stretched invisibly over the pill; the icon, label
-    // and chevron beside it are what the user sees.
-    //
-    // Stretching the outer `.Select` rather than the <select> itself: SDS puts
-    // our className on the <select>, whose `.Select__container` ancestor is
-    // `position: relative` and would trap `inset: 0`, shrinking the hitbox to
-    // that wrapper instead of the pill.
-    .Select {
-      position: absolute;
-      inset: 0;
-    }
-
-    // Stretched over the pill, the container's own fill and border would
-    // otherwise paint over the icon/label/chevron beneath it.
-    .Select__container {
-      width: 100%;
-      height: 100%;
-      background-color: transparent;
-      border: none;
-      // Match the pill, so the focus ring traces its corners and not SDS's 4px.
-      border-radius: pxToRem(8px);
-    }
-
-    // Redundant with the Icon.ChevronDown already in the pill.
-    .Select__icon {
-      display: none;
-    }
-
-    &__select {
-      display: block;
-      width: 100%;
-      height: 100%;
-      // Invisible, but still the focused element — which is why SDS's focus
-      // ring is left at full strength as the pill's only focus affordance.
-      opacity: 0;
-      cursor: pointer;
-    }
+    color: var(--sds-clr-gray-11);
   }
 
   &__wrapper {
     display: flex;
     flex-direction: column;
-    flex: 1;
     gap: pxToRem(16px);
-    justify-content: space-between;
   }
 
   &__list {
@@ -104,6 +40,15 @@
     background-color: var(--sds-clr-gray-03);
     border-radius: pxToRem(16px);
     overflow: hidden;
+    // A long allow-list would otherwise push "Disconnect all" past the sheet's
+    // max-height and out of reach.
+    max-height: pxToRem(280px);
+    overflow-y: auto;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
   }
 
   &__row {
@@ -111,6 +56,8 @@
     align-items: center;
     justify-content: space-between;
     padding: pxToRem(12px) pxToRem(16px);
+    // The rounded list clips its children, so a scrolled row keeps the corners.
+    flex: 0 0 auto;
 
     &:not(:last-child) {
       border-bottom: 1px solid var(--sds-clr-gray-06);
@@ -180,7 +127,7 @@
     align-items: center;
     text-align: center;
     gap: pxToRem(8px);
-    padding-top: pxToRem(24px);
+    padding-top: pxToRem(8px);
 
     &__badge {
       display: flex;
@@ -215,11 +162,5 @@
       // With the column's 8px gap, makes the frame's 24px above the button.
       margin-bottom: pxToRem(16px);
     }
-  }
-
-  &__discover-sheet {
-    background: var(--sds-clr-gray-01);
-    height: 100%;
-    width: 100%;
   }
 }

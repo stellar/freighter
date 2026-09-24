@@ -48,7 +48,7 @@ export const loginToTestAccountPT = async ({
   });
 
   await page.goto(`chrome-extension://${extensionId}/index.html#/`);
-  await expect(page.getByTestId("network-selector-open")).toBeVisible({
+  await expect(page.getByTestId("account-chip")).toBeVisible({
     timeout: 50000,
   });
   await switchNetwork(page, "Testnet");

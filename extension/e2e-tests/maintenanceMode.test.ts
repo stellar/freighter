@@ -69,7 +69,7 @@ test("MaintenanceScreen overlay intercepts clicks on underlying UI", async ({
   // The fixed overlay sits above the account UI; Playwright's click uses
   // elementFromPoint(), which respects z-index, so this should throw.
   await expect(async () => {
-    await page.getByTestId("account-options-dropdown").click({ timeout: 2000 });
+    await page.getByTestId("account-chip").click({ timeout: 2000 });
   }).rejects.toThrow();
 });
 

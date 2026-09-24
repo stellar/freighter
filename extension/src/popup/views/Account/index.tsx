@@ -34,7 +34,6 @@ import { NotFundedMessage } from "popup/components/account/NotFundedMessage";
 import { isMainnet } from "helpers/stellar";
 import { newTabHref } from "helpers/urls";
 import { getTotalUsd, getTotalUsdLabel } from "popup/helpers/balance";
-import { NetworkDetails } from "@shared/constants/stellar";
 import { reRouteOnboarding } from "popup/helpers/route";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { AccountBalances } from "helpers/hooks/useGetBalances";
@@ -253,10 +252,7 @@ export const Account = () => {
         currentAccountName={currentAccountName}
         publicKey={resolvedData?.publicKey || reduxPublicKey}
         onAllowListRemove={refreshAppData}
-        onClickRow={async (updatedValues: {
-          publicKey?: string;
-          network?: NetworkDetails;
-        }) => {
+        onAccountChanged={async (updatedValues: { publicKey: string }) => {
           await fetchData({
             useAppDataCache: false,
             updatedAppData: updatedValues,

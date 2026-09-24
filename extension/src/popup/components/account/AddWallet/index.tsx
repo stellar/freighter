@@ -4,16 +4,15 @@ import { Link } from "react-router-dom";
 import { Icon } from "@stellar/design-system";
 
 import { ROUTES } from "popup/constants/routes";
-import { SubviewHeader } from "popup/components/SubviewHeader";
-import { View } from "popup/basics/layout/View";
 
 import "./styles.scss";
 
-interface AddWalletProps {
-  onBack: () => void;
-}
-
-export const AddWallet = ({ onBack }: AddWalletProps) => {
+/**
+ * The three ways to add a wallet. Renders as a bare list: it is a body state of
+ * the account sheet, which supplies the header, so it must not open a `View` of
+ * its own.
+ */
+export const AddWallet = () => {
   const { t } = useTranslation();
   const actions = [
     {
@@ -35,30 +34,18 @@ export const AddWallet = ({ onBack }: AddWalletProps) => {
       link: ROUTES.connectWallet,
     },
   ];
+
   return (
-    <>
-      <SubviewHeader
-        title={t("Add wallet")}
-        customBackAction={onBack}
-        customBackIcon={<Icon.X />}
-      />
-      <View.Content hasNoTopPadding>
-        <div className="AddWallet">
-          {actions.map((action) => (
-            <Link
-              className="AddWallet__row"
-              key={action.title}
-              to={action.link}
-            >
-              <div className="AddWallet__row__icon">{action.icon}</div>
-              <div className="AddWallet__row__title">{action.title}</div>
-              <div className="AddWallet__row__description">
-                {action.description}
-              </div>
-            </Link>
-          ))}
-        </div>
-      </View.Content>
-    </>
+    <div className="AddWallet">
+      {actions.map((action) => (
+        <Link className="AddWallet__row" key={action.title} to={action.link}>
+          <div className="AddWallet__row__icon">{action.icon}</div>
+          <div className="AddWallet__row__title">{action.title}</div>
+          <div className="AddWallet__row__description">
+            {action.description}
+          </div>
+        </Link>
+      ))}
+    </div>
   );
 };

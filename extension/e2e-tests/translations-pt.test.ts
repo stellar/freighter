@@ -46,10 +46,14 @@ test("Smoke test: Portuguese translations in settings", async ({
   // Login first to access settings
   await loginToTestAccountPT({ page, extensionId });
 
-  // Navigate to settings
-  await page.getByTestId("account-options-dropdown").click();
-  await expect(page.getByText("Configurações")).toBeVisible();
-  await page.getByText("Configurações").click();
+  // Navigate to settings. The entry point is the gear inside the account
+  // sheet, which is an icon — so the page title is what carries the
+  // translation to assert on.
+  await page.getByTestId("account-chip").click();
+  await page.getByTestId("account-sheet-settings").click();
+  await expect(page.getByTestId("AppHeaderPageTitle")).toHaveText(
+    "Configurações",
+  );
 
   // Verify Portuguese translations in settings page. Settings is grouped into
   // labelled cards now, and the Security group's label repeats its row's name,

@@ -1,26 +1,23 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
-import { Navigate, useNavigate } from "react-router-dom";
-import { Button, Icon, Notification } from "@stellar/design-system";
+import { useNavigate } from "react-router-dom";
+import { Button, Icon, Loader, Notification } from "@stellar/design-system";
 import { toast } from "sonner";
 
 import {
   getStellarExpertUrl,
   isStellarExpertSupported,
 } from "popup/helpers/account";
-
 import { emitMetric } from "helpers/metrics";
 import { truncatedPublicKey } from "helpers/stellar";
-import { newTabHref } from "helpers/urls";
-import { AppDataType } from "helpers/hooks/useGetAppData";
 import { RequestState } from "constants/request";
+import { AppDataType } from "helpers/hooks/useGetAppData";
 
 import { AppDispatch } from "popup/App";
 import { ROUTES } from "popup/constants/routes";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
-import { SubviewHeader } from "popup/components/SubviewHeader";
-import { View } from "popup/basics/layout/View";
+import { SlideupModal } from "popup/components/SlideupModal";
 import {
   makeAccountActive,
   allAccountsSelector,
@@ -31,24 +28,44 @@ import {
   clearBalancesForAccount,
   clearCollectiblesForAccount,
 } from "popup/ducks/cache";
-import { LoadingBackground } from "popup/basics/LoadingBackground";
-import { useGetWalletsData } from "./hooks/useGetWalletsData";
-import { Loading } from "popup/components/Loading";
 import { navigateTo, openTab } from "popup/helpers/navigate";
-import { reRouteOnboarding } from "popup/helpers/route";
 import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
 import { WalletRow } from "popup/components/account/WalletRow";
 import { RenameWallet } from "popup/components/account/RenameWallet";
 import { AddWallet } from "popup/components/account/AddWallet";
 
+import { useGetWalletsData } from "./hooks/useGetWalletsData";
+
 import "./styles.scss";
 
-export const Wallets = () => {
+type SheetBody = "list" | "rename" | "add";
+
+interface AccountSheetProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onAccountChanged: (updated: { publicKey: string }) => Promise<void>;
+}
+
+/**
+ * The account switcher sheet: the active account's identity and actions, the
+ * list of wallets, and Add wallet.
+ *
+ * Rename and Add wallet are body states rather than overlays. They used to be
+ * absolutely-positioned layers over the full-screen Wallets view, which cannot
+ * work here -- SlideupModal is a containing block for fixed descendants and
+ * measures its height from in-flow content only, so an overlay would be clipped
+ * and would collapse the card.
+ */
+export const AccountSheet = ({
+  isOpen,
+  onClose,
+  onAccountChanged,
+}: AccountSheetProps) => {
   const { t } = useTranslation();
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
-  const [isEditingName, setIsEditingName] = React.useState("");
-  const [isAddingWallet, setIsAddingWallet] = React.useState(false);
+  const [body, setBody] = useState<SheetBody>("list");
+  const [renameKey, setRenameKey] = useState("");
   const { state: dataState, fetchData } = useGetWalletsData();
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const allAccounts = useSelector(allAccountsSelector);
@@ -56,60 +73,40 @@ export const Wallets = () => {
   // still holds the active account from the last successful load.
   const reduxPublicKey = useSelector(publicKeySelector);
   // Holds the currently-shown copy-toast's id (see copyAddress below for why
-  // this can't be a stable id). Declared here, above the early returns, so
-  // this hook always runs regardless of which branch this render takes.
+  // this can't be a stable id).
   const lastToastIdRef = useRef<string | number | null>(null);
 
   useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+    // Always reopen on the list; a sheet closed mid-rename would otherwise
+    // come back to a stale form.
+    setBody("list");
+    setRenameKey("");
     const getData = async () => {
       await fetchData(true);
     };
     getData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [isOpen]);
 
-  if (
+  const isLoading =
     dataState.state === RequestState.IDLE ||
-    dataState.state === RequestState.LOADING
-  ) {
-    return <Loading />;
-  }
-
+    dataState.state === RequestState.LOADING;
   const hasError = dataState.state === RequestState.ERROR;
 
-  if (dataState.data?.type === AppDataType.REROUTE) {
-    if (dataState.data.shouldOpenTab) {
-      openTab(newTabHref(dataState.data.routeTarget));
-      window.close();
-    }
-    return (
-      <Navigate
-        to={`${dataState.data.routeTarget}${location.search}`}
-        state={{ from: location }}
-        replace
-      />
-    );
-  }
-
-  const isFetchingTokenPrices = dataState.data?.isFetchingTokenPrices || false;
-
-  if (!hasError) {
-    reRouteOnboarding({
-      type: dataState.data.type,
-      applicationState: dataState.data?.applicationState,
-      state: dataState.state,
-    });
-  }
-
-  // Deliberately not an early return on `hasError`. `dataState.data` is null
-  // in that state, but everything the chrome needs — the active key, the
-  // account list — lives in Redux and survives a failed fetch. Returning the
-  // notification on its own left the screen with no close button, no account
-  // actions and no Add wallet, i.e. an error the user could not navigate out
-  // of. The failure is scoped to the list instead, below.
-  const resolvedData = hasError ? null : dataState.data;
+  // No REROUTE or onboarding handling here, unlike the screen this replaces:
+  // the sheet only ever mounts inside Home, which has already resolved both.
+  // The reroute arm is still narrowed away rather than asserted past, so this
+  // falls back to Redux if it ever does come back.
+  const resolvedData =
+    !hasError && dataState.data?.type === AppDataType.RESOLVED
+      ? dataState.data
+      : null;
   const activePublicKey = resolvedData?.publicKey || reduxPublicKey;
   const accountValue = resolvedData?.accountValue;
+  const isFetchingTokenPrices = resolvedData?.isFetchingTokenPrices || false;
   const activeAccountName =
     allAccounts.find((account) => account.publicKey === activePublicKey)
       ?.name || "";
@@ -147,46 +144,85 @@ export const Wallets = () => {
     }
   };
 
-  return (
-    <React.Fragment>
-      <SubviewHeader
-        title={t("Wallets")}
-        customBackAction={() => navigateTo(ROUTES.account, navigate)}
-        customBackIcon={<Icon.X />}
-      />
-      <View.Content
-        hasNoTopPadding
-        contentFooter={
-          <div className="Wallets__add-wallet">
-            <Button
-              size="xl"
-              isRounded
-              variant="tertiary"
-              iconPosition="left"
-              icon={<Icon.Plus />}
-              onClick={() => setIsAddingWallet(true)}
-              data-testid="add-wallet"
+  const renderBody = () => {
+    if (body === "rename") {
+      // RenameWallet ships its own header and close, so it stands alone as the
+      // whole body rather than sitting under the sheet header.
+      return (
+        <RenameWallet
+          allAccounts={allAccounts}
+          publicKey={renameKey}
+          onSubmit={() => fetchData(true)}
+          onClose={() => setBody("list")}
+        />
+      );
+    }
+
+    if (body === "add") {
+      return (
+        <>
+          <div className="AccountSheet__header">
+            <button
+              className="AccountSheet__header__action"
+              onClick={() => setBody("list")}
+              aria-label={t("Back")}
+              data-testid="account-sheet-add-back"
             >
-              {t("Add wallet")}
-            </Button>
+              <Icon.ArrowLeft />
+            </button>
+            <span className="AccountSheet__title">{t("Add wallet")}</span>
+            <button
+              className="AccountSheet__header__action"
+              onClick={onClose}
+              aria-label={t("Close")}
+              data-testid="AccountSheet__close"
+            >
+              <Icon.XClose />
+            </button>
           </div>
-        }
-      >
-        <div className="Wallets__header" data-testid="wallets-header">
-          <div className="Wallets__header__identicon">
+          <AddWallet />
+        </>
+      );
+    }
+
+    return (
+      <>
+        <div className="AccountSheet__header">
+          <button
+            className="AccountSheet__header__action"
+            onClick={() => navigateTo(ROUTES.settings, navigate)}
+            aria-label={t("Settings")}
+            data-testid="account-sheet-settings"
+          >
+            <Icon.Settings01 />
+          </button>
+          <button
+            className="AccountSheet__header__action"
+            onClick={onClose}
+            aria-label={t("Close")}
+            data-testid="AccountSheet__close"
+          >
+            <Icon.XClose />
+          </button>
+        </div>
+
+        <div className="AccountSheet__identity" data-testid="wallets-header">
+          <div className="AccountSheet__identity__identicon">
             <IdenticonImg publicKey={activePublicKey} />
           </div>
           {/* Name and address are one tight block; the 16px gap belongs
               between the identicon, this block, and the action row. */}
-          <div className="Wallets__header__identity">
-            <div className="Wallets__header__name">{activeAccountName}</div>
-            <div className="Wallets__header__address">
+          <div className="AccountSheet__identity__text">
+            <div className="AccountSheet__identity__name">
+              {activeAccountName}
+            </div>
+            <div className="AccountSheet__identity__address">
               {truncatedPublicKey(activePublicKey)}
             </div>
           </div>
-          <div className="Wallets__header__actions">
+          <div className="AccountSheet__identity__actions">
             <button
-              className="Wallets__header__action"
+              className="AccountSheet__identity__action"
               onClick={() => navigateTo(ROUTES.viewPublicKey, navigate)}
               data-testid="wallets-header-qr"
               aria-label={t("Show QR code")}
@@ -197,7 +233,7 @@ export const Wallets = () => {
                 key. Emitted from copyAddress only once the clipboard write
                 succeeds, so failed copies aren't counted. */}
             <button
-              className="Wallets__header__action"
+              className="AccountSheet__identity__action"
               onClick={copyAddress}
               data-testid="wallets-header-copy"
               aria-label={t("Copy wallet address")}
@@ -209,7 +245,7 @@ export const Wallets = () => {
                 experimental mode makes Futurenet the active network. */}
             {isStellarExpertSupported(networkDetails) ? (
               <button
-                className="Wallets__header__action"
+                className="AccountSheet__identity__action"
                 onClick={() => {
                   openTab(
                     `${getStellarExpertUrl(networkDetails)}/account/${activePublicKey}`,
@@ -223,8 +259,11 @@ export const Wallets = () => {
               </button>
             ) : null}
             <button
-              className="Wallets__header__action"
-              onClick={() => setIsEditingName(activePublicKey)}
+              className="AccountSheet__identity__action"
+              onClick={() => {
+                setRenameKey(activePublicKey);
+                setBody("rename");
+              }}
               data-testid="wallets-header-edit-name"
               aria-label={t("Rename wallet")}
             >
@@ -232,8 +271,10 @@ export const Wallets = () => {
             </button>
           </div>
         </div>
-        <div className="Wallets__divider" />
-        <div className="Wallets__list">
+
+        <div className="AccountSheet__divider" />
+
+        <div className="AccountSheet__list">
           {hasError ? (
             <Notification
               variant="error"
@@ -270,36 +311,47 @@ export const Wallets = () => {
                           networkDetails,
                         }),
                       );
-                      navigateTo(ROUTES.account, navigate);
+                      // Close before refetching: Home renders <Loading /> while
+                      // the new account loads, which unmounts this sheet
+                      // anyway. Closing first keeps that from reading as a
+                      // flicker.
+                      onClose();
+                      await onAccountChanged({ publicKey });
                     }}
                   />
                 );
               },
             )
           )}
+          {isLoading ? (
+            <div className="AccountSheet__loader">
+              <Loader size="1rem" />
+            </div>
+          ) : null}
         </div>
-      </View.Content>
-      {isEditingName ? (
-        <>
-          <div className="RenameWalletWrapper">
-            <RenameWallet
-              allAccounts={allAccounts}
-              publicKey={isEditingName}
-              onSubmit={fetchData}
-              onClose={() => setIsEditingName("")}
-            />
-          </div>
-          <LoadingBackground
-            onClick={() => setIsEditingName("")}
-            isActive={isEditingName.length > 0}
-          />
-        </>
-      ) : null}
-      {isAddingWallet ? (
-        <div className="AddWalletWrapper">
-          <AddWallet onBack={() => setIsAddingWallet(false)} />
+
+        <div className="AccountSheet__add-wallet">
+          <Button
+            size="xl"
+            isRounded
+            variant="tertiary"
+            iconPosition="left"
+            icon={<Icon.Plus />}
+            onClick={() => setBody("add")}
+            data-testid="add-wallet"
+          >
+            {t("Add wallet")}
+          </Button>
         </div>
-      ) : null}
-    </React.Fragment>
+      </>
+    );
+  };
+
+  return (
+    <SlideupModal isModalOpen={isOpen} setIsModalOpen={onClose}>
+      <div className="AccountSheet" data-testid="AccountSheet">
+        {renderBody()}
+      </div>
+    </SlideupModal>
   );
 };

@@ -108,7 +108,11 @@ export const Settings = () => {
             </ListNavLink>
           </div>
           <div className="Settings__row">
-            <ListNavLink icon={<IconNetwork />} href={ROUTES.networkSettings}>
+            <ListNavLink
+              dataTestId="settings-network-link"
+              icon={<IconNetwork />}
+              href={ROUTES.networkSettings}
+            >
               {t("Network")}
             </ListNavLink>
           </div>

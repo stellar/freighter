@@ -7,6 +7,7 @@ import {
   fillMnemonicInputs,
   clickImportAndWaitForSuccess,
 } from "./helpers/onboarding";
+import { goToSettings } from "./helpers/network";
 
 const { generateMnemonic } = StellarHDWallet;
 
@@ -401,9 +402,8 @@ test("Logout and create new account", async ({
   // the test seed phrase should have multiple funded accounts
   expect(originalAccountsCount).not.toBe(1);
 
-  await page.getByTestId("BackButton").click();
-  await page.getByTestId("account-options-dropdown").click();
-  await page.getByText("Settings").click();
+  await page.getByTestId("AccountSheet__close").click();
+  await goToSettings(page);
   await page.getByText("Log Out").click();
 
   await expectPageToHaveScreenshot({
@@ -445,9 +445,8 @@ test("Logout and create new account", async ({
   // the new seed phrase should only have one funded account; this confirms that the other accounts are no longer present
   expect(newAccountsCount).toBe(1);
 
-  await newPage.getByTestId("BackButton").click();
-  await newPage.getByTestId("account-options-dropdown").click();
-  await newPage.getByText("Settings").click();
+  await newPage.getByTestId("AccountSheet__close").click();
+  await goToSettings(newPage);
   await newPage.getByText("Log Out").click();
 
   await newPage.locator("#password-input").fill(PASSWORD);
@@ -473,9 +472,8 @@ test("Logout and import new account", async ({
   // the test seed phrase should have multiple funded accounts
   expect(originalAccountsCount).not.toBe(1);
 
-  await page.getByTestId("BackButton").click();
-  await page.getByTestId("account-options-dropdown").click();
-  await page.getByText("Settings").click();
+  await page.getByTestId("AccountSheet__close").click();
+  await goToSettings(page);
   await page.getByText("Log Out").click();
 
   await expectPageToHaveScreenshot({
@@ -531,9 +529,8 @@ test("Logout and import new account", async ({
   // the new seed phrase should only have one funded account; this confirms that the other accounts are no longer present
   expect(newAccountsCount).toBe(1);
 
-  await newPage.getByTestId("BackButton").click();
-  await newPage.getByTestId("account-options-dropdown").click();
-  await newPage.getByText("Settings").click();
+  await newPage.getByTestId("AccountSheet__close").click();
+  await goToSettings(newPage);
   await newPage.getByText("Log Out").click();
 
   await newPage.locator("#password-input").fill(PASSWORD);
@@ -598,9 +595,8 @@ test("Overwrites account when user abandons mnemonic phrase confirmation", async
 
   await expect(page.getByTestId("wallet-row-select")).toHaveCount(1);
 
-  await page.getByTestId("BackButton").click();
-  await page.getByTestId("account-options-dropdown").click();
-  await page.getByText("Settings").click();
+  await page.getByTestId("AccountSheet__close").click();
+  await goToSettings(page);
   await page.getByRole("link", { name: "Security" }).click();
   await page.getByText("Show recovery phrase").click();
 
@@ -670,9 +666,8 @@ test("Overwrites account when user abandons after password creation", async ({
 
   expect(page.getByTestId("wallet-row-select")).toHaveCount(1);
 
-  await page.getByTestId("BackButton").click();
-  await page.getByTestId("account-options-dropdown").click();
-  await page.getByText("Settings").click();
+  await page.getByTestId("AccountSheet__close").click();
+  await goToSettings(page);
   await page.getByRole("link", { name: "Security" }).click();
   await page.getByText("Show recovery phrase").click();
 
@@ -698,8 +693,7 @@ test("Password input is auto focused on Show recovery phrase screen", async ({
 }) => {
   test.slow();
   await loginToTestAccount({ page, extensionId, context });
-  await page.getByTestId("account-options-dropdown").click();
-  await page.getByText("Settings").click();
+  await goToSettings(page);
   await page.getByRole("link", { name: "Security" }).click();
   await page.getByText("Show recovery phrase").click();
   await expect(page.locator("#password")).toBeFocused();

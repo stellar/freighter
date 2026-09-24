@@ -20,7 +20,7 @@ The URL `index.html?mode=sidebar` is set in the manifest and passed by `openSide
 
 **UI entry point:** `src/popup/views/Settings/index.tsx`
 
-Settings → General shows a "Sidebar mode" row (test ID: `settings-sidebar-mode`), conditionally rendered only when the browser supports it (`chrome.sidePanel.open` or `browser.sidebarAction.open`). It previously lived in the account options dropdown, which the header restructure removes.
+Settings → General shows a "Sidebar mode" row (test ID: `settings-sidebar-mode`), conditionally rendered only when the browser supports it (`chrome.sidePanel.open` or `browser.sidebarAction.open`). It previously lived in the account options dropdown, which the header restructure deleted; see `ACCOUNT_HEADER.md`.
 
 **Activation function:** `src/popup/helpers/navigate.ts` — `openSidebar()`
 
