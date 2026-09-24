@@ -153,7 +153,7 @@ export const Discover = () => {
   if (error) {
     return (
       <>
-        <SubviewHeader title={t("Discover")} />
+        <SubviewHeader title={t("Discover")} hasBackButton={false} />
         <View.Content hasNoTopPadding>
           <DiscoverError onRetry={retry} />
         </View.Content>

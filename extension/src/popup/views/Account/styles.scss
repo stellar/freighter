@@ -78,7 +78,7 @@
       // scroll offsets the pill still overlays whatever row is beneath it,
       // which is inherent to the floating-pill pattern and bounded by the fact
       // that any covered row can be scrolled out from under it.
-      padding-bottom: pxToRem(88px);
+      padding-bottom: calc(var(--app--bottom-offset) + #{pxToRem(88px)});
       height: auto;
       overflow: auto;
       position: relative;

@@ -38,7 +38,8 @@ export const DiscoverHome = ({
 
   return (
     <>
-      <SubviewHeader title={t("Discover")} />
+      {/* A tab root has nowhere to go back to. */}
+      <SubviewHeader title={t("Discover")} hasBackButton={false} />
       <View.Content hasNoTopPadding>
         <div className="DiscoverHome__sections">
           <TrendingCarousel items={trendingItems} onCardClick={onCardClick} />

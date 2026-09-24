@@ -11,8 +11,6 @@ import { ROUTES } from "popup/constants/routes";
 import { LoadingBackground } from "popup/basics/LoadingBackground";
 import { View } from "popup/basics/layout/View";
 import { isActiveNetwork } from "helpers/stellar";
-import { emitMetric } from "helpers/metrics";
-import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { navigateTo } from "popup/helpers/navigate";
 import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
 import { PunycodedDomain } from "popup/components/PunycodedDomain";
@@ -41,7 +39,6 @@ interface AccountHeaderProps {
   }) => Promise<void>;
   publicKey: string;
   roundedTotalBalanceUsd: string;
-  onDiscoverClick: () => void;
 }
 
 export const AccountHeader = ({
@@ -51,7 +48,6 @@ export const AccountHeader = ({
   onClickRow,
   publicKey,
   roundedTotalBalanceUsd,
-  onDiscoverClick,
 }: AccountHeaderProps) => {
   const { t } = useTranslation();
   const networkDisplayNames = {
@@ -162,21 +158,6 @@ export const AccountHeader = ({
                 </AccountHeaderModal>
               </div>
 
-              <div data-testid="nav-link-account-history">
-                <NavButton
-                  showBorder
-                  title={t("View history")}
-                  id="nav-btn-history"
-                  icon={<Icon.ClockRewind />}
-                  onClick={() => {
-                    emitMetric(METRIC_NAMES.historyFullHistoryOpened, {
-                      source: "account_header",
-                    });
-                    navigateTo(ROUTES.accountHistory, navigate);
-                  }}
-                />
-              </div>
-
               <div
                 className="AccountHeader__dropdown"
                 data-testid="network-selector-open"
@@ -276,15 +257,6 @@ export const AccountHeader = ({
                 </AccountHeaderModal>
               </div>
             </div>
-          </div>
-        }
-        rightContent={
-          <div
-            data-testid="account-header-discover-button"
-            className="AccountHeader__right-button AccountHeader__right-button--with-label"
-            onClick={onDiscoverClick}
-          >
-            <Icon.Compass03 /> {t("Discover")}
           </div>
         }
       >

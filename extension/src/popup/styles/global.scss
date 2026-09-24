@@ -27,6 +27,12 @@
   --z-index-modal: 30;
   --z-index-maintenance-screen: 100;
 
+  // Bottom tab bar. --app--bottom-offset is what the floating sheet reads; the
+  // shell raises it to the bar height on the routes that show the bar, so the
+  // sheet lifts above it without either side knowing about the other.
+  --tab-bar--height: 3.75rem;
+  --z-index--tab-bar: 15;
+
   // Floating bottom sheet geometry.
   //
   // --app--bottom-offset is owned by the app shell: it is the height of any

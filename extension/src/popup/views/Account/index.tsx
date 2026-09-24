@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useContext } from "react";
-import { Navigate, useLocation, useNavigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { Notification } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
@@ -12,12 +12,11 @@ import {
   settingsNetworkDetailsSelector,
 } from "popup/ducks/settings";
 import { View } from "popup/basics/layout/View";
-import { ROUTES } from "popup/constants/routes";
 import {
   accountNameSelector,
   publicKeySelector,
 } from "popup/ducks/accountServices";
-import { navigateTo, openTab } from "popup/helpers/navigate";
+import { openTab } from "popup/helpers/navigate";
 import { isFullscreenMode } from "popup/helpers/isFullscreenMode";
 import { useSwapTopTokensPrewarm } from "popup/helpers/useSwapTopTokensPrewarm";
 
@@ -55,7 +54,6 @@ import "./styles.scss";
 
 export const Account = () => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const location = useLocation();
   const isSorobanSuported = useSelector(settingsSorobanSupportedSelector);
   const { userNotification } = useSelector(settingsSelector);
@@ -266,7 +264,6 @@ export const Account = () => {
           });
         }}
         roundedTotalBalanceUsd={roundedTotalBalanceUsd}
-        onDiscoverClick={() => navigateTo(ROUTES.discover, navigate)}
       />
       <View.Content hasNoPadding>
         <div className="AccountView" data-testid="account-view">

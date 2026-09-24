@@ -139,6 +139,7 @@ export const METRIC_NAMES = {
   signingMessageFailed: "signing.message_failed",
 
   // -- History -------------------------------------------------------------
+  navTabSelected: "navigation.tab_selected",
   historyFullHistoryOpened: "history.full_history_opened",
   historyItemOpened: "history.item_opened",
 

@@ -55,6 +55,8 @@ import { About } from "popup/views/About";
 import { Send } from "popup/views/Send";
 import { ManageAssets } from "popup/views/ManageAssets";
 import { Discover } from "popup/views/Discover";
+import { TabBar } from "popup/components/TabBar";
+import { shouldShowTabBar } from "popup/constants/tabBar";
 import { AddCollectibles } from "popup/views/AddCollectibles";
 import { VerifyAccount } from "popup/views/VerifyAccount";
 import { Swap } from "popup/views/Swap";
@@ -163,12 +165,19 @@ const Layout = () => {
     return <AppError>{error}</AppError>;
   }
 
+  // Mode checks live here rather than in shouldShowTabBar: standalone dApp
+  // signing popups open directly onto signing routes, which are not in the
+  // allow-list, so they need no special case -- but the predicate stays pure.
+  const hasTabBar = shouldShowTabBar(location.pathname);
+
   return (
     <View
       isAppLayout={isAppLayout}
       isScrollableView={location.pathname === "/"}
+      hasTabBar={hasTabBar}
     >
       <Outlet />
+      {hasTabBar && <TabBar />}
     </View>
   );
 };

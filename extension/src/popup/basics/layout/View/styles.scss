@@ -238,6 +238,20 @@
   // — but in fullscreen it left the inset's vertical borders stopping partway
   // down the window. Grow with the content, but never be shorter than the
   // viewport; `View__content` is `flex: 1`, so it takes up any slack.
+  // The bar is fixed, so it does not occupy flow space -- content has to be
+  // padded out from under it. Home overrides View__content/__inset to
+  // `overflow: visible` and pads its panes instead, so it is handled there.
+  //
+  // --app--bottom-offset is what the floating sheet reads; raising it here is
+  // the entire contract between the two.
+  &--has-tab-bar {
+    --app--bottom-offset: var(--tab-bar--height);
+
+    .View__content .View__inset {
+      padding-bottom: calc(var(--tab-bar--height) + #{pxToRem(24px)});
+    }
+  }
+
   &--scrollable {
     height: auto;
     // Both floors, deliberately. `100dvh` alone is circular in the popup:
