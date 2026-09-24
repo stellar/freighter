@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import { BigNumber } from "bignumber.js";
 import { useTranslation } from "react-i18next";
@@ -76,6 +76,12 @@ import "./styles.scss";
 
 // §N refs: wallet-eng-monorepo/design-docs/token-price-graphs/token-price-graphs-design.md
 
+const LOADING_DELTA: RangeDeltaState = {
+  isLoading: true,
+  text: "",
+  colorClass: PriceDirection.Neutral,
+};
+
 const AssetDetailOperations = ({
   filteredAssetOperations,
   accountBalances,
@@ -139,12 +145,21 @@ export const AssetDetail = ({
   const { isHideDustEnabled } = useSelector(settingsSelector);
   const [optionsOpen, setOptionsOpen] = React.useState(false);
   // The chart section owns the range and the fetch; it reports the selected
-  // range's delta up. Starts on the placeholder until the mount fetch resolves.
-  const [rangeDelta, setRangeDelta] = useState<RangeDeltaState>({
-    isLoading: true,
-    text: "",
-    colorClass: PriceDirection.Neutral,
-  });
+  // range's delta up. The report is tagged with the (network, token) it was
+  // made for: this instance outlives a scope change that remounts the chart,
+  // and until the new chart reports, a delta from another scope must read as
+  // the placeholder rather than the previous token's number.
+  const scopeKey = `${networkDetails.networkPassphrase}/${selectedAsset}`;
+  const [rangeDelta, setRangeDelta] = useState<{
+    scope: string;
+    delta: RangeDeltaState;
+  }>({ scope: scopeKey, delta: LOADING_DELTA });
+  const handleDeltaChange = useCallback(
+    (delta: RangeDeltaState) => setRangeDelta({ scope: scopeKey, delta }),
+    [scopeKey],
+  );
+  const shownDelta =
+    rangeDelta.scope === scopeKey ? rangeDelta.delta : LOADING_DELTA;
   const activeOptionsRef = useRef<HTMLDivElement>(null);
   const isNative = isNativeAssetId(selectedAsset);
   const tokenPrices =
@@ -244,7 +259,6 @@ export const AssetDetail = ({
   // the new identity (and `token_chart.viewed` cannot fire for the old data).
   // Prefixed per child: identical keys on siblings send React's reconciler
   // into a loop.
-  const scopeKey = `${networkDetails.networkPassphrase}/${selectedAsset}`;
   const isChartShown =
     isPriceHistoryEnabled && isMainnet(networkDetails) && !isLpShare;
 
@@ -389,16 +403,16 @@ export const AssetDetail = ({
               /* The view's one delta, reported by the chart section. Rendered in
                  every state so the price and chart never shift. */
               <div
-                className={`AssetDetail__delta AssetDetail__delta--range ${rangeDelta.colorClass}`}
+                className={`AssetDetail__delta AssetDetail__delta--range ${shownDelta.colorClass}`}
                 data-testid="AssetDetail__delta"
               >
-                {rangeDelta.isLoading ? (
+                {shownDelta.isLoading ? (
                   <span
                     className="AssetDetail__delta-ghost"
                     aria-hidden="true"
                   />
                 ) : (
-                  rangeDelta.text
+                  shownDelta.text
                 )}
               </div>
             ) : assetPrice && assetPrice.percentagePriceChange24h ? (
@@ -422,7 +436,7 @@ export const AssetDetail = ({
                 token={selectedAsset}
                 networkDetails={networkDetails}
                 fallback24hPercent={assetPrice?.percentagePriceChange24h}
-                onDeltaChange={setRangeDelta}
+                onDeltaChange={handleDeltaChange}
               />
             ) : null}
             <div className="AssetDetail__balance-info">
