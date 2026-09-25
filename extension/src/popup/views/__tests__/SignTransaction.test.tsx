@@ -631,7 +631,8 @@ describe("SignTransactions", () => {
         state={{
           auth: {
             allAccounts: mockAccounts,
-            publicKey: mockAccounts[0].publicKey,
+            // The selected account is the tx source, so it pays the fee.
+            publicKey: transaction.source,
           },
           settings: {
             isExperimentalModeEnabled: true,
@@ -646,6 +647,141 @@ describe("SignTransactions", () => {
       </Wrapper>,
     );
     await waitFor(() => screen.getByTestId("InsufficientBalanceWarning"));
+  });
+  it("does not show unfunded warning when another account pays the fee", async () => {
+    const mockBalancesEmpty = {
+      ...mockBalances,
+      balances: {
+        native: {
+          token: { type: "native", code: "XLM" },
+          total: new BigNumber("0"),
+          available: new BigNumber("0"),
+          blockaidData: defaultBlockaidScanAssetResult,
+        },
+      } as any as Balances,
+    };
+    let currentSignTxDataMock = {
+      state: {
+        state: RequestState.SUCCESS,
+        data: {
+          type: AppDataType.RESOLVED,
+          scanResult: {
+            simualtion: null,
+            validation: null,
+            request_id: "1",
+          },
+          icons: {},
+          balances: {
+            balances: sortBalances(mockBalancesEmpty.balances),
+            isFunded: true,
+            subentryCount: 0,
+          },
+          publicKey: mockAccounts[1].publicKey,
+          signFlowState: {
+            allAccounts: mockAccounts,
+            accountNotFound: false,
+            currentAccount: mockAccounts[0],
+          },
+          applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
+          networkDetails: {
+            ...defaultSettingsState.networkDetails,
+            networkPassphrase: FUTURENET_NETWORK_DETAILS.networkPassphrase,
+          },
+          siteScanData: null,
+          blockaidOverrideState: null,
+        },
+        error: null,
+      },
+      fetchData: jest.fn(),
+    } as ReturnType<typeof SignTxDataHooks.useGetSignTxData>;
+    jest.spyOn(SigningFlowHooks, "useSetupSigningFlow").mockReturnValue({
+      isConfirming: false,
+      isHardwareWallet: false,
+      isPasswordRequired: false,
+      handleApprove: jest.fn(),
+      hwStatus: ShowOverlayStatus.IDLE,
+      rejectAndClose: jest.fn(),
+      setIsPasswordRequired: jest.fn(),
+      verifyPasswordThenSign: jest.fn(),
+      hardwareWalletType: WalletType.LEDGER,
+    });
+    jest
+      .spyOn(SignTxDataHooks, "useGetSignTxData")
+      .mockReturnValue(currentSignTxDataMock);
+    jest
+      .spyOn(ApiInternal, "getAccountBalances")
+      .mockImplementation(() => Promise.resolve(mockBalancesEmpty));
+
+    jest.spyOn(ApiInternal, "loadSettings").mockImplementation(() =>
+      Promise.resolve({
+        networkDetails: {
+          ...defaultSettingsState.networkDetails,
+          networkPassphrase: FUTURENET_NETWORK_DETAILS.networkPassphrase,
+        },
+        networksList: DEFAULT_NETWORKS,
+        hiddenAssets: {},
+        allowList: ApiInternal.DEFAULT_ALLOW_LIST,
+        error: "",
+        isDataSharingAllowed: false,
+        isMemoValidationEnabled: false,
+        isHideDustEnabled: true,
+        isOpenSidebarByDefault: false,
+        settingsState: SettingsState.SUCCESS,
+        isSorobanPublicEnabled: false,
+        isRpcHealthy: true,
+        userNotification: {
+          enabled: false,
+          message: "",
+        },
+        isExperimentalModeEnabled: false,
+        isHashSigningEnabled: false,
+        isNonSSLEnabled: false,
+        experimentalFeaturesState: SettingsState.SUCCESS,
+        assetsLists: DEFAULT_ASSETS_LISTS,
+        autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
+      }),
+    );
+
+    const transaction = TransactionBuilder.fromXdr(
+      transactions.classic,
+      Networks.PUBLIC,
+    ) as Transaction;
+    const op = transaction.operations[0];
+    jest.spyOn(Stellar, "getTransactionInfo").mockImplementation(() => ({
+      ...mockTransactionInfo,
+      transactionXdr: transactions.classic,
+      transaction: {
+        ...mockTransactionInfo.transaction,
+        _networkPassphrase: Networks.FUTURENET,
+        _operations: [op],
+      },
+      isHttpsDomain: false,
+      uuid: "123-123-123-123-123",
+    }));
+
+    render(
+      <Wrapper
+        routes={[ROUTES.signTransaction]}
+        state={{
+          auth: {
+            allAccounts: mockAccounts,
+            // The selected account signs, but the tx source pays the fee.
+            publicKey: Keypair.random().publicKey(),
+          },
+          settings: {
+            isExperimentalModeEnabled: true,
+            networkDetails: {
+              ...defaultSettingsState.networkDetails,
+              networkPassphrase: FUTURENET_NETWORK_DETAILS.networkPassphrase,
+            },
+          },
+        }}
+      >
+        <SignTransaction />
+      </Wrapper>,
+    );
+    await waitFor(() => screen.getByTestId("SignTransaction"));
+    expect(screen.queryByTestId("InsufficientBalanceWarning")).toBeNull();
   });
   it("renders blockaid scan label when tx expected to fail", async () => {
     let currentSignTxDataMock = {

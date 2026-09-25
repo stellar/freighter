@@ -219,6 +219,22 @@ export const getTrustlineChangesForAccount = (
 };
 
 /**
+ * Returns the account that pays the fee of a transaction.
+ *
+ * For a fee bump, the fee source pays. Else, the transaction source pays. The
+ * selected account can sign a transaction and not pay its fee.
+ *
+ * @param transaction The transaction
+ * @returns The address of the account that pays the fee
+ */
+export const getFeeSourceAccount = (
+  transaction: Transaction | FeeBumpTransaction,
+): string =>
+  "innerTransaction" in transaction
+    ? transaction.feeSource
+    : transaction.source;
+
+/**
  * Creates a muxed account address from a base account and a muxed ID (memo)
  * This is used for CAP-0067 to support memo in Soroban transfers
  *

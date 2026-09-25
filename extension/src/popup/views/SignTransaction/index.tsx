@@ -30,10 +30,12 @@ import {
 } from "helpers/urls";
 import { emitMetric } from "helpers/metrics";
 import {
+  getFeeSourceAccount,
   getTransactionInfo,
   getTrustlineChangesForAccount,
   isFederationAddress,
   isMuxedAccount,
+  isSameAccount,
   stroopToXlm,
 } from "helpers/stellar";
 import { isNativeAssetPair } from "@shared/helpers/assetIdentity";
@@ -370,11 +372,18 @@ export const SignTransaction = () => {
 
   const { currentAccount } = signTxState.data?.signFlowState!;
 
-  // Check if user has enough XLM for the fee - skip warning if balances unavailable
+  // Check if user has enough XLM for the fee - skip warning if balances unavailable.
+  // Only the fee source pays the fee, so skip the check when the selected
+  // account is not the fee source.
   const balances = signTxState.data?.balances;
-  const hasEnoughXlm = balances
-    ? hasEnoughXlmForFee(balances.balances, stroopToXlm(_fee as string))
-    : true; // If balances unavailable, assume user can proceed
+  const isFeeSource = isSameAccount(
+    getFeeSourceAccount(transaction),
+    publicKey,
+  );
+  const hasEnoughXlm =
+    balances && isFeeSource
+      ? hasEnoughXlmForFee(balances.balances, stroopToXlm(_fee as string))
+      : true; // If balances unavailable, assume user can proceed
 
   if (
     currentAccount.publicKey &&

@@ -19,6 +19,7 @@ import {
   isSameAccount,
   toSignatureBuffer,
   getTrustlineChangesForAccount,
+  getFeeSourceAccount,
 } from "../stellar";
 import * as urls from "../urls";
 
@@ -272,5 +273,31 @@ describe("getTrustlineChangesForAccount", () => {
     const changes = getTrustlineChangesForAccount(feeBump, selected);
     expect(changes).toHaveLength(1);
     expect((changes[0].line as Asset).code).toBe("AQUA");
+  });
+});
+
+describe("getFeeSourceAccount", () => {
+  const source = Keypair.random().publicKey();
+  const tx = new TransactionBuilder(new Account(source, "1"), {
+    fee: "100",
+    networkPassphrase: Networks.TESTNET,
+  })
+    .addOperation(Operation.bumpSequence({ bumpTo: "2" }))
+    .setTimeout(0)
+    .build();
+
+  it("returns the tx source for a transaction", () => {
+    expect(getFeeSourceAccount(tx)).toBe(source);
+  });
+
+  it("returns the fee source for a fee bump", () => {
+    const feeSource = Keypair.random();
+    const feeBump = TransactionBuilder.buildFeeBumpTransaction(
+      feeSource,
+      "200",
+      tx,
+      Networks.TESTNET,
+    );
+    expect(getFeeSourceAccount(feeBump)).toBe(feeSource.publicKey());
   });
 });
