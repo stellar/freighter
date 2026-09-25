@@ -188,13 +188,14 @@ export const SignTransaction = () => {
     _networkPassphrase as string,
   );
 
-  let _memo = {};
-  let _sequence = "";
-
-  if (!("innerTransaction" in transaction)) {
-    _sequence = transaction.sequence;
-    _memo = transaction.memo;
-  }
+  // A fee bump has no memo or sequence of its own. They are in the inner
+  // transaction, so read them from there.
+  const innerTransaction =
+    "innerTransaction" in transaction
+      ? transaction.innerTransaction
+      : transaction;
+  const _memo = innerTransaction.memo;
+  const _sequence = innerTransaction.sequence;
 
   const decodedMemo = decodeMemo(_memo);
 
