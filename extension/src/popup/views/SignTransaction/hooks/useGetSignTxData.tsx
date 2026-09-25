@@ -18,7 +18,11 @@ import {
   NeedsReRoute,
   useGetAppData,
 } from "helpers/hooks/useGetAppData";
-import { getCanonicalFromAsset, isMainnet } from "helpers/stellar";
+import {
+  getCanonicalFromAsset,
+  getTrustlineChangesForAccount,
+  isMainnet,
+} from "helpers/stellar";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { makeAccountActive } from "popup/ducks/accountServices";
@@ -261,8 +265,9 @@ function useGetSignTxData(
         scanOptions.xdr,
         networkDetails.networkPassphrase,
       );
-      const trustlineChanges = transaction.operations.filter(
-        (op) => op.type === "changeTrust",
+      const trustlineChanges = getTrustlineChangesForAccount(
+        transaction,
+        publicKey,
       );
       if (trustlineChanges.length) {
         for (const trustChange of trustlineChanges) {

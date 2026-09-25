@@ -2,10 +2,13 @@ import BigNumber from "bignumber.js";
 import {
   Account,
   Asset,
+  FeeBumpTransaction,
   hash,
   MuxedAccount,
   Networks,
+  Operation,
   StrKey,
+  Transaction,
 } from "stellar-sdk";
 import isEqual from "lodash/isEqual";
 
@@ -184,6 +187,35 @@ export const isSameAccount = (
   }
 
   return baseA === baseB;
+};
+
+/**
+ * Returns the changeTrust operations that change a trustline of `publicKey`.
+ *
+ * A changeTrust operation changes a trustline of its source account. That is
+ * the operation source, or the transaction source when the operation has none.
+ * A transaction can have operations with different sources, so we must filter
+ * by source. If we do not, the trustlines of other accounts show as changes to
+ * the selected account.
+ *
+ * @param transaction The transaction. For a fee bump, we read the inner transaction.
+ * @param publicKey The account to get the trustline changes for
+ * @returns The changeTrust operations that apply to `publicKey`
+ */
+export const getTrustlineChangesForAccount = (
+  transaction: Transaction | FeeBumpTransaction,
+  publicKey: string,
+): Operation.ChangeTrust[] => {
+  const tx =
+    "innerTransaction" in transaction
+      ? transaction.innerTransaction
+      : transaction;
+
+  return tx.operations.filter(
+    (op): op is Operation.ChangeTrust =>
+      op.type === "changeTrust" &&
+      isSameAccount(op.source ?? tx.source, publicKey),
+  );
 };
 
 /**

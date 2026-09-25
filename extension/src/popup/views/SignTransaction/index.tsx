@@ -31,6 +31,7 @@ import {
 import { emitMetric } from "helpers/metrics";
 import {
   getTransactionInfo,
+  getTrustlineChangesForAccount,
   isFederationAddress,
   isMuxedAccount,
   stroopToXlm,
@@ -406,9 +407,7 @@ export const SignTransaction = () => {
   const hasAuthEntries = _tx.operations.some(
     (op) => op.type === "invokeHostFunction" && op.auth && op.auth.length,
   );
-  const trustlineChanges = _tx.operations.filter(
-    (op) => op.type === "changeTrust",
-  );
+  const trustlineChanges = getTrustlineChangesForAccount(_tx, publicKey);
 
   const assetDiffs =
     scanResult?.simulation?.status === "Success"
