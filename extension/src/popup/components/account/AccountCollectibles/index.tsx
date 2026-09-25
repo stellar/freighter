@@ -6,11 +6,9 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { Collection } from "@shared/api/types/types";
 import { navigateTo } from "popup/helpers/navigate";
 import {
-  ScreenReaderOnly,
-  Sheet,
-  SheetContent,
-  SheetTitle,
-} from "popup/basics/shadcn/Sheet";
+  SlideupModal,
+  SLIDEUP_MODAL_TRANSITION_MS,
+} from "popup/components/SlideupModal";
 import { ROUTES } from "popup/constants/routes";
 import { CollectibleDetail, SelectedCollectible } from "../CollectibleDetail";
 import { CollectibleInfoImage } from "../CollectibleInfo";
@@ -98,12 +96,10 @@ const CollectionsList = ({
     setIsDetailOpen(false);
     clearCollectibleDetailQueryParams();
     onCloseCollectible();
-  };
-
-  const handleAnimationEnd = () => {
-    if (!isDetailOpen) {
-      setDetailData(null);
-    }
+    // Clear the selection only once the sheet has slid out; dropping it
+    // immediately would empty the card mid-animation. SlideupModal exposes no
+    // animation-end hook, so this is timed against its transition.
+    setTimeout(() => setDetailData(null), SLIDEUP_MODAL_TRANSITION_MS);
   };
 
   return (
@@ -191,34 +187,27 @@ const CollectionsList = ({
         );
       })}
 
-      {/* Sheet rendered outside the map to persist during close animation */}
-      <Sheet
-        open={isDetailOpen}
-        onOpenChange={(open) => {
+      {/* Rendered outside the map so it survives the close animation. */}
+      <SlideupModal
+        isModalOpen={isDetailOpen}
+        setIsModalOpen={(open) => {
           if (!open) {
             handleCloseCollectible();
           }
         }}
       >
-        <SheetContent
-          aria-describedby={undefined}
-          side="bottom"
-          className="AccountCollectibles__collectible-detail__sheet"
-          onOpenAutoFocus={(e) => e.preventDefault()}
-          onAnimationEnd={handleAnimationEnd}
-        >
-          <ScreenReaderOnly>
-            <SheetTitle>{detailData?.tokenId || ""}</SheetTitle>
-          </ScreenReaderOnly>
-          {detailData && (
+        <div className="AccountCollectibles__collectible-detail__sheet">
+          {detailData ? (
             <CollectibleDetail
               selectedCollectible={detailData}
               handleItemClose={handleCloseCollectible}
               isHidden={showHidden}
             />
+          ) : (
+            <div />
           )}
-        </SheetContent>
-      </Sheet>
+        </div>
+      </SlideupModal>
     </>
   );
 };

@@ -1,6 +1,7 @@
 import React from "react";
 import { render, waitFor, screen, fireEvent } from "@testing-library/react";
 
+import * as ApiInternal from "@shared/api/internal";
 import { HiddenCollectibles } from "popup/components/account/HiddenCollectibles";
 import {
   TESTNET_NETWORK_DETAILS,
@@ -145,14 +146,14 @@ describe("HiddenCollectibles", () => {
       </Wrapper>,
     );
 
-    // Should not find the hidden collectibles content
-    expect(screen.queryByText("Hidden Collectibles")).not.toBeInTheDocument();
+    // SlideupModal keeps its children mounted and animates them out, unlike the
+    // Radix sheet this replaced, so assert it is closed rather than absent.
     expect(
-      screen.queryByText("No hidden collectibles"),
+      document.querySelector(".SlideupModal.open"),
     ).not.toBeInTheDocument();
   });
 
-  it("opens collectible detail when clicking on a hidden collectible", async () => {
+  it("unhides from the row without opening a detail view", async () => {
     const onClose = jest.fn();
     const hiddenCollectibles = {
       "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA:2": "hidden",
@@ -174,12 +175,27 @@ describe("HiddenCollectibles", () => {
       expect(screen.getByTestId("hidden-collectible-2")).toBeInTheDocument();
     });
 
-    // Click on the hidden collectible
-    fireEvent.click(screen.getByTestId("hidden-collectible-2"));
+    const changeCollectibleVisibility = jest
+      .spyOn(ApiInternal, "changeCollectibleVisibility")
+      .mockResolvedValue({ hiddenCollectibles: {}, error: "" } as any);
 
-    // Should open the collectible detail
+    // The row carries its own Unhide action; the designs dropped the
+    // tile -> detail -> menu route that used to be the only way.
+    const unhide = screen.getByTestId("hidden-collectible-unhide-2");
+    expect(unhide).toBeInTheDocument();
+
+    fireEvent.click(unhide);
+
     await waitFor(() => {
-      expect(screen.getByTestId("CollectibleDetail")).toBeInTheDocument();
+      expect(changeCollectibleVisibility).toHaveBeenCalledWith(
+        expect.objectContaining({
+          collectibleKey:
+            "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA:2",
+          collectibleVisibility: "visible",
+        }),
+      );
     });
+
+    expect(screen.queryByTestId("CollectibleDetail")).not.toBeInTheDocument();
   });
 });

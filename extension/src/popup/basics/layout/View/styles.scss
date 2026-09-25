@@ -249,7 +249,10 @@
   &--has-tab-bar {
     --app--bottom-offset: var(--tab-bar--height);
 
-    .View__content .View__inset {
+    // Direct child only. A descendant selector also matched the insets inside
+    // anything rendered *within* the content -- notably the sheets, whose own
+    // headers picked up 84px of tab-bar clearance they have no use for.
+    .View__content > .View__inset {
       padding-bottom: calc(var(--tab-bar--height) + #{pxToRem(24px)});
     }
   }

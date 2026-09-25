@@ -122,23 +122,11 @@ test("Hide and unhide a collectible", async ({
   // Verify the hidden collectible is shown
   await expect(page.getByTestId("hidden-collectible-1")).toBeVisible();
 
-  // Click on the hidden collectible to open detail
-  await page.getByTestId("hidden-collectible-1").click();
-
-  // Wait for collectible detail to open
-  await expect(page.getByTestId("CollectibleDetail")).toBeVisible();
-
-  // Open the three-dot menu
-  await page.getByTestId("CollectibleDetail__header__right-button").click();
-
-  // Verify "Show collectible" option is visible (not "Hide collectible")
-  await expect(page.getByText("Show collectible")).toBeVisible();
-
-  // Click "Show collectible"
-  await page.getByText("Show collectible").click();
-
-  // Wait for detail sheet to close
-  await expect(page.getByTestId("CollectibleDetail")).not.toBeVisible();
+  // Unhide from the row itself. This used to mean opening a second sheet on
+  // top of this one and going through the detail view's overflow menu; the
+  // designs put the action on the row.
+  await page.getByTestId("hidden-collectible-unhide-1").click();
+  await expect(page.getByTestId("CollectibleDetail")).toHaveCount(0);
 
   // Verify the empty state is now shown in hidden collectibles
   await expect(page.getByText("No hidden collectibles")).toBeVisible();

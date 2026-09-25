@@ -99,8 +99,9 @@
     }
   }
 
+  // The floating sheet owns its own background, radius and sizing now; this
+  // only needs to fill the card.
   &__sheet {
-    background: var(--sds-clr-gray-01);
     height: 100%;
     width: 100%;
   }

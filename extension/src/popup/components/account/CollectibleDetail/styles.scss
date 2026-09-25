@@ -1,9 +1,15 @@
 @use "../../../styles/utils.scss" as *;
 
 .CollectibleDetail {
-  background: var(--sds-clr-gray-01);
+  // Hosted inside a SlideupModal, which owns the card's background, radius and
+  // width. `100vw` and a nested full-screen `View` were right when this lived
+  // in a full-bleed Radix sheet; in a floating card they laid the content out
+  // 1280px wide inside an 848px card, so it rendered empty. Same nested-View
+  // trap as Discover and AddWallet.
   position: relative;
-  width: 100vw;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
 
   &__header__right-button {
     cursor: pointer;
@@ -52,16 +58,20 @@
           font-weight: var(--sds-fw-medium);
           line-height: pxToRem(20px);
         }
+
+        // Remove reads red in the designs, icon and label together. Declared
+        // after the base rules so it wins without needing extra specificity.
+        &--destructive {
+          .CollectibleDetail__header__right-button__popover-content__item__icon {
+            stroke: var(--sds-clr-red-09);
+          }
+
+          .CollectibleDetail__header__right-button__popover-content__item__label {
+            color: var(--sds-clr-red-09);
+          }
+        }
       }
     }
-  }
-
-  &__content {
-    align-items: center;
-    display: flex;
-    flex-direction: column;
-    gap: pxToRem(12px);
-    justify-content: center;
   }
 
   &__attributes {
@@ -72,9 +82,14 @@
       line-height: pxToRem(20px);
     }
 
+    // A grid rather than wrapped flex with fixed-width tiles. The tiles were
+    // 134px, tuned for the old full-bleed sheet: two of them plus the gap need
+    // 280px, and the floating card's 8px side gutters leave 264px, so they
+    // dropped to one column. auto-fill keeps two in the popup and still uses
+    // the extra room in fullscreen instead of stretching two tiles across it.
     &__list {
-      display: flex;
-      flex-wrap: wrap;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(#{pxToRem(120px)}, 1fr));
       gap: pxToRem(12px);
     }
   }
@@ -87,7 +102,9 @@
     justify-content: center;
     flex-direction: column;
     padding: pxToRem(12px) pxToRem(24px);
-    width: pxToRem(134px);
+    // Sized by the grid track now; `min-width: 0` lets a long trait value
+    // ellipsize inside the tile rather than widening it.
+    min-width: 0;
     text-align: center;
   }
 
@@ -124,7 +141,7 @@
 // Target the Radix popper wrapper globally - it renders via portal at body level
 // This ensures the popover appears above nested sheets (z-index: 100)
 [data-radix-popper-content-wrapper]:has(
-    .CollectibleDetail__header__right-button__popover-content
-  ) {
+  .CollectibleDetail__header__right-button__popover-content
+) {
   z-index: 100 !important;
 }

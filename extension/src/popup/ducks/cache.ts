@@ -29,6 +29,13 @@ interface ClearBalancesPayload {
   networkDetails: NetworkDetails;
 }
 
+interface RemoveCollectiblePayload {
+  publicKey: PublicKey;
+  networkDetails: NetworkDetails;
+  collectionAddress: string;
+  tokenId: string;
+}
+
 interface SaveIconsPayload {
   icons: Record<AssetCode, IconUrl>;
 }
@@ -198,6 +205,42 @@ const cacheSlice = createSlice({
         },
       };
     },
+    /**
+     * Drops one collectible from the cached collections, so the grid updates
+     * the moment a removal succeeds instead of waiting for the next fetch.
+     * Emptied collections go with it -- otherwise the list keeps a collection
+     * header with no rows under it.
+     */
+    removeCollectibleFromCache(
+      state,
+      action: { payload: RemoveCollectiblePayload },
+    ) {
+      const { networkDetails, publicKey, collectionAddress, tokenId } =
+        action.payload;
+      const byNetwork = state.collections[networkDetails.network];
+      const collections = byNetwork?.[publicKey];
+
+      if (!collections) {
+        return;
+      }
+
+      byNetwork[publicKey] = collections
+        .map((entry) => {
+          if (entry.collection?.address !== collectionAddress) {
+            return entry;
+          }
+          return {
+            ...entry,
+            collection: {
+              ...entry.collection,
+              collectibles: entry.collection.collectibles.filter(
+                (collectible) => collectible.tokenId !== tokenId,
+              ),
+            },
+          };
+        })
+        .filter((entry) => entry.collection?.collectibles.length !== 0);
+    },
     clearCollectiblesForAccount(
       state,
       action: { payload: ClearBalancesPayload },
@@ -271,5 +314,6 @@ export const {
   saveCollections,
   clearBalancesForAccount,
   clearCollectiblesForAccount,
+  removeCollectibleFromCache,
   savePopularTokens,
 } = cacheSlice.actions;
