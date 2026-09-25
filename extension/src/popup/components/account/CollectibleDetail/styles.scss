@@ -74,6 +74,17 @@
     }
   }
 
+  // Restored: an over-eager deletion of the remove-confirmation block took
+  // this with it, which dropped the 12px gap between the info, description and
+  // traits cards so they rendered as one continuous slab.
+  &__content {
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(12px);
+    justify-content: center;
+  }
+
   &__attributes {
     &__label {
       color: var(--sds-clr-gray-11);
