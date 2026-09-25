@@ -1,5 +1,5 @@
 import React from "react";
-import { render, waitFor, screen } from "@testing-library/react";
+import { render, waitFor, screen, fireEvent } from "@testing-library/react";
 import * as createStellarIdenticon from "helpers/stellarIdenticon";
 import { useLocation } from "react-router-dom";
 import BigNumber from "bignumber.js";
@@ -601,10 +601,12 @@ describe("SignTransactions", () => {
       }),
     );
     innerBuilder.addMemo(Memo.text("123"));
+    const innerTx = innerBuilder.setTimeout(0).build();
+    const innerSequence = innerTx.sequence;
     const feeBumpXdr = TransactionBuilder.buildFeeBumpTransaction(
       Keypair.random(),
       "200",
-      innerBuilder.setTimeout(0).build(),
+      innerTx,
       Networks.TESTNET,
     ).toXDR();
     jest.spyOn(Stellar, "getTransactionInfo").mockImplementation(() => ({
@@ -651,6 +653,14 @@ describe("SignTransactions", () => {
     await waitFor(() => screen.getByTestId("SignTransaction"));
     expect(screen.queryByTestId("memo-required-label")).toBeNull();
     expect(screen.getByTestId("sign-transaction-sign")).not.toBeDisabled();
+
+    // The details pane shows the memo and the sequence of the inner tx.
+    fireEvent.click(screen.getByText("Transaction details"));
+    expect(screen.getByTestId("MemoBlock")).toHaveTextContent("123");
+    expect(screen.getByTestId("MemoBlock")).toHaveTextContent("(MEMO_TEXT)");
+    expect(
+      screen.getByText("Sequence #").closest(".TxInfoBlock"),
+    ).toHaveTextContent(innerSequence);
   });
 
   it("requires a memo when the inner transaction of a fee bump has none", async () => {
@@ -737,10 +747,12 @@ describe("SignTransactions", () => {
         amount: "1",
       }),
     );
+    const innerTx = innerBuilder.setTimeout(0).build();
+    const innerSequence = innerTx.sequence;
     const feeBumpXdr = TransactionBuilder.buildFeeBumpTransaction(
       Keypair.random(),
       "200",
-      innerBuilder.setTimeout(0).build(),
+      innerTx,
       Networks.TESTNET,
     ).toXDR();
     jest.spyOn(Stellar, "getTransactionInfo").mockImplementation(() => ({
@@ -787,6 +799,13 @@ describe("SignTransactions", () => {
     await waitFor(() => screen.getByTestId("SignTransaction"));
     expect(screen.getByTestId("memo-required-label")).toBeInTheDocument();
     expect(screen.getByTestId("sign-transaction-sign")).toBeDisabled();
+
+    // The details pane shows the sequence of the inner tx and no memo.
+    fireEvent.click(screen.getByText("Transaction details"));
+    expect(screen.queryByTestId("MemoBlock")).toBeNull();
+    expect(
+      screen.getByText("Sequence #").closest(".TxInfoBlock"),
+    ).toHaveTextContent(innerSequence);
   });
 
   it("shows unfunded warning when signer has no XLM", async () => {
