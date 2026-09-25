@@ -41,17 +41,21 @@
   align-items: center;
   height: 5rem;
 
+  // Bare glyphs, no chrome: the designs draw these as 18px icons on a 36px
+  // pitch with no border or fill. The 32px box is kept as the hit target, so
+  // the 4px gap is what lands the glyph centres where the mock puts them
+  // (36px apart, the trailing one 24px off the inset edge).
   &__icon-btns {
     display: flex;
-    gap: pxToRem(8px);
+    gap: pxToRem(4px);
 
     button {
       width: pxToRem(32);
       height: pxToRem(32);
 
       svg {
-        width: pxToRem(16);
-        height: pxToRem(16);
+        width: pxToRem(18);
+        height: pxToRem(18);
         stroke: var(--sds-clr-base-01);
       }
     }

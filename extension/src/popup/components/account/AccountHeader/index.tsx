@@ -54,16 +54,14 @@ export const AccountHeader = ({
           <div className="AccountHeader__icon-btns">
             <div data-testid="account-header-qr-button">
               <NavButton
-                showBorder
                 title={t("Account details")}
                 id="nav-btn-qr"
-                icon={<Icon.QrCode01 />}
+                icon={<Icon.QrCode02 />}
                 onClick={() => navigateTo(ROUTES.viewPublicKey, navigate)}
               />
             </div>
             <div data-testid="account-header-connected-apps-button">
               <NavButton
-                showBorder
                 title={t("Connected apps")}
                 id="nav-btn-connected-apps"
                 icon={<Icon.NotificationBox />}
