@@ -52,6 +52,10 @@ jest.spyOn(GetAppDataHooks, "useGetAppData").mockReturnValue({
       type: AppDataType.RESOLVED,
       account: {
         publicKey: TEST_PUBLIC_KEY,
+        allAccounts: [
+          { ...mockAccounts[0], publicKey: TEST_PUBLIC_KEY },
+          mockAccounts[1],
+        ],
       },
       settings: defaultSettingsState,
     }),
@@ -431,6 +435,7 @@ describe("useGetSignTxData", () => {
 
     const data = result.current.state.data as ResolvedData;
     expect(data.publicKey).toBe(signingAccount);
+    expect(data.signFlowState.currentAccount.publicKey).toBe(signingAccount);
     expect(fetchBalances.mock.calls[0][0]).toBe(signingAccount);
     expect(getIconUrlFromIssuer).toHaveBeenCalledWith(
       expect.objectContaining({ code: "AQUA", key: asset.getIssuer() }),
@@ -499,6 +504,7 @@ describe("useGetSignTxData", () => {
     // The previous active account signs, so the screen uses its data.
     const data = result.current.state.data as ResolvedData;
     expect(data.publicKey).toBe(TEST_PUBLIC_KEY);
+    expect(data.signFlowState.currentAccount.publicKey).toBe(TEST_PUBLIC_KEY);
     expect(fetchBalances.mock.calls[0][0]).toBe(TEST_PUBLIC_KEY);
     expect(getIconUrlFromIssuer).not.toHaveBeenCalled();
   });

@@ -141,7 +141,7 @@ function useGetSignTxData(
       let accountSwitch:
         | ReturnType<ReturnType<typeof makeAccountActive>>
         | undefined;
-      const currentAccount = signFlowAccountSelector({
+      let currentAccount = signFlowAccountSelector({
         allAccounts,
         publicKey: activePublicKey,
         accountToSign,
@@ -164,6 +164,13 @@ function useGetSignTxData(
         const switchResult = await accountSwitch;
         if (makeAccountActive.fulfilled.match(switchResult)) {
           publicKey = switchResult.payload.publicKey;
+        } else {
+          // Keep `currentAccount` the same as `publicKey`: both are the
+          // previous active account.
+          currentAccount =
+            allAccounts.find(
+              (account) => account.publicKey === activePublicKey,
+            ) ?? currentAccount;
         }
       }
 
