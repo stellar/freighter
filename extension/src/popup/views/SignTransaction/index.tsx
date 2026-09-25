@@ -71,7 +71,6 @@ import { useGetSignTxData } from "./hooks/useGetSignTxData";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { useSetupSigningFlow } from "popup/helpers/useSetupSigningFlow";
 import { rejectTransaction, signTransaction } from "popup/ducks/access";
-import { publicKeySelector } from "popup/ducks/accountServices";
 import { reRouteOnboarding } from "popup/helpers/route";
 import { getSiteFavicon } from "popup/helpers/getSiteFavicon";
 import { AssetIcons, BlockaidAssetDiff } from "@shared/api/types";
@@ -118,7 +117,6 @@ export const SignTransaction = () => {
   // ReviewTransaction.
   const [isOnBlockaidSheet, setIsOnBlockaidSheet] = useState(false);
   const isNonSSLEnabled = useSelector(isNonSSLEnabledSelector);
-  const publicKey = useSelector(publicKeySelector);
   const { isDomainListedAllowed } = useIsDomainListedAllowed({
     domain,
   });
@@ -371,6 +369,9 @@ export const SignTransaction = () => {
   }
 
   const { currentAccount } = signTxState.data?.signFlowState!;
+  // The account that signs. The data hook resolves it from `accountToSign`
+  // and uses it for balances and icons, so use the same account here.
+  const { publicKey } = signTxState.data;
 
   // Check if user has enough XLM for the fee - skip warning if balances unavailable.
   // Only the fee source pays the fee, so skip the check when the selected

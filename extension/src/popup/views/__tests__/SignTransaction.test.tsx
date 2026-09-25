@@ -162,6 +162,10 @@ const transactions = {
     "AAAAAgAAAACM6IR9GHiRoVVAO78JJNksy2fKDQNs2jBn8bacsRLcrDucQIQAAAWIAAAAMQAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAGAAAAAAAAAABHkEVdJ+UfDnWpBr/qF582IEoDQ0iW0WPzO9CEUdvvh8AAAAEbWludAAAAAIAAAASAAAAAAAAAADoFl2ACT9HZkbCeuaT9MAIdStpdf58wM3P24nl738AnQAAAAoAAAAAAAAAAAAAAAAAAAAFAAAAAQAAAAAAAAAAAAAAAR5BFXSflHw51qQa/6hefNiBKA0NIltFj8zvQhFHb74fAAAABG1pbnQAAAACAAAAEgAAAAAAAAAA6BZdgAk/R2ZGwnrmk/TACHUraXX+fMDNz9uJ5e9/AJ0AAAAKAAAAAAAAAAAAAAAAAAAABQAAAAAAAAABAAAAAAAAAAIAAAAGAAAAAR5BFXSflHw51qQa/6hefNiBKA0NIltFj8zvQhFHb74fAAAAFAAAAAEAAAAHa35L+/RxV6EuJOVk78H5rCN+eubXBWtsKrRxeLnnpRAAAAABAAAABgAAAAEeQRV0n5R8OdakGv+oXnzYgSgNDSJbRY/M70IRR2++HwAAABAAAAABAAAAAgAAAA8AAAAHQmFsYW5jZQAAAAASAAAAAAAAAADoFl2ACT9HZkbCeuaT9MAIdStpdf58wM3P24nl738AnQAAAAEAYpBIAAAfrAAAAJQAAAAAAAAdYwAAAAA=",
 };
 
+// The source account of `transactions.classic`. It pays the fee.
+const CLASSIC_TX_SOURCE =
+  "GCBDC5AVPZEOSO3IAASQZSVRJMHX3UCCZH5O7S53FPZ636LQ5RHEW65H";
+
 describe("SignTransactions", () => {
   beforeEach(() => {
     const mockCanvas = document.createElement("canvas");
@@ -195,7 +199,7 @@ describe("SignTransactions", () => {
           isFunded: true,
           subentryCount: 0,
         },
-        publicKey: mockAccounts[1].publicKey,
+        publicKey: mockAccounts[0].publicKey,
         signFlowState: {
           allAccounts: mockAccounts,
           accountNotFound: false,
@@ -300,7 +304,7 @@ describe("SignTransactions", () => {
             isFunded: true,
             subentryCount: 0,
           },
-          publicKey: mockAccounts[1].publicKey,
+          publicKey: mockAccounts[0].publicKey,
           signFlowState: {
             allAccounts: mockAccounts,
             accountNotFound: false,
@@ -412,7 +416,7 @@ describe("SignTransactions", () => {
             isFunded: true,
             subentryCount: 0,
           },
-          publicKey: mockAccounts[1].publicKey,
+          publicKey: mockAccounts[0].publicKey,
           signFlowState: {
             allAccounts: mockAccounts,
             accountNotFound: false,
@@ -542,7 +546,7 @@ describe("SignTransactions", () => {
             isFunded: true,
             subentryCount: 0,
           },
-          publicKey: mockAccounts[1].publicKey,
+          publicKey: CLASSIC_TX_SOURCE,
           signFlowState: {
             allAccounts: mockAccounts,
             accountNotFound: false,
@@ -631,8 +635,7 @@ describe("SignTransactions", () => {
         state={{
           auth: {
             allAccounts: mockAccounts,
-            // The selected account is the tx source, so it pays the fee.
-            publicKey: transaction.source,
+            publicKey: mockAccounts[0].publicKey,
           },
           settings: {
             isExperimentalModeEnabled: true,
@@ -649,6 +652,7 @@ describe("SignTransactions", () => {
     await waitFor(() => screen.getByTestId("InsufficientBalanceWarning"));
   });
   it("does not show unfunded warning when another account pays the fee", async () => {
+    // The selected account (mockAccounts[0]) signs, but the tx source pays the fee.
     const mockBalancesEmpty = {
       ...mockBalances,
       balances: {
@@ -676,7 +680,7 @@ describe("SignTransactions", () => {
             isFunded: true,
             subentryCount: 0,
           },
-          publicKey: mockAccounts[1].publicKey,
+          publicKey: mockAccounts[0].publicKey,
           signFlowState: {
             allAccounts: mockAccounts,
             accountNotFound: false,
@@ -765,8 +769,7 @@ describe("SignTransactions", () => {
         state={{
           auth: {
             allAccounts: mockAccounts,
-            // The selected account signs, but the tx source pays the fee.
-            publicKey: Keypair.random().publicKey(),
+            publicKey: mockAccounts[0].publicKey,
           },
           settings: {
             isExperimentalModeEnabled: true,
@@ -803,7 +806,7 @@ describe("SignTransactions", () => {
             isFunded: true,
             subentryCount: 0,
           },
-          publicKey: mockAccounts[1].publicKey,
+          publicKey: mockAccounts[0].publicKey,
           signFlowState: {
             allAccounts: mockAccounts,
             accountNotFound: false,
@@ -926,7 +929,7 @@ describe("SignTransactions", () => {
             isFunded: true,
             subentryCount: 0,
           },
-          publicKey: mockAccounts[1].publicKey,
+          publicKey: mockAccounts[0].publicKey,
           signFlowState: {
             allAccounts: mockAccounts,
             accountNotFound: false,
@@ -1049,7 +1052,7 @@ describe("SignTransactions", () => {
             isFunded: true,
             subentryCount: 0,
           },
-          publicKey: mockAccounts[1].publicKey,
+          publicKey: mockAccounts[0].publicKey,
           signFlowState: {
             allAccounts: mockAccounts,
             accountNotFound: false,
@@ -1166,7 +1169,7 @@ describe("SignTransactions", () => {
             isFunded: true,
             subentryCount: 0,
           },
-          publicKey: mockAccounts[1].publicKey,
+          publicKey: mockAccounts[0].publicKey,
           signFlowState: {
             allAccounts: mockAccounts,
             accountNotFound: false,
@@ -1284,7 +1287,7 @@ describe("SignTransactions", () => {
           blockaidOverrideState: null,
           icons: {},
           balances: null, // Balances unavailable due to fetch failure
-          publicKey: mockAccounts[1].publicKey,
+          publicKey: mockAccounts[0].publicKey,
           signFlowState: {
             allAccounts: mockAccounts,
             accountNotFound: false,
@@ -1429,7 +1432,7 @@ describe("SignTransactions", () => {
             isFunded: true,
             subentryCount: 0,
           },
-          publicKey: mockAccounts[1].publicKey,
+          publicKey: mockAccounts[0].publicKey,
           signFlowState: {
             allAccounts: mockAccounts,
             accountNotFound: false,
@@ -1604,7 +1607,7 @@ describe("SignTransactions", () => {
             isFunded: true,
             subentryCount: 0,
           },
-          publicKey: mockAccounts[1].publicKey,
+          publicKey: mockAccounts[0].publicKey,
           signFlowState: {
             allAccounts: mockAccounts,
             accountNotFound: false,
@@ -1771,7 +1774,7 @@ describe("SignTransactions", () => {
             isFunded: true,
             subentryCount: 0,
           },
-          publicKey: mockAccounts[1].publicKey,
+          publicKey: mockAccounts[0].publicKey,
           signFlowState: {
             allAccounts: mockAccounts,
             accountNotFound: false,
@@ -1878,6 +1881,7 @@ describe("SignTransactions", () => {
     expect(screen.getByText("-0.5")).toBeInTheDocument();
   });
   it("only shows trustline changes for the selected account", async () => {
+    const selectedAccount = Keypair.random().publicKey();
     let currentSignTxDataMock = {
       state: {
         state: RequestState.SUCCESS,
@@ -1894,7 +1898,7 @@ describe("SignTransactions", () => {
             isFunded: true,
             subentryCount: 0,
           },
-          publicKey: mockAccounts[1].publicKey,
+          publicKey: selectedAccount,
           signFlowState: {
             allAccounts: mockAccounts,
             accountNotFound: false,
@@ -1952,7 +1956,6 @@ describe("SignTransactions", () => {
     // Two accounts add a trustline to the same asset in one transaction.
     // Only the trustline of the selected account must show.
     const aqua = new Asset("AQUA", Keypair.random().publicKey());
-    const selectedAccount = Keypair.random().publicKey();
     const otherAccount = Keypair.random().publicKey();
     const trustlineXdr = new TransactionBuilder(
       new Account(selectedAccount, "1"),
@@ -1983,7 +1986,7 @@ describe("SignTransactions", () => {
         state={{
           auth: {
             allAccounts: mockAccounts,
-            publicKey: selectedAccount,
+            publicKey: mockAccounts[0].publicKey,
           },
           settings: {
             allowList: {
