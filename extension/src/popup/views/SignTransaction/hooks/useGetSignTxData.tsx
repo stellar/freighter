@@ -138,22 +138,34 @@ function useGetSignTxData(
       const isMainnetNetwork = isMainnet(networkDetails);
 
       // handle auto selecting the right account based on `accountToSign`
+      let accountSwitch:
+        | ReturnType<ReturnType<typeof makeAccountActive>>
+        | undefined;
       const currentAccount = signFlowAccountSelector({
         allAccounts,
         publicKey: activePublicKey,
         accountToSign,
-        setActiveAccount: (account: string) =>
-          reduxDispatch(makeAccountActive(account)),
+        setActiveAccount: (account: string) => {
+          accountSwitch = reduxDispatch(makeAccountActive(account));
+        },
       });
 
       if (!currentAccount) {
         setAccountNotFound(true);
       }
 
-      // The account that signs. It can differ from the active account when
-      // the dApp gives `accountToSign`. Use it for all data about the
-      // selected account, so the view and this hook use the same account.
-      const publicKey = currentAccount?.publicKey ?? activePublicKey;
+      // The account that signs. The signing thunk signs with the active
+      // account, so wait for the switch to `accountToSign` to complete. If
+      // the switch fails, the previous active account signs. Use this
+      // account for all data about the selected account, so the screen
+      // always shows the account that signs.
+      let publicKey = activePublicKey;
+      if (accountSwitch) {
+        const switchResult = await accountSwitch;
+        if (makeAccountActive.fulfilled.match(switchResult)) {
+          publicKey = switchResult.payload.publicKey;
+        }
+      }
 
       // Fetch balances with soft failure handling - if this fails, we continue
       // without balance data (balance-related warnings will be skipped)
