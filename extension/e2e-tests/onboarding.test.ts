@@ -56,7 +56,7 @@ test("Create new wallet", async ({ page }) => {
   await expectPageToHaveScreenshot(
     { page, screenshot: "recovery-page.png" },
     {
-      mask: [page.locator(".MnemonicDisplay__list-item")],
+      mask: [page.locator(".MnemonicDisplay__word")],
     },
   );
 
@@ -357,7 +357,7 @@ test("Incorrect mnemonic phrase", async ({ page }) => {
   await expectPageToHaveScreenshot(
     { page, screenshot: "recovery-page.png" },
     {
-      mask: [page.locator(".MnemonicDisplay__list-item")],
+      mask: [page.locator(".MnemonicDisplay__word")],
     },
   );
 

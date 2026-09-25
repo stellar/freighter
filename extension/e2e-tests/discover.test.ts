@@ -16,7 +16,8 @@ test("Open Discover, dismiss welcome modal, and open a trending protocol in a ne
   await patchChromeTabsCreate(page);
   await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
 
-  // 1. Open Discover from the account header
+  // 1. Open Discover from the bottom tab bar. The test id predates the tab
+  //    bar and was kept deliberately, so the selector reads as the header's.
   await page.getByTestId("account-header-discover-button").click();
 
   // 2. Welcome modal appears on first open (fresh storage) — dismiss it

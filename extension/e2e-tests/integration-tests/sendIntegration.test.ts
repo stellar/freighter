@@ -434,8 +434,8 @@ test("Send token payment to C address", async ({
       page.getByTestId("ManageAssetRowButton__ellipsis-E2E"),
     ).toBeVisible();
 
-    // now go back and make sure the asset is displayed in the account view
-    await page.getByTestId("BackButton").click();
+    // One step back, not two: search is reached from Home now, so leaving the
+    // add flow lands on the account view rather than the retired asset list.
     await page.getByTestId("BackButton").click();
     await expect(page.getByTestId("account-view")).toBeVisible();
   }

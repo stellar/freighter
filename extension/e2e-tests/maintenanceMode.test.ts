@@ -56,7 +56,7 @@ test("MaintenanceScreen overlay intercepts clicks on underlying UI", async ({
 }) => {
   await loginToTestAccount({ page, extensionId, context });
 
-  // Confirm baseline — dropdown works before the overlay is active
+  // Confirm baseline — the account view is reachable before the overlay
   await expect(page.getByTestId("account-view")).toBeVisible();
 
   await stubMaintenanceScreenVariant(page, {

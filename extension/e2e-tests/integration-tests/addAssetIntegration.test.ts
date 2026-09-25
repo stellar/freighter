@@ -45,30 +45,31 @@ test("Adding classic asset on Testnet", async ({
   if (isIntegrationMode) {
     // if we're running in integration mode, verify the asset was actually added
     await page.getByText("Done").click();
-    await expect(
-      page.getByTestId("ManageAssetRowButton__ellipsis-USDC"),
-    ).toBeVisible();
 
-    // now go back and remove this asset
-    await page.getByTestId("BackButton").click();
-    await expect(page.getByText("Your assets")).toBeVisible();
-    await expect(page.getByTestId("ManageAssetCode")).toHaveText("USDC");
-    await expect(page.getByTestId("ManageAssetDomain")).toHaveText("centre.io");
-    await page.getByTestId("ManageAssetRowButton__ellipsis-USDC").click();
-    await page.getByText("Remove asset").click();
+    // Adding lands back on Home: the asset list it used to return to is gone,
+    // and the asset's own row on the balances list is the proof it was added.
+    await expect(page.getByTestId("account-view")).toBeVisible({
+      timeout: 30000,
+    });
     await expect(
-      page.getByTestId("SignTransaction__TrustlineRow__Asset"),
-    ).toHaveText("USDC");
-    await expect(
-      page.getByTestId("SignTransaction__TrustlineRow__Type"),
-    ).toHaveText("Remove Trustline");
+      page.getByTestId("account-assets-item").filter({ hasText: "USDC" }),
+    ).toBeVisible({ timeout: 20000 });
+
+    // Removal moved from the retired screen's per-row menu to Asset Details.
+    await startRemoveAsset(page, "USDC");
+    await expect(page.getByTestId("ChangeTrustInternal__Body")).toBeVisible({
+      timeout: 15000,
+    });
+    await expect(page.getByText("Remove Trustline")).toBeVisible();
     await page.getByRole("button", { name: "Confirm" }).click();
     await page.getByText("Done").click();
+
+    await expect(page.getByTestId("account-view")).toBeVisible({
+      timeout: 30000,
+    });
     await expect(
-      page.getByText(
-        "You have no assets added. Get started by adding an asset.",
-      ),
-    ).toBeVisible();
+      page.getByTestId("account-assets-item").filter({ hasText: "USDC" }),
+    ).toHaveCount(0);
   }
 });
 
@@ -129,8 +130,8 @@ test("Adding and removing unverified Soroban token", async ({
       page.getByTestId("ManageAssetRowButton__ellipsis-E2E"),
     ).toBeVisible();
 
-    // now go back and make sure the asset is displayed in the account view
-    await page.getByTestId("BackButton").click();
+    // One step back, not two: search is reached from Home now, so leaving the
+    // add flow lands on the account view rather than the retired asset list.
     await page.getByTestId("BackButton").click();
     await expect(page.getByTestId("account-view")).toBeVisible();
     await expect(page.getByText("E2E")).toBeVisible();
@@ -144,11 +145,15 @@ test("Adding and removing unverified Soroban token", async ({
       "Remove Token",
     );
     await page.getByRole("button", { name: "Confirm" }).click();
+
+    // That empty-state copy belonged to the retired asset list; the balances
+    // list on Home no longer showing the token is the equivalent assertion.
+    await expect(page.getByTestId("account-view")).toBeVisible({
+      timeout: 30000,
+    });
     await expect(
-      page.getByText(
-        "You have no assets added. Get started by adding an asset.",
-      ),
-    ).toBeVisible();
+      page.getByTestId("account-assets-item").filter({ hasText: "E2E" }),
+    ).toHaveCount(0);
   }
 });
 
