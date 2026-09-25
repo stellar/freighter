@@ -110,6 +110,7 @@ export const Usdt0LaunchBanner = () => {
       <SlideupModal
         isModalOpen={isSheetOpen}
         setIsModalOpen={(open) => !open && setIsSheetOpen(false)}
+        ariaLabel={t("USDT0 is now on Stellar")}
       >
         <div className="Usdt0LaunchBanner__sheet">
           <Usdt0LaunchSheet onClose={() => setIsSheetOpen(false)} />

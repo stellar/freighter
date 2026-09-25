@@ -151,7 +151,11 @@ export const HiddenAssets = ({ isOpen, onClose }: HiddenAssetsProps) => {
   };
 
   return (
-    <SlideupModal isModalOpen={isOpen} setIsModalOpen={onClose}>
+    <SlideupModal
+      isModalOpen={isOpen}
+      setIsModalOpen={onClose}
+      ariaLabel={t("Hidden tokens")}
+    >
       <div className="HiddenAssets" data-testid="HiddenAssets">
         <div className="HiddenAssets__header">
           <span className="HiddenAssets__title">{t("Hidden tokens")}</span>

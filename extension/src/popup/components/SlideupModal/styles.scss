@@ -55,6 +55,13 @@ $exit-transform: translateY(
     height 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   will-change: transform, opacity, height;
 
+  // The card takes focus on open so the sheet is announced; it is a container,
+  // not a control, so it must not paint a ring.
+  &:focus,
+  &:focus-visible {
+    outline: none;
+  }
+
   // Kill the inset's vertical borders, which View adds at >=850px; the card
   // supplies its own edge. No radius needed here -- the card's overflow clips
   // descendants to its rounded corners.

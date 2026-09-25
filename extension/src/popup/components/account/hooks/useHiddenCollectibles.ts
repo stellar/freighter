@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { captureException } from "@sentry/browser";
 
@@ -25,6 +25,7 @@ export const useHiddenCollectibles = () => {
   const publicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const { networkName } = networkDetails;
+  const [hiddenCollectiblesError, setHiddenCollectiblesError] = useState("");
 
   const hiddenCollectibles = useSelector((state: AppState) =>
     selectHiddenCollectiblesFor(state, networkName, publicKey),
@@ -36,9 +37,23 @@ export const useHiddenCollectibles = () => {
     }
 
     try {
-      const { hiddenCollectibles: hidden } = await getHiddenCollectibles({
-        activePublicKey: publicKey,
-      });
+      const { hiddenCollectibles: hidden, error } = await getHiddenCollectibles(
+        {
+          activePublicKey: publicKey,
+        },
+      );
+
+      // A structured error comes back as `{ hiddenCollectibles: {}, error }` --
+      // the call does not throw. Saving that empty map would record "loaded,
+      // nothing hidden" and unhide every collectible for good, so leave the key
+      // unwritten and let callers keep waiting.
+      if (error) {
+        setHiddenCollectiblesError(error);
+        captureException(`Failed to fetch hidden collectibles - ${error}`);
+        return;
+      }
+
+      setHiddenCollectiblesError("");
       dispatch(
         saveHiddenCollectibles({
           publicKey,
@@ -47,6 +62,7 @@ export const useHiddenCollectibles = () => {
         }),
       );
     } catch (error) {
+      setHiddenCollectiblesError(String(error));
       captureException(`Failed to fetch hidden collectibles - ${error}`);
     }
     // networkName is a dependency on purpose: the background resolves the
@@ -65,10 +81,18 @@ export const useHiddenCollectibles = () => {
   );
 
   return {
-    // `undefined` means "not loaded yet"; callers only ever ask whether a
-    // specific collectible is hidden, for which an empty map is the right
-    // answer while the first fetch is in flight.
-    hiddenCollectibles: hiddenCollectibles || {},
+    // `undefined` means this account/network has never been loaded, which is
+    // not the same as "nothing hidden". It is returned as-is -- collapsing it
+    // to `{}` here would make `isCollectibleHidden` answer `false` for
+    // everything and paint an unfiltered grid on every cold load. Mirrors
+    // HiddenAssets, which holds a loader on the same signal.
+    hiddenCollectibles,
+    // Guarded on `publicKey`: `refreshHiddenCollectibles` early-returns without
+    // one, so there is no fetch in flight to wait for and the signal would
+    // otherwise stay true forever.
+    isHiddenCollectiblesLoading:
+      !!publicKey && hiddenCollectibles === undefined,
+    hiddenCollectiblesError,
     refreshHiddenCollectibles,
     isCollectibleHidden,
   };

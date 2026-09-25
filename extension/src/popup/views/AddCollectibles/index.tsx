@@ -50,8 +50,12 @@ export const AddCollectibles = () => {
   const [isHiddenCollectiblesOpen, setIsHiddenCollectiblesOpen] =
     useState(false);
   const collections = useSelector(collectionsSelector);
-  const { refreshHiddenCollectibles, isCollectibleHidden } =
-    useHiddenCollectibles();
+  const {
+    refreshHiddenCollectibles,
+    isCollectibleHidden,
+    isHiddenCollectiblesLoading,
+    hiddenCollectiblesError,
+  } = useHiddenCollectibles();
   const { fetchData: fetchCollectiblesData } = useGetCollectibles({
     useCache: false,
   });
@@ -255,6 +259,8 @@ export const AddCollectibles = () => {
             collections={currentCollections}
             refreshHiddenCollectibles={refreshHiddenCollectibles}
             isCollectibleHidden={isCollectibleHidden}
+            isLoading={isHiddenCollectiblesLoading}
+            loadError={hiddenCollectiblesError}
             isOpen={isHiddenCollectiblesOpen}
             onClose={() => setIsHiddenCollectiblesOpen(false)}
           />

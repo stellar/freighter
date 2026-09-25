@@ -69,6 +69,8 @@ describe("HiddenCollectibles", () => {
           onClose={onClose}
           refreshHiddenCollectibles={mockRefreshHiddenCollectibles}
           isCollectibleHidden={createIsCollectibleHidden(hiddenCollectibles)}
+          isLoading={false}
+          loadError=""
         />
       </Wrapper>,
     );
@@ -92,6 +94,8 @@ describe("HiddenCollectibles", () => {
           onClose={onClose}
           refreshHiddenCollectibles={mockRefreshHiddenCollectibles}
           isCollectibleHidden={createIsCollectibleHidden(hiddenCollectibles)}
+          isLoading={false}
+          loadError=""
         />
       </Wrapper>,
     );
@@ -117,6 +121,8 @@ describe("HiddenCollectibles", () => {
           onClose={onClose}
           refreshHiddenCollectibles={mockRefreshHiddenCollectibles}
           isCollectibleHidden={createIsCollectibleHidden(hiddenCollectibles)}
+          isLoading={false}
+          loadError=""
         />
       </Wrapper>,
     );
@@ -142,6 +148,8 @@ describe("HiddenCollectibles", () => {
           onClose={onClose}
           refreshHiddenCollectibles={mockRefreshHiddenCollectibles}
           isCollectibleHidden={createIsCollectibleHidden(hiddenCollectibles)}
+          isLoading={false}
+          loadError=""
         />
       </Wrapper>,
     );
@@ -167,6 +175,8 @@ describe("HiddenCollectibles", () => {
           onClose={onClose}
           refreshHiddenCollectibles={mockRefreshHiddenCollectibles}
           isCollectibleHidden={createIsCollectibleHidden(hiddenCollectibles)}
+          isLoading={false}
+          loadError=""
         />
       </Wrapper>,
     );
@@ -197,5 +207,58 @@ describe("HiddenCollectibles", () => {
     });
 
     expect(screen.queryByTestId("CollectibleDetail")).not.toBeInTheDocument();
+  });
+  it("waits for the visibility map instead of claiming nothing is hidden", async () => {
+    render(
+      <Wrapper state={defaultState} routes={[ROUTES.account]}>
+        <HiddenCollectibles
+          collections={mockCollectibles}
+          isOpen={true}
+          onClose={jest.fn()}
+          refreshHiddenCollectibles={mockRefreshHiddenCollectibles}
+          isCollectibleHidden={createIsCollectibleHidden({})}
+          isLoading={true}
+          loadError=""
+        />
+      </Wrapper>,
+    );
+
+    await waitFor(() => {
+      expect(
+        screen.getByTestId("HiddenCollectibles__loader"),
+      ).toBeInTheDocument();
+    });
+    // The empty state would be a claim the sheet cannot make yet.
+    expect(
+      screen.queryByText("No hidden collectibles"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("surfaces a failed visibility load rather than spinning forever", async () => {
+    render(
+      <Wrapper state={defaultState} routes={[ROUTES.account]}>
+        <HiddenCollectibles
+          collections={mockCollectibles}
+          isOpen={true}
+          onClose={jest.fn()}
+          refreshHiddenCollectibles={mockRefreshHiddenCollectibles}
+          isCollectibleHidden={createIsCollectibleHidden({})}
+          isLoading={true}
+          loadError="boom"
+        />
+      </Wrapper>,
+    );
+
+    await waitFor(() => {
+      expect(
+        screen.getByTestId("HiddenCollectibles__error"),
+      ).toBeInTheDocument();
+    });
+    expect(
+      screen.queryByTestId("HiddenCollectibles__loader"),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("No hidden collectibles"),
+    ).not.toBeInTheDocument();
   });
 });

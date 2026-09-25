@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
-import { Button, Icon, Notification } from "@stellar/design-system";
+import { Button, Icon, Loader, Notification } from "@stellar/design-system";
 import { toast } from "sonner";
 
 import { Collection } from "@shared/api/types/types";
@@ -19,6 +19,14 @@ interface HiddenCollectiblesProps {
   collections: Collection[];
   refreshHiddenCollectibles: () => Promise<void>;
   isCollectibleHidden: (collectionAddress: string, tokenId: string) => boolean;
+  /**
+   * The scoped visibility map has not arrived yet. Distinct from having none
+   * hidden: `isCollectibleHidden` answers `false` for everything either way, and
+   * rendering the empty state here claims nothing is hidden while the answer is
+   * still in flight.
+   */
+  isLoading: boolean;
+  loadError: string;
   isOpen: boolean;
   onClose: () => void;
 }
@@ -35,6 +43,8 @@ export const HiddenCollectibles = ({
   collections,
   refreshHiddenCollectibles,
   isCollectibleHidden,
+  isLoading,
+  loadError,
   isOpen,
   onClose,
 }: HiddenCollectiblesProps) => {
@@ -113,7 +123,11 @@ export const HiddenCollectibles = ({
   };
 
   return (
-    <SlideupModal isModalOpen={isOpen} setIsModalOpen={onClose}>
+    <SlideupModal
+      isModalOpen={isOpen}
+      setIsModalOpen={onClose}
+      ariaLabel={t("Hidden collectibles")}
+    >
       <div className="HiddenCollectibles" data-testid="HiddenCollectibles">
         <div className="HiddenCollectibles__header">
           <span className="HiddenCollectibles__title">
@@ -129,57 +143,84 @@ export const HiddenCollectibles = ({
           </button>
         </div>
 
-        {hiddenItems.length ? (
-          <div className="HiddenCollectibles__list">
-            {hiddenItems.map((item) => {
-              const collectibleKey = `${item.collectionAddress}:${item.tokenId}`;
-              return (
-                <div
-                  className="HiddenCollectibles__row"
-                  key={collectibleKey}
-                  data-testid={`hidden-collectible-${item.tokenId}`}
-                >
-                  <div className="HiddenCollectibles__row__image">
-                    <CollectibleInfoImage
-                      image={item.image}
-                      name={item.tokenId}
-                      isSmall
-                    />
-                  </div>
-                  <div className="HiddenCollectibles__row__identity">
-                    <div className="HiddenCollectibles__row__name">
-                      {item.name || item.collectionName}
-                    </div>
-                    <div className="HiddenCollectibles__row__token-id">
-                      #{item.tokenId}
-                    </div>
-                  </div>
-                  <Button
-                    // `md` matches the designs: 32px tall, 6px radius. Not
-                    // isRounded -- the row action is a rounded rect, only the
-                    // footer is a pill.
-                    size="md"
-                    variant="tertiary"
-                    isLoading={pendingKey === collectibleKey}
-                    disabled={pendingKey !== null}
-                    onClick={() =>
-                      handleUnhide(item.collectionAddress, item.tokenId)
-                    }
-                    data-testid={`hidden-collectible-unhide-${item.tokenId}`}
-                    icon={<Icon.Eye />}
-                    iconPosition="right"
+        {(() => {
+          if (loadError) {
+            return (
+              <div
+                className="HiddenCollectibles__empty"
+                data-testid="HiddenCollectibles__error"
+              >
+                <Notification
+                  variant="error"
+                  title={t("Unable to load hidden collectibles")}
+                />
+              </div>
+            );
+          }
+
+          if (isLoading) {
+            return (
+              <div
+                className="HiddenCollectibles__loader"
+                data-testid="HiddenCollectibles__loader"
+              >
+                <Loader size="2rem" />
+              </div>
+            );
+          }
+
+          return hiddenItems.length ? (
+            <div className="HiddenCollectibles__list">
+              {hiddenItems.map((item) => {
+                const collectibleKey = `${item.collectionAddress}:${item.tokenId}`;
+                return (
+                  <div
+                    className="HiddenCollectibles__row"
+                    key={collectibleKey}
+                    data-testid={`hidden-collectible-${item.tokenId}`}
                   >
-                    {t("Unhide")}
-                  </Button>
-                </div>
-              );
-            })}
-          </div>
-        ) : (
-          <div className="HiddenCollectibles__empty">
-            {t("No hidden collectibles")}
-          </div>
-        )}
+                    <div className="HiddenCollectibles__row__image">
+                      <CollectibleInfoImage
+                        image={item.image}
+                        name={item.tokenId}
+                        isSmall
+                      />
+                    </div>
+                    <div className="HiddenCollectibles__row__identity">
+                      <div className="HiddenCollectibles__row__name">
+                        {item.name || item.collectionName}
+                      </div>
+                      <div className="HiddenCollectibles__row__token-id">
+                        #{item.tokenId}
+                      </div>
+                    </div>
+                    <Button
+                      // `md` matches the designs: 32px tall, 6px radius. Not
+                      // isRounded -- the row action is a rounded rect, only the
+                      // footer is a pill.
+                      size="md"
+                      variant="tertiary"
+                      isLoading={pendingKey === collectibleKey}
+                      disabled={pendingKey !== null}
+                      onClick={() =>
+                        handleUnhide(item.collectionAddress, item.tokenId)
+                      }
+                      data-testid={`hidden-collectible-unhide-${item.tokenId}`}
+                      icon={<Icon.Eye />}
+                      iconPosition="right"
+                    >
+                      {t("Unhide")}
+                    </Button>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="HiddenCollectibles__empty">
+              {t("No hidden collectibles")}
+            </div>
+          );
+        })()}
 
         <div className="HiddenCollectibles__footer">
           <Button

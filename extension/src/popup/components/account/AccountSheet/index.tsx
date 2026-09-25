@@ -348,7 +348,11 @@ export const AccountSheet = ({
   };
 
   return (
-    <SlideupModal isModalOpen={isOpen} setIsModalOpen={onClose}>
+    <SlideupModal
+      isModalOpen={isOpen}
+      setIsModalOpen={onClose}
+      ariaLabel={t("Wallets")}
+    >
       <div className="AccountSheet" data-testid="AccountSheet">
         {renderBody()}
       </div>

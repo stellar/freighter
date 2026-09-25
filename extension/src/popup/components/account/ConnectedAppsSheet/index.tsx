@@ -106,7 +106,11 @@ export const ConnectedAppsSheet = ({
   };
 
   return (
-    <SlideupModal isModalOpen={isOpen} setIsModalOpen={onClose}>
+    <SlideupModal
+      isModalOpen={isOpen}
+      setIsModalOpen={onClose}
+      ariaLabel={t("Connected apps")}
+    >
       <div className="ConnectedAppsSheet" data-testid="ConnectedAppsSheet">
         <div className="ConnectedAppsSheet__header">
           <span className="ConnectedAppsSheet__title">

@@ -77,8 +77,12 @@ export const Account = () => {
     useGetAccountHistoryData();
 
   const { state: iconsData, fetchData: fetchIconsData } = useGetIcons();
-  const { refreshHiddenCollectibles, isCollectibleHidden } =
-    useHiddenCollectibles();
+  const {
+    refreshHiddenCollectibles,
+    isCollectibleHidden,
+    isHiddenCollectiblesLoading,
+    hiddenCollectiblesError,
+  } = useHiddenCollectibles();
 
   // Warm the swap top-tokens cache in the background so the first Swap entry
   // paints Popular instantly; no-op on testnet / when already cached.
@@ -234,8 +238,15 @@ export const Account = () => {
   // An empty `collections` means "owns none" only once the request lands, so that
   // tab spins until it does. Guarded on `resolvedData`: a failed fetch discards
   // the result, and waiting on it would spin forever.
+  //
+  // The visibility map is a second, independent request, and the grid filters
+  // against it -- so painting before it lands flashes every hidden collectible
+  // back into view. Same spin-forever guard applies: once the fetch has failed
+  // there is nothing left to wait for, and an unfiltered grid beats a permanent
+  // loader.
   const isCollectiblesLoading =
-    !!resolvedData && !resolvedData.hasLoadedCollectibles;
+    (!!resolvedData && !resolvedData.hasLoadedCollectibles) ||
+    (isHiddenCollectiblesLoading && !hiddenCollectiblesError);
 
   // Only where there is an empty state to host it -- with collectibles on screen
   // the pill stays, so that tab always has some way to add one. Same predicate

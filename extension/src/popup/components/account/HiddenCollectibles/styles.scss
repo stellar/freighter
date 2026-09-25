@@ -102,6 +102,14 @@
     font-size: pxToRem(14px);
   }
 
+  &__loader {
+    // Matches the empty state's vertical footprint so the card does not resize
+    // between the loader and whatever replaces it.
+    display: flex;
+    justify-content: center;
+    padding: pxToRem(12px) 0;
+  }
+
   &__footer {
     // The design's footer button is 36px, between SDS's md (32) and lg (40).
     .Button {
