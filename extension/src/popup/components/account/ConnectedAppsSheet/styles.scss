@@ -1,0 +1,166 @@
+@use "../../../styles/utils.scss" as *;
+
+.ConnectedAppsSheet {
+  display: flex;
+  flex-direction: column;
+  padding: pxToRem(24px);
+  gap: pxToRem(16px);
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  &__title {
+    font-size: pxToRem(16px);
+    font-weight: var(--sds-fw-medium);
+    color: var(--sds-clr-gray-12);
+  }
+
+  &__close {
+    display: flex;
+    align-items: center;
+    background: none;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+    color: var(--sds-clr-gray-11);
+  }
+
+  &__wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(16px);
+  }
+
+  &__list {
+    display: flex;
+    flex-direction: column;
+    background-color: var(--sds-clr-gray-03);
+    border-radius: pxToRem(16px);
+    overflow: hidden;
+    // A long allow-list would otherwise push "Disconnect all" past the sheet's
+    // max-height and out of reach.
+    max-height: pxToRem(280px);
+    overflow-y: auto;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+
+  &__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: pxToRem(12px) pxToRem(16px);
+    // The rounded list clips its children, so a scrolled row keeps the corners.
+    flex: 0 0 auto;
+
+    &:not(:last-child) {
+      border-bottom: 1px solid var(--sds-clr-gray-06);
+    }
+
+    // RemoveButton is an SDS tertiary Button (a bordered gray pill); the frame
+    // wants a bare red minus-circle, so strip the chrome.
+    .Button {
+      flex: 0 0 auto;
+      color: var(--sds-clr-red-09);
+      background-color: transparent;
+      border: none;
+      height: pxToRem(18px);
+      width: pxToRem(18px);
+      padding: 0;
+    }
+
+    .PunycodedDomain {
+      display: flex;
+      align-items: center;
+      gap: pxToRem(12px);
+      flex: 1 1 0%;
+      min-width: 0;
+
+      // PunycodedDomain's own stylesheet puts `margin-bottom` on every nested
+      // div, and its `--row` modifier only clears the root. The element rules
+      // below are more specific but never declare the property, so without
+      // this the base rule applies unopposed: 4px taller rows, contents 2px
+      // above centre.
+      div {
+        margin-bottom: 0;
+      }
+    }
+
+    .PunycodedDomain__favicon-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: pxToRem(32px);
+      height: pxToRem(32px);
+      border-radius: pxToRem(8px);
+      overflow: hidden;
+      flex: 0 0 auto;
+    }
+
+    .PunycodedDomain__favicon {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .PunycodedDomain__domain {
+      color: var(--sds-clr-gray-12);
+      font-size: pxToRem(14px);
+      font-weight: var(--sds-fw-medium);
+      line-height: pxToRem(20px);
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+
+  &__empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: pxToRem(8px);
+    padding-top: pxToRem(8px);
+
+    &__badge {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: pxToRem(48px);
+      height: pxToRem(48px);
+      border-radius: 50%;
+      background-color: var(--sds-clr-gray-03);
+      color: var(--sds-clr-gray-09);
+      margin-bottom: pxToRem(8px);
+
+      // Unsized, the glyph lands at ~16px — short of the frame's 20.571px.
+      svg {
+        width: pxToRem(20.571px);
+        height: pxToRem(20.571px);
+      }
+    }
+
+    &__title {
+      color: var(--sds-clr-gray-12);
+      font-size: pxToRem(16px);
+      font-weight: var(--sds-fw-medium);
+      line-height: pxToRem(24px);
+    }
+
+    &__subtitle {
+      color: var(--sds-clr-gray-11);
+      font-size: pxToRem(14px);
+      font-weight: var(--sds-fw-regular);
+      line-height: pxToRem(20px);
+      // With the column's 8px gap, makes the frame's 24px above the button.
+      margin-bottom: pxToRem(16px);
+    }
+  }
+}

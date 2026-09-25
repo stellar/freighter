@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { Button, Icon, Notification } from "@stellar/design-system";
+import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 
 import { RequestState } from "constants/request";
@@ -19,10 +20,17 @@ import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { publicKeySelector } from "popup/ducks/accountServices";
 import { collectionsSelector } from "popup/ducks/cache";
 import { ROUTES } from "popup/constants/routes";
-import { changeCollectibleVisibility } from "@shared/api/internal";
+import {
+  changeCollectibleVisibility,
+  removeCollectible,
+} from "@shared/api/internal";
 import { AssetVisibility } from "@shared/api/types/types";
+import { AppDispatch } from "popup/App";
+import { saveHiddenCollectibles } from "popup/ducks/hiddenCollectibles";
+import { removeCollectibleFromCache } from "popup/ducks/cache";
 
 import { useCollectibleDetail } from "./hooks/useCollectibleDetail";
+import { useIsCollectibleTracked } from "./hooks/useIsCollectibleTracked";
 import {
   getCollectibleName,
   CollectibleInfo,
@@ -62,14 +70,18 @@ export const CollectibleDetail = ({
   );
   const { state, fetchData: fetchCollectibleMetadata } = useCollectibleDetail();
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
+  const reduxDispatch = useDispatch<AppDispatch>();
+  const isTracked = useIsCollectibleTracked({
+    collectionAddress: selectedCollectible.collectionAddress,
+    tokenId: selectedCollectible.tokenId,
+  });
+  const [isRemoving, setIsRemoving] = useState(false);
 
   if (!collectible) {
     return (
-      <View>
-        <Notification title={t("Error")} variant="error">
-          {t("Collectible not found")}
-        </Notification>
-      </View>
+      <Notification title={t("Error")} variant="error">
+        {t("Collectible not found")}
+      </Notification>
     );
   }
 
@@ -101,175 +113,266 @@ export const CollectibleDetail = ({
 
   const handleToggleCollectibleVisibility = async () => {
     const collectibleKey = `${selectedCollectible.collectionAddress}:${selectedCollectible.tokenId}`;
-    await changeCollectibleVisibility({
+    const { hiddenCollectibles, error } = await changeCollectibleVisibility({
       collectibleKey,
       collectibleVisibility: isHidden
         ? "visible"
         : ("hidden" as AssetVisibility),
       activePublicKey: publicKey || "",
     });
+
     setIsPopoverOpen(false);
+
+    // This used to discard the response entirely, so a failed write closed the
+    // sheet exactly as a successful one did.
+    if (error) {
+      toast.custom(() => (
+        <Notification
+          variant="error"
+          title={
+            isHidden
+              ? t("Unable to show this collectible")
+              : t("Unable to hide this collectible")
+          }
+        />
+      ));
+      return;
+    }
+
+    // The grid filters against the redux mirror, so a write that only reaches
+    // the background would leave the collectible wrongly hidden until reload.
+    reduxDispatch(
+      saveHiddenCollectibles({
+        publicKey,
+        networkName: networkDetails.networkName,
+        hiddenCollectibles,
+      }),
+    );
     handleItemClose();
+    toast.custom(() => (
+      <Notification
+        variant="success"
+        title={isHidden ? t("Collectible unhidden") : t("Collectible hidden")}
+      />
+    ));
+  };
+
+  const handleRemoveCollectible = async () => {
+    // Removing happens straight from the menu, with no confirmation step to
+    // sit behind -- so guard re-entry here instead.
+    if (isRemoving) {
+      return;
+    }
+    setIsRemoving(true);
+    const { error } = await removeCollectible({
+      publicKey,
+      network: networkDetails.network,
+      collectibleContractAddress: selectedCollectible.collectionAddress,
+      collectibleTokenId: selectedCollectible.tokenId,
+    });
+    setIsRemoving(false);
+
+    if (error) {
+      toast.custom(() => (
+        <Notification
+          variant="error"
+          title={t("Unable to remove this collectible")}
+        />
+      ));
+      return;
+    }
+
+    // Drop it from the cached collections so the grid behind this sheet
+    // updates now rather than on the next collectibles fetch.
+    reduxDispatch(
+      removeCollectibleFromCache({
+        publicKey,
+        networkDetails,
+        collectionAddress: selectedCollectible.collectionAddress,
+        tokenId: selectedCollectible.tokenId,
+      }),
+    );
+    handleItemClose();
+    toast.custom(() => (
+      <Notification variant="success" title={t("Collectible removed")} />
+    ));
   };
 
   return (
     <div className="CollectibleDetail" data-testid="CollectibleDetail">
-      <View>
-        <SubviewHeader
-          title={name}
-          customBackAction={handleItemClose}
-          customBackIcon={<Icon.X />}
-          rightButton={
-            <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
-              <div
-                className="CollectibleDetail__header__right-button"
-                data-testid="CollectibleDetail__header__right-button"
+      <SubviewHeader
+        title={name}
+        customBackAction={handleItemClose}
+        customBackIcon={<Icon.X />}
+        rightButton={
+          <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
+            <div
+              className="CollectibleDetail__header__right-button"
+              data-testid="CollectibleDetail__header__right-button"
+            >
+              <PopoverTrigger
+                asChild
+                className="CollectibleDetail__header__right-button__trigger"
+                onClick={() => setIsPopoverOpen(true)}
               >
-                <PopoverTrigger
-                  asChild
-                  className="CollectibleDetail__header__right-button__trigger"
-                  onClick={() => setIsPopoverOpen(true)}
+                <Icon.DotsHorizontal className="CollectibleDetail__header__right-button__icon" />
+              </PopoverTrigger>
+              <PopoverContent
+                align="end"
+                className="CollectibleDetail__header__right-button__popover-content"
+              >
+                <div
+                  className="CollectibleDetail__header__right-button__popover-content__item"
+                  onClick={handleRefreshMetadata}
                 >
-                  <Icon.DotsHorizontal className="CollectibleDetail__header__right-button__icon" />
-                </PopoverTrigger>
-                <PopoverContent
-                  align="end"
-                  className="CollectibleDetail__header__right-button__popover-content"
-                >
+                  <Icon.RefreshCcw01 className="CollectibleDetail__header__right-button__popover-content__item__icon" />
+                  <div className="CollectibleDetail__header__right-button__popover-content__item__label">
+                    {t("Refresh metadata")}
+                  </div>
+                </div>
+                <div className="CollectibleDetail__header__right-button__popover-content__item">
+                  <Icon.LinkExternal01 className="CollectibleDetail__header__right-button__popover-content__item__icon" />
                   <div
-                    className="CollectibleDetail__header__right-button__popover-content__item"
-                    onClick={handleRefreshMetadata}
+                    className="CollectibleDetail__header__right-button__popover-content__item__label"
+                    onClick={() => {
+                      openTab(
+                        `${stellarExpertUrl}/contract/${collectible.collectionAddress}`,
+                      );
+                    }}
                   >
-                    <Icon.RefreshCcw01 className="CollectibleDetail__header__right-button__popover-content__item__icon" />
+                    {t("View on stellar.expert")}
+                  </div>
+                </div>
+                <div
+                  className="CollectibleDetail__header__right-button__popover-content__item"
+                  onClick={handleToggleCollectibleVisibility}
+                >
+                  {isHidden ? (
+                    <Icon.Eye className="CollectibleDetail__header__right-button__popover-content__item__icon" />
+                  ) : (
+                    <Icon.EyeOff className="CollectibleDetail__header__right-button__popover-content__item__icon" />
+                  )}
+                  <div className="CollectibleDetail__header__right-button__popover-content__item__label">
+                    {isHidden ? t("Show collectible") : t("Hide collectible")}
+                  </div>
+                </div>
+                {/* Only for collectibles this wallet tracks. The backend also
+                    returns special-cased ones that were never added here, and
+                    those have nothing in storage to remove -- Hide is the
+                    action that works for them. */}
+                {isTracked && (
+                  <div
+                    className="CollectibleDetail__header__right-button__popover-content__item CollectibleDetail__header__right-button__popover-content__item--destructive"
+                    onClick={() => {
+                      setIsPopoverOpen(false);
+                      handleRemoveCollectible();
+                    }}
+                    data-testid="CollectibleDetail__remove"
+                  >
+                    <Icon.MinusCircle className="CollectibleDetail__header__right-button__popover-content__item__icon" />
                     <div className="CollectibleDetail__header__right-button__popover-content__item__label">
-                      {t("Refresh metadata")}
+                      {t("Remove")}
                     </div>
                   </div>
-                  <div className="CollectibleDetail__header__right-button__popover-content__item">
-                    <Icon.LinkExternal01 className="CollectibleDetail__header__right-button__popover-content__item__icon" />
-                    <div
-                      className="CollectibleDetail__header__right-button__popover-content__item__label"
-                      onClick={() => {
-                        openTab(
-                          `${stellarExpertUrl}/contract/${collectible.collectionAddress}`,
-                        );
-                      }}
-                    >
-                      {t("View on stellar.expert")}
-                    </div>
-                  </div>
-                  <div
-                    className="CollectibleDetail__header__right-button__popover-content__item"
-                    onClick={handleToggleCollectibleVisibility}
-                  >
-                    {isHidden ? (
-                      <Icon.Eye className="CollectibleDetail__header__right-button__popover-content__item__icon" />
-                    ) : (
-                      <Icon.EyeOff className="CollectibleDetail__header__right-button__popover-content__item__icon" />
-                    )}
-                    <div className="CollectibleDetail__header__right-button__popover-content__item__label">
-                      {isHidden ? t("Show collectible") : t("Hide collectible")}
-                    </div>
-                  </div>
-                </PopoverContent>
-              </div>
-            </Popover>
-          }
-        />
-        {state.state === RequestState.LOADING ? (
-          <Loading />
-        ) : (
-          <View.Content>
-            <div className="CollectibleDetail__content">
-              <CollectibleInfo
-                name={name}
-                collectionName={collectionData?.collection?.name || ""}
-                tokenId={selectedCollectible.tokenId}
-                image={collectible.metadata?.image}
-                dataTestIdBase="CollectibleDetail"
-              />
-              {isHidden && (
-                <Notification
-                  variant="warning"
-                  icon={<Icon.EyeOff />}
-                  title={t("This collectible is hidden")}
-                />
-              )}
-              <CollectibleDescription
-                description={collectible.metadata?.description || ""}
-                dataTestIdBase="CollectibleDetail"
-              />
-              {hasAttributes && (
-                <CollectibleInfoBlock
-                  className="CollectibleDetail__attributes"
-                  data-testid="CollectibleDetail__attributes"
-                >
-                  <div
-                    className="CollectibleDetail__attributes__label"
-                    data-testid="CollectibleDetail__attributes__label"
-                  >
-                    {t("Collectible Traits")}
-                  </div>
-                  <div className="CollectibleDetail__attributes__list">
-                    {attributes.map((attribute) => (
-                      <div
-                        className="CollectibleDetail__attribute"
-                        key={attribute.traitType}
-                      >
-                        <div
-                          className="CollectibleDetail__attribute__value"
-                          data-testid="CollectibleDetail__attribute__value"
-                        >
-                          {attribute.value}
-                        </div>
-                        <div
-                          className="CollectibleDetail__attribute__trait"
-                          data-testid="CollectibleDetail__attribute__trait"
-                        >
-                          {attribute.traitType}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CollectibleInfoBlock>
-              )}
+                )}
+              </PopoverContent>
             </div>
-          </View.Content>
-        )}
-        <View.Footer>
-          <div className="CollectibleDetail__footer__buttons">
-            {collectible.metadata?.externalUrl && (
-              <Button
-                data-testid="CollectibleDetail__footer__buttons__view"
-                isRounded
-                isFullWidth
-                variant="secondary"
-                size="lg"
-                iconPosition="right"
-                icon={
-                  <Icon.LinkExternal01 className="CollectibleDetail__footer__buttons__icon" />
-                }
-                onClick={() => {
-                  openTab(collectible.metadata?.externalUrl || "");
-                }}
-              >
-                {t("View")}
-              </Button>
+          </Popover>
+        }
+      />
+      {state.state === RequestState.LOADING ? (
+        <Loading />
+      ) : (
+        <View.Content>
+          <div className="CollectibleDetail__content">
+            <CollectibleInfo
+              name={name}
+              collectionName={collectionData?.collection?.name || ""}
+              tokenId={selectedCollectible.tokenId}
+              image={collectible.metadata?.image}
+              dataTestIdBase="CollectibleDetail"
+            />
+            {isHidden && (
+              <Notification
+                variant="warning"
+                icon={<Icon.EyeOff />}
+                title={t("This collectible is hidden")}
+              />
             )}
-
+            <CollectibleDescription
+              description={collectible.metadata?.description || ""}
+              dataTestIdBase="CollectibleDetail"
+            />
+            {hasAttributes && (
+              <CollectibleInfoBlock
+                className="CollectibleDetail__attributes"
+                data-testid="CollectibleDetail__attributes"
+              >
+                <div
+                  className="CollectibleDetail__attributes__label"
+                  data-testid="CollectibleDetail__attributes__label"
+                >
+                  {t("Collectible Traits")}
+                </div>
+                <div className="CollectibleDetail__attributes__list">
+                  {attributes.map((attribute) => (
+                    <div
+                      className="CollectibleDetail__attribute"
+                      key={attribute.traitType}
+                    >
+                      <div
+                        className="CollectibleDetail__attribute__value"
+                        data-testid="CollectibleDetail__attribute__value"
+                      >
+                        {attribute.value}
+                      </div>
+                      <div
+                        className="CollectibleDetail__attribute__trait"
+                        data-testid="CollectibleDetail__attribute__trait"
+                      >
+                        {attribute.traitType}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CollectibleInfoBlock>
+            )}
+          </div>
+        </View.Content>
+      )}
+      <View.Footer>
+        <div className="CollectibleDetail__footer__buttons">
+          {collectible.metadata?.externalUrl && (
             <Button
-              data-testid="CollectibleDetail__footer__buttons__send"
-              isFullWidth
+              data-testid="CollectibleDetail__footer__buttons__view"
               isRounded
+              isFullWidth
               variant="secondary"
               size="lg"
-              onClick={handleSendCollectible}
+              iconPosition="right"
+              icon={
+                <Icon.LinkExternal01 className="CollectibleDetail__footer__buttons__icon" />
+              }
+              onClick={() => {
+                openTab(collectible.metadata?.externalUrl || "");
+              }}
             >
-              {t("Send")}
+              {t("View")}
             </Button>
-          </div>
-        </View.Footer>
-      </View>
+          )}
+
+          <Button
+            data-testid="CollectibleDetail__footer__buttons__send"
+            isFullWidth
+            isRounded
+            variant="secondary"
+            size="lg"
+            onClick={handleSendCollectible}
+          >
+            {t("Send")}
+          </Button>
+        </div>
+      </View.Footer>
     </div>
   );
 };

@@ -15,7 +15,11 @@ import { APPLICATION_STATE as ApplicationState } from "@shared/constants/applica
 
 jest.mock("react-router-dom", () => ({
   ...jest.requireActual("react-router-dom"),
-  useLocation: jest.fn(),
+  // Needs a real value: consumers read both `search` and `pathname`.
+  useLocation: jest.fn(() => ({
+    pathname: "/manage-assets/search-asset",
+    search: "",
+  })),
 }));
 
 describe("SearchAsset", () => {

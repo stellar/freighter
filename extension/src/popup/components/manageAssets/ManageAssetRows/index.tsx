@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 
 import { getCanonicalFromAsset } from "helpers/stellar";
 import { isContractId, isAssetSac } from "popup/helpers/soroban";
-import { findAssetBalance } from "popup/helpers/balance";
+import { findAssetBalance, getIsRemovable } from "popup/helpers/balance";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { Icon } from "@stellar/design-system";
 import {
@@ -44,36 +44,6 @@ export interface NewAssetFlags {
   isInvalidDomain: boolean;
   isRevocable: boolean;
 }
-
-/**
- * Whether the row may offer "Remove asset".
- *
- * Classic assets are removed by closing their trustline, and SACs are not
- * removable at all — both unchanged. A custom token is removable only while it
- * is on screen because of the user's local token list: once the backend returns
- * it on its own, dropping the local entry would not stop it coming back, so it
- * can only be hidden (Manage assets → Toggle Assets).
- */
-const getIsRemovable = ({
-  contract,
-  isSac,
-  localOnlyTokenIds,
-}: {
-  contract: string;
-  isSac: boolean;
-  localOnlyTokenIds?: string[];
-}) => {
-  if (isSac) {
-    return false;
-  }
-  // No contract means a classic asset, removed by closing its trustline. This
-  // is the same test isAssetSac and shouldChangeTrust use to tell the two
-  // apart.
-  if (!contract) {
-    return true;
-  }
-  return !!localOnlyTokenIds?.includes(contract);
-};
 
 interface ManageAssetRowsProps {
   children?: React.ReactNode;
@@ -213,7 +183,15 @@ export const ManageAssetRows = ({
               )}
             </>
           </SlideupModal>,
-          document.getElementById("layout-view")!,
+          // Portaled into the app's View rather than the body so the sheet
+          // inherits the .View-scoped cascade that ChangeTrustInternal's
+          // View.Content relies on for its padding and scroll region.
+          // Geometry does not depend on this: .View is position:relative with
+          // z-index:auto, so it is neither a containing block for the sheet's
+          // position:fixed nor a stacking context. That invariant is load
+          // bearing -- if #layout-view ever gains transform, filter or
+          // contain:paint, the sheet starts positioning against it instead.
+          document.getElementById("layout-view") ?? document.body,
         )}
       </div>
     </>

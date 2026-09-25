@@ -41,6 +41,7 @@ interface ScreenDef {
 const SCREEN_BY_ROUTE: Partial<Record<ROUTES, ScreenDef>> = {
   [ROUTES.welcome]: { screen_name: "welcome", flow: "onboarding" },
   [ROUTES.account]: { screen_name: "account", flow: "assets" },
+  [ROUTES.discover]: { screen_name: "discover", flow: "discovery" },
   [ROUTES.accountHistory]: { screen_name: "account_history", flow: "history" },
   [ROUTES.addAccount]: { screen_name: "add_account", flow: "onboarding" },
   [ROUTES.importAccount]: { screen_name: "import_account", flow: "onboarding" },
@@ -64,10 +65,6 @@ const SCREEN_BY_ROUTE: Partial<Record<ROUTES, ScreenDef>> = {
   [ROUTES.grantAccess]: { screen_name: "grant_access", flow: "signing" },
   [ROUTES.mnemonicPhrase]: {
     screen_name: "mnemonic_phrase",
-    flow: "onboarding",
-  },
-  [ROUTES.mnemonicPhraseConfirm]: {
-    screen_name: "confirm_mnemonic_phrase",
     flow: "onboarding",
   },
   [ROUTES.unlockAccount]: { screen_name: "unlock_account", flow: "security" },
@@ -112,7 +109,6 @@ const SCREEN_BY_ROUTE: Partial<Record<ROUTES, ScreenDef>> = {
   [ROUTES.addCollectibles]: { screen_name: "add_collectibles", flow: "assets" },
   [ROUTES.manageAssets]: { screen_name: "manage_assets", flow: "assets" },
   [ROUTES.searchAsset]: { screen_name: "search_asset", flow: "assets" },
-  [ROUTES.assetVisibility]: { screen_name: "asset_visibility", flow: "assets" },
   [ROUTES.addAsset]: { screen_name: "add_asset_manually", flow: "assets" },
   [ROUTES.swap]: { screen_name: "swap", flow: "swap" },
   [ROUTES.manageNetwork]: { screen_name: "manage_network", flow: "settings" },
@@ -167,7 +163,19 @@ const SCREEN_BY_ROUTE: Partial<Record<ROUTES, ScreenDef>> = {
  * by the Send flow's step effect, so tracking the bare container here would only
  * double-count. Mobile has no send_payment container either (RFC #2883, D8).
  */
-const ROUTES_WITHOUT_SCREEN_VIEW = new Set<string>([ROUTES.sendPayment]);
+export const ROUTES_WITHOUT_SCREEN_VIEW = new Set<string>([
+  ROUTES.sendPayment,
+  // Redirects, not screens. The design-parity restructure turned these three
+  // into `<Navigate to={ROUTES.account} replace />` -- the paths survive only so
+  // a popup restoring its last location lands on Home. Emitting for them would
+  // report a screen nobody saw and then immediately report `account` as well,
+  // double-counting every redirect. Their SCREEN_BY_ROUTE entries stay: the
+  // handler `captureException`s on an uncatalogued path, and views.test.ts
+  // asserts a mapping exists for every ROUTES value.
+  ROUTES.manageAssets,
+  ROUTES.manageConnectedApps,
+  ROUTES.wallets,
+]);
 
 /** Builds the screen.viewed props object, dropping any undefined flow/step. */
 const screenProps = (

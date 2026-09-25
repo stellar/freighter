@@ -34,6 +34,8 @@ interface ToggleTokenInternalProps {
   networkDetails: NetworkDetails;
   onCancel: () => void;
   publicKey: string;
+  /** Which surface the remove was initiated from, for asset_remove.responded. */
+  source?: "manage_assets" | "asset_detail";
 }
 
 export const ToggleTokenInternal = ({
@@ -41,6 +43,7 @@ export const ToggleTokenInternal = ({
   networkDetails,
   onCancel,
   publicKey,
+  source = "manage_assets",
 }: ToggleTokenInternalProps) => {
   const { t } = useTranslation();
   const dispatch: AppDispatch = useDispatch();
@@ -56,7 +59,7 @@ export const ToggleTokenInternal = ({
     if (isRemoveFlow) {
       emitMetric(METRIC_NAMES.assetRemoveResponded, {
         decision: "reject",
-        source: "manage_assets",
+        source,
         asset_code: asset.code,
       });
     }
@@ -75,7 +78,7 @@ export const ToggleTokenInternal = ({
     } else {
       emitMetric(METRIC_NAMES.assetRemoveResponded, {
         decision: "confirm",
-        source: "manage_assets",
+        source,
         asset_code: asset.code,
       });
       await dispatch(

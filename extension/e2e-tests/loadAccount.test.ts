@@ -10,6 +10,7 @@ import {
   stubCollectibles,
   stubCollectiblesUnsuccessfulMetadata,
 } from "./helpers/stubs";
+import { goToSettings, switchNetwork } from "./helpers/network";
 
 // XLM-only fixture served on both the v1 and v2 balances endpoints.
 const makeXlmBalances = (total: string, available: string) => ({
@@ -54,8 +55,7 @@ test("Load accounts on standalone network", async ({
   context,
 }) => {
   await loginToTestAccount({ page, extensionId, context });
-  await page.getByTestId("account-options-dropdown").click();
-  await page.getByText("Settings").click();
+  await goToSettings(page);
   await page.getByText("Network").click();
   await page.getByText("Add custom network").click();
   await expect(page.getByText("Add custom network")).toBeVisible();
@@ -161,8 +161,7 @@ test("Switches network and fetches correct balances while clearing cache", async
   );
   await expect(page.getByTestId("asset-amount")).toHaveText("2");
 
-  await page.getByTestId("network-selector-open").click();
-  await page.getByText("Mainnet").click();
+  await switchNetwork(page, "Mainnet");
 
   await expect(page.getByTestId("asset-amount")).toHaveText("1");
 
@@ -172,8 +171,7 @@ test("Switches network and fetches correct balances while clearing cache", async
     await route.fulfill({ json: updatedBalances });
   });
   await stubAccountBalancesV2(page, updatedBalances);
-  await page.getByTestId("network-selector-open").click();
-  await page.getByText("Testnet").click();
+  await switchNetwork(page, "Testnet");
   await expect(page.getByTestId("asset-amount")).toHaveText("999,111");
 });
 
@@ -196,8 +194,7 @@ test("Account Balances should be loaded once and cached", async ({
     }
   });
 
-  await page.getByTestId("account-options-dropdown").click();
-  await page.getByText("Settings").click();
+  await goToSettings(page);
   await page.getByTestId("BackButton").click();
   await expect(accountBalancesRequestWasMade).toBeFalsy();
 });
@@ -216,10 +213,10 @@ test("Switches account without password prompt", async ({
   await page.getByTestId("account-view-account-name").click();
   await page.getByText("Account 2").click();
 
-  await page.getByTestId("account-options-dropdown").click();
-  await page.getByText("Manage assets").click();
-
-  await expect(page.getByText("Your assets")).toBeVisible();
+  // Smoke check that the switched-to account renders its own balances.
+  await expect(page.getByTestId("account-assets")).toBeVisible({
+    timeout: 30000,
+  });
 });
 
 test("Can't change settings on a stale window", async ({
@@ -249,20 +246,18 @@ test("Can't change settings on a stale window", async ({
     timeout: 30000,
   });
 
-  await expect(pageTwo.getByTestId("account-options-dropdown")).toBeVisible({
+  await expect(pageTwo.getByTestId("account-chip")).toBeVisible({
     timeout: 30000,
   });
   // go back to the first tab (still on the old account) and try to change a setting
-  await pageOne.getByTestId("account-options-dropdown").click();
-  await pageOne.getByText("Settings").click();
+  await goToSettings(pageOne);
   await pageOne.getByText("Preferences").click();
   await expect(pageOne.locator("#isValidatingMemoValue")).toHaveValue("true");
   await pageOne.getByTestId("isValidatingMemoValue").click();
   await expect(pageOne.getByTestId("account-mismatch")).toBeVisible();
 
   // go back to the second tab and confirm the setting didn't change
-  await pageTwo.getByTestId("account-options-dropdown").click();
-  await pageTwo.getByText("Settings").click();
+  await goToSettings(pageTwo);
   await pageTwo.getByText("Preferences").click();
   await expect(pageTwo.locator("#isValidatingMemoValue")).toHaveValue("true");
 });
@@ -289,8 +284,7 @@ test.skip("Clears cache and fetches balances if it's been 2 minutes since the la
     .getByTestId("asset-amount")
     .textContent();
 
-  await page.getByTestId("account-options-dropdown").click();
-  await page.getByText("Settings").click();
+  await goToSettings(page);
   await expect(page.getByTestId("AppHeaderPageTitle")).toHaveText("Settings");
 
   // go back to account 1 and make sure we do a fresh balance fetch
@@ -310,8 +304,7 @@ test.skip("Clears cache and fetches balances if it's been 2 minutes since the la
   await expect(updatedAccount1XlmBalance1minute).toEqual(account1XlmBalance);
 
   // go back and wait another 2 minutes
-  await page.getByTestId("account-options-dropdown").click();
-  await page.getByText("Settings").click();
+  await goToSettings(page);
   await expect(page.getByTestId("AppHeaderPageTitle")).toHaveText("Settings");
   await page.clock.fastForward("02:00");
   await page.getByTestId("BackButton").click();
@@ -493,15 +486,14 @@ test("Loads wallets data and token prices on Mainnet in batches", async ({
     await stubAccountBalancesV2(page, (address) => makeBalances(address));
   };
   await loginToTestAccount({ page, extensionId, context, stubOverrides });
-  await page.getByTestId("network-selector-open").click();
-  await page.getByText("Mainnet").click();
+  await switchNetwork(page, "Mainnet");
   // The native row shows the "Stellar Lumens" display name, not "XLM"
   // (BalanceRow).
   await expect(page.getByTestId("account-assets")).toContainText(
     "Stellar Lumens",
   );
   await page.getByTestId("account-view-account-name").click();
-  await expect(page.getByText("Wallets")).toBeVisible();
+  await expect(page.getByTestId("AccountSheet")).toBeVisible();
 
   // By testid: the footer button and the sheet it opens share the "Add
   // wallet" label, so matching on text is ambiguous once the sheet is open.
@@ -516,7 +508,7 @@ test("Loads wallets data and token prices on Mainnet in batches", async ({
   );
 
   await page.getByTestId("account-view-account-name").click();
-  await expect(page.getByText("Wallets")).toBeVisible();
+  await expect(page.getByTestId("AccountSheet")).toBeVisible();
 
   // Address and balance now live in separate cells (no more concatenated
   // "address - $balance" text), so scope each assertion to the row that
@@ -549,7 +541,7 @@ test("Loads wallets data and token prices on Mainnet in batches", async ({
 test("Renames wallets", async ({ page, extensionId, context }) => {
   await loginToTestAccount({ page, extensionId, context });
   await page.getByTestId("account-view-account-name").click();
-  await expect(page.getByText("Wallets")).toBeVisible();
+  await expect(page.getByTestId("AccountSheet")).toBeVisible();
 
   // Rename now acts on the active account via the header pencil button
   // instead of the (removed) per-row ellipsis menu. This seed phrase has
@@ -577,7 +569,7 @@ test("Trims the wallet name and rejects blank ones", async ({
 }) => {
   await loginToTestAccount({ page, extensionId, context });
   await page.getByTestId("account-view-account-name").click();
-  await expect(page.getByText("Wallets")).toBeVisible();
+  await expect(page.getByTestId("AccountSheet")).toBeVisible();
   await page.getByTestId("wallets-header-edit-name").click();
 
   const input = page.getByTestId("rename-wallet-input");
@@ -610,7 +602,7 @@ test("Closes the rename modal when the name is unchanged", async ({
 }) => {
   await loginToTestAccount({ page, extensionId, context });
   await page.getByTestId("account-view-account-name").click();
-  await expect(page.getByText("Wallets")).toBeVisible();
+  await expect(page.getByTestId("AccountSheet")).toBeVisible();
   await page.getByTestId("wallets-header-edit-name").click();
 
   // Submitting without editing is a no-op save, but it must still dismiss the
@@ -628,7 +620,7 @@ test("Copies the active wallet address", async ({
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
   await loginToTestAccount({ page, extensionId, context });
   await page.getByTestId("account-view-account-name").click();
-  await expect(page.getByText("Wallets")).toBeVisible();
+  await expect(page.getByTestId("AccountSheet")).toBeVisible();
 
   await page.getByTestId("wallets-header-copy").click();
 

@@ -43,6 +43,12 @@
       border-color: var(--sds-clr-gray-06);
       color: var(--sds-clr-gray-11);
     }
+
+    &--destructive {
+      background-color: var(--sds-clr-red-03);
+      border-color: var(--sds-clr-red-06);
+      color: var(--sds-clr-red-11);
+    }
   }
 
   &__close {

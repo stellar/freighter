@@ -27,7 +27,6 @@ import { Account } from "popup/views/Account";
 import { AccountHistory } from "popup/views/AccountHistory";
 import { AccountCreator } from "popup/views/AccountCreator";
 import { AddAccount } from "popup/views/AddAccount/AddAccount";
-import { ManageConnectedApps } from "popup/views/ManageConnectedApps";
 import { ManageAssetsLists } from "popup/views/ManageAssetsLists";
 import { ImportAccount } from "popup/views/AddAccount/ImportAccount";
 import { SelectHardwareWallet } from "popup/views/AddAccount/connect/SelectHardwareWallet";
@@ -54,6 +53,9 @@ import { AutoLockTimer } from "popup/views/AutoLockTimer";
 import { About } from "popup/views/About";
 import { Send } from "popup/views/Send";
 import { ManageAssets } from "popup/views/ManageAssets";
+import { Discover } from "popup/views/Discover";
+import { TabBar } from "popup/components/TabBar";
+import { shouldShowTabBar } from "popup/constants/tabBar";
 import { AddCollectibles } from "popup/views/AddCollectibles";
 import { VerifyAccount } from "popup/views/VerifyAccount";
 import { Swap } from "popup/views/Swap";
@@ -61,7 +63,6 @@ import { ManageNetwork } from "popup/views/ManageNetwork";
 import { LeaveFeedback } from "popup/views/LeaveFeedback";
 import { AccountMigration } from "popup/views/AccountMigration";
 import { AddFunds } from "popup/views/AddFunds";
-import { Wallets } from "popup/views/Wallets";
 import { ConfirmSidebarRequest } from "popup/views/ConfirmSidebarRequest";
 
 import { DEV_SERVER } from "@shared/constants/services";
@@ -162,12 +163,21 @@ const Layout = () => {
     return <AppError>{error}</AppError>;
   }
 
+  // No window-mode check is needed: the bar is wanted in popup, sidebar and
+  // fullscreen alike, and standalone dApp signing popups open directly onto
+  // signing routes, which the allow-list already excludes. If a mode ever does
+  // need to opt out, that predicate belongs here rather than in
+  // shouldShowTabBar, which stays pure and unit-testable.
+  const hasTabBar = shouldShowTabBar(location.pathname);
+
   return (
     <View
       isAppLayout={isAppLayout}
       isScrollableView={location.pathname === "/"}
+      hasTabBar={hasTabBar}
     >
       <Outlet />
+      {hasTabBar && <TabBar />}
     </View>
   );
 };
@@ -187,6 +197,7 @@ export const Router = () => (
             </ActiveTabProvider>
           }
         ></Route>
+        <Route path={ROUTES.discover} element={<Discover />}></Route>
         <Route
           path={ROUTES.accountHistory}
           element={<AccountHistory />}
@@ -279,9 +290,12 @@ export const Router = () => (
           path={`${ROUTES.manageNetwork}/*`}
           element={<ManageNetwork />}
         ></Route>
+        {/* Both of these are sheets on Home now. The route strings stay so a
+            popup restoring its last location lands on Home rather than a blank
+            screen. */}
         <Route
           path={ROUTES.manageConnectedApps}
-          element={<ManageConnectedApps />}
+          element={<Navigate to={ROUTES.account} replace />}
         ></Route>
         <Route
           path={`${ROUTES.manageAssetsLists}/*`}
@@ -295,12 +309,12 @@ export const Router = () => (
           path={ROUTES.advancedSettings}
           element={<AdvancedSettings />}
         ></Route>
-        <Route
-          path={ROUTES.autoLockTimer}
-          element={<AutoLockTimer />}
-        ></Route>
+        <Route path={ROUTES.autoLockTimer} element={<AutoLockTimer />}></Route>
         <Route path={ROUTES.addFunds} element={<AddFunds />} />
-        <Route path={ROUTES.wallets} element={<Wallets />} />
+        <Route
+          path={ROUTES.wallets}
+          element={<Navigate to={ROUTES.account} replace />}
+        />
 
         {DEV_SERVER && (
           <>

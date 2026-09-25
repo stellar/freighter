@@ -57,7 +57,7 @@ import {
   IndexerSettings,
   SettingsState,
   ExperimentalFeatures,
-  IssuerKey,
+  AssetKey,
   AssetVisibility,
   ApiTokenPrices,
   HorizonOperation,
@@ -2604,7 +2604,7 @@ export const getHiddenAssets = async ({
 }) => {
   let response = {
     error: "",
-    hiddenAssets: {} as Record<IssuerKey, AssetVisibility>,
+    hiddenAssets: {} as Record<AssetKey, AssetVisibility>,
   };
 
   response = await sendMessageToBackground({
@@ -2616,23 +2616,23 @@ export const getHiddenAssets = async ({
 };
 
 export const changeAssetVisibility = async ({
-  assetIssuer,
+  assetKey,
   assetVisibility,
   activePublicKey,
 }: {
-  assetIssuer: IssuerKey;
+  assetKey: AssetKey;
   assetVisibility: AssetVisibility;
   activePublicKey: string;
 }) => {
   let response = {
     error: "",
-    hiddenAssets: {} as Record<IssuerKey, AssetVisibility>,
+    hiddenAssets: {} as Record<AssetKey, AssetVisibility>,
   };
 
   response = await sendMessageToBackground({
     type: SERVICE_TYPES.CHANGE_ASSET_VISIBILITY,
     assetVisibility: {
-      issuer: assetIssuer,
+      assetKey,
       visibility: assetVisibility,
     },
     activePublicKey,
@@ -2652,13 +2652,8 @@ export const addCollectible = async ({
   collectibleContractAddress: string;
   collectibleTokenId: string;
 }) => {
-  let response = {
-    error: "",
-    collectiblesList: [] as CollectibleContract[],
-  };
-
   try {
-    response = await sendMessageToBackground({
+    const response = await sendMessageToBackground({
       type: SERVICE_TYPES.ADD_COLLECTIBLE,
       activePublicKey: publicKey,
       publicKey,
@@ -2666,11 +2661,74 @@ export const addCollectible = async ({
       collectibleContractAddress,
       collectibleTokenId,
     });
+
+    // A background that does not recognise the message type returns nothing,
+    // and Chrome serialises that to `null` -- which happens whenever the
+    // loaded service worker predates this message. Report it rather than
+    // letting the caller destructure null, and never let it read as success.
+    if (!response) {
+      return {
+        error: "Freighter needs to be reloaded to complete this action",
+        collectiblesList: [] as CollectibleContract[],
+      };
+    }
+
+    return {
+      error: response.error || "",
+      collectiblesList: response.collectiblesList || [],
+    };
   } catch (e) {
     console.error(e);
+    return {
+      error: "Unable to reach the Freighter background",
+      collectiblesList: [] as CollectibleContract[],
+    };
   }
+};
 
-  return response;
+export const removeCollectible = async ({
+  publicKey,
+  network,
+  collectibleContractAddress,
+  collectibleTokenId,
+}: {
+  publicKey: string;
+  network: string;
+  collectibleContractAddress: string;
+  collectibleTokenId: string;
+}) => {
+  try {
+    const response = await sendMessageToBackground({
+      type: SERVICE_TYPES.REMOVE_COLLECTIBLE,
+      activePublicKey: publicKey,
+      publicKey,
+      network,
+      collectibleContractAddress,
+      collectibleTokenId,
+    });
+
+    // A background that does not recognise the message type returns nothing,
+    // and Chrome serialises that to `null` -- which happens whenever the
+    // loaded service worker predates this message. Report it rather than
+    // letting the caller destructure null, and never let it read as success.
+    if (!response) {
+      return {
+        error: "Freighter needs to be reloaded to complete this action",
+        collectiblesList: [] as CollectibleContract[],
+      };
+    }
+
+    return {
+      error: response.error || "",
+      collectiblesList: response.collectiblesList || [],
+    };
+  } catch (e) {
+    console.error(e);
+    return {
+      error: "Unable to reach the Freighter background",
+      collectiblesList: [] as CollectibleContract[],
+    };
+  }
 };
 
 export const getCollectibles = async ({

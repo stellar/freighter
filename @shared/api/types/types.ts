@@ -29,6 +29,14 @@ export interface UserInfo {
 export type MigratableAccount = Account & { keyIdIndex: number };
 
 export type IssuerKey = string; // {assetCode}:{issuer/contract ID} issuer pub key for classic, contract ID for tokens
+
+/**
+ * Canonical `{code}:{issuer|contractId}` identifying one asset. Named apart
+ * from IssuerKey because the hidden-assets map is keyed by the whole
+ * canonical string, not by an issuer -- a distinction the old field name
+ * ("issuer") actively hid.
+ */
+export type AssetKey = string;
 export type CollectibleKey = string; // {collectionAddress}:{tokenId}
 export type AssetVisibility = "visible" | "hidden";
 
@@ -127,10 +135,11 @@ export interface Response {
   activePublicKey: string;
   isAccountMismatch: boolean;
   assetVisibility: {
-    issuer: IssuerKey;
+    assetKey: AssetKey;
     visibility: AssetVisibility;
   };
-  hiddenAssets: Record<IssuerKey, AssetVisibility>;
+  // The leaf record for one account on one network, never the whole store.
+  hiddenAssets: Record<AssetKey, AssetVisibility>;
   collectibleVisibility: {
     collectible: CollectibleKey;
     visibility: AssetVisibility;

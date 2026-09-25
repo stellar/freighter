@@ -19,6 +19,7 @@ import {
   stubMemoRequiredAccounts,
 } from "./helpers/stubs";
 import { testBlockaidFeedback } from "./helpers/blockaid";
+import { goToAddAsset } from "./helpers/assets";
 
 // A valid classic transaction XDR for openSignTransactionPopup.
 const TX_TO_SIGN =
@@ -71,10 +72,7 @@ test.describe("BlockAid Scan - Malicious States", () => {
       },
     });
 
-    await page.getByTestId("account-options-dropdown").click();
-    await page.getByText("Manage assets").click();
-    await expect(page.getByText("Your assets")).toBeVisible();
-    await page.getByText("Add an asset").click({ force: true });
+    await goToAddAsset(page);
 
     // Use a classic asset issuer address to trigger ChangeTrustInternal (not ToggleTokenInternal)
     const classicAssetIssuer =
@@ -168,10 +166,7 @@ test.describe("BlockAid Scan - Malicious States", () => {
       },
     });
 
-    await page.getByTestId("account-options-dropdown").click();
-    await page.getByText("Manage assets").click();
-    await expect(page.getByText("Your assets")).toBeVisible();
-    await page.getByText("Add an asset").click({ force: true });
+    await goToAddAsset(page);
 
     await page
       .getByTestId("search-asset-input")

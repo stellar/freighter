@@ -249,19 +249,28 @@
     cursor: pointer;
   }
 
+  // One height for every stage of the remove flow -- loading, details, the
+  // fee/timeout/memo panes and submit -- so the sheet does not resize under
+  // the user as panes change. Capped by the sheet's own ceiling so sidebar and
+  // fullscreen still behave.
+  &__remove-sheet {
+    display: flex;
+    flex-direction: column;
+    height: min(var(--slideup-modal--max-height), #{pxToRem(420px)});
+  }
+
+  // Positioning is owned by Radix's popper wrapper, not this element: the
+  // content renders through a portal at body level, so the absolute
+  // top/right this used to carry resolved against the document instead of
+  // the header, and the menu landed offscreen behind the sheet.
   &__options-actions {
     display: flex;
     flex-direction: column;
-    position: absolute;
     background-color: var(--sds-clr-gray-01);
     border: 1px solid var(--sds-clr-gray-06);
     border-radius: 6px;
-    margin-top: -2rem;
     padding: 0.25rem;
-    top: 5.5rem;
-    right: 1rem;
     width: 10.75rem;
-    z-index: var(--z-index--banner);
 
     &__row {
       padding: 0.375rem 0.5rem;
@@ -297,10 +306,25 @@
       font-weight: var(--font-weight-medium);
     }
 
+    // Remove is destructive, per the designs.
+    &__row--destructive {
+      .action,
+      .action svg {
+        color: var(--sds-clr-red-11);
+      }
+    }
+
     &__background {
       height: 100vh;
       position: absolute;
       width: 100vw;
     }
   }
+}
+
+// The popper wrapper is the stacking context, so raising z-index on the content
+// itself does nothing. AssetDetail lives inside a Radix Sheet (z-50), so the
+// menu has to clear that. Mirrors the same override in CollectibleDetail.
+[data-radix-popper-content-wrapper]:has(.AssetDetail__options-actions) {
+  z-index: 100 !important;
 }

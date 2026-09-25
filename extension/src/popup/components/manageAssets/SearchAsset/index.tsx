@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { Formik, Form, Field, FieldProps } from "formik";
 import debounce from "lodash/debounce";
@@ -23,6 +23,8 @@ import { newTabHref } from "helpers/urls";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { reRouteOnboarding } from "popup/helpers/route";
 import { balancesSelector } from "popup/ducks/cache";
+
+import { HiddenAssets } from "popup/components/account/HiddenAssets";
 
 import { ManageAssetRows } from "../ManageAssetRows";
 import { SearchInput, SearchCopy, SearchResults } from "../AssetResults";
@@ -65,6 +67,7 @@ const ResultsHeader = () => {
 
 export const SearchAsset = () => {
   const { t } = useTranslation();
+  const [isHiddenAssetsOpen, setIsHiddenAssetsOpen] = useState(false);
   const location = useLocation();
   const cachedBalances = useSelector(balancesSelector);
 
@@ -204,6 +207,19 @@ export const SearchAsset = () => {
                     </a>
                   </SearchCopy>
                 </div>
+                {/* Opens a modal sheet rather than a Radix dialog, so there is
+                  no Trigger to inherit these from; aria-controls is omitted
+                  because the sheet's id isn't knowable at this level. */}
+                <button
+                  type="button"
+                  className="SearchAsset__show-hidden"
+                  data-testid="hidden-assets-btn"
+                  aria-haspopup="dialog"
+                  aria-expanded={isHiddenAssetsOpen}
+                  onClick={() => setIsHiddenAssetsOpen(true)}
+                >
+                  {t("Show hidden")}
+                </button>
                 <SearchResults
                   isSearching={tokenState.state === "LOADING"}
                   resultsRef={ResultsRef}
@@ -238,6 +254,10 @@ export const SearchAsset = () => {
           )}
         </Formik>
       </View.Content>
+      <HiddenAssets
+        isOpen={isHiddenAssetsOpen}
+        onClose={() => setIsHiddenAssetsOpen(false)}
+      />
     </>
   );
 };

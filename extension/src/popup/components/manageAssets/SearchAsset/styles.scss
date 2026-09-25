@@ -1,3 +1,5 @@
+@use "../../../styles/utils.scss" as *;
+
 :root {
   --SearchAsset--loader--dimension: 1rem;
 }
@@ -26,4 +28,15 @@
   &__fetch-fail {
     margin-top: 1.5rem;
   }
+}
+
+.SearchAsset__show-hidden {
+  align-self: flex-end;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  color: var(--sds-clr-lilac-11);
+  font-size: pxToRem(14px);
+  line-height: pxToRem(20px);
 }

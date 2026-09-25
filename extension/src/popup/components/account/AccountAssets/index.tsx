@@ -13,6 +13,7 @@ import { AccountBalances } from "helpers/hooks/useGetBalances";
 
 import { getCanonicalFromAsset } from "helpers/stellar";
 import { isSorobanIssuer } from "popup/helpers/account";
+import { isNativeAssetId } from "@shared/helpers/assetIdentity";
 import { formatTokenAmount } from "popup/helpers/soroban";
 import {
   useIsAssetSuspicious,
@@ -29,6 +30,10 @@ import {
 
 import StellarLogo from "popup/assets/stellar-logo.png";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
+import { publicKeySelector } from "popup/ducks/accountServices";
+import { selectHiddenAssetsFor } from "popup/ducks/hiddenAssets";
+import { isAssetVisible } from "popup/helpers/settings";
+import { AppState } from "popup/App";
 import { transactionSubmissionSelector } from "popup/ducks/transactionSubmission";
 import { ScamAssetIcon } from "popup/components/account/ScamAssetIcon";
 import ImageMissingIcon from "popup/assets/image-missing.svg?react";
@@ -218,6 +223,13 @@ export const AccountAssets = ({
   const location = useLocation();
   const [assetIcons, setAssetIcons] = useState(inputAssetIcons);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
+  const publicKey = useSelector(publicKeySelector);
+  // `balances` was already filtered when it was fetched. Reading the live map
+  // here as well is what lets hiding an asset drop its row immediately,
+  // instead of waiting for the next balances fetch.
+  const hiddenAssets = useSelector((state: AppState) =>
+    selectHiddenAssetsFor(state, networkDetails.networkName, publicKey),
+  );
   const [hasIconFetchRetried, setHasIconFetchRetried] = useState(false);
   const isAssetSuspicious = useIsAssetSuspicious();
   const isAssetMalicious = useIsAssetMalicious();
@@ -332,6 +344,16 @@ export const AccountAssets = ({
         }
 
         const canonicalAsset = getCanonicalFromAsset(code, issuer?.key);
+
+        // Native XLM is never hideable, matching filterHiddenBalances.
+        if (
+          !isLP &&
+          !isNativeAssetId(canonicalAsset) &&
+          !isAssetVisible(hiddenAssets || {}, canonicalAsset)
+        ) {
+          return null;
+        }
+
         const assetPrice = assetPrices ? assetPrices[canonicalAsset] : null;
 
         const isSuspicious = isAssetSuspicious((rb as Balance).blockaidData);

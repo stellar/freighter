@@ -1,0 +1,47 @@
+@use "../../styles/utils.scss" as *;
+
+.TabBar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: var(--z-index--tab-bar);
+  height: var(--tab-bar--height);
+  background-color: var(--sds-clr-gray-01);
+  border-top: 1px solid var(--sds-clr-gray-06);
+
+  &__inset {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: pxToRem(8px);
+    height: 100%;
+    padding: pxToRem(12px) pxToRem(24px);
+    // In fullscreen the window runs to 1100px; keep the bar reading as a
+    // control rather than a strip stretched across the whole window.
+    max-width: pxToRem(480px);
+    margin: 0 auto;
+  }
+
+  &__tab {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: pxToRem(72px);
+    padding: pxToRem(8px);
+    border-radius: pxToRem(100px);
+    color: var(--sds-clr-gray-09);
+    cursor: pointer;
+
+    svg {
+      width: pxToRem(20px);
+      height: pxToRem(20px);
+    }
+
+    &--active {
+      background-color: var(--sds-clr-gray-03);
+      color: var(--sds-clr-gray-12);
+      cursor: default;
+    }
+  }
+}

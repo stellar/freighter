@@ -1,6 +1,7 @@
 import {
   DEFAULT_NETWORKS,
   FUTURENET_NETWORK_DETAILS,
+  NETWORK_NAMES,
   NETWORKS,
   TESTNET_NETWORK_DETAILS,
   SOROBAN_RPC_URLS,
@@ -9,6 +10,9 @@ import {
 import {
   ASSETS_LISTS_ID,
   HAS_ACCOUNT_SUBSCRIPTION,
+  HIDDEN_ASSETS,
+  HIDDEN_COLLECTIBLES,
+  LAST_USED_ACCOUNT,
   NETWORK_ID,
   NETWORKS_LIST_ID,
   STORAGE_VERSION,
@@ -221,5 +225,161 @@ describe("Storage migrations", () => {
     const storedVersion = await mockStorage.get(STORAGE_VERSION);
     expect(storedAssetList[ASSETS_LISTS_ID]).toEqual(DEFAULT_ASSETS_LISTS);
     expect(storedVersion[STORAGE_VERSION]).toEqual("4.1.0");
+  });
+
+  describe("migrateHiddenAssetsToKeyNetworkSchema", () => {
+    const ACCOUNT = "GABC123";
+    const legacy = { "USDC:GA5ZSE": "hidden", "EURC:GB3Q6": "visible" };
+
+    it("assigns a legacy flat map to the active account on every network", async () => {
+      await mockStorage.set({ [STORAGE_VERSION]: "5.45.0" });
+      await mockStorage.set({ [HIDDEN_ASSETS]: legacy });
+      await mockStorage.set({ [LAST_USED_ACCOUNT]: ACCOUNT });
+
+      await DataStorage.migrateHiddenAssetsToKeyNetworkSchema();
+
+      const stored = await mockStorage.get(HIDDEN_ASSETS);
+      expect(stored[HIDDEN_ASSETS]).toEqual({
+        [NETWORK_NAMES.PUBNET]: { [ACCOUNT]: legacy },
+        [NETWORK_NAMES.TESTNET]: { [ACCOUNT]: legacy },
+        [NETWORK_NAMES.FUTURENET]: { [ACCOUNT]: legacy },
+      });
+      const storedVersion = await mockStorage.get(STORAGE_VERSION);
+      expect(storedVersion[STORAGE_VERSION]).toEqual("5.46.0");
+    });
+
+    it("writes empty buckets when there is no active account to attribute them to", async () => {
+      await mockStorage.set({ [STORAGE_VERSION]: "5.45.0" });
+      await mockStorage.set({ [HIDDEN_ASSETS]: legacy });
+
+      await DataStorage.migrateHiddenAssetsToKeyNetworkSchema();
+
+      const stored = await mockStorage.get(HIDDEN_ASSETS);
+      expect(stored[HIDDEN_ASSETS]).toEqual({
+        [NETWORK_NAMES.PUBNET]: {},
+        [NETWORK_NAMES.TESTNET]: {},
+        [NETWORK_NAMES.FUTURENET]: {},
+      });
+    });
+
+    it("writes empty buckets when nothing was ever hidden", async () => {
+      await mockStorage.set({ [STORAGE_VERSION]: "5.45.0" });
+      await mockStorage.set({ [LAST_USED_ACCOUNT]: ACCOUNT });
+
+      await DataStorage.migrateHiddenAssetsToKeyNetworkSchema();
+
+      const stored = await mockStorage.get(HIDDEN_ASSETS);
+      expect(stored[HIDDEN_ASSETS]).toEqual({
+        [NETWORK_NAMES.PUBNET]: {},
+        [NETWORK_NAMES.TESTNET]: {},
+        [NETWORK_NAMES.FUTURENET]: {},
+      });
+    });
+
+    it("leaves an already-nested map untouched", async () => {
+      const nested = {
+        [NETWORK_NAMES.PUBNET]: { [ACCOUNT]: { "USDC:GA5ZSE": "hidden" } },
+        [NETWORK_NAMES.TESTNET]: {},
+        [NETWORK_NAMES.FUTURENET]: {},
+      };
+      await mockStorage.set({ [STORAGE_VERSION]: "5.45.0" });
+      await mockStorage.set({ [HIDDEN_ASSETS]: nested });
+      await mockStorage.set({ [LAST_USED_ACCOUNT]: ACCOUNT });
+
+      await DataStorage.migrateHiddenAssetsToKeyNetworkSchema();
+
+      const stored = await mockStorage.get(HIDDEN_ASSETS);
+      expect(stored[HIDDEN_ASSETS]).toEqual(nested);
+    });
+
+    it("does not run once storage is already at 5.46.0", async () => {
+      await mockStorage.set({ [STORAGE_VERSION]: "5.46.0" });
+      await mockStorage.set({ [HIDDEN_ASSETS]: legacy });
+      await mockStorage.set({ [LAST_USED_ACCOUNT]: ACCOUNT });
+
+      await DataStorage.migrateHiddenAssetsToKeyNetworkSchema();
+
+      const stored = await mockStorage.get(HIDDEN_ASSETS);
+      expect(stored[HIDDEN_ASSETS]).toEqual(legacy);
+    });
+  });
+
+  describe("migrateHiddenCollectiblesToKeyNetworkSchema", () => {
+    const ACCOUNT = "GABC123";
+    const legacy = { "CDPENGUIN:102510": "hidden", "CDDOMAIN:7": "visible" };
+
+    it("assigns a legacy flat map to the active account on every network", async () => {
+      await mockStorage.set({ [STORAGE_VERSION]: "5.46.0" });
+      await mockStorage.set({ [HIDDEN_COLLECTIBLES]: legacy });
+      await mockStorage.set({ [LAST_USED_ACCOUNT]: ACCOUNT });
+
+      await DataStorage.migrateHiddenCollectiblesToKeyNetworkSchema();
+
+      const stored = await mockStorage.get(HIDDEN_COLLECTIBLES);
+      expect(stored[HIDDEN_COLLECTIBLES]).toEqual({
+        [NETWORK_NAMES.PUBNET]: { [ACCOUNT]: legacy },
+        [NETWORK_NAMES.TESTNET]: { [ACCOUNT]: legacy },
+        [NETWORK_NAMES.FUTURENET]: { [ACCOUNT]: legacy },
+      });
+      const storedVersion = await mockStorage.get(STORAGE_VERSION);
+      expect(storedVersion[STORAGE_VERSION]).toEqual("5.47.0");
+    });
+
+    it("still runs for storage already at 5.46.0, which the assets migration wrote", async () => {
+      // The guard is `semver.lt`, so this migration must claim a version above
+      // the one its sibling writes or it would be skipped for every user who
+      // has already taken the hidden-assets migration.
+      await mockStorage.set({ [STORAGE_VERSION]: "5.46.0" });
+      await mockStorage.set({ [HIDDEN_COLLECTIBLES]: legacy });
+      await mockStorage.set({ [LAST_USED_ACCOUNT]: ACCOUNT });
+
+      await DataStorage.migrateHiddenCollectiblesToKeyNetworkSchema();
+
+      const stored = await mockStorage.get(HIDDEN_COLLECTIBLES);
+      expect(stored[HIDDEN_COLLECTIBLES]).not.toEqual(legacy);
+    });
+
+    it("writes empty buckets when there is no active account to attribute them to", async () => {
+      await mockStorage.set({ [STORAGE_VERSION]: "5.46.0" });
+      await mockStorage.set({ [HIDDEN_COLLECTIBLES]: legacy });
+
+      await DataStorage.migrateHiddenCollectiblesToKeyNetworkSchema();
+
+      const stored = await mockStorage.get(HIDDEN_COLLECTIBLES);
+      expect(stored[HIDDEN_COLLECTIBLES]).toEqual({
+        [NETWORK_NAMES.PUBNET]: {},
+        [NETWORK_NAMES.TESTNET]: {},
+        [NETWORK_NAMES.FUTURENET]: {},
+      });
+    });
+
+    it("leaves an already-nested map untouched", async () => {
+      const nested = {
+        [NETWORK_NAMES.PUBNET]: {
+          [ACCOUNT]: { "CDPENGUIN:102510": "hidden" },
+        },
+        [NETWORK_NAMES.TESTNET]: {},
+        [NETWORK_NAMES.FUTURENET]: {},
+      };
+      await mockStorage.set({ [STORAGE_VERSION]: "5.46.0" });
+      await mockStorage.set({ [HIDDEN_COLLECTIBLES]: nested });
+      await mockStorage.set({ [LAST_USED_ACCOUNT]: ACCOUNT });
+
+      await DataStorage.migrateHiddenCollectiblesToKeyNetworkSchema();
+
+      const stored = await mockStorage.get(HIDDEN_COLLECTIBLES);
+      expect(stored[HIDDEN_COLLECTIBLES]).toEqual(nested);
+    });
+
+    it("does not run once storage is already at 5.47.0", async () => {
+      await mockStorage.set({ [STORAGE_VERSION]: "5.47.0" });
+      await mockStorage.set({ [HIDDEN_COLLECTIBLES]: legacy });
+      await mockStorage.set({ [LAST_USED_ACCOUNT]: ACCOUNT });
+
+      await DataStorage.migrateHiddenCollectiblesToKeyNetworkSchema();
+
+      const stored = await mockStorage.get(HIDDEN_COLLECTIBLES);
+      expect(stored[HIDDEN_COLLECTIBLES]).toEqual(legacy);
+    });
   });
 });

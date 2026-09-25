@@ -15,6 +15,7 @@ import {
   createAssetObject,
   stubAssetSearch,
 } from "./helpers/stubs";
+import { goToAddAsset } from "./helpers/assets";
 
 test.describe("BlockAid Scan - Safe States (No Override)", () => {
   test("Add asset shows no warning when scan confirms asset is safe", async ({
@@ -67,10 +68,7 @@ test.describe("BlockAid Scan - Safe States (No Override)", () => {
     // switch to Mainnet where asset scanning is supported and results are shown
     await switchToMainnet(page);
 
-    await page.getByTestId("account-options-dropdown").click();
-    await page.getByText("Manage assets").click();
-    await expect(page.getByText("Your assets")).toBeVisible();
-    await page.getByText("Add an asset").click({ force: true });
+    await goToAddAsset(page);
 
     // Use a classic asset issuer address to trigger ChangeTrustInternal (not ToggleTokenInternal)
     const classicAssetIssuer =

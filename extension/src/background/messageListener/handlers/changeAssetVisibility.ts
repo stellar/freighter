@@ -1,6 +1,7 @@
 import { ChangeAssetVisibilityMessage } from "@shared/api/types/message-request";
+import { getNetworkDetails } from "background/helpers/account";
 import { DataStorageAccess } from "background/helpers/dataStorageAccess";
-import { getHiddenAssets } from "../helpers/get-hidden-assets";
+import { getHiddenAssetsStore } from "../helpers/get-hidden-assets";
 import { HIDDEN_ASSETS } from "constants/localStorageTypes";
 
 export const changeAssetVisibility = async ({
@@ -10,11 +11,25 @@ export const changeAssetVisibility = async ({
   request: ChangeAssetVisibilityMessage;
   localStore: DataStorageAccess;
 }) => {
-  const { assetVisibility } = request;
+  const { assetVisibility, activePublicKey } = request;
+  const { networkName } = await getNetworkDetails({ localStore });
 
-  const { hiddenAssets } = await getHiddenAssets({ localStore });
-  hiddenAssets[assetVisibility.issuer] = assetVisibility.visibility;
+  const store = await getHiddenAssetsStore({ localStore });
+  const byNetwork = store[networkName] || {};
+  const hiddenAssets = {
+    ...byNetwork[activePublicKey],
+    [assetVisibility.assetKey]: assetVisibility.visibility,
+  };
 
-  await localStore.setItem(HIDDEN_ASSETS, hiddenAssets);
+  await localStore.setItem(HIDDEN_ASSETS, {
+    ...store,
+    [networkName]: {
+      ...byNetwork,
+      [activePublicKey]: hiddenAssets,
+    },
+  });
+
+  // Return only this account's leaf, so a caller cannot accidentally treat the
+  // whole store as a visibility map.
   return { hiddenAssets };
 };

@@ -29,6 +29,13 @@ interface ClearBalancesPayload {
   networkDetails: NetworkDetails;
 }
 
+interface RemoveCollectiblePayload {
+  publicKey: PublicKey;
+  networkDetails: NetworkDetails;
+  collectionAddress: string;
+  tokenId: string;
+}
+
 interface SaveIconsPayload {
   icons: Record<AssetCode, IconUrl>;
 }
@@ -198,6 +205,42 @@ const cacheSlice = createSlice({
         },
       };
     },
+    /**
+     * Drops one collectible from the cached collections, so the grid updates
+     * the moment a removal succeeds instead of waiting for the next fetch.
+     * Emptied collections go with it -- otherwise the list keeps a collection
+     * header with no rows under it.
+     */
+    removeCollectibleFromCache(
+      state,
+      action: { payload: RemoveCollectiblePayload },
+    ) {
+      const { networkDetails, publicKey, collectionAddress, tokenId } =
+        action.payload;
+      const byNetwork = state.collections[networkDetails.network];
+      const collections = byNetwork?.[publicKey];
+
+      if (!collections) {
+        return;
+      }
+
+      byNetwork[publicKey] = collections
+        .map((entry) => {
+          if (entry.collection?.address !== collectionAddress) {
+            return entry;
+          }
+          return {
+            ...entry,
+            collection: {
+              ...entry.collection,
+              collectibles: entry.collection.collectibles.filter(
+                (collectible) => collectible.tokenId !== tokenId,
+              ),
+            },
+          };
+        })
+        .filter((entry) => entry.collection?.collectibles.length !== 0);
+    },
     clearCollectiblesForAccount(
       state,
       action: { payload: ClearBalancesPayload },
@@ -225,6 +268,14 @@ const cacheSlice = createSlice({
     // the previous network's results until the in-memory store is reset.
     builder.addCase("settings/changeNetwork/fulfilled", (state) => {
       state.tokenLists = [];
+      // Balances and history are network-keyed, so switching away and back
+      // would otherwise re-serve whatever was cached for that network. The
+      // header's network switcher used to force a refresh on every change
+      // (`shouldForceBalancesRefresh`); it is gone, and switching now happens
+      // in Settings, so the guarantee moves here where every entry point gets
+      // it.
+      state.balanceData = {};
+      state.historyData = {};
     });
   },
 });
@@ -263,5 +314,6 @@ export const {
   saveCollections,
   clearBalancesForAccount,
   clearCollectiblesForAccount,
+  removeCollectibleFromCache,
   savePopularTokens,
 } = cacheSlice.actions;

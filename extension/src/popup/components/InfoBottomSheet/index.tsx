@@ -7,12 +7,12 @@ import { SlideupModal } from "popup/components/SlideupModal";
 import "./styles.scss";
 
 /** Color treatment for the top-left icon badge. */
-export type InfoSheetBadgeVariant = "brand" | "neutral";
+export type InfoSheetBadgeVariant = "brand" | "neutral" | "destructive";
 
 interface InfoSheetContentProps {
   /** Icon rendered inside the top-left badge. */
   icon: React.ReactNode;
-  /** Badge color: "brand" (lilac) or "neutral" (gray). */
+  /** Badge color: "brand" (lilac), "neutral" (gray) or "destructive" (red). */
   badgeVariant?: InfoSheetBadgeVariant;
   title: string;
   /** Label for the full-width dismiss button (e.g. "Close", "Got it"). */

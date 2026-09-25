@@ -8,6 +8,7 @@ import {
   stubTokenPrices,
   stubCollectibles,
 } from "./helpers/stubs";
+import { switchNetwork } from "./helpers/network";
 
 test("Hide and unhide a collectible", async ({
   page,
@@ -78,8 +79,7 @@ test("Hide and unhide a collectible", async ({
 
   test.slow();
   await loginToTestAccount({ page, extensionId });
-  await page.getByTestId("network-selector-open").click();
-  await page.getByText("Mainnet").click();
+  await switchNetwork(page, "Mainnet");
 
   // Navigate to collectibles tab
   await expect(page.getByTestId("account-view")).toBeVisible();
@@ -122,23 +122,11 @@ test("Hide and unhide a collectible", async ({
   // Verify the hidden collectible is shown
   await expect(page.getByTestId("hidden-collectible-1")).toBeVisible();
 
-  // Click on the hidden collectible to open detail
-  await page.getByTestId("hidden-collectible-1").click();
-
-  // Wait for collectible detail to open
-  await expect(page.getByTestId("CollectibleDetail")).toBeVisible();
-
-  // Open the three-dot menu
-  await page.getByTestId("CollectibleDetail__header__right-button").click();
-
-  // Verify "Show collectible" option is visible (not "Hide collectible")
-  await expect(page.getByText("Show collectible")).toBeVisible();
-
-  // Click "Show collectible"
-  await page.getByText("Show collectible").click();
-
-  // Wait for detail sheet to close
-  await expect(page.getByTestId("CollectibleDetail")).not.toBeVisible();
+  // Unhide from the row itself. This used to mean opening a second sheet on
+  // top of this one and going through the detail view's overflow menu; the
+  // designs put the action on the row.
+  await page.getByTestId("hidden-collectible-unhide-1").click();
+  await expect(page.getByTestId("CollectibleDetail")).toHaveCount(0);
 
   // Verify the empty state is now shown in hidden collectibles
   await expect(page.getByText("No hidden collectibles")).toBeVisible();
@@ -184,8 +172,7 @@ test("Hidden collectibles view shows empty state when no collectibles are hidden
 
   test.slow();
   await loginToTestAccount({ page, extensionId });
-  await page.getByTestId("network-selector-open").click();
-  await page.getByText("Mainnet").click();
+  await switchNetwork(page, "Mainnet");
 
   // Navigate to collectibles tab
   await expect(page.getByTestId("account-view")).toBeVisible();
@@ -245,8 +232,7 @@ test("Hiding a collectible removes it from the main view", async ({
 
   test.slow();
   await loginToTestAccount({ page, extensionId });
-  await page.getByTestId("network-selector-open").click();
-  await page.getByText("Mainnet").click();
+  await switchNetwork(page, "Mainnet");
 
   // Navigate to collectibles tab
   await expect(page.getByTestId("account-view")).toBeVisible();
@@ -271,4 +257,109 @@ test("Hiding a collectible removes it from the main view", async ({
 
   // Collection count should now be 1
   await expect(page.getByTestId("account-collection-count")).toHaveText("1");
+});
+
+test("Hiding a collectible on one network leaves it visible on another", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  // The regression this guards: HIDDEN_COLLECTIBLES used to be a single flat
+  // map shared by every account and network, so hiding here hid everywhere.
+  await stubTokenDetails(page);
+  await stubAccountBalances(page);
+  await stubAccountHistory(page);
+  await stubTokenPrices(page);
+  await stubScanDapp(context);
+  await stubCollectibles(page, context);
+
+  await context.route("**/collectibles**", async (route) => {
+    const json = {
+      data: {
+        collections: [
+          // Stellar Frogs Collection
+          {
+            collection: {
+              address:
+                "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA",
+              name: "Stellar Frogs",
+              symbol: "SFROG",
+              collectibles: [
+                {
+                  owner:
+                    "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
+                  token_id: "1",
+                  token_uri: "https://nftcalendar.io/tokenMetadata/1",
+                },
+                {
+                  owner:
+                    "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
+                  token_id: "2",
+                  token_uri: "https://nftcalendar.io/tokenMetadata/2",
+                },
+                {
+                  owner:
+                    "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
+                  token_id: "3",
+                  token_uri: "https://nftcalendar.io/tokenMetadata/3",
+                },
+              ],
+            },
+          },
+          // Soroban Domains Collection
+          {
+            collection: {
+              address: "CCCSorobanDomainsCollection",
+              name: "Soroban Domains",
+              symbol: "SDOM",
+              collectibles: [
+                {
+                  owner:
+                    "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
+                  token_id: "102510",
+                  token_uri: "https://nftcalendar.io/tokenMetadata/102510",
+                },
+              ],
+            },
+          },
+        ],
+      },
+    };
+    await route.fulfill({ json });
+  });
+
+  test.slow();
+  await loginToTestAccount({ page, extensionId });
+  await switchNetwork(page, "Mainnet");
+
+  await expect(page.getByTestId("account-view")).toBeVisible();
+  await page.getByTestId("account-tab-collectibles").click();
+  await expect(page.getByText("Stellar Frogs")).toBeVisible();
+
+  const collectibleGrid = page.getByTestId("account-collection-grid").first();
+  await collectibleGrid.locator("div").first().click();
+  await expect(page.getByTestId("CollectibleDetail")).toBeVisible();
+  await page.getByTestId("CollectibleDetail__header__right-button").click();
+  await page.getByText("Hide collectible").click();
+  await expect(page.getByTestId("CollectibleDetail")).not.toBeVisible();
+
+  // Hidden on Mainnet.
+  await page.getByTestId("add-collectible-btn").click();
+  await page.getByTestId("hidden-collectibles-btn").click();
+  await expect(page.getByTestId("hidden-collectible-1")).toBeVisible();
+
+  // Back to Home before switching: the network switcher lives behind the
+  // account chip, which only the Home header renders. Going via a reload also
+  // proves the hide survived a restart.
+  await page.goto(`chrome-extension://${extensionId}/index.html#/`);
+  await expect(page.getByTestId("account-view")).toBeVisible({
+    timeout: 30000,
+  });
+
+  // ...but Testnet is a different key, so nothing is hidden there.
+  await switchNetwork(page, "Testnet");
+  await page.getByTestId("account-tab-collectibles").click();
+  await page.getByTestId("add-collectible-btn").click();
+  await page.getByTestId("hidden-collectibles-btn").click();
+  await expect(page.getByText("No hidden collectibles")).toBeVisible();
 });

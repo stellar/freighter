@@ -2,6 +2,7 @@ import { expect, test, expectPageToHaveScreenshot } from "../test-fixtures";
 import { TEST_TOKEN_ADDRESS } from "../helpers/test-token";
 import { loginToTestAccount, switchToMainnet } from "../helpers/login";
 import { allowDapp } from "../helpers/dAppSessionHelper";
+import { goToSettings } from "../helpers/network";
 import {
   SAC_CONTRACT_ID,
   delayAddTokenRoundTrip,
@@ -1235,8 +1236,7 @@ test("should get public key when logged out", async ({
   context,
 }) => {
   await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
-  await page.getByTestId("account-options-dropdown").click();
-  await page.getByText("Settings").click();
+  await goToSettings(page);
   await page.getByText("Log Out").click();
   await expect(page.getByText("Welcome back")).toBeVisible();
 
