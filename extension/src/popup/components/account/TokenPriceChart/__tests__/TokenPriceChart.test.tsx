@@ -1124,7 +1124,9 @@ describe("TokenPriceChart", () => {
 
       mockRect();
       const svg = screen.getByTestId("TokenPriceChart__svg");
-      const errorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+      const errorSpy = jest
+        .spyOn(console, "error")
+        .mockImplementation(() => {});
       const warnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
 
       fireEvent.pointerDown(svg, { clientX: 320, pointerId: 1 });
@@ -1166,6 +1168,51 @@ describe("TokenPriceChart", () => {
         await Promise.resolve();
       });
 
+      expect(
+        screen.queryByTestId("TokenPriceChart__inspect-tooltip"),
+      ).toBeNull();
+      expect(reportedDelta).toEqual(
+        expect.objectContaining({ inspectedPrice: null }),
+      );
+    });
+
+    it("a cached range switch clears the inspection while the chart stays mounted", async () => {
+      // A cached switch never shows the loading ghost, so only the series
+      // identity guard can drop the index snapped against the old series.
+      jest.useFakeTimers();
+      respondByRange({ "1D": INSPECTABLE_HISTORY, "1W": HISTORY_1W });
+      renderChart();
+      await act(async () => {
+        await Promise.resolve();
+      });
+
+      const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
+      await user.click(screen.getByRole("tab", { name: "1W" }));
+      await act(async () => {
+        jest.advanceTimersByTime(RANGE_SWITCH_DEBOUNCE_MS + 50);
+        await Promise.resolve();
+      });
+
+      mockRect();
+      // Index 0, which also exists in the 3-point 1D series: an index past its
+      // end would null out without the guard ever being consulted.
+      fireEvent.pointerDown(screen.getByTestId("TokenPriceChart__svg"), {
+        clientX: 0,
+        pointerId: 1,
+      });
+      expect(
+        screen.getByTestId("TokenPriceChart__inspect-tooltip"),
+      ).toBeDefined();
+
+      await user.click(screen.getByRole("tab", { name: "1D" }));
+      await act(async () => {
+        jest.advanceTimersByTime(RANGE_SWITCH_DEBOUNCE_MS);
+        await Promise.resolve();
+      });
+
+      expect(requestCountForRange("1D")).toBe(1);
+      expect(screen.getByTestId("TokenPriceChart__svg")).toBeInTheDocument();
+      expect(screen.queryByTestId("TokenPriceChart__loading")).toBeNull();
       expect(
         screen.queryByTestId("TokenPriceChart__inspect-tooltip"),
       ).toBeNull();
