@@ -668,7 +668,85 @@ const scvAddressToString = (address: xdr.ScAddress) => {
 };
 
 /**
- * Renders an `SCVal` as a Soroban value literal for the signing screen.
+ * One piece of a rendered `SCVal`. A `value` token is a single scalar and
+ * carries the arm it came from, so the signing screen can offer its type
+ * without spelling that type out inline; `punct` is the structure around it.
+ *
+ * Both the string form and the React form are built from this one stream, so
+ * what is copied and what is shown cannot drift apart.
+ */
+export type DisplayToken =
+  | { kind: "value"; text: string; scValType: string }
+  | { kind: "punct"; text: string };
+
+const punct = (text: string): DisplayToken => ({ kind: "punct", text });
+
+const value = (text: string, scValType: string): DisplayToken => ({
+  kind: "value",
+  text,
+  scValType,
+});
+
+type DisplayOpts = { depth?: number; compact?: boolean };
+
+/**
+ * Wraps already-rendered lines in `{ }` or `[ ]`, one signed entry per line
+ * unless `compact`.
+ */
+const joinLines = (
+  lines: DisplayToken[][],
+  open: string,
+  close: string,
+  {
+    depth,
+    compact,
+    compactPad,
+  }: {
+    depth: number;
+    compact: boolean;
+    compactPad: string;
+  },
+): DisplayToken[] => {
+  const pad = DISPLAY_INDENT.repeat(depth);
+  const innerPad = DISPLAY_INDENT.repeat(depth + 1);
+  const opened = compact
+    ? punct(`${open}${compactPad}`)
+    : punct(`${open}\n${innerPad}`);
+  const separator = compact ? punct(", ") : punct(`,\n${innerPad}`);
+  const closed = compact
+    ? punct(`${compactPad}${close}`)
+    : punct(`\n${pad}${close}`);
+
+  const tokens: DisplayToken[] = [opened];
+  lines.forEach((line, index) => {
+    if (index) {
+      tokens.push(separator);
+    }
+    tokens.push(...line);
+  });
+  tokens.push(closed);
+  return tokens;
+};
+
+/** Renders the `SCMap` entry list shared by `SCV_MAP` and instance storage. */
+const mapEntriesToTokens = (
+  entries: xdr.ScMapEntry[] | null,
+  { depth = 0, compact = false }: DisplayOpts,
+): DisplayToken[] => {
+  if (!entries || !entries.length) {
+    return [punct("{}")];
+  }
+  const lines = entries.map((entry) => [
+    // Keys render compact so that one signed entry is always exactly one line.
+    ...scValToDisplayTokens(entry.key, { compact: true }),
+    punct(": "),
+    ...scValToDisplayTokens(entry.val, { depth: depth + 1, compact }),
+  ]);
+  return joinLines(lines, "{", "}", { depth, compact, compactPad: " " });
+};
+
+/**
+ * Renders an `SCVal` as a stream of display tokens.
  *
  * Deliberately does *not* route containers through `scValToNative()`. That
  * decoder builds maps with `Object.fromEntries`, which coerces every key
@@ -677,86 +755,69 @@ const scvAddressToString = (address: xdr.ScAddress) => {
  * and no warning, on the screen the user approves from. Here the map arm walks
  * the signed entry list directly, so every signed entry reaches the screen.
  *
- * Quoting carries the type, which is what keeps colliding keys legible:
- * strings are quoted, symbols and numbers are bare, binary is labelled hex.
- * `u64(1)` renders `1` where `string("1")` renders `"1"`.
- *
- * Map keys are always rendered `compact` (on one line) so that one signed
- * entry is always exactly one line.
+ * Quoting carries some of the type: strings are quoted where symbols and
+ * numbers are bare. The rest of it rides on each `value` token's `scValType`
+ * rather than being spelled out inline, which keeps the common case — a
+ * symbol-keyed struct — readable.
  */
-export const scValToDisplayValue = (
+export const scValToDisplayTokens = (
   scVal: xdr.ScVal,
-  { depth = 0, compact = false }: { depth?: number; compact?: boolean } = {},
-): string => {
-  const pad = DISPLAY_INDENT.repeat(depth);
-  const innerPad = DISPLAY_INDENT.repeat(depth + 1);
-
+  { depth = 0, compact = false }: DisplayOpts = {},
+): DisplayToken[] => {
   switch (scVal.type) {
     case "scvMap": {
-      const entries = scVal.map || [];
-      if (!entries.length) {
-        return "{}";
-      }
-      const lines = entries.map(
-        (entry) =>
-          `${scValToDisplayValue(entry.key, {
-            compact: true,
-          })}: ${scValToDisplayValue(entry.val, {
-            depth: depth + 1,
-            compact,
-          })}`,
-      );
-      return compact
-        ? `{ ${lines.join(", ")} }`
-        : `{\n${innerPad}${lines.join(`,\n${innerPad}`)}\n${pad}}`;
+      return mapEntriesToTokens(scVal.map, { depth, compact });
     }
 
     case "scvVec": {
       const values = scVal.vec || [];
       if (!values.length) {
-        return "[]";
+        return [punct("[]")];
       }
-      const lines = values.map((value) =>
-        scValToDisplayValue(value, { depth: depth + 1, compact }),
+      const lines = values.map((entry) =>
+        scValToDisplayTokens(entry, { depth: depth + 1, compact }),
       );
-      return compact
-        ? `[${lines.join(", ")}]`
-        : `[\n${innerPad}${lines.join(`,\n${innerPad}`)}\n${pad}]`;
+      return joinLines(lines, "[", "]", { depth, compact, compactPad: "" });
     }
 
     case "scvString": {
-      return xdrStringToLiteral(scVal.str, "string");
+      return [value(xdrStringToLiteral(scVal.str, "string"), scVal.type)];
     }
 
     case "scvSymbol": {
-      return xdrStringToLiteral(scVal.sym, "symbol");
+      return [value(xdrStringToLiteral(scVal.sym, "symbol"), scVal.type)];
     }
 
     case "scvExecutableTag": {
-      return xdrStringToLiteral(scVal.executableTag, "tag");
+      return [
+        value(xdrStringToDisplay(scVal.executableTag, "tag"), scVal.type),
+      ];
     }
 
     case "scvBytes": {
-      return `0x${xdr.encodeBytes(scVal.bytes.toBytes(), "hex")}`;
+      const bytes = xdr.encodeBytes(scVal.bytes.toBytes(), "hex");
+      return [value(`0x${bytes}`, scVal.type)];
     }
 
     case "scvAddress": {
-      return scvAddressToString(scVal.address);
+      return [value(scvAddressToString(scVal.address), scVal.type)];
     }
 
     case "scvBool": {
-      return `${scVal.b}`;
+      return [value(`${scVal.b}`, scVal.type)];
     }
 
     case "scvLedgerKeyNonce": {
-      return scVal.nonceKey.nonce.toString();
+      return [value(scVal.nonceKey.nonce.toString(), scVal.type)];
     }
 
     case "scvContractInstance": {
-      const executable = scVal.instance.executable;
-      return executable.type === "contractExecutableWasm"
-        ? `contractInstance(0x${xdr.encodeBytes(executable.wasmHash.toBytes(), "hex")})`
-        : `contractInstance(${executable.type})`;
+      const { executable } = scVal.instance;
+      const text =
+        executable.type === "contractExecutableWasm"
+          ? `contractInstance(0x${xdr.encodeBytes(executable.wasmHash.toBytes(), "hex")})`
+          : `contractInstance(${executable.type})`;
+      return [value(text, scVal.type)];
     }
 
     case "scvError": {
@@ -765,7 +826,9 @@ export const scValToDisplayValue = (
         code: number;
         value?: string;
       };
-      return `error(${error.type}:${error.value ?? error.code})`;
+      return [
+        value(`error(${error.type}:${error.value ?? error.code})`, scVal.type),
+      ];
     }
 
     case "scvTimepoint":
@@ -778,31 +841,43 @@ export const scValToDisplayValue = (
     case "scvU256":
     case "scvU32":
     case "scvU64": {
-      return scValToNative(scVal).toString();
+      return [value(scValToNative(scVal).toString(), scVal.type)];
     }
 
     case "scvVoid": {
-      return "void";
+      return [value("void", scVal.type)];
     }
 
     case "scvLedgerKeyContractInstance": {
-      return "ledgerKeyContractInstance";
+      return [value("ledgerKeyContractInstance", scVal.type)];
     }
 
     default: {
-      return "null";
+      return [value("null", (scVal as xdr.ScVal).type)];
     }
   }
 };
 
-export const scValByType = (scVal: xdr.ScVal) => {
+/**
+ * The string form of {@link scValToDisplayTokens}, used wherever the value has
+ * to be plain text — the clipboard, most obviously.
+ */
+export const scValToDisplayValue = (
+  scVal: xdr.ScVal,
+  opts: DisplayOpts = {},
+): string =>
+  scValToDisplayTokens(scVal, opts)
+    .map((token) => token.text)
+    .join("");
+
+export const scValByType = (scVal: xdr.ScVal): string => {
   switch (scVal.type) {
     case "scvAddress": {
       return scvAddressToString(scVal.address);
     }
 
     case "scvBool": {
-      return scVal.b;
+      return `${scVal.b}`;
     }
 
     case "scvBytes": {
@@ -811,13 +886,14 @@ export const scValByType = (scVal: xdr.ScVal) => {
 
     case "scvContractInstance": {
       const executable = scVal.instance.executable;
+      // A non-wasm arm used to return `undefined`, i.e. an empty row.
       return executable.type === "contractExecutableWasm"
         ? xdr.encodeBytes(executable.wasmHash.toBytes(), "hex")
-        : undefined;
+        : executable.type;
     }
 
     case "scvError": {
-      return scVal.error.value;
+      return `${scVal.error.value}`;
     }
 
     case "scvExecutableTag": {
@@ -842,8 +918,7 @@ export const scValByType = (scVal: xdr.ScVal) => {
     }
 
     case "scvLedgerKeyContractInstance": {
-      // void arm — carries no payload
-      return null;
+      return "ledgerKeyContractInstance";
     }
 
     case "scvVec":
@@ -860,11 +935,13 @@ export const scValByType = (scVal: xdr.ScVal) => {
     }
 
     case "scvVoid": {
-      return null;
+      return "void";
     }
 
+    // Exhaustive today; a future arm should still name itself rather than
+    // reach the signing screen as an empty row.
     default:
-      return null;
+      return (scVal as xdr.ScVal).type;
   }
 };
 

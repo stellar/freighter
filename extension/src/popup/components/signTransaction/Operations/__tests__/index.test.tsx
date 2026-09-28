@@ -1,5 +1,12 @@
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { Provider } from "react-redux";
 import {
   Account,
@@ -15,6 +22,7 @@ import {
 } from "stellar-sdk";
 
 import { makeDummyStore } from "popup/__testHelpers__";
+import { scValByType } from "popup/helpers/soroban";
 import { Operations } from "../index";
 
 // setOptions never triggers the asset scanner, but mock it so the component's
@@ -337,6 +345,180 @@ describe("Operations — Soroban contract-call parameters", () => {
 
     const params = await screen.findByTestId("OperationParameters");
     expect(params.textContent).toContain("string(0x616c696365ff)");
-    expect(params.textContent).not.toContain("�");
+    expect(params.textContent).not.toContain("\uFFFD");
+  });
+
+  it("offers each scalar's SCVal type without spelling it out inline", async () => {
+    const arg = xdr.ScVal.scvMap([
+      new xdr.ScMapEntry({
+        key: xdr.ScVal.scvSymbol("amount"),
+        val: xdr.ScVal.scvU64(BigInt(100)),
+      }),
+    ]);
+
+    renderOps(invokeContract([arg]));
+
+    const params = await screen.findByTestId("OperationParameters");
+    // The type rides on the token, not on the rendered text.
+    expect(params.textContent).toContain("amount: 100");
+    expect(params.textContent).not.toContain("scvU64");
+
+    const tokens = within(params).getAllByTestId("ScValToken");
+    expect(tokens.map((token) => token.dataset.scvalType)).toEqual([
+      "scvSymbol",
+      "scvU64",
+    ]);
+
+    await userEvent.click(tokens[1]);
+    expect(await screen.findByTestId("ScValTokenType")).toHaveTextContent(
+      "scvU64",
+    );
+  });
+
+  it("reveals the type on hover and hides it again on leave", async () => {
+    const arg = xdr.ScVal.scvMap([
+      new xdr.ScMapEntry({
+        key: xdr.ScVal.scvSymbol("amount"),
+        val: xdr.ScVal.scvU64(BigInt(100)),
+      }),
+    ]);
+
+    renderOps(invokeContract([arg]));
+
+    const params = await screen.findByTestId("OperationParameters");
+    const token = within(params).getAllByTestId("ScValToken")[1];
+
+    expect(screen.queryByTestId("ScValTokenType")).not.toBeInTheDocument();
+
+    await userEvent.hover(token);
+    expect(await screen.findByTestId("ScValTokenType")).toHaveTextContent(
+      "scvU64",
+    );
+
+    // Not pinned by a click, so it closes when the pointer leaves.
+    fireEvent.pointerLeave(token);
+    await waitFor(() =>
+      expect(screen.queryByTestId("ScValTokenType")).not.toBeInTheDocument(),
+    );
+  });
+
+  it("waits for hover intent before revealing the type", async () => {
+    const arg = xdr.ScVal.scvMap([
+      new xdr.ScMapEntry({
+        key: xdr.ScVal.scvSymbol("amount"),
+        val: xdr.ScVal.scvU64(BigInt(100)),
+      }),
+    ]);
+
+    renderOps(invokeContract([arg]));
+
+    const params = await screen.findByTestId("OperationParameters");
+    const token = within(params).getAllByTestId("ScValToken")[1];
+
+    fireEvent.pointerEnter(token);
+    // Brushing past a value must not flash a tooltip.
+    expect(screen.queryByTestId("ScValTokenType")).not.toBeInTheDocument();
+
+    expect(await screen.findByTestId("ScValTokenType")).toHaveTextContent(
+      "scvU64",
+    );
+  });
+
+  // Moving along a row of values should read as one tooltip following the
+  // pointer, not a series of them tearing down and rebuilding.
+  it("moves one tooltip between values instead of reopening it", async () => {
+    const arg = xdr.ScVal.scvMap([
+      new xdr.ScMapEntry({
+        key: xdr.ScVal.scvSymbol("amount"),
+        val: xdr.ScVal.scvU64(BigInt(100)),
+      }),
+    ]);
+
+    renderOps(invokeContract([arg]));
+
+    const params = await screen.findByTestId("OperationParameters");
+    const [symbolToken, numberToken] =
+      within(params).getAllByTestId("ScValToken");
+
+    fireEvent.pointerEnter(symbolToken);
+    const opened = await screen.findByTestId("ScValTokenType");
+    expect(opened).toHaveTextContent("scvSymbol");
+
+    fireEvent.pointerLeave(symbolToken);
+    fireEvent.pointerEnter(numberToken);
+
+    const moved = screen.getByTestId("ScValTokenType");
+    // Same node, new content: it was re-anchored, not replaced.
+    expect(moved).toBe(opened);
+    expect(moved).toHaveTextContent("scvU64");
+
+    // The description follows the tooltip to whichever value it sits on.
+    expect(numberToken).toHaveAttribute("aria-describedby", "ScValTokenType");
+    expect(symbolToken).not.toHaveAttribute("aria-describedby");
+  });
+
+  it("keeps the type open after a click, until dismissed", async () => {
+    const arg = xdr.ScVal.scvMap([
+      new xdr.ScMapEntry({
+        key: xdr.ScVal.scvSymbol("amount"),
+        val: xdr.ScVal.scvU64(BigInt(100)),
+      }),
+    ]);
+
+    renderOps(invokeContract([arg]));
+
+    const params = await screen.findByTestId("OperationParameters");
+    const token = within(params).getAllByTestId("ScValToken")[1];
+
+    await userEvent.click(token);
+    fireEvent.pointerLeave(token);
+    // A click pins it, so leaving the token does not dismiss it.
+    expect(await screen.findByTestId("ScValTokenType")).toBeInTheDocument();
+
+    await userEvent.keyboard("{Escape}");
+    await waitFor(() =>
+      expect(screen.queryByTestId("ScValTokenType")).not.toBeInTheDocument(),
+    );
+  });
+
+  // The parameter block is one big click-to-copy target, and SDS `CopyText`
+  // chains handlers rather than swallowing them, so without stopPropagation
+  // inspecting a value would silently copy it too.
+  it("does not copy when a value is inspected", async () => {
+    const arg = xdr.ScVal.scvMap([
+      new xdr.ScMapEntry({
+        key: xdr.ScVal.scvSymbol("amount"),
+        val: xdr.ScVal.scvU64(BigInt(100)),
+      }),
+    ]);
+
+    renderOps(invokeContract([arg]));
+
+    const execCommand = jest.fn();
+    document.execCommand = execCommand;
+
+    const params = await screen.findByTestId("OperationParameters");
+    await userEvent.click(within(params).getAllByTestId("ScValToken")[0]);
+    expect(execCommand).not.toHaveBeenCalled();
+
+    // The key row is still a copy target, so the affordance is not lost.
+    await userEvent.click(screen.getByTestId("ParameterKey"));
+    expect(execCommand).toHaveBeenCalledWith("copy");
+  });
+
+  // Displayed text and copied text are built from the same token stream; this
+  // is what stops them drifting apart.
+  it("copies exactly what it displays", async () => {
+    const arg = xdr.ScVal.scvMap([
+      new xdr.ScMapEntry({
+        key: xdr.ScVal.scvSymbol("amount"),
+        val: xdr.ScVal.scvU64(BigInt(100)),
+      }),
+    ]);
+
+    renderOps(invokeContract([arg]));
+
+    const rendered = await screen.findByTestId("ParameterValue");
+    expect(rendered.textContent).toEqual(scValByType(arg));
   });
 });

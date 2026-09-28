@@ -30,6 +30,7 @@ import {
   xdrStringToDisplay,
 } from "popup/helpers/soroban";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
+import { ScValDisplay, ScValTypeTooltipProvider } from "./ScValDisplay";
 
 import "./styles.scss";
 
@@ -552,25 +553,27 @@ export const KeyValueInvokeHostFnArgs = ({
       {/* The note goes wherever the heading goes, and only once names
       resolved -- auth entries and failed lookups have nothing to qualify. */}
       {showHeader && !!argNames?.length && <ContractSpecNote />}
-      <div className="OperationParameters" data-testid="OperationParameters">
-        {/* Keyed by position: two arguments can hold the same value (a
-        self-transfer passes the same address twice), and the value alone
-        would give those rows the same key. The list only ever renders in
-        call order, so the index is both stable and unique. */}
-        {args.map((arg, ind) => (
-          <CopyText textToCopy={scValByType(arg)} key={`arg-${ind}`}>
-            <div className="Parameters">
-              <div className="ParameterKey" data-testid="ParameterKey">
-                {argNames?.[ind]}
-                <Icon.Copy01 />
+      <ScValTypeTooltipProvider>
+        <div className="OperationParameters" data-testid="OperationParameters">
+          {/* Keyed by position: two arguments can hold the same value (a
+          self-transfer passes the same address twice), and the value alone
+          would give those rows the same key. The list only ever renders in
+          call order, so the index is both stable and unique. */}
+          {args.map((arg, ind) => (
+            <CopyText textToCopy={scValByType(arg)} key={`arg-${ind}`}>
+              <div className="Parameters">
+                <div className="ParameterKey" data-testid="ParameterKey">
+                  {argNames?.[ind]}
+                  <Icon.Copy01 />
+                </div>
+                <div className="ParameterValue" data-testid="ParameterValue">
+                  <ScValDisplay scVal={arg} />
+                </div>
               </div>
-              <div className="ParameterValue" data-testid="ParameterValue">
-                {scValByType(arg)}
-              </div>
-            </div>
-          </CopyText>
-        ))}
-      </div>
+            </CopyText>
+          ))}
+        </div>
+      </ScValTypeTooltipProvider>
     </div>
   );
 };

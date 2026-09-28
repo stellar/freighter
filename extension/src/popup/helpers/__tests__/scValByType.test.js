@@ -1,7 +1,7 @@
 import { Address, xdr, StrKey } from "stellar-sdk";
 import yaml from "js-yaml";
 
-import { scValByType } from "../soroban";
+import { scValByType, scValToDisplayTokens } from "../soroban";
 
 const ACCOUNT = "GBBM6BKZPEHWYO3E3YKREDPQXMS4VK35YLNU7NFBRI26RAN7GI5POFBB";
 const CONTRACT = "CA3D5KRYM6CB7OWQ6TWYRR3Z4T7GNZLKERYNZGGA5SOAOPIFY6YQGAXE";
@@ -45,7 +45,11 @@ describe("scValByType", () => {
   it("should render booleans as strings", () => {
     const bool = xdr.ScVal.scvBool(true);
     const parsedBool = scValByType(bool);
-    expect(parsedBool).toEqual(true);
+    expect(parsedBool).toEqual("true");
+
+    // Returning the raw boolean made React render `false` as nothing at all,
+    // so a signed `false` argument used to reach the screen as an empty row.
+    expect(scValByType(xdr.ScVal.scvBool(false))).toEqual("false");
   });
   it("should render bytes as a a hex string", () => {
     const bytesBuffer = Buffer.from([0x00, 0x01]);
@@ -58,13 +62,13 @@ describe("scValByType", () => {
     const contractError = xdr.ScError.sceContract(contractErrorCode);
     const scvContractError = xdr.ScVal.scvError(contractError);
     const parsedContractError = scValByType(scvContractError);
-    expect(parsedContractError).toEqual(contractErrorCode);
+    expect(parsedContractError).toEqual(`${contractErrorCode}`);
 
     const scErrorCode = xdr.ScErrorCode.scecArithDomain;
     const wasmError = xdr.ScError.sceWasmVm(scErrorCode);
     const scvWasmError = xdr.ScVal.scvError(wasmError);
     const parsedWasmError = scValByType(scvWasmError);
-    expect(parsedWasmError).toEqual(scErrorCode);
+    expect(parsedWasmError).toEqual(`${scErrorCode}`);
   });
   it("should render number types as strings", () => {
     const num = 1;
@@ -81,7 +85,7 @@ describe("scValByType", () => {
 
     const ledgerKeyContractInstance = xdr.ScVal.scvLedgerKeyContractInstance();
     const parsedInstance = scValByType(ledgerKeyContractInstance);
-    expect(parsedInstance).toEqual(null);
+    expect(parsedInstance).toEqual("ledgerKeyContractInstance");
   });
   // An SCMap is a list of signed entries, not a JS object. `scValToNative`
   // builds one with `Object.fromEntries`, which coerces every key through
@@ -253,10 +257,70 @@ describe("scValByType", () => {
     const parsedSymbol = scValByType(scvSym);
     expect(parsedSymbol).toEqual(str);
   });
-  it("should render void as null", () => {
+  it("should render void", () => {
     const scvNull = xdr.ScVal.scvVoid();
     const parsedVoid = scValByType(scvNull);
-    expect(parsedVoid).toEqual(null);
+    expect(parsedVoid).toEqual("void");
+  });
+
+  // Every one of these used to return a non-string that React drops, so the
+  // parameter row rendered empty on the screen the user approves from.
+  it("should never render a signed value as an empty row", () => {
+    const sacInstance = xdr.ScVal.scvContractInstance(
+      new xdr.ScContractInstance({
+        executable: xdr.ContractExecutable.contractExecutableStellarAsset(),
+        storage: [],
+      }),
+    );
+    for (const scVal of [
+      xdr.ScVal.scvBool(false),
+      xdr.ScVal.scvVoid(),
+      xdr.ScVal.scvLedgerKeyContractInstance(),
+      sacInstance,
+    ]) {
+      expect(typeof scValByType(scVal)).toEqual("string");
+      expect(scValByType(scVal)).not.toEqual("");
+    }
+  });
+
+  // The signing screen offers each scalar's type on demand rather than
+  // spelling it out inline, so every scalar has to carry its arm.
+  describe("display tokens", () => {
+    it("should tag every scalar with its SCVal arm at any depth", () => {
+      const tokens = scValToDisplayTokens(
+        xdr.ScVal.scvMap([
+          mapEntry(
+            xdr.ScVal.scvSymbol("one"),
+            xdr.ScVal.scvVec([
+              xdr.ScVal.scvU64(BigInt(1)),
+              xdr.ScVal.scvString("1"),
+            ]),
+          ),
+        ]),
+      );
+      expect(
+        tokens
+          .filter((token) => token.kind === "value")
+          .map((token) => [token.text, token.scValType]),
+      ).toEqual([
+        ["one", "scvSymbol"],
+        ["1", "scvU64"],
+        ['"1"', "scvString"],
+      ]);
+    });
+
+    // The tokens are what the screen renders and the join is what the
+    // clipboard gets; this is what stops the two drifting apart.
+    it("should join back to exactly the string form", () => {
+      const scVal = xdr.ScVal.scvMap([
+        mapEntry(xdr.ScVal.scvSymbol("amount"), xdr.ScVal.scvU32(100)),
+      ]);
+      expect(
+        scValToDisplayTokens(scVal)
+          .map((token) => token.text)
+          .join(""),
+      ).toEqual(scValByType(scVal));
+    });
   });
   it("should render a CAP-85 executable tag as a string", () => {
     const tag = "v2";
