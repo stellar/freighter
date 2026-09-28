@@ -303,8 +303,8 @@ export const inspectTooltipTop = (y: number): number =>
   );
 
 /**
- * Memoised: the parent re-renders on unrelated state (price polls, menu) and
- * none of these props change between fetches.
+ * Memoised on props: the parent re-renders on unrelated state (price polls,
+ * menu), and the per-move inspect props are the only ones that churn.
  *
  * Drag-to-inspect is pointer-only (§7.4): pointerdown arms, capture keeps
  * moves flowing, up/cancel clears. Keyboard users keep everything shown by
@@ -345,8 +345,10 @@ export const LineChart = React.memo(function LineChart({
   // live drag) and the "pointer is down" state the move handler gates on — one
   // ref rather than two, so the two can never disagree. Deliberately NOT the
   // `inspectedIndex` prop: the parent clears that when the series changes
-  // mid-drag, and a drag that outlives a range switch must be able to re-snap
-  // into the new series rather than going dead under the finger.
+  // mid-drag, and a drag that outlives a range switch (a cached switch; an
+  // uncached one replaces the chart with the skeleton and ends the drag) must
+  // be able to re-snap into the new series rather than going dead under the
+  // finger.
   const activePointerIdRef = useRef<number | null>(null);
   const downClientXRef = useRef(0);
   const hasCrossedMoveThresholdRef = useRef(false);

@@ -298,10 +298,9 @@ export const AssetDetail = ({
   const isShowingSend = hasBalance;
 
   // See the `AssetDetail__price` div below for why this falls back to spot.
-  // Guarded on `isChartShown` as well as on the reported value: an inspected
-  // price only ever means anything while the chart that produced it is on
-  // screen, and the guard holds in the render before the `LOADING_DELTA`
-  // reset above lands.
+  // The `isChartShown` guard is belt-and-braces with the render-time
+  // `LOADING_DELTA` reset above: either alone keeps an inspected price off a
+  // hidden chart's header.
   const headerPrice =
     (isChartShown ? shownDelta.inspectedPrice : null) ??
     assetPrice?.currentPrice;
