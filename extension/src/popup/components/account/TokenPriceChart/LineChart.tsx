@@ -11,6 +11,7 @@ import {
   CHART_VIEWBOX_WIDTH,
   INSPECT_DOT_RADIUS,
   INSPECT_DOT_RING_WIDTH,
+  INSPECT_MOVE_THRESHOLD_PX,
   INSPECT_TOOLTIP_FLIP_RATIO,
   INSPECT_TOOLTIP_HEIGHT_PX,
   PriceDirection,
@@ -345,6 +346,8 @@ export const LineChart = React.memo(function LineChart({
   // mid-drag, and a drag that outlives a range switch must be able to re-snap
   // into the new series rather than going dead under the finger.
   const activePointerIdRef = useRef<number | null>(null);
+  const downClientXRef = useRef(0);
+  const hasCrossedMoveThresholdRef = useRef(false);
 
   const handlePointerDown = (event: React.PointerEvent<SVGSVGElement>) => {
     if (!onInspectStart || xs.length < 2) {
@@ -356,8 +359,9 @@ export const LineChart = React.memo(function LineChart({
     if (activePointerIdRef.current !== null) {
       return;
     }
-    event.preventDefault();
     activePointerIdRef.current = event.pointerId;
+    downClientXRef.current = event.clientX;
+    hasCrossedMoveThresholdRef.current = false;
     // Keep receiving moves after the pointer leaves the svg; jsdom lacks it.
     if (typeof event.currentTarget.setPointerCapture === "function") {
       event.currentTarget.setPointerCapture(event.pointerId);
@@ -368,6 +372,15 @@ export const LineChart = React.memo(function LineChart({
     // Idle (no pointer down) or a pointer that is not the active one: ignored.
     if (activePointerIdRef.current !== event.pointerId || !onInspectMove) {
       return;
+    }
+    if (!hasCrossedMoveThresholdRef.current) {
+      if (
+        Math.abs(event.clientX - downClientXRef.current) <
+        INSPECT_MOVE_THRESHOLD_PX
+      ) {
+        return;
+      }
+      hasCrossedMoveThresholdRef.current = true;
     }
     onInspectMove(nearestCoordinateIndex(xs, toViewBoxX(event)));
   };

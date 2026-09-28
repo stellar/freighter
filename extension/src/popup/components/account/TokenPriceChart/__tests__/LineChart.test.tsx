@@ -1,5 +1,11 @@
 import React from "react";
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import {
+  act,
+  createEvent,
+  fireEvent,
+  render,
+  screen,
+} from "@testing-library/react";
 
 import { ApiTokenPriceHistoryPoint } from "@shared/api/types";
 import { installPointerEventPolyfill } from "popup/__testHelpers__/pointerEvents";
@@ -269,6 +275,37 @@ describe("drag to inspect", () => {
       pointerId: 1,
     });
     expect(onInspectMove).not.toHaveBeenCalled();
+  });
+
+  it("does not prevent the pointerdown default, so the compatibility mousedown still fires", () => {
+    // Click-outside handlers and the activity ping listen for `mousedown`;
+    // preventing pointerdown would suppress it.
+    renderInspectable({ onInspectStart: jest.fn() });
+    const svg = screen.getByTestId("TokenPriceChart__svg");
+    const event = createEvent.pointerDown(svg, { clientX: 200, pointerId: 1 });
+    fireEvent(svg, event);
+    expect(event.defaultPrevented).toBe(false);
+  });
+
+  it("treats a move under the tap threshold as a tap, not a drag", () => {
+    const onInspectMove = jest.fn();
+    renderInspectable({ onInspectStart: jest.fn(), onInspectMove });
+    const svg = screen.getByTestId("TokenPriceChart__svg");
+    fireEvent.pointerDown(svg, { clientX: 200, pointerId: 1 });
+    fireEvent.pointerMove(svg, { clientX: 202, pointerId: 1 });
+    expect(onInspectMove).not.toHaveBeenCalled();
+  });
+
+  it("reports a move once it crosses the tap threshold, and every move after", () => {
+    const onInspectMove = jest.fn();
+    renderInspectable({ onInspectStart: jest.fn(), onInspectMove });
+    const svg = screen.getByTestId("TokenPriceChart__svg");
+    fireEvent.pointerDown(svg, { clientX: 200, pointerId: 1 });
+    fireEvent.pointerMove(svg, { clientX: 205, pointerId: 1 });
+    expect(onInspectMove).toHaveBeenCalledTimes(1);
+    // Back inside the threshold of the press: still a drag.
+    fireEvent.pointerMove(svg, { clientX: 201, pointerId: 1 });
+    expect(onInspectMove).toHaveBeenCalledTimes(2);
   });
 
   it("captures the pointer, so moves keep arriving once it leaves the svg", () => {

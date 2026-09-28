@@ -120,6 +120,10 @@
     // which already clears the inspection; that is this platform's equivalent
     // of mobile's "movement before the long-press fails the pan".
     touch-action: pan-y;
+    // Stops a drag selecting the surrounding text; the press itself is left
+    // un-prevented so the compatibility mousedown still reaches listeners.
+    -webkit-user-select: none;
+    user-select: none;
   }
 
   &__guide {

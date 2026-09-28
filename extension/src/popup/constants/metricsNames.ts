@@ -68,8 +68,8 @@ export const METRIC_NAMES = {
   // to warming). Answers "which chart did they look at / was it empty".
   tokenChartViewed: "token_chart.viewed",
   tokenChartRangeChanged: "token_chart.range_changed",
-  // Once per drag-to-inspect activation — on its first move, never per move
-  // and never for a bare click (§7.5, Phase 3).
+  // Once per drag-to-inspect activation — on its first move beyond the tap
+  // threshold, never per move and never for a bare click (§7.5, Phase 3).
   tokenChartBrushed: "token_chart.brushed",
 
   // -- Assets / trustlines -------------------------------------------------

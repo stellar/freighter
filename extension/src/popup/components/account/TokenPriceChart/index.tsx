@@ -457,7 +457,7 @@ export const TokenPriceChart = ({
     (index: number) => {
       // Not `brushed` yet: a bare click (down then up, no movement) is not a
       // drag, and mobile's long-press-armed pan would never have activated on
-      // it. The first move of this activation emits the event.
+      // it. The first move beyond the tap threshold emits the event.
       brushedThisActivationRef.current = false;
       if (chartHistory) {
         setInspected({ history: chartHistory, index });
@@ -473,9 +473,9 @@ export const TokenPriceChart = ({
       setInspected({ history: chartHistory, index });
       if (!brushedThisActivationRef.current) {
         brushedThisActivationRef.current = true;
-        // Once per activation, on the first real drag and never per move
-        // (§7.5) — the payload is the plotted series' range, not
-        // `selectedRange`, which can lead it.
+        // Once per activation, on the first move beyond the tap threshold and
+        // never per move (§7.5) — the payload is the plotted series' range,
+        // not `selectedRange`, which can lead it.
         emitMetric(METRIC_NAMES.tokenChartBrushed, {
           range: chartHistory.range,
         });
