@@ -23,6 +23,7 @@ import {
 
 import { makeDummyStore } from "popup/__testHelpers__";
 import { scValToDisplayValue } from "popup/helpers/soroban";
+import { ScValDisplay } from "../KeyVal/ScValDisplay";
 import { Operations } from "../index";
 
 // setOptions never triggers the asset scanner, but mock it so the component's
@@ -592,5 +593,22 @@ describe("Operations — Soroban contract-call parameters", () => {
     const rendered = await screen.findByTestId("ParameterValue");
     expect(rendered.textContent).toEqual(expected);
     expect(rendered.textContent).toEqual(scValToDisplayValue(arg));
+  });
+
+  // Type inspection needs a provider above the value. Without one the
+  // component renders the same characters as plain text -- it does not throw,
+  // and it does not silently offer a tooltip that cannot open.
+  it("renders plain text when no tooltip provider is above it", () => {
+    const arg = xdr.ScVal.scvMap([
+      new xdr.ScMapEntry({
+        key: xdr.ScVal.scvSymbol("amount"),
+        val: xdr.ScVal.scvU64(BigInt(100)),
+      }),
+    ]);
+
+    const { container } = render(<ScValDisplay scVal={arg} />);
+
+    expect(container.textContent).toEqual(scValToDisplayValue(arg));
+    expect(screen.queryAllByTestId("ScValToken")).toHaveLength(0);
   });
 });

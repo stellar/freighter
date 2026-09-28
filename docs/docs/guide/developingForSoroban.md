@@ -155,9 +155,14 @@ const walkAndParse = (transactionXdr, networkPassphrase) => {
   const firstInvocation = invocations[0];
   const firstInvocationArgs = firstInvocation.args;
 
-  /* Generally, we can just use `scValToNative` to decode a SC val into a usable JS data type
-  but this may not work for all SC vals.
-  For more information check the function scValToDisplayValue in extension/src/popup/helpers/soroban.ts */
+  /* `scValToNative` is the right tool for reading a value into JS, but not for
+  building the text a user approves. It decodes an SCMap through
+  `Object.fromEntries`, which coerces every key to a string and lets a later
+  entry overwrite an earlier one, so two entries whose keys differ only by type
+  collapse into one; and it decodes SCString/SCSymbol leniently, so any invalid
+  byte becomes U+FFFD and two distinct signed payloads render as one string.
+  Render approval text from the SCVal itself -- see the function
+  scValToDisplayValue in extension/src/popup/helpers/soroban.ts */
   const humanReadableArgs = firstInvocationArgs.map((a) => scValToNative(a));
 
   return humanReadableArgs;

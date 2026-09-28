@@ -242,11 +242,17 @@ ScValToken.displayName = "ScValToken";
  *
  * The text and the clipboard string come from the same token stream
  * (`scValToDisplayTokens`), so what is shown and what is copied cannot drift.
+ *
+ * Inspection needs a {@link ScValTypeTooltipProvider} above this; without one
+ * the same characters render as plain text. This cannot wrap itself in a
+ * provider as a fallback: the tokens are built in this render, from the
+ * context this render saw, so a provider added around them afterwards would
+ * hand its value to children that never read it.
  */
 export const ScValDisplay = ({ scVal }: { scVal: xdr.ScVal }) => {
   const tooltip = React.useContext(ScValTypeTooltipContext);
 
-  const tokens = (
+  return (
     <>
       {scValToDisplayTokens(scVal).map((token: DisplayToken, index: number) => {
         const key = `${index}-${token.text}`;
@@ -263,13 +269,5 @@ export const ScValDisplay = ({ scVal }: { scVal: xdr.ScVal }) => {
         );
       })}
     </>
-  );
-
-  // Standalone use still gets a tooltip; the provider above just lets every
-  // argument on the screen share one.
-  return tooltip ? (
-    tokens
-  ) : (
-    <ScValTypeTooltipProvider>{tokens}</ScValTypeTooltipProvider>
   );
 };
