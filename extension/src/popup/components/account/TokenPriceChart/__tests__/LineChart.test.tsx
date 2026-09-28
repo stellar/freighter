@@ -356,6 +356,62 @@ describe("drag to inspect", () => {
     expect(onInspectEnd).toHaveBeenCalledTimes(1);
   });
 
+  it("a non-primary-button press neither arms nor locks the inspection", () => {
+    const setPointerCapture = jest.fn();
+    (
+      SVGElement.prototype as unknown as { setPointerCapture: jest.Mock }
+    ).setPointerCapture = setPointerCapture;
+
+    try {
+      const onInspectStart = jest.fn();
+      renderInspectable({ onInspectStart });
+      const svg = screen.getByTestId("TokenPriceChart__svg");
+
+      fireEvent.pointerDown(svg, { clientX: 200, pointerId: 1, button: 2 });
+      expect(onInspectStart).not.toHaveBeenCalled();
+      expect(setPointerCapture).not.toHaveBeenCalled();
+
+      // A right-click that armed would hold the lock, so this would be ignored.
+      fireEvent.pointerDown(svg, { clientX: 200, pointerId: 2, button: 0 });
+      expect(onInspectStart).toHaveBeenCalledWith(1);
+      expect(setPointerCapture).toHaveBeenCalledWith(2);
+    } finally {
+      delete (SVGElement.prototype as unknown as Record<string, unknown>)
+        .setPointerCapture;
+    }
+  });
+
+  it("unmounting mid-drag ends the inspection exactly once", () => {
+    const onInspectEnd = jest.fn();
+    const { unmount } = renderInspectable({
+      onInspectStart: jest.fn(),
+      onInspectEnd,
+    });
+    fireEvent.pointerDown(screen.getByTestId("TokenPriceChart__svg"), {
+      clientX: 200,
+      pointerId: 1,
+    });
+
+    unmount();
+
+    expect(onInspectEnd).toHaveBeenCalledTimes(1);
+  });
+
+  it("unmounting after a release does not end the inspection again", () => {
+    const onInspectEnd = jest.fn();
+    const { unmount } = renderInspectable({
+      onInspectStart: jest.fn(),
+      onInspectEnd,
+    });
+    const svg = screen.getByTestId("TokenPriceChart__svg");
+    fireEvent.pointerDown(svg, { clientX: 200, pointerId: 1 });
+    fireEvent.pointerUp(svg, { pointerId: 1 });
+
+    unmount();
+
+    expect(onInspectEnd).toHaveBeenCalledTimes(1);
+  });
+
   it("keeps reporting moves after the parent clears the inspected index", () => {
     // A series change mid-drag (a range switch, a refetch landing) makes the
     // parent drop the index. The drag is still under the finger, so the next

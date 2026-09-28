@@ -1168,6 +1168,51 @@ describe("TokenPriceChart", () => {
       );
     });
 
+    it("an uncached switch mid-drag drops the inspection through the skeleton and after returning", async () => {
+      jest.useFakeTimers();
+      respondByRange({ "1D": INSPECTABLE_HISTORY, "1W": HISTORY_1W });
+      renderChart();
+      await act(async () => {
+        await Promise.resolve();
+      });
+
+      mockChartRect();
+      fireEvent.pointerDown(screen.getByTestId("TokenPriceChart__svg"), {
+        clientX: 320,
+        pointerId: 1,
+      });
+      expect(reportedDelta?.inspectedPrice).toBe("0.22");
+
+      const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
+      await user.click(screen.getByRole("tab", { name: "1W" }));
+      expect(
+        screen.getByTestId("TokenPriceChart__loading"),
+      ).toBeInTheDocument();
+      expect(reportedDelta).toEqual(
+        expect.objectContaining({ isLoading: true, inspectedPrice: null }),
+      );
+
+      await act(async () => {
+        jest.advanceTimersByTime(RANGE_SWITCH_DEBOUNCE_MS + 50);
+        await Promise.resolve();
+      });
+      expect(screen.getByTestId("TokenPriceChart__svg")).toBeInTheDocument();
+
+      await user.click(screen.getByRole("tab", { name: "1D" }));
+      await act(async () => {
+        jest.advanceTimersByTime(RANGE_SWITCH_DEBOUNCE_MS);
+        await Promise.resolve();
+      });
+
+      expect(requestCountForRange("1D")).toBe(1);
+      expect(
+        screen.queryByTestId("TokenPriceChart__inspect-tooltip"),
+      ).toBeNull();
+      expect(reportedDelta).toEqual(
+        expect.objectContaining({ inspectedPrice: null }),
+      );
+    });
+
     it("a cached range switch clears the inspection while the chart stays mounted", async () => {
       // A cached switch never shows the loading ghost, so only the series
       // identity guard can drop the index snapped against the old series.

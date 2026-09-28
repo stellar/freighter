@@ -352,8 +352,27 @@ export const LineChart = React.memo(function LineChart({
   const activePointerIdRef = useRef<number | null>(null);
   const downClientXRef = useRef(0);
   const hasCrossedMoveThresholdRef = useRef(false);
+  const onInspectEndRef = useRef(onInspectEnd);
+  onInspectEndRef.current = onInspectEnd;
+
+  // An unmount mid-drag (the skeleton replacing the chart) fires no pointerup,
+  // so the parent would otherwise keep the inspection it was never told ended.
+  useEffect(
+    () => () => {
+      if (activePointerIdRef.current !== null) {
+        activePointerIdRef.current = null;
+        onInspectEndRef.current?.();
+      }
+    },
+    [],
+  );
 
   const handlePointerDown = (event: React.PointerEvent<SVGSVGElement>) => {
+    // A right/middle press opens a menu or autoscrolls; it must not arm or
+    // take the lock, or no pointerup may ever release it.
+    if (!event.isPrimary || event.button !== 0) {
+      return;
+    }
     if (!onInspectStart || xs.length < 2) {
       return;
     }
