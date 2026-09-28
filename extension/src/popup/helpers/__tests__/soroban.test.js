@@ -368,7 +368,6 @@ describe("signing-screen display fidelity", () => {
   /** "transfer" with one trailing byte that cannot begin a UTF-8 sequence. */
   const invalidFnName = (suffix) =>
     new Uint8Array([...Buffer.from("transfer"), suffix]);
-  const INVALID_FN_HEX = "7472616e73666572ff";
 
   const contractFn = (functionName, args = []) =>
     new xdr.InvokeContractArgs({
@@ -410,10 +409,23 @@ describe("signing-screen display fidelity", () => {
       subInvocations: [],
     });
 
-  it("renders a non-UTF-8 function name as labelled hex in an invocation tree", () => {
+  it("escapes a non-UTF-8 function name in an invocation tree", () => {
     const tree = buildInvocationTree(contractFnInvocation(invalidFnName(0xff)));
-    expect(tree.args.function).toEqual(`symbol(0x${INVALID_FN_HEX})`);
+    expect(tree.args.function).toEqual("transfer\\xff");
     expect(tree.args.function).not.toContain("�");
+  });
+
+  it("carries no raw function name when the signed name is not text", () => {
+    // The escaped form is for the screen. Handing it to the contract-spec
+    // lookup would key the lookup off a string no spec can define.
+    expect(
+      buildInvocationTree(contractFnInvocation(Buffer.from("transfer"))).args
+        .functionRaw,
+    ).toEqual("transfer");
+    expect(
+      buildInvocationTree(contractFnInvocation(invalidFnName(0xff))).args
+        .functionRaw,
+    ).toBeUndefined();
   });
 
   it("does not collapse two distinct non-UTF-8 function names", () => {
@@ -442,19 +454,19 @@ describe("signing-screen display fidelity", () => {
     expect(tree.args.args[0].toXdr("base64")).toEqual(arg.toXdr("base64"));
   });
 
-  it("renders a non-UTF-8 function name as labelled hex in invocation args", () => {
+  it("escapes a non-UTF-8 function name in invocation args", () => {
     const args = getInvocationArgs(contractFnInvocation(invalidFnName(0xff)));
-    expect(args.fnName).toEqual(`symbol(0x${INVALID_FN_HEX})`);
+    expect(args.fnName).toEqual("transfer\\xff");
     expect(args.fnName).not.toContain("�");
 
     const other = getInvocationArgs(contractFnInvocation(invalidFnName(0xfe)));
     expect(args.fnName).not.toEqual(other.fnName);
   });
 
-  it("renders a non-UTF-8 CAP-85 executable tag as labelled hex", () => {
+  it("escapes a non-UTF-8 CAP-85 executable tag", () => {
     const tagBytes = (suffix) => new Uint8Array([...Buffer.from("v2"), suffix]);
     const args = getInvocationArgs(externalRefInvocation(tagBytes(0xff)));
-    expect(args.tag).toEqual("tag(0x7632ff)");
+    expect(args.tag).toEqual("v2\\xff");
     expect(args.tag).not.toContain("�");
 
     const other = getInvocationArgs(externalRefInvocation(tagBytes(0xfe)));

@@ -83,7 +83,7 @@ const InvocationByType = ({ _invocation }: { _invocation: InvocationTree }) => {
           />
           <KeyValueInvokeHostFnArgs
             args={_invocation.args.args}
-            fnName={_invocation.args.function}
+            specFnName={_invocation.args.functionRaw}
             contractId={_invocation.args.source}
           />
         </>
@@ -428,12 +428,18 @@ type SpecLookup =
  */
 export const useContractArgNames = ({
   contractId,
-  fnName,
+  specFnName,
   argCount,
   isAuthEntry = false,
 }: {
   contractId?: string;
-  fnName?: string;
+  /**
+   * The raw signed function name. Deliberately not the displayed name: that
+   * one is escaped for the screen, and an escaped string is not a name any
+   * spec defines. Undefined when the signed bytes are not text, which skips
+   * the lookup rather than keying it off something no contract declared.
+   */
+  specFnName?: string;
   argCount: number;
   isAuthEntry?: boolean;
 }) => {
@@ -472,8 +478,8 @@ export const useContractArgNames = ({
     // an arbitrary list under the same contract and function name, and the
     // arity can match, so the length check in `getContractFnArgNames` does not
     // catch it. Those rows render unlabelled. See stellar/freighter#2196.
-    if (contractId && fnName && !isAuthEntry) {
-      getSpec(contractId, fnName);
+    if (contractId && specFnName && !isAuthEntry) {
+      getSpec(contractId, specFnName);
     } else {
       setLookup({ status: "done", argNames: null });
     }
@@ -481,7 +487,7 @@ export const useContractArgNames = ({
     return () => {
       isCurrent = false;
     };
-  }, [contractId, fnName, networkDetails, isAuthEntry, argCount]);
+  }, [contractId, specFnName, networkDetails, isAuthEntry, argCount]);
 
   return {
     argNames: lookup.status === "done" ? lookup.argNames : null,
@@ -511,7 +517,7 @@ export const ContractSpecNote = () => {
 export const KeyValueInvokeHostFnArgs = ({
   args,
   contractId,
-  fnName,
+  specFnName,
   showHeader = true,
   isAuthEntry = false,
   argNames: resolvedArgNames,
@@ -519,7 +525,13 @@ export const KeyValueInvokeHostFnArgs = ({
 }: {
   args: xdr.ScVal[];
   contractId?: string;
-  fnName?: string;
+  /**
+   * The raw signed function name, used only as a key into the contract spec.
+   * Deliberately not the displayed name: that one is escaped for the screen,
+   * and an escaped string is not a name any spec defines. Undefined when the
+   * signed bytes are not text, which skips the lookup.
+   */
+  specFnName?: string;
   showHeader?: boolean;
   isAuthEntry?: boolean;
   // A caller that renders the heading itself resolves the names (it owns the
@@ -531,7 +543,7 @@ export const KeyValueInvokeHostFnArgs = ({
   const { t } = useTranslation();
   const ownSpec = useContractArgNames({
     contractId,
-    fnName,
+    specFnName,
     argCount: args.length,
     isAuthEntry,
   });
@@ -797,7 +809,7 @@ export const KeyValueInvokeHostFn = ({
         const invocation = hostfn.invokeContract;
         const contractId = addressToString(invocation.contractAddress);
 
-        const fnName = xdrStringToDisplay(invocation.functionName, "symbol");
+        const fnName = xdrStringToDisplay(invocation.functionName);
 
         return (
           <>

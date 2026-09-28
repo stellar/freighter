@@ -300,6 +300,44 @@ describe("Operations — Soroban contract-call parameters", () => {
   const mapEntry = (key: xdr.ScVal, val: xdr.ScVal) =>
     new xdr.ScMapEntry({ key, val });
 
+  // The displayed name is escaped for the screen; the spec lookup needs the
+  // name that was signed. Handing the escaped form to the lookup would key it
+  // off a string no contract spec can define.
+  describe("contract-spec lookup", () => {
+    const getContractSpec = jest.requireMock("@shared/api/internal")
+      .getContractSpec as jest.Mock;
+
+    beforeEach(() => getContractSpec.mockClear());
+
+    it("runs the lookup when the signed name is text", async () => {
+      renderOps(invokeContract([xdr.ScVal.scvU32(1)], "configure"));
+
+      await screen.findByTestId("OperationParameters");
+      expect(getContractSpec).toHaveBeenCalled();
+    });
+
+    it("skips the lookup when the signed name is not text", async () => {
+      const binaryName = decodeOperation(
+        Operation.invokeHostFunction({
+          func: xdr.HostFunction.hostFunctionTypeInvokeContract(
+            new xdr.InvokeContractArgs({
+              contractAddress: new Address(CONTRACT).toScAddress(),
+              functionName: new Uint8Array([...Buffer.from("configure"), 0xff]),
+              args: [xdr.ScVal.scvU32(1)],
+            }),
+          ),
+          auth: [],
+        }),
+      );
+
+      renderOps(binaryName);
+
+      const params = await screen.findByTestId("OperationParameters");
+      expect(params.textContent).toContain("1");
+      expect(getContractSpec).not.toHaveBeenCalled();
+    });
+  });
+
   it("renders every entry of a struct-keyed map, not just the last one", async () => {
     const structKey = (id: number) =>
       xdr.ScVal.scvMap([
@@ -336,7 +374,7 @@ describe("Operations — Soroban contract-call parameters", () => {
     expect(params.textContent).toContain('"1": "from-string"');
   });
 
-  it("renders a non-UTF-8 string argument as labelled hex", async () => {
+  it("escapes a non-UTF-8 string argument", async () => {
     const stringArg = xdr.ScVal.scvString(
       new Uint8Array([...Buffer.from("alice"), 0xff]),
     );
@@ -344,8 +382,34 @@ describe("Operations — Soroban contract-call parameters", () => {
     renderOps(invokeContract([stringArg]));
 
     const params = await screen.findByTestId("OperationParameters");
-    expect(params.textContent).toContain("string(0x616c696365ff)");
+    expect(params.textContent).toContain('"alice\\xff"');
     expect(params.textContent).not.toContain("\uFFFD");
+  });
+
+  // The escape has to stand for exactly one byte string. A labelled-hex form
+  // could be spelled out by valid text, putting two signed payloads behind one
+  // screen string — the defect this whole path exists to close.
+  it("does not let valid text impersonate an escaped byte string", async () => {
+    renderOps(invokeContract([xdr.ScVal.scvString("alice\\xff")]));
+
+    const params = await screen.findByTestId("OperationParameters");
+    expect(params.textContent).toContain('"alice\\\\xff"');
+  });
+
+  it("leaves legible non-ASCII text alone", async () => {
+    renderOps(invokeContract([xdr.ScVal.scvString("café ✓")]));
+
+    const params = await screen.findByTestId("OperationParameters");
+    expect(params.textContent).toContain('"café ✓"');
+  });
+
+  // A bidi override reorders what is drawn without changing what is signed.
+  it("escapes an invisible codepoint in an argument", async () => {
+    renderOps(invokeContract([xdr.ScVal.scvString("alice\u202Ebob")]));
+
+    const params = await screen.findByTestId("OperationParameters");
+    expect(params.textContent).toContain('"alice\\u{202e}bob"');
+    expect(params.textContent).not.toContain("\u202E");
   });
 
   it("offers each scalar's SCVal type without spelling it out inline", async () => {

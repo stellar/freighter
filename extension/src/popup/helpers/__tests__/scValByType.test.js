@@ -20,6 +20,9 @@ const contractAddress = () =>
     new xdr.ContractId(StrKey.decodeContract(CONTRACT)),
   );
 
+const WASM_HASH = Buffer.alloc(32, 7);
+const WASM_HASH_HEX = WASM_HASH.toString("hex");
+
 /** "alice" with one trailing byte that cannot begin a UTF-8 sequence. */
 const invalidUtf8 = (suffix) =>
   new Uint8Array([...Buffer.from("alice"), suffix]);
@@ -203,9 +206,36 @@ describe("scValByType", () => {
   // UTF-8 decode turns every invalid byte into U+FFFD, so two distinct signed
   // payloads render as one screen string. These cases pin the strict decode.
   describe("non-UTF-8 text", () => {
-    it("should render an invalid-UTF-8 string as labelled hex", () => {
+    it("should escape an invalid byte in a string", () => {
       expect(scValByType(xdr.ScVal.scvString(invalidUtf8(0xff)))).toEqual(
-        "string(0x616c696365ff)",
+        "alice\\xff",
+      );
+    });
+
+    // The hex form this used to emit could be spelled out by a string whose
+    // text happened to read `string(0x...)` — one screen string standing for
+    // two signed payloads, which is the defect, not the fix.
+    it("should not let valid text impersonate an escaped byte string", () => {
+      const binary = scValByType(xdr.ScVal.scvString(invalidUtf8(0xff)));
+      const text = scValByType(xdr.ScVal.scvString("alice\\xff"));
+      expect(text).toEqual("alice\\\\xff");
+      expect(text).not.toEqual(binary);
+    });
+
+    // `toJson()`, the SDK's SEP-0051 form, hex-escapes every byte above
+    // ASCII, which would render this as `caf\xc3\xa9 \xe2\x9c\x93`.
+    it("should leave legible non-ASCII text alone", () => {
+      expect(scValByType(xdr.ScVal.scvString("café ✓"))).toEqual("café ✓");
+    });
+
+    // Valid UTF-8 that cannot be seen: left as-is, a bidi override reorders
+    // what is drawn without changing what is signed.
+    it("should escape invisible and control codepoints", () => {
+      expect(scValByType(xdr.ScVal.scvString("a\u202Eb"))).toEqual(
+        "a\\u{202e}b",
+      );
+      expect(scValByType(xdr.ScVal.scvString("a\nb\u0007"))).toEqual(
+        "a\\nb\\x07",
       );
     });
 
@@ -217,24 +247,24 @@ describe("scValByType", () => {
       expect(second).not.toContain("�");
     });
 
-    it("should render an invalid-UTF-8 symbol as labelled hex", () => {
+    it("should escape an invalid byte in a symbol", () => {
       expect(scValByType(xdr.ScVal.scvSymbol(invalidUtf8(0xff)))).toEqual(
-        "symbol(0x616c696365ff)",
+        "alice\\xff",
       );
     });
 
-    it("should render an invalid-UTF-8 executable tag as labelled hex", () => {
+    it("should escape an invalid byte in an executable tag", () => {
       const first = scValByType(xdr.ScVal.scvExecutableTag(invalidUtf8(0xff)));
       const second = scValByType(xdr.ScVal.scvExecutableTag(invalidUtf8(0xfe)));
-      expect(first).toEqual("tag(0x616c696365ff)");
+      expect(first).toEqual("alice\\xff");
       expect(first).not.toEqual(second);
     });
 
-    it("should render invalid-UTF-8 text nested in a container as labelled hex", () => {
+    it("should escape invalid-UTF-8 text nested in a container", () => {
       const xdrVec = xdr.ScVal.scvVec([xdr.ScVal.scvString(invalidUtf8(0xff))]);
       // Not `{"0":97,"1":108,…}`, which is what a JSON stringification of the
       // decoded bytes produces.
-      expect(scValByType(xdrVec)).toEqual("[\n  string(0x616c696365ff)\n]");
+      expect(scValByType(xdrVec)).toEqual('[\n  "alice\\xff"\n]');
 
       const xdrMap = xdr.ScVal.scvMap([
         mapEntry(
@@ -242,9 +272,7 @@ describe("scValByType", () => {
           xdr.ScVal.scvString(invalidUtf8(0xfe)),
         ),
       ]);
-      expect(scValByType(xdrMap)).toEqual(
-        "{\n  string(0x616c696365ff): string(0x616c696365fe)\n}",
-      );
+      expect(scValByType(xdrMap)).toEqual('{\n  "alice\\xff": "alice\\xfe"\n}');
     });
   });
   it("should render strings and symbols as strings", () => {
@@ -281,6 +309,82 @@ describe("scValByType", () => {
       expect(typeof scValByType(scVal)).toEqual("string");
       expect(scValByType(scVal)).not.toEqual("");
     }
+  });
+
+  // An instance is told apart from another instance by its storage map and,
+  // for a CAP-85 external reference, by whose code it points at. Naming the
+  // executable arm alone dropped both.
+  describe("contract instances", () => {
+    const instance = (executable, storage) =>
+      xdr.ScVal.scvContractInstance(
+        new xdr.ScContractInstance({ executable, storage }),
+      );
+    const wasm = () =>
+      xdr.ContractExecutable.contractExecutableWasm(new xdr.Hash(WASM_HASH));
+
+    it("should render the storage map, not just the executable", () => {
+      const rendered = scValByType(
+        instance(wasm(), [
+          mapEntry(xdr.ScVal.scvSymbol("admin"), xdr.ScVal.scvU32(1)),
+        ]),
+      );
+      expect(rendered).toContain("admin: 1");
+      expect(rendered).toContain(`wasm(0x${WASM_HASH_HEX})`);
+    });
+
+    it("should tell two instances sharing an executable apart", () => {
+      const first = scValByType(
+        instance(wasm(), [
+          mapEntry(xdr.ScVal.scvSymbol("admin"), xdr.ScVal.scvU32(1)),
+        ]),
+      );
+      const second = scValByType(
+        instance(wasm(), [
+          mapEntry(xdr.ScVal.scvSymbol("admin"), xdr.ScVal.scvU32(2)),
+        ]),
+      );
+      expect(first).not.toEqual(second);
+    });
+
+    // `storage` is an optional pointer: absent storage and empty storage are
+    // two different signed values.
+    it("should distinguish absent storage from empty storage", () => {
+      expect(scValByType(instance(wasm(), null))).not.toEqual(
+        scValByType(instance(wasm(), [])),
+      );
+    });
+
+    it("should render the external reference's owner and tag", () => {
+      const rendered = scValByType(
+        instance(
+          xdr.ContractExecutable.contractExecutableExternalRef(
+            new xdr.ContractExecutableExternalRef({
+              executableOwner: contractAddress(),
+              tag: Buffer.from("v2"),
+            }),
+          ),
+          null,
+        ),
+      );
+      expect(rendered).toContain(CONTRACT);
+      expect(rendered).toContain("tag: v2");
+    });
+
+    // An instance can appear as a map key, and a key has to stay one line so
+    // that one signed entry is always exactly one row.
+    it("should stay on one line as a map key", () => {
+      const rendered = scValByType(
+        xdr.ScVal.scvMap([
+          mapEntry(
+            instance(wasm(), [
+              mapEntry(xdr.ScVal.scvSymbol("admin"), xdr.ScVal.scvU32(1)),
+            ]),
+            xdr.ScVal.scvU32(9),
+          ),
+        ]),
+      );
+      expect(rendered.split("\n")).toHaveLength(3);
+    });
   });
 
   // The signing screen offers each scalar's type on demand rather than
