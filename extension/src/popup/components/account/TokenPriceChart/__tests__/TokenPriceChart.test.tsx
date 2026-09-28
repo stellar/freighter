@@ -8,7 +8,6 @@ import {
   fireEvent,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { BigNumber } from "bignumber.js";
 
 import { MAINNET_NETWORK_DETAILS } from "@shared/constants/stellar";
 import { sendMessageToBackground } from "@shared/api/helpers/extensionMessaging";
@@ -17,13 +16,16 @@ import {
   makeHistory,
 } from "@shared/api/__tests__/fixtures/tokenPriceHistory";
 import { makeDummyStore } from "popup/__testHelpers__";
-import { installPointerEventPolyfill } from "popup/__testHelpers__/pointerEvents";
+import {
+  installPointerEventPolyfill,
+  mockChartRect,
+} from "popup/__testHelpers__/pointerEvents";
 import { resetCacheWriteClaims } from "helpers/cacheWrites";
 import { emitMetric } from "helpers/metrics";
 import {
   RangeDeltaState,
   TokenPriceChart,
-  formatChartPrice,
+  formatInspectedPriceLabel,
 } from "popup/components/account/TokenPriceChart";
 import {
   CHART_HEIGHT_PX,
@@ -951,16 +953,6 @@ describe("TokenPriceChart", () => {
       change: { absolute: "0.06", percent: "30.00" },
     });
 
-    const mockRect = () =>
-      jest
-        .spyOn(SVGElement.prototype, "getBoundingClientRect")
-        .mockReturnValue({
-          left: 0,
-          width: 640,
-          top: 0,
-          height: 280,
-        } as DOMRect);
-
     afterEach(() => jest.restoreAllMocks());
 
     it("while inspecting, reports the inspected price and the close-to-close delta, then reverts on release", async () => {
@@ -971,7 +963,7 @@ describe("TokenPriceChart", () => {
         expect(screen.getByTestId("TokenPriceChart__polyline")).toBeDefined(),
       );
 
-      mockRect();
+      mockChartRect();
       const svg = screen.getByTestId("TokenPriceChart__svg");
 
       // 640px-wide element → clientX 320 is viewBox x 160 → nearest is index 1
@@ -1001,7 +993,7 @@ describe("TokenPriceChart", () => {
         expect(screen.getByTestId("TokenPriceChart__polyline")).toBeDefined(),
       );
 
-      mockRect();
+      mockChartRect();
       fireEvent.pointerDown(screen.getByTestId("TokenPriceChart__svg"), {
         clientX: 320,
         pointerId: 1,
@@ -1009,7 +1001,7 @@ describe("TokenPriceChart", () => {
 
       expect(
         screen.getByTestId("TokenPriceChart__inspect-tooltip"),
-      ).toHaveTextContent(`$${formatChartPrice(new BigNumber("0.22"))}`);
+      ).toHaveTextContent(formatInspectedPriceLabel("0.22"));
     });
 
     it("the chart colour stays the RANGE's direction while inspecting a point below the open", async () => {
@@ -1033,7 +1025,7 @@ describe("TokenPriceChart", () => {
       );
       expect(chartClass()).toContain("LineChart--positive");
 
-      mockRect();
+      mockChartRect();
       fireEvent.pointerDown(screen.getByTestId("TokenPriceChart__svg"), {
         clientX: 320,
         pointerId: 1,
@@ -1054,7 +1046,7 @@ describe("TokenPriceChart", () => {
         expect(screen.getByTestId("TokenPriceChart__polyline")).toBeDefined(),
       );
 
-      mockRect();
+      mockChartRect();
       const svg = screen.getByTestId("TokenPriceChart__svg");
 
       // Pointerdown alone: the artwork, the tooltip and the reported price all
@@ -1085,7 +1077,7 @@ describe("TokenPriceChart", () => {
         expect(screen.getByTestId("TokenPriceChart__polyline")).toBeDefined(),
       );
 
-      mockRect();
+      mockChartRect();
       const svg = screen.getByTestId("TokenPriceChart__svg");
 
       fireEvent.pointerDown(svg, { clientX: 320, pointerId: 1 });
@@ -1122,7 +1114,7 @@ describe("TokenPriceChart", () => {
         expect(screen.getByTestId("TokenPriceChart__polyline")).toBeDefined(),
       );
 
-      mockRect();
+      mockChartRect();
       const svg = screen.getByTestId("TokenPriceChart__svg");
       const errorSpy = jest
         .spyOn(console, "error")
@@ -1152,7 +1144,7 @@ describe("TokenPriceChart", () => {
         await Promise.resolve();
       });
 
-      mockRect();
+      mockChartRect();
       fireEvent.pointerDown(screen.getByTestId("TokenPriceChart__svg"), {
         clientX: 320,
         pointerId: 1,
@@ -1193,7 +1185,7 @@ describe("TokenPriceChart", () => {
         await Promise.resolve();
       });
 
-      mockRect();
+      mockChartRect();
       // Index 0, which also exists in the 3-point 1D series: an index past its
       // end would null out without the guard ever being consulted.
       fireEvent.pointerDown(screen.getByTestId("TokenPriceChart__svg"), {

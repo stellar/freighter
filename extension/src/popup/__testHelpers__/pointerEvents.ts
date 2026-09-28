@@ -33,3 +33,21 @@ export const installPointerEventPolyfill = (): void => {
   window.PointerEvent = PointerEvent as unknown as typeof window.PointerEvent;
   globalThis.PointerEvent = window.PointerEvent;
 };
+
+/** Stubs every svg's rect; restore with `jest.restoreAllMocks()` or the spy. */
+export const mockChartRect = (width = 640, height = 280) =>
+  // Linted as source (not under __tests__), so the jest global is unknown here.
+  // eslint-disable-next-line no-undef
+  jest.spyOn(SVGElement.prototype, "getBoundingClientRect").mockReturnValue({
+    left: 0,
+    top: 0,
+    width,
+    height,
+    right: width,
+    bottom: height,
+    x: 0,
+    y: 0,
+    toJSON() {
+      return {};
+    },
+  } as DOMRect);

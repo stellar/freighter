@@ -48,6 +48,8 @@ export interface ChartCoordinate {
   y: number;
 }
 
+const dotPath = (coord: ChartCoordinate) => `M${coord.x},${coord.y} h0.01`;
+
 const clampProgress = (progress: number) => Math.min(Math.max(progress, 0), 1);
 
 /** Cubic ease-out, matching mobile's `Easing.out(Easing.cubic)`. */
@@ -482,7 +484,7 @@ export const LineChart = React.memo(function LineChart({
             {/* Ring first (background colour), dot on top — both zero-length
               round-capped strokes, as the end dot is. */}
             <path
-              d={`M${inspectedCoord.x},${inspectedCoord.y} h0.01`}
+              d={dotPath(inspectedCoord)}
               fill="none"
               className="LineChart__inspect-ring"
               strokeWidth={(INSPECT_DOT_RADIUS + INSPECT_DOT_RING_WIDTH) * 2}
@@ -490,7 +492,7 @@ export const LineChart = React.memo(function LineChart({
               vectorEffect="non-scaling-stroke"
             />
             <path
-              d={`M${inspectedCoord.x},${inspectedCoord.y} h0.01`}
+              d={dotPath(inspectedCoord)}
               fill="none"
               stroke="currentColor"
               strokeWidth={INSPECT_DOT_RADIUS * 2}
@@ -501,7 +503,7 @@ export const LineChart = React.memo(function LineChart({
           </>
         ) : (
           <path
-            d={`M${endPoint.x},${endPoint.y} h0.01`}
+            d={dotPath(endPoint)}
             fill="none"
             stroke="currentColor"
             strokeWidth={END_DOT_RADIUS * 2}

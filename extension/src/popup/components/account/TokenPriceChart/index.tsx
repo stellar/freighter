@@ -86,6 +86,10 @@ export const formatChartPrice = (value: BigNumber): string => {
   );
 };
 
+/** The inspect tooltip's text for a raw point price. */
+export const formatInspectedPriceLabel = (price: string): string =>
+  `$${formatChartPrice(new BigNumber(price))}`;
+
 /** True when the formatted price parses to zero (grouping separators stripped). */
 export const isFormattedZero = (formatted: string): boolean =>
   new BigNumber(formatted.replace(/,/g, "")).isZero();
@@ -722,7 +726,7 @@ export const TokenPriceChart = ({
                 inspectedIndex={inspectedIndex}
                 inspectedLabel={
                   inspectedPoint
-                    ? `$${formatChartPrice(new BigNumber(inspectedPoint.p))}`
+                    ? formatInspectedPriceLabel(inspectedPoint.p)
                     : undefined
                 }
                 onInspectStart={handleInspectStart}

@@ -14,7 +14,10 @@ import { MAINNET_NETWORK_DETAILS } from "@shared/constants/stellar";
 import { sendMessageToBackground } from "@shared/api/helpers/extensionMessaging";
 import { makeHistory } from "@shared/api/__tests__/fixtures/tokenPriceHistory";
 import { makeDummyStore } from "popup/__testHelpers__";
-import { installPointerEventPolyfill } from "popup/__testHelpers__/pointerEvents";
+import {
+  installPointerEventPolyfill,
+  mockChartRect,
+} from "popup/__testHelpers__/pointerEvents";
 import { TokenPriceChart } from "popup/components/account/TokenPriceChart";
 import { RANGE_SWITCH_DEBOUNCE_MS } from "popup/components/account/TokenPriceChart/constants";
 import { useGetTokenPriceHistory } from "helpers/hooks/useGetTokenPriceHistory";
@@ -188,9 +191,7 @@ describe("token_chart analytics payloads (frozen cross-platform fixture)", () =>
       expect(screen.getByTestId("TokenPriceChart__svg")).toBeInTheDocument(),
     );
 
-    jest
-      .spyOn(SVGElement.prototype, "getBoundingClientRect")
-      .mockReturnValue({ left: 0, width: 320, top: 0, height: 140 } as DOMRect);
+    mockChartRect(320, 140);
     fireEvent.pointerDown(screen.getByTestId("TokenPriceChart__svg"), {
       clientX: 10,
       pointerId: 1,

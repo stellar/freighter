@@ -23,7 +23,10 @@ import {
   makeHistory,
 } from "@shared/api/__tests__/fixtures/tokenPriceHistory";
 import { mockAccounts, Wrapper, mockBalances } from "popup/__testHelpers__";
-import { installPointerEventPolyfill } from "popup/__testHelpers__/pointerEvents";
+import {
+  installPointerEventPolyfill,
+  mockChartRect,
+} from "popup/__testHelpers__/pointerEvents";
 import { resetCacheWriteClaims } from "helpers/cacheWrites";
 import { RANGE_SWITCH_DEBOUNCE_MS } from "popup/components/account/TokenPriceChart/constants";
 import { AppDataType } from "helpers/hooks/useGetAppData";
@@ -875,9 +878,15 @@ describe("AssetDetail", () => {
       statsSpy.mockReset().mockResolvedValue({} as any);
     });
 
+    // Restored on its own: `jest.restoreAllMocks()` would also detach the
+    // describe-scoped `historySpy`/`statsSpy` from every later test.
+    let rectSpy: ReturnType<typeof mockChartRect> | undefined;
+
     afterEach(() => {
       resetCacheWriteClaims();
       jest.useRealTimers();
+      rectSpy?.mockRestore();
+      rectSpy = undefined;
     });
 
     const makeProps = () =>
@@ -959,7 +968,7 @@ describe("AssetDetail", () => {
     });
 
     it("shows the inspected point's price in the header while dragging, and spot again on release", async () => {
-      // 3 evenly-spaced buckets → bucket ends 0, 900, 1800 → viewBox x 0, 160,
+      // 3 evenly-spaced buckets → bucket ends 900, 1800, 2700 → viewBox x 0, 160,
       // 320 (§ getChartCoordinates), independent of `resolutionSeconds`.
       const INSPECTABLE_HISTORY = makeHistory({
         points: [
@@ -979,14 +988,7 @@ describe("AssetDetail", () => {
 
       await waitFor(() => expect(delta().textContent).toBe("+$0.06 (30.00%)"));
 
-      jest
-        .spyOn(SVGElement.prototype, "getBoundingClientRect")
-        .mockReturnValue({
-          left: 0,
-          width: 640,
-          top: 0,
-          height: 280,
-        } as DOMRect);
+      rectSpy = mockChartRect();
       const svg = await screen.findByTestId("TokenPriceChart__svg");
 
       // 640px-wide element → clientX 320 is viewBox x 160 → nearest is index 1
@@ -1025,46 +1027,34 @@ describe("AssetDetail", () => {
 
       await waitFor(() => expect(delta().textContent).toBe("+$0.06 (30.00%)"));
 
-      const rectSpy = jest
-        .spyOn(SVGElement.prototype, "getBoundingClientRect")
-        .mockReturnValue({
-          left: 0,
-          width: 640,
-          top: 0,
-          height: 280,
-        } as DOMRect);
+      rectSpy = mockChartRect();
+      fireEvent.pointerDown(await screen.findByTestId("TokenPriceChart__svg"), {
+        clientX: 320,
+        pointerId: 1,
+      });
+      expect(screen.getByTestId("AssetDetail__price")).toHaveTextContent(
+        "$0.22",
+      );
 
-      try {
-        fireEvent.pointerDown(await screen.findByTestId("TokenPriceChart__svg"), {
-          clientX: 320,
-          pointerId: 1,
-        });
-        expect(screen.getByTestId("AssetDetail__price")).toHaveTextContent(
-          "$0.22",
-        );
+      // No pointerup: the section goes away underneath the drag.
+      rerender(
+        <Wrapper
+          routes={[ROUTES.account]}
+          state={makeState({ isChartEnabled: false, price })}
+        >
+          <AssetDetail {...makeProps()} />
+        </Wrapper>,
+      );
 
-        // No pointerup: the section goes away underneath the drag.
-        rerender(
-          <Wrapper
-            routes={[ROUTES.account]}
-            state={makeState({ isChartEnabled: false, price })}
-          >
-            <AssetDetail {...makeProps()} />
-          </Wrapper>,
-        );
-
-        await waitFor(() =>
-          expect(screen.queryByTestId("TokenPriceChart")).toBeNull(),
-        );
-        expect(screen.getByTestId("AssetDetail__price")).toHaveTextContent(
-          "$0.30",
-        );
-        // And the range delta is gone with it — the 24h figure is what this
-        // view shows without a chart.
-        expect(delta().textContent).toBe("1.09%");
-      } finally {
-        rectSpy.mockRestore();
-      }
+      await waitFor(() =>
+        expect(screen.queryByTestId("TokenPriceChart")).toBeNull(),
+      );
+      expect(screen.getByTestId("AssetDetail__price")).toHaveTextContent(
+        "$0.30",
+      );
+      // And the range delta is gone with it — the 24h figure is what this
+      // view shows without a chart.
+      expect(delta().textContent).toBe("1.09%");
     });
 
     it("paints a losing range red — header delta and chart artwork", async () => {

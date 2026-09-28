@@ -8,7 +8,10 @@ import {
 } from "@testing-library/react";
 
 import { ApiTokenPriceHistoryPoint } from "@shared/api/types";
-import { installPointerEventPolyfill } from "popup/__testHelpers__/pointerEvents";
+import {
+  installPointerEventPolyfill,
+  mockChartRect,
+} from "popup/__testHelpers__/pointerEvents";
 import { LineChart, getPlottedRangeEnd, inspectTooltipTop } from "../LineChart";
 import {
   CHART_MORPH_DURATION_MS,
@@ -227,9 +230,7 @@ describe("drag to inspect", () => {
     );
 
   beforeEach(() => {
-    jest
-      .spyOn(SVGElement.prototype, "getBoundingClientRect")
-      .mockReturnValue({ left: 0, width: 640, top: 0, height: 280 } as DOMRect);
+    mockChartRect();
   });
   afterEach(() => jest.restoreAllMocks());
 
