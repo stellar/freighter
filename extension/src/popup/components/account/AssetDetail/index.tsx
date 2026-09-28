@@ -248,8 +248,9 @@ export const AssetDetail = ({
     isPriceHistoryEnabled && isMainnet(networkDetails) && !isLpShare;
   // The scope tag cannot tell a remount from a return: hiding the chart and
   // showing it again for the same scope would revive the delta under the
-  // remounted chart's default range. Drop it while the chart is hidden.
-  if (!isChartShown && rangeDelta.delta !== LOADING_DELTA) {
+  // remounted chart's default range. Drop it while the chart is hidden — off
+  // the path, or unmounted under an operation modal.
+  if ((!isChartShown || activeAssetId) && rangeDelta.delta !== LOADING_DELTA) {
     setRangeDelta({ scope: scopeKey, delta: LOADING_DELTA });
   }
 
@@ -298,11 +299,10 @@ export const AssetDetail = ({
   const isShowingSend = hasBalance;
 
   // See the `AssetDetail__price` div below for why this falls back to spot.
-  // The `isChartShown` guard is belt-and-braces with the render-time
-  // `LOADING_DELTA` reset above: either alone keeps an inspected price off a
-  // hidden chart's header.
+  // The guard mirrors the render-time `LOADING_DELTA` reset above: either
+  // alone keeps an inspected price off a hidden chart's header.
   const headerPrice =
-    (isChartShown ? shownDelta.inspectedPrice : null) ??
+    (isChartShown && !activeAssetId ? shownDelta.inspectedPrice : null) ??
     assetPrice?.currentPrice;
 
   return activeAssetId ? (
