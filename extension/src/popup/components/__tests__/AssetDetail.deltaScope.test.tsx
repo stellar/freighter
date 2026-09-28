@@ -106,6 +106,7 @@ describe("AssetDetail header delta scope", () => {
         isLoading: false,
         text: "+$0.0014 (0.86%)",
         colorClass: PriceDirection.Positive,
+        inspectedPrice: null,
       });
     });
     expect(delta().textContent).toBe("+$0.0014 (0.86%)");
@@ -143,6 +144,7 @@ describe("AssetDetail header delta scope", () => {
         isLoading: false,
         text: "+$0.0602 (32.12%)",
         colorClass: PriceDirection.Positive,
+        inspectedPrice: null,
       });
     });
     expect(delta().textContent).toBe("+$0.0602 (32.12%)");

@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useSelector } from "react-redux";
 import { BigNumber } from "bignumber.js";
 import { useTranslation } from "react-i18next";
@@ -125,15 +131,6 @@ const AssetDetailOperations = React.memo(function AssetDetailOperations({
     </>
   );
 });
-
-/** What the header shows before the chart section reports anything — and what
- * it must fall back to the moment that section goes away. */
-const INITIAL_RANGE_DELTA: RangeDeltaState = {
-  isLoading: true,
-  text: "",
-  colorClass: PriceDirection.Neutral,
-  inspectedPrice: null,
-};
 
 interface AssetDetailProps {
   accountBalances: AccountBalances;
@@ -303,8 +300,8 @@ export const AssetDetail = ({
   // See the `AssetDetail__price` div below for why this falls back to spot.
   // Guarded on `isChartShown` as well as on the reported value: an inspected
   // price only ever means anything while the chart that produced it is on
-  // screen, and the guard holds even in the render before the reset effect
-  // above has run.
+  // screen, and the guard holds in the render before the `LOADING_DELTA`
+  // reset above lands.
   const headerPrice =
     (isChartShown ? shownDelta.inspectedPrice : null) ??
     assetPrice?.currentPrice;
