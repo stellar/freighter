@@ -12,11 +12,7 @@ export const CHART_VERTICAL_PADDING = 8;
 
 /** Drag-to-inspect (Phase 3): background ring around the inspected dot. */
 export const INSPECT_DOT_RING_WIDTH = 2;
-/**
- * Radius of the dot on the inspected point, in viewBox units (≈px): Figma's
- * 8px inspected dot. Deliberately distinct from `END_DOT_RADIUS` — the end dot
- * is 6px — so a change to one never silently resizes the other.
- */
+/** Figma's 8px inspected dot, in viewBox units (≈px); distinct from the 6px end dot. */
 export const INSPECT_DOT_RADIUS = 4;
 /** Left of this fraction of the width the tooltip flips to the guide's right. */
 export const INSPECT_TOOLTIP_FLIP_RATIO = 0.3;

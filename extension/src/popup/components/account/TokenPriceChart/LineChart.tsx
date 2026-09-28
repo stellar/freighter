@@ -286,16 +286,7 @@ const toViewBoxX = (event: React.PointerEvent<SVGSVGElement>): number => {
   return ((event.clientX - rect.left) / rect.width) * CHART_VIEWBOX_WIDTH;
 };
 
-/**
- * `top` (viewBox/px, the two coincide — see `CHART_VIEWBOX_HEIGHT` and
- * `CHART_HEIGHT_PX`) for the inspect tooltip pill, centred on the inspected
- * dot's y so the pill's tip (the `::after` at 50%) points at it. Clamped to
- * stay inside the plot band, so the pill never overhangs into the label rows
- * above or below it — at that clamp the tip still points at the dot's x but
- * is no longer vertically centred on it, which is the Figma's own behaviour
- * near the top (its example dot sits near the top edge and the pill sits
- * flush with the band rather than centred on the dot).
- */
+/** Centred on the inspected dot and clamped inside the plot band so the pill never overhangs the label rows. */
 export const inspectTooltipTop = (y: number): number =>
   Math.min(
     Math.max(y - INSPECT_TOOLTIP_HEIGHT_PX / 2, 0),
@@ -340,15 +331,8 @@ export const LineChart = React.memo(function LineChart({
   // the target geometry, whose indices are the points' indices.
   const inspectedCoord = isInspecting ? coordinates[inspectedIndex] : undefined;
 
-  // The pointer currently driving the inspection, or null when none is down.
-  // It is both the activation lock (a second finger cannot restart or hijack a
-  // live drag) and the "pointer is down" state the move handler gates on — one
-  // ref rather than two, so the two can never disagree. Deliberately NOT the
-  // `inspectedIndex` prop: the parent clears that when the series changes
-  // mid-drag, and a drag that outlives a range switch (a cached switch; an
-  // uncached one replaces the chart with the skeleton and ends the drag) must
-  // be able to re-snap into the new series rather than going dead under the
-  // finger.
+  // The pointer id that armed the inspection; null while idle. Any other
+  // pointer is ignored so a second finger cannot restart or hijack the drag.
   const activePointerIdRef = useRef<number | null>(null);
   const downClientXRef = useRef(0);
   const hasCrossedMoveThresholdRef = useRef(false);
