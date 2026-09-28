@@ -474,7 +474,12 @@ export const TokenPriceChart = ({
       if (!chartHistory) {
         return;
       }
-      setInspected({ history: chartHistory, index });
+      // Returning `prev` bails out of the re-render: most moves stay on one point.
+      setInspected((prev) =>
+        prev && prev.history === chartHistory && prev.index === index
+          ? prev
+          : { history: chartHistory, index },
+      );
       if (!brushedThisActivationRef.current) {
         brushedThisActivationRef.current = true;
         // Once per activation, on the first move beyond the tap threshold and

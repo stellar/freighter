@@ -1101,6 +1101,41 @@ describe("TokenPriceChart", () => {
       ]);
     });
 
+    it("a move that snaps to the already-inspected index does not re-render", async () => {
+      respondByRange({ "1D": INSPECTABLE_HISTORY });
+      const onRender = jest.fn();
+      render(
+        <React.Profiler id="chart" onRender={onRender}>
+          <Provider store={makeDummyStore({})}>
+            <TokenPriceChart
+              token="native"
+              networkDetails={MAINNET_NETWORK_DETAILS}
+              fallback24hPercent="1.09"
+              onDeltaChange={handleDelta}
+            />
+          </Provider>
+        </React.Profiler>,
+      );
+      await waitFor(() =>
+        expect(screen.getByTestId("TokenPriceChart__polyline")).toBeDefined(),
+      );
+
+      mockChartRect();
+      const svg = screen.getByTestId("TokenPriceChart__svg");
+      fireEvent.pointerDown(svg, { clientX: 0, pointerId: 1 });
+      fireEvent.pointerMove(svg, { clientX: 320, pointerId: 1 });
+      expect(reportedDelta?.inspectedPrice).toBe("0.22");
+      const commits = onRender.mock.calls.length;
+
+      // All still nearest index 1 (x=160). React may render once more before
+      // its eager bailout engages; a fresh object per move commits every time.
+      fireEvent.pointerMove(svg, { clientX: 330, pointerId: 1 });
+      fireEvent.pointerMove(svg, { clientX: 310, pointerId: 1 });
+      fireEvent.pointerMove(svg, { clientX: 325, pointerId: 1 });
+
+      expect(onRender.mock.calls.length).toBeLessThanOrEqual(commits + 1);
+    });
+
     it("unmounting mid-drag tears down cleanly", async () => {
       // The pointer is still down and captured when the section goes away (a
       // kill-switch flip, a back navigation). Nothing may set state on the
