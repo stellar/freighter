@@ -660,17 +660,34 @@ const utf8SequenceWidth = (byte: number) => {
 };
 
 /**
- * Codepoints that decode cleanly but cannot be seen: C1 controls, bidi
- * overrides and zero-width marks. Left as-is they let one signed string
- * impersonate another on the approval screen — the same defect as a lenient
- * byte decode, just spelled in valid UTF-8.
+ * Unicode's own class for codepoints that are meant to render as nothing:
+ * soft hyphens, zero-width marks, bidi controls, variation selectors and the
+ * tag block. Named rather than hand-listed so the boundary is one the standard
+ * maintains — the previous enumeration missed 4159 codepoints, U+2060 WORD
+ * JOINER and the whole of U+E0000..U+E0FFF among them.
+ */
+const DEFAULT_IGNORABLE = /\p{Default_Ignorable_Code_Point}/u;
+
+/**
+ * Codepoints that decode cleanly but cannot be seen. Left as-is they let one
+ * signed string impersonate another on the approval screen — the same defect
+ * as a lenient byte decode, just spelled in valid UTF-8.
+ *
+ * Two things are unioned onto the default-ignorable class because they are not
+ * in it: the C1 controls, which reach this path as `0xc2 0x80`-style sequences;
+ * and U+2028/U+2029, which draw as nothing but insert a real line break, so an
+ * unescaped one would split a signed map entry across two lines and break the
+ * one-entry-per-line invariant {@link mapEntriesToTokens} relies on.
+ *
+ * This cannot be made complete, and is not trying to be: `\u0430` and `a` still
+ * render identically, and no escape set reaches homoglyphs. It closes the
+ * invisible channel, not the confusable one.
  */
 const isInvisible = (code: number) =>
   (code >= 0x7f && code <= 0x9f) ||
-  (code >= 0x200b && code <= 0x200f) ||
-  (code >= 0x202a && code <= 0x202e) ||
-  (code >= 0x2066 && code <= 0x2069) ||
-  code === 0xfeff;
+  code === 0x2028 ||
+  code === 0x2029 ||
+  DEFAULT_IGNORABLE.test(String.fromCodePoint(code));
 
 const strictUtf8 = new TextDecoder("utf-8", { fatal: true, ignoreBOM: true });
 
@@ -1025,8 +1042,10 @@ export const scValToDisplayTokens = (
       return [value("ledgerKeyContractInstance", scVal.type)];
     }
 
+    // Exhaustive today; a future arm should still name itself rather than
+    // reach the signing screen as a bare `null`.
     default: {
-      return [value("null", (scVal as xdr.ScVal).type)];
+      return [value((scVal as xdr.ScVal).type, (scVal as xdr.ScVal).type)];
     }
   }
 };
@@ -1042,80 +1061,6 @@ export const scValToDisplayValue = (
   scValToDisplayTokens(scVal, opts)
     .map((token) => token.text)
     .join("");
-
-export const scValByType = (scVal: xdr.ScVal): string => {
-  switch (scVal.type) {
-    case "scvAddress": {
-      return scvAddressToString(scVal.address);
-    }
-
-    case "scvBool": {
-      return `${scVal.b}`;
-    }
-
-    case "scvBytes": {
-      return xdr.encodeBytes(scVal.bytes.toBytes(), "hex");
-    }
-
-    case "scvContractInstance": {
-      // A non-wasm arm used to return `undefined`, i.e. an empty row; naming
-      // the arm alone still dropped the storage map and the external
-      // reference's owner and tag.
-      return scValToDisplayValue(scVal);
-    }
-
-    case "scvError": {
-      return `${scVal.error.value}`;
-    }
-
-    case "scvExecutableTag": {
-      return xdrStringToDisplay(scVal.executableTag);
-    }
-
-    case "scvTimepoint":
-    case "scvDuration":
-    case "scvI128":
-    case "scvI256":
-    case "scvI32":
-    case "scvI64":
-    case "scvU128":
-    case "scvU256":
-    case "scvU32":
-    case "scvU64": {
-      return scValToNative(scVal).toString();
-    }
-
-    case "scvLedgerKeyNonce": {
-      return scVal.nonceKey.nonce.toString();
-    }
-
-    case "scvLedgerKeyContractInstance": {
-      return "ledgerKeyContractInstance";
-    }
-
-    case "scvVec":
-    case "scvMap": {
-      return scValToDisplayValue(scVal);
-    }
-
-    case "scvString": {
-      return xdrStringToDisplay(scVal.str);
-    }
-
-    case "scvSymbol": {
-      return xdrStringToDisplay(scVal.sym);
-    }
-
-    case "scvVoid": {
-      return "void";
-    }
-
-    // Exhaustive today; a future arm should still name itself rather than
-    // reach the signing screen as an empty row.
-    default:
-      return (scVal as xdr.ScVal).type;
-  }
-};
 
 /**
  * Extracts the Soroban authorization payload struct from a HashIdPreimage a

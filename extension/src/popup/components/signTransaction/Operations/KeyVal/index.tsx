@@ -26,7 +26,7 @@ import {
   getContractFnArgNames,
   getCreateContractArgs,
   InvocationTree,
-  scValByType,
+  scValToDisplayValue,
   xdrStringToDisplay,
 } from "popup/helpers/soroban";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
@@ -572,7 +572,7 @@ export const KeyValueInvokeHostFnArgs = ({
           would give those rows the same key. The list only ever renders in
           call order, so the index is both stable and unique. */}
           {args.map((arg, ind) => (
-            <CopyText textToCopy={scValByType(arg)} key={`arg-${ind}`}>
+            <CopyText textToCopy={scValToDisplayValue(arg)} key={`arg-${ind}`}>
               <div className="Parameters">
                 <div className="ParameterKey" data-testid="ParameterKey">
                   {argNames?.[ind]}

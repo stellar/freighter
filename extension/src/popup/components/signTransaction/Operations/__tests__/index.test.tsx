@@ -22,7 +22,7 @@ import {
 } from "stellar-sdk";
 
 import { makeDummyStore } from "popup/__testHelpers__";
-import { scValByType } from "popup/helpers/soroban";
+import { scValToDisplayValue } from "popup/helpers/soroban";
 import { Operations } from "../index";
 
 // setOptions never triggers the asset scanner, but mock it so the component's
@@ -571,18 +571,26 @@ describe("Operations — Soroban contract-call parameters", () => {
   });
 
   // Displayed text and copied text are built from the same token stream; this
-  // is what stops them drifting apart.
-  it("copies exactly what it displays", async () => {
-    const arg = xdr.ScVal.scvMap([
-      new xdr.ScMapEntry({
-        key: xdr.ScVal.scvSymbol("amount"),
-        val: xdr.ScVal.scvU64(BigInt(100)),
-      }),
-    ]);
-
+  // is what stops them drifting apart. The scalar case is the one that does
+  // the work: this used to assert against a map alone, the one shape where the
+  // old copy path agreed by delegating, so it could not catch any drift.
+  it.each([
+    ["a scalar", xdr.ScVal.scvString("alice"), '"alice"'],
+    [
+      "a container",
+      xdr.ScVal.scvMap([
+        new xdr.ScMapEntry({
+          key: xdr.ScVal.scvSymbol("amount"),
+          val: xdr.ScVal.scvU64(BigInt(100)),
+        }),
+      ]),
+      "{\n  amount: 100\n}",
+    ],
+  ])("copies exactly what it displays for %s", async (_name, arg, expected) => {
     renderOps(invokeContract([arg]));
 
     const rendered = await screen.findByTestId("ParameterValue");
-    expect(rendered.textContent).toEqual(scValByType(arg));
+    expect(rendered.textContent).toEqual(expected);
+    expect(rendered.textContent).toEqual(scValToDisplayValue(arg));
   });
 });

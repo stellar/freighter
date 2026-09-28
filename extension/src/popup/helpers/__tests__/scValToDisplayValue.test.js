@@ -1,7 +1,7 @@
 import { Address, xdr, StrKey } from "stellar-sdk";
 import yaml from "js-yaml";
 
-import { scValByType, scValToDisplayTokens } from "../soroban";
+import { scValToDisplayValue, scValToDisplayTokens } from "../soroban";
 
 const ACCOUNT = "GBBM6BKZPEHWYO3E3YKREDPQXMS4VK35YLNU7NFBRI26RAN7GI5POFBB";
 const CONTRACT = "CA3D5KRYM6CB7OWQ6TWYRR3Z4T7GNZLKERYNZGGA5SOAOPIFY6YQGAXE";
@@ -27,7 +27,7 @@ const WASM_HASH_HEX = WASM_HASH.toString("hex");
 const invalidUtf8 = (suffix) =>
   new Uint8Array([...Buffer.from("alice"), suffix]);
 
-describe("scValByType", () => {
+describe("scValToDisplayValue", () => {
   it("should render addresses as strings", () => {
     const scAddressAccount = xdr.ScAddress.scAddressTypeAccount(
       xdr.PublicKey.publicKeyTypeEd25519(
@@ -35,59 +35,60 @@ describe("scValByType", () => {
       ),
     );
     const accountAddress = xdr.ScVal.scvAddress(scAddressAccount);
-    const parsedAccountAddress = scValByType(accountAddress);
+    const parsedAccountAddress = scValToDisplayValue(accountAddress);
     expect(parsedAccountAddress).toEqual(ACCOUNT);
 
     const scAddressContract = xdr.ScAddress.scAddressTypeContract(
       new xdr.ContractId(StrKey.decodeContract(CONTRACT)),
     );
     const contractAddress = xdr.ScVal.scvAddress(scAddressContract);
-    const parsedContractAddress = scValByType(contractAddress);
+    const parsedContractAddress = scValToDisplayValue(contractAddress);
     expect(parsedContractAddress).toEqual(CONTRACT);
   });
   it("should render booleans as strings", () => {
     const bool = xdr.ScVal.scvBool(true);
-    const parsedBool = scValByType(bool);
+    const parsedBool = scValToDisplayValue(bool);
     expect(parsedBool).toEqual("true");
 
     // Returning the raw boolean made React render `false` as nothing at all,
     // so a signed `false` argument used to reach the screen as an empty row.
-    expect(scValByType(xdr.ScVal.scvBool(false))).toEqual("false");
+    expect(scValToDisplayValue(xdr.ScVal.scvBool(false))).toEqual("false");
   });
-  it("should render bytes as a a hex string", () => {
+  it("should render bytes as prefixed hex", () => {
     const bytesBuffer = Buffer.from([0x00, 0x01]);
     const bytes = xdr.ScVal.scvBytes(bytesBuffer);
-    const parsedBytes = scValByType(bytes);
-    expect(parsedBytes).toEqual("0001");
+    const parsedBytes = scValToDisplayValue(bytes);
+    expect(parsedBytes).toEqual("0x0001");
   });
-  it("should render an error as a string, including the contract code and name", () => {
-    const contractErrorCode = 1;
-    const contractError = xdr.ScError.sceContract(contractErrorCode);
+  // The bare union value this used to render is a base64 XDR blob for every
+  // arm that is not a contract error, so the code alone never identified the
+  // error the signer is approving.
+  it("should render an error with its arm and code", () => {
+    const contractError = xdr.ScError.sceContract(1);
     const scvContractError = xdr.ScVal.scvError(contractError);
-    const parsedContractError = scValByType(scvContractError);
-    expect(parsedContractError).toEqual(`${contractErrorCode}`);
+    expect(scValToDisplayValue(scvContractError)).toEqual("error(contract:1)");
 
-    const scErrorCode = xdr.ScErrorCode.scecArithDomain;
-    const wasmError = xdr.ScError.sceWasmVm(scErrorCode);
+    const wasmError = xdr.ScError.sceWasmVm(xdr.ScErrorCode.scecArithDomain);
     const scvWasmError = xdr.ScVal.scvError(wasmError);
-    const parsedWasmError = scValByType(scvWasmError);
-    expect(parsedWasmError).toEqual(`${scErrorCode}`);
+    expect(scValToDisplayValue(scvWasmError)).toEqual(
+      "error(system:scecArithDomain)",
+    );
   });
   it("should render number types as strings", () => {
     const num = 1;
     const scvInt64 = xdr.ScVal.scvI64(BigInt(num));
-    const parsedInt = scValByType(scvInt64);
+    const parsedInt = scValToDisplayValue(scvInt64);
     expect(parsedInt).toEqual(num.toString());
   });
   it("should render ledger keys as strings", () => {
     const nonce = 1;
     const nonceKey = new xdr.ScNonceKey({ nonce: BigInt(nonce) });
     const ledgerKey = xdr.ScVal.scvLedgerKeyNonce(nonceKey);
-    const parsedLedgerKey = scValByType(ledgerKey);
+    const parsedLedgerKey = scValToDisplayValue(ledgerKey);
     expect(parsedLedgerKey).toEqual(nonce.toString());
 
     const ledgerKeyContractInstance = xdr.ScVal.scvLedgerKeyContractInstance();
-    const parsedInstance = scValByType(ledgerKeyContractInstance);
+    const parsedInstance = scValToDisplayValue(ledgerKeyContractInstance);
     expect(parsedInstance).toEqual("ledgerKeyContractInstance");
   });
   // An SCMap is a list of signed entries, not a JS object. `scValToNative`
@@ -100,7 +101,7 @@ describe("scValByType", () => {
       const xdrMap = xdr.ScVal.scvMap([
         mapEntry(xdr.ScVal.scvString("key"), xdr.ScVal.scvU64(BigInt(1))),
       ]);
-      expect(scValByType(xdrMap)).toEqual('{\n  "key": 1\n}');
+      expect(scValToDisplayValue(xdrMap)).toEqual('{\n  "key": 1\n}');
     });
 
     it("should render a vector as a value literal", () => {
@@ -108,12 +109,12 @@ describe("scValByType", () => {
         xdr.ScVal.scvU32(1),
         xdr.ScVal.scvString("two"),
       ]);
-      expect(scValByType(xdrVec)).toEqual('[\n  1,\n  "two"\n]');
+      expect(scValToDisplayValue(xdrVec)).toEqual('[\n  1,\n  "two"\n]');
     });
 
     it("should render empty maps and vectors", () => {
-      expect(scValByType(xdr.ScVal.scvMap([]))).toEqual("{}");
-      expect(scValByType(xdr.ScVal.scvVec([]))).toEqual("[]");
+      expect(scValToDisplayValue(xdr.ScVal.scvMap([]))).toEqual("{}");
+      expect(scValToDisplayValue(xdr.ScVal.scvVec([]))).toEqual("[]");
     });
 
     it("should render every entry of a map with mixed-type keys", () => {
@@ -123,7 +124,7 @@ describe("scValByType", () => {
       ]);
       // Both entries survive, and the key types stay distinguishable: the u64
       // key is bare where the string key is quoted.
-      expect(scValByType(xdrMap)).toEqual(
+      expect(scValToDisplayValue(xdrMap)).toEqual(
         '{\n  1: "from-u64",\n  "1": "from-string"\n}',
       );
     });
@@ -138,7 +139,7 @@ describe("scValByType", () => {
           mapEntry(structKey(id), xdr.ScVal.scvString(`v${id}`)),
         ),
       );
-      const rendered = scValByType(xdrMap);
+      const rendered = scValToDisplayValue(xdrMap);
       expect(rendered).toEqual(
         '{\n  { id: 0 }: "v0",\n  { id: 1 }: "v1",\n  { id: 2 }: "v2",\n  { id: 3 }: "v3"\n}',
       );
@@ -150,7 +151,9 @@ describe("scValByType", () => {
         mapEntry(xdr.ScVal.scvSymbol("a"), xdr.ScVal.scvString("sym")),
         mapEntry(xdr.ScVal.scvString("a"), xdr.ScVal.scvString("str")),
       ]);
-      expect(scValByType(xdrMap)).toEqual('{\n  a: "sym",\n  "a": "str"\n}');
+      expect(scValToDisplayValue(xdrMap)).toEqual(
+        '{\n  a: "sym",\n  "a": "str"\n}',
+      );
     });
 
     it("should render every entry of an address-keyed map", () => {
@@ -158,7 +161,7 @@ describe("scValByType", () => {
         mapEntry(xdr.ScVal.scvAddress(accountAddress()), xdr.ScVal.scvU32(0)),
         mapEntry(xdr.ScVal.scvAddress(contractAddress()), xdr.ScVal.scvU32(1)),
       ]);
-      expect(scValByType(xdrMap)).toEqual(
+      expect(scValToDisplayValue(xdrMap)).toEqual(
         `{\n  ${ACCOUNT}: 0,\n  ${CONTRACT}: 1\n}`,
       );
     });
@@ -169,7 +172,7 @@ describe("scValByType", () => {
           mapEntry(xdr.ScVal.scvU32(id), xdr.ScVal.scvBool(true)),
         ),
       );
-      expect(scValByType(xdrMap)).toEqual(
+      expect(scValToDisplayValue(xdrMap)).toEqual(
         "{\n  0: true,\n  1: true,\n  2: true\n}",
       );
     });
@@ -187,7 +190,7 @@ describe("scValByType", () => {
           ),
         ]),
       ]);
-      expect(scValByType(xdrVec)).toEqual(
+      expect(scValToDisplayValue(xdrVec)).toEqual(
         '[\n  {\n    1: "from-u64",\n    "1": "from-string"\n  }\n]',
       );
     });
@@ -198,7 +201,7 @@ describe("scValByType", () => {
       ]);
       // Not `{"type":"Buffer","data":[222,…]}`, which is what a JSON
       // stringification of the decoded value produces.
-      expect(scValByType(xdrVec)).toEqual("[\n  0xdeadbeef\n]");
+      expect(scValToDisplayValue(xdrVec)).toEqual("[\n  0xdeadbeef\n]");
     });
   });
 
@@ -207,55 +210,95 @@ describe("scValByType", () => {
   // payloads render as one screen string. These cases pin the strict decode.
   describe("non-UTF-8 text", () => {
     it("should escape an invalid byte in a string", () => {
-      expect(scValByType(xdr.ScVal.scvString(invalidUtf8(0xff)))).toEqual(
-        "alice\\xff",
-      );
+      expect(
+        scValToDisplayValue(xdr.ScVal.scvString(invalidUtf8(0xff))),
+      ).toEqual('"alice\\xff"');
     });
 
     // The hex form this used to emit could be spelled out by a string whose
     // text happened to read `string(0x...)` — one screen string standing for
     // two signed payloads, which is the defect, not the fix.
     it("should not let valid text impersonate an escaped byte string", () => {
-      const binary = scValByType(xdr.ScVal.scvString(invalidUtf8(0xff)));
-      const text = scValByType(xdr.ScVal.scvString("alice\\xff"));
-      expect(text).toEqual("alice\\\\xff");
+      const binary = scValToDisplayValue(
+        xdr.ScVal.scvString(invalidUtf8(0xff)),
+      );
+      const text = scValToDisplayValue(xdr.ScVal.scvString("alice\\xff"));
+      expect(text).toEqual('"alice\\\\xff"');
       expect(text).not.toEqual(binary);
     });
 
     // `toJson()`, the SDK's SEP-0051 form, hex-escapes every byte above
     // ASCII, which would render this as `caf\xc3\xa9 \xe2\x9c\x93`.
     it("should leave legible non-ASCII text alone", () => {
-      expect(scValByType(xdr.ScVal.scvString("café ✓"))).toEqual("café ✓");
+      expect(scValToDisplayValue(xdr.ScVal.scvString("café ✓"))).toEqual(
+        '"café ✓"',
+      );
     });
 
     // Valid UTF-8 that cannot be seen: left as-is, a bidi override reorders
     // what is drawn without changing what is signed.
-    it("should escape invisible and control codepoints", () => {
-      expect(scValByType(xdr.ScVal.scvString("a\u202Eb"))).toEqual(
-        "a\\u{202e}b",
+    it("should escape control codepoints", () => {
+      expect(scValToDisplayValue(xdr.ScVal.scvString("a\u202Eb"))).toEqual(
+        '"a\\u{202e}b"',
       );
-      expect(scValByType(xdr.ScVal.scvString("a\nb\u0007"))).toEqual(
-        "a\\nb\\x07",
+      expect(scValToDisplayValue(xdr.ScVal.scvString("a\nb\u0007"))).toEqual(
+        '"a\\nb\\x07"',
+      );
+    });
+
+    // The escaped set is Unicode's `Default_Ignorable_Code_Point` class rather
+    // than a hand-picked list, because a hand-picked list is exactly what let
+    // these through. One case per family it now covers, plus the two things
+    // unioned on top of the class.
+    it.each([
+      ["a word joiner", "\u2060", "\\u{2060}"],
+      ["a soft hyphen", "\u00ad", "\\u{ad}"],
+      ["an arabic letter mark", "\u061c", "\\u{61c}"],
+      ["a variation selector", "\ufe0f", "\\u{fe0f}"],
+      ["a language tag", "\u{e0001}", "\\u{e0001}"],
+      ["a hangul filler", "\u3164", "\\u{3164}"],
+      // Not default-ignorable: draws as nothing, but inserts a real line
+      // break, which would split a signed map entry across two lines.
+      ["a line separator", "\u2028", "\\u{2028}"],
+      // Not default-ignorable either; kept from the ranges it replaced.
+      ["a C1 control", "\u0080", "\\u{80}"],
+    ])("should escape %s", (_name, codepoint, escaped) => {
+      expect(
+        scValToDisplayValue(xdr.ScVal.scvString(`a${codepoint}b`)),
+      ).toEqual(`"a${escaped}b"`);
+    });
+
+    // The point of escaping them at all: two distinct signed strings must not
+    // draw as one on the screen the user approves from.
+    it("should tell an invisible codepoint apart from its absence", () => {
+      expect(scValToDisplayValue(xdr.ScVal.scvString("ab"))).not.toEqual(
+        scValToDisplayValue(xdr.ScVal.scvString("a\u2060b")),
       );
     });
 
     it("should render two distinct invalid-UTF-8 strings differently", () => {
-      const first = scValByType(xdr.ScVal.scvString(invalidUtf8(0xff)));
-      const second = scValByType(xdr.ScVal.scvString(invalidUtf8(0xfe)));
+      const first = scValToDisplayValue(xdr.ScVal.scvString(invalidUtf8(0xff)));
+      const second = scValToDisplayValue(
+        xdr.ScVal.scvString(invalidUtf8(0xfe)),
+      );
       expect(first).not.toEqual(second);
       expect(first).not.toContain("�");
       expect(second).not.toContain("�");
     });
 
     it("should escape an invalid byte in a symbol", () => {
-      expect(scValByType(xdr.ScVal.scvSymbol(invalidUtf8(0xff)))).toEqual(
-        "alice\\xff",
-      );
+      expect(
+        scValToDisplayValue(xdr.ScVal.scvSymbol(invalidUtf8(0xff))),
+      ).toEqual('symbol("alice\\xff")');
     });
 
     it("should escape an invalid byte in an executable tag", () => {
-      const first = scValByType(xdr.ScVal.scvExecutableTag(invalidUtf8(0xff)));
-      const second = scValByType(xdr.ScVal.scvExecutableTag(invalidUtf8(0xfe)));
+      const first = scValToDisplayValue(
+        xdr.ScVal.scvExecutableTag(invalidUtf8(0xff)),
+      );
+      const second = scValToDisplayValue(
+        xdr.ScVal.scvExecutableTag(invalidUtf8(0xfe)),
+      );
       expect(first).toEqual("alice\\xff");
       expect(first).not.toEqual(second);
     });
@@ -264,7 +307,7 @@ describe("scValByType", () => {
       const xdrVec = xdr.ScVal.scvVec([xdr.ScVal.scvString(invalidUtf8(0xff))]);
       // Not `{"0":97,"1":108,…}`, which is what a JSON stringification of the
       // decoded bytes produces.
-      expect(scValByType(xdrVec)).toEqual('[\n  "alice\\xff"\n]');
+      expect(scValToDisplayValue(xdrVec)).toEqual('[\n  "alice\\xff"\n]');
 
       const xdrMap = xdr.ScVal.scvMap([
         mapEntry(
@@ -272,22 +315,28 @@ describe("scValByType", () => {
           xdr.ScVal.scvString(invalidUtf8(0xfe)),
         ),
       ]);
-      expect(scValByType(xdrMap)).toEqual('{\n  "alice\\xff": "alice\\xfe"\n}');
+      expect(scValToDisplayValue(xdrMap)).toEqual(
+        '{\n  "alice\\xff": "alice\\xfe"\n}',
+      );
     });
   });
-  it("should render strings and symbols as strings", () => {
+  // The quoting is what carries the arm: a bare `alice` on the signing screen
+  // would stand for both the string and the symbol.
+  it("should render strings and symbols with their quoting", () => {
     const str = "arbitrary string";
-    const scvString = xdr.ScVal.scvString(str);
-    const parsedString = scValByType(scvString);
-    expect(parsedString).toEqual(str);
+    expect(scValToDisplayValue(xdr.ScVal.scvString(str))).toEqual(`"${str}"`);
+    expect(scValToDisplayValue(xdr.ScVal.scvSymbol(str))).toEqual(
+      `symbol("${str}")`,
+    );
 
-    const scvSym = xdr.ScVal.scvSymbol(str);
-    const parsedSymbol = scValByType(scvSym);
-    expect(parsedSymbol).toEqual(str);
+    // A symbol that is spelled like one stays bare, which is the common case.
+    expect(scValToDisplayValue(xdr.ScVal.scvSymbol("transfer"))).toEqual(
+      "transfer",
+    );
   });
   it("should render void", () => {
     const scvNull = xdr.ScVal.scvVoid();
-    const parsedVoid = scValByType(scvNull);
+    const parsedVoid = scValToDisplayValue(scvNull);
     expect(parsedVoid).toEqual("void");
   });
 
@@ -306,8 +355,8 @@ describe("scValByType", () => {
       xdr.ScVal.scvLedgerKeyContractInstance(),
       sacInstance,
     ]) {
-      expect(typeof scValByType(scVal)).toEqual("string");
-      expect(scValByType(scVal)).not.toEqual("");
+      expect(typeof scValToDisplayValue(scVal)).toEqual("string");
+      expect(scValToDisplayValue(scVal)).not.toEqual("");
     }
   });
 
@@ -323,7 +372,7 @@ describe("scValByType", () => {
       xdr.ContractExecutable.contractExecutableWasm(new xdr.Hash(WASM_HASH));
 
     it("should render the storage map, not just the executable", () => {
-      const rendered = scValByType(
+      const rendered = scValToDisplayValue(
         instance(wasm(), [
           mapEntry(xdr.ScVal.scvSymbol("admin"), xdr.ScVal.scvU32(1)),
         ]),
@@ -333,12 +382,12 @@ describe("scValByType", () => {
     });
 
     it("should tell two instances sharing an executable apart", () => {
-      const first = scValByType(
+      const first = scValToDisplayValue(
         instance(wasm(), [
           mapEntry(xdr.ScVal.scvSymbol("admin"), xdr.ScVal.scvU32(1)),
         ]),
       );
-      const second = scValByType(
+      const second = scValToDisplayValue(
         instance(wasm(), [
           mapEntry(xdr.ScVal.scvSymbol("admin"), xdr.ScVal.scvU32(2)),
         ]),
@@ -349,13 +398,13 @@ describe("scValByType", () => {
     // `storage` is an optional pointer: absent storage and empty storage are
     // two different signed values.
     it("should distinguish absent storage from empty storage", () => {
-      expect(scValByType(instance(wasm(), null))).not.toEqual(
-        scValByType(instance(wasm(), [])),
+      expect(scValToDisplayValue(instance(wasm(), null))).not.toEqual(
+        scValToDisplayValue(instance(wasm(), [])),
       );
     });
 
     it("should render the external reference's owner and tag", () => {
-      const rendered = scValByType(
+      const rendered = scValToDisplayValue(
         instance(
           xdr.ContractExecutable.contractExecutableExternalRef(
             new xdr.ContractExecutableExternalRef({
@@ -373,7 +422,7 @@ describe("scValByType", () => {
     // An instance can appear as a map key, and a key has to stay one line so
     // that one signed entry is always exactly one row.
     it("should stay on one line as a map key", () => {
-      const rendered = scValByType(
+      const rendered = scValToDisplayValue(
         xdr.ScVal.scvMap([
           mapEntry(
             instance(wasm(), [
@@ -414,22 +463,25 @@ describe("scValByType", () => {
     });
 
     // The tokens are what the screen renders and the join is what the
-    // clipboard gets; this is what stops the two drifting apart.
+    // clipboard gets. Pinned to a literal rather than to
+    // `scValToDisplayValue`, which is that same join and so would assert
+    // nothing.
     it("should join back to exactly the string form", () => {
       const scVal = xdr.ScVal.scvMap([
         mapEntry(xdr.ScVal.scvSymbol("amount"), xdr.ScVal.scvU32(100)),
       ]);
-      expect(
-        scValToDisplayTokens(scVal)
-          .map((token) => token.text)
-          .join(""),
-      ).toEqual(scValByType(scVal));
+      const joined = scValToDisplayTokens(scVal)
+        .map((token) => token.text)
+        .join("");
+
+      expect(joined).toEqual("{\n  amount: 100\n}");
+      expect(scValToDisplayValue(scVal)).toEqual(joined);
     });
   });
   it("should render a CAP-85 executable tag as a string", () => {
     const tag = "v2";
     const scvTag = xdr.ScVal.scvExecutableTag(tag);
-    const parsedTag = scValByType(scvTag);
+    const parsedTag = scValToDisplayValue(scvTag);
     expect(parsedTag).toEqual(tag);
   });
 });
