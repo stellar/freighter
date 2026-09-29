@@ -1006,7 +1006,7 @@ describe("AssetDetail", () => {
       expect(delta()).toHaveTextContent("+$0.06 (30.00%)");
     });
 
-    it("prints the inspected header price with the chart's sub-dollar precision, not spot's", async () => {
+    it("keeps the app's price format for the inspected header price, not the chart's sub-dollar precision", async () => {
       const INSPECTABLE_HISTORY = makeHistory({
         points: [
           { t: 0, p: "0.2196" },
@@ -1027,11 +1027,13 @@ describe("AssetDetail", () => {
       rectSpy = mockChartRect();
       const svg = await screen.findByTestId("TokenPriceChart__svg");
 
-      // clientX 320 → viewBox x 160 → index 1 (p: "0.2213"). The chart's
-      // formatter keeps all 4 sub-dollar decimals; spot's would floor to 2.
+      // clientX 320 → viewBox x 160 → index 1 (p: "0.2213"). The header now
+      // formats it like spot: 2 decimals, not the chart's 4. Exact match:
+      // "$0.22" is a substring of the chart's unfixed "$0.2213", so a
+      // partial-match assertion would pass either way.
       fireEvent.pointerDown(svg, { clientX: 320, pointerId: 1 });
-      expect(screen.getByTestId("AssetDetail__price")).toHaveTextContent(
-        "$0.2213",
+      expect(screen.getByTestId("AssetDetail__price").textContent).toBe(
+        "$0.22",
       );
 
       fireEvent.pointerUp(svg, { pointerId: 1 });
@@ -1040,7 +1042,7 @@ describe("AssetDetail", () => {
       );
     });
 
-    it("rounds the inspected header price half-up, not floored like spot", async () => {
+    it("keeps the app's price format for the inspected header price, floored like spot", async () => {
       const INSPECTABLE_HISTORY = makeHistory({
         points: [
           { t: 0, p: "1.20" },
@@ -1061,11 +1063,10 @@ describe("AssetDetail", () => {
       rectSpy = mockChartRect();
       const svg = await screen.findByTestId("TokenPriceChart__svg");
 
-      // 1.235 half-up → "$1.24"; spot's floor (`roundUsdValue`) would give
-      // "$1.23".
+      // 1.235 through spot's floor (`roundUsdValue`) → "$1.23".
       fireEvent.pointerDown(svg, { clientX: 320, pointerId: 1 });
-      expect(screen.getByTestId("AssetDetail__price")).toHaveTextContent(
-        "$1.24",
+      expect(screen.getByTestId("AssetDetail__price").textContent).toBe(
+        "$1.23",
       );
     });
 

@@ -73,7 +73,6 @@ import { tokenPriceHistoryEnabledSelector } from "popup/ducks/remoteConfig";
 import {
   RangeDeltaState,
   TokenPriceChart,
-  formatInspectedPriceLabel,
 } from "popup/components/account/TokenPriceChart";
 import { AssetAbout } from "popup/components/account/AssetAbout";
 import { TokenStats } from "popup/components/account/TokenStats";
@@ -423,19 +422,16 @@ export const AssetDetail = ({
               </div>
             ) : null}
             {/* Spot, or the inspected point's close while a drag-to-inspect is
-                in progress. Inspecting describes a chart point, so it uses
-                the chart's precision, as the delta already does. */}
+                in progress. Both go through the app's normal price format. */}
             <div
               className="AssetDetail__price"
               data-testid="AssetDetail__price"
             >
-              {inspectedHeaderPrice
-                ? formatInspectedPriceLabel(inspectedHeaderPrice)
-                : headerPrice
-                  ? `$${formatAmount(
-                      roundUsdValue(new BigNumber(headerPrice).toString()),
-                    )}`
-                  : null}
+              {headerPrice
+                ? `$${formatAmount(
+                    roundUsdValue(new BigNumber(headerPrice).toString()),
+                  )}`
+                : null}
             </div>
             {isChartShown ? (
               /* The view's one delta, reported by the chart section. Rendered in

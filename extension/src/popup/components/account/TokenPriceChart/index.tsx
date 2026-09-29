@@ -87,10 +87,6 @@ export const formatChartPrice = (value: BigNumber): string => {
   );
 };
 
-/** The detail header's text for an inspected point's raw price. */
-export const formatInspectedPriceLabel = (price: string): string =>
-  `$${formatChartPrice(new BigNumber(price))}`;
-
 /** True when the formatted price parses to zero (grouping separators stripped). */
 export const isFormattedZero = (formatted: string): boolean =>
   new BigNumber(formatted.replace(/,/g, "")).isZero();
