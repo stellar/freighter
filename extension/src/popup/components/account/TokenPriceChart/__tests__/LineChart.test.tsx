@@ -15,6 +15,7 @@ import {
 import { LineChart, getPlottedRangeEnd } from "../LineChart";
 import {
   CHART_MORPH_DURATION_MS,
+  CHART_VIEWBOX_HEIGHT,
   CHART_VIEWBOX_WIDTH,
   PriceDirection,
 } from "../constants";
@@ -204,6 +205,31 @@ describe("LineChart", () => {
     expect(screen.getByRole("img")).toHaveAccessibleName(
       "Price chart, 1D: Aug 25 to Aug 26, +0.86%",
     );
+  });
+
+  it("anchors the fill gradient in user space to the series' peak", () => {
+    // Coordinates: (0,132) (320,8) — the peak (p=1.20) sits at y=8.
+    render(
+      <LineChart
+        points={[
+          { t: 0, p: "1.00" },
+          { t: 900, p: "1.20" },
+        ]}
+        resolutionSeconds={900}
+        nowSeconds={2000}
+        direction={PriceDirection.Positive}
+        label="Price chart"
+      />,
+    );
+
+    const gradient = screen
+      .getByTestId("TokenPriceChart__svg")
+      .querySelector("linearGradient");
+    expect(gradient?.getAttribute("gradientUnits")).toBe("userSpaceOnUse");
+    expect(gradient?.getAttribute("x1")).toBe("0");
+    expect(gradient?.getAttribute("x2")).toBe("0");
+    expect(Number(gradient?.getAttribute("y1"))).toBeCloseTo(8, 1);
+    expect(Number(gradient?.getAttribute("y2"))).toBe(CHART_VIEWBOX_HEIGHT);
   });
 });
 
@@ -510,6 +536,21 @@ describe("drag to inspect", () => {
     expect(fill).not.toHaveAttribute("opacity");
     expect(dimmedFill).toHaveAttribute("opacity", "0.3");
     expect(dimmedFill.getAttribute("fill")).toBe(fill.getAttribute("fill"));
+  });
+
+  it("keeps the fill gradient anchored to the full series' peak, even though the peak sits in the dimmed half", () => {
+    // Peak is index 3 (p=1.20, y=8), inspecting index 1 puts it in the
+    // dimmed half — outside the solid polygon's own bounding box.
+    renderInspectable({ inspectedIndex: 1 });
+
+    const fill = screen.getByTestId("TokenPriceChart__fill");
+    const dimmedFill = screen.getByTestId("TokenPriceChart__fill-dimmed");
+    expect(dimmedFill.getAttribute("fill")).toBe(fill.getAttribute("fill"));
+
+    const gradient = screen
+      .getByTestId("TokenPriceChart__svg")
+      .querySelector("linearGradient");
+    expect(Number(gradient?.getAttribute("y1"))).toBeCloseTo(8, 1);
   });
 
   it("draws nothing extra when idle", () => {

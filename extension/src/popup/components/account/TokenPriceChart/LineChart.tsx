@@ -427,6 +427,11 @@ export const LineChart = React.memo(function LineChart({
   // Per instance: SVG ids are document-global, and two charts overlapping
   // during a sheet transition would both resolve `url(#…)` to the first.
   const gradientId = `${useId()}-gradient`;
+  // Full series, not a half: an inspecting split's two polygons must shade to
+  // one shared peak, not each fall back to its own bounding box.
+  const seriesTopY = coordinates.length
+    ? Math.min(...coordinates.map((coord) => coord.y))
+    : 0;
 
   return (
     <svg
@@ -446,7 +451,15 @@ export const LineChart = React.memo(function LineChart({
       onLostPointerCapture={handlePointerEnd}
     >
       <defs>
-        <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+        {/* userSpaceOnUse anchors both fill polygons to one peak, not each's own bbox. */}
+        <linearGradient
+          id={gradientId}
+          gradientUnits="userSpaceOnUse"
+          x1="0"
+          x2="0"
+          y1={seriesTopY}
+          y2={CHART_VIEWBOX_HEIGHT}
+        >
           <stop offset="0" stopColor="currentColor" stopOpacity="0.16" />
           <stop offset="1" stopColor="currentColor" stopOpacity="0" />
         </linearGradient>
