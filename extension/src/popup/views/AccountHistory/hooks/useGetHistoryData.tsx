@@ -960,12 +960,11 @@ export const getRowDataByOpType = async (
       // receiving some XLM to create(fund) your own account
       const isReceiving = !isCreateExternalAccount;
 
-      // Extract destination from XDR for createAccount (may be muxed if sent to muxed address)
-      const actualDestination = await extractDestinationFromXDR(
-        txEnvelopeXdr,
-        networkDetails,
-        account || "",
-      );
+      // The destination of createAccount is an account ID (G...), never a
+      // muxed address. So Horizon's `account` is correct for this operation.
+      // Do not read it from the envelope: a transaction can have other
+      // payment or createAccount operations with different destinations.
+      const actualDestination = account || "";
 
       const paymentDifference = isReceiving ? "+" : "-";
       const nonLabelAmount = formatAmount(
