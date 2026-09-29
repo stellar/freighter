@@ -1,11 +1,12 @@
 import React from "react";
 import { Provider } from "react-redux";
-import { renderHook, waitFor } from "@testing-library/react";
+import { act, renderHook, waitFor } from "@testing-library/react";
 
 import * as ApiInternal from "@shared/api/internal";
 import { TESTNET_NETWORK_DETAILS } from "@shared/constants/stellar";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import { makeDummyStore, TEST_PUBLIC_KEY } from "popup/__testHelpers__";
+import { saveAccount } from "popup/ducks/accountServices";
 import { useHiddenCollectibles } from "../useHiddenCollectibles";
 
 jest.mock("@shared/api/internal", () => ({
@@ -33,6 +34,29 @@ const renderUseHiddenCollectibles = () => {
   });
 
   return { ...result, store };
+};
+
+const OTHER_PUBLIC_KEY =
+  "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN";
+
+/** Switches the active account without unmounting the hook. */
+const switchAccountTo = (publicKey: string) =>
+  saveAccount({
+    hasPrivateKey: true,
+    publicKey,
+    applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
+    allAccounts: [TEST_PUBLIC_KEY, OTHER_PUBLIC_KEY],
+    bipPath: "",
+    tokenIdList: [],
+  });
+
+/** A promise whose settlement this test controls. */
+const deferred = <T,>() => {
+  let settle: (value: T) => void = () => {};
+  const promise = new Promise<T>((resolve) => {
+    settle = resolve;
+  });
+  return { promise, settle: (value: T) => settle(value) };
 };
 
 describe("useHiddenCollectibles", () => {
@@ -80,5 +104,62 @@ describe("useHiddenCollectibles", () => {
     ).toEqual({});
     expect(result.current.hiddenCollectibles).toBeUndefined();
     expect(result.current.isHiddenCollectiblesLoading).toBe(true);
+  });
+
+  it("ignores a superseded error rather than reporting it against the new account", async () => {
+    const first = deferred<{ hiddenCollectibles: {}; error: string }>();
+    const second = deferred<{ hiddenCollectibles: {}; error: string }>();
+    (ApiInternal.getHiddenCollectibles as jest.Mock)
+      .mockReturnValueOnce(first.promise)
+      .mockReturnValueOnce(second.promise);
+
+    const { result, store } = renderUseHiddenCollectibles();
+
+    // Switch before A's request settles, then let A fail.
+    act(() => {
+      store.dispatch(switchAccountTo(OTHER_PUBLIC_KEY));
+    });
+    await act(async () => {
+      first.settle({ hiddenCollectibles: {}, error: "A went wrong" });
+    });
+
+    // `Account` suppresses its loader on this signal, so reporting A's failure
+    // here would paint B's grid unfiltered while B's own request is pending.
+    expect(result.current.hiddenCollectiblesError).toBe("");
+    expect(result.current.isHiddenCollectiblesLoading).toBe(true);
+  });
+
+  it("still saves a superseded success under its own account key", async () => {
+    const first = deferred<{ hiddenCollectibles: {}; error: string }>();
+    const second = deferred<{ hiddenCollectibles: {}; error: string }>();
+    (ApiInternal.getHiddenCollectibles as jest.Mock)
+      .mockReturnValueOnce(first.promise)
+      .mockReturnValueOnce(second.promise);
+
+    const { store } = renderUseHiddenCollectibles();
+
+    act(() => {
+      store.dispatch(switchAccountTo(OTHER_PUBLIC_KEY));
+    });
+    await act(async () => {
+      first.settle({
+        hiddenCollectibles: { [COLLECTIBLE_KEY]: "hidden" },
+        error: "",
+      });
+    });
+
+    // publicKey/networkName are captured from the render that started the
+    // fetch, so the map is correctly keyed -- discarding it would only force a
+    // refetch when that account comes back.
+    const state = store.getState() as {
+      hiddenCollectibles: {
+        hiddenCollectibles: Record<string, Record<string, unknown>>;
+      };
+    };
+    expect(
+      state.hiddenCollectibles.hiddenCollectibles[
+        TESTNET_NETWORK_DETAILS.networkName
+      ][TEST_PUBLIC_KEY],
+    ).toEqual({ [COLLECTIBLE_KEY]: "hidden" });
   });
 });

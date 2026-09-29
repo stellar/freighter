@@ -65,6 +65,7 @@ describe("AccountCollectibles", () => {
           hasInlineCta={false}
           isLoading={false}
           refreshHiddenCollectibles={mockRefreshHiddenCollectibles}
+          onCollectibleRemoved={jest.fn()}
           isCollectibleHidden={mockIsCollectibleHidden}
         />
       </Wrapper>,
@@ -181,6 +182,7 @@ describe("AccountCollectibles", () => {
           hasInlineCta={false}
           isLoading={false}
           refreshHiddenCollectibles={mockRefreshHiddenCollectibles}
+          onCollectibleRemoved={jest.fn()}
           isCollectibleHidden={mockIsCollectibleHidden}
         />
       </Wrapper>,
@@ -247,6 +249,7 @@ describe("AccountCollectibles", () => {
           hasInlineCta={false}
           isLoading={false}
           refreshHiddenCollectibles={mockRefreshHiddenCollectibles}
+          onCollectibleRemoved={jest.fn()}
           isCollectibleHidden={mockIsCollectibleHidden}
         />
       </Wrapper>,
@@ -297,6 +300,7 @@ describe("AccountCollectibles", () => {
           hasInlineCta={false}
           isLoading={false}
           refreshHiddenCollectibles={mockRefreshHiddenCollectibles}
+          onCollectibleRemoved={jest.fn()}
           isCollectibleHidden={mockIsCollectibleHidden}
         />
       </Wrapper>,
@@ -418,6 +422,7 @@ describe("AccountCollectibles", () => {
           hasInlineCta={false}
           isLoading={false}
           refreshHiddenCollectibles={mockRefreshHiddenCollectibles}
+          onCollectibleRemoved={jest.fn()}
           isCollectibleHidden={mockIsCollectibleHidden}
         />
       </Wrapper>,

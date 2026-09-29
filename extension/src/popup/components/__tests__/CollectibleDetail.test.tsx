@@ -736,6 +736,7 @@ describe("CollectibleDetail", () => {
       ],
     } as any);
     const handleItemClose = jest.fn();
+    const onCollectibleRemoved = jest.fn();
 
     render(
       <Wrapper
@@ -774,6 +775,7 @@ describe("CollectibleDetail", () => {
             tokenId: "2",
           }}
           handleItemClose={handleItemClose}
+          onCollectibleRemoved={onCollectibleRemoved}
         />
       </Wrapper>,
     );
@@ -801,6 +803,11 @@ describe("CollectibleDetail", () => {
       ),
     );
     await waitFor(() => expect(handleItemClose).toHaveBeenCalled());
+
+    // removeCollectibleFromCache only updates the redux cache; Home renders a
+    // separate copy from useGetAccountData. Without this the tile stays in the
+    // grid and reopening it lands on "Collectible not found".
+    expect(onCollectibleRemoved).toHaveBeenCalled();
   });
 
   it("hides Remove for a collectible the wallet does not track", async () => {
@@ -865,5 +872,82 @@ describe("CollectibleDetail", () => {
     expect(
       screen.queryByTestId("CollectibleDetail__remove"),
     ).not.toBeInTheDocument();
+  });
+
+  it("renders the overflow menu actions as focusable buttons", async () => {
+    jest.spyOn(ApiInternal, "getCollectibles").mockResolvedValue({
+      error: "",
+      collectiblesList: [
+        {
+          id: "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA",
+          tokenIds: ["2"],
+        },
+      ],
+    } as any);
+
+    render(
+      <Wrapper
+        routes={[ROUTES.account]}
+        state={{
+          auth: {
+            error: null,
+            applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
+            publicKey:
+              "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF",
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: TESTNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+            isSorobanPublicEnabled: true,
+            isRpcHealthy: true,
+            userNotification: {
+              enabled: false,
+              message: "",
+            },
+          },
+          cache: {
+            collections: {
+              [TESTNET_NETWORK_DETAILS.network]: {
+                [TEST_PUBLIC_KEY]: mockCollectibles,
+              },
+            },
+          },
+        }}
+      >
+        <CollectibleDetail
+          selectedCollectible={{
+            collectionAddress:
+              "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA",
+            tokenId: "2",
+          }}
+          handleItemClose={() => {}}
+        />
+      </Wrapper>,
+    );
+    await waitFor(() => screen.getByTestId("CollectibleDetail"));
+
+    fireEvent.click(
+      document.querySelector(
+        ".CollectibleDetail__header__right-button__trigger",
+      ) as Element,
+    );
+
+    // Asserting the element type rather than simulating Enter: jsdom does not
+    // implement a native button's implicit keyboard activation, so the tag is
+    // what actually carries the guarantee. As plain divs these were neither
+    // tab-reachable nor activatable by keyboard.
+    const remove = await screen.findByTestId("CollectibleDetail__remove");
+    expect(remove.tagName).toBe("BUTTON");
+
+    const items = document.querySelectorAll(
+      ".CollectibleDetail__header__right-button__popover-content__item",
+    );
+    expect(items.length).toBe(4);
+    items.forEach((item) => {
+      expect(item.tagName).toBe("BUTTON");
+      // A negative tabIndex would put it back out of the tab order.
+      expect(item.getAttribute("tabindex")).toBeNull();
+    });
   });
 });

@@ -48,10 +48,18 @@ export const CollectibleDetail = ({
   selectedCollectible,
   handleItemClose,
   isHidden = false,
+  onCollectibleRemoved,
 }: {
   selectedCollectible: SelectedCollectible;
   handleItemClose: () => void;
   isHidden?: boolean;
+  /**
+   * Rebuild the owning account-data state after a successful remove.
+   * `removeCollectibleFromCache` below only updates the redux cache, and Home
+   * renders a separate copy held by `useGetAccountData` -- so without this the
+   * tile stays in the grid and reopening it lands on "Collectible not found".
+   */
+  onCollectibleRemoved?: () => void;
 }) => {
   const { t } = useTranslation();
   const publicKey = useSelector(publicKeySelector);
@@ -198,6 +206,10 @@ export const CollectibleDetail = ({
         tokenId: selectedCollectible.tokenId,
       }),
     );
+    // After the cache write above, so the refetch reads the corrected cache --
+    // `useGetCollectibles` is cache-first, so this costs no collectibles round
+    // trip in the common case.
+    onCollectibleRemoved?.();
     handleItemClose();
     toast.custom(() => (
       <Notification variant="success" title={t("Collectible removed")} />
@@ -227,7 +239,8 @@ export const CollectibleDetail = ({
                 align="end"
                 className="CollectibleDetail__header__right-button__popover-content"
               >
-                <div
+                <button
+                  type="button"
                   className="CollectibleDetail__header__right-button__popover-content__item"
                   onClick={handleRefreshMetadata}
                 >
@@ -235,21 +248,23 @@ export const CollectibleDetail = ({
                   <div className="CollectibleDetail__header__right-button__popover-content__item__label">
                     {t("Refresh metadata")}
                   </div>
-                </div>
-                <div className="CollectibleDetail__header__right-button__popover-content__item">
+                </button>
+                <button
+                  type="button"
+                  className="CollectibleDetail__header__right-button__popover-content__item"
+                  onClick={() => {
+                    openTab(
+                      `${stellarExpertUrl}/contract/${collectible.collectionAddress}`,
+                    );
+                  }}
+                >
                   <Icon.LinkExternal01 className="CollectibleDetail__header__right-button__popover-content__item__icon" />
-                  <div
-                    className="CollectibleDetail__header__right-button__popover-content__item__label"
-                    onClick={() => {
-                      openTab(
-                        `${stellarExpertUrl}/contract/${collectible.collectionAddress}`,
-                      );
-                    }}
-                  >
+                  <div className="CollectibleDetail__header__right-button__popover-content__item__label">
                     {t("View on stellar.expert")}
                   </div>
-                </div>
-                <div
+                </button>
+                <button
+                  type="button"
                   className="CollectibleDetail__header__right-button__popover-content__item"
                   onClick={handleToggleCollectibleVisibility}
                 >
@@ -261,13 +276,14 @@ export const CollectibleDetail = ({
                   <div className="CollectibleDetail__header__right-button__popover-content__item__label">
                     {isHidden ? t("Show collectible") : t("Hide collectible")}
                   </div>
-                </div>
+                </button>
                 {/* Only for collectibles this wallet tracks. The backend also
                     returns special-cased ones that were never added here, and
                     those have nothing in storage to remove -- Hide is the
                     action that works for them. */}
                 {isTracked && (
-                  <div
+                  <button
+                    type="button"
                     className="CollectibleDetail__header__right-button__popover-content__item CollectibleDetail__header__right-button__popover-content__item--destructive"
                     onClick={() => {
                       setIsPopoverOpen(false);
@@ -279,7 +295,7 @@ export const CollectibleDetail = ({
                     <div className="CollectibleDetail__header__right-button__popover-content__item__label">
                       {t("Remove")}
                     </div>
-                  </div>
+                  </button>
                 )}
               </PopoverContent>
             </div>

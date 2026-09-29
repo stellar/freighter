@@ -38,6 +38,17 @@
       z-index: calc(var(--z-index-modal) + 1);
 
       &__item {
+        // Native <button> so the menu is reachable by Tab and fires on Enter
+        // and Space without hand-rolled key handling; these resets keep it
+        // looking exactly like the rows it replaced.
+        appearance: none;
+        background: none;
+        border: 0;
+        border-radius: pxToRem(4px);
+        font: inherit;
+        text-align: left;
+        width: 100%;
+
         display: flex;
         gap: pxToRem(8px);
         align-items: center;
@@ -46,6 +57,11 @@
 
         &:hover {
           background: var(--sds-clr-gray-04);
+        }
+
+        &:focus-visible {
+          outline: 2px solid var(--sds-clr-lilac-09);
+          outline-offset: -2px;
         }
 
         &__icon {

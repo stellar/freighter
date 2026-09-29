@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useState } from "react";
+import { useEffect, useCallback, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { captureException } from "@sentry/browser";
 
@@ -26,6 +26,10 @@ export const useHiddenCollectibles = () => {
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const { networkName } = networkDetails;
   const [hiddenCollectiblesError, setHiddenCollectiblesError] = useState("");
+  // Which fetch the component-scoped state belongs to. Bumped per call, so a
+  // request that resolves after the scope moved on can tell it is no longer
+  // the current one.
+  const requestIdRef = useRef(0);
 
   const hiddenCollectibles = useSelector((state: AppState) =>
     selectHiddenCollectiblesFor(state, networkName, publicKey),
@@ -42,6 +46,12 @@ export const useHiddenCollectibles = () => {
     // length of the request. The new scope waits for its own result.
     setHiddenCollectiblesError("");
 
+    // Clearing on the way in is not enough on its own: A's request can still be
+    // in flight when the switch to B happens, and would otherwise report A's
+    // outcome against B below.
+    const requestId = ++requestIdRef.current;
+    const isCurrent = () => requestId === requestIdRef.current;
+
     try {
       const { hiddenCollectibles: hidden, error } = await getHiddenCollectibles(
         {
@@ -54,12 +64,20 @@ export const useHiddenCollectibles = () => {
       // nothing hidden" and unhide every collectible for good, so leave the key
       // unwritten and let callers keep waiting.
       if (error) {
-        setHiddenCollectiblesError(error);
+        if (isCurrent()) {
+          setHiddenCollectiblesError(error);
+        }
         captureException(`Failed to fetch hidden collectibles - ${error}`);
         return;
       }
 
-      setHiddenCollectiblesError("");
+      if (isCurrent()) {
+        setHiddenCollectiblesError("");
+      }
+      // Dispatched even when superseded: `publicKey` and `networkName` are
+      // captured from the render that started this fetch, so the map lands
+      // under its own key. Discarding it would only force a refetch when that
+      // scope comes back.
       dispatch(
         saveHiddenCollectibles({
           publicKey,
@@ -68,7 +86,9 @@ export const useHiddenCollectibles = () => {
         }),
       );
     } catch (error) {
-      setHiddenCollectiblesError(String(error));
+      if (isCurrent()) {
+        setHiddenCollectiblesError(String(error));
+      }
       captureException(`Failed to fetch hidden collectibles - ${error}`);
     }
     // networkName is a dependency on purpose: the background resolves the

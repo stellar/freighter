@@ -360,6 +360,9 @@ export const Account = () => {
                   isLoading={isCollectiblesLoading}
                   refreshHiddenCollectibles={refreshHiddenCollectibles}
                   isCollectibleHidden={isCollectibleHidden}
+                  onCollectibleRemoved={() =>
+                    fetchData({ useAppDataCache: true })
+                  }
                 />
               </div>,
             ]}

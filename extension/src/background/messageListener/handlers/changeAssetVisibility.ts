@@ -12,6 +12,21 @@ export const changeAssetVisibility = async ({
   localStore: DataStorageAccess;
 }) => {
   const { assetVisibility, activePublicKey } = request;
+
+  // `issuer` is the legacy alias for `assetKey`, carrying the identical
+  // canonical value. The outgoing API sends both so a worker predating the
+  // rename still finds one it understands; accept both here for the mirror
+  // case, where a page predating the rename reaches this worker.
+  //
+  // Bail rather than key off `undefined`: with no identifier the write below
+  // would land under the literal string "undefined" and still report success,
+  // so Hide/Unhide would silently do nothing while the UI said it worked.
+  const assetKey = assetVisibility?.assetKey ?? assetVisibility?.issuer;
+
+  if (!assetKey) {
+    return { error: "Missing asset identifier" };
+  }
+
   const { networkName } = await getNetworkDetails({ localStore });
 
   // Resolved, not read: storage may still hold the pre-5.46.0 flat map, and
@@ -23,7 +38,7 @@ export const changeAssetVisibility = async ({
   const byNetwork = store[networkName] || {};
   const hiddenAssets = {
     ...byNetwork[activePublicKey],
-    [assetVisibility.assetKey]: assetVisibility.visibility,
+    [assetKey]: assetVisibility.visibility,
   };
 
   await localStore.setItem(HIDDEN_ASSETS, {

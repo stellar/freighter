@@ -47,6 +47,53 @@ const makeLocalStore = (seed: Record<string, unknown>) => {
 // `{}` for the old shape, so a writer that spreads it would replace the whole
 // flat map. The result has no string leaves, so the migration would then treat
 // it as already migrated and the earlier hides would be gone for good.
+// The outgoing API sends `assetKey` and the legacy `issuer` alias together, so
+// a worker predating the rename still finds one it understands. These cover the
+// mirror case: a page predating the rename reaching this worker.
+describe("changeAssetVisibility identifier handling", () => {
+  it("accepts a payload carrying only the legacy issuer field", async () => {
+    const localStore = makeLocalStore({});
+
+    const result = await changeAssetVisibility({
+      request: {
+        assetVisibility: { issuer: "NEW:GXYZ", visibility: "hidden" },
+        activePublicKey: PUBLIC_KEY,
+      } as unknown as ChangeAssetVisibilityMessage,
+      localStore,
+    });
+
+    expect(result).toEqual({ hiddenAssets: { "NEW:GXYZ": "hidden" } });
+    expect(
+      localStore.read()[HIDDEN_ASSETS][NETWORK_NAMES.PUBNET][PUBLIC_KEY],
+    ).toEqual({ "NEW:GXYZ": "hidden" });
+  });
+
+  it("writes nothing and reports an error when no identifier is present", async () => {
+    const localStore = makeLocalStore({
+      [HIDDEN_ASSETS]: {
+        [NETWORK_NAMES.PUBNET]: { [PUBLIC_KEY]: { "USDC:GA5ZSE": "hidden" } },
+      },
+    });
+
+    const result = await changeAssetVisibility({
+      request: {
+        assetVisibility: { visibility: "hidden" },
+        activePublicKey: PUBLIC_KEY,
+      } as unknown as ChangeAssetVisibilityMessage,
+      localStore,
+    });
+
+    // Keying off `undefined` would write the literal "undefined" and still
+    // report success, so Hide would silently do nothing while the UI said it
+    // worked -- the worst shape of failure.
+    expect(result).toEqual({ error: "Missing asset identifier" });
+    expect(localStore.setItem).not.toHaveBeenCalled();
+    expect(
+      localStore.read()[HIDDEN_ASSETS][NETWORK_NAMES.PUBNET][PUBLIC_KEY],
+    ).toEqual({ "USDC:GA5ZSE": "hidden" });
+  });
+});
+
 describe("visibility writes against a legacy flat store", () => {
   it("keeps earlier hidden assets when the store is still a flat map", async () => {
     const localStore = makeLocalStore({
