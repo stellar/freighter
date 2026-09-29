@@ -46,6 +46,17 @@ export interface ChartCoordinate {
 
 const dotPath = (coord: ChartCoordinate) => `M${coord.x},${coord.y} h0.01`;
 
+const toLinePoints = (coords: ChartCoordinate[]) =>
+  coords.map((coord) => `${coord.x},${coord.y}`).join(" ");
+
+// Closed under the REAL endpoints, not the viewBox edges: the clock-skew clamp
+// can collapse a two-point series onto one x, and a fill closed at x=320 would
+// then draw a diagonal unrelated to the data.
+const toFillPoints = (coords: ChartCoordinate[], linePoints: string) =>
+  `${linePoints} ${coords[coords.length - 1].x},${CHART_VIEWBOX_HEIGHT} ${coords[0].x},${CHART_VIEWBOX_HEIGHT}`;
+
+const DIMMED_OPACITY = "0.3";
+
 const clampProgress = (progress: number) => Math.min(Math.max(progress, 0), 1);
 
 /** Cubic ease-out, matching mobile's `Easing.out(Easing.cubic)`. */
@@ -398,14 +409,21 @@ export const LineChart = React.memo(function LineChart({
     onInspectEnd?.();
   };
 
-  const linePoints = coordinates
-    .map((coord) => `${coord.x},${coord.y}`)
-    .join(" ");
   const endPoint = coordinates[coordinates.length - 1];
-  // Close the area under the REAL endpoints, not the viewBox edges: the
-  // clock-skew clamp can collapse a two-point series onto one x, and a fill
-  // closed at x=320 would then draw a diagonal unrelated to the data.
-  const fillPoints = `${linePoints} ${endPoint.x},${CHART_VIEWBOX_HEIGHT} ${coordinates[0].x},${CHART_VIEWBOX_HEIGHT}`;
+  const splitIndex = inspectedCoord ? inspectedIndex : null;
+  // Both halves include the inspected point, so the line has no gap at the split.
+  const solidCoordinates =
+    splitIndex === null || splitIndex === undefined
+      ? coordinates
+      : coordinates.slice(0, splitIndex + 1);
+  const dimmedCoordinates =
+    splitIndex === null || splitIndex === undefined
+      ? null
+      : coordinates.slice(splitIndex);
+  const solidLinePoints = toLinePoints(solidCoordinates);
+  const dimmedLinePoints = dimmedCoordinates
+    ? toLinePoints(dimmedCoordinates)
+    : null;
   // Per instance: SVG ids are document-global, and two charts overlapping
   // during a sheet transition would both resolve `url(#…)` to the first.
   const gradientId = `${useId()}-gradient`;
@@ -434,14 +452,23 @@ export const LineChart = React.memo(function LineChart({
         </linearGradient>
       </defs>
       <polygon
-        points={fillPoints}
+        points={toFillPoints(solidCoordinates, solidLinePoints)}
         fill={`url(#${gradientId})`}
         stroke="none"
         data-testid="TokenPriceChart__fill"
       />
+      {dimmedCoordinates && dimmedLinePoints ? (
+        <polygon
+          points={toFillPoints(dimmedCoordinates, dimmedLinePoints)}
+          fill={`url(#${gradientId})`}
+          stroke="none"
+          opacity={DIMMED_OPACITY}
+          data-testid="TokenPriceChart__fill-dimmed"
+        />
+      ) : null}
       <polyline
         data-testid="TokenPriceChart__polyline"
-        points={linePoints}
+        points={solidLinePoints}
         fill="none"
         stroke="currentColor"
         strokeWidth="1.5"
@@ -449,6 +476,19 @@ export const LineChart = React.memo(function LineChart({
         strokeLinecap="round"
         vectorEffect="non-scaling-stroke"
       />
+      {dimmedLinePoints ? (
+        <polyline
+          data-testid="TokenPriceChart__polyline-dimmed"
+          points={dimmedLinePoints}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinejoin="round"
+          strokeLinecap="round"
+          vectorEffect="non-scaling-stroke"
+          opacity={DIMMED_OPACITY}
+        />
+      ) : null}
       {/* The dot is a (near) zero-length stroke with round caps under
           `non-scaling-stroke`: the stroke outline is built in screen space,
           so it stays a circle however the outer svg is stretched. A nested

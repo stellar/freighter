@@ -484,10 +484,41 @@ describe("drag to inspect", () => {
     expect(screen.queryByTestId("TokenPriceChart__end-dot")).toBeNull();
   });
 
+  it("dims the series right of the inspected point, sharing that point with the undimmed part", () => {
+    renderInspectable({ inspectedIndex: 1 });
+    const polyline = screen.getByTestId("TokenPriceChart__polyline");
+    const dimmedPolyline = screen.getByTestId(
+      "TokenPriceChart__polyline-dimmed",
+    );
+    const left = (polyline.getAttribute("points") ?? "").split(" ");
+    const right = (dimmedPolyline.getAttribute("points") ?? "").split(" ");
+    expect(left).toHaveLength(2);
+    expect(right).toHaveLength(3);
+    expect(right[0]).toBe(left[1]);
+    expect(Number(right[0].split(",")[0])).toBeCloseTo(106.67, 1);
+    expect(polyline).not.toHaveAttribute("opacity");
+    expect(dimmedPolyline).toHaveAttribute("opacity", "0.3");
+
+    const fill = screen.getByTestId("TokenPriceChart__fill");
+    const dimmedFill = screen.getByTestId("TokenPriceChart__fill-dimmed");
+    expect(fill.getAttribute("points")).toBe(
+      `${left.join(" ")} 106.67,140 0,140`,
+    );
+    expect(dimmedFill.getAttribute("points")).toBe(
+      `${right.join(" ")} 320,140 106.67,140`,
+    );
+    expect(fill).not.toHaveAttribute("opacity");
+    expect(dimmedFill).toHaveAttribute("opacity", "0.3");
+    expect(dimmedFill.getAttribute("fill")).toBe(fill.getAttribute("fill"));
+  });
+
   it("draws nothing extra when idle", () => {
     renderInspectable();
     expect(screen.queryByTestId("TokenPriceChart__inspect-guide")).toBeNull();
     expect(screen.getByTestId("TokenPriceChart__end-dot")).toBeInTheDocument();
+    expect(screen.queryByTestId("TokenPriceChart__polyline-dimmed")).toBeNull();
+    expect(screen.queryByTestId("TokenPriceChart__fill-dimmed")).toBeNull();
+    expect(getPolylinePoints().split(" ")).toHaveLength(4);
   });
 });
 
