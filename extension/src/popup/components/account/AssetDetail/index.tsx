@@ -73,6 +73,7 @@ import { tokenPriceHistoryEnabledSelector } from "popup/ducks/remoteConfig";
 import {
   RangeDeltaState,
   TokenPriceChart,
+  formatInspectedPriceLabel,
 } from "popup/components/account/TokenPriceChart";
 import { AssetAbout } from "popup/components/account/AssetAbout";
 import { TokenStats } from "popup/components/account/TokenStats";
@@ -301,9 +302,9 @@ export const AssetDetail = ({
   // See the `AssetDetail__price` div below for why this falls back to spot.
   // The guard mirrors the render-time `LOADING_DELTA` reset above: either
   // alone keeps an inspected price off a hidden chart's header.
-  const headerPrice =
-    (isChartShown && !activeAssetId ? shownDelta.inspectedPrice : null) ??
-    assetPrice?.currentPrice;
+  const inspectedHeaderPrice =
+    isChartShown && !activeAssetId ? shownDelta.inspectedPrice : null;
+  const headerPrice = inspectedHeaderPrice ?? assetPrice?.currentPrice;
 
   return activeAssetId ? (
     <SlideupModal
@@ -422,16 +423,19 @@ export const AssetDetail = ({
               </div>
             ) : null}
             {/* Spot, or the inspected point's close while a drag-to-inspect is
-                in progress — same formatter either way (Phase 3). */}
+                in progress. Inspecting describes a chart point, so it uses
+                the chart's precision, as the delta already does. */}
             <div
               className="AssetDetail__price"
               data-testid="AssetDetail__price"
             >
-              {headerPrice
-                ? `$${formatAmount(
-                    roundUsdValue(new BigNumber(headerPrice).toString()),
-                  )}`
-                : null}
+              {inspectedHeaderPrice
+                ? formatInspectedPriceLabel(inspectedHeaderPrice)
+                : headerPrice
+                  ? `$${formatAmount(
+                      roundUsdValue(new BigNumber(headerPrice).toString()),
+                    )}`
+                  : null}
             </div>
             {isChartShown ? (
               /* The view's one delta, reported by the chart section. Rendered in

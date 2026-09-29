@@ -1006,6 +1006,69 @@ describe("AssetDetail", () => {
       expect(delta()).toHaveTextContent("+$0.06 (30.00%)");
     });
 
+    it("prints the inspected header price with the chart's sub-dollar precision, not spot's", async () => {
+      const INSPECTABLE_HISTORY = makeHistory({
+        points: [
+          { t: 0, p: "0.2196" },
+          { t: 900, p: "0.2213" },
+          { t: 1800, p: "0.2267" },
+        ],
+        resolutionSeconds: 900,
+      });
+      historySpy.mockResolvedValue(INSPECTABLE_HISTORY);
+      renderDetail(
+        makeState({
+          price: { currentPrice: "0.30", percentagePriceChange24h: "1.09" },
+        }),
+      );
+
+      await waitFor(() => expect(delta()).toBeInTheDocument());
+
+      rectSpy = mockChartRect();
+      const svg = await screen.findByTestId("TokenPriceChart__svg");
+
+      // clientX 320 → viewBox x 160 → index 1 (p: "0.2213"). The chart's
+      // formatter keeps all 4 sub-dollar decimals; spot's would floor to 2.
+      fireEvent.pointerDown(svg, { clientX: 320, pointerId: 1 });
+      expect(screen.getByTestId("AssetDetail__price")).toHaveTextContent(
+        "$0.2213",
+      );
+
+      fireEvent.pointerUp(svg, { pointerId: 1 });
+      expect(screen.getByTestId("AssetDetail__price")).toHaveTextContent(
+        "$0.30",
+      );
+    });
+
+    it("rounds the inspected header price half-up, not floored like spot", async () => {
+      const INSPECTABLE_HISTORY = makeHistory({
+        points: [
+          { t: 0, p: "1.20" },
+          { t: 900, p: "1.235" },
+          { t: 1800, p: "1.30" },
+        ],
+        resolutionSeconds: 900,
+      });
+      historySpy.mockResolvedValue(INSPECTABLE_HISTORY);
+      renderDetail(
+        makeState({
+          price: { currentPrice: "1.50", percentagePriceChange24h: "1.09" },
+        }),
+      );
+
+      await waitFor(() => expect(delta()).toBeInTheDocument());
+
+      rectSpy = mockChartRect();
+      const svg = await screen.findByTestId("TokenPriceChart__svg");
+
+      // 1.235 half-up → "$1.24"; spot's floor (`roundUsdValue`) would give
+      // "$1.23".
+      fireEvent.pointerDown(svg, { clientX: 320, pointerId: 1 });
+      expect(screen.getByTestId("AssetDetail__price")).toHaveTextContent(
+        "$1.24",
+      );
+    });
+
     it("falls back to spot when the chart unmounts mid-drag", async () => {
       // The kill switch flips (or the token/network changes) while a finger is
       // still down. The chart section unmounts without ever reporting the
