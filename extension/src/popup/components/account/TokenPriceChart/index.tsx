@@ -562,10 +562,13 @@ export const TokenPriceChart = ({
     setInspected(null);
   }, []);
 
-  // Inert the moment the series changes underneath it: `inspected.history` is
-  // the exact object the index was snapped against.
+  // Also gated on `selectedRange`: the identity check alone stays true until
+  // the newly selected tab's fetch effect swaps `chartHistory` in.
   const inspectedPoint =
-    inspected && chartHistory && inspected.history === chartHistory
+    inspected &&
+    chartHistory &&
+    inspected.history === chartHistory &&
+    chartHistory.range === selectedRange
       ? (chartHistory.points[inspected.index] ?? null)
       : null;
   const inspectedIndex = inspectedPoint ? (inspected?.index ?? null) : null;

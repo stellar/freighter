@@ -1309,5 +1309,57 @@ describe("TokenPriceChart", () => {
         expect.objectContaining({ inspectedPrice: null }),
       );
     });
+
+    it("ends the inspection the instant another cached range is selected, before the debounce lands", async () => {
+      jest.useFakeTimers();
+      respondByRange({ "1D": INSPECTABLE_HISTORY, "1W": HISTORY_1W });
+      renderChart();
+      await act(async () => {
+        await Promise.resolve();
+      });
+
+      const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
+      await user.click(screen.getByRole("tab", { name: "1W" }));
+      await act(async () => {
+        jest.advanceTimersByTime(RANGE_SWITCH_DEBOUNCE_MS + 50);
+        await Promise.resolve();
+      });
+
+      mockChartRect();
+      fireEvent.pointerDown(screen.getByTestId("TokenPriceChart__svg"), {
+        clientX: 0,
+        pointerId: 1,
+      });
+      expect(
+        screen.getByTestId("TokenPriceChart__inspect-timestamp"),
+      ).toBeDefined();
+
+      // A raw, un-`act`-wrapped dispatch: this commits the `selectedRange`
+      // change on its own, one microtask ahead of the passive effect that
+      // re-fetches (even a cache hit) and swaps `chartHistory` — the one
+      // render where a range-unaware guard would still show the old point.
+      screen
+        .getByRole("tab", { name: "1D" })
+        .dispatchEvent(
+          new MouseEvent("click", { bubbles: true, cancelable: true }),
+        );
+      await Promise.resolve();
+
+      expect(screen.getByTestId("TokenPriceChart__svg")).toBeInTheDocument();
+      expect(screen.queryByTestId("TokenPriceChart__inspect-guide")).toBeNull();
+      expect(
+        screen.queryByTestId("TokenPriceChart__inspect-timestamp"),
+      ).toBeNull();
+
+      // Let the deferred fetch and its effects settle, then confirm the
+      // reported delta agrees.
+      await act(async () => {
+        jest.advanceTimersByTime(RANGE_SWITCH_DEBOUNCE_MS);
+        await Promise.resolve();
+      });
+      expect(reportedDelta).toEqual(
+        expect.objectContaining({ inspectedPrice: null }),
+      );
+    });
   });
 });
