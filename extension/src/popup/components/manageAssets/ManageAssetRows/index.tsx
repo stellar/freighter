@@ -65,6 +65,7 @@ export const ManageAssetRows = ({
   balances,
   shouldSplitAssetsByVerificationStatus = true,
 }: ManageAssetRowsProps) => {
+  const { t } = useTranslation();
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const publicKey = useSelector(publicKeySelector);
 
@@ -162,6 +163,7 @@ export const ManageAssetRows = ({
           <SlideupModal
             setIsModalOpen={() => setSelectedAsset(undefined)}
             isModalOpen={selectedAsset !== undefined}
+            ariaLabel={t("Manage token")}
           >
             <>
               {selectedAsset && shouldChangeTrust && (

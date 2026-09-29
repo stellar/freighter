@@ -92,11 +92,23 @@ describe("views navigate handler → screen.viewed", () => {
     expect(emitMetric).not.toHaveBeenCalled();
   });
 
-  it("skips (does not throw) and reports to Sentry for an uncatalogued route (D6)", () => {
+  it("skips (does not throw) for a path the router no longer serves (D6)", () => {
+    // Retired paths reach the catch-all in `Router` and redirect to Home. A
+    // stale fullscreen tab or bookmark can still land on one after an update,
+    // and that is not an uncatalogued-screen gap -- there is no screen to
+    // catalogue -- so it must not file a Sentry exception either.
+    (captureException as jest.Mock).mockClear();
+    expect(() => fireNavigate("/manage-assets/asset-visibility")).not.toThrow();
+    expect(emitScreenViewed).not.toHaveBeenCalled();
+    expect(emitMetric).not.toHaveBeenCalled();
+    expect(captureException).not.toHaveBeenCalled();
+  });
+
+  it("does not report for an arbitrary unknown path", () => {
     (captureException as jest.Mock).mockClear();
     expect(() => fireNavigate("/some-brand-new-route")).not.toThrow();
     expect(emitScreenViewed).not.toHaveBeenCalled();
-    expect(captureException).toHaveBeenCalledTimes(1);
+    expect(captureException).not.toHaveBeenCalled();
   });
 
   it("attaches a step for completion/success screens", () => {

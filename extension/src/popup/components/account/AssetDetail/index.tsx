@@ -359,6 +359,7 @@ export const AssetDetail = ({
     <SlideupModal
       isModalOpen={isOperationSheetOpen && activeOperation !== null}
       setIsModalOpen={closeOperationSheet}
+      ariaLabel={t("Transaction details")}
     >
       <TransactionDetail
         activeOperation={activeOperation}
@@ -609,6 +610,7 @@ export const AssetDetail = ({
           <SlideupModal
             isModalOpen={isModalOpen}
             setIsModalOpen={setIsModalOpen}
+            ariaLabel={t("Balance details")}
           >
             <div className="AssetDetail__info-modal">
               <div className="AssetDetail__info-modal__total-box">
@@ -662,6 +664,7 @@ export const AssetDetail = ({
         <SlideupModal
           isModalOpen={body === "remove"}
           setIsModalOpen={() => setBody("detail")}
+          ariaLabel={t("Remove token")}
         >
           {/* Gated on the same flag rather than always mounted:
               ChangeTrustInternal emits signing.rejected on unmount unless it

@@ -490,4 +490,84 @@ describe("Storage migrations", () => {
       expect(stored[HIDDEN_COLLECTIBLES]).toEqual(legacy);
     });
   });
+
+  describe("hidden-visibility migration ordering", () => {
+    const ACCOUNT = "GABC123";
+    const legacyAssets = { "USDC:GA5ZSE": "hidden" };
+
+    // These two are the only migrations in the file that can decline to advance
+    // STORAGE_VERSION. `versionedMigration` runs them back to back, so the
+    // successor must not bump past a predecessor that deferred -- a single
+    // version number cannot record "5.46.0 pending, 5.47.0 done".
+    const runBoth = async () => {
+      await DataStorage.migrateHiddenAssetsToKeyNetworkSchema();
+      await DataStorage.migrateHiddenCollectiblesToKeyNetworkSchema();
+    };
+
+    it("holds the version when the hidden-assets migration deferred", async () => {
+      // No LAST_USED_ACCOUNT, so assets defers. No hidden collectibles either,
+      // so without the gate the collectibles migration would happily write
+      // empty buckets and bump to 5.47.0, putting the assets map out of reach.
+      await mockStorage.set({ [STORAGE_VERSION]: "5.45.0" });
+      await mockStorage.set({ [HIDDEN_ASSETS]: legacyAssets });
+
+      await runBoth();
+
+      const version = await mockStorage.get(STORAGE_VERSION);
+      expect(version[STORAGE_VERSION]).toEqual("5.45.0");
+      const stored = await mockStorage.get(HIDDEN_ASSETS);
+      expect(stored[HIDDEN_ASSETS]).toEqual(legacyAssets);
+    });
+
+    it("holds the version when the hidden-assets migration threw", async () => {
+      await mockStorage.set({ [STORAGE_VERSION]: "5.45.0" });
+      await mockStorage.set({ [HIDDEN_ASSETS]: legacyAssets });
+      await mockStorage.set({ [LAST_USED_ACCOUNT]: ACCOUNT });
+
+      const consoleError = jest
+        .spyOn(console, "error")
+        .mockImplementation(() => {});
+      const restore = failReadsOf(HIDDEN_ASSETS);
+
+      await runBoth();
+
+      restore();
+      consoleError.mockRestore();
+
+      const version = await mockStorage.get(STORAGE_VERSION);
+      expect(version[STORAGE_VERSION]).toEqual("5.45.0");
+    });
+
+    it("migrates hidden assets on a later run once an account exists", async () => {
+      await mockStorage.set({ [STORAGE_VERSION]: "5.45.0" });
+      await mockStorage.set({ [HIDDEN_ASSETS]: legacyAssets });
+
+      // First start: nothing to attribute the map to, so neither lands.
+      await runBoth();
+      await mockStorage.set({ [LAST_USED_ACCOUNT]: ACCOUNT });
+      // Next start: both do.
+      await runBoth();
+
+      const stored = await mockStorage.get(HIDDEN_ASSETS);
+      expect(stored[HIDDEN_ASSETS]).toEqual({
+        [NETWORK_NAMES.PUBNET]: { [ACCOUNT]: legacyAssets },
+        [NETWORK_NAMES.TESTNET]: { [ACCOUNT]: legacyAssets },
+        [NETWORK_NAMES.FUTURENET]: { [ACCOUNT]: legacyAssets },
+      });
+      const version = await mockStorage.get(STORAGE_VERSION);
+      expect(version[STORAGE_VERSION]).toEqual("5.47.0");
+    });
+
+    it("still reaches 5.47.0 when there is nothing to defer", async () => {
+      // The gate re-reads STORAGE_VERSION, so it sees the 5.46.0 the assets
+      // migration just wrote and does not strand the collectibles migration.
+      await mockStorage.set({ [STORAGE_VERSION]: "5.45.0" });
+      await mockStorage.set({ [LAST_USED_ACCOUNT]: ACCOUNT });
+
+      await runBoth();
+
+      const version = await mockStorage.get(STORAGE_VERSION);
+      expect(version[STORAGE_VERSION]).toEqual("5.47.0");
+    });
+  });
 });

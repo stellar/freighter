@@ -973,6 +973,7 @@ export const SendAmount = ({
           setIsEditingSettings(true);
         }}
         isModalOpen={isShowingFeesPane}
+        ariaLabel={t("Fees")}
       >
         {isShowingFeesPane ? (
           <View.Inset>
@@ -1000,6 +1001,7 @@ export const SendAmount = ({
       <SlideupModal
         setIsModalOpen={() => setIsReviewingTx(false)}
         isModalOpen={isReviewingTx}
+        ariaLabel={t("Review transaction")}
       >
         {isReviewingTx ? (
           <ReviewTx

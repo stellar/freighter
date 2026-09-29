@@ -177,6 +177,13 @@ export const ROUTES_WITHOUT_SCREEN_VIEW = new Set<string>([
   ROUTES.wallets,
 ]);
 
+/**
+ * Every path the router still serves. A pathname outside this set is a retired
+ * or unknown route on its way to the catch-all redirect in `Router`, not a
+ * screen someone forgot to catalogue.
+ */
+const KNOWN_ROUTE_PATHS = new Set<string>(Object.values(ROUTES));
+
 /** Builds the screen.viewed props object, dropping any undefined flow/step. */
 const screenProps = (
   screen: ScreenDef,
@@ -211,11 +218,20 @@ registerHandler<AppState>(navigate, (_, a) => {
     // RFC #2883 (D6): an uncatalogued route is not tracked. Report to Sentry so
     // the gap is visible, but never throw inside the navigate handler — throwing
     // here risks breaking navigation for a route someone simply forgot to add.
-    captureException(
-      new Error(
-        `No screen definition for path '${pathname}'; screen.viewed skipped`,
-      ),
-    );
+    //
+    // Only for paths the router still serves, though. A retired path -- a
+    // fullscreen tab or bookmark reloading onto it after an update -- is
+    // redirected to Home by the catch-all, so reporting it would file an
+    // exception for a screen nobody asked for and nobody can catalogue.
+    // `views.test.ts` enumerates ROUTES to assert every one is covered, so this
+    // is a backstop for that assertion being weakened, not the first defence.
+    if (KNOWN_ROUTE_PATHS.has(pathname)) {
+      captureException(
+        new Error(
+          `No screen definition for path '${pathname}'; screen.viewed skipped`,
+        ),
+      );
+    }
     return;
   }
 

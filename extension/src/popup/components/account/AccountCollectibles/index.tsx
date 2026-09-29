@@ -223,6 +223,14 @@ const CollectionsList = ({
         <div className="AccountCollectibles__collectible-detail__sheet">
           {detailData ? (
             <CollectibleDetail
+              // Remount per item. This sheet is rendered once, outside the
+              // grid, and `handleOpenCollectible` cancels the pending clear --
+              // so opening a second collectible inside the close animation
+              // swaps props on a live `CollectibleDetail`. `useIsCollectibleTracked`
+              // would then keep the previous item's `isTracked` until its own
+              // lookup resolves, briefly offering Remove for an item that has
+              // nothing local to remove.
+              key={`${detailData.collectionAddress}:${detailData.tokenId}`}
               selectedCollectible={detailData}
               handleItemClose={handleCloseCollectible}
               isHidden={showHidden}

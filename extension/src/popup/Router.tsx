@@ -326,6 +326,16 @@ export const Router = () => (
           </>
         )}
         <Route path={ROUTES.welcome} element={<Welcome />} />
+
+        {/* Last, so it only catches what nothing above claimed. Retiring a
+            route deletes its ROUTES entry and its <Route>, but a fullscreen
+            tab or a bookmark can still be sitting on the old hash when the
+            extension updates and reloads its pages -- and with no catch-all
+            those rendered nothing at all. `/mnemonic-phrase/confirm`, retired
+            in this release, was a blank screen for exactly that reason.
+            Redirect to Home instead; `metrics/views.ts` keeps these paths out
+            of screen-view tracking. */}
+        <Route path="*" element={<Navigate to={ROUTES.account} replace />} />
       </Route>
     </Routes>
   </HashRouter>

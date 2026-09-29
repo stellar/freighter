@@ -12,10 +12,16 @@ import { getPathFromRoute } from "popup/helpers/route";
  * Details -- but these two routes still live under its path and are reached from
  * Home, so the router stays.
  *
- * The index and the wildcard redirect rather than 404: the popup restores its
- * last route on reopen, so a popup left on /manage-assets -- or on a child this
- * release retired, such as the old /manage-assets/asset-visibility -- would
- * otherwise come back blank.
+ * The index and the wildcard redirect rather than 404. The popup itself always
+ * opens at "/" -- nothing in the extension persists or restores a route -- but a
+ * fullscreen tab or a bookmark can be sitting on one of these hashes when the
+ * extension updates and reloads its pages, including a child this release
+ * retired such as the old /manage-assets/asset-visibility.
+ *
+ * The wildcard has to stay here rather than lean on the catch-all in `Router`:
+ * react-router ranks `/manage-assets/*` above a bare `*`, so this component
+ * claims every path under it and would render blank without an inner fallback.
+ * `metrics/views.ts` keeps retired paths out of screen-view tracking.
  */
 export const ManageAssets = () => {
   const manageAssetsBasePath = "/manage-assets/";

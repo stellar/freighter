@@ -36,6 +36,12 @@ export const useHiddenCollectibles = () => {
       return;
     }
 
+    // Drop the previous scope's error before this fetch. `Account` suppresses
+    // its loader once this is set, so carrying account A's failure into B --
+    // whose map is still undefined -- would paint B's grid unfiltered for the
+    // length of the request. The new scope waits for its own result.
+    setHiddenCollectiblesError("");
+
     try {
       const { hiddenCollectibles: hidden, error } = await getHiddenCollectibles(
         {

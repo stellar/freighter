@@ -215,6 +215,8 @@ export const Discover = () => {
 
       <SlideupModal
         isModalOpen={isDetailsOpen}
+        // The protocol's own name, so the dialog announces which one opened.
+        ariaLabel={selectedProtocol?.name ?? t("Protocol details")}
         setIsModalOpen={(open) => {
           setIsDetailsOpen(open);
           if (!open) {

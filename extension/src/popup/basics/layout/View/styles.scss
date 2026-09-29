@@ -248,12 +248,26 @@
   // covers the bar.
   &--has-tab-bar {
     --app--bottom-offset: var(--tab-bar--height);
+    // Named once so the modifier override below cannot drift from the base rule.
+    --view--tab-bar-clearance: calc(var(--tab-bar--height) + #{pxToRem(24px)});
 
     // Direct child only. A descendant selector also matched the insets inside
     // anything rendered *within* the content -- notably the sheets, whose own
     // headers picked up 84px of tab-bar clearance they have no use for.
     .View__content > .View__inset {
-      padding-bottom: calc(var(--tab-bar--height) + #{pxToRem(24px)});
+      padding-bottom: var(--view--tab-bar-clearance);
+    }
+
+    // A tab-bar view's content inset has to clear the bar whatever padding
+    // modifier it carries. `--no-bottom-padding` is `padding-bottom: 0
+    // !important`, which beats the rule above regardless of specificity and
+    // dropped the clearance entirely -- History passes it, so its last row sat
+    // under the 60px bar with only 24px of list margin to show for it.
+    //
+    // Deliberately not `--no-padding`: Home passes that one and pads its own
+    // panes off --app--bottom-offset, so its zero has to keep winning.
+    .View__content > .View__inset--no-bottom-padding {
+      padding-bottom: var(--view--tab-bar-clearance) !important;
     }
   }
 

@@ -406,6 +406,16 @@ export const migrateHiddenCollectiblesToKeyNetworkSchema = async () => {
   const localStore = dataStorageAccess(browserLocalStorage);
   const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
 
+  // The hidden-assets migration above is the only one in this file that can
+  // decline to advance the version -- it defers when there is no account to
+  // attribute the old map to, and leaves it alone when it throws, so that it
+  // runs again next start. A single STORAGE_VERSION cannot record "5.46.0
+  // pending, 5.47.0 done": bumping past it here would make `semver.lt` answer
+  // false for 5.46.0 forever and skip that migration permanently. Wait.
+  if (shouldRunMigration({ storageVersion, migrationVersion: "5.46.0" })) {
+    return;
+  }
+
   // 5.47.0, not 5.46.0: `shouldRunMigration` is `semver.lt`, so reusing the
   // version the hidden-assets migration already wrote would skip this entirely
   // for anyone who has run that one.

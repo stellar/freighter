@@ -133,6 +133,7 @@ export const AccountHistory = () => {
       <SlideupModal
         isModalOpen={activeHistoryDetail !== null}
         setIsModalOpen={() => setActiveHistoryDetailId(null)}
+        ariaLabel={t("Transaction details")}
       >
         <TransactionDetail
           activeOperation={activeOperation || null}

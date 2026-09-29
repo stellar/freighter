@@ -96,7 +96,13 @@ export const InfoBottomSheet = ({
   onClose,
   ...rest
 }: InfoBottomSheetProps) => (
-  <SlideupModal isModalOpen={isOpen} setIsModalOpen={() => onClose()}>
+  <SlideupModal
+    isModalOpen={isOpen}
+    setIsModalOpen={() => onClose()}
+    // Every consumer already supplies a visible title, so naming the dialog
+    // costs no new string and covers all of them at once.
+    ariaLabel={rest.title}
+  >
     <InfoSheetContent onClose={onClose} {...rest} />
   </SlideupModal>
 );
