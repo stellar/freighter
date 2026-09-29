@@ -53,11 +53,13 @@ export const useHiddenCollectibles = () => {
     const isCurrent = () => requestId === requestIdRef.current;
 
     try {
-      const { hiddenCollectibles: hidden, error } = await getHiddenCollectibles(
-        {
-          activePublicKey: publicKey,
-        },
-      );
+      const {
+        hiddenCollectibles: hidden,
+        networkName: resolvedNetworkName,
+        error,
+      } = await getHiddenCollectibles({
+        activePublicKey: publicKey,
+      });
 
       // A structured error comes back as `{ hiddenCollectibles: {}, error }` --
       // the call does not throw. Saving that empty map would record "loaded,
@@ -74,14 +76,22 @@ export const useHiddenCollectibles = () => {
       if (isCurrent()) {
         setHiddenCollectiblesError("");
       }
-      // Dispatched even when superseded: `publicKey` and `networkName` are
-      // captured from the render that started this fetch, so the map lands
-      // under its own key. Discarding it would only force a refetch when that
-      // scope comes back.
+      // Dispatched even when superseded: the map lands under its own key, so
+      // discarding it would only force a refetch when that scope comes back.
+      // The two halves of that key are scoped differently, though.
+      // `activePublicKey` goes out with the request, so the captured one always
+      // describes the response. The network does not: the background resolves
+      // `NETWORK_ID` while handling, so a switch that commits mid-flight
+      // answers with the *new* network's map. Keying that off the captured
+      // `networkName` would file mainnet's map under testnet, where the
+      // selector reads it as loaded and never refetches it.
       dispatch(
         saveHiddenCollectibles({
           publicKey,
-          networkName,
+          // A service worker from before this shipped does not echo a network.
+          // Falling back to the captured one is no worse than what it did then.
+          // Drop once the release carrying the new handler has rolled out.
+          networkName: resolvedNetworkName || networkName,
           hiddenCollectibles: hidden,
         }),
       );

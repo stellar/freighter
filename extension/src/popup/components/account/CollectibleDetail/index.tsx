@@ -127,7 +127,11 @@ export const CollectibleDetail = ({
     // shape: `sendMessageToBackground` rejects outright when the send itself
     // fails, rather than answering with an `error`.
     try {
-      const { hiddenCollectibles, error } = await changeCollectibleVisibility({
+      const {
+        hiddenCollectibles,
+        networkName: resolvedNetworkName,
+        error,
+      } = await changeCollectibleVisibility({
         collectibleKey,
         collectibleVisibility: isHidden
           ? "visible"
@@ -141,10 +145,15 @@ export const CollectibleDetail = ({
 
       // The grid filters against the redux mirror, so a write that only reaches
       // the background would leave the collectible wrongly hidden until reload.
+      // Keyed by the network the background reports rather than the one
+      // selected here: the request carries no network, so a switch that commits
+      // mid-flight writes to -- and answers with -- the other network's map.
+      // The fallback covers a service worker from before this shipped; drop it
+      // once rolled out.
       reduxDispatch(
         saveHiddenCollectibles({
           publicKey,
-          networkName: networkDetails.networkName,
+          networkName: resolvedNetworkName || networkDetails.networkName,
           hiddenCollectibles,
         }),
       );

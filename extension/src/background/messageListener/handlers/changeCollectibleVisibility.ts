@@ -35,6 +35,9 @@ export const changeCollectibleVisibility = async ({
   });
 
   // Return only this account's leaf, so a caller cannot accidentally treat the
-  // whole store as a visibility map.
-  return { hiddenCollectibles };
+  // whole store as a visibility map. `networkName` rides along because the
+  // request does not carry one: the popup mirrors this leaf under a network
+  // key, and a switch that commits while this write is in flight would
+  // otherwise leave it filing the map under the network it *was* on.
+  return { hiddenCollectibles, networkName };
 };

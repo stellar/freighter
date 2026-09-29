@@ -5,6 +5,7 @@ import * as ApiInternal from "@shared/api/internal";
 import { HiddenCollectibles } from "popup/components/account/HiddenCollectibles";
 import {
   TESTNET_NETWORK_DETAILS,
+  MAINNET_NETWORK_DETAILS,
   DEFAULT_NETWORKS,
 } from "@shared/constants/stellar";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
@@ -14,6 +15,7 @@ import {
   mockAccounts,
   TEST_PUBLIC_KEY,
   mockCollectibles,
+  getTestStore,
 } from "../../__testHelpers__";
 
 const mockRefreshHiddenCollectibles = jest.fn().mockResolvedValue(undefined);
@@ -207,6 +209,57 @@ describe("HiddenCollectibles", () => {
     });
 
     expect(screen.queryByTestId("CollectibleDetail")).not.toBeInTheDocument();
+  });
+
+  it("mirrors an unhide under the network the background reports", async () => {
+    // The write carries no network -- the background resolves NETWORK_ID while
+    // handling it -- so a switch committing mid-flight persists into the other
+    // network's bucket. Mirroring that under the network selected here would
+    // leave redux disagreeing with storage on both.
+    const hiddenCollectibles = {
+      "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA:2": "hidden",
+    };
+
+    render(
+      <Wrapper state={defaultState} routes={[ROUTES.account]}>
+        <HiddenCollectibles
+          collections={mockCollectibles}
+          isOpen={true}
+          onClose={jest.fn()}
+          refreshHiddenCollectibles={mockRefreshHiddenCollectibles}
+          isCollectibleHidden={createIsCollectibleHidden(hiddenCollectibles)}
+          isLoading={false}
+          loadError=""
+        />
+      </Wrapper>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("hidden-collectible-2")).toBeInTheDocument();
+    });
+
+    jest.spyOn(ApiInternal, "changeCollectibleVisibility").mockResolvedValue({
+      hiddenCollectibles: {},
+      networkName: MAINNET_NETWORK_DETAILS.networkName,
+      error: "",
+    } as any);
+
+    fireEvent.click(screen.getByTestId("hidden-collectible-unhide-2"));
+
+    await waitFor(() => {
+      const mirror = (
+        getTestStore()?.getState() as {
+          hiddenCollectibles: {
+            hiddenCollectibles: Record<string, Record<string, unknown>>;
+          };
+        }
+      ).hiddenCollectibles.hiddenCollectibles;
+
+      expect(
+        mirror[MAINNET_NETWORK_DETAILS.networkName]?.[TEST_PUBLIC_KEY],
+      ).toEqual({});
+      expect(mirror[TESTNET_NETWORK_DETAILS.networkName]).toBeUndefined();
+    });
   });
 
   it("re-enables the Unhide buttons when the background message fails", async () => {

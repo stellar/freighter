@@ -95,7 +95,11 @@ export const HiddenCollectibles = ({
     // the pending key only on the happy path would leave every Unhide button in
     // the sheet disabled, with nothing on screen to say why.
     try {
-      const { hiddenCollectibles, error } = await changeCollectibleVisibility({
+      const {
+        hiddenCollectibles,
+        networkName: resolvedNetworkName,
+        error,
+      } = await changeCollectibleVisibility({
         collectibleKey,
         collectibleVisibility: "visible",
         activePublicKey: publicKey,
@@ -106,11 +110,15 @@ export const HiddenCollectibles = ({
       }
 
       // The grid filters against the redux mirror, so the write has to land
-      // there too or the row stays hidden until the popup reloads.
+      // there too or the row stays hidden until the popup reloads. Keyed by the
+      // network the background reports rather than the one selected here: the
+      // request carries no network, so a switch that commits mid-flight writes
+      // to -- and answers with -- the other network's map. The fallback covers
+      // a service worker from before this shipped; drop it once rolled out.
       dispatch(
         saveHiddenCollectibles({
           publicKey,
-          networkName: networkDetails.networkName,
+          networkName: resolvedNetworkName || networkDetails.networkName,
           hiddenCollectibles,
         }),
       );

@@ -3,7 +3,10 @@ import { Provider } from "react-redux";
 import { act, renderHook, waitFor } from "@testing-library/react";
 
 import * as ApiInternal from "@shared/api/internal";
-import { TESTNET_NETWORK_DETAILS } from "@shared/constants/stellar";
+import {
+  MAINNET_NETWORK_DETAILS,
+  TESTNET_NETWORK_DETAILS,
+} from "@shared/constants/stellar";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import { makeDummyStore, TEST_PUBLIC_KEY } from "popup/__testHelpers__";
 import { saveAccount } from "popup/ducks/accountServices";
@@ -151,6 +154,77 @@ describe("useHiddenCollectibles", () => {
     // publicKey/networkName are captured from the render that started the
     // fetch, so the map is correctly keyed -- discarding it would only force a
     // refetch when that account comes back.
+    const state = store.getState() as {
+      hiddenCollectibles: {
+        hiddenCollectibles: Record<string, Record<string, unknown>>;
+      };
+    };
+    expect(
+      state.hiddenCollectibles.hiddenCollectibles[
+        TESTNET_NETWORK_DETAILS.networkName
+      ][TEST_PUBLIC_KEY],
+    ).toEqual({ [COLLECTIBLE_KEY]: "hidden" });
+  });
+
+  it("keys the map by the network the background reports, not the one it asked from", async () => {
+    // The request carries no network -- the background resolves NETWORK_ID
+    // while handling it -- so a switch committing mid-flight answers with the
+    // other network's map.
+    (ApiInternal.getHiddenCollectibles as jest.Mock).mockResolvedValue({
+      hiddenCollectibles: { [COLLECTIBLE_KEY]: "hidden" },
+      networkName: MAINNET_NETWORK_DETAILS.networkName,
+      error: "",
+    });
+
+    const { result, store } = renderUseHiddenCollectibles();
+
+    await waitFor(() => {
+      const { hiddenCollectibles } = (
+        store.getState() as {
+          hiddenCollectibles: {
+            hiddenCollectibles: Record<string, Record<string, unknown>>;
+          };
+        }
+      ).hiddenCollectibles;
+      expect(
+        hiddenCollectibles[MAINNET_NETWORK_DETAILS.networkName]?.[
+          TEST_PUBLIC_KEY
+        ],
+      ).toEqual({ [COLLECTIBLE_KEY]: "hidden" });
+    });
+
+    const { hiddenCollectibles } = (
+      store.getState() as {
+        hiddenCollectibles: {
+          hiddenCollectibles: Record<string, Record<string, unknown>>;
+        };
+      }
+    ).hiddenCollectibles;
+
+    // Filing mainnet's map under testnet is what makes the corruption stick:
+    // the selector reads a present key as loaded and never refetches it.
+    expect(
+      hiddenCollectibles[TESTNET_NETWORK_DETAILS.networkName],
+    ).toBeUndefined();
+    expect(result.current.hiddenCollectibles).toBeUndefined();
+    expect(result.current.isHiddenCollectiblesLoading).toBe(true);
+  });
+
+  it("falls back to the requesting network when the response reports none", async () => {
+    // A service worker from before the handler echoed a network. Falling back
+    // is no worse than what it did then.
+    (ApiInternal.getHiddenCollectibles as jest.Mock).mockResolvedValue({
+      hiddenCollectibles: { [COLLECTIBLE_KEY]: "hidden" },
+      networkName: "",
+      error: "",
+    });
+
+    const { result, store } = renderUseHiddenCollectibles();
+
+    await waitFor(() => {
+      expect(result.current.isHiddenCollectiblesLoading).toBe(false);
+    });
+
     const state = store.getState() as {
       hiddenCollectibles: {
         hiddenCollectibles: Record<string, Record<string, unknown>>;

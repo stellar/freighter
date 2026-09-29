@@ -2781,6 +2781,10 @@ export const changeCollectibleVisibility = async ({
 
   return {
     hiddenCollectibles: response?.hiddenCollectibles || {},
+    // The network the background resolved while handling this, which is not
+    // necessarily the one the caller was on when it sent it. Empty only when an
+    // older service worker answers; callers fall back to their own network.
+    networkName: response?.networkName || "",
     error: response?.error || "",
   };
 };
@@ -2797,6 +2801,9 @@ export const getHiddenCollectibles = async ({
 
   return {
     hiddenCollectibles: response?.hiddenCollectibles || {},
+    // See `changeCollectibleVisibility`: the request carries no network, so
+    // this is the only thing identifying the map that came back.
+    networkName: response?.networkName || "",
     error: response?.error || "",
   };
 };
