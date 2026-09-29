@@ -520,22 +520,24 @@ test("Loads wallets data and token prices on Mainnet in batches", async ({
 
   // Address and balance now live in separate cells (no more concatenated
   // "address - $balance" text), so scope each assertion to the row that
-  // contains the address and check its balance cell within that row.
+  // contains the address and check its balance cell within that row. Totals
+  // are (XLM + BTC, plus USDC on the first row) x the one stubbed price,
+  // summed first and then rounded half-up to the cent.
   await expect(
     page.getByTestId("wallet-row-select").filter({ hasText: "GDF3…ZEFY" }),
-  ).toContainText("$6.52");
+  ).toContainText("$6.53");
   await expect(
     page.getByTestId("wallet-row-select").filter({ hasText: "GCKU…67J2" }),
   ).toContainText("$5.71");
   await expect(
     page.getByTestId("wallet-row-select").filter({ hasText: "GDPX…YGJC" }),
-  ).toContainText("$6.11");
+  ).toContainText("$6.12");
   await expect(
     page.getByTestId("wallet-row-select").filter({ hasText: "GC32…GTQA" }),
-  ).toContainText("$6.52");
+  ).toContainText("$6.53");
   await expect(
     page.getByTestId("wallet-row-select").filter({ hasText: "GDY4…BQ7C" }),
-  ).toContainText("$6.93");
+  ).toContainText("$6.94");
   await expect(
     page.getByTestId("wallet-row-select").filter({ hasText: "GBW2…OU3T" }),
   ).toContainText("$7.34");
