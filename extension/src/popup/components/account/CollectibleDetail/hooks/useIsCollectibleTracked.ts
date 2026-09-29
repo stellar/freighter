@@ -33,6 +33,15 @@ export const useIsCollectibleTracked = ({
   useEffect(() => {
     let isStale = false;
 
+    // This effect keys on publicKey and network as well as the collectible, but
+    // the detail sheet's `key` only covers the collectible -- so an account or
+    // network change with the sheet mounted would otherwise keep answering for
+    // the previous scope. Resetting here also closes the `!publicKey` early
+    // return and the catch below, both of which used to leave the old value in
+    // place, and restores the documented default: hide the action until a read
+    // confirms it can succeed.
+    setIsTracked(false);
+
     const check = async () => {
       if (!publicKey) {
         return;
