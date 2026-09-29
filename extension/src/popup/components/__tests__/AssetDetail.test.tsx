@@ -1042,7 +1042,7 @@ describe("AssetDetail", () => {
       );
     });
 
-    it("keeps the app's price format for the inspected header price, floored like spot", async () => {
+    it("keeps the app's price format for the inspected header price, rounded like spot", async () => {
       const INSPECTABLE_HISTORY = makeHistory({
         points: [
           { t: 0, p: "1.20" },
@@ -1063,10 +1063,10 @@ describe("AssetDetail", () => {
       rectSpy = mockChartRect();
       const svg = await screen.findByTestId("TokenPriceChart__svg");
 
-      // 1.235 through spot's floor (`roundUsdValue`) → "$1.23".
+      // 1.235 through spot's half-up cent rounding (`roundUsdValue`) → "$1.24".
       fireEvent.pointerDown(svg, { clientX: 320, pointerId: 1 });
       expect(screen.getByTestId("AssetDetail__price").textContent).toBe(
-        "$1.23",
+        "$1.24",
       );
     });
 
@@ -1155,7 +1155,7 @@ describe("AssetDetail", () => {
         { timeout: 3000 },
       );
       // The spot price is live, not per-timeframe.
-      expect(screen.getByText("$0.27")).toBeInTheDocument();
+      expect(screen.getByText("$0.28")).toBeInTheDocument();
     });
 
     it("shows the placeholder for an uncached range, never the previous number", async () => {
