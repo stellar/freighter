@@ -382,13 +382,17 @@ export const migrateHiddenAssetsToKeyNetworkSchema = async () => {
           hiddenAssetsByKey = currentHiddenAssets;
         }
       }
+
+      await localStore.setItem(HIDDEN_ASSETS, hiddenAssetsByKey);
+
+      await migrateDataStorageVersion("5.46.0");
     } catch (error) {
-      hiddenAssetsByKey = empty;
+      // Leave both the stored value and the storage version alone so this runs
+      // again on the next start. Writing `empty` here would erase the very
+      // hides the migration exists to preserve, and bumping the version would
+      // put them permanently out of reach.
+      console.error(error);
     }
-
-    await localStore.setItem(HIDDEN_ASSETS, hiddenAssetsByKey);
-
-    await migrateDataStorageVersion("5.46.0");
   }
 };
 
@@ -436,13 +440,17 @@ export const migrateHiddenCollectiblesToKeyNetworkSchema = async () => {
           hiddenCollectiblesByKey = currentHiddenCollectibles;
         }
       }
+
+      await localStore.setItem(HIDDEN_COLLECTIBLES, hiddenCollectiblesByKey);
+
+      await migrateDataStorageVersion("5.47.0");
     } catch (error) {
-      hiddenCollectiblesByKey = empty;
+      // Leave both the stored value and the storage version alone so this runs
+      // again on the next start. Writing `empty` here would erase the very
+      // hides the migration exists to preserve, and bumping the version would
+      // put them permanently out of reach.
+      console.error(error);
     }
-
-    await localStore.setItem(HIDDEN_COLLECTIBLES, hiddenCollectiblesByKey);
-
-    await migrateDataStorageVersion("5.47.0");
   }
 };
 

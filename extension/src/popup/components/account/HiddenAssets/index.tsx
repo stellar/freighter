@@ -36,6 +36,10 @@ export const HiddenAssets = ({ isOpen, onClose }: HiddenAssetsProps) => {
   const dispatch = useDispatch<AppDispatch>();
   const [pendingKey, setPendingKey] = useState<string | null>(null);
   const [error, setError] = useState("");
+  // The visibility map failing to load is not the same as "nothing hidden": it
+  // has to stop the loader without letting the empty state claim the account
+  // has no hidden assets.
+  const [didVisibilityFail, setDidVisibilityFail] = useState(false);
 
   // showHidden: true, or the hidden assets would be filtered out of the very
   // list this sheet exists to show.
@@ -65,6 +69,7 @@ export const HiddenAssets = ({ isOpen, onClose }: HiddenAssetsProps) => {
       fetchData(true);
     } else {
       setError("");
+      setDidVisibilityFail(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
@@ -81,13 +86,27 @@ export const HiddenAssets = ({ isOpen, onClose }: HiddenAssetsProps) => {
 
     let isStale = false;
     const loadVisibility = async () => {
-      const { hiddenAssets: fetched } = await getHiddenAssets({
-        activePublicKey: publicKey,
-      });
-      if (!isStale) {
+      try {
+        const { hiddenAssets: fetched, error: fetchError } =
+          await getHiddenAssets({
+            activePublicKey: publicKey,
+          });
+        if (isStale) {
+          return;
+        }
+        if (fetchError) {
+          throw new Error(fetchError);
+        }
         dispatch(
           saveHiddenAssets({ publicKey, networkName, hiddenAssets: fetched }),
         );
+      } catch (e) {
+        // Without this the rejection is unhandled and the key stays undefined,
+        // which `isLoading` reads as "still loading" -- a permanent spinner.
+        if (!isStale) {
+          setDidVisibilityFail(true);
+          setError(t("Unable to load hidden tokens. Please try again."));
+        }
       }
     };
 
@@ -105,7 +124,7 @@ export const HiddenAssets = ({ isOpen, onClose }: HiddenAssetsProps) => {
     // `undefined` means this account has never been loaded, which is not the
     // same as "nothing hidden" -- show a loader rather than an empty state we
     // would have to take back a moment later.
-    hiddenAssets === undefined;
+    (hiddenAssets === undefined && !didVisibilityFail);
 
   const hiddenRows = (resolved?.domains || []).filter(
     ({ code = "", issuer = "" }) =>
@@ -182,7 +201,7 @@ export const HiddenAssets = ({ isOpen, onClose }: HiddenAssetsProps) => {
             </div>
           ) : null}
 
-          {!isLoading && !hiddenRows.length ? (
+          {!isLoading && !didVisibilityFail && !hiddenRows.length ? (
             <div
               className="HiddenAssets__empty"
               data-testid="HiddenAssets__empty"

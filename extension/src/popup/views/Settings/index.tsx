@@ -60,7 +60,10 @@ const SettingsAction = ({
 }) => (
   <div className="Settings__row">
     <div className="Settings__icon">{icon}</div>
-    <div
+    {/* A native button, not a div: these rows sit beside ListNavLink anchors
+        and have to take focus and fire from the keyboard the same way. */}
+    <button
+      type="button"
       className={`Settings__action${
         isDestructive ? " Settings__action--destructive" : ""
       }`}
@@ -68,7 +71,7 @@ const SettingsAction = ({
       data-testid={dataTestId}
     >
       {label}
-    </div>
+    </button>
   </div>
 );
 

@@ -77,12 +77,21 @@
     }
   }
 
-  // Action rows carry no chevron, so they need the link colour and cursor that
-  // ListNavLink would otherwise supply.
+  // A <button>, so it needs the appearance reset knocked out before it can
+  // match the ListNavLink rows beside it. Action rows carry no chevron, so they
+  // also need the link colour and cursor ListNavLink would otherwise supply.
+  // Note: no `color: inherit` -- these rows set their own, including the
+  // destructive variant below.
   &__action {
     color: var(--sds-clr-gray-12);
     cursor: pointer;
     width: 100%;
+    padding: 0;
+    border: 0;
+    background: none;
+    appearance: none;
+    font: inherit;
+    text-align: left;
 
     &--destructive {
       color: var(--sds-clr-red-09);

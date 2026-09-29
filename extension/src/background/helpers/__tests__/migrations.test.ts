@@ -56,6 +56,23 @@ const dataStorageAccess = (storageApi: DataStorageAccess.StorageOption) => {
 
 const mockStorage = new MockStorage();
 
+/**
+ * Reject reads of one key while every other read -- notably STORAGE_VERSION,
+ * which the migration guard needs -- still works. Returns the restore fn.
+ */
+const failReadsOf = (failingKey: string) => {
+  const realGet = mockStorage.get;
+  const spy = jest
+    .spyOn(mockStorage, "get")
+    .mockImplementation(async (key: string) => {
+      if (key === failingKey) {
+        throw new Error("storage unavailable");
+      }
+      return realGet(key);
+    });
+  return () => spy.mockRestore();
+};
+
 jest
   .spyOn(DataStorageAccess, "dataStorageAccess")
   .mockImplementation(() =>
@@ -292,6 +309,30 @@ describe("Storage migrations", () => {
       expect(stored[HIDDEN_ASSETS]).toEqual(nested);
     });
 
+    it("leaves the data and the version alone when the read fails", async () => {
+      // A failed read is not "nothing hidden": writing the empty schema would
+      // erase the user's hides, and bumping the version would put them
+      // permanently out of retry range.
+      await mockStorage.set({ [STORAGE_VERSION]: "5.45.0" });
+      await mockStorage.set({ [HIDDEN_ASSETS]: legacy });
+      await mockStorage.set({ [LAST_USED_ACCOUNT]: ACCOUNT });
+
+      const consoleError = jest
+        .spyOn(console, "error")
+        .mockImplementation(() => {});
+      const restore = failReadsOf(HIDDEN_ASSETS);
+
+      await DataStorage.migrateHiddenAssetsToKeyNetworkSchema();
+
+      restore();
+      consoleError.mockRestore();
+
+      const stored = await mockStorage.get(HIDDEN_ASSETS);
+      expect(stored[HIDDEN_ASSETS]).toEqual(legacy);
+      const storedVersion = await mockStorage.get(STORAGE_VERSION);
+      expect(storedVersion[STORAGE_VERSION]).toEqual("5.45.0");
+    });
+
     it("does not run once storage is already at 5.46.0", async () => {
       await mockStorage.set({ [STORAGE_VERSION]: "5.46.0" });
       await mockStorage.set({ [HIDDEN_ASSETS]: legacy });
@@ -351,6 +392,27 @@ describe("Storage migrations", () => {
         [NETWORK_NAMES.TESTNET]: {},
         [NETWORK_NAMES.FUTURENET]: {},
       });
+    });
+
+    it("leaves the data and the version alone when the read fails", async () => {
+      await mockStorage.set({ [STORAGE_VERSION]: "5.46.0" });
+      await mockStorage.set({ [HIDDEN_COLLECTIBLES]: legacy });
+      await mockStorage.set({ [LAST_USED_ACCOUNT]: ACCOUNT });
+
+      const consoleError = jest
+        .spyOn(console, "error")
+        .mockImplementation(() => {});
+      const restore = failReadsOf(HIDDEN_COLLECTIBLES);
+
+      await DataStorage.migrateHiddenCollectiblesToKeyNetworkSchema();
+
+      restore();
+      consoleError.mockRestore();
+
+      const stored = await mockStorage.get(HIDDEN_COLLECTIBLES);
+      expect(stored[HIDDEN_COLLECTIBLES]).toEqual(legacy);
+      const storedVersion = await mockStorage.get(STORAGE_VERSION);
+      expect(storedVersion[STORAGE_VERSION]).toEqual("5.46.0");
     });
 
     it("leaves an already-nested map untouched", async () => {

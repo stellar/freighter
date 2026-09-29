@@ -725,6 +725,7 @@
   "Unable to hide {{code}}": "Unable to hide {{code}}",
   "Unable to hide this collectible": "Unable to hide this collectible",
   "Unable to load hidden collectibles": "Unable to load hidden collectibles",
+  "Unable to load hidden tokens. Please try again.": "Unable to load hidden tokens. Please try again.",
   "Unable to load network details": "Não foi possível carregar os detalhes da rede",
   "Unable to migrate": "Não foi possível migrar",
   "Unable to parse assets lists": "Não foi possível fazer parse das asset lists",

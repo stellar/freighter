@@ -2633,6 +2633,10 @@ export const changeAssetVisibility = async ({
     type: SERVICE_TYPES.CHANGE_ASSET_VISIBILITY,
     assetVisibility: {
       assetKey,
+      // See ChangeAssetVisibilityMessage: a service worker from before the
+      // rename reads `issuer`, and the two fields carry the same canonical
+      // `{code}:{issuer}` value.
+      issuer: assetKey,
       visibility: assetVisibility,
     },
     activePublicKey,

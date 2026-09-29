@@ -128,13 +128,19 @@ function useGetBalances(options: {
       if (!options.showHidden && !hiddenAssets) {
         const fetched = await getHiddenAssets({ activePublicKey: publicKey });
         hiddenAssets = fetched.hiddenAssets;
-        reduxDispatch(
-          saveHiddenAssets({
-            publicKey,
-            networkName: networkDetails.networkName,
-            hiddenAssets,
-          }),
-        );
+        // Only cache a map the background actually loaded. Saving the `{}` that
+        // comes back with an error would define the slice key, so every hidden
+        // asset would show and no later call would retry for the rest of the
+        // session; `{}` still serves as the local fallback for this pass.
+        if (!fetched.error) {
+          reduxDispatch(
+            saveHiddenAssets({
+              publicKey,
+              networkName: networkDetails.networkName,
+              hiddenAssets,
+            }),
+          );
+        }
       }
 
       const { balances, unfilteredBalances } = formatBalances({

@@ -420,6 +420,11 @@ export interface ChangeAssetVisibilityMessage extends BaseMessage {
   type: SERVICE_TYPES.CHANGE_ASSET_VISIBILITY;
   assetVisibility: {
     assetKey: AssetKey;
+    // Legacy alias for `assetKey`, carrying the identical canonical value. A
+    // service worker from before the rename reads `issuer`; sending only
+    // `assetKey` makes it write the visibility under `undefined` and report
+    // success. Drop once the release shipping the new handler has rolled out.
+    issuer?: AssetKey;
     visibility: AssetVisibility;
   };
 }

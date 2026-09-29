@@ -12,8 +12,10 @@ import { getPathFromRoute } from "popup/helpers/route";
  * Details -- but these two routes still live under its path and are reached from
  * Home, so the router stays.
  *
- * The index redirects rather than 404s: the popup restores its last route on
- * reopen, so a popup left on /manage-assets would otherwise come back blank.
+ * The index and the wildcard redirect rather than 404: the popup restores its
+ * last route on reopen, so a popup left on /manage-assets -- or on a child this
+ * release retired, such as the old /manage-assets/asset-visibility -- would
+ * otherwise come back blank.
  */
 export const ManageAssets = () => {
   const manageAssetsBasePath = "/manage-assets/";
@@ -31,6 +33,10 @@ export const ManageAssets = () => {
       <Route index element={<Navigate to={ROUTES.account} replace />}></Route>
       <Route path={searchAssetsPath} element={<SearchAsset />}></Route>
       <Route path={addAssetsPath} element={<AddAsset />}></Route>
+      <Route
+        path="*"
+        element={<Navigate to={ROUTES.account} replace />}
+      ></Route>
     </Routes>
   );
 };

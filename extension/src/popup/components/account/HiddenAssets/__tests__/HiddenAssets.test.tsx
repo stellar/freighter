@@ -56,12 +56,10 @@ const renderSheet = () =>
 describe("HiddenAssets", () => {
   beforeEach(() => {
     fetchData.mockClear();
-    jest
-      .spyOn(ApiInternal, "getHiddenAssets")
-      .mockResolvedValue({
-        hiddenAssets: { [KALE]: "hidden" },
-        error: "",
-      } as any);
+    jest.spyOn(ApiInternal, "getHiddenAssets").mockResolvedValue({
+      hiddenAssets: { [KALE]: "hidden" },
+      error: "",
+    } as any);
   });
 
   afterEach(() => {
@@ -103,6 +101,40 @@ describe("HiddenAssets", () => {
 
     await waitFor(() =>
       expect(screen.getByTestId("HiddenAssets__empty")).toBeInTheDocument(),
+    );
+  });
+
+  // The dangerous shape of failure is the quiet one: persisting the empty map
+  // that comes back with an error would define the redux key, so the sheet
+  // would claim nothing is hidden and never retry on reopen.
+  it("reports a structured error instead of claiming nothing is hidden", async () => {
+    jest
+      .spyOn(ApiInternal, "getHiddenAssets")
+      .mockResolvedValue({ hiddenAssets: {}, error: "boom" } as any);
+    mockDomains([{ code: "KALE", issuer: ISSUER, domain: "kalepail.com" }]);
+    renderSheet();
+
+    await waitFor(() =>
+      expect(
+        screen.getByText(/Unable to load hidden tokens/),
+      ).toBeInTheDocument(),
+    );
+    expect(screen.queryByTestId("HiddenAssets__empty")).not.toBeInTheDocument();
+  });
+
+  // Without a catch the rejection is unhandled and the redux key stays
+  // undefined, which the loader reads as "still loading" -- forever.
+  it("does not spin forever when the message rejects", async () => {
+    jest
+      .spyOn(ApiInternal, "getHiddenAssets")
+      .mockRejectedValue(new Error("no background"));
+    mockDomains([{ code: "KALE", issuer: ISSUER, domain: "kalepail.com" }]);
+    renderSheet();
+
+    await waitFor(() =>
+      expect(
+        screen.getByText(/Unable to load hidden tokens/),
+      ).toBeInTheDocument(),
     );
   });
 
