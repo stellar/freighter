@@ -1,7 +1,7 @@
 import { ChangeAssetVisibilityMessage } from "@shared/api/types/message-request";
 import { getNetworkDetails } from "background/helpers/account";
 import { DataStorageAccess } from "background/helpers/dataStorageAccess";
-import { getHiddenAssetsStore } from "../helpers/get-hidden-assets";
+import { resolveHiddenAssetsStore } from "../helpers/get-hidden-assets";
 import { HIDDEN_ASSETS } from "constants/localStorageTypes";
 
 export const changeAssetVisibility = async ({
@@ -14,7 +14,12 @@ export const changeAssetVisibility = async ({
   const { assetVisibility, activePublicKey } = request;
   const { networkName } = await getNetworkDetails({ localStore });
 
-  const store = await getHiddenAssetsStore({ localStore });
+  // Resolved, not read: storage may still hold the pre-5.46.0 flat map, and
+  // spreading an empty store over it would erase every earlier hide.
+  const store = await resolveHiddenAssetsStore({
+    localStore,
+    publicKey: activePublicKey,
+  });
   const byNetwork = store[networkName] || {};
   const hiddenAssets = {
     ...byNetwork[activePublicKey],

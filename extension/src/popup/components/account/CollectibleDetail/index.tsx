@@ -113,19 +113,41 @@ export const CollectibleDetail = ({
 
   const handleToggleCollectibleVisibility = async () => {
     const collectibleKey = `${selectedCollectible.collectionAddress}:${selectedCollectible.tokenId}`;
-    const { hiddenCollectibles, error } = await changeCollectibleVisibility({
-      collectibleKey,
-      collectibleVisibility: isHidden
-        ? "visible"
-        : ("hidden" as AssetVisibility),
-      activePublicKey: publicKey || "",
-    });
-
-    setIsPopoverOpen(false);
 
     // This used to discard the response entirely, so a failed write closed the
-    // sheet exactly as a successful one did.
-    if (error) {
+    // sheet exactly as a successful one did. The catch covers the other failure
+    // shape: `sendMessageToBackground` rejects outright when the send itself
+    // fails, rather than answering with an `error`.
+    try {
+      const { hiddenCollectibles, error } = await changeCollectibleVisibility({
+        collectibleKey,
+        collectibleVisibility: isHidden
+          ? "visible"
+          : ("hidden" as AssetVisibility),
+        activePublicKey: publicKey || "",
+      });
+
+      if (error) {
+        throw new Error(error);
+      }
+
+      // The grid filters against the redux mirror, so a write that only reaches
+      // the background would leave the collectible wrongly hidden until reload.
+      reduxDispatch(
+        saveHiddenCollectibles({
+          publicKey,
+          networkName: networkDetails.networkName,
+          hiddenCollectibles,
+        }),
+      );
+      handleItemClose();
+      toast.custom(() => (
+        <Notification
+          variant="success"
+          title={isHidden ? t("Collectible unhidden") : t("Collectible hidden")}
+        />
+      ));
+    } catch (e) {
       toast.custom(() => (
         <Notification
           variant="error"
@@ -136,25 +158,9 @@ export const CollectibleDetail = ({
           }
         />
       ));
-      return;
+    } finally {
+      setIsPopoverOpen(false);
     }
-
-    // The grid filters against the redux mirror, so a write that only reaches
-    // the background would leave the collectible wrongly hidden until reload.
-    reduxDispatch(
-      saveHiddenCollectibles({
-        publicKey,
-        networkName: networkDetails.networkName,
-        hiddenCollectibles,
-      }),
-    );
-    handleItemClose();
-    toast.custom(() => (
-      <Notification
-        variant="success"
-        title={isHidden ? t("Collectible unhidden") : t("Collectible hidden")}
-      />
-    ));
   };
 
   const handleRemoveCollectible = async () => {

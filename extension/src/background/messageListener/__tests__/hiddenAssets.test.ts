@@ -6,6 +6,7 @@ import type { ChangeAssetVisibilityMessage } from "@shared/api/types/message-req
 
 const TEST_NET = "Test Net";
 const MAIN_NET = "Main Net";
+const FUTURE_NET = "Future Net";
 
 let mockNetworkName = TEST_NET;
 
@@ -117,7 +118,12 @@ describe("hidden assets scoping", () => {
     expect((await read(ACCOUNT_A, localStore)).hiddenAssets).toEqual({});
   });
 
-  it("does not clobber sibling accounts when writing over a legacy map", async () => {
+  it("carries a legacy map into the new schema instead of writing over it", async () => {
+    // The reader answers `{}` for the old shape, so a writer that spread it
+    // would replace the whole flat map. The result has no string leaves, so the
+    // migration would then treat it as done and the old hides would be gone for
+    // good. The old map applied to every account on every network, so it is
+    // attributed to the writing account on each configured network.
     const localStore = makeStore({
       [HIDDEN_ASSETS]: { [USDC]: "hidden" },
     });
@@ -125,7 +131,11 @@ describe("hidden assets scoping", () => {
     await hide(ACCOUNT_A, "EURC:GB3Q6", localStore);
 
     expect(localStore.read()).toEqual({
-      [TEST_NET]: { [ACCOUNT_A]: { "EURC:GB3Q6": "hidden" } },
+      [MAIN_NET]: { [ACCOUNT_A]: { [USDC]: "hidden" } },
+      [FUTURE_NET]: { [ACCOUNT_A]: { [USDC]: "hidden" } },
+      [TEST_NET]: {
+        [ACCOUNT_A]: { [USDC]: "hidden", "EURC:GB3Q6": "hidden" },
+      },
     });
   });
 });

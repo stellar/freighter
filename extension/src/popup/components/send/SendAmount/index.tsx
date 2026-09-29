@@ -964,14 +964,17 @@ export const SendAmount = ({
           />
         </>
       ) : null}
-      {isShowingFeesPane ? (
-        <SlideupModal
-          setIsModalOpen={() => {
-            setIsShowingFeesPane(false);
-            setIsEditingSettings(true);
-          }}
-          isModalOpen={isShowingFeesPane}
-        >
+      {/* Mounted unconditionally, with only the contents gated -- as the review
+          sheet below already is. An unmount on close would cut the slide-out
+          off, since SlideupModal reports the close as it starts. */}
+      <SlideupModal
+        setIsModalOpen={() => {
+          setIsShowingFeesPane(false);
+          setIsEditingSettings(true);
+        }}
+        isModalOpen={isShowingFeesPane}
+      >
+        {isShowingFeesPane ? (
           <View.Inset>
             <div className="SendAmount__FeesPane">
               <FeesPane
@@ -990,8 +993,10 @@ export const SendAmount = ({
               />
             </div>
           </View.Inset>
-        </SlideupModal>
-      ) : null}
+        ) : (
+          <></>
+        )}
+      </SlideupModal>
       <SlideupModal
         setIsModalOpen={() => setIsReviewingTx(false)}
         isModalOpen={isReviewingTx}

@@ -6,6 +6,7 @@ import type { ChangeCollectibleVisibilityMessage } from "@shared/api/types/messa
 
 const TEST_NET = "Test Net";
 const MAIN_NET = "Main Net";
+const FUTURE_NET = "Future Net";
 
 let mockNetworkName = TEST_NET;
 
@@ -118,7 +119,9 @@ describe("hidden collectibles scoping", () => {
     expect((await read(ACCOUNT_A, localStore)).hiddenCollectibles).toEqual({});
   });
 
-  it("does not clobber sibling accounts when writing over a legacy map", async () => {
+  it("carries a legacy map into the new schema instead of writing over it", async () => {
+    // Same reasoning as the hidden-assets case: dropping the old flat map on
+    // the first write would put it permanently out of the migration's reach.
     const localStore = makeStore({
       [HIDDEN_COLLECTIBLES]: { [PENGUIN]: "hidden" },
     });
@@ -126,7 +129,11 @@ describe("hidden collectibles scoping", () => {
     await hide(ACCOUNT_A, DOMAIN, localStore);
 
     expect(localStore.read()).toEqual({
-      [TEST_NET]: { [ACCOUNT_A]: { [DOMAIN]: "hidden" } },
+      [MAIN_NET]: { [ACCOUNT_A]: { [PENGUIN]: "hidden" } },
+      [FUTURE_NET]: { [ACCOUNT_A]: { [PENGUIN]: "hidden" } },
+      [TEST_NET]: {
+        [ACCOUNT_A]: { [PENGUIN]: "hidden", [DOMAIN]: "hidden" },
+      },
     });
   });
 

@@ -208,6 +208,46 @@ describe("HiddenCollectibles", () => {
 
     expect(screen.queryByTestId("CollectibleDetail")).not.toBeInTheDocument();
   });
+
+  it("re-enables the Unhide buttons when the background message fails", async () => {
+    // `sendMessageToBackground` rejects outright when the send fails -- e.g.
+    // while the service worker restarts -- rather than answering with an
+    // `error`. Without a catch the pending key was never cleared and every
+    // Unhide button stayed disabled with nothing on screen to explain it.
+    const hiddenCollectibles = {
+      "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA:2": "hidden",
+    };
+
+    render(
+      <Wrapper state={defaultState} routes={[ROUTES.account]}>
+        <HiddenCollectibles
+          collections={mockCollectibles}
+          isOpen={true}
+          onClose={jest.fn()}
+          refreshHiddenCollectibles={mockRefreshHiddenCollectibles}
+          isCollectibleHidden={createIsCollectibleHidden(hiddenCollectibles)}
+          isLoading={false}
+          loadError=""
+        />
+      </Wrapper>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("hidden-collectible-2")).toBeInTheDocument();
+    });
+
+    jest
+      .spyOn(ApiInternal, "changeCollectibleVisibility")
+      .mockRejectedValue(new Error("Could not establish connection"));
+
+    fireEvent.click(screen.getByTestId("hidden-collectible-unhide-2"));
+
+    await waitFor(() => {
+      expect(
+        screen.getByTestId("hidden-collectible-unhide-2"),
+      ).not.toBeDisabled();
+    });
+  });
   it("waits for the visibility map instead of claiming nothing is hidden", async () => {
     render(
       <Wrapper state={defaultState} routes={[ROUTES.account]}>

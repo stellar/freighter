@@ -33,6 +33,13 @@ interface ToggleTokenInternalProps {
   };
   networkDetails: NetworkDetails;
   onCancel: () => void;
+  /**
+   * Where to go once the add or remove has gone through. Defaults to
+   * `onCancel`, which is right for a sheet whose only job was the prompt --
+   * but a caller that returns to the removed token's own page needs to leave
+   * instead, or it lands back on a detail view for something that is gone.
+   */
+  onSuccess?: () => void;
   publicKey: string;
   /** Which surface the remove was initiated from, for asset_remove.responded. */
   source?: "manage_assets" | "asset_detail";
@@ -42,6 +49,7 @@ export const ToggleTokenInternal = ({
   asset,
   networkDetails,
   onCancel,
+  onSuccess,
   publicKey,
   source = "manage_assets",
 }: ToggleTokenInternalProps) => {
@@ -104,7 +112,7 @@ export const ToggleTokenInternal = ({
         )} ${networkDetails.network}`,
       );
     }
-    onCancel();
+    (onSuccess || onCancel)();
   };
   const isSac = isAssetSac({
     asset: {

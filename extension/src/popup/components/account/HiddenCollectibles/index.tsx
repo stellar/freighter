@@ -90,36 +90,43 @@ export const HiddenCollectibles = ({
     const collectibleKey = `${collectionAddress}:${tokenId}`;
     setPendingKey(collectibleKey);
 
-    const { hiddenCollectibles, error } = await changeCollectibleVisibility({
-      collectibleKey,
-      collectibleVisibility: "visible",
-      activePublicKey: publicKey,
-    });
+    // `sendMessageToBackground` awaits `browser.runtime.sendMessage` with no
+    // catch, so a failed send rejects rather than returning an `error`. Clearing
+    // the pending key only on the happy path would leave every Unhide button in
+    // the sheet disabled, with nothing on screen to say why.
+    try {
+      const { hiddenCollectibles, error } = await changeCollectibleVisibility({
+        collectibleKey,
+        collectibleVisibility: "visible",
+        activePublicKey: publicKey,
+      });
 
-    setPendingKey(null);
+      if (error) {
+        throw new Error(error);
+      }
 
-    if (error) {
+      // The grid filters against the redux mirror, so the write has to land
+      // there too or the row stays hidden until the popup reloads.
+      dispatch(
+        saveHiddenCollectibles({
+          publicKey,
+          networkName: networkDetails.networkName,
+          hiddenCollectibles,
+        }),
+      );
+      toast.custom(() => (
+        <Notification variant="success" title={t("Collectible unhidden")} />
+      ));
+    } catch (e) {
       toast.custom(() => (
         <Notification
           variant="error"
           title={t("Unable to show this collectible")}
         />
       ));
-      return;
+    } finally {
+      setPendingKey(null);
     }
-
-    // The grid filters against the redux mirror, so the write has to land there
-    // too or the row stays hidden until the popup reloads.
-    dispatch(
-      saveHiddenCollectibles({
-        publicKey,
-        networkName: networkDetails.networkName,
-        hiddenCollectibles,
-      }),
-    );
-    toast.custom(() => (
-      <Notification variant="success" title={t("Collectible unhidden")} />
-    ));
   };
 
   return (

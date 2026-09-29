@@ -29,6 +29,12 @@ import {
 } from "@shared/constants/stellar";
 import { DEFAULT_ASSETS_LISTS } from "@shared/constants/soroban/asset-list";
 import { dataStorageAccess, browserLocalStorage } from "./dataStorageAccess";
+import {
+  emptyVisibilityStore,
+  getVisibilityNetworkNames,
+  isLegacyFlatVisibilityMap,
+  nestLegacyVisibilityMap,
+} from "./hidden-visibility";
 
 // Session Storage Feature Flag - turn on when storage.session is supported
 export const SESSION_STORAGE_ENABLED = true;
@@ -347,40 +353,40 @@ export const migrateHiddenAssetsToKeyNetworkSchema = async () => {
   const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
 
   if (shouldRunMigration({ storageVersion, migrationVersion: "5.46.0" })) {
-    const empty = {
-      [NETWORK_NAMES.PUBNET]: {},
-      [NETWORK_NAMES.TESTNET]: {},
-      [NETWORK_NAMES.FUTURENET]: {},
-    };
-    let hiddenAssetsByKey: Record<string, unknown> = empty;
-
     try {
       const currentHiddenAssets = await localStore.getItem(HIDDEN_ASSETS);
       const lastUsedAccount = await localStore.getItem(LAST_USED_ACCOUNT);
+      // Every configured network, not just the three built-in ones: readers key
+      // off `networkDetails.networkName`, so a custom network with no bucket
+      // resolves to `undefined` and nothing is ever hidden there.
+      const networkNames = await getVisibilityNetworkNames({ localStore });
 
-      // The old value was a single flat { [assetKey]: visibility } map shared by
-      // every account on every network. Assign it to the active account on all
-      // three networks: the user hid these deliberately, very often to bury a
-      // spam airdrop, so dropping them is a visible regression -- but spreading
-      // them to accounts they never touched would widen the very bug this
-      // migration exists to fix, with no one-step undo.
-      if (currentHiddenAssets && lastUsedAccount) {
-        const isAlreadyMigrated = !Object.values(currentHiddenAssets).some(
-          (value) => typeof value === "string",
-        );
+      let hiddenAssetsByKey: Record<string, unknown> =
+        emptyVisibilityStore(networkNames);
 
-        if (!isAlreadyMigrated) {
-          const byAccount = {
-            [lastUsedAccount as string]: currentHiddenAssets,
-          };
-          hiddenAssetsByKey = {
-            [NETWORK_NAMES.PUBNET]: byAccount,
-            [NETWORK_NAMES.TESTNET]: byAccount,
-            [NETWORK_NAMES.FUTURENET]: byAccount,
-          };
-        } else {
-          hiddenAssetsByKey = currentHiddenAssets;
+      if (currentHiddenAssets) {
+        // Nothing to attribute the old map to yet -- `lastUsedAccount` is
+        // removed by clearAccount / removePreviousAccount. Leave the stored
+        // value and the storage version alone so this runs again once an
+        // account is in use; writing empty buckets here would erase the very
+        // hides the migration exists to preserve.
+        if (!lastUsedAccount) {
+          return;
         }
+
+        // The old value was a single flat { [assetKey]: visibility } map shared
+        // by every account on every network. Assign it to the active account on
+        // all of them: the user hid these deliberately, very often to bury a
+        // spam airdrop, so dropping them is a visible regression -- but
+        // spreading them to accounts they never touched would widen the very bug
+        // this migration exists to fix, with no one-step undo.
+        hiddenAssetsByKey = isLegacyFlatVisibilityMap(currentHiddenAssets)
+          ? nestLegacyVisibilityMap({
+              legacyMap: currentHiddenAssets,
+              publicKey: lastUsedAccount as string,
+              networkNames,
+            })
+          : (currentHiddenAssets as Record<string, unknown>);
       }
 
       await localStore.setItem(HIDDEN_ASSETS, hiddenAssetsByKey);
@@ -404,41 +410,33 @@ export const migrateHiddenCollectiblesToKeyNetworkSchema = async () => {
   // version the hidden-assets migration already wrote would skip this entirely
   // for anyone who has run that one.
   if (shouldRunMigration({ storageVersion, migrationVersion: "5.47.0" })) {
-    const empty = {
-      [NETWORK_NAMES.PUBNET]: {},
-      [NETWORK_NAMES.TESTNET]: {},
-      [NETWORK_NAMES.FUTURENET]: {},
-    };
-    let hiddenCollectiblesByKey: Record<string, unknown> = empty;
-
     try {
       const currentHiddenCollectibles =
         await localStore.getItem(HIDDEN_COLLECTIBLES);
       const lastUsedAccount = await localStore.getItem(LAST_USED_ACCOUNT);
+      const networkNames = await getVisibilityNetworkNames({ localStore });
 
-      // Same reasoning as the hidden-assets migration: the old value was a
-      // single flat { [collectibleKey]: visibility } map shared by every
-      // account on every network. Assign it to the active account on all three
-      // networks -- dropping deliberate hides is a visible regression, but
-      // spreading them to accounts the user never touched would widen the very
-      // bug this migration exists to fix.
-      if (currentHiddenCollectibles && lastUsedAccount) {
-        const isAlreadyMigrated = !Object.values(
-          currentHiddenCollectibles,
-        ).some((value) => typeof value === "string");
+      let hiddenCollectiblesByKey: Record<string, unknown> =
+        emptyVisibilityStore(networkNames);
 
-        if (!isAlreadyMigrated) {
-          const byAccount = {
-            [lastUsedAccount as string]: currentHiddenCollectibles,
-          };
-          hiddenCollectiblesByKey = {
-            [NETWORK_NAMES.PUBNET]: byAccount,
-            [NETWORK_NAMES.TESTNET]: byAccount,
-            [NETWORK_NAMES.FUTURENET]: byAccount,
-          };
-        } else {
-          hiddenCollectiblesByKey = currentHiddenCollectibles;
+      // Same reasoning as the hidden-assets migration throughout: custom
+      // networks need their own buckets, a missing account means wait rather
+      // than overwrite, and the old flat map is attributed to the active
+      // account on every network.
+      if (currentHiddenCollectibles) {
+        if (!lastUsedAccount) {
+          return;
         }
+
+        hiddenCollectiblesByKey = isLegacyFlatVisibilityMap(
+          currentHiddenCollectibles,
+        )
+          ? nestLegacyVisibilityMap({
+              legacyMap: currentHiddenCollectibles,
+              publicKey: lastUsedAccount as string,
+              networkNames,
+            })
+          : (currentHiddenCollectibles as Record<string, unknown>);
       }
 
       await localStore.setItem(HIDDEN_COLLECTIBLES, hiddenCollectiblesByKey);

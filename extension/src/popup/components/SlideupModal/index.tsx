@@ -53,22 +53,55 @@ export const SlideupModal = ({
   const [contentHeight, setContentHeight] = useState<number | undefined>(
     undefined,
   );
+  // The children as of the last render while open, and the copy painted during
+  // the slide-out. The parent is told the sheet closed immediately, so by then
+  // it may already have swapped its children for a placeholder; most call sites
+  // gate theirs on the same flag they pass as `isModalOpen`.
+  const openChildren = useRef(children);
+  const [exitingChildren, setExitingChildren] =
+    useState<React.ReactElement | null>(null);
+  const wasModalOpen = useRef(isModalOpen);
+
+  // Through a ref, and only while open: re-freezing on every child render
+  // would fight the slide-out.
+  useEffect(() => {
+    if (isModalOpen) {
+      openChildren.current = children;
+    }
+  });
 
   useEffect(() => {
-    setIsOpen(isModalOpen);
-  }, [isModalOpen]);
+    const didClose = wasModalOpen.current && !isModalOpen;
+    wasModalOpen.current = isModalOpen;
 
-  // Slide out first, then tell the parent. Shared by the backdrop and Escape so
-  // the two dismissals cannot drift apart.
-  const closeWithTransition = useCallback(() => {
-    setIsOpen(false);
     if (closeTimer.current !== null) {
       clearTimeout(closeTimer.current);
+      closeTimer.current = null;
     }
+
+    setIsOpen(isModalOpen);
+
+    if (!didClose) {
+      // Reopening mid-slide-out: drop the frozen copy so the live children come
+      // back. Nothing to freeze on the first render either way.
+      setExitingChildren(null);
+      return;
+    }
+
+    setExitingChildren(openChildren.current);
     closeTimer.current = setTimeout(() => {
       closeTimer.current = null;
-      setIsModalOpen(false);
+      setExitingChildren(null);
     }, SLIDEUP_MODAL_TRANSITION_MS);
+  }, [isModalOpen]);
+
+  // Tell the parent straight away and let the frozen children above cover the
+  // slide-out. Deferring this call instead used to swallow a reopen: the
+  // parent's flag was still `true`, so re-setting it to `true` was a no-op bail
+  // out and the sheet never came back. Shared by the backdrop and Escape so the
+  // two dismissals cannot drift apart.
+  const closeWithTransition = useCallback(() => {
+    setIsModalOpen(false);
   }, [setIsModalOpen]);
 
   useEffect(
@@ -169,7 +202,7 @@ export const SlideupModal = ({
           contentHeight !== undefined ? { height: `${contentHeight}px` } : {}
         }
       >
-        <div ref={contentRef}>{children}</div>
+        <div ref={contentRef}>{exitingChildren ?? children}</div>
       </div>
       <LoadingBackground onClick={closeWithTransition} isActive={isOpen} />
     </>

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { BigNumber } from "bignumber.js";
 import { useTranslation } from "react-i18next";
@@ -36,7 +36,10 @@ import {
 
 import { HistoryItem } from "popup/components/accountHistory/HistoryItem";
 import { TransactionDetail } from "popup/components/accountHistory/TransactionDetail";
-import { SlideupModal } from "popup/components/SlideupModal";
+import {
+  SlideupModal,
+  SLIDEUP_MODAL_TRANSITION_MS,
+} from "popup/components/SlideupModal";
 import {
   Popover,
   PopoverTrigger,
@@ -238,6 +241,43 @@ export const AssetDetail = ({
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeAssetId, setActiveAssetId] = useState<string | null>(null);
+  // The operation sheet replaces this whole view rather than floating over it,
+  // so its open flag has to outlive the dismissal: SlideupModal reports the
+  // close as the slide-out begins, and clearing the id there would unmount the
+  // card mid-animation. Cleared a transition later instead.
+  const [isOperationSheetOpen, setIsOperationSheetOpen] = useState(false);
+  const operationSheetTimer = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
+
+  useEffect(
+    () => () => {
+      if (operationSheetTimer.current !== null) {
+        clearTimeout(operationSheetTimer.current);
+      }
+    },
+    [],
+  );
+
+  const openOperationSheet = useCallback((id: string) => {
+    if (operationSheetTimer.current !== null) {
+      clearTimeout(operationSheetTimer.current);
+      operationSheetTimer.current = null;
+    }
+    setActiveAssetId(id);
+    setIsOperationSheetOpen(true);
+  }, []);
+
+  const closeOperationSheet = useCallback(() => {
+    setIsOperationSheetOpen(false);
+    if (operationSheetTimer.current !== null) {
+      clearTimeout(operationSheetTimer.current);
+    }
+    operationSheetTimer.current = setTimeout(() => {
+      operationSheetTimer.current = null;
+      setActiveAssetId(null);
+    }, SLIDEUP_MODAL_TRANSITION_MS);
+  }, []);
 
   const { assetDomain, error: assetError } = useAssetDomain({
     assetIssuer,
@@ -317,8 +357,8 @@ export const AssetDetail = ({
 
   return activeAssetId ? (
     <SlideupModal
-      isModalOpen={activeOperation !== null}
-      setIsModalOpen={() => setActiveAssetId(null)}
+      isModalOpen={isOperationSheetOpen && activeOperation !== null}
+      setIsModalOpen={closeOperationSheet}
     >
       <TransactionDetail
         activeOperation={activeOperation}
@@ -526,7 +566,7 @@ export const AssetDetail = ({
                 accountBalances={accountBalances}
                 publicKey={publicKey}
                 networkDetails={networkDetails}
-                setActiveAssetId={setActiveAssetId}
+                setActiveAssetId={openOperationSheet}
               />
             )}
           </div>
@@ -652,6 +692,10 @@ export const AssetDetail = ({
                 networkDetails={networkDetails}
                 publicKey={publicKey}
                 onCancel={() => setBody("detail")}
+                // Rejecting goes back to the detail body; confirming cannot,
+                // since that page is for the token that was just removed --
+                // and still offers Remove. Matches ChangeTrustInternal above.
+                onSuccess={handleClose}
                 source="asset_detail"
               />
             )}

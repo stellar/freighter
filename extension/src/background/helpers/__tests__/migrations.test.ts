@@ -244,6 +244,13 @@ describe("Storage migrations", () => {
     expect(storedVersion[STORAGE_VERSION]).toEqual("4.1.0");
   });
 
+  const CUSTOM_NETWORK = {
+    network: "STANDALONE",
+    networkName: "My Standalone Network",
+    networkUrl: "http://localhost:8000",
+    networkPassphrase: "Standalone Network ; February 2017",
+  };
+
   describe("migrateHiddenAssetsToKeyNetworkSchema", () => {
     const ACCOUNT = "GABC123";
     const legacy = { "USDC:GA5ZSE": "hidden", "EURC:GB3Q6": "visible" };
@@ -265,17 +272,39 @@ describe("Storage migrations", () => {
       expect(storedVersion[STORAGE_VERSION]).toEqual("5.46.0");
     });
 
-    it("writes empty buckets when there is no active account to attribute them to", async () => {
+    it("waits rather than overwriting when there is no active account to attribute them to", async () => {
+      // `lastUsedAccount` is removed by clearAccount / removePreviousAccount.
+      // Writing empty buckets over the old map would erase it for good, since
+      // the result has no string leaves for a later run to recognise.
       await mockStorage.set({ [STORAGE_VERSION]: "5.45.0" });
       await mockStorage.set({ [HIDDEN_ASSETS]: legacy });
 
       await DataStorage.migrateHiddenAssetsToKeyNetworkSchema();
 
       const stored = await mockStorage.get(HIDDEN_ASSETS);
+      expect(stored[HIDDEN_ASSETS]).toEqual(legacy);
+      const storedVersion = await mockStorage.get(STORAGE_VERSION);
+      expect(storedVersion[STORAGE_VERSION]).toEqual("5.45.0");
+    });
+
+    it("gives a custom network its own bucket", async () => {
+      // Readers look the store up by `networkDetails.networkName`, so a custom
+      // network with no bucket resolves to undefined and hides nothing.
+      await mockStorage.set({ [STORAGE_VERSION]: "5.45.0" });
+      await mockStorage.set({ [HIDDEN_ASSETS]: legacy });
+      await mockStorage.set({ [LAST_USED_ACCOUNT]: ACCOUNT });
+      await mockStorage.set({
+        [NETWORKS_LIST_ID]: [...DEFAULT_NETWORKS, CUSTOM_NETWORK],
+      });
+
+      await DataStorage.migrateHiddenAssetsToKeyNetworkSchema();
+
+      const stored = await mockStorage.get(HIDDEN_ASSETS);
       expect(stored[HIDDEN_ASSETS]).toEqual({
-        [NETWORK_NAMES.PUBNET]: {},
-        [NETWORK_NAMES.TESTNET]: {},
-        [NETWORK_NAMES.FUTURENET]: {},
+        [NETWORK_NAMES.PUBNET]: { [ACCOUNT]: legacy },
+        [NETWORK_NAMES.TESTNET]: { [ACCOUNT]: legacy },
+        [NETWORK_NAMES.FUTURENET]: { [ACCOUNT]: legacy },
+        [CUSTOM_NETWORK.networkName]: { [ACCOUNT]: legacy },
       });
     });
 
@@ -380,17 +409,34 @@ describe("Storage migrations", () => {
       expect(stored[HIDDEN_COLLECTIBLES]).not.toEqual(legacy);
     });
 
-    it("writes empty buckets when there is no active account to attribute them to", async () => {
+    it("waits rather than overwriting when there is no active account to attribute them to", async () => {
       await mockStorage.set({ [STORAGE_VERSION]: "5.46.0" });
       await mockStorage.set({ [HIDDEN_COLLECTIBLES]: legacy });
 
       await DataStorage.migrateHiddenCollectiblesToKeyNetworkSchema();
 
       const stored = await mockStorage.get(HIDDEN_COLLECTIBLES);
+      expect(stored[HIDDEN_COLLECTIBLES]).toEqual(legacy);
+      const storedVersion = await mockStorage.get(STORAGE_VERSION);
+      expect(storedVersion[STORAGE_VERSION]).toEqual("5.46.0");
+    });
+
+    it("gives a custom network its own bucket", async () => {
+      await mockStorage.set({ [STORAGE_VERSION]: "5.46.0" });
+      await mockStorage.set({ [HIDDEN_COLLECTIBLES]: legacy });
+      await mockStorage.set({ [LAST_USED_ACCOUNT]: ACCOUNT });
+      await mockStorage.set({
+        [NETWORKS_LIST_ID]: [...DEFAULT_NETWORKS, CUSTOM_NETWORK],
+      });
+
+      await DataStorage.migrateHiddenCollectiblesToKeyNetworkSchema();
+
+      const stored = await mockStorage.get(HIDDEN_COLLECTIBLES);
       expect(stored[HIDDEN_COLLECTIBLES]).toEqual({
-        [NETWORK_NAMES.PUBNET]: {},
-        [NETWORK_NAMES.TESTNET]: {},
-        [NETWORK_NAMES.FUTURENET]: {},
+        [NETWORK_NAMES.PUBNET]: { [ACCOUNT]: legacy },
+        [NETWORK_NAMES.TESTNET]: { [ACCOUNT]: legacy },
+        [NETWORK_NAMES.FUTURENET]: { [ACCOUNT]: legacy },
+        [CUSTOM_NETWORK.networkName]: { [ACCOUNT]: legacy },
       });
     });
 

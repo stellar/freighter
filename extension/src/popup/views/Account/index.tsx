@@ -340,6 +340,7 @@ export const Account = () => {
                     historyData={historyData.data}
                     assetPrices={tokenPrices ?? {}}
                     assetIcons={resolvedIcons}
+                    reloadBalances={reloadBalances}
                   />
                 </div>
               ) : (

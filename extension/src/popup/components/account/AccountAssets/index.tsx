@@ -211,6 +211,13 @@ interface AccountAssetsProps {
   balances: AccountBalances;
   historyData: AccountHistoryData | null;
   assetPrices?: ApiTokenPrices;
+  /**
+   * Refetch the Account view's balances. Removing a token or a trustline from
+   * the detail sheet only refreshes the remover's own `useGetBalances`
+   * instance; these rows read `useGetAccountData`'s reducer, which nothing else
+   * reaches, so without this the removed row sits here until the 30s poll.
+   */
+  reloadBalances?: () => Promise<unknown>;
 }
 
 export const AccountAssets = ({
@@ -218,6 +225,7 @@ export const AccountAssets = ({
   balances,
   assetPrices,
   historyData,
+  reloadBalances,
 }: AccountAssetsProps) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -418,6 +426,7 @@ export const AccountAssets = ({
                 handleClose={() => {
                   setSelectedAsset("");
                   clearAssetDetailQueryParams();
+                  void reloadBalances?.();
                 }}
               />
             </SheetContent>
