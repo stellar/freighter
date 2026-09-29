@@ -12,7 +12,7 @@ import {
   installPointerEventPolyfill,
   mockChartRect,
 } from "popup/__testHelpers__/pointerEvents";
-import { LineChart, getPlottedRangeEnd, inspectTooltipTop } from "../LineChart";
+import { LineChart, getPlottedRangeEnd } from "../LineChart";
 import {
   CHART_MORPH_DURATION_MS,
   CHART_VIEWBOX_WIDTH,
@@ -463,8 +463,8 @@ describe("drag to inspect", () => {
     expect(onInspectEnd).toHaveBeenCalledTimes(1);
   });
 
-  it("draws the guide, dot and tooltip at the inspected point and hides the end dot", () => {
-    renderInspectable({ inspectedIndex: 1, inspectedLabel: "$1.10" });
+  it("draws the guide and dot at the inspected point and hides the end dot", () => {
+    renderInspectable({ inspectedIndex: 1 });
     const guide = screen.getByTestId("TokenPriceChart__inspect-guide");
     expect(Number(guide.getAttribute("x1"))).toBeCloseTo(106.67, 1);
     expect(guide.getAttribute("stroke-dasharray")).toBe("4 4");
@@ -482,49 +482,12 @@ describe("drag to inspect", () => {
         ?.getAttribute("stroke-width"),
     ).toBe("12");
     expect(screen.queryByTestId("TokenPriceChart__end-dot")).toBeNull();
-    const tooltip = screen.getByTestId("TokenPriceChart__inspect-tooltip");
-    expect(tooltip).toHaveTextContent("$1.10");
-    expect(tooltip).toHaveAttribute("aria-hidden", "true");
-    expect(tooltip.className).toContain("LineChart__tooltip--left");
-    expect(parseFloat(tooltip.style.left)).toBeCloseTo(33.33, 1);
-    // Index 1 (p="1.10") plots at y=70 — read straight off the inspect dot's
-    // path so this stays honest if the fixture's geometry ever changes.
-    const dotY = Number(
-      screen
-        .getByTestId("TokenPriceChart__inspect-dot")
-        .getAttribute("d")
-        ?.match(/^M[\d.]+,([\d.]+)/)?.[1],
-    );
-    expect(dotY).toBeCloseTo(70, 1);
-    expect(parseFloat(tooltip.style.top)).toBe(inspectTooltipTop(dotY));
-  });
-
-  it("flips the tooltip to the right of the guide near the left edge", () => {
-    renderInspectable({ inspectedIndex: 0, inspectedLabel: "$1.00" });
-    expect(
-      screen.getByTestId("TokenPriceChart__inspect-tooltip").className,
-    ).toContain("LineChart__tooltip--right");
   });
 
   it("draws nothing extra when idle", () => {
     renderInspectable();
     expect(screen.queryByTestId("TokenPriceChart__inspect-guide")).toBeNull();
-    expect(screen.queryByTestId("TokenPriceChart__inspect-tooltip")).toBeNull();
     expect(screen.getByTestId("TokenPriceChart__end-dot")).toBeInTheDocument();
-  });
-});
-
-describe("inspectTooltipTop", () => {
-  it("centres the pill on a mid-band dot", () => {
-    expect(inspectTooltipTop(70)).toBe(53);
-  });
-
-  it("clamps to the top of the plot band for a dot near the top edge", () => {
-    expect(inspectTooltipTop(5)).toBe(0);
-  });
-
-  it("clamps to the bottom of the plot band for a dot near the bottom edge", () => {
-    expect(inspectTooltipTop(139)).toBe(106);
   });
 });
 

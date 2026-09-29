@@ -25,7 +25,6 @@ import { emitMetric } from "helpers/metrics";
 import {
   RangeDeltaState,
   TokenPriceChart,
-  formatInspectedPriceLabel,
 } from "popup/components/account/TokenPriceChart";
 import {
   CHART_HEIGHT_PX,
@@ -985,23 +984,41 @@ describe("TokenPriceChart", () => {
       });
     });
 
-    it("the tooltip shows the inspected point's price through the axis-label formatter", async () => {
+    it("while inspecting, the high row shows the point's timestamp instead of the price labels", async () => {
       respondByRange({ "1D": INSPECTABLE_HISTORY });
       renderChart();
 
       await waitFor(() =>
         expect(screen.getByTestId("TokenPriceChart__polyline")).toBeDefined(),
       );
+      const highRow = screen.getByTestId("TokenPriceChart__axis-high");
+      const lowRow = screen.getByTestId("TokenPriceChart__axis-low");
+      expect(highRow).toHaveTextContent("$0.26");
+      expect(lowRow).toHaveTextContent("$0.20");
 
       mockChartRect();
-      fireEvent.pointerDown(screen.getByTestId("TokenPriceChart__svg"), {
-        clientX: 320,
-        pointerId: 1,
-      });
+      const svg = screen.getByTestId("TokenPriceChart__svg");
+      fireEvent.pointerDown(svg, { clientX: 320, pointerId: 1 });
 
       expect(
-        screen.getByTestId("TokenPriceChart__inspect-tooltip"),
-      ).toHaveTextContent(formatInspectedPriceLabel("0.22"));
+        screen.queryByTestId("TokenPriceChart__inspect-tooltip"),
+      ).toBeNull();
+      const timestamp = screen.getByTestId(
+        "TokenPriceChart__inspect-timestamp",
+      );
+      expect(highRow.contains(timestamp)).toBe(true);
+      expect(highRow).not.toHaveTextContent("$0.26");
+      expect(lowRow.textContent).toBe("");
+      // Index 1 plots at x=160, the middle of the 320-wide viewBox.
+      expect(timestamp.style.left).toBe("50%");
+      expect(timestamp.style.transform).toBe("translateX(-50%)");
+
+      fireEvent.pointerUp(svg, { pointerId: 1 });
+      expect(
+        screen.queryByTestId("TokenPriceChart__inspect-timestamp"),
+      ).toBeNull();
+      expect(highRow).toHaveTextContent("$0.26");
+      expect(lowRow).toHaveTextContent("$0.20");
     });
 
     it("the chart colour stays the RANGE's direction while inspecting a point below the open", async () => {
@@ -1049,11 +1066,11 @@ describe("TokenPriceChart", () => {
       mockChartRect();
       const svg = screen.getByTestId("TokenPriceChart__svg");
 
-      // Pointerdown alone: the artwork, the tooltip and the reported price all
+      // Pointerdown alone: the artwork, the timestamp and the reported price all
       // follow it, but nothing is reported to analytics — a tap is not a drag.
       fireEvent.pointerDown(svg, { clientX: 320, pointerId: 1 });
       expect(
-        screen.getByTestId("TokenPriceChart__inspect-tooltip"),
+        screen.getByTestId("TokenPriceChart__inspect-timestamp"),
       ).toBeDefined();
       expect(reportedDelta?.inspectedPrice).toBe("0.22");
       expect(brushedCalls()).toHaveLength(0);
@@ -1185,7 +1202,7 @@ describe("TokenPriceChart", () => {
         pointerId: 1,
       });
       expect(
-        screen.getByTestId("TokenPriceChart__inspect-tooltip"),
+        screen.getByTestId("TokenPriceChart__inspect-timestamp"),
       ).toBeDefined();
 
       const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
@@ -1196,7 +1213,7 @@ describe("TokenPriceChart", () => {
       });
 
       expect(
-        screen.queryByTestId("TokenPriceChart__inspect-tooltip"),
+        screen.queryByTestId("TokenPriceChart__inspect-timestamp"),
       ).toBeNull();
       expect(reportedDelta).toEqual(
         expect.objectContaining({ inspectedPrice: null }),
@@ -1241,7 +1258,7 @@ describe("TokenPriceChart", () => {
 
       expect(requestCountForRange("1D")).toBe(1);
       expect(
-        screen.queryByTestId("TokenPriceChart__inspect-tooltip"),
+        screen.queryByTestId("TokenPriceChart__inspect-timestamp"),
       ).toBeNull();
       expect(reportedDelta).toEqual(
         expect.objectContaining({ inspectedPrice: null }),
@@ -1273,7 +1290,7 @@ describe("TokenPriceChart", () => {
         pointerId: 1,
       });
       expect(
-        screen.getByTestId("TokenPriceChart__inspect-tooltip"),
+        screen.getByTestId("TokenPriceChart__inspect-timestamp"),
       ).toBeDefined();
 
       await user.click(screen.getByRole("tab", { name: "1D" }));
@@ -1286,7 +1303,7 @@ describe("TokenPriceChart", () => {
       expect(screen.getByTestId("TokenPriceChart__svg")).toBeInTheDocument();
       expect(screen.queryByTestId("TokenPriceChart__loading")).toBeNull();
       expect(
-        screen.queryByTestId("TokenPriceChart__inspect-tooltip"),
+        screen.queryByTestId("TokenPriceChart__inspect-timestamp"),
       ).toBeNull();
       expect(reportedDelta).toEqual(
         expect.objectContaining({ inspectedPrice: null }),

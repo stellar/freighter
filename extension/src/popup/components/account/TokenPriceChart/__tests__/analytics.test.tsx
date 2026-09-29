@@ -209,7 +209,7 @@ describe("token_chart analytics payloads (frozen cross-platform fixture)", () =>
     );
 
     // A bare click is not a brush: pointerdown still moves the artwork, the
-    // tooltip and the header, but with no movement there was no drag to
+    // timestamp and the header, but with no movement there was no drag to
     // report — matching mobile, where a long-press-armed pan that never moves
     // never activates.
     fireEvent.pointerDown(screen.getByTestId("TokenPriceChart__svg"), {

@@ -1,6 +1,13 @@
 import React from "react";
 import { Provider } from "react-redux";
-import { render, screen, waitFor, act } from "@testing-library/react";
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
+import type { TFunction } from "i18next";
 import userEvent from "@testing-library/user-event";
 
 import { MAINNET_NETWORK_DETAILS } from "@shared/constants/stellar";
@@ -10,7 +17,14 @@ import {
   makeHistory,
 } from "@shared/api/__tests__/fixtures/tokenPriceHistory";
 import { makeDummyStore } from "popup/__testHelpers__";
-import { TokenPriceChart } from "popup/components/account/TokenPriceChart";
+import {
+  installPointerEventPolyfill,
+  mockChartRect,
+} from "popup/__testHelpers__/pointerEvents";
+import {
+  TokenPriceChart,
+  formatInspectedTimestamp,
+} from "popup/components/account/TokenPriceChart";
 import { RANGE_SWITCH_DEBOUNCE_MS } from "popup/components/account/TokenPriceChart/constants";
 
 // §N refs: wallet-eng-monorepo/design-docs/token-price-graphs/token-price-graphs-design.md
@@ -29,6 +43,8 @@ jest.mock("react-i18next", () => ({
     i18n: { resolvedLanguage: "en-US", language: "en-US" },
   }),
 }));
+
+installPointerEventPolyfill();
 
 jest.mock("@shared/api/helpers/extensionMessaging");
 const mockedSend = sendMessageToBackground as jest.Mock;
@@ -143,5 +159,49 @@ describe("TokenPriceChart — the chart's text alternative", () => {
     expect(chartLabel()).not.toContain(
       asShortDate(nowSeconds - 6 * daySeconds),
     );
+  });
+
+  it("labels the inspected point with its plotted time, the last one clamped to now", async () => {
+    const nowSeconds = Math.floor(Date.UTC(2025, 8, 21, 12, 3, 30) / 1000);
+    jest.useFakeTimers({ now: nowSeconds * 1000 });
+    respondByRange({
+      "1D": makeHistory({
+        range: "1D",
+        resolutionSeconds: 900,
+        points: [
+          { t: nowSeconds - 1800, p: "0.100000" },
+          // Still in progress: its raw bucket end is ten minutes from now.
+          { t: nowSeconds - 300, p: "0.120000" },
+        ],
+      }),
+    });
+    renderChart();
+    await waitFor(() =>
+      expect(screen.getByTestId("TokenPriceChart__svg")).toBeDefined(),
+    );
+
+    const substitute = ((key: string, options?: Record<string, unknown>) =>
+      key.replace(/{{(\w+)}}/g, (_match, name: string) =>
+        String(options?.[name] ?? ""),
+      )) as unknown as TFunction;
+    const expected = (unixSeconds: number) =>
+      formatInspectedTimestamp({
+        unixSeconds,
+        range: "1D",
+        language: "en-US",
+        t: substitute,
+      });
+    const timestamp = () =>
+      screen.getByTestId("TokenPriceChart__inspect-timestamp").textContent;
+
+    const rectSpy = mockChartRect();
+    const svg = screen.getByTestId("TokenPriceChart__svg");
+    fireEvent.pointerDown(svg, { clientX: 640, pointerId: 1 });
+    expect(timestamp()).toBe(expected(nowSeconds));
+    expect(timestamp()).not.toBe(expected(nowSeconds + 600));
+
+    fireEvent.pointerMove(svg, { clientX: 0, pointerId: 1 });
+    expect(timestamp()).toBe(expected(nowSeconds - 900));
+    rectSpy.mockRestore();
   });
 });

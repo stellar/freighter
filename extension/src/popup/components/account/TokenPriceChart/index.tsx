@@ -8,6 +8,7 @@ import React, {
   useState,
 } from "react";
 import { BigNumber } from "bignumber.js";
+import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
 
 import {
@@ -86,7 +87,7 @@ export const formatChartPrice = (value: BigNumber): string => {
   );
 };
 
-/** The inspect tooltip's text for a raw point price. */
+/** The detail header's text for an inspected point's raw price. */
 export const formatInspectedPriceLabel = (price: string): string =>
   `$${formatChartPrice(new BigNumber(price))}`;
 
@@ -180,6 +181,74 @@ const pointDateFormatter = (language: string) => {
 
 const formatPointDate = (unixSeconds: number, language: string) =>
   pointDateFormatter(language).format(new Date(unixSeconds * 1000));
+
+const INSPECTED_TIMESTAMP_FORMATS = {
+  date: { weekday: "short", month: "short", day: "numeric" },
+  dateWithYear: {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  },
+  time: { hour: "numeric", minute: "2-digit" },
+} satisfies Record<string, Intl.DateTimeFormatOptions>;
+
+type InspectedTimestampFormat = keyof typeof INSPECTED_TIMESTAMP_FORMATS;
+
+const INSPECTED_TIMESTAMP_FORMATTERS = new Map<string, Intl.DateTimeFormat>();
+
+const inspectedTimestampFormatter = (
+  language: string,
+  format: InspectedTimestampFormat,
+) => {
+  const key = `${language}|${format}`;
+  const cached = INSPECTED_TIMESTAMP_FORMATTERS.get(key);
+  if (cached) {
+    return cached;
+  }
+  const formatter = new Intl.DateTimeFormat(
+    language,
+    INSPECTED_TIMESTAMP_FORMATS[format],
+  );
+  INSPECTED_TIMESTAMP_FORMATTERS.set(key, formatter);
+  return formatter;
+};
+
+const INTRADAY_RANGES: ReadonlySet<string> = new Set([
+  TokenPriceHistoryRange.OneHour,
+  TokenPriceHistoryRange.OneDay,
+]);
+// On 1Y and ALL the same weekday and date recur across the plotted span.
+const YEAR_RANGES: ReadonlySet<string> = new Set([
+  TokenPriceHistoryRange.OneYear,
+  TokenPriceHistoryRange.All,
+]);
+
+/** The high-row label for the inspected point, e.g. "Mon, Sep 21 at 4:03 am". */
+export const formatInspectedTimestamp = ({
+  unixSeconds,
+  range,
+  language,
+  t,
+}: {
+  unixSeconds: number;
+  range: string;
+  language: string;
+  t: TFunction;
+}): string => {
+  const date = new Date(unixSeconds * 1000);
+  const datePart = inspectedTimestampFormatter(
+    language,
+    YEAR_RANGES.has(range) ? "dateWithYear" : "date",
+  ).format(date);
+  if (!INTRADAY_RANGES.has(range)) {
+    return datePart;
+  }
+  const time = inspectedTimestampFormatter(language, "time")
+    .format(date)
+    .toLowerCase();
+  return t("{{date}} at {{time}}", { date: datePart, time });
+};
 
 /**
  * Places a price label over the point it describes, without letting it hang
@@ -609,30 +678,38 @@ export const TokenPriceChart = ({
   // pinned right and left, the high label lands above the low point whenever
   // a series peaks early, which reads as a mislabelled chart. Mobile
   // positions them this way; this is the platform that was out of step.
-  const { highLabel, lowLabel, highLabelX, lowLabelX } = useMemo(() => {
-    if (!chartHistory) {
-      return { highLabel: "", lowLabel: "", highLabelX: 0, lowLabelX: 0 };
-    }
-    const values = chartHistory.points.map((point) => new BigNumber(point.p));
-    let minIndex = 0;
-    let maxIndex = 0;
-    values.forEach((value, index) => {
-      if (value.lt(values[minIndex])) minIndex = index;
-      if (value.gt(values[maxIndex])) maxIndex = index;
-    });
-    const coordinates = getChartCoordinates({
-      points: chartHistory.points,
-      resolutionSeconds: chartHistory.resolutionSeconds,
-      nowSeconds,
-    });
+  const { highLabel, lowLabel, highLabelX, lowLabelX, pointXs } =
+    useMemo(() => {
+      if (!chartHistory) {
+        return {
+          highLabel: "",
+          lowLabel: "",
+          highLabelX: 0,
+          lowLabelX: 0,
+          pointXs: [] as number[],
+        };
+      }
+      const values = chartHistory.points.map((point) => new BigNumber(point.p));
+      let minIndex = 0;
+      let maxIndex = 0;
+      values.forEach((value, index) => {
+        if (value.lt(values[minIndex])) minIndex = index;
+        if (value.gt(values[maxIndex])) maxIndex = index;
+      });
+      const coordinates = getChartCoordinates({
+        points: chartHistory.points,
+        resolutionSeconds: chartHistory.resolutionSeconds,
+        nowSeconds,
+      });
 
-    return {
-      highLabel: `$${formatChartPrice(values[maxIndex])}`,
-      lowLabel: `$${formatChartPrice(values[minIndex])}`,
-      highLabelX: coordinates[maxIndex]?.x ?? 0,
-      lowLabelX: coordinates[minIndex]?.x ?? 0,
-    };
-  }, [chartHistory, nowSeconds]);
+      return {
+        highLabel: `$${formatChartPrice(values[maxIndex])}`,
+        lowLabel: `$${formatChartPrice(values[minIndex])}`,
+        highLabelX: coordinates[maxIndex]?.x ?? 0,
+        lowLabelX: coordinates[minIndex]?.x ?? 0,
+        pointXs: coordinates.map((coordinate) => coordinate.x),
+      };
+    }, [chartHistory, nowSeconds]);
 
   // `resolvedLanguage` is what i18next actually fell back to, which is the
   // language the surrounding translated string is really in — `language` can
@@ -661,6 +738,19 @@ export const TokenPriceChart = ({
     });
   }, [chartHistory, labelDeltaText, t, language, nowSeconds]);
 
+  const inspectedTimestamp = useMemo(() => {
+    if (!chartHistory || inspectedIndex === null) {
+      return "";
+    }
+    const { points, resolutionSeconds, range } = chartHistory;
+    // The time the point is PLOTTED at, as `getChartCoordinates` places it.
+    const unixSeconds =
+      inspectedIndex === points.length - 1
+        ? getPlottedRangeEnd({ points, resolutionSeconds, nowSeconds })
+        : points[inspectedIndex].t + resolutionSeconds;
+    return formatInspectedTimestamp({ unixSeconds, range, language, t });
+  }, [chartHistory, inspectedIndex, nowSeconds, language, t]);
+
   return (
     <div className="TokenPriceChart" data-testid="TokenPriceChart">
       {/* The notice is inserted after the fetch settles, and it sits outside
@@ -687,12 +777,22 @@ export const TokenPriceChart = ({
           className="TokenPriceChart__axis-label TokenPriceChart__axis-label--high"
           data-testid="TokenPriceChart__axis-high"
         >
-          <span
-            className="TokenPriceChart__axis-label-text"
-            style={axisLabelPosition(highLabelX)}
-          >
-            {highLabel}
-          </span>
+          {inspectedTimestamp && inspectedIndex !== null ? (
+            <span
+              className="TokenPriceChart__axis-label-text TokenPriceChart__inspect-timestamp"
+              style={axisLabelPosition(pointXs[inspectedIndex] ?? 0)}
+              data-testid="TokenPriceChart__inspect-timestamp"
+            >
+              {inspectedTimestamp}
+            </span>
+          ) : (
+            <span
+              className="TokenPriceChart__axis-label-text"
+              style={axisLabelPosition(highLabelX)}
+            >
+              {highLabel}
+            </span>
+          )}
         </div>
         {/* `aria-busy` lives on the container that survives the state change —
           it flips to false in place when the series lands. The announcement
@@ -729,11 +829,6 @@ export const TokenPriceChart = ({
                 direction={chartDirection}
                 label={chartLabel}
                 inspectedIndex={inspectedIndex}
-                inspectedLabel={
-                  inspectedPoint
-                    ? formatInspectedPriceLabel(inspectedPoint.p)
-                    : undefined
-                }
                 onInspectStart={handleInspectStart}
                 onInspectMove={handleInspectMove}
                 onInspectEnd={handleInspectEnd}
@@ -758,7 +853,7 @@ export const TokenPriceChart = ({
             className="TokenPriceChart__axis-label-text"
             style={axisLabelPosition(lowLabelX)}
           >
-            {lowLabel}
+            {inspectedTimestamp ? "" : lowLabel}
           </span>
         </div>
       </div>

@@ -89,6 +89,14 @@
     max-width: 100%;
     white-space: nowrap;
   }
+
+  // Figma "Drag to inspect": Text/XS/Medium in Foreground/Primary.
+  &__inspect-timestamp {
+    color: var(--sds-clr-gray-09);
+    font-size: pxToRem(12px);
+    font-weight: var(--sds-fw-medium);
+    line-height: pxToRem(18px);
+  }
 }
 
 .LineChart {
@@ -132,50 +140,6 @@
 
   &__inspect-ring {
     stroke: var(--sds-clr-gray-01);
-  }
-
-  // Figma "Drag to inspect": inverted pill, Text/XS/600, 8x12 padding, an 8px
-  // gap to the guide, tip pointing at it. Vertically centred on the
-  // inspected dot — `top` is set inline, per point, by `inspectTooltipTop`,
-  // which also clamps it inside the plot band.
-  //
-  // Literal px, not `pxToRem`: the plot band and `INSPECT_TOOLTIP_HEIGHT_PX`
-  // are px, so a rem pill would outgrow the clamp at a non-16px root font.
-  &__tooltip {
-    background: var(--sds-clr-gray-12);
-    border-radius: 8px;
-    color: var(--sds-clr-gray-01);
-    font-size: 12px;
-    font-weight: 600;
-    line-height: 18px;
-    padding: 8px 12px;
-    pointer-events: none;
-    position: absolute;
-    white-space: nowrap;
-
-    &::after {
-      border: 4px solid transparent;
-      content: "";
-      position: absolute;
-      top: 50%;
-      transform: translateY(-50%);
-    }
-
-    &--left {
-      transform: translateX(calc(-100% - 8px));
-      &::after {
-        border-left-color: var(--sds-clr-gray-12);
-        left: 100%;
-      }
-    }
-
-    &--right {
-      transform: translateX(8px);
-      &::after {
-        border-right-color: var(--sds-clr-gray-12);
-        right: 100%;
-      }
-    }
   }
 }
 
