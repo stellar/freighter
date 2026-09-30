@@ -536,6 +536,14 @@ test("Loads wallets data and token prices on Mainnet in batches", async ({
   ).toContainText("$7.75");
 
   expect(tokenPricesCallCount).toBe(7);
+
+  // The sheet has to shrink its account list rather than push Add wallet off
+  // the bottom. Two reasons this needs its own assertion: e2e runs with no
+  // viewport (`viewportSize` is null in test-fixtures), so 100dvh is nowhere
+  // near the popup's 600px and nothing overflows; and the `add-wallet` click
+  // above auto-scrolls, so it would pass on a clipped button anyway.
+  await page.setViewportSize({ width: 360, height: 600 });
+  await expect(page.getByTestId("add-wallet")).toBeInViewport({ ratio: 1 });
 });
 
 test("Renames wallets", async ({ page, extensionId, context }) => {

@@ -5,10 +5,29 @@
   flex-direction: column;
   padding: pxToRem(24px);
   gap: pxToRem(16px);
+  // SDS scopes `border-box` through `.sds-theme-light *, .sds-theme-dark *`
+  // rather than universally, and the modifier's max-height below has to cover
+  // the 24px padding -- a content-box ceiling would sit 48px above the card's
+  // own, which is the overflow it exists to prevent. SlideupModal declares
+  // this for the same reason.
+  box-sizing: border-box;
+
+  // Only the list body has a region that can give way, so only it is bounded;
+  // `add` and `rename` are short fixed forms that keep the card's own scroll.
+  //
+  // Bounding the column is what lets `__list` shrink at all. Without it the
+  // sheet sizes to its content, runs past SlideupModal's ceiling, and clips
+  // whatever is last -- which is `__add-wallet`. The same custom property the
+  // card uses, so this tracks 100dvh across popup, sidebar and fullscreen
+  // instead of restating a pixel guess.
+  &--list {
+    max-height: var(--slideup-modal--max-height);
+  }
 
   &__header {
     display: flex;
     align-items: center;
+    flex-shrink: 0;
     // With only two children this puts the gear left and the close right; with
     // three it centres the title between them.
     justify-content: space-between;
@@ -36,6 +55,8 @@
     align-items: center;
     gap: pxToRem(16px);
     text-align: center;
+    // The list is the only child allowed to shrink; see `&--list`.
+    flex-shrink: 0;
 
     &__identicon {
       width: pxToRem(48px);
@@ -104,6 +125,7 @@
 
   &__divider {
     height: 1px;
+    flex-shrink: 0;
     background-color: var(--sds-clr-gray-06);
   }
 
@@ -111,10 +133,21 @@
     display: flex;
     flex-direction: column;
     gap: pxToRem(16px);
-    // The sheet caps its own height; this caps the list within it so Add wallet
-    // stays reachable with many accounts.
+    // A ceiling, not a height. `&--list` bounds the column above, and this is
+    // the only child that shrinks into whatever the rest of the sheet leaves
+    // -- about 187px in the 600px popup, so three 48px rows with the fourth
+    // peeking, which is itself the scroll cue. 240px alone did not keep
+    // Add wallet on screen: the chrome around this list already eats ~357px of
+    // the card's 544px.
     max-height: pxToRem(240px);
+    // Deliberately no floor. `overflow-y: auto` already zeroes the automatic
+    // minimum size, and a floor would pad the list with dead space on the far
+    // more common one- and two-account cases.
+    min-height: 0;
     overflow-y: auto;
+    // Once the list bottoms out, don't chain the scroll on to the Home
+    // document sitting behind the backdrop.
+    overscroll-behavior: contain;
     scrollbar-width: none;
 
     &::-webkit-scrollbar {
@@ -133,6 +166,9 @@
   // label — the tinted background belongs to the chip alone, not to the whole
   // control, so the button itself is transparent.
   &__add-wallet {
+    // Never shrinks: keeping this on screen is the whole point of `&--list`.
+    flex-shrink: 0;
+
     // SDS `Button` overwrites (rather than merges) any `className` passed to
     // it, so a class placed directly on it can never combine with its own
     // `Button`/`Button--*` classes. Scope the override through this wrapper

@@ -135,7 +135,17 @@ function useGetAccountData(options: {
         try {
           const fetchedTokenPrices = await fetchTokenPrices({
             publicKey,
-            balances: balancesResult.balances,
+            // Price everything the account holds, not just what is visible.
+            // The cached price map is keyed by account and network alone, with
+            // no record of which assets it covers, so a map built from the
+            // filtered list is served as complete for the next 3 minutes. Redux
+            // does not persist, so a popup opened while an asset is hidden
+            // caches a map without it, and unhiding -- which only writes the
+            // visibility mirror -- brings the row back with no price. Hidden
+            // assets stay out of the totals because getTotalUsd is gated on the
+            // filtered `balances` below, not on this map.
+            balances:
+              balancesResult.unfilteredBalances ?? balancesResult.balances,
             networkDetails,
             useCache: true,
           });
@@ -229,7 +239,12 @@ function useGetAccountData(options: {
       try {
         const fetchedTokenPrices = await fetchTokenPrices({
           publicKey: resolvedData.publicKey,
-          balances: resolvedData.balances.balances,
+          // Unfiltered for the same reason as the initial fetch above --
+          // moreso here, since `useCache: false` means a filtered list would
+          // overwrite a complete map with a gapped one every 30 seconds.
+          balances:
+            resolvedData.balances.unfilteredBalances ??
+            resolvedData.balances.balances,
           networkDetails: resolvedData.networkDetails,
           useCache: false,
         });

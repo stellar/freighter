@@ -353,7 +353,10 @@ export const AccountSheet = ({
       setIsModalOpen={onClose}
       ariaLabel={t("Wallets")}
     >
-      <div className="AccountSheet" data-testid="AccountSheet">
+      <div
+        className={`AccountSheet AccountSheet--${body}`}
+        data-testid="AccountSheet"
+      >
         {renderBody()}
       </div>
     </SlideupModal>

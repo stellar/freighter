@@ -12,6 +12,11 @@ const openHiddenSheet = async (page: any) => {
   });
 };
 
+// The canonical id the USDC balance stub uses; BalanceRow tags its fiat cell
+// with it, which is how we tell "priced" from "row is back but has no price".
+const USDC_CANONICAL =
+  "USDC:GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5";
+
 const backToHome = async (page: any) => {
   await page.getByTestId("HiddenAssets__close").click();
   await page.getByTestId("BackButton").click();
@@ -95,4 +100,57 @@ test("Keeps hidden tokens scoped to the network they were hidden on", async ({
   await expect(page.getByTestId("HiddenAssets__row-USDC")).toBeVisible({
     timeout: 20000,
   });
+});
+
+test("Keeps a token's price after hiding it, reopening the popup, and unhiding", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  test.slow();
+  const stubOverrides = async () => {
+    await stubAccountBalancesWithUSDC(page);
+  };
+  await loginToTestAccount({ page, extensionId, context, stubOverrides });
+  // Token prices are fetched on Mainnet only.
+  await switchNetwork(page, "Mainnet");
+
+  const usdcRow = page
+    .getByTestId("account-assets-item")
+    .filter({ hasText: "USDC" });
+  const usdcFiat = page.getByTestId(`asset-amount-${USDC_CANONICAL}`);
+
+  await expect(usdcRow).toBeVisible({ timeout: 30000 });
+  await expect(usdcFiat).toBeVisible({ timeout: 30000 });
+
+  await openAssetDetails(page, "USDC");
+  await page.getByAltText("asset options").click();
+  await page.getByTestId("asset-detail-hide-button").click({ force: true });
+  await expect(usdcRow).toHaveCount(0, { timeout: 20000 });
+
+  // The restart is the whole point. Redux holds the price map and does not
+  // persist, so this is what forces it to be rebuilt while USDC is hidden --
+  // and the map is cached per account and network with no record of which
+  // assets it covers, so a gapped one reads as complete. Unhiding in the same
+  // session cannot reproduce this: the map still holds the price from before
+  // the hide.
+  //
+  // `reload()`, not a `goto` back to `index.html#/`: the popup is already
+  // there, and a navigation that differs only in the hash is same-document.
+  // The store survives it and the test passes against the bug.
+  await page.reload();
+  await expectHomeReady(page);
+
+  await openHiddenSheet(page);
+  await page.getByTestId("HiddenAssets__unhide-USDC").click();
+  await expect(page.getByTestId("HiddenAssets__empty")).toBeVisible({
+    timeout: 20000,
+  });
+  await backToHome(page);
+
+  // The row coming back is not enough -- that only needs the visibility
+  // mirror. The fiat cell is what the price map decides, and BalanceRow omits
+  // it entirely when there is no price.
+  await expect(usdcRow).toBeVisible({ timeout: 30000 });
+  await expect(usdcFiat).toBeVisible({ timeout: 30000 });
 });
