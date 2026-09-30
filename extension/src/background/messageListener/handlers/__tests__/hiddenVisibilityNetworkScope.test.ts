@@ -1,5 +1,7 @@
 import {
+  ChangeAssetVisibilityMessage,
   ChangeCollectibleVisibilityMessage,
+  GetHiddenAssetsMessage,
   GetHiddenCollectiblesMessage,
 } from "@shared/api/types/message-request";
 import {
@@ -8,11 +10,14 @@ import {
   TESTNET_NETWORK_DETAILS,
 } from "@shared/constants/stellar";
 import {
+  HIDDEN_ASSETS,
   HIDDEN_COLLECTIBLES,
   NETWORK_ID,
   NETWORKS_LIST_ID,
 } from "constants/localStorageTypes";
+import { changeAssetVisibility } from "../changeAssetVisibility";
 import { changeCollectibleVisibility } from "../changeCollectibleVisibility";
+import { getHiddenAssets } from "../getHiddenAssets";
 import { getHiddenCollectibles } from "../getHiddenCollectibles";
 
 const PUBLIC_KEY = "GABC123";
@@ -69,11 +74,18 @@ const makeLocalStore = (seed: Record<string, unknown>) => {
 const HIDDEN_ON_MAINNET = { "CMAINNET:1": "hidden" };
 const HIDDEN_ON_TESTNET = { "CTESTNET:1": "hidden" };
 
+const ASSET_ON_MAINNET = { "USDC:GMAINNET": "hidden" };
+const ASSET_ON_TESTNET = { "USDC:GTESTNET": "hidden" };
+
 const seededStore = () =>
   makeLocalStore({
     [HIDDEN_COLLECTIBLES]: {
       [MAINNET]: { [PUBLIC_KEY]: HIDDEN_ON_MAINNET },
       [TESTNET]: { [PUBLIC_KEY]: HIDDEN_ON_TESTNET },
+    },
+    [HIDDEN_ASSETS]: {
+      [MAINNET]: { [PUBLIC_KEY]: ASSET_ON_MAINNET },
+      [TESTNET]: { [PUBLIC_KEY]: ASSET_ON_TESTNET },
     },
   });
 
@@ -82,7 +94,7 @@ const seededStore = () =>
 // the network it was on when it asked, and a switch landing mid-flight files one
 // network's map under the other -- where the selector reads it as loaded and
 // never refetches.
-describe("hidden collectibles network scoping", () => {
+describe("hidden visibility network scoping", () => {
   it("reports the network it resolved alongside the map", async () => {
     const localStore = seededStore();
 
@@ -149,6 +161,56 @@ describe("hidden collectibles network scoping", () => {
     // disagree with storage until the popup reloads.
     expect(localStore.read()[HIDDEN_COLLECTIBLES][MAINNET][PUBLIC_KEY]).toEqual(
       HIDDEN_ON_MAINNET,
+    );
+  });
+  it("reports the post-switch network when an asset read spans a network change", async () => {
+    const localStore = seededStore();
+    const gate = deferred();
+    localStore.holdNetworkRead(gate.promise);
+
+    const pending = getHiddenAssets({
+      request: { activePublicKey: PUBLIC_KEY } as GetHiddenAssetsMessage,
+      localStore,
+    });
+
+    localStore.switchNetworkTo(TESTNET_NETWORK_DETAILS);
+    localStore.releaseNetworkRead();
+    gate.settle();
+
+    expect(await pending).toEqual({
+      hiddenAssets: ASSET_ON_TESTNET,
+      networkName: TESTNET,
+    });
+  });
+
+  it("reports the network an asset visibility write landed in", async () => {
+    const localStore = seededStore();
+    const gate = deferred();
+    localStore.holdNetworkRead(gate.promise);
+
+    const pending = changeAssetVisibility({
+      request: {
+        assetVisibility: { assetKey: "NEW:GXYZ", visibility: "hidden" },
+        activePublicKey: PUBLIC_KEY,
+      } as ChangeAssetVisibilityMessage,
+      localStore,
+    });
+
+    localStore.switchNetworkTo(TESTNET_NETWORK_DETAILS);
+    localStore.releaseNetworkRead();
+    gate.settle();
+
+    const result = await pending;
+
+    expect(result.networkName).toBe(TESTNET);
+    expect(result.hiddenAssets).toEqual({
+      ...ASSET_ON_TESTNET,
+      "NEW:GXYZ": "hidden",
+    });
+    // `useGetBalances` treats a present key as loaded and never re-asks, so
+    // mirroring this under mainnet would outlive the switch.
+    expect(localStore.read()[HIDDEN_ASSETS][MAINNET][PUBLIC_KEY]).toEqual(
+      ASSET_ON_MAINNET,
     );
   });
 });

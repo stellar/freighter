@@ -66,7 +66,12 @@ export const HiddenAssets = ({ isOpen, onClose }: HiddenAssetsProps) => {
       // SearchAsset re-fetches off that, early-returns <Loading /> while it
       // does, and unmounts this sheet -- which remounts with isOpen still
       // true and fetches again, reopening forever.
-      fetchData(true);
+      // `useGetAssetDomainsWithBalances` dispatches FETCH_DATA_ERROR *and*
+      // rethrows, so this call rejects. Left floating it was an unhandled
+      // rejection, and because the reducer nulls `data` the sheet lost its
+      // publicKey, never loaded a visibility map, and sat on the loader for
+      // good. `didDomainsFail` below turns that into the error state.
+      fetchData(true).catch(() => {});
     } else {
       setError("");
       setDidVisibilityFail(false);
@@ -87,18 +92,29 @@ export const HiddenAssets = ({ isOpen, onClose }: HiddenAssetsProps) => {
     let isStale = false;
     const loadVisibility = async () => {
       try {
-        const { hiddenAssets: fetched, error: fetchError } =
-          await getHiddenAssets({
-            activePublicKey: publicKey,
-          });
+        const {
+          hiddenAssets: fetched,
+          networkName: resolvedNetworkName,
+          error: fetchError,
+        } = await getHiddenAssets({
+          activePublicKey: publicKey,
+        });
         if (isStale) {
           return;
         }
         if (fetchError) {
           throw new Error(fetchError);
         }
+        // Keyed by the network the background reports rather than the one this
+        // render captured: the request carries no network, so a switch that
+        // commits mid-flight answers with the other network's map. The fallback
+        // covers a service worker from before this shipped.
         dispatch(
-          saveHiddenAssets({ publicKey, networkName, hiddenAssets: fetched }),
+          saveHiddenAssets({
+            publicKey,
+            networkName: resolvedNetworkName || networkName,
+            hiddenAssets: fetched,
+          }),
         );
       } catch (e) {
         // Without this the rejection is unhandled and the key stays undefined,
@@ -118,13 +134,26 @@ export const HiddenAssets = ({ isOpen, onClose }: HiddenAssetsProps) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, publicKey, networkName, hiddenAssets]);
 
+  // A failed balances/domains fetch nulls `data`, so `publicKey` is "" and the
+  // visibility effect never runs: without this the third clause below is true
+  // forever and the sheet spins with nothing on screen to say why.
+  const didDomainsFail = domainState.state === RequestState.ERROR;
+
   const isLoading =
     domainState.state === RequestState.IDLE ||
     domainState.state === RequestState.LOADING ||
     // `undefined` means this account has never been loaded, which is not the
     // same as "nothing hidden" -- show a loader rather than an empty state we
     // would have to take back a moment later.
-    (hiddenAssets === undefined && !didVisibilityFail);
+    (hiddenAssets === undefined && !didVisibilityFail && !didDomainsFail);
+
+  // One message for both failures. The visibility path sets `error` itself; the
+  // domains path is derived, so a retry that succeeds clears it on its own.
+  const loadError =
+    error ||
+    (didDomainsFail
+      ? t("Unable to load hidden tokens. Please try again.")
+      : "");
 
   const hiddenRows = (resolved?.domains || []).filter(
     ({ code = "", issuer = "" }) =>
@@ -138,21 +167,26 @@ export const HiddenAssets = ({ isOpen, onClose }: HiddenAssetsProps) => {
     setError("");
 
     try {
-      const { hiddenAssets: updated, error: visibilityError } =
-        await changeAssetVisibility({
-          assetKey,
-          assetVisibility: "visible",
-          activePublicKey: publicKey,
-        });
+      const {
+        hiddenAssets: updated,
+        networkName: resolvedNetworkName,
+        error: visibilityError,
+      } = await changeAssetVisibility({
+        assetKey,
+        assetVisibility: "visible",
+        activePublicKey: publicKey,
+      });
 
       if (visibilityError) {
         throw new Error(visibilityError);
       }
 
+      // See the load above: the write lands in whichever network the background
+      // had resolved, so mirror it under that one.
       dispatch(
         saveHiddenAssets({
           publicKey,
-          networkName,
+          networkName: resolvedNetworkName || networkName,
           hiddenAssets: updated,
         }),
       );
@@ -188,20 +222,29 @@ export const HiddenAssets = ({ isOpen, onClose }: HiddenAssetsProps) => {
           </button>
         </div>
 
-        {error ? (
-          <div className="HiddenAssets__error">
-            <Notification variant="error" title={error} />
+        {loadError ? (
+          <div
+            className="HiddenAssets__error"
+            data-testid="HiddenAssets__error"
+          >
+            <Notification variant="error" title={loadError} />
           </div>
         ) : null}
 
         <div className="HiddenAssets__list">
           {isLoading ? (
-            <div className="HiddenAssets__loader">
+            <div
+              className="HiddenAssets__loader"
+              data-testid="HiddenAssets__loader"
+            >
               <Loader size="1.5rem" />
             </div>
           ) : null}
 
-          {!isLoading && !didVisibilityFail && !hiddenRows.length ? (
+          {!isLoading &&
+          !didVisibilityFail &&
+          !didDomainsFail &&
+          !hiddenRows.length ? (
             <div
               className="HiddenAssets__empty"
               data-testid="HiddenAssets__empty"

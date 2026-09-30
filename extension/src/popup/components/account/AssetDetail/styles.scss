@@ -290,6 +290,21 @@
         width: 100%;
         display: flex;
         justify-content: space-between;
+        // Hide and Remove are real buttons so they take focus and answer
+        // Enter/Space; the row supplies the whole visual treatment, so the UA
+        // button styling has to come off. Same reset the `.link` variant below
+        // has always needed.
+        background: none;
+        border: 0;
+        padding: 0;
+        font: inherit;
+        color: inherit;
+        text-align: left;
+        cursor: pointer;
+
+        &:disabled {
+          cursor: default;
+        }
 
         &.link {
           color: inherit;

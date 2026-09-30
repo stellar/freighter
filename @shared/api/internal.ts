@@ -2605,6 +2605,7 @@ export const getHiddenAssets = async ({
   let response = {
     error: "",
     hiddenAssets: {} as Record<AssetKey, AssetVisibility>,
+    networkName: "",
   };
 
   response = await sendMessageToBackground({
@@ -2612,7 +2613,13 @@ export const getHiddenAssets = async ({
     activePublicKey,
   });
 
-  return { hiddenAssets: response.hiddenAssets || {}, error: response.error };
+  return {
+    hiddenAssets: response.hiddenAssets || {},
+    // See `changeAssetVisibility`: the request carries no network, so this is
+    // the only thing identifying the map that came back.
+    networkName: response.networkName || "",
+    error: response.error,
+  };
 };
 
 export const changeAssetVisibility = async ({
@@ -2627,6 +2634,7 @@ export const changeAssetVisibility = async ({
   let response = {
     error: "",
     hiddenAssets: {} as Record<AssetKey, AssetVisibility>,
+    networkName: "",
   };
 
   response = await sendMessageToBackground({
@@ -2642,7 +2650,14 @@ export const changeAssetVisibility = async ({
     activePublicKey,
   });
 
-  return { hiddenAssets: response.hiddenAssets, error: response.error };
+  return {
+    hiddenAssets: response.hiddenAssets,
+    // The network the background resolved while handling this, which is not
+    // necessarily the one the caller was on when it sent it. Empty only when an
+    // older service worker answers; callers fall back to their own network.
+    networkName: response.networkName || "",
+    error: response.error,
+  };
 };
 
 export const addCollectible = async ({

@@ -5,10 +5,13 @@ import * as ApiInternal from "@shared/api/internal";
 import * as DomainsHook from "helpers/hooks/useGetAssetDomainsWithBalances";
 import { RequestState } from "constants/request";
 import { AppDataType } from "helpers/hooks/useGetAppData";
-import { Wrapper, mockAccounts } from "popup/__testHelpers__";
+import { Wrapper, mockAccounts, getTestStore } from "popup/__testHelpers__";
 import { HiddenAssets } from "popup/components/account/HiddenAssets";
 import { ROUTES } from "popup/constants/routes";
-import { TESTNET_NETWORK_DETAILS } from "@shared/constants/stellar";
+import {
+  MAINNET_NETWORK_DETAILS,
+  TESTNET_NETWORK_DETAILS,
+} from "@shared/constants/stellar";
 import { APPLICATION_STATE as ApplicationState } from "@shared/constants/applicationState";
 
 const ISSUER = "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN";
@@ -136,6 +139,68 @@ describe("HiddenAssets", () => {
         screen.getByText(/Unable to load hidden tokens/),
       ).toBeInTheDocument(),
     );
+  });
+
+  // FETCH_DATA_ERROR nulls `data`, so the sheet loses its publicKey and never
+  // loads a visibility map. Left floating, the rejection was unhandled and the
+  // third loader clause stayed true with nothing on screen to say why.
+  it("surfaces a failed domains fetch instead of spinning", async () => {
+    const rejectingFetch = jest
+      .fn()
+      .mockRejectedValue(new Error("Failed to fetch domains"));
+    jest.spyOn(DomainsHook, "useGetAssetDomainsWithBalances").mockReturnValue({
+      state: { state: RequestState.ERROR, data: null, error: "boom" },
+      fetchData: rejectingFetch,
+    } as any);
+
+    renderSheet();
+
+    await waitFor(() =>
+      expect(
+        screen.getByText(/Unable to load hidden tokens/),
+      ).toBeInTheDocument(),
+    );
+    // The point of the fix: the loader has to stop. Before it, `data` was null,
+    // so the visibility map never loaded and this spun with no message.
+    expect(
+      screen.queryByTestId("HiddenAssets__loader"),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByTestId("HiddenAssets__empty")).not.toBeInTheDocument();
+  });
+
+  it("mirrors the visibility map under the network the background reports", async () => {
+    // The request carries no network, so a switch committing mid-flight answers
+    // with the other network's map. Filing it under the network this render
+    // captured would be read as loaded and never re-fetched.
+    jest.spyOn(ApiInternal, "getHiddenAssets").mockResolvedValue({
+      hiddenAssets: { [KALE]: "hidden" },
+      networkName: MAINNET_NETWORK_DETAILS.networkName,
+      error: "",
+    } as any);
+    mockDomains([{ code: "KALE", issuer: ISSUER, domain: "kalepail.com" }]);
+    renderSheet();
+
+    await waitFor(() => {
+      const mirror = (
+        getTestStore()?.getState() as {
+          hiddenAssets: {
+            hiddenAssets: Record<string, Record<string, unknown>>;
+          };
+        }
+      ).hiddenAssets.hiddenAssets;
+      expect(mirror[MAINNET_NETWORK_DETAILS.networkName]?.["G1"]).toEqual({
+        [KALE]: "hidden",
+      });
+    });
+
+    const mirror = (
+      getTestStore()?.getState() as {
+        hiddenAssets: {
+          hiddenAssets: Record<string, Record<string, unknown>>;
+        };
+      }
+    ).hiddenAssets.hiddenAssets;
+    expect(mirror[TESTNET_NETWORK_DETAILS.networkName]).toBeUndefined();
   });
 
   it("unhides a row", async () => {

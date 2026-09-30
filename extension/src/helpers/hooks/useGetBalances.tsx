@@ -127,7 +127,15 @@ function useGetBalances(options: {
       );
       if (!options.showHidden && !hiddenAssets) {
         const fetched = await getHiddenAssets({ activePublicKey: publicKey });
-        hiddenAssets = fetched.hiddenAssets;
+        // The request carries no network -- the background resolves NETWORK_ID
+        // while handling it -- so a switch that commits mid-flight answers with
+        // the other network's map. Cache it under the network that answered,
+        // never the one we asked from: the guard above treats a present key as
+        // loaded, so a map filed under the wrong network would be served for
+        // the rest of the session. Falls back to the captured name for a
+        // service worker from before the handler echoed one.
+        const resolvedNetworkName =
+          fetched.networkName || networkDetails.networkName;
         // Only cache a map the background actually loaded. Saving the `{}` that
         // comes back with an error would define the slice key, so every hidden
         // asset would show and no later call would retry for the rest of the
@@ -136,10 +144,16 @@ function useGetBalances(options: {
           reduxDispatch(
             saveHiddenAssets({
               publicKey,
-              networkName: networkDetails.networkName,
-              hiddenAssets,
+              networkName: resolvedNetworkName,
+              hiddenAssets: fetched.hiddenAssets,
             }),
           );
+        }
+        // Only filter this pass with it when it describes the network this pass
+        // is for. The switch re-runs this hook under the new network, which
+        // then reads the map cached just above.
+        if (resolvedNetworkName === networkDetails.networkName) {
+          hiddenAssets = fetched.hiddenAssets;
         }
       }
 

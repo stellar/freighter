@@ -51,7 +51,9 @@ jest.mock("react-router-dom", () => ({
 
 jest
   .spyOn(ApiInternal, "getHiddenAssets")
-  .mockImplementation(() => Promise.resolve({ hiddenAssets: {}, error: "" }));
+  .mockImplementation(() =>
+    Promise.resolve({ hiddenAssets: {}, networkName: "", error: "" }),
+  );
 
 jest
   .spyOn(ApiInternal, "getAccountBalances")

@@ -62,7 +62,11 @@ describe("changeAssetVisibility identifier handling", () => {
       localStore,
     });
 
-    expect(result).toEqual({ hiddenAssets: { "NEW:GXYZ": "hidden" } });
+    expect(result).toEqual({
+      hiddenAssets: { "NEW:GXYZ": "hidden" },
+      // The network the write landed in; see hiddenVisibilityNetworkScope.
+      networkName: NETWORK_NAMES.PUBNET,
+    });
     expect(
       localStore.read()[HIDDEN_ASSETS][NETWORK_NAMES.PUBNET][PUBLIC_KEY],
     ).toEqual({ "NEW:GXYZ": "hidden" });

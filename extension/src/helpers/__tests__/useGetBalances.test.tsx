@@ -8,7 +8,10 @@ import {
 } from "../hooks/useGetBalances";
 import { getAccountBalances, getHiddenAssets } from "@shared/api/internal";
 import { makeDummyStore, TEST_PUBLIC_KEY } from "popup/__testHelpers__";
-import { TESTNET_NETWORK_DETAILS } from "@shared/constants/stellar";
+import {
+  MAINNET_NETWORK_DETAILS,
+  TESTNET_NETWORK_DETAILS,
+} from "@shared/constants/stellar";
 import { getIconUrlFromIssuer } from "@shared/api/helpers/getIconUrlFromIssuer";
 import { getCombinedAssetListData } from "@shared/api/helpers/token-list";
 
@@ -391,6 +394,58 @@ describe("useGetBalances (hidden asset visibility)", () => {
     await act(async () => {
       await result.current.fetchData(
         "GDIFFERENTACCOUNT",
+        true,
+        TESTNET_NETWORK_DETAILS,
+        false,
+      );
+    });
+    expect(getHiddenAssets).toHaveBeenCalledTimes(2);
+  });
+
+  // The request carries no network -- the background resolves NETWORK_ID while
+  // handling it -- so a switch committing mid-flight answers with the other
+  // network's map. Caching that under the network we asked from is permanent:
+  // the one-shot guard reads a present key as loaded and never re-asks.
+  it("caches the map under the network the background reports", async () => {
+    (getHiddenAssets as jest.Mock).mockResolvedValue({
+      hiddenAssets: { "USDC:GISSUER": "hidden" },
+      networkName: MAINNET_NETWORK_DETAILS.networkName,
+      error: "",
+    });
+
+    const store = makeStore();
+    const { result } = renderHook(
+      () => useGetBalances({ showHidden: false, includeIcons: false }),
+      { wrapper: Wrapper(store) },
+    );
+
+    await act(async () => {
+      await result.current.fetchData(
+        publicKey,
+        true,
+        TESTNET_NETWORK_DETAILS,
+        false,
+      );
+    });
+
+    const mirror = (
+      store.getState() as {
+        hiddenAssets: {
+          hiddenAssets: Record<string, Record<string, unknown>>;
+        };
+      }
+    ).hiddenAssets.hiddenAssets;
+
+    expect(mirror[MAINNET_NETWORK_DETAILS.networkName]?.[publicKey]).toEqual({
+      "USDC:GISSUER": "hidden",
+    });
+    expect(mirror[TESTNET_NETWORK_DETAILS.networkName]).toBeUndefined();
+
+    // Testnet is still unloaded, so the next pass for it asks again rather than
+    // serving mainnet's map.
+    await act(async () => {
+      await result.current.fetchData(
+        publicKey,
         true,
         TESTNET_NETWORK_DETAILS,
         false,

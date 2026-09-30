@@ -149,6 +149,12 @@ export const HiddenCollectibles = ({
             {t("Hidden collectibles")}
           </span>
           <button
+            // Explicit, not decorative: AddCollectibles is this sheet's only
+            // caller and it renders inside a Formik `<Form>`, so an untyped
+            // button submits it -- dismissing the sheet would add the
+            // collectible. SlideupModal renders in place rather than in a
+            // portal, so the sheet really is inside that form element.
+            type="button"
             className="HiddenCollectibles__close"
             onClick={onClose}
             aria-label={t("Close")}
@@ -210,6 +216,10 @@ export const HiddenCollectibles = ({
                       </div>
                     </div>
                     <Button
+                      // See the close button above: the design-system `Button`
+                      // spreads props onto a bare `<button>` without defaulting
+                      // the type, so this needs it too.
+                      type="button"
                       // `md` matches the designs: 32px tall, 6px radius. Not
                       // isRounded -- the row action is a rounded rect, only the
                       // footer is a pill.
@@ -239,6 +249,7 @@ export const HiddenCollectibles = ({
 
         <div className="HiddenCollectibles__footer">
           <Button
+            type="button"
             size="md"
             variant="tertiary"
             isRounded

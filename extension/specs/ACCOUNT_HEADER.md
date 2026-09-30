@@ -7,9 +7,8 @@ left, and QR + connected-apps buttons on the right. The two dropdown menus it
 used to carry — account options (the three dots) and the network globe — are
 deleted, and what lived in them moves to a sheet, to Settings, or nowhere.
 
-**Design source:** Figma `lcdj2ucnJ2BfvRvsLboBNC` ("Varial"), node `1443:166677`.
-Layout and information architecture only; colors and type stay on existing
-tokens.
+This is a layout and information-architecture change only; colors and type
+stay on existing tokens.
 
 ## Where Everything Went
 

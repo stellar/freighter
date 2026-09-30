@@ -165,7 +165,11 @@ export const AssetDetail = ({
   const handleHideAsset = async () => {
     setIsHiding(true);
     try {
-      const { hiddenAssets, error } = await changeAssetVisibility({
+      const {
+        hiddenAssets,
+        networkName: resolvedNetworkName,
+        error,
+      } = await changeAssetVisibility({
         assetKey: selectedAsset,
         assetVisibility: "hidden",
         activePublicKey: publicKey,
@@ -175,10 +179,15 @@ export const AssetDetail = ({
         throw new Error(error);
       }
 
+      // Keyed by the network the background reports rather than the one
+      // selected here: the request carries no network, so a switch that commits
+      // mid-flight writes to -- and answers with -- the other network's map.
+      // The fallback covers a service worker from before this shipped; drop it
+      // once rolled out.
       reduxDispatch(
         saveHiddenAssets({
           publicKey,
-          networkName: networkDetails.networkName,
+          networkName: resolvedNetworkName || networkDetails.networkName,
           hiddenAssets,
         }),
       );
@@ -429,21 +438,24 @@ export const AssetDetail = ({
                   ) : null}
                   {!isNativeBalance(selectedBalance) && !isLpShare ? (
                     <div className="AssetDetail__options-actions__row">
-                      <div
+                      <button
+                        type="button"
                         className="action"
-                        onClick={isHiding ? undefined : handleHideAsset}
+                        onClick={handleHideAsset}
+                        disabled={isHiding}
                         data-testid="asset-detail-hide-button"
                       >
                         <div className="AssetDetail__options-actions__label">
                           {t("Hide {{code}}", { code: canonical.code })}
                         </div>
                         <Icon.EyeOff />
-                      </div>
+                      </button>
                     </div>
                   ) : null}
                   {isRemovable ? (
                     <div className="AssetDetail__options-actions__row AssetDetail__options-actions__row--destructive">
-                      <div
+                      <button
+                        type="button"
                         className="action"
                         onClick={() => {
                           setOptionsOpen(false);
@@ -462,7 +474,7 @@ export const AssetDetail = ({
                           {t("Remove")}
                         </div>
                         <Icon.MinusCircle />
-                      </div>
+                      </button>
                     </div>
                   ) : null}
                 </PopoverContent>
