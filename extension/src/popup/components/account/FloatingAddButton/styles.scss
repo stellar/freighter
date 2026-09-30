@@ -34,6 +34,8 @@
   }
 
   color: var(--sds-clr-gray-12);
+  // Opaque fallback first: manifest v2 still allows Firefox < 113, no color-mix
+  background-color: var(--sds-clr-gray-03);
   background-color: color-mix(in srgb, var(--sds-clr-gray-03) 80%, transparent);
   backdrop-filter: blur(10px);
   border: 1px solid var(--sds-clr-gray-06);
@@ -43,6 +45,7 @@
   transition: background-color var(--sds-anim-transition-default);
 
   &:hover {
+    background-color: var(--sds-clr-gray-04);
     background-color: color-mix(
       in srgb,
       var(--sds-clr-gray-04) 90%,

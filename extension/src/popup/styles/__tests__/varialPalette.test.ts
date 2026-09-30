@@ -84,15 +84,20 @@ const ALLOWED_RAW_COLORS: Record<string, string[]> = {
   "popup/styles/varialPalette.scss": ["*"],
   // Emulates the browser's native focus ring; deliberately not themed.
   "popup/styles/utils.scss": ["rgb(153, 200, 255)"],
-  // USDT0 campaign artwork: brand green and the fade stops baked into the
-  // arcs graphic. Theme-neutral page colors in these files are tokenized.
+  // USDT0 banner: the campaign's brand green background, the dismiss-button
+  // hover drawn on that fixed green (correct in both themes), and the logo's
+  // drop shadow.
   "popup/components/account/Usdt0LaunchBanner/styles.scss": [
     "#002d19",
     "rgba(0, 0, 0, 0.25)",
     "rgba(255, 255, 255, 0.1)",
   ],
+  // USDT0 sheet hero: one composite dark artwork (gradient + arcs image +
+  // fade + overlay) whose layers stay fixed-dark together. Colors on the
+  // sheet body below it are tokenized.
   "popup/components/account/Usdt0LaunchBanner/Usdt0LaunchSheet/styles.scss": [
     "#002d19",
+    "#161616",
     "#151616",
     "rgba(22, 23, 23, 0)",
     "rgba(21, 22, 22, 0.78)",
@@ -124,22 +129,29 @@ function walk(dir: string): string[] {
   });
 }
 
-const HEX_IN_SCSS = /#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})\b/g;
-// In ts/tsx only match hexes inside string literals so issue references in
-// comments ("#2769") don't trip the scan.
-const HEX_IN_TS = /["'`]#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})\b/g;
+const HEX_LITERAL = /#(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})\b/g;
 // Literal rgb()/rgba() calls; template interpolations (`rgb(${r}...`) don't
 // start with a digit and are out of scope.
 const RGB_LITERAL = /rgba?\(\s*\d[\d\s,./%]*\)/g;
 
+// Comments are stripped before scanning so issue references ("#2769",
+// "freighter-mobile#936") don't trip the hex match; a color in a comment
+// can't ship anyway.
+function stripComments(src: string): string {
+  return src
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .split("\n")
+    .filter((line) => !/^\s*(\/\/|\*)/.test(line))
+    .map((line) => line.replace(/\s\/\/.*$/, ""))
+    .join("\n");
+}
+
 function rawColorsIn(file: string): string[] {
-  const content = fs.readFileSync(file, "utf8");
-  const isScss = file.endsWith(".scss");
-  const hexes = (content.match(isScss ? HEX_IN_SCSS : HEX_IN_TS) || []).map(
-    (m) => (isScss ? m : m.slice(1)),
-  );
-  const rgbs = content.match(RGB_LITERAL) || [];
-  return [...hexes, ...rgbs];
+  const content = stripComments(fs.readFileSync(file, "utf8"));
+  return [
+    ...(content.match(HEX_LITERAL) || []),
+    ...(content.match(RGB_LITERAL) || []),
+  ];
 }
 
 function relToSrc(file: string): string {
