@@ -80,6 +80,7 @@ export const UnlockAccount = () => {
         description={t("Enter password to unlock Freighter")}
         onConfirm={handleSubmit}
         confirmButtonTitle={t("Unlock")}
+        allowAutofill
       />
 
       <View.Footer customGap="0.5rem">

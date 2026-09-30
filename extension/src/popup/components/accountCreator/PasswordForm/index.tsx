@@ -99,7 +99,7 @@ export const PasswordForm = ({
                       autoFocus
                       data-testid="account-creator-password-input"
                       fieldSize="md"
-                      autoComplete="off"
+                      autoComplete="new-password"
                       id="new-password-input"
                       placeholder={t("New password")}
                       type="password"
@@ -118,7 +118,7 @@ export const PasswordForm = ({
                     <Input
                       data-testid="account-creator-confirm-password-input"
                       fieldSize="md"
-                      autoComplete="off"
+                      autoComplete="new-password"
                       id="confirm-password-input"
                       placeholder={t("Confirm password")}
                       type="password"

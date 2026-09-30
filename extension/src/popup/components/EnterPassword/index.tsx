@@ -1,6 +1,6 @@
 import { Button, Text, Input } from "@stellar/design-system";
 import { Field, Form, Formik, FieldProps } from "formik";
-import React from "react";
+import React, { useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
@@ -14,6 +14,10 @@ interface FormValues {
   password: string;
 }
 
+// Fixed username so password managers save and match one login for the
+// unlock screen, whatever account is selected.
+const AUTOFILL_USERNAME = "Freighter";
+
 interface EnterPasswordProps {
   accountAddress?: string;
   title?: string;
@@ -22,6 +26,9 @@ interface EnterPasswordProps {
   onCancel?: () => void;
   confirmButtonTitle?: string;
   cancelButtonTitle?: string;
+  // Lets password managers save and fill the password. Only use it on the
+  // unlock screen: re-checks before sensitive actions must be typed.
+  allowAutofill?: boolean;
 }
 
 export const EnterPassword = ({
@@ -32,6 +39,7 @@ export const EnterPassword = ({
   onCancel,
   confirmButtonTitle,
   cancelButtonTitle,
+  allowAutofill = false,
 }: EnterPasswordProps) => {
   const { t } = useTranslation();
   const titleLabel = title || t("Enter your password");
@@ -46,9 +54,26 @@ export const EnterPassword = ({
   };
 
   const authError = useSelector(authErrorSelector);
+  const formikWrapperRef = useRef<HTMLDivElement>(null);
 
   const handleSubmit = async (values: FormValues) => {
-    await onConfirm(values.password);
+    let { password } = values;
+
+    // Browsers can fill the field without sending a change event to the
+    // page, so read the field directly when the form value is empty.
+    if (allowAutofill && !password) {
+      const input =
+        formikWrapperRef.current?.querySelector<HTMLInputElement>(
+          "#password-input",
+        );
+      password = input?.value || "";
+    }
+
+    if (!password) {
+      return;
+    }
+
+    await onConfirm(password);
   };
 
   const handleReset = () => {
@@ -77,7 +102,10 @@ export const EnterPassword = ({
             {descriptionLabel}
           </Text>
 
-          <div className="EnterPassword__wrapper__formik">
+          <div
+            className="EnterPassword__wrapper__formik"
+            ref={formikWrapperRef}
+          >
             <Formik
               initialValues={initialValues}
               onSubmit={handleSubmit}
@@ -92,6 +120,18 @@ export const EnterPassword = ({
                 setFieldValue,
               }) => (
                 <Form>
+                  {allowAutofill && (
+                    <input
+                      className="EnterPassword__autofill-username"
+                      type="text"
+                      name="username"
+                      autoComplete="username"
+                      value={AUTOFILL_USERNAME}
+                      readOnly
+                      tabIndex={-1}
+                      aria-hidden="true"
+                    />
+                  )}
                   <Field name="password">
                     {({ field }: FieldProps) => (
                       <Input
@@ -100,7 +140,9 @@ export const EnterPassword = ({
                         data-testid="enter-password-input"
                         isPassword
                         fieldSize="md"
-                        autoComplete="off"
+                        autoComplete={
+                          allowAutofill ? "current-password" : "off"
+                        }
                         autoFocus
                         placeholder={t("Enter password")}
                         onChange={(e) => {
@@ -141,7 +183,7 @@ export const EnterPassword = ({
                       variant="secondary"
                       type="submit"
                       isLoading={isSubmitting}
-                      disabled={!(dirty && isValid)}
+                      disabled={!allowAutofill && !(dirty && isValid)}
                     >
                       {confirmLabel}
                     </Button>
