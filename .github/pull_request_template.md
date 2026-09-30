@@ -6,6 +6,14 @@
 
 [TODO: Why this change is being made. Include any context required to understand the why.]
 
+### Screenshots / video
+
+[TODO: Before and after screenshots, or a screen recording, for any user-facing change. Write N/A if there is none.]
+
+| Before | After |
+| ------ | ----- |
+|        |       |
+
 ### Checklist
 
 - [ ] I have read [CONTRIBUTING.md](https://github.com/stellar/freighter/blob/master/CONTRIBUTING.md) and this PR meets its requirements.
