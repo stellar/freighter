@@ -636,7 +636,7 @@
     z-index: 2;
 
     &__icon {
-      background-color: rgba(241, 50, 50, 0.32);
+      background-color: var(--sds-clr-red-04);
       border-radius: 100px;
       display: flex;
       width: 2rem;
@@ -645,7 +645,7 @@
       margin-bottom: 0.5rem;
 
       &--isWarning {
-        background-color: rgba(94, 58, 4, 0.32);
+        background-color: var(--sds-clr-amber-04);
       }
     }
 

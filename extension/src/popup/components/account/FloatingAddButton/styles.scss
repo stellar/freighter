@@ -34,7 +34,7 @@
   }
 
   color: var(--sds-clr-gray-12);
-  background-color: rgba(35, 35, 35, 0.8);
+  background-color: color-mix(in srgb, var(--sds-clr-gray-03) 80%, transparent);
   backdrop-filter: blur(10px);
   border: 1px solid var(--sds-clr-gray-06);
   border-radius: pxToRem(100px);
@@ -43,7 +43,11 @@
   transition: background-color var(--sds-anim-transition-default);
 
   &:hover {
-    background-color: rgba(40, 40, 40, 0.9);
+    background-color: color-mix(
+      in srgb,
+      var(--sds-clr-gray-04) 90%,
+      transparent
+    );
   }
 
   &__label {

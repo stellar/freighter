@@ -1,0 +1,188 @@
+import * as fs from "fs";
+import * as path from "path";
+
+/**
+ * Guards for the Varial palette swap (freighter-private#37).
+ *
+ * The UI must take every color from SDS `--sds-clr-*` tokens so that #18's
+ * theme switching (flipping the body's `.sds-theme-*` class) re-themes every
+ * surface. These tests scan the source rather than render it: a hardcoded
+ * color renders fine today and only breaks when the theme flips.
+ */
+
+const POPUP_ROOT = path.join(__dirname, "..", "..");
+const SRC_ROOT = path.join(POPUP_ROOT, "..");
+const PALETTE_FILE = path.join(POPUP_ROOT, "styles", "varialPalette.scss");
+
+// Varial Blue ramp from design's Varial spec; identical to the values mobile
+// shipped in freighter-mobile-private#26.
+const VARIAL_LILAC: Record<"light" | "dark", string[]> = {
+  light: [
+    "#fcfdff",
+    "#f5faff",
+    "#eef4ff",
+    "#daeaff",
+    "#c8e0ff",
+    "#a8c6ff",
+    "#98bfff",
+    "#73a5ff",
+    "#0050ff",
+    "#0246df",
+    "#0f53ec",
+    "#0e2b6c",
+  ],
+  dark: [
+    "#0e1623",
+    "#101a29",
+    "#0d264d",
+    "#092f69",
+    "#0f3b7c",
+    "#19478d",
+    "#2255a3",
+    "#2865c1",
+    "#1677ff",
+    "#0069f0",
+    "#7eb6ff",
+    "#cde3ff",
+  ],
+};
+
+// The Freighter lilac ramps these replace (SDS 3.2.8 defaults). None of these
+// may appear anywhere in extension source.
+const FREIGHTER_LILAC = [
+  // light
+  "#fdfcfe",
+  "#fbfaff",
+  "#f5f2ff",
+  "#ede9fe",
+  "#e4defc",
+  "#d7cff9",
+  "#c4b8f3",
+  "#aa99ec",
+  "#6e56cf",
+  "#644fc1",
+  "#5746af",
+  "#20134b",
+  // dark
+  "#17151f",
+  "#1c172b",
+  "#251e40",
+  "#2c2250",
+  "#32275f",
+  "#392c72",
+  "#443592",
+  "#5842c3",
+  "#7c66dc",
+  "#9e8cfc",
+  "#f1eefe",
+];
+
+// Raw colors that are allowed to stay, per file. Everything else must be an
+// SDS token.
+const ALLOWED_RAW_COLORS: Record<string, string[]> = {
+  // The palette override itself.
+  "popup/styles/varialPalette.scss": ["*"],
+  // Emulates the browser's native focus ring; deliberately not themed.
+  "popup/styles/utils.scss": ["rgb(153, 200, 255)"],
+  // USDT0 campaign artwork: brand green and the fade stops baked into the
+  // arcs graphic. Theme-neutral page colors in these files are tokenized.
+  "popup/components/account/Usdt0LaunchBanner/styles.scss": [
+    "#002d19",
+    "rgba(0, 0, 0, 0.25)",
+    "rgba(255, 255, 255, 0.1)",
+  ],
+  "popup/components/account/Usdt0LaunchBanner/Usdt0LaunchSheet/styles.scss": [
+    "#002d19",
+    "#151616",
+    "rgba(22, 23, 23, 0)",
+    "rgba(21, 22, 22, 0.78)",
+  ],
+};
+
+// Neutral shadow/scrim alphas; black-based, so they don't invert when the
+// theme flips (a white-based shadow would).
+const BLACK_ALPHA = /^rgba\(0,\s*0,\s*0,\s*[\d.]+\)$/;
+
+const SCANNED_EXTENSIONS = [".scss", ".ts", ".tsx"];
+const IGNORED_PATH_SEGMENTS = [
+  "__tests__",
+  "__mocks__",
+  "e2e-tests",
+  path.join("styles", "vendor"),
+];
+
+function walk(dir: string): string[] {
+  return fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+    const full = path.join(dir, entry.name);
+    if (IGNORED_PATH_SEGMENTS.some((seg) => full.includes(seg))) {
+      return [];
+    }
+    if (entry.isDirectory()) {
+      return walk(full);
+    }
+    return SCANNED_EXTENSIONS.includes(path.extname(entry.name)) ? [full] : [];
+  });
+}
+
+const HEX_IN_SCSS = /#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})\b/g;
+// In ts/tsx only match hexes inside string literals so issue references in
+// comments ("#2769") don't trip the scan.
+const HEX_IN_TS = /["'`]#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})\b/g;
+// Literal rgb()/rgba() calls; template interpolations (`rgb(${r}...`) don't
+// start with a digit and are out of scope.
+const RGB_LITERAL = /rgba?\(\s*\d[\d\s,./%]*\)/g;
+
+function rawColorsIn(file: string): string[] {
+  const content = fs.readFileSync(file, "utf8");
+  const isScss = file.endsWith(".scss");
+  const hexes = (content.match(isScss ? HEX_IN_SCSS : HEX_IN_TS) || []).map(
+    (m) => (isScss ? m : m.slice(1)),
+  );
+  const rgbs = content.match(RGB_LITERAL) || [];
+  return [...hexes, ...rgbs];
+}
+
+function relToSrc(file: string): string {
+  return path.relative(SRC_ROOT, file).split(path.sep).join("/");
+}
+
+describe("Varial palette (freighter-private#37)", () => {
+  it("overrides the SDS lilac ramp with Varial Blue for both themes", () => {
+    const css = fs.readFileSync(PALETTE_FILE, "utf8");
+    (["light", "dark"] as const).forEach((theme) => {
+      const block = css.match(
+        new RegExp(`\\.sds-theme-${theme}\\s*\\{([^}]*)\\}`),
+      );
+      expect(block).not.toBeNull();
+      VARIAL_LILAC[theme].forEach((value, i) => {
+        const token = `--sds-clr-lilac-${String(i + 1).padStart(2, "0")}`;
+        expect(block![1]).toContain(`${token}: ${value}`);
+      });
+    });
+  });
+
+  it("has no Freighter-palette lilac left anywhere in extension source", () => {
+    const offenders = walk(SRC_ROOT).flatMap((file) => {
+      const content = fs.readFileSync(file, "utf8").toLowerCase();
+      return FREIGHTER_LILAC.filter((hex) => content.includes(hex)).map(
+        (hex) => `${relToSrc(file)}: ${hex}`,
+      );
+    });
+    expect(offenders).toEqual([]);
+  });
+
+  it("has no raw colors outside the allowlist — colors come from SDS tokens", () => {
+    const offenders = walk(SRC_ROOT).flatMap((file) => {
+      const rel = relToSrc(file);
+      const allowed = ALLOWED_RAW_COLORS[rel] || [];
+      if (allowed.includes("*")) {
+        return [];
+      }
+      return rawColorsIn(file)
+        .filter((color) => !allowed.includes(color))
+        .filter((color) => !BLACK_ALPHA.test(color))
+        .map((color) => `${rel}: ${color}`);
+    });
+    expect(offenders).toEqual([]);
+  });
+});

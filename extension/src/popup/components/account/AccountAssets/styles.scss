@@ -1,5 +1,5 @@
-$loader-dark-color: #191b22;
-$loader-light-color: #444961;
+$loader-dark-color: var(--sds-clr-gray-03);
+$loader-light-color: var(--sds-clr-gray-06);
 
 // This file holds no list-container rule: AccountAssets returns a fragment, so
 // there's no element to hang one on. Row spacing lives in BalanceRow's own
@@ -65,7 +65,7 @@ $loader-light-color: #444961;
       width: 32px;
       height: 32px;
       align-items: center;
-      background: rgba(100, 50, 241, 0.32);
+      background: var(--sds-clr-lilac-04);
       border-radius: 2rem;
       display: flex;
       justify-content: center;
