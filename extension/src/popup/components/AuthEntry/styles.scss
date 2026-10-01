@@ -150,6 +150,9 @@
       .ParameterValue {
         margin-top: pxToRem(8px);
         word-break: break-word;
+        // Equal specificity to the rule in Operations/KeyVal/styles.scss, so
+        // it has to be set here too or source order decides.
+        white-space: pre-wrap;
       }
     }
   }
