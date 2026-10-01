@@ -108,6 +108,9 @@
       width: pxToRem(16px);
       height: pxToRem(16px);
       margin-right: pxToRem(8px);
+      // lilac-09 icon with lilac-11 text matches mobile's trigger
+      // (Icon themeColor resolves to the ramp's step 9 there)
+      color: var(--sds-clr-lilac-09);
     }
   }
 
