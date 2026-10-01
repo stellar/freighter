@@ -108,7 +108,12 @@ const ALLOWED_RAW_COLORS: Record<string, string[]> = {
 // theme flips (a white-based shadow would).
 const BLACK_ALPHA = /^rgba\(0,\s*0,\s*0,\s*[\d.]+\)$/;
 
-const SCANNED_EXTENSIONS = [".scss", ".ts", ".tsx"];
+// The raw-color scan covers authored styles and components. SVG assets are
+// static artwork and keep literal colors until #18 decides per-theme asset
+// handling — but the banned-palette scan below covers them too, so a
+// Freighter-colored asset can't land in the meantime.
+const STYLE_EXTENSIONS = [".scss", ".ts", ".tsx"];
+const ASSET_EXTENSIONS = [...STYLE_EXTENSIONS, ".svg", ".html"];
 const IGNORED_PATH_SEGMENTS = [
   "__tests__",
   "__mocks__",
@@ -116,16 +121,16 @@ const IGNORED_PATH_SEGMENTS = [
   path.join("styles", "vendor"),
 ];
 
-function walk(dir: string): string[] {
+function walk(dir: string, extensions: string[]): string[] {
   return fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
     const full = path.join(dir, entry.name);
     if (IGNORED_PATH_SEGMENTS.some((seg) => full.includes(seg))) {
       return [];
     }
     if (entry.isDirectory()) {
-      return walk(full);
+      return walk(full, extensions);
     }
-    return SCANNED_EXTENSIONS.includes(path.extname(entry.name)) ? [full] : [];
+    return extensions.includes(path.extname(entry.name)) ? [full] : [];
   });
 }
 
@@ -174,7 +179,10 @@ describe("Varial palette (freighter-private#37)", () => {
   });
 
   it("has no Freighter-palette lilac left anywhere in extension source", () => {
-    const offenders = walk(SRC_ROOT).flatMap((file) => {
+    const offenders = [
+      ...walk(SRC_ROOT, ASSET_EXTENSIONS),
+      ...walk(path.join(SRC_ROOT, "..", "public"), ASSET_EXTENSIONS),
+    ].flatMap((file) => {
       const content = fs.readFileSync(file, "utf8").toLowerCase();
       return FREIGHTER_LILAC.filter((hex) => content.includes(hex)).map(
         (hex) => `${relToSrc(file)}: ${hex}`,
@@ -184,7 +192,7 @@ describe("Varial palette (freighter-private#37)", () => {
   });
 
   it("has no raw colors outside the allowlist — colors come from SDS tokens", () => {
-    const offenders = walk(SRC_ROOT).flatMap((file) => {
+    const offenders = walk(SRC_ROOT, STYLE_EXTENSIONS).flatMap((file) => {
       const rel = relToSrc(file);
       const allowed = ALLOWED_RAW_COLORS[rel] || [];
       if (allowed.includes("*")) {
