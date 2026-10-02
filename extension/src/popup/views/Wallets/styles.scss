@@ -118,11 +118,11 @@
   // already matches the spec — only the colors, gap and weight are overridden.
   .Button {
     --Button-gap: #{pxToRem(16px)};
-    --Button-color-text-default: var(--sds-clr-lilac-11);
+    --Button-color-text-default: var(--sds-clr-lilac-09);
     --Button-color-icon-default: var(--sds-clr-lilac-09);
     --Button-color-background-default: transparent;
     --Button-color-border-default: transparent;
-    --Button-color-text-hover: var(--sds-clr-lilac-11);
+    --Button-color-text-hover: var(--sds-clr-lilac-09);
     --Button-color-icon-hover: var(--sds-clr-lilac-09);
     --Button-color-background-hover: transparent;
     --Button-color-border-hover: transparent;
@@ -138,10 +138,10 @@
   // The chip. Sized to the list rows' 40px avatars so the two circles read as
   // one column — with the 16px gap above, that also lines the "Add wallet"
   // label up with each row's name. The plus glyph uses `stroke="currentColor"`,
-  // inheriting whatever `color` it finds — which would otherwise be the
-  // button's own (lighter) text color above. Setting `color` here keeps it the
-  // more saturated brand blue. lilac-03 circle + lilac-09 glyph matches
-  // mobile's AddWalletFooter.
+  // so the chip pins its own `color` rather than inheriting the button's text
+  // color — the label and glyph are both lilac-09 today (per Figma 694-19174),
+  // but the pin keeps the glyph stable if the text color ever changes.
+  // lilac-03 circle + lilac-09 glyph matches mobile's AddWalletFooter.
   .Button__icon {
     width: #{pxToRem(40px)};
     height: #{pxToRem(40px)};
