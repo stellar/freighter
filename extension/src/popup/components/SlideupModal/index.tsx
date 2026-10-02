@@ -60,7 +60,10 @@ export const SlideupModal = ({
   const openChildren = useRef(children);
   const [exitingChildren, setExitingChildren] =
     useState<React.ReactElement | null>(null);
-  const wasModalOpen = useRef(isModalOpen);
+  // Held in state rather than a ref because the swap below happens *during*
+  // render, and a ref mutated in render is not safe under StrictMode's double
+  // invocation.
+  const [prevIsModalOpen, setPrevIsModalOpen] = useState(isModalOpen);
 
   // Through a ref, and only while open: re-freezing on every child render
   // would fight the slide-out.
@@ -70,10 +73,27 @@ export const SlideupModal = ({
     }
   });
 
-  useEffect(() => {
-    const didClose = wasModalOpen.current && !isModalOpen;
-    wasModalOpen.current = isModalOpen;
+  // Swapped in during the closing render, not from an effect afterwards.
+  //
+  // An effect runs after the commit, and by then the slot has already painted
+  // the parent's closed-state placeholder and React has unmounted the real
+  // child -- so assigning the frozen copy mounted a *second* instance just to
+  // play the slide-out. That copy re-ran the child's data fetches (a visible
+  // spinner and another Blockaid scan on the trustline sheet) and fired its
+  // unmount effects all over again, which for `ChangeTrustInternal` meant a
+  // spurious `signing.rejected` -- after a successful add, and twice on a
+  // cancel.
+  //
+  // Assigning the very element React is already holding keeps type, key and
+  // position identical, so the child reconciles in place and never unmounts.
+  if (prevIsModalOpen !== isModalOpen) {
+    setPrevIsModalOpen(isModalOpen);
+    // Reopening mid-slide-out drops the frozen copy so the live children come
+    // back; the effect below clears the pending timer.
+    setExitingChildren(isModalOpen ? null : openChildren.current);
+  }
 
+  useEffect(() => {
     if (closeTimer.current !== null) {
       clearTimeout(closeTimer.current);
       closeTimer.current = null;
@@ -81,14 +101,13 @@ export const SlideupModal = ({
 
     setIsOpen(isModalOpen);
 
-    if (!didClose) {
-      // Reopening mid-slide-out: drop the frozen copy so the live children come
-      // back. Nothing to freeze on the first render either way.
-      setExitingChildren(null);
+    if (isModalOpen) {
       return;
     }
 
-    setExitingChildren(openChildren.current);
+    // Nulling the frozen copy is what finally lets a gated child unmount --
+    // once, at the end of the animation rather than at its start. Mounting
+    // already closed arms this too; it resolves to a no-op bail out.
     closeTimer.current = setTimeout(() => {
       closeTimer.current = null;
       setExitingChildren(null);

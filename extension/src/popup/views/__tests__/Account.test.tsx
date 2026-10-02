@@ -794,6 +794,60 @@ describe("Account view", () => {
     });
   });
 
+  it("does not blank Home when Asset Details is closed with the X", async () => {
+    // Closing through AssetDetail's own handler used to call the full
+    // `fetchData`, which resets the request to LOADING with `data: null` and
+    // makes Account early-return a full-screen <Loading />. Dismissing a token
+    // sheet with no change must not take Home off screen.
+    render(
+      <Wrapper
+        routes={[ROUTES.welcome]}
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
+            publicKey: "G1",
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: TESTNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+          },
+        }}
+      >
+        <Account />
+      </Wrapper>,
+    );
+
+    await waitFor(async () => {
+      await fireEvent.click(
+        screen.getByTestId("AccountAssets__asset--loading-USDC"),
+      );
+    });
+    await waitFor(() => {
+      expect(
+        screen.getByTestId("asset-detail-available-copy"),
+      ).toHaveTextContent("100 USDC");
+    });
+
+    fireEvent.click(screen.getByTestId("BackButton"));
+
+    // Asserted in the same tick as the click, with no `waitFor` in between:
+    // `fetchData` dispatches FETCH_DATA_START synchronously, so the blank
+    // frame lands here and is gone again by the time a refetch settles.
+    expect(screen.queryByTestId("Loading")).not.toBeInTheDocument();
+    expect(screen.getAllByTestId("account-assets-item").length).toBeGreaterThan(
+      0,
+    );
+
+    await waitFor(() => {
+      expect(
+        screen.queryByTestId("asset-detail-available-copy"),
+      ).not.toBeInTheDocument();
+    });
+    expect(screen.queryByTestId("Loading")).not.toBeInTheDocument();
+  });
+
   it("goes to account details and shows loading until history data is fetched", async () => {
     jest.useFakeTimers();
     jest
@@ -1436,6 +1490,8 @@ describe("Account view", () => {
         },
         fetchData: jest.fn(),
         refreshAppData: jest.fn(),
+        refreshBalances: jest.fn(),
+        refreshCollectibles: jest.fn(),
       } as any);
 
     render(
@@ -1482,6 +1538,8 @@ describe("Account view", () => {
         },
         fetchData: jest.fn(),
         refreshAppData: jest.fn(),
+        refreshBalances: jest.fn(),
+        refreshCollectibles: jest.fn(),
       });
 
     render(
@@ -1575,6 +1633,8 @@ describe("Account view", () => {
                 } as any),
           fetchData: jest.fn(),
           refreshAppData: jest.fn(),
+          refreshBalances: jest.fn(),
+          refreshCollectibles: jest.fn(),
         } as any);
 
       render(
@@ -1925,6 +1985,8 @@ describe("Account view", () => {
       },
       fetchData: jest.fn(),
       refreshAppData: jest.fn(),
+      refreshBalances: jest.fn(),
+      refreshCollectibles: jest.fn(),
     });
 
     render(

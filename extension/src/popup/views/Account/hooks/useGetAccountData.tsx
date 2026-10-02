@@ -229,6 +229,85 @@ function useGetAccountData(options: {
     }
   };
 
+  /**
+   * Re-fetch balances *without* blanking the screen.
+   *
+   * `fetchData` opens with FETCH_DATA_START, which the shared reducer resolves
+   * to `{ state: LOADING, data: null }`, and Account early-returns a
+   * full-screen <Loading /> on LOADING. That is right for a cold load and wrong
+   * for a refresh set off by dismissing a sheet: Home was replaced by a spinner
+   * and the sheet lost its exit animation. Merge into the resolved data and
+   * dispatch only on success, as the 30s polling effects below do.
+   */
+  const refreshBalances = async () => {
+    if (!state.data || state.data.type === AppDataType.REROUTE) {
+      return;
+    }
+    const resolvedData = state.data;
+
+    try {
+      const balancesResult = await fetchBalances(
+        resolvedData.publicKey,
+        // Derived from the network in hand rather than the `_isMainnet` flag,
+        // which `fetchData` only ever sets to `true` and so stays stale after
+        // a switch away from mainnet.
+        isMainnet(resolvedData.networkDetails),
+        resolvedData.networkDetails,
+        false,
+      );
+
+      if (isError<AccountBalances>(balancesResult)) {
+        throw new Error(balancesResult.message);
+      }
+
+      dispatch({
+        type: "FETCH_DATA_SUCCESS",
+        payload: {
+          ...resolvedData,
+          balances: balancesResult,
+          isScanAppended: true,
+        } as ResolvedAccountData,
+      });
+    } catch (error) {
+      // Deliberately not FETCH_DATA_ERROR: a background refresh that fails has
+      // to leave the good data on screen rather than swap it for the error
+      // view.
+      captureException(`Error refreshing balances on Account - ${error}`);
+    }
+  };
+
+  /** Same contract as `refreshBalances`, for the collectibles grid. */
+  const refreshCollectibles = async () => {
+    if (!state.data || state.data.type === AppDataType.REROUTE) {
+      return;
+    }
+    const resolvedData = state.data;
+
+    if (isCustomNetwork(resolvedData.networkDetails)) {
+      return;
+    }
+
+    try {
+      // Cache-first, and the remove handler corrects the cache before calling
+      // this, so the common case costs no round trip.
+      const collectibles = await fetchCollectibles({
+        publicKey: resolvedData.publicKey,
+        networkDetails: resolvedData.networkDetails,
+      });
+
+      dispatch({
+        type: "FETCH_DATA_SUCCESS",
+        payload: {
+          ...resolvedData,
+          collectibles,
+          hasLoadedCollectibles: true,
+        } as ResolvedAccountData,
+      });
+    } catch (error) {
+      captureException(`Error refreshing collectibles on Account - ${error}`);
+    }
+  };
+
   useEffect(() => {
     if (!state.data || state.data.type === AppDataType.REROUTE || !_isMainnet) {
       return;
@@ -297,6 +376,8 @@ function useGetAccountData(options: {
     state,
     fetchData,
     refreshAppData,
+    refreshBalances,
+    refreshCollectibles,
   };
 }
 

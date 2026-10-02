@@ -69,6 +69,8 @@ export const Account = () => {
     state: accountData,
     fetchData,
     refreshAppData,
+    refreshBalances,
+    refreshCollectibles,
   } = useGetAccountData({
     showHidden: false,
     includeIcons: false,
@@ -206,11 +208,12 @@ export const Account = () => {
   const isFunded = !!resolvedData?.balances?.isFunded;
   const canUseFriendbot = !!resolvedData?.networkDetails?.friendbotUrl;
   const collections = resolvedData?.collectibles?.collections ?? [];
-  const reloadBalances = () =>
-    fetchData({
-      useAppDataCache: true,
-      shouldForceBalancesRefresh: true,
-    });
+  // Deliberately the non-blanking refresh rather than `fetchData`. Asset
+  // Details calls this from its own close handler -- the X, and after Hide as
+  // well as after Remove -- and a full fetch resets the screen to LOADING,
+  // which replaced Home with a full-screen spinner every time a token sheet
+  // was dismissed.
+  const reloadBalances = () => refreshBalances();
 
   const totalBalanceUsd = getTotalUsd(tokenPrices ?? {}, balances);
   // The hero is never hidden; see getTotalUsdLabel for which of a total, a
@@ -360,9 +363,7 @@ export const Account = () => {
                   isLoading={isCollectiblesLoading}
                   refreshHiddenCollectibles={refreshHiddenCollectibles}
                   isCollectibleHidden={isCollectibleHidden}
-                  onCollectibleRemoved={() =>
-                    fetchData({ useAppDataCache: true })
-                  }
+                  onCollectibleRemoved={refreshCollectibles}
                 />
               </div>,
             ]}

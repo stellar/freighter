@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { render, act, screen, fireEvent } from "@testing-library/react";
 
 import { SlideupModal, SLIDEUP_MODAL_TRANSITION_MS } from "..";
@@ -32,6 +32,56 @@ const Harness = ({ ariaLabel }: { ariaLabel?: string }) => {
         ) : (
           <div data-testid="sheet-placeholder" />
         )}
+      </SlideupModal>
+    </>
+  );
+};
+
+/**
+ * Reports its own mount and unmount, so a test can tell "the same instance was
+ * kept alive through the slide-out" from "it was torn down and rebuilt".
+ */
+const Tracked = ({
+  onMount,
+  onUnmount,
+}: {
+  onMount: () => void;
+  onUnmount: () => void;
+}) => {
+  useEffect(() => {
+    onMount();
+    return onUnmount;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return <div data-testid="tracked" />;
+};
+
+const TrackedHarness = ({
+  onMount,
+  onUnmount,
+}: {
+  onMount: () => void;
+  onUnmount: () => void;
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <>
+      <button
+        type="button"
+        data-testid="trigger"
+        onClick={() => setIsOpen(true)}
+      >
+        open
+      </button>
+      <SlideupModal
+        isModalOpen={isOpen}
+        setIsModalOpen={setIsOpen}
+        ariaLabel="Sheet"
+      >
+        {/* Gated, as ManageAssetRows and the AssetDetail remove sheet are. */}
+        <>{isOpen && <Tracked onMount={onMount} onUnmount={onUnmount} />}</>
       </SlideupModal>
     </>
   );
@@ -152,5 +202,55 @@ describe("SlideupModal", () => {
 
     expect(screen.queryByTestId("sheet-button")).not.toBeInTheDocument();
     expect(screen.getByTestId("sheet-placeholder")).toBeInTheDocument();
+  });
+
+  it("keeps the same child instance through the slide-out", () => {
+    // The test above only asserts the contents are still *painted*, which a
+    // re-created copy satisfies just as well. Freezing from an effect did
+    // exactly that: the gated child unmounted on the closing render and a
+    // second instance mounted for the animation, re-running its fetches and
+    // firing its unmount effects twice -- a spurious `signing.rejected` from
+    // ChangeTrustInternal. Count the mounts.
+    const onMount = jest.fn();
+    const onUnmount = jest.fn();
+
+    render(<TrackedHarness onMount={onMount} onUnmount={onUnmount} />);
+
+    fireEvent.click(screen.getByTestId("trigger"));
+    expect(onMount).toHaveBeenCalledTimes(1);
+
+    fireEvent.click(document.querySelector(".LoadingBackground")!);
+
+    // Mid slide-out: still the original instance.
+    expect(onMount).toHaveBeenCalledTimes(1);
+    expect(onUnmount).not.toHaveBeenCalled();
+
+    act(() => {
+      jest.advanceTimersByTime(SLIDEUP_MODAL_TRANSITION_MS);
+    });
+
+    // Torn down once, at the end of the animation rather than its start.
+    expect(onMount).toHaveBeenCalledTimes(1);
+    expect(onUnmount).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps the same child instance when reopened mid-slide-out", () => {
+    const onMount = jest.fn();
+    const onUnmount = jest.fn();
+
+    render(<TrackedHarness onMount={onMount} onUnmount={onUnmount} />);
+
+    const trigger = screen.getByTestId("trigger");
+    fireEvent.click(trigger);
+    fireEvent.click(document.querySelector(".LoadingBackground")!);
+    fireEvent.click(trigger);
+
+    act(() => {
+      jest.advanceTimersByTime(SLIDEUP_MODAL_TRANSITION_MS);
+    });
+
+    expect(screen.getByTestId("tracked")).toBeInTheDocument();
+    expect(onMount).toHaveBeenCalledTimes(1);
+    expect(onUnmount).not.toHaveBeenCalled();
   });
 });
