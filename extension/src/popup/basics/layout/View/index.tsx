@@ -2,7 +2,7 @@ import React, { createContext, useContext } from "react";
 import { Text } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
-import VarialLockup from "popup/assets/logo-varial-lockup.svg";
+import VarialLockup from "popup/assets/logo-varial-lockup.svg?react";
 import { BackButton } from "popup/basics/buttons/BackButton";
 import { addStyleClasses } from "popup/helpers/addStyleClasses";
 
@@ -21,10 +21,10 @@ const ViewHeader: React.FC = ({ ...props }) => {
     <header className="View__header" {...props}>
       <ViewInset isInline hasVerticalBorder>
         <div className="View__header__box View__header__box--center full">
-          <img
+          <VarialLockup
             className="View__header__logo"
-            alt={t("Varial logo")}
-            src={VarialLockup}
+            role="img"
+            aria-label={t("Varial logo")}
           />
         </div>
       </ViewInset>

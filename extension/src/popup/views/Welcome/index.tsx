@@ -7,7 +7,7 @@ import { ROUTES } from "popup/constants/routes";
 import { navigateTo } from "popup/helpers/navigate";
 import { View } from "popup/basics/layout/View";
 
-import LogoWelcome from "popup/assets/logo-varial.svg";
+import LogoWelcome from "popup/assets/logo-varial.svg?react";
 
 import "./styles.scss";
 
@@ -20,7 +20,7 @@ export const Welcome = () => {
       <View.Content>
         <div className="Welcome__column">
           <div className="Welcome__centered-screen">
-            <img src={LogoWelcome} alt={t("Varial logo")} />
+            <LogoWelcome role="img" aria-label={t("Varial logo")} />
             <div>
               <Heading addlClassName="Welcome__heading" as="h1" size="lg">
                 {t("Varial Wallet")}

@@ -5,7 +5,7 @@ import { Text, Icon } from "@stellar/design-system";
 import { Onboarding, OnboardingModal } from "popup/components/Onboarding";
 import { View } from "popup/basics/layout/View";
 
-import LogoWelcome from "popup/assets/logo-varial.svg";
+import LogoWelcome from "popup/assets/logo-varial.svg?react";
 
 import "./styles.scss";
 
@@ -26,7 +26,7 @@ export const FullscreenSuccessMessage = () => {
         </div>
         <div className="FullscreenSuccessMessage__pin__row">
           <div className="FullscreenSuccessMessage__pin__row__logo">
-            <img src={LogoWelcome} alt={t("Varial logo")} />
+            <LogoWelcome role="img" aria-label={t("Varial logo")} />
           </div>
           <div className="FullscreenSuccessMessage__pin__row__text">
             {t("Varial - Stellar Wallet")}
