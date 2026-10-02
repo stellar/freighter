@@ -14,10 +14,6 @@ import { RequestState } from "constants/request";
 import { TESTNET_NETWORK_DETAILS } from "@shared/constants/stellar";
 import { getAssetDomains } from "@shared/api/internal";
 import { defaultBlockaidScanAssetResult } from "@shared/helpers/stellar";
-import {
-  AssetSelectType,
-  initialState as transactionSubmissionInitialState,
-} from "popup/ducks/transactionSubmission";
 
 jest.mock("@shared/api/internal", () => ({
   ...jest.requireActual("@shared/api/internal"),
@@ -382,14 +378,6 @@ describe("useGetAssetDomainsWithBalances (native-code asset identity)", () => {
       assetsLists: [],
       networkDetails: TESTNET_NETWORK_DETAILS,
     },
-    // The duck's default `assetSelect.type` is MANAGE, which skips the
-    // native row entirely (the hook's `else if (!isManagingAssets)` branch),
-    // so the native control row below would never be produced. Force a
-    // non-manage context instead.
-    transactionSubmission: {
-      ...transactionSubmissionInitialState,
-      assetSelect: { type: AssetSelectType.REGULAR, isSource: true },
-    },
   };
 
   it("keeps a non-native XLM-coded asset out of the native row", async () => {
@@ -416,22 +404,14 @@ describe("useGetAssetDomainsWithBalances (native-code asset identity)", () => {
     // @ts-ignore
     const domains = result.current.state.data?.domains as any[];
 
-    // Both entries must exist as separate rows — the shared display code
-    // must not merge one into the other.
-    expect(domains).toHaveLength(2);
+    // The hook never emits a native row -- XLM has no trustline to manage and
+    // cannot be hidden -- so the XLM-coded asset is the only entry. The point
+    // of the test is that it survives on its own terms rather than being
+    // swallowed by, or mistaken for, the native balance.
+    expect(domains).toHaveLength(1);
+    expect(domains.find((d) => d.issuer === "")).toBeUndefined();
 
-    const nativeRow = domains.find((d) => d.issuer === "");
     const xlmCodeRow = domains.find((d) => d.issuer === xlmCodeIssuer);
-
-    // Control: the genuine native row is unchanged — no issuer, no domain
-    // lookup, benign.
-    expect(nativeRow).toEqual({
-      code: "XLM",
-      issuer: "",
-      image: "",
-      domain: "",
-      isSuspicious: false,
-    });
 
     // The non-native XLM-coded asset: real issuer, its own domain, and a
     // Blockaid-derived verdict rather than the hardcoded native default.

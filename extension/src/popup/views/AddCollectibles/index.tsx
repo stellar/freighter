@@ -50,8 +50,12 @@ export const AddCollectibles = () => {
   const [isHiddenCollectiblesOpen, setIsHiddenCollectiblesOpen] =
     useState(false);
   const collections = useSelector(collectionsSelector);
-  const { refreshHiddenCollectibles, isCollectibleHidden } =
-    useHiddenCollectibles();
+  const {
+    refreshHiddenCollectibles,
+    isCollectibleHidden,
+    isHiddenCollectiblesLoading,
+    hiddenCollectiblesError,
+  } = useHiddenCollectibles();
   const { fetchData: fetchCollectiblesData } = useGetCollectibles({
     useCache: false,
   });
@@ -209,11 +213,10 @@ export const AddCollectibles = () => {
                 )}
               </Field>
             </FormRows>
-            {/* The sheet this opens is a Radix dialog, and its Root lives
-              inside HiddenCollectibles, so Radix's own Dialog.Trigger can't
-              reach it from here. These mirror what that trigger would emit;
-              aria-controls is omitted because the id is generated inside the
-              portal and isn't knowable at this level. */}
+            {/* The sheet this opens is a hand-rolled SlideupModal, not Radix,
+              so there is no Dialog.Trigger to emit these. They are written out
+              by hand instead; aria-controls is omitted because the sheet's
+              dialog element carries no id to point at. */}
             <button
               type="button"
               className="AddCollectibles__show-hidden"
@@ -255,6 +258,8 @@ export const AddCollectibles = () => {
             collections={currentCollections}
             refreshHiddenCollectibles={refreshHiddenCollectibles}
             isCollectibleHidden={isCollectibleHidden}
+            isLoading={isHiddenCollectiblesLoading}
+            loadError={hiddenCollectiblesError}
             isOpen={isHiddenCollectiblesOpen}
             onClose={() => setIsHiddenCollectiblesOpen(false)}
           />

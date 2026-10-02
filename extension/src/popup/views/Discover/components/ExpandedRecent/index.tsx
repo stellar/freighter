@@ -32,7 +32,7 @@ export const ExpandedRecent = ({
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
 
   return (
-    <View>
+    <>
       <SubviewHeader
         title={t("Recent")}
         customBackAction={onBack}
@@ -82,6 +82,6 @@ export const ExpandedRecent = ({
           ))}
         </div>
       </View.Content>
-    </View>
+    </>
   );
 };

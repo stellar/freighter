@@ -8,12 +8,7 @@ import {
   dismissUsdt0LaunchBanner,
 } from "@shared/api/internal";
 
-import {
-  Sheet,
-  SheetContent,
-  SheetTitle,
-  ScreenReaderOnly,
-} from "popup/basics/shadcn/Sheet";
+import { SlideupModal } from "popup/components/SlideupModal";
 import Usdt0Logo from "popup/assets/logo-usdt0.png";
 import { Usdt0LaunchSheet } from "./Usdt0LaunchSheet";
 
@@ -112,22 +107,15 @@ export const Usdt0LaunchBanner = () => {
           <Icon.X />
         </button>
       </div>
-      <Sheet
-        open={isSheetOpen}
-        onOpenChange={(open) => !open && setIsSheetOpen(false)}
+      <SlideupModal
+        isModalOpen={isSheetOpen}
+        setIsModalOpen={(open) => !open && setIsSheetOpen(false)}
+        ariaLabel={t("USDT0 is now on Stellar")}
       >
-        <SheetContent
-          onOpenAutoFocus={(e) => e.preventDefault()}
-          aria-describedby={undefined}
-          side="bottom"
-          className="Usdt0LaunchBanner__sheet"
-        >
-          <ScreenReaderOnly>
-            <SheetTitle>{t("USDT0 is now on Stellar")}</SheetTitle>
-          </ScreenReaderOnly>
+        <div className="Usdt0LaunchBanner__sheet">
           <Usdt0LaunchSheet onClose={() => setIsSheetOpen(false)} />
-        </SheetContent>
-      </Sheet>
+        </div>
+      </SlideupModal>
     </>
   );
 };

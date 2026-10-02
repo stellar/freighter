@@ -1,6 +1,7 @@
 import {
   DEFAULT_NETWORKS,
   FUTURENET_NETWORK_DETAILS,
+  NETWORK_NAMES,
   NETWORKS,
   TESTNET_NETWORK_DETAILS,
   SOROBAN_RPC_URLS,
@@ -9,6 +10,9 @@ import {
 import {
   ASSETS_LISTS_ID,
   HAS_ACCOUNT_SUBSCRIPTION,
+  HIDDEN_ASSETS,
+  HIDDEN_COLLECTIBLES,
+  LAST_USED_ACCOUNT,
   NETWORK_ID,
   NETWORKS_LIST_ID,
   STORAGE_VERSION,
@@ -51,6 +55,23 @@ const dataStorageAccess = (storageApi: DataStorageAccess.StorageOption) => {
 };
 
 const mockStorage = new MockStorage();
+
+/**
+ * Reject reads of one key while every other read -- notably STORAGE_VERSION,
+ * which the migration guard needs -- still works. Returns the restore fn.
+ */
+const failReadsOf = (failingKey: string) => {
+  const realGet = mockStorage.get;
+  const spy = jest
+    .spyOn(mockStorage, "get")
+    .mockImplementation(async (key: string) => {
+      if (key === failingKey) {
+        throw new Error("storage unavailable");
+      }
+      return realGet(key);
+    });
+  return () => spy.mockRestore();
+};
 
 jest
   .spyOn(DataStorageAccess, "dataStorageAccess")
@@ -221,5 +242,332 @@ describe("Storage migrations", () => {
     const storedVersion = await mockStorage.get(STORAGE_VERSION);
     expect(storedAssetList[ASSETS_LISTS_ID]).toEqual(DEFAULT_ASSETS_LISTS);
     expect(storedVersion[STORAGE_VERSION]).toEqual("4.1.0");
+  });
+
+  const CUSTOM_NETWORK = {
+    network: "STANDALONE",
+    networkName: "My Standalone Network",
+    networkUrl: "http://localhost:8000",
+    networkPassphrase: "Standalone Network ; February 2017",
+  };
+
+  describe("migrateHiddenAssetsToKeyNetworkSchema", () => {
+    const ACCOUNT = "GABC123";
+    const legacy = { "USDC:GA5ZSE": "hidden", "EURC:GB3Q6": "visible" };
+
+    it("assigns a legacy flat map to the active account on every network", async () => {
+      await mockStorage.set({ [STORAGE_VERSION]: "5.45.0" });
+      await mockStorage.set({ [HIDDEN_ASSETS]: legacy });
+      await mockStorage.set({ [LAST_USED_ACCOUNT]: ACCOUNT });
+
+      await DataStorage.migrateHiddenAssetsToKeyNetworkSchema();
+
+      const stored = await mockStorage.get(HIDDEN_ASSETS);
+      expect(stored[HIDDEN_ASSETS]).toEqual({
+        [NETWORK_NAMES.PUBNET]: { [ACCOUNT]: legacy },
+        [NETWORK_NAMES.TESTNET]: { [ACCOUNT]: legacy },
+        [NETWORK_NAMES.FUTURENET]: { [ACCOUNT]: legacy },
+      });
+      const storedVersion = await mockStorage.get(STORAGE_VERSION);
+      expect(storedVersion[STORAGE_VERSION]).toEqual("5.46.0");
+    });
+
+    it("waits rather than overwriting when there is no active account to attribute them to", async () => {
+      // `lastUsedAccount` is removed by clearAccount / removePreviousAccount.
+      // Writing empty buckets over the old map would erase it for good, since
+      // the result has no string leaves for a later run to recognise.
+      await mockStorage.set({ [STORAGE_VERSION]: "5.45.0" });
+      await mockStorage.set({ [HIDDEN_ASSETS]: legacy });
+
+      await DataStorage.migrateHiddenAssetsToKeyNetworkSchema();
+
+      const stored = await mockStorage.get(HIDDEN_ASSETS);
+      expect(stored[HIDDEN_ASSETS]).toEqual(legacy);
+      const storedVersion = await mockStorage.get(STORAGE_VERSION);
+      expect(storedVersion[STORAGE_VERSION]).toEqual("5.45.0");
+    });
+
+    it("gives a custom network its own bucket", async () => {
+      // Readers look the store up by `networkDetails.networkName`, so a custom
+      // network with no bucket resolves to undefined and hides nothing.
+      await mockStorage.set({ [STORAGE_VERSION]: "5.45.0" });
+      await mockStorage.set({ [HIDDEN_ASSETS]: legacy });
+      await mockStorage.set({ [LAST_USED_ACCOUNT]: ACCOUNT });
+      await mockStorage.set({
+        [NETWORKS_LIST_ID]: [...DEFAULT_NETWORKS, CUSTOM_NETWORK],
+      });
+
+      await DataStorage.migrateHiddenAssetsToKeyNetworkSchema();
+
+      const stored = await mockStorage.get(HIDDEN_ASSETS);
+      expect(stored[HIDDEN_ASSETS]).toEqual({
+        [NETWORK_NAMES.PUBNET]: { [ACCOUNT]: legacy },
+        [NETWORK_NAMES.TESTNET]: { [ACCOUNT]: legacy },
+        [NETWORK_NAMES.FUTURENET]: { [ACCOUNT]: legacy },
+        [CUSTOM_NETWORK.networkName]: { [ACCOUNT]: legacy },
+      });
+    });
+
+    it("writes empty buckets when nothing was ever hidden", async () => {
+      await mockStorage.set({ [STORAGE_VERSION]: "5.45.0" });
+      await mockStorage.set({ [LAST_USED_ACCOUNT]: ACCOUNT });
+
+      await DataStorage.migrateHiddenAssetsToKeyNetworkSchema();
+
+      const stored = await mockStorage.get(HIDDEN_ASSETS);
+      expect(stored[HIDDEN_ASSETS]).toEqual({
+        [NETWORK_NAMES.PUBNET]: {},
+        [NETWORK_NAMES.TESTNET]: {},
+        [NETWORK_NAMES.FUTURENET]: {},
+      });
+    });
+
+    it("leaves an already-nested map untouched", async () => {
+      const nested = {
+        [NETWORK_NAMES.PUBNET]: { [ACCOUNT]: { "USDC:GA5ZSE": "hidden" } },
+        [NETWORK_NAMES.TESTNET]: {},
+        [NETWORK_NAMES.FUTURENET]: {},
+      };
+      await mockStorage.set({ [STORAGE_VERSION]: "5.45.0" });
+      await mockStorage.set({ [HIDDEN_ASSETS]: nested });
+      await mockStorage.set({ [LAST_USED_ACCOUNT]: ACCOUNT });
+
+      await DataStorage.migrateHiddenAssetsToKeyNetworkSchema();
+
+      const stored = await mockStorage.get(HIDDEN_ASSETS);
+      expect(stored[HIDDEN_ASSETS]).toEqual(nested);
+    });
+
+    it("leaves the data and the version alone when the read fails", async () => {
+      // A failed read is not "nothing hidden": writing the empty schema would
+      // erase the user's hides, and bumping the version would put them
+      // permanently out of retry range.
+      await mockStorage.set({ [STORAGE_VERSION]: "5.45.0" });
+      await mockStorage.set({ [HIDDEN_ASSETS]: legacy });
+      await mockStorage.set({ [LAST_USED_ACCOUNT]: ACCOUNT });
+
+      const consoleError = jest
+        .spyOn(console, "error")
+        .mockImplementation(() => {});
+      const restore = failReadsOf(HIDDEN_ASSETS);
+
+      await DataStorage.migrateHiddenAssetsToKeyNetworkSchema();
+
+      restore();
+      consoleError.mockRestore();
+
+      const stored = await mockStorage.get(HIDDEN_ASSETS);
+      expect(stored[HIDDEN_ASSETS]).toEqual(legacy);
+      const storedVersion = await mockStorage.get(STORAGE_VERSION);
+      expect(storedVersion[STORAGE_VERSION]).toEqual("5.45.0");
+    });
+
+    it("does not run once storage is already at 5.46.0", async () => {
+      await mockStorage.set({ [STORAGE_VERSION]: "5.46.0" });
+      await mockStorage.set({ [HIDDEN_ASSETS]: legacy });
+      await mockStorage.set({ [LAST_USED_ACCOUNT]: ACCOUNT });
+
+      await DataStorage.migrateHiddenAssetsToKeyNetworkSchema();
+
+      const stored = await mockStorage.get(HIDDEN_ASSETS);
+      expect(stored[HIDDEN_ASSETS]).toEqual(legacy);
+    });
+  });
+
+  describe("migrateHiddenCollectiblesToKeyNetworkSchema", () => {
+    const ACCOUNT = "GABC123";
+    const legacy = { "CDPENGUIN:102510": "hidden", "CDDOMAIN:7": "visible" };
+
+    it("assigns a legacy flat map to the active account on every network", async () => {
+      await mockStorage.set({ [STORAGE_VERSION]: "5.46.0" });
+      await mockStorage.set({ [HIDDEN_COLLECTIBLES]: legacy });
+      await mockStorage.set({ [LAST_USED_ACCOUNT]: ACCOUNT });
+
+      await DataStorage.migrateHiddenCollectiblesToKeyNetworkSchema();
+
+      const stored = await mockStorage.get(HIDDEN_COLLECTIBLES);
+      expect(stored[HIDDEN_COLLECTIBLES]).toEqual({
+        [NETWORK_NAMES.PUBNET]: { [ACCOUNT]: legacy },
+        [NETWORK_NAMES.TESTNET]: { [ACCOUNT]: legacy },
+        [NETWORK_NAMES.FUTURENET]: { [ACCOUNT]: legacy },
+      });
+      const storedVersion = await mockStorage.get(STORAGE_VERSION);
+      expect(storedVersion[STORAGE_VERSION]).toEqual("5.47.0");
+    });
+
+    it("still runs for storage already at 5.46.0, which the assets migration wrote", async () => {
+      // The guard is `semver.lt`, so this migration must claim a version above
+      // the one its sibling writes or it would be skipped for every user who
+      // has already taken the hidden-assets migration.
+      await mockStorage.set({ [STORAGE_VERSION]: "5.46.0" });
+      await mockStorage.set({ [HIDDEN_COLLECTIBLES]: legacy });
+      await mockStorage.set({ [LAST_USED_ACCOUNT]: ACCOUNT });
+
+      await DataStorage.migrateHiddenCollectiblesToKeyNetworkSchema();
+
+      const stored = await mockStorage.get(HIDDEN_COLLECTIBLES);
+      expect(stored[HIDDEN_COLLECTIBLES]).not.toEqual(legacy);
+    });
+
+    it("waits rather than overwriting when there is no active account to attribute them to", async () => {
+      await mockStorage.set({ [STORAGE_VERSION]: "5.46.0" });
+      await mockStorage.set({ [HIDDEN_COLLECTIBLES]: legacy });
+
+      await DataStorage.migrateHiddenCollectiblesToKeyNetworkSchema();
+
+      const stored = await mockStorage.get(HIDDEN_COLLECTIBLES);
+      expect(stored[HIDDEN_COLLECTIBLES]).toEqual(legacy);
+      const storedVersion = await mockStorage.get(STORAGE_VERSION);
+      expect(storedVersion[STORAGE_VERSION]).toEqual("5.46.0");
+    });
+
+    it("gives a custom network its own bucket", async () => {
+      await mockStorage.set({ [STORAGE_VERSION]: "5.46.0" });
+      await mockStorage.set({ [HIDDEN_COLLECTIBLES]: legacy });
+      await mockStorage.set({ [LAST_USED_ACCOUNT]: ACCOUNT });
+      await mockStorage.set({
+        [NETWORKS_LIST_ID]: [...DEFAULT_NETWORKS, CUSTOM_NETWORK],
+      });
+
+      await DataStorage.migrateHiddenCollectiblesToKeyNetworkSchema();
+
+      const stored = await mockStorage.get(HIDDEN_COLLECTIBLES);
+      expect(stored[HIDDEN_COLLECTIBLES]).toEqual({
+        [NETWORK_NAMES.PUBNET]: { [ACCOUNT]: legacy },
+        [NETWORK_NAMES.TESTNET]: { [ACCOUNT]: legacy },
+        [NETWORK_NAMES.FUTURENET]: { [ACCOUNT]: legacy },
+        [CUSTOM_NETWORK.networkName]: { [ACCOUNT]: legacy },
+      });
+    });
+
+    it("leaves the data and the version alone when the read fails", async () => {
+      await mockStorage.set({ [STORAGE_VERSION]: "5.46.0" });
+      await mockStorage.set({ [HIDDEN_COLLECTIBLES]: legacy });
+      await mockStorage.set({ [LAST_USED_ACCOUNT]: ACCOUNT });
+
+      const consoleError = jest
+        .spyOn(console, "error")
+        .mockImplementation(() => {});
+      const restore = failReadsOf(HIDDEN_COLLECTIBLES);
+
+      await DataStorage.migrateHiddenCollectiblesToKeyNetworkSchema();
+
+      restore();
+      consoleError.mockRestore();
+
+      const stored = await mockStorage.get(HIDDEN_COLLECTIBLES);
+      expect(stored[HIDDEN_COLLECTIBLES]).toEqual(legacy);
+      const storedVersion = await mockStorage.get(STORAGE_VERSION);
+      expect(storedVersion[STORAGE_VERSION]).toEqual("5.46.0");
+    });
+
+    it("leaves an already-nested map untouched", async () => {
+      const nested = {
+        [NETWORK_NAMES.PUBNET]: {
+          [ACCOUNT]: { "CDPENGUIN:102510": "hidden" },
+        },
+        [NETWORK_NAMES.TESTNET]: {},
+        [NETWORK_NAMES.FUTURENET]: {},
+      };
+      await mockStorage.set({ [STORAGE_VERSION]: "5.46.0" });
+      await mockStorage.set({ [HIDDEN_COLLECTIBLES]: nested });
+      await mockStorage.set({ [LAST_USED_ACCOUNT]: ACCOUNT });
+
+      await DataStorage.migrateHiddenCollectiblesToKeyNetworkSchema();
+
+      const stored = await mockStorage.get(HIDDEN_COLLECTIBLES);
+      expect(stored[HIDDEN_COLLECTIBLES]).toEqual(nested);
+    });
+
+    it("does not run once storage is already at 5.47.0", async () => {
+      await mockStorage.set({ [STORAGE_VERSION]: "5.47.0" });
+      await mockStorage.set({ [HIDDEN_COLLECTIBLES]: legacy });
+      await mockStorage.set({ [LAST_USED_ACCOUNT]: ACCOUNT });
+
+      await DataStorage.migrateHiddenCollectiblesToKeyNetworkSchema();
+
+      const stored = await mockStorage.get(HIDDEN_COLLECTIBLES);
+      expect(stored[HIDDEN_COLLECTIBLES]).toEqual(legacy);
+    });
+  });
+
+  describe("hidden-visibility migration ordering", () => {
+    const ACCOUNT = "GABC123";
+    const legacyAssets = { "USDC:GA5ZSE": "hidden" };
+
+    // These two are the only migrations in the file that can decline to advance
+    // STORAGE_VERSION. `versionedMigration` runs them back to back, so the
+    // successor must not bump past a predecessor that deferred -- a single
+    // version number cannot record "5.46.0 pending, 5.47.0 done".
+    const runBoth = async () => {
+      await DataStorage.migrateHiddenAssetsToKeyNetworkSchema();
+      await DataStorage.migrateHiddenCollectiblesToKeyNetworkSchema();
+    };
+
+    it("holds the version when the hidden-assets migration deferred", async () => {
+      // No LAST_USED_ACCOUNT, so assets defers. No hidden collectibles either,
+      // so without the gate the collectibles migration would happily write
+      // empty buckets and bump to 5.47.0, putting the assets map out of reach.
+      await mockStorage.set({ [STORAGE_VERSION]: "5.45.0" });
+      await mockStorage.set({ [HIDDEN_ASSETS]: legacyAssets });
+
+      await runBoth();
+
+      const version = await mockStorage.get(STORAGE_VERSION);
+      expect(version[STORAGE_VERSION]).toEqual("5.45.0");
+      const stored = await mockStorage.get(HIDDEN_ASSETS);
+      expect(stored[HIDDEN_ASSETS]).toEqual(legacyAssets);
+    });
+
+    it("holds the version when the hidden-assets migration threw", async () => {
+      await mockStorage.set({ [STORAGE_VERSION]: "5.45.0" });
+      await mockStorage.set({ [HIDDEN_ASSETS]: legacyAssets });
+      await mockStorage.set({ [LAST_USED_ACCOUNT]: ACCOUNT });
+
+      const consoleError = jest
+        .spyOn(console, "error")
+        .mockImplementation(() => {});
+      const restore = failReadsOf(HIDDEN_ASSETS);
+
+      await runBoth();
+
+      restore();
+      consoleError.mockRestore();
+
+      const version = await mockStorage.get(STORAGE_VERSION);
+      expect(version[STORAGE_VERSION]).toEqual("5.45.0");
+    });
+
+    it("migrates hidden assets on a later run once an account exists", async () => {
+      await mockStorage.set({ [STORAGE_VERSION]: "5.45.0" });
+      await mockStorage.set({ [HIDDEN_ASSETS]: legacyAssets });
+
+      // First start: nothing to attribute the map to, so neither lands.
+      await runBoth();
+      await mockStorage.set({ [LAST_USED_ACCOUNT]: ACCOUNT });
+      // Next start: both do.
+      await runBoth();
+
+      const stored = await mockStorage.get(HIDDEN_ASSETS);
+      expect(stored[HIDDEN_ASSETS]).toEqual({
+        [NETWORK_NAMES.PUBNET]: { [ACCOUNT]: legacyAssets },
+        [NETWORK_NAMES.TESTNET]: { [ACCOUNT]: legacyAssets },
+        [NETWORK_NAMES.FUTURENET]: { [ACCOUNT]: legacyAssets },
+      });
+      const version = await mockStorage.get(STORAGE_VERSION);
+      expect(version[STORAGE_VERSION]).toEqual("5.47.0");
+    });
+
+    it("still reaches 5.47.0 when there is nothing to defer", async () => {
+      // The gate re-reads STORAGE_VERSION, so it sees the 5.46.0 the assets
+      // migration just wrote and does not strand the collectibles migration.
+      await mockStorage.set({ [STORAGE_VERSION]: "5.45.0" });
+      await mockStorage.set({ [LAST_USED_ACCOUNT]: ACCOUNT });
+
+      await runBoth();
+
+      const version = await mockStorage.get(STORAGE_VERSION);
+      expect(version[STORAGE_VERSION]).toEqual("5.47.0");
+    });
   });
 });

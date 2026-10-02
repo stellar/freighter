@@ -6,9 +6,12 @@ import {
   RequestState,
   AccountBalances,
 } from "../hooks/useGetBalances";
-import { getAccountBalances } from "@shared/api/internal";
+import { getAccountBalances, getHiddenAssets } from "@shared/api/internal";
 import { makeDummyStore, TEST_PUBLIC_KEY } from "popup/__testHelpers__";
-import { TESTNET_NETWORK_DETAILS } from "@shared/constants/stellar";
+import {
+  MAINNET_NETWORK_DETAILS,
+  TESTNET_NETWORK_DETAILS,
+} from "@shared/constants/stellar";
 import { getIconUrlFromIssuer } from "@shared/api/helpers/getIconUrlFromIssuer";
 import { getCombinedAssetListData } from "@shared/api/helpers/token-list";
 
@@ -287,5 +290,167 @@ describe("useGetBalances (flag routing)", () => {
         localOnlyTokenIds,
       );
     });
+  });
+});
+
+describe("useGetBalances (hidden asset visibility)", () => {
+  const publicKey = TEST_PUBLIC_KEY;
+
+  const makeStore = () =>
+    makeDummyStore({
+      cache: { balanceData: {}, icons: {}, tokenLists: [] },
+      settings: { assetsLists: [] },
+      remoteConfig: {
+        isInitialized: true,
+        use_token_prices_v2: true,
+        use_balances_v2: false,
+        maintenance_banner: { enabled: false, payload: undefined },
+        maintenance_screen: { enabled: false, payload: undefined },
+      },
+    });
+
+  const Wrapper =
+    (store: ReturnType<typeof makeDummyStore>) =>
+    ({ children }: { children: React.ReactNode }) => (
+      <Provider store={store}>{children}</Provider>
+    );
+
+  beforeEach(() => {
+    (getAccountBalances as jest.Mock).mockReset();
+    (getAccountBalances as jest.Mock).mockResolvedValue({
+      isFunded: true,
+      subentryCount: 0,
+      balances: {},
+    });
+    (getHiddenAssets as jest.Mock).mockClear();
+    (getHiddenAssets as jest.Mock).mockResolvedValue({ hiddenAssets: {} });
+  });
+
+  it("fetches the visibility map once and serves later calls from the store", async () => {
+    const store = makeStore();
+    const { result } = renderHook(
+      () => useGetBalances({ showHidden: false, includeIcons: false }),
+      { wrapper: Wrapper(store) },
+    );
+
+    await act(async () => {
+      await result.current.fetchData(
+        publicKey,
+        true,
+        TESTNET_NETWORK_DETAILS,
+        false,
+      );
+    });
+    expect(getHiddenAssets).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      await result.current.fetchData(
+        publicKey,
+        true,
+        TESTNET_NETWORK_DETAILS,
+        false,
+      );
+    });
+    // Previously every showHidden:false call paid a background round trip.
+    expect(getHiddenAssets).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not fetch the visibility map at all when showing hidden assets", async () => {
+    const store = makeStore();
+    const { result } = renderHook(
+      () => useGetBalances({ showHidden: true, includeIcons: false }),
+      { wrapper: Wrapper(store) },
+    );
+
+    await act(async () => {
+      await result.current.fetchData(
+        publicKey,
+        true,
+        TESTNET_NETWORK_DETAILS,
+        false,
+      );
+    });
+
+    expect(getHiddenAssets).not.toHaveBeenCalled();
+  });
+
+  it("re-fetches for an account it has not loaded yet", async () => {
+    const store = makeStore();
+    const { result } = renderHook(
+      () => useGetBalances({ showHidden: false, includeIcons: false }),
+      { wrapper: Wrapper(store) },
+    );
+
+    await act(async () => {
+      await result.current.fetchData(
+        publicKey,
+        true,
+        TESTNET_NETWORK_DETAILS,
+        false,
+      );
+    });
+    expect(getHiddenAssets).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      await result.current.fetchData(
+        "GDIFFERENTACCOUNT",
+        true,
+        TESTNET_NETWORK_DETAILS,
+        false,
+      );
+    });
+    expect(getHiddenAssets).toHaveBeenCalledTimes(2);
+  });
+
+  // The request carries no network -- the background resolves NETWORK_ID while
+  // handling it -- so a switch committing mid-flight answers with the other
+  // network's map. Caching that under the network we asked from is permanent:
+  // the one-shot guard reads a present key as loaded and never re-asks.
+  it("caches the map under the network the background reports", async () => {
+    (getHiddenAssets as jest.Mock).mockResolvedValue({
+      hiddenAssets: { "USDC:GISSUER": "hidden" },
+      networkName: MAINNET_NETWORK_DETAILS.networkName,
+      error: "",
+    });
+
+    const store = makeStore();
+    const { result } = renderHook(
+      () => useGetBalances({ showHidden: false, includeIcons: false }),
+      { wrapper: Wrapper(store) },
+    );
+
+    await act(async () => {
+      await result.current.fetchData(
+        publicKey,
+        true,
+        TESTNET_NETWORK_DETAILS,
+        false,
+      );
+    });
+
+    const mirror = (
+      store.getState() as {
+        hiddenAssets: {
+          hiddenAssets: Record<string, Record<string, unknown>>;
+        };
+      }
+    ).hiddenAssets.hiddenAssets;
+
+    expect(mirror[MAINNET_NETWORK_DETAILS.networkName]?.[publicKey]).toEqual({
+      "USDC:GISSUER": "hidden",
+    });
+    expect(mirror[TESTNET_NETWORK_DETAILS.networkName]).toBeUndefined();
+
+    // Testnet is still unloaded, so the next pass for it asks again rather than
+    // serving mainnet's map.
+    await act(async () => {
+      await result.current.fetchData(
+        publicKey,
+        true,
+        TESTNET_NETWORK_DETAILS,
+        false,
+      );
+    });
+    expect(getHiddenAssets).toHaveBeenCalledTimes(2);
   });
 });

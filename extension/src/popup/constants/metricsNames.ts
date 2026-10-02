@@ -139,6 +139,11 @@ export const METRIC_NAMES = {
   signingMessageFailed: "signing.message_failed",
 
   // -- History -------------------------------------------------------------
+  navTabSelected: "navigation.tab_selected",
+  // Retired by the bottom tab bar, which replaced the account header's history
+  // button. It is fully derivable from `navigation.tab_selected` where
+  // `tab === "history"`, so emitting it too would only double-count. Kept for a
+  // shared catalog; any dashboard filtering this name needs repointing.
   historyFullHistoryOpened: "history.full_history_opened",
   historyItemOpened: "history.item_opened",
 

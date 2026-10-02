@@ -1,7 +1,14 @@
 import React from "react";
-import { render, waitFor, screen, within } from "@testing-library/react";
+import {
+  render,
+  waitFor,
+  screen,
+  within,
+  fireEvent,
+} from "@testing-library/react";
 import browser from "webextension-polyfill";
 
+import * as ApiInternal from "@shared/api/internal";
 import { CollectibleDetail } from "popup/components/account/CollectibleDetail";
 import {
   TESTNET_NETWORK_DETAILS,
@@ -712,5 +719,235 @@ describe("CollectibleDetail", () => {
     expect(
       screen.getByTestId("CollectibleDetail__header__right-button"),
     ).toBeDefined();
+  });
+
+  it("removes a collectible straight from the overflow menu", async () => {
+    const removeCollectible = jest
+      .spyOn(ApiInternal, "removeCollectible")
+      .mockResolvedValue({ error: "", collectiblesList: [] } as any);
+    // Remove is only offered for collectibles this wallet tracks.
+    jest.spyOn(ApiInternal, "getCollectibles").mockResolvedValue({
+      error: "",
+      collectiblesList: [
+        {
+          id: "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA",
+          tokenIds: ["2"],
+        },
+      ],
+    } as any);
+    const handleItemClose = jest.fn();
+    const onCollectibleRemoved = jest.fn();
+
+    render(
+      <Wrapper
+        routes={[ROUTES.account]}
+        state={{
+          auth: {
+            error: null,
+            applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
+            publicKey:
+              "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF",
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: TESTNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+            isSorobanPublicEnabled: true,
+            isRpcHealthy: true,
+            userNotification: {
+              enabled: false,
+              message: "",
+            },
+          },
+          cache: {
+            collections: {
+              [TESTNET_NETWORK_DETAILS.network]: {
+                [TEST_PUBLIC_KEY]: mockCollectibles,
+              },
+            },
+          },
+        }}
+      >
+        <CollectibleDetail
+          selectedCollectible={{
+            collectionAddress:
+              "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA",
+            tokenId: "2",
+          }}
+          handleItemClose={handleItemClose}
+          onCollectibleRemoved={onCollectibleRemoved}
+        />
+      </Wrapper>,
+    );
+    await waitFor(() => screen.getByTestId("CollectibleDetail"));
+
+    // The test id is on the wrapper; the Radix trigger is the child, and a
+    // click on the parent does not reach it.
+    fireEvent.click(
+      document.querySelector(
+        ".CollectibleDetail__header__right-button__trigger",
+      ) as Element,
+    );
+    // The designs specify no confirmation step: Remove deletes outright. It is
+    // a local delete, not an on-chain operation, so there is no transaction
+    // review to route through either (unlike removing a token).
+    fireEvent.click(await screen.findByTestId("CollectibleDetail__remove"));
+
+    await waitFor(() =>
+      expect(removeCollectible).toHaveBeenCalledWith(
+        expect.objectContaining({
+          collectibleContractAddress:
+            "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA",
+          collectibleTokenId: "2",
+        }),
+      ),
+    );
+    await waitFor(() => expect(handleItemClose).toHaveBeenCalled());
+
+    // removeCollectibleFromCache only updates the redux cache; Home renders a
+    // separate copy from useGetAccountData. Without this the tile stays in the
+    // grid and reopening it lands on "Collectible not found".
+    expect(onCollectibleRemoved).toHaveBeenCalled();
+  });
+
+  it("hides Remove for a collectible the wallet does not track", async () => {
+    // The backend also returns special-cased collectibles (Meridian Pay and
+    // the like) that were never added here. Nothing in COLLECTIBLES_ID
+    // corresponds to them, so Remove would always fail -- Hide is the action
+    // that works.
+    jest
+      .spyOn(ApiInternal, "getCollectibles")
+      .mockResolvedValue({ error: "", collectiblesList: [] } as any);
+
+    render(
+      <Wrapper
+        routes={[ROUTES.account]}
+        state={{
+          auth: {
+            error: null,
+            applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
+            publicKey:
+              "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF",
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: TESTNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+            isSorobanPublicEnabled: true,
+            isRpcHealthy: true,
+            userNotification: {
+              enabled: false,
+              message: "",
+            },
+          },
+          cache: {
+            collections: {
+              [TESTNET_NETWORK_DETAILS.network]: {
+                [TEST_PUBLIC_KEY]: mockCollectibles,
+              },
+            },
+          },
+        }}
+      >
+        <CollectibleDetail
+          selectedCollectible={{
+            collectionAddress:
+              "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA",
+            tokenId: "2",
+          }}
+          handleItemClose={() => {}}
+        />
+      </Wrapper>,
+    );
+    await waitFor(() => screen.getByTestId("CollectibleDetail"));
+
+    fireEvent.click(
+      document.querySelector(
+        ".CollectibleDetail__header__right-button__trigger",
+      ) as Element,
+    );
+
+    // The rest of the menu is still there.
+    expect(await screen.findByText("Hide collectible")).toBeInTheDocument();
+    expect(
+      screen.queryByTestId("CollectibleDetail__remove"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("renders the overflow menu actions as focusable buttons", async () => {
+    jest.spyOn(ApiInternal, "getCollectibles").mockResolvedValue({
+      error: "",
+      collectiblesList: [
+        {
+          id: "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA",
+          tokenIds: ["2"],
+        },
+      ],
+    } as any);
+
+    render(
+      <Wrapper
+        routes={[ROUTES.account]}
+        state={{
+          auth: {
+            error: null,
+            applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
+            publicKey:
+              "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF",
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: TESTNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+            isSorobanPublicEnabled: true,
+            isRpcHealthy: true,
+            userNotification: {
+              enabled: false,
+              message: "",
+            },
+          },
+          cache: {
+            collections: {
+              [TESTNET_NETWORK_DETAILS.network]: {
+                [TEST_PUBLIC_KEY]: mockCollectibles,
+              },
+            },
+          },
+        }}
+      >
+        <CollectibleDetail
+          selectedCollectible={{
+            collectionAddress:
+              "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA",
+            tokenId: "2",
+          }}
+          handleItemClose={() => {}}
+        />
+      </Wrapper>,
+    );
+    await waitFor(() => screen.getByTestId("CollectibleDetail"));
+
+    fireEvent.click(
+      document.querySelector(
+        ".CollectibleDetail__header__right-button__trigger",
+      ) as Element,
+    );
+
+    // Asserting the element type rather than simulating Enter: jsdom does not
+    // implement a native button's implicit keyboard activation, so the tag is
+    // what actually carries the guarantee. As plain divs these were neither
+    // tab-reachable nor activatable by keyboard.
+    const remove = await screen.findByTestId("CollectibleDetail__remove");
+    expect(remove.tagName).toBe("BUTTON");
+
+    const items = document.querySelectorAll(
+      ".CollectibleDetail__header__right-button__popover-content__item",
+    );
+    expect(items.length).toBe(4);
+    items.forEach((item) => {
+      expect(item.tagName).toBe("BUTTON");
+      // A negative tabIndex would put it back out of the tab order.
+      expect(item.getAttribute("tabindex")).toBeNull();
+    });
   });
 });

@@ -23,6 +23,11 @@ import { getCombinedAssetListData } from "@shared/api/helpers/token-list";
 import { AppDispatch, AppState } from "popup/App";
 import { balancesV2Selector } from "popup/ducks/remoteConfig";
 import {
+  HiddenAssetsMap,
+  saveHiddenAssets,
+  selectHiddenAssetsFor,
+} from "popup/ducks/hiddenAssets";
+import {
   balancesSelector,
   iconsSelector,
   saveBalancesForAccount,
@@ -31,24 +36,19 @@ import {
   tokensListsSelector,
 } from "popup/ducks/cache";
 
-const formatBalances = async ({
-  publicKey,
+const formatBalances = ({
   balances,
   showHidden,
+  hiddenAssets,
 }: {
-  publicKey: string;
   balances: NonNullable<BalanceMap>;
   showHidden: boolean;
+  hiddenAssets: HiddenAssetsMap;
 }) => {
   const unfilteredBalances = sortBalances(balances);
   if (!showHidden) {
-    const hiddenAssets = await getHiddenAssets({
-      activePublicKey: publicKey,
-    });
     return {
-      balances: sortBalances(
-        filterHiddenBalances(balances, hiddenAssets.hiddenAssets),
-      ),
+      balances: sortBalances(filterHiddenBalances(balances, hiddenAssets)),
       unfilteredBalances,
     };
   }
@@ -114,10 +114,53 @@ function useGetBalances(options: {
               balancesV2Selector(store.getState()),
             );
 
-      const { balances, unfilteredBalances } = await formatBalances({
+      // Read the visibility map from the store rather than messaging the
+      // background on every call -- same call-time read as balancesV2Selector
+      // above, so an account switch isn't served a render-captured value.
+      // `undefined` means this account/network has never been loaded, which is
+      // not the same as "nothing hidden": without the one-shot fetch a cold
+      // popup would render hidden assets for a frame.
+      let hiddenAssets = selectHiddenAssetsFor(
+        store.getState(),
+        networkDetails.networkName,
         publicKey,
+      );
+      if (!options.showHidden && !hiddenAssets) {
+        const fetched = await getHiddenAssets({ activePublicKey: publicKey });
+        // The request carries no network -- the background resolves NETWORK_ID
+        // while handling it -- so a switch that commits mid-flight answers with
+        // the other network's map. Cache it under the network that answered,
+        // never the one we asked from: the guard above treats a present key as
+        // loaded, so a map filed under the wrong network would be served for
+        // the rest of the session. Falls back to the captured name for a
+        // service worker from before the handler echoed one.
+        const resolvedNetworkName =
+          fetched.networkName || networkDetails.networkName;
+        // Only cache a map the background actually loaded. Saving the `{}` that
+        // comes back with an error would define the slice key, so every hidden
+        // asset would show and no later call would retry for the rest of the
+        // session; `{}` still serves as the local fallback for this pass.
+        if (!fetched.error) {
+          reduxDispatch(
+            saveHiddenAssets({
+              publicKey,
+              networkName: resolvedNetworkName,
+              hiddenAssets: fetched.hiddenAssets,
+            }),
+          );
+        }
+        // Only filter this pass with it when it describes the network this pass
+        // is for. The switch re-runs this hook under the new network, which
+        // then reads the map cached just above.
+        if (resolvedNetworkName === networkDetails.networkName) {
+          hiddenAssets = fetched.hiddenAssets;
+        }
+      }
+
+      const { balances, unfilteredBalances } = formatBalances({
         balances: accountBalances.balances as NonNullable<BalanceMap>,
         showHidden: options.showHidden,
+        hiddenAssets: hiddenAssets || {},
       });
       const payload = {
         isFunded: accountBalances.isFunded,

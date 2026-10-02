@@ -1,0 +1,264 @@
+@use "../../../styles/utils.scss" as *;
+
+.AccountSheet {
+  display: flex;
+  flex-direction: column;
+  padding: pxToRem(24px);
+  gap: pxToRem(16px);
+  // SDS scopes `border-box` through `.sds-theme-light *, .sds-theme-dark *`
+  // rather than universally, and the modifier's max-height below has to cover
+  // the 24px padding -- a content-box ceiling would sit 48px above the card's
+  // own, which is the overflow it exists to prevent. SlideupModal declares
+  // this for the same reason.
+  box-sizing: border-box;
+
+  // Only the list body has a region that can give way, so only it is bounded;
+  // `add` and `rename` are short fixed forms that keep the card's own scroll.
+  //
+  // Bounding the column is what lets `__list` shrink at all. Without it the
+  // sheet sizes to its content, runs past SlideupModal's ceiling, and clips
+  // whatever is last -- which is `__add-wallet`. The same custom property the
+  // card uses, so this tracks 100dvh across popup, sidebar and fullscreen
+  // instead of restating a pixel guess.
+  &--list {
+    max-height: var(--slideup-modal--max-height);
+  }
+
+  &__header {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    // With only two children this puts the gear left and the close right; with
+    // three it centres the title between them.
+    justify-content: space-between;
+
+    &__action {
+      display: flex;
+      align-items: center;
+      background: none;
+      border: 0;
+      padding: 0;
+      cursor: pointer;
+      color: var(--sds-clr-gray-11);
+    }
+  }
+
+  &__title {
+    font-size: pxToRem(16px);
+    font-weight: var(--sds-fw-medium);
+    color: var(--sds-clr-gray-12);
+  }
+
+  &__identity {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: pxToRem(16px);
+    text-align: center;
+    // The list is the only child allowed to shrink; see `&--list`.
+    flex-shrink: 0;
+
+    &__identicon {
+      width: pxToRem(48px);
+      height: pxToRem(48px);
+      flex-shrink: 0;
+      padding: pxToRem(14px);
+      border-radius: 50%;
+      background-color: var(--sds-clr-gray-03);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    // Name sits directly above the address with no gap between them; the
+    // parent's 16px gap separates this pair from the identicon and actions.
+    &__text {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    &__name {
+      font-size: pxToRem(16px);
+      line-height: pxToRem(24px);
+      font-weight: var(--sds-fw-medium);
+      color: var(--sds-clr-gray-12);
+    }
+
+    &__address {
+      font-size: pxToRem(14px);
+      line-height: pxToRem(20px);
+      font-weight: var(--sds-fw-regular);
+      color: var(--sds-clr-gray-11);
+    }
+
+    &__actions {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: pxToRem(16px);
+    }
+
+    &__action {
+      width: pxToRem(48px);
+      height: pxToRem(48px);
+      padding: pxToRem(8px);
+      border: none;
+      border-radius: 100px;
+      background-color: var(--sds-clr-gray-03);
+      color: var(--sds-clr-gray-09);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+
+      svg {
+        width: pxToRem(20px);
+        height: pxToRem(20px);
+      }
+
+      &:hover {
+        background-color: var(--sds-clr-gray-04);
+      }
+    }
+  }
+
+  &__divider {
+    height: 1px;
+    flex-shrink: 0;
+    background-color: var(--sds-clr-gray-06);
+  }
+
+  &__list {
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(16px);
+    // A ceiling, not a height. `&--list` bounds the column above, and this is
+    // the only child that shrinks into whatever the rest of the sheet leaves
+    // -- about 187px in the 600px popup, so three 48px rows with the fourth
+    // peeking, which is itself the scroll cue. 240px alone did not keep
+    // Add wallet on screen: the chrome around this list already eats ~357px of
+    // the card's 544px. The extra 32px over that 240px is exactly the padding
+    // added below, which `box-sizing: border-box` would otherwise take out of
+    // the rows.
+    max-height: pxToRem(272px);
+    // Deliberately no floor. `overflow-y: auto` already zeroes the automatic
+    // minimum size, and a floor would pad the list with dead space on the far
+    // more common one- and two-account cases.
+    min-height: 0;
+    overflow-y: auto;
+
+    // The scroll viewport has to reach the divider above and the Add wallet
+    // button below, or rows vanish in mid-air 16px short of each. The parent's
+    // 16px gap is cancelled on both sides and re-added as padding *inside* the
+    // scroller: the viewport edges now sit flush against its neighbours while
+    // the resting layout is unchanged, since padding scrolls with the content.
+    margin-top: pxToRem(-16px);
+    margin-bottom: pxToRem(-16px);
+    padding-top: pxToRem(16px);
+    padding-bottom: pxToRem(16px);
+
+    // ...and rows fade out into the bottom 16px of that reclaimed space rather
+    // than being cut off at it. Bottom only: the top edge cuts against the
+    // divider, where a hard line already explains the clip -- a ramp there
+    // would only blur it. Sized to the padding so a list at rest is fully
+    // opaque; content only enters the ramp while scrolling.
+    $list-fade: pxToRem(16px);
+    $list-fade-mask: linear-gradient(
+      to bottom,
+      #000 0,
+      #000 calc(100% - #{$list-fade}),
+      transparent 100%
+    );
+    -webkit-mask-image: $list-fade-mask;
+    mask-image: $list-fade-mask;
+
+    // Once the list bottoms out, don't chain the scroll on to the Home
+    // document sitting behind the backdrop.
+    overscroll-behavior: contain;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+
+  &__loader {
+    display: flex;
+    justify-content: center;
+    padding: pxToRem(12px) 0;
+    color: var(--sds-clr-gray-11);
+  }
+
+  // Per the spec this reads as a purple icon chip sitting beside a plain purple
+  // label — the tinted background belongs to the chip alone, not to the whole
+  // control, so the button itself is transparent.
+  &__add-wallet {
+    // Never shrinks: keeping this on screen is the whole point of `&--list`.
+    flex-shrink: 0;
+
+    // SDS `Button` overwrites (rather than merges) any `className` passed to
+    // it, so a class placed directly on it can never combine with its own
+    // `Button`/`Button--*` classes. Scope the override through this wrapper
+    // instead, at higher specificity than `.Button--tertiary` itself.
+    // Height, padding and type come from SDS's `xl` size, whose 16px/24px text
+    // already matches the spec — only the colors, gap and weight are overridden.
+    .Button {
+      --Button-gap: #{pxToRem(16px)};
+      --Button-color-text-default: var(--sds-clr-lilac-11);
+      --Button-color-icon-default: var(--sds-clr-lilac-09);
+      --Button-color-background-default: transparent;
+      --Button-color-border-default: transparent;
+      --Button-color-text-hover: var(--sds-clr-lilac-11);
+      --Button-color-icon-hover: var(--sds-clr-lilac-09);
+      --Button-color-background-hover: transparent;
+      --Button-color-border-hover: transparent;
+
+      // SDS exposes no font-weight custom property, so set it directly.
+      font-weight: var(--sds-fw-medium);
+
+      // SDS drives both sides from one horizontal custom property, so zero the
+      // left alone here to line the icon chip up with the list's avatars.
+      padding-left: 0;
+    }
+
+    // The chip. Sized to the list rows' 40px avatars so the two circles read as
+    // one column — with the 16px gap above, that also lines the "Add wallet"
+    // label up with each row's name. The plus glyph uses `stroke="currentColor"`,
+    // inheriting whatever `color` it finds — which would otherwise be the
+    // button's own (lighter) text color above. Setting `color` here keeps it the
+    // spec's more saturated fill purple.
+    .Button__icon {
+      width: pxToRem(40px);
+      height: pxToRem(40px);
+      flex-shrink: 0;
+      border-radius: 100px;
+      background-color: var(--sds-clr-lilac-02);
+      color: var(--sds-clr-lilac-09);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      svg {
+        width: pxToRem(16px);
+        height: pxToRem(16px);
+      }
+
+      // Must target the path, not the svg. SDS ships these through SVGR, so the
+      // path keeps its own `stroke-width="2"` presentation attribute -- which
+      // loses to a rule matching the path, but beats a value inherited from the
+      // svg.
+      //
+      // The value is 3, not 2, because the viewBox is 24x24 while the glyph
+      // renders at 16px: strokes scale by 2/3, so 3 user units draw as 2px.
+      // Same treatment as FloatingAddButton's plus.
+      svg path {
+        stroke-width: 3;
+      }
+    }
+
+    .Button:hover .Button__icon {
+      background-color: var(--sds-clr-lilac-03);
+    }
+  }
+}

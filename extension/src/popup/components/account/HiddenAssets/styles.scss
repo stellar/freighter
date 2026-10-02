@@ -1,0 +1,66 @@
+@use "../../../styles/utils.scss" as *;
+
+.HiddenAssets {
+  display: flex;
+  flex-direction: column;
+  padding: pxToRem(24px);
+  gap: pxToRem(16px);
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  &__title {
+    font-size: pxToRem(16px);
+    font-weight: var(--sds-fw-medium);
+    color: var(--sds-clr-gray-12);
+  }
+
+  &__close {
+    display: flex;
+    align-items: center;
+    background: none;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+    color: var(--sds-clr-gray-11);
+  }
+
+  &__list {
+    display: flex;
+    flex-direction: column;
+    // AssetListRow has no vertical padding of its own, so without this the
+    // rows sit flush. 20px matches the row pitch in the designs (38px rows
+    // on a 58px pitch).
+    gap: pxToRem(20px);
+    // Keep a long hidden list from pushing the footer button out of reach; the
+    // sheet's own max-height caps the card, this caps the list within it.
+    max-height: pxToRem(280px);
+    overflow-y: auto;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+
+  &__empty,
+  &__loader {
+    display: flex;
+    justify-content: center;
+    padding: pxToRem(12px) 0;
+    color: var(--sds-clr-gray-11);
+    font-size: pxToRem(14px);
+  }
+
+  &__footer {
+    // The design's footer button is 36px, between SDS's md (32) and lg (40).
+    // SDS overwrites any className on Button, so height has to come through
+    // its custom property. isRounded derives the pill radius from this.
+    .Button {
+      --Button-height: #{pxToRem(36px)};
+    }
+  }
+}

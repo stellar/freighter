@@ -325,3 +325,42 @@ export const hasEnoughXlmForFee = (
   balances.some(
     (balance) => isNativeBalance(balance) && balance.available.gt(feeXlm),
   );
+
+/**
+ * Whether an asset may offer "Remove".
+ *
+ * Classic assets are removed by closing their trustline, and SACs are not
+ * removable at all. A custom token is removable only while it is on screen
+ * because of the user's local token list: once the backend returns it on its
+ * own, dropping the local entry would not stop it coming back, so it can only
+ * be hidden.
+ *
+ * The native and liquidity-pool guards are load bearing on Asset Details,
+ * which opens a sheet for every balance. Manage assets never reaches them --
+ * useGetAssetDomainsWithBalances drops the native row, and LP rows are not
+ * clickable -- so without the guards XLM would offer a changeTrust that cannot
+ * succeed.
+ */
+export const getIsRemovable = ({
+  contract,
+  isSac,
+  isNative,
+  isLiquidityPool,
+  localOnlyTokenIds,
+}: {
+  contract: string;
+  isSac: boolean;
+  isNative?: boolean;
+  isLiquidityPool?: boolean;
+  localOnlyTokenIds?: string[];
+}) => {
+  if (isNative || isLiquidityPool || isSac) {
+    return false;
+  }
+  // No contract means a classic asset, removed by closing its trustline. This
+  // is the same test isAssetSac and shouldChangeTrust use to tell the two apart.
+  if (!contract) {
+    return true;
+  }
+  return !!localOnlyTokenIds?.includes(contract);
+};

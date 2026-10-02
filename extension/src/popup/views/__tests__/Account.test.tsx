@@ -19,7 +19,12 @@ import { defaultBlockaidScanAssetResult } from "@shared/helpers/stellar";
 import * as UseAssetDomain from "popup/helpers/useAssetDomain";
 import { INDEXER_URL } from "@shared/constants/mercury";
 import { SERVICE_TYPES } from "@shared/constants/services";
-import { HorizonOperation, Response, SettingsState } from "@shared/api/types";
+import {
+  AssetVisibility,
+  HorizonOperation,
+  Response,
+  SettingsState,
+} from "@shared/api/types";
 import * as TokenListHelpers from "@shared/api/helpers/token-list";
 import * as GetIconFromTokenList from "@shared/api/helpers/getIconFromTokenList";
 import * as GetIconUrlFromIssuer from "@shared/api/helpers/getIconUrlFromIssuer";
@@ -124,7 +129,9 @@ jest
 
 jest
   .spyOn(ApiInternal, "getHiddenAssets")
-  .mockImplementation(() => Promise.resolve({ hiddenAssets: {}, error: "" }));
+  .mockImplementation(() =>
+    Promise.resolve({ hiddenAssets: {}, networkName: "", error: "" }),
+  );
 
 jest
   .spyOn(ApiInternal, "getTokenPrices")
@@ -290,6 +297,14 @@ describe("Account view", () => {
   afterEach(() => {
     jest.useRealTimers();
     jest.clearAllMocks();
+    // `clearAllMocks` drops recorded calls but keeps implementations, so a test
+    // that hides an asset would otherwise hide it for every test after it. The
+    // module-level default is "nothing hidden"; put it back.
+    jest
+      .spyOn(ApiInternal, "getHiddenAssets")
+      .mockImplementation(() =>
+        Promise.resolve({ hiddenAssets: {}, networkName: "", error: "" }),
+      );
   });
 
   jest
@@ -779,6 +794,60 @@ describe("Account view", () => {
     });
   });
 
+  it("does not blank Home when Asset Details is closed with the X", async () => {
+    // Closing through AssetDetail's own handler used to call the full
+    // `fetchData`, which resets the request to LOADING with `data: null` and
+    // makes Account early-return a full-screen <Loading />. Dismissing a token
+    // sheet with no change must not take Home off screen.
+    render(
+      <Wrapper
+        routes={[ROUTES.welcome]}
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
+            publicKey: "G1",
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: TESTNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+          },
+        }}
+      >
+        <Account />
+      </Wrapper>,
+    );
+
+    await waitFor(async () => {
+      await fireEvent.click(
+        screen.getByTestId("AccountAssets__asset--loading-USDC"),
+      );
+    });
+    await waitFor(() => {
+      expect(
+        screen.getByTestId("asset-detail-available-copy"),
+      ).toHaveTextContent("100 USDC");
+    });
+
+    fireEvent.click(screen.getByTestId("BackButton"));
+
+    // Asserted in the same tick as the click, with no `waitFor` in between:
+    // `fetchData` dispatches FETCH_DATA_START synchronously, so the blank
+    // frame lands here and is gone again by the time a refetch settles.
+    expect(screen.queryByTestId("Loading")).not.toBeInTheDocument();
+    expect(screen.getAllByTestId("account-assets-item").length).toBeGreaterThan(
+      0,
+    );
+
+    await waitFor(() => {
+      expect(
+        screen.queryByTestId("asset-detail-available-copy"),
+      ).not.toBeInTheDocument();
+    });
+    expect(screen.queryByTestId("Loading")).not.toBeInTheDocument();
+  });
+
   it("goes to account details and shows loading until history data is fetched", async () => {
     jest.useFakeTimers();
     jest
@@ -1007,6 +1076,90 @@ describe("Account view", () => {
         screen.getByTestId(`asset-price-delta-${TEST_CANONICAL}`),
       ).toHaveTextContent("--");
     });
+  });
+
+  // A hidden asset must still be priced. The price map is cached per account
+  // and network with no record of which assets it covers, so one built from
+  // the visibility-filtered list is served as complete -- and unhiding, which
+  // only writes the visibility mirror, brings the row back with no price.
+  it("prices assets the user has hidden", async () => {
+    jest.spyOn(ApiInternal, "loadSettings").mockImplementation(() =>
+      Promise.resolve({
+        networkDetails: MAINNET_NETWORK_DETAILS,
+        networksList: DEFAULT_NETWORKS,
+        hiddenAssets: {},
+        allowList: ApiInternal.DEFAULT_ALLOW_LIST,
+        error: "",
+        isDataSharingAllowed: false,
+        isMemoValidationEnabled: false,
+        isHideDustEnabled: true,
+        isOpenSidebarByDefault: false,
+        settingsState: SettingsState.SUCCESS,
+        isSorobanPublicEnabled: false,
+        isRpcHealthy: true,
+        userNotification: {
+          enabled: false,
+          message: "",
+        },
+        isExperimentalModeEnabled: false,
+        isHashSigningEnabled: false,
+        isNonSSLEnabled: false,
+        experimentalFeaturesState: SettingsState.SUCCESS,
+        assetsLists: DEFAULT_ASSETS_LISTS,
+        autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
+      }),
+    );
+    jest
+      .spyOn(ApiInternal, "getAccountBalances")
+      .mockImplementation(() => Promise.resolve(mockBalances));
+    jest.spyOn(ApiInternal, "getHiddenAssets").mockImplementation(() =>
+      Promise.resolve({
+        hiddenAssets: { [TEST_USDC_CANONICAL]: "hidden" as AssetVisibility },
+        networkName: MAINNET_NETWORK_DETAILS.networkName,
+        error: "",
+      }),
+    );
+    const getTokenPrices = jest
+      .spyOn(ApiInternal, "getTokenPrices")
+      .mockImplementation(() => Promise.resolve(mockPrices));
+
+    render(
+      <Wrapper
+        routes={[ROUTES.account]}
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
+            publicKey: "G1",
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: MAINNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+          },
+        }}
+      >
+        <Account />
+      </Wrapper>,
+    );
+
+    await waitFor(() => {
+      expect(getTokenPrices).toHaveBeenCalled();
+    });
+
+    // The row is gone from the list...
+    await waitFor(() => {
+      expect(
+        screen.queryByTestId(`asset-amount-${TEST_USDC_CANONICAL}`),
+      ).not.toBeInTheDocument();
+    });
+
+    // ...but its price was still requested, so unhiding it later has a price
+    // waiting rather than a gap in a map that reads as complete.
+    for (const call of getTokenPrices.mock.calls) {
+      expect(call[0]).toContain(TEST_USDC_CANONICAL);
+    }
+    expect(getTokenPrices.mock.calls.length).toBeGreaterThan(0);
   });
 
   it("hides prices and deltas on token price failure", async () => {
@@ -1337,6 +1490,8 @@ describe("Account view", () => {
         },
         fetchData: jest.fn(),
         refreshAppData: jest.fn(),
+        refreshBalances: jest.fn(),
+        refreshCollectibles: jest.fn(),
       } as any);
 
     render(
@@ -1383,6 +1538,8 @@ describe("Account view", () => {
         },
         fetchData: jest.fn(),
         refreshAppData: jest.fn(),
+        refreshBalances: jest.fn(),
+        refreshCollectibles: jest.fn(),
       });
 
     render(
@@ -1476,6 +1633,8 @@ describe("Account view", () => {
                 } as any),
           fetchData: jest.fn(),
           refreshAppData: jest.fn(),
+          refreshBalances: jest.fn(),
+          refreshCollectibles: jest.fn(),
         } as any);
 
       render(
@@ -1826,6 +1985,8 @@ describe("Account view", () => {
       },
       fetchData: jest.fn(),
       refreshAppData: jest.fn(),
+      refreshBalances: jest.fn(),
+      refreshCollectibles: jest.fn(),
     });
 
     render(

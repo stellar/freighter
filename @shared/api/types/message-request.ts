@@ -7,7 +7,7 @@ import { NetworkDetails } from "@shared/constants/stellar";
 import {
   AssetVisibility,
   BalanceToMigrate,
-  IssuerKey,
+  AssetKey,
   CollectibleKey,
   TrendingAsset,
 } from "./types";
@@ -419,7 +419,12 @@ export interface GetIsAccountMismatchMessage extends BaseMessage {
 export interface ChangeAssetVisibilityMessage extends BaseMessage {
   type: SERVICE_TYPES.CHANGE_ASSET_VISIBILITY;
   assetVisibility: {
-    issuer: IssuerKey;
+    assetKey: AssetKey;
+    // Legacy alias for `assetKey`, carrying the identical canonical value. A
+    // service worker from before the rename reads `issuer`; sending only
+    // `assetKey` makes it write the visibility under `undefined` and report
+    // success. Drop once the release shipping the new handler has rolled out.
+    issuer?: AssetKey;
     visibility: AssetVisibility;
   };
 }
@@ -462,6 +467,14 @@ export interface GetBlockaidDebugOverrideMessage extends BaseMessage {
 }
 export interface AddCollectibleMessage extends BaseMessage {
   type: SERVICE_TYPES.ADD_COLLECTIBLE;
+  network: string;
+  publicKey: string;
+  collectibleContractAddress: string;
+  collectibleTokenId: string;
+}
+
+export interface RemoveCollectibleMessage extends BaseMessage {
+  type: SERVICE_TYPES.REMOVE_COLLECTIBLE;
   network: string;
   publicKey: string;
   collectibleContractAddress: string;
@@ -582,6 +595,7 @@ export type ServiceMessageRequest =
   | DismissDiscoverWelcomeMessage
   | GetBlockaidDebugOverrideMessage
   | AddCollectibleMessage
+  | RemoveCollectibleMessage
   | GetCollectiblesMessage
   | ChangeCollectibleVisibilityMessage
   | GetHiddenCollectiblesMessage
