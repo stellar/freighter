@@ -162,7 +162,7 @@
   &__infoBlock {
     background: var(--sds-clr-lilac-03);
     border-radius: pxToRem(16px);
-    color: var(--sds-clr-lilac-11);
+    color: var(--sds-clr-lilac-09);
     font-size: 0.875rem;
     padding: pxToRem(16px) pxToRem(12px);
 
@@ -607,7 +607,7 @@
 // Sizing/spacing inherit from .ScanLabel to stay consistent with the other
 // banners (the mobile Figma's smaller type scale doesn't apply to extension).
 .ScanAssetList {
-  color: var(--sds-clr-lilac-11);
+  color: var(--sds-clr-lilac-09);
   background-color: var(--sds-clr-lilac-03);
 
   .Icon .WarningMessage__icon {
