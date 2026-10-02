@@ -27,6 +27,9 @@
     line-height: 24px;
 
     a {
+      // the deleted dead var beat the UA link color, then computed to
+      // inherit - keep that rendering rather than browser-default blue
+      color: inherit;
     }
 
     &:not(:last-child) {

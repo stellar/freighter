@@ -181,6 +181,10 @@ describe("custom properties resolve (freighter-private#18)", () => {
     // computes to inherited/initial, which is how the pre-SDS --color-* refs
     // shipped invisible for years and broke light mode (black check mark on
     // the navy active-wallet bubble).
+    // Known limits: a definition anywhere in source counts (the scan is
+    // scope-blind — fine for custom properties, which inherit — and doesn't
+    // know which files a page actually loads), so it catches dangling names,
+    // not wrong scoping.
     const files = walk(SRC_ROOT, STYLE_EXTENSIONS);
     const defined = new Set<string>();
     const defRe = /(--[A-Za-z0-9_-]+)\s*:/g;
@@ -191,13 +195,15 @@ describe("custom properties resolve (freighter-private#18)", () => {
         "../../node_modules/@stellar/design-system/build/styles.min.css",
       ),
     ].forEach((file) => {
-      for (const m of fs.readFileSync(file, "utf8").matchAll(defRe)) {
+      for (const m of stripComments(fs.readFileSync(file, "utf8")).matchAll(
+        defRe,
+      )) {
         defined.add(m[1]);
       }
     });
 
     const offenders = files.flatMap((file) => {
-      const content = fs.readFileSync(file, "utf8");
+      const content = stripComments(fs.readFileSync(file, "utf8"));
       const out: string[] = [];
       for (const m of content.matchAll(/var\(\s*(--[A-Za-z0-9_-]+)/g)) {
         const name = m[1];
