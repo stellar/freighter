@@ -78,7 +78,7 @@
     // `getPriceDeltaColor()` in index.tsx. A color on `&__delta` itself would
     // flatten gains and losses together.
     &.positive {
-      color: var(--sds-clr-green-09);
+      color: var(--sds-clr-green-10);
     }
 
     // Zero deltas are `negative` too, so this stays gray: only gains get color.
