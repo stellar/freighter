@@ -118,7 +118,23 @@ const commonConfig = (
         test: /\.svg$/i,
         issuer: /\.[jt]sx?$/,
         resourceQuery: /react/, // *.svg?react
-        use: ["@svgr/webpack"],
+        use: [
+          {
+            loader: "@svgr/webpack",
+            options: {
+              // svgo's preset-default strips viewBox; without it an inline
+              // svg can't scale, so CSS-resized icons render clipped.
+              svgoConfig: {
+                plugins: [
+                  {
+                    name: "preset-default",
+                    params: { overrides: { removeViewBox: false } },
+                  },
+                ],
+              },
+            },
+          },
+        ],
       },
       {
         test: /tailwind.css$/i,
