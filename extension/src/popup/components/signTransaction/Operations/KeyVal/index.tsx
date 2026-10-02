@@ -24,6 +24,7 @@ import { formattedBuffer } from "popup/helpers/formatters";
 
 import {
   addressToString,
+  getContractFnArgNames,
   getCreateContractArgs,
   InvocationTree,
   scValByType,
@@ -406,45 +407,135 @@ export const KeyValueSignerKeyOptions = ({
   return <></>;
 };
 
+/**
+ * The state of a spec lookup. One value rather than a name list beside a
+ * loading flag, because the two have to move together: an unlabelled row means
+ * "the spec had nothing to say about this parameter", and a lookup that is
+ * still in flight must not be able to say that. Separate pieces of state let a
+ * refetch clear the names while the flag stayed down, which reads to the
+ * consumer as a resolved-but-empty lookup.
+ */
+type SpecLookup =
+  | { status: "loading" }
+  | { status: "done"; argNames: string[] | null };
+
+/**
+ * Resolves an invocation's parameter names from the contract spec. A hook so
+ * that the component owning the "Parameters" heading can look the names up
+ * once -- it renders the spec note that belongs beside that heading, and hands
+ * the same names to the rows below.
+ */
+export const useContractArgNames = ({
+  contractId,
+  fnName,
+  argCount,
+  isAuthEntry = false,
+}: {
+  contractId?: string;
+  fnName?: string;
+  argCount: number;
+  isAuthEntry?: boolean;
+}) => {
+  const [lookup, setLookup] = React.useState<SpecLookup>({ status: "loading" });
+  const networkDetails = useSelector(settingsNetworkDetailsSelector);
+
+  React.useEffect(() => {
+    // A resolved fetch must never label a different invocation than the one it
+    // was issued for, so drop the names up front and ignore a response that
+    // arrives after the inputs moved on. Dropping them is a return to the
+    // loading state, not a result: the effect re-runs on a settings refresh
+    // that only changed `networkDetails`' identity, and the rows have to show
+    // the loader across that refetch rather than silently losing their labels.
+    let isCurrent = true;
+    setLookup({ status: "loading" });
+
+    async function getSpec(id: string, name: string) {
+      try {
+        const spec = await getContractSpec({ contractId: id, networkDetails });
+        if (!isCurrent) {
+          return;
+        }
+        setLookup({
+          status: "done",
+          argNames: getContractFnArgNames(spec, name, argCount),
+        });
+      } catch (error) {
+        if (isCurrent) {
+          setLookup({ status: "done", argNames: null });
+        }
+      }
+    }
+
+    // An auth entry is never labelled from the contract spec. Its args are not
+    // the function's declared parameters: `require_auth_for_args` substitutes
+    // an arbitrary list under the same contract and function name, and the
+    // arity can match, so the length check in `getContractFnArgNames` does not
+    // catch it. Those rows render unlabelled. See stellar/freighter#2196.
+    if (contractId && fnName && !isAuthEntry) {
+      getSpec(contractId, fnName);
+    } else {
+      setLookup({ status: "done", argNames: null });
+    }
+
+    return () => {
+      isCurrent = false;
+    };
+  }, [contractId, fnName, networkDetails, isAuthEntry, argCount]);
+
+  return {
+    argNames: lookup.status === "done" ? lookup.argNames : null,
+    isLoading: lookup.status === "loading",
+  };
+};
+
+/**
+ * Qualifies spec-derived parameter names: the spec is author-controlled wasm
+ * metadata that nothing validates against the implementation, so a name is the
+ * contract's claim about its own parameter, not a verified fact. It renders
+ * with the "Parameters" heading, between the heading and the card of rows, so
+ * it reads as a note on the section rather than as a row inside it.
+ */
+export const ContractSpecNote = () => {
+  const { t } = useTranslation();
+
+  return (
+    <div className="ContractSpecNote" data-testid="ContractSpecNote">
+      {t(
+        "Parameter names are based on the contract spec and may not reflect actual contract behavior.",
+      )}
+    </div>
+  );
+};
+
 export const KeyValueInvokeHostFnArgs = ({
   args,
   contractId,
   fnName,
   showHeader = true,
   isAuthEntry = false,
+  argNames: resolvedArgNames,
+  isLoadingArgNames = false,
 }: {
   args: xdr.ScVal[];
   contractId?: string;
   fnName?: string;
   showHeader?: boolean;
   isAuthEntry?: boolean;
+  // A caller that renders the heading itself resolves the names (it owns the
+  // spec note beside that heading) and passes them here instead of the
+  // contract id, so the spec is fetched once for the section.
+  argNames?: string[] | null;
+  isLoadingArgNames?: boolean;
 }) => {
   const { t } = useTranslation();
-  const [isLoading, setLoading] = React.useState(true);
-  const [argNames, setArgNames] = React.useState([] as string[]);
-  const networkDetails = useSelector(settingsNetworkDetailsSelector);
-
-  React.useEffect(() => {
-    async function getSpec(id: string, name: string) {
-      try {
-        const spec = await getContractSpec({ contractId: id, networkDetails });
-        const { definitions } = spec;
-        const invocationSpec = definitions[name];
-        const argNamesPositional = invocationSpec.properties?.args
-          ?.required as string[];
-        setArgNames(argNamesPositional);
-        setLoading(false);
-      } catch (error) {
-        setLoading(false);
-      }
-    }
-
-    if (contractId && fnName && !isAuthEntry) {
-      getSpec(contractId, fnName);
-    } else {
-      setLoading(false);
-    }
-  }, [contractId, fnName, networkDetails, isAuthEntry]);
+  const ownSpec = useContractArgNames({
+    contractId,
+    fnName,
+    argCount: args.length,
+    isAuthEntry,
+  });
+  const argNames = resolvedArgNames ?? ownSpec.argNames;
+  const isLoading = isLoadingArgNames || ownSpec.isLoading;
 
   return isLoading ? (
     <div className="Operations__pair--invoke" data-testid="OperationKeyVal">
@@ -458,12 +549,19 @@ export const KeyValueInvokeHostFnArgs = ({
           <span>{t("Parameters")}</span>
         </div>
       )}
+      {/* The note goes wherever the heading goes, and only once names
+      resolved -- auth entries and failed lookups have nothing to qualify. */}
+      {showHeader && !!argNames?.length && <ContractSpecNote />}
       <div className="OperationParameters" data-testid="OperationParameters">
+        {/* Keyed by position: two arguments can hold the same value (a
+        self-transfer passes the same address twice), and the value alone
+        would give those rows the same key. The list only ever renders in
+        call order, so the index is both stable and unique. */}
         {args.map((arg, ind) => (
-          <CopyText textToCopy={scValByType(arg)} key={arg.toXdr("base64")}>
+          <CopyText textToCopy={scValByType(arg)} key={`arg-${ind}`}>
             <div className="Parameters">
               <div className="ParameterKey" data-testid="ParameterKey">
-                {argNames[ind] && argNames[ind]}
+                {argNames?.[ind]}
                 <Icon.Copy01 />
               </div>
               <div className="ParameterValue" data-testid="ParameterValue">

@@ -979,6 +979,73 @@ export const getCreateContractArgs = (hostFn: xdr.HostFunction) => {
   };
 };
 
+/**
+ * The slice of a `Spec.jsonSchema()` payload the wallet actually reads. These
+ * describe the `/contract-spec` response rather than validate it: the payload
+ * is author-controlled JSON, so every field is optional and the runtime guards
+ * below stay responsible for rejecting a shape that only looks right.
+ */
+export interface ContractFnArgsSchema {
+  properties?: Record<string, unknown>;
+  required?: string[];
+}
+
+export interface ContractFnDefinition {
+  properties?: { args?: ContractFnArgsSchema };
+}
+
+export interface ContractSpecSchema {
+  definitions?: Record<string, ContractFnDefinition | undefined>;
+}
+
+// V8 hoists integer-like keys to the front of `Object.keys` and sorts them
+// numerically, so their presence alone means the key order is not insertion
+// order. No Rust identifier looks like this, but the spec section is
+// author-controlled metadata and can hold any string.
+const INTEGER_LIKE_KEY = /^(0|[1-9]\d*)$/;
+
+/**
+ * Argument names for a contract function, in declaration order, or `null` when
+ * the spec does not describe the invocation we were handed.
+ *
+ * The ordered parameter list is `properties.args.properties`, never `required`:
+ * `Spec.jsonSchema()` follows JSON Schema semantics, so an `Option<T>`
+ * parameter is left out of `required` and every name after it would attach to
+ * the wrong value.
+ *
+ * Reading the parameter list off object keys is sound here because nothing in
+ * the path reorders them: `Spec.jsonSchema()` fills `properties` from a single
+ * pass over the function's inputs, and `JSON.stringify` and `JSON.parse` both
+ * preserve insertion order for keys that are not integer-like. The two guards
+ * below cover the cases where that breaks down — an arity mismatch, and keys
+ * `Object.keys` would reorder. A re-serializer that sorted the keys is not
+ * detectable from this payload; the followup is for `/contract-spec` to return
+ * an explicit ordered array derived from `inputs()`, so order is carried rather
+ * than inferred.
+ *
+ * These names come from author-controlled wasm metadata, so they are advisory
+ * either way — the signing view says as much beside them.
+ */
+export const getContractFnArgNames = (
+  spec: ContractSpecSchema | undefined,
+  fnName: string,
+  argCount: number,
+): string[] | null => {
+  const names = Object.keys(
+    spec?.definitions?.[fnName]?.properties?.args?.properties || {},
+  );
+
+  if (names.length !== argCount) {
+    return null;
+  }
+
+  if (names.some((name) => INTEGER_LIKE_KEY.test(name))) {
+    return null;
+  }
+
+  return names;
+};
+
 export const isSacContract = (
   name: string,
   contractId: string,

@@ -3,7 +3,7 @@
  */
 import { NetworkDetails } from "@shared/constants/stellar";
 import { getContractSpec } from "@shared/api/internal";
-import { isContractId } from "popup/helpers/soroban";
+import { ContractSpecSchema, isContractId } from "popup/helpers/soroban";
 import {
   isMuxedAccount,
   isValidStellarAddress,
@@ -37,18 +37,7 @@ export async function checkIsMuxedSupported(
     const spec = await getContractSpec({ contractId, networkDetails });
 
     // Check if transfer function exists
-    const definitions = spec.definitions as
-      | {
-          transfer?: {
-            properties?: {
-              args?: {
-                properties?: Record<string, unknown>;
-                required?: string[];
-              };
-            };
-          };
-        }
-      | undefined;
+    const definitions: ContractSpecSchema["definitions"] = spec.definitions;
     const transferDef = definitions?.transfer;
     if (!transferDef) {
       return false;

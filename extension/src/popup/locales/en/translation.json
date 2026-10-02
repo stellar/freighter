@@ -450,6 +450,7 @@
   "Overridden response": "Overridden response",
   "Override Blockaid security responses for testing different security states (DEV only)": "Override Blockaid security responses for testing different security states (DEV only)",
   "Overview": "Overview",
+  "Parameter names are based on the contract spec and may not reflect actual contract behavior.": "Parameter names are based on the contract spec and may not reflect actual contract behavior.",
   "Parameters": "Parameters",
   "Passphrase": "Passphrase",
   "Password": "Password",

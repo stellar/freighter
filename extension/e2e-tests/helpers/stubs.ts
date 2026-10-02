@@ -3623,3 +3623,43 @@ export const stubVerifiedToken = async (
     await route.fulfill({ json: verifiedAssetList });
   });
 };
+
+/**
+ * Stubs the contract-spec endpoint with caller-supplied `definitions`.
+ *
+ * `stubContractSpec` above hard-codes a single-arg `transfer`, which is all the
+ * muxed-support checks need. This one takes the whole `definitions` map, so a
+ * test can model any function and arity -- including a non-trailing `Option<T>`,
+ * where `required` legitimately omits a parameter that `properties` still
+ * carries.
+ */
+export const stubContractSpecDefinitions = async (
+  page: Page | BrowserContext,
+  contractId: string,
+  definitions: Record<string, unknown>,
+) => {
+  await page.route("**/contract-spec/**", async (route) => {
+    const request = route.request();
+    if (request.method() !== "GET") {
+      await route.continue();
+      return;
+    }
+
+    let match: RegExpMatchArray | null = null;
+    try {
+      match = new URL(request.url()).pathname.match(
+        /\/contract-spec\/([^/?]+)/,
+      );
+    } catch (e) {
+      await route.continue();
+      return;
+    }
+
+    if (!match || match[1] !== contractId) {
+      await route.continue();
+      return;
+    }
+
+    await route.fulfill({ json: { data: { definitions }, error: null } });
+  });
+};
