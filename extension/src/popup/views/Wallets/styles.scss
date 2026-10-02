@@ -140,13 +140,14 @@
   // label up with each row's name. The plus glyph uses `stroke="currentColor"`,
   // inheriting whatever `color` it finds — which would otherwise be the
   // button's own (lighter) text color above. Setting `color` here keeps it the
-  // spec's more saturated fill purple.
+  // more saturated brand blue. lilac-03 circle + lilac-09 glyph matches
+  // mobile's AddWalletFooter.
   .Button__icon {
     width: #{pxToRem(40px)};
     height: #{pxToRem(40px)};
     flex-shrink: 0;
     border-radius: 100px;
-    background-color: var(--sds-clr-lilac-02);
+    background-color: var(--sds-clr-lilac-03);
     color: var(--sds-clr-lilac-09);
     display: flex;
     align-items: center;
@@ -171,7 +172,7 @@
   }
 
   .Button:hover .Button__icon {
-    background-color: var(--sds-clr-lilac-03);
+    background-color: var(--sds-clr-lilac-04);
   }
 }
 
