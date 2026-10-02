@@ -7,9 +7,10 @@
   width: var(--back--button-dimension);
   z-index: var(--back--button-z-index);
 
-  svg {
-    fill: var(--sds-clr-gray-05);
-  }
+  // No svg fill rule: SDS arrow/X icons are stroke-based (stroke=currentColor,
+  // fill=none), so the icon renders in the inherited text color — gray-12,
+  // which is what the Figma headers spec. The old `fill: gray-05` here was a
+  // no-op on a stroke icon.
 
   &--has-copy {
     width: 3.75rem;
