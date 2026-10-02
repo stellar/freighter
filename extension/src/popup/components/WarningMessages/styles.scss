@@ -180,7 +180,7 @@
     }
 
     &--warning {
-      background-color: var(--sds-clr-amber-03);
+      background-color: var(--sds-clr-amber-02);
       color: var(--sds-clr-amber-11);
       border-radius: pxToRem(16px);
       padding: pxToRem(16px) pxToRem(12px);
@@ -188,7 +188,7 @@
       .WarningMessage__icon {
         width: pxToRem(16px);
         height: pxToRem(16px);
-        color: var(--sds-clr-amber-11);
+        color: var(--sds-clr-amber-09);
       }
     }
   }
@@ -583,22 +583,22 @@
 
 .ScanMiss {
   color: var(--sds-clr-amber-11);
-  background-color: var(--sds-clr-amber-03);
+  background-color: var(--sds-clr-amber-02);
 
   .Icon {
     .WarningMessage__icon {
-      color: var(--sds-clr-amber-11);
+      color: var(--sds-clr-amber-09);
     }
   }
 }
 
 .ScanWarning {
   color: var(--sds-clr-amber-11);
-  background-color: var(--sds-clr-amber-03);
+  background-color: var(--sds-clr-amber-02);
 
   .Icon {
     .WarningMessage__icon {
-      color: var(--sds-clr-amber-11);
+      color: var(--sds-clr-amber-09);
     }
   }
 }
