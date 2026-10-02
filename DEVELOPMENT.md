@@ -1,10 +1,11 @@
-# Contributing to Freighter
+# Developing Freighter
 
 Non-custodial Stellar wallet browser extension. Monorepo with extension, client
 SDK, shared utilities, and docs site.
 
-For the Stellar organization's general contribution guidelines, see the
-[Stellar Contribution Guide](https://github.com/stellar/.github/blob/master/CONTRIBUTING.md).
+This is the developer setup guide. For the contribution policy — the issue-first
+workflow, pull request requirements, and how to use LLMs responsibly here — see
+[CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Prerequisites
 
