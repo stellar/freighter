@@ -59,6 +59,15 @@ same strip-the-nested-`View` treatment Discover needed.
 the new account loads, which unmounts the sheet anyway; closing first keeps that
 from reading as a flicker.
 
+**The wallet list scrolls edge to edge.** Its scroll viewport reaches the
+divider above and the Add wallet button below: the column's 16px gap is
+cancelled with negative margins on the list and re-added as padding inside the
+scroller, so the resting layout is unchanged but rows no longer disappear in
+mid-air short of either neighbour. A `mask-image` ramp fades rows out into the
+bottom 16px, where nothing marks the boundary; the top edge cuts hard against
+the divider, which already explains the clip. The ramp is sized to the padding,
+so a list sitting at rest is fully opaque and only scrolling content enters it.
+
 ### `ConnectedAppsSheet`
 
 `components/account/ConnectedAppsSheet/` — the former

@@ -138,13 +138,41 @@
     // -- about 187px in the 600px popup, so three 48px rows with the fourth
     // peeking, which is itself the scroll cue. 240px alone did not keep
     // Add wallet on screen: the chrome around this list already eats ~357px of
-    // the card's 544px.
-    max-height: pxToRem(240px);
+    // the card's 544px. The extra 32px over that 240px is exactly the padding
+    // added below, which `box-sizing: border-box` would otherwise take out of
+    // the rows.
+    max-height: pxToRem(272px);
     // Deliberately no floor. `overflow-y: auto` already zeroes the automatic
     // minimum size, and a floor would pad the list with dead space on the far
     // more common one- and two-account cases.
     min-height: 0;
     overflow-y: auto;
+
+    // The scroll viewport has to reach the divider above and the Add wallet
+    // button below, or rows vanish in mid-air 16px short of each. The parent's
+    // 16px gap is cancelled on both sides and re-added as padding *inside* the
+    // scroller: the viewport edges now sit flush against its neighbours while
+    // the resting layout is unchanged, since padding scrolls with the content.
+    margin-top: pxToRem(-16px);
+    margin-bottom: pxToRem(-16px);
+    padding-top: pxToRem(16px);
+    padding-bottom: pxToRem(16px);
+
+    // ...and rows fade out into the bottom 16px of that reclaimed space rather
+    // than being cut off at it. Bottom only: the top edge cuts against the
+    // divider, where a hard line already explains the clip -- a ramp there
+    // would only blur it. Sized to the padding so a list at rest is fully
+    // opaque; content only enters the ramp while scrolling.
+    $list-fade: pxToRem(16px);
+    $list-fade-mask: linear-gradient(
+      to bottom,
+      #000 0,
+      #000 calc(100% - #{$list-fade}),
+      transparent 100%
+    );
+    -webkit-mask-image: $list-fade-mask;
+    mask-image: $list-fade-mask;
+
     // Once the list bottoms out, don't chain the scroll on to the Home
     // document sitting behind the backdrop.
     overscroll-behavior: contain;
