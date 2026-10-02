@@ -3,7 +3,12 @@ import { Provider } from "react-redux";
 import { act, renderHook, waitFor } from "@testing-library/react";
 
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
-import { TESTNET_NETWORK_DETAILS } from "@shared/constants/stellar";
+import {
+  MAINNET_NETWORK_DETAILS,
+  NetworkDetails,
+  TESTNET_NETWORK_DETAILS,
+} from "@shared/constants/stellar";
+import { CUSTOM_NETWORK } from "@shared/helpers/stellar";
 import { AccountBalances } from "helpers/hooks/useGetBalances";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { Collectibles } from "@shared/api/types/types";
@@ -51,6 +56,13 @@ jest.mock("helpers/hooks/useGetTokenPrices", () => ({
 const OTHER_PUBLIC_KEY =
   "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN";
 
+const CUSTOM_NETWORK_DETAILS: NetworkDetails = {
+  network: CUSTOM_NETWORK,
+  networkName: "My Standalone Network",
+  networkUrl: "http://localhost:8000",
+  networkPassphrase: "Standalone Network ; February 2017",
+};
+
 /** A promise whose settlement this test controls. */
 const deferred = <T,>() => {
   let settle: (value: T) => void = () => {};
@@ -77,14 +89,17 @@ const makeCollectibles = (count: number) =>
     collections: new Array(count).fill({ collectionAddress: "C1", items: [] }),
   }) as unknown as Collectibles;
 
-const appDataFor = (publicKey: string) => ({
+const appDataFor = (
+  publicKey: string,
+  networkDetails: NetworkDetails = TESTNET_NETWORK_DETAILS,
+) => ({
   type: AppDataType.RESOLVED,
   account: {
     publicKey,
     applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
   },
   settings: {
-    networkDetails: TESTNET_NETWORK_DETAILS,
+    networkDetails,
     allowList: {},
   },
 });
@@ -255,5 +270,48 @@ describe("useGetAccountData", () => {
 
     expect(resolved(result).publicKey).toBe(TEST_PUBLIC_KEY);
     expect(resolved(result).balances.subentryCount).toBe(7);
+  });
+
+  it("stops polling as Mainnet once the network changes", async () => {
+    jest.useFakeTimers();
+    try {
+      mockFetchAppData.mockImplementation(() =>
+        Promise.resolve(appDataFor(TEST_PUBLIC_KEY, MAINNET_NETWORK_DETAILS)),
+      );
+
+      const { result } = renderUseGetAccountData();
+      await act(async () => {
+        await result.current.fetchData({ useAppDataCache: false });
+      });
+      expect(resolved(result).networkDetails).toBe(MAINNET_NETWORK_DETAILS);
+      // The Mainnet load is what a cached flag would latch on.
+      expect(mockFetchTokenPrices).toHaveBeenCalled();
+
+      mockFetchAppData.mockImplementation(() =>
+        Promise.resolve(appDataFor(TEST_PUBLIC_KEY, CUSTOM_NETWORK_DETAILS)),
+      );
+      await act(async () => {
+        await result.current.fetchData({ useAppDataCache: false });
+      });
+      expect(resolved(result).networkDetails).toBe(CUSTOM_NETWORK_DETAILS);
+
+      mockFetchBalances.mockClear();
+      mockFetchTokenPrices.mockClear();
+
+      await act(async () => {
+        jest.advanceTimersByTime(30000);
+      });
+
+      expect(mockFetchBalances).toHaveBeenCalled();
+      // `isMainnet` is the second argument. A stale `true` here reaches
+      // `makeDisplayableBalances` on the standalone path, which puts the custom
+      // network's asset ids through the Mainnet Blockaid bulk scan.
+      expect(mockFetchBalances.mock.calls[0][1]).toBe(false);
+      // The price poll is Mainnet-only -- `fetchData` skips it off Mainnet, so
+      // the interval must not keep it alive.
+      expect(mockFetchTokenPrices).not.toHaveBeenCalled();
+    } finally {
+      jest.useRealTimers();
+    }
   });
 });

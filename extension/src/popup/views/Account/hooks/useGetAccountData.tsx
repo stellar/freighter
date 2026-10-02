@@ -1,4 +1,4 @@
-import { useEffect, useReducer, useRef, useState } from "react";
+import { useEffect, useReducer, useRef } from "react";
 import { captureException } from "@sentry/browser";
 
 import { RequestState } from "constants/request";
@@ -49,7 +49,6 @@ function useGetAccountData(options: {
   includeIcons: boolean;
 }) {
   const reduxDispatch = useDispatch<AppDispatch>();
-  const [_isMainnet, setIsMainnet] = useState(false);
   const [state, dispatch] = useReducer(
     reducer<AccountData, unknown>,
     initialState,
@@ -169,7 +168,6 @@ function useGetAccountData(options: {
             useCache: true,
           });
           payload.tokenPrices = fetchedTokenPrices.tokenPrices;
-          setIsMainnet(isMainnetNetwork);
         } catch (e) {
           payload.tokenPrices = null;
         }
@@ -284,9 +282,10 @@ function useGetAccountData(options: {
     try {
       const balancesResult = await fetchBalances(
         resolvedData.publicKey,
-        // Derived from the network in hand rather than the `_isMainnet` flag,
-        // which `fetchData` only ever sets to `true` and so stays stale after
-        // a switch away from mainnet.
+        // Derived per call from the network in hand. A flag cached across
+        // fetches goes stale the moment the user switches away from mainnet,
+        // and `fetchBalances` sends a mainnet `true` straight into the
+        // Blockaid bulk scan.
         isMainnet(resolvedData.networkDetails),
         resolvedData.networkDetails,
         false,
@@ -352,7 +351,13 @@ function useGetAccountData(options: {
   };
 
   useEffect(() => {
-    if (!state.data || state.data.type === AppDataType.REROUTE || !_isMainnet) {
+    if (
+      !state.data ||
+      state.data.type === AppDataType.REROUTE ||
+      // Same gate as `fetchData`, read off the resolved network rather than a
+      // cached flag, so switching away from mainnet actually stops the poll.
+      !isMainnet(state.data.networkDetails)
+    ) {
       return;
     }
     const resolvedData = state.data;
@@ -388,7 +393,7 @@ function useGetAccountData(options: {
     }, 30000);
     return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [_isMainnet, state.data]);
+  }, [state.data]);
 
   useEffect(() => {
     // refresh balances every 30 seconds
@@ -407,7 +412,7 @@ function useGetAccountData(options: {
         const networkDetails = resolvedData.networkDetails;
         const balancesResult = await fetchBalances(
           publicKey,
-          _isMainnet,
+          isMainnet(networkDetails),
           networkDetails,
           false,
         );
@@ -425,7 +430,7 @@ function useGetAccountData(options: {
       }
     }, 30000);
     return () => clearInterval(interval);
-  }, [_isMainnet, state.data, fetchBalances]);
+  }, [state.data, fetchBalances]);
 
   return {
     state,
