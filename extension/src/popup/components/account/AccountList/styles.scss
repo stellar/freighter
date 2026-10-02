@@ -13,7 +13,7 @@
     }
 
     .AccountListIdenticon__active-wrapper.active {
-      border-color: var(--color-white);
+      border-color: currentColor; // what the long-undefined --color-white computed to
     }
 
     &::before {

@@ -163,6 +163,54 @@ function relToSrc(file: string): string {
   return path.relative(SRC_ROOT, file).split(path.sep).join("/");
 }
 
+// Dead font-token namespace pending its own typography fix: these resolve to
+// nothing today (inherited weight/size ships), and correcting them app-wide is
+// a design-affecting change that doesn't belong to the palette/theme work.
+const KNOWN_UNRESOLVED = [
+  "--font-weight-light",
+  "--font-weight-regular",
+  "--font-weight-medium",
+  "--font-weight-semi-bold",
+  "--font-weight-bold",
+  "--font-size-secondary",
+];
+
+describe("custom properties resolve (freighter-private#18)", () => {
+  it("every var() used in the popup is defined in app source or SDS", () => {
+    // An undefined custom property doesn't error — the declaration silently
+    // computes to inherited/initial, which is how the pre-SDS --color-* refs
+    // shipped invisible for years and broke light mode (black check mark on
+    // the navy active-wallet bubble).
+    const files = walk(SRC_ROOT, STYLE_EXTENSIONS);
+    const defined = new Set<string>();
+    const defRe = /(--[A-Za-z0-9_-]+)\s*:/g;
+    [
+      ...files,
+      path.join(
+        SRC_ROOT,
+        "../../node_modules/@stellar/design-system/build/styles.min.css",
+      ),
+    ].forEach((file) => {
+      for (const m of fs.readFileSync(file, "utf8").matchAll(defRe)) {
+        defined.add(m[1]);
+      }
+    });
+
+    const offenders = files.flatMap((file) => {
+      const content = fs.readFileSync(file, "utf8");
+      const out: string[] = [];
+      for (const m of content.matchAll(/var\(\s*(--[A-Za-z0-9_-]+)/g)) {
+        const name = m[1];
+        if (!defined.has(name) && !KNOWN_UNRESOLVED.includes(name)) {
+          out.push(`${relToSrc(file)}: ${name}`);
+        }
+      }
+      return out;
+    });
+    expect(offenders).toEqual([]);
+  });
+});
+
 describe("Varial palette (freighter-private#37)", () => {
   it("overrides the SDS lilac ramp with Varial Blue for both themes", () => {
     const css = fs.readFileSync(PALETTE_FILE, "utf8");
