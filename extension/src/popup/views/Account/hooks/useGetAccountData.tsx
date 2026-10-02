@@ -1,4 +1,4 @@
-import { useEffect, useReducer, useState } from "react";
+import { useEffect, useReducer, useRef, useState } from "react";
 import { captureException } from "@sentry/browser";
 
 import { RequestState } from "constants/request";
@@ -54,6 +54,20 @@ function useGetAccountData(options: {
     reducer<AccountData, unknown>,
     initialState,
   );
+  /**
+   * Which account/network scope the in-flight requests belong to. Every
+   * dispatch here follows an await and spreads a snapshot captured before it,
+   * so one that lands after a wallet switch would restore the previous
+   * account wholesale -- its publicKey and networkDetails included, not just
+   * the field it went to fetch.
+   *
+   * Only `fetchData` bumps it; it is the only path that changes the active
+   * account or network. The refreshes and the pollers capture and compare
+   * without bumping, or the two 30s pollers -- both set up on the same
+   * `state.data` change, so they tick together -- would cancel each other out
+   * and drop a refresh every interval. Same idiom as `useHiddenCollectibles`.
+   */
+  const requestIdRef = useRef(0);
   const { fetchData: fetchAppData } = useGetAppData();
   const { fetchData: fetchBalances } = useGetBalances(options);
   const { fetchData: fetchTokenPrices } = useGetTokenPrices();
@@ -73,6 +87,9 @@ function useGetAccountData(options: {
     };
     shouldForceBalancesRefresh?: boolean;
   }) => {
+    const requestId = ++requestIdRef.current;
+    const isCurrent = () => requestId === requestIdRef.current;
+
     dispatch({ type: "FETCH_DATA_START" });
     try {
       if (updatedAppData && updatedAppData.publicKey) {
@@ -89,7 +106,9 @@ function useGetAccountData(options: {
       }
 
       if (appData.type === AppDataType.REROUTE) {
-        dispatch({ type: "FETCH_DATA_SUCCESS", payload: appData });
+        if (isCurrent()) {
+          dispatch({ type: "FETCH_DATA_SUCCESS", payload: appData });
+        }
         return appData;
       }
 
@@ -156,7 +175,9 @@ function useGetAccountData(options: {
         }
       }
 
-      dispatch({ type: "FETCH_DATA_SUCCESS", payload });
+      if (isCurrent()) {
+        dispatch({ type: "FETCH_DATA_SUCCESS", payload });
+      }
 
       payload.collectibles = await collectiblesRequest;
       payload.hasLoadedCollectibles = true;
@@ -164,7 +185,9 @@ function useGetAccountData(options: {
       // mutating it changes what a later render reads but schedules no render of
       // its own. Without this the Collectibles tab kept waiting on a result that
       // had already arrived until some unrelated dispatch happened to land.
-      dispatch({ type: "FETCH_DATA_SUCCESS", payload: { ...payload } });
+      if (isCurrent()) {
+        dispatch({ type: "FETCH_DATA_SUCCESS", payload: { ...payload } });
+      }
 
       if (isMainnetNetwork) {
         // now that the UI has renderered, on Mainnet, let's make an additional call to fetch the balances with the Blockaid scan results included
@@ -182,7 +205,9 @@ function useGetAccountData(options: {
             balances: balancesResult,
             isScanAppended: true,
           } as ResolvedAccountData;
-          dispatch({ type: "FETCH_DATA_SUCCESS", payload: scannedPayload });
+          if (isCurrent()) {
+            dispatch({ type: "FETCH_DATA_SUCCESS", payload: scannedPayload });
+          }
         } catch (e) {
           captureException(`Error fetching scanned balances on Account - ${e}`);
         }
@@ -192,13 +217,20 @@ function useGetAccountData(options: {
       reduxDispatch(saveBackendSettingsAction(backendSettings));
       return payload;
     } catch (error) {
-      dispatch({ type: "FETCH_DATA_ERROR", payload: error });
+      // Only the live fetch may raise the error view. A superseded one failing
+      // would blank the account that has since loaded.
+      if (isCurrent()) {
+        dispatch({ type: "FETCH_DATA_ERROR", payload: error });
+      }
       captureException(`Error loading account data on Account - ${error}`);
       return error;
     }
   };
 
   const refreshAppData = async () => {
+    const requestId = requestIdRef.current;
+    const isCurrent = () => requestId === requestIdRef.current;
+
     try {
       const appData = await fetchAppData(false);
       if (isError(appData)) {
@@ -221,7 +253,9 @@ function useGetAccountData(options: {
         networkDetails,
         applicationState,
       } as ResolvedAccountData;
-      dispatch({ type: "FETCH_DATA_SUCCESS", payload });
+      if (isCurrent()) {
+        dispatch({ type: "FETCH_DATA_SUCCESS", payload });
+      }
       return payload;
     } catch (error) {
       captureException(`Error loading refresh app data on Account - ${error}`);
@@ -244,6 +278,8 @@ function useGetAccountData(options: {
       return;
     }
     const resolvedData = state.data;
+    const requestId = requestIdRef.current;
+    const isCurrent = () => requestId === requestIdRef.current;
 
     try {
       const balancesResult = await fetchBalances(
@@ -260,14 +296,16 @@ function useGetAccountData(options: {
         throw new Error(balancesResult.message);
       }
 
-      dispatch({
-        type: "FETCH_DATA_SUCCESS",
-        payload: {
-          ...resolvedData,
-          balances: balancesResult,
-          isScanAppended: true,
-        } as ResolvedAccountData,
-      });
+      if (isCurrent()) {
+        dispatch({
+          type: "FETCH_DATA_SUCCESS",
+          payload: {
+            ...resolvedData,
+            balances: balancesResult,
+            isScanAppended: true,
+          } as ResolvedAccountData,
+        });
+      }
     } catch (error) {
       // Deliberately not FETCH_DATA_ERROR: a background refresh that fails has
       // to leave the good data on screen rather than swap it for the error
@@ -287,6 +325,9 @@ function useGetAccountData(options: {
       return;
     }
 
+    const requestId = requestIdRef.current;
+    const isCurrent = () => requestId === requestIdRef.current;
+
     try {
       // Cache-first, and the remove handler corrects the cache before calling
       // this, so the common case costs no round trip.
@@ -295,14 +336,16 @@ function useGetAccountData(options: {
         networkDetails: resolvedData.networkDetails,
       });
 
-      dispatch({
-        type: "FETCH_DATA_SUCCESS",
-        payload: {
-          ...resolvedData,
-          collectibles,
-          hasLoadedCollectibles: true,
-        } as ResolvedAccountData,
-      });
+      if (isCurrent()) {
+        dispatch({
+          type: "FETCH_DATA_SUCCESS",
+          payload: {
+            ...resolvedData,
+            collectibles,
+            hasLoadedCollectibles: true,
+          } as ResolvedAccountData,
+        });
+      }
     } catch (error) {
       captureException(`Error refreshing collectibles on Account - ${error}`);
     }
@@ -315,6 +358,11 @@ function useGetAccountData(options: {
     const resolvedData = state.data;
 
     const interval = setInterval(async () => {
+      // Captured per tick rather than per effect: clearInterval stops the next
+      // tick but cannot recall a request this one already has in flight.
+      const requestId = requestIdRef.current;
+      const isCurrent = () => requestId === requestIdRef.current;
+
       try {
         const fetchedTokenPrices = await fetchTokenPrices({
           publicKey: resolvedData.publicKey,
@@ -331,7 +379,9 @@ function useGetAccountData(options: {
           ...state.data,
           tokenPrices: fetchedTokenPrices.tokenPrices,
         } as AccountData;
-        dispatch({ type: "FETCH_DATA_SUCCESS", payload });
+        if (isCurrent()) {
+          dispatch({ type: "FETCH_DATA_SUCCESS", payload });
+        }
       } catch (error) {
         captureException(`Error refreshing token prices on Account - ${error}`);
       }
@@ -349,6 +399,9 @@ function useGetAccountData(options: {
     const resolvedData = state.data;
 
     const interval = setInterval(async () => {
+      const requestId = requestIdRef.current;
+      const isCurrent = () => requestId === requestIdRef.current;
+
       try {
         const publicKey = resolvedData.publicKey;
         const networkDetails = resolvedData.networkDetails;
@@ -364,7 +417,9 @@ function useGetAccountData(options: {
           balances: balancesResult,
           isScanAppended: true,
         } as AccountData;
-        dispatch({ type: "FETCH_DATA_SUCCESS", payload });
+        if (isCurrent()) {
+          dispatch({ type: "FETCH_DATA_SUCCESS", payload });
+        }
       } catch (error) {
         captureException(`Error refreshing balances on Account - ${error}`);
       }
