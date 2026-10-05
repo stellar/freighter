@@ -268,6 +268,9 @@ export const TokenPriceChart = ({
   // Bumped when the current scope ends; a pass stops as soon as its own
   // generation is stale.
   const warmGenerationRef = useRef(0);
+  // The scope whose warm pass has run to the end, every range settled.
+  const [settledScope, setSettledScope] = useState<string | null>(null);
+  const scope = `${networkDetails.networkPassphrase}/${token}`;
 
   useEffect(() => {
     selectedRangeRef.current = selectedRange;
@@ -288,7 +291,6 @@ export const TokenPriceChart = ({
    */
   const warmOtherRanges = useCallback(
     async (generation: number) => {
-      const scope = `${networkDetails.networkPassphrase}/${token}`;
       // The generation is captured by the caller before the fetch: this runs
       // from its `.then`, after an unmount would already have bumped it.
       if (warmGenerationRef.current !== generation) {
@@ -316,8 +318,11 @@ export const TokenPriceChart = ({
         // has settled.
         await warmRange(query);
       }
+      if (warmGenerationRef.current === generation) {
+        setSettledScope(scope);
+      }
     },
-    [token, networkDetails, isRangeCached, warmRange],
+    [scope, token, networkDetails, isRangeCached, warmRange],
   );
 
   useEffect(() => {
@@ -521,9 +526,10 @@ export const TokenPriceChart = ({
             resolutionSeconds: chartHistory.resolutionSeconds,
             nowSeconds,
             firstTradeSeconds,
+            rangesSettled: settledScope === scope,
           })
         : null,
-    [chartHistory, nowSeconds, firstTradeSeconds],
+    [chartHistory, nowSeconds, firstTradeSeconds, settledScope, scope],
   );
 
   // Axis labels come from returned points, not the requested window (§B.5),

@@ -10,6 +10,7 @@ import {
   makeHistory,
 } from "@shared/api/__tests__/fixtures/tokenPriceHistory";
 import { makeDummyStore } from "popup/__testHelpers__";
+import { resetCacheWriteClaims } from "helpers/cacheWrites";
 import { TokenPriceChart } from "popup/components/account/TokenPriceChart";
 import {
   TokenChartNoticeVariant,
@@ -255,6 +256,28 @@ describe("getNoticeVariant newly-traded", () => {
     ).toBe(TokenChartNoticeVariant.LowVolume);
   });
 
+  it("holds back both sparse notices until the other ranges have settled", () => {
+    const sparse = {
+      lowVolume: false,
+      points: youngOneYear,
+      range: "1Y",
+      resolutionSeconds: THREE_DAYS,
+      nowSeconds: NOW,
+      rangesSettled: false,
+    };
+    expect(
+      getNoticeVariant({ ...sparse, firstTradeSeconds: firstTradeInWindow }),
+    ).toBeNull();
+    expect(getNoticeVariant(sparse)).toBeNull();
+    // The verdict notices depend on nothing else loading.
+    expect(getNoticeVariant({ ...sparse, lowVolume: true })).toBe(
+      TokenChartNoticeVariant.LowVolume,
+    );
+    expect(getNoticeVariant({ ...sparse, lowVolume: null })).toBe(
+      TokenChartNoticeVariant.VerdictUnavailable,
+    );
+  });
+
   it("never returns newly-traded on ALL, which is already lifetime-relative", () => {
     const points = [
       { t: NOW - 78 * TWO_WEEKS, p: "1" },
@@ -401,6 +424,8 @@ describe("newly-traded notice from the warmed cache", () => {
 
   afterEach(() => {
     mockedSend.mockReset();
+    // A request left hanging would otherwise be joined by the next test.
+    resetCacheWriteClaims();
   });
 
   /** A token that first traded 6 hours ago; each range answers with its own
@@ -474,6 +499,22 @@ describe("newly-traded notice from the warmed cache", () => {
     expect(screen.getByTestId("TokenChartNotice").textContent).toContain(
       "Newly traded token",
     );
+  });
+
+  it("shows no sparse notice while a range is still loading", async () => {
+    answerLaunchedToday({ failAll: false });
+    const answer = mockedSend.getMockImplementation()!;
+    // ALL is first in the warm queue, so the pass parks on it.
+    mockedSend.mockImplementation((args: { path: string }) =>
+      args.path.includes("range=ALL") ? new Promise(() => {}) : answer(args),
+    );
+    renderChart();
+
+    await waitFor(() =>
+      expect(screen.getByTestId("TokenPriceChart__polyline")).toBeDefined(),
+    );
+    await waitFor(() => expect(mockedSend).toHaveBeenCalledTimes(2));
+    expect(screen.queryByTestId("TokenChartNotice")).toBeNull();
   });
 
   it("stays limited-data when ALL never loads", async () => {

@@ -116,6 +116,7 @@ export const getNoticeVariant = ({
   resolutionSeconds,
   nowSeconds,
   firstTradeSeconds,
+  rangesSettled = true,
 }: {
   lowVolume: boolean | null;
   points: ApiTokenPriceHistoryPoint[];
@@ -124,6 +125,9 @@ export const getNoticeVariant = ({
   nowSeconds: number;
   /** From {@link getFirstTradeLowerBound}. */
   firstTradeSeconds?: number;
+  /** False while other ranges are still loading: the first-trade bound can
+   * still move, so limited-data could flip to newly-traded on screen. */
+  rangesSettled?: boolean;
 }): TokenChartNoticeVariant | null => {
   if (!hasChartData(points)) {
     return null;
@@ -142,6 +146,9 @@ export const getNoticeVariant = ({
       ? Math.ceil((nowSeconds - points[0].t) / resolutionSeconds)
       : EXPECTED_POINTS_BY_RANGE[range];
   if (expectedPoints && pointCount < expectedPoints * SPARSE_COVERAGE_RATIO) {
+    if (!rangesSettled) {
+      return null;
+    }
     return isNewlyTraded({
       points,
       range,
