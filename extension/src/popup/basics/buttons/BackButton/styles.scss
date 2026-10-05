@@ -9,7 +9,7 @@
 
   // No svg fill rule on purpose: SDS arrow/X icons are stroke-based
   // (stroke=currentColor, fill=none), so the icon renders in the inherited
-  // text color — gray-12, which is what the Figma headers spec.
+  // text color — gray-12, matching the Figma header spec.
 
   &--has-copy {
     width: 3.75rem;
