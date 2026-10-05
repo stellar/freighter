@@ -41,6 +41,19 @@ export const EXPECTED_POINTS_BY_RANGE: Record<string, number> = {
 };
 
 /**
+ * Each range's lookback window. Must match freighter-backend-v2's
+ * `priceHistoryRanges`, or a token that started trading just outside the
+ * window is called newly traded. ALL has no window.
+ */
+export const RANGE_WINDOW_SECONDS: Record<string, number> = {
+  [TokenPriceHistoryRange.OneHour]: 3600,
+  [TokenPriceHistoryRange.OneDay]: 86400,
+  [TokenPriceHistoryRange.OneWeek]: 7 * 86400,
+  [TokenPriceHistoryRange.OneMonth]: 30 * 86400,
+  [TokenPriceHistoryRange.OneYear]: 365 * 86400,
+};
+
+/**
  * Sign of `change.percent`, falling back to `change.absolute` when the percent
  * rounds to zero. Colours the delta text and the artwork together. Flat, or
  * no `change`, is neutral — unlike `getPriceDeltaColor`, which paints a flat
@@ -61,6 +74,14 @@ export const TIMEFRAME_ORDER = [
   TokenPriceHistoryRange.OneYear,
   TokenPriceHistoryRange.All,
 ] as const;
+
+/** ALL first: its first point is what tells a newly traded token apart from
+ * a limited-data one, and until it lands every range falls back to the
+ * latter. */
+export const WARM_ORDER = [
+  TokenPriceHistoryRange.All,
+  ...TIMEFRAME_ORDER.filter((range) => range !== TokenPriceHistoryRange.All),
+];
 
 /** Mirrors mobile's `priceHistoryChart` helpers. */
 /** Below this, fixed decimals collapse a price to "$0.00". */

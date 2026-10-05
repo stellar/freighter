@@ -75,9 +75,9 @@ const HISTORY_BY_RANGE: Record<string, ApiTokenPriceHistory> = {
   }),
 };
 
-/** The order the warm pass must walk: the selector's own, minus 1D, which is
- * the initially-selected range and pays its own way. */
-const WARM_ORDER = ["1H", "1W", "1M", "1Y", "ALL"];
+/** The order the warm pass must walk: ALL first, then the selector's own,
+ * minus 1D, which is the initially-selected range and pays its own way. */
+const WARM_ORDER = ["ALL", "1H", "1W", "1M", "1Y"];
 
 const TOKEN = "native";
 const OTHER_TOKEN =
@@ -212,10 +212,10 @@ describe("TokenPriceChart deferred range warming", () => {
     await resolveRange("1D");
 
     // Only now does the queue open — with one range, not five.
-    expect(rangesFor()).toEqual(["1D", "1H"]);
+    expect(rangesFor()).toEqual(["1D", "ALL"]);
   });
 
-  it("warms the other five one at a time, in selector order", async () => {
+  it("warms the other five one at a time, ALL first", async () => {
     installTransport();
     renderChart();
     await settle();
@@ -243,16 +243,16 @@ describe("TokenPriceChart deferred range warming", () => {
     const { unmount } = renderChart();
     await settle();
     await resolveRange("1D");
-    expect(rangesFor()).toEqual(["1D", "1H"]);
+    expect(rangesFor()).toEqual(["1D", "ALL"]);
 
     unmount();
 
-    // 1H's response still lands, but nothing queued behind it is started: a
+    // ALL's response still lands, but nothing queued behind it is started: a
     // user who bounces into a token and straight back out must not cost six
     // requests.
-    await resolveRange("1H");
+    await resolveRange("ALL");
     await settle();
-    expect(rangesFor()).toEqual(["1D", "1H"]);
+    expect(rangesFor()).toEqual(["1D", "ALL"]);
   });
 
   it("starts no warm pass when the section unmounts BEFORE the selected range resolves", async () => {
@@ -316,6 +316,7 @@ describe("TokenPriceChart deferred range warming", () => {
     await resolveRange("1D");
 
     // Let the warm pass populate 1H while the user is still on 1D.
+    await resolveRange("ALL");
     await resolveRange("1H");
     await settle();
     const before = rangesFor().filter((r) => r === "1H").length;
@@ -337,7 +338,7 @@ describe("TokenPriceChart deferred range warming", () => {
     const { switchToken } = renderChart();
     await settle();
     await resolveRange("1D");
-    expect(rangesFor()).toEqual(["1D", "1H"]);
+    expect(rangesFor()).toEqual(["1D", "ALL"]);
 
     switchToken(OTHER_TOKEN);
     await waitOutDebounce();
@@ -345,16 +346,16 @@ describe("TokenPriceChart deferred range warming", () => {
     // The new token fetches the selected range, debounced like any switch.
     expect(rangesFor(OTHER_TOKEN)).toEqual(["1D"]);
 
-    // The old token's 1H comes back late. Nothing more is warmed for a token
+    // The old token's ALL comes back late. Nothing more is warmed for a token
     // the user has left — a shared cancellation flag reset for the new scope
     // would have let this queue resume under it.
-    await resolveRange("1H");
-    expect(rangesFor()).toEqual(["1D", "1H"]);
+    await resolveRange("ALL");
+    expect(rangesFor()).toEqual(["1D", "ALL"]);
 
     // ...and the new token gets a pass of its own once its range lands.
     await resolveRange("1D", OTHER_TOKEN);
-    expect(rangesFor(OTHER_TOKEN)).toEqual(["1D", "1H"]);
-    expect(rangesFor()).toEqual(["1D", "1H"]);
+    expect(rangesFor(OTHER_TOKEN)).toEqual(["1D", "ALL"]);
+    expect(rangesFor()).toEqual(["1D", "ALL"]);
   });
 
   it("skips a range already valid in the session cache", async () => {
@@ -370,10 +371,11 @@ describe("TokenPriceChart deferred range warming", () => {
     });
     await settle();
     await resolveRange("1D");
+    await resolveRange("ALL");
     await resolveRange("1H");
 
     // 1W is fresh, so the queue steps straight over it to 1M.
-    expect(rangesFor()).toEqual(["1D", "1H", "1M"]);
+    expect(rangesFor()).toEqual(["1D", "ALL", "1H", "1M"]);
   });
 
   it("emits no analytics for the ranges it warms", async () => {
@@ -421,10 +423,10 @@ describe("TokenPriceChart deferred range warming", () => {
 
     // The sharpest case: a warmed range with no data at all. It must not flip
     // the section to its empty state, drop the notice in, or touch the delta.
-    await answer("1H", {
+    await answer("ALL", {
       status: 200,
       body: {
-        data: { ...HISTORY_BY_RANGE["1H"], points: [], change: null },
+        data: { ...HISTORY_BY_RANGE.ALL, points: [], change: null },
       },
     });
 
@@ -455,14 +457,15 @@ describe("TokenPriceChart deferred range warming", () => {
     const user = userEvent.setup();
     await user.click(screen.getByRole("tab", { name: "1M" }));
     await waitOutDebounce();
-    expect(rangesFor()).toEqual(["1D", "1H", "1M"]);
+    expect(rangesFor()).toEqual(["1D", "ALL", "1M"]);
 
-    // 1H settles, 1W is warmed next, and then 1M is stepped over — even though
-    // the user's own request for it has not come back yet, so it is not cached.
+    // 1W settles, and then 1M is stepped over — even though the user's own
+    // request for it has not come back yet, so it is not cached.
+    await resolveRange("ALL");
     await resolveRange("1H");
-    expect(rangesFor()).toEqual(["1D", "1H", "1M", "1W"]);
+    expect(rangesFor()).toEqual(["1D", "ALL", "1M", "1H", "1W"]);
     await resolveRange("1W");
-    expect(rangesFor()).toEqual(["1D", "1H", "1M", "1W", "1Y"]);
+    expect(rangesFor()).toEqual(["1D", "ALL", "1M", "1H", "1W", "1Y"]);
 
     // ...and the user is still waiting on their own range, not on a warm one.
     expect(selectedTab()).toBe("1M");
@@ -497,6 +500,7 @@ describe("TokenPriceChart deferred range warming", () => {
     renderChart();
     await settle();
     await resolveRange("1D");
+    await resolveRange("ALL");
     await failRange("1H");
 
     // Nothing happened as far as the user is concerned: 1D is still on
@@ -508,7 +512,7 @@ describe("TokenPriceChart deferred range warming", () => {
     expect(mockedCapture).not.toHaveBeenCalled();
 
     // The queue carries on past the failure — a skip, never a retry.
-    expect(rangesFor()).toEqual(["1D", "1H", "1W"]);
+    expect(rangesFor()).toEqual(["1D", "ALL", "1H", "1W"]);
 
     // A later user switch to that same range runs the normal fetch path and
     // reports exactly as it does today.

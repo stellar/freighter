@@ -9,6 +9,7 @@ import React, {
 } from "react";
 import { BigNumber } from "bignumber.js";
 import { useTranslation } from "react-i18next";
+import { useSelector } from "react-redux";
 
 import {
   ApiTokenPriceHistory,
@@ -23,6 +24,7 @@ import { emitMetric } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { getChartAssetIdentity } from "popup/helpers/token";
 import { hasChartData } from "popup/helpers/tokenPriceHistory";
+import { tokenPriceHistorySelector } from "popup/ducks/cache";
 import { RequestState } from "constants/request";
 
 import { ChartGhost } from "./ChartGhost";
@@ -33,7 +35,11 @@ import {
   getPlottedRangeStart,
 } from "./LineChart";
 import { TimeframeSelector, formatRangeLabel } from "./TimeframeSelector";
-import { TokenChartNotice, getNoticeVariant } from "./Notice";
+import {
+  TokenChartNotice,
+  getFirstTradeLowerBound,
+  getNoticeVariant,
+} from "./Notice";
 import {
   CHART_HEIGHT_PX,
   CHART_VIEWBOX_WIDTH,
@@ -44,7 +50,7 @@ import {
   RANGE_SWITCH_DEBOUNCE_MS,
   SUB_CENT_SIGNIFICANT_DIGITS,
   SUB_CENT_THRESHOLD,
-  TIMEFRAME_ORDER,
+  WARM_ORDER,
 } from "./constants";
 
 import "./styles.scss";
@@ -293,7 +299,7 @@ export const TokenPriceChart = ({
       }
       warmedScopeRef.current = scope;
 
-      for (const range of TIMEFRAME_ORDER) {
+      for (const range of WARM_ORDER) {
         if (warmGenerationRef.current !== generation) {
           return;
         }
@@ -492,6 +498,19 @@ export const TokenPriceChart = ({
     [chartHistory],
   );
 
+  // Past the cache's staleness check on purpose: a first trade never moves,
+  // so an aged-out entry still bounds it.
+  const priceHistoryCache = useSelector(tokenPriceHistorySelector);
+  const cachedByRange =
+    priceHistoryCache?.[networkDetails.networkPassphrase]?.[token];
+  const firstTradeSeconds = useMemo(
+    () =>
+      cachedByRange && chartHistory
+        ? getFirstTradeLowerBound(cachedByRange, nowSeconds)
+        : undefined,
+    [cachedByRange, chartHistory, nowSeconds],
+  );
+
   const noticeVariant = useMemo(
     () =>
       chartHistory
@@ -501,9 +520,10 @@ export const TokenPriceChart = ({
             range: chartHistory.range,
             resolutionSeconds: chartHistory.resolutionSeconds,
             nowSeconds,
+            firstTradeSeconds,
           })
         : null,
-    [chartHistory, nowSeconds],
+    [chartHistory, nowSeconds, firstTradeSeconds],
   );
 
   // Axis labels come from returned points, not the requested window (§B.5),

@@ -13,6 +13,7 @@ import { makeDummyStore } from "popup/__testHelpers__";
 import { TokenPriceChart } from "popup/components/account/TokenPriceChart";
 import {
   TokenChartNoticeVariant,
+  getFirstTradeLowerBound,
   getNoticeVariant,
 } from "popup/components/account/TokenPriceChart/Notice";
 
@@ -148,6 +149,202 @@ describe("getNoticeVariant precedence", () => {
   });
 });
 
+describe("getNoticeVariant newly-traded", () => {
+  const THREE_DAYS = 259200;
+  const FIFTEEN_MIN = 900;
+  // USDT0 on 1Y: 12 three-day buckets, unbroken, from its first trade ~5
+  // weeks ago. Against the fixed 122 it reads as 10% coverage.
+  const youngOneYear = densePoints(12, {
+    startT: NOW - 12 * THREE_DAYS,
+    stepSeconds: THREE_DAYS,
+  });
+  const firstTradeInWindow = NOW - 13 * THREE_DAYS;
+
+  it("returns newly-traded when the first trade is inside the window and coverage since is dense", () => {
+    expect(
+      getNoticeVariant({
+        lowVolume: false,
+        points: youngOneYear,
+        range: "1Y",
+        resolutionSeconds: THREE_DAYS,
+        nowSeconds: NOW,
+        firstTradeSeconds: firstTradeInWindow,
+      }),
+    ).toBe(TokenChartNoticeVariant.NewlyTraded);
+  });
+
+  it("falls back to limited-data while the token's first trade is unknown", () => {
+    expect(
+      getNoticeVariant({
+        lowVolume: false,
+        points: youngOneYear,
+        range: "1Y",
+        resolutionSeconds: THREE_DAYS,
+        nowSeconds: NOW,
+      }),
+    ).toBe(TokenChartNoticeVariant.LimitedData);
+  });
+
+  it("keeps limited-data for an old token that only traded late in the window", () => {
+    // The backend returns only buckets that traded, so this series alone is
+    // indistinguishable from a young token: 8 dense buckets in the last 2h.
+    expect(
+      getNoticeVariant({
+        lowVolume: false,
+        points: densePoints(8, {
+          startT: NOW - 8 * FIFTEEN_MIN,
+          stepSeconds: FIFTEEN_MIN,
+        }),
+        range: "1D",
+        resolutionSeconds: FIFTEEN_MIN,
+        nowSeconds: NOW,
+        firstTradeSeconds: NOW - 2 * 365 * 86400,
+      }),
+    ).toBe(TokenChartNoticeVariant.LimitedData);
+  });
+
+  it("keeps limited-data when the first trade is only known to fall before the window", () => {
+    // ALL's two-week buckets start before the 1W window even though the
+    // token may have started inside it — not determinable, so fall back.
+    expect(
+      getNoticeVariant({
+        lowVolume: false,
+        points: densePoints(40, {
+          startT: NOW - 40 * 3600,
+          stepSeconds: 3600,
+        }),
+        range: "1W",
+        resolutionSeconds: 3600,
+        nowSeconds: NOW,
+        firstTradeSeconds: NOW - 10 * 86400,
+      }),
+    ).toBe(TokenChartNoticeVariant.LimitedData);
+  });
+
+  it("keeps limited-data for a young token with gaps since its first trade", () => {
+    // First bucket 12 three-day buckets back, only 3 of them traded.
+    const points = [
+      { t: NOW - 12 * THREE_DAYS, p: "1" },
+      ...densePoints(2, {
+        startT: NOW - 2 * THREE_DAYS,
+        stepSeconds: THREE_DAYS,
+      }),
+    ];
+    expect(
+      getNoticeVariant({
+        lowVolume: false,
+        points,
+        range: "1Y",
+        resolutionSeconds: THREE_DAYS,
+        nowSeconds: NOW,
+        firstTradeSeconds: firstTradeInWindow,
+      }),
+    ).toBe(TokenChartNoticeVariant.LimitedData);
+  });
+
+  it("keeps low-volume ahead of newly-traded", () => {
+    expect(
+      getNoticeVariant({
+        lowVolume: true,
+        points: youngOneYear,
+        range: "1Y",
+        resolutionSeconds: THREE_DAYS,
+        nowSeconds: NOW,
+        firstTradeSeconds: firstTradeInWindow,
+      }),
+    ).toBe(TokenChartNoticeVariant.LowVolume);
+  });
+
+  it("never returns newly-traded on ALL, which is already lifetime-relative", () => {
+    const points = [
+      { t: NOW - 78 * TWO_WEEKS, p: "1" },
+      ...densePoints(9, {
+        startT: NOW - 9 * TWO_WEEKS,
+        stepSeconds: TWO_WEEKS,
+      }),
+    ];
+    expect(
+      getNoticeVariant({
+        lowVolume: false,
+        points,
+        range: "ALL",
+        resolutionSeconds: TWO_WEEKS,
+        nowSeconds: NOW,
+        firstTradeSeconds: NOW - 78 * TWO_WEEKS,
+      }),
+    ).toBe(TokenChartNoticeVariant.LimitedData);
+  });
+});
+
+describe("getFirstTradeLowerBound", () => {
+  const HOUR = 3600;
+  const DAY = 86400;
+  const cached = (
+    range: ApiTokenPriceHistory["range"],
+    firstT: number,
+    updatedAtSeconds = NOW,
+  ) => ({
+    ...makeHistory({ range, points: [{ t: firstT, p: "1" }] }),
+    updatedAt: updatedAtSeconds * 1000,
+  });
+
+  it("is unknown until ALL is cached", () => {
+    expect(
+      getFirstTradeLowerBound({ "1D": cached("1D", NOW - 6 * HOUR) }, NOW),
+    ).toBeUndefined();
+  });
+
+  it("is ALL's first bucket start when nothing finer covers it", () => {
+    expect(
+      getFirstTradeLowerBound({ ALL: cached("ALL", NOW - 400 * DAY) }, NOW),
+    ).toBe(NOW - 400 * DAY);
+  });
+
+  it("narrows a launch hours ago down to the 1D bucket", () => {
+    // ALL's two-week bucket alone starts before the 1D window.
+    expect(
+      getFirstTradeLowerBound(
+        {
+          ALL: cached("ALL", NOW - 12 * DAY),
+          "1Y": cached("1Y", NOW - 2 * DAY),
+          "1M": cached("1M", NOW - 8 * HOUR),
+          "1W": cached("1W", NOW - 7 * HOUR),
+          "1D": cached("1D", NOW - 6 * HOUR),
+        },
+        NOW,
+      ),
+    ).toBe(NOW - 6 * HOUR);
+  });
+
+  it("does not narrow through a range whose window starts after the bound", () => {
+    // 1W's window starts 7 days back, after the 8.5-day bound, so trades
+    // before it are invisible to 1W — its later first point proves nothing.
+    expect(
+      getFirstTradeLowerBound(
+        {
+          ALL: cached("ALL", NOW - 10 * DAY),
+          "1M": cached("1M", NOW - 8.5 * DAY),
+          "1W": cached("1W", NOW - 1 * DAY),
+        },
+        NOW,
+      ),
+    ).toBe(NOW - 8.5 * DAY);
+  });
+
+  it("measures a cached range's window from when it was fetched", () => {
+    // 1W fetched 3 days ago reached back 10 days, past the 9-day bound.
+    expect(
+      getFirstTradeLowerBound(
+        {
+          ALL: cached("ALL", NOW - 9 * DAY),
+          "1W": cached("1W", NOW - 8 * DAY, NOW - 3 * DAY),
+        },
+        NOW,
+      ),
+    ).toBe(NOW - 8 * DAY);
+  });
+});
+
 describe("TokenPriceChart notices", () => {
   afterEach(() => {
     mockedSend.mockReset();
@@ -195,6 +392,101 @@ describe("TokenPriceChart notices", () => {
     expect(
       screen.getByTestId("TokenChartNotice").getAttribute("data-variant"),
     ).toBe("low-volume");
+  });
+});
+
+describe("newly-traded notice from the warmed cache", () => {
+  const HOUR = 3600;
+  const DAY = 86400;
+
+  afterEach(() => {
+    mockedSend.mockReset();
+  });
+
+  /** A token that first traded 6 hours ago; each range answers with its own
+   * first bucket, and `failAll` makes the ALL request fail. */
+  const answerLaunchedToday = ({ failAll }: { failAll: boolean }) => {
+    const now = Math.floor(Date.now() / 1000);
+    const launch = now - 6 * HOUR;
+    const byRange: Record<string, ApiTokenPriceHistory> = {
+      "1D": makeHistory({
+        range: "1D",
+        resolutionSeconds: 900,
+        points: densePoints(24, { startT: launch, stepSeconds: 900 }),
+      }),
+      "1H": makeHistory({
+        range: "1H",
+        resolutionSeconds: 300,
+        points: densePoints(12, { startT: now - HOUR, stepSeconds: 300 }),
+      }),
+      "1W": makeHistory({
+        range: "1W",
+        resolutionSeconds: 3600,
+        points: densePoints(6, { startT: launch, stepSeconds: 3600 }),
+      }),
+      "1M": makeHistory({
+        range: "1M",
+        resolutionSeconds: 14400,
+        points: densePoints(2, { startT: now - 8 * HOUR, stepSeconds: 14400 }),
+      }),
+      "1Y": makeHistory({
+        range: "1Y",
+        resolutionSeconds: 259200,
+        points: [{ t: now - 2 * DAY, p: "1" }],
+      }),
+      ALL: makeHistory({
+        range: "ALL",
+        resolutionSeconds: 1209600,
+        points: [{ t: now - 12 * DAY, p: "1" }],
+      }),
+    };
+    mockedSend.mockImplementation(({ path }: { path: string }) => {
+      const range =
+        new URLSearchParams(path.slice(path.indexOf("?") + 1)).get("range") ??
+        "";
+      if (range === "ALL" && failAll) {
+        return Promise.resolve({ status: 500, body: {} });
+      }
+      return Promise.resolve({ status: 200, body: { data: byRange[range] } });
+    });
+  };
+
+  const renderChart = () =>
+    render(
+      <Provider store={makeDummyStore({})}>
+        <TokenPriceChart
+          token="native"
+          networkDetails={MAINNET_NETWORK_DETAILS}
+          onDeltaChange={() => {}}
+        />
+      </Provider>,
+    );
+
+  it("shows newly-traded on 1D once the warmed ranges pin the first trade", async () => {
+    answerLaunchedToday({ failAll: false });
+    renderChart();
+
+    await waitFor(() =>
+      expect(
+        screen.getByTestId("TokenChartNotice").getAttribute("data-variant"),
+      ).toBe("newly-traded"),
+    );
+    expect(screen.getByTestId("TokenChartNotice").textContent).toContain(
+      "Newly traded token",
+    );
+  });
+
+  it("stays limited-data when ALL never loads", async () => {
+    answerLaunchedToday({ failAll: true });
+    renderChart();
+
+    // Every other range warms; without ALL the first trade stays unknown.
+    await waitFor(() => expect(mockedSend).toHaveBeenCalledTimes(6));
+    await waitFor(() =>
+      expect(
+        screen.getByTestId("TokenChartNotice").getAttribute("data-variant"),
+      ).toBe("limited-data"),
+    );
   });
 });
 
