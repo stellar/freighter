@@ -2325,13 +2325,21 @@ export const removeTokenId = async ({
   contractId: string;
   network: NETWORKS;
 }): Promise<string[]> => {
-  const resp = await sendMessageToBackground({
+  const { tokenIdList, error } = await sendMessageToBackground({
     type: SERVICE_TYPES.REMOVE_TOKEN_ID,
     contractId,
     network,
     activePublicKey,
   });
-  return resp.tokenIdList;
+
+  // The background answers an account mismatch with { error } and no list, so
+  // returning the field unchecked resolves `undefined` and reads as a success.
+  // Mirrors addTokenId above.
+  if (error) {
+    throw new Error(error);
+  }
+
+  return tokenIdList;
 };
 
 export const addAssetsList = async ({

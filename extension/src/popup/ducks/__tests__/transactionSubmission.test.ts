@@ -1,6 +1,9 @@
-import { configureStore } from "@reduxjs/toolkit";
+import { combineReducers, configureStore } from "@reduxjs/toolkit";
 
+import * as ApiInternal from "@shared/api/internal";
+import { NETWORKS } from "@shared/constants/stellar";
 import { SecurityLevel } from "popup/constants/blockaid";
+import { reducer as authReducer } from "../accountServices";
 import {
   reducer as transactionSubmissionReducer,
   saveDestinationTokenDetails,
@@ -8,6 +11,7 @@ import {
   clearSwapQuoteExpired,
   resetSubmitStatus,
   resetSubmission,
+  removeTokenId,
   submitFreighterTransaction,
   initialState,
   DestinationTokenDetails,
@@ -125,5 +129,58 @@ describe("transactionSubmission isSwapQuoteExpired", () => {
     store.dispatch(rejectedWith(["op_under_dest_min"]));
     store.dispatch(resetSubmission());
     expect(quoteExpiredFlag(store)).toBe(false);
+  });
+});
+
+describe("transactionSubmission removeTokenId", () => {
+  const CONTRACT = "CTOKEN";
+
+  const makeAuthedStore = () =>
+    configureStore({
+      reducer: combineReducers({
+        auth: authReducer,
+        transactionSubmission: transactionSubmissionReducer,
+      }),
+      preloadedState: {
+        auth: { publicKey: "GBTEST" },
+      } as any,
+    });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  it("fulfills when the removal goes through", async () => {
+    jest
+      .spyOn(ApiInternal, "removeTokenId")
+      .mockResolvedValue([] as unknown as string[]);
+
+    const store = makeAuthedStore();
+    const res = await store.dispatch(
+      removeTokenId({ contractId: CONTRACT, network: NETWORKS.TESTNET }) as any,
+    );
+
+    expect(removeTokenId.fulfilled.match(res as any)).toBe(true);
+  });
+
+  it("rejects with the error message when the removal fails", async () => {
+    // Regression: the catch used to call rejectWithValue without returning it,
+    // so the thunk resolved and every caller read a failed removal as success.
+    jest.spyOn(console, "error").mockImplementation(() => {});
+    jest
+      .spyOn(ApiInternal, "removeTokenId")
+      .mockRejectedValue(
+        new Error("Public key does not match active public key"),
+      );
+
+    const store = makeAuthedStore();
+    const res = await store.dispatch(
+      removeTokenId({ contractId: CONTRACT, network: NETWORKS.TESTNET }) as any,
+    );
+
+    expect(removeTokenId.rejected.match(res as any)).toBe(true);
+    expect((res as any).payload).toEqual({
+      errorMessage: "Public key does not match active public key",
+    });
   });
 });
