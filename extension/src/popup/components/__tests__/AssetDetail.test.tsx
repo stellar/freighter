@@ -1028,7 +1028,7 @@ describe("AssetDetail", () => {
       const svg = await screen.findByTestId("TokenPriceChart__svg");
 
       // clientX 320 → viewBox x 160 → index 1 (p: "0.2213"). The chart's
-      // formatter keeps all 4 sub-dollar decimals; spot's would floor to 2.
+      // formatter keeps all 4 sub-dollar decimals; spot shows 2 ("$0.22").
       fireEvent.pointerDown(svg, { clientX: 320, pointerId: 1 });
       expect(screen.getByTestId("AssetDetail__price")).toHaveTextContent(
         "$0.2213",
@@ -1040,7 +1040,7 @@ describe("AssetDetail", () => {
       );
     });
 
-    it("rounds the inspected header price half-up, not floored like spot", async () => {
+    it("prints an inspected price at a dollar and above in the same two decimals as spot", async () => {
       const INSPECTABLE_HISTORY = makeHistory({
         points: [
           { t: 0, p: "1.20" },
