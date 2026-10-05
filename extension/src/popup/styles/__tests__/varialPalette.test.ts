@@ -89,6 +89,7 @@ const ALLOWED_RAW_COLORS: Record<string, string[]> = {
   // drop shadow.
   "popup/components/account/Usdt0LaunchBanner/styles.scss": [
     "#002d19",
+    "#a0a0a0", // subtitle on the fixed campaign surface; must not theme-flip
     "rgba(0, 0, 0, 0.25)",
     "rgba(255, 255, 255, 0.1)",
   ],
