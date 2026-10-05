@@ -1006,7 +1006,7 @@ describe("AssetDetail", () => {
       expect(delta()).toHaveTextContent("+$0.06 (30.00%)");
     });
 
-    it("keeps the app's price format for the inspected header price, not the chart's sub-dollar precision", async () => {
+    it("prints the inspected header price with the chart's sub-dollar precision, not spot's", async () => {
       const INSPECTABLE_HISTORY = makeHistory({
         points: [
           { t: 0, p: "0.2196" },
@@ -1027,13 +1027,11 @@ describe("AssetDetail", () => {
       rectSpy = mockChartRect();
       const svg = await screen.findByTestId("TokenPriceChart__svg");
 
-      // clientX 320 → viewBox x 160 → index 1 (p: "0.2213"). The header now
-      // formats it like spot: 2 decimals, not the chart's 4. Exact match:
-      // "$0.22" is a substring of the chart's unfixed "$0.2213", so a
-      // partial-match assertion would pass either way.
+      // clientX 320 → viewBox x 160 → index 1 (p: "0.2213"). The chart's
+      // formatter keeps all 4 sub-dollar decimals; spot's would floor to 2.
       fireEvent.pointerDown(svg, { clientX: 320, pointerId: 1 });
-      expect(screen.getByTestId("AssetDetail__price").textContent).toBe(
-        "$0.22",
+      expect(screen.getByTestId("AssetDetail__price")).toHaveTextContent(
+        "$0.2213",
       );
 
       fireEvent.pointerUp(svg, { pointerId: 1 });
@@ -1042,7 +1040,7 @@ describe("AssetDetail", () => {
       );
     });
 
-    it("keeps the app's price format for the inspected header price, rounded like spot", async () => {
+    it("rounds the inspected header price half-up, not floored like spot", async () => {
       const INSPECTABLE_HISTORY = makeHistory({
         points: [
           { t: 0, p: "1.20" },
@@ -1063,9 +1061,10 @@ describe("AssetDetail", () => {
       rectSpy = mockChartRect();
       const svg = await screen.findByTestId("TokenPriceChart__svg");
 
-      // 1.235 through spot's half-up cent rounding (`roundUsdValue`) → "$1.24".
+      // 1.235 → "$1.24": at a dollar and above the chart's formatter is the
+      // standard fiat format, same as spot.
       fireEvent.pointerDown(svg, { clientX: 320, pointerId: 1 });
-      expect(screen.getByTestId("AssetDetail__price").textContent).toBe(
+      expect(screen.getByTestId("AssetDetail__price")).toHaveTextContent(
         "$1.24",
       );
     });
