@@ -25,6 +25,9 @@
       left: 0;
       right: 0;
       height: pxToRem(377px);
+      // The hero (gradient + arcs image + fade + overlay) is one composite
+      // dark artwork — all its layers stay fixed-dark together; a tokenized
+      // stop here would split from the still-dark fade when the theme flips.
       background: linear-gradient(180deg, #002d19 0%, #161616 100%);
     }
 
@@ -159,7 +162,7 @@
       width: pxToRem(32px);
       height: pxToRem(32px);
       flex-shrink: 0;
-      background: #222222;
+      background: var(--sds-clr-gray-03);
       border-radius: pxToRem(4px);
       display: flex;
       align-items: center;
@@ -225,7 +228,9 @@
     line-height: pxToRem(22px);
 
     &:hover {
-      background: rgba(255, 255, 255, 0.1);
+      // Opaque fallback first: manifest v2 still allows Firefox < 113, no color-mix
+      background: var(--sds-clr-gray-04);
+      background: color-mix(in srgb, var(--sds-clr-gray-12) 10%, transparent);
     }
 
     svg {
