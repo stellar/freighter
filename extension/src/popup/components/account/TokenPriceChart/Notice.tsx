@@ -11,6 +11,7 @@ import { hasChartData } from "popup/helpers/tokenPriceHistory";
 
 import {
   EXPECTED_POINTS_BY_RANGE,
+  RANGE_BUCKET_SECONDS,
   RANGE_WINDOW_SECONDS,
   SPARSE_COVERAGE_RATIO,
 } from "./constants";
@@ -51,7 +52,6 @@ export const getFirstTradeLowerBound = (
   cachedByRange: Partial<
     Record<string, ApiTokenPriceHistory & { updatedAt: number }>
   >,
-  nowSeconds: number,
 ): number | undefined => {
   let bound = cachedByRange[TokenPriceHistoryRange.All]?.points[0]?.t;
   if (bound === undefined) {
@@ -61,8 +61,7 @@ export const getFirstTradeLowerBound = (
     const entry = cachedByRange[range];
     const firstT = entry?.points[0]?.t;
     if (entry && firstT !== undefined) {
-      const fetchedAtSeconds = Math.min(entry.updatedAt / 1000, nowSeconds);
-      if (fetchedAtSeconds - RANGE_WINDOW_SECONDS[range] <= bound) {
+      if (entry.updatedAt / 1000 - RANGE_WINDOW_SECONDS[range] <= bound) {
         bound = Math.max(bound, firstT);
       }
     }
@@ -80,27 +79,28 @@ export const getFirstTradeLowerBound = (
 const isNewlyTraded = ({
   points,
   range,
-  resolutionSeconds,
   nowSeconds,
   firstTradeSeconds,
 }: {
   points: ApiTokenPriceHistoryPoint[];
   range: string;
-  resolutionSeconds: number;
   nowSeconds: number;
   firstTradeSeconds?: number;
 }) => {
   const windowSeconds = RANGE_WINDOW_SECONDS[range];
+  // Not the payload's resolution: the backend derives that from the smallest
+  // gap, so a token trading every 2h on 1D would read as fully covered.
+  const bucketSeconds = RANGE_BUCKET_SECONDS[range];
   if (
     !windowSeconds ||
+    !bucketSeconds ||
     firstTradeSeconds === undefined ||
-    resolutionSeconds <= 0 ||
     firstTradeSeconds <= nowSeconds - windowSeconds
   ) {
     return false;
   }
   const expectedSinceFirstPoint = Math.ceil(
-    (nowSeconds - points[0].t) / resolutionSeconds,
+    (nowSeconds - points[0].t) / bucketSeconds,
   );
   return points.length >= expectedSinceFirstPoint * SPARSE_COVERAGE_RATIO;
 };
@@ -152,7 +152,6 @@ export const getNoticeVariant = ({
     return isNewlyTraded({
       points,
       range,
-      resolutionSeconds,
       nowSeconds,
       firstTradeSeconds,
     })

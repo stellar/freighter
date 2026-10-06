@@ -25,6 +25,7 @@ import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { getChartAssetIdentity } from "popup/helpers/token";
 import { hasChartData } from "popup/helpers/tokenPriceHistory";
 import { tokenPriceHistorySelector } from "popup/ducks/cache";
+import { awaitInFlight, priceHistoryCacheKey } from "helpers/cacheWrites";
 import { RequestState } from "constants/request";
 
 import { ChartGhost } from "./ChartGhost";
@@ -281,9 +282,10 @@ export const TokenPriceChart = ({
   useEffect(
     () => () => {
       warmGenerationRef.current += 1;
-      // The stopped pass never finished, so a return to this scope must run
-      // one again; the sparse notices wait for it.
+      // A return to this scope runs a new pass, and the sparse notices wait
+      // for that one rather than any earlier one.
       warmedScopeRef.current = null;
+      setSettledScope(null);
     },
     [token, networkDetails],
   );
@@ -308,13 +310,21 @@ export const TokenPriceChart = ({
         if (warmGenerationRef.current !== generation) {
           return;
         }
-        // Already cached or in flight; warming it would duplicate work or
-        // silently retry a failure the user is looking at.
-        if (range === selectedRangeRef.current) {
-          continue;
-        }
         const query = { token, range, networkDetails };
         if (isRangeCached(query)) {
+          continue;
+        }
+        // The user's own fetch owns this range: warming it would silently
+        // retry a failure they are looking at. Still wait for a request in
+        // flight, or it lands after the pass and moves the first-trade bound.
+        if (range === selectedRangeRef.current) {
+          await awaitInFlight(
+            priceHistoryCacheKey({
+              networkPassphrase: networkDetails.networkPassphrase,
+              token,
+              range,
+            }),
+          );
           continue;
         }
         // Sequential by construction: the next range starts only once this one
@@ -514,9 +524,9 @@ export const TokenPriceChart = ({
   const firstTradeSeconds = useMemo(
     () =>
       cachedByRange && chartHistory
-        ? getFirstTradeLowerBound(cachedByRange, nowSeconds)
+        ? getFirstTradeLowerBound(cachedByRange)
         : undefined,
-    [cachedByRange, chartHistory, nowSeconds],
+    [cachedByRange, chartHistory],
   );
 
   const noticeVariant = useMemo(

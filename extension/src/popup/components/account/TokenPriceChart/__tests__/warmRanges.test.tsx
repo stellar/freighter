@@ -479,17 +479,63 @@ describe("TokenPriceChart deferred range warming", () => {
     await waitOutDebounce();
     expect(rangesFor()).toEqual(["1D", "ALL", "1M"]);
 
-    // 1W settles, and then 1M is stepped over — even though the user's own
-    // request for it has not come back yet, so it is not cached.
+    // At 1M the queue waits on the user's own request rather than skipping
+    // it: settling before it lands would let it move the first-trade bound
+    // under a notice already on screen. It still never sends a second one.
     await resolveRange("ALL");
     await resolveRange("1H");
     expect(rangesFor()).toEqual(["1D", "ALL", "1M", "1H", "1W"]);
     await resolveRange("1W");
-    expect(rangesFor()).toEqual(["1D", "ALL", "1M", "1H", "1W", "1Y"]);
+    expect(rangesFor()).toEqual(["1D", "ALL", "1M", "1H", "1W"]);
 
     // ...and the user is still waiting on their own range, not on a warm one.
     expect(selectedTab()).toBe("1M");
     expect(screen.getByTestId("TokenPriceChart__loading")).toBeDefined();
+
+    await resolveRange("1M");
+    expect(rangesFor()).toEqual(["1D", "ALL", "1M", "1H", "1W", "1Y"]);
+  });
+
+  it("holds the sparse notice again when a scope's pass restarts", async () => {
+    const sparseDay = {
+      status: 200,
+      body: {
+        data: {
+          ...HISTORY_BY_RANGE["1D"],
+          token: TOKEN,
+          points: HISTORY_BY_RANGE["1D"].points.slice(0, 10),
+        },
+      },
+    };
+    installTransport();
+    const { switchToken } = renderChart();
+    await settle();
+    await answer("1D", sparseDay);
+    for (const range of WARM_ORDER) {
+      // eslint-disable-next-line no-await-in-loop
+      await resolveRange(range);
+    }
+    expect(screen.getByTestId("TokenChartNotice")).toBeDefined();
+
+    // Away and back after the session cache has gone stale, so the return
+    // fetches again and runs a fresh pass.
+    switchToken(OTHER_TOKEN);
+    await waitOutDebounce();
+    const realNow = Date.now();
+    const clock = jest
+      .spyOn(Date, "now")
+      .mockReturnValue(realNow + 6 * 60 * 1000);
+    try {
+      switchToken(TOKEN);
+      await waitOutDebounce();
+      await answer("1D", sparseDay);
+
+      // ALL is back in flight: nothing has settled for this pass yet.
+      expect(rangesFor().filter((r) => r === "ALL")).toHaveLength(2);
+      expect(screen.queryByTestId("TokenChartNotice")).toBeNull();
+    } finally {
+      clock.mockRestore();
+    }
   });
 
   it("makes a switch to a warmed range a cache hit", async () => {

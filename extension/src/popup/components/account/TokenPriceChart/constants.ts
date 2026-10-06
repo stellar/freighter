@@ -41,9 +41,10 @@ export const EXPECTED_POINTS_BY_RANGE: Record<string, number> = {
 };
 
 /**
- * Each range's lookback window. Must match freighter-backend-v2's
- * `priceHistoryRanges`, or a token that started trading just outside the
- * window is called newly traded. ALL has no window.
+ * Each range's lookback window and bucket width. Must match
+ * freighter-backend-v2's `priceHistoryRanges`, or a token that started
+ * trading just outside the window, or traded only every few buckets, is
+ * called newly traded. ALL has neither.
  */
 export const RANGE_WINDOW_SECONDS: Record<string, number> = {
   [TokenPriceHistoryRange.OneHour]: 3600,
@@ -51,6 +52,14 @@ export const RANGE_WINDOW_SECONDS: Record<string, number> = {
   [TokenPriceHistoryRange.OneWeek]: 7 * 86400,
   [TokenPriceHistoryRange.OneMonth]: 30 * 86400,
   [TokenPriceHistoryRange.OneYear]: 365 * 86400,
+};
+
+export const RANGE_BUCKET_SECONDS: Record<string, number> = {
+  [TokenPriceHistoryRange.OneHour]: 300,
+  [TokenPriceHistoryRange.OneDay]: 900,
+  [TokenPriceHistoryRange.OneWeek]: 3600,
+  [TokenPriceHistoryRange.OneMonth]: 14400,
+  [TokenPriceHistoryRange.OneYear]: 259200,
 };
 
 /**
@@ -75,9 +84,8 @@ export const TIMEFRAME_ORDER = [
   TokenPriceHistoryRange.All,
 ] as const;
 
-/** ALL first: its first point is what tells a newly traded token apart from
- * a limited-data one, and until it lands every range falls back to the
- * latter. */
+/** ALL first: every newly-traded verdict needs its first point, while each
+ * finer range only narrows it. */
 export const WARM_ORDER = [
   TokenPriceHistoryRange.All,
   ...TIMEFRAME_ORDER.filter((range) => range !== TokenPriceHistoryRange.All),
