@@ -18,7 +18,11 @@ import {
   NeedsReRoute,
   useGetAppData,
 } from "helpers/hooks/useGetAppData";
-import { getCanonicalFromAsset, isMainnet } from "helpers/stellar";
+import {
+  getCanonicalFromAsset,
+  getTrustlineChangesForAccount,
+  isMainnet,
+} from "helpers/stellar";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { makeAccountActive } from "popup/ducks/accountServices";
@@ -128,10 +132,47 @@ function useGetSignTxData(
         return appData;
       }
 
-      const publicKey = appData.account.publicKey;
+      const activePublicKey = appData.account.publicKey;
       const allAccounts = appData.account.allAccounts;
       const networkDetails = appData.settings.networkDetails;
       const isMainnetNetwork = isMainnet(networkDetails);
+
+      // handle auto selecting the right account based on `accountToSign`
+      let accountSwitch:
+        | ReturnType<ReturnType<typeof makeAccountActive>>
+        | undefined;
+      let currentAccount = signFlowAccountSelector({
+        allAccounts,
+        publicKey: activePublicKey,
+        accountToSign,
+        setActiveAccount: (account: string) => {
+          accountSwitch = reduxDispatch(makeAccountActive(account));
+        },
+      });
+
+      if (!currentAccount) {
+        setAccountNotFound(true);
+      }
+
+      // The account that signs. The signing thunk signs with the active
+      // account, so wait for the switch to `accountToSign` to complete. If
+      // the switch fails, the previous active account signs. Use this
+      // account for all data about the selected account, so the screen
+      // always shows the account that signs.
+      let publicKey = activePublicKey;
+      if (accountSwitch) {
+        const switchResult = await accountSwitch;
+        if (makeAccountActive.fulfilled.match(switchResult)) {
+          publicKey = switchResult.payload.publicKey;
+        } else {
+          // Keep `currentAccount` the same as `publicKey`: both are the
+          // previous active account.
+          currentAccount =
+            allAccounts.find(
+              (account) => account.publicKey === activePublicKey,
+            ) ?? currentAccount;
+        }
+      }
 
       // Fetch balances with soft failure handling - if this fails, we continue
       // without balance data (balance-related warnings will be skipped)
@@ -149,19 +190,6 @@ function useGetSignTxData(
         }
       } catch {
         // Balance fetch failed - continue without balance data
-      }
-
-      // handle auto selecting the right account based on `accountToSign`
-      const currentAccount = signFlowAccountSelector({
-        allAccounts,
-        publicKey,
-        accountToSign,
-        setActiveAccount: (account: string) =>
-          reduxDispatch(makeAccountActive(account)),
-      });
-
-      if (!currentAccount) {
-        setAccountNotFound(true);
       }
 
       const scanResult = await scanTx(
@@ -261,8 +289,9 @@ function useGetSignTxData(
         scanOptions.xdr,
         networkDetails.networkPassphrase,
       );
-      const trustlineChanges = transaction.operations.filter(
-        (op) => op.type === "changeTrust",
+      const trustlineChanges = getTrustlineChangesForAccount(
+        transaction,
+        publicKey,
       );
       if (trustlineChanges.length) {
         for (const trustChange of trustlineChanges) {

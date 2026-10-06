@@ -1,4 +1,11 @@
-import { Asset, Networks } from "stellar-sdk";
+import {
+  Account,
+  Asset,
+  Keypair,
+  Networks,
+  Operation,
+  TransactionBuilder,
+} from "stellar-sdk";
 
 import { TESTNET_NETWORK_DETAILS } from "@shared/constants/stellar";
 import { SorobanTokenInterface } from "@shared/constants/soroban/token";
@@ -273,5 +280,58 @@ describe("getRowDataByOpType - Soroban transfer identity", () => {
     const row = await callGetRowData(operation);
 
     expect(row.amount).toContain("XLM");
+  });
+});
+
+describe("getRowDataByOpType - createAccount in a multi-operation transaction", () => {
+  it("shows the destination of this operation, not of another operation in the tx", async () => {
+    const otherDestination = Keypair.random().publicKey();
+    const newAccount = Keypair.random().publicKey();
+    // One transaction: a payment to one account, then a createAccount for another.
+    const envelopeXdr = new TransactionBuilder(new Account(PUBLIC_KEY, "1"), {
+      fee: "100",
+      networkPassphrase: Networks.TESTNET,
+    })
+      .addOperation(
+        Operation.payment({
+          destination: otherDestination,
+          asset: Asset.native(),
+          amount: "1",
+        }),
+      )
+      .addOperation(
+        Operation.createAccount({
+          destination: newAccount,
+          startingBalance: "2",
+        }),
+      )
+      .setTimeout(0)
+      .build()
+      .toXDR();
+
+    const operation = {
+      id: "op-2",
+      type: "create_account",
+      type_i: 0,
+      created_at: "2024-01-01T00:00:00Z",
+      account: newAccount,
+      funder: PUBLIC_KEY,
+      starting_balance: "2",
+      transaction_attr: {
+        operation_count: 2,
+        fee_charged: "200",
+        memo: "",
+        envelope_xdr: envelopeXdr,
+      },
+      isPayment: false,
+      isSwap: false,
+      isDustPayment: false,
+      isCreateExternalAccount: true,
+    } as unknown as HistoryItemOperation;
+
+    const row = await callGetRowData(operation);
+
+    expect(row.action).toBe("Sent");
+    expect(row.metadata.to).toBe(newAccount);
   });
 });
