@@ -358,6 +358,26 @@ describe("TokenPriceChart deferred range warming", () => {
     expect(rangesFor()).toEqual(["1D", "ALL"]);
   });
 
+  it("restarts the pass when the user comes back to a token before the other one loaded", async () => {
+    installTransport();
+    const { switchToken } = renderChart();
+    await settle();
+    await resolveRange("1D");
+    expect(rangesFor()).toEqual(["1D", "ALL"]);
+
+    // Away and straight back, before the other token's own range answers.
+    switchToken(OTHER_TOKEN);
+    await waitOutDebounce();
+    switchToken(TOKEN);
+    await waitOutDebounce();
+
+    // The interrupted pass picks up again rather than staying abandoned —
+    // the sparse notices wait for it to finish.
+    await resolveRange("ALL");
+    await settle();
+    expect(rangesFor()).toEqual(["1D", "ALL", "1H"]);
+  });
+
   it("skips a range already valid in the session cache", async () => {
     installTransport();
     renderChart({

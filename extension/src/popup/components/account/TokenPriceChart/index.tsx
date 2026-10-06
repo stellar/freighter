@@ -281,6 +281,9 @@ export const TokenPriceChart = ({
   useEffect(
     () => () => {
       warmGenerationRef.current += 1;
+      // The stopped pass never finished, so a return to this scope must run
+      // one again; the sparse notices wait for it.
+      warmedScopeRef.current = null;
     },
     [token, networkDetails],
   );
