@@ -74,10 +74,20 @@ test("Swap doesn't throw error when account is unfunded", async ({
   page,
   extensionId,
 }) => {
-  // This test intentionally uses the unstubbed login() (real endpoints) with
-  // an unfunded account. The v2 balances endpoint can't serve every network in
-  // the beta env yet, so stub just that route as unfunded (is_funded=false
-  // with empty balances) to keep the account state deterministic.
+  // login() leaves the backend unstubbed, so both balances routes must be
+  // stubbed here: v1 is the default source (use_balances_v2 is off unless
+  // Amplitude flips it), and login() blocks on the TESTNET balances response.
+  // Fork-PR CI has no indexer to answer an unstubbed request.
+  await page.route("**/account-balances/**", async (route) => {
+    await route.fulfill({
+      json: {
+        balances: {},
+        isFunded: false,
+        subentryCount: 0,
+        error: { horizon: null, soroban: null },
+      },
+    });
+  });
   await stubAccountBalancesV2(page, () => null);
   await login({ page, extensionId });
 
