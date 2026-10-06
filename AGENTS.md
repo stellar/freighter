@@ -34,7 +34,8 @@ Domain terms you will encounter throughout this codebase:
 - [Soroswap Integration](./extension/INTEGRATING_SOROSWAP.MD)
 - [@stellar/freighter-api SDK](./@stellar/freighter-api/README.md)
 - [Getting Started](./README.md)
-- [Contributing](./CONTRIBUTING.MD)
+- [Development Guide](./DEVELOPMENT.md)
+- [Contributing](./CONTRIBUTING.md)
 
 ## Quick Reference
 
