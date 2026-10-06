@@ -50,11 +50,6 @@ export const joinInFlight = <T>(
   return request;
 };
 
-/** Settles once the request in flight for `key` does, if any; never rejects. */
-export const awaitInFlight = async (key: string): Promise<void> => {
-  await inFlight.get(key)?.catch(() => undefined);
-};
-
 /** Namespaced so the two caches cannot collide on a shared (network, token). */
 export const priceHistoryCacheKey = ({
   networkPassphrase,

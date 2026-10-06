@@ -496,6 +496,30 @@ describe("TokenPriceChart deferred range warming", () => {
     expect(rangesFor()).toEqual(["1D", "ALL", "1M", "1H", "1W", "1Y"]);
   });
 
+  it("fetches a just-selected range itself when it gets there inside the switch debounce", async () => {
+    installTransport();
+    renderChart();
+    await settle();
+    await resolveRange("1D");
+
+    // The user taps 1M; its own request is still 250ms away.
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("tab", { name: "1M" }));
+    await resolveRange("ALL");
+    await resolveRange("1H");
+    await resolveRange("1W");
+
+    // The queue reaches 1M first and requests it, rather than stepping over
+    // it and settling before the user's response can move the bound.
+    expect(rangesFor()).toEqual(["1D", "ALL", "1H", "1W", "1M"]);
+
+    // The user's debounced fetch joins that request: still one 1M.
+    await waitOutDebounce();
+    expect(rangesFor()).toEqual(["1D", "ALL", "1H", "1W", "1M"]);
+    await resolveRange("1M");
+    expect(rangesFor()).toEqual(["1D", "ALL", "1H", "1W", "1M", "1Y"]);
+  });
+
   it("holds the sparse notice again when a scope's pass restarts", async () => {
     const sparseDay = {
       status: 200,

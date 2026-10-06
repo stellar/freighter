@@ -25,7 +25,6 @@ import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { getChartAssetIdentity } from "popup/helpers/token";
 import { hasChartData } from "popup/helpers/tokenPriceHistory";
 import { tokenPriceHistorySelector } from "popup/ducks/cache";
-import { awaitInFlight, priceHistoryCacheKey } from "helpers/cacheWrites";
 import { RequestState } from "constants/request";
 
 import { ChartGhost } from "./ChartGhost";
@@ -260,9 +259,6 @@ export const TokenPriceChart = ({
   const settledRangeRef = useRef<TokenPriceHistoryRangeValue>(
     TokenPriceHistoryRange.OneDay,
   );
-  // The selection as of now, read by the warm queue between ranges (which
-  // runs across awaits, long after the render that started it).
-  const selectedRangeRef = useRef(selectedRange);
   // The (token, network) a warm pass has already been run for, so a visit
   // gets exactly one.
   const warmedScopeRef = useRef<string | null>(null);
@@ -272,10 +268,6 @@ export const TokenPriceChart = ({
   // The scope whose warm pass has run to the end, every range settled.
   const [settledScope, setSettledScope] = useState<string | null>(null);
   const scope = `${networkDetails.networkPassphrase}/${token}`;
-
-  useEffect(() => {
-    selectedRangeRef.current = selectedRange;
-  }, [selectedRange]);
 
   // Unmount or token/network switch stops the queue. A generation counter, not
   // a flag: a flag reset for the new scope would let the old queue resume.
@@ -314,21 +306,11 @@ export const TokenPriceChart = ({
         if (isRangeCached(query)) {
           continue;
         }
-        // The user's own fetch owns this range: warming it would silently
-        // retry a failure they are looking at. Still wait for a request in
-        // flight, or it lands after the pass and moves the first-trade bound.
-        if (range === selectedRangeRef.current) {
-          await awaitInFlight(
-            priceHistoryCacheKey({
-              networkPassphrase: networkDetails.networkPassphrase,
-              token,
-              range,
-            }),
-          );
-          continue;
-        }
-        // Sequential by construction: the next range starts only once this one
-        // has settled.
+        // The selected range too: `warmRange` joins the user's request when it
+        // is in flight, and the user's debounced fetch joins this one when it
+        // is not. Stepping over it would settle the pass before that response
+        // lands and moves the first-trade bound. Sequential by construction:
+        // the next range starts only once this one has settled.
         await warmRange(query);
       }
       if (warmGenerationRef.current === generation) {
