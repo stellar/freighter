@@ -484,6 +484,14 @@ export const TokenPriceChart = ({
   // every render of the parent detail view.
   const chartHistory = hasChart ? history : null;
 
+  // One clock read per fetched series. Reading `Date.now()` inline in the JSX
+  // handed `LineChart` a new prop value on every render and defeated its
+  // memoisation; the clamp target only needs to be "now, as of this series".
+  const nowSeconds = useMemo(
+    () => (chartHistory ? Math.floor(Date.now() / 1000) : 0),
+    [chartHistory],
+  );
+
   const noticeVariant = useMemo(
     () =>
       chartHistory
@@ -491,17 +499,11 @@ export const TokenPriceChart = ({
             lowVolume: chartHistory.lowVolume,
             points: chartHistory.points,
             range: chartHistory.range,
+            resolutionSeconds: chartHistory.resolutionSeconds,
+            nowSeconds,
           })
         : null,
-    [chartHistory],
-  );
-
-  // One clock read per fetched series. Reading `Date.now()` inline in the JSX
-  // handed `LineChart` a new prop value on every render and defeated its
-  // memoisation; the clamp target only needs to be "now, as of this series".
-  const nowSeconds = useMemo(
-    () => (chartHistory ? Math.floor(Date.now() / 1000) : 0),
-    [chartHistory],
+    [chartHistory, nowSeconds],
   );
 
   // Axis labels come from returned points, not the requested window (§B.5),
@@ -563,20 +565,6 @@ export const TokenPriceChart = ({
 
   return (
     <div className="TokenPriceChart" data-testid="TokenPriceChart">
-      {/* The notice is inserted after the fetch settles, and it sits outside
-          the `aria-busy` panel, so without a live region a screen-reader user
-          resting on the selector never hears the reliability warning. The
-          region is mounted unconditionally — a `role="status"` that appears in
-          the same tick as its own text is announced inconsistently — and
-          collapses via `:empty` so an absent notice does not open the
-          section's 24px gap above the chart. */}
-      <div
-        className="TokenPriceChart__notice"
-        data-testid="TokenPriceChart__notice"
-        role="status"
-      >
-        {noticeVariant ? <TokenChartNotice variant={noticeVariant} /> : null}
-      </div>
       {/* The price labels sit in their own rows above and below the plot, not
           overlaid on it: the low label is left-aligned and a series whose
           minimum falls near the left edge ran straight into it. The rows are
@@ -659,6 +647,20 @@ export const TokenPriceChart = ({
         selectedRange={selectedRange}
         onSelect={handleRangeSelect}
       />
+      {/* The notice is inserted after the fetch settles, and it sits outside
+          the `aria-busy` panel, so without a live region a screen-reader user
+          resting on the selector never hears the reliability warning. The
+          region is mounted unconditionally — a `role="status"` that appears in
+          the same tick as its own text is announced inconsistently — and
+          collapses via `:empty` so an absent notice does not open the
+          section's 24px gap below the selector. */}
+      <div
+        className="TokenPriceChart__notice"
+        data-testid="TokenPriceChart__notice"
+        role="status"
+      >
+        {noticeVariant ? <TokenChartNotice variant={noticeVariant} /> : null}
+      </div>
     </div>
   );
 };
