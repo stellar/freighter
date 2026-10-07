@@ -1130,3 +1130,70 @@ describe("AssetDetail", () => {
     });
   });
 });
+
+describe("AssetDetail history loading state", () => {
+  const makeProps = (hasHistoryError?: boolean) => ({
+    handleClose: () => null,
+    accountBalances: {
+      balances: [
+        {
+          available: new BigNumber(10),
+          token: { type: "native", code: "XLM" },
+          total: new BigNumber(10),
+        },
+      ],
+    } as any,
+    selectedAsset: "native",
+    historyData: null,
+    hasHistoryError,
+  });
+
+  const renderDetail = (props: ReturnType<typeof makeProps>) =>
+    render(
+      <Wrapper
+        routes={[ROUTES.account]}
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.PASSWORD_CREATED,
+            publicKey: "G1",
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: TESTNET_NETWORK_DETAILS,
+          },
+        }}
+      >
+        <AssetDetail {...props} />
+      </Wrapper>,
+    );
+
+  it("shows three skeleton rows and announces loading while history is in flight", async () => {
+    renderDetail(makeProps());
+
+    await waitFor(() => screen.getByTestId("AssetDetail__list__loader"));
+    const loader = screen.getByTestId("AssetDetail__list__loader");
+    expect(loader).toHaveAttribute("role", "status");
+    expect(loader).toHaveAttribute("aria-label", "Loading history");
+    const rows = screen.getAllByTestId("AssetDetail__list__skeleton-row");
+    expect(rows).toHaveLength(3);
+    rows.forEach((row) => {
+      expect(row).toHaveClass("Shimmer", "Shimmer--pill");
+      expect((row as HTMLElement).style.width).toBe("100%");
+      expect((row as HTMLElement).style.height).toBe("2.75rem");
+    });
+  });
+
+  it("shows an error, not a skeleton that never ends, when the history fetch failed", async () => {
+    renderDetail(makeProps(true));
+
+    await waitFor(() => screen.getByTestId("AssetDetail"));
+    expect(screen.queryByTestId("AssetDetail__list__loader")).toBeNull();
+    expect(
+      screen.queryAllByTestId("AssetDetail__list__skeleton-row"),
+    ).toHaveLength(0);
+    expect(screen.getByTestId("AssetDetail__list__error")).toHaveTextContent(
+      "Unable to load history",
+    );
+  });
+});

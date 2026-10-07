@@ -206,6 +206,8 @@ interface AccountAssetsProps {
   balances: AccountBalances;
   historyData: AccountHistoryData | null;
   assetPrices?: ApiTokenPrices;
+  /** The account history request failed; AssetDetail shows an error, not a skeleton. */
+  hasHistoryError?: boolean;
 }
 
 export const AccountAssets = ({
@@ -213,6 +215,7 @@ export const AccountAssets = ({
   balances,
   assetPrices,
   historyData,
+  hasHistoryError = false,
 }: AccountAssetsProps) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -392,6 +395,7 @@ export const AccountAssets = ({
               <AssetDetail
                 accountBalances={balances}
                 historyData={historyData}
+                hasHistoryError={hasHistoryError}
                 selectedAsset={canonicalAsset}
                 handleClose={() => {
                   setSelectedAsset("");

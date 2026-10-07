@@ -3,7 +3,7 @@ import { useSelector } from "react-redux";
 import { BigNumber } from "bignumber.js";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { Button, CopyText, Icon, Link, Loader } from "@stellar/design-system";
+import { Button, CopyText, Icon, Link } from "@stellar/design-system";
 
 import { NetworkDetails } from "@shared/constants/stellar";
 import {
@@ -128,6 +128,8 @@ interface AssetDetailProps {
   historyData: AccountHistoryData | null;
   selectedAsset: string;
   handleClose: () => void;
+  /** The account history request failed; shows an error, not a skeleton. */
+  hasHistoryError?: boolean;
 }
 
 export const AssetDetail = ({
@@ -135,6 +137,7 @@ export const AssetDetail = ({
   historyData,
   selectedAsset,
   handleClose,
+  hasHistoryError = false,
 }: AssetDetailProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -491,12 +494,28 @@ export const AssetDetail = ({
                 networkDetails={networkDetails}
               />
             ) : null}
-            {filteredAssetOperations === null ? (
+            {filteredAssetOperations === null && hasHistoryError ? (
+              <div
+                className="AssetDetail__empty"
+                data-testid="AssetDetail__list__error"
+              >
+                {t("Unable to load history")}
+              </div>
+            ) : filteredAssetOperations === null ? (
               <div
                 className="AssetDetail__list AssetDetail__list--loading"
                 data-testid="AssetDetail__list__loader"
+                role="status"
+                aria-label={t("Loading history")}
               >
-                <Loader />
+                {[0, 1, 2].map((row) => (
+                  <Shimmer
+                    key={row}
+                    data-testid="AssetDetail__list__skeleton-row"
+                    width="100%"
+                    height="2.75rem"
+                  />
+                ))}
               </div>
             ) : (
               <AssetDetailOperations
