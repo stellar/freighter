@@ -6,7 +6,7 @@
  */
 
 /** Same query the OS exposes to stylesheets; shared with tests. */
-export const LIGHT_SCHEME_QUERY = "(prefers-color-scheme: light)";
+export const DARK_SCHEME_QUERY = "(prefers-color-scheme: dark)";
 
 export type ColorScheme = "dark" | "light";
 
@@ -16,12 +16,13 @@ const THEME_CLASS: Record<ColorScheme, string> = {
 };
 
 /**
- * The device scheme. Queried as explicit-light so that anything short of a
- * light preference — including no matchMedia or an unsupported query, which
- * report false — resolves dark, matching the static fallback in index.html.
+ * The device scheme. Queried as explicit-dark so that anything short of a
+ * dark preference — including no matchMedia or an unsupported query, which
+ * report false — resolves light: Varial is light-first, matching mobile's
+ * DEFAULT_COLOR_SCHEME and the static fallback in index.html.
  */
 export const getSystemColorScheme = (): ColorScheme =>
-  window.matchMedia?.(LIGHT_SCHEME_QUERY)?.matches ? "light" : "dark";
+  window.matchMedia?.(DARK_SCHEME_QUERY)?.matches ? "dark" : "light";
 
 /**
  * The scheme the UI is actually rendering, read from the body class rather
@@ -29,7 +30,7 @@ export const getSystemColorScheme = (): ColorScheme =>
  * device preference changing, and metrics report what the user sees.
  */
 export const getAppliedColorScheme = (): ColorScheme =>
-  document.body.classList.contains(THEME_CLASS.light) ? "light" : "dark";
+  document.body.classList.contains(THEME_CLASS.dark) ? "dark" : "light";
 
 const applyColorScheme = (scheme: ColorScheme) => {
   document.body.classList.remove(THEME_CLASS.dark, THEME_CLASS.light);
@@ -44,7 +45,7 @@ export const followSystemColorScheme = () => {
   applyColorScheme(getSystemColorScheme());
   // The handler re-derives through getSystemColorScheme rather than reading
   // the event, so the initial and live paths can't drift apart.
-  window.matchMedia?.(LIGHT_SCHEME_QUERY)?.addEventListener?.("change", () => {
+  window.matchMedia?.(DARK_SCHEME_QUERY)?.addEventListener?.("change", () => {
     applyColorScheme(getSystemColorScheme());
   });
 };

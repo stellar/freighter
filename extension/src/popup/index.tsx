@@ -11,7 +11,8 @@ import "./styles/varialPalette.scss";
 import "./styles/vendor/tailwind.css";
 
 // Before render, so the first paint is already in the device scheme. The
-// static sds-theme-dark on <body> stays as the pre-script fallback.
+// static sds-theme-light on <body> stays as the pre-script fallback —
+// light-first, same as mobile.
 followSystemColorScheme();
 
 const root = createRoot(document.getElementById("root")!);

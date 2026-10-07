@@ -629,8 +629,8 @@ describe("color_scheme common property (#18)", () => {
     expect(buildCommonContext({} as never).color_scheme).toBe("dark");
   });
 
-  it("defaults to dark when no theme class is applied yet", () => {
+  it("defaults to light when no theme class is applied yet", () => {
     document.body.className = "";
-    expect(buildCommonContext({} as never).color_scheme).toBe("dark");
+    expect(buildCommonContext({} as never).color_scheme).toBe("light");
   });
 });
