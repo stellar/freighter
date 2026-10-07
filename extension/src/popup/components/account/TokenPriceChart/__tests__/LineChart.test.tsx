@@ -5,6 +5,7 @@ import { ApiTokenPriceHistoryPoint } from "@shared/api/types";
 import { LineChart, getPlottedRangeEnd } from "../LineChart";
 import {
   CHART_MORPH_DURATION_MS,
+  CHART_VIEWBOX_HEIGHT,
   CHART_VIEWBOX_WIDTH,
   PriceDirection,
 } from "../constants";
@@ -313,13 +314,57 @@ describe("LineChart timeframe morph", () => {
   });
 
   it("paints the settled geometry on the first render — nothing to morph from", () => {
-    // First load, or arriving from the loading ghost / empty / error state:
-    // the component mounts fresh, so there is no previous line on screen and
-    // no tween to run.
+    // Without `riseFromFlat` the component mounts fresh with no previous line
+    // on screen, so there is no tween to run.
     render(chart(VALLEY));
 
     expect(getPolylinePoints()).toBe("0,8 160,132 320,8");
     expect(pendingFrames.size).toBe(0);
+    expect(screen.getByTestId("TokenPriceChart__svg")).not.toHaveClass(
+      "LineChart--rise",
+    );
+  });
+
+  it("rises from a flat line at the vertical centre when replacing the loading hairline", () => {
+    render(
+      <LineChart
+        points={VALLEY}
+        resolutionSeconds={900}
+        nowSeconds={5000}
+        direction={PriceDirection.Positive}
+        label="Price chart"
+        riseFromFlat
+      />,
+    );
+    const mid = CHART_VIEWBOX_HEIGHT / 2;
+    expect(getPolylinePoints()).toBe(`0,${mid} 160,${mid} 320,${mid}`);
+    expect(screen.getByTestId("TokenPriceChart__svg")).toHaveClass(
+      "LineChart--rise",
+    );
+
+    flushFrame(0);
+    flushFrame(CHART_MORPH_DURATION_MS);
+    expect(getPolylinePoints()).toBe("0,8 160,132 320,8");
+    expect(pendingFrames.size).toBe(0);
+  });
+
+  it("does not rise under reduced motion", () => {
+    setPrefersReducedMotion(true);
+    render(
+      <LineChart
+        points={VALLEY}
+        resolutionSeconds={900}
+        nowSeconds={5000}
+        direction={PriceDirection.Positive}
+        label="Price chart"
+        riseFromFlat
+      />,
+    );
+    expect(getPolylinePoints()).toBe("0,8 160,132 320,8");
+    expect(pendingFrames.size).toBe(0);
+    expect(screen.getByTestId("TokenPriceChart__svg")).not.toHaveClass(
+      "LineChart--rise",
+    );
   });
 
   it("morphs from the outgoing shape rather than hard-cutting to the new one", () => {

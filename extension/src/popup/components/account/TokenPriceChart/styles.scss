@@ -79,6 +79,16 @@
   }
 }
 
+@keyframes LineChart-fill-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
 .LineChart {
   display: block;
   height: 100%;
@@ -97,6 +107,13 @@
 
   &--neutral {
     color: var(--sds-clr-gray-09);
+  }
+
+  // The fill fades in while the line rises out of the hairline; a flat line's
+  // fill would otherwise flash as a solid block. Keep in step with
+  // CHART_MORPH_DURATION_MS and easeOutCubic.
+  &--rise &__fill {
+    animation: LineChart-fill-in 250ms cubic-bezier(0.33, 1, 0.68, 1);
   }
 }
 

@@ -397,6 +397,17 @@ export const TokenPriceChart = ({
 
   const isLoading =
     state.state === RequestState.IDLE || state.state === RequestState.LOADING;
+  // Set while the hairline shows, so the chart that replaces it rises out of
+  // it; cleared once that chart has mounted.
+  const risesFromHairlineRef = useRef(false);
+  if (isLoading) {
+    risesFromHairlineRef.current = true;
+  }
+  useEffect(() => {
+    if (!isLoading) {
+      risesFromHairlineRef.current = false;
+    }
+  }, [isLoading]);
   const history: ApiTokenPriceHistory | null = state.data?.history ?? null;
   const isError = !isLoading && state.data !== null && history === null;
   const hasChart =
@@ -633,6 +644,7 @@ export const TokenPriceChart = ({
                 nowSeconds={nowSeconds}
                 direction={chartDirection}
                 label={chartLabel}
+                riseFromFlat={risesFromHairlineRef.current}
               />
             </>
           ) : (

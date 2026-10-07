@@ -18,6 +18,7 @@ import {
 import {
   CHART_HEIGHT_PX,
   CHART_MORPH_DURATION_MS,
+  CHART_VIEWBOX_HEIGHT,
   RANGE_SWITCH_DEBOUNCE_MS,
 } from "popup/components/account/TokenPriceChart/constants";
 
@@ -435,11 +436,11 @@ describe("TokenPriceChart", () => {
     expect(deltaText()).toContain("0.86%");
   });
 
-  it("morphs the line on a cached switch, never during a fetch", async () => {
+  it("rises out of the hairline after a fetch, and morphs on a cached switch", async () => {
     // The two halves of the morph contract, on the real switching path: a
-    // cache hit tweens (which is the fast switching worth smoothing), and an
-    // uncached one still shows the ghost and then paints the new series
-    // directly — the previous range's line is never held under the new tab.
+    // cache hit tweens from the outgoing line, and a fetch shows the shimmer
+    // and then lifts the new series out of the flat centre line where the
+    // hairline sat — the previous range's line is never held under the new tab.
     jest.useFakeTimers();
     const pendingFrames = new Map<number, FrameRequestCallback>();
     let nextFrameId = 0;
@@ -462,6 +463,13 @@ describe("TokenPriceChart", () => {
     };
     const linePoints = () =>
       screen.getByTestId("TokenPriceChart__polyline").getAttribute("points");
+    const isFlatAtCentre = (points: string | null) =>
+      (points ?? "")
+        .trim()
+        .split(" ")
+        .every(
+          (pair) => Number(pair.split(",")[1]) === CHART_VIEWBOX_HEIGHT / 2,
+        );
 
     try {
       respondByRange({ "1D": HISTORY_1D, "1W": HISTORY_1W });
@@ -469,8 +477,13 @@ describe("TokenPriceChart", () => {
       await act(async () => {
         await Promise.resolve();
       });
-      // First load: the settled geometry, painted directly.
+      // First load, after the shimmer: flat at the centre, then rising.
+      expect(isFlatAtCentre(linePoints())).toBe(true);
+      expect(pendingFrames.size).toBe(1);
+      flushFrame(0);
+      flushFrame(CHART_MORPH_DURATION_MS);
       const points1D = linePoints();
+      expect(isFlatAtCentre(points1D)).toBe(false);
       expect(pendingFrames.size).toBe(0);
 
       const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
@@ -485,8 +498,12 @@ describe("TokenPriceChart", () => {
         jest.advanceTimersByTime(RANGE_SWITCH_DEBOUNCE_MS + 50);
         await Promise.resolve();
       });
+      expect(isFlatAtCentre(linePoints())).toBe(true);
+      flushFrame(0);
+      flushFrame(CHART_MORPH_DURATION_MS);
       const points1W = linePoints();
       expect(points1W).not.toBe(points1D);
+      expect(isFlatAtCentre(points1W)).toBe(false);
       expect(pendingFrames.size).toBe(0);
 
       // Cached: no ghost, and the line is still the outgoing shape with a
