@@ -20,7 +20,8 @@ This repo is constructed using yarn workspaces and consists of the 4 sections:
 - Yarn 4.10.0: `corepack enable && corepack prepare yarn@4.10.0 --activate`
 
 For a complete setup guide including LLM-assisted quick setup, see
-[CONTRIBUTING.MD](CONTRIBUTING.MD).
+[DEVELOPMENT.md](DEVELOPMENT.md). Before opening a pull request, read
+[CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Build the extension
 
