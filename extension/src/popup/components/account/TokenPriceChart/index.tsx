@@ -20,12 +20,12 @@ import {
   useGetTokenPriceHistory,
 } from "helpers/hooks/useGetTokenPriceHistory";
 import { emitMetric } from "helpers/metrics";
+import { Shimmer } from "popup/components/Shimmer";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { getChartAssetIdentity } from "popup/helpers/token";
 import { hasChartData } from "popup/helpers/tokenPriceHistory";
 import { RequestState } from "constants/request";
 
-import { ChartGhost } from "./ChartGhost";
 import {
   LineChart,
   getChartCoordinates,
@@ -618,7 +618,12 @@ export const TokenPriceChart = ({
               role="status"
               aria-label={t("Loading price chart")}
             >
-              <ChartGhost />
+              <Shimmer
+                data-testid="TokenPriceChart__shimmer"
+                variant="hairline"
+                width="100%"
+                height="1px"
+              />
             </div>
           ) : chartHistory ? (
             <>

@@ -25,23 +25,11 @@
     width: 100%;
   }
 
-  // The Figma "Data loading" state: the chart's own artwork behind a 10px
-  // blur. Static by design — a pulsing blurred chart reads as a rendering
-  // glitch, and the blur alone already says "not ready".
-  //
-  // A literal px, deliberately not `pxToRem`: `blur()` takes a Gaussian
-  // standard deviation, which is what mobile's Skia `Blur` sigma of 10 is
-  // too. In rem it would ride the user's root font size and drift off both
-  // the design and the other platform.
+  // The Figma "Data loading" state: a hairline at the plot's centre with the
+  // shared shimmer sweeping along it.
   &__loading {
-    filter: blur(10px);
-    height: 100%;
-    width: 100%;
-  }
-
-  &__ghost {
-    color: var(--sds-clr-green-09);
-    display: block;
+    align-items: center;
+    display: flex;
     height: 100%;
     width: 100%;
   }

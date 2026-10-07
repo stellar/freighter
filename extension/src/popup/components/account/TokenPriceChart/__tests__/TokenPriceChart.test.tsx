@@ -695,23 +695,18 @@ describe("TokenPriceChart", () => {
       return renderChart();
     };
 
-    it("renders the blurred chart ghost, not a flat block", () => {
+    it("draws a hairline shimmer across the chart, centred, not a flat block", () => {
       renderLoading();
 
       const loading = screen.getByTestId("TokenPriceChart__loading");
       expect(loading.className).not.toContain("TokenPriceChart__skeleton");
 
-      // Chart-shaped artwork, drawn with the chart's own SVG idiom: gradient
-      // fill polygon under a stroked polyline.
-      const ghost = screen.getByTestId("TokenPriceChart__ghost");
-      expect(ghost.tagName.toLowerCase()).toBe("svg");
-      expect(ghost.querySelector("polyline")).not.toBeNull();
-      expect(ghost.querySelector("polygon")).not.toBeNull();
-      expect(loading.contains(ghost)).toBe(true);
-
-      // ...and it is decorative art, never the data path.
-      expect(screen.queryByTestId("TokenPriceChart__polyline")).toBeNull();
-      expect(screen.queryByTestId("TokenPriceChart__svg")).toBeNull();
+      const line = screen.getByTestId("TokenPriceChart__shimmer");
+      expect(line).toHaveClass("Shimmer", "Shimmer--hairline");
+      expect(line.style.width).toBe("100%");
+      expect(line.style.height).toBe("1px");
+      expect(loading.contains(line)).toBe(true);
+      expect(screen.queryByTestId("TokenPriceChart__ghost")).toBeNull();
     });
 
     it("keeps the timeframe selector crisp and interactive while loading", () => {
@@ -721,7 +716,7 @@ describe("TokenPriceChart", () => {
       expect(tabs).toHaveLength(6);
       tabs.forEach((tab) => expect(tab).toBeEnabled());
 
-      // The selector is a sibling of the blurred layer, never inside it.
+      // The selector is a sibling of the loading layer, never inside it.
       expect(
         screen
           .getByTestId("TokenPriceChart__loading")
@@ -782,12 +777,12 @@ describe("TokenPriceChart", () => {
       expect(loadingRows).toEqual(loadedRows);
     });
 
-    it("hides the ghost from assistive tech and reports the chart busy", () => {
+    it("hides the shimmer from assistive tech and reports the chart busy", () => {
       renderLoading();
 
       expect(
         screen
-          .getByTestId("TokenPriceChart__ghost")
+          .getByTestId("TokenPriceChart__shimmer")
           .getAttribute("aria-hidden"),
       ).toBe("true");
       expect(
@@ -797,7 +792,7 @@ describe("TokenPriceChart", () => {
         screen.getByRole("status", { name: "Loading price chart" }),
       ).toBeInTheDocument();
 
-      // A blurred ghost is not a chart image — nothing announces as one.
+      // A hairline shimmer is not a chart image — nothing announces as one.
       expect(screen.queryByRole("img")).toBeNull();
     });
 
@@ -821,7 +816,7 @@ describe("TokenPriceChart", () => {
     it("renders no price text at all while loading", () => {
       renderLoading();
 
-      // A wallet must never draw invented prices, even blurred: no axis
+      // A wallet must never draw invented prices while loading: no axis
       // labels, no delta, no currency anywhere in the section.
       const section = screen.getByTestId("TokenPriceChart");
       expect(section.textContent).not.toContain("$");
