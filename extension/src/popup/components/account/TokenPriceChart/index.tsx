@@ -287,7 +287,7 @@ export interface RangeDeltaState {
   text: string;
   /** Three-state palette: a gain is green, a loss red, a flat range neutral. */
   colorClass: SignedPercent["colorClass"];
-  /** The inspected point's raw price while a drag-to-inspect is active; the
+  /** The inspected point's raw price while an inspection is active; the
    * header shows it in place of spot. Null otherwise. */
   inspectedPrice: string | null;
 }
@@ -332,7 +332,8 @@ export const TokenPriceChart = ({
     index: number;
   } | null>(null);
   // Whether `token_chart.brushed` has already been emitted for the activation
-  // in progress. Reset on start and end, so it is exactly once per drag.
+  // in progress. Reset on start and end, so it is exactly once per hover or
+  // press.
   const brushedThisActivationRef = useRef(false);
   const { state, fetchData, warmRange, isRangeCached, startLoading } =
     useGetTokenPriceHistory();
@@ -528,9 +529,9 @@ export const TokenPriceChart = ({
 
   const handleInspectStart = useCallback(
     (index: number) => {
-      // Not `brushed` yet: a bare click (down then up, no movement) is not a
-      // drag, and mobile's long-press-armed pan would never have activated on
-      // it. The first move beyond the tap threshold emits the event.
+      // Not `brushed` yet: a hover that never moves, or a tap, is not a
+      // sweep, and mobile's long-press-armed pan would never have activated on
+      // it. The first move beyond the threshold emits the event.
       brushedThisActivationRef.current = false;
       if (chartHistory) {
         setInspected({ history: chartHistory, index });

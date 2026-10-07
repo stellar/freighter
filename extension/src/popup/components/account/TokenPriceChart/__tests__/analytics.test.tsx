@@ -193,14 +193,17 @@ describe("token_chart analytics payloads (frozen cross-platform fixture)", () =>
 
     mockChartRect(320, 140);
     fireEvent.pointerDown(screen.getByTestId("TokenPriceChart__svg"), {
+      pointerType: "touch",
       clientX: 10,
       pointerId: 1,
     });
     fireEvent.pointerMove(screen.getByTestId("TokenPriceChart__svg"), {
+      pointerType: "touch",
       clientX: 200,
       pointerId: 1,
     });
     fireEvent.pointerUp(screen.getByTestId("TokenPriceChart__svg"), {
+      pointerType: "touch",
       pointerId: 1,
     });
 
@@ -213,15 +216,39 @@ describe("token_chart analytics payloads (frozen cross-platform fixture)", () =>
     // report — matching mobile, where a long-press-armed pan that never moves
     // never activates.
     fireEvent.pointerDown(screen.getByTestId("TokenPriceChart__svg"), {
+      pointerType: "touch",
       clientX: 10,
       pointerId: 2,
     });
     fireEvent.pointerUp(screen.getByTestId("TokenPriceChart__svg"), {
+      pointerType: "touch",
       pointerId: 2,
     });
 
     expect(mockedEmitMetric.mock.calls).toEqual(
       CANONICAL_FIXTURE.map((fixture) => [fixture.event, fixture.props]),
+    );
+
+    // A mouse brushes by hovering: one `brushed` per hover once it moves,
+    // none for a pass that never moves.
+    const svg = screen.getByTestId("TokenPriceChart__svg");
+    const mouse = (clientX: number) => ({
+      pointerType: "mouse",
+      pointerId: 3,
+      clientX,
+    });
+    mockedEmitMetric.mockClear();
+    fireEvent.pointerEnter(svg, mouse(10));
+    fireEvent.pointerMove(svg, mouse(100));
+    fireEvent.pointerMove(svg, mouse(200));
+    fireEvent.pointerLeave(svg, mouse(200));
+    fireEvent.pointerEnter(svg, mouse(10));
+    fireEvent.pointerLeave(svg, mouse(10));
+
+    expect(mockedEmitMetric.mock.calls).toEqual(
+      CANONICAL_FIXTURE.filter(
+        (fixture) => fixture.event === "token_chart.brushed",
+      ).map((fixture) => [fixture.event, fixture.props]),
     );
   });
 

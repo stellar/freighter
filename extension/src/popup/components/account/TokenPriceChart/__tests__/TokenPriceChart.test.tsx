@@ -967,7 +967,11 @@ describe("TokenPriceChart", () => {
 
       // 640px-wide element → clientX 320 is viewBox x 160 → nearest is index 1
       // (x=160) exactly.
-      fireEvent.pointerDown(svg, { clientX: 320, pointerId: 1 });
+      fireEvent.pointerDown(svg, {
+        pointerType: "touch",
+        clientX: 320,
+        pointerId: 1,
+      });
       expect(reportedDelta).toEqual({
         isLoading: false,
         text: "+$0.02 (10.00%)",
@@ -975,7 +979,7 @@ describe("TokenPriceChart", () => {
         inspectedPrice: "0.22",
       });
 
-      fireEvent.pointerUp(svg, { pointerId: 1 });
+      fireEvent.pointerUp(svg, { pointerType: "touch", pointerId: 1 });
       expect(reportedDelta).toEqual({
         isLoading: false,
         text: "+$0.06 (30.00%)",
@@ -998,7 +1002,11 @@ describe("TokenPriceChart", () => {
 
       mockChartRect();
       const svg = screen.getByTestId("TokenPriceChart__svg");
-      fireEvent.pointerDown(svg, { clientX: 320, pointerId: 1 });
+      fireEvent.pointerDown(svg, {
+        pointerType: "touch",
+        clientX: 320,
+        pointerId: 1,
+      });
 
       expect(
         screen.queryByTestId("TokenPriceChart__inspect-tooltip"),
@@ -1013,7 +1021,7 @@ describe("TokenPriceChart", () => {
       expect(timestamp.style.left).toBe("50%");
       expect(timestamp.style.transform).toBe("translateX(-50%)");
 
-      fireEvent.pointerUp(svg, { pointerId: 1 });
+      fireEvent.pointerUp(svg, { pointerType: "touch", pointerId: 1 });
       expect(
         screen.queryByTestId("TokenPriceChart__inspect-timestamp"),
       ).toBeNull();
@@ -1044,6 +1052,7 @@ describe("TokenPriceChart", () => {
 
       mockChartRect();
       fireEvent.pointerDown(screen.getByTestId("TokenPriceChart__svg"), {
+        pointerType: "touch",
         clientX: 320,
         pointerId: 1,
       });
@@ -1068,21 +1077,33 @@ describe("TokenPriceChart", () => {
 
       // Pointerdown alone: the artwork, the timestamp and the reported price all
       // follow it, but nothing is reported to analytics — a tap is not a drag.
-      fireEvent.pointerDown(svg, { clientX: 320, pointerId: 1 });
+      fireEvent.pointerDown(svg, {
+        pointerType: "touch",
+        clientX: 320,
+        pointerId: 1,
+      });
       expect(
         screen.getByTestId("TokenPriceChart__inspect-timestamp"),
       ).toBeDefined();
       expect(reportedDelta?.inspectedPrice).toBe("0.22");
       expect(brushedCalls()).toHaveLength(0);
 
-      fireEvent.pointerMove(svg, { clientX: 640, pointerId: 1 });
+      fireEvent.pointerMove(svg, {
+        pointerType: "touch",
+        clientX: 640,
+        pointerId: 1,
+      });
       expect(brushedCalls()).toEqual([
         ["token_chart.brushed", { range: "1D" }],
       ]);
 
       // Still exactly one for the rest of the activation.
-      fireEvent.pointerMove(svg, { clientX: 0, pointerId: 1 });
-      fireEvent.pointerUp(svg, { pointerId: 1 });
+      fireEvent.pointerMove(svg, {
+        pointerType: "touch",
+        clientX: 0,
+        pointerId: 1,
+      });
+      fireEvent.pointerUp(svg, { pointerType: "touch", pointerId: 1 });
       expect(brushedCalls()).toHaveLength(1);
     });
 
@@ -1097,15 +1118,31 @@ describe("TokenPriceChart", () => {
       mockChartRect();
       const svg = screen.getByTestId("TokenPriceChart__svg");
 
-      fireEvent.pointerDown(svg, { clientX: 320, pointerId: 1 });
-      fireEvent.pointerUp(svg, { pointerId: 1 });
+      fireEvent.pointerDown(svg, {
+        pointerType: "touch",
+        clientX: 320,
+        pointerId: 1,
+      });
+      fireEvent.pointerUp(svg, { pointerType: "touch", pointerId: 1 });
       expect(brushedCalls()).toHaveLength(0);
 
       const drag = (pointerId: number) => {
-        fireEvent.pointerDown(svg, { clientX: 0, pointerId });
-        fireEvent.pointerMove(svg, { clientX: 320, pointerId });
-        fireEvent.pointerMove(svg, { clientX: 640, pointerId });
-        fireEvent.pointerUp(svg, { pointerId });
+        fireEvent.pointerDown(svg, {
+          pointerType: "touch",
+          clientX: 0,
+          pointerId,
+        });
+        fireEvent.pointerMove(svg, {
+          pointerType: "touch",
+          clientX: 320,
+          pointerId,
+        });
+        fireEvent.pointerMove(svg, {
+          pointerType: "touch",
+          clientX: 640,
+          pointerId,
+        });
+        fireEvent.pointerUp(svg, { pointerType: "touch", pointerId });
       };
       drag(2);
       drag(3);
@@ -1139,16 +1176,36 @@ describe("TokenPriceChart", () => {
 
       mockChartRect();
       const svg = screen.getByTestId("TokenPriceChart__svg");
-      fireEvent.pointerDown(svg, { clientX: 0, pointerId: 1 });
-      fireEvent.pointerMove(svg, { clientX: 320, pointerId: 1 });
+      fireEvent.pointerDown(svg, {
+        pointerType: "touch",
+        clientX: 0,
+        pointerId: 1,
+      });
+      fireEvent.pointerMove(svg, {
+        pointerType: "touch",
+        clientX: 320,
+        pointerId: 1,
+      });
       expect(reportedDelta?.inspectedPrice).toBe("0.22");
       const commits = onRender.mock.calls.length;
 
       // All still nearest index 1 (x=160). React may render once more before
       // its eager bailout engages; a fresh object per move commits every time.
-      fireEvent.pointerMove(svg, { clientX: 330, pointerId: 1 });
-      fireEvent.pointerMove(svg, { clientX: 310, pointerId: 1 });
-      fireEvent.pointerMove(svg, { clientX: 325, pointerId: 1 });
+      fireEvent.pointerMove(svg, {
+        pointerType: "touch",
+        clientX: 330,
+        pointerId: 1,
+      });
+      fireEvent.pointerMove(svg, {
+        pointerType: "touch",
+        clientX: 310,
+        pointerId: 1,
+      });
+      fireEvent.pointerMove(svg, {
+        pointerType: "touch",
+        clientX: 325,
+        pointerId: 1,
+      });
 
       expect(onRender.mock.calls.length).toBeLessThanOrEqual(commits + 1);
     });
@@ -1173,8 +1230,16 @@ describe("TokenPriceChart", () => {
         .mockImplementation(() => {});
       const warnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
 
-      fireEvent.pointerDown(svg, { clientX: 320, pointerId: 1 });
-      fireEvent.pointerMove(svg, { clientX: 640, pointerId: 1 });
+      fireEvent.pointerDown(svg, {
+        pointerType: "touch",
+        clientX: 320,
+        pointerId: 1,
+      });
+      fireEvent.pointerMove(svg, {
+        pointerType: "touch",
+        clientX: 640,
+        pointerId: 1,
+      });
       expect(reportedDelta?.inspectedPrice).toBe("0.26");
 
       unmount();
@@ -1198,6 +1263,7 @@ describe("TokenPriceChart", () => {
 
       mockChartRect();
       fireEvent.pointerDown(screen.getByTestId("TokenPriceChart__svg"), {
+        pointerType: "touch",
         clientX: 320,
         pointerId: 1,
       });
@@ -1230,6 +1296,7 @@ describe("TokenPriceChart", () => {
 
       mockChartRect();
       fireEvent.pointerDown(screen.getByTestId("TokenPriceChart__svg"), {
+        pointerType: "touch",
         clientX: 320,
         pointerId: 1,
       });
@@ -1286,6 +1353,7 @@ describe("TokenPriceChart", () => {
       // Index 0, which also exists in the 3-point 1D series: an index past its
       // end would null out without the guard ever being consulted.
       fireEvent.pointerDown(screen.getByTestId("TokenPriceChart__svg"), {
+        pointerType: "touch",
         clientX: 0,
         pointerId: 1,
       });
@@ -1327,6 +1395,7 @@ describe("TokenPriceChart", () => {
 
       mockChartRect();
       fireEvent.pointerDown(screen.getByTestId("TokenPriceChart__svg"), {
+        pointerType: "touch",
         clientX: 0,
         pointerId: 1,
       });

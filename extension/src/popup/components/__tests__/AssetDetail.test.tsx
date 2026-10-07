@@ -993,13 +993,17 @@ describe("AssetDetail", () => {
 
       // 640px-wide element → clientX 320 is viewBox x 160 → nearest is index 1
       // (x=160) exactly.
-      fireEvent.pointerDown(svg, { clientX: 320, pointerId: 1 });
+      fireEvent.pointerDown(svg, {
+        pointerType: "touch",
+        clientX: 320,
+        pointerId: 1,
+      });
       expect(screen.getByTestId("AssetDetail__price")).toHaveTextContent(
         "$0.22",
       );
       expect(delta()).toHaveTextContent("+$0.02 (10.00%)");
 
-      fireEvent.pointerUp(svg, { pointerId: 1 });
+      fireEvent.pointerUp(svg, { pointerType: "touch", pointerId: 1 });
       expect(screen.getByTestId("AssetDetail__price")).toHaveTextContent(
         "$0.30",
       );
@@ -1029,12 +1033,16 @@ describe("AssetDetail", () => {
 
       // clientX 320 → viewBox x 160 → index 1 (p: "0.2213"). The chart's
       // formatter keeps all 4 sub-dollar decimals; spot shows 2 ("$0.22").
-      fireEvent.pointerDown(svg, { clientX: 320, pointerId: 1 });
+      fireEvent.pointerDown(svg, {
+        pointerType: "touch",
+        clientX: 320,
+        pointerId: 1,
+      });
       expect(screen.getByTestId("AssetDetail__price")).toHaveTextContent(
         "$0.2213",
       );
 
-      fireEvent.pointerUp(svg, { pointerId: 1 });
+      fireEvent.pointerUp(svg, { pointerType: "touch", pointerId: 1 });
       expect(screen.getByTestId("AssetDetail__price")).toHaveTextContent(
         "$0.30",
       );
@@ -1063,7 +1071,11 @@ describe("AssetDetail", () => {
 
       // 1.235 → "$1.24": at a dollar and above the chart's formatter is the
       // standard fiat format, same as spot.
-      fireEvent.pointerDown(svg, { clientX: 320, pointerId: 1 });
+      fireEvent.pointerDown(svg, {
+        pointerType: "touch",
+        clientX: 320,
+        pointerId: 1,
+      });
       expect(screen.getByTestId("AssetDetail__price")).toHaveTextContent(
         "$1.24",
       );
@@ -1092,6 +1104,7 @@ describe("AssetDetail", () => {
 
       rectSpy = mockChartRect();
       fireEvent.pointerDown(await screen.findByTestId("TokenPriceChart__svg"), {
+        pointerType: "touch",
         clientX: 320,
         pointerId: 1,
       });

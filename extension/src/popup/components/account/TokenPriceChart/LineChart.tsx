@@ -293,14 +293,20 @@ const toViewBoxX = (event: React.PointerEvent<SVGSVGElement>): number => {
   return ((event.clientX - rect.left) / rect.width) * CHART_VIEWBOX_WIDTH;
 };
 
+/** A mouse inspects by hovering; touch and pen have no hover. */
+const isHoverPointer = (event: React.PointerEvent) =>
+  event.pointerType === "mouse";
+
 /**
  * Memoised on props: the parent re-renders on unrelated state (price polls,
  * menu), and the per-move inspect props are the only ones that churn.
  *
- * Drag-to-inspect is pointer-only (§7.4): pointerdown arms, capture keeps
- * moves flowing, up/cancel clears. Keyboard users keep everything shown by
- * default — chart, per-range delta, label — and lose arbitrary-point
- * inspection specifically; focusable guide as a follow-up.
+ * Inspection is pointer-only (§7.4). A mouse inspects by hovering: entering
+ * arms, moves follow, leaving clears. Touch and pen have no hover, so they
+ * press to drag: pointerdown arms, capture keeps moves flowing, up/cancel
+ * clears. Keyboard users keep everything shown by default — chart,
+ * per-range delta, label — and lose arbitrary-point inspection specifically;
+ * focusable guide as a follow-up.
  */
 export const LineChart = React.memo(function LineChart({
   points,
@@ -338,8 +344,8 @@ export const LineChart = React.memo(function LineChart({
   const onInspectEndRef = useRef(onInspectEnd);
   onInspectEndRef.current = onInspectEnd;
 
-  // An unmount mid-drag (the skeleton replacing the chart) fires no pointerup,
-  // so the parent would otherwise keep the inspection it was never told ended.
+  // An unmount mid-inspection (the skeleton replacing the chart) fires no
+  // pointerup or pointerleave, so the parent would otherwise keep the inspection it was never told ended.
   useEffect(
     () => () => {
       if (activePointerIdRef.current !== null) {
@@ -350,13 +356,40 @@ export const LineChart = React.memo(function LineChart({
     [],
   );
 
+  const canInspect = Boolean(onInspectStart) && xs.length >= 2;
+  const startInspection = (event: React.PointerEvent<SVGSVGElement>) => {
+    activePointerIdRef.current = event.pointerId;
+    downClientXRef.current = event.clientX;
+    hasCrossedMoveThresholdRef.current = false;
+    onInspectStart?.(nearestCoordinateIndex(xs, toViewBoxX(event)));
+  };
+
+  const handlePointerEnter = (event: React.PointerEvent<SVGSVGElement>) => {
+    if (
+      isHoverPointer(event) &&
+      canInspect &&
+      activePointerIdRef.current === null
+    ) {
+      startInspection(event);
+    }
+  };
+  const handlePointerLeave = (event: React.PointerEvent<SVGSVGElement>) => {
+    if (isHoverPointer(event)) {
+      endInspection(event);
+    }
+  };
+
   const handlePointerDown = (event: React.PointerEvent<SVGSVGElement>) => {
+    // The mouse is already inspecting from hover; a click changes nothing.
+    if (isHoverPointer(event)) {
+      return;
+    }
     // A right/middle press opens a menu or autoscrolls; it must not arm or
     // take the lock, or no pointerup may ever release it.
     if (!event.isPrimary || event.button !== 0) {
       return;
     }
-    if (!onInspectStart || xs.length < 2) {
+    if (!canInspect) {
       return;
     }
     // A second pointer while one is already inspecting is ignored outright:
@@ -365,16 +398,20 @@ export const LineChart = React.memo(function LineChart({
     if (activePointerIdRef.current !== null) {
       return;
     }
-    activePointerIdRef.current = event.pointerId;
-    downClientXRef.current = event.clientX;
-    hasCrossedMoveThresholdRef.current = false;
     // Keep receiving moves after the pointer leaves the svg; jsdom lacks it.
     if (typeof event.currentTarget.setPointerCapture === "function") {
       event.currentTarget.setPointerCapture(event.pointerId);
     }
-    onInspectStart(nearestCoordinateIndex(xs, toViewBoxX(event)));
+    startInspection(event);
   };
   const handlePointerMove = (event: React.PointerEvent<SVGSVGElement>) => {
+    // No pointerenter fires when the chart mounts under a resting mouse.
+    if (isHoverPointer(event) && activePointerIdRef.current === null) {
+      if (canInspect) {
+        startInspection(event);
+      }
+      return;
+    }
     // Idle (no pointer down) or a pointer that is not the active one: ignored.
     if (activePointerIdRef.current !== event.pointerId || !onInspectMove) {
       return;
@@ -391,14 +428,14 @@ export const LineChart = React.memo(function LineChart({
     onInspectMove(nearestCoordinateIndex(xs, toViewBoxX(event)));
   };
   /**
-   * End of the activation: `pointerup`, `pointercancel` (the browser claimed
-   * the gesture as a scroll) and `lostpointercapture` (capture taken away by
-   * anything else) all land here, and clearing is idempotent so overlapping
+   * End of the activation: a mouse leaving, and for a press `pointerup`,
+   * `pointercancel` (the browser claimed the gesture as a scroll) and
+   * `lostpointercapture` (capture taken away by anything else) all land here, and clearing is idempotent so overlapping
    * ones cost nothing. A pointer OTHER than the active one cannot end someone
    * else's drag; an end with no pointer tracked still clears, so a state the
    * component never armed can always be released.
    */
-  const handlePointerEnd = (event: React.PointerEvent<SVGSVGElement>) => {
+  const endInspection = (event: React.PointerEvent<SVGSVGElement>) => {
     if (
       activePointerIdRef.current !== null &&
       activePointerIdRef.current !== event.pointerId
@@ -407,6 +444,12 @@ export const LineChart = React.memo(function LineChart({
     }
     activePointerIdRef.current = null;
     onInspectEnd?.();
+  };
+  // A mouse button release is not the end of a hover; only leaving is.
+  const handlePointerEnd = (event: React.PointerEvent<SVGSVGElement>) => {
+    if (!isHoverPointer(event)) {
+      endInspection(event);
+    }
   };
 
   const endPoint = coordinates[coordinates.length - 1];
@@ -444,6 +487,8 @@ export const LineChart = React.memo(function LineChart({
       role="img"
       aria-label={label}
       data-testid="TokenPriceChart__svg"
+      onPointerEnter={handlePointerEnter}
+      onPointerLeave={handlePointerLeave}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerEnd}

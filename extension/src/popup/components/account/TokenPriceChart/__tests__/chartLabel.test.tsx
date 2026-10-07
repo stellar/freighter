@@ -196,11 +196,19 @@ describe("TokenPriceChart — the chart's text alternative", () => {
 
     const rectSpy = mockChartRect();
     const svg = screen.getByTestId("TokenPriceChart__svg");
-    fireEvent.pointerDown(svg, { clientX: 640, pointerId: 1 });
+    fireEvent.pointerDown(svg, {
+      pointerType: "touch",
+      clientX: 640,
+      pointerId: 1,
+    });
     expect(timestamp()).toBe(expected(nowSeconds));
     expect(timestamp()).not.toBe(expected(nowSeconds + 600));
 
-    fireEvent.pointerMove(svg, { clientX: 0, pointerId: 1 });
+    fireEvent.pointerMove(svg, {
+      pointerType: "touch",
+      clientX: 0,
+      pointerId: 1,
+    });
     expect(timestamp()).toBe(expected(nowSeconds - 900));
     rectSpy.mockRestore();
   });

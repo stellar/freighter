@@ -15,8 +15,9 @@ export const INSPECT_DOT_RING_WIDTH = 2;
 /** Figma's 8px inspected dot, in viewBox units (≈px); distinct from the 6px end dot. */
 export const INSPECT_DOT_RADIUS = 4;
 /**
- * Client pixels. Below this a press is a tap, not a drag — keeps `brushed`
- * meaning "the user swept", not "a finger jittered".
+ * Client pixels from where the inspection started. Below this a tap or a
+ * hover pass is not a sweep — keeps `brushed` meaning "the user swept", not
+ * "a pointer jittered".
  */
 export const INSPECT_MOVE_THRESHOLD_PX = 4;
 
