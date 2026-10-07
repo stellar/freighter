@@ -829,6 +829,49 @@ describe("Account view", () => {
     });
   });
 
+  it("shows the history error, not an endless skeleton, when the history fetch fails", async () => {
+    jest
+      .spyOn(ApiInternal, "getAccountHistory")
+      .mockImplementation(() => Promise.reject(new Error("history down")));
+
+    render(
+      <Wrapper
+        routes={[ROUTES.welcome]}
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
+            publicKey: "G1",
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: TESTNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+          },
+        }}
+      >
+        <Account />
+      </Wrapper>,
+    );
+
+    await waitFor(async () => {
+      await fireEvent.click(
+        screen.getByTestId("AccountAssets__asset--loading-USDC"),
+      );
+    });
+    await waitFor(() => {
+      expect(
+        screen.getByTestId("asset-detail-available-copy"),
+      ).toHaveTextContent("100 USDC");
+    });
+    await waitFor(() => {
+      expect(screen.getByTestId("AssetDetail__list__error")).toHaveTextContent(
+        "Unable to load history",
+      );
+    });
+    expect(screen.queryByTestId("AssetDetail__list__loader")).toBeNull();
+  });
+
   it("loads LP shares", async () => {
     const mockLpBalance = {
       balances: {
