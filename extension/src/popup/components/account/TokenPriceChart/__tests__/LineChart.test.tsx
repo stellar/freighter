@@ -726,6 +726,38 @@ describe("hover to inspect (mouse)", () => {
     expect(cbs.onInspectStart).toHaveBeenLastCalledWith(3);
   });
 
+  it("hands the inspection to a touch press while the mouse rests on the chart", () => {
+    const cbs = callbacks();
+    renderHoverable(cbs);
+    const svg = screen.getByTestId("TokenPriceChart__svg");
+
+    fireEvent.pointerEnter(svg, mouse(200));
+    fireEvent.pointerDown(svg, {
+      pointerType: "touch",
+      pointerId: 7,
+      clientX: 0,
+      button: 0,
+    });
+    expect(cbs.onInspectStart).toHaveBeenCalledTimes(2);
+    expect(cbs.onInspectStart).toHaveBeenLastCalledWith(0);
+
+    fireEvent.pointerMove(svg, {
+      pointerType: "touch",
+      pointerId: 7,
+      clientX: 640,
+    });
+    expect(cbs.onInspectMove).toHaveBeenLastCalledWith(3);
+
+    // The mouse can no longer end or steer the touch's inspection.
+    fireEvent.pointerMove(svg, mouse(200));
+    fireEvent.pointerLeave(svg, mouse(200));
+    expect(cbs.onInspectMove).toHaveBeenCalledTimes(1);
+    expect(cbs.onInspectEnd).not.toHaveBeenCalled();
+
+    fireEvent.pointerUp(svg, { pointerType: "touch", pointerId: 7 });
+    expect(cbs.onInspectEnd).toHaveBeenCalledTimes(1);
+  });
+
   it("ends the inspection when the chart unmounts under the pointer", () => {
     const cbs = callbacks();
     const { unmount } = renderHoverable(cbs);

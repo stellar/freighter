@@ -339,6 +339,7 @@ export const LineChart = React.memo(function LineChart({
   // The pointer id that armed the inspection; null while idle. Any other
   // pointer is ignored so a second finger cannot restart or hijack the drag.
   const activePointerIdRef = useRef<number | null>(null);
+  const activeIsHoverRef = useRef(false);
   const downClientXRef = useRef(0);
   const hasCrossedMoveThresholdRef = useRef(false);
   const onInspectEndRef = useRef(onInspectEnd);
@@ -359,6 +360,7 @@ export const LineChart = React.memo(function LineChart({
   const canInspect = Boolean(onInspectStart) && xs.length >= 2;
   const startInspection = (event: React.PointerEvent<SVGSVGElement>) => {
     activePointerIdRef.current = event.pointerId;
+    activeIsHoverRef.current = isHoverPointer(event);
     downClientXRef.current = event.clientX;
     hasCrossedMoveThresholdRef.current = false;
     onInspectStart?.(nearestCoordinateIndex(xs, toViewBoxX(event)));
@@ -394,8 +396,9 @@ export const LineChart = React.memo(function LineChart({
     }
     // A second pointer while one is already inspecting is ignored outright:
     // restarting the activation would emit a second `brushed` and hand the
-    // drag to a finger that never armed it.
-    if (activePointerIdRef.current !== null) {
+    // drag to a finger that never armed it. A resting mouse is the exception:
+    // it would otherwise block touch until the cursor moved off the chart.
+    if (activePointerIdRef.current !== null && !activeIsHoverRef.current) {
       return;
     }
     // Keep receiving moves after the pointer leaves the svg; jsdom lacks it.
