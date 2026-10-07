@@ -25,6 +25,12 @@
       border-radius: pxToRem(12px);
       overflow: hidden;
 
+      // The image's own 24px radius would expose the tile's background in
+      // the corners; the tile's clip is the only rounding.
+      .CollectibleInfo__image {
+        border-radius: 0;
+      }
+
       &__overlay {
         position: absolute;
         top: 0;
