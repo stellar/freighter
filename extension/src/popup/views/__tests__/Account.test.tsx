@@ -196,9 +196,11 @@ jest
   .spyOn(ApiInternal, "getTokenIds")
   .mockImplementation(() => Promise.resolve(["C1"]));
 
-jest
+const resolveDefaultAccountHistory = () =>
+  Promise.resolve(mockHistoryOperations.operations);
+const getAccountHistorySpy = jest
   .spyOn(ApiInternal, "getAccountHistory")
-  .mockImplementation(() => Promise.resolve(mockHistoryOperations.operations));
+  .mockImplementation(resolveDefaultAccountHistory);
 
 jest.spyOn(UseAssetDomain, "useAssetDomain").mockImplementation(() => {
   return { assetDomain: "centre.io", error: "" };
@@ -290,6 +292,9 @@ describe("Account view", () => {
   afterEach(() => {
     jest.useRealTimers();
     jest.clearAllMocks();
+    // clearAllMocks keeps implementations; a test that overrides history
+    // must not hand its rejection or delay to the tests after it.
+    getAccountHistorySpy.mockImplementation(resolveDefaultAccountHistory);
   });
 
   jest
