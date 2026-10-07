@@ -109,10 +109,11 @@
         color: var(--sds-clr-red-09);
       }
     }
-  }
 
-  &__delta-ghost {
-    vertical-align: middle;
+    .AssetDetail__delta-ghost {
+      // Top-aligned so the 24px pill fits the 24px line box; middle grows the row and shifts the chart.
+      vertical-align: top;
+    }
   }
 
   &__list {
