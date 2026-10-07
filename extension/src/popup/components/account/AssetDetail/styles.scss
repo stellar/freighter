@@ -111,15 +111,8 @@
     }
   }
 
-  // The Figma "Data loading" skeleton pill standing in for the delta text,
-  // fading out to the right as the design draws it.
   &__delta-ghost {
-    background: linear-gradient(to right, var(--sds-clr-gray-03), transparent);
-    border-radius: pxToRem(8px);
-    display: inline-block;
-    height: pxToRem(14px);
     vertical-align: middle;
-    width: pxToRem(112px);
   }
 
   &__list {

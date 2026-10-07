@@ -1008,6 +1008,28 @@ describe("AssetDetail", () => {
       expect(delta().textContent).toBe("");
     });
 
+    it("draws the loading delta as the frame's 146 × 24 shimmer pill", async () => {
+      jest.useFakeTimers();
+      historySpy.mockImplementation(({ range }) =>
+        range === "1Y" ? new Promise(() => {}) : Promise.resolve(HISTORY_1D),
+      );
+      renderDetail(makeState());
+      await flush();
+      expect(delta().textContent).toBe("+$0.0014 (0.86%)");
+
+      const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
+      await user.click(screen.getByRole("tab", { name: "1Y" }));
+
+      const pill = document.querySelector(
+        ".AssetDetail__delta-ghost",
+      ) as HTMLElement;
+      expect(pill).not.toBeNull();
+      expect(pill).toHaveClass("Shimmer", "Shimmer--pill");
+      expect(pill).toHaveAttribute("aria-hidden", "true");
+      expect(pill.style.width).toBe("9.125rem");
+      expect(pill.style.height).toBe("1.5rem");
+    });
+
     it("shows no delta text when the range carries no change", async () => {
       historySpy.mockResolvedValue(
         makeHistory({ points: densePoints(97), change: null }),

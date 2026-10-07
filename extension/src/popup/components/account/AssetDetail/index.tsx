@@ -52,6 +52,7 @@ import {
   isSorobanBalance,
 } from "popup/helpers/balance";
 import { CopyValue } from "popup/components/CopyValue";
+import { Shimmer } from "popup/components/Shimmer";
 import {
   AssetType,
   LiquidityPoolShareAsset,
@@ -413,9 +414,10 @@ export const AssetDetail = ({
                 data-testid="AssetDetail__delta"
               >
                 {shownDelta.isLoading ? (
-                  <span
+                  <Shimmer
                     className="AssetDetail__delta-ghost"
-                    aria-hidden="true"
+                    width="9.125rem"
+                    height="1.5rem"
                   />
                 ) : (
                   shownDelta.text
