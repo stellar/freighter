@@ -20,9 +20,9 @@ const stubUnfundedBalances = async (page: Page) => {
       },
     });
   });
-  // v2 is the default balances source and stubAllExternalApis already
-  // registered a funded fixture for it, so the v1 override alone leaves the
-  // account looking funded. A null fixture serves is_funded: false.
+  // stubAllExternalApis registered a funded v2 fixture, and remote config can
+  // switch balances to v2, so override v2 too. A null fixture serves
+  // is_funded: false.
   await stubAccountBalancesV2(page, () => null);
 };
 
