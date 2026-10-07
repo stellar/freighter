@@ -1,0 +1,88 @@
+@use "../../styles/utils.scss" as *;
+
+// Keep the cycle in step with SHIMMER_CYCLE_MS in index.tsx.
+@keyframes Shimmer-sweep {
+  0% {
+    transform: translateX(-100%);
+  }
+  84.211% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.Shimmer {
+  display: inline-block;
+  overflow: hidden;
+  position: relative;
+  vertical-align: middle;
+
+  &::after {
+    animation: Shimmer-sweep 1.9s linear infinite;
+    animation-delay: var(--shimmer-delay, 0ms);
+    background: linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 0.03) 30%,
+      rgba(255, 255, 255, 0.07) 50%,
+      rgba(255, 255, 255, 0.03) 70%,
+      rgba(255, 255, 255, 0) 100%
+    );
+    content: "";
+    inset: 0;
+    position: absolute;
+    transform: translateX(-100%);
+  }
+
+  &--pill {
+    background: linear-gradient(
+      to right,
+      var(--sds-clr-gray-05),
+      var(--sds-clr-gray-01)
+    );
+    border-radius: pxToRem(8px);
+  }
+
+  &--hairline {
+    background: var(--sds-clr-gray-06);
+    display: block;
+
+    &::after {
+      background: linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0) 0%,
+        rgba(255, 255, 255, 0.08) 30%,
+        rgba(255, 255, 255, 0.15) 50%,
+        rgba(255, 255, 255, 0.08) 70%,
+        rgba(255, 255, 255, 0) 100%
+      );
+    }
+  }
+
+  &--static::after {
+    animation: none;
+    display: none;
+  }
+}
+
+// The frame's 7% white vanishes on a pill fading to near-white; 60% reads.
+.sds-theme-light .Shimmer--pill {
+  background: linear-gradient(
+    to right,
+    var(--sds-clr-gray-01),
+    var(--sds-clr-gray-05)
+  );
+
+  &::after {
+    background: linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 0.3) 30%,
+      rgba(255, 255, 255, 0.6) 50%,
+      rgba(255, 255, 255, 0.3) 70%,
+      rgba(255, 255, 255, 0) 100%
+    );
+  }
+}
