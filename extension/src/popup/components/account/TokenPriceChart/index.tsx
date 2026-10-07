@@ -397,10 +397,11 @@ export const TokenPriceChart = ({
 
   const isLoading =
     state.state === RequestState.IDLE || state.state === RequestState.LOADING;
-  // Set while the hairline shows, so the chart that replaces it rises out of
-  // it; cleared once that chart has mounted.
+  // Set while a fetch is in flight, so the chart that replaces the hairline
+  // rises out of it; cleared once that chart has mounted. Not on IDLE: a cache
+  // hit goes IDLE → SUCCESS within one commit and should paint directly.
   const risesFromHairlineRef = useRef(false);
-  if (isLoading) {
+  if (state.state === RequestState.LOADING) {
     risesFromHairlineRef.current = true;
   }
   useEffect(() => {

@@ -528,6 +528,38 @@ describe("TokenPriceChart", () => {
     }
   });
 
+  it("paints a cached open directly — it rises only out of a visible shimmer", async () => {
+    respondByRange({ "1D": HISTORY_1D });
+    const store = makeDummyStore({});
+    const chart = (
+      <Provider store={store}>
+        <TokenPriceChart
+          token="native"
+          networkDetails={MAINNET_NETWORK_DETAILS}
+          fallback24hPercent="1.09"
+          onDeltaChange={handleDelta}
+        />
+      </Provider>
+    );
+
+    const first = render(chart);
+    await waitFor(() =>
+      expect(screen.getByTestId("TokenPriceChart__svg")).toHaveClass(
+        "LineChart--rise",
+      ),
+    );
+    first.unmount();
+
+    render(chart);
+    await waitFor(() =>
+      expect(screen.getByTestId("TokenPriceChart__svg")).toBeInTheDocument(),
+    );
+    expect(requestCountForRange("1D")).toBe(1);
+    expect(screen.getByTestId("TokenPriceChart__svg")).not.toHaveClass(
+      "LineChart--rise",
+    );
+  });
+
   it("reports no delta for a one-point series, even when change is present", async () => {
     // The backend computes `change` from a single point; a signed delta above
     // "No price data for this period" would contradict the canvas.
