@@ -110,9 +110,11 @@ const ALLOWED_RAW_COLORS: Record<string, string[]> = {
 const BLACK_ALPHA = /^rgba\(0,\s*0,\s*0,\s*[\d.]+\)$/;
 
 // The raw-color scan covers authored styles and components. SVG assets are
-// static artwork and keep literal colors until #18 decides per-theme asset
-// handling — but the banned-palette scan below covers them too, so a
-// Freighter-colored asset can't land in the meantime.
+// static artwork: the dark-baked ones render inline (`?react`) with
+// var(--sds-clr-*) fills; the rest keep literal colors that read in both
+// themes (mid-gray glyphs, status colors, fixed campaign artwork). The
+// banned-palette scan below still covers them, so a Freighter-colored asset
+// can't land.
 const STYLE_EXTENSIONS = [".scss", ".ts", ".tsx"];
 const ASSET_EXTENSIONS = [...STYLE_EXTENSIONS, ".svg", ".html"];
 const IGNORED_PATH_SEGMENTS = [
