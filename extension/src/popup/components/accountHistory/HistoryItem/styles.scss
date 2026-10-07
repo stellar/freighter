@@ -57,7 +57,7 @@
   &__icon {
     position: relative;
     // Keeps the badge/swap z-indexes local; unscoped, they outrank the
-    // SlideupModal scrim (z-index 1) and stay bright over it.
+    // default (non-backdrop) SlideupModal scrim at z-index 1.
     isolation: isolate;
     display: flex;
     align-items: center;

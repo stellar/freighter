@@ -190,20 +190,27 @@ test("History detail sheet is legible in light mode", async ({
   expect(await status.evaluate(colorOf)).toBe(await feeValue.evaluate(colorOf));
 
   // The failed row's status badge sits under the sheet's scrim rather than
-  // drawing over it: the topmost element at its center is the scrim.
-  const badge = page.locator(".HistoryItem__icon__small").first();
+  // drawing over it: the topmost element at its center is the scrim. Polled
+  // because the scrim's z-index transitions in after the sheet opens.
+  const badge = page
+    .getByTestId("history-item")
+    .nth(1)
+    .locator(".HistoryItem__icon__small");
   const box = await badge.boundingBox();
   expect(box).not.toBeNull();
-  const topmost = await page.evaluate(
-    ({ x, y }) => {
-      const el = document.elementFromPoint(x, y);
-      return el?.closest(".HistoryItem__icon__small")
-        ? "badge"
-        : (el?.getAttribute("class") ?? "");
-    },
-    { x: box!.x + box!.width / 2, y: box!.y + box!.height / 2 },
-  );
-  expect(topmost).toContain("LoadingBackground");
+  await expect
+    .poll(() =>
+      page.evaluate(
+        ({ x, y }) => {
+          const el = document.elementFromPoint(x, y);
+          return el?.closest(".HistoryItem__icon__small")
+            ? "badge"
+            : (el?.getAttribute("class") ?? "");
+        },
+        { x: box!.x + box!.width / 2, y: box!.y + box!.height / 2 },
+      ),
+    )
+    .toContain("LoadingBackground");
 });
 
 test("Orders failed transactions by date alongside successful ones", async ({
