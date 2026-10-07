@@ -60,11 +60,12 @@ describe("Shimmer", () => {
 
   it("joins the running sweep: delays differ by the time between mounts", () => {
     setReducedMotion(false);
+    const t0 = performance.now();
     const now = jest.spyOn(performance, "now");
 
-    now.mockReturnValue(1000);
+    now.mockReturnValue(t0 + 1000);
     render(<Shimmer data-testid="a" width="1rem" height="1rem" />);
-    now.mockReturnValue(1000 + 250 + SHIMMER_CYCLE_MS + 700);
+    now.mockReturnValue(t0 + 1000 + 250 + SHIMMER_CYCLE_MS + 700);
     render(<Shimmer data-testid="b" width="1rem" height="1rem" />);
 
     const delayMs = (id: string) => {
