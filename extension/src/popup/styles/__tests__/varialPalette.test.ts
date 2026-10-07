@@ -103,6 +103,16 @@ const ALLOWED_RAW_COLORS: Record<string, string[]> = {
     "rgba(22, 23, 23, 0)",
     "rgba(21, 22, 22, 0.78)",
   ],
+  // Shimmer highlight: white in both themes by design, matching mobile.
+  "popup/components/Shimmer/styles.scss": [
+    "rgba(255, 255, 255, 0)",
+    "rgba(255, 255, 255, 0.03)",
+    "rgba(255, 255, 255, 0.07)",
+    "rgba(255, 255, 255, 0.08)",
+    "rgba(255, 255, 255, 0.15)",
+    "rgba(255, 255, 255, 0.3)",
+    "rgba(255, 255, 255, 0.6)",
+  ],
 };
 
 // Neutral shadow/scrim alphas; black-based, so they don't invert when the
