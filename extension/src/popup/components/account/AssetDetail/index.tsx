@@ -229,8 +229,11 @@ export const AssetDetail = ({
     return null;
   }
 
-  const assetOperations =
-    historyData?.operationsByAsset?.[selectedAsset] || null;
+  // A missing key means no operations for this asset, not a pending fetch:
+  // only null history (not fetched yet) should keep the loader up.
+  const assetOperations = historyData
+    ? (historyData.operationsByAsset?.[selectedAsset] ?? [])
+    : null;
 
   let filteredAssetOperations = null;
   let activeOperation = null;

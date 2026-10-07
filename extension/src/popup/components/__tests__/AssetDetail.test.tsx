@@ -20,6 +20,7 @@ import { mockAccounts, Wrapper, mockBalances } from "popup/__testHelpers__";
 import { resetCacheWriteClaims } from "helpers/cacheWrites";
 import { RANGE_SWITCH_DEBOUNCE_MS } from "popup/components/account/TokenPriceChart/constants";
 import { AppDataType } from "helpers/hooks/useGetAppData";
+import { AccountHistoryData } from "popup/views/Account/hooks/useGetAccountHistoryData";
 
 const mockHistoryData = {
   type: AppDataType.RESOLVED,
@@ -1132,7 +1133,10 @@ describe("AssetDetail", () => {
 });
 
 describe("AssetDetail history loading state", () => {
-  const makeProps = (hasHistoryError?: boolean) => ({
+  const makeProps = (
+    hasHistoryError?: boolean,
+    historyData: AccountHistoryData | null = null,
+  ) => ({
     handleClose: () => null,
     accountBalances: {
       balances: [
@@ -1144,7 +1148,7 @@ describe("AssetDetail history loading state", () => {
       ],
     } as any,
     selectedAsset: "native",
-    historyData: null,
+    historyData,
     hasHistoryError,
   });
 
@@ -1195,5 +1199,18 @@ describe("AssetDetail history loading state", () => {
     expect(screen.getByTestId("AssetDetail__list__error")).toHaveTextContent(
       "Unable to load history",
     );
+  });
+
+  it("shows the empty state when history loaded but has nothing for this asset", async () => {
+    renderDetail(
+      makeProps(undefined, {
+        type: AppDataType.RESOLVED,
+        operationsByAsset: {},
+      }),
+    );
+
+    await waitFor(() => screen.getByTestId("AssetDetail"));
+    expect(screen.queryByTestId("AssetDetail__list__loader")).toBeNull();
+    expect(screen.getByText("No transactions to show")).toBeInTheDocument();
   });
 });
