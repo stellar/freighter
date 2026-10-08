@@ -128,6 +128,91 @@ test("View failed transaction", async ({ page, extensionId, context }) => {
     screenshot: "failed-transaction.png",
   });
 });
+test("History detail sheet is legible in light mode", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  test.slow();
+  const payment = {
+    amount: "0.0010000",
+    asset_code: "USDC",
+    asset_issuer: "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
+    asset_type: "credit_alphanum4",
+    from: "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
+    source_account: "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
+    to: "GCKUVXILBNYS4FDNWCGCYSJBY2PBQ4KAW2M5CODRVJPUFM62IJFH67J2",
+    transaction_attr: {},
+    type: "payment",
+    type_i: 1,
+  };
+  const mockAccountHistoryData = [
+    {
+      ...payment,
+      created_at: "2025-03-22T22:28:46Z",
+      id: "164007621169154",
+      paging_token: "164007621169154",
+      transaction_hash:
+        "786601028de9ddf40a1c24461a6a9c0415d60a39255c35eccad0b52ac1e700a5",
+      transaction_successful: true,
+    },
+    {
+      ...payment,
+      created_at: "2025-03-21T22:28:46Z",
+      id: "164007621169153",
+      paging_token: "164007621169153",
+      transaction_hash:
+        "686601028de9ddf40a1c24461a6a9c0415d60a39255c35eccad0b52ac1e700a5",
+      transaction_successful: false,
+    },
+  ];
+
+  const stubOverrides = async () => {
+    await stubAccountHistoryWith(page, context, mockAccountHistoryData);
+  };
+
+  await page.emulateMedia({ colorScheme: "light" });
+  await loginToTestAccount({ page, extensionId, context, stubOverrides });
+  await page.getByTestId("nav-link-account-history").click();
+  await expect(page.getByTestId("history-item")).toHaveCount(2, {
+    timeout: 30000,
+  });
+
+  await page.getByTestId("history-item").first().click();
+  const status = page.getByTestId("TransactionDetailModal__status");
+  await expect(status).toHaveText("Success");
+
+  // "Success" reads like the other metadata values, not white-on-white.
+  const feeValue = page
+    .locator(".TransactionDetailModal__metadata .Metadata__value")
+    .nth(1);
+  const colorOf = (el: Element) => getComputedStyle(el).color;
+  expect(await status.evaluate(colorOf)).toBe(await feeValue.evaluate(colorOf));
+
+  // The failed row's status badge sits under the sheet's scrim rather than
+  // drawing over it: the topmost element at its center is the scrim. Polled
+  // because the scrim's z-index transitions in after the sheet opens.
+  const badge = page
+    .getByTestId("history-item")
+    .nth(1)
+    .locator(".HistoryItem__icon__small");
+  const box = await badge.boundingBox();
+  expect(box).not.toBeNull();
+  await expect
+    .poll(() =>
+      page.evaluate(
+        ({ x, y }) => {
+          const el = document.elementFromPoint(x, y);
+          return el?.closest(".HistoryItem__icon__small")
+            ? "badge"
+            : (el?.getAttribute("class") ?? "");
+        },
+        { x: box!.x + box!.width / 2, y: box!.y + box!.height / 2 },
+      ),
+    )
+    .toContain("LoadingBackground");
+});
+
 test("Orders failed transactions by date alongside successful ones", async ({
   page,
   extensionId,

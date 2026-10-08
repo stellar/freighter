@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { View } from "popup/basics/layout/View";
 
-import VarialLogo from "popup/assets/logo-varial.svg";
+import VarialLogo from "popup/assets/logo-varial.svg?react";
 
 import "./styles.scss";
 
@@ -33,7 +33,7 @@ export const About = () => {
       <View.Content hasNoTopPadding>
         <div className="About">
           <div>
-            <img alt={t("Varial logo")} src={VarialLogo} />
+            <VarialLogo role="img" aria-label={t("Varial logo")} />
           </div>
           <div className="About__body">
             <div className="About__info">

@@ -615,3 +615,22 @@ describe("app.opened", () => {
     expect(call![1].surface).toBeDefined();
   });
 });
+
+describe("color_scheme common property (#18)", () => {
+  afterEach(() => {
+    document.body.className = "";
+  });
+
+  it("stamps the rendered scheme from the body class", () => {
+    document.body.className = "sds-theme-light";
+    expect(buildCommonContext({} as never).color_scheme).toBe("light");
+
+    document.body.className = "sds-theme-dark";
+    expect(buildCommonContext({} as never).color_scheme).toBe("dark");
+  });
+
+  it("defaults to light when no theme class is applied yet", () => {
+    document.body.className = "";
+    expect(buildCommonContext({} as never).color_scheme).toBe("light");
+  });
+});

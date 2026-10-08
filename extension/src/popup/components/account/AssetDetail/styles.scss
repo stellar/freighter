@@ -27,7 +27,7 @@
   &__balance-label {
     display: flex;
     align-items: center;
-    color: var(--sds-clr-gray-09);
+    color: var(--sds-clr-gray-11);
 
     svg {
       margin-right: pxToRem(6px);
@@ -76,7 +76,7 @@
     line-height: pxToRem(24px);
     margin-top: pxToRem(8px);
     &.positive {
-      color: var(--sds-clr-green-09);
+      color: var(--sds-clr-green-10);
     }
 
     &.negative {
@@ -182,7 +182,7 @@
       line-height: 150%;
 
       &--isSuspicious {
-        color: var(--color-red-70);
+        color: var(--sds-clr-red-09);
       }
     }
   }

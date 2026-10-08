@@ -89,6 +89,7 @@ const ALLOWED_RAW_COLORS: Record<string, string[]> = {
   // drop shadow.
   "popup/components/account/Usdt0LaunchBanner/styles.scss": [
     "#002d19",
+    "#a0a0a0", // subtitle on the fixed campaign surface; must not theme-flip
     "rgba(0, 0, 0, 0.25)",
     "rgba(255, 255, 255, 0.1)",
   ],
@@ -102,6 +103,13 @@ const ALLOWED_RAW_COLORS: Record<string, string[]> = {
     "rgba(22, 23, 23, 0)",
     "rgba(21, 22, 22, 0.78)",
   ],
+  // Trending card over its artwork: fade and tag text from Figma 1123-116809,
+  // fixed so they read on the image in both themes.
+  "popup/views/Discover/components/TrendingCarousel/styles.scss": [
+    "#232323",
+    "#c7c7c7",
+    "rgba(35, 35, 35, 0)",
+  ],
 };
 
 // Neutral shadow/scrim alphas; black-based, so they don't invert when the
@@ -109,9 +117,11 @@ const ALLOWED_RAW_COLORS: Record<string, string[]> = {
 const BLACK_ALPHA = /^rgba\(0,\s*0,\s*0,\s*[\d.]+\)$/;
 
 // The raw-color scan covers authored styles and components. SVG assets are
-// static artwork and keep literal colors until #18 decides per-theme asset
-// handling — but the banned-palette scan below covers them too, so a
-// Freighter-colored asset can't land in the meantime.
+// static artwork: the dark-baked ones render inline (`?react`) with
+// var(--sds-clr-*) fills; the rest keep literal colors that read in both
+// themes (mid-gray glyphs, status colors, fixed campaign artwork). The
+// banned-palette scan below still covers them, so a Freighter-colored asset
+// can't land.
 const STYLE_EXTENSIONS = [".scss", ".ts", ".tsx"];
 const ASSET_EXTENSIONS = [...STYLE_EXTENSIONS, ".svg", ".html"];
 const IGNORED_PATH_SEGMENTS = [
@@ -162,6 +172,60 @@ function rawColorsIn(file: string): string[] {
 function relToSrc(file: string): string {
   return path.relative(SRC_ROOT, file).split(path.sep).join("/");
 }
+
+// Dead font-token namespace pending its own typography fix: these resolve to
+// nothing today (inherited weight/size ships), and correcting them app-wide is
+// a design-affecting change that doesn't belong to the palette/theme work.
+const KNOWN_UNRESOLVED = [
+  "--font-weight-light",
+  "--font-weight-regular",
+  "--font-weight-medium",
+  "--font-weight-semi-bold",
+  "--font-weight-bold",
+  "--font-size-secondary",
+];
+
+describe("custom properties resolve (freighter-private#18)", () => {
+  it("every var() used in the popup is defined in app source or SDS", () => {
+    // An undefined custom property doesn't error — the declaration silently
+    // computes to inherited/initial, which is how the pre-SDS --color-* refs
+    // shipped invisible for years and broke light mode (black check mark on
+    // the navy active-wallet bubble).
+    // Known limits: a definition anywhere in source counts (the scan is
+    // scope-blind — fine for custom properties, which inherit — and doesn't
+    // know which files a page actually loads), so it catches dangling names,
+    // not wrong scoping.
+    const files = walk(SRC_ROOT, STYLE_EXTENSIONS);
+    const defined = new Set<string>();
+    const defRe = /(--[A-Za-z0-9_-]+)\s*:/g;
+    [
+      ...files,
+      path.join(
+        SRC_ROOT,
+        "../../node_modules/@stellar/design-system/build/styles.min.css",
+      ),
+    ].forEach((file) => {
+      for (const m of stripComments(fs.readFileSync(file, "utf8")).matchAll(
+        defRe,
+      )) {
+        defined.add(m[1]);
+      }
+    });
+
+    const offenders = files.flatMap((file) => {
+      const content = stripComments(fs.readFileSync(file, "utf8"));
+      const out: string[] = [];
+      for (const m of content.matchAll(/var\(\s*(--[A-Za-z0-9_-]+)/g)) {
+        const name = m[1];
+        if (!defined.has(name) && !KNOWN_UNRESOLVED.includes(name)) {
+          out.push(`${relToSrc(file)}: ${name}`);
+        }
+      }
+      return out;
+    });
+    expect(offenders).toEqual([]);
+  });
+});
 
 describe("Varial palette (freighter-private#37)", () => {
   it("overrides the SDS lilac ramp with Varial Blue for both themes", () => {

@@ -7,7 +7,6 @@
 .TransactionDetail {
   &__header {
     border-bottom: 1px solid var(--sds-clr-gray-04);
-    color: var(--color-white);
     font-size: 2rem;
     font-weight: var(--font-weight-light);
     padding-bottom: 1.5rem;
@@ -18,7 +17,7 @@
     display: block;
 
     &--isMalicious {
-      color: var(--color-red-70);
+      color: var(--sds-clr-red-09);
     }
   }
 
@@ -313,10 +312,6 @@
         &.failed {
           color: var(--sds-clr-red-11);
         }
-
-        &.success {
-          color: var(--sds-clr-white);
-        }
       }
 
       &__label {
@@ -380,7 +375,7 @@
     }
 
     .AssetDiff__value {
-      font-weight: var(--sds-font-weight-medium);
+      font-weight: var(--sds-fw-medium);
 
       &.credit {
         color: var(--sds-clr-green-11);
