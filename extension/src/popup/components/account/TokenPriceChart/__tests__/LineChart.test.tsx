@@ -1,13 +1,29 @@
 import React from "react";
-import { act, render, screen } from "@testing-library/react";
+import {
+  act,
+  createEvent,
+  fireEvent,
+  render,
+  screen,
+} from "@testing-library/react";
 
 import { ApiTokenPriceHistoryPoint } from "@shared/api/types";
+import {
+  installPointerEventPolyfill,
+  mockChartRect,
+} from "popup/__testHelpers__/pointerEvents";
 import { LineChart, getPlottedRangeEnd } from "../LineChart";
 import {
   CHART_MORPH_DURATION_MS,
+  CHART_VIEWBOX_HEIGHT,
   CHART_VIEWBOX_WIDTH,
   PriceDirection,
 } from "../constants";
+
+// jest-fixed-jsdom has no PointerEvent; without this, fireEvent.pointerDown/
+// pointerMove below would silently drop clientX/pointerId. Installed once at
+// module scope, before any render.
+installPointerEventPolyfill();
 
 const getPolylinePoints = () =>
   screen.getByTestId("TokenPriceChart__polyline").getAttribute("points") || "";
@@ -189,6 +205,569 @@ describe("LineChart", () => {
     expect(screen.getByRole("img")).toHaveAccessibleName(
       "Price chart, 1D: Aug 25 to Aug 26, +0.86%",
     );
+  });
+
+  it("anchors the fill gradient in user space to the series' peak", () => {
+    // Coordinates: (0,132) (320,8) — the peak (p=1.20) sits at y=8.
+    render(
+      <LineChart
+        points={[
+          { t: 0, p: "1.00" },
+          { t: 900, p: "1.20" },
+        ]}
+        resolutionSeconds={900}
+        nowSeconds={2000}
+        direction={PriceDirection.Positive}
+        label="Price chart"
+      />,
+    );
+
+    const gradient = screen
+      .getByTestId("TokenPriceChart__svg")
+      .querySelector("linearGradient");
+    expect(gradient?.getAttribute("gradientUnits")).toBe("userSpaceOnUse");
+    expect(gradient?.getAttribute("x1")).toBe("0");
+    expect(gradient?.getAttribute("x2")).toBe("0");
+    expect(Number(gradient?.getAttribute("y1"))).toBeCloseTo(8, 1);
+    expect(Number(gradient?.getAttribute("y2"))).toBe(CHART_VIEWBOX_HEIGHT);
+  });
+});
+
+describe("drag to inspect", () => {
+  // bucket ends 900, 1800, 2700, 3600 → x 0, 106.67, 213.33, 320
+  const points = [
+    { t: 0, p: "1.00" },
+    { t: 900, p: "1.10" },
+    { t: 1800, p: "1.05" },
+    { t: 2700, p: "1.20" },
+  ];
+  const renderInspectable = (
+    props: Partial<React.ComponentProps<typeof LineChart>> = {},
+  ) =>
+    render(
+      <LineChart
+        points={points}
+        resolutionSeconds={900}
+        nowSeconds={20000}
+        direction={PriceDirection.Positive}
+        label="Price chart"
+        {...props}
+      />,
+    );
+
+  beforeEach(() => {
+    mockChartRect();
+  });
+  afterEach(() => jest.restoreAllMocks());
+
+  it("pointerdown reports the snapped index (viewBox space, not client px), moves report on every pointermove, up ends", () => {
+    const onInspectStart = jest.fn();
+    const onInspectMove = jest.fn();
+    const onInspectEnd = jest.fn();
+    const { rerender } = renderInspectable({
+      onInspectStart,
+      onInspectMove,
+      onInspectEnd,
+    });
+    const svg = screen.getByTestId("TokenPriceChart__svg");
+
+    // 640px wide element → clientX 200 is viewBox x 100 → nearest 106.67 → index 1
+    fireEvent.pointerDown(svg, {
+      pointerType: "touch",
+      clientX: 200,
+      pointerId: 1,
+    });
+    expect(onInspectStart).toHaveBeenCalledWith(1);
+
+    rerender(
+      <LineChart
+        points={points}
+        resolutionSeconds={900}
+        nowSeconds={20000}
+        direction={PriceDirection.Positive}
+        label="Price chart"
+        inspectedIndex={1}
+        onInspectStart={onInspectStart}
+        onInspectMove={onInspectMove}
+        onInspectEnd={onInspectEnd}
+      />,
+    );
+    fireEvent.pointerMove(svg, {
+      pointerType: "touch",
+      clientX: 640,
+      pointerId: 1,
+    });
+    expect(onInspectMove).toHaveBeenCalledWith(3);
+    fireEvent.pointerUp(svg, { pointerType: "touch", pointerId: 1 });
+    expect(onInspectEnd).toHaveBeenCalledTimes(1);
+  });
+
+  it("ignores pointermove while idle", () => {
+    const onInspectMove = jest.fn();
+    renderInspectable({ onInspectMove });
+    fireEvent.pointerMove(screen.getByTestId("TokenPriceChart__svg"), {
+      pointerType: "touch",
+      clientX: 100,
+      pointerId: 1,
+    });
+    expect(onInspectMove).not.toHaveBeenCalled();
+  });
+
+  it("does not prevent the pointerdown default, so the compatibility mousedown still fires", () => {
+    // Click-outside handlers and the activity ping listen for `mousedown`;
+    // preventing pointerdown would suppress it.
+    renderInspectable({ onInspectStart: jest.fn() });
+    const svg = screen.getByTestId("TokenPriceChart__svg");
+    const event = createEvent.pointerDown(svg, {
+      pointerType: "touch",
+      clientX: 200,
+      pointerId: 1,
+    });
+    fireEvent(svg, event);
+    expect(event.defaultPrevented).toBe(false);
+  });
+
+  it("treats a move under the tap threshold as a tap, not a drag", () => {
+    const onInspectMove = jest.fn();
+    renderInspectable({ onInspectStart: jest.fn(), onInspectMove });
+    const svg = screen.getByTestId("TokenPriceChart__svg");
+    fireEvent.pointerDown(svg, {
+      pointerType: "touch",
+      clientX: 200,
+      pointerId: 1,
+    });
+    fireEvent.pointerMove(svg, {
+      pointerType: "touch",
+      clientX: 202,
+      pointerId: 1,
+    });
+    expect(onInspectMove).not.toHaveBeenCalled();
+  });
+
+  it("reports a move once it crosses the tap threshold, and every move after", () => {
+    const onInspectMove = jest.fn();
+    renderInspectable({ onInspectStart: jest.fn(), onInspectMove });
+    const svg = screen.getByTestId("TokenPriceChart__svg");
+    fireEvent.pointerDown(svg, {
+      pointerType: "touch",
+      clientX: 200,
+      pointerId: 1,
+    });
+    fireEvent.pointerMove(svg, {
+      pointerType: "touch",
+      clientX: 205,
+      pointerId: 1,
+    });
+    expect(onInspectMove).toHaveBeenCalledTimes(1);
+    // Back inside the threshold of the press: still a drag.
+    fireEvent.pointerMove(svg, {
+      pointerType: "touch",
+      clientX: 201,
+      pointerId: 1,
+    });
+    expect(onInspectMove).toHaveBeenCalledTimes(2);
+  });
+
+  it("captures the pointer, so moves keep arriving once it leaves the svg", () => {
+    // jsdom has no pointer capture at all; define it for this test only, or
+    // the component's `typeof … === "function"` guard skips it silently.
+    const setPointerCapture = jest.fn();
+    (
+      SVGElement.prototype as unknown as { setPointerCapture: jest.Mock }
+    ).setPointerCapture = setPointerCapture;
+
+    try {
+      renderInspectable({ onInspectStart: jest.fn() });
+      fireEvent.pointerDown(screen.getByTestId("TokenPriceChart__svg"), {
+        pointerType: "touch",
+        clientX: 200,
+        pointerId: 7,
+      });
+
+      expect(setPointerCapture).toHaveBeenCalledWith(7);
+    } finally {
+      delete (SVGElement.prototype as unknown as Record<string, unknown>)
+        .setPointerCapture;
+    }
+  });
+
+  it("ignores a second pointer while one is already inspecting", () => {
+    // A second finger (or a pen landing beside a thumb) must not restart the
+    // activation — that would emit a second `brushed` — and releasing it must
+    // not end a drag it never owned.
+    const onInspectStart = jest.fn();
+    const onInspectMove = jest.fn();
+    const onInspectEnd = jest.fn();
+    renderInspectable({ onInspectStart, onInspectMove, onInspectEnd });
+    const svg = screen.getByTestId("TokenPriceChart__svg");
+
+    fireEvent.pointerDown(svg, {
+      pointerType: "touch",
+      clientX: 200,
+      pointerId: 1,
+    });
+    expect(onInspectStart).toHaveBeenCalledTimes(1);
+
+    fireEvent.pointerDown(svg, {
+      pointerType: "touch",
+      clientX: 640,
+      pointerId: 2,
+    });
+    expect(onInspectStart).toHaveBeenCalledTimes(1);
+    fireEvent.pointerUp(svg, { pointerType: "touch", pointerId: 2 });
+    expect(onInspectEnd).not.toHaveBeenCalled();
+
+    // The first pointer still owns the drag, and its release still ends it.
+    fireEvent.pointerMove(svg, {
+      pointerType: "touch",
+      clientX: 640,
+      pointerId: 1,
+    });
+    expect(onInspectMove).toHaveBeenCalledWith(3);
+    fireEvent.pointerUp(svg, { pointerType: "touch", pointerId: 1 });
+    expect(onInspectEnd).toHaveBeenCalledTimes(1);
+  });
+
+  it("a non-primary-button press neither arms nor locks the inspection", () => {
+    const setPointerCapture = jest.fn();
+    (
+      SVGElement.prototype as unknown as { setPointerCapture: jest.Mock }
+    ).setPointerCapture = setPointerCapture;
+
+    try {
+      const onInspectStart = jest.fn();
+      renderInspectable({ onInspectStart });
+      const svg = screen.getByTestId("TokenPriceChart__svg");
+
+      fireEvent.pointerDown(svg, {
+        pointerType: "touch",
+        clientX: 200,
+        pointerId: 1,
+        button: 2,
+      });
+      expect(onInspectStart).not.toHaveBeenCalled();
+      expect(setPointerCapture).not.toHaveBeenCalled();
+
+      // A right-click that armed would hold the lock, so this would be ignored.
+      fireEvent.pointerDown(svg, {
+        pointerType: "touch",
+        clientX: 200,
+        pointerId: 2,
+        button: 0,
+      });
+      expect(onInspectStart).toHaveBeenCalledWith(1);
+      expect(setPointerCapture).toHaveBeenCalledWith(2);
+    } finally {
+      delete (SVGElement.prototype as unknown as Record<string, unknown>)
+        .setPointerCapture;
+    }
+  });
+
+  it("unmounting mid-drag ends the inspection exactly once", () => {
+    const onInspectEnd = jest.fn();
+    const { unmount } = renderInspectable({
+      onInspectStart: jest.fn(),
+      onInspectEnd,
+    });
+    fireEvent.pointerDown(screen.getByTestId("TokenPriceChart__svg"), {
+      pointerType: "touch",
+      clientX: 200,
+      pointerId: 1,
+    });
+
+    unmount();
+
+    expect(onInspectEnd).toHaveBeenCalledTimes(1);
+  });
+
+  it("unmounting after a release does not end the inspection again", () => {
+    const onInspectEnd = jest.fn();
+    const { unmount } = renderInspectable({
+      onInspectStart: jest.fn(),
+      onInspectEnd,
+    });
+    const svg = screen.getByTestId("TokenPriceChart__svg");
+    fireEvent.pointerDown(svg, {
+      pointerType: "touch",
+      clientX: 200,
+      pointerId: 1,
+    });
+    fireEvent.pointerUp(svg, { pointerType: "touch", pointerId: 1 });
+
+    unmount();
+
+    expect(onInspectEnd).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps reporting moves after the parent clears the inspected index", () => {
+    // A series change mid-drag (a range switch, a refetch landing) makes the
+    // parent drop the index. The drag is still under the finger, so the next
+    // move has to re-snap into the new series rather than going dead.
+    const onInspectMove = jest.fn();
+    const { rerender } = renderInspectable({
+      onInspectStart: jest.fn(),
+      onInspectMove,
+      inspectedIndex: 1,
+    });
+    const svg = screen.getByTestId("TokenPriceChart__svg");
+    fireEvent.pointerDown(svg, {
+      pointerType: "touch",
+      clientX: 200,
+      pointerId: 1,
+    });
+
+    rerender(
+      <LineChart
+        points={points}
+        resolutionSeconds={900}
+        nowSeconds={20000}
+        direction={PriceDirection.Positive}
+        label="Price chart"
+        inspectedIndex={null}
+        onInspectStart={jest.fn()}
+        onInspectMove={onInspectMove}
+      />,
+    );
+    fireEvent.pointerMove(svg, {
+      pointerType: "touch",
+      clientX: 640,
+      pointerId: 1,
+    });
+
+    expect(onInspectMove).toHaveBeenCalledWith(3);
+  });
+
+  it("lostpointercapture ends the inspection", () => {
+    // The browser can take capture away mid-drag (a context menu, a claimed
+    // scroll). Without this the pointer is gone and the inspection would stay
+    // frozen on screen.
+    const onInspectEnd = jest.fn();
+    renderInspectable({ onInspectStart: jest.fn(), onInspectEnd });
+    const svg = screen.getByTestId("TokenPriceChart__svg");
+    fireEvent.pointerDown(svg, {
+      pointerType: "touch",
+      clientX: 200,
+      pointerId: 1,
+    });
+    fireEvent.lostPointerCapture(svg, { pointerType: "touch", pointerId: 1 });
+    expect(onInspectEnd).toHaveBeenCalledTimes(1);
+  });
+
+  it("pointercancel ends the inspection", () => {
+    const onInspectEnd = jest.fn();
+    renderInspectable({ inspectedIndex: 1, onInspectEnd });
+    fireEvent.pointerCancel(screen.getByTestId("TokenPriceChart__svg"), {
+      pointerType: "touch",
+      pointerId: 1,
+    });
+    expect(onInspectEnd).toHaveBeenCalledTimes(1);
+  });
+
+  it("draws the guide and dot at the inspected point and hides the end dot", () => {
+    renderInspectable({ inspectedIndex: 1 });
+    const guide = screen.getByTestId("TokenPriceChart__inspect-guide");
+    expect(Number(guide.getAttribute("x1"))).toBeCloseTo(106.67, 1);
+    expect(guide.getAttribute("stroke-dasharray")).toBe("4 4");
+    // Figma's 8px inspected dot, inside a 2px background ring — larger than
+    // the 6px end dot it replaces.
+    expect(
+      screen
+        .getByTestId("TokenPriceChart__inspect-dot")
+        .getAttribute("stroke-width"),
+    ).toBe("8");
+    expect(
+      screen
+        .getByTestId("TokenPriceChart__svg")
+        .querySelector(".LineChart__inspect-ring")
+        ?.getAttribute("stroke-width"),
+    ).toBe("12");
+    expect(screen.queryByTestId("TokenPriceChart__end-dot")).toBeNull();
+  });
+
+  it("dims the series right of the inspected point, sharing that point with the undimmed part", () => {
+    renderInspectable({ inspectedIndex: 1 });
+    const polyline = screen.getByTestId("TokenPriceChart__polyline");
+    const dimmedPolyline = screen.getByTestId(
+      "TokenPriceChart__polyline-dimmed",
+    );
+    const left = (polyline.getAttribute("points") ?? "").split(" ");
+    const right = (dimmedPolyline.getAttribute("points") ?? "").split(" ");
+    expect(left).toHaveLength(2);
+    expect(right).toHaveLength(3);
+    expect(right[0]).toBe(left[1]);
+    expect(Number(right[0].split(",")[0])).toBeCloseTo(106.67, 1);
+    expect(polyline).not.toHaveAttribute("opacity");
+    expect(dimmedPolyline).toHaveAttribute("opacity", "0.3");
+
+    const fill = screen.getByTestId("TokenPriceChart__fill");
+    const dimmedFill = screen.getByTestId("TokenPriceChart__fill-dimmed");
+    expect(fill.getAttribute("points")).toBe(
+      `${left.join(" ")} 106.67,140 0,140`,
+    );
+    expect(dimmedFill.getAttribute("points")).toBe(
+      `${right.join(" ")} 320,140 106.67,140`,
+    );
+    expect(fill).not.toHaveAttribute("opacity");
+    expect(dimmedFill).toHaveAttribute("opacity", "0.3");
+    expect(dimmedFill.getAttribute("fill")).toBe(fill.getAttribute("fill"));
+  });
+
+  it("keeps the fill gradient anchored to the full series' peak, even though the peak sits in the dimmed half", () => {
+    // Peak is index 3 (p=1.20, y=8), inspecting index 1 puts it in the
+    // dimmed half — outside the solid polygon's own bounding box.
+    renderInspectable({ inspectedIndex: 1 });
+
+    const fill = screen.getByTestId("TokenPriceChart__fill");
+    const dimmedFill = screen.getByTestId("TokenPriceChart__fill-dimmed");
+    expect(dimmedFill.getAttribute("fill")).toBe(fill.getAttribute("fill"));
+
+    const gradient = screen
+      .getByTestId("TokenPriceChart__svg")
+      .querySelector("linearGradient");
+    expect(Number(gradient?.getAttribute("y1"))).toBeCloseTo(8, 1);
+  });
+
+  it("draws nothing extra when idle", () => {
+    renderInspectable();
+    expect(screen.queryByTestId("TokenPriceChart__inspect-guide")).toBeNull();
+    expect(screen.getByTestId("TokenPriceChart__end-dot")).toBeInTheDocument();
+    expect(screen.queryByTestId("TokenPriceChart__polyline-dimmed")).toBeNull();
+    expect(screen.queryByTestId("TokenPriceChart__fill-dimmed")).toBeNull();
+    expect(getPolylinePoints().split(" ")).toHaveLength(4);
+  });
+});
+
+describe("hover to inspect (mouse)", () => {
+  // bucket ends 900, 1800, 2700, 3600 → x 0, 106.67, 213.33, 320
+  const points = [
+    { t: 0, p: "1.00" },
+    { t: 900, p: "1.10" },
+    { t: 1800, p: "1.05" },
+    { t: 2700, p: "1.20" },
+  ];
+  const callbacks = () => ({
+    onInspectStart: jest.fn(),
+    onInspectMove: jest.fn(),
+    onInspectEnd: jest.fn(),
+  });
+  const renderHoverable = (cbs: ReturnType<typeof callbacks>) =>
+    render(
+      <LineChart
+        points={points}
+        resolutionSeconds={900}
+        nowSeconds={20000}
+        direction={PriceDirection.Positive}
+        label="Price chart"
+        {...cbs}
+      />,
+    );
+  const mouse = (clientX: number) => ({
+    pointerType: "mouse",
+    pointerId: 1,
+    clientX,
+  });
+
+  beforeEach(() => {
+    mockChartRect();
+  });
+  afterEach(() => jest.restoreAllMocks());
+
+  it("inspects on hover with no button pressed, follows the pointer, and ends on leave", () => {
+    const cbs = callbacks();
+    renderHoverable(cbs);
+    const svg = screen.getByTestId("TokenPriceChart__svg");
+
+    fireEvent.pointerEnter(svg, mouse(200));
+    expect(cbs.onInspectStart).toHaveBeenCalledWith(1);
+
+    fireEvent.pointerMove(svg, mouse(640));
+    expect(cbs.onInspectMove).toHaveBeenCalledWith(3);
+    expect(cbs.onInspectEnd).not.toHaveBeenCalled();
+
+    fireEvent.pointerLeave(svg, mouse(640));
+    expect(cbs.onInspectEnd).toHaveBeenCalledTimes(1);
+  });
+
+  it("starts from a move when the chart appeared under a resting pointer", () => {
+    const cbs = callbacks();
+    renderHoverable(cbs);
+
+    fireEvent.pointerMove(
+      screen.getByTestId("TokenPriceChart__svg"),
+      mouse(200),
+    );
+    expect(cbs.onInspectStart).toHaveBeenCalledWith(1);
+  });
+
+  it("keeps inspecting through a mouse click; only leaving ends it", () => {
+    const cbs = callbacks();
+    renderHoverable(cbs);
+    const svg = screen.getByTestId("TokenPriceChart__svg");
+
+    fireEvent.pointerEnter(svg, mouse(200));
+    fireEvent.pointerDown(svg, { ...mouse(200), button: 0 });
+    fireEvent.pointerUp(svg, mouse(200));
+    expect(cbs.onInspectStart).toHaveBeenCalledTimes(1);
+    expect(cbs.onInspectEnd).not.toHaveBeenCalled();
+
+    fireEvent.pointerLeave(svg, mouse(200));
+    expect(cbs.onInspectEnd).toHaveBeenCalledTimes(1);
+  });
+
+  it("re-entering starts a fresh inspection", () => {
+    const cbs = callbacks();
+    renderHoverable(cbs);
+    const svg = screen.getByTestId("TokenPriceChart__svg");
+
+    fireEvent.pointerEnter(svg, mouse(200));
+    fireEvent.pointerLeave(svg, mouse(200));
+    fireEvent.pointerEnter(svg, mouse(640));
+    expect(cbs.onInspectStart).toHaveBeenCalledTimes(2);
+    expect(cbs.onInspectStart).toHaveBeenLastCalledWith(3);
+  });
+
+  it("hands the inspection to a touch press while the mouse rests on the chart", () => {
+    const cbs = callbacks();
+    renderHoverable(cbs);
+    const svg = screen.getByTestId("TokenPriceChart__svg");
+
+    fireEvent.pointerEnter(svg, mouse(200));
+    fireEvent.pointerDown(svg, {
+      pointerType: "touch",
+      pointerId: 7,
+      clientX: 0,
+      button: 0,
+    });
+    expect(cbs.onInspectStart).toHaveBeenCalledTimes(2);
+    expect(cbs.onInspectStart).toHaveBeenLastCalledWith(0);
+
+    fireEvent.pointerMove(svg, {
+      pointerType: "touch",
+      pointerId: 7,
+      clientX: 640,
+    });
+    expect(cbs.onInspectMove).toHaveBeenLastCalledWith(3);
+
+    // The mouse can no longer end or steer the touch's inspection.
+    fireEvent.pointerMove(svg, mouse(200));
+    fireEvent.pointerLeave(svg, mouse(200));
+    expect(cbs.onInspectMove).toHaveBeenCalledTimes(1);
+    expect(cbs.onInspectEnd).not.toHaveBeenCalled();
+
+    fireEvent.pointerUp(svg, { pointerType: "touch", pointerId: 7 });
+    expect(cbs.onInspectEnd).toHaveBeenCalledTimes(1);
+  });
+
+  it("ends the inspection when the chart unmounts under the pointer", () => {
+    const cbs = callbacks();
+    const { unmount } = renderHoverable(cbs);
+
+    fireEvent.pointerEnter(
+      screen.getByTestId("TokenPriceChart__svg"),
+      mouse(200),
+    );
+    unmount();
+    expect(cbs.onInspectEnd).toHaveBeenCalledTimes(1);
   });
 });
 

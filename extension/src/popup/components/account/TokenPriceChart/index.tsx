@@ -8,6 +8,7 @@ import React, {
   useState,
 } from "react";
 import { BigNumber } from "bignumber.js";
+import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
 
 import {
@@ -26,6 +27,7 @@ import { hasChartData } from "popup/helpers/tokenPriceHistory";
 import { RequestState } from "constants/request";
 
 import { ChartGhost } from "./ChartGhost";
+import { computeInspectedChange } from "./inspect";
 import {
   LineChart,
   getChartCoordinates,
@@ -84,6 +86,10 @@ export const formatChartPrice = (value: BigNumber): string => {
     ),
   );
 };
+
+/** The detail header's text for an inspected point's raw price. */
+export const formatInspectedPriceLabel = (price: string): string =>
+  `$${formatChartPrice(new BigNumber(price))}`;
 
 /** True when the formatted price parses to zero (grouping separators stripped). */
 export const isFormattedZero = (formatted: string): boolean =>
@@ -176,6 +182,74 @@ const pointDateFormatter = (language: string) => {
 const formatPointDate = (unixSeconds: number, language: string) =>
   pointDateFormatter(language).format(new Date(unixSeconds * 1000));
 
+const INSPECTED_TIMESTAMP_FORMATS = {
+  date: { weekday: "short", month: "short", day: "numeric" },
+  dateWithYear: {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  },
+  time: { hour: "numeric", minute: "2-digit" },
+} satisfies Record<string, Intl.DateTimeFormatOptions>;
+
+type InspectedTimestampFormat = keyof typeof INSPECTED_TIMESTAMP_FORMATS;
+
+const INSPECTED_TIMESTAMP_FORMATTERS = new Map<string, Intl.DateTimeFormat>();
+
+const inspectedTimestampFormatter = (
+  language: string,
+  format: InspectedTimestampFormat,
+) => {
+  const key = `${language}|${format}`;
+  const cached = INSPECTED_TIMESTAMP_FORMATTERS.get(key);
+  if (cached) {
+    return cached;
+  }
+  const formatter = new Intl.DateTimeFormat(
+    language,
+    INSPECTED_TIMESTAMP_FORMATS[format],
+  );
+  INSPECTED_TIMESTAMP_FORMATTERS.set(key, formatter);
+  return formatter;
+};
+
+const INTRADAY_RANGES: ReadonlySet<string> = new Set([
+  TokenPriceHistoryRange.OneHour,
+  TokenPriceHistoryRange.OneDay,
+]);
+// On 1Y and ALL the same weekday and date recur across the plotted span.
+const YEAR_RANGES: ReadonlySet<string> = new Set([
+  TokenPriceHistoryRange.OneYear,
+  TokenPriceHistoryRange.All,
+]);
+
+/** The high-row label for the inspected point, e.g. "Mon, Sep 21 at 4:03 am". */
+export const formatInspectedTimestamp = ({
+  unixSeconds,
+  range,
+  language,
+  t,
+}: {
+  unixSeconds: number;
+  range: string;
+  language: string;
+  t: TFunction;
+}): string => {
+  const date = new Date(unixSeconds * 1000);
+  const datePart = inspectedTimestampFormatter(
+    language,
+    YEAR_RANGES.has(range) ? "dateWithYear" : "date",
+  ).format(date);
+  if (!INTRADAY_RANGES.has(range)) {
+    return datePart;
+  }
+  const time = inspectedTimestampFormatter(language, "time")
+    .format(date)
+    .toLowerCase();
+  return t("{{date}} at {{time}}", { date: datePart, time });
+};
+
 /**
  * Places a price label over the point it describes, without letting it hang
  * outside the plot.
@@ -213,6 +287,9 @@ export interface RangeDeltaState {
   text: string;
   /** Three-state palette: a gain is green, a loss red, a flat range neutral. */
   colorClass: SignedPercent["colorClass"];
+  /** The inspected point's raw price while an inspection is active; the
+   * header shows it in place of spot. Null otherwise. */
+  inspectedPrice: string | null;
 }
 
 interface TokenPriceChartProps {
@@ -245,6 +322,19 @@ export const TokenPriceChart = ({
   const chartTabIdPrefix = `${idBase}-chart-tab`;
   const [selectedRange, setSelectedRange] =
     useState<TokenPriceHistoryRangeValue>(TokenPriceHistoryRange.OneDay);
+  // The point under the pointer, stored WITH the series it was snapped on, so
+  // the index can never be read against a series it does not describe. A range
+  // switch or a refetch makes the stored inspection inert on the very same
+  // render that swaps the series in — derived, not an effect, so there is no
+  // window in which a stale index picks a point out of the new series.
+  const [inspected, setInspected] = useState<{
+    history: ApiTokenPriceHistory;
+    index: number;
+  } | null>(null);
+  // Whether `token_chart.brushed` has already been emitted for the activation
+  // in progress. Reset on start and end, so it is exactly once per hover or
+  // press.
+  const brushedThisActivationRef = useRef(false);
   const { state, fetchData, warmRange, isRangeCached, startLoading } =
     useGetTokenPriceHistory();
   const isFirstFetchRef = useRef(true);
@@ -402,6 +492,13 @@ export const TokenPriceChart = ({
   const hasChart =
     !isLoading && !isError && Boolean(history && hasChartData(history.points));
 
+  // The drawn series, or null. Everything derived below keys off this one
+  // reference, so the derivations recompute when a fetch lands rather than on
+  // every render of the parent detail view. Declared ahead of the delta
+  // computation so the inspect derivations (which also key off it) can
+  // precede it.
+  const chartHistory = hasChart ? history : null;
+
   /**
    * One per (token, range) shown, cache hits included. Keyed off the series'
    * own range so a mid-switch render cannot mis-attribute. Deduped per visit.
@@ -430,25 +527,102 @@ export const TokenPriceChart = ({
     });
   }, [token, networkDetails, history, viewedRange, isLoading]);
 
+  const handleInspectStart = useCallback(
+    (index: number) => {
+      // Not `brushed` yet: a hover that never moves, or a tap, is not a
+      // sweep, and mobile's long-press-armed pan would never have activated on
+      // it. The first move beyond the threshold emits the event.
+      brushedThisActivationRef.current = false;
+      if (chartHistory) {
+        setInspected({ history: chartHistory, index });
+      }
+    },
+    [chartHistory],
+  );
+  const handleInspectMove = useCallback(
+    (index: number) => {
+      if (!chartHistory) {
+        return;
+      }
+      // Returning `prev` bails out of the re-render: most moves stay on one point.
+      setInspected((prev) =>
+        prev && prev.history === chartHistory && prev.index === index
+          ? prev
+          : { history: chartHistory, index },
+      );
+      if (!brushedThisActivationRef.current) {
+        brushedThisActivationRef.current = true;
+        // Once per activation, on the first move beyond the tap threshold and
+        // never per move (§7.5) — the payload is the plotted series' range,
+        // not `selectedRange`, which can lead it.
+        emitMetric(METRIC_NAMES.tokenChartBrushed, {
+          range: chartHistory.range,
+        });
+      }
+    },
+    [chartHistory],
+  );
+  const handleInspectEnd = useCallback(() => {
+    brushedThisActivationRef.current = false;
+    setInspected(null);
+  }, []);
+
+  // Also gated on `selectedRange`: the identity check alone stays true until
+  // the newly selected tab's fetch effect swaps `chartHistory` in.
+  const inspectedPoint =
+    inspected &&
+    chartHistory &&
+    inspected.history === chartHistory &&
+    chartHistory.range === selectedRange
+      ? (chartHistory.points[inspected.index] ?? null)
+      : null;
+  const inspectedIndex = inspectedPoint ? (inspected?.index ?? null) : null;
+  // The one client-side delta (D8 exception): close-to-close from the first
+  // plotted point to the inspected one, through the same formatting path as
+  // the server's `change`.
+  const inspectedChange =
+    chartHistory && inspectedPoint
+      ? computeInspectedChange(chartHistory.points[0], inspectedPoint)
+      : null;
+
   // Off the drawable series, not the raw response: the backend computes
   // `change` from a single point, and a signed delta above "No price data"
   // would contradict it.
-  const change = hasChart && history ? history.change : null;
+  const rangeChange = hasChart && history ? history.change : null;
   // Parsed once: the direction and the dollar figure must read the same
   // number, and a second parse is a second chance for them to disagree.
-  const changeAbsolute = change ? new BigNumber(change.absolute) : null;
-  const rangePercent = change
-    ? formatSignedPercent(new BigNumber(change.percent), changeAbsolute)
+  const rangeAbsolute = rangeChange
+    ? new BigNumber(rangeChange.absolute)
     : null;
-  // The same direction colours the delta text and the artwork, so they can
-  // never disagree. No `change` draws neutral.
+  const rangePercent = rangeChange
+    ? formatSignedPercent(new BigNumber(rangeChange.percent), rangeAbsolute)
+    : null;
+  // The artwork keeps the RANGE's direction even while inspecting: a drag
+  // that dips below the open must not flip the whole chart's colour, only
+  // the delta text that describes the inspected point. No `change` draws
+  // neutral.
   const chartDirection: PriceDirection =
     rangePercent?.colorClass ?? PriceDirection.Neutral;
 
-  // Display `change`, never recompute it. On error, 1D falls back to the
-  // existing 24h percent (no absolute — never derived from a percent); other
-  // ranges show nothing. Deliberately no copy in the empty case: the design
-  // draws the row empty and mobile does the same; the min-height holds it open.
+  // The delta the header prints: the inspected point's close-to-close while a
+  // drag is in progress, otherwise the server's `change` verbatim. Never
+  // recomputed outside of the one client-side exception above.
+  const displayedChange = inspectedChange ?? rangeChange;
+  const changeAbsolute = displayedChange
+    ? new BigNumber(displayedChange.absolute)
+    : null;
+  const displayedPercent = displayedChange
+    ? formatSignedPercent(
+        new BigNumber(displayedChange.percent),
+        changeAbsolute,
+      )
+    : null;
+
+  // Display `displayedChange`, never recompute it further. On error, 1D falls
+  // back to the existing 24h percent (no absolute — never derived from a
+  // percent); other ranges show nothing. Deliberately no copy in the empty
+  // case: the design draws the row empty and mobile does the same; the
+  // min-height holds it open.
   let deltaText = "";
   let deltaColorClass: RangeDeltaState["colorClass"] = PriceDirection.Neutral;
   if (isError) {
@@ -458,31 +632,30 @@ export const TokenPriceChart = ({
       deltaColorClass = fallback.colorClass;
       deltaText = fallback.text;
     }
-  } else if (changeAbsolute && rangePercent) {
-    deltaColorClass = rangePercent.colorClass;
+  } else if (changeAbsolute && displayedPercent) {
+    deltaColorClass = displayedPercent.colorClass;
     const formattedAbsolute = formatChartPrice(changeAbsolute);
     // A sub-cent move formats to "0.00"; signing that reads as a gain the number
     // denies, so the percentage stands alone and carries the sign.
     deltaText = isFormattedZero(formattedAbsolute)
-      ? rangePercent.text
-      : `${rangePercent.sign}$${formattedAbsolute} (${rangePercent.formatted}%)`;
+      ? displayedPercent.text
+      : `${displayedPercent.sign}$${formattedAbsolute} (${displayedPercent.formatted}%)`;
   }
 
-  // Deps are the three rendered primitives, so this fires on a delta change,
-  // not on every parent re-render (which would loop through the parent's
-  // setState). `FETCH_DATA_START` clears `data`, so nothing stale escapes.
+  // Deps are primitives, so this fires on a delta change, not on every parent
+  // re-render (which would loop through the parent's setState).
+  // `FETCH_DATA_START` clears `data`, so nothing stale escapes.
+  // `inspectedPoint?.p` rather than `inspectedPoint`: the point object is a
+  // fresh reference from `chartHistory.points`, so keying on it would fire
+  // on every render while inspecting the same index.
   useEffect(() => {
     onDeltaChange({
       isLoading,
       text: deltaText,
       colorClass: deltaColorClass,
+      inspectedPrice: inspectedPoint?.p ?? null,
     });
-  }, [onDeltaChange, isLoading, deltaText, deltaColorClass]);
-
-  // The drawn series, or null. Everything derived below keys off this one
-  // reference, so the derivations recompute when a fetch lands rather than on
-  // every render of the parent detail view.
-  const chartHistory = hasChart ? history : null;
+  }, [onDeltaChange, isLoading, deltaText, deltaColorClass, inspectedPoint?.p]);
 
   // One clock read per fetched series. Reading `Date.now()` inline in the JSX
   // handed `LineChart` a new prop value on every render and defeated its
@@ -511,30 +684,38 @@ export const TokenPriceChart = ({
   // pinned right and left, the high label lands above the low point whenever
   // a series peaks early, which reads as a mislabelled chart. Mobile
   // positions them this way; this is the platform that was out of step.
-  const { highLabel, lowLabel, highLabelX, lowLabelX } = useMemo(() => {
-    if (!chartHistory) {
-      return { highLabel: "", lowLabel: "", highLabelX: 0, lowLabelX: 0 };
-    }
-    const values = chartHistory.points.map((point) => new BigNumber(point.p));
-    let minIndex = 0;
-    let maxIndex = 0;
-    values.forEach((value, index) => {
-      if (value.lt(values[minIndex])) minIndex = index;
-      if (value.gt(values[maxIndex])) maxIndex = index;
-    });
-    const coordinates = getChartCoordinates({
-      points: chartHistory.points,
-      resolutionSeconds: chartHistory.resolutionSeconds,
-      nowSeconds,
-    });
+  const { highLabel, lowLabel, highLabelX, lowLabelX, pointXs } =
+    useMemo(() => {
+      if (!chartHistory) {
+        return {
+          highLabel: "",
+          lowLabel: "",
+          highLabelX: 0,
+          lowLabelX: 0,
+          pointXs: [] as number[],
+        };
+      }
+      const values = chartHistory.points.map((point) => new BigNumber(point.p));
+      let minIndex = 0;
+      let maxIndex = 0;
+      values.forEach((value, index) => {
+        if (value.lt(values[minIndex])) minIndex = index;
+        if (value.gt(values[maxIndex])) maxIndex = index;
+      });
+      const coordinates = getChartCoordinates({
+        points: chartHistory.points,
+        resolutionSeconds: chartHistory.resolutionSeconds,
+        nowSeconds,
+      });
 
-    return {
-      highLabel: `$${formatChartPrice(values[maxIndex])}`,
-      lowLabel: `$${formatChartPrice(values[minIndex])}`,
-      highLabelX: coordinates[maxIndex]?.x ?? 0,
-      lowLabelX: coordinates[minIndex]?.x ?? 0,
-    };
-  }, [chartHistory, nowSeconds]);
+      return {
+        highLabel: `$${formatChartPrice(values[maxIndex])}`,
+        lowLabel: `$${formatChartPrice(values[minIndex])}`,
+        highLabelX: coordinates[maxIndex]?.x ?? 0,
+        lowLabelX: coordinates[minIndex]?.x ?? 0,
+        pointXs: coordinates.map((coordinate) => coordinate.x),
+      };
+    }, [chartHistory, nowSeconds]);
 
   // `resolvedLanguage` is what i18next actually fell back to, which is the
   // language the surrounding translated string is really in — `language` can
@@ -563,6 +744,19 @@ export const TokenPriceChart = ({
     });
   }, [chartHistory, labelDeltaText, t, language, nowSeconds]);
 
+  const inspectedTimestamp = useMemo(() => {
+    if (!chartHistory || inspectedIndex === null) {
+      return "";
+    }
+    const { points, resolutionSeconds, range } = chartHistory;
+    // The time the point is PLOTTED at, as `getChartCoordinates` places it.
+    const unixSeconds =
+      inspectedIndex === points.length - 1
+        ? getPlottedRangeEnd({ points, resolutionSeconds, nowSeconds })
+        : points[inspectedIndex].t + resolutionSeconds;
+    return formatInspectedTimestamp({ unixSeconds, range, language, t });
+  }, [chartHistory, inspectedIndex, nowSeconds, language, t]);
+
   return (
     <div className="TokenPriceChart" data-testid="TokenPriceChart">
       {/* The price labels sit in their own rows above and below the plot, not
@@ -575,12 +769,22 @@ export const TokenPriceChart = ({
           className="TokenPriceChart__axis-label TokenPriceChart__axis-label--high"
           data-testid="TokenPriceChart__axis-high"
         >
-          <span
-            className="TokenPriceChart__axis-label-text"
-            style={axisLabelPosition(highLabelX)}
-          >
-            {highLabel}
-          </span>
+          {inspectedTimestamp && inspectedIndex !== null ? (
+            <span
+              className="TokenPriceChart__axis-label-text TokenPriceChart__inspect-timestamp"
+              style={axisLabelPosition(pointXs[inspectedIndex] ?? 0)}
+              data-testid="TokenPriceChart__inspect-timestamp"
+            >
+              {inspectedTimestamp}
+            </span>
+          ) : (
+            <span
+              className="TokenPriceChart__axis-label-text"
+              style={axisLabelPosition(highLabelX)}
+            >
+              {highLabel}
+            </span>
+          )}
         </div>
         {/* `aria-busy` lives on the container that survives the state change —
           it flips to false in place when the series lands. The announcement
@@ -616,6 +820,10 @@ export const TokenPriceChart = ({
                 nowSeconds={nowSeconds}
                 direction={chartDirection}
                 label={chartLabel}
+                inspectedIndex={inspectedIndex}
+                onInspectStart={handleInspectStart}
+                onInspectMove={handleInspectMove}
+                onInspectEnd={handleInspectEnd}
               />
             </>
           ) : (
@@ -637,7 +845,7 @@ export const TokenPriceChart = ({
             className="TokenPriceChart__axis-label-text"
             style={axisLabelPosition(lowLabelX)}
           >
-            {lowLabel}
+            {inspectedTimestamp ? "" : lowLabel}
           </span>
         </div>
       </div>

@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen, act } from "@testing-library/react";
+import { render, screen, act, fireEvent } from "@testing-library/react";
 import BigNumber from "bignumber.js";
 
 import { AssetDetail } from "popup/components/account/AssetDetail";
@@ -14,6 +14,7 @@ import { mockAccounts, Wrapper } from "popup/__testHelpers__";
 import { PriceDirection } from "popup/components/account/TokenPriceChart/constants";
 import type { RangeDeltaState } from "popup/components/account/TokenPriceChart";
 import { AppDataType } from "helpers/hooks/useGetAppData";
+import { SLIDEUP_MODAL_TRANSITION_MS } from "popup/components/SlideupModal";
 
 // The real chart reports `isLoading: true` from its mount effect, which RTL
 // flushes inside `act` — so the parent's stale render between a scope change
@@ -91,6 +92,7 @@ const state = makeState();
 describe("AssetDetail header delta scope", () => {
   afterEach(() => {
     reportDelta = null;
+    jest.useRealTimers();
   });
 
   it("never carries one token's delta into another token's header", async () => {
@@ -106,6 +108,7 @@ describe("AssetDetail header delta scope", () => {
         isLoading: false,
         text: "+$0.0014 (0.86%)",
         colorClass: PriceDirection.Positive,
+        inspectedPrice: null,
       });
     });
     expect(delta().textContent).toBe("+$0.0014 (0.86%)");
@@ -143,6 +146,7 @@ describe("AssetDetail header delta scope", () => {
         isLoading: false,
         text: "+$0.0602 (32.12%)",
         colorClass: PriceDirection.Positive,
+        inspectedPrice: null,
       });
     });
     expect(delta().textContent).toBe("+$0.0602 (32.12%)");
@@ -154,6 +158,68 @@ describe("AssetDetail header delta scope", () => {
     rerender(renderWith(makeState()));
 
     expect(screen.getByTestId("TokenPriceChart")).toBeInTheDocument();
+    expect(delta().textContent).toBe("");
+    expect(delta().querySelector(".AssetDetail__delta-ghost")).not.toBeNull();
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+  });
+
+  it("drops the inspected price while an operation modal hides the chart", async () => {
+    jest.useFakeTimers();
+    const operation = {
+      action: "Received",
+      actionIcon: "received",
+      amount: "+1 XLM",
+      date: "Sep 19",
+      id: "253426134438383665",
+      metadata: {
+        createdAt: "2025-09-19T21:15:45Z",
+        feeCharged: "10000",
+        type: "payment",
+        isPayment: true,
+        isReceiving: true,
+        nonLabelAmount: "1 XLM",
+        to: "G1",
+      },
+      rowIcon: <></>,
+      rowText: "XLM",
+    };
+    render(
+      <Wrapper routes={[ROUTES.account]} state={state}>
+        <AssetDetail
+          {...makeProps("native")}
+          historyData={{
+            type: AppDataType.RESOLVED,
+            operationsByAsset: { native: [operation] },
+          }}
+        />
+      </Wrapper>,
+    );
+    const delta = () => screen.getByTestId("AssetDetail__delta");
+    const price = () => screen.getByTestId("AssetDetail__price");
+
+    act(() => {
+      reportDelta!({
+        isLoading: false,
+        text: "+$0.02 (10.00%)",
+        colorClass: PriceDirection.Positive,
+        inspectedPrice: "0.22",
+      });
+    });
+    expect(price()).toHaveTextContent("$0.22");
+
+    fireEvent.click(screen.getByTestId("history-item"));
+    expect(screen.queryByTestId("TokenPriceChart")).toBeNull();
+    fireEvent.click(screen.getByTestId("LoadingBackground"));
+    act(() => {
+      jest.advanceTimersByTime(SLIDEUP_MODAL_TRANSITION_MS);
+    });
+
+    // The remounted stub has reported nothing: spot and the placeholder.
+    expect(screen.getByTestId("TokenPriceChart")).toBeInTheDocument();
+    expect(price()).toHaveTextContent("$0.27");
     expect(delta().textContent).toBe("");
     expect(delta().querySelector(".AssetDetail__delta-ghost")).not.toBeNull();
 
