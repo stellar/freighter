@@ -120,6 +120,7 @@ jest
 jest.spyOn(ApiInternal, "getHiddenAssets").mockImplementation(() =>
   Promise.resolve({
     hiddenAssets: {},
+    networkName: "",
     error: "",
   }),
 );

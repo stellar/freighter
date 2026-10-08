@@ -1,5 +1,6 @@
 import { expect } from "../test-fixtures";
 import { Page } from "@playwright/test";
+import { switchNetwork } from "./network";
 
 export const PASSWORD = "My-password123";
 
@@ -47,11 +48,10 @@ export const loginToTestAccountPT = async ({
   });
 
   await page.goto(`chrome-extension://${extensionId}/index.html#/`);
-  await expect(page.getByTestId("network-selector-open")).toBeVisible({
+  await expect(page.getByTestId("account-chip")).toBeVisible({
     timeout: 50000,
   });
-  await page.getByTestId("network-selector-open").click();
-  await page.getByText("Testnet").click();
+  await switchNetwork(page, "Testnet");
   await expect(page.getByTestId("account-view")).toBeVisible({
     timeout: 30000,
   });

@@ -1,9 +1,11 @@
 import React from "react";
 import { render, waitFor, screen, fireEvent } from "@testing-library/react";
 
+import * as ApiInternal from "@shared/api/internal";
 import { HiddenCollectibles } from "popup/components/account/HiddenCollectibles";
 import {
   TESTNET_NETWORK_DETAILS,
+  MAINNET_NETWORK_DETAILS,
   DEFAULT_NETWORKS,
 } from "@shared/constants/stellar";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
@@ -13,6 +15,7 @@ import {
   mockAccounts,
   TEST_PUBLIC_KEY,
   mockCollectibles,
+  getTestStore,
 } from "../../__testHelpers__";
 
 const mockRefreshHiddenCollectibles = jest.fn().mockResolvedValue(undefined);
@@ -68,6 +71,8 @@ describe("HiddenCollectibles", () => {
           onClose={onClose}
           refreshHiddenCollectibles={mockRefreshHiddenCollectibles}
           isCollectibleHidden={createIsCollectibleHidden(hiddenCollectibles)}
+          isLoading={false}
+          loadError=""
         />
       </Wrapper>,
     );
@@ -91,6 +96,8 @@ describe("HiddenCollectibles", () => {
           onClose={onClose}
           refreshHiddenCollectibles={mockRefreshHiddenCollectibles}
           isCollectibleHidden={createIsCollectibleHidden(hiddenCollectibles)}
+          isLoading={false}
+          loadError=""
         />
       </Wrapper>,
     );
@@ -116,6 +123,8 @@ describe("HiddenCollectibles", () => {
           onClose={onClose}
           refreshHiddenCollectibles={mockRefreshHiddenCollectibles}
           isCollectibleHidden={createIsCollectibleHidden(hiddenCollectibles)}
+          isLoading={false}
+          loadError=""
         />
       </Wrapper>,
     );
@@ -141,18 +150,20 @@ describe("HiddenCollectibles", () => {
           onClose={onClose}
           refreshHiddenCollectibles={mockRefreshHiddenCollectibles}
           isCollectibleHidden={createIsCollectibleHidden(hiddenCollectibles)}
+          isLoading={false}
+          loadError=""
         />
       </Wrapper>,
     );
 
-    // Should not find the hidden collectibles content
-    expect(screen.queryByText("Hidden Collectibles")).not.toBeInTheDocument();
+    // SlideupModal keeps its children mounted and animates them out, unlike the
+    // Radix sheet this replaced, so assert it is closed rather than absent.
     expect(
-      screen.queryByText("No hidden collectibles"),
+      document.querySelector(".SlideupModal.open"),
     ).not.toBeInTheDocument();
   });
 
-  it("opens collectible detail when clicking on a hidden collectible", async () => {
+  it("unhides from the row without opening a detail view", async () => {
     const onClose = jest.fn();
     const hiddenCollectibles = {
       "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA:2": "hidden",
@@ -166,6 +177,8 @@ describe("HiddenCollectibles", () => {
           onClose={onClose}
           refreshHiddenCollectibles={mockRefreshHiddenCollectibles}
           isCollectibleHidden={createIsCollectibleHidden(hiddenCollectibles)}
+          isLoading={false}
+          loadError=""
         />
       </Wrapper>,
     );
@@ -174,12 +187,171 @@ describe("HiddenCollectibles", () => {
       expect(screen.getByTestId("hidden-collectible-2")).toBeInTheDocument();
     });
 
-    // Click on the hidden collectible
-    fireEvent.click(screen.getByTestId("hidden-collectible-2"));
+    const changeCollectibleVisibility = jest
+      .spyOn(ApiInternal, "changeCollectibleVisibility")
+      .mockResolvedValue({ hiddenCollectibles: {}, error: "" } as any);
 
-    // Should open the collectible detail
+    // The row carries its own Unhide action; the designs dropped the
+    // tile -> detail -> menu route that used to be the only way.
+    const unhide = screen.getByTestId("hidden-collectible-unhide-2");
+    expect(unhide).toBeInTheDocument();
+
+    fireEvent.click(unhide);
+
     await waitFor(() => {
-      expect(screen.getByTestId("CollectibleDetail")).toBeInTheDocument();
+      expect(changeCollectibleVisibility).toHaveBeenCalledWith(
+        expect.objectContaining({
+          collectibleKey:
+            "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA:2",
+          collectibleVisibility: "visible",
+        }),
+      );
     });
+
+    expect(screen.queryByTestId("CollectibleDetail")).not.toBeInTheDocument();
+  });
+
+  it("mirrors an unhide under the network the background reports", async () => {
+    // The write carries no network -- the background resolves NETWORK_ID while
+    // handling it -- so a switch committing mid-flight persists into the other
+    // network's bucket. Mirroring that under the network selected here would
+    // leave redux disagreeing with storage on both.
+    const hiddenCollectibles = {
+      "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA:2": "hidden",
+    };
+
+    render(
+      <Wrapper state={defaultState} routes={[ROUTES.account]}>
+        <HiddenCollectibles
+          collections={mockCollectibles}
+          isOpen={true}
+          onClose={jest.fn()}
+          refreshHiddenCollectibles={mockRefreshHiddenCollectibles}
+          isCollectibleHidden={createIsCollectibleHidden(hiddenCollectibles)}
+          isLoading={false}
+          loadError=""
+        />
+      </Wrapper>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("hidden-collectible-2")).toBeInTheDocument();
+    });
+
+    jest.spyOn(ApiInternal, "changeCollectibleVisibility").mockResolvedValue({
+      hiddenCollectibles: {},
+      networkName: MAINNET_NETWORK_DETAILS.networkName,
+      error: "",
+    } as any);
+
+    fireEvent.click(screen.getByTestId("hidden-collectible-unhide-2"));
+
+    await waitFor(() => {
+      const mirror = (
+        getTestStore()?.getState() as {
+          hiddenCollectibles: {
+            hiddenCollectibles: Record<string, Record<string, unknown>>;
+          };
+        }
+      ).hiddenCollectibles.hiddenCollectibles;
+
+      expect(
+        mirror[MAINNET_NETWORK_DETAILS.networkName]?.[TEST_PUBLIC_KEY],
+      ).toEqual({});
+      expect(mirror[TESTNET_NETWORK_DETAILS.networkName]).toBeUndefined();
+    });
+  });
+
+  it("re-enables the Unhide buttons when the background message fails", async () => {
+    // `sendMessageToBackground` rejects outright when the send fails -- e.g.
+    // while the service worker restarts -- rather than answering with an
+    // `error`. Without a catch the pending key was never cleared and every
+    // Unhide button stayed disabled with nothing on screen to explain it.
+    const hiddenCollectibles = {
+      "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA:2": "hidden",
+    };
+
+    render(
+      <Wrapper state={defaultState} routes={[ROUTES.account]}>
+        <HiddenCollectibles
+          collections={mockCollectibles}
+          isOpen={true}
+          onClose={jest.fn()}
+          refreshHiddenCollectibles={mockRefreshHiddenCollectibles}
+          isCollectibleHidden={createIsCollectibleHidden(hiddenCollectibles)}
+          isLoading={false}
+          loadError=""
+        />
+      </Wrapper>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("hidden-collectible-2")).toBeInTheDocument();
+    });
+
+    jest
+      .spyOn(ApiInternal, "changeCollectibleVisibility")
+      .mockRejectedValue(new Error("Could not establish connection"));
+
+    fireEvent.click(screen.getByTestId("hidden-collectible-unhide-2"));
+
+    await waitFor(() => {
+      expect(
+        screen.getByTestId("hidden-collectible-unhide-2"),
+      ).not.toBeDisabled();
+    });
+  });
+  it("waits for the visibility map instead of claiming nothing is hidden", async () => {
+    render(
+      <Wrapper state={defaultState} routes={[ROUTES.account]}>
+        <HiddenCollectibles
+          collections={mockCollectibles}
+          isOpen={true}
+          onClose={jest.fn()}
+          refreshHiddenCollectibles={mockRefreshHiddenCollectibles}
+          isCollectibleHidden={createIsCollectibleHidden({})}
+          isLoading={true}
+          loadError=""
+        />
+      </Wrapper>,
+    );
+
+    await waitFor(() => {
+      expect(
+        screen.getByTestId("HiddenCollectibles__loader"),
+      ).toBeInTheDocument();
+    });
+    // The empty state would be a claim the sheet cannot make yet.
+    expect(
+      screen.queryByText("No hidden collectibles"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("surfaces a failed visibility load rather than spinning forever", async () => {
+    render(
+      <Wrapper state={defaultState} routes={[ROUTES.account]}>
+        <HiddenCollectibles
+          collections={mockCollectibles}
+          isOpen={true}
+          onClose={jest.fn()}
+          refreshHiddenCollectibles={mockRefreshHiddenCollectibles}
+          isCollectibleHidden={createIsCollectibleHidden({})}
+          isLoading={true}
+          loadError="boom"
+        />
+      </Wrapper>,
+    );
+
+    await waitFor(() => {
+      expect(
+        screen.getByTestId("HiddenCollectibles__error"),
+      ).toBeInTheDocument();
+    });
+    expect(
+      screen.queryByTestId("HiddenCollectibles__loader"),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("No hidden collectibles"),
+    ).not.toBeInTheDocument();
   });
 });

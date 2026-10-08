@@ -55,7 +55,6 @@
     align-items: center;
     background: var(--sds-clr-gray-01);
 
-    // TODO - make a single reusable var when removing PopupWrapper
     padding: var(--popup-vertical-padding) var(--account-view-padding-side) 1rem
       var(--account-view-padding-side);
     border-top-right-radius: 1rem;

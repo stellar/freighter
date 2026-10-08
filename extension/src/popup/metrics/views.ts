@@ -41,6 +41,7 @@ interface ScreenDef {
 const SCREEN_BY_ROUTE: Partial<Record<ROUTES, ScreenDef>> = {
   [ROUTES.welcome]: { screen_name: "welcome", flow: "onboarding" },
   [ROUTES.account]: { screen_name: "account", flow: "assets" },
+  [ROUTES.discover]: { screen_name: "discover", flow: "discovery" },
   [ROUTES.accountHistory]: { screen_name: "account_history", flow: "history" },
   [ROUTES.addAccount]: { screen_name: "add_account", flow: "onboarding" },
   [ROUTES.importAccount]: { screen_name: "import_account", flow: "onboarding" },
@@ -64,10 +65,6 @@ const SCREEN_BY_ROUTE: Partial<Record<ROUTES, ScreenDef>> = {
   [ROUTES.grantAccess]: { screen_name: "grant_access", flow: "signing" },
   [ROUTES.mnemonicPhrase]: {
     screen_name: "mnemonic_phrase",
-    flow: "onboarding",
-  },
-  [ROUTES.mnemonicPhraseConfirm]: {
-    screen_name: "confirm_mnemonic_phrase",
     flow: "onboarding",
   },
   [ROUTES.unlockAccount]: { screen_name: "unlock_account", flow: "security" },
@@ -112,7 +109,6 @@ const SCREEN_BY_ROUTE: Partial<Record<ROUTES, ScreenDef>> = {
   [ROUTES.addCollectibles]: { screen_name: "add_collectibles", flow: "assets" },
   [ROUTES.manageAssets]: { screen_name: "manage_assets", flow: "assets" },
   [ROUTES.searchAsset]: { screen_name: "search_asset", flow: "assets" },
-  [ROUTES.assetVisibility]: { screen_name: "asset_visibility", flow: "assets" },
   [ROUTES.addAsset]: { screen_name: "add_asset_manually", flow: "assets" },
   [ROUTES.swap]: { screen_name: "swap", flow: "swap" },
   [ROUTES.manageNetwork]: { screen_name: "manage_network", flow: "settings" },
@@ -167,7 +163,26 @@ const SCREEN_BY_ROUTE: Partial<Record<ROUTES, ScreenDef>> = {
  * by the Send flow's step effect, so tracking the bare container here would only
  * double-count. Mobile has no send_payment container either (RFC #2883, D8).
  */
-const ROUTES_WITHOUT_SCREEN_VIEW = new Set<string>([ROUTES.sendPayment]);
+export const ROUTES_WITHOUT_SCREEN_VIEW = new Set<string>([
+  ROUTES.sendPayment,
+  // Redirects, not screens. The design-parity restructure turned these three
+  // into `<Navigate to={ROUTES.account} replace />` -- the paths survive only so
+  // a popup restoring its last location lands on Home. Emitting for them would
+  // report a screen nobody saw and then immediately report `account` as well,
+  // double-counting every redirect. Their SCREEN_BY_ROUTE entries stay: the
+  // handler `captureException`s on an uncatalogued path, and views.test.ts
+  // asserts a mapping exists for every ROUTES value.
+  ROUTES.manageAssets,
+  ROUTES.manageConnectedApps,
+  ROUTES.wallets,
+]);
+
+/**
+ * Every path the router still serves. A pathname outside this set is a retired
+ * or unknown route on its way to the catch-all redirect in `Router`, not a
+ * screen someone forgot to catalogue.
+ */
+const KNOWN_ROUTE_PATHS = new Set<string>(Object.values(ROUTES));
 
 /** Builds the screen.viewed props object, dropping any undefined flow/step. */
 const screenProps = (
@@ -203,11 +218,20 @@ registerHandler<AppState>(navigate, (_, a) => {
     // RFC #2883 (D6): an uncatalogued route is not tracked. Report to Sentry so
     // the gap is visible, but never throw inside the navigate handler — throwing
     // here risks breaking navigation for a route someone simply forgot to add.
-    captureException(
-      new Error(
-        `No screen definition for path '${pathname}'; screen.viewed skipped`,
-      ),
-    );
+    //
+    // Only for paths the router still serves, though. A retired path -- a
+    // fullscreen tab or bookmark reloading onto it after an update -- is
+    // redirected to Home by the catch-all, so reporting it would file an
+    // exception for a screen nobody asked for and nobody can catalogue.
+    // `views.test.ts` enumerates ROUTES to assert every one is covered, so this
+    // is a backstop for that assertion being weakened, not the first defence.
+    if (KNOWN_ROUTE_PATHS.has(pathname)) {
+      captureException(
+        new Error(
+          `No screen definition for path '${pathname}'; screen.viewed skipped`,
+        ),
+      );
+    }
     return;
   }
 

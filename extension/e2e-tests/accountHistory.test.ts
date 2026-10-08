@@ -220,8 +220,9 @@ test("Orders failed transactions by date alongside successful ones", async ({
   await expect(historyItemLabels.nth(0)).toHaveText("Transaction Failed");
   await expect(historyItemLabels.nth(2)).toHaveText("Transaction Failed");
 
-  // Now verify the same ordering inside the asset (USDC) detail view.
-  await page.getByTestId("BackButton").click();
+  // Now verify the same ordering inside the asset (USDC) detail view. History is
+  // a tab root, so it has no back button -- return via the Home tab.
+  await page.getByTestId("nav-link-account").click();
   await expect(page.getByTestId("account-view")).toBeVisible({
     timeout: 10000,
   });

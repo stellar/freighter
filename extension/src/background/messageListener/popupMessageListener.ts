@@ -96,6 +96,7 @@ import { loadBackendSettings } from "./handlers/loadBackendSettings";
 import { saveBlockaidOverrideState } from "./handlers/saveDebugOverride";
 import { getBlockaidOverrideState } from "./handlers/getDebugOverride";
 import { addCollectible } from "./handlers/addCollectible";
+import { removeCollectible } from "./handlers/removeCollectible";
 import { getCollectibles } from "./handlers/getCollectibles";
 import { changeCollectibleVisibility } from "./handlers/changeCollectibleVisibility";
 import { getHiddenCollectibles } from "./handlers/getHiddenCollectibles";
@@ -578,6 +579,7 @@ export const popupMessageListener = (
     }
     case SERVICE_TYPES.GET_HIDDEN_ASSETS: {
       return getHiddenAssets({
+        request,
         localStore,
       });
     }
@@ -602,6 +604,12 @@ export const popupMessageListener = (
         localStore,
       });
     }
+    case SERVICE_TYPES.REMOVE_COLLECTIBLE: {
+      return removeCollectible({
+        request,
+        localStore,
+      });
+    }
     case SERVICE_TYPES.GET_COLLECTIBLES: {
       return getCollectibles({
         request,
@@ -616,6 +624,7 @@ export const popupMessageListener = (
     }
     case SERVICE_TYPES.GET_HIDDEN_COLLECTIBLES: {
       return getHiddenCollectibles({
+        request,
         localStore,
       });
     }

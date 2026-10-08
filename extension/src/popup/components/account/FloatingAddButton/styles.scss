@@ -8,7 +8,8 @@
   // Safe because no ancestor sets transform/filter/backdrop-filter, which
   // would otherwise turn into its containing block.
   position: fixed;
-  bottom: pxToRem(24px);
+  // Rides above the tab bar; --app--bottom-offset is 0 on routes without one.
+  bottom: calc(var(--app--bottom-offset) + #{pxToRem(24px)});
   left: 50%;
   transform: translateX(-50%);
   z-index: var(--z-index--banner);

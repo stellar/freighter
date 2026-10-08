@@ -13,6 +13,8 @@ import {
   IS_BLOCKAID_ANNOUNCED_ID,
   IS_HIDE_DUST_ENABLED_ID,
   ALLOWLIST_ID,
+  HIDDEN_ASSETS,
+  HIDDEN_COLLECTIBLES,
   LAST_USED_ACCOUNT,
 } from "constants/localStorageTypes";
 import {
@@ -27,6 +29,12 @@ import {
 } from "@shared/constants/stellar";
 import { DEFAULT_ASSETS_LISTS } from "@shared/constants/soroban/asset-list";
 import { dataStorageAccess, browserLocalStorage } from "./dataStorageAccess";
+import {
+  emptyVisibilityStore,
+  getVisibilityNetworkNames,
+  isLegacyFlatVisibilityMap,
+  nestLegacyVisibilityMap,
+} from "./hidden-visibility";
 
 // Session Storage Feature Flag - turn on when storage.session is supported
 export const SESSION_STORAGE_ENABLED = true;
@@ -340,6 +348,120 @@ export const migrateAllowlistToKeyNetworkSchema = async () => {
   }
 };
 
+export const migrateHiddenAssetsToKeyNetworkSchema = async () => {
+  const localStore = dataStorageAccess(browserLocalStorage);
+  const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
+
+  if (shouldRunMigration({ storageVersion, migrationVersion: "5.46.0" })) {
+    try {
+      const currentHiddenAssets = await localStore.getItem(HIDDEN_ASSETS);
+      const lastUsedAccount = await localStore.getItem(LAST_USED_ACCOUNT);
+      // Every configured network, not just the three built-in ones: readers key
+      // off `networkDetails.networkName`, so a custom network with no bucket
+      // resolves to `undefined` and nothing is ever hidden there.
+      const networkNames = await getVisibilityNetworkNames({ localStore });
+
+      let hiddenAssetsByKey: Record<string, unknown> =
+        emptyVisibilityStore(networkNames);
+
+      if (currentHiddenAssets) {
+        // Nothing to attribute the old map to yet -- `lastUsedAccount` is
+        // removed by clearAccount / removePreviousAccount. Leave the stored
+        // value and the storage version alone so this runs again once an
+        // account is in use; writing empty buckets here would erase the very
+        // hides the migration exists to preserve.
+        if (!lastUsedAccount) {
+          return;
+        }
+
+        // The old value was a single flat { [assetKey]: visibility } map shared
+        // by every account on every network. Assign it to the active account on
+        // all of them: the user hid these deliberately, very often to bury a
+        // spam airdrop, so dropping them is a visible regression -- but
+        // spreading them to accounts they never touched would widen the very bug
+        // this migration exists to fix, with no one-step undo.
+        hiddenAssetsByKey = isLegacyFlatVisibilityMap(currentHiddenAssets)
+          ? nestLegacyVisibilityMap({
+              legacyMap: currentHiddenAssets,
+              publicKey: lastUsedAccount as string,
+              networkNames,
+            })
+          : (currentHiddenAssets as Record<string, unknown>);
+      }
+
+      await localStore.setItem(HIDDEN_ASSETS, hiddenAssetsByKey);
+
+      await migrateDataStorageVersion("5.46.0");
+    } catch (error) {
+      // Leave both the stored value and the storage version alone so this runs
+      // again on the next start. Writing `empty` here would erase the very
+      // hides the migration exists to preserve, and bumping the version would
+      // put them permanently out of reach.
+      console.error(error);
+    }
+  }
+};
+
+export const migrateHiddenCollectiblesToKeyNetworkSchema = async () => {
+  const localStore = dataStorageAccess(browserLocalStorage);
+  const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
+
+  // The hidden-assets migration above is the only one in this file that can
+  // decline to advance the version -- it defers when there is no account to
+  // attribute the old map to, and leaves it alone when it throws, so that it
+  // runs again next start. A single STORAGE_VERSION cannot record "5.46.0
+  // pending, 5.47.0 done": bumping past it here would make `semver.lt` answer
+  // false for 5.46.0 forever and skip that migration permanently. Wait.
+  if (shouldRunMigration({ storageVersion, migrationVersion: "5.46.0" })) {
+    return;
+  }
+
+  // 5.47.0, not 5.46.0: `shouldRunMigration` is `semver.lt`, so reusing the
+  // version the hidden-assets migration already wrote would skip this entirely
+  // for anyone who has run that one.
+  if (shouldRunMigration({ storageVersion, migrationVersion: "5.47.0" })) {
+    try {
+      const currentHiddenCollectibles =
+        await localStore.getItem(HIDDEN_COLLECTIBLES);
+      const lastUsedAccount = await localStore.getItem(LAST_USED_ACCOUNT);
+      const networkNames = await getVisibilityNetworkNames({ localStore });
+
+      let hiddenCollectiblesByKey: Record<string, unknown> =
+        emptyVisibilityStore(networkNames);
+
+      // Same reasoning as the hidden-assets migration throughout: custom
+      // networks need their own buckets, a missing account means wait rather
+      // than overwrite, and the old flat map is attributed to the active
+      // account on every network.
+      if (currentHiddenCollectibles) {
+        if (!lastUsedAccount) {
+          return;
+        }
+
+        hiddenCollectiblesByKey = isLegacyFlatVisibilityMap(
+          currentHiddenCollectibles,
+        )
+          ? nestLegacyVisibilityMap({
+              legacyMap: currentHiddenCollectibles,
+              publicKey: lastUsedAccount as string,
+              networkNames,
+            })
+          : (currentHiddenCollectibles as Record<string, unknown>);
+      }
+
+      await localStore.setItem(HIDDEN_COLLECTIBLES, hiddenCollectiblesByKey);
+
+      await migrateDataStorageVersion("5.47.0");
+    } catch (error) {
+      // Leave both the stored value and the storage version alone so this runs
+      // again on the next start. Writing `empty` here would erase the very
+      // hides the migration exists to preserve, and bumping the version would
+      // put them permanently out of reach.
+      console.error(error);
+    }
+  }
+};
+
 export const migratePubnetRpcUrl = async () => {
   const localStore = dataStorageAccess(browserLocalStorage);
   const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
@@ -392,6 +514,8 @@ export const versionedMigration = async () => {
   await removeStellarExpertData();
   await migrateAllowlistToKeyNetworkSchema();
   await migratePubnetRpcUrl();
+  await migrateHiddenAssetsToKeyNetworkSchema();
+  await migrateHiddenCollectiblesToKeyNetworkSchema();
 };
 
 // Updates storage version

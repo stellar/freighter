@@ -12,6 +12,8 @@ import { reducer as settings } from "popup/ducks/settings";
 import { reducer as transactionSubmission } from "popup/ducks/transactionSubmission";
 import { reducer as tokenPaymentSimulation } from "popup/ducks/token-payment";
 import { reducer as cache } from "popup/ducks/cache";
+import { reducer as hiddenAssets } from "popup/ducks/hiddenAssets";
+import { reducer as hiddenCollectibles } from "popup/ducks/hiddenCollectibles";
 import { reducer as remoteConfig } from "popup/ducks/remoteConfig";
 import { ErrorTracking } from "popup/components/ErrorTracking";
 import { AccountMismatch } from "popup/components/AccountMismatch";
@@ -30,6 +32,8 @@ const rootReducer = combineReducers({
   transactionSubmission,
   tokenPaymentSimulation,
   cache,
+  hiddenAssets,
+  hiddenCollectibles,
   remoteConfig,
 });
 export type AppState = ReturnType<typeof rootReducer>;

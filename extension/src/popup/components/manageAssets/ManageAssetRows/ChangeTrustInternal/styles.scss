@@ -127,7 +127,7 @@
     &__Wrapper {
       max-width: 49rem;
       width: 100%;
-      max-height: calc(85vh - pxToRem(160px));
+      max-height: calc(var(--slideup-modal--max-height) - #{pxToRem(160px)});
       overflow-y: auto;
       display: flex;
       flex-direction: column;

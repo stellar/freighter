@@ -57,7 +57,7 @@ import {
   IndexerSettings,
   SettingsState,
   ExperimentalFeatures,
-  IssuerKey,
+  AssetKey,
   AssetVisibility,
   ApiTokenPrices,
   HorizonOperation,
@@ -2325,13 +2325,21 @@ export const removeTokenId = async ({
   contractId: string;
   network: NETWORKS;
 }): Promise<string[]> => {
-  const resp = await sendMessageToBackground({
+  const { tokenIdList, error } = await sendMessageToBackground({
     type: SERVICE_TYPES.REMOVE_TOKEN_ID,
     contractId,
     network,
     activePublicKey,
   });
-  return resp.tokenIdList;
+
+  // The background answers an account mismatch with { error } and no list, so
+  // returning the field unchecked resolves `undefined` and reads as a success.
+  // Mirrors addTokenId above.
+  if (error) {
+    throw new Error(error);
+  }
+
+  return tokenIdList;
 };
 
 export const addAssetsList = async ({
@@ -2604,7 +2612,8 @@ export const getHiddenAssets = async ({
 }) => {
   let response = {
     error: "",
-    hiddenAssets: {} as Record<IssuerKey, AssetVisibility>,
+    hiddenAssets: {} as Record<AssetKey, AssetVisibility>,
+    networkName: "",
   };
 
   response = await sendMessageToBackground({
@@ -2612,33 +2621,51 @@ export const getHiddenAssets = async ({
     activePublicKey,
   });
 
-  return { hiddenAssets: response.hiddenAssets || {}, error: response.error };
+  return {
+    hiddenAssets: response.hiddenAssets || {},
+    // See `changeAssetVisibility`: the request carries no network, so this is
+    // the only thing identifying the map that came back.
+    networkName: response.networkName || "",
+    error: response.error,
+  };
 };
 
 export const changeAssetVisibility = async ({
-  assetIssuer,
+  assetKey,
   assetVisibility,
   activePublicKey,
 }: {
-  assetIssuer: IssuerKey;
+  assetKey: AssetKey;
   assetVisibility: AssetVisibility;
   activePublicKey: string;
 }) => {
   let response = {
     error: "",
-    hiddenAssets: {} as Record<IssuerKey, AssetVisibility>,
+    hiddenAssets: {} as Record<AssetKey, AssetVisibility>,
+    networkName: "",
   };
 
   response = await sendMessageToBackground({
     type: SERVICE_TYPES.CHANGE_ASSET_VISIBILITY,
     assetVisibility: {
-      issuer: assetIssuer,
+      assetKey,
+      // See ChangeAssetVisibilityMessage: a service worker from before the
+      // rename reads `issuer`, and the two fields carry the same canonical
+      // `{code}:{issuer}` value.
+      issuer: assetKey,
       visibility: assetVisibility,
     },
     activePublicKey,
   });
 
-  return { hiddenAssets: response.hiddenAssets, error: response.error };
+  return {
+    hiddenAssets: response.hiddenAssets,
+    // The network the background resolved while handling this, which is not
+    // necessarily the one the caller was on when it sent it. Empty only when an
+    // older service worker answers; callers fall back to their own network.
+    networkName: response.networkName || "",
+    error: response.error,
+  };
 };
 
 export const addCollectible = async ({
@@ -2652,13 +2679,8 @@ export const addCollectible = async ({
   collectibleContractAddress: string;
   collectibleTokenId: string;
 }) => {
-  let response = {
-    error: "",
-    collectiblesList: [] as CollectibleContract[],
-  };
-
   try {
-    response = await sendMessageToBackground({
+    const response = await sendMessageToBackground({
       type: SERVICE_TYPES.ADD_COLLECTIBLE,
       activePublicKey: publicKey,
       publicKey,
@@ -2666,11 +2688,74 @@ export const addCollectible = async ({
       collectibleContractAddress,
       collectibleTokenId,
     });
+
+    // A background that does not recognise the message type returns nothing,
+    // and Chrome serialises that to `null` -- which happens whenever the
+    // loaded service worker predates this message. Report it rather than
+    // letting the caller destructure null, and never let it read as success.
+    if (!response) {
+      return {
+        error: "Freighter needs to be reloaded to complete this action",
+        collectiblesList: [] as CollectibleContract[],
+      };
+    }
+
+    return {
+      error: response.error || "",
+      collectiblesList: response.collectiblesList || [],
+    };
   } catch (e) {
     console.error(e);
+    return {
+      error: "Unable to reach the Freighter background",
+      collectiblesList: [] as CollectibleContract[],
+    };
   }
+};
 
-  return response;
+export const removeCollectible = async ({
+  publicKey,
+  network,
+  collectibleContractAddress,
+  collectibleTokenId,
+}: {
+  publicKey: string;
+  network: string;
+  collectibleContractAddress: string;
+  collectibleTokenId: string;
+}) => {
+  try {
+    const response = await sendMessageToBackground({
+      type: SERVICE_TYPES.REMOVE_COLLECTIBLE,
+      activePublicKey: publicKey,
+      publicKey,
+      network,
+      collectibleContractAddress,
+      collectibleTokenId,
+    });
+
+    // A background that does not recognise the message type returns nothing,
+    // and Chrome serialises that to `null` -- which happens whenever the
+    // loaded service worker predates this message. Report it rather than
+    // letting the caller destructure null, and never let it read as success.
+    if (!response) {
+      return {
+        error: "Freighter needs to be reloaded to complete this action",
+        collectiblesList: [] as CollectibleContract[],
+      };
+    }
+
+    return {
+      error: response.error || "",
+      collectiblesList: response.collectiblesList || [],
+    };
+  } catch (e) {
+    console.error(e);
+    return {
+      error: "Unable to reach the Freighter background",
+      collectiblesList: [] as CollectibleContract[],
+    };
+  }
 };
 
 export const getCollectibles = async ({
@@ -2719,6 +2804,10 @@ export const changeCollectibleVisibility = async ({
 
   return {
     hiddenCollectibles: response?.hiddenCollectibles || {},
+    // The network the background resolved while handling this, which is not
+    // necessarily the one the caller was on when it sent it. Empty only when an
+    // older service worker answers; callers fall back to their own network.
+    networkName: response?.networkName || "",
     error: response?.error || "",
   };
 };
@@ -2735,6 +2824,9 @@ export const getHiddenCollectibles = async ({
 
   return {
     hiddenCollectibles: response?.hiddenCollectibles || {},
+    // See `changeCollectibleVisibility`: the request carries no network, so
+    // this is the only thing identifying the map that came back.
+    networkName: response?.networkName || "",
     error: response?.error || "",
   };
 };

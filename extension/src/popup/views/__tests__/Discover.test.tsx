@@ -80,7 +80,7 @@ describe("Discover", () => {
           },
         }}
       >
-        <Discover onClose={jest.fn()} />
+        <Discover />
       </Wrapper>,
     );
 

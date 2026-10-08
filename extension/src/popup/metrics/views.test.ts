@@ -32,7 +32,7 @@ import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { ROUTES } from "popup/constants/routes";
 
 // Importing the module registers the navigate handler via registerHandler.
-import "popup/metrics/views";
+import { ROUTES_WITHOUT_SCREEN_VIEW } from "popup/metrics/views";
 
 type NavHandler = (state: unknown, action: unknown) => void;
 
@@ -80,11 +80,35 @@ describe("views navigate handler → screen.viewed", () => {
     expect(emitMetric).not.toHaveBeenCalled();
   });
 
-  it("skips (does not throw) and reports to Sentry for an uncatalogued route (D6)", () => {
+  it.each([
+    ["manage assets", ROUTES.manageAssets],
+    ["connected apps", ROUTES.manageConnectedApps],
+    ["wallets", ROUTES.wallets],
+  ])("does not emit a screen-view for the %s redirect", (_label, route) => {
+    // These paths render `<Navigate to={ROUTES.account} replace />`. Emitting
+    // would report a screen nobody saw, and then report `account` as well.
+    fireNavigate(route);
+    expect(emitScreenViewed).not.toHaveBeenCalled();
+    expect(emitMetric).not.toHaveBeenCalled();
+  });
+
+  it("skips (does not throw) for a path the router no longer serves (D6)", () => {
+    // Retired paths reach the catch-all in `Router` and redirect to Home. A
+    // stale fullscreen tab or bookmark can still land on one after an update,
+    // and that is not an uncatalogued-screen gap -- there is no screen to
+    // catalogue -- so it must not file a Sentry exception either.
+    (captureException as jest.Mock).mockClear();
+    expect(() => fireNavigate("/manage-assets/asset-visibility")).not.toThrow();
+    expect(emitScreenViewed).not.toHaveBeenCalled();
+    expect(emitMetric).not.toHaveBeenCalled();
+    expect(captureException).not.toHaveBeenCalled();
+  });
+
+  it("does not report for an arbitrary unknown path", () => {
     (captureException as jest.Mock).mockClear();
     expect(() => fireNavigate("/some-brand-new-route")).not.toThrow();
     expect(emitScreenViewed).not.toHaveBeenCalled();
-    expect(captureException).toHaveBeenCalledTimes(1);
+    expect(captureException).not.toHaveBeenCalled();
   });
 
   it("attaches a step for completion/success screens", () => {
@@ -142,9 +166,10 @@ describe("views navigate handler → screen.viewed", () => {
     const screenRoutes = Object.values(ROUTES).filter(
       (r) =>
         r !== ROUTES.manageAssetsListsModifyAssetList &&
-        // The send route is an intentional non-emit container (D8); its
-        // per-step screens are emitted by the Send flow's step effect.
-        r !== ROUTES.sendPayment,
+        // Derived rather than hardcoded so the two cannot drift: the set covers
+        // the send container (D8, whose per-step screens are emitted by the Send
+        // flow) and the routes that are now bare redirects.
+        !ROUTES_WITHOUT_SCREEN_VIEW.has(r),
     );
     const names: string[] = [];
     screenRoutes.forEach((pathname) => {

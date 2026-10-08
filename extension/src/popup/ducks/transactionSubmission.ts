@@ -361,9 +361,14 @@ export const removeTokenId = createAsyncThunk<
     try {
       await internalRemoveTokenId({ activePublicKey, contractId, network });
     } catch (e) {
+      const message = e instanceof Error ? e.message : JSON.stringify(e);
       console.error(e);
-      rejectWithValue({ errorMessage: e as string });
+      // Must be returned: a bare call still resolves the thunk, so callers see
+      // removeTokenId/fulfilled for a removal that never happened.
+      return rejectWithValue({ errorMessage: message });
     }
+
+    return undefined;
   },
 );
 
@@ -509,7 +514,6 @@ interface TransactionData {
   destinationAsset: string;
   destinationDecimals?: number;
   destinationAmount: string;
-  destinationIcon: string;
   destinationTokenDetails: DestinationTokenDetails | null;
   path: string[];
   allowedSlippage: string;
@@ -537,12 +541,6 @@ interface HardwareWalletData {
   shouldSubmit: boolean;
 }
 
-export enum AssetSelectType {
-  MANAGE = "MANAGE",
-  REGULAR = "REGULAR",
-  PATH_PAY = "PATH_PAY",
-  SWAP = "SWAP",
-}
 interface InitialState {
   submitStatus: ActionStatus;
   hardwareWalletData: HardwareWalletData;
@@ -561,10 +559,6 @@ interface InitialState {
     preparedTransaction: string | null;
   };
   soroswapTokens: SoroswapToken[];
-  assetSelect: {
-    type: AssetSelectType;
-    isSource: boolean;
-  };
   memoRequiredAccounts: MemoRequiredAccount[];
 }
 
@@ -586,7 +580,6 @@ export const initialState: InitialState = {
     memoType: "",
     destinationAsset: "",
     destinationAmount: "",
-    destinationIcon: "",
     destinationTokenDetails: null,
     path: [],
     allowedSlippage: "2",
@@ -614,10 +607,6 @@ export const initialState: InitialState = {
     shouldSubmit: true,
   },
   soroswapTokens: [],
-  assetSelect: {
-    type: AssetSelectType.MANAGE,
-    isSource: true,
-  },
   memoRequiredAccounts: [],
 };
 
@@ -687,9 +676,6 @@ const transactionSubmissionSlice = createSlice({
     saveDestinationAsset: (state, action) => {
       state.transactionData.destinationAsset = action.payload;
     },
-    saveDestinationIcon: (state, action) => {
-      state.transactionData.destinationIcon = action.payload;
-    },
     saveIsSoroswap: (state, action) => {
       state.transactionData.isSoroswap = action.payload;
     },
@@ -739,12 +725,6 @@ const transactionSubmissionSlice = createSlice({
       state.hardwareWalletData.status = ShowOverlayStatus.IDLE;
       state.hardwareWalletData.transactionXDR = "";
       state.hardwareWalletData.shouldSubmit = true;
-    },
-    saveAssetSelectType: (state, action) => {
-      state.assetSelect.type = action.payload;
-    },
-    saveAssetSelectSource: (state, action) => {
-      state.assetSelect.isSource = action.payload;
     },
     saveIsMergeSelected: (state, action) => {
       state.transactionData.isMergeSelected = action.payload;
@@ -889,7 +869,6 @@ export const {
   saveTransactionTimeout,
   saveMemoAndType,
   saveDestinationAsset,
-  saveDestinationIcon,
   saveIsSoroswap,
   saveAllowedSlippage,
   saveIsToken,
@@ -899,8 +878,6 @@ export const {
   startHwConnect,
   startHwSign,
   closeHwOverlay,
-  saveAssetSelectType,
-  saveAssetSelectSource,
   saveIsMergeSelected,
   saveBalancesToMigrate,
   saveSwapBestPath,

@@ -9,7 +9,9 @@
   background-color: var(--sds-clr-gray-01);
   border-radius: 0.875rem;
   height: auto;
-  max-height: 85vh;
+  // Track the sheet's own ceiling rather than a bare 85vh, which ignored
+  // the bottom inset and any persistent bottom chrome.
+  max-height: var(--slideup-modal--max-height);
 
   &__Warnings {
     margin-top: pxToRem(32px);
@@ -280,7 +282,7 @@
     .ReviewTx__TextAction {
       margin-top: pxToRem(12px);
       // Extra breathing room below the "Confirm anyway" text button so it is
-      // not flush against the bottom edge of the screen.
+      // not flush against the bottom of the sheet.
       margin-bottom: pxToRem(20px);
       width: 100%;
       border: none;

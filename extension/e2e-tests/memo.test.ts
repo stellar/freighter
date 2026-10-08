@@ -215,7 +215,7 @@ test("Send payment returns to review modal after cancelling memo editor from rev
 
   // Cancel memo editor
   await expect(page.getByTestId("edit-memo-input")).toBeVisible();
-  await page.getByText("Cancel").click();
+  await page.getByTestId("edit-memo-cancel").click();
 
   // Verify review modal is reopened after cancelling and "Add Memo" button is still visible
   await expect(page.getByText("You are sending")).toBeVisible({
@@ -583,7 +583,7 @@ test("Send custom token without Soroban mux support to G address disables memo",
   await expect(saveButton).toBeDisabled();
 
   // Close the EditMemo dialog
-  await page.getByText("Cancel").click();
+  await page.getByTestId("edit-memo-cancel").click();
 
   // Wait for EditMemo to close
   await expect(page.getByTestId("edit-memo-input")).not.toBeVisible();
@@ -783,7 +783,7 @@ test("Send custom token with Soroban mux support to M address disables memo", as
   await expect(
     page.getByText("Memo is disabled for this transaction"),
   ).toBeVisible({ timeout: 15000 });
-  await page.getByText("Cancel").click();
+  await page.getByTestId("edit-memo-cancel").click();
 
   // Click Review Send
   const reviewSendButton = page.getByTestId("send-amount-btn-continue");
