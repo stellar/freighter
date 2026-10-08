@@ -66,7 +66,7 @@ export const Settings = () => {
 
             <div className="Settings__row">
               <ListNavLink
-                href="https://www.freighter.app/faq"
+                href="https://varialwallet.com/faq"
                 icon={<IconHelp />}
               >
                 {t("Help")}
@@ -84,7 +84,7 @@ export const Settings = () => {
             </div>
             <div className="Settings__row">
               <ListNavLink
-                href="https://docs.freighter.app/docs/whatsNew"
+                href="https://docs.varialwallet.com/docs/whatsNew"
                 icon={
                   <Icon.Announcement01 className="Settings__icon__whatsNew" />
                 }
