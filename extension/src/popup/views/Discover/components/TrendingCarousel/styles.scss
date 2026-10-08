@@ -62,10 +62,19 @@
       display: flex;
       justify-content: space-between;
       align-items: flex-end;
+      gap: pxToRem(8);
+    }
+
+    &__name {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     &__tag {
       color: var(--sds-clr-gray-11);
+      flex-shrink: 0;
     }
 
     // Over artwork the fade and text stay dark-on-image in both themes, as

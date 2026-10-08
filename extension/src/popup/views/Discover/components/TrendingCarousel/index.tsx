@@ -39,7 +39,12 @@ const TrendingCard = ({
       )}
       <div className="TrendingCarousel__card__gradient" />
       <div className="TrendingCarousel__card__content">
-        <Text as="div" size="md" weight="medium">
+        <Text
+          as="div"
+          size="md"
+          weight="medium"
+          addlClassName="TrendingCarousel__card__name"
+        >
           {protocol.name}
         </Text>
         <div className="TrendingCarousel__card__tag">
