@@ -103,6 +103,13 @@ const ALLOWED_RAW_COLORS: Record<string, string[]> = {
     "rgba(22, 23, 23, 0)",
     "rgba(21, 22, 22, 0.78)",
   ],
+  // Trending card over its artwork: fade and tag text from Figma 1123-116809,
+  // fixed so they read on the image in both themes.
+  "popup/views/Discover/components/TrendingCarousel/styles.scss": [
+    "#232323",
+    "#c7c7c7",
+    "rgba(35, 35, 35, 0)",
+  ],
 };
 
 // Neutral shadow/scrim alphas; black-based, so they don't invert when the
