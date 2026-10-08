@@ -120,9 +120,7 @@ export const Usdt0LaunchBanner = () => {
           onOpenAutoFocus={(e) => e.preventDefault()}
           aria-describedby={undefined}
           side="bottom"
-          // Pinned dark: the hero art is fixed-dark and there is no light
-          // design for the sheet yet.
-          className="Usdt0LaunchBanner__sheet sds-theme-dark"
+          className="Usdt0LaunchBanner__sheet"
         >
           <ScreenReaderOnly>
             <SheetTitle>{t("USDT0 is now on Stellar")}</SheetTitle>

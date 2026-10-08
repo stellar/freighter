@@ -103,9 +103,6 @@
 
   &__sheet {
     background: var(--sds-clr-gray-01);
-    // Re-resolves inherited text against this subtree's theme class; body's
-    // color arrives already computed in the page theme.
-    color: var(--sds-clr-gray-12);
     height: 100%;
     width: 100%;
   }
