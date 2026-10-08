@@ -1,0 +1,50 @@
+@use "../../../../../styles/utils.scss" as *;
+
+// A scalar inside a rendered SCVal. It has to sit in the text flow like the
+// punctuation around it, so the button chrome is stripped back to nothing and
+// the parent's `white-space` is inherited rather than reset by the button.
+.ScValToken {
+  display: inline;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  color: inherit;
+  white-space: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  // Without a cue, nobody discovers that the value is inspectable.
+  text-decoration: underline dotted var(--sds-clr-gray-08);
+  text-underline-offset: pxToRem(3px);
+
+  &:hover,
+  &:focus-visible {
+    text-decoration-color: var(--sds-clr-gray-11);
+  }
+}
+
+.ScValTokenType {
+  z-index: var(--z-index-tooltip);
+  // A hint, not a surface: the pointer has to pass straight through it on its
+  // way to the next value, or moving along a row would flicker.
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  gap: pxToRem(2px);
+  padding: pxToRem(8px) pxToRem(12px);
+  border: 1px solid var(--sds-clr-gray-06);
+  border-radius: pxToRem(8px);
+  background-color: var(--sds-clr-gray-03);
+
+  &__label {
+    color: var(--sds-clr-gray-11);
+    font-size: pxToRem(12px);
+  }
+
+  &__value {
+    color: var(--sds-clr-gray-12);
+    font-size: pxToRem(14px);
+  }
+}

@@ -3,15 +3,25 @@ id: developingForSoroban
 title: Developing A Wallet For Soroban
 ---
 
-Freighter offers first-class support for Soroban, but developing a wallet that supports a new smart contract platform came with many learnings. Below you will find some tips for developing a wallet that takes advantage of the full capabilities of Soroban.
+Freighter offers first-class support for Soroban, but developing a wallet that
+supports a new smart contract platform came with many learnings. Below you will
+find some tips for developing a wallet that takes advantage of the full
+capabilities of Soroban.
 
 ### Common Scenarios
 
-When interacting with a Soroban smart contract from a wallet, you will need to be able to encode human readable values into smart contract (SC) values and vice-versa.
+When interacting with a Soroban smart contract from a wallet, you will need to
+be able to encode human readable values into smart contract (SC) values and
+vice-versa.
 
-For example, consider the common use-case of sending a token payment. You would likely need to take in some values that a user configures in form fields and convert those into SC values to generate an XDR to simulate.
+For example, consider the common use-case of sending a token payment. You would
+likely need to take in some values that a user configures in form fields and
+convert those into SC values to generate an XDR to simulate.
 
-Another common use-case is signing arbitrary XDR's sent from a dapp. In this scenario, you'll want to dig into the invocations being called by a Soroban XDR and show them to the user in a way that they can understand what they're signing.
+Another common use-case is signing arbitrary XDR's sent from a dapp. In this
+scenario, you'll want to dig into the invocations being called by a Soroban XDR
+and show them to the user in a way that they can understand what they're
+signing.
 
 We'll go through each of these scenarios below.
 
@@ -19,7 +29,9 @@ We'll go through each of these scenarios below.
 
 In Freighter, we do this by utilizing helper methods in `@stellar/stellar-sdk`.
 
-The below example is an abridged version of what Freighter does under the hood when it initiates a token transfer. It is designed for a token transfer invocation, but this approach would work for any smart contract invocation.
+The below example is an abridged version of what Freighter does under the hood
+when it initiates a token transfer. It is designed for a token transfer
+invocation, but this approach would work for any smart contract invocation.
 
 ```javascript
 
@@ -87,13 +99,17 @@ const generateTransferXdr =
 
 ### Walking the invocation tree and parsing SC Values
 
-If you have an XDR of a transaction containing an invocation, you may want to show the contents to the user. We'll walk the whole invocation tree to show the user all the invocations they are authorizing by signing. This is important as invocations can contain subinvocations that the user may not expect. This is an abridged version of what Freighter does when signing an XDR from a dapp.
+If you have an XDR of a transaction containing an invocation, you may want to
+show the contents to the user. We'll walk the whole invocation tree to show the
+user all the invocations they are authorizing by signing. This is important as
+invocations can contain subinvocations that the user may not expect. This is an
+abridged version of what Freighter does when signing an XDR from a dapp.
 
 ```javascript
 const walkAndParse = (transactionXdr, networkPassphrase) => {
   const transaction = TransactionBuilder.fromXDR(
     transactionXdr,
-    networkPassphrase
+    networkPassphrase,
   );
 
   // for this simple example, let's just grab the first operation's first auth entry
@@ -109,7 +125,7 @@ const walkAndParse = (transactionXdr, networkPassphrase) => {
     const fn = invocation.function();
     const _invocation = fn.contractFn();
     const contractId = StrKey.encodeContract(
-      _invocation.contractAddress().contractId()
+      _invocation.contractAddress().contractId(),
     );
 
     const fnName = _invocation.functionName().toString();
@@ -139,9 +155,14 @@ const walkAndParse = (transactionXdr, networkPassphrase) => {
   const firstInvocation = invocations[0];
   const firstInvocationArgs = firstInvocation.args;
 
-  /* Generally, we can just use `scValToNative` to decode a SC val into a usable JS data type
-  but this may not work for all SC vals.
-  For more information check the function scValByType in extension/src/popup/helpers/soroban.ts */
+  /* `scValToNative` is the right tool for reading a value into JS, but not for
+  building the text a user approves. It decodes an SCMap through
+  `Object.fromEntries`, which coerces every key to a string and lets a later
+  entry overwrite an earlier one, so two entries whose keys differ only by type
+  collapse into one; and it decodes SCString/SCSymbol leniently, so any invalid
+  byte becomes U+FFFD and two distinct signed payloads render as one string.
+  Render approval text from the SCVal itself -- see the function
+  scValToDisplayValue in extension/src/popup/helpers/soroban.ts */
   const humanReadableArgs = firstInvocationArgs.map((a) => scValToNative(a));
 
   return humanReadableArgs;
