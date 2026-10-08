@@ -78,6 +78,9 @@ test("should sign transaction when allowed", async ({
   extensionId,
   context,
 }) => {
+  // Multi-page live-site flow; 86%+ of the 15s budget on a good runner.
+  test.slow();
+
   await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
   await allowDapp({ page });
 
@@ -288,6 +291,9 @@ test("should sign correct transactions when Freighter receives multiple requests
   extensionId,
   context,
 }) => {
+  // Multi-page live-site flow; 86%+ of the 15s budget on a good runner.
+  test.slow();
+
   await stubTokenDetails(page);
   await stubAccountBalances(page);
   await stubAccountHistory(page);
@@ -518,6 +524,9 @@ test("should sign auth entry for a selected account when allowed", async ({
   extensionId,
   context,
 }) => {
+  // Multi-page live-site flow; 86%+ of the 15s budget on a good runner.
+  test.slow();
+
   await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
 
   await allowDapp({ page });
@@ -759,6 +768,9 @@ test("should sign message for a specific account when allowed", async ({
   extensionId,
   context,
 }) => {
+  // Multi-page live-site flow; 86%+ of the 15s budget on a good runner.
+  test.slow();
+
   await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
   await allowDapp({ page });
 

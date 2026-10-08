@@ -4,7 +4,7 @@ import React, { Component } from "react";
 import { useTranslation } from "react-i18next";
 import i18n from "popup/helpers/localizationConfig";
 
-import IconFail from "popup/assets/icon-fail.svg";
+import IconFail from "popup/assets/icon-fail.svg?react";
 import { Button } from "@stellar/design-system";
 
 import "./styles.scss";
@@ -56,7 +56,7 @@ export const UnhandledError = ({
         <div className="UnexpectedError__content">
           <div className="UnexpectedError__amount">{t("Unexpected Error")}</div>
           <div className="UnexpectedError__icon UnexpectedError__fail">
-            <img src={IconFail} alt={t("Icon Fail")} />
+            <IconFail role="img" aria-label={t("Icon Fail")} />
           </div>
         </div>
         <div className="UnexpectedError__error-block">{t(errorMessage)}</div>

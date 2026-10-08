@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { View } from "popup/basics/layout/View";
 
-import VarialLogo from "popup/assets/logo-varial.svg";
+import VarialLogo from "popup/assets/logo-varial.svg?react";
 
 import "./styles.scss";
 
@@ -33,19 +33,19 @@ export const About = () => {
       <View.Content hasNoTopPadding>
         <div className="About">
           <div>
-            <img alt={t("Varial logo")} src={VarialLogo} />
+            <VarialLogo role="img" aria-label={t("Varial logo")} />
           </div>
           <div className="About__body">
             <div className="About__info">
               {t("Varial is a non-custodial wallet for the Stellar blockchain")}
             </div>
             <div className="About__links-header">{t("Links")}</div>
-            <AboutLink url="freighter.app" />
+            <AboutLink url="varialwallet.com" />
             <AboutLink url="stellar.org" />
-            <AboutLink url="stellar.org/privacy-policy">
+            <AboutLink url="varialwallet.com/privacy">
               {t("Privacy Policy")}
             </AboutLink>
-            <AboutLink url="stellar.org/terms-of-service">
+            <AboutLink url="varialwallet.com/terms">
               {t("Terms of Service")}
             </AboutLink>
           </div>

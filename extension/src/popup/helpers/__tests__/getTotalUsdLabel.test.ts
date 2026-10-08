@@ -19,7 +19,7 @@ const label = (overrides: Partial<Parameters<typeof getTotalUsdLabel>[0]>) =>
 
 describe("getTotalUsdLabel", () => {
   it("formats the total when it can be determined", () => {
-    expect(label({})).toBe("$1,149.23");
+    expect(label({})).toBe("$1,149.24");
   });
 
   // Zero is a fact here, not a stand-in for a total that went missing.

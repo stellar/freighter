@@ -34,7 +34,13 @@
         svg {
           width: pxToRem(16);
           height: pxToRem(16);
-          stroke: var(--sds-clr-base-01);
+        }
+
+        // Stroke scoped off the remove button: the network dropdown renders
+        // inline inside this container, and its allow-list-remove icon isn't
+        // part of the Figma-verified gray-11 nav-circle set.
+        &:not(.allow-list-remove) svg {
+          stroke: var(--sds-clr-gray-11);
         }
       }
     }
@@ -100,7 +106,7 @@
   }
 
   &__account-name {
-    color: var(--sds-clr-gray-11);
+    color: var(--sds-clr-gray-12);
     font-weight: var(--sds-fw-medium);
   }
 
@@ -121,10 +127,6 @@
 
     li::before {
       content: none !important;
-    }
-
-    .View__inset--scroll-shadows {
-      --bgRGB: 22, 22, 24;
     }
   }
 

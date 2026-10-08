@@ -162,7 +162,7 @@
   &__infoBlock {
     background: var(--sds-clr-lilac-03);
     border-radius: pxToRem(16px);
-    color: var(--sds-clr-lilac-11);
+    color: var(--sds-clr-lilac-09);
     font-size: 0.875rem;
     padding: pxToRem(16px) pxToRem(12px);
 
@@ -180,7 +180,7 @@
     }
 
     &--warning {
-      background-color: var(--sds-clr-amber-03);
+      background-color: var(--sds-clr-amber-02);
       color: var(--sds-clr-amber-11);
       border-radius: pxToRem(16px);
       padding: pxToRem(16px) pxToRem(12px);
@@ -188,7 +188,7 @@
       .WarningMessage__icon {
         width: pxToRem(16px);
         height: pxToRem(16px);
-        color: var(--sds-clr-amber-11);
+        color: var(--sds-clr-amber-09);
       }
     }
   }
@@ -583,22 +583,22 @@
 
 .ScanMiss {
   color: var(--sds-clr-amber-11);
-  background-color: var(--sds-clr-amber-03);
+  background-color: var(--sds-clr-amber-02);
 
   .Icon {
     .WarningMessage__icon {
-      color: var(--sds-clr-amber-11);
+      color: var(--sds-clr-amber-09);
     }
   }
 }
 
 .ScanWarning {
   color: var(--sds-clr-amber-11);
-  background-color: var(--sds-clr-amber-03);
+  background-color: var(--sds-clr-amber-02);
 
   .Icon {
     .WarningMessage__icon {
-      color: var(--sds-clr-amber-11);
+      color: var(--sds-clr-amber-09);
     }
   }
 }
@@ -607,7 +607,7 @@
 // Sizing/spacing inherit from .ScanLabel to stay consistent with the other
 // banners (the mobile Figma's smaller type scale doesn't apply to extension).
 .ScanAssetList {
-  color: var(--sds-clr-lilac-11);
+  color: var(--sds-clr-lilac-09);
   background-color: var(--sds-clr-lilac-03);
 
   .Icon .WarningMessage__icon {
@@ -636,7 +636,7 @@
     z-index: 2;
 
     &__icon {
-      background-color: rgba(241, 50, 50, 0.32);
+      background-color: var(--sds-clr-red-04);
       border-radius: 100px;
       display: flex;
       width: 2rem;
@@ -645,7 +645,7 @@
       margin-bottom: 0.5rem;
 
       &--isWarning {
-        background-color: rgba(94, 58, 4, 0.32);
+        background-color: var(--sds-clr-amber-04);
       }
     }
 

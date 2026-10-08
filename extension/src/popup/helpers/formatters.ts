@@ -171,8 +171,18 @@ export const scrubPathGkey = (route: string, url: string) => {
   }
 };
 
-export const roundUsdValue = (fullValue: string) =>
-  (Math.floor(parseFloat(fullValue) * 100) / 100).toFixed(2);
+// Half-up to the cent, the same rounding as mobile's fiat formatter, so both
+// apps show one price for one quote. `parseFloat` keeps the old tolerance for
+// loosely formatted input; BigNumber does the rounding in decimal space.
+export const roundUsdValue = (fullValue: string) => {
+  const rounded = new BigNumber(parseFloat(fullValue)).toFixed(
+    2,
+    BigNumber.ROUND_HALF_UP,
+  );
+
+  // BigNumber keeps the sign on a negative zero, and "-0.00%" is not a delta.
+  return rounded === "-0.00" ? "0.00" : rounded;
+};
 
 /**
  * Shown in place of a USD amount that cannot be determined — no price for the

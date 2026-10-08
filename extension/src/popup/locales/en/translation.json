@@ -1,5 +1,6 @@
 {
   "{{appName}} disconnected": "{{appName}} disconnected",
+  "{{date}} at {{time}}": "{{date}} at {{time}}",
   "{{domain}} is not currently connected to Varial": "{{domain}} is not currently connected to Varial",
   "* All Stellar accounts must maintain a minimum balance of lumens.": "* All Stellar accounts must maintain a minimum balance of lumens.",
   "0.5 XLM required": "0.5 XLM required",

@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useSelector } from "react-redux";
 import { BigNumber } from "bignumber.js";
 import { useTranslation } from "react-i18next";
@@ -67,6 +73,7 @@ import { tokenPriceHistoryEnabledSelector } from "popup/ducks/remoteConfig";
 import {
   RangeDeltaState,
   TokenPriceChart,
+  formatInspectedPriceLabel,
 } from "popup/components/account/TokenPriceChart";
 import { AssetAbout } from "popup/components/account/AssetAbout";
 import { TokenStats } from "popup/components/account/TokenStats";
@@ -80,9 +87,13 @@ const LOADING_DELTA: RangeDeltaState = {
   isLoading: true,
   text: "",
   colorClass: PriceDirection.Neutral,
+  inspectedPrice: null,
 };
 
-const AssetDetailOperations = ({
+// Memoised: drag-to-inspect reports a new price and delta per SNAPPED point,
+// so this whole view re-renders on every pointer move over the chart, and the
+// operations list has nothing to do with any of it.
+const AssetDetailOperations = React.memo(function AssetDetailOperations({
   filteredAssetOperations,
   accountBalances,
   publicKey,
@@ -94,7 +105,7 @@ const AssetDetailOperations = ({
   publicKey: string;
   networkDetails: NetworkDetails;
   setActiveAssetId: (id: string) => void;
-}) => {
+}) {
   const { t } = useTranslation();
   return (
     <>
@@ -120,7 +131,7 @@ const AssetDetailOperations = ({
       )}
     </>
   );
-};
+});
 
 interface AssetDetailProps {
   accountBalances: AccountBalances;
@@ -221,34 +232,9 @@ export const AssetDetail = ({
     assetIssuer,
   });
 
-  if (historyData?.type === AppDataType.REROUTE) {
-    return null;
-  }
-
-  const assetOperations =
-    historyData?.operationsByAsset?.[selectedAsset] || null;
-
-  let filteredAssetOperations = null;
-  let activeOperation = null;
-
-  if (assetOperations) {
-    filteredAssetOperations = assetOperations.filter((operation) => {
-      if (operation.metadata.isDustPayment && isHideDustEnabled) {
-        return false;
-      }
-
-      return true;
-    });
-    activeOperation =
-      filteredAssetOperations.find((op) => op.id === activeAssetId) || null;
-  }
-
-  if (assetIssuer && !assetDomain && !assetError && !isSorobanAsset) {
-    // if we have an asset issuer, wait until we have the asset domain before continuing
-    return <Loading />;
-  }
-
-  const isLpShare = "liquidityPoolId" in selectedBalance;
+  const isLpShare = Boolean(
+    selectedBalance && "liquidityPoolId" in selectedBalance,
+  );
 
   // Chart + stats are mainnet-only; elsewhere the header keeps its 24h delta.
   // LP shares are excluded: `<pool-id>:lp` is not priceable (getTokenPrices
@@ -263,9 +249,42 @@ export const AssetDetail = ({
     isPriceHistoryEnabled && isMainnet(networkDetails) && !isLpShare;
   // The scope tag cannot tell a remount from a return: hiding the chart and
   // showing it again for the same scope would revive the delta under the
-  // remounted chart's default range. Drop it while the chart is hidden.
-  if (!isChartShown && rangeDelta.delta !== LOADING_DELTA) {
+  // remounted chart's default range. Drop it while the chart is hidden — off
+  // the path, or unmounted under an operation modal.
+  if ((!isChartShown || activeAssetId) && rangeDelta.delta !== LOADING_DELTA) {
     setRangeDelta({ scope: scopeKey, delta: LOADING_DELTA });
+  }
+
+  // Narrowed by hand rather than by the `REROUTE` early return below: this has
+  // to sit above it to be a hook, and a reroute has no operations anyway.
+  const assetOperations =
+    historyData && historyData.type !== AppDataType.REROUTE
+      ? historyData.operationsByAsset?.[selectedAsset] || null
+      : null;
+
+  // Memoised for the same reason `AssetDetailOperations` is: a fresh array on
+  // every pointer move over the chart would defeat the memo it feeds.
+  const filteredAssetOperations = useMemo(
+    () =>
+      assetOperations
+        ? assetOperations.filter(
+            (operation) =>
+              !(operation.metadata.isDustPayment && isHideDustEnabled),
+          )
+        : null,
+    [assetOperations, isHideDustEnabled],
+  );
+
+  if (historyData?.type === AppDataType.REROUTE) {
+    return null;
+  }
+
+  const activeOperation =
+    filteredAssetOperations?.find((op) => op.id === activeAssetId) || null;
+
+  if (assetIssuer && !assetDomain && !assetError && !isSorobanAsset) {
+    // if we have an asset issuer, wait until we have the asset domain before continuing
+    return <Loading />;
   }
 
   const isStellarExpertSupported =
@@ -279,6 +298,13 @@ export const AssetDetail = ({
     new BigNumber(selectedBalance.total).isGreaterThan(0);
   const isShowingSwap = !isSorobanAsset && !isLpShare;
   const isShowingSend = hasBalance;
+
+  // See the `AssetDetail__price` div below for why this falls back to spot.
+  // The guard mirrors the render-time `LOADING_DELTA` reset above: either
+  // alone keeps an inspected price off a hidden chart's header.
+  const inspectedHeaderPrice =
+    isChartShown && !activeAssetId ? shownDelta.inspectedPrice : null;
+  const headerPrice = inspectedHeaderPrice ?? assetPrice?.currentPrice;
 
   return activeAssetId ? (
     <SlideupModal
@@ -396,14 +422,20 @@ export const AssetDetail = ({
                 />
               </div>
             ) : null}
-            <div className="AssetDetail__price">
-              {assetPrice && assetPrice.currentPrice
-                ? `$${formatAmount(
-                    roundUsdValue(
-                      new BigNumber(assetPrice.currentPrice).toString(),
-                    ),
-                  )}`
-                : null}
+            {/* Spot, or the inspected point's close while a drag-to-inspect is
+                in progress. Inspecting describes a chart point, so it uses
+                the chart's precision, as the delta already does. */}
+            <div
+              className="AssetDetail__price"
+              data-testid="AssetDetail__price"
+            >
+              {inspectedHeaderPrice
+                ? formatInspectedPriceLabel(inspectedHeaderPrice)
+                : headerPrice
+                  ? `$${formatAmount(
+                      roundUsdValue(new BigNumber(headerPrice).toString()),
+                    )}`
+                  : null}
             </div>
             {isChartShown ? (
               /* The view's one delta, reported by the chart section. Rendered in

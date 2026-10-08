@@ -155,7 +155,7 @@ export const PasswordForm = ({
                             {`${t("I have read and agree to")} `}
                             <Link
                               variant="secondary"
-                              href="https://stellar.org/terms-of-service"
+                              href="https://varialwallet.com/terms"
                             >
                               {t("Terms of Use")}
                             </Link>

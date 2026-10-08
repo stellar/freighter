@@ -32,11 +32,11 @@ function getBannerIcon(theme: BannerTheme): React.ReactElement {
 
 /** CSS color value for each modal icon theme, applied as inline style to override SDS defaults. */
 const MODAL_ICON_COLOR: Record<BannerTheme, string> = {
-  [BannerTheme.Warning]: "var(--sds-clr-amber-09, #ffb224)",
-  [BannerTheme.Error]: "var(--sds-clr-red-09, #e5484d)",
-  [BannerTheme.Primary]: "var(--sds-clr-lilac-09, #6e56cf)",
-  [BannerTheme.Secondary]: "var(--sds-clr-lilac-09, #6e56cf)",
-  [BannerTheme.Tertiary]: "var(--sds-clr-gray-09, #707070)",
+  [BannerTheme.Warning]: "var(--sds-clr-amber-09)",
+  [BannerTheme.Error]: "var(--sds-clr-red-09)",
+  [BannerTheme.Primary]: "var(--sds-clr-lilac-09)",
+  [BannerTheme.Secondary]: "var(--sds-clr-lilac-09)",
+  [BannerTheme.Tertiary]: "var(--sds-clr-gray-09)",
 };
 
 /**

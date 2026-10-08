@@ -257,7 +257,7 @@
   }
 
   &__inner-transaction {
-    border: 1px solid var(--pal-border-primary);
+    border: 1px solid var(--sds-clr-gray-06);
     border-radius: 0.5rem;
     height: 10rem;
     opacity: 0.7;
@@ -271,8 +271,7 @@
   }
 
   &__subject {
-    border-bottom: 1px solid var(--pal-border-secondary);
-    color: var(--pal-text-primary);
+    border-bottom: 1px solid var(--sds-clr-gray-06);
     font-size: 0.875rem;
     line-height: 1.5rem;
     margin-bottom: 1rem;
@@ -283,7 +282,7 @@
     margin-bottom: -1rem;
 
     &__title {
-      color: rgba(255, 255, 255, 0.6);
+      color: var(--sds-clr-gray-11);
       font-size: 0.875rem;
       line-height: 1.5rem;
     }

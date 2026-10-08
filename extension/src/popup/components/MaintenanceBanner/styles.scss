@@ -52,20 +52,20 @@
   }
 
   &__alert--warning &__alert-icon svg {
-    color: var(--sds-clr-amber-09, #ffb224);
+    color: var(--sds-clr-amber-09);
   }
 
   &__alert--error &__alert-icon svg {
-    color: var(--sds-clr-red-09, #e5484d);
+    color: var(--sds-clr-red-09);
   }
 
   &__alert--primary &__alert-icon svg,
   &__alert--secondary &__alert-icon svg {
-    color: var(--sds-clr-lilac-09, #6e56cf);
+    color: var(--sds-clr-lilac-09);
   }
 
   &__alert--tertiary &__alert-icon svg {
-    color: var(--sds-clr-gray-09, #707070);
+    color: var(--sds-clr-gray-09);
   }
 
   &__alert-text {

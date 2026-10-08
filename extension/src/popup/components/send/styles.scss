@@ -420,10 +420,6 @@
 }
 
 .SendSettings {
-  &__input {
-    color: black;
-  }
-
   &__row {
     display: flex;
     justify-content: space-between;
@@ -471,9 +467,6 @@
   flex-direction: column;
 
   text-align: center;
-  &__input {
-    color: black;
-  }
 }
 
 .EditMemoWrapper {

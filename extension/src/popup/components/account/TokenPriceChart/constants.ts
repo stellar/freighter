@@ -10,6 +10,17 @@ export const CHART_VIEWBOX_HEIGHT = 140;
 /** Vertical inset so the line and end-dot never clip at the extremes. */
 export const CHART_VERTICAL_PADDING = 8;
 
+/** Drag-to-inspect (Phase 3): background ring around the inspected dot. */
+export const INSPECT_DOT_RING_WIDTH = 2;
+/** Figma's 8px inspected dot, in viewBox units (≈px); distinct from the 6px end dot. */
+export const INSPECT_DOT_RADIUS = 4;
+/**
+ * Client pixels from where the inspection started. Below this a tap or a
+ * hover pass is not a sweep — keeps `brushed` meaning "the user swept", not
+ * "a pointer jittered".
+ */
+export const INSPECT_MOVE_THRESHOLD_PX = 4;
+
 /** Rendered height of the chart area — shared by the skeleton, the empty
  * placeholder, and the drawn chart so state changes never shift layout. */
 export const CHART_HEIGHT_PX = 140;

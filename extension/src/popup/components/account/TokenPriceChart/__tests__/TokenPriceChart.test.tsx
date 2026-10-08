@@ -1,6 +1,12 @@
 import React from "react";
 import { Provider } from "react-redux";
-import { render, screen, waitFor, act } from "@testing-library/react";
+import {
+  render,
+  screen,
+  waitFor,
+  act,
+  fireEvent,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 import { MAINNET_NETWORK_DETAILS } from "@shared/constants/stellar";
@@ -10,7 +16,12 @@ import {
   makeHistory,
 } from "@shared/api/__tests__/fixtures/tokenPriceHistory";
 import { makeDummyStore } from "popup/__testHelpers__";
+import {
+  installPointerEventPolyfill,
+  mockChartRect,
+} from "popup/__testHelpers__/pointerEvents";
 import { resetCacheWriteClaims } from "helpers/cacheWrites";
+import { emitMetric } from "helpers/metrics";
 import {
   RangeDeltaState,
   TokenPriceChart,
@@ -19,9 +30,14 @@ import {
   CHART_HEIGHT_PX,
   CHART_MORPH_DURATION_MS,
   RANGE_SWITCH_DEBOUNCE_MS,
+  PriceDirection,
 } from "popup/components/account/TokenPriceChart/constants";
 
 // §N refs: wallet-eng-monorepo/design-docs/token-price-graphs/token-price-graphs-design.md
+
+// jest-fixed-jsdom has no PointerEvent; without this, fireEvent.pointerDown/
+// pointerMove/pointerUp below would silently drop clientX/pointerId.
+installPointerEventPolyfill();
 
 jest.mock("@shared/api/helpers/extensionMessaging");
 const mockedSend = sendMessageToBackground as jest.Mock;
@@ -29,6 +45,11 @@ const mockedSend = sendMessageToBackground as jest.Mock;
 jest.mock("helpers/metrics", () => ({
   emitMetric: jest.fn(),
 }));
+const mockedEmitMetric = emitMetric as jest.Mock;
+const brushedCalls = () =>
+  mockedEmitMetric.mock.calls.filter(
+    ([event]) => event === "token_chart.brushed",
+  );
 
 // 97 points — a full 1D series, comfortably past the sparse threshold.
 const HISTORY_1D = makeHistory({ points: densePoints(97) });
@@ -115,6 +136,7 @@ describe("TokenPriceChart", () => {
   beforeEach(() => {
     reportedDelta = null;
     reportCount = 0;
+    mockedEmitMetric.mockClear();
   });
 
   afterEach(() => {
@@ -255,6 +277,7 @@ describe("TokenPriceChart", () => {
       isLoading: false,
       text: "+$0.0014 (0.86%)",
       colorClass: "positive",
+      inspectedPrice: null,
     });
   });
 
@@ -528,6 +551,7 @@ describe("TokenPriceChart", () => {
         isLoading: false,
         text: "",
         colorClass: "neutral",
+        inspectedPrice: null,
       }),
     );
     expect(screen.queryByTestId("TokenPriceChart__polyline")).toBeNull();
@@ -549,6 +573,7 @@ describe("TokenPriceChart", () => {
       isLoading: false,
       text: "",
       colorClass: "neutral",
+      inspectedPrice: null,
     });
     // No delta means no direction: the artwork is neutral, never coloured off
     // a series the payload declined to characterise.
@@ -573,6 +598,7 @@ describe("TokenPriceChart", () => {
       isLoading: false,
       text: "+0.05%",
       colorClass: "positive",
+      inspectedPrice: null,
     });
   });
 
@@ -591,6 +617,7 @@ describe("TokenPriceChart", () => {
       isLoading: false,
       text: "-$0.0602 (12.12%)",
       colorClass: "negative",
+      inspectedPrice: null,
     });
     // Colour never carries the meaning alone (§7.4): the sign stays in the
     // text.
@@ -637,6 +664,7 @@ describe("TokenPriceChart", () => {
       isLoading: false,
       text: "+$0.000020 (0.00%)",
       colorClass: "positive",
+      inspectedPrice: null,
     });
     // One direction drives everything: the artwork takes the delta's, so this
     // token's chart is green rather than the grey it used to draw.
@@ -661,6 +689,7 @@ describe("TokenPriceChart", () => {
       isLoading: false,
       text: "-$0.000020 (0.00%)",
       colorClass: "negative",
+      inspectedPrice: null,
     });
     expect(chartClass()).toContain("LineChart--negative");
     expect(chartClass()).not.toContain("LineChart--neutral");
@@ -683,6 +712,7 @@ describe("TokenPriceChart", () => {
       isLoading: false,
       text: "0.00%",
       colorClass: "neutral",
+      inspectedPrice: null,
     });
     expect(chartClass()).toContain("LineChart--neutral");
     expect(chartClass()).not.toContain("LineChart--negative");
@@ -765,6 +795,7 @@ describe("TokenPriceChart", () => {
         isLoading: true,
         text: "",
         colorClass: "neutral",
+        inspectedPrice: null,
       });
       unmount();
       resetCacheWriteClaims();
@@ -851,6 +882,7 @@ describe("TokenPriceChart", () => {
       isLoading: false,
       text: "+1.09%",
       colorClass: "positive",
+      inspectedPrice: null,
     });
   });
 
@@ -905,5 +937,498 @@ describe("TokenPriceChart", () => {
     expect(screen.getByTestId("TokenPriceChart__canvas").contains(region)).toBe(
       false,
     );
+  });
+
+  describe("drag to inspect", () => {
+    // 3 evenly-spaced buckets → bucket ends 900, 1800, 2700 → viewBox x 0,
+    // 160, 320 (§ getChartCoordinates), independent of `resolutionSeconds`.
+    const INSPECTABLE_HISTORY = makeHistory({
+      points: [
+        { t: 0, p: "0.20" },
+        { t: 900, p: "0.22" },
+        { t: 1800, p: "0.26" },
+      ],
+      resolutionSeconds: 900,
+      change: { absolute: "0.06", percent: "30.00" },
+    });
+
+    afterEach(() => jest.restoreAllMocks());
+
+    it("while inspecting, reports the inspected price and the close-to-close delta, then reverts on release", async () => {
+      respondByRange({ "1D": INSPECTABLE_HISTORY });
+      renderChart();
+
+      await waitFor(() =>
+        expect(screen.getByTestId("TokenPriceChart__polyline")).toBeDefined(),
+      );
+
+      mockChartRect();
+      const svg = screen.getByTestId("TokenPriceChart__svg");
+
+      // 640px-wide element → clientX 320 is viewBox x 160 → nearest is index 1
+      // (x=160) exactly.
+      fireEvent.pointerDown(svg, {
+        pointerType: "touch",
+        clientX: 320,
+        pointerId: 1,
+      });
+      expect(reportedDelta).toEqual({
+        isLoading: false,
+        text: "+$0.02 (10.00%)",
+        colorClass: PriceDirection.Positive,
+        inspectedPrice: "0.22",
+      });
+
+      fireEvent.pointerUp(svg, { pointerType: "touch", pointerId: 1 });
+      expect(reportedDelta).toEqual({
+        isLoading: false,
+        text: "+$0.06 (30.00%)",
+        colorClass: PriceDirection.Positive,
+        inspectedPrice: null,
+      });
+    });
+
+    it("while inspecting, the high row shows the point's timestamp instead of the price labels", async () => {
+      respondByRange({ "1D": INSPECTABLE_HISTORY });
+      renderChart();
+
+      await waitFor(() =>
+        expect(screen.getByTestId("TokenPriceChart__polyline")).toBeDefined(),
+      );
+      const highRow = screen.getByTestId("TokenPriceChart__axis-high");
+      const lowRow = screen.getByTestId("TokenPriceChart__axis-low");
+      expect(highRow).toHaveTextContent("$0.26");
+      expect(lowRow).toHaveTextContent("$0.20");
+
+      mockChartRect();
+      const svg = screen.getByTestId("TokenPriceChart__svg");
+      fireEvent.pointerDown(svg, {
+        pointerType: "touch",
+        clientX: 320,
+        pointerId: 1,
+      });
+
+      expect(
+        screen.queryByTestId("TokenPriceChart__inspect-tooltip"),
+      ).toBeNull();
+      const timestamp = screen.getByTestId(
+        "TokenPriceChart__inspect-timestamp",
+      );
+      expect(highRow.contains(timestamp)).toBe(true);
+      expect(highRow).not.toHaveTextContent("$0.26");
+      expect(lowRow.textContent).toBe("");
+      // Index 1 plots at x=160, the middle of the 320-wide viewBox.
+      expect(timestamp.style.left).toBe("50%");
+      expect(timestamp.style.transform).toBe("translateX(-50%)");
+
+      fireEvent.pointerUp(svg, { pointerType: "touch", pointerId: 1 });
+      expect(
+        screen.queryByTestId("TokenPriceChart__inspect-timestamp"),
+      ).toBeNull();
+      expect(highRow).toHaveTextContent("$0.26");
+      expect(lowRow).toHaveTextContent("$0.20");
+    });
+
+    it("the chart colour stays the RANGE's direction while inspecting a point below the open", async () => {
+      // Rising overall (0.20 → 0.30, range change positive) but the middle
+      // point dips below the open — the inspected delta from it is negative.
+      respondByRange({
+        "1D": makeHistory({
+          points: [
+            { t: 0, p: "0.20" },
+            { t: 900, p: "0.18" },
+            { t: 1800, p: "0.30" },
+          ],
+          resolutionSeconds: 900,
+          change: { absolute: "0.10", percent: "50.00" },
+        }),
+      });
+      renderChart();
+
+      await waitFor(() =>
+        expect(screen.getByTestId("TokenPriceChart__polyline")).toBeDefined(),
+      );
+      expect(chartClass()).toContain("LineChart--positive");
+
+      mockChartRect();
+      fireEvent.pointerDown(screen.getByTestId("TokenPriceChart__svg"), {
+        pointerType: "touch",
+        clientX: 320,
+        pointerId: 1,
+      });
+
+      // The delta TEXT follows the inspected (negative) change...
+      expect(reportedDelta?.colorClass).toBe(PriceDirection.Negative);
+      // ...but the ARTWORK keeps the range's (positive) direction.
+      expect(chartClass()).toContain("LineChart--positive");
+      expect(chartClass()).not.toContain("LineChart--negative");
+    });
+
+    it("fires token_chart.brushed on the first MOVE of an activation, not on the click", async () => {
+      respondByRange({ "1D": INSPECTABLE_HISTORY });
+      renderChart();
+
+      await waitFor(() =>
+        expect(screen.getByTestId("TokenPriceChart__polyline")).toBeDefined(),
+      );
+
+      mockChartRect();
+      const svg = screen.getByTestId("TokenPriceChart__svg");
+
+      // Pointerdown alone: the artwork, the timestamp and the reported price all
+      // follow it, but nothing is reported to analytics — a tap is not a drag.
+      fireEvent.pointerDown(svg, {
+        pointerType: "touch",
+        clientX: 320,
+        pointerId: 1,
+      });
+      expect(
+        screen.getByTestId("TokenPriceChart__inspect-timestamp"),
+      ).toBeDefined();
+      expect(reportedDelta?.inspectedPrice).toBe("0.22");
+      expect(brushedCalls()).toHaveLength(0);
+
+      fireEvent.pointerMove(svg, {
+        pointerType: "touch",
+        clientX: 640,
+        pointerId: 1,
+      });
+      expect(brushedCalls()).toEqual([
+        ["token_chart.brushed", { range: "1D" }],
+      ]);
+
+      // Still exactly one for the rest of the activation.
+      fireEvent.pointerMove(svg, {
+        pointerType: "touch",
+        clientX: 0,
+        pointerId: 1,
+      });
+      fireEvent.pointerUp(svg, { pointerType: "touch", pointerId: 1 });
+      expect(brushedCalls()).toHaveLength(1);
+    });
+
+    it("a bare click emits nothing, and two drags emit two brushed events", async () => {
+      respondByRange({ "1D": INSPECTABLE_HISTORY });
+      renderChart();
+
+      await waitFor(() =>
+        expect(screen.getByTestId("TokenPriceChart__polyline")).toBeDefined(),
+      );
+
+      mockChartRect();
+      const svg = screen.getByTestId("TokenPriceChart__svg");
+
+      fireEvent.pointerDown(svg, {
+        pointerType: "touch",
+        clientX: 320,
+        pointerId: 1,
+      });
+      fireEvent.pointerUp(svg, { pointerType: "touch", pointerId: 1 });
+      expect(brushedCalls()).toHaveLength(0);
+
+      const drag = (pointerId: number) => {
+        fireEvent.pointerDown(svg, {
+          pointerType: "touch",
+          clientX: 0,
+          pointerId,
+        });
+        fireEvent.pointerMove(svg, {
+          pointerType: "touch",
+          clientX: 320,
+          pointerId,
+        });
+        fireEvent.pointerMove(svg, {
+          pointerType: "touch",
+          clientX: 640,
+          pointerId,
+        });
+        fireEvent.pointerUp(svg, { pointerType: "touch", pointerId });
+      };
+      drag(2);
+      drag(3);
+
+      // Per ACTIVATION, so a second drag is a second event — the ref is reset
+      // at both ends of an activation, not once per mount.
+      expect(brushedCalls()).toEqual([
+        ["token_chart.brushed", { range: "1D" }],
+        ["token_chart.brushed", { range: "1D" }],
+      ]);
+    });
+
+    it("a move that snaps to the already-inspected index does not re-render", async () => {
+      respondByRange({ "1D": INSPECTABLE_HISTORY });
+      const onRender = jest.fn();
+      render(
+        <React.Profiler id="chart" onRender={onRender}>
+          <Provider store={makeDummyStore({})}>
+            <TokenPriceChart
+              token="native"
+              networkDetails={MAINNET_NETWORK_DETAILS}
+              fallback24hPercent="1.09"
+              onDeltaChange={handleDelta}
+            />
+          </Provider>
+        </React.Profiler>,
+      );
+      await waitFor(() =>
+        expect(screen.getByTestId("TokenPriceChart__polyline")).toBeDefined(),
+      );
+
+      mockChartRect();
+      const svg = screen.getByTestId("TokenPriceChart__svg");
+      fireEvent.pointerDown(svg, {
+        pointerType: "touch",
+        clientX: 0,
+        pointerId: 1,
+      });
+      fireEvent.pointerMove(svg, {
+        pointerType: "touch",
+        clientX: 320,
+        pointerId: 1,
+      });
+      expect(reportedDelta?.inspectedPrice).toBe("0.22");
+      const commits = onRender.mock.calls.length;
+
+      // All still nearest index 1 (x=160). React may render once more before
+      // its eager bailout engages; a fresh object per move commits every time.
+      fireEvent.pointerMove(svg, {
+        pointerType: "touch",
+        clientX: 330,
+        pointerId: 1,
+      });
+      fireEvent.pointerMove(svg, {
+        pointerType: "touch",
+        clientX: 310,
+        pointerId: 1,
+      });
+      fireEvent.pointerMove(svg, {
+        pointerType: "touch",
+        clientX: 325,
+        pointerId: 1,
+      });
+
+      expect(onRender.mock.calls.length).toBeLessThanOrEqual(commits + 1);
+    });
+
+    it("unmounting mid-drag tears down cleanly", async () => {
+      // The pointer is still down and captured when the section goes away (a
+      // kill-switch flip, a back navigation). Nothing may set state on the
+      // unmounted tree, and the last thing the parent heard must not be left
+      // standing as the header's price — see AssetDetail's own test for the
+      // other half of that.
+      respondByRange({ "1D": INSPECTABLE_HISTORY });
+      const { unmount } = renderChart();
+
+      await waitFor(() =>
+        expect(screen.getByTestId("TokenPriceChart__polyline")).toBeDefined(),
+      );
+
+      mockChartRect();
+      const svg = screen.getByTestId("TokenPriceChart__svg");
+      const errorSpy = jest
+        .spyOn(console, "error")
+        .mockImplementation(() => {});
+      const warnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
+
+      fireEvent.pointerDown(svg, {
+        pointerType: "touch",
+        clientX: 320,
+        pointerId: 1,
+      });
+      fireEvent.pointerMove(svg, {
+        pointerType: "touch",
+        clientX: 640,
+        pointerId: 1,
+      });
+      expect(reportedDelta?.inspectedPrice).toBe("0.26");
+
+      unmount();
+
+      expect(errorSpy).not.toHaveBeenCalled();
+      expect(warnSpy).not.toHaveBeenCalled();
+      // The section cannot report a release it is no longer mounted for: the
+      // last report it made still carries the inspected price, which is why
+      // the detail view resets its own copy when the chart goes away.
+      expect(reportedDelta?.inspectedPrice).toBe("0.26");
+    });
+
+    it("a range switch clears the inspection", async () => {
+      jest.useFakeTimers();
+      respondByRange({ "1D": INSPECTABLE_HISTORY, "1W": HISTORY_1W });
+      renderChart();
+
+      await act(async () => {
+        await Promise.resolve();
+      });
+
+      mockChartRect();
+      fireEvent.pointerDown(screen.getByTestId("TokenPriceChart__svg"), {
+        pointerType: "touch",
+        clientX: 320,
+        pointerId: 1,
+      });
+      expect(
+        screen.getByTestId("TokenPriceChart__inspect-timestamp"),
+      ).toBeDefined();
+
+      const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
+      await user.click(screen.getByRole("tab", { name: "1W" }));
+      await act(async () => {
+        jest.advanceTimersByTime(RANGE_SWITCH_DEBOUNCE_MS + 50);
+        await Promise.resolve();
+      });
+
+      expect(
+        screen.queryByTestId("TokenPriceChart__inspect-timestamp"),
+      ).toBeNull();
+      expect(reportedDelta).toEqual(
+        expect.objectContaining({ inspectedPrice: null }),
+      );
+    });
+
+    it("an uncached switch mid-drag drops the inspection through the skeleton and after returning", async () => {
+      jest.useFakeTimers();
+      respondByRange({ "1D": INSPECTABLE_HISTORY, "1W": HISTORY_1W });
+      renderChart();
+      await act(async () => {
+        await Promise.resolve();
+      });
+
+      mockChartRect();
+      fireEvent.pointerDown(screen.getByTestId("TokenPriceChart__svg"), {
+        pointerType: "touch",
+        clientX: 320,
+        pointerId: 1,
+      });
+      expect(reportedDelta?.inspectedPrice).toBe("0.22");
+
+      const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
+      await user.click(screen.getByRole("tab", { name: "1W" }));
+      expect(
+        screen.getByTestId("TokenPriceChart__loading"),
+      ).toBeInTheDocument();
+      expect(reportedDelta).toEqual(
+        expect.objectContaining({ isLoading: true, inspectedPrice: null }),
+      );
+
+      await act(async () => {
+        jest.advanceTimersByTime(RANGE_SWITCH_DEBOUNCE_MS + 50);
+        await Promise.resolve();
+      });
+      expect(screen.getByTestId("TokenPriceChart__svg")).toBeInTheDocument();
+
+      await user.click(screen.getByRole("tab", { name: "1D" }));
+      await act(async () => {
+        jest.advanceTimersByTime(RANGE_SWITCH_DEBOUNCE_MS);
+        await Promise.resolve();
+      });
+
+      expect(requestCountForRange("1D")).toBe(1);
+      expect(
+        screen.queryByTestId("TokenPriceChart__inspect-timestamp"),
+      ).toBeNull();
+      expect(reportedDelta).toEqual(
+        expect.objectContaining({ inspectedPrice: null }),
+      );
+    });
+
+    it("a cached range switch clears the inspection while the chart stays mounted", async () => {
+      // A cached switch never shows the loading ghost, so only the series
+      // identity guard can drop the index snapped against the old series.
+      jest.useFakeTimers();
+      respondByRange({ "1D": INSPECTABLE_HISTORY, "1W": HISTORY_1W });
+      renderChart();
+      await act(async () => {
+        await Promise.resolve();
+      });
+
+      const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
+      await user.click(screen.getByRole("tab", { name: "1W" }));
+      await act(async () => {
+        jest.advanceTimersByTime(RANGE_SWITCH_DEBOUNCE_MS + 50);
+        await Promise.resolve();
+      });
+
+      mockChartRect();
+      // Index 0, which also exists in the 3-point 1D series: an index past its
+      // end would null out without the guard ever being consulted.
+      fireEvent.pointerDown(screen.getByTestId("TokenPriceChart__svg"), {
+        pointerType: "touch",
+        clientX: 0,
+        pointerId: 1,
+      });
+      expect(
+        screen.getByTestId("TokenPriceChart__inspect-timestamp"),
+      ).toBeDefined();
+
+      await user.click(screen.getByRole("tab", { name: "1D" }));
+      await act(async () => {
+        jest.advanceTimersByTime(RANGE_SWITCH_DEBOUNCE_MS);
+        await Promise.resolve();
+      });
+
+      expect(requestCountForRange("1D")).toBe(1);
+      expect(screen.getByTestId("TokenPriceChart__svg")).toBeInTheDocument();
+      expect(screen.queryByTestId("TokenPriceChart__loading")).toBeNull();
+      expect(
+        screen.queryByTestId("TokenPriceChart__inspect-timestamp"),
+      ).toBeNull();
+      expect(reportedDelta).toEqual(
+        expect.objectContaining({ inspectedPrice: null }),
+      );
+    });
+
+    it("ends the inspection the instant another cached range is selected, before the debounce lands", async () => {
+      jest.useFakeTimers();
+      respondByRange({ "1D": INSPECTABLE_HISTORY, "1W": HISTORY_1W });
+      renderChart();
+      await act(async () => {
+        await Promise.resolve();
+      });
+
+      const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
+      await user.click(screen.getByRole("tab", { name: "1W" }));
+      await act(async () => {
+        jest.advanceTimersByTime(RANGE_SWITCH_DEBOUNCE_MS + 50);
+        await Promise.resolve();
+      });
+
+      mockChartRect();
+      fireEvent.pointerDown(screen.getByTestId("TokenPriceChart__svg"), {
+        pointerType: "touch",
+        clientX: 0,
+        pointerId: 1,
+      });
+      expect(
+        screen.getByTestId("TokenPriceChart__inspect-timestamp"),
+      ).toBeDefined();
+
+      // A raw, un-`act`-wrapped dispatch: this commits the `selectedRange`
+      // change on its own, one microtask ahead of the passive effect that
+      // re-fetches (even a cache hit) and swaps `chartHistory` — the one
+      // render where a range-unaware guard would still show the old point.
+      screen
+        .getByRole("tab", { name: "1D" })
+        .dispatchEvent(
+          new MouseEvent("click", { bubbles: true, cancelable: true }),
+        );
+      await Promise.resolve();
+
+      expect(screen.getByTestId("TokenPriceChart__svg")).toBeInTheDocument();
+      expect(screen.queryByTestId("TokenPriceChart__inspect-guide")).toBeNull();
+      expect(
+        screen.queryByTestId("TokenPriceChart__inspect-timestamp"),
+      ).toBeNull();
+
+      // Let the deferred fetch and its effects settle, then confirm the
+      // reported delta agrees.
+      await act(async () => {
+        jest.advanceTimersByTime(RANGE_SWITCH_DEBOUNCE_MS);
+        await Promise.resolve();
+      });
+      expect(reportedDelta).toEqual(
+        expect.objectContaining({ inspectedPrice: null }),
+      );
+    });
   });
 });

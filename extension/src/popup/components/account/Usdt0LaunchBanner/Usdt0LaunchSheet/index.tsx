@@ -37,7 +37,13 @@ export const Usdt0LaunchSheet = ({ onClose }: Usdt0LaunchSheetProps) => {
   };
 
   return (
-    <div className="Usdt0LaunchSheet" data-testid="usdt0-launch-sheet">
+    // Pinned dark: the hero art is fixed-dark and there is no light design
+    // for the sheet yet. Set here, not on SheetContent, whose className also
+    // lands on the full-screen overlay.
+    <div
+      className="Usdt0LaunchSheet sds-theme-dark"
+      data-testid="usdt0-launch-sheet"
+    >
       <div className="Usdt0LaunchSheet__background">
         <div className="Usdt0LaunchSheet__background__gradient" />
         <img
