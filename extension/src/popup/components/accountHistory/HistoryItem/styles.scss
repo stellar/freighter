@@ -2,6 +2,10 @@
 
 .HistoryItem {
   cursor: pointer;
+  // Chrome sizes the popup to its content's min-content width, and the
+  // nowrap amount's percentage max-width doesn't cap that, so a long token
+  // code would widen the whole popup. Size the row from its container only.
+  contain: inline-size;
 
   &__row {
     width: 100%;

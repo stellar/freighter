@@ -344,6 +344,60 @@ test("Hide create claimable balance spam", async ({
   await expect(historyItems).toHaveCount(2);
 });
 
+test("A long token code does not widen the popup", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  // Token symbols are free-form, e.g. a Soroswap LP token's symbol is
+  // "native-USDC-SOROSWAP-LP", and the row shows it in both the label and
+  // the amount.
+  const LONG_CODE = "native-USDC-SOROSWAP-LP";
+
+  const stubOverrides = async () => {
+    await stubAccountHistoryWith(page, context, [
+      {
+        amount: "12.3456789",
+        asset_code: LONG_CODE,
+        asset_issuer:
+          "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
+        asset_type: "credit_alphanum12",
+        created_at: "2025-03-21T22:28:46Z",
+        from: "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
+        id: "164007621169153",
+        paging_token: "164007621169153",
+        source_account:
+          "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
+        to: "GCKUVXILBNYS4FDNWCGCYSJBY2PBQ4KAW2M5CODRVJPUFM62IJFH67J2",
+        transaction_attr: {},
+        transaction_hash:
+          "686601028de9ddf40a1c24461a6a9c0415d60a39255c35eccad0b52ac1e700a5",
+        transaction_successful: true,
+        type: "payment",
+        type_i: 1,
+      },
+    ]);
+  };
+
+  await loginToTestAccount({ page, extensionId, context, stubOverrides });
+  // Onboarding at popup size hands off to a full tab, so only shrink to the
+  // popup's dimensions once logged in.
+  await page.setViewportSize({ width: 360, height: 600 });
+  await page.getByTestId("nav-link-account-history").click();
+  await expect(page.getByTestId("history-item-label")).toHaveText(LONG_CODE);
+
+  // Chrome sizes the popup window to the document's min-content width, not
+  // to a fixed width, so a row that can't shrink widens the whole popup.
+  const popupWidth = await page.evaluate(() => {
+    const root = document.documentElement;
+    root.style.width = "min-content";
+    const { width } = root.getBoundingClientRect();
+    root.style.removeProperty("width");
+    return width;
+  });
+  expect(popupWidth).toBe(360);
+});
+
 test("History row displays muxed address extracted from XDR for payment", async ({
   page,
   extensionId,
