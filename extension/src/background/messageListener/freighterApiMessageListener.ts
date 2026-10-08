@@ -23,6 +23,7 @@ import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 import {
   FreighterApiInternalError,
   FreighterApiDeclinedError,
+  FreighterApiLockedError,
 } from "@shared/api/helpers/extensionMessaging";
 import {
   EXTERNAL_SERVICE_TYPES,
@@ -42,6 +43,7 @@ import {
   getIsMemoValidationEnabled,
   getNetworkDetails,
   getAllowListSegment,
+  removeAllowListDomain,
 } from "background/helpers/account";
 import { isSenderAllowed } from "background/helpers/allowListAuthorization";
 import { cachedFetch } from "background/helpers/cachedFetch";
@@ -861,6 +863,38 @@ export const freighterApiMessageListener = (
     };
   };
 
+  const disconnect = async () => {
+    try {
+      const publicKey = publicKeySelector(sessionStore.getState());
+
+      // the allowlist is keyed by public key, which we can't know while locked
+      if (!publicKey) {
+        return {
+          apiError: FreighterApiLockedError,
+          error: FreighterApiLockedError.message,
+        };
+      }
+
+      const { url: tabUrl = "" } = sender;
+      const domain = getPunycodedDomain(getUrlHostname(tabUrl));
+      const { networkName } = await getNetworkDetails({ localStore });
+
+      await removeAllowListDomain({
+        publicKey,
+        networkName,
+        domain,
+        localStore,
+      });
+
+      return {};
+    } catch (e) {
+      return {
+        apiError: FreighterApiInternalError,
+        error: FreighterApiInternalError.message,
+      };
+    }
+  };
+
   const messageResponder: MessageResponder = {
     [EXTERNAL_SERVICE_TYPES.REQUEST_ACCESS]: requestAccess,
     [EXTERNAL_SERVICE_TYPES.REQUEST_PUBLIC_KEY]: requestPublicKey,
@@ -874,6 +908,7 @@ export const freighterApiMessageListener = (
     [EXTERNAL_SERVICE_TYPES.REQUEST_ALLOWED_STATUS]: requestAllowedStatus,
     [EXTERNAL_SERVICE_TYPES.SET_ALLOWED_STATUS]: setAllowedStatus,
     [EXTERNAL_SERVICE_TYPES.REQUEST_USER_INFO]: requestUserInfo,
+    [EXTERNAL_SERVICE_TYPES.DISCONNECT]: disconnect,
   };
 
   return messageResponder[request.type]();

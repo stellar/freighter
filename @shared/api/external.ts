@@ -303,3 +303,23 @@ export const setAllowedStatus = async (): Promise<{
 
   return { isAllowed, error: response?.apiError };
 };
+
+export const disconnect = async (): Promise<{
+  error?: FreighterApiError;
+}> => {
+  let response;
+
+  try {
+    response = await sendMessageToContentScript({
+      type: EXTERNAL_SERVICE_TYPES.DISCONNECT,
+    });
+  } catch (e) {
+    console.error(e);
+  }
+
+  if (!response) {
+    return { error: FreighterApiInternalError };
+  }
+
+  return response.apiError ? { error: response.apiError } : {};
+};
