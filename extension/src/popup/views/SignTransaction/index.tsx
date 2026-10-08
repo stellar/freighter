@@ -30,9 +30,12 @@ import {
 } from "helpers/urls";
 import { emitMetric } from "helpers/metrics";
 import {
+  getFeeSourceAccount,
   getTransactionInfo,
+  getTrustlineChangesForAccount,
   isFederationAddress,
   isMuxedAccount,
+  isSameAccount,
   stroopToXlm,
 } from "helpers/stellar";
 import { isNativeAssetPair } from "@shared/helpers/assetIdentity";
@@ -68,7 +71,6 @@ import { useGetSignTxData } from "./hooks/useGetSignTxData";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { useSetupSigningFlow } from "popup/helpers/useSetupSigningFlow";
 import { rejectTransaction, signTransaction } from "popup/ducks/access";
-import { publicKeySelector } from "popup/ducks/accountServices";
 import { reRouteOnboarding } from "popup/helpers/route";
 import { getSiteFavicon } from "popup/helpers/getSiteFavicon";
 import { AssetIcons, BlockaidAssetDiff } from "@shared/api/types";
@@ -115,7 +117,6 @@ export const SignTransaction = () => {
   // ReviewTransaction.
   const [isOnBlockaidSheet, setIsOnBlockaidSheet] = useState(false);
   const isNonSSLEnabled = useSelector(isNonSSLEnabledSelector);
-  const publicKey = useSelector(publicKeySelector);
   const { isDomainListedAllowed } = useIsDomainListedAllowed({
     domain,
   });
@@ -188,13 +189,19 @@ export const SignTransaction = () => {
     _networkPassphrase as string,
   );
 
-  let _memo = {};
   let _sequence = "";
 
   if (!("innerTransaction" in transaction)) {
     _sequence = transaction.sequence;
-    _memo = transaction.memo;
   }
+
+  // A fee bump has no memo of its own. The memo is in the inner transaction,
+  // so read it from there. Otherwise, the memo-required check blocks a fee
+  // bump even when the inner transaction has a memo.
+  const _memo =
+    "innerTransaction" in transaction
+      ? transaction.innerTransaction.memo
+      : transaction.memo;
 
   const decodedMemo = decodeMemo(_memo);
 
@@ -368,12 +375,22 @@ export const SignTransaction = () => {
   }
 
   const { currentAccount } = signTxState.data?.signFlowState!;
+  // The account that signs. The data hook resolves it from `accountToSign`
+  // and uses it for balances and icons, so use the same account here.
+  const { publicKey } = signTxState.data;
 
-  // Check if user has enough XLM for the fee - skip warning if balances unavailable
+  // Check if user has enough XLM for the fee - skip warning if balances unavailable.
+  // Only the fee source pays the fee, so skip the check when the selected
+  // account is not the fee source.
   const balances = signTxState.data?.balances;
-  const hasEnoughXlm = balances
-    ? hasEnoughXlmForFee(balances.balances, stroopToXlm(_fee as string))
-    : true; // If balances unavailable, assume user can proceed
+  const isFeeSource = isSameAccount(
+    getFeeSourceAccount(transaction),
+    publicKey,
+  );
+  const hasEnoughXlm =
+    balances && isFeeSource
+      ? hasEnoughXlmForFee(balances.balances, stroopToXlm(_fee as string))
+      : true; // If balances unavailable, assume user can proceed
 
   if (
     currentAccount.publicKey &&
@@ -406,9 +423,7 @@ export const SignTransaction = () => {
   const hasAuthEntries = _tx.operations.some(
     (op) => op.type === "invokeHostFunction" && op.auth && op.auth.length,
   );
-  const trustlineChanges = _tx.operations.filter(
-    (op) => op.type === "changeTrust",
-  );
+  const trustlineChanges = getTrustlineChangesForAccount(_tx, publicKey);
 
   const assetDiffs =
     scanResult?.simulation?.status === "Success"

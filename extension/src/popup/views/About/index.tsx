@@ -40,12 +40,12 @@ export const About = () => {
               {t("Varial is a non-custodial wallet for the Stellar blockchain")}
             </div>
             <div className="About__links-header">{t("Links")}</div>
-            <AboutLink url="freighter.app" />
+            <AboutLink url="varialwallet.com" />
             <AboutLink url="stellar.org" />
-            <AboutLink url="stellar.org/privacy-policy">
+            <AboutLink url="varialwallet.com/privacy">
               {t("Privacy Policy")}
             </AboutLink>
-            <AboutLink url="stellar.org/terms-of-service">
+            <AboutLink url="varialwallet.com/terms">
               {t("Terms of Service")}
             </AboutLink>
           </div>

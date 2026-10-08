@@ -1039,10 +1039,10 @@ describe("Account view", () => {
         screen.getByTestId(`asset-price-delta-${TEST_USDC_CANONICAL}`),
       ).toHaveTextContent("0.50%");
       expect(screen.getByTestId(`asset-amount-native`)).toHaveTextContent(
-        "$13.81",
+        "$13.82",
       );
       expect(screen.getByTestId(`asset-price-delta-native`)).toHaveTextContent(
-        "1.09%",
+        "1.10%",
       );
       // Contract-ID issuers are filtered out by production `getTokenPrices`
       // (`@shared/api/internal.ts` → `isContractId`), so DT can never carry

@@ -17,7 +17,7 @@
   // tree, and a live region that appears together with its first text is not
   // reliably announced. Instead, cancel the flex gap it would otherwise take.
   &__notice:empty {
-    margin-bottom: pxToRem(-24px);
+    margin-top: pxToRem(-24px);
   }
 
   &__canvas {
@@ -77,6 +77,14 @@
     max-width: 100%;
     white-space: nowrap;
   }
+
+  // Figma "Drag to inspect": Text/XS/Medium in Foreground/Primary.
+  &__inspect-timestamp {
+    color: var(--sds-clr-gray-09);
+    font-size: pxToRem(12px);
+    font-weight: var(--sds-fw-medium);
+    line-height: pxToRem(18px);
+  }
 }
 
 @keyframes LineChart-fill-in {
@@ -114,6 +122,29 @@
   // CHART_MORPH_DURATION_MS and easeOutCubic.
   &--rise &__fill {
     animation: LineChart-fill-in 250ms cubic-bezier(0.33, 1, 0.68, 1);
+  }
+
+  &--inspectable {
+    cursor: crosshair;
+    // Vertical scrolling must keep working over the chart — the detail view is
+    // taller than the popup — so only the horizontal axis is claimed here: a
+    // horizontal drag becomes an inspect, a vertical one still scrolls the
+    // view. When the browser claims the vertical pan it fires `pointercancel`,
+    // which already clears the inspection; that is this platform's equivalent
+    // of mobile's "movement before the long-press fails the pan".
+    touch-action: pan-y;
+    // Stops a drag selecting the surrounding text; the press itself is left
+    // un-prevented so the compatibility mousedown still reaches listeners.
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  &__guide {
+    stroke: var(--sds-clr-gray-06);
+  }
+
+  &__inspect-ring {
+    stroke: var(--sds-clr-gray-01);
   }
 }
 

@@ -18,8 +18,7 @@ import {
 /**
  * Rounds to 2 decimal places, half-up, in decimal space before converting to
  * a number. Never `Math.round(x * 100) / 100` — that reintroduces binary
- * floating-point error at the half-cent boundary. Never the extension's
- * existing `roundUsdValue`, which floors instead of rounding.
+ * floating-point error at the half-cent boundary.
  */
 export const roundHalfUp2dp = (value: BigNumber.Value): number =>
   new BigNumber(value).decimalPlaces(2, BigNumber.ROUND_HALF_UP).toNumber();

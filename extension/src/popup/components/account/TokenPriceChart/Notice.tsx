@@ -2,7 +2,10 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { Icon } from "@stellar/design-system";
 
-import { ApiTokenPriceHistoryPoint } from "@shared/api/types";
+import {
+  ApiTokenPriceHistoryPoint,
+  TokenPriceHistoryRange,
+} from "@shared/api/types";
 import { hasChartData } from "popup/helpers/tokenPriceHistory";
 
 import { EXPECTED_POINTS_BY_RANGE, SPARSE_COVERAGE_RATIO } from "./constants";
@@ -29,10 +32,14 @@ export const getNoticeVariant = ({
   lowVolume,
   points,
   range,
+  resolutionSeconds,
+  nowSeconds,
 }: {
   lowVolume: boolean | null;
   points: ApiTokenPriceHistoryPoint[];
   range: string;
+  resolutionSeconds: number;
+  nowSeconds: number;
 }): TokenChartNoticeVariant | null => {
   if (!hasChartData(points)) {
     return null;
@@ -44,7 +51,12 @@ export const getNoticeVariant = ({
   if (lowVolume === null) {
     return TokenChartNoticeVariant.VerdictUnavailable;
   }
-  const expectedPoints = EXPECTED_POINTS_BY_RANGE[range];
+  // ALL starts before the network, so the fixed count would flag every token
+  // younger than XLM; measure it against the token's own first bucket.
+  const expectedPoints =
+    range === TokenPriceHistoryRange.All && resolutionSeconds > 0
+      ? Math.ceil((nowSeconds - points[0].t) / resolutionSeconds)
+      : EXPECTED_POINTS_BY_RANGE[range];
   if (expectedPoints && pointCount < expectedPoints * SPARSE_COVERAGE_RATIO) {
     return TokenChartNoticeVariant.LimitedData;
   }

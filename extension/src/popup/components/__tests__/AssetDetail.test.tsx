@@ -1,6 +1,12 @@
 import React from "react";
 import { Asset } from "stellar-sdk";
-import { render, waitFor, screen, act } from "@testing-library/react";
+import {
+  render,
+  waitFor,
+  screen,
+  act,
+  fireEvent,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import BigNumber from "bignumber.js";
 
@@ -17,10 +23,18 @@ import {
   makeHistory,
 } from "@shared/api/__tests__/fixtures/tokenPriceHistory";
 import { mockAccounts, Wrapper, mockBalances } from "popup/__testHelpers__";
+import {
+  installPointerEventPolyfill,
+  mockChartRect,
+} from "popup/__testHelpers__/pointerEvents";
 import { resetCacheWriteClaims } from "helpers/cacheWrites";
 import { RANGE_SWITCH_DEBOUNCE_MS } from "popup/components/account/TokenPriceChart/constants";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { AccountHistoryData } from "popup/views/Account/hooks/useGetAccountHistoryData";
+
+// jest-fixed-jsdom has no PointerEvent; without this, fireEvent.pointerDown/
+// pointerUp below would silently drop clientX/pointerId.
+installPointerEventPolyfill();
 
 const mockHistoryData = {
   type: AppDataType.RESOLVED,
@@ -865,9 +879,15 @@ describe("AssetDetail", () => {
       statsSpy.mockReset().mockResolvedValue({} as any);
     });
 
+    // Restored on its own: `jest.restoreAllMocks()` would also detach the
+    // describe-scoped `historySpy`/`statsSpy` from every later test.
+    let rectSpy: ReturnType<typeof mockChartRect> | undefined;
+
     afterEach(() => {
       resetCacheWriteClaims();
       jest.useRealTimers();
+      rectSpy?.mockRestore();
+      rectSpy = undefined;
     });
 
     const makeProps = () =>
@@ -948,6 +968,172 @@ describe("AssetDetail", () => {
       ).toHaveLength(1);
     });
 
+    it("shows the inspected point's price in the header while dragging, and spot again on release", async () => {
+      // 3 evenly-spaced buckets → bucket ends 900, 1800, 2700 → viewBox x 0, 160,
+      // 320 (§ getChartCoordinates), independent of `resolutionSeconds`.
+      const INSPECTABLE_HISTORY = makeHistory({
+        points: [
+          { t: 0, p: "0.20" },
+          { t: 900, p: "0.22" },
+          { t: 1800, p: "0.26" },
+        ],
+        resolutionSeconds: 900,
+        change: { absolute: "0.06", percent: "30.00" },
+      });
+      historySpy.mockResolvedValue(INSPECTABLE_HISTORY);
+      renderDetail(
+        makeState({
+          price: { currentPrice: "0.30", percentagePriceChange24h: "1.09" },
+        }),
+      );
+
+      await waitFor(() => expect(delta().textContent).toBe("+$0.06 (30.00%)"));
+
+      rectSpy = mockChartRect();
+      const svg = await screen.findByTestId("TokenPriceChart__svg");
+
+      // 640px-wide element → clientX 320 is viewBox x 160 → nearest is index 1
+      // (x=160) exactly.
+      fireEvent.pointerDown(svg, {
+        pointerType: "touch",
+        clientX: 320,
+        pointerId: 1,
+      });
+      expect(screen.getByTestId("AssetDetail__price")).toHaveTextContent(
+        "$0.22",
+      );
+      expect(delta()).toHaveTextContent("+$0.02 (10.00%)");
+
+      fireEvent.pointerUp(svg, { pointerType: "touch", pointerId: 1 });
+      expect(screen.getByTestId("AssetDetail__price")).toHaveTextContent(
+        "$0.30",
+      );
+      expect(delta()).toHaveTextContent("+$0.06 (30.00%)");
+    });
+
+    it("prints the inspected header price with the chart's sub-dollar precision, not spot's", async () => {
+      const INSPECTABLE_HISTORY = makeHistory({
+        points: [
+          { t: 0, p: "0.2196" },
+          { t: 900, p: "0.2213" },
+          { t: 1800, p: "0.2267" },
+        ],
+        resolutionSeconds: 900,
+      });
+      historySpy.mockResolvedValue(INSPECTABLE_HISTORY);
+      renderDetail(
+        makeState({
+          price: { currentPrice: "0.30", percentagePriceChange24h: "1.09" },
+        }),
+      );
+
+      await waitFor(() => expect(delta()).toBeInTheDocument());
+
+      rectSpy = mockChartRect();
+      const svg = await screen.findByTestId("TokenPriceChart__svg");
+
+      // clientX 320 → viewBox x 160 → index 1 (p: "0.2213"). The chart's
+      // formatter keeps all 4 sub-dollar decimals; spot shows 2 ("$0.22").
+      fireEvent.pointerDown(svg, {
+        pointerType: "touch",
+        clientX: 320,
+        pointerId: 1,
+      });
+      expect(screen.getByTestId("AssetDetail__price")).toHaveTextContent(
+        "$0.2213",
+      );
+
+      fireEvent.pointerUp(svg, { pointerType: "touch", pointerId: 1 });
+      expect(screen.getByTestId("AssetDetail__price")).toHaveTextContent(
+        "$0.30",
+      );
+    });
+
+    it("prints an inspected price at a dollar and above in the same two decimals as spot", async () => {
+      const INSPECTABLE_HISTORY = makeHistory({
+        points: [
+          { t: 0, p: "1.20" },
+          { t: 900, p: "1.235" },
+          { t: 1800, p: "1.30" },
+        ],
+        resolutionSeconds: 900,
+      });
+      historySpy.mockResolvedValue(INSPECTABLE_HISTORY);
+      renderDetail(
+        makeState({
+          price: { currentPrice: "1.50", percentagePriceChange24h: "1.09" },
+        }),
+      );
+
+      await waitFor(() => expect(delta()).toBeInTheDocument());
+
+      rectSpy = mockChartRect();
+      const svg = await screen.findByTestId("TokenPriceChart__svg");
+
+      // 1.235 → "$1.24": at a dollar and above the chart's formatter is the
+      // standard fiat format, same as spot.
+      fireEvent.pointerDown(svg, {
+        pointerType: "touch",
+        clientX: 320,
+        pointerId: 1,
+      });
+      expect(screen.getByTestId("AssetDetail__price")).toHaveTextContent(
+        "$1.24",
+      );
+    });
+
+    it("falls back to spot when the chart unmounts mid-drag", async () => {
+      // The kill switch flips (or the token/network changes) while a finger is
+      // still down. The chart section unmounts without ever reporting the
+      // release, so the header has to drop the inspected price on its own —
+      // otherwise the view is left showing a price that is not spot and a
+      // delta describing a chart that is gone.
+      const INSPECTABLE_HISTORY = makeHistory({
+        points: [
+          { t: 0, p: "0.20" },
+          { t: 900, p: "0.22" },
+          { t: 1800, p: "0.26" },
+        ],
+        resolutionSeconds: 900,
+        change: { absolute: "0.06", percent: "30.00" },
+      });
+      historySpy.mockResolvedValue(INSPECTABLE_HISTORY);
+      const price = { currentPrice: "0.30", percentagePriceChange24h: "1.09" };
+      const { rerender } = renderDetail(makeState({ price }));
+
+      await waitFor(() => expect(delta().textContent).toBe("+$0.06 (30.00%)"));
+
+      rectSpy = mockChartRect();
+      fireEvent.pointerDown(await screen.findByTestId("TokenPriceChart__svg"), {
+        pointerType: "touch",
+        clientX: 320,
+        pointerId: 1,
+      });
+      expect(screen.getByTestId("AssetDetail__price")).toHaveTextContent(
+        "$0.22",
+      );
+
+      // No pointerup: the section goes away underneath the drag.
+      rerender(
+        <Wrapper
+          routes={[ROUTES.account]}
+          state={makeState({ isChartEnabled: false, price })}
+        >
+          <AssetDetail {...makeProps()} />
+        </Wrapper>,
+      );
+
+      await waitFor(() =>
+        expect(screen.queryByTestId("TokenPriceChart")).toBeNull(),
+      );
+      expect(screen.getByTestId("AssetDetail__price")).toHaveTextContent(
+        "$0.30",
+      );
+      // And the range delta is gone with it — the 24h figure is what this
+      // view shows without a chart.
+      expect(delta().textContent).toBe("1.09%");
+    });
+
     it("paints a losing range red — header delta and chart artwork", async () => {
       historySpy.mockResolvedValue(HISTORY_1D_NEGATIVE);
       renderDetail(makeState());
@@ -982,7 +1168,7 @@ describe("AssetDetail", () => {
         { timeout: 3000 },
       );
       // The spot price is live, not per-timeframe.
-      expect(screen.getByText("$0.27")).toBeInTheDocument();
+      expect(screen.getByText("$0.28")).toBeInTheDocument();
     });
 
     it("shows the placeholder for an uncached range, never the previous number", async () => {

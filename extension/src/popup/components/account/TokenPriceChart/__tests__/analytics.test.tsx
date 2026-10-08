@@ -1,18 +1,33 @@
 import React from "react";
 import { Provider } from "react-redux";
-import { render, renderHook, act, screen } from "@testing-library/react";
+import {
+  render,
+  renderHook,
+  act,
+  screen,
+  fireEvent,
+  waitFor,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 import { MAINNET_NETWORK_DETAILS } from "@shared/constants/stellar";
 import { sendMessageToBackground } from "@shared/api/helpers/extensionMessaging";
 import { makeHistory } from "@shared/api/__tests__/fixtures/tokenPriceHistory";
 import { makeDummyStore } from "popup/__testHelpers__";
+import {
+  installPointerEventPolyfill,
+  mockChartRect,
+} from "popup/__testHelpers__/pointerEvents";
 import { TokenPriceChart } from "popup/components/account/TokenPriceChart";
 import { RANGE_SWITCH_DEBOUNCE_MS } from "popup/components/account/TokenPriceChart/constants";
 import { useGetTokenPriceHistory } from "helpers/hooks/useGetTokenPriceHistory";
 import { emitMetric } from "helpers/metrics";
 
 // §N refs: wallet-eng-monorepo/design-docs/token-price-graphs/token-price-graphs-design.md
+
+// jest-fixed-jsdom has no PointerEvent; without this, fireEvent.pointerDown/
+// pointerMove/pointerUp below would silently drop clientX/pointerId.
+installPointerEventPolyfill();
 
 jest.mock("@shared/api/helpers/extensionMessaging");
 const mockedSend = sendMessageToBackground as jest.Mock;
@@ -66,12 +81,37 @@ const CANONICAL_FIXTURE = [
     },
   },
   { event: "token_chart.range_changed", props: { range: "1W" } },
+  // The 1W switch resolves for real (below) so drag-to-inspect has a chart to
+  // act on — the fetch and its first showing are real outcomes, and both fire
+  // in the normal order: `loaded` off the network response, `viewed` once it
+  // is on screen.
+  {
+    event: "token_chart.loaded",
+    props: { token_type: "classic", has_data: true, range: "1W" },
+  },
+  {
+    event: "token_chart.viewed",
+    props: {
+      asset_code: "USDC",
+      asset_issuer: "GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
+      token_type: "classic",
+      has_data: true,
+      range: "1W",
+    },
+  },
+  // Once per drag-to-inspect activation, on its FIRST move. A bare click
+  // emits nothing at all (asserted below).
+  { event: "token_chart.brushed", props: { range: "1W" } },
 ];
 
 describe("token_chart analytics payloads (frozen cross-platform fixture)", () => {
   afterEach(() => {
     mockedSend.mockReset();
     mockedEmitMetric.mockReset();
+    // The `getBoundingClientRect` spy below is installed on a shared
+    // prototype; left in place it would hand every later test in this file a
+    // 320-wide SVG.
+    jest.restoreAllMocks();
   });
 
   it("emits payloads that deep-equal the canonical fixture", async () => {
@@ -109,10 +149,24 @@ describe("token_chart analytics payloads (frozen cross-platform fixture)", () =>
       });
     });
 
-    // Fixture 3: a timeframe switch. The mount fetch never resolves, so the
-    // only emission from the component is the interaction event — reported
-    // once the switch settles past the debounce, matching mobile.
-    mockedSend.mockImplementation(() => new Promise(() => {}));
+    // Fixture 3: a timeframe switch. The mount fetch (1D, already cached
+    // above) never issues a network call and settles from the cache; the 1W
+    // switch DOES resolve for real, so there is a chart to drag-to-inspect on
+    // once it lands.
+    mockedSend.mockImplementation(({ path }: { path: string }) =>
+      path.includes("range=1W")
+        ? Promise.resolve({
+            status: 200,
+            body: {
+              data: makeHistory({
+                token: CLASSIC_TOKEN,
+                lowVolume: false,
+                range: "1W",
+              }),
+            },
+          })
+        : new Promise(() => {}),
+    );
     jest.useFakeTimers({ doNotFake: ["performance"] });
     const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
     render(
@@ -125,13 +179,76 @@ describe("token_chart analytics payloads (frozen cross-platform fixture)", () =>
       </Provider>,
     );
     await user.click(screen.getByRole("tab", { name: "1W" }));
-    act(() => {
+    await act(async () => {
       jest.advanceTimersByTime(RANGE_SWITCH_DEBOUNCE_MS);
+      // Flushes the now-resolved 1W fetch's promise chain under fake timers.
+      await Promise.resolve();
+      await Promise.resolve();
     });
     jest.useRealTimers();
 
+    await waitFor(() =>
+      expect(screen.getByTestId("TokenPriceChart__svg")).toBeInTheDocument(),
+    );
+
+    mockChartRect(320, 140);
+    fireEvent.pointerDown(screen.getByTestId("TokenPriceChart__svg"), {
+      pointerType: "touch",
+      clientX: 10,
+      pointerId: 1,
+    });
+    fireEvent.pointerMove(screen.getByTestId("TokenPriceChart__svg"), {
+      pointerType: "touch",
+      clientX: 200,
+      pointerId: 1,
+    });
+    fireEvent.pointerUp(screen.getByTestId("TokenPriceChart__svg"), {
+      pointerType: "touch",
+      pointerId: 1,
+    });
+
     expect(mockedEmitMetric.mock.calls).toEqual(
       CANONICAL_FIXTURE.map((fixture) => [fixture.event, fixture.props]),
+    );
+
+    // A bare click is not a brush: pointerdown still moves the artwork, the
+    // timestamp and the header, but with no movement there was no drag to
+    // report — matching mobile, where a long-press-armed pan that never moves
+    // never activates.
+    fireEvent.pointerDown(screen.getByTestId("TokenPriceChart__svg"), {
+      pointerType: "touch",
+      clientX: 10,
+      pointerId: 2,
+    });
+    fireEvent.pointerUp(screen.getByTestId("TokenPriceChart__svg"), {
+      pointerType: "touch",
+      pointerId: 2,
+    });
+
+    expect(mockedEmitMetric.mock.calls).toEqual(
+      CANONICAL_FIXTURE.map((fixture) => [fixture.event, fixture.props]),
+    );
+
+    // A mouse brushes by hovering: one `brushed` per hover once it moves,
+    // none for a pass that never moves.
+    const svg = screen.getByTestId("TokenPriceChart__svg");
+    const mouse = (clientX: number) => ({
+      pointerType: "mouse",
+      pointerId: 3,
+      clientX,
+    });
+    mockedEmitMetric.mockClear();
+    fireEvent.pointerEnter(svg, mouse(10));
+    fireEvent.pointerMove(svg, mouse(100));
+    fireEvent.pointerMove(svg, mouse(200));
+    fireEvent.pointerLeave(svg, mouse(200));
+    fireEvent.pointerEnter(svg, mouse(10));
+    fireEvent.pointerLeave(svg, mouse(10));
+
+    expect(mockedEmitMetric.mock.calls).toEqual(
+      CANONICAL_FIXTURE.filter(
+        (fixture) => fixture.event === "token_chart.brushed",
+      ).map((fixture) => [fixture.event, fixture.props]),
     );
   });
 

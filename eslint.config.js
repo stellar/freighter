@@ -46,6 +46,7 @@ export default [
         ...globals.browser,
         ...globals.node,
         RequestInit: "readonly",
+        PointerEventInit: "readonly",
         chrome: "readonly",
       },
     },

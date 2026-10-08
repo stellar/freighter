@@ -9,8 +9,12 @@ import {
   CHART_VIEWBOX_HEIGHT,
   END_DOT_RADIUS,
   CHART_VIEWBOX_WIDTH,
+  INSPECT_DOT_RADIUS,
+  INSPECT_DOT_RING_WIDTH,
+  INSPECT_MOVE_THRESHOLD_PX,
   PriceDirection,
 } from "./constants";
+import { nearestCoordinateIndex } from "./inspect";
 
 // §N refs: wallet-eng-monorepo/design-docs/token-price-graphs/token-price-graphs-design.md
 
@@ -29,6 +33,11 @@ interface LineChartProps {
    * centre, where the hairline sat, and morph up into the series. Read on
    * mount only. */
   riseFromFlat?: boolean;
+  /** Index into `points` under the pointer, or null/undefined when idle. */
+  inspectedIndex?: number | null;
+  onInspectStart?: (index: number) => void;
+  onInspectMove?: (index: number) => void;
+  onInspectEnd?: () => void;
 }
 
 const round = (value: number) => Math.round(value * 100) / 100;
@@ -38,6 +47,19 @@ export interface ChartCoordinate {
   x: number;
   y: number;
 }
+
+const dotPath = (coord: ChartCoordinate) => `M${coord.x},${coord.y} h0.01`;
+
+const toLinePoints = (coords: ChartCoordinate[]) =>
+  coords.map((coord) => `${coord.x},${coord.y}`).join(" ");
+
+// Closed under the REAL endpoints, not the viewBox edges: the clock-skew clamp
+// can collapse a two-point series onto one x, and a fill closed at x=320 would
+// then draw a diagonal unrelated to the data.
+const toFillPoints = (coords: ChartCoordinate[], linePoints: string) =>
+  `${linePoints} ${coords[coords.length - 1].x},${CHART_VIEWBOX_HEIGHT} ${coords[0].x},${CHART_VIEWBOX_HEIGHT}`;
+
+const DIMMED_OPACITY = "0.3";
 
 const clampProgress = (progress: number) => Math.min(Math.max(progress, 0), 1);
 
@@ -275,9 +297,29 @@ const useMorphedCoordinates = (
   return { displayed, rises };
 };
 
+/** Pointer position → viewBox x. The svg is stretched to the popup width. */
+const toViewBoxX = (event: React.PointerEvent<SVGSVGElement>): number => {
+  const rect = event.currentTarget.getBoundingClientRect();
+  if (rect.width === 0) {
+    return 0;
+  }
+  return ((event.clientX - rect.left) / rect.width) * CHART_VIEWBOX_WIDTH;
+};
+
+/** A mouse inspects by hovering; touch and pen have no hover. */
+const isHoverPointer = (event: React.PointerEvent) =>
+  event.pointerType === "mouse";
+
 /**
- * Memoised: the parent re-renders on unrelated state (price polls, menu) and
- * none of these props change between fetches.
+ * Memoised on props: the parent re-renders on unrelated state (price polls,
+ * menu), and the per-move inspect props are the only ones that churn.
+ *
+ * Inspection is pointer-only (§7.4). A mouse inspects by hovering: entering
+ * arms, moves follow, leaving clears. Touch and pen have no hover, so they
+ * press to drag: pointerdown arms, capture keeps moves flowing, up/cancel
+ * clears. Keyboard users keep everything shown by default — chart,
+ * per-range delta, label — and lose arbitrary-point inspection specifically;
+ * focusable guide as a follow-up.
  */
 export const LineChart = React.memo(function LineChart({
   points,
@@ -286,6 +328,10 @@ export const LineChart = React.memo(function LineChart({
   direction,
   label,
   riseFromFlat = false,
+  inspectedIndex,
+  onInspectStart,
+  onInspectMove,
+  onInspectEnd,
 }: LineChartProps) {
   // Memoised on the series itself, so the morph effect fires on a real change
   // of geometry rather than on every render.
@@ -298,21 +344,161 @@ export const LineChart = React.memo(function LineChart({
     riseFromFlat,
   );
 
-  const linePoints = coordinates
-    .map((coord) => `${coord.x},${coord.y}`)
-    .join(" ");
+  const xs = useMemo(
+    () => targetCoordinates.map((c) => c.x),
+    [targetCoordinates],
+  );
+  const isInspecting = inspectedIndex !== null && inspectedIndex !== undefined;
+  // The dot rides the DISPLAYED (possibly morphing) geometry; the snap uses
+  // the target geometry, whose indices are the points' indices.
+  const inspectedCoord = isInspecting ? coordinates[inspectedIndex] : undefined;
+
+  // The pointer id that armed the inspection; null while idle. Any other
+  // pointer is ignored so a second finger cannot restart or hijack the drag.
+  const activePointerIdRef = useRef<number | null>(null);
+  const activeIsHoverRef = useRef(false);
+  const downClientXRef = useRef(0);
+  const hasCrossedMoveThresholdRef = useRef(false);
+  const onInspectEndRef = useRef(onInspectEnd);
+  onInspectEndRef.current = onInspectEnd;
+
+  // An unmount mid-inspection (the skeleton replacing the chart) fires no
+  // pointerup or pointerleave, so the parent would otherwise keep the inspection it was never told ended.
+  useEffect(
+    () => () => {
+      if (activePointerIdRef.current !== null) {
+        activePointerIdRef.current = null;
+        onInspectEndRef.current?.();
+      }
+    },
+    [],
+  );
+
+  const canInspect = Boolean(onInspectStart) && xs.length >= 2;
+  const startInspection = (event: React.PointerEvent<SVGSVGElement>) => {
+    activePointerIdRef.current = event.pointerId;
+    activeIsHoverRef.current = isHoverPointer(event);
+    downClientXRef.current = event.clientX;
+    hasCrossedMoveThresholdRef.current = false;
+    onInspectStart?.(nearestCoordinateIndex(xs, toViewBoxX(event)));
+  };
+
+  const handlePointerEnter = (event: React.PointerEvent<SVGSVGElement>) => {
+    if (
+      isHoverPointer(event) &&
+      canInspect &&
+      activePointerIdRef.current === null
+    ) {
+      startInspection(event);
+    }
+  };
+  const handlePointerLeave = (event: React.PointerEvent<SVGSVGElement>) => {
+    if (isHoverPointer(event)) {
+      endInspection(event);
+    }
+  };
+
+  const handlePointerDown = (event: React.PointerEvent<SVGSVGElement>) => {
+    // The mouse is already inspecting from hover; a click changes nothing.
+    if (isHoverPointer(event)) {
+      return;
+    }
+    // A right/middle press opens a menu or autoscrolls; it must not arm or
+    // take the lock, or no pointerup may ever release it.
+    if (!event.isPrimary || event.button !== 0) {
+      return;
+    }
+    if (!canInspect) {
+      return;
+    }
+    // A second pointer while one is already inspecting is ignored outright:
+    // restarting the activation would emit a second `brushed` and hand the
+    // drag to a finger that never armed it. A resting mouse is the exception:
+    // it would otherwise block touch until the cursor moved off the chart.
+    if (activePointerIdRef.current !== null && !activeIsHoverRef.current) {
+      return;
+    }
+    // Keep receiving moves after the pointer leaves the svg; jsdom lacks it.
+    if (typeof event.currentTarget.setPointerCapture === "function") {
+      event.currentTarget.setPointerCapture(event.pointerId);
+    }
+    startInspection(event);
+  };
+  const handlePointerMove = (event: React.PointerEvent<SVGSVGElement>) => {
+    // No pointerenter fires when the chart mounts under a resting mouse.
+    if (isHoverPointer(event) && activePointerIdRef.current === null) {
+      if (canInspect) {
+        startInspection(event);
+      }
+      return;
+    }
+    // Idle (no pointer down) or a pointer that is not the active one: ignored.
+    if (activePointerIdRef.current !== event.pointerId || !onInspectMove) {
+      return;
+    }
+    if (!hasCrossedMoveThresholdRef.current) {
+      if (
+        Math.abs(event.clientX - downClientXRef.current) <
+        INSPECT_MOVE_THRESHOLD_PX
+      ) {
+        return;
+      }
+      hasCrossedMoveThresholdRef.current = true;
+    }
+    onInspectMove(nearestCoordinateIndex(xs, toViewBoxX(event)));
+  };
+  /**
+   * End of the activation: a mouse leaving, and for a press `pointerup`,
+   * `pointercancel` (the browser claimed the gesture as a scroll) and
+   * `lostpointercapture` (capture taken away by anything else) all land here, and clearing is idempotent so overlapping
+   * ones cost nothing. A pointer OTHER than the active one cannot end someone
+   * else's drag; an end with no pointer tracked still clears, so a state the
+   * component never armed can always be released.
+   */
+  const endInspection = (event: React.PointerEvent<SVGSVGElement>) => {
+    if (
+      activePointerIdRef.current !== null &&
+      activePointerIdRef.current !== event.pointerId
+    ) {
+      return;
+    }
+    activePointerIdRef.current = null;
+    onInspectEnd?.();
+  };
+  // A mouse button release is not the end of a hover; only leaving is.
+  const handlePointerEnd = (event: React.PointerEvent<SVGSVGElement>) => {
+    if (!isHoverPointer(event)) {
+      endInspection(event);
+    }
+  };
+
   const endPoint = coordinates[coordinates.length - 1];
-  // Close the area under the REAL endpoints, not the viewBox edges: the
-  // clock-skew clamp can collapse a two-point series onto one x, and a fill
-  // closed at x=320 would then draw a diagonal unrelated to the data.
-  const fillPoints = `${linePoints} ${endPoint.x},${CHART_VIEWBOX_HEIGHT} ${coordinates[0].x},${CHART_VIEWBOX_HEIGHT}`;
+  const splitIndex = inspectedCoord ? inspectedIndex : null;
+  // Both halves include the inspected point, so the line has no gap at the split.
+  const solidCoordinates =
+    splitIndex === null || splitIndex === undefined
+      ? coordinates
+      : coordinates.slice(0, splitIndex + 1);
+  const dimmedCoordinates =
+    splitIndex === null || splitIndex === undefined
+      ? null
+      : coordinates.slice(splitIndex);
+  const solidLinePoints = toLinePoints(solidCoordinates);
+  const dimmedLinePoints = dimmedCoordinates
+    ? toLinePoints(dimmedCoordinates)
+    : null;
   // Per instance: SVG ids are document-global, and two charts overlapping
   // during a sheet transition would both resolve `url(#…)` to the first.
   const gradientId = `${useId()}-gradient`;
+  // Full series, not a half: an inspecting split's two polygons must shade to
+  // one shared peak, not each fall back to its own bounding box.
+  const seriesTopY = coordinates.length
+    ? Math.min(...coordinates.map((coord) => coord.y))
+    : 0;
 
   return (
     <svg
-      className={`LineChart LineChart--${direction}${rises ? " LineChart--rise" : ""}`}
+      className={`LineChart LineChart--${direction}${rises ? " LineChart--rise" : ""}${onInspectStart ? " LineChart--inspectable" : ""}`}
       viewBox={`0 0 ${CHART_VIEWBOX_WIDTH} ${CHART_VIEWBOX_HEIGHT}`}
       preserveAspectRatio="none"
       // Every series ends at x=320 and the end dot extends 3 units past it;
@@ -321,23 +507,47 @@ export const LineChart = React.memo(function LineChart({
       role="img"
       aria-label={label}
       data-testid="TokenPriceChart__svg"
+      onPointerEnter={handlePointerEnter}
+      onPointerLeave={handlePointerLeave}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerEnd}
+      onPointerCancel={handlePointerEnd}
+      onLostPointerCapture={handlePointerEnd}
     >
       <defs>
-        <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+        {/* userSpaceOnUse anchors both fill polygons to one peak, not each's own bbox. */}
+        <linearGradient
+          id={gradientId}
+          gradientUnits="userSpaceOnUse"
+          x1="0"
+          x2="0"
+          y1={seriesTopY}
+          y2={CHART_VIEWBOX_HEIGHT}
+        >
           <stop offset="0" stopColor="currentColor" stopOpacity="0.16" />
           <stop offset="1" stopColor="currentColor" stopOpacity="0" />
         </linearGradient>
       </defs>
       <polygon
         className="LineChart__fill"
-        points={fillPoints}
+        points={toFillPoints(solidCoordinates, solidLinePoints)}
         fill={`url(#${gradientId})`}
         stroke="none"
         data-testid="TokenPriceChart__fill"
       />
+      {dimmedCoordinates && dimmedLinePoints ? (
+        <polygon
+          points={toFillPoints(dimmedCoordinates, dimmedLinePoints)}
+          fill={`url(#${gradientId})`}
+          stroke="none"
+          opacity={DIMMED_OPACITY}
+          data-testid="TokenPriceChart__fill-dimmed"
+        />
+      ) : null}
       <polyline
         data-testid="TokenPriceChart__polyline"
-        points={linePoints}
+        points={solidLinePoints}
         fill="none"
         stroke="currentColor"
         strokeWidth="1.5"
@@ -345,20 +555,68 @@ export const LineChart = React.memo(function LineChart({
         strokeLinecap="round"
         vectorEffect="non-scaling-stroke"
       />
+      {dimmedLinePoints ? (
+        <polyline
+          data-testid="TokenPriceChart__polyline-dimmed"
+          points={dimmedLinePoints}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinejoin="round"
+          strokeLinecap="round"
+          vectorEffect="non-scaling-stroke"
+          opacity={DIMMED_OPACITY}
+        />
+      ) : null}
       {/* The dot is a (near) zero-length stroke with round caps under
           `non-scaling-stroke`: the stroke outline is built in screen space,
           so it stays a circle however the outer svg is stretched. A nested
           viewport would not — its aspect handling runs in the already
           stretched user space. */}
-      <path
-        d={`M${endPoint.x},${endPoint.y} h0.01`}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth={END_DOT_RADIUS * 2}
-        strokeLinecap="round"
-        vectorEffect="non-scaling-stroke"
-        data-testid="TokenPriceChart__end-dot"
-      />
+      {inspectedCoord ? (
+        <>
+          <line
+            x1={inspectedCoord.x}
+            x2={inspectedCoord.x}
+            y1={0}
+            y2={CHART_VIEWBOX_HEIGHT}
+            className="LineChart__guide"
+            strokeDasharray="4 4"
+            strokeWidth="1"
+            vectorEffect="non-scaling-stroke"
+            data-testid="TokenPriceChart__inspect-guide"
+          />
+          {/* Ring first (background colour), dot on top — both zero-length
+              round-capped strokes, as the end dot is. */}
+          <path
+            d={dotPath(inspectedCoord)}
+            fill="none"
+            className="LineChart__inspect-ring"
+            strokeWidth={(INSPECT_DOT_RADIUS + INSPECT_DOT_RING_WIDTH) * 2}
+            strokeLinecap="round"
+            vectorEffect="non-scaling-stroke"
+          />
+          <path
+            d={dotPath(inspectedCoord)}
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={INSPECT_DOT_RADIUS * 2}
+            strokeLinecap="round"
+            vectorEffect="non-scaling-stroke"
+            data-testid="TokenPriceChart__inspect-dot"
+          />
+        </>
+      ) : (
+        <path
+          d={dotPath(endPoint)}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={END_DOT_RADIUS * 2}
+          strokeLinecap="round"
+          vectorEffect="non-scaling-stroke"
+          data-testid="TokenPriceChart__end-dot"
+        />
+      )}
     </svg>
   );
 });

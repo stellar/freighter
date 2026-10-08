@@ -68,6 +68,10 @@ export const METRIC_NAMES = {
   // to warming). Answers "which chart did they look at / was it empty".
   tokenChartViewed: "token_chart.viewed",
   tokenChartRangeChanged: "token_chart.range_changed",
+  // Once per inspection (a mouse hover or a touch press) — on its first move
+  // beyond the threshold, never per move and never for a tap or a still
+  // hover (§7.5, Phase 3).
+  tokenChartBrushed: "token_chart.brushed",
 
   // -- Assets / trustlines -------------------------------------------------
   assetAdded: "asset.added",
