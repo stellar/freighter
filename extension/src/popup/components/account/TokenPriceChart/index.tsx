@@ -21,7 +21,7 @@ import {
   useGetTokenPriceHistory,
 } from "helpers/hooks/useGetTokenPriceHistory";
 import { emitMetric } from "helpers/metrics";
-import { Shimmer } from "popup/components/Shimmer";
+import { Shimmer, ShimmerVariant } from "popup/components/Shimmer";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { getChartAssetIdentity } from "popup/helpers/token";
 import { hasChartData } from "popup/helpers/tokenPriceHistory";
@@ -824,7 +824,7 @@ export const TokenPriceChart = ({
             >
               <Shimmer
                 data-testid="TokenPriceChart__shimmer"
-                variant="hairline"
+                variant={ShimmerVariant.Hairline}
                 width="100%"
                 height="1px"
               />

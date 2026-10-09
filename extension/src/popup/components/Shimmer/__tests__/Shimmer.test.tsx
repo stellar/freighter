@@ -2,7 +2,11 @@ import React from "react";
 import { render, screen, act } from "@testing-library/react";
 
 import { REDUCED_MOTION_QUERY } from "helpers/hooks/usePrefersReducedMotion";
-import { Shimmer, SHIMMER_CYCLE_MS } from "popup/components/Shimmer";
+import {
+  Shimmer,
+  SHIMMER_CYCLE_MS,
+  ShimmerVariant,
+} from "popup/components/Shimmer";
 
 const setReducedMotion = (matches: boolean) => {
   const listeners = new Set<(e: { matches: boolean }) => void>();
@@ -45,7 +49,7 @@ describe("Shimmer", () => {
     render(
       <Shimmer
         data-testid="s"
-        variant="hairline"
+        variant={ShimmerVariant.Hairline}
         width="100%"
         height="1px"
         className="Extra"

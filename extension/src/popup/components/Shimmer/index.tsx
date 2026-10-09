@@ -11,11 +11,16 @@ export const SHIMMER_CYCLE_MS = 1900;
 // so pills that mount at different moments still sweep together.
 const SHIMMER_EPOCH = performance.now();
 
+export enum ShimmerVariant {
+  Pill = "pill",
+  Hairline = "hairline",
+}
+
 export interface ShimmerProps {
   /** Any CSS length, e.g. "9.125rem" or "100%". */
   width: string;
   height: string;
-  variant?: "pill" | "hairline";
+  variant?: ShimmerVariant;
   className?: string;
   "data-testid"?: string;
 }
@@ -27,7 +32,7 @@ export interface ShimmerProps {
 export const Shimmer = ({
   width,
   height,
-  variant = "pill",
+  variant = ShimmerVariant.Pill,
   className,
   "data-testid": testId,
 }: ShimmerProps) => {
