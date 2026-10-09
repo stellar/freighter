@@ -344,39 +344,44 @@ test("Hide create claimable balance spam", async ({
   await expect(historyItems).toHaveCount(2);
 });
 
-test("A long token code does not widen the popup", async ({
+test("Long token codes fit in the popup", async ({
   page,
   extensionId,
   context,
 }) => {
-  // Token symbols are free-form, e.g. a Soroswap LP token's symbol is
-  // "native-USDC-SOROSWAP-LP", and the row shows it in both the label and
-  // the amount.
-  const LONG_CODE = "native-USDC-SOROSWAP-LP";
+  // Token symbols are free-form and have no length limit, e.g. a Soroswap LP
+  // token's symbol is "native-USDC-SOROSWAP-LP". The row shows the symbol in
+  // both the label and the amount. Cover a symbol that can wrap at its hyphens
+  // and one that has no break opportunity at all.
+  const LONG_CODES = [
+    "native-USDC-SOROSWAP-LP",
+    "SUPERLONGMEMECOINNAMEFORTESTING",
+  ];
 
   const stubOverrides = async () => {
-    await stubAccountHistoryWith(page, context, [
-      {
+    await stubAccountHistoryWith(
+      page,
+      context,
+      LONG_CODES.map((code, i) => ({
         amount: "12.3456789",
-        asset_code: LONG_CODE,
+        asset_code: code,
         asset_issuer:
           "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
         asset_type: "credit_alphanum12",
-        created_at: "2025-03-21T22:28:46Z",
+        created_at: `2025-03-2${i}T22:28:46Z`,
         from: "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
-        id: "164007621169153",
-        paging_token: "164007621169153",
+        id: `16400762116915${i}`,
+        paging_token: `16400762116915${i}`,
         source_account:
           "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
         to: "GCKUVXILBNYS4FDNWCGCYSJBY2PBQ4KAW2M5CODRVJPUFM62IJFH67J2",
         transaction_attr: {},
-        transaction_hash:
-          "686601028de9ddf40a1c24461a6a9c0415d60a39255c35eccad0b52ac1e700a5",
+        transaction_hash: `68660102${i}de9ddf40a1c24461a6a9c0415d60a39255c35eccad0b52ac1e700a5`,
         transaction_successful: true,
         type: "payment",
         type_i: 1,
-      },
-    ]);
+      })),
+    );
   };
 
   await loginToTestAccount({ page, extensionId, context, stubOverrides });
@@ -384,7 +389,9 @@ test("A long token code does not widen the popup", async ({
   // popup's dimensions once logged in.
   await page.setViewportSize({ width: 360, height: 600 });
   await page.getByTestId("nav-link-account-history").click();
-  await expect(page.getByTestId("history-item-label")).toHaveText(LONG_CODE);
+  await expect(page.getByTestId("history-item-label")).toHaveText(
+    [...LONG_CODES].reverse(),
+  );
 
   // Chrome sizes the popup window to the document's min-content width, not
   // to a fixed width, so a row that can't shrink widens the whole popup.
@@ -396,6 +403,22 @@ test("A long token code does not widen the popup", async ({
     return width;
   });
   expect(popupWidth).toBe(360);
+
+  // Within the popup's width, each row has to wrap or truncate its content
+  // rather than run off the edge and squeeze the amount out.
+  for (const item of await page.getByTestId("history-item").all()) {
+    const row = await item.evaluate((el) => {
+      const content = el.querySelector(".HistoryItem__row")!;
+      return {
+        overflow: content.scrollWidth - content.clientWidth,
+        amountWidth: el
+          .querySelector("[data-testid=history-item-amount-component]")!
+          .getBoundingClientRect().width,
+      };
+    });
+    expect(row.overflow).toBe(0);
+    expect(row.amountWidth).toBeGreaterThan(0);
+  }
 });
 
 test("History row displays muxed address extracted from XDR for payment", async ({

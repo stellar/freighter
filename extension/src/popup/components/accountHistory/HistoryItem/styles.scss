@@ -9,6 +9,8 @@
 
   &__row {
     width: 100%;
+    // Let the label shrink instead of squeezing the amount out of the row.
+    min-width: 0;
     display: flex;
     flex: 1;
     flex-direction: row;
@@ -23,6 +25,9 @@
 
   &__description {
     flex: 1;
+    min-width: 0;
+    // Token symbols have no length limit and may have no break opportunity.
+    overflow-wrap: anywhere;
     color: var(--sds-clr-gray-12);
 
     &__swap-label {
