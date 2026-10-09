@@ -142,6 +142,7 @@ export interface Response {
   overriddenBlockaidResponse: string | null;
   recentProtocols: RecentProtocolEntry[];
   hasSeenDiscoverWelcome: boolean;
+  shouldShowRebrandAnnouncement: boolean;
   cachedSwapTopTokens: { tokens: TrendingAsset[]; updatedAt: number } | null;
 }
 

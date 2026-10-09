@@ -41,6 +41,7 @@ import { AddToken } from "popup/views/AddToken";
 import { SignTransaction } from "popup/views/SignTransaction";
 import { SignAuthEntry } from "popup/views/SignAuthEntry";
 import { UnlockAccount } from "popup/views/UnlockAccount";
+import { RebrandAnnouncement } from "popup/views/RebrandAnnouncement";
 import { Welcome } from "popup/views/Welcome";
 import { DisplayBackupPhrase } from "popup/views/DisplayBackupPhrase";
 import { Debug } from "popup/views/Debug";
@@ -241,6 +242,14 @@ export const Router = () => (
           }
         ></Route>
         <Route
+          path={ROUTES.rebrandAnnouncement}
+          element={
+            <VerifiedAccountRoute>
+              <RebrandAnnouncement />
+            </VerifiedAccountRoute>
+          }
+        ></Route>
+        <Route
           path={ROUTES.mnemonicPhraseConfirmed}
           element={<FullscreenSuccessMessage />}
         ></Route>
@@ -295,10 +304,7 @@ export const Router = () => (
           path={ROUTES.advancedSettings}
           element={<AdvancedSettings />}
         ></Route>
-        <Route
-          path={ROUTES.autoLockTimer}
-          element={<AutoLockTimer />}
-        ></Route>
+        <Route path={ROUTES.autoLockTimer} element={<AutoLockTimer />}></Route>
         <Route path={ROUTES.addFunds} element={<AddFunds />} />
         <Route path={ROUTES.wallets} element={<Wallets />} />
 

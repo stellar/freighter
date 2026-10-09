@@ -3116,6 +3116,22 @@ export const dismissDiscoverWelcome = async (): Promise<boolean> => {
   return !!hasSeenDiscoverWelcome;
 };
 
+// True once per eligible wallet: the background flips pending to seen as it
+// answers, so only the first surface to ask shows the announcement.
+export const claimRebrandAnnouncement = async (): Promise<boolean> => {
+  const { shouldShowRebrandAnnouncement, error } =
+    await sendMessageToBackground({
+      activePublicKey: null,
+      type: SERVICE_TYPES.CLAIM_REBRAND_ANNOUNCEMENT,
+    });
+
+  if (error) {
+    throw new Error(error);
+  }
+
+  return Boolean(shouldShowRebrandAnnouncement);
+};
+
 export const getCachedSwapTopTokens = async (
   network: string,
 ): Promise<{ tokens: TrendingAsset[]; updatedAt: number } | null> => {

@@ -16,6 +16,7 @@ import {
   loadLastUsedAccount,
 } from "popup/ducks/accountServices";
 import { EnterPassword } from "popup/components/EnterPassword";
+import { claimRebrandAnnouncement } from "@shared/api/internal";
 import { reconcileAnalyticsUserId } from "helpers/metrics";
 
 import "./styles.scss";
@@ -54,9 +55,35 @@ export const UnlockAccount = () => {
   };
 
   useEffect(() => {
-    if (wasLockedOnMount.current && hasPrivateKey) {
-      navigate(`${destination}${queryParams}`, { replace: true });
+    if (!wasLockedOnMount.current || !hasPrivateKey) {
+      return;
     }
+
+    const target = `${destination}${queryParams}`;
+
+    // Wallets that pre-date the rebrand get the one-time announcement before
+    // their destination. The background hands it out once, so of several
+    // surfaces unlocked by the same broadcast only the first shows it.
+    const continueToDestination = async () => {
+      let shouldShowAnnouncement = false;
+      try {
+        shouldShowAnnouncement = await claimRebrandAnnouncement();
+      } catch {
+        // Fail closed: a messaging failure skips the announcement.
+      }
+
+      if (shouldShowAnnouncement) {
+        navigate(ROUTES.rebrandAnnouncement, {
+          replace: true,
+          state: { destination: target },
+        });
+        return;
+      }
+
+      navigate(target, { replace: true });
+    };
+
+    void continueToDestination();
   }, [hasPrivateKey, destination, queryParams, navigate]);
 
   useEffect(() => {

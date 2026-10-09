@@ -71,6 +71,7 @@ const SCREEN_BY_ROUTE: Partial<Record<ROUTES, ScreenDef>> = {
     flow: "onboarding",
   },
   [ROUTES.unlockAccount]: { screen_name: "unlock_account", flow: "security" },
+  [ROUTES.rebrandAnnouncement]: { screen_name: "rebrand_announcement" },
   [ROUTES.verifyAccount]: { screen_name: "verify_account", flow: "security" },
   [ROUTES.mnemonicPhraseConfirmed]: {
     screen_name: "account_creator_finished",

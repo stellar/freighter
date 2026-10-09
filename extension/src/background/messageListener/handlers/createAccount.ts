@@ -8,8 +8,10 @@ import { clearAccount } from "../helpers/clear-account";
 import { DataStorageAccess } from "background/helpers/dataStorageAccess";
 import {
   APPLICATION_ID,
+  REBRAND_ANNOUNCEMENT_STATUS_ID,
   KEY_DERIVATION_NUMBER_ID,
 } from "constants/localStorageTypes";
+import { REBRAND_ANNOUNCEMENT_STATUS } from "constants/rebrandAnnouncement";
 import { clearSession, SessionTimer } from "background/helpers/session";
 import { storeAccount } from "../helpers/store-account";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
@@ -74,6 +76,12 @@ export const createAccount = async ({
   }
 
   await localStore.setItem(APPLICATION_ID, APPLICATION_STATE.PASSWORD_CREATED);
+  // A new wallet goes through onboarding, which must not be followed by the
+  // one-time rebrand announcement.
+  await localStore.setItem(
+    REBRAND_ANNOUNCEMENT_STATUS_ID,
+    REBRAND_ANNOUNCEMENT_STATUS.SEEN,
+  );
 
   const currentState = sessionStore.getState();
 

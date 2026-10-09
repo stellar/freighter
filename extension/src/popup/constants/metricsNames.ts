@@ -58,6 +58,11 @@ export const METRIC_NAMES = {
   discoverProtocolOpenedFromDetails: "discover.protocol_opened_from_details",
   discoverWelcomeModalViewed: "discover.welcome_modal_viewed",
 
+  // Rebrand announcement (existing users only)
+  rebrandAnnouncementViewed: "rebrand.announcement_viewed",
+  // carries source (continue)
+  rebrandAnnouncementDismissed: "rebrand.announcement_dismissed",
+
   // -- Token price chart ----------------------------------------------------
   // Fired when the price-history fetch resolves (`has_data` known) — not a
   // screen view; `screen.viewed` (asset_detail) covers that. Props are a

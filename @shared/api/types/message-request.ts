@@ -457,6 +457,10 @@ export interface DismissDiscoverWelcomeMessage extends BaseMessage {
   type: SERVICE_TYPES.DISMISS_DISCOVER_WELCOME;
 }
 
+export interface ClaimRebrandAnnouncementMessage extends BaseMessage {
+  type: SERVICE_TYPES.CLAIM_REBRAND_ANNOUNCEMENT;
+}
+
 export interface GetBlockaidDebugOverrideMessage extends BaseMessage {
   type: SERVICE_TYPES.GET_BLOCKAID_DEBUG_OVERRIDE;
 }
@@ -580,6 +584,7 @@ export type ServiceMessageRequest =
   | ClearRecentProtocolsMessage
   | GetDiscoverWelcomeSeenMessage
   | DismissDiscoverWelcomeMessage
+  | ClaimRebrandAnnouncementMessage
   | GetBlockaidDebugOverrideMessage
   | AddCollectibleMessage
   | GetCollectiblesMessage
