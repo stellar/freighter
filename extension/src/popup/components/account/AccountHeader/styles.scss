@@ -176,13 +176,7 @@
     justify-content: center;
     width: pxToRem(16);
     height: pxToRem(16);
-    background: var(--sds-clr-gray-03);
     border-radius: pxToRem(100);
-
-    .IdenticonImg {
-      width: pxToRem(8);
-      height: pxToRem(8);
-    }
   }
 
   &__account-list-item {

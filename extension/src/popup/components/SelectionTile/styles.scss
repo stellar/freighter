@@ -28,6 +28,12 @@
     border: 1px solid var(--sds-clr-gray-06);
     border-radius: pxToRem(100px);
     margin-right: pxToRem(12px);
+
+    // Account avatars fill the circle; the frame is for token icons.
+    &:has(> .IdenticonImg) {
+      padding: 0;
+      border: 0;
+    }
   }
 
   &__text {
