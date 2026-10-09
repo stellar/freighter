@@ -105,6 +105,16 @@ const ALLOWED_RAW_COLORS: Record<string, string[]> = {
   ],
   // Account avatar artwork; fixed so an avatar looks the same in both themes.
   "popup/components/identicons/IdenticonImg/colors.ts": ["*"],
+  // Shimmer highlight: white in both themes by design, matching mobile.
+  "popup/components/Shimmer/styles.scss": [
+    "rgba(255, 255, 255, 0)",
+    "rgba(255, 255, 255, 0.03)",
+    "rgba(255, 255, 255, 0.07)",
+    "rgba(255, 255, 255, 0.08)",
+    "rgba(255, 255, 255, 0.15)",
+    "rgba(255, 255, 255, 0.3)",
+    "rgba(255, 255, 255, 0.6)",
+  ],
   // Trending card over its artwork: fade and tag text from Figma 1123-116809,
   // fixed so they read on the image in both themes.
   "popup/views/Discover/components/TrendingCarousel/styles.scss": [

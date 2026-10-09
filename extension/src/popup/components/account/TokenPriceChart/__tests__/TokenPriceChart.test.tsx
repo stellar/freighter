@@ -29,6 +29,7 @@ import {
 import {
   CHART_HEIGHT_PX,
   CHART_MORPH_DURATION_MS,
+  CHART_VIEWBOX_HEIGHT,
   RANGE_SWITCH_DEBOUNCE_MS,
   PriceDirection,
 } from "popup/components/account/TokenPriceChart/constants";
@@ -85,7 +86,7 @@ const respondByRange = (byRange: Record<string, unknown>) => {
     const match = /range=([A-Z0-9]+)/.exec(path);
     const range = match ? match[1] : "";
     // A range the test says nothing about never answers. The deferred warm
-    // pass (see warmRanges.test.tsx) walks the ranges in selector order and
+    // pass (see warmRanges.test.tsx) walks the ranges in WARM_ORDER and
     // waits for each, so an unstubbed range parks the queue there rather than
     // quietly caching ranges a test's premise needs uncached.
     if (!(range in byRange)) {
@@ -458,11 +459,11 @@ describe("TokenPriceChart", () => {
     expect(deltaText()).toContain("0.86%");
   });
 
-  it("morphs the line on a cached switch, never during a fetch", async () => {
+  it("rises out of the hairline after a fetch, and morphs on a cached switch", async () => {
     // The two halves of the morph contract, on the real switching path: a
-    // cache hit tweens (which is the fast switching worth smoothing), and an
-    // uncached one still shows the ghost and then paints the new series
-    // directly — the previous range's line is never held under the new tab.
+    // cache hit tweens from the outgoing line, and a fetch shows the shimmer
+    // and then lifts the new series out of the flat centre line where the
+    // hairline sat — the previous range's line is never held under the new tab.
     jest.useFakeTimers();
     const pendingFrames = new Map<number, FrameRequestCallback>();
     let nextFrameId = 0;
@@ -485,6 +486,13 @@ describe("TokenPriceChart", () => {
     };
     const linePoints = () =>
       screen.getByTestId("TokenPriceChart__polyline").getAttribute("points");
+    const isFlatAtCentre = (points: string | null) =>
+      (points ?? "")
+        .trim()
+        .split(" ")
+        .every(
+          (pair) => Number(pair.split(",")[1]) === CHART_VIEWBOX_HEIGHT / 2,
+        );
 
     try {
       respondByRange({ "1D": HISTORY_1D, "1W": HISTORY_1W });
@@ -492,8 +500,13 @@ describe("TokenPriceChart", () => {
       await act(async () => {
         await Promise.resolve();
       });
-      // First load: the settled geometry, painted directly.
+      // First load, after the shimmer: flat at the centre, then rising.
+      expect(isFlatAtCentre(linePoints())).toBe(true);
+      expect(pendingFrames.size).toBe(1);
+      flushFrame(0);
+      flushFrame(CHART_MORPH_DURATION_MS);
       const points1D = linePoints();
+      expect(isFlatAtCentre(points1D)).toBe(false);
       expect(pendingFrames.size).toBe(0);
 
       const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
@@ -508,8 +521,12 @@ describe("TokenPriceChart", () => {
         jest.advanceTimersByTime(RANGE_SWITCH_DEBOUNCE_MS + 50);
         await Promise.resolve();
       });
+      expect(isFlatAtCentre(linePoints())).toBe(true);
+      flushFrame(0);
+      flushFrame(CHART_MORPH_DURATION_MS);
       const points1W = linePoints();
       expect(points1W).not.toBe(points1D);
+      expect(isFlatAtCentre(points1W)).toBe(false);
       expect(pendingFrames.size).toBe(0);
 
       // Cached: no ghost, and the line is still the outgoing shape with a
@@ -532,6 +549,38 @@ describe("TokenPriceChart", () => {
       window.requestAnimationFrame = originalRaf;
       window.cancelAnimationFrame = originalCancelRaf;
     }
+  });
+
+  it("paints a cached open directly — it rises only out of a visible shimmer", async () => {
+    respondByRange({ "1D": HISTORY_1D });
+    const store = makeDummyStore({});
+    const chart = (
+      <Provider store={store}>
+        <TokenPriceChart
+          token="native"
+          networkDetails={MAINNET_NETWORK_DETAILS}
+          fallback24hPercent="1.09"
+          onDeltaChange={handleDelta}
+        />
+      </Provider>
+    );
+
+    const first = render(chart);
+    await waitFor(() =>
+      expect(screen.getByTestId("TokenPriceChart__svg")).toHaveClass(
+        "LineChart--rise",
+      ),
+    );
+    first.unmount();
+
+    render(chart);
+    await waitFor(() =>
+      expect(screen.getByTestId("TokenPriceChart__svg")).toBeInTheDocument(),
+    );
+    expect(requestCountForRange("1D")).toBe(1);
+    expect(screen.getByTestId("TokenPriceChart__svg")).not.toHaveClass(
+      "LineChart--rise",
+    );
   });
 
   it("reports no delta for a one-point series, even when change is present", async () => {
@@ -725,23 +774,18 @@ describe("TokenPriceChart", () => {
       return renderChart();
     };
 
-    it("renders the blurred chart ghost, not a flat block", () => {
+    it("draws a hairline shimmer across the chart, centred, not a flat block", () => {
       renderLoading();
 
       const loading = screen.getByTestId("TokenPriceChart__loading");
       expect(loading.className).not.toContain("TokenPriceChart__skeleton");
 
-      // Chart-shaped artwork, drawn with the chart's own SVG idiom: gradient
-      // fill polygon under a stroked polyline.
-      const ghost = screen.getByTestId("TokenPriceChart__ghost");
-      expect(ghost.tagName.toLowerCase()).toBe("svg");
-      expect(ghost.querySelector("polyline")).not.toBeNull();
-      expect(ghost.querySelector("polygon")).not.toBeNull();
-      expect(loading.contains(ghost)).toBe(true);
-
-      // ...and it is decorative art, never the data path.
-      expect(screen.queryByTestId("TokenPriceChart__polyline")).toBeNull();
-      expect(screen.queryByTestId("TokenPriceChart__svg")).toBeNull();
+      const line = screen.getByTestId("TokenPriceChart__shimmer");
+      expect(line).toHaveClass("Shimmer", "Shimmer--hairline");
+      expect(line.style.width).toBe("100%");
+      expect(line.style.height).toBe("1px");
+      expect(loading.contains(line)).toBe(true);
+      expect(screen.queryByTestId("TokenPriceChart__ghost")).toBeNull();
     });
 
     it("keeps the timeframe selector crisp and interactive while loading", () => {
@@ -751,7 +795,7 @@ describe("TokenPriceChart", () => {
       expect(tabs).toHaveLength(6);
       tabs.forEach((tab) => expect(tab).toBeEnabled());
 
-      // The selector is a sibling of the blurred layer, never inside it.
+      // The selector is a sibling of the loading layer, never inside it.
       expect(
         screen
           .getByTestId("TokenPriceChart__loading")
@@ -813,12 +857,12 @@ describe("TokenPriceChart", () => {
       expect(loadingRows).toEqual(loadedRows);
     });
 
-    it("hides the ghost from assistive tech and reports the chart busy", () => {
+    it("hides the shimmer from assistive tech and reports the chart busy", () => {
       renderLoading();
 
       expect(
         screen
-          .getByTestId("TokenPriceChart__ghost")
+          .getByTestId("TokenPriceChart__shimmer")
           .getAttribute("aria-hidden"),
       ).toBe("true");
       expect(
@@ -828,7 +872,7 @@ describe("TokenPriceChart", () => {
         screen.getByRole("status", { name: "Loading price chart" }),
       ).toBeInTheDocument();
 
-      // A blurred ghost is not a chart image — nothing announces as one.
+      // A hairline shimmer is not a chart image — nothing announces as one.
       expect(screen.queryByRole("img")).toBeNull();
     });
 
@@ -852,7 +896,7 @@ describe("TokenPriceChart", () => {
     it("renders no price text at all while loading", () => {
       renderLoading();
 
-      // A wallet must never draw invented prices, even blurred: no axis
+      // A wallet must never draw invented prices while loading: no axis
       // labels, no delta, no currency anywhere in the section.
       const section = screen.getByTestId("TokenPriceChart");
       expect(section.textContent).not.toContain("$");

@@ -30,6 +30,7 @@ import {
 import { resetCacheWriteClaims } from "helpers/cacheWrites";
 import { RANGE_SWITCH_DEBOUNCE_MS } from "popup/components/account/TokenPriceChart/constants";
 import { AppDataType } from "helpers/hooks/useGetAppData";
+import { AccountHistoryData } from "popup/views/Account/hooks/useGetAccountHistoryData";
 
 // jest-fixed-jsdom has no PointerEvent; without this, fireEvent.pointerDown/
 // pointerUp below would silently drop clientX/pointerId.
@@ -1194,6 +1195,28 @@ describe("AssetDetail", () => {
       expect(delta().textContent).toBe("");
     });
 
+    it("draws the loading delta as the frame's 146 × 24 shimmer pill", async () => {
+      jest.useFakeTimers();
+      historySpy.mockImplementation(({ range }) =>
+        range === "1Y" ? new Promise(() => {}) : Promise.resolve(HISTORY_1D),
+      );
+      renderDetail(makeState());
+      await flush();
+      expect(delta().textContent).toBe("+$0.0014 (0.86%)");
+
+      const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
+      await user.click(screen.getByRole("tab", { name: "1Y" }));
+
+      const pill = document.querySelector(
+        ".AssetDetail__delta-ghost",
+      ) as HTMLElement;
+      expect(pill).not.toBeNull();
+      expect(pill).toHaveClass("Shimmer", "Shimmer--pill");
+      expect(pill).toHaveAttribute("aria-hidden", "true");
+      expect(pill.style.width).toBe("9.125rem");
+      expect(pill.style.height).toBe("1.5rem");
+    });
+
     it("shows no delta text when the range carries no change", async () => {
       historySpy.mockResolvedValue(
         makeHistory({ points: densePoints(97), change: null }),
@@ -1292,5 +1315,88 @@ describe("AssetDetail", () => {
         expect(screen.queryByTestId("AssetDetail__delta")).toBeNull();
       });
     });
+  });
+});
+
+describe("AssetDetail history loading state", () => {
+  const makeProps = (
+    hasHistoryError?: boolean,
+    historyData: AccountHistoryData | null = null,
+  ) => ({
+    handleClose: () => null,
+    accountBalances: {
+      balances: [
+        {
+          available: new BigNumber(10),
+          token: { type: "native", code: "XLM" },
+          total: new BigNumber(10),
+        },
+      ],
+    } as any,
+    selectedAsset: "native",
+    historyData,
+    hasHistoryError,
+  });
+
+  const renderDetail = (props: ReturnType<typeof makeProps>) =>
+    render(
+      <Wrapper
+        routes={[ROUTES.account]}
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.PASSWORD_CREATED,
+            publicKey: "G1",
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: TESTNET_NETWORK_DETAILS,
+          },
+        }}
+      >
+        <AssetDetail {...props} />
+      </Wrapper>,
+    );
+
+  it("shows three skeleton rows and announces loading while history is in flight", async () => {
+    renderDetail(makeProps());
+
+    await waitFor(() => screen.getByTestId("AssetDetail__list__loader"));
+    const loader = screen.getByTestId("AssetDetail__list__loader");
+    expect(loader).toHaveAttribute("role", "status");
+    expect(loader).toHaveAttribute("aria-label", "Loading history");
+    const rows = screen.getAllByTestId("AssetDetail__list__skeleton-row");
+    expect(rows).toHaveLength(3);
+    rows.forEach((row) => {
+      expect(row).toHaveClass("Shimmer", "Shimmer--pill");
+      expect((row as HTMLElement).style.width).toBe("100%");
+      expect((row as HTMLElement).style.height).toBe("2.75rem");
+    });
+  });
+
+  it("shows an error, not a skeleton that never ends, when the history fetch failed", async () => {
+    renderDetail(makeProps(true));
+
+    await waitFor(() => screen.getByTestId("AssetDetail"));
+    expect(screen.queryByTestId("AssetDetail__list__loader")).toBeNull();
+    expect(
+      screen.queryAllByTestId("AssetDetail__list__skeleton-row"),
+    ).toHaveLength(0);
+    expect(screen.getByTestId("AssetDetail__list__error")).toHaveTextContent(
+      "Unable to load history",
+    );
+  });
+
+  it("shows the empty state when history loaded but has nothing for this asset", async () => {
+    renderDetail(
+      makeProps(undefined, {
+        type: AppDataType.RESOLVED,
+        operationsByAsset: {},
+      }),
+    );
+
+    await waitFor(() => screen.getByTestId("AssetDetail"));
+    expect(screen.queryByTestId("AssetDetail__list__loader")).toBeNull();
+    expect(screen.getByText("No transactions to show")).toBeInTheDocument();
   });
 });

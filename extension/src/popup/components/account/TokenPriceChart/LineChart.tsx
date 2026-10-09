@@ -29,6 +29,10 @@ interface LineChartProps {
   direction: PriceDirection;
   /** Text alternative: "Price chart, {range}: {start} to {end}, {delta}". */
   label: string;
+  /** Replacing the loading hairline: start as a flat line at the vertical
+   * centre, where the hairline sat, and morph up into the series. Read on
+   * mount only. */
+  riseFromFlat?: boolean;
   /** Index into `points` under the pointer, or null/undefined when idle. */
   inspectedIndex?: number | null;
   onInspectStart?: (index: number) => void;
@@ -219,13 +223,22 @@ export const getChartCoordinates = ({
 };
 
 /** Coordinates to paint now; a switch mid-morph resumes from the painted shape. */
-const useMorphedCoordinates = (target: ChartCoordinate[]) => {
+const useMorphedCoordinates = (
+  target: ChartCoordinate[],
+  riseFromFlat: boolean,
+) => {
   const prefersReducedMotion = usePrefersReducedMotion();
-  const [displayed, setDisplayed] = useState<ChartCoordinate[]>(target);
+  // Fixed at mount: a later cached-switch morph is not a rise.
+  const [rises] = useState(() => riseFromFlat && !prefersReducedMotion);
+  const [displayed, setDisplayed] = useState<ChartCoordinate[]>(() =>
+    rises
+      ? target.map(({ x }) => ({ x, y: CHART_VIEWBOX_HEIGHT / 2 }))
+      : target,
+  );
   // What is actually painted, readable from inside a frame callback. It is
   // also how an interrupted morph resumes: the next one starts from the shape
   // on screen, never from the series it originally left.
-  const displayedRef = useRef<ChartCoordinate[]>(target);
+  const displayedRef = useRef<ChartCoordinate[]>(displayed);
   const frameRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -281,7 +294,7 @@ const useMorphedCoordinates = (target: ChartCoordinate[]) => {
     };
   }, [target, prefersReducedMotion]);
 
-  return displayed;
+  return { displayed, rises };
 };
 
 /** Pointer position → viewBox x. The svg is stretched to the popup width. */
@@ -314,6 +327,7 @@ export const LineChart = React.memo(function LineChart({
   nowSeconds,
   direction,
   label,
+  riseFromFlat = false,
   inspectedIndex,
   onInspectStart,
   onInspectMove,
@@ -325,7 +339,10 @@ export const LineChart = React.memo(function LineChart({
     () => getChartCoordinates({ points, resolutionSeconds, nowSeconds }),
     [points, resolutionSeconds, nowSeconds],
   );
-  const coordinates = useMorphedCoordinates(targetCoordinates);
+  const { displayed: coordinates, rises } = useMorphedCoordinates(
+    targetCoordinates,
+    riseFromFlat,
+  );
 
   const xs = useMemo(
     () => targetCoordinates.map((c) => c.x),
@@ -481,7 +498,7 @@ export const LineChart = React.memo(function LineChart({
 
   return (
     <svg
-      className={`LineChart LineChart--${direction}${onInspectStart ? " LineChart--inspectable" : ""}`}
+      className={`LineChart LineChart--${direction}${rises ? " LineChart--rise" : ""}${onInspectStart ? " LineChart--inspectable" : ""}`}
       viewBox={`0 0 ${CHART_VIEWBOX_WIDTH} ${CHART_VIEWBOX_HEIGHT}`}
       preserveAspectRatio="none"
       // Every series ends at x=320 and the end dot extends 3 units past it;
@@ -513,6 +530,7 @@ export const LineChart = React.memo(function LineChart({
         </linearGradient>
       </defs>
       <polygon
+        className="LineChart__fill"
         points={toFillPoints(solidCoordinates, solidLinePoints)}
         fill={`url(#${gradientId})`}
         stroke="none"

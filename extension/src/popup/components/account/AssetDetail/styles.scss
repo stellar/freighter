@@ -109,17 +109,11 @@
         color: var(--sds-clr-red-09);
       }
     }
-  }
 
-  // The Figma "Data loading" skeleton pill standing in for the delta text,
-  // fading out to the right as the design draws it.
-  &__delta-ghost {
-    background: linear-gradient(to right, var(--sds-clr-gray-03), transparent);
-    border-radius: pxToRem(8px);
-    display: inline-block;
-    height: pxToRem(14px);
-    vertical-align: middle;
-    width: pxToRem(112px);
+    .AssetDetail__delta-ghost {
+      // Top-aligned so the 24px pill fits the 24px line box; middle grows the row and shifts the chart.
+      vertical-align: top;
+    }
   }
 
   &__list {
@@ -129,9 +123,7 @@
     margin-top: pxToRem(32px);
 
     &--loading {
-      align-items: center;
-      display: flex;
-      justify-content: center;
+      align-items: stretch;
     }
   }
 

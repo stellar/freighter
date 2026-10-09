@@ -75,9 +75,9 @@ const HISTORY_BY_RANGE: Record<string, ApiTokenPriceHistory> = {
   }),
 };
 
-/** The order the warm pass must walk: the selector's own, minus 1D, which is
- * the initially-selected range and pays its own way. */
-const WARM_ORDER = ["1H", "1W", "1M", "1Y", "ALL"];
+/** The order the warm pass must walk: ALL first, then the selector's own,
+ * minus 1D, which is the initially-selected range and pays its own way. */
+const WARM_ORDER = ["ALL", "1H", "1W", "1M", "1Y"];
 
 const TOKEN = "native";
 const OTHER_TOKEN =
@@ -184,10 +184,11 @@ const waitOutDebounce = async () => {
 /**
  * Deferred warming (§7.0): once the selected range has landed, the other five
  * are pulled into the session cache one at a time, so the first switch to any
- * of them is a cache hit. The whole pass is invisible — no analytics, no UI
- * state, no error surface — and it only runs inside this component, which
- * `AssetDetail` renders solely when the chart itself is shown (flag on,
- * mainnet), so a network with no chart never warms.
+ * of them is a cache hit. The pass emits no analytics and surfaces no errors,
+ * but it isn't invisible: the sparse notices wait for it to finish, and the
+ * ranges it caches decide "newly traded" vs. "limited data". It only runs
+ * inside this component, which `AssetDetail` renders solely when the chart
+ * itself is shown (flag on, mainnet), so a network with no chart never warms.
  */
 describe("TokenPriceChart deferred range warming", () => {
   beforeEach(() => {
@@ -212,10 +213,10 @@ describe("TokenPriceChart deferred range warming", () => {
     await resolveRange("1D");
 
     // Only now does the queue open — with one range, not five.
-    expect(rangesFor()).toEqual(["1D", "1H"]);
+    expect(rangesFor()).toEqual(["1D", "ALL"]);
   });
 
-  it("warms the other five one at a time, in selector order", async () => {
+  it("warms the other five one at a time, ALL first", async () => {
     installTransport();
     renderChart();
     await settle();
@@ -243,16 +244,16 @@ describe("TokenPriceChart deferred range warming", () => {
     const { unmount } = renderChart();
     await settle();
     await resolveRange("1D");
-    expect(rangesFor()).toEqual(["1D", "1H"]);
+    expect(rangesFor()).toEqual(["1D", "ALL"]);
 
     unmount();
 
-    // 1H's response still lands, but nothing queued behind it is started: a
+    // ALL's response still lands, but nothing queued behind it is started: a
     // user who bounces into a token and straight back out must not cost six
     // requests.
-    await resolveRange("1H");
+    await resolveRange("ALL");
     await settle();
-    expect(rangesFor()).toEqual(["1D", "1H"]);
+    expect(rangesFor()).toEqual(["1D", "ALL"]);
   });
 
   it("starts no warm pass when the section unmounts BEFORE the selected range resolves", async () => {
@@ -316,6 +317,7 @@ describe("TokenPriceChart deferred range warming", () => {
     await resolveRange("1D");
 
     // Let the warm pass populate 1H while the user is still on 1D.
+    await resolveRange("ALL");
     await resolveRange("1H");
     await settle();
     const before = rangesFor().filter((r) => r === "1H").length;
@@ -337,7 +339,7 @@ describe("TokenPriceChart deferred range warming", () => {
     const { switchToken } = renderChart();
     await settle();
     await resolveRange("1D");
-    expect(rangesFor()).toEqual(["1D", "1H"]);
+    expect(rangesFor()).toEqual(["1D", "ALL"]);
 
     switchToken(OTHER_TOKEN);
     await waitOutDebounce();
@@ -345,16 +347,36 @@ describe("TokenPriceChart deferred range warming", () => {
     // The new token fetches the selected range, debounced like any switch.
     expect(rangesFor(OTHER_TOKEN)).toEqual(["1D"]);
 
-    // The old token's 1H comes back late. Nothing more is warmed for a token
+    // The old token's ALL comes back late. Nothing more is warmed for a token
     // the user has left — a shared cancellation flag reset for the new scope
     // would have let this queue resume under it.
-    await resolveRange("1H");
-    expect(rangesFor()).toEqual(["1D", "1H"]);
+    await resolveRange("ALL");
+    expect(rangesFor()).toEqual(["1D", "ALL"]);
 
     // ...and the new token gets a pass of its own once its range lands.
     await resolveRange("1D", OTHER_TOKEN);
-    expect(rangesFor(OTHER_TOKEN)).toEqual(["1D", "1H"]);
-    expect(rangesFor()).toEqual(["1D", "1H"]);
+    expect(rangesFor(OTHER_TOKEN)).toEqual(["1D", "ALL"]);
+    expect(rangesFor()).toEqual(["1D", "ALL"]);
+  });
+
+  it("restarts the pass when the user comes back to a token before the other one loaded", async () => {
+    installTransport();
+    const { switchToken } = renderChart();
+    await settle();
+    await resolveRange("1D");
+    expect(rangesFor()).toEqual(["1D", "ALL"]);
+
+    // Away and straight back, before the other token's own range answers.
+    switchToken(OTHER_TOKEN);
+    await waitOutDebounce();
+    switchToken(TOKEN);
+    await waitOutDebounce();
+
+    // The interrupted pass picks up again rather than staying abandoned —
+    // the sparse notices wait for it to finish.
+    await resolveRange("ALL");
+    await settle();
+    expect(rangesFor()).toEqual(["1D", "ALL", "1H"]);
   });
 
   it("skips a range already valid in the session cache", async () => {
@@ -370,10 +392,11 @@ describe("TokenPriceChart deferred range warming", () => {
     });
     await settle();
     await resolveRange("1D");
+    await resolveRange("ALL");
     await resolveRange("1H");
 
     // 1W is fresh, so the queue steps straight over it to 1M.
-    expect(rangesFor()).toEqual(["1D", "1H", "1M"]);
+    expect(rangesFor()).toEqual(["1D", "ALL", "1H", "1M"]);
   });
 
   it("emits no analytics for the ranges it warms", async () => {
@@ -421,10 +444,10 @@ describe("TokenPriceChart deferred range warming", () => {
 
     // The sharpest case: a warmed range with no data at all. It must not flip
     // the section to its empty state, drop the notice in, or touch the delta.
-    await answer("1H", {
+    await answer("ALL", {
       status: 200,
       body: {
-        data: { ...HISTORY_BY_RANGE["1H"], points: [], change: null },
+        data: { ...HISTORY_BY_RANGE.ALL, points: [], change: null },
       },
     });
 
@@ -455,18 +478,89 @@ describe("TokenPriceChart deferred range warming", () => {
     const user = userEvent.setup();
     await user.click(screen.getByRole("tab", { name: "1M" }));
     await waitOutDebounce();
-    expect(rangesFor()).toEqual(["1D", "1H", "1M"]);
+    expect(rangesFor()).toEqual(["1D", "ALL", "1M"]);
 
-    // 1H settles, 1W is warmed next, and then 1M is stepped over — even though
-    // the user's own request for it has not come back yet, so it is not cached.
+    // At 1M the queue waits on the user's own request rather than skipping
+    // it: settling before it lands would let it move the first-trade bound
+    // under a notice already on screen. It still never sends a second one.
+    await resolveRange("ALL");
     await resolveRange("1H");
-    expect(rangesFor()).toEqual(["1D", "1H", "1M", "1W"]);
+    expect(rangesFor()).toEqual(["1D", "ALL", "1M", "1H", "1W"]);
     await resolveRange("1W");
-    expect(rangesFor()).toEqual(["1D", "1H", "1M", "1W", "1Y"]);
+    expect(rangesFor()).toEqual(["1D", "ALL", "1M", "1H", "1W"]);
 
     // ...and the user is still waiting on their own range, not on a warm one.
     expect(selectedTab()).toBe("1M");
     expect(screen.getByTestId("TokenPriceChart__loading")).toBeDefined();
+
+    await resolveRange("1M");
+    expect(rangesFor()).toEqual(["1D", "ALL", "1M", "1H", "1W", "1Y"]);
+  });
+
+  it("fetches a just-selected range itself when it gets there inside the switch debounce", async () => {
+    installTransport();
+    renderChart();
+    await settle();
+    await resolveRange("1D");
+
+    // The user taps 1M; its own request is still 250ms away.
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("tab", { name: "1M" }));
+    await resolveRange("ALL");
+    await resolveRange("1H");
+    await resolveRange("1W");
+
+    // The queue reaches 1M first and requests it, rather than stepping over
+    // it and settling before the user's response can move the bound.
+    expect(rangesFor()).toEqual(["1D", "ALL", "1H", "1W", "1M"]);
+
+    // The user's debounced fetch joins that request: still one 1M.
+    await waitOutDebounce();
+    expect(rangesFor()).toEqual(["1D", "ALL", "1H", "1W", "1M"]);
+    await resolveRange("1M");
+    expect(rangesFor()).toEqual(["1D", "ALL", "1H", "1W", "1M", "1Y"]);
+  });
+
+  it("holds the sparse notice again when a scope's pass restarts", async () => {
+    const sparseDay = {
+      status: 200,
+      body: {
+        data: {
+          ...HISTORY_BY_RANGE["1D"],
+          token: TOKEN,
+          points: HISTORY_BY_RANGE["1D"].points.slice(0, 10),
+        },
+      },
+    };
+    installTransport();
+    const { switchToken } = renderChart();
+    await settle();
+    await answer("1D", sparseDay);
+    for (const range of WARM_ORDER) {
+      // eslint-disable-next-line no-await-in-loop
+      await resolveRange(range);
+    }
+    expect(screen.getByTestId("TokenChartNotice")).toBeDefined();
+
+    // Away and back after the session cache has gone stale, so the return
+    // fetches again and runs a fresh pass.
+    switchToken(OTHER_TOKEN);
+    await waitOutDebounce();
+    const realNow = Date.now();
+    const clock = jest
+      .spyOn(Date, "now")
+      .mockReturnValue(realNow + 6 * 60 * 1000);
+    try {
+      switchToken(TOKEN);
+      await waitOutDebounce();
+      await answer("1D", sparseDay);
+
+      // ALL is back in flight: nothing has settled for this pass yet.
+      expect(rangesFor().filter((r) => r === "ALL")).toHaveLength(2);
+      expect(screen.queryByTestId("TokenChartNotice")).toBeNull();
+    } finally {
+      clock.mockRestore();
+    }
   });
 
   it("makes a switch to a warmed range a cache hit", async () => {
@@ -497,6 +591,7 @@ describe("TokenPriceChart deferred range warming", () => {
     renderChart();
     await settle();
     await resolveRange("1D");
+    await resolveRange("ALL");
     await failRange("1H");
 
     // Nothing happened as far as the user is concerned: 1D is still on
@@ -508,7 +603,7 @@ describe("TokenPriceChart deferred range warming", () => {
     expect(mockedCapture).not.toHaveBeenCalled();
 
     // The queue carries on past the failure — a skip, never a retry.
-    expect(rangesFor()).toEqual(["1D", "1H", "1W"]);
+    expect(rangesFor()).toEqual(["1D", "ALL", "1H", "1W"]);
 
     // A later user switch to that same range runs the normal fetch path and
     // reports exactly as it does today.
