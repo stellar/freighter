@@ -2,4 +2,18 @@
   display: block;
   height: 100%;
   width: 100%;
+
+  &--placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background-color: var(--sds-clr-gray-03);
+    color: var(--sds-clr-gray-11);
+
+    svg {
+      width: 50%;
+      height: 50%;
+    }
+  }
 }

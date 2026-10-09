@@ -31,6 +31,16 @@ describe("IdenticonImg", () => {
     expect(avatar).toHaveAttribute("aria-label", "account identicon");
   });
 
+  it("shows the generic user icon, not an avatar, when there is no key", () => {
+    render(<IdenticonImg publicKey="" />);
+
+    const placeholder = screen.getByTestId("identicon-img");
+    expect(placeholder).toHaveClass("IdenticonImg--placeholder");
+    expect(placeholder).toHaveAttribute("aria-label", "account identicon");
+    expect(placeholder.querySelector("svg")).not.toBeNull();
+    expect(placeholder.querySelector("g[mask]")).toBeNull();
+  });
+
   // Mobile pins the same fixtures; a change here is a change to every
   // user's avatar on both platforms.
   it.each(avatarFixtures)(

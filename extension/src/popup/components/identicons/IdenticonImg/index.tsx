@@ -1,5 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
+import { Icon } from "@stellar/design-system";
 import Avatar from "boring-avatars";
 import { StrKey } from "stellar-sdk";
 
@@ -22,6 +23,22 @@ const avatarSeed = (address: string) =>
 
 export const IdenticonImg = ({ publicKey }: IdenticonImgProps) => {
   const { t } = useTranslation();
+
+  // Same fallback as mobile's Avatar: a generic user icon, never an avatar
+  // that looks like a real account.
+  if (!publicKey) {
+    return (
+      <div
+        className="IdenticonImg IdenticonImg--placeholder"
+        role="img"
+        aria-label={t("account identicon")}
+        data-testid="identicon-img"
+      >
+        <Icon.User01 />
+      </div>
+    );
+  }
+
   return (
     <Avatar
       className="IdenticonImg"
