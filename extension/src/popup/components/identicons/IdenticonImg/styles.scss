@@ -1,9 +1,12 @@
 .IdenticonImg {
   display: block;
+  flex-shrink: 0;
   height: 100%;
   width: 100%;
 
   &--placeholder {
+    // A <div> has no intrinsic size, unlike the <svg> avatar it stands in for.
+    aspect-ratio: 1;
     display: flex;
     align-items: center;
     justify-content: center;
