@@ -54,9 +54,7 @@ describe("AddressTile", () => {
       render(<AddressTile address={mockAddress} onClick={mockOnClick} />);
 
       const identicon = screen.getByTestId("identicon-img");
-      expect(identicon).toHaveAttribute("alt", "account identicon");
-      expect(identicon).toHaveAttribute("src");
-      expect(identicon.getAttribute("src")).toMatch(/^data:image/);
+      expect(identicon).toHaveAttribute("aria-label", "account identicon");
     });
 
     it("calls onClick when clicked", () => {
@@ -120,9 +118,7 @@ describe("AddressTile", () => {
       );
 
       const identicon = screen.getByTestId("identicon-img");
-      expect(identicon).toHaveAttribute("alt", "account identicon");
-      expect(identicon).toHaveAttribute("src");
-      expect(identicon.getAttribute("src")).toMatch(/^data:image/);
+      expect(identicon).toHaveAttribute("aria-label", "account identicon");
     });
   });
 
@@ -159,14 +155,12 @@ describe("AddressTile", () => {
   });
 
   describe("IdenticonImg integration", () => {
-    it("renders IdenticonImg as img element for standard address", () => {
+    it("renders IdenticonImg as svg element for standard address", () => {
       render(<AddressTile address={mockAddress} onClick={mockOnClick} />);
 
       const identicon = screen.getByTestId("identicon-img");
-      expect(identicon.tagName).toBe("IMG");
-      expect(identicon).toHaveAttribute("alt", "account identicon");
-      expect(identicon).toHaveAttribute("src");
-      expect(identicon.getAttribute("src")).toMatch(/^data:image/);
+      expect(identicon.tagName.toLowerCase()).toBe("svg");
+      expect(identicon).toHaveAttribute("aria-label", "account identicon");
     });
 
     it("renders IdenticonImg correctly when federation address exists", () => {
@@ -179,10 +173,8 @@ describe("AddressTile", () => {
       );
 
       const identicon = screen.getByTestId("identicon-img");
-      expect(identicon.tagName).toBe("IMG");
-      expect(identicon).toHaveAttribute("alt", "account identicon");
-      expect(identicon).toHaveAttribute("src");
-      expect(identicon.getAttribute("src")).toMatch(/^data:image/);
+      expect(identicon.tagName.toLowerCase()).toBe("svg");
+      expect(identicon).toHaveAttribute("aria-label", "account identicon");
     });
   });
 

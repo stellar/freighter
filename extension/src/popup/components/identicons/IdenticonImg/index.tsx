@@ -1,6 +1,8 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import createStellarIdenticon from "helpers/stellarIdenticon";
+import Avatar from "boring-avatars";
+
+import { VARIAL_AVATAR_COLORS } from "./colors";
 
 import "./styles.scss";
 
@@ -11,10 +13,13 @@ interface IdenticonImgProps {
 export const IdenticonImg = ({ publicKey }: IdenticonImgProps) => {
   const { t } = useTranslation();
   return (
-    <img
+    <Avatar
       className="IdenticonImg"
-      alt={t("account identicon")}
-      src={createStellarIdenticon(publicKey).toDataURL()}
+      name={publicKey}
+      variant="marble"
+      colors={VARIAL_AVATAR_COLORS}
+      size="100%"
+      aria-label={t("account identicon")}
       data-testid="identicon-img"
     />
   );

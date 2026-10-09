@@ -103,6 +103,8 @@ const ALLOWED_RAW_COLORS: Record<string, string[]> = {
     "rgba(22, 23, 23, 0)",
     "rgba(21, 22, 22, 0.78)",
   ],
+  // Account avatar artwork; fixed so an avatar looks the same in both themes.
+  "popup/components/identicons/IdenticonImg/colors.ts": ["*"],
   // Trending card over its artwork: fade and tag text from Figma 1123-116809,
   // fixed so they read on the image in both themes.
   "popup/views/Discover/components/TrendingCarousel/styles.scss": [
