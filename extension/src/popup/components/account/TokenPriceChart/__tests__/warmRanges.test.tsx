@@ -184,10 +184,11 @@ const waitOutDebounce = async () => {
 /**
  * Deferred warming (§7.0): once the selected range has landed, the other five
  * are pulled into the session cache one at a time, so the first switch to any
- * of them is a cache hit. The whole pass is invisible — no analytics, no UI
- * state, no error surface — and it only runs inside this component, which
- * `AssetDetail` renders solely when the chart itself is shown (flag on,
- * mainnet), so a network with no chart never warms.
+ * of them is a cache hit. The pass emits no analytics and surfaces no errors,
+ * but it isn't invisible: the sparse notices wait for it to finish, and the
+ * ranges it caches decide "newly traded" vs. "limited data". It only runs
+ * inside this component, which `AssetDetail` renders solely when the chart
+ * itself is shown (flag on, mainnet), so a network with no chart never warms.
  */
 describe("TokenPriceChart deferred range warming", () => {
   beforeEach(() => {

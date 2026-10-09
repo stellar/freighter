@@ -373,8 +373,9 @@ export const TokenPriceChart = ({
   );
 
   /**
-   * Prefetches the unopened ranges, sequentially and deferred. Cache-only:
-   * no analytics, no request state, no error reporting.
+   * Prefetches the uncached ranges, sequentially and deferred. No analytics,
+   * no request state, no error reporting — but finishing the pass sets
+   * `settledScope`, which releases the held sparse notices.
    */
   const warmOtherRanges = useCallback(
     async (generation: number) => {
