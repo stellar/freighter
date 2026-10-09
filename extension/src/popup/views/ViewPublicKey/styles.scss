@@ -22,12 +22,11 @@
       border-radius: 50%;
       background-color: var(--sds-clr-gray-03);
 
-      // IdenticonImg's own styles set the <img> to width/height: 100%, which
-      // would let it fill this entire circle. Size the descendant image
-      // directly so a visible ring of the circle's background remains
-      // around a smaller identicon, instead of cropping with
-      // overflow: hidden.
-      img {
+      // IdenticonImg's own styles set it to width/height: 100%, which would
+      // let it fill this entire circle. Size it directly so a visible ring of
+      // the circle's background remains around a smaller identicon, instead
+      // of cropping with overflow: hidden.
+      .IdenticonImg {
         width: pxToRem(16px);
         height: pxToRem(16px);
       }
