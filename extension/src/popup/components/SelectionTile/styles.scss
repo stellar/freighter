@@ -29,8 +29,8 @@
     border-radius: pxToRem(100px);
     margin-right: pxToRem(12px);
 
-    // Account avatars fill the circle; the frame is for token icons.
-    &:has(> .IdenticonImg) {
+    // Account avatars fill the circle; the frame is for the empty-state icons.
+    &--frameless {
       padding: 0;
       border: 0;
     }

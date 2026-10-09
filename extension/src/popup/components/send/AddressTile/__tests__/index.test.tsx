@@ -16,9 +16,11 @@ jest.mock("popup/components/SelectionTile", () => ({
     onClick,
     isEmpty,
     testId,
+    hasIconFrame,
   }: any) => (
     <div
       data-testid={testId || "selection-tile"}
+      data-has-icon-frame={String(hasIconFrame)}
       className={`SelectionTile ${isEmpty ? "SelectionTile--empty" : ""}`}
       onClick={onClick}
     >
@@ -151,6 +153,26 @@ describe("AddressTile", () => {
       render(<AddressTile address="" onClick={mockOnClick} />);
 
       expect(screen.queryByTestId("identicon-img")).not.toBeInTheDocument();
+    });
+  });
+
+  describe("icon frame", () => {
+    it("shows the account avatar without the tile's icon frame", () => {
+      render(<AddressTile address={mockAddress} onClick={mockOnClick} />);
+
+      expect(screen.getByTestId("address-tile")).toHaveAttribute(
+        "data-has-icon-frame",
+        "false",
+      );
+    });
+
+    it("leaves the empty-state icon on SelectionTile's default frame", () => {
+      render(<AddressTile address="" onClick={mockOnClick} />);
+
+      expect(screen.getByTestId("address-tile")).toHaveAttribute(
+        "data-has-icon-frame",
+        "undefined",
+      );
     });
   });
 
