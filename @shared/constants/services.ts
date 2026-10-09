@@ -114,6 +114,8 @@ declare const DEV_SERVER_URL: string;
 const _DEV_SERVER_URL = DEV_SERVER_URL;
 export { _DEV_SERVER_URL as DEV_SERVER_URL };
 
-declare const DEV_EXTENSION: string;
+// True in dev builds, false in production builds. Webpack defines it as a
+// boolean, not a string.
+declare const DEV_EXTENSION: boolean;
 const _DEV_EXTENSION = DEV_EXTENSION;
 export { _DEV_EXTENSION as DEV_EXTENSION };
