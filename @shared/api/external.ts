@@ -317,9 +317,14 @@ export const disconnect = async (): Promise<{
     console.error(e);
   }
 
-  if (!response) {
+  if (response?.apiError) {
+    return { error: response.apiError };
+  }
+
+  // the content script returns only `error` when it can't reach the background
+  if (!response || response.error) {
     return { error: FreighterApiInternalError };
   }
 
-  return response.apiError ? { error: response.apiError } : {};
+  return {};
 };

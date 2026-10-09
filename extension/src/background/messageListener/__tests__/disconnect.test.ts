@@ -11,6 +11,9 @@ import { ALLOWLIST_ID, NETWORK_ID } from "constants/localStorageTypes";
 import { DataStorageAccess } from "background/helpers/dataStorageAccess";
 import { freighterApiMessageListener } from "../freighterApiMessageListener";
 
+const { publicKeySelector, sessionSlice, timeoutAccountAccess } =
+  jest.requireActual("background/ducks/session");
+
 const ACTIVE_PUBLIC_KEY =
   "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF";
 const OTHER_PUBLIC_KEY =
@@ -20,7 +23,7 @@ const mockPublicKeySelector = jest.fn();
 
 jest.mock("background/ducks/session", () => ({
   ...jest.requireActual("background/ducks/session"),
-  publicKeySelector: () => mockPublicKeySelector(),
+  publicKeySelector: (state: unknown) => mockPublicKeySelector(state),
 }));
 
 jest.mock("@sentry/browser", () => ({
@@ -99,7 +102,36 @@ describe("freighterApiMessageListener DISCONNECT", () => {
     expect(store.setItem).not.toHaveBeenCalled();
   });
 
-  it("returns a locked error and leaves the allowlist untouched when locked", async () => {
+  it("removes the domain after an idle lock, which keeps the public key", async () => {
+    mockPublicKeySelector.mockImplementation(publicKeySelector);
+    const { data, store } = makeLocalStore({
+      [NETWORK_ID]: { networkName: "Testnet" },
+      [ALLOWLIST_ID]: initialAllowList,
+    });
+
+    const response = await freighterApiMessageListener(
+      { type: EXTERNAL_SERVICE_TYPES.DISCONNECT } as ExternalRequest,
+      { url: "https://example.com" } as browser.Runtime.MessageSender,
+      {
+        getState: () => ({
+          session: {
+            ...sessionSlice.reducer(undefined, timeoutAccountAccess()),
+            publicKey: ACTIVE_PUBLIC_KEY,
+          },
+        }),
+      } as unknown as Store,
+      store,
+    );
+
+    expect(response).toEqual({});
+    expect(
+      (data[ALLOWLIST_ID] as typeof initialAllowList).Testnet[
+        ACTIVE_PUBLIC_KEY
+      ],
+    ).toEqual(["other.com"]);
+  });
+
+  it("returns a locked error and leaves the allowlist untouched before the first unlock", async () => {
     mockPublicKeySelector.mockReturnValue("");
     const { data, store } = makeLocalStore({
       [NETWORK_ID]: { networkName: "Testnet" },

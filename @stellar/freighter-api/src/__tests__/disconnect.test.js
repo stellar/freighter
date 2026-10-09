@@ -16,4 +16,13 @@ describe("disconnect", () => {
     const res = await disconnect();
     expect(res).toEqual({ error: "error" });
   });
+  it("returns an internal error when the extension can't be reached", async () => {
+    extensionMessaging.sendMessageToContentScript = jest
+      .fn()
+      .mockReturnValue({ error: "Unable to send message to extension" });
+    const res = await disconnect();
+    expect(res).toEqual({
+      error: extensionMessaging.FreighterApiInternalError,
+    });
+  });
 });

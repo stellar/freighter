@@ -867,7 +867,8 @@ export const freighterApiMessageListener = (
     try {
       const publicKey = publicKeySelector(sessionStore.getState());
 
-      // the allowlist is keyed by public key, which we can't know while locked
+      // The allowlist is keyed by public key. An idle lock keeps the public
+      // key in the session, but it's empty until the user first unlocks.
       if (!publicKey) {
         return {
           apiError: FreighterApiLockedError,
