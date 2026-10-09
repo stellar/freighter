@@ -58,5 +58,17 @@
       "fill": "#c8e0ff",
       "transform": "translate(1 -1) rotate(57 40 40) scale(1.3)"
     }
+  },
+  {
+    "publicKey": "MBZDMNOBDWHWA6CEBCSPE2K6B6MIYP6JXK7WR52ZSSRGKSD7ZWKESAAAAAAAAABQHFTGG",
+    "base": "#1677ff",
+    "layer1": {
+      "fill": "#c8e0ff",
+      "transform": "translate(6 -6) rotate(230 40 40) scale(1.3)"
+    },
+    "layer2": {
+      "fill": "#0e2b6c",
+      "transform": "translate(-5 -5) rotate(-165 40 40) scale(1.3)"
+    }
   }
 ]
