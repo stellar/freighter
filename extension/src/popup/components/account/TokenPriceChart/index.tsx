@@ -10,6 +10,7 @@ import React, {
 import { BigNumber } from "bignumber.js";
 import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
+import { useSelector } from "react-redux";
 
 import {
   ApiTokenPriceHistory,
@@ -25,6 +26,7 @@ import { Shimmer, ShimmerVariant } from "popup/components/Shimmer";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { getChartAssetIdentity } from "popup/helpers/token";
 import { hasChartData } from "popup/helpers/tokenPriceHistory";
+import { tokenPriceHistorySelector } from "popup/ducks/cache";
 import { RequestState } from "constants/request";
 
 import { computeInspectedChange } from "./inspect";
@@ -35,7 +37,11 @@ import {
   getPlottedRangeStart,
 } from "./LineChart";
 import { TimeframeSelector, formatRangeLabel } from "./TimeframeSelector";
-import { TokenChartNotice, getNoticeVariant } from "./Notice";
+import {
+  TokenChartNotice,
+  getFirstTradeLowerBound,
+  getNoticeVariant,
+} from "./Notice";
 import {
   CHART_HEIGHT_PX,
   CHART_VIEWBOX_WIDTH,
@@ -46,7 +52,7 @@ import {
   RANGE_SWITCH_DEBOUNCE_MS,
   SUB_CENT_SIGNIFICANT_DIGITS,
   SUB_CENT_THRESHOLD,
-  TIMEFRAME_ORDER,
+  WARM_ORDER,
 } from "./constants";
 
 import "./styles.scss";
@@ -343,36 +349,36 @@ export const TokenPriceChart = ({
   const settledRangeRef = useRef<TokenPriceHistoryRangeValue>(
     TokenPriceHistoryRange.OneDay,
   );
-  // The selection as of now, read by the warm queue between ranges (which
-  // runs across awaits, long after the render that started it).
-  const selectedRangeRef = useRef(selectedRange);
   // The (token, network) a warm pass has already been run for, so a visit
   // gets exactly one.
   const warmedScopeRef = useRef<string | null>(null);
   // Bumped when the current scope ends; a pass stops as soon as its own
   // generation is stale.
   const warmGenerationRef = useRef(0);
-
-  useEffect(() => {
-    selectedRangeRef.current = selectedRange;
-  }, [selectedRange]);
+  // The scope whose warm pass has run to the end, every range settled.
+  const [settledScope, setSettledScope] = useState<string | null>(null);
+  const scope = `${networkDetails.networkPassphrase}/${token}`;
 
   // Unmount or token/network switch stops the queue. A generation counter, not
   // a flag: a flag reset for the new scope would let the old queue resume.
   useEffect(
     () => () => {
       warmGenerationRef.current += 1;
+      // A return to this scope runs a new pass, and the sparse notices wait
+      // for that one rather than any earlier one.
+      warmedScopeRef.current = null;
+      setSettledScope(null);
     },
     [token, networkDetails],
   );
 
   /**
-   * Prefetches the unopened ranges, sequentially and deferred. Cache-only:
-   * no analytics, no request state, no error reporting.
+   * Prefetches the uncached ranges, sequentially and deferred. No analytics,
+   * no request state, no error reporting — but finishing the pass sets
+   * `settledScope`, which releases the held sparse notices.
    */
   const warmOtherRanges = useCallback(
     async (generation: number) => {
-      const scope = `${networkDetails.networkPassphrase}/${token}`;
       // The generation is captured by the caller before the fetch: this runs
       // from its `.then`, after an unmount would already have bumped it.
       if (warmGenerationRef.current !== generation) {
@@ -383,25 +389,26 @@ export const TokenPriceChart = ({
       }
       warmedScopeRef.current = scope;
 
-      for (const range of TIMEFRAME_ORDER) {
+      for (const range of WARM_ORDER) {
         if (warmGenerationRef.current !== generation) {
           return;
-        }
-        // Already cached or in flight; warming it would duplicate work or
-        // silently retry a failure the user is looking at.
-        if (range === selectedRangeRef.current) {
-          continue;
         }
         const query = { token, range, networkDetails };
         if (isRangeCached(query)) {
           continue;
         }
-        // Sequential by construction: the next range starts only once this one
-        // has settled.
+        // The selected range too: `warmRange` joins the user's request when it
+        // is in flight, and the user's debounced fetch joins this one when it
+        // is not. Stepping over it would settle the pass before that response
+        // lands and moves the first-trade bound. Sequential by construction:
+        // the next range starts only once this one has settled.
         await warmRange(query);
       }
+      if (warmGenerationRef.current === generation) {
+        setSettledScope(scope);
+      }
     },
-    [token, networkDetails, isRangeCached, warmRange],
+    [scope, token, networkDetails, isRangeCached, warmRange],
   );
 
   useEffect(() => {
@@ -677,6 +684,19 @@ export const TokenPriceChart = ({
     [chartHistory],
   );
 
+  // Past the cache's staleness check on purpose: a first trade never moves,
+  // so an aged-out entry still bounds it.
+  const priceHistoryCache = useSelector(tokenPriceHistorySelector);
+  const cachedByRange =
+    priceHistoryCache?.[networkDetails.networkPassphrase]?.[token];
+  const firstTradeSeconds = useMemo(
+    () =>
+      cachedByRange && chartHistory
+        ? getFirstTradeLowerBound(cachedByRange)
+        : undefined,
+    [cachedByRange, chartHistory],
+  );
+
   const noticeVariant = useMemo(
     () =>
       chartHistory
@@ -686,9 +706,11 @@ export const TokenPriceChart = ({
             range: chartHistory.range,
             resolutionSeconds: chartHistory.resolutionSeconds,
             nowSeconds,
+            firstTradeSeconds,
+            rangesSettled: settledScope === scope,
           })
         : null,
-    [chartHistory, nowSeconds],
+    [chartHistory, nowSeconds, firstTradeSeconds, settledScope, scope],
   );
 
   // Axis labels come from returned points, not the requested window (§B.5),

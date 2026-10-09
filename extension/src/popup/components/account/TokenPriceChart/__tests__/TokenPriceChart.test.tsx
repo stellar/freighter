@@ -86,7 +86,7 @@ const respondByRange = (byRange: Record<string, unknown>) => {
     const match = /range=([A-Z0-9]+)/.exec(path);
     const range = match ? match[1] : "";
     // A range the test says nothing about never answers. The deferred warm
-    // pass (see warmRanges.test.tsx) walks the ranges in selector order and
+    // pass (see warmRanges.test.tsx) walks the ranges in WARM_ORDER and
     // waits for each, so an unstubbed range parks the queue there rather than
     // quietly caching ranges a test's premise needs uncached.
     if (!(range in byRange)) {

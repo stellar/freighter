@@ -52,6 +52,28 @@ export const EXPECTED_POINTS_BY_RANGE: Record<string, number> = {
 };
 
 /**
+ * Each range's lookback window and bucket width. Must match
+ * freighter-backend-v2's `priceHistoryRanges`, or a token that started
+ * trading just outside the window, or traded only every few buckets, is
+ * called newly traded. ALL has neither.
+ */
+export const RANGE_WINDOW_SECONDS: Record<string, number> = {
+  [TokenPriceHistoryRange.OneHour]: 3600,
+  [TokenPriceHistoryRange.OneDay]: 86400,
+  [TokenPriceHistoryRange.OneWeek]: 7 * 86400,
+  [TokenPriceHistoryRange.OneMonth]: 30 * 86400,
+  [TokenPriceHistoryRange.OneYear]: 365 * 86400,
+};
+
+export const RANGE_BUCKET_SECONDS: Record<string, number> = {
+  [TokenPriceHistoryRange.OneHour]: 300,
+  [TokenPriceHistoryRange.OneDay]: 900,
+  [TokenPriceHistoryRange.OneWeek]: 3600,
+  [TokenPriceHistoryRange.OneMonth]: 14400,
+  [TokenPriceHistoryRange.OneYear]: 259200,
+};
+
+/**
  * Sign of `change.percent`, falling back to `change.absolute` when the percent
  * rounds to zero. Colours the delta text and the artwork together. Flat, or
  * no `change`, is neutral — unlike `getPriceDeltaColor`, which paints a flat
@@ -72,6 +94,13 @@ export const TIMEFRAME_ORDER = [
   TokenPriceHistoryRange.OneYear,
   TokenPriceHistoryRange.All,
 ] as const;
+
+/** ALL first: every newly-traded verdict needs its first point, while each
+ * finer range only narrows it. */
+export const WARM_ORDER = [
+  TokenPriceHistoryRange.All,
+  ...TIMEFRAME_ORDER.filter((range) => range !== TokenPriceHistoryRange.All),
+];
 
 /** Mirrors mobile's `priceHistoryChart` helpers. */
 /** Below this, fixed decimals collapse a price to "$0.00". */
