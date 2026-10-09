@@ -19,10 +19,7 @@
     .identicon-wrapper {
       width: 100%;
       height: 100%;
-      // Centers a 16px identicon inside the 40px avatar, per the spec.
-      padding: #{pxToRem(12px)};
       border-radius: 50%;
-      background-color: var(--sds-clr-gray-03);
       display: flex;
       justify-content: center;
       align-items: center;

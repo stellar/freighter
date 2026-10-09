@@ -1,0 +1,74 @@
+[
+  {
+    "publicKey": "GBZDMNOBDWHWA6CEBCSPE2K6B6MIYP6JXK7WR52ZSSRGKSD7ZWKETTQB",
+    "base": "#1677ff",
+    "layer1": {
+      "fill": "#c8e0ff",
+      "transform": "translate(6 -6) rotate(230 40 40) scale(1.3)"
+    },
+    "layer2": {
+      "fill": "#0e2b6c",
+      "transform": "translate(-5 -5) rotate(-165 40 40) scale(1.3)"
+    }
+  },
+  {
+    "publicKey": "GA4Y5EOYZJH6IMZTD6WHOJPTK3N2S4W24NX2TJNN32RKTF5SOTFXRSES",
+    "base": "#c8e0ff",
+    "layer1": {
+      "fill": "#0e2b6c",
+      "transform": "translate(-6 6) rotate(-302 40 40) scale(1.3)"
+    },
+    "layer2": {
+      "fill": "#0050ff",
+      "transform": "translate(5 -5) rotate(93 40 40) scale(1.3)"
+    }
+  },
+  {
+    "publicKey": "GB6U4WQEH5EWH2BM5KFGTE2WGKXVDVPTJVWTRZXT6G7ZN3VX3IPESOLI",
+    "base": "#0e2b6c",
+    "layer1": {
+      "fill": "#0050ff",
+      "transform": "translate(-4 -4) rotate(-324 40 40) scale(1.4)"
+    },
+    "layer2": {
+      "fill": "#73a5ff",
+      "transform": "translate(-2 -2) rotate(-306 40 40) scale(1.4)"
+    }
+  },
+  {
+    "publicKey": "GDPTLSADQMBWK5KP3U7MBWR5KGDCUBR5J5JSLQAORO5C5ZEO2PYVQIKP",
+    "base": "#0050ff",
+    "layer1": {
+      "fill": "#73a5ff",
+      "transform": "translate(-6 -6) rotate(-6 40 40) scale(1.3)"
+    },
+    "layer2": {
+      "fill": "#1677ff",
+      "transform": "translate(-5 -5) rotate(-189 40 40) scale(1.3)"
+    }
+  },
+  {
+    "publicKey": "GBUM6UW4PO7YMKKU7FWUDZ7IAS4CPKPAXSKMMGLXCRVDHCGSVE5OWPHR",
+    "base": "#73a5ff",
+    "layer1": {
+      "fill": "#1677ff",
+      "transform": "translate(6 -6) rotate(158 40 40) scale(1.3)"
+    },
+    "layer2": {
+      "fill": "#c8e0ff",
+      "transform": "translate(1 -1) rotate(57 40 40) scale(1.3)"
+    }
+  },
+  {
+    "publicKey": "MBZDMNOBDWHWA6CEBCSPE2K6B6MIYP6JXK7WR52ZSSRGKSD7ZWKESAAAAAAAAABQHFTGG",
+    "base": "#1677ff",
+    "layer1": {
+      "fill": "#c8e0ff",
+      "transform": "translate(6 -6) rotate(230 40 40) scale(1.3)"
+    },
+    "layer2": {
+      "fill": "#0e2b6c",
+      "transform": "translate(-5 -5) rotate(-165 40 40) scale(1.3)"
+    }
+  }
+]

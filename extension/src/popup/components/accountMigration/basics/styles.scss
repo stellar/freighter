@@ -91,10 +91,9 @@
   }
 
   &__identicon-wrapper {
-    border: 1px solid var(--sds-clr-gray-04);
+    flex-shrink: 0;
     border-radius: 2rem;
     height: 2rem;
-    padding: 0.33rem;
     width: 2rem;
   }
 

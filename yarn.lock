@@ -8835,6 +8835,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"boring-avatars@npm:2.0.4":
+  version: 2.0.4
+  resolution: "boring-avatars@npm:2.0.4"
+  peerDependencies:
+    react: ">=18.0.0"
+    react-dom: ">=18.0.0"
+  checksum: 10c0/9a55cce3d59aff2dda20b6f972e91280892ed3579b2ff5fca8ae5b00425066b867d7ad7ea65e1932463b6025b5f7b7ce5c85b7024c7602c8aa4a6e69dd5f1c6c
+  languageName: node
+  linkType: hard
+
 "boxen@npm:^6.2.1":
   version: 6.2.1
   resolution: "boxen@npm:6.2.1"
@@ -12326,6 +12336,7 @@ __metadata:
     "@types/webextension-polyfill": "npm:0.12.5"
     "@types/yup": "npm:0.32.0"
     bignumber.js: "npm:9.3.0"
+    boring-avatars: "npm:2.0.4"
     buffer: "npm:6.0.3"
     classnames: "npm:2.5.1"
     concurrently: "npm:10.0.3"

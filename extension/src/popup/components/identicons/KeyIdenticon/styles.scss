@@ -1,15 +1,14 @@
 .KeyIdenticon {
-  --Icon-padding: 0.25rem;
   --Icon-dimension: 1.5rem;
 
   align-items: center;
   display: flex;
 
   &--icon {
-    border: 1px solid var(--sds-clr-gray-06);
     border-radius: 2rem;
     display: flex;
-    padding: var(--Icon-padding);
+    flex-shrink: 0;
+    height: var(--Icon-dimension);
     width: var(--Icon-dimension);
   }
 

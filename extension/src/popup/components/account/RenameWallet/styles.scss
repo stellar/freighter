@@ -50,12 +50,6 @@
     width: #{pxToRem(48px)};
     height: #{pxToRem(48px)};
     border-radius: 50%;
-    background-color: var(--sds-clr-gray-03);
-
-    .IdenticonImg {
-      width: #{pxToRem(20.8px)};
-      height: #{pxToRem(20.8px)};
-    }
   }
 
   &__form {

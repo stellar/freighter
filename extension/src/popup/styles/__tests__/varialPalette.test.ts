@@ -103,6 +103,8 @@ const ALLOWED_RAW_COLORS: Record<string, string[]> = {
     "rgba(22, 23, 23, 0)",
     "rgba(21, 22, 22, 0.78)",
   ],
+  // Account avatar artwork; fixed so an avatar looks the same in both themes.
+  "popup/components/identicons/IdenticonImg/colors.ts": ["*"],
   // Shimmer highlight: white in both themes by design, matching mobile.
   "popup/components/Shimmer/styles.scss": [
     "rgba(255, 255, 255, 0)",
