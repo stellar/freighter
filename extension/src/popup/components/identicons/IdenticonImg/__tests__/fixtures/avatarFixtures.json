@@ -1,62 +1,98 @@
 [
   {
-    "publicKey": "GCVCOHZMW6PNMGCQCGIC3DNOTYWUEVT64BA6ZA5OU46J4XMPI4WN5BP4",
-    "base": "#2E89FF",
+    "publicKey": "GDAFYWB724EHQ3XJ7VHO7KWDZZ2JHVVG4K534KHZNWXK466LUTDPDJ2K",
+    "base": "#0050ff",
     "layer1": {
-      "fill": "#C8D9F9",
-      "transform": "translate(6 -6) rotate(350 40 40) scale(1.3)"
+      "fill": "#c8e0ff",
+      "transform": "translate(0 0) rotate(-104 40 40) scale(1.2)"
     },
     "layer2": {
-      "fill": "#926868",
-      "transform": "translate(-5 -5) rotate(-165 40 40) scale(1.3)"
+      "fill": "#0e2b6c",
+      "transform": "translate(0 0) rotate(336 40 40) scale(1.2)"
     }
   },
   {
-    "publicKey": "GDQFPU73V5OBSYMALYGGEBKJJPJTTRISUQD2EBWPTIKPDNO6ZZDXGPXU",
-    "base": "#926868",
+    "publicKey": "GCEBVVYLUUVMUYXABI6BSKTVOCZ3EQHUG7TGL57PU3FFX7TMFVIMEP26",
+    "base": "#c8e0ff",
     "layer1": {
-      "fill": "#0000FF",
-      "transform": "translate(6 6) rotate(254 40 40) scale(1.3)"
+      "fill": "#0e2b6c",
+      "transform": "translate(2 2) rotate(178 40 40) scale(1.5)"
     },
     "layer2": {
-      "fill": "#012C78",
-      "transform": "translate(-1 1) rotate(-201 40 40) scale(1.3)"
+      "fill": "#73a5ff",
+      "transform": "translate(-3 3) rotate(-267 40 40) scale(1.5)"
     }
   },
   {
-    "publicKey": "GAD3AWHGV6LNNZINDNAIVQHRX2H5VLSNIDNVIXHTLHSQNEIXHAKVUQJ6",
-    "base": "#012C78",
+    "publicKey": "GDWHCYQ6JIT5EBSOLMBWXMNCK2KHZPYCTOIPJSJJELWEWLYDK57KK2GN",
+    "base": "#0e2b6c",
     "layer1": {
-      "fill": "#2E89FF",
-      "transform": "translate(-4 -4) rotate(-348 40 40) scale(1.4)"
+      "fill": "#73a5ff",
+      "transform": "translate(4 4) rotate(252 40 40) scale(1.4)"
     },
     "layer2": {
-      "fill": "#C8D9F9",
-      "transform": "translate(-6 6) rotate(-342 40 40) scale(1.4)"
+      "fill": "#2255a3",
+      "transform": "translate(6 6) rotate(198 40 40) scale(1.4)"
     }
   },
   {
-    "publicKey": "GBQWJLTUPLX4BQK4T3K3F4SETJ64ATUOJEV2L3UQOH2ICVVSDODNX7YD",
-    "base": "#0000FF",
+    "publicKey": "GBLUSJRCJYUU5GEKGORIV4RUXF3A3JYCZLDWHFKAQ3BFCRZLAGPWAW5U",
+    "base": "#73a5ff",
     "layer1": {
-      "fill": "#012C78",
-      "transform": "translate(-6 -6) rotate(-126 40 40) scale(1.3)"
+      "fill": "#2255a3",
+      "transform": "translate(-6 6) rotate(-302 40 40) scale(1.3)"
     },
     "layer2": {
-      "fill": "#2E89FF",
-      "transform": "translate(-1 1) rotate(-9 40 40) scale(1.3)"
-    }
-  },
-  {
-    "publicKey": "GBHTW2H4IWCAXMH2SRGU5RYJL6RM4PLCST6JR7TAC26OM4CZRFA7X2FL",
-    "base": "#C8D9F9",
-    "layer1": {
-      "fill": "#926868",
-      "transform": "translate(-6 6) rotate(-62 40 40) scale(1.3)"
-    },
-    "layer2": {
-      "fill": "#0000FF",
+      "fill": "#a8c6ff",
       "transform": "translate(1 1) rotate(273 40 40) scale(1.3)"
+    }
+  },
+  {
+    "publicKey": "GDFFTDT65W6ETDDJTSGRJIYKTPSDEB2FNIGUHMUATI3JVRR4CEB72KJC",
+    "base": "#2255a3",
+    "layer1": {
+      "fill": "#a8c6ff",
+      "transform": "translate(0 0) rotate(336 40 40) scale(1.2)"
+    },
+    "layer2": {
+      "fill": "#1677ff",
+      "transform": "translate(-4 -4) rotate(-324 40 40) scale(1.2)"
+    }
+  },
+  {
+    "publicKey": "GC5PPFKLQNBS625WMLOSOMCNT32QPHJV7323T5WUMYRTOYM4JMB5C77M",
+    "base": "#a8c6ff",
+    "layer1": {
+      "fill": "#1677ff",
+      "transform": "translate(-2 2) rotate(-346 40 40) scale(1.5)"
+    },
+    "layer2": {
+      "fill": "#0f3b7c",
+      "transform": "translate(7 7) rotate(159 40 40) scale(1.5)"
+    }
+  },
+  {
+    "publicKey": "GBXDFF4AE5EW7KHU3E2GGLNL4SNEIP42SYGLOP6K5GO5JNEFHNROIPH6",
+    "base": "#1677ff",
+    "layer1": {
+      "fill": "#0f3b7c",
+      "transform": "translate(-4 -4) rotate(-308 40 40) scale(1.4)"
+    },
+    "layer2": {
+      "fill": "#0050ff",
+      "transform": "translate(-2 -2) rotate(-282 40 40) scale(1.4)"
+    }
+  },
+  {
+    "publicKey": "GASDCWEVACMKHCO3HKVEQRVBWX5OHZCQZXW5Q564CDDRY7Y4O5MKFPBN",
+    "base": "#0f3b7c",
+    "layer1": {
+      "fill": "#0050ff",
+      "transform": "translate(6 6) rotate(350 40 40) scale(1.3)"
+    },
+    "layer2": {
+      "fill": "#c8e0ff",
+      "transform": "translate(-5 -5) rotate(-165 40 40) scale(1.3)"
     }
   }
 ]
