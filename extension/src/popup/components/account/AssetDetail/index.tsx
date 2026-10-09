@@ -9,7 +9,7 @@ import { useSelector } from "react-redux";
 import { BigNumber } from "bignumber.js";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { Button, CopyText, Icon, Link, Loader } from "@stellar/design-system";
+import { Button, CopyText, Icon, Link } from "@stellar/design-system";
 
 import { NetworkDetails } from "@shared/constants/stellar";
 import {
@@ -58,6 +58,7 @@ import {
   isSorobanBalance,
 } from "popup/helpers/balance";
 import { CopyValue } from "popup/components/CopyValue";
+import { Shimmer } from "popup/components/Shimmer";
 import {
   AssetType,
   LiquidityPoolShareAsset,
@@ -89,6 +90,10 @@ const LOADING_DELTA: RangeDeltaState = {
   colorClass: PriceDirection.Neutral,
   inspectedPrice: null,
 };
+
+// One shared empty list, so the operations memo keeps its identity for an
+// asset with no history instead of recomputing on every render.
+const NO_OPERATIONS: OperationDataRow[] = [];
 
 // Memoised: drag-to-inspect reports a new price and delta per SNAPPED point,
 // so this whole view re-renders on every pointer move over the chart, and the
@@ -138,6 +143,8 @@ interface AssetDetailProps {
   historyData: AccountHistoryData | null;
   selectedAsset: string;
   handleClose: () => void;
+  /** The account history request failed; shows an error, not a skeleton. */
+  hasHistoryError?: boolean;
 }
 
 export const AssetDetail = ({
@@ -145,6 +152,7 @@ export const AssetDetail = ({
   historyData,
   selectedAsset,
   handleClose,
+  hasHistoryError = false,
 }: AssetDetailProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -257,9 +265,11 @@ export const AssetDetail = ({
 
   // Narrowed by hand rather than by the `REROUTE` early return below: this has
   // to sit above it to be a hook, and a reroute has no operations anyway.
+  // A missing key means no operations for this asset, not a pending fetch:
+  // only null history (not fetched yet) should keep the loader up.
   const assetOperations =
     historyData && historyData.type !== AppDataType.REROUTE
-      ? historyData.operationsByAsset?.[selectedAsset] || null
+      ? (historyData.operationsByAsset?.[selectedAsset] ?? NO_OPERATIONS)
       : null;
 
   // Memoised for the same reason `AssetDetailOperations` is: a fresh array on
@@ -445,9 +455,10 @@ export const AssetDetail = ({
                 data-testid="AssetDetail__delta"
               >
                 {shownDelta.isLoading ? (
-                  <span
+                  <Shimmer
                     className="AssetDetail__delta-ghost"
-                    aria-hidden="true"
+                    width="9.125rem"
+                    height="1.5rem"
                   />
                 ) : (
                   shownDelta.text
@@ -521,12 +532,28 @@ export const AssetDetail = ({
                 networkDetails={networkDetails}
               />
             ) : null}
-            {filteredAssetOperations === null ? (
+            {filteredAssetOperations === null && hasHistoryError ? (
+              <div
+                className="AssetDetail__empty"
+                data-testid="AssetDetail__list__error"
+              >
+                {t("Unable to load history")}
+              </div>
+            ) : filteredAssetOperations === null ? (
               <div
                 className="AssetDetail__list AssetDetail__list--loading"
                 data-testid="AssetDetail__list__loader"
+                role="status"
+                aria-label={t("Loading history")}
               >
-                <Loader />
+                {[0, 1, 2].map((row) => (
+                  <Shimmer
+                    key={row}
+                    data-testid="AssetDetail__list__skeleton-row"
+                    width="100%"
+                    height="2.75rem"
+                  />
+                ))}
               </div>
             ) : (
               <AssetDetailOperations

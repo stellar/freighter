@@ -342,6 +342,7 @@ export const Account = () => {
                       balances: sortedBalances,
                     }}
                     historyData={historyData.data}
+                    hasHistoryError={historyData.state === RequestState.ERROR}
                     assetPrices={tokenPrices ?? {}}
                     assetIcons={resolvedIcons}
                   />

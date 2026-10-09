@@ -21,12 +21,12 @@ import {
   useGetTokenPriceHistory,
 } from "helpers/hooks/useGetTokenPriceHistory";
 import { emitMetric } from "helpers/metrics";
+import { Shimmer, ShimmerVariant } from "popup/components/Shimmer";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { getChartAssetIdentity } from "popup/helpers/token";
 import { hasChartData } from "popup/helpers/tokenPriceHistory";
 import { RequestState } from "constants/request";
 
-import { ChartGhost } from "./ChartGhost";
 import { computeInspectedChange } from "./inspect";
 import {
   LineChart,
@@ -487,6 +487,18 @@ export const TokenPriceChart = ({
 
   const isLoading =
     state.state === RequestState.IDLE || state.state === RequestState.LOADING;
+  // Set while a fetch is in flight, so the chart that replaces the hairline
+  // rises out of it; cleared once that chart has mounted. Not on IDLE: a cache
+  // hit goes IDLE → SUCCESS within one commit and should paint directly.
+  const risesFromHairlineRef = useRef(false);
+  if (state.state === RequestState.LOADING) {
+    risesFromHairlineRef.current = true;
+  }
+  useEffect(() => {
+    if (!isLoading) {
+      risesFromHairlineRef.current = false;
+    }
+  }, [isLoading]);
   const history: ApiTokenPriceHistory | null = state.data?.history ?? null;
   const isError = !isLoading && state.data !== null && history === null;
   const hasChart =
@@ -810,7 +822,12 @@ export const TokenPriceChart = ({
               role="status"
               aria-label={t("Loading price chart")}
             >
-              <ChartGhost />
+              <Shimmer
+                data-testid="TokenPriceChart__shimmer"
+                variant={ShimmerVariant.Hairline}
+                width="100%"
+                height="1px"
+              />
             </div>
           ) : chartHistory ? (
             <>
@@ -820,6 +837,7 @@ export const TokenPriceChart = ({
                 nowSeconds={nowSeconds}
                 direction={chartDirection}
                 label={chartLabel}
+                riseFromFlat={risesFromHairlineRef.current}
                 inspectedIndex={inspectedIndex}
                 onInspectStart={handleInspectStart}
                 onInspectMove={handleInspectMove}
