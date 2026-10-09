@@ -278,6 +278,10 @@ export interface SignOutMessage extends BaseMessage {
   type: SERVICE_TYPES.SIGN_OUT;
 }
 
+export interface ResetWalletMessage extends BaseMessage {
+  type: SERVICE_TYPES.RESET_WALLET;
+}
+
 export interface SaveAllowListMessage extends BaseMessage {
   type: SERVICE_TYPES.SAVE_ALLOWLIST;
   networkName: string;
@@ -551,6 +555,7 @@ export type ServiceMessageRequest =
   | LoadRecentAddressesMessage
   | LoadLastAccountUsedMessage
   | SignOutMessage
+  | ResetWalletMessage
   | SaveAllowListMessage
   | SaveSettingsMessage
   | SaveExperimentalFeaturesMessage

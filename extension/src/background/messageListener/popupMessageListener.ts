@@ -67,6 +67,7 @@ import { addRecentAddress } from "./handlers/addRecentAddress";
 import { loadRecentAddresses } from "./handlers/loadRecentAddresses";
 import { loadLastUsedAccount } from "./handlers/loadLastAccountUsed";
 import { signOut } from "./handlers/signOut";
+import { resetWallet } from "./handlers/resetWallet";
 import { saveAllowList } from "./handlers/saveAllowList";
 import { saveSettings } from "./handlers/saveSettings";
 import { userActivity } from "./handlers/userActivity";
@@ -440,6 +441,15 @@ export const popupMessageListener = (
         sessionStore,
         sessionTimer,
       });
+    }
+    case SERVICE_TYPES.RESET_WALLET: {
+      // Erases the wallet, so only our own extension pages may call it.
+      // Production content scripts never forward internal types, but DEV
+      // builds forward any type from any page (see `isFromDevServer` above).
+      if (!isFromExtensionPage && !isFromDevServer) {
+        return { error: "Unauthorized" };
+      }
+      return resetWallet({ localStore, sessionStore, sessionTimer });
     }
     case SERVICE_TYPES.SAVE_ALLOWLIST: {
       return saveAllowList({

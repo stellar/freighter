@@ -1,26 +1,33 @@
-import { Button } from "@stellar/design-system";
+import { Button, Heading, Input, Text } from "@stellar/design-system";
+import { Field, FieldProps, Form, Formik } from "formik";
 import get from "lodash/get";
 import React, { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { useLocation, useNavigate } from "react-router-dom";
 
-import { newTabHref } from "helpers/urls";
-
-import { ROUTES } from "popup/constants/routes";
-import { openTab } from "popup/helpers/navigate";
+import { reconcileAnalyticsUserId } from "helpers/metrics";
+import IconKeySwap from "popup/assets/icon-key-swap.svg?react";
+import LogoVarial from "popup/assets/logo-varial.svg?react";
+import { AppDispatch } from "popup/App";
 import { View } from "popup/basics/layout/View";
+import { ROUTES } from "popup/constants/routes";
 import {
+  authErrorSelector,
   confirmPassword,
   hasPrivateKeySelector,
-  loadLastUsedAccount,
 } from "popup/ducks/accountServices";
-import { EnterPassword } from "popup/components/EnterPassword";
 import { claimRebrandAnnouncement } from "@shared/api/internal";
-import { reconcileAnalyticsUserId } from "helpers/metrics";
+
+import { ForgotPasswordSheet } from "./ForgotPasswordSheet";
 
 import "./styles.scss";
-import { AppDispatch } from "popup/App";
+
+interface FormValues {
+  password: string;
+}
+
+const initialValues: FormValues = { password: "" };
 
 export const UnlockAccount = () => {
   const { t } = useTranslation();
@@ -30,10 +37,10 @@ export const UnlockAccount = () => {
   const queryParams = get(location, "search", "");
   const destination = from || ROUTES.account;
 
-  const [accountAddress, setAccountAddress] = useState("");
-
   const dispatch = useDispatch<AppDispatch>();
   const hasPrivateKey = useSelector(hasPrivateKeySelector);
+  const authError = useSelector(authErrorSelector);
+  const [isForgotPasswordOpen, setIsForgotPasswordOpen] = useState(false);
   // Track the initial auth state so we don't auto-navigate if the
   // component happens to mount while the wallet is already unlocked
   // (e.g. a stale `/unlock-account` route). We only redirect on the
@@ -42,7 +49,7 @@ export const UnlockAccount = () => {
   // SESSION_UNLOCKED broadcast saving fresh auth state).
   const wasLockedOnMount = useRef(!hasPrivateKey);
 
-  const handleSubmit = async (password: string) => {
+  const handleSubmit = async ({ password }: FormValues) => {
     const response = await dispatch(confirmPassword(password));
     // Navigation is handled by the `hasPrivateKey` effect below so
     // that both password-submit and cross-surface SESSION_UNLOCKED
@@ -86,58 +93,88 @@ export const UnlockAccount = () => {
     void continueToDestination();
   }, [hasPrivateKey, destination, queryParams, navigate]);
 
-  useEffect(() => {
-    const fetchLastUsedAccount = async () => {
-      const response = (await dispatch(loadLastUsedAccount())) as any;
-      if (loadLastUsedAccount.fulfilled.match(response)) {
-        setAccountAddress(response.payload.lastUsedAccount);
-      }
-    };
-
-    fetchLastUsedAccount();
-  }, [dispatch]);
-
   return (
     <React.Fragment>
-      <View.Header />
+      <View.Content alignment="center">
+        <div className="UnlockAccount" data-testid="unlock-account">
+          <LogoVarial className="UnlockAccount__logo" aria-hidden="true" />
 
-      <EnterPassword
-        accountAddress={accountAddress}
-        title={t("Welcome back")}
-        description={t("Enter password to unlock Varial")}
-        onConfirm={handleSubmit}
-        confirmButtonTitle={t("Unlock")}
-      />
+          <div className="UnlockAccount__titles">
+            <Heading as="h1" size="xs" weight="semi-bold">
+              {t("Welcome back")}
+            </Heading>
+            <div className="UnlockAccount__rebrand-notice">
+              <IconKeySwap
+                className="UnlockAccount__rebrand-notice__icon"
+                aria-hidden="true"
+              />
+              <Text as="span" size="sm" weight="medium">
+                {t("Freighter is now Varial")}
+              </Text>
+            </div>
+          </div>
 
-      <View.Footer customGap="0.5rem">
-        <div className="UnlockAccount__footer-label">
-          {t("Lost your password? Want to replace your accounts?")}
+          <Formik initialValues={initialValues} onSubmit={handleSubmit}>
+            {({ dirty, isSubmitting, setFieldValue }) => (
+              <Form className="UnlockAccount__form">
+                <Field name="password">
+                  {({ field }: FieldProps) => (
+                    <Input
+                      {...field}
+                      id="password-input"
+                      data-testid="enter-password-input"
+                      isPassword
+                      fieldSize="lg"
+                      autoComplete="off"
+                      autoFocus
+                      placeholder={t("Password")}
+                      onChange={(e) => {
+                        e.stopPropagation();
+                        setFieldValue(
+                          "password",
+                          (e.target as HTMLInputElement).value,
+                        );
+                      }}
+                      error={authError}
+                    />
+                  )}
+                </Field>
+
+                <div className="UnlockAccount__buttons">
+                  <Button
+                    data-testid="enter-password-submit"
+                    size="lg"
+                    variant="secondary"
+                    isFullWidth
+                    isRounded
+                    type="submit"
+                    isLoading={isSubmitting}
+                    disabled={!dirty}
+                  >
+                    {t("Unlock")}
+                  </Button>
+                  <Button
+                    data-testid="forgot-password-button"
+                    size="lg"
+                    variant="tertiary"
+                    isFullWidth
+                    isRounded
+                    type="button"
+                    onClick={() => setIsForgotPasswordOpen(true)}
+                  >
+                    {t("Forgot password")}
+                  </Button>
+                </div>
+              </Form>
+            )}
+          </Formik>
         </div>
+      </View.Content>
 
-        <Button
-          size="lg"
-          isFullWidth
-          isRounded
-          variant="tertiary"
-          onClick={() => {
-            openTab(newTabHref(ROUTES.recoverAccount));
-          }}
-        >
-          {t("Import using account seed phrase")}
-        </Button>
-
-        <Button
-          size="lg"
-          isFullWidth
-          isRounded
-          variant="tertiary"
-          onClick={() => {
-            openTab(newTabHref(ROUTES.accountCreator));
-          }}
-        >
-          {t("Create a wallet")}
-        </Button>
-      </View.Footer>
+      <ForgotPasswordSheet
+        isOpen={isForgotPasswordOpen}
+        onClose={() => setIsForgotPasswordOpen(false)}
+      />
     </React.Fragment>
   );
 };

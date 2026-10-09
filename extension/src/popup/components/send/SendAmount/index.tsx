@@ -56,7 +56,7 @@ import { TX_SEND_MAX } from "popup/constants/transaction";
 import { getBalanceByAsset, getBalanceByKey } from "popup/helpers/balance";
 
 import { RequestState, State } from "constants/request";
-import { openTab } from "popup/helpers/navigate";
+import { closeWindow, openTab } from "popup/helpers/navigate";
 import { newTabHref } from "helpers/urls";
 import { AMOUNT_ERROR, InputType } from "helpers/transaction";
 import { reRouteOnboarding } from "popup/helpers/route";
@@ -513,7 +513,7 @@ export const SendAmount = ({
   if (sendAmountData.data?.type === AppDataType.REROUTE) {
     if (sendAmountData.data.shouldOpenTab) {
       openTab(newTabHref(sendAmountData.data.routeTarget));
-      window.close();
+      closeWindow();
     }
     return (
       <Navigate

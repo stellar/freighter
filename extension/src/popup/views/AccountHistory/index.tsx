@@ -16,7 +16,7 @@ import { Loading } from "popup/components/Loading";
 import { View } from "popup/basics/layout/View";
 import { RequestState } from "constants/request";
 import { AppDataType } from "helpers/hooks/useGetAppData";
-import { openTab } from "popup/helpers/navigate";
+import { closeWindow, openTab } from "popup/helpers/navigate";
 import { newTabHref } from "helpers/urls";
 import { reRouteOnboarding } from "popup/helpers/route";
 import { useGetHistoryData } from "./hooks/useGetHistoryData";
@@ -63,7 +63,7 @@ export const AccountHistory = () => {
   if (historyState.data?.type === AppDataType.REROUTE) {
     if (historyState.data.shouldOpenTab) {
       openTab(newTabHref(historyState.data.routeTarget));
-      window.close();
+      closeWindow();
     }
     return (
       <Navigate

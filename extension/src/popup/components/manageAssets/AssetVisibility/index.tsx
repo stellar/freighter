@@ -20,7 +20,7 @@ import { ToggleAssetRows } from "../ToggleAssetRows";
 import { AppDispatch } from "popup/App";
 
 import "./styles.scss";
-import { openTab } from "popup/helpers/navigate";
+import { closeWindow, openTab } from "popup/helpers/navigate";
 import { newTabHref } from "helpers/urls";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { reRouteOnboarding } from "popup/helpers/route";
@@ -75,7 +75,7 @@ export const AssetVisibility = () => {
   if (domainState.data?.type === AppDataType.REROUTE) {
     if (domainState.data.shouldOpenTab) {
       openTab(newTabHref(domainState.data.routeTarget));
-      window.close();
+      closeWindow();
     }
     return (
       <Navigate

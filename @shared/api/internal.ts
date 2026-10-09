@@ -2170,6 +2170,28 @@ export const signOut = async ({
   return response;
 };
 
+/**
+ * Erases the wallet from the extension (lock screen → "Forgot password" →
+ * "Reset wallet"), keeping app settings. Never rejects: resolves `{}` only
+ * when the background replies that the wallet is erased, and `{ error }` when
+ * it refuses or fails, when sending throws, or when no reply arrives at all
+ * (`runtime.sendMessage` resolves `undefined` if the port closes first, e.g.
+ * the MV3 service worker was terminated mid-reset). A missing reply leaves the
+ * outcome unknown, so it is an error and the user can safely retry.
+ */
+export const resetWallet = async (): Promise<{ error?: string }> => {
+  try {
+    const response = await sendMessageToBackground<{ error?: string }>({
+      activePublicKey: null,
+      type: SERVICE_TYPES.RESET_WALLET,
+    });
+    return response ?? { error: "No response from background" };
+  } catch (e) {
+    console.error(e);
+    return { error: e instanceof Error ? e.message : String(e) };
+  }
+};
+
 export const showBackupPhrase = async ({
   activePublicKey,
   password,

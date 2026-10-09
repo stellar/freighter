@@ -21,7 +21,7 @@ import { TokenList } from "popup/components/InternalTransaction/TokenList";
 import { CollectiblesList } from "popup/components/InternalTransaction/CollectiblesList";
 import { RequestState } from "constants/request";
 import { AppDataType } from "helpers/hooks/useGetAppData";
-import { openTab } from "popup/helpers/navigate";
+import { closeWindow, openTab } from "popup/helpers/navigate";
 import { newTabHref } from "helpers/urls";
 import { reRouteOnboarding } from "popup/helpers/route";
 import { useGetDestAssetData } from "./hooks/useGetDestAssetData";
@@ -80,7 +80,7 @@ export const SendDestinationAsset = ({
   if (destAssetDataState.data?.type === AppDataType.REROUTE) {
     if (destAssetDataState.data.shouldOpenTab) {
       openTab(newTabHref(destAssetDataState.data.routeTarget));
-      window.close();
+      closeWindow();
     }
     return (
       <Navigate

@@ -43,6 +43,14 @@
       border-color: var(--sds-clr-gray-06);
       color: var(--sds-clr-gray-11);
     }
+
+    // Warnings about destructive actions (e.g. the lock screen's
+    // "Reset wallet" sheet).
+    &--error {
+      background-color: var(--sds-clr-red-03);
+      border-color: var(--sds-clr-red-06);
+      color: var(--sds-clr-red-09);
+    }
   }
 
   &__close {

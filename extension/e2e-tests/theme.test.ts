@@ -1,3 +1,4 @@
+import type { Locator, Page } from "@playwright/test";
 import { test, expect } from "./test-fixtures";
 import { loginToTestAccount } from "./helpers/login";
 
@@ -70,4 +71,96 @@ test("USDT0 sheet stays dark in light theme", async ({
   expect(
     await page.getByTestId("usdt0-launch-sheet-close").evaluate(colorOf),
   ).toBe(darkGray12);
+});
+
+// The lock screen and its Forgot password sheet resolve their colors in both
+// themes. Expected values are the resolved tokens: gray and red from SDS's
+// .sds-theme-* blocks, lilac from varialPalette.scss.
+const computed = (
+  locator: Locator,
+  property: "color" | "backgroundColor" | "fill" | "fontWeight",
+) => locator.evaluate((el, prop) => getComputedStyle(el)[prop], property);
+
+const lockScreenColors = async (page: Page) => ({
+  heading: await computed(
+    page.getByRole("heading", { name: "Welcome back" }),
+    "color",
+  ),
+  logo: await computed(
+    page.locator(".UnlockAccount__logo path").first(),
+    "fill",
+  ),
+});
+
+const sheetColors = async (page: Page) => ({
+  badgeBackground: await computed(
+    page.locator(".InfoSheet__badge--error"),
+    "backgroundColor",
+  ),
+  badgeColor: await computed(page.locator(".InfoSheet__badge--error"), "color"),
+  resetBackground: await computed(
+    page.getByTestId("forgot-password-sheet-reset"),
+    "backgroundColor",
+  ),
+});
+
+// The reset reminder is semibold in the body's gray, like mobile: the same
+// color as the sheet's first paragraph, not InfoSheet__emphasis's brighter one.
+const expectReminderStyle = async (page: Page) => {
+  const paragraph = page.locator(".ForgotPasswordSheet__body > div").first();
+  const reminder = page.locator(".ForgotPasswordSheet__reminder");
+  expect({
+    color: await computed(reminder, "color"),
+    fontWeight: await computed(reminder, "fontWeight"),
+  }).toEqual({
+    color: await computed(paragraph, "color"),
+    fontWeight: "600",
+  });
+};
+
+test("lock screen and Forgot password sheet follow the color scheme", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  test.slow();
+  await page.emulateMedia({ colorScheme: "light" });
+  await loginToTestAccount({ page, extensionId, context });
+  await page.getByTestId("account-options-dropdown").click();
+  await page.getByText("Settings").click();
+  await page.getByText("Log Out").click();
+  await expect(page.getByText("Welcome back")).toBeVisible();
+
+  await expect(page.locator("body")).toHaveClass(/sds-theme-light/);
+  expect(await lockScreenColors(page)).toEqual({
+    heading: "rgb(23, 23, 23)", // gray-12 light
+    logo: "rgb(0, 80, 255)", // lilac-09 light
+  });
+
+  // Only open and close the sheet; nothing here presses Reset wallet.
+  await page.getByTestId("forgot-password-button").click();
+  await expect(page.getByTestId("forgot-password-sheet")).toBeVisible();
+  expect(await sheetColors(page)).toEqual({
+    badgeBackground: "rgb(255, 239, 239)", // red-03 light
+    badgeColor: "rgb(229, 72, 77)", // red-09 light, the icon step like brand's
+    resetBackground: "rgb(229, 72, 77)", // red-09, the destructive button
+  });
+  await expectReminderStyle(page);
+
+  // Live change with the sheet still open — no reload.
+  await page.emulateMedia({ colorScheme: "dark" });
+  await expect(page.locator("body")).toHaveClass(/sds-theme-dark/);
+  expect(await sheetColors(page)).toEqual({
+    badgeBackground: "rgb(60, 24, 26)", // red-03 dark
+    badgeColor: "rgb(229, 72, 77)", // red-09 dark
+    resetBackground: "rgb(229, 72, 77)", // red-09 is the same in both themes
+  });
+  await expectReminderStyle(page);
+
+  await page.getByTestId("forgot-password-sheet-close").click();
+  await expect(page.getByTestId("forgot-password-sheet")).toBeHidden();
+  expect(await lockScreenColors(page)).toEqual({
+    heading: "rgb(237, 237, 237)", // gray-12 dark
+    logo: "rgb(22, 119, 255)", // lilac-09 dark
+  });
 });

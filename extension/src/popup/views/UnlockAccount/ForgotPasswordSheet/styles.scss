@@ -1,0 +1,19 @@
+@use "../../../styles/utils.scss" as *;
+
+.ForgotPasswordSheet {
+  &__body {
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(8px);
+  }
+
+  // Semibold in the body's gray, like mobile. No color on purpose: it
+  // inherits gray-11 from InfoBottomSheet's `.InfoSheet__body`.
+  &__reminder {
+    font-weight: var(--sds-fw-semi-bold);
+  }
+
+  &__error {
+    color: var(--sds-clr-red-11);
+  }
+}

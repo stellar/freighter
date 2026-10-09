@@ -50,6 +50,7 @@ const dataStorageAccess = (storageApi: DataStorageAccess.StorageOption) => {
     },
     clear: () => store.clear(),
     remove: (keys: string | string[]) => store.remove(keys),
+    getAllKeys: store.getAllKeys,
   };
 };
 

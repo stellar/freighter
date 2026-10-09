@@ -70,6 +70,10 @@ export const PasswordForm = ({
           <div className="PasswordForm__subheading">
             {t("This will be used to unlock your wallet")}
           </div>
+          {/* Prevents an accidental overwrite from a stale Welcome tab. After
+              "Reset wallet" erases the wallet, this can't show in that flow,
+              but a Welcome tab left open and used once a new wallet exists
+              would otherwise replace that wallet without notice. */}
           {isShowingOverwriteWarning && (
             <div className="PasswordForm__notification">
               <Notification

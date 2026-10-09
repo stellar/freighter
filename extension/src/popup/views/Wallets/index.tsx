@@ -34,7 +34,7 @@ import {
 import { LoadingBackground } from "popup/basics/LoadingBackground";
 import { useGetWalletsData } from "./hooks/useGetWalletsData";
 import { Loading } from "popup/components/Loading";
-import { navigateTo, openTab } from "popup/helpers/navigate";
+import { closeWindow, navigateTo, openTab } from "popup/helpers/navigate";
 import { reRouteOnboarding } from "popup/helpers/route";
 import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
 import { WalletRow } from "popup/components/account/WalletRow";
@@ -80,7 +80,7 @@ export const Wallets = () => {
   if (dataState.data?.type === AppDataType.REROUTE) {
     if (dataState.data.shouldOpenTab) {
       openTab(newTabHref(dataState.data.routeTarget));
-      window.close();
+      closeWindow();
     }
     return (
       <Navigate

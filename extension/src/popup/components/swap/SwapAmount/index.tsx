@@ -34,7 +34,7 @@ import { isNativeAssetId } from "@shared/helpers/assetIdentity";
 import { RequestState } from "constants/request";
 import { Loading } from "popup/components/Loading";
 import { AppDataType } from "helpers/hooks/useGetAppData";
-import { openTab } from "popup/helpers/navigate";
+import { closeWindow, openTab } from "popup/helpers/navigate";
 import { newTabHref } from "helpers/urls";
 import { reRouteOnboarding } from "popup/helpers/route";
 import { getAvailableBalance } from "popup/helpers/soroban";
@@ -368,7 +368,7 @@ export const SwapAmount = ({
   if (swapAmountData.data?.type === AppDataType.REROUTE) {
     if (swapAmountData.data.shouldOpenTab) {
       openTab(newTabHref(swapAmountData.data.routeTarget));
-      window.close();
+      closeWindow();
     }
     return (
       <Navigate

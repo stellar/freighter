@@ -70,6 +70,66 @@ describe("internalApi", () => {
     });
   });
 
+  describe("resetWallet", () => {
+    // `{}` is the only answer that means "the wallet is erased". Every other
+    // outcome must resolve `{ error }` instead, and none may reject.
+    it("sends RESET_WALLET with no active public key and resolves {} when the background confirms", async () => {
+      mockedSend.mockResolvedValue({});
+
+      await expect(internalApi.resetWallet()).resolves.toEqual({});
+
+      expect(mockedSend).toHaveBeenCalledTimes(1);
+      expect(mockedSend).toHaveBeenCalledWith({
+        activePublicKey: null,
+        type: SERVICE_TYPES.RESET_WALLET,
+      });
+    });
+
+    it("passes the background's error through", async () => {
+      mockedSend.mockResolvedValue({ error: "Failed to reset wallet" });
+
+      await expect(internalApi.resetWallet()).resolves.toEqual({
+        error: "Failed to reset wallet",
+      });
+    });
+
+    // `browser.runtime.sendMessage` resolves `undefined` instead of rejecting
+    // when the port closes without a reply, e.g. the MV3 service worker was
+    // terminated mid-reset. The outcome is unknown, so it must not read as
+    // success.
+    it.each([[undefined], [null]])(
+      "resolves an error, not success, when the background sends no reply (%s)",
+      async (noReply) => {
+        mockedSend.mockResolvedValue(noReply);
+
+        await expect(internalApi.resetWallet()).resolves.toEqual({
+          error: "No response from background",
+        });
+      },
+    );
+
+    it("resolves the error's message instead of rejecting when the send throws", async () => {
+      const consoleError = jest
+        .spyOn(console, "error")
+        .mockImplementation(() => undefined);
+      mockedSend.mockRejectedValue(new Error("Receiving end does not exist"));
+
+      await expect(internalApi.resetWallet()).resolves.toEqual({
+        error: "Receiving end does not exist",
+      });
+      expect(consoleError).toHaveBeenCalledTimes(1);
+    });
+
+    it("stringifies a non-Error rejection", async () => {
+      jest.spyOn(console, "error").mockImplementation(() => undefined);
+      mockedSend.mockRejectedValue("port closed");
+
+      await expect(internalApi.resetWallet()).resolves.toEqual({
+        error: "port closed",
+      });
+    });
+  });
+
   describe("getAssetDomains", () => {
     it("should return a list of domains from a list of issuers", async () => {
       jest

@@ -35,7 +35,7 @@ import { useGetSignMessageData } from "./hooks/useGetSignMessageData";
 import { RequestState } from "constants/request";
 import { Loading } from "popup/components/Loading";
 import { AppDataType } from "helpers/hooks/useGetAppData";
-import { openTab } from "popup/helpers/navigate";
+import { closeWindow, openTab } from "popup/helpers/navigate";
 import { useSetupSigningFlow } from "popup/helpers/useSetupSigningFlow";
 import { rejectBlob, signBlob } from "popup/ducks/access";
 import { publicKeySelector } from "popup/ducks/accountServices";
@@ -122,7 +122,7 @@ export const SignMessage = () => {
   if (signMessageState.data?.type === AppDataType.REROUTE) {
     if (signMessageState.data.shouldOpenTab) {
       openTab(newTabHref(signMessageState.data.routeTarget));
-      window.close();
+      closeWindow();
     }
     return (
       <Navigate

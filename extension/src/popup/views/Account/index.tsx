@@ -16,7 +16,7 @@ import {
   accountNameSelector,
   publicKeySelector,
 } from "popup/ducks/accountServices";
-import { openTab } from "popup/helpers/navigate";
+import { closeWindow, openTab } from "popup/helpers/navigate";
 import { isFullscreenMode } from "popup/helpers/isFullscreenMode";
 import { useSwapTopTokensPrewarm } from "popup/helpers/useSwapTopTokensPrewarm";
 
@@ -183,7 +183,7 @@ export const Account = () => {
   if (accountData.data?.type === AppDataType.REROUTE) {
     if (accountData.data.shouldOpenTab) {
       openTab(newTabHref(accountData.data.routeTarget));
-      window.close();
+      closeWindow();
     }
     return (
       <Navigate

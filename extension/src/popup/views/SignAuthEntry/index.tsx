@@ -32,7 +32,7 @@ import { useGetSignAuthEntryData } from "./hooks/useGetSignAuthEntryData";
 import { RequestState } from "constants/request";
 import { Loading } from "popup/components/Loading";
 import { AppDataType } from "helpers/hooks/useGetAppData";
-import { openTab } from "popup/helpers/navigate";
+import { closeWindow, openTab } from "popup/helpers/navigate";
 import { useSetupSigningFlow } from "popup/helpers/useSetupSigningFlow";
 import { rejectAuthEntry, signEntry } from "popup/ducks/access";
 import { publicKeySelector } from "popup/ducks/accountServices";
@@ -106,7 +106,7 @@ export const SignAuthEntry = () => {
   if (signAuthEntryData.data?.type === AppDataType.REROUTE) {
     if (signAuthEntryData.data.shouldOpenTab) {
       openTab(newTabHref(signAuthEntryData.data.routeTarget));
-      window.close();
+      closeWindow();
     }
     return (
       <Navigate

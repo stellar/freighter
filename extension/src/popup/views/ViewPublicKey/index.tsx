@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { emitMetric } from "helpers/metrics";
 import { truncatedPublicKey } from "helpers/stellar";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
-import { openTab } from "popup/helpers/navigate";
+import { closeWindow, openTab } from "popup/helpers/navigate";
 import { View } from "popup/basics/layout/View";
 import { accountNameSelector } from "popup/ducks/accountServices";
 import { AppDataType, useGetAppData } from "helpers/hooks/useGetAppData";
@@ -64,7 +64,7 @@ export const ViewPublicKey = () => {
   if (state.data?.type === AppDataType.REROUTE) {
     if (state.data.shouldOpenTab) {
       openTab(newTabHref(state.data.routeTarget));
-      window.close();
+      closeWindow();
     }
     return (
       <Navigate

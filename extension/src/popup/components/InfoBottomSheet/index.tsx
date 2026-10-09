@@ -7,21 +7,31 @@ import { SlideupModal } from "popup/components/SlideupModal";
 import "./styles.scss";
 
 /** Color treatment for the top-left icon badge. */
-export type InfoSheetBadgeVariant = "brand" | "neutral";
+export type InfoSheetBadgeVariant = "brand" | "neutral" | "error";
 
 interface InfoSheetContentProps {
   /** Icon rendered inside the top-left badge. */
   icon: React.ReactNode;
-  /** Badge color: "brand" (lilac) or "neutral" (gray). */
+  /** Badge color: "brand" (lilac), "neutral" (gray) or "error" (red, for
+   * warnings about destructive actions). */
   badgeVariant?: InfoSheetBadgeVariant;
   title: string;
-  /** Label for the full-width dismiss button (e.g. "Close", "Got it"). */
+  /** Label for the full-width action button (e.g. "Close", "Got it"). */
   actionLabel: string;
   onClose: () => void;
+  /** Runs when the action button is pressed. Defaults to `onClose`, which
+   * makes the action a dismiss button. */
+  onAction?: () => void;
+  /** Action button variant; "destructive" renders it red. */
+  actionVariant?: "secondary" | "destructive";
+  /** Shows a spinner on the action button and disables it. */
+  isActionLoading?: boolean;
   children: React.ReactNode;
   "data-testid"?: string;
   /** Test id for the circular X close button. */
   closeTestId?: string;
+  /** Test id for the action button. */
+  actionTestId?: string;
   /** Rendered in-flow (not in its own SlideupModal), e.g. inside the review
    * sheet. Drops the sheet's self-padding (the host already provides the
    * gutter) and matches the host's lg/rounded action button. */
@@ -30,9 +40,10 @@ interface InfoSheetContentProps {
 
 /**
  * Presentational body of an informational sheet: a colored icon badge plus a
- * circular close button on top, a title and body, and a full-width dismiss
- * button. Modal-agnostic so it can be wrapped in a SlideupModal (see
- * InfoBottomSheet below) or rendered directly inside a review pane.
+ * circular close button on top, a title and body, and a full-width action
+ * button (a dismiss button unless `onAction` is given).
+ * Modal-agnostic so it can be wrapped in a SlideupModal (see InfoBottomSheet
+ * below) or rendered directly inside a review pane.
  */
 export const InfoSheetContent = ({
   icon,
@@ -40,9 +51,13 @@ export const InfoSheetContent = ({
   title,
   actionLabel,
   onClose,
+  onAction = onClose,
+  actionVariant = "secondary",
+  isActionLoading = false,
   children,
   "data-testid": dataTestId,
   closeTestId,
+  actionTestId,
   isInline = false,
 }: InfoSheetContentProps) => {
   const { t } = useTranslation();
@@ -75,10 +90,13 @@ export const InfoSheetContent = ({
           bare text. */}
       <Button
         size="lg"
-        variant="secondary"
+        variant={actionVariant}
         isFullWidth
         isRounded
-        onClick={onClose}
+        onClick={onAction}
+        isLoading={isActionLoading}
+        disabled={isActionLoading}
+        data-testid={actionTestId}
       >
         {actionLabel}
       </Button>

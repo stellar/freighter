@@ -77,3 +77,24 @@ describe("i18n placeholder syntax", () => {
     ).toEqual(["Connect {walletType}", "Conectar {walletType}"]);
   });
 });
+
+const lockScreenKeys = [
+  "Freighter is now Varial",
+  "Forgot password",
+  "Forgot your password?",
+  "Your password is stored only on this device and can’t be recovered.",
+  "You can reset Varial with your recovery phrase, set a new password, and re-import.",
+  "Make sure you have your recovery phrase before continuing.",
+  "Reset wallet",
+  "Couldn’t reset your wallet. Try again.",
+];
+
+describe("lock screen i18n parity", () => {
+  it("defines every lock-screen key in en and translates it in pt", () => {
+    lockScreenKeys.forEach((k) => {
+      expect(en).toHaveProperty([k], k);
+      expect(pt).toHaveProperty([k]);
+      expect((pt as Record<string, string>)[k]).not.toEqual(k);
+    });
+  });
+});

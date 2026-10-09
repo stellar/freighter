@@ -24,6 +24,8 @@ import * as TokenListHelpers from "@shared/api/helpers/token-list";
 import * as GetIconFromTokenList from "@shared/api/helpers/getIconFromTokenList";
 import * as GetIconUrlFromIssuer from "@shared/api/helpers/getIconUrlFromIssuer";
 import * as RouteHelpers from "popup/helpers/route";
+import { closeWindow, openTab } from "popup/helpers/navigate";
+import { newTabHref } from "helpers/urls";
 import * as GetLedgerKeyAccounts from "@shared/api/helpers/getLedgerKeyAccounts";
 import * as UseGetCollectibles from "helpers/hooks/useGetCollectibles";
 import { Toaster } from "popup/basics/shadcn/Toast";
@@ -284,6 +286,13 @@ jest.mock("popup/ducks/accountServices", () => {
     allAccountsSelector: actual.allAccountsSelector,
   };
 });
+
+// A test must not open a real tab or close the jsdom window.
+jest.mock("popup/helpers/navigate", () => ({
+  ...jest.requireActual("popup/helpers/navigate"),
+  openTab: jest.fn(),
+  closeWindow: jest.fn(),
+}));
 
 describe("Account view", () => {
   afterAll(() => {
@@ -1905,5 +1914,60 @@ describe("Account view", () => {
     await waitFor(() => {
       expect(screen.getByTestId("rerouted")).toBeInTheDocument();
     });
+  });
+
+  it("hands onboarding to a tab and closes the window for real when the re-route needs a tab", async () => {
+    jest.spyOn(AccountDataHooks, "useGetAccountData").mockReturnValue({
+      state: {
+        state: RequestState.SUCCESS,
+        data: {
+          type: AppDataType.REROUTE,
+          shouldOpenTab: true,
+          routeTarget: ROUTES.welcome,
+        },
+        error: null,
+      },
+      fetchData: jest.fn(),
+      refreshAppData: jest.fn(),
+    });
+    // In the sidebar a plain window.close() navigates home, which would run
+    // this hand-off again, so it must not be the call that closes the window.
+    const windowCloseSpy = jest
+      .spyOn(window, "close")
+      .mockImplementation(() => undefined);
+
+    render(
+      <Wrapper
+        routes={[ROUTES.account]}
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.APPLICATION_STARTED,
+            publicKey: "",
+            allAccounts: [],
+          },
+          settings: {
+            networkDetails: MAINNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+          },
+        }}
+      >
+        <ReactRouterDom.Routes>
+          <ReactRouterDom.Route path={ROUTES.account} element={<Account />} />
+          <ReactRouterDom.Route
+            path={ROUTES.welcome}
+            element={<div data-testid="rerouted" />}
+          />
+        </ReactRouterDom.Routes>
+      </Wrapper>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("rerouted")).toBeInTheDocument();
+    });
+    expect(openTab).toHaveBeenCalledWith(newTabHref(ROUTES.welcome));
+    expect(closeWindow).toHaveBeenCalled();
+    expect(windowCloseSpy).not.toHaveBeenCalled();
+    windowCloseSpy.mockRestore();
   });
 });

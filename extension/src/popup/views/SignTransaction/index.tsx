@@ -41,7 +41,7 @@ import {
 import { isNativeAssetPair } from "@shared/helpers/assetIdentity";
 import { decodeMemo } from "popup/helpers/parseTransaction";
 import { useIsDomainListedAllowed } from "popup/helpers/useIsDomainListedAllowed";
-import { openTab } from "popup/helpers/navigate";
+import { closeWindow, openTab } from "popup/helpers/navigate";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { useMarkQueueActive } from "popup/helpers/useMarkQueueActive";
 
@@ -270,7 +270,7 @@ export const SignTransaction = () => {
   if (signTxState.data?.type === AppDataType.REROUTE) {
     if (signTxState.data.shouldOpenTab) {
       openTab(newTabHref(signTxState.data.routeTarget));
-      window.close();
+      closeWindow();
     }
     return (
       <Navigate

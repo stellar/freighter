@@ -12,7 +12,7 @@ import { View } from "popup/basics/layout/View";
 
 import { RequestState } from "constants/request";
 import { useGetAssetDomainsWithBalances } from "helpers/hooks/useGetAssetDomainsWithBalances";
-import { openTab } from "popup/helpers/navigate";
+import { closeWindow, openTab } from "popup/helpers/navigate";
 import { newTabHref } from "helpers/urls";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { reRouteOnboarding } from "popup/helpers/route";
@@ -82,7 +82,7 @@ export const ChooseAsset = ({
   if (domainState.data?.type === AppDataType.REROUTE) {
     if (domainState.data.shouldOpenTab) {
       openTab(newTabHref(domainState.data.routeTarget));
-      window.close();
+      closeWindow();
     }
     return (
       <Navigate
