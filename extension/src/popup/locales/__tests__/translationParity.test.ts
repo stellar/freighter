@@ -98,3 +98,28 @@ describe("lock screen i18n parity", () => {
     });
   });
 });
+
+const welcomeKeys = [
+  "Welcome to Varial",
+  "Your favorite Stellar wallet",
+  "Create new wallet",
+  "Import wallet",
+];
+
+describe("Welcome i18n parity", () => {
+  it("defines every Welcome key in en and translates it in pt", () => {
+    welcomeKeys.forEach((k) => {
+      expect(en).toHaveProperty([k], k);
+      expect(pt).toHaveProperty([k]);
+      expect((pt as Record<string, string>)[k]).not.toEqual(k);
+    });
+  });
+});
+
+describe("pt spelling", () => {
+  it("writes “Bem vindo” without a hyphen", () => {
+    expect(
+      Object.values(pt).filter((value) => /bem-vind/i.test(value)),
+    ).toEqual([]);
+  });
+});

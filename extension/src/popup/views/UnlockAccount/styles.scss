@@ -27,24 +27,6 @@
     text-align: center;
   }
 
-  &__rebrand-notice {
-    display: flex;
-    align-items: center;
-    gap: pxToRem(8px);
-    color: var(--sds-clr-gray-11);
-
-    .Text--sm {
-      line-height: pxToRem(20px);
-    }
-
-    &__icon {
-      flex-shrink: 0;
-      width: pxToRem(16px);
-      height: pxToRem(16px);
-      color: var(--sds-clr-gray-09);
-    }
-  }
-
   &__form {
     width: 100%;
     display: flex;

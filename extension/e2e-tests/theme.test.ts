@@ -34,18 +34,46 @@ test("follows the system color scheme, including live changes", async ({
   await expect(page.locator("body")).toHaveClass(/sds-theme-light/);
 });
 
-test("welcome screen renders in light theme", async ({ page, extensionId }) => {
+// The color painted behind an element: its own background, or the nearest
+// ancestor's that isn't transparent.
+const backdrop = (locator: Locator) =>
+  locator.evaluate((el) => {
+    for (let node: Element | null = el; node; node = node.parentElement) {
+      const { backgroundColor } = getComputedStyle(node);
+      if (backgroundColor !== "rgba(0, 0, 0, 0)") {
+        return backgroundColor;
+      }
+    }
+    return "";
+  });
+
+test("welcome screen follows the color scheme", async ({
+  page,
+  extensionId,
+}) => {
   await page.emulateMedia({ colorScheme: "light" });
   await page.goto(`chrome-extension://${extensionId}/index.html#/`);
 
-  await page.locator(".Welcome__column").waitFor();
+  const welcome = page.locator(".Welcome");
+  await welcome.waitFor();
 
   // A rendered Welcome element resolves to the light text color — a
   // component-level check, not just the body token the first test covers.
   const headingColor = await page
-    .locator(".Welcome__heading")
+    .getByRole("heading", { name: "Welcome to Varial" })
     .evaluate((el) => getComputedStyle(el).color);
   expect(headingColor).toBe("rgb(23, 23, 23)"); // gray-12 light
+
+  // The page color every view shares, behind the content and in the window
+  // margins around it.
+  const body = page.locator("body");
+  expect(await backdrop(welcome)).toBe("rgb(252, 252, 252)"); // gray-01 light
+  expect(await backdrop(body)).toBe("rgb(252, 252, 252)");
+
+  await page.emulateMedia({ colorScheme: "dark" });
+  await expect(body).toHaveClass(/sds-theme-dark/);
+  expect(await backdrop(welcome)).toBe("rgb(22, 22, 22)"); // gray-01 dark
+  expect(await backdrop(body)).toBe("rgb(22, 22, 22)");
 });
 
 test("USDT0 sheet stays dark in light theme", async ({

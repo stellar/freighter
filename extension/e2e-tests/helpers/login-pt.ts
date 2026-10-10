@@ -11,7 +11,7 @@ export const loginToTestAccountPT = async ({
   extensionId: string;
 }) => {
   await page.goto(`chrome-extension://${extensionId}/index.html`);
-  await page.getByText("Já tenho uma carteira").click();
+  await page.getByText("Importar carteira").click();
 
   await expect(page.getByText("Criar uma Senha")).toBeVisible();
 

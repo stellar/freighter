@@ -4,7 +4,7 @@ import { expect } from "../test-fixtures";
 const DEFAULT_IMPORT_TIMEOUT_MS = 10000;
 
 /**
- * Starts the import wallet flow by clicking "I already have a wallet",
+ * Starts the import wallet flow by clicking "Import wallet",
  * filling in password and confirm password, checking terms of use, and clicking Confirm.
  * Waits for the "Import wallet from recovery phrase" screen to be visible.
  *
@@ -20,7 +20,7 @@ export const startImportWalletFlow = async ({
   password: string;
   confirmPassword?: string;
 }) => {
-  await page.getByText("I already have a wallet").click();
+  await page.getByText("Import wallet").click();
   await expect(page.getByText("Create a password")).toBeVisible();
 
   await page.locator("#new-password-input").fill(password);

@@ -32,10 +32,14 @@ test.beforeEach(async ({ page, extensionId }) => {
 });
 
 test("Welcome page loads", async ({ page }) => {
-  await page.locator(".Welcome__column").waitFor();
-  await expect(page.getByText("Varial Wallet")).toBeVisible();
+  await page.locator(".Welcome").waitFor();
+  await expect(
+    page.getByRole("heading", { name: "Welcome to Varial" }),
+  ).toBeVisible();
+  await expect(page.getByText("Your favorite Stellar wallet")).toBeVisible();
+  await expect(page.getByText("Freighter is now Varial")).toBeVisible();
   await expect(page.getByText("Create new wallet")).toBeVisible();
-  await expect(page.getByText("I already have a wallet")).toBeVisible();
+  await expect(page.getByText("Import wallet")).toBeVisible();
   await expectPageToHaveScreenshot({ page, screenshot: "welcome-page.png" });
 });
 
@@ -92,7 +96,7 @@ test("Create new wallet", async ({ page }) => {
 });
 
 test("Import 12 word wallet", async ({ page }) => {
-  await page.getByText("I already have a wallet").click();
+  await page.getByText("Import wallet").click();
   await expect(page.getByText("Create a Password")).toBeVisible();
 
   await page.locator("#new-password-input").fill("My-password123");
@@ -133,7 +137,7 @@ test("Import 12 word wallet", async ({ page }) => {
 test("Import 12 word wallet by pasting", async ({ page, context }) => {
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
 
-  await page.getByText("I already have a wallet").click();
+  await page.getByText("Import wallet").click();
   await expect(page.getByText("Create a Password")).toBeVisible();
 
   await page.locator("#new-password-input").fill("My-password123");
@@ -179,7 +183,7 @@ test("Import 12 word wallet by pasting", async ({ page, context }) => {
 });
 
 test("Import 24 word wallet", async ({ page }) => {
-  await page.getByText("I already have a wallet").click();
+  await page.getByText("Import wallet").click();
   await expect(page.getByText("Create a Password")).toBeVisible();
 
   await page.locator("#new-password-input").fill("My-password123");
@@ -249,7 +253,7 @@ test("Import 24 word wallet", async ({ page }) => {
 test("Import 24 word wallet by pasting", async ({ page, context }) => {
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
 
-  await page.getByText("I already have a wallet").click();
+  await page.getByText("Import wallet").click();
   await expect(page.getByText("Create a Password")).toBeVisible();
 
   await page.locator("#new-password-input").fill("My-password123");
@@ -322,7 +326,7 @@ test("Import 24 word wallet by pasting", async ({ page, context }) => {
 });
 
 test("Import wallet with wrong password", async ({ page }) => {
-  await page.getByText("I already have a wallet").click();
+  await page.getByText("Import wallet").click();
   await expect(page.getByText("Create a password")).toBeVisible();
 
   await page.locator("#new-password-input").fill("My-password123");
@@ -419,7 +423,7 @@ const resetWalletFromLockScreen = async (page: Page, extensionId: string) => {
   // The root route shows Welcome only when no wallet is stored, and the lock
   // screen otherwise.
   await welcomePage.goto(`chrome-extension://${extensionId}/index.html`);
-  await expect(welcomePage.getByText("I already have a wallet")).toBeVisible();
+  await expect(welcomePage.getByText("Import wallet")).toBeVisible();
   await expect(welcomePage.getByText("Welcome back")).toHaveCount(0);
   return welcomePage;
 };
@@ -496,7 +500,7 @@ test("Reset wallet and import a wallet", async ({
 
   const welcomePage = await resetWalletFromLockScreen(page, extensionId);
 
-  await welcomePage.getByText("I already have a wallet").click();
+  await welcomePage.getByText("Import wallet").click();
   await fillNewPassword(welcomePage);
   await expect(
     welcomePage.getByText("Import wallet from recovery phrase"),

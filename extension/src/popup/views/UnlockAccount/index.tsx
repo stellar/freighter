@@ -1,4 +1,4 @@
-import { Button, Heading, Input, Text } from "@stellar/design-system";
+import { Button, Heading, Input } from "@stellar/design-system";
 import { Field, FieldProps, Form, Formik } from "formik";
 import get from "lodash/get";
 import React, { useEffect, useRef, useState } from "react";
@@ -7,10 +7,10 @@ import { useDispatch, useSelector } from "react-redux";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import { reconcileAnalyticsUserId } from "helpers/metrics";
-import IconKeySwap from "popup/assets/icon-key-swap.svg?react";
 import LogoVarial from "popup/assets/logo-varial.svg?react";
 import { AppDispatch } from "popup/App";
 import { View } from "popup/basics/layout/View";
+import { RebrandNotice } from "popup/components/RebrandNotice";
 import { ROUTES } from "popup/constants/routes";
 import {
   authErrorSelector,
@@ -103,15 +103,7 @@ export const UnlockAccount = () => {
             <Heading as="h1" size="xs" weight="semi-bold">
               {t("Welcome back")}
             </Heading>
-            <div className="UnlockAccount__rebrand-notice">
-              <IconKeySwap
-                className="UnlockAccount__rebrand-notice__icon"
-                aria-hidden="true"
-              />
-              <Text as="span" size="sm" weight="medium">
-                {t("Freighter is now Varial")}
-              </Text>
-            </div>
+            <RebrandNotice size="sm" />
           </div>
 
           <Formik initialValues={initialValues} onSubmit={handleSubmit}>
