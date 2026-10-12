@@ -90,7 +90,7 @@
 
 .WarningMessage {
   &--active {
-    background: var(--sds-clr-gray-01);
+    background: var(--sds-clr-base-00);
     display: flex;
     flex-direction: column;
     left: 0;
@@ -365,128 +365,6 @@
     display: flex;
     column-gap: 1rem;
     margin-top: 1rem;
-  }
-}
-
-.TokenWarning {
-  z-index: var(--z-index--scam-warning);
-  display: flex;
-  position: fixed;
-  width: 100%;
-  left: 0;
-  top: 0;
-  bottom: 0;
-
-  &__wrapper {
-    z-index: calc(var(--z-index--scam-warning) + 1);
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    background: var(--sds-clr-gray-01);
-    padding: 2rem 1.5rem 0.75rem 1.5rem;
-    transition: margin var(--dropdown-animation);
-  }
-
-  &__body {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-
-  &__bottom-content {
-    margin-top: 1rem;
-    width: 100%;
-  }
-
-  &__icon {
-    align-items: center;
-    display: flex;
-    justify-content: center;
-    margin-bottom: 0.5rem;
-
-    .AccountAssets__asset--logo {
-      margin-right: 0;
-    }
-  }
-
-  &__code,
-  &__domain {
-    display: flex;
-    font-size: pxToRem(14px);
-    justify-content: center;
-  }
-
-  &__domain {
-    color: var(--sds-clr-gray-11);
-  }
-
-  &__description {
-    align-items: center;
-    background: var(--sds-clr-gray-04);
-    border-radius: 0.375rem;
-    display: flex;
-    gap: 0.25rem;
-    margin: 1rem 0 1.5rem 0;
-    padding: 0.125rem 0.375rem;
-
-    &__icon {
-      svg {
-        color: var(--sds-clr-gray-12);
-        height: 0.75rem;
-        width: 0.75rem;
-      }
-    }
-
-    &__text {
-      color: var(--sds-clr-gray-11);
-      font-size: 0.75rem;
-      line-height: 1.125rem;
-    }
-  }
-
-  &__flags {
-    border-radius: 0.5rem;
-    margin-top: 0.5rem;
-    background: var(--sds-clr-gray-02);
-    padding: 0.75rem 1rem;
-    width: 100%;
-
-    &__info {
-      font-size: 0.875rem;
-      color: var(--sds-clr-gray-12);
-      margin-bottom: 0.5rem;
-    }
-  }
-
-  &__flag {
-    display: flex;
-    margin-bottom: 0.375rem;
-    column-gap: 0.5rem;
-    &__header {
-      color: var(--sds-clr-white);
-      font-size: 0.875rem;
-      margin-bottom: 0.25rem;
-    }
-    &__description {
-      color: var(--sds-clr-gray-12);
-      font-size: 0.75rem;
-      line-height: 1.25rem;
-    }
-    &__icon--unverified {
-      color: var(--sds-clr-amber-09);
-    }
-
-    &__icon--invalid-format {
-      svg {
-        color: var(--sds-clr-gray-09);
-      }
-    }
-    &__content {
-      color: var(--sds-clr-gray-11);
-      font-size: 0.875rem;
-      line-height: 1.125rem;
-    }
   }
 }
 

@@ -91,7 +91,13 @@
       height: pxToRem(22px);
       width: pxToRem(22px);
       border-radius: pxToRem(22px);
-      background-color: var(--sds-clr-gray-01);
+      // Masks the icon it overlaps, so it takes the color behind it: the page
+      // on history rows, the sheet in a transaction's details.
+      background-color: var(--sds-clr-base-00);
+
+      .SlideupModal & {
+        background-color: var(--sds-clr-gray-01);
+      }
     }
 
     &__bordered {

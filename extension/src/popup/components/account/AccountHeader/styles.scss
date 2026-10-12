@@ -7,17 +7,6 @@
   align-items: center;
   height: 5rem;
 
-  &__wallets {
-    position: absolute;
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-    min-width: var(--popup--width);
-    width: 100%;
-    background: var(--sds-clr-gray-01);
-    z-index: var(--z-index-modal);
-  }
-
   &__icon-btn {
     // Styles all three nav circles (options / history / networks) from one
     // place. The history button is not wrapped in `__dropdown`, so keying off

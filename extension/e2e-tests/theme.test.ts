@@ -47,6 +47,10 @@ const backdrop = (locator: Locator) =>
     return "";
   });
 
+// Varial pages sit on base-00; sheets floating over them stay on gray-01.
+const BASE_00 = { light: "rgb(255, 255, 255)", dark: "rgb(0, 0, 0)" };
+const GRAY_01 = { light: "rgb(252, 252, 252)", dark: "rgb(22, 22, 22)" };
+
 test("welcome screen follows the color scheme", async ({
   page,
   extensionId,
@@ -67,13 +71,13 @@ test("welcome screen follows the color scheme", async ({
   // The page color every view shares, behind the content and in the window
   // margins around it.
   const body = page.locator("body");
-  expect(await backdrop(welcome)).toBe("rgb(252, 252, 252)"); // gray-01 light
-  expect(await backdrop(body)).toBe("rgb(252, 252, 252)");
+  expect(await backdrop(welcome)).toBe(BASE_00.light);
+  expect(await backdrop(body)).toBe(BASE_00.light);
 
   await page.emulateMedia({ colorScheme: "dark" });
   await expect(body).toHaveClass(/sds-theme-dark/);
-  expect(await backdrop(welcome)).toBe("rgb(22, 22, 22)"); // gray-01 dark
-  expect(await backdrop(body)).toBe("rgb(22, 22, 22)");
+  expect(await backdrop(welcome)).toBe(BASE_00.dark);
+  expect(await backdrop(body)).toBe(BASE_00.dark);
 });
 
 test("USDT0 sheet stays dark in light theme", async ({
@@ -102,8 +106,8 @@ test("USDT0 sheet stays dark in light theme", async ({
 });
 
 // The lock screen and its Forgot password sheet resolve their colors in both
-// themes. Expected values are the resolved tokens: gray and red from SDS's
-// .sds-theme-* blocks, lilac from varialPalette.scss.
+// themes. Expected values are the resolved tokens: gray, red and base from
+// SDS's .sds-theme-* blocks, lilac from varialPalette.scss.
 const computed = (
   locator: Locator,
   property: "color" | "backgroundColor" | "fill" | "fontWeight",
@@ -118,9 +122,11 @@ const lockScreenColors = async (page: Page) => ({
     page.locator(".UnlockAccount__logo path").first(),
     "fill",
   ),
+  page: await backdrop(page.getByTestId("unlock-account")),
 });
 
 const sheetColors = async (page: Page) => ({
+  surface: await backdrop(page.getByTestId("forgot-password-sheet")),
   badgeBackground: await computed(
     page.locator(".InfoSheet__badge--error"),
     "backgroundColor",
@@ -154,6 +160,7 @@ test("lock screen and Forgot password sheet follow the color scheme", async ({
   test.slow();
   await page.emulateMedia({ colorScheme: "light" });
   await loginToTestAccount({ page, extensionId, context });
+  expect(await backdrop(page.getByTestId("account-view"))).toBe(BASE_00.light);
   await page.getByTestId("account-options-dropdown").click();
   await page.getByText("Settings").click();
   await page.getByText("Log Out").click();
@@ -163,12 +170,14 @@ test("lock screen and Forgot password sheet follow the color scheme", async ({
   expect(await lockScreenColors(page)).toEqual({
     heading: "rgb(23, 23, 23)", // gray-12 light
     logo: "rgb(0, 80, 255)", // lilac-09 light
+    page: BASE_00.light,
   });
 
   // Only open and close the sheet; nothing here presses Reset wallet.
   await page.getByTestId("forgot-password-button").click();
   await expect(page.getByTestId("forgot-password-sheet")).toBeVisible();
   expect(await sheetColors(page)).toEqual({
+    surface: GRAY_01.light,
     badgeBackground: "rgb(255, 239, 239)", // red-03 light
     badgeColor: "rgb(229, 72, 77)", // red-09 light, the icon step like brand's
     resetBackground: "rgb(229, 72, 77)", // red-09, the destructive button
@@ -179,6 +188,7 @@ test("lock screen and Forgot password sheet follow the color scheme", async ({
   await page.emulateMedia({ colorScheme: "dark" });
   await expect(page.locator("body")).toHaveClass(/sds-theme-dark/);
   expect(await sheetColors(page)).toEqual({
+    surface: GRAY_01.dark,
     badgeBackground: "rgb(60, 24, 26)", // red-03 dark
     badgeColor: "rgb(229, 72, 77)", // red-09 dark
     resetBackground: "rgb(229, 72, 77)", // red-09 is the same in both themes
@@ -190,5 +200,6 @@ test("lock screen and Forgot password sheet follow the color scheme", async ({
   expect(await lockScreenColors(page)).toEqual({
     heading: "rgb(237, 237, 237)", // gray-12 dark
     logo: "rgb(22, 119, 255)", // lilac-09 dark
+    page: BASE_00.dark,
   });
 });

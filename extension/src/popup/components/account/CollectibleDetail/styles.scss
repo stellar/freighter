@@ -1,7 +1,7 @@
 @use "../../../styles/utils.scss" as *;
 
 .CollectibleDetail {
-  background: var(--sds-clr-gray-01);
+  background: var(--sds-clr-base-00);
   position: relative;
   width: 100vw;
 
@@ -124,7 +124,7 @@
 // Target the Radix popper wrapper globally - it renders via portal at body level
 // This ensures the popover appears above nested sheets (z-index: 100)
 [data-radix-popper-content-wrapper]:has(
-    .CollectibleDetail__header__right-button__popover-content
-  ) {
+  .CollectibleDetail__header__right-button__popover-content
+) {
   z-index: 100 !important;
 }

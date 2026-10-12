@@ -42,6 +42,14 @@ body {
   overscroll-behavior: none;
   margin: 0;
   padding: 0;
+
+  // Varial pages sit on base-00, where SDS paints its theme root (this body)
+  // gray-01. The body-qualified selector outranks SDS's whatever order the
+  // stylesheets load in, and leaves elements that pin a theme of their own.
+  &.sds-theme-light,
+  &.sds-theme-dark {
+    background-color: var(--sds-clr-base-00);
+  }
 }
 
 a {

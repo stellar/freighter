@@ -20,6 +20,13 @@
     height: 100%;
     min-height: 0;
     overflow: hidden;
+    // A page here rather than a sheet, so it and its action row take the
+    // page color.
+    background-color: var(--sds-clr-base-00);
+
+    .ChangeTrustInternal__Actions {
+      background-color: var(--sds-clr-base-00);
+    }
 
     // Grow the slider so the action row is pushed to the bottom.
     > .multi-pane-slider {

@@ -191,7 +191,7 @@
     flex-direction: row;
     gap: pxToRem(12px);
     padding: 0 pxToRem(16px) pxToRem(16px);
-    background-color: var(--sds-clr-gray-01);
+    background-color: var(--sds-clr-base-00);
     position: sticky;
     bottom: 0;
     margin: 0 auto;
@@ -215,7 +215,7 @@
       background: linear-gradient(
         to bottom,
         transparent,
-        var(--sds-clr-gray-01)
+        var(--sds-clr-base-00)
       );
       pointer-events: none;
     }
