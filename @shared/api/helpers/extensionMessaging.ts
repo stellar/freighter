@@ -110,7 +110,7 @@ export const FreighterApiInternalError = {
 
 export const FreighterApiLockedError = {
   code: -1,
-  message: "The wallet is locked. Unlock Freighter and try again.",
+  message: "The wallet is locked. Unlock Varial and try again.",
 };
 
 export const FreighterApiDeclinedError = {
