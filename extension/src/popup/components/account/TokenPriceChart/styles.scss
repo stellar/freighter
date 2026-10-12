@@ -39,8 +39,10 @@
     color: var(--sds-clr-gray-11);
     display: flex;
     font-size: pxToRem(14px);
+    font-weight: var(--sds-fw-medium);
     height: 100%;
     justify-content: center;
+    line-height: pxToRem(20px);
     width: 100%;
   }
 
@@ -59,6 +61,7 @@
   &__axis-label {
     color: var(--sds-clr-gray-09);
     font-size: pxToRem(14px);
+    font-weight: var(--sds-fw-medium);
     height: pxToRem(20px);
     line-height: pxToRem(20px);
     pointer-events: none;

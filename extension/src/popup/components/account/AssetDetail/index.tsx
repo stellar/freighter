@@ -456,8 +456,8 @@ export const AssetDetail = ({
                 {shownDelta.isLoading ? (
                   <Shimmer
                     className="AssetDetail__delta-ghost"
-                    width="9.125rem"
-                    height="1.5rem"
+                    width="9.5rem"
+                    height="1.25rem"
                   />
                 ) : (
                   shownDelta.text

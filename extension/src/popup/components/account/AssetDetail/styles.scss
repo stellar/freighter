@@ -7,9 +7,13 @@
     position: relative;
   }
 
+  // Text/SM/500
   &__balance-info {
     display: flex;
     flex-direction: column;
+    font-size: pxToRem(14px);
+    font-weight: var(--sds-fw-medium);
+    line-height: pxToRem(20px);
     // 12px vertical / 16px horizontal, per the design: the card is 97 tall
     // with rows at y=12-36 and y=61-85.
     padding: pxToRem(12px) pxToRem(16px);
@@ -53,20 +57,22 @@
 
   // 8px below the 40px icon, per the design (icon bottom y=40, title top
   // y=48 in the Token header frame).
+  // Text/XS/500 in Default/Text/Secondary.
   &__title {
     margin-top: pxToRem(8px);
-    color: var(--sds-clr-gray-09);
+    color: var(--sds-clr-gray-11);
+    font-size: pxToRem(12px);
+    font-weight: var(--sds-fw-medium);
+    line-height: pxToRem(18px);
   }
 
-  // Display/SM from the design system: 32/40, regular, -4% tracking. Same
-  // token as AccountHeader__total-usd-balance, whose -1.28px is that -4%
-  // resolved against 32px — kept in px rather than em to match it exactly.
+  // Display/XS/400: 24/32, -4% tracking (-0.96px at 24px).
   &__price {
     margin-top: pxToRem(12px);
-    font-size: pxToRem(32px);
+    font-size: pxToRem(24px);
     font-weight: var(--sds-fw-regular);
-    letter-spacing: pxToRem(-1.28px);
-    line-height: pxToRem(40px);
+    letter-spacing: pxToRem(-0.96px);
+    line-height: pxToRem(32px);
 
     // Default/Text/Secondary
     &--placeholder {
@@ -74,15 +80,17 @@
     }
   }
 
-  // Text/MD from the design system: 16/24. Applies to both delta paths — the
-  // legacy 24h figure and the chart's per-range delta below — so the header
-  // reads the same whether or not the chart is shown.
+  // Text/SM/500. Applies to both delta paths — the legacy 24h figure and the
+  // chart's per-range delta below — so the header reads the same whether or
+  // not the chart is shown.
   &__delta {
-    font-size: pxToRem(16px);
-    line-height: pxToRem(24px);
+    font-size: pxToRem(14px);
+    font-weight: var(--sds-fw-medium);
+    line-height: pxToRem(20px);
     margin-top: pxToRem(8px);
+    // Success/Text/Primary
     &.positive {
-      color: var(--sds-clr-green-10);
+      color: var(--sds-clr-green-11);
     }
 
     &.negative {
@@ -104,20 +112,21 @@
     &--range {
       // Size and line-height come from `&__delta` above; only the reserved
       // row is this path's own concern, and it tracks that line box.
-      min-height: pxToRem(24px);
+      min-height: pxToRem(20px);
 
       // Red is scoped to this path deliberately. The chart section reports a
       // three-state direction, where "negative" means a genuine loss and
       // matches the chart's own red artwork. The `.negative` above stays grey
       // for the legacy branch, whose `getPriceDeltaColor` also labels a flat
       // zero "negative" — reconciling the two is the §13 follow-up.
+      // Color is Error/Text/Primary.
       &.negative {
-        color: var(--sds-clr-red-09);
+        color: var(--sds-clr-red-11);
       }
     }
 
     .AssetDetail__delta-ghost {
-      // Top-aligned so the 24px pill fits the 24px line box; middle grows the row and shifts the chart.
+      // Top-aligned so the 20px pill fits the 20px line box; middle grows the row and shifts the chart.
       vertical-align: top;
     }
   }

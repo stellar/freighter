@@ -1335,7 +1335,7 @@ describe("AssetDetail", () => {
       expect(delta().textContent).toBe("");
     });
 
-    it("draws the loading delta as the frame's 146 × 24 shimmer pill", async () => {
+    it("draws the loading delta as the frame's 152 × 20 shimmer pill", async () => {
       jest.useFakeTimers();
       historySpy.mockImplementation(({ range }) =>
         range === "1Y" ? new Promise(() => {}) : Promise.resolve(HISTORY_1D),
@@ -1353,8 +1353,8 @@ describe("AssetDetail", () => {
       expect(pill).not.toBeNull();
       expect(pill).toHaveClass("Shimmer", "Shimmer--pill");
       expect(pill).toHaveAttribute("aria-hidden", "true");
-      expect(pill.style.width).toBe("9.125rem");
-      expect(pill.style.height).toBe("1.5rem");
+      expect(pill.style.width).toBe("9.5rem");
+      expect(pill.style.height).toBe("1.25rem");
     });
 
     it("shows no delta text when the range carries no change", async () => {
