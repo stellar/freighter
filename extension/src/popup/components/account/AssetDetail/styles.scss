@@ -64,6 +64,8 @@
     font-size: pxToRem(12px);
     font-weight: var(--sds-fw-medium);
     line-height: pxToRem(18px);
+    // A contract's name() is arbitrary length.
+    overflow-wrap: anywhere;
   }
 
   // Display/XS/400: 24/32, -4% tracking (-0.96px at 24px).
@@ -88,9 +90,8 @@
     font-weight: var(--sds-fw-medium);
     line-height: pxToRem(20px);
     margin-top: pxToRem(8px);
-    // Success/Text/Primary
     &.positive {
-      color: var(--sds-clr-green-11);
+      color: var(--sds-clr-green-10);
     }
 
     &.negative {
@@ -119,9 +120,8 @@
       // matches the chart's own red artwork. The `.negative` above stays grey
       // for the legacy branch, whose `getPriceDeltaColor` also labels a flat
       // zero "negative" — reconciling the two is the §13 follow-up.
-      // Color is Error/Text/Primary.
       &.negative {
-        color: var(--sds-clr-red-11);
+        color: var(--sds-clr-red-09);
       }
     }
 
