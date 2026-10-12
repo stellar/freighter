@@ -166,7 +166,7 @@ describe("AssetDetail header delta scope", () => {
     });
   });
 
-  it("drops the inspected price while an operation modal hides the chart", async () => {
+  it("keeps the chart and its delta under an operation sheet", async () => {
     jest.useFakeTimers();
     const operation = {
       action: "Received",
@@ -211,17 +211,18 @@ describe("AssetDetail header delta scope", () => {
     expect(price()).toHaveTextContent("$0.22");
 
     fireEvent.click(screen.getByTestId("history-item"));
-    expect(screen.queryByTestId("TokenPriceChart")).toBeNull();
-    fireEvent.click(screen.getByTestId("LoadingBackground"));
+    expect(screen.getByTestId("TokenPriceChart")).toBeInTheDocument();
+    fireEvent.click(
+      document.querySelector(".LoadingBackground--isFullScreen") as Element,
+    );
     act(() => {
       jest.advanceTimersByTime(SLIDEUP_MODAL_TRANSITION_MS);
     });
 
-    // The remounted stub has reported nothing: spot and the placeholder.
-    expect(screen.getByTestId("TokenPriceChart")).toBeInTheDocument();
-    expect(price()).toHaveTextContent("$0.27");
-    expect(delta().textContent).toBe("");
-    expect(delta().querySelector(".AssetDetail__delta-ghost")).not.toBeNull();
+    // The chart stayed mounted and will not report again, so the header must
+    // still hold its last report rather than the placeholder.
+    expect(price()).toHaveTextContent("$0.22");
+    expect(delta()).toHaveTextContent("+$0.02 (10.00%)");
 
     await act(async () => {
       await Promise.resolve();

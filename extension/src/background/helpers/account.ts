@@ -121,7 +121,18 @@ export const getAllowListSegment = async ({
   return allowListByKey;
 };
 
-export const setAllowListDomain = async ({
+// Allowlist updates read the whole allowlist and write it back. Run them one
+// at a time so that concurrent updates (for example, two dApps calling
+// disconnect) don't overwrite each other.
+let allowListQueue: Promise<unknown> = Promise.resolve();
+
+const withAllowListLock = <T>(fn: () => Promise<T>): Promise<T> => {
+  const result = allowListQueue.then(fn);
+  allowListQueue = result.catch(() => undefined);
+  return result;
+};
+
+export const setAllowListDomain = ({
   publicKey,
   networkDetails,
   domain,
@@ -131,28 +142,30 @@ export const setAllowListDomain = async ({
   networkDetails: NetworkDetails;
   domain: string;
   localStore: DataStorageAccess;
-}) => {
-  const allowList = (await localStore.getItem(ALLOWLIST_ID)) || {};
-  const allowListByNetwork = { ...allowList[networkDetails.networkName] };
-  const allowListPublicKeyArray: string[] = allowListByNetwork[publicKey] || [];
+}) =>
+  withAllowListLock(async () => {
+    const allowList = (await localStore.getItem(ALLOWLIST_ID)) || {};
+    const allowListByNetwork = { ...allowList[networkDetails.networkName] };
+    const allowListPublicKeyArray: string[] =
+      allowListByNetwork[publicKey] || [];
 
-  if (allowListPublicKeyArray.includes(domain)) {
+    if (allowListPublicKeyArray.includes(domain)) {
+      return allowListPublicKeyArray;
+    }
+
+    allowListPublicKeyArray.push(domain);
+    await localStore.setItem(ALLOWLIST_ID, {
+      ...allowList,
+      [networkDetails.networkName]: {
+        ...allowListByNetwork,
+        [publicKey]: allowListPublicKeyArray,
+      },
+    });
+
     return allowListPublicKeyArray;
-  }
-
-  allowListPublicKeyArray.push(domain);
-  await localStore.setItem(ALLOWLIST_ID, {
-    ...allowList,
-    [networkDetails.networkName]: {
-      ...allowListByNetwork,
-      [publicKey]: allowListPublicKeyArray,
-    },
   });
 
-  return allowListPublicKeyArray;
-};
-
-export const removeAllowListDomain = async ({
+export const removeAllowListDomain = ({
   publicKey,
   networkName,
   domain,
@@ -162,29 +175,31 @@ export const removeAllowListDomain = async ({
   networkName: string;
   domain: string;
   localStore: DataStorageAccess;
-}) => {
-  const allowList = (await localStore.getItem(ALLOWLIST_ID)) || {};
-  const allowListByNetwork = { ...allowList[networkName] };
-  const allowListPublicKeyArray: string[] = allowListByNetwork[publicKey] || [];
+}) =>
+  withAllowListLock(async () => {
+    const allowList = (await localStore.getItem(ALLOWLIST_ID)) || {};
+    const allowListByNetwork = { ...allowList[networkName] };
+    const allowListPublicKeyArray: string[] =
+      allowListByNetwork[publicKey] || [];
 
-  if (!allowListPublicKeyArray.includes(domain)) {
+    if (!allowListPublicKeyArray.includes(domain)) {
+      return allowListPublicKeyArray;
+    }
+
+    const editedAllowList = allowListPublicKeyArray.filter(
+      (item) => item !== domain,
+    );
+
+    await localStore.setItem(ALLOWLIST_ID, {
+      ...allowList,
+      [networkName]: {
+        ...allowListByNetwork,
+        [publicKey]: editedAllowList,
+      },
+    });
+
     return allowListPublicKeyArray;
-  }
-
-  const editedAllowList = allowListPublicKeyArray.filter(
-    (item) => item !== domain,
-  );
-
-  await localStore.setItem(ALLOWLIST_ID, {
-    ...allowList,
-    [networkName]: {
-      ...allowListByNetwork,
-      [publicKey]: editedAllowList,
-    },
   });
-
-  return allowListPublicKeyArray;
-};
 
 export const getIsMemoValidationEnabled = async ({
   localStore,
