@@ -127,9 +127,9 @@ test("Token detail paints a negative range red — delta text and chart", async 
   await expect(delta).toHaveText("-$0.0602 (12.12%)", { timeout: 30000 });
   await expect(page.getByTestId("TokenPriceChart__polyline")).toBeVisible();
 
-  // The real stylesheet, not just the class names: both the delta text and
-  // the chart's stroke resolve to the SDS red-09 token — the chart artwork is
-  // red too, not the green a rising range draws.
+  // The real stylesheet, not just the class names: the delta text resolves to
+  // Error/Text (red-11) and the chart's stroke to Error/Foreground (red-09) —
+  // the chart artwork is red too, not the green a rising range draws.
   const colors = await page.evaluate(() => {
     const resolve = (token: string) => {
       const probe = document.createElement("span");
@@ -140,6 +140,7 @@ test("Token detail paints a negative range red — delta text and chart", async 
       return value;
     };
     const red = resolve("--sds-clr-red-09");
+    const textRed = resolve("--sds-clr-red-11");
     // The grey the neutral/legacy delta draws — the control that proves the
     // red comparison below is not two undefined tokens both inheriting.
     const grey = resolve("--sds-clr-gray-11");
@@ -151,6 +152,7 @@ test("Token detail paints a negative range red — delta text and chart", async 
     ) as SVGElement;
     return {
       red,
+      textRed,
       grey,
       delta: getComputedStyle(deltaEl).color,
       // The artwork is drawn in `currentColor`, so the resolved stroke is the
@@ -160,7 +162,8 @@ test("Token detail paints a negative range red — delta text and chart", async 
   });
 
   expect(colors.red).not.toBe(colors.grey);
-  expect(colors.delta).toBe(colors.red);
+  expect(colors.textRed).not.toBe(colors.red);
+  expect(colors.delta).toBe(colors.textRed);
   expect(colors.stroke).toBe(colors.red);
 });
 

@@ -90,8 +90,10 @@
     font-weight: var(--sds-fw-medium);
     line-height: pxToRem(20px);
     margin-top: pxToRem(8px);
+    // Success/Text/Primary. Text and chart artwork use different steps in
+    // the design, so this does not track `.LineChart--positive`.
     &.positive {
-      color: var(--sds-clr-green-10);
+      color: var(--sds-clr-green-11);
     }
 
     &.negative {
@@ -116,12 +118,13 @@
       min-height: pxToRem(20px);
 
       // Red is scoped to this path deliberately. The chart section reports a
-      // three-state direction, where "negative" means a genuine loss and
-      // matches the chart's own red artwork. The `.negative` above stays grey
-      // for the legacy branch, whose `getPriceDeltaColor` also labels a flat
-      // zero "negative" — reconciling the two is the §13 follow-up.
+      // three-state direction, where "negative" means a genuine loss. The
+      // `.negative` above stays grey for the legacy branch, whose
+      // `getPriceDeltaColor` also labels a flat zero "negative" — reconciling
+      // the two is the §13 follow-up. Error/Text/Primary, a darker step than
+      // the chart's red line.
       &.negative {
-        color: var(--sds-clr-red-09);
+        color: var(--sds-clr-red-11);
       }
     }
 
