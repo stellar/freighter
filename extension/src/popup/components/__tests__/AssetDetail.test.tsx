@@ -1,5 +1,5 @@
 import React from "react";
-import { render, waitFor, screen } from "@testing-library/react";
+import { render, waitFor, screen, fireEvent } from "@testing-library/react";
 import BigNumber from "bignumber.js";
 
 import { AssetDetail } from "popup/components/account/AssetDetail";
@@ -235,6 +235,49 @@ describe("AssetDetail", () => {
     );
     await waitFor(() => screen.getByTestId("AssetDetail__list"));
     expect(screen.getByTestId("AssetDetail__list")).not.toBeEmptyDOMElement();
+  });
+  it("keeps the asset detail behind an opened transaction", async () => {
+    const props = {
+      handleClose: () => null,
+      accountBalances: {
+        balances: [
+          {
+            available: new BigNumber(10),
+            token: { type: "native", code: "XLM" },
+            total: new BigNumber(10),
+          },
+        ],
+      } as any,
+      selectedAsset: "native",
+      historyData: mockHistoryData,
+    };
+
+    render(
+      <Wrapper
+        routes={[ROUTES.account]}
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.PASSWORD_CREATED,
+            publicKey: "G1",
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: TESTNET_NETWORK_DETAILS,
+            isHideDustEnabled: false,
+          },
+        }}
+      >
+        <AssetDetail {...props} />
+      </Wrapper>,
+    );
+    await waitFor(() => screen.getByTestId("history-item"));
+    fireEvent.click(screen.getByTestId("history-item"));
+
+    await waitFor(() => screen.getByTestId("TransactionDetailModal"));
+    // The sheet's backdrop is translucent, so the asset detail has to stay
+    // rendered underneath it.
+    expect(screen.getByTestId("AssetDetail")).toBeInTheDocument();
   });
   it("should display all balances", async () => {
     const props = {

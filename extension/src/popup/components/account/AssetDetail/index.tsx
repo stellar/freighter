@@ -226,17 +226,7 @@ export const AssetDetail = ({
   const isShowingSwap = !isSorobanAsset && !isLpShare;
   const isShowingSend = hasBalance;
 
-  return activeAssetId ? (
-    <SlideupModal
-      isModalOpen={activeOperation !== null}
-      setIsModalOpen={() => setActiveAssetId(null)}
-    >
-      <TransactionDetail
-        activeOperation={activeOperation}
-        networkDetails={networkDetails}
-      />
-    </SlideupModal>
-  ) : (
+  return (
     <React.Fragment>
       <View>
         <SubviewHeader
@@ -490,6 +480,17 @@ export const AssetDetail = ({
             </div>
           </SlideupModal>
         )}
+        {/* The full-screen backdrop also covers the sticky Send/Swap bar */}
+        <SlideupModal
+          isModalOpen={activeOperation !== null}
+          setIsModalOpen={() => setActiveAssetId(null)}
+          hasBackdrop
+        >
+          <TransactionDetail
+            activeOperation={activeOperation}
+            networkDetails={networkDetails}
+          />
+        </SlideupModal>
       </View>
     </React.Fragment>
   );
