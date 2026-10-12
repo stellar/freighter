@@ -78,6 +78,34 @@ test("Token detail renders the price chart, stats, and about card", async ({
     "+$0.0014 (0.86%)",
   );
   expect(await page.getByTestId("TokenPriceChart__delta").count()).toBe(0);
+
+  // Success/Text (green-11) for the delta, Green/10 for the chart's stroke.
+  const colors = await page.evaluate(() => {
+    const resolve = (token: string) => {
+      const probe = document.createElement("span");
+      probe.style.color = `var(${token})`;
+      document.body.appendChild(probe);
+      const value = getComputedStyle(probe).color;
+      probe.remove();
+      return value;
+    };
+    const deltaEl = document.querySelector(
+      '[data-testid="AssetDetail__delta"]',
+    ) as HTMLElement;
+    const polyline = document.querySelector(
+      '[data-testid="TokenPriceChart__polyline"]',
+    ) as SVGElement;
+    return {
+      textGreen: resolve("--sds-clr-green-11"),
+      green: resolve("--sds-clr-green-10"),
+      delta: getComputedStyle(deltaEl).color,
+      stroke: getComputedStyle(polyline).stroke,
+    };
+  });
+  expect(colors.textGreen).not.toBe(colors.green);
+  expect(colors.delta).toBe(colors.textGreen);
+  expect(colors.stroke).toBe(colors.green);
+
   await expect(page.getByRole("tab", { name: "1D" })).toHaveAttribute(
     "aria-selected",
     "true",
