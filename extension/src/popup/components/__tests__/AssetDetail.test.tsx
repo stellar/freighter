@@ -452,6 +452,26 @@ describe("AssetDetail", () => {
       );
     });
 
+    it("falls back to the symbol when the token's name is missing", async () => {
+      const contractId =
+        "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABSC4";
+      renderContractToken(
+        {
+          token: { code: "TKN", issuer: { key: contractId } },
+          contractId,
+          total: new BigNumber(100),
+          decimals: 7,
+          symbol: "TKN",
+        },
+        `TKN:${contractId}`,
+      );
+
+      await waitFor(() => screen.getByTestId("AssetDetail"));
+      expect(
+        screen.getByTestId("AssetDetail").querySelector(".AssetDetail__title"),
+      ).toHaveTextContent(/^TKN$/);
+    });
+
     it("keeps the code as the title for a classic asset's SAC", async () => {
       const issuer = "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN";
       const contractId = new Asset("USDC", issuer).contractId(

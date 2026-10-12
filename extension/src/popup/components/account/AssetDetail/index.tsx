@@ -311,6 +311,8 @@ export const AssetDetail = ({
     isSorobanBalance(selectedBalance) &&
     getTokenType(selectedAsset, networkDetails.networkPassphrase) ===
       TokenType.Soroban &&
+    // Typed as string, but token-details responses can omit it.
+    !!selectedBalance.name &&
     !isSacContract(
       selectedBalance.name,
       selectedBalance.contractId,
@@ -410,9 +412,7 @@ export const AssetDetail = ({
                   helper with no access to `t`, and the name is translatable. */}
               {isLpShare && "liquidityPoolId" in selectedBalance
                 ? `LP: ${truncateString(selectedBalance.liquidityPoolId as string, 12)}`
-                : isCustomToken &&
-                    isSorobanBalance(selectedBalance) &&
-                    selectedBalance.name
+                : isCustomToken && isSorobanBalance(selectedBalance)
                   ? selectedBalance.name
                   : (getTokenType(
                       selectedAsset,
