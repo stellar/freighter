@@ -67,6 +67,11 @@
     font-weight: var(--sds-fw-regular);
     letter-spacing: pxToRem(-1.28px);
     line-height: pxToRem(40px);
+
+    // Default/Text/Secondary
+    &--placeholder {
+      color: var(--sds-clr-gray-11);
+    }
   }
 
   // Text/MD from the design system: 16/24. Applies to both delta paths — the

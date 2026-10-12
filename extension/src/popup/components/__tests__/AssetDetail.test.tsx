@@ -450,6 +450,9 @@ describe("AssetDetail", () => {
       expect(screen.getByTestId("AssetDetail__price")).toHaveTextContent(
         /^\$--$/,
       );
+      expect(screen.getByTestId("AssetDetail__price")).toHaveClass(
+        "AssetDetail__price--placeholder",
+      );
     });
 
     it("falls back to the symbol when the token's name is missing", async () => {

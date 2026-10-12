@@ -326,6 +326,7 @@ export const AssetDetail = ({
   // alone keeps an inspected price off a hidden chart's header.
   const inspectedHeaderPrice = isChartShown ? shownDelta.inspectedPrice : null;
   const headerPrice = inspectedHeaderPrice ?? assetPrice?.currentPrice;
+  const isPricePlaceholder = !headerPrice && isSorobanAsset;
 
   return (
     <React.Fragment>
@@ -430,7 +431,9 @@ export const AssetDetail = ({
                 in progress. Inspecting describes a chart point, so it uses
                 the chart's precision, as the delta already does. */}
             <div
-              className="AssetDetail__price"
+              className={`AssetDetail__price${
+                isPricePlaceholder ? " AssetDetail__price--placeholder" : ""
+              }`}
               data-testid="AssetDetail__price"
             >
               {inspectedHeaderPrice
@@ -439,7 +442,7 @@ export const AssetDetail = ({
                   ? `$${formatAmount(
                       roundUsdValue(new BigNumber(headerPrice).toString()),
                     )}`
-                  : isSorobanAsset
+                  : isPricePlaceholder
                     ? `$${NO_FIAT_VALUE}`
                     : null}
             </div>
