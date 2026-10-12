@@ -15,7 +15,8 @@ on:
       firefox_channel:
         description:
           AMO channel. "listed" goes live as soon as AMO approves it; AMO
-          cannot hold an approved version.
+          cannot hold an approved version. "unlisted" uses up this version
+          number on AMO, so a later listed release needs a new version.
         type: choice
         options:
           - none
