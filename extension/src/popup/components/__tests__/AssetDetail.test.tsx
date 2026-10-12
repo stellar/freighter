@@ -403,6 +403,80 @@ describe("AssetDetail", () => {
     );
   });
 
+  describe("SEP-41 header", () => {
+    const renderContractToken = (balance: any, selectedAsset: string) =>
+      render(
+        <Wrapper
+          routes={[ROUTES.account]}
+          state={{
+            auth: {
+              error: null,
+              applicationState: ApplicationState.PASSWORD_CREATED,
+              publicKey: "G1",
+              allAccounts: mockAccounts,
+            },
+            settings: {
+              networkDetails: TESTNET_NETWORK_DETAILS,
+            },
+          }}
+        >
+          <AssetDetail
+            handleClose={() => null}
+            accountBalances={{ balances: [balance] } as any}
+            selectedAsset={selectedAsset}
+            historyData={mockHistoryData}
+          />
+        </Wrapper>,
+      );
+
+    it("shows the default icon, the token name and $-- for a custom token", async () => {
+      const contractId =
+        "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABSC4";
+      renderContractToken(
+        {
+          token: { code: "TKN", issuer: { key: contractId } },
+          contractId,
+          total: new BigNumber(100),
+          decimals: 7,
+          name: "Token Name",
+          symbol: "TKN",
+        },
+        `TKN:${contractId}`,
+      );
+
+      await waitFor(() => screen.getByTestId("AssetDetail"));
+      expect(screen.getByTestId("AssetDetail__soroban-icon")).toBeVisible();
+      expect(screen.getByText("Token Name")).toBeInTheDocument();
+      expect(screen.getByTestId("AssetDetail__price")).toHaveTextContent(
+        /^\$--$/,
+      );
+    });
+
+    it("keeps the code as the title for a classic asset's SAC", async () => {
+      const issuer = "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN";
+      const contractId = new Asset("USDC", issuer).contractId(
+        TESTNET_NETWORK_DETAILS.networkPassphrase,
+      );
+      renderContractToken(
+        {
+          token: { code: "USDC", issuer: { key: contractId } },
+          contractId,
+          total: new BigNumber(100),
+          decimals: 7,
+          name: `USDC:${issuer}`,
+          symbol: "USDC",
+        },
+        `USDC:${contractId}`,
+      );
+
+      await waitFor(() => screen.getByTestId("AssetDetail"));
+      expect(screen.queryByText(`USDC:${issuer}`)).toBeNull();
+      expect(
+        screen.getByTestId("AssetDetail").querySelector(".AssetDetail__title"),
+      ).toHaveTextContent(/^USDC$/);
+    });
+  });
+
   describe("Action Buttons", () => {
     it("should show both send and swap buttons for native asset with balance", async () => {
       const props = {

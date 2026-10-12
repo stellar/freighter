@@ -43,6 +43,12 @@
       width: 40px;
       height: auto;
     }
+
+    svg {
+      display: block;
+      width: 40px;
+      height: 40px;
+    }
   }
 
   // 8px below the 40px icon, per the design (icon bottom y=40, title top
@@ -50,11 +56,6 @@
   &__title {
     margin-top: pxToRem(8px);
     color: var(--sds-clr-gray-09);
-  }
-
-  &__subtitle {
-    margin-top: pxToRem(12px);
-    font-size: pxToRem(12px);
   }
 
   // Display/SM from the design system: 32/40, regular, -4% tracking. Same
