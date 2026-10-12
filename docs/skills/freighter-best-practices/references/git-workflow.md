@@ -75,9 +75,11 @@ Releases are managed by the `newRelease.yml` GitHub Actions workflow:
 
 Submission workflows by channel:
 
-- **`submitProduction.yml`** -- single workflow that handles both Chrome Web
-  Store upload and Firefox AMO submission in the same job, then creates the
-  semver git tag and GitHub release
+- **`submitProduction.yml`** -- creates the semver git tag and GitHub release,
+  then submits to the stores per its inputs: `chrome_mode` (`none` / `draft`
+  (default) / `publish`) and `firefox_channel` (`none` (default) / `unlisted` /
+  `listed`). The defaults submit nothing publicly — a regular release picks
+  `publish` and `listed`
 - **`submitBeta.yml`** -- beta/preview submission
 - **npm** -- `deployFreighterApiProduction.yml` publishes
   `@stellar/freighter-api` to the npm registry

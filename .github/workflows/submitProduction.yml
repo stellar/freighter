@@ -12,6 +12,26 @@ on:
           tag)
         type: string
         default: ""
+      firefox_channel:
+        description:
+          AMO channel. "listed" goes live as soon as AMO approves it; AMO
+          cannot hold an approved version.
+        type: choice
+        options:
+          - none
+          - unlisted
+          - listed
+        default: none
+      chrome_mode:
+        description:
+          Chrome Web Store. "draft" uploads only; submit it from the dashboard
+          (uncheck auto-publish to hold it). "publish" goes live on approval.
+        type: choice
+        options:
+          - none
+          - draft
+          - publish
+        default: draft
 jobs:
   bump-version:
     name: Bump Package Version and Submit Extension
@@ -104,17 +124,19 @@ jobs:
           prerelease: false
           commitish: ${{ steps.checkout_sha.outputs.sha }}
       - name: Build for Firefox
+        if: ${{ inputs.firefox_channel != 'none' }}
         id: web-ext-build
         uses: kewisch/action-web-ext@fe10addf5d5e5ba6b78ffde720dd488a27d10e8c #v1
         with:
           cmd: build
           source: ./extension/build
       - name: Submit extension to Firefox
+        if: ${{ inputs.firefox_channel != 'none' }}
         uses: kewisch/action-web-ext@fe10addf5d5e5ba6b78ffde720dd488a27d10e8c #v1
         with:
           cmd: sign
           source: ${{ steps.web-ext-build.outputs.target }}
-          channel: listed
+          channel: ${{ inputs.firefox_channel }}
           apiKey: ${{ secrets.AMO_SIGN_KEY }}
           apiSecret: ${{ secrets.AMO_SIGN_SECRET }}
           timeout: 900000
@@ -127,6 +149,7 @@ jobs:
         run: zip -qq -r ./build_chrome.zip *
         working-directory: ./extension/build
       - name: Submit extension to Chrome
+        if: ${{ inputs.chrome_mode != 'none' }}
         uses: mnao305/chrome-extension-upload@4008e29e13c144d0f6725462cbd49b7c291b4928 #v5.0.0
         with:
           file-path: ./extension/build/build_chrome.zip
@@ -134,6 +157,7 @@ jobs:
           client-id: ${{ secrets.EXTENSION_CLIENT_ID }}
           client-secret: ${{ secrets.EXTENSION_CLIENT_SECRET }}
           refresh-token: ${{ secrets.EXTENSION_REFRESH_TOKEN }}
+          publish: ${{ inputs.chrome_mode == 'publish' }}
       # - name: Submit extension to Edge
       #   uses: wdzeng/edge-addon@v1
       #   with:
@@ -162,8 +186,9 @@ jobs:
           SLACK_MESSAGE:
             "https://github.com/stellar/freighter/releases/tag/${{
             steps.package_version.outputs.version }}"
-          SLACK_TITLE:
-            Freighter v${{ steps.package_version.outputs.version }} has been
-            submitted to app stores for review!
+          SLACK_TITLE: >-
+            Freighter v${{ steps.package_version.outputs.version }} built
+            (Chrome: ${{ inputs.chrome_mode }}, Firefox: ${{
+            inputs.firefox_channel }})
           SLACK_USERNAME: Freighter Administrative Assistant
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
