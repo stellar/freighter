@@ -257,9 +257,8 @@ export const AssetDetail = ({
     isPriceHistoryEnabled && isMainnet(networkDetails) && !isLpShare;
   // The scope tag cannot tell a remount from a return: hiding the chart and
   // showing it again for the same scope would revive the delta under the
-  // remounted chart's default range. Drop it while the chart is hidden — off
-  // the path, or unmounted under an operation modal.
-  if ((!isChartShown || activeAssetId) && rangeDelta.delta !== LOADING_DELTA) {
+  // remounted chart's default range. Drop it while the chart is hidden.
+  if (!isChartShown && rangeDelta.delta !== LOADING_DELTA) {
     setRangeDelta({ scope: scopeKey, delta: LOADING_DELTA });
   }
 
@@ -312,21 +311,10 @@ export const AssetDetail = ({
   // See the `AssetDetail__price` div below for why this falls back to spot.
   // The guard mirrors the render-time `LOADING_DELTA` reset above: either
   // alone keeps an inspected price off a hidden chart's header.
-  const inspectedHeaderPrice =
-    isChartShown && !activeAssetId ? shownDelta.inspectedPrice : null;
+  const inspectedHeaderPrice = isChartShown ? shownDelta.inspectedPrice : null;
   const headerPrice = inspectedHeaderPrice ?? assetPrice?.currentPrice;
 
-  return activeAssetId ? (
-    <SlideupModal
-      isModalOpen={activeOperation !== null}
-      setIsModalOpen={() => setActiveAssetId(null)}
-    >
-      <TransactionDetail
-        activeOperation={activeOperation}
-        networkDetails={networkDetails}
-      />
-    </SlideupModal>
-  ) : (
+  return (
     <React.Fragment>
       <View>
         <SubviewHeader
@@ -655,6 +643,17 @@ export const AssetDetail = ({
             </div>
           </SlideupModal>
         )}
+        {/* The full-screen backdrop also covers the sticky Send/Swap bar */}
+        <SlideupModal
+          isModalOpen={activeOperation !== null}
+          setIsModalOpen={() => setActiveAssetId(null)}
+          hasBackdrop
+        >
+          <TransactionDetail
+            activeOperation={activeOperation}
+            networkDetails={networkDetails}
+          />
+        </SlideupModal>
       </View>
     </React.Fragment>
   );
