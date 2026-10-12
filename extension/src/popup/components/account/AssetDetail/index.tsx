@@ -17,14 +17,14 @@ import {
   isNativeBalance,
 } from "@shared/helpers/assetIdentity";
 import IconEllipsis from "popup/assets/icon-ellipsis.svg";
+import IconSoroban from "popup/assets/icon-soroban.svg?react";
 import {
-  displaySorobanId,
   getAvailableBalance,
   getIssuerFromBalance,
   isSorobanIssuer,
 } from "popup/helpers/account";
 import { useAssetDomain } from "popup/helpers/useAssetDomain";
-import { formatTokenAmount } from "popup/helpers/soroban";
+import { formatTokenAmount, isSacContract } from "popup/helpers/soroban";
 import {
   getAssetFromCanonical,
   isMainnet,
@@ -57,7 +57,6 @@ import {
   getPriceDeltaColor,
   isSorobanBalance,
 } from "popup/helpers/balance";
-import { CopyValue } from "popup/components/CopyValue";
 import { Shimmer } from "popup/components/Shimmer";
 import {
   AssetType,
@@ -305,6 +304,20 @@ export const AssetDetail = ({
   const hasBalance =
     selectedBalance?.total &&
     new BigNumber(selectedBalance.total).isGreaterThan(0);
+  // A SAC's `name()` is "native" or "CODE:ISSUER", so only a custom SEP-41
+  // token gets its contract name as the title.
+  const isCustomToken =
+    !!selectedBalance &&
+    isSorobanBalance(selectedBalance) &&
+    getTokenType(selectedAsset, networkDetails.networkPassphrase) ===
+      TokenType.Soroban &&
+    // Typed as string, but token-details responses can omit it.
+    !!selectedBalance.name &&
+    !isSacContract(
+      selectedBalance.name,
+      selectedBalance.contractId,
+      networkDetails.networkPassphrase,
+    );
   const isShowingSwap = !isSorobanAsset && !isLpShare;
   const isShowingSend = hasBalance;
 
@@ -313,6 +326,7 @@ export const AssetDetail = ({
   // alone keeps an inspected price off a hidden chart's header.
   const inspectedHeaderPrice = isChartShown ? shownDelta.inspectedPrice : null;
   const headerPrice = inspectedHeaderPrice ?? assetPrice?.currentPrice;
+  const isPricePlaceholder = !headerPrice && isSorobanAsset;
 
   return (
     <React.Fragment>
@@ -387,6 +401,8 @@ export const AssetDetail = ({
                   alt={t("Network icon")}
                   data-testid="AssetDetail__icon"
                 />
+              ) : isSorobanAsset ? (
+                <IconSoroban data-testid="AssetDetail__soroban-icon" />
               ) : null}
             </div>
             <div className="AssetDetail__title">
@@ -397,34 +413,27 @@ export const AssetDetail = ({
                   helper with no access to `t`, and the name is translatable. */}
               {isLpShare && "liquidityPoolId" in selectedBalance
                 ? `LP: ${truncateString(selectedBalance.liquidityPoolId as string, 12)}`
-                : (getTokenType(
-                    selectedAsset,
-                    networkDetails.networkPassphrase,
-                  ) === TokenType.Native
-                    ? t("Stellar Lumens")
-                    : title(
-                        selectedBalance as Exclude<
-                          AssetType,
-                          LiquidityPoolShareAsset
-                        >,
-                      )) || assetDomain}
+                : isCustomToken && isSorobanBalance(selectedBalance)
+                  ? selectedBalance.name
+                  : (getTokenType(
+                      selectedAsset,
+                      networkDetails.networkPassphrase,
+                    ) === TokenType.Native
+                      ? t("Stellar Lumens")
+                      : title(
+                          selectedBalance as Exclude<
+                            AssetType,
+                            LiquidityPoolShareAsset
+                          >,
+                        )) || assetDomain}
             </div>
-            {"contractId" in selectedBalance ? (
-              <div className="AssetDetail__subtitle">
-                <CopyValue
-                  value={selectedBalance.contractId}
-                  displayValue={displaySorobanId(
-                    selectedBalance.contractId,
-                    28,
-                  )}
-                />
-              </div>
-            ) : null}
             {/* Spot, or the inspected point's close while a drag-to-inspect is
                 in progress. Inspecting describes a chart point, so it uses
                 the chart's precision, as the delta already does. */}
             <div
-              className="AssetDetail__price"
+              className={`AssetDetail__price${
+                isPricePlaceholder ? " AssetDetail__price--placeholder" : ""
+              }`}
               data-testid="AssetDetail__price"
             >
               {inspectedHeaderPrice
@@ -433,7 +442,9 @@ export const AssetDetail = ({
                   ? `$${formatAmount(
                       roundUsdValue(new BigNumber(headerPrice).toString()),
                     )}`
-                  : null}
+                  : isPricePlaceholder
+                    ? `$${NO_FIAT_VALUE}`
+                    : null}
             </div>
             {isChartShown ? (
               /* The view's one delta, reported by the chart section. Rendered in
@@ -445,8 +456,8 @@ export const AssetDetail = ({
                 {shownDelta.isLoading ? (
                   <Shimmer
                     className="AssetDetail__delta-ghost"
-                    width="9.125rem"
-                    height="1.5rem"
+                    width="9.5rem"
+                    height="1.25rem"
                   />
                 ) : (
                   shownDelta.text

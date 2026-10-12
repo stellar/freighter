@@ -403,6 +403,103 @@ describe("AssetDetail", () => {
     );
   });
 
+  describe("SEP-41 header", () => {
+    const renderContractToken = (balance: any, selectedAsset: string) =>
+      render(
+        <Wrapper
+          routes={[ROUTES.account]}
+          state={{
+            auth: {
+              error: null,
+              applicationState: ApplicationState.PASSWORD_CREATED,
+              publicKey: "G1",
+              allAccounts: mockAccounts,
+            },
+            settings: {
+              networkDetails: TESTNET_NETWORK_DETAILS,
+            },
+          }}
+        >
+          <AssetDetail
+            handleClose={() => null}
+            accountBalances={{ balances: [balance] } as any}
+            selectedAsset={selectedAsset}
+            historyData={mockHistoryData}
+          />
+        </Wrapper>,
+      );
+
+    it("shows the default icon, the token name and $-- for a custom token", async () => {
+      const contractId =
+        "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABSC4";
+      renderContractToken(
+        {
+          token: { code: "TKN", issuer: { key: contractId } },
+          contractId,
+          total: new BigNumber(100),
+          decimals: 7,
+          name: "Token Name",
+          symbol: "TKN",
+        },
+        `TKN:${contractId}`,
+      );
+
+      await waitFor(() => screen.getByTestId("AssetDetail"));
+      expect(screen.getByTestId("AssetDetail__soroban-icon")).toBeVisible();
+      expect(screen.getByText("Token Name")).toBeInTheDocument();
+      expect(screen.getByTestId("AssetDetail__price")).toHaveTextContent(
+        /^\$--$/,
+      );
+      expect(screen.getByTestId("AssetDetail__price")).toHaveClass(
+        "AssetDetail__price--placeholder",
+      );
+    });
+
+    it("falls back to the symbol when the token's name is missing", async () => {
+      const contractId =
+        "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABSC4";
+      renderContractToken(
+        {
+          token: { code: "TKN", issuer: { key: contractId } },
+          contractId,
+          total: new BigNumber(100),
+          decimals: 7,
+          symbol: "TKN",
+        },
+        `TKN:${contractId}`,
+      );
+
+      await waitFor(() => screen.getByTestId("AssetDetail"));
+      expect(
+        screen.getByTestId("AssetDetail").querySelector(".AssetDetail__title"),
+      ).toHaveTextContent(/^TKN$/);
+    });
+
+    it("keeps the code as the title for a classic asset's SAC", async () => {
+      const issuer = "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN";
+      const contractId = new Asset("USDC", issuer).contractId(
+        TESTNET_NETWORK_DETAILS.networkPassphrase,
+      );
+      renderContractToken(
+        {
+          token: { code: "USDC", issuer: { key: contractId } },
+          contractId,
+          total: new BigNumber(100),
+          decimals: 7,
+          name: `USDC:${issuer}`,
+          symbol: "USDC",
+        },
+        `USDC:${contractId}`,
+      );
+
+      await waitFor(() => screen.getByTestId("AssetDetail"));
+      expect(screen.queryByText(`USDC:${issuer}`)).toBeNull();
+      expect(
+        screen.getByTestId("AssetDetail").querySelector(".AssetDetail__title"),
+      ).toHaveTextContent(/^USDC$/);
+    });
+  });
+
   describe("Action Buttons", () => {
     it("should show both send and swap buttons for native asset with balance", async () => {
       const props = {
@@ -1238,7 +1335,7 @@ describe("AssetDetail", () => {
       expect(delta().textContent).toBe("");
     });
 
-    it("draws the loading delta as the frame's 146 × 24 shimmer pill", async () => {
+    it("draws the loading delta as the frame's 152 × 20 shimmer pill", async () => {
       jest.useFakeTimers();
       historySpy.mockImplementation(({ range }) =>
         range === "1Y" ? new Promise(() => {}) : Promise.resolve(HISTORY_1D),
@@ -1256,8 +1353,8 @@ describe("AssetDetail", () => {
       expect(pill).not.toBeNull();
       expect(pill).toHaveClass("Shimmer", "Shimmer--pill");
       expect(pill).toHaveAttribute("aria-hidden", "true");
-      expect(pill.style.width).toBe("9.125rem");
-      expect(pill.style.height).toBe("1.5rem");
+      expect(pill.style.width).toBe("9.5rem");
+      expect(pill.style.height).toBe("1.25rem");
     });
 
     it("shows no delta text when the range carries no change", async () => {

@@ -9,11 +9,12 @@
 
   &__header {
     align-items: center;
-    color: var(--sds-clr-gray-12);
+    color: var(--sds-clr-gray-11);
     display: flex;
     font-size: pxToRem(14px);
     font-weight: var(--sds-fw-medium);
     gap: pxToRem(8px);
+    line-height: pxToRem(20px);
 
     svg {
       color: var(--sds-clr-gray-09);
@@ -41,6 +42,7 @@
     align-items: center;
     display: flex;
     font-size: pxToRem(14px);
+    font-weight: var(--sds-fw-medium);
     justify-content: space-between;
     line-height: pxToRem(20px);
 
