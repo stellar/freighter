@@ -87,42 +87,10 @@
     .ParameterValue {
       margin-top: pxToRem(8px);
       word-break: break-word;
-    }
-  }
-
-  .Parameter {
-    text-overflow: ellipsis;
-    overflow: hidden;
-    color: var(--sds-clr-gray-12);
-    white-space: pre;
-
-    &:not(:last-child) {
-      margin-bottom: pxToRem(12px);
-    }
-
-    .ParameterName {
-      color: var(--sds-clr-gray-11);
-    }
-
-    .CopyText {
-      width: 100%;
-
-      .Floater {
-        .CopyText__content {
-          width: 100%;
-
-          .CopyValue {
-            width: 100%;
-
-            .Value {
-              width: 100%;
-              display: block;
-              overflow: hidden;
-              text-overflow: ellipsis;
-            }
-          }
-        }
-      }
+      // A rendered SCMap puts one signed entry on each line. Without this the
+      // browser collapses those newlines and the indentation into a single
+      // run, and `textContent` assertions cannot see that happen.
+      white-space: pre-wrap;
     }
   }
 }

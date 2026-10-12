@@ -98,7 +98,6 @@ export const AuthEntries = ({ entries }: AuthEntriesProps) => {
                   <KeyValueInvokeHostFnArgs
                     args={detail.args}
                     contractId={detail.contractId}
-                    fnName={detail.fnName}
                     isAuthEntry
                   />
                 </div>
