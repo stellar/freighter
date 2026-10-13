@@ -197,7 +197,7 @@ export const SendingTransaction = ({
                     variant="tertiary"
                     onClick={(e) => {
                       e.preventDefault();
-                      window.close();
+                      navigateTo(ROUTES.account, navigate);
                     }}
                   >
                     {t("Close")}
