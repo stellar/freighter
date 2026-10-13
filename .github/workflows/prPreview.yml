@@ -281,7 +281,18 @@ jobs:
         run: corepack enable
 
       - name: Install + build extension (production)
-        run: yarn && yarn build:freighter-api && yarn build:extension:production
+        # Remote flags (e.g. use_balances_v2) only load when AMPLITUDE_KEY is
+        # set too: the experiment client starts after analytics init.
+        # BUILD_TYPE=beta: previews get extension.beta's flag targeting and
+        # analytics cohort ("Bundle Id" user property), not production's.
+        env:
+          AMPLITUDE_KEY: ${{ secrets.AMPLITUDE_KEY }}
+          AMPLITUDE_EXPERIMENT_DEPLOYMENT_KEY: ${{ secrets.AMPLITUDE_EXPERIMENT_DEPLOYMENT_KEY }}
+        run: >
+          yarn && yarn build:freighter-api && yarn build:extension:production
+          --env AMPLITUDE_KEY="$AMPLITUDE_KEY"
+          AMPLITUDE_EXPERIMENT_DEPLOYMENT_KEY="$AMPLITUDE_EXPERIMENT_DEPLOYMENT_KEY"
+          BUILD_TYPE="beta"
 
       - name: Use BETA icons
         run: |
