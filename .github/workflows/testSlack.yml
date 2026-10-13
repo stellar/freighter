@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Slack Notification
-        uses: rtCamp/action-slack-notify@07cbdbfd6c6190970778d8f98f11d073b2932aae #v2.3.3
+        uses: rtCamp/action-slack-notify@6f7cba18378f7bc4a96367dc93049fc2fd72d87e #v2.3.3
         env:
           MSG_MINIMAL: true
           SLACK_CHANNEL: team-wallet-eng
