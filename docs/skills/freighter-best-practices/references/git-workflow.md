@@ -78,9 +78,9 @@ Submission workflows by channel:
 - **`submitProduction.yml`** -- creates the semver git tag and GitHub release,
   then submits to the stores per its inputs: `chrome_mode` (`none` / `draft`
   (default) / `publish`) and `firefox_channel` (`none` (default) / `unlisted` /
-  `listed`). The defaults publish nothing to the stores, but the tag, GitHub
-  release and Slack post still happen — a regular release picks `publish` and
-  `listed`
+  `listed`). By default, Chrome receives a draft upload and Firefox is skipped;
+  neither store publishes this build. The tag, GitHub release and Slack post
+  still happen. For a regular store release, pick `publish` and `listed`.
 - **`submitBeta.yml`** -- beta/preview submission
 - **npm** -- `deployFreighterApiProduction.yml` publishes
   `@stellar/freighter-api` to the npm registry
