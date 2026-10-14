@@ -2,7 +2,7 @@
   "name": "Varial Wallet",
   "version": "5.19.1",
   "version_name": "5.19.1",
-  "description": "Varial is a non-custodial Stellar wallet for trading, earning, and discovering apps on Stellar.",
+  "description": "Varial is a non-custodial Stellar wallet for trading, connecting to defi, and discovering apps on Stellar.",
   "browser_specific_settings": {
     "gecko": {
       "id": "{3ee0dd4e-8c64-4b92-b539-25718a10f62f}",
