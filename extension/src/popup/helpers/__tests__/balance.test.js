@@ -3,7 +3,7 @@ import BigNumber from "bignumber.js";
 import { TESTNET_NETWORK_DETAILS } from "@shared/constants/stellar";
 import { defaultBlockaidScanAssetResult } from "@shared/helpers/stellar";
 
-import { getBalanceByKey, findAssetBalance, sortBalancesByValue, getBalanceCanonicalKey } from "../balance";
+import { getBalanceByKey, findAssetBalance, sortBalancesByValue, getBalanceCanonicalKey, getTotalUsd } from "../balance";
 
 const CONTRACT_ID = "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC";
 const TOKEN_BALANCE_KEY = `DT:${CONTRACT_ID}`;
@@ -268,5 +268,42 @@ describe("getBalanceCanonicalKey", () => {
     expect(getBalanceCanonicalKey(CLASSIC_USDC)).not.toBe(
       getBalanceCanonicalKey(SOROBAN_USDC),
     );
+  });
+});
+
+describe("SEP-41 balances are valued in whole units", () => {
+  const SOLVBTC_ID = "CBIJBDNZNF4X35BJ4FFZWCDBSCKOP5NB4PLG4SNENRMLAPYG4P5FM6VN";
+  const SOLVBTC_CANONICAL = `SolvBTC:${SOLVBTC_ID}`;
+  const USDC_ISSUER = "GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM";
+  const USDC_CANONICAL = `USDC:${USDC_ISSUER}`;
+  // Raw i128 227 at 8 decimals = 0.00000227 SolvBTC ≈ $0.185.
+  const SOLVBTC = {
+    token: { code: "SolvBTC", issuer: { key: SOLVBTC_ID } },
+    contractId: SOLVBTC_ID,
+    decimals: 8,
+    total: new BigNumber("227"),
+    available: new BigNumber("227"),
+    name: "Solv BTC",
+    symbol: "SolvBTC",
+  };
+  const USDC = {
+    token: { code: "USDC", issuer: { key: USDC_ISSUER } },
+    total: new BigNumber("100"),
+    available: new BigNumber("100"),
+  };
+  const prices = {
+    [SOLVBTC_CANONICAL]: { currentPrice: "81597.03" },
+    [USDC_CANONICAL]: { currentPrice: "1" },
+  };
+
+  it("sorts by the scaled value", () => {
+    const result = sortBalancesByValue([SOLVBTC, USDC], prices);
+    expect(result[0]).toBe(USDC);
+    expect(result[1]).toBe(SOLVBTC);
+  });
+
+  it("sums the scaled value into the total", () => {
+    const total = getTotalUsd(prices, [SOLVBTC, USDC]);
+    expect(total.toNumber()).toBeCloseTo(100.18522526, 6);
   });
 });

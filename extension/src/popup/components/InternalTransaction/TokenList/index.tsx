@@ -17,7 +17,10 @@ import {
   formatAmount,
   roundUsdValue,
 } from "popup/helpers/formatters";
-import { sortBalancesByValue } from "popup/helpers/balance";
+import {
+  getTotalInWholeUnits,
+  sortBalancesByValue,
+} from "popup/helpers/balance";
 import { AssetIcon } from "popup/components/account/AccountAssets";
 import { title } from "helpers/transaction";
 
@@ -132,7 +135,7 @@ export const TokenList = ({
                       ? `$${formatAmount(
                           roundUsdValue(
                             new BigNumber(usdValue.currentPrice)
-                              .multipliedBy(balance.total)
+                              .multipliedBy(getTotalInWholeUnits(balance))
                               .toString(),
                           ),
                         )}`

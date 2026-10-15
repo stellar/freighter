@@ -30,6 +30,13 @@ export const isClassicBalance = (balance: AssetType): balance is ClassicAsset =>
 export const isSorobanBalance = (balance: AssetType): balance is SorobanAsset =>
   "contractId" in balance;
 
+// SEP-41 totals are raw integers; scale them exactly as the balance display
+// does before multiplying by a whole-token price.
+export const getTotalInWholeUnits = (balance: AssetType): BigNumber =>
+  "contractId" in balance && "decimals" in balance
+    ? new BigNumber(balance.total).shiftedBy(-Number(balance.decimals))
+    : new BigNumber(balance.total);
+
 export const findAssetBalance = (
   balances: AssetType[],
   asset: Asset | { issuer?: string; code: string },
@@ -238,7 +245,7 @@ export const sortBalancesByValue = (
     if (priceStr === undefined || priceStr === null || priceStr === "") {
       return null;
     }
-    const value = new BigNumber(priceStr).multipliedBy(b.total);
+    const value = new BigNumber(priceStr).multipliedBy(getTotalInWholeUnits(b));
     return value.isFinite() ? value : null;
   };
 
@@ -260,7 +267,7 @@ export const getTotalUsd = (prices: ApiTokenPrices, balances: AssetType[]) => {
     if (!priceBalance) {
       return prev;
     }
-    const currentAssetBalance = priceBalance.total;
+    const currentAssetBalance = getTotalInWholeUnits(priceBalance);
     const currentPrice = prices[curr] ? prices[curr].currentPrice : "0";
     const currentUsdBalance = new BigNumber(currentPrice).multipliedBy(
       currentAssetBalance,

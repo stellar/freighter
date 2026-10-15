@@ -14,6 +14,7 @@ import { AccountBalances } from "helpers/hooks/useGetBalances";
 import { getCanonicalFromAsset } from "helpers/stellar";
 import { isSorobanIssuer } from "popup/helpers/account";
 import { formatTokenAmount } from "popup/helpers/soroban";
+import { getTotalInWholeUnits } from "popup/helpers/balance";
 import {
   useIsAssetSuspicious,
   useIsAssetMalicious,
@@ -371,7 +372,7 @@ export const AccountAssets = ({
                   ? `$${formatAmount(
                       roundUsdValue(
                         new BigNumber(assetPrice.currentPrice)
-                          .multipliedBy(rb.total)
+                          .multipliedBy(getTotalInWholeUnits(rb))
                           .toString(),
                       ),
                     )}`
