@@ -22,13 +22,7 @@ import { SelectAssetRows } from "../SelectAssetRows";
 
 import "./styles.scss";
 
-export const ChooseAsset = ({
-  goBack,
-  showHideAssets = false,
-}: {
-  goBack: () => void;
-  showHideAssets?: boolean;
-}) => {
+export const ChooseAsset = ({ goBack }: { goBack: () => void }) => {
   const { t } = useTranslation();
   const location = useLocation();
   const isSorobanSuported = useSelector(settingsSorobanSupportedSelector);
@@ -108,22 +102,6 @@ export const ChooseAsset = ({
         title={t("Your assets")}
         customBackIcon={!data.isManagingAssets ? <Icon.X /> : undefined}
         customBackAction={goBack}
-        rightButton={
-          showHideAssets ? (
-            <Link
-              to={ROUTES.assetVisibility}
-              data-testid="ChooseAssetHideAssetBtn"
-            >
-              <Button
-                size="sm"
-                className="ChooseAsset__hide-btn"
-                variant="tertiary"
-              >
-                <Icon.Settings03 />
-              </Button>
-            </Link>
-          ) : undefined
-        }
       />
       <View.Content hasNoTopPadding>
         <div className="ChooseAsset__wrapper" data-testid="ChooseAssetWrapper">

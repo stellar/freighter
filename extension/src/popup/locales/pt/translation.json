@@ -699,7 +699,6 @@
   "To create a new account you need to send at least 1 XLM to it.": "Para criar uma nova conta, você precisa enviar pelo menos 1 XLM para ela.",
   "To hold {{code}} in your wallet, Stellar requires a trustline. <bold>0.5 XLM will be reserved</bold> from your balance. You can get it back by removing the trustline after your {{code}} balance is zero.": "Para manter {{code}} na sua carteira, a Stellar exige uma linha de confiança. <bold>0,5 XLM serão reservados</bold> do seu saldo. Você pode recuperá-los removendo a linha de confiança após o saldo de {{code}} ficar zerado.",
   "To receive {{tokenCode}}, your wallet needs a trustline on Stellar.": "Para receber {{tokenCode}}, sua carteira precisa de uma linha de confiança na Stellar.",
-  "Toggle Assets": "Alternar Ativos",
   "Token": "Token",
   "Token address": "Endereço do token",
   "Token Code": "Código do token",

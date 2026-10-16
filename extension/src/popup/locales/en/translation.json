@@ -699,7 +699,6 @@
   "To create a new account you need to send at least 1 XLM to it.": "To create a new account you need to send at least 1 XLM to it.",
   "To hold {{code}} in your wallet, Stellar requires a trustline. <bold>0.5 XLM will be reserved</bold> from your balance. You can get it back by removing the trustline after your {{code}} balance is zero.": "To hold {{code}} in your wallet, Stellar requires a trustline. <bold>0.5 XLM will be reserved</bold> from your balance. You can get it back by removing the trustline after your {{code}} balance is zero.",
   "To receive {{tokenCode}}, your wallet needs a trustline on Stellar.": "To receive {{tokenCode}}, your wallet needs a trustline on Stellar.",
-  "Toggle Assets": "Toggle Assets",
   "Token": "Token",
   "Token address": "Token address",
   "Token Code": "Token Code",

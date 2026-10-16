@@ -754,28 +754,4 @@ describe.skip("Manage assets", () => {
       await fireEvent.click(addAssetButton);
     });
   });
-
-  it("hide a token", async () => {
-    await initView();
-
-    const navigateToHideBtn = screen.getByTestId("ChooseAssetHideAssetBtn");
-    expect(navigateToHideBtn).toBeEnabled();
-    await fireEvent.click(navigateToHideBtn);
-
-    await waitFor(() => {
-      expect(screen.getByTestId("ToggleAssetContent")).toBeDefined();
-    });
-
-    const toggleUsdcRow = screen.getByTestId("Toggle-USDC");
-    const childInput = toggleUsdcRow.querySelector("input");
-    expect(childInput).toBeEnabled();
-
-    if (!childInput) {
-      throw new Error("toggle not found");
-    }
-
-    expect(childInput).toBeChecked();
-    fireEvent.change(childInput, { target: { checked: false } });
-    expect(childInput).not.toBeChecked();
-  });
 });

@@ -52,7 +52,7 @@ export interface NewAssetFlags {
  * removable at all — both unchanged. A custom token is removable only while it
  * is on screen because of the user's local token list: once the backend returns
  * it on its own, dropping the local entry would not stop it coming back, so it
- * can only be hidden (Manage assets → Toggle Assets).
+ * can only be hidden (from its token details).
  */
 const getIsRemovable = ({
   contract,
