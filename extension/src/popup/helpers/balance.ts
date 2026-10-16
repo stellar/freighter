@@ -32,10 +32,14 @@ export const isSorobanBalance = (balance: AssetType): balance is SorobanAsset =>
 
 // SEP-41 totals are raw integers; scale them exactly as the balance display
 // does before multiplying by a whole-token price.
-export const getTotalInWholeUnits = (balance: AssetType): BigNumber =>
-  "contractId" in balance && "decimals" in balance
-    ? new BigNumber(balance.total).shiftedBy(-Number(balance.decimals))
-    : new BigNumber(balance.total);
+export const getTotalInWholeUnits = (balance: AssetType): BigNumber => {
+  const total = new BigNumber(balance.total);
+  if (!("contractId" in balance && "decimals" in balance)) {
+    return total;
+  }
+  const decimals = Number(balance.decimals);
+  return decimals > 0 ? total.shiftedBy(-decimals) : total;
+};
 
 export const findAssetBalance = (
   balances: AssetType[],
@@ -222,9 +226,8 @@ export const getBalanceCanonicalKey = (b: AssetType): string => {
 /**
  * Re-orders balances for display by descending USD value.
  *
- * Only native + classic G-issuer assets receive prices from the indexer
- * (Soroban, custom tokens, and LP shares are filtered out upstream — see
- * `getTokenPrices` in `@shared/api/internal.ts`). Unpriced balances keep
+ * LP shares are never priced; SEP-41 balances are priced on the v2 path and
+ * valued in whole units via `getTotalInWholeUnits`. Unpriced balances keep
  * the relative order produced by `sortBalances` and sort below all
  * priced balances. A `currentPrice` of `"0"` is a valid USD value and
  * keeps the asset in the priced group; a malformed `currentPrice` is

@@ -27,11 +27,8 @@ export const TEST_PUBLIC_KEY =
 export const TEST_CANONICAL =
   "DT:CCXVDIGMR6WTXZQX2OEVD6YM6AYCYPXPQ7YYH6OZMRS7U6VD3AVHNGBJ";
 
-// Classic G-issuer canonical present in `mockBalances`. Use this when a test
-// needs an asset that production `getTokenPrices` would actually price —
-// `TEST_CANONICAL` (DT) has a contract-ID issuer and is filtered out by
-// `isContractId` in `@shared/api/internal.ts`, so it can never carry a real
-// indexer price.
+// Classic G-issuer canonical present in `mockBalances`. `TEST_CANONICAL` (DT)
+// has a contract-ID issuer, so only the v2 price path prices it.
 export const TEST_USDC_CANONICAL =
   "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM";
 

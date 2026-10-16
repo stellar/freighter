@@ -3,7 +3,7 @@ import BigNumber from "bignumber.js";
 import { TESTNET_NETWORK_DETAILS } from "@shared/constants/stellar";
 import { defaultBlockaidScanAssetResult } from "@shared/helpers/stellar";
 
-import { getBalanceByKey, findAssetBalance, sortBalancesByValue, getBalanceCanonicalKey, getTotalUsd } from "../balance";
+import { getBalanceByKey, findAssetBalance, sortBalancesByValue, getBalanceCanonicalKey, getTotalUsd, getTotalInWholeUnits } from "../balance";
 
 const CONTRACT_ID = "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC";
 const TOKEN_BALANCE_KEY = `DT:${CONTRACT_ID}`;
@@ -305,5 +305,14 @@ describe("SEP-41 balances are valued in whole units", () => {
   it("sums the scaled value into the total", () => {
     const total = getTotalUsd(prices, [SOLVBTC, USDC]);
     expect(total.toNumber()).toBeCloseTo(100.18522526, 6);
+  });
+});
+
+describe("getTotalInWholeUnits", () => {
+  it("leaves the raw total unscaled when decimals isn't a positive number, like the display", () => {
+    const base = { contractId: "CBIJBDNZNF4X35BJ4FFZWCDBSCKOP5NB4PLG4SNENRMLAPYG4P5FM6VN", total: new BigNumber(227) };
+    expect(getTotalInWholeUnits({ ...base, decimals: undefined }).toString()).toBe("227");
+    expect(getTotalInWholeUnits({ ...base, decimals: 0 }).toString()).toBe("227");
+    expect(getTotalInWholeUnits({ ...base, decimals: 8 }).toString()).toBe("0.00000227");
   });
 });

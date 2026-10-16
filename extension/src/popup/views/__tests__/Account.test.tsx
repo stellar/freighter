@@ -1093,21 +1093,19 @@ describe("Account view", () => {
         autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
       }),
     );
-    jest
-      .spyOn(ApiInternal, "getAccountBalances")
-      .mockImplementation(() =>
-        Promise.resolve({
-          ...mockBalances,
-          balances: {
-            ...mockBalances.balances,
-            [TEST_CANONICAL]: {
-              ...(mockBalances.balances as any)[TEST_CANONICAL],
-              contractId:
-                "CCXVDIGMR6WTXZQX2OEVD6YM6AYCYPXPQ7YYH6OZMRS7U6VD3AVHNGBJ",
-            },
+    jest.spyOn(ApiInternal, "getAccountBalances").mockImplementation(() =>
+      Promise.resolve({
+        ...mockBalances,
+        balances: {
+          ...mockBalances.balances,
+          [TEST_CANONICAL]: {
+            ...(mockBalances.balances as any)[TEST_CANONICAL],
+            contractId:
+              "CCXVDIGMR6WTXZQX2OEVD6YM6AYCYPXPQ7YYH6OZMRS7U6VD3AVHNGBJ",
           },
-        } as any),
-      );
+        },
+      } as any),
+    );
 
     jest.spyOn(ApiInternal, "getTokenPrices").mockImplementation(() =>
       Promise.resolve({
