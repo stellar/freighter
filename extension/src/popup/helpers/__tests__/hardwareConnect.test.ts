@@ -128,12 +128,12 @@ describe("when the Stellar app is not open", () => {
 
   const requestMock = TransportWebHID.request as jest.Mock;
   const createMock = TransportWebHID.create as jest.Mock;
-  const openConnectedMock = jest.fn();
+  const reopenMock = jest.fn();
 
   beforeEach(() => {
     jest.useFakeTimers();
-    openConnectedMock.mockReset();
-    (TransportWebHID as any).openConnected = openConnectedMock;
+    reopenMock.mockReset();
+    (TransportWebHID as any).open = reopenMock;
     mockGetPublicKey.mockRejectedValueOnce(
       mockStatusError(LEDGER_APP_NOT_OPEN_STATUS),
     );
@@ -149,7 +149,7 @@ describe("when the Stellar app is not open", () => {
     );
     const relaunched = makeTransport(jest.fn());
     requestMock.mockResolvedValueOnce(dashboard);
-    openConnectedMock.mockResolvedValue(relaunched);
+    reopenMock.mockResolvedValue(relaunched);
 
     const connection = createWalletConnection[WalletType.LEDGER](BIP_PATH);
     await jest.advanceTimersByTimeAsync(1000);
@@ -166,7 +166,7 @@ describe("when the Stellar app is not open", () => {
       jest.fn().mockResolvedValue(Buffer.from([])),
     );
     createMock.mockResolvedValueOnce(dashboard);
-    openConnectedMock.mockResolvedValue(makeTransport(jest.fn()));
+    reopenMock.mockResolvedValue(makeTransport(jest.fn()));
 
     const publicKey = getWalletPublicKey[WalletType.LEDGER](BIP_PATH);
     await jest.advanceTimersByTimeAsync(1000);
@@ -182,7 +182,7 @@ describe("when the Stellar app is not open", () => {
     // its USB stack before the reply gets out.
     const dashboard = makeTransport(jest.fn(() => new Promise(() => {})));
     requestMock.mockResolvedValueOnce(dashboard);
-    openConnectedMock.mockResolvedValue(makeTransport(jest.fn()));
+    reopenMock.mockResolvedValue(makeTransport(jest.fn()));
 
     const connection = createWalletConnection[WalletType.LEDGER](BIP_PATH);
     await jest.advanceTimersByTimeAsync(0);
@@ -200,7 +200,7 @@ describe("when the Stellar app is not open", () => {
       jest.fn().mockResolvedValue(Buffer.from([])),
     );
     requestMock.mockResolvedValueOnce(dashboard);
-    openConnectedMock
+    reopenMock
       .mockResolvedValueOnce(null)
       .mockRejectedValueOnce(new Error("The device is already open."))
       .mockResolvedValue(makeTransport(jest.fn()));
@@ -209,7 +209,7 @@ describe("when the Stellar app is not open", () => {
     await jest.advanceTimersByTimeAsync(3000);
 
     await expect(connection).resolves.toBeDefined();
-    expect(openConnectedMock).toHaveBeenCalledTimes(3);
+    expect(reopenMock).toHaveBeenCalledTimes(3);
   });
 
   it("should surface the original error when the user declines to open it", async () => {
@@ -225,7 +225,7 @@ describe("when the Stellar app is not open", () => {
     await jest.advanceTimersByTimeAsync(0);
 
     await assertion;
-    expect(openConnectedMock).not.toHaveBeenCalled();
+    expect(reopenMock).not.toHaveBeenCalled();
     expect(mockGetPublicKey).toHaveBeenCalledTimes(1);
   });
 
@@ -240,7 +240,7 @@ describe("when the Stellar app is not open", () => {
     await jest.advanceTimersByTimeAsync(30000);
 
     await assertion;
-    expect(openConnectedMock).not.toHaveBeenCalled();
+    expect(reopenMock).not.toHaveBeenCalled();
     // transport.close() would wait forever on the unanswered exchange and
     // leave the device open for the next attempt to trip over.
     expect(dashboard.device.close).toHaveBeenCalled();
@@ -267,7 +267,7 @@ describe("when the Stellar app is not open", () => {
       jest.fn().mockResolvedValue(Buffer.from([])),
     );
     requestMock.mockResolvedValueOnce(dashboard);
-    openConnectedMock.mockResolvedValue(null);
+    reopenMock.mockResolvedValue(null);
 
     const connection = createWalletConnection[WalletType.LEDGER](BIP_PATH);
     const assertion = expect(connection).rejects.toMatchObject({
@@ -277,6 +277,30 @@ describe("when the Stellar app is not open", () => {
 
     await assertion;
     expect(mockGetPublicKey).toHaveBeenCalledTimes(1);
+  });
+
+  it("should not guess which device came back when two Ledgers are attached", async () => {
+    const dashboard = makeTransport(
+      jest.fn().mockResolvedValue(Buffer.from([])),
+    );
+    requestMock.mockResolvedValueOnce(dashboard);
+    const attached = { close: jest.fn().mockResolvedValue(undefined) };
+    const listMock = TransportWebHID.list as jest.Mock;
+    listMock
+      // The stale-device cleanup before connecting.
+      .mockResolvedValueOnce([attached])
+      .mockResolvedValue([attached, attached]);
+    reopenMock.mockResolvedValue(makeTransport(jest.fn()));
+
+    const connection = createWalletConnection[WalletType.LEDGER](BIP_PATH);
+    const assertion = expect(connection).rejects.toMatchObject({
+      statusCode: LEDGER_APP_NOT_OPEN_STATUS,
+    });
+    await jest.advanceTimersByTimeAsync(10000);
+
+    await assertion;
+    expect(reopenMock).not.toHaveBeenCalled();
+    listMock.mockResolvedValue([attached]);
   });
 });
 
@@ -318,12 +342,12 @@ describe("when another app is open", () => {
   });
 
   const requestMock = TransportWebHID.request as jest.Mock;
-  const openConnectedMock = jest.fn();
+  const reopenMock = jest.fn();
 
   beforeEach(() => {
     jest.useFakeTimers();
-    openConnectedMock.mockReset();
-    (TransportWebHID as any).openConnected = openConnectedMock;
+    reopenMock.mockReset();
+    (TransportWebHID as any).open = reopenMock;
     // Ethereum reads Stellar's get-public-key request as a malformed one of
     // its own.
     mockGetPublicKey.mockRejectedValueOnce(mockStatusError(0x6a80));
@@ -337,7 +361,7 @@ describe("when another app is open", () => {
     const ethereum = makeDevice("Ethereum");
     const dashboard = makeDevice("BOLOS");
     requestMock.mockResolvedValueOnce(ethereum);
-    openConnectedMock
+    reopenMock
       .mockResolvedValueOnce(dashboard)
       .mockResolvedValue(makeDevice("Stellar"));
     mockGetPublicKey.mockRejectedValueOnce(
@@ -365,14 +389,14 @@ describe("when another app is open", () => {
     await expect(
       createWalletConnection[WalletType.LEDGER](BIP_PATH),
     ).rejects.toThrow(OTHER_LEDGER_APP_OPEN_ERROR);
-    expect(openConnectedMock).not.toHaveBeenCalled();
+    expect(reopenMock).not.toHaveBeenCalled();
   });
 
   it("should only try closing it once", async () => {
     const ethereum = makeDevice("Ethereum");
     requestMock.mockResolvedValueOnce(ethereum);
     // Still not Stellar after quitting, e.g. the app relaunched itself.
-    openConnectedMock.mockResolvedValue(makeDevice("Ethereum"));
+    reopenMock.mockResolvedValue(makeDevice("Ethereum"));
     mockGetPublicKey.mockRejectedValueOnce(mockStatusError(0x6a80));
 
     const connection = createWalletConnection[WalletType.LEDGER](BIP_PATH);
@@ -383,6 +407,17 @@ describe("when another app is open", () => {
 
     await assertion;
     expect(mockGetPublicKey).toHaveBeenCalledTimes(2);
+  });
+
+  it("should not try to quit the dashboard on older firmware", async () => {
+    // Older firmware names the dashboard "OLOS" plus a NUL byte.
+    const dashboard = makeDevice("OLOS\u0000");
+    requestMock.mockResolvedValueOnce(dashboard);
+
+    await expect(
+      createWalletConnection[WalletType.LEDGER](BIP_PATH),
+    ).rejects.toMatchObject({ statusCode: 0x6a80 });
+    expect(dashboard.send).not.toHaveBeenCalledWith(...QUIT_APP_APDU);
   });
 
   it("should pass on errors from the Stellar app itself", async () => {

@@ -57,8 +57,9 @@ export const OTHER_LEDGER_APP_OPEN_ERROR = "LEDGER_OTHER_APP_OPEN";
 // the open-app request against.
 const LEDGER_STELLAR_APP_NAME = "Stellar";
 
-// The name the device reports for itself while it is on the dashboard.
-const LEDGER_DASHBOARD_NAME = "BOLOS";
+// The names the device reports for itself while it is on the dashboard: older
+// firmware answers "OLOS" plus a NUL byte instead of "BOLOS".
+const LEDGER_DASHBOARD_NAMES = ["BOLOS", "OLOS\u0000"];
 
 // How long to wait for the user to answer the open-app prompt on the device
 // before giving up and asking them to open the app themselves.
@@ -215,14 +216,19 @@ const switchLedgerApp = async (
     release();
   }
 
-  // openConnected rather than create: it only returns a device the user has
-  // already granted, where create falls back to a permission prompt that
-  // needs a user gesture we no longer have.
+  // Only devices the user has already granted, where create would fall back to
+  // a permission prompt that needs a user gesture we no longer have. The
+  // device comes back as a new HIDDevice with nothing tying it to the one we
+  // switched, so with more than one Ledger attached we cannot tell which is
+  // ours and give up rather than read a key from the wrong one.
   for (let attempt = 0; attempt < REOPEN_POLL_ATTEMPTS; attempt += 1) {
     await wait(REOPEN_POLL_INTERVAL_MS);
-    const reopened = await TransportWebHID.openConnected().catch(() => null);
-    if (reopened) {
-      return reopened;
+    const devices = await TransportWebHID.list().catch(() => []);
+    if (devices.length === 1) {
+      const reopened = await TransportWebHID.open(devices[0]).catch(() => null);
+      if (reopened) {
+        return reopened;
+      }
     }
   }
 
@@ -276,7 +282,7 @@ const getLedgerPublicKey = async (
     if (
       !appName ||
       appName === LEDGER_STELLAR_APP_NAME ||
-      appName === LEDGER_DASHBOARD_NAME
+      LEDGER_DASHBOARD_NAMES.includes(appName)
     ) {
       throw e;
     }
