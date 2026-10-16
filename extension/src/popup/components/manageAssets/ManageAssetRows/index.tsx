@@ -85,6 +85,11 @@ interface ManageAssetRowsProps {
   verifiedLists?: string[];
   balances: AccountBalances;
   shouldSplitAssetsByVerificationStatus?: boolean;
+  /** Whether the account hid this held asset; its row then offers Unhide */
+  isAssetHidden?: (canonicalAsset: string) => boolean;
+  onUnhideAsset?: (asset: { code: string; canonicalAsset: string }) => void;
+  /** Canonical of the asset whose unhide is in flight, if any */
+  unhidingAsset?: string;
 }
 
 export const ManageAssetRows = ({
@@ -94,6 +99,9 @@ export const ManageAssetRows = ({
   unverifiedAssetRows,
   balances,
   shouldSplitAssetsByVerificationStatus = true,
+  isAssetHidden,
+  onUnhideAsset,
+  unhidingAsset,
 }: ManageAssetRowsProps) => {
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const publicKey = useSelector(publicKeySelector);
@@ -150,41 +158,55 @@ export const ManageAssetRows = ({
               isSac,
               isTrustlineActive,
               name,
-            }) => (
-              <AssetListRow
-                code={code}
-                issuer={issuer}
-                iconUrl={image}
-                domain={domain}
-                isSuspicious={isSuspicious}
-                isMalicious={isMalicious}
-                // Native (non-SAC) contract tokens display their name; classic
-                // assets and SAC-wrapped tokens display their code.
-                displayCode={name && contract && !isSac ? name : code}
-                codeTestId="ManageAssetCode"
-                domainTestId="ManageAssetDomain"
-                rightElement={
-                  <ManageAssetRowButton
-                    code={code}
-                    issuer={issuer}
-                    isTrustlineActive={!!isTrustlineActive}
-                    isRemovable={isRemovable}
-                    isLoading={false}
-                    onClick={async () => {
-                      setSelectedAsset({
-                        code,
-                        issuer,
-                        domain,
-                        name,
-                        image,
-                        isTrustlineActive,
-                        contract,
-                      });
-                    }}
-                  />
-                }
-              />
-            )}
+            }) => {
+              const canonicalAsset = getCanonicalFromAsset(code, issuer);
+              // A held asset the user hid offers Unhide instead of the menu.
+              const isHidden =
+                !!isTrustlineActive && !!isAssetHidden?.(canonicalAsset);
+
+              return (
+                <AssetListRow
+                  code={code}
+                  issuer={issuer}
+                  iconUrl={image}
+                  domain={domain}
+                  isSuspicious={isSuspicious}
+                  isMalicious={isMalicious}
+                  // Native (non-SAC) contract tokens display their name; classic
+                  // assets and SAC-wrapped tokens display their code.
+                  displayCode={name && contract && !isSac ? name : code}
+                  codeTestId="ManageAssetCode"
+                  domainTestId="ManageAssetDomain"
+                  rightElement={
+                    <ManageAssetRowButton
+                      code={code}
+                      issuer={issuer}
+                      isTrustlineActive={!!isTrustlineActive}
+                      isRemovable={isRemovable}
+                      isLoading={false}
+                      isHidden={isHidden}
+                      isUnhiding={unhidingAsset === canonicalAsset}
+                      onUnhide={
+                        onUnhideAsset
+                          ? () => onUnhideAsset({ code, canonicalAsset })
+                          : undefined
+                      }
+                      onClick={async () => {
+                        setSelectedAsset({
+                          code,
+                          issuer,
+                          domain,
+                          name,
+                          image,
+                          isTrustlineActive,
+                          contract,
+                        });
+                      }}
+                    />
+                  }
+                />
+              );
+            }}
           />
         </div>
         {children}

@@ -4,7 +4,13 @@ import { render, waitFor, screen, fireEvent } from "@testing-library/react";
 import * as ApiInternal from "@shared/api/internal";
 
 import { SearchAsset } from "popup/components/manageAssets/SearchAsset";
-import { mockAccounts, mockBalances, Wrapper } from "popup/__testHelpers__";
+import {
+  getTestStore,
+  mockAccounts,
+  mockBalances,
+  Wrapper,
+} from "popup/__testHelpers__";
+import { saveBalancesForAccount } from "popup/ducks/cache";
 import { ROUTES } from "popup/constants/routes";
 import {
   DEFAULT_NETWORKS,
@@ -22,6 +28,87 @@ describe("SearchAsset", () => {
   jest
     .spyOn(ApiInternal, "getAccountBalances")
     .mockImplementation(() => Promise.resolve(mockBalances));
+  jest
+    .spyOn(ApiInternal, "getHiddenAssets")
+    .mockImplementation(() => Promise.resolve({ hiddenAssets: {}, error: "" }));
+
+  it("opens the Hidden tokens sheet from Show hidden", async () => {
+    render(
+      <Wrapper
+        routes={[ROUTES.searchAsset]}
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
+            publicKey: "G1",
+            hasPrivateKey: true,
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: MAINNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+          },
+        }}
+      >
+        <SearchAsset />
+      </Wrapper>,
+    );
+    await waitFor(() => {
+      expect(screen.getByTestId("hidden-assets-btn")).toHaveTextContent(
+        "Show hidden",
+      );
+    });
+
+    fireEvent.click(screen.getByTestId("hidden-assets-btn"));
+
+    await waitFor(() => {
+      expect(screen.getByText("Hidden tokens")).toBeInTheDocument();
+    });
+    expect(screen.getByTestId("hidden-assets-empty")).toBeInTheDocument();
+  });
+
+  it("refetches the hidden map when the balance cache changes", async () => {
+    const getHidden = jest.spyOn(ApiInternal, "getHiddenAssets");
+    getHidden.mockClear();
+
+    render(
+      <Wrapper
+        routes={[ROUTES.searchAsset]}
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
+            publicKey: "G1",
+            hasPrivateKey: true,
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: MAINNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+          },
+        }}
+      >
+        <SearchAsset />
+      </Wrapper>,
+    );
+    await waitFor(() => {
+      expect(screen.getByTestId("hidden-assets-btn")).toBeInTheDocument();
+    });
+    const callsBefore = getHidden.mock.calls.length;
+
+    // A successful add writes new balances to the cache, as the add flows do
+    getTestStore()!.dispatch(
+      saveBalancesForAccount({
+        publicKey: "G1",
+        networkDetails: MAINNET_NETWORK_DETAILS,
+        balances: mockBalances,
+      } as any),
+    );
+
+    await waitFor(() => {
+      expect(getHidden.mock.calls.length).toBeGreaterThan(callsBefore);
+    });
+  });
 
   it("should render", async () => {
     render(
@@ -50,6 +137,56 @@ describe("SearchAsset", () => {
       );
     });
   });
+  it("hides Show hidden once the user starts searching", async () => {
+    // Typing kicks off the (debounced) asset lookup; keep it off the network,
+    // give it the asset lists it reads, and let it fire before this test ends
+    // so no call leaks into the next test's fetch count.
+    const fetchSpy = jest.spyOn(global, "fetch").mockImplementation(() =>
+      Promise.resolve({
+        ok: true,
+        json: async () => ({ _embedded: { records: [] } }),
+      } as any),
+    );
+    render(
+      <Wrapper
+        routes={[ROUTES.searchAsset]}
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
+            publicKey: "G1",
+            hasPrivateKey: true,
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: MAINNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+            assetsLists: {
+              [NETWORKS.PUBLIC]: [],
+            },
+          },
+        }}
+      >
+        <SearchAsset />
+      </Wrapper>,
+    );
+    await waitFor(() => {
+      expect(screen.getByTestId("hidden-assets-btn")).toBeInTheDocument();
+    });
+
+    fireEvent.change(screen.getByTestId("search-asset-input"), {
+      target: { value: "USDC" },
+    });
+
+    await waitFor(() => {
+      expect(screen.queryByTestId("hidden-assets-btn")).not.toBeInTheDocument();
+    });
+    await waitFor(() => expect(fetchSpy).toHaveBeenCalled(), {
+      timeout: 2000,
+    });
+    fetchSpy.mockRestore();
+  });
+
   it("should cancel the request when search is changed", async () => {
     const signalMock = {
       addEventListener: jest.fn(),

@@ -1,6 +1,7 @@
 import { useReducer } from "react";
 import { captureException } from "@sentry/browser";
-import { Account } from "@shared/api/types";
+import { Account, AssetVisibility } from "@shared/api/types";
+import { getHiddenAssets } from "@shared/api/internal";
 import { initialState, isError, reducer } from "helpers/request";
 import {
   AppDataType,
@@ -8,7 +9,11 @@ import {
   useGetAppData,
 } from "helpers/hooks/useGetAppData";
 import { isMainnet } from "helpers/stellar";
-import { getTotalUsd, getTotalUsdLabel } from "popup/helpers/balance";
+import {
+  getTotalUsd,
+  getTotalUsdLabel,
+  omitHiddenBalances,
+} from "popup/helpers/balance";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import { AccountBalances, useGetBalances } from "helpers/hooks/useGetBalances";
 import { NetworkDetails } from "@shared/constants/stellar";
@@ -30,6 +35,25 @@ type GetWalletsData = NeedsReRoute | ResolvedData;
 // the number of wallets that fit in the extension viewport at once
 const BATCH_SIZE = 6;
 
+/**
+ * The wallet's hidden-assets map, or an empty one when it can't be read: the
+ * totals then include hidden assets rather than failing to load.
+ */
+const loadHiddenAssets = async (
+  activePublicKey: string,
+): Promise<Record<string, AssetVisibility>> => {
+  try {
+    const { hiddenAssets, error } = await getHiddenAssets({ activePublicKey });
+    if (error) {
+      throw new Error(error);
+    }
+    return hiddenAssets || {};
+  } catch (error) {
+    captureException(`Error loading hidden assets in wallets data - ${error}`);
+    return {};
+  }
+};
+
 function useGetWalletsData() {
   const [state, dispatch] = useReducer(
     reducer<GetWalletsData, unknown>,
@@ -48,12 +72,15 @@ function useGetWalletsData() {
     isMainnetNetwork,
     useCache,
     payload,
+    hiddenAssets = {},
   }: {
     accounts: Account[];
     networkDetails: NetworkDetails;
     isMainnetNetwork: boolean;
     useCache: boolean;
     payload: ResolvedData;
+    /** The wallet's hidden assets; they don't count toward any total */
+    hiddenAssets?: Record<string, AssetVisibility>;
   }) => {
     const prices = await Promise.all(
       accounts.map(async (account) => {
@@ -78,15 +105,22 @@ function useGetWalletsData() {
             };
           }
 
+          // Hidden assets don't count, matching the Home total. Hiding is
+          // how people deal with spam tokens, whose made-up prices would
+          // otherwise inflate this total.
+          const visibleBalances = omitHiddenBalances(
+            balances.balances,
+            hiddenAssets,
+          );
           const prices = await fetchTokenPrices({
             publicKey: account.publicKey,
-            balances: balances.balances,
+            balances: visibleBalances,
             networkDetails,
             useCache: true,
           });
           const totalPriceUsd = getTotalUsd(
             prices.tokenPrices || {},
-            balances.balances,
+            visibleBalances,
           );
           return {
             [account.publicKey]: getTotalUsdLabel({
@@ -158,6 +192,10 @@ function useGetWalletsData() {
       }
 
       if (isMainnetNetwork) {
+        // The background only answers for the active account, and the hidden
+        // list is wallet-wide, so read it once and apply it to every account.
+        const hiddenAssets = await loadHiddenAssets(publicKey);
+
         for (let i = 0; i < allAccounts.length; i += BATCH_SIZE) {
           const batch = allAccounts.slice(i, i + BATCH_SIZE);
           await batchedFetchBalances({
@@ -166,6 +204,7 @@ function useGetWalletsData() {
             isMainnetNetwork,
             useCache,
             payload,
+            hiddenAssets,
           });
         }
       }

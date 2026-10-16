@@ -1,18 +1,15 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Icon } from "@stellar/design-system";
+import { useSelector } from "react-redux";
+import { Button, Icon, Notification } from "@stellar/design-system";
+import { toast } from "sonner";
 
 import { Collection } from "@shared/api/types/types";
-import {
-  ScreenReaderOnly,
-  Sheet,
-  SheetContent,
-  SheetTitle,
-} from "popup/basics/shadcn/Sheet";
-import { SubviewHeader } from "popup/components/SubviewHeader";
-import { View } from "popup/basics/layout/View";
-import { CollectibleDetail, SelectedCollectible } from "../CollectibleDetail";
-import { CollectibleInfoImage } from "../CollectibleInfo";
+import { AssetVisibility } from "@shared/api/types";
+import { changeCollectibleVisibility } from "@shared/api/internal";
+import { HiddenItemsSheet } from "popup/components/HiddenItemsSheet";
+import { publicKeySelector } from "popup/ducks/accountServices";
+import { CollectibleInfoImage, getCollectibleName } from "../CollectibleInfo";
 
 import "./styles.scss";
 
@@ -24,6 +21,21 @@ interface HiddenCollectiblesProps {
   onClose: () => void;
 }
 
+interface HiddenItem {
+  collectionAddress: string;
+  tokenId: string;
+  /** The metadata name, or "Token #<id>" when the metadata has none */
+  name: string;
+  /** Whether `name` came from the metadata, so the id line isn't repeated */
+  hasMetadataName: boolean;
+  image?: string;
+}
+
+/**
+ * Bottom sheet listing the hidden collectibles with an Unhide button per
+ * row, and an empty state when nothing is hidden. Opened from "Show hidden"
+ * on the Add collectible screen. Same sheet as Hidden tokens.
+ */
 export const HiddenCollectibles = ({
   collections,
   refreshHiddenCollectibles,
@@ -32,15 +44,9 @@ export const HiddenCollectibles = ({
   onClose,
 }: HiddenCollectiblesProps) => {
   const { t } = useTranslation();
-  const [isDetailOpen, setIsDetailOpen] = useState(false);
-  const [detailData, setDetailData] = useState<SelectedCollectible | null>(
-    null,
-  );
-
-  const handleOpenCollectible = (collectible: SelectedCollectible) => {
-    setDetailData(collectible);
-    setIsDetailOpen(true);
-  };
+  const publicKey = useSelector(publicKeySelector);
+  // Key of the collectible whose unhide is in flight, if any
+  const [unhidingKey, setUnhidingKey] = useState("");
 
   // Refresh hidden collectibles when sheet opens
   useEffect(() => {
@@ -49,24 +55,8 @@ export const HiddenCollectibles = ({
     }
   }, [isOpen, refreshHiddenCollectibles]);
 
-  const handleCloseCollectible = () => {
-    setIsDetailOpen(false);
-    // Refresh the shared state - this will update all components using the hook
-    refreshHiddenCollectibles();
-  };
-
-  const handleAnimationEnd = () => {
-    if (!isDetailOpen) {
-      setDetailData(null);
-    }
-  };
-
   // Get all hidden collectibles across all collections
-  const hiddenItems: Array<{
-    collection: Collection["collection"];
-    tokenId: string;
-    metadata: { image?: string; name?: string };
-  }> = [];
+  const hiddenItems: HiddenItem[] = [];
 
   collections.forEach(({ collection, error }) => {
     if (error || !collection) return;
@@ -74,100 +64,105 @@ export const HiddenCollectibles = ({
     collection.collectibles.forEach((item) => {
       if (isCollectibleHidden(collection.address, item.tokenId)) {
         hiddenItems.push({
-          collection,
+          collectionAddress: collection.address,
           tokenId: item.tokenId,
-          metadata: item.metadata || {},
+          name: getCollectibleName(item.metadata?.name, item.tokenId),
+          hasMetadataName: !!item.metadata?.name,
+          image: item.metadata?.image,
         });
       }
     });
   });
 
-  const hasHiddenCollectibles = hiddenItems.length > 0;
+  /**
+   * Unhides a collectible, refreshes the shared hidden state, confirms with
+   * a toast and closes the sheet so the result is visible straight away.
+   */
+  const handleUnhide = async ({ collectionAddress, tokenId }: HiddenItem) => {
+    const collectibleKey = `${collectionAddress}:${tokenId}`;
+
+    if (unhidingKey) {
+      return;
+    }
+
+    setUnhidingKey(collectibleKey);
+
+    try {
+      const { error } = await changeCollectibleVisibility({
+        collectibleKey,
+        collectibleVisibility: "visible" as AssetVisibility,
+        activePublicKey: publicKey || "",
+      });
+
+      if (error) {
+        throw new Error(error);
+      }
+
+      await refreshHiddenCollectibles();
+      onClose();
+      toast.custom(() => (
+        <Notification variant="success" title={t("Collectible unhidden")} />
+      ));
+    } catch {
+      toast.custom(() => (
+        <Notification
+          variant="error"
+          title={t("Couldn’t unhide collectible")}
+        />
+      ));
+    } finally {
+      setUnhidingKey("");
+    }
+  };
 
   return (
-    <>
-      {/* Main Hidden Collectibles Sheet */}
-      <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
-        <SheetContent
-          aria-describedby={undefined}
-          side="bottom"
-          className="HiddenCollectibles__sheet"
-          onOpenAutoFocus={(e) => e.preventDefault()}
-        >
-          <ScreenReaderOnly>
-            <SheetTitle>{t("Hidden Collectibles")}</SheetTitle>
-          </ScreenReaderOnly>
-          <View>
-            <SubviewHeader
-              title={t("Hidden Collectibles")}
-              customBackAction={onClose}
-              customBackIcon={<Icon.X />}
-            />
-            <View.Content hasNoTopPadding>
-              {hasHiddenCollectibles ? (
-                <div className="HiddenCollectibles__grid">
-                  {hiddenItems.map((item) => (
-                    <div
-                      className="HiddenCollectibles__grid__item"
-                      onClick={() => {
-                        handleOpenCollectible({
-                          collectionAddress: item.collection?.address || "",
-                          tokenId: item.tokenId,
-                        });
-                      }}
-                      key={`${item.collection?.address}:${item.tokenId}`}
-                      data-testid={`hidden-collectible-${item.tokenId}`}
-                    >
-                      <CollectibleInfoImage
-                        image={item.metadata?.image}
-                        name={item.tokenId}
-                      />
-                      <div className="HiddenCollectibles__grid__item__overlay">
-                        <Icon.EyeOff />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="HiddenCollectibles__empty">
-                  <Icon.EyeOff />
-                  <span>{t("No hidden collectibles")}</span>
-                </div>
-              )}
-            </View.Content>
-          </View>
-        </SheetContent>
-      </Sheet>
+    <HiddenItemsSheet
+      isOpen={isOpen}
+      onClose={onClose}
+      title={t("Hidden collectibles")}
+      emptyText={t("No hidden collectibles")}
+      data-testid="hidden-collectibles"
+      rows={hiddenItems.map((item) => {
+        const key = `${item.collectionAddress}:${item.tokenId}`;
 
-      {/* Collectible Detail Sheet - overlays on top */}
-      <Sheet
-        open={isDetailOpen}
-        onOpenChange={(open) => {
-          if (!open) {
-            handleCloseCollectible();
-          }
-        }}
-      >
-        <SheetContent
-          aria-describedby={undefined}
-          side="bottom"
-          className="HiddenCollectibles__collectible-detail__sheet"
-          onOpenAutoFocus={(e) => e.preventDefault()}
-          onAnimationEnd={handleAnimationEnd}
-          style={{ zIndex: 100 }}
-        >
-          <ScreenReaderOnly>
-            <SheetTitle>{detailData?.tokenId || ""}</SheetTitle>
-          </ScreenReaderOnly>
-          {detailData && (
-            <CollectibleDetail
-              selectedCollectible={detailData}
-              handleItemClose={handleCloseCollectible}
-              isHidden
-            />
-          )}
-        </SheetContent>
-      </Sheet>
-    </>
+        return (
+          <div
+            className="HiddenCollectibles__row"
+            key={key}
+            data-testid={`hidden-collectible-${item.tokenId}`}
+          >
+            <div className="HiddenCollectibles__row__image">
+              <CollectibleInfoImage
+                image={item.image}
+                name={item.name}
+                isSmall
+              />
+            </div>
+            <div className="HiddenCollectibles__row__body">
+              <div className="HiddenCollectibles__row__name">{item.name}</div>
+              {item.hasMetadataName ? (
+                <div className="HiddenCollectibles__row__id">
+                  #{item.tokenId}
+                </div>
+              ) : null}
+            </div>
+            <Button
+              size="md"
+              variant="secondary"
+              type="button"
+              disabled={unhidingKey === key}
+              isLoading={unhidingKey === key}
+              onClick={() => handleUnhide(item)}
+              data-testid={`hidden-collectible-unhide-${item.tokenId}`}
+            >
+              <div className="HiddenCollectibles__row__unhide-label">
+                {t("Unhide")}
+              </div>
+              {unhidingKey === key ? null : <Icon.Eye />}
+            </Button>
+          </div>
+        );
+      })}
+    />
   );
 };

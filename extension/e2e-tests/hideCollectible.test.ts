@@ -122,25 +122,15 @@ test("Hide and unhide a collectible", async ({
   // Verify the hidden collectible is shown
   await expect(page.getByTestId("hidden-collectible-1")).toBeVisible();
 
-  // Click on the hidden collectible to open detail
-  await page.getByTestId("hidden-collectible-1").click();
+  // Unhide it from the sheet row
+  await page.getByTestId("hidden-collectible-unhide-1").click();
 
-  // Wait for collectible detail to open
-  await expect(page.getByTestId("CollectibleDetail")).toBeVisible();
+  // The sheet closes and a toast confirms the change
+  await expect(page.getByText("Collectible unhidden")).toBeVisible();
+  await expect(page.getByTestId("hidden-collectible-1")).not.toBeVisible();
 
-  // Open the three-dot menu
-  await page.getByTestId("CollectibleDetail__header__right-button").click();
-
-  // Verify "Show collectible" option is visible (not "Hide collectible")
-  await expect(page.getByText("Show collectible")).toBeVisible();
-
-  // Click "Show collectible"
-  await page.getByText("Show collectible").click();
-
-  // Wait for detail sheet to close
-  await expect(page.getByTestId("CollectibleDetail")).not.toBeVisible();
-
-  // Verify the empty state is now shown in hidden collectibles
+  // Reopening the sheet now shows the empty state
+  await page.getByTestId("hidden-collectibles-btn").click();
   await expect(page.getByText("No hidden collectibles")).toBeVisible();
 });
 

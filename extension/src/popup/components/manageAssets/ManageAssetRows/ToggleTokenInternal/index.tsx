@@ -12,7 +12,12 @@ import { addTokenId } from "popup/ducks/accountServices";
 import { removeTokenId } from "popup/ducks/transactionSubmission";
 
 import { isAssetSac } from "popup/helpers/soroban";
-import { isMainnet, truncateString } from "helpers/stellar";
+import {
+  getCanonicalFromAsset,
+  isMainnet,
+  truncateString,
+} from "helpers/stellar";
+import { clearHiddenAssetFlag } from "popup/helpers/useHiddenAssets";
 import { AccountBalances, useGetBalances } from "helpers/hooks/useGetBalances";
 import { emitMetric } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
@@ -65,13 +70,20 @@ export const ToggleTokenInternal = ({
 
   const onConfirm = async () => {
     if (!asset.isTrustlineActive) {
-      await dispatch(
+      const addResult = await dispatch(
         addTokenId({
           publicKey,
           tokenId: asset.contract!,
           network: networkDetails.network as Networks,
         }),
       );
+      // A token the user adds on purpose must show up; see clearHiddenAssetFlag.
+      if (addTokenId.fulfilled.match(addResult)) {
+        await clearHiddenAssetFlag({
+          canonicalAsset: getCanonicalFromAsset(asset.code, asset.contract!),
+          activePublicKey: publicKey,
+        });
+      }
     } else {
       emitMetric(METRIC_NAMES.assetRemoveResponded, {
         decision: "confirm",

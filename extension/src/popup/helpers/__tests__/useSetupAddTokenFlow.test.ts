@@ -36,6 +36,12 @@ jest.mock("popup/ducks/accountServices", () => ({
   hasPrivateKeySelector: () => mockHasPrivateKey,
 }));
 
+const mockClearHiddenAssetFlag = jest.fn().mockResolvedValue(undefined);
+jest.mock("popup/helpers/useHiddenAssets", () => ({
+  clearHiddenAssetFlag: (...args: unknown[]) =>
+    mockClearHiddenAssetFlag(...args),
+}));
+
 const addToken = jest.fn(({ uuid }: { uuid: string }) => ({
   type: "addToken",
   payload: { uuid },
@@ -235,6 +241,84 @@ describe("useSetupAddTokenFlow", () => {
       isTrustlineBacked: false,
     });
     expect(closeSpy).toHaveBeenCalled();
+  });
+
+  describe("hidden flag cleanup for a SEP-41 add", () => {
+    const CONTRACT_ID =
+      "CCXVDIGMR6WTXZQX2OEVD6YM6AYCYPXPQ7YYH6OZMRS7U6VD3AVHNGBJ";
+    const PUBLIC_KEY =
+      "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF";
+
+    const setupWithToken = () =>
+      renderHook(() =>
+        useSetupAddTokenFlow({
+          rejectToken,
+          addToken,
+          uuid: UUID,
+          assetCode: "KALE",
+          contractId: CONTRACT_ID,
+          publicKey: PUBLIC_KEY,
+        } as any),
+      );
+
+    it("clears the flag before the popup closes after Approve", async () => {
+      mockDispatch.mockResolvedValue({ type: "addToken/fulfilled" });
+      const { result } = setupWithToken();
+
+      await act(async () => {
+        await result.current.handleApprove();
+      });
+
+      expect(mockClearHiddenAssetFlag).toHaveBeenCalledWith({
+        canonicalAsset: `KALE:${CONTRACT_ID}`,
+        activePublicKey: PUBLIC_KEY,
+      });
+      expect(mockClearHiddenAssetFlag.mock.invocationCallOrder[0]).toBeLessThan(
+        closeSpy.mock.invocationCallOrder[0],
+      );
+    });
+
+    it("clears the flag after a password-confirmed add", async () => {
+      mockDispatch.mockImplementation((action: any) => {
+        if (action?.type === "confirmPassword") {
+          return Promise.resolve({ type: "confirmPassword/fulfilled" });
+        }
+        return Promise.resolve({ type: "addToken/fulfilled" });
+      });
+      const { result } = setupWithToken();
+
+      await act(async () => {
+        await result.current.verifyPasswordThenAddToken("pw");
+      });
+
+      expect(mockClearHiddenAssetFlag).toHaveBeenCalledTimes(1);
+      expect(closeSpy).toHaveBeenCalled();
+    });
+
+    it("leaves the flag alone when the add fails", async () => {
+      mockDispatch.mockResolvedValue({
+        type: "addToken/rejected",
+        error: { message: "boom" },
+      });
+      const { result } = setupWithToken();
+
+      await act(async () => {
+        await result.current.handleApprove();
+      });
+
+      expect(mockClearHiddenAssetFlag).not.toHaveBeenCalled();
+    });
+
+    it("leaves the flag to the trustline flow for a SAC add", async () => {
+      mockDispatch.mockResolvedValue({ type: "addToken/fulfilled" });
+      const { result } = setupWithToken();
+
+      await act(async () => {
+        await result.current.addTokenAndClose(true);
+      });
+
+      expect(mockClearHiddenAssetFlag).not.toHaveBeenCalled();
+    });
   });
 
   it("handleApprove requires a password when no private key is present", async () => {

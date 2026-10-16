@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { Button, Icon, Notification } from "@stellar/design-system";
+import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 
 import { RequestState } from "constants/request";
@@ -36,14 +37,16 @@ export interface SelectedCollectible {
   tokenId: string;
 }
 
+/**
+ * Details for a visible collectible. Hidden collectibles never open here:
+ * they are listed, and unhidden, in the Hidden collectibles sheet.
+ */
 export const CollectibleDetail = ({
   selectedCollectible,
   handleItemClose,
-  isHidden = false,
 }: {
   selectedCollectible: SelectedCollectible;
   handleItemClose: () => void;
-  isHidden?: boolean;
 }) => {
   const { t } = useTranslation();
   const publicKey = useSelector(publicKeySelector);
@@ -99,17 +102,31 @@ export const CollectibleDetail = ({
     navigateTo(ROUTES.sendPayment, navigate, queryParams);
   };
 
-  const handleToggleCollectibleVisibility = async () => {
+  const handleHideCollectible = async () => {
     const collectibleKey = `${selectedCollectible.collectionAddress}:${selectedCollectible.tokenId}`;
-    await changeCollectibleVisibility({
-      collectibleKey,
-      collectibleVisibility: isHidden
-        ? "visible"
-        : ("hidden" as AssetVisibility),
-      activePublicKey: publicKey || "",
-    });
     setIsPopoverOpen(false);
+
+    try {
+      const { error } = await changeCollectibleVisibility({
+        collectibleKey,
+        collectibleVisibility: "hidden" as AssetVisibility,
+        activePublicKey: publicKey || "",
+      });
+
+      if (error) {
+        throw new Error(error);
+      }
+    } catch {
+      toast.custom(() => (
+        <Notification variant="error" title={t("Couldn’t hide collectible")} />
+      ));
+      return;
+    }
+
     handleItemClose();
+    toast.custom(() => (
+      <Notification variant="success" title={t("Collectible hidden")} />
+    ));
   };
 
   return (
@@ -160,15 +177,11 @@ export const CollectibleDetail = ({
                   </div>
                   <div
                     className="CollectibleDetail__header__right-button__popover-content__item"
-                    onClick={handleToggleCollectibleVisibility}
+                    onClick={handleHideCollectible}
                   >
-                    {isHidden ? (
-                      <Icon.Eye className="CollectibleDetail__header__right-button__popover-content__item__icon" />
-                    ) : (
-                      <Icon.EyeOff className="CollectibleDetail__header__right-button__popover-content__item__icon" />
-                    )}
+                    <Icon.EyeOff className="CollectibleDetail__header__right-button__popover-content__item__icon" />
                     <div className="CollectibleDetail__header__right-button__popover-content__item__label">
-                      {isHidden ? t("Show collectible") : t("Hide collectible")}
+                      {t("Hide collectible")}
                     </div>
                   </div>
                 </PopoverContent>
@@ -188,13 +201,6 @@ export const CollectibleDetail = ({
                 image={collectible.metadata?.image}
                 dataTestIdBase="CollectibleDetail"
               />
-              {isHidden && (
-                <Notification
-                  variant="warning"
-                  icon={<Icon.EyeOff />}
-                  title={t("This collectible is hidden")}
-                />
-              )}
               <CollectibleDescription
                 description={collectible.metadata?.description || ""}
                 dataTestIdBase="CollectibleDetail"

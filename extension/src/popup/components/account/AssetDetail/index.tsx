@@ -9,7 +9,16 @@ import { useSelector } from "react-redux";
 import { BigNumber } from "bignumber.js";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { Button, CopyText, Icon, Link } from "@stellar/design-system";
+import {
+  Button,
+  CopyText,
+  Icon,
+  Link,
+  Notification,
+} from "@stellar/design-system";
+import { toast } from "sonner";
+
+import { changeAssetVisibility } from "@shared/api/internal";
 
 import { NetworkDetails } from "@shared/constants/stellar";
 import {
@@ -142,6 +151,11 @@ interface AssetDetailProps {
   historyData: AccountHistoryData | null;
   selectedAsset: string;
   handleClose: () => void;
+  /**
+   * Called after the asset was hidden and the sheet closed, so the balances
+   * view can drop it from the list.
+   */
+  onAssetHidden?: () => void | Promise<void>;
   /** The account history request failed; shows an error, not a skeleton. */
   hasHistoryError?: boolean;
 }
@@ -151,6 +165,7 @@ export const AssetDetail = ({
   historyData,
   selectedAsset,
   handleClose,
+  onAssetHidden,
   hasHistoryError = false,
 }: AssetDetailProps) => {
   const { t } = useTranslation();
@@ -242,6 +257,9 @@ export const AssetDetail = ({
   const isLpShare = Boolean(
     selectedBalance && "liquidityPoolId" in selectedBalance,
   );
+  // A classic asset with an issuer, or a contract token. XLM and LP shares
+  // are neither: they have no address to copy and are never hidden.
+  const isIssuedToken = !isNativeBalance(selectedBalance) && !isLpShare;
 
   // Chart + stats are mainnet-only; elsewhere the header keeps its 24h delta.
   // LP shares are excluded: `<pool-id>:lp` is not priceable (getTokenPrices
@@ -328,6 +346,57 @@ export const AssetDetail = ({
   const headerPrice = inspectedHeaderPrice ?? assetPrice?.currentPrice;
   const isPricePlaceholder = !headerPrice && isSorobanAsset;
 
+  // Only issued tokens can be hidden. XLM pays every transaction fee, so
+  // hiding it would make Send and Swap report insufficient XLM; the Hidden
+  // tokens sheet doesn't list LP shares, so a hidden one could never be
+  // unhidden. Same as mobile, where neither opens token details' Hide.
+  const canOfferHide = isIssuedToken;
+
+  /**
+   * Hides the asset from the balances view, returns to the account and
+   * confirms with a toast. XLM never gets here; see `canOfferHide`.
+   */
+  const handleHideAsset = async () => {
+    setOptionsOpen(false);
+
+    try {
+      const { error } = await changeAssetVisibility({
+        assetIssuer: selectedAsset,
+        assetVisibility: "hidden",
+        activePublicKey: publicKey,
+      });
+
+      if (error) {
+        throw new Error(error);
+      }
+    } catch {
+      toast.custom(() => (
+        <Notification
+          variant="error"
+          title={t("Couldn’t hide {{code}}", { code: canonical.code })}
+        />
+      ));
+      return;
+    }
+
+    handleClose();
+
+    // The flag is saved at this point, so a failed refresh must not read as
+    // a failed hide: the balances catch up on the next poll.
+    try {
+      await onAssetHidden?.();
+    } catch (error) {
+      console.error("Failed to refresh balances after hiding:", error);
+    }
+
+    toast.custom(() => (
+      <Notification
+        variant="success"
+        title={t("{{code}} hidden", { code: canonical.code })}
+      />
+    ));
+  };
+
   return (
     <React.Fragment>
       <View>
@@ -350,7 +419,9 @@ export const AssetDetail = ({
                     className="AssetDetail__options-actions"
                     ref={activeOptionsRef}
                   >
-                    {!isNativeBalance(selectedBalance) ? (
+                    {/* Reading an LP share's issuer would throw and blank
+                        the menu. */}
+                    {isIssuedToken ? (
                       <div className="AssetDetail__options-actions__row">
                         <CopyText
                           textToCopy={
@@ -366,6 +437,21 @@ export const AssetDetail = ({
                             <Icon.Copy01 />
                           </div>
                         </CopyText>
+                      </div>
+                    ) : null}
+                    {canOfferHide ? (
+                      <div className="AssetDetail__options-actions__row">
+                        <button
+                          type="button"
+                          className="action AssetDetail__options-actions__button"
+                          onClick={handleHideAsset}
+                          data-testid="AssetDetail__hide"
+                        >
+                          <div className="AssetDetail__options-actions__label">
+                            {t("Hide {{code}}", { code: canonical.code })}
+                          </div>
+                          <Icon.EyeOff />
+                        </button>
                       </div>
                     ) : null}
                     {isStellarExpertSupported ? (

@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 
 import { emitMetric } from "helpers/metrics";
+import { getCanonicalFromAsset } from "helpers/stellar";
 import { scrubStrKeys } from "helpers/stellarStrKey";
 
 import { AppDispatch } from "popup/App";
@@ -12,6 +13,7 @@ import {
   confirmPassword,
   hasPrivateKeySelector,
 } from "popup/ducks/accountServices";
+import { clearHiddenAssetFlag } from "popup/helpers/useHiddenAssets";
 
 type Params = {
   rejectToken: typeof rejectToken;
@@ -20,6 +22,10 @@ type Params = {
   // Threaded onto the add/reject dispatch so asset_add.responded carries
   // asset_code (analytics only — see ducks/access.ts). Empty when unknown.
   assetCode?: string;
+  // The requested SEP-41 token's contract and the account adding it, so a
+  // successful add can clear a hidden flag left on that token.
+  contractId?: string;
+  publicKey?: string;
 };
 
 type Response = {
@@ -39,6 +45,8 @@ export const useSetupAddTokenFlow = ({
   addToken: addTokenFn,
   uuid,
   assetCode,
+  contractId,
+  publicKey,
 }: Params): Response => {
   const { t } = useTranslation();
   const [isConfirming, setIsConfirming] = useState(false);
@@ -103,13 +111,32 @@ export const useSetupAddTokenFlow = ({
     } catch (e) {
       console.error(e);
       await emitMetric(METRIC_NAMES.assetAddApiFailed, {
-        reason_code: e instanceof Error ? (scrubStrKeys(e.message) ?? e.message) : "unknown",
+        reason_code:
+          e instanceof Error
+            ? (scrubStrKeys(e.message) ?? e.message)
+            : "unknown",
       });
       setSubmitError(t("Failed to add token. Please retry or cancel."));
       return false;
     }
 
     return true;
+  };
+
+  /**
+   * Drops a stored hidden flag for the SEP-41 token just added, so it shows
+   * up; see clearHiddenAssetFlag. Awaited before the popup closes, which
+   * would drop a write still in flight. Never throws.
+   */
+  const clearAddedTokenHiddenFlag = async () => {
+    if (!assetCode || !contractId || !publicKey) {
+      return;
+    }
+
+    await clearHiddenAssetFlag({
+      canonicalAsset: getCanonicalFromAsset(assetCode, contractId),
+      activePublicKey: publicKey,
+    });
   };
 
   // SEP-41 is a one-step flow: approve submits and closes immediately on
@@ -120,6 +147,7 @@ export const useSetupAddTokenFlow = ({
 
     if (hasPrivateKey) {
       if (await addTokenAndClose()) {
+        await clearAddedTokenHiddenFlag();
         window.close();
       }
     } else {
@@ -134,6 +162,7 @@ export const useSetupAddTokenFlow = ({
 
     if (confirmPassword.fulfilled.match(confirmPasswordResp)) {
       if (await addTokenAndClose()) {
+        await clearAddedTokenHiddenFlag();
         window.close();
       }
     }

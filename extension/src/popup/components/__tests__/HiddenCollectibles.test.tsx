@@ -1,6 +1,9 @@
 import React from "react";
 import { render, waitFor, screen, fireEvent } from "@testing-library/react";
 
+import { toast } from "sonner";
+
+import * as ApiInternal from "@shared/api/internal";
 import { HiddenCollectibles } from "popup/components/account/HiddenCollectibles";
 import {
   TESTNET_NETWORK_DETAILS,
@@ -49,6 +52,14 @@ const defaultState = {
       },
     },
   },
+};
+
+/** The props of the Notification the latest toast would render. */
+const lastToastProps = (spy: jest.SpyInstance) => {
+  const renderToast = spy.mock.calls[spy.mock.calls.length - 1][0] as (
+    id: string,
+  ) => React.ReactElement<{ variant: string; title: string }>;
+  return renderToast("toast").props;
 };
 
 describe("HiddenCollectibles", () => {
@@ -129,7 +140,7 @@ describe("HiddenCollectibles", () => {
     });
   });
 
-  it("does not render when isOpen is false", async () => {
+  it("keeps the sheet closed when isOpen is false", async () => {
     const onClose = jest.fn();
     const hiddenCollectibles = {};
 
@@ -145,15 +156,89 @@ describe("HiddenCollectibles", () => {
       </Wrapper>,
     );
 
-    // Should not find the hidden collectibles content
-    expect(screen.queryByText("Hidden Collectibles")).not.toBeInTheDocument();
-    expect(
-      screen.queryByText("No hidden collectibles"),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("hidden-collectibles")).not.toBeInTheDocument();
   });
 
-  it("opens collectible detail when clicking on a hidden collectible", async () => {
+  it("shows each hidden collectible's name and token id with an Unhide button", async () => {
+    const hiddenCollectibles = {
+      "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA:2": "hidden",
+    };
+
+    render(
+      <Wrapper state={defaultState} routes={[ROUTES.account]}>
+        <HiddenCollectibles
+          collections={mockCollectibles}
+          isOpen={true}
+          onClose={jest.fn()}
+          refreshHiddenCollectibles={mockRefreshHiddenCollectibles}
+          isCollectibleHidden={createIsCollectibleHidden(hiddenCollectibles)}
+        />
+      </Wrapper>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("hidden-collectible-2")).toBeInTheDocument();
+    });
+    expect(screen.getByText("Stellar Frog 2")).toBeInTheDocument();
+    expect(screen.getByText("#2")).toBeInTheDocument();
+    expect(screen.getByTestId("hidden-collectible-unhide-2")).toHaveTextContent(
+      "Unhide",
+    );
+  });
+
+  it("names a collectible without metadata Token #<id>, without repeating the id", async () => {
+    const collectionAddress =
+      "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA";
+    const nameless = [
+      {
+        collection: {
+          address: collectionAddress,
+          name: "Stellar Frogs",
+          symbol: "SFROG",
+          collectibles: [
+            {
+              collectionAddress,
+              collectionName: "Stellar Frogs",
+              owner: TEST_PUBLIC_KEY,
+              tokenId: "102510",
+              tokenUri: "",
+            },
+          ],
+        },
+      },
+    ] as any;
+
+    render(
+      <Wrapper state={defaultState} routes={[ROUTES.account]}>
+        <HiddenCollectibles
+          collections={nameless}
+          isOpen={true}
+          onClose={jest.fn()}
+          refreshHiddenCollectibles={mockRefreshHiddenCollectibles}
+          isCollectibleHidden={() => true}
+        />
+      </Wrapper>,
+    );
+
+    await waitFor(() => {
+      expect(
+        screen.getByTestId("hidden-collectible-102510"),
+      ).toBeInTheDocument();
+    });
+    expect(screen.getByTestId("hidden-collectible-102510")).toHaveTextContent(
+      "Token #102510",
+    );
+    expect(screen.queryByText("#102510")).not.toBeInTheDocument();
+  });
+
+  it("unhides a collectible from its row, refreshes and closes", async () => {
     const onClose = jest.fn();
+    const changeVisibility = jest
+      .spyOn(ApiInternal, "changeCollectibleVisibility")
+      .mockImplementation(() =>
+        Promise.resolve({ hiddenCollectibles: {}, error: "" } as any),
+      );
     const hiddenCollectibles = {
       "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA:2": "hidden",
     };
@@ -174,12 +259,64 @@ describe("HiddenCollectibles", () => {
       expect(screen.getByTestId("hidden-collectible-2")).toBeInTheDocument();
     });
 
-    // Click on the hidden collectible
-    fireEvent.click(screen.getByTestId("hidden-collectible-2"));
+    fireEvent.click(screen.getByTestId("hidden-collectible-unhide-2"));
 
-    // Should open the collectible detail
     await waitFor(() => {
-      expect(screen.getByTestId("CollectibleDetail")).toBeInTheDocument();
+      expect(changeVisibility).toHaveBeenCalledWith({
+        collectibleKey:
+          "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA:2",
+        collectibleVisibility: "visible",
+        activePublicKey: TEST_PUBLIC_KEY,
+      });
     });
+    await waitFor(() => {
+      expect(onClose).toHaveBeenCalled();
+    });
+    // Once on open, once after the unhide
+    expect(mockRefreshHiddenCollectibles).toHaveBeenCalledTimes(2);
+  });
+
+  it("keeps the sheet open and reports the failure when the unhide is rejected", async () => {
+    const onClose = jest.fn();
+    const changeVisibility = jest
+      .spyOn(ApiInternal, "changeCollectibleVisibility")
+      .mockImplementation(() =>
+        Promise.resolve({
+          hiddenCollectibles: {},
+          error: "storage failed",
+        } as any),
+      );
+    const toastSpy = jest
+      .spyOn(toast, "custom")
+      .mockImplementation(() => "toast");
+    const hiddenCollectibles = {
+      "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA:2": "hidden",
+    };
+
+    render(
+      <Wrapper state={defaultState} routes={[ROUTES.account]}>
+        <HiddenCollectibles
+          collections={mockCollectibles}
+          isOpen={true}
+          onClose={onClose}
+          refreshHiddenCollectibles={mockRefreshHiddenCollectibles}
+          isCollectibleHidden={createIsCollectibleHidden(hiddenCollectibles)}
+        />
+      </Wrapper>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("hidden-collectible-2")).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByTestId("hidden-collectible-unhide-2"));
+
+    await waitFor(() => expect(changeVisibility).toHaveBeenCalled());
+    await waitFor(() => expect(toastSpy).toHaveBeenCalled());
+    expect(lastToastProps(toastSpy).variant).toBe("error");
+    expect(onClose).not.toHaveBeenCalled();
+    // Only the refresh on open; a failed unhide changes nothing
+    expect(mockRefreshHiddenCollectibles).toHaveBeenCalledTimes(1);
+    expect(screen.getByTestId("hidden-collectible-2")).toBeInTheDocument();
   });
 });

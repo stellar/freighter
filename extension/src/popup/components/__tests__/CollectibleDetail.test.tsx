@@ -1,6 +1,15 @@
 import React from "react";
-import { render, waitFor, screen, within } from "@testing-library/react";
+import {
+  render,
+  waitFor,
+  screen,
+  within,
+  fireEvent,
+} from "@testing-library/react";
 import browser from "webextension-polyfill";
+import { toast } from "sonner";
+
+import * as ApiInternal from "@shared/api/internal";
 
 import { CollectibleDetail } from "popup/components/account/CollectibleDetail";
 import {
@@ -28,6 +37,14 @@ const newTabSpy = jest
   .spyOn(browser.tabs, "create")
   // @ts-ignore
   .mockImplementation(() => Promise.resolve());
+
+/** The props of the Notification the latest toast would render. */
+const lastToastProps = (spy: jest.SpyInstance) => {
+  const renderToast = spy.mock.calls[spy.mock.calls.length - 1][0] as (
+    id: string,
+  ) => React.ReactElement<{ variant: string; title: string }>;
+  return renderToast("toast").props;
+};
 
 describe("CollectibleDetail", () => {
   it("renders collectible detail", async () => {
@@ -571,100 +588,6 @@ describe("CollectibleDetail", () => {
       url: "https://nftcalendar.io/external/2",
     });
   });
-  it("shows 'This collectible is hidden' notification when isHidden is true", async () => {
-    render(
-      <Wrapper
-        routes={[ROUTES.account]}
-        state={{
-          auth: {
-            error: null,
-            applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
-            publicKey:
-              "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF",
-            allAccounts: mockAccounts,
-          },
-          settings: {
-            networkDetails: TESTNET_NETWORK_DETAILS,
-            networksList: DEFAULT_NETWORKS,
-            isSorobanPublicEnabled: true,
-            isRpcHealthy: true,
-            userNotification: {
-              enabled: false,
-              message: "",
-            },
-          },
-          cache: {
-            collections: {
-              [TESTNET_NETWORK_DETAILS.network]: {
-                [TEST_PUBLIC_KEY]: mockCollectibles,
-              },
-            },
-          },
-        }}
-      >
-        <CollectibleDetail
-          selectedCollectible={{
-            collectionAddress:
-              "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA",
-            tokenId: "2",
-          }}
-          handleItemClose={() => {}}
-          isHidden={true}
-        />
-      </Wrapper>,
-    );
-    await waitFor(() => screen.getByTestId("CollectibleDetail"));
-
-    // Should show the hidden notification
-    expect(screen.getByText("This collectible is hidden")).toBeDefined();
-  });
-  it("does not show hidden notification when isHidden is false", async () => {
-    render(
-      <Wrapper
-        routes={[ROUTES.account]}
-        state={{
-          auth: {
-            error: null,
-            applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
-            publicKey:
-              "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF",
-            allAccounts: mockAccounts,
-          },
-          settings: {
-            networkDetails: TESTNET_NETWORK_DETAILS,
-            networksList: DEFAULT_NETWORKS,
-            isSorobanPublicEnabled: true,
-            isRpcHealthy: true,
-            userNotification: {
-              enabled: false,
-              message: "",
-            },
-          },
-          cache: {
-            collections: {
-              [TESTNET_NETWORK_DETAILS.network]: {
-                [TEST_PUBLIC_KEY]: mockCollectibles,
-              },
-            },
-          },
-        }}
-      >
-        <CollectibleDetail
-          selectedCollectible={{
-            collectionAddress:
-              "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA",
-            tokenId: "2",
-          }}
-          handleItemClose={() => {}}
-          isHidden={false}
-        />
-      </Wrapper>,
-    );
-    await waitFor(() => screen.getByTestId("CollectibleDetail"));
-
-    // Should not show the hidden notification
-    expect(screen.queryByText("This collectible is hidden")).toBeNull();
-  });
   it("renders menu button for hide/show functionality", async () => {
     render(
       <Wrapper
@@ -712,5 +635,105 @@ describe("CollectibleDetail", () => {
     expect(
       screen.getByTestId("CollectibleDetail__header__right-button"),
     ).toBeDefined();
+  });
+
+  describe("hide outcome", () => {
+    const renderDetail = (handleItemClose: jest.Mock) =>
+      render(
+        <Wrapper
+          routes={[ROUTES.account]}
+          state={{
+            auth: {
+              error: null,
+              applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
+              publicKey: TEST_PUBLIC_KEY,
+              allAccounts: mockAccounts,
+            },
+            settings: {
+              networkDetails: TESTNET_NETWORK_DETAILS,
+              networksList: DEFAULT_NETWORKS,
+              isSorobanPublicEnabled: true,
+              isRpcHealthy: true,
+              userNotification: {
+                enabled: false,
+                message: "",
+              },
+            },
+            cache: {
+              collections: {
+                [TESTNET_NETWORK_DETAILS.network]: {
+                  [TEST_PUBLIC_KEY]: mockCollectibles,
+                },
+              },
+            },
+          }}
+        >
+          <CollectibleDetail
+            selectedCollectible={{
+              collectionAddress:
+                "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA",
+              tokenId: "2",
+            }}
+            handleItemClose={handleItemClose}
+          />
+        </Wrapper>,
+      );
+
+    const clickHide = async () => {
+      await waitFor(() => screen.getByTestId("CollectibleDetail"));
+      // The popover trigger is the icon inside the header button wrapper
+      fireEvent.click(
+        screen.getByTestId("CollectibleDetail__header__right-button")
+          .firstElementChild!,
+      );
+      fireEvent.click(await screen.findByText("Hide collectible"));
+    };
+
+    it("closes the detail and confirms when the hide is saved", async () => {
+      const changeVisibility = jest
+        .spyOn(ApiInternal, "changeCollectibleVisibility")
+        .mockImplementation(() =>
+          Promise.resolve({ hiddenCollectibles: {}, error: "" } as any),
+        );
+      const toastSpy = jest
+        .spyOn(toast, "custom")
+        .mockImplementation(() => "toast");
+      const handleItemClose = jest.fn();
+
+      renderDetail(handleItemClose);
+      await clickHide();
+
+      await waitFor(() => expect(handleItemClose).toHaveBeenCalled());
+      expect(changeVisibility).toHaveBeenCalledWith({
+        collectibleKey:
+          "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA:2",
+        collectibleVisibility: "hidden",
+        activePublicKey: TEST_PUBLIC_KEY,
+      });
+      expect(lastToastProps(toastSpy).variant).toBe("success");
+    });
+
+    it("keeps the detail open and reports the failure when the hide is rejected", async () => {
+      const changeVisibility = jest
+        .spyOn(ApiInternal, "changeCollectibleVisibility")
+        .mockImplementation(() =>
+          Promise.resolve({
+            hiddenCollectibles: {},
+            error: "storage failed",
+          } as any),
+        );
+      const toastSpy = jest
+        .spyOn(toast, "custom")
+        .mockImplementation(() => "toast");
+      const handleItemClose = jest.fn();
+
+      renderDetail(handleItemClose);
+      await clickHide();
+
+      await waitFor(() => expect(changeVisibility).toHaveBeenCalled());
+      await waitFor(() => expect(toastSpy).toHaveBeenCalled());
+      expect(lastToastProps(toastSpy).variant).toBe("error");
+      expect(handleItemClose).not.toHaveBeenCalled();
+    });
   });
 });

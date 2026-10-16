@@ -148,6 +148,70 @@ describe("ManageAssetRows", () => {
   afterEach(() => {
     jest.clearAllMocks();
   });
+  it("offers Unhide for a held asset the account hid", async () => {
+    const onUnhideAsset = jest.fn();
+    const usdcIssuer =
+      "GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM";
+
+    render(
+      <Wrapper
+        routes={[ROUTES.manageAssets]}
+        state={{
+          auth: {
+            hasPrivateKey: true,
+            allAccounts: [
+              {
+                hardwareWalletType: "",
+                imported: false,
+                name: "Account 1",
+                publicKey: "G1",
+              },
+            ],
+            publicKey: "G1",
+          },
+          settings: {
+            networkDetails: TESTNET_NETWORK_DETAILS,
+          },
+        }}
+      >
+        <ManageAssetRows
+          balances={{
+            balances: [
+              mockBalances?.balances?.native as any,
+              mockBalances?.balances?.[`USDC:${usdcIssuer}`] as any,
+            ],
+            isFunded: true,
+            subentryCount: 1,
+          }}
+          verifiedAssetRows={[
+            {
+              code: "USDC",
+              issuer: usdcIssuer,
+              domain: "test.com",
+              image: "icon.png",
+            },
+          ]}
+          unverifiedAssetRows={[]}
+          isAssetHidden={(canonical) => canonical === `USDC:${usdcIssuer}`}
+          onUnhideAsset={onUnhideAsset}
+        />
+      </Wrapper>,
+    );
+
+    const unhide = await screen.findByTestId("ManageAssetRowButton__unhide");
+    expect(unhide).toHaveTextContent("Unhide");
+    expect(
+      screen.queryByTestId("ManageAssetRowButton__ellipsis-USDC"),
+    ).not.toBeInTheDocument();
+
+    fireEvent.click(unhide);
+
+    expect(onUnhideAsset).toHaveBeenCalledWith({
+      code: "USDC",
+      canonicalAsset: `USDC:${usdcIssuer}`,
+    });
+  });
+
   it("renders ManageAssetRows with change trust internal", async () => {
     render(
       <Wrapper

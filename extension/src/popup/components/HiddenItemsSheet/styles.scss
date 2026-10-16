@@ -1,0 +1,69 @@
+@use "../../styles/utils.scss" as *;
+
+// The sheet's panel. SheetContent hands the same class to its overlay, so
+// the slot attribute keeps these rules on the panel only.
+.HiddenItemsSheet__content[data-slot="sheet-content"] {
+  background: var(--sds-clr-gray-01);
+  border-radius: 1.5rem 1.5rem 0 0;
+  box-shadow: 0 1rem 1.5rem rgba(0, 0, 0, 0.24);
+  max-height: 100vh;
+}
+
+.HiddenItemsSheet {
+  display: flex;
+  flex-direction: column;
+  gap: pxToRem(24px);
+  padding: pxToRem(24px);
+
+  &__top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  // Two classes so these win over the primitive's own utility classes.
+  & &__title {
+    margin: 0;
+    color: var(--sds-clr-gray-12);
+    font-size: pxToRem(18px);
+    font-weight: var(--sds-fw-medium);
+    line-height: pxToRem(26px);
+  }
+
+  &__close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: pxToRem(32px);
+    height: pxToRem(32px);
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background-color: var(--sds-clr-gray-03);
+    color: var(--sds-clr-gray-09);
+    cursor: pointer;
+
+    svg {
+      width: pxToRem(20px);
+      height: pxToRem(20px);
+    }
+  }
+
+  &__list {
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(16px);
+    // Keeps the sheet reachable with many hidden items
+    max-height: 50vh;
+    overflow-y: auto;
+  }
+
+  &__empty {
+    color: var(--sds-clr-gray-11);
+    font-size: pxToRem(14px);
+    font-weight: var(--sds-fw-medium);
+    line-height: pxToRem(20px);
+    text-align: center;
+    padding: pxToRem(8px) 0;
+  }
+}

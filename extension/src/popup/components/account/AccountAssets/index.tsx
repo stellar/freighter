@@ -208,6 +208,8 @@ interface AccountAssetsProps {
   assetPrices?: ApiTokenPrices;
   /** The account history request failed; AssetDetail shows an error, not a skeleton. */
   hasHistoryError?: boolean;
+  /** Called after an asset was hidden from its detail sheet, to refresh the list */
+  onAssetHidden?: () => void | Promise<void>;
 }
 
 export const AccountAssets = ({
@@ -216,6 +218,7 @@ export const AccountAssets = ({
   assetPrices,
   historyData,
   hasHistoryError = false,
+  onAssetHidden,
 }: AccountAssetsProps) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -401,6 +404,7 @@ export const AccountAssets = ({
                   setSelectedAsset("");
                   clearAssetDetailQueryParams();
                 }}
+                onAssetHidden={onAssetHidden}
               />
             </SheetContent>
           </Sheet>

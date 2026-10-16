@@ -4,7 +4,11 @@ import { captureException } from "@sentry/browser";
 import BigNumber from "bignumber.js";
 
 import { NetworkDetails } from "@shared/constants/stellar";
-import { ApiTokenPrices, BlockAidScanAssetResult } from "@shared/api/types";
+import {
+  ApiTokenPrices,
+  AssetVisibility,
+  BlockAidScanAssetResult,
+} from "@shared/api/types";
 import { AssetListResponse } from "@shared/constants/soroban/asset-list";
 import { getCombinedAssetListData } from "@shared/api/helpers/token-list";
 import { AssetType } from "@shared/api/types/account-balance";
@@ -27,6 +31,8 @@ import { splitVerifiedAssetCurrency } from "popup/helpers/assetList";
 import { isContractId } from "popup/helpers/soroban";
 import { formatAmount, roundUsdValue } from "popup/helpers/formatters";
 import { sortBalancesByValue } from "popup/helpers/balance";
+import { isAssetVisible } from "popup/helpers/settings";
+import { readHiddenAssets } from "popup/helpers/useHiddenAssets";
 import {
   scanAssetBulk,
   MAX_ASSETS_TO_SCAN,
@@ -201,6 +207,7 @@ const currencyToRecord = (
  * Fallback:              yourTokens only (held-in-memory filter), popular/verified/unverified empty
  *
  * Classic-only: any non-SAC Soroban contract is stripped and sets hadSorobanMatches = true.
+
  */
 export const buildSwapSections = ({
   searchTerm,
@@ -343,6 +350,34 @@ export const buildSwapSections = ({
  * The map is keyed by "CODE-ISSUER" (matching how scanAssetBulk IDs are built).
  * Native XLM (no issuer) is always trusted and left unmodified.
  */
+/**
+ * The result with the hidden tokens left out of Popular and the search
+ * buckets. Applied to every result the hook serves, cached ones included:
+ * `balances` already leaves hidden tokens out, so a hidden token the account
+ * holds would otherwise look new and picking it would offer a trustline the
+ * account already has. Your tokens is untouched; it comes from `balances`.
+ * The user unhides a token from Add token to swap into it.
+ */
+export const omitHiddenFromSections = (
+  result: SwapTokenLookupResult,
+  hiddenAssets: Record<string, AssetVisibility>,
+): SwapTokenLookupResult => {
+  if (!Object.keys(hiddenAssets).length) {
+    return result;
+  }
+  const visible = (rows: SwapTokenRecord[]) =>
+    rows.filter((r) => isAssetVisible(hiddenAssets, r.canonical));
+  return {
+    ...result,
+    sections: {
+      ...result.sections,
+      popular: visible(result.sections.popular),
+      verified: visible(result.sections.verified),
+      unverified: visible(result.sections.unverified),
+    },
+  };
+};
+
 export const mergeScanResults = ({
   rows,
   scanResults,
@@ -515,7 +550,7 @@ export const useSwapTokenLookup = () => {
   const fetchData = async ({
     searchTerm,
     balances,
-    publicKey: _publicKey,
+    publicKey,
     networkDetails,
     icons = {},
     tokenPrices = {},
@@ -546,10 +581,25 @@ export const useSwapTokenLookup = () => {
       (isIdle
         ? undefined
         : getCachedSearchResult(networkDetails.network, normalizedTerm));
-    if (cachedResult) {
-      dispatch({ type: "FETCH_DATA_SUCCESS", payload: cachedResult });
-    } else {
+    if (!cachedResult) {
       dispatch({ type: "FETCH_DATA_START" });
+    }
+
+    // Read on every lookup, before anything is served (the cached repaint
+    // included), so a token hidden or unhidden since the last lookup is
+    // reflected straight away. The caches hold unfiltered results.
+    const hiddenAssets = await readHiddenAssets(publicKey);
+    if (signal.aborted) {
+      return;
+    }
+    const serve = (result: SwapTokenLookupResult) =>
+      dispatch({
+        type: "FETCH_DATA_SUCCESS",
+        payload: omitHiddenFromSections(result, hiddenAssets),
+      });
+
+    if (cachedResult) {
+      serve(cachedResult);
     }
 
     // Token discovery (Popular + search) only exists on Mainnet / Testnet.
@@ -558,9 +608,8 @@ export const useSwapTokenLookup = () => {
       isMainnet(networkDetails) || isTestnet(networkDetails);
 
     if (!supportsDiscovery) {
-      dispatch({
-        type: "FETCH_DATA_SUCCESS",
-        payload: buildSwapSections({
+      serve(
+        buildSwapSections({
           searchTerm,
           balances,
           networkDetails,
@@ -568,7 +617,7 @@ export const useSwapTokenLookup = () => {
           tokenPrices,
           isFallback: true,
         }),
-      });
+      );
       return;
     }
 
@@ -741,7 +790,7 @@ export const useSwapTokenLookup = () => {
         return;
       }
 
-      dispatch({ type: "FETCH_DATA_SUCCESS", payload });
+      serve(payload);
 
       // Bulk-scan only the candidates not already cached this session, in
       // parallel chunks. Cached verdicts seed the result map so the full
@@ -793,7 +842,7 @@ export const useSwapTokenLookup = () => {
           if (signal.aborted) {
             return;
           }
-          dispatch({ type: "FETCH_DATA_SUCCESS", payload });
+          serve(payload);
         }
       }
 
@@ -814,13 +863,12 @@ export const useSwapTokenLookup = () => {
       // transient failure instead of dropping Popular to held-only; fall back
       // to held-only only when there's nothing cached.
       if (cachedResult) {
-        dispatch({ type: "FETCH_DATA_SUCCESS", payload: cachedResult });
+        serve(cachedResult);
         return;
       }
       // Graceful fallback: stellar.expert or Blockaid unreachable → held-only
-      dispatch({
-        type: "FETCH_DATA_SUCCESS",
-        payload: buildSwapSections({
+      serve(
+        buildSwapSections({
           searchTerm,
           balances,
           networkDetails,
@@ -828,7 +876,7 @@ export const useSwapTokenLookup = () => {
           tokenPrices,
           isFallback: true,
         }),
-      });
+      );
     }
   };
 

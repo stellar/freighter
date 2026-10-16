@@ -345,6 +345,11 @@ export const Account = () => {
                     hasHistoryError={historyData.state === RequestState.ERROR}
                     assetPrices={tokenPrices ?? {}}
                     assetIcons={resolvedIcons}
+                    // The balances cache holds the unfiltered list, so a cached
+                    // reload is enough to drop the newly hidden asset.
+                    onAssetHidden={async () => {
+                      await fetchData({ useAppDataCache: true });
+                    }}
                   />
                 </div>
               ) : (

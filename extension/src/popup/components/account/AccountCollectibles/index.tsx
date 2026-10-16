@@ -19,12 +19,10 @@ import "./styles.scss";
 
 const CollectionsList = ({
   collections,
-  showHidden,
   isCollectibleHidden,
   onCloseCollectible,
 }: {
   collections: Collection[];
-  showHidden: boolean;
   isCollectibleHidden: (collectionAddress: string, tokenId: string) => boolean;
   onCloseCollectible: () => void;
 }) => {
@@ -114,14 +112,10 @@ const CollectionsList = ({
           return null;
         }
 
-        // filter collectibles based on showHidden toggle
-        const collectiblesToShow = showHidden
-          ? collection.collectibles.filter((item) =>
-              isCollectibleHidden(collection.address, item.tokenId),
-            )
-          : collection.collectibles.filter(
-              (item) => !isCollectibleHidden(collection.address, item.tokenId),
-            );
+        // Hidden collectibles live in the Hidden collectibles sheet instead
+        const collectiblesToShow = collection.collectibles.filter(
+          (item) => !isCollectibleHidden(collection.address, item.tokenId),
+        );
 
         // if no collectibles to show, don't render the collection
         if (collectiblesToShow.length === 0) {
@@ -166,11 +160,7 @@ const CollectionsList = ({
               >
                 {collectiblesToShow.map((item) => (
                   <div
-                    className={`AccountCollectibles__collection__grid__item${
-                      showHidden
-                        ? " AccountCollectibles__collection__grid__item--hidden"
-                        : ""
-                    }`}
+                    className="AccountCollectibles__collection__grid__item"
                     onClick={() =>
                       handleOpenCollectible({
                         collectionAddress: collection.address,
@@ -214,7 +204,6 @@ const CollectionsList = ({
             <CollectibleDetail
               selectedCollectible={detailData}
               handleItemClose={handleCloseCollectible}
-              isHidden={showHidden}
             />
           )}
         </SheetContent>
@@ -296,7 +285,6 @@ export const AccountCollectibles = ({
       {hasValidCollections ? (
         <CollectionsList
           collections={collections}
-          showHidden={false}
           isCollectibleHidden={isCollectibleHidden}
           onCloseCollectible={refreshHiddenCollectibles}
         />

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch, useSelector, useStore } from "react-redux";
 import { useNavigate, useLocation } from "react-router-dom";
 import { ActionStatus } from "@shared/api/types";
 import { STEPS, isSwapSource } from "popup/constants/swap";
@@ -14,7 +14,7 @@ import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { getQuoteExpiredOperationCodes } from "popup/helpers/quoteExpiry";
 import { SwapAsset } from "popup/components/swap/SwapAsset";
 import { SwapAmount } from "popup/components/swap/SwapAmount";
-import { AppDispatch } from "popup/App";
+import { AppDispatch, AppState } from "popup/App";
 import {
   resetSubmission,
   resetSubmitStatus,
@@ -31,6 +31,9 @@ import { navigateTo } from "popup/helpers/navigate";
 import { ROUTES } from "popup/constants/routes";
 import { resetSimulation } from "popup/ducks/token-payment";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
+import { publicKeySelector } from "popup/ducks/accountServices";
+import { isAssetVisible } from "popup/helpers/settings";
+import { readHiddenAssets } from "popup/helpers/useHiddenAssets";
 import { getAssetFromCanonical } from "helpers/stellar";
 import { isNativeAssetId } from "@shared/helpers/assetIdentity";
 import {
@@ -84,6 +87,7 @@ export const Swap = () => {
 
   const { transactionSimulation, transactionData } = submission;
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
+  const store = useStore<AppState>();
 
   // Quote expired at submit (op_under_dest_min / op_too_few_offers): recover to
   // the review screen with a fresh quote instead of dead-ending in SubmitFail.
@@ -159,18 +163,42 @@ export const Swap = () => {
         // Invalid destination asset param, ignore
       }
     }
-    if (!destinationAsset) {
-      const defaultDest =
-        DEFAULT_SWAP_DEST_CANONICAL[networkDetails.network as NETWORKS];
-      if (defaultDest) {
-        destinationAsset = defaultDest === sourceAsset ? "native" : defaultDest;
+    let isCancelled = false;
+
+    const applyDestination = async () => {
+      if (!destinationAsset) {
+        const defaultDest =
+          DEFAULT_SWAP_DEST_CANONICAL[networkDetails.network as NETWORKS];
+        if (defaultDest === sourceAsset) {
+          destinationAsset = "native";
+        } else if (defaultDest) {
+          // A hidden default stays unselected: the pickers leave hidden
+          // tokens out, so preselecting one would be the only place it
+          // still shows up. The account is read from the store at call
+          // time so this mount-only effect never re-runs (and resets) for it.
+          const hiddenAssets = await readHiddenAssets(
+            publicKeySelector(store.getState()),
+          );
+          if (isAssetVisible(hiddenAssets, defaultDest)) {
+            destinationAsset = defaultDest;
+          }
+        }
       }
-    }
-    if (destinationAsset) {
-      dispatch(saveDestinationAsset(destinationAsset));
-    }
-    setAreDefaultsApplied(true);
-  }, [dispatch, location.search, networkDetails.network]);
+      if (isCancelled) {
+        return;
+      }
+      if (destinationAsset) {
+        dispatch(saveDestinationAsset(destinationAsset));
+      }
+      setAreDefaultsApplied(true);
+    };
+
+    applyDestination();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [dispatch, location.search, networkDetails.network, store]);
 
   // The in-flight submission and its terminal success are internal states of
   // the submitting screen rather than distinct steps/routes, so emit their

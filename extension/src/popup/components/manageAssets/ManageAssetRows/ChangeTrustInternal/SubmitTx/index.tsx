@@ -24,6 +24,7 @@ import { getStellarExpertUrl } from "popup/helpers/account";
 import { openTab } from "popup/helpers/navigate";
 import { getManageAssetXDR } from "popup/helpers/getManageAssetXDR";
 import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
+import { clearHiddenAssetFlag } from "popup/helpers/useHiddenAssets";
 import { AssetIcons } from "@shared/api/types";
 import { removeTokenId, startHwSign } from "popup/ducks/transactionSubmission";
 import { NETWORKS } from "@shared/constants/stellar";
@@ -188,7 +189,19 @@ export const SubmitTransaction = ({
         { asset_code: asset.code, asset_issuer: asset.issuer },
       );
     }
-    onTransactionSuccess?.();
+    const finish = async () => {
+      if (addTrustline) {
+        // A token the user adds on purpose must show up; see
+        // clearHiddenAssetFlag. Awaited because the success callback can
+        // close the popup, which would drop a cleanup still in flight.
+        await clearHiddenAssetFlag({
+          canonicalAsset: getCanonicalFromAsset(asset.code, asset.issuer),
+          activePublicKey: publicKey,
+        });
+      }
+      onTransactionSuccess?.();
+    };
+    finish();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSuccess]);
 

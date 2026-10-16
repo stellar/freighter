@@ -17,6 +17,8 @@ import {
   TESTNET_NETWORK_DETAILS,
 } from "@shared/constants/stellar";
 import { APPLICATION_STATE as ApplicationState } from "@shared/constants/applicationState";
+import { toast } from "sonner";
+
 import * as ApiInternal from "@shared/api/internal";
 import {
   densePoints,
@@ -80,6 +82,14 @@ jest
 jest
   .spyOn(ApiInternal, "getAssetDomains")
   .mockImplementation(() => Promise.resolve({} as any));
+
+/** The props of the Notification the latest toast would render. */
+const lastToastProps = (spy: jest.SpyInstance) => {
+  const renderToast = spy.mock.calls[spy.mock.calls.length - 1][0] as (
+    id: string,
+  ) => React.ReactElement<{ variant: string; title: string }>;
+  return renderToast("toast").props;
+};
 
 describe("AssetDetail", () => {
   // The in-flight request map is module scope; a test that leaves a request
@@ -153,6 +163,306 @@ describe("AssetDetail", () => {
     // place still reading "XLM".
     expect(screen.getByText("Stellar Lumens")).toBeInTheDocument();
   });
+  it("hides a non-native asset from the options menu", async () => {
+    jest
+      .spyOn(ApiInternal, "getAccountBalances")
+      .mockImplementation(() => Promise.resolve(mockBalances));
+    const changeVisibility = jest
+      .spyOn(ApiInternal, "changeAssetVisibility")
+      .mockImplementation(() =>
+        Promise.resolve({ hiddenAssets: {}, error: "" } as any),
+      );
+    const usdcCanonical =
+      "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM";
+    const handleClose = jest.fn();
+    const onAssetHidden = jest.fn().mockResolvedValue(undefined);
+    const props = {
+      handleClose,
+      onAssetHidden,
+      accountBalances: {
+        balances: [
+          {
+            available: new BigNumber(100),
+            token: {
+              code: "USDC",
+              issuer: {
+                key: "GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
+              },
+            },
+            total: new BigNumber(100),
+          },
+        ],
+      } as any,
+      selectedAsset: usdcCanonical,
+      historyData: mockHistoryData,
+    };
+
+    render(
+      <Wrapper
+        routes={[ROUTES.account]}
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.PASSWORD_CREATED,
+            publicKey: "G1",
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: TESTNET_NETWORK_DETAILS,
+          },
+        }}
+      >
+        <AssetDetail {...props} />
+      </Wrapper>,
+    );
+    await waitFor(() => screen.getByTestId("AssetDetail"));
+
+    fireEvent.click(screen.getByAltText("asset options"));
+    const hideButton = await screen.findByTestId("AssetDetail__hide");
+    // The test i18n returns keys uninterpolated, so match the verb only.
+    expect(hideButton).toHaveTextContent(/^Hide/);
+
+    fireEvent.click(hideButton);
+
+    await waitFor(() => {
+      expect(changeVisibility).toHaveBeenCalledWith({
+        assetIssuer: usdcCanonical,
+        assetVisibility: "hidden",
+        activePublicKey: "G1",
+      });
+    });
+    await waitFor(() => {
+      expect(handleClose).toHaveBeenCalled();
+      expect(onAssetHidden).toHaveBeenCalled();
+    });
+  });
+
+  describe("hide outcome", () => {
+    const usdcCanonical =
+      "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM";
+
+    const renderUsdcDetail = (props: {
+      handleClose: jest.Mock;
+      onAssetHidden: jest.Mock;
+    }) =>
+      render(
+        <Wrapper
+          routes={[ROUTES.account]}
+          state={{
+            auth: {
+              error: null,
+              applicationState: ApplicationState.PASSWORD_CREATED,
+              publicKey: "G1",
+              allAccounts: mockAccounts,
+            },
+            settings: {
+              networkDetails: TESTNET_NETWORK_DETAILS,
+            },
+          }}
+        >
+          <AssetDetail
+            {...props}
+            accountBalances={
+              {
+                balances: [
+                  {
+                    available: new BigNumber(100),
+                    token: {
+                      code: "USDC",
+                      issuer: {
+                        key: "GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
+                      },
+                    },
+                    total: new BigNumber(100),
+                  },
+                ],
+              } as any
+            }
+            selectedAsset={usdcCanonical}
+            historyData={mockHistoryData}
+          />
+        </Wrapper>,
+      );
+
+    const clickHide = async () => {
+      await waitFor(() => screen.getByTestId("AssetDetail"));
+      fireEvent.click(screen.getByAltText("asset options"));
+      fireEvent.click(await screen.findByTestId("AssetDetail__hide"));
+    };
+
+    beforeEach(() => {
+      jest
+        .spyOn(ApiInternal, "getAccountBalances")
+        .mockImplementation(() => Promise.resolve(mockBalances));
+    });
+
+    it("still reports the hide when the balances refresh fails", async () => {
+      jest.spyOn(console, "error").mockImplementation(() => undefined);
+      jest
+        .spyOn(ApiInternal, "changeAssetVisibility")
+        .mockImplementation(() =>
+          Promise.resolve({ hiddenAssets: {}, error: "" } as any),
+        );
+      const toastSpy = jest
+        .spyOn(toast, "custom")
+        .mockImplementation(() => "toast");
+      const handleClose = jest.fn();
+      const onAssetHidden = jest
+        .fn()
+        .mockRejectedValue(new Error("refresh failed"));
+
+      renderUsdcDetail({ handleClose, onAssetHidden });
+      await clickHide();
+
+      await waitFor(() => expect(toastSpy).toHaveBeenCalled());
+      expect(onAssetHidden).toHaveBeenCalled();
+      expect(handleClose).toHaveBeenCalled();
+      expect(lastToastProps(toastSpy).variant).toBe("success");
+    });
+
+    it("keeps the detail open and reports a failed hide", async () => {
+      jest
+        .spyOn(ApiInternal, "changeAssetVisibility")
+        .mockImplementation(() =>
+          Promise.resolve({ hiddenAssets: {}, error: "storage failed" } as any),
+        );
+      const toastSpy = jest
+        .spyOn(toast, "custom")
+        .mockImplementation(() => "toast");
+      const handleClose = jest.fn();
+      const onAssetHidden = jest.fn().mockResolvedValue(undefined);
+
+      renderUsdcDetail({ handleClose, onAssetHidden });
+      await clickHide();
+
+      await waitFor(() => expect(toastSpy).toHaveBeenCalled());
+      expect(lastToastProps(toastSpy).variant).toBe("error");
+      expect(handleClose).not.toHaveBeenCalled();
+      expect(onAssetHidden).not.toHaveBeenCalled();
+    });
+  });
+
+  /** Renders the detail for an LP share and waits for it. */
+  const renderLpShareDetail = async () => {
+    jest
+      .spyOn(ApiInternal, "getAccountBalances")
+      .mockImplementation(() => Promise.resolve(mockBalances));
+    const liquidityPoolId =
+      "67260c4c1807b262ff851b0a3fe141194936bb0215b2f77447f1df11998eabb9";
+    const props = {
+      handleClose: () => null,
+      accountBalances: {
+        balances: [
+          {
+            liquidityPoolId,
+            total: new BigNumber(100),
+            available: new BigNumber(100),
+            limit: "1000",
+            reserves: [
+              { asset: "XLM:native", amount: "1000" },
+              {
+                asset:
+                  "USDC:GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
+                amount: "1000",
+              },
+            ],
+          },
+        ],
+      } as any,
+      selectedAsset: `${liquidityPoolId}:lp`,
+      historyData: mockHistoryData,
+    };
+
+    render(
+      <Wrapper
+        routes={[ROUTES.account]}
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.PASSWORD_CREATED,
+            publicKey: "G1",
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: TESTNET_NETWORK_DETAILS,
+          },
+        }}
+      >
+        <AssetDetail {...props} />
+      </Wrapper>,
+    );
+    await waitFor(() => screen.getByTestId("AssetDetail"));
+  };
+
+  it("opens the options menu for a liquidity pool share without Copy address", async () => {
+    await renderLpShareDetail();
+
+    fireEvent.click(screen.getByAltText("asset options"));
+    // The menu renders (it used to throw reading the share's issuer) and
+    // offers nothing to copy, since an LP share has no address
+    expect(
+      document.querySelector(".AssetDetail__options-actions"),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("Copy address")).not.toBeInTheDocument();
+  });
+
+  it("never offers to hide a liquidity pool share", async () => {
+    await renderLpShareDetail();
+
+    fireEvent.click(screen.getByAltText("asset options"));
+    // The menu is open, so the missing Hide is the guard, not a closed menu
+    expect(
+      document.querySelector(".AssetDetail__options-actions"),
+    ).toBeInTheDocument();
+    expect(screen.queryByTestId("AssetDetail__hide")).not.toBeInTheDocument();
+  });
+
+  it("never offers to hide the native asset", async () => {
+    jest
+      .spyOn(ApiInternal, "getAccountBalances")
+      .mockImplementation(() => Promise.resolve(mockBalances));
+    const props = {
+      handleClose: () => null,
+      accountBalances: {
+        balances: [
+          {
+            available: new BigNumber(10),
+            token: { type: "native", code: "XLM" },
+            total: new BigNumber(10),
+          },
+        ],
+      } as any,
+      selectedAsset: "native",
+      historyData: mockHistoryData,
+    };
+
+    render(
+      <Wrapper
+        routes={[ROUTES.account]}
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.PASSWORD_CREATED,
+            publicKey: "G1",
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: TESTNET_NETWORK_DETAILS,
+          },
+        }}
+      >
+        <AssetDetail {...props} />
+      </Wrapper>,
+    );
+    await waitFor(() => screen.getByTestId("AssetDetail"));
+
+    const options = screen.queryByAltText("asset options");
+    if (options) {
+      fireEvent.click(options);
+    }
+    expect(screen.queryByTestId("AssetDetail__hide")).not.toBeInTheDocument();
+  });
+
   it("should hide dust payment if configured", async () => {
     const props = {
       handleClose: () => null,

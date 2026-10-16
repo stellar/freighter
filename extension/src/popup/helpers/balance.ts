@@ -7,7 +7,7 @@ import {
   getCanonicalFromAsset,
   isAsset,
 } from "helpers/stellar";
-import { ApiTokenPrices, AssetToken } from "@shared/api/types";
+import { ApiTokenPrices, AssetToken, AssetVisibility } from "@shared/api/types";
 import {
   AssetType,
   ClassicAsset,
@@ -22,6 +22,7 @@ import {
 import { getAssetSacAddress } from "@shared/helpers/soroban/token";
 import { LP_IDENTIFIER } from "./account";
 import { NO_FIAT_VALUE, formatFiatAmount } from "./formatters";
+import { isAssetVisible } from "./settings";
 import { isContractId } from "./soroban";
 
 export const isClassicBalance = (balance: AssetType): balance is ClassicAsset =>
@@ -211,6 +212,21 @@ export const getBalanceCanonicalKey = (b: AssetType): string => {
   }
   return "";
 };
+
+/**
+ * The balances left once the hidden assets are taken out, by the same rules
+ * as the balances map's `filterHiddenBalances`: native XLM always stays, and
+ * anything else stays unless the hidden map marks it.
+ */
+export const omitHiddenBalances = (
+  balances: AssetType[],
+  hiddenAssets: Record<string, AssetVisibility>,
+): AssetType[] =>
+  balances.filter(
+    (b) =>
+      isNativeBalance(b) ||
+      isAssetVisible(hiddenAssets, getBalanceCanonicalKey(b)),
+  );
 
 /**
  * Re-orders balances for display by descending USD value.

@@ -3,7 +3,11 @@ import { Asset, Networks } from "stellar-sdk";
 
 import { AssetType } from "@shared/api/types/account-balance";
 import { NetworkDetails } from "@shared/constants/stellar";
-import { getBalanceByKey, hasEnoughXlmForFee } from "popup/helpers/balance";
+import {
+  getBalanceByKey,
+  hasEnoughXlmForFee,
+  omitHiddenBalances,
+} from "popup/helpers/balance";
 
 const XLM_CODED_ISSUER =
   "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN";
@@ -73,5 +77,42 @@ describe("hasEnoughXlmForFee", () => {
 
   it("is false when there are no balances", () => {
     expect(hasEnoughXlmForFee([], fee)).toBe(false);
+  });
+});
+
+describe("omitHiddenBalances", () => {
+  const usdc = {
+    token: {
+      code: "USDC",
+      issuer: {
+        key: "GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
+      },
+    },
+    total: new BigNumber(100),
+    available: new BigNumber(100),
+  } as any;
+  const xlm = {
+    token: { type: "native", code: "XLM" },
+    total: new BigNumber(50),
+    available: new BigNumber(50),
+  } as any;
+  const usdcKey =
+    "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM";
+
+  it("drops a hidden asset and keeps the rest", () => {
+    expect(omitHiddenBalances([xlm, usdc], { [usdcKey]: "hidden" })).toEqual([
+      xlm,
+    ]);
+  });
+
+  it("keeps an asset marked visible again", () => {
+    expect(omitHiddenBalances([xlm, usdc], { [usdcKey]: "visible" })).toEqual([
+      xlm,
+      usdc,
+    ]);
+  });
+
+  it("never drops native XLM", () => {
+    expect(omitHiddenBalances([xlm], { native: "hidden" })).toEqual([xlm]);
   });
 });

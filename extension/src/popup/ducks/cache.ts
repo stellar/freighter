@@ -51,6 +51,11 @@ type SaveTokenPricesPayload = {
   publicKey: string;
   networkDetails: NetworkDetails;
   tokenPrices: ApiTokenPrices;
+  /**
+   * When the prices were fetched. Defaults to now; pass the existing stamp
+   * when adding to a cached map so its older prices don't read as fresh.
+   */
+  updatedAt?: number;
 };
 
 type SaveCollectionsPayload = {
@@ -232,7 +237,7 @@ const cacheSlice = createSlice({
           ...state.tokenPrices[networkPassphrase],
           [action.payload.publicKey]: {
             ...action.payload.tokenPrices,
-            updatedAt: Date.now(),
+            updatedAt: action.payload.updatedAt ?? Date.now(),
           } as ApiTokenPrices & { updatedAt: number },
         },
       };

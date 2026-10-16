@@ -18,6 +18,17 @@ export interface GetTokenPricesData {
   tokenPrices: ApiTokenPrices | null;
 }
 
+/** The canonical ids of the balances a price can be fetched for. */
+const getPriceableAssetIds = (balances: AccountBalances["balances"]) =>
+  balances
+    .filter((balance) => "token" in balance)
+    .map((balance) =>
+      getCanonicalFromAsset(
+        balance.token.code,
+        "issuer" in balance.token ? balance.token.issuer.key : undefined,
+      ),
+    );
+
 export function useGetTokenPrices() {
   const reduxDispatch = useDispatch<AppDispatch>();
   const store = useStore<AppState>();
@@ -60,16 +71,47 @@ export function useGetTokenPrices() {
       // to keep symmetry with the response, we don't want to return the updatedAt field
       delete payloadTokenPrices.updatedAt;
       payload.tokenPrices = payloadTokenPrices;
+
+      // The cache only covers the balances it was fetched for. A balance it
+      // has never seen, such as a token unhidden since, would otherwise show
+      // no price (and sort last) until the cache expires, so price just those.
+      const unseenAssetIds = getPriceableAssetIds(balances).filter(
+        (id) => !(id in payloadTokenPrices),
+      );
+      if (unseenAssetIds.length) {
+        try {
+          const useV2 = tokenPricesV2Selector(store.getState());
+          const unseenPrices = await getTokenPrices(
+            unseenAssetIds,
+            networkDetails,
+            useV2,
+          );
+          const mergedTokenPrices = {
+            ...payloadTokenPrices,
+            // Recorded as unpriced when the response leaves an id out, so it
+            // isn't asked for again on every load while the cache is valid
+            ...Object.fromEntries(unseenAssetIds.map((id) => [id, null])),
+            ...unseenPrices,
+          };
+          reduxDispatch(
+            saveTokenPrices({
+              publicKey,
+              networkDetails,
+              tokenPrices: mergedTokenPrices,
+              // Keep the cache's age: the older prices weren't refetched
+              updatedAt: publicKeyTokenPrices!.updatedAt,
+            }),
+          );
+          payload.tokenPrices = mergedTokenPrices;
+        } catch (e) {
+          captureException(
+            `Failed to fetch prices missing from the cache in useGetTokenPrices - ${e}`,
+          );
+        }
+      }
     } else {
       try {
-        const assetIds = balances
-          .filter((balance) => "token" in balance)
-          .map((balance) =>
-            getCanonicalFromAsset(
-              balance.token.code,
-              "issuer" in balance.token ? balance.token.issuer.key : undefined,
-            ),
-          );
+        const assetIds = getPriceableAssetIds(balances);
         if (assetIds.length) {
           // Read the flag from the store at call time (not a render-captured
           // value) so a freshly resolved Amplitude flag isn't missed when this

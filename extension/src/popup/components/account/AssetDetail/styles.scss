@@ -362,6 +362,24 @@
       font-weight: var(--font-weight-medium);
     }
 
+    // A real button for the keyboard, styled like the other rows' actions
+    &__button {
+      align-items: center;
+      appearance: none;
+      background: none;
+      border: 0;
+      color: inherit;
+      cursor: pointer;
+      font: inherit;
+      padding: 0;
+      text-align: left;
+
+      svg {
+        width: 1rem;
+        height: 1rem;
+      }
+    }
+
     &__background {
       height: 100vh;
       position: absolute;
