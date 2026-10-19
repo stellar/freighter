@@ -21,7 +21,15 @@ import { APPLICATION_STATE as ApplicationState } from "@shared/constants/applica
 
 jest.mock("react-router-dom", () => ({
   ...jest.requireActual("react-router-dom"),
-  useLocation: jest.fn(),
+  // The hidden-tokens sheet mounts useGetAssetDomainsWithBalances, whose
+  // useIsSwap reads the location, so the mock has to answer with one.
+  useLocation: jest.fn(() => ({
+    pathname: "/manage-assets/search-asset",
+    search: "",
+    hash: "",
+    state: null,
+    key: "test",
+  })),
 }));
 
 describe("SearchAsset", () => {
@@ -64,7 +72,8 @@ describe("SearchAsset", () => {
     await waitFor(() => {
       expect(screen.getByText("Hidden tokens")).toBeInTheDocument();
     });
-    expect(screen.getByTestId("hidden-assets-empty")).toBeInTheDocument();
+    // The sheet owns its own data; its states are covered by its own tests.
+    expect(await screen.findByTestId("HiddenAssets")).toBeInTheDocument();
   });
 
   it("refetches the hidden map when the balance cache changes", async () => {

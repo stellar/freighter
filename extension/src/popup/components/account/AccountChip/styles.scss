@@ -1,0 +1,56 @@
+@use "../../../styles/utils.scss" as *;
+
+.AccountChip {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: pxToRem(8);
+  cursor: pointer;
+  // Reset the <button> UA styles; this is a text row, not a control surface.
+  background: none;
+  border: none;
+  padding: 0;
+  // The name is allowed to shrink and ellipsize, so the chip must be able to
+  // shrink below its content width.
+  min-width: 0;
+
+  &__identicon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: pxToRem(24);
+    height: pxToRem(24);
+    background: var(--sds-clr-gray-03);
+    border-radius: pxToRem(100);
+
+    img {
+      width: pxToRem(12);
+      height: pxToRem(12);
+    }
+  }
+
+  &__name {
+    color: var(--sds-clr-gray-12);
+    font-size: pxToRem(16);
+    font-weight: var(--sds-fw-semi-bold);
+    line-height: pxToRem(24);
+    // A long wallet name must not push the QR and connected-apps buttons off
+    // the 360px row.
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    // A flex item defaults to `min-width: auto`, which would floor this at the
+    // full unwrapped name and defeat the ellipsis. This makes the text shrink;
+    // what stops a long name widening the popup itself is the containment on
+    // `.View__header__box--left`.
+    min-width: 0;
+  }
+
+  > svg {
+    flex-shrink: 0;
+    width: pxToRem(16);
+    height: pxToRem(16);
+    stroke: var(--sds-clr-gray-09);
+  }
+}

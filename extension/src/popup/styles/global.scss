@@ -26,6 +26,40 @@
   --z-index-tooltip: 20;
   --z-index-modal: 30;
   --z-index-maintenance-screen: 100;
+
+  // Bottom tab bar.
+  --tab-bar--height: 3.75rem;
+  --z-index--tab-bar: 15;
+
+  // --app--bottom-offset is the height of whatever persistent bottom chrome the
+  // shell is showing; `.View--has-tab-bar` raises it to the bar height.
+  //
+  // Read it DIRECTLY on the element that needs the clearance -- see
+  // FloatingAddButton, which rides above the bar. Never derive another
+  // :root-level custom property from it. A custom property whose value contains
+  // var() is substituted at computed-value time *on the element where it is
+  // declared*, so anything built from it here freezes against the 0rem below
+  // and inherits already-resolved; the shell's override can never reach it.
+  --app--bottom-offset: 0rem;
+
+  // Floating bottom sheet geometry.
+  //
+  // The sheet is deliberately not one of those consumers: the designs run it to
+  // an 8px gutter off the window and let it cover the tab bar, so its inset is
+  // the gutter alone.
+  --slideup-modal--gutter: 0.5rem;
+  --slideup-modal--inset-bottom: var(--slideup-modal--gutter);
+  --slideup-modal--radius: 1.5rem;
+  // Matches .View__inset's max-width so the sheet's edges line up with the
+  // content column in fullscreen instead of stretching the full 1100px.
+  --slideup-modal--max-width: 53rem;
+  --slideup-modal--top-gap: 3rem;
+  --slideup-modal--max-height: calc(
+    100dvh - var(--slideup-modal--inset-bottom) - var(--slideup-modal--top-gap)
+  );
+  // Extra travel on exit so the box-shadow, which paints outside the border
+  // box, also clears the viewport instead of bleeding into the bottom gutter.
+  --slideup-modal--exit-clearance: 2.5rem;
 }
 
 html,

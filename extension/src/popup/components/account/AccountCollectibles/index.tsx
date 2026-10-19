@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button, Icon, Loader } from "@stellar/design-system";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -6,11 +6,9 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { Collection } from "@shared/api/types/types";
 import { navigateTo } from "popup/helpers/navigate";
 import {
-  ScreenReaderOnly,
-  Sheet,
-  SheetContent,
-  SheetTitle,
-} from "popup/basics/shadcn/Sheet";
+  SlideupModal,
+  SLIDEUP_MODAL_TRANSITION_MS,
+} from "popup/components/SlideupModal";
 import { ROUTES } from "popup/constants/routes";
 import { CollectibleDetail, SelectedCollectible } from "../CollectibleDetail";
 import { CollectibleInfoImage } from "../CollectibleInfo";
@@ -21,17 +19,35 @@ const CollectionsList = ({
   collections,
   isCollectibleHidden,
   onCloseCollectible,
+  onCollectibleRemoved,
 }: {
   collections: Collection[];
   isCollectibleHidden: (collectionAddress: string, tokenId: string) => boolean;
   onCloseCollectible: () => void;
+  onCollectibleRemoved: () => void;
 }) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [detailData, setDetailData] = useState<SelectedCollectible | null>(
     null,
   );
+  // The pending "clear the selection once the sheet has slid out" timer. It has
+  // to be cancellable: the backdrop stops taking clicks the moment the sheet
+  // starts sliding out, so the grid underneath is live for the whole exit, and
+  // a timer left running from the previous close would blank the sheet the user
+  // just reopened.
+  const clearDetailTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const cancelPendingDetailClear = () => {
+    if (clearDetailTimer.current !== null) {
+      clearTimeout(clearDetailTimer.current);
+      clearDetailTimer.current = null;
+    }
+  };
+
+  useEffect(() => cancelPendingDetailClear, []);
   // Tracks *collapsed* ids, so "expanded on mount" (spec D5) falls out of an
   // empty set. Local state only — not persisted, since chrome.storage is
   // background-owned and would pull a message handler into a styling change.
@@ -79,6 +95,7 @@ const CollectionsList = ({
     const tokenId = params.get("collectible_token_id");
 
     if (collectionAddress && tokenId) {
+      cancelPendingDetailClear();
       setDetailData({
         collectionAddress,
         tokenId,
@@ -88,6 +105,7 @@ const CollectionsList = ({
   }, [location.search]);
 
   const handleOpenCollectible = (collectible: SelectedCollectible) => {
+    cancelPendingDetailClear();
     setDetailData(collectible);
     setIsDetailOpen(true);
   };
@@ -96,12 +114,15 @@ const CollectionsList = ({
     setIsDetailOpen(false);
     clearCollectibleDetailQueryParams();
     onCloseCollectible();
-  };
-
-  const handleAnimationEnd = () => {
-    if (!isDetailOpen) {
+    // Clear the selection only once the sheet has slid out; dropping it
+    // immediately would empty the card mid-animation. SlideupModal exposes no
+    // animation-end hook, so this is timed against its transition -- and
+    // tracked, so reopening within that window cancels it.
+    cancelPendingDetailClear();
+    clearDetailTimer.current = setTimeout(() => {
+      clearDetailTimer.current = null;
       setDetailData(null);
-    }
+    }, SLIDEUP_MODAL_TRANSITION_MS);
   };
 
   return (
@@ -181,33 +202,36 @@ const CollectionsList = ({
         );
       })}
 
-      {/* Sheet rendered outside the map to persist during close animation */}
-      <Sheet
-        open={isDetailOpen}
-        onOpenChange={(open) => {
+      {/* Rendered outside the map so it survives the close animation. */}
+      <SlideupModal
+        isModalOpen={isDetailOpen}
+        ariaLabel={t("Collectible details")}
+        setIsModalOpen={(open) => {
           if (!open) {
             handleCloseCollectible();
           }
         }}
       >
-        <SheetContent
-          aria-describedby={undefined}
-          side="bottom"
-          className="AccountCollectibles__collectible-detail__sheet"
-          onOpenAutoFocus={(e) => e.preventDefault()}
-          onAnimationEnd={handleAnimationEnd}
-        >
-          <ScreenReaderOnly>
-            <SheetTitle>{detailData?.tokenId || ""}</SheetTitle>
-          </ScreenReaderOnly>
-          {detailData && (
+        <div className="AccountCollectibles__collectible-detail__sheet">
+          {detailData ? (
             <CollectibleDetail
+              // Remount per item. This sheet is rendered once, outside the
+              // grid, and `handleOpenCollectible` cancels the pending clear --
+              // so opening a second collectible inside the close animation
+              // swaps props on a live `CollectibleDetail`. `useIsCollectibleTracked`
+              // would then keep the previous item's `isTracked` until its own
+              // lookup resolves, briefly offering Remove for an item that has
+              // nothing local to remove.
+              key={`${detailData.collectionAddress}:${detailData.tokenId}`}
               selectedCollectible={detailData}
               handleItemClose={handleCloseCollectible}
+              onCollectibleRemoved={onCollectibleRemoved}
             />
+          ) : (
+            <div />
           )}
-        </SheetContent>
-      </Sheet>
+        </div>
+      </SlideupModal>
     </>
   );
 };
@@ -249,6 +273,8 @@ interface AccountCollectiblesProps {
   isLoading: boolean;
   refreshHiddenCollectibles: () => Promise<void>;
   isCollectibleHidden: (collectionAddress: string, tokenId: string) => boolean;
+  /** Rebuilds the collections this grid renders after a collectible is removed. */
+  onCollectibleRemoved: () => void;
   onClickCollectible?: (selectedCollectible: SelectedCollectible) => void;
 }
 
@@ -258,6 +284,7 @@ export const AccountCollectibles = ({
   isLoading,
   refreshHiddenCollectibles,
   isCollectibleHidden,
+  onCollectibleRemoved,
 }: AccountCollectiblesProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -287,6 +314,7 @@ export const AccountCollectibles = ({
           collections={collections}
           isCollectibleHidden={isCollectibleHidden}
           onCloseCollectible={refreshHiddenCollectibles}
+          onCollectibleRemoved={onCollectibleRemoved}
         />
       ) : (
         <div className="AccountCollectibles__empty">

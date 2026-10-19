@@ -1,4 +1,4 @@
-import { emitMetric, emitScreenViewed } from "helpers/metrics";
+import { emitMetric } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 
 /** Strip query parameters and fragments from a URL to avoid leaking
@@ -64,10 +64,6 @@ export const trackDiscoverProtocolOpenedFromDetails = (
     protocol_name: protocolName,
     url: stripQueryParams(url),
   });
-};
-
-export const trackDiscoverViewed = (): void => {
-  emitScreenViewed("discover", { flow: "discovery" });
 };
 
 export const trackDiscoverWelcomeModalViewed = (): void => {

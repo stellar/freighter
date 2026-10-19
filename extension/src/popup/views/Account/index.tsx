@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useContext, useState } from "react";
+import React, { useEffect, useRef, useContext } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { Notification } from "@stellar/design-system";
@@ -34,7 +34,6 @@ import { NotFundedMessage } from "popup/components/account/NotFundedMessage";
 import { isMainnet } from "helpers/stellar";
 import { newTabHref } from "helpers/urls";
 import { getTotalUsd, getTotalUsdLabel } from "popup/helpers/balance";
-import { NetworkDetails } from "@shared/constants/stellar";
 import { reRouteOnboarding } from "popup/helpers/route";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { AccountBalances } from "helpers/hooks/useGetBalances";
@@ -48,14 +47,6 @@ import {
 } from "./hooks/useGetIcons";
 import { useStableSortedBalances } from "./hooks/useStableSortedBalances";
 import { AccountTabsContext, TabsList } from "./contexts/activeTabContext";
-
-import {
-  Sheet,
-  SheetContent,
-  ScreenReaderOnly,
-  SheetTitle,
-} from "popup/basics/shadcn/Sheet";
-import { Discover } from "popup/views/Discover";
 
 import "popup/metrics/authServices";
 import "./styles.scss";
@@ -72,13 +63,14 @@ export const Account = () => {
   const reduxPublicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const { activeTab } = useContext(AccountTabsContext);
-  const [isDiscoverOpen, setIsDiscoverOpen] = useState(false);
 
   const isFullscreenModeEnabled = isFullscreenMode();
   const {
     state: accountData,
     fetchData,
     refreshAppData,
+    refreshBalances,
+    refreshCollectibles,
   } = useGetAccountData({
     showHidden: false,
     includeIcons: false,
@@ -212,11 +204,12 @@ export const Account = () => {
   const isFunded = !!resolvedData?.balances?.isFunded;
   const canUseFriendbot = !!resolvedData?.networkDetails?.friendbotUrl;
   const collections = resolvedData?.collectibles?.collections ?? [];
-  const reloadBalances = () =>
-    fetchData({
-      useAppDataCache: true,
-      shouldForceBalancesRefresh: true,
-    });
+  // Deliberately the non-blanking refresh rather than `fetchData`. Asset
+  // Details calls this from its own close handler -- the X, and after Hide as
+  // well as after Remove -- and a full fetch resets the screen to LOADING,
+  // which replaced Home with a full-screen spinner every time a token sheet
+  // was dismissed.
+  const reloadBalances = () => refreshBalances();
 
   const totalBalanceUsd = getTotalUsd(tokenPrices ?? {}, balances);
   // The hero is never hidden; see getTotalUsdLabel for which of a total, a
@@ -244,6 +237,12 @@ export const Account = () => {
   // An empty `collections` means "owns none" only once the request lands, so that
   // tab spins until it does. Guarded on `resolvedData`: a failed fetch discards
   // the result, and waiting on it would spin forever.
+  //
+  // The visibility map is a second, independent request, and the grid filters
+  // against it -- so painting before it lands flashes every hidden collectible
+  // back into view. Same spin-forever guard applies: once the fetch has failed
+  // there is nothing left to wait for, and an unfiltered grid beats a permanent
+  // loader.
   const isCollectiblesLoading =
     !!resolvedData && !resolvedData.hasLoadedCollectibles;
 
@@ -262,10 +261,7 @@ export const Account = () => {
         currentAccountName={currentAccountName}
         publicKey={resolvedData?.publicKey || reduxPublicKey}
         onAllowListRemove={refreshAppData}
-        onClickRow={async (updatedValues: {
-          publicKey?: string;
-          network?: NetworkDetails;
-        }) => {
+        onAccountChanged={async (updatedValues: { publicKey: string }) => {
           await fetchData({
             useAppDataCache: false,
             updatedAppData: updatedValues,
@@ -273,8 +269,6 @@ export const Account = () => {
           });
         }}
         roundedTotalBalanceUsd={roundedTotalBalanceUsd}
-        isFunded={isFunded}
-        onDiscoverClick={() => setIsDiscoverOpen(true)}
       />
       <View.Content hasNoPadding>
         <div className="AccountView" data-testid="account-view">
@@ -345,11 +339,7 @@ export const Account = () => {
                     hasHistoryError={historyData.state === RequestState.ERROR}
                     assetPrices={tokenPrices ?? {}}
                     assetIcons={resolvedIcons}
-                    // The balances cache holds the unfiltered list, so a cached
-                    // reload is enough to drop the newly hidden asset.
-                    onAssetHidden={async () => {
-                      await fetchData({ useAppDataCache: true });
-                    }}
+                    reloadBalances={reloadBalances}
                   />
                 </div>
               ) : (
@@ -369,6 +359,7 @@ export const Account = () => {
                   isLoading={isCollectiblesLoading}
                   refreshHiddenCollectibles={refreshHiddenCollectibles}
                   isCollectibleHidden={isCollectibleHidden}
+                  onCollectibleRemoved={refreshCollectibles}
                 />
               </div>,
             ]}
@@ -388,22 +379,6 @@ export const Account = () => {
         isCollectiblesCtaInline={isCollectiblesCtaInline}
         isCollectiblesLoading={isCollectiblesLoading}
       />
-      <Sheet
-        open={isDiscoverOpen}
-        onOpenChange={(open) => !open && setIsDiscoverOpen(false)}
-      >
-        <SheetContent
-          onOpenAutoFocus={(e) => e.preventDefault()}
-          aria-describedby={undefined}
-          side="bottom"
-          className="AccountView__discover-sheet"
-        >
-          <ScreenReaderOnly>
-            <SheetTitle>{t("Discover")}</SheetTitle>
-          </ScreenReaderOnly>
-          <Discover onClose={() => setIsDiscoverOpen(false)} />
-        </SheetContent>
-      </Sheet>
     </>
   );
 };

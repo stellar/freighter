@@ -18,9 +18,9 @@ The URL `index.html?mode=sidebar` is set in the manifest and passed by `openSide
 
 ## How Sidebar Mode Is Activated
 
-**UI entry point:** `src/popup/components/account/AccountHeader/index.tsx` (lines 185-200)
+**UI entry point:** `src/popup/views/Settings/index.tsx`
 
-The account options dropdown (test ID: `account-options-dropdown`) shows a "Sidebar mode" menu item, conditionally rendered only when the browser supports it (`chrome.sidePanel.open` or `browser.sidebarAction.open`).
+Settings → General shows a "Sidebar mode" row (test ID: `settings-sidebar-mode`), conditionally rendered only when the browser supports it (`chrome.sidePanel.open` or `browser.sidebarAction.open`). It previously lived in the account options dropdown, which the header restructure deleted; see `ACCOUNT_HEADER.md`.
 
 **Activation function:** `src/popup/helpers/navigate.ts` — `openSidebar()`
 
@@ -123,7 +123,7 @@ Firefox has no equivalent API. `browser.sidebarAction` can open/close the sideba
 
 The setting is persisted in `localStorage` under `IS_OPEN_SIDEBAR_BY_DEFAULT_ID` (`"isOpenSidebarByDefault"`). On Chrome, `initSidebarBehavior()` reads this on startup and applies it via `setPanelBehavior`. On Firefox, the function is a no-op — the comment at line 228 documents this explicitly.
 
-Firefox users can still open sidebar mode manually via the "Sidebar mode" menu item in the account dropdown, or via the browser's native sidebar toggle.
+Firefox users can still open sidebar mode manually via the "Sidebar mode" row in Settings → General, or via the browser's native sidebar toggle.
 
 ## E2E Testing Limitations
 
@@ -146,7 +146,7 @@ To properly E2E test sidebar signing flow, Playwright would need to support Chro
 | `src/popup/components/SidebarSigningListener/index.tsx`         | Port connection, navigation listener, window.close override                      |
 | `src/popup/views/ConfirmSidebarRequest/index.tsx`               | Concurrent request interstitial                                                  |
 | `src/popup/Router.tsx`                                          | Conditionally mounts SidebarSigningListener, defines confirmSidebarRequest route |
-| `src/popup/components/account/AccountHeader/index.tsx`          | "Sidebar mode" dropdown menu item                                                |
+| `src/popup/views/Settings/index.tsx`                            | "Sidebar mode" row in Settings → General                                         |
 | `src/background/index.ts`                                       | `initSidebarConnectionListener()` — port validation, state management, cleanup   |
 | `src/background/helpers/sidebarPort.ts`                         | Global sidebar port state                                                        |
 | `src/background/helpers/queueCleanup.ts`                        | `sidebarQueueUuids` set                                                          |

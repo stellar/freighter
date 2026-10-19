@@ -136,7 +136,7 @@ export const MaintenanceBanner: React.FC = () => {
         <SlideupModal
           isModalOpen={isModalOpen}
           setIsModalOpen={setIsModalOpen}
-          hasBackdrop
+          ariaLabel={activeContent.modal.title}
         >
           <View.Inset>
             <div

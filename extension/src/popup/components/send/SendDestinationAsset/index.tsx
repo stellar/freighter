@@ -60,7 +60,7 @@ export const SendDestinationAsset = ({
   if (isLoading) {
     return (
       <View.Content hasNoTopPadding>
-        <div className="ChooseAsset__loader">
+        <div className="SendDestinationAsset__loader">
           <Loader size="2rem" />
         </div>
       </View.Content>
@@ -69,7 +69,7 @@ export const SendDestinationAsset = ({
 
   if (destAssetDataState.state === RequestState.ERROR) {
     return (
-      <div className="ChooseAsset___fail">
+      <div className="SendDestinationAsset__fetch-fail">
         <Notification variant="error" title={t("Failed to fetch assets.")}>
           {t("An unknown error has occurred.")}
         </Notification>

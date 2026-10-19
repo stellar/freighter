@@ -296,6 +296,8 @@ interface ViewLayoutProps {
   children: React.ReactNode;
   isAppLayout?: boolean;
   isScrollableView?: boolean;
+  /** Adds bottom clearance so content is not hidden behind the tab bar. */
+  hasTabBar?: boolean;
 }
 
 export const View: React.FC<ViewLayoutProps> & ViewComponent = ({
@@ -303,11 +305,14 @@ export const View: React.FC<ViewLayoutProps> & ViewComponent = ({
   // Most views have "app" layout, so defaulting to that
   isAppLayout = true,
   isScrollableView = false,
+  hasTabBar = false,
   ...props
 }: ViewLayoutProps) => (
   <ViewContext.Provider value={{ isAppLayout }}>
     <div
-      className={`View${isScrollableView ? " View--scrollable" : ""}`}
+      className={`View${isScrollableView ? " View--scrollable" : ""}${
+        hasTabBar ? " View--has-tab-bar" : ""
+      }`}
       id="layout-view"
       {...props}
     >

@@ -69,6 +69,7 @@ jest.spyOn(ApiInternal, "loadRecentAddresses").mockImplementation(() => {
 jest.spyOn(ApiInternal, "getHiddenAssets").mockImplementation(() => {
   return Promise.resolve({
     hiddenAssets: {},
+    networkName: "",
     error: "",
   });
 });

@@ -34,6 +34,7 @@ const renderCollectibles = ({
         isLoading={isLoading}
         refreshHiddenCollectibles={() => Promise.resolve()}
         isCollectibleHidden={isCollectibleHidden}
+        onCollectibleRemoved={() => {}}
       />
     </Wrapper>,
   );
