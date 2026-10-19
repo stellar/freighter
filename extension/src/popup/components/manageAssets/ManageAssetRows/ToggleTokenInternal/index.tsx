@@ -1,19 +1,11 @@
-import React, { useState } from "react";
+import React from "react";
 import { useDispatch } from "react-redux";
-import {
-  Asset,
-  Badge,
-  Button,
-  Icon,
-  Notification,
-  Text,
-} from "@stellar/design-system";
+import { Asset, Badge, Button, Icon, Text } from "@stellar/design-system";
 import { Networks } from "stellar-sdk";
 import { captureException } from "@sentry/browser";
 import { useTranslation } from "react-i18next";
 
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
-import { showToast } from "popup/basics/shadcn/Toast";
 import { AppDispatch } from "popup/App";
 import { NetworkDetails, NETWORKS } from "@shared/constants/stellar";
 import { addTokenId } from "popup/ducks/accountServices";
@@ -73,8 +65,6 @@ export const ToggleTokenInternal = ({
     includeIcons: false,
   });
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
   // The remove-token prompt confirm/reject is its own analytical unit.
   const isRemoveFlow = asset.isTrustlineActive;
 
@@ -86,8 +76,7 @@ export const ToggleTokenInternal = ({
     },
     networkDetails,
   });
-  // What this token is called on screen. Shared by the header and the failure
-  // toast so both name the same thing.
+  // What this token is called on screen.
   const label = isSac
     ? asset.code
     : asset.name || truncateString(asset.contract!);
@@ -103,94 +92,55 @@ export const ToggleTokenInternal = ({
     onCancel();
   };
 
-  const onFailure = (errorMessage?: string) => {
-    captureException(
-      `Failed to ${isRemoveFlow ? "remove" : "add"} token ${
-        asset.contract
-      } - ${errorMessage || "unknown error"} ${networkDetails.network}`,
-    );
-    showToast(() => (
-      <Notification
-        variant="error"
-        title={
-          isRemoveFlow
-            ? t("Unable to remove {{label}}", { label })
-            : t("Unable to add {{label}}", { label })
-        }
-      />
-    ));
-  };
-
   const onConfirm = async () => {
-    setIsSubmitting(true);
-
-    try {
-      // dispatch resolves for rejected thunks too, so the action has to be
-      // inspected -- otherwise a failed add/remove falls through to onSuccess
-      // and closes the flow as if the token had changed.
-      if (!asset.isTrustlineActive) {
-        const res = await dispatch(
-          addTokenId({
-            publicKey,
-            tokenId: asset.contract!,
-            network: networkDetails.network as Networks,
-          }),
-        );
-
-        if (addTokenId.rejected.match(res)) {
-          onFailure(res.payload?.errorMessage);
-          return;
-        }
-
-        // A token the user adds on purpose must show up; see
-        // clearHiddenAssetFlag.
+    if (!asset.isTrustlineActive) {
+      const addResult = await dispatch(
+        addTokenId({
+          publicKey,
+          tokenId: asset.contract!,
+          network: networkDetails.network as Networks,
+        }),
+      );
+      // A token the user adds on purpose must show up; see clearHiddenAssetFlag.
+      if (addTokenId.fulfilled.match(addResult)) {
         await clearHiddenAssetFlag({
           canonicalAsset: getCanonicalFromAsset(asset.code, asset.contract!),
           activePublicKey: publicKey,
           network: networkDetails.network,
         });
-      } else {
-        emitMetric(METRIC_NAMES.assetRemoveResponded, {
-          decision: "confirm",
-          source,
-          asset_code: asset.code,
-        });
-        const res = await dispatch(
-          removeTokenId({
-            contractId: asset.contract!,
-            network: networkDetails.network as NETWORKS,
-          }),
-        );
-
-        if (removeTokenId.rejected.match(res)) {
-          onFailure(res.payload?.errorMessage);
-          return;
-        }
       }
-
-      const balancesResult = await fetchBalances(
-        publicKey,
-        isMainnet(networkDetails),
-        networkDetails,
-        false,
+    } else {
+      emitMetric(METRIC_NAMES.assetRemoveResponded, {
+        decision: "confirm",
+        source,
+        asset_code: asset.code,
+      });
+      await dispatch(
+        removeTokenId({
+          contractId: asset.contract!,
+          network: networkDetails.network as NETWORKS,
+        }),
       );
-
-      if (isError<AccountBalances>(balancesResult)) {
-        // we don't want to throw an error if balances fail to fetch as this doesn't affect the UX of adding a token
-        // let's simply log the error and continue - the user will need to refresh the Account page or wait for polling to refresh the balances
-        captureException(
-          `Failed to fetch balances after ${!asset.isTrustlineActive ? "add" : "remove"} token - ${JSON.stringify(
-            balancesResult.message,
-          )} ${networkDetails.network}`,
-        );
-      }
-      (onSuccess || onCancel)();
-    } finally {
-      // The success path unmounts this, but the failure path leaves the sheet
-      // open so Confirm can be retried.
-      setIsSubmitting(false);
     }
+    const balancesResult = await fetchBalances(
+      publicKey,
+      isMainnet(networkDetails),
+      networkDetails,
+      false,
+    );
+
+    if (isError<AccountBalances>(balancesResult)) {
+      // we don't want to throw an error if balances fail to fetch as this doesn't affect the UX of adding a token
+      // let's simply log the error and continue - the user will need to refresh the Account page or wait for polling to refresh the balances
+      captureException(
+        `Failed to fetch balances after ${!asset.isTrustlineActive ? "add" : "remove"} token - ${JSON.stringify(
+          balancesResult.message,
+        )} ${networkDetails.network}`,
+      );
+    }
+    (onSuccess || onCancel)();
   };
+
   return (
     <div className="ToggleToken__wrapper">
       <div className="ToggleToken__wrapper__body">
@@ -277,8 +227,6 @@ export const ToggleTokenInternal = ({
             isFullWidth
             isRounded
             size="lg"
-            isLoading={isSubmitting}
-            disabled={isSubmitting}
             onClick={onConfirm}
           >
             {t("Confirm")}

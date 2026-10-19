@@ -75,7 +75,6 @@ const renderCollectibles = () =>
         hasInlineCta={false}
         isLoading={false}
         refreshHiddenCollectibles={mockRefreshHiddenCollectibles}
-        onCollectibleRemoved={jest.fn()}
         isCollectibleHidden={mockIsCollectibleHidden}
       />
     </Wrapper>,

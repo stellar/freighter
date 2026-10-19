@@ -70,7 +70,6 @@ export const Account = () => {
     fetchData,
     refreshAppData,
     refreshBalances,
-    refreshCollectibles,
   } = useGetAccountData({
     showHidden: false,
     includeIcons: false,
@@ -359,7 +358,6 @@ export const Account = () => {
                   isLoading={isCollectiblesLoading}
                   refreshHiddenCollectibles={refreshHiddenCollectibles}
                   isCollectibleHidden={isCollectibleHidden}
-                  onCollectibleRemoved={refreshCollectibles}
                 />
               </div>,
             ]}

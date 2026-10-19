@@ -19,12 +19,10 @@ const CollectionsList = ({
   collections,
   isCollectibleHidden,
   onCloseCollectible,
-  onCollectibleRemoved,
 }: {
   collections: Collection[];
   isCollectibleHidden: (collectionAddress: string, tokenId: string) => boolean;
   onCloseCollectible: () => void;
-  onCollectibleRemoved: () => void;
 }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -225,7 +223,6 @@ const CollectionsList = ({
               key={`${detailData.collectionAddress}:${detailData.tokenId}`}
               selectedCollectible={detailData}
               handleItemClose={handleCloseCollectible}
-              onCollectibleRemoved={onCollectibleRemoved}
             />
           ) : (
             <div />
@@ -273,8 +270,6 @@ interface AccountCollectiblesProps {
   isLoading: boolean;
   refreshHiddenCollectibles: () => Promise<void>;
   isCollectibleHidden: (collectionAddress: string, tokenId: string) => boolean;
-  /** Rebuilds the collections this grid renders after a collectible is removed. */
-  onCollectibleRemoved: () => void;
   onClickCollectible?: (selectedCollectible: SelectedCollectible) => void;
 }
 
@@ -284,7 +279,6 @@ export const AccountCollectibles = ({
   isLoading,
   refreshHiddenCollectibles,
   isCollectibleHidden,
-  onCollectibleRemoved,
 }: AccountCollectiblesProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -314,7 +308,6 @@ export const AccountCollectibles = ({
           collections={collections}
           isCollectibleHidden={isCollectibleHidden}
           onCloseCollectible={refreshHiddenCollectibles}
-          onCollectibleRemoved={onCollectibleRemoved}
         />
       ) : (
         <div className="AccountCollectibles__empty">

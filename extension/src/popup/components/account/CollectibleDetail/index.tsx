@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import { Button, Icon, Notification } from "@stellar/design-system";
 import { useNavigate } from "react-router-dom";
 
@@ -20,16 +20,10 @@ import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { publicKeySelector } from "popup/ducks/accountServices";
 import { collectionsSelector } from "popup/ducks/cache";
 import { ROUTES } from "popup/constants/routes";
-import {
-  changeCollectibleVisibility,
-  removeCollectible,
-} from "@shared/api/internal";
+import { changeCollectibleVisibility } from "@shared/api/internal";
 import { AssetVisibility } from "@shared/api/types/types";
-import { AppDispatch } from "popup/App";
-import { removeCollectibleFromCache } from "popup/ducks/cache";
 
 import { useCollectibleDetail } from "./hooks/useCollectibleDetail";
-import { useIsCollectibleTracked } from "./hooks/useIsCollectibleTracked";
 import {
   getCollectibleName,
   CollectibleInfo,
@@ -51,18 +45,10 @@ export const CollectibleDetail = ({
   selectedCollectible,
   handleItemClose,
   isHidden = false,
-  onCollectibleRemoved,
 }: {
   selectedCollectible: SelectedCollectible;
   handleItemClose: () => void;
   isHidden?: boolean;
-  /**
-   * Rebuild the owning account-data state after a successful remove.
-   * `removeCollectibleFromCache` below only updates the redux cache, and Home
-   * renders a separate copy held by `useGetAccountData` -- so without this the
-   * tile stays in the grid and reopening it lands on "Collectible not found".
-   */
-  onCollectibleRemoved?: () => void;
 }) => {
   const { t } = useTranslation();
   const publicKey = useSelector(publicKeySelector);
@@ -81,12 +67,6 @@ export const CollectibleDetail = ({
   );
   const { state, fetchData: fetchCollectibleMetadata } = useCollectibleDetail();
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
-  const reduxDispatch = useDispatch<AppDispatch>();
-  const isTracked = useIsCollectibleTracked({
-    collectionAddress: selectedCollectible.collectionAddress,
-    tokenId: selectedCollectible.tokenId,
-  });
-  const [isRemoving, setIsRemoving] = useState(false);
 
   if (!collectible) {
     return (
@@ -165,51 +145,6 @@ export const CollectibleDetail = ({
     }
   };
 
-  const handleRemoveCollectible = async () => {
-    // Removing happens straight from the menu, with no confirmation step to
-    // sit behind -- so guard re-entry here instead.
-    if (isRemoving) {
-      return;
-    }
-    setIsRemoving(true);
-    const { error } = await removeCollectible({
-      publicKey,
-      network: networkDetails.network,
-      collectibleContractAddress: selectedCollectible.collectionAddress,
-      collectibleTokenId: selectedCollectible.tokenId,
-    });
-    setIsRemoving(false);
-
-    if (error) {
-      showToast(() => (
-        <Notification
-          variant="error"
-          title={t("Unable to remove this collectible")}
-        />
-      ));
-      return;
-    }
-
-    // Drop it from the cached collections so the grid behind this sheet
-    // updates now rather than on the next collectibles fetch.
-    reduxDispatch(
-      removeCollectibleFromCache({
-        publicKey,
-        networkDetails,
-        collectionAddress: selectedCollectible.collectionAddress,
-        tokenId: selectedCollectible.tokenId,
-      }),
-    );
-    // After the cache write above, so the refetch reads the corrected cache --
-    // `useGetCollectibles` is cache-first, so this costs no collectibles round
-    // trip in the common case.
-    onCollectibleRemoved?.();
-    handleItemClose();
-    showToast(() => (
-      <Notification variant="success" title={t("Collectible removed")} />
-    ));
-  };
-
   return (
     <div className="CollectibleDetail" data-testid="CollectibleDetail">
       <SubviewHeader
@@ -271,26 +206,6 @@ export const CollectibleDetail = ({
                     {isHidden ? t("Show collectible") : t("Hide collectible")}
                   </div>
                 </button>
-                {/* Only for collectibles this wallet tracks. The backend also
-                    returns special-cased ones that were never added here, and
-                    those have nothing in storage to remove -- Hide is the
-                    action that works for them. */}
-                {isTracked && (
-                  <button
-                    type="button"
-                    className="CollectibleDetail__header__right-button__popover-content__item CollectibleDetail__header__right-button__popover-content__item--destructive"
-                    onClick={() => {
-                      setIsPopoverOpen(false);
-                      handleRemoveCollectible();
-                    }}
-                    data-testid="CollectibleDetail__remove"
-                  >
-                    <Icon.MinusCircle className="CollectibleDetail__header__right-button__popover-content__item__icon" />
-                    <div className="CollectibleDetail__header__right-button__popover-content__item__label">
-                      {t("Remove")}
-                    </div>
-                  </button>
-                )}
               </PopoverContent>
             </div>
           </Popover>

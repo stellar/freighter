@@ -362,14 +362,9 @@ export const removeTokenId = createAsyncThunk<
     try {
       await internalRemoveTokenId({ activePublicKey, contractId, network });
     } catch (e) {
-      const message = e instanceof Error ? e.message : JSON.stringify(e);
       console.error(e);
-      // Must be returned: a bare call still resolves the thunk, so callers see
-      // removeTokenId/fulfilled for a removal that never happened.
-      return rejectWithValue({ errorMessage: message });
+      rejectWithValue({ errorMessage: e as string });
     }
-
-    return undefined;
   },
 );
 

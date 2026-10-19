@@ -480,14 +480,6 @@ export interface AddCollectibleMessage extends BaseMessage {
   collectibleTokenId: string;
 }
 
-export interface RemoveCollectibleMessage extends BaseMessage {
-  type: SERVICE_TYPES.REMOVE_COLLECTIBLE;
-  network: string;
-  publicKey: string;
-  collectibleContractAddress: string;
-  collectibleTokenId: string;
-}
-
 export interface GetCollectiblesMessage extends BaseMessage {
   type: SERVICE_TYPES.GET_COLLECTIBLES;
   publicKey: string;
@@ -604,7 +596,6 @@ export type ServiceMessageRequest =
   | ClaimRebrandAnnouncementMessage
   | GetBlockaidDebugOverrideMessage
   | AddCollectibleMessage
-  | RemoveCollectibleMessage
   | GetCollectiblesMessage
   | ChangeCollectibleVisibilityMessage
   | GetHiddenCollectiblesMessage
