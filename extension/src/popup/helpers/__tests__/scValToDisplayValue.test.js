@@ -215,9 +215,9 @@ describe("scValToDisplayValue", () => {
       ).toEqual('"alice\\xff"');
     });
 
-    // The hex form this used to emit could be spelled out by a string whose
-    // text happened to read `string(0x...)` — one screen string standing for
-    // two signed payloads, which is the defect, not the fix.
+    // A hex fallback for invalid bytes can be spelled out by valid text that
+    // happens to read the same way — one screen string standing for two
+    // signed payloads, which is the defect, not the fix.
     it("should not let valid text impersonate an escaped byte string", () => {
       const binary = scValToDisplayValue(
         xdr.ScVal.scvString(invalidUtf8(0xff)),

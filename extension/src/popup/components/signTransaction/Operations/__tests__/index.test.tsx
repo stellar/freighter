@@ -573,8 +573,8 @@ describe("Operations — Soroban contract-call parameters", () => {
 
   // Displayed text and copied text are built from the same token stream; this
   // is what stops them drifting apart. The scalar case is the one that does
-  // the work: this used to assert against a map alone, the one shape where the
-  // old copy path agreed by delegating, so it could not catch any drift.
+  // the work: a copy path that delegates containers to the display formatter
+  // agrees on a map by construction, so a map alone cannot catch drift.
   it.each([
     ["a scalar", xdr.ScVal.scvString("alice"), '"alice"'],
     [

@@ -662,9 +662,8 @@ const utf8SequenceWidth = (byte: number) => {
 /**
  * Unicode's own class for codepoints that are meant to render as nothing:
  * soft hyphens, zero-width marks, bidi controls, variation selectors and the
- * tag block. Named rather than hand-listed so the boundary is one the standard
- * maintains — the previous enumeration missed 4159 codepoints, U+2060 WORD
- * JOINER and the whole of U+E0000..U+E0FFF among them.
+ * tag block. Named rather than hand-listed so the boundary is one the
+ * standard maintains.
  */
 const DEFAULT_IGNORABLE = /\p{Default_Ignorable_Code_Point}/u;
 
