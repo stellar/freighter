@@ -15,7 +15,11 @@ import { FlaggedKeys } from "types/transactions";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { truncateString, truncatedPoolId } from "helpers/stellar";
 import { scanAsset } from "popup/helpers/blockaid";
-import { addressToString, getCreateContractArgs } from "popup/helpers/soroban";
+import {
+  addressToString,
+  getCreateContractArgs,
+  xdrStringToRaw,
+} from "popup/helpers/soroban";
 import { CopyValue } from "popup/components/CopyValue";
 import {
   ContractSpecNote,
@@ -153,7 +157,10 @@ const OperationParametersSection = ({
     contractId: invocation
       ? addressToString(invocation.contractAddress)
       : undefined,
-    fnName: invocation?.functionName.toString(),
+    // The raw signed name, not `toString()`: that decode replaces every
+    // invalid byte with U+FFFD, and a lossily decoded name is not a key any
+    // contract spec defines.
+    specFnName: invocation && xdrStringToRaw(invocation.functionName),
     argCount: invocation?.args.length ?? 0,
   });
 
