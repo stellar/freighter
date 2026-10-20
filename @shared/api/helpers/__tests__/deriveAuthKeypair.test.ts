@@ -1,12 +1,36 @@
 import { Buffer } from "buffer";
-import { xdr } from "stellar-sdk";
+import { mnemonicToSeedSync } from "bip39";
+import StellarHDWallet from "stellar-hd-wallet";
+import { Keypair, xdr } from "stellar-sdk";
 
 import {
   AUTH_SALT,
   deriveAuthKeypair,
   deriveAuthSeed,
+  deriveSourceIdentity,
 } from "../deriveAuthKeypair";
-import { AUTH_KEYPAIR_VECTORS } from "../authKeypairVectors";
+import {
+  ACCOUNT_SOURCE_VECTORS,
+  AUTH_KEYPAIR_VECTORS,
+  SOURCE_IDENTITY_VECTOR,
+} from "../authKeypairVectors";
+
+const pubHex = (keypair: Keypair): string =>
+  xdr.encodeBytes(keypair.rawPublicKey(), "hex");
+
+// Account keypair at m/44'/148'/index', the way the background derives accounts
+// (addAccount.ts / createAccount.ts). StellarHDWallet.fromMnemonic cannot run
+// under jest: its internal bip39 default import hits the CJS interop edge case
+// described in deriveAuthKeypair.ts. fromSeed takes the raw 64-byte seed, so
+// we build that with bip39's named export, exactly as deriveAuthSeed does.
+const deriveAccount = (mnemonic: string, index: number): Keypair =>
+  StellarHDWallet.fromSeed(
+    Buffer.from(mnemonicToSeedSync(mnemonic)),
+  ).getKeypair(index);
+
+const accountRows = ACCOUNT_SOURCE_VECTORS.flatMap(({ mnemonic, accounts }) =>
+  accounts.map((account) => ({ mnemonic, ...account })),
+);
 
 describe("deriveAuthSeed (HMAC step)", () => {
   it("uses the versioned domain-separation salt", () => {
@@ -85,5 +109,129 @@ describe("deriveAuthKeypair", () => {
     await expect(
       deriveAuthKeypair("not a valid mnemonic phrase"),
     ).rejects.toThrow(/invalid mnemonic/i);
+  });
+});
+
+describe("deriveSourceIdentity", () => {
+  const fixedSeed = () => Buffer.from(SOURCE_IDENTITY_VECTOR.seed32Hex, "hex");
+
+  it("derives the committed sourceId for the fixed 32-byte seed", async () => {
+    const { sourceId, keypair } = await deriveSourceIdentity(fixedSeed());
+    expect(sourceId).toBe(SOURCE_IDENTITY_VECTOR.sourceId);
+    expect(sourceId).toMatch(/^[0-9a-f]{64}$/);
+    expect(pubHex(keypair)).toBe(sourceId);
+  });
+
+  it("is deterministic for the same seed", async () => {
+    const a = await deriveSourceIdentity(fixedSeed());
+    const b = await deriveSourceIdentity(fixedSeed());
+    expect(a.sourceId).toBe(b.sourceId);
+    expect(pubHex(a.keypair)).toBe(pubHex(b.keypair));
+  });
+
+  // A 64-byte input is the dangerous one: HMAC would accept it and the result
+  // would be a phrase id, silently conflating the two source kinds.
+  it.each([31, 33, 64])(
+    "rejects a %d-byte seed instead of producing an id",
+    async (length) => {
+      await expect(
+        deriveSourceIdentity(new Uint8Array(length).fill(1)),
+      ).rejects.toThrow(/32 bytes/);
+    },
+  );
+
+  // Pins the construction independently of the module's private helper: same
+  // salt as the phrase derivation, HMAC-SHA256, keyed on the 32-byte seed.
+  it("is pub(HMAC-SHA256(seed32, AUTH_SALT))", async () => {
+    const seed = fixedSeed();
+    const key = await crypto.subtle.importKey(
+      "raw",
+      new Uint8Array(seed),
+      { name: "HMAC", hash: "SHA-256" },
+      false,
+      ["sign"],
+    );
+    const mac = await crypto.subtle.sign(
+      "HMAC",
+      key,
+      new TextEncoder().encode(AUTH_SALT),
+    );
+    const expected = pubHex(Keypair.fromRawEd25519Seed(Buffer.from(mac)));
+    expect((await deriveSourceIdentity(seed)).sourceId).toBe(expected);
+  });
+
+  it("never sends an extension message during derivation", async () => {
+    const sendMessage = jest.fn();
+    (globalThis as unknown as { browser?: unknown }).browser = {
+      runtime: { sendMessage },
+    };
+    try {
+      await deriveSourceIdentity(fixedSeed());
+      expect(sendMessage).not.toHaveBeenCalled();
+    } finally {
+      delete (globalThis as unknown as { browser?: unknown }).browser;
+    }
+  });
+});
+
+describe("deriveSourceIdentity (account vectors)", () => {
+  it.each(accountRows)(
+    "pins the m/44'/148'/$index' keys of $mnemonic",
+    ({ mnemonic, index, secret, publicKey }) => {
+      const keypair = deriveAccount(mnemonic, index);
+      expect(keypair.secret()).toBe(secret);
+      expect(keypair.publicKey()).toBe(publicKey);
+    },
+  );
+
+  // The equality the user model depends on: the account derived from the
+  // phrase and the same account imported from its exported S… are one source.
+  it.each(accountRows)(
+    "derives sourceId from the phrase path for $mnemonic index $index",
+    async ({ mnemonic, index, sourceId }) => {
+      const seed32 = deriveAccount(mnemonic, index).rawSecretKey();
+      expect((await deriveSourceIdentity(seed32)).sourceId).toBe(sourceId);
+    },
+  );
+
+  it.each(accountRows)(
+    "derives sourceId from the exported secret key for $mnemonic index $index",
+    async ({ secret, sourceId }) => {
+      const seed32 = Keypair.fromSecret(secret).rawSecretKey();
+      expect((await deriveSourceIdentity(seed32)).sourceId).toBe(sourceId);
+    },
+  );
+
+  it.each(accountRows)(
+    "differs from the phrase userId for $mnemonic index $index",
+    async ({ mnemonic, sourceId }) => {
+      const { userId } = await deriveAuthKeypair(mnemonic);
+      expect(sourceId).not.toBe(userId);
+    },
+  );
+
+  // An id equal to the account's public key would let the identity table
+  // reveal G addresses.
+  it.each(accountRows)(
+    "differs from the account's own public key for $mnemonic index $index",
+    ({ secret, sourceId }) => {
+      expect(sourceId).not.toBe(pubHex(Keypair.fromSecret(secret)));
+    },
+  );
+
+  it.each(ACCOUNT_SOURCE_VECTORS)(
+    "account ids for one phrase are pairwise distinct ($mnemonic)",
+    ({ accounts }) => {
+      const ids = accounts.map(({ sourceId }) => sourceId);
+      expect(new Set(ids).size).toBe(ids.length);
+    },
+  );
+
+  it("account ids across phrases are distinct from each other and from every phrase userId", () => {
+    const ids = [
+      ...accountRows.map(({ sourceId }) => sourceId),
+      ...AUTH_KEYPAIR_VECTORS.map(({ userId }) => userId),
+    ];
+    expect(new Set(ids).size).toBe(ids.length);
   });
 });
