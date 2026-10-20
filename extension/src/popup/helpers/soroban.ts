@@ -899,7 +899,10 @@ const executableToTokens = (
           punct("owner: "),
           value(addressToString(ref.executableOwner), executable.type),
         ],
-        [punct("tag: "), value(xdrStringToDisplay(ref.tag), executable.type)],
+        [
+          punct("tag: "),
+          value(xdrStringToLiteral(ref.tag, "string"), executable.type),
+        ],
       ];
       return [
         punct("externalRef "),
@@ -924,7 +927,8 @@ const executableToTokens = (
  * the signed entry list directly, so every signed entry reaches the screen.
  *
  * Quoting carries some of the type: strings are quoted where symbols and
- * numbers are bare. The rest of it rides on each `value` token's `scValType`
+ * numbers are bare, and an executable tag is wrapped as `tag("…")` so that it
+ * cannot read as a string. The rest of it rides on each `value` token's `scValType`
  * rather than being spelled out inline, which keeps the common case — a
  * symbol-keyed struct — readable.
  */
@@ -957,7 +961,8 @@ export const scValToDisplayTokens = (
     }
 
     case "scvExecutableTag": {
-      return [value(xdrStringToDisplay(scVal.executableTag), scVal.type)];
+      const literal = xdrStringToLiteral(scVal.executableTag, "string");
+      return [value(`tag(${literal})`, scVal.type)];
     }
 
     case "scvBytes": {

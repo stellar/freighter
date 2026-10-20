@@ -299,7 +299,7 @@ describe("scValToDisplayValue", () => {
       const second = scValToDisplayValue(
         xdr.ScVal.scvExecutableTag(invalidUtf8(0xfe)),
       );
-      expect(first).toEqual("alice\\xff");
+      expect(first).toEqual('tag("alice\\xff")');
       expect(first).not.toEqual(second);
     });
 
@@ -416,7 +416,33 @@ describe("scValToDisplayValue", () => {
         ),
       );
       expect(rendered).toContain(CONTRACT);
-      expect(rendered).toContain("tag: v2");
+      expect(rendered).toContain('tag: "v2"');
+    });
+
+    // The tag is a byte string the deployer chose. Unquoted, one that reads
+    // `x, owner: G...` draws a second owner field that nobody signed.
+    it("should not let an external reference's tag forge a field", () => {
+      const rendered = scValToDisplayValue(
+        instance(
+          xdr.ContractExecutable.contractExecutableExternalRef(
+            new xdr.ContractExecutableExternalRef({
+              executableOwner: contractAddress(),
+              tag: Buffer.from(`x, owner: ${ACCOUNT}`),
+            }),
+          ),
+          null,
+        ),
+      );
+      expect(rendered).toEqual(
+        [
+          "contractInstance {",
+          "  executable: externalRef {",
+          `    owner: ${CONTRACT},`,
+          `    tag: "x, owner: ${ACCOUNT}"`,
+          "  }",
+          "}",
+        ].join("\n"),
+      );
     });
 
     // An instance can appear as a map key, and a key has to stay one line so
@@ -478,10 +504,18 @@ describe("scValToDisplayValue", () => {
       expect(scValToDisplayValue(scVal)).toEqual(joined);
     });
   });
-  it("should render a CAP-85 executable tag as a string", () => {
-    const tag = "v2";
-    const scvTag = xdr.ScVal.scvExecutableTag(tag);
-    const parsedTag = scValToDisplayValue(scvTag);
-    expect(parsedTag).toEqual(tag);
+  it("should render a CAP-85 executable tag as a tag literal", () => {
+    const scvTag = xdr.ScVal.scvExecutableTag("v2");
+    expect(scValToDisplayValue(scvTag)).toEqual('tag("v2")');
+  });
+
+  // A tag's bytes can be anything, including a quoted string. Shown bare, a
+  // tag of `"hello"` and the string `hello` are the same characters.
+  it("should not let an executable tag read as a string", () => {
+    const tag = scValToDisplayValue(xdr.ScVal.scvExecutableTag('"hello"'));
+    const string = scValToDisplayValue(xdr.ScVal.scvString("hello"));
+    expect(string).toEqual('"hello"');
+    expect(tag).toEqual('tag("\\"hello\\"")');
+    expect(tag).not.toEqual(string);
   });
 });
