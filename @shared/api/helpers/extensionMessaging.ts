@@ -55,6 +55,17 @@ export const sendMessageToContentScript = (msg: Msg): Promise<Response> => {
       }, 2000);
     }
 
+    /*
+      Versions of Freighter that predate DISCONNECT drop the message without
+      responding, so resolve with an error rather than hanging forever.
+    */
+    if (msg.type === EXTERNAL_SERVICE_TYPES.DISCONNECT) {
+      requestTimeout = setTimeout(() => {
+        resolve({ apiError: FreighterApiInternalError } as Response);
+        window.removeEventListener("message", messageListener);
+      }, 2000);
+    }
+
     const messageListener = (event: { source: any; data: Response }) => {
       // We only accept messages from ourselves
       if (event.source !== window) return;
@@ -95,6 +106,11 @@ export const FreighterApiInternalError = {
   code: -1,
   message:
     "The wallet encountered an internal error. Please try again or contact the wallet if the problem persists.",
+};
+
+export const FreighterApiLockedError = {
+  code: -1,
+  message: "The wallet is locked. Unlock Freighter and try again.",
 };
 
 export const FreighterApiDeclinedError = {
