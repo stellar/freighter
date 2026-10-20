@@ -19,6 +19,8 @@ import {
 import { View } from "popup/basics/layout/View";
 import { TokenList } from "popup/components/InternalTransaction/TokenList";
 import { CollectiblesList } from "popup/components/InternalTransaction/CollectiblesList";
+import { useHiddenCollectibles } from "popup/components/account/hooks/useHiddenCollectibles";
+import { filterHiddenCollectibles } from "popup/helpers/collectibles";
 import { RequestState } from "constants/request";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { closeWindow, openTab } from "popup/helpers/navigate";
@@ -44,9 +46,16 @@ export const SendDestinationAsset = ({
     showHidden: false,
     includeIcons: true,
   });
+  // Hidden collectibles live in the Hidden collectibles sheet, so the picker
+  // filters against the same map Home does. Waiting on it keeps a hidden one
+  // from painting for a frame; the hook reports a failed fetch as loaded, so
+  // this cannot spin forever.
+  const { isCollectibleHidden, isHiddenCollectiblesLoading } =
+    useHiddenCollectibles();
   const isLoading =
     destAssetDataState.state === RequestState.IDLE ||
-    destAssetDataState.state === RequestState.LOADING;
+    destAssetDataState.state === RequestState.LOADING ||
+    isHiddenCollectiblesLoading;
   const hasError = destAssetDataState.state === RequestState.ERROR;
 
   useEffect(() => {
@@ -102,6 +111,12 @@ export const SendDestinationAsset = ({
   const icons = destAssetDataState.data.balances.icons || {};
   const tokenPrices = destAssetDataState.data.tokenPrices || {};
   const balances = destAssetDataState.data.balances;
+  const visibleCollectibles = {
+    collections: filterHiddenCollectibles(
+      destAssetDataState.data.collectibles.collections,
+      isCollectibleHidden,
+    ),
+  };
 
   const resetAmountForm = () => {
     dispatch(saveAmount("0"));
@@ -133,14 +148,14 @@ export const SendDestinationAsset = ({
             }}
             isShowingHeader={true}
           />
-          {destAssetDataState.data.collectibles.collections.length > 0 && (
+          {visibleCollectibles.collections.length > 0 && (
             <div className="SendDestinationAsset__collectibles-section">
               <div className="SendDestinationAsset__collectibles-heading">
                 <Icon.Image01 />
                 {t("Collectibles")}
               </div>
               <CollectiblesList
-                collectibles={destAssetDataState.data.collectibles}
+                collectibles={visibleCollectibles}
                 onClickCollectible={({
                   collectionAddress,
                   tokenId,
