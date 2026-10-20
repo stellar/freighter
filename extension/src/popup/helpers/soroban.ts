@@ -793,13 +793,6 @@ const xdrStringToLiteral = (value: XdrStringLike, kind: XdrStringKind) => {
   return quoted;
 };
 
-const scvAddressToString = (address: xdr.ScAddress) => {
-  if (address.type === "scAddressTypeAccount") {
-    return StrKey.encodeEd25519PublicKey(address.accountId.ed25519.toBytes());
-  }
-  return addressToString(address);
-};
-
 /**
  * One piece of a rendered `SCVal`. A `value` token is a single scalar and
  * carries the arm it came from, so the signing screen can offer its type
@@ -904,7 +897,7 @@ const executableToTokens = (
       const lines = [
         [
           punct("owner: "),
-          value(scvAddressToString(ref.executableOwner), executable.type),
+          value(addressToString(ref.executableOwner), executable.type),
         ],
         [punct("tag: "), value(xdrStringToDisplay(ref.tag), executable.type)],
       ];
@@ -973,7 +966,7 @@ export const scValToDisplayTokens = (
     }
 
     case "scvAddress": {
-      return [value(scvAddressToString(scVal.address), scVal.type)];
+      return [value(addressToString(scVal.address), scVal.type)];
     }
 
     case "scvBool": {
