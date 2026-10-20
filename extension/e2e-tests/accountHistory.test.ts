@@ -17,6 +17,9 @@ import {
 } from "stellar-sdk";
 
 test("View Account History", async ({ page, extensionId, context }) => {
+  // Login walks Settings -> Network for the network switch, which puts this
+  // test past the default budget on CI.
+  test.slow();
   await loginToTestAccount({ page, extensionId, context });
 
   await page.getByTestId("nav-link-account-history").click();

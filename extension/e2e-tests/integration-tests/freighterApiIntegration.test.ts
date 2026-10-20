@@ -1245,6 +1245,10 @@ test("should get public key when logged out", async ({
   extensionId,
   context,
 }) => {
+  // Logging in now walks Settings -> Network for the network switch, and this
+  // test walks into Settings again to log out, which runs past the default
+  // budget on CI.
+  test.slow();
   await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
   await goToSettings(page);
   await page.getByText("Log Out").click();
