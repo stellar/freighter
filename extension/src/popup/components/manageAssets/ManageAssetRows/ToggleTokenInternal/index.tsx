@@ -166,6 +166,14 @@ export const ToggleTokenInternal = ({
           onFailure(res.payload?.errorMessage);
           return;
         }
+
+        // The hidden map outlives the token entry, so a flag left behind would
+        // hide this token if it comes back another way (dApp, swap).
+        await clearHiddenAssetFlag({
+          canonicalAsset: getCanonicalFromAsset(asset.code, asset.contract!),
+          activePublicKey: publicKey,
+          network: networkDetails.network,
+        });
       }
 
       const balancesResult = await fetchBalances(

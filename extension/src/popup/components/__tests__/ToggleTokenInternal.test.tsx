@@ -179,6 +179,30 @@ describe("ToggleTokenInternal", () => {
     await waitFor(() => expect(onSuccess).toHaveBeenCalled());
   });
 
+  it("clears a stored hidden flag once the token is removed", async () => {
+    jest.spyOn(ApiInternal, "removeTokenId").mockResolvedValue([]);
+    jest.spyOn(ApiInternal, "getHiddenAssets").mockResolvedValue({
+      hiddenAssets: { [CANONICAL]: "hidden" },
+      error: "",
+    });
+    const changeVisibility = jest
+      .spyOn(ApiInternal, "changeAssetVisibility")
+      .mockResolvedValue({ hiddenAssets: {}, error: "" });
+
+    const onSuccess = jest.fn();
+    renderSheet({ isTrustlineActive: true, onCancel: jest.fn(), onSuccess });
+    await userEvent.click(screen.getByText("Confirm"));
+
+    await waitFor(() => expect(changeVisibility).toHaveBeenCalledTimes(1));
+    expect(changeVisibility).toHaveBeenCalledWith({
+      assetIssuer: CANONICAL,
+      assetVisibility: "visible",
+      activePublicKey: PUBLIC_KEY,
+      network: TESTNET_NETWORK_DETAILS.network,
+    });
+    await waitFor(() => expect(onSuccess).toHaveBeenCalled());
+  });
+
   it("leaves the hidden flag alone when the add fails", async () => {
     jest.spyOn(console, "error").mockImplementation(() => undefined);
     jest.spyOn(ApiInternal, "addTokenId").mockRejectedValue(new Error("boom"));
