@@ -67,6 +67,11 @@ $exit-transform: translateY(
   // descendants to its rounded corners.
   .View__inset {
     border: 0;
+    // `View__inset--scroll-shadows` paints the page colour (Base/0). Inside
+    // the card that is black over gray-01 in dark mode and hides the card
+    // entirely. The mocks paint the sheet Background/Primary, so the inset
+    // takes the card colour here.
+    background-color: var(--sds-clr-gray-01);
   }
 }
 
