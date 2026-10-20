@@ -1,5 +1,11 @@
 import React from "react";
-import { render, waitFor, screen, fireEvent } from "@testing-library/react";
+import {
+  act,
+  render,
+  waitFor,
+  screen,
+  fireEvent,
+} from "@testing-library/react";
 import BigNumber from "bignumber.js";
 import * as ReactRouterDom from "react-router-dom";
 
@@ -1777,6 +1783,61 @@ describe("Account view", () => {
         screen.queryByTestId("add-collectible-inline-btn"),
       ).not.toBeInTheDocument();
       expect(pillTestIds()).toEqual([]);
+    });
+
+    // The grid filters against the hidden map, which is a separate request. If
+    // the collections land first the hidden items paint for a frame and then
+    // vanish, so the tab keeps spinning until the map is in.
+    it("keeps spinning until the hidden-collectibles map has loaded", async () => {
+      let resolveHidden: (value: unknown) => void = () => {};
+      const hiddenSpy = jest
+        .spyOn(ApiInternal, "getHiddenCollectibles")
+        .mockImplementation(
+          () =>
+            new Promise((resolve) => {
+              resolveHidden = resolve;
+            }) as any,
+        );
+      const hiddenKey = `${mockCollectibles[0].collection!.address}:${
+        mockCollectibles[0].collection!.collectibles[0].tokenId
+      }`;
+
+      const spy = await renderWithHoldings({
+        collections: mockCollectibles,
+        isFunded: true,
+      });
+      await switchToCollectibles();
+
+      expect(
+        screen.getByTestId("account-collectibles-loader"),
+      ).toBeInTheDocument();
+      expect(
+        screen.queryByTestId("account-collectible-image"),
+      ).not.toBeInTheDocument();
+
+      await act(async () => {
+        resolveHidden({
+          hiddenCollectibles: { [hiddenKey]: "hidden" },
+          error: "",
+        });
+      });
+
+      await waitFor(() => {
+        expect(
+          screen.queryByTestId("account-collectibles-loader"),
+        ).not.toBeInTheDocument();
+      });
+      spy.mockRestore();
+      hiddenSpy.mockRestore();
+
+      const total = mockCollectibles.reduce(
+        (count, { collection }) => count + collection!.collectibles.length,
+        0,
+      );
+      // One image per collectible; the hidden one is filtered out.
+      expect(screen.getAllByTestId("account-collectible-image")).toHaveLength(
+        total - 1,
+      );
     });
 
     // A failed balances fetch leaves Tokens with no CTA of either kind, so there
