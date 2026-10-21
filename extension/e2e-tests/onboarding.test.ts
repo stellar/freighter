@@ -8,6 +8,7 @@ import {
   clickImportAndWaitForSuccess,
 } from "./helpers/onboarding";
 import type { Page } from "@playwright/test";
+import { goToSettings } from "./helpers/network";
 
 const { generateMnemonic } = StellarHDWallet;
 
@@ -60,7 +61,7 @@ test("Create new wallet", async ({ page }) => {
   await expectPageToHaveScreenshot(
     { page, screenshot: "recovery-page.png" },
     {
-      mask: [page.locator(".MnemonicDisplay__list-item")],
+      mask: [page.locator(".MnemonicDisplay__word")],
     },
   );
 
@@ -361,7 +362,7 @@ test("Incorrect mnemonic phrase", async ({ page }) => {
   await expectPageToHaveScreenshot(
     { page, screenshot: "recovery-page.png" },
     {
-      mask: [page.locator(".MnemonicDisplay__list-item")],
+      mask: [page.locator(".MnemonicDisplay__word")],
     },
   );
 
@@ -396,8 +397,7 @@ test("Incorrect mnemonic phrase", async ({ page }) => {
 // tab that opens, once the wallet is confirmed gone. The original page stays
 // on the lock screen.
 const resetWalletFromLockScreen = async (page: Page, extensionId: string) => {
-  await page.getByTestId("account-options-dropdown").click();
-  await page.getByText("Settings").click();
+  await goToSettings(page);
   await page.getByText("Log Out").click();
 
   await expect(page.getByText("Welcome back")).toBeVisible();
@@ -432,7 +432,7 @@ const expectOldWalletAccountsCount = async (page: Page) => {
   await page.getByTestId("account-view-account-name").click();
   // the test seed phrase should have multiple funded accounts
   expect(await page.getByTestId("wallet-row-select").count()).not.toBe(1);
-  await page.getByTestId("BackButton").click();
+  await page.getByTestId("AccountSheet__close").click();
 };
 
 const expectOnlyNewWalletAccount = async (page: Page, extensionId: string) => {
@@ -526,8 +526,7 @@ test("Closing the Forgot password sheet keeps the wallet", async ({
 }) => {
   test.slow();
   await loginToTestAccount({ page, extensionId, context });
-  await page.getByTestId("account-options-dropdown").click();
-  await page.getByText("Settings").click();
+  await goToSettings(page);
   await page.getByText("Log Out").click();
   const unlockButton = page.getByTestId("enter-password-submit");
   await expect(unlockButton).toBeVisible();
@@ -604,10 +603,9 @@ test("Overwrites account when user abandons mnemonic phrase confirmation", async
 
   await expect(page.getByTestId("wallet-row-select")).toHaveCount(1);
 
-  await page.getByTestId("BackButton").click();
-  await page.getByTestId("account-options-dropdown").click();
-  await page.getByText("Settings").click();
-  await page.getByText("Security").click();
+  await page.getByTestId("AccountSheet__close").click();
+  await goToSettings(page);
+  await page.getByRole("link", { name: "Security" }).click();
   await page.getByText("Show recovery phrase").click();
 
   await page.locator("#password").fill(PASSWORD);
@@ -676,10 +674,9 @@ test("Overwrites account when user abandons after password creation", async ({
 
   expect(page.getByTestId("wallet-row-select")).toHaveCount(1);
 
-  await page.getByTestId("BackButton").click();
-  await page.getByTestId("account-options-dropdown").click();
-  await page.getByText("Settings").click();
-  await page.getByText("Security").click();
+  await page.getByTestId("AccountSheet__close").click();
+  await goToSettings(page);
+  await page.getByRole("link", { name: "Security" }).click();
   await page.getByText("Show recovery phrase").click();
 
   await page.locator("#password").fill(PASSWORD);
@@ -704,9 +701,8 @@ test("Password input is auto focused on Show recovery phrase screen", async ({
 }) => {
   test.slow();
   await loginToTestAccount({ page, extensionId, context });
-  await page.getByTestId("account-options-dropdown").click();
-  await page.getByText("Settings").click();
-  await page.getByText("Security").click();
+  await goToSettings(page);
+  await page.getByRole("link", { name: "Security" }).click();
   await page.getByText("Show recovery phrase").click();
   await expect(page.locator("#password")).toBeFocused();
 });

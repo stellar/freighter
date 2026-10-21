@@ -883,6 +883,7 @@ export const SwapAmount = ({
       <SlideupModal
         setIsModalOpen={() => setIsReviewingTx(false)}
         isModalOpen={isReviewingTx}
+        ariaLabel={t("Review transaction")}
       >
         {isReviewingTx ? (
           <ReviewTx
@@ -928,6 +929,7 @@ export const SwapAmount = ({
       <SlideupModal
         setIsModalOpen={() => setIsXlmReserveOpen(false)}
         isModalOpen={isXlmReserveOpen}
+        ariaLabel={t("You need XLM to create a trustline")}
       >
         {isXlmReserveOpen ? (
           <XlmReserveSheet

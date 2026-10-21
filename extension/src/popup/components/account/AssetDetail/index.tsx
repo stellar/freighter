@@ -1,10 +1,4 @@
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 import { BigNumber } from "bignumber.js";
 import { useTranslation } from "react-i18next";
@@ -16,8 +10,6 @@ import {
   Link,
   Notification,
 } from "@stellar/design-system";
-
-import { changeAssetVisibility } from "@shared/api/internal";
 
 import { NetworkDetails } from "@shared/constants/stellar";
 import {
@@ -43,6 +35,17 @@ import {
 import { HistoryItem } from "popup/components/accountHistory/HistoryItem";
 import { TransactionDetail } from "popup/components/accountHistory/TransactionDetail";
 import { SlideupModal } from "popup/components/SlideupModal";
+import {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+} from "popup/basics/shadcn/Popover";
+import { changeAssetVisibility } from "@shared/api/internal";
+import { getIsRemovable } from "popup/helpers/balance";
+import { isAssetSac } from "popup/helpers/soroban";
+import { ChangeTrustInternal } from "popup/components/manageAssets/ManageAssetRows/ChangeTrustInternal";
+import { ToggleTokenInternal } from "popup/components/manageAssets/ManageAssetRows/ToggleTokenInternal";
+import { InfoBottomSheet } from "popup/components/InfoBottomSheet";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { View } from "popup/basics/layout/View";
 import { showToast } from "popup/basics/shadcn/Toast";
@@ -151,11 +154,6 @@ interface AssetDetailProps {
   historyData: AccountHistoryData | null;
   selectedAsset: string;
   handleClose: () => void;
-  /**
-   * Called after the asset was hidden and the sheet closed, so the balances
-   * view can drop it from the list.
-   */
-  onAssetHidden?: () => void | Promise<void>;
   /** The account history request failed; shows an error, not a skeleton. */
   hasHistoryError?: boolean;
 }
@@ -165,7 +163,6 @@ export const AssetDetail = ({
   historyData,
   selectedAsset,
   handleClose,
-  onAssetHidden,
   hasHistoryError = false,
 }: AssetDetailProps) => {
   const { t } = useTranslation();
@@ -193,28 +190,61 @@ export const AssetDetail = ({
   );
   const shownDelta =
     rangeDelta.scope === scopeKey ? rangeDelta.delta : LOADING_DELTA;
-  const activeOptionsRef = useRef<HTMLDivElement>(null);
   const isNative = isNativeAssetId(selectedAsset);
+  const canonical = getAssetFromCanonical(selectedAsset);
+
+  const [isHiding, setIsHiding] = useState(false);
+  // Which body this sheet is showing. The remove flow renders in a sibling
+  // SlideupModal rather than inside this one: SlideupModal is z-30 against
+  // this Radix Sheet's z-50, and View sets id="layout-view" on every
+  // instance, so ManageAssetRows' portal target would resolve to Home's View,
+  // outside the sheet entirely.
+  const [body, setBody] = useState<"detail" | "remove">("detail");
+  const [isBalanceWarningOpen, setIsBalanceWarningOpen] = useState(false);
+
+  /**
+   * Hides the asset from the balances view, returns to the account and
+   * confirms with a toast. XLM never gets here; see `canOfferHide`.
+   */
+  const handleHideAsset = async () => {
+    setIsHiding(true);
+    try {
+      const { error } = await changeAssetVisibility({
+        assetIssuer: selectedAsset,
+        assetVisibility: "hidden",
+        activePublicKey: publicKey,
+        network: networkDetails.network,
+      });
+
+      if (error) {
+        throw new Error(error);
+      }
+
+      setOptionsOpen(false);
+      // The asset is gone from the list behind this sheet, so there is nothing
+      // left to return to; closing reloads the balances with it filtered out.
+      handleClose();
+      showToast(() => (
+        <Notification
+          variant="success"
+          title={t("{{code}} hidden", { code: canonical.code })}
+        />
+      ));
+    } catch (e) {
+      setOptionsOpen(false);
+      showToast(() => (
+        <Notification
+          variant="error"
+          title={t("Unable to hide {{code}}", { code: canonical.code })}
+        />
+      ));
+    } finally {
+      setIsHiding(false);
+    }
+  };
+
   const tokenPrices =
     cachedTokenPrices[networkDetails.networkPassphrase]?.[publicKey] || null;
-
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (
-        activeOptionsRef.current &&
-        !activeOptionsRef.current.contains(event.target as Node)
-      ) {
-        setOptionsOpen(false);
-      }
-    }
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [activeOptionsRef]);
-
-  const canonical = getAssetFromCanonical(selectedAsset);
   const isSorobanAsset = canonical.issuer && isSorobanIssuer(canonical.issuer);
 
   const selectedBalance = getBalanceByAsset(
@@ -319,6 +349,37 @@ export const AssetDetail = ({
     ? `contract/${selectedBalance.contractId}`
     : `asset/${selectedAsset.replace(":", "-")}`;
 
+  const assetContract = isSorobanBalance(selectedBalance)
+    ? selectedBalance.contractId
+    : "";
+  const isSac = assetContract
+    ? isAssetSac({
+        asset: {
+          code: canonical.code,
+          issuer: canonical.issuer,
+          contract: assetContract,
+        },
+        networkDetails,
+      })
+    : false;
+  const isRemovable = getIsRemovable({
+    contract: assetContract,
+    isSac,
+    isNative: isNativeBalance(selectedBalance),
+    isLiquidityPool: isLpShare,
+    localOnlyTokenIds: accountBalances.localOnlyTokenIds,
+  });
+  // Same split ManageAssetRows uses: a classic asset or SAC closes a trustline,
+  // a custom token just leaves the local token list.
+  const shouldChangeTrust = !assetContract || isSac;
+  const removeAsset = {
+    code: canonical.code,
+    // Only a native balance has no issuer, and native is never removable.
+    issuer: canonical.issuer || "",
+    image: assetIconUrl || null,
+    domain: assetDomain || null,
+    contract: assetContract || undefined,
+  };
   const hasBalance =
     selectedBalance?.total &&
     new BigNumber(selectedBalance.total).isGreaterThan(0);
@@ -352,52 +413,6 @@ export const AssetDetail = ({
   // unhidden. Same as mobile, where neither opens token details' Hide.
   const canOfferHide = isIssuedToken;
 
-  /**
-   * Hides the asset from the balances view, returns to the account and
-   * confirms with a toast. XLM never gets here; see `canOfferHide`.
-   */
-  const handleHideAsset = async () => {
-    setOptionsOpen(false);
-
-    try {
-      const { error } = await changeAssetVisibility({
-        assetIssuer: selectedAsset,
-        assetVisibility: "hidden",
-        activePublicKey: publicKey,
-        network: networkDetails.network,
-      });
-
-      if (error) {
-        throw new Error(error);
-      }
-    } catch {
-      showToast(() => (
-        <Notification
-          variant="error"
-          title={t("Couldn’t hide {{code}}", { code: canonical.code })}
-        />
-      ));
-      return;
-    }
-
-    handleClose();
-
-    // The flag is saved at this point, so a failed refresh must not read as
-    // a failed hide: the balances catch up on the next poll.
-    try {
-      await onAssetHidden?.();
-    } catch (error) {
-      console.error("Failed to refresh balances after hiding:", error);
-    }
-
-    showToast(() => (
-      <Notification
-        variant="success"
-        title={t("{{code}} hidden", { code: canonical.code })}
-      />
-    ));
-  };
-
   return (
     <React.Fragment>
       <View>
@@ -406,76 +421,104 @@ export const AssetDetail = ({
           customBackIcon={<Icon.X />}
           customBackAction={handleClose}
           rightButton={
+            // Native XLM has no address to copy and cannot be hidden
+            // (filterHiddenBalances always keeps it), so on a network without
+            // stellar.expert it would be an empty menu.
             !isStellarExpertSupported &&
             isNativeBalance(selectedBalance) ? null : (
-              <>
-                <div
+              <Popover open={optionsOpen} onOpenChange={setOptionsOpen}>
+                <PopoverTrigger
+                  asChild
                   className="AssetDetail__options"
                   onClick={() => setOptionsOpen(true)}
                 >
                   <img src={IconEllipsis} alt={t("asset options")} />
-                </div>
-                {optionsOpen ? (
-                  <div
-                    className="AssetDetail__options-actions"
-                    ref={activeOptionsRef}
-                  >
-                    {/* Reading an LP share's issuer would throw and blank
-                        the menu. */}
-                    {isIssuedToken ? (
-                      <div className="AssetDetail__options-actions__row">
-                        <CopyText
-                          textToCopy={
-                            isSorobanBalance(selectedBalance)
-                              ? selectedBalance.contractId
-                              : selectedBalance.token.issuer.key
-                          }
-                        >
-                          <div className="action">
-                            <div className="AssetDetail__options-actions__label">
-                              {t("Copy address")}
-                            </div>
-                            <Icon.Copy01 />
-                          </div>
-                        </CopyText>
-                      </div>
-                    ) : null}
-                    {canOfferHide ? (
-                      <div className="AssetDetail__options-actions__row">
-                        <button
-                          type="button"
-                          className="action AssetDetail__options-actions__button"
-                          onClick={handleHideAsset}
-                          data-testid="AssetDetail__hide"
-                        >
+                </PopoverTrigger>
+                <PopoverContent
+                  align="end"
+                  className="AssetDetail__options-actions"
+                >
+                  {/* Reading an LP share's issuer would throw and blank
+                      the menu. */}
+                  {isIssuedToken ? (
+                    <div className="AssetDetail__options-actions__row">
+                      <CopyText
+                        textToCopy={
+                          isSorobanBalance(selectedBalance)
+                            ? selectedBalance.contractId
+                            : selectedBalance.token.issuer.key
+                        }
+                      >
+                        <div className="action">
                           <div className="AssetDetail__options-actions__label">
-                            {t("Hide {{code}}", { code: canonical.code })}
+                            {t("Copy address")}
                           </div>
-                          <Icon.EyeOff />
-                        </button>
-                      </div>
-                    ) : null}
-                    {isStellarExpertSupported ? (
-                      <div className="AssetDetail__options-actions__row">
-                        <Link
-                          className="action link"
-                          variant="secondary"
-                          rel="noreferrer"
-                          target="_blank"
-                          href={`https://stellar.expert/explorer/${networkDetails.network.toLowerCase()}/${stellarExpertAssetLinkSlug}`}
-                        >
-                          <>
-                            <div className="AssetDetail__options-actions__label">
-                              Stellar.expert
-                            </div>
-                            <Icon.LinkExternal01 />
-                          </>
-                        </Link>
-                      </div>
-                    ) : null}
-                  </div>
-                ) : null}
-              </>
+                          <Icon.Copy01 />
+                        </div>
+                      </CopyText>
+                    </div>
+                  ) : null}
+                  {isStellarExpertSupported ? (
+                    <div className="AssetDetail__options-actions__row">
+                      <Link
+                        className="action link"
+                        variant="secondary"
+                        rel="noreferrer"
+                        target="_blank"
+                        href={`https://stellar.expert/explorer/${networkDetails.network.toLowerCase()}/${stellarExpertAssetLinkSlug}`}
+                      >
+                        <>
+                          <div className="AssetDetail__options-actions__label">
+                            Stellar.expert
+                          </div>
+                          <Icon.LinkExternal01 />
+                        </>
+                      </Link>
+                    </div>
+                  ) : null}
+                  {canOfferHide ? (
+                    <div className="AssetDetail__options-actions__row">
+                      <button
+                        type="button"
+                        className="action"
+                        onClick={handleHideAsset}
+                        disabled={isHiding}
+                        data-testid="AssetDetail__hide"
+                      >
+                        <div className="AssetDetail__options-actions__label">
+                          {t("Hide {{code}}", { code: canonical.code })}
+                        </div>
+                        <Icon.EyeOff />
+                      </button>
+                    </div>
+                  ) : null}
+                  {isRemovable ? (
+                    <div className="AssetDetail__options-actions__row AssetDetail__options-actions__row--destructive">
+                      <button
+                        type="button"
+                        className="action"
+                        onClick={() => {
+                          setOptionsOpen(false);
+                          // Closing a trustline requires a zero balance, so
+                          // entering the flow with one held could only ever
+                          // fail on submit. Explain instead.
+                          if (shouldChangeTrust && hasBalance) {
+                            setIsBalanceWarningOpen(true);
+                            return;
+                          }
+                          setBody("remove");
+                        }}
+                        data-testid="asset-detail-remove-button"
+                      >
+                        <div className="AssetDetail__options-actions__label">
+                          {t("Remove")}
+                        </div>
+                        <Icon.MinusCircle />
+                      </button>
+                    </div>
+                  ) : null}
+                </PopoverContent>
+              </Popover>
             )
           }
         />
@@ -691,6 +734,7 @@ export const AssetDetail = ({
           <SlideupModal
             isModalOpen={isModalOpen}
             setIsModalOpen={setIsModalOpen}
+            ariaLabel={t("Balance details")}
           >
             <div className="AssetDetail__info-modal">
               <div className="AssetDetail__info-modal__total-box">
@@ -741,17 +785,75 @@ export const AssetDetail = ({
             </div>
           </SlideupModal>
         )}
-        {/* The full-screen backdrop also covers the sticky Send/Swap bar */}
+        {/* The backdrop also covers the sticky Send/Swap bar */}
         <SlideupModal
           isModalOpen={activeOperation !== null}
           setIsModalOpen={() => setActiveAssetId(null)}
-          hasBackdrop
+          ariaLabel={t("Transaction details")}
         >
           <TransactionDetail
             activeOperation={activeOperation}
             networkDetails={networkDetails}
           />
         </SlideupModal>
+        <SlideupModal
+          isModalOpen={body === "remove"}
+          setIsModalOpen={() => setBody("detail")}
+          ariaLabel={t("Remove token")}
+        >
+          {/* Gated on the same flag rather than always mounted:
+              ChangeTrustInternal emits signing.rejected on unmount unless it
+              was approved, and SlideupModal renders its children even while
+              closed -- so an ungated copy would fire a spurious rejection
+              every time this sheet closed. Mirrors ManageAssetRows. */}
+          <>
+            {body === "remove" && shouldChangeTrust && (
+              <div className="AssetDetail__remove-sheet">
+                <ChangeTrustInternal
+                  asset={removeAsset}
+                  addTrustline={false}
+                  networkDetails={networkDetails}
+                  publicKey={publicKey}
+                  onCancel={() => setBody("detail")}
+                  onSuccess={handleClose}
+                  // Fills the fixed-height wrapper above rather than sizing to
+                  // its content, so the footer pins and the body scrolls. Also
+                  // drops the "you can close this tab" hint, which is only
+                  // meaningful in the standalone popup.
+                  isFullHeight
+                />
+              </div>
+            )}
+            {body === "remove" && !shouldChangeTrust && (
+              <ToggleTokenInternal
+                asset={{ ...removeAsset, isTrustlineActive: true }}
+                networkDetails={networkDetails}
+                publicKey={publicKey}
+                onCancel={() => setBody("detail")}
+                // Rejecting goes back to the detail body; confirming cannot,
+                // since that page is for the token that was just removed --
+                // and still offers Remove. Matches ChangeTrustInternal above.
+                onSuccess={handleClose}
+                source="asset_detail"
+              />
+            )}
+          </>
+        </SlideupModal>
+
+        <InfoBottomSheet
+          isOpen={isBalanceWarningOpen}
+          icon={<Icon.MinusCircle />}
+          badgeVariant="error"
+          title={t("Token still has a balance")}
+          actionLabel={t("Got it")}
+          onClose={() => setIsBalanceWarningOpen(false)}
+          data-testid="asset-detail-balance-warning"
+          closeTestId="asset-detail-balance-warning-close"
+        >
+          {t(
+            "You can't remove this token yet. To remove a token, your balance for this token must be 0. You must send or sell the remaining balance before trying again.",
+          )}
+        </InfoBottomSheet>
       </View>
     </React.Fragment>
   );

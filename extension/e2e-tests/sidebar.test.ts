@@ -1,5 +1,6 @@
 import { Page } from "@playwright/test";
 import { loginToTestAccount } from "./helpers/login";
+import { goToSettings } from "./helpers/network";
 import { test, expect } from "./test-fixtures";
 
 // Regression tests for a side panel that opens with no wallet. "Reset wallet"
@@ -199,8 +200,7 @@ test("Reset wallet in a locked sidebar opens a single Welcome tab and closes the
   test.slow();
   // The tab that makes and locks the wallet is then loaded as the panel.
   await loginToTestAccount({ page, extensionId, context });
-  await page.getByTestId("account-options-dropdown").click();
-  await page.getByText("Settings").click();
+  await goToSettings(page);
   await page.getByText("Log Out").click();
   await expect(page.getByText("Welcome back")).toBeVisible();
 

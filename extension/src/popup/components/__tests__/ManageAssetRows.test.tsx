@@ -614,6 +614,7 @@ describe("ManageAssetRows", () => {
     jest.spyOn(ApiInternal, "getHiddenAssets").mockImplementation(() => {
       return Promise.resolve({
         hiddenAssets: {},
+        networkName: "",
         error: "",
       });
     });
@@ -742,6 +743,7 @@ describe("ManageAssetRows", () => {
     jest.spyOn(ApiInternal, "getHiddenAssets").mockImplementation(() => {
       return Promise.resolve({
         hiddenAssets: {},
+        networkName: "",
         error: "",
       });
     });

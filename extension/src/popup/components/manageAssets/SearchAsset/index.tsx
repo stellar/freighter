@@ -27,7 +27,7 @@ import { balancesSelector } from "popup/ducks/cache";
 import { useHiddenAssets } from "popup/helpers/useHiddenAssets";
 
 import { ManageAssetRows } from "../ManageAssetRows";
-import { HiddenAssets } from "../HiddenAssets";
+import { HiddenAssets } from "popup/components/account/HiddenAssets";
 import { SearchInput, SearchResults } from "../AssetResults";
 import { useAssetLookup } from "./hooks/useAssetLookup";
 import { useGetSearchData } from "./hooks/useSearchData";
@@ -245,9 +245,9 @@ export const SearchAsset = () => {
                   </Field>
                   {/* Only before the user starts searching: once there is a
                       query, a hidden token that matches shows Unhide on its
-                      own row instead. The sheet is a Radix dialog whose Root
-                      lives inside HiddenAssets, so Radix's own Trigger can't
-                      reach it from here; mirror what that trigger would emit. */}
+                      own row instead. The sheet is a SlideupModal rather than
+                      a Radix dialog, so there is no Trigger to inherit these
+                      from; mirror what one would emit. */}
                   {!dirty ? (
                     <button
                       type="button"
@@ -301,10 +301,7 @@ export const SearchAsset = () => {
       <HiddenAssets
         isOpen={isHiddenAssetsOpen}
         onClose={() => setIsHiddenAssetsOpen(false)}
-        balances={data?.balances}
-        isAssetHidden={isAssetHidden}
-        onUnhide={handleUnhide}
-        unhidingAsset={unhidingAsset}
+        onVisibilityChange={refreshHiddenAssets}
       />
     </>
   );

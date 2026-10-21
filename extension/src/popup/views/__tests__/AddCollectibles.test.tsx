@@ -200,6 +200,69 @@ describe("AddCollectibles", () => {
       ).toHaveTextContent("Token ID cannot contain spaces");
     });
   });
+  // The hidden-collectibles sheet renders inside this screen's Formik `<Form>`
+  // -- SlideupModal has no portal -- so a control in it without an explicit
+  // type submits the form. Dismissing the sheet would add the collectible.
+  it("does not submit the form when the hidden sheet is dismissed", async () => {
+    const fetchCollectibles = jest
+      .spyOn(fetchCollectiblesModule, "fetchCollectibles")
+      .mockResolvedValue([] as any);
+
+    jest.spyOn(useGetCollectiblesModule, "useGetCollectibles").mockReturnValue({
+      fetchData: jest.fn().mockResolvedValue({}),
+    } as any);
+
+    render(
+      <Wrapper
+        routes={[ROUTES.welcome]}
+        state={{
+          auth: {
+            error: null,
+            applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
+            publicKey:
+              "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF",
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: TESTNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+            hiddenAssets: {},
+          },
+        }}
+      >
+        <AddCollectibles />
+      </Wrapper>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("AddCollectibles")).toBeInTheDocument();
+    });
+
+    // Valid details, so submitting would really go through.
+    fireEvent.change(screen.getByTestId("collectibleContractAddress"), {
+      target: {
+        value: "CCTYMI5ME6NFJC675P2CHNVG467YQJQ5E4TWP5RAPYYNKWK7DIUUDENN",
+      },
+    });
+    fireEvent.change(screen.getByTestId("collectibleTokenId"), {
+      target: { value: "123" },
+    });
+
+    fireEvent.click(screen.getByTestId("hidden-collectibles-btn"));
+    await waitFor(() => {
+      expect(screen.getByTestId("HiddenCollectibles")).toBeInTheDocument();
+    });
+
+    fetchCollectibles.mockClear();
+    fireEvent.click(screen.getByTestId("HiddenCollectibles__close"));
+    fireEvent.click(screen.getByTestId("HiddenCollectibles__done"));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("AddCollectibles")).toBeInTheDocument();
+    });
+    expect(fetchCollectibles).not.toHaveBeenCalled();
+  });
+
   it("shows 'Collectible not found' error when fetchedCollectibles returns an error", async () => {
     jest.spyOn(fetchCollectiblesModule, "fetchCollectibles").mockResolvedValue([
       {

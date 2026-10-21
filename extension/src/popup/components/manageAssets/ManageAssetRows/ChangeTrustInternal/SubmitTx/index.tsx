@@ -190,16 +190,16 @@ export const SubmitTransaction = ({
       );
     }
     const finish = async () => {
-      if (addTrustline) {
-        // A token the user adds on purpose must show up; see
-        // clearHiddenAssetFlag. Awaited because the success callback can
-        // close the popup, which would drop a cleanup still in flight.
-        await clearHiddenAssetFlag({
-          canonicalAsset: getCanonicalFromAsset(asset.code, asset.issuer),
-          activePublicKey: publicKey,
-          network: networkDetails.network,
-        });
-      }
+      // On add, a token the user adds on purpose must show up. On remove, the
+      // hidden map outlives the trustline, so a flag left behind would hide
+      // the asset if the trustline comes back another way (dApp, swap). See
+      // clearHiddenAssetFlag. Awaited because the success callback can close
+      // the popup, which would drop a cleanup still in flight.
+      await clearHiddenAssetFlag({
+        canonicalAsset: getCanonicalFromAsset(asset.code, asset.issuer),
+        activePublicKey: publicKey,
+        network: networkDetails.network,
+      });
       onTransactionSuccess?.();
     };
     finish();

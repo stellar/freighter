@@ -1,6 +1,7 @@
 import type { Locator, Page } from "@playwright/test";
 import { test, expect } from "./test-fixtures";
 import { loginToTestAccount } from "./helpers/login";
+import { goToSettings } from "./helpers/network";
 
 // Light/dark smoke (freighter-private#18): the UI follows the device color
 // scheme, including live changes while the popup is open. Asserts both the
@@ -161,8 +162,7 @@ test("lock screen and Forgot password sheet follow the color scheme", async ({
   await page.emulateMedia({ colorScheme: "light" });
   await loginToTestAccount({ page, extensionId, context });
   expect(await backdrop(page.getByTestId("account-view"))).toBe(BASE_00.light);
-  await page.getByTestId("account-options-dropdown").click();
-  await page.getByText("Settings").click();
+  await goToSettings(page);
   await page.getByText("Log Out").click();
   await expect(page.getByText("Welcome back")).toBeVisible();
 

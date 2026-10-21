@@ -92,6 +92,11 @@ export const EditMemo = ({
                       isRounded
                       variant="tertiary"
                       onClick={onClose}
+                      // Named so tests can reach this Cancel and not the review
+                      // sheet's: when the editor is opened from review, that
+                      // sheet paints its frozen contents through the slide-out,
+                      // leaving two Cancel buttons in the DOM for 200ms.
+                      data-testid="edit-memo-cancel"
                     >
                       {t("Cancel")}
                     </Button>

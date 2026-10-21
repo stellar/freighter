@@ -88,8 +88,12 @@ export const useHiddenAssets = () => {
 };
 
 /**
- * Unhides an asset the user just added, since a hidden flag outlives its
- * removal. Never throws, so a failed cleanup can't fail the add.
+ * Drops a stored hidden flag for an asset the user just added or removed.
+ * The hidden map is keyed by canonical asset and outlives a trustline or
+ * local entry, so a flag left behind would hide the token when it comes back,
+ * whether re-added here or through a dApp or swap. Writes only when the asset
+ * is actually hidden, and never throws: the add or remove already succeeded,
+ * so a failed cleanup must not fail it.
  */
 export const clearHiddenAssetFlag = async ({
   canonicalAsset,
@@ -125,7 +129,7 @@ export const clearHiddenAssetFlag = async ({
       throw new Error(writeError);
     }
   } catch (error) {
-    console.error("Failed to clear hidden flag after add:", error);
+    console.error("Failed to clear hidden flag:", error);
   }
 };
 

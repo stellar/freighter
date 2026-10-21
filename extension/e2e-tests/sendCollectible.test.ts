@@ -269,7 +269,7 @@ test("Send collectible with Soroban mux support to M address disables memo", asy
   await expect(
     page.getByText("Memo is disabled for this transaction"),
   ).toBeVisible({ timeout: 15000 });
-  await page.getByText("Cancel").click();
+  await page.getByTestId("edit-memo-cancel").click();
 
   // Click Review Send
   const reviewSendButton = page.getByTestId("send-collectible-btn-continue");
@@ -325,7 +325,7 @@ test("Send collectible without Soroban mux support to G address disables memo", 
   await expect(
     page.getByText("Memo is not supported for this operation"),
   ).toBeVisible({ timeout: 15000 });
-  await page.getByText("Cancel").click();
+  await page.getByTestId("edit-memo-cancel").click();
 
   // Click Review Send
   const reviewSendButton = page.getByTestId("send-collectible-btn-continue");

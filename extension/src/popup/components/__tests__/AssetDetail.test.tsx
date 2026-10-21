@@ -175,10 +175,8 @@ describe("AssetDetail", () => {
     const usdcCanonical =
       "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM";
     const handleClose = jest.fn();
-    const onAssetHidden = jest.fn().mockResolvedValue(undefined);
     const props = {
       handleClose,
-      onAssetHidden,
       accountBalances: {
         balances: [
           {
@@ -234,7 +232,6 @@ describe("AssetDetail", () => {
     });
     await waitFor(() => {
       expect(handleClose).toHaveBeenCalled();
-      expect(onAssetHidden).toHaveBeenCalled();
     });
   });
 
@@ -242,10 +239,7 @@ describe("AssetDetail", () => {
     const usdcCanonical =
       "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM";
 
-    const renderUsdcDetail = (props: {
-      handleClose: jest.Mock;
-      onAssetHidden: jest.Mock;
-    }) =>
+    const renderUsdcDetail = (props: { handleClose: jest.Mock }) =>
       render(
         <Wrapper
           routes={[ROUTES.account]}
@@ -297,30 +291,6 @@ describe("AssetDetail", () => {
         .mockImplementation(() => Promise.resolve(mockBalances));
     });
 
-    it("still reports the hide when the balances refresh fails", async () => {
-      jest.spyOn(console, "error").mockImplementation(() => undefined);
-      jest
-        .spyOn(ApiInternal, "changeAssetVisibility")
-        .mockImplementation(() =>
-          Promise.resolve({ hiddenAssets: {}, error: "" } as any),
-        );
-      const toastSpy = jest
-        .spyOn(toast, "custom")
-        .mockImplementation(() => "toast");
-      const handleClose = jest.fn();
-      const onAssetHidden = jest
-        .fn()
-        .mockRejectedValue(new Error("refresh failed"));
-
-      renderUsdcDetail({ handleClose, onAssetHidden });
-      await clickHide();
-
-      await waitFor(() => expect(toastSpy).toHaveBeenCalled());
-      expect(onAssetHidden).toHaveBeenCalled();
-      expect(handleClose).toHaveBeenCalled();
-      expect(lastToastProps(toastSpy).variant).toBe("success");
-    });
-
     it("keeps the detail open and reports a failed hide", async () => {
       jest
         .spyOn(ApiInternal, "changeAssetVisibility")
@@ -331,15 +301,13 @@ describe("AssetDetail", () => {
         .spyOn(toast, "custom")
         .mockImplementation(() => "toast");
       const handleClose = jest.fn();
-      const onAssetHidden = jest.fn().mockResolvedValue(undefined);
 
-      renderUsdcDetail({ handleClose, onAssetHidden });
+      renderUsdcDetail({ handleClose });
       await clickHide();
 
       await waitFor(() => expect(toastSpy).toHaveBeenCalled());
       expect(lastToastProps(toastSpy).variant).toBe("error");
       expect(handleClose).not.toHaveBeenCalled();
-      expect(onAssetHidden).not.toHaveBeenCalled();
     });
   });
 
@@ -415,7 +383,9 @@ describe("AssetDetail", () => {
     expect(
       document.querySelector(".AssetDetail__options-actions"),
     ).toBeInTheDocument();
-    expect(screen.queryByTestId("AssetDetail__hide")).not.toBeInTheDocument();
+    expect(
+      screen.queryByTestId("AssetDetail__hide"),
+    ).not.toBeInTheDocument();
   });
 
   it("never offers to hide the native asset", async () => {
@@ -461,7 +431,9 @@ describe("AssetDetail", () => {
     if (options) {
       fireEvent.click(options);
     }
-    expect(screen.queryByTestId("AssetDetail__hide")).not.toBeInTheDocument();
+    expect(
+      screen.queryByTestId("AssetDetail__hide"),
+    ).not.toBeInTheDocument();
   });
 
   it("should hide dust payment if configured", async () => {
@@ -1849,5 +1821,315 @@ describe("AssetDetail history loading state", () => {
     await waitFor(() => screen.getByTestId("AssetDetail"));
     expect(screen.queryByTestId("AssetDetail__list__loader")).toBeNull();
     expect(screen.getByText("No transactions to show")).toBeInTheDocument();
+  });
+
+  describe("Hide asset", () => {
+    const renderDetail = (props: any) =>
+      render(
+        <Wrapper
+          routes={[ROUTES.account]}
+          state={{
+            auth: {
+              error: null,
+              applicationState: ApplicationState.PASSWORD_CREATED,
+              publicKey: "G1",
+              allAccounts: mockAccounts,
+            },
+            settings: { networkDetails: TESTNET_NETWORK_DETAILS },
+          }}
+        >
+          <AssetDetail {...props} />
+        </Wrapper>,
+      );
+
+    const classicAsset = {
+      handleClose: () => null,
+      accountBalances: {
+        balances: [
+          {
+            available: new BigNumber(10),
+            token: {
+              code: "USDC",
+              issuer: {
+                key: "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN",
+              },
+            },
+            total: new BigNumber(10),
+          },
+        ],
+      } as any,
+      assetOperations: [] as any,
+      selectedAsset:
+        "USDC:GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN",
+      setSelectedAsset: () => null,
+      historyData: mockHistoryData,
+    };
+
+    it("offers Hide for a classic asset", async () => {
+      renderDetail(classicAsset);
+
+      fireEvent.click(await screen.findByAltText("asset options"));
+      await waitFor(() =>
+        expect(screen.getByTestId("AssetDetail__hide")).toBeVisible(),
+      );
+      // Translations resolve to empty strings under test, so the label falls
+      // back to the raw key; the interpolated code is not observable here.
+      expect(screen.getByTestId("AssetDetail__hide")).toHaveTextContent(
+        "Hide",
+      );
+    });
+
+    it("does not offer Hide for native XLM", async () => {
+      // filterHiddenBalances never hides native, so offering it would be a
+      // no-op the user could not undo.
+      renderDetail({
+        ...classicAsset,
+        accountBalances: {
+          balances: [
+            {
+              available: new BigNumber(10),
+              token: { type: "native", code: "XLM" },
+              total: new BigNumber(10),
+            },
+          ],
+        } as any,
+        selectedAsset: "native",
+      });
+
+      fireEvent.click(await screen.findByAltText("asset options"));
+      await screen.findByText("Stellar.expert");
+      expect(
+        screen.queryByTestId("AssetDetail__hide"),
+      ).not.toBeInTheDocument();
+    });
+
+    it("hides the asset and closes the sheet", async () => {
+      const changeAssetVisibility = jest
+        .spyOn(ApiInternal, "changeAssetVisibility")
+        .mockResolvedValue({
+          hiddenAssets: {
+            "USDC:GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN":
+              "hidden",
+          },
+          error: "",
+        } as any);
+      const handleClose = jest.fn();
+
+      renderDetail({ ...classicAsset, handleClose });
+
+      fireEvent.click(await screen.findByAltText("asset options"));
+      fireEvent.click(await screen.findByTestId("AssetDetail__hide"));
+
+      await waitFor(() =>
+        expect(changeAssetVisibility).toHaveBeenCalledWith({
+          assetIssuer:
+            "USDC:GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN",
+          assetVisibility: "hidden",
+          activePublicKey: "G1",
+          network: TESTNET_NETWORK_DETAILS.network,
+        }),
+      );
+      // The row is gone from the list behind the sheet, so there is nothing
+      // left to return to.
+      await waitFor(() => expect(handleClose).toHaveBeenCalled());
+
+      changeAssetVisibility.mockRestore();
+    });
+  });
+
+  describe("Remove asset", () => {
+    const renderDetail = (props: any) =>
+      render(
+        <Wrapper
+          routes={[ROUTES.account]}
+          state={{
+            auth: {
+              error: null,
+              applicationState: ApplicationState.PASSWORD_CREATED,
+              publicKey: "G1",
+              allAccounts: mockAccounts,
+            },
+            settings: { networkDetails: TESTNET_NETWORK_DETAILS },
+          }}
+        >
+          <AssetDetail {...props} />
+        </Wrapper>,
+      );
+
+    const classicProps = {
+      handleClose: () => null,
+      accountBalances: {
+        balances: [
+          {
+            available: new BigNumber(10),
+            token: {
+              code: "USDC",
+              issuer: {
+                key: "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN",
+              },
+            },
+            total: new BigNumber(10),
+          },
+        ],
+      } as any,
+      assetOperations: [] as any,
+      selectedAsset:
+        "USDC:GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN",
+      setSelectedAsset: () => null,
+      historyData: mockHistoryData,
+    };
+
+    it("offers Remove for a classic asset", async () => {
+      renderDetail(classicProps);
+
+      fireEvent.click(await screen.findByAltText("asset options"));
+      await waitFor(() =>
+        expect(screen.getByTestId("asset-detail-remove-button")).toBeVisible(),
+      );
+    });
+
+    it("does not offer Remove for native XLM", async () => {
+      // Native has no trustline to close, so a changeTrust could not succeed.
+      renderDetail({
+        ...classicProps,
+        accountBalances: {
+          balances: [
+            {
+              available: new BigNumber(10),
+              token: { type: "native", code: "XLM" },
+              total: new BigNumber(10),
+            },
+          ],
+        } as any,
+        selectedAsset: "native",
+      });
+
+      fireEvent.click(await screen.findByAltText("asset options"));
+      // Stellar.expert is present for native on testnet, so this waits for the
+      // menu to actually be open before asserting Remove is absent from it.
+      await screen.findByText("Stellar.expert");
+      expect(
+        screen.queryByTestId("asset-detail-remove-button"),
+      ).not.toBeInTheDocument();
+    });
+
+    it("does not offer Remove for a liquidity pool share", async () => {
+      // LP shares are exited by withdrawing from the pool, not by closing a
+      // trustline. The canonical carries the ":lp" issuer marker.
+      const liquidityPoolId =
+        "67260c4c1807b262ff851b0a3fe141194936bb0215b2f77447f1df11998eabb9";
+      renderDetail({
+        ...classicProps,
+        accountBalances: {
+          balances: [
+            {
+              liquidityPoolId,
+              total: new BigNumber(100),
+              available: new BigNumber(100),
+              limit: "1000",
+              reserves: [
+                { asset: "XLM:native", amount: "1000" },
+                {
+                  asset:
+                    "USDC:GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
+                  amount: "1000",
+                },
+              ],
+            },
+          ],
+        } as any,
+        selectedAsset: `${liquidityPoolId}:lp`,
+      });
+
+      fireEvent.click(await screen.findByAltText("asset options"));
+      await screen.findByText("Stellar.expert");
+      expect(
+        screen.queryByTestId("asset-detail-remove-button"),
+      ).not.toBeInTheDocument();
+    });
+
+    // ChangeTrustInternal emits signing.rejected on unmount unless it was
+    // approved, so it must not be mounted alongside the detail body -- every
+    // sheet close would emit a rejection for users who never opened the flow.
+    it("does not mount the remove flow until Remove is chosen", async () => {
+      renderDetail(classicProps);
+
+      await waitFor(() => screen.getByTestId("AssetDetail"));
+      expect(
+        screen.queryByTestId("ChangeTrustInternal"),
+      ).not.toBeInTheDocument();
+    });
+
+    // A changeTrust that zeroes the limit is rejected while the trustline still
+    // holds a balance, so entering the flow could only ever fail on submit.
+    it("warns instead of starting the remove flow when a balance is held", async () => {
+      renderDetail(classicProps);
+
+      fireEvent.click(await screen.findByAltText("asset options"));
+      fireEvent.click(await screen.findByTestId("asset-detail-remove-button"));
+
+      const warning = await screen.findByTestId("asset-detail-balance-warning");
+      // SlideupModal always renders its children; open state is the class.
+      await waitFor(() =>
+        expect(warning.closest(".SlideupModal")).toHaveClass("open"),
+      );
+      expect(
+        screen.getByTestId("asset-detail-balance-warning"),
+      ).toHaveTextContent("Token still has a balance");
+      // Still on the detail body, not the remove flow.
+      expect(screen.getByTestId("AssetDetail")).toBeInTheDocument();
+    });
+
+    it("leaves the warning closed when the balance is zero", async () => {
+      renderDetail({
+        ...classicProps,
+        accountBalances: {
+          balances: [
+            {
+              available: new BigNumber(0),
+              token: {
+                code: "USDC",
+                issuer: {
+                  key: "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN",
+                },
+              },
+              total: new BigNumber(0),
+            },
+          ],
+        } as any,
+      });
+
+      fireEvent.click(await screen.findByAltText("asset options"));
+      const warning = screen.getByTestId("asset-detail-balance-warning");
+      expect(warning.closest(".SlideupModal")).toHaveClass("closed");
+    });
+
+    // The confirm-transaction view belongs in a bottom sheet over the detail,
+    // not as a full-screen takeover of it.
+    it("opens the remove flow in a bottom sheet", async () => {
+      renderDetail({
+        ...classicProps,
+        accountBalances: {
+          balances: [
+            {
+              available: new BigNumber(0),
+              token: {
+                code: "USDC",
+                issuer: {
+                  key: "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN",
+                },
+              },
+              total: new BigNumber(0),
+            },
+          ],
+        } as any,
+      });
+
+      fireEvent.click(await screen.findByAltText("asset options"));
+      fireEvent.click(await screen.findByTestId("asset-detail-remove-button"));
+
+      const flow = await screen.findByTestId("ChangeTrustInternal");
+      expect(flow.closest(".SlideupModal")).toHaveClass("open");
+    });
   });
 });

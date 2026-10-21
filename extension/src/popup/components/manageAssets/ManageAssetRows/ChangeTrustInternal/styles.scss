@@ -28,6 +28,18 @@
       background-color: var(--sds-clr-base-00);
     }
 
+    // Asset Details hosts this inside a SlideupModal with isFullHeight for
+    // the layout alone (footer pins, body scrolls). The mocks paint that
+    // sheet's card Background/Primary, so the page colour above must not
+    // paint a black wrapper over the gray-01 card.
+    .SlideupModal & {
+      background-color: var(--sds-clr-gray-01);
+
+      .ChangeTrustInternal__Actions {
+        background-color: var(--sds-clr-gray-01);
+      }
+    }
+
     // Grow the slider so the action row is pushed to the bottom.
     > .multi-pane-slider {
       flex: 1;
@@ -134,7 +146,7 @@
     &__Wrapper {
       max-width: 49rem;
       width: 100%;
-      max-height: calc(85vh - pxToRem(160px));
+      max-height: calc(var(--slideup-modal--max-height) - #{pxToRem(160px)});
       overflow-y: auto;
       display: flex;
       flex-direction: column;
