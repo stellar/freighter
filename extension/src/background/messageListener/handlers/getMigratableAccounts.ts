@@ -37,9 +37,9 @@ export const getMigratableAccounts = async ({
   // only use accounts that were derived from the mnemonic phrase
   const migratableAccounts: MigratableAccount[] = [];
 
-  allAccounts.forEach((acct, i) => {
+  allAccounts.forEach((acct) => {
     if (mnemonicPublicKeyArr.includes(acct.publicKey)) {
-      migratableAccounts.push({ ...acct, keyIdIndex: i });
+      migratableAccounts.push({ ...acct });
     }
   });
 

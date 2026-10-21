@@ -70,8 +70,14 @@ export const migrateAccounts = async ({
   }
 
   const newWallet = fromMnemonic(migratedMnemonicPhrase);
-  const keyIdList: string = await getKeyIdList({ localStore });
+  // Read once: `replaceAccount` swaps ids in place, so positions are stable.
+  const keyIdList: string[] = await getKeyIdList({ localStore });
   const fee = xlmToStroop(recommendedFee).toFixed();
+  // The migrated phrase is the source of every account created below.
+  const phraseSourceId = await getPhraseSourceId(migratedMnemonicPhrase);
+  // The first account that actually migrated; it becomes the active one.
+  let firstMigratedKeyPair: { publicKey: string; privateKey: string } | null =
+    null;
 
   // we expect all migrations to be done on MAINNET
   const server = stellarSdkServer(
@@ -92,15 +98,27 @@ export const migrateAccounts = async ({
   */
 
   for (let i = 0; i < balancesToMigrate.length; i += 1) {
-    const { publicKey, xlmBalance, minBalance, trustlineBalances, keyIdIndex } =
-      balancesToMigrate[i];
+    const {
+      publicKey,
+      xlmBalance,
+      minBalance,
+      trustlineBalances,
+      id: keyID,
+    } = balancesToMigrate[i];
     const migratedAccount = {
       ...balancesToMigrate[i],
       newPublicKey: "",
       isMigrated: true,
     };
 
-    const keyID = keyIdList[keyIdIndex];
+    // The account to migrate is the keystore with this id. Its position in
+    // `keyIdList` (persisted storage order, never the presentation order of
+    // `allAccounts`) is the derivation index the replacement takes on the new
+    // phrase, as it always has. #74 replaces this with per-source index sets.
+    const derivationIndex = keyIdList.indexOf(keyID);
+    if (derivationIndex === -1) {
+      throw new Error(`No keystore with id ${keyID}`);
+    }
 
     const store = await unlockKeystore({ password, keyID, keyManager });
 
@@ -108,8 +126,8 @@ export const migrateAccounts = async ({
 
     // create a new keystore and migrate while replacing the keyId in the list
     const newKeyPair = {
-      publicKey: newWallet.getPublicKey(keyIdIndex),
-      privateKey: newWallet.getSecret(keyIdIndex),
+      publicKey: newWallet.getPublicKey(derivationIndex),
+      privateKey: newWallet.getSecret(derivationIndex),
     };
 
     const transaction = new StellarSdk.TransactionBuilder(sourceAccount, {
@@ -212,29 +230,27 @@ export const migrateAccounts = async ({
       await replaceAccount({
         args: {
           mnemonicPhrase: migratedMnemonicPhrase,
+          sourceId: phraseSourceId,
           password,
           keyPair: newKeyPair,
-          indexToReplace: keyIdIndex,
+          idToReplace: keyID,
         },
         localStore,
         sessionStore,
         keyManager,
       });
+      firstMigratedKeyPair = firstMigratedKeyPair || newKeyPair;
     }
 
     migratedAccount.newPublicKey = newKeyPair.publicKey;
     migratedAccounts.push(migratedAccount);
   }
 
-  const successfullyMigratedAccts = migratedAccounts.filter(
-    ({ isMigrated }) => isMigrated,
-  );
-
   // if any of the accounts have been successfully migrated, go ahead and log in
-  if (successfullyMigratedAccts.length) {
-    // let's make the first public key the active one
+  if (firstMigratedKeyPair) {
+    // let's make the first migrated account the active one
     await activatePublicKey({
-      publicKey: newWallet.getPublicKey(0),
+      publicKey: firstMigratedKeyPair.publicKey,
       sessionStore,
       localStore,
     });
@@ -246,14 +262,13 @@ export const migrateAccounts = async ({
     await storeEncryptedTemporaryData({
       localStore,
       keyName: await localStore.getItem(KEY_ID),
-      temporaryData: newWallet.getSecret(0),
+      temporaryData: firstMigratedKeyPair.privateKey,
       hashKey,
     });
 
     // The migrated phrase is a new source the wallet now holds. The old
     // phrase keeps its record even when every account migrated off it:
     // telling requires opening every keystore, which a later issue does.
-    const phraseSourceId = await getPhraseSourceId(migratedMnemonicPhrase);
     await addMnemonic({
       localStore,
       hashKey,

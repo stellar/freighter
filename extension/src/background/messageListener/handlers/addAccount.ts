@@ -109,6 +109,7 @@ export const addAccount = async ({
       keyPair,
       mnemonicPhrase,
       phraseSourceId,
+      sourceId: phraseSourceId,
       sessionStore,
       keyManager,
       localStore,

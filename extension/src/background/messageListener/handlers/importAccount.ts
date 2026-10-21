@@ -93,10 +93,12 @@ export const importAccount = async ({
   };
 
   try {
+    const sourceId = await getSecretKeySourceId(privateKey);
     await storeAccount({
       password,
       keyPair,
       mnemonicPhrase: source?.mnemonic ?? "",
+      sourceId,
       imported: true,
       sessionStore,
       localStore,
@@ -104,7 +106,7 @@ export const importAccount = async ({
     });
     await addSecretSource({
       localStore,
-      id: await getSecretKeySourceId(privateKey),
+      id: sourceId,
       type: SecretSourceType.SECRET_KEY,
     });
   } catch (e) {

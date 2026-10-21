@@ -96,6 +96,7 @@ const addSecondPhrase = async () => {
   await storeAccount({
     mnemonicPhrase: PHRASE_2.mnemonic,
     phraseSourceId,
+    sourceId: phraseSourceId,
     password: PASSWORD,
     keyPair: { publicKey: row.publicKey, privateKey: row.secret },
     sessionStore: mockSessionStore,

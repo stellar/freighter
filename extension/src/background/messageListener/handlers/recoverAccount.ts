@@ -108,6 +108,7 @@ export const recoverAccount = async ({
       await storeAccount({
         mnemonicPhrase: recoverMnemonic,
         phraseSourceId,
+        sourceId: phraseSourceId,
         password,
         keyPair,
         isSettingHashKey: true,
@@ -159,6 +160,7 @@ export const recoverAccount = async ({
             keyPair: newKeyPair,
             mnemonicPhrase: recoverMnemonic,
             phraseSourceId,
+            sourceId: phraseSourceId,
             sessionStore,
             localStore,
             keyManager,

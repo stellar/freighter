@@ -13,21 +13,24 @@ import { KEY_ID, KEY_ID_LIST } from "constants/localStorageTypes";
 
 /*
   _replaceAccount is only used during the migration process. It is analagous to _storeAccount above.
-  1. We login with the new account, which sets the new active public key and new allAccounts in Redux for the UI to consume
-  2. We save the key store in storage
+  1. We save the key store in storage
+  2. We swap the old account for the new one, in place, in Redux and in `keyIdList`, and set the new active public key
   3. We save the new account name in storage
 */
 export const replaceAccount = async ({
-  args: { mnemonicPhrase, password, keyPair, indexToReplace },
+  args: { mnemonicPhrase, sourceId, password, keyPair, idToReplace },
   localStore,
   sessionStore,
   keyManager,
 }: {
   args: {
     mnemonicPhrase: string;
+    /** The migrated phrase's source id; the new account is rooted in it. */
+    sourceId: string;
     password: string;
     keyPair: KeyPair;
-    indexToReplace: number;
+    /** The keystore id of the account being replaced. */
+    idToReplace: string;
   };
   localStore: DataStorageAccess;
   sessionStore: Store;
@@ -36,10 +39,36 @@ export const replaceAccount = async ({
   const { publicKey, privateKey } = keyPair;
 
   const allAccounts = allAccountsSelector(sessionStore.getState());
-  const accountName = `Account ${indexToReplace + 1}`;
-  const newAllAccounts = [...allAccounts];
+  const accountIndex = allAccounts.findIndex(({ id }) => id === idToReplace);
+  if (accountIndex === -1) {
+    throw new Error(`No account with id ${idToReplace}`);
+  }
+  const keyIdListArr: string[] = await getKeyIdList({ localStore });
+  const keyIdIndex = keyIdListArr.indexOf(idToReplace);
+  if (keyIdIndex === -1) {
+    throw new Error(`No keystore with id ${idToReplace}`);
+  }
 
-  newAllAccounts[indexToReplace] = {
+  const keyMetadata = {
+    key: {
+      extra: { imported: false, mnemonicPhrase },
+      type: KeyType.plaintextKey,
+      publicKey,
+      privateKey,
+    },
+    password,
+    encrypterName: ScryptEncrypter.name,
+  };
+
+  // Let a failed store throw: an account whose keystore does not exist must
+  // never enter the session or the list.
+  const keyStore = await keyManager.storeKey(keyMetadata);
+
+  const accountName = `Account ${keyIdIndex + 1}`;
+  const newAllAccounts = [...allAccounts];
+  newAllAccounts[accountIndex] = {
+    id: keyStore.id,
+    sourceId,
     publicKey,
     name: accountName,
     imported: false,
@@ -53,27 +82,7 @@ export const replaceAccount = async ({
     }) as any,
   );
 
-  const keyMetadata = {
-    key: {
-      extra: { imported: false, mnemonicPhrase },
-      type: KeyType.plaintextKey,
-      publicKey,
-      privateKey,
-    },
-    password,
-    encrypterName: ScryptEncrypter.name,
-  };
-
-  let keyStore = { id: "" };
-
-  try {
-    keyStore = await keyManager.storeKey(keyMetadata);
-  } catch (e) {
-    console.error(e);
-  }
-
-  const keyIdListArr = await getKeyIdList({ localStore });
-  keyIdListArr[indexToReplace] = keyStore.id;
+  keyIdListArr[keyIdIndex] = keyStore.id;
 
   await localStore.setItem(KEY_ID_LIST, keyIdListArr);
   await localStore.setItem(KEY_ID, keyStore.id);

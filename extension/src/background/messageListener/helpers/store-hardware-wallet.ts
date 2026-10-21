@@ -56,6 +56,8 @@ export const storeHardwareWalletAccount = async ({
     allAccounts = [
       ...allAccounts,
       {
+        // A hardware account has no secret and so no source.
+        id: keyId,
         publicKey,
         name: accountName,
         imported: true,

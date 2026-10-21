@@ -25,6 +25,7 @@ import { DataStorageAccess } from "background/helpers/dataStorageAccess";
 import { INDEXER_URL } from "@shared/constants/mercury";
 import { captureException } from "@sentry/browser";
 import { Store } from "redux";
+import { Account } from "@shared/api/types";
 
 export const getKeyIdList = async ({
   localStore,
@@ -63,6 +64,44 @@ export const addAccountName = async ({
   const encodedaccountNameList = encodeObject(accountNameList);
 
   await localStore.setItem(ACCOUNT_NAME_LIST_ID, encodedaccountNameList);
+};
+
+/*
+  Account identity is `Account.id`, the keystore id as stored in `keyIdList`.
+  Nothing resolves an account by its position in `allAccounts`: that order is
+  presentation only. A lookup that finds nothing is a bug upstream and must
+  surface, never fall back to the first account.
+*/
+
+const assertHasId = (account: Account, label: string) => {
+  if (!account.id) {
+    throw new Error(`Account ${label} has no id`);
+  }
+  return account;
+};
+
+/** The first account with `publicKey`. Throws when there is none. */
+export const findAccountByPublicKey = (
+  allAccounts: Account[],
+  publicKey: string,
+): Account => {
+  const account = allAccounts.find((a) => a.publicKey === publicKey);
+  if (!account) {
+    throw new Error(`No account for public key ${publicKey}`);
+  }
+  return assertHasId(account, publicKey);
+};
+
+/** The account with keystore id `id`. Throws when there is none. */
+export const findAccountById = (
+  allAccounts: Account[],
+  id: string,
+): Account => {
+  const account = allAccounts.find((a) => a.id === id);
+  if (!account) {
+    throw new Error(`No account with id ${id}`);
+  }
+  return assertHasId(account, id);
 };
 
 export const getIsMainnet = async ({

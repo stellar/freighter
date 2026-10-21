@@ -26,6 +26,7 @@ interface KeyPair {
 export const storeAccount = async ({
   mnemonicPhrase,
   phraseSourceId,
+  sourceId,
   password,
   keyPair,
   imported = false,
@@ -41,6 +42,13 @@ export const storeAccount = async ({
    * keystore (secret-key imports, for now) leave it out.
    */
   phraseSourceId?: string;
+  /**
+   * The `SecretSource` the account is rooted in: the phrase it was derived
+   * from, or its own secret key for a standalone import. Required and never
+   * inferred from `phraseSourceId`, so an import cannot inherit the phrase
+   * that is still stamped into its keystore (#75).
+   */
+  sourceId: string;
   password: string;
   keyPair: KeyPair;
   imported?: boolean;
@@ -64,22 +72,6 @@ export const storeAccount = async ({
     throw new Error("Error deriving hash key");
   }
 
-  // set the active public key
-  await sessionStore.dispatch(
-    logIn({
-      publicKey,
-      allAccounts: [
-        ...allAccounts,
-        {
-          publicKey,
-          name: accountName,
-          imported,
-        },
-      ],
-      localStore,
-    }) as any,
-  );
-
   const keyMetadata = {
     key: {
       extra: { imported, mnemonicPhrase },
@@ -97,6 +89,25 @@ export const storeAccount = async ({
   // store encrypted extra data
 
   keyStore = await keyManager.storeKey(keyMetadata);
+
+  // The keystore id is the account's id, so the account joins the session
+  // only once the keystore exists. A failed store leaves no account behind.
+  await sessionStore.dispatch(
+    logIn({
+      publicKey,
+      allAccounts: [
+        ...allAccounts,
+        {
+          id: keyStore.id,
+          sourceId,
+          publicKey,
+          name: accountName,
+          imported,
+        },
+      ],
+      localStore,
+    }) as any,
+  );
 
   if (mnemonicPhrase && phraseSourceId) {
     await addMnemonic({

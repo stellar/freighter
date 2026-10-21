@@ -6,8 +6,10 @@ import {
   allAccountsSelector,
   updateAccountName as updateAccountNameAction,
 } from "background/ducks/session";
-import { addAccountName, getKeyIdList } from "background/helpers/account";
-import { Account } from "@shared/api/types";
+import {
+  addAccountName,
+  findAccountByPublicKey,
+} from "background/helpers/account";
 
 export const updateAccountName = async ({
   request,
@@ -20,19 +22,17 @@ export const updateAccountName = async ({
 }) => {
   const { accountName, publicKey } = request;
 
+  // Resolve before touching anything: an unknown key throws and leaves both
+  // the session and the stored names as they were.
+  const { id } = findAccountByPublicKey(
+    allAccountsSelector(sessionStore.getState()),
+    publicKey,
+  );
+
+  await addAccountName({ keyId: id, accountName, localStore });
   sessionStore.dispatch(
     updateAccountNameAction({ updatedAccountName: accountName, publicKey }),
   );
-  const allAccounts = allAccountsSelector(sessionStore.getState());
-  let publicKeyIndex = allAccounts.findIndex(
-    (account: Account) => account.publicKey === publicKey,
-  );
-  publicKeyIndex = publicKeyIndex > -1 ? publicKeyIndex : 0;
-
-  const keyIdList = await getKeyIdList({ localStore });
-
-  const keyId = keyIdList[publicKeyIndex];
-  await addAccountName({ keyId, accountName, localStore });
 
   return {
     allAccounts: allAccountsSelector(sessionStore.getState()),

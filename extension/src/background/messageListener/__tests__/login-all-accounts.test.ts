@@ -130,6 +130,43 @@ describe("loginToAllAccounts", () => {
     );
   });
 
+  // #73: a session persisted by a build that predates `Account.id` holds
+  // accounts nothing can resolve by id. Rebuild it from storage on unlock.
+  it("rebuilds allAccounts when a held account has no id", async () => {
+    const localStore = {
+      getItem: jest
+        .fn()
+        .mockImplementation((key: string) =>
+          Promise.resolve(key === KEY_ID ? "key-id-0" : null),
+        ),
+      remove: jest.fn().mockResolvedValue(undefined),
+    } as any;
+    const sessionStore = {
+      dispatch: jest.fn().mockResolvedValue(undefined),
+      getState: jest.fn().mockReturnValue({
+        session: {
+          publicKey: "GBACTIVE",
+          allAccounts: [
+            { publicKey: "GBACTIVE", name: "Account 1", imported: false },
+          ],
+        },
+      }),
+    } as any;
+    const sessionTimer = {
+      startSession: jest.fn().mockResolvedValue(undefined),
+    } as any;
+
+    await loginToAllAccounts(
+      "password",
+      localStore,
+      sessionStore,
+      {} as any,
+      sessionTimer,
+    );
+
+    expect(mockGetStoredAccounts).toHaveBeenCalledTimes(1);
+  });
+
   // Regression: the two catch blocks call `clearSession()` (which wipes
   // hashKey, sets `isHardwareWalletLocked=true`, removes
   // TEMPORARY_STORE_ID), but previously did not return/throw. Execution

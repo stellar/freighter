@@ -71,6 +71,7 @@ export const createAccount = async ({
       keyPair,
       mnemonicPhrase,
       phraseSourceId,
+      sourceId: phraseSourceId,
       isSettingHashKey: true,
       localStore,
       sessionStore,

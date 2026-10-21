@@ -58,9 +58,13 @@ export const loginToAllAccounts = async (
 
   const hashKey = await deriveKeyFromString(password);
 
+  const heldAccounts = allAccountsSelector(sessionStore.getState());
   if (
     !publicKeySelector(sessionStore.getState()) ||
-    !allAccountsSelector(sessionStore.getState()).length
+    !heldAccounts.length ||
+    // A session persisted by a build that predates `Account.id` cannot
+    // resolve anything by id; rebuild it from storage.
+    heldAccounts.some((account) => !account.id)
   ) {
     // we have cleared redux store via reloading extension/browser
     // construct allAccounts from local storage

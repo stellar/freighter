@@ -53,7 +53,7 @@ type AccountToMigrate = {
   trustlineBalances: Horizon.HorizonApi.BalanceLine[];
   isSigner: boolean;
   minBalance: string;
-  keyIdIndex: number;
+  id: string;
 };
 
 interface FormValues {
@@ -272,7 +272,7 @@ export const ReviewMigration = () => {
           trustlineBalances: [] as Horizon.HorizonApi.BalanceLine[],
           isSigner,
           minBalance: "",
-          keyIdIndex: migratableAccounts[i].keyIdIndex,
+          id: migratableAccounts[i].id,
         };
 
         let acctItem = {
@@ -316,21 +316,14 @@ export const ReviewMigration = () => {
   const handleSubmit = (values: FormValues) => {
     const migratableBalances: BalanceToMigrate[] = [];
     accountToMigrateList.forEach(
-      ({
-        publicKey,
-        name,
-        minBalance,
-        xlmBalance,
-        trustlineBalances,
-        keyIdIndex,
-      }) => {
+      ({ publicKey, name, minBalance, xlmBalance, trustlineBalances, id }) => {
         migratableBalances.push({
           publicKey,
           name,
           minBalance,
           xlmBalance,
           trustlineBalances,
-          keyIdIndex,
+          id,
         });
       },
     );
