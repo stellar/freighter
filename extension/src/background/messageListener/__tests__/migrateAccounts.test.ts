@@ -118,6 +118,7 @@ describe("migrateAccounts", () => {
     mockSessionStore.dispatch(sessionSlice.actions.reset());
     mockSubmitTx.mockReset();
     mockSubmitTx.mockResolvedValue({});
+    jest.restoreAllMocks();
   });
 
   it("replaces the account by id at its keystore's position, whatever the list order", async () => {
@@ -154,6 +155,35 @@ describe("migrateAccounts", () => {
     ).toEqual([...list].sort());
     const untouched = allAccounts().find(({ id }) => id === firstKeyId);
     expect(untouched?.sourceId).toBe(PHRASE_1.userId);
+  });
+
+  it("keeps a keystore id added while the replacement keystore is being stored", async () => {
+    await seedWallet();
+    const [firstKeyId, secondKeyId] = await keyIdList();
+    const second = allAccounts()[1];
+    const hwKeyId =
+      "hw:GBXMNIDFHHJ4KRVYVKWOPLKD4VTBINTOUGFBNV6R2UW4PT2DMJZN3PKD";
+    const storeKey = mockKeyManager.storeKey.bind(mockKeyManager);
+    // A hardware import on another surface lands in keyIdList while Scrypt
+    // is running for the replacement keystore.
+    jest
+      .spyOn(mockKeyManager, "storeKey")
+      .mockImplementation(async (params) => {
+        await mockDataStorage.setItem(KEY_ID_LIST, [
+          ...(await keyIdList()),
+          hwKeyId,
+        ]);
+        return storeKey(params);
+      });
+
+    await migrate([balanceFor(second)]);
+
+    const list = await keyIdList();
+    expect(list).toHaveLength(3);
+    expect(list[0]).toBe(firstKeyId);
+    expect(list[1]).not.toBe(secondKeyId);
+    expect(list[2]).toBe(hwKeyId);
+    expect(allAccounts().map(({ id }) => id)).toContain(list[1]);
   });
 
   it("rejects an unknown id before anything is submitted", async () => {

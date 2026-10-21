@@ -43,8 +43,8 @@ export const replaceAccount = async ({
   if (accountIndex === -1) {
     throw new Error(`No account with id ${idToReplace}`);
   }
-  const keyIdListArr: string[] = await getKeyIdList({ localStore });
-  const keyIdIndex = keyIdListArr.indexOf(idToReplace);
+  // Only a check: the list is read again after `storeKey` below.
+  const keyIdIndex = (await getKeyIdList({ localStore })).indexOf(idToReplace);
   if (keyIdIndex === -1) {
     throw new Error(`No keystore with id ${idToReplace}`);
   }
@@ -82,7 +82,15 @@ export const replaceAccount = async ({
     }) as any,
   );
 
-  keyIdListArr[keyIdIndex] = keyStore.id;
+  // Re-read the list now that Scrypt is done: another surface may have added
+  // a keystore id meanwhile, and a snapshot from before `storeKey` would drop
+  // it. (#112 serializes these handlers; until then keep the window small.)
+  const keyIdListArr: string[] = await getKeyIdList({ localStore });
+  const slot = keyIdListArr.indexOf(idToReplace);
+  if (slot === -1) {
+    throw new Error(`No keystore with id ${idToReplace}`);
+  }
+  keyIdListArr[slot] = keyStore.id;
 
   await localStore.setItem(KEY_ID_LIST, keyIdListArr);
   await localStore.setItem(KEY_ID, keyStore.id);
