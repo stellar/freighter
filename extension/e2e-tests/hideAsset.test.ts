@@ -38,7 +38,7 @@ test("Hides a token from asset details and unhides it from the sheet", async ({
   // retired Manage assets screen's per-row toggle.
   await openAssetDetails(page, "USDC");
   await page.getByAltText("asset options").click();
-  await page.getByTestId("asset-detail-hide-button").click({ force: true });
+  await page.getByTestId("AssetDetail__hide").click({ force: true });
 
   // The row leaves the balances list immediately; the redux mirror is what
   // makes that happen without a refetch.

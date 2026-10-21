@@ -483,7 +483,7 @@ export const AssetDetail = ({
                         className="action"
                         onClick={handleHideAsset}
                         disabled={isHiding}
-                        data-testid="asset-detail-hide-button"
+                        data-testid="AssetDetail__hide"
                       >
                         <div className="AssetDetail__options-actions__label">
                           {t("Hide {{code}}", { code: canonical.code })}

@@ -216,7 +216,7 @@ describe("AssetDetail", () => {
     await waitFor(() => screen.getByTestId("AssetDetail"));
 
     fireEvent.click(screen.getByAltText("asset options"));
-    const hideButton = await screen.findByTestId("asset-detail-hide-button");
+    const hideButton = await screen.findByTestId("AssetDetail__hide");
     // The test i18n returns keys uninterpolated, so match the verb only.
     expect(hideButton).toHaveTextContent(/^Hide/);
 
@@ -282,7 +282,7 @@ describe("AssetDetail", () => {
     const clickHide = async () => {
       await waitFor(() => screen.getByTestId("AssetDetail"));
       fireEvent.click(screen.getByAltText("asset options"));
-      fireEvent.click(await screen.findByTestId("asset-detail-hide-button"));
+      fireEvent.click(await screen.findByTestId("AssetDetail__hide"));
     };
 
     beforeEach(() => {
@@ -384,7 +384,7 @@ describe("AssetDetail", () => {
       document.querySelector(".AssetDetail__options-actions"),
     ).toBeInTheDocument();
     expect(
-      screen.queryByTestId("asset-detail-hide-button"),
+      screen.queryByTestId("AssetDetail__hide"),
     ).not.toBeInTheDocument();
   });
 
@@ -432,7 +432,7 @@ describe("AssetDetail", () => {
       fireEvent.click(options);
     }
     expect(
-      screen.queryByTestId("asset-detail-hide-button"),
+      screen.queryByTestId("AssetDetail__hide"),
     ).not.toBeInTheDocument();
   });
 
@@ -1870,11 +1870,11 @@ describe("AssetDetail history loading state", () => {
 
       fireEvent.click(await screen.findByAltText("asset options"));
       await waitFor(() =>
-        expect(screen.getByTestId("asset-detail-hide-button")).toBeVisible(),
+        expect(screen.getByTestId("AssetDetail__hide")).toBeVisible(),
       );
       // Translations resolve to empty strings under test, so the label falls
       // back to the raw key; the interpolated code is not observable here.
-      expect(screen.getByTestId("asset-detail-hide-button")).toHaveTextContent(
+      expect(screen.getByTestId("AssetDetail__hide")).toHaveTextContent(
         "Hide",
       );
     });
@@ -1899,7 +1899,7 @@ describe("AssetDetail history loading state", () => {
       fireEvent.click(await screen.findByAltText("asset options"));
       await screen.findByText("Stellar.expert");
       expect(
-        screen.queryByTestId("asset-detail-hide-button"),
+        screen.queryByTestId("AssetDetail__hide"),
       ).not.toBeInTheDocument();
     });
 
@@ -1918,7 +1918,7 @@ describe("AssetDetail history loading state", () => {
       renderDetail({ ...classicAsset, handleClose });
 
       fireEvent.click(await screen.findByAltText("asset options"));
-      fireEvent.click(await screen.findByTestId("asset-detail-hide-button"));
+      fireEvent.click(await screen.findByTestId("AssetDetail__hide"));
 
       await waitFor(() =>
         expect(changeAssetVisibility).toHaveBeenCalledWith({
