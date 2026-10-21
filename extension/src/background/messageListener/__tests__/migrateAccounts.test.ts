@@ -18,11 +18,17 @@ import {
   mockStorageApi,
   MockBrowserAlarm,
 } from "background/messageListener/helpers/test-helpers";
-import { KEY_ID, KEY_ID_LIST } from "constants/localStorageTypes";
+import {
+  DERIVATION_INDICES_ID,
+  KEY_ID,
+  KEY_ID_LIST,
+} from "constants/localStorageTypes";
 
-// #73: the migration resolves the account to replace by its id, derives the
-// replacement at that keystore's position in `keyIdList` (not in
+// #73: the migration resolves the account to replace by its id, swaps the
+// replacement into that keystore's slot in `keyIdList` (not in
 // `allAccounts`), and activates an account that was actually migrated.
+// #74: each replacement derives at the migrated phrase's lowest unused index,
+// and an index derived in a run is never handed out twice in that run.
 
 const [PHRASE_1, PHRASE_2] = AUTH_KEYPAIR_VECTORS;
 const NEW_ACCOUNTS = ACCOUNT_SOURCE_VECTORS[1].accounts;
@@ -74,6 +80,9 @@ const allAccounts = (): Account[] =>
 
 const keyIdList = (): Promise<string[]> => mockDataStorage.getItem(KEY_ID_LIST);
 
+const indexMap = (): Promise<Record<string, number[]>> =>
+  mockDataStorage.getItem(DERIVATION_INDICES_ID);
+
 const balanceFor = (account: Account): BalanceToMigrate => ({
   id: account.id,
   publicKey: account.publicKey,
@@ -121,7 +130,7 @@ describe("migrateAccounts", () => {
     jest.restoreAllMocks();
   });
 
-  it("replaces the account by id at its keystore's position, whatever the list order", async () => {
+  it("replaces the account by id in its keystore's slot, deriving at the new phrase's first free index", async () => {
     await seedWallet();
     const [firstKeyId, secondKeyId] = await keyIdList();
     const second = allAccounts()[1];
@@ -144,8 +153,10 @@ describe("migrateAccounts", () => {
     expect(list[0]).toBe(firstKeyId);
     expect(list[1]).not.toBe(secondKeyId);
     const replaced = allAccounts().find(({ id }) => id === list[1]);
+    // Phrase 2 is new, so its first account is index 0 whatever slot the
+    // old account sat in.
     expect(replaced).toMatchObject({
-      publicKey: NEW_ACCOUNTS[1].publicKey,
+      publicKey: NEW_ACCOUNTS[0].publicKey,
       sourceId: PHRASE_2.userId,
     });
     expect(
@@ -155,6 +166,26 @@ describe("migrateAccounts", () => {
     ).toEqual([...list].sort());
     const untouched = allAccounts().find(({ id }) => id === firstKeyId);
     expect(untouched?.sourceId).toBe(PHRASE_1.userId);
+    // The old phrase keeps its index: the migrated-off account was abandoned.
+    expect(await indexMap()).toEqual({
+      [PHRASE_1.userId]: [0, 1],
+      [PHRASE_2.userId]: [0],
+    });
+  });
+
+  it("gives each migrated account the next index on the new phrase", async () => {
+    await seedWallet();
+    const [first, second] = allAccounts();
+
+    const response = (await migrate([
+      balanceFor(first),
+      balanceFor(second),
+    ])) as { migratedAccounts: { newPublicKey: string }[] };
+
+    expect(
+      response.migratedAccounts.map(({ newPublicKey }) => newPublicKey),
+    ).toEqual([NEW_ACCOUNTS[0].publicKey, NEW_ACCOUNTS[1].publicKey]);
+    expect((await indexMap())[PHRASE_2.userId]).toEqual([0, 1]);
   });
 
   it("keeps a keystore id added while the replacement keystore is being stored", async () => {
@@ -218,5 +249,8 @@ describe("migrateAccounts", () => {
     const list = await keyIdList();
     expect(await mockDataStorage.getItem(KEY_ID)).toBe(list[1]);
     expect(list[0]).toBe(first.id);
+    // Index 0 was reserved for the failed account and never marked; the
+    // second account did not re-derive it.
+    expect((await indexMap())[PHRASE_2.userId]).toEqual([1]);
   });
 });

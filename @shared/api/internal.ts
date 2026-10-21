@@ -183,9 +183,12 @@ export const fundAccount = async ({
 export const addAccount = async ({
   activePublicKey,
   password,
+  sourceId,
 }: {
   activePublicKey: string;
   password: string;
+  /** The phrase source to derive from; see `AddAccountMessage`. */
+  sourceId?: string;
 }): Promise<{
   publicKey: string;
   activeAccountId: string;
@@ -203,6 +206,7 @@ export const addAccount = async ({
       await sendMessageToBackground({
         activePublicKey,
         password,
+        sourceId,
         type: SERVICE_TYPES.ADD_ACCOUNT,
       }));
   } catch (e) {

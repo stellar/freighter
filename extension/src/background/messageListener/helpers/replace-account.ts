@@ -9,6 +9,7 @@ import {
   ScryptEncrypter,
 } from "@stellar/typescript-wallet-sdk-km";
 import { addAccountName, getKeyIdList } from "background/helpers/account";
+import { markDerivationIndexUsed } from "background/helpers/derivation-indices";
 import { KEY_ID, KEY_ID_LIST } from "constants/localStorageTypes";
 
 /*
@@ -18,7 +19,14 @@ import { KEY_ID, KEY_ID_LIST } from "constants/localStorageTypes";
   3. We save the new account name in storage
 */
 export const replaceAccount = async ({
-  args: { mnemonicPhrase, sourceId, password, keyPair, idToReplace },
+  args: {
+    mnemonicPhrase,
+    sourceId,
+    derivationIndex,
+    password,
+    keyPair,
+    idToReplace,
+  },
   localStore,
   sessionStore,
   keyManager,
@@ -27,6 +35,8 @@ export const replaceAccount = async ({
     mnemonicPhrase: string;
     /** The migrated phrase's source id; the new account is rooted in it. */
     sourceId: string;
+    /** The index on the migrated phrase that derived `keyPair`. */
+    derivationIndex: number;
     password: string;
     keyPair: KeyPair;
     /** The keystore id of the account being replaced. */
@@ -63,6 +73,15 @@ export const replaceAccount = async ({
   // Let a failed store throw: an account whose keystore does not exist must
   // never enter the session or the list.
   const keyStore = await keyManager.storeKey(keyMetadata);
+
+  // Marked as soon as the keystore exists, for the reason given in
+  // `storeAccount`. The replaced account's index on the old phrase is not
+  // released: that account was merged or deliberately abandoned.
+  await markDerivationIndexUsed({
+    localStore,
+    sourceId,
+    index: derivationIndex,
+  });
 
   const accountName = `Account ${keyIdIndex + 1}`;
   const newAllAccounts = [...allAccounts];

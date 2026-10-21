@@ -16,6 +16,7 @@ import {
 import { DataStorageAccess } from "background/helpers/dataStorageAccess";
 import { KEY_ID, KEY_ID_LIST } from "constants/localStorageTypes";
 import { addAccountName, getKeyIdList } from "background/helpers/account";
+import { markDerivationIndexUsed } from "background/helpers/derivation-indices";
 
 interface KeyPair {
   publicKey: string;
@@ -27,6 +28,7 @@ export const storeAccount = async ({
   mnemonicPhrase,
   phraseSourceId,
   sourceId,
+  derivationIndex,
   password,
   keyPair,
   imported = false,
@@ -49,6 +51,11 @@ export const storeAccount = async ({
    * that is still stamped into its keystore (#75).
    */
   sourceId: string;
+  /**
+   * The index on `phraseSourceId` that derived `keyPair`. Marked used the
+   * moment the keystore exists. Secret-key imports have none.
+   */
+  derivationIndex?: number;
   password: string;
   keyPair: KeyPair;
   imported?: boolean;
@@ -58,6 +65,10 @@ export const storeAccount = async ({
   localStore: DataStorageAccess;
 }) => {
   const { publicKey, privateKey } = keyPair;
+
+  if (derivationIndex !== undefined && !phraseSourceId) {
+    throw new Error("A derivation index belongs to a phrase source");
+  }
 
   const allAccounts = allAccountsSelector(sessionStore.getState());
   const accountName = `Account ${allAccounts.length + 1}`;
@@ -89,6 +100,18 @@ export const storeAccount = async ({
   // store encrypted extra data
 
   keyStore = await keyManager.storeKey(keyMetadata);
+
+  // Mark the index before anything else makes the account real. A mark that
+  // failed after the `keyIdList` write would leave a stored account whose
+  // index the next add re-derives; a mark that succeeded before a later
+  // failure leaves at worst a gap.
+  if (derivationIndex !== undefined && phraseSourceId) {
+    await markDerivationIndexUsed({
+      localStore,
+      sourceId: phraseSourceId,
+      index: derivationIndex,
+    });
+  }
 
   // The keystore id is the account's id, so the account joins the session
   // only once the keystore exists. A failed store leaves no account behind.

@@ -5,11 +5,19 @@ import { AddAccountMessage } from "@shared/api/types/message-request";
 import {
   clearSession,
   getEncryptedTemporaryData,
+  getMnemonics,
   SessionTimer,
 } from "background/helpers/session";
-import { getDefaultMnemonic } from "background/helpers/secret-sources";
+import {
+  getDefaultMnemonic,
+  getHeldMnemonic,
+} from "background/helpers/secret-sources";
+import {
+  markDerivationIndexUsed,
+  nextDerivationIndex,
+} from "background/helpers/derivation-indices";
 import { DataStorageAccess } from "background/helpers/dataStorageAccess";
-import { KEY_DERIVATION_NUMBER_ID, KEY_ID } from "constants/localStorageTypes";
+import { KEY_ID } from "constants/localStorageTypes";
 import { loginToAllAccounts } from "../helpers/login-all-accounts";
 import { KeyManager } from "@stellar/typescript-wallet-sdk-km";
 import { captureException } from "@sentry/browser";
@@ -41,13 +49,45 @@ export const addAccount = async ({
   keyManager: KeyManager;
   sessionTimer: SessionTimer;
 }) => {
-  const password = request.password;
+  const { password, sourceId: requestedSourceId } = request;
 
-  // Interim: derives from the wallet's default phrase until the source
-  // becomes an explicit argument with its own index set.
-  let source = await getDefaultMnemonic({ sessionStore, localStore });
+  /*
+    The phrase to derive from: the one the message names, else the active
+    account's phrase, else the pinned source or the first held phrase. The
+    source chooser will always name one; the implicit cases cover a
+    one-phrase wallet and a migrated wallet until then.
+  */
+  const resolveSource = async () => {
+    if (requestedSourceId) {
+      return getHeldMnemonic({
+        sessionStore,
+        localStore,
+        sourceId: requestedSourceId,
+      });
+    }
 
-  if (!source) {
+    const activeId = await getActiveAccountId({ localStore });
+    const active = allAccountsSelector(sessionStore.getState()).find(
+      ({ id }) => id === activeId,
+    );
+    const fromActive = active?.sourceId
+      ? await getHeldMnemonic({
+          sessionStore,
+          localStore,
+          sourceId: active.sourceId,
+        })
+      : null;
+
+    return fromActive || getDefaultMnemonic({ sessionStore, localStore });
+  };
+
+  let source = await resolveSource();
+
+  // Nothing held means the session is locked: unlock, then resolve again.
+  if (
+    !source &&
+    !Object.keys(await getMnemonics({ sessionStore, localStore })).length
+  ) {
     try {
       await loginToAllAccounts(
         password,
@@ -56,7 +96,7 @@ export const addAccount = async ({
         keyManager,
         sessionTimer,
       );
-      source = await getDefaultMnemonic({ sessionStore, localStore });
+      source = await resolveSource();
     } catch (e) {
       captureException(
         `Error logging in to all accounts in Add Account - ${JSON.stringify(
@@ -68,10 +108,14 @@ export const addAccount = async ({
   }
 
   if (!source) {
-    return { error: "No recovery phrase to derive from" };
+    return {
+      error: requestedSourceId
+        ? "Unknown recovery phrase"
+        : "No recovery phrase to derive from",
+    };
   }
 
-  const { mnemonic: mnemonicPhrase, sourceId: phraseSourceId } = source;
+  const { mnemonic: mnemonicPhrase, sourceId } = source;
 
   const keyID = (await getIsHardwareWalletActive({ localStore }))
     ? await getNonHwKeyID({ localStore })
@@ -96,14 +140,57 @@ export const addAccount = async ({
     return { error: "Incorrect password" };
   }
 
-  const wallet = fromMnemonic(mnemonicPhrase);
-  const keyNumber =
-    Number(await localStore.getItem(KEY_DERIVATION_NUMBER_ID)) + 1;
+  /*
+    Derive at the phrase's lowest unused index. If that key is already an
+    account, the index set has fallen behind the accounts: mark the index
+    used and move on to the next. At most every held account can collide, so
+    the loop is bounded by the account count plus one.
+  */
+  const heldPublicKeys = new Set(
+    allAccountsSelector(sessionStore.getState()).map(
+      ({ publicKey }) => publicKey,
+    ),
+  );
+  let keyPair: { publicKey: string; privateKey: string } | null = null;
+  let derivationIndex = -1;
 
-  const keyPair = {
-    publicKey: wallet.getPublicKey(keyNumber),
-    privateKey: wallet.getSecret(keyNumber),
-  };
+  try {
+    const wallet = fromMnemonic(mnemonicPhrase);
+    const skipped: number[] = [];
+
+    for (let attempt = 0; attempt <= heldPublicKeys.size; attempt += 1) {
+      derivationIndex = await nextDerivationIndex({ localStore, sourceId });
+      const publicKey = wallet.getPublicKey(derivationIndex);
+
+      if (!heldPublicKeys.has(publicKey)) {
+        keyPair = { publicKey, privateKey: wallet.getSecret(derivationIndex) };
+        break;
+      }
+
+      await markDerivationIndexUsed({
+        localStore,
+        sourceId,
+        index: derivationIndex,
+      });
+      skipped.push(derivationIndex);
+    }
+
+    if (skipped.length) {
+      captureException(
+        `Derivation index set for source ${sourceId} was missing indices ${skipped.join(
+          ", ",
+        )}`,
+      );
+    }
+  } catch (e) {
+    captureException(`Error deriving account: ${JSON.stringify(e)}`);
+    return { error: "Error adding account" };
+  }
+
+  if (!keyPair) {
+    captureException(`No free derivation index found for source ${sourceId}`);
+    return { error: "Error adding account" };
+  }
 
   // Add the new account to our data store
   try {
@@ -111,8 +198,9 @@ export const addAccount = async ({
       password,
       keyPair,
       mnemonicPhrase,
-      phraseSourceId,
-      sourceId: phraseSourceId,
+      phraseSourceId: sourceId,
+      sourceId,
+      derivationIndex,
       sessionStore,
       keyManager,
       localStore,
@@ -122,9 +210,6 @@ export const addAccount = async ({
     captureException(`Error adding account: ${JSON.stringify(e)}`);
     return { error: "Error adding account" };
   }
-
-  const keyId = keyNumber.toString();
-  await localStore.setItem(KEY_DERIVATION_NUMBER_ID, keyId);
 
   const currentState = sessionStore.getState();
   const hasPrivateKeySelector = buildHasPrivateKeySelector(localStore);

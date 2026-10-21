@@ -10,7 +10,6 @@ import { DataStorageAccess } from "background/helpers/dataStorageAccess";
 import {
   APPLICATION_ID,
   REBRAND_ANNOUNCEMENT_STATUS_ID,
-  KEY_DERIVATION_NUMBER_ID,
 } from "constants/localStorageTypes";
 import { REBRAND_ANNOUNCEMENT_STATUS } from "constants/rebrandAnnouncement";
 import { clearSession, SessionTimer } from "background/helpers/session";
@@ -53,14 +52,12 @@ export const createAccount = async ({
   const mnemonicPhrase = generateMnemonic({ entropyBits: 128 });
   const wallet = fromMnemonic(mnemonicPhrase);
 
-  const KEY_DERIVATION_NUMBER = 0;
-  const keyId = KEY_DERIVATION_NUMBER.toString();
-
-  await localStore.setItem(KEY_DERIVATION_NUMBER_ID, keyId);
+  // A new phrase's first account is its index 0.
+  const DERIVATION_INDEX = 0;
 
   const keyPair = {
-    publicKey: wallet.getPublicKey(KEY_DERIVATION_NUMBER),
-    privateKey: wallet.getSecret(KEY_DERIVATION_NUMBER),
+    publicKey: wallet.getPublicKey(DERIVATION_INDEX),
+    privateKey: wallet.getSecret(DERIVATION_INDEX),
   };
 
   await clearSession({ localStore, sessionStore });
@@ -73,6 +70,7 @@ export const createAccount = async ({
       mnemonicPhrase,
       phraseSourceId,
       sourceId: phraseSourceId,
+      derivationIndex: DERIVATION_INDEX,
       isSettingHashKey: true,
       localStore,
       sessionStore,

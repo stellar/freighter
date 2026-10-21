@@ -40,6 +40,7 @@ import {
   getPhraseSourceId,
 } from "background/helpers/secret-sources";
 import { SecretSourceType } from "@shared/api/types";
+import { nextDerivationIndex } from "background/helpers/derivation-indices";
 import { KEY_ID } from "constants/localStorageTypes";
 
 const { fromMnemonic } = StellarHDWallet;
@@ -70,11 +71,15 @@ export const migrateAccounts = async ({
   }
 
   const newWallet = fromMnemonic(migratedMnemonicPhrase);
-  // Read once: `replaceAccount` swaps ids in place, so positions are stable.
+  // Read once: `replaceAccount` swaps ids in place, so membership is stable.
   const keyIdList: string[] = await getKeyIdList({ localStore });
   const fee = xlmToStroop(recommendedFee).toFixed();
   // The migrated phrase is the source of every account created below.
   const phraseSourceId = await getPhraseSourceId(migratedMnemonicPhrase);
+  // Indices derived in this run but not yet marked: an account whose
+  // on-chain create succeeded and whose later step failed never reaches
+  // `replaceAccount`, and the next account must not re-derive its key.
+  const reserved = new Set<number>();
   // The first account that actually migrated; it becomes the active one.
   let firstMigratedKeyPair: { publicKey: string; privateKey: string } | null =
     null;
@@ -111,14 +116,18 @@ export const migrateAccounts = async ({
       isMigrated: true,
     };
 
-    // The account to migrate is the keystore with this id. Its position in
-    // `keyIdList` (persisted storage order, never the presentation order of
-    // `allAccounts`) is the derivation index the replacement takes on the new
-    // phrase, as it always has. #74 replaces this with per-source index sets.
-    const derivationIndex = keyIdList.indexOf(keyID);
-    if (derivationIndex === -1) {
+    // The account to migrate is the keystore with this id. Its replacement
+    // takes the migrated phrase's lowest unused index, so the new phrase's
+    // accounts sit at 0, 1, ... and a later recovery of it finds them all.
+    if (!keyIdList.includes(keyID)) {
       throw new Error(`No keystore with id ${keyID}`);
     }
+    const derivationIndex = await nextDerivationIndex({
+      localStore,
+      sourceId: phraseSourceId,
+      exclude: reserved,
+    });
+    reserved.add(derivationIndex);
 
     const store = await unlockKeystore({ password, keyID, keyManager });
 
@@ -231,6 +240,7 @@ export const migrateAccounts = async ({
         args: {
           mnemonicPhrase: migratedMnemonicPhrase,
           sourceId: phraseSourceId,
+          derivationIndex,
           password,
           keyPair: newKeyPair,
           idToReplace: keyID,

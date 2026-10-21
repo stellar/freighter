@@ -15,7 +15,6 @@ import {
   ACCOUNT_NAME_LIST_ID,
   APPLICATION_ID,
   REBRAND_ANNOUNCEMENT_STATUS_ID,
-  KEY_DERIVATION_NUMBER_ID,
   KEY_ID_LIST,
 } from "constants/localStorageTypes";
 import { REBRAND_ANNOUNCEMENT_STATUS } from "constants/rebrandAnnouncement";
@@ -33,6 +32,7 @@ import {
   getPhraseSourceId,
 } from "background/helpers/secret-sources";
 import { SecretSourceType } from "@shared/api/types";
+import { clearDerivationIndices } from "background/helpers/derivation-indices";
 
 const { fromMnemonic } = StellarHDWallet;
 
@@ -94,7 +94,9 @@ export const recoverAccount = async ({
       await clearPinnedSourceId({ localStore });
     }
 
-    await localStore.setItem(KEY_DERIVATION_NUMBER_ID, "0");
+    // A recovery always starts the wallet afresh, so every phrase's index
+    // set goes with it; the recovered phrase rebuilds its own below.
+    await clearDerivationIndices({ localStore });
     // Recovery is onboarding (also the "forgot password" path), which must
     // not be followed by the one-time rebrand announcement.
     await localStore.setItem(
@@ -109,6 +111,7 @@ export const recoverAccount = async ({
         mnemonicPhrase: recoverMnemonic,
         phraseSourceId,
         sourceId: phraseSourceId,
+        derivationIndex: 0,
         password,
         keyPair,
         isSettingHashKey: true,
@@ -161,12 +164,11 @@ export const recoverAccount = async ({
             mnemonicPhrase: recoverMnemonic,
             phraseSourceId,
             sourceId: phraseSourceId,
+            derivationIndex: i,
             sessionStore,
             localStore,
             keyManager,
           });
-
-          await localStore.setItem(KEY_DERIVATION_NUMBER_ID, String(i));
         }
       } catch (e) {
         captureException(

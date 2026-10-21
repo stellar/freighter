@@ -117,6 +117,11 @@ export interface CreateAccountMessage extends BaseMessage {
 export interface AddAccountMessage extends BaseMessage {
   type: SERVICE_TYPES.ADD_ACCOUNT;
   password: string;
+  /**
+   * The phrase source to derive the new account from. Absent, the active
+   * account's phrase is used, else the pinned source, else the first held.
+   */
+  sourceId?: string;
 }
 
 export interface ImportAccountMessage extends BaseMessage {

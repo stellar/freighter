@@ -139,18 +139,34 @@ export const clearPinnedSourceId = async ({
   await localStore.remove(PINNED_SOURCE_ID);
 };
 
+/** The held mnemonic of one phrase source, or null when it is not held. */
+export const getHeldMnemonic = async ({
+  sessionStore,
+  localStore,
+  sourceId,
+}: {
+  sessionStore: Store;
+  localStore: DataStorageAccess;
+  sourceId: string;
+}): Promise<{ sourceId: string; mnemonic: string } | null> => {
+  const mnemonic = (await getMnemonics({ sessionStore, localStore }))[sourceId];
+
+  return mnemonic ? { sourceId, mnemonic } : null;
+};
+
 /**
  * INTERIM resolver for the callers that still assume "the" wallet phrase
- * (backend auth, analytics id, add account, show recovery phrase, ...). It
- * returns the pinned source's mnemonic when one is pinned and held, else the
- * first held phrase, else null. For a one-phrase wallet this is exactly the
- * phrase the single slot used to hold.
+ * (backend auth, analytics id, show recovery phrase, ...). It returns the
+ * pinned source's mnemonic when one is pinned and held, else the first held
+ * phrase, else null. For a one-phrase wallet this is exactly the phrase the
+ * single slot used to hold.
  *
- * Follow-ups move the auth/analytics callers to pinned-source signing and
- * make account creation take an explicit source. Until then a wallet with no
- * phrase (secret-key only) resolves to null, and callers that re-run the
- * unlock on null will do so even though the session is unlocked; that state
- * cannot be reached until onboarding by secret key ships.
+ * Follow-ups move the auth/analytics callers to pinned-source signing.
+ * Account creation names its source and falls back here only when the
+ * message names none and the active account has no held phrase. Until then a
+ * wallet with no phrase (secret-key only) resolves to null, and callers that
+ * re-run the unlock on null will do so even though the session is unlocked;
+ * that state cannot be reached until onboarding by secret key ships.
  */
 export const getDefaultMnemonic = async ({
   sessionStore,

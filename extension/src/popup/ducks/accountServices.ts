@@ -95,29 +95,32 @@ export const addAccount = createAsyncThunk<
     allAccounts: Account[];
     hasPrivateKey: boolean;
   },
-  { password: string },
+  { password: string; sourceId?: string },
   { rejectValue: ErrorMessage }
->("auth/addAccount", async ({ password }, { getState, rejectWithValue }) => {
-  const activePublicKey = publicKeySelector(getState() as AppState);
+>(
+  "auth/addAccount",
+  async ({ password, sourceId }, { getState, rejectWithValue }) => {
+    const activePublicKey = publicKeySelector(getState() as AppState);
 
-  let res = {
-    publicKey: "",
-    activeAccountId: "",
-    allAccounts: [] as Account[],
-    hasPrivateKey: false,
-  };
+    let res = {
+      publicKey: "",
+      activeAccountId: "",
+      allAccounts: [] as Account[],
+      hasPrivateKey: false,
+    };
 
-  try {
-    res = await addAccountService({ activePublicKey, password });
-  } catch (e) {
-    const message = e instanceof Error ? e.message : JSON.stringify(e);
-    console.error("Failed when creating an account: ", message);
-    return rejectWithValue({
-      errorMessage: message,
-    });
-  }
-  return res;
-});
+    try {
+      res = await addAccountService({ activePublicKey, password, sourceId });
+    } catch (e) {
+      const message = e instanceof Error ? e.message : JSON.stringify(e);
+      console.error("Failed when creating an account: ", message);
+      return rejectWithValue({
+        errorMessage: message,
+      });
+    }
+    return res;
+  },
+);
 
 export const importAccount = createAsyncThunk<
   {
