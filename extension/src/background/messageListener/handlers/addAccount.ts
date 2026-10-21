@@ -7,12 +7,9 @@ import {
   getEncryptedTemporaryData,
   SessionTimer,
 } from "background/helpers/session";
+import { getDefaultMnemonic } from "background/helpers/secret-sources";
 import { DataStorageAccess } from "background/helpers/dataStorageAccess";
-import {
-  KEY_DERIVATION_NUMBER_ID,
-  KEY_ID,
-  TEMPORARY_STORE_EXTRA_ID,
-} from "constants/localStorageTypes";
+import { KEY_DERIVATION_NUMBER_ID, KEY_ID } from "constants/localStorageTypes";
 import { loginToAllAccounts } from "../helpers/login-all-accounts";
 import { KeyManager } from "@stellar/typescript-wallet-sdk-km";
 import { captureException } from "@sentry/browser";
@@ -43,13 +40,11 @@ export const addAccount = async ({
 }) => {
   const password = request.password;
 
-  let mnemonicPhrase = await getEncryptedTemporaryData({
-    sessionStore,
-    localStore,
-    keyName: TEMPORARY_STORE_EXTRA_ID,
-  });
+  // Interim: derives from the wallet's default phrase. #74 makes the source
+  // an explicit argument with its own index set.
+  let source = await getDefaultMnemonic({ sessionStore, localStore });
 
-  if (!mnemonicPhrase) {
+  if (!source) {
     try {
       await loginToAllAccounts(
         password,
@@ -58,11 +53,7 @@ export const addAccount = async ({
         keyManager,
         sessionTimer,
       );
-      mnemonicPhrase = await getEncryptedTemporaryData({
-        sessionStore,
-        localStore,
-        keyName: TEMPORARY_STORE_EXTRA_ID,
-      });
+      source = await getDefaultMnemonic({ sessionStore, localStore });
     } catch (e) {
       captureException(
         `Error logging in to all accounts in Add Account - ${JSON.stringify(
@@ -72,6 +63,12 @@ export const addAccount = async ({
       return { error: "Unable to login" };
     }
   }
+
+  if (!source) {
+    return { error: "No recovery phrase to derive from" };
+  }
+
+  const { mnemonic: mnemonicPhrase, sourceId: phraseSourceId } = source;
 
   const keyID = (await getIsHardwareWalletActive({ localStore }))
     ? await getNonHwKeyID({ localStore })
@@ -111,6 +108,7 @@ export const addAccount = async ({
       password,
       keyPair,
       mnemonicPhrase,
+      phraseSourceId,
       sessionStore,
       keyManager,
       localStore,

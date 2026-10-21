@@ -7,17 +7,14 @@ import {
 
 import { allAccountsSelector, logIn } from "background/ducks/session";
 import {
+  addMnemonic,
   deriveKeyFromString,
   getActiveHashKeyCryptoKey,
   storeActiveHashKey,
   storeEncryptedTemporaryData,
 } from "background/helpers/session";
 import { DataStorageAccess } from "background/helpers/dataStorageAccess";
-import {
-  KEY_ID,
-  KEY_ID_LIST,
-  TEMPORARY_STORE_EXTRA_ID,
-} from "constants/localStorageTypes";
+import { KEY_ID, KEY_ID_LIST } from "constants/localStorageTypes";
 import { addAccountName, getKeyIdList } from "background/helpers/account";
 
 interface KeyPair {
@@ -28,6 +25,7 @@ interface KeyPair {
 /* Append an additional account to user's account list */
 export const storeAccount = async ({
   mnemonicPhrase,
+  phraseSourceId,
   password,
   keyPair,
   imported = false,
@@ -37,6 +35,12 @@ export const storeAccount = async ({
   localStore,
 }: {
   mnemonicPhrase: string;
+  /**
+   * The source id of `mnemonicPhrase`. When given, the phrase is held in the
+   * session's mnemonic map under it. Callers that only stamp a phrase into the
+   * keystore (secret-key imports, until #75) leave it out.
+   */
+  phraseSourceId?: string;
   password: string;
   keyPair: KeyPair;
   imported?: boolean;
@@ -93,12 +97,15 @@ export const storeAccount = async ({
   // store encrypted extra data
 
   keyStore = await keyManager.storeKey(keyMetadata);
-  await storeEncryptedTemporaryData({
-    localStore,
-    keyName: TEMPORARY_STORE_EXTRA_ID,
-    temporaryData: mnemonicPhrase,
-    hashKey: activeHashKey,
-  });
+
+  if (mnemonicPhrase && phraseSourceId) {
+    await addMnemonic({
+      localStore,
+      hashKey: activeHashKey,
+      sourceId: phraseSourceId,
+      mnemonic: mnemonicPhrase,
+    });
+  }
 
   // store encrypted keypair data
   await storeEncryptedTemporaryData({

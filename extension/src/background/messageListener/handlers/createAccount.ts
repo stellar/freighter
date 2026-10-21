@@ -14,6 +14,11 @@ import {
 import { REBRAND_ANNOUNCEMENT_STATUS } from "constants/rebrandAnnouncement";
 import { clearSession, SessionTimer } from "background/helpers/session";
 import { storeAccount } from "../helpers/store-account";
+import {
+  addSecretSource,
+  getPhraseSourceId,
+} from "background/helpers/secret-sources";
+import { SecretSourceType } from "@shared/api/types";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import {
   allAccountsSelector,
@@ -60,14 +65,21 @@ export const createAccount = async ({
   await clearSession({ localStore, sessionStore });
 
   try {
+    const phraseSourceId = await getPhraseSourceId(mnemonicPhrase);
     await storeAccount({
       password,
       keyPair,
       mnemonicPhrase,
+      phraseSourceId,
       isSettingHashKey: true,
       localStore,
       sessionStore,
       keyManager,
+    });
+    await addSecretSource({
+      localStore,
+      id: phraseSourceId,
+      type: SecretSourceType.PHRASE,
     });
   } catch (e) {
     console.error(e);

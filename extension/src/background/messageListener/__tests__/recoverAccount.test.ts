@@ -9,11 +9,22 @@ import {
   mockStorageApi,
   MockBrowserAlarm,
 } from "background/messageListener/helpers/test-helpers";
+import { AUTH_KEYPAIR_VECTORS } from "@shared/api/helpers/authKeypairVectors";
+import { SecretSourceType } from "@shared/api/types";
+import { getMnemonics } from "background/helpers/session";
+import {
+  getPinnedSourceId,
+  getSecretSources,
+  setPinnedSourceId,
+} from "background/helpers/secret-sources";
+
+// A real BIP39 phrase: the handler derives the phrase's source id from it.
+const VECTOR = AUTH_KEYPAIR_VECTORS[0];
 
 // Distinct keys per derivation index, so the recovery preload loop stores a
 // separate account for each one rather than collapsing into a single entry.
 jest.mock("stellar-hd-wallet", () => ({
-  generateMnemonic: () => "mocked mnemonic phrase",
+  generateMnemonic: () => "unused",
   fromMnemonic: () => ({
     getPublicKey: (index: number) => `pubKey${index}`,
     getSecret: (index: number) => `secret${index}`,
@@ -22,13 +33,13 @@ jest.mock("stellar-hd-wallet", () => ({
 
 const testAlarm = new MockBrowserAlarm(() => {});
 
-const recover = () =>
+const recover = (isOverwritingAccount = false) =>
   popupMessageListener(
     {
       type: SERVICE_TYPES.RECOVER_ACCOUNT,
       password: "test",
-      recoverMnemonic: "mocked mnemonic phrase",
-      isOverwritingAccount: false,
+      recoverMnemonic: VECTOR.mnemonic,
+      isOverwritingAccount,
     } as RecoverAccountMessage,
     mockSessionStore,
     mockDataStorage,
@@ -70,5 +81,42 @@ describe("Recover account message listener", () => {
     expect(allAccounts.every((account) => account.imported === false)).toBe(
       true,
     );
+  });
+
+  it("registers the recovered phrase once despite the preloaded accounts", async () => {
+    await recover();
+
+    const { session } = mockSessionStore.getState();
+    expect((session.allAccounts ?? []).length).toBeGreaterThan(1);
+    expect(await getSecretSources({ localStore: mockDataStorage })).toEqual({
+      [VECTOR.userId]: {
+        id: VECTOR.userId,
+        type: SecretSourceType.PHRASE,
+        label: "Seed Phrase 1",
+        createdAt: expect.any(Number),
+      },
+    });
+    expect(
+      await getMnemonics({
+        sessionStore: mockSessionStore,
+        localStore: mockDataStorage,
+      }),
+    ).toEqual({ [VECTOR.userId]: VECTOR.mnemonic });
+  });
+
+  it("recovering over an existing wallet leaves one record and no pin", async () => {
+    await recover();
+    await setPinnedSourceId({
+      localStore: mockDataStorage,
+      sourceId: VECTOR.userId,
+    });
+
+    await recover(true);
+
+    const sources = await getSecretSources({ localStore: mockDataStorage });
+    expect(Object.values(sources).map((s) => s.label)).toEqual([
+      "Seed Phrase 1",
+    ]);
+    expect(await getPinnedSourceId({ localStore: mockDataStorage })).toBeNull();
   });
 });

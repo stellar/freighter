@@ -5,7 +5,7 @@ import * as Sentry from "@sentry/browser";
 
 import { callBackendV2 } from "../callBackendV2";
 import * as deriveMod from "@shared/api/helpers/deriveAuthKeypair";
-import * as sessionMod from "background/helpers/session";
+import * as sourcesMod from "background/helpers/secret-sources";
 
 jest.mock("@sentry/browser");
 jest.mock("@shared/constants/mercury", () => ({
@@ -27,8 +27,8 @@ describe("callBackendV2", () => {
 
   it("when unlocked, signs the full server path and attaches a Bearer token", async () => {
     jest
-      .spyOn(sessionMod, "getEncryptedTemporaryData")
-      .mockResolvedValue(VECTOR_MNEMONIC);
+      .spyOn(sourcesMod, "getDefaultMnemonic")
+      .mockResolvedValue({ sourceId: "phrase-id", mnemonic: VECTOR_MNEMONIC });
     jest.spyOn(deriveMod, "deriveAuthKeypair").mockResolvedValue({
       userId: xdr.encodeBytes(KP.rawPublicKey(), "hex"),
       keypair: KP,
@@ -66,7 +66,7 @@ describe("callBackendV2", () => {
   });
 
   it("when locked, sends no Authorization header", async () => {
-    jest.spyOn(sessionMod, "getEncryptedTemporaryData").mockResolvedValue("");
+    jest.spyOn(sourcesMod, "getDefaultMnemonic").mockResolvedValue(null);
     const fetchImpl = jest.fn().mockResolvedValue(okResponse({ data: 1 }));
 
     await callBackendV2({
@@ -84,8 +84,8 @@ describe("callBackendV2", () => {
 
   it("with skipAuth, sends anonymously and never derives a keypair even when unlocked", async () => {
     const getMnemonic = jest
-      .spyOn(sessionMod, "getEncryptedTemporaryData")
-      .mockResolvedValue(VECTOR_MNEMONIC);
+      .spyOn(sourcesMod, "getDefaultMnemonic")
+      .mockResolvedValue({ sourceId: "phrase-id", mnemonic: VECTOR_MNEMONIC });
     // Mocked so a skipAuth regression fails fast instead of running real PBKDF2.
     const derive = jest
       .spyOn(deriveMod, "deriveAuthKeypair")
@@ -117,7 +117,7 @@ describe("callBackendV2", () => {
   });
 
   it("forwards a POST body and sets Content-Type", async () => {
-    jest.spyOn(sessionMod, "getEncryptedTemporaryData").mockResolvedValue("");
+    jest.spyOn(sourcesMod, "getDefaultMnemonic").mockResolvedValue(null);
     const fetchImpl = jest.fn().mockResolvedValue(okResponse({ data: [] }));
 
     await callBackendV2({
@@ -139,8 +139,8 @@ describe("callBackendV2", () => {
 
   it("when unlocked, authed POST carries Bearer token, Content-Type, and signs the query path", async () => {
     jest
-      .spyOn(sessionMod, "getEncryptedTemporaryData")
-      .mockResolvedValue(VECTOR_MNEMONIC);
+      .spyOn(sourcesMod, "getDefaultMnemonic")
+      .mockResolvedValue({ sourceId: "phrase-id", mnemonic: VECTOR_MNEMONIC });
     jest.spyOn(deriveMod, "deriveAuthKeypair").mockResolvedValue({
       userId: xdr.encodeBytes(KP.rawPublicKey(), "hex"),
       keypair: KP,
@@ -181,7 +181,7 @@ describe("callBackendV2", () => {
   });
 
   it("returns { status, body: null } on a non-2xx response", async () => {
-    jest.spyOn(sessionMod, "getEncryptedTemporaryData").mockResolvedValue("");
+    jest.spyOn(sourcesMod, "getDefaultMnemonic").mockResolvedValue(null);
     const fetchImpl = jest
       .fn()
       .mockResolvedValue(new Response("nope", { status: 500 }));
@@ -198,7 +198,7 @@ describe("callBackendV2", () => {
   });
 
   it("preserves a JSON error body on a non-2xx response (for Sentry detail)", async () => {
-    jest.spyOn(sessionMod, "getEncryptedTemporaryData").mockResolvedValue("");
+    jest.spyOn(sourcesMod, "getDefaultMnemonic").mockResolvedValue(null);
     const fetchImpl = jest.fn().mockResolvedValue(
       new Response(JSON.stringify({ error: "boom", code: 42 }), {
         status: 500,
@@ -221,9 +221,9 @@ describe("callBackendV2", () => {
   it("captures and falls back to anonymous when key derivation throws unexpectedly", async () => {
     (Sentry.captureException as jest.Mock).mockClear();
     jest
-      .spyOn(sessionMod, "getEncryptedTemporaryData")
-      .mockResolvedValue(VECTOR_MNEMONIC);
-    const deriveError = new Error("corrupted temporaryStoreExtra");
+      .spyOn(sourcesMod, "getDefaultMnemonic")
+      .mockResolvedValue({ sourceId: "phrase-id", mnemonic: VECTOR_MNEMONIC });
+    const deriveError = new Error("corrupted mnemonic map");
     jest.spyOn(deriveMod, "deriveAuthKeypair").mockRejectedValue(deriveError);
     const fetchImpl = jest.fn().mockResolvedValue(okResponse({ data: 1 }));
 

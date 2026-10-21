@@ -28,12 +28,18 @@ import { migrateTrustlines } from "background/helpers/migration";
 import { replaceAccount } from "../helpers/replace-account";
 import { activatePublicKey } from "../helpers/activate-public-key";
 import {
+  addMnemonic,
   clearSession,
   deriveKeyFromString,
   SessionTimer,
   storeActiveHashKey,
   storeEncryptedTemporaryData,
 } from "background/helpers/session";
+import {
+  addSecretSource,
+  getPhraseSourceId,
+} from "background/helpers/secret-sources";
+import { SecretSourceType } from "@shared/api/types";
 import { KEY_ID } from "constants/localStorageTypes";
 
 const { fromMnemonic } = StellarHDWallet;
@@ -243,6 +249,23 @@ export const migrateAccounts = async ({
       temporaryData: newWallet.getSecret(0),
       hashKey,
     });
+
+    // The migrated phrase is a new source the wallet now holds. The old
+    // phrase keeps its record even when every account migrated off it:
+    // telling requires opening every keystore, which a later issue does.
+    const phraseSourceId = await getPhraseSourceId(migratedMnemonicPhrase);
+    await addMnemonic({
+      localStore,
+      hashKey,
+      sourceId: phraseSourceId,
+      mnemonic: migratedMnemonicPhrase,
+    });
+    await addSecretSource({
+      localStore,
+      id: phraseSourceId,
+      type: SecretSourceType.PHRASE,
+    });
+
     await storeActiveHashKey({
       sessionStore,
       hashKey,

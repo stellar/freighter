@@ -26,6 +26,13 @@ import { captureException } from "@sentry/browser";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import { MAINNET_NETWORK_DETAILS } from "@shared/constants/stellar";
 import { activatePublicKey } from "../helpers/activate-public-key";
+import {
+  addSecretSource,
+  clearPinnedSourceId,
+  clearSecretSources,
+  getPhraseSourceId,
+} from "background/helpers/secret-sources";
+import { SecretSourceType } from "@shared/api/types";
 
 const { fromMnemonic } = StellarHDWallet;
 
@@ -46,6 +53,7 @@ export const recoverAccount = async ({
 }) => {
   const { password, recoverMnemonic, isOverwritingAccount } = request;
   let wallet;
+  let phraseSourceId = "";
   let applicationState;
   let error = "";
 
@@ -55,8 +63,10 @@ export const recoverAccount = async ({
 
   try {
     wallet = fromMnemonic(recoverMnemonic);
+    phraseSourceId = await getPhraseSourceId(recoverMnemonic);
   } catch (e) {
     console.error(e);
+    wallet = undefined;
     error = "Invalid mnemonic phrase";
   }
 
@@ -80,6 +90,8 @@ export const recoverAccount = async ({
 
       await localStore.setItem(KEY_ID_LIST, []);
       await localStore.remove(ACCOUNT_NAME_LIST_ID);
+      await clearSecretSources({ localStore });
+      await clearPinnedSourceId({ localStore });
     }
 
     await localStore.setItem(KEY_DERIVATION_NUMBER_ID, "0");
@@ -95,12 +107,18 @@ export const recoverAccount = async ({
     try {
       await storeAccount({
         mnemonicPhrase: recoverMnemonic,
+        phraseSourceId,
         password,
         keyPair,
         isSettingHashKey: true,
         sessionStore,
         localStore,
         keyManager,
+      });
+      await addSecretSource({
+        localStore,
+        id: phraseSourceId,
+        type: SecretSourceType.PHRASE,
       });
     } catch (e) {
       captureException(`Error recovering account: ${JSON.stringify(e)}`);
@@ -140,6 +158,7 @@ export const recoverAccount = async ({
             password,
             keyPair: newKeyPair,
             mnemonicPhrase: recoverMnemonic,
+            phraseSourceId,
             sessionStore,
             localStore,
             keyManager,

@@ -9,7 +9,13 @@ import {
   getEncryptedTemporaryData,
   SessionTimer,
 } from "background/helpers/session";
-import { KEY_ID, TEMPORARY_STORE_EXTRA_ID } from "constants/localStorageTypes";
+import { KEY_ID } from "constants/localStorageTypes";
+import {
+  addSecretSource,
+  getDefaultMnemonic,
+  getSecretKeySourceId,
+} from "background/helpers/secret-sources";
+import { SecretSourceType } from "@shared/api/types";
 import { loginToAllAccounts } from "../helpers/login-all-accounts";
 import { getNonHwKeyID } from "../helpers/get-non-hw-key-id";
 import { unlockKeystore } from "../helpers/unlock-keystore";
@@ -37,13 +43,12 @@ export const importAccount = async ({
   const { password, privateKey } = request;
   let sourceKeys;
 
-  let mnemonicPhrase = await getEncryptedTemporaryData({
-    sessionStore,
-    localStore,
-    keyName: TEMPORARY_STORE_EXTRA_ID,
-  });
+  // The held phrase is still stamped into the import's keystore `extra`
+  // (#75 stops that); it is not what identifies the import. The import is
+  // its own source, registered below from its own key.
+  let source = await getDefaultMnemonic({ sessionStore, localStore });
 
-  if (!mnemonicPhrase) {
+  if (!source) {
     try {
       await loginToAllAccounts(
         password,
@@ -52,11 +57,7 @@ export const importAccount = async ({
         keyManager,
         sessionTimer,
       );
-      mnemonicPhrase = await getEncryptedTemporaryData({
-        sessionStore,
-        localStore,
-        keyName: TEMPORARY_STORE_EXTRA_ID,
-      });
+      source = await getDefaultMnemonic({ sessionStore, localStore });
     } catch (e) {
       captureException(
         `Error logging in to all accounts in Import Account - ${JSON.stringify(
@@ -95,11 +96,16 @@ export const importAccount = async ({
     await storeAccount({
       password,
       keyPair,
-      mnemonicPhrase,
+      mnemonicPhrase: source?.mnemonic ?? "",
       imported: true,
       sessionStore,
       localStore,
       keyManager,
+    });
+    await addSecretSource({
+      localStore,
+      id: await getSecretKeySourceId(privateKey),
+      type: SecretSourceType.SECRET_KEY,
     });
   } catch (e) {
     captureException(`Error importing account: ${JSON.stringify(e)}`);

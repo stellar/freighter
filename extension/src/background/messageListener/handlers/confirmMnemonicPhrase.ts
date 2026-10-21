@@ -1,11 +1,8 @@
 import { Store } from "redux";
 
 import { DataStorageAccess } from "background/helpers/dataStorageAccess";
-import { getEncryptedTemporaryData } from "background/helpers/session";
-import {
-  APPLICATION_ID,
-  TEMPORARY_STORE_EXTRA_ID,
-} from "constants/localStorageTypes";
+import { getDefaultMnemonic } from "background/helpers/secret-sources";
+import { APPLICATION_ID } from "constants/localStorageTypes";
 import { ConfirmMnemonicPhraseMessage } from "@shared/api/types/message-request";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 
@@ -18,12 +15,10 @@ export const confirmMnemonicPhrase = async ({
   sessionStore: Store;
   localStore: DataStorageAccess;
 }) => {
-  const mnemonicPhrase = await getEncryptedTemporaryData({
-    sessionStore,
-    localStore,
-    keyName: TEMPORARY_STORE_EXTRA_ID,
-  });
-  const isCorrectPhrase = mnemonicPhrase === request.mnemonicPhraseToConfirm;
+  // Onboarding confirms the phrase just created, which is the only one held.
+  const held = await getDefaultMnemonic({ sessionStore, localStore });
+  const isCorrectPhrase =
+    !!held && held.mnemonic === request.mnemonicPhraseToConfirm;
 
   const applicationState = isCorrectPhrase
     ? APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED

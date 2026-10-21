@@ -4,8 +4,7 @@ import StellarHDWallet from "stellar-hd-wallet";
 import { allAccountsSelector } from "background/ducks/session";
 import { getKeyIdList } from "background/helpers/account";
 import { DataStorageAccess } from "background/helpers/dataStorageAccess";
-import { getEncryptedTemporaryData } from "background/helpers/session";
-import { TEMPORARY_STORE_EXTRA_ID } from "constants/localStorageTypes";
+import { getDefaultMnemonic } from "background/helpers/secret-sources";
 import { MigratableAccount } from "@shared/api/types";
 
 const { fromMnemonic } = StellarHDWallet;
@@ -21,11 +20,8 @@ export const getMigratableAccounts = async ({
 }) => {
   const keyIdList = (await getKeyIdList({ localStore })) as string[];
 
-  const mnemonicPhrase = await getEncryptedTemporaryData({
-    sessionStore,
-    localStore,
-    keyName: TEMPORARY_STORE_EXTRA_ID,
-  });
+  const mnemonicPhrase =
+    (await getDefaultMnemonic({ sessionStore, localStore }))?.mnemonic ?? "";
   const allAccounts = allAccountsSelector(sessionStore.getState());
   const wallet = fromMnemonic(mnemonicPhrase);
 

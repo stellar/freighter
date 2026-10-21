@@ -13,6 +13,7 @@ import { DataStorageAccess } from "./dataStorageAccess";
 import {
   AUTO_LOCK_TIMEOUT_MINUTES_ID,
   TEMPORARY_STORE_ID,
+  TEMPORARY_STORE_MNEMONICS_ID,
 } from "../../constants/localStorageTypes";
 import {
   AutoLockTimeoutMinutes,
@@ -295,6 +296,114 @@ export const getEncryptedTemporaryData = async ({
 
   return "";
 };
+
+/*
+  The held mnemonics live in ONE encrypted entry of the temporary store, as a
+  JSON map of phrase source id -> mnemonic. A standalone secret key is a
+  source with no mnemonic, so a secret-key-only wallet has no entry at all.
+  The entry goes with the rest of the temporary store on lock.
+*/
+type MnemonicMap = Record<string, string>;
+
+interface StoreMnemonics {
+  localStore: DataStorageAccess;
+  hashKey: {
+    key: CryptoKey;
+  };
+  mnemonics: MnemonicMap;
+}
+
+/* Replace the held map wholesale. Unlock uses this to write every held phrase at once. */
+export const storeMnemonics = async ({
+  localStore,
+  hashKey,
+  mnemonics,
+}: StoreMnemonics) => {
+  await storeEncryptedTemporaryData({
+    localStore,
+    keyName: TEMPORARY_STORE_MNEMONICS_ID,
+    temporaryData: JSON.stringify(mnemonics),
+    hashKey,
+  });
+};
+
+const decryptMnemonicMap = async ({
+  localStore,
+  hashKey,
+}: {
+  localStore: DataStorageAccess;
+  hashKey: { key: CryptoKey };
+}): Promise<MnemonicMap> => {
+  const temporaryStore = (await localStore.getItem(TEMPORARY_STORE_ID)) || {};
+  const encrypted = temporaryStore[TEMPORARY_STORE_MNEMONICS_ID];
+
+  if (!encrypted) {
+    return {};
+  }
+
+  const json = await decryptHashString({
+    hash: decode(encrypted as string),
+    keyObject: hashKey,
+  });
+
+  return JSON.parse(json) as MnemonicMap;
+};
+
+interface AddMnemonic {
+  localStore: DataStorageAccess;
+  hashKey: {
+    key: CryptoKey;
+  };
+  sourceId: string;
+  mnemonic: string;
+}
+
+/*
+  Merge one phrase into the held map. Takes the hash key explicitly rather
+  than reading it from the session store: on wallet creation the key is
+  freshly derived and only dispatched to the store after the temporary data
+  is written.
+*/
+export const addMnemonic = async ({
+  localStore,
+  hashKey,
+  sourceId,
+  mnemonic,
+}: AddMnemonic) => {
+  const mnemonics = await decryptMnemonicMap({ localStore, hashKey });
+
+  await storeMnemonics({
+    localStore,
+    hashKey,
+    mnemonics: { ...mnemonics, [sourceId]: mnemonic },
+  });
+};
+
+interface GetMnemonics {
+  sessionStore: Store;
+  localStore: DataStorageAccess;
+}
+
+/* Every held phrase keyed by source id; empty when locked or when none is held. */
+export const getMnemonics = async ({
+  sessionStore,
+  localStore,
+}: GetMnemonics): Promise<MnemonicMap> => {
+  const hashKey = await getActiveHashKeyCryptoKey({ sessionStore });
+
+  if (hashKey === null) {
+    return {};
+  }
+
+  return decryptMnemonicMap({ localStore, hashKey });
+};
+
+export const getMnemonic = async ({
+  sessionStore,
+  localStore,
+  sourceId,
+}: GetMnemonics & { sourceId: string }): Promise<string> =>
+  (await getMnemonics({ sessionStore, localStore }))[sourceId] || "";
 
 interface ClearSession {
   localStore: DataStorageAccess;

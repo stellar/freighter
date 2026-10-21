@@ -7,11 +7,7 @@ import {
   HW_PREFIX,
 } from "background/helpers/account";
 import { DataStorageAccess } from "background/helpers/dataStorageAccess";
-import {
-  KEY_ID,
-  TEMPORARY_STORE_EXTRA_ID,
-  TEMPORARY_STORE_ID,
-} from "constants/localStorageTypes";
+import { KEY_ID, TEMPORARY_STORE_ID } from "constants/localStorageTypes";
 import { getNonHwKeyID } from "./get-non-hw-key-id";
 import { unlockKeystore } from "./unlock-keystore";
 import {
@@ -20,7 +16,9 @@ import {
   SessionTimer,
   storeActiveHashKey,
   storeEncryptedTemporaryData,
+  storeMnemonics,
 } from "background/helpers/session";
+import { getPhraseSourceId } from "background/helpers/secret-sources";
 import { flushSessionStore } from "background/store";
 import {
   allAccountsSelector,
@@ -52,18 +50,12 @@ export const loginToAllAccounts = async (
   }
 
   // first make sure the password is correct to get active keystore, short circuit if not
-  const activeAccountKeystore = await unlockKeystore({
+  const { publicKey: activePublicKey } = await unlockKeystore({
     keyID,
     password,
     keyManager,
   });
 
-  const {
-    publicKey: activePublicKey,
-    extra: activeExtra = { mnemonicPhrase: "" },
-  } = activeAccountKeystore;
-
-  const activeMnemonicPhrase = activeExtra.mnemonicPhrase;
   const hashKey = await deriveKeyFromString(password);
 
   if (
@@ -86,24 +78,11 @@ export const loginToAllAccounts = async (
   // clear the temporary store (if it exists) so we can replace it with the new encrypted data
   await localStore.remove(TEMPORARY_STORE_ID);
 
-  try {
-    await storeEncryptedTemporaryData({
-      localStore,
-      keyName: TEMPORARY_STORE_EXTRA_ID,
-      temporaryData: activeMnemonicPhrase,
-      hashKey,
-    });
-  } catch (e) {
-    await clearSession({ localStore, sessionStore });
-    captureException(
-      `Error storing encrypted temporary data: ${JSON.stringify(e)}`,
-    );
-    // Rethrow so we don't fall through to startSession() +
-    // broadcastSessionState(SESSION_UNLOCKED) below, which would tell
-    // every Freighter surface the wallet is unlocked even though
-    // clearSession() just wiped it.
-    throw e;
-  }
+  // Every phrase the wallet holds, collected from the keystores as they are
+  // opened below. There is no single "wallet phrase": each phrase-derived
+  // keystore carries its own phrase in `extra`, and a standalone secret key
+  // carries none (hardware keystores hold no secret and are skipped).
+  const heldPhrases = new Set<string>();
 
   for (let i = 0; i < keyIdList.length; i += 1) {
     const currentKeyId = keyIdList[i];
@@ -114,6 +93,11 @@ export const loginToAllAccounts = async (
         password,
         keyManager,
       });
+
+      const phrase = keyStoreToUnlock.extra?.mnemonicPhrase;
+      if (phrase) {
+        heldPhrases.add(phrase);
+      }
 
       try {
         await storeEncryptedTemporaryData({
@@ -129,6 +113,35 @@ export const loginToAllAccounts = async (
           )} - ${JSON.stringify(keyIdList)}: ${i}`,
         );
       }
+    }
+  }
+
+  const mnemonics: Record<string, string> = {};
+  for (const phrase of heldPhrases) {
+    try {
+      mnemonics[await getPhraseSourceId(phrase)] = phrase;
+    } catch (e) {
+      // One unreadable phrase must not lock the user out: the private keys
+      // above are already in hand, so every account can still sign.
+      captureException(
+        `Error deriving a phrase source id on unlock: ${JSON.stringify(e)}`,
+      );
+    }
+  }
+
+  if (Object.keys(mnemonics).length) {
+    try {
+      await storeMnemonics({ localStore, hashKey, mnemonics });
+    } catch (e) {
+      await clearSession({ localStore, sessionStore });
+      captureException(
+        `Error storing encrypted temporary data: ${JSON.stringify(e)}`,
+      );
+      // Rethrow so we don't fall through to startSession() +
+      // broadcastSessionState(SESSION_UNLOCKED) below, which would tell
+      // every Freighter surface the wallet is unlocked even though
+      // clearSession() just wiped it.
+      throw e;
     }
   }
 

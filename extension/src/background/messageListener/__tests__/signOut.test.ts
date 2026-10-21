@@ -1,6 +1,7 @@
 import { SERVICE_TYPES } from "@shared/constants/services";
 
 import { lockHardwareWallet, logOut } from "background/ducks/session";
+import { TEMPORARY_STORE_ID } from "constants/localStorageTypes";
 import { signOut } from "../handlers/signOut";
 
 const mockFlushSessionStore = jest.fn().mockResolvedValue(undefined);
@@ -39,7 +40,10 @@ describe("signOut handler", () => {
 
     expect(sessionTimer.stopSession).toHaveBeenCalledTimes(1);
     expect(mockFlushSessionStore).toHaveBeenCalledWith(sessionStore);
+    // Only the temporary store goes. The secret-source set and the pinned
+    // source id live under their own keys and survive a lock (#72).
     expect(localStore.remove).toHaveBeenCalledTimes(1);
+    expect(localStore.remove).toHaveBeenCalledWith(TEMPORARY_STORE_ID);
     expect(mockBroadcastSessionState).toHaveBeenCalledWith(
       SERVICE_TYPES.SESSION_LOCKED,
     );
@@ -47,18 +51,18 @@ describe("signOut handler", () => {
     // stopSession must run before any state mutation so a pending
     // alarm can't fire `clearSession` (and emit a duplicate
     // SESSION_LOCKED broadcast) between the dispatch and the clear.
-    expect(
-      sessionTimer.stopSession.mock.invocationCallOrder[0],
-    ).toBeLessThan(sessionStore.dispatch.mock.invocationCallOrder[0]);
-    expect(
+    expect(sessionTimer.stopSession.mock.invocationCallOrder[0]).toBeLessThan(
       sessionStore.dispatch.mock.invocationCallOrder[0],
-    ).toBeLessThan(mockFlushSessionStore.mock.invocationCallOrder[0]);
-    expect(
+    );
+    expect(sessionStore.dispatch.mock.invocationCallOrder[0]).toBeLessThan(
       mockFlushSessionStore.mock.invocationCallOrder[0],
-    ).toBeLessThan(localStore.remove.mock.invocationCallOrder[0]);
-    expect(
+    );
+    expect(mockFlushSessionStore.mock.invocationCallOrder[0]).toBeLessThan(
       localStore.remove.mock.invocationCallOrder[0],
-    ).toBeLessThan(mockBroadcastSessionState.mock.invocationCallOrder[0]);
+    );
+    expect(localStore.remove.mock.invocationCallOrder[0]).toBeLessThan(
+      mockBroadcastSessionState.mock.invocationCallOrder[0],
+    );
   });
 
   // Regression: `logOut` resets session state to `initialState`, which

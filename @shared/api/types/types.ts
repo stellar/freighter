@@ -198,6 +198,32 @@ export enum AccountType {
   FREIGHTER = "FREIGHTER",
 }
 
+/**
+ * A secret the wallet holds that roots accounts: one seed phrase, or one
+ * standalone imported secret key. Hardware accounts have no secret and are
+ * never a source. See unified-user-model/v2.md "Enumerating a wallet's
+ * identities".
+ */
+export enum SecretSourceType {
+  PHRASE = "phrase",
+  SECRET_KEY = "secret_key",
+}
+
+export interface SecretSource {
+  /**
+   * The source's v2 identity: `deriveAuthKeypair(mnemonic).userId` for a
+   * phrase, `deriveSourceIdentity(seed32).sourceId` for a secret key.
+   */
+  id: string;
+  type: SecretSourceType;
+  /** Sequential within its type: "Seed Phrase 1", "Secret Key 1", ... */
+  label: string;
+  /** Epoch milliseconds. */
+  createdAt: number;
+}
+
+export type SecretSourceMap = Record<string, SecretSource>;
+
 export interface Preferences {
   isDataSharingAllowed: boolean;
   isMemoValidationEnabled: boolean;

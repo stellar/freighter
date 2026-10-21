@@ -1,6 +1,10 @@
 import { getKeyIdList } from "background/helpers/account";
 import { DataStorageAccess } from "background/helpers/dataStorageAccess";
 import {
+  clearPinnedSourceId,
+  clearSecretSources,
+} from "background/helpers/secret-sources";
+import {
   ACCOUNT_NAME_LIST_ID,
   APPLICATION_ID,
   RECENT_ADDRESSES,
@@ -24,4 +28,6 @@ export const clearAccount = async (store: DataStorageAccess) => {
   }
 
   await store.remove(KEY_ID_LIST);
+  await clearSecretSources({ localStore: store });
+  await clearPinnedSourceId({ localStore: store });
 };

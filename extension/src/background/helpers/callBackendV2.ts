@@ -5,9 +5,8 @@ import { Keypair } from "stellar-sdk";
 import { deriveAuthKeypair } from "@shared/api/helpers/deriveAuthKeypair";
 import { authedFetch } from "@shared/api/helpers/authedFetch";
 import { INDEXER_V2_URL } from "@shared/constants/mercury";
-import { getEncryptedTemporaryData } from "background/helpers/session";
+import { getDefaultMnemonic } from "background/helpers/secret-sources";
 import { DataStorageAccess } from "background/helpers/dataStorageAccess";
-import { TEMPORARY_STORE_EXTRA_ID } from "constants/localStorageTypes";
 
 export interface CallBackendV2Params {
   method: string;
@@ -33,27 +32,26 @@ export interface CallBackendV2Result {
 }
 
 /**
- * Returns the auth keypair when the session is unlocked (mnemonic present in the
- * encrypted session store), else null (locked / hardware-only / pre-onboarding).
+ * Returns the auth keypair when the session is unlocked and holds a phrase,
+ * else null (locked / hardware-only / secret-key-only / pre-onboarding).
  * On-demand derivation — never cached at rest (#2769).
+ *
+ * Interim: signs with the wallet's default phrase (see getDefaultMnemonic).
+ * #66 replaces this with the pinned source identity.
  */
 const tryGetAuthKeypair = async (
   sessionStore: Store,
   localStore: DataStorageAccess,
 ): Promise<Keypair | null> => {
   try {
-    const mnemonic = await getEncryptedTemporaryData({
-      sessionStore,
-      localStore,
-      keyName: TEMPORARY_STORE_EXTRA_ID,
-    });
-    if (!mnemonic) return null;
-    const { keypair } = await deriveAuthKeypair(mnemonic);
+    const held = await getDefaultMnemonic({ sessionStore, localStore });
+    if (!held) return null;
+    const { keypair } = await deriveAuthKeypair(held.mnemonic);
     return keypair;
   } catch (e) {
-    // getEncryptedTemporaryData returns "" for both a locked store and a
-    // missing entry (handled by the `!mnemonic` check above), so anything
-    // reaching here is unexpected — a corrupted temporaryStoreExtra entry or a
+    // getDefaultMnemonic returns null for both a locked store and a wallet
+    // with no phrase (handled by the `!held` check above), so anything
+    // reaching here is unexpected — a corrupted mnemonic map entry or a
     // WebCrypto/PBKDF2 failure. Capture it: otherwise an unlocked user silently
     // downgrades to anonymous with zero telemetry the moment the backend
     // enforces auth on these endpoints.
