@@ -14,6 +14,7 @@ import {
   IS_HIDE_DUST_ENABLED_ID,
   ALLOWLIST_ID,
   LAST_USED_ACCOUNT,
+  KEY_ID,
   KEY_ID_LIST,
   REBRAND_ANNOUNCEMENT_STATUS_ID,
 } from "constants/localStorageTypes";
@@ -30,9 +31,15 @@ import {
 } from "@shared/constants/stellar";
 import { DEFAULT_ASSETS_LISTS } from "@shared/constants/soroban/asset-list";
 import { dataStorageAccess, browserLocalStorage } from "./dataStorageAccess";
+import { migratePreV2Storage } from "./pre-v2-migration";
 
 // Session Storage Feature Flag - turn on when storage.session is supported
 export const SESSION_STORAGE_ENABLED = true;
+
+// A key-manager id such as "0.8123" parses as a number, which is what the old
+// load-time `keyId` repair existed to undo. `keyIdList` still needs parsing
+// when a legacy build stored it as a JSON string; its quoted ids stay strings.
+const NON_NORMALIZED_KEYS = new Set([KEY_ID]);
 
 export const normalizeMigratedData = async () => {
   const localStore = dataStorageAccess(browserLocalStorage);
@@ -49,6 +56,9 @@ export const normalizeMigratedData = async () => {
 
   for (let i = 0; i < localStorageEntries.length; i++) {
     const [key, value] = localStorageEntries[i];
+    if (NON_NORMALIZED_KEYS.has(key)) {
+      continue;
+    }
     try {
       if (typeof value === "string") {
         const parsedValue = JSON.parse(value);
@@ -403,6 +413,19 @@ export const markRebrandAnnouncementEligibility = async () => {
   );
 };
 
+// Pre-V2 -> multi-source model (#76). Not deferrable: it runs on the first
+// start after upgrade with no password. See `pre-v2-migration.ts` for the two
+// passes and the rollback posture.
+export const migrateToMultiSourceModel = async () => {
+  const localStore = dataStorageAccess(browserLocalStorage);
+  const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
+
+  if (shouldRunMigration({ storageVersion, migrationVersion: "5.50.0" })) {
+    await migratePreV2Storage({ localStore });
+    await migrateDataStorageVersion("5.50.0");
+  }
+};
+
 export const versionedMigration = async () => {
   // sequentially call migrations in order to enforce smooth schema upgrades
 
@@ -418,6 +441,7 @@ export const versionedMigration = async () => {
   await removeStellarExpertData();
   await migrateAllowlistToKeyNetworkSchema();
   await migratePubnetRpcUrl();
+  await migrateToMultiSourceModel();
 };
 
 // Updates storage version

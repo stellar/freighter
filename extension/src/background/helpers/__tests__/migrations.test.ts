@@ -7,12 +7,15 @@ import {
   MAINNET_NETWORK_DETAILS,
 } from "@shared/constants/stellar";
 import {
+  ACCOUNT_PROVENANCE_ID,
   ASSETS_LISTS_ID,
   HAS_ACCOUNT_SUBSCRIPTION,
+  KEY_ID,
+  KEY_ID_LIST,
+  PENDING_ATTRIBUTION_ID,
   NETWORK_ID,
   NETWORKS_LIST_ID,
   STORAGE_VERSION,
-  KEY_ID_LIST,
   REBRAND_ANNOUNCEMENT_STATUS_ID,
   TOKEN_ID_LIST,
 } from "constants/localStorageTypes";
@@ -260,5 +263,37 @@ describe("Storage migrations", () => {
         REBRAND_ANNOUNCEMENT_STATUS.SEEN,
       );
     });
+  });
+  it("migrateToMultiSourceModel runs the pre-V2 install pass below 5.50.0", async () => {
+    await mockStorage.set({
+      [STORAGE_VERSION]: "5.33.5",
+      [KEY_ID]: "0.1",
+      [KEY_ID_LIST]: ["0.1", "hw:GABC"],
+    });
+    await DataStorage.migrateToMultiSourceModel();
+    const pending = await mockStorage.get(PENDING_ATTRIBUTION_ID);
+    const provenance = await mockStorage.get(ACCOUNT_PROVENANCE_ID);
+    const storedVersion = await mockStorage.get(STORAGE_VERSION);
+    expect(pending[PENDING_ATTRIBUTION_ID]).toEqual(["0.1"]);
+    expect(provenance[ACCOUNT_PROVENANCE_ID]).toEqual({
+      "hw:GABC": { type: "HW" },
+    });
+    expect(storedVersion[STORAGE_VERSION]).toEqual("5.50.0");
+  });
+  it("migrateToMultiSourceModel does not run again at 5.50.0", async () => {
+    await mockStorage.set({
+      [STORAGE_VERSION]: "5.50.0",
+      [KEY_ID]: "0.1",
+      [KEY_ID_LIST]: ["0.1"],
+    });
+    await DataStorage.migrateToMultiSourceModel();
+    const pending = await mockStorage.get(PENDING_ATTRIBUTION_ID);
+    expect(pending[PENDING_ATTRIBUTION_ID]).toBeUndefined();
+  });
+  it("versionedMigration ends at the multi-source model version", async () => {
+    await mockStorage.set({ [STORAGE_VERSION]: "5.33.5" });
+    await DataStorage.versionedMigration();
+    const storedVersion = await mockStorage.get(STORAGE_VERSION);
+    expect(storedVersion[STORAGE_VERSION]).toEqual("5.50.0");
   });
 });

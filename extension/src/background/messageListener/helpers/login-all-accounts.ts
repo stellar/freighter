@@ -26,6 +26,7 @@ import {
   publicKeySelector,
 } from "background/ducks/session";
 import { getStoredAccounts } from "./get-stored-accounts";
+import { attributePendingAccounts } from "./attribute-pending-accounts";
 import { captureException } from "@sentry/browser";
 import { SERVICE_TYPES } from "@shared/constants/services";
 import { broadcastSessionState } from "./broadcast-session-state";
@@ -50,16 +51,37 @@ export const loginToAllAccounts = async (
   }
 
   // first make sure the password is correct to get active keystore, short circuit if not
-  const { publicKey: activePublicKey } = await unlockKeystore({
-    keyID,
-    password,
-    keyManager,
-  });
+  const { publicKey: activePublicKey, extra: activeExtra } =
+    await unlockKeystore({
+      keyID,
+      password,
+      keyManager,
+    });
+
+  // Pre-V2 migration, unlock pass (#76). It runs before the session rebuild
+  // so the rebuilt account list reads the provenance it writes. The keystore
+  // above is the one pre-V2 builds took "the wallet phrase" from, which is
+  // what keeps the pinned source equal to the existing analytics id.
+  let didAttribute = false;
+  try {
+    didAttribute = await attributePendingAccounts({
+      localStore,
+      keyManager,
+      password,
+      identityPhrase: activeExtra?.mnemonicPhrase,
+    });
+  } catch (e) {
+    // Attribution must never lock the user out; the next unlock retries.
+    captureException(
+      `Error attributing pre-V2 accounts on unlock: ${JSON.stringify(e)}`,
+    );
+  }
 
   const hashKey = await deriveKeyFromString(password);
 
   const heldAccounts = allAccountsSelector(sessionStore.getState());
   if (
+    didAttribute ||
     !publicKeySelector(sessionStore.getState()) ||
     !heldAccounts.length ||
     // A session persisted by a build that predates `Account.id` cannot
