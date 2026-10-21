@@ -17,6 +17,8 @@ import { DataStorageAccess } from "background/helpers/dataStorageAccess";
 import { KEY_ID, KEY_ID_LIST } from "constants/localStorageTypes";
 import { addAccountName, getKeyIdList } from "background/helpers/account";
 import { markDerivationIndexUsed } from "background/helpers/derivation-indices";
+import { setAccountProvenance } from "background/helpers/account-provenance";
+import { AccountType } from "@shared/api/types";
 
 interface KeyPair {
   publicKey: string;
@@ -37,18 +39,21 @@ export const storeAccount = async ({
   keyManager,
   localStore,
 }: {
-  mnemonicPhrase: string;
+  /**
+   * The phrase that derived `keyPair`. Required for a derived account and
+   * stamped into its keystore, which is where unlock still collects the held
+   * phrases from. A secret-key import has none.
+   */
+  mnemonicPhrase?: string;
   /**
    * The source id of `mnemonicPhrase`. When given, the phrase is held in the
-   * session's mnemonic map under it. Callers that only stamp a phrase into the
-   * keystore (secret-key imports, for now) leave it out.
+   * session's mnemonic map under it.
    */
   phraseSourceId?: string;
   /**
    * The `SecretSource` the account is rooted in: the phrase it was derived
    * from, or its own secret key for a standalone import. Required and never
-   * inferred from `phraseSourceId`, so an import cannot inherit the phrase
-   * that is still stamped into its keystore (#75).
+   * inferred from `phraseSourceId`.
    */
   sourceId: string;
   /**
@@ -69,6 +74,12 @@ export const storeAccount = async ({
   if (derivationIndex !== undefined && !phraseSourceId) {
     throw new Error("A derivation index belongs to a phrase source");
   }
+  if (!imported && !mnemonicPhrase) {
+    throw new Error("A derived account must carry its phrase");
+  }
+  if (imported && mnemonicPhrase) {
+    throw new Error("A secret-key import carries no phrase");
+  }
 
   const allAccounts = allAccountsSelector(sessionStore.getState());
   const accountName = `Account ${allAccounts.length + 1}`;
@@ -83,9 +94,13 @@ export const storeAccount = async ({
     throw new Error("Error deriving hash key");
   }
 
+  // A derived keystore keeps its phrase so the existing unlock readers keep
+  // working; an import's keystore says only that it is one.
+  const extra = mnemonicPhrase ? { imported, mnemonicPhrase } : { imported };
+
   const keyMetadata = {
     key: {
-      extra: { imported, mnemonicPhrase },
+      extra,
       type: KeyType.plaintextKey,
       publicKey,
       privateKey,
@@ -112,6 +127,15 @@ export const storeAccount = async ({
       index: derivationIndex,
     });
   }
+
+  // Provenance is written before the account is listed, for the same reason:
+  // the list may never name an account the map cannot attribute.
+  await setAccountProvenance({
+    localStore,
+    keyId: keyStore.id,
+    type: imported ? AccountType.IMPORTED : AccountType.FREIGHTER,
+    sourceId,
+  });
 
   // The keystore id is the account's id, so the account joins the session
   // only once the keystore exists. A failed store leaves no account behind.

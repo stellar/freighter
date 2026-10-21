@@ -297,7 +297,7 @@ describe("loginToAllAccounts", () => {
           privateKey: "SB",
           extra: { imported: false, mnemonicPhrase: "phrase b" },
         },
-        // a secret-key import still stamped with the active phrase
+        // a secret-key import from before provenance moved to plain storage, still stamped with the active phrase
         "key-id-2": {
           publicKey: "GC",
           privateKey: "SC",

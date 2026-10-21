@@ -49,6 +49,11 @@ const recover = (isOverwritingAccount = false) =>
   );
 
 describe("Recover account message listener", () => {
+  // Each recovery stores one keystore per funded index through Scrypt, and
+  // one case recovers twice; under a full parallel run that outlasts the
+  // 5 s default, as the sibling suites already allow for.
+  jest.setTimeout(60_000);
+
   beforeEach(async () => {
     await mockStorageApi.clear();
     mockSessionStore.dispatch(sessionSlice.actions.reset());

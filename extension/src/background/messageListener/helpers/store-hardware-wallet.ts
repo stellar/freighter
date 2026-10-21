@@ -9,6 +9,8 @@ import {
 } from "background/helpers/account";
 import { KEY_ID, KEY_ID_LIST } from "constants/localStorageTypes";
 import { DataStorageAccess } from "background/helpers/dataStorageAccess";
+import { setAccountProvenance } from "background/helpers/account-provenance";
+import { AccountType } from "@shared/api/types";
 
 // in lieu of using KeyManager, let's store hW data in local storage
 // using schema:
@@ -41,6 +43,13 @@ export const storeHardwareWalletAccount = async ({
   }`;
 
   if (keyIdListArr.indexOf(keyId) === -1) {
+    // Before the list names it, as `storeAccount` does. No source: a
+    // hardware account holds no secret.
+    await setAccountProvenance({
+      localStore,
+      keyId,
+      type: AccountType.HW,
+    });
     keyIdListArr.push(keyId);
     await localStore.setItem(KEY_ID_LIST, keyIdListArr);
     const hwData = {

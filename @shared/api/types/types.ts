@@ -211,6 +211,19 @@ export enum AccountType {
 }
 
 /**
+ * Where an account comes from, persisted in plain local storage per keystore
+ * id (see `background/helpers/account-provenance.ts`). `sourceId` is the
+ * phrase's source id for a derived account and the key's own source id for a
+ * secret-key import; a hardware account has none.
+ */
+export interface AccountProvenance {
+  type: AccountType;
+  sourceId?: string;
+}
+
+export type AccountProvenanceMap = Record<string, AccountProvenance>;
+
+/**
  * A secret the wallet holds that roots accounts: one seed phrase, or one
  * standalone imported secret key. Hardware accounts have no secret and are
  * never a source. See wallet-eng-monorepo

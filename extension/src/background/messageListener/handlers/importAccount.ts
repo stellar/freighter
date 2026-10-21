@@ -7,13 +7,13 @@ import { ImportAccountMessage } from "@shared/api/types/message-request";
 import { ACCOUNT_ALREADY_EXISTS_ERROR } from "@shared/constants/errors";
 import { DataStorageAccess } from "background/helpers/dataStorageAccess";
 import {
+  getActiveHashKeyCryptoKey,
   getEncryptedTemporaryData,
   SessionTimer,
 } from "background/helpers/session";
 import { KEY_ID } from "constants/localStorageTypes";
 import {
   addSecretSource,
-  getDefaultMnemonic,
   getSecretKeySourceId,
 } from "background/helpers/secret-sources";
 import { SecretSourceType } from "@shared/api/types";
@@ -47,12 +47,10 @@ export const importAccount = async ({
   const { password, privateKey } = request;
   let sourceKeys;
 
-  // The held phrase is still stamped into the import's keystore `extra`
-  // for now; it is not what identifies the import. The import is
-  // its own source, registered below from its own key.
-  let source = await getDefaultMnemonic({ sessionStore, localStore });
-
-  if (!source) {
+  // An import needs the unlocked session's hash key to store its private
+  // key. No phrase is involved: the import is its own source, registered
+  // below from its own key, and nothing of any phrase is written into it.
+  if ((await getActiveHashKeyCryptoKey({ sessionStore })) === null) {
     try {
       await loginToAllAccounts(
         password,
@@ -61,7 +59,6 @@ export const importAccount = async ({
         keyManager,
         sessionTimer,
       );
-      source = await getDefaultMnemonic({ sessionStore, localStore });
     } catch (e) {
       captureException(
         `Error logging in to all accounts in Import Account - ${JSON.stringify(
@@ -111,7 +108,6 @@ export const importAccount = async ({
     await storeAccount({
       password,
       keyPair,
-      mnemonicPhrase: source?.mnemonic ?? "",
       sourceId,
       imported: true,
       sessionStore,

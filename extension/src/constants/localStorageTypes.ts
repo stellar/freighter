@@ -35,6 +35,7 @@ export const TEMPORARY_STORE_MNEMONICS_ID = "temporaryStoreMnemonics";
 export const SECRET_SOURCES_ID = "secretSources";
 export const PINNED_SOURCE_ID = "pinnedSourceId";
 export const DERIVATION_INDICES_ID = "derivationIndices";
+export const ACCOUNT_PROVENANCE_ID = "accountProvenance";
 export const USDT0_LAUNCH_BANNER_DISMISSED = "usdt0LaunchBannerDismissed";
 export const OVERRIDDEN_BLOCKAID_RESPONSE_ID = "overriddenBlockaidResponse";
 export const COLLECTIBLES_ID = "collectibles";

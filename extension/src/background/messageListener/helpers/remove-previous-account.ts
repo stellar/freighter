@@ -1,6 +1,7 @@
 import { getKeyIdList } from "background/helpers/account";
 import { DataStorageAccess } from "background/helpers/dataStorageAccess";
 import { clearDerivationIndices } from "background/helpers/derivation-indices";
+import { clearAccountProvenance } from "background/helpers/account-provenance";
 import {
   clearPinnedSourceId,
   clearSecretSources,
@@ -40,4 +41,5 @@ export const removePreviousAccount = async ({
   await clearSecretSources({ localStore });
   await clearPinnedSourceId({ localStore });
   await clearDerivationIndices({ localStore });
+  await clearAccountProvenance({ localStore });
 };

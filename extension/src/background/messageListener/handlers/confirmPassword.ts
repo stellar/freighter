@@ -45,6 +45,8 @@ export const confirmPassword = async ({
   const keyIdList = await getKeyIdList({ localStore });
 
   /* migration needed to v1.0.6-beta data model */
+  // This keystore gets no `accountProvenance` entry on purpose: it is a
+  // legacy account, and #76 attributes those at install and unlock.
   if (!keyIdList.length) {
     const keyId = await localStore.getItem(KEY_ID);
     if (keyId) {

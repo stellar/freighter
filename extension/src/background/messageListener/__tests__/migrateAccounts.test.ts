@@ -19,10 +19,12 @@ import {
   MockBrowserAlarm,
 } from "background/messageListener/helpers/test-helpers";
 import {
+  ACCOUNT_PROVENANCE_ID,
   DERIVATION_INDICES_ID,
   KEY_ID,
   KEY_ID_LIST,
 } from "constants/localStorageTypes";
+import { AccountType } from "@shared/api/types";
 
 // #73: the migration resolves the account to replace by its id, swaps the
 // replacement into that keystore's slot in `keyIdList` (not in
@@ -82,6 +84,10 @@ const keyIdList = (): Promise<string[]> => mockDataStorage.getItem(KEY_ID_LIST);
 
 const indexMap = (): Promise<Record<string, number[]>> =>
   mockDataStorage.getItem(DERIVATION_INDICES_ID);
+
+const provenance = (): Promise<
+  Record<string, { type: AccountType; sourceId?: string }>
+> => mockDataStorage.getItem(ACCOUNT_PROVENANCE_ID);
 
 const balanceFor = (account: Account): BalanceToMigrate => ({
   id: account.id,
@@ -170,6 +176,12 @@ describe("migrateAccounts", () => {
     expect(await indexMap()).toEqual({
       [PHRASE_1.userId]: [0, 1],
       [PHRASE_2.userId]: [0],
+    });
+    // #75: the replaced id's provenance goes with it; the new id is rooted
+    // in the migrated phrase.
+    expect(await provenance()).toEqual({
+      [firstKeyId]: { type: AccountType.FREIGHTER, sourceId: PHRASE_1.userId },
+      [list[1]]: { type: AccountType.FREIGHTER, sourceId: PHRASE_2.userId },
     });
   });
 

@@ -10,6 +10,11 @@ import {
 } from "@stellar/typescript-wallet-sdk-km";
 import { addAccountName, getKeyIdList } from "background/helpers/account";
 import { markDerivationIndexUsed } from "background/helpers/derivation-indices";
+import {
+  removeAccountProvenance,
+  setAccountProvenance,
+} from "background/helpers/account-provenance";
+import { AccountType } from "@shared/api/types";
 import { KEY_ID, KEY_ID_LIST } from "constants/localStorageTypes";
 
 /*
@@ -82,6 +87,12 @@ export const replaceAccount = async ({
     sourceId,
     index: derivationIndex,
   });
+  await setAccountProvenance({
+    localStore,
+    keyId: keyStore.id,
+    type: AccountType.FREIGHTER,
+    sourceId,
+  });
 
   const accountName = `Account ${keyIdIndex + 1}`;
   const newAllAccounts = [...allAccounts];
@@ -118,4 +129,7 @@ export const replaceAccount = async ({
     accountName,
     localStore,
   });
+  // Only once the old id has left the list: an id still listed must keep its
+  // entry, or a later migration would take it for an unattributed account.
+  await removeAccountProvenance({ localStore, keyId: idToReplace });
 };

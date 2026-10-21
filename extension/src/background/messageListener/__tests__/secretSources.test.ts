@@ -166,16 +166,13 @@ describe("secret sources", () => {
     });
   });
 
-  it("keeps stamping the held phrase into a secret-key import", async () => {
+  it("stamps no phrase into a secret-key import", async () => {
     await createWallet();
     await importKey();
 
     const keyId = await mockDataStorage.getItem(KEY_ID);
     const keyStore = await mockKeyManager.loadKey(keyId, PASSWORD);
-    expect(keyStore.extra).toEqual({
-      imported: true,
-      mnemonicPhrase: PHRASE_1.mnemonic,
-    });
+    expect(keyStore.extra).toEqual({ imported: true });
   });
 
   it("locking clears every mnemonic and keeps the sources and the pin", async () => {
