@@ -229,6 +229,7 @@ describe("AssetDetail", () => {
         assetIssuer: usdcCanonical,
         assetVisibility: "hidden",
         activePublicKey: "G1",
+        network: TESTNET_NETWORK_DETAILS.network,
       });
     });
     await waitFor(() => {

@@ -77,6 +77,7 @@ describe("ToggleTokenInternal", () => {
       assetIssuer: CANONICAL,
       assetVisibility: "visible",
       activePublicKey: TEST_PUBLIC_KEY,
+      network: TESTNET_NETWORK_DETAILS.network,
     });
   });
 

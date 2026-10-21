@@ -2,13 +2,13 @@ import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { Button, Icon, Notification } from "@stellar/design-system";
-import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 
 import { RequestState } from "constants/request";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { Loading } from "popup/components/Loading";
 import { View } from "popup/basics/layout/View";
+import { showToast } from "popup/basics/shadcn/Toast";
 import { navigateTo, openTab } from "popup/helpers/navigate";
 import { getStellarExpertUrl } from "popup/helpers/account";
 import {
@@ -117,14 +117,14 @@ export const CollectibleDetail = ({
         throw new Error(error);
       }
     } catch {
-      toast.custom(() => (
+      showToast(() => (
         <Notification variant="error" title={t("Couldn’t hide collectible")} />
       ));
       return;
     }
 
     handleItemClose();
-    toast.custom(() => (
+    showToast(() => (
       <Notification variant="success" title={t("Collectible hidden")} />
     ));
   };

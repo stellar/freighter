@@ -293,6 +293,7 @@ describe("ChangeTrustInternal", () => {
       assetIssuer: `${ASSET.code}:${ASSET.issuer}`,
       assetVisibility: "visible",
       activePublicKey: LEDGER_PUBLIC_KEY,
+      network: TESTNET_NETWORK_DETAILS.network,
     });
   });
 

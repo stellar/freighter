@@ -1,9 +1,8 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { Navigate, useNavigate } from "react-router-dom";
 import { Button, Icon, Notification } from "@stellar/design-system";
-import { toast } from "sonner";
 
 import {
   getStellarExpertUrl,
@@ -21,6 +20,7 @@ import { ROUTES } from "popup/constants/routes";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { View } from "popup/basics/layout/View";
+import { showToast } from "popup/basics/shadcn/Toast";
 import {
   makeAccountActive,
   allAccountsSelector,
@@ -55,10 +55,6 @@ export const Wallets = () => {
   // Fallback for the error state, where the fetch yields no data but Redux
   // still holds the active account from the last successful load.
   const reduxPublicKey = useSelector(publicKeySelector);
-  // Holds the currently-shown copy-toast's id (see copyAddress below for why
-  // this can't be a stable id). Declared here, above the early returns, so
-  // this hook always runs regardless of which branch this render takes.
-  const lastToastIdRef = useRef<string | number | null>(null);
 
   useEffect(() => {
     const getData = async () => {
@@ -113,17 +109,6 @@ export const Wallets = () => {
   const activeAccountName =
     allAccounts.find((account) => account.publicKey === activePublicKey)
       ?.name || "";
-
-  // Dismiss-then-create with a fresh id, so repeated taps replace rather than
-  // stack. Do NOT switch to a stable id: sonner's create() updates an existing
-  // entry, but dismiss() never removes it, so after a swipe the update targets
-  // an unmounted toast and nothing renders.
-  const showToast = (render: (id: string | number) => React.ReactElement) => {
-    if (lastToastIdRef.current !== null) {
-      toast.dismiss(lastToastIdRef.current);
-    }
-    lastToastIdRef.current = toast.custom(render);
-  };
 
   const copyAddress = async () => {
     try {

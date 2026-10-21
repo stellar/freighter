@@ -3,7 +3,6 @@ import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
 import { Button, Icon, Notification, Select } from "@stellar/design-system";
 import { Navigate, useLocation } from "react-router-dom";
-import { toast } from "sonner";
 
 import { saveAllowList } from "popup/ducks/settings";
 import { SubviewHeader } from "popup/components/SubviewHeader";
@@ -11,6 +10,7 @@ import { PunycodedDomain } from "popup/components/PunycodedDomain";
 import { NetworkIcon } from "popup/components/manageNetwork/NetworkIcon";
 
 import { View } from "popup/basics/layout/View";
+import { showToast } from "popup/basics/shadcn/Toast";
 import { RemoveButton } from "popup/basics/buttons/RemoveButton";
 import { AppDispatch } from "popup/App";
 import { AppDataType, useGetAppData } from "helpers/hooks/useGetAppData";
@@ -44,7 +44,7 @@ export const ManageConnectedApps = () => {
   };
 
   const notify = (variant: "success" | "error", title: string) => {
-    toast.custom(() => <Notification variant={variant} title={title} />);
+    showToast(() => <Notification variant={variant} title={title} />);
   };
 
   // `saveAllowList` rejects into `rejectWithValue`, so awaiting the dispatch

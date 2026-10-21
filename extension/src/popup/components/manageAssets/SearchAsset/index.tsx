@@ -5,7 +5,6 @@ import debounce from "lodash/debounce";
 import { useTranslation } from "react-i18next";
 import { Notification } from "@stellar/design-system";
 import { useSelector } from "react-redux";
-import { toast } from "sonner";
 
 import { FormRows } from "popup/basics/Forms";
 import { ROUTES } from "popup/constants/routes";
@@ -15,6 +14,7 @@ import { isBlockaidEnabled as isBlockaidEnabledForNetwork } from "popup/helpers/
 
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { View } from "popup/basics/layout/View";
+import { showToast } from "popup/basics/shadcn/Toast";
 
 import { NetworkDetails } from "@shared/constants/stellar";
 import { RequestState } from "helpers/hooks/fetchHookInterface";
@@ -106,14 +106,14 @@ export const SearchAsset = () => {
     try {
       await setAssetVisibility(canonicalAsset, "visible");
       setIsHiddenAssetsOpen(false);
-      toast.custom(() => (
+      showToast(() => (
         <Notification
           variant="success"
           title={t("{{code}} unhidden", { code })}
         />
       ));
     } catch {
-      toast.custom(() => (
+      showToast(() => (
         <Notification
           variant="error"
           title={t("Couldn’t unhide {{code}}", { code })}

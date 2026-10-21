@@ -13,6 +13,7 @@ import {
   confirmPassword,
   hasPrivateKeySelector,
 } from "popup/ducks/accountServices";
+import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { clearHiddenAssetFlag } from "popup/helpers/useHiddenAssets";
 
 type Params = {
@@ -55,6 +56,8 @@ export const useSetupAddTokenFlow = ({
 
   const dispatch: AppDispatch = useDispatch();
   const hasPrivateKey = useSelector(hasPrivateKeySelector);
+  // The token is added on the active network
+  const { network } = useSelector(settingsNetworkDetailsSelector);
 
   const rejectAndClose = () => {
     emitMetric(METRIC_NAMES.assetAddApiCancelled);
@@ -136,6 +139,7 @@ export const useSetupAddTokenFlow = ({
     await clearHiddenAssetFlag({
       canonicalAsset: getCanonicalFromAsset(assetCode, contractId),
       activePublicKey: publicKey,
+      network,
     });
   };
 

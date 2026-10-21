@@ -18,7 +18,6 @@ import {
   DATA_SHARING_ID,
   IS_OPEN_SIDEBAR_BY_DEFAULT_ID,
 } from "constants/localStorageTypes";
-import { getHiddenAssets } from "../helpers/get-hidden-assets";
 
 export const loadSettings = async ({
   localStore,
@@ -39,7 +38,6 @@ export const loadSettings = async ({
   const autoLockTimeoutMinutes = coerceAutoLockTimeoutMinutes(
     await localStore.getItem(AUTO_LOCK_TIMEOUT_MINUTES_ID),
   );
-  const { hiddenAssets } = await getHiddenAssets({ localStore });
   const overriddenBlockaidResponse = await getOverriddenBlockaidResponse({
     localStore,
   });
@@ -59,7 +57,6 @@ export const loadSettings = async ({
     isHideDustEnabled,
     isOpenSidebarByDefault,
     autoLockTimeoutMinutes,
-    hiddenAssets,
     overriddenBlockaidResponse,
   };
 };

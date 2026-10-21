@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useState } from "react";
 import { Icon, Notification } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 import { captureException } from "@sentry/browser";
-import { toast } from "sonner";
 
 import { ProtocolEntry } from "@shared/api/types";
 import {
@@ -14,6 +13,7 @@ import {
 } from "popup/metrics/discover";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { View } from "popup/basics/layout/View";
+import { showToast } from "popup/basics/shadcn/Toast";
 import { openTab } from "popup/helpers/navigate";
 import { addRecentProtocol, clearRecentProtocols } from "@shared/api/internal";
 import {
@@ -57,7 +57,7 @@ export const Discover = ({ onClose = () => {} }: DiscoverProps) => {
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
   const notifyError = useCallback((title: string, description: string) => {
-    toast.custom(() => (
+    showToast(() => (
       <Notification variant="error" title={title}>
         {description}
       </Notification>

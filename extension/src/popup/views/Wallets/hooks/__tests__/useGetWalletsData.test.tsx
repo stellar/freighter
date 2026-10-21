@@ -18,6 +18,7 @@ const SETTLED_REMOTE_CONFIG = {
 };
 import { RequestState } from "constants/request";
 import * as ApiInternal from "@shared/api/internal";
+import { AssetVisibility } from "@shared/api/types";
 import {
   MAINNET_NETWORK_DETAILS,
   TESTNET_NETWORK_DETAILS,
@@ -174,18 +175,23 @@ describe("useGetWalletsData", () => {
       applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
     });
   });
-  it("leaves hidden assets out of each account's total on Mainnet", async () => {
-    // A leftover native flag must not drop XLM, which is never hidden
+  it("leaves each account's own hidden assets out of its total on Mainnet", async () => {
+    // G1 hid USDC, G2 hid nothing. XLM is never hidden.
+    const hiddenAssetsFor = async ({ publicKey }: { publicKey?: string }) => ({
+      hiddenAssets: (publicKey === "G1"
+        ? {
+            "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM":
+              "hidden",
+            native: "hidden",
+          }
+        : {}) as Record<string, AssetVisibility>,
+      error: "",
+    });
+    // Once per account, so other tests keep the default
     const getHiddenAssetsSpy = jest
       .spyOn(ApiInternal, "getHiddenAssets")
-      .mockResolvedValueOnce({
-        hiddenAssets: {
-          "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM":
-            "hidden",
-          native: "hidden",
-        },
-        error: "",
-      } as any);
+      .mockImplementationOnce(hiddenAssetsFor)
+      .mockImplementationOnce(hiddenAssetsFor);
     const store = makeDummyStore({
       remoteConfig: SETTLED_REMOTE_CONFIG,
       auth: {
@@ -221,14 +227,20 @@ describe("useGetWalletsData", () => {
       await result.current.fetchData(true);
     });
 
-    // XLM alone: 50 x $1. The hidden USDC (100 x $2) no longer counts.
+    // G1: XLM only (50 x $1). G2: XLM + USDC (100 x $2).
     expect(
       (result.current.state.data as { accountValue: Record<string, string> })
         .accountValue,
-    ).toEqual({ G1: "$50.00", G2: "$50.00" });
-    // Read once, with the active account: the background rejects other keys
-    expect(getHiddenAssetsSpy).toHaveBeenCalledTimes(1);
-    expect(getHiddenAssetsSpy).toHaveBeenCalledWith({ activePublicKey: "G1" });
+    ).toEqual({ G1: "$50.00", G2: "$250.00" });
+    // One read per account
+    expect(getHiddenAssetsSpy).toHaveBeenCalledTimes(2);
+    ["G1", "G2"].forEach((publicKey) =>
+      expect(getHiddenAssetsSpy).toHaveBeenCalledWith({
+        activePublicKey: "G1",
+        publicKey,
+        network: MAINNET_NETWORK_DETAILS.network,
+      }),
+    );
   });
 
   it("should return wallets data and token prices on Mainnet in batches", async () => {

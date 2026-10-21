@@ -16,7 +16,6 @@ import {
   Link,
   Notification,
 } from "@stellar/design-system";
-import { toast } from "sonner";
 
 import { changeAssetVisibility } from "@shared/api/internal";
 
@@ -46,6 +45,7 @@ import { TransactionDetail } from "popup/components/accountHistory/TransactionDe
 import { SlideupModal } from "popup/components/SlideupModal";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { View } from "popup/basics/layout/View";
+import { showToast } from "popup/basics/shadcn/Toast";
 import {
   settingsNetworkDetailsSelector,
   settingsSelector,
@@ -364,13 +364,14 @@ export const AssetDetail = ({
         assetIssuer: selectedAsset,
         assetVisibility: "hidden",
         activePublicKey: publicKey,
+        network: networkDetails.network,
       });
 
       if (error) {
         throw new Error(error);
       }
     } catch {
-      toast.custom(() => (
+      showToast(() => (
         <Notification
           variant="error"
           title={t("Couldn’t hide {{code}}", { code: canonical.code })}
@@ -389,7 +390,7 @@ export const AssetDetail = ({
       console.error("Failed to refresh balances after hiding:", error);
     }
 
-    toast.custom(() => (
+    showToast(() => (
       <Notification
         variant="success"
         title={t("{{code}} hidden", { code: canonical.code })}

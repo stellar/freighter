@@ -1,5 +1,6 @@
 import { renderHook, act } from "@testing-library/react";
 
+import { TESTNET_NETWORK_DETAILS } from "@shared/constants/stellar";
 import { emitMetric } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { useSetupAddTokenFlow } from "popup/helpers/useSetupAddTokenFlow";
@@ -34,6 +35,11 @@ jest.mock("popup/ducks/accountServices", () => ({
     return mockConfirmPassword;
   },
   hasPrivateKeySelector: () => mockHasPrivateKey,
+}));
+
+jest.mock("popup/ducks/settings", () => ({
+  settingsNetworkDetailsSelector: () =>
+    jest.requireActual("@shared/constants/stellar").TESTNET_NETWORK_DETAILS,
 }));
 
 const mockClearHiddenAssetFlag = jest.fn().mockResolvedValue(undefined);
@@ -272,6 +278,7 @@ describe("useSetupAddTokenFlow", () => {
       expect(mockClearHiddenAssetFlag).toHaveBeenCalledWith({
         canonicalAsset: `KALE:${CONTRACT_ID}`,
         activePublicKey: PUBLIC_KEY,
+        network: TESTNET_NETWORK_DETAILS.network,
       });
       expect(mockClearHiddenAssetFlag.mock.invocationCallOrder[0]).toBeLessThan(
         closeSpy.mock.invocationCallOrder[0],

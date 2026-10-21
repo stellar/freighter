@@ -82,6 +82,7 @@ export const ToggleTokenInternal = ({
         await clearHiddenAssetFlag({
           canonicalAsset: getCanonicalFromAsset(asset.code, asset.contract!),
           activePublicKey: publicKey,
+          network: networkDetails.network,
         });
       }
     } else {

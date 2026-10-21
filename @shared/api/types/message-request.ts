@@ -422,6 +422,8 @@ export interface GetIsAccountMismatchMessage extends BaseMessage {
 
 export interface ChangeAssetVisibilityMessage extends BaseMessage {
   type: SERVICE_TYPES.CHANGE_ASSET_VISIBILITY;
+  publicKey: string;
+  network: string;
   assetVisibility: {
     issuer: IssuerKey;
     visibility: AssetVisibility;
@@ -430,6 +432,8 @@ export interface ChangeAssetVisibilityMessage extends BaseMessage {
 
 export interface GetHiddenAssetsMessage extends BaseMessage {
   type: SERVICE_TYPES.GET_HIDDEN_ASSETS;
+  publicKey: string;
+  network: string;
 }
 
 export interface GetUsdt0LaunchBannerDismissedMessage extends BaseMessage {

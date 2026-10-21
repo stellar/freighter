@@ -2,12 +2,12 @@ import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { Button, Icon, Notification } from "@stellar/design-system";
-import { toast } from "sonner";
 
 import { Collection } from "@shared/api/types/types";
 import { AssetVisibility } from "@shared/api/types";
 import { changeCollectibleVisibility } from "@shared/api/internal";
 import { HiddenItemsSheet } from "popup/components/HiddenItemsSheet";
+import { showToast } from "popup/basics/shadcn/Toast";
 import { publicKeySelector } from "popup/ducks/accountServices";
 import { CollectibleInfoImage, getCollectibleName } from "../CollectibleInfo";
 
@@ -100,11 +100,11 @@ export const HiddenCollectibles = ({
 
       await refreshHiddenCollectibles();
       onClose();
-      toast.custom(() => (
+      showToast(() => (
         <Notification variant="success" title={t("Collectible unhidden")} />
       ));
     } catch {
-      toast.custom(() => (
+      showToast(() => (
         <Notification
           variant="error"
           title={t("Couldn’t unhide collectible")}

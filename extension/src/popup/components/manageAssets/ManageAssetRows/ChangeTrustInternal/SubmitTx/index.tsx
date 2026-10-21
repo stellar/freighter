@@ -197,6 +197,7 @@ export const SubmitTransaction = ({
         await clearHiddenAssetFlag({
           canonicalAsset: getCanonicalFromAsset(asset.code, asset.issuer),
           activePublicKey: publicKey,
+          network: networkDetails.network,
         });
       }
       onTransactionSuccess?.();

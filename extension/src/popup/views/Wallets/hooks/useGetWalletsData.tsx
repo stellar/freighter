@@ -36,14 +36,24 @@ type GetWalletsData = NeedsReRoute | ResolvedData;
 const BATCH_SIZE = 6;
 
 /**
- * The wallet's hidden-assets map, or an empty one when it can't be read: the
- * totals then include hidden assets rather than failing to load.
+ * Hidden assets for an account. Returns an empty map on error, so the total
+ * still loads.
  */
-const loadHiddenAssets = async (
-  activePublicKey: string,
-): Promise<Record<string, AssetVisibility>> => {
+const loadHiddenAssets = async ({
+  activePublicKey,
+  publicKey,
+  network,
+}: {
+  activePublicKey: string;
+  publicKey: string;
+  network: string;
+}): Promise<Record<string, AssetVisibility>> => {
   try {
-    const { hiddenAssets, error } = await getHiddenAssets({ activePublicKey });
+    const { hiddenAssets, error } = await getHiddenAssets({
+      activePublicKey,
+      publicKey,
+      network,
+    });
     if (error) {
       throw new Error(error);
     }
@@ -72,19 +82,22 @@ function useGetWalletsData() {
     isMainnetNetwork,
     useCache,
     payload,
-    hiddenAssets = {},
   }: {
     accounts: Account[];
     networkDetails: NetworkDetails;
     isMainnetNetwork: boolean;
     useCache: boolean;
     payload: ResolvedData;
-    /** The wallet's hidden assets; they don't count toward any total */
-    hiddenAssets?: Record<string, AssetVisibility>;
   }) => {
     const prices = await Promise.all(
       accounts.map(async (account) => {
         try {
+          // Hidden assets are per account
+          const hiddenAssets = await loadHiddenAssets({
+            activePublicKey: payload.publicKey,
+            publicKey: account.publicKey,
+            network: networkDetails.network,
+          });
           const balances = await fetchBalances(
             account.publicKey,
             isMainnetNetwork,
@@ -192,10 +205,6 @@ function useGetWalletsData() {
       }
 
       if (isMainnetNetwork) {
-        // The background only answers for the active account, and the hidden
-        // list is wallet-wide, so read it once and apply it to every account.
-        const hiddenAssets = await loadHiddenAssets(publicKey);
-
         for (let i = 0; i < allAccounts.length; i += BATCH_SIZE) {
           const batch = allAccounts.slice(i, i + BATCH_SIZE);
           await batchedFetchBalances({
@@ -204,7 +213,6 @@ function useGetWalletsData() {
             isMainnetNetwork,
             useCache,
             payload,
-            hiddenAssets,
           });
         }
       }

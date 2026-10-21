@@ -588,7 +588,10 @@ export const useSwapTokenLookup = () => {
     // Read on every lookup, before anything is served (the cached repaint
     // included), so a token hidden or unhidden since the last lookup is
     // reflected straight away. The caches hold unfiltered results.
-    const hiddenAssets = await readHiddenAssets(publicKey);
+    const hiddenAssets = await readHiddenAssets(
+      publicKey,
+      networkDetails.network,
+    );
     if (signal.aborted) {
       return;
     }

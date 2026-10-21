@@ -178,6 +178,7 @@ export const Swap = () => {
           // time so this mount-only effect never re-runs (and resets) for it.
           const hiddenAssets = await readHiddenAssets(
             publicKeySelector(store.getState()),
+            networkDetails.network,
           );
           if (isAssetVisible(hiddenAssets, defaultDest)) {
             destinationAsset = defaultDest;
