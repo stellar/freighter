@@ -415,15 +415,19 @@ export const markRebrandAnnouncementEligibility = async () => {
 
 // Pre-V2 -> multi-source model (#76). Not deferrable: it runs on the first
 // start after upgrade with no password. See `pre-v2-migration.ts` for the two
-// passes and the rollback posture.
+// passes and the rollback posture. The install pass is idempotent and runs on
+// every upgrade, not only below 5.50.0, so accounts a downgraded build added
+// without provenance are picked up when the wallet upgrades again.
 export const migrateToMultiSourceModel = async () => {
   const localStore = dataStorageAccess(browserLocalStorage);
   const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
+  const migrated = await migratePreV2Storage({ localStore });
 
-  if (shouldRunMigration({ storageVersion, migrationVersion: "5.50.0" })) {
-    if (await migratePreV2Storage({ localStore })) {
-      await migrateDataStorageVersion("5.50.0");
-    }
+  if (
+    migrated &&
+    shouldRunMigration({ storageVersion, migrationVersion: "5.50.0" })
+  ) {
+    await migrateDataStorageVersion("5.50.0");
   }
 };
 

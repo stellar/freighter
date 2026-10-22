@@ -292,15 +292,63 @@ describe("Storage migrations", () => {
     expect(pending[PENDING_ATTRIBUTION_ID]).toBeUndefined();
     expect(storedVersion[STORAGE_VERSION]).toEqual("5.33.5");
   });
-  it("migrateToMultiSourceModel does not run again at 5.50.0", async () => {
+  it("migrateToMultiSourceModel still runs the install pass at 5.50.0", async () => {
     await mockStorage.set({
       [STORAGE_VERSION]: "5.50.0",
+      [KEY_ID]: "0.1",
+      [KEY_ID_LIST]: ["0.1", "0.2"],
+      [ACCOUNT_PROVENANCE_ID]: {
+        "0.1": { type: "FREIGHTER", sourceId: "source-1" },
+      },
+    });
+    await DataStorage.migrateToMultiSourceModel();
+    const pending = await mockStorage.get(PENDING_ATTRIBUTION_ID);
+    const storedVersion = await mockStorage.get(STORAGE_VERSION);
+    expect(pending[PENDING_ATTRIBUTION_ID]).toEqual(["0.2"]);
+    expect(storedVersion[STORAGE_VERSION]).toEqual("5.50.0");
+  });
+  it("migrateToMultiSourceModel never lowers a later storage version", async () => {
+    await mockStorage.set({
+      [STORAGE_VERSION]: "5.60.0",
       [KEY_ID]: "0.1",
       [KEY_ID_LIST]: ["0.1"],
     });
     await DataStorage.migrateToMultiSourceModel();
+    const storedVersion = await mockStorage.get(STORAGE_VERSION);
+    expect(storedVersion[STORAGE_VERSION]).toEqual("5.60.0");
+  });
+  it("versionedMigration queues accounts a downgraded build added after the migration", async () => {
+    await mockStorage.set({
+      [STORAGE_VERSION]: "5.33.5",
+      [KEY_ID]: "0.1",
+      [KEY_ID_LIST]: ["0.1"],
+    });
+    await DataStorage.versionedMigration();
+
+    // The unlock pass attributes the original account.
+    await mockStorage.set({
+      [PENDING_ATTRIBUTION_ID]: [],
+      [ACCOUNT_PROVENANCE_ID]: {
+        "0.1": { type: "FREIGHTER", sourceId: "source-1" },
+      },
+    });
+
+    // A downgraded build keeps the 5.50.0 storage version and adds accounts
+    // without provenance.
+    await mockStorage.set({
+      [KEY_ID_LIST]: ["0.1", "0.2", "hw:GDEF"],
+    });
+
+    await DataStorage.versionedMigration();
     const pending = await mockStorage.get(PENDING_ATTRIBUTION_ID);
-    expect(pending[PENDING_ATTRIBUTION_ID]).toBeUndefined();
+    const provenance = await mockStorage.get(ACCOUNT_PROVENANCE_ID);
+    const storedVersion = await mockStorage.get(STORAGE_VERSION);
+    expect(pending[PENDING_ATTRIBUTION_ID]).toEqual(["0.2"]);
+    expect(provenance[ACCOUNT_PROVENANCE_ID]).toEqual({
+      "0.1": { type: "FREIGHTER", sourceId: "source-1" },
+      "hw:GDEF": { type: "HW" },
+    });
+    expect(storedVersion[STORAGE_VERSION]).toEqual("5.50.0");
   });
   it("versionedMigration ends at the multi-source model version", async () => {
     await mockStorage.set({ [STORAGE_VERSION]: "5.33.5" });

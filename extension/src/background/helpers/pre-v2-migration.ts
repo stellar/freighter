@@ -45,6 +45,9 @@ import { decodeString, encodeObject } from "helpers/urls";
   below, which restore the shape the old code itself expects (a string
   `keyId`, a populated `keyIdList`). A downgraded build therefore reads the
   same keystores, ids, names and counter it wrote, and ignores the new keys.
+  Accounts it adds carry no provenance and the storage version stays at
+  5.50.0, so the install pass runs on every upgrade, not only the first: on
+  the next upgrade it queues those accounts for the unlock pass.
 
   LINKED FLAGS. The migration writes no linked state. A source with no linked
   entry is unlinked by definition, so every migrated source is unlinked and the
