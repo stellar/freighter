@@ -105,8 +105,12 @@ const deriveWalletSources = async ({
         localStore,
         keyName: keyId,
       });
-      // No private key in hand (unlock failed to store it): nothing to derive.
+      // No private key in hand: unlock failed to store it, or a migration
+      // re-keyed the session. Only the next unlock writes it, under a new hash
+      // key and so a new cache key, so retrying here would only repeat the
+      // phrase derivations.
       if (!secretKey) {
+        captureException("getWalletSources: no private key for a keystore");
         continue;
       }
       const { sourceId, keypair } = await deriveSourceIdentity(

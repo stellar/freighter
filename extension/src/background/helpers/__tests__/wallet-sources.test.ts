@@ -245,6 +245,29 @@ describe("getWalletSources", () => {
   });
 
   describe("cache", () => {
+    it("keeps a set missing a keystore's private key, and reports it", async () => {
+      const stores = await unlock({
+        keystores: {
+          "key-a0": phraseA.accounts[0].secret,
+          "key-unstored": null,
+        },
+        mnemonics: { [phraseId(phraseA.mnemonic)]: phraseA.mnemonic },
+      });
+
+      const first = await getWalletSources(stores);
+      const second = await getWalletSources(stores);
+
+      expect(first.sources.map(({ id }) => id)).toEqual([
+        phraseId(phraseA.mnemonic),
+        phraseA.accounts[0].sourceId,
+      ]);
+      expect(second).toBe(first);
+      expect(mockDeriveAuthKeypair).toHaveBeenCalledTimes(1);
+      expect(mockCaptureException).toHaveBeenCalledWith(
+        "getWalletSources: no private key for a keystore",
+      );
+    });
+
     it("derives the phrases once per unlock", async () => {
       const stores = await twoPhraseWallet(importedSecret);
 
