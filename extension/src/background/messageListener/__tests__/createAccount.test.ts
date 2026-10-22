@@ -106,7 +106,7 @@ describe("Create account message listener", () => {
       }),
     ).toEqual({ [VECTOR.userId]: VECTOR.mnemonic });
   });
-  it("resets the source set and the pin when overwriting", async () => {
+  it("resets the source set and re-pins the new phrase when overwriting", async () => {
     await popupMessageListener(
       {
         type: SERVICE_TYPES.CREATE_ACCOUNT,
@@ -119,9 +119,10 @@ describe("Create account message listener", () => {
       testAlarm as any,
       { id: "fake-extension-id" },
     );
+    // A pin the old wallet held that the new phrase does not derive.
     await setPinnedSourceId({
       localStore: mockDataStorage,
-      sourceId: VECTOR.userId,
+      sourceId: "f".repeat(64),
     });
 
     await popupMessageListener(
@@ -141,7 +142,9 @@ describe("Create account message listener", () => {
     expect(Object.values(sources).map((s) => s.label)).toEqual([
       "Seed Phrase 1",
     ]);
-    expect(await getPinnedSourceId({ localStore: mockDataStorage })).toBeNull();
+    expect(await getPinnedSourceId({ localStore: mockDataStorage })).toBe(
+      VECTOR.userId,
+    );
   });
   it("can overwrite account", async () => {
     const response = (await popupMessageListener(

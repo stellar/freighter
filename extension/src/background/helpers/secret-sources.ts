@@ -74,46 +74,6 @@ const nextLabel = (sources: SecretSourceMap, type: SecretSourceType) => {
   return `${prefix} ${highest + 1}`;
 };
 
-/**
- * Registers a source. Idempotent by id: an existing record is returned
- * untouched, so re-adding (a re-import, a recover with N preloaded accounts)
- * never allocates a second label.
- */
-export const addSecretSource = async ({
-  localStore,
-  id,
-  type,
-}: {
-  localStore: DataStorageAccess;
-  id: string;
-  type: SecretSourceType;
-}): Promise<SecretSource> => {
-  const sources = await getSecretSources({ localStore });
-
-  if (sources[id]) {
-    return sources[id];
-  }
-
-  const source: SecretSource = {
-    id,
-    type,
-    label: nextLabel(sources, type),
-    createdAt: Date.now(),
-  };
-
-  await localStore.setItem(SECRET_SOURCES_ID, { ...sources, [id]: source });
-
-  return source;
-};
-
-export const clearSecretSources = async ({
-  localStore,
-}: {
-  localStore: DataStorageAccess;
-}) => {
-  await localStore.remove(SECRET_SOURCES_ID);
-};
-
 export const getPinnedSourceId = async ({
   localStore,
 }: {
@@ -139,6 +99,55 @@ export const clearPinnedSourceId = async ({
   await localStore.remove(PINNED_SOURCE_ID);
 };
 
+/**
+ * Registers a source. Idempotent by id: an existing record is returned
+ * untouched, so re-adding (a re-import, a recover with N preloaded accounts)
+ * never allocates a second label.
+ *
+ * The first source a wallet registers becomes its pinned source, and the pin
+ * never moves after that: a phrase wallet that later imports a key keeps the
+ * phrase, and a key-first wallet keeps the key. The pin is written before the
+ * record, so an interrupted write is retried on the next registration.
+ */
+export const addSecretSource = async ({
+  localStore,
+  id,
+  type,
+}: {
+  localStore: DataStorageAccess;
+  id: string;
+  type: SecretSourceType;
+}): Promise<SecretSource> => {
+  const sources = await getSecretSources({ localStore });
+
+  if (!(await getPinnedSourceId({ localStore }))) {
+    await setPinnedSourceId({ localStore, sourceId: id });
+  }
+
+  if (sources[id]) {
+    return sources[id];
+  }
+
+  const source: SecretSource = {
+    id,
+    type,
+    label: nextLabel(sources, type),
+    createdAt: Date.now(),
+  };
+
+  await localStore.setItem(SECRET_SOURCES_ID, { ...sources, [id]: source });
+
+  return source;
+};
+
+export const clearSecretSources = async ({
+  localStore,
+}: {
+  localStore: DataStorageAccess;
+}) => {
+  await localStore.remove(SECRET_SOURCES_ID);
+};
+
 /** The held mnemonic of one phrase source, or null when it is not held. */
 export const getHeldMnemonic = async ({
   sessionStore,
@@ -156,17 +165,18 @@ export const getHeldMnemonic = async ({
 
 /**
  * INTERIM resolver for the callers that still assume "the" wallet phrase
- * (backend auth, analytics id, show recovery phrase, ...). It returns the
+ * (show recovery phrase, confirm phrase, migrate, ...). It returns the
  * pinned source's mnemonic when one is pinned and held, else the first held
  * phrase, else null. For a one-phrase wallet this is exactly the phrase the
  * single slot used to hold.
  *
- * Follow-ups move the auth/analytics callers to pinned-source signing.
- * Account creation names its source and falls back here only when the
- * message names none and the active account has no held phrase. Until then a
- * wallet with no phrase (secret-key only) resolves to null, and callers that
- * re-run the unlock on null will do so even though the session is unlocked;
- * that state cannot be reached until onboarding by secret key ships.
+ * Not an identity: backend auth and the analytics id resolve through
+ * getSigningIdentity. Account creation names its source and falls back here
+ * only when the message names none and the active account has no held
+ * phrase. A wallet with no phrase (secret-key only) resolves to null, and
+ * callers that re-run the unlock on null will do so even though the session
+ * is unlocked; that state cannot be reached until onboarding by secret key
+ * ships.
  */
 export const getDefaultMnemonic = async ({
   sessionStore,

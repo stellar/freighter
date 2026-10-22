@@ -13,14 +13,15 @@ import {
 import {
   addSecretSource,
   getPhraseSourceId,
-  getPinnedSourceId,
   getSecretKeySourceId,
-  setPinnedSourceId,
 } from "background/helpers/secret-sources";
+import { getIsHardwareWalletActive } from "background/helpers/account";
 import {
   KEY_DERIVATION_NUMBER_ID,
+  KEY_ID,
   KEY_ID_LIST,
 } from "constants/localStorageTypes";
+import { getNonHwKeyID } from "./get-non-hw-key-id";
 import { unlockKeystore } from "./unlock-keystore";
 
 const { fromMnemonic } = StellarHDWallet;
@@ -87,12 +88,10 @@ export const attributePendingAccounts = async ({
   localStore,
   keyManager,
   password,
-  identityPhrase,
 }: {
   localStore: DataStorageAccess;
   keyManager: KeyManager;
   password: string;
-  identityPhrase?: string;
 }): Promise<boolean> => {
   const pending = await getPendingAttribution({ localStore });
 
@@ -126,44 +125,51 @@ export const attributePendingAccounts = async ({
     return wallet;
   };
 
-  // The pin never moves once set. It is written before the id it comes from
-  // leaves the pending list, so a failed or interrupted write is retried.
-  const pinIfUnset = async (sourceId: string) => {
-    if (!(await getPinnedSourceId({ localStore }))) {
-      await setPinnedSourceId({ localStore, sourceId });
-    }
-  };
-
   let identityId: string | undefined;
 
-  if (identityPhrase) {
+  // The pre-V2 identity rule, applied only here, once per pending wallet:
+  // the active keystore's phrase, or the first non-hardware keystore's when a
+  // hardware account is active.
+  let identityKeyId = ((await localStore.getItem(KEY_ID)) as string) || "";
+  if (await getIsHardwareWalletActive({ localStore })) {
+    identityKeyId = await getNonHwKeyID({ localStore });
+  }
+
+  if (identityKeyId) {
     try {
-      const phraseId = await getPhraseSourceId(identityPhrase);
-      // Registered first, so it takes "Seed Phrase 1".
-      await addSecretSource({
-        localStore,
-        id: phraseId,
-        type: SecretSourceType.PHRASE,
+      const { extra } = await unlockKeystore({
+        keyID: identityKeyId,
+        password,
+        keyManager,
       });
-      for (let index = 0; index <= counter; index += 1) {
-        await markDerivationIndexUsed({
-          localStore,
-          sourceId: phraseId,
-          index,
-        });
+      if (extra?.mnemonicPhrase) {
+        identityId = await getPhraseSourceId(extra.mnemonicPhrase);
       }
-      identityId = phraseId;
     } catch (e) {
       captureException(
-        `Error registering the pre-V2 wallet phrase: ${JSON.stringify(e)}`,
+        `Error reading the pre-V2 wallet phrase: ${JSON.stringify(e)}`,
       );
     }
   }
 
-  // Outside the catch: if this write fails, no id has left the pending list
-  // yet, so the whole pass retries rather than pinning another source.
+  // addSecretSource pins the first source it registers, and the pin never
+  // moves after that. These writes stay outside the catch: if one fails, no id
+  // has left the pending list yet, so the whole pass retries rather than
+  // letting a later account pin another source.
   if (identityId) {
-    await pinIfUnset(identityId);
+    // Registered first, so it takes "Seed Phrase 1" and the pin.
+    await addSecretSource({
+      localStore,
+      id: identityId,
+      type: SecretSourceType.PHRASE,
+    });
+    for (let index = 0; index <= counter; index += 1) {
+      await markDerivationIndexUsed({
+        localStore,
+        sourceId: identityId,
+        index,
+      });
+    }
   }
 
   let attributed = false;
@@ -190,7 +196,6 @@ export const attributePendingAccounts = async ({
           type: AccountType.IMPORTED,
           sourceId,
         });
-        await pinIfUnset(sourceId);
       } else {
         if (!phrase) {
           throw new Error("derived keystore carries no phrase");
@@ -210,7 +215,6 @@ export const attributePendingAccounts = async ({
           type: AccountType.FREIGHTER,
           sourceId,
         });
-        await pinIfUnset(sourceId);
       }
 
       await removePendingAttribution({ localStore, keyId });

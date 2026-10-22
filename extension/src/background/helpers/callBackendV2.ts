@@ -1,12 +1,9 @@
-import { captureException } from "@sentry/browser";
 import { Store } from "redux";
-import { Keypair } from "stellar-sdk";
 
-import { deriveAuthKeypair } from "@shared/api/helpers/deriveAuthKeypair";
 import { authedFetch } from "@shared/api/helpers/authedFetch";
 import { INDEXER_V2_URL } from "@shared/constants/mercury";
-import { getDefaultMnemonic } from "background/helpers/secret-sources";
 import { DataStorageAccess } from "background/helpers/dataStorageAccess";
+import { getSigningIdentity } from "background/helpers/signing-identity";
 
 export interface CallBackendV2Params {
   method: string;
@@ -18,9 +15,8 @@ export interface CallBackendV2Params {
   /** Injectable for tests; defaults to global fetch. */
   fetchImpl?: typeof fetch;
   /**
-   * Skip auth entirely: no keypair derivation, no JWT — always an anonymous
-   * fetch. For endpoints that will never be auth-gated (e.g. rpc-health), this
-   * avoids the per-request PBKDF2 cost of deriving the auth key.
+   * Skip auth entirely: no identity resolution, no JWT — always an anonymous
+   * fetch. For endpoints that will never be auth-gated (e.g. rpc-health).
    */
   skipAuth?: boolean;
 }
@@ -32,46 +28,11 @@ export interface CallBackendV2Result {
 }
 
 /**
- * Returns the auth keypair when the session is unlocked and holds a phrase,
- * else null (locked / hardware-only / secret-key-only / pre-onboarding).
- * On-demand derivation — never cached at rest (#2769).
- *
- * Interim: signs with the wallet's default phrase (see getDefaultMnemonic).
- * A follow-up replaces this with signing by the pinned source identity.
- */
-const tryGetAuthKeypair = async (
-  sessionStore: Store,
-  localStore: DataStorageAccess,
-): Promise<Keypair | null> => {
-  try {
-    const held = await getDefaultMnemonic({ sessionStore, localStore });
-    if (!held) return null;
-    const { keypair } = await deriveAuthKeypair(held.mnemonic);
-    return keypair;
-  } catch (e) {
-    // getDefaultMnemonic returns null for both a locked store and a wallet
-    // with no phrase (handled by the `!held` check above), so anything
-    // reaching here is unexpected — a corrupted mnemonic map entry or a
-    // WebCrypto/PBKDF2 failure. Capture it: otherwise an unlocked user silently
-    // downgrades to anonymous with zero telemetry the moment the backend
-    // enforces auth on these endpoints.
-    // Capture the original exception (not a JSON.stringify of it): stringifying
-    // an Error yields "{}" and loses the stack, and JSON.stringify itself throws
-    // on non-serializable values. Sentry preserves the stack; the context string
-    // lives in `extra`.
-    captureException(e, {
-      extra: {
-        context: "callBackendV2: unexpected error deriving auth keypair",
-      },
-    });
-    return null;
-  }
-};
-
-/**
  * The single chokepoint for freighter-backend-v2 requests. Attaches a fresh
- * per-request JWT when the session is unlocked; otherwise sends anonymously
- * (backend is permissive). The signed methodAndPath uses the server's full
+ * per-request JWT signed by the wallet's pinned source (see
+ * getSigningIdentity) when the session holds a signer; otherwise sends
+ * anonymously (backend is permissive). Nothing in the request selects the
+ * identity. The signed methodAndPath uses the server's full
  * request-target (incl. /api/v1), derived from the resolved URL.
  */
 export const callBackendV2 = async ({
@@ -85,14 +46,14 @@ export const callBackendV2 = async ({
 }: CallBackendV2Params): Promise<CallBackendV2Result> => {
   const doFetch = fetchImpl ?? fetch;
   const fullUrl = new URL(`${INDEXER_V2_URL}${path}`);
-  const keypair = skipAuth
+  const identity = skipAuth
     ? null
-    : await tryGetAuthKeypair(sessionStore, localStore);
+    : await getSigningIdentity({ sessionStore, localStore });
 
   let res: Response;
-  if (keypair) {
+  if (identity) {
     res = await authedFetch({
-      keypair,
+      keypair: identity.keypair,
       baseUrl: fullUrl.origin,
       method,
       path: `${fullUrl.pathname}${fullUrl.search}`,

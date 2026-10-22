@@ -4,8 +4,7 @@ import { Keypair, xdr } from "stellar-sdk";
 import * as Sentry from "@sentry/browser";
 
 import { callBackendV2 } from "../callBackendV2";
-import * as deriveMod from "@shared/api/helpers/deriveAuthKeypair";
-import * as sourcesMod from "background/helpers/secret-sources";
+import * as identityMod from "background/helpers/signing-identity";
 
 jest.mock("@sentry/browser");
 jest.mock("@shared/constants/mercury", () => ({
@@ -13,8 +12,14 @@ jest.mock("@shared/constants/mercury", () => ({
 }));
 
 const KP = Keypair.fromRawEd25519Seed(Buffer.alloc(32, 5));
-const VECTOR_MNEMONIC =
-  "illness spike retreat truth genius clock brain pass fit cave bargain toe";
+const PINNED_ID = xdr.encodeBytes(KP.rawPublicKey(), "hex");
+
+const signAsPinned = () =>
+  jest
+    .spyOn(identityMod, "getSigningIdentity")
+    .mockResolvedValue({ sourceId: PINNED_ID, keypair: KP });
+const noSigner = () =>
+  jest.spyOn(identityMod, "getSigningIdentity").mockResolvedValue(null);
 
 const sessionStore = {} as never;
 const localStore = {} as never;
@@ -23,16 +28,13 @@ const okResponse = (bodyObj: unknown): Response =>
   new Response(JSON.stringify(bodyObj), { status: 200 });
 
 describe("callBackendV2", () => {
-  afterEach(() => jest.restoreAllMocks());
+  afterEach(() => {
+    jest.restoreAllMocks();
+    (Sentry.captureException as jest.Mock).mockClear();
+  });
 
   it("when unlocked, signs the full server path and attaches a Bearer token", async () => {
-    jest
-      .spyOn(sourcesMod, "getDefaultMnemonic")
-      .mockResolvedValue({ sourceId: "phrase-id", mnemonic: VECTOR_MNEMONIC });
-    jest.spyOn(deriveMod, "deriveAuthKeypair").mockResolvedValue({
-      userId: xdr.encodeBytes(KP.rawPublicKey(), "hex"),
-      keypair: KP,
-    });
+    signAsPinned();
 
     const fetchImpl = jest
       .fn()
@@ -63,10 +65,28 @@ describe("callBackendV2", () => {
       ).toString("utf8"),
     );
     expect(claims.methodAndPath).toBe("GET /api/v1/protocols");
+    // …and is signed as the pinned source.
+    expect(claims.sub).toBe(PINNED_ID);
+  });
+
+  it("resolves identity from the session alone, never from the request", async () => {
+    const resolve = signAsPinned();
+    const fetchImpl = jest.fn().mockResolvedValue(okResponse({ data: 1 }));
+
+    await callBackendV2({
+      method: "POST",
+      path: "/contacts",
+      body: JSON.stringify({ sub: "f".repeat(64) }),
+      sessionStore,
+      localStore,
+      fetchImpl,
+    });
+
+    expect(resolve).toHaveBeenCalledWith({ sessionStore, localStore });
   });
 
   it("when locked, sends no Authorization header", async () => {
-    jest.spyOn(sourcesMod, "getDefaultMnemonic").mockResolvedValue(null);
+    noSigner();
     const fetchImpl = jest.fn().mockResolvedValue(okResponse({ data: 1 }));
 
     await callBackendV2({
@@ -83,16 +103,8 @@ describe("callBackendV2", () => {
   });
 
   it("with skipAuth, sends anonymously and never derives a keypair even when unlocked", async () => {
-    const getMnemonic = jest
-      .spyOn(sourcesMod, "getDefaultMnemonic")
-      .mockResolvedValue({ sourceId: "phrase-id", mnemonic: VECTOR_MNEMONIC });
-    // Mocked so a skipAuth regression fails fast instead of running real PBKDF2.
-    const derive = jest
-      .spyOn(deriveMod, "deriveAuthKeypair")
-      .mockResolvedValue({
-        userId: xdr.encodeBytes(KP.rawPublicKey(), "hex"),
-        keypair: KP,
-      });
+    // Mocked so a skipAuth regression fails fast instead of deriving.
+    const resolve = signAsPinned();
     const fetchImpl = jest
       .fn()
       .mockResolvedValue(okResponse({ status: "healthy" }));
@@ -107,9 +119,8 @@ describe("callBackendV2", () => {
     });
 
     expect(result).toEqual({ status: 200, body: { status: "healthy" } });
-    // No session read and no key derivation (avoids the PBKDF2 cost).
-    expect(getMnemonic).not.toHaveBeenCalled();
-    expect(derive).not.toHaveBeenCalled();
+    // No identity resolution at all (avoids the derivation cost).
+    expect(resolve).not.toHaveBeenCalled();
     // No Authorization header.
     const headers = ((fetchImpl.mock.calls[0][1] as RequestInit).headers ??
       {}) as Record<string, string>;
@@ -117,7 +128,7 @@ describe("callBackendV2", () => {
   });
 
   it("forwards a POST body and sets Content-Type", async () => {
-    jest.spyOn(sourcesMod, "getDefaultMnemonic").mockResolvedValue(null);
+    noSigner();
     const fetchImpl = jest.fn().mockResolvedValue(okResponse({ data: [] }));
 
     await callBackendV2({
@@ -138,13 +149,7 @@ describe("callBackendV2", () => {
   });
 
   it("when unlocked, authed POST carries Bearer token, Content-Type, and signs the query path", async () => {
-    jest
-      .spyOn(sourcesMod, "getDefaultMnemonic")
-      .mockResolvedValue({ sourceId: "phrase-id", mnemonic: VECTOR_MNEMONIC });
-    jest.spyOn(deriveMod, "deriveAuthKeypair").mockResolvedValue({
-      userId: xdr.encodeBytes(KP.rawPublicKey(), "hex"),
-      keypair: KP,
-    });
+    signAsPinned();
 
     const fetchImpl = jest
       .fn()
@@ -181,7 +186,7 @@ describe("callBackendV2", () => {
   });
 
   it("returns { status, body: null } on a non-2xx response", async () => {
-    jest.spyOn(sourcesMod, "getDefaultMnemonic").mockResolvedValue(null);
+    noSigner();
     const fetchImpl = jest
       .fn()
       .mockResolvedValue(new Response("nope", { status: 500 }));
@@ -198,7 +203,7 @@ describe("callBackendV2", () => {
   });
 
   it("preserves a JSON error body on a non-2xx response (for Sentry detail)", async () => {
-    jest.spyOn(sourcesMod, "getDefaultMnemonic").mockResolvedValue(null);
+    noSigner();
     const fetchImpl = jest.fn().mockResolvedValue(
       new Response(JSON.stringify({ error: "boom", code: 42 }), {
         status: 500,
@@ -218,13 +223,10 @@ describe("callBackendV2", () => {
     expect(result).toEqual({ status: 500, body: { error: "boom", code: 42 } });
   });
 
-  it("captures and falls back to anonymous when key derivation throws unexpectedly", async () => {
-    (Sentry.captureException as jest.Mock).mockClear();
-    jest
-      .spyOn(sourcesMod, "getDefaultMnemonic")
-      .mockResolvedValue({ sourceId: "phrase-id", mnemonic: VECTOR_MNEMONIC });
-    const deriveError = new Error("corrupted mnemonic map");
-    jest.spyOn(deriveMod, "deriveAuthKeypair").mockRejectedValue(deriveError);
+  it("sends anonymously when the session holds no signer", async () => {
+    // Locked, hardware-only, or the resolver hit an unexpected error (it
+    // captures that itself and returns null).
+    noSigner();
     const fetchImpl = jest.fn().mockResolvedValue(okResponse({ data: 1 }));
 
     const result = await callBackendV2({
@@ -235,21 +237,10 @@ describe("callBackendV2", () => {
       fetchImpl,
     });
 
-    // Unexpected derivation failure must emit telemetry (not be swallowed), and
-    // the original Error is captured (preserving the stack) with the context in
-    // `extra` — not a JSON.stringify that would flatten it to "{}".
-    expect(Sentry.captureException).toHaveBeenCalledWith(
-      deriveError,
-      expect.objectContaining({
-        extra: expect.objectContaining({
-          context: expect.stringContaining("deriving auth keypair"),
-        }),
-      }),
-    );
-    // …and the request still goes out anonymously (no Authorization header).
     const headers = ((fetchImpl.mock.calls[0][1] as RequestInit).headers ??
       {}) as Record<string, string>;
     expect(headers.Authorization).toBeUndefined();
     expect(result).toEqual({ status: 200, body: { data: 1 } });
+    expect(Sentry.captureException).not.toHaveBeenCalled();
   });
 });

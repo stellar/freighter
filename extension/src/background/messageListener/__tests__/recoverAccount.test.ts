@@ -109,11 +109,12 @@ describe("Recover account message listener", () => {
     ).toEqual({ [VECTOR.userId]: VECTOR.mnemonic });
   });
 
-  it("recovering over an existing wallet leaves one record and no pin", async () => {
+  it("recovering over an existing wallet leaves one record, pinned to the recovered phrase", async () => {
     await recover();
+    // A pin the old wallet held that the new phrase does not derive.
     await setPinnedSourceId({
       localStore: mockDataStorage,
-      sourceId: VECTOR.userId,
+      sourceId: "f".repeat(64),
     });
 
     await recover(true);
@@ -122,6 +123,8 @@ describe("Recover account message listener", () => {
     expect(Object.values(sources).map((s) => s.label)).toEqual([
       "Seed Phrase 1",
     ]);
-    expect(await getPinnedSourceId({ localStore: mockDataStorage })).toBeNull();
+    expect(await getPinnedSourceId({ localStore: mockDataStorage })).toBe(
+      VECTOR.userId,
+    );
   });
 });

@@ -31,8 +31,8 @@ import {
   getPhraseSourceId,
   getPinnedSourceId,
   getSecretSources,
-  setPinnedSourceId,
 } from "background/helpers/secret-sources";
+import { getSigningIdentity } from "background/helpers/signing-identity";
 import {
   KEY_ID,
   KEY_ID_LIST,
@@ -166,6 +166,29 @@ describe("secret sources", () => {
     });
   });
 
+  it("signs as the first phrase after a second phrase and a key are added, whichever account is active", async () => {
+    await createWallet();
+    await addSecondPhrase();
+    await importKey();
+
+    const ids: (string | undefined)[] = [];
+    for (const keyId of (await mockDataStorage.getItem(
+      KEY_ID_LIST,
+    )) as string[]) {
+      await mockDataStorage.setItem(KEY_ID, keyId);
+      ids.push(
+        (
+          await getSigningIdentity({
+            sessionStore: mockSessionStore,
+            localStore: mockDataStorage,
+          })
+        )?.sourceId,
+      );
+    }
+
+    expect(ids).toEqual([PHRASE_1.userId, PHRASE_1.userId, PHRASE_1.userId]);
+  });
+
   it("stamps no phrase into a secret-key import", async () => {
     await createWallet();
     await importKey();
@@ -179,10 +202,6 @@ describe("secret sources", () => {
     await createWallet();
     await addSecondPhrase();
     await importKey();
-    await setPinnedSourceId({
-      localStore: mockDataStorage,
-      sourceId: PHRASE_1.userId,
-    });
 
     await signOut();
 
@@ -274,7 +293,10 @@ describe("secret sources", () => {
     await createWallet();
 
     expect(await mockDataStorage.getItem(SECRET_SOURCES_ID)).toBeDefined();
-    expect(await mockDataStorage.getItem(PINNED_SOURCE_ID)).toBeUndefined();
+    // The pin is a public source id in plain storage, not keystore data.
+    expect(await mockDataStorage.getItem(PINNED_SOURCE_ID)).toBe(
+      PHRASE_1.userId,
+    );
     const keyId = await mockDataStorage.getItem(KEY_ID);
     const keyStore = await mockKeyManager.loadKey(keyId, PASSWORD);
     expect(Object.keys(keyStore.extra)).toEqual(["imported", "mnemonicPhrase"]);

@@ -53,24 +53,22 @@ export const loginToAllAccounts = async (
   }
 
   // first make sure the password is correct to get active keystore, short circuit if not
-  const { publicKey: activePublicKey, extra: activeExtra } =
-    await unlockKeystore({
-      keyID,
-      password,
-      keyManager,
-    });
+  const { publicKey: activePublicKey } = await unlockKeystore({
+    keyID,
+    password,
+    keyManager,
+  });
 
   // Pre-V2 migration, unlock pass (#76). It runs before the session rebuild
-  // so the rebuilt account list reads the provenance it writes. The keystore
-  // above is the one pre-V2 builds took "the wallet phrase" from, which is
-  // what keeps the pinned source equal to the existing analytics id.
+  // so the rebuilt account list reads the provenance it writes. Identity is
+  // the pinned source, never the active keystore's phrase; the migration
+  // alone applies the pre-V2 rule once, to pin the existing analytics id.
   let didAttribute = false;
   try {
     didAttribute = await attributePendingAccounts({
       localStore,
       keyManager,
       password,
-      identityPhrase: activeExtra?.mnemonicPhrase,
     });
   } catch (e) {
     // Attribution must never lock the user out; the next unlock retries.

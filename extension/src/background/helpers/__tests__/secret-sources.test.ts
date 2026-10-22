@@ -196,6 +196,49 @@ describe("pinned source id", () => {
 
     expect(await getPinnedSourceId({ localStore: store })).toBeNull();
   });
+
+  it("pins the first source a wallet registers", async () => {
+    const { store } = makeLocalStore();
+
+    await addSecretSource({
+      localStore: store,
+      id: KEY_C,
+      type: SecretSourceType.SECRET_KEY,
+    });
+    await addSecretSource({
+      localStore: store,
+      id: PHRASE_A,
+      type: SecretSourceType.PHRASE,
+    });
+
+    expect(await getPinnedSourceId({ localStore: store })).toBe(KEY_C);
+  });
+
+  it("does not move a pin that is already set", async () => {
+    const { store } = makeLocalStore();
+    await setPinnedSourceId({ localStore: store, sourceId: PHRASE_B });
+
+    await addSecretSource({
+      localStore: store,
+      id: PHRASE_A,
+      type: SecretSourceType.PHRASE,
+    });
+
+    expect(await getPinnedSourceId({ localStore: store })).toBe(PHRASE_B);
+  });
+
+  it("writes the pin before the source record", async () => {
+    const { store } = makeLocalStore();
+
+    await addSecretSource({
+      localStore: store,
+      id: PHRASE_A,
+      type: SecretSourceType.PHRASE,
+    });
+
+    const keys = (store.setItem as jest.Mock).mock.calls.map(([key]) => key);
+    expect(keys).toEqual([PINNED_SOURCE_ID, SECRET_SOURCES_ID]);
+  });
 });
 
 describe("source ids", () => {
