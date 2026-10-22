@@ -4,8 +4,14 @@ import { sessionSlice } from "background/ducks/session";
 import { popupMessageListener } from "background/messageListener/popupMessageListener";
 import { SERVICE_TYPES } from "@shared/constants/services";
 import { WalletType } from "@shared/constants/hardwareWallet";
-import { ConfirmPasswordMessage } from "@shared/api/types/message-request";
-import { AUTH_KEYPAIR_VECTORS } from "@shared/api/helpers/authKeypairVectors";
+import {
+  ConfirmPasswordMessage,
+  RecoverAccountMessage,
+} from "@shared/api/types/message-request";
+import {
+  ACCOUNT_SOURCE_VECTORS,
+  AUTH_KEYPAIR_VECTORS,
+} from "@shared/api/helpers/authKeypairVectors";
 import { deriveSourceIdentity } from "@shared/api/helpers/deriveAuthKeypair";
 import { Account, AccountType, SecretSourceType } from "@shared/api/types";
 import {
@@ -372,6 +378,63 @@ describe("pre-V2 storage migration", () => {
       expect(
         Object.keys(await mockDataStorage.getItem(SECRET_SOURCES_ID)),
       ).toEqual([PHRASE.userId]);
+    });
+
+    describe("after a recovery before the first unlock", () => {
+      const RECOVERED_PHRASE = ACCOUNT_SOURCE_VECTORS.find(
+        (v) => v.mnemonic !== PRE_V2_PHRASE,
+      )!.mnemonic;
+
+      const recover = () =>
+        send({
+          type: SERVICE_TYPES.RECOVER_ACCOUNT,
+          password: PRE_V2_PASSWORD,
+          recoverMnemonic: RECOVERED_PHRASE,
+          isOverwritingAccount: true,
+        } as RecoverAccountMessage);
+
+      beforeEach(async () => {
+        // A wallet that derived far past the one account a recovery creates.
+        await mockDataStorage.setItem(KEY_DERIVATION_NUMBER_ID, "20");
+      });
+
+      it("discards the old wallet's pending list", async () => {
+        await recover();
+
+        expect(
+          await mockDataStorage.getItem(PENDING_ATTRIBUTION_ID),
+        ).toBeUndefined();
+
+        await unlock();
+
+        expect(
+          Object.values(await mockDataStorage.getItem(DERIVATION_INDICES_ID)),
+        ).toEqual([[0]]);
+      });
+
+      it("does not seed the recovered phrase from a stale pending list", async () => {
+        await recover();
+        // The ids a wipe path left behind, none of them in the wallet now.
+        await mockDataStorage.setItem(PENDING_ATTRIBUTION_ID, [
+          PRE_V2_DERIVED_0_ID,
+          PRE_V2_DERIVED_1_ID,
+          PRE_V2_IMPORTED_ID,
+        ]);
+
+        await unlock();
+
+        expect(await mockDataStorage.getItem(PENDING_ATTRIBUTION_ID)).toEqual(
+          [],
+        );
+        // Only the recovered account's own index, so the next account on the
+        // phrase derives index 1, not 21.
+        expect(
+          Object.values(await mockDataStorage.getItem(DERIVATION_INDICES_ID)),
+        ).toEqual([[0]]);
+        expect(
+          Object.keys(await mockDataStorage.getItem(SECRET_SOURCES_ID)),
+        ).toHaveLength(1);
+      });
     });
   });
 

@@ -74,6 +74,15 @@ export const getPendingAttribution = async ({
 }): Promise<string[]> =>
   ((await localStore.getItem(PENDING_ATTRIBUTION_ID)) as string[]) || [];
 
+/** Drops the whole pending list, for the paths that wipe the wallet. */
+export const clearPendingAttribution = async ({
+  localStore,
+}: {
+  localStore: DataStorageAccess;
+}) => {
+  await localStore.remove(PENDING_ATTRIBUTION_ID);
+};
+
 /** Drops `keyId` from the pending list. A no-op when it is not there. */
 export const removePendingAttribution = async ({
   localStore,

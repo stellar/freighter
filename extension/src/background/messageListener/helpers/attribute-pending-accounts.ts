@@ -99,6 +99,19 @@ export const attributePendingAccounts = async ({
   }
 
   const keyIdList = ((await localStore.getItem(KEY_ID_LIST)) as string[]) || [];
+
+  // Ids no longer in the wallet were removed since the install pass ran. Drop
+  // them before anything is registered or seeded: after a recovery the list
+  // holds only the old wallet's ids, and seeding the recovered phrase from the
+  // old counter would skip indices it never used.
+  for (const keyId of pending.filter((id) => !keyIdList.includes(id))) {
+    await removePendingAttribution({ localStore, keyId });
+  }
+
+  if (!keyIdList.some((id) => pending.includes(id))) {
+    return false;
+  }
+
   const counter = await readLegacyCounter(localStore);
   const searchLimit = Math.max(counter, keyIdList.length) + INDEX_SEARCH_MARGIN;
   const wallets = new Map<string, StellarHDWallet>();
@@ -138,11 +151,6 @@ export const attributePendingAccounts = async ({
   }
 
   let attributed = false;
-
-  // Ids no longer in the wallet were removed since the install pass ran.
-  for (const keyId of pending.filter((id) => !keyIdList.includes(id))) {
-    await removePendingAttribution({ localStore, keyId });
-  }
 
   // `keyIdList` order, so "Secret Key N" follows the order accounts were added.
   for (const keyId of keyIdList.filter((id) => pending.includes(id))) {

@@ -34,6 +34,7 @@ import {
 import { SecretSourceType } from "@shared/api/types";
 import { clearDerivationIndices } from "background/helpers/derivation-indices";
 import { clearAccountProvenance } from "background/helpers/account-provenance";
+import { clearPendingAttribution } from "background/helpers/pre-v2-migration";
 
 const { fromMnemonic } = StellarHDWallet;
 
@@ -96,10 +97,13 @@ export const recoverAccount = async ({
     }
 
     // A recovery always starts the wallet afresh, so every phrase's index
-    // set and every account's provenance go with it, whether or not the list
-    // above had anything in it; the recovered phrase rebuilds its own below.
+    // set, every account's provenance and any accounts the pre-V2 migration
+    // left pending go with it, whether or not the list above had anything in
+    // it; the recovered phrase rebuilds its own below.
     await clearDerivationIndices({ localStore });
     await clearAccountProvenance({ localStore });
+    await clearPendingAttribution({ localStore });
+
     // Recovery is onboarding (also the "forgot password" path), which must
     // not be followed by the one-time rebrand announcement.
     await localStore.setItem(
