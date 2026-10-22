@@ -70,10 +70,7 @@
 
 .TransactionDetailModal {
   width: 100%;
-  height: auto;
-  max-width: 53rem;
-  margin: 0 auto;
-  padding: pxToRem(32px) pxToRem(16px);
+  // Padding, width cap and the pinned explorer button come from the sheet.
 
   &__title-row {
     align-items: center;

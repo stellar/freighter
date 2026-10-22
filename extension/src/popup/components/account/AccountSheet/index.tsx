@@ -16,6 +16,12 @@ import { AppDataType } from "helpers/hooks/useGetAppData";
 import { AppDispatch } from "popup/App";
 import { ROUTES } from "popup/constants/routes";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
+import {
+  SheetHeader,
+  SheetHeaderAction,
+  SheetHeaderLayout,
+} from "popup/components/SheetHeader";
+import { SheetLayout } from "popup/components/SheetLayout";
 import { SlideupModal } from "popup/components/SlideupModal";
 import { showToast } from "popup/basics/shadcn/Toast";
 import {
@@ -130,192 +136,66 @@ export const AccountSheet = ({
     }
   };
 
-  const renderBody = () => {
+  // Each body supplies its pinned header and footer; the list between them is
+  // what scrolls, under the sheet's edge fades, like mobile's wallets sheet.
+  const renderSheet = () => {
     if (body === "rename") {
-      // RenameWallet ships its own header and close, so it stands alone as the
-      // whole body rather than sitting under the sheet header.
-      return (
-        <RenameWallet
-          allAccounts={allAccounts}
-          publicKey={renameKey}
-          onSubmit={() => fetchData(true)}
-          onClose={() => setBody("list")}
-        />
-      );
+      // RenameWallet ships its own header, so it stands alone as the whole body.
+      return {
+        header: undefined,
+        footer: undefined,
+        content: (
+          <RenameWallet
+            allAccounts={allAccounts}
+            publicKey={renameKey}
+            onSubmit={() => fetchData(true)}
+            onClose={() => setBody("list")}
+          />
+        ),
+      };
     }
 
     if (body === "add") {
-      return (
-        <>
-          <div className="AccountSheet__header">
-            <button
-              className="AccountSheet__header__action"
-              onClick={() => setBody("list")}
-              aria-label={t("Back")}
-              data-testid="account-sheet-add-back"
-            >
-              <Icon.ArrowLeft />
-            </button>
-            <span className="AccountSheet__title">{t("Add wallet")}</span>
-            <button
-              className="AccountSheet__header__action"
-              onClick={onClose}
-              aria-label={t("Close")}
-              data-testid="AccountSheet__close"
-            >
-              <Icon.XClose />
-            </button>
-          </div>
-          <AddWallet />
-        </>
-      );
+      return {
+        header: (
+          <SheetHeader
+            layout={SheetHeaderLayout.Centered}
+            title={t("Add wallet")}
+            leading={
+              <SheetHeaderAction
+                onClick={() => setBody("list")}
+                aria-label={t("Back")}
+                data-testid="account-sheet-add-back"
+              >
+                <Icon.ArrowLeft />
+              </SheetHeaderAction>
+            }
+            onClose={onClose}
+            closeTestId="AccountSheet__close"
+          />
+        ),
+        footer: undefined,
+        content: <AddWallet />,
+      };
     }
 
-    return (
-      <>
-        <div className="AccountSheet__header">
-          <button
-            className="AccountSheet__header__action"
-            onClick={() => navigateTo(ROUTES.settings, navigate)}
-            aria-label={t("Settings")}
-            data-testid="account-sheet-settings"
-          >
-            <Icon.Settings01 />
-          </button>
-          <button
-            className="AccountSheet__header__action"
-            onClick={onClose}
-            aria-label={t("Close")}
-            data-testid="AccountSheet__close"
-          >
-            <Icon.XClose />
-          </button>
-        </div>
-
-        <div className="AccountSheet__identity" data-testid="wallets-header">
-          <div className="AccountSheet__identity__identicon">
-            <IdenticonImg publicKey={activePublicKey} />
-          </div>
-          {/* Name and address are one tight block; the 16px gap belongs
-              between the identicon, this block, and the action row. */}
-          <div className="AccountSheet__identity__text">
-            <div className="AccountSheet__identity__name">
-              {activeAccountName}
-            </div>
-            <div className="AccountSheet__identity__address">
-              {truncatedPublicKey(activePublicKey)}
-            </div>
-          </div>
-          <div className="AccountSheet__identity__actions">
-            <button
-              className="AccountSheet__identity__action"
-              onClick={() => navigateTo(ROUTES.viewPublicKey, navigate)}
-              data-testid="wallets-header-qr"
-              aria-label={t("Show QR code")}
+    return {
+      header: (
+        <SheetHeader
+          leading={
+            <SheetHeaderAction
+              onClick={() => navigateTo(ROUTES.settings, navigate)}
+              aria-label={t("Settings")}
+              data-testid="account-sheet-settings"
             >
-              <Icon.QrCode02 />
-            </button>
-            {/* account.public_key_copied carries no source and never the raw
-                key. Emitted from copyAddress only once the clipboard write
-                succeeds, so failed copies aren't counted. */}
-            <button
-              className="AccountSheet__identity__action"
-              onClick={copyAddress}
-              data-testid="wallets-header-copy"
-              aria-label={t("Copy wallet address")}
-            >
-              <Icon.Copy01 />
-            </button>
-            {/* Gated on stellar.expert's supported networks, not merely on
-                "not a custom network": it has no Futurenet explorer, and
-                experimental mode makes Futurenet the active network. */}
-            {isStellarExpertSupported(networkDetails) ? (
-              <button
-                className="AccountSheet__identity__action"
-                onClick={() => {
-                  openTab(
-                    `${getStellarExpertUrl(networkDetails)}/account/${activePublicKey}`,
-                  );
-                  emitMetric(METRIC_NAMES.accountStellarExpertOpened);
-                }}
-                data-testid="wallets-header-explorer"
-                aria-label={t("View on stellar.expert")}
-              >
-                <Icon.LinkExternal01 />
-              </button>
-            ) : null}
-            <button
-              className="AccountSheet__identity__action"
-              onClick={() => {
-                setRenameKey(activePublicKey);
-                setBody("rename");
-              }}
-              data-testid="wallets-header-edit-name"
-              aria-label={t("Rename wallet")}
-            >
-              <Icon.Edit01 />
-            </button>
-          </div>
-        </div>
-
-        <div className="AccountSheet__divider" />
-
-        <div className="AccountSheet__list">
-          {hasError ? (
-            <Notification
-              variant="error"
-              title={t("Failed to fetch your wallets.")}
-            >
-              {t("Your wallets could not be fetched at this time.")}
-            </Notification>
-          ) : (
-            allAccounts.map(
-              ({ publicKey, name, imported, hardwareWalletType }) => {
-                const isSelected = activePublicKey === publicKey;
-                const totalValueUsd = accountValue
-                  ? accountValue[publicKey]
-                  : "";
-
-                return (
-                  <WalletRow
-                    key={publicKey}
-                    isFetchingTokenPrices={isFetchingTokenPrices}
-                    accountName={name}
-                    accountValue={totalValueUsd}
-                    isImported={imported}
-                    hardwareWalletType={hardwareWalletType}
-                    publicKey={publicKey}
-                    isSelected={isSelected}
-                    onClick={async (publicKey) => {
-                      await dispatch(makeAccountActive(publicKey));
-                      dispatch(
-                        clearBalancesForAccount({ publicKey, networkDetails }),
-                      );
-                      dispatch(
-                        clearCollectiblesForAccount({
-                          publicKey,
-                          networkDetails,
-                        }),
-                      );
-                      // Close before refetching: Home renders <Loading /> while
-                      // the new account loads, which unmounts this sheet
-                      // anyway. Closing first keeps that from reading as a
-                      // flicker.
-                      onClose();
-                      await onAccountChanged({ publicKey });
-                    }}
-                  />
-                );
-              },
-            )
-          )}
-          {isLoading ? (
-            <div className="AccountSheet__loader">
-              <Loader size="1rem" />
-            </div>
-          ) : null}
-        </div>
-
+              <Icon.Settings02 />
+            </SheetHeaderAction>
+          }
+          onClose={onClose}
+          closeTestId="AccountSheet__close"
+        />
+      ),
+      footer: (
         <div className="AccountSheet__add-wallet">
           <Button
             size="xl"
@@ -329,9 +209,141 @@ export const AccountSheet = ({
             {t("Add wallet")}
           </Button>
         </div>
-      </>
-    );
+      ),
+      content: (
+        <>
+          <div className="AccountSheet__identity" data-testid="wallets-header">
+            <div className="AccountSheet__identity__identicon">
+              <IdenticonImg publicKey={activePublicKey} />
+            </div>
+            {/* Name and address are one tight block; the 16px gap belongs
+              between the identicon, this block, and the action row. */}
+            <div className="AccountSheet__identity__text">
+              <div className="AccountSheet__identity__name">
+                {activeAccountName}
+              </div>
+              <div className="AccountSheet__identity__address">
+                {truncatedPublicKey(activePublicKey)}
+              </div>
+            </div>
+            <div className="AccountSheet__identity__actions">
+              <button
+                className="AccountSheet__identity__action"
+                onClick={() => navigateTo(ROUTES.viewPublicKey, navigate)}
+                data-testid="wallets-header-qr"
+                aria-label={t("Show QR code")}
+              >
+                <Icon.QrCode02 />
+              </button>
+              {/* account.public_key_copied carries no source and never the raw
+                key. Emitted from copyAddress only once the clipboard write
+                succeeds, so failed copies aren't counted. */}
+              <button
+                className="AccountSheet__identity__action"
+                onClick={copyAddress}
+                data-testid="wallets-header-copy"
+                aria-label={t("Copy wallet address")}
+              >
+                <Icon.Copy01 />
+              </button>
+              {/* Gated on stellar.expert's supported networks, not merely on
+                "not a custom network": it has no Futurenet explorer, and
+                experimental mode makes Futurenet the active network. */}
+              {isStellarExpertSupported(networkDetails) ? (
+                <button
+                  className="AccountSheet__identity__action"
+                  onClick={() => {
+                    openTab(
+                      `${getStellarExpertUrl(networkDetails)}/account/${activePublicKey}`,
+                    );
+                    emitMetric(METRIC_NAMES.accountStellarExpertOpened);
+                  }}
+                  data-testid="wallets-header-explorer"
+                  aria-label={t("View on stellar.expert")}
+                >
+                  <Icon.LinkExternal01 />
+                </button>
+              ) : null}
+              <button
+                className="AccountSheet__identity__action"
+                onClick={() => {
+                  setRenameKey(activePublicKey);
+                  setBody("rename");
+                }}
+                data-testid="wallets-header-edit-name"
+                aria-label={t("Rename wallet")}
+              >
+                <Icon.Edit01 />
+              </button>
+            </div>
+          </div>
+
+          <div className="AccountSheet__divider" />
+
+          <div className="AccountSheet__list">
+            {hasError ? (
+              <Notification
+                variant="error"
+                title={t("Failed to fetch your wallets.")}
+              >
+                {t("Your wallets could not be fetched at this time.")}
+              </Notification>
+            ) : (
+              allAccounts.map(
+                ({ publicKey, name, imported, hardwareWalletType }) => {
+                  const isSelected = activePublicKey === publicKey;
+                  const totalValueUsd = accountValue
+                    ? accountValue[publicKey]
+                    : "";
+
+                  return (
+                    <WalletRow
+                      key={publicKey}
+                      isFetchingTokenPrices={isFetchingTokenPrices}
+                      accountName={name}
+                      accountValue={totalValueUsd}
+                      isImported={imported}
+                      hardwareWalletType={hardwareWalletType}
+                      publicKey={publicKey}
+                      isSelected={isSelected}
+                      onClick={async (publicKey) => {
+                        await dispatch(makeAccountActive(publicKey));
+                        dispatch(
+                          clearBalancesForAccount({
+                            publicKey,
+                            networkDetails,
+                          }),
+                        );
+                        dispatch(
+                          clearCollectiblesForAccount({
+                            publicKey,
+                            networkDetails,
+                          }),
+                        );
+                        // Close before refetching: Home renders <Loading /> while
+                        // the new account loads, which unmounts this sheet
+                        // anyway. Closing first keeps that from reading as a
+                        // flicker.
+                        onClose();
+                        await onAccountChanged({ publicKey });
+                      }}
+                    />
+                  );
+                },
+              )
+            )}
+            {isLoading ? (
+              <div className="AccountSheet__loader">
+                <Loader size="1rem" />
+              </div>
+            ) : null}
+          </div>
+        </>
+      ),
+    };
   };
+
+  const { header, footer, content } = renderSheet();
 
   return (
     <SlideupModal
@@ -339,12 +351,9 @@ export const AccountSheet = ({
       setIsModalOpen={onClose}
       ariaLabel={t("Wallets")}
     >
-      <div
-        className={`AccountSheet AccountSheet--${body}`}
-        data-testid="AccountSheet"
-      >
-        {renderBody()}
-      </div>
+      <SheetLayout header={header} footer={footer} data-testid="AccountSheet">
+        <div className="AccountSheet">{content}</div>
+      </SheetLayout>
     </SlideupModal>
   );
 };

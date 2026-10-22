@@ -53,7 +53,8 @@
   // Matches .View__inset's max-width so the sheet's edges line up with the
   // content column in fullscreen instead of stretching the full 1100px.
   --slideup-modal--max-width: 53rem;
-  --slideup-modal--top-gap: 3rem;
+  // Tall sheets stop 8px from the top too, like the Varial frames.
+  --slideup-modal--top-gap: var(--slideup-modal--gutter);
   --slideup-modal--max-height: calc(
     100dvh - var(--slideup-modal--inset-bottom) - var(--slideup-modal--top-gap)
   );

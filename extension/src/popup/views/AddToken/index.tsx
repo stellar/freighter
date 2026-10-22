@@ -604,7 +604,8 @@ export const AddToken = () => {
         onSuccess={handleTrustlineDone}
         onClose={() => setShowTrustlineReview(false)}
         initialFee={displayFee}
-        isFullHeight
+        isStandalone
+        hideCloseTabHint
       />
     );
   }

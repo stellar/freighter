@@ -6,7 +6,6 @@ import { useFormik } from "formik";
 import { Button, Icon, Notification } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
-import { LoadingBackground } from "popup/basics/LoadingBackground";
 import { View } from "popup/basics/layout/View";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { AppDispatch } from "popup/App";
@@ -16,6 +15,7 @@ import {
   isMainnet,
   isMuxedAccount,
 } from "helpers/stellar";
+import { useReviewSettingsHandoff } from "popup/helpers/useReviewSettingsHandoff";
 import { NetworkCongestion } from "popup/helpers/useNetworkFees";
 import { emitMetric, emitScreenViewed } from "helpers/metrics";
 import {
@@ -70,6 +70,7 @@ import { SelectedCollectible } from "popup/components/sendCollectible/SelectedCo
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { useGetSendAmountData } from "./hooks/useSendAmountData";
 import { SimulateTxData, SimulateResult } from "./hooks/useSimulateTxData";
+import { SheetLayout } from "popup/components/SheetLayout";
 import { SlideupModal } from "popup/components/SlideupModal";
 import { MemoEditingContext } from "popup/constants/send-payment";
 import { AmountCard } from "popup/components/amount/AmountCard";
@@ -198,6 +199,12 @@ export const SendAmount = ({
   // so neither is reported as a rejection.
   const wasReviewingRef = useRef(false);
   const skipRejectionRef = useRef(false);
+  const { openSettingsFromReview, closeSettings, returnToReview } =
+    useReviewSettingsHandoff({
+      setIsReviewingTx,
+      setIsEditingSettings,
+      skipRejectionRef,
+    });
 
   /**
    * Reports the review stages: the `confirm` stage when the review opens, and
@@ -633,6 +640,11 @@ export const SendAmount = ({
     }
   };
 
+  const closeSendSettings = () => {
+    setDraftFeeForDisplay(null);
+    closeSettings();
+  };
+
   return (
     <React.Fragment>
       <SubviewHeader
@@ -871,37 +883,23 @@ export const SendAmount = ({
           </div>
         </div>
       </View.Content>
-      {isEditingMemo ? (
-        <>
-          <div className="EditMemoWrapper">
-            <EditMemo
-              memo={transactionData.memo || ""}
-              memoType={transactionData.memoType}
-              onClose={() => {
-                setIsEditingMemo(false);
-                // Reopen review sheet if user came from review flow
-                if (memoEditingContext === MemoEditingContext.Review) {
-                  setIsReviewingTx(true);
-                }
-                setMemoEditingContext(null);
-              }}
-              onSubmit={async ({ memo }: { memo: string }) => {
-                dispatch(saveMemoAndType({ memo, memoType: "" }));
-                setIsEditingMemo(false);
-                // Regenerate transaction XDR with new memo (now reads memo from Redux state inside fetchData)
-                await fetchSimulationData();
-                // Reopen review sheet after memo is saved and XDR is regenerated only if user came from review flow
-                if (memoEditingContext === MemoEditingContext.Review) {
-                  setIsReviewingTx(true);
-                  setMemoEditingContext(null);
-                }
-              }}
-              disabled={isMemoDisabled}
-              disabledMessage={memoDisabledMessage}
-            />
-          </div>
-          <LoadingBackground
-            onClick={() => {
+      <SlideupModal
+        isModalOpen={isEditingMemo}
+        setIsModalOpen={() => {
+          setIsEditingMemo(false);
+          // Reopen review sheet if user came from review flow
+          if (memoEditingContext === MemoEditingContext.Review) {
+            setIsReviewingTx(true);
+          }
+          setMemoEditingContext(null);
+        }}
+        ariaLabel={t("Memo")}
+      >
+        {isEditingMemo ? (
+          <EditMemo
+            memo={transactionData.memo || ""}
+            memoType={transactionData.memoType}
+            onClose={() => {
               setIsEditingMemo(false);
               // Reopen review sheet if user came from review flow
               if (memoEditingContext === MemoEditingContext.Review) {
@@ -909,61 +907,71 @@ export const SendAmount = ({
               }
               setMemoEditingContext(null);
             }}
-            isActive={isEditingMemo}
+            onSubmit={async ({ memo }: { memo: string }) => {
+              dispatch(saveMemoAndType({ memo, memoType: "" }));
+              setIsEditingMemo(false);
+              // Regenerate transaction XDR with new memo (now reads memo from Redux state inside fetchData)
+              await fetchSimulationData();
+              // Reopen review sheet after memo is saved and XDR is regenerated only if user came from review flow
+              if (memoEditingContext === MemoEditingContext.Review) {
+                setIsReviewingTx(true);
+                setMemoEditingContext(null);
+              }
+            }}
+            disabled={isMemoDisabled}
+            disabledMessage={memoDisabledMessage}
           />
-        </>
-      ) : null}
-      {isEditingSettings && !isShowingFeesPane ? (
-        <>
-          <div className="EditMemoWrapper">
-            <EditSettings
-              fee={draftFeeForDisplay ?? editSettingsFee}
-              defaultFee={recommendedFee}
-              title={t("Send Settings")}
-              timeout={transactionData.transactionTimeout}
-              congestion={networkCongestion}
-              isSoroban={isToken || isCollectible}
-              onFeeChange={(v) => {
-                setDraftFeeForDisplay(v);
-              }}
-              onClose={() => {
-                setIsEditingSettings(false);
-                setDraftFeeForDisplay(null);
-              }}
-              onShowFeesInfo={(currentDraftFee) => {
-                trackSendFeeBreakdownOpened("settings");
-                setDraftFeeForDisplay(currentDraftFee);
-                setIsShowingFeesPane(true);
-              }}
-              onSubmit={async ({
-                fee,
-                timeout,
-              }: {
-                fee: string;
-                timeout: number;
-              }) => {
-                const nextFee = fee.trim() || editSettingsFee;
-                dispatch(saveTransactionFee(nextFee));
-                dispatch(saveTransactionTimeout(timeout));
-                hasManuallySetFeeRef.current = nextFee;
-                dispatch(saveManualTransactionFee(nextFee));
-                setIsEditingSettings(false);
-                setDraftFeeForDisplay(null);
-                if (destination) {
-                  await fetchSimulationData();
-                }
-              }}
-            />
-          </div>
-          <LoadingBackground
-            onClick={() => {
+        ) : (
+          <></>
+        )}
+      </SlideupModal>
+      <SlideupModal
+        isModalOpen={isEditingSettings && !isShowingFeesPane}
+        setIsModalOpen={closeSendSettings}
+        ariaLabel={t("Settings")}
+      >
+        {isEditingSettings ? (
+          <EditSettings
+            fee={draftFeeForDisplay ?? editSettingsFee}
+            defaultFee={recommendedFee}
+            timeout={transactionData.transactionTimeout}
+            congestion={networkCongestion}
+            isSoroban={isToken || isCollectible}
+            onFeeChange={(v) => {
+              setDraftFeeForDisplay(v);
+            }}
+            onClose={closeSendSettings}
+            onShowFeesInfo={(currentDraftFee) => {
+              trackSendFeeBreakdownOpened("settings");
+              setDraftFeeForDisplay(currentDraftFee);
+              setIsShowingFeesPane(true);
+            }}
+            onSubmit={async ({
+              fee,
+              timeout,
+            }: {
+              fee: string;
+              timeout: number;
+            }) => {
+              const nextFee = fee.trim() || editSettingsFee;
+              dispatch(saveTransactionFee(nextFee));
+              dispatch(saveTransactionTimeout(timeout));
+              hasManuallySetFeeRef.current = nextFee;
+              dispatch(saveManualTransactionFee(nextFee));
               setIsEditingSettings(false);
               setDraftFeeForDisplay(null);
+              // Rebuild the XDR with the new fee before the review comes back,
+              // so Confirm never submits the old one.
+              if (destination) {
+                await fetchSimulationData();
+              }
+              returnToReview();
             }}
-            isActive={isEditingSettings}
           />
-        </>
-      ) : null}
+        ) : (
+          <></>
+        )}
+      </SlideupModal>
       {/* Mounted unconditionally, with only the contents gated -- as the review
           sheet below already is. An unmount on close would cut the slide-out
           off, since SlideupModal reports the close as it starts. */}
@@ -976,24 +984,22 @@ export const SendAmount = ({
         ariaLabel={t("Fees")}
       >
         {isShowingFeesPane ? (
-          <View.Inset>
-            <div className="SendAmount__FeesPane">
-              <FeesPane
-                fee={buildFeesPaneTotal(
-                  feeForFeesPane,
-                  simulationState.state === RequestState.ERROR
-                    ? undefined
-                    : simulationState.data?.resourceFee,
-                )}
-                simulationState={simulationState}
-                isSoroban={isToken || isCollectible}
-                onClose={() => {
-                  setIsShowingFeesPane(false);
-                  setIsEditingSettings(true);
-                }}
-              />
-            </div>
-          </View.Inset>
+          <SheetLayout>
+            <FeesPane
+              fee={buildFeesPaneTotal(
+                feeForFeesPane,
+                simulationState.state === RequestState.ERROR
+                  ? undefined
+                  : simulationState.data?.resourceFee,
+              )}
+              simulationState={simulationState}
+              isSoroban={isToken || isCollectible}
+              onClose={() => {
+                setIsShowingFeesPane(false);
+                setIsEditingSettings(true);
+              }}
+            />
+          </SheetLayout>
         ) : (
           <></>
         )}
@@ -1001,7 +1007,7 @@ export const SendAmount = ({
       <SlideupModal
         setIsModalOpen={() => setIsReviewingTx(false)}
         isModalOpen={isReviewingTx}
-        ariaLabel={t("Review transaction")}
+        ariaLabel={t("Review send")}
       >
         {isReviewingTx ? (
           <ReviewTx
@@ -1013,6 +1019,7 @@ export const SendAmount = ({
               skipRejectionRef.current = true;
               goToNext();
             }}
+            onEditSettings={openSettingsFromReview}
             onAddMemo={() => {
               // Leaving to edit the memo is not a decision on the transaction.
               skipRejectionRef.current = true;
@@ -1030,6 +1037,7 @@ export const SendAmount = ({
             simulationState={simulationState}
             srcAsset={asset}
             title={t("You are sending")}
+            sheetTitle={t("Review send")}
           />
         ) : (
           <></>

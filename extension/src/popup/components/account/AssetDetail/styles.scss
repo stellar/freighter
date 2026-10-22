@@ -246,8 +246,6 @@
   }
 
   &__info-modal {
-    padding: 2rem var(--popup--side-padding);
-
     &__total-box {
       align-items: center;
       border: 1px solid var(--sds-clr-gray-06);
@@ -312,16 +310,6 @@
 
   &__options {
     cursor: pointer;
-  }
-
-  // One height for every stage of the remove flow -- loading, details, the
-  // fee/timeout/memo panes and submit -- so the sheet does not resize under
-  // the user as panes change. Capped by the sheet's own ceiling so sidebar and
-  // fullscreen still behave.
-  &__remove-sheet {
-    display: flex;
-    flex-direction: column;
-    height: min(var(--slideup-modal--max-height), #{pxToRem(420px)});
   }
 
   // Positioning is owned by Radix's popper wrapper, not this element: the

@@ -5,6 +5,8 @@ import { Button, Icon, Loader, Notification } from "@stellar/design-system";
 
 import { Collection } from "@shared/api/types/types";
 import { changeCollectibleVisibility } from "@shared/api/internal";
+import { SheetHeader } from "popup/components/SheetHeader";
+import { SheetLayout } from "popup/components/SheetLayout";
 import { SlideupModal } from "popup/components/SlideupModal";
 import { showToast } from "popup/basics/shadcn/Toast";
 import { publicKeySelector } from "popup/ducks/accountServices";
@@ -124,124 +126,104 @@ export const HiddenCollectibles = ({
       setIsModalOpen={onClose}
       ariaLabel={t("Hidden collectibles")}
     >
-      <div className="HiddenCollectibles" data-testid="HiddenCollectibles">
-        <div className="HiddenCollectibles__header">
-          <span className="HiddenCollectibles__title">
-            {t("Hidden collectibles")}
-          </span>
-          <button
-            // Explicit, not decorative: AddCollectibles is this sheet's only
-            // caller and it renders inside a Formik `<Form>`, so an untyped
-            // button submits it -- dismissing the sheet would add the
-            // collectible. SlideupModal renders in place rather than in a
-            // portal, so the sheet really is inside that form element.
-            type="button"
-            className="HiddenCollectibles__close"
-            onClick={onClose}
-            aria-label={t("Close")}
-            data-testid="HiddenCollectibles__close"
-          >
-            <Icon.XClose />
-          </button>
-        </div>
+      <SheetLayout
+        data-testid="HiddenCollectibles"
+        header={
+          // SheetHeader's X is type="button": this sheet renders inside
+          // AddCollectibles' Formik <Form>, so an untyped button would submit
+          // it and add the collectible on dismiss.
+          <SheetHeader
+            title={t("Hidden collectibles")}
+            onClose={onClose}
+            closeTestId="HiddenCollectibles__close"
+          />
+        }
+      >
+        <div className="HiddenCollectibles">
+          {(() => {
+            if (loadError) {
+              return (
+                <div
+                  className="HiddenCollectibles__empty"
+                  data-testid="HiddenCollectibles__error"
+                >
+                  <Notification
+                    variant="error"
+                    title={t("Unable to load hidden collectibles")}
+                  />
+                </div>
+              );
+            }
 
-        {(() => {
-          if (loadError) {
-            return (
-              <div
-                className="HiddenCollectibles__empty"
-                data-testid="HiddenCollectibles__error"
-              >
-                <Notification
-                  variant="error"
-                  title={t("Unable to load hidden collectibles")}
-                />
-              </div>
-            );
-          }
+            if (isLoading) {
+              return (
+                <div
+                  className="HiddenCollectibles__loader"
+                  data-testid="HiddenCollectibles__loader"
+                >
+                  <Loader size="2rem" />
+                </div>
+              );
+            }
 
-          if (isLoading) {
-            return (
-              <div
-                className="HiddenCollectibles__loader"
-                data-testid="HiddenCollectibles__loader"
-              >
-                <Loader size="2rem" />
-              </div>
-            );
-          }
-
-          return hiddenItems.length ? (
-            <div className="HiddenCollectibles__list">
-              {hiddenItems.map((item) => {
-                const collectibleKey = `${item.collectionAddress}:${item.tokenId}`;
-                return (
-                  <div
-                    className="HiddenCollectibles__row"
-                    key={collectibleKey}
-                    data-testid={`hidden-collectible-${item.tokenId}`}
-                  >
-                    <div className="HiddenCollectibles__row__image">
-                      <CollectibleInfoImage
-                        image={item.image}
-                        name={item.tokenId}
-                        isSmall
-                      />
-                    </div>
-                    <div className="HiddenCollectibles__row__identity">
-                      <div className="HiddenCollectibles__row__name">
-                        {item.name || item.collectionName}
-                      </div>
-                      <div className="HiddenCollectibles__row__token-id">
-                        #{item.tokenId}
-                      </div>
-                    </div>
-                    <Button
-                      // See the close button above: the design-system `Button`
-                      // spreads props onto a bare `<button>` without defaulting
-                      // the type, so this needs it too.
-                      type="button"
-                      // `md` matches the designs: 32px tall, 6px radius. Not
-                      // isRounded -- the row action is a rounded rect, only the
-                      // footer is a pill.
-                      size="md"
-                      variant="tertiary"
-                      isLoading={pendingKey === collectibleKey}
-                      disabled={pendingKey !== null}
-                      onClick={() =>
-                        handleUnhide(item.collectionAddress, item.tokenId)
-                      }
-                      data-testid={`hidden-collectible-unhide-${item.tokenId}`}
-                      icon={<Icon.Eye />}
-                      iconPosition="right"
+            return hiddenItems.length ? (
+              <div className="HiddenCollectibles__list">
+                {hiddenItems.map((item) => {
+                  const collectibleKey = `${item.collectionAddress}:${item.tokenId}`;
+                  return (
+                    <div
+                      className="HiddenCollectibles__row"
+                      key={collectibleKey}
+                      data-testid={`hidden-collectible-${item.tokenId}`}
                     >
-                      {t("Unhide")}
-                    </Button>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="HiddenCollectibles__empty">
-              {t("No hidden collectibles")}
-            </div>
-          );
-        })()}
-
-        <div className="HiddenCollectibles__footer">
-          <Button
-            type="button"
-            size="md"
-            variant="tertiary"
-            isRounded
-            isFullWidth
-            onClick={onClose}
-            data-testid="HiddenCollectibles__done"
-          >
-            {t("Close")}
-          </Button>
+                      <div className="HiddenCollectibles__row__image">
+                        <CollectibleInfoImage
+                          image={item.image}
+                          name={item.tokenId}
+                          isSmall
+                        />
+                      </div>
+                      <div className="HiddenCollectibles__row__identity">
+                        <div className="HiddenCollectibles__row__name">
+                          {item.name || item.collectionName}
+                        </div>
+                        <div className="HiddenCollectibles__row__token-id">
+                          #{item.tokenId}
+                        </div>
+                      </div>
+                      <Button
+                        // See the close button above: the design-system `Button`
+                        // spreads props onto a bare `<button>` without defaulting
+                        // the type, so this needs it too.
+                        type="button"
+                        // `md` matches the designs: 32px tall, 6px radius. Not
+                        // isRounded -- the row action is a rounded rect, only the
+                        // footer is a pill.
+                        size="md"
+                        variant="tertiary"
+                        isLoading={pendingKey === collectibleKey}
+                        disabled={pendingKey !== null}
+                        onClick={() =>
+                          handleUnhide(item.collectionAddress, item.tokenId)
+                        }
+                        data-testid={`hidden-collectible-unhide-${item.tokenId}`}
+                        icon={<Icon.Eye />}
+                        iconPosition="right"
+                      >
+                        {t("Unhide")}
+                      </Button>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="HiddenCollectibles__empty">
+                {t("No hidden collectibles")}
+              </div>
+            );
+          })()}
         </div>
-      </div>
+      </SheetLayout>
     </SlideupModal>
   );
 };

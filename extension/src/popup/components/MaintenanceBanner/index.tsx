@@ -1,12 +1,13 @@
 import React, { useCallback, useState } from "react";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
-import { Button, Heading, Icon, Text } from "@stellar/design-system";
+import { Button, Icon, Text } from "@stellar/design-system";
 
 import { maintenanceBannerSelector } from "popup/ducks/remoteConfig";
 import { BannerTheme } from "popup/helpers/maintenance/types";
 import { openTab } from "popup/helpers/navigate";
-import { View } from "popup/basics/layout/View";
+import { SheetHeader } from "popup/components/SheetHeader";
+import { SheetLayout } from "popup/components/SheetLayout";
 import { SlideupModal } from "popup/components/SlideupModal";
 
 import "./styles.scss";
@@ -27,37 +28,6 @@ function getBannerIcon(theme: BannerTheme): React.ReactElement {
     case BannerTheme.Tertiary:
     default:
       return <Icon.InfoCircle />;
-  }
-}
-
-/** CSS color value for each modal icon theme, applied as inline style to override SDS defaults. */
-const MODAL_ICON_COLOR: Record<BannerTheme, string> = {
-  [BannerTheme.Warning]: "var(--sds-clr-amber-09)",
-  [BannerTheme.Error]: "var(--sds-clr-red-09)",
-  [BannerTheme.Primary]: "var(--sds-clr-lilac-09)",
-  [BannerTheme.Secondary]: "var(--sds-clr-lilac-09)",
-  [BannerTheme.Tertiary]: "var(--sds-clr-gray-09)",
-};
-
-/**
- * Maps a `BannerTheme` to the modal header icon (larger, inside the sheet).
- * Matches mobile: AlertOctagon for high-severity, InfoCircle otherwise.
- * Color is applied via inline style to guarantee it overrides any SDS stylesheet.
- *
- * @param theme - The theme from the Amplitude payload
- * @returns An SDS Icon element
- */
-function getModalIcon(theme: BannerTheme): React.ReactElement {
-  const iconStyle = { color: MODAL_ICON_COLOR[theme] };
-  switch (theme) {
-    case BannerTheme.Warning:
-    case BannerTheme.Error:
-      return <Icon.AlertOctagon style={iconStyle} />;
-    case BannerTheme.Primary:
-    case BannerTheme.Secondary:
-    case BannerTheme.Tertiary:
-    default:
-      return <Icon.InfoCircle style={iconStyle} />;
   }
 }
 
@@ -138,32 +108,13 @@ export const MaintenanceBanner: React.FC = () => {
           setIsModalOpen={setIsModalOpen}
           ariaLabel={activeContent.modal.title}
         >
-          <View.Inset>
-            <div
-              className="MaintenanceBanner__modal"
-              data-testid="maintenance-banner-modal"
-            >
-              <div className="MaintenanceBanner__modal-header">
-                <div
-                  className={`MaintenanceBanner__modal-icon MaintenanceBanner__modal-icon--${activeContent.theme}`}
-                >
-                  {getModalIcon(activeContent.theme)}
-                </div>
-                <button
-                  className="MaintenanceBanner__modal-close"
-                  onClick={() => setIsModalOpen(false)}
-                  aria-label={t("Close")}
-                >
-                  <Icon.X />
-                </button>
-              </div>
-              <Heading
-                as="h3"
-                size="xs"
-                addlClassName="MaintenanceBanner__modal-title"
-              >
-                {activeContent.modal.title}
-              </Heading>
+          <SheetLayout data-testid="maintenance-banner-modal">
+            <div className="MaintenanceBanner__modal">
+              <SheetHeader
+                title={activeContent.modal.title}
+                onClose={() => setIsModalOpen(false)}
+                closeTestId="maintenance-banner-close-button"
+              />
               {activeContent.modal.body.length > 0 && (
                 <div className="MaintenanceBanner__modal-body">
                   {activeContent.modal.body.map((paragraph, index) => (
@@ -188,7 +139,7 @@ export const MaintenanceBanner: React.FC = () => {
                 {t("Done")}
               </Button>
             </div>
-          </View.Inset>
+          </SheetLayout>
         </SlideupModal>
       )}
     </>

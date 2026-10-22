@@ -9,6 +9,7 @@ import {
   Textarea,
   Text,
 } from "@stellar/design-system";
+import { SheetHeader } from "popup/components/SheetHeader";
 import { useTranslation, Trans } from "react-i18next";
 import { Field, FieldProps, Formik, Form } from "formik";
 import { object as YupObject, string as YupString } from "yup";
@@ -435,8 +436,6 @@ interface BlockAidAssetScanExpandedProps {
 }
 
 interface BlockaidAssetDetailPaneProps {
-  headerIconClass: string;
-  headerIcon: React.ReactNode;
   title: string;
   subtitle: string;
   detailRows: React.ReactNode;
@@ -444,21 +443,13 @@ interface BlockaidAssetDetailPaneProps {
 }
 
 const BlockaidAssetDetailPane = ({
-  headerIconClass,
-  headerIcon,
   title,
   subtitle,
   detailRows,
   onClose,
 }: BlockaidAssetDetailPaneProps) => (
   <div className="BlockaidDetailsExpanded">
-    <div className="BlockaidDetailsExpanded__Header">
-      <div className={headerIconClass}>{headerIcon}</div>
-      <div className="Close" onClick={onClose}>
-        <Icon.X />
-      </div>
-    </div>
-    <div className="BlockaidDetailsExpanded__Title">{title}</div>
+    <SheetHeader title={title} onClose={onClose} />
     <div className="BlockaidDetailsExpanded__SubTitle">{subtitle}</div>
     <div className="BlockaidDetailsExpanded__Details">
       {detailRows}
@@ -479,8 +470,6 @@ export const BlockAidAssetScanExpanded = ({
   if (blockaidOverrideState === SecurityLevel.MALICIOUS) {
     return (
       <BlockaidAssetDetailPane
-        headerIconClass="WarningMarkError"
-        headerIcon={<Icon.AlertOctagon />}
         title={t("Do not proceed")}
         subtitle={t(
           "This token has been flagged as malicious for the following reasons.",
@@ -501,8 +490,6 @@ export const BlockAidAssetScanExpanded = ({
   if (blockaidOverrideState === SecurityLevel.SUSPICIOUS) {
     return (
       <BlockaidAssetDetailPane
-        headerIconClass="WarningMark"
-        headerIcon={<Icon.AlertTriangle />}
         title={t("Suspicious Request")}
         subtitle={t(
           "This token has been flagged as suspicious for the following reasons.",
@@ -524,8 +511,6 @@ export const BlockAidAssetScanExpanded = ({
   if (shouldTreatAssetAsUnableToScan(scanResult)) {
     return (
       <BlockaidAssetDetailPane
-        headerIconClass="WarningMark"
-        headerIcon={<Icon.AlertTriangle />}
         title={t("Proceed with caution")}
         subtitle={t("We were unable to scan this token for security threats")}
         detailRows={
@@ -562,10 +547,6 @@ export const BlockAidAssetScanExpanded = ({
         ),
       };
 
-  const warningType = isMalicious
-    ? { class: "WarningMarkError", icon: <Icon.AlertOctagon /> }
-    : { class: "WarningMark", icon: <Icon.AlertTriangle /> };
-
   const fallbackMessage = isMalicious
     ? t("This token was flagged as malicious")
     : t("This token was flagged as suspicious");
@@ -590,8 +571,6 @@ export const BlockAidAssetScanExpanded = ({
 
   return (
     <BlockaidAssetDetailPane
-      headerIconClass={warningType.class}
-      headerIcon={warningType.icon}
       title={title}
       subtitle={description}
       detailRows={featureRows}
@@ -934,29 +913,13 @@ export const BlockAidScanExpanded = ({
   const subtitle = isAssetScan
     ? t("This token does not appear safe for the following reasons.")
     : t("This transaction does not appear safe for the following reasons.");
-  const headerIcon = mergedIsMalicious ? (
-    <div className="WarningMarkError">
-      <Icon.AlertOctagon />
-    </div>
-  ) : (
-    <div className="WarningMark">
-      <Icon.AlertTriangle />
-    </div>
-  );
-
   return (
     <div className="BlockaidDetailsExpanded">
-      <div className="BlockaidDetailsExpanded__Header">
-        {headerIcon}
-        <div
-          className="Close"
-          onClick={onClose}
-          data-testid="blockaid-details-close"
-        >
-          <Icon.X />
-        </div>
-      </div>
-      <div className="BlockaidDetailsExpanded__Title">{title}</div>
+      <SheetHeader
+        title={title}
+        onClose={onClose}
+        closeTestId="blockaid-details-close"
+      />
       <div className="BlockaidDetailsExpanded__SubTitle">{subtitle}</div>
       <div className="BlockaidDetailsExpanded__Details">
         {allWarnings.map((warning, index) => (

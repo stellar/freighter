@@ -1,100 +1,21 @@
 @use "../../../../styles/utils.scss" as *;
 
 .ChangeTrustInternal {
-  z-index: var(--z-index--banner);
-  position: relative;
   display: flex;
   flex-direction: column;
   width: 100%;
   margin: 0 auto;
-  background-color: var(--sds-clr-gray-01);
-  border-radius: 0.875rem;
 
-  // Full popup view (external Add Token), vs the content-sized in-app modal:
-  // fill the height so actions/footer pin to the bottom and the scroll region
-  // expands to occupy all the space down to the buttons (no gray gap). Use a
-  // hard height (not min-height) so the inner Body is firmly bounded and
-  // becomes the scroll container instead of staying content-sized.
+  // As a page (AddToken's trustline review) the layout fills the view so the
+  // actions sit at the bottom even when the body is short.
   &--standalone {
-    flex: 1;
-    height: 100%;
-    min-height: 0;
-    overflow: hidden;
-    // A page here rather than a sheet, so it and its action row take the
-    // page color.
-    background-color: var(--sds-clr-base-00);
+    min-height: 100%;
+    // The page is Base/0, not the sheet's gray-01: the pinned actions and the
+    // fade above them take the page colour.
+    --sheet-layout--background: var(--sds-clr-base-00);
 
-    .ChangeTrustInternal__Actions {
-      background-color: var(--sds-clr-base-00);
-    }
-
-    // Asset Details hosts this inside a SlideupModal with isFullHeight for
-    // the layout alone (footer pins, body scrolls). The mocks paint that
-    // sheet's card Background/Primary, so the page colour above must not
-    // paint a black wrapper over the gray-01 card.
-    .SlideupModal & {
-      background-color: var(--sds-clr-gray-01);
-
-      .ChangeTrustInternal__Actions {
-        background-color: var(--sds-clr-gray-01);
-      }
-    }
-
-    // Grow the slider so the action row is pushed to the bottom.
-    > .multi-pane-slider {
+    > .SheetLayout {
       flex: 1;
-      min-height: 0;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-
-      .multi-pane-slider__container {
-        flex: 1;
-        min-height: 0;
-        height: auto;
-      }
-    }
-
-    // The pane is the scroll container: bounded to the slider height and
-    // scrolls its content, so the details fill down to the pinned buttons.
-    // Hide the scrollbar to match the app's other scrollable content.
-    .multi-pane-slider__pane {
-      height: 100%;
-      min-height: 0;
-      overflow: auto;
-      scrollbar-width: none;
-
-      &::-webkit-scrollbar {
-        display: none;
-      }
-    }
-
-    // Single scroll container, so transaction details scroll fully instead of
-    // being cut off (drops the modal's fixed max-height).
-    .ChangeTrustInternal__Body {
-      flex: 1;
-      min-height: 0;
-      overflow-y: auto;
-      scrollbar-width: none;
-
-      &::-webkit-scrollbar {
-        display: none;
-      }
-    }
-
-    .ChangeTrustInternal__Body__Wrapper {
-      max-height: none;
-      min-height: 0;
-    }
-
-    .ChangeTrustInternal__TransactionDetails {
-      overflow-y: visible;
-    }
-
-    // Pin the nested submit/success footer to the bottom.
-    > .View__content {
-      flex: 1;
-      min-height: 0;
     }
   }
 
@@ -139,15 +60,10 @@
     flex-direction: column;
     align-items: center;
     width: 100%;
-    flex: 1;
-    overflow-y: auto;
-    padding: 1.5rem 0;
 
     &__Wrapper {
       max-width: 49rem;
       width: 100%;
-      max-height: calc(var(--slideup-modal--max-height) - #{pxToRem(160px)});
-      overflow-y: auto;
       display: flex;
       flex-direction: column;
     }
@@ -158,10 +74,6 @@
     flex-direction: column;
     align-items: center;
     width: 100%;
-    background-color: var(--sds-clr-gray-01);
-    padding: 1.5rem 0;
-    padding-top: 0;
-    flex-shrink: 0;
 
     &__PublicKey {
       display: flex;
@@ -182,11 +94,7 @@
       position: relative;
       max-width: 49rem;
       width: 100%;
-      margin-top: 10px;
-
-      .Button {
-        margin-top: pxToRem(12px);
-      }
+      gap: pxToRem(12px);
 
       &--side-by-side {
         flex-direction: row;
@@ -322,57 +230,13 @@
     display: flex;
     flex-direction: column;
     width: 100%;
-    overflow-y: scroll;
-
-    &__Header {
-      display: flex;
-      justify-content: space-between;
-      margin: pxToRem(12px) 0;
-
-      .DetailsMark {
-        display: flex;
-        width: 40px;
-        height: 40px;
-        padding: 7.5px;
-        justify-content: center;
-        align-items: center;
-        aspect-ratio: 1/1;
-        border-radius: 8px;
-        border: 1px solid var(--sds-clr-lilac-06);
-        background: var(--sds-clr-lilac-03);
-
-        svg {
-          width: 25px;
-          height: 25px;
-          color: var(--sds-clr-lilac-09);
-        }
-      }
-
-      .Close {
-        display: flex;
-        width: 32px;
-        height: 32px;
-        justify-content: center;
-        align-items: center;
-        border-radius: 1000px;
-        background: var(--sds-clr-gray-03);
-        color: var(--sds-clr-gray-09);
-      }
-    }
+    gap: pxToRem(16px);
 
     &__Summary {
       padding: pxToRem(12px) pxToRem(12px);
       border-radius: pxToRem(16px);
       background-color: var(--sds-clr-gray-03);
       margin-top: pxToRem(12px);
-    }
-
-    &__Title {
-      display: flex;
-      align-items: center;
-      width: 100%;
-      margin: pxToRem(12px) 0;
-      font-size: pxToRem(20px);
     }
   }
 

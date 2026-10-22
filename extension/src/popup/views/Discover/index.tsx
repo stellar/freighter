@@ -15,6 +15,7 @@ import { View } from "popup/basics/layout/View";
 import { showToast } from "popup/basics/shadcn/Toast";
 import { openTab } from "popup/helpers/navigate";
 import { addRecentProtocol, clearRecentProtocols } from "@shared/api/internal";
+import { SheetLayout } from "popup/components/SheetLayout";
 import {
   SlideupModal,
   SLIDEUP_MODAL_TRANSITION_MS,
@@ -225,10 +226,12 @@ export const Discover = () => {
         }}
       >
         {selectedProtocol ? (
-          <ProtocolDetailsPanel
-            protocol={selectedProtocol}
-            onOpen={handleDetailsOpen}
-          />
+          <SheetLayout>
+            <ProtocolDetailsPanel
+              protocol={selectedProtocol}
+              onOpen={handleDetailsOpen}
+            />
+          </SheetLayout>
         ) : (
           <div />
         )}

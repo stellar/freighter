@@ -74,11 +74,11 @@ test("Send collectible with metadata", async ({
     page.getByTestId("review-tx-send-destination-address"),
   ).toHaveText("GBTY…JZOF");
 
-  // The review is a bottom sheet: its content's View keeps the sheet's
-  // gray-01 instead of the page's base-00, edge to edge.
+  // The review is a bottom sheet: the card paints gray-01 instead of the
+  // page's base-00, edge to edge.
   expect(
     await page
-      .locator(".SlideupModal.open .View__inset")
+      .locator(".SlideupModal.open")
       .first()
       .evaluate((el) => getComputedStyle(el).backgroundColor),
   ).toBe("rgb(22, 22, 22)"); // gray-01 dark

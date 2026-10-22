@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { Icon } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
 
@@ -10,6 +9,7 @@ import { ROUTES } from "popup/constants/routes";
 import { resetWallet } from "popup/ducks/accountServices";
 import { isSidebarMode } from "popup/helpers/isSidebarMode";
 import { closeWindow, openTab } from "popup/helpers/navigate";
+import { SheetHeaderLayout } from "popup/components/SheetHeader";
 
 import "./styles.scss";
 
@@ -69,8 +69,7 @@ export const ForgotPasswordSheet = ({
       data-testid="forgot-password-sheet"
       closeTestId="forgot-password-sheet-close"
       actionTestId="forgot-password-sheet-reset"
-      icon={<Icon.InfoCircle />}
-      badgeVariant="error"
+      headerLayout={SheetHeaderLayout.Stacked}
       title={t("Forgot your password?")}
       actionLabel={t("Reset wallet")}
       actionVariant="destructive"

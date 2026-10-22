@@ -1,9 +1,10 @@
 import React from "react";
-import { Button, Card, Input } from "@stellar/design-system";
+import { Button, Input } from "@stellar/design-system";
 import { Field, FieldProps, Form, Formik } from "formik";
 import { useTranslation } from "react-i18next";
 
-import { View } from "popup/basics/layout/View";
+import { SheetHeader, SheetHeaderLayout } from "popup/components/SheetHeader";
+import { SheetLayout } from "popup/components/SheetLayout";
 import { useValidateMemo } from "popup/helpers/useValidateMemo";
 
 import "./styles.scss";
@@ -48,74 +49,80 @@ export const EditMemo = ({
   };
 
   return (
-    <View.Content hasNoTopPadding>
+    <SheetLayout
+      header={
+        <SheetHeader
+          layout={SheetHeaderLayout.Centered}
+          title={t("Memo")}
+          onClose={onClose}
+          closeTestId="edit-memo-close"
+        />
+      }
+    >
       <div className="EditMemo">
-        <Card>
-          <p>{t("Memo")}</p>
-          <Formik initialValues={initialValues} onSubmit={handleSubmit}>
-            {({ errors }) => (
-              <>
-                <Form className="EditMemo__form">
-                  <Field name="memo">
-                    {({ field }: FieldProps) => (
-                      <Input
-                        data-testid="edit-memo-input"
-                        autoFocus={!disabled}
-                        fieldSize="md"
-                        autoComplete="off"
-                        id="memo"
-                        placeholder={t("Type your memo")}
-                        {...field}
-                        onChange={(e) => {
-                          field.onChange(e);
-                          handleFieldChange(e.target.value);
-                        }}
-                        error={memoError || errors.memo}
-                        disabled={disabled}
-                      />
-                    )}
-                  </Field>
-                  {disabled && disabledMessage && (
-                    <div className="EditMemo__description EditMemo__description--warning">
-                      {disabledMessage}
-                    </div>
+        <Formik initialValues={initialValues} onSubmit={handleSubmit}>
+          {({ errors }) => (
+            <>
+              <Form className="EditMemo__form">
+                <Field name="memo">
+                  {({ field }: FieldProps) => (
+                    <Input
+                      data-testid="edit-memo-input"
+                      autoFocus={!disabled}
+                      fieldSize="md"
+                      autoComplete="off"
+                      id="memo"
+                      placeholder={t("Type your memo")}
+                      {...field}
+                      onChange={(e) => {
+                        field.onChange(e);
+                        handleFieldChange(e.target.value);
+                      }}
+                      error={memoError || errors.memo}
+                      disabled={disabled}
+                    />
                   )}
-                  {!disabled && (
-                    <div className="EditMemo__description">
-                      {t("What is this transaction for? (optional)")}
-                    </div>
-                  )}
-                  <div className="EditMemo__actions">
-                    <Button
-                      type="button"
-                      size="md"
-                      isRounded
-                      variant="tertiary"
-                      onClick={onClose}
-                      // Named so tests can reach this Cancel and not the review
-                      // sheet's: when the editor is opened from review, that
-                      // sheet paints its frozen contents through the slide-out,
-                      // leaving two Cancel buttons in the DOM for 200ms.
-                      data-testid="edit-memo-cancel"
-                    >
-                      {t("Cancel")}
-                    </Button>
-                    <Button
-                      type="submit"
-                      size="md"
-                      isRounded
-                      variant="secondary"
-                      disabled={disabled || !!memoError}
-                    >
-                      {t("Save")}
-                    </Button>
+                </Field>
+                {disabled && disabledMessage && (
+                  <div className="EditMemo__description EditMemo__description--warning">
+                    {disabledMessage}
                   </div>
-                </Form>
-              </>
-            )}
-          </Formik>
-        </Card>
+                )}
+                {!disabled && (
+                  <div className="EditMemo__description">
+                    {t("What is this transaction for? (optional)")}
+                  </div>
+                )}
+                <div className="EditMemo__actions">
+                  <Button
+                    type="button"
+                    size="md"
+                    isRounded
+                    variant="tertiary"
+                    onClick={onClose}
+                    // Named so tests can reach this Cancel and not the review
+                    // sheet's: when the editor is opened from review, that
+                    // sheet paints its frozen contents through the slide-out,
+                    // leaving two Cancel buttons in the DOM for 200ms.
+                    data-testid="edit-memo-cancel"
+                  >
+                    {t("Cancel")}
+                  </Button>
+                  <Button
+                    type="submit"
+                    size="md"
+                    isRounded
+                    variant="secondary"
+                    disabled={disabled || !!memoError}
+                  >
+                    {t("Save")}
+                  </Button>
+                </div>
+              </Form>
+            </>
+          )}
+        </Formik>
       </div>
-    </View.Content>
+    </SheetLayout>
   );
 };

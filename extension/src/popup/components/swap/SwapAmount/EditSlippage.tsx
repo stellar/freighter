@@ -5,7 +5,8 @@ import { Form, Field, FieldProps, Formik } from "formik";
 import { object as YupObject, number as YupNumber } from "yup";
 import { Button, Card, Input } from "@stellar/design-system";
 
-import { View } from "popup/basics/layout/View";
+import { SheetHeader, SheetHeaderLayout } from "popup/components/SheetHeader";
+import { SheetLayout } from "popup/components/SheetLayout";
 import {
   saveAllowedSlippage,
   transactionDataSelector,
@@ -46,82 +47,85 @@ export const EditSlippage = ({ onClose }: EditSlippageProps) => {
       })}
     >
       {({ setFieldValue, values, errors }) => (
-        <Form
-          className="View__contentAndFooterWrapper"
-          data-testid="slippage-form"
-        >
-          <View.Content hasNoTopPadding>
+        <Form data-testid="slippage-form">
+          <SheetLayout
+            header={
+              <SheetHeader
+                layout={SheetHeaderLayout.Centered}
+                title={t("Allowed Slippage")}
+                onClose={onClose}
+                closeTestId="edit-slippage-close"
+              />
+            }
+          >
             <div className="Slippage">
-              <Card>
-                <p>{t("Allowed Slippage")}</p>
-                <div className="Slippage__cards">
-                  {["1", "2", "3"].map((value) => (
-                    <label key={value} className="Slippage--radio-label">
-                      <Field
-                        className="Slippage--radio-field"
-                        name="presetSlippage"
-                        type="radio"
-                        value={value}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                          setFieldValue("presetSlippage", e.target.value);
-                          setFieldValue("customSlippage", "");
-                          dispatch(saveAllowedSlippage(e.target.value));
-                          onClose();
-                        }}
-                      />
-                      <Card>{value}%</Card>
-                    </label>
-                  ))}
-                </div>
-                <div className="Slippage__custom-input">
-                  <Field name="customSlippage">
-                    {({ field }: FieldProps) => (
-                      <Input
-                        data-testid="custom-slippage-input"
-                        fieldSize="md"
-                        id="custom-input"
-                        min={0}
-                        max={10}
-                        placeholder={`${t("Custom")} %`}
-                        type="number"
-                        {...field}
-                        onChange={(e) => {
-                          setFieldValue("customSlippage", e.target.value);
-                          setFieldValue("presetSlippage", "");
-                        }}
-                        error={errors.customSlippage}
-                      />
-                    )}
-                  </Field>
-                </div>
-                <div className="Slippage__Footer">
-                  <Button
-                    size="md"
-                    isFullWidth
-                    isRounded
-                    variant="tertiary"
-                    type="button"
-                    onClick={() => {
-                      setFieldValue("presetSlippage", defaultSlippage);
-                      setFieldValue("customSlippage", "");
-                    }}
-                  >
-                    {t("Set default")}
-                  </Button>
-                  <Button
-                    size="md"
-                    isFullWidth
-                    isRounded
-                    disabled={!values.presetSlippage && !values.customSlippage}
-                    variant="secondary"
-                    type="submit"
-                  >
-                    {t("Done")}
-                  </Button>
-                </div>
-              </Card>
+              <div className="Slippage__cards">
+                {["1", "2", "3"].map((value) => (
+                  <label key={value} className="Slippage--radio-label">
+                    <Field
+                      className="Slippage--radio-field"
+                      name="presetSlippage"
+                      type="radio"
+                      value={value}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                        setFieldValue("presetSlippage", e.target.value);
+                        setFieldValue("customSlippage", "");
+                        dispatch(saveAllowedSlippage(e.target.value));
+                        onClose();
+                      }}
+                    />
+                    <Card>{value}%</Card>
+                  </label>
+                ))}
+              </div>
+              <div className="Slippage__custom-input">
+                <Field name="customSlippage">
+                  {({ field }: FieldProps) => (
+                    <Input
+                      data-testid="custom-slippage-input"
+                      fieldSize="md"
+                      id="custom-input"
+                      min={0}
+                      max={10}
+                      placeholder={`${t("Custom")} %`}
+                      type="number"
+                      {...field}
+                      onChange={(e) => {
+                        setFieldValue("customSlippage", e.target.value);
+                        setFieldValue("presetSlippage", "");
+                      }}
+                      error={errors.customSlippage}
+                    />
+                  )}
+                </Field>
+              </div>
+              <div className="Slippage__Footer">
+                <Button
+                  size="md"
+                  isFullWidth
+                  isRounded
+                  variant="tertiary"
+                  type="button"
+                  onClick={() => {
+                    setFieldValue("presetSlippage", defaultSlippage);
+                    setFieldValue("customSlippage", "");
+                  }}
+                >
+                  {t("Set default")}
+                </Button>
+                <Button
+                  size="md"
+                  isFullWidth
+                  isRounded
+                  disabled={!values.presetSlippage && !values.customSlippage}
+                  variant="secondary"
+                  type="submit"
+                >
+                  {t("Done")}
+                </Button>
+              </div>
             </div>
-          </View.Content>
+          </SheetLayout>
         </Form>
       )}
     </Formik>

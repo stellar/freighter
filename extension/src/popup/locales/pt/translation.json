@@ -1,4 +1,5 @@
 {
+  "To": "Para",
   "{{appName}} disconnected": "{{appName}} desconectado",
   "{{code}} hidden": "{{code}} ocultado",
   "{{code}} unhidden": "{{code}} exibido",
@@ -539,6 +540,7 @@
   "Review authorization on device": "Revise a autorização no dispositivo",
   "Review message on device": "Revise a mensagem no dispositivo",
   "Review Send": "Revisar Envio",
+  "Review send": "Revisar envio",
   "Review swap": "Revisar troca",
   "Review transaction": "Revisar transação",
   "Review transaction on device": "Revisar transação no dispositivo",

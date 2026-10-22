@@ -34,6 +34,7 @@ import {
 
 import { HistoryItem } from "popup/components/accountHistory/HistoryItem";
 import { TransactionDetail } from "popup/components/accountHistory/TransactionDetail";
+import { SheetLayout } from "popup/components/SheetLayout";
 import { SlideupModal } from "popup/components/SlideupModal";
 import {
   Popover,
@@ -736,53 +737,55 @@ export const AssetDetail = ({
             setIsModalOpen={setIsModalOpen}
             ariaLabel={t("Balance details")}
           >
-            <div className="AssetDetail__info-modal">
-              <div className="AssetDetail__info-modal__total-box">
-                <div className="AssetDetail__info-modal__asset-code">
-                  <img src={StellarLogo} alt={t("Network icon")} />
-                  <div>{` ${canonical.code}`}</div>
-                </div>
-                <div>{displayTotal}</div>
-              </div>
-              <div className="AssetDetail__info-modal__available-box">
-                <div className="AssetDetail__info-modal__balance-row">
-                  <div>{t("Total Balance")}</div>
+            <SheetLayout>
+              <div className="AssetDetail__info-modal">
+                <div className="AssetDetail__info-modal__total-box">
+                  <div className="AssetDetail__info-modal__asset-code">
+                    <img src={StellarLogo} alt={t("Network icon")} />
+                    <div>{` ${canonical.code}`}</div>
+                  </div>
                   <div>{displayTotal}</div>
                 </div>
-                <div className="AssetDetail__info-modal__balance-row">
-                  <div>{t("Reserved Balance*")}</div>
-                  {selectedBalance &&
-                  "available" in selectedBalance &&
-                  selectedBalance?.available &&
-                  selectedBalance?.total ? (
-                    <div>
-                      {`${formatAmount(
-                        new BigNumber(balanceAvailable)
-                          .minus(new BigNumber(selectedBalance?.total))
-                          .toString(),
-                      )} `}
-                      {canonical.code}
-                    </div>
-                  ) : null}
+                <div className="AssetDetail__info-modal__available-box">
+                  <div className="AssetDetail__info-modal__balance-row">
+                    <div>{t("Total Balance")}</div>
+                    <div>{displayTotal}</div>
+                  </div>
+                  <div className="AssetDetail__info-modal__balance-row">
+                    <div>{t("Reserved Balance*")}</div>
+                    {selectedBalance &&
+                    "available" in selectedBalance &&
+                    selectedBalance?.available &&
+                    selectedBalance?.total ? (
+                      <div>
+                        {`${formatAmount(
+                          new BigNumber(balanceAvailable)
+                            .minus(new BigNumber(selectedBalance?.total))
+                            .toString(),
+                        )} `}
+                        {canonical.code}
+                      </div>
+                    ) : null}
+                  </div>
+                  <div className="AssetDetail__info-modal__total-available-row">
+                    <div>{t("Total Available")}</div>
+                    <div>{availableTotal}</div>
+                  </div>
                 </div>
-                <div className="AssetDetail__info-modal__total-available-row">
-                  <div>{t("Total Available")}</div>
-                  <div>{availableTotal}</div>
+                <div className="AssetDetail__info-modal__footnote">
+                  {`${t(
+                    "* All Stellar accounts must maintain a minimum balance of lumens.",
+                  )} `}
+                  <a
+                    href="https://developers.stellar.org/docs/glossary/minimum-balance/"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    {t("Learn more")}
+                  </a>
                 </div>
               </div>
-              <div className="AssetDetail__info-modal__footnote">
-                {`${t(
-                  "* All Stellar accounts must maintain a minimum balance of lumens.",
-                )} `}
-                <a
-                  href="https://developers.stellar.org/docs/glossary/minimum-balance/"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  {t("Learn more")}
-                </a>
-              </div>
-            </div>
+            </SheetLayout>
           </SlideupModal>
         )}
         {/* The backdrop also covers the sticky Send/Swap bar */}
@@ -808,21 +811,17 @@ export const AssetDetail = ({
               every time this sheet closed. Mirrors ManageAssetRows. */}
           <>
             {body === "remove" && shouldChangeTrust && (
-              <div className="AssetDetail__remove-sheet">
-                <ChangeTrustInternal
-                  asset={removeAsset}
-                  addTrustline={false}
-                  networkDetails={networkDetails}
-                  publicKey={publicKey}
-                  onCancel={() => setBody("detail")}
-                  onSuccess={handleClose}
-                  // Fills the fixed-height wrapper above rather than sizing to
-                  // its content, so the footer pins and the body scrolls. Also
-                  // drops the "you can close this tab" hint, which is only
-                  // meaningful in the standalone popup.
-                  isFullHeight
-                />
-              </div>
+              <ChangeTrustInternal
+                asset={removeAsset}
+                addTrustline={false}
+                networkDetails={networkDetails}
+                publicKey={publicKey}
+                onCancel={() => setBody("detail")}
+                onSuccess={handleClose}
+                // The "you can close this tab" hint only makes sense in the
+                // standalone popup.
+                hideCloseTabHint
+              />
             )}
             {body === "remove" && !shouldChangeTrust && (
               <ToggleTokenInternal
@@ -842,10 +841,7 @@ export const AssetDetail = ({
 
         <InfoBottomSheet
           isOpen={isBalanceWarningOpen}
-          icon={<Icon.MinusCircle />}
-          badgeVariant="error"
           title={t("Token still has a balance")}
-          actionLabel={t("Got it")}
           onClose={() => setIsBalanceWarningOpen(false)}
           data-testid="asset-detail-balance-warning"
           closeTestId="asset-detail-balance-warning-close"

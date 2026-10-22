@@ -255,7 +255,6 @@ describe("AddCollectibles", () => {
 
     fetchCollectibles.mockClear();
     fireEvent.click(screen.getByTestId("HiddenCollectibles__close"));
-    fireEvent.click(screen.getByTestId("HiddenCollectibles__done"));
 
     await waitFor(() => {
       expect(screen.getByTestId("AddCollectibles")).toBeInTheDocument();

@@ -9,6 +9,8 @@ import { RequestState } from "constants/request";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { useGetAssetDomainsWithBalances } from "helpers/hooks/useGetAssetDomainsWithBalances";
 import { AssetListRow } from "popup/components/AssetListRow";
+import { SheetHeader } from "popup/components/SheetHeader";
+import { SheetLayout } from "popup/components/SheetLayout";
 import { SlideupModal } from "popup/components/SlideupModal";
 import { showToast } from "popup/basics/shadcn/Toast";
 import { isAssetVisible } from "popup/helpers/settings";
@@ -193,100 +195,84 @@ export const HiddenAssets = ({
       setIsModalOpen={onClose}
       ariaLabel={t("Hidden tokens")}
     >
-      <div className="HiddenAssets" data-testid="HiddenAssets">
-        <div className="HiddenAssets__header">
-          <span className="HiddenAssets__title">{t("Hidden tokens")}</span>
-          <button
-            className="HiddenAssets__close"
-            onClick={onClose}
-            aria-label={t("Close")}
-            data-testid="HiddenAssets__close"
-          >
-            <Icon.XClose />
-          </button>
-        </div>
+      <SheetLayout
+        data-testid="HiddenAssets"
+        header={
+          <SheetHeader
+            title={t("Hidden tokens")}
+            onClose={onClose}
+            closeTestId="HiddenAssets__close"
+          />
+        }
+      >
+        <div className="HiddenAssets">
+          {loadError ? (
+            <div
+              className="HiddenAssets__error"
+              data-testid="HiddenAssets__error"
+            >
+              <Notification variant="error" title={loadError} />
+            </div>
+          ) : null}
 
-        {loadError ? (
-          <div
-            className="HiddenAssets__error"
-            data-testid="HiddenAssets__error"
-          >
-            <Notification variant="error" title={loadError} />
+          <div className="HiddenAssets__list">
+            {isLoading ? (
+              <div
+                className="HiddenAssets__loader"
+                data-testid="HiddenAssets__loader"
+              >
+                <Loader size="1.5rem" />
+              </div>
+            ) : null}
+
+            {!isLoading &&
+            !didVisibilityFail &&
+            !didDomainsFail &&
+            !hiddenRows.length ? (
+              <div
+                className="HiddenAssets__empty"
+                data-testid="HiddenAssets__empty"
+              >
+                {t("No hidden tokens")}
+              </div>
+            ) : null}
+
+            {hiddenRows.map((asset) => {
+              const { code = "", issuer = "", domain, image, name } = asset;
+              const assetKey = getCanonicalFromAsset(code, issuer);
+
+              return (
+                <AssetListRow
+                  key={assetKey}
+                  code={code}
+                  displayCode={name || code}
+                  issuer={issuer}
+                  iconUrl={image}
+                  domain={domain}
+                  data-testid={`HiddenAssets__row-${code}`}
+                  rightElement={
+                    <Button
+                      // `md` already matches the design exactly: 32px tall, 6px
+                      // radius, 14px text. Deliberately not isRounded -- the row
+                      // action is a rounded rect, only the footer is a pill.
+                      size="md"
+                      variant="tertiary"
+                      isLoading={pendingKey === assetKey}
+                      disabled={pendingKey !== null}
+                      onClick={() => handleUnhide(asset)}
+                      data-testid={`HiddenAssets__unhide-${code}`}
+                      icon={<Icon.Eye />}
+                      iconPosition="right"
+                    >
+                      {t("Unhide")}
+                    </Button>
+                  }
+                />
+              );
+            })}
           </div>
-        ) : null}
-
-        <div className="HiddenAssets__list">
-          {isLoading ? (
-            <div
-              className="HiddenAssets__loader"
-              data-testid="HiddenAssets__loader"
-            >
-              <Loader size="1.5rem" />
-            </div>
-          ) : null}
-
-          {!isLoading &&
-          !didVisibilityFail &&
-          !didDomainsFail &&
-          !hiddenRows.length ? (
-            <div
-              className="HiddenAssets__empty"
-              data-testid="HiddenAssets__empty"
-            >
-              {t("No hidden tokens")}
-            </div>
-          ) : null}
-
-          {hiddenRows.map((asset) => {
-            const { code = "", issuer = "", domain, image, name } = asset;
-            const assetKey = getCanonicalFromAsset(code, issuer);
-
-            return (
-              <AssetListRow
-                key={assetKey}
-                code={code}
-                displayCode={name || code}
-                issuer={issuer}
-                iconUrl={image}
-                domain={domain}
-                data-testid={`HiddenAssets__row-${code}`}
-                rightElement={
-                  <Button
-                    // `md` already matches the design exactly: 32px tall, 6px
-                    // radius, 14px text. Deliberately not isRounded -- the row
-                    // action is a rounded rect, only the footer is a pill.
-                    size="md"
-                    variant="tertiary"
-                    isLoading={pendingKey === assetKey}
-                    disabled={pendingKey !== null}
-                    onClick={() => handleUnhide(asset)}
-                    data-testid={`HiddenAssets__unhide-${code}`}
-                    icon={<Icon.Eye />}
-                    iconPosition="right"
-                  >
-                    {t("Unhide")}
-                  </Button>
-                }
-              />
-            );
-          })}
         </div>
-
-        <div className="HiddenAssets__footer">
-          <Button
-            // Bordered, not filled: `secondary` is a solid gray-12 button.
-            // Height is nudged to the design's 36px in styles.scss.
-            size="md"
-            variant="tertiary"
-            isRounded
-            isFullWidth
-            onClick={onClose}
-            data-testid="HiddenAssets__done"
-          >
-            {t("Close")}
-          </Button>
-        </div>
-      </div>
+      </SheetLayout>
     </SlideupModal>
   );
 };

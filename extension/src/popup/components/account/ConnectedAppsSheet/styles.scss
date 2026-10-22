@@ -1,54 +1,12 @@
 @use "../../../styles/utils.scss" as *;
 
 .ConnectedAppsSheet {
-  display: flex;
-  flex-direction: column;
-  padding: pxToRem(24px);
-  gap: pxToRem(16px);
-
-  &__header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-
-  &__title {
-    font-size: pxToRem(16px);
-    font-weight: var(--sds-fw-medium);
-    color: var(--sds-clr-gray-12);
-  }
-
-  &__close {
-    display: flex;
-    align-items: center;
-    background: none;
-    border: 0;
-    padding: 0;
-    cursor: pointer;
-    color: var(--sds-clr-gray-11);
-  }
-
-  &__wrapper {
-    display: flex;
-    flex-direction: column;
-    gap: pxToRem(16px);
-  }
-
   &__list {
     display: flex;
     flex-direction: column;
     background-color: var(--sds-clr-gray-03);
     border-radius: pxToRem(16px);
     overflow: hidden;
-    // A long allow-list would otherwise push "Disconnect all" past the sheet's
-    // max-height and out of reach.
-    max-height: pxToRem(280px);
-    overflow-y: auto;
-    scrollbar-width: none;
-
-    &::-webkit-scrollbar {
-      display: none;
-    }
   }
 
   &__row {
@@ -127,7 +85,8 @@
     align-items: center;
     text-align: center;
     gap: pxToRem(8px);
-    padding-top: pxToRem(8px);
+    // Like mobile's empty state: its own 24px on top of the sheet's.
+    padding: pxToRem(24px) 0;
 
     &__badge {
       display: flex;

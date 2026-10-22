@@ -7,6 +7,8 @@ import { Button, Icon, Notification } from "@stellar/design-system";
 import { AppDispatch } from "popup/App";
 import { ROUTES } from "popup/constants/routes";
 import { navigateTo } from "popup/helpers/navigate";
+import { SheetHeader, SheetHeaderLayout } from "popup/components/SheetHeader";
+import { SheetLayout } from "popup/components/SheetLayout";
 import { SlideupModal } from "popup/components/SlideupModal";
 import { showToast } from "popup/basics/shadcn/Toast";
 import { PunycodedDomain } from "popup/components/PunycodedDomain";
@@ -111,43 +113,21 @@ export const ConnectedAppsSheet = ({
       setIsModalOpen={onClose}
       ariaLabel={t("Connected apps")}
     >
-      <div className="ConnectedAppsSheet" data-testid="ConnectedAppsSheet">
-        <div className="ConnectedAppsSheet__header">
-          <span className="ConnectedAppsSheet__title">
-            {t("Connected apps")}
-          </span>
-          <button
-            className="ConnectedAppsSheet__close"
-            onClick={onClose}
-            aria-label={t("Close")}
-            data-testid="ConnectedAppsSheet__close"
-          >
-            <Icon.XClose />
-          </button>
-        </div>
-
-        {allowList.length ? (
-          <div className="ConnectedAppsSheet__wrapper">
-            <div className="ConnectedAppsSheet__list">
-              {allowList.map(
-                (allowedDomain) =>
-                  allowedDomain && (
-                    <div
-                      className="ConnectedAppsSheet__row"
-                      key={allowedDomain}
-                    >
-                      <PunycodedDomain domain={allowedDomain} isRow />
-                      <RemoveButton
-                        onClick={() => handleRemove(allowedDomain)}
-                      />
-                    </div>
-                  ),
-              )}
-            </div>
-
-            {/* No `className` on purpose: SDS spreads props after its own
-                className, so passing one replaces `Button Button--error ...`
-                rather than adding to it, leaving an unstyled block. */}
+      <SheetLayout
+        data-testid="ConnectedAppsSheet"
+        header={
+          <SheetHeader
+            layout={SheetHeaderLayout.Centered}
+            title={t("Connected apps")}
+            onClose={onClose}
+            closeTestId="ConnectedAppsSheet__close"
+          />
+        }
+        footer={
+          allowList.length ? (
+            // No `className` on purpose: SDS spreads props after its own
+            // className, so passing one replaces `Button Button--error ...`
+            // rather than adding to it, leaving an unstyled block.
             <Button
               size="lg"
               variant="error"
@@ -158,6 +138,20 @@ export const ConnectedAppsSheet = ({
             >
               {t("Disconnect all")}
             </Button>
+          ) : undefined
+        }
+      >
+        {allowList.length ? (
+          <div className="ConnectedAppsSheet__list">
+            {allowList.map(
+              (allowedDomain) =>
+                allowedDomain && (
+                  <div className="ConnectedAppsSheet__row" key={allowedDomain}>
+                    <PunycodedDomain domain={allowedDomain} isRow />
+                    <RemoveButton onClick={() => handleRemove(allowedDomain)} />
+                  </div>
+                ),
+            )}
           </div>
         ) : (
           <div
@@ -184,7 +178,7 @@ export const ConnectedAppsSheet = ({
             </Button>
           </div>
         )}
-      </div>
+      </SheetLayout>
     </SlideupModal>
   );
 };

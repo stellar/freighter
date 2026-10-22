@@ -37,6 +37,8 @@ import {
 } from "helpers/muxedAddress";
 import { SimulateTxData } from "types/transactions";
 import { View } from "popup/basics/layout/View";
+import { SheetHeader, SheetHeaderLayout } from "popup/components/SheetHeader";
+import { SheetLayout } from "popup/components/SheetLayout";
 import { HardwareSign } from "popup/components/hardwareConnect/HardwareSign";
 import { hardwareWalletTypeSelector } from "popup/ducks/accountServices";
 import { useValidateTransactionMemo } from "popup/helpers/useValidateTransactionMemo";
@@ -80,10 +82,14 @@ interface ReviewTxProps {
   srcAsset: string;
   simulationState: State<SimulateTxData, string>;
   networkDetails: NetworkDetails;
+  /** Centered sheet title ("Review send" / "Review swap"). */
+  sheetTitle: string;
   title: string;
   onConfirm: () => void;
   onCancel: () => void;
   onAddMemo?: () => void;
+  /** Opens the transaction settings sheet from the review footer. */
+  onEditSettings?: () => void;
   destinationTokenDetails?: {
     tokenCode: string;
     requiresTrustline: boolean;
@@ -118,10 +124,12 @@ export const ReviewTx = ({
   sendPriceUsd,
   simulationState,
   networkDetails,
+  sheetTitle,
   title,
   onConfirm,
   onCancel,
   onAddMemo,
+  onEditSettings,
   destinationTokenDetails,
   sourceTokenSecurityLevel,
   sourceTokenSecurityWarnings,
@@ -393,7 +401,7 @@ export const ReviewTx = ({
 
   if (simulationState.state === RequestState.ERROR) {
     return (
-      <View.Content hasNoTopPadding>
+      <SheetLayout>
         <div className="ReviewTx">
           <Notification
             variant="error"
@@ -402,7 +410,7 @@ export const ReviewTx = ({
             {simulationState.error}
           </Notification>
         </div>
-      </View.Content>
+      </SheetLayout>
     );
   }
 
@@ -421,8 +429,15 @@ export const ReviewTx = ({
 
   const reviewPane = (
     <>
+      {/* In the body, not SheetLayout's header slot: the title scrolls away
+          with the summary, as in the frame and on mobile; only the actions pin. */}
+      <div className="ReviewTx__Header">
+        <SheetHeader title={sheetTitle} layout={SheetHeaderLayout.Centered} />
+      </div>
       <div className="ReviewTx__Summary">
-        <p>{title}</p>
+        {/* A div, not a p: the global `p` rules add a 24px bottom margin that
+            would stack on the card's 16px gap. */}
+        <div className="ReviewTx__Summary__title">{title}</div>
         <div className="ReviewTx__SendSummary">
           <div className="ReviewTx__SendAsset">
             <SendAsset
@@ -583,23 +598,11 @@ export const ReviewTx = ({
 
   const memoPane = (
     <div className="ReviewTx__MemoDetails">
-      <div className="ReviewTx__MemoDetails__Header">
-        <div className="ReviewTx__MemoDetails__Header__Icon">
-          <Icon.InfoOctagon className="WarningMessage__icon" />
-        </div>
-        <button
-          type="button"
-          className="ReviewTx__MemoDetails__Header__Close"
-          data-testid="review-tx-memo-close-btn"
-          aria-label={t("Close")}
-          onClick={() => setIsOnMemoPane(false)}
-        >
-          <Icon.X />
-        </button>
-      </div>
-      <div className="ReviewTx__MemoDetails__Title">
-        <span>{t("Memo is required")}</span>
-      </div>
+      <SheetHeader
+        title={t("Memo is required")}
+        onClose={() => setIsOnMemoPane(false)}
+        closeTestId="review-tx-memo-close-btn"
+      />
       <div className="ReviewTx__MemoDetails__Content">
         <div className="ReviewTx__MemoDetails__Text">
           {t(
@@ -628,25 +631,17 @@ export const ReviewTx = ({
   // reusing the dapp-signing Summary/Details/AuthEntries components. Internal
   // txns have no flaggedKeys, so an empty object is passed (the warnings just
   // no-op) and memo is never required here.
+  // Pinned while the breakdown scrolls, like mobile's details sheet.
+  const detailsHeader = (
+    <SheetHeader
+      layout={SheetHeaderLayout.Centered}
+      title={t("Transaction details")}
+      onClose={() => setIsOnDetailsPane(false)}
+      closeTestId="review-tx-details-close-btn"
+    />
+  );
   const detailsPane = detailTx ? (
     <div className="ReviewTx__TxDetails" data-testid="review-tx-details-pane">
-      <div className="ReviewTx__TxDetails__Header">
-        <div className="DetailsMark">
-          <Icon.List />
-        </div>
-        <button
-          type="button"
-          className="Close"
-          data-testid="review-tx-details-close-btn"
-          aria-label={t("Close")}
-          onClick={() => setIsOnDetailsPane(false)}
-        >
-          <Icon.X />
-        </button>
-      </div>
-      <div className="ReviewTx__TxDetails__Title">
-        <span>{t("Transaction details")}</span>
-      </div>
       <div className="ReviewTx__TxDetails__Summary">
         <Summary
           sequenceNumber={detailTx.sequence}
@@ -681,61 +676,68 @@ export const ReviewTx = ({
     </div>
   ) : null;
 
-  return (
-    <View.Content hasNoTopPadding>
-      {hwStatus === ShowOverlayStatus.IN_PROGRESS && hardwareWalletType ? (
+  // The action row is pinned under the review and Blockaid panes; the detail
+  // panes (trustline, fees, memo, details) have their own X and no actions.
+  const showActions =
+    !isOnFeesPane && !isOnMemoPane && !isOnDetailsPane && !isOnTrustlinePane;
+
+  if (hwStatus === ShowOverlayStatus.IN_PROGRESS && hardwareWalletType) {
+    return (
+      <View.Content hasNoTopPadding>
         <HardwareSign
           isInternal
           walletType={hardwareWalletType}
           onSubmit={onConfirm}
         />
-      ) : (
-        <div className="ReviewTx">
-          {/* Every detail view (trustline, Blockaid, fees, memo) replaces the
+      </View.Content>
+    );
+  }
+
+  return (
+    <SheetLayout
+      header={isOnDetailsPane && detailTx ? detailsHeader : undefined}
+      footer={
+        showActions ? (
+          <div className="ReviewTx__Actions">
+            <ActionButtons
+              isOnBlockaidPane={isOnBlockaidSheet}
+              isMalicious={isMalicious}
+              isRequiredMemoMissing={isRequiredMemoMissing}
+              isValidatingMemo={isValidatingMemo}
+              onAddMemo={onAddMemo}
+              onEditSettings={onEditSettings}
+              shouldShowTxWarning={shouldShowTxWarning}
+              onCancel={onCancel}
+              onConfirmTx={onConfirmTx}
+              isSubmitDisabled={isSubmitDisabled}
+            />
+          </div>
+        ) : undefined
+      }
+    >
+      <div className="ReviewTx">
+        {/* Every detail view (trustline, Blockaid, fees, memo) replaces the
               review body in-flow while open, and the body returns when it
               closes. Rendered in-flow rather than as nested modals/horizontal
               slider panes so they aren't clipped by the self-measuring review
               modal and appear in place. */}
-          {isOnTrustlinePane ? (
-            <TrustlineInfoSheet
-              tokenCode={trustlineTokenCode}
-              onClose={() => setIsOnTrustlinePane(false)}
-            />
-          ) : isOnBlockaidSheet ? (
-            blockaidPane
-          ) : isOnFeesPane ? (
-            feesPane
-          ) : isOnMemoPane ? (
-            memoPane
-          ) : isOnDetailsPane ? (
-            detailsPane
-          ) : (
-            reviewPane
-          )}
-          {!isOnFeesPane &&
-            !isOnMemoPane &&
-            !isOnDetailsPane &&
-            !isOnTrustlinePane && (
-              <div className="ReviewTx__Actions">
-                <ActionButtons
-                  isOnBlockaidPane={isOnBlockaidSheet}
-                  isMalicious={isMalicious}
-                  isRequiredMemoMissing={isRequiredMemoMissing}
-                  isValidatingMemo={isValidatingMemo}
-                  onAddMemo={onAddMemo}
-                  shouldShowTxWarning={shouldShowTxWarning}
-                  onCancel={onCancel}
-                  onConfirmTx={onConfirmTx}
-                  isSubmitDisabled={isSubmitDisabled}
-                  dstAsset={dstAsset}
-                  dest={dest}
-                  asset={asset}
-                  truncatedDest={truncatedDest}
-                />
-              </div>
-            )}
-        </div>
-      )}
-    </View.Content>
+        {isOnTrustlinePane ? (
+          <TrustlineInfoSheet
+            tokenCode={trustlineTokenCode}
+            onClose={() => setIsOnTrustlinePane(false)}
+          />
+        ) : isOnBlockaidSheet ? (
+          blockaidPane
+        ) : isOnFeesPane ? (
+          feesPane
+        ) : isOnMemoPane ? (
+          memoPane
+        ) : isOnDetailsPane ? (
+          detailsPane
+        ) : (
+          reviewPane
+        )}
+      </div>
+    </SheetLayout>
   );
 };

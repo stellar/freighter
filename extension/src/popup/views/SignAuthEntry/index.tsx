@@ -13,7 +13,6 @@ import {
   WarningMessage,
   SSLWarningMessage,
 } from "popup/components/WarningMessages";
-import { View } from "popup/basics/layout/View";
 import {
   isNonSSLEnabledSelector,
   settingsNetworkDetailsSelector,
@@ -43,6 +42,8 @@ import { AuthEntries } from "popup/components/AuthEntry";
 import { parseAuthEntryPreimage } from "popup/helpers/soroban";
 import { truncateString } from "helpers/stellar";
 import { useMarkQueueActive } from "popup/helpers/useMarkQueueActive";
+import { SheetLayout } from "popup/components/SheetLayout";
+import { SlideupModal } from "popup/components/SlideupModal";
 
 import "./styles.scss";
 
@@ -254,87 +255,100 @@ export const SignAuthEntry = () => {
         />
       )}
       <React.Fragment>
-        <View.Content>
-          <div className="SignAuthEntry__Body">
-            <div className="SignAuthEntry__TitleRow">
-              <img
-                className="PunycodedDomain__favicon"
-                src={favicon}
-                alt={t("Site favicon")}
-              />
-              <div className="SignAuthEntry__TitleRow__Detail">
-                <span className="SignAuthEntry__TitleRow__Title">
-                  Confirm Authorizations
-                </span>
-                <span className="SignAuthEntry__TitleRow__Domain">
-                  {validDomain}
-                </span>
+        {/* The request floats as a card over the dimmed window, like every other
+          sheet and like mobile's dApp sheets. Dismissing it (backdrop, Escape)
+          rejects the request, the same as Cancel. */}
+        <SlideupModal
+          isModalOpen
+          setIsModalOpen={() => rejectAndClose()}
+          // Same literal as the title row, which is not translated either.
+          ariaLabel="Confirm Authorizations"
+        >
+          <SheetLayout
+            footer={
+              <div className="SignAuthEntry__Footer">
+                <Button
+                  isFullWidth
+                  isRounded
+                  size="lg"
+                  variant="tertiary"
+                  onClick={() => rejectAndClose()}
+                >
+                  {t("Cancel")}
+                </Button>
+                <Button
+                  data-testid="sign-auth-entry-approve-button"
+                  disabled={!isDomainListedAllowed}
+                  isFullWidth
+                  isRounded
+                  size="lg"
+                  variant="secondary"
+                  isLoading={isConfirming}
+                  onClick={() => handleApprove()}
+                >
+                  {t("Confirm")}
+                </Button>
               </div>
-            </div>
-            {!isDomainListedAllowed && (
-              <DomainNotAllowedWarningMessage domain={domain} />
-            )}
-            <div className="SignAuthEntry__Metadata">
-              <div className="SignAuthEntry__Metadata__Row">
-                <div className="SignAuthEntry__Metadata__Label">
-                  <Icon.Wallet01 />
-                  <span>{t("Wallet")}</span>
-                </div>
-                <div className="SignAuthEntry__Metadata__Value">
-                  <KeyIdenticon publicKey={publicKey} />
-                </div>
-              </div>
-              <div className="SignAuthEntry__Metadata__Row">
-                <div className="SignAuthEntry__Metadata__Label">
-                  <Icon.Globe02 />
-                  <span>{t("Network")}</span>
-                </div>
-                <div className="SignAuthEntry__Metadata__Value">
-                  <span>{networkName}</span>
+            }
+          >
+            <div className="SignAuthEntry__Body">
+              <div className="SignAuthEntry__TitleRow">
+                <img
+                  className="PunycodedDomain__favicon"
+                  src={favicon}
+                  alt={t("Site favicon")}
+                />
+                <div className="SignAuthEntry__TitleRow__Detail">
+                  <span className="SignAuthEntry__TitleRow__Title">
+                    Confirm Authorizations
+                  </span>
+                  <span className="SignAuthEntry__TitleRow__Domain">
+                    {validDomain}
+                  </span>
                 </div>
               </div>
-              {boundAddress && (
-                // Address-bound authorization (CAP-71): show the address this
-                // signature is bound to so the user knows who is authorizing.
+              {!isDomainListedAllowed && (
+                <DomainNotAllowedWarningMessage domain={domain} />
+              )}
+              <div className="SignAuthEntry__Metadata">
                 <div className="SignAuthEntry__Metadata__Row">
                   <div className="SignAuthEntry__Metadata__Label">
-                    <Icon.UserCircle />
-                    <span>{t("Authorized address")}</span>
+                    <Icon.Wallet01 />
+                    <span>{t("Wallet")}</span>
                   </div>
                   <div className="SignAuthEntry__Metadata__Value">
-                    <KeyIdenticon publicKey={boundAddress} />
+                    <KeyIdenticon publicKey={publicKey} />
                   </div>
                 </div>
-              )}
+                <div className="SignAuthEntry__Metadata__Row">
+                  <div className="SignAuthEntry__Metadata__Label">
+                    <Icon.Globe02 />
+                    <span>{t("Network")}</span>
+                  </div>
+                  <div className="SignAuthEntry__Metadata__Value">
+                    <span>{networkName}</span>
+                  </div>
+                </div>
+                {boundAddress && (
+                  // Address-bound authorization (CAP-71): show the address this
+                  // signature is bound to so the user knows who is authorizing.
+                  <div className="SignAuthEntry__Metadata__Row">
+                    <div className="SignAuthEntry__Metadata__Label">
+                      <Icon.UserCircle />
+                      <span>{t("Authorized address")}</span>
+                    </div>
+                    <div className="SignAuthEntry__Metadata__Value">
+                      <KeyIdenticon publicKey={boundAddress} />
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-          {/* boundAddress is shown in the metadata block above, so it is
+            {/* boundAddress is shown in the metadata block above, so it is
               intentionally omitted here to avoid duplication. */}
-          <AuthEntries entries={[{ invocation }]} />
-        </View.Content>
-        <View.Footer isInline>
-          <Button
-            isFullWidth
-            isRounded
-            size="lg"
-            variant="tertiary"
-            onClick={() => rejectAndClose()}
-          >
-            {t("Cancel")}
-          </Button>
-          <Button
-            data-testid="sign-auth-entry-approve-button"
-            disabled={!isDomainListedAllowed}
-            isFullWidth
-            isRounded
-            size="lg"
-            variant="secondary"
-            isLoading={isConfirming}
-            onClick={() => handleApprove()}
-          >
-            {t("Confirm")}
-          </Button>
-        </View.Footer>
+            <AuthEntries entries={[{ invocation }]} />
+          </SheetLayout>
+        </SlideupModal>
       </React.Fragment>
     </>
   );

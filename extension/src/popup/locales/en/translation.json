@@ -1,4 +1,5 @@
 {
+  "To": "To",
   "{{appName}} disconnected": "{{appName}} disconnected",
   "{{code}} hidden": "{{code}} hidden",
   "{{code}} unhidden": "{{code}} unhidden",
@@ -539,6 +540,7 @@
   "Review authorization on device": "Review authorization on device",
   "Review message on device": "Review message on device",
   "Review Send": "Review Send",
+  "Review send": "Review send",
   "Review swap": "Review swap",
   "Review transaction": "Review transaction",
   "Review transaction on device": "Review transaction on device",
