@@ -12,17 +12,31 @@ const ISSUER = "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN";
 const CONTRACT = "CCV3NAKLIBBNSJNNTV2AZVRX6VODUDWK4TVYILE5MW6R45SSQJS5VCAM";
 
 describe("assetMatchesListItem", () => {
-  // Issuer-alone matching is the long-standing behaviour of the verified-list
-  // membership tests, tracked in stellar/wallet-eng-monorepo#76. Pinned here as
-  // current behaviour, not as the intended contract — a fix for that issue is
-  // expected to require the code to match too, and to change this expectation.
-  it("matches on a shared issuer, without comparing the code", () => {
+  it("matches on a shared code and issuer", () => {
+    expect(
+      assetMatchesListItem(
+        { code: "USDE", issuer: ISSUER },
+        { code: "USDE", issuer: ISSUER, contract: undefined },
+      ),
+    ).toBe(true);
+  });
+
+  it("does not match a different code from the same issuer", () => {
+    expect(
+      assetMatchesListItem(
+        { code: "USDe", issuer: ISSUER },
+        { code: "USDE", issuer: ISSUER },
+      ),
+    ).toBe(false);
+  });
+
+  it("does not match on the issuer alone", () => {
     expect(
       assetMatchesListItem(
         { issuer: ISSUER },
-        { issuer: ISSUER, contract: undefined },
+        { code: "USDE", issuer: ISSUER },
       ),
-    ).toBe(true);
+    ).toBe(false);
   });
 
   it("matches on a shared contract", () => {
@@ -37,7 +51,10 @@ describe("assetMatchesListItem", () => {
 
   it("does not match a contract-less asset against a contract-less entry", () => {
     expect(
-      assetMatchesListItem({ issuer: ISSUER }, { issuer: "GDIFFERENT" }),
+      assetMatchesListItem(
+        { code: "USDE", issuer: ISSUER },
+        { code: "USDE", issuer: "GDIFFERENT" },
+      ),
     ).toBe(false);
   });
 });
@@ -99,5 +116,68 @@ describe("splitVerifiedAssetCurrency", () => {
 
     expect(verifiedAssets).toEqual([]);
     expect(unverifiedAssets).toEqual([xlmCodedRow]);
+  });
+  it("verifies only the listed code from a listed issuer", async () => {
+    const listedRow = mapStellarExpertRecord(
+      { asset: `USDE-${ISSUER}-1` },
+      MAINNET,
+    );
+    const sameIssuerRow = mapStellarExpertRecord(
+      { asset: `USDe-${ISSUER}-1` },
+      MAINNET,
+    );
+    jest.spyOn(TokenListHelpers, "schemaValidatedAssetList").mockResolvedValue({
+      assets: [
+        {
+          code: "USDE",
+          issuer: ISSUER,
+          contract: CONTRACT,
+          domain: "",
+          icon: "",
+          decimals: 7,
+        },
+      ],
+      errors: null,
+    });
+
+    const { verifiedAssets, unverifiedAssets } =
+      await splitVerifiedAssetCurrency({
+        networkDetails: MAINNET,
+        assets: [listedRow, sameIssuerRow],
+        assetsListsDetails: {} as never,
+        cachedAssetLists: [emptyList],
+      });
+
+    expect(verifiedAssets).toEqual([listedRow]);
+    expect(unverifiedAssets).toEqual([sameIssuerRow]);
+  });
+
+  it("verifies a contract token listed by contract id", async () => {
+    const contractRow = mapStellarExpertRecord(
+      { asset: CONTRACT, code: "TKN" },
+      MAINNET,
+    );
+    jest.spyOn(TokenListHelpers, "schemaValidatedAssetList").mockResolvedValue({
+      assets: [
+        {
+          code: "TKN",
+          issuer: "",
+          contract: CONTRACT,
+          domain: "",
+          icon: "",
+          decimals: 7,
+        },
+      ],
+      errors: null,
+    });
+
+    const { verifiedAssets } = await splitVerifiedAssetCurrency({
+      networkDetails: MAINNET,
+      assets: [contractRow],
+      assetsListsDetails: {} as never,
+      cachedAssetLists: [emptyList],
+    });
+
+    expect(verifiedAssets).toEqual([contractRow]);
   });
 });
