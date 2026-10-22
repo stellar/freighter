@@ -260,7 +260,23 @@ describe("getSigningIdentity", () => {
     expect((await getSigningIdentity(stores))?.sourceId).toBe(phraseAId);
   });
 
-  it("pins the first held source when the wallet has no pin", async () => {
+  it("pins the earliest registered source when the wallet has no pin", async () => {
+    // Held sources list phrases first, so the key is not the first held one.
+    const stores = await unlock({
+      keystores: {
+        "key-imported": importedSecret,
+        "key-a0": phraseA.accounts[0].secret,
+      },
+      mnemonics: { [phraseAId]: phraseA.mnemonic },
+      order: [key, phrase],
+    });
+    await stores.localStore.remove(PINNED_SOURCE_ID);
+
+    expect((await getSigningIdentity(stores))?.sourceId).toBe(importedId);
+    expect(await getPinnedSourceId(stores)).toBe(importedId);
+  });
+
+  it("pins the first held source when the wallet has no pin and no records", async () => {
     const stores = await unlock({
       keystores: { "key-imported": importedSecret },
       order: [],

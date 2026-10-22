@@ -22,6 +22,7 @@ import {
   getPinnedSourceId,
   getSecretKeySourceId,
   getSecretSources,
+  pinFirstSource,
   setPinnedSourceId,
 } from "../secret-sources";
 
@@ -227,7 +228,7 @@ describe("pinned source id", () => {
     expect(await getPinnedSourceId({ localStore: store })).toBe(PHRASE_B);
   });
 
-  it("writes the pin before the source record", async () => {
+  it("writes the source record before the pin", async () => {
     const { store } = makeLocalStore();
 
     await addSecretSource({
@@ -237,7 +238,109 @@ describe("pinned source id", () => {
     });
 
     const keys = (store.setItem as jest.Mock).mock.calls.map(([key]) => key);
-    expect(keys).toEqual([PINNED_SOURCE_ID, SECRET_SOURCES_ID]);
+    expect(keys).toEqual([SECRET_SOURCES_ID, PINNED_SOURCE_ID]);
+  });
+
+  /* Rejects the next write to `key` only. */
+  const failNextWrite = (store: DataStorageAccess, key: string) => {
+    const setItem = store.setItem as jest.Mock;
+    const write = setItem.getMockImplementation()!;
+    setItem.mockImplementation(async (k: string, value: unknown) => {
+      if (k === key) {
+        setItem.mockImplementation(write);
+        throw new Error("storage write failed");
+      }
+      return write(k, value);
+    });
+  };
+
+  it("pins nothing when the source record fails to write", async () => {
+    const { store } = makeLocalStore();
+    failNextWrite(store, SECRET_SOURCES_ID);
+
+    await expect(
+      addSecretSource({
+        localStore: store,
+        id: PHRASE_A,
+        type: SecretSourceType.PHRASE,
+      }),
+    ).rejects.toThrow("storage write failed");
+
+    expect(await getPinnedSourceId({ localStore: store })).toBeNull();
+  });
+
+  it("pins the first source on the next registration when the pin write fails", async () => {
+    const { store } = makeLocalStore();
+    failNextWrite(store, PINNED_SOURCE_ID);
+    await expect(
+      addSecretSource({
+        localStore: store,
+        id: PHRASE_A,
+        type: SecretSourceType.PHRASE,
+      }),
+    ).rejects.toThrow("storage write failed");
+
+    await addSecretSource({
+      localStore: store,
+      id: KEY_C,
+      type: SecretSourceType.SECRET_KEY,
+    });
+
+    expect(await getPinnedSourceId({ localStore: store })).toBe(PHRASE_A);
+  });
+
+  it("repairs a missing pin when an existing source is re-added", async () => {
+    const { store } = makeLocalStore();
+    await addSecretSource({
+      localStore: store,
+      id: PHRASE_A,
+      type: SecretSourceType.PHRASE,
+    });
+    await addSecretSource({
+      localStore: store,
+      id: KEY_C,
+      type: SecretSourceType.SECRET_KEY,
+    });
+    await clearPinnedSourceId({ localStore: store });
+
+    await addSecretSource({
+      localStore: store,
+      id: KEY_C,
+      type: SecretSourceType.SECRET_KEY,
+    });
+
+    expect(await getPinnedSourceId({ localStore: store })).toBe(PHRASE_A);
+  });
+});
+
+describe("pinFirstSource", () => {
+  it("pins the earliest registered source when no pin is set", async () => {
+    const { store, data } = makeLocalStore();
+    data[SECRET_SOURCES_ID] = {
+      [KEY_C]: { id: KEY_C, type: SecretSourceType.SECRET_KEY },
+      [PHRASE_A]: { id: PHRASE_A, type: SecretSourceType.PHRASE },
+    };
+
+    expect(await pinFirstSource({ localStore: store })).toBe(KEY_C);
+    expect(await getPinnedSourceId({ localStore: store })).toBe(KEY_C);
+  });
+
+  it("leaves a set pin alone", async () => {
+    const { store, data } = makeLocalStore();
+    data[SECRET_SOURCES_ID] = {
+      [KEY_C]: { id: KEY_C, type: SecretSourceType.SECRET_KEY },
+    };
+    await setPinnedSourceId({ localStore: store, sourceId: PHRASE_B });
+
+    expect(await pinFirstSource({ localStore: store })).toBe(PHRASE_B);
+    expect(await getPinnedSourceId({ localStore: store })).toBe(PHRASE_B);
+  });
+
+  it("returns null and pins nothing when no source is registered", async () => {
+    const { store } = makeLocalStore();
+
+    expect(await pinFirstSource({ localStore: store })).toBeNull();
+    expect(await getPinnedSourceId({ localStore: store })).toBeNull();
   });
 });
 

@@ -4,7 +4,7 @@ import { captureException } from "@sentry/browser";
 
 import { DataStorageAccess } from "background/helpers/dataStorageAccess";
 import {
-  getPinnedSourceId,
+  pinFirstSource,
   setPinnedSourceId,
 } from "background/helpers/secret-sources";
 import { getWalletSources } from "background/helpers/wallet-sources";
@@ -38,8 +38,9 @@ export interface SigningIdentity {
  *   sources: sign with the first held source (phrases first) and leave the
  *   pin alone. The pin moves only from what the server returns (#69), so a
  *   source that failed to derive this unlock cannot move it either.
- * - No pin (a wallet that registered its sources before pinning existed):
- *   pin the first held source.
+ * - No pin, as after a failed pin write: pin the earliest registered source
+ *   (see pinFirstSource), or the first held source when nothing is
+ *   registered.
  */
 export const getSigningIdentity = async ({
   sessionStore,
@@ -57,20 +58,21 @@ export const getSigningIdentity = async ({
       return null;
     }
 
-    const pinned = await getPinnedSourceId({ localStore });
-    const pinnedSigner = pinned ? signers.get(pinned) : undefined;
-    if (pinned && pinnedSigner) {
+    const [{ id: firstHeldId }] = sources;
+
+    let pinned = await pinFirstSource({ localStore });
+    if (!pinned) {
+      await setPinnedSourceId({ localStore, sourceId: firstHeldId });
+      pinned = firstHeldId;
+    }
+
+    const pinnedSigner = signers.get(pinned);
+    if (pinnedSigner) {
       return { sourceId: pinned, keypair: pinnedSigner };
     }
 
-    const [{ id: fallbackId }] = sources;
-    if (pinned) {
-      captureException("getSigningIdentity: the pinned source is not held");
-    } else {
-      await setPinnedSourceId({ localStore, sourceId: fallbackId });
-    }
-
-    return { sourceId: fallbackId, keypair: signers.get(fallbackId)! };
+    captureException("getSigningIdentity: the pinned source is not held");
+    return { sourceId: firstHeldId, keypair: signers.get(firstHeldId)! };
   } catch (e) {
     // A locked or empty wallet is handled above, so anything reaching here
     // is unexpected (a WebCrypto/PBKDF2 failure, a storage read error).

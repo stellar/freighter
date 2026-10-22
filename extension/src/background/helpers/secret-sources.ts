@@ -100,14 +100,44 @@ export const clearPinnedSourceId = async ({
 };
 
 /**
+ * Pins the wallet's first source when no pin is set and returns the pin.
+ *
+ * The first source is the earliest record in the persisted set, not whatever
+ * the caller is registering now. The record and the pin are separate writes,
+ * so this is what lets any later registration repair a pin write that failed.
+ * Returns null when nothing is pinned and nothing is registered.
+ */
+export const pinFirstSource = async ({
+  localStore,
+}: {
+  localStore: DataStorageAccess;
+}): Promise<string | null> => {
+  const pinned = await getPinnedSourceId({ localStore });
+  if (pinned) {
+    return pinned;
+  }
+
+  // Source ids are 64-char hex, never integer-like, so key order is
+  // insertion order.
+  const [first] = Object.keys(await getSecretSources({ localStore }));
+  if (!first) {
+    return null;
+  }
+
+  await setPinnedSourceId({ localStore, sourceId: first });
+  return first;
+};
+
+/**
  * Registers a source. Idempotent by id: an existing record is returned
  * untouched, so re-adding (a re-import, a recover with N preloaded accounts)
  * never allocates a second label.
  *
  * The first source a wallet registers becomes its pinned source, and the pin
  * never moves after that: a phrase wallet that later imports a key keeps the
- * phrase, and a key-first wallet keeps the key. The pin is written before the
- * record, so an interrupted write is retried on the next registration.
+ * phrase, and a key-first wallet keeps the key. The record is written first
+ * and the pin is derived from the persisted set (see pinFirstSource), so a
+ * failed write on either side is repaired by the next registration.
  */
 export const addSecretSource = async ({
   localStore,
@@ -120,22 +150,18 @@ export const addSecretSource = async ({
 }): Promise<SecretSource> => {
   const sources = await getSecretSources({ localStore });
 
-  if (!(await getPinnedSourceId({ localStore }))) {
-    await setPinnedSourceId({ localStore, sourceId: id });
+  let source = sources[id];
+  if (!source) {
+    source = {
+      id,
+      type,
+      label: nextLabel(sources, type),
+      createdAt: Date.now(),
+    };
+    await localStore.setItem(SECRET_SOURCES_ID, { ...sources, [id]: source });
   }
 
-  if (sources[id]) {
-    return sources[id];
-  }
-
-  const source: SecretSource = {
-    id,
-    type,
-    label: nextLabel(sources, type),
-    createdAt: Date.now(),
-  };
-
-  await localStore.setItem(SECRET_SOURCES_ID, { ...sources, [id]: source });
+  await pinFirstSource({ localStore });
 
   return source;
 };
