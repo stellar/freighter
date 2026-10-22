@@ -11,8 +11,12 @@ const mockClearSession = jest.fn().mockResolvedValue(undefined);
 const mockDeriveKeyFromString = jest.fn();
 const mockStoreEncryptedTemporaryData = jest.fn().mockResolvedValue(undefined);
 const mockStoreMnemonics = jest.fn().mockResolvedValue(undefined);
-const mockGetPhraseSourceId = jest.fn(
-  async (mnemonic: string) => `id:${mnemonic}`,
+const derived = (mnemonic: string) => ({
+  userId: `id:${mnemonic}`,
+  keypair: { mnemonic },
+});
+const mockDeriveAuthKeypair = jest.fn(async (mnemonic: string) =>
+  derived(mnemonic),
 );
 const mockStoreActiveHashKey = jest.fn().mockResolvedValue(undefined);
 const mockFlushSessionStore = jest.fn().mockResolvedValue(undefined);
@@ -47,8 +51,8 @@ jest.mock("background/helpers/session", () => ({
   storeMnemonics: (...args: unknown[]) => mockStoreMnemonics(...args),
 }));
 
-jest.mock("background/helpers/secret-sources", () => ({
-  getPhraseSourceId: (mnemonic: string) => mockGetPhraseSourceId(mnemonic),
+jest.mock("@shared/api/helpers/deriveAuthKeypair", () => ({
+  deriveAuthKeypair: (mnemonic: string) => mockDeriveAuthKeypair(mnemonic),
 }));
 
 jest.mock("background/helpers/wallet-sources", () => ({
@@ -86,8 +90,8 @@ describe("loginToAllAccounts", () => {
     mockGetStoredAccounts.mockResolvedValue([{ publicKey: "GBACTIVE" }]);
     mockStoreMnemonics.mockReset();
     mockStoreMnemonics.mockResolvedValue(undefined);
-    mockGetPhraseSourceId.mockImplementation(
-      async (mnemonic: string) => `id:${mnemonic}`,
+    mockDeriveAuthKeypair.mockImplementation(async (mnemonic: string) =>
+      derived(mnemonic),
     );
     mockDeriveKeyFromString.mockResolvedValue({ key: "derived-key" });
   });
@@ -347,7 +351,7 @@ describe("loginToAllAccounts", () => {
 
       await login();
 
-      expect(mockGetPhraseSourceId).toHaveBeenCalledTimes(1);
+      expect(mockDeriveAuthKeypair).toHaveBeenCalledTimes(1);
     });
 
     it("writes no mnemonic map for a secret-key-only wallet", async () => {
@@ -402,11 +406,11 @@ describe("loginToAllAccounts", () => {
           extra: { imported: false, mnemonicPhrase: "not bip39" },
         },
       });
-      mockGetPhraseSourceId.mockImplementation(async (mnemonic: string) => {
+      mockDeriveAuthKeypair.mockImplementation(async (mnemonic: string) => {
         if (mnemonic === "not bip39") {
           throw new Error("Invalid mnemonic (see bip39)");
         }
-        return `id:${mnemonic}`;
+        return derived(mnemonic);
       });
 
       await login();
@@ -477,6 +481,7 @@ describe("loginToAllAccounts", () => {
       expect(mockGetWalletSources).toHaveBeenCalledWith({
         sessionStore,
         localStore,
+        phraseSigners: expect.any(Map),
       });
       expect(mockStoreActiveHashKey.mock.invocationCallOrder[0]).toBeLessThan(
         mockGetWalletSources.mock.invocationCallOrder[0],
@@ -484,6 +489,31 @@ describe("loginToAllAccounts", () => {
       expect(mockGetWalletSources.mock.invocationCallOrder[0]).toBeLessThan(
         mockBroadcastSessionState.mock.invocationCallOrder[0],
       );
+    });
+
+    it("hands over the phrase keypairs it derived, deriving each phrase once", async () => {
+      mockUnlockKeystore.mockReset();
+      mockUnlockKeystore
+        .mockResolvedValueOnce({
+          publicKey: "GBACTIVE",
+          extra: { mnemonicPhrase: "phrase a" },
+        })
+        .mockImplementation(async ({ keyID }: any) => ({
+          privateKey: `S-${keyID}`,
+          extra: {
+            mnemonicPhrase: keyID === "key-id-0" ? "phrase a" : "phrase b",
+          },
+        }));
+      mockGetKeyIdList.mockResolvedValue(["key-id-0", "key-id-1"]);
+
+      await login();
+
+      expect(mockDeriveAuthKeypair).toHaveBeenCalledTimes(2);
+      const { phraseSigners } = mockGetWalletSources.mock.calls[0][0];
+      expect([...phraseSigners]).toEqual([
+        ["id:phrase a", { mnemonic: "phrase a" }],
+        ["id:phrase b", { mnemonic: "phrase b" }],
+      ]);
     });
 
     it("still unlocks when deriving them fails", async () => {

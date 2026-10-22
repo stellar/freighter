@@ -57,10 +57,12 @@ const deriveWalletSources = async ({
   sessionStore,
   localStore,
   keyIdList,
+  phraseSigners,
 }: {
   sessionStore: Store;
   localStore: DataStorageAccess;
   keyIdList: string[];
+  phraseSigners?: Map<string, Keypair>;
 }): Promise<{ sources: WalletSources; complete: boolean }> => {
   const result = empty();
   let complete = true;
@@ -73,9 +75,15 @@ const deriveWalletSources = async ({
     result.signers.set(id, keypair);
   };
 
-  // One PBKDF2 per phrase (mnemonicToSeedSync); the reason this is cached.
+  // One PBKDF2 per phrase (mnemonicToSeedSync); the reason this is cached,
+  // and why a keypair the caller already derived is used as is.
   const mnemonics = await getMnemonics({ sessionStore, localStore });
   for (const [heldId, mnemonic] of Object.entries(mnemonics)) {
+    const seeded = phraseSigners?.get(heldId);
+    if (seeded) {
+      add(heldId, SecretSourceType.PHRASE, seeded);
+      continue;
+    }
     try {
       const { userId, keypair } = await deriveAuthKeypair(mnemonic);
       if (userId !== heldId) {
@@ -141,13 +149,19 @@ const digest = async (str: string) =>
  * every lock clears the cache) and the keystore id list. Every held phrase
  * comes in with a keystore, so adding, importing, replacing or removing an
  * account or a phrase changes the list and re-derives.
+ *
+ * `phraseSigners` holds phrase keypairs the caller already derived, by source
+ * id. Unlock passes the ones it derived to key the held phrase map, so each
+ * phrase is derived once per unlock.
  */
 export const getWalletSources = async ({
   sessionStore,
   localStore,
+  phraseSigners,
 }: {
   sessionStore: Store;
   localStore: DataStorageAccess;
+  phraseSigners?: Map<string, Keypair>;
 }): Promise<WalletSources> => {
   // Read before the first await: a lock that lands anywhere after this point
   // must stop the result from being cached.
@@ -173,6 +187,7 @@ export const getWalletSources = async ({
     sessionStore,
     localStore,
     keyIdList,
+    phraseSigners,
   }).then(
     ({ sources, complete }) => {
       // A lock landed mid-derivation: hand back nothing from the ended session.

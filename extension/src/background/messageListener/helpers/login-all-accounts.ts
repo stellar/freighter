@@ -1,4 +1,5 @@
 import { Store } from "redux";
+import { Keypair } from "stellar-sdk";
 import { KeyManager } from "@stellar/typescript-wallet-sdk-km";
 
 import {
@@ -18,7 +19,6 @@ import {
   storeEncryptedTemporaryData,
   storeMnemonics,
 } from "background/helpers/session";
-import { getPhraseSourceId } from "background/helpers/secret-sources";
 import { getWalletSources } from "background/helpers/wallet-sources";
 import { flushSessionStore } from "background/store";
 import {
@@ -30,6 +30,7 @@ import { getStoredAccounts } from "./get-stored-accounts";
 import { attributePendingAccounts } from "./attribute-pending-accounts";
 import { captureException } from "@sentry/browser";
 import { SERVICE_TYPES } from "@shared/constants/services";
+import { deriveAuthKeypair } from "@shared/api/helpers/deriveAuthKeypair";
 import { broadcastSessionState } from "./broadcast-session-state";
 
 /* Retrive and store encrypted data for all existing accounts */
@@ -143,10 +144,15 @@ export const loginToAllAccounts = async (
     }
   }
 
+  // The keypairs come along so the warm-up below does not derive each phrase
+  // a second time.
   const mnemonics: Record<string, string> = {};
+  const phraseSigners = new Map<string, Keypair>();
   for (const phrase of heldPhrases) {
     try {
-      mnemonics[await getPhraseSourceId(phrase)] = phrase;
+      const { userId, keypair } = await deriveAuthKeypair(phrase);
+      mnemonics[userId] = phrase;
+      phraseSigners.set(userId, keypair);
     } catch (e) {
       // One unreadable phrase must not lock the user out: the private keys
       // above are already in hand, so every account can still sign.
@@ -190,7 +196,7 @@ export const loginToAllAccounts = async (
   // key material, so the first signed backend request does not. A failure
   // only skips the warm-up; getWalletSources derives again on demand.
   try {
-    await getWalletSources({ sessionStore, localStore });
+    await getWalletSources({ sessionStore, localStore, phraseSigners });
   } catch (e) {
     captureException(e, {
       extra: { context: "loginToAllAccounts: deriving wallet sources" },

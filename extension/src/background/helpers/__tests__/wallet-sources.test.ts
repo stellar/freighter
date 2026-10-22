@@ -244,6 +244,21 @@ describe("getWalletSources", () => {
     });
   });
 
+  it("uses a phrase keypair the caller already derived", async () => {
+    const stores = await twoPhraseWallet(importedSecret);
+    const seeded = await deriveAuthKeypair(phraseA.mnemonic);
+    mockDeriveAuthKeypair.mockClear();
+
+    const { signers } = await getWalletSources({
+      ...stores,
+      phraseSigners: new Map([[phraseId(phraseA.mnemonic), seeded.keypair]]),
+    });
+
+    expect(signers.get(phraseId(phraseA.mnemonic))).toBe(seeded.keypair);
+    expect(mockDeriveAuthKeypair).toHaveBeenCalledTimes(1);
+    expect(mockDeriveAuthKeypair).toHaveBeenCalledWith(phraseB.mnemonic);
+  });
+
   describe("cache", () => {
     it("keeps a set missing a keystore's private key, and reports it", async () => {
       const stores = await unlock({
