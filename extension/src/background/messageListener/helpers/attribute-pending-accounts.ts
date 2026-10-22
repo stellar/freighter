@@ -126,30 +126,44 @@ export const attributePendingAccounts = async ({
     return wallet;
   };
 
-  let pinCandidate: string | undefined;
+  // The pin never moves once set. It is written before the id it comes from
+  // leaves the pending list, so a failed or interrupted write is retried.
+  const pinIfUnset = async (sourceId: string) => {
+    if (!(await getPinnedSourceId({ localStore }))) {
+      await setPinnedSourceId({ localStore, sourceId });
+    }
+  };
+
+  let identityId: string | undefined;
 
   if (identityPhrase) {
     try {
-      const identityId = await getPhraseSourceId(identityPhrase);
+      const phraseId = await getPhraseSourceId(identityPhrase);
       // Registered first, so it takes "Seed Phrase 1".
       await addSecretSource({
         localStore,
-        id: identityId,
+        id: phraseId,
         type: SecretSourceType.PHRASE,
       });
       for (let index = 0; index <= counter; index += 1) {
         await markDerivationIndexUsed({
           localStore,
-          sourceId: identityId,
+          sourceId: phraseId,
           index,
         });
       }
-      pinCandidate = identityId;
+      identityId = phraseId;
     } catch (e) {
       captureException(
         `Error registering the pre-V2 wallet phrase: ${JSON.stringify(e)}`,
       );
     }
+  }
+
+  // Outside the catch: if this write fails, no id has left the pending list
+  // yet, so the whole pass retries rather than pinning another source.
+  if (identityId) {
+    await pinIfUnset(identityId);
   }
 
   let attributed = false;
@@ -176,7 +190,7 @@ export const attributePendingAccounts = async ({
           type: AccountType.IMPORTED,
           sourceId,
         });
-        pinCandidate = pinCandidate ?? sourceId;
+        await pinIfUnset(sourceId);
       } else {
         if (!phrase) {
           throw new Error("derived keystore carries no phrase");
@@ -196,7 +210,7 @@ export const attributePendingAccounts = async ({
           type: AccountType.FREIGHTER,
           sourceId,
         });
-        pinCandidate = pinCandidate ?? sourceId;
+        await pinIfUnset(sourceId);
       }
 
       await removePendingAttribution({ localStore, keyId });
@@ -208,11 +222,6 @@ export const attributePendingAccounts = async ({
         `Error attributing a pre-V2 account: ${JSON.stringify(e)}`,
       );
     }
-  }
-
-  // The pin never moves once set.
-  if (pinCandidate && !(await getPinnedSourceId({ localStore }))) {
-    await setPinnedSourceId({ localStore, sourceId: pinCandidate });
   }
 
   return attributed;

@@ -332,6 +332,56 @@ describe("pre-V2 storage migration", () => {
       );
     });
 
+    it("pins before the last pending id is removed", async () => {
+      // A pass that stops between the two writes must still have pinned:
+      // once the pending list is empty the next unlock does nothing.
+      const setItem = jest.spyOn(mockDataStorage, "setItem");
+      let pinnedWhenDrained: unknown;
+      setItem.mockImplementation(async (key, value) => {
+        if (key === PENDING_ATTRIBUTION_ID && !(value as string[]).length) {
+          pinnedWhenDrained = await mockDataStorage.getItem(PINNED_SOURCE_ID);
+        }
+        await mockStorageApi.set({ [key]: value });
+      });
+
+      try {
+        await unlock();
+      } finally {
+        setItem.mockRestore();
+      }
+
+      expect(pinnedWhenDrained).toBe(PRE_UPGRADE_METRICS_USER_ID);
+    });
+
+    it("retries the pin on the next unlock when its write fails", async () => {
+      // Rejects the first pin write only.
+      const setItem = jest.spyOn(mockDataStorage, "setItem");
+      setItem.mockImplementation(async (key, value) => {
+        if (key === PINNED_SOURCE_ID) {
+          setItem.mockRestore();
+          throw new Error("storage write failed");
+        }
+        await mockStorageApi.set({ [key]: value });
+      });
+
+      expect((await unlock()).error).toBeUndefined();
+
+      expect(await mockDataStorage.getItem(PINNED_SOURCE_ID)).toBeUndefined();
+      expect(await mockDataStorage.getItem(PENDING_ATTRIBUTION_ID)).toEqual([
+        PRE_V2_DERIVED_0_ID,
+        PRE_V2_DERIVED_1_ID,
+        PRE_V2_IMPORTED_ID,
+      ]);
+
+      mockSessionStore.dispatch(sessionSlice.actions.reset());
+      await unlock();
+
+      expect(await mockDataStorage.getItem(PINNED_SOURCE_ID)).toBe(
+        PRE_UPGRADE_METRICS_USER_ID,
+      );
+      expect(await mockDataStorage.getItem(PENDING_ATTRIBUTION_ID)).toEqual([]);
+    });
+
     it("a wrong password attributes nothing", async () => {
       const before = await snapshot();
 
