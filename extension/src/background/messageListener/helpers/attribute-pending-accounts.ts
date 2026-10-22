@@ -68,10 +68,12 @@ const findDerivationIndex = (
     sign as the phrase, so the cluster root equals the existing analytics id.
   - Its index set is seeded with 0..`keyDerivationNumber`. Over-marking is
     safe: a marked index is only ever skipped.
-  - A keystore with `extra.imported` set becomes its own "Secret Key N". The
-    phrase pre-#75 builds stamped into it is ignored.
-  - Any other keystore is attributed to the phrase in its own `extra`, and its
-    actual index is marked.
+  - A keystore whose key derives from the phrase in its own `extra` is
+    attributed to that phrase, and its actual index is marked. This holds even
+    with `extra.imported` set: recovery before 5.45.0 preloaded funded phrase
+    accounts with that flag.
+  - Any other keystore with `extra.imported` set becomes its own "Secret Key
+    N". The phrase pre-#75 builds stamped into it is not its source.
 
   Every write is idempotent and an id leaves the pending list only once its
   provenance is written, so an interrupted pass resumes on the next unlock. A
@@ -156,8 +158,12 @@ export const attributePendingAccounts = async ({
   for (const keyId of keyIdList.filter((id) => pending.includes(id))) {
     try {
       const key = await unlockKeystore({ keyID: keyId, password, keyManager });
+      const phrase = key.extra?.mnemonicPhrase;
+      const index = phrase
+        ? findDerivationIndex(walletFor(phrase), key.publicKey, searchLimit)
+        : null;
 
-      if (key.extra?.imported) {
+      if (key.extra?.imported && index === null) {
         const sourceId = await getSecretKeySourceId(key.privateKey);
         await addSecretSource({
           localStore,
@@ -172,7 +178,6 @@ export const attributePendingAccounts = async ({
         });
         pinCandidate = pinCandidate ?? sourceId;
       } else {
-        const phrase = key.extra?.mnemonicPhrase;
         if (!phrase) {
           throw new Error("derived keystore carries no phrase");
         }
@@ -182,11 +187,6 @@ export const attributePendingAccounts = async ({
           id: sourceId,
           type: SecretSourceType.PHRASE,
         });
-        const index = findDerivationIndex(
-          walletFor(phrase),
-          key.publicKey,
-          searchLimit,
-        );
         if (index !== null) {
           await markDerivationIndexUsed({ localStore, sourceId, index });
         }

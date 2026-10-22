@@ -1,4 +1,5 @@
 import { Keypair } from "stellar-sdk";
+import { KeyType, ScryptEncrypter } from "@stellar/typescript-wallet-sdk-km";
 
 import { sessionSlice } from "background/ducks/session";
 import { popupMessageListener } from "background/messageListener/popupMessageListener";
@@ -378,6 +379,48 @@ describe("pre-V2 storage migration", () => {
       expect(
         Object.keys(await mockDataStorage.getItem(SECRET_SOURCES_ID)),
       ).toEqual([PHRASE.userId]);
+    });
+
+    it("attributes phrase accounts a pre-5.45 recovery flagged imported", async () => {
+      // Recovery's preload loop stored funded indices 1..n with
+      // `imported: true` and the recovered phrase until 5.45.0.
+      const recovered = ACCOUNT_SOURCE_VECTORS[0].accounts[2];
+      const { id: recoveredId } = await mockKeyManager.storeKey({
+        key: {
+          extra: { imported: true, mnemonicPhrase: PRE_V2_PHRASE },
+          type: KeyType.plaintextKey,
+          publicKey: recovered.publicKey,
+          privateKey: recovered.secret,
+        },
+        password: PRE_V2_PASSWORD,
+        encrypterName: ScryptEncrypter.name,
+      });
+      await mockDataStorage.setItem(KEY_ID_LIST, [
+        ...(PRE_V2_STORAGE.keyIdList as string[]),
+        recoveredId,
+      ]);
+      // Left at 1, so only the derivation search can mark index 2.
+      await installPass();
+
+      await unlock();
+
+      const sourceId = await importedSourceId();
+      expect(await mockDataStorage.getItem(ACCOUNT_PROVENANCE_ID)).toEqual(
+        expect.objectContaining({
+          [recoveredId]: {
+            type: AccountType.FREIGHTER,
+            sourceId: PHRASE.userId,
+          },
+          [PRE_V2_IMPORTED_ID]: { type: AccountType.IMPORTED, sourceId },
+        }),
+      );
+      expect(
+        Object.keys(await mockDataStorage.getItem(SECRET_SOURCES_ID)).sort(),
+      ).toEqual([PHRASE.userId, sourceId].sort());
+      expect(await mockDataStorage.getItem(DERIVATION_INDICES_ID)).toEqual({
+        [PHRASE.userId]: [0, 1, 2],
+      });
+      expect(await mockDataStorage.getItem(PENDING_ATTRIBUTION_ID)).toEqual([]);
     });
 
     describe("after a recovery before the first unlock", () => {
