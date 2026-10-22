@@ -171,6 +171,10 @@ export const getWalletSources = async ({
     keyIdList,
   }).then(
     ({ sources, complete }) => {
+      // A lock landed mid-derivation: hand back nothing from the ended session.
+      if (generation !== getWalletSourcesGeneration()) {
+        return empty();
+      }
       if (!complete) {
         dropCachedWalletSources(pending);
       }

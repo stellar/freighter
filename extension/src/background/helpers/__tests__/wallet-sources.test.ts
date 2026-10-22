@@ -320,6 +320,36 @@ describe("getWalletSources", () => {
       expect(mockDeriveAuthKeypair).toHaveBeenCalledTimes(2);
     });
 
+    it("returns nothing to a caller whose derivation a lock overtook", async () => {
+      const { deriveAuthKeypair: actual } = jest.requireActual(
+        "@shared/api/helpers/deriveAuthKeypair",
+      );
+      let reached: () => void;
+      const derivationReached = new Promise<void>((resolve) => {
+        reached = resolve;
+      });
+      let release: () => void;
+      const derivationReleased = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      // Pause after the phrases are decrypted, while the first is deriving.
+      mockDeriveAuthKeypair.mockImplementationOnce(async (mnemonic: string) => {
+        reached();
+        await derivationReleased;
+        return actual(mnemonic);
+      });
+      const stores = await twoPhraseWallet(importedSecret);
+
+      const inFlight = getWalletSources(stores);
+      await derivationReached;
+      await clearSession(stores);
+      release!();
+
+      const { sources, signers } = await inFlight;
+      expect(sources).toEqual([]);
+      expect(signers.size).toBe(0);
+    });
+
     it("is dropped by clearSession", async () => {
       const stores = await twoPhraseWallet(importedSecret);
       await getWalletSources(stores);
