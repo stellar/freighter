@@ -421,8 +421,9 @@ export const migrateToMultiSourceModel = async () => {
   const storageVersion = (await localStore.getItem(STORAGE_VERSION)) as string;
 
   if (shouldRunMigration({ storageVersion, migrationVersion: "5.50.0" })) {
-    await migratePreV2Storage({ localStore });
-    await migrateDataStorageVersion("5.50.0");
+    if (await migratePreV2Storage({ localStore })) {
+      await migrateDataStorageVersion("5.50.0");
+    }
   }
 };
 

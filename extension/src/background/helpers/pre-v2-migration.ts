@@ -166,13 +166,15 @@ const backfillKeyIdList = async (
 
 /**
  * The install pass. Plain storage only, no password. Safe to run on empty
- * storage (a fresh install), where it writes nothing.
+ * storage (a fresh install), where it writes nothing. Resolves false when it
+ * left the storage untouched because the `keyIdList` shape is unknown, so the
+ * caller can leave the storage version unadvanced and retry on a later start.
  */
 export const migratePreV2Storage = async ({
   localStore,
 }: {
   localStore: DataStorageAccess;
-}) => {
+}): Promise<boolean> => {
   const { keyId, keyIdList: storedKeyIdList } = await coerceKeyIds(localStore);
 
   if (storedKeyIdList === null) {
@@ -180,7 +182,7 @@ export const migratePreV2Storage = async ({
     // A present but non-array list is a shape this code does not understand.
     // Leave it alone rather than overwrite accounts it might describe.
     if (rawKeyIdList !== null && rawKeyIdList !== undefined) {
-      return;
+      return false;
     }
   }
 
@@ -189,7 +191,7 @@ export const migratePreV2Storage = async ({
     : await backfillKeyIdList(localStore, keyId);
 
   if (!keyIdList.length) {
-    return;
+    return true;
   }
 
   const provenance = await getAccountProvenance({ localStore });
@@ -216,4 +218,6 @@ export const migratePreV2Storage = async ({
   if (pending.size !== pendingBefore) {
     await localStore.setItem(PENDING_ATTRIBUTION_ID, [...pending]);
   }
+
+  return true;
 };

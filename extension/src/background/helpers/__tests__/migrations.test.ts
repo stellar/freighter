@@ -280,6 +280,18 @@ describe("Storage migrations", () => {
     });
     expect(storedVersion[STORAGE_VERSION]).toEqual("5.50.0");
   });
+  it("migrateToMultiSourceModel leaves the version unadvanced for a non-array keyIdList", async () => {
+    await mockStorage.set({
+      [STORAGE_VERSION]: "5.33.5",
+      [KEY_ID]: "0.1",
+      [KEY_ID_LIST]: '["0.1"]',
+    });
+    await DataStorage.migrateToMultiSourceModel();
+    const pending = await mockStorage.get(PENDING_ATTRIBUTION_ID);
+    const storedVersion = await mockStorage.get(STORAGE_VERSION);
+    expect(pending[PENDING_ATTRIBUTION_ID]).toBeUndefined();
+    expect(storedVersion[STORAGE_VERSION]).toEqual("5.33.5");
+  });
   it("migrateToMultiSourceModel does not run again at 5.50.0", async () => {
     await mockStorage.set({
       [STORAGE_VERSION]: "5.50.0",
