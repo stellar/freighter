@@ -45,6 +45,21 @@ describe("assetMatchesListItem", () => {
     ).toBe(true);
   });
 
+  it("matches a contract in the list's issuer field for any code", () => {
+    expect(
+      assetMatchesListItem(
+        { code: "", issuer: CONTRACT, contract: CONTRACT },
+        { code: "TKN", issuer: CONTRACT },
+      ),
+    ).toBe(true);
+    expect(
+      assetMatchesListItem(
+        { code: "OTHER", issuer: CONTRACT },
+        { code: "TKN", issuer: CONTRACT },
+      ),
+    ).toBe(true);
+  });
+
   it("does not match when both sides are simply absent", () => {
     expect(assetMatchesListItem({}, {})).toBe(false);
   });

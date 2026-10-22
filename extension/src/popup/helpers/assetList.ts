@@ -1,5 +1,6 @@
 import { NetworkDetails } from "@shared/constants/stellar";
 import { getCanonicalFromAsset } from "@shared/helpers/stellar";
+import { isContractId } from "@shared/api/helpers/soroban";
 import {
   AssetsLists,
   AssetListReponseItem,
@@ -75,7 +76,8 @@ interface GetAssetListsForAssetParams {
 
 /**
  * The identities an asset (or an asset list entry) is known by: its contract
- * id, and for a classic asset its code:issuer pair.
+ * id, and for a classic asset its code:issuer pair. A contract id in the
+ * issuer field is a contract identity too, matched for any code.
  *
  * A classic asset is the pair (code, issuer), so the issuer alone is never an
  * identity: an issuer can mint any number of codes, and a list that vouches
@@ -91,7 +93,9 @@ export const getAssetIdentities = (asset: {
   if (asset.contract) {
     identities.push(asset.contract);
   }
-  if (asset.code && asset.issuer) {
+  if (isContractId(asset.issuer)) {
+    identities.push(asset.issuer!);
+  } else if (asset.code && asset.issuer) {
     identities.push(getCanonicalFromAsset(asset.code, asset.issuer));
   }
   return identities;
