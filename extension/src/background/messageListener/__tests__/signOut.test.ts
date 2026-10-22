@@ -1,6 +1,11 @@
 import { SERVICE_TYPES } from "@shared/constants/services";
 
 import { lockHardwareWallet, logOut } from "background/ducks/session";
+import {
+  getCachedWalletSources,
+  getWalletSourcesGeneration,
+  setCachedWalletSources,
+} from "background/helpers/session";
 import { TEMPORARY_STORE_ID } from "constants/localStorageTypes";
 import { signOut } from "../handlers/signOut";
 
@@ -106,5 +111,30 @@ describe("signOut handler", () => {
     );
     expect(logOutIdx).toBeGreaterThanOrEqual(0);
     expect(lockHwIdx).toBeGreaterThan(logOutIdx);
+  });
+
+  // #65: the derived source signers must not outlive the session.
+  it("drops the cached wallet sources", async () => {
+    setCachedWalletSources(
+      "cache-key",
+      Promise.resolve({ sources: [], signers: new Map() }),
+      getWalletSourcesGeneration(),
+    );
+
+    await signOut({
+      localStore: {
+        getItem: jest.fn().mockResolvedValue(""),
+        remove: jest.fn().mockResolvedValue(undefined),
+      } as any,
+      sessionStore: {
+        dispatch: jest.fn(),
+        getState: jest.fn().mockReturnValue({ session: { publicKey: "" } }),
+      } as any,
+      sessionTimer: {
+        stopSession: jest.fn().mockResolvedValue(undefined),
+      } as any,
+    });
+
+    expect(getCachedWalletSources("cache-key")).toBeNull();
   });
 });

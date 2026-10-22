@@ -20,6 +20,7 @@ import {
   coerceAutoLockTimeoutMinutes,
 } from "@shared/constants/autoLock";
 import { encode, decode } from "./base64-arraybuffer";
+import type { WalletSources } from "./wallet-sources";
 
 export const SESSION_ALARM_NAME = "session-timer";
 
@@ -405,6 +406,53 @@ export const getMnemonic = async ({
 }: GetMnemonics & { sourceId: string }): Promise<string> =>
   (await getMnemonics({ sessionStore, localStore }))[sourceId] || "";
 
+/*
+  Per-unlock cache of the wallet's derived source identities (see
+  wallet-sources.ts). It lives here so both lock paths (clearSession and the
+  signOut handler) can drop it without wallet-sources and session importing
+  each other. In memory only: the signers are never written anywhere, and a
+  service worker restart simply re-derives them on the next call.
+
+  The value is the derivation's promise, so concurrent callers share one
+  derivation. The generation is bumped on every lock, so a derivation that
+  started before the lock cannot cache its signers after it.
+*/
+let walletSourcesCache: {
+  key: string;
+  value: Promise<WalletSources>;
+} | null = null;
+let walletSourcesGeneration = 0;
+
+export const getWalletSourcesGeneration = () => walletSourcesGeneration;
+
+/* The cached sources for this cache key, or null when none are cached for it. */
+export const getCachedWalletSources = (key: string) =>
+  walletSourcesCache?.key === key ? walletSourcesCache.value : null;
+
+/* Caches `value` under `key`, unless the wallet was locked since `generation`. */
+export const setCachedWalletSources = (
+  key: string,
+  value: Promise<WalletSources>,
+  generation: number,
+) => {
+  if (generation === walletSourcesGeneration) {
+    walletSourcesCache = { key, value };
+  }
+};
+
+/* Drops `value` if it is still the cached entry; a no-op otherwise. */
+export const dropCachedWalletSources = (value: Promise<WalletSources>) => {
+  if (walletSourcesCache?.value === value) {
+    walletSourcesCache = null;
+  }
+};
+
+/* Called on lock: drops the cache and invalidates any derivation in flight. */
+export const clearCachedWalletSources = () => {
+  walletSourcesCache = null;
+  walletSourcesGeneration += 1;
+};
+
 interface ClearSession {
   localStore: DataStorageAccess;
   sessionStore: Store;
@@ -420,6 +468,7 @@ export const clearSession = async ({
   // `localStore.isHardwareWalletActive` and is unaffected — so without
   // this dispatch the idle alarm would be a no-op on HW-only sessions.
   sessionStore.dispatch(lockHardwareWallet());
+  clearCachedWalletSources();
   await flushSessionStore(sessionStore);
   await localStore.remove(TEMPORARY_STORE_ID);
 };

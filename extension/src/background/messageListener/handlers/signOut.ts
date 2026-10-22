@@ -7,7 +7,10 @@ import {
   publicKeySelector,
 } from "background/ducks/session";
 import { DataStorageAccess } from "background/helpers/dataStorageAccess";
-import { SessionTimer } from "background/helpers/session";
+import {
+  clearCachedWalletSources,
+  SessionTimer,
+} from "background/helpers/session";
 import { broadcastSessionState } from "../helpers/broadcast-session-state";
 import { flushSessionStore } from "background/store";
 import {
@@ -39,6 +42,8 @@ export const signOut = async ({
   // dispatch, `buildHasPrivateKeySelector`'s HW branch would report
   // the wallet UNLOCKED for HW users immediately after sign-out.
   sessionStore.dispatch(lockHardwareWallet());
+  // The derived source signers must not outlive the session.
+  clearCachedWalletSources();
   await flushSessionStore(sessionStore);
   await localStore.remove(TEMPORARY_STORE_ID);
   await broadcastSessionState(SERVICE_TYPES.SESSION_LOCKED);

@@ -19,6 +19,7 @@ import {
   storeMnemonics,
 } from "background/helpers/session";
 import { getPhraseSourceId } from "background/helpers/secret-sources";
+import { getWalletSources } from "background/helpers/wallet-sources";
 import { flushSessionStore } from "background/store";
 import {
   allAccountsSelector,
@@ -183,6 +184,17 @@ export const loginToAllAccounts = async (
     // broadcastSessionState(SESSION_UNLOCKED) below — the session was
     // just cleared and the wallet must not be reported as unlocked.
     throw e;
+  }
+
+  // Derive every source identity now, while the unlock is already paying for
+  // key material, so the first signed backend request does not. A failure
+  // only skips the warm-up; getWalletSources derives again on demand.
+  try {
+    await getWalletSources({ sessionStore, localStore });
+  } catch (e) {
+    captureException(e, {
+      extra: { context: "loginToAllAccounts: deriving wallet sources" },
+    });
   }
 
   // start the timer now that we have active private key

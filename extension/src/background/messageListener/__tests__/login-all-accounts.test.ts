@@ -17,6 +17,10 @@ const mockGetPhraseSourceId = jest.fn(
 const mockStoreActiveHashKey = jest.fn().mockResolvedValue(undefined);
 const mockFlushSessionStore = jest.fn().mockResolvedValue(undefined);
 const mockBroadcastSessionState = jest.fn().mockResolvedValue(undefined);
+const mockGetWalletSources = jest.fn().mockResolvedValue({
+  sources: [],
+  signers: new Map(),
+});
 
 jest.mock("background/helpers/account", () => ({
   HW_PREFIX: "hw:",
@@ -45,6 +49,10 @@ jest.mock("background/helpers/session", () => ({
 
 jest.mock("background/helpers/secret-sources", () => ({
   getPhraseSourceId: (mnemonic: string) => mockGetPhraseSourceId(mnemonic),
+}));
+
+jest.mock("background/helpers/wallet-sources", () => ({
+  getWalletSources: (...args: unknown[]) => mockGetWalletSources(...args),
 }));
 
 jest.mock("background/store", () => ({
@@ -431,6 +439,63 @@ describe("loginToAllAccounts", () => {
       );
       expect(mockStoreMnemonics.mock.invocationCallOrder[0]).toBeLessThan(
         mockStoreActiveHashKey.mock.invocationCallOrder[0],
+      );
+    });
+  });
+
+  // #65: the source identities are derived once the hash key is stored, so
+  // the first signed backend request finds them cached.
+  describe("wallet sources", () => {
+    const login = async () => {
+      const localStore = {
+        getItem: jest
+          .fn()
+          .mockImplementation((key: string) =>
+            Promise.resolve(key === KEY_ID ? "key-id-0" : null),
+          ),
+        remove: jest.fn().mockResolvedValue(undefined),
+      } as any;
+      const sessionStore = {
+        dispatch: jest.fn().mockResolvedValue(undefined),
+        getState: jest
+          .fn()
+          .mockReturnValue({ session: { publicKey: "", allAccounts: [] } }),
+      } as any;
+      await loginToAllAccounts(
+        "password",
+        localStore,
+        sessionStore,
+        {} as any,
+        { startSession: jest.fn().mockResolvedValue(undefined) } as any,
+      );
+      return { localStore, sessionStore };
+    };
+
+    it("derives them after the hash key is stored and before broadcasting", async () => {
+      const { localStore, sessionStore } = await login();
+
+      expect(mockGetWalletSources).toHaveBeenCalledWith({
+        sessionStore,
+        localStore,
+      });
+      expect(mockStoreActiveHashKey.mock.invocationCallOrder[0]).toBeLessThan(
+        mockGetWalletSources.mock.invocationCallOrder[0],
+      );
+      expect(mockGetWalletSources.mock.invocationCallOrder[0]).toBeLessThan(
+        mockBroadcastSessionState.mock.invocationCallOrder[0],
+      );
+    });
+
+    it("still unlocks when deriving them fails", async () => {
+      mockGetWalletSources.mockRejectedValueOnce(new Error("boom"));
+
+      await expect(login()).resolves.toBeDefined();
+
+      expect(mockCaptureException).toHaveBeenCalledWith(expect.any(Error), {
+        extra: { context: "loginToAllAccounts: deriving wallet sources" },
+      });
+      expect(mockBroadcastSessionState).toHaveBeenCalledWith(
+        SERVICE_TYPES.SESSION_UNLOCKED,
       );
     });
   });
