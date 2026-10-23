@@ -23,7 +23,7 @@ import { getAssetSacAddress } from "@shared/helpers/soroban/token";
 import { LP_IDENTIFIER } from "./account";
 import { NO_FIAT_VALUE, formatFiatAmount } from "./formatters";
 import { isAssetVisible } from "./settings";
-import { isContractId } from "./soroban";
+import { getTokenBalance, isContractId } from "./soroban";
 
 export const isClassicBalance = (balance: AssetType): balance is ClassicAsset =>
   "token" in balance && "issuer" in balance.token;
@@ -31,16 +31,12 @@ export const isClassicBalance = (balance: AssetType): balance is ClassicAsset =>
 export const isSorobanBalance = (balance: AssetType): balance is SorobanAsset =>
   "contractId" in balance;
 
-// SEP-41 totals are raw integers; scale them exactly as the balance display
-// does before multiplying by a whole-token price.
-export const getTotalInWholeUnits = (balance: AssetType): BigNumber => {
-  const total = new BigNumber(balance.total);
-  if (!("contractId" in balance && "decimals" in balance)) {
-    return total;
-  }
-  const decimals = Number(balance.decimals);
-  return decimals > 0 ? total.shiftedBy(-decimals) : total;
-};
+// SEP-41 totals are raw integers; scale them the same way the send flow does
+// (getTokenBalance) before multiplying by a whole-token price.
+export const getTotalInWholeUnits = (balance: AssetType): BigNumber =>
+  isSorobanBalance(balance)
+    ? new BigNumber(getTokenBalance(balance))
+    : new BigNumber(balance.total);
 
 export const findAssetBalance = (
   balances: AssetType[],
