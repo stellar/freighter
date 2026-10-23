@@ -239,6 +239,9 @@ export const reconcileAnalyticsUserId = async ({
   try {
     const { analyticsUserId: authUserId, confirmed } =
       await getAnalyticsUserId();
+    // Another call settled the session while this one waited: its answer is
+    // the server's, and this one may be stale.
+    if (hasReconciledUserId) return;
 
     // No id: locked with nothing cached, or the message failed. Leave the
     // guard unset so we retry once the session is actually unlocked.

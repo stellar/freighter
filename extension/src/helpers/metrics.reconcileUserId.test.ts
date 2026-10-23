@@ -248,6 +248,30 @@ describe("reconcileAnalyticsUserId (canonical id)", () => {
     expect(amplitude.track).not.toHaveBeenCalled();
   });
 
+  it("ignores a provisional answer that arrives after another call confirmed", async () => {
+    localStorage.setItem(METRICS_USER_ID, "4873921");
+    let resolveStale: (value: unknown) => void = () => {};
+    mockGetAnalyticsUserId
+      .mockReturnValueOnce(
+        new Promise((resolve) => {
+          resolveStale = resolve;
+        }),
+      )
+      .mockResolvedValueOnce({
+        analyticsUserId: "5".repeat(64),
+        confirmed: true,
+      });
+
+    const stale = reconcileAnalyticsUserId();
+    await reconcileAnalyticsUserId();
+    resolveStale({ analyticsUserId: "4".repeat(64), confirmed: false });
+    await stale;
+
+    expect(localStorage.getItem(METRICS_USER_ID)).toBe("5".repeat(64));
+    expect(amplitude.setUserId).toHaveBeenLastCalledWith("5".repeat(64));
+    expect(Sentry.setUser).toHaveBeenLastCalledWith({ id: "5".repeat(64) });
+  });
+
   it("adopts the cached id while locked without settling the session", async () => {
     localStorage.setItem(METRICS_USER_ID, "4873921");
     mockGetAnalyticsUserId.mockResolvedValue({
