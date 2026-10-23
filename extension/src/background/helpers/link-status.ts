@@ -15,6 +15,11 @@ import { LINK_STATUS_ID } from "constants/localStorageTypes";
   run. An entry is written only after a successful response, never by the
   install-time migration. Removing an account removes no source, so nothing
   here is cleared on removal.
+
+  Replacing the wallet (create over, recover) clears the map and moves the
+  epoch. A pass that started before the clear may still get a response
+  afterwards; recordLinkResults drops it, so the replaced wallet's answers
+  never land in the new wallet's map.
 */
 
 export type LinkStatus = "linked" | "conflict";
@@ -22,6 +27,11 @@ type LinkStatusMap = Record<string, LinkStatus>;
 
 const getMap = async (localStore: DataStorageAccess) =>
   ((await localStore.getItem(LINK_STATUS_ID)) as LinkStatusMap) || {};
+
+let epoch = 0;
+
+/** Read before a pass starts; pass the value to recordLinkResults. */
+export const getLinkStatusEpoch = () => epoch;
 
 export const getLinkStatus = async ({
   localStore,
@@ -41,21 +51,31 @@ export const getLinkConflicts = async ({
 
 /**
  * Merges one response into the stored map. Entries from earlier calls are
- * kept. A no-op when both lists are empty.
+ * kept. A no-op when both lists are empty, or when the map was cleared since
+ * `epoch` was read. Returns false only in that last case.
  */
 export const recordLinkResults = async ({
   localStore,
   linked,
   conflicts,
+  epoch: readAt,
 }: {
   localStore: DataStorageAccess;
   linked: string[];
   conflicts: string[];
-}) => {
+  epoch: number;
+}): Promise<boolean> => {
+  if (readAt !== epoch) {
+    return false;
+  }
   if (!linked.length && !conflicts.length) {
-    return;
+    return true;
   }
   const map = await getMap(localStore);
+  // The read above awaited; a clear may have landed during it.
+  if (readAt !== epoch) {
+    return false;
+  }
   for (const id of linked) {
     map[id] = "linked";
   }
@@ -63,6 +83,7 @@ export const recordLinkResults = async ({
     map[id] = "conflict";
   }
   await localStore.setItem(LINK_STATUS_ID, map);
+  return true;
 };
 
 /** For a recover, which replaces every source the wallet holds. */
@@ -71,5 +92,6 @@ export const clearLinkStatus = async ({
 }: {
   localStore: DataStorageAccess;
 }) => {
+  epoch += 1;
   await localStore.remove(LINK_STATUS_ID);
 };

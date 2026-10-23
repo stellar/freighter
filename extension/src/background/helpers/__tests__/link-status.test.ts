@@ -5,6 +5,7 @@ import {
   clearLinkStatus,
   getLinkConflicts,
   getLinkStatus,
+  getLinkStatusEpoch,
   recordLinkResults,
 } from "../link-status";
 
@@ -38,8 +39,18 @@ describe("link-status", () => {
 
   it("merges a later response into the earlier entries", async () => {
     const { store, data } = makeLocalStore();
-    await recordLinkResults({ localStore: store, linked: [A], conflicts: [] });
-    await recordLinkResults({ localStore: store, linked: [B], conflicts: [C] });
+    await recordLinkResults({
+      localStore: store,
+      linked: [A],
+      conflicts: [],
+      epoch: getLinkStatusEpoch(),
+    });
+    await recordLinkResults({
+      localStore: store,
+      linked: [B],
+      conflicts: [C],
+      epoch: getLinkStatusEpoch(),
+    });
 
     expect(data[LINK_STATUS_ID]).toEqual({
       [A]: "linked",
@@ -51,13 +62,39 @@ describe("link-status", () => {
 
   it("writes nothing for an empty response", async () => {
     const { store, data } = makeLocalStore();
-    await recordLinkResults({ localStore: store, linked: [], conflicts: [] });
+    await recordLinkResults({
+      localStore: store,
+      linked: [],
+      conflicts: [],
+      epoch: getLinkStatusEpoch(),
+    });
+    expect(LINK_STATUS_ID in data).toBe(false);
+  });
+
+  it("drops a write that read the epoch before a clear", async () => {
+    const { store, data } = makeLocalStore();
+    const epoch = getLinkStatusEpoch();
+    await clearLinkStatus({ localStore: store });
+
+    const written = await recordLinkResults({
+      localStore: store,
+      linked: [A],
+      conflicts: [B],
+      epoch,
+    });
+
+    expect(written).toBe(false);
     expect(LINK_STATUS_ID in data).toBe(false);
   });
 
   it("clears every entry", async () => {
     const { store } = makeLocalStore();
-    await recordLinkResults({ localStore: store, linked: [A], conflicts: [B] });
+    await recordLinkResults({
+      localStore: store,
+      linked: [A],
+      conflicts: [B],
+      epoch: getLinkStatusEpoch(),
+    });
     await clearLinkStatus({ localStore: store });
     expect(await getLinkStatus({ localStore: store })).toEqual({});
   });

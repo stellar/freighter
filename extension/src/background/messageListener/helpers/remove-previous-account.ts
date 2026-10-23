@@ -2,6 +2,7 @@ import { getKeyIdList } from "background/helpers/account";
 import { DataStorageAccess } from "background/helpers/dataStorageAccess";
 import { clearDerivationIndices } from "background/helpers/derivation-indices";
 import { clearAccountProvenance } from "background/helpers/account-provenance";
+import { clearLinkStatus } from "background/helpers/link-status";
 import { clearPendingAttribution } from "background/helpers/pre-v2-migration";
 import {
   clearPinnedSourceId,
@@ -43,5 +44,6 @@ export const removePreviousAccount = async ({
   await clearPinnedSourceId({ localStore });
   await clearDerivationIndices({ localStore });
   await clearAccountProvenance({ localStore });
+  await clearLinkStatus({ localStore });
   await clearPendingAttribution({ localStore });
 };

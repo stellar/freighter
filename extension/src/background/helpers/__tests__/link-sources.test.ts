@@ -12,6 +12,7 @@ import {
 } from "background/helpers/wallet-sources";
 import { LINK_STATUS_ID } from "constants/localStorageTypes";
 
+import { clearLinkStatus } from "../link-status";
 import { linkWalletSources } from "../link-sources";
 
 jest.mock("@sentry/browser");
@@ -312,5 +313,60 @@ describe("linkWalletSources", () => {
       MAX_LINK_SOURCES,
     );
     expect(wallet.ids().length).toBeGreaterThan(MAX_LINK_SOURCES);
+  });
+
+  it("drops a response that lands after the wallet was replaced", async () => {
+    makeWallet(1);
+    const { store, data } = makeLocalStore();
+    const inner = server();
+    let release: () => void = () => undefined;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    let sent: () => void = () => undefined;
+    const firstSent = new Promise<void>((resolve) => {
+      sent = resolve;
+    });
+    const fetchImpl = jest.fn(
+      async (url: RequestInfo | URL, init?: RequestInit) => {
+        sent();
+        await gate;
+        return inner(url, init);
+      },
+    );
+
+    const pass = linkWalletSources({
+      sessionStore,
+      localStore: store,
+      fetchImpl,
+    });
+    await firstSent;
+    // A recover or an overwrite clears the map while the request is out.
+    await clearLinkStatus({ localStore: store });
+    release();
+    await pass;
+
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    expect(LINK_STATUS_ID in data).toBe(false);
+  });
+
+  it("sends no further body once the wallet is replaced mid-pass", async () => {
+    makeWallet(MAX_LINK_SOURCES + 10);
+    const { store, data } = makeLocalStore();
+    const inner = server();
+    const fetchImpl = jest.fn(
+      async (url: RequestInfo | URL, init?: RequestInit) => {
+        const res = await inner(url, init);
+        if (fetchImpl.mock.calls.length === 1) {
+          await clearLinkStatus({ localStore: store });
+        }
+        return res;
+      },
+    );
+
+    await linkWalletSources({ sessionStore, localStore: store, fetchImpl });
+
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    expect(LINK_STATUS_ID in data).toBe(false);
   });
 });

@@ -2,6 +2,7 @@ import { getKeyIdList } from "background/helpers/account";
 import { DataStorageAccess } from "background/helpers/dataStorageAccess";
 import { clearDerivationIndices } from "background/helpers/derivation-indices";
 import { clearAccountProvenance } from "background/helpers/account-provenance";
+import { clearLinkStatus } from "background/helpers/link-status";
 import {
   clearPinnedSourceId,
   clearSecretSources,
@@ -34,4 +35,5 @@ export const clearAccount = async (store: DataStorageAccess) => {
   await clearPinnedSourceId({ localStore: store });
   await clearDerivationIndices({ localStore: store });
   await clearAccountProvenance({ localStore: store });
+  await clearLinkStatus({ localStore: store });
 };

@@ -11,7 +11,10 @@ import {
 } from "@shared/api/types/message-request";
 import { AUTH_KEYPAIR_VECTORS } from "@shared/api/helpers/authKeypairVectors";
 import { linkWalletSources } from "background/helpers/link-sources";
-import { recordLinkResults } from "background/helpers/link-status";
+import {
+  getLinkStatusEpoch,
+  recordLinkResults,
+} from "background/helpers/link-status";
 import {
   mockDataStorage,
   mockSessionStore,
@@ -137,9 +140,28 @@ describe("link triggers", () => {
       localStore: mockDataStorage,
       linked: [PHRASE_1.userId],
       conflicts: [],
+      epoch: getLinkStatusEpoch(),
     });
 
     await recover(PHRASE_2.mnemonic, true);
+
+    expect(await mockDataStorage.getItem(LINK_STATUS_ID)).toBeUndefined();
+  });
+
+  it("clears every link status when a new wallet overwrites the old", async () => {
+    await createWallet();
+    await recordLinkResults({
+      localStore: mockDataStorage,
+      linked: [PHRASE_1.userId],
+      conflicts: [PHRASE_2.userId],
+      epoch: getLinkStatusEpoch(),
+    });
+
+    await send({
+      type: SERVICE_TYPES.CREATE_ACCOUNT,
+      password: PASSWORD,
+      isOverwritingAccount: true,
+    } as CreateAccountMessage);
 
     expect(await mockDataStorage.getItem(LINK_STATUS_ID)).toBeUndefined();
   });
@@ -189,6 +211,7 @@ describe("link triggers", () => {
       localStore: mockDataStorage,
       linked: [PHRASE_1.userId],
       conflicts: [PHRASE_2.userId],
+      epoch: getLinkStatusEpoch(),
     });
     await send({ type: SERVICE_TYPES.SIGN_OUT });
 

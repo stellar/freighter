@@ -7,6 +7,7 @@ import { INDEXER_V2_URL } from "@shared/constants/mercury";
 import { DataStorageAccess } from "background/helpers/dataStorageAccess";
 import {
   getLinkStatus,
+  getLinkStatusEpoch,
   recordLinkResults,
 } from "background/helpers/link-status";
 import { SigningIdentity } from "background/helpers/signing-identity";
@@ -49,17 +50,22 @@ const idsOf = (list: unknown, key?: "id"): Set<string> => {
   return ids;
 };
 
-/** One POST. True when the server answered 2xx and the result was stored. */
+/**
+ * One POST. True when the server answered 2xx and the result was stored;
+ * false on an error status or when the wallet was replaced mid-request.
+ */
 const sendBody = async ({
   body,
   identity,
   now,
+  epoch,
   localStore,
   fetchImpl,
 }: {
   body: UserLinkBody;
   identity: SigningIdentity;
   now: number;
+  epoch: number;
   localStore: DataStorageAccess;
   fetchImpl?: typeof fetch;
 }): Promise<boolean> => {
@@ -91,12 +97,12 @@ const sendBody = async ({
 
   // Only ids this body carried. A sent id the server reports neither way
   // stays unsettled and goes out again on the next trigger.
-  await recordLinkResults({
+  return recordLinkResults({
     localStore,
     linked: sent.filter((id) => members.has(id) && !conflicts.has(id)),
     conflicts: sent.filter((id) => conflicts.has(id)),
+    epoch,
   });
-  return true;
 };
 
 const linkOnce = async ({
@@ -106,6 +112,9 @@ const linkOnce = async ({
   now = Date.now(),
 }: LinkWalletSourcesParams) => {
   try {
+    // Read before anything else: a wallet replacement from here on discards
+    // this pass's results, and the pass it queues starts over.
+    const epoch = getLinkStatusEpoch();
     const settled = new Set(Object.keys(await getLinkStatus({ localStore })));
     const request = await buildUserLinkRequestBodies({
       sessionStore,
@@ -117,12 +126,17 @@ const linkOnce = async ({
       return;
     }
     for (const body of request.bodies) {
+      if (getLinkStatusEpoch() !== epoch) {
+        // The wallet these bodies came from has been replaced.
+        return;
+      }
       // Stop at the first failure: the rest would most likely fail the same
       // way, and the next trigger sends them anyway.
       const ok = await sendBody({
         body,
         identity: request.identity,
         now,
+        epoch,
         localStore,
         fetchImpl,
       });
