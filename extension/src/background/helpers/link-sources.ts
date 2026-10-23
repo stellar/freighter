@@ -91,12 +91,12 @@ const sendBody = async ({
     return false;
   }
 
+  // The server wraps every body in `data`.
   const parsed = (await res.json().catch(() => null)) as {
-    sources?: unknown;
-    conflicts?: unknown;
+    data?: { sources?: unknown; conflicts?: unknown };
   } | null;
-  const members = idsOf(parsed?.sources, "id");
-  const conflicts = idsOf(parsed?.conflicts);
+  const members = idsOf(parsed?.data?.sources, "id");
+  const conflicts = idsOf(parsed?.data?.conflicts);
   const sent = body.sources.map(({ id }) => id);
 
   // Only ids this body carried. A sent id the server reports neither way

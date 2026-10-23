@@ -125,7 +125,10 @@ const expectConsentsVerify = (
   }
 };
 
-/* A server that puts every sent source in the caller's cluster except `foreign`. */
+/*
+  A server that puts every sent source in the caller's cluster except
+  `foreign`. Same `data` envelope as freighter-backend-v2.
+*/
 const server = (foreign: string[] = []) =>
   jest.fn(async (_url: RequestInfo | URL, init?: RequestInit) => {
     const ids: string[] = JSON.parse(init?.body as string).sources.map(
@@ -133,11 +136,13 @@ const server = (foreign: string[] = []) =>
     );
     return new Response(
       JSON.stringify({
-        userId: ids[0],
-        sources: ids
-          .filter((id) => !foreign.includes(id))
-          .map((id) => ({ id, kind: "secret_key" })),
-        conflicts: ids.filter((id) => foreign.includes(id)),
+        data: {
+          userId: ids[0],
+          sources: ids
+            .filter((id) => !foreign.includes(id))
+            .map((id) => ({ id, kind: "secret_key" })),
+          conflicts: ids.filter((id) => foreign.includes(id)),
+        },
       }),
       { status: 200 },
     );
