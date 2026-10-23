@@ -738,6 +738,64 @@ describe("AssetDetail", () => {
       );
     });
 
+    it("values a priced SEP-41 balance in whole units", async () => {
+      const contractId =
+        "CBIJBDNZNF4X35BJ4FFZWCDBSCKOP5NB4PLG4SNENRMLAPYG4P5FM6VN";
+      const selectedAsset = `SolvBTC:${contractId}`;
+      const { container } = render(
+        <Wrapper
+          routes={[ROUTES.account]}
+          state={{
+            auth: {
+              error: null,
+              applicationState: ApplicationState.PASSWORD_CREATED,
+              publicKey: "G1",
+              allAccounts: mockAccounts,
+            },
+            settings: {
+              networkDetails: TESTNET_NETWORK_DETAILS,
+            },
+            cache: {
+              icons: {},
+              tokenPrices: {
+                [TESTNET_NETWORK_DETAILS.networkPassphrase]: {
+                  G1: {
+                    [selectedAsset]: { currentPrice: "81597.03" },
+                  },
+                },
+              },
+            },
+          }}
+        >
+          <AssetDetail
+            handleClose={() => null}
+            accountBalances={
+              {
+                balances: [
+                  {
+                    token: { code: "SolvBTC", issuer: { key: contractId } },
+                    contractId,
+                    // Raw 227 at 8 decimals = 0.00000227 SolvBTC.
+                    total: new BigNumber(227),
+                    decimals: 8,
+                    name: "Solv BTC",
+                    symbol: "SolvBTC",
+                  },
+                ],
+              } as any
+            }
+            selectedAsset={selectedAsset}
+            historyData={mockHistoryData}
+          />
+        </Wrapper>,
+      );
+
+      await waitFor(() => screen.getByTestId("AssetDetail"));
+      expect(
+        container.querySelector(".AssetDetail__balance-value"),
+      ).toHaveTextContent(/\$0\.19$/);
+    });
+
     it("falls back to the symbol when the token's name is missing", async () => {
       const contractId =
         "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABSC4";

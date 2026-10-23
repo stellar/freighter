@@ -1134,6 +1134,86 @@ describe("Account view", () => {
     });
   });
 
+  it("values a priced SEP-41 balance in whole units", async () => {
+    jest.spyOn(ApiInternal, "loadSettings").mockImplementation(() =>
+      Promise.resolve({
+        networkDetails: MAINNET_NETWORK_DETAILS,
+        networksList: DEFAULT_NETWORKS,
+        hiddenAssets: {},
+        allowList: ApiInternal.DEFAULT_ALLOW_LIST,
+        error: "",
+        isDataSharingAllowed: false,
+        isMemoValidationEnabled: false,
+        isHideDustEnabled: true,
+        isOpenSidebarByDefault: false,
+        settingsState: SettingsState.SUCCESS,
+        isSorobanPublicEnabled: false,
+        isRpcHealthy: true,
+        userNotification: {
+          enabled: false,
+          message: "",
+        },
+        isExperimentalModeEnabled: false,
+        isHashSigningEnabled: false,
+        isNonSSLEnabled: false,
+        experimentalFeaturesState: SettingsState.SUCCESS,
+        assetsLists: DEFAULT_ASSETS_LISTS,
+        autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
+      }),
+    );
+    jest.spyOn(ApiInternal, "getAccountBalances").mockImplementation(() =>
+      Promise.resolve({
+        ...mockBalances,
+        balances: {
+          ...mockBalances.balances,
+          [TEST_CANONICAL]: {
+            ...(mockBalances.balances as any)[TEST_CANONICAL],
+            contractId:
+              "CCXVDIGMR6WTXZQX2OEVD6YM6AYCYPXPQ7YYH6OZMRS7U6VD3AVHNGBJ",
+          },
+        },
+      } as any),
+    );
+
+    jest.spyOn(ApiInternal, "getTokenPrices").mockImplementation(() =>
+      Promise.resolve({
+        ...mockPrices,
+        // DT holds raw 1000000000 at 7 decimals = 100 DT.
+        [TEST_CANONICAL]: { currentPrice: "2", percentagePriceChange24h: "0" },
+      }),
+    );
+
+    render(
+      <Wrapper
+        routes={[ROUTES.account]}
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
+            publicKey: "G1",
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: MAINNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+          },
+        }}
+      >
+        <Account />
+      </Wrapper>,
+    );
+
+    await waitFor(() => {
+      expect(
+        screen.getByTestId(`asset-amount-${TEST_CANONICAL}`),
+      ).toHaveTextContent(/^\$200\.00$/);
+    });
+    // 100 USDC + 100 DT × $2 + 50 XLM × $0.2763…
+    expect(screen.getByTestId("account-view-total-balance")).toHaveTextContent(
+      "$313.82",
+    );
+  });
+
   // A hidden asset must still be priced. The price map is cached per account
   // and network with no record of which assets it covers, so one built from
   // the visibility-filtered list is served as complete -- and unhiding, which

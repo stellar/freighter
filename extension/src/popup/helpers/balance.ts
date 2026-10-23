@@ -23,13 +23,20 @@ import { getAssetSacAddress } from "@shared/helpers/soroban/token";
 import { LP_IDENTIFIER } from "./account";
 import { NO_FIAT_VALUE, formatFiatAmount } from "./formatters";
 import { isAssetVisible } from "./settings";
-import { isContractId } from "./soroban";
+import { getTokenBalance, isContractId } from "./soroban";
 
 export const isClassicBalance = (balance: AssetType): balance is ClassicAsset =>
   "token" in balance && "issuer" in balance.token;
 
 export const isSorobanBalance = (balance: AssetType): balance is SorobanAsset =>
   "contractId" in balance;
+
+// SEP-41 totals are raw integers; scale them the same way the send flow does
+// (getTokenBalance) before multiplying by a whole-token price.
+export const getTotalInWholeUnits = (balance: AssetType): BigNumber =>
+  isSorobanBalance(balance)
+    ? new BigNumber(getTokenBalance(balance))
+    : new BigNumber(balance.total);
 
 export const findAssetBalance = (
   balances: AssetType[],
@@ -231,9 +238,8 @@ export const omitHiddenBalances = (
 /**
  * Re-orders balances for display by descending USD value.
  *
- * Only native + classic G-issuer assets receive prices from the indexer
- * (Soroban, custom tokens, and LP shares are filtered out upstream — see
- * `getTokenPrices` in `@shared/api/internal.ts`). Unpriced balances keep
+ * LP shares are never priced; SEP-41 balances are priced on the v2 path and
+ * valued in whole units via `getTotalInWholeUnits`. Unpriced balances keep
  * the relative order produced by `sortBalances` and sort below all
  * priced balances. A `currentPrice` of `"0"` is a valid USD value and
  * keeps the asset in the priced group; a malformed `currentPrice` is
@@ -254,7 +260,7 @@ export const sortBalancesByValue = (
     if (priceStr === undefined || priceStr === null || priceStr === "") {
       return null;
     }
-    const value = new BigNumber(priceStr).multipliedBy(b.total);
+    const value = new BigNumber(priceStr).multipliedBy(getTotalInWholeUnits(b));
     return value.isFinite() ? value : null;
   };
 
@@ -276,7 +282,7 @@ export const getTotalUsd = (prices: ApiTokenPrices, balances: AssetType[]) => {
     if (!priceBalance) {
       return prev;
     }
-    const currentAssetBalance = priceBalance.total;
+    const currentAssetBalance = getTotalInWholeUnits(priceBalance);
     const currentPrice = prices[curr] ? prices[curr].currentPrice : "0";
     const currentUsdBalance = new BigNumber(currentPrice).multipliedBy(
       currentAssetBalance,

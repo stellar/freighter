@@ -68,6 +68,7 @@ import { PriceDirection } from "popup/components/account/TokenPriceChart/constan
 import {
   getBalanceByAsset,
   getPriceDeltaColor,
+  getTotalInWholeUnits,
   isSorobanBalance,
 } from "popup/helpers/balance";
 import { Shimmer } from "popup/components/Shimmer";
@@ -639,7 +640,7 @@ export const AssetDetail = ({
                     ? `$${formatAmount(
                         roundUsdValue(
                           new BigNumber(assetPrice.currentPrice)
-                            .multipliedBy(selectedBalance.total)
+                            .multipliedBy(getTotalInWholeUnits(selectedBalance))
                             .toString(),
                         ),
                       )}`
