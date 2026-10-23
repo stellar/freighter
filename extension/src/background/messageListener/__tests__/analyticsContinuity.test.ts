@@ -8,6 +8,7 @@ import { INDEXER_V2_URL } from "@shared/constants/mercury";
 import { getAnalyticsUserId } from "background/helpers/analyticsUserId";
 import { linkWalletSources } from "background/helpers/link-sources";
 import { migratePreV2Storage } from "background/helpers/pre-v2-migration";
+import { getSigningIdentity } from "background/helpers/signing-identity";
 import {
   mockDataStorage,
   mockSessionStore,
@@ -146,6 +147,15 @@ const send = (request: object) =>
     { id: "fake-extension-id" },
   ) as Promise<{ error?: string }>;
 
+// Every step's id check would still pass after a failed step, since the id is
+// cached, so each step must also succeed.
+const sendOk = async (request: object) => {
+  expect((await send(request)).error).toBeUndefined();
+};
+
+const unlock = () =>
+  sendOk({ type: SERVICE_TYPES.CONFIRM_PASSWORD, password: PRE_V2_PASSWORD });
+
 const stores = { sessionStore: mockSessionStore, localStore: mockDataStorage };
 
 // Triggers start the linker without awaiting it. A call while it runs joins
@@ -154,7 +164,10 @@ const settleLinks = () => linkWalletSources(stores);
 
 const analyticsId = () => getAnalyticsUserId(mockSessionStore, mockDataStorage);
 
-const expectSameId = async () => {
+// Once the server's id is cached, getAnalyticsUserId returns it without
+// reading the session, locked or not. So also check the session: unlocked, it
+// must sign as the pinned phrase; locked, it must hold no signer.
+const expectSameId = async ({ unlocked }: { unlocked: boolean }) => {
   expect(await analyticsId()).toEqual({
     analyticsUserId: PRE_UPGRADE_METRICS_USER_ID,
     confirmed: true,
@@ -162,6 +175,12 @@ const expectSameId = async () => {
   expect(await mockDataStorage.getItem(PINNED_SOURCE_ID)).toBe(
     PRE_UPGRADE_METRICS_USER_ID,
   );
+  const identity = await getSigningIdentity(stores);
+  if (unlocked) {
+    expect(identity?.sourceId).toBe(PRE_UPGRADE_METRICS_USER_ID);
+  } else {
+    expect(identity).toBeNull();
+  }
 };
 
 describe("analytics id continuity after an upgrade (#70)", () => {
@@ -189,17 +208,10 @@ describe("analytics id continuity after an upgrade (#70)", () => {
   });
 
   it("keeps the id through the first unlock and its first link", async () => {
-    expect(
-      (
-        await send({
-          type: SERVICE_TYPES.CONFIRM_PASSWORD,
-          password: PRE_V2_PASSWORD,
-        })
-      ).error,
-    ).toBeUndefined();
+    await unlock();
     await settleLinks();
 
-    await expectSameId();
+    await expectSameId({ unlocked: true });
     // The phrase rooted the user, so the server's id is the old id.
     expect(backend.owner.get(PRE_UPGRADE_METRICS_USER_ID)).toBe(
       PRE_UPGRADE_METRICS_USER_ID,
@@ -210,46 +222,47 @@ describe("analytics id continuity after an upgrade (#70)", () => {
   });
 
   it("keeps the id when an account is added", async () => {
-    await send({ type: SERVICE_TYPES.ADD_ACCOUNT, password: PRE_V2_PASSWORD });
+    await sendOk({
+      type: SERVICE_TYPES.ADD_ACCOUNT,
+      password: PRE_V2_PASSWORD,
+    });
     await settleLinks();
-    await expectSameId();
+    await expectSameId({ unlocked: true });
   });
 
   it("keeps the id when a secret key is imported", async () => {
-    await send({
+    await sendOk({
       type: SERVICE_TYPES.IMPORT_ACCOUNT,
       password: PRE_V2_PASSWORD,
       privateKey: Keypair.random().secret(),
     });
     await settleLinks();
-    await expectSameId();
+    await expectSameId({ unlocked: true });
   });
 
   it.each([
     ["the imported account", PRE_V2_IMPORTED_PUBLIC_KEY],
     ["the hardware account", PRE_V2_HW_PUBLIC_KEY],
   ])("keeps the id with %s active", async (_, publicKey) => {
-    await send({ type: SERVICE_TYPES.MAKE_ACCOUNT_ACTIVE, publicKey });
-    await expectSameId();
+    await sendOk({ type: SERVICE_TYPES.MAKE_ACCOUNT_ACTIVE, publicKey });
+    expect(mockSessionStore.getState().session.publicKey).toBe(publicKey);
+    await expectSameId({ unlocked: true });
   });
 
   it("keeps the id while locked", async () => {
     await send({ type: SERVICE_TYPES.SIGN_OUT });
-    await expectSameId();
+    await expectSameId({ unlocked: false });
   });
 
   it("keeps the id across another update and the unlock after it", async () => {
     // An update clears storage.session and reruns the install pass.
     mockSessionStore.dispatch(sessionSlice.actions.reset());
     await migratePreV2Storage({ localStore: mockDataStorage });
-    await expectSameId();
+    await expectSameId({ unlocked: false });
 
-    await send({
-      type: SERVICE_TYPES.CONFIRM_PASSWORD,
-      password: PRE_V2_PASSWORD,
-    });
+    await unlock();
     await settleLinks();
-    await expectSameId();
+    await expectSameId({ unlocked: true });
   });
 
   it("signed every request as the phrase, and every source joined its user", () => {
