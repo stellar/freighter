@@ -719,13 +719,7 @@ export const popupMessageListener = (
       // for the webpack dev-server popup relay.
       if (!isFromExtensionPage && !isFromDevServer)
         return { error: "Unauthorized" };
-      return (async () => {
-        const analyticsUserId = await getAnalyticsUserId(
-          sessionStore,
-          localStore,
-        );
-        return { analyticsUserId };
-      })();
+      return getAnalyticsUserId(sessionStore, localStore);
     }
 
     default:

@@ -548,24 +548,32 @@ export const getMigratableAccounts = async () => {
 };
 
 /**
- * Fetches the seed-derived analytics user id from the background. Returns
- * `null` when locked (no active session) or if the message fails.
+ * Fetches the analytics user id from the background. `confirmed` is true
+ * when it is the server's canonical id, false when it is the pinned source
+ * id standing in until the first link. The id is `null` when locked with
+ * nothing cached, or if the message fails.
  */
 export const getAnalyticsUserId = async (): Promise<{
   analyticsUserId: string | null;
+  confirmed: boolean;
 }> => {
   let analyticsUserId: string | null = null;
+  let confirmed = false;
 
   try {
-    ({ analyticsUserId } = await sendMessageToBackground({
-      activePublicKey: null,
-      type: SERVICE_TYPES.GET_ANALYTICS_USER_ID,
-    }));
+    ({ analyticsUserId = null, confirmed = false } =
+      await sendMessageToBackground<{
+        analyticsUserId?: string | null;
+        confirmed?: boolean;
+      }>({
+        activePublicKey: null,
+        type: SERVICE_TYPES.GET_ANALYTICS_USER_ID,
+      }));
   } catch (e) {
     console.error(e);
   }
 
-  return { analyticsUserId };
+  return { analyticsUserId, confirmed };
 };
 
 export const migrateAccounts = async ({

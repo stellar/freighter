@@ -44,7 +44,8 @@ export interface SigningIdentity {
  *   the next registration or unlock will pin).
  * - That source is not held, as after a restore that recovered only some
  *   sources: sign with the first held source (phrases first) and leave the
- *   pin alone. The pin moves only from what the server returns (#69).
+ *   pin alone. Nothing re-pins from the server yet, so the pin stays put,
+ *   and a source that failed to derive this unlock cannot move it either.
  * - Nothing pinned and nothing registered, as when a request overlaps a
  *   wallet wipe: sign with the first held phrase, or return null when no
  *   phrase is held. Nothing is persisted, so a wrong guess lasts one request.

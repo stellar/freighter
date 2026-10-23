@@ -5,6 +5,10 @@ import { authedFetch } from "@shared/api/helpers/authedFetch";
 import { issuedAtSeconds } from "@shared/api/helpers/buildAuthJwt";
 import { UserLinkBody } from "@shared/api/helpers/userLinkConsent";
 import { INDEXER_V2_URL } from "@shared/constants/mercury";
+import {
+  setCachedCanonicalUserId,
+  userIdOf,
+} from "background/helpers/canonical-user-id";
 import { DataStorageAccess } from "background/helpers/dataStorageAccess";
 import {
   getLinkStatus,
@@ -106,12 +110,19 @@ const sendBody = async ({
 
   // Only ids this body carried. A sent id the server reports neither way
   // stays unsettled and goes out again on the next trigger.
-  return recordLinkResults({
+  const recorded = await recordLinkResults({
     localStore,
     linked: sent.filter((id) => members.has(id) && !conflicts.has(id)),
     conflicts: sent.filter((id) => conflicts.has(id)),
     epoch,
   });
+  // The response names the caller's user, so the analytics id (#69) is
+  // settled here without waiting for the next GET /user.
+  const userId = userIdOf(parsed);
+  if (recorded && userId) {
+    await setCachedCanonicalUserId({ localStore, userId, epoch });
+  }
+  return recorded;
 };
 
 const linkOnce = async ({

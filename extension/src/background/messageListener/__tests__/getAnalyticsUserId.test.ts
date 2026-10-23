@@ -38,7 +38,10 @@ describe("GET_ANALYTICS_USER_ID", () => {
   });
 
   it("resolves to the analytics user id returned by getAnalyticsUserId", async () => {
-    mockGetAnalyticsUserId.mockResolvedValue("pub123");
+    mockGetAnalyticsUserId.mockResolvedValue({
+      analyticsUserId: "pub123",
+      confirmed: true,
+    });
 
     const result = await popupMessageListener(
       { type: SERVICE_TYPES.GET_ANALYTICS_USER_ID } as any,
@@ -49,15 +52,18 @@ describe("GET_ANALYTICS_USER_ID", () => {
       {},
     );
 
-    expect(result).toEqual({ analyticsUserId: "pub123" });
+    expect(result).toEqual({ analyticsUserId: "pub123", confirmed: true });
     expect(mockGetAnalyticsUserId).toHaveBeenCalledWith(
       mockSessionStore,
       mockLocalStore,
     );
   });
 
-  it("resolves to null when getAnalyticsUserId returns null", async () => {
-    mockGetAnalyticsUserId.mockResolvedValue(null);
+  it("resolves to a null id when getAnalyticsUserId has none", async () => {
+    mockGetAnalyticsUserId.mockResolvedValue({
+      analyticsUserId: null,
+      confirmed: false,
+    });
 
     const result = await popupMessageListener(
       { type: SERVICE_TYPES.GET_ANALYTICS_USER_ID } as any,
@@ -68,7 +74,7 @@ describe("GET_ANALYTICS_USER_ID", () => {
       {},
     );
 
-    expect(result).toEqual({ analyticsUserId: null });
+    expect(result).toEqual({ analyticsUserId: null, confirmed: false });
   });
 
   it("returns Unauthorized when sender is a content script (dev-mode web page), mirroring FETCH_BACKEND_V2's isFromExtensionPage guard", async () => {

@@ -15,7 +15,7 @@ import {
   getWalletSources,
   WalletSource,
 } from "background/helpers/wallet-sources";
-import { LINK_STATUS_ID } from "constants/localStorageTypes";
+import { CANONICAL_USER_ID, LINK_STATUS_ID } from "constants/localStorageTypes";
 
 import { clearLinkStatus } from "../link-status";
 import { linkWalletSources } from "../link-sources";
@@ -181,6 +181,40 @@ describe("linkWalletSources", () => {
     expect(data[LINK_STATUS_ID]).toEqual(
       Object.fromEntries(wallet.ids().map((id) => [id, "linked"])),
     );
+    // The analytics id (#69) comes from the response's userId.
+    expect(data[CANONICAL_USER_ID]).toBe(wallet.sub);
+  });
+
+  it("caches the existing user's id when the wallet resolved to one", async () => {
+    makeWallet(1);
+    const { store, data } = makeLocalStore();
+    data[CANONICAL_USER_ID] = "stale";
+    const root = "f".repeat(64);
+    const inner = server();
+    const fetchImpl = jest.fn(
+      async (url: RequestInfo | URL, init?: RequestInit) => {
+        const res = await inner(url, init);
+        const body = await res.json();
+        body.data.userId = root;
+        return new Response(JSON.stringify(body), { status: 200 });
+      },
+    );
+
+    await linkWalletSources({ sessionStore, localStore: store, fetchImpl });
+
+    expect(data[CANONICAL_USER_ID]).toBe(root);
+  });
+
+  it("caches no id when the call fails", async () => {
+    makeWallet(1);
+    const { store, data } = makeLocalStore();
+    const fetchImpl = jest
+      .fn()
+      .mockResolvedValue(new Response(null, { status: 500 }));
+
+    await linkWalletSources({ sessionStore, localStore: store, fetchImpl });
+
+    expect(CANONICAL_USER_ID in data).toBe(false);
   });
 
   it("sends nothing once every source is settled", async () => {
@@ -433,6 +467,7 @@ describe("linkWalletSources", () => {
 
     expect(fetchImpl).toHaveBeenCalledTimes(1);
     expect(LINK_STATUS_ID in data).toBe(false);
+    expect(CANONICAL_USER_ID in data).toBe(false);
   });
 
   it("sends no further body once the wallet is replaced mid-pass", async () => {

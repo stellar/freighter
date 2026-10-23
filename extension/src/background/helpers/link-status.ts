@@ -1,5 +1,5 @@
 import { DataStorageAccess } from "background/helpers/dataStorageAccess";
-import { LINK_STATUS_ID } from "constants/localStorageTypes";
+import { CANONICAL_USER_ID, LINK_STATUS_ID } from "constants/localStorageTypes";
 
 /*
   What the server last said about each source, keyed by source id and
@@ -93,5 +93,6 @@ export const clearLinkStatus = async ({
   localStore: DataStorageAccess;
 }) => {
   epoch += 1;
-  await localStore.remove(LINK_STATUS_ID);
+  // The cached user id (canonical-user-id.ts) belongs to the old wallet too.
+  await localStore.remove([LINK_STATUS_ID, CANONICAL_USER_ID]);
 };

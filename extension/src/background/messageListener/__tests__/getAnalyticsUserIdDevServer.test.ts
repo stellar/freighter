@@ -35,7 +35,10 @@ const mockSessionTimer = {} as any;
 describe("GET_ANALYTICS_USER_ID dev-server carve-out", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockGetAnalyticsUserId.mockResolvedValue("pub123");
+    mockGetAnalyticsUserId.mockResolvedValue({
+      analyticsUserId: "pub123",
+      confirmed: true,
+    });
   });
 
   it("admits the dev-server popup relay (sender on DEV_SERVER_URL)", async () => {
@@ -45,10 +48,13 @@ describe("GET_ANALYTICS_USER_ID dev-server carve-out", () => {
       mockLocalStore,
       mockKeyManager,
       mockSessionTimer,
-      { tab: { id: 1 }, url: `${DEV_SERVER_ORIGIN}index.html?mode=popup` } as any,
+      {
+        tab: { id: 1 },
+        url: `${DEV_SERVER_ORIGIN}index.html?mode=popup`,
+      } as any,
     );
 
-    expect(result).toEqual({ analyticsUserId: "pub123" });
+    expect(result).toEqual({ analyticsUserId: "pub123", confirmed: true });
     expect(mockGetAnalyticsUserId).toHaveBeenCalledTimes(1);
   });
 

@@ -263,9 +263,34 @@ describe("pre-V2 storage migration", () => {
       expect(await mockDataStorage.getItem(PINNED_SOURCE_ID)).toBe(
         PRE_UPGRADE_METRICS_USER_ID,
       );
-      expect(await getAnalyticsUserId(mockSessionStore, mockDataStorage)).toBe(
-        PRE_UPGRADE_METRICS_USER_ID,
+      // Before the first link the server has no user (404): the analytics id
+      // is the pinned phrase, unconfirmed.
+      (global.fetch as jest.Mock).mockResolvedValueOnce(
+        new Response(null, { status: 404 }),
       );
+      expect(
+        await getAnalyticsUserId(mockSessionStore, mockDataStorage),
+      ).toEqual({
+        analyticsUserId: PRE_UPGRADE_METRICS_USER_ID,
+        confirmed: false,
+      });
+
+      // After it, the root is the phrase that signed the link, so the
+      // server's canonical id is the same value.
+      (global.fetch as jest.Mock).mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            data: { userId: PRE_UPGRADE_METRICS_USER_ID, sources: [] },
+          }),
+          { status: 200 },
+        ),
+      );
+      expect(
+        await getAnalyticsUserId(mockSessionStore, mockDataStorage),
+      ).toEqual({
+        analyticsUserId: PRE_UPGRADE_METRICS_USER_ID,
+        confirmed: true,
+      });
     });
 
     it("leaves every source unlinked, so the first unlock fires the link call", async () => {

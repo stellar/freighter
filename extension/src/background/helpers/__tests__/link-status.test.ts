@@ -1,5 +1,5 @@
 import type { DataStorageAccess } from "background/helpers/dataStorageAccess";
-import { LINK_STATUS_ID } from "constants/localStorageTypes";
+import { CANONICAL_USER_ID, LINK_STATUS_ID } from "constants/localStorageTypes";
 
 import {
   clearLinkStatus,
@@ -69,6 +69,17 @@ describe("link-status", () => {
       epoch: getLinkStatusEpoch(),
     });
     expect(LINK_STATUS_ID in data).toBe(false);
+  });
+
+  it("clears the cached user id with the map", async () => {
+    const { store, data } = makeLocalStore();
+    data[LINK_STATUS_ID] = { [A]: "linked" };
+    data[CANONICAL_USER_ID] = A;
+
+    await clearLinkStatus({ localStore: store });
+
+    expect(LINK_STATUS_ID in data).toBe(false);
+    expect(CANONICAL_USER_ID in data).toBe(false);
   });
 
   it("drops a write that read the epoch before a clear", async () => {

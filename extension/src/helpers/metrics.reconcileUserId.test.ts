@@ -58,7 +58,7 @@ jest.mock("popup/ducks/accountServices", () => ({
 
 const mockGetAnalyticsUserId = getAnalyticsUserId as jest.Mock;
 
-describe("reconcileAnalyticsUserId (auth id migration)", () => {
+describe("reconcileAnalyticsUserId (canonical id)", () => {
   beforeAll(() => {
     // Flip the module-level `hasInitialized` flag once so the
     // `hasInitialized && AMPLITUDE_KEY` guard in reconcileAnalyticsUserId
@@ -79,6 +79,7 @@ describe("reconcileAnalyticsUserId (auth id migration)", () => {
     localStorage.setItem(METRICS_USER_ID, "4873921"); // existing random id
     mockGetAnalyticsUserId.mockResolvedValue({
       analyticsUserId: "a".repeat(64),
+      confirmed: true,
     });
 
     await reconcileAnalyticsUserId();
@@ -92,6 +93,7 @@ describe("reconcileAnalyticsUserId (auth id migration)", () => {
     localStorage.setItem(METRICS_USER_ID, "a".repeat(64));
     mockGetAnalyticsUserId.mockResolvedValue({
       analyticsUserId: "a".repeat(64),
+      confirmed: true,
     });
 
     await reconcileAnalyticsUserId();
@@ -102,7 +104,10 @@ describe("reconcileAnalyticsUserId (auth id migration)", () => {
 
   it("is a no-op when locked (null auth id) — keeps the bootstrap id", async () => {
     localStorage.setItem(METRICS_USER_ID, "4873921");
-    mockGetAnalyticsUserId.mockResolvedValue({ analyticsUserId: null });
+    mockGetAnalyticsUserId.mockResolvedValue({
+      analyticsUserId: null,
+      confirmed: false,
+    });
 
     await reconcileAnalyticsUserId();
 
@@ -131,6 +136,7 @@ describe("reconcileAnalyticsUserId (auth id migration)", () => {
     localStorage.setItem(METRICS_USER_ID, "4873921");
     mockGetAnalyticsUserId.mockResolvedValue({
       analyticsUserId: "b".repeat(64),
+      confirmed: true,
     });
 
     await reconcileAnalyticsUserId();
@@ -151,6 +157,7 @@ describe("reconcileAnalyticsUserId (auth id migration)", () => {
     localStorage.setItem(METRICS_USER_ID, "4873921");
     mockGetAnalyticsUserId.mockResolvedValue({
       analyticsUserId: "c".repeat(64),
+      confirmed: true,
     });
 
     await reconcileAnalyticsUserId();
@@ -162,6 +169,7 @@ describe("reconcileAnalyticsUserId (auth id migration)", () => {
     localStorage.setItem(METRICS_USER_ID, "4873921");
     mockGetAnalyticsUserId.mockResolvedValue({
       analyticsUserId: "d".repeat(64),
+      confirmed: true,
     });
 
     await reconcileAnalyticsUserId();
@@ -176,13 +184,17 @@ describe("reconcileAnalyticsUserId (auth id migration)", () => {
   it("does not latch the guard while locked, so a later unlock still reconciles", async () => {
     localStorage.setItem(METRICS_USER_ID, "4873921");
     // Locked: background returns a null auth id.
-    mockGetAnalyticsUserId.mockResolvedValueOnce({ analyticsUserId: null });
+    mockGetAnalyticsUserId.mockResolvedValueOnce({
+      analyticsUserId: null,
+      confirmed: false,
+    });
     await reconcileAnalyticsUserId();
     expect(localStorage.getItem(METRICS_USER_ID)).toBe("4873921");
 
     // Now unlocked: the auth id resolves and reconciliation proceeds.
     mockGetAnalyticsUserId.mockResolvedValue({
       analyticsUserId: "e".repeat(64),
+      confirmed: true,
     });
     await reconcileAnalyticsUserId();
 
@@ -193,6 +205,7 @@ describe("reconcileAnalyticsUserId (auth id migration)", () => {
   it("re-reconciles after the guard is reset on lock", async () => {
     mockGetAnalyticsUserId.mockResolvedValue({
       analyticsUserId: "f".repeat(64),
+      confirmed: true,
     });
 
     await reconcileAnalyticsUserId();
@@ -201,6 +214,52 @@ describe("reconcileAnalyticsUserId (auth id migration)", () => {
     // Simulate a lock transition (SessionLockListener → SESSION_LOCKED).
     resetAnalyticsUserIdReconciliation();
 
+    await reconcileAnalyticsUserId();
+    expect(mockGetAnalyticsUserId).toHaveBeenCalledTimes(2);
+  });
+
+  it("adopts a provisional id but keeps asking until the server confirms one", async () => {
+    // A secret-key-only wallet before its first link: the pinned key's
+    // source id replaces the random bootstrap id.
+    localStorage.setItem(METRICS_USER_ID, "4873921");
+    mockGetAnalyticsUserId.mockResolvedValue({
+      analyticsUserId: "1".repeat(64),
+      confirmed: false,
+    });
+
+    await reconcileAnalyticsUserId();
+    await reconcileAnalyticsUserId();
+
+    expect(mockGetAnalyticsUserId).toHaveBeenCalledTimes(2);
+    expect(localStorage.getItem(METRICS_USER_ID)).toBe("1".repeat(64));
+
+    // The first link resolved the key to an existing user: overwrite with
+    // that user's id. No event is sent.
+    mockGetAnalyticsUserId.mockResolvedValue({
+      analyticsUserId: "2".repeat(64),
+      confirmed: true,
+    });
+    await reconcileAnalyticsUserId();
+    await reconcileAnalyticsUserId();
+
+    expect(mockGetAnalyticsUserId).toHaveBeenCalledTimes(3);
+    expect(localStorage.getItem(METRICS_USER_ID)).toBe("2".repeat(64));
+    expect(amplitude.setUserId).toHaveBeenLastCalledWith("2".repeat(64));
+    expect(amplitude.track).not.toHaveBeenCalled();
+  });
+
+  it("adopts the cached id while locked without settling the session", async () => {
+    localStorage.setItem(METRICS_USER_ID, "4873921");
+    mockGetAnalyticsUserId.mockResolvedValue({
+      analyticsUserId: "3".repeat(64),
+      confirmed: true,
+    });
+
+    await reconcileAnalyticsUserId({ settle: false });
+    expect(localStorage.getItem(METRICS_USER_ID)).toBe("3".repeat(64));
+
+    // The next (unlocked) call still asks: a wallet replaced from the lock
+    // screen would have a different id.
     await reconcileAnalyticsUserId();
     expect(mockGetAnalyticsUserId).toHaveBeenCalledTimes(2);
   });
