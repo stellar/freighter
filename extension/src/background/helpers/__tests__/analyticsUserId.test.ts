@@ -139,10 +139,37 @@ describe("getAnalyticsUserId", () => {
       return userResponse(ROOT);
     });
 
-    const { confirmed } = await getAnalyticsUserId(sessionStore, store);
-
-    expect(confirmed).toBe(false);
+    expect(await getAnalyticsUserId(sessionStore, store)).toEqual({
+      analyticsUserId: null,
+      confirmed: false,
+    });
     expect(data[CANONICAL_USER_ID]).toBeUndefined();
+  });
+
+  it("returns no id when the wallet is replaced during a 404", async () => {
+    const { store } = makeLocalStore();
+    mockCall.mockImplementation(async () => {
+      await clearLinkStatus({ localStore: store });
+      return { status: 404, body: null };
+    });
+
+    expect(await getAnalyticsUserId(sessionStore, store)).toEqual({
+      analyticsUserId: null,
+      confirmed: false,
+    });
+  });
+
+  it("returns no id when the wallet is replaced during a failed request", async () => {
+    const { store } = makeLocalStore();
+    mockCall.mockImplementation(async () => {
+      await clearLinkStatus({ localStore: store });
+      throw new Error("offline");
+    });
+
+    expect(await getAnalyticsUserId(sessionStore, store)).toEqual({
+      analyticsUserId: null,
+      confirmed: false,
+    });
   });
 
   it("never returns keypair/private material", async () => {

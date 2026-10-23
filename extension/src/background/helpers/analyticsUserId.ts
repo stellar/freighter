@@ -28,6 +28,8 @@ export interface AnalyticsUserId {
  * - Unlocked, not cached: ask the server and cache a 200. Until the source
  *   is linked (404) or while the server can't be reached, return the pinned
  *   source id, unconfirmed and uncached, so the caller asks again later.
+ * - Wallet replaced during the request: null. The pinned source id is the
+ *   old wallet's.
  * - Locked or hardware-only with nothing cached: null.
  *
  * Never returns or exposes the private keypair.
@@ -73,5 +75,9 @@ export const getAnalyticsUserId = async (
     // load until the id is confirmed, so this would fire on each one.
   }
 
+  // A wallet replaced mid-request: the pinned source is the old wallet's.
+  if (epoch !== getLinkStatusEpoch()) {
+    return { analyticsUserId: null, confirmed: false };
+  }
   return { analyticsUserId: identity.sourceId, confirmed: false };
 };
