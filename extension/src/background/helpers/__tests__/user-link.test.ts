@@ -259,6 +259,15 @@ describe("buildUserLinkRequestBodies", () => {
     expect(mockGetWalletSources).not.toHaveBeenCalled();
   });
 
+  it("returns null when the session locks after the identity resolves", async () => {
+    const wallet = await makeWallet();
+    mockGetSigningIdentity.mockResolvedValue(wallet.identity);
+    // A lock landed during getSigningIdentity's pin read: the sources are gone.
+    mockGetWalletSources.mockResolvedValue({ sources: [], signers: new Map() });
+
+    expect(await buildUserLinkRequestBodies(stores)).toBeNull();
+  });
+
   it("signs every body under the iat of the given clock reading", async () => {
     const wallet = await makeWallet();
     const many = makeManySources(200);

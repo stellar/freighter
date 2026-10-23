@@ -127,11 +127,16 @@ export const buildUserLinkRequestBodies = async ({
   if (!identity) {
     return null;
   }
-  // Cached per unlock, so this is the set getSigningIdentity just read.
   const { sources, signers } = await getWalletSources({
     sessionStore,
     localStore,
   });
+  // A lock (or a keystore change) can land while getSigningIdentity awaits
+  // the pin, so this read may no longer hold the signer it chose. That is
+  // the no-signer case, not a caller bug: return null rather than throw.
+  if (!sources.some(({ id }) => id === identity.sourceId)) {
+    return null;
+  }
   const iat = issuedAtSeconds(now);
   return {
     identity,
