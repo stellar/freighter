@@ -90,12 +90,16 @@ describe("queueCleanup", () => {
     });
 
     it("removes items exactly at TTL boundary", () => {
+      // Pin the clock: cleanupQueue reads Date.now() again, and a millisecond
+      // passing between the two reads would put the item past the cutoff.
       const now = Date.now();
+      const dateNowSpy = jest.spyOn(Date, "now").mockReturnValue(now);
       const exactlyAtTtl = now - QUEUE_ITEM_TTL_MS;
 
       const queue = [{ uuid: "at-boundary", createdAt: exactlyAtTtl }];
 
       const removedCount = cleanupQueue(queue);
+      dateNowSpy.mockRestore();
 
       // Items at exactly the TTL boundary should NOT be removed (cutoff is <, not <=)
       expect(removedCount).toBe(0);
