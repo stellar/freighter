@@ -33,9 +33,11 @@ import { SecretSourceType } from "../../../@shared/api/types/types";
  *                                 also asserts row ownership and counts in
  *                                 Postgres via `docker exec psql`.
  *
- * Phrase A is the `abandon ... about` vector, so its id is the literal
- * analytics id a shipped wallet already reports. Every other phrase is random
- * per run, so reruns against the same database stay independent.
+ * Every phrase in the clustering steps is random per run, and each link that
+ * should add a source first checks the source is unlinked. Reruns against the
+ * same database therefore test new rows, never ones a previous run left. Only
+ * the shipped-id test uses the `abandon ... about` vector, and it asserts the
+ * root alone, which never moves once set.
  */
 const isIntegrationMode = process.env.IS_INTEGRATION_MODE === "true";
 const BASE = process.env.BACKEND_V2_URL ?? "http://localhost:3002";
@@ -43,10 +45,10 @@ const DB_CONTAINER = process.env.BACKEND_V2_DB_CONTAINER;
 const USER_PATH = "/api/v1/user";
 const LINK_PATH = "/api/v1/user/link";
 
-const PHRASE_A =
+const SHIPPED_PHRASE =
   "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about";
-// The `metrics_user_id` of every shipped wallet holding phrase A. Frozen.
-const PHRASE_A_USER_ID =
+// The `metrics_user_id` of every shipped wallet holding SHIPPED_PHRASE. Frozen.
+const SHIPPED_USER_ID =
   "ec57e5d04783b5ade776621ab171b3b197c3acc0a1cb5bad10786dc8e381e797";
 
 interface Source {
@@ -138,6 +140,16 @@ const getUser = async (request: APIRequestContext, signer: Source) => {
 
 const idsOf = (body?: UserBody) => (body?.sources ?? []).map(({ id }) => id);
 
+// A link asserted to add these sources can only prove it if they start unlinked.
+const expectUnlinked = async (
+  request: APIRequestContext,
+  sources: Source[],
+) => {
+  for (const source of sources) {
+    expect((await getUser(request, source)).status).toBe(404);
+  }
+};
+
 // Source ids are hex, so they are safe to inline into SQL.
 const sql = (query: string): string =>
   execFileSync(
@@ -173,26 +185,43 @@ test.describe("user clusters and identity continuity (#70)", () => {
     "Requires a live freighter-backend-v2; run with IS_INTEGRATION_MODE=true",
   );
 
+  let phraseA: string;
   let a: Source;
   let a0: Source;
   let a1: Source; // "account 2": exported and imported elsewhere
   let a2: Source; // "account 3": added after the export
 
   test.beforeAll(async () => {
-    a = await phraseSource(PHRASE_A);
+    phraseA = generateMnemonic();
+    a = await phraseSource(phraseA);
     [a0, a1, a2] = await Promise.all(
-      [0, 1, 2].map((i) => accountSource(PHRASE_A, i)),
+      [0, 1, 2].map((i) => accountSource(phraseA, i)),
     );
   });
 
-  test("1. phrase A with two accounts roots at its shipped analytics id", async ({
+  // Idempotent: a root never moves, so this holds on every rerun.
+  test("a shipped phrase roots at the analytics id it already reports", async ({
     request,
   }) => {
-    expect(a.id).toBe(PHRASE_A_USER_ID);
+    const shipped = await phraseSource(SHIPPED_PHRASE);
+    expect(shipped.id).toBe(SHIPPED_USER_ID);
+
+    const res = await link(request, shipped, []);
+    expect(res.status).toBe(200);
+    expect(res.data?.userId).toBe(SHIPPED_USER_ID);
+    expect((await getUser(request, shipped)).data?.userId).toBe(
+      SHIPPED_USER_ID,
+    );
+  });
+
+  test("1. phrase A with two accounts roots a new user at A", async ({
+    request,
+  }) => {
+    await expectUnlinked(request, [a, a0, a1]);
 
     const res = await link(request, a, [a0, a1]);
     expect(res.status).toBe(200);
-    expect(res.data?.userId).toBe(PHRASE_A_USER_ID);
+    expect(res.data?.userId).toBe(a.id);
     expect(idsOf(res.data)).toEqual(
       expect.arrayContaining([a.id, a0.id, a1.id]),
     );
@@ -200,7 +229,7 @@ test.describe("user clusters and identity continuity (#70)", () => {
 
     const user = await getUser(request, a);
     expect(user.status).toBe(200);
-    expect(user.data?.userId).toBe(PHRASE_A_USER_ID);
+    expect(user.data?.userId).toBe(a.id);
   });
 
   test("2-3. a wallet holding only account 2's exported S... resolves to A", async ({
@@ -208,19 +237,19 @@ test.describe("user clusters and identity continuity (#70)", () => {
   }) => {
     // Profile B's only source is the imported key, so it signs as that key.
     const imported = await keySource(
-      Keypair.fromSecret(accountKeypair(PHRASE_A, 1).secret()),
+      Keypair.fromSecret(accountKeypair(phraseA, 1).secret()),
     );
     expect(imported.id).toBe(a1.id);
 
     // Before B links anything, the server already places the key in A.
     const user = await getUser(request, imported);
     expect(user.status).toBe(200);
-    expect(user.data?.userId).toBe(PHRASE_A_USER_ID);
+    expect(user.data?.userId).toBe(a.id);
 
     // The import's own link call settles it as a member, not a conflict.
     const res = await link(request, imported, []);
     expect(res.status).toBe(200);
-    expect(res.data?.userId).toBe(PHRASE_A_USER_ID);
+    expect(res.data?.userId).toBe(a.id);
     expect(res.data?.conflicts).toEqual([]);
   });
 
@@ -228,20 +257,19 @@ test.describe("user clusters and identity continuity (#70)", () => {
     const p = generateMnemonic();
     const pPhrase = await phraseSource(p);
     const p0 = await accountSource(p, 0);
+    await expectUnlinked(request, [pPhrase, p0]);
 
     // B is still pinned to the imported key, so that key signs the link.
     const res = await link(request, a1, [pPhrase, p0]);
     expect(res.status).toBe(200);
-    expect(res.data?.userId).toBe(PHRASE_A_USER_ID);
+    expect(res.data?.userId).toBe(a.id);
     expect(idsOf(res.data)).toEqual(
       expect.arrayContaining([pPhrase.id, p0.id]),
     );
 
     // Both profiles still resolve to A.
-    expect((await getUser(request, a)).data?.userId).toBe(PHRASE_A_USER_ID);
-    expect((await getUser(request, pPhrase)).data?.userId).toBe(
-      PHRASE_A_USER_ID,
-    );
+    expect((await getUser(request, a)).data?.userId).toBe(a.id);
+    expect((await getUser(request, pPhrase)).data?.userId).toBe(a.id);
   });
 
   test("5. a fresh phrase that imports account 2 keeps its own cluster and gets a conflict", async ({
@@ -250,6 +278,7 @@ test.describe("user clusters and identity continuity (#70)", () => {
     const c = generateMnemonic();
     const cPhrase = await phraseSource(c);
     const c0 = await accountSource(c, 0);
+    await expectUnlinked(request, [cPhrase, c0]);
 
     // Onboarding C: its first link roots a new user at C.
     const created = await link(request, cPhrase, [c0]);
@@ -266,11 +295,11 @@ test.describe("user clusters and identity continuity (#70)", () => {
     expect(idsOf(res.data)).not.toContain(a1.id);
 
     // The claimed key never moves, and C's `sub` still resolves to C.
-    expect((await getUser(request, a1)).data?.userId).toBe(PHRASE_A_USER_ID);
+    expect((await getUser(request, a1)).data?.userId).toBe(a.id);
     expect((await getUser(request, cPhrase)).data?.userId).toBe(cPhrase.id);
 
     if (DB_CONTAINER) {
-      expect(ownerOf(a1.id)).toBe(PHRASE_A_USER_ID);
+      expect(ownerOf(a1.id)).toBe(a.id);
       // C and c0 were already linked and a1 conflicted, so nothing is written.
       expect(rowCounts()).toEqual(before);
       expect(ownerOf(c0.id)).toBe(cPhrase.id);
@@ -278,13 +307,15 @@ test.describe("user clusters and identity continuity (#70)", () => {
   });
 
   test("6. account 3 added in A shows up for B too", async ({ request }) => {
+    await expectUnlinked(request, [a2]);
+
     const res = await link(request, a, [a2]);
     expect(res.status).toBe(200);
     expect(idsOf(res.data)).toContain(a2.id);
 
     // B signs as the imported account 2.
     const fromB = await getUser(request, a1);
-    expect(fromB.data?.userId).toBe(PHRASE_A_USER_ID);
+    expect(fromB.data?.userId).toBe(a.id);
     expect(idsOf(fromB.data)).toContain(a2.id);
   });
 
@@ -294,6 +325,7 @@ test.describe("user clusters and identity continuity (#70)", () => {
     const d1 = await phraseSource(generateMnemonic());
     const d2 = await phraseSource(generateMnemonic());
     const k = await keySource(Keypair.random());
+    await expectUnlinked(request, [d1, d2, k]);
 
     const res = await link(request, d1, [d2, k]);
     expect(res.status).toBe(200);
