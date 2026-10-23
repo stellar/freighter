@@ -41,6 +41,7 @@ import {
 } from "background/helpers/secret-sources";
 import { SecretSourceType } from "@shared/api/types";
 import { nextDerivationIndex } from "background/helpers/derivation-indices";
+import { linkWalletSources } from "background/helpers/link-sources";
 import { KEY_ID } from "constants/localStorageTypes";
 
 const { fromMnemonic } = StellarHDWallet;
@@ -295,6 +296,10 @@ export const migrateAccounts = async ({
       sessionStore,
       hashKey,
     });
+
+    // Link the migrated phrase and its accounts. Not awaited, so the
+    // migration result never waits on the backend.
+    void linkWalletSources({ sessionStore, localStore });
   }
 
   const currentState = sessionStore.getState();

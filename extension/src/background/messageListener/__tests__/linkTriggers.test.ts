@@ -25,7 +25,9 @@ import {
 import { LINK_STATUS_ID } from "constants/localStorageTypes";
 
 // #68: every place a source can be added, and every unlock, starts a link
-// pass. What the pass sends is link-sources.test.ts's business.
+// pass. What the pass sends is link-sources.test.ts's business. The
+// MIGRATE_ACCOUNTS trigger is asserted in migrateAccounts.test.ts, which has
+// the Horizon mocks a migration needs.
 
 const [PHRASE_1, PHRASE_2] = AUTH_KEYPAIR_VECTORS;
 const STANDALONE_SECRET =

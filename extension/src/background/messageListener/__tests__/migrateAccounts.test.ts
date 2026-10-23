@@ -25,6 +25,7 @@ import {
   KEY_ID_LIST,
 } from "constants/localStorageTypes";
 import { AccountType } from "@shared/api/types";
+import { linkWalletSources } from "background/helpers/link-sources";
 
 // #73: the migration resolves the account to replace by its id, swaps the
 // replacement into that keystore's slot in `keyIdList` (not in
@@ -72,6 +73,8 @@ jest.mock("@shared/api/helpers/stellarSdkServer", () => {
 jest.mock("background/helpers/migration", () => ({
   migrateTrustlines: jest.fn().mockResolvedValue(undefined),
 }));
+
+const mockLink = linkWalletSources as jest.Mock;
 
 const testAlarm = new MockBrowserAlarm(() => {});
 const send = (request: object) =>
@@ -271,5 +274,28 @@ describe("migrateAccounts", () => {
     // Index 0 was reserved for the failed account and never marked; the
     // second account did not re-derive it.
     expect((await indexMap())[PHRASE_2.userId]).toEqual([1]);
+  });
+
+  it("links the migrated phrase once an account has migrated", async () => {
+    await seedWallet();
+    mockLink.mockClear();
+
+    await migrate([balanceFor(allAccounts()[0])]);
+
+    expect(mockLink).toHaveBeenCalledTimes(1);
+    expect(mockLink).toHaveBeenCalledWith({
+      sessionStore: mockSessionStore,
+      localStore: mockDataStorage,
+    });
+  });
+
+  it("does not link when no account migrated", async () => {
+    await seedWallet();
+    mockLink.mockClear();
+    mockSubmitTx.mockRejectedValue(new Error("tx_failed"));
+
+    await migrate([balanceFor(allAccounts()[0])]);
+
+    expect(mockLink).not.toHaveBeenCalled();
   });
 });
