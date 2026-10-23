@@ -2891,10 +2891,17 @@ export const getIsAccountMismatch = async ({
   };
 };
 
+/**
+ * Hidden assets for an account on a network. Defaults to the active account.
+ */
 export const getHiddenAssets = async ({
   activePublicKey,
+  network,
+  publicKey = activePublicKey,
 }: {
   activePublicKey: string;
+  network: string;
+  publicKey?: string;
 }) => {
   let response = {
     error: "",
@@ -2904,19 +2911,26 @@ export const getHiddenAssets = async ({
   response = await sendMessageToBackground({
     type: SERVICE_TYPES.GET_HIDDEN_ASSETS,
     activePublicKey,
+    publicKey,
+    network,
   });
 
   return { hiddenAssets: response.hiddenAssets || {}, error: response.error };
 };
 
+/**
+ * Hides or shows an asset for the active account on a network.
+ */
 export const changeAssetVisibility = async ({
   assetIssuer,
   assetVisibility,
   activePublicKey,
+  network,
 }: {
   assetIssuer: IssuerKey;
   assetVisibility: AssetVisibility;
   activePublicKey: string;
+  network: string;
 }) => {
   let response = {
     error: "",
@@ -2930,6 +2944,8 @@ export const changeAssetVisibility = async ({
       visibility: assetVisibility,
     },
     activePublicKey,
+    publicKey: activePublicKey,
+    network,
   });
 
   return { hiddenAssets: response.hiddenAssets, error: response.error };

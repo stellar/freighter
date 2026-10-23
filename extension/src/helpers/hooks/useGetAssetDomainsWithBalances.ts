@@ -7,16 +7,10 @@ import { isNativeBalance } from "@shared/helpers/assetIdentity";
 import { initialState, isError, reducer } from "helpers/request";
 
 import { ManageAssetCurrency } from "popup/components/manageAssets/ManageAssetRows";
-import {
-  AssetSelectType,
-  transactionSubmissionSelector,
-} from "popup/ducks/transactionSubmission";
 import { getCanonicalFromAsset, isMainnet } from "helpers/stellar";
-import { findAssetBalance } from "popup/helpers/balance";
 import { isAssetSuspicious } from "../../popup/helpers/blockaid";
 import { useIsSoroswapEnabled, useIsSwap } from "../../popup/helpers/useIsSwap";
 import { AccountBalances, useGetBalances } from "./useGetBalances";
-import { getNativeContractDetails } from "popup/helpers/searchAsset";
 import { AppDataType, NeedsReRoute, useGetAppData } from "./useGetAppData";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import { homeDomainsSelector, saveDomainForIssuer } from "popup/ducks/cache";
@@ -28,7 +22,6 @@ export interface ResolvedAssetDomains {
   publicKey: string;
   balances: AccountBalances;
   domains: ManageAssetCurrency[];
-  isManagingAssets: boolean;
   networkDetails: NetworkDetails;
   applicationState: APPLICATION_STATE;
 }
@@ -43,11 +36,7 @@ export function useGetAssetDomainsWithBalances(getBalancesOptions: {
   const reduxDispatch = useDispatch<AppDispatch>();
   const isSwap = useIsSwap();
   const isSoroswapEnabled = useIsSoroswapEnabled();
-  const { assetSelect, soroswapTokens } = useSelector(
-    transactionSubmissionSelector,
-  );
   const homeDomains = useSelector(homeDomainsSelector);
-  const isManagingAssets = assetSelect.type === AssetSelectType.MANAGE;
 
   const [state, dispatch] = useReducer(
     reducer<AssetDomains, unknown>,
@@ -134,42 +123,11 @@ export function useGetAssetDomainsWithBalances(getBalancesOptions: {
             contract: contractId,
             isSuspicious: isAssetSuspicious(blockaidData),
           });
-          // include native asset for asset dropdown selection
-        } else if (!isManagingAssets) {
-          domains.push({
-            code,
-            issuer: "",
-            image: "",
-            domain: "",
-            isSuspicious: false,
-          });
+          // No native row: XLM has no trustline to manage and cannot be
+          // hidden, and the only screen rendering these domains is the hidden
+          // assets sheet. This used to be gated on an `assetSelect.type` that
+          // nothing ever dispatched, so the row was already unreachable.
         }
-      }
-
-      if (isSoroswapEnabled && isSwap && !assetSelect.isSource) {
-        soroswapTokens.forEach((token) => {
-          const nativeContractDetails =
-            getNativeContractDetails(networkDetails);
-
-          // if we have a balance for a token, it will have been handled above.
-          // This is designed to populate tokens available from Soroswap that the user does not already have
-          if (
-            balances &&
-            !findAssetBalance(balances.balances, {
-              code: token.code,
-              issuer: token.contract,
-            }) &&
-            token.contract !== nativeContractDetails.contract
-          ) {
-            domains.push({
-              code: token.code,
-              issuer: token.contract,
-              image: token.icon,
-              domain: "",
-              icon: token.icon,
-            });
-          }
-        });
       }
 
       let backfilledDomains = [] as ManageAssetCurrency[];
@@ -208,7 +166,6 @@ export function useGetAssetDomainsWithBalances(getBalancesOptions: {
       const payload = {
         type: AppDataType.RESOLVED,
         domains: backfilledDomains,
-        isManagingAssets,
         balances,
         publicKey,
         networkDetails,

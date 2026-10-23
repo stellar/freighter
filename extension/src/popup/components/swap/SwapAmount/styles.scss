@@ -261,19 +261,7 @@
   }
 }
 
-.SlippageWrapper {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
 .Slippage {
-  z-index: var(--z-index--banner);
-  position: relative;
-
   &__Footer {
     display: flex;
     justify-content: space-between;

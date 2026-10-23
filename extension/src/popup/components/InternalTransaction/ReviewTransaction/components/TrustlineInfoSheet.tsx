@@ -1,6 +1,5 @@
 import React from "react";
 import { Trans, useTranslation } from "react-i18next";
-import { Icon } from "@stellar/design-system";
 
 import { InfoSheetContent } from "popup/components/InfoBottomSheet";
 
@@ -27,8 +26,6 @@ export const TrustlineInfoSheet = ({
       isInline
       data-testid="trustline-info-sheet"
       closeTestId="trustline-info-sheet-close"
-      badgeVariant="brand"
-      icon={<Icon.PlusCircle />}
       title={t("This will add a trustline to {{code}}", { code: tokenCode })}
       actionLabel={t("Got it")}
       onClose={onClose}

@@ -13,7 +13,6 @@ describe("EditSettings", () => {
     defaultFee: "0.00001",
     timeout: 30,
     congestion: "Low",
-    title: "Send Settings",
     onClose: jest.fn(),
     onSubmit: jest.fn(),
   };

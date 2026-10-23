@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { Formik, Form, Field, FieldProps } from "formik";
 import debounce from "lodash/debounce";
@@ -14,6 +14,7 @@ import { isBlockaidEnabled as isBlockaidEnabledForNetwork } from "popup/helpers/
 
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { View } from "popup/basics/layout/View";
+import { showToast } from "popup/basics/shadcn/Toast";
 
 import { NetworkDetails } from "@shared/constants/stellar";
 import { RequestState } from "helpers/hooks/fetchHookInterface";
@@ -23,9 +24,11 @@ import { newTabHref } from "helpers/urls";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { reRouteOnboarding } from "popup/helpers/route";
 import { balancesSelector } from "popup/ducks/cache";
+import { useHiddenAssets } from "popup/helpers/useHiddenAssets";
 
 import { ManageAssetRows } from "../ManageAssetRows";
-import { SearchInput, SearchCopy, SearchResults } from "../AssetResults";
+import { HiddenAssets } from "popup/components/account/HiddenAssets";
+import { SearchInput, SearchResults } from "../AssetResults";
 import { useAssetLookup } from "./hooks/useAssetLookup";
 import { useGetSearchData } from "./hooks/useSearchData";
 
@@ -77,6 +80,50 @@ export const SearchAsset = () => {
 
   const { state: tokenState, fetchData: fetchTokenData } = useAssetLookup();
 
+  const { isAssetHidden, setAssetVisibility, refreshHiddenAssets } =
+    useHiddenAssets();
+  const [isHiddenAssetsOpen, setIsHiddenAssetsOpen] = useState(false);
+  // Canonical of the asset whose unhide is in flight, if any
+  const [unhidingAsset, setUnhidingAsset] = useState("");
+
+  /**
+   * Unhides a token from the Hidden tokens sheet or a search row, confirms
+   * with a toast and closes the sheet so the result is visible straight away.
+   */
+  const handleUnhide = async ({
+    code,
+    canonicalAsset,
+  }: {
+    code: string;
+    canonicalAsset: string;
+  }) => {
+    if (unhidingAsset) {
+      return;
+    }
+
+    setUnhidingAsset(canonicalAsset);
+
+    try {
+      await setAssetVisibility(canonicalAsset, "visible");
+      setIsHiddenAssetsOpen(false);
+      showToast(() => (
+        <Notification
+          variant="success"
+          title={t("{{code}} unhidden", { code })}
+        />
+      ));
+    } catch {
+      showToast(() => (
+        <Notification
+          variant="error"
+          title={t("Couldn’t unhide {{code}}", { code })}
+        />
+      ));
+    } finally {
+      setUnhidingAsset("");
+    }
+  };
+
   /* eslint-disable react-hooks/exhaustive-deps */
   const handleSearchRef = useRef(
     debounce(
@@ -106,6 +153,9 @@ export const SearchAsset = () => {
     };
 
     getData();
+    // A successful add clears the stored hidden flag, so the map must follow
+    // the balances or the re-added row would still offer Unhide.
+    refreshHiddenAssets();
   }, [cachedBalances]);
 
   if (
@@ -193,16 +243,23 @@ export const SearchAsset = () => {
                       />
                     )}
                   </Field>
-                  <SearchCopy>
-                    {`${t("powered by")} `}
-                    <a
-                      href="https://stellar.expert"
-                      target="_blank"
-                      rel="noreferrer"
+                  {/* Only before the user starts searching: once there is a
+                      query, a hidden token that matches shows Unhide on its
+                      own row instead. The sheet is a SlideupModal rather than
+                      a Radix dialog, so there is no Trigger to inherit these
+                      from; mirror what one would emit. */}
+                  {!dirty ? (
+                    <button
+                      type="button"
+                      className="SearchAsset__show-hidden"
+                      data-testid="hidden-assets-btn"
+                      aria-haspopup="dialog"
+                      aria-expanded={isHiddenAssetsOpen}
+                      onClick={() => setIsHiddenAssetsOpen(true)}
                     >
-                      stellar.expert
-                    </a>
-                  </SearchCopy>
+                      {t("Show hidden")}
+                    </button>
+                  ) : null}
                 </div>
                 <SearchResults
                   isSearching={tokenState.state === "LOADING"}
@@ -225,6 +282,9 @@ export const SearchAsset = () => {
                       isVerificationInfoShowing={
                         tokenState.data.isVerificationInfoShowing
                       }
+                      isAssetHidden={isAssetHidden}
+                      onUnhideAsset={handleUnhide}
+                      unhidingAsset={unhidingAsset}
                     />
                   ) : null}
                 </SearchResults>
@@ -238,6 +298,11 @@ export const SearchAsset = () => {
           )}
         </Formik>
       </View.Content>
+      <HiddenAssets
+        isOpen={isHiddenAssetsOpen}
+        onClose={() => setIsHiddenAssetsOpen(false)}
+        onVisibilityChange={refreshHiddenAssets}
+      />
     </>
   );
 };

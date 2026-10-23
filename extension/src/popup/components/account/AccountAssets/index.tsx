@@ -209,6 +209,13 @@ interface AccountAssetsProps {
   assetPrices?: ApiTokenPrices;
   /** The account history request failed; AssetDetail shows an error, not a skeleton. */
   hasHistoryError?: boolean;
+  /**
+   * Refetch the Account view's balances. Removing a token or a trustline from
+   * the detail sheet only refreshes the remover's own `useGetBalances`
+   * instance; these rows read `useGetAccountData`'s reducer, which nothing else
+   * reaches, so without this the removed row sits here until the 30s poll.
+   */
+  reloadBalances?: () => Promise<unknown>;
 }
 
 export const AccountAssets = ({
@@ -217,6 +224,7 @@ export const AccountAssets = ({
   assetPrices,
   historyData,
   hasHistoryError = false,
+  reloadBalances,
 }: AccountAssetsProps) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -336,6 +344,8 @@ export const AccountAssets = ({
         }
 
         const canonicalAsset = getCanonicalFromAsset(code, issuer?.key);
+
+        // Native XLM is never hideable, matching filterHiddenBalances.
         const assetPrice = assetPrices ? assetPrices[canonicalAsset] : null;
 
         const isSuspicious = isAssetSuspicious((rb as Balance).blockaidData);
@@ -401,6 +411,7 @@ export const AccountAssets = ({
                 handleClose={() => {
                   setSelectedAsset("");
                   clearAssetDetailQueryParams();
+                  void reloadBalances?.();
                 }}
               />
             </SheetContent>

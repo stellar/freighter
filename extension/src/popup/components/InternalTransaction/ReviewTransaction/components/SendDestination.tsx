@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { Asset } from "stellar-sdk";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { isNativeAssetId } from "@shared/helpers/assetIdentity";
@@ -32,6 +33,7 @@ export const SendDestination: React.FC<SendDestinationProps> = ({
   isSuspicious = false,
   isMalicious = true,
 }) => {
+  const { t } = useTranslation();
   if (dstAsset && dest) {
     return (
       <>
@@ -64,11 +66,13 @@ export const SendDestination: React.FC<SendDestinationProps> = ({
   return (
     <>
       <IdenticonImg publicKey={destination} />
-      <div
-        className="ReviewTx__SendDestinationDetails"
-        data-testid="review-tx-send-destination-address"
-      >
-        {truncatedDest}
+      <div className="ReviewTx__SendDestinationDetails">
+        <span className="ReviewTx__SendDestinationDetails__label">
+          {t("To")}
+        </span>
+        <span data-testid="review-tx-send-destination-address">
+          {truncatedDest}
+        </span>
       </div>
     </>
   );

@@ -63,7 +63,7 @@ describe("ForgotPasswordSheet", () => {
     jest.restoreAllMocks();
   });
 
-  it("shows the reset warning with a red info badge", () => {
+  it("shows the reset warning under a stacked header", () => {
     renderSheet();
 
     expect(screen.getByText("Forgot your password?")).toBeInTheDocument();
@@ -82,11 +82,10 @@ describe("ForgotPasswordSheet", () => {
         "Make sure you have your recovery phrase before continuing.",
       ),
     ).toHaveClass("ForgotPasswordSheet__reminder");
-    expect(
-      screen
-        .getByTestId("forgot-password-sheet")
-        .querySelector(".InfoSheet__badge--error"),
-    ).not.toBeNull();
+    // Varial: the X alone on the top row, the title below, no badge.
+    const sheet = screen.getByTestId("forgot-password-sheet");
+    expect(sheet.querySelector(".SheetHeader--stacked")).not.toBeNull();
+    expect(sheet.querySelector(".InfoSheet__badge")).toBeNull();
     expect(screen.getByTestId("forgot-password-sheet-reset")).toHaveTextContent(
       "Reset wallet",
     );

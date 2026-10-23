@@ -12,6 +12,8 @@ interface ListNavLinkProps {
   searchParams?: string;
   icon?: React.ReactNode;
   isExternal?: boolean;
+  /** Lets callers address a row without depending on its translated label. */
+  dataTestId?: string;
 }
 
 const renderListNavLinkIcon = (icon: React.ReactNode) => (
@@ -24,17 +26,23 @@ export const ListNavLink = ({
   searchParams = "",
   icon,
   isExternal = false,
+  dataTestId,
 }: ListNavLinkProps) => {
   const fullHref = `${href}${searchParams}`;
   return (
     <div className="ListNavLink">
       {icon ? renderListNavLinkIcon(icon) : null}
       {Object.values(ROUTES).includes(href as ROUTES) ? (
-        <Link to={fullHref}>
+        <Link to={fullHref} data-testid={dataTestId}>
           {children} <Icon.ChevronRight className="ListNavLink__arrow" />
         </Link>
       ) : (
-        <a rel="noreferrer" target="_blank" href={fullHref}>
+        <a
+          rel="noreferrer"
+          target="_blank"
+          href={fullHref}
+          data-testid={dataTestId}
+        >
           {children}{" "}
           {isExternal ? (
             <Icon.LinkExternal01 className="ListNavLink__arrow" />

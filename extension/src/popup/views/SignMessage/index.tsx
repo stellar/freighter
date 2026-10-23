@@ -16,7 +16,6 @@ import {
   BlockaidByLine,
 } from "popup/components/WarningMessages";
 import { BlockaidBanner } from "popup/components/BlockaidBanner";
-import { View } from "popup/basics/layout/View";
 
 import { ShowOverlayStatus } from "popup/ducks/transactionSubmission";
 
@@ -49,6 +48,9 @@ import {
 } from "popup/helpers/blockaid";
 import { SecurityLevel } from "popup/constants/blockaid";
 import { useMarkQueueActive } from "popup/helpers/useMarkQueueActive";
+import { SheetHeader } from "popup/components/SheetHeader";
+import { SheetLayout } from "popup/components/SheetLayout";
+import { SlideupModal } from "popup/components/SlideupModal";
 
 import "./styles.scss";
 
@@ -219,208 +221,215 @@ export const SignMessage = () => {
         />
       )}
       <React.Fragment>
-        <View.Content>
-          {isOnBlockaidSheet ? (
-            <div className="SignMessage__BlockaidDetails">
-              <div className="SignMessage__BlockaidDetails__Header">
-                <div
-                  className={isMalicious ? "WarningMarkError" : "WarningMark"}
-                >
-                  <Icon.AlertOctagon />
+        {/* The request floats as a card over the dimmed window, like every other
+          sheet and like mobile's dApp sheets. Dismissing it (backdrop, Escape)
+          rejects the request, the same as Cancel. */}
+        <SlideupModal
+          isModalOpen
+          setIsModalOpen={() => rejectAndClose()}
+          // Same literal as the title row, which is not translated either.
+          ariaLabel="Sign message"
+        >
+          <SheetLayout
+            footer={
+              <div className="SignMessage__Footer">
+                {!shouldShowWarning && (
+                  <span className="SignMessage__Warning">
+                    {t("Only confirm if you trust this site")}
+                  </span>
+                )}
+                <div className="SignMessage__Actions">
+                  {shouldShowWarning ? (
+                    <>
+                      <Button
+                        size="lg"
+                        isFullWidth
+                        isRounded
+                        variant={isMalicious ? "destructive" : "secondary"}
+                        onClick={() => rejectAndClose()}
+                      >
+                        <span className="SignMessage__CancelBtn">
+                          {t("Cancel")}
+                        </span>
+                      </Button>
+                      <Button
+                        data-testid="sign-message-confirm-anyway-button"
+                        disabled={!isDomainListedAllowed}
+                        size="lg"
+                        isFullWidth
+                        isRounded
+                        variant={isMalicious ? "error" : "tertiary"}
+                        isLoading={isConfirming}
+                        onClick={() => handleApprove()}
+                      >
+                        {t("Confirm anyway")}
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <Button
+                        size="lg"
+                        isFullWidth
+                        isRounded
+                        variant="tertiary"
+                        onClick={() => rejectAndClose()}
+                      >
+                        <span className="SignMessage__CancelBtn">
+                          {t("Cancel")}
+                        </span>
+                      </Button>
+                      <Button
+                        data-testid="sign-message-approve-button"
+                        disabled={!isDomainListedAllowed}
+                        size="lg"
+                        isFullWidth
+                        isRounded
+                        variant="secondary"
+                        isLoading={isConfirming}
+                        onClick={() => handleApprove()}
+                      >
+                        {t("Confirm")}
+                      </Button>
+                    </>
+                  )}
                 </div>
-                <div
-                  className="Close"
-                  onClick={() => setIsOnBlockaidSheet(false)}
-                >
-                  <Icon.X />
+              </div>
+            }
+          >
+            {isOnBlockaidSheet ? (
+              <div className="SignMessage__BlockaidDetails">
+                <SheetHeader
+                  title={
+                    isUnableToScan
+                      ? t("Proceed with caution")
+                      : isMalicious
+                        ? t("Do not proceed")
+                        : t("Suspicious Request")
+                  }
+                  onClose={() => setIsOnBlockaidSheet(false)}
+                />
+                <div className="SignMessage__BlockaidDetails__SubTitle">
+                  {isUnableToScan
+                    ? t("We were unable to scan this site for security issues")
+                    : isMalicious
+                      ? t(
+                          "This site does not appear safe for the following reasons",
+                        )
+                      : t("This site has been flagged with potential concerns")}
                 </div>
-              </div>
-              <div className="SignMessage__BlockaidDetails__Title">
-                {isUnableToScan
-                  ? t("Proceed with caution")
-                  : isMalicious
-                    ? t("Do not proceed")
-                    : t("Suspicious Request")}
-              </div>
-              <div className="SignMessage__BlockaidDetails__SubTitle">
-                {isUnableToScan
-                  ? t("We were unable to scan this site for security issues")
-                  : isMalicious
-                    ? t(
-                        "This site does not appear safe for the following reasons",
-                      )
-                    : t("This site has been flagged with potential concerns")}
-              </div>
-              <div className="SignMessage__BlockaidDetails__Details">
-                {!isUnableToScan &&
-                  attackTypes.length > 0 &&
-                  attackTypes.map((attack, index) => (
+                <div className="SignMessage__BlockaidDetails__Details">
+                  {!isUnableToScan &&
+                    attackTypes.length > 0 &&
+                    attackTypes.map((attack, index) => (
+                      <div
+                        key={index}
+                        className={
+                          isMalicious
+                            ? "SignMessage__BlockaidDetails__DetailRowError"
+                            : "SignMessage__BlockaidDetails__DetailRow"
+                        }
+                      >
+                        {isMalicious ? <Icon.XCircle /> : <Icon.MinusCircle />}
+                        <span>
+                          {
+                            ATTACK_TO_DISPLAY[
+                              attack as keyof typeof ATTACK_TO_DISPLAY
+                            ]
+                          }
+                        </span>
+                      </div>
+                    ))}
+                  {hasOverrideWithoutMessages && (
                     <div
-                      key={index}
                       className={
-                        isMalicious
+                        blockaidOverrideState === SecurityLevel.MALICIOUS
                           ? "SignMessage__BlockaidDetails__DetailRowError"
                           : "SignMessage__BlockaidDetails__DetailRow"
                       }
                     >
-                      {isMalicious ? <Icon.XCircle /> : <Icon.MinusCircle />}
-                      <span>
-                        {
-                          ATTACK_TO_DISPLAY[
-                            attack as keyof typeof ATTACK_TO_DISPLAY
-                          ]
-                        }
+                      {blockaidOverrideState === SecurityLevel.MALICIOUS ? (
+                        <Icon.XCircle />
+                      ) : (
+                        <Icon.MinusCircle />
+                      )}
+                      <span>{t("This site was flagged as malicious")}</span>
+                    </div>
+                  )}
+                  {isUnableToScan && (
+                    <div className="SignMessage__BlockaidDetails__DetailRow">
+                      <Icon.MinusCircle />
+                      <span>{t("Unable to scan site")}</span>
+                    </div>
+                  )}
+                  <BlockaidByLine address={""} />
+                </div>
+              </div>
+            ) : (
+              <div className="SignMessage__MainPane">
+                <div className="SignMessage__Body">
+                  <div className="SignMessage__TitleRow">
+                    <img
+                      className="PunycodedDomain__favicon"
+                      src={favicon}
+                      alt={t("Site favicon")}
+                    />
+                    <div className="SignMessage__TitleRow__Detail">
+                      <span className="SignMessage__TitleRow__Title">
+                        Sign message
+                      </span>
+                      <span className="SignMessage__TitleRow__Domain">
+                        {validDomain}
                       </span>
                     </div>
-                  ))}
-                {hasOverrideWithoutMessages && (
-                  <div
-                    className={
-                      blockaidOverrideState === SecurityLevel.MALICIOUS
-                        ? "SignMessage__BlockaidDetails__DetailRowError"
-                        : "SignMessage__BlockaidDetails__DetailRow"
-                    }
-                  >
-                    {blockaidOverrideState === SecurityLevel.MALICIOUS ? (
-                      <Icon.XCircle />
-                    ) : (
-                      <Icon.MinusCircle />
-                    )}
-                    <span>{t("This site was flagged as malicious")}</span>
+                  </div>
+                </div>
+                {!isDomainListedAllowed && (
+                  <DomainNotAllowedWarningMessage domain={domain} />
+                )}
+                {shouldShowWarning && (
+                  <div className="SignMessage__BlockaidBanner">
+                    <BlockaidBanner
+                      securityLevel={
+                        isMalicious
+                          ? SecurityLevel.MALICIOUS
+                          : isSuspicious
+                            ? SecurityLevel.SUSPICIOUS
+                            : SecurityLevel.UNABLE_TO_SCAN
+                      }
+                      entity="site"
+                      onClick={() => setIsOnBlockaidSheet(true)}
+                      dataTestId="sign-message-blockaid-banner"
+                    />
                   </div>
                 )}
-                {isUnableToScan && (
-                  <div className="SignMessage__BlockaidDetails__DetailRow">
-                    <Icon.MinusCircle />
-                    <span>{t("Unable to scan site")}</span>
+                <Message
+                  prefix={SIGN_MESSAGE_PREFIX}
+                  message={message.message}
+                />
+                <div className="SignMessage__Metadata">
+                  <div className="SignMessage__Metadata__Row">
+                    <div className="SignMessage__Metadata__Label">
+                      <Icon.Wallet01 />
+                      <span>{t("Wallet")}</span>
+                    </div>
+                    <div className="SignMessage__Metadata__Value">
+                      <KeyIdenticon publicKey={publicKey} />
+                    </div>
                   </div>
-                )}
-                <BlockaidByLine address={""} />
-              </div>
-            </div>
-          ) : (
-            <div className="SignMessage__MainPane">
-              <div className="SignMessage__Body">
-                <div className="SignMessage__TitleRow">
-                  <img
-                    className="PunycodedDomain__favicon"
-                    src={favicon}
-                    alt={t("Site favicon")}
-                  />
-                  <div className="SignMessage__TitleRow__Detail">
-                    <span className="SignMessage__TitleRow__Title">
-                      Sign message
-                    </span>
-                    <span className="SignMessage__TitleRow__Domain">
-                      {validDomain}
-                    </span>
+                  <div className="SignMessage__Metadata__Row">
+                    <div className="SignMessage__Metadata__Label">
+                      <Icon.Globe02 />
+                      <span>{t("Network")}</span>
+                    </div>
+                    <div className="SignMessage__Metadata__Value">
+                      <span>{networkName}</span>
+                    </div>
                   </div>
                 </div>
               </div>
-              {!isDomainListedAllowed && (
-                <DomainNotAllowedWarningMessage domain={domain} />
-              )}
-              {shouldShowWarning && (
-                <div className="SignMessage__BlockaidBanner">
-                  <BlockaidBanner
-                    securityLevel={
-                      isMalicious
-                        ? SecurityLevel.MALICIOUS
-                        : isSuspicious
-                          ? SecurityLevel.SUSPICIOUS
-                          : SecurityLevel.UNABLE_TO_SCAN
-                    }
-                    entity="site"
-                    onClick={() => setIsOnBlockaidSheet(true)}
-                    dataTestId="sign-message-blockaid-banner"
-                  />
-                </div>
-              )}
-              <Message prefix={SIGN_MESSAGE_PREFIX} message={message.message} />
-              <div className="SignMessage__Metadata">
-                <div className="SignMessage__Metadata__Row">
-                  <div className="SignMessage__Metadata__Label">
-                    <Icon.Wallet01 />
-                    <span>{t("Wallet")}</span>
-                  </div>
-                  <div className="SignMessage__Metadata__Value">
-                    <KeyIdenticon publicKey={publicKey} />
-                  </div>
-                </div>
-                <div className="SignMessage__Metadata__Row">
-                  <div className="SignMessage__Metadata__Label">
-                    <Icon.Globe02 />
-                    <span>{t("Network")}</span>
-                  </div>
-                  <div className="SignMessage__Metadata__Value">
-                    <span>{networkName}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-        </View.Content>
-        {/* The default footer is a fixed 80px, which this footer's warning line
-            plus button row overflows — the text then spills up over the content
-            pane. Size to content so it grows instead. */}
-        <View.Footer customHeight="auto">
-          {!shouldShowWarning && (
-            <span className="SignMessage__Warning">
-              {t("Only confirm if you trust this site")}
-            </span>
-          )}
-          <div className="SignMessage__Actions">
-            {shouldShowWarning ? (
-              <>
-                <Button
-                  size="lg"
-                  isFullWidth
-                  isRounded
-                  variant={isMalicious ? "destructive" : "secondary"}
-                  onClick={() => rejectAndClose()}
-                >
-                  <span className="SignMessage__CancelBtn">{t("Cancel")}</span>
-                </Button>
-                <Button
-                  data-testid="sign-message-confirm-anyway-button"
-                  disabled={!isDomainListedAllowed}
-                  size="lg"
-                  isFullWidth
-                  isRounded
-                  variant={isMalicious ? "error" : "tertiary"}
-                  isLoading={isConfirming}
-                  onClick={() => handleApprove()}
-                >
-                  {t("Confirm anyway")}
-                </Button>
-              </>
-            ) : (
-              <>
-                <Button
-                  size="lg"
-                  isFullWidth
-                  isRounded
-                  variant="tertiary"
-                  onClick={() => rejectAndClose()}
-                >
-                  <span className="SignMessage__CancelBtn">{t("Cancel")}</span>
-                </Button>
-                <Button
-                  data-testid="sign-message-approve-button"
-                  disabled={!isDomainListedAllowed}
-                  size="lg"
-                  isFullWidth
-                  isRounded
-                  variant="secondary"
-                  isLoading={isConfirming}
-                  onClick={() => handleApprove()}
-                >
-                  {t("Confirm")}
-                </Button>
-              </>
             )}
-          </div>
-        </View.Footer>
+          </SheetLayout>
+        </SlideupModal>
       </React.Fragment>
     </>
   );

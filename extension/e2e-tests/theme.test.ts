@@ -1,6 +1,7 @@
 import type { Locator, Page } from "@playwright/test";
 import { test, expect } from "./test-fixtures";
 import { loginToTestAccount } from "./helpers/login";
+import { goToSettings } from "./helpers/network";
 
 // Light/dark smoke (freighter-private#18): the UI follows the device color
 // scheme, including live changes while the popup is open. Asserts both the
@@ -125,21 +126,25 @@ const lockScreenColors = async (page: Page) => ({
   page: await backdrop(page.getByTestId("unlock-account")),
 });
 
+// The Varial header: a bare X in gray-09 and the title in gray-12, no badge.
 const sheetColors = async (page: Page) => ({
   surface: await backdrop(page.getByTestId("forgot-password-sheet")),
-  badgeBackground: await computed(
-    page.locator(".InfoSheet__badge--error"),
-    "backgroundColor",
+  closeColor: await computed(
+    page.getByTestId("forgot-password-sheet-close"),
+    "color",
   ),
-  badgeColor: await computed(page.locator(".InfoSheet__badge--error"), "color"),
+  titleColor: await computed(
+    page.getByRole("heading", { name: "Forgot your password?" }),
+    "color",
+  ),
   resetBackground: await computed(
     page.getByTestId("forgot-password-sheet-reset"),
     "backgroundColor",
   ),
 });
 
-// The reset reminder is semibold in the body's gray, like mobile: the same
-// color as the sheet's first paragraph, not InfoSheet__emphasis's brighter one.
+// The reset reminder is semibold in the body's color, like mobile: the same
+// color as the sheet's first paragraph.
 const expectReminderStyle = async (page: Page) => {
   const paragraph = page.locator(".ForgotPasswordSheet__body > div").first();
   const reminder = page.locator(".ForgotPasswordSheet__reminder");
@@ -161,8 +166,7 @@ test("lock screen and Forgot password sheet follow the color scheme", async ({
   await page.emulateMedia({ colorScheme: "light" });
   await loginToTestAccount({ page, extensionId, context });
   expect(await backdrop(page.getByTestId("account-view"))).toBe(BASE_00.light);
-  await page.getByTestId("account-options-dropdown").click();
-  await page.getByText("Settings").click();
+  await goToSettings(page);
   await page.getByText("Log Out").click();
   await expect(page.getByText("Welcome back")).toBeVisible();
 
@@ -178,8 +182,8 @@ test("lock screen and Forgot password sheet follow the color scheme", async ({
   await expect(page.getByTestId("forgot-password-sheet")).toBeVisible();
   expect(await sheetColors(page)).toEqual({
     surface: GRAY_01.light,
-    badgeBackground: "rgb(255, 239, 239)", // red-03 light
-    badgeColor: "rgb(229, 72, 77)", // red-09 light, the icon step like brand's
+    closeColor: "rgb(143, 143, 143)", // gray-09 light
+    titleColor: "rgb(23, 23, 23)", // gray-12 light
     resetBackground: "rgb(229, 72, 77)", // red-09, the destructive button
   });
   await expectReminderStyle(page);
@@ -189,8 +193,8 @@ test("lock screen and Forgot password sheet follow the color scheme", async ({
   await expect(page.locator("body")).toHaveClass(/sds-theme-dark/);
   expect(await sheetColors(page)).toEqual({
     surface: GRAY_01.dark,
-    badgeBackground: "rgb(60, 24, 26)", // red-03 dark
-    badgeColor: "rgb(229, 72, 77)", // red-09 dark
+    closeColor: "rgb(112, 112, 112)", // gray-09 dark
+    titleColor: "rgb(237, 237, 237)", // gray-12 dark
     resetBackground: "rgb(229, 72, 77)", // red-09 is the same in both themes
   });
   await expectReminderStyle(page);

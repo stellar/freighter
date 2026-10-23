@@ -5,6 +5,12 @@
   overflow: hidden;
   position: relative;
 
+  // Cancel and Confirm side by side, pinned under the request by SheetLayout.
+  &__Footer {
+    display: flex;
+    gap: pxToRem(12px);
+  }
+
   &__Body {
     display: flex;
     flex-direction: column;

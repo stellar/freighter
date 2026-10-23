@@ -4,65 +4,14 @@
   display: flex;
   flex-direction: column;
   gap: pxToRem(24px);
-  padding: pxToRem(24px);
 
-  &__top {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-
-  // Brand (lilac) icon badge — matches the shared InfoSheet badge.
-  &__badge {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: pxToRem(32px);
-    height: pxToRem(32px);
-    border-radius: pxToRem(8px);
-    border: 1px solid var(--sds-clr-lilac-06);
-    background-color: var(--sds-clr-lilac-03);
-    // Brand/Foreground/Primary — muted vs the brighter lilac-11.
-    color: var(--sds-clr-lilac-09);
-
-    svg {
-      width: pxToRem(20px);
-      height: pxToRem(20px);
-    }
-  }
-
-  &__close {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: pxToRem(32px);
-    height: pxToRem(32px);
-    padding: 0;
-    border: 0;
+  // Mobile's lg token icon, so the leading XLM mark matches.
+  &__token {
+    display: block;
+    width: pxToRem(40px);
+    height: pxToRem(40px);
     border-radius: 50%;
-    background-color: var(--sds-clr-gray-03);
-    // Default/Foreground/Primary — muted vs the brighter gray-11.
-    color: var(--sds-clr-gray-09);
-    cursor: pointer;
-
-    svg {
-      width: pxToRem(20px);
-      height: pxToRem(20px);
-    }
-  }
-
-  &__text {
-    display: flex;
-    flex-direction: column;
-    gap: pxToRem(8px);
-  }
-
-  &__title {
-    margin: 0;
-    color: var(--sds-clr-gray-12);
-    font-size: pxToRem(18px);
-    font-weight: var(--sds-fw-medium);
-    line-height: pxToRem(26px);
+    object-fit: cover;
   }
 
   &__body {
@@ -119,7 +68,7 @@
   &__card-body {
     color: var(--sds-clr-gray-11);
     font-size: pxToRem(12px);
-    font-weight: var(--sds-fw-medium);
+    font-weight: var(--sds-fw-regular);
     line-height: pxToRem(18px);
   }
 

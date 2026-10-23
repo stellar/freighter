@@ -51,6 +51,11 @@ type SaveTokenPricesPayload = {
   publicKey: string;
   networkDetails: NetworkDetails;
   tokenPrices: ApiTokenPrices;
+  /**
+   * When the prices were fetched. Defaults to now; pass the existing stamp
+   * when adding to a cached map so its older prices don't read as fresh.
+   */
+  updatedAt?: number;
 };
 
 type SaveCollectionsPayload = {
@@ -232,7 +237,7 @@ const cacheSlice = createSlice({
           ...state.tokenPrices[networkPassphrase],
           [action.payload.publicKey]: {
             ...action.payload.tokenPrices,
-            updatedAt: Date.now(),
+            updatedAt: action.payload.updatedAt ?? Date.now(),
           } as ApiTokenPrices & { updatedAt: number },
         },
       };
@@ -311,6 +316,14 @@ const cacheSlice = createSlice({
     // the previous network's results until the in-memory store is reset.
     builder.addCase("settings/changeNetwork/fulfilled", (state) => {
       state.tokenLists = [];
+      // Balances and history are network-keyed, so switching away and back
+      // would otherwise re-serve whatever was cached for that network. The
+      // header's network switcher used to force a refresh on every change
+      // (`shouldForceBalancesRefresh`); it is gone, and switching now happens
+      // in Settings, so the guarantee moves here where every entry point gets
+      // it.
+      state.balanceData = {};
+      state.historyData = {};
     });
   },
 });

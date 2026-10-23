@@ -1,23 +1,20 @@
 import React from "react";
-import { useTranslation } from "react-i18next";
-import { Button, Icon } from "@stellar/design-system";
+import { Button } from "@stellar/design-system";
 
+import { SheetHeader, SheetHeaderLayout } from "popup/components/SheetHeader";
+import { SheetLayout } from "popup/components/SheetLayout";
 import { SlideupModal } from "popup/components/SlideupModal";
 
 import "./styles.scss";
 
-/** Color treatment for the top-left icon badge. */
-export type InfoSheetBadgeVariant = "brand" | "neutral" | "error";
-
 interface InfoSheetContentProps {
-  /** Icon rendered inside the top-left badge. */
-  icon: React.ReactNode;
-  /** Badge color: "brand" (lilac), "neutral" (gray) or "error" (red, for
-   * warnings about destructive actions). */
-  badgeVariant?: InfoSheetBadgeVariant;
   title: string;
-  /** Label for the full-width action button (e.g. "Close", "Got it"). */
-  actionLabel: string;
+  /** `stacked` puts the X alone on the top row and the title below it (the
+   * forgot-password sheet). */
+  headerLayout?: SheetHeaderLayout;
+  /** Label for the full-width action button (e.g. "Got it"). Omit it for a
+   * sheet the X alone dismisses. */
+  actionLabel?: string;
   onClose: () => void;
   /** Runs when the action button is pressed. Defaults to `onClose`, which
    * makes the action a dismiss button. */
@@ -28,7 +25,7 @@ interface InfoSheetContentProps {
   isActionLoading?: boolean;
   children: React.ReactNode;
   "data-testid"?: string;
-  /** Test id for the circular X close button. */
+  /** Test id for the X. */
   closeTestId?: string;
   /** Test id for the action button. */
   actionTestId?: string;
@@ -39,16 +36,15 @@ interface InfoSheetContentProps {
 }
 
 /**
- * Presentational body of an informational sheet: a colored icon badge plus a
- * circular close button on top, a title and body, and a full-width action
- * button (a dismiss button unless `onAction` is given).
+ * Presentational body of an informational sheet: the shared sheet header (a
+ * title and a bare X), the body copy, and an optional full-width action button
+ * (a dismiss button unless `onAction` is given).
  * Modal-agnostic so it can be wrapped in a SlideupModal (see InfoBottomSheet
  * below) or rendered directly inside a review pane.
  */
 export const InfoSheetContent = ({
-  icon,
-  badgeVariant = "brand",
   title,
+  headerLayout,
   actionLabel,
   onClose,
   onAction = onClose,
@@ -60,47 +56,47 @@ export const InfoSheetContent = ({
   actionTestId,
   isInline = false,
 }: InfoSheetContentProps) => {
-  const { t } = useTranslation();
-  return (
-    <div
-      className={`InfoSheet${isInline ? " InfoSheet--inline" : ""}`}
-      data-testid={dataTestId}
+  const header = (
+    <SheetHeader
+      title={title}
+      layout={headerLayout}
+      onClose={onClose}
+      closeTestId={closeTestId}
+    />
+  );
+  // Do not pass a className to this Button. SDS Button does
+  // `className: "Button ...", ...props`, so a passed className overwrites its
+  // own variant/size classes and the button renders as bare text.
+  const action = actionLabel ? (
+    <Button
+      size="lg"
+      variant={actionVariant}
+      isFullWidth
+      isRounded
+      onClick={onAction}
+      isLoading={isActionLoading}
+      disabled={isActionLoading}
+      data-testid={actionTestId}
     >
-      <div className="InfoSheet__top">
-        <div className={`InfoSheet__badge InfoSheet__badge--${badgeVariant}`}>
-          {icon}
-        </div>
-        <button
-          type="button"
-          className="InfoSheet__close"
-          onClick={onClose}
-          data-testid={closeTestId}
-          aria-label={t("Close")}
-        >
-          <Icon.X />
-        </button>
+      {actionLabel}
+    </Button>
+  ) : null;
+  const body = <div className="InfoSheet__body">{children}</div>;
+
+  if (isInline) {
+    return (
+      <div className="InfoSheet InfoSheet--inline" data-testid={dataTestId}>
+        {header}
+        {body}
+        {action}
       </div>
-      <div className="InfoSheet__text">
-        <h2 className="InfoSheet__title">{title}</h2>
-        <div className="InfoSheet__body">{children}</div>
-      </div>
-      {/* Do not pass a className to this Button. SDS Button does
-          `className: \`Button ...\`, ...props`, so a passed className
-          overwrites its own variant/size classes and the button renders as
-          bare text. */}
-      <Button
-        size="lg"
-        variant={actionVariant}
-        isFullWidth
-        isRounded
-        onClick={onAction}
-        isLoading={isActionLoading}
-        disabled={isActionLoading}
-        data-testid={actionTestId}
-      >
-        {actionLabel}
-      </Button>
-    </div>
+    );
+  }
+
+  return (
+    <SheetLayout data-testid={dataTestId} header={header} footer={action}>
+      {body}
+    </SheetLayout>
   );
 };
 
@@ -114,7 +110,13 @@ export const InfoBottomSheet = ({
   onClose,
   ...rest
 }: InfoBottomSheetProps) => (
-  <SlideupModal isModalOpen={isOpen} setIsModalOpen={() => onClose()}>
+  <SlideupModal
+    isModalOpen={isOpen}
+    setIsModalOpen={() => onClose()}
+    // Every consumer already supplies a visible title, so naming the dialog
+    // costs no new string and covers all of them at once.
+    ariaLabel={rest.title}
+  >
     <InfoSheetContent onClose={onClose} {...rest} />
   </SlideupModal>
 );

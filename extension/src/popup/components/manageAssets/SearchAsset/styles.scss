@@ -1,3 +1,5 @@
+@use "../../../styles/utils.scss" as *;
+
 :root {
   --SearchAsset--loader--dimension: 1rem;
 }
@@ -28,4 +30,34 @@
   &__fetch-fail {
     margin-top: 1.5rem;
   }
+
+  // Flush right under the search field; the 16px above and the 14px/20px
+  // type match the Add collectible screen's "Show hidden".
+  &__show-hidden {
+    display: block;
+    margin-left: auto;
+    margin-top: pxToRem(16px);
+    padding: 0;
+    border: 0;
+    background: none;
+    appearance: none;
+    font: inherit;
+    cursor: pointer;
+    color: var(--sds-clr-lilac-11);
+    font-size: pxToRem(14px);
+    font-weight: var(--sds-fw-medium);
+    line-height: pxToRem(20px);
+    white-space: nowrap;
+  }
+}
+
+.SearchAsset__show-hidden {
+  align-self: flex-end;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  color: var(--sds-clr-lilac-11);
+  font-size: pxToRem(14px);
+  line-height: pxToRem(20px);
 }

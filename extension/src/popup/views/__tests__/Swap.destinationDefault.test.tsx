@@ -12,6 +12,7 @@ import { RequestState } from "constants/request";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { Wrapper, getTestStore } from "popup/__testHelpers__";
 import { Swap } from "popup/views/Swap";
+import * as ApiInternal from "@shared/api/internal";
 import * as UseGetSwapAmountData from "popup/components/swap/SwapAmount/hooks/useGetSwapAmountData";
 import * as UseSimulateSwapData from "popup/components/swap/SwapAmount/hooks/useSimulateSwapData";
 import * as UseNetworkFees from "popup/helpers/useNetworkFees";
@@ -89,6 +90,11 @@ const getDestinationAsset = () =>
 
 describe("Swap destination default (USDC)", () => {
   beforeEach(() => {
+    // Nothing hidden unless a test says otherwise; the real read goes to the
+    // background, which tests don't run
+    jest
+      .spyOn(ApiInternal, "getHiddenAssets")
+      .mockResolvedValue({ hiddenAssets: {}, error: "" });
     jest.spyOn(UseNetworkFees, "useNetworkFees").mockReturnValue({
       networkCongestion: "LOW",
       recommendedFee: "0.00001",
@@ -132,6 +138,22 @@ describe("Swap destination default (USDC)", () => {
     await waitFor(() => {
       expect(getDestinationAsset()).toBe(MAINNET_USDC);
     });
+  });
+
+  it("leaves the destination empty when the network USDC is hidden", async () => {
+    const getHiddenAssets = jest
+      .spyOn(ApiInternal, "getHiddenAssets")
+      .mockResolvedValue({
+        hiddenAssets: { [TESTNET_USDC]: "hidden" },
+        error: "",
+      });
+
+    renderSwap({ networkDetails: TESTNET_NETWORK_DETAILS });
+
+    // Defaults are applied once the receive card renders
+    await screen.findByTestId("swap-receive-card");
+    expect(getHiddenAssets).toHaveBeenCalled();
+    expect(getDestinationAsset()).toBe("");
   });
 
   it("defaults the destination to native when the source is already the network USDC", async () => {

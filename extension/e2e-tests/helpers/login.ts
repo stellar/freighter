@@ -2,6 +2,7 @@ import StellarHDWallet from "stellar-hd-wallet";
 import { Page, BrowserContext } from "@playwright/test";
 import { expect } from "../test-fixtures";
 import { stubAllExternalApis } from "./stubs";
+import { switchNetwork } from "./network";
 
 const { generateMnemonic } = StellarHDWallet;
 
@@ -47,7 +48,7 @@ export const login = async ({
   });
 
   await page.goto(`chrome-extension://${extensionId}/index.html#/`);
-  await expect(page.getByTestId("network-selector-open")).toBeVisible({
+  await expect(page.getByTestId("account-chip")).toBeVisible({
     timeout: 10000,
   });
   // Register the balances-response listener BEFORE the network-selection
@@ -66,8 +67,7 @@ export const login = async ({
         response.url().includes("network=TESTNET"),
     );
 
-  await page.getByTestId("network-selector-open").click();
-  await page.getByText("Testnet").click();
+  await switchNetwork(page, "Testnet");
 
   // Wait for the balances API call to complete
   await balancesPromise;
@@ -161,21 +161,20 @@ export const loginToTestAccount = async ({
   });
 
   await page.goto(`chrome-extension://${extensionId}/index.html#/`);
-  await expect(page.getByTestId("network-selector-open")).toBeVisible({
+  await expect(page.getByTestId("account-chip")).toBeVisible({
     timeout: 50000,
   });
-  await page.getByTestId("network-selector-open").click();
-  await page.getByText("Testnet").click();
+  await switchNetwork(page, "Testnet");
   await expect(page.getByTestId("account-view")).toBeVisible({
     timeout: 30000,
   });
 };
 
 export const switchToMainnet = async (page: Page) => {
-  await page.getByTestId("network-selector-open").click();
-  await page.getByText("Mainnet").click();
-  await expect(page.getByTestId("network-selector-open")).toContainText(
-    "Mainnet",
-    { timeout: 30000 },
-  );
+  await switchNetwork(page, "Mainnet");
+  // Nothing in the header names the active network any more, so Home coming
+  // back is the observable signal that the switch landed.
+  await expect(page.getByTestId("account-view")).toBeVisible({
+    timeout: 30000,
+  });
 };

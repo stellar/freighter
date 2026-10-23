@@ -585,11 +585,14 @@ export const popupMessageListener = (
       return changeAssetVisibility({
         request,
         localStore,
+        sessionStore,
       });
     }
     case SERVICE_TYPES.GET_HIDDEN_ASSETS: {
       return getHiddenAssets({
+        request,
         localStore,
+        sessionStore,
       });
     }
     case SERVICE_TYPES.GET_USDT0_LAUNCH_BANNER_DISMISSED: {

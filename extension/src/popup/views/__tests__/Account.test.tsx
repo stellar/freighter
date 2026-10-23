@@ -1,5 +1,11 @@
 import React from "react";
-import { render, waitFor, screen, fireEvent } from "@testing-library/react";
+import {
+  act,
+  render,
+  waitFor,
+  screen,
+  fireEvent,
+} from "@testing-library/react";
 import BigNumber from "bignumber.js";
 import * as ReactRouterDom from "react-router-dom";
 
@@ -304,6 +310,14 @@ describe("Account view", () => {
     // clearAllMocks keeps implementations; a test that overrides history
     // must not hand its rejection or delay to the tests after it.
     getAccountHistorySpy.mockImplementation(resolveDefaultAccountHistory);
+    // `clearAllMocks` drops recorded calls but keeps implementations, so a test
+    // that hides an asset would otherwise hide it for every test after it. The
+    // module-level default is "nothing hidden"; put it back.
+    jest
+      .spyOn(ApiInternal, "getHiddenAssets")
+      .mockImplementation(() =>
+        Promise.resolve({ hiddenAssets: {}, error: "" }),
+      );
   });
 
   jest
@@ -793,6 +807,60 @@ describe("Account view", () => {
     });
   });
 
+  it("does not blank Home when Asset Details is closed with the X", async () => {
+    // Closing through AssetDetail's own handler used to call the full
+    // `fetchData`, which resets the request to LOADING with `data: null` and
+    // makes Account early-return a full-screen <Loading />. Dismissing a token
+    // sheet with no change must not take Home off screen.
+    render(
+      <Wrapper
+        routes={[ROUTES.welcome]}
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
+            publicKey: "G1",
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: TESTNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+          },
+        }}
+      >
+        <Account />
+      </Wrapper>,
+    );
+
+    await waitFor(async () => {
+      await fireEvent.click(
+        screen.getByTestId("AccountAssets__asset--loading-USDC"),
+      );
+    });
+    await waitFor(() => {
+      expect(
+        screen.getByTestId("asset-detail-available-copy"),
+      ).toHaveTextContent("100 USDC");
+    });
+
+    fireEvent.click(screen.getByTestId("BackButton"));
+
+    // Asserted in the same tick as the click, with no `waitFor` in between:
+    // `fetchData` dispatches FETCH_DATA_START synchronously, so the blank
+    // frame lands here and is gone again by the time a refetch settles.
+    expect(screen.queryByTestId("Loading")).not.toBeInTheDocument();
+    expect(screen.getAllByTestId("account-assets-item").length).toBeGreaterThan(
+      0,
+    );
+
+    await waitFor(() => {
+      expect(
+        screen.queryByTestId("asset-detail-available-copy"),
+      ).not.toBeInTheDocument();
+    });
+    expect(screen.queryByTestId("Loading")).not.toBeInTheDocument();
+  });
+
   it("goes to account details and shows loading until history data is fetched", async () => {
     jest.useFakeTimers();
     jest
@@ -1146,6 +1214,10 @@ describe("Account view", () => {
     );
   });
 
+  // A hidden asset must still be priced. The price map is cached per account
+  // and network with no record of which assets it covers, so one built from
+  // the visibility-filtered list is served as complete -- and unhiding, which
+  // only writes the visibility mirror, brings the row back with no price.
   it("hides prices and deltas on token price failure", async () => {
     jest.spyOn(ApiInternal, "loadSettings").mockImplementation(() =>
       Promise.resolve({
@@ -1474,6 +1546,7 @@ describe("Account view", () => {
         },
         fetchData: jest.fn(),
         refreshAppData: jest.fn(),
+        refreshBalances: jest.fn(),
       } as any);
 
     render(
@@ -1520,6 +1593,7 @@ describe("Account view", () => {
         },
         fetchData: jest.fn(),
         refreshAppData: jest.fn(),
+        refreshBalances: jest.fn(),
       });
 
     render(
@@ -1613,6 +1687,7 @@ describe("Account view", () => {
                 } as any),
           fetchData: jest.fn(),
           refreshAppData: jest.fn(),
+          refreshBalances: jest.fn(),
         } as any);
 
       render(
@@ -1790,6 +1865,61 @@ describe("Account view", () => {
       expect(pillTestIds()).toEqual([]);
     });
 
+    // The grid filters against the hidden map, which is a separate request. If
+    // the collections land first the hidden items paint for a frame and then
+    // vanish, so the tab keeps spinning until the map is in.
+    it("keeps spinning until the hidden-collectibles map has loaded", async () => {
+      let resolveHidden: (value: unknown) => void = () => {};
+      const hiddenSpy = jest
+        .spyOn(ApiInternal, "getHiddenCollectibles")
+        .mockImplementation(
+          () =>
+            new Promise((resolve) => {
+              resolveHidden = resolve;
+            }) as any,
+        );
+      const hiddenKey = `${mockCollectibles[0].collection!.address}:${
+        mockCollectibles[0].collection!.collectibles[0].tokenId
+      }`;
+
+      const spy = await renderWithHoldings({
+        collections: mockCollectibles,
+        isFunded: true,
+      });
+      await switchToCollectibles();
+
+      expect(
+        screen.getByTestId("account-collectibles-loader"),
+      ).toBeInTheDocument();
+      expect(
+        screen.queryByTestId("account-collectible-image"),
+      ).not.toBeInTheDocument();
+
+      await act(async () => {
+        resolveHidden({
+          hiddenCollectibles: { [hiddenKey]: "hidden" },
+          error: "",
+        });
+      });
+
+      await waitFor(() => {
+        expect(
+          screen.queryByTestId("account-collectibles-loader"),
+        ).not.toBeInTheDocument();
+      });
+      spy.mockRestore();
+      hiddenSpy.mockRestore();
+
+      const total = mockCollectibles.reduce(
+        (count, { collection }) => count + collection!.collectibles.length,
+        0,
+      );
+      // One image per collectible; the hidden one is filtered out.
+      expect(screen.getAllByTestId("account-collectible-image")).toHaveLength(
+        total - 1,
+      );
+    });
+
     // A failed balances fetch leaves Tokens with no CTA of either kind, so there
     // is no style for Collectibles to match and it falls back to the pill.
     it("falls back to the Collectibles pill when the balances fetch failed", async () => {
@@ -1963,6 +2093,7 @@ describe("Account view", () => {
       },
       fetchData: jest.fn(),
       refreshAppData: jest.fn(),
+      refreshBalances: jest.fn(),
     });
 
     render(
@@ -2009,6 +2140,7 @@ describe("Account view", () => {
       },
       fetchData: jest.fn(),
       refreshAppData: jest.fn(),
+      refreshBalances: jest.fn(),
     });
     // In the sidebar a plain window.close() navigates home, which would run
     // this hand-off again, so it must not be the call that closes the window.

@@ -17,6 +17,7 @@ import {
   createAssetObject,
   stubMemoRequiredAccounts,
 } from "./helpers/stubs";
+import { goToAddAsset } from "./helpers/assets";
 
 test.describe("BlockAid Scan - Unable to Scan States", () => {
   test("Add asset shows 'Unable to scan token' warning when scan fails", async ({
@@ -68,10 +69,7 @@ test.describe("BlockAid Scan - Unable to Scan States", () => {
     // switch to Mainnet where asset scanning is supported and errors are surfaced
     await switchToMainnet(page);
 
-    await page.getByTestId("account-options-dropdown").click();
-    await page.getByText("Manage assets").click();
-    await expect(page.getByText("Your assets")).toBeVisible();
-    await page.getByText("Add an asset").click({ force: true });
+    await goToAddAsset(page);
 
     // Use a classic asset issuer address to trigger ChangeTrustInternal (not ToggleTokenInternal)
     // Searching by issuer will return classic assets which use ChangeTrustInternal

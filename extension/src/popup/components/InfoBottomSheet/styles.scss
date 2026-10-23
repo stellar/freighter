@@ -1,89 +1,12 @@
 @use "../../styles/utils.scss" as *;
 
 .InfoSheet {
-  display: flex;
-  flex-direction: column;
-  gap: pxToRem(24px);
-  padding: pxToRem(24px);
-
-  // Rendered in-flow inside a host that already provides the gutter (e.g. the
-  // review sheet's View inset), so drop the self-padding to avoid doubling it.
+  // In-flow inside a host that already pads the sheet (the review sheet), so
+  // only the header-to-body and body-to-action gaps from the frames apply.
   &--inline {
-    padding: 0;
-  }
-
-  &__top {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-
-  &__badge {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: pxToRem(32px);
-    height: pxToRem(32px);
-    border-radius: pxToRem(8px);
-    border: 1px solid transparent;
-
-    svg {
-      width: pxToRem(20px);
-      height: pxToRem(20px);
-    }
-
-    &--brand {
-      background-color: var(--sds-clr-lilac-03);
-      border-color: var(--sds-clr-lilac-06);
-      color: var(--sds-clr-lilac-09);
-    }
-
-    &--neutral {
-      background-color: var(--sds-clr-gray-03);
-      border-color: var(--sds-clr-gray-06);
-      color: var(--sds-clr-gray-11);
-    }
-
-    // Warnings about destructive actions (e.g. the lock screen's
-    // "Reset wallet" sheet).
-    &--error {
-      background-color: var(--sds-clr-red-03);
-      border-color: var(--sds-clr-red-06);
-      color: var(--sds-clr-red-09);
-    }
-  }
-
-  &__close {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: pxToRem(32px);
-    height: pxToRem(32px);
-    padding: 0;
-    border: 0;
-    border-radius: 50%;
-    background-color: var(--sds-clr-gray-03);
-    color: var(--sds-clr-gray-09);
-    cursor: pointer;
-
-    svg {
-      width: pxToRem(20px);
-      height: pxToRem(20px);
-    }
-  }
-
-  &__text {
     display: flex;
     flex-direction: column;
-    gap: pxToRem(8px);
-  }
-
-  &__title {
-    margin: 0;
-    color: var(--sds-clr-gray-12);
-    font-size: pxToRem(18px);
-    font-weight: var(--sds-fw-medium);
-    line-height: pxToRem(26px);
+    gap: pxToRem(16px);
   }
 
   &__body {

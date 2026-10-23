@@ -1,10 +1,19 @@
-import React from "react";
+import React, { useState } from "react";
 import { useDispatch } from "react-redux";
-import { Asset, Badge, Button, Icon, Text } from "@stellar/design-system";
+import {
+  Asset,
+  Badge,
+  Button,
+  Icon,
+  Notification,
+  Text,
+} from "@stellar/design-system";
 import { Networks } from "stellar-sdk";
 import { captureException } from "@sentry/browser";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 
+import { SheetLayout } from "popup/components/SheetLayout";
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
 import { AppDispatch } from "popup/App";
 import { NetworkDetails, NETWORKS } from "@shared/constants/stellar";
@@ -12,7 +21,12 @@ import { addTokenId } from "popup/ducks/accountServices";
 import { removeTokenId } from "popup/ducks/transactionSubmission";
 
 import { isAssetSac } from "popup/helpers/soroban";
-import { isMainnet, truncateString } from "helpers/stellar";
+import {
+  getCanonicalFromAsset,
+  isMainnet,
+  truncateString,
+} from "helpers/stellar";
+import { clearHiddenAssetFlag } from "popup/helpers/useHiddenAssets";
 import { AccountBalances, useGetBalances } from "helpers/hooks/useGetBalances";
 import { emitMetric } from "helpers/metrics";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
@@ -33,14 +47,25 @@ interface ToggleTokenInternalProps {
   };
   networkDetails: NetworkDetails;
   onCancel: () => void;
+  /**
+   * Where to go once the add or remove has gone through. Defaults to
+   * `onCancel`, which is right for a sheet whose only job was the prompt --
+   * but a caller that returns to the removed token's own page needs to leave
+   * instead, or it lands back on a detail view for something that is gone.
+   */
+  onSuccess?: () => void;
   publicKey: string;
+  /** Which surface the remove was initiated from, for asset_remove.responded. */
+  source?: "manage_assets" | "asset_detail";
 }
 
 export const ToggleTokenInternal = ({
   asset,
   networkDetails,
   onCancel,
+  onSuccess,
   publicKey,
+  source = "manage_assets",
 }: ToggleTokenInternalProps) => {
   const { t } = useTranslation();
   const dispatch: AppDispatch = useDispatch();
@@ -49,60 +74,11 @@ export const ToggleTokenInternal = ({
     includeIcons: false,
   });
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   // The remove-token prompt confirm/reject is its own analytical unit.
   const isRemoveFlow = asset.isTrustlineActive;
 
-  const handleCancel = () => {
-    if (isRemoveFlow) {
-      emitMetric(METRIC_NAMES.assetRemoveResponded, {
-        decision: "reject",
-        source: "manage_assets",
-        asset_code: asset.code,
-      });
-    }
-    onCancel();
-  };
-
-  const onConfirm = async () => {
-    if (!asset.isTrustlineActive) {
-      await dispatch(
-        addTokenId({
-          publicKey,
-          tokenId: asset.contract!,
-          network: networkDetails.network as Networks,
-        }),
-      );
-    } else {
-      emitMetric(METRIC_NAMES.assetRemoveResponded, {
-        decision: "confirm",
-        source: "manage_assets",
-        asset_code: asset.code,
-      });
-      await dispatch(
-        removeTokenId({
-          contractId: asset.contract!,
-          network: networkDetails.network as NETWORKS,
-        }),
-      );
-    }
-    const balancesResult = await fetchBalances(
-      publicKey,
-      isMainnet(networkDetails),
-      networkDetails,
-      false,
-    );
-
-    if (isError<AccountBalances>(balancesResult)) {
-      // we don't want to throw an error if balances fail to fetch as this doesn't affect the UX of adding a token
-      // let's simply log the error and continue - the user will need to refresh the Account page or wait for polling to refresh the balances
-      captureException(
-        `Failed to fetch balances after ${!asset.isTrustlineActive ? "add" : "remove"} token - ${JSON.stringify(
-          balancesResult.message,
-        )} ${networkDetails.network}`,
-      );
-    }
-    onCancel();
-  };
   const isSac = isAssetSac({
     asset: {
       code: asset.code,
@@ -111,98 +87,219 @@ export const ToggleTokenInternal = ({
     },
     networkDetails,
   });
+  // What this token is called on screen. Shared by the header and the failure
+  // toast so both name the same thing.
+  const label = isSac
+    ? asset.code
+    : asset.name || truncateString(asset.contract!);
+
+  const handleCancel = () => {
+    if (isRemoveFlow) {
+      emitMetric(METRIC_NAMES.assetRemoveResponded, {
+        decision: "reject",
+        source,
+        asset_code: asset.code,
+      });
+    }
+    onCancel();
+  };
+
+  const onFailure = (errorMessage?: string) => {
+    captureException(
+      `Failed to ${isRemoveFlow ? "remove" : "add"} token ${
+        asset.contract
+      } - ${errorMessage || "unknown error"} ${networkDetails.network}`,
+    );
+    toast.custom(() => (
+      <Notification
+        variant="error"
+        title={
+          isRemoveFlow
+            ? t("Unable to remove {{label}}", { label })
+            : t("Unable to add {{label}}", { label })
+        }
+      />
+    ));
+  };
+
+  const onConfirm = async () => {
+    setIsSubmitting(true);
+
+    try {
+      // dispatch resolves for rejected thunks too, so the action has to be
+      // inspected -- otherwise a failed add/remove falls through to onSuccess
+      // and closes the flow as if the token had changed.
+      if (!asset.isTrustlineActive) {
+        const res = await dispatch(
+          addTokenId({
+            publicKey,
+            tokenId: asset.contract!,
+            network: networkDetails.network as Networks,
+          }),
+        );
+
+        if (addTokenId.rejected.match(res)) {
+          onFailure(res.payload?.errorMessage);
+          return;
+        }
+
+        // A token the user adds on purpose must show up; see
+        // clearHiddenAssetFlag.
+        await clearHiddenAssetFlag({
+          canonicalAsset: getCanonicalFromAsset(asset.code, asset.contract!),
+          activePublicKey: publicKey,
+          network: networkDetails.network,
+        });
+      } else {
+        emitMetric(METRIC_NAMES.assetRemoveResponded, {
+          decision: "confirm",
+          source,
+          asset_code: asset.code,
+        });
+        const res = await dispatch(
+          removeTokenId({
+            contractId: asset.contract!,
+            network: networkDetails.network as NETWORKS,
+          }),
+        );
+
+        if (removeTokenId.rejected.match(res)) {
+          onFailure(res.payload?.errorMessage);
+          return;
+        }
+
+        // The hidden map outlives the token entry, so a flag left behind would
+        // hide this token if it comes back another way (dApp, swap).
+        await clearHiddenAssetFlag({
+          canonicalAsset: getCanonicalFromAsset(asset.code, asset.contract!),
+          activePublicKey: publicKey,
+          network: networkDetails.network,
+        });
+      }
+
+      const balancesResult = await fetchBalances(
+        publicKey,
+        isMainnet(networkDetails),
+        networkDetails,
+        false,
+      );
+
+      if (isError<AccountBalances>(balancesResult)) {
+        // we don't want to throw an error if balances fail to fetch as this doesn't affect the UX of adding a token
+        // let's simply log the error and continue - the user will need to refresh the Account page or wait for polling to refresh the balances
+        captureException(
+          `Failed to fetch balances after ${!asset.isTrustlineActive ? "add" : "remove"} token - ${JSON.stringify(
+            balancesResult.message,
+          )} ${networkDetails.network}`,
+        );
+      }
+      (onSuccess || onCancel)();
+    } finally {
+      // The success path unmounts this, but the failure path leaves the sheet
+      // open so Confirm can be retried.
+      setIsSubmitting(false);
+    }
+  };
+  // Cancel and Confirm stay pinned while the body scrolls, as on mobile.
+  const actions = (
+    <div className="ToggleToken__Actions">
+      <Button
+        isRounded
+        isFullWidth
+        size="lg"
+        variant="tertiary"
+        onClick={handleCancel}
+      >
+        {t("Cancel")}
+      </Button>
+      <Button
+        variant="secondary"
+        isFullWidth
+        isRounded
+        size="lg"
+        isLoading={isSubmitting}
+        disabled={isSubmitting}
+        onClick={onConfirm}
+      >
+        {t("Confirm")}
+      </Button>
+    </div>
+  );
+
   return (
-    <div className="ToggleToken__wrapper">
-      <div className="ToggleToken__wrapper__body">
-        <div className="ToggleToken__wrapper__header">
-          {asset.image && (
-            <div className="ToggleToken__wrapper__icon-logo">
-              <Asset
-                size="lg"
-                variant="single"
-                sourceOne={{
-                  altText: t("Token logo"),
-                  image: asset.image,
-                }}
-              />
-            </div>
-          )}
+    <SheetLayout footer={actions}>
+      <div className="ToggleToken__wrapper">
+        <div className="ToggleToken__wrapper__body">
+          <div className="ToggleToken__wrapper__header">
+            {asset.image && (
+              <div className="ToggleToken__wrapper__icon-logo">
+                <Asset
+                  size="lg"
+                  variant="single"
+                  sourceOne={{
+                    altText: t("Token logo"),
+                    image: asset.image,
+                  }}
+                />
+              </div>
+            )}
 
-          {!asset.image && asset.code && (
-            <div className="ToggleToken__wrapper__code-logo">
-              <Text
-                as="div"
-                size="sm"
-                weight="bold"
-                addlClassName="ToggleToken__wrapper--logo-label"
-              >
-                {asset.code.slice(0, 2)}
-              </Text>
-            </div>
-          )}
+            {!asset.image && asset.code && (
+              <div className="ToggleToken__wrapper__code-logo">
+                <Text
+                  as="div"
+                  size="sm"
+                  weight="bold"
+                  addlClassName="ToggleToken__wrapper--logo-label"
+                >
+                  {asset.code.slice(0, 2)}
+                </Text>
+              </div>
+            )}
 
-          <Text
-            as="div"
-            size="sm"
-            weight="medium"
-            data-testid="ToggleToken__asset-code"
-          >
-            {isSac ? asset.code : asset.name || truncateString(asset.contract!)}
-          </Text>
-          <div
-            className="ToggleToken__wrapper__badge"
-            data-testid="ToggleToken__asset-add-remove"
-          >
-            <Badge
+            <Text
+              as="div"
               size="sm"
-              variant="secondary"
-              icon={<Icon.PlusCircle />}
-              iconPosition="left"
+              weight="medium"
+              data-testid="ToggleToken__asset-code"
             >
-              {asset.isTrustlineActive ? t("Remove Token") : t("Add Token")}
-            </Badge>
+              {label}
+            </Text>
+            <div
+              className="ToggleToken__wrapper__badge"
+              data-testid="ToggleToken__asset-add-remove"
+            >
+              <Badge
+                size="sm"
+                variant="secondary"
+                icon={<Icon.PlusCircle />}
+                iconPosition="left"
+              >
+                {asset.isTrustlineActive ? t("Remove Token") : t("Add Token")}
+              </Badge>
+            </div>
           </div>
-        </div>
 
-        <div className="ToggleToken__Description">
-          {asset.isTrustlineActive
-            ? t("Remove token from your account balance view")
-            : t(
-                "Allow token to be displayed and used with this wallet address",
-              )}
-        </div>
-        <div className="ToggleToken__Metadata">
-          <div className="ToggleToken__Metadata__Row">
-            <div className="ToggleToken__Metadata__Label">
-              <Icon.Wallet01 />
-              <span>{t("Wallet")}</span>
-            </div>
-            <div className="ToggleToken__Metadata__Value">
-              <KeyIdenticon publicKey={publicKey} />
+          <div className="ToggleToken__Description">
+            {asset.isTrustlineActive
+              ? t("Remove token from your account balance view")
+              : t(
+                  "Allow token to be displayed and used with this wallet address",
+                )}
+          </div>
+          <div className="ToggleToken__Metadata">
+            <div className="ToggleToken__Metadata__Row">
+              <div className="ToggleToken__Metadata__Label">
+                <Icon.Wallet01 />
+                <span>{t("Wallet")}</span>
+              </div>
+              <div className="ToggleToken__Metadata__Value">
+                <KeyIdenticon publicKey={publicKey} />
+              </div>
             </div>
           </div>
-        </div>
-        <div className="ToggleToken__Actions">
-          <Button
-            isRounded
-            isFullWidth
-            size="lg"
-            variant="tertiary"
-            onClick={handleCancel}
-          >
-            {t("Cancel")}
-          </Button>
-          <Button
-            variant="secondary"
-            isFullWidth
-            isRounded
-            size="lg"
-            onClick={onConfirm}
-          >
-            {t("Confirm")}
-          </Button>
         </div>
       </div>
-    </div>
+    </SheetLayout>
   );
 };

@@ -176,10 +176,6 @@
         aspect-ratio: 1/1;
         overflow: hidden;
         border-radius: pxToRem(12px);
-
-        &--hidden {
-          opacity: 0.5;
-        }
       }
     }
   }

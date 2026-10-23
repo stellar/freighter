@@ -213,7 +213,7 @@ describe("AssetDetail header delta scope", () => {
     fireEvent.click(screen.getByTestId("history-item"));
     expect(screen.getByTestId("TokenPriceChart")).toBeInTheDocument();
     fireEvent.click(
-      document.querySelector(".LoadingBackground--isFullScreen") as Element,
+      document.querySelector(".SlideupModal + .LoadingBackground") as Element,
     );
     act(() => {
       jest.advanceTimersByTime(SLIDEUP_MODAL_TRANSITION_MS);

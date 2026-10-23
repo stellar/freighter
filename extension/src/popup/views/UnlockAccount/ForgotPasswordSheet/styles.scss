@@ -5,10 +5,11 @@
     display: flex;
     flex-direction: column;
     gap: pxToRem(8px);
+    // The frame sets this copy in Text/Primary rather than the info sheets'
+    // secondary gray.
+    color: var(--sds-clr-gray-12);
   }
 
-  // Semibold in the body's gray, like mobile. No color on purpose: it
-  // inherits gray-11 from InfoBottomSheet's `.InfoSheet__body`.
   &__reminder {
     font-weight: var(--sds-fw-semi-bold);
   }

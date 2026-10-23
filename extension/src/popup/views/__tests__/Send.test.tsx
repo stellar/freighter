@@ -10,6 +10,7 @@ import {
 import {
   Wrapper,
   mockBalances,
+  mockCollectibles,
   mockTestnetBalances,
   mockAccounts,
   getTestStore,
@@ -69,6 +70,7 @@ jest.spyOn(ApiInternal, "loadRecentAddresses").mockImplementation(() => {
 jest.spyOn(ApiInternal, "getHiddenAssets").mockImplementation(() => {
   return Promise.resolve({
     hiddenAssets: {},
+    networkName: "",
     error: "",
   });
 });
@@ -430,6 +432,79 @@ describe("Send", () => {
       expect(screen.getByTestId("token-list")).toBeDefined();
     });
     expect(screen.queryByTestId("send-amount-amount-input")).toBeNull();
+  });
+
+  it("leaves hidden collectibles out of the picker", async () => {
+    // The fixture's collectibles belong to another account, and the picker
+    // only lists the user's own.
+    const owned = mockCollectibles.map((entry) => ({
+      ...entry,
+      collection: {
+        ...entry.collection!,
+        collectibles: entry.collection!.collectibles.map((item) => ({
+          ...item,
+          owner: publicKey,
+        })),
+      },
+    }));
+    const frogs = owned[0].collection;
+    const hiddenKey = `${frogs.address}:${frogs.collectibles[0].tokenId}`;
+    const collectiblesSpy = jest
+      .spyOn(UseGetCollectibles, "useGetCollectibles")
+      .mockImplementation(
+        () =>
+          ({
+            state: { collections: owned },
+            fetchData: () => Promise.resolve({ collections: owned }),
+          }) as any,
+      );
+    const hiddenSpy = jest
+      .spyOn(ApiInternal, "getHiddenCollectibles")
+      .mockResolvedValue({
+        hiddenCollectibles: { [hiddenKey]: "hidden" },
+        error: "",
+      } as any);
+
+    render(
+      <Wrapper
+        routes={[ROUTES.sendPayment]}
+        state={{
+          auth: {
+            error: null,
+            hasPrivateKey: true,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
+            publicKey,
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: MAINNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+          },
+          transactionSubmission: {
+            ...transactionSubmissionInitialState,
+            accountBalances: mockBalances,
+          },
+          tokenPaymentSimulation: tokenPaymentActions.initialState,
+        }}
+      >
+        <Send />
+      </Wrapper>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("Stellar Frog 2")).toBeInTheDocument();
+    });
+    expect(screen.queryByText("Stellar Frog 1")).not.toBeInTheDocument();
+
+    hiddenSpy.mockRestore();
+    // Back to the file-level default so later tests see no collectibles.
+    collectiblesSpy.mockImplementation(
+      () =>
+        ({
+          state: { collections: [] },
+          fetchData: () => Promise.resolve({ collections: [] }),
+        }) as any,
+    );
   });
 
   it("sending native asset on Mainnet works", async () => {

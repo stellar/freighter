@@ -140,6 +140,11 @@ export const AddToken = () => {
   const baseFeeXlm = stroopToXlm(BASE_FEE).toString();
   const displayFee = recommendedFee === BASE_FEE ? baseFeeXlm : recommendedFee;
 
+  const hydratedPublicKey =
+    state.state === RequestState.SUCCESS && state.data.type === "resolved"
+      ? state.data.account.publicKey
+      : "";
+
   const {
     isConfirming,
     isPasswordRequired,
@@ -155,12 +160,10 @@ export const AddToken = () => {
     addToken,
     uuid,
     assetCode,
+    contractId,
+    publicKey: hydratedPublicKey,
   });
 
-  const hydratedPublicKey =
-    state.state === RequestState.SUCCESS && state.data.type === "resolved"
-      ? state.data.account.publicKey
-      : "";
   const hydratedNetworkDetails =
     state.state === RequestState.SUCCESS && state.data.type === "resolved"
       ? state.data.settings.networkDetails
@@ -601,7 +604,8 @@ export const AddToken = () => {
         onSuccess={handleTrustlineDone}
         onClose={() => setShowTrustlineReview(false)}
         initialFee={displayFee}
-        isFullHeight
+        isStandalone
+        hideCloseTabHint
       />
     );
   }
