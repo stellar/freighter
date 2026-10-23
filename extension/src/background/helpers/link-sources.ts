@@ -2,6 +2,7 @@ import { captureException } from "@sentry/browser";
 import { Store } from "redux";
 
 import { authedFetch } from "@shared/api/helpers/authedFetch";
+import { issuedAtSeconds } from "@shared/api/helpers/buildAuthJwt";
 import { UserLinkBody } from "@shared/api/helpers/userLinkConsent";
 import { INDEXER_V2_URL } from "@shared/constants/mercury";
 import { DataStorageAccess } from "background/helpers/dataStorageAccess";
@@ -11,7 +12,10 @@ import {
   recordLinkResults,
 } from "background/helpers/link-status";
 import { SigningIdentity } from "background/helpers/signing-identity";
-import { buildUserLinkRequestBodies } from "background/helpers/user-link";
+import {
+  buildUserLinkRequest,
+  signUserLinkBody,
+} from "background/helpers/user-link";
 
 /*
   Sends POST /api/v1/user/link for every held source the server has not
@@ -30,8 +34,8 @@ export interface LinkWalletSourcesParams {
   localStore: DataStorageAccess;
   /** Injectable for tests; defaults to global fetch. */
   fetchImpl?: typeof fetch;
-  /** Injectable clock in ms epoch; defaults to Date.now() on each pass. */
-  now?: number;
+  /** Injectable clock in ms epoch; read once per call. Defaults to Date.now. */
+  clock?: () => number;
 }
 
 const LINK_PATH = "/user/link";
@@ -109,27 +113,35 @@ const linkOnce = async ({
   sessionStore,
   localStore,
   fetchImpl,
-  now = Date.now(),
+  clock = Date.now,
 }: LinkWalletSourcesParams) => {
   try {
     // Read before anything else: a wallet replacement from here on discards
     // this pass's results, and the pass it queues starts over.
     const epoch = getLinkStatusEpoch();
     const settled = new Set(Object.keys(await getLinkStatus({ localStore })));
-    const request = await buildUserLinkRequestBodies({
+    const request = await buildUserLinkRequest({
       sessionStore,
       localStore,
       linkedIds: settled,
-      now,
     });
     if (!request) {
       return;
     }
-    for (const body of request.bodies) {
+    for (const batch of request.batches) {
       if (getLinkStatusEpoch() !== epoch) {
         // The wallet these bodies came from has been replaced.
         return;
       }
+      // Sign each body just before its call: a JWT lives 15 seconds, and a
+      // slow earlier call would expire an iat taken at the start of the pass.
+      const now = clock();
+      const body = signUserLinkBody({
+        identity: request.identity,
+        signers: request.signers,
+        batch,
+        iat: issuedAtSeconds(now),
+      });
       // Stop at the first failure: the rest would most likely fail the same
       // way, and the next trigger sends them anyway.
       const ok = await sendBody({

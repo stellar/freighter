@@ -22,7 +22,11 @@ import {
   WalletSource,
 } from "background/helpers/wallet-sources";
 
-import { buildUserLinkBodies, buildUserLinkRequestBodies } from "../user-link";
+import {
+  buildUserLinkBodies,
+  buildUserLinkRequest,
+  signUserLinkBody,
+} from "../user-link";
 
 jest.mock("background/helpers/signing-identity", () => ({
   getSigningIdentity: jest.fn(),
@@ -249,7 +253,7 @@ describe("buildUserLinkBodies", () => {
   });
 });
 
-describe("buildUserLinkRequestBodies", () => {
+describe("buildUserLinkRequest", () => {
   const stores = { sessionStore: {} as any, localStore: {} as any };
 
   beforeEach(() => {
@@ -259,7 +263,7 @@ describe("buildUserLinkRequestBodies", () => {
   it("returns null when the session holds no signer", async () => {
     mockGetSigningIdentity.mockResolvedValue(null);
 
-    expect(await buildUserLinkRequestBodies(stores)).toBeNull();
+    expect(await buildUserLinkRequest(stores)).toBeNull();
     expect(mockGetWalletSources).not.toHaveBeenCalled();
   });
 
@@ -269,10 +273,10 @@ describe("buildUserLinkRequestBodies", () => {
     // A lock landed during getSigningIdentity's pin read: the sources are gone.
     mockGetWalletSources.mockResolvedValue({ sources: [], signers: new Map() });
 
-    expect(await buildUserLinkRequestBodies(stores)).toBeNull();
+    expect(await buildUserLinkRequest(stores)).toBeNull();
   });
 
-  it("signs every body under the iat of the given clock reading", async () => {
+  it("batches the held sources, each batch signable under its own iat", async () => {
     const wallet = await makeWallet();
     const many = makeManySources(200);
     mockGetSigningIdentity.mockResolvedValue(wallet.identity);
@@ -281,16 +285,19 @@ describe("buildUserLinkRequestBodies", () => {
       signers: new Map([...wallet.signers, ...many.signers]),
     });
 
-    const result = await buildUserLinkRequestBodies({
-      ...stores,
-      now: IAT * 1000 + 999,
-    });
+    const result = await buildUserLinkRequest(stores);
 
-    expect(result?.iat).toBe(IAT);
     expect(result?.identity).toBe(wallet.identity);
-    expect(result!.bodies.length).toBeGreaterThan(1);
-    for (const body of result!.bodies) {
-      expectConsentsVerify(body, wallet.identity.sourceId, IAT);
-    }
+    expect(result!.batches.length).toBeGreaterThan(1);
+    result!.batches.forEach((batch, i) => {
+      const body = signUserLinkBody({
+        identity: result!.identity,
+        signers: result!.signers,
+        batch,
+        iat: IAT + i * 20,
+      });
+      expect(body.sources[0].id).toBe(wallet.identity.sourceId);
+      expectConsentsVerify(body, wallet.identity.sourceId, IAT + i * 20);
+    });
   });
 });

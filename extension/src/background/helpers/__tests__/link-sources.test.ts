@@ -2,7 +2,11 @@ import { Buffer } from "buffer";
 import { Keypair, xdr } from "stellar-sdk";
 
 import * as Sentry from "@sentry/browser";
-import { MAX_LINK_SOURCES } from "@shared/api/helpers/userLinkConsent";
+import {
+  buildLinkConsentMessage,
+  MAX_LINK_SOURCES,
+  UserLinkBody,
+} from "@shared/api/helpers/userLinkConsent";
 import { SecretSourceType } from "@shared/api/types";
 import type { DataStorageAccess } from "background/helpers/dataStorageAccess";
 import { getSigningIdentity } from "background/helpers/signing-identity";
@@ -95,6 +99,32 @@ const jwtIat = (call: unknown[]): number => {
   return JSON.parse(Buffer.from(payload, "base64").toString("utf8")).iat;
 };
 
+/* Every consent in the call verifies under `sub` and `iat`. */
+const expectConsentsVerify = (
+  call: unknown[],
+  wallet: { sub: string },
+  iat: number,
+) => {
+  const body: UserLinkBody = JSON.parse(
+    (call[1] as RequestInit).body as string,
+  );
+  for (const { id, kind, sig } of body.sources) {
+    const message = buildLinkConsentMessage({
+      id,
+      kind,
+      signingSourceId: wallet.sub,
+      iat,
+    });
+    const verifier = new Keypair({
+      type: "ed25519",
+      publicKey: Buffer.from(id, "hex"),
+    });
+    expect(
+      verifier.verify(Buffer.from(message, "utf8"), Buffer.from(sig, "base64")),
+    ).toBe(true);
+  }
+};
+
 /* A server that puts every sent source in the caller's cluster except `foreign`. */
 const server = (foreign: string[] = []) =>
   jest.fn(async (_url: RequestInfo | URL, init?: RequestInit) => {
@@ -129,7 +159,7 @@ describe("linkWalletSources", () => {
       sessionStore,
       localStore: store,
       fetchImpl,
-      now: NOW,
+      clock: () => NOW,
     });
 
     expect(fetchImpl).toHaveBeenCalledTimes(1);
@@ -275,7 +305,7 @@ describe("linkWalletSources", () => {
     expect(sentIds(fetchImpl.mock.calls[1])).toEqual([wallet.sub, added]);
   });
 
-  it("splits a large wallet into bodies that share one iat", async () => {
+  it("splits a large wallet into bodies that each start with sub", async () => {
     const wallet = makeWallet(MAX_LINK_SOURCES + 10);
     const { store, data } = makeLocalStore();
     const fetchImpl = server();
@@ -284,7 +314,7 @@ describe("linkWalletSources", () => {
       sessionStore,
       localStore: store,
       fetchImpl,
-      now: NOW,
+      clock: () => NOW,
     });
 
     expect(fetchImpl).toHaveBeenCalledTimes(2);
@@ -292,6 +322,36 @@ describe("linkWalletSources", () => {
       expect(sentIds(call)[0]).toBe(wallet.sub);
       expect(jwtIat(call)).toBe(Math.floor(NOW / 1000));
     }
+    expect(Object.keys(data[LINK_STATUS_ID] as object)).toHaveLength(
+      wallet.ids().length,
+    );
+  });
+
+  it("signs each body under a fresh iat when an earlier call is slow", async () => {
+    const wallet = makeWallet(MAX_LINK_SOURCES + 10);
+    const { store, data } = makeLocalStore();
+    const inner = server();
+    let time = NOW;
+    const fetchImpl = jest.fn(
+      async (url: RequestInfo | URL, init?: RequestInit) => {
+        // The first response outlives the 15-second JWT.
+        time += 16_000;
+        return inner(url, init);
+      },
+    );
+
+    await linkWalletSources({
+      sessionStore,
+      localStore: store,
+      fetchImpl,
+      clock: () => time,
+    });
+
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    const [first, second] = fetchImpl.mock.calls;
+    expect(jwtIat(first)).toBe(Math.floor(NOW / 1000));
+    expect(jwtIat(second)).toBe(Math.floor((NOW + 16_000) / 1000));
+    expectConsentsVerify(second, wallet, jwtIat(second));
     expect(Object.keys(data[LINK_STATUS_ID] as object)).toHaveLength(
       wallet.ids().length,
     );

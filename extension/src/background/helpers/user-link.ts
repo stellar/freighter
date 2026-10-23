@@ -1,7 +1,6 @@
 import { Store } from "redux";
 import { Keypair } from "stellar-sdk";
 
-import { issuedAtSeconds } from "@shared/api/helpers/buildAuthJwt";
 import {
   buildLinkConsentMessage,
   MAX_LINK_SOURCES,
@@ -30,27 +29,23 @@ import {
 */
 
 /**
- * One body per call, each at most MAX_LINK_SOURCES entries and each starting
- * with `sub`. Sources in `linkedIds` are left out; `sub` is sent anyway while
- * any other source is pending. Returns [] once every source is linked.
+ * Groups the sources into one batch per call, each at most MAX_LINK_SOURCES
+ * entries and each starting with `sub`. Sources in `linkedIds` are left out;
+ * `sub` is sent anyway while any other source is pending. Returns [] once
+ * every source is linked.
  *
  * Duplicate ids collapse to the first occurrence: the server rejects a
- * repeated id with 400. Nothing else is checked here. The server rejects the
- * whole request if any consent fails.
+ * repeated id with 400.
  */
-export const buildUserLinkBodies = ({
+export const batchUserLinkSources = ({
   identity,
   sources,
-  signers,
   linkedIds = new Set(),
-  iat,
 }: {
   identity: SigningIdentity;
   sources: WalletSource[];
-  signers: Map<string, Keypair>;
   linkedIds?: ReadonlySet<string>;
-  iat: number;
-}): UserLinkBody[] => {
+}): WalletSource[][] => {
   const unique = new Map<string, WalletSource>();
   for (const source of sources) {
     if (!unique.has(source.id)) {
@@ -72,56 +67,88 @@ export const buildUserLinkBodies = ({
     return [];
   }
 
-  const consent = ({ id, kind }: WalletSource) => {
-    const keypair = id === sub.id ? identity.keypair : signers.get(id);
+  // `sub` takes one slot in every batch.
+  const perBody = MAX_LINK_SOURCES - 1;
+  const batches: WalletSource[][] = [];
+  for (let i = 0; i === 0 || i < pending.length; i += perBody) {
+    batches.push([sub, ...pending.slice(i, i + perBody)]);
+  }
+  return batches;
+};
+
+/**
+ * Signs one batch's consents under `iat`. Send the body with a JWT built from
+ * the same clock reading, or every consent fails with 403. Nothing else is
+ * checked here. The server rejects the whole request if any consent fails.
+ */
+export const signUserLinkBody = ({
+  identity,
+  signers,
+  batch,
+  iat,
+}: {
+  identity: SigningIdentity;
+  signers: Map<string, Keypair>;
+  batch: WalletSource[];
+  iat: number;
+}): UserLinkBody => ({
+  sources: batch.map(({ id, kind }) => {
+    const keypair =
+      id === identity.sourceId ? identity.keypair : signers.get(id);
     if (!keypair) {
       throw new Error("buildUserLinkBodies: no signer for a source");
     }
     const message = buildLinkConsentMessage({
       id,
       kind,
-      signingSourceId: sub.id,
+      signingSourceId: identity.sourceId,
       iat,
     });
     return { id, kind, sig: signLinkConsent({ keypair, message }) };
-  };
+  }),
+});
 
-  // `sub` takes one slot in every body.
-  const perBody = MAX_LINK_SOURCES - 1;
-  const signedSub = consent(sub);
-  const bodies: UserLinkBody[] = [];
-  for (let i = 0; i === 0 || i < pending.length; i += perBody) {
-    bodies.push({
-      sources: [signedSub, ...pending.slice(i, i + perBody).map(consent)],
-    });
-  }
-  return bodies;
-};
+/** Every batch signed under one iat. */
+export const buildUserLinkBodies = ({
+  identity,
+  sources,
+  signers,
+  linkedIds,
+  iat,
+}: {
+  identity: SigningIdentity;
+  sources: WalletSource[];
+  signers: Map<string, Keypair>;
+  linkedIds?: ReadonlySet<string>;
+  iat: number;
+}): UserLinkBody[] =>
+  batchUserLinkSources({ identity, sources, linkedIds }).map((batch) =>
+    signUserLinkBody({ identity, signers, batch, iat }),
+  );
 
 /**
- * Resolves the pinned signer and the held sources, then builds the bodies
- * under one iat. Null when the session holds no signer (locked or
+ * Resolves the pinned signer and the held sources, then groups the unsettled
+ * ones into batches. Null when the session holds no signer (locked or
  * hardware-only), the same as getSigningIdentity.
  *
- * Send each body with a JWT signed by `identity.keypair` and built from the
- * same `now` (buildAuthJwt({ now })), or every consent fails with 403. A retry
- * that mints a new JWT, such as authedFetch's 401 retry, must rebuild the
- * bodies with the new clock reading.
+ * Nothing is signed yet. Sign each batch (signUserLinkBody) right before its
+ * call, under the iat of the clock reading its JWT is built from
+ * (buildAuthJwt({ now })). A JWT lives 15 seconds, so one iat shared by every
+ * batch would expire while an earlier call is still out. A retry that mints a
+ * new JWT, such as authedFetch's 401 retry, must re-sign the same way.
  */
-export const buildUserLinkRequestBodies = async ({
+export const buildUserLinkRequest = async ({
   sessionStore,
   localStore,
   linkedIds,
-  now = Date.now(),
 }: {
   sessionStore: Store;
   localStore: DataStorageAccess;
   linkedIds?: ReadonlySet<string>;
-  now?: number;
 }): Promise<{
   identity: SigningIdentity;
-  iat: number;
-  bodies: UserLinkBody[];
+  signers: Map<string, Keypair>;
+  batches: WalletSource[][];
 } | null> => {
   const identity = await getSigningIdentity({ sessionStore, localStore });
   if (!identity) {
@@ -137,16 +164,9 @@ export const buildUserLinkRequestBodies = async ({
   if (!sources.some(({ id }) => id === identity.sourceId)) {
     return null;
   }
-  const iat = issuedAtSeconds(now);
   return {
     identity,
-    iat,
-    bodies: buildUserLinkBodies({
-      identity,
-      sources,
-      signers,
-      linkedIds,
-      iat,
-    }),
+    signers,
+    batches: batchUserLinkSources({ identity, sources, linkedIds }),
   };
 };
