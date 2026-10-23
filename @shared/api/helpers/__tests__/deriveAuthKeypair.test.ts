@@ -1,6 +1,4 @@
 import { Buffer } from "buffer";
-import { mnemonicToSeedSync } from "bip39";
-import StellarHDWallet from "stellar-hd-wallet";
 import { Keypair, xdr } from "stellar-sdk";
 
 import {
@@ -17,16 +15,6 @@ import {
 
 const pubHex = (keypair: Keypair): string =>
   xdr.encodeBytes(keypair.rawPublicKey(), "hex");
-
-// Account keypair at m/44'/148'/index', the way the background derives accounts
-// (addAccount.ts / createAccount.ts). StellarHDWallet.fromMnemonic cannot run
-// under jest: its internal bip39 default import hits the CJS interop edge case
-// described in deriveAuthKeypair.ts. fromSeed takes the raw 64-byte seed, so
-// we build that with bip39's named export, exactly as deriveAuthSeed does.
-const deriveAccount = (mnemonic: string, index: number): Keypair =>
-  StellarHDWallet.fromSeed(
-    Buffer.from(mnemonicToSeedSync(mnemonic)),
-  ).getKeypair(index);
 
 const accountRows = ACCOUNT_SOURCE_VECTORS.flatMap(({ mnemonic, accounts }) =>
   accounts.map((account) => ({ mnemonic, ...account })),
@@ -174,34 +162,9 @@ describe("deriveSourceIdentity", () => {
   });
 });
 
+// The phrase-path == exported-secret equality lives in
+// identityContinuity.test.ts, next to the continuity guard.
 describe("deriveSourceIdentity (account vectors)", () => {
-  it.each(accountRows)(
-    "pins the m/44'/148'/$index' keys of $mnemonic",
-    ({ mnemonic, index, secret, publicKey }) => {
-      const keypair = deriveAccount(mnemonic, index);
-      expect(keypair.secret()).toBe(secret);
-      expect(keypair.publicKey()).toBe(publicKey);
-    },
-  );
-
-  // The equality the user model depends on: the account derived from the
-  // phrase and the same account imported from its exported S… are one source.
-  it.each(accountRows)(
-    "derives sourceId from the phrase path for $mnemonic index $index",
-    async ({ mnemonic, index, sourceId }) => {
-      const seed32 = deriveAccount(mnemonic, index).rawSecretKey();
-      expect((await deriveSourceIdentity(seed32)).sourceId).toBe(sourceId);
-    },
-  );
-
-  it.each(accountRows)(
-    "derives sourceId from the exported secret key for $mnemonic index $index",
-    async ({ secret, sourceId }) => {
-      const seed32 = Keypair.fromSecret(secret).rawSecretKey();
-      expect((await deriveSourceIdentity(seed32)).sourceId).toBe(sourceId);
-    },
-  );
-
   it.each(accountRows)(
     "differs from the phrase userId for $mnemonic index $index",
     async ({ mnemonic, sourceId }) => {
