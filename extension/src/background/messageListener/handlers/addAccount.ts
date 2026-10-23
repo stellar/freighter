@@ -17,6 +17,7 @@ import {
   nextDerivationIndex,
 } from "background/helpers/derivation-indices";
 import { DataStorageAccess } from "background/helpers/dataStorageAccess";
+import { linkWalletSources } from "background/helpers/link-sources";
 import { KEY_ID } from "constants/localStorageTypes";
 import { loginToAllAccounts } from "../helpers/login-all-accounts";
 import { KeyManager } from "@stellar/typescript-wallet-sdk-km";
@@ -210,6 +211,9 @@ export const addAccount = async ({
     captureException(`Error adding account: ${JSON.stringify(e)}`);
     return { error: "Error adding account" };
   }
+
+  // The new account is a source of its own. Not awaited.
+  void linkWalletSources({ sessionStore, localStore });
 
   const currentState = sessionStore.getState();
   const hasPrivateKeySelector = buildHasPrivateKeySelector(localStore);

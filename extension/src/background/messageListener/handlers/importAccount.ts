@@ -6,6 +6,7 @@ import { captureException } from "@sentry/browser";
 import { ImportAccountMessage } from "@shared/api/types/message-request";
 import { ACCOUNT_ALREADY_EXISTS_ERROR } from "@shared/constants/errors";
 import { DataStorageAccess } from "background/helpers/dataStorageAccess";
+import { linkWalletSources } from "background/helpers/link-sources";
 import {
   getActiveHashKeyCryptoKey,
   getEncryptedTemporaryData,
@@ -128,6 +129,9 @@ export const importAccount = async ({
     captureException("Error decrypting active private key in Import Account");
     return { error: "Error importing account" };
   }
+
+  // A key another user owns comes back as a conflict. Not awaited.
+  void linkWalletSources({ sessionStore, localStore });
 
   const currentState = sessionStore.getState();
   const hasPrivateKeySelector = buildHasPrivateKeySelector(localStore);

@@ -53,6 +53,13 @@ const STANDALONE_SECRET =
   "SDHOAMBNLGCE2MV5ZKIVZAQD3VCLGP53P3OBSBI6UN5L5XZI5TKHFQL4";
 const PASSWORD = "test";
 
+// The linker is fire-and-forget: a real pass outlives the test that started it
+// and writes the pin into the next test's storage. link-sources.test.ts covers
+// it; here only the trigger matters.
+jest.mock("background/helpers/link-sources", () => ({
+  linkWalletSources: jest.fn().mockResolvedValue(undefined),
+}));
+
 // StellarHDWallet.fromMnemonic cannot run under jest (bip39 CJS interop, see
 // deriveAuthKeypair.ts), so derive from the pinned (mnemonic, index) rows.
 jest.mock("stellar-hd-wallet", () => {

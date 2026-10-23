@@ -36,6 +36,13 @@ const [PHRASE_1, PHRASE_2] = AUTH_KEYPAIR_VECTORS;
 const NEW_ACCOUNTS = ACCOUNT_SOURCE_VECTORS[1].accounts;
 const PASSWORD = "test";
 
+// The linker is fire-and-forget: a real pass outlives the test that started it
+// and writes the pin into the next test's storage. link-sources.test.ts covers
+// it; here only the trigger matters.
+jest.mock("background/helpers/link-sources", () => ({
+  linkWalletSources: jest.fn().mockResolvedValue(undefined),
+}));
+
 jest.mock("stellar-hd-wallet", () => {
   const { ACCOUNT_SOURCE_VECTORS: vectors, AUTH_KEYPAIR_VECTORS: phrases } =
     jest.requireActual("@shared/api/helpers/authKeypairVectors");

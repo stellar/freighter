@@ -58,6 +58,13 @@ const [PHRASE] = AUTH_KEYPAIR_VECTORS;
 const PRE_UPGRADE_METRICS_USER_ID =
   "ec57e5d04783b5ade776621ab171b3b197c3acc0a1cb5bad10786dc8e381e797";
 
+// The linker is fire-and-forget: a real pass outlives the test that started it
+// and writes the pin into the next test's storage. link-sources.test.ts covers
+// it; here only the trigger matters.
+jest.mock("background/helpers/link-sources", () => ({
+  linkWalletSources: jest.fn().mockResolvedValue(undefined),
+}));
+
 // StellarHDWallet.fromMnemonic cannot run under jest (bip39 CJS interop, see
 // deriveAuthKeypair.ts), so derive from the pinned (mnemonic, index) rows.
 jest.mock("stellar-hd-wallet", () => {

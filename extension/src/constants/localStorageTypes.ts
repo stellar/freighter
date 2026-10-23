@@ -37,6 +37,7 @@ export const PINNED_SOURCE_ID = "pinnedSourceId";
 export const DERIVATION_INDICES_ID = "derivationIndices";
 export const ACCOUNT_PROVENANCE_ID = "accountProvenance";
 export const PENDING_ATTRIBUTION_ID = "pendingAttribution";
+export const LINK_STATUS_ID = "sourceLinkStatus";
 export const USDT0_LAUNCH_BANNER_DISMISSED = "usdt0LaunchBannerDismissed";
 export const OVERRIDDEN_BLOCKAID_RESPONSE_ID = "overriddenBlockaidResponse";
 export const COLLECTIBLES_ID = "collectibles";

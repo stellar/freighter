@@ -35,6 +35,8 @@ import { SecretSourceType } from "@shared/api/types";
 import { clearDerivationIndices } from "background/helpers/derivation-indices";
 import { clearAccountProvenance } from "background/helpers/account-provenance";
 import { clearPendingAttribution } from "background/helpers/pre-v2-migration";
+import { clearLinkStatus } from "background/helpers/link-status";
+import { linkWalletSources } from "background/helpers/link-sources";
 
 const { fromMnemonic } = StellarHDWallet;
 
@@ -97,12 +99,14 @@ export const recoverAccount = async ({
     }
 
     // A recovery always starts the wallet afresh, so every phrase's index
-    // set, every account's provenance and any accounts the pre-V2 migration
-    // left pending go with it, whether or not the list above had anything in
-    // it; the recovered phrase rebuilds its own below.
+    // set, every account's provenance, any accounts the pre-V2 migration
+    // left pending and every source's link status go with it, whether or not
+    // the list above had anything in it; the recovered phrase rebuilds its
+    // own below.
     await clearDerivationIndices({ localStore });
     await clearAccountProvenance({ localStore });
     await clearPendingAttribution({ localStore });
+    await clearLinkStatus({ localStore });
 
     // Recovery is onboarding (also the "forgot password" path), which must
     // not be followed by the one-time rebrand announcement.
@@ -194,6 +198,11 @@ export const recoverAccount = async ({
 
     // start the timer now that we have active private key
     await sessionTimer.startSession();
+
+    // Link the recovered phrase and the accounts preloaded above. This runs
+    // on every recover rather than keying off the application-state write,
+    // which a re-import repeats; the stored link status keeps it idempotent.
+    void linkWalletSources({ sessionStore, localStore });
   }
 
   const currentState = sessionStore.getState();

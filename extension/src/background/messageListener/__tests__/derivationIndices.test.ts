@@ -40,6 +40,13 @@ const [PHRASE_1, PHRASE_2] = AUTH_KEYPAIR_VECTORS;
 const [ROWS_1, ROWS_2] = ACCOUNT_SOURCE_VECTORS.map(({ accounts }) => accounts);
 const PASSWORD = "test";
 
+// The linker is fire-and-forget: a real pass outlives the test that started it
+// and writes the pin into the next test's storage. link-sources.test.ts covers
+// it; here only the trigger matters.
+jest.mock("background/helpers/link-sources", () => ({
+  linkWalletSources: jest.fn().mockResolvedValue(undefined),
+}));
+
 // StellarHDWallet.fromMnemonic cannot run under jest (bip39 CJS interop, see
 // deriveAuthKeypair.ts), so derive from the pinned (mnemonic, index) rows.
 // Only indices 0..2 are pinned; a higher index throws.

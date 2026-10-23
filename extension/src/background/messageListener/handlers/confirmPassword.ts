@@ -4,6 +4,7 @@ import { KeyManager } from "@stellar/typescript-wallet-sdk-km";
 import { ConfirmPasswordMessage } from "@shared/api/types/message-request";
 import { getBipPath, getActiveAccountId } from "background/helpers/account";
 import { DataStorageAccess } from "background/helpers/dataStorageAccess";
+import { getLinkConflicts } from "background/helpers/link-status";
 import { APPLICATION_ID } from "constants/localStorageTypes";
 import { loginToAllAccounts } from "../helpers/login-all-accounts";
 import { SessionTimer } from "background/helpers/session";
@@ -58,5 +59,8 @@ export const confirmPassword = async ({
     applicationState: (await localStore.getItem(APPLICATION_ID)) || "",
     allAccounts: allAccountsSelector(sessionStore.getState()),
     bipPath: await getBipPath({ localStore }),
+    // What earlier link passes stored. The pass this unlock started has not
+    // answered yet; loadAccount picks its result up.
+    linkConflicts: await getLinkConflicts({ localStore }),
   };
 };

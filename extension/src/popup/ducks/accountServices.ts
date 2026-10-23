@@ -391,6 +391,7 @@ export const confirmPassword = createAsyncThunk<
     applicationState: APPLICATION_STATE;
     allAccounts: Account[];
     bipPath: string;
+    linkConflicts: string[];
   },
   string,
   { rejectValue: ErrorMessage }
@@ -402,6 +403,7 @@ export const confirmPassword = createAsyncThunk<
     applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
     allAccounts: [] as Account[],
     bipPath: "",
+    linkConflicts: [] as string[],
   };
   try {
     res = await confirmPasswordService(phrase);
@@ -612,6 +614,11 @@ interface InitialState {
   connectingWalletType: WalletType;
   bipPath: string;
   tokenIdList: string[];
+  /**
+   * Source ids /user/link reported as belonging to another user (#68). Not
+   * shown yet: the conflict UI is waiting on design.
+   */
+  linkConflicts: string[];
   error: string;
   accountStatus: ActionStatus;
   isAccountMismatch: boolean;
@@ -627,6 +634,7 @@ const initialState: InitialState = {
   connectingWalletType: WalletType.NONE,
   bipPath: "",
   tokenIdList: [],
+  linkConflicts: [],
   error: "",
   accountStatus: ActionStatus.IDLE,
   isAccountMismatch: false,
@@ -654,6 +662,7 @@ const authSlice = createSlice({
         allAccounts,
         bipPath,
         tokenIdList,
+        linkConflicts,
       } = action.payload;
       state.hasPrivateKey = hasPrivateKey;
       state.publicKey = publicKey;
@@ -663,6 +672,7 @@ const authSlice = createSlice({
       state.allAccounts = allAccounts;
       state.bipPath = bipPath;
       state.tokenIdList = tokenIdList;
+      state.linkConflicts = linkConflicts ?? [];
     },
     saveAccountError(state, action) {
       const {
@@ -694,6 +704,7 @@ const authSlice = createSlice({
       state.allAccounts = [];
       state.bipPath = "";
       state.tokenIdList = [];
+      state.linkConflicts = [];
     },
   },
   extraReducers: (builder) => {
@@ -904,12 +915,14 @@ const authSlice = createSlice({
         hasPrivateKey,
         allAccounts,
         bipPath,
+        linkConflicts,
       } = action.payload || {
         publicKey: "",
         hasPrivateKey: false,
         applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
         allAccounts: [""],
         bipPath: "",
+        linkConflicts: [],
       };
       return {
         ...state,
@@ -919,6 +932,7 @@ const authSlice = createSlice({
         publicKey,
         allAccounts,
         bipPath,
+        linkConflicts: linkConflicts ?? [],
         error: "",
       };
     });
@@ -1041,6 +1055,10 @@ export const publicKeySelector = createSelector(
 export const bipPathSelector = createSelector(
   authSelector,
   (auth: InitialState) => auth.bipPath,
+);
+export const linkConflictsSelector = createSelector(
+  authSelector,
+  (auth: InitialState) => auth.linkConflicts,
 );
 export const migratedAccountsSelector = createSelector(
   authSelector,

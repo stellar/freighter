@@ -20,6 +20,7 @@ import {
   storeMnemonics,
 } from "background/helpers/session";
 import { getWalletSources } from "background/helpers/wallet-sources";
+import { linkWalletSources } from "background/helpers/link-sources";
 import { pinFirstSource } from "background/helpers/secret-sources";
 import { flushSessionStore } from "background/store";
 import {
@@ -217,4 +218,9 @@ export const loginToAllAccounts = async (
   await sessionTimer.startSession();
   await flushSessionStore(sessionStore);
   await broadcastSessionState(SERVICE_TYPES.SESSION_UNLOCKED);
+
+  // Send any source the server has not confirmed yet: the retry for an
+  // install that was offline when the source was added. A no-op once every
+  // source is settled. Not awaited, so the unlock never waits on the backend.
+  void linkWalletSources({ sessionStore, localStore });
 };

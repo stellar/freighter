@@ -31,6 +31,13 @@ const mockGetWalletSources = jest.fn().mockResolvedValue({
   signers: new Map(),
 });
 
+// The linker is fire-and-forget: a real pass outlives the test that started it
+// and writes the pin into the next test's storage. link-sources.test.ts covers
+// it; here only the trigger matters.
+jest.mock("background/helpers/link-sources", () => ({
+  linkWalletSources: jest.fn().mockResolvedValue(undefined),
+}));
+
 jest.mock("background/helpers/account", () => ({
   HW_PREFIX: "hw:",
   getIsHardwareWalletActive: (...args: unknown[]) =>

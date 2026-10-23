@@ -21,6 +21,13 @@ import {
 // A real BIP39 phrase: the handler derives the phrase's source id from it.
 const VECTOR = AUTH_KEYPAIR_VECTORS[0];
 
+// The linker is fire-and-forget: a real pass outlives the test that started it
+// and writes the pin into the next test's storage. link-sources.test.ts covers
+// it; here only the trigger matters.
+jest.mock("background/helpers/link-sources", () => ({
+  linkWalletSources: jest.fn().mockResolvedValue(undefined),
+}));
+
 // Distinct keys per derivation index, so the recovery preload loop stores a
 // separate account for each one rather than collapsing into a single entry.
 jest.mock("stellar-hd-wallet", () => ({

@@ -16,12 +16,24 @@ export interface AuthedFetchParams {
   body?: string;
   /** Injectable for tests; defaults to the global fetch. */
   fetchImpl?: typeof fetch;
+  /**
+   * Clock reading in ms epoch for the JWT's iat; defaults to Date.now(). A
+   * body signed against a specific iat (a /user/link consent) passes the same
+   * reading here.
+   */
+  now?: number;
+  /**
+   * Retry once with a fresh JWT on 401. Defaults to true. Turn it off when the
+   * body is bound to the first JWT's iat: the retry would send the same body
+   * under a new iat and fail anyway.
+   */
+  retryOnUnauthorized?: boolean;
 }
 
 /**
  * Sends a request authenticated with a fresh per-request JWT. On 401 it rebuilds
  * a fresh JWT and retries exactly once, returning that response (success or the
- * second 401). The JWT is never cached.
+ * second 401), unless `retryOnUnauthorized` is false. The JWT is never cached.
  */
 export const authedFetch = async ({
   keypair,
@@ -30,6 +42,8 @@ export const authedFetch = async ({
   path,
   body,
   fetchImpl,
+  now,
+  retryOnUnauthorized = true,
 }: AuthedFetchParams): Promise<Response> => {
   const doFetch = fetchImpl ?? fetch;
   // Upper-case the method once and use it for BOTH the signed methodAndPath
@@ -60,6 +74,7 @@ export const authedFetch = async ({
       method: httpMethod,
       path: requestTarget,
       body,
+      now,
     });
     return doFetch(url, {
       method: httpMethod,
@@ -69,6 +84,6 @@ export const authedFetch = async ({
   };
 
   const first = await send();
-  if (first.status !== 401) return first;
+  if (first.status !== 401 || !retryOnUnauthorized) return first;
   return send();
 };

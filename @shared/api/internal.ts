@@ -351,6 +351,8 @@ export const loadAccount = (): Promise<{
   allAccounts: Array<Account>;
   bipPath: string;
   tokenIdList: string[];
+  /** Source ids another user owns, from /user/link (#68). */
+  linkConflicts?: string[];
 }> =>
   sendMessageToBackground({
     activePublicKey: null,
@@ -479,6 +481,7 @@ export const confirmPassword = async (
   applicationState: APPLICATION_STATE;
   allAccounts: Array<Account>;
   bipPath: string;
+  linkConflicts: string[];
 }> => {
   let response = {
     publicKey: "",
@@ -487,6 +490,7 @@ export const confirmPassword = async (
     applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
     allAccounts: [] as Array<Account>,
     bipPath: "",
+    linkConflicts: [] as string[],
   };
   try {
     response = await sendMessageToBackground({

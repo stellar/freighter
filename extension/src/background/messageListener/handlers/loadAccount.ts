@@ -8,6 +8,7 @@ import {
   publicKeySelector,
 } from "background/ducks/session";
 import { getBipPath, getActiveAccountId } from "background/helpers/account";
+import { getLinkConflicts } from "background/helpers/link-status";
 
 export const loadAccount = async ({
   localStore,
@@ -27,5 +28,6 @@ export const loadAccount = async ({
     allAccounts: allAccountsSelector(currentState),
     bipPath: await getBipPath({ localStore }),
     tokenIdList: (await localStore.getItem(TOKEN_ID_LIST)) || {},
+    linkConflicts: await getLinkConflicts({ localStore }),
   };
 };
