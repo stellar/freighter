@@ -192,7 +192,7 @@ describe("buildUserLinkBodies", () => {
     expect(ids(body)).toEqual(wallet.sources.map(({ id }) => id));
   });
 
-  it("splits a large set into bodies of at most 128, each carrying the signer", async () => {
+  it("splits a large set into bodies of at most MAX_LINK_SOURCES, each carrying the signer", async () => {
     const wallet = await makeWallet();
     const many = makeManySources(300);
     const sources = [...wallet.sources, ...many.sources];
@@ -206,7 +206,11 @@ describe("buildUserLinkBodies", () => {
       iat: IAT,
     });
 
-    expect(bodies.length).toBe(3);
+    // `sub` takes one slot in every body.
+    expect(bodies.length).toBe(
+      Math.ceil((sources.length - 1) / (MAX_LINK_SOURCES - 1)),
+    );
+    expect(bodies[0].sources).toHaveLength(MAX_LINK_SOURCES);
     for (const body of bodies) {
       expect(body.sources.length).toBeLessThanOrEqual(MAX_LINK_SOURCES);
       expect(ids(body)[0]).toBe(sub);
@@ -217,7 +221,7 @@ describe("buildUserLinkBodies", () => {
     expect(new Set([sub, ...others])).toEqual(
       new Set(sources.map(({ id }) => id)),
     );
-    expectConsentsVerify(bodies[2], sub, IAT);
+    expectConsentsVerify(bodies[bodies.length - 1], sub, IAT);
   });
 
   it("binds every consent to the signer and iat", async () => {
@@ -284,7 +288,7 @@ describe("buildUserLinkRequestBodies", () => {
 
     expect(result?.iat).toBe(IAT);
     expect(result?.identity).toBe(wallet.identity);
-    expect(result?.bodies).toHaveLength(2);
+    expect(result!.bodies.length).toBeGreaterThan(1);
     for (const body of result!.bodies) {
       expectConsentsVerify(body, wallet.identity.sourceId, IAT);
     }

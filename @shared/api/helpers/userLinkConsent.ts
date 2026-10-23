@@ -17,8 +17,11 @@ import { SecretSourceType } from "@shared/api/types";
 
 export const USER_LINK_CONSENT_DOMAIN = "freighter-user-link-v2";
 
-/** The server rejects a body above this many sources with 400. */
-export const MAX_LINK_SOURCES = 128;
+/**
+ * The server rejects a body above this many sources with 400. Mirrors the
+ * backend's users.MaxLinkSources; change both together.
+ */
+export const MAX_LINK_SOURCES = 32;
 
 export interface UserLinkSource {
   id: string;
