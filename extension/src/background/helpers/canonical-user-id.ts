@@ -29,7 +29,9 @@ export const getCachedCanonicalUserId = async ({
 
 /**
  * Stores the server's user id, overwriting any earlier one. A no-op, and
- * false, when the wallet was replaced since `epoch` was read.
+ * false, when the wallet was replaced since `epoch` was read. Also false when
+ * it was replaced during the write: the clear removes the id, and the caller
+ * must not adopt it.
  */
 export const setCachedCanonicalUserId = async ({
   localStore,
@@ -44,7 +46,7 @@ export const setCachedCanonicalUserId = async ({
     return false;
   }
   await localStore.setItem(CANONICAL_USER_ID, userId);
-  return true;
+  return epoch === getLinkStatusEpoch();
 };
 
 /** The `data.userId` of a /user or /user/link response, or null. */

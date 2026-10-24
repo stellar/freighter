@@ -173,6 +173,12 @@ let sessionUserId: string | null = null;
 let hasReconciledUserId = false;
 
 /**
+ * Bumped by every reset. A reconcile that started before a reset answers for
+ * the previous session, possibly a replaced wallet, and is dropped.
+ */
+let reconcileGeneration = 0;
+
+/**
  * Clears the once-per-session reconciliation guard so the next
  * `reconcileAnalyticsUserId` call asks the background again. Called on every
  * lock transition (auto-lock and manual sign-out both broadcast
@@ -180,6 +186,7 @@ let hasReconciledUserId = false;
  */
 export const resetAnalyticsUserIdReconciliation = (): void => {
   hasReconciledUserId = false;
+  reconcileGeneration += 1;
 };
 
 /**
@@ -237,11 +244,13 @@ export const reconcileAnalyticsUserId = async ({
   // setItem, or anything unexpected from amplitude/Sentry, must never
   // become an unhandled rejection for callers. Catch → return.
   try {
+    const generation = reconcileGeneration;
     const { analyticsUserId: authUserId, confirmed } =
       await getAnalyticsUserId();
     // Another call settled the session while this one waited: its answer is
-    // the server's, and this one may be stale.
-    if (hasReconciledUserId) return;
+    // the server's, and this one may be stale. Or the session was reset
+    // (locked) while it waited, and this answer belongs to the one before.
+    if (hasReconciledUserId || generation !== reconcileGeneration) return;
 
     // No id: locked with nothing cached, or the message failed. Leave the
     // guard unset so we retry once the session is actually unlocked.

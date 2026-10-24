@@ -272,6 +272,34 @@ describe("reconcileAnalyticsUserId (canonical id)", () => {
     expect(Sentry.setUser).toHaveBeenLastCalledWith({ id: "5".repeat(64) });
   });
 
+  it("drops an answer that arrives after the session was reset", async () => {
+    localStorage.setItem(METRICS_USER_ID, "4873921");
+    let resolveStale: (value: unknown) => void = () => {};
+    mockGetAnalyticsUserId.mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveStale = resolve;
+      }),
+    );
+
+    const stale = reconcileAnalyticsUserId();
+    // Locked while the call was in flight; the wallet may be replaced next.
+    resetAnalyticsUserIdReconciliation();
+    resolveStale({ analyticsUserId: "6".repeat(64), confirmed: true });
+    await stale;
+
+    expect(localStorage.getItem(METRICS_USER_ID)).toBe("4873921");
+    expect(amplitude.setUserId).not.toHaveBeenCalled();
+
+    // The session was not settled by the stale answer: the next call asks.
+    mockGetAnalyticsUserId.mockResolvedValue({
+      analyticsUserId: "7".repeat(64),
+      confirmed: true,
+    });
+    await reconcileAnalyticsUserId();
+    expect(mockGetAnalyticsUserId).toHaveBeenCalledTimes(2);
+    expect(localStorage.getItem(METRICS_USER_ID)).toBe("7".repeat(64));
+  });
+
   it("adopts the cached id while locked without settling the session", async () => {
     localStorage.setItem(METRICS_USER_ID, "4873921");
     mockGetAnalyticsUserId.mockResolvedValue({

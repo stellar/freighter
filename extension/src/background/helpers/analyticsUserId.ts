@@ -28,8 +28,8 @@ export interface AnalyticsUserId {
  * - Unlocked, not cached: ask the server and cache a 200. Until the source
  *   is linked (404) or while the server can't be reached, return the pinned
  *   source id, unconfirmed and uncached, so the caller asks again later.
- * - Wallet replaced during the request: null. The pinned source id is the
- *   old wallet's.
+ * - Wallet replaced during the cache read or the request: null. Both ids
+ *   are the old wallet's.
  * - Locked or hardware-only with nothing cached: null.
  *
  * Never returns or exposes the private keypair.
@@ -38,12 +38,16 @@ export const getAnalyticsUserId = async (
   sessionStore: Store,
   localStore: DataStorageAccess,
 ): Promise<AnalyticsUserId> => {
+  const epoch = getLinkStatusEpoch();
   const cached = await getCachedCanonicalUserId({ localStore });
+  // A wallet replaced during the read: a cached id is the old wallet's.
+  if (epoch !== getLinkStatusEpoch()) {
+    return { analyticsUserId: null, confirmed: false };
+  }
   if (cached) {
     return { analyticsUserId: cached, confirmed: true };
   }
 
-  const epoch = getLinkStatusEpoch();
   const identity = await getSigningIdentity({ sessionStore, localStore });
   if (!identity) {
     return { analyticsUserId: null, confirmed: false };

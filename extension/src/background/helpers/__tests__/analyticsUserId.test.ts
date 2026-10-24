@@ -146,6 +146,41 @@ describe("getAnalyticsUserId", () => {
     expect(data[CANONICAL_USER_ID]).toBeUndefined();
   });
 
+  it("returns no id when the wallet is replaced during the cache read", async () => {
+    const { store, data } = makeLocalStore();
+    data[CANONICAL_USER_ID] = ROOT;
+    // The read returns the old wallet's id; the clear lands before it resolves.
+    (store.getItem as jest.Mock).mockImplementationOnce(async (key: string) => {
+      const value = data[key];
+      await clearLinkStatus({ localStore: store });
+      return value;
+    });
+
+    expect(await getAnalyticsUserId(sessionStore, store)).toEqual({
+      analyticsUserId: null,
+      confirmed: false,
+    });
+    expect(mockCall).not.toHaveBeenCalled();
+  });
+
+  it("returns no id when the wallet is replaced during the cache write", async () => {
+    const { store, data } = makeLocalStore();
+    mockCall.mockResolvedValue(userResponse(ROOT));
+    // The clear lands after the write, so it removes what was written.
+    (store.setItem as jest.Mock).mockImplementationOnce(
+      async (key: string, value: unknown) => {
+        data[key] = value;
+        await clearLinkStatus({ localStore: store });
+      },
+    );
+
+    expect(await getAnalyticsUserId(sessionStore, store)).toEqual({
+      analyticsUserId: null,
+      confirmed: false,
+    });
+    expect(data[CANONICAL_USER_ID]).toBeUndefined();
+  });
+
   it("returns no id when the wallet is replaced during a 404", async () => {
     const { store } = makeLocalStore();
     mockCall.mockImplementation(async () => {
