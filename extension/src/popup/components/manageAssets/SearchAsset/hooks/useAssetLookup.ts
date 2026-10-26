@@ -136,9 +136,12 @@ const useAssetLookup = () => {
         ? "verifiedAssetRows"
         : "unverifiedAssetRows";
 
+      // Both lists are scanned at once into the same payload, so write this
+      // list's rows into it: each update then keeps the other list's verdicts.
+      payload[rowsToUpdate] = assetRows;
       dispatch({
         type: "FETCH_DATA_SUCCESS",
-        payload: { ...payload, [rowsToUpdate]: assetRows },
+        payload: { ...payload },
       });
     }
   };
@@ -431,10 +434,12 @@ const useAssetLookup = () => {
     // If we want to gather Blockaid data about our assets, we'll fetch the data and then combine with our
     // asset rows so we have all of our information in one object
     if (isBlockaidEnabled && !isContractId(asset)) {
+      // Shared by both scans below, so neither undoes the other's verdicts.
+      const scannedPayload = { ...payload };
       if (verifiedAssets.length) {
         addBlockaidScanResults({
           assetRows: verifiedAssets,
-          payload,
+          payload: scannedPayload,
           isVerifiedList: true,
           signal,
         }).catch(() => {
@@ -447,7 +452,7 @@ const useAssetLookup = () => {
       if (unverifiedAssets.length) {
         addBlockaidScanResults({
           assetRows: unverifiedAssets,
-          payload,
+          payload: scannedPayload,
           isVerifiedList: false,
           signal,
         }).catch(() => {

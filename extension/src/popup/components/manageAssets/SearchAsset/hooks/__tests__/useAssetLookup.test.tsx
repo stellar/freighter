@@ -25,10 +25,12 @@ jest.mock("popup/helpers/assetList", () => ({
 
 import { MAINNET_NETWORK_DETAILS } from "@shared/constants/stellar";
 import { searchAsset } from "popup/helpers/searchAsset";
+import { splitVerifiedAssetCurrency } from "popup/helpers/assetList";
 import { makeDummyStore } from "popup/__testHelpers__";
 import { useAssetLookup } from "../useAssetLookup";
 
 const ISSUER = "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN";
+const IMPERSONATOR = "GCDK6KWRHOQCWIVAYWMUEBXNH47E7HATCXJDWZPG6LPOQRYDOHXABANK";
 const CONTRACT = "CAS3J7GYLGXMF6TDJBBYYSE3HQ6BBSMLNUQ34T6TZMYMW2EVH34XOWMA";
 
 describe("useAssetLookup Blockaid scan", () => {
@@ -103,5 +105,66 @@ describe("useAssetLookup Blockaid scan", () => {
       expect(row?.isMalicious).toBe(true);
     });
     expect(scannedIds()).toEqual([[`LIQTVAULT-${ISSUER}`]]);
+  });
+
+  // The verified and unverified lists are scanned at the same time. Each
+  // update used to write back the other list's rows as they were before its
+  // scan, so whichever finished last wiped the other's verdicts, here the
+  // impersonator's malicious one.
+  it("keeps both lists' verdicts when the verified scan finishes last", async () => {
+    (searchAsset as jest.Mock).mockResolvedValue({
+      _embedded: {
+        records: [
+          { asset: `USDC-${ISSUER}-1` },
+          { asset: `USDC-${IMPERSONATOR}-1` },
+        ],
+      },
+    });
+    (splitVerifiedAssetCurrency as jest.Mock).mockImplementationOnce(
+      ({ assets }) =>
+        Promise.resolve({
+          verifiedAssets: assets.slice(0, 1),
+          unverifiedAssets: assets.slice(1),
+        }),
+    );
+    fetchSpy.mockImplementation(async (url) => {
+      const ids = new URL(String(url)).searchParams.getAll("asset_ids");
+      if (ids.includes(`USDC-${ISSUER}`)) {
+        await new Promise((resolve) => setTimeout(resolve, 50));
+      }
+      const results = Object.fromEntries(
+        ids.map((id) => [
+          id,
+          {
+            result_type: id.endsWith(IMPERSONATOR) ? "Malicious" : "Benign",
+          },
+        ]),
+      );
+      return new Response(JSON.stringify({ data: { results } }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+    });
+    const store = makeDummyStore({ settings: { assetsLists: {} } });
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <Provider store={store}>{children}</Provider>
+    );
+    const { result } = renderHook(() => useAssetLookup(), { wrapper });
+
+    await act(async () => {
+      await result.current.fetchData({
+        asset: "usdc",
+        isBlockaidEnabled: true,
+        publicKey: ISSUER,
+        isAllowListVerificationEnabled: false,
+        networkDetails: MAINNET_NETWORK_DETAILS,
+      });
+    });
+
+    await waitFor(() => {
+      const data = result.current.state.data;
+      expect(data?.verifiedAssetRows[0].isMalicious).toBe(false);
+      expect(data?.unverifiedAssetRows[0].isMalicious).toBe(true);
+    });
   });
 });
