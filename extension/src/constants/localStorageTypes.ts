@@ -27,7 +27,9 @@ export const IS_HIDE_DUST_ENABLED_ID = "isHideDustEnabled";
 // Legacy wallet-wide list, only read to migrate to HIDDEN_ASSET_LIST
 export const HIDDEN_ASSETS = "hiddenAssets";
 export const HIDDEN_ASSET_LIST = "hiddenAssetList";
+// Legacy wallet-wide map, only read to migrate to HIDDEN_COLLECTIBLE_LIST
 export const HIDDEN_COLLECTIBLES = "hiddenCollectibles";
+export const HIDDEN_COLLECTIBLE_LIST = "hiddenCollectibleList";
 export const TEMPORARY_STORE_ID = "temporaryStore";
 export const TEMPORARY_STORE_EXTRA_ID = "temporaryStoreExtra";
 export const USDT0_LAUNCH_BANNER_DISMISSED = "usdt0LaunchBannerDismissed";

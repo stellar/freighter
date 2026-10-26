@@ -626,11 +626,14 @@ export const popupMessageListener = (
       return changeCollectibleVisibility({
         request,
         localStore,
+        sessionStore,
       });
     }
     case SERVICE_TYPES.GET_HIDDEN_COLLECTIBLES: {
       return getHiddenCollectibles({
+        request,
         localStore,
+        sessionStore,
       });
     }
     case SERVICE_TYPES.GET_RECENT_PROTOCOLS: {

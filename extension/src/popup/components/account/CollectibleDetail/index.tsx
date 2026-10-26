@@ -120,6 +120,7 @@ export const CollectibleDetail = ({
           ? "visible"
           : ("hidden" as AssetVisibility),
         activePublicKey: publicKey || "",
+        network: networkDetails.network,
       });
 
       if (error) {

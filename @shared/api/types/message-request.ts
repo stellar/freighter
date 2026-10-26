@@ -488,6 +488,8 @@ export interface GetCollectiblesMessage extends BaseMessage {
 
 export interface ChangeCollectibleVisibilityMessage extends BaseMessage {
   type: SERVICE_TYPES.CHANGE_COLLECTIBLE_VISIBILITY;
+  publicKey: string;
+  network: string;
   collectibleVisibility: {
     collectible: CollectibleKey;
     visibility: AssetVisibility;
@@ -496,6 +498,8 @@ export interface ChangeCollectibleVisibilityMessage extends BaseMessage {
 
 export interface GetHiddenCollectiblesMessage extends BaseMessage {
   type: SERVICE_TYPES.GET_HIDDEN_COLLECTIBLES;
+  publicKey: string;
+  network: string;
 }
 
 export interface MarkQueueActiveMessage extends BaseMessage {

@@ -3009,14 +3009,19 @@ export const getCollectibles = async ({
   return response;
 };
 
+/**
+ * Hides or shows a collectible for the active account on a network.
+ */
 export const changeCollectibleVisibility = async ({
   collectibleKey,
   collectibleVisibility,
   activePublicKey,
+  network,
 }: {
   collectibleKey: string;
   collectibleVisibility: AssetVisibility;
   activePublicKey: string;
+  network: string;
 }) => {
   const response = await sendMessageToBackground({
     type: SERVICE_TYPES.CHANGE_COLLECTIBLE_VISIBILITY,
@@ -3025,6 +3030,8 @@ export const changeCollectibleVisibility = async ({
       visibility: collectibleVisibility,
     },
     activePublicKey,
+    publicKey: activePublicKey,
+    network,
   });
 
   return {
@@ -3035,12 +3042,16 @@ export const changeCollectibleVisibility = async ({
 
 export const getHiddenCollectibles = async ({
   activePublicKey,
+  network,
 }: {
   activePublicKey: string;
+  network: string;
 }) => {
   const response = await sendMessageToBackground({
     type: SERVICE_TYPES.GET_HIDDEN_COLLECTIBLES,
     activePublicKey,
+    publicKey: activePublicKey,
+    network,
   });
 
   return {

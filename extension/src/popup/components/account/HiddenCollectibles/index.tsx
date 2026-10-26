@@ -10,6 +10,7 @@ import { SheetLayout } from "popup/components/SheetLayout";
 import { SlideupModal } from "popup/components/SlideupModal";
 import { showToast } from "popup/basics/shadcn/Toast";
 import { publicKeySelector } from "popup/ducks/accountServices";
+import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
 import { CollectibleInfoImage } from "../CollectibleInfo";
 
 import "./styles.scss";
@@ -49,6 +50,7 @@ export const HiddenCollectibles = ({
 }: HiddenCollectiblesProps) => {
   const { t } = useTranslation();
   const publicKey = useSelector(publicKeySelector);
+  const { network } = useSelector(settingsNetworkDetailsSelector);
   const [pendingKey, setPendingKey] = useState<string | null>(null);
 
   useEffect(() => {
@@ -96,6 +98,7 @@ export const HiddenCollectibles = ({
         collectibleKey,
         collectibleVisibility: "visible",
         activePublicKey: publicKey,
+        network,
       });
 
       if (error) {

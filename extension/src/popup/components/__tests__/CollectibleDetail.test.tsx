@@ -709,6 +709,7 @@ describe("CollectibleDetail", () => {
           "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA:2",
         collectibleVisibility: "hidden",
         activePublicKey: TEST_PUBLIC_KEY,
+        network: "TESTNET",
       });
       expect(lastToastProps(toastSpy).variant).toBe("success");
     });
