@@ -6,6 +6,7 @@ import { getTokenDetails } from "@shared/api/internal";
 import { isSacContractExecutable } from "@shared/helpers/soroban/token";
 import { isNativeContract } from "@shared/helpers/assetIdentity";
 import { INDEXER_URL } from "@shared/constants/mercury";
+import { isBulkScannableAssetId } from "@shared/helpers/blockaid";
 import { BlockAidScanAssetResult } from "@shared/api/types";
 import {
   buildNativeAssetRow,
@@ -84,16 +85,23 @@ const useAssetLookup = () => {
     // scan the first few assets to see if they are suspicious
     // due to the length of time it takes to scan, we'll do it in consecutive chunks
     for (let i = 0; i < assetRows.length; i += MAX_ASSETS_TO_SCAN) {
-      const url = new URL(`${INDEXER_URL}/scan-asset-bulk`);
-
       const chunk = assetRows.slice(i, i + MAX_ASSETS_TO_SCAN);
-      chunk.forEach((record) => {
-        if (record.code && record.issuer && !isContractId(record.issuer)) {
-          url.searchParams.append(
-            "asset_ids",
-            `${record.code}-${record.issuer}`,
-          );
-        }
+      const assetIds = chunk
+        .filter(
+          (record) =>
+            record.code && record.issuer && !isContractId(record.issuer),
+        )
+        .map((record) => `${record.code}-${record.issuer}`)
+        .filter(isBulkScannableAssetId);
+      // The backend rejects a request with no ids, and that failure would stop
+      // the scan before the chunks after this one (e.g. 10 contract tokens).
+      if (!assetIds.length) {
+        continue;
+      }
+
+      const url = new URL(`${INDEXER_URL}/scan-asset-bulk`);
+      assetIds.forEach((assetId) => {
+        url.searchParams.append("asset_ids", assetId);
       });
       const response = await fetch(url.href, { signal });
       const data = await response.json();
