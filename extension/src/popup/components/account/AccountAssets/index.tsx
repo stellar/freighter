@@ -393,6 +393,9 @@ export const AccountAssets = ({
               fiatTestId={`asset-amount-${canonicalAsset}`}
               deltaTestId={`asset-price-delta-${canonicalAsset}`}
               onClick={isLP ? undefined : () => handleClick(canonicalAsset)}
+              // Every row, the last included: Home's list ends with a line
+              // above its Add token button.
+              hasDivider
             />
             <SheetContent
               onOpenAutoFocus={(e) => e.preventDefault()}

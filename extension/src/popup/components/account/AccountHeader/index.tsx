@@ -1,10 +1,12 @@
 import React, { useState } from "react";
 import { useNavigate, NavLink } from "react-router-dom";
+import { useSelector } from "react-redux";
 
-import { Icon, Text, NavButton } from "@stellar/design-system";
+import { Icon, NavButton } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
 import { ROUTES } from "popup/constants/routes";
+import { maintenanceBannerSelector } from "popup/ducks/remoteConfig";
 import { View } from "popup/basics/layout/View";
 import { navigateTo } from "popup/helpers/navigate";
 import { AccountChip } from "popup/components/account/AccountChip";
@@ -15,6 +17,29 @@ import { AccountTabs } from "popup/components/account/AccountTabs";
 import { MaintenanceBanner } from "popup/components/MaintenanceBanner";
 
 import "./styles.scss";
+
+// The Add / Send / Swap tiles under the balance. The labels are existing
+// translation keys, translated at render.
+const ACTION_TILES = [
+  {
+    route: ROUTES.addFunds,
+    icon: <Icon.Plus />,
+    label: "Add",
+    testId: "nav-link-add",
+  },
+  {
+    route: ROUTES.sendPayment,
+    icon: <Icon.ArrowUp />,
+    label: "Send",
+    testId: "nav-link-send",
+  },
+  {
+    route: ROUTES.swap,
+    icon: <Icon.RefreshCw02 />,
+    label: "Swap",
+    testId: "nav-link-swap",
+  },
+];
 
 interface AccountHeaderProps {
   allowList: string[];
@@ -37,11 +62,15 @@ export const AccountHeader = ({
   const navigate = useNavigate();
   const [isAccountSheetOpen, setIsAccountSheetOpen] = useState(false);
   const [isConnectedAppsOpen, setIsConnectedAppsOpen] = useState(false);
+  // MaintenanceBanner renders under the same condition.
+  const { enabled, content } = useSelector(maintenanceBannerSelector);
+  const hasBanner = enabled && !!content;
 
   return (
     <>
       <View.AppHeader
         isAccountHeader
+        isSolid={hasBanner}
         topContent={<MaintenanceBanner />}
         leftContent={
           <AccountChip
@@ -70,58 +99,39 @@ export const AccountHeader = ({
             </div>
           </div>
         }
-      >
-        <View.Inset hasVerticalBorder>
+      />
+
+      {/* Outside the pinned header, so it scrolls up under the row's fade.
+          A flow sibling of View.Content, which keeps it above the account
+          notifications as before. */}
+      <View.Inset hasVerticalBorder additionalClassName="AccountHeader__hero">
+        <div
+          className="AccountHeader__account-info"
+          data-testid="account-header"
+        >
           <div
-            className="AccountHeader__account-info"
-            data-testid="account-header"
+            className="AccountHeader__total-usd-balance"
+            data-testid="account-view-total-balance"
           >
-            <div className="AccountHeader__account-info__details">
-              <div
-                className="AccountHeader__total-usd-balance"
-                data-testid="account-view-total-balance"
-                key="total-balance"
-              >
-                {roundedTotalBalanceUsd}
-              </div>
-              <div className="AccountHeader__actions">
-                <NavLink to={ROUTES.addFunds} data-testid="nav-link-add">
-                  <div className="AccountHeader__actions__column">
-                    <div className="AccountHeader__actions__btn">
-                      <Icon.Plus />
-                    </div>
-                    <Text as="div" size="xs" weight="medium">
-                      {t("Add")}
-                    </Text>
-                  </div>
-                </NavLink>
-                <NavLink to={ROUTES.sendPayment} data-testid="nav-link-send">
-                  <div className="AccountHeader__actions__column">
-                    <div className="AccountHeader__actions__btn">
-                      <Icon.ArrowUp />
-                    </div>
-                    <Text as="div" size="xs" weight="medium">
-                      {t("Send")}
-                    </Text>
-                  </div>
-                </NavLink>
-                <NavLink to={ROUTES.swap} data-testid="nav-link-swap">
-                  <div className="AccountHeader__actions__column">
-                    <div className="AccountHeader__actions__btn">
-                      <Icon.RefreshCw02 />
-                    </div>
-                    <Text as="div" size="xs" weight="medium">
-                      {t("Swap")}
-                    </Text>
-                  </div>
-                </NavLink>
-              </div>
-              <Usdt0LaunchBanner />
-            </div>
+            {roundedTotalBalanceUsd}
           </div>
-          <AccountTabs />
-        </View.Inset>
-      </View.AppHeader>
+          <div className="AccountHeader__actions">
+            {ACTION_TILES.map(({ route, icon, label, testId }) => (
+              <NavLink
+                key={testId}
+                to={route}
+                className="AccountHeader__actions__column"
+                data-testid={testId}
+              >
+                {icon}
+                <span>{t(label)}</span>
+              </NavLink>
+            ))}
+          </div>
+          <Usdt0LaunchBanner />
+        </div>
+        <AccountTabs />
+      </View.Inset>
 
       <AccountSheet
         isOpen={isAccountSheetOpen}

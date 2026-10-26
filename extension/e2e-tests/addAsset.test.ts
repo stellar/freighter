@@ -63,10 +63,10 @@ test("Adding token on Futurenet", async ({ page, extensionId, context }) => {
   await expect(page.getByTestId("search-token-input")).toBeVisible();
 });
 
-// The Tokens tab's primary "add" action is the floating pill on the account
-// view. The tests above reach search through `goToAddAsset`, which drives the
-// same pill -- this one asserts the routing explicitly so a change to either
-// is caught by name.
+// The Tokens tab's primary "add" action is the inline Add token button that
+// ends the token list. The tests above reach search through `goToAddAsset`,
+// which drives the same button -- this one asserts the routing explicitly so a
+// change to either is caught by name.
 test("Tokens tab add button routes to asset search", async ({
   page,
   extensionId,
@@ -118,9 +118,9 @@ test("Tokens tab add button is absent for an unfunded account", async ({
     timeout: 30000,
   });
 
-  // The unfunded empty state carries its own "Add XLM" action, so the pill
-  // would be a duplicate call to action and is deliberately not rendered.
-  await expect(page.getByText("Looking a little empty...")).toBeVisible({
+  // The unfunded empty state carries its own "Add XLM" action, and adding a
+  // token needs a trustline, which needs XLM, so Add token is not rendered.
+  await expect(page.getByText("Activate your wallet")).toBeVisible({
     timeout: 20000,
   });
   await expect(page.getByTestId("add-token-btn")).toHaveCount(0);

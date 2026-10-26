@@ -44,7 +44,12 @@ interface ViewAppHeaderProps {
   customBackAction?: () => void;
   customBackIcon?: React.ReactNode;
   isAccountHeader?: boolean;
-  children?: React.ReactNode;
+  /** Floats over the scrolling content on the Home-style fade, instead of
+   * sitting above it in the flow. For the tab screens that scroll inside
+   * their inset (History, Discover); Home pins its own with `isAccountHeader`. */
+  isFloating?: boolean;
+  /** Drops the fade for a solid page color, e.g. under an opaque banner. */
+  isSolid?: boolean;
 }
 
 const ViewAppHeader: React.FC<ViewAppHeaderProps> = ({
@@ -57,11 +62,17 @@ const ViewAppHeader: React.FC<ViewAppHeaderProps> = ({
   hasBackButton,
   customBackAction,
   customBackIcon,
-  children,
   isAccountHeader = false,
+  isFloating = false,
+  isSolid = false,
   ...props
 }: ViewAppHeaderProps) => (
-  <div className="View__header" {...props}>
+  <div
+    className={`View__header${isAccountHeader ? " View__header--account" : ""}${
+      isFloating ? " View__header--floating" : ""
+    }${isSolid ? " View__header--solid" : ""}`}
+    {...props}
+  >
     {topContent && (
       <ViewInset hasVerticalBorder hasNoPadding>
         <div className="View__topContent">{topContent}</div>
@@ -115,8 +126,6 @@ const ViewAppHeader: React.FC<ViewAppHeaderProps> = ({
         {rightContent}
       </div>
     </ViewInset>
-
-    {children}
   </div>
 );
 

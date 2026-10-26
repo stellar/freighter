@@ -106,8 +106,8 @@ $exit-transform: translateY(
 // A floating card leaves a visible gap on all four sides, so the backdrop is
 // now part of the sheet's frame rather than something behind it: it must cover
 // the whole viewport unconditionally, and sit directly beneath the card. This
-// raises it from z-index 1 to 29, so it now also dims the floating add button
-// (10) and tooltips (20) -- which is correct modal behaviour, but it moves pixels.
+// raises it from z-index 1 to 29, so it now also dims the tab bar (15) and
+// tooltips (20) -- which is correct modal behaviour, but it moves pixels.
 .SlideupModal + .LoadingBackground--active {
   position: fixed;
   inset: 0;

@@ -1,47 +1,65 @@
 @use "../../styles/utils.scss" as *;
 
+// Figma's Extension nav (3514:103394): a 176x48 pill, 24px above the window's
+// bottom edge, holding three 60x40 tabs that overlap by 8px and sit 4px in
+// from the pill's edges (6px at the ends). Same pill as mobile's
+// FloatingTabBar, at the extension's size.
 .TabBar {
   position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
+  bottom: var(--tab-bar--bottom-gap);
+  left: 50%;
+  transform: translateX(-50%);
   z-index: var(--z-index--tab-bar);
   height: var(--tab-bar--height);
-  background-color: var(--sds-clr-gray-01);
-  border-top: 1px solid var(--sds-clr-gray-06);
+  border-radius: pxToRem(100px);
+  // Mobile's pill fill over a 4px background blur, with Figma's 0 8 40 shadow.
+  background-color: rgba(255, 255, 255, 0.86);
+  backdrop-filter: blur(4px);
+  box-shadow: 0 pxToRem(8px) pxToRem(40px) rgba(0, 0, 0, 0.12);
 
   &__inset {
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: pxToRem(8px);
     height: 100%;
-    padding: pxToRem(12px) pxToRem(24px);
-    // In fullscreen the window runs to 1100px; keep the bar reading as a
-    // control rather than a strip stretched across the whole window.
-    max-width: pxToRem(480px);
-    margin: 0 auto;
+    padding: pxToRem(4px) pxToRem(6px);
   }
 
   &__tab {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: pxToRem(72px);
-    padding: pxToRem(8px);
+    flex-shrink: 0;
+    width: pxToRem(60px);
+    height: pxToRem(40px);
     border-radius: pxToRem(100px);
     color: var(--sds-clr-gray-09);
     cursor: pointer;
 
+    & + & {
+      margin-left: pxToRem(-8px);
+    }
+
+    // Figma's 2px stroke; the filled glyphs have no stroke, so it leaves them
+    // alone.
     svg {
-      width: pxToRem(20px);
-      height: pxToRem(20px);
+      width: pxToRem(28px);
+      height: pxToRem(28px);
+      @include icon-stroke(28);
     }
 
     &--active {
-      background-color: var(--sds-clr-gray-03);
-      color: var(--sds-clr-gray-12);
+      // Figma's selection layer: a translucent gray no palette step matches.
+      background-color: rgba(153, 153, 153, 0.15);
+      color: var(--sds-clr-base-01);
       cursor: default;
     }
+  }
+}
+
+.sds-theme-dark .TabBar {
+  background-color: rgba(33, 33, 33, 0.83);
+
+  &__tab--active {
+    background-color: var(--sds-clr-gray-04);
   }
 }

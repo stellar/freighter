@@ -19,15 +19,11 @@
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
+    // The marble avatar fills the 24px circle, as Figma draws it.
     width: pxToRem(24);
     height: pxToRem(24);
-    background: var(--sds-clr-gray-03);
     border-radius: pxToRem(100);
-
-    img {
-      width: pxToRem(12);
-      height: pxToRem(12);
-    }
+    overflow: hidden;
   }
 
   &__name {
@@ -47,10 +43,13 @@
     min-width: 0;
   }
 
+  // Figma puts the chevron 4px after the name, against the chip's 8px.
   > svg {
     flex-shrink: 0;
+    margin-left: pxToRem(-4);
     width: pxToRem(16);
     height: pxToRem(16);
     stroke: var(--sds-clr-gray-09);
+    @include icon-stroke(16);
   }
 }

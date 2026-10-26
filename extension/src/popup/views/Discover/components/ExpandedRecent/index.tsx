@@ -34,6 +34,7 @@ export const ExpandedRecent = ({
   return (
     <>
       <SubviewHeader
+        isFloating
         title={t("Recent")}
         customBackAction={onBack}
         rightButton={

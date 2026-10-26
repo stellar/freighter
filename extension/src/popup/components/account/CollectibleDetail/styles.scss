@@ -11,24 +11,9 @@
   flex-direction: column;
   width: 100%;
 
+  // The menu button itself is a SheetHeaderAction; only its popover is
+  // styled here.
   &__header__right-button {
-    cursor: pointer;
-    width: pxToRem(20px);
-    height: pxToRem(20px);
-
-    &__icon {
-      width: pxToRem(20px);
-      height: pxToRem(20px);
-      stroke: var(--sds-clr-gray-11);
-      color: var(--sds-clr-gray-11);
-    }
-
-    &__trigger {
-      cursor: pointer;
-      background: none;
-      border: none;
-    }
-
     &__popover-content {
       background: var(--sds-clr-gray-01);
       border-radius: pxToRem(6px);
@@ -90,18 +75,52 @@
     }
   }
 
-  // Restored: an over-eager deletion of the remove-confirmation block took
-  // this with it, which dropped the 12px gap between the info, description and
-  // traits cards so they rendered as one continuous slab.
+  // Figma's Collectible details (1481:20211): the image, the info card, the
+  // description and the traits 16px apart.
   &__content {
     align-items: center;
     display: flex;
     flex-direction: column;
-    gap: pxToRem(12px);
+    gap: pxToRem(16px);
     justify-content: center;
+
+    // Scoped here rather than in CollectibleInfo, which the Send collectible
+    // screen shares: the frame's 32px image corners, no margin of its own
+    // (the gap above spaces it), and Text/SM/500 values that ellipsize on the
+    // right of each row.
+    .CollectibleInfo__image {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      border-radius: pxToRem(32px);
+      margin-bottom: 0;
+    }
+
+    .CollectibleInfo__base-info__row {
+      gap: pxToRem(16px);
+
+      .CollectibleInfo__block__label {
+        flex-shrink: 0;
+      }
+
+      .CollectibleInfo__block__value {
+        min-width: 0;
+        overflow: hidden;
+        text-align: right;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+    }
+
+    .CollectibleInfo__block__value {
+      font-weight: var(--sds-fw-medium);
+      line-height: pxToRem(20px);
+    }
   }
 
+  // The traits card pads 16px all round, unlike the 12px by 16px info cards.
   &__attributes {
+    padding: pxToRem(16px);
+
     &__label {
       color: var(--sds-clr-gray-11);
       font-size: pxToRem(14px);
@@ -109,18 +128,16 @@
       line-height: pxToRem(20px);
     }
 
-    // A grid rather than wrapped flex with fixed-width tiles. The tiles were
-    // 134px, tuned for the old full-bleed sheet: two of them plus the gap need
-    // 280px, and the floating card's 8px side gutters leave 264px, so they
-    // dropped to one column. auto-fill keeps two in the popup and still uses
-    // the extra room in fullscreen instead of stretching two tiles across it.
+    // One full-width tile per trait, 12px apart, as the frame stacks them.
     &__list {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(#{pxToRem(120px)}, 1fr));
+      display: flex;
+      flex-direction: column;
       gap: pxToRem(12px);
     }
   }
 
+  // Background/Secondary, padded 16px by 12px, the value over its trait 4px
+  // apart, both Text/SM/500.
   &__attribute {
     align-items: center;
     background: var(--sds-clr-gray-02);
@@ -128,29 +145,31 @@
     display: flex;
     justify-content: center;
     flex-direction: column;
-    padding: pxToRem(12px) pxToRem(24px);
-    // Sized by the grid track now; `min-width: 0` lets a long trait value
-    // ellipsize inside the tile rather than widening it.
+    gap: pxToRem(4px);
+    padding: pxToRem(16px) pxToRem(12px);
+    // `min-width: 0` lets a long trait value ellipsize inside the tile rather
+    // than widening it.
     min-width: 0;
     text-align: center;
   }
 
+  &__attribute__trait,
+  &__attribute__value {
+    font-size: pxToRem(14px);
+    font-weight: var(--sds-fw-medium);
+    line-height: pxToRem(20px);
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
   &__attribute__trait {
     color: var(--sds-clr-gray-11);
-    font-size: pxToRem(12px);
-    font-weight: var(--sds-fw-semi-bold);
-    line-height: pxToRem(18px);
-    max-width: 100%;
-    overflow: scroll;
   }
 
   &__attribute__value {
     color: var(--sds-clr-gray-12);
-    font-size: pxToRem(12px);
-    font-weight: var(--sds-fw-medium);
-    line-height: pxToRem(18px);
-    max-width: 100%;
-    overflow: scroll;
   }
 
   &__footer__buttons {

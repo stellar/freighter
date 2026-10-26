@@ -9,6 +9,13 @@
 // the empty centre box a third of a 360px row and squeeze the chip.
 .View__inset--account-header {
   align-items: center;
+  // Figma's header: 24px above a 32px row, 16px below it.
+  padding-top: pxToRem(24px);
+  padding-bottom: pxToRem(16px);
+
+  .View__header__box {
+    height: pxToRem(32px);
+  }
 
   .View__header__box--left {
     flex: 1 1 auto;
@@ -35,16 +42,8 @@
 }
 
 .AccountHeader {
-  display: flex;
-  flex-direction: row;
-  justify-content: space-between;
-  align-items: center;
-  height: 5rem;
-
-  // Bare glyphs, no chrome: the designs draw these as 18px icons on a 36px
-  // pitch with no border or fill. The 32px box is kept as the hit target, so
-  // the 4px gap is what lands the glyph centres where the mock puts them
-  // (36px apart, the trailing one 24px off the inset edge).
+  // Bare glyphs, no chrome: Figma draws these as 20px icons in 32px buttons,
+  // 4px apart, the trailing one on the inset edge.
   &__icon-btns {
     display: flex;
     gap: pxToRem(4px);
@@ -54,36 +53,37 @@
       height: pxToRem(32);
 
       svg {
-        width: pxToRem(18);
-        height: pxToRem(18);
+        width: pxToRem(20);
+        height: pxToRem(20);
         stroke: var(--sds-clr-base-01);
       }
     }
   }
 
-  &__account-info {
-    display: flex;
-    justify-content: space-around;
-    // Figma's Balance frame carries 24px of top padding, putting the balance
-    // row below the header's 72px top strip.
-    padding-top: pxToRem(24px);
-
-    // Full width so the action tiles below span the whole row; without it this
-    // flex item is content-sized and the tiles sit inset from both edges.
-    &__details {
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      gap: pxToRem(8px);
-      width: 100%;
-    }
+  // A flex item of the column-flex `.View`, where View__inset's `margin: 0
+  // auto` would shrink it to its content and centre it. It has to span the
+  // column like the insets above and below it.
+  &__hero {
+    width: 100%;
+    flex-shrink: 0;
   }
 
+  // Figma's Home/extension frame: 16px under the header row, then the
+  // balance, the tiles and the tabs 16px apart.
+  &__account-info {
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(16px);
+    padding-top: pxToRem(16px);
+    padding-bottom: pxToRem(16px);
+  }
+
+  // Display/SM/600.
   &__total-usd-balance {
     display: flex;
     font-size: pxToRem(32);
     line-height: pxToRem(40px);
-    font-weight: var(--sds-fw-medium);
+    font-weight: var(--sds-fw-semi-bold);
     letter-spacing: pxToRem(-1.28px);
     justify-content: center;
     overflow: hidden;
@@ -91,21 +91,16 @@
     text-overflow: ellipsis;
   }
 
+  // Figma's four 72px tiles leave 8px between them; with three (Earn is out of
+  // scope) they share the row at the same gap, as mobile's flex tiles do.
   &__actions {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    margin-top: pxToRem(8px);
     gap: pxToRem(8px);
-    // Figma's Balance frame closes with 24px, and the tab strip below adds no
-    // top offset of its own, so this alone sets the tiles -> tabs gap.
-    padding-bottom: pxToRem(24px);
 
-    // The NavLink is the grid item; without this the tile inside it shrinks to
-    // its content instead of filling the column.
-    a {
-      display: block;
-    }
-
+    // Home button: a 20px icon in Foreground/Primary over a Text/SM/600 label
+    // in primary text, 4px apart, on Gray/2 (Gray/1 in dark, as mobile
+    // measured: dark Gray/2 reads lighter than the tile Figma draws).
     &__column {
       align-items: center;
       color: var(--sds-clr-gray-12);
@@ -113,35 +108,33 @@
       flex-direction: column;
       gap: pxToRem(4px);
       justify-content: center;
-      background: var(--sds-clr-gray-03);
+      background: var(--sds-clr-gray-02);
       border-radius: pxToRem(16px);
-      height: pxToRem(78px);
-      padding: pxToRem(16px) pxToRem(8px);
+      padding: pxToRem(12px) pxToRem(8px);
       width: 100%;
+      font-size: pxToRem(14px);
+      line-height: pxToRem(20px);
+      font-weight: var(--sds-fw-semi-bold);
       transition: background var(--sds-anim-transition-default);
 
       &:hover {
-        background: var(--sds-clr-gray-04);
+        background: var(--sds-clr-gray-03);
       }
-    }
-
-    &__btn {
-      display: flex;
-      justify-content: center;
-      align-items: center;
 
       svg {
-        width: pxToRem(24px);
-        height: pxToRem(24px);
-        stroke: var(--sds-clr-lilac-11);
-      }
-
-      // On the path, not the svg: the path's own `stroke-width` presentation
-      // attribute beats an inherited value, so a rule on the svg is silently
-      // dead. Here 2 over a 24x24 viewBox in a 24px box renders as Figma's 2px.
-      svg path {
-        stroke-width: 2;
+        width: pxToRem(20px);
+        height: pxToRem(20px);
+        stroke: var(--sds-clr-gray-09);
+        @include icon-stroke(20);
       }
     }
+  }
+}
+
+.sds-theme-dark .AccountHeader__actions__column {
+  background: var(--sds-clr-gray-01);
+
+  &:hover {
+    background: var(--sds-clr-gray-02);
   }
 }

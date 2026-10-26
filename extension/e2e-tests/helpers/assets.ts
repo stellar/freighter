@@ -3,10 +3,10 @@ import { expect, Page } from "@playwright/test";
 /**
  * Open the asset search from Home.
  *
- * Routed through the "Add token" pill rather than the account overflow menu:
- * the Manage assets screen is being retired, and the menu that reaches it
- * disappears with the header restructure. SearchAsset renders the same
- * ManageAssetRows, so every row-level selector is unchanged.
+ * Routed through the inline "Add token" button rather than the account
+ * overflow menu: the Manage assets screen is being retired, and the menu that
+ * reaches it disappears with the header restructure. SearchAsset renders the
+ * same ManageAssetRows, so every row-level selector is unchanged.
  */
 export const goToAddAsset = async (page: Page) => {
   await expect(page.getByTestId("account-view")).toBeVisible({

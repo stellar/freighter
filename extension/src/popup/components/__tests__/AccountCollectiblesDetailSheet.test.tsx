@@ -72,7 +72,6 @@ const renderCollectibles = () =>
     >
       <AccountCollectibles
         collections={mockCollectibles}
-        hasInlineCta={false}
         isLoading={false}
         refreshHiddenCollectibles={mockRefreshHiddenCollectibles}
         isCollectibleHidden={mockIsCollectibleHidden}

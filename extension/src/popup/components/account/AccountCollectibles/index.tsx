@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import classnames from "classnames";
 import { Button, Icon, Loader } from "@stellar/design-system";
 import { useLocation, useNavigate } from "react-router-dom";
 
@@ -12,6 +13,8 @@ import {
 import { ROUTES } from "popup/constants/routes";
 import { CollectibleDetail, SelectedCollectible } from "../CollectibleDetail";
 import { CollectibleInfoImage } from "../CollectibleInfo";
+import { InlineAddButton } from "../InlineAddButton";
+import { HomeEmptyState } from "../HomeEmptyState";
 
 import "./styles.scss";
 
@@ -125,80 +128,82 @@ const CollectionsList = ({
 
   return (
     <>
-      {collections.map(({ collection, error }) => {
-        // if the collection is missing or has an error, skip rendering
-        if (error || !collection) {
-          return null;
-        }
+      <div className="AccountCollectibles__list">
+        {collections.map(({ collection, error }) => {
+          // if the collection is missing or has an error, skip rendering
+          if (error || !collection) {
+            return null;
+          }
 
-        // Hidden collectibles live in the Hidden collectibles sheet instead
-        const collectiblesToShow = collection.collectibles.filter(
-          (item) => !isCollectibleHidden(collection.address, item.tokenId),
-        );
+          // Hidden collectibles live in the Hidden collectibles sheet instead
+          const collectiblesToShow = collection.collectibles.filter(
+            (item) => !isCollectibleHidden(collection.address, item.tokenId),
+          );
 
-        // if no collectibles to show, don't render the collection
-        if (collectiblesToShow.length === 0) {
-          return null;
-        }
+          // if no collectibles to show, don't render the collection
+          if (collectiblesToShow.length === 0) {
+            return null;
+          }
 
-        const isCollapsed = collapsedCollections.has(collection.address);
+          const isCollapsed = collapsedCollections.has(collection.address);
 
-        return (
-          <div
-            className="AccountCollectibles__collection"
-            key={collection.address}
-            data-testid="account-collectible"
-          >
-            <button
-              type="button"
-              className="AccountCollectibles__collection__header"
-              onClick={() => toggleCollection(collection.address)}
-              aria-expanded={!isCollapsed}
-              data-testid="account-collection-header"
+          return (
+            <div
+              className="AccountCollectibles__collection"
+              key={collection.address}
+              data-testid="account-collectible"
             >
-              <div
-                className="AccountCollectibles__collection__header__name"
-                data-testid="account-collection-name"
+              <button
+                type="button"
+                className="AccountCollectibles__collection__header"
+                onClick={() => toggleCollection(collection.address)}
+                aria-expanded={!isCollapsed}
+                data-testid="account-collection-header"
               >
-                {collection.name}
-              </div>
-              <div className="AccountCollectibles__collection__header__right">
                 <div
-                  className="AccountCollectibles__collection__header__count"
-                  data-testid="account-collection-count"
+                  className="AccountCollectibles__collection__header__name"
+                  data-testid="account-collection-name"
                 >
-                  {collectiblesToShow.length}
+                  {collection.name}
                 </div>
-                {isCollapsed ? <Icon.ChevronDown /> : <Icon.ChevronUp />}
-              </div>
-            </button>
-            {!isCollapsed && (
-              <div
-                className="AccountCollectibles__collection__grid"
-                data-testid="account-collection-grid"
-              >
-                {collectiblesToShow.map((item) => (
+                <div className="AccountCollectibles__collection__header__right">
                   <div
-                    className="AccountCollectibles__collection__grid__item"
-                    onClick={() =>
-                      handleOpenCollectible({
-                        collectionAddress: collection.address,
-                        tokenId: item.tokenId,
-                      })
-                    }
-                    key={item.tokenId}
+                    className="AccountCollectibles__collection__header__count"
+                    data-testid="account-collection-count"
                   >
-                    <CollectibleInfoImage
-                      image={item.metadata?.image}
-                      name={item.tokenId}
-                    />
+                    {collectiblesToShow.length}
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
-        );
-      })}
+                  {isCollapsed ? <Icon.ChevronDown /> : <Icon.ChevronUp />}
+                </div>
+              </button>
+              {!isCollapsed && (
+                <div
+                  className="AccountCollectibles__collection__grid"
+                  data-testid="account-collection-grid"
+                >
+                  {collectiblesToShow.map((item) => (
+                    <div
+                      className="AccountCollectibles__collection__grid__item"
+                      onClick={() =>
+                        handleOpenCollectible({
+                          collectionAddress: collection.address,
+                          tokenId: item.tokenId,
+                        })
+                      }
+                      key={item.tokenId}
+                    >
+                      <CollectibleInfoImage
+                        image={item.metadata?.image}
+                        name={item.tokenId}
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
 
       {/* Rendered outside the map so it survives the close animation. */}
       <SlideupModal
@@ -241,12 +246,8 @@ const CollectionsList = ({
  * hidden, so counting a collection as visible on `collection && !error` alone
  * left the tab blank -- no grid and no empty state -- once the last one was
  * hidden.
- *
- * Exported because Home decides whether this tab's Add action goes inline or
- * stays in the floating pill, and an inline one needs the empty state below to
- * host it, so that decision has to read "empty" exactly the way this tab does.
  */
-export const hasVisibleCollections = (
+const hasVisibleCollections = (
   collections: Collection[],
   isCollectibleHidden: (collectionAddress: string, tokenId: string) => boolean,
 ) =>
@@ -261,13 +262,17 @@ export const hasVisibleCollections = (
 
 interface AccountCollectiblesProps {
   collections: Collection[];
-  hasInlineCta: boolean;
   /**
    * The collectibles request has not resolved yet. Distinct from having none:
    * `collections` is empty in both cases, and rendering the empty state here
    * would tell the account it owns nothing while the answer is still in flight.
    */
   isLoading: boolean;
+  /**
+   * The data failed to load, so an empty `collections` is unknown rather than
+   * empty: the empty state is skipped and only the Add action is offered.
+   */
+  hasError?: boolean;
   refreshHiddenCollectibles: () => Promise<void>;
   isCollectibleHidden: (collectionAddress: string, tokenId: string) => boolean;
   onClickCollectible?: (selectedCollectible: SelectedCollectible) => void;
@@ -275,8 +280,8 @@ interface AccountCollectiblesProps {
 
 export const AccountCollectibles = ({
   collections,
-  hasInlineCta,
   isLoading,
+  hasError = false,
   refreshHiddenCollectibles,
   isCollectibleHidden,
 }: AccountCollectiblesProps) => {
@@ -301,43 +306,64 @@ export const AccountCollectibles = ({
     );
   }
 
+  const addCollectibleButton = (
+    <Button
+      type="button"
+      variant="secondary"
+      size="lg"
+      isRounded
+      onClick={() => navigateTo(ROUTES.addCollectibles, navigate)}
+      data-testid="add-collectible-empty-btn"
+    >
+      {t("Add Collectible")}
+    </Button>
+  );
+
+  if (!hasValidCollections && hasError) {
+    return (
+      <div
+        className="AccountCollectibles AccountCollectibles--error"
+        data-testid="account-collectibles"
+      >
+        {addCollectibleButton}
+      </div>
+    );
+  }
+
   return (
-    <div className="AccountCollectibles" data-testid="account-collectibles">
+    <div
+      className={classnames("AccountCollectibles", {
+        "AccountCollectibles--empty": !hasValidCollections,
+      })}
+      data-testid="account-collectibles"
+    >
       {hasValidCollections ? (
-        <CollectionsList
-          collections={collections}
-          isCollectibleHidden={isCollectibleHidden}
-          onCloseCollectible={refreshHiddenCollectibles}
-        />
+        <>
+          <CollectionsList
+            collections={collections}
+            isCollectibleHidden={isCollectibleHidden}
+            onCloseCollectible={refreshHiddenCollectibles}
+          />
+          {/* Ends the grid and scrolls with it. Holding a collectible needs no
+              funded account, so this follows an unfunded Tokens tab too. */}
+          <InlineAddButton
+            label={t("Add collectible")}
+            route={ROUTES.addCollectibles}
+            data-testid="add-collectible-btn"
+          />
+        </>
       ) : (
-        <div className="AccountCollectibles__empty">
-          <div className="AccountCollectibles__empty__badge">
-            <Icon.Image01 />
-          </div>
-          <div className="AccountCollectibles__empty__title">
-            {t("No collectibles yet")}
-          </div>
-          <div className="AccountCollectibles__empty__subtitle">
-            {t("Collectibles you own will appear here.")}
-          </div>
-          {/* Set while the Tokens tab is showing its own unfunded empty state,
-              so that both tabs offer the same kind of button. The pill stands
-              down on this tab while it does. */}
-          {hasInlineCta && (
-            <div className="AccountCollectibles__empty__cta">
-              <Button
-                type="button"
-                variant="secondary"
-                size="lg"
-                isRounded
-                onClick={() => navigateTo(ROUTES.addCollectibles, navigate)}
-                data-testid="add-collectible-inline-btn"
-              >
-                {t("Add collectible")}
-              </Button>
-            </div>
-          )}
-        </div>
+        // Figma's Empty card (1429:165964), with its own Add Collectible
+        // button funded or not: with nothing in the grid there is no inline
+        // Add collectible button to fall back on.
+        <HomeEmptyState
+          title={t("Collect your first NFT")}
+          description={t("Collectibles you own will appear here.")}
+          isWide
+          data-testid="account-collectibles-empty"
+        >
+          {addCollectibleButton}
+        </HomeEmptyState>
       )}
     </div>
   );

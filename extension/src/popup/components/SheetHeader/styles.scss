@@ -28,13 +28,15 @@ $close-size: 32px;
     }
 
     .SheetHeader__close,
-    .SheetHeader__leading {
+    .SheetHeader__leading,
+    .SheetHeader__trailing {
       position: absolute;
       top: 50%;
       transform: translateY(-50%);
     }
 
-    .SheetHeader__close {
+    .SheetHeader__close,
+    .SheetHeader__trailing {
       right: 0;
     }
 
@@ -68,7 +70,8 @@ $close-size: 32px;
     justify-content: space-between;
   }
 
-  &__leading {
+  &__leading,
+  &__trailing {
     display: flex;
     align-items: center;
   }

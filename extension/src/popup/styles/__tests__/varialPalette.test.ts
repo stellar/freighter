@@ -115,6 +115,17 @@ const ALLOWED_RAW_COLORS: Record<string, string[]> = {
     "rgba(255, 255, 255, 0.3)",
     "rgba(255, 255, 255, 0.6)",
   ],
+  // Floating tab bar: the pill's translucent fills and Figma's selection layer
+  // (3514:103394), the same raw values mobile's FloatingTabBar ships. No SDS
+  // token is translucent, so they can't come from the palette.
+  "popup/components/TabBar/styles.scss": [
+    "rgba(255, 255, 255, 0.86)",
+    "rgba(33, 33, 33, 0.83)",
+    "rgba(153, 153, 153, 0.15)",
+  ],
+  // Home's empty card: Figma's Empty (1429:165964) fills the light card with
+  // this raw hex rather than a token, as mobile's EmptyState does.
+  "popup/components/account/HomeEmptyState/styles.scss": ["#f5f7f9"],
   // Trending card over its artwork: fade and tag text from Figma 1123-116809,
   // fixed so they read on the image in both themes.
   "popup/views/Discover/components/TrendingCarousel/styles.scss": [

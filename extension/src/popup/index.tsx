@@ -6,6 +6,8 @@ import { followSystemColorScheme } from "popup/helpers/systemTheme";
 
 // Import global CSS from Stellar Design System
 import "@stellar/design-system/build/styles.min.css";
+// Inter, which SDS names as its font but doesn't ship
+import "./styles/fonts.scss";
 // Varial palette override — must come after the SDS stylesheet
 import "./styles/varialPalette.scss";
 import "./styles/vendor/tailwind.css";

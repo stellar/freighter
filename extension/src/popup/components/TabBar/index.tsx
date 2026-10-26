@@ -6,6 +6,8 @@ import { Icon } from "@stellar/design-system";
 import { ROUTES } from "popup/constants/routes";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { emitMetric } from "helpers/metrics";
+import HomeFilledIcon from "popup/assets/tab-home-filled.svg?react";
+import CompassFilledIcon from "popup/assets/tab-compass-03-filled.svg?react";
 
 import "./styles.scss";
 
@@ -16,9 +18,17 @@ interface Tab {
   route: ROUTES;
   label: string;
   icon: React.ReactNode;
+  /** Drawn instead of `icon` while the tab is active. */
+  activeIcon?: React.ReactNode;
   testId: string;
 }
 
+/**
+ * The bottom tab bar: a pill floating over the content, with a capsule behind
+ * the active tab (Figma's Extension nav, 3514:103394; mobile's FloatingTabBar).
+ * Activity is a stroked clock and Home a filled house either way; Discover's
+ * compass fills in while it is active.
+ */
 export const TabBar = () => {
   const { t } = useTranslation();
   const { pathname } = useLocation();
@@ -27,7 +37,7 @@ export const TabBar = () => {
     {
       name: "history",
       route: ROUTES.accountHistory,
-      label: t("History"),
+      label: t("Activity"),
       icon: <Icon.ClockRewind />,
       // Reused from the header nav button this replaces, so the ~12 specs that
       // click it keep working and keep their meaning.
@@ -37,7 +47,7 @@ export const TabBar = () => {
       name: "home",
       route: ROUTES.account,
       label: t("Home"),
-      icon: <Icon.Home02 />,
+      icon: <HomeFilledIcon />,
       testId: "nav-link-account",
     },
     {
@@ -45,6 +55,7 @@ export const TabBar = () => {
       route: ROUTES.discover,
       label: t("Discover"),
       icon: <Icon.Compass03 />,
+      activeIcon: <CompassFilledIcon />,
       testId: "account-header-discover-button",
     },
   ];
@@ -52,7 +63,7 @@ export const TabBar = () => {
   return (
     <nav className="TabBar" data-testid="tab-bar">
       <div className="TabBar__inset">
-        {tabs.map(({ name, route, label, icon, testId }) => {
+        {tabs.map(({ name, route, label, icon, activeIcon, testId }) => {
           const isActive = pathname === route;
 
           return (
@@ -84,7 +95,7 @@ export const TabBar = () => {
                 });
               }}
             >
-              {icon}
+              {isActive && activeIcon ? activeIcon : icon}
             </NavLink>
           );
         })}

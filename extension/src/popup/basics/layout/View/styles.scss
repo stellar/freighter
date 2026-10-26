@@ -6,6 +6,9 @@
   --View-footer-height: #{pxToRem(80px)};
   --View-footer-padding-bottom: 1.5rem;
   --View-footer-gap: 1rem;
+  // How far the content inset starts below its top edge, on top of its own
+  // padding: the header's height when the header floats over it.
+  --View-inset-top-offset: 0px;
 
   position: relative;
   width: 100%;
@@ -26,6 +29,48 @@
     min-height: var(--View-header-height);
     flex-shrink: 0;
     flex-grow: 0;
+
+    // Figma's Top (3705-77862; mobile's HeaderFade): the page color runs solid
+    // to 80.714% of the header and is clear by 93.214%, so content scrolling up
+    // under it fades out.
+    @mixin header-fade {
+      z-index: var(--z-index--app-header);
+      background: linear-gradient(
+        to bottom,
+        var(--sds-clr-base-00) 80.714%,
+        transparent 93.214%
+      );
+    }
+
+    // Home's top row stays pinned while the balance, the tiles and the lists
+    // scroll up under it. Sticky against the document, which is Home's
+    // scrollport: `.View--scrollable` clips with `overflow: clip`, which unlike
+    // `hidden` does not make it a scroll container that would hold the row in
+    // place.
+    &--account {
+      @include header-fade;
+      position: sticky;
+      top: 0;
+      min-height: 0;
+    }
+
+    // A banner is opaque, so with one the header stays solid instead of
+    // letting content show through under it. A class rather than `:has()`,
+    // for the same Firefox floor noted below.
+    &--solid {
+      background: var(--sds-clr-base-00);
+    }
+
+    // History and Discover scroll inside their inset, so their header floats
+    // over the top of it instead, and the inset pads its content down by the
+    // header's height (`--View-inset-top-offset`) so nothing moves at rest.
+    &--floating {
+      @include header-fade;
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+    }
 
     &__logo {
       width: auto;
@@ -84,7 +129,9 @@
       flex: 1;
       width: 100%;
       overflow: auto;
-      padding-top: var(--View-inset-padding-top);
+      padding-top: calc(
+        var(--View-inset-padding-top) + var(--View-inset-top-offset)
+      );
       padding-bottom: 1.5rem;
 
       &__footer {
@@ -183,14 +230,23 @@
     }
   }
 
+  // Both keep the floating header's offset: "no padding" means none of the
+  // inset's own.
   &__inset--no-top-padding {
-    padding-top: 0 !important;
+    padding-top: var(--View-inset-top-offset) !important;
   }
 
   &__inset--top-input {
     // this is a variant of no-top-padding
     // it provides a little room for a top input's focus glow
-    padding-top: 4px !important;
+    padding-top: calc(4px + var(--View-inset-top-offset)) !important;
+  }
+
+  // The floating header and View__content are siblings, header first, so a
+  // sibling selector carries the offset down to the inset. Not `:has()`: the
+  // MV2 manifest still allows Firefox from 48, which lacks it.
+  &__header--floating ~ &__content {
+    --View-inset-top-offset: var(--View-header-height);
   }
 
   &__inset--no-bottom-padding {
@@ -234,9 +290,14 @@
   // note in global.scss. The floating sheet is not one of them, by design: it
   // covers the bar.
   &--has-tab-bar {
-    --app--bottom-offset: var(--tab-bar--height);
-    // Named once so the modifier override below cannot drift from the base rule.
-    --view--tab-bar-clearance: calc(var(--tab-bar--height) + #{pxToRem(24px)});
+    --app--bottom-offset: calc(
+      var(--tab-bar--height) + var(--tab-bar--bottom-gap)
+    );
+    // Named once so the modifier override below cannot drift from the base
+    // rule. Content ends 16px above the pill, as on mobile.
+    --view--tab-bar-clearance: calc(
+      var(--tab-bar--height) + var(--tab-bar--bottom-gap) + #{pxToRem(16px)}
+    );
 
     // Direct child only. A descendant selector also matched the insets inside
     // anything rendered *within* the content -- notably the sheets, whose own
@@ -249,7 +310,7 @@
     // modifier it carries. `--no-bottom-padding` is `padding-bottom: 0
     // !important`, which beats the rule above regardless of specificity and
     // dropped the clearance entirely -- History passes it, so its last row sat
-    // under the 60px bar with only 24px of list margin to show for it.
+    // under the bar with only 24px of list margin to show for it.
     //
     // Deliberately not `--no-padding`: Home passes that one and pads its own
     // panes off --app--bottom-offset, so its zero has to keep winning.
@@ -260,6 +321,10 @@
 
   &--scrollable {
     height: auto;
+    // Clips like the base `hidden` but is no scroll container, so Home's
+    // sticky header pins to the document. Browsers without `clip` keep
+    // `hidden`, and the header scrolls away as it used to.
+    overflow: clip;
     // Both floors, deliberately. `100dvh` alone is circular in the popup:
     // Chrome sizes the popup window to the document, so the floor would
     // depend on the viewport, which depends on the content, which depends on

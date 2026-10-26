@@ -5,10 +5,10 @@ import { loginToTestAccount } from "./helpers/login";
 import { stubAccountBalancesV2 } from "./helpers/stubs";
 import { switchNetwork } from "./helpers/network";
 
-// The Tokens tab decides which kind of Add button the Collectibles tab uses, so
-// these cover the Collectibles side following its lead -- including the one case
-// where it cannot. The Tokens side is unchanged from master and is covered in
-// addAsset.test.ts.
+// The Collectibles tab offers one Add action at a time: the button inside its
+// empty state, or the inline Add collectible button that ends a grid with
+// content. Unlike Add token it does not depend on the account being funded.
+// The Tokens side is covered in addAsset.test.ts.
 
 const stubUnfundedBalances = async (page: Page) => {
   await page.route("**/account-balances/**", async (route) => {
@@ -35,7 +35,7 @@ const stubNoCollectibles = async (context: BrowserContext) => {
   });
 };
 
-test("Collectibles empty state carries the CTA while Tokens is showing its own", async ({
+test("Collectibles empty state carries the Add action on an unfunded account", async ({
   page,
   extensionId,
   context,
@@ -53,21 +53,21 @@ test("Collectibles empty state carries the CTA while Tokens is showing its own",
     timeout: 30000,
   });
 
-  // Tokens is untouched: its empty state carries the funding action itself.
-  await expect(page.getByText("Looking a little empty...")).toBeVisible({
+  // Tokens' empty state carries the funding action itself, and no Add token.
+  await expect(page.getByText("Activate your wallet")).toBeVisible({
     timeout: 20000,
   });
   await expect(page.getByTestId("add-token-btn")).toHaveCount(0);
 
   await page.getByTestId("account-tab-collectibles").click();
-  await expect(page.getByText("No collectibles yet")).toBeVisible({
+  await expect(page.getByText("Collect your first NFT")).toBeVisible({
     timeout: 20000,
   });
 
-  // Same style of button as the Tokens tab, so no pill here either.
-  const inlineCta = page.getByTestId("add-collectible-inline-btn");
+  // The empty state's own button, and no inline one: there is no grid to end.
+  const inlineCta = page.getByTestId("add-collectible-empty-btn");
   await expect(inlineCta).toBeVisible();
-  await expect(inlineCta).toHaveText("Add collectible");
+  await expect(inlineCta).toHaveText("Add Collectible");
   await expect(page.getByTestId("add-collectible-btn")).toHaveCount(0);
 
   await inlineCta.click();
@@ -76,12 +76,12 @@ test("Collectibles empty state carries the CTA while Tokens is showing its own",
   );
 });
 
-test("Collectibles shows the pill once Tokens does", async ({
+test("Collectibles empty state carries the Add action on a funded account too", async ({
   page,
   extensionId,
   context,
 }) => {
-  // Funded by default, so the Tokens tab is on the pill.
+  // Funded by default, so the token list ends with Add token.
   await loginToTestAccount({
     page,
     extensionId,
@@ -98,18 +98,18 @@ test("Collectibles shows the pill once Tokens does", async ({
   });
 
   await page.getByTestId("account-tab-collectibles").click();
-  await expect(page.getByText("No collectibles yet")).toBeVisible({
+  await expect(page.getByText("Collect your first NFT")).toBeVisible({
     timeout: 20000,
   });
 
-  await expect(page.getByTestId("add-collectible-btn")).toBeVisible();
-  await expect(page.getByTestId("add-collectible-inline-btn")).toHaveCount(0);
+  await expect(page.getByTestId("add-collectible-empty-btn")).toBeVisible();
+  await expect(page.getByTestId("add-collectible-btn")).toHaveCount(0);
 });
 
 // An unfunded account can still hold collectibles. That tab then has no empty
-// state to host a CTA, so it keeps the pill rather than losing its only way to
-// add one -- the Tokens tab meanwhile still carries its own inline action.
-test("Collectibles keeps the pill when it has collectibles to show", async ({
+// state, so its grid ends with the inline Add collectible button -- the Tokens
+// tab meanwhile still carries its own funding action.
+test("Collectibles ends its grid with Add collectible when it has collectibles to show", async ({
   page,
   extensionId,
   context,
@@ -125,7 +125,7 @@ test("Collectibles keeps the pill when it has collectibles to show", async ({
   await expect(page.getByTestId("account-view")).toBeVisible({
     timeout: 30000,
   });
-  await expect(page.getByText("Looking a little empty...")).toBeVisible({
+  await expect(page.getByText("Activate your wallet")).toBeVisible({
     timeout: 20000,
   });
 
@@ -133,7 +133,7 @@ test("Collectibles keeps the pill when it has collectibles to show", async ({
   await expect(page.getByTestId("add-collectible-btn")).toBeVisible({
     timeout: 20000,
   });
-  await expect(page.getByTestId("add-collectible-inline-btn")).toHaveCount(0);
+  await expect(page.getByTestId("add-collectible-empty-btn")).toHaveCount(0);
 });
 
 // The collectibles request resolves after balances, and until it does an empty
@@ -197,15 +197,16 @@ test("Collectibles shows a spinner until the request resolves", async ({
   await expect(page.getByTestId("account-collectibles-loader")).toBeVisible({
     timeout: 20000,
   });
-  await expect(page.getByText("No collectibles yet")).toHaveCount(0);
-  await expect(page.getByTestId("add-collectible-inline-btn")).toHaveCount(0);
+  await expect(page.getByText("Collect your first NFT")).toHaveCount(0);
+  await expect(page.getByTestId("add-collectible-empty-btn")).toHaveCount(0);
   await expect(page.getByTestId("add-collectible-btn")).toHaveCount(0);
 
-  // Once it resolves this tab has collectibles to show, so the pill is the action
-  // -- and it only appears at all because their arrival is dispatched.
+  // Once it resolves this tab has collectibles to show, so the grid's inline
+  // button is the action -- and it only appears at all because their arrival
+  // is dispatched.
   await expect(page.getByTestId("add-collectible-btn")).toBeVisible({
     timeout: 20000,
   });
   await expect(page.getByTestId("account-collectibles-loader")).toHaveCount(0);
-  await expect(page.getByTestId("add-collectible-inline-btn")).toHaveCount(0);
+  await expect(page.getByTestId("add-collectible-empty-btn")).toHaveCount(0);
 });

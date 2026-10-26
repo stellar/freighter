@@ -48,6 +48,11 @@ $fade-height: 24px;
 
   &__body {
     padding: 0 pxToRem($padding);
+    // Its own stacking context, so z-indexes inside the body stay below the
+    // pinned rows (z-index 1). SDS's CopyText wraps its value in a Floater at
+    // z-index 1 (2 when active), which otherwise painted copyable values over
+    // the header as they scrolled up under it.
+    isolation: isolate;
   }
 
   // Without a pinned row the body takes the card padding on that edge itself.

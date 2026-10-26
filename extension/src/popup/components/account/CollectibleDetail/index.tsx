@@ -5,9 +5,13 @@ import { Button, Icon, Notification } from "@stellar/design-system";
 import { useNavigate } from "react-router-dom";
 
 import { RequestState } from "constants/request";
-import { SubviewHeader } from "popup/components/SubviewHeader";
+import { SheetLayout } from "popup/components/SheetLayout";
+import {
+  SheetHeader,
+  SheetHeaderAction,
+  SheetHeaderLayout,
+} from "popup/components/SheetHeader";
 import { Loading } from "popup/components/Loading";
-import { View } from "popup/basics/layout/View";
 import { showToast } from "popup/basics/shadcn/Toast";
 import { navigateTo, openTab } from "popup/helpers/navigate";
 import { getStellarExpertUrl } from "popup/helpers/account";
@@ -147,74 +151,116 @@ export const CollectibleDetail = ({
 
   return (
     <div className="CollectibleDetail" data-testid="CollectibleDetail">
-      <SubviewHeader
-        title={name}
-        customBackAction={handleItemClose}
-        customBackIcon={<Icon.X />}
-        rightButton={
-          <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
-            <div
-              className="CollectibleDetail__header__right-button"
-              data-testid="CollectibleDetail__header__right-button"
-            >
-              <PopoverTrigger
-                asChild
-                className="CollectibleDetail__header__right-button__trigger"
-                onClick={() => setIsPopoverOpen(true)}
+      <SheetLayout
+        header={
+          // Figma's header (1481:20211): the X on the left, the title
+          // centered, the menu on the right.
+          <SheetHeader
+            layout={SheetHeaderLayout.Centered}
+            title={name}
+            leading={
+              <SheetHeaderAction
+                aria-label={t("Close")}
+                onClick={handleItemClose}
+                data-testid="CollectibleDetail__close"
               >
-                <Icon.DotsHorizontal className="CollectibleDetail__header__right-button__icon" />
-              </PopoverTrigger>
-              <PopoverContent
-                align="end"
-                className="CollectibleDetail__header__right-button__popover-content"
-              >
-                <button
-                  type="button"
-                  className="CollectibleDetail__header__right-button__popover-content__item"
-                  onClick={handleRefreshMetadata}
+                <Icon.X />
+              </SheetHeaderAction>
+            }
+            trailing={
+              <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
+                <PopoverTrigger asChild>
+                  <SheetHeaderAction
+                    aria-label={t("More options")}
+                    data-testid="CollectibleDetail__header__right-button"
+                  >
+                    <Icon.DotsVertical />
+                  </SheetHeaderAction>
+                </PopoverTrigger>
+                <PopoverContent
+                  align="end"
+                  className="CollectibleDetail__header__right-button__popover-content"
                 >
-                  <Icon.RefreshCcw01 className="CollectibleDetail__header__right-button__popover-content__item__icon" />
-                  <div className="CollectibleDetail__header__right-button__popover-content__item__label">
-                    {t("Refresh metadata")}
-                  </div>
-                </button>
-                <button
-                  type="button"
-                  className="CollectibleDetail__header__right-button__popover-content__item"
-                  onClick={() => {
-                    openTab(
-                      `${stellarExpertUrl}/contract/${collectible.collectionAddress}`,
-                    );
-                  }}
-                >
-                  <Icon.LinkExternal01 className="CollectibleDetail__header__right-button__popover-content__item__icon" />
-                  <div className="CollectibleDetail__header__right-button__popover-content__item__label">
-                    {t("View on stellar.expert")}
-                  </div>
-                </button>
-                <button
-                  type="button"
-                  className="CollectibleDetail__header__right-button__popover-content__item"
-                  onClick={handleToggleCollectibleVisibility}
-                >
-                  {isHidden ? (
-                    <Icon.Eye className="CollectibleDetail__header__right-button__popover-content__item__icon" />
-                  ) : (
-                    <Icon.EyeOff className="CollectibleDetail__header__right-button__popover-content__item__icon" />
-                  )}
-                  <div className="CollectibleDetail__header__right-button__popover-content__item__label">
-                    {isHidden ? t("Show collectible") : t("Hide collectible")}
-                  </div>
-                </button>
-              </PopoverContent>
-            </div>
-          </Popover>
+                  <button
+                    type="button"
+                    className="CollectibleDetail__header__right-button__popover-content__item"
+                    onClick={handleRefreshMetadata}
+                  >
+                    <Icon.RefreshCcw01 className="CollectibleDetail__header__right-button__popover-content__item__icon" />
+                    <div className="CollectibleDetail__header__right-button__popover-content__item__label">
+                      {t("Refresh metadata")}
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    className="CollectibleDetail__header__right-button__popover-content__item"
+                    onClick={() => {
+                      openTab(
+                        `${stellarExpertUrl}/contract/${collectible.collectionAddress}`,
+                      );
+                    }}
+                  >
+                    <Icon.LinkExternal01 className="CollectibleDetail__header__right-button__popover-content__item__icon" />
+                    <div className="CollectibleDetail__header__right-button__popover-content__item__label">
+                      {t("View on stellar.expert")}
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    className="CollectibleDetail__header__right-button__popover-content__item"
+                    onClick={handleToggleCollectibleVisibility}
+                  >
+                    {isHidden ? (
+                      <Icon.Eye className="CollectibleDetail__header__right-button__popover-content__item__icon" />
+                    ) : (
+                      <Icon.EyeOff className="CollectibleDetail__header__right-button__popover-content__item__icon" />
+                    )}
+                    <div className="CollectibleDetail__header__right-button__popover-content__item__label">
+                      {isHidden ? t("Show collectible") : t("Hide collectible")}
+                    </div>
+                  </button>
+                </PopoverContent>
+              </Popover>
+            }
+          />
         }
-      />
-      {state.state === RequestState.LOADING ? (
-        <Loading />
-      ) : (
-        <View.Content>
+        footer={
+          <div className="CollectibleDetail__footer__buttons">
+            {collectible.metadata?.externalUrl && (
+              <Button
+                data-testid="CollectibleDetail__footer__buttons__view"
+                isRounded
+                isFullWidth
+                variant="secondary"
+                size="lg"
+                iconPosition="right"
+                icon={
+                  <Icon.LinkExternal01 className="CollectibleDetail__footer__buttons__icon" />
+                }
+                onClick={() => {
+                  openTab(collectible.metadata?.externalUrl || "");
+                }}
+              >
+                {t("View")}
+              </Button>
+            )}
+
+            <Button
+              data-testid="CollectibleDetail__footer__buttons__send"
+              isFullWidth
+              isRounded
+              variant="secondary"
+              size="lg"
+              onClick={handleSendCollectible}
+            >
+              {t("Send")}
+            </Button>
+          </div>
+        }
+      >
+        {state.state === RequestState.LOADING ? (
+          <Loading />
+        ) : (
           <div className="CollectibleDetail__content">
             <CollectibleInfo
               name={name}
@@ -269,41 +315,8 @@ export const CollectibleDetail = ({
               </CollectibleInfoBlock>
             )}
           </div>
-        </View.Content>
-      )}
-      <View.Footer>
-        <div className="CollectibleDetail__footer__buttons">
-          {collectible.metadata?.externalUrl && (
-            <Button
-              data-testid="CollectibleDetail__footer__buttons__view"
-              isRounded
-              isFullWidth
-              variant="secondary"
-              size="lg"
-              iconPosition="right"
-              icon={
-                <Icon.LinkExternal01 className="CollectibleDetail__footer__buttons__icon" />
-              }
-              onClick={() => {
-                openTab(collectible.metadata?.externalUrl || "");
-              }}
-            >
-              {t("View")}
-            </Button>
-          )}
-
-          <Button
-            data-testid="CollectibleDetail__footer__buttons__send"
-            isFullWidth
-            isRounded
-            variant="secondary"
-            size="lg"
-            onClick={handleSendCollectible}
-          >
-            {t("Send")}
-          </Button>
-        </div>
-      </View.Footer>
+        )}
+      </SheetLayout>
     </div>
   );
 };

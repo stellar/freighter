@@ -24,7 +24,7 @@ export const ExpandedDapps = ({
 
   return (
     <>
-      <SubviewHeader title={t("dApps")} customBackAction={onBack} />
+      <SubviewHeader title={t("dApps")} customBackAction={onBack} isFloating />
       <View.Content hasNoTopPadding>
         <div className="ExpandedDapps__list">
           {items.map((protocol) => (

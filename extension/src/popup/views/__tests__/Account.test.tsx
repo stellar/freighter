@@ -389,6 +389,91 @@ describe("Account view", () => {
       screen.queryAllByTestId("account-view-user-notification"),
     ).toHaveLength(0);
   });
+
+  it("pins only the top row, so the balance and tabs scroll under its fade", async () => {
+    render(
+      <Wrapper
+        routes={[ROUTES.account]}
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
+            publicKey: "G1",
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: TESTNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+          },
+        }}
+      >
+        <Account />
+      </Wrapper>,
+    );
+
+    await waitFor(() => screen.getByTestId("account-header"));
+    const pinned = screen
+      .getByTestId("account-chip")
+      .closest(".View__header--account");
+
+    expect(pinned).not.toBeNull();
+    expect(pinned).toContainElement(
+      screen.getByTestId("account-header-qr-button"),
+    );
+    expect(pinned).not.toContainElement(screen.getByTestId("account-header"));
+    expect(pinned).not.toContainElement(
+      screen.getByTestId("account-tab-tokens"),
+    );
+  });
+  it("keeps the pinned header solid only while a maintenance banner shows", async () => {
+    const renderHome = (isBannerOn: boolean) =>
+      render(
+        <Wrapper
+          routes={[ROUTES.account]}
+          state={{
+            auth: {
+              error: null,
+              applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
+              publicKey: "G1",
+              allAccounts: mockAccounts,
+            },
+            settings: {
+              networkDetails: TESTNET_NETWORK_DETAILS,
+              networksList: DEFAULT_NETWORKS,
+            },
+            remoteConfig: {
+              isInitialized: true,
+              use_token_prices_v2: true,
+              use_balances_v2: true,
+              use_token_price_history: true,
+              maintenance_screen: { enabled: false, payload: undefined },
+              maintenance_banner: {
+                enabled: isBannerOn,
+                payload: {
+                  theme: "warning",
+                  banner: { title: { en: "Services degraded" } },
+                },
+              },
+            },
+          }}
+        >
+          <Account />
+        </Wrapper>,
+      );
+    const pinnedHeader = () =>
+      screen.getByTestId("account-chip").closest(".View__header--account");
+
+    const { unmount } = renderHome(true);
+    await waitFor(() => screen.getByTestId("maintenance-banner"));
+    // A class, not `:has()`: Firefox before 121 drops `:has()` rules.
+    expect(pinnedHeader()).toHaveClass("View__header--solid");
+    unmount();
+
+    renderHome(false);
+    await waitFor(() => screen.getByTestId("account-header"));
+    expect(pinnedHeader()).not.toHaveClass("View__header--solid");
+  });
+
   it("should show user notification if user notification is enabled", async () => {
     jest.spyOn(ApiInternal, "loadBackendSettings").mockImplementationOnce(() =>
       Promise.resolve({
@@ -1642,16 +1727,18 @@ describe("Account view", () => {
   // that decision lives in this view rather than in the components it feeds, so
   // it has to be pinned here: the component suites take it as a literal prop and
   // cannot catch it drifting.
-  describe("Add CTA placement across the two tabs", () => {
+  describe("Add actions across the two tabs", () => {
     const renderWithHoldings = async ({
       collections,
       isFunded,
       hasLoadedCollectibles = true,
+      hasCollectiblesError = false,
       requestState = RequestState.SUCCESS,
     }: {
       collections: any[];
       isFunded: boolean;
       hasLoadedCollectibles?: boolean;
+      hasCollectiblesError?: boolean;
       requestState?: RequestState;
     }) => {
       const accountDataSpy = jest
@@ -1677,6 +1764,7 @@ describe("Account view", () => {
                     isScanAppended: true,
                     collectibles: { collections },
                     hasLoadedCollectibles,
+                    hasCollectiblesError,
                     // `isFunded` is the only part of this the CTA decision
                     // reads, and the list is post-normalisation here (this
                     // mocks the hook, not the network), so an empty array is
@@ -1732,54 +1820,63 @@ describe("Account view", () => {
           screen.getAllByTestId("account-collectibles").length,
         ).toBeGreaterThan(0);
       });
+      // Both panes stay mounted for the 300ms slide, and the Tokens pane now
+      // carries its own Add token button, so wait for it to leave.
+      await waitFor(() => {
+        expect(screen.queryByTestId("account-assets")).not.toBeInTheDocument();
+        expect(screen.queryByTestId("not-funded")).not.toBeInTheDocument();
+      });
     };
 
-    const pillTestIds = () =>
+    // The inline buttons that end each list (as opposed to the button inside
+    // the Collectibles empty state, `add-collectible-empty-btn`).
+    const listEndButtonTestIds = () =>
       ["add-token-btn", "add-collectible-btn"].filter((id) =>
         screen.queryByTestId(id),
       );
 
-    it("gives Collectibles an inline CTA while Tokens is showing its empty state", async () => {
+    it("gives Collectibles its empty-state button while Tokens is unfunded", async () => {
       const spy = await renderWithHoldings({
         collections: [],
         isFunded: false,
       });
 
-      // Tokens is untouched: its empty state carries "Add XLM" and no pill.
+      // Tokens' empty state carries "Add XLM", and no Add token: adding one
+      // needs a trustline, which needs XLM.
       expect(
         screen.getByTestId("not-funded").querySelectorAll("button"),
       ).toHaveLength(1);
-      expect(pillTestIds()).toEqual([]);
+      expect(listEndButtonTestIds()).toEqual([]);
 
-      // Collectibles follows suit, so both tabs show the same button style.
       await switchToCollectibles();
       spy.mockRestore();
 
       expect(
-        screen.getByTestId("add-collectible-inline-btn"),
+        screen.getByTestId("add-collectible-empty-btn"),
       ).toBeInTheDocument();
-      expect(pillTestIds()).toEqual([]);
+      expect(listEndButtonTestIds()).toEqual([]);
     });
 
-    it("moves Collectibles to the pill once Tokens shows one", async () => {
+    // As on mobile, the empty state carries its button funded or not: with
+    // nothing in the grid there is no list for an Add button to end.
+    it("ends a funded token list with Add token, and keeps the empty-state button on Collectibles", async () => {
       const spy = await renderWithHoldings({ collections: [], isFunded: true });
 
       expect(screen.queryByTestId("not-funded")).not.toBeInTheDocument();
-      expect(pillTestIds()).toEqual(["add-token-btn"]);
+      expect(listEndButtonTestIds()).toEqual(["add-token-btn"]);
 
       await switchToCollectibles();
       spy.mockRestore();
 
       expect(
-        screen.queryByTestId("add-collectible-inline-btn"),
-      ).not.toBeInTheDocument();
-      expect(pillTestIds()).toEqual(["add-collectible-btn"]);
+        screen.getByTestId("add-collectible-empty-btn"),
+      ).toBeInTheDocument();
+      expect(listEndButtonTestIds()).toEqual([]);
     });
 
-    // Collectibles can only host an inline CTA inside its empty state. With
-    // collectibles on screen there is no empty state, so it keeps the pill even
-    // though Tokens is inline -- otherwise the tab would have no way to add one.
-    it("keeps the Collectibles pill when that tab has collectibles to show", async () => {
+    // Holding a collectible needs no funded account, so a grid with content
+    // ends with Add collectible even while Tokens is unfunded.
+    it("ends a populated grid with Add collectible, funded or not", async () => {
       const spy = await renderWithHoldings({
         collections: mockCollectibles,
         isFunded: false,
@@ -1794,16 +1891,14 @@ describe("Account view", () => {
       spy.mockRestore();
 
       expect(
-        screen.queryByTestId("add-collectible-inline-btn"),
+        screen.queryByTestId("add-collectible-empty-btn"),
       ).not.toBeInTheDocument();
-      expect(pillTestIds()).toEqual(["add-collectible-btn"]);
+      expect(listEndButtonTestIds()).toEqual(["add-collectible-btn"]);
     });
 
     // Hiding the last collectible leaves that tab showing its empty state rather
-    // than a blank pane, so the CTA has to move inline with it. That only works
-    // because Home feeds isCollectibleHidden into the same predicate the pane
-    // switches on; reading "empty" any other way puts the two out of step.
-    it("gives Collectibles the inline CTA when every collectible is hidden", async () => {
+    // than a blank pane, so the Add action moves into it.
+    it("moves the Add action into the empty state when every collectible is hidden", async () => {
       const hidden: Record<string, string> = {};
       mockCollectibles.forEach(({ collection }) => {
         collection!.collectibles.forEach((item: { tokenId: string }) => {
@@ -1824,15 +1919,15 @@ describe("Account view", () => {
 
       // Awaited before restoring: the hidden set arrives from an async fetch.
       await waitFor(() => {
-        expect(screen.getByText("No collectibles yet")).toBeInTheDocument();
+        expect(screen.getByText("Collect your first NFT")).toBeInTheDocument();
       });
       spy.mockRestore();
       hiddenSpy.mockRestore();
 
       expect(
-        screen.getByTestId("add-collectible-inline-btn"),
+        screen.getByTestId("add-collectible-empty-btn"),
       ).toBeInTheDocument();
-      expect(pillTestIds()).toEqual([]);
+      expect(listEndButtonTestIds()).toEqual([]);
     });
 
     // The collectibles request resolves after balances, and until it does an empty
@@ -1858,11 +1953,13 @@ describe("Account view", () => {
       expect(
         screen.getByTestId("account-collectibles-loader"),
       ).toBeInTheDocument();
-      expect(screen.queryByText("No collectibles yet")).not.toBeInTheDocument();
       expect(
-        screen.queryByTestId("add-collectible-inline-btn"),
+        screen.queryByText("Collect your first NFT"),
       ).not.toBeInTheDocument();
-      expect(pillTestIds()).toEqual([]);
+      expect(
+        screen.queryByTestId("add-collectible-empty-btn"),
+      ).not.toBeInTheDocument();
+      expect(listEndButtonTestIds()).toEqual([]);
     });
 
     // The grid filters against the hidden map, which is a separate request. If
@@ -1920,9 +2017,31 @@ describe("Account view", () => {
       );
     });
 
-    // A failed balances fetch leaves Tokens with no CTA of either kind, so there
-    // is no style for Collectibles to match and it falls back to the pill.
-    it("falls back to the Collectibles pill when the balances fetch failed", async () => {
+    // The balances can load while the collectibles request alone fails; the
+    // tab still can't claim the account owns none.
+    it("keeps only the Collectibles Add button when only the collectibles fetch failed", async () => {
+      const spy = await renderWithHoldings({
+        collections: [],
+        isFunded: true,
+        hasCollectiblesError: true,
+      });
+
+      expect(listEndButtonTestIds()).toEqual(["add-token-btn"]);
+
+      await switchToCollectibles();
+      spy.mockRestore();
+
+      expect(
+        screen.getByTestId("add-collectible-empty-btn"),
+      ).toBeInTheDocument();
+      expect(
+        screen.queryByText("Collect your first NFT"),
+      ).not.toBeInTheDocument();
+    });
+
+    // After a failed fetch neither tab can claim the account is empty, so
+    // Collectibles keeps only its Add action.
+    it("keeps only the Collectibles Add button when the balances fetch failed", async () => {
       const spy = await renderWithHoldings({
         collections: [],
         isFunded: false,
@@ -1930,7 +2049,7 @@ describe("Account view", () => {
       });
 
       expect(screen.queryByTestId("not-funded")).not.toBeInTheDocument();
-      expect(pillTestIds()).toEqual([]);
+      expect(listEndButtonTestIds()).toEqual([]);
 
       await switchToCollectibles();
       spy.mockRestore();
@@ -1941,9 +2060,12 @@ describe("Account view", () => {
         screen.queryByTestId("account-collectibles-loader"),
       ).not.toBeInTheDocument();
       expect(
-        screen.queryByTestId("add-collectible-inline-btn"),
+        screen.getByTestId("add-collectible-empty-btn"),
+      ).toBeInTheDocument();
+      expect(
+        screen.queryByText("Collect your first NFT"),
       ).not.toBeInTheDocument();
-      expect(pillTestIds()).toEqual(["add-collectible-btn"]);
+      expect(listEndButtonTestIds()).toEqual([]);
     });
   });
 

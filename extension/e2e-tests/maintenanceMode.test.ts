@@ -257,3 +257,33 @@ test("MaintenanceBanner — Close button dismisses the detail modal", async ({
 
   await expect(page.getByTestId("maintenance-banner-modal")).not.toBeVisible();
 });
+
+// The sheet opens from inside Home's pinned header, which is its own stacking
+// layer. Clicking "Done" (rather than the × at the top) checks the sheet is
+// not stuck under the floating tab bar, which would intercept the click.
+test("MaintenanceBanner — Done dismisses the detail modal above the tab bar", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  await loginToTestAccount({ page, extensionId, context });
+
+  await stubMaintenanceBannerVariant(page, {
+    theme: "primary",
+    bannerTitle: "Upcoming outage",
+    modal: {
+      title: "Outage window",
+      body: ["Maintenance starts at 00:00 UTC."],
+    },
+  });
+
+  await page.getByTestId("maintenance-banner").click();
+  await expect(page.getByTestId("maintenance-banner-modal")).toBeVisible();
+
+  await page
+    .getByTestId("maintenance-banner-modal")
+    .getByRole("button", { name: "Done" })
+    .click({ timeout: 5000 });
+
+  await expect(page.getByTestId("maintenance-banner-modal")).not.toBeVisible();
+});

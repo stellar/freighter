@@ -125,7 +125,7 @@ test("View failed transaction", async ({ page, extensionId, context }) => {
     screenshot: "failed-transaction-history-item.png",
   });
   await page.getByText("Transaction failed").click();
-  await expect(page.getByTestId("AppHeaderPageTitle")).toHaveText("History");
+  await expect(page.getByTestId("AppHeaderPageTitle")).toHaveText("Activity");
   await expectPageToHaveScreenshot({
     page,
     screenshot: "failed-transaction.png",
@@ -428,7 +428,7 @@ test("Hide create claimable balance spam", async ({
 
   await loginToTestAccount({ page, extensionId, context, stubOverrides });
   await page.getByTestId("nav-link-account-history").click();
-  await expect(page.getByTestId("AppHeaderPageTitle")).toHaveText("History");
+  await expect(page.getByTestId("AppHeaderPageTitle")).toHaveText("Activity");
   const historyItems = page.getByTestId("history-item");
   await expect(historyItems).toHaveCount(2);
 });

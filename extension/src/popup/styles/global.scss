@@ -27,15 +27,20 @@
   --z-index-modal: 30;
   --z-index-maintenance-screen: 100;
 
-  // Bottom tab bar.
-  --tab-bar--height: 3.75rem;
+  // Bottom tab bar: a 48px pill floating 24px above the window's bottom edge
+  // (Figma's Extension nav, 3514:103394).
+  --tab-bar--height: 3rem;
+  --tab-bar--bottom-gap: 1.5rem;
   --z-index--tab-bar: 15;
+  // Home's top row, pinned over the content that scrolls up under it. Above
+  // the content, below the tab bar and every sheet.
+  --z-index--app-header: 5;
 
   // --app--bottom-offset is the height of whatever persistent bottom chrome the
-  // shell is showing; `.View--has-tab-bar` raises it to the bar height.
+  // shell is showing; `.View--has-tab-bar` raises it to the pill's top edge.
   //
-  // Read it DIRECTLY on the element that needs the clearance -- see
-  // FloatingAddButton, which rides above the bar. Never derive another
+  // Read it DIRECTLY on the element that needs the clearance -- see Home's
+  // panes in views/Account/styles.scss. Never derive another
   // :root-level custom property from it. A custom property whose value contains
   // var() is substituted at computed-value time *on the element where it is
   // declared*, so anything built from it here freezes against the 0rem below

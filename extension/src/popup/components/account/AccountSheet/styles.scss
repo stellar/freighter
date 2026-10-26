@@ -14,16 +14,15 @@
     text-align: center;
     flex-shrink: 0;
 
+    // Figma's Avatar (2709:129284): a 56px marble filling its circle. The
+    // padding and gray backdrop this used to carry framed the old blocky
+    // identicon glyph, and only shrank the marble inside a gray ring.
     &__identicon {
-      width: pxToRem(48px);
-      height: pxToRem(48px);
+      width: pxToRem(56px);
+      height: pxToRem(56px);
       flex-shrink: 0;
-      padding: pxToRem(14px);
       border-radius: 50%;
-      background-color: var(--sds-clr-gray-03);
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      overflow: hidden;
     }
 
     // Name sits directly above the address with no gap between them; the
@@ -151,18 +150,7 @@
       svg {
         width: pxToRem(16px);
         height: pxToRem(16px);
-      }
-
-      // Must target the path, not the svg. SDS ships these through SVGR, so the
-      // path keeps its own `stroke-width="2"` presentation attribute -- which
-      // loses to a rule matching the path, but beats a value inherited from the
-      // svg.
-      //
-      // The value is 3, not 2, because the viewBox is 24x24 while the glyph
-      // renders at 16px: strokes scale by 2/3, so 3 user units draw as 2px.
-      // Same treatment as FloatingAddButton's plus.
-      svg path {
-        stroke-width: 3;
+        @include icon-stroke(16);
       }
     }
 

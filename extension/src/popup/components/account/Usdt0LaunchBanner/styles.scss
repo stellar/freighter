@@ -2,16 +2,16 @@
 
 .Usdt0LaunchBanner {
   position: relative;
+  // Its own stacking context, so the dismiss button's z-index stays inside
+  // the banner instead of lifting it over Home's pinned header as the banner
+  // scrolls under it.
+  isolation: isolate;
   background: #002d19;
   border-radius: pxToRem(12px);
-  // No horizontal offsets: this sits in `AccountHeader__account-info__details`,
-  // which spans the full content column, so the banner stretches to match the
-  // action tiles and tab strip.
-  margin-bottom: pxToRem(8px);
-  // Pulls the banner halfway into the action tiles' 24px bottom padding —
-  // that padding also sets the tiles -> tabs gap when the banner is
-  // dismissed, so it can't be reduced globally.
-  margin-top: pxToRem(-12px);
+  // No margins: this sits in `AccountHeader__account-info`, which spans the
+  // content column and spaces its children 16px apart, so the banner
+  // stretches to match the action tiles and takes the same gap above and
+  // below them as Figma's balance, tiles and tabs.
   display: flex;
   align-items: center;
   justify-content: space-between;

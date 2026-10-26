@@ -1,4 +1,5 @@
 import React, { useCallback, useState } from "react";
+import { createPortal } from "react-dom";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { Button, Icon, Text } from "@stellar/design-system";
@@ -102,46 +103,52 @@ export const MaintenanceBanner: React.FC = () => {
         </Text>
       </div>
 
-      {activeContent.modal && (
-        <SlideupModal
-          isModalOpen={isModalOpen}
-          setIsModalOpen={setIsModalOpen}
-          ariaLabel={activeContent.modal.title}
-        >
-          <SheetLayout data-testid="maintenance-banner-modal">
-            <div className="MaintenanceBanner__modal">
-              <SheetHeader
-                title={activeContent.modal.title}
-                onClose={() => setIsModalOpen(false)}
-                closeTestId="maintenance-banner-close-button"
-              />
-              {activeContent.modal.body.length > 0 && (
-                <div className="MaintenanceBanner__modal-body">
-                  {activeContent.modal.body.map((paragraph, index) => (
-                    <Text
-                      as="div"
-                      size="sm"
-                      key={`${index}-${paragraph.slice(0, 20)}`}
-                      className="MaintenanceBanner__modal-bodyText"
-                    >
-                      {paragraph}
-                    </Text>
-                  ))}
-                </div>
-              )}
-              <Button
-                variant="secondary"
-                size="md"
-                isFullWidth
-                isRounded
-                onClick={() => setIsModalOpen(false)}
-              >
-                {t("Done")}
-              </Button>
-            </div>
-          </SheetLayout>
-        </SlideupModal>
-      )}
+      {/* Portaled out of the banner: it renders inside Home's pinned header,
+          which is its own stacking layer below the floating tab bar, so in
+          place the sheet and its backdrop would sit under the tab bar. Into
+          the app's View, like ManageAssetRows' sheet, for the same cascade. */}
+      {activeContent.modal &&
+        createPortal(
+          <SlideupModal
+            isModalOpen={isModalOpen}
+            setIsModalOpen={setIsModalOpen}
+            ariaLabel={activeContent.modal.title}
+          >
+            <SheetLayout data-testid="maintenance-banner-modal">
+              <div className="MaintenanceBanner__modal">
+                <SheetHeader
+                  title={activeContent.modal.title}
+                  onClose={() => setIsModalOpen(false)}
+                  closeTestId="maintenance-banner-close-button"
+                />
+                {activeContent.modal.body.length > 0 && (
+                  <div className="MaintenanceBanner__modal-body">
+                    {activeContent.modal.body.map((paragraph, index) => (
+                      <Text
+                        as="div"
+                        size="sm"
+                        key={`${index}-${paragraph.slice(0, 20)}`}
+                        className="MaintenanceBanner__modal-bodyText"
+                      >
+                        {paragraph}
+                      </Text>
+                    ))}
+                  </div>
+                )}
+                <Button
+                  variant="secondary"
+                  size="md"
+                  isFullWidth
+                  isRounded
+                  onClick={() => setIsModalOpen(false)}
+                >
+                  {t("Done")}
+                </Button>
+              </div>
+            </SheetLayout>
+          </SlideupModal>,
+          document.getElementById("layout-view") ?? document.body,
+        )}
     </>
   );
 };

@@ -18,10 +18,10 @@
     margin-top: 1.5rem;
   }
 
-  // 12px + BalanceRow's own 12px puts the first row 24px below the pane, level
-  // with the collectibles list. The slider pane adds no vertical padding.
+  // Figma's list pads 8px above its first row, whose own 8px puts the token
+  // text 16px under the tab row. The slider pane adds no vertical padding.
   &__assets-wrapper {
-    padding-top: pxToRem(12px);
+    padding-top: pxToRem(8px);
   }
 
   @keyframes animateNotification {
@@ -47,10 +47,12 @@
 
   // The content inset is disabled for this view (`View.Content hasNoPadding`),
   // so notifications have to bring their own gutter or they run edge to edge.
-  // Set only the sides: `margin-top` is what animateNotification animates.
+  // `margin-top` is what animateNotification animates; the bottom margin
+  // spaces whatever follows.
   &__fetch-fail {
     animation: animateNotification 0.3s ease-in-out;
     margin-top: 1.5rem;
+    margin-bottom: 1.5rem;
     margin-left: var(--account-view-padding-side);
     margin-right: var(--account-view-padding-side);
   }
@@ -71,14 +73,10 @@
 
     &__pane {
       padding: 0 var(--account-view-padding-side);
-      // Reserve room below the last row so the floating add pill (fixed to the
-      // viewport, not absolutely positioned) never comes to rest on top of the
-      // last row at max scroll, where it would permanently swallow its clicks.
-      // This only guarantees the *last* row clears the pill; at intermediate
-      // scroll offsets the pill still overlays whatever row is beneath it,
-      // which is inherent to the floating-pill pattern and bounded by the fact
-      // that any covered row can be scrolled out from under it.
-      padding-bottom: calc(var(--app--bottom-offset) + #{pxToRem(88px)});
+      // Ends the content 16px above the floating tab bar, which is fixed to
+      // the viewport, so the last row and the inline Add button scroll clear
+      // of it.
+      padding-bottom: calc(var(--app--bottom-offset) + #{pxToRem(16px)});
       height: auto;
       overflow: auto;
       position: relative;

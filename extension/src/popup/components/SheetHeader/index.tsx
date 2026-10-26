@@ -9,7 +9,8 @@ import "./styles.scss";
  * - `stacked`: a top row with `leading` on the left and the X on the right,
  *   the title below it.
  * - `centered`: title centered, X (if any) on the right and `leading` (if any,
- *   e.g. a back arrow) on the left.
+ *   e.g. a back arrow) on the left. `trailing` (e.g. a menu) takes the right
+ *   instead of the X.
  */
 export enum SheetHeaderLayout {
   Inline = "inline",
@@ -24,6 +25,9 @@ interface SheetHeaderProps {
   /** Rendered at the start of the stacked layout's top row (e.g. a settings
    * button). */
   leading?: React.ReactNode;
+  /** Rendered on the right of the centered layout, where the X would go (e.g.
+   * a menu when the X sits on the left as `leading`). */
+  trailing?: React.ReactNode;
   /** Shows the X when given. */
   onClose?: () => void;
   closeTestId?: string;
@@ -39,13 +43,14 @@ export const SheetHeader = ({
   title,
   layout,
   leading,
+  trailing,
   onClose,
   closeTestId,
   titleTestId,
 }: SheetHeaderProps) => {
   const { t } = useTranslation();
 
-  if (!title && !leading && !onClose) {
+  if (!title && !leading && !trailing && !onClose) {
     return null;
   }
 
@@ -90,7 +95,11 @@ export const SheetHeader = ({
         <div className="SheetHeader__leading">{leading}</div>
       )}
       {titleElement}
-      {closeButton}
+      {resolvedLayout === SheetHeaderLayout.Centered && trailing ? (
+        <div className="SheetHeader__trailing">{trailing}</div>
+      ) : (
+        closeButton
+      )}
     </div>
   );
 };
@@ -100,12 +109,16 @@ interface SheetHeaderActionProps extends React.ButtonHTMLAttributes<HTMLButtonEl
   "data-testid"?: string;
 }
 
-/** A plain icon button that sits in the header beside the X (settings, back). */
-export const SheetHeaderAction = ({
-  children,
-  ...props
-}: SheetHeaderActionProps) => (
-  <button type="button" className="SheetHeader__action" {...props}>
+/**
+ * A plain icon button that sits in the header beside the X (settings, back).
+ * Forwards its ref so a Radix trigger (`asChild`) can anchor to it.
+ */
+export const SheetHeaderAction = React.forwardRef<
+  HTMLButtonElement,
+  SheetHeaderActionProps
+>(({ children, ...props }, ref) => (
+  <button type="button" className="SheetHeader__action" ref={ref} {...props}>
     {children}
   </button>
-);
+));
+SheetHeaderAction.displayName = "SheetHeaderAction";

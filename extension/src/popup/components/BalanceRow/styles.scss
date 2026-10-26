@@ -1,12 +1,16 @@
 @use "../../styles/utils.scss" as *;
 
+// Figma's token row (Home main, 1463:182652): a 32px icon, 12px to the text,
+// 8px of padding above and below, every line in Inter Medium. Mobile sets the
+// name and fiat value semibold; the extension follows its own frame. Lists
+// divide the rows with `--divider` rather than spacing them apart.
 .BalanceRow {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  // 12px top + bottom, so adjacent rows land on frame 9567-17044's 24px gap
-  // without an extra margin between them.
-  padding: pxToRem(12px) 0;
+  gap: pxToRem(12px);
+  padding: pxToRem(8px) 0;
   color: var(--sds-clr-gray-12);
   font-size: 1rem;
   line-height: 1.5rem;
@@ -15,19 +19,35 @@
     cursor: pointer;
   }
 
+  // Border/Primary under the text column only: from the 32px icon plus its
+  // 12px gap to the row's end (the frame's 268px line in a 312px column), as
+  // on mobile.
+  &--divider::after {
+    content: "";
+    position: absolute;
+    left: pxToRem(44px);
+    right: 0;
+    bottom: 0;
+    height: 1px;
+    background-color: var(--sds-clr-gray-06);
+  }
+
   &__left {
     min-width: 0;
     display: flex;
     align-items: center;
-    font-weight: var(--sds-fw-medium);
-    // No `gap`: icon-to-text spacing already comes from AssetIcon's
-    // `margin-right` (AccountAssets `&__asset--logo`), and would stack.
+
+    // AssetIcon brings a 16px margin of its own for its other callers.
+    .AccountAssets__asset--logo {
+      margin-right: pxToRem(12px);
+    }
   }
 
   &__value {
     min-width: 0;
     display: flex;
     flex-direction: column;
+    gap: pxToRem(2px);
   }
 
   &__code {
@@ -50,7 +70,10 @@
 
   &__right {
     min-width: 0;
-    font-weight: var(--sds-fw-regular);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: pxToRem(2px);
     text-align: right;
   }
 

@@ -4,7 +4,10 @@ import { captureException } from "@sentry/browser";
 import { RequestState } from "constants/request";
 import { initialState, isError, reducer } from "helpers/request";
 import { AccountBalances, useGetBalances } from "helpers/hooks/useGetBalances";
-import { useGetCollectibles } from "helpers/hooks/useGetCollectibles";
+import {
+  FetchCollectiblesResult,
+  useGetCollectibles,
+} from "helpers/hooks/useGetCollectibles";
 import { isMainnet } from "helpers/stellar";
 import { AllowList, ApiTokenPrices } from "@shared/api/types";
 import {
@@ -40,6 +43,8 @@ interface ResolvedAccountData {
    * action goes from it -- needs this rather than the list length.
    */
   hasLoadedCollectibles: boolean;
+  /** The collectibles request failed, so an empty `collections` is unknown. */
+  hasCollectiblesError: boolean;
 }
 
 type AccountData = NeedsReRoute | ResolvedAccountData;
@@ -102,9 +107,10 @@ function useGetAccountData(options: {
       // awaited yet: until it resolves the Collectibles tab cannot say where its
       // Add action belongs, so running it alongside the balances fetch keeps that
       // gap short. It needs only the key and network, both already known.
-      const collectiblesRequest = isCustomNetwork(networkDetails)
-        ? Promise.resolve({ collections: [] } as Collectibles)
-        : fetchCollectibles({ publicKey, networkDetails });
+      const collectiblesRequest: Promise<FetchCollectiblesResult> =
+        isCustomNetwork(networkDetails)
+          ? Promise.resolve({ collections: [] })
+          : fetchCollectibles({ publicKey, networkDetails });
 
       // let's fetch *just* the balances (without Blockaid scan results) to quickly be able to show the user their balances
       const balancesResult = await fetchBalances(
@@ -129,6 +135,7 @@ function useGetAccountData(options: {
         isScanAppended: false,
         collectibles: { collections: [] },
         hasLoadedCollectibles: false,
+        hasCollectiblesError: false,
       } as ResolvedAccountData;
 
       if (isMainnetNetwork) {
@@ -148,8 +155,11 @@ function useGetAccountData(options: {
 
       dispatch({ type: "FETCH_DATA_SUCCESS", payload });
 
-      payload.collectibles = await collectiblesRequest;
+      const { error: collectiblesError, ...collectibles } =
+        await collectiblesRequest;
+      payload.collectibles = collectibles;
       payload.hasLoadedCollectibles = true;
+      payload.hasCollectiblesError = !!collectiblesError;
       // Dispatched, not just assigned: the reducer holds this very object, so
       // mutating it changes what a later render reads but schedules no render of
       // its own. Without this the Collectibles tab kept waiting on a result that
