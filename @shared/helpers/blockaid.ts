@@ -1,8 +1,9 @@
 import { StrKey } from "stellar-sdk";
 
 /**
- * Codes Blockaid accepts in a bulk scan: 1-12 letters in any script,
- * combining marks, decimal digits or connectors such as "_".
+ * Codes Blockaid accepts in a bulk scan: 1-12 code points (Blockaid's unit,
+ * not UTF-16 units), each a letter in any script, a combining mark, a decimal
+ * digit, a connector such as "_", or a zero-width joiner or non-joiner.
  */
 const BLOCKAID_ASSET_CODE =
   /^[\p{Alphabetic}\p{M}\p{Nd}\p{Pc}\p{Join_Control}]{1,12}$/u;
