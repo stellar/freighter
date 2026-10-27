@@ -14,6 +14,7 @@ import {
   isNativeAssetId,
   isNativeAssetPair,
 } from "@shared/helpers/assetIdentity";
+import { isBulkScannableAssetId } from "@shared/helpers/blockaid";
 
 export const CUSTOM_NETWORK = "STANDALONE";
 export const LP_ISSUER_KEY = "lp";
@@ -79,17 +80,25 @@ export const makeDisplayableBalances = async (
     const url = new URL(`${INDEXER_URL}/scan-asset-bulk`);
     for (const balance of balances) {
       const balanceId = getBalanceIdentifier(balance);
-      if (!isNativeAssetId(balanceId) && !balanceId.includes(":lp")) {
-        url.searchParams.append("asset_ids", balanceId.replace(":", "-"));
+      const assetId = balanceId.replace(":", "-");
+      if (
+        !isNativeAssetId(balanceId) &&
+        !balanceId.includes(":lp") &&
+        isBulkScannableAssetId(assetId)
+      ) {
+        url.searchParams.append("asset_ids", assetId);
       }
     }
 
-    try {
-      const response = await fetch(url.href);
-      const data = await response.json();
-      blockaidScanResults = data.data.results;
-    } catch (e) {
-      console.error(e);
+    // The backend rejects a request with no ids, e.g. for an XLM-only account.
+    if (url.searchParams.has("asset_ids")) {
+      try {
+        const response = await fetch(url.href);
+        const data = await response.json();
+        blockaidScanResults = data.data.results;
+      } catch (e) {
+        console.error(e);
+      }
     }
   }
 
