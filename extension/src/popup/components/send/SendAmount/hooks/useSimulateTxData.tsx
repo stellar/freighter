@@ -24,7 +24,9 @@ import {
 } from "@shared/helpers/assetIdentity";
 import {
   getAssetFromCanonical,
+  isContractDestination,
   isMuxedAccount,
+  isMuxedContract,
   stroopToXlm,
   xlmToStroop,
 } from "helpers/stellar";
@@ -396,7 +398,7 @@ function getAssetAddress(
     return asset;
   }
   if (
-    isContractId(destination) &&
+    isContractDestination(destination) &&
     !isContractId(getAssetFromCanonical(asset).issuer)
   ) {
     return getAssetSacAddress(
@@ -474,7 +476,7 @@ function useSimulateTxData({
       let destinationAccount = await getBaseAccount(destination);
 
       let destBalancesResult = {} as AccountBalances;
-      if (destinationAccount && !isContractId(destinationAccount)) {
+      if (destinationAccount && !isContractDestination(destinationAccount)) {
         const balances = await fetchBalancesDest(
           destinationAccount,
           isMainnet,
@@ -540,7 +542,7 @@ function useSimulateTxData({
           // For Soroban transfers with muxed support, don't pass memo separately
           // (it's encoded in the muxed address)
           // Send empty string instead of undefined to satisfy backend API requirement
-          if (contractSupportsMuxed) {
+          if (contractSupportsMuxed || isMuxedContract(destination)) {
             sorobanMemo = "";
           }
         } catch (error) {

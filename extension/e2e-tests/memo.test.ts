@@ -798,3 +798,89 @@ test("Send custom token with Soroban mux support to M address disables memo", as
   // Verify memo row is NOT shown in review (memo is embedded in M address for tokens with Soroban mux support)
   await expect(page.getByTestId("review-tx-memo")).not.toBeVisible();
 });
+
+// CAP-84: the SEP-23 test vector, a muxed contract (W) address with mux id 0.
+const TEST_W_ADDRESS =
+  "WA7QYNF7SOWQ3GLR2BGMZEHXAVIRZA4KVWLTJJFC7MGXUA74P7UJUAAAAAAAAAAAAAWWC";
+
+// XLM to W -> sent as a SAC transfer, memo NOT allowed (id is in the address)
+test("Send XLM to W address disables memo and reaches review", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  test.slow();
+  const stubOverrides = async () => {
+    await stubAccountBalancesE2e(page);
+    await stubSimulateTokenTransfer(page);
+  };
+
+  await loginToTestAccount({ page, extensionId, context, stubOverrides });
+  await page.getByTestId("nav-link-send").click({ force: true });
+
+  await expect(page.getByTestId("token-list")).toBeVisible();
+  await page.getByTestId("SendRow-native").click();
+
+  await page.getByTestId("send-to-input").fill(TEST_W_ADDRESS);
+  await page.getByText("Continue").click();
+
+  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+  await page.getByTestId("send-amount-amount-input").fill("1");
+
+  // XLM goes through its SAC, so a W destination is allowed.
+  await expect(page.getByTestId("send-amount-muxed-banner")).not.toBeVisible();
+
+  await page.getByTestId("send-amount-btn-memo").click();
+  await expect(page.getByTestId("edit-memo-input")).toBeVisible();
+  await expect(page.getByTestId("edit-memo-input")).toBeDisabled();
+  await page.getByText("Cancel").click();
+  await expect(page.getByTestId("edit-memo-input")).not.toBeVisible();
+
+  const reviewSendButton = page.getByTestId("send-amount-btn-continue");
+  await expect(reviewSendButton).toBeEnabled({ timeout: 15000 });
+  await reviewSendButton.click();
+  await expect(page.getByText("You are sending")).toBeVisible({
+    timeout: 20000,
+  });
+});
+
+// Custom token to W -> blocked, only a Stellar Asset Contract accepts W
+test("Send custom token to W address is disabled", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  test.slow();
+  const stubOverrides = async () => {
+    await stubAccountBalancesE2e(page);
+    await stubSimulateTokenTransfer(page);
+  };
+  await stubContractSpec(page, TEST_TOKEN_ADDRESS, false);
+
+  await loginToTestAccount({ page, extensionId, context, stubOverrides });
+  await page.getByTestId("nav-link-send").click({ force: true });
+
+  await expect(page.getByTestId("token-list")).toBeVisible();
+  await page.getByTestId("SendRow-native").click();
+
+  await page.getByTestId("send-to-input").fill(TEST_W_ADDRESS);
+  await page.getByText("Continue").click();
+
+  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+
+  await page.getByTestId("send-amount-edit-dest-asset").click();
+  await page
+    .locator(".Send__step:not(.Send__step--hidden)")
+    .getByTestId(`SendRow-E2E:${TEST_TOKEN_ADDRESS}`)
+    .click({ force: true });
+
+  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+  await page.getByTestId("send-amount-amount-input").fill(".001");
+
+  await expect(
+    page.getByText(
+      "This token does not support muxed contract address (W-) as a target destination",
+    ),
+  ).toBeVisible({ timeout: 10000 });
+  await expect(page.getByTestId("send-amount-btn-continue")).toBeDisabled();
+});

@@ -6,6 +6,7 @@ import { getContractSpec } from "@shared/api/internal";
 import { ContractSpecSchema, isContractId } from "popup/helpers/soroban";
 import {
   isMuxedAccount,
+  isMuxedContract,
   isValidStellarAddress,
   createMuxedAccount,
   isFederationAddress,
@@ -79,7 +80,7 @@ export interface MemoDisabledState {
 
 /**
  * Determines if memo should be disabled for a transaction.
- * Disables memo for all M addresses (memo is encoded in the address).
+ * Disables memo for all M and W addresses (the id is encoded in the address).
  *
  * @param params Parameters for determining memo disabled state
  * @returns Object indicating if memo is disabled and optional message
@@ -89,8 +90,9 @@ export function getMemoDisabledState(
 ): MemoDisabledState {
   const { targetAddress, contractId, contractSupportsMuxed, t } = params;
 
-  // Disable memo for all M addresses (memo is encoded in the address)
-  if (isMuxedAccount(targetAddress)) {
+  // Disable memo for all M and W addresses (the mux id is encoded in the
+  // address)
+  if (isMuxedAccount(targetAddress) || isMuxedContract(targetAddress)) {
     return {
       isMemoDisabled: true,
       memoDisabledMessage: t("Memo is disabled for this transaction"),
@@ -155,6 +157,12 @@ export function determineMuxedDestination(
   params: DetermineMuxedDestinationParams,
 ): string {
   const { recipientAddress, transactionMemo, contractSupportsMuxed } = params;
+
+  // A W address (CAP-84) already carries its mux id. SAC transfers accept it
+  // whatever the token's spec says, so pass it through and never re-encode it.
+  if (isMuxedContract(recipientAddress)) {
+    return recipientAddress;
+  }
 
   // Check specifically for G address (Ed25519 public key)
   // Must exclude M addresses, contract IDs, and federation addresses

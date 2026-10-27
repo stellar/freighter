@@ -20,6 +20,10 @@ import {
   toSignatureBuffer,
   getTrustlineChangesForAccount,
   getFeeSourceAccount,
+  getBaseAccount,
+  isContractDestination,
+  isMuxedContract,
+  isValidStellarAddress,
 } from "../stellar";
 import * as urls from "../urls";
 
@@ -169,6 +173,45 @@ describe("isSameAccount", () => {
     expect(isSameAccount(undefined, BASE_G)).toBe(false);
     expect(isSameAccount(BASE_G, undefined)).toBe(false);
     expect(isSameAccount("", "")).toBe(false);
+  });
+
+  it("never matches a muxed contract (W...) address to a G address", () => {
+    expect(isSameAccount(MUXED_CONTRACT, BASE_G)).toBe(false);
+    expect(isSameAccount(MUXED_CONTRACT, MUXED_CONTRACT)).toBe(true);
+  });
+});
+
+// The SEP-23 test vector: contract CA7QYNF7…UWDA with mux id 0.
+const MUXED_CONTRACT =
+  "WA7QYNF7SOWQ3GLR2BGMZEHXAVIRZA4KVWLTJJFC7MGXUA74P7UJUAAAAAAAAAAAAAWWC";
+const BASE_CONTRACT =
+  "CA7QYNF7SOWQ3GLR2BGMZEHXAVIRZA4KVWLTJJFC7MGXUA74P7UJUWDA";
+const MUXED_ACCOUNT =
+  "MAJVUHQV535IYW25XBTWTCUXNHLQN4F2PGIPOOX4DDKL2UPNXUHWUAAAAAAAAAAAAGPZI";
+
+describe("muxed contract (W...) addresses", () => {
+  it("recognises a W address as a muxed contract and nothing else", () => {
+    expect(isMuxedContract(MUXED_CONTRACT)).toBe(true);
+    expect(isMuxedContract(BASE_CONTRACT)).toBe(false);
+    expect(isMuxedContract(MUXED_ACCOUNT)).toBe(false);
+  });
+
+  it("treats both C and W addresses as contract destinations", () => {
+    expect(isContractDestination(MUXED_CONTRACT)).toBe(true);
+    expect(isContractDestination(BASE_CONTRACT)).toBe(true);
+    expect(isContractDestination(MUXED_ACCOUNT)).toBe(false);
+  });
+
+  it("accepts a W address as a valid Stellar address", () => {
+    expect(isValidStellarAddress(MUXED_CONTRACT)).toBe(true);
+    // One character off breaks the checksum.
+    expect(isValidStellarAddress(`${MUXED_CONTRACT.slice(0, -1)}A`)).toBe(
+      false,
+    );
+  });
+
+  it("leaves a W address unchanged when extracting the base account", () => {
+    expect(getBaseAccount(MUXED_CONTRACT)).toBe(MUXED_CONTRACT);
   });
 });
 

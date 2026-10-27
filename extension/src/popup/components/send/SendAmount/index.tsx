@@ -14,6 +14,7 @@ import {
   getAssetFromCanonical,
   isMainnet,
   isMuxedAccount,
+  isMuxedContract,
 } from "helpers/stellar";
 import { useReviewSettingsHandoff } from "popup/helpers/useReviewSettingsHandoff";
 import { NetworkCongestion } from "popup/helpers/useNetworkFees";
@@ -333,6 +334,17 @@ export const SendAmount = ({
       (isToken || isCollectible) &&
       contractSupportsMuxed === false,
     [isRecipientMuxed, isToken, isCollectible, contractSupportsMuxed],
+  );
+
+  // A W address (CAP-84) is only valid as the `to` of a Stellar Asset Contract
+  // transfer. Native and classic assets are sent through their SAC; custom
+  // tokens and collectibles are not SACs, so a W destination is blocked.
+  const isMuxedContractWithoutSupport = React.useMemo(
+    () =>
+      !!destination &&
+      isMuxedContract(destination) &&
+      (isToken || isCollectible),
+    [destination, isToken, isCollectible],
   );
   const [memoEditingContext, setMemoEditingContext] =
     React.useState<MemoEditingContext | null>(null);
@@ -726,6 +738,7 @@ export const SendAmount = ({
                   disabled={
                     !destination ||
                     isMuxedAddressWithoutMemoSupport ||
+                    isMuxedContractWithoutSupport ||
                     simulationState.state === RequestState.ERROR
                   }
                   isLoading={simulationState.state === RequestState.LOADING}
@@ -757,6 +770,7 @@ export const SendAmount = ({
                     !isAmountInputValid ||
                     isAmountTooHigh ||
                     isMuxedAddressWithoutMemoSupport ||
+                    isMuxedContractWithoutSupport ||
                     ((isToken || isCollectible) &&
                       simulationState.state === RequestState.ERROR)
                   }
@@ -780,16 +794,24 @@ export const SendAmount = ({
         }
       >
         <div className="SendAmount">
-          {isMuxedAddressWithoutMemoSupport && (
-            <div className="SendAmount__warning-banner">
+          {(isMuxedAddressWithoutMemoSupport ||
+            isMuxedContractWithoutSupport) && (
+            <div
+              className="SendAmount__warning-banner"
+              data-testid="send-amount-muxed-banner"
+            >
               <Notification
                 variant="error"
                 icon={<Icon.AlertCircle />}
                 title={t("Muxed address not supported")}
               >
-                {t(
-                  "This token does not support muxed address (M-) as a target destination.",
-                )}
+                {isMuxedContractWithoutSupport
+                  ? t(
+                      "This token does not support muxed contract address (W-) as a target destination.",
+                    )
+                  : t(
+                      "This token does not support muxed address (M-) as a target destination.",
+                    )}
               </Notification>
             </div>
           )}
