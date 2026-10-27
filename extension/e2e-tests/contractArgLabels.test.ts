@@ -357,4 +357,70 @@ test.describe("contract argument labels", () => {
       popup.getByTestId("DetailsBody").getByTestId("ContractSpecNote"),
     ).toBeVisible();
   });
+
+  test("renders a SAC transfer to a muxed contract (W) address", async ({
+    page,
+    extensionId,
+    context,
+  }) => {
+    // CAP-84: a muxed contract address is valid as a SAC transfer `to`.
+    const MUXED_CONTRACT =
+      "WA7QYNF7SOWQ3GLR2BGMZEHXAVIRZA4KVWLTJJFC7MGXUA74P7UJUAAAAAAAAAAAAAWWC";
+    const TRANSFER_DEFINITIONS = {
+      transfer: {
+        properties: {
+          args: {
+            type: "object",
+            properties: { from: {}, to: {}, amount: {} },
+            required: ["from", "to", "amount"],
+          },
+        },
+      },
+    };
+    const func = xdr.HostFunction.hostFunctionTypeInvokeContract(
+      new xdr.InvokeContractArgs({
+        contractAddress: xdr.ScAddress.scAddressTypeContract(
+          new xdr.ContractId(StrKey.decodeContract(CONTRACT)),
+        ),
+        functionName: Buffer.from("transfer"),
+        args: [
+          new Address(SIGNER).toScVal(),
+          new Address(MUXED_CONTRACT).toScVal(),
+          new ScInt(100).toI128(),
+        ],
+      }),
+    );
+    const transferXdr = new TransactionBuilder(new Account(SIGNER, "0"), {
+      fee: "1000000",
+      networkPassphrase: Networks.TESTNET,
+    })
+      .addOperation(Operation.invokeHostFunction({ func, auth: [] }))
+      .setTimeout(0)
+      .build()
+      .toXDR();
+
+    await loginToTestAccount({
+      page,
+      extensionId,
+      context,
+      stubOverrides: async () => {
+        await stubContractSpecDefinitions(
+          context,
+          CONTRACT,
+          TRANSFER_DEFINITIONS,
+        );
+      },
+    });
+
+    const popup = await openSignTransactionPopup({ page, xdr: transferXdr });
+    await stubContractSpecDefinitions(popup, CONTRACT, TRANSFER_DEFINITIONS);
+    await openDetailsPane(popup);
+
+    const keys = popup.getByTestId("ParameterKey");
+    const values = popup.getByTestId("ParameterValue");
+
+    await expect(keys).toHaveCount(3);
+    await expect(keys.nth(1)).toHaveText(/to/);
+    await expect(values.nth(1)).toHaveText(MUXED_CONTRACT);
+  });
 });

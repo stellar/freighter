@@ -251,6 +251,44 @@ describe("AuthEntry", () => {
     expect(screen.queryByTestId("ContractSpecNote")).not.toBeInTheDocument();
   });
 
+  it("renders a SAC transfer to a muxed contract (W) address", async () => {
+    // CAP-84: a muxed contract address is valid as a SAC transfer `to`, so it
+    // reaches the auth entry's invocation args as well as the operation's.
+    const MUXED_CONTRACT =
+      "WA7QYNF7SOWQ3GLR2BGMZEHXAVIRZA4KVWLTJJFC7MGXUA74P7UJUAAAAAAAAAAAAAWWC";
+    const args = new xdr.InvokeContractArgs({
+      functionName: Buffer.from("transfer"),
+      args: [
+        new Address(TEST_PUBLIC_KEY).toScVal(),
+        new Address(MUXED_CONTRACT).toScVal(),
+        new ScInt(100).toI128(),
+      ],
+      contractAddress: new Address(OWNER_CONTRACT).toScAddress(),
+    });
+
+    const authorizedInvocation = new xdr.SorobanAuthorizedInvocation({
+      function:
+        xdr.SorobanAuthorizedFunction.sorobanAuthorizedFunctionTypeContractFn(
+          args,
+        ),
+      subInvocations: [],
+    });
+
+    render(
+      <Wrapper routes={[ROUTES.reviewAuthorization]} state={wrapperState}>
+        <AuthEntries entries={[{ invocation: authorizedInvocation }]} />
+      </Wrapper>,
+    );
+    await waitFor(() => screen.getAllByTestId("AuthEntryContainer"));
+    await fireEvent.click(screen.getByTestId("AuthEntryBtn"));
+    await waitFor(() => screen.getAllByTestId("AuthEntryContent"));
+
+    const parameterValues = screen.getAllByTestId("ParameterValue");
+    expect(parameterValues).toHaveLength(3);
+    expect(parameterValues[0]).toHaveTextContent(TEST_PUBLIC_KEY);
+    expect(parameterValues[1]).toHaveTextContent(MUXED_CONTRACT);
+  });
+
   it("renders auth entries for a CAP-85 external executable ref", async () => {
     const tag = "v2";
     const args = new xdr.CreateContractArgsV2({

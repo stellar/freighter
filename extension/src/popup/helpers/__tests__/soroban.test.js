@@ -10,6 +10,8 @@ import {
 import BigNumber from "bignumber.js";
 
 import {
+  addressToString,
+  getArgsForTokenInvocation,
   getInvocationArgs,
   getInvocationArgsFromInvokeHostFn,
   getInvocationDetails,
@@ -18,6 +20,7 @@ import {
   getDecimalsForAsset,
   getContractIdFromTransactionData,
   isAssetSac,
+  scValToDisplayValue,
   CLASSIC_ASSET_DECIMALS,
 } from "../soroban";
 import { getNativeContractDetails } from "../searchAsset";
@@ -508,6 +511,65 @@ describe("signing-screen display fidelity", () => {
       to,
       amount: BigInt(100),
     });
+  });
+});
+
+describe("muxed contract (W) addresses", () => {
+  // The SEP-23 test vector: contract CA7QYNF7…UWDA with mux id 0.
+  const MUXED_CONTRACT =
+    "WA7QYNF7SOWQ3GLR2BGMZEHXAVIRZA4KVWLTJJFC7MGXUA74P7UJUAAAAAAAAAAAAAWWC";
+  const from = Keypair.random().publicKey();
+  const transferArgs = [
+    new Address(from).toScVal(),
+    new Address(MUXED_CONTRACT).toScVal(),
+    nativeToScVal(BigInt(100), { type: "i128" }),
+  ];
+  const transferFn = new xdr.InvokeContractArgs({
+    contractAddress: new Address(OWNER_CONTRACT).toScAddress(),
+    functionName: Buffer.from("transfer"),
+    args: transferArgs,
+  });
+
+  it("renders a W address as its strkey", () => {
+    expect(addressToString(new Address(MUXED_CONTRACT).toScAddress())).toEqual(
+      MUXED_CONTRACT,
+    );
+    expect(scValToDisplayValue(transferArgs[1])).toEqual(MUXED_CONTRACT);
+  });
+
+  it("reads a W transfer destination from token invocation args", () => {
+    expect(getArgsForTokenInvocation("transfer", transferArgs)).toMatchObject({
+      from,
+      to: MUXED_CONTRACT,
+      amount: BigInt(100),
+    });
+  });
+
+  it("recognises a SAC transfer to a W address", () => {
+    const op = Operation.fromXDRObject(
+      Operation.invokeHostFunction({
+        func: xdr.HostFunction.hostFunctionTypeInvokeContract(transferFn),
+        auth: [],
+      }),
+    );
+    expect(getInvocationArgsFromInvokeHostFn(op)).toMatchObject({
+      fnName: "transfer",
+      from,
+      to: MUXED_CONTRACT,
+    });
+  });
+
+  it("carries a W argument through the invocation tree", () => {
+    const tree = buildInvocationTree(
+      new xdr.SorobanAuthorizedInvocation({
+        function:
+          xdr.SorobanAuthorizedFunction.sorobanAuthorizedFunctionTypeContractFn(
+            transferFn,
+          ),
+        subInvocations: [],
+      }),
+    );
+    expect(scValToDisplayValue(tree.args.args[1])).toEqual(MUXED_CONTRACT);
   });
 });
 

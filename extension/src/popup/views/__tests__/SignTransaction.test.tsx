@@ -2437,4 +2437,42 @@ describe("SignTransactions", () => {
     expect(trustlineRows).toHaveLength(1);
     expect(trustlineRows[0]).toHaveTextContent("AQUA");
   });
+
+  it("shows an error instead of crashing when the transaction XDR does not decode", async () => {
+    jest.spyOn(Stellar, "getTransactionInfo").mockImplementation(() => ({
+      ...mockTransactionInfo,
+      transactionXdr: "not a transaction",
+      transaction: {
+        ...mockTransactionInfo.transaction,
+        _networkPassphrase: Networks.TESTNET,
+      },
+      isHttpsDomain: true,
+      uuid: "123-123-123-123-123",
+    }));
+    render(
+      <Wrapper
+        routes={[ROUTES.signTransaction]}
+        state={{
+          auth: {
+            allAccounts: mockAccounts,
+            publicKey: mockAccounts[0].publicKey,
+          },
+          settings: {
+            isExperimentalModeEnabled: false,
+            networkDetails: {
+              ...defaultSettingsState.networkDetails,
+              networkPassphrase: "Test SDF Network ; September 2015",
+            },
+          },
+        }}
+      >
+        <SignTransaction />
+      </Wrapper>,
+    );
+    await waitFor(() => screen.getByTestId("WarningMessage"));
+    expect(screen.queryByTestId("SignTransaction")).toBeNull();
+    expect(screen.getByTestId("WarningMessage")).toHaveTextContent(
+      "Unable to read this transaction",
+    );
+  });
 });

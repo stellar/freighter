@@ -188,27 +188,37 @@ export const SignTransaction = () => {
   const shouldShowSiteWarning =
     isSiteMalicious || isSiteSuspicious || isSiteUnableToScan;
 
-  // rebuild transaction to get Transaction prototypes
-  const transaction = TransactionBuilder.fromXdr(
-    transactionXdr,
-    _networkPassphrase as string,
-  );
+  // rebuild transaction to get Transaction prototypes. The XDR comes from a
+  // dApp, so a failed parse renders an error below rather than throwing
+  // mid-render and taking down the whole popup.
+  let transaction: ReturnType<typeof TransactionBuilder.fromXdr> | null = null;
+  try {
+    transaction = TransactionBuilder.fromXdr(
+      transactionXdr,
+      _networkPassphrase as string,
+    );
+  } catch (error) {
+    console.error(error);
+  }
 
   let _sequence = "";
 
-  if (!("innerTransaction" in transaction)) {
+  if (transaction && !("innerTransaction" in transaction)) {
     _sequence = transaction.sequence;
   }
 
   // A fee bump has no memo of its own. The memo is in the inner transaction,
   // so read it from there. Otherwise, the memo-required check blocks a fee
   // bump even when the inner transaction has a memo.
-  const _memo =
-    "innerTransaction" in transaction
-      ? transaction.innerTransaction.memo
-      : transaction.memo;
+  let _memo;
+  if (transaction) {
+    _memo =
+      "innerTransaction" in transaction
+        ? transaction.innerTransaction.memo
+        : transaction.memo;
+  }
 
-  const decodedMemo = decodeMemo(_memo);
+  const decodedMemo = _memo ? decodeMemo(_memo) : undefined;
 
   const memo = decodedMemo?.value;
 
@@ -292,6 +302,19 @@ export const SignTransaction = () => {
       applicationState: signTxState.data.applicationState,
       state: signTxState.state,
     });
+  }
+
+  if (!transaction) {
+    return (
+      <WarningMessage
+        variant={WarningMessageVariant.warning}
+        handleCloseClick={rejectAndClose}
+        isActive
+        header={t("Unable to read this transaction")}
+      >
+        <p>{t("The transaction could not be decoded.")}</p>
+      </WarningMessage>
+    );
   }
 
   // Handle potential missing networkDetails
