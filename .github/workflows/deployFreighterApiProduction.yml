@@ -4,7 +4,6 @@ on:
     inputs:
       release:
         description: Release Number
-        default: "2.0.0"
         required: true
 jobs:
   bump-version:
