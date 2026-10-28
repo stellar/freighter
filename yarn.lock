@@ -5884,15 +5884,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@stellar/freighter-api@workspace:*, @stellar/freighter-api@workspace:@stellar/freighter-api":
-  version: 0.0.0-use.local
-  resolution: "@stellar/freighter-api@workspace:@stellar/freighter-api"
+"@stellar/freighter-api@npm:6.0.1":
+  version: 6.0.1
+  resolution: "@stellar/freighter-api@npm:6.0.1"
   dependencies:
-    "@lavamoat/allow-scripts": "npm:5.1.0"
     buffer: "npm:6.0.3"
-    semver: "npm:7.8.4"
-  languageName: unknown
-  linkType: soft
+    semver: "npm:7.7.1"
+  checksum: 10c0/52b27ee420c6b1b4ea535dce214492f832c7c69a6af5d956607653503e16d783c3807136e7ab84c44806cd5a50a31416b1ebe3b3a475ad7843d714c47d19d82d
+  languageName: node
+  linkType: hard
 
 "@stellar/js-xdr@npm:^3.1.1, @stellar/js-xdr@npm:^3.1.2":
   version: 3.1.2
@@ -6001,6 +6001,16 @@ __metadata:
   checksum: 10c0/174a03f31bac9217a6bc2ad90b7cfad63c2570d8674ca4044ea6b8a66b484a714008d2fc5de8f6e82bacfbb53d484a5d532397887e75d030539ba2bdb5e4bfa6
   languageName: node
   linkType: hard
+
+"@stellar/varial-sdk@workspace:@stellar/freighter-api":
+  version: 0.0.0-use.local
+  resolution: "@stellar/varial-sdk@workspace:@stellar/freighter-api"
+  dependencies:
+    "@lavamoat/allow-scripts": "npm:5.1.0"
+    buffer: "npm:6.0.3"
+    semver: "npm:7.8.4"
+  languageName: unknown
+  linkType: soft
 
 "@svgr/babel-plugin-add-jsx-attribute@npm:8.0.0":
   version: 8.0.0
@@ -21489,6 +21499,15 @@ __metadata:
   bin:
     semver: bin/semver
   checksum: 10c0/e4cf10f86f168db772ae95d86ba65b3fd6c5967c94d97c708ccb463b778c2ee53b914cd7167620950fc07faf5a564e6efe903836639e512a1aa15fbc9667fa25
+  languageName: node
+  linkType: hard
+
+"semver@npm:7.7.1":
+  version: 7.7.1
+  resolution: "semver@npm:7.7.1"
+  bin:
+    semver: bin/semver.js
+  checksum: 10c0/fd603a6fb9c399c6054015433051bdbe7b99a940a8fb44b85c2b524c4004b023d7928d47cb22154f8d054ea7ee8597f586605e05b52047f048278e4ac56ae958
   languageName: node
   linkType: hard
 

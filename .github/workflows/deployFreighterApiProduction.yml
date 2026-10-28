@@ -1,10 +1,9 @@
-name: Deploy @stellar/freighter-api
+name: Deploy @stellar/varial-sdk
 on:
   workflow_dispatch:
     inputs:
       release:
         description: Release Number
-        default: "2.0.0"
         required: true
 jobs:
   bump-version:
@@ -41,7 +40,7 @@ jobs:
         uses: peter-evans/create-pull-request@84ae59a2cdc2258d6fa0732dd66352dddae2a412 #v7.0.9
         with:
           title:
-            Bump @stellar/freighter-api version to ${{
+            Bump @stellar/varial-sdk version to ${{
             github.event.inputs.version }}
       - name: Slack Notification
         uses: rtCamp/action-slack-notify@e31e87e03dd19038e411e38ae27cbad084a90661 #v2.3.3
@@ -53,6 +52,6 @@ jobs:
           SLACK_MESSAGE:
             "https://github.com/stellar/freighter/releases/tag/${{
             github.event.inputs.release }}"
-          SLACK_TITLE: "@stellar/freighter-api has been deployed to npm!"
+          SLACK_TITLE: "@stellar/varial-sdk has been deployed to npm!"
           SLACK_USERNAME: Freighter Administrative Assistant
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
