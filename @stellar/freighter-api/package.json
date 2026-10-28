@@ -1,9 +1,9 @@
 {
-  "name": "@stellar/freighter-api",
-  "version": "6.0.1",
+  "name": "@stellar/varial-sdk",
+  "version": "1.0.0",
   "license": "Apache-2.0",
   "author": "Stellar Development Foundation <hello@stellar.org>",
-  "description": "Utility functions to interact with Freighter extension",
+  "description": "Utility functions to interact with the Varial extension",
   "repository": {
     "url": "git@github.com:stellar/freighter.git",
     "type": "git"

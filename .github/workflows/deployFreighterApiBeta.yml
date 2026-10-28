@@ -1,4 +1,4 @@
-name: Deploy @stellar/freighter-api beta
+name: Deploy @stellar/varial-sdk beta
 on:
   workflow_dispatch:
     inputs:
@@ -51,6 +51,6 @@ jobs:
             "https://github.com/stellar/freighter/releases/tag/${{
             github.event.inputs.release }}-beta.${{ github.event.inputs.version
             }}"
-          SLACK_TITLE: "@stellar/freighter-api beta has been deployed to npm!"
+          SLACK_TITLE: "@stellar/varial-sdk beta has been deployed to npm!"
           SLACK_USERNAME: Freighter Administrative Assistant
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
