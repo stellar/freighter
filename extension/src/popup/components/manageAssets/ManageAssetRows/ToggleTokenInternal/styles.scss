@@ -24,12 +24,13 @@
     align-items: center;
     width: 100%;
 
+    // No padding of its own: the SheetLayout around it already insets the
+    // sheet, as it does for ChangeTrustInternal.
     &__body {
       width: 100%;
       max-width: 49rem;
       display: flex;
       flex-direction: column;
-      padding: 1rem 1.5rem;
     }
 
     &__header {

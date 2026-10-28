@@ -10,12 +10,14 @@
   // actions sit at the bottom even when the body is short.
   &--standalone {
     min-height: 100%;
-    // The page is Base/0, not the sheet's gray-01: the pinned actions and the
-    // fade above them take the page colour.
-    --sheet-layout--background: var(--sds-clr-base-00);
 
     > .SheetLayout {
       flex: 1;
+      // The page is Base/0, not the sheet's gray-01: the pinned actions and the
+      // fade above them take the page colour. Set on the layout itself, since
+      // SheetLayout declares its own default there and would win over a value
+      // inherited from here.
+      --sheet-layout--background: var(--sds-clr-base-00);
     }
   }
 

@@ -138,6 +138,10 @@
         flex: none;
         padding-bottom: var(--View-footer-padding-bottom);
         padding-top: 0;
+        // Sized to its content, so it never scrolls. The inherited `auto`
+        // only clipped the 4px focus ring of the buttons along its top edge
+        // (Send's Memo and settings, Swap's Slippage and settings).
+        overflow: visible;
       }
     }
   }

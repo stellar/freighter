@@ -30,6 +30,7 @@ import { ConfigurableWalletType } from "@shared/constants/hardwareWallet";
 import { isCustomNetwork } from "@shared/helpers/stellar";
 import { BlockaidWarning, SecurityLevel } from "popup/constants/blockaid";
 import { SwapSource } from "popup/constants/swap";
+import { DEFAULT_TX_TIMEOUT } from "popup/constants/transaction";
 
 import { encodeSep53Message, getCanonicalFromAsset } from "helpers/stellar";
 import { INDEXER_URL } from "@shared/constants/mercury";
@@ -579,7 +580,7 @@ export const initialState: InitialState = {
     recipientName: "",
     federationAddress: "",
     transactionFee: "",
-    transactionTimeout: 180,
+    transactionTimeout: DEFAULT_TX_TIMEOUT,
     memo: "",
     memoType: "",
     destinationAsset: "",

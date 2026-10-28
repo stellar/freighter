@@ -3,6 +3,11 @@
 $padding: 24px;
 $header-gap: 16px;
 $fade-height: 24px;
+// SDS's focus ring. The body takes this much of the header gap as its own top
+// padding, so a control at the top of the body (Memo's input) shows its whole
+// ring rather than having the top of it painted over by the pinned header.
+// Nothing moves: the gap is the same 16px, split between the two.
+$focus-ring: 4px;
 
 .SheetLayout {
   // The card's colour, so pinned rows hide what scrolls under them.
@@ -39,7 +44,8 @@ $fade-height: 24px;
   }
 
   &__header {
-    padding: pxToRem($padding) pxToRem($padding) pxToRem($header-gap);
+    padding: pxToRem($padding) pxToRem($padding)
+      pxToRem($header-gap - $focus-ring);
   }
 
   &__footer {
@@ -53,6 +59,10 @@ $fade-height: 24px;
     // z-index 1 (2 when active), which otherwise painted copyable values over
     // the header as they scrolled up under it.
     isolation: isolate;
+  }
+
+  &--has-header &__body {
+    padding-top: pxToRem($focus-ring);
   }
 
   // Without a pinned row the body takes the card padding on that edge itself.

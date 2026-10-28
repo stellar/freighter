@@ -96,7 +96,7 @@ export const EditMemo = ({
                 <div className="EditMemo__actions">
                   <Button
                     type="button"
-                    size="md"
+                    size="lg"
                     isRounded
                     variant="tertiary"
                     onClick={onClose}
@@ -110,7 +110,7 @@ export const EditMemo = ({
                   </Button>
                   <Button
                     type="submit"
-                    size="md"
+                    size="lg"
                     isRounded
                     variant="secondary"
                     disabled={disabled || !!memoError}

@@ -101,7 +101,7 @@ export const EditSlippage = ({ onClose }: EditSlippageProps) => {
               </div>
               <div className="Slippage__Footer">
                 <Button
-                  size="md"
+                  size="lg"
                   isFullWidth
                   isRounded
                   variant="tertiary"
@@ -114,7 +114,7 @@ export const EditSlippage = ({ onClose }: EditSlippageProps) => {
                   {t("Set default")}
                 </Button>
                 <Button
-                  size="md"
+                  size="lg"
                   isFullWidth
                   isRounded
                   disabled={!values.presetSlippage && !values.customSlippage}

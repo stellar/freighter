@@ -3,6 +3,8 @@ import { Button, Icon, Input } from "@stellar/design-system";
 import { Field, FieldProps, Formik, Form } from "formik";
 import { useTranslation } from "react-i18next";
 
+import { DEFAULT_TX_TIMEOUT } from "popup/constants/transaction";
+
 import { CongestionIndicator } from "../CongestionIndicator";
 import { SheetHeader, SheetHeaderLayout } from "popup/components/SheetHeader";
 import { SheetLayout } from "popup/components/SheetLayout";
@@ -181,7 +183,9 @@ export const EditSettings = ({
                           type="button"
                           size="md"
                           variant="tertiary"
-                          onClick={() => setFieldValue("timeout", timeout)}
+                          onClick={() =>
+                            setFieldValue("timeout", DEFAULT_TX_TIMEOUT)
+                          }
                         >
                           {t("Default")}
                         </Button>
