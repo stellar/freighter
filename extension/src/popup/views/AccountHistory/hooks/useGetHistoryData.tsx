@@ -1,6 +1,10 @@
 import React, { ReactNode, useReducer } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { Horizon, TransactionBuilder } from "stellar-sdk";
+import {
+  encodeMuxedContractAddress,
+  Horizon,
+  TransactionBuilder,
+} from "stellar-sdk";
 import { camelCase } from "lodash";
 import BigNumber from "bignumber.js";
 import {
@@ -469,7 +473,16 @@ const processAssetBalanceChanges = async (
     // Determine if this is a credit (receiving) or debit (sending)
     const isCredit = isSameAccount(change.to, publicKey);
     // Destination is the counterparty (from for credits, to for debits)
-    const destination = isCredit ? change.from : change.to;
+    let destination = isCredit ? change.from : change.to;
+    // A muxed contract destination arrives as the base contract plus a mux
+    // id. Rebuild the muxed address for display; matching above stays on
+    // the base address.
+    if (!isCredit && change.destination_muxed_id && isContractId(change.to)) {
+      destination = encodeMuxedContractAddress(
+        change.to,
+        change.destination_muxed_id,
+      );
+    }
 
     // Get asset icon
     const icon = isNativeAssetPair(assetCode, assetIssuer)

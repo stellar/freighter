@@ -19,6 +19,7 @@ import {
   getAvailableBalance,
   getDecimalsForAsset,
   getContractIdFromTransactionData,
+  getAttrsFromSorobanHorizonOp,
   isAssetSac,
   scValToDisplayValue,
   CLASSIC_ASSET_DECIMALS,
@@ -832,5 +833,18 @@ describe("getContractIdFromTransactionData", () => {
 
     // Classic assets don't have contract IDs, so should return undefined
     expect(result).toBeUndefined();
+  });
+});
+
+describe("getAttrsFromSorobanHorizonOp", () => {
+  it("returns null instead of throwing for an undecodable envelope", () => {
+    const operation = {
+      type: "invoke_host_function",
+      transaction_attr: { envelope_xdr: "not-xdr" },
+    };
+
+    expect(
+      getAttrsFromSorobanHorizonOp(operation, TESTNET_NETWORK_DETAILS),
+    ).toBeNull();
   });
 });

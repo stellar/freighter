@@ -474,16 +474,23 @@ export const getAttrsFromSorobanHorizonOp = (
     return null;
   }
 
-  const txEnvelope = TransactionBuilder.fromXdr(
-    operation.transaction_attr.envelope_xdr as string,
-    networkDetails.networkPassphrase,
-  ) as Transaction;
+  // One undecodable envelope must not break the whole history load.
+  try {
+    const txEnvelope = TransactionBuilder.fromXdr(
+      operation.transaction_attr.envelope_xdr as string,
+      networkDetails.networkPassphrase,
+    ) as Transaction;
 
-  // only one op per tx in Soroban right now; isSorobanOp above guarantees it
-  // is an invokeHostFunction operation
-  const invokeHostFn = txEnvelope.operations[0] as Operation.InvokeHostFunction;
+    // only one op per tx in Soroban right now; isSorobanOp above guarantees it
+    // is an invokeHostFunction operation
+    const invokeHostFn = txEnvelope
+      .operations[0] as Operation.InvokeHostFunction;
 
-  return getInvocationArgsFromInvokeHostFn(invokeHostFn);
+    return getInvocationArgsFromInvokeHostFn(invokeHostFn);
+  } catch (error) {
+    captureException(`Failed to decode Soroban operation: ${error}`);
+    return null;
+  }
 };
 
 export interface InvocationTree {

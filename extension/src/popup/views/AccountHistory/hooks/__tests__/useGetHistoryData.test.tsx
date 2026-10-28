@@ -54,6 +54,11 @@ const buildPaymentOperation = ({
   }) as unknown as HistoryItemOperation;
 
 const CONTRACT_ID = "CAAQCAIBAEAQCAIBAEAQCAIBAEAQCAIBAEAQCAIBAEAQCAIBAEAQC526";
+// W_ADDRESS is W_BASE_CONTRACT with mux id 0.
+const W_BASE_CONTRACT =
+  "CA7QYNF7SOWQ3GLR2BGMZEHXAVIRZA4KVWLTJJFC7MGXUA74P7UJUWDA";
+const W_ADDRESS =
+  "WA7QYNF7SOWQ3GLR2BGMZEHXAVIRZA4KVWLTJJFC7MGXUA74P7UJUAAAAAAAAAAAAAWWC";
 
 const callGetRowData = (
   operation: HistoryItemOperation,
@@ -227,6 +232,53 @@ describe("getRowDataByOpType - Soroban asset balance changes muxed classificatio
 
     expect(row.metadata.isReceiving).toBe(true);
     expect(row.amount).toMatch(/^\+/);
+  });
+
+  it("shows a transfer to a muxed contract (W) as sent to the W address", async () => {
+    jest
+      .spyOn(sorobanHelpers, "getAttrsFromSorobanHorizonOp")
+      .mockReturnValue(null as any);
+
+    // Horizon reports the base contract as `to` and the mux id separately.
+    const operation = buildInvokeHostFnOperation({
+      asset_balance_changes: [
+        {
+          asset_type: "native",
+          from: PUBLIC_KEY,
+          to: W_BASE_CONTRACT,
+          amount: "5",
+          destination_muxed_id: "0",
+        },
+      ],
+    });
+
+    const row = await callGetRowData(operation);
+
+    expect(row.metadata.isReceiving).toBe(false);
+    expect(row.amount).toMatch(/^-/);
+    expect(row.metadata.to).toBe(W_ADDRESS);
+  });
+
+  it("only rebuilds a muxed address when the destination is a contract", async () => {
+    jest
+      .spyOn(sorobanHelpers, "getAttrsFromSorobanHorizonOp")
+      .mockReturnValue(null as any);
+
+    const operation = buildInvokeHostFnOperation({
+      asset_balance_changes: [
+        {
+          asset_type: "native",
+          from: PUBLIC_KEY,
+          to: COUNTERPARTY,
+          amount: "5",
+          destination_muxed_id: "1",
+        },
+      ],
+    });
+
+    const row = await callGetRowData(operation);
+
+    expect(row.metadata.to).toBe(COUNTERPARTY);
   });
 });
 
