@@ -1,6 +1,6 @@
 @use "../../../styles/utils.scss" as *;
 
-$activeColor: rgba(61, 204, 152, 1);
+$activeColor: var(--sds-clr-green-11);
 
 .NetworkSettings {
   &__header {
@@ -32,7 +32,7 @@ $activeColor: rgba(61, 204, 152, 1);
   }
 
   &__url {
-    color: rgba(255, 255, 255, 0.4);
+    color: var(--sds-clr-gray-09);
     font-size: 0.875rem;
     margin-left: 1rem;
   }

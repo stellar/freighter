@@ -11,6 +11,7 @@ interface SelectionTileProps {
   onClick: () => void;
   isEmpty?: boolean;
   shouldUseIconWrapper?: boolean;
+  hasIconFrame?: boolean;
   testId?: string;
 }
 
@@ -22,6 +23,7 @@ export const SelectionTile = ({
   onClick,
   isEmpty = false,
   shouldUseIconWrapper = true,
+  hasIconFrame = true,
   testId,
 }: SelectionTileProps) => {
   const handleChevronClick = (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -39,7 +41,13 @@ export const SelectionTile = ({
     >
       <div className="SelectionTile__content">
         {shouldUseIconWrapper ? (
-          <div className="SelectionTile__icon">{icon}</div>
+          <div
+            className={`SelectionTile__icon ${
+              hasIconFrame ? "" : "SelectionTile__icon--frameless"
+            }`}
+          >
+            {icon}
+          </div>
         ) : (
           icon
         )}

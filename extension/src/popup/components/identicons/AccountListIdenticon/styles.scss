@@ -7,18 +7,12 @@
   &__active-wrapper {
     background: none;
     border-radius: 2rem;
-    border-width: 1.5px;
-    border-style: solid;
-    border-color: var(--sds-clr-gray-03);
   }
 
   &__identicon-wrapper {
-    background: var(--color-white);
     border-radius: 2rem;
     height: 2rem;
     width: 2rem;
-    margin: 0.125rem;
-    padding: 0.25rem;
   }
 
   &__identicon-button {

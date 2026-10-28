@@ -17,6 +17,7 @@ const esModules = [
   "uint8array-extras",
   "smol-toml",
   "feaxios",
+  "boring-avatars",
 ];
 
 const jsdomTests = {

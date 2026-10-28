@@ -1,0 +1,40 @@
+@use "../../../styles/utils.scss" as *;
+
+.HiddenAssets {
+  display: flex;
+  flex-direction: column;
+  gap: pxToRem(16px);
+
+  &__list {
+    display: flex;
+    flex-direction: column;
+    // AssetListRow has no vertical padding of its own, so without this the
+    // rows sit flush. 20px matches the row pitch in the designs (38px rows
+    // on a 58px pitch). A long list scrolls with the sheet, under its fades.
+    gap: pxToRem(20px);
+
+    // AssetListRow is shared with the Home list; only this sheet follows the
+    // hidden-tokens frame (name Text/SM/500, domain Text/XS/500 secondary).
+    .AssetListRow__code {
+      font-size: pxToRem(14px);
+      font-weight: var(--sds-fw-medium);
+      line-height: pxToRem(20px);
+    }
+
+    .AssetListRow__domain {
+      color: var(--sds-clr-gray-11);
+      font-size: pxToRem(12px);
+      font-weight: var(--sds-fw-medium);
+      line-height: pxToRem(18px);
+    }
+  }
+
+  &__empty,
+  &__loader {
+    display: flex;
+    justify-content: center;
+    padding: pxToRem(12px) 0;
+    color: var(--sds-clr-gray-11);
+    font-size: pxToRem(14px);
+  }
+}

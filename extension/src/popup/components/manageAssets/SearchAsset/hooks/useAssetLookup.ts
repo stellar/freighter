@@ -6,6 +6,7 @@ import { getTokenDetails } from "@shared/api/internal";
 import { isSacContractExecutable } from "@shared/helpers/soroban/token";
 import { isNativeContract } from "@shared/helpers/assetIdentity";
 import { INDEXER_URL } from "@shared/constants/mercury";
+import { isBulkScannableAssetId } from "@shared/helpers/blockaid";
 import { BlockAidScanAssetResult } from "@shared/api/types";
 import {
   buildNativeAssetRow,
@@ -84,16 +85,23 @@ const useAssetLookup = () => {
     // scan the first few assets to see if they are suspicious
     // due to the length of time it takes to scan, we'll do it in consecutive chunks
     for (let i = 0; i < assetRows.length; i += MAX_ASSETS_TO_SCAN) {
-      const url = new URL(`${INDEXER_URL}/scan-asset-bulk`);
-
       const chunk = assetRows.slice(i, i + MAX_ASSETS_TO_SCAN);
-      chunk.forEach((record) => {
-        if (record.code && record.issuer && !isContractId(record.issuer)) {
-          url.searchParams.append(
-            "asset_ids",
-            `${record.code}-${record.issuer}`,
-          );
-        }
+      const assetIds = chunk
+        .filter(
+          (record) =>
+            record.code && record.issuer && !isContractId(record.issuer),
+        )
+        .map((record) => `${record.code}-${record.issuer}`)
+        .filter(isBulkScannableAssetId);
+      // The backend rejects a request with no ids, and that failure would stop
+      // the scan before the chunks after this one (e.g. 10 contract tokens).
+      if (!assetIds.length) {
+        continue;
+      }
+
+      const url = new URL(`${INDEXER_URL}/scan-asset-bulk`);
+      assetIds.forEach((assetId) => {
+        url.searchParams.append("asset_ids", assetId);
       });
       const response = await fetch(url.href, { signal });
       const data = await response.json();
@@ -128,9 +136,12 @@ const useAssetLookup = () => {
         ? "verifiedAssetRows"
         : "unverifiedAssetRows";
 
+      // Both lists are scanned at once into the same payload, so write this
+      // list's rows into it: each update then keeps the other list's verdicts.
+      payload[rowsToUpdate] = assetRows;
       dispatch({
         type: "FETCH_DATA_SUCCESS",
-        payload: { ...payload, [rowsToUpdate]: assetRows },
+        payload: { ...payload },
       });
     }
   };
@@ -423,10 +434,12 @@ const useAssetLookup = () => {
     // If we want to gather Blockaid data about our assets, we'll fetch the data and then combine with our
     // asset rows so we have all of our information in one object
     if (isBlockaidEnabled && !isContractId(asset)) {
+      // Shared by both scans below, so neither undoes the other's verdicts.
+      const scannedPayload = { ...payload };
       if (verifiedAssets.length) {
         addBlockaidScanResults({
           assetRows: verifiedAssets,
-          payload,
+          payload: scannedPayload,
           isVerifiedList: true,
           signal,
         }).catch(() => {
@@ -439,7 +452,7 @@ const useAssetLookup = () => {
       if (unverifiedAssets.length) {
         addBlockaidScanResults({
           assetRows: unverifiedAssets,
-          payload,
+          payload: scannedPayload,
           isVerifiedList: false,
           signal,
         }).catch(() => {

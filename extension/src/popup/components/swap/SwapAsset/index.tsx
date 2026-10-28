@@ -7,7 +7,7 @@ import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 
 import { SubviewHeader } from "popup/components/SubviewHeader";
-import { openTab } from "popup/helpers/navigate";
+import { closeWindow, openTab } from "popup/helpers/navigate";
 import { View } from "popup/basics/layout/View";
 import { FormRows } from "popup/basics/Forms";
 import { RequestState } from "constants/request";
@@ -200,7 +200,7 @@ export const SwapAsset = ({
     if (fromState.data?.type === AppDataType.REROUTE) {
       if (fromState.data.shouldOpenTab) {
         openTab(newTabHref(fromState.data.routeTarget));
-        window.close();
+        closeWindow();
       }
       return (
         <Navigate

@@ -3,6 +3,11 @@
     display: flex;
     gap: 0.25rem;
     align-items: center;
+
+    svg {
+      width: 1rem;
+      height: 1rem;
+    }
   }
 
   &__label {

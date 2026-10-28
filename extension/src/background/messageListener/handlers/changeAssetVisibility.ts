@@ -1,20 +1,26 @@
+import { Store } from "redux";
+
 import { ChangeAssetVisibilityMessage } from "@shared/api/types/message-request";
 import { DataStorageAccess } from "background/helpers/dataStorageAccess";
-import { getHiddenAssets } from "../helpers/get-hidden-assets";
-import { HIDDEN_ASSETS } from "constants/localStorageTypes";
+import { setAssetVisibility } from "../helpers/hidden-assets";
 
 export const changeAssetVisibility = async ({
   request,
   localStore,
+  sessionStore,
 }: {
   request: ChangeAssetVisibilityMessage;
   localStore: DataStorageAccess;
+  sessionStore: Store;
 }) => {
-  const { assetVisibility } = request;
+  const { assetVisibility, publicKey, network } = request;
 
-  const { hiddenAssets } = await getHiddenAssets({ localStore });
-  hiddenAssets[assetVisibility.issuer] = assetVisibility.visibility;
-
-  await localStore.setItem(HIDDEN_ASSETS, hiddenAssets);
-  return { hiddenAssets };
+  return setAssetVisibility({
+    publicKey,
+    network,
+    canonical: assetVisibility.issuer,
+    visibility: assetVisibility.visibility,
+    localStore,
+    sessionStore,
+  });
 };

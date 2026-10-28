@@ -32,9 +32,7 @@ export const MaintenanceScreen: React.FC<{
         <View.Inset>
           <div className="MaintenanceScreen__card">
             <div className="MaintenanceScreen__icon-box">
-              <Icon.AlertOctagon
-                style={{ color: "var(--sds-clr-lilac-09, #6e56cf)" }}
-              />
+              <Icon.AlertOctagon style={{ color: "var(--sds-clr-lilac-09)" }} />
             </div>
             <Heading as="h2" size="xs" addlClassName="MaintenanceScreen__title">
               {content.title}

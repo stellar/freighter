@@ -7,7 +7,7 @@ import {
   getCanonicalFromAsset,
   isAsset,
 } from "helpers/stellar";
-import { ApiTokenPrices, AssetToken } from "@shared/api/types";
+import { ApiTokenPrices, AssetToken, AssetVisibility } from "@shared/api/types";
 import {
   AssetType,
   ClassicAsset,
@@ -22,13 +22,21 @@ import {
 import { getAssetSacAddress } from "@shared/helpers/soroban/token";
 import { LP_IDENTIFIER } from "./account";
 import { NO_FIAT_VALUE, formatFiatAmount } from "./formatters";
-import { isContractId } from "./soroban";
+import { isAssetVisible } from "./settings";
+import { getTokenBalance, isContractId } from "./soroban";
 
 export const isClassicBalance = (balance: AssetType): balance is ClassicAsset =>
   "token" in balance && "issuer" in balance.token;
 
 export const isSorobanBalance = (balance: AssetType): balance is SorobanAsset =>
   "contractId" in balance;
+
+// SEP-41 totals are raw integers; scale them the same way the send flow does
+// (getTokenBalance) before multiplying by a whole-token price.
+export const getTotalInWholeUnits = (balance: AssetType): BigNumber =>
+  isSorobanBalance(balance)
+    ? new BigNumber(getTokenBalance(balance))
+    : new BigNumber(balance.total);
 
 export const findAssetBalance = (
   balances: AssetType[],
@@ -213,11 +221,25 @@ export const getBalanceCanonicalKey = (b: AssetType): string => {
 };
 
 /**
+ * The balances left once the hidden assets are taken out, by the same rules
+ * as the balances map's `filterHiddenBalances`: native XLM always stays, and
+ * anything else stays unless the hidden map marks it.
+ */
+export const omitHiddenBalances = (
+  balances: AssetType[],
+  hiddenAssets: Record<string, AssetVisibility>,
+): AssetType[] =>
+  balances.filter(
+    (b) =>
+      isNativeBalance(b) ||
+      isAssetVisible(hiddenAssets, getBalanceCanonicalKey(b)),
+  );
+
+/**
  * Re-orders balances for display by descending USD value.
  *
- * Only native + classic G-issuer assets receive prices from the indexer
- * (Soroban, custom tokens, and LP shares are filtered out upstream — see
- * `getTokenPrices` in `@shared/api/internal.ts`). Unpriced balances keep
+ * LP shares are never priced; SEP-41 balances are priced on the v2 path and
+ * valued in whole units via `getTotalInWholeUnits`. Unpriced balances keep
  * the relative order produced by `sortBalances` and sort below all
  * priced balances. A `currentPrice` of `"0"` is a valid USD value and
  * keeps the asset in the priced group; a malformed `currentPrice` is
@@ -238,7 +260,7 @@ export const sortBalancesByValue = (
     if (priceStr === undefined || priceStr === null || priceStr === "") {
       return null;
     }
-    const value = new BigNumber(priceStr).multipliedBy(b.total);
+    const value = new BigNumber(priceStr).multipliedBy(getTotalInWholeUnits(b));
     return value.isFinite() ? value : null;
   };
 
@@ -260,7 +282,7 @@ export const getTotalUsd = (prices: ApiTokenPrices, balances: AssetType[]) => {
     if (!priceBalance) {
       return prev;
     }
-    const currentAssetBalance = priceBalance.total;
+    const currentAssetBalance = getTotalInWholeUnits(priceBalance);
     const currentPrice = prices[curr] ? prices[curr].currentPrice : "0";
     const currentUsdBalance = new BigNumber(currentPrice).multipliedBy(
       currentAssetBalance,
@@ -325,3 +347,42 @@ export const hasEnoughXlmForFee = (
   balances.some(
     (balance) => isNativeBalance(balance) && balance.available.gt(feeXlm),
   );
+
+/**
+ * Whether an asset may offer "Remove".
+ *
+ * Classic assets are removed by closing their trustline, and SACs are not
+ * removable at all. A custom token is removable only while it is on screen
+ * because of the user's local token list: once the backend returns it on its
+ * own, dropping the local entry would not stop it coming back, so it can only
+ * be hidden.
+ *
+ * The native and liquidity-pool guards are load bearing on Asset Details,
+ * which opens a sheet for every balance. Manage assets never reaches them --
+ * useGetAssetDomainsWithBalances drops the native row, and LP rows are not
+ * clickable -- so without the guards XLM would offer a changeTrust that cannot
+ * succeed.
+ */
+export const getIsRemovable = ({
+  contract,
+  isSac,
+  isNative,
+  isLiquidityPool,
+  localOnlyTokenIds,
+}: {
+  contract: string;
+  isSac: boolean;
+  isNative?: boolean;
+  isLiquidityPool?: boolean;
+  localOnlyTokenIds?: string[];
+}) => {
+  if (isNative || isLiquidityPool || isSac) {
+    return false;
+  }
+  // No contract means a classic asset, removed by closing its trustline. This
+  // is the same test isAssetSac and shouldChangeTrust use to tell the two apart.
+  if (!contract) {
+    return true;
+  }
+  return !!localOnlyTokenIds?.includes(contract);
+};

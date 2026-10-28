@@ -75,7 +75,11 @@ export const Fee = ({ fee, recommendedFee, onSaveFee, goBack }: FeeProps) => {
                 </Form>
               </div>
             </View.Content>
-            <View.Footer>
+            <View.Footer
+              // Two stacked buttons outgrow the footer's fixed 80px, which
+              // clipped Set recommended down to a sliver; size to them instead.
+              allowWrap
+            >
               <div className="TxFee__actions">
                 <Button
                   type="button"

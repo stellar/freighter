@@ -46,7 +46,7 @@ import type { FederationMemoType } from "popup/helpers/federationMemo";
 import { RequestState } from "constants/request";
 import { useSendToData, getAddressFromInput } from "./hooks/useSendToData";
 
-import { openTab } from "popup/helpers/navigate";
+import { closeWindow, openTab } from "popup/helpers/navigate";
 import { newTabHref } from "helpers/urls";
 import { Navigate, useLocation } from "react-router-dom";
 import { AppDataType } from "helpers/hooks/useGetAppData";
@@ -270,7 +270,7 @@ export const SendTo = ({
   if (sendDataState.data?.type === AppDataType.REROUTE) {
     if (sendDataState.data.shouldOpenTab) {
       openTab(newTabHref(sendDataState.data.routeTarget));
-      window.close();
+      closeWindow();
     }
     return (
       <Navigate

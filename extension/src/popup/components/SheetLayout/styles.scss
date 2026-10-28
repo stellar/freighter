@@ -1,0 +1,118 @@
+@use "../../styles/utils.scss" as *;
+
+$padding: 24px;
+$header-gap: 16px;
+$fade-height: 24px;
+// SDS's focus ring. The body takes this much of the header gap as its own top
+// padding, so a control at the top of the body (Memo's input) shows its whole
+// ring rather than having the top of it painted over by the pinned header.
+// Nothing moves: the gap is the same 16px, split between the two.
+$focus-ring: 4px;
+
+.SheetLayout {
+  // The card's colour, so pinned rows hide what scrolls under them.
+  --sheet-layout--background: var(--sds-clr-gray-01);
+
+  display: flex;
+  flex-direction: column;
+
+  &--fill {
+    min-height: 100%;
+  }
+
+  &--fill &__body {
+    flex: 1;
+  }
+
+  &__top,
+  &__bottom {
+    position: sticky;
+    z-index: 1;
+  }
+
+  &__top {
+    top: 0;
+  }
+
+  &__bottom {
+    bottom: 0;
+  }
+
+  &__header,
+  &__footer {
+    background-color: var(--sheet-layout--background);
+  }
+
+  &__header {
+    padding: pxToRem($padding) pxToRem($padding)
+      pxToRem($header-gap - $focus-ring);
+  }
+
+  &__footer {
+    padding: pxToRem($padding);
+  }
+
+  &__body {
+    padding: 0 pxToRem($padding);
+    // Its own stacking context, so z-indexes inside the body stay below the
+    // pinned rows (z-index 1). SDS's CopyText wraps its value in a Floater at
+    // z-index 1 (2 when active), which otherwise painted copyable values over
+    // the header as they scrolled up under it.
+    isolation: isolate;
+  }
+
+  &--has-header &__body {
+    padding-top: pxToRem($focus-ring);
+  }
+
+  // Without a pinned row the body takes the card padding on that edge itself.
+  &:not(&--has-header) &__body {
+    padding-top: pxToRem($padding);
+  }
+
+  &:not(&--has-footer) &__body {
+    padding-bottom: pxToRem($padding);
+  }
+
+  // The fades overlay the body from the inside edge of the pinned rows (or
+  // the card edge), so they take no space and never change the measured height.
+  &__fade {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: pxToRem($fade-height);
+    pointer-events: none;
+    opacity: 0;
+
+    &--visible {
+      opacity: 1;
+    }
+
+    &--top {
+      top: 100%;
+      background: linear-gradient(
+        to bottom,
+        var(--sheet-layout--background),
+        transparent
+      );
+    }
+
+    &--bottom {
+      bottom: 100%;
+      background: linear-gradient(
+        to top,
+        var(--sheet-layout--background),
+        transparent
+      );
+    }
+  }
+
+  // Without a header the top fade hangs from the card edge instead.
+  &:not(&--has-header) &__fade--top {
+    top: 0;
+  }
+
+  &:not(&--has-footer) &__fade--bottom {
+    bottom: 0;
+  }
+}

@@ -2,7 +2,7 @@ import React, { createContext, useContext } from "react";
 import { Text } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
-import FreighterLogo from "popup/assets/logo-freighter-welcome-2.svg";
+import VarialLockup from "popup/assets/logo-varial-lockup.svg?react";
 import { BackButton } from "popup/basics/buttons/BackButton";
 import { addStyleClasses } from "popup/helpers/addStyleClasses";
 
@@ -21,10 +21,10 @@ const ViewHeader: React.FC = ({ ...props }) => {
     <header className="View__header" {...props}>
       <ViewInset isInline hasVerticalBorder>
         <div className="View__header__box View__header__box--center full">
-          <img
+          <VarialLockup
             className="View__header__logo"
-            alt={t("Freighter logo")}
-            src={FreighterLogo}
+            role="img"
+            aria-label={t("Varial logo")}
           />
         </div>
       </ViewInset>
@@ -44,7 +44,12 @@ interface ViewAppHeaderProps {
   customBackAction?: () => void;
   customBackIcon?: React.ReactNode;
   isAccountHeader?: boolean;
-  children?: React.ReactNode;
+  /** Floats over the scrolling content on the Home-style fade, instead of
+   * sitting above it in the flow. For the tab screens that scroll inside
+   * their inset (History, Discover); Home pins its own with `isAccountHeader`. */
+  isFloating?: boolean;
+  /** Drops the fade for a solid page color, e.g. under an opaque banner. */
+  isSolid?: boolean;
 }
 
 const ViewAppHeader: React.FC<ViewAppHeaderProps> = ({
@@ -57,11 +62,17 @@ const ViewAppHeader: React.FC<ViewAppHeaderProps> = ({
   hasBackButton,
   customBackAction,
   customBackIcon,
-  children,
   isAccountHeader = false,
+  isFloating = false,
+  isSolid = false,
   ...props
 }: ViewAppHeaderProps) => (
-  <div className="View__header" {...props}>
+  <div
+    className={`View__header${isAccountHeader ? " View__header--account" : ""}${
+      isFloating ? " View__header--floating" : ""
+    }${isSolid ? " View__header--solid" : ""}`}
+    {...props}
+  >
     {topContent && (
       <ViewInset hasVerticalBorder hasNoPadding>
         <div className="View__topContent">{topContent}</div>
@@ -115,8 +126,6 @@ const ViewAppHeader: React.FC<ViewAppHeaderProps> = ({
         {rightContent}
       </div>
     </ViewInset>
-
-    {children}
   </div>
 );
 
@@ -296,6 +305,8 @@ interface ViewLayoutProps {
   children: React.ReactNode;
   isAppLayout?: boolean;
   isScrollableView?: boolean;
+  /** Adds bottom clearance so content is not hidden behind the tab bar. */
+  hasTabBar?: boolean;
 }
 
 export const View: React.FC<ViewLayoutProps> & ViewComponent = ({
@@ -303,11 +314,14 @@ export const View: React.FC<ViewLayoutProps> & ViewComponent = ({
   // Most views have "app" layout, so defaulting to that
   isAppLayout = true,
   isScrollableView = false,
+  hasTabBar = false,
   ...props
 }: ViewLayoutProps) => (
   <ViewContext.Provider value={{ isAppLayout }}>
     <div
-      className={`View${isScrollableView ? " View--scrollable" : ""}`}
+      className={`View${isScrollableView ? " View--scrollable" : ""}${
+        hasTabBar ? " View--has-tab-bar" : ""
+      }`}
       id="layout-view"
       {...props}
     >

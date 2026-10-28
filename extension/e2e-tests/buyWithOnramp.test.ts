@@ -1,6 +1,7 @@
 import { test, expect, expectPageToHaveScreenshot } from "./test-fixtures";
 import { loginToTestAccount } from "./helpers/login";
 import { stubAccountBalancesV2 } from "./helpers/stubs";
+import { switchNetwork } from "./helpers/network";
 
 // Zero-XLM unfunded fixture shared by both tests, served on both the v1 and
 // v2 balances endpoints.
@@ -65,8 +66,7 @@ test("should show add XLM page and open Coinbase", async ({
   };
   await loginToTestAccount({ page, extensionId, context, stubOverrides });
 
-  await page.getByTestId("network-selector-open").click();
-  await page.getByText("Mainnet").click();
+  await switchNetwork(page, "Mainnet");
   await expect(page.getByTestId("account-view")).toBeVisible({
     timeout: 30000,
   });
@@ -110,8 +110,7 @@ test("should show Buy with Coinbase and open Coinbase", async ({
   };
   await loginToTestAccount({ page, extensionId, context, stubOverrides });
 
-  await page.getByTestId("network-selector-open").click();
-  await page.getByText("Mainnet").click();
+  await switchNetwork(page, "Mainnet");
   await expect(page.getByTestId("account-view")).toBeVisible({
     timeout: 30000,
   });

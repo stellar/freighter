@@ -14,7 +14,7 @@ import { PillButton } from "popup/basics/buttons/PillButton";
 import { View } from "popup/basics/layout/View";
 import { ROUTES } from "popup/constants/routes";
 
-import { navigateTo, openTab } from "popup/helpers/navigate";
+import { closeWindow, navigateTo, openTab } from "popup/helpers/navigate";
 import { isNetworkUrlValid as isNetworkUrlValidHelper } from "popup/helpers/account";
 import { isActiveNetwork } from "helpers/stellar";
 
@@ -99,7 +99,7 @@ export const NetworkForm = ({ isEditing }: NetworkFormProps) => {
   if (state.data?.type === AppDataType.REROUTE) {
     if (state.data.shouldOpenTab) {
       openTab(newTabHref(state.data.routeTarget));
-      window.close();
+      closeWindow();
     }
     return (
       <Navigate

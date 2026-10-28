@@ -9,6 +9,37 @@ describe("SelectionTile", () => {
     mockOnClick.mockClear();
   });
 
+  describe("icon frame", () => {
+    it("frames the icon by default", () => {
+      const { container } = render(
+        <SelectionTile
+          icon={<div />}
+          primaryText="Token"
+          onClick={mockOnClick}
+        />,
+      );
+
+      expect(container.querySelector(".SelectionTile__icon")).not.toHaveClass(
+        "SelectionTile__icon--frameless",
+      );
+    });
+
+    it("drops the frame when hasIconFrame is false", () => {
+      const { container } = render(
+        <SelectionTile
+          icon={<div />}
+          primaryText="Account"
+          onClick={mockOnClick}
+          hasIconFrame={false}
+        />,
+      );
+
+      expect(container.querySelector(".SelectionTile__icon")).toHaveClass(
+        "SelectionTile__icon--frameless",
+      );
+    });
+  });
+
   describe("with all props", () => {
     it("renders icon, primary text, and secondary text", () => {
       render(

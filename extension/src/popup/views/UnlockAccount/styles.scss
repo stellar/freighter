@@ -1,9 +1,54 @@
+@use "../../styles/utils.scss" as *;
+
 .UnlockAccount {
-  &__footer-label {
-    width: 100%;
+  flex: 1;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: pxToRem(24px);
+
+  // Figma's frame keeps 24px of trailing space below "Forgot password", so its
+  // visible block sits 12px above true center. Reserve the same space here to
+  // land the centered column where the design has it.
+  padding-bottom: pxToRem(24px);
+
+  &__logo {
+    width: pxToRem(48px);
+    height: pxToRem(48px);
+  }
+
+  &__titles {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: pxToRem(8px);
     text-align: center;
-    font-size: 12px;
-    line-height: 1.5rem;
-    color: var(--sds-clr-gray-11);
+  }
+
+  &__form {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(24px);
+  }
+
+  &__buttons {
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(8px);
+
+    // "Forgot password" is a text-only button in the design: no fill or border
+    // in any state. SDS's focus ring is a box-shadow, so it stays. SDS applies
+    // the "active" colors on :focus, which is why those are cleared as well.
+    .Button--tertiary {
+      --Button-color-background-default: transparent;
+      --Button-color-background-hover: transparent;
+      --Button-color-background-active: transparent;
+      --Button-color-border-default: transparent;
+      --Button-color-border-hover: transparent;
+      --Button-color-border-active: transparent;
+    }
   }
 }

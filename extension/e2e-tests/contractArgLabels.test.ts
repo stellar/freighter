@@ -98,6 +98,78 @@ const openDetailsPane = async (popup: any) => {
 };
 
 test.describe("contract argument labels", () => {
+  // The pane's copyable values are wrapped in SDS's CopyText, a Floater at
+  // z-index 1 (2 when active). Scrolled up under the pinned header they used
+  // to paint over it; SheetLayout's body now keeps them below the header.
+  test("keeps copyable arguments under the pinned header while scrolling", async ({
+    page,
+    extensionId,
+    context,
+  }) => {
+    await loginToTestAccount({
+      page,
+      extensionId,
+      context,
+      stubOverrides: async () => {
+        await stubContractSpecDefinitions(context, CONTRACT, GAUGE_DEFINITIONS);
+      },
+    });
+
+    const popup = await openSignTransactionPopup({
+      page,
+      xdr: buildInvokeXdr(true),
+    });
+    await stubContractSpecDefinitions(popup, CONTRACT, GAUGE_DEFINITIONS);
+    await openDetailsPane(popup);
+
+    // Polled: the sheet slides in, and until it settles the header's box is
+    // not where it ends up.
+    const topmostOverHeader = () =>
+      popup.evaluate(() => {
+        const layout = [
+          ...document.querySelectorAll(".SheetLayout--has-header"),
+        ].find((l) => l.querySelector(".SheetLayout__body .Floater"));
+        if (!layout) return "no copyable value in the pane";
+        let scroller = layout.parentElement;
+        while (
+          scroller &&
+          !(
+            ["auto", "scroll"].includes(getComputedStyle(scroller).overflowY) &&
+            scroller.scrollHeight > scroller.clientHeight
+          )
+        ) {
+          scroller = scroller.parentElement;
+        }
+        if (!scroller) return "pane does not scroll";
+        const header = layout
+          .querySelector(".SheetLayout__header")!
+          .getBoundingClientRect();
+        // Scroll the first copyable value that can reach it under the header.
+        for (const floater of layout.querySelectorAll(
+          ".SheetLayout__body .Floater",
+        )) {
+          scroller.scrollTop = 0;
+          const offset =
+            floater.getBoundingClientRect().top - (header.top + 20);
+          if (
+            offset >= 0 &&
+            offset <= scroller.scrollHeight - scroller.clientHeight
+          ) {
+            scroller.scrollTop = offset;
+            const box = floater.getBoundingClientRect();
+            const hit = document.elementFromPoint(
+              box.left + Math.min(20, box.width / 2),
+              header.top + header.height / 2,
+            );
+            return hit?.closest(".SheetLayout__top") ? "header" : "body";
+          }
+        }
+        return "no copyable value reaches the header";
+      });
+
+    await expect.poll(topmostOverHeader).toBe("header");
+  });
+
   test("labels every argument when a middle parameter is optional", async ({
     page,
     extensionId,

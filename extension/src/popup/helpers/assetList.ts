@@ -1,4 +1,6 @@
 import { NetworkDetails } from "@shared/constants/stellar";
+import { getCanonicalFromAsset } from "@shared/helpers/stellar";
+import { isContractId } from "@shared/api/helpers/soroban";
 import {
   AssetsLists,
   AssetListReponseItem,
@@ -36,15 +38,10 @@ export const splitVerifiedAssetCurrency = async ({
       validatedAssets.push(...validatedList.assets);
     }
   }
-  // make a unique set of contract IDs and issuers
+  // make a unique set of the contract IDs and code:issuer pairs the lists vouch for
   const verifiedIds = new Set<string>();
   for (const validAsset of validatedAssets) {
-    if (validAsset.contract && !verifiedIds.has(validAsset.contract)) {
-      verifiedIds.add(validAsset.contract);
-    }
-    if (!verifiedIds.has(validAsset.issuer)) {
-      verifiedIds.add(validAsset.issuer);
-    }
+    getAssetIdentities(validAsset).forEach((id) => verifiedIds.add(id));
   }
 
   verifiedIds.add(nativeContractDetails.contract);
@@ -53,12 +50,7 @@ export const splitVerifiedAssetCurrency = async ({
     [typeof assets, typeof assets]
   >(
     ([inVerifiedList, notInVerifiedList], item) => {
-      if (item.issuer && verifiedIds.has(item.issuer)) {
-        inVerifiedList.push(item);
-        return [inVerifiedList, notInVerifiedList];
-      }
-
-      if (item.contract && verifiedIds.has(item.contract)) {
+      if (getAssetIdentities(item).some((id) => verifiedIds.has(id))) {
         inVerifiedList.push(item);
         return [inVerifiedList, notInVerifiedList];
       }
@@ -83,23 +75,47 @@ interface GetAssetListsForAssetParams {
 }
 
 /**
- * True when `asset` and `item` share an issuer, or share a contract id.
+ * The identities an asset (or an asset list entry) is known by: its contract
+ * id, and for a classic asset its code:issuer pair. A contract id in the
+ * issuer field is a contract identity too, matched for any code.
+ *
+ * A classic asset is the pair (code, issuer), so the issuer alone is never an
+ * identity: an issuer can mint any number of codes, and a list that vouches
+ * for one of them does not vouch for the others. Codes are case-sensitive, so
+ * USDE and USDe from the same issuer are different assets.
+ */
+export const getAssetIdentities = (asset: {
+  code?: string;
+  issuer?: string;
+  contract?: string;
+}): string[] => {
+  const identities = [] as string[];
+  if (asset.contract) {
+    identities.push(asset.contract);
+  }
+  if (isContractId(asset.issuer)) {
+    identities.push(asset.issuer!);
+  } else if (asset.code && asset.issuer) {
+    identities.push(getCanonicalFromAsset(asset.code, asset.issuer));
+  }
+  return identities;
+};
+
+/**
+ * True when `asset` and `item` share a contract id, or share both code and
+ * issuer.
  *
  * Both halves of an identity are optional on these records, so each comparison
  * requires its own side to actually be present — two absent values are not a
  * match.
- *
- * Note this is not full identity: a classic asset is the pair (code, issuer),
- * and matching on the issuer alone accepts a different asset from the same
- * issuer. That is the long-standing behaviour of the verified-list membership
- * tests, tracked in stellar/wallet-eng-monorepo#76; this helper preserves it.
  */
 export const assetMatchesListItem = (
-  asset: { issuer?: string; contract?: string },
-  item: { issuer?: string; contract?: string },
-): boolean =>
-  (!!asset.issuer && asset.issuer === item.issuer) ||
-  (!!asset.contract && asset.contract === item.contract);
+  asset: { code?: string; issuer?: string; contract?: string },
+  item: { code?: string; issuer?: string; contract?: string },
+): boolean => {
+  const itemIdentities = getAssetIdentities(item);
+  return getAssetIdentities(asset).some((id) => itemIdentities.includes(id));
+};
 
 export const getAssetListsForAsset = async ({
   asset,

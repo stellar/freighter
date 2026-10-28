@@ -17,7 +17,7 @@ import {
   resetSubmission,
 } from "popup/ducks/transactionSubmission";
 import { View } from "popup/basics/layout/View";
-import IconFail from "popup/assets/icon-fail.svg";
+import IconFail from "popup/assets/icon-fail.svg?react";
 
 import "./styles.scss";
 
@@ -208,7 +208,7 @@ export const SubmitFail = () => {
         <div className="SubmitResult__content">
           <div className="SubmitResult__amount">{errDetails.title}</div>
           <div className="SubmitResult__icon SubmitResult__fail">
-            <img src={IconFail} alt={t("Icon Fail")} />
+            <IconFail role="img" aria-label={t("Icon Fail")} />
           </div>
           <div className="SubmitResult__error-code">
             {errDetails.status ? `${t("Status")} ${errDetails.status}: ` : ""}

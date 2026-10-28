@@ -29,7 +29,7 @@ export const sendMessageToContentScript = (msg: Msg): Promise<Response> => {
 
   window.postMessage(
     { source: EXTERNAL_MSG_REQUEST, messageId: MESSAGE_ID, ...msg },
-    window.location.origin
+    window.location.origin,
   );
   return new Promise((resolve) => {
     let requestTimeout = 0 as any;
@@ -110,7 +110,7 @@ export const FreighterApiInternalError = {
 
 export const FreighterApiLockedError = {
   code: -1,
-  message: "The wallet is locked. Unlock Freighter and try again.",
+  message: "The wallet is locked. Unlock Varial and try again.",
 };
 
 export const FreighterApiDeclinedError = {

@@ -11,3 +11,15 @@ export enum STEPS {
   SET_SWAP_TIMEOUT = "set-swap-timeout",
   SWAP_CONFIRM = "swap-confirmation",
 }
+
+/**
+ * `source` on `swap.completed`. Closed set: `Swap` validates the `?source=`
+ * query param against it so arbitrary URL values never reach analytics.
+ */
+export enum SwapSource {
+  /** The AssetDetail view's Swap button. */
+  TokenDetails = "token_details",
+}
+
+export const isSwapSource = (value: string | null): value is SwapSource =>
+  value !== null && (Object.values(SwapSource) as string[]).includes(value);

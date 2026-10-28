@@ -22,8 +22,7 @@ describe("roundHalfUp2dp", () => {
     expect(roundHalfUp2dp(1.115)).toBe(1.12);
   });
 
-  it("never floors like the extension's existing roundUsdValue", () => {
-    // roundUsdValue would report 0.00 here (Math.floor bias); half-up must not.
+  it("rounds half-up rather than flooring", () => {
     expect(roundHalfUp2dp("0.009")).toBe(0.01);
   });
 

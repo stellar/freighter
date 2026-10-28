@@ -49,6 +49,7 @@ const swapProps = {
     networkUrl: "https://horizon-testnet.stellar.org",
   } as any,
   title: "You are swapping",
+  sheetTitle: "Review swap",
   onConfirm: jest.fn(),
   onCancel: jest.fn(),
   simulationState: {
@@ -490,6 +491,12 @@ describe("ReviewTx Blockaid security banner (single, by priority) + badges", () 
       screen.queryByTestId("review-tx-details-btn"),
     ).not.toBeInTheDocument();
     expect(screen.queryByTestId("SubmitAction")).not.toBeInTheDocument();
+    // The pane's header is pinned by the sheet layout, not scrolled with it.
+    expect(
+      screen
+        .getByTestId("review-tx-details-close-btn")
+        .closest(".SheetLayout__header"),
+    ).not.toBeNull();
 
     fireEvent.click(screen.getByTestId("review-tx-details-close-btn"));
     // Body restored.
@@ -508,6 +515,7 @@ describe("ReviewTx Blockaid security banner (single, by priority) + badges", () 
           srcAsset="native"
           networkDetails={swapProps.networkDetails}
           title="You are sending"
+          sheetTitle="Review send"
           onConfirm={onConfirm}
           onCancel={jest.fn()}
           simulationState={

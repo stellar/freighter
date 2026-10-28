@@ -74,6 +74,15 @@ test("Send collectible with metadata", async ({
     page.getByTestId("review-tx-send-destination-address"),
   ).toHaveText("GBTY…JZOF");
 
+  // The review is a bottom sheet: the card paints gray-01 instead of the
+  // page's base-00, edge to edge.
+  expect(
+    await page
+      .locator(".SlideupModal.open")
+      .first()
+      .evaluate((el) => getComputedStyle(el).backgroundColor),
+  ).toBe("rgb(22, 22, 22)"); // gray-01 dark
+
   await page.getByTestId("SubmitAction").click();
   await expect(page.getByText("Sent!")).toBeVisible();
   await expect(
@@ -260,7 +269,7 @@ test("Send collectible with Soroban mux support to M address disables memo", asy
   await expect(
     page.getByText("Memo is disabled for this transaction"),
   ).toBeVisible({ timeout: 15000 });
-  await page.getByText("Cancel").click();
+  await page.getByTestId("edit-memo-cancel").click();
 
   // Click Review Send
   const reviewSendButton = page.getByTestId("send-collectible-btn-continue");
@@ -316,7 +325,7 @@ test("Send collectible without Soroban mux support to G address disables memo", 
   await expect(
     page.getByText("Memo is not supported for this operation"),
   ).toBeVisible({ timeout: 15000 });
-  await page.getByText("Cancel").click();
+  await page.getByTestId("edit-memo-cancel").click();
 
   // Click Review Send
   const reviewSendButton = page.getByTestId("send-collectible-btn-continue");
