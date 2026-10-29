@@ -1,5 +1,4 @@
 {
-  "To": "Para",
   "{{appName}} disconnected": "{{appName}} desconectado",
   "{{code}} hidden": "{{code}} ocultado",
   "{{code}} unhidden": "{{code}} exibido",
@@ -539,8 +538,8 @@
   "Review accounts to migrate": "Revisar contas para migrar",
   "Review authorization on device": "Revise a autorização no dispositivo",
   "Review message on device": "Revise a mensagem no dispositivo",
-  "Review Send": "Revisar Envio",
   "Review send": "Revisar envio",
+  "Review Send": "Revisar Envio",
   "Review swap": "Revisar troca",
   "Review transaction": "Revisar transação",
   "Review transaction on device": "Revisar transação no dispositivo",
@@ -709,6 +708,7 @@
   "Timeout": "Tempo esgotado",
   "Timeout (seconds)": "Timeout (segundos)",
   "to": "para",
+  "To": "Para",
   "To access your wallet, click Varial from your browser Extensions browser menu.": "Para acessar sua carteira, clique em Varial no menu de Extensões do seu navegador.",
   "To create a new account you need to send at least 1 XLM to it.": "Para criar uma nova conta, você precisa enviar pelo menos 1 XLM para ela.",
   "To hold {{code}} in your wallet, Stellar requires a trustline. <bold>0.5 XLM will be reserved</bold> from your balance. You can get it back by removing the trustline after your {{code}} balance is zero.": "Para manter {{code}} na sua carteira, a Stellar exige uma linha de confiança. <bold>0,5 XLM serão reservados</bold> do seu saldo. Você pode recuperá-los removendo a linha de confiança após o saldo de {{code}} ficar zerado.",
