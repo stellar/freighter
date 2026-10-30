@@ -83,6 +83,71 @@ test("Classifies a payment received to a muxed (M...) address as Received", asyn
   await expect(page.getByText("Received")).toBeVisible();
 });
 
+test("Shows a SAC transfer to a muxed contract (W...) as sent to the W address", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  // Horizon reports a transfer to a muxed contract (W...) with the base
+  // contract (C...) in `to` and the mux id in `destination_muxed_id`.
+  // W_ADDRESS is BASE_CONTRACT with mux id 0.
+  const TEST_ACCOUNT =
+    "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY";
+  const BASE_CONTRACT =
+    "CA7QYNF7SOWQ3GLR2BGMZEHXAVIRZA4KVWLTJJFC7MGXUA74P7UJUWDA";
+  const W_ADDRESS =
+    "WA7QYNF7SOWQ3GLR2BGMZEHXAVIRZA4KVWLTJJFC7MGXUA74P7UJUAAAAAAAAAAAAAWWC";
+
+  const mockAccountHistoryData = [
+    {
+      created_at: "2025-03-21T22:28:46Z",
+      id: "164007621169154",
+      paging_token: "164007621169154",
+      source_account: TEST_ACCOUNT,
+      transaction_hash:
+        "686601028de9ddf40a1c24461a6a9c0415d60a39255c35eccad0b52ac1e700a7",
+      transaction_successful: true,
+      type: "invoke_host_function",
+      type_i: 24,
+      asset_balance_changes: [
+        {
+          asset_type: "native",
+          type: "transfer",
+          from: TEST_ACCOUNT,
+          to: BASE_CONTRACT,
+          amount: "5.0000000",
+          destination_muxed_id: "0",
+        },
+      ],
+      transaction_attr: {
+        memo: null,
+        fee_charged: "100",
+        operation_count: 1,
+      },
+    },
+  ];
+
+  const stubOverrides = async () => {
+    await stubAccountHistoryWith(page, context, mockAccountHistoryData);
+  };
+
+  await loginToTestAccount({ page, extensionId, context, stubOverrides });
+  await page.getByTestId("nav-link-account-history").click();
+
+  const amountCell = page.getByTestId("history-item-amount-component");
+  await expect(amountCell).toContainText("Mar 21", { timeout: 30000 });
+  await expect(amountCell).toContainText("-5");
+
+  await page.getByTestId("history-item").first().click();
+
+  const toAddress = page.getByTestId("AssetDiff__to-from-address");
+  await expect(toAddress).toContainText(W_ADDRESS.slice(0, 4));
+  await expect(toAddress).toContainText(W_ADDRESS.slice(-4));
+
+  // The mux id travels in the W address, so there is no memo row.
+  await expect(page.locator(".Metadata--memo")).not.toBeVisible();
+});
+
 test("View failed transaction", async ({ page, extensionId, context }) => {
   test.slow();
   const mockAccountHistoryData = [

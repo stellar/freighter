@@ -24,7 +24,9 @@ import {
 } from "@shared/helpers/assetIdentity";
 import {
   getAssetFromCanonical,
+  isContractDestination,
   isMuxedAccount,
+  isMuxedContract,
   stroopToXlm,
   xlmToStroop,
 } from "helpers/stellar";
@@ -396,7 +398,7 @@ function getAssetAddress(
     return asset;
   }
   if (
-    isContractId(destination) &&
+    isContractDestination(destination) &&
     !isContractId(getAssetFromCanonical(asset).issuer)
   ) {
     return getAssetSacAddress(
@@ -474,7 +476,7 @@ function useSimulateTxData({
       let destinationAccount = await getBaseAccount(destination);
 
       let destBalancesResult = {} as AccountBalances;
-      if (destinationAccount && !isContractId(destinationAccount)) {
+      if (destinationAccount && !isContractDestination(destinationAccount)) {
         const balances = await fetchBalancesDest(
           destinationAccount,
           isMainnet,
@@ -525,7 +527,10 @@ function useSimulateTxData({
 
       // For Soroban transfers, check if contract supports muxed and determine final destination
       let finalDestination = destination;
-      let sorobanMemo = currentMemo;
+      // A muxed contract destination carries its own id, so no memo is sent
+      // with it. Decide that before the spec lookup so the memo never depends
+      // on whether the lookup succeeds.
+      let sorobanMemo = isMuxedContract(destination) ? "" : currentMemo;
       if (simParams.type === "soroban") {
         try {
           const contractSupportsMuxed = await checkIsMuxedSupported({

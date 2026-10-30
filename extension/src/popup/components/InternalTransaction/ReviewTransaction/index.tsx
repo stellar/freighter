@@ -23,6 +23,7 @@ import {
 } from "popup/ducks/transactionSubmission";
 import {
   getAssetFromCanonical,
+  isContractDestination,
   truncatedFedAddress,
   truncatedPublicKey,
 } from "helpers/stellar";
@@ -618,11 +619,16 @@ export const ReviewTx = ({
     </div>
   );
 
+  // Same rule as the send simulation: any contract destination makes this a
+  // Soroban transfer, whatever the asset, so the fee breakdown must match.
+  const isSorobanSend =
+    isToken || isCollectible || isContractDestination(destination);
+
   const feesPane = (
     <FeesPane
       fee={fee}
       simulationState={simulationState}
-      isSoroban={isToken || isCollectible}
+      isSoroban={isSorobanSend}
       onClose={() => setIsOnFeesPane(false)}
     />
   );

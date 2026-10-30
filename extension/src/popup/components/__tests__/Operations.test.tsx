@@ -136,6 +136,71 @@ describe("Operations", () => {
       expect(specNote.closest(".Operations--item")).toBeNull();
     });
 
+    it("renders a SAC transfer to a muxed contract (W) address", async () => {
+      const CONTRACT =
+        "CA3D5KRYM6CB7OWQ6TWYRR3Z4T7GNZLKERYNZGGA5SOAOPIFY6YQGAXE";
+      // CAP-84: a muxed contract address is valid as a SAC transfer `to`.
+      const MUXED_CONTRACT =
+        "WA7QYNF7SOWQ3GLR2BGMZEHXAVIRZA4KVWLTJJFC7MGXUA74P7UJUAAAAAAAAAAAAAWWC";
+
+      const func = xdr.HostFunction.hostFunctionTypeInvokeContract(
+        new xdr.InvokeContractArgs({
+          contractAddress: xdr.ScAddress.scAddressTypeContract(
+            new xdr.ContractId(StrKey.decodeContract(CONTRACT)),
+          ),
+          functionName: Buffer.from("transfer"),
+          args: [
+            new Address(TEST_PUBLIC_KEY).toScVal(),
+            new Address(MUXED_CONTRACT).toScVal(),
+            new ScInt(100).toI128(),
+          ],
+        }),
+      );
+
+      const op = {
+        auth: [],
+        func,
+        type: "invokeHostFunction",
+      } as Operation.InvokeHostFunction;
+
+      render(
+        <Wrapper
+          routes={[ROUTES.signTransaction]}
+          state={{
+            auth: {
+              error: null,
+              applicationState: APPLICATION_STATE.PASSWORD_CREATED,
+              TEST_PUBLIC_KEY,
+              allAccounts: mockAccounts,
+              hasPrivateKey: true,
+            },
+            settings: {
+              networkDetails: TESTNET_NETWORK_DETAILS,
+              networksList: DEFAULT_NETWORKS,
+              isSorobanPublicEnabled: true,
+              isRpcHealthy: true,
+            },
+          }}
+        >
+          <Operations
+            operations={[op]}
+            flaggedKeys={{}}
+            isMemoRequired={false}
+          />
+        </Wrapper>,
+      );
+
+      await waitFor(() => screen.getAllByTestId("ParameterKey"));
+      const parameterKeys = screen.getAllByTestId("ParameterKey");
+      const parameterValues = screen.getAllByTestId("ParameterValue");
+
+      expect(parameterKeys[1]).toHaveTextContent("to");
+      expect(parameterValues).toHaveLength(3);
+      expect(parameterValues[0]).toHaveTextContent(TEST_PUBLIC_KEY);
+      expect(parameterValues[1]).toHaveTextContent(MUXED_CONTRACT);
+      expect(parameterValues[2]).toHaveTextContent("100");
+    });
+
     it("renders transfer operations if contract spec is not available", async () => {
       jest.spyOn(internalApi, "getContractSpec").mockImplementation(() => {
         return Promise.reject({});

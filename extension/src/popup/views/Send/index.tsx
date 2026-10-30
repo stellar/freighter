@@ -17,8 +17,11 @@ import {
   resetSubmission,
   transactionSubmissionSelector,
 } from "popup/ducks/transactionSubmission";
-import { getAssetFromCanonical, isMainnet } from "helpers/stellar";
-import { isContractId } from "popup/helpers/soroban";
+import {
+  getAssetFromCanonical,
+  isContractDestination,
+  isMainnet,
+} from "helpers/stellar";
 import { useSimulateTxData } from "popup/components/send/SendAmount/hooks/useSimulateTxData";
 import { useSimulateTxData as useSimulateCollectibleTxData } from "popup/components/sendCollectible/SelectedCollectible/hooks/useSimulateTxData";
 import { settingsNetworkDetailsSelector } from "popup/ducks/settings";
@@ -87,7 +90,7 @@ export const Send = () => {
   /* Construct simulation parameters for an asset payment */
   const asset = getAssetFromCanonical(srcAsset);
   const simParams =
-    isToken || isSoroswap || isContractId(destination)
+    isToken || isSoroswap || isContractDestination(destination)
       ? {
           type: "soroban" as const,
           xdr: transactionSimulation.preparedTransaction ?? "",

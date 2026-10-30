@@ -5,7 +5,6 @@ import {
   Asset,
   Operation,
   StrKey,
-  Transaction,
   TransactionBuilder,
   scValToNative,
   xdr,
@@ -21,7 +20,11 @@ import {
   SorobanCollectibleInterface,
 } from "@shared/constants/soroban/token";
 import { AccountBalances } from "helpers/hooks/useGetBalances";
-import { getAssetFromCanonical, getCanonicalFromAsset } from "helpers/stellar";
+import {
+  getAssetFromCanonical,
+  getCanonicalFromAsset,
+  isContractDestination,
+} from "helpers/stellar";
 import { findAssetBalance, isSorobanBalance } from "./balance";
 import { getSdk, splitCanonical } from "@shared/helpers/stellar";
 import {
@@ -124,7 +127,7 @@ export const isSorobanTransaction = ({
   }
 
   // Check if recipient address is a contract address
-  if (recipientAddress && isContractId(recipientAddress)) {
+  if (recipientAddress && isContractDestination(recipientAddress)) {
     return true;
   }
 
@@ -462,6 +465,14 @@ export const getInvocationArgsFromInvokeHostFn = (
   };
 };
 
+// Several call sites decode the same operation during one history load.
+// Cache by envelope so each one is decoded, and any failure reported, once.
+const sorobanOpAttrsCache = new Map<
+  string,
+  ReturnType<typeof getInvocationArgsFromInvokeHostFn>
+>();
+const SOROBAN_OP_ATTRS_CACHE_MAX = 500;
+
 export const getAttrsFromSorobanHorizonOp = (
   operation: HorizonOperation,
   networkDetails: NetworkDetails,
@@ -470,16 +481,37 @@ export const getAttrsFromSorobanHorizonOp = (
     return null;
   }
 
-  const txEnvelope = TransactionBuilder.fromXdr(
-    operation.transaction_attr.envelope_xdr as string,
-    networkDetails.networkPassphrase,
-  ) as Transaction;
+  const envelopeXdr = operation.transaction_attr.envelope_xdr as string;
+  const cacheKey = `${networkDetails.networkPassphrase}:${envelopeXdr}`;
+  const cached = sorobanOpAttrsCache.get(cacheKey);
+  if (cached !== undefined) {
+    return cached;
+  }
 
-  // only one op per tx in Soroban right now; isSorobanOp above guarantees it
-  // is an invokeHostFunction operation
-  const invokeHostFn = txEnvelope.operations[0] as Operation.InvokeHostFunction;
+  let attrs: ReturnType<typeof getInvocationArgsFromInvokeHostFn> = null;
+  // One undecodable envelope must not break the whole history load.
+  try {
+    // For a fee bump, `operations` reads through to the inner transaction.
+    const transaction = TransactionBuilder.fromXdr(
+      envelopeXdr,
+      networkDetails.networkPassphrase,
+    );
 
-  return getInvocationArgsFromInvokeHostFn(invokeHostFn);
+    // only one op per tx in Soroban right now; isSorobanOp above guarantees it
+    // is an invokeHostFunction operation
+    const invokeHostFn = transaction
+      .operations[0] as Operation.InvokeHostFunction;
+
+    attrs = getInvocationArgsFromInvokeHostFn(invokeHostFn);
+  } catch (error) {
+    captureException(error, { extra: { operationId: operation.id } });
+  }
+
+  if (sorobanOpAttrsCache.size >= SOROBAN_OP_ATTRS_CACHE_MAX) {
+    sorobanOpAttrsCache.clear();
+  }
+  sorobanOpAttrsCache.set(cacheKey, attrs);
+  return attrs;
 };
 
 export interface InvocationTree {

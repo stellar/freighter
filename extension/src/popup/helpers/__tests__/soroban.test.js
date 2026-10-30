@@ -1,4 +1,5 @@
 import {
+  Account,
   Address,
   Keypair,
   nativeToScVal,
@@ -10,6 +11,8 @@ import {
 import BigNumber from "bignumber.js";
 
 import {
+  addressToString,
+  getArgsForTokenInvocation,
   getInvocationArgs,
   getInvocationArgsFromInvokeHostFn,
   getInvocationDetails,
@@ -17,7 +20,9 @@ import {
   getAvailableBalance,
   getDecimalsForAsset,
   getContractIdFromTransactionData,
+  getAttrsFromSorobanHorizonOp,
   isAssetSac,
+  scValToDisplayValue,
   CLASSIC_ASSET_DECIMALS,
 } from "../soroban";
 import { getNativeContractDetails } from "../searchAsset";
@@ -511,6 +516,65 @@ describe("signing-screen display fidelity", () => {
   });
 });
 
+describe("muxed contract (W) addresses", () => {
+  // The SEP-23 test vector: contract CA7QYNF7…UWDA with mux id 0.
+  const MUXED_CONTRACT =
+    "WA7QYNF7SOWQ3GLR2BGMZEHXAVIRZA4KVWLTJJFC7MGXUA74P7UJUAAAAAAAAAAAAAWWC";
+  const from = Keypair.random().publicKey();
+  const transferArgs = [
+    new Address(from).toScVal(),
+    new Address(MUXED_CONTRACT).toScVal(),
+    nativeToScVal(BigInt(100), { type: "i128" }),
+  ];
+  const transferFn = new xdr.InvokeContractArgs({
+    contractAddress: new Address(OWNER_CONTRACT).toScAddress(),
+    functionName: Buffer.from("transfer"),
+    args: transferArgs,
+  });
+
+  it("renders a W address as its strkey", () => {
+    expect(addressToString(new Address(MUXED_CONTRACT).toScAddress())).toEqual(
+      MUXED_CONTRACT,
+    );
+    expect(scValToDisplayValue(transferArgs[1])).toEqual(MUXED_CONTRACT);
+  });
+
+  it("reads a W transfer destination from token invocation args", () => {
+    expect(getArgsForTokenInvocation("transfer", transferArgs)).toMatchObject({
+      from,
+      to: MUXED_CONTRACT,
+      amount: BigInt(100),
+    });
+  });
+
+  it("recognises a SAC transfer to a W address", () => {
+    const op = Operation.fromXDRObject(
+      Operation.invokeHostFunction({
+        func: xdr.HostFunction.hostFunctionTypeInvokeContract(transferFn),
+        auth: [],
+      }),
+    );
+    expect(getInvocationArgsFromInvokeHostFn(op)).toMatchObject({
+      fnName: "transfer",
+      from,
+      to: MUXED_CONTRACT,
+    });
+  });
+
+  it("carries a W argument through the invocation tree", () => {
+    const tree = buildInvocationTree(
+      new xdr.SorobanAuthorizedInvocation({
+        function:
+          xdr.SorobanAuthorizedFunction.sorobanAuthorizedFunctionTypeContractFn(
+            transferFn,
+          ),
+        subInvocations: [],
+      }),
+    );
+    expect(scValToDisplayValue(tree.args.args[1])).toEqual(MUXED_CONTRACT);
+  });
+});
+
 describe("getDecimalsForAsset", () => {
   // Test constants
   const sorobanContractId =
@@ -770,5 +834,117 @@ describe("getContractIdFromTransactionData", () => {
 
     // Classic assets don't have contract IDs, so should return undefined
     expect(result).toBeUndefined();
+  });
+});
+
+describe("getAttrsFromSorobanHorizonOp", () => {
+  it("returns null instead of throwing for an undecodable envelope", () => {
+    const operation = {
+      type: "invoke_host_function",
+      transaction_attr: { envelope_xdr: "not-xdr" },
+    };
+
+    expect(
+      getAttrsFromSorobanHorizonOp(operation, TESTNET_NETWORK_DETAILS),
+    ).toBeNull();
+  });
+
+  it("reads the operation of a fee-bumped envelope", () => {
+    const from = Keypair.random();
+    const to = Keypair.random().publicKey();
+    const inner = new TransactionBuilder(new Account(from.publicKey(), "0"), {
+      fee: "100",
+      networkPassphrase: TESTNET_NETWORK_DETAILS.networkPassphrase,
+    })
+      .addOperation(
+        Operation.invokeHostFunction({
+          func: xdr.HostFunction.hostFunctionTypeInvokeContract(
+            new xdr.InvokeContractArgs({
+              contractAddress: new Address(
+                "CA7QYNF7SOWQ3GLR2BGMZEHXAVIRZA4KVWLTJJFC7MGXUA74P7UJUWDA",
+              ).toScAddress(),
+              functionName: "transfer",
+              args: [
+                nativeToScVal(from.publicKey(), { type: "address" }),
+                nativeToScVal(to, { type: "address" }),
+                nativeToScVal(BigInt(100), { type: "i128" }),
+              ],
+            }),
+          ),
+          auth: [],
+        }),
+      )
+      .setTimeout(0)
+      .build();
+    const feeBump = TransactionBuilder.buildFeeBumpTransaction(
+      Keypair.random().publicKey(),
+      "200",
+      inner,
+      TESTNET_NETWORK_DETAILS.networkPassphrase,
+    );
+    const operation = {
+      type: "invoke_host_function",
+      transaction_attr: { envelope_xdr: feeBump.toXDR() },
+    };
+
+    expect(
+      getAttrsFromSorobanHorizonOp(operation, TESTNET_NETWORK_DETAILS),
+    ).toMatchObject({
+      fnName: "transfer",
+      from: from.publicKey(),
+      to,
+      amount: BigInt(100),
+    });
+  });
+
+  it("decodes an envelope once however many times it is asked for", () => {
+    const fromXdr = jest.spyOn(TransactionBuilder, "fromXdr");
+    // A fresh source key makes this envelope unique, so no earlier test has
+    // already cached it.
+    const from = Keypair.random();
+    const inner = new TransactionBuilder(new Account(from.publicKey(), "0"), {
+      fee: "100",
+      networkPassphrase: TESTNET_NETWORK_DETAILS.networkPassphrase,
+    })
+      .addOperation(
+        Operation.invokeHostFunction({
+          func: xdr.HostFunction.hostFunctionTypeInvokeContract(
+            new xdr.InvokeContractArgs({
+              contractAddress: new Address(
+                "CA7QYNF7SOWQ3GLR2BGMZEHXAVIRZA4KVWLTJJFC7MGXUA74P7UJUWDA",
+              ).toScAddress(),
+              functionName: "transfer",
+              args: [
+                nativeToScVal(from.publicKey(), { type: "address" }),
+                nativeToScVal(Keypair.random().publicKey(), {
+                  type: "address",
+                }),
+                nativeToScVal(BigInt(1), { type: "i128" }),
+              ],
+            }),
+          ),
+          auth: [],
+        }),
+      )
+      .setTimeout(0)
+      .build();
+    const operation = {
+      type: "invoke_host_function",
+      transaction_attr: { envelope_xdr: inner.toXDR() },
+    };
+
+    const first = getAttrsFromSorobanHorizonOp(
+      operation,
+      TESTNET_NETWORK_DETAILS,
+    );
+    const second = getAttrsFromSorobanHorizonOp(
+      { ...operation },
+      TESTNET_NETWORK_DETAILS,
+    );
+
+    expect(first).toMatchObject({ fnName: "transfer" });
+    expect(second).toBe(first);
+    expect(fromXdr).toHaveBeenCalledTimes(1);
+    fromXdr.mockRestore();
   });
 });
