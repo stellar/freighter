@@ -12,7 +12,7 @@ test("View Allow List selector", async ({ page, extensionId, context }) => {
 
   const popupPromise = page.context().waitForEvent("page");
   await pageTwo.goto(
-    "https://play.freighter.app/#/extension/playground/setAllowed",
+    "https://play.varialwallet.com/#/extension/playground/setAllowed",
   );
   await pageTwo.getByText("Set Allowed").click();
 
@@ -35,7 +35,7 @@ test("View Allow List selector", async ({ page, extensionId, context }) => {
   await page.getByTestId("ConnectedAppsSheet__close").click();
   await goToConnectedApps(page);
   await expect(
-    page.getByTestId("ConnectedAppsSheet").getByText("play.freighter.app"),
+    page.getByTestId("ConnectedAppsSheet").getByText("play.varialwallet.com"),
   ).toBeVisible();
 
   await expectPageToHaveScreenshot({
@@ -92,12 +92,12 @@ test("Disconnecting apps shows a success toast", async ({
   const pageTwo = await page.context().newPage();
   await pageTwo.waitForLoadState();
 
-  // Connects play.freighter.app to the current network, so the Connected apps
+  // Connects play.varialwallet.com to the current network, so the Connected apps
   // view has a row to disconnect.
   const grantAccess = async () => {
     const popupPromise = page.context().waitForEvent("page");
     await pageTwo.goto(
-      "https://play.freighter.app/#/extension/playground/setAllowed",
+      "https://play.varialwallet.com/#/extension/playground/setAllowed",
     );
     await pageTwo.getByText("Set Allowed").click();
     const popup = await popupPromise;
@@ -112,12 +112,14 @@ test("Disconnecting apps shows a success toast", async ({
   await page.getByTestId("ConnectedAppsSheet__close").click();
   await goToConnectedApps(page);
   await expect(
-    page.getByTestId("ConnectedAppsSheet").getByText("play.freighter.app"),
+    page.getByTestId("ConnectedAppsSheet").getByText("play.varialwallet.com"),
   ).toBeVisible();
 
   // Removing a single app names it in the toast.
   await page.locator(".ConnectedAppsSheet__row .Button").first().click();
-  await expect(page.getByText("play.freighter.app disconnected")).toBeVisible();
+  await expect(
+    page.getByText("play.varialwallet.com disconnected"),
+  ).toBeVisible();
   await expect(page.getByText("Nothing connected yet")).toBeVisible();
 
   // "Disconnect all" reports the batch instead of naming each app.
@@ -125,7 +127,7 @@ test("Disconnecting apps shows a success toast", async ({
   await page.getByTestId("ConnectedAppsSheet__close").click();
   await goToConnectedApps(page);
   await expect(
-    page.getByTestId("ConnectedAppsSheet").getByText("play.freighter.app"),
+    page.getByTestId("ConnectedAppsSheet").getByText("play.varialwallet.com"),
   ).toBeVisible();
 
   await page.getByTestId("disconnect-all").click();
