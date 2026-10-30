@@ -844,6 +844,59 @@ test("Send XLM to W address disables memo and reaches review", async ({
   });
 });
 
+// A memo typed for an earlier recipient must not ride along once the recipient
+// is a muxed contract, even when the contract spec lookup fails.
+test("Send XLM to W address drops a memo typed for an earlier recipient", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  test.slow();
+  const G_ADDRESS = "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF";
+  const stubOverrides = async () => {
+    await stubAccountBalancesE2e(page);
+    await stubSimulateTokenTransfer(page);
+  };
+
+  await loginToTestAccount({ page, extensionId, context, stubOverrides });
+  // The spec lookup fails; the W memo decision must not depend on it.
+  await page.route("**/contract-spec/**", (route) => route.abort());
+
+  await page.getByTestId("nav-link-send").click({ force: true });
+  await expect(page.getByTestId("token-list")).toBeVisible();
+  await page.getByTestId("SendRow-native").click();
+
+  // Type a memo for a G recipient first.
+  await page.getByTestId("send-to-input").fill(G_ADDRESS);
+  await page.getByText("Continue").click();
+  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+  await page.getByTestId("send-amount-amount-input").fill("1");
+  await page.getByTestId("send-amount-btn-memo").click();
+  await page.getByTestId("edit-memo-input").fill("123");
+  await page.getByText("Save").click();
+
+  // Switch the recipient to a W address.
+  await page.getByTestId("address-tile").click();
+  await page.getByTestId("send-to-input").clear();
+  await page.getByTestId("send-to-input").fill(TEST_W_ADDRESS);
+  await page.getByText("Continue").click();
+  await expect(page.getByTestId("send-amount-amount-input")).toBeVisible();
+  await page.getByTestId("send-amount-amount-input").fill("1");
+
+  const simulateRequest = page.waitForRequest(
+    (request) =>
+      request.url().includes("simulate-token-transfer") &&
+      request.method() === "POST",
+  );
+  const reviewSendButton = page.getByTestId("send-amount-btn-continue");
+  await expect(reviewSendButton).toBeEnabled({ timeout: 15000 });
+  await reviewSendButton.click();
+
+  const body = (await simulateRequest).postDataJSON();
+  expect(body.params.destination).toBe(TEST_W_ADDRESS);
+  expect(body.memo).toBe("");
+});
+
 // Custom token to W -> blocked, only a Stellar Asset Contract accepts W
 test("Send custom token to W address is disabled", async ({
   page,
@@ -856,6 +909,15 @@ test("Send custom token to W address is disabled", async ({
     await stubSimulateTokenTransfer(page);
   };
   await stubContractSpec(page, TEST_TOKEN_ADDRESS, false);
+
+  // The banner already says the send cannot go through, so no simulation
+  // should be sent for it.
+  const simulateRequests: string[] = [];
+  page.on("request", (request) => {
+    if (request.url().includes("simulate-token-transfer")) {
+      simulateRequests.push(request.url());
+    }
+  });
 
   await loginToTestAccount({ page, extensionId, context, stubOverrides });
   await page.getByTestId("nav-link-send").click({ force: true });
@@ -883,4 +945,5 @@ test("Send custom token to W address is disabled", async ({
     ),
   ).toBeVisible({ timeout: 10000 });
   await expect(page.getByTestId("send-amount-btn-continue")).toBeDisabled();
+  expect(simulateRequests).toHaveLength(0);
 });

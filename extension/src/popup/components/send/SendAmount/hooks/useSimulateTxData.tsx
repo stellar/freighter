@@ -527,7 +527,10 @@ function useSimulateTxData({
 
       // For Soroban transfers, check if contract supports muxed and determine final destination
       let finalDestination = destination;
-      let sorobanMemo = currentMemo;
+      // A muxed contract destination carries its own id, so no memo is sent
+      // with it. Decide that before the spec lookup so the memo never depends
+      // on whether the lookup succeeds.
+      let sorobanMemo = isMuxedContract(destination) ? "" : currentMemo;
       if (simParams.type === "soroban") {
         try {
           const contractSupportsMuxed = await checkIsMuxedSupported({
@@ -542,7 +545,7 @@ function useSimulateTxData({
           // For Soroban transfers with muxed support, don't pass memo separately
           // (it's encoded in the muxed address)
           // Send empty string instead of undefined to satisfy backend API requirement
-          if (contractSupportsMuxed || isMuxedContract(destination)) {
+          if (contractSupportsMuxed) {
             sorobanMemo = "";
           }
         } catch (error) {

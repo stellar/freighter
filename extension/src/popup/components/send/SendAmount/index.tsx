@@ -12,6 +12,7 @@ import { AppDispatch } from "popup/App";
 import { isNativeAssetId } from "@shared/helpers/assetIdentity";
 import {
   getAssetFromCanonical,
+  isContractDestination,
   isMainnet,
   isMuxedAccount,
   isMuxedContract,
@@ -346,6 +347,17 @@ export const SendAmount = ({
       (isToken || isCollectible),
     [destination, isToken, isCollectible],
   );
+
+  // The asset cannot be sent to this muxed recipient. The banner already says
+  // so; skip the simulation, which would only fail on the backend.
+  const isRecipientUnsupported =
+    isMuxedAddressWithoutMemoSupport || isMuxedContractWithoutSupport;
+
+  // Same rule as the simulation: any contract destination makes this a
+  // Soroban transfer, whatever the asset, so the fee breakdown must match.
+  const isSorobanSend =
+    isToken || isCollectible || isContractDestination(destination);
+
   const [memoEditingContext, setMemoEditingContext] =
     React.useState<MemoEditingContext | null>(null);
 
@@ -363,6 +375,9 @@ export const SendAmount = ({
   };
 
   const handleContinue = async () => {
+    if (isRecipientUnsupported) {
+      return;
+    }
     if (isToken || isCollectible) {
       // Reset to the inclusion fee before re-simulating. After a prior
       // simulation, saveTransactionFee stored the TOTAL (inclusion + resource).
@@ -454,6 +469,7 @@ export const SendAmount = ({
   useEffect(() => {
     if (!(isToken || isCollectible)) return;
     if (!destination) return;
+    if (isRecipientUnsupported) return;
     // Don't stack concurrent simulations.
     if (simulationState.state === RequestState.LOADING) return;
 
@@ -477,7 +493,14 @@ export const SendAmount = ({
       fetchSimulationData();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [destination, asset, isToken, isCollectible, simulationState.state]);
+  }, [
+    destination,
+    asset,
+    isToken,
+    isCollectible,
+    isRecipientUnsupported,
+    simulationState.state,
+  ]);
 
   // If the user was in fiat mode and current asset no longer has a USD price,
   // force back to crypto mode so the input is still operable.
@@ -958,7 +981,7 @@ export const SendAmount = ({
             defaultFee={recommendedFee}
             timeout={transactionData.transactionTimeout}
             congestion={networkCongestion}
-            isSoroban={isToken || isCollectible}
+            isSoroban={isSorobanSend}
             onFeeChange={(v) => {
               setDraftFeeForDisplay(v);
             }}
@@ -1015,7 +1038,7 @@ export const SendAmount = ({
                   : simulationState.data?.resourceFee,
               )}
               simulationState={simulationState}
-              isSoroban={isToken || isCollectible}
+              isSoroban={isSorobanSend}
               onClose={() => {
                 setIsShowingFeesPane(false);
                 setIsEditingSettings(true);
