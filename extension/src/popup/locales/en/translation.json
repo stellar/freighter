@@ -1,5 +1,4 @@
 {
-  "To": "To",
   "{{appName}} disconnected": "{{appName}} disconnected",
   "{{code}} hidden": "{{code}} hidden",
   "{{code}} unhidden": "{{code}} unhidden",
@@ -540,8 +539,8 @@
   "Review accounts to migrate": "Review accounts to migrate",
   "Review authorization on device": "Review authorization on device",
   "Review message on device": "Review message on device",
-  "Review Send": "Review Send",
   "Review send": "Review send",
+  "Review Send": "Review Send",
   "Review swap": "Review swap",
   "Review transaction": "Review transaction",
   "Review transaction on device": "Review transaction on device",
@@ -711,6 +710,7 @@
   "Timeout": "Timeout",
   "Timeout (seconds)": "Timeout (seconds)",
   "to": "to",
+  "To": "To",
   "To access your wallet, click Varial from your browser Extensions browser menu.": "To access your wallet, click Varial from your browser Extensions browser menu.",
   "To create a new account you need to send at least 1 XLM to it.": "To create a new account you need to send at least 1 XLM to it.",
   "To hold {{code}} in your wallet, Stellar requires a trustline. <bold>0.5 XLM will be reserved</bold> from your balance. You can get it back by removing the trustline after your {{code}} balance is zero.": "To hold {{code}} in your wallet, Stellar requires a trustline. <bold>0.5 XLM will be reserved</bold> from your balance. You can get it back by removing the trustline after your {{code}} balance is zero.",
