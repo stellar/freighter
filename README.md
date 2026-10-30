@@ -1,15 +1,15 @@
-# Freighter
+# Varial
 
-Freighter is a non-custodial wallet extension that enables you to sign Stellar
-transactions via your browser. Learn more at
-[freighter.app](https://www.freighter.app/).
+Varial (formerly Freighter) is a non-custodial wallet extension that enables you
+to sign Stellar transactions via your browser. Learn more at
+[varialwallet.com](https://varialwallet.com/).
 
 ## Yarn Workspaces
 
 This repo is constructed using yarn workspaces and consists of the 4 sections:
 
 - the browser extension (`/extension`)
-- the client-facing SDK (`/@stellar/freighter-api`)
+- the client-facing SDK, `@stellar/varial-sdk` (`/@stellar/freighter-api`)
 - the docs (`/docs`)
 - some shared files that the above use (`/@shared/*`)
 
@@ -53,8 +53,8 @@ INDEXER_V2_URL=your_backend_v2_prod_url_here
 
 ```
 
-These URLs should point to your deployment of Freighter backend. For more
-details on backend configuration, see
+These URLs should point to your deployment of the backend. For more details on
+backend configuration, see
 [extension/README.md](extension/README.md#configure-the-backend).
 
 If you're running the backends locally, follow the setup instructions in
@@ -72,7 +72,7 @@ yarn start
 
 This will start up multiple watching builds in parallel:
 
-- The `@stellar/freighter-api` npm module
+- The `@stellar/varial-sdk` npm module
 - The docs, serving on `localhost:3000`
 - A dev server with the webapp running in the extension, serving on
   `localhost:9000`
@@ -92,7 +92,7 @@ These can be started individually with `yarn start:\<workspace name\>` where
 yarn build
 ```
 
-This will produce final output for the docs, the `@stellar/freighter` npm
+This will produce final output for the docs, the `@stellar/varial-sdk` npm
 module, and the extension.
 
 `yarn build:\<workspace name\>`, like the equivalent start commands, will build
