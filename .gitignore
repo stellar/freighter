@@ -30,11 +30,6 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# fastlane output
-Freighter.app/
-Freighter.pkg
-Freighter.app.dSYM.zip
-
 # Agent tools
 .vscode/mcp.json
 .copliot/
