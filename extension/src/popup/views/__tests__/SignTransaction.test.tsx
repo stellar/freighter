@@ -1,6 +1,5 @@
 import React from "react";
 import { render, waitFor, screen, fireEvent } from "@testing-library/react";
-import * as createStellarIdenticon from "helpers/stellarIdenticon";
 import { useLocation } from "react-router-dom";
 import BigNumber from "bignumber.js";
 import {
@@ -41,7 +40,6 @@ import { WalletType } from "@shared/constants/hardwareWallet";
 import { sortBalances } from "popup/helpers/account";
 import { defaultBlockaidScanAssetResult } from "@shared/helpers/stellar";
 
-jest.mock("helpers/stellarIdenticon");
 jest.setTimeout(20000);
 
 jest.mock("react-router-dom", () => ({
@@ -51,7 +49,9 @@ jest.mock("react-router-dom", () => ({
 
 jest
   .spyOn(ApiInternal, "getHiddenAssets")
-  .mockImplementation(() => Promise.resolve({ hiddenAssets: {}, error: "" }));
+  .mockImplementation(() =>
+    Promise.resolve({ hiddenAssets: {}, networkName: "", error: "" }),
+  );
 
 jest
   .spyOn(ApiInternal, "getAccountBalances")
@@ -170,8 +170,6 @@ const CLASSIC_TX_SOURCE =
 
 describe("SignTransactions", () => {
   beforeEach(() => {
-    const mockCanvas = document.createElement("canvas");
-    jest.spyOn(createStellarIdenticon, "default").mockReturnValue(mockCanvas);
     jest.spyOn(global, "fetch").mockImplementation(() =>
       Promise.resolve({
         json: async () => ({

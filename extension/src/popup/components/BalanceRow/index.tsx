@@ -1,6 +1,7 @@
 import React from "react";
 import BigNumber from "bignumber.js";
 import { isEmpty } from "lodash";
+import classnames from "classnames";
 import { useTranslation } from "react-i18next";
 
 import { AssetIcon } from "popup/components/account/AccountAssets";
@@ -35,6 +36,8 @@ export interface BalanceRowProps {
    * Null → NO_FIAT_VALUE. */
   percentChange?: string | null;
   onClick?: () => void;
+  /** Draws the 1px line under the row, inset to the text column. */
+  hasDivider?: boolean;
   "data-testid"?: string;
   amountTestId?: string;
   fiatTestId?: string;
@@ -59,6 +62,7 @@ export const BalanceRow = ({
   fiatAmount,
   percentChange,
   onClick,
+  hasDivider = false,
   "data-testid": dataTestId,
   amountTestId,
   fiatTestId,
@@ -88,7 +92,10 @@ export const BalanceRow = ({
 
   return (
     <div
-      className={`BalanceRow ${onClick ? "BalanceRow--clickable" : ""}`}
+      className={classnames("BalanceRow", {
+        "BalanceRow--clickable": !!onClick,
+        "BalanceRow--divider": hasDivider,
+      })}
       data-testid={dataTestId}
       onClick={onClick}
       role={onClick ? "button" : undefined}

@@ -10,6 +10,7 @@ import { Button, Icon, Notification } from "@stellar/design-system";
 
 import { View } from "popup/basics/layout/View";
 import { SubviewHeader } from "popup/components/SubviewHeader";
+import { useReviewSettingsHandoff } from "popup/helpers/useReviewSettingsHandoff";
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
 import {
   saveAmount,
@@ -34,7 +35,7 @@ import { isNativeAssetId } from "@shared/helpers/assetIdentity";
 import { RequestState } from "constants/request";
 import { Loading } from "popup/components/Loading";
 import { AppDataType } from "helpers/hooks/useGetAppData";
-import { openTab } from "popup/helpers/navigate";
+import { closeWindow, openTab } from "popup/helpers/navigate";
 import { newTabHref } from "helpers/urls";
 import { reRouteOnboarding } from "popup/helpers/route";
 import { getAvailableBalance } from "popup/helpers/soroban";
@@ -50,7 +51,6 @@ import {
 import { InputType } from "helpers/transaction";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { XLM_RESERVE_HELP_URL } from "popup/constants/externalLinks";
-import { LoadingBackground } from "popup/basics/LoadingBackground";
 import { EditSettings } from "popup/components/InternalTransaction/EditSettings";
 import { ReviewTx } from "popup/components/InternalTransaction/ReviewTransaction";
 import {
@@ -197,6 +197,12 @@ export const SwapAmount = ({
   // equivalent refs in SendAmount.
   const wasReviewingRef = useRef(false);
   const skipRejectionRef = useRef(false);
+  const { openSettingsFromReview, closeSettings, returnToReview } =
+    useReviewSettingsHandoff({
+      setIsReviewingTx,
+      setIsEditingSettings,
+      skipRejectionRef,
+    });
 
   // Reports the `confirm` stage when the review opens, and a rejection when
   // the user leaves it without approving — see the equivalent effect in
@@ -368,7 +374,7 @@ export const SwapAmount = ({
   if (swapAmountData.data?.type === AppDataType.REROUTE) {
     if (swapAmountData.data.shouldOpenTab) {
       openTab(newTabHref(swapAmountData.data.routeTarget));
-      window.close();
+      closeWindow();
     }
     return (
       <Navigate
@@ -840,49 +846,56 @@ export const SwapAmount = ({
           </div>
         </div>
       </View.Content>
-      {isEditingSlippage ? (
-        <>
-          <div className="SlippageWrapper">
-            <EditSlippage onClose={() => setIsEditingSlippage(false)} />
-          </div>
-          <LoadingBackground
-            onClick={() => setIsEditingSlippage(false)}
-            isActive={isEditingSlippage}
+      <SlideupModal
+        isModalOpen={isEditingSlippage}
+        setIsModalOpen={() => setIsEditingSlippage(false)}
+        ariaLabel={t("Allowed Slippage")}
+      >
+        {isEditingSlippage ? (
+          <EditSlippage onClose={() => setIsEditingSlippage(false)} />
+        ) : (
+          <></>
+        )}
+      </SlideupModal>
+      <SlideupModal
+        isModalOpen={isEditingSettings}
+        setIsModalOpen={closeSettings}
+        ariaLabel={t("Settings")}
+      >
+        {isEditingSettings ? (
+          <EditSettings
+            fee={fee}
+            defaultFee={recommendedFee}
+            timeout={transactionData.transactionTimeout}
+            congestion={networkCongestion}
+            onClose={closeSettings}
+            onSubmit={async ({
+              fee,
+              timeout,
+            }: {
+              fee: string;
+              timeout: number;
+            }) => {
+              dispatch(saveTransactionFee(fee));
+              dispatch(saveTransactionTimeout(timeout));
+              setIsEditingSettings(false);
+              // Rebuild the quote with the new fee before the review comes
+              // back, so Confirm never submits the old XDR.
+              await fetchSimulationData({
+                amount,
+                destinationRate: dstAssetPrice,
+              });
+              returnToReview();
+            }}
           />
-        </>
-      ) : null}
-      {isEditingSettings ? (
-        <>
-          <div className="SlippageWrapper">
-            <EditSettings
-              fee={fee}
-              defaultFee={recommendedFee}
-              title={t("Swap Settings")}
-              timeout={transactionData.transactionTimeout}
-              congestion={networkCongestion}
-              onClose={() => setIsEditingSettings(false)}
-              onSubmit={({
-                fee,
-                timeout,
-              }: {
-                fee: string;
-                timeout: number;
-              }) => {
-                dispatch(saveTransactionFee(fee));
-                dispatch(saveTransactionTimeout(timeout));
-                setIsEditingSettings(false);
-              }}
-            />
-          </div>
-          <LoadingBackground
-            onClick={() => setIsEditingSettings(false)}
-            isActive={isEditingSettings}
-          />
-        </>
-      ) : null}
+        ) : (
+          <></>
+        )}
+      </SlideupModal>
       <SlideupModal
         setIsModalOpen={() => setIsReviewingTx(false)}
         isModalOpen={isReviewingTx}
+        ariaLabel={t("Review swap")}
       >
         {isReviewingTx ? (
           <ReviewTx
@@ -897,6 +910,7 @@ export const SwapAmount = ({
               skipRejectionRef.current = true;
               goToNext();
             }}
+            onEditSettings={openSettingsFromReview}
             sendAmount={amount}
             // Show the same fiat figure the amount screen displayed: the
             // entered dollars in fiat mode, the computed USD of the crypto
@@ -913,6 +927,7 @@ export const SwapAmount = ({
               amount: destinationAmount,
             }}
             title={t("You are swapping")}
+            sheetTitle={t("Review swap")}
             destinationTokenDetails={transactionData.destinationTokenDetails}
             sourceTokenSecurityLevel={sourceTokenSecurityLevel}
             sourceTokenSecurityWarnings={sourceTokenSecurityWarnings}
@@ -928,6 +943,7 @@ export const SwapAmount = ({
       <SlideupModal
         setIsModalOpen={() => setIsXlmReserveOpen(false)}
         isModalOpen={isXlmReserveOpen}
+        ariaLabel={t("You need XLM to create a trustline")}
       >
         {isXlmReserveOpen ? (
           <XlmReserveSheet

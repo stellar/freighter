@@ -2,6 +2,7 @@ import { expect, test, expectPageToHaveScreenshot } from "../test-fixtures";
 import { TEST_TOKEN_ADDRESS } from "../helpers/test-token";
 import { loginToTestAccount, switchToMainnet } from "../helpers/login";
 import { allowDapp } from "../helpers/dAppSessionHelper";
+import { goToSettings } from "../helpers/network";
 import {
   SAC_CONTRACT_ID,
   delayAddTokenRoundTrip,
@@ -78,6 +79,9 @@ test("should sign transaction when allowed", async ({
   extensionId,
   context,
 }) => {
+  // Multi-page live-site flow; 86%+ of the 15s budget on a good runner.
+  test.slow();
+
   await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
   await allowDapp({ page });
 
@@ -88,7 +92,7 @@ test("should sign transaction when allowed", async ({
   const txPopupPromise = page.context().waitForEvent("page");
 
   await pageTwo.goto(
-    "https://play.freighter.app/#/extension/playground/signTransaction",
+    "https://play.varialwallet.com/#/extension/playground/signTransaction",
   );
   await pageTwo.getByRole("textbox").first().fill(TX_TO_SIGN);
   await pageTwo
@@ -220,7 +224,7 @@ test.skip("should sign transaction for a specific account when allowed", async (
   await allowDapp({ page });
 
   await pageTwo.goto(
-    "https://play.freighter.app/#/extension/playground/signTransaction",
+    "https://play.varialwallet.com/#/extension/playground/signTransaction",
   );
   await pageTwo.getByRole("textbox").first().fill(TX_TO_SIGN);
   await pageTwo
@@ -254,7 +258,7 @@ test("should not sign transaction when not allowed", async ({
   const txPopupPromise = page.context().waitForEvent("page");
 
   await pageTwo.goto(
-    "https://play.freighter.app/#/extension/playground/signTransaction",
+    "https://play.varialwallet.com/#/extension/playground/signTransaction",
   );
   await pageTwo.getByRole("textbox").first().fill(TX_TO_SIGN);
   await pageTwo
@@ -273,7 +277,7 @@ test("should not sign transaction when not allowed", async ({
 
   await expect(
     txPopup.getByText(
-      "play.freighter.app is not currently connected to Freighter",
+      "play.varialwallet.com is not currently connected to Varial",
     ),
   ).toBeVisible();
   await expect(txPopup.getByTestId("sign-transaction-sign")).toBeDisabled();
@@ -288,6 +292,9 @@ test("should sign correct transactions when Freighter receives multiple requests
   extensionId,
   context,
 }) => {
+  // Multi-page live-site flow; 86%+ of the 15s budget on a good runner.
+  test.slow();
+
   await stubTokenDetails(page);
   await stubAccountBalances(page);
   await stubAccountHistory(page);
@@ -304,7 +311,7 @@ test("should sign correct transactions when Freighter receives multiple requests
   const txPopupPromise = page.context().waitForEvent("page");
 
   await pageTwo.goto(
-    "https://play.freighter.app/#/extension/playground/signTransaction",
+    "https://play.varialwallet.com/#/extension/playground/signTransaction",
   );
   await pageTwo.getByRole("textbox").first().fill(TX_TO_SIGN);
   await pageTwo
@@ -415,7 +422,7 @@ test("should sign correct transactions when Freighter receives multiple requests
 
   const txPopupPromise2 = page.context().waitForEvent("page");
   await pageThree.goto(
-    "https://play.freighter.app/#/extension/playground/signTransaction",
+    "https://play.varialwallet.com/#/extension/playground/signTransaction",
   );
   await pageThree.getByRole("textbox").first().fill(SECOND_TX_TO_SIGN);
   await pageThree
@@ -454,7 +461,7 @@ test("should sign auth entry when allowed", async ({
 
   const popupPromise = page.context().waitForEvent("page");
   await pageTwo.goto(
-    "https://play.freighter.app/#/extension/playground/signAuthEntry",
+    "https://play.varialwallet.com/#/extension/playground/signAuthEntry",
   );
   await pageTwo.getByRole("textbox").first().fill(AUTH_ENTRY_TO_SIGN);
   await pageTwo
@@ -497,7 +504,7 @@ test("should not sign auth entry when not allowed", async ({
 
   const popupPromise = page.context().waitForEvent("page");
   await pageTwo.goto(
-    "https://play.freighter.app/#/extension/playground/signAuthEntry",
+    "https://play.varialwallet.com/#/extension/playground/signAuthEntry",
   );
   await pageTwo.getByRole("textbox").first().fill(AUTH_ENTRY_TO_SIGN);
   await pageTwo
@@ -518,6 +525,9 @@ test("should sign auth entry for a selected account when allowed", async ({
   extensionId,
   context,
 }) => {
+  // Multi-page live-site flow; 86%+ of the 15s budget on a good runner.
+  test.slow();
+
   await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
 
   await allowDapp({ page });
@@ -532,7 +542,7 @@ test("should sign auth entry for a selected account when allowed", async ({
   await allowDapp({ page });
 
   await pageTwo.goto(
-    "https://play.freighter.app/#/extension/playground/signAuthEntry",
+    "https://play.varialwallet.com/#/extension/playground/signAuthEntry",
   );
   await pageTwo.getByRole("textbox").first().fill(AUTH_ENTRY_TO_SIGN);
   await pageTwo
@@ -576,7 +586,7 @@ test("should sign message string when allowed", async ({
 
   const popupPromise = page.context().waitForEvent("page");
   await pageTwo.goto(
-    "https://play.freighter.app/#/extension/playground/signMessage",
+    "https://play.varialwallet.com/#/extension/playground/signMessage",
   );
   await pageTwo.getByRole("textbox").first().fill(MSG_TO_SIGN);
   await pageTwo
@@ -618,7 +628,7 @@ test("should sign message long string when allowed", async ({
 
   const popupPromise = page.context().waitForEvent("page");
   await pageTwo.goto(
-    "https://play.freighter.app/#/extension/playground/signMessage",
+    "https://play.varialwallet.com/#/extension/playground/signMessage",
   );
   await pageTwo.getByRole("textbox").first().fill(LONG_MSG_TO_SIGN);
   await pageTwo
@@ -664,7 +674,7 @@ test("should sign correct message when Freighter receives multiple requests", as
 
   const popupPromise = page.context().waitForEvent("page");
   await pageTwo.goto(
-    "https://play.freighter.app/#/extension/playground/signMessage",
+    "https://play.varialwallet.com/#/extension/playground/signMessage",
   );
   await pageTwo.getByRole("textbox").first().fill(MSG_TO_SIGN);
   await pageTwo
@@ -686,7 +696,7 @@ test("should sign correct message when Freighter receives multiple requests", as
 
   const popupPromise2 = page.context().waitForEvent("page");
   await pageThree.goto(
-    "https://play.freighter.app/#/extension/playground/signMessage",
+    "https://play.varialwallet.com/#/extension/playground/signMessage",
   );
   await pageThree.getByRole("textbox").first().fill("new message");
   await pageThree
@@ -719,7 +729,7 @@ test("should sign message json when allowed", async ({
 
   const popupPromise = page.context().waitForEvent("page");
   await pageTwo.goto(
-    "https://play.freighter.app/#/extension/playground/signMessage",
+    "https://play.varialwallet.com/#/extension/playground/signMessage",
   );
   await pageTwo.getByRole("textbox").first().fill(JSON_MSG_TO_SIGN);
   await pageTwo
@@ -759,6 +769,9 @@ test("should sign message for a specific account when allowed", async ({
   extensionId,
   context,
 }) => {
+  // Multi-page live-site flow; 86%+ of the 15s budget on a good runner.
+  test.slow();
+
   await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
   await allowDapp({ page });
 
@@ -772,7 +785,7 @@ test("should sign message for a specific account when allowed", async ({
   await allowDapp({ page });
 
   await pageTwo.goto(
-    "https://play.freighter.app/#/extension/playground/signMessage",
+    "https://play.varialwallet.com/#/extension/playground/signMessage",
   );
   await pageTwo.getByRole("textbox").first().fill(MSG_TO_SIGN);
   await pageTwo
@@ -814,7 +827,7 @@ test("should not sign message when not allowed", async ({
 
   const popupPromise = page.context().waitForEvent("page");
   await pageTwo.goto(
-    "https://play.freighter.app/#/extension/playground/signMessage",
+    "https://play.varialwallet.com/#/extension/playground/signMessage",
   );
   await pageTwo.getByRole("textbox").first().fill(MSG_TO_SIGN);
   await pageTwo
@@ -845,7 +858,7 @@ test("should add an unverified SEP-41 token when allowed", async ({
 
   const popupPromise = page.context().waitForEvent("page");
   await pageTwo.goto(
-    "https://play.freighter.app/#/extension/playground/addToken",
+    "https://play.varialwallet.com/#/extension/playground/addToken",
   );
   await pageTwo.getByRole("textbox").first().fill(TEST_TOKEN_ADDRESS);
   await pageTwo
@@ -929,7 +942,7 @@ test("should add an unverified SAC token through the Change Trust review when al
 
   const popupPromise = page.context().waitForEvent("page");
   await pageTwo.goto(
-    "https://play.freighter.app/#/extension/playground/addToken",
+    "https://play.varialwallet.com/#/extension/playground/addToken",
   );
   // Use the cryptographically-derived SAC contract ID, not TEST_TOKEN_ADDRESS.
   // AddToken passes this contractId to useTokenLookup and then to ChangeTrustInternal;
@@ -1013,7 +1026,7 @@ test("should not report the dApp request as rejected when Done is clicked immedi
 
   const popupPromise = page.context().waitForEvent("page");
   await pageTwo.goto(
-    "https://play.freighter.app/#/extension/playground/addToken",
+    "https://play.varialwallet.com/#/extension/playground/addToken",
   );
   await pageTwo.getByRole("textbox").first().fill(SAC_CONTRACT_ID);
   await pageTwo
@@ -1082,7 +1095,7 @@ test("should not add a SEP-41 token when the domain is not allowed", async ({
 
   const popupPromise = page.context().waitForEvent("page");
   await pageTwo.goto(
-    "https://play.freighter.app/#/extension/playground/addToken",
+    "https://play.varialwallet.com/#/extension/playground/addToken",
   );
   await pageTwo.getByRole("textbox").first().fill(TEST_TOKEN_ADDRESS);
   await pageTwo
@@ -1095,7 +1108,7 @@ test("should not add a SEP-41 token when the domain is not allowed", async ({
 
   await expect(
     popup.getByText(
-      "play.freighter.app is not currently connected to Freighter",
+      "play.varialwallet.com is not currently connected to Varial",
     ),
   ).toBeVisible();
   await expect(popup.getByTestId("add-token-approve")).toBeDisabled();
@@ -1124,7 +1137,7 @@ test("should add a verified SEP-41 token without the unverified banner", async (
 
   const popupPromise = page.context().waitForEvent("page");
   await pageTwo.goto(
-    "https://play.freighter.app/#/extension/playground/addToken",
+    "https://play.varialwallet.com/#/extension/playground/addToken",
   );
   await pageTwo.getByRole("textbox").first().fill(TEST_TOKEN_ADDRESS);
   await pageTwo
@@ -1189,7 +1202,7 @@ test("should add a verified SAC token through the Change Trust review without th
 
   const popupPromise = page.context().waitForEvent("page");
   await pageTwo.goto(
-    "https://play.freighter.app/#/extension/playground/addToken",
+    "https://play.varialwallet.com/#/extension/playground/addToken",
   );
   await pageTwo.getByRole("textbox").first().fill(SAC_CONTRACT_ID);
   await pageTwo
@@ -1234,9 +1247,12 @@ test("should get public key when logged out", async ({
   extensionId,
   context,
 }) => {
+  // Logging in now walks Settings -> Network for the network switch, and this
+  // test walks into Settings again to log out, which runs past the default
+  // budget on CI.
+  test.slow();
   await loginToTestAccount({ page, extensionId, context, isIntegrationMode });
-  await page.getByTestId("account-options-dropdown").click();
-  await page.getByText("Settings").click();
+  await goToSettings(page);
   await page.getByText("Log Out").click();
   await expect(page.getByText("Welcome back")).toBeVisible();
 
@@ -1246,7 +1262,7 @@ test("should get public key when logged out", async ({
 
   const popupPromise = page.context().waitForEvent("page");
   await pageTwo.goto(
-    "https://play.freighter.app/#/extension/playground/requestAccess",
+    "https://play.varialwallet.com/#/extension/playground/requestAccess",
   );
   await pageTwo.getByText("Request Access").click();
 
@@ -1280,7 +1296,7 @@ test("should show network mismatch warning when signing auth entry for wrong net
 
   const popupPromise = page.context().waitForEvent("page");
   await pageTwo.goto(
-    "https://play.freighter.app/#/extension/playground/signAuthEntry",
+    "https://play.varialwallet.com/#/extension/playground/signAuthEntry",
   );
   await pageTwo.getByRole("textbox").first().fill(AUTH_ENTRY_TO_SIGN);
   await pageTwo
@@ -1319,7 +1335,7 @@ test("should block signing an auth entry bound to a different account", async ({
 
   const popupPromise = page.context().waitForEvent("page");
   await pageTwo.goto(
-    "https://play.freighter.app/#/extension/playground/signAuthEntry",
+    "https://play.varialwallet.com/#/extension/playground/signAuthEntry",
   );
   await pageTwo.getByRole("textbox").first().fill(V2_AUTH_ENTRY_WRONG_ADDRESS);
   await pageTwo
@@ -1333,7 +1349,7 @@ test("should block signing an auth entry bound to a different account", async ({
   const popup = await popupPromise;
 
   await expect(
-    popup.getByText("Freighter is set to a different account"),
+    popup.getByText("Varial is set to a different account"),
   ).toBeVisible();
   await expect(
     popup.getByText(
@@ -1355,7 +1371,7 @@ test("should show invalid entry warning when auth entry XDR cannot be parsed", a
 
   const popupPromise = page.context().waitForEvent("page");
   await pageTwo.goto(
-    "https://play.freighter.app/#/extension/playground/signAuthEntry",
+    "https://play.varialwallet.com/#/extension/playground/signAuthEntry",
   );
   // TX_TO_SIGN is a TransactionEnvelope XDR — it will fail to parse as HashIdPreimage
   await pageTwo.getByRole("textbox").first().fill(TX_TO_SIGN);
@@ -1388,7 +1404,7 @@ test("should show invalid entry warning when auth entry is not a Soroban authori
 
   const popupPromise = page.context().waitForEvent("page");
   await pageTwo.goto(
-    "https://play.freighter.app/#/extension/playground/signAuthEntry",
+    "https://play.varialwallet.com/#/extension/playground/signAuthEntry",
   );
   // NON_SOROBAN_AUTH_ENTRY is a valid HashIdPreimage of type OP_ID (6), not sorobanAuthorization
   await pageTwo.getByRole("textbox").first().fill(NON_SOROBAN_AUTH_ENTRY);
@@ -1423,7 +1439,7 @@ test("should show network warning when signing message with mismatched network p
 
   const popupPromise = page.context().waitForEvent("page");
   await pageTwo.goto(
-    "https://play.freighter.app/#/extension/playground/signMessage",
+    "https://play.varialwallet.com/#/extension/playground/signMessage",
   );
   await pageTwo.getByRole("textbox").first().fill(MSG_TO_SIGN);
   // Wallet is on TestNet; provide MainNet passphrase to trigger network mismatch
@@ -1458,7 +1474,7 @@ test("should show network mismatch warning when signing transaction for wrong ne
 
   const popupPromise = page.context().waitForEvent("page");
   await pageTwo.goto(
-    "https://play.freighter.app/#/extension/playground/signTransaction",
+    "https://play.varialwallet.com/#/extension/playground/signTransaction",
   );
   await pageTwo.getByRole("textbox").first().fill(TX_TO_SIGN);
   // Wallet is on TestNet; provide MainNet passphrase to trigger the mismatch check

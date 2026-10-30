@@ -13,7 +13,7 @@ describe("Token info sheets", () => {
     expect(screen.getByText("Verified token")).toBeInTheDocument();
     expect(
       screen.getByText(
-        "Freighter uses asset lists to verify assets before interactions. You can define your own assets lists in Settings.",
+        "Varial uses asset lists to verify assets before interactions. You can define your own assets lists in Settings.",
       ),
     ).toBeInTheDocument();
   });
@@ -28,19 +28,21 @@ describe("Token info sheets", () => {
     ).toBeInTheDocument();
   });
 
-  it("VerifiedTokenInfoSheet calls onClose when dismiss button is clicked", () => {
+  it("VerifiedTokenInfoSheet closes from its X, its only button", () => {
     const mockOnClose = jest.fn();
     render(<VerifiedTokenInfoSheet isOpen onClose={mockOnClose} />);
-    const dismissButton = screen.getByText("Close");
-    fireEvent.click(dismissButton);
+    const buttons = screen.getAllByRole("button");
+    expect(buttons).toHaveLength(1);
+    fireEvent.click(screen.getByRole("button", { name: "Close" }));
     expect(mockOnClose).toHaveBeenCalled();
   });
 
-  it("UnverifiedTokenInfoSheet calls onClose when dismiss button is clicked", () => {
+  it("UnverifiedTokenInfoSheet closes from its X, its only button", () => {
     const mockOnClose = jest.fn();
     render(<UnverifiedTokenInfoSheet isOpen onClose={mockOnClose} />);
-    const dismissButton = screen.getByText("Close");
-    fireEvent.click(dismissButton);
+    const buttons = screen.getAllByRole("button");
+    expect(buttons).toHaveLength(1);
+    fireEvent.click(screen.getByRole("button", { name: "Close" }));
     expect(mockOnClose).toHaveBeenCalled();
   });
 });

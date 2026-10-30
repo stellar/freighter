@@ -4,14 +4,13 @@ import { Navigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Button, Icon, Loader, Notification } from "@stellar/design-system";
 
-import { View } from "popup/basics/layout/View";
 import { getUrlHostname, newTabHref, parsedSearchParam } from "helpers/urls";
 import { rejectAccess, grantAccess } from "popup/ducks/access";
 import { DomainScanModalInfo } from "popup/components/ModalInfo";
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
 import { AppDispatch } from "popup/App";
 import { RequestState } from "constants/request";
-import { openTab } from "popup/helpers/navigate";
+import { closeWindow, openTab } from "popup/helpers/navigate";
 import { useGetGrantAccessData } from "./hooks/useGetGrantAccessData";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { reRouteOnboarding } from "popup/helpers/route";
@@ -24,6 +23,9 @@ import {
 } from "popup/helpers/blockaid";
 import { SecurityLevel } from "popup/constants/blockaid";
 import { useMarkQueueActive } from "popup/helpers/useMarkQueueActive";
+import { SheetHeader } from "popup/components/SheetHeader";
+import { SheetLayout } from "popup/components/SheetLayout";
+import { SlideupModal } from "popup/components/SlideupModal";
 
 import "popup/metrics/access";
 import "./styles.scss";
@@ -80,7 +82,7 @@ export const GrantAccess = () => {
   if (state.data?.type === AppDataType.REROUTE) {
     if (state.data.shouldOpenTab) {
       openTab(newTabHref(state.data.routeTarget));
-      window.close();
+      closeWindow();
     }
     return (
       <Navigate
@@ -137,171 +139,178 @@ export const GrantAccess = () => {
 
   return (
     <>
-      <View.Content>
-        <MultiPaneSlider
-          activeIndex={activePaneIndex}
-          panes={[
-            <DomainScanModalInfo
-              domain={domain}
-              isMalicious={isMalicious}
-              isUnableToScan={isUnableToScan}
-              onClick={() => setActivePaneIndex(1)}
-              subject={t(
-                `Allow ${domain} to view your wallet address, balance, activity and request approval for transactions`,
+      {/* The request floats as a card over the dimmed window, like every other
+          sheet and like mobile's dApp sheets. Dismissing it (backdrop, Escape)
+          rejects the request, the same as Cancel. */}
+      <SlideupModal
+        isModalOpen
+        setIsModalOpen={() => rejectAndClose()}
+        ariaLabel={t("Connection Request")}
+      >
+        <SheetLayout
+          footer={
+            <div className="GrantAccess__Footer">
+              {!shouldShowWarning && (
+                <span className="GrantAccess__Warning">
+                  Only confirm if you trust this site
+                </span>
               )}
-            >
-              <div
-                className="GrantAccess__SigningWith"
-                data-testid="grant-access-view"
-              >
-                <div className="GrantAccess__Detail">
-                  <div className="GrantAccess__Detail__Label">
-                    <Icon.Wallet01 />
-                    <span>{t("Wallet")}</span>
-                  </div>
-                  <div className="GrantAccess__Detail__Value">
-                    <KeyIdenticon publicKey={publicKey} />
-                  </div>
+              {shouldShowWarning ? (
+                <div className="GrantAccess__ButtonsContainerMalicious">
+                  <Button
+                    size="lg"
+                    isFullWidth
+                    isRounded
+                    variant={isMalicious ? "destructive" : "secondary"}
+                    onClick={rejectAndClose}
+                  >
+                    <span className="GrantAccess__CancelBtn">
+                      {t("Cancel")}
+                    </span>
+                  </Button>
+                  <Button
+                    data-testid="grant-access-connect-anyway-button"
+                    className={
+                      isMalicious
+                        ? "GrantAccess__ConnectAnywayBtn Error"
+                        : "GrantAccess__ConnectAnywayBtn"
+                    }
+                    size="lg"
+                    isFullWidth
+                    isRounded
+                    variant={isMalicious ? "error" : "tertiary"}
+                    isLoading={isGranting}
+                    onClick={() => grantAndClose()}
+                  >
+                    {t("Connect anyway")}
+                  </Button>
                 </div>
-                <div className="GrantAccess__Detail">
-                  <div className="GrantAccess__Detail__Label">
-                    <Icon.Globe02 />
-                    <span>{t("Network")}</span>
-                  </div>
-                  <div className="GrantAccess__Detail__Value">
-                    <span>{networkDetails.networkName}</span>
-                  </div>
+              ) : (
+                <div className="GrantAccess__ButtonsContainer">
+                  <Button
+                    size="lg"
+                    isFullWidth
+                    isRounded
+                    variant="tertiary"
+                    onClick={rejectAndClose}
+                  >
+                    <span className="GrantAccess__CancelBtn">
+                      {t("Cancel")}
+                    </span>
+                  </Button>
+                  <Button
+                    data-testid="grant-access-connect-button"
+                    size="lg"
+                    isFullWidth
+                    isRounded
+                    variant="secondary"
+                    isLoading={isGranting}
+                    onClick={() => grantAndClose()}
+                  >
+                    {t("Connect")}
+                  </Button>
                 </div>
-              </div>
-            </DomainScanModalInfo>,
-            <div className="GrantAccess__BlockaidDetails">
-              <div className="GrantAccess__BlockaidDetails__Header">
-                <div
-                  className={isMalicious ? "WarningMarkError" : "WarningMark"}
-                >
-                  <Icon.AlertOctagon />
-                </div>
-                <div className="Close" onClick={() => setActivePaneIndex(0)}>
-                  <Icon.X />
-                </div>
-              </div>
-              <div className="GrantAccess__BlockaidDetails__Title">
-                {t("Do not proceed")}
-              </div>
-              <div className="GrantAccess__BlockaidDetails__SubTitle">
-                {t(
-                  "This transaction does not appear safe for the following reasons",
+              )}
+            </div>
+          }
+        >
+          <MultiPaneSlider
+            activeIndex={activePaneIndex}
+            panes={[
+              <DomainScanModalInfo
+                domain={domain}
+                isMalicious={isMalicious}
+                isUnableToScan={isUnableToScan}
+                onClick={() => setActivePaneIndex(1)}
+                subject={t(
+                  `Allow ${domain} to view your wallet address, balance, activity and request approval for transactions`,
                 )}
-              </div>
-              <div className="GrantAccess__BlockaidDetails__Details">
-                {!isUnableToScan &&
-                  attackTypes.length > 0 &&
-                  attackTypes.map((attack, index) => (
+              >
+                <div
+                  className="GrantAccess__SigningWith"
+                  data-testid="grant-access-view"
+                >
+                  <div className="GrantAccess__Detail">
+                    <div className="GrantAccess__Detail__Label">
+                      <Icon.Wallet01 />
+                      <span>{t("Wallet")}</span>
+                    </div>
+                    <div className="GrantAccess__Detail__Value">
+                      <KeyIdenticon publicKey={publicKey} />
+                    </div>
+                  </div>
+                  <div className="GrantAccess__Detail">
+                    <div className="GrantAccess__Detail__Label">
+                      <Icon.Globe02 />
+                      <span>{t("Network")}</span>
+                    </div>
+                    <div className="GrantAccess__Detail__Value">
+                      <span>{networkDetails.networkName}</span>
+                    </div>
+                  </div>
+                </div>
+              </DomainScanModalInfo>,
+              <div className="GrantAccess__BlockaidDetails">
+                <SheetHeader
+                  title={t("Do not proceed")}
+                  onClose={() => setActivePaneIndex(0)}
+                />
+                <div className="GrantAccess__BlockaidDetails__SubTitle">
+                  {t(
+                    "This transaction does not appear safe for the following reasons",
+                  )}
+                </div>
+                <div className="GrantAccess__BlockaidDetails__Details">
+                  {!isUnableToScan &&
+                    attackTypes.length > 0 &&
+                    attackTypes.map((attack, index) => (
+                      <div
+                        key={index}
+                        className={
+                          isMalicious
+                            ? "GrantAccess__BlockaidDetails__DetailRowError"
+                            : "GrantAccess__BlockaidDetails__DetailRow"
+                        }
+                      >
+                        {isMalicious ? <Icon.XCircle /> : <Icon.MinusCircle />}
+                        <span>
+                          {
+                            ATTACK_TO_DISPLAY[
+                              attack as keyof typeof ATTACK_TO_DISPLAY
+                            ]
+                          }
+                        </span>
+                      </div>
+                    ))}
+                  {hasOverrideWithoutMessages && (
                     <div
-                      key={index}
                       className={
-                        isMalicious
+                        blockaidOverrideState === SecurityLevel.MALICIOUS
                           ? "GrantAccess__BlockaidDetails__DetailRowError"
                           : "GrantAccess__BlockaidDetails__DetailRow"
                       }
                     >
-                      {isMalicious ? <Icon.XCircle /> : <Icon.MinusCircle />}
-                      <span>
-                        {
-                          ATTACK_TO_DISPLAY[
-                            attack as keyof typeof ATTACK_TO_DISPLAY
-                          ]
-                        }
-                      </span>
+                      {blockaidOverrideState === SecurityLevel.MALICIOUS ? (
+                        <Icon.XCircle />
+                      ) : (
+                        <Icon.MinusCircle />
+                      )}
+                      <span>{t("This site was flagged as malicious")}</span>
                     </div>
-                  ))}
-                {hasOverrideWithoutMessages && (
-                  <div
-                    className={
-                      blockaidOverrideState === SecurityLevel.MALICIOUS
-                        ? "GrantAccess__BlockaidDetails__DetailRowError"
-                        : "GrantAccess__BlockaidDetails__DetailRow"
-                    }
-                  >
-                    {blockaidOverrideState === SecurityLevel.MALICIOUS ? (
-                      <Icon.XCircle />
-                    ) : (
+                  )}
+                  {isUnableToScan && (
+                    <div className="GrantAccess__BlockaidDetails__DetailRow">
                       <Icon.MinusCircle />
-                    )}
-                    <span>{t("This site was flagged as malicious")}</span>
-                  </div>
-                )}
-                {isUnableToScan && (
-                  <div className="GrantAccess__BlockaidDetails__DetailRow">
-                    <Icon.MinusCircle />
-                    <span>{t("Unable to scan site")}</span>
-                  </div>
-                )}
-                <BlockaidByLine address={""} />
-              </div>
-            </div>,
-          ]}
-        />
-      </View.Content>
-      <View.Footer>
-        {!shouldShowWarning && (
-          <span className="GrantAccess__Warning">
-            Only confirm if you trust this site
-          </span>
-        )}
-        {shouldShowWarning ? (
-          <div className="GrantAccess__ButtonsContainerMalicious">
-            <Button
-              size="lg"
-              isFullWidth
-              isRounded
-              variant={isMalicious ? "destructive" : "secondary"}
-              onClick={rejectAndClose}
-            >
-              <span className="GrantAccess__CancelBtn">{t("Cancel")}</span>
-            </Button>
-            <Button
-              data-testid="grant-access-connect-anyway-button"
-              className={
-                isMalicious
-                  ? "GrantAccess__ConnectAnywayBtn Error"
-                  : "GrantAccess__ConnectAnywayBtn"
-              }
-              size="lg"
-              isFullWidth
-              isRounded
-              variant={isMalicious ? "error" : "tertiary"}
-              isLoading={isGranting}
-              onClick={() => grantAndClose()}
-            >
-              {t("Connect anyway")}
-            </Button>
-          </div>
-        ) : (
-          <div className="GrantAccess__ButtonsContainer">
-            <Button
-              size="lg"
-              isFullWidth
-              isRounded
-              variant="tertiary"
-              onClick={rejectAndClose}
-            >
-              <span className="GrantAccess__CancelBtn">{t("Cancel")}</span>
-            </Button>
-            <Button
-              data-testid="grant-access-connect-button"
-              size="lg"
-              isFullWidth
-              isRounded
-              variant="secondary"
-              isLoading={isGranting}
-              onClick={() => grantAndClose()}
-            >
-              {t("Connect")}
-            </Button>
-          </div>
-        )}
-      </View.Footer>
+                      <span>{t("Unable to scan site")}</span>
+                    </div>
+                  )}
+                  <BlockaidByLine address={""} />
+                </div>
+              </div>,
+            ]}
+          />
+        </SheetLayout>
+      </SlideupModal>
     </>
   );
 };

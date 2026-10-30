@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Toaster as SonnerToaster } from "sonner";
+import { Toaster as SonnerToaster, toast } from "sonner";
 import { Icon } from "@stellar/design-system";
 
 import "./styles.scss";
@@ -31,4 +31,14 @@ function Toaster({ ...props }: React.ComponentProps<typeof SonnerToaster>) {
   );
 }
 
-export { Toaster };
+/**
+ * Shows a custom toast, replacing any toast already on screen, so toasts
+ * never stack. Each call gets a fresh id; a stable id can stop the toast
+ * from rendering once an earlier one with that id has been dismissed.
+ */
+const showToast = (render: (id: string | number) => React.ReactElement) => {
+  toast.dismiss();
+  return toast.custom(render);
+};
+
+export { Toaster, showToast };

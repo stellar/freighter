@@ -24,8 +24,12 @@ export const IS_HASH_SIGNING_ENABLED_ID = "isHashSigningEnabled";
 export const IS_NON_SSL_ENABLED_ID = "isNonSSLEnabled";
 export const IS_BLOCKAID_ANNOUNCED_ID = "isBlockaidAnnounced";
 export const IS_HIDE_DUST_ENABLED_ID = "isHideDustEnabled";
+// Legacy wallet-wide list, only read to migrate to HIDDEN_ASSET_LIST
 export const HIDDEN_ASSETS = "hiddenAssets";
+export const HIDDEN_ASSET_LIST = "hiddenAssetList";
+// Legacy wallet-wide map, only read to migrate to HIDDEN_COLLECTIBLE_LIST
 export const HIDDEN_COLLECTIBLES = "hiddenCollectibles";
+export const HIDDEN_COLLECTIBLE_LIST = "hiddenCollectibleList";
 export const TEMPORARY_STORE_ID = "temporaryStore";
 export const TEMPORARY_STORE_EXTRA_ID = "temporaryStoreExtra";
 export const USDT0_LAUNCH_BANNER_DISMISSED = "usdt0LaunchBannerDismissed";
@@ -35,4 +39,5 @@ export const IS_OPEN_SIDEBAR_BY_DEFAULT_ID = "isOpenSidebarByDefault";
 export const METRICS_USER_ID = "metrics_user_id";
 export const RECENT_PROTOCOLS = "recentProtocols";
 export const HAS_SEEN_DISCOVER_WELCOME = "hasSeenDiscoverWelcome";
+export const REBRAND_ANNOUNCEMENT_STATUS_ID = "rebrandAnnouncementStatus";
 export const AUTO_LOCK_TIMEOUT_MINUTES_ID = "autoLockTimeoutMinutes";

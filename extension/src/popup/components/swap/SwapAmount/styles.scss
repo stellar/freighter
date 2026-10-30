@@ -261,26 +261,15 @@
   }
 }
 
-.SlippageWrapper {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
 .Slippage {
-  z-index: var(--z-index--banner);
-  position: relative;
-
   &__Footer {
     display: flex;
     justify-content: space-between;
     margin-top: pxToRem(24px);
 
+    // Same gap as the Settings sheet's Cancel and Save, so the buttons match.
     .Button:first-child {
-      margin-right: pxToRem(6px);
+      margin-right: pxToRem(10px);
     }
   }
 

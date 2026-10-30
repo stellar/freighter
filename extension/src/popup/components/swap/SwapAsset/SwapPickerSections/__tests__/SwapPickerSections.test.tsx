@@ -13,9 +13,13 @@ jest.mock("react-i18next", () => ({
 // Stub BalanceRow and AssetListRow to simple markers so tests assert section
 // structure without depending on row internals.
 jest.mock("popup/components/BalanceRow", () => ({
-  BalanceRow: ({ code }: { code: string }) => (
-    <div data-testid={`row-${code}`} />
-  ),
+  BalanceRow: ({
+    code,
+    hasDivider,
+  }: {
+    code: string;
+    hasDivider?: boolean;
+  }) => <div data-testid={`row-${code}`} data-divider={String(!!hasDivider)} />,
 }));
 
 jest.mock("popup/components/AssetListRow", () => ({
@@ -224,6 +228,32 @@ describe("SwapPickerSections", () => {
     // Discover sections still drop hidden assets (AQUA) but keep the rest.
     expect(screen.queryByTestId("row-AQUA")).toBeNull();
     expect(screen.getByTestId("row-DOGET")).toBeInTheDocument();
+  });
+
+  it("divides Your tokens rows like Home's list, with no line after the last", () => {
+    render(
+      <SwapPickerSections
+        {...baseProps}
+        searchTerm=""
+        result={{
+          ...emptyResult,
+          yourTokens: [rec("XLM", true), rec("USDC", true), rec("EURC", true)],
+        }}
+      />,
+    );
+
+    expect(screen.getByTestId("row-XLM")).toHaveAttribute(
+      "data-divider",
+      "true",
+    );
+    expect(screen.getByTestId("row-USDC")).toHaveAttribute(
+      "data-divider",
+      "true",
+    );
+    expect(screen.getByTestId("row-EURC")).toHaveAttribute(
+      "data-divider",
+      "false",
+    );
   });
 
   it("idle + new account + no popular: renders nothing (no generic empty state)", () => {

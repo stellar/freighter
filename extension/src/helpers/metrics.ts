@@ -15,6 +15,7 @@ import { BUNDLE_ID_USER_PROPERTY_KEY, getBundleId } from "helpers/analytics";
 import { isDev } from "@shared/helpers/dev";
 import { truncatedPublicKey } from "helpers/stellar";
 import { isSidebarMode } from "popup/helpers/isSidebarMode";
+import { getAppliedColorScheme } from "popup/helpers/systemTheme";
 import {
   settingsDataSharingSelector,
   settingsNetworkDetailsSelector,
@@ -481,6 +482,10 @@ export const buildCommonContext = (
     schema_version: SCHEMA_VERSION,
     surface: getSurface(),
     network: networkDetails?.network ?? "UNKNOWN",
+    // Event property, not an Identify trait: devices set to "automatic" flip
+    // theme on sunset, so a profile property would thrash — stickiness gets
+    // inferred in Amplitude instead (thread linked from mobile#26).
+    color_scheme: getAppliedColorScheme(),
   };
 
   // Active-account fields are meaningful only when there is an active account.

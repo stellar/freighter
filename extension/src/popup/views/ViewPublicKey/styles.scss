@@ -14,23 +14,13 @@
     gap: pxToRem(8px);
 
     &__identicon {
+      flex-shrink: 0;
       display: flex;
       align-items: center;
       justify-content: center;
       width: pxToRem(32px);
       height: pxToRem(32px);
       border-radius: 50%;
-      background-color: var(--sds-clr-gray-03);
-
-      // IdenticonImg's own styles set the <img> to width/height: 100%, which
-      // would let it fill this entire circle. Size the descendant image
-      // directly so a visible ring of the circle's background remains
-      // around a smaller identicon, instead of cropping with
-      // overflow: hidden.
-      img {
-        width: pxToRem(16px);
-        height: pxToRem(16px);
-      }
     }
 
     &__text {

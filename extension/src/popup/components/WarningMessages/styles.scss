@@ -90,7 +90,7 @@
 
 .WarningMessage {
   &--active {
-    background: var(--sds-clr-gray-01);
+    background: var(--sds-clr-base-00);
     display: flex;
     flex-direction: column;
     left: 0;
@@ -162,7 +162,7 @@
   &__infoBlock {
     background: var(--sds-clr-lilac-03);
     border-radius: pxToRem(16px);
-    color: var(--sds-clr-lilac-11);
+    color: var(--sds-clr-lilac-09);
     font-size: 0.875rem;
     padding: pxToRem(16px) pxToRem(12px);
 
@@ -180,7 +180,7 @@
     }
 
     &--warning {
-      background-color: var(--sds-clr-amber-03);
+      background-color: var(--sds-clr-amber-02);
       color: var(--sds-clr-amber-11);
       border-radius: pxToRem(16px);
       padding: pxToRem(16px) pxToRem(12px);
@@ -188,7 +188,7 @@
       .WarningMessage__icon {
         width: pxToRem(16px);
         height: pxToRem(16px);
-        color: var(--sds-clr-amber-11);
+        color: var(--sds-clr-amber-09);
       }
     }
   }
@@ -368,128 +368,6 @@
   }
 }
 
-.TokenWarning {
-  z-index: var(--z-index--scam-warning);
-  display: flex;
-  position: fixed;
-  width: 100%;
-  left: 0;
-  top: 0;
-  bottom: 0;
-
-  &__wrapper {
-    z-index: calc(var(--z-index--scam-warning) + 1);
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    background: var(--sds-clr-gray-01);
-    padding: 2rem 1.5rem 0.75rem 1.5rem;
-    transition: margin var(--dropdown-animation);
-  }
-
-  &__body {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-
-  &__bottom-content {
-    margin-top: 1rem;
-    width: 100%;
-  }
-
-  &__icon {
-    align-items: center;
-    display: flex;
-    justify-content: center;
-    margin-bottom: 0.5rem;
-
-    .AccountAssets__asset--logo {
-      margin-right: 0;
-    }
-  }
-
-  &__code,
-  &__domain {
-    display: flex;
-    font-size: pxToRem(14px);
-    justify-content: center;
-  }
-
-  &__domain {
-    color: var(--sds-clr-gray-11);
-  }
-
-  &__description {
-    align-items: center;
-    background: var(--sds-clr-gray-04);
-    border-radius: 0.375rem;
-    display: flex;
-    gap: 0.25rem;
-    margin: 1rem 0 1.5rem 0;
-    padding: 0.125rem 0.375rem;
-
-    &__icon {
-      svg {
-        color: var(--sds-clr-gray-12);
-        height: 0.75rem;
-        width: 0.75rem;
-      }
-    }
-
-    &__text {
-      color: var(--sds-clr-gray-11);
-      font-size: 0.75rem;
-      line-height: 1.125rem;
-    }
-  }
-
-  &__flags {
-    border-radius: 0.5rem;
-    margin-top: 0.5rem;
-    background: var(--sds-clr-gray-02);
-    padding: 0.75rem 1rem;
-    width: 100%;
-
-    &__info {
-      font-size: 0.875rem;
-      color: var(--sds-clr-gray-12);
-      margin-bottom: 0.5rem;
-    }
-  }
-
-  &__flag {
-    display: flex;
-    margin-bottom: 0.375rem;
-    column-gap: 0.5rem;
-    &__header {
-      color: var(--sds-clr-white);
-      font-size: 0.875rem;
-      margin-bottom: 0.25rem;
-    }
-    &__description {
-      color: var(--sds-clr-gray-12);
-      font-size: 0.75rem;
-      line-height: 1.25rem;
-    }
-    &__icon--unverified {
-      color: var(--sds-clr-amber-09);
-    }
-
-    &__icon--invalid-format {
-      svg {
-        color: var(--sds-clr-gray-09);
-      }
-    }
-    &__content {
-      color: var(--sds-clr-gray-11);
-      font-size: 0.875rem;
-      line-height: 1.125rem;
-    }
-  }
-}
-
 .TokenTransferWarning {
   overflow-wrap: break-word;
 
@@ -583,22 +461,22 @@
 
 .ScanMiss {
   color: var(--sds-clr-amber-11);
-  background-color: var(--sds-clr-amber-03);
+  background-color: var(--sds-clr-amber-02);
 
   .Icon {
     .WarningMessage__icon {
-      color: var(--sds-clr-amber-11);
+      color: var(--sds-clr-amber-09);
     }
   }
 }
 
 .ScanWarning {
   color: var(--sds-clr-amber-11);
-  background-color: var(--sds-clr-amber-03);
+  background-color: var(--sds-clr-amber-02);
 
   .Icon {
     .WarningMessage__icon {
-      color: var(--sds-clr-amber-11);
+      color: var(--sds-clr-amber-09);
     }
   }
 }
@@ -607,7 +485,7 @@
 // Sizing/spacing inherit from .ScanLabel to stay consistent with the other
 // banners (the mobile Figma's smaller type scale doesn't apply to extension).
 .ScanAssetList {
-  color: var(--sds-clr-lilac-11);
+  color: var(--sds-clr-lilac-09);
   background-color: var(--sds-clr-lilac-03);
 
   .Icon .WarningMessage__icon {
@@ -636,7 +514,7 @@
     z-index: 2;
 
     &__icon {
-      background-color: rgba(241, 50, 50, 0.32);
+      background-color: var(--sds-clr-red-04);
       border-radius: 100px;
       display: flex;
       width: 2rem;
@@ -645,7 +523,7 @@
       margin-bottom: 0.5rem;
 
       &--isWarning {
-        background-color: rgba(94, 58, 4, 0.32);
+        background-color: var(--sds-clr-amber-04);
       }
     }
 
@@ -679,76 +557,12 @@
   max-width: 57rem;
   margin: 0 auto;
   padding: 12px 0;
-
-  &__Header {
-    display: flex;
-    justify-content: space-between;
-
-    .WarningMark {
-      display: flex;
-      width: 32px;
-      height: 32px;
-      padding: 5px;
-      justify-content: center;
-      align-items: center;
-      aspect-ratio: 1/1;
-      border-radius: 8px;
-      border: 1px solid var(--sds-clr-amber-06);
-      background: var(--sds-clr-amber-03);
-
-      svg {
-        width: 20px;
-        height: 20px;
-        color: var(--sds-clr-amber-09);
-      }
-    }
-
-    .WarningMarkError {
-      display: flex;
-      width: 32px;
-      height: 32px;
-      padding: 5px;
-      justify-content: center;
-      align-items: center;
-      aspect-ratio: 1/1;
-      border-radius: 8px;
-      border: 1px solid var(--sds-clr-red-06);
-      background: var(--sds-clr-red-03);
-
-      svg {
-        width: 20px;
-        height: 20px;
-        color: var(--sds-clr-red-09);
-      }
-    }
-
-    .Close {
-      display: flex;
-      width: 32px;
-      height: 32px;
-      justify-content: center;
-      align-items: center;
-      border-radius: 1000px;
-      background: var(--sds-clr-gray-03);
-      color: var(--sds-clr-gray-09);
-    }
-  }
-
-  &__Title {
-    display: flex;
-    margin: pxToRem(16px) 0 pxToRem(8px);
-    font-size: pxToRem(18px);
-    font-weight: 500;
-    justify-content: flex-start;
-    text-align: left;
-    width: 100%;
-  }
+  gap: pxToRem(16px);
 
   &__SubTitle {
     font-size: pxToRem(14px);
     font-weight: 400;
     line-height: pxToRem(20px);
-    margin-bottom: pxToRem(16px);
     color: var(--sds-clr-gray-11);
     text-align: left;
     width: 100%;

@@ -118,7 +118,28 @@ const commonConfig = (
         test: /\.svg$/i,
         issuer: /\.[jt]sx?$/,
         resourceQuery: /react/, // *.svg?react
-        use: ["@svgr/webpack"],
+        use: [
+          {
+            loader: "@svgr/webpack",
+            options: {
+              // svgo's preset-default strips viewBox; without it an inline
+              // svg can't scale, so CSS-resized icons render clipped.
+              svgoConfig: {
+                plugins: [
+                  {
+                    name: "preset-default",
+                    params: { overrides: { removeViewBox: false } },
+                  },
+                  // svgoConfig replaces svgr's defaults wholesale, which would
+                  // drop prefixIds — without it, cleanupIds-minified ids ("a",
+                  // "b", …) collide across inline svgs on the same page and
+                  // url(#...) resolves to another icon's defs.
+                  "prefixIds",
+                ],
+              },
+            },
+          },
+        ],
       },
       {
         test: /tailwind.css$/i,

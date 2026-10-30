@@ -419,7 +419,7 @@ export const stubScanDapp = async (context: BrowserContext) => {
     const json = {
       data: {
         status: "hit",
-        url: "https://play.freighter.app/#/extension/playground/setAllowed",
+        url: "https://play.varialwallet.com/#/extension/playground/setAllowed",
         scan_start_time: "2025-07-04T08:58:59.350000",
         scan_end_time: "2025-07-04T09:02:37.766000",
         malicious_score: 0,
@@ -460,7 +460,7 @@ export const stubScanDappMalicious = async (context: BrowserContext) => {
     const json = {
       data: {
         status: "hit",
-        url: "https://play.freighter.app/#/extension/playground/setAllowed",
+        url: "https://play.varialwallet.com/#/extension/playground/setAllowed",
         scan_start_time: "2025-07-04T08:58:59.350000",
         scan_end_time: "2025-07-04T09:02:37.766000",
         malicious_score: 0.95,
@@ -974,6 +974,66 @@ export const stubTokenPrices = async (page: Page | BrowserContext) => {
     }
 
     await route.fulfill({ json });
+  });
+};
+
+/**
+ * Stubs `GET /token-price-history` (the frozen §6.1 wire contract). Like
+ * token-prices, it is fetched from the background service worker, so it MUST
+ * be intercepted on the BrowserContext — page.route silently misses SW
+ * fetches. Pass per-range overrides to shape empty/sparse/low-volume states;
+ * unlisted ranges serve a full 97-point 1D-shaped series.
+ */
+export const stubTokenPriceHistory = async (
+  page: Page | BrowserContext,
+  overridesByRange: Record<string, Record<string, unknown>> = {},
+) => {
+  const ctx = "context" in page ? page.context() : page;
+  await ctx.route("**/token-price-history*", async (route) => {
+    const url = new URL(route.request().url());
+    const token = url.searchParams.get("token") || "native";
+    const range = url.searchParams.get("range") || "1D";
+    const base = {
+      token,
+      range,
+      resolutionSeconds: 900,
+      currency: "USD",
+      lowVolume: false,
+      change: { absolute: "0.001359", percent: "0.86" },
+      points: Array.from({ length: 97 }, (_, i) => ({
+        t: 1786636800 + i * 900,
+        p: (0.1589 + i * 0.0001).toFixed(6),
+      })),
+    };
+    await route.fulfill({
+      json: { data: { ...base, ...(overridesByRange[range] || {}) } },
+    });
+  });
+};
+
+/**
+ * Stubs `GET /token-stats` (§6.1). Background service-worker fetch — must be
+ * intercepted on the BrowserContext. Absent fields stay absent per the
+ * contract; pass overrides with `undefined` values to drop them.
+ */
+export const stubTokenStats = async (
+  page: Page | BrowserContext,
+  overrides: Record<string, unknown> = {},
+) => {
+  const ctx = "context" in page ? page.context() : page;
+  await ctx.route("**/token-stats*", async (route) => {
+    const url = new URL(route.request().url());
+    const token = url.searchParams.get("token") || "native";
+    await route.fulfill({
+      json: {
+        data: {
+          token,
+          supplyOnStellar: "105443902087.3472865",
+          holders: 9926520,
+          ...overrides,
+        },
+      },
+    });
   });
 };
 
@@ -3332,6 +3392,10 @@ export const stubAllExternalApis = async (
   await stubTokenDetails(page);
   await stubTokenPrices(page);
   await stubIsSac(page);
+  // AssetDetail mounts these on mainnet (the flag defaults on); background
+  // service-worker fetches, so they go on the context.
+  await stubTokenPriceHistory(context);
+  await stubTokenStats(context);
 
   // Horizon endpoints
   await stubFeeStats(page);

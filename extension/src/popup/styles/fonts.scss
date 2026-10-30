@@ -1,0 +1,41 @@
+// Inter, the typeface SDS names in `--sds-ff-base` ("Inter", sans-serif) but
+// doesn't ship. Without these faces every Varial screen fell back to the
+// system sans -- Helvetica on macOS, whose lack of a semibold drew every 600
+// as full bold.
+//
+// The same Inter 4.001 static faces mobile bundles (18pt optical size),
+// converted from mobile's TTFs to woff2. Served from the extension itself, so
+// no CSP or network dependency. Only the weights SDS tokens use: 400, 500,
+// 600 and 700. License: assets/fonts/inter/OFL.txt.
+
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("../assets/fonts/inter/Inter-Regular.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("../assets/fonts/inter/Inter-Medium.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("../assets/fonts/inter/Inter-SemiBold.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("../assets/fonts/inter/Inter-Bold.woff2") format("woff2");
+}

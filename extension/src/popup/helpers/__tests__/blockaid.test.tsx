@@ -12,6 +12,7 @@ import {
   isBlockaidEnabled,
   getSiteSecurityStates,
   extractAssetScanWarnings,
+  scanAssetBulk,
 } from "../blockaid";
 import { SecurityLevel } from "popup/constants/blockaid";
 import {
@@ -559,5 +560,59 @@ describe("extractAssetScanWarnings", () => {
         features: [],
       } as unknown as BlockAidScanAssetResult),
     ).toEqual([]);
+  });
+});
+
+describe("scanAssetBulk id filtering", () => {
+  const ISSUER = "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN";
+  const CONTRACT = "CAS3J7GYLGXMF6TDJBBYYSE3HQ6BBSMLNUQ34T6TZMYMW2EVH34XOWMA";
+  let fetchSpy: jest.SpyInstance;
+
+  const scanRequests = () =>
+    fetchSpy.mock.calls
+      .map(([url]) => String(url))
+      .filter((url) => url.includes("/scan-asset-bulk"));
+
+  beforeEach(() => {
+    fetchSpy = jest.spyOn(global, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ data: { results: {} } }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      }),
+    );
+  });
+
+  afterEach(() => {
+    fetchSpy.mockRestore();
+  });
+
+  // One id the backend or Blockaid can't take fails the whole request, so
+  // e.g. a stellar.toml currency without an issuer would cost every other
+  // currency in the batch its verdict.
+  it("leaves out ids the bulk scan can't take so the rest of the batch is still scanned", async () => {
+    await scanAssetBulk(
+      [
+        `USDC-${ISSUER}`,
+        `USDC-SEAV-${CONTRACT}`,
+        `${CONTRACT}-${CONTRACT}`,
+        "XYZ-undefined",
+      ],
+      MAINNET_NETWORK_DETAILS,
+    );
+
+    expect(scanRequests()).toHaveLength(1);
+    expect(new URL(scanRequests()[0]).searchParams.getAll("asset_ids")).toEqual(
+      [`USDC-${ISSUER}`],
+    );
+  });
+
+  it("returns no results without fetching when no id can be bulk scanned", async () => {
+    const result = await scanAssetBulk(
+      [`USDC-SEAV-${CONTRACT}`],
+      MAINNET_NETWORK_DETAILS,
+    );
+
+    expect(scanRequests()).toHaveLength(0);
+    expect(result).toEqual({ results: {} });
   });
 });

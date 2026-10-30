@@ -11,6 +11,8 @@ interface SubviewHeaderProps {
   subtitle?: React.ReactNode;
   hasBackButton?: boolean;
   rightButton?: React.ReactNode;
+  /** See `View.AppHeader`'s `isFloating`. */
+  isFloating?: boolean;
 }
 
 export const SubviewHeader = ({
@@ -20,8 +22,10 @@ export const SubviewHeader = ({
   subtitle,
   hasBackButton = true,
   rightButton,
+  isFloating,
 }: SubviewHeaderProps) => (
   <View.AppHeader
+    isFloating={isFloating}
     pageTitle={title}
     pageSubtitle={subtitle}
     rightContent={rightButton}

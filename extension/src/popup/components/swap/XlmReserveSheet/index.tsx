@@ -1,7 +1,9 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { Button, CopyText, Icon } from "@stellar/design-system";
+import { Button, CopyText } from "@stellar/design-system";
 
+import { SheetHeader } from "popup/components/SheetHeader";
+import { SheetLayout } from "popup/components/SheetLayout";
 import { openTab } from "popup/helpers/navigate";
 import StellarLogo from "popup/assets/stellar-logo.png";
 
@@ -28,29 +30,22 @@ export const XlmReserveSheet = ({
   const { t } = useTranslation();
 
   return (
-    <div className="XlmReserveSheet" data-testid="XlmReserveSheet">
-      <div className="XlmReserveSheet__top">
-        <div className="XlmReserveSheet__badge">
-          <Icon.PlusCircle />
-        </div>
-        <button
-          type="button"
-          className="XlmReserveSheet__close"
-          onClick={onClose}
-          aria-label={t("Close")}
-          data-testid="XlmReserveSheet__close"
-        >
-          <Icon.X />
-        </button>
-      </div>
+    <SheetLayout data-testid="XlmReserveSheet">
+      <div className="XlmReserveSheet">
+        <SheetHeader
+          title={t("You need XLM to create a trustline")}
+          leading={
+            // Decorative: the title names the token, and the reserve card
+            // below carries the labelled XLM image.
+            <img className="XlmReserveSheet__token" src={StellarLogo} alt="" />
+          }
+          onClose={onClose}
+          closeTestId="XlmReserveSheet__close"
+        />
 
-      <div className="XlmReserveSheet__text">
-        <h2 className="XlmReserveSheet__title">
-          {t("You need XLM to create a trustline")}
-        </h2>
         {/* A div, not a p: the SDS theme's global `p` rules force
-            color:inherit !important (→ near-white) and line-height 1.75rem,
-            overriding the muted gray + 20px we want here. */}
+          color:inherit !important (→ near-white) and line-height 1.75rem,
+          overriding the muted gray + 20px we want here. */}
         <div className="XlmReserveSheet__body">
           {t(
             "To receive {{tokenCode}}, your wallet needs a trustline on Stellar.",
@@ -67,56 +62,56 @@ export const XlmReserveSheet = ({
             {t("Why do I need XLM?")}
           </button>
         </div>
-      </div>
 
-      <div className="XlmReserveSheet__card">
-        <img
-          className="XlmReserveSheet__card-icon"
-          src={StellarLogo}
-          alt="XLM"
-        />
-        <div className="XlmReserveSheet__card-text">
-          <span className="XlmReserveSheet__card-title">
-            {t("0.5 XLM required")}
-          </span>
-          <span className="XlmReserveSheet__card-body">
-            {t(
-              "Stellar requires this reserve to add {{tokenCode}}. You can get it back once your {{tokenCode}} balance is zero.",
-              { tokenCode },
-            )}
-          </span>
+        <div className="XlmReserveSheet__card">
+          <img
+            className="XlmReserveSheet__card-icon"
+            src={StellarLogo}
+            alt="XLM"
+          />
+          <div className="XlmReserveSheet__card-text">
+            <span className="XlmReserveSheet__card-title">
+              {t("0.5 XLM required")}
+            </span>
+            <span className="XlmReserveSheet__card-body">
+              {t(
+                "Stellar requires this reserve to add {{tokenCode}}. You can get it back once your {{tokenCode}} balance is zero.",
+                { tokenCode },
+              )}
+            </span>
+          </div>
+        </div>
+
+        <div className="XlmReserveSheet__actions">
+          {canSwapForReserve ? (
+            <Button
+              size="lg"
+              variant="secondary"
+              isFullWidth
+              isRounded
+              data-testid="XlmReserveSheet__swap-for-reserve"
+              onClick={() => {
+                onSwapForReserve?.();
+                onClose();
+              }}
+            >
+              {t("Swap for 0.5 XLM")}
+            </Button>
+          ) : null}
+
+          <CopyText textToCopy={publicKey}>
+            <Button
+              size="lg"
+              variant="tertiary"
+              isFullWidth
+              isRounded
+              data-testid="XlmReserveSheet__copy-address"
+            >
+              {t("Copy my wallet address")}
+            </Button>
+          </CopyText>
         </div>
       </div>
-
-      <div className="XlmReserveSheet__actions">
-        {canSwapForReserve ? (
-          <Button
-            size="lg"
-            variant="secondary"
-            isFullWidth
-            isRounded
-            data-testid="XlmReserveSheet__swap-for-reserve"
-            onClick={() => {
-              onSwapForReserve?.();
-              onClose();
-            }}
-          >
-            {t("Swap for 0.5 XLM")}
-          </Button>
-        ) : null}
-
-        <CopyText textToCopy={publicKey}>
-          <Button
-            size="lg"
-            variant="tertiary"
-            isFullWidth
-            isRounded
-            data-testid="XlmReserveSheet__copy-address"
-          >
-            {t("Copy my wallet address")}
-          </Button>
-        </CopyText>
-      </div>
-    </div>
+    </SheetLayout>
   );
 };

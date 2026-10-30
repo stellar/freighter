@@ -1,9 +1,13 @@
 import React, { useRef } from "react";
-import { Button, Card, Icon, Input } from "@stellar/design-system";
+import { Button, Icon, Input } from "@stellar/design-system";
 import { Field, FieldProps, Formik, Form } from "formik";
 import { useTranslation } from "react-i18next";
 
+import { DEFAULT_TX_TIMEOUT } from "popup/constants/transaction";
+
 import { CongestionIndicator } from "../CongestionIndicator";
+import { SheetHeader, SheetHeaderLayout } from "popup/components/SheetHeader";
+import { SheetLayout } from "popup/components/SheetLayout";
 
 import "./styles.scss";
 
@@ -17,7 +21,6 @@ interface EditSettingsProps {
   defaultFee: string;
   timeout: number;
   congestion: string;
-  title: string;
   isSoroban?: boolean;
   onClose: () => void;
   onFeeChange?: (fee: string) => void;
@@ -30,7 +33,6 @@ export const EditSettings = ({
   defaultFee,
   timeout,
   congestion,
-  title,
   isSoroban = false,
   onClose,
   onFeeChange,
@@ -79,9 +81,17 @@ export const EditSettings = ({
   );
 
   return (
-    <div className="EditTxSettings">
-      <Card>
-        {title && <p>{title}</p>}
+    <SheetLayout
+      header={
+        <SheetHeader
+          layout={SheetHeaderLayout.Centered}
+          title={t("Settings")}
+          onClose={onClose}
+          closeTestId="edit-settings-close"
+        />
+      }
+    >
+      <div className="EditTxSettings">
         <Formik
           initialValues={initialValues}
           onSubmit={handleSubmit}
@@ -173,7 +183,9 @@ export const EditSettings = ({
                           type="button"
                           size="md"
                           variant="tertiary"
-                          onClick={() => setFieldValue("timeout", timeout)}
+                          onClick={() =>
+                            setFieldValue("timeout", DEFAULT_TX_TIMEOUT)
+                          }
                         >
                           {t("Default")}
                         </Button>
@@ -205,7 +217,7 @@ export const EditSettings = ({
             </>
           )}
         </Formik>
-      </Card>
-    </div>
+      </div>
+    </SheetLayout>
   );
 };

@@ -53,4 +53,14 @@ describe("BalanceRow", () => {
       FETCHED_ICON,
     );
   });
+
+  it("draws no divider unless the list asks for one", () => {
+    renderRow({ "data-testid": "row" });
+    expect(screen.getByTestId("row")).not.toHaveClass("BalanceRow--divider");
+  });
+
+  it("draws the divider when the list asks for one", () => {
+    renderRow({ "data-testid": "row", hasDivider: true });
+    expect(screen.getByTestId("row")).toHaveClass("BalanceRow--divider");
+  });
 });

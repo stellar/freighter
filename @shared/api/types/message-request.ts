@@ -278,6 +278,10 @@ export interface SignOutMessage extends BaseMessage {
   type: SERVICE_TYPES.SIGN_OUT;
 }
 
+export interface ResetWalletMessage extends BaseMessage {
+  type: SERVICE_TYPES.RESET_WALLET;
+}
+
 export interface SaveAllowListMessage extends BaseMessage {
   type: SERVICE_TYPES.SAVE_ALLOWLIST;
   networkName: string;
@@ -418,6 +422,8 @@ export interface GetIsAccountMismatchMessage extends BaseMessage {
 
 export interface ChangeAssetVisibilityMessage extends BaseMessage {
   type: SERVICE_TYPES.CHANGE_ASSET_VISIBILITY;
+  publicKey: string;
+  network: string;
   assetVisibility: {
     issuer: IssuerKey;
     visibility: AssetVisibility;
@@ -426,6 +432,8 @@ export interface ChangeAssetVisibilityMessage extends BaseMessage {
 
 export interface GetHiddenAssetsMessage extends BaseMessage {
   type: SERVICE_TYPES.GET_HIDDEN_ASSETS;
+  publicKey: string;
+  network: string;
 }
 
 export interface GetUsdt0LaunchBannerDismissedMessage extends BaseMessage {
@@ -457,6 +465,10 @@ export interface DismissDiscoverWelcomeMessage extends BaseMessage {
   type: SERVICE_TYPES.DISMISS_DISCOVER_WELCOME;
 }
 
+export interface ClaimRebrandAnnouncementMessage extends BaseMessage {
+  type: SERVICE_TYPES.CLAIM_REBRAND_ANNOUNCEMENT;
+}
+
 export interface GetBlockaidDebugOverrideMessage extends BaseMessage {
   type: SERVICE_TYPES.GET_BLOCKAID_DEBUG_OVERRIDE;
 }
@@ -476,6 +488,8 @@ export interface GetCollectiblesMessage extends BaseMessage {
 
 export interface ChangeCollectibleVisibilityMessage extends BaseMessage {
   type: SERVICE_TYPES.CHANGE_COLLECTIBLE_VISIBILITY;
+  publicKey: string;
+  network: string;
   collectibleVisibility: {
     collectible: CollectibleKey;
     visibility: AssetVisibility;
@@ -484,6 +498,8 @@ export interface ChangeCollectibleVisibilityMessage extends BaseMessage {
 
 export interface GetHiddenCollectiblesMessage extends BaseMessage {
   type: SERVICE_TYPES.GET_HIDDEN_COLLECTIBLES;
+  publicKey: string;
+  network: string;
 }
 
 export interface MarkQueueActiveMessage extends BaseMessage {
@@ -547,6 +563,7 @@ export type ServiceMessageRequest =
   | LoadRecentAddressesMessage
   | LoadLastAccountUsedMessage
   | SignOutMessage
+  | ResetWalletMessage
   | SaveAllowListMessage
   | SaveSettingsMessage
   | SaveExperimentalFeaturesMessage
@@ -580,6 +597,7 @@ export type ServiceMessageRequest =
   | ClearRecentProtocolsMessage
   | GetDiscoverWelcomeSeenMessage
   | DismissDiscoverWelcomeMessage
+  | ClaimRebrandAnnouncementMessage
   | GetBlockaidDebugOverrideMessage
   | AddCollectibleMessage
   | GetCollectiblesMessage

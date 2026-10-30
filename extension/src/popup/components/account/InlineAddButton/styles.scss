@@ -1,0 +1,35 @@
+@use "../../../styles/utils.scss" as *;
+
+// Figma's Button under the list (760:33267, the node the issue links; mobile's
+// InlineAddButton): full width, 44px tall, no fill or border; an 18px plus in
+// Foreground/Primary and a Text/MD/600 label in primary text, 4px apart.
+.InlineAddButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: pxToRem(4px);
+  width: 100%;
+  height: pxToRem(44px);
+  padding: pxToRem(12px) pxToRem(16px);
+  border-radius: pxToRem(100px);
+  color: var(--sds-clr-gray-12);
+  font-size: pxToRem(16px);
+  line-height: pxToRem(24px);
+  font-weight: var(--sds-fw-semi-bold);
+  transition: opacity var(--sds-anim-transition-default);
+
+  // No fill on hover: the design has none, and with the 100px radius a fill
+  // reads as a full-width pill. It dims instead, as mobile does on press.
+  &:hover,
+  &:active {
+    opacity: 0.8;
+  }
+
+  svg {
+    flex-shrink: 0;
+    width: pxToRem(18px);
+    height: pxToRem(18px);
+    stroke: var(--sds-clr-gray-09);
+    @include icon-stroke(18);
+  }
+}

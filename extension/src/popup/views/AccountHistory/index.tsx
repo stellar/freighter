@@ -16,7 +16,7 @@ import { Loading } from "popup/components/Loading";
 import { View } from "popup/basics/layout/View";
 import { RequestState } from "constants/request";
 import { AppDataType } from "helpers/hooks/useGetAppData";
-import { openTab } from "popup/helpers/navigate";
+import { closeWindow, openTab } from "popup/helpers/navigate";
 import { newTabHref } from "helpers/urls";
 import { reRouteOnboarding } from "popup/helpers/route";
 import { useGetHistoryData } from "./hooks/useGetHistoryData";
@@ -63,7 +63,7 @@ export const AccountHistory = () => {
   if (historyState.data?.type === AppDataType.REROUTE) {
     if (historyState.data.shouldOpenTab) {
       openTab(newTabHref(historyState.data.routeTarget));
-      window.close();
+      closeWindow();
     }
     return (
       <Navigate
@@ -95,7 +95,9 @@ export const AccountHistory = () => {
 
   return (
     <>
-      <View.AppHeader hasBackButton pageTitle={t("History")} />
+      {/* A tab root has nowhere to go back to: the tab bar navigates with
+          `replace`, so `navigate(-1)` would skip past Home entirely. */}
+      <View.AppHeader pageTitle={t("Activity")} isFloating />
       <View.Content hasNoTopPadding hasNoBottomPadding>
         <div className="AccountHistory" data-testid="AccountHistory">
           {!hasError &&
@@ -131,6 +133,7 @@ export const AccountHistory = () => {
       <SlideupModal
         isModalOpen={activeHistoryDetail !== null}
         setIsModalOpen={() => setActiveHistoryDetailId(null)}
+        ariaLabel={t("Transaction details")}
       >
         <TransactionDetail
           activeOperation={activeOperation || null}

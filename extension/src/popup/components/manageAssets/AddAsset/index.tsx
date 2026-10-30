@@ -32,7 +32,7 @@ import { useGetAddAssetData } from "./hooks/useGetAddAssetData";
 import { RequestState } from "helpers/hooks/fetchHookInterface";
 import { Loading } from "popup/components/Loading";
 import { NetworkDetails } from "@shared/constants/stellar";
-import { openTab } from "popup/helpers/navigate";
+import { closeWindow, openTab } from "popup/helpers/navigate";
 import { newTabHref } from "helpers/urls";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { reRouteOnboarding } from "popup/helpers/route";
@@ -333,7 +333,7 @@ export const AddAsset = () => {
   if (state.data?.type === AppDataType.REROUTE) {
     if (state.data.shouldOpenTab) {
       openTab(newTabHref(state.data.routeTarget));
-      window.close();
+      closeWindow();
     }
     return (
       <Navigate

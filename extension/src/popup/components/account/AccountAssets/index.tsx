@@ -14,6 +14,7 @@ import { AccountBalances } from "helpers/hooks/useGetBalances";
 import { getCanonicalFromAsset } from "helpers/stellar";
 import { isSorobanIssuer } from "popup/helpers/account";
 import { formatTokenAmount } from "popup/helpers/soroban";
+import { getTotalInWholeUnits } from "popup/helpers/balance";
 import {
   useIsAssetSuspicious,
   useIsAssetMalicious,
@@ -206,6 +207,15 @@ interface AccountAssetsProps {
   balances: AccountBalances;
   historyData: AccountHistoryData | null;
   assetPrices?: ApiTokenPrices;
+  /** The account history request failed; AssetDetail shows an error, not a skeleton. */
+  hasHistoryError?: boolean;
+  /**
+   * Refetch the Account view's balances. Removing a token or a trustline from
+   * the detail sheet only refreshes the remover's own `useGetBalances`
+   * instance; these rows read `useGetAccountData`'s reducer, which nothing else
+   * reaches, so without this the removed row sits here until the 30s poll.
+   */
+  reloadBalances?: () => Promise<unknown>;
 }
 
 export const AccountAssets = ({
@@ -213,6 +223,8 @@ export const AccountAssets = ({
   balances,
   assetPrices,
   historyData,
+  hasHistoryError = false,
+  reloadBalances,
 }: AccountAssetsProps) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -332,6 +344,8 @@ export const AccountAssets = ({
         }
 
         const canonicalAsset = getCanonicalFromAsset(code, issuer?.key);
+
+        // Native XLM is never hideable, matching filterHiddenBalances.
         const assetPrice = assetPrices ? assetPrices[canonicalAsset] : null;
 
         const isSuspicious = isAssetSuspicious((rb as Balance).blockaidData);
@@ -368,7 +382,7 @@ export const AccountAssets = ({
                   ? `$${formatAmount(
                       roundUsdValue(
                         new BigNumber(assetPrice.currentPrice)
-                          .multipliedBy(rb.total)
+                          .multipliedBy(getTotalInWholeUnits(rb))
                           .toString(),
                       ),
                     )}`
@@ -379,6 +393,9 @@ export const AccountAssets = ({
               fiatTestId={`asset-amount-${canonicalAsset}`}
               deltaTestId={`asset-price-delta-${canonicalAsset}`}
               onClick={isLP ? undefined : () => handleClick(canonicalAsset)}
+              // Every row, the last included: Home's list ends with a line
+              // above its Add token button.
+              hasDivider
             />
             <SheetContent
               onOpenAutoFocus={(e) => e.preventDefault()}
@@ -392,10 +409,12 @@ export const AccountAssets = ({
               <AssetDetail
                 accountBalances={balances}
                 historyData={historyData}
+                hasHistoryError={hasHistoryError}
                 selectedAsset={canonicalAsset}
                 handleClose={() => {
                   setSelectedAsset("");
                   clearAssetDetailQueryParams();
+                  void reloadBalances?.();
                 }}
               />
             </SheetContent>

@@ -1,0 +1,109 @@
+@use "../../styles/utils.scss" as *;
+
+// Values from the Varial frames: title Text/MD/600 in Text/Primary, X a 28px
+// icon in a 32px box in Foreground/Primary (gray 9).
+$close-size: 32px;
+
+.SheetHeader {
+  display: flex;
+  align-items: center;
+  gap: pxToRem(16px);
+
+  &--stacked {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  // The X leaves the flow so the title centers on the card, not on the space
+  // left of the X.
+  &--centered {
+    position: relative;
+    justify-content: center;
+
+    .SheetHeader__title {
+      // Room for the X (and a leading button) plus a gap, so a long title
+      // never touches the icons.
+      padding: 0 pxToRem($close-size + 16px);
+      text-align: center;
+    }
+
+    .SheetHeader__close,
+    .SheetHeader__leading,
+    .SheetHeader__trailing {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+
+    .SheetHeader__close,
+    .SheetHeader__trailing {
+      right: 0;
+    }
+
+    .SheetHeader__leading {
+      left: 0;
+    }
+  }
+
+  // Plain icon buttons that sit in the header beside the X (settings, back).
+  &__action {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: pxToRem($close-size);
+    height: pxToRem($close-size);
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--sds-clr-gray-09);
+    cursor: pointer;
+
+    svg {
+      width: pxToRem(24px);
+      height: pxToRem(24px);
+    }
+  }
+
+  &__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  &__leading,
+  &__trailing {
+    display: flex;
+    align-items: center;
+  }
+
+  &__title {
+    flex: 1;
+    min-width: 0;
+    margin: 0;
+    color: var(--sds-clr-gray-12);
+    font-size: pxToRem(16px);
+    font-weight: var(--sds-fw-semi-bold);
+    line-height: pxToRem(24px);
+  }
+
+  &__close {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: pxToRem($close-size);
+    height: pxToRem($close-size);
+    // Pushes the X out to the card's padding edge, like the frames.
+    margin-left: auto;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--sds-clr-gray-09);
+    cursor: pointer;
+
+    svg {
+      width: pxToRem(28px);
+      height: pxToRem(28px);
+    }
+  }
+}

@@ -3,6 +3,7 @@ import { test, expect } from "../test-fixtures";
 import { loginToTestAccount } from "../helpers/login";
 import { stubAccountBalancesV2 } from "../helpers/stubs";
 import { TEST_M_ADDRESS, TEST_TOKEN_ADDRESS } from "../helpers/test-token";
+import { goToAddAsset } from "../helpers/assets";
 
 const isIntegrationMode = process.env.IS_INTEGRATION_MODE === "true";
 
@@ -419,10 +420,7 @@ test("Send token payment to C address", async ({
 
   if (isIntegrationMode) {
     // in integration mode, make sure the token is added first
-    await page.getByTestId("account-options-dropdown").click();
-    await page.getByText("Manage assets").click();
-    await expect(page.getByText("Your assets")).toBeVisible();
-    await page.getByText("Add an asset").click({ force: true });
+    await goToAddAsset(page);
     await page.getByTestId("search-asset-input").fill(TEST_TOKEN_ADDRESS);
     await page.getByTestId("ManageAssetRowButton").click();
     await expect(page.getByTestId("ToggleToken__asset-code")).toHaveText(
@@ -436,8 +434,8 @@ test("Send token payment to C address", async ({
       page.getByTestId("ManageAssetRowButton__ellipsis-E2E"),
     ).toBeVisible();
 
-    // now go back and make sure the asset is displayed in the account view
-    await page.getByTestId("BackButton").click();
+    // One step back, not two: search is reached from Home now, so leaving the
+    // add flow lands on the account view rather than the retired asset list.
     await page.getByTestId("BackButton").click();
     await expect(page.getByTestId("account-view")).toBeVisible();
   }

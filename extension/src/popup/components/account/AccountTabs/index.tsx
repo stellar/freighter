@@ -1,7 +1,7 @@
 /**
- * @fileoverview AccountTabs renders the Home screen's tab row. Adding tokens and
- * collectibles is handled by FloatingAddButton; hidden collectibles are reached
- * from the Add Collectible screen.
+ * @fileoverview AccountTabs renders the Home screen's tab row. Each tab's list
+ * ends with its own InlineAddButton; hidden collectibles are reached from the
+ * Add Collectible screen.
  */
 
 import React from "react";

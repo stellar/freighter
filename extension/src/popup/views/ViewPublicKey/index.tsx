@@ -1,16 +1,16 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect } from "react";
 import { useSelector } from "react-redux";
 import { QRCodeSVG } from "qrcode.react";
 import { Icon, Button, Notification } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 import { Navigate, useLocation } from "react-router-dom";
-import { toast } from "sonner";
 
 import { emitMetric } from "helpers/metrics";
 import { truncatedPublicKey } from "helpers/stellar";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
-import { openTab } from "popup/helpers/navigate";
+import { closeWindow, openTab } from "popup/helpers/navigate";
 import { View } from "popup/basics/layout/View";
+import { showToast } from "popup/basics/shadcn/Toast";
 import { accountNameSelector } from "popup/ducks/accountServices";
 import { AppDataType, useGetAppData } from "helpers/hooks/useGetAppData";
 import { RequestState } from "constants/request";
@@ -28,10 +28,6 @@ export const ViewPublicKey = () => {
   const location = useLocation();
   const accountName = useSelector(accountNameSelector);
   const { state, fetchData } = useGetAppData();
-  // Holds the currently-shown copy-toast's id (see copyAddress below for why
-  // this can't be a stable id). Declared here, above the early returns, so
-  // this hook always runs regardless of which branch this render takes.
-  const lastToastIdRef = useRef<string | number | null>(null);
 
   useEffect(() => {
     const getData = async () => {
@@ -64,7 +60,7 @@ export const ViewPublicKey = () => {
   if (state.data?.type === AppDataType.REROUTE) {
     if (state.data.shouldOpenTab) {
       openTab(newTabHref(state.data.routeTarget));
-      window.close();
+      closeWindow();
     }
     return (
       <Navigate
@@ -82,17 +78,6 @@ export const ViewPublicKey = () => {
   });
 
   const { publicKey } = state.data.account;
-
-  // Dismiss-then-create with a fresh id, so repeated taps replace rather than
-  // stack. Do NOT switch to a stable id: sonner's create() updates an existing
-  // entry, but dismiss() never removes it, so after a swipe the update targets
-  // an unmounted toast and nothing renders.
-  const showToast = (render: (id: string | number) => React.ReactElement) => {
-    if (lastToastIdRef.current !== null) {
-      toast.dismiss(lastToastIdRef.current);
-    }
-    lastToastIdRef.current = toast.custom(render);
-  };
 
   const copyAddress = async () => {
     try {

@@ -1,3 +1,5 @@
+// §N refs: wallet-eng-monorepo/design-docs/token-price-graphs/token-price-graphs-design.md
+
 export const METRIC_NAMES = {
   // Domain (action/outcome) event catalog, shared cross-platform.
   //
@@ -55,6 +57,26 @@ export const METRIC_NAMES = {
   discoverProtocolDetailsViewed: "discover.protocol_details_viewed",
   discoverProtocolOpenedFromDetails: "discover.protocol_opened_from_details",
   discoverWelcomeModalViewed: "discover.welcome_modal_viewed",
+
+  // Rebrand announcement (existing users only)
+  rebrandAnnouncementViewed: "rebrand.announcement_viewed",
+  // carries source (continue)
+  rebrandAnnouncementDismissed: "rebrand.announcement_dismissed",
+
+  // -- Token price chart ----------------------------------------------------
+  // Fired when the price-history fetch resolves (`has_data` known) — not a
+  // screen view; `screen.viewed` (asset_detail) covers that. Props are a
+  // frozen cross-platform fixture: snake_case, `range` verbatim, `low_volume`
+  // only when true.
+  tokenChartLoaded: "token_chart.loaded",
+  // Per range shown, unlike `loaded` (per network fetch, ~once per open thanks
+  // to warming). Answers "which chart did they look at / was it empty".
+  tokenChartViewed: "token_chart.viewed",
+  tokenChartRangeChanged: "token_chart.range_changed",
+  // Once per inspection (a mouse hover or a touch press) — on its first move
+  // beyond the threshold, never per move and never for a tap or a still
+  // hover (§7.5, Phase 3).
+  tokenChartBrushed: "token_chart.brushed",
 
   // -- Assets / trustlines -------------------------------------------------
   assetAdded: "asset.added",
@@ -139,6 +161,11 @@ export const METRIC_NAMES = {
   signingMessageFailed: "signing.message_failed",
 
   // -- History -------------------------------------------------------------
+  navTabSelected: "navigation.tab_selected",
+  // Retired by the bottom tab bar, which replaced the account header's history
+  // button. It is fully derivable from `navigation.tab_selected` where
+  // `tab === "history"`, so emitting it too would only double-count. Kept for a
+  // shared catalog; any dashboard filtering this name needs repointing.
   historyFullHistoryOpened: "history.full_history_opened",
   historyItemOpened: "history.item_opened",
 

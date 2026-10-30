@@ -1,18 +1,27 @@
 @use "../../../styles/utils.scss" as *;
 
 .ReviewTx {
-  z-index: var(--z-index--banner);
-  position: relative;
   display: flex;
   flex-direction: column;
-  padding-top: 1.5rem;
-  background-color: var(--sds-clr-gray-01);
-  border-radius: 0.875rem;
-  height: auto;
-  max-height: 85vh;
+  // Padding, height cap and the pinned action row come from SheetLayout.
+
+  // Header-to-body gap from the frames.
+  &__Header {
+    margin-bottom: pxToRem(16px);
+  }
+
+  // Blockaid's expanded pane pads itself for the dApp signing window; inside
+  // the sheet, SheetLayout already does.
+  .BlockaidDetailsExpanded {
+    padding: 0;
+  }
 
   &__Warnings {
-    margin-top: pxToRem(32px);
+    margin-top: pxToRem(12px);
+
+    &:empty {
+      display: none;
+    }
     // A flex column with a single gap is the one source of inter-banner
     // spacing, so every stacked banner (Blockaid, "Memo required", trustline)
     // is spaced identically regardless of type or order.
@@ -77,10 +86,27 @@
 
   &__Divider {
     display: flex;
-    margin: pxToRem(12px) 0;
+    margin: pxToRem(16px) 0;
     svg {
       color: var(--sds-clr-gray-09);
       margin-left: pxToRem(7px);
+    }
+  }
+
+  // The "You are sending" card from the frame: label, asset, arrow, recipient.
+  &__Summary {
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(16px);
+    padding: pxToRem(16px);
+    border-radius: pxToRem(16px);
+    background-color: var(--sds-clr-gray-03);
+
+    &__title {
+      color: var(--sds-clr-gray-12);
+      font-size: pxToRem(14px);
+      font-weight: var(--sds-fw-medium);
+      line-height: pxToRem(20px);
     }
   }
 
@@ -91,6 +117,8 @@
 
   // The purple "Transaction details" banner shown above the confirm buttons,
   // opening the full operation breakdown in-flow.
+  // The purple "Transaction details" trigger above the confirm buttons, as on
+  // mobile, opening the full operation breakdown in-flow.
   &__TxDetailsBtn {
     display: flex;
     align-items: center;
@@ -108,6 +136,9 @@
       width: pxToRem(16px);
       height: pxToRem(16px);
       margin-right: pxToRem(8px);
+      // lilac-09 icon with lilac-11 text matches mobile's trigger
+      // (Icon themeColor resolves to the ramp's step 9 there)
+      color: var(--sds-clr-lilac-09);
     }
   }
 
@@ -116,59 +147,11 @@
     display: flex;
     flex-direction: column;
     width: 100%;
-    // Extra breathing room below the operation breakdown.
-    padding-bottom: pxToRem(20px);
-
-    &__Header {
-      display: flex;
-      justify-content: space-between;
-      margin: pxToRem(12px) 0;
-
-      .DetailsMark {
-        display: flex;
-        width: pxToRem(40px);
-        height: pxToRem(40px);
-        padding: pxToRem(7px);
-        justify-content: center;
-        align-items: center;
-        border-radius: pxToRem(8px);
-        border: 1px solid var(--sds-clr-lilac-06);
-        background: var(--sds-clr-lilac-03);
-
-        svg {
-          width: pxToRem(24px);
-          height: pxToRem(24px);
-          color: var(--sds-clr-lilac-09);
-        }
-      }
-
-      .Close {
-        display: flex;
-        width: pxToRem(32px);
-        height: pxToRem(32px);
-        padding: 0;
-        justify-content: center;
-        align-items: center;
-        border: 0;
-        border-radius: 50%;
-        background: var(--sds-clr-gray-03);
-        color: var(--sds-clr-gray-09);
-        cursor: pointer;
-      }
-    }
-
-    &__Title {
-      color: var(--sds-clr-gray-12);
-      font-size: pxToRem(18px);
-      font-weight: var(--font-weight-medium);
-      margin-bottom: pxToRem(4px);
-    }
 
     &__Summary {
       padding: pxToRem(12px);
       border-radius: pxToRem(16px);
       background-color: var(--sds-clr-gray-03);
-      margin-top: pxToRem(12px);
 
       > div:not(:first-child) {
         margin-top: pxToRem(16px);
@@ -178,7 +161,12 @@
   }
 
   &__Details {
-    padding: pxToRem(12px);
+    // Rows in Text/SM/500; titles in Text/Secondary, values in Text/Primary.
+    font-size: pxToRem(14px);
+    font-weight: var(--sds-fw-medium);
+    line-height: pxToRem(20px);
+    color: var(--sds-clr-gray-12);
+    padding: pxToRem(12px) pxToRem(16px);
     border-radius: pxToRem(16px);
     background-color: var(--sds-clr-gray-03);
     // Same 12px as the inter-banner gap, so the spacing below the banner block
@@ -219,7 +207,7 @@
       &__Title {
         flex: 2;
         display: flex;
-        color: var(--sds-clr-gray-09);
+        color: var(--sds-clr-gray-11);
         align-items: center;
 
         svg {
@@ -259,9 +247,21 @@
   &__Actions {
     display: flex;
     flex-direction: column;
+    gap: pxToRem(12px);
 
-    .Button {
-      margin-top: pxToRem(12px);
+    // Cancel and Confirm side by side, as on mobile and in the frames.
+    &__Row {
+      display: flex;
+      gap: pxToRem(8px);
+
+      > .Button {
+        flex: 1;
+      }
+
+      // The gear keeps its own width; Cancel and Confirm share the rest.
+      .ReviewTx__Actions__Settings {
+        flex: 0 0 auto;
+      }
     }
 
     .ReviewTx__ActionButton {
@@ -278,10 +278,6 @@
     }
 
     .ReviewTx__TextAction {
-      margin-top: pxToRem(12px);
-      // Extra breathing room below the "Confirm anyway" text button so it is
-      // not flush against the bottom edge of the screen.
-      margin-bottom: pxToRem(20px);
       width: 100%;
       border: none;
       background: none;
@@ -338,13 +334,19 @@
     }
   }
 
+  // Text/SM/500 amount over a Text/XS/500 secondary fiat value.
   &__SendAssetDetails {
     display: flex;
     flex-direction: column;
+    color: var(--sds-clr-gray-12);
+    font-size: pxToRem(14px);
+    font-weight: var(--sds-fw-medium);
+    line-height: pxToRem(20px);
 
     &__price {
-      color: var(--sds-clr-gray-09);
-      font-size: pxToRem(14px);
+      color: var(--sds-clr-gray-11);
+      font-size: pxToRem(12px);
+      line-height: pxToRem(18px);
     }
   }
 
@@ -355,69 +357,31 @@
     .IdenticonImg {
       width: 2rem;
       height: 2rem;
-      padding: pxToRem(6px);
-      border: 1px solid var(--sds-clr-gray-09);
-      border-radius: pxToRem(100px);
       margin-right: pxToRem(12px);
     }
   }
 
+  // "To" in Text/SM/500 secondary over the address in Text/XS/500.
   &__SendDestinationDetails {
     display: flex;
     flex-direction: column;
+    color: var(--sds-clr-gray-12);
+    font-size: pxToRem(12px);
+    font-weight: var(--sds-fw-medium);
+    line-height: pxToRem(18px);
+
+    &__label {
+      color: var(--sds-clr-gray-11);
+      font-size: pxToRem(14px);
+      line-height: pxToRem(20px);
+    }
   }
 
   &__MemoDetails {
     display: flex;
     flex-direction: column;
     width: 100%;
-    // No self horizontal padding — the review host already provides the gutter,
-    // matching the other in-flow sheets.
-
-    &__Header {
-      display: flex;
-      justify-content: space-between;
-      margin: pxToRem(12px) 0;
-
-      &__Icon {
-        display: flex;
-        width: 40px;
-        height: 40px;
-        padding: 7.5px;
-        justify-content: center;
-        align-items: center;
-        aspect-ratio: 1/1;
-        border-radius: 8px;
-        background: var(--sds-clr-red-03);
-
-        svg {
-          width: 25px;
-          height: 25px;
-          color: var(--sds-clr-red-11);
-        }
-      }
-
-      &__Close {
-        display: flex;
-        width: 32px;
-        height: 32px;
-        justify-content: center;
-        align-items: center;
-        border-radius: 1000px;
-        background: var(--sds-clr-gray-03);
-        color: var(--sds-clr-gray-09);
-        cursor: pointer;
-      }
-    }
-
-    &__Title {
-      display: flex;
-      align-items: center;
-      width: 100%;
-      margin: pxToRem(12px) 0;
-      font-size: pxToRem(20px);
-      font-weight: var(--font-weight-medium);
-    }
+    gap: pxToRem(16px);
 
     &__Content {
       display: flex;

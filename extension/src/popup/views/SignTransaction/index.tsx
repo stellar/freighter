@@ -41,7 +41,7 @@ import {
 import { isNativeAssetPair } from "@shared/helpers/assetIdentity";
 import { decodeMemo } from "popup/helpers/parseTransaction";
 import { useIsDomainListedAllowed } from "popup/helpers/useIsDomainListedAllowed";
-import { openTab } from "popup/helpers/navigate";
+import { closeWindow, openTab } from "popup/helpers/navigate";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { useMarkQueueActive } from "popup/helpers/useMarkQueueActive";
 
@@ -85,6 +85,9 @@ import { MultiPaneSlider } from "popup/components/SlidingPaneSwitcher";
 
 import { AuthEntries } from "popup/components/AuthEntry";
 import { TruncatedMemo } from "popup/components/TruncatedMemo";
+import { SheetHeader, SheetHeaderLayout } from "popup/components/SheetHeader";
+import { SheetLayout } from "popup/components/SheetLayout";
+import { SlideupModal } from "popup/components/SlideupModal";
 import { Summary } from "./Preview/Summary";
 import { Details } from "./Preview/Details";
 
@@ -116,6 +119,8 @@ export const SignTransaction = () => {
   // body in place) rather than as a horizontal slider pane, consistent with
   // ReviewTransaction.
   const [isOnBlockaidSheet, setIsOnBlockaidSheet] = useState(false);
+  // Pane order in the slider below: 0 review, 1 transaction details, 2 memo.
+  const DETAILS_PANE_INDEX = 1;
   const isNonSSLEnabled = useSelector(isNonSSLEnabledSelector);
   const { isDomainListedAllowed } = useIsDomainListedAllowed({
     domain,
@@ -270,7 +275,7 @@ export const SignTransaction = () => {
   if (signTxState.data?.type === AppDataType.REROUTE) {
     if (signTxState.data.shouldOpenTab) {
       openTab(newTabHref(signTxState.data.routeTarget));
-      window.close();
+      closeWindow();
     }
     return (
       <Navigate
@@ -358,7 +363,7 @@ export const SignTransaction = () => {
         variant={WarningMessageVariant.warning}
         handleCloseClick={() => window.close()}
         isActive
-        header={`${t("Freighter is set to")} ${networkName}`}
+        header={`${t("Varial is set to")} ${networkName}`}
       >
         <p>
           {`${t("The transaction you’re trying to sign is on")} `}
@@ -475,253 +480,254 @@ export const SignTransaction = () => {
       {hwStatus === ShowOverlayStatus.IN_PROGRESS && hardwareWalletType && (
         <HardwareSign walletType={hardwareWalletType} uuid={uuid} url={url} />
       )}
-      <div data-testid="SignTransaction" className="SignTransaction">
-        {isOnBlockaidSheet ? (
-          <BlockAidScanExpanded
-            scanResult={scanResult}
-            onClose={() => setIsOnBlockaidSheet(false)}
-          />
-        ) : (
-          <MultiPaneSlider
-            activeIndex={activePaneIndex}
-            panes={[
-              <div className="SignTransaction__Body">
-                <div className="SignTransaction__Body__Wrapper">
-                  <div className="SignTransaction__TitleRow">
-                    <img
-                      className="PunycodedDomain__favicon"
-                      src={favicon}
-                      alt={t("Site favicon")}
-                    />
-                    <div className="SignTransaction__TitleRow__Detail">
-                      <span className="SignTransaction__TitleRow__Title">
-                        {t("Confirm Transaction")}
+      {/* The request floats as a card over the dimmed window, like every other
+          sheet and like mobile's dApp sheets. Dismissing it (backdrop, Escape)
+          rejects the request, the same as Cancel. */}
+      <SlideupModal
+        isModalOpen
+        setIsModalOpen={() => rejectAndClose()}
+        ariaLabel={t("Confirm Transaction")}
+      >
+        <SheetLayout
+          header={
+            !isOnBlockaidSheet && activePaneIndex === DETAILS_PANE_INDEX ? (
+              <SheetHeader
+                layout={SheetHeaderLayout.Centered}
+                title={t("Transaction Details")}
+                onClose={() => setActivePaneIndex(0)}
+              />
+            ) : undefined
+          }
+          footer={
+            <div className="SignTransaction__Actions">
+              <div className="SignTransaction__Actions__BtnRow">
+                {showBlockAidDetails ? (
+                  <div className="SignTransaction__Actions__BtnRowReject">
+                    <Button
+                      isFullWidth
+                      isRounded
+                      size="lg"
+                      variant={btnIsDestructive ? "destructive" : "secondary"}
+                      onClick={() => rejectAndClose()}
+                    >
+                      <span className="SignTransaction__CancelBtn">
+                        {t("Cancel")}
                       </span>
-                      <span className="SignTransaction__TitleRow__Domain">
-                        {validDomain}
-                      </span>
-                    </div>
+                    </Button>
+                    <Button
+                      disabled={isSubmitDisabled}
+                      variant={btnIsDestructive ? "error" : "tertiary"}
+                      isFullWidth
+                      isRounded
+                      size="lg"
+                      isLoading={isConfirming}
+                      onClick={() => handleApprove()}
+                      className={`SignTransaction__Action__ConfirmAnyway ${btnIsDestructive ? "" : "Warning"}`}
+                    >
+                      {t("Confirm anyway")}
+                    </Button>
                   </div>
-                  {renderBanner()}
-                  {assetDiffs && (
-                    <AssetDiffs
-                      icons={signTxState.data?.icons || {}}
-                      assetDiffs={assetDiffs}
-                    />
-                  )}
-                  {trustlineChanges.length > 0 && (
-                    <Trustline
-                      operations={trustlineChanges}
-                      icons={signTxState.data?.icons || {}}
-                    />
-                  )}
-                  <div className="SignTransaction__Metadata">
-                    <div className="SignTransaction__Metadata__Row">
-                      <div className="SignTransaction__Metadata__Label">
-                        <Icon.Wallet01 />
-                        <span>{t("Wallet")}</span>
+                ) : (
+                  <>
+                    <Button
+                      isFullWidth
+                      isRounded
+                      size="lg"
+                      variant="tertiary"
+                      onClick={() => rejectAndClose()}
+                    >
+                      <span className="SignTransaction__CancelBtn">
+                        {t("Cancel")}
+                      </span>
+                    </Button>
+                    <Button
+                      data-testid="sign-transaction-sign"
+                      disabled={isSubmitDisabled}
+                      variant="secondary"
+                      isFullWidth
+                      isRounded
+                      size="lg"
+                      isLoading={isConfirming}
+                      onClick={() => handleApprove()}
+                    >
+                      {t("Confirm")}
+                    </Button>
+                  </>
+                )}
+              </div>
+            </div>
+          }
+        >
+          <div data-testid="SignTransaction" className="SignTransaction">
+            {isOnBlockaidSheet ? (
+              <BlockAidScanExpanded
+                scanResult={scanResult}
+                onClose={() => setIsOnBlockaidSheet(false)}
+              />
+            ) : (
+              <MultiPaneSlider
+                activeIndex={activePaneIndex}
+                panes={[
+                  <div className="SignTransaction__Body">
+                    <div className="SignTransaction__Body__Wrapper">
+                      <div className="SignTransaction__TitleRow">
+                        <img
+                          className="PunycodedDomain__favicon"
+                          src={favicon}
+                          alt={t("Site favicon")}
+                        />
+                        <div className="SignTransaction__TitleRow__Detail">
+                          <span className="SignTransaction__TitleRow__Title">
+                            {t("Confirm Transaction")}
+                          </span>
+                          <span className="SignTransaction__TitleRow__Domain">
+                            {validDomain}
+                          </span>
+                        </div>
                       </div>
-                      <div className="SignTransaction__Metadata__Value">
-                        <KeyIdenticon publicKey={publicKey} />
+                      {renderBanner()}
+                      {assetDiffs && (
+                        <AssetDiffs
+                          icons={signTxState.data?.icons || {}}
+                          assetDiffs={assetDiffs}
+                        />
+                      )}
+                      {trustlineChanges.length > 0 && (
+                        <Trustline
+                          operations={trustlineChanges}
+                          icons={signTxState.data?.icons || {}}
+                        />
+                      )}
+                      <div className="SignTransaction__Metadata">
+                        <div className="SignTransaction__Metadata__Row">
+                          <div className="SignTransaction__Metadata__Label">
+                            <Icon.Wallet01 />
+                            <span>{t("Wallet")}</span>
+                          </div>
+                          <div className="SignTransaction__Metadata__Value">
+                            <KeyIdenticon publicKey={publicKey} />
+                          </div>
+                        </div>
+                        <div className="SignTransaction__Metadata__Row">
+                          <div className="SignTransaction__Metadata__Label">
+                            <Icon.Globe02 />
+                            <span>{t("Network")}</span>
+                          </div>
+                          <div className="SignTransaction__Metadata__Value">
+                            <span>{networkName}</span>
+                          </div>
+                        </div>
+                        <div className="SignTransaction__Metadata__Row">
+                          <div className="SignTransaction__Metadata__Label">
+                            <Icon.Route />
+                            <span>{t("Fee")}</span>
+                          </div>
+                          <div className="SignTransaction__Metadata__Value">
+                            <span>
+                              {`${formatTokenAmount(new BigNumber(_fee), CLASSIC_ASSET_DECIMALS)} XLM `}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="SignTransaction__Metadata__Row SignTransaction__Metadata__Row--memo">
+                          <div className="SignTransaction__Metadata__Label">
+                            <Icon.File02 />
+                            <span>{t("Memo")}</span>
+                          </div>
+                          <div className="SignTransaction__Metadata__Value SignTransaction__Metadata__Value--memo">
+                            <TruncatedMemo
+                              memo={decodedMemo && decodedMemo.value}
+                              className="SignTransaction__Metadata__Memo"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      <div
+                        className="SignTransaction__TransactionDetailsBtn"
+                        onClick={() => setActivePaneIndex(1)}
+                      >
+                        <Icon.List />
+                        <span>{t("Transaction details")}</span>
                       </div>
                     </div>
-                    <div className="SignTransaction__Metadata__Row">
-                      <div className="SignTransaction__Metadata__Label">
-                        <Icon.Globe02 />
-                        <span>{t("Network")}</span>
-                      </div>
-                      <div className="SignTransaction__Metadata__Value">
-                        <span>{networkName}</span>
-                      </div>
-                    </div>
-                    <div className="SignTransaction__Metadata__Row">
-                      <div className="SignTransaction__Metadata__Label">
-                        <Icon.Route />
-                        <span>{t("Fee")}</span>
-                      </div>
-                      <div className="SignTransaction__Metadata__Value">
-                        <span>
-                          {`${formatTokenAmount(new BigNumber(_fee), CLASSIC_ASSET_DECIMALS)} XLM `}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="SignTransaction__Metadata__Row SignTransaction__Metadata__Row--memo">
-                      <div className="SignTransaction__Metadata__Label">
-                        <Icon.File02 />
-                        <span>{t("Memo")}</span>
-                      </div>
-                      <div className="SignTransaction__Metadata__Value SignTransaction__Metadata__Value--memo">
-                        <TruncatedMemo
-                          memo={decodedMemo && decodedMemo.value}
-                          className="SignTransaction__Metadata__Memo"
+                  </div>,
+                  <div className="SignTransaction__Body">
+                    <div className="SignTransaction__Body__Wrapper">
+                      <div className="SignTransaction__TransactionDetails">
+                        <div className="SignTransaction__TransactionDetails__Summary">
+                          <Summary
+                            sequenceNumber={_sequence}
+                            fee={_fee}
+                            memo={decodedMemo}
+                            xdr={transactionXdr}
+                            operationNames={_tx.operations.map(
+                              (op) =>
+                                OPERATION_TYPES[
+                                  op.type as keyof typeof OPERATION_TYPES
+                                ] || op.type,
+                            )}
+                          />
+                        </div>
+                        {hasAuthEntries && (
+                          <AuthEntries
+                            entries={
+                              (
+                                _tx
+                                  .operations[0] as Operation.InvokeHostFunction
+                              ).auth?.map((authEntry) => ({
+                                invocation: authEntry.rootInvocation,
+                                boundAddress:
+                                  getAuthEntryBoundAddress(authEntry),
+                              })) || []
+                            }
+                          />
+                        )}
+                        <Details
+                          operations={_tx.operations}
+                          flaggedKeys={flaggedKeys}
+                          isMemoRequired={isMemoRequired}
                         />
                       </div>
                     </div>
-                  </div>
-                  <div
-                    className="SignTransaction__TransactionDetailsBtn"
-                    onClick={() => setActivePaneIndex(1)}
-                  >
-                    <Icon.List />
-                    <span>{t("Transaction details")}</span>
-                  </div>
-                </div>
-              </div>,
-              <div className="SignTransaction__Body">
-                <div className="SignTransaction__Body__Wrapper">
-                  <div className="SignTransaction__TransactionDetails">
-                    <div className="SignTransaction__TransactionDetails__Header">
-                      <div className="DetailsMark">
-                        <Icon.List />
-                      </div>
-                      <div
-                        className="Close"
-                        onClick={() => setActivePaneIndex(0)}
-                      >
-                        <Icon.X />
-                      </div>
-                    </div>
-                    <div className="SignTransaction__TransactionDetails__Title">
-                      <span>{t("Transaction Details")}</span>
-                    </div>
-                    <div className="SignTransaction__TransactionDetails__Summary">
-                      <Summary
-                        sequenceNumber={_sequence}
-                        fee={_fee}
-                        memo={decodedMemo}
-                        xdr={transactionXdr}
-                        operationNames={_tx.operations.map(
-                          (op) =>
-                            OPERATION_TYPES[
-                              op.type as keyof typeof OPERATION_TYPES
-                            ] || op.type,
-                        )}
-                      />
-                    </div>
-                    {hasAuthEntries && (
-                      <AuthEntries
-                        entries={
-                          (
-                            _tx.operations[0] as Operation.InvokeHostFunction
-                          ).auth?.map((authEntry) => ({
-                            invocation: authEntry.rootInvocation,
-                            boundAddress: getAuthEntryBoundAddress(authEntry),
-                          })) || []
-                        }
-                      />
-                    )}
-                    <Details
-                      operations={_tx.operations}
-                      flaggedKeys={flaggedKeys}
-                      isMemoRequired={isMemoRequired}
-                    />
-                  </div>
-                </div>
-              </div>,
-              <div className="SignTransaction__Body">
-                <div className="SignTransaction__Body__Wrapper">
-                  <div className="SignTransaction__TransactionDetails">
-                    <div className="SignTransaction__TransactionDetails__Header">
-                      <div className="DetailsMark">
-                        <Icon.File02 />
-                      </div>
-                      <div
-                        className="Close"
-                        onClick={() => setActivePaneIndex(0)}
-                      >
-                        <Icon.X />
-                      </div>
-                    </div>
-                    <div className="SignTransaction__TransactionDetails__Title">
-                      <span>{t("Memo is required")}</span>
-                    </div>
-                    <div className="SignTransaction__TransactionDetails__Summary">
-                      <div className="WarningMessage__infoBlock WarningMessage__infoBlock--warning">
-                        <div className="WarningMessage__header">
-                          <Icon.InfoOctagon className="WarningMessage__icon" />
-                          <div>{t("Memo is required")}</div>
+                  </div>,
+                  <div className="SignTransaction__Body">
+                    <div className="SignTransaction__Body__Wrapper">
+                      <div className="SignTransaction__TransactionDetails">
+                        <SheetHeader
+                          title={t("Memo is required")}
+                          onClose={() => setActivePaneIndex(0)}
+                        />
+                        <div className="SignTransaction__TransactionDetails__Summary">
+                          <div className="WarningMessage__infoBlock WarningMessage__infoBlock--warning">
+                            <div className="WarningMessage__header">
+                              <Icon.InfoOctagon className="WarningMessage__icon" />
+                              <div>{t("Memo is required")}</div>
+                            </div>
+                          </div>
+                          <div>
+                            {t(
+                              "A destination account requires the use of the memo field which is not present in the transaction you’re about to sign.",
+                            )}
+                          </div>
+                          <div>
+                            {t(
+                              "Varial automatically disabled the option to sign this transaction.",
+                            )}
+                          </div>
+                          <div>
+                            {t(
+                              "Check the destination account memo requirements and include it in the transaction.",
+                            )}
+                          </div>
                         </div>
                       </div>
-                      <div>
-                        {t(
-                          "A destination account requires the use of the memo field which is not present in the transaction you’re about to sign.",
-                        )}
-                      </div>
-                      <div>
-                        {t(
-                          "Freighter automatically disabled the option to sign this transaction.",
-                        )}
-                      </div>
-                      <div>
-                        {t(
-                          "Check the destination account memo requirements and include it in the transaction.",
-                        )}
-                      </div>
                     </div>
-                  </div>
-                </div>
-              </div>,
-            ]}
-          />
-        )}
-        <div className="SignTransaction__Actions">
-          <div className="SignTransaction__Actions__BtnRow">
-            {showBlockAidDetails ? (
-              <div className="SignTransaction__Actions__BtnRowReject">
-                <Button
-                  isFullWidth
-                  isRounded
-                  size="lg"
-                  variant={btnIsDestructive ? "destructive" : "secondary"}
-                  onClick={() => rejectAndClose()}
-                >
-                  <span className="SignTransaction__CancelBtn">
-                    {t("Cancel")}
-                  </span>
-                </Button>
-                <Button
-                  disabled={isSubmitDisabled}
-                  variant={btnIsDestructive ? "error" : "tertiary"}
-                  isFullWidth
-                  isRounded
-                  size="lg"
-                  isLoading={isConfirming}
-                  onClick={() => handleApprove()}
-                  className={`SignTransaction__Action__ConfirmAnyway ${btnIsDestructive ? "" : "Warning"}`}
-                >
-                  {t("Confirm anyway")}
-                </Button>
-              </div>
-            ) : (
-              <>
-                <Button
-                  isFullWidth
-                  isRounded
-                  size="lg"
-                  variant="tertiary"
-                  onClick={() => rejectAndClose()}
-                >
-                  <span className="SignTransaction__CancelBtn">
-                    {t("Cancel")}
-                  </span>
-                </Button>
-                <Button
-                  data-testid="sign-transaction-sign"
-                  disabled={isSubmitDisabled}
-                  variant="secondary"
-                  isFullWidth
-                  isRounded
-                  size="lg"
-                  isLoading={isConfirming}
-                  onClick={() => handleApprove()}
-                >
-                  {t("Confirm")}
-                </Button>
-              </>
+                  </div>,
+                ]}
+              />
             )}
           </div>
-        </div>
-      </div>
+        </SheetLayout>
+      </SlideupModal>
     </>
   );
 };
