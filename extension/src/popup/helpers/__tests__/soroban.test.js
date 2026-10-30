@@ -1,4 +1,5 @@
 import {
+  Account,
   Address,
   Keypair,
   nativeToScVal,
@@ -846,5 +847,104 @@ describe("getAttrsFromSorobanHorizonOp", () => {
     expect(
       getAttrsFromSorobanHorizonOp(operation, TESTNET_NETWORK_DETAILS),
     ).toBeNull();
+  });
+
+  it("reads the operation of a fee-bumped envelope", () => {
+    const from = Keypair.random();
+    const to = Keypair.random().publicKey();
+    const inner = new TransactionBuilder(new Account(from.publicKey(), "0"), {
+      fee: "100",
+      networkPassphrase: TESTNET_NETWORK_DETAILS.networkPassphrase,
+    })
+      .addOperation(
+        Operation.invokeHostFunction({
+          func: xdr.HostFunction.hostFunctionTypeInvokeContract(
+            new xdr.InvokeContractArgs({
+              contractAddress: new Address(
+                "CA7QYNF7SOWQ3GLR2BGMZEHXAVIRZA4KVWLTJJFC7MGXUA74P7UJUWDA",
+              ).toScAddress(),
+              functionName: "transfer",
+              args: [
+                nativeToScVal(from.publicKey(), { type: "address" }),
+                nativeToScVal(to, { type: "address" }),
+                nativeToScVal(BigInt(100), { type: "i128" }),
+              ],
+            }),
+          ),
+          auth: [],
+        }),
+      )
+      .setTimeout(0)
+      .build();
+    const feeBump = TransactionBuilder.buildFeeBumpTransaction(
+      Keypair.random().publicKey(),
+      "200",
+      inner,
+      TESTNET_NETWORK_DETAILS.networkPassphrase,
+    );
+    const operation = {
+      type: "invoke_host_function",
+      transaction_attr: { envelope_xdr: feeBump.toXDR() },
+    };
+
+    expect(
+      getAttrsFromSorobanHorizonOp(operation, TESTNET_NETWORK_DETAILS),
+    ).toMatchObject({
+      fnName: "transfer",
+      from: from.publicKey(),
+      to,
+      amount: BigInt(100),
+    });
+  });
+
+  it("decodes an envelope once however many times it is asked for", () => {
+    const fromXdr = jest.spyOn(TransactionBuilder, "fromXdr");
+    // A fresh source key makes this envelope unique, so no earlier test has
+    // already cached it.
+    const from = Keypair.random();
+    const inner = new TransactionBuilder(new Account(from.publicKey(), "0"), {
+      fee: "100",
+      networkPassphrase: TESTNET_NETWORK_DETAILS.networkPassphrase,
+    })
+      .addOperation(
+        Operation.invokeHostFunction({
+          func: xdr.HostFunction.hostFunctionTypeInvokeContract(
+            new xdr.InvokeContractArgs({
+              contractAddress: new Address(
+                "CA7QYNF7SOWQ3GLR2BGMZEHXAVIRZA4KVWLTJJFC7MGXUA74P7UJUWDA",
+              ).toScAddress(),
+              functionName: "transfer",
+              args: [
+                nativeToScVal(from.publicKey(), { type: "address" }),
+                nativeToScVal(Keypair.random().publicKey(), {
+                  type: "address",
+                }),
+                nativeToScVal(BigInt(1), { type: "i128" }),
+              ],
+            }),
+          ),
+          auth: [],
+        }),
+      )
+      .setTimeout(0)
+      .build();
+    const operation = {
+      type: "invoke_host_function",
+      transaction_attr: { envelope_xdr: inner.toXDR() },
+    };
+
+    const first = getAttrsFromSorobanHorizonOp(
+      operation,
+      TESTNET_NETWORK_DETAILS,
+    );
+    const second = getAttrsFromSorobanHorizonOp(
+      { ...operation },
+      TESTNET_NETWORK_DETAILS,
+    );
+
+    expect(first).toMatchObject({ fnName: "transfer" });
+    expect(second).toBe(first);
+    expect(fromXdr).toHaveBeenCalledTimes(1);
+    fromXdr.mockRestore();
   });
 });

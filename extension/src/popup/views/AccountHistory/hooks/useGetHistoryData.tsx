@@ -3,6 +3,7 @@ import { useSelector, useDispatch } from "react-redux";
 import {
   encodeMuxedContractAddress,
   Horizon,
+  StrKey,
   TransactionBuilder,
 } from "stellar-sdk";
 import { camelCase } from "lodash";
@@ -33,6 +34,7 @@ import {
   useGetAppData,
 } from "helpers/hooks/useGetAppData";
 import {
+  createMuxedAccount,
   getCanonicalFromAsset,
   isMainnet,
   isSameAccount,
@@ -423,6 +425,29 @@ export interface AssetDiffSummary {
 }
 
 /**
+ * Rebuilds a muxed address from the base address and mux id that Horizon
+ * reports separately. Returns null when the pair cannot be encoded, so one
+ * bad record falls back to the base address instead of failing the load.
+ */
+const rebuildMuxedDestination = (
+  baseAddress: string,
+  muxedId: string,
+  operationId: string,
+): string | null => {
+  try {
+    if (StrKey.isValidContract(baseAddress)) {
+      return encodeMuxedContractAddress(baseAddress, muxedId);
+    }
+    if (StrKey.isValidEd25519PublicKey(baseAddress)) {
+      return createMuxedAccount(baseAddress, muxedId);
+    }
+  } catch (error) {
+    captureException(error, { extra: { operationId, baseAddress, muxedId } });
+  }
+  return null;
+};
+
+/**
  * Processes asset_balance_changes for a given public key and returns summaries for each asset
  * @returns Array of asset diff summaries, or empty array if none
  */
@@ -474,14 +499,15 @@ const processAssetBalanceChanges = async (
     const isCredit = isSameAccount(change.to, publicKey);
     // Destination is the counterparty (from for credits, to for debits)
     let destination = isCredit ? change.from : change.to;
-    // A muxed contract destination arrives as the base contract plus a mux
-    // id. Rebuild the muxed address for display; matching above stays on
-    // the base address.
-    if (!isCredit && change.destination_muxed_id && isContractId(change.to)) {
-      destination = encodeMuxedContractAddress(
-        change.to,
-        change.destination_muxed_id,
-      );
+    // A muxed destination arrives as the base address plus a mux id. Rebuild
+    // the muxed address for display; matching above stays on the base address.
+    if (!isCredit && change.destination_muxed_id) {
+      destination =
+        rebuildMuxedDestination(
+          change.to,
+          change.destination_muxed_id,
+          operation.id,
+        ) ?? change.to;
     }
 
     // Get asset icon

@@ -2,6 +2,7 @@ import {
   Account,
   Asset,
   Keypair,
+  MuxedAccount,
   Networks,
   Operation,
   TransactionBuilder,
@@ -259,11 +260,13 @@ describe("getRowDataByOpType - Soroban asset balance changes muxed classificatio
     expect(row.metadata.to).toBe(W_ADDRESS);
   });
 
-  it("only rebuilds a muxed address when the destination is a contract", async () => {
+  it("shows a transfer to a muxed account (M) as sent to the M address", async () => {
     jest
       .spyOn(sorobanHelpers, "getAttrsFromSorobanHorizonOp")
       .mockReturnValue(null as any);
 
+    // Horizon reports the base account as `to` and the mux id separately,
+    // the same way it does for a muxed contract.
     const operation = buildInvokeHostFnOperation({
       asset_balance_changes: [
         {
@@ -278,7 +281,32 @@ describe("getRowDataByOpType - Soroban asset balance changes muxed classificatio
 
     const row = await callGetRowData(operation);
 
-    expect(row.metadata.to).toBe(COUNTERPARTY);
+    expect(row.metadata.to).toBe(
+      new MuxedAccount(new Account(COUNTERPARTY, "0"), "1").accountId(),
+    );
+  });
+
+  it("falls back to the base address when the mux id cannot be encoded", async () => {
+    jest
+      .spyOn(sorobanHelpers, "getAttrsFromSorobanHorizonOp")
+      .mockReturnValue(null as any);
+
+    const operation = buildInvokeHostFnOperation({
+      asset_balance_changes: [
+        {
+          asset_type: "native",
+          from: PUBLIC_KEY,
+          to: W_BASE_CONTRACT,
+          amount: "5",
+          destination_muxed_id: "not-a-number",
+        },
+      ],
+    });
+
+    const row = await callGetRowData(operation);
+
+    expect(row.metadata.to).toBe(W_BASE_CONTRACT);
+    expect(row.amount).toMatch(/^-/);
   });
 });
 
