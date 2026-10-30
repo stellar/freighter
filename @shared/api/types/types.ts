@@ -363,6 +363,8 @@ export interface AssetBalanceChange {
   from: string;
   to: string;
   amount: string;
+  // Mux id of the destination when it was muxed; `to` holds the base address.
+  destination_muxed_id?: string;
 }
 
 export type HorizonOperation = Horizon.ServerApi.OperationRecord & {
