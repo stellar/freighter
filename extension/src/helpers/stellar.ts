@@ -139,6 +139,25 @@ export const isMuxedAccount = (address: string): boolean =>
   StrKey.isValidMed25519PublicKey(address);
 
 /**
+ * Checks if an address is a muxed contract (W... format, CAP-84)
+ *
+ * @param address The address to check
+ * @returns True if the address is a muxed contract
+ */
+export const isMuxedContract = (address: string): boolean =>
+  StrKey.isValidMuxedContract(address);
+
+/**
+ * Checks if a destination is a contract, plain (C...) or muxed (W...). Both
+ * hold no classic account, so a send to either is a Soroban token transfer.
+ *
+ * @param address The destination to check
+ * @returns True if the destination is a contract
+ */
+export const isContractDestination = (address: string): boolean =>
+  isContractId(address) || isMuxedContract(address);
+
+/**
  * Extracts the base ED25519 account (G...) from a muxed account (M...)
  *
  * @param muxedAddress The muxed account address
@@ -320,6 +339,11 @@ export const isValidStellarAddress = (publicKey: string): boolean => {
     if (publicKey.startsWith("C")) {
       const isValid = isContractId(publicKey);
       return isValid;
+    }
+
+    // Check if it's a valid muxed contract (W... addresses)
+    if (isMuxedContract(publicKey)) {
+      return true;
     }
 
     // Check if it's a valid federation address (user*domain.com)

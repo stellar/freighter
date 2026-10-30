@@ -12,6 +12,7 @@ import {
 import { useTranslation } from "react-i18next";
 
 import {
+  isContractDestination,
   isFederationAddress,
   isSameAccount,
   isValidFederatedDomain,
@@ -24,7 +25,6 @@ import { SubviewHeader } from "popup/components/SubviewHeader";
 import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
 import { FormRows } from "popup/basics/Forms";
 import { emitMetric } from "helpers/metrics";
-import { isContractId } from "popup/helpers/soroban";
 import { shouldShowAccountDoesntExistWarning } from "popup/helpers/sendWarnings";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { STELLAR_DOCS_CREATE_ACCOUNT_URL } from "popup/constants/externalLinks";
@@ -113,7 +113,9 @@ const InvalidAddressWarning = () => {
         icon={<Icon.InfoOctagon />}
         title={t("INVALID STELLAR ADDRESS")}
       >
-        {t(`Addresses are uppercase and begin with letters "G", "M", or "C"`)}
+        {t(
+          `Addresses are uppercase and begin with letters "G", "M", "C", or "W"`,
+        )}
       </Notification>
     </div>
   );
@@ -193,7 +195,7 @@ export const SendTo = ({
     validate: (values) => {
       if (
         isValidPublicKey(values.destination) ||
-        isContractId(values.destination)
+        isContractDestination(values.destination)
       ) {
         return {};
       }

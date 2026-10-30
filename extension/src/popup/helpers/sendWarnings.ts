@@ -1,4 +1,5 @@
 import { isContractId } from "@shared/api/helpers/soroban";
+import { isContractDestination } from "helpers/stellar";
 import { splitCanonical } from "@shared/helpers/stellar";
 import { isNativeAssetId } from "@shared/helpers/assetIdentity";
 
@@ -30,7 +31,7 @@ export const shouldCheckUnfundedDestinationWarning = ({
   if (isCollectible) {
     return false;
   }
-  if (destination && isContractId(destination)) {
+  if (destination && isContractDestination(destination)) {
     return false;
   }
 

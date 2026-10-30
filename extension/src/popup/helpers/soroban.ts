@@ -21,7 +21,11 @@ import {
   SorobanCollectibleInterface,
 } from "@shared/constants/soroban/token";
 import { AccountBalances } from "helpers/hooks/useGetBalances";
-import { getAssetFromCanonical, getCanonicalFromAsset } from "helpers/stellar";
+import {
+  getAssetFromCanonical,
+  getCanonicalFromAsset,
+  isContractDestination,
+} from "helpers/stellar";
 import { findAssetBalance, isSorobanBalance } from "./balance";
 import { getSdk, splitCanonical } from "@shared/helpers/stellar";
 import {
@@ -124,7 +128,7 @@ export const isSorobanTransaction = ({
   }
 
   // Check if recipient address is a contract address
-  if (recipientAddress && isContractId(recipientAddress)) {
+  if (recipientAddress && isContractDestination(recipientAddress)) {
     return true;
   }
 
