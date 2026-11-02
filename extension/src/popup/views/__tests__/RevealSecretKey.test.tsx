@@ -7,7 +7,7 @@ import { WalletType } from "@shared/constants/hardwareWallet";
 import { TESTNET_NETWORK_DETAILS } from "@shared/constants/stellar";
 import { ROUTES } from "popup/constants/routes";
 
-import { RevealSecretKey } from "../RevealSecretKey";
+import { RevealRecoveryPhrase, RevealSecretKey } from "../RevealSecretKey";
 import { EditAccount } from "../EditAccount";
 import { TEST_PUBLIC_KEY, Wrapper } from "../../__testHelpers__";
 
@@ -15,9 +15,14 @@ const SECRET = "SBXKUDBDMEJ3BH5OLVRTBKOHU4F4XQRZF7T4TXIIELRXNCEHFLSAZ3XN";
 const OTHER_PUBLIC_KEY =
   "GDVEU3DD4KOFECV66VIHWEZOYX4ZKR3WV27L464SIIPOU2IUI3JCZA57";
 
+const PHRASE =
+  "gloom student label strategy tattoo promote brand mushroom problem divert carbon erode";
+
 const mockRevealSecretKey = jest.fn();
+const mockShowBackupPhrase = jest.fn();
 jest.mock("@shared/api/internal", () => ({
   revealSecretKey: (...args: unknown[]) => mockRevealSecretKey(...args),
+  showBackupPhrase: (...args: unknown[]) => mockShowBackupPhrase(...args),
 }));
 
 jest.mock("helpers/hooks/useGetAppData", () => {
@@ -86,19 +91,25 @@ const renderReveal = (search = "") =>
     </Wrapper>,
   );
 
-const acknowledgeAndContinue = () => {
-  const reveal = screen.getByRole("button", { name: "Reveal secret key" });
+const acknowledgeAndContinue = (
+  action = "Reveal secret key",
+  testId = "reveal-secret-key",
+) => {
+  const reveal = screen.getByRole("button", { name: action });
   expect(reveal).toBeDisabled();
-  fireEvent.click(screen.getByTestId("reveal-secret-key-acknowledge"));
+  fireEvent.click(screen.getByTestId(`${testId}-acknowledge`));
   expect(reveal).not.toBeDisabled();
   fireEvent.click(reveal);
 };
 
-const submitPassword = async (password: string) => {
+const submitPassword = async (
+  password: string,
+  action = "Reveal secret key",
+) => {
   fireEvent.change(screen.getByPlaceholderText("Enter your password"), {
     target: { value: password },
   });
-  const reveal = screen.getByRole("button", { name: "Reveal secret key" });
+  const reveal = screen.getByRole("button", { name: action });
   await waitFor(() => expect(reveal).not.toBeDisabled());
   fireEvent.click(reveal);
 };
@@ -164,6 +175,62 @@ describe("RevealSecretKey", () => {
   });
 });
 
+describe("RevealRecoveryPhrase", () => {
+  beforeEach(() => {
+    mockShowBackupPhrase.mockReset();
+  });
+
+  it("asks for consent, then the password, then shows the numbered words", async () => {
+    mockShowBackupPhrase.mockResolvedValue({
+      mnemonicPhrase: PHRASE,
+      error: "",
+    });
+    render(
+      <Wrapper routes={[ROUTES.revealRecoveryPhrase]}>
+        <RevealRecoveryPhrase />
+      </Wrapper>,
+    );
+
+    expect(
+      screen.getByText("Your recovery phrase controls this wallet"),
+    ).toBeInTheDocument();
+
+    acknowledgeAndContinue("Reveal recovery phrase", "reveal-recovery-phrase");
+    await submitPassword("hunter22", "Reveal recovery phrase");
+
+    const grid = await screen.findByTestId("reveal-recovery-phrase-value");
+    const words = grid.querySelectorAll("li");
+    expect(words).toHaveLength(12);
+    expect(words[0]).toHaveTextContent("1gloom");
+    expect(words[11]).toHaveTextContent("12erode");
+    expect(screen.getByRole("button", { name: "Done" })).toBeInTheDocument();
+    expect(mockShowBackupPhrase).toHaveBeenCalledWith({
+      activePublicKey: TEST_PUBLIC_KEY,
+      password: "hunter22",
+    });
+  });
+
+  it("shows the error inline and no words when the password is wrong", async () => {
+    mockShowBackupPhrase.mockResolvedValue({
+      mnemonicPhrase: "",
+      error: "Incorrect Password",
+    });
+    render(
+      <Wrapper routes={[ROUTES.revealRecoveryPhrase]}>
+        <RevealRecoveryPhrase />
+      </Wrapper>,
+    );
+
+    acknowledgeAndContinue("Reveal recovery phrase", "reveal-recovery-phrase");
+    await submitPassword("wrong", "Reveal recovery phrase");
+
+    await waitFor(() =>
+      expect(screen.getByText("Incorrect Password")).toBeInTheDocument(),
+    );
+    expect(screen.queryByTestId("reveal-recovery-phrase-value")).toBeNull();
+  });
+});
+
 describe("EditAccount", () => {
   const renderEditAccount = (
     search: string,
@@ -177,6 +244,10 @@ describe("EditAccount", () => {
         <Routes>
           <Route path={ROUTES.editAccount} element={<EditAccount />} />
           <Route path={ROUTES.revealSecretKey} element={<LocationProbe />} />
+          <Route
+            path={ROUTES.revealRecoveryPhrase}
+            element={<LocationProbe />}
+          />
         </Routes>
       </Wrapper>,
     );
@@ -196,6 +267,24 @@ describe("EditAccount", () => {
     );
   });
 
+  it("offers a phrase-derived account both its phrase and its key", () => {
+    renderEditAccount(`?publicKey=${TEST_PUBLIC_KEY}`);
+
+    expect(screen.getByTestId("edit-account-secret-key")).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId("edit-account-recovery-phrase"));
+
+    expect(screen.getByTestId("location")).toHaveTextContent(
+      ROUTES.revealRecoveryPhrase,
+    );
+  });
+
+  it("offers an imported account no recovery phrase", () => {
+    renderEditAccount(`?publicKey=${OTHER_PUBLIC_KEY}`);
+
+    expect(screen.getByTestId("edit-account-secret-key")).toBeInTheDocument();
+    expect(screen.queryByTestId("edit-account-recovery-phrase")).toBeNull();
+  });
+
   it("offers no secret key for a hardware account", () => {
     renderEditAccount(`?publicKey=${TEST_PUBLIC_KEY}`, WalletType.LEDGER);
 
@@ -203,6 +292,7 @@ describe("EditAccount", () => {
       "Account 1",
     );
     expect(screen.queryByTestId("edit-account-secret-key")).toBeNull();
+    expect(screen.queryByTestId("edit-account-recovery-phrase")).toBeNull();
   });
 
   it("opens the rename sheet from Account name", () => {

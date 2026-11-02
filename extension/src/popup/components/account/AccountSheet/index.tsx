@@ -275,22 +275,6 @@ export const AccountSheet = ({
               >
                 <Icon.Edit01 />
               </button>
-              {/* Temporary way into Edit account until Settings → Accounts
-                & recovery lists every account. */}
-              <button
-                className="AccountSheet__identity__action"
-                onClick={() =>
-                  navigateTo(
-                    ROUTES.editAccount,
-                    navigate,
-                    `?publicKey=${encodeURIComponent(activePublicKey)}`,
-                  )
-                }
-                data-testid="wallets-header-edit-account"
-                aria-label={t("Edit account")}
-              >
-                <Icon.DotsHorizontal />
-              </button>
             </div>
           </div>
 

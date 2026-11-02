@@ -8,6 +8,40 @@
     height: 100%;
   }
 
+  &__banner {
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(8px);
+    width: 100%;
+    padding: pxToRem(12px) pxToRem(16px);
+    border: 1px solid var(--sds-clr-red-06);
+    border-radius: pxToRem(16px);
+    background-color: var(--sds-clr-red-03);
+
+    &__title {
+      display: flex;
+      align-items: center;
+      gap: pxToRem(8px);
+      font-size: pxToRem(14px);
+      line-height: pxToRem(20px);
+      font-weight: var(--font-weight-medium);
+      color: var(--sds-clr-red-11);
+
+      svg {
+        flex-shrink: 0;
+        width: pxToRem(16px);
+        height: pxToRem(16px);
+        stroke: var(--sds-clr-red-11);
+      }
+    }
+
+    &__body {
+      font-size: pxToRem(14px);
+      line-height: pxToRem(20px);
+      color: var(--sds-clr-gray-12);
+    }
+  }
+
   &__intro {
     display: flex;
     flex-direction: column;
@@ -84,12 +118,55 @@
     width: 100%;
     padding: pxToRem(12px);
     border-radius: pxToRem(12px);
-    background-color: var(--sds-clr-gray-03);
+    background-color: var(--sds-clr-gray-02);
     font-size: pxToRem(16px);
     line-height: pxToRem(24px);
     font-weight: var(--font-weight-medium);
     color: var(--sds-clr-gray-12);
     word-break: break-all;
+  }
+
+  // Two columns of numbered words, 16px between columns and 12px between rows.
+  &__phrase {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: pxToRem(16px);
+    row-gap: pxToRem(12px);
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    // SDS prefixes every li with a dash (`.sds-theme-* li::before`); this
+    // selector outranks it.
+    @at-root ol#{&} li::before {
+      content: none;
+    }
+
+    &__word {
+      display: flex;
+      gap: pxToRem(8px);
+      min-width: 0;
+      padding: pxToRem(8px) pxToRem(12px);
+      border-radius: pxToRem(12px);
+      background-color: var(--sds-clr-gray-02);
+      font-size: pxToRem(16px);
+      line-height: pxToRem(24px);
+      font-weight: var(--font-weight-semi-bold);
+      color: var(--sds-clr-gray-12);
+
+      span:last-child {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+    }
+
+    &__number {
+      flex-shrink: 0;
+      width: pxToRem(20px);
+      color: var(--sds-clr-gray-09);
+    }
   }
 
   &__copy {

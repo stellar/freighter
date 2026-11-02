@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Navigate, useLocation } from "react-router-dom";
+import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import {
   Button,
   Checkbox,
@@ -11,7 +11,7 @@ import {
 import { Trans, useTranslation } from "react-i18next";
 import { Field, Form, Formik } from "formik";
 
-import { revealSecretKey } from "@shared/api/internal";
+import { revealSecretKey, showBackupPhrase } from "@shared/api/internal";
 
 import { closeWindow, openTab } from "popup/helpers/navigate";
 import { emitScreenViewed } from "helpers/metrics";
@@ -28,33 +28,114 @@ import { reRouteOnboarding } from "popup/helpers/route";
 import "./styles.scss";
 
 /*
+  One reveal flow for both secrets an account can offer from Edit account.
+
   consent: the warning and the acknowledgement.
   password: re-authentication. Mobile uses Face ID here; the extension asks
     for the password even while the wallet is unlocked.
-  revealed: the key and Tap to copy.
+  revealed: the secret and Tap to copy.
 */
 type Step = "consent" | "password" | "revealed";
 
-export const RevealSecretKey = () => {
+type SecretKind = "secretKey" | "recoveryPhrase";
+
+/** The red "Never share" card every step opens with. */
+const NeverShareBanner = ({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) => (
+  <div className="RevealSecretKey__banner" role="alert">
+    <div className="RevealSecretKey__banner__title">
+      <Icon.AlertCircle />
+      {title}
+    </div>
+    <div className="RevealSecretKey__banner__body">{children}</div>
+  </div>
+);
+
+/** The phrase as a numbered two-column grid. */
+const PhraseGrid = ({ phrase }: { phrase: string }) => (
+  <ol
+    className="RevealSecretKey__phrase"
+    data-testid="reveal-recovery-phrase-value"
+  >
+    {phrase.split(" ").map((word, i) => (
+      <li key={`${i}-${word}`} className="RevealSecretKey__phrase__word">
+        <span className="RevealSecretKey__phrase__number">{i + 1}</span>
+        <span>{word}</span>
+      </li>
+    ))}
+  </ol>
+);
+
+const RevealSecret = ({ kind }: { kind: SecretKind }) => {
   const { t } = useTranslation();
   const location = useLocation();
+  const navigate = useNavigate();
   const [step, setStep] = useState<Step>("consent");
   const [hasAcknowledged, setHasAcknowledged] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
-  const [secretKey, setSecretKey] = useState("");
+  const [secret, setSecret] = useState("");
   const { state, fetchData } = useGetAppData();
 
+  const isPhrase = kind === "recoveryPhrase";
+  // Each string is written out in full so the translation build can find it.
+  const copy = isPhrase
+    ? {
+        title: t("Show recovery phrase"),
+        revealedTitle: t("Your recovery phrase"),
+        bannerTitle: t("Never share your recovery phrase"),
+        revealedBannerTitle: t("Never share your recovery phrase"),
+        revealedBannerBody: t(
+          "Anyone with it can take control of your wallet.",
+        ),
+        heading: t("Your recovery phrase controls this wallet"),
+        acknowledgement: (
+          <Trans
+            i18nKey="I understand that sharing my recovery phrase could result in <strong>permanent loss of funds</strong>."
+            components={{ strong: <strong /> }}
+          />
+        ),
+        action: t("Reveal recovery phrase"),
+        failure: t("Unable to reveal your recovery phrase"),
+        testId: "reveal-recovery-phrase",
+        screens: ["unlock_recovery_phrase", "show_recovery_phrase"],
+      }
+    : {
+        title: t("Show secret key"),
+        revealedTitle: t("Your secret key"),
+        bannerTitle: t("Never share your secret key"),
+        revealedBannerTitle: t("Never share your secret key"),
+        revealedBannerBody: t(
+          "Anyone with this key can access your account and funds. Keep it private and store it securely.",
+        ),
+        heading: t("Your secret key controls this wallet"),
+        acknowledgement: (
+          <Trans
+            i18nKey="I understand that sharing my secret key could result in <strong>permanent loss of funds</strong>."
+            components={{ strong: <strong /> }}
+          />
+        ),
+        action: t("Reveal secret key"),
+        failure: t("Unable to reveal your secret key"),
+        testId: "reveal-secret-key",
+        screens: ["unlock_secret_key", "show_secret_key"],
+      };
+
   useEffect(() => {
-    emitScreenViewed(
-      step === "revealed" ? "show_secret_key" : "unlock_secret_key",
-      { flow: "security" },
-    );
+    emitScreenViewed(copy.screens[step === "revealed" ? 1 : 0], {
+      flow: "security",
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step]);
 
   useEffect(() => {
     fetchData();
-    // Drop the key from memory when the screen goes away.
-    return () => setSecretKey("");
+    // Drop the secret from memory when the screen goes away.
+    return () => setSecret("");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -104,54 +185,85 @@ export const RevealSecretKey = () => {
     new URLSearchParams(location.search).get("publicKey") || activePublicKey;
 
   const handleSubmit = async ({ password }: { password: string }) => {
-    const res = await revealSecretKey({
-      activePublicKey,
-      publicKey,
-      password,
-    });
+    let revealed = "";
+    let error = "";
 
-    if (res.error || !res.secretKey) {
-      setErrorMessage(res.error || t("Unable to reveal your secret key"));
+    if (isPhrase) {
+      // Until accounts carry a source, the wallet holds one phrase and it
+      // roots every phrase-derived account.
+      const res = await showBackupPhrase({ activePublicKey, password });
+      revealed = res.mnemonicPhrase;
+      error = res.error;
     } else {
-      setSecretKey(res.secretKey);
+      const res = await revealSecretKey({
+        activePublicKey,
+        publicKey,
+        password,
+      });
+      revealed = res.secretKey;
+      error = res.error;
+    }
+
+    if (error || !revealed) {
+      setErrorMessage(error || copy.failure);
+    } else {
+      setSecret(revealed);
       setErrorMessage("");
       setStep("revealed");
     }
   };
 
   if (step === "revealed") {
+    const copyButton = (
+      <CopyText textToCopy={secret}>
+        <button
+          type="button"
+          className="RevealSecretKey__copy"
+          data-testid={`${copy.testId}-copy`}
+        >
+          {t("Tap to copy")}
+          <Icon.Copy01 />
+        </button>
+      </CopyText>
+    );
+
     return (
       <React.Fragment>
-        <SubviewHeader title={t("Your secret key")} />
+        <SubviewHeader title={copy.revealedTitle} />
         <View.Content hasNoTopPadding>
           <div className="RevealSecretKey__revealed">
-            <Notification
-              variant="error"
-              icon={<Icon.AlertCircle />}
-              title={t("Never share your secret key")}
-            >
-              {t(
-                "Anyone with this key can access your account and funds. Keep it private and store it securely.",
-              )}
-            </Notification>
-            <div
-              className="RevealSecretKey__key"
-              data-testid="reveal-secret-key-value"
-            >
-              {secretKey}
-            </div>
-            <CopyText textToCopy={secretKey}>
-              <button
-                type="button"
-                className="RevealSecretKey__copy"
-                data-testid="reveal-secret-key-copy"
+            <NeverShareBanner title={copy.revealedBannerTitle}>
+              {copy.revealedBannerBody}
+            </NeverShareBanner>
+            {isPhrase ? (
+              <PhraseGrid phrase={secret} />
+            ) : (
+              <div
+                className="RevealSecretKey__key"
+                data-testid="reveal-secret-key-value"
               >
-                {t("Tap to copy")}
-                <Icon.Copy01 />
-              </button>
-            </CopyText>
+                {secret}
+              </div>
+            )}
+            {isPhrase ? null : copyButton}
           </div>
         </View.Content>
+        {isPhrase ? (
+          // Twelve words don't leave room for Tap to copy in the 600px popup,
+          // so it sits above Done where it can't scroll out of view.
+          <View.Footer customHeight="auto" customGap="0.75rem">
+            {copyButton}
+            <Button
+              size="lg"
+              isFullWidth
+              isRounded
+              variant="secondary"
+              onClick={() => navigate(-1)}
+            >
+              {t("Done")}
+            </Button>
+          </View.Footer>
+        ) : null}
       </React.Fragment>
     );
   }
@@ -160,7 +272,7 @@ export const RevealSecretKey = () => {
     return (
       <React.Fragment>
         <SubviewHeader
-          title={t("Show secret key")}
+          title={copy.title}
           customBackAction={() => {
             setErrorMessage("");
             setStep("consent");
@@ -193,7 +305,7 @@ export const RevealSecretKey = () => {
                   type="submit"
                   variant="destructive"
                 >
-                  {t("Reveal secret key")}
+                  {copy.action}
                 </Button>
               </View.Footer>
             </Form>
@@ -205,23 +317,17 @@ export const RevealSecretKey = () => {
 
   return (
     <React.Fragment>
-      <SubviewHeader title={t("Show secret key")} />
+      <SubviewHeader title={copy.title} />
       <View.Content hasNoTopPadding hasNoBottomPadding>
         <div className="RevealSecretKey__consent">
-          <Notification
-            variant="error"
-            icon={<Icon.AlertCircle />}
-            title={t("Never share your secret key")}
-          >
+          <NeverShareBanner title={copy.bannerTitle}>
             {t("Anyone with it can take control of your wallet.")}
-          </Notification>
+          </NeverShareBanner>
           <div className="RevealSecretKey__intro">
             <div className="RevealSecretKey__intro__icon">
               <Icon.Shield03 />
             </div>
-            <div className="RevealSecretKey__intro__title">
-              {t("Your secret key controls this wallet")}
-            </div>
+            <div className="RevealSecretKey__intro__title">{copy.heading}</div>
             <div className="RevealSecretKey__intro__subtitle">
               {t("Keep it secure. You’ll need it to restore your wallet.")}
             </div>
@@ -232,17 +338,16 @@ export const RevealSecretKey = () => {
         <div className="RevealSecretKey__acknowledge">
           <Checkbox
             fieldSize="md"
-            id="reveal-secret-key-acknowledge"
-            data-testid="reveal-secret-key-acknowledge"
+            id={`${copy.testId}-acknowledge`}
+            data-testid={`${copy.testId}-acknowledge`}
             checked={hasAcknowledged}
             onChange={(e) => setHasAcknowledged(e.target.checked)}
             label={
-              <span className="RevealSecretKey__acknowledge__label">
-                <Trans
-                  i18nKey="I understand that sharing my secret key could result in <strong>permanent loss of funds</strong>."
-                  components={{ strong: <strong /> }}
-                />
-              </span>
+              // A div, not a span: SDS styles any span directly inside a
+              // checkbox label as the tick box.
+              <div className="RevealSecretKey__acknowledge__label">
+                {copy.acknowledgement}
+              </div>
             }
           />
         </div>
@@ -254,9 +359,15 @@ export const RevealSecretKey = () => {
           variant="destructive"
           onClick={() => setStep("password")}
         >
-          {t("Reveal secret key")}
+          {copy.action}
         </Button>
       </View.Footer>
     </React.Fragment>
   );
 };
+
+export const RevealSecretKey = () => <RevealSecret kind="secretKey" />;
+
+export const RevealRecoveryPhrase = () => (
+  <RevealSecret kind="recoveryPhrase" />
+);

@@ -53,8 +53,7 @@ const Row = ({ label, value, trailingIcon, onClick, testId }: RowProps) => (
  * One account's settings: its name, its secret key, and its explorer link.
  * Reached with `?publicKey=`; without one it edits the active account.
  *
- * Not yet here: the Recovery phrase row, which needs to know which phrase
- * roots the account, and Networks and Hide wallet, which are out of scope.
+ * Networks and Hide wallet are out of scope.
  */
 export const EditAccount = () => {
   const { t } = useTranslation();
@@ -121,6 +120,10 @@ export const EditAccount = () => {
 
   // A hardware account's key never leaves the device.
   const hasSecretKey = !account.hardwareWalletType;
+  // An imported key has no phrase. Every other hot account was derived from
+  // the wallet's one phrase; with several phrases (user model v2) this must
+  // name the account's own source.
+  const hasRecoveryPhrase = hasSecretKey && !account.imported;
 
   return (
     <React.Fragment>
@@ -141,6 +144,20 @@ export const EditAccount = () => {
           </div>
           {hasSecretKey ? (
             <div className="EditAccount__card">
+              {hasRecoveryPhrase ? (
+                <>
+                  <Row
+                    label={t("Recovery phrase")}
+                    value={t("Unlock to reveal")}
+                    trailingIcon={<Icon.ChevronRight />}
+                    onClick={() =>
+                      navigateTo(ROUTES.revealRecoveryPhrase, navigate)
+                    }
+                    testId="edit-account-recovery-phrase"
+                  />
+                  <div className="EditAccount__divider" />
+                </>
+              ) : null}
               <Row
                 label={t("Secret key")}
                 value={t("Unlock to reveal")}
