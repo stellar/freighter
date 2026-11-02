@@ -10,7 +10,7 @@ import { RequestState } from "constants/request";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { ROUTES } from "popup/constants/routes";
 
-import { AccountsRecovery, groupAccounts } from "../AccountsRecovery";
+import { AccountsRecovery } from "../AccountsRecovery";
 import { Settings } from "../Settings";
 import { Wrapper } from "../../__testHelpers__";
 
@@ -33,11 +33,6 @@ const accounts: Account[] = [
   { publicKey: IMPORTED_2, name: "Account 5", imported: true },
 ] as Account[];
 
-const identity = (key: string, options?: Record<string, unknown>) =>
-  options?.number !== undefined
-    ? key.replace("{{number}}", String(options.number))
-    : key;
-
 let mockWalletsState: unknown;
 jest.mock(
   "popup/components/account/AccountSheet/hooks/useGetWalletsData",
@@ -58,33 +53,6 @@ const LocationProbe = () => {
   const { pathname, search } = useLocation();
   return <div data-testid="location">{`${pathname}${search}`}</div>;
 };
-
-describe("groupAccounts", () => {
-  it("puts derived accounts under the phrase and each import in its own group", () => {
-    const groups = groupAccounts(accounts, identity);
-
-    expect(
-      groups.map(({ label, accounts: members }) => [
-        label,
-        members.map(({ publicKey }) => publicKey),
-      ]),
-    ).toEqual([
-      ["Recovery phrase 1", [DERIVED_1, DERIVED_2]],
-      ["Secret key 1", [IMPORTED_1]],
-      ["Secret key 2", [IMPORTED_2]],
-      ["Ledger", [LEDGER]],
-    ]);
-  });
-
-  it("drops the number when the wallet holds one imported key", () => {
-    const groups = groupAccounts(accounts.slice(0, 3), identity);
-
-    expect(groups.map(({ label }) => label)).toEqual([
-      "Recovery phrase 1",
-      "Secret key",
-    ]);
-  });
-});
 
 describe("AccountsRecovery", () => {
   beforeEach(() => {

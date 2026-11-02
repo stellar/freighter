@@ -69,10 +69,6 @@
       color: var(--sds-clr-gray-11) !important; // sds override
       font-size: #{pxToRem(12px)};
       font-weight: var(--sds-fw-medium);
-
-      .detail-separator {
-        margin: 0 #{pxToRem(4px)};
-      }
     }
   }
 

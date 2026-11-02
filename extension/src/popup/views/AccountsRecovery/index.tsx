@@ -3,13 +3,13 @@ import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { Icon, Loader, Notification } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
-import { Account } from "@shared/api/types";
 import { ROUTES } from "popup/constants/routes";
 import { closeWindow, navigateTo, openTab } from "popup/helpers/navigate";
 import { newTabHref } from "helpers/urls";
 import { RequestState } from "constants/request";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { reRouteOnboarding } from "popup/helpers/route";
+import { AccountGroupKind, groupAccounts } from "popup/helpers/accountGroups";
 
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { View } from "popup/basics/layout/View";
@@ -19,64 +19,10 @@ import { useGetWalletsData } from "popup/components/account/AccountSheet/hooks/u
 
 import "./styles.scss";
 
-interface AccountGroup {
-  key: string;
-  label: string;
-  icon: React.ReactNode;
-  accounts: Account[];
-}
-
-/*
-  Groups accounts by what roots them. Until accounts carry a source id, this
-  is all the base branch can tell: every phrase-derived account comes from the
-  wallet's one phrase, each imported account is its own secret key, and a
-  hardware account is grouped by its device.
-*/
-export const groupAccounts = (
-  accounts: Account[],
-  t: (key: string, options?: Record<string, unknown>) => string,
-): AccountGroup[] => {
-  const derived = accounts.filter(
-    (acct) => !acct.imported && !acct.hardwareWalletType,
-  );
-  const imported = accounts.filter(
-    (acct) => acct.imported && !acct.hardwareWalletType,
-  );
-  const hardware = accounts.filter((acct) => !!acct.hardwareWalletType);
-
-  const groups: AccountGroup[] = [];
-
-  if (derived.length) {
-    groups.push({
-      key: "phrase-1",
-      label: t("Recovery phrase {{number}}", { number: 1 }),
-      icon: <Icon.Passcode />,
-      accounts: derived,
-    });
-  }
-
-  imported.forEach((acct, i) => {
-    groups.push({
-      key: `secret-key-${acct.publicKey}`,
-      label:
-        imported.length === 1
-          ? t("Secret key")
-          : t("Secret key {{number}}", { number: i + 1 }),
-      icon: <Icon.Key02 />,
-      accounts: [acct],
-    });
-  });
-
-  if (hardware.length) {
-    groups.push({
-      key: "hardware",
-      label: hardware[0].hardwareWalletType || t("Hardware wallet"),
-      icon: <Icon.Wallet02 />,
-      accounts: hardware,
-    });
-  }
-
-  return groups;
+const GROUP_ICONS: Record<AccountGroupKind, React.ReactNode> = {
+  [AccountGroupKind.RecoveryPhrase]: <Icon.Passcode />,
+  [AccountGroupKind.SecretKey]: <Icon.Key02 />,
+  [AccountGroupKind.Hardware]: <Icon.Wallet02 />,
 };
 
 export const AccountsRecovery = () => {
@@ -169,7 +115,7 @@ export const AccountsRecovery = () => {
                 data-testid="accounts-recovery-group"
               >
                 <div className="AccountsRecovery__group__label">
-                  {group.icon}
+                  {GROUP_ICONS[group.kind]}
                   <span>{group.label}</span>
                 </div>
                 {group.accounts.map((account) => {
