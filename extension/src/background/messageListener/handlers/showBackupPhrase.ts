@@ -9,7 +9,9 @@ import {
   getEncryptedTemporaryData,
   SessionTimer,
 } from "background/helpers/session";
+import { getIsHardwareWalletActive } from "background/helpers/account";
 import { loginToAllAccounts } from "../helpers/login-all-accounts";
+import { getNonHwKeyID } from "../helpers/get-non-hw-key-id";
 
 export const showBackupPhrase = async ({
   request,
@@ -26,12 +28,14 @@ export const showBackupPhrase = async ({
 }) => {
   const { password } = request;
 
+  // A hardware account's key id has no keystore, so check the password
+  // against the first one that does. Every keystore shares the password.
+  const keyID = (await getIsHardwareWalletActive({ localStore }))
+    ? await getNonHwKeyID({ localStore })
+    : (await localStore.getItem(KEY_ID)) || "";
+
   try {
-    await unlockKeystore({
-      keyID: (await localStore.getItem(KEY_ID)) || "",
-      password,
-      keyManager,
-    });
+    await unlockKeystore({ keyID, password, keyManager });
   } catch (e) {
     return { error: "Incorrect Password" };
   }

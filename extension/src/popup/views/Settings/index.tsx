@@ -1,6 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
+import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Icon } from "@stellar/design-system";
 import browser from "webextension-polyfill";
@@ -8,11 +9,12 @@ import browser from "webextension-polyfill";
 import { ListNavLink, ListNavLinkWrapper } from "popup/basics/ListNavLink";
 import { View } from "popup/basics/layout/View";
 import { ROUTES } from "popup/constants/routes";
-import { signOut } from "popup/ducks/accountServices";
+import { allAccountsSelector, signOut } from "popup/ducks/accountServices";
 import { navigateTo, openSidebar, openTab } from "popup/helpers/navigate";
 import { newTabHref } from "helpers/urls";
 import { AppDispatch } from "popup/App";
 import { SubviewHeader } from "popup/components/SubviewHeader";
+import { IdenticonImg } from "popup/components/identicons/IdenticonImg";
 
 import IconNetwork from "popup/assets/icon-settings-network.svg?react";
 import IconSecurity from "popup/assets/icon-settings-security.svg?react";
@@ -75,6 +77,37 @@ const SettingsAction = ({
   </div>
 );
 
+/** The way into Accounts & recovery, with the first two accounts' avatars. */
+const AccountsRecoveryCard = () => {
+  const { t } = useTranslation();
+  const allAccounts = useSelector(allAccountsSelector);
+
+  return (
+    <Link
+      to={ROUTES.accountsRecovery}
+      className="Settings__accounts"
+      data-testid="settings-accounts-recovery"
+    >
+      <div className="Settings__accounts__text">
+        <span className="Settings__accounts__title">
+          {t("Accounts & recovery")}
+        </span>
+        <span className="Settings__accounts__subtitle">
+          {t("Manage your accounts")}
+        </span>
+      </div>
+      <div className="Settings__accounts__avatars" aria-hidden="true">
+        {allAccounts.slice(0, 2).map(({ publicKey }) => (
+          <div key={publicKey} className="Settings__accounts__avatar">
+            <IdenticonImg publicKey={publicKey} />
+          </div>
+        ))}
+      </div>
+      <Icon.ChevronRight className="Settings__accounts__chevron" />
+    </Link>
+  );
+};
+
 export const Settings = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -101,6 +134,7 @@ export const Settings = () => {
     <>
       <SubviewHeader title={t("Settings")} customBackIcon={<Icon.X />} />
       <View.Content hasNoTopPadding>
+        <AccountsRecoveryCard />
         <SettingsGroup label={t("General")}>
           <div className="Settings__row">
             <ListNavLink
