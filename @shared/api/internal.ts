@@ -2213,6 +2213,30 @@ export const showBackupPhrase = async ({
   return response;
 };
 
+export const revealSecretKey = async ({
+  activePublicKey,
+  publicKey,
+  password,
+}: {
+  activePublicKey: string | null;
+  publicKey: string;
+  password: string;
+}): Promise<{ secretKey: string; error: string }> => {
+  let response = { secretKey: "", error: "" };
+  try {
+    response = await sendMessageToBackground({
+      activePublicKey,
+      publicKey,
+      password,
+      type: SERVICE_TYPES.REVEAL_SECRET_KEY,
+    });
+  } catch (e) {
+    console.error(e);
+  }
+
+  return response;
+};
+
 export const saveAllowList = async ({
   activePublicKey,
   domain,

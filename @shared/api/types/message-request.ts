@@ -195,6 +195,13 @@ export interface ShowBackupPhraseMessage extends BaseMessage {
   password: string;
 }
 
+export interface RevealSecretKeyMessage extends BaseMessage {
+  type: SERVICE_TYPES.REVEAL_SECRET_KEY;
+  password: string;
+  /** The account whose secret key to reveal. */
+  publicKey: string;
+}
+
 export interface ConfirmPasswordMessage extends BaseMessage {
   type: SERVICE_TYPES.CONFIRM_PASSWORD;
   password: string;
@@ -548,6 +555,7 @@ export type ServiceMessageRequest =
   | ConfirmMigratedMnemonicPhraseMessage
   | RecoverAccountMessage
   | ShowBackupPhraseMessage
+  | RevealSecretKeyMessage
   | ConfirmPasswordMessage
   | GrantAccessMessage
   | RejectAccessMessage

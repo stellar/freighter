@@ -52,6 +52,7 @@ import { confirmMnemonicPhrase } from "./handlers/confirmMnemonicPhrase";
 import { confirmMigratedMnemonicPhrase } from "./handlers/confirmMigratedMnemonicPhrase";
 import { recoverAccount } from "./handlers/recoverAccount";
 import { showBackupPhrase } from "./handlers/showBackupPhrase";
+import { revealSecretKey } from "./handlers/revealSecretKey";
 import { confirmPassword } from "./handlers/confirmPassword";
 import { grantAccess } from "./handlers/grantAccess";
 import { rejectAccess } from "./handlers/rejectAccess";
@@ -314,6 +315,17 @@ export const popupMessageListener = (
     }
     case SERVICE_TYPES.SHOW_BACKUP_PHRASE: {
       return showBackupPhrase({
+        request,
+        sessionStore,
+        localStore,
+        keyManager,
+        sessionTimer,
+      });
+    }
+    case SERVICE_TYPES.REVEAL_SECRET_KEY: {
+      // A secret key leaves the background only for our own pages.
+      if (!isFromExtensionPage) return { error: "Unauthorized" };
+      return revealSecretKey({
         request,
         sessionStore,
         localStore,

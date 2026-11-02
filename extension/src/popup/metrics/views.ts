@@ -93,6 +93,10 @@ const SCREEN_BY_ROUTE: Partial<Record<ROUTES, ScreenDef>> = {
     screen_name: "show_recovery_phrase",
     flow: "security",
   },
+  [ROUTES.revealSecretKey]: {
+    screen_name: "show_secret_key",
+    flow: "security",
+  },
   [ROUTES.settings]: { screen_name: "settings", flow: "settings" },
   [ROUTES.preferences]: { screen_name: "preferences", flow: "settings" },
   [ROUTES.security]: { screen_name: "security", flow: "security" },

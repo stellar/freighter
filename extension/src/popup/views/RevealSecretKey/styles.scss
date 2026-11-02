@@ -1,0 +1,47 @@
+@use "../../styles/utils.scss" as *;
+
+.RevealSecretKey {
+  &__container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: pxToRem(16px);
+    width: 100%;
+  }
+
+  &__key {
+    width: 100%;
+    padding: pxToRem(16px);
+    border-radius: pxToRem(12px);
+    background-color: var(--sds-clr-gray-03);
+    font-family: var(--sds-ff-monospace);
+    font-size: pxToRem(14px);
+    line-height: pxToRem(20px);
+    color: var(--sds-clr-gray-12);
+    word-break: break-all;
+  }
+
+  &__form {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    justify-content: space-between;
+  }
+
+  &__warning {
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(12px);
+    margin-bottom: pxToRem(24px);
+    font-size: pxToRem(14px);
+    line-height: pxToRem(20px);
+    color: var(--sds-clr-gray-11);
+  }
+
+  &__description {
+    font-size: pxToRem(14px);
+    line-height: pxToRem(20px);
+    color: var(--sds-clr-gray-11);
+    text-align: center;
+  }
+}
