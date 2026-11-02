@@ -42,6 +42,34 @@ export const UNVERIFIED_SIGN_MESSAGE_ERROR =
 // getAppConfiguration reports alongside the version.
 export const OVERSIZED_SIGN_MESSAGE_ERROR = "SIGN_MESSAGE_TOO_LARGE";
 
+// Status word the Ledger OS answers with when a Stellar APDU arrives while the
+// device is on its dashboard, i.e. no app is open. The Stellar app never sees
+// the request, so hw-app-str has no mapping for it and it surfaces as
+// "Ledger device: UNKNOWN_ERROR (0x6511)".
+export const LEDGER_APP_NOT_OPEN_STATUS = 0x6511;
+
+// Sentinel thrown when another app (Ethereum, Bitcoin, ...) is open on the
+// device and could not be closed for us. That app answers our requests with
+// errors of its own, which say nothing useful about the real problem.
+export const OTHER_LEDGER_APP_OPEN_ERROR = "LEDGER_OTHER_APP_OPEN";
+
+// The name the Stellar app is installed under, which is what the OS matches
+// the open-app request against.
+const LEDGER_STELLAR_APP_NAME = "Stellar";
+
+// The names the device reports for itself while it is on the dashboard: older
+// firmware answers "OLOS" plus a NUL byte instead of "BOLOS".
+const LEDGER_DASHBOARD_NAMES = ["BOLOS", "OLOS\u0000"];
+
+// How long to wait for the user to answer the open-app prompt on the device
+// before giving up and asking them to open the app themselves.
+const OPEN_APP_TIMEOUT_MS = 30000;
+
+// Launching an app makes the device drop off USB and come back, so the old
+// transport is dead and the new one takes a moment to appear.
+const REOPEN_POLL_INTERVAL_MS = 1000;
+const REOPEN_POLL_ATTEMPTS = 10;
+
 // Messages that mean the user declined on the device rather than something
 // going wrong. hw-app-str raises StellarUserRefusedError("User refused the
 // request") for the deny status word (0x6985) on every sign call; the second
@@ -75,9 +103,10 @@ type CreateWalletConnection = {
   [key in ConfigurableWalletType]: (bipPath?: string) => Promise<string>;
 };
 
-// To communicate with an existing ledger connection, we need to close existing connections first
-export const connectToLedgerTransport = async () => {
-  // Close existing connections to avoid "device already open" error
+// Close existing connections to avoid "device already open" error. A failed
+// attempt can leave the device open, and WebHID hands the same device object
+// back on the next attempt, so every connect has to start from here.
+const closeLedgerDevices = async () => {
   const existingTransports = await TransportWebHID.list();
   await Promise.all(
     existingTransports.map((existingTransport) =>
@@ -86,8 +115,184 @@ export const connectToLedgerTransport = async () => {
       }),
     ),
   );
+};
+
+// To communicate with an existing ledger connection, we need to close existing connections first
+export const connectToLedgerTransport = async () => {
+  await closeLedgerDevices();
 
   return TransportWebHID.create();
+};
+
+type LedgerTransport = Awaited<ReturnType<typeof TransportWebHID.create>>;
+
+const isAppNotOpenError = (error: unknown): boolean =>
+  (error as { statusCode?: number } | null)?.statusCode ===
+  LEDGER_APP_NOT_OPEN_STATUS;
+
+const wait = (ms: number) =>
+  new Promise<void>((resolve) => {
+    setTimeout(resolve, ms);
+  });
+
+/*
+ * Asks the device which app is running. Every app answers this, as does the
+ * dashboard, which reports itself as "BOLOS".
+ * @returns {string | null} The app name, or null if the device did not answer.
+ */
+const getRunningAppName = async (
+  transport: LedgerTransport,
+): Promise<string | null> => {
+  try {
+    // Reply: format byte, name length, name, version length, version, ...
+    const response = await transport.send(0xb0, 0x01, 0x00, 0x00);
+    const nameLength = response[1];
+    return response.subarray(2, 2 + nameLength).toString("ascii");
+  } catch (e) {
+    return null;
+  }
+};
+
+/*
+ * Sends a request that makes the device switch apps, then reconnects once it
+ * comes back. Switching apps makes the device drop off USB, so the transport
+ * passed in is released either way.
+ * @param {LedgerTransport} transport - A transport to the device.
+ * @param {number} cla - The request's class byte.
+ * @param {number} ins - The request's instruction byte.
+ * @param {Buffer} data - The request's payload.
+ * @returns {LedgerTransport | null} A transport to the device in its new app,
+ * or null if the device refused (declined, not installed), never answered, or
+ * could not be reached again without a new permission prompt.
+ */
+const switchLedgerApp = async (
+  transport: LedgerTransport,
+  cla: number,
+  ins: number,
+  data?: Buffer,
+): Promise<LedgerTransport | null> => {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  let onDisconnect: (() => void) | undefined;
+  // transport.close() waits for the exchange in flight, which never settles if
+  // the device went away or the prompt was left unanswered, and would leave the
+  // device open. Closing the device itself does not wait.
+  const release = () => {
+    (transport as TransportWebHID).device.close().catch(() => {
+      // Ignore close errors - the device has usually already gone away
+    });
+  };
+
+  try {
+    // The device confirms with a status word, then drops off USB to switch
+    // apps. On some firmware the drop wins and the exchange never settles, so
+    // a disconnect counts as the switch happening too.
+    const outcome = await Promise.race([
+      transport
+        .send(cla, ins, 0x00, 0x00, data)
+        .then(() => "launching" as const),
+      new Promise<"launching">((resolve) => {
+        onDisconnect = () => resolve("launching");
+        transport.on("disconnect", onDisconnect);
+      }),
+      new Promise<"timeout">((resolve) => {
+        timeoutId = setTimeout(() => resolve("timeout"), OPEN_APP_TIMEOUT_MS);
+      }),
+    ]);
+    if (outcome === "timeout") {
+      return null;
+    }
+  } catch (e) {
+    // A status word means the device answered and did not switch: the user
+    // declined, or the app is not installed. Any other failure is the
+    // connection dropping mid-exchange as the device switches.
+    if ((e as { statusCode?: number } | null)?.statusCode !== undefined) {
+      return null;
+    }
+  } finally {
+    clearTimeout(timeoutId);
+    if (onDisconnect) {
+      transport.off("disconnect", onDisconnect);
+    }
+    release();
+  }
+
+  // Only devices the user has already granted, where create would fall back to
+  // a permission prompt that needs a user gesture we no longer have. The
+  // device comes back as a new HIDDevice with nothing tying it to the one we
+  // switched, so with more than one Ledger attached we cannot tell which is
+  // ours and give up rather than read a key from the wrong one.
+  for (let attempt = 0; attempt < REOPEN_POLL_ATTEMPTS; attempt += 1) {
+    await wait(REOPEN_POLL_INTERVAL_MS);
+    const devices = await TransportWebHID.list().catch(() => []);
+    if (devices.length === 1) {
+      const reopened = await TransportWebHID.open(devices[0]).catch(() => null);
+      if (reopened) {
+        return reopened;
+      }
+    }
+  }
+
+  return null;
+};
+
+// Asks the Ledger OS to launch the Stellar app, which the user confirms on the
+// device. Only answered on the dashboard.
+const openStellarApp = (transport: LedgerTransport) =>
+  switchLedgerApp(
+    transport,
+    0xe0,
+    0xd8,
+    Buffer.from(LEDGER_STELLAR_APP_NAME, "ascii"),
+  );
+
+// Asks the running app to quit back to the dashboard. No confirmation needed.
+const quitLedgerApp = (transport: LedgerTransport) =>
+  switchLedgerApp(transport, 0xb0, 0xa7);
+
+/*
+ * Reads the public key, getting the Stellar app open first if it is not:
+ * launching it from the dashboard, or closing another app that is in the way.
+ * Every Ledger flow reads the key before doing anything else, so this is the
+ * one place those cases need handling.
+ */
+const getLedgerPublicKey = async (
+  transport: LedgerTransport,
+  bipPath: string,
+  canQuitOtherApp = true,
+): Promise<{ rawPublicKey: Buffer }> => {
+  try {
+    return await new LedgerApi(transport).getPublicKey(bipPath);
+  } catch (e) {
+    if (isAppNotOpenError(e)) {
+      const reopened = await openStellarApp(transport);
+      if (!reopened) {
+        throw e;
+      }
+      return new LedgerApi(reopened).getPublicKey(bipPath);
+    }
+
+    // Another app answers our request with an error of its own (Ethereum
+    // reads it as a malformed request, 0x6a80), so ask which app replied.
+    // A Stellar app error, a locked device or a lost connection are real and
+    // go back to the caller as they are.
+    if (!canQuitOtherApp) {
+      throw e;
+    }
+    const appName = await getRunningAppName(transport);
+    if (
+      !appName ||
+      appName === LEDGER_STELLAR_APP_NAME ||
+      LEDGER_DASHBOARD_NAMES.includes(appName)
+    ) {
+      throw e;
+    }
+    const dashboard = await quitLedgerApp(transport);
+    if (!dashboard) {
+      throw new Error(OTHER_LEDGER_APP_OPEN_ERROR);
+    }
+    // Back on the dashboard, which the app-not-open path above takes from here.
+    return getLedgerPublicKey(dashboard, bipPath, false);
+  }
 };
 
 /*
@@ -97,9 +302,9 @@ export const connectToLedgerTransport = async () => {
  */
 export const createWalletConnection: CreateWalletConnection = {
   [WalletType.LEDGER]: async (bipPath = "") => {
+    await closeLedgerDevices();
     const transport = await TransportWebHID.request();
-    const ledgerApi = new LedgerApi(transport);
-    const response = await ledgerApi.getPublicKey(bipPath);
+    const response = await getLedgerPublicKey(transport, bipPath);
 
     return StrKey.encodeEd25519PublicKey(response.rawPublicKey);
   },
@@ -117,8 +322,7 @@ type GetWalletPublicKey = {
 export const getWalletPublicKey: GetWalletPublicKey = {
   [WalletType.LEDGER]: async (bipPath = "") => {
     const transport = await connectToLedgerTransport();
-    const ledgerApi = new LedgerApi(transport);
-    const response = await ledgerApi.getPublicKey(bipPath);
+    const response = await getLedgerPublicKey(transport, bipPath);
 
     return StrKey.encodeEd25519PublicKey(response.rawPublicKey);
   },
@@ -320,6 +524,23 @@ export const parseWalletError: ParseWalletError = {
     if (message.indexOf("Incorrect length") > -1) {
       return i18n.t(
         "Connect device to computer and open the Stellar app on it",
+      );
+    }
+    // The Ledger OS answers this for any request while the PIN screen is up.
+    if (message.indexOf("(0x5515)") > -1) {
+      return i18n.t("Your Ledger is locked. Unlock it and try again.");
+    }
+    // Matched on the text rather than statusCode because HardwareSign passes
+    // errors through Redux as a bare message string. Reaching here means the
+    // open-app request in getLedgerPublicKey did not get the app running.
+    if (message.indexOf("(0x6511)") > -1) {
+      return i18n.t(
+        "The Stellar app is not open on your Ledger. Open it on the device and try again.",
+      );
+    }
+    if (message.indexOf(OTHER_LEDGER_APP_OPEN_ERROR) > -1) {
+      return i18n.t(
+        "Another app is open on your Ledger. Close it, open the Stellar app and try again.",
       );
     }
     // Declining on the device is the one "error" every hardware user will hit
