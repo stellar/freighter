@@ -23,10 +23,10 @@ import {
   `accountNameList`. Nothing here is secret: a source id is a derived public
   key that is not linkable to a G address, and the label and timestamp exist
   only for the UI. Keeping it in plain storage is what lets the install-time
-  migration (#76) read it with no password.
+  migration of pre-V2 storage read it with no password.
 
   The pinned source id lives beside the set. It is the source that signs every
-  backend request (#66) and it survives lock.
+  backend request and it survives lock.
 */
 
 const LABEL_PREFIX: Record<SecretSourceType, string> = {
@@ -34,7 +34,7 @@ const LABEL_PREFIX: Record<SecretSourceType, string> = {
   [SecretSourceType.SECRET_KEY]: "Secret Key",
 };
 
-/** The phrase source id. Returns only the id; the signing keypair stays with #65/#66. */
+/** The phrase source id. Returns only the id; the signing keypair is derived elsewhere. */
 export const getPhraseSourceId = async (mnemonic: string): Promise<string> =>
   (await deriveAuthKeypair(mnemonic)).userId;
 
@@ -146,11 +146,11 @@ export const clearPinnedSourceId = async ({
  * first held phrase, else null. For a one-phrase wallet this is exactly the
  * phrase the single slot used to hold.
  *
- * #66 replaces the auth/analytics callers with pinned-source signing, and
- * #54/#74 make account creation take an explicit source. Until then a wallet
- * with no phrase (secret-key only) resolves to null, and callers that re-run
- * the unlock on null will do so even though the session is unlocked; that
- * state cannot be onboarded before #53.
+ * Follow-ups move the auth/analytics callers to pinned-source signing and
+ * make account creation take an explicit source. Until then a wallet with no
+ * phrase (secret-key only) resolves to null, and callers that re-run the
+ * unlock on null will do so even though the session is unlocked; that state
+ * cannot be reached until onboarding by secret key ships.
  */
 export const getDefaultMnemonic = async ({
   sessionStore,

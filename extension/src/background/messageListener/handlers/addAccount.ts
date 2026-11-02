@@ -40,8 +40,8 @@ export const addAccount = async ({
 }) => {
   const password = request.password;
 
-  // Interim: derives from the wallet's default phrase. #74 makes the source
-  // an explicit argument with its own index set.
+  // Interim: derives from the wallet's default phrase until the source
+  // becomes an explicit argument with its own index set.
   let source = await getDefaultMnemonic({ sessionStore, localStore });
 
   if (!source) {

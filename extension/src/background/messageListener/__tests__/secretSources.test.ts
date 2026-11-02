@@ -41,7 +41,7 @@ import {
   TEMPORARY_STORE_ID,
 } from "constants/localStorageTypes";
 
-// Acceptance for #72: a wallet with two phrases and one standalone key unlocks
+// Acceptance: a wallet with two phrases and one standalone key unlocks
 // with both mnemonics in the temporary store and three SecretSource records
 // with the right labels; locking clears the mnemonics and leaves the pinned
 // source id in place; a secret-key-only wallet unlocks with a source set and
@@ -88,7 +88,7 @@ const createWallet = () =>
     isOverwritingAccount: false,
   } as CreateAccountMessage);
 
-// No handler adds a second phrase yet (#54/#55); go through the helpers the
+// No handler adds a second phrase yet; go through the helpers the
 // handlers will use.
 const addSecondPhrase = async () => {
   const phraseSourceId = await getPhraseSourceId(PHRASE_2.mnemonic);
@@ -165,7 +165,7 @@ describe("secret sources", () => {
     });
   });
 
-  it("keeps stamping the held phrase into a secret-key import until #75", async () => {
+  it("keeps stamping the held phrase into a secret-key import", async () => {
     await createWallet();
     await importKey();
 

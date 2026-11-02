@@ -41,7 +41,7 @@ describe("signOut handler", () => {
     expect(sessionTimer.stopSession).toHaveBeenCalledTimes(1);
     expect(mockFlushSessionStore).toHaveBeenCalledWith(sessionStore);
     // Only the temporary store goes. The secret-source set and the pinned
-    // source id live under their own keys and survive a lock (#72).
+    // source id live under their own keys and survive a lock.
     expect(localStore.remove).toHaveBeenCalledTimes(1);
     expect(localStore.remove).toHaveBeenCalledWith(TEMPORARY_STORE_ID);
     expect(mockBroadcastSessionState).toHaveBeenCalledWith(

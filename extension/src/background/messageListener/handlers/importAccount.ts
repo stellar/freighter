@@ -44,7 +44,7 @@ export const importAccount = async ({
   let sourceKeys;
 
   // The held phrase is still stamped into the import's keystore `extra`
-  // (#75 stops that); it is not what identifies the import. The import is
+  // for now; it is not what identifies the import. The import is
   // its own source, registered below from its own key.
   let source = await getDefaultMnemonic({ sessionStore, localStore });
 

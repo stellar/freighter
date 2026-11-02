@@ -260,7 +260,7 @@ describe("loginToAllAccounts", () => {
           privateKey: "SB",
           extra: { imported: false, mnemonicPhrase: "phrase b" },
         },
-        // a secret-key import still stamped with the active phrase (#75 un-stamps)
+        // a secret-key import still stamped with the active phrase
         "key-id-2": {
           publicKey: "GC",
           privateKey: "SC",

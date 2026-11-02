@@ -37,7 +37,7 @@ export interface CallBackendV2Result {
  * On-demand derivation — never cached at rest (#2769).
  *
  * Interim: signs with the wallet's default phrase (see getDefaultMnemonic).
- * #66 replaces this with the pinned source identity.
+ * A follow-up replaces this with signing by the pinned source identity.
  */
 const tryGetAuthKeypair = async (
   sessionStore: Store,

@@ -201,7 +201,8 @@ export enum AccountType {
 /**
  * A secret the wallet holds that roots accounts: one seed phrase, or one
  * standalone imported secret key. Hardware accounts have no secret and are
- * never a source. See unified-user-model/v2.md "Enumerating a wallet's
+ * never a source. See wallet-eng-monorepo
+ * design-docs/unified-user-model/v2.md "Enumerating a wallet's
  * identities".
  */
 export enum SecretSourceType {

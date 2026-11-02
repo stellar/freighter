@@ -34,8 +34,8 @@ export const showBackupPhrase = async ({
     return { error: "Incorrect Password" };
   }
 
-  // Interim: shows the wallet's default phrase. #58 scopes the reveal to the
-  // account's own source.
+  // Interim: shows the wallet's default phrase until the reveal is scoped
+  // to the account's own source.
   let source = await getDefaultMnemonic({ sessionStore, localStore });
 
   if (!source) {

@@ -38,7 +38,7 @@ export const storeAccount = async ({
   /**
    * The source id of `mnemonicPhrase`. When given, the phrase is held in the
    * session's mnemonic map under it. Callers that only stamp a phrase into the
-   * keystore (secret-key imports, until #75) leave it out.
+   * keystore (secret-key imports, for now) leave it out.
    */
   phraseSourceId?: string;
   password: string;
