@@ -30,6 +30,7 @@ export enum ROUTES {
   settings = "/settings",
   displayBackupPhrase = "/settings/display-backup-phrase",
   revealSecretKey = "/settings/reveal-secret-key",
+  editAccount = "/settings/edit-account",
   about = "/settings/about",
   preferences = "/settings/preferences",
   security = "/settings/security",

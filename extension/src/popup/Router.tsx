@@ -44,6 +44,7 @@ import { RebrandAnnouncement } from "popup/views/RebrandAnnouncement";
 import { Welcome } from "popup/views/Welcome";
 import { DisplayBackupPhrase } from "popup/views/DisplayBackupPhrase";
 import { RevealSecretKey } from "popup/views/RevealSecretKey";
+import { EditAccount } from "popup/views/EditAccount";
 import { Debug } from "popup/views/Debug";
 import { IntegrationTest } from "popup/views/IntegrationTest";
 import { ViewPublicKey } from "popup/views/ViewPublicKey";
@@ -231,6 +232,7 @@ export const Router = () => (
           path={ROUTES.revealSecretKey}
           element={<RevealSecretKey />}
         ></Route>
+        <Route path={ROUTES.editAccount} element={<EditAccount />}></Route>
         <Route path={ROUTES.grantAccess} element={<GrantAccess />}></Route>
         <Route
           path={ROUTES.confirmSidebarRequest}

@@ -1,10 +1,8 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
 import { Icon } from "@stellar/design-system";
 
 import { ROUTES } from "popup/constants/routes";
-import { hardwareWalletTypeSelector } from "popup/ducks/accountServices";
 
 // import { newTabHref } from "helpers/urls";
 // import { openTab } from "popup/helpers/navigate";
@@ -25,9 +23,6 @@ import "./styles.scss";
 
 export const Security = () => {
   const { t } = useTranslation();
-  const hardwareWalletType = useSelector(hardwareWalletTypeSelector);
-  // A hardware account's key never leaves the device. WalletType.NONE is "".
-  const hasSecretKey = !hardwareWalletType;
 
   return (
     <React.Fragment>
@@ -51,11 +46,6 @@ export const Security = () => {
             >
               {t("Show recovery phrase")}
             </ListNavLink>
-            {hasSecretKey && (
-              <ListNavLink href={ROUTES.revealSecretKey} icon={<Icon.Key01 />}>
-                {t("Show secret key")}
-              </ListNavLink>
-            )}
             <ListNavLink
               href={ROUTES.advancedSettings}
               icon={<Icon.LifeBuoy01 />}

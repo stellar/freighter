@@ -1,24 +1,69 @@
 @use "../../styles/utils.scss" as *;
 
 .RevealSecretKey {
-  &__container {
+  &__consent {
+    display: flex;
+    flex-direction: column;
+    gap: pxToRem(24px);
+    height: 100%;
+  }
+
+  &__intro {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: pxToRem(16px);
-    width: 100%;
+    justify-content: center;
+    flex-grow: 1;
+    gap: pxToRem(24px);
+    text-align: center;
+
+    &__icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: pxToRem(50px);
+      height: pxToRem(50px);
+      border-radius: pxToRem(100px);
+      background-color: var(--sds-clr-red-09);
+
+      svg {
+        width: pxToRem(18px);
+        height: pxToRem(18px);
+        stroke: var(--sds-clr-white);
+      }
+    }
+
+    &__title {
+      font-size: pxToRem(32px);
+      line-height: pxToRem(40px);
+      font-weight: var(--font-weight-medium);
+      letter-spacing: pxToRem(-1.28px);
+      color: var(--sds-clr-gray-12);
+    }
+
+    &__subtitle {
+      // Wraps where the design breaks the line.
+      max-width: pxToRem(240px);
+      margin-top: pxToRem(-12px);
+      font-size: pxToRem(16px);
+      line-height: pxToRem(24px);
+      color: var(--sds-clr-gray-11);
+    }
   }
 
-  &__key {
+  &__acknowledge {
     width: 100%;
-    padding: pxToRem(16px);
-    border-radius: pxToRem(12px);
-    background-color: var(--sds-clr-gray-03);
-    font-family: var(--sds-ff-monospace);
-    font-size: pxToRem(14px);
-    line-height: pxToRem(20px);
-    color: var(--sds-clr-gray-12);
-    word-break: break-all;
+
+    &__label {
+      font-size: pxToRem(14px);
+      line-height: pxToRem(20px);
+      color: var(--sds-clr-gray-11);
+
+      strong {
+        font-weight: var(--font-weight-medium);
+        color: var(--sds-clr-gray-12);
+      }
+    }
   }
 
   &__form {
@@ -28,20 +73,42 @@
     justify-content: space-between;
   }
 
-  &__warning {
+  &__revealed {
     display: flex;
     flex-direction: column;
-    gap: pxToRem(12px);
-    margin-bottom: pxToRem(24px);
-    font-size: pxToRem(14px);
-    line-height: pxToRem(20px);
-    color: var(--sds-clr-gray-11);
+    align-items: center;
+    gap: pxToRem(16px);
   }
 
-  &__description {
+  &__key {
+    width: 100%;
+    padding: pxToRem(12px);
+    border-radius: pxToRem(12px);
+    background-color: var(--sds-clr-gray-03);
+    font-size: pxToRem(16px);
+    line-height: pxToRem(24px);
+    font-weight: var(--font-weight-medium);
+    color: var(--sds-clr-gray-12);
+    word-break: break-all;
+  }
+
+  &__copy {
+    display: flex;
+    align-items: center;
+    gap: pxToRem(4px);
+    padding: pxToRem(8px) pxToRem(12px);
+    border: none;
+    background: none;
+    cursor: pointer;
     font-size: pxToRem(14px);
     line-height: pxToRem(20px);
-    color: var(--sds-clr-gray-11);
-    text-align: center;
+    font-weight: var(--font-weight-semi-bold);
+    color: var(--sds-clr-gray-12);
+
+    svg {
+      width: pxToRem(16px);
+      height: pxToRem(16px);
+      stroke: var(--sds-clr-gray-12);
+    }
   }
 }
