@@ -142,3 +142,31 @@ describe("REVEAL_SECRET_KEY", () => {
     expect(result).toEqual({ error: "Unauthorized" });
   });
 });
+
+describe("SHOW_BACKUP_PHRASE", () => {
+  beforeEach(async () => {
+    await mockStorageApi.clear();
+    mockSessionStore.dispatch(sessionSlice.actions.reset());
+    await send({
+      type: SERVICE_TYPES.CREATE_ACCOUNT,
+      password: PASSWORD,
+      isOverwritingAccount: false,
+    } as CreateAccountMessage);
+  });
+
+  const showPhrase = (sender?: object) =>
+    send(
+      { type: SERVICE_TYPES.SHOW_BACKUP_PHRASE, password: PASSWORD },
+      sender,
+    );
+
+  it("returns the phrase to one of our pages", async () => {
+    expect(await showPhrase()).toEqual({
+      mnemonicPhrase: "mocked mnemonic phrase",
+    });
+  });
+
+  it("refuses a sender that isn't one of our pages", async () => {
+    expect(await showPhrase(contentScript)).toEqual({ error: "Unauthorized" });
+  });
+});

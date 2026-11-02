@@ -314,6 +314,11 @@ export const popupMessageListener = (
       });
     }
     case SERVICE_TYPES.SHOW_BACKUP_PHRASE: {
+      // The recovery phrase leaves the background only for our own pages
+      // (and the dev-server popup, which relays through the content script).
+      if (!isFromExtensionPage && !isFromDevServer) {
+        return { error: "Unauthorized" };
+      }
       return showBackupPhrase({
         request,
         sessionStore,
