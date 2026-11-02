@@ -12,7 +12,6 @@ const renderRow = (props: Partial<React.ComponentProps<typeof WalletRow>>) =>
       <WalletRow
         isFetchingTokenPrices={false}
         accountName="Account 1"
-        isImported={false}
         isSelected={false}
         publicKey={PUBLIC_KEY}
         onClick={() => {}}
