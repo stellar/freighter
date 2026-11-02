@@ -104,6 +104,31 @@ export const findAccountById = (
   return assertHasId(account, id);
 };
 
+/**
+ * The account a message names: by `id` when the caller has one, else the
+ * first account with `publicKey`. Throws when neither is given or nothing
+ * matches.
+ */
+export const findAccount = (
+  allAccounts: Account[],
+  { id, publicKey }: { id?: string; publicKey?: string },
+): Account => {
+  if (id) {
+    return findAccountById(allAccounts, id);
+  }
+  if (publicKey) {
+    return findAccountByPublicKey(allAccounts, publicKey);
+  }
+  throw new Error("No account id or public key given");
+};
+
+/** The keystore id of the active account, as stored in `KEY_ID`. */
+export const getActiveAccountId = async ({
+  localStore,
+}: {
+  localStore: DataStorageAccess;
+}): Promise<string> => ((await localStore.getItem(KEY_ID)) as string) || "";
+
 export const getIsMainnet = async ({
   localStore,
 }: {

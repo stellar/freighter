@@ -11,7 +11,7 @@ import {
   publicKeySelector,
 } from "background/ducks/session";
 import { DataStorageAccess } from "background/helpers/dataStorageAccess";
-import { getKeyIdList } from "background/helpers/account";
+import { getKeyIdList, getActiveAccountId } from "background/helpers/account";
 import { xlmToStroop } from "helpers/stellar";
 import {
   stellarSdkServer,
@@ -293,6 +293,7 @@ export const migrateAccounts = async ({
   return {
     migratedAccounts,
     publicKey: publicKeySelector(currentState),
+    activeAccountId: await getActiveAccountId({ localStore }),
     allAccounts: allAccountsSelector(currentState),
     hasPrivateKey: await hasPrivateKeySelector(currentState),
   };

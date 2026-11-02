@@ -8,7 +8,12 @@ import {
   buildHasPrivateKeySelector,
   publicKeySelector,
 } from "background/ducks/session";
-import { getBipPath } from "background/helpers/account";
+import { ACCOUNT_ALREADY_EXISTS_ERROR } from "@shared/constants/errors";
+import {
+  getBipPath,
+  getActiveAccountId,
+  HW_PREFIX,
+} from "background/helpers/account";
 import { SessionTimer } from "background/helpers/session";
 
 export const importHardwareWallet = async ({
@@ -23,6 +28,18 @@ export const importHardwareWallet = async ({
   sessionTimer: SessionTimer;
 }) => {
   const { publicKey, hardwareWalletType, bipPath } = request;
+
+  // Reconnecting the same device is fine: it resolves to the same `hw:` id.
+  // A hot account with this address is not: the default Ledger path is the
+  // same path Freighter derives account 0 on, so a Ledger on the wallet's
+  // own seed lands here, and the two accounts would share an address.
+  const hwId = `${HW_PREFIX}${publicKey}`;
+  const isDuplicate = allAccountsSelector(sessionStore.getState()).some(
+    (account) => account.publicKey === publicKey && account.id !== hwId,
+  );
+  if (isDuplicate) {
+    return { error: ACCOUNT_ALREADY_EXISTS_ERROR };
+  }
 
   await storeHardwareWalletAccount({
     publicKey,
@@ -41,6 +58,7 @@ export const importHardwareWallet = async ({
 
   return {
     publicKey: publicKeySelector(sessionStore.getState()),
+    activeAccountId: await getActiveAccountId({ localStore }),
     allAccounts: allAccountsSelector(sessionStore.getState()),
     hasPrivateKey: await hasPrivateKeySelector(sessionStore.getState()),
     bipPath: await getBipPath({ localStore }),

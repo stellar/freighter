@@ -4,6 +4,7 @@ import { KeyManager } from "@stellar/typescript-wallet-sdk-km";
 import { captureException } from "@sentry/browser";
 
 import { ImportAccountMessage } from "@shared/api/types/message-request";
+import { ACCOUNT_ALREADY_EXISTS_ERROR } from "@shared/constants/errors";
 import { DataStorageAccess } from "background/helpers/dataStorageAccess";
 import {
   getEncryptedTemporaryData,
@@ -19,7 +20,10 @@ import { SecretSourceType } from "@shared/api/types";
 import { loginToAllAccounts } from "../helpers/login-all-accounts";
 import { getNonHwKeyID } from "../helpers/get-non-hw-key-id";
 import { unlockKeystore } from "../helpers/unlock-keystore";
-import { getIsHardwareWalletActive } from "background/helpers/account";
+import {
+  getIsHardwareWalletActive,
+  getActiveAccountId,
+} from "background/helpers/account";
 import { storeAccount } from "../helpers/store-account";
 import {
   allAccountsSelector,
@@ -92,6 +96,16 @@ export const importAccount = async ({
     privateKey,
   };
 
+  // An address the wallet already holds, hot or hardware, would give two
+  // accounts one address. Flows that only know the address can't tell them
+  // apart, so refuse before anything is stored.
+  const isDuplicate = allAccountsSelector(sessionStore.getState()).some(
+    (account) => account.publicKey === keyPair.publicKey,
+  );
+  if (isDuplicate) {
+    return { error: ACCOUNT_ALREADY_EXISTS_ERROR };
+  }
+
   try {
     const sourceId = await getSecretKeySourceId(privateKey);
     await storeAccount({
@@ -124,6 +138,7 @@ export const importAccount = async ({
 
   return {
     publicKey: publicKeySelector(currentState),
+    activeAccountId: await getActiveAccountId({ localStore }),
     allAccounts: allAccountsSelector(currentState),
     hasPrivateKey: await hasPrivateKeySelector(currentState),
   };

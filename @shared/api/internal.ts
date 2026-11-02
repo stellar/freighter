@@ -84,6 +84,7 @@ import {
   PASSPHRASE_TO_PRICE_NETWORK,
 } from "../constants/stellar";
 import { SERVICE_TYPES } from "../constants/services";
+import { AccountRef } from "./types/message-request";
 import { isDev } from "../helpers/dev";
 import { SorobanRpcNotSupportedError } from "../constants/errors";
 import { APPLICATION_STATE } from "../constants/applicationState";
@@ -132,16 +133,18 @@ export const createAccount = async ({
   isOverwritingAccount: boolean;
 }): Promise<{
   publicKey: string;
+  activeAccountId: string;
   allAccounts: Array<Account>;
   hasPrivateKey: boolean;
 }> => {
   let publicKey = "";
+  let activeAccountId = "";
   let allAccounts = [] as Array<Account>;
   let hasPrivateKey = false;
   let error = "";
 
   try {
-    ({ allAccounts, publicKey, hasPrivateKey, error } =
+    ({ allAccounts, publicKey, activeAccountId, hasPrivateKey, error } =
       await sendMessageToBackground({
         activePublicKey: null,
         password,
@@ -156,7 +159,7 @@ export const createAccount = async ({
     throw new Error(error);
   }
 
-  return { allAccounts, publicKey, hasPrivateKey };
+  return { allAccounts, publicKey, activeAccountId, hasPrivateKey };
 };
 
 export const fundAccount = async ({
@@ -185,16 +188,18 @@ export const addAccount = async ({
   password: string;
 }): Promise<{
   publicKey: string;
+  activeAccountId: string;
   allAccounts: Array<Account>;
   hasPrivateKey: boolean;
 }> => {
   let error = "";
   let publicKey = "";
+  let activeAccountId = "";
   let allAccounts = [] as Array<Account>;
   let hasPrivateKey = false;
 
   try {
-    ({ allAccounts, error, publicKey, hasPrivateKey } =
+    ({ allAccounts, error, publicKey, activeAccountId, hasPrivateKey } =
       await sendMessageToBackground({
         activePublicKey,
         password,
@@ -208,7 +213,7 @@ export const addAccount = async ({
     throw new Error(error);
   }
 
-  return { allAccounts, publicKey, hasPrivateKey };
+  return { allAccounts, publicKey, activeAccountId, hasPrivateKey };
 };
 
 export const importAccount = async ({
@@ -221,16 +226,18 @@ export const importAccount = async ({
   activePublicKey: string;
 }): Promise<{
   publicKey: string;
+  activeAccountId: string;
   allAccounts: Array<Account>;
   hasPrivateKey: boolean;
 }> => {
   let error = "";
   let publicKey = "";
+  let activeAccountId = "";
   let allAccounts = [] as Array<Account>;
   let hasPrivateKey = false;
 
   try {
-    ({ allAccounts, publicKey, error, hasPrivateKey } =
+    ({ allAccounts, publicKey, activeAccountId, error, hasPrivateKey } =
       await sendMessageToBackground({
         activePublicKey,
         password,
@@ -246,7 +253,7 @@ export const importAccount = async ({
     throw new Error(error);
   }
 
-  return { allAccounts, publicKey, hasPrivateKey };
+  return { allAccounts, publicKey, activeAccountId, hasPrivateKey };
 };
 
 export const importHardwareWallet = async ({
@@ -261,15 +268,19 @@ export const importHardwareWallet = async ({
   bipPath: string;
 }) => {
   let _publicKey = "";
+  let activeAccountId = "";
   let allAccounts = [] as Array<Account>;
   let hasPrivateKey = false;
   let _bipPath = "";
+  let error = "";
   try {
     ({
       publicKey: _publicKey,
+      activeAccountId,
       allAccounts,
       hasPrivateKey,
       bipPath: _bipPath,
+      error,
     } = await sendMessageToBackground({
       activePublicKey,
       publicKey,
@@ -280,9 +291,15 @@ export const importHardwareWallet = async ({
   } catch (e) {
     console.log({ e });
   }
+
+  if (error) {
+    throw new Error(error);
+  }
+
   return {
     allAccounts,
     publicKey: _publicKey,
+    activeAccountId,
     hasPrivateKey,
     bipPath: _bipPath,
   };
@@ -290,36 +307,42 @@ export const importHardwareWallet = async ({
 
 export const makeAccountActive = ({
   activePublicKey,
-  publicKey,
+  account,
 }: {
   activePublicKey: string;
+  account: AccountRef;
+}): Promise<{
   publicKey: string;
-}): Promise<{ publicKey: string; hasPrivateKey: boolean; bipPath: string }> =>
+  activeAccountId: string;
+  hasPrivateKey: boolean;
+  bipPath: string;
+}> =>
   sendMessageToBackground({
     activePublicKey,
-    publicKey,
+    ...account,
     type: SERVICE_TYPES.MAKE_ACCOUNT_ACTIVE,
   });
 
 export const updateAccountName = ({
   activePublicKey,
   accountName,
-  publicKey,
+  id,
 }: {
   activePublicKey: string;
   accountName: string;
-  publicKey: string;
+  id: string;
 }): Promise<{ allAccounts: Array<Account> }> =>
   sendMessageToBackground({
     activePublicKey,
     accountName,
-    publicKey,
+    id,
     type: SERVICE_TYPES.UPDATE_ACCOUNT_NAME,
   });
 
 export const loadAccount = (): Promise<{
   hasPrivateKey: boolean;
   publicKey: string;
+  activeAccountId: string;
   applicationState: APPLICATION_STATE;
   allAccounts: Array<Account>;
   bipPath: string;
@@ -416,17 +439,19 @@ export const recoverAccount = async ({
   isOverwritingAccount: boolean;
 }): Promise<{
   publicKey: string;
+  activeAccountId: string;
   allAccounts: Array<Account>;
   hasPrivateKey: boolean;
   error: string;
 }> => {
   let publicKey = "";
+  let activeAccountId = "";
   let allAccounts = [] as Array<Account>;
   let hasPrivateKey = false;
   let error = "";
 
   try {
-    ({ allAccounts, publicKey, hasPrivateKey, error } =
+    ({ allAccounts, publicKey, activeAccountId, hasPrivateKey, error } =
       await sendMessageToBackground({
         activePublicKey: null,
         password,
@@ -438,13 +463,14 @@ export const recoverAccount = async ({
     console.error(e);
   }
 
-  return { allAccounts, publicKey, hasPrivateKey, error };
+  return { allAccounts, publicKey, activeAccountId, hasPrivateKey, error };
 };
 
 export const confirmPassword = async (
   password: string,
 ): Promise<{
   publicKey: string;
+  activeAccountId: string;
   hasPrivateKey: boolean;
   applicationState: APPLICATION_STATE;
   allAccounts: Array<Account>;
@@ -452,6 +478,7 @@ export const confirmPassword = async (
 }> => {
   let response = {
     publicKey: "",
+    activeAccountId: "",
     hasPrivateKey: false,
     applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
     allAccounts: [] as Array<Account>,
@@ -543,31 +570,46 @@ export const migrateAccounts = async ({
   recommendedFee: string;
 }): Promise<{
   publicKey: string;
+  activeAccountId: string;
   migratedAccounts: Array<MigratedAccount>;
   allAccounts: Array<Account>;
   hasPrivateKey: boolean;
   error: string;
 }> => {
   let publicKey = "";
+  let activeAccountId = "";
   let migratedAccounts = [] as Array<MigratedAccount>;
   let allAccounts = [] as Array<Account>;
   let hasPrivateKey = false;
   let error = "";
 
   try {
-    ({ migratedAccounts, allAccounts, publicKey, hasPrivateKey, error } =
-      await sendMessageToBackground({
-        activePublicKey: null,
-        balancesToMigrate,
-        isMergeSelected,
-        recommendedFee,
-        type: SERVICE_TYPES.MIGRATE_ACCOUNTS,
-      }));
+    ({
+      migratedAccounts,
+      allAccounts,
+      publicKey,
+      activeAccountId,
+      hasPrivateKey,
+      error,
+    } = await sendMessageToBackground({
+      activePublicKey: null,
+      balancesToMigrate,
+      isMergeSelected,
+      recommendedFee,
+      type: SERVICE_TYPES.MIGRATE_ACCOUNTS,
+    }));
   } catch (e) {
     console.error(e);
   }
 
-  return { migratedAccounts, allAccounts, publicKey, hasPrivateKey, error };
+  return {
+    migratedAccounts,
+    allAccounts,
+    publicKey,
+    activeAccountId,
+    hasPrivateKey,
+    error,
+  };
 };
 
 export const getAccountIndexerBalances = async ({

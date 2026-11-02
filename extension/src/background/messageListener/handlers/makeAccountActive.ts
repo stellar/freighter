@@ -7,7 +7,7 @@ import {
   buildHasPrivateKeySelector,
   publicKeySelector,
 } from "background/ducks/session";
-import { getBipPath } from "background/helpers/account";
+import { getActiveAccountId, getBipPath } from "background/helpers/account";
 
 export const makeAccountActive = async ({
   request,
@@ -18,13 +18,14 @@ export const makeAccountActive = async ({
   sessionStore: Store;
   localStore: DataStorageAccess;
 }) => {
-  const { publicKey } = request;
-  await activatePublicKey({ publicKey, sessionStore, localStore });
+  const { id, publicKey } = request;
+  await activatePublicKey({ id, publicKey, sessionStore, localStore });
   const currentState = sessionStore.getState();
   const hasPrivateKeySelector = buildHasPrivateKeySelector(localStore);
 
   return {
     publicKey: publicKeySelector(currentState),
+    activeAccountId: await getActiveAccountId({ localStore }),
     hasPrivateKey: await hasPrivateKeySelector(currentState),
     bipPath: await getBipPath({ localStore }),
   };

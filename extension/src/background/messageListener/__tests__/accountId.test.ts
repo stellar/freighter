@@ -11,9 +11,11 @@ import {
   ImportAccountMessage,
   ImportHardWareWalletMessage,
   MakeAccountActiveMessage,
+  AccountRef,
   SignOutMessage,
   UpdateAccountNameMessage,
 } from "@shared/api/types/message-request";
+import { ACCOUNT_ALREADY_EXISTS_ERROR } from "@shared/constants/errors";
 import { AUTH_KEYPAIR_VECTORS } from "@shared/api/helpers/authKeypairVectors";
 import { deriveSourceIdentity } from "@shared/api/helpers/deriveAuthKeypair";
 import { Account } from "@shared/api/types";
@@ -24,13 +26,20 @@ import {
   mockStorageApi,
   MockBrowserAlarm,
 } from "background/messageListener/helpers/test-helpers";
-import { getAccountNameList } from "background/helpers/account";
+import {
+  getAccountNameList,
+  getIsHardwareWalletActive,
+  HW_PREFIX,
+} from "background/helpers/account";
+import { storeHardwareWalletAccount } from "background/messageListener/helpers/store-hardware-wallet";
 import { KEY_ID, KEY_ID_LIST } from "constants/localStorageTypes";
 
 // Acceptance for #73: every account carries its keystore id and its source id;
 // switching, renaming and unlocking resolve by id, so the order of
-// `allAccounts` changes nothing; an unknown public key is an error, never a
-// silent fall back to the first account.
+// `allAccounts` changes nothing; an unknown id or public key is an error,
+// never a silent fall back to the first account. Two accounts never share an
+// address through an import, and where they already do, the id still picks
+// the right one.
 
 const [PHRASE_1] = AUTH_KEYPAIR_VECTORS;
 // A key no held phrase derives.
@@ -96,16 +105,24 @@ const importLedger = () =>
     bipPath: "44'/148'/0'",
   } as ImportHardWareWalletMessage);
 
-const switchTo = (publicKey: string) =>
+const importLedgerAt = (publicKey: string) =>
+  send({
+    type: SERVICE_TYPES.IMPORT_HARDWARE_WALLET,
+    publicKey,
+    hardwareWalletType: WalletType.LEDGER,
+    bipPath: "44'/148'/0'",
+  } as ImportHardWareWalletMessage);
+
+const switchTo = (account: AccountRef) =>
   send({
     type: SERVICE_TYPES.MAKE_ACCOUNT_ACTIVE,
-    publicKey,
+    ...account,
   } as MakeAccountActiveMessage);
 
-const rename = (publicKey: string, accountName: string) =>
+const rename = (id: string, accountName: string) =>
   send({
     type: SERVICE_TYPES.UPDATE_ACCOUNT_NAME,
-    publicKey,
+    id,
     accountName,
   } as UpdateAccountNameMessage);
 
@@ -194,7 +211,17 @@ describe("stable account id", () => {
     const reversed = reverseAllAccounts();
 
     for (const account of reversed) {
-      await switchTo(account.publicKey);
+      await switchTo({ id: account.id });
+      expect(await activeKeyId()).toBe(account.id);
+    }
+  });
+
+  it("switches by public key when that is all the caller has", async () => {
+    await seedFourAccounts();
+    const reversed = reverseAllAccounts();
+
+    for (const account of reversed) {
+      await switchTo({ publicKey: account.publicKey });
       expect(await activeKeyId()).toBe(account.id);
     }
   });
@@ -204,7 +231,7 @@ describe("stable account id", () => {
     const [, second] = reverseAllAccounts();
     const before = await accountNames();
 
-    await rename(second.publicKey, "Renamed");
+    await rename(second.id, "Renamed");
 
     expect(await accountNames()).toEqual({ ...before, [second.id]: "Renamed" });
     const renamed = allAccounts().find(({ id }) => id === second.id);
@@ -217,21 +244,22 @@ describe("stable account id", () => {
     const keyId = await activeKeyId();
     const publicKey = mockSessionStore.getState().session.publicKey;
 
-    await expect(switchTo(Keypair.random().publicKey())).rejects.toThrow();
+    await expect(
+      switchTo({ publicKey: Keypair.random().publicKey() }),
+    ).rejects.toThrow();
+    await expect(switchTo({ id: "no-such-keystore" })).rejects.toThrow();
 
     expect(await activeKeyId()).toBe(keyId);
     expect(mockSessionStore.getState().session.publicKey).toBe(publicKey);
   });
 
-  it("rejects a rename of an unknown public key and changes nothing", async () => {
+  it("rejects a rename of an unknown id and changes nothing", async () => {
     await createWallet();
     await addAccount();
     const names = await accountNames();
     const accounts = allAccounts();
 
-    await expect(
-      rename(Keypair.random().publicKey(), "Renamed"),
-    ).rejects.toThrow();
+    await expect(rename("no-such-keystore", "Renamed")).rejects.toThrow();
 
     expect(await accountNames()).toEqual(names);
     expect(allAccounts()).toEqual(accounts);
@@ -258,6 +286,118 @@ describe("stable account id", () => {
     await unlock();
 
     expect(allAccounts().map(({ id }) => id)).toEqual([first, third]);
+  });
+
+  it("refuses a Ledger whose address the wallet already holds", async () => {
+    await createWallet();
+    const [hot] = allAccounts();
+    const ids = await keyIdList();
+    const keyId = await activeKeyId();
+
+    const response = (await importLedgerAt(hot.publicKey)) as {
+      error?: string;
+    };
+
+    expect(response.error).toBe(ACCOUNT_ALREADY_EXISTS_ERROR);
+    expect(await keyIdList()).toEqual(ids);
+    expect(await activeKeyId()).toBe(keyId);
+    expect(allAccounts()).toHaveLength(1);
+  });
+
+  it("still lets the same Ledger reconnect", async () => {
+    await createWallet();
+    await importLedger();
+    await switchTo({ id: allAccounts()[0].id });
+
+    const response = (await importLedger()) as { error?: string };
+
+    expect(response.error).toBeUndefined();
+    expect(await activeKeyId()).toBe(`${HW_PREFIX}${HW_PUBLIC_KEY}`);
+    expect(allAccounts()).toHaveLength(2);
+  });
+
+  it("refuses a secret key whose address the wallet already holds", async () => {
+    await createWallet();
+    await importKey();
+    const ids = await keyIdList();
+
+    const response = (await importKey()) as { error?: string };
+
+    expect(response.error).toBe(ACCOUNT_ALREADY_EXISTS_ERROR);
+    expect(await keyIdList()).toEqual(ids);
+  });
+
+  it("refuses a secret key a connected Ledger already holds", async () => {
+    await createWallet();
+    await importLedgerAt(Keypair.fromSecret(STANDALONE_SECRET).publicKey());
+    const ids = await keyIdList();
+
+    const response = (await importKey()) as { error?: string };
+
+    expect(response.error).toBe(ACCOUNT_ALREADY_EXISTS_ERROR);
+    expect(await keyIdList()).toEqual(ids);
+  });
+
+  describe("a hot account and a Ledger that already share an address", () => {
+    // The import guard stops this from happening now, but a wallet written by
+    // an older build can still hold it. Store the Ledger directly, past the
+    // handler's guard.
+    const seedSharedAddress = async () => {
+      await createWallet();
+      const [hot] = allAccounts();
+      await storeHardwareWalletAccount({
+        publicKey: hot.publicKey,
+        hardwareWalletType: WalletType.LEDGER,
+        bipPath: "44'/148'/0'",
+        sessionStore: mockSessionStore,
+        localStore: mockDataStorage,
+      });
+      const ledger = allAccounts().find(({ id }) => id.startsWith(HW_PREFIX))!;
+      expect(ledger.publicKey).toBe(hot.publicKey);
+      return { hot, ledger };
+    };
+
+    it("switches to the Ledger by id, so signing goes to the device", async () => {
+      const { hot, ledger } = await seedSharedAddress();
+      await switchTo({ id: hot.id });
+
+      const response = (await switchTo({ id: ledger.id })) as {
+        activeAccountId: string;
+      };
+
+      expect(await activeKeyId()).toBe(ledger.id);
+      expect(response.activeAccountId).toBe(ledger.id);
+      expect(
+        await getIsHardwareWalletActive({ localStore: mockDataStorage }),
+      ).toBe(true);
+    });
+
+    it("switches to the hot account by id", async () => {
+      const { hot, ledger } = await seedSharedAddress();
+      await switchTo({ id: ledger.id });
+
+      await switchTo({ id: hot.id });
+
+      expect(await activeKeyId()).toBe(hot.id);
+      expect(
+        await getIsHardwareWalletActive({ localStore: mockDataStorage }),
+      ).toBe(false);
+    });
+
+    it("renames only the row it names", async () => {
+      const { hot, ledger } = await seedSharedAddress();
+      const before = await accountNames();
+
+      await rename(ledger.id, "My Ledger");
+
+      expect(await accountNames()).toEqual({
+        ...before,
+        [ledger.id]: "My Ledger",
+      });
+      expect(allAccounts().find(({ id }) => id === hot.id)?.name).toBe(
+        before[hot.id],
+      );
+    });
   });
 
   it("leaves no account behind when the keystore cannot be stored", async () => {

@@ -13,7 +13,10 @@ import { KEY_DERIVATION_NUMBER_ID, KEY_ID } from "constants/localStorageTypes";
 import { loginToAllAccounts } from "../helpers/login-all-accounts";
 import { KeyManager } from "@stellar/typescript-wallet-sdk-km";
 import { captureException } from "@sentry/browser";
-import { getIsHardwareWalletActive } from "background/helpers/account";
+import {
+  getIsHardwareWalletActive,
+  getActiveAccountId,
+} from "background/helpers/account";
 import { getNonHwKeyID } from "../helpers/get-non-hw-key-id";
 import { unlockKeystore } from "../helpers/unlock-keystore";
 import { storeAccount } from "../helpers/store-account";
@@ -128,6 +131,7 @@ export const addAccount = async ({
 
   return {
     publicKey: publicKeySelector(currentState),
+    activeAccountId: await getActiveAccountId({ localStore }),
     allAccounts: allAccountsSelector(currentState),
     hasPrivateKey: await hasPrivateKeySelector(currentState),
   };

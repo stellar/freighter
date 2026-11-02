@@ -4,6 +4,7 @@ import StellarHDWallet from "stellar-hd-wallet";
 import { KeyManager } from "@stellar/typescript-wallet-sdk-km";
 
 import { CreateAccountMessage } from "@shared/api/types/message-request";
+import { getActiveAccountId } from "background/helpers/account";
 import { clearAccount } from "../helpers/clear-account";
 import { DataStorageAccess } from "background/helpers/dataStorageAccess";
 import {
@@ -104,6 +105,7 @@ export const createAccount = async ({
   return {
     allAccounts: allAccountsSelector(currentState),
     publicKey: publicKeySelector(currentState),
+    activeAccountId: await getActiveAccountId({ localStore }),
     hasPrivateKey: await hasPrivateKeySelector(currentState),
   };
 };

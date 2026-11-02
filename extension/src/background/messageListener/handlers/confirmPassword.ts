@@ -6,6 +6,7 @@ import {
   addAccountName,
   getBipPath,
   getKeyIdList,
+  getActiveAccountId,
 } from "background/helpers/account";
 import { DataStorageAccess } from "background/helpers/dataStorageAccess";
 import {
@@ -75,6 +76,7 @@ export const confirmPassword = async ({
   const hasPrivateKeySelector = buildHasPrivateKeySelector(localStore);
   return {
     publicKey: publicKeySelector(sessionStore.getState()),
+    activeAccountId: await getActiveAccountId({ localStore }),
     hasPrivateKey: await hasPrivateKeySelector(sessionStore.getState()),
     applicationState: (await localStore.getItem(APPLICATION_ID)) || "",
     allAccounts: allAccountsSelector(sessionStore.getState()),

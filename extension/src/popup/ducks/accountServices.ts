@@ -2,6 +2,7 @@ import {
   createAsyncThunk,
   createSelector,
   createSlice,
+  isFulfilled,
 } from "@reduxjs/toolkit";
 import { Networks } from "stellar-sdk";
 
@@ -33,6 +34,7 @@ import {
   ErrorMessage,
   MigratedAccount,
 } from "@shared/api/types";
+import { AccountRef } from "@shared/api/types/message-request";
 import { WalletType } from "@shared/constants/hardwareWallet";
 
 import { AppState } from "popup/App";
@@ -41,7 +43,12 @@ import { MetricsData } from "helpers/metrics";
 import i18n from "popup/helpers/localizationConfig";
 
 export const createAccount = createAsyncThunk<
-  { allAccounts: Account[]; publicKey: string; hasPrivateKey: boolean },
+  {
+    allAccounts: Account[];
+    publicKey: string;
+    activeAccountId: string;
+    hasPrivateKey: boolean;
+  },
   { password: string; isOverwritingAccount?: boolean },
   { rejectValue: ErrorMessage }
 >(
@@ -50,6 +57,7 @@ export const createAccount = createAsyncThunk<
     let res = {
       allAccounts: [] as Account[],
       publicKey: "",
+      activeAccountId: "",
       hasPrivateKey: false,
     };
 
@@ -81,7 +89,12 @@ export const fundAccount = createAsyncThunk(
 );
 
 export const addAccount = createAsyncThunk<
-  { publicKey: string; allAccounts: Account[]; hasPrivateKey: boolean },
+  {
+    publicKey: string;
+    activeAccountId: string;
+    allAccounts: Account[];
+    hasPrivateKey: boolean;
+  },
   { password: string },
   { rejectValue: ErrorMessage }
 >("auth/addAccount", async ({ password }, { getState, rejectWithValue }) => {
@@ -89,6 +102,7 @@ export const addAccount = createAsyncThunk<
 
   let res = {
     publicKey: "",
+    activeAccountId: "",
     allAccounts: [] as Account[],
     hasPrivateKey: false,
   };
@@ -106,7 +120,12 @@ export const addAccount = createAsyncThunk<
 });
 
 export const importAccount = createAsyncThunk<
-  { publicKey: string; allAccounts: Account[]; hasPrivateKey: boolean },
+  {
+    publicKey: string;
+    activeAccountId: string;
+    allAccounts: Account[];
+    hasPrivateKey: boolean;
+  },
   { password: string; privateKey: string },
   { rejectValue: ErrorMessage }
 >(
@@ -114,6 +133,7 @@ export const importAccount = createAsyncThunk<
   async ({ password, privateKey }, { getState, rejectWithValue }) => {
     let res = {
       publicKey: "",
+      activeAccountId: "",
       allAccounts: [] as Account[],
       hasPrivateKey: false,
     };
@@ -139,6 +159,7 @@ export const importAccount = createAsyncThunk<
 export const importHardwareWallet = createAsyncThunk<
   {
     publicKey: string;
+    activeAccountId: string;
     allAccounts: Account[];
     hasPrivateKey: boolean;
     bipPath: string;
@@ -153,6 +174,7 @@ export const importHardwareWallet = createAsyncThunk<
   ) => {
     let res = {
       publicKey: "",
+      activeAccountId: "",
       allAccounts: [] as Account[],
       hasPrivateKey: false,
       bipPath: "",
@@ -175,22 +197,32 @@ export const importHardwareWallet = createAsyncThunk<
   },
 );
 
+/**
+ * Switches the active account. UI actions pass `{ id }`, since two accounts
+ * can share a public key. Flows that only know an address, such as a dApp's
+ * `accountToSign`, pass `{ publicKey }` and get the first match.
+ */
 export const makeAccountActive = createAsyncThunk<
-  { publicKey: string; hasPrivateKey: boolean; bipPath: string },
-  string,
+  {
+    publicKey: string;
+    activeAccountId: string;
+    hasPrivateKey: boolean;
+    bipPath: string;
+  },
+  AccountRef,
   { rejectValue: ErrorMessage; state: AppState }
 >(
   "auth/makeAccountActive",
-  async (publicKey: string, { getState, rejectWithValue }) => {
+  async (account: AccountRef, { getState, rejectWithValue }) => {
     const activePublicKey = publicKeySelector(getState());
 
     try {
       const res = await makeAccountActiveService({
         activePublicKey,
-        publicKey,
+        account,
       });
       const { allAccounts } = authSelector(getState());
-      storeAccountMetricsData(publicKey, allAccounts);
+      storeAccountMetricsData(res.publicKey, allAccounts);
       return res;
     } catch (e) {
       return rejectWithValue({ errorMessage: e as string });
@@ -200,12 +232,12 @@ export const makeAccountActive = createAsyncThunk<
 
 export const updateAccountName = createAsyncThunk<
   { allAccounts: Account[] },
-  { accountName: string; publicKey: string },
+  { accountName: string; id: string },
   { rejectValue: ErrorMessage; state: AppState }
->("auth/updateAccountName", ({ accountName, publicKey }, { getState }) => {
+>("auth/updateAccountName", ({ accountName, id }, { getState }) => {
   const activePublicKey = publicKeySelector(getState());
 
-  return updateAccountNameService({ activePublicKey, accountName, publicKey });
+  return updateAccountNameService({ activePublicKey, accountName, id });
 });
 
 export const loadLastUsedAccount = createAsyncThunk<
@@ -226,6 +258,7 @@ export const recoverAccount = createAsyncThunk<
     allAccounts: Account[];
     hasPrivateKey: boolean;
     publicKey: string;
+    activeAccountId: string;
     error: string;
     isOverwritingAccount?: boolean;
   },
@@ -244,6 +277,7 @@ export const recoverAccount = createAsyncThunk<
     let res = {
       allAccounts: [] as Account[],
       publicKey: "",
+      activeAccountId: "",
       hasPrivateKey: false,
       error: "",
     };
@@ -349,6 +383,7 @@ export const confirmMigratedMnemonicPhrase = createAsyncThunk<
 export const confirmPassword = createAsyncThunk<
   {
     publicKey: string;
+    activeAccountId: string;
     hasPrivateKey: boolean;
     applicationState: APPLICATION_STATE;
     allAccounts: Account[];
@@ -359,6 +394,7 @@ export const confirmPassword = createAsyncThunk<
 >("auth/confirmPassword", async (phrase: string, thunkApi) => {
   let res = {
     publicKey: "",
+    activeAccountId: "",
     hasPrivateKey: false,
     applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
     allAccounts: [] as Account[],
@@ -498,6 +534,7 @@ export const migrateAccounts = createAsyncThunk<
     migratedAccounts: MigratedAccount[];
     hasPrivateKey: boolean;
     publicKey: string;
+    activeAccountId: string;
     error: string;
   },
   {
@@ -513,6 +550,7 @@ export const migrateAccounts = createAsyncThunk<
       migratedAccounts: [] as MigratedAccount[],
       allAccounts: [] as Account[],
       publicKey: "",
+      activeAccountId: "",
       hasPrivateKey: false,
       error: "",
     };
@@ -562,6 +600,12 @@ interface InitialState {
   applicationState: APPLICATION_STATE;
   hasPrivateKey: boolean;
   publicKey: string;
+  /**
+   * `Account.id` of the active account, as the background holds it in
+   * `KEY_ID`. `publicKey` alone can't name it: a hot account and a Ledger
+   * can share an address.
+   */
+  activeAccountId: string;
   connectingWalletType: WalletType;
   bipPath: string;
   tokenIdList: string[];
@@ -576,6 +620,7 @@ const initialState: InitialState = {
   applicationState: APPLICATION_STATE.APPLICATION_LOADING,
   hasPrivateKey: false,
   publicKey: "",
+  activeAccountId: "",
   connectingWalletType: WalletType.NONE,
   bipPath: "",
   tokenIdList: [],
@@ -601,6 +646,7 @@ const authSlice = createSlice({
       const {
         hasPrivateKey,
         publicKey,
+        activeAccountId,
         applicationState,
         allAccounts,
         bipPath,
@@ -608,6 +654,7 @@ const authSlice = createSlice({
       } = action.payload;
       state.hasPrivateKey = hasPrivateKey;
       state.publicKey = publicKey;
+      state.activeAccountId = activeAccountId || "";
       state.applicationState =
         applicationState || APPLICATION_STATE.APPLICATION_STARTED;
       state.allAccounts = allAccounts;
@@ -640,6 +687,7 @@ const authSlice = createSlice({
     lockAccount(state) {
       state.hasPrivateKey = false;
       state.publicKey = "";
+      state.activeAccountId = "";
       state.allAccounts = [];
       state.bipPath = "";
       state.tokenIdList = [];
@@ -945,6 +993,23 @@ const authSlice = createSlice({
         error: errorMessage,
       };
     });
+    // Every response that changes the active account names it by id. Runs
+    // after the case reducers above, on the state they returned.
+    builder.addMatcher(
+      isFulfilled(
+        createAccount,
+        addAccount,
+        importAccount,
+        importHardwareWallet,
+        makeAccountActive,
+        recoverAccount,
+        confirmPassword,
+        migrateAccounts,
+      ),
+      (state, action) => {
+        state.activeAccountId = action.payload.activeAccountId || "";
+      },
+    );
   },
 });
 
@@ -979,27 +1044,40 @@ export const migratedAccountsSelector = createSelector(
   (auth: InitialState) => auth.migratedAccounts,
 );
 
-export const accountNameSelector = createSelector(
+export const activeAccountIdSelector = createSelector(
+  authSelector,
+  (auth: InitialState) => auth.activeAccountId,
+);
+
+/**
+ * The active account. Resolved by `activeAccountId`, since a hot account and
+ * a Ledger can share an address. Falls back to the first account with the
+ * active public key when the id is empty or stale, i.e. it names an account
+ * with a different address.
+ */
+export const activeAccountSelector = createSelector(
+  activeAccountIdSelector,
   publicKeySelector,
   allAccountsSelector,
-  (publicKey, allAccounts) => {
-    const { name } = allAccounts.find(
+  (activeAccountId, publicKey, allAccounts): Account | undefined => {
+    const byId = allAccounts.find(({ id }) => id === activeAccountId);
+    if (byId && byId.publicKey === publicKey) {
+      return byId;
+    }
+    return allAccounts.find(
       ({ publicKey: accountPublicKey }) => accountPublicKey === publicKey,
-    ) || { publicKey: "", name: "" };
-
-    return name;
+    );
   },
 );
 
+export const accountNameSelector = createSelector(
+  activeAccountSelector,
+  (account) => account?.name ?? "",
+);
+
 export const hardwareWalletTypeSelector = createSelector(
-  publicKeySelector,
-  allAccountsSelector,
-  (publicKey, allAccounts) => {
-    const account = allAccounts.find(
-      ({ publicKey: accountPublicKey }) => accountPublicKey === publicKey,
-    ) || { hardwareWalletType: WalletType.NONE };
-    return account.hardwareWalletType;
-  },
+  activeAccountSelector,
+  (account) => account?.hardwareWalletType ?? WalletType.NONE,
 );
 
 export const accountStatusSelector = createSelector(
@@ -1017,6 +1095,7 @@ export const accountSelector = createSelector(
   (auth: InitialState) => ({
     hasPrivateKey: auth.hasPrivateKey,
     publicKey: auth.publicKey,
+    activeAccountId: auth.activeAccountId,
     applicationState: auth.applicationState,
     allAccounts: auth.allAccounts,
     bipPath: auth.bipPath,

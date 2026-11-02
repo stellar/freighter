@@ -26,6 +26,7 @@ import { SlideupModal } from "popup/components/SlideupModal";
 import { showToast } from "popup/basics/shadcn/Toast";
 import {
   makeAccountActive,
+  activeAccountSelector,
   allAccountsSelector,
   publicKeySelector,
 } from "popup/ducks/accountServices";
@@ -78,6 +79,7 @@ export const AccountSheet = ({
   // Fallback for the error state, where the fetch yields no data but Redux
   // still holds the active account from the last successful load.
   const reduxPublicKey = useSelector(publicKeySelector);
+  const reduxActiveAccount = useSelector(activeAccountSelector);
 
   useEffect(() => {
     if (!isOpen) {
@@ -110,9 +112,14 @@ export const AccountSheet = ({
   const activePublicKey = resolvedData?.publicKey || reduxPublicKey;
   const accountValue = resolvedData?.accountValue;
   const isFetchingTokenPrices = resolvedData?.isFetchingTokenPrices || false;
+  // By id, not address: a hot account and a Ledger can share one.
+  const activeAccountId =
+    reduxActiveAccount?.publicKey === activePublicKey
+      ? reduxActiveAccount.id
+      : allAccounts.find((account) => account.publicKey === activePublicKey)
+          ?.id || "";
   const activeAccountName =
-    allAccounts.find((account) => account.publicKey === activePublicKey)
-      ?.name || "";
+    allAccounts.find((account) => account.id === activeAccountId)?.name || "";
 
   const copyAddress = async () => {
     try {
@@ -147,7 +154,7 @@ export const AccountSheet = ({
         content: (
           <RenameWallet
             allAccounts={allAccounts}
-            publicKey={renameKey}
+            accountId={renameKey}
             onSubmit={() => fetchData(true)}
             onClose={() => setBody("list")}
           />
@@ -267,7 +274,7 @@ export const AccountSheet = ({
               <button
                 className="AccountSheet__identity__action"
                 onClick={() => {
-                  setRenameKey(activePublicKey);
+                  setRenameKey(activeAccountId);
                   setBody("rename");
                 }}
                 data-testid="wallets-header-edit-name"
@@ -290,15 +297,15 @@ export const AccountSheet = ({
               </Notification>
             ) : (
               allAccounts.map(
-                ({ publicKey, name, imported, hardwareWalletType }) => {
-                  const isSelected = activePublicKey === publicKey;
+                ({ id, publicKey, name, imported, hardwareWalletType }) => {
+                  const isSelected = activeAccountId === id;
                   const totalValueUsd = accountValue
                     ? accountValue[publicKey]
                     : "";
 
                   return (
                     <WalletRow
-                      key={publicKey}
+                      key={id}
                       isFetchingTokenPrices={isFetchingTokenPrices}
                       accountName={name}
                       accountValue={totalValueUsd}
@@ -306,8 +313,8 @@ export const AccountSheet = ({
                       hardwareWalletType={hardwareWalletType}
                       publicKey={publicKey}
                       isSelected={isSelected}
-                      onClick={async (publicKey) => {
-                        await dispatch(makeAccountActive(publicKey));
+                      onClick={async () => {
+                        await dispatch(makeAccountActive({ id }));
                         dispatch(
                           clearBalancesForAccount({
                             publicKey,

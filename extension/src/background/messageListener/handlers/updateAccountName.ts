@@ -6,10 +6,7 @@ import {
   allAccountsSelector,
   updateAccountName as updateAccountNameAction,
 } from "background/ducks/session";
-import {
-  addAccountName,
-  findAccountByPublicKey,
-} from "background/helpers/account";
+import { addAccountName, findAccountById } from "background/helpers/account";
 
 export const updateAccountName = async ({
   request,
@@ -20,18 +17,16 @@ export const updateAccountName = async ({
   localStore: DataStorageAccess;
   sessionStore: Store;
 }) => {
-  const { accountName, publicKey } = request;
+  const { accountName, id } = request;
 
-  // Resolve before touching anything: an unknown key throws and leaves both
-  // the session and the stored names as they were.
-  const { id } = findAccountByPublicKey(
-    allAccountsSelector(sessionStore.getState()),
-    publicKey,
-  );
+  // Resolve by id, never by public key: two accounts can share an address.
+  // An unknown id throws and leaves both the session and the stored names as
+  // they were.
+  findAccountById(allAccountsSelector(sessionStore.getState()), id);
 
   await addAccountName({ keyId: id, accountName, localStore });
   sessionStore.dispatch(
-    updateAccountNameAction({ updatedAccountName: accountName, publicKey }),
+    updateAccountNameAction({ updatedAccountName: accountName, id }),
   );
 
   return {

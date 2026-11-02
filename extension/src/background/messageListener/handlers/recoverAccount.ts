@@ -10,7 +10,7 @@ import {
   publicKeySelector,
   reset,
 } from "background/ducks/session";
-import { getKeyIdList } from "background/helpers/account";
+import { getKeyIdList, getActiveAccountId } from "background/helpers/account";
 import {
   ACCOUNT_NAME_LIST_ID,
   APPLICATION_ID,
@@ -193,6 +193,7 @@ export const recoverAccount = async ({
   return {
     allAccounts: allAccountsSelector(currentState),
     publicKey: publicKeySelector(currentState),
+    activeAccountId: await getActiveAccountId({ localStore }),
     applicationState: (await localStore.getItem(APPLICATION_ID)) || "",
     hasPrivateKey: await hasPrivateKeySelector(currentState),
     error,

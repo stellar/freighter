@@ -11,7 +11,7 @@ import {
   buildHasPrivateKeySelector,
   publicKeySelector,
 } from "background/ducks/session";
-import { getBipPath } from "background/helpers/account";
+import { getBipPath, getActiveAccountId } from "background/helpers/account";
 
 export const loadAccount = async ({
   localStore,
@@ -42,6 +42,7 @@ export const loadAccount = async ({
   return {
     hasPrivateKey: await hasPrivateKeySelector(currentState),
     publicKey: publicKeySelector(currentState),
+    activeAccountId: await getActiveAccountId({ localStore }),
     applicationState: (await localStore.getItem(APPLICATION_ID)) || "",
     allAccounts: allAccountsSelector(currentState),
     bipPath: await getBipPath({ localStore }),
