@@ -15,7 +15,11 @@ import {
   mockStorageApi,
   MockBrowserAlarm,
 } from "background/messageListener/helpers/test-helpers";
-import { KEY_ID_LIST, TEMPORARY_STORE_ID } from "constants/localStorageTypes";
+import {
+  KEY_ID,
+  KEY_ID_LIST,
+  TEMPORARY_STORE_ID,
+} from "constants/localStorageTypes";
 
 // `webextension-polyfill` is mocked to undefined globally; give the
 // `isFromExtensionPage` check enough of `browser.runtime` to recognize our
@@ -168,5 +172,30 @@ describe("SHOW_BACKUP_PHRASE", () => {
 
   it("refuses a sender that isn't one of our pages", async () => {
     expect(await showPhrase(contentScript)).toEqual({ error: "Unauthorized" });
+  });
+
+  describe("while a hardware account is active", () => {
+    // A Ledger account's key id has no keystore to check a password against.
+    beforeEach(async () => {
+      const hwKeyId = `hw:${Keypair.random().publicKey()}`;
+      const keyIdList = await mockDataStorage.getItem(KEY_ID_LIST);
+      await mockDataStorage.setItem(KEY_ID_LIST, [...keyIdList, hwKeyId]);
+      await mockDataStorage.setItem(KEY_ID, hwKeyId);
+    });
+
+    it("returns the phrase for the right password", async () => {
+      expect(await showPhrase()).toEqual({
+        mnemonicPhrase: "mocked mnemonic phrase",
+      });
+    });
+
+    it("refuses a wrong password", async () => {
+      const result = await send({
+        type: SERVICE_TYPES.SHOW_BACKUP_PHRASE,
+        password: "wrong-password",
+      });
+      expect(result).toHaveProperty("error");
+      expect(result).not.toHaveProperty("mnemonicPhrase");
+    });
   });
 });
