@@ -40,14 +40,27 @@ import { decodeString, encodeObject } from "helpers/urls";
   ROLLBACK POSTURE. This migration only adds keys (`accountProvenance`,
   `pendingAttribution`, and at unlock `secretSources`, `pinnedSourceId` and
   `derivationIndices`). It never deletes a key and never rewrites a keystore.
-  `keyDerivationNumber` is deliberately kept: a downgraded build derives its
-  next account from it. The only in-place writes are the two legacy repairs
-  below, which restore the shape the old code itself expects (a string
-  `keyId`, a populated `keyIdList`). A downgraded build therefore reads the
-  same keystores, ids, names and counter it wrote, and ignores the new keys.
-  Accounts it adds carry no provenance and the storage version stays at
-  5.50.0, so the install pass runs on every upgrade, not only the first: on
-  the next upgrade it queues those accounts for the unlock pass.
+  The only in-place writes are the two legacy repairs below, which restore
+  the shape the old code itself expects (a string `keyId`, a populated
+  `keyIdList`). A downgraded build opens the migrated storage and ignores the
+  new keys.
+
+  Rollback is still unsupported once the multi-source code has written to the
+  wallet. The old build breaks in these ways:
+  - Nothing maintains `keyDerivationNumber` any more. On a wallet created
+    here the old Add account throws, and on a migrated or recovered wallet it
+    re-derives an index that is already in use.
+  - An import's keystore no longer carries the phrase, so while one is active
+    the old build has no phrase: Add account throws, Show Recovery Phrase is
+    blank and backend calls go out without a user id.
+  - A reset or recover on the old build leaves the v2 keys behind, and the
+    next upgrade reads them as stale sources, pins and index sets.
+  A bad release is fixed by shipping forward, not by republishing the old
+  build.
+
+  Accounts an old build adds carry no provenance, and the storage version
+  stays at 5.50.0, so the install pass runs on every upgrade, not only the
+  first: on the next upgrade it queues those accounts for the unlock pass.
 
   LINKED FLAGS. The migration writes no linked state. A source with no linked
   entry is unlinked by definition, so every migrated source is unlinked and the
