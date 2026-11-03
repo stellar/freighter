@@ -32,6 +32,7 @@ import {
   trackEarnSwapCompleted,
   trackEarnTokenSelected,
 } from "popup/metrics/earn";
+import { showToast } from "popup/basics/shadcn/Toast";
 import { getFailureReasonCode } from "popup/components/earn/helpers/failureReasonCode";
 import { EarnIntro } from "popup/components/earn/EarnIntro";
 import { useEarnIntroSeen } from "popup/components/earn/EarnIntro/hooks/useEarnIntroSeen";
@@ -46,7 +47,6 @@ import {
   saveDestinationTokenDetails,
 } from "popup/ducks/transactionSubmission";
 import { Notification } from "@stellar/design-system";
-import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 
 import "./styles.scss";
@@ -341,18 +341,15 @@ export const Earn = () => {
             setSwapTarget(null);
             dispatch(saveDestinationAsset(""));
             dispatch(saveDestinationTokenDetails(null));
-            toast.custom(
-              () => (
-                <Notification
-                  variant="success"
-                  title={t("{{from}} has been swapped to {{to}}", {
-                    from: fromCode,
-                    to: toCode,
-                  })}
-                />
-              ),
-              { id: "earn-swap-success" },
-            );
+            showToast(() => (
+              <Notification
+                variant="success"
+                title={t("{{from}} has been swapped to {{to}}", {
+                  from: fromCode,
+                  to: toCode,
+                })}
+              />
+            ));
             // The picker stayed mounted underneath, so it needs an explicit
             // nudge to pick up the balance the swap just created.
             setPickerRefreshKey((key) => key + 1);

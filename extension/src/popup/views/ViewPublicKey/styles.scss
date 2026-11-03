@@ -82,7 +82,7 @@
   // shared app header hard-codes its title at 14px, which is 2px short.
   &__title {
     font-size: pxToRem(16);
-    font-weight: var(--font-weight-medium);
+    font-weight: var(--sds-fw-medium);
     line-height: pxToRem(24);
     color: var(--sds-clr-gray-12);
   }

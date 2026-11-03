@@ -427,7 +427,11 @@ export const EarnAmount = ({ goBack, onConfirm }: EarnAmountProps) => {
         </div>
       </View.Content>
 
-      <SlideupModal isModalOpen={isReviewOpen} setIsModalOpen={setIsReviewOpen}>
+      <SlideupModal
+        isModalOpen={isReviewOpen}
+        setIsModalOpen={setIsReviewOpen}
+        ariaLabel={t("Review deposit")}
+      >
         <EarnReview
           pool={pool}
           assetCode={selected?.code || ""}
@@ -460,6 +464,7 @@ export const EarnAmount = ({ goBack, onConfirm }: EarnAmountProps) => {
       <SlideupModal
         isModalOpen={isPoolSheetOpen}
         setIsModalOpen={setIsPoolSheetOpen}
+        ariaLabel={pool ? pool.name || t("Blend pool") : undefined}
       >
         {pool ? (
           <PoolDetailsSheet
@@ -474,6 +479,7 @@ export const EarnAmount = ({ goBack, onConfirm }: EarnAmountProps) => {
       <SlideupModal
         isModalOpen={isFeeSheetOpen}
         setIsModalOpen={setIsFeeSheetOpen}
+        ariaLabel={t("You need some XLM for the network fee")}
       >
         <NetworkFeeSheet
           canBuyXlm={isMainnet(data.networkDetails)}

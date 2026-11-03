@@ -85,8 +85,6 @@ import { EditSlippage } from "./EditSlippage";
 
 import "./styles.scss";
 
-// Canonical "zero" values for the swap amount and its USD equivalent.
-
 interface SwapAmountProps {
   inputType: InputType;
   setInputType: (type: InputType) => void;

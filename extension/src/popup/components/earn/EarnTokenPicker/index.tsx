@@ -283,6 +283,11 @@ export const EarnTokenPicker = ({
             setNotEnoughToken(null);
           }
         }}
+        ariaLabel={
+          notEnoughToken
+            ? t("Not enough {{code}}", { code: notEnoughToken.code })
+            : undefined
+        }
       >
         {notEnoughToken && notEnoughVariant ? (
           <NotEnoughTokenSheet
