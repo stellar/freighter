@@ -20,20 +20,15 @@
   }
 }
 
-// The blurred green ellipse behind the Blend mark. In the mock its centre sits
-// 40px above the logo's centre, which lands it here: 24 (top padding) + 24
-// (close icon) + 24 (header gap) + 24 (content offset) + 44 (half the logo)
-// - 40. Kept as the exported asset rather than a CSS gradient so the falloff
-// matches the design's 100px gaussian exactly.
+// The blurred green glow behind the Blend mark (see EarnGlow). In the mock its
+// centre sits 40px above the logo's centre, which lands it here: 24 (top
+// padding) + 24 (close icon) + 24 (header gap) + 24 (content offset) + 44
+// (half the logo) - 40.
 .EarnIntro__glow {
   position: absolute;
   left: 50%;
   top: pxToRem(100);
   transform: translate(-50%, -50%);
-  width: pxToRem(664);
-  height: pxToRem(664);
-  max-width: none;
-  pointer-events: none;
   z-index: 0;
 }
 

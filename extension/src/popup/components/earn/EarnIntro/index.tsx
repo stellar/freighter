@@ -3,7 +3,7 @@ import { Button, Heading, Icon, Text } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
 import BlendLogo from "popup/assets/blend-logo.svg";
-import EarnGlow from "popup/assets/earn-glow.svg";
+import { EarnGlow } from "popup/components/earn/EarnGlow";
 
 import "./styles.scss";
 
@@ -43,7 +43,7 @@ export const EarnIntro = ({ onStart, onClose }: EarnIntroProps) => {
   return (
     <div className="EarnIntro" data-testid="earn-intro">
       {/* Sits outside __content, which scrolls and would clip it. */}
-      <img className="EarnIntro__glow" src={EarnGlow} alt="" />
+      <EarnGlow className="EarnIntro__glow" />
 
       <div className="EarnIntro__header">
         <button

@@ -12,23 +12,19 @@
   padding: pxToRem(24);
   // Both axes, deliberately. The glow is absolutely positioned and its box runs
   // past the bottom edge; with only `overflow-x: hidden`, `overflow-y` computes
-  // to `auto` and that bleed becomes 217px of phantom scroll under the pinned
+  // to `auto` and that bleed becomes phantom scroll under the pinned
   // disclaimer. Nothing here scrolls but `&__content`.
   overflow: hidden;
 
-  // The same ellipse EarnIntro uses, at the design's 0.7 alpha and anchored to
-  // the bottom of the screen instead of the top: its centre sits 115px above
-  // the frame's safe bottom in the mock.
+  // The same glow EarnIntro uses (see EarnGlow), at the design's 0.7 alpha and
+  // anchored to the bottom of the screen instead of the top: its centre sits
+  // 115px above the frame's safe bottom in the mock.
   &__glow {
     position: absolute;
     left: 50%;
     bottom: pxToRem(115);
     transform: translate(-50%, 50%);
-    width: pxToRem(664);
-    height: pxToRem(664);
-    max-width: none;
     opacity: 0.7;
-    pointer-events: none;
     z-index: 0;
   }
 

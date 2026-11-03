@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { Navigate } from "react-router-dom";
 
 import BlendLogo from "popup/assets/blend-logo.svg";
-import EarnGlow from "popup/assets/earn-glow.svg";
+import { EarnGlow } from "popup/components/earn/EarnGlow";
 import { BalanceRow } from "popup/components/BalanceRow";
 import { SlideupModal } from "popup/components/SlideupModal";
 import { RequestState } from "constants/request";
@@ -78,7 +78,7 @@ const PickerShell = ({
 
   return (
     <div className="EarnTokenPicker" data-testid={dataTestId}>
-      <img className="EarnTokenPicker__glow" src={EarnGlow} alt="" />
+      <EarnGlow className="EarnTokenPicker__glow" />
 
       <div className="EarnTokenPicker__header">
         <button

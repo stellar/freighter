@@ -33,6 +33,13 @@
     border-right: 0;
   }
 
+  // `View__inset--scroll-shadows` paints the page colour (Base/0), which in
+  // this gray-01 sheet is a black slab in dark mode and a white one in light.
+  // The insets take the sheet's colour instead, as they do in SlideupModal.
+  .View__inset {
+    background-color: var(--sds-clr-gray-01);
+  }
+
   // Follow whichever inset paints first rather than assuming a header: the
   // submitting/success step renders only View.Content, and `--scroll-shadows`
   // gives that inset an opaque background that would otherwise square off the
