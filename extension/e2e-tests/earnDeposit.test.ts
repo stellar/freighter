@@ -56,7 +56,12 @@
 import { test, expect } from "./test-fixtures";
 import { Page } from "@playwright/test";
 import { loginToTestAccount, switchToMainnet } from "./helpers/login";
-import { stubBlendEarn, stubEarnSimulateTx } from "./helpers/stubs";
+import { expectHomeReady, goToSettings } from "./helpers/network";
+import {
+  stubBlendEarn,
+  stubEarnDepositFlag,
+  stubEarnSimulateTx,
+} from "./helpers/stubs";
 
 /** Home -> Earn, through the first-run interstitial. */
 async function openEarnFlow(page: Page) {
@@ -76,6 +81,7 @@ test("Earn tile opens the interstitial once, then goes straight to the picker", 
 }) => {
   test.slow();
 
+  await stubEarnDepositFlag(context);
   await loginToTestAccount({
     page,
     extensionId,
@@ -116,6 +122,7 @@ test("token picker splits held from supported and shows each rate", async ({
 }) => {
   test.slow();
 
+  await stubEarnDepositFlag(context);
   await loginToTestAccount({
     page,
     extensionId,
@@ -159,6 +166,7 @@ test("zero-balance EURC offers swap and transfer but not buy", async ({
 }) => {
   test.slow();
 
+  await stubEarnDepositFlag(context);
   await loginToTestAccount({
     page,
     extensionId,
@@ -188,6 +196,7 @@ test("zero-balance USDC offers buy, swap and transfer", async ({
 }) => {
   test.slow();
 
+  await stubEarnDepositFlag(context);
   await loginToTestAccount({
     page,
     extensionId,
@@ -217,6 +226,7 @@ test("depositing a held token reaches the success screen", async ({
 }) => {
   test.slow();
 
+  await stubEarnDepositFlag(context);
   await loginToTestAccount({
     page,
     extensionId,
@@ -282,6 +292,7 @@ test("pool details sheet shows market stats including Backstop", async ({
 }) => {
   test.slow();
 
+  await stubEarnDepositFlag(context);
   await loginToTestAccount({
     page,
     extensionId,
@@ -324,6 +335,7 @@ test("Earn tile is hidden on a custom network with no allowlisted pool", async (
   // Both stock networks the selector offers — Testnet (where login lands) and
   // Mainnet — have a BLEND_FIXED_POOL_IDS entry, so neither exercises the gate.
   // A custom network is the only reachable one without an allowlisted pool.
+  await stubEarnDepositFlag(context);
   await loginToTestAccount({
     page,
     extensionId,
@@ -333,9 +345,8 @@ test("Earn tile is hidden on a custom network with no allowlisted pool", async (
 
   await expect(page.getByTestId("nav-link-earn")).toBeVisible();
 
-  await page.getByTestId("account-options-dropdown").click();
-  await page.getByText("Settings").click();
-  await page.getByText("Network").click();
+  await goToSettings(page);
+  await page.getByTestId("settings-network-link").click();
   await page.getByText("Add custom network").click();
   await page.getByTestId("NetworkForm__networkName").fill("test standalone");
   await page
@@ -348,22 +359,20 @@ test("Earn tile is hidden on a custom network with no allowlisted pool", async (
     .getByTestId("NetworkForm__networkPassphrase")
     .fill("Test SDF Network ; September 2015");
   await page.getByTestId("NetworkForm__add").click();
-  await page.getByTestId("BackButton").click();
-  await page.getByTestId("BackButton").click();
-
-  await expect(page.getByTestId("account-view")).toBeVisible({
-    timeout: 30000,
-  });
 
   // Adding a network does not select it, so switch to it explicitly — the tile
   // is gated on the ACTIVE network, and without this the account is still on
-  // Testnet, which does have an allowlisted pool.
-  await page.getByTestId("network-selector-open").click();
-  await page.getByText("test standalone").click();
-  await expect(page.getByTestId("network-selector-open")).toContainText(
-    "test standalone",
-    { timeout: 30000 },
-  );
+  // Testnet, which does have an allowlisted pool. The form returns to Network
+  // settings, whose select is the only place that names the active network.
+  const networkSelect = page.getByTestId("network-settings-select");
+  await networkSelect.selectOption("test standalone");
+  await expect(networkSelect).toHaveValue("test standalone");
+
+  // Back out to Home: Network -> Settings -> Home.
+  await page.getByTestId("BackButton").click();
+  await expect(page.getByTestId("settings-network-link")).toBeVisible();
+  await page.getByTestId("BackButton").click();
+  await expectHomeReady(page);
 
   // Send stays available everywhere, so it pins that the action row rendered at
   // all — otherwise a blank row would satisfy the Earn assertion on its own.

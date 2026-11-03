@@ -3738,6 +3738,44 @@ export const stubEarnSimulateTx = async (page: Page) => {
 };
 
 /**
+ * Turns on the `earn_deposit` Amplitude flag, which gates the Home Earn tile
+ * and defaults to off. Call it BEFORE `loginToTestAccount`.
+ *
+ * A route cannot do this: neither `page.route` nor `context.route` sees the
+ * test page's own flags request, the same blind spot `stubSacViaInitScript`
+ * documents for the popup's early fetches. The request reaches the real
+ * Experiment endpoint, which rejects the test deployment key, and the flag
+ * stays off, hiding the tile from every Earn spec. An init script runs before
+ * the bundle, so the SDK, which binds `fetch` when its module loads, picks up
+ * this wrapper. It answers only the flags request.
+ */
+export const stubEarnDepositFlag = async (context: BrowserContext) => {
+  await context.addInitScript(() => {
+    const origFetch = window.fetch.bind(window);
+    window.fetch = (input: RequestInfo | URL, init?: RequestInit) => {
+      const url =
+        typeof input === "string"
+          ? input
+          : input instanceof URL
+            ? input.href
+            : input.url;
+      if (url.includes("/sdk/v2/vardata")) {
+        return Promise.resolve(
+          new Response(
+            JSON.stringify({ earn_deposit: { key: "on", value: "on" } }),
+            {
+              status: 200,
+              headers: { "Content-Type": "application/json" },
+            },
+          ),
+        );
+      }
+      return origFetch(input, init);
+    };
+  });
+};
+
+/**
  * Stubs the three Blend endpoints the Earn flow reads.
  *
  * Asset ids are the real mainnet SACs so `getBalanceByKey` resolves them the
@@ -3782,16 +3820,6 @@ export const stubBlendEarn = async (
     // supply-side BLND stream, so this mirrors what the backend returns.
     emissions_supply_apr: null,
     supplied_usd: 50050000,
-  });
-
-  // The Earn tile is gated on the `earn_deposit` Amplitude flag, which defaults
-  // to off. Serve it as "on" from the Experiment vardata endpoint so the entry
-  // point renders. Context-scoped like the rest of the Earn stubs so it is in
-  // place before the popup's first flag fetch.
-  await context.route(AMPLITUDE_EXPERIMENT_VARDATA_ROUTE, async (route) => {
-    await route.fulfill({
-      json: { earn_deposit: { key: "on", value: "on" } },
-    });
   });
 
   await context.route("**/protocols/blend/earn-options**", async (route) => {
