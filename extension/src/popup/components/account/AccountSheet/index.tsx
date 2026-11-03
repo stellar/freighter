@@ -198,7 +198,7 @@ export const AccountSheet = ({
               className="AccountSheet__group__toggle"
               onClick={() => toggleGroup(group.key)}
               aria-expanded={isExpanded}
-              aria-controls={listId}
+aria-controls={isExpanded ? listId : undefined}
               data-testid="account-sheet-group-toggle"
             >
               <span>{group.label}</span>
