@@ -97,7 +97,8 @@
   }
 
   // 34px on Default/Background/Primary with a 14px glyph (Figma
-  // I9448:29162;4603:1304), where this was a 28px circle on gray-05.
+  // I9448:29162;4603:1304), where this was a 28px circle on gray-05. Varial
+  // pages paint that as base-00, and this card only sits on a page.
   &__chevron {
     display: flex;
     align-items: center;
@@ -106,7 +107,7 @@
     width: pxToRem(34);
     height: pxToRem(34);
     border-radius: 50%;
-    background: var(--sds-clr-gray-01);
+    background: var(--sds-clr-base-00);
     color: var(--sds-clr-gray-11);
 
     svg {

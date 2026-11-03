@@ -19,7 +19,7 @@ import { PoolDetailsSheet } from "popup/components/earn/PoolDetailsSheet";
 import { RequestState } from "constants/request";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { newTabHref } from "helpers/urls";
-import { openTab } from "popup/helpers/navigate";
+import { closeWindow, openTab } from "popup/helpers/navigate";
 import { getAssetFromCanonical, isMainnet } from "helpers/stellar";
 import {
   cleanAmount,
@@ -128,7 +128,7 @@ export const EarnAmount = ({ goBack, onConfirm }: EarnAmountProps) => {
   if (state.data?.type === AppDataType.REROUTE) {
     if (state.data.shouldOpenTab) {
       openTab(newTabHref(state.data.routeTarget));
-      window.close();
+      closeWindow();
     }
     return <Navigate to={state.data.routeTarget} replace />;
   }

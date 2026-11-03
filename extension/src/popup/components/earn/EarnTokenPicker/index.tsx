@@ -10,7 +10,7 @@ import { SlideupModal } from "popup/components/SlideupModal";
 import { RequestState } from "constants/request";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { newTabHref } from "helpers/urls";
-import { openTab } from "popup/helpers/navigate";
+import { closeWindow, openTab } from "popup/helpers/navigate";
 import { NO_FIAT_VALUE, formatAmount } from "popup/helpers/formatters";
 import { trackEarnBalanceInsufficientShown } from "popup/metrics/earn";
 
@@ -148,7 +148,7 @@ export const EarnTokenPicker = ({
   if (state.data?.type === AppDataType.REROUTE) {
     if (state.data.shouldOpenTab) {
       openTab(newTabHref(state.data.routeTarget));
-      window.close();
+      closeWindow();
     }
     return <Navigate to={state.data.routeTarget} replace />;
   }
