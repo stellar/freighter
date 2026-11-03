@@ -1,38 +1,37 @@
 @use "../../../styles/utils.scss" as *;
 
+// Figma's tab row: Text/MD/600 labels 16px apart, primary when active and
+// Gray/9 when not, with no underline.
 .AccountTabs {
   display: flex;
-  gap: pxToRem(12px);
-  // Flush: Figma's tab strip owns no padding. The 24px above belongs to the
-  // action tiles' padding-bottom, the 24px below to the list/empty-state that
-  // follows. Padding here double-counted against both.
+  // Flush: the 16px above belongs to the tiles block, the 8px below to the
+  // list or empty card that follows.
   padding: 0;
   align-items: center;
   position: relative;
 
   &__tabs {
     display: flex;
-    gap: pxToRem(8px);
+    gap: pxToRem(16px);
   }
 
   &__tab-item {
     align-items: center;
-    gap: pxToRem(4px);
-    color: var(--sds-clr-gray-11);
+    color: var(--sds-clr-gray-09);
     cursor: pointer;
     display: flex;
-    font-size: pxToRem(14px);
-    line-height: pxToRem(20px);
+    font-size: pxToRem(16px);
+    line-height: pxToRem(24px);
     font-weight: var(--sds-fw-semi-bold);
-    padding: pxToRem(12px) pxToRem(10px);
-    border-bottom: 2px solid transparent;
+    padding: pxToRem(8px) 0;
 
     &:hover {
-      color: var(--sds-clr-gray-12);
+      color: var(--sds-clr-gray-11);
     }
-    &--active {
-      color: var(--sds-clr-lilac-11);
-      border-bottom: 2px solid var(--sds-clr-lilac-09);
+
+    &--active,
+    &--active:hover {
+      color: var(--sds-clr-gray-12);
     }
   }
 }

@@ -5,7 +5,7 @@ import {
   TransactionBuilder,
   xdr,
 } from "stellar-sdk";
-import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+import { PayloadAction, createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
 import {
   signFreighterTransaction as internalSignFreighterTransaction,
@@ -29,6 +29,8 @@ import { NETWORKS, NetworkDetails } from "@shared/constants/stellar";
 import { ConfigurableWalletType } from "@shared/constants/hardwareWallet";
 import { isCustomNetwork } from "@shared/helpers/stellar";
 import { BlockaidWarning, SecurityLevel } from "popup/constants/blockaid";
+import { SwapSource } from "popup/constants/swap";
+import { DEFAULT_TX_TIMEOUT } from "popup/constants/transaction";
 
 import { encodeSep53Message, getCanonicalFromAsset } from "helpers/stellar";
 import { INDEXER_URL } from "@shared/constants/mercury";
@@ -278,8 +280,11 @@ export const signWithHardwareWallet = createAsyncThunk<
 
         // A Buffer does not survive the JSON serialization that
         // `runtime.sendMessage` applies on the way to the background script, so
-        // the signature travels as base64 and is decoded there.
-        return signature.toString("base64");
+        // the signature travels as base64 and is decoded there. Encode via
+        // xdr.encodeBytes: as of SDK v17 the signature may be a plain
+        // Uint8Array, whose `toString("base64")` silently yields
+        // comma-joined decimals.
+        return xdr.encodeBytes(signature, "base64");
       } catch (e) {
         const message = e instanceof Error ? e.message : JSON.stringify(e);
         return thunkApi.rejectWithValue({ errorMessage: message });
@@ -304,7 +309,7 @@ export const signWithHardwareWallet = createAsyncThunk<
     }
 
     try {
-      const tx = TransactionBuilder.fromXDR(transactionXDR, networkPassphrase);
+      const tx = TransactionBuilder.fromXdr(transactionXDR, networkPassphrase);
 
       const signature = await hardwareSign[walletType]({
         bipPath,
@@ -320,7 +325,7 @@ export const signWithHardwareWallet = createAsyncThunk<
 
       tx.signatures.push(decoratedSignature);
 
-      return tx.toXDR();
+      return tx.toXdr();
     } catch (e) {
       const message = e instanceof Error ? e.message : JSON.stringify(e);
       return thunkApi.rejectWithValue({ errorMessage: message });
@@ -358,9 +363,14 @@ export const removeTokenId = createAsyncThunk<
     try {
       await internalRemoveTokenId({ activePublicKey, contractId, network });
     } catch (e) {
+      const message = e instanceof Error ? e.message : JSON.stringify(e);
       console.error(e);
-      rejectWithValue({ errorMessage: e as string });
+      // Must be returned: a bare call still resolves the thunk, so callers see
+      // removeTokenId/fulfilled for a removal that never happened.
+      return rejectWithValue({ errorMessage: message });
     }
+
+    return undefined;
   },
 );
 
@@ -506,7 +516,6 @@ interface TransactionData {
   destinationAsset: string;
   destinationDecimals?: number;
   destinationAmount: string;
-  destinationIcon: string;
   destinationTokenDetails: DestinationTokenDetails | null;
   path: string[];
   allowedSlippage: string;
@@ -526,6 +535,9 @@ interface TransactionData {
   // Persisted in Redux so it survives SendAmount unmount/remount (e.g. when
   // the user navigates to pick a recipient and returns).
   manualTransactionFee: string | null;
+  // Analytics-only: where the swap flow was entered from (`source` on
+  // swap.completed). Reset with the rest of the submission on Swap mount.
+  swapSource: SwapSource | null;
 }
 
 interface HardwareWalletData {
@@ -534,12 +546,6 @@ interface HardwareWalletData {
   shouldSubmit: boolean;
 }
 
-export enum AssetSelectType {
-  MANAGE = "MANAGE",
-  REGULAR = "REGULAR",
-  PATH_PAY = "PATH_PAY",
-  SWAP = "SWAP",
-}
 interface InitialState {
   submitStatus: ActionStatus;
   hardwareWalletData: HardwareWalletData;
@@ -558,10 +564,6 @@ interface InitialState {
     preparedTransaction: string | null;
   };
   soroswapTokens: SoroswapToken[];
-  assetSelect: {
-    type: AssetSelectType;
-    isSource: boolean;
-  };
   memoRequiredAccounts: MemoRequiredAccount[];
 }
 
@@ -578,12 +580,11 @@ export const initialState: InitialState = {
     recipientName: "",
     federationAddress: "",
     transactionFee: "",
-    transactionTimeout: 180,
+    transactionTimeout: DEFAULT_TX_TIMEOUT,
     memo: "",
     memoType: "",
     destinationAsset: "",
     destinationAmount: "",
-    destinationIcon: "",
     destinationTokenDetails: null,
     path: [],
     allowedSlippage: "2",
@@ -600,6 +601,7 @@ export const initialState: InitialState = {
     balancesToMigrate: [] as BalanceToMigrate[],
     isSoroswap: false,
     manualTransactionFee: null,
+    swapSource: null,
   },
   transactionSimulation: {
     response: null,
@@ -611,10 +613,6 @@ export const initialState: InitialState = {
     shouldSubmit: true,
   },
   soroswapTokens: [],
-  assetSelect: {
-    type: AssetSelectType.MANAGE,
-    isSource: true,
-  },
   memoRequiredAccounts: [],
 };
 
@@ -625,6 +623,19 @@ const transactionSubmissionSlice = createSlice({
     resetSubmission: () => initialState,
     resetSubmitStatus: (state) => {
       state.submitStatus = initialState.submitStatus;
+    },
+    /**
+     * Puts the flow into its failed state without a submission having been
+     * attempted. `submitFreighterTransaction.rejected` covers the ordinary
+     * case, and `signFreighterTransaction.rejected` covers a signature that
+     * threw — but a sign that resolves *fulfilled* with an empty payload, and
+     * a hardware flow that arrives with no signed XDR, dispatch neither, so
+     * without this the view stays on ActionStatus.PENDING and the user is
+     * stranded on the sending spinner instead of reaching SubmitFail.
+     */
+    setSubmitError: (state, action: { payload: ErrorMessage | undefined }) => {
+      state.submitStatus = ActionStatus.ERROR;
+      state.error = action.payload;
     },
     clearSwapQuoteExpired: (state) => {
       state.isSwapQuoteExpired = false;
@@ -671,11 +682,11 @@ const transactionSubmissionSlice = createSlice({
     saveDestinationAsset: (state, action) => {
       state.transactionData.destinationAsset = action.payload;
     },
-    saveDestinationIcon: (state, action) => {
-      state.transactionData.destinationIcon = action.payload;
-    },
     saveIsSoroswap: (state, action) => {
       state.transactionData.isSoroswap = action.payload;
+    },
+    saveSwapSource: (state, action: PayloadAction<SwapSource | null>) => {
+      state.transactionData.swapSource = action.payload;
     },
     saveAllowedSlippage: (state, action) => {
       state.transactionData.allowedSlippage = action.payload;
@@ -723,12 +734,6 @@ const transactionSubmissionSlice = createSlice({
       state.hardwareWalletData.status = ShowOverlayStatus.IDLE;
       state.hardwareWalletData.transactionXDR = "";
       state.hardwareWalletData.shouldSubmit = true;
-    },
-    saveAssetSelectType: (state, action) => {
-      state.assetSelect.type = action.payload;
-    },
-    saveAssetSelectSource: (state, action) => {
-      state.assetSelect.isSource = action.payload;
     },
     saveIsMergeSelected: (state, action) => {
       state.transactionData.isMergeSelected = action.payload;
@@ -860,6 +865,7 @@ const transactionSubmissionSlice = createSlice({
 export const {
   resetSubmission,
   resetSubmitStatus,
+  setSubmitError,
   clearSwapQuoteExpired,
   saveDestination,
   saveRecipientName,
@@ -872,8 +878,8 @@ export const {
   saveTransactionTimeout,
   saveMemoAndType,
   saveDestinationAsset,
-  saveDestinationIcon,
   saveIsSoroswap,
+  saveSwapSource,
   saveAllowedSlippage,
   saveIsToken,
   saveIsCollectible,
@@ -882,8 +888,6 @@ export const {
   startHwConnect,
   startHwSign,
   closeHwOverlay,
-  saveAssetSelectType,
-  saveAssetSelectSource,
   saveIsMergeSelected,
   saveBalancesToMigrate,
   saveSwapBestPath,

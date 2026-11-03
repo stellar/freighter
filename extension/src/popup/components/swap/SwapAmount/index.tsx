@@ -10,6 +10,7 @@ import { Button, Icon, Notification } from "@stellar/design-system";
 
 import { View } from "popup/basics/layout/View";
 import { SubviewHeader } from "popup/components/SubviewHeader";
+import { useReviewSettingsHandoff } from "popup/helpers/useReviewSettingsHandoff";
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
 import {
   saveAmount,
@@ -30,21 +31,26 @@ import {
 } from "popup/helpers/formatters";
 import { useGetSwapAmountData } from "./hooks/useGetSwapAmountData";
 import { getAssetFromCanonical } from "helpers/stellar";
+import { isNativeAssetId } from "@shared/helpers/assetIdentity";
 import { RequestState } from "constants/request";
 import { Loading } from "popup/components/Loading";
 import { AppDataType } from "helpers/hooks/useGetAppData";
-import { openTab } from "popup/helpers/navigate";
+import { closeWindow, openTab } from "popup/helpers/navigate";
 import { newTabHref } from "helpers/urls";
 import { reRouteOnboarding } from "popup/helpers/route";
 import { getAvailableBalance } from "popup/helpers/soroban";
 import { getBalanceCanonicalKey } from "popup/helpers/balance";
 import { useBlockaidOverrideState } from "popup/helpers/blockaid";
 import { AppDispatch } from "popup/App";
-import { emitMetric } from "helpers/metrics";
+import { emitMetric, emitScreenViewed } from "helpers/metrics";
+import {
+  emitSigningRejected,
+  SigningKind,
+  SigningSource,
+} from "popup/metrics/signing";
 import { InputType } from "helpers/transaction";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { XLM_RESERVE_HELP_URL } from "popup/constants/externalLinks";
-import { LoadingBackground } from "popup/basics/LoadingBackground";
 import { EditSettings } from "popup/components/InternalTransaction/EditSettings";
 import { ReviewTx } from "popup/components/InternalTransaction/ReviewTransaction";
 import {
@@ -205,6 +211,39 @@ export const SwapAmount = ({
   const [isEditingSlippage, setIsEditingSlippage] = useState(false);
   const [isEditingSettings, setIsEditingSettings] = useState(false);
   const [isReviewingTx, setIsReviewingTx] = React.useState(false);
+
+  // True while the review is open, and true once the user approves. See the
+  // equivalent refs in SendAmount.
+  const wasReviewingRef = useRef(false);
+  const skipRejectionRef = useRef(false);
+  const { openSettingsFromReview, closeSettings, returnToReview } =
+    useReviewSettingsHandoff({
+      setIsReviewingTx,
+      setIsEditingSettings,
+      skipRejectionRef,
+    });
+
+  // Reports the `confirm` stage when the review opens, and a rejection when
+  // the user leaves it without approving — see the equivalent effect in
+  // SendAmount for why this is keyed on the open state.
+  useEffect(() => {
+    if (isReviewingTx) {
+      wasReviewingRef.current = true;
+      skipRejectionRef.current = false;
+      emitScreenViewed("swap_confirm", { flow: "swap", step: "confirm" });
+      return;
+    }
+    if (!wasReviewingRef.current) {
+      return;
+    }
+    wasReviewingRef.current = false;
+    if (skipRejectionRef.current) {
+      return;
+    }
+    emitSigningRejected(SigningKind.Transaction, {
+      source: SigningSource.Internal,
+    });
+  }, [isReviewingTx]);
   const [isXlmReserveOpen, setIsXlmReserveOpen] = useState(false);
   // Tracks focus on the sell input so the "Enter an amount" CTA can disable
   // itself while the input is focused. The extension has no virtual keyboard,
@@ -233,7 +272,7 @@ export const SwapAmount = ({
     });
     const needsReserve = shouldShowXlmReservePreflight({
       requiresTrustline: destRequiresTrustline,
-      sourceIsXlm: asset === "native",
+      sourceIsXlm: isNativeAssetId(asset),
       spendableXlm: getAvailableBalance({
         assetCanonical: "native",
         balances: sendData.userBalances.balances,
@@ -354,7 +393,7 @@ export const SwapAmount = ({
   if (swapAmountData.data?.type === AppDataType.REROUTE) {
     if (swapAmountData.data.shouldOpenTab) {
       openTab(newTabHref(swapAmountData.data.routeTarget));
-      window.close();
+      closeWindow();
     }
     return (
       <Navigate
@@ -650,7 +689,9 @@ export const SwapAmount = ({
                     assetCode={srcAsset ? srcAsset.code : ""}
                     assetIcon={assetIcon}
                     assetIcons={
-                      asset && asset !== "native" ? { [asset]: assetIcon } : {}
+                      asset && !isNativeAssetId(asset)
+                        ? { [asset]: assetIcon }
+                        : {}
                     }
                     assetIssuerKey={srcAsset?.issuer}
                     // Carry the sell token's Blockaid verdict onto its pill so a
@@ -780,7 +821,7 @@ export const SwapAmount = ({
                     assetCode={dstAsset ? dstAsset.code : ""}
                     assetIcon={dstAssetIcon}
                     assetIcons={
-                      destinationAsset && destinationAsset !== "native"
+                      destinationAsset && !isNativeAssetId(destinationAsset)
                         ? { [destinationAsset]: dstAssetIcon }
                         : {}
                     }
@@ -862,49 +903,56 @@ export const SwapAmount = ({
           </div>
         </div>
       </View.Content>
-      {isEditingSlippage ? (
-        <>
-          <div className="SlippageWrapper">
-            <EditSlippage onClose={() => setIsEditingSlippage(false)} />
-          </div>
-          <LoadingBackground
-            onClick={() => setIsEditingSlippage(false)}
-            isActive={isEditingSlippage}
+      <SlideupModal
+        isModalOpen={isEditingSlippage}
+        setIsModalOpen={() => setIsEditingSlippage(false)}
+        ariaLabel={t("Allowed Slippage")}
+      >
+        {isEditingSlippage ? (
+          <EditSlippage onClose={() => setIsEditingSlippage(false)} />
+        ) : (
+          <></>
+        )}
+      </SlideupModal>
+      <SlideupModal
+        isModalOpen={isEditingSettings}
+        setIsModalOpen={closeSettings}
+        ariaLabel={t("Settings")}
+      >
+        {isEditingSettings ? (
+          <EditSettings
+            fee={fee}
+            defaultFee={recommendedFee}
+            timeout={transactionData.transactionTimeout}
+            congestion={networkCongestion}
+            onClose={closeSettings}
+            onSubmit={async ({
+              fee,
+              timeout,
+            }: {
+              fee: string;
+              timeout: number;
+            }) => {
+              dispatch(saveTransactionFee(fee));
+              dispatch(saveTransactionTimeout(timeout));
+              setIsEditingSettings(false);
+              // Rebuild the quote with the new fee before the review comes
+              // back, so Confirm never submits the old XDR.
+              await fetchSimulationData({
+                amount,
+                destinationRate: dstAssetPrice,
+              });
+              returnToReview();
+            }}
           />
-        </>
-      ) : null}
-      {isEditingSettings ? (
-        <>
-          <div className="SlippageWrapper">
-            <EditSettings
-              fee={fee}
-              defaultFee={recommendedFee}
-              title={t("Swap Settings")}
-              timeout={transactionData.transactionTimeout}
-              congestion={networkCongestion}
-              onClose={() => setIsEditingSettings(false)}
-              onSubmit={({
-                fee,
-                timeout,
-              }: {
-                fee: string;
-                timeout: number;
-              }) => {
-                dispatch(saveTransactionFee(fee));
-                dispatch(saveTransactionTimeout(timeout));
-                setIsEditingSettings(false);
-              }}
-            />
-          </div>
-          <LoadingBackground
-            onClick={() => setIsEditingSettings(false)}
-            isActive={isEditingSettings}
-          />
-        </>
-      ) : null}
+        ) : (
+          <></>
+        )}
+      </SlideupModal>
       <SlideupModal
         setIsModalOpen={() => setIsReviewingTx(false)}
         isModalOpen={isReviewingTx}
+        ariaLabel={t("Review swap")}
       >
         {isReviewingTx ? (
           <ReviewTx
@@ -915,7 +963,11 @@ export const SwapAmount = ({
             // The trustline-added + swap-success metrics fire post-confirmation
             // (in useSubmitTxData), once the swap actually settles — not here at
             // review time.
-            onConfirm={goToNext}
+            onConfirm={() => {
+              skipRejectionRef.current = true;
+              goToNext();
+            }}
+            onEditSettings={openSettingsFromReview}
             sendAmount={amount}
             // Show the same fiat figure the amount screen displayed: the
             // entered dollars in fiat mode, the computed USD of the crypto
@@ -932,6 +984,7 @@ export const SwapAmount = ({
               amount: destinationAmount,
             }}
             title={t("You are swapping")}
+            sheetTitle={t("Review swap")}
             destinationTokenDetails={transactionData.destinationTokenDetails}
             sourceTokenSecurityLevel={sourceTokenSecurityLevel}
             sourceTokenSecurityWarnings={sourceTokenSecurityWarnings}
@@ -947,6 +1000,7 @@ export const SwapAmount = ({
       <SlideupModal
         setIsModalOpen={() => setIsXlmReserveOpen(false)}
         isModalOpen={isXlmReserveOpen}
+        ariaLabel={t("You need XLM to create a trustline")}
       >
         {isXlmReserveOpen ? (
           <XlmReserveSheet

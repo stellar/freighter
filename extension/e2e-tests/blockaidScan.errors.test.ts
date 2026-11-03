@@ -9,6 +9,7 @@ import {
   abortApiEndpoint,
   createAssetObject,
 } from "./helpers/stubs";
+import { goToAddAsset } from "./helpers/assets";
 
 test.describe("BlockAid Scan - Edge Cases", () => {
   test.describe("API Error Handling", () => {
@@ -47,10 +48,7 @@ test.describe("BlockAid Scan - Edge Cases", () => {
       // switch to Mainnet where asset scanning is supported and errors are surfaced
       await switchToMainnet(page);
 
-      await page.getByTestId("account-options-dropdown").click();
-      await page.getByText("Manage assets").click();
-      await expect(page.getByText("Your assets")).toBeVisible();
-      await page.getByText("Add an asset").click({ force: true });
+      await goToAddAsset(page);
 
       const classicAssetIssuer =
         "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5";
@@ -187,10 +185,7 @@ test.describe("BlockAid Scan - Edge Cases", () => {
       // switch to Mainnet where asset scanning is supported and errors are surfaced
       await switchToMainnet(page);
 
-      await page.getByTestId("account-options-dropdown").click();
-      await page.getByText("Manage assets").click();
-      await expect(page.getByText("Your assets")).toBeVisible();
-      await page.getByText("Add an asset").click({ force: true });
+      await goToAddAsset(page);
 
       const classicAssetIssuer =
         "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5";

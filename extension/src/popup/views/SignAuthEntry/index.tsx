@@ -13,7 +13,6 @@ import {
   WarningMessage,
   SSLWarningMessage,
 } from "popup/components/WarningMessages";
-import { View } from "popup/basics/layout/View";
 import {
   isNonSSLEnabledSelector,
   settingsNetworkDetailsSelector,
@@ -32,7 +31,7 @@ import { useGetSignAuthEntryData } from "./hooks/useGetSignAuthEntryData";
 import { RequestState } from "constants/request";
 import { Loading } from "popup/components/Loading";
 import { AppDataType } from "helpers/hooks/useGetAppData";
-import { openTab } from "popup/helpers/navigate";
+import { closeWindow, openTab } from "popup/helpers/navigate";
 import { useSetupSigningFlow } from "popup/helpers/useSetupSigningFlow";
 import { rejectAuthEntry, signEntry } from "popup/ducks/access";
 import { publicKeySelector } from "popup/ducks/accountServices";
@@ -43,6 +42,8 @@ import { AuthEntries } from "popup/components/AuthEntry";
 import { parseAuthEntryPreimage } from "popup/helpers/soroban";
 import { truncateString } from "helpers/stellar";
 import { useMarkQueueActive } from "popup/helpers/useMarkQueueActive";
+import { SheetLayout } from "popup/components/SheetLayout";
+import { SlideupModal } from "popup/components/SlideupModal";
 
 import "./styles.scss";
 
@@ -106,7 +107,7 @@ export const SignAuthEntry = () => {
   if (signAuthEntryData.data?.type === AppDataType.REROUTE) {
     if (signAuthEntryData.data.shouldOpenTab) {
       openTab(newTabHref(signAuthEntryData.data.routeTarget));
-      window.close();
+      closeWindow();
     }
     return (
       <Navigate
@@ -129,7 +130,7 @@ export const SignAuthEntry = () => {
   // showing any signing UI. An unparseable entry is rejected immediately.
   let preimage: xdr.HashIdPreimage;
   try {
-    preimage = xdr.HashIdPreimage.fromXDR(params.entry, "base64");
+    preimage = xdr.HashIdPreimage.fromXdr(params.entry, "base64");
   } catch (_e) {
     return (
       <WarningMessage
@@ -149,19 +150,23 @@ export const SignAuthEntry = () => {
   let sorobanAuth: ReturnType<typeof parseAuthEntryPreimage>;
   try {
     sorobanAuth = parseAuthEntryPreimage(preimage);
-    const embeddedNetworkId = sorobanAuth.networkId();
+    // v17: `networkId` is a `Hash` wrapper (not a Buffer), so compare via
+    // its structural `equals` rather than Buffer.equals.
+    const embeddedNetworkId = sorobanAuth.networkId;
     const entryNetworkName =
       Object.entries(PASSPHRASE_TO_NETWORK_NAME).find(([passphrase]) =>
-        hash(Buffer.from(passphrase)).equals(embeddedNetworkId),
+        embeddedNetworkId.equals(new xdr.Hash(hash(Buffer.from(passphrase)))),
       )?.[1] ?? params.networkPassphrase;
-    const expectedNetworkId = hash(Buffer.from(networkPassphrase));
+    const expectedNetworkId = new xdr.Hash(
+      hash(Buffer.from(networkPassphrase)),
+    );
     if (!embeddedNetworkId.equals(expectedNetworkId)) {
       return (
         <WarningMessage
           variant={WarningMessageVariant.warning}
           handleCloseClick={() => rejectAndClose()}
           isActive
-          header={`${t("Freighter is set to")} ${networkName}`}
+          header={`${t("Varial is set to")} ${networkName}`}
         >
           <p>
             {entryNetworkName
@@ -200,7 +205,7 @@ export const SignAuthEntry = () => {
   // mismatch is — signing it is not supported for now.
   const boundAddress =
     sorobanAuth instanceof xdr.HashIdPreimageSorobanAuthorizationWithAddress
-      ? Address.fromScAddress(sorobanAuth.address()).toString()
+      ? Address.fromScAddress(sorobanAuth.address).toString()
       : undefined;
 
   if (boundAddress && boundAddress !== publicKey) {
@@ -209,7 +214,7 @@ export const SignAuthEntry = () => {
         variant={WarningMessageVariant.warning}
         handleCloseClick={() => rejectAndClose()}
         isActive
-        header={t("Freighter is set to a different account")}
+        header={t("Varial is set to a different account")}
       >
         <p>
           {t("This authorization is for {{address}}.", {
@@ -231,7 +236,7 @@ export const SignAuthEntry = () => {
   const favicon = getSiteFavicon(domain);
   const validDomain = isDomainValid ? punycodedDomain : `xn-${punycodedDomain}`;
 
-  const invocation = sorobanAuth.invocation();
+  const invocation = sorobanAuth.invocation;
 
   return isPasswordRequired ? (
     <VerifyAccount
@@ -246,90 +251,104 @@ export const SignAuthEntry = () => {
           walletType={hardwareWalletType}
           isSignSorobanAuthorization
           uuid={params.uuid}
+          url={params.url}
         />
       )}
       <React.Fragment>
-        <View.Content>
-          <div className="SignAuthEntry__Body">
-            <div className="SignAuthEntry__TitleRow">
-              <img
-                className="PunycodedDomain__favicon"
-                src={favicon}
-                alt={t("Site favicon")}
-              />
-              <div className="SignAuthEntry__TitleRow__Detail">
-                <span className="SignAuthEntry__TitleRow__Title">
-                  Confirm Authorizations
-                </span>
-                <span className="SignAuthEntry__TitleRow__Domain">
-                  {validDomain}
-                </span>
+        {/* The request floats as a card over the dimmed window, like every other
+          sheet and like mobile's dApp sheets. Dismissing it (backdrop, Escape)
+          rejects the request, the same as Cancel. */}
+        <SlideupModal
+          isModalOpen
+          setIsModalOpen={() => rejectAndClose()}
+          // Same literal as the title row, which is not translated either.
+          ariaLabel="Confirm Authorizations"
+        >
+          <SheetLayout
+            footer={
+              <div className="SignAuthEntry__Footer">
+                <Button
+                  isFullWidth
+                  isRounded
+                  size="lg"
+                  variant="tertiary"
+                  onClick={() => rejectAndClose()}
+                >
+                  {t("Cancel")}
+                </Button>
+                <Button
+                  data-testid="sign-auth-entry-approve-button"
+                  disabled={!isDomainListedAllowed}
+                  isFullWidth
+                  isRounded
+                  size="lg"
+                  variant="secondary"
+                  isLoading={isConfirming}
+                  onClick={() => handleApprove()}
+                >
+                  {t("Confirm")}
+                </Button>
               </div>
-            </div>
-            {!isDomainListedAllowed && (
-              <DomainNotAllowedWarningMessage domain={domain} />
-            )}
-            <div className="SignAuthEntry__Metadata">
-              <div className="SignAuthEntry__Metadata__Row">
-                <div className="SignAuthEntry__Metadata__Label">
-                  <Icon.Wallet01 />
-                  <span>{t("Wallet")}</span>
-                </div>
-                <div className="SignAuthEntry__Metadata__Value">
-                  <KeyIdenticon publicKey={publicKey} />
-                </div>
-              </div>
-              <div className="SignAuthEntry__Metadata__Row">
-                <div className="SignAuthEntry__Metadata__Label">
-                  <Icon.Globe02 />
-                  <span>{t("Network")}</span>
-                </div>
-                <div className="SignAuthEntry__Metadata__Value">
-                  <span>{networkName}</span>
+            }
+          >
+            <div className="SignAuthEntry__Body">
+              <div className="SignAuthEntry__TitleRow">
+                <img
+                  className="PunycodedDomain__favicon"
+                  src={favicon}
+                  alt={t("Site favicon")}
+                />
+                <div className="SignAuthEntry__TitleRow__Detail">
+                  <span className="SignAuthEntry__TitleRow__Title">
+                    Confirm Authorizations
+                  </span>
+                  <span className="SignAuthEntry__TitleRow__Domain">
+                    {validDomain}
+                  </span>
                 </div>
               </div>
-              {boundAddress && (
-                // Address-bound authorization (CAP-71): show the address this
-                // signature is bound to so the user knows who is authorizing.
+              {!isDomainListedAllowed && (
+                <DomainNotAllowedWarningMessage domain={domain} />
+              )}
+              <div className="SignAuthEntry__Metadata">
                 <div className="SignAuthEntry__Metadata__Row">
                   <div className="SignAuthEntry__Metadata__Label">
-                    <Icon.UserCircle />
-                    <span>{t("Authorized address")}</span>
+                    <Icon.Wallet01 />
+                    <span>{t("Wallet")}</span>
                   </div>
                   <div className="SignAuthEntry__Metadata__Value">
-                    <KeyIdenticon publicKey={boundAddress} />
+                    <KeyIdenticon publicKey={publicKey} />
                   </div>
                 </div>
-              )}
+                <div className="SignAuthEntry__Metadata__Row">
+                  <div className="SignAuthEntry__Metadata__Label">
+                    <Icon.Globe02 />
+                    <span>{t("Network")}</span>
+                  </div>
+                  <div className="SignAuthEntry__Metadata__Value">
+                    <span>{networkName}</span>
+                  </div>
+                </div>
+                {boundAddress && (
+                  // Address-bound authorization (CAP-71): show the address this
+                  // signature is bound to so the user knows who is authorizing.
+                  <div className="SignAuthEntry__Metadata__Row">
+                    <div className="SignAuthEntry__Metadata__Label">
+                      <Icon.UserCircle />
+                      <span>{t("Authorized address")}</span>
+                    </div>
+                    <div className="SignAuthEntry__Metadata__Value">
+                      <KeyIdenticon publicKey={boundAddress} />
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-          {/* boundAddress is shown in the metadata block above, so it is
+            {/* boundAddress is shown in the metadata block above, so it is
               intentionally omitted here to avoid duplication. */}
-          <AuthEntries entries={[{ invocation }]} />
-        </View.Content>
-        <View.Footer isInline>
-          <Button
-            isFullWidth
-            isRounded
-            size="lg"
-            variant="tertiary"
-            onClick={() => rejectAndClose()}
-          >
-            {t("Cancel")}
-          </Button>
-          <Button
-            data-testid="sign-auth-entry-approve-button"
-            disabled={!isDomainListedAllowed}
-            isFullWidth
-            isRounded
-            size="lg"
-            variant="secondary"
-            isLoading={isConfirming}
-            onClick={() => handleApprove()}
-          >
-            {t("Confirm")}
-          </Button>
-        </View.Footer>
+            <AuthEntries entries={[{ invocation }]} />
+          </SheetLayout>
+        </SlideupModal>
       </React.Fragment>
     </>
   );

@@ -3,7 +3,7 @@ import * as Sentry from "@sentry/browser";
 import { Action, Middleware } from "redux";
 import { PayloadAction } from "@reduxjs/toolkit";
 import { Location } from "react-router-dom";
-import { hash } from "stellar-sdk";
+import { hash, xdr } from "stellar-sdk";
 
 import browser from "webextension-polyfill";
 
@@ -15,6 +15,7 @@ import { BUNDLE_ID_USER_PROPERTY_KEY, getBundleId } from "helpers/analytics";
 import { isDev } from "@shared/helpers/dev";
 import { truncatedPublicKey } from "helpers/stellar";
 import { isSidebarMode } from "popup/helpers/isSidebarMode";
+import { getAppliedColorScheme } from "popup/helpers/systemTheme";
 import {
   settingsDataSharingSelector,
   settingsNetworkDetailsSelector,
@@ -121,8 +122,14 @@ let hasInitialized = false;
  */
 const AMPLITUDE_FLUSH_INTERVAL_MS = 500;
 
-/** Schema generation marker for the new cross-platform property model. */
-export const SCHEMA_VERSION = "2";
+/**
+ * Schema generation marker for the cross-platform property model. Bumped to
+ * "4" for the signing/step alignment: `step: "confirm"` now marks the review
+ * screen (before the user decides) rather than the submitting screen, so
+ * without a bump a `confirm` event is ambiguous between a pre-change and a
+ * post-change client.
+ */
+export const SCHEMA_VERSION = "4";
 
 /** Maps the internal account type to the RFC's wire value for `account_type`. */
 const ACCOUNT_TYPE_WIRE: Record<AccountType, string> = {
@@ -452,7 +459,7 @@ export const getAccountIdHash = (publicKey: string): string => {
   const cached = accountIdHashCache.get(publicKey);
   if (cached) return cached;
   try {
-    const digest = hash(Buffer.from(publicKey, "utf8")).toString("hex");
+    const digest = xdr.encodeBytes(hash(Buffer.from(publicKey, "utf8")), "hex");
     accountIdHashCache.set(publicKey, digest);
     return digest;
   } catch {
@@ -475,6 +482,10 @@ export const buildCommonContext = (
     schema_version: SCHEMA_VERSION,
     surface: getSurface(),
     network: networkDetails?.network ?? "UNKNOWN",
+    // Event property, not an Identify trait: devices set to "automatic" flip
+    // theme on sunset, so a profile property would thrash — stickiness gets
+    // inferred in Amplitude instead (thread linked from mobile#26).
+    color_scheme: getAppliedColorScheme(),
   };
 
   // Active-account fields are meaningful only when there is an active account.

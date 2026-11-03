@@ -241,7 +241,7 @@ describe("EarnReview hardware wallet signing", () => {
     expect(
       deviceKeypair.verify(
         signed.signatureBase(),
-        signed.signatures[0].signature(),
+        signed.signatures[0].signature,
       ),
     ).toBe(true);
   });

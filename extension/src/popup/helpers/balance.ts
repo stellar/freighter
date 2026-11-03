@@ -7,19 +7,23 @@ import {
   getCanonicalFromAsset,
   isAsset,
 } from "helpers/stellar";
-import { ApiTokenPrices, AssetToken } from "@shared/api/types";
+import { ApiTokenPrices, AssetToken, AssetVisibility } from "@shared/api/types";
 import {
   AssetType,
   ClassicAsset,
   LiquidityPoolShareAsset,
-  NativeAsset,
   SorobanAsset,
 } from "@shared/api/types/account-balance";
 import { NetworkDetails } from "@shared/constants/stellar";
+import {
+  isNativeAssetId,
+  isNativeBalance,
+} from "@shared/helpers/assetIdentity";
 import { getAssetSacAddress } from "@shared/helpers/soroban/token";
 import { LP_IDENTIFIER } from "./account";
 import { NO_FIAT_VALUE, formatFiatAmount } from "./formatters";
-import { isContractId } from "./soroban";
+import { isAssetVisible } from "./settings";
+import { getTokenBalance, isContractId } from "./soroban";
 
 export const isClassicBalance = (balance: AssetType): balance is ClassicAsset =>
   "token" in balance && "issuer" in balance.token;
@@ -27,22 +31,21 @@ export const isClassicBalance = (balance: AssetType): balance is ClassicAsset =>
 export const isSorobanBalance = (balance: AssetType): balance is SorobanAsset =>
   "contractId" in balance;
 
-export const isNativeBalance = (balance: AssetType): balance is NativeAsset =>
-  "token" in balance &&
-  "type" in balance.token &&
-  balance.token.type === "native";
+// SEP-41 totals are raw integers; scale them the same way the send flow does
+// (getTokenBalance) before multiplying by a whole-token price.
+export const getTotalInWholeUnits = (balance: AssetType): BigNumber =>
+  isSorobanBalance(balance)
+    ? new BigNumber(getTokenBalance(balance))
+    : new BigNumber(balance.total);
 
 export const findAssetBalance = (
   balances: AssetType[],
   asset: Asset | { issuer?: string; code: string },
 ) => {
   if (isAsset(asset) && asset.isNative()) {
-    return balances.find(
-      (balance) =>
-        "token" in balance &&
-        "type" in balance.token &&
-        balance.token.type === "native",
-    ) as Exclude<AssetType, SorobanAsset | LiquidityPoolShareAsset> | undefined;
+    return balances.find((balance) => isNativeBalance(balance)) as
+      | Exclude<AssetType, SorobanAsset | LiquidityPoolShareAsset>
+      | undefined;
   }
   if (isContractId(asset.issuer)) {
     return balances.find(
@@ -69,8 +72,8 @@ export const getBalanceByAsset = (
   const issuer = asset.issuer;
 
   return balances.find((balance) => {
-    if ("token" in balance && "type" in balance.token && !issuer) {
-      return balance.token.type === "native";
+    if (!issuer) {
+      return isNativeBalance(balance);
     }
     if (isContractId(issuer)) {
       return "contractId" in balance && balance.contractId === issuer;
@@ -104,8 +107,8 @@ export const getBalanceByKey = (
       "contractId" in balance && contractId === balance.contractId;
 
     try {
-      // if xlm, check for a SAC match
-      if ("token" in balance && balance.token.code === "XLM") {
+      // if this is the native balance, check for a SAC match
+      if (isNativeBalance(balance)) {
         const matchesSac =
           Asset.native().contractId(networkDetails.networkPassphrase) ===
           contractId;
@@ -148,13 +151,8 @@ export const findAddressBalance = (
   address: string,
   network: Networks,
 ) => {
-  if (address === "native") {
-    return balances.find(
-      (balance) =>
-        "token" in balance &&
-        "type" in balance.token &&
-        balance.token.type === "native",
-    );
+  if (isNativeAssetId(address)) {
+    return balances.find((balance) => isNativeBalance(balance));
   }
   if (isContractId(address)) {
     // first check for contract ID match, then check for SAC match
@@ -223,11 +221,25 @@ export const getBalanceCanonicalKey = (b: AssetType): string => {
 };
 
 /**
+ * The balances left once the hidden assets are taken out, by the same rules
+ * as the balances map's `filterHiddenBalances`: native XLM always stays, and
+ * anything else stays unless the hidden map marks it.
+ */
+export const omitHiddenBalances = (
+  balances: AssetType[],
+  hiddenAssets: Record<string, AssetVisibility>,
+): AssetType[] =>
+  balances.filter(
+    (b) =>
+      isNativeBalance(b) ||
+      isAssetVisible(hiddenAssets, getBalanceCanonicalKey(b)),
+  );
+
+/**
  * Re-orders balances for display by descending USD value.
  *
- * Only native + classic G-issuer assets receive prices from the indexer
- * (Soroban, custom tokens, and LP shares are filtered out upstream — see
- * `getTokenPrices` in `@shared/api/internal.ts`). Unpriced balances keep
+ * LP shares are never priced; SEP-41 balances are priced on the v2 path and
+ * valued in whole units via `getTotalInWholeUnits`. Unpriced balances keep
  * the relative order produced by `sortBalances` and sort below all
  * priced balances. A `currentPrice` of `"0"` is a valid USD value and
  * keeps the asset in the priced group; a malformed `currentPrice` is
@@ -248,7 +260,7 @@ export const sortBalancesByValue = (
     if (priceStr === undefined || priceStr === null || priceStr === "") {
       return null;
     }
-    const value = new BigNumber(priceStr).multipliedBy(b.total);
+    const value = new BigNumber(priceStr).multipliedBy(getTotalInWholeUnits(b));
     return value.isFinite() ? value : null;
   };
 
@@ -270,7 +282,7 @@ export const getTotalUsd = (prices: ApiTokenPrices, balances: AssetType[]) => {
     if (!priceBalance) {
       return prev;
     }
-    const currentAssetBalance = priceBalance.total;
+    const currentAssetBalance = getTotalInWholeUnits(priceBalance);
     const currentPrice = prices[curr] ? prices[curr].currentPrice : "0";
     const currentUsdBalance = new BigNumber(currentPrice).multipliedBy(
       currentAssetBalance,
@@ -320,4 +332,57 @@ export const getTotalUsdLabel = ({
   }
 
   return formatFiatAmount(totalUsd?.toString());
+};
+
+/**
+ * True when the account holds enough native lumens to cover `feeXlm`.
+ *
+ * Only the native balance can pay a fee, so this is anchored on the balance's
+ * type rather than its code.
+ */
+export const hasEnoughXlmForFee = (
+  balances: AssetType[],
+  feeXlm: BigNumber,
+): boolean =>
+  balances.some(
+    (balance) => isNativeBalance(balance) && balance.available.gt(feeXlm),
+  );
+
+/**
+ * Whether an asset may offer "Remove".
+ *
+ * Classic assets are removed by closing their trustline, and SACs are not
+ * removable at all. A custom token is removable only while it is on screen
+ * because of the user's local token list: once the backend returns it on its
+ * own, dropping the local entry would not stop it coming back, so it can only
+ * be hidden.
+ *
+ * The native and liquidity-pool guards are load bearing on Asset Details,
+ * which opens a sheet for every balance. Manage assets never reaches them --
+ * useGetAssetDomainsWithBalances drops the native row, and LP rows are not
+ * clickable -- so without the guards XLM would offer a changeTrust that cannot
+ * succeed.
+ */
+export const getIsRemovable = ({
+  contract,
+  isSac,
+  isNative,
+  isLiquidityPool,
+  localOnlyTokenIds,
+}: {
+  contract: string;
+  isSac: boolean;
+  isNative?: boolean;
+  isLiquidityPool?: boolean;
+  localOnlyTokenIds?: string[];
+}) => {
+  if (isNative || isLiquidityPool || isSac) {
+    return false;
+  }
+  // No contract means a classic asset, removed by closing its trustline. This
+  // is the same test isAssetSac and shouldChangeTrust use to tell the two apart.
+  if (!contract) {
+    return true;
+  }
+  return !!localOnlyTokenIds?.includes(contract);
 };

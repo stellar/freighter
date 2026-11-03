@@ -1,6 +1,8 @@
 import {
+  Account,
   Address,
   Keypair,
+  nativeToScVal,
   Operation,
   scValToNative,
   TransactionBuilder,
@@ -9,12 +11,18 @@ import {
 import BigNumber from "bignumber.js";
 
 import {
+  addressToString,
+  getArgsForTokenInvocation,
   getInvocationArgs,
+  getInvocationArgsFromInvokeHostFn,
+  getInvocationDetails,
   buildInvocationTree,
   getAvailableBalance,
   getDecimalsForAsset,
   getContractIdFromTransactionData,
+  getAttrsFromSorobanHorizonOp,
   isAssetSac,
+  scValToDisplayValue,
   CLASSIC_ASSET_DECIMALS,
 } from "../soroban";
 import { getNativeContractDetails } from "../searchAsset";
@@ -50,11 +58,14 @@ describe("isAssetSac", () => {
   });
 });
 
+const OWNER_CONTRACT =
+  "CA3D5KRYM6CB7OWQ6TWYRR3Z4T7GNZLKERYNZGGA5SOAOPIFY6YQGAXE";
+
 describe("getInvocationArgs", () => {
   it("can parse a create contract v1 xdr class", () => {
     const assetCode = "KHL";
     const assetType = new xdr.AlphaNum4({
-      assetCode: Buffer.from(assetCode),
+      assetCode: assetCode,
       issuer: Keypair.fromPublicKey(TEST_PUBLIC_KEY).xdrAccountId(),
     });
     const args = new xdr.CreateContractArgs({
@@ -80,7 +91,7 @@ describe("getInvocationArgs", () => {
   it("can parse a create contract v2 xdr class", () => {
     const assetCode = "KHL";
     const assetType = new xdr.AlphaNum4({
-      assetCode: Buffer.from(assetCode),
+      assetCode: assetCode,
       issuer: Keypair.fromPublicKey(TEST_PUBLIC_KEY).xdrAccountId(),
     });
     const args = new xdr.CreateContractArgsV2({
@@ -102,19 +113,159 @@ describe("getInvocationArgs", () => {
     expect(invocationArgs).toEqual({
       type: "sac",
       asset: `${assetCode}:${TEST_PUBLIC_KEY}`,
-      args: args.constructorArgs(),
+      args: args.constructorArgs,
     });
+  });
+  it("can parse a create contract v2 xdr with a CAP-85 external executable ref", () => {
+    const tag = "v2";
+    const externalRef = new xdr.ContractExecutableExternalRef({
+      executableOwner: new Address(OWNER_CONTRACT).toScAddress(),
+      tag,
+    });
+    const args = new xdr.CreateContractArgsV2({
+      contractIdPreimage: xdr.ContractIdPreimage.contractIdPreimageFromAddress(
+        new xdr.ContractIdPreimageFromAddress({
+          address: new Address(TEST_PUBLIC_KEY).toScAddress(),
+          salt: Buffer.alloc(32),
+        }),
+      ),
+      executable:
+        xdr.ContractExecutable.contractExecutableExternalRef(externalRef),
+      constructorArgs: [new Address(TEST_PUBLIC_KEY).toScVal()],
+    });
+    const authorizedFn =
+      xdr.SorobanAuthorizedFunction.sorobanAuthorizedFunctionTypeCreateContractV2HostFn(
+        args,
+      );
+    const authorizedInvocation = new xdr.SorobanAuthorizedInvocation({
+      function: authorizedFn,
+      subInvocations: [],
+    });
+    const invocationArgs = getInvocationArgs(authorizedInvocation);
+    expect(invocationArgs).toEqual({
+      type: "externalRef",
+      owner: OWNER_CONTRACT,
+      tag,
+      address: TEST_PUBLIC_KEY,
+      salt: "0".repeat(64),
+      args: args.constructorArgs,
+    });
+  });
+  it("builds an invocation tree for a CAP-85 external executable ref", () => {
+    const tag = "v2";
+    const args = new xdr.CreateContractArgsV2({
+      contractIdPreimage: xdr.ContractIdPreimage.contractIdPreimageFromAddress(
+        new xdr.ContractIdPreimageFromAddress({
+          address: new Address(TEST_PUBLIC_KEY).toScAddress(),
+          salt: Buffer.alloc(32),
+        }),
+      ),
+      executable: xdr.ContractExecutable.contractExecutableExternalRef(
+        new xdr.ContractExecutableExternalRef({
+          executableOwner: new Address(OWNER_CONTRACT).toScAddress(),
+          tag,
+        }),
+      ),
+      constructorArgs: [],
+    });
+    const authorizedFn =
+      xdr.SorobanAuthorizedFunction.sorobanAuthorizedFunctionTypeCreateContractV2HostFn(
+        args,
+      );
+    const authorizedInvocation = new xdr.SorobanAuthorizedInvocation({
+      function: authorizedFn,
+      subInvocations: [],
+    });
+
+    const tree = buildInvocationTree(authorizedInvocation);
+    expect(tree.type).toEqual("create");
+    expect(tree.args.type).toEqual("externalRef");
+    expect(tree.args.externalRef).toEqual({
+      owner: OWNER_CONTRACT,
+      tag,
+      address: TEST_PUBLIC_KEY,
+      salt: "0".repeat(64),
+    });
+  });
+  it("explains which executable/preimage pairing was invalid when it throws", () => {
+    const assetPreimage = xdr.ContractIdPreimage.contractIdPreimageFromAsset(
+      xdr.Asset.assetTypeNative(),
+    );
+    const addressPreimage =
+      xdr.ContractIdPreimage.contractIdPreimageFromAddress(
+        new xdr.ContractIdPreimageFromAddress({
+          address: new Address(TEST_PUBLIC_KEY).toScAddress(),
+          salt: Buffer.alloc(32),
+        }),
+      );
+
+    const build = (executable, contractIdPreimage) =>
+      new xdr.SorobanAuthorizedInvocation({
+        function:
+          xdr.SorobanAuthorizedFunction.sorobanAuthorizedFunctionTypeCreateContractHostFn(
+            new xdr.CreateContractArgs({ contractIdPreimage, executable }),
+          ),
+        subInvocations: [],
+      });
+
+    // wasm code must be deployed from an address, never derived from an asset
+    expect(() =>
+      getInvocationArgs(
+        build(
+          xdr.ContractExecutable.contractExecutableWasm(Buffer.alloc(32)),
+          assetPreimage,
+        ),
+      ),
+    ).toThrow(/wasm executable.*contractIdPreimageFromAsset/);
+
+    // and a SAC is only ever derived from an asset
+    expect(() =>
+      getInvocationArgs(
+        build(
+          xdr.ContractExecutable.contractExecutableStellarAsset(),
+          addressPreimage,
+        ),
+      ),
+    ).toThrow(/Stellar asset executable.*contractIdPreimageFromAddress/);
+  });
+  it("marks an invocation it cannot parse as unrecognized instead of throwing", () => {
+    // A wasm executable paired with an asset preimage is decodable XDR but a
+    // nonsensical combination -- the kind of thing a future protocol arm or a
+    // hostile dApp could produce. It must not crash the review UI.
+    const assetType = new xdr.AlphaNum4({
+      assetCode: "KHL",
+      issuer: Keypair.fromPublicKey(TEST_PUBLIC_KEY).xdrAccountId(),
+    });
+    const args = new xdr.CreateContractArgs({
+      contractIdPreimage: xdr.ContractIdPreimage.contractIdPreimageFromAsset(
+        xdr.Asset.assetTypeCreditAlphanum4(assetType),
+      ),
+      executable: xdr.ContractExecutable.contractExecutableWasm(
+        Buffer.alloc(32),
+      ),
+    });
+    const authorizedFn =
+      xdr.SorobanAuthorizedFunction.sorobanAuthorizedFunctionTypeCreateContractHostFn(
+        args,
+      );
+    const authorizedInvocation = new xdr.SorobanAuthorizedInvocation({
+      function: authorizedFn,
+      subInvocations: [],
+    });
+    expect(getInvocationDetails(authorizedInvocation)).toEqual([
+      { type: "unrecognized" },
+    ]);
   });
   it("can parse a create contract v2 xdr for the deployer pattern", () => {
     const xdr =
       "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";
-    const tx = TransactionBuilder.fromXDR(
+    const tx = TransactionBuilder.fromXdr(
       xdr,
       TESTNET_NETWORK_DETAILS.networkPassphrase,
     );
     const op = tx.operations[0];
     for (const authEntry of op.auth || []) {
-      const rootInvocation = authEntry.rootInvocation();
+      const rootInvocation = authEntry.rootInvocation;
       const tree = buildInvocationTree(rootInvocation);
       expect(tree.type).toEqual("execute");
       expect(tree.args.source).toEqual(
@@ -212,6 +363,215 @@ describe("getInvocationArgs", () => {
       recommendedFee: ".11",
     });
     expect(availableBalance).toEqual("100");
+  });
+});
+
+// A function name and a CAP-85 executable tag are byte strings, not guaranteed
+// text. Decoding them leniently renders every invalid byte as U+FFFD, so two
+// distinct signed payloads collapse to one screen string on the approval view.
+describe("signing-screen display fidelity", () => {
+  /** "transfer" with one trailing byte that cannot begin a UTF-8 sequence. */
+  const invalidFnName = (suffix) =>
+    new Uint8Array([...Buffer.from("transfer"), suffix]);
+
+  const contractFn = (functionName, args = []) =>
+    new xdr.InvokeContractArgs({
+      contractAddress: new Address(OWNER_CONTRACT).toScAddress(),
+      functionName,
+      args,
+    });
+
+  const contractFnInvocation = (functionName, args = []) =>
+    new xdr.SorobanAuthorizedInvocation({
+      function:
+        xdr.SorobanAuthorizedFunction.sorobanAuthorizedFunctionTypeContractFn(
+          contractFn(functionName, args),
+        ),
+      subInvocations: [],
+    });
+
+  const externalRefInvocation = (tag) =>
+    new xdr.SorobanAuthorizedInvocation({
+      function:
+        xdr.SorobanAuthorizedFunction.sorobanAuthorizedFunctionTypeCreateContractV2HostFn(
+          new xdr.CreateContractArgsV2({
+            contractIdPreimage:
+              xdr.ContractIdPreimage.contractIdPreimageFromAddress(
+                new xdr.ContractIdPreimageFromAddress({
+                  address: new Address(TEST_PUBLIC_KEY).toScAddress(),
+                  salt: Buffer.alloc(32),
+                }),
+              ),
+            executable: xdr.ContractExecutable.contractExecutableExternalRef(
+              new xdr.ContractExecutableExternalRef({
+                executableOwner: new Address(OWNER_CONTRACT).toScAddress(),
+                tag,
+              }),
+            ),
+            constructorArgs: [],
+          }),
+        ),
+      subInvocations: [],
+    });
+
+  it("escapes a non-UTF-8 function name in an invocation tree", () => {
+    const tree = buildInvocationTree(contractFnInvocation(invalidFnName(0xff)));
+    expect(tree.args.function).toEqual("transfer\\xff");
+    expect(tree.args.function).not.toContain("�");
+  });
+
+  it("carries no raw function name when the signed name is not text", () => {
+    // The escaped form is for the screen. Handing it to the contract-spec
+    // lookup would key the lookup off a string no spec can define.
+    expect(
+      buildInvocationTree(contractFnInvocation(Buffer.from("transfer"))).args
+        .functionRaw,
+    ).toEqual("transfer");
+    expect(
+      buildInvocationTree(contractFnInvocation(invalidFnName(0xff))).args
+        .functionRaw,
+    ).toBeUndefined();
+  });
+
+  it("does not collapse two distinct non-UTF-8 function names", () => {
+    const first = buildInvocationTree(
+      contractFnInvocation(invalidFnName(0xff)),
+    );
+    const second = buildInvocationTree(
+      contractFnInvocation(invalidFnName(0xfe)),
+    );
+    expect(first.args.function).not.toEqual(second.args.function);
+  });
+
+  it("carries the signed ScVal args through the invocation tree untouched", () => {
+    // Decoding args to natives here used to force the render layer to
+    // re-encode them with `nativeToScVal`, a round trip that re-types map keys.
+    const arg = xdr.ScVal.scvMap([
+      new xdr.ScMapEntry({
+        key: xdr.ScVal.scvU32(1),
+        val: xdr.ScVal.scvString("one"),
+      }),
+    ]);
+    const tree = buildInvocationTree(
+      contractFnInvocation(Buffer.from("transfer"), [arg]),
+    );
+    expect(tree.args.args).toHaveLength(1);
+    expect(tree.args.args[0].toXdr("base64")).toEqual(arg.toXdr("base64"));
+  });
+
+  it("escapes a non-UTF-8 function name in invocation args", () => {
+    const args = getInvocationArgs(contractFnInvocation(invalidFnName(0xff)));
+    expect(args.fnName).toEqual("transfer\\xff");
+    expect(args.fnName).not.toContain("�");
+
+    const other = getInvocationArgs(contractFnInvocation(invalidFnName(0xfe)));
+    expect(args.fnName).not.toEqual(other.fnName);
+  });
+
+  it("escapes a non-UTF-8 CAP-85 executable tag", () => {
+    const tagBytes = (suffix) => new Uint8Array([...Buffer.from("v2"), suffix]);
+    const args = getInvocationArgs(externalRefInvocation(tagBytes(0xff)));
+    expect(args.tag).toEqual("v2\\xff");
+    expect(args.tag).not.toContain("�");
+
+    const other = getInvocationArgs(externalRefInvocation(tagBytes(0xfe)));
+    expect(args.tag).not.toEqual(other.tag);
+  });
+
+  it("treats a non-UTF-8 function name as not a token invocation", () => {
+    const op = Operation.fromXDRObject(
+      Operation.invokeHostFunction({
+        func: xdr.HostFunction.hostFunctionTypeInvokeContract(
+          contractFn(invalidFnName(0xff), []),
+        ),
+        auth: [],
+      }),
+    );
+    // A binary name can never be one of the token interfaces, so this must
+    // bail out rather than match on a lossily decoded string or throw.
+    expect(getInvocationArgsFromInvokeHostFn(op)).toBeNull();
+  });
+
+  it("still recognises a valid token transfer", () => {
+    const from = Keypair.random().publicKey();
+    const to = Keypair.random().publicKey();
+    const op = Operation.fromXDRObject(
+      Operation.invokeHostFunction({
+        func: xdr.HostFunction.hostFunctionTypeInvokeContract(
+          contractFn(Buffer.from("transfer"), [
+            nativeToScVal(from, { type: "address" }),
+            nativeToScVal(to, { type: "address" }),
+            nativeToScVal(BigInt(100), { type: "i128" }),
+          ]),
+        ),
+        auth: [],
+      }),
+    );
+    expect(getInvocationArgsFromInvokeHostFn(op)).toMatchObject({
+      fnName: "transfer",
+      from,
+      to,
+      amount: BigInt(100),
+    });
+  });
+});
+
+describe("muxed contract (W) addresses", () => {
+  // The SEP-23 test vector: contract CA7QYNF7…UWDA with mux id 0.
+  const MUXED_CONTRACT =
+    "WA7QYNF7SOWQ3GLR2BGMZEHXAVIRZA4KVWLTJJFC7MGXUA74P7UJUAAAAAAAAAAAAAWWC";
+  const from = Keypair.random().publicKey();
+  const transferArgs = [
+    new Address(from).toScVal(),
+    new Address(MUXED_CONTRACT).toScVal(),
+    nativeToScVal(BigInt(100), { type: "i128" }),
+  ];
+  const transferFn = new xdr.InvokeContractArgs({
+    contractAddress: new Address(OWNER_CONTRACT).toScAddress(),
+    functionName: Buffer.from("transfer"),
+    args: transferArgs,
+  });
+
+  it("renders a W address as its strkey", () => {
+    expect(addressToString(new Address(MUXED_CONTRACT).toScAddress())).toEqual(
+      MUXED_CONTRACT,
+    );
+    expect(scValToDisplayValue(transferArgs[1])).toEqual(MUXED_CONTRACT);
+  });
+
+  it("reads a W transfer destination from token invocation args", () => {
+    expect(getArgsForTokenInvocation("transfer", transferArgs)).toMatchObject({
+      from,
+      to: MUXED_CONTRACT,
+      amount: BigInt(100),
+    });
+  });
+
+  it("recognises a SAC transfer to a W address", () => {
+    const op = Operation.fromXDRObject(
+      Operation.invokeHostFunction({
+        func: xdr.HostFunction.hostFunctionTypeInvokeContract(transferFn),
+        auth: [],
+      }),
+    );
+    expect(getInvocationArgsFromInvokeHostFn(op)).toMatchObject({
+      fnName: "transfer",
+      from,
+      to: MUXED_CONTRACT,
+    });
+  });
+
+  it("carries a W argument through the invocation tree", () => {
+    const tree = buildInvocationTree(
+      new xdr.SorobanAuthorizedInvocation({
+        function:
+          xdr.SorobanAuthorizedFunction.sorobanAuthorizedFunctionTypeContractFn(
+            transferFn,
+          ),
+        subInvocations: [],
+      }),
+    );
+    expect(scValToDisplayValue(tree.args.args[1])).toEqual(MUXED_CONTRACT);
   });
 });
 
@@ -474,5 +834,117 @@ describe("getContractIdFromTransactionData", () => {
 
     // Classic assets don't have contract IDs, so should return undefined
     expect(result).toBeUndefined();
+  });
+});
+
+describe("getAttrsFromSorobanHorizonOp", () => {
+  it("returns null instead of throwing for an undecodable envelope", () => {
+    const operation = {
+      type: "invoke_host_function",
+      transaction_attr: { envelope_xdr: "not-xdr" },
+    };
+
+    expect(
+      getAttrsFromSorobanHorizonOp(operation, TESTNET_NETWORK_DETAILS),
+    ).toBeNull();
+  });
+
+  it("reads the operation of a fee-bumped envelope", () => {
+    const from = Keypair.random();
+    const to = Keypair.random().publicKey();
+    const inner = new TransactionBuilder(new Account(from.publicKey(), "0"), {
+      fee: "100",
+      networkPassphrase: TESTNET_NETWORK_DETAILS.networkPassphrase,
+    })
+      .addOperation(
+        Operation.invokeHostFunction({
+          func: xdr.HostFunction.hostFunctionTypeInvokeContract(
+            new xdr.InvokeContractArgs({
+              contractAddress: new Address(
+                "CA7QYNF7SOWQ3GLR2BGMZEHXAVIRZA4KVWLTJJFC7MGXUA74P7UJUWDA",
+              ).toScAddress(),
+              functionName: "transfer",
+              args: [
+                nativeToScVal(from.publicKey(), { type: "address" }),
+                nativeToScVal(to, { type: "address" }),
+                nativeToScVal(BigInt(100), { type: "i128" }),
+              ],
+            }),
+          ),
+          auth: [],
+        }),
+      )
+      .setTimeout(0)
+      .build();
+    const feeBump = TransactionBuilder.buildFeeBumpTransaction(
+      Keypair.random().publicKey(),
+      "200",
+      inner,
+      TESTNET_NETWORK_DETAILS.networkPassphrase,
+    );
+    const operation = {
+      type: "invoke_host_function",
+      transaction_attr: { envelope_xdr: feeBump.toXDR() },
+    };
+
+    expect(
+      getAttrsFromSorobanHorizonOp(operation, TESTNET_NETWORK_DETAILS),
+    ).toMatchObject({
+      fnName: "transfer",
+      from: from.publicKey(),
+      to,
+      amount: BigInt(100),
+    });
+  });
+
+  it("decodes an envelope once however many times it is asked for", () => {
+    const fromXdr = jest.spyOn(TransactionBuilder, "fromXdr");
+    // A fresh source key makes this envelope unique, so no earlier test has
+    // already cached it.
+    const from = Keypair.random();
+    const inner = new TransactionBuilder(new Account(from.publicKey(), "0"), {
+      fee: "100",
+      networkPassphrase: TESTNET_NETWORK_DETAILS.networkPassphrase,
+    })
+      .addOperation(
+        Operation.invokeHostFunction({
+          func: xdr.HostFunction.hostFunctionTypeInvokeContract(
+            new xdr.InvokeContractArgs({
+              contractAddress: new Address(
+                "CA7QYNF7SOWQ3GLR2BGMZEHXAVIRZA4KVWLTJJFC7MGXUA74P7UJUWDA",
+              ).toScAddress(),
+              functionName: "transfer",
+              args: [
+                nativeToScVal(from.publicKey(), { type: "address" }),
+                nativeToScVal(Keypair.random().publicKey(), {
+                  type: "address",
+                }),
+                nativeToScVal(BigInt(1), { type: "i128" }),
+              ],
+            }),
+          ),
+          auth: [],
+        }),
+      )
+      .setTimeout(0)
+      .build();
+    const operation = {
+      type: "invoke_host_function",
+      transaction_attr: { envelope_xdr: inner.toXDR() },
+    };
+
+    const first = getAttrsFromSorobanHorizonOp(
+      operation,
+      TESTNET_NETWORK_DETAILS,
+    );
+    const second = getAttrsFromSorobanHorizonOp(
+      { ...operation },
+      TESTNET_NETWORK_DETAILS,
+    );
+
+    expect(first).toMatchObject({ fnName: "transfer" });
+    expect(second).toBe(first);
+    expect(fromXdr).toHaveBeenCalledTimes(1);
+    fromXdr.mockRestore();
   });
 });

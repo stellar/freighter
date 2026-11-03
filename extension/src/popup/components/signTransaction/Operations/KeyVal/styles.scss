@@ -87,42 +87,46 @@
     .ParameterValue {
       margin-top: pxToRem(8px);
       word-break: break-word;
+      // A rendered SCMap puts one signed entry on each line. Without this the
+      // browser collapses those newlines and the indentation into a single
+      // run, and `textContent` assertions cannot see that happen.
+      white-space: pre-wrap;
     }
   }
+}
 
-  .Parameter {
-    text-overflow: ellipsis;
-    overflow: hidden;
-    color: var(--sds-clr-gray-12);
-    white-space: pre;
+// Informational note attached to a contract executable (e.g. a CAP-85
+// externally managed executable). Full-width so the text wraps rather than
+// being truncated in the right-aligned value column.
+.ExecutableNote {
+  display: flex;
+  align-items: flex-start;
+  gap: pxToRem(8px);
+  margin-top: pxToRem(4px);
+  padding: pxToRem(12px);
+  border-radius: pxToRem(12px);
+  line-height: 1.5rem;
+  font-size: pxToRem(14px);
+  color: var(--sds-clr-gray-11);
+  background-color: var(--sds-clr-gray-03);
+  border: 1px solid var(--sds-clr-gray-06);
 
-    &:not(:last-child) {
-      margin-bottom: pxToRem(12px);
-    }
-
-    .ParameterName {
-      color: var(--sds-clr-gray-11);
-    }
-
-    .CopyText {
-      width: 100%;
-
-      .Floater {
-        .CopyText__content {
-          width: 100%;
-
-          .CopyValue {
-            width: 100%;
-
-            .Value {
-              width: 100%;
-              display: block;
-              overflow: hidden;
-              text-overflow: ellipsis;
-            }
-          }
-        }
-      }
-    }
+  svg {
+    flex-shrink: 0;
+    width: pxToRem(16px);
+    height: pxToRem(16px);
+    margin-top: pxToRem(4px);
   }
+}
+
+// Qualifies the parameter names below it: they come from the contract spec,
+// which no one validates against the contract's code. Sits between the
+// "Parameters" heading and the card of rows, so it annotates the section
+// rather than reading as a row inside it -- hence a plain line, not a boxed
+// warning. Its bottom margin collapses with the card's own top margin.
+.ContractSpecNote {
+  font-size: pxToRem(14px);
+  line-height: pxToRem(20px);
+  color: var(--sds-clr-gray-11);
+  margin-bottom: pxToRem(12px);
 }

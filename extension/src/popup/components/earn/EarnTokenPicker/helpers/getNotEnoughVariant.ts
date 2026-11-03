@@ -2,14 +2,11 @@ import BigNumber from "bignumber.js";
 
 import { AssetType, ClassicAsset } from "@shared/api/types/account-balance";
 import { NetworkDetails } from "@shared/constants/stellar";
+import { isNativeBalance } from "@shared/helpers/assetIdentity";
 import { getCanonicalFromAsset } from "@shared/helpers/stellar";
 import { isMainnet } from "helpers/stellar";
 import { EARN_ONRAMP_ASSETS, NotEnoughVariant } from "popup/constants/earn";
-import {
-  isClassicBalance,
-  isNativeBalance,
-  isSorobanBalance,
-} from "popup/helpers/balance";
+import { isClassicBalance, isSorobanBalance } from "popup/helpers/balance";
 
 /**
  * Can the Coinbase onramp sell this asset?

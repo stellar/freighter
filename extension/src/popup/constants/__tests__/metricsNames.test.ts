@@ -118,6 +118,9 @@ describe("METRIC_NAMES domain-event catalog", () => {
     expect(METRIC_NAMES.signingTransactionRejected).toBe(
       "signing.transaction_rejected",
     );
+    expect(METRIC_NAMES.signingTransactionFailed).toBe(
+      "signing.transaction_failed",
+    );
     expect(METRIC_NAMES.signingTransactionBlocked).toBe(
       "signing.transaction_blocked",
     );

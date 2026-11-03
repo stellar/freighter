@@ -25,7 +25,7 @@ import { ROUTES } from "popup/constants/routes";
 
 const TEST_TX = {
   signatureBase: () => "signatureBase",
-  toXDR: () => "toXDR",
+  toXdr: () => "toXDR",
   _networkPassphrase: "Test SDF Network ; September 2015",
   _tx: {},
   signatures: [],
@@ -62,15 +62,20 @@ jest.mock("stellar-sdk", () => {
         "GBKWMR7TJ7BBICOOXRY2SWXKCWPTOHZPI6MP4LNNE5A73VP3WADGG3CH",
     },
     TransactionBuilder: {
-      fromXDR: () => TEST_TX as any,
+      fromXdr: () => TEST_TX as any,
     },
     Keypair: {
       fromPublicKey: () => ({
-        signatureHint: () => "signatureHint",
+        // v17: xdr.SignatureHint is a 4-byte, hex-encoding BytesValue that
+        // validates its input — a placeholder string throws "invalid hex
+        // input" rather than passing through as it did on v16.
+        signatureHint: () => new Uint8Array([1, 2, 3, 4]),
       }),
     },
     xdr: {
       DecoratedSignature: original.xdr.DecoratedSignature,
+      encodeBytes: original.xdr.encodeBytes,
+      decodeBytes: original.xdr.decodeBytes,
     },
   };
 });
@@ -93,7 +98,9 @@ jest.mock("@ledgerhq/hw-app-str", () => {
         Promise.resolve({
           rawPublicKey: jest.fn(),
         }),
-      signTransaction: () => Promise.resolve({ signature: "L1" }),
+      // v17: xdr.Signature validates its input too, so hand back bytes.
+      signTransaction: () =>
+        Promise.resolve({ signature: new Uint8Array(64).fill(1) }),
     };
   });
 });
@@ -141,6 +148,70 @@ describe("ManageAssetRows", () => {
   afterEach(() => {
     jest.clearAllMocks();
   });
+  it("offers Unhide for a held asset the account hid", async () => {
+    const onUnhideAsset = jest.fn();
+    const usdcIssuer =
+      "GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM";
+
+    render(
+      <Wrapper
+        routes={[ROUTES.manageAssets]}
+        state={{
+          auth: {
+            hasPrivateKey: true,
+            allAccounts: [
+              {
+                hardwareWalletType: "",
+                imported: false,
+                name: "Account 1",
+                publicKey: "G1",
+              },
+            ],
+            publicKey: "G1",
+          },
+          settings: {
+            networkDetails: TESTNET_NETWORK_DETAILS,
+          },
+        }}
+      >
+        <ManageAssetRows
+          balances={{
+            balances: [
+              mockBalances?.balances?.native as any,
+              mockBalances?.balances?.[`USDC:${usdcIssuer}`] as any,
+            ],
+            isFunded: true,
+            subentryCount: 1,
+          }}
+          verifiedAssetRows={[
+            {
+              code: "USDC",
+              issuer: usdcIssuer,
+              domain: "test.com",
+              image: "icon.png",
+            },
+          ]}
+          unverifiedAssetRows={[]}
+          isAssetHidden={(canonical) => canonical === `USDC:${usdcIssuer}`}
+          onUnhideAsset={onUnhideAsset}
+        />
+      </Wrapper>,
+    );
+
+    const unhide = await screen.findByTestId("ManageAssetRowButton__unhide");
+    expect(unhide).toHaveTextContent("Unhide");
+    expect(
+      screen.queryByTestId("ManageAssetRowButton__ellipsis-USDC"),
+    ).not.toBeInTheDocument();
+
+    fireEvent.click(unhide);
+
+    expect(onUnhideAsset).toHaveBeenCalledWith({
+      code: "USDC",
+      canonicalAsset: `USDC:${usdcIssuer}`,
+    });
+  });
+
   it("renders ManageAssetRows with change trust internal", async () => {
     render(
       <Wrapper
@@ -543,6 +614,7 @@ describe("ManageAssetRows", () => {
     jest.spyOn(ApiInternal, "getHiddenAssets").mockImplementation(() => {
       return Promise.resolve({
         hiddenAssets: {},
+        networkName: "",
         error: "",
       });
     });
@@ -671,6 +743,7 @@ describe("ManageAssetRows", () => {
     jest.spyOn(ApiInternal, "getHiddenAssets").mockImplementation(() => {
       return Promise.resolve({
         hiddenAssets: {},
+        networkName: "",
         error: "",
       });
     });

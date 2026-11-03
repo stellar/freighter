@@ -15,7 +15,7 @@ import { AutoSaveFields } from "popup/components/AutoSave";
 import { AppDataType, useGetAppData } from "helpers/hooks/useGetAppData";
 import { RequestState } from "constants/request";
 import { Loading } from "popup/components/Loading";
-import { openTab } from "popup/helpers/navigate";
+import { closeWindow, openTab } from "popup/helpers/navigate";
 import { newTabHref } from "helpers/urls";
 import { Navigate, useLocation } from "react-router-dom";
 import { reRouteOnboarding } from "popup/helpers/route";
@@ -86,7 +86,7 @@ export const Preferences = () => {
   if (state.data?.type === AppDataType.REROUTE) {
     if (state.data.shouldOpenTab) {
       openTab(newTabHref(state.data.routeTarget));
-      window.close();
+      closeWindow();
     }
     return (
       <Navigate
@@ -163,7 +163,7 @@ export const Preferences = () => {
                 </div>
                 <span className="Preferences--section--subtitle">
                   {t(
-                    "Help us improve Freighter by sharing usage, device, and activity data, including your public keys, IP address, and a persistent ID that links your wallet across extension and mobile, with our analytics and crash-reporting providers. You can turn this off at any time. See our Privacy Policy for details.",
+                    "Help us improve Varial by sharing usage, device, and activity data, including your public keys, IP address, and a persistent ID that links your wallet across extension and mobile, with our analytics and crash-reporting providers. You can turn this off at any time. See our Privacy Policy for details.",
                   )}
                 </span>
               </div>
@@ -200,7 +200,7 @@ export const Preferences = () => {
                   </div>
                   <span className="Preferences--section--subtitle">
                     {t(
-                      "Open Freighter in sidebar instead of popup when clicking the extension icon",
+                      "Open Varial in sidebar instead of popup when clicking the extension icon",
                     )}
                   </span>
                 </div>

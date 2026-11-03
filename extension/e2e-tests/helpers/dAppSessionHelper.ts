@@ -14,7 +14,7 @@ export const openGrantAccessPopup = async ({
   await docsPage.waitForLoadState();
   const popupPromise = page.context().waitForEvent("page");
   await docsPage.goto(
-    "https://play.freighter.app/#/extension/playground/setAllowed",
+    "https://play.varialwallet.com/#/extension/playground/setAllowed",
   );
   await docsPage.getByText("Set Allowed").click();
   const popup = await popupPromise;
@@ -41,7 +41,7 @@ export const openSignMessagePopup = async ({ page }: { page: Page }) => {
   const connectionPopupPromise = page.context().waitForEvent("page");
 
   await newPage.goto(
-    "https://play.freighter.app/#/extension/playground/signMessage",
+    "https://play.varialwallet.com/#/extension/playground/signMessage",
   );
   await newPage.getByRole("textbox").first().fill("Test message");
   await newPage
@@ -87,7 +87,7 @@ export const openSignTransactionPopup = async ({
   const signTxPopupPromise = page.context().waitForEvent("page");
 
   await dappPage.goto(
-    "https://play.freighter.app/#/extension/playground/signTransaction",
+    "https://play.varialwallet.com/#/extension/playground/signTransaction",
   );
   await dappPage.getByRole("textbox").first().fill(xdr);
   await dappPage.getByRole("textbox").nth(1).fill(networkPassphrase);

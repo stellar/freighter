@@ -15,6 +15,30 @@ export const navigateTo = (
 /* Firefox will not let you use window.open to programatically open a tab. Use this instead */
 export const openTab = (url: string) => browser.tabs.create({ url });
 
+// The browser's own window.close, handed over by SidebarSigningListener for as
+// long as it has window.close replaced with "navigate home" (sidebar mode).
+let nativeWindowClose: (() => void) | undefined;
+
+export const rememberNativeWindowClose = (close: () => void) => {
+  nativeWindowClose = close;
+};
+
+export const forgetNativeWindowClose = () => {
+  nativeWindowClose = undefined;
+};
+
+// Closes the popup, or the side panel in sidebar mode. A plain window.close()
+// in the sidebar would navigate home and re-run the onboarding hand-off, so
+// there this calls the native close the listener handed over. Everywhere else
+// it calls window.close(), looked up when called rather than captured at load.
+export const closeWindow = () => {
+  if (nativeWindowClose) {
+    nativeWindowClose();
+    return;
+  }
+  window.close();
+};
+
 export const openSidebar = async () => {
   try {
     if ((browser as any).sidebarAction) {

@@ -1,14 +1,22 @@
 @use "../../../styles/utils.scss" as *;
 
+// §N refs: wallet-eng-monorepo/design-docs/token-price-graphs/token-price-graphs-design.md
+
 .AssetDetail {
   &__wrapper {
     position: relative;
   }
 
+  // Text/SM/500
   &__balance-info {
     display: flex;
     flex-direction: column;
-    padding: pxToRem(16px);
+    font-size: pxToRem(14px);
+    font-weight: var(--sds-fw-medium);
+    line-height: pxToRem(20px);
+    // 12px vertical / 16px horizontal, per the design: the card is 97 tall
+    // with rows at y=12-36 and y=61-85.
+    padding: pxToRem(12px) pxToRem(16px);
     border-radius: #{pxToRem(12px)};
     border: 1px solid var(--sds-clr-gray-06);
     margin-top: pxToRem(24px);
@@ -23,7 +31,7 @@
   &__balance-label {
     display: flex;
     align-items: center;
-    color: var(--sds-clr-gray-09);
+    color: var(--sds-clr-gray-11);
 
     svg {
       margin-right: pxToRem(6px);
@@ -39,31 +47,90 @@
       width: 40px;
       height: auto;
     }
+
+    svg {
+      display: block;
+      width: 40px;
+      height: 40px;
+    }
   }
 
+  // 8px below the 40px icon, per the design (icon bottom y=40, title top
+  // y=48 in the Token header frame).
+  // Text/XS/500 in Default/Text/Secondary.
   &__title {
-    margin-top: pxToRem(4px);
-    color: var(--sds-clr-gray-09);
-  }
-
-  &__subtitle {
-    margin-top: pxToRem(12px);
+    margin-top: pxToRem(8px);
+    color: var(--sds-clr-gray-11);
     font-size: pxToRem(12px);
+    font-weight: var(--sds-fw-medium);
+    line-height: pxToRem(18px);
+    // A contract's name() is arbitrary length.
+    overflow-wrap: anywhere;
   }
 
+  // Display/XS/400: 24/32, -4% tracking (-0.96px at 24px).
   &__price {
-    margin-top: pxToRem(10px);
+    margin-top: pxToRem(8px);
     font-size: pxToRem(24px);
+    font-weight: var(--sds-fw-regular);
+    letter-spacing: pxToRem(-0.96px);
+    line-height: pxToRem(32px);
+
+    // Default/Text/Secondary
+    &--placeholder {
+      color: var(--sds-clr-gray-11);
+    }
   }
 
+  // Text/SM/500. Applies to both delta paths — the legacy 24h figure and the
+  // chart's per-range delta below — so the header reads the same whether or
+  // not the chart is shown.
   &__delta {
-    margin-top: pxToRem(4px);
+    font-size: pxToRem(14px);
+    font-weight: var(--sds-fw-medium);
+    line-height: pxToRem(20px);
+    margin-top: pxToRem(8px);
+    // Success/Text/Primary. Text and chart artwork use different steps in
+    // the design, so this does not track `.LineChart--positive`.
     &.positive {
-      color: var(--sds-clr-green-09);
+      color: var(--sds-clr-green-11);
     }
 
     &.negative {
       color: var(--sds-clr-gray-11);
+    }
+
+    // The chart section's palette has a neutral; `getPriceDeltaColor`, which
+    // the non-chart path still goes through, does not — it paints a flat zero
+    // "negative".
+    &.neutral {
+      color: var(--sds-clr-gray-11);
+    }
+
+    // The delta that follows the selected timeframe. It has to occupy its
+    // line box in every state — loading, no coverage, and loaded — or landing
+    // data and range switches would move the chart and the selector under it.
+    // An empty div collapses to zero height, so the line is reserved
+    // explicitly.
+    &--range {
+      // Size and line-height come from `&__delta` above; only the reserved
+      // row is this path's own concern, and it tracks that line box.
+      min-height: pxToRem(20px);
+
+      // Red is scoped to this path deliberately. The chart section reports a
+      // three-state direction, where "negative" means a genuine loss. The
+      // `.negative` above stays grey for the legacy branch, whose
+      // `getPriceDeltaColor` also labels a flat zero "negative" — reconciling
+      // the two is the §13 follow-up. Error/Text/Primary, a darker step than
+      // the chart's red line.
+      &.negative {
+        color: var(--sds-clr-red-11);
+      }
+    }
+
+    .AssetDetail__delta-ghost {
+      // Top-aligned so the 20px pill fits the 20px line box; middle grows the row and shifts the chart.
+      vertical-align: top;
     }
   }
 
@@ -74,9 +141,7 @@
     margin-top: pxToRem(32px);
 
     &--loading {
-      align-items: center;
-      display: flex;
-      justify-content: center;
+      align-items: stretch;
     }
   }
 
@@ -102,7 +167,7 @@
 
   &__token-name {
     align-items: center;
-    color: rgba(255, 255, 255, 0.6);
+    color: var(--sds-clr-gray-11);
     display: flex;
     justify-content: center;
     font-size: 0.875rem;
@@ -127,7 +192,7 @@
       line-height: 150%;
 
       &--isSuspicious {
-        color: var(--color-red-70);
+        color: var(--sds-clr-red-09);
       }
     }
   }
@@ -144,7 +209,7 @@
     flex-direction: row;
     gap: pxToRem(12px);
     padding: 0 pxToRem(16px) pxToRem(16px);
-    background-color: var(--sds-clr-gray-01);
+    background-color: var(--sds-clr-base-00);
     position: sticky;
     bottom: 0;
     margin: 0 auto;
@@ -168,7 +233,7 @@
       background: linear-gradient(
         to bottom,
         transparent,
-        var(--sds-clr-gray-01)
+        var(--sds-clr-base-00)
       );
       pointer-events: none;
     }
@@ -181,13 +246,11 @@
   }
 
   &__info-modal {
-    padding: 2rem var(--popup--side-padding);
-
     &__total-box {
       align-items: center;
-      border: 1px solid rgba(48, 52, 72, 1);
+      border: 1px solid var(--sds-clr-gray-06);
       border-radius: 0.5rem;
-      color: #fff;
+      color: var(--sds-clr-gray-12);
       display: flex;
       justify-content: space-between;
       padding: 1rem;
@@ -215,17 +278,17 @@
       margin-bottom: 1.5rem;
 
       div {
-        color: #fff;
+        color: var(--sds-clr-gray-12);
       }
 
       div:first-child {
-        color: rgba(255, 255, 255, 0.6);
+        color: var(--sds-clr-gray-11);
       }
     }
 
     &__total-available-row {
       border-top: 1px solid var(--sds-clr-gray-03);
-      color: #fff;
+      color: var(--sds-clr-gray-12);
       display: flex;
       justify-content: space-between;
       margin-top: 0.5rem;
@@ -233,13 +296,13 @@
     }
 
     &__footnote {
-      color: #a5a6aa;
+      color: var(--sds-clr-gray-11);
       font-size: 0.875rem;
       line-height: 1.375rem;
       margin-top: 5.875rem;
 
       a {
-        color: #a5a6aa;
+        color: var(--sds-clr-gray-11);
         text-decoration: underline;
       }
     }
@@ -249,19 +312,18 @@
     cursor: pointer;
   }
 
+  // Positioning is owned by Radix's popper wrapper, not this element: the
+  // content renders through a portal at body level, so the absolute
+  // top/right this used to carry resolved against the document instead of
+  // the header, and the menu landed offscreen behind the sheet.
   &__options-actions {
     display: flex;
     flex-direction: column;
-    position: absolute;
     background-color: var(--sds-clr-gray-01);
     border: 1px solid var(--sds-clr-gray-06);
     border-radius: 6px;
-    margin-top: -2rem;
     padding: 0.25rem;
-    top: 5.5rem;
-    right: 1rem;
     width: 10.75rem;
-    z-index: var(--z-index--banner);
 
     &__row {
       padding: 0.375rem 0.5rem;
@@ -281,6 +343,21 @@
         width: 100%;
         display: flex;
         justify-content: space-between;
+        // Hide and Remove are real buttons so they take focus and answer
+        // Enter/Space; the row supplies the whole visual treatment, so the UA
+        // button styling has to come off. Same reset the `.link` variant below
+        // has always needed.
+        background: none;
+        border: 0;
+        padding: 0;
+        font: inherit;
+        color: inherit;
+        text-align: left;
+        cursor: pointer;
+
+        &:disabled {
+          cursor: default;
+        }
 
         &.link {
           color: inherit;
@@ -297,10 +374,25 @@
       font-weight: var(--font-weight-medium);
     }
 
+    // Remove is destructive, per the designs.
+    &__row--destructive {
+      .action,
+      .action svg {
+        color: var(--sds-clr-red-11);
+      }
+    }
+
     &__background {
       height: 100vh;
       position: absolute;
       width: 100vw;
     }
   }
+}
+
+// The popper wrapper is the stacking context, so raising z-index on the content
+// itself does nothing. AssetDetail lives inside a Radix Sheet (z-50), so the
+// menu has to clear that. Mirrors the same override in CollectibleDetail.
+[data-radix-popper-content-wrapper]:has(.AssetDetail__options-actions) {
+  z-index: 100 !important;
 }

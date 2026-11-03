@@ -30,6 +30,7 @@ const BOOLEAN_FLAGS = [
   "use_token_prices_v2",
   "use_balances_v2",
   "earn_deposit",
+  "use_token_price_history",
 ] as const;
 
 /**
@@ -89,11 +90,15 @@ const initialState: RemoteConfigState = {
   // Defaults to v2; Amplitude can flip it off to roll back to the v1
   // token-prices endpoint without a release.
   use_token_prices_v2: true,
-  // Defaults to v2; Amplitude can flip it off to roll back to the v1
-  // account-balances endpoint without a release.
-  use_balances_v2: true,
+  // Defaults to v1 while the balances-v2 work is still in progress; Amplitude
+  // can flip it on to opt into the v2 account-balances endpoint without a
+  // release.
+  use_balances_v2: false,
   // Defaults to off; Amplitude turns it on to expose the Earn entry point.
   earn_deposit: false,
+  // Token price-history chart on AssetDetail. Ships ON — a kill switch, not
+  // launch choreography (§11 of the token-price-graphs design).
+  use_token_price_history: true,
   maintenance_banner: { enabled: false, payload: undefined },
   maintenance_screen: { enabled: false, payload: undefined },
 };
@@ -190,6 +195,16 @@ const remoteConfigSelector = (state: { remoteConfig: RemoteConfigState }) =>
   state.remoteConfig;
 
 /**
+ * A default-ON flag read fail-closed: off until `fetchFeatureFlags` settles.
+ * The app renders before that, so a bare read would run the feature during
+ * the first few hundred ms of exactly the incident the switch is for.
+ * `isInitialized` is set on failure too, so Amplitude being down can't wedge
+ * the feature off.
+ */
+const killSwitchSelector = (flag: (typeof BOOLEAN_FLAGS)[number]) =>
+  createSelector(remoteConfigSelector, (rc) => rc.isInitialized && rc[flag]);
+
+/**
  * Returns the maintenance banner flag state (enabled + resolved content).
  * Payload parsing happens here so the Redux store stays generic.
  */
@@ -235,16 +250,28 @@ export const maintenanceScreenSelector = createSelector(
  */
 export const tokenPricesV2Selector = createSelector(
   remoteConfigSelector,
+  // Deliberately NOT through `killSwitchSelector`. That factory gates whether
+  // a feature MOUNTS, which has no lasting effect; this flag picks the backend
+  // for a load whose result is cached. If it were read fail-closed, a
+  // pre-settle Account load would go to v1, which filters contract tokens, and
+  // the partial result would sit in the prices cache with nothing to retry it
+  // once the flags settled — Soroban assets stuck on "--" beside a v2 chart.
   (rc) => rc.use_token_prices_v2,
 );
 
 /**
  * Returns whether the v2 account-balances endpoint should be used. Defaults
- * to true; Amplitude can flip the flag off to roll back to the v1 endpoint.
+ * to false while the balances-v2 work is in progress; Amplitude can flip the
+ * flag on to opt into the v2 endpoint.
  */
 export const balancesV2Selector = createSelector(
   remoteConfigSelector,
   (rc) => rc.use_balances_v2,
+);
+
+/** Kill switch for the AssetDetail chart/stats/about section. Defaults to true. */
+export const tokenPriceHistoryEnabledSelector = killSwitchSelector(
+  "use_token_price_history",
 );
 
 /**

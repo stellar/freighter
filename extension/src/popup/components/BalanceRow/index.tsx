@@ -1,6 +1,7 @@
 import React from "react";
 import BigNumber from "bignumber.js";
 import { isEmpty } from "lodash";
+import classnames from "classnames";
 import { useTranslation } from "react-i18next";
 
 import { AssetIcon } from "popup/components/account/AccountAssets";
@@ -12,6 +13,7 @@ import {
 } from "popup/helpers/formatters";
 import { getPriceDeltaColor } from "popup/helpers/balance";
 import { getCanonicalFromAsset } from "helpers/stellar";
+import { isNativeAssetPair } from "@shared/helpers/assetIdentity";
 
 import "./styles.scss";
 
@@ -39,6 +41,8 @@ export interface BalanceRowProps {
    */
   rightSlot?: React.ReactNode;
   onClick?: () => void;
+  /** Draws the 1px line under the row, inset to the text column. */
+  hasDivider?: boolean;
   "data-testid"?: string;
   amountTestId?: string;
   fiatTestId?: string;
@@ -64,6 +68,7 @@ export const BalanceRow = ({
   percentChange,
   rightSlot,
   onClick,
+  hasDivider = false,
   "data-testid": dataTestId,
   amountTestId,
   fiatTestId,
@@ -76,12 +81,9 @@ export const BalanceRow = ({
   // AssetIcon shows a perpetual loading state when assetIcons is empty (and the
   // asset isn't XLM). Callers that pass a single iconUrl (e.g. the swap picker's
   // held list) would otherwise hit that; synthesize a one-entry map for them.
-  const canonical =
-    code === "XLM" && !issuerKey
-      ? "native"
-      : getCanonicalFromAsset(code, issuerKey);
+  const canonical = getCanonicalFromAsset(code, issuerKey);
   const resolvedIcons =
-    code !== "XLM" && isEmpty(assetIcons)
+    !isNativeAssetPair(code, issuerKey) && isEmpty(assetIcons)
       ? { [canonical]: iconUrl ?? "" }
       : assetIcons;
   const deltaColor = hasDelta
@@ -90,11 +92,16 @@ export const BalanceRow = ({
 
   // XLM is the only token whose friendly name we hold locally; the rest fall
   // back to their code.
-  const displayName = code === "XLM" && !issuerKey ? t("Stellar Lumens") : code;
+  const displayName = isNativeAssetPair(code, issuerKey)
+    ? t("Stellar Lumens")
+    : code;
 
   return (
     <div
-      className={`BalanceRow ${onClick ? "BalanceRow--clickable" : ""}`}
+      className={classnames("BalanceRow", {
+        "BalanceRow--clickable": !!onClick,
+        "BalanceRow--divider": hasDivider,
+      })}
       data-testid={dataTestId}
       onClick={onClick}
       role={onClick ? "button" : undefined}

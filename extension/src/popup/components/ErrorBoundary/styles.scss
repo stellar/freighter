@@ -45,12 +45,6 @@
     }
   }
 
-  &__success {
-    svg {
-      fill: var(--color-green-60);
-    }
-  }
-
   &__fail {
     svg {
       fill: var(--sds-clr-red-06);

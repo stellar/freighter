@@ -301,7 +301,7 @@ export const buildAndSimulateSoroswapTx = async ({
     const preparedTransaction = Sdk.rpc
       .assembleTransaction(builtTx, simulationTransaction)
       .build()
-      .toXDR();
+      .toXdr();
 
     if (Sdk.rpc.Api.isSimulationError(simulationTransaction)) {
       throw new Error(simulationTransaction.error);
@@ -314,7 +314,7 @@ export const buildAndSimulateSoroswapTx = async ({
   }
 
   const { ok, response } = await simulateTransaction({
-    xdr: builtTx.toXDR(),
+    xdr: builtTx.toXdr(),
     networkDetails,
   });
 

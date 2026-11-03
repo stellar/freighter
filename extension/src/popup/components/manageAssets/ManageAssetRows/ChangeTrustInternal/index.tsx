@@ -10,6 +10,8 @@ import {
   stroopToXlm,
   xlmToStroop,
 } from "helpers/stellar";
+import { SheetHeader, SheetHeaderLayout } from "popup/components/SheetHeader";
+import { SheetLayout } from "popup/components/SheetLayout";
 import { useNetworkFees } from "popup/helpers/useNetworkFees";
 import { MultiPaneSlider } from "popup/components/SlidingPaneSwitcher";
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
@@ -26,6 +28,12 @@ import {
   useBlockaidOverrideState,
   getAssetSecurityLevel,
 } from "popup/helpers/blockaid";
+import {
+  emitSigningRejected,
+  SigningKind,
+  SigningSource,
+} from "popup/metrics/signing";
+
 import { useGetChangeTrustData } from "./hooks/useChangeTrustData";
 import { Fee } from "./Settings/Fee";
 import { Timeout } from "./Settings/Timeout";
@@ -69,7 +77,12 @@ interface ChangeTrustInternalProps {
   // When rendered as a full popup view (the external Add Token flow) rather
   // than inside the content-sized in-app modal, fill the available height so
   // the action buttons / submit footer pin to the bottom instead of floating.
-  isFullHeight?: boolean;
+  /** Hides SubmitTx's "you can close this screen" hint, which only makes
+   * sense in the standalone popup. */
+  hideCloseTabHint?: boolean;
+  /** Rendered as a page (AddToken's trustline review) rather than inside a
+   * sheet: gets its own scroll region and fills the page height. */
+  isStandalone?: boolean;
 }
 
 export const ChangeTrustInternal = ({
@@ -82,11 +95,9 @@ export const ChangeTrustInternal = ({
   onTransactionSuccess,
   onClose,
   initialFee,
-  isFullHeight = false,
+  hideCloseTabHint = false,
+  isStandalone = false,
 }: ChangeTrustInternalProps) => {
-  const rootClassName = `ChangeTrustInternal${
-    isFullHeight ? " ChangeTrustInternal--standalone" : ""
-  }`;
   const activeOptionsRef = useRef<HTMLDivElement>(null);
   const [activePaneIndex, setActivePaneIndex] = useState(0);
   // The expanded Blockaid "Do not proceed" sheet renders in-flow (replacing the
@@ -96,6 +107,35 @@ export const ChangeTrustInternal = ({
   const [activeBodyContent, setActiveBodyContent] = useState(
     ActiveBodyContent.details,
   );
+  // True once the user approves. This component renders only while the
+  // trustline review is open, so anything else that unmounts it is the user
+  // leaving without deciding — including the enclosing modal's backdrop,
+  // which no button handler sees.
+  const hasApprovedRef = useRef(false);
+
+  useEffect(
+    () => () => {
+      if (!hasApprovedRef.current) {
+        emitSigningRejected(SigningKind.Transaction, {
+          source: SigningSource.Internal,
+        });
+      }
+    },
+    [],
+  );
+
+  /**
+   * Approves the review and moves to the submit step.
+   *
+   * Every route to that step goes through here, including the one behind the
+   * Blockaid warning. A route that skipped the latch would report an approval
+   * and then a rejection for the same transaction.
+   */
+  const onApproveReview = () => {
+    hasApprovedRef.current = true;
+    setActiveBodyContent(ActiveBodyContent.submitTx);
+  };
+
   const { t } = useTranslation();
 
   // Check override state (takes precedence, dev mode only)
@@ -139,7 +179,7 @@ export const ChangeTrustInternal = ({
     state.state === RequestState.IDLE
   ) {
     return (
-      <div data-testid="ChangeTrustInternal" className={rootClassName}>
+      <div data-testid="ChangeTrustInternal" className="ChangeTrustInternal">
         <div className="ChangeTrustInternal__Loading">
           <Loader size="2rem" />
         </div>
@@ -149,7 +189,7 @@ export const ChangeTrustInternal = ({
 
   if (state.state === RequestState.ERROR) {
     return (
-      <div data-testid="ChangeTrustInternal" className={rootClassName}>
+      <div data-testid="ChangeTrustInternal" className="ChangeTrustInternal">
         <div className="ChangeTrustInternal__Error">
           <Notification
             variant="error"
@@ -169,7 +209,7 @@ export const ChangeTrustInternal = ({
   const icons = { [canonical]: asset.image };
 
   let sequence = "";
-  const transaction = TransactionBuilder.fromXDR(
+  const transaction = TransactionBuilder.fromXdr(
     xdrDefined,
     networkDetails.networkPassphrase,
   ) as Transaction;
@@ -298,25 +338,21 @@ export const ChangeTrustInternal = ({
     </div>
   );
 
-  // Transaction details pane
+  // Transaction details pane. Its header is pinned by the sheet layout while
+  // the pane is active, like mobile's details sheet.
+  const detailsHeader = (
+    <SheetHeader
+      layout={SheetHeaderLayout.Centered}
+      title={t("Transaction Details")}
+      onClose={() => setActivePaneIndex(paneConfig.confirmIndex)}
+    />
+  );
+  const isOnDetailsPane =
+    activePaneIndex === paneConfig.detailsIndex && !isOnBlockaidSheet;
   const detailsPane = (
     <div className="ChangeTrustInternal__Body">
       <div className="ChangeTrustInternal__Body__Wrapper">
         <div className="ChangeTrustInternal__TransactionDetails">
-          <div className="ChangeTrustInternal__TransactionDetails__Header">
-            <div className="DetailsMark">
-              <Icon.List />
-            </div>
-            <div
-              className="Close"
-              onClick={() => setActivePaneIndex(paneConfig.confirmIndex)}
-            >
-              <Icon.X />
-            </div>
-          </div>
-          <div className="ChangeTrustInternal__TransactionDetails__Title">
-            <span>{t("Transaction Details")}</span>
-          </div>
           <div className="ChangeTrustInternal__TransactionDetails__Summary">
             <Summary
               sequenceNumber={sequence}
@@ -391,7 +427,7 @@ export const ChangeTrustInternal = ({
         }`}
         onClick={(e) => {
           e.preventDefault();
-          setActiveBodyContent(ActiveBodyContent.submitTx);
+          onApproveReview();
         }}
       >
         {t("Confirm anyway")}
@@ -424,7 +460,7 @@ export const ChangeTrustInternal = ({
         isFullWidth
         isRounded
         size="lg"
-        onClick={() => setActiveBodyContent(ActiveBodyContent.submitTx)}
+        onClick={onApproveReview}
       >
         {t("Confirm")}
       </Button>
@@ -442,19 +478,18 @@ export const ChangeTrustInternal = ({
     activeBodyContent === ActiveBodyContent.memo ||
     activeBodyContent === ActiveBodyContent.submitTx;
 
-  return (
-    <View.Content
-      hasNoTopPadding={!isSelfContainedPane}
-      hasNoPadding={isSelfContainedPane}
+  const sheet = (
+    <div
+      data-testid="ChangeTrustInternal"
+      className={`ChangeTrustInternal${
+        isStandalone ? " ChangeTrustInternal--standalone" : ""
+      }`}
     >
-      <div data-testid="ChangeTrustInternal" className={rootClassName}>
-        {activeBodyContent === ActiveBodyContent.details && (
-          <>
-            {isOnBlockaidSheet ? (
-              blockaidPane
-            ) : (
-              <MultiPaneSlider activeIndex={activePaneIndex} panes={panes} />
-            )}
+      {activeBodyContent === ActiveBodyContent.details && (
+        <SheetLayout
+          fill={isStandalone}
+          header={isOnDetailsPane ? detailsHeader : undefined}
+          footer={
             <div className="ChangeTrustInternal__Actions">
               <div
                 className={`ChangeTrustInternal__Actions__BtnRow ${!shouldShowBlockaidWarning && !isOnBlockaidSheet ? "ChangeTrustInternal__Actions__BtnRow--side-by-side" : ""}`}
@@ -512,44 +547,60 @@ export const ChangeTrustInternal = ({
                     : renderSafeCaseButtons()}
               </div>
             </div>
-          </>
-        )}
-        {activeBodyContent === ActiveBodyContent.fee && (
-          <Fee
-            fee={fee}
-            onSaveFee={setFee}
-            recommendedFee={recommendedFee}
-            goBack={() => setActiveBodyContent(ActiveBodyContent.details)}
-          />
-        )}
-        {activeBodyContent === ActiveBodyContent.timeout && (
-          <Timeout
-            timeout={timeout}
-            onSave={setTimeout}
-            goBack={() => setActiveBodyContent(ActiveBodyContent.details)}
-          />
-        )}
-        {activeBodyContent === ActiveBodyContent.memo && (
-          <Memo
-            memo={memo}
-            onSave={setMemo}
-            goBack={() => setActiveBodyContent(ActiveBodyContent.details)}
-          />
-        )}
-        {activeBodyContent === ActiveBodyContent.submitTx && (
-          <SubmitTransaction
-            asset={asset}
-            addTrustline={addTrustline}
-            icons={icons}
-            fee={fee}
-            goBack={() => setActiveBodyContent(ActiveBodyContent.details)}
-            onSuccess={onSuccess ?? onCancel}
-            onTransactionSuccess={onTransactionSuccess}
-            onClose={onClose ?? onCancel}
-            hideCloseTabHint={isFullHeight}
-          />
-        )}
-      </div>
-    </View.Content>
+          }
+        >
+          {isOnBlockaidSheet ? (
+            blockaidPane
+          ) : (
+            <MultiPaneSlider activeIndex={activePaneIndex} panes={panes} />
+          )}
+        </SheetLayout>
+      )}
+      {activeBodyContent === ActiveBodyContent.fee && (
+        <Fee
+          fee={fee}
+          onSaveFee={setFee}
+          recommendedFee={recommendedFee}
+          goBack={() => setActiveBodyContent(ActiveBodyContent.details)}
+        />
+      )}
+      {activeBodyContent === ActiveBodyContent.timeout && (
+        <Timeout
+          timeout={timeout}
+          onSave={setTimeout}
+          goBack={() => setActiveBodyContent(ActiveBodyContent.details)}
+        />
+      )}
+      {activeBodyContent === ActiveBodyContent.memo && (
+        <Memo
+          memo={memo}
+          onSave={setMemo}
+          goBack={() => setActiveBodyContent(ActiveBodyContent.details)}
+        />
+      )}
+      {activeBodyContent === ActiveBodyContent.submitTx && (
+        <SubmitTransaction
+          asset={asset}
+          addTrustline={addTrustline}
+          icons={icons}
+          fee={fee}
+          goBack={() => setActiveBodyContent(ActiveBodyContent.details)}
+          onSuccess={onSuccess ?? onCancel}
+          onTransactionSuccess={onTransactionSuccess}
+          onClose={onClose ?? onCancel}
+          hideCloseTabHint={hideCloseTabHint}
+        />
+      )}
+    </div>
+  );
+
+  // The fee / timeout / memo / submit-tx panes are self-contained sub-screens
+  // with their own View.Content; the details body pins its actions through
+  // SheetLayout instead. A page host still needs View.Content for its scroll
+  // region; inside a sheet the card itself scrolls.
+  return isSelfContainedPane || isStandalone ? (
+    <View.Content hasNoPadding>{sheet}</View.Content>
+  ) : (
+    sheet
   );
 };

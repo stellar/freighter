@@ -1,9 +1,17 @@
 import React from "react";
-import { render, waitFor, screen } from "@testing-library/react";
-import * as createStellarIdenticon from "helpers/stellarIdenticon";
+import { render, waitFor, screen, fireEvent } from "@testing-library/react";
 import { useLocation } from "react-router-dom";
 import BigNumber from "bignumber.js";
-import { Networks, Transaction, TransactionBuilder } from "stellar-sdk";
+import {
+  Account,
+  Asset,
+  Keypair,
+  Memo,
+  Networks,
+  Operation,
+  Transaction,
+  TransactionBuilder,
+} from "stellar-sdk";
 
 import * as Stellar from "helpers/stellar";
 import * as ApiInternal from "@shared/api/internal";
@@ -24,6 +32,7 @@ import { DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES } from "@shared/constants/autoLock";
 import * as UseIsDomainAllowed from "popup/helpers/useIsDomainListedAllowed";
 import * as SignTxDataHooks from "../SignTransaction/hooks/useGetSignTxData";
 import { RequestState } from "constants/request";
+import { TRANSACTION_WARNING } from "constants/transaction";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import * as SigningFlowHooks from "popup/helpers/useSetupSigningFlow";
 import { ShowOverlayStatus } from "popup/ducks/transactionSubmission";
@@ -31,7 +40,6 @@ import { WalletType } from "@shared/constants/hardwareWallet";
 import { sortBalances } from "popup/helpers/account";
 import { defaultBlockaidScanAssetResult } from "@shared/helpers/stellar";
 
-jest.mock("helpers/stellarIdenticon");
 jest.setTimeout(20000);
 
 jest.mock("react-router-dom", () => ({
@@ -41,7 +49,9 @@ jest.mock("react-router-dom", () => ({
 
 jest
   .spyOn(ApiInternal, "getHiddenAssets")
-  .mockImplementation(() => Promise.resolve({ hiddenAssets: {}, error: "" }));
+  .mockImplementation(() =>
+    Promise.resolve({ hiddenAssets: {}, networkName: "", error: "" }),
+  );
 
 jest
   .spyOn(ApiInternal, "getAccountBalances")
@@ -154,10 +164,12 @@ const transactions = {
     "AAAAAgAAAACM6IR9GHiRoVVAO78JJNksy2fKDQNs2jBn8bacsRLcrDucQIQAAAWIAAAAMQAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAGAAAAAAAAAABHkEVdJ+UfDnWpBr/qF582IEoDQ0iW0WPzO9CEUdvvh8AAAAEbWludAAAAAIAAAASAAAAAAAAAADoFl2ACT9HZkbCeuaT9MAIdStpdf58wM3P24nl738AnQAAAAoAAAAAAAAAAAAAAAAAAAAFAAAAAQAAAAAAAAAAAAAAAR5BFXSflHw51qQa/6hefNiBKA0NIltFj8zvQhFHb74fAAAABG1pbnQAAAACAAAAEgAAAAAAAAAA6BZdgAk/R2ZGwnrmk/TACHUraXX+fMDNz9uJ5e9/AJ0AAAAKAAAAAAAAAAAAAAAAAAAABQAAAAAAAAABAAAAAAAAAAIAAAAGAAAAAR5BFXSflHw51qQa/6hefNiBKA0NIltFj8zvQhFHb74fAAAAFAAAAAEAAAAHa35L+/RxV6EuJOVk78H5rCN+eubXBWtsKrRxeLnnpRAAAAABAAAABgAAAAEeQRV0n5R8OdakGv+oXnzYgSgNDSJbRY/M70IRR2++HwAAABAAAAABAAAAAgAAAA8AAAAHQmFsYW5jZQAAAAASAAAAAAAAAADoFl2ACT9HZkbCeuaT9MAIdStpdf58wM3P24nl738AnQAAAAEAYpBIAAAfrAAAAJQAAAAAAAAdYwAAAAA=",
 };
 
+// The source account of `transactions.classic`. It pays the fee.
+const CLASSIC_TX_SOURCE =
+  "GCBDC5AVPZEOSO3IAASQZSVRJMHX3UCCZH5O7S53FPZ636LQ5RHEW65H";
+
 describe("SignTransactions", () => {
   beforeEach(() => {
-    const mockCanvas = document.createElement("canvas");
-    jest.spyOn(createStellarIdenticon, "default").mockReturnValue(mockCanvas);
     jest.spyOn(global, "fetch").mockImplementation(() =>
       Promise.resolve({
         json: async () => ({
@@ -187,7 +199,7 @@ describe("SignTransactions", () => {
           isFunded: true,
           subentryCount: 0,
         },
-        publicKey: mockAccounts[1].publicKey,
+        publicKey: mockAccounts[0].publicKey,
         signFlowState: {
           allAccounts: mockAccounts,
           accountNotFound: false,
@@ -292,7 +304,7 @@ describe("SignTransactions", () => {
             isFunded: true,
             subentryCount: 0,
           },
-          publicKey: mockAccounts[1].publicKey,
+          publicKey: mockAccounts[0].publicKey,
           signFlowState: {
             allAccounts: mockAccounts,
             accountNotFound: false,
@@ -343,7 +355,7 @@ describe("SignTransactions", () => {
       }),
     );
 
-    const transaction = TransactionBuilder.fromXDR(
+    const transaction = TransactionBuilder.fromXdr(
       transactions.classic,
       Networks.PUBLIC,
     ) as Transaction;
@@ -388,6 +400,125 @@ describe("SignTransactions", () => {
   });
 
   it("does not show non-https domain error on Testnet", async () => {
+    let currentSignTxDataMock = {
+      state: {
+        state: RequestState.SUCCESS,
+        data: {
+          type: AppDataType.RESOLVED,
+          scanResult: {
+            simualtion: null,
+            validation: null,
+            request_id: "1",
+          },
+          icons: {},
+          balances: {
+            balances: sortBalances(mockBalances.balances),
+            isFunded: true,
+            subentryCount: 0,
+          },
+          publicKey: mockAccounts[0].publicKey,
+          signFlowState: {
+            allAccounts: mockAccounts,
+            accountNotFound: false,
+            currentAccount: mockAccounts[0],
+          },
+          applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
+          networkDetails: {
+            ...defaultSettingsState.networkDetails,
+            networkPassphrase: "Test SDF Network ; September 2015",
+          },
+          siteScanData: null,
+          blockaidOverrideState: null,
+        },
+        error: null,
+      },
+      fetchData: jest.fn(),
+    } as ReturnType<typeof SignTxDataHooks.useGetSignTxData>;
+    jest
+      .spyOn(SignTxDataHooks, "useGetSignTxData")
+      .mockReturnValue(currentSignTxDataMock);
+    jest.spyOn(ApiInternal, "loadSettings").mockImplementation(() =>
+      Promise.resolve({
+        networkDetails: {
+          ...defaultSettingsState.networkDetails,
+          networkPassphrase: "Test SDF Network ; September 2015",
+          networkName: "Test Net",
+        },
+        networksList: DEFAULT_NETWORKS,
+        hiddenAssets: {},
+        allowList: {
+          "Test Net": {
+            [mockAccounts[0].publicKey]: ["laboratory.stellar.org"],
+          },
+        },
+        error: "",
+        isDataSharingAllowed: false,
+        isMemoValidationEnabled: false,
+        isHideDustEnabled: true,
+        isOpenSidebarByDefault: false,
+        settingsState: SettingsState.SUCCESS,
+        isSorobanPublicEnabled: false,
+        isRpcHealthy: true,
+        userNotification: {
+          enabled: false,
+          message: "",
+        },
+        isExperimentalModeEnabled: false,
+        isHashSigningEnabled: false,
+        isNonSSLEnabled: false,
+        experimentalFeaturesState: SettingsState.SUCCESS,
+        assetsLists: DEFAULT_ASSETS_LISTS,
+        autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
+      }),
+    );
+    const transaction = TransactionBuilder.fromXdr(
+      transactions.classic,
+      Networks.TESTNET,
+    ) as Transaction;
+    const op = transaction.operations[0];
+    jest.spyOn(Stellar, "getTransactionInfo").mockImplementation(() => ({
+      ...mockTransactionInfo,
+      transactionXdr: transactions.classic,
+      transaction: {
+        ...mockTransactionInfo.transaction,
+        _networkPassphrase: Networks.TESTNET,
+        _operations: [op],
+      },
+      isHttpsDomain: false,
+      domain: "laboratory.stellar.org",
+      uuid: "123-123-123-123-123",
+    }));
+    render(
+      <Wrapper
+        routes={[ROUTES.signTransaction]}
+        state={{
+          auth: {
+            allAccounts: mockAccounts,
+            publicKey: mockAccounts[0].publicKey,
+          },
+          settings: {
+            allowList: {
+              "Test Net": {
+                [mockAccounts[0].publicKey]: ["laboratory.stellar.org"],
+              },
+            },
+            isExperimentalModeEnabled: false,
+            networkDetails: {
+              ...defaultSettingsState.networkDetails,
+              networkPassphrase: "Test SDF Network ; September 2015",
+              networkName: "Test Net",
+            },
+          },
+        }}
+      >
+        <SignTransaction />
+      </Wrapper>,
+    );
+    await waitFor(() => screen.getByTestId("SignTransaction"));
+    expect(screen.queryByTestId("WarningMessage")).toBeNull();
+  });
+
+  it("does not require a memo when the inner transaction of a fee bump has one", async () => {
     let currentSignTxDataMock = {
       state: {
         state: RequestState.SUCCESS,
@@ -459,20 +590,38 @@ describe("SignTransactions", () => {
         autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
       }),
     );
-    const transaction = TransactionBuilder.fromXDR(
-      transactions.classic,
+    // A fee bump: the memo is in the inner transaction, not the outer one.
+    const destination = Keypair.random().publicKey();
+    const innerBuilder = new TransactionBuilder(
+      new Account(Keypair.random().publicKey(), "1"),
+      { fee: "100", networkPassphrase: Networks.TESTNET },
+    ).addOperation(
+      Operation.payment({
+        destination,
+        asset: Asset.native(),
+        amount: "1",
+      }),
+    );
+    innerBuilder.addMemo(Memo.text("123"));
+    const innerTx = innerBuilder.setTimeout(0).build();
+    const feeBumpXdr = TransactionBuilder.buildFeeBumpTransaction(
+      Keypair.random(),
+      "200",
+      innerTx,
       Networks.TESTNET,
-    ) as Transaction;
-    const op = transaction.operations[0];
+    ).toXDR();
     jest.spyOn(Stellar, "getTransactionInfo").mockImplementation(() => ({
       ...mockTransactionInfo,
-      transactionXdr: transactions.classic,
+      transactionXdr: feeBumpXdr,
       transaction: {
         ...mockTransactionInfo.transaction,
         _networkPassphrase: Networks.TESTNET,
-        _operations: [op],
+        _operations: [{ type: "payment" }],
       },
-      isHttpsDomain: false,
+      flaggedKeys: {
+        [destination]: { tags: [TRANSACTION_WARNING.memoRequired] },
+      },
+      isHttpsDomain: true,
       domain: "laboratory.stellar.org",
       uuid: "123-123-123-123-123",
     }));
@@ -503,7 +652,154 @@ describe("SignTransactions", () => {
       </Wrapper>,
     );
     await waitFor(() => screen.getByTestId("SignTransaction"));
-    expect(screen.queryByTestId("WarningMessage")).toBeNull();
+    expect(screen.queryByTestId("memo-required-label")).toBeNull();
+    expect(screen.getByTestId("sign-transaction-sign")).not.toBeDisabled();
+
+    // The details pane shows the memo of the inner tx.
+    fireEvent.click(screen.getByText("Transaction details"));
+    expect(screen.getByTestId("MemoBlock")).toHaveTextContent("123");
+    expect(screen.getByTestId("MemoBlock")).toHaveTextContent("(MEMO_TEXT)");
+  });
+
+  it("requires a memo when the inner transaction of a fee bump has none", async () => {
+    let currentSignTxDataMock = {
+      state: {
+        state: RequestState.SUCCESS,
+        data: {
+          type: AppDataType.RESOLVED,
+          scanResult: {
+            simualtion: null,
+            validation: null,
+            request_id: "1",
+          },
+          icons: {},
+          balances: {
+            balances: sortBalances(mockBalances.balances),
+            isFunded: true,
+            subentryCount: 0,
+          },
+          publicKey: mockAccounts[1].publicKey,
+          signFlowState: {
+            allAccounts: mockAccounts,
+            accountNotFound: false,
+            currentAccount: mockAccounts[0],
+          },
+          applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
+          networkDetails: {
+            ...defaultSettingsState.networkDetails,
+            networkPassphrase: "Test SDF Network ; September 2015",
+          },
+          siteScanData: null,
+          blockaidOverrideState: null,
+        },
+        error: null,
+      },
+      fetchData: jest.fn(),
+    } as ReturnType<typeof SignTxDataHooks.useGetSignTxData>;
+    jest
+      .spyOn(SignTxDataHooks, "useGetSignTxData")
+      .mockReturnValue(currentSignTxDataMock);
+    jest.spyOn(ApiInternal, "loadSettings").mockImplementation(() =>
+      Promise.resolve({
+        networkDetails: {
+          ...defaultSettingsState.networkDetails,
+          networkPassphrase: "Test SDF Network ; September 2015",
+          networkName: "Test Net",
+        },
+        networksList: DEFAULT_NETWORKS,
+        hiddenAssets: {},
+        allowList: {
+          "Test Net": {
+            [mockAccounts[0].publicKey]: ["laboratory.stellar.org"],
+          },
+        },
+        error: "",
+        isDataSharingAllowed: false,
+        isMemoValidationEnabled: false,
+        isHideDustEnabled: true,
+        isOpenSidebarByDefault: false,
+        settingsState: SettingsState.SUCCESS,
+        isSorobanPublicEnabled: false,
+        isRpcHealthy: true,
+        userNotification: {
+          enabled: false,
+          message: "",
+        },
+        isExperimentalModeEnabled: false,
+        isHashSigningEnabled: false,
+        isNonSSLEnabled: false,
+        experimentalFeaturesState: SettingsState.SUCCESS,
+        assetsLists: DEFAULT_ASSETS_LISTS,
+        autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
+      }),
+    );
+    // A fee bump: the memo is in the inner transaction, not the outer one.
+    const destination = Keypair.random().publicKey();
+    const innerBuilder = new TransactionBuilder(
+      new Account(Keypair.random().publicKey(), "1"),
+      { fee: "100", networkPassphrase: Networks.TESTNET },
+    ).addOperation(
+      Operation.payment({
+        destination,
+        asset: Asset.native(),
+        amount: "1",
+      }),
+    );
+    const innerTx = innerBuilder.setTimeout(0).build();
+    const feeBumpXdr = TransactionBuilder.buildFeeBumpTransaction(
+      Keypair.random(),
+      "200",
+      innerTx,
+      Networks.TESTNET,
+    ).toXDR();
+    jest.spyOn(Stellar, "getTransactionInfo").mockImplementation(() => ({
+      ...mockTransactionInfo,
+      transactionXdr: feeBumpXdr,
+      transaction: {
+        ...mockTransactionInfo.transaction,
+        _networkPassphrase: Networks.TESTNET,
+        _operations: [{ type: "payment" }],
+      },
+      flaggedKeys: {
+        [destination]: { tags: [TRANSACTION_WARNING.memoRequired] },
+      },
+      isHttpsDomain: true,
+      domain: "laboratory.stellar.org",
+      uuid: "123-123-123-123-123",
+    }));
+    render(
+      <Wrapper
+        routes={[ROUTES.signTransaction]}
+        state={{
+          auth: {
+            allAccounts: mockAccounts,
+            publicKey: mockAccounts[0].publicKey,
+          },
+          settings: {
+            allowList: {
+              "Test Net": {
+                [mockAccounts[0].publicKey]: ["laboratory.stellar.org"],
+              },
+            },
+            isExperimentalModeEnabled: false,
+            networkDetails: {
+              ...defaultSettingsState.networkDetails,
+              networkPassphrase: "Test SDF Network ; September 2015",
+              networkName: "Test Net",
+            },
+          },
+        }}
+      >
+        <SignTransaction />
+      </Wrapper>,
+    );
+    await waitFor(() => screen.getByTestId("SignTransaction"));
+    expect(screen.getByTestId("memo-required-label")).toBeInTheDocument();
+    expect(screen.getByTestId("sign-transaction-sign")).toBeDisabled();
+
+    // The details pane shows no memo.
+    fireEvent.click(screen.getByText("Transaction details"));
+    expect(screen.queryByTestId("MemoBlock")).toBeNull();
   });
 
   it("shows unfunded warning when signer has no XLM", async () => {
@@ -534,7 +830,7 @@ describe("SignTransactions", () => {
             isFunded: true,
             subentryCount: 0,
           },
-          publicKey: mockAccounts[1].publicKey,
+          publicKey: CLASSIC_TX_SOURCE,
           signFlowState: {
             allAccounts: mockAccounts,
             accountNotFound: false,
@@ -600,7 +896,7 @@ describe("SignTransactions", () => {
       }),
     );
 
-    const transaction = TransactionBuilder.fromXDR(
+    const transaction = TransactionBuilder.fromXdr(
       transactions.classic,
       Networks.PUBLIC,
     ) as Transaction;
@@ -639,6 +935,141 @@ describe("SignTransactions", () => {
     );
     await waitFor(() => screen.getByTestId("InsufficientBalanceWarning"));
   });
+  it("does not show unfunded warning when another account pays the fee", async () => {
+    // The selected account (mockAccounts[0]) signs, but the tx source pays the fee.
+    const mockBalancesEmpty = {
+      ...mockBalances,
+      balances: {
+        native: {
+          token: { type: "native", code: "XLM" },
+          total: new BigNumber("0"),
+          available: new BigNumber("0"),
+          blockaidData: defaultBlockaidScanAssetResult,
+        },
+      } as any as Balances,
+    };
+    let currentSignTxDataMock = {
+      state: {
+        state: RequestState.SUCCESS,
+        data: {
+          type: AppDataType.RESOLVED,
+          scanResult: {
+            simualtion: null,
+            validation: null,
+            request_id: "1",
+          },
+          icons: {},
+          balances: {
+            balances: sortBalances(mockBalancesEmpty.balances),
+            isFunded: true,
+            subentryCount: 0,
+          },
+          publicKey: mockAccounts[0].publicKey,
+          signFlowState: {
+            allAccounts: mockAccounts,
+            accountNotFound: false,
+            currentAccount: mockAccounts[0],
+          },
+          applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
+          networkDetails: {
+            ...defaultSettingsState.networkDetails,
+            networkPassphrase: FUTURENET_NETWORK_DETAILS.networkPassphrase,
+          },
+          siteScanData: null,
+          blockaidOverrideState: null,
+        },
+        error: null,
+      },
+      fetchData: jest.fn(),
+    } as ReturnType<typeof SignTxDataHooks.useGetSignTxData>;
+    jest.spyOn(SigningFlowHooks, "useSetupSigningFlow").mockReturnValue({
+      isConfirming: false,
+      isHardwareWallet: false,
+      isPasswordRequired: false,
+      handleApprove: jest.fn(),
+      hwStatus: ShowOverlayStatus.IDLE,
+      rejectAndClose: jest.fn(),
+      setIsPasswordRequired: jest.fn(),
+      verifyPasswordThenSign: jest.fn(),
+      hardwareWalletType: WalletType.LEDGER,
+    });
+    jest
+      .spyOn(SignTxDataHooks, "useGetSignTxData")
+      .mockReturnValue(currentSignTxDataMock);
+    jest
+      .spyOn(ApiInternal, "getAccountBalances")
+      .mockImplementation(() => Promise.resolve(mockBalancesEmpty));
+
+    jest.spyOn(ApiInternal, "loadSettings").mockImplementation(() =>
+      Promise.resolve({
+        networkDetails: {
+          ...defaultSettingsState.networkDetails,
+          networkPassphrase: FUTURENET_NETWORK_DETAILS.networkPassphrase,
+        },
+        networksList: DEFAULT_NETWORKS,
+        hiddenAssets: {},
+        allowList: ApiInternal.DEFAULT_ALLOW_LIST,
+        error: "",
+        isDataSharingAllowed: false,
+        isMemoValidationEnabled: false,
+        isHideDustEnabled: true,
+        isOpenSidebarByDefault: false,
+        settingsState: SettingsState.SUCCESS,
+        isSorobanPublicEnabled: false,
+        isRpcHealthy: true,
+        userNotification: {
+          enabled: false,
+          message: "",
+        },
+        isExperimentalModeEnabled: false,
+        isHashSigningEnabled: false,
+        isNonSSLEnabled: false,
+        experimentalFeaturesState: SettingsState.SUCCESS,
+        assetsLists: DEFAULT_ASSETS_LISTS,
+        autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
+      }),
+    );
+
+    const transaction = TransactionBuilder.fromXdr(
+      transactions.classic,
+      Networks.PUBLIC,
+    ) as Transaction;
+    const op = transaction.operations[0];
+    jest.spyOn(Stellar, "getTransactionInfo").mockImplementation(() => ({
+      ...mockTransactionInfo,
+      transactionXdr: transactions.classic,
+      transaction: {
+        ...mockTransactionInfo.transaction,
+        _networkPassphrase: Networks.FUTURENET,
+        _operations: [op],
+      },
+      isHttpsDomain: false,
+      uuid: "123-123-123-123-123",
+    }));
+
+    render(
+      <Wrapper
+        routes={[ROUTES.signTransaction]}
+        state={{
+          auth: {
+            allAccounts: mockAccounts,
+            publicKey: mockAccounts[0].publicKey,
+          },
+          settings: {
+            isExperimentalModeEnabled: true,
+            networkDetails: {
+              ...defaultSettingsState.networkDetails,
+              networkPassphrase: FUTURENET_NETWORK_DETAILS.networkPassphrase,
+            },
+          },
+        }}
+      >
+        <SignTransaction />
+      </Wrapper>,
+    );
+    await waitFor(() => screen.getByTestId("SignTransaction"));
+    expect(screen.queryByTestId("InsufficientBalanceWarning")).toBeNull();
+  });
   it("renders blockaid scan label when tx expected to fail", async () => {
     let currentSignTxDataMock = {
       state: {
@@ -659,7 +1090,7 @@ describe("SignTransactions", () => {
             isFunded: true,
             subentryCount: 0,
           },
-          publicKey: mockAccounts[1].publicKey,
+          publicKey: mockAccounts[0].publicKey,
           signFlowState: {
             allAccounts: mockAccounts,
             accountNotFound: false,
@@ -714,7 +1145,7 @@ describe("SignTransactions", () => {
         autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
       }),
     );
-    const transaction = TransactionBuilder.fromXDR(
+    const transaction = TransactionBuilder.fromXdr(
       transactions.classic,
       Networks.TESTNET,
     ) as Transaction;
@@ -782,7 +1213,7 @@ describe("SignTransactions", () => {
             isFunded: true,
             subentryCount: 0,
           },
-          publicKey: mockAccounts[1].publicKey,
+          publicKey: mockAccounts[0].publicKey,
           signFlowState: {
             allAccounts: mockAccounts,
             accountNotFound: false,
@@ -837,7 +1268,7 @@ describe("SignTransactions", () => {
         autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
       }),
     );
-    const transaction = TransactionBuilder.fromXDR(
+    const transaction = TransactionBuilder.fromXdr(
       transactions.classic,
       Networks.TESTNET,
     ) as Transaction;
@@ -905,7 +1336,7 @@ describe("SignTransactions", () => {
             isFunded: true,
             subentryCount: 0,
           },
-          publicKey: mockAccounts[1].publicKey,
+          publicKey: mockAccounts[0].publicKey,
           signFlowState: {
             allAccounts: mockAccounts,
             accountNotFound: false,
@@ -960,7 +1391,7 @@ describe("SignTransactions", () => {
         autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
       }),
     );
-    const transaction = TransactionBuilder.fromXDR(
+    const transaction = TransactionBuilder.fromXdr(
       transactions.classic,
       Networks.TESTNET,
     ) as Transaction;
@@ -1022,7 +1453,7 @@ describe("SignTransactions", () => {
             isFunded: true,
             subentryCount: 0,
           },
-          publicKey: mockAccounts[1].publicKey,
+          publicKey: mockAccounts[0].publicKey,
           signFlowState: {
             allAccounts: mockAccounts,
             accountNotFound: false,
@@ -1077,7 +1508,7 @@ describe("SignTransactions", () => {
         autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
       }),
     );
-    const transaction = TransactionBuilder.fromXDR(
+    const transaction = TransactionBuilder.fromXdr(
       transactions.classic,
       Networks.TESTNET,
     ) as Transaction;
@@ -1140,7 +1571,7 @@ describe("SignTransactions", () => {
           blockaidOverrideState: null,
           icons: {},
           balances: null, // Balances unavailable due to fetch failure
-          publicKey: mockAccounts[1].publicKey,
+          publicKey: mockAccounts[0].publicKey,
           signFlowState: {
             allAccounts: mockAccounts,
             accountNotFound: false,
@@ -1201,7 +1632,7 @@ describe("SignTransactions", () => {
       }),
     );
 
-    const transaction = TransactionBuilder.fromXDR(
+    const transaction = TransactionBuilder.fromXdr(
       transactions.classic,
       Networks.PUBLIC,
     ) as Transaction;
@@ -1285,7 +1716,7 @@ describe("SignTransactions", () => {
             isFunded: true,
             subentryCount: 0,
           },
-          publicKey: mockAccounts[1].publicKey,
+          publicKey: mockAccounts[0].publicKey,
           signFlowState: {
             allAccounts: mockAccounts,
             accountNotFound: false,
@@ -1340,7 +1771,7 @@ describe("SignTransactions", () => {
         autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
       }),
     );
-    const transaction = TransactionBuilder.fromXDR(
+    const transaction = TransactionBuilder.fromXdr(
       transactions.classic,
       Networks.TESTNET,
     ) as Transaction;
@@ -1460,7 +1891,7 @@ describe("SignTransactions", () => {
             isFunded: true,
             subentryCount: 0,
           },
-          publicKey: mockAccounts[1].publicKey,
+          publicKey: mockAccounts[0].publicKey,
           signFlowState: {
             allAccounts: mockAccounts,
             accountNotFound: false,
@@ -1515,7 +1946,7 @@ describe("SignTransactions", () => {
         autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
       }),
     );
-    const transaction = TransactionBuilder.fromXDR(
+    const transaction = TransactionBuilder.fromXdr(
       transactions.classic,
       Networks.TESTNET,
     ) as Transaction;
@@ -1627,7 +2058,7 @@ describe("SignTransactions", () => {
             isFunded: true,
             subentryCount: 0,
           },
-          publicKey: mockAccounts[1].publicKey,
+          publicKey: mockAccounts[0].publicKey,
           signFlowState: {
             allAccounts: mockAccounts,
             accountNotFound: false,
@@ -1682,7 +2113,7 @@ describe("SignTransactions", () => {
         autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
       }),
     );
-    const transaction = TransactionBuilder.fromXDR(
+    const transaction = TransactionBuilder.fromXdr(
       transactions.classic,
       Networks.TESTNET,
     ) as Transaction;
@@ -1732,5 +2163,278 @@ describe("SignTransactions", () => {
     // Valid entry should still render
     expect(screen.getByText("GOOD")).toBeInTheDocument();
     expect(screen.getByText("-0.5")).toBeInTheDocument();
+  });
+  it("only shows trustline changes for the selected account", async () => {
+    const selectedAccount = Keypair.random().publicKey();
+    let currentSignTxDataMock = {
+      state: {
+        state: RequestState.SUCCESS,
+        data: {
+          type: AppDataType.RESOLVED,
+          scanResult: {
+            simualtion: null,
+            validation: null,
+            request_id: "1",
+          },
+          icons: {},
+          balances: {
+            balances: sortBalances(mockBalances.balances),
+            isFunded: true,
+            subentryCount: 0,
+          },
+          publicKey: selectedAccount,
+          signFlowState: {
+            allAccounts: mockAccounts,
+            accountNotFound: false,
+            currentAccount: mockAccounts[0],
+          },
+          applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
+          networkDetails: {
+            ...defaultSettingsState.networkDetails,
+            networkPassphrase: "Test SDF Network ; September 2015",
+          },
+          siteScanData: null,
+          blockaidOverrideState: null,
+        },
+        error: null,
+      },
+      fetchData: jest.fn(),
+    } as ReturnType<typeof SignTxDataHooks.useGetSignTxData>;
+    jest
+      .spyOn(SignTxDataHooks, "useGetSignTxData")
+      .mockReturnValue(currentSignTxDataMock);
+    jest.spyOn(ApiInternal, "loadSettings").mockImplementation(() =>
+      Promise.resolve({
+        networkDetails: {
+          ...defaultSettingsState.networkDetails,
+          networkPassphrase: "Test SDF Network ; September 2015",
+          networkName: "Test Net",
+        },
+        networksList: DEFAULT_NETWORKS,
+        hiddenAssets: {},
+        allowList: {
+          "Test Net": {
+            [mockAccounts[0].publicKey]: ["laboratory.stellar.org"],
+          },
+        },
+        error: "",
+        isDataSharingAllowed: false,
+        isMemoValidationEnabled: false,
+        isHideDustEnabled: true,
+        isOpenSidebarByDefault: false,
+        settingsState: SettingsState.SUCCESS,
+        isSorobanPublicEnabled: false,
+        isRpcHealthy: true,
+        userNotification: {
+          enabled: false,
+          message: "",
+        },
+        isExperimentalModeEnabled: false,
+        isHashSigningEnabled: false,
+        isNonSSLEnabled: false,
+        experimentalFeaturesState: SettingsState.SUCCESS,
+        assetsLists: DEFAULT_ASSETS_LISTS,
+        autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
+      }),
+    );
+    // Two accounts add a trustline to the same asset in one transaction.
+    // Only the trustline of the selected account must show.
+    const aqua = new Asset("AQUA", Keypair.random().publicKey());
+    const otherAccount = Keypair.random().publicKey();
+    const trustlineXdr = new TransactionBuilder(
+      new Account(selectedAccount, "1"),
+      { fee: "100", networkPassphrase: Networks.TESTNET },
+    )
+      .addOperation(Operation.changeTrust({ asset: aqua }))
+      .addOperation(
+        Operation.changeTrust({ asset: aqua, source: otherAccount }),
+      )
+      .setTimeout(0)
+      .build()
+      .toXDR();
+    jest.spyOn(Stellar, "getTransactionInfo").mockImplementation(() => ({
+      ...mockTransactionInfo,
+      transactionXdr: trustlineXdr,
+      transaction: {
+        ...mockTransactionInfo.transaction,
+        _networkPassphrase: Networks.TESTNET,
+        _operations: [{ type: "changeTrust" }, { type: "changeTrust" }],
+      },
+      isHttpsDomain: true,
+      domain: "laboratory.stellar.org",
+      uuid: "123-123-123-123-123",
+    }));
+    render(
+      <Wrapper
+        routes={[ROUTES.signTransaction]}
+        state={{
+          auth: {
+            allAccounts: mockAccounts,
+            publicKey: mockAccounts[0].publicKey,
+          },
+          settings: {
+            allowList: {
+              "Test Net": {
+                [mockAccounts[0].publicKey]: ["laboratory.stellar.org"],
+              },
+            },
+            isExperimentalModeEnabled: false,
+            networkDetails: {
+              ...defaultSettingsState.networkDetails,
+              networkPassphrase: "Test SDF Network ; September 2015",
+              networkName: "Test Net",
+            },
+          },
+        }}
+      >
+        <SignTransaction />
+      </Wrapper>,
+    );
+    await waitFor(() => screen.getByTestId("SignTransaction"));
+    const trustlineRows = screen.getAllByTestId(
+      "SignTransaction__TrustlineRow__Asset",
+    );
+    expect(trustlineRows).toHaveLength(1);
+    expect(trustlineRows[0]).toHaveTextContent("AQUA");
+  });
+
+  it("renders the trustline changes of a fee bump transaction", async () => {
+    const selectedAccount = Keypair.random().publicKey();
+    let currentSignTxDataMock = {
+      state: {
+        state: RequestState.SUCCESS,
+        data: {
+          type: AppDataType.RESOLVED,
+          scanResult: {
+            simualtion: null,
+            validation: null,
+            request_id: "1",
+          },
+          icons: {},
+          balances: {
+            balances: sortBalances(mockBalances.balances),
+            isFunded: true,
+            subentryCount: 0,
+          },
+          publicKey: selectedAccount,
+          signFlowState: {
+            allAccounts: mockAccounts,
+            accountNotFound: false,
+            currentAccount: mockAccounts[0],
+          },
+          applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
+          networkDetails: {
+            ...defaultSettingsState.networkDetails,
+            networkPassphrase: "Test SDF Network ; September 2015",
+          },
+          siteScanData: null,
+          blockaidOverrideState: null,
+        },
+        error: null,
+      },
+      fetchData: jest.fn(),
+    } as ReturnType<typeof SignTxDataHooks.useGetSignTxData>;
+    jest
+      .spyOn(SignTxDataHooks, "useGetSignTxData")
+      .mockReturnValue(currentSignTxDataMock);
+    jest.spyOn(ApiInternal, "loadSettings").mockImplementation(() =>
+      Promise.resolve({
+        networkDetails: {
+          ...defaultSettingsState.networkDetails,
+          networkPassphrase: "Test SDF Network ; September 2015",
+          networkName: "Test Net",
+        },
+        networksList: DEFAULT_NETWORKS,
+        hiddenAssets: {},
+        allowList: {
+          "Test Net": {
+            [mockAccounts[0].publicKey]: ["laboratory.stellar.org"],
+          },
+        },
+        error: "",
+        isDataSharingAllowed: false,
+        isMemoValidationEnabled: false,
+        isHideDustEnabled: true,
+        isOpenSidebarByDefault: false,
+        settingsState: SettingsState.SUCCESS,
+        isSorobanPublicEnabled: false,
+        isRpcHealthy: true,
+        userNotification: {
+          enabled: false,
+          message: "",
+        },
+        isExperimentalModeEnabled: false,
+        isHashSigningEnabled: false,
+        isNonSSLEnabled: false,
+        experimentalFeaturesState: SettingsState.SUCCESS,
+        assetsLists: DEFAULT_ASSETS_LISTS,
+        autoLockTimeoutMinutes: DEFAULT_AUTO_LOCK_TIMEOUT_MINUTES,
+      }),
+    );
+    // Two accounts add a trustline to the same asset in one transaction.
+    // Only the trustline of the selected account must show.
+    const aqua = new Asset("AQUA", Keypair.random().publicKey());
+    const otherAccount = Keypair.random().publicKey();
+    const innerTx = new TransactionBuilder(new Account(selectedAccount, "1"), {
+      fee: "100",
+      networkPassphrase: Networks.TESTNET,
+    })
+      .addOperation(Operation.changeTrust({ asset: aqua }))
+      .addOperation(
+        Operation.changeTrust({ asset: aqua, source: otherAccount }),
+      )
+      .setTimeout(0)
+      .build();
+    // Another account pays the fee. The operations are in the inner tx.
+    const trustlineXdr = TransactionBuilder.buildFeeBumpTransaction(
+      Keypair.random(),
+      "200",
+      innerTx,
+      Networks.TESTNET,
+    ).toXDR();
+    jest.spyOn(Stellar, "getTransactionInfo").mockImplementation(() => ({
+      ...mockTransactionInfo,
+      transactionXdr: trustlineXdr,
+      transaction: {
+        ...mockTransactionInfo.transaction,
+        _networkPassphrase: Networks.TESTNET,
+        _operations: [{ type: "changeTrust" }, { type: "changeTrust" }],
+      },
+      isHttpsDomain: true,
+      domain: "laboratory.stellar.org",
+      uuid: "123-123-123-123-123",
+    }));
+    render(
+      <Wrapper
+        routes={[ROUTES.signTransaction]}
+        state={{
+          auth: {
+            allAccounts: mockAccounts,
+            publicKey: mockAccounts[0].publicKey,
+          },
+          settings: {
+            allowList: {
+              "Test Net": {
+                [mockAccounts[0].publicKey]: ["laboratory.stellar.org"],
+              },
+            },
+            isExperimentalModeEnabled: false,
+            networkDetails: {
+              ...defaultSettingsState.networkDetails,
+              networkPassphrase: "Test SDF Network ; September 2015",
+              networkName: "Test Net",
+            },
+          },
+        }}
+      >
+        <SignTransaction />
+      </Wrapper>,
+    );
+    await waitFor(() => screen.getByTestId("SignTransaction"));
+    const trustlineRows = screen.getAllByTestId(
+      "SignTransaction__TrustlineRow__Asset",
+    );
+    expect(trustlineRows).toHaveLength(1);
+    expect(trustlineRows[0]).toHaveTextContent("AQUA");
   });
 });

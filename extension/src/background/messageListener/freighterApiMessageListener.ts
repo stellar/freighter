@@ -23,6 +23,7 @@ import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
 import {
   FreighterApiInternalError,
   FreighterApiDeclinedError,
+  FreighterApiLockedError,
 } from "@shared/api/helpers/extensionMessaging";
 import {
   EXTERNAL_SERVICE_TYPES,
@@ -42,6 +43,7 @@ import {
   getIsMemoValidationEnabled,
   getNetworkDetails,
   getAllowListSegment,
+  removeAllowListDomain,
 } from "background/helpers/account";
 import { isSenderAllowed } from "background/helpers/allowListAuthorization";
 import { cachedFetch } from "background/helpers/cachedFetch";
@@ -368,7 +370,7 @@ export const freighterApiMessageListener = (
       const Sdk = getSdk(currentNetworkPassphrase);
       const { tab, url: tabUrl = "" } = sender;
 
-      const transaction = Sdk.TransactionBuilder.fromXDR(
+      const transaction = Sdk.TransactionBuilder.fromXdr(
         transactionXdr,
         networkPassphrase || Sdk.Networks[network as keyof typeof Sdk.Networks],
       );
@@ -576,7 +578,9 @@ export const freighterApiMessageListener = (
 
             if (apiVersion && semver.gte(apiVersion, "4.0.0")) {
               safeResolve({
-                signedBlob: signature.toString("base64"),
+                // xdr.encodeBytes rather than .toString("base64"): a plain
+                // Uint8Array would silently encode as comma-joined decimals.
+                signedBlob: StellarSdk.xdr.encodeBytes(signature, "base64"),
                 signerAddress,
               });
               return;
@@ -859,6 +863,39 @@ export const freighterApiMessageListener = (
     };
   };
 
+  const disconnect = async () => {
+    try {
+      const publicKey = publicKeySelector(sessionStore.getState());
+
+      // The allowlist is keyed by public key. An idle lock keeps the public
+      // key in the session, but it's empty until the user first unlocks.
+      if (!publicKey) {
+        return {
+          apiError: FreighterApiLockedError,
+          error: FreighterApiLockedError.message,
+        };
+      }
+
+      const { url: tabUrl = "" } = sender;
+      const domain = getPunycodedDomain(getUrlHostname(tabUrl));
+      const { networkName } = await getNetworkDetails({ localStore });
+
+      await removeAllowListDomain({
+        publicKey,
+        networkName,
+        domain,
+        localStore,
+      });
+
+      return {};
+    } catch (e) {
+      return {
+        apiError: FreighterApiInternalError,
+        error: FreighterApiInternalError.message,
+      };
+    }
+  };
+
   const messageResponder: MessageResponder = {
     [EXTERNAL_SERVICE_TYPES.REQUEST_ACCESS]: requestAccess,
     [EXTERNAL_SERVICE_TYPES.REQUEST_PUBLIC_KEY]: requestPublicKey,
@@ -872,6 +909,7 @@ export const freighterApiMessageListener = (
     [EXTERNAL_SERVICE_TYPES.REQUEST_ALLOWED_STATUS]: requestAllowedStatus,
     [EXTERNAL_SERVICE_TYPES.SET_ALLOWED_STATUS]: setAllowedStatus,
     [EXTERNAL_SERVICE_TYPES.REQUEST_USER_INFO]: requestUserInfo,
+    [EXTERNAL_SERVICE_TYPES.DISCONNECT]: disconnect,
   };
 
   return messageResponder[request.type]();

@@ -1,10 +1,10 @@
 import BigNumber from "bignumber.js";
+import { captureException } from "@sentry/browser";
 import {
   Address,
   Asset,
   Operation,
   StrKey,
-  Transaction,
   TransactionBuilder,
   scValToNative,
   xdr,
@@ -20,9 +20,17 @@ import {
   SorobanCollectibleInterface,
 } from "@shared/constants/soroban/token";
 import { AccountBalances } from "helpers/hooks/useGetBalances";
-import { getAssetFromCanonical, getCanonicalFromAsset } from "helpers/stellar";
+import {
+  getAssetFromCanonical,
+  getCanonicalFromAsset,
+  isContractDestination,
+} from "helpers/stellar";
 import { findAssetBalance, isSorobanBalance } from "./balance";
-import { getSdk } from "@shared/helpers/stellar";
+import { getSdk, splitCanonical } from "@shared/helpers/stellar";
+import {
+  isNativeAssetId,
+  isNativeContract,
+} from "@shared/helpers/assetIdentity";
 import { AssetType } from "@shared/api/types/account-balance";
 import { getNativeContractDetails } from "./searchAsset";
 import { getTokenDetails } from "@shared/api/internal";
@@ -119,7 +127,7 @@ export const isSorobanTransaction = ({
   }
 
   // Check if recipient address is a contract address
-  if (recipientAddress && isContractId(recipientAddress)) {
+  if (recipientAddress && isContractDestination(recipientAddress)) {
     return true;
   }
 
@@ -218,7 +226,7 @@ export const getContractIdFromTokenId = (
   tokenId: string,
   networkDetails: NetworkDetails,
 ): string | undefined => {
-  if (tokenId === "native") {
+  if (isNativeAssetId(tokenId)) {
     return getNativeContractDetails(networkDetails).contract;
   }
 
@@ -227,12 +235,11 @@ export const getContractIdFromTokenId = (
     return tokenId;
   }
 
-  // Check if it's SYMBOL:CONTRACTID format (Soroban token)
-  // Split by : and check if the second part is a contract ID
-  const parts = tokenId.split(":");
-  if (parts.length === 2 && isContractId(parts[1])) {
-    // This is a Soroban token in SYMBOL:CONTRACTID format
-    return parts[1];
+  // SYMBOL:CONTRACTID format (Soroban token). The symbol may itself contain
+  // a colon, so read the issuer half from the last separator.
+  const { issuer } = splitCanonical(tokenId);
+  if (isContractId(issuer)) {
+    return issuer;
   }
 
   // Classic token format: CODE:ISSUER (no contract ID)
@@ -350,9 +357,21 @@ export const parseTokenAmount = (value: string, decimals: number) => {
   return wholeValue.shiftedBy(decimals).plus(fractionValue);
 };
 
+/**
+ * Narrows an ScVal to its SCV_ADDRESS arm.
+ *
+ * Pre-v17 the generated arm accessor (`scVal.address()`) threw when the union
+ * carried a different arm; `expectUnionVariant` preserves that contract now
+ * that arms are plain properties on variant classes.
+ *
+ * @throws TypeError if the value is not an SCV_ADDRESS
+ */
+export const scValToAddress = (scVal: xdr.ScVal): xdr.ScAddress =>
+  xdr.expectUnionVariant(scVal, "scvAddress").address;
+
 export const addressToString = (address: xdr.ScAddress) => {
-  if (address.switch().name === "scAddressTypeAccount") {
-    return StrKey.encodeEd25519PublicKey(address.accountId().ed25519());
+  if (address.type === "scAddressTypeAccount") {
+    return StrKey.encodeEd25519PublicKey(address.accountId.ed25519.toBytes());
   }
 
   return Address.fromScAddress(address).toString();
@@ -366,7 +385,7 @@ export const getArgsForTokenInvocation = (
   let amount: bigint | number | undefined;
   let from = "";
   let to = "";
-  const thirdArgType = args[2].switch();
+  const thirdArgType = args[2].type;
 
   switch (fnName) {
     case SorobanTokenInterface.transfer:
@@ -377,17 +396,17 @@ export const getArgsForTokenInvocation = (
       // by the type of the 3rd argument.
       // Token transfer - (from: Address, to: Address, amount: i128)
       // Collectible transfer - (from: Address, to: Address, tokenId: u32)
-      if (thirdArgType === xdr.ScValType.scvI128()) {
+      if (thirdArgType === "scvI128") {
         amount = scValToNative(args[2]);
       }
-      if (thirdArgType === xdr.ScValType.scvU32()) {
+      if (thirdArgType === "scvU32") {
         tokenId = scValToNative(args[2]);
       }
-      from = addressToString(args[0].address());
-      to = addressToString(args[1].address());
+      from = addressToString(scValToAddress(args[0]));
+      to = addressToString(scValToAddress(args[1]));
       break;
     case SorobanTokenInterface.mint:
-      to = addressToString(args[0].address());
+      to = addressToString(scValToAddress(args[0]));
       amount = scValToNative(args[1]);
       break;
     default:
@@ -403,22 +422,25 @@ const isSorobanOp = (operation: HorizonOperation) =>
 export const getInvocationArgsFromInvokeHostFn = (
   hostFn: Operation.InvokeHostFunction,
 ): HostFnInvocationArgs | null => {
-  if (!hostFn?.func?.invokeContract) {
+  const func = hostFn?.func;
+  if (!func || func.type !== "hostFunctionTypeInvokeContract") {
     return null;
   }
 
-  let invokedContract: xdr.InvokeContractArgs;
+  const invokedContract: xdr.InvokeContractArgs = func.invokeContract;
 
-  try {
-    invokedContract = hostFn.func.invokeContract();
-  } catch (e) {
+  const contractId = addressToString(invokedContract.contractAddress);
+
+  // A function name is a byte string, not guaranteed text. Decode it strictly
+  // rather than leniently: a binary name can never be one of the token
+  // interfaces, so treat it as "not a token invocation" instead of matching on
+  // a lossily decoded string.
+  const fnName = invokedContract.functionName.asStringOrBytes();
+  const args = invokedContract.args;
+
+  if (typeof fnName !== "string") {
     return null;
   }
-
-  const contractId = addressToString(invokedContract.contractAddress());
-
-  const fnName = invokedContract.functionName().toString();
-  const args = invokedContract.args();
 
   if (
     fnName !== SorobanTokenInterface.transfer &&
@@ -443,6 +465,14 @@ export const getInvocationArgsFromInvokeHostFn = (
   };
 };
 
+// Several call sites decode the same operation during one history load.
+// Cache by envelope so each one is decoded, and any failure reported, once.
+const sorobanOpAttrsCache = new Map<
+  string,
+  ReturnType<typeof getInvocationArgsFromInvokeHostFn>
+>();
+const SOROBAN_OP_ATTRS_CACHE_MAX = 500;
+
 export const getAttrsFromSorobanHorizonOp = (
   operation: HorizonOperation,
   networkDetails: NetworkDetails,
@@ -451,16 +481,37 @@ export const getAttrsFromSorobanHorizonOp = (
     return null;
   }
 
-  const txEnvelope = TransactionBuilder.fromXDR(
-    operation.transaction_attr.envelope_xdr as string,
-    networkDetails.networkPassphrase,
-  ) as Transaction;
+  const envelopeXdr = operation.transaction_attr.envelope_xdr as string;
+  const cacheKey = `${networkDetails.networkPassphrase}:${envelopeXdr}`;
+  const cached = sorobanOpAttrsCache.get(cacheKey);
+  if (cached !== undefined) {
+    return cached;
+  }
 
-  // only one op per tx in Soroban right now; isSorobanOp above guarantees it
-  // is an invokeHostFunction operation
-  const invokeHostFn = txEnvelope.operations[0] as Operation.InvokeHostFunction;
+  let attrs: ReturnType<typeof getInvocationArgsFromInvokeHostFn> = null;
+  // One undecodable envelope must not break the whole history load.
+  try {
+    // For a fee bump, `operations` reads through to the inner transaction.
+    const transaction = TransactionBuilder.fromXdr(
+      envelopeXdr,
+      networkDetails.networkPassphrase,
+    );
 
-  return getInvocationArgsFromInvokeHostFn(invokeHostFn);
+    // only one op per tx in Soroban right now; isSorobanOp above guarantees it
+    // is an invokeHostFunction operation
+    const invokeHostFn = transaction
+      .operations[0] as Operation.InvokeHostFunction;
+
+    attrs = getInvocationArgsFromInvokeHostFn(invokeHostFn);
+  } catch (error) {
+    captureException(error, { extra: { operationId: operation.id } });
+  }
+
+  if (sorobanOpAttrsCache.size >= SOROBAN_OP_ATTRS_CACHE_MAX) {
+    sorobanOpAttrsCache.clear();
+  }
+  sorobanOpAttrsCache.set(cacheKey, attrs);
+  return attrs;
 };
 
 export interface InvocationTree {
@@ -470,18 +521,25 @@ export interface InvocationTree {
 }
 
 export function buildInvocationTree(root: xdr.SorobanAuthorizedInvocation) {
-  const fn = root.function();
+  const fn = root.function;
   const output = {} as InvocationTree;
-  const inner = fn.value();
+  const inner = fn.value;
 
-  switch (fn.switch().name) {
+  switch (fn.type) {
     case "sorobanAuthorizedFunctionTypeContractFn": {
-      const _inner = inner as xdr.InvokeContractArgs;
+      const _inner = fn.contractFn;
       output.type = "execute";
       output.args = {
-        source: Address.fromScAddress(_inner.contractAddress()).toString(),
-        function: _inner.functionName().toString(),
-        args: _inner.args().map((arg) => scValToNative(arg)),
+        source: Address.fromScAddress(_inner.contractAddress).toString(),
+        function: xdrStringToDisplay(_inner.functionName),
+        // The escaped display form is not a name. Carry the raw one alongside
+        // it, undefined when the bytes are not text, so the contract-spec
+        // lookup keys off what was signed rather than off what is drawn.
+        functionRaw: xdrStringToRaw(_inner.functionName),
+        // Carry the signed `ScVal`s through untouched. Decoding to natives
+        // here forced the render layer to re-encode with `nativeToScVal`, a
+        // round trip that silently re-types map keys.
+        args: _inner.args,
       };
       break;
     }
@@ -489,48 +547,48 @@ export function buildInvocationTree(root: xdr.SorobanAuthorizedInvocation) {
     case "sorobanAuthorizedFunctionTypeCreateContractHostFn":
     case "sorobanAuthorizedFunctionTypeCreateContractV2HostFn": {
       const isCreateV2 =
-        fn.switch().name ===
-        "sorobanAuthorizedFunctionTypeCreateContractV2HostFn";
-      const _inner = inner as xdr.CreateContractArgs | xdr.CreateContractArgsV2;
+        fn.type === "sorobanAuthorizedFunctionTypeCreateContractV2HostFn";
+      const _inner: xdr.CreateContractArgs | xdr.CreateContractArgsV2 =
+        fn.type === "sorobanAuthorizedFunctionTypeCreateContractV2HostFn"
+          ? fn.createContractV2HostFn
+          : fn.createContractHostFn;
       output.type = "create";
       output.args = {} as {
         type: string;
         wasm: any;
       };
 
-      const [exec, preimage] = [
-        _inner.executable(),
-        _inner.contractIdPreimage(),
-      ];
+      const exec = _inner.executable;
+      const preimage = _inner.contractIdPreimage;
 
-      switch (exec.switch().name) {
+      switch (exec.type) {
         case "contractExecutableWasm": {
           // A WASM executable must be paired with an address preimage.
-          if (preimage.switch().name !== "contractIdPreimageFromAddress") {
+          if (preimage.type !== "contractIdPreimageFromAddress") {
             throw new Error(
               `creation function appears invalid: ${JSON.stringify(
                 inner,
               )} (should be wasm+address or token+asset)`,
             );
           }
-          const details = preimage.fromAddress();
+          const details = preimage.fromAddress;
 
           output.args.type = "wasm";
           output.args.wasm = {
-            salt: details.salt().toString("hex"),
-            hash: exec.wasmHash().toString("hex"),
-            address: Address.fromScAddress(details.address()).toString(),
+            salt: xdr.encodeBytes(details.salt.toBytes(), "hex"),
+            hash: xdr.encodeBytes(exec.wasmHash.toBytes(), "hex"),
+            address: Address.fromScAddress(details.address).toString(),
           };
           if (isCreateV2) {
             const v2Args = _inner as xdr.CreateContractArgsV2;
-            output.args.constructorArgs = v2Args.constructorArgs();
+            output.args.constructorArgs = v2Args.constructorArgs;
           }
           break;
         }
 
         case "contractExecutableStellarAsset": {
           // A SAC executable must be paired with an asset preimage.
-          if (preimage.switch().name !== "contractIdPreimageFromAsset") {
+          if (preimage.type !== "contractIdPreimageFromAsset") {
             throw new Error(
               `creation function appears invalid: ${JSON.stringify(
                 inner,
@@ -539,11 +597,40 @@ export function buildInvocationTree(root: xdr.SorobanAuthorizedInvocation) {
           }
           output.args.type = "sac";
           output.args.asset = Asset.fromOperation(
-            preimage.fromAsset(),
+            preimage.fromAsset,
           ).toString();
           if (isCreateV2) {
             const v2Args = _inner as xdr.CreateContractArgsV2;
-            output.args.constructorArgs = v2Args.constructorArgs();
+            output.args.constructorArgs = v2Args.constructorArgs;
+          }
+          break;
+        }
+
+        case "contractExecutableExternalRef": {
+          const { executableOwner, tag } = exec.externalRef;
+
+          output.args.type = "externalRef";
+          output.args.externalRef = {
+            owner: Address.fromScAddress(executableOwner).toString(),
+            tag: tag.toJson(),
+          };
+          // External references derive the contract ID from address + salt.
+          if (preimage.type !== "contractIdPreimageFromAddress") {
+            throw new Error(
+              `creation function appears invalid: an external-ref executable is paired with ${preimage.type} (should be external-ref+address)`,
+            );
+          }
+          const details = preimage.fromAddress;
+          output.args.externalRef.address = Address.fromScAddress(
+            details.address,
+          ).toString();
+          output.args.externalRef.salt = xdr.encodeBytes(
+            details.salt.toBytes(),
+            "hex",
+          );
+          if (isCreateV2) {
+            const v2Args = _inner as xdr.CreateContractArgsV2;
+            output.args.constructorArgs = v2Args.constructorArgs;
           }
           break;
         }
@@ -557,95 +644,452 @@ export function buildInvocationTree(root: xdr.SorobanAuthorizedInvocation) {
 
     default:
       throw new Error(
-        `unknown invocation type (${fn.switch()}): ${JSON.stringify(fn)}`,
+        `unknown invocation type (${(fn as xdr.SorobanAuthorizedFunction).type}): ${JSON.stringify(fn)}`,
       );
   }
 
-  output.invocations = root.subInvocations().map((i) => buildInvocationTree(i));
+  output.invocations = root.subInvocations.map((i) => buildInvocationTree(i));
   return output;
 }
 
-export const scValByType = (scVal: xdr.ScVal) => {
-  switch (scVal.switch()) {
-    case xdr.ScValType.scvAddress(): {
-      const address = scVal.address();
-      const addressType = address.switch();
-      if (addressType.name === "scAddressTypeAccount") {
-        return StrKey.encodeEd25519PublicKey(address.accountId().ed25519());
+const DISPLAY_INDENT = "  ";
+
+/** Soroban symbols are `[a-zA-Z0-9_]`, so anything else has to be quoted. */
+const isBareSymbol = (value: string) => /^[a-zA-Z0-9_]+$/.test(value);
+
+/** An `XdrString`-backed field, reached through its canonical wire bytes. */
+type XdrStringLike = { bytes: Uint8Array };
+
+/** What an `XdrString`-backed field is, where that decides its quoting. */
+type XdrStringKind = "string" | "symbol";
+
+const HEX_DIGITS = "0123456789abcdef";
+
+/** The escapes SEP-0051 gives a name to, so the common ones stay readable. */
+const NAMED_ESCAPES = new Map([
+  [0x00, "\\0"],
+  [0x09, "\\t"],
+  [0x0a, "\\n"],
+  [0x0d, "\\r"],
+  [0x5c, "\\\\"],
+]);
+
+const hexEscape = (byte: number) =>
+  `\\x${HEX_DIGITS[(byte >> 4) & 0xf]}${HEX_DIGITS[byte & 0xf]}`;
+
+/** How many bytes the UTF-8 sequence opened by this byte should span. */
+const utf8SequenceWidth = (byte: number) => {
+  if (byte >= 0xc2 && byte <= 0xdf) {
+    return 2;
+  }
+  if (byte >= 0xe0 && byte <= 0xef) {
+    return 3;
+  }
+  if (byte >= 0xf0 && byte <= 0xf4) {
+    return 4;
+  }
+  return 0;
+};
+
+/**
+ * Unicode's own class for codepoints that are meant to render as nothing:
+ * soft hyphens, zero-width marks, bidi controls, variation selectors and the
+ * tag block. Named rather than hand-listed so the boundary is one the
+ * standard maintains.
+ */
+const DEFAULT_IGNORABLE = /\p{Default_Ignorable_Code_Point}/u;
+
+/**
+ * Codepoints that decode cleanly but cannot be seen. Left as-is they let one
+ * signed string impersonate another on the approval screen — the same defect
+ * as a lenient byte decode, just spelled in valid UTF-8.
+ *
+ * Two things are unioned onto the default-ignorable class because they are not
+ * in it: the C1 controls, which reach this path as `0xc2 0x80`-style sequences;
+ * and U+2028/U+2029, which draw as nothing but insert a real line break, so an
+ * unescaped one would split a signed map entry across two lines and break the
+ * one-entry-per-line invariant {@link mapEntriesToTokens} relies on.
+ *
+ * This cannot be made complete, and is not trying to be: `\u0430` and `a` still
+ * render identically, and no escape set reaches homoglyphs. It closes the
+ * invisible channel, not the confusable one.
+ */
+const isInvisible = (code: number) =>
+  (code >= 0x7f && code <= 0x9f) ||
+  code === 0x2028 ||
+  code === 0x2029 ||
+  DEFAULT_IGNORABLE.test(String.fromCodePoint(code));
+
+const strictUtf8 = new TextDecoder("utf-8", { fatal: true, ignoreBOM: true });
+
+/**
+ * Renders the wire bytes of an `XdrString` as display text that stands for
+ * exactly one byte string.
+ *
+ * These fields are byte strings, not guaranteed text, and every lossy reading
+ * of them collapses distinct signed payloads onto one screen string: the
+ * lenient `toString()` turns every invalid byte into U+FFFD, so `"transfer" +
+ * 0xFF` and `"transfer" + 0xFE` look the same; a bare hex fallback can be
+ * spelled out by valid text that happens to read `string(0x...)`; and an
+ * unescaped bidi override can reorder what is drawn without changing what is
+ * signed.
+ *
+ * So: escape rather than substitute. Backslash, the C0/C1 controls and the
+ * invisible codepoints become escapes, invalid bytes become `\xNN`, and
+ * everything else — including ordinary non-ASCII text — is passed through
+ * untouched. Because the backslash is itself escaped, the escapes are
+ * prefix-free and no two byte strings can produce the same output.
+ *
+ * This is the SDK's SEP-0051 `toJson()` alphabet, widened to leave legible
+ * text legible: `toJson()` hex-escapes every byte above ASCII, which would
+ * render `café` as `caf\xc3\xa9` on every signing screen.
+ */
+export const escapeXdrString = (bytes: Uint8Array) => {
+  let out = "";
+  let index = 0;
+
+  while (index < bytes.length) {
+    const byte = bytes[index];
+    const named = NAMED_ESCAPES.get(byte);
+
+    if (named) {
+      out += named;
+      index += 1;
+    } else if (byte < 0x20) {
+      out += hexEscape(byte);
+      index += 1;
+    } else if (byte < 0x7f) {
+      out += String.fromCharCode(byte);
+      index += 1;
+    } else {
+      // Above ASCII: decode the one sequence starting here, strictly, so a
+      // byte that cannot be part of valid text is escaped on its own rather
+      // than swallowing the bytes that follow it.
+      const width = utf8SequenceWidth(byte);
+      let decoded = "";
+
+      if (width && index + width <= bytes.length) {
+        try {
+          decoded = strictUtf8.decode(bytes.subarray(index, index + width));
+        } catch {
+          decoded = "";
+        }
       }
-      return addressToString(address);
-    }
 
-    case xdr.ScValType.scvBool(): {
-      return scVal.b();
-    }
-
-    case xdr.ScValType.scvBytes(): {
-      return scVal
-        .bytes()
-        .toJSON()
-        .data.map((d) => d.toString(16).padStart(2, "0"))
-        .join("");
-    }
-
-    case xdr.ScValType.scvContractInstance(): {
-      const instance = scVal.instance();
-      return instance.executable().wasmHash()?.toString();
-    }
-
-    case xdr.ScValType.scvError(): {
-      const error = scVal.error();
-      return error.value();
-    }
-
-    case xdr.ScValType.scvTimepoint():
-    case xdr.ScValType.scvDuration():
-    case xdr.ScValType.scvI128():
-    case xdr.ScValType.scvI256():
-    case xdr.ScValType.scvI32():
-    case xdr.ScValType.scvI64():
-    case xdr.ScValType.scvU128():
-    case xdr.ScValType.scvU256():
-    case xdr.ScValType.scvU32():
-    case xdr.ScValType.scvU64(): {
-      return scValToNative(scVal).toString();
-    }
-
-    case xdr.ScValType.scvLedgerKeyNonce():
-    case xdr.ScValType.scvLedgerKeyContractInstance(): {
-      if (scVal.switch().name === "scvLedgerKeyNonce") {
-        const val = scVal.nonceKey().nonce();
-        return val.toString();
+      if (!decoded) {
+        out += hexEscape(byte);
+        index += 1;
+      } else {
+        const code = decoded.codePointAt(0) as number;
+        out += isInvisible(code) ? `\\u{${code.toString(16)}}` : decoded;
+        index += width;
       }
-      return scVal.value();
     }
+  }
 
-    case xdr.ScValType.scvVec():
-    case xdr.ScValType.scvMap(): {
-      return JSON.stringify(
-        scValToNative(scVal),
-        (_, val) => (typeof val === "bigint" ? val.toString() : val),
-        2,
-      );
-    }
+  return out;
+};
 
-    case xdr.ScValType.scvString():
-    case xdr.ScValType.scvSymbol(): {
-      const native = scValToNative(scVal);
-      if (native.constructor === "Uint8Array") {
-        return native.toString();
-      }
-      return native;
-    }
+/**
+ * Decodes an `XdrString`-backed field (an SCString, an SCSymbol, a function
+ * name, a CAP-85 executable tag) for display. See {@link escapeXdrString} for
+ * why the bytes are escaped rather than decoded leniently.
+ */
+export const xdrStringToDisplay = (value: XdrStringLike) =>
+  escapeXdrString(value.bytes);
 
-    case xdr.ScValType.scvVoid(): {
-      return null;
-    }
-
-    default:
-      return null;
+/**
+ * The raw text of an `XdrString`-backed field, for the few places that need a
+ * lookup key rather than something to show — the contract-spec lookup, most
+ * obviously. `undefined` when the bytes are not text, because there is then no
+ * name to look up and the escaped display form is not one.
+ */
+export const xdrStringToRaw = (value: XdrStringLike) => {
+  try {
+    return strictUtf8.decode(value.bytes);
+  } catch {
+    return undefined;
   }
 };
+
+/** As {@link xdrStringToDisplay}, but quoted for use inside a value literal. */
+const xdrStringToLiteral = (value: XdrStringLike, kind: XdrStringKind) => {
+  const escaped = escapeXdrString(value.bytes);
+  // Layer 1 has already escaped every backslash, so an escaped quote here can
+  // only have come from a quote in the signed bytes.
+  const quoted = `"${escaped.replace(/"/g, '\\"')}"`;
+
+  if (kind === "symbol") {
+    return isBareSymbol(escaped) ? escaped : `symbol(${quoted})`;
+  }
+  return quoted;
+};
+
+/**
+ * One piece of a rendered `SCVal`. A `value` token is a single scalar and
+ * carries the arm it came from, so the signing screen can offer its type
+ * without spelling that type out inline; `punct` is the structure around it.
+ *
+ * Both the string form and the React form are built from this one stream, so
+ * what is copied and what is shown cannot drift apart.
+ */
+export type DisplayToken =
+  | { kind: "value"; text: string; scValType: string }
+  | { kind: "punct"; text: string };
+
+const punct = (text: string): DisplayToken => ({ kind: "punct", text });
+
+const value = (text: string, scValType: string): DisplayToken => ({
+  kind: "value",
+  text,
+  scValType,
+});
+
+type DisplayOpts = { depth?: number; compact?: boolean };
+
+/**
+ * Wraps already-rendered lines in `{ }` or `[ ]`, one signed entry per line
+ * unless `compact`.
+ */
+const joinLines = (
+  lines: DisplayToken[][],
+  open: string,
+  close: string,
+  {
+    depth,
+    compact,
+    compactPad,
+  }: {
+    depth: number;
+    compact: boolean;
+    compactPad: string;
+  },
+): DisplayToken[] => {
+  const pad = DISPLAY_INDENT.repeat(depth);
+  const innerPad = DISPLAY_INDENT.repeat(depth + 1);
+  const opened = compact
+    ? punct(`${open}${compactPad}`)
+    : punct(`${open}\n${innerPad}`);
+  const separator = compact ? punct(", ") : punct(`,\n${innerPad}`);
+  const closed = compact
+    ? punct(`${compactPad}${close}`)
+    : punct(`\n${pad}${close}`);
+
+  const tokens: DisplayToken[] = [opened];
+  lines.forEach((line, index) => {
+    if (index) {
+      tokens.push(separator);
+    }
+    tokens.push(...line);
+  });
+  tokens.push(closed);
+  return tokens;
+};
+
+/** Renders the `SCMap` entry list shared by `SCV_MAP` and instance storage. */
+const mapEntriesToTokens = (
+  entries: xdr.ScMapEntry[] | null,
+  { depth = 0, compact = false }: DisplayOpts,
+): DisplayToken[] => {
+  if (!entries || !entries.length) {
+    return [punct("{}")];
+  }
+  const lines = entries.map((entry) => [
+    // Keys render compact so that one signed entry is always exactly one line.
+    ...scValToDisplayTokens(entry.key, { compact: true }),
+    punct(": "),
+    ...scValToDisplayTokens(entry.val, { depth: depth + 1, compact }),
+  ]);
+  return joinLines(lines, "{", "}", { depth, compact, compactPad: " " });
+};
+
+/**
+ * Renders a `ContractExecutable`, arms with a payload included.
+ *
+ * Naming the arm alone drops the CAP-85 external reference's owner and tag —
+ * the two fields that say whose code is about to run — which is exactly what
+ * the signer is being asked to approve.
+ */
+const executableToTokens = (
+  executable: xdr.ContractExecutable,
+  { depth = 0, compact = false }: DisplayOpts,
+): DisplayToken[] => {
+  switch (executable.type) {
+    case "contractExecutableWasm": {
+      const wasmHash = xdr.encodeBytes(executable.wasmHash.toBytes(), "hex");
+      return [
+        punct("wasm("),
+        value(`0x${wasmHash}`, executable.type),
+        punct(")"),
+      ];
+    }
+
+    case "contractExecutableExternalRef": {
+      const ref = executable.externalRef;
+      const lines = [
+        [
+          punct("owner: "),
+          value(addressToString(ref.executableOwner), executable.type),
+        ],
+        [
+          punct("tag: "),
+          value(xdrStringToLiteral(ref.tag, "string"), executable.type),
+        ],
+      ];
+      return [
+        punct("externalRef "),
+        ...joinLines(lines, "{", "}", { depth, compact, compactPad: " " }),
+      ];
+    }
+
+    default: {
+      return [value(executable.type, executable.type)];
+    }
+  }
+};
+
+/**
+ * Renders an `SCVal` as a stream of display tokens.
+ *
+ * Deliberately does *not* route containers through `scValToNative()`. That
+ * decoder builds maps with `Object.fromEntries`, which coerces every key
+ * through `ToPropertyKey` and lets a later entry overwrite an earlier one, so
+ * an SCMap with N signed entries can render as one — silently, with no glyph
+ * and no warning, on the screen the user approves from. Here the map arm walks
+ * the signed entry list directly, so every signed entry reaches the screen.
+ *
+ * Quoting carries some of the type: strings are quoted where symbols and
+ * numbers are bare, and an executable tag is wrapped as `tag("…")` so that it
+ * cannot read as a string. The rest of it rides on each `value` token's `scValType`
+ * rather than being spelled out inline, which keeps the common case — a
+ * symbol-keyed struct — readable.
+ */
+export const scValToDisplayTokens = (
+  scVal: xdr.ScVal,
+  { depth = 0, compact = false }: DisplayOpts = {},
+): DisplayToken[] => {
+  switch (scVal.type) {
+    case "scvMap": {
+      return mapEntriesToTokens(scVal.map, { depth, compact });
+    }
+
+    case "scvVec": {
+      const values = scVal.vec || [];
+      if (!values.length) {
+        return [punct("[]")];
+      }
+      const lines = values.map((entry) =>
+        scValToDisplayTokens(entry, { depth: depth + 1, compact }),
+      );
+      return joinLines(lines, "[", "]", { depth, compact, compactPad: "" });
+    }
+
+    case "scvString": {
+      return [value(xdrStringToLiteral(scVal.str, "string"), scVal.type)];
+    }
+
+    case "scvSymbol": {
+      return [value(xdrStringToLiteral(scVal.sym, "symbol"), scVal.type)];
+    }
+
+    case "scvExecutableTag": {
+      const literal = xdrStringToLiteral(scVal.executableTag, "string");
+      return [value(`tag(${literal})`, scVal.type)];
+    }
+
+    case "scvBytes": {
+      const bytes = xdr.encodeBytes(scVal.bytes.toBytes(), "hex");
+      return [value(`0x${bytes}`, scVal.type)];
+    }
+
+    case "scvAddress": {
+      return [value(addressToString(scVal.address), scVal.type)];
+    }
+
+    case "scvBool": {
+      return [value(`${scVal.b}`, scVal.type)];
+    }
+
+    case "scvLedgerKeyNonce": {
+      return [value(scVal.nonceKey.nonce.toString(), scVal.type)];
+    }
+
+    case "scvContractInstance": {
+      const { executable, storage } = scVal.instance;
+      const lines = [
+        [
+          punct("executable: "),
+          ...executableToTokens(executable, { depth: depth + 1, compact }),
+        ],
+      ];
+
+      // `storage` is an optional pointer, so no storage and empty storage are
+      // two different signed values. Two instances sharing an executable are
+      // told apart by this map alone, so it has to reach the screen.
+      if (storage) {
+        lines.push([
+          punct("storage: "),
+          ...mapEntriesToTokens(storage, { depth: depth + 1, compact }),
+        ]);
+      }
+
+      return [
+        punct("contractInstance "),
+        ...joinLines(lines, "{", "}", { depth, compact, compactPad: " " }),
+      ];
+    }
+
+    case "scvError": {
+      const error = scValToNative(scVal) as {
+        type: string;
+        code: number;
+        value?: string;
+      };
+      return [
+        value(`error(${error.type}:${error.value ?? error.code})`, scVal.type),
+      ];
+    }
+
+    case "scvTimepoint":
+    case "scvDuration":
+    case "scvI128":
+    case "scvI256":
+    case "scvI32":
+    case "scvI64":
+    case "scvU128":
+    case "scvU256":
+    case "scvU32":
+    case "scvU64": {
+      return [value(scValToNative(scVal).toString(), scVal.type)];
+    }
+
+    case "scvVoid": {
+      return [value("void", scVal.type)];
+    }
+
+    case "scvLedgerKeyContractInstance": {
+      return [value("ledgerKeyContractInstance", scVal.type)];
+    }
+
+    // Exhaustive today; a future arm should still name itself rather than
+    // reach the signing screen as a bare `null`.
+    default: {
+      return [value((scVal as xdr.ScVal).type, (scVal as xdr.ScVal).type)];
+    }
+  }
+};
+
+/**
+ * The string form of {@link scValToDisplayTokens}, used wherever the value has
+ * to be plain text — the clipboard, most obviously.
+ */
+export const scValToDisplayValue = (
+  scVal: xdr.ScVal,
+  opts: DisplayOpts = {},
+): string =>
+  scValToDisplayTokens(scVal, opts)
+    .map((token) => token.text)
+    .join("");
 
 /**
  * Extracts the Soroban authorization payload struct from a HashIdPreimage a
@@ -662,18 +1106,18 @@ export function parseAuthEntryPreimage(
 ):
   | xdr.HashIdPreimageSorobanAuthorization
   | xdr.HashIdPreimageSorobanAuthorizationWithAddress {
-  switch (preimage.switch()) {
-    case xdr.EnvelopeType.envelopeTypeSorobanAuthorization():
-      return preimage.sorobanAuthorization();
+  switch (preimage.type) {
+    case "envelopeTypeSorobanAuthorization":
+      return preimage.sorobanAuthorization;
 
     // CAP-71 (protocol 27): same payload plus the SCAddress the signature
     // is bound to
-    case xdr.EnvelopeType.envelopeTypeSorobanAuthorizationWithAddress():
-      return preimage.sorobanAuthorizationWithAddress();
+    case "envelopeTypeSorobanAuthorizationWithAddress":
+      return preimage.sorobanAuthorizationWithAddress;
 
     default:
       throw new Error(
-        `unsupported authorization envelope type: ${preimage.switch().name}`,
+        `unsupported authorization envelope type: ${preimage.type}`,
       );
   }
 }
@@ -696,14 +1140,13 @@ export function parseAuthEntryPreimage(
 export function getAddressCredentials(
   credentials: xdr.SorobanCredentials,
 ): xdr.SorobanAddressCredentials | null {
-  switch (credentials.switch().value) {
-    case xdr.SorobanCredentialsType.sorobanCredentialsAddress().value:
-      return credentials.address();
-    case xdr.SorobanCredentialsType.sorobanCredentialsAddressV2().value:
-      return credentials.addressV2();
-    case xdr.SorobanCredentialsType.sorobanCredentialsAddressWithDelegates()
-      .value:
-      return credentials.addressWithDelegates().addressCredentials();
+  switch (credentials.type) {
+    case "sorobanCredentialsAddress":
+      return credentials.address;
+    case "sorobanCredentialsAddressV2":
+      return credentials.addressV2;
+    case "sorobanCredentialsAddressWithDelegates":
+      return credentials.addressWithDelegates.addressCredentials;
     default:
       return null;
   }
@@ -717,9 +1160,9 @@ export function getAddressCredentials(
 export function getAuthEntryBoundAddress(
   entry: xdr.SorobanAuthorizationEntry,
 ): string | undefined {
-  const addressCredentials = getAddressCredentials(entry.credentials());
+  const addressCredentials = getAddressCredentials(entry.credentials);
   return addressCredentials
-    ? Address.fromScAddress(addressCredentials.address()).toString()
+    ? Address.fromScAddress(addressCredentials.address).toString()
     : undefined;
 }
 
@@ -729,9 +1172,16 @@ export function getInvocationDetails(
   const invocations = [] as InvocationArgs[];
 
   walkInvocationTree(invocation, (inv) => {
-    const args = getInvocationArgs(inv);
-    if (args) {
-      invocations.push(args);
+    try {
+      const args = getInvocationArgs(inv);
+      if (args) {
+        invocations.push(args);
+      }
+    } catch (error) {
+      // An invocation we cannot decode must not take down the whole signing
+      // view -- surface it so the user sees that something was unreadable.
+      captureException(error);
+      invocations.push({ type: "unrecognized" });
     }
 
     return null;
@@ -761,7 +1211,33 @@ export interface FnArgsCreateSac {
   args?: xdr.ScVal[];
 }
 
-export type InvocationArgs = FnArgsInvoke | FnArgsCreateWasm | FnArgsCreateSac;
+/**
+ * A CAP-85 (protocol 28) contract creation whose executable is a reference
+ * into another contract's storage rather than a wasm hash. `owner` and `tag`
+ * identify the reference; the code behind it is chosen by the owner at
+ * invocation time and can change after this entry is signed, so there is
+ * deliberately no wasm hash here.
+ */
+export interface FnArgsCreateExternalRef {
+  type: "externalRef";
+  owner: string;
+  tag: string;
+  address?: string;
+  salt?: string;
+  args?: xdr.ScVal[];
+}
+
+/** An invocation whose contents we could not decode. */
+export interface FnArgsUnrecognized {
+  type: "unrecognized";
+}
+
+export type InvocationArgs =
+  | FnArgsInvoke
+  | FnArgsCreateWasm
+  | FnArgsCreateSac
+  | FnArgsCreateExternalRef
+  | FnArgsUnrecognized;
 
 const isInvocationArg = (
   invocation: InvocationArgs | undefined,
@@ -770,63 +1246,105 @@ const isInvocationArg = (
 export function getInvocationArgs(
   invocation: xdr.SorobanAuthorizedInvocation,
 ): InvocationArgs | undefined {
-  const fn = invocation.function();
+  const fn = invocation.function;
 
-  switch (fn.switch().name) {
+  switch (fn.type) {
     case "sorobanAuthorizedFunctionTypeContractFn": {
-      const _invocation = fn.contractFn();
-      const contractId = addressToString(_invocation.contractAddress());
-      const fnName = _invocation.functionName().toString();
-      const args = _invocation.args();
+      const _invocation = fn.contractFn;
+      const contractId = addressToString(_invocation.contractAddress);
+      const fnName = xdrStringToDisplay(_invocation.functionName);
+      const args = _invocation.args;
       return { fnName, contractId, args, type: "invoke" };
     }
 
     case "sorobanAuthorizedFunctionTypeCreateContractHostFn":
     case "sorobanAuthorizedFunctionTypeCreateContractV2HostFn": {
       const isCreateV2 =
-        fn.switch().name ===
-        "sorobanAuthorizedFunctionTypeCreateContractV2HostFn";
-      const _invocation = isCreateV2
-        ? fn.createContractV2HostFn()
-        : fn.createContractHostFn();
-      const [exec, preimage] = [
-        _invocation.executable(),
-        _invocation.contractIdPreimage(),
-      ];
+        fn.type === "sorobanAuthorizedFunctionTypeCreateContractV2HostFn";
+      const _invocation: xdr.CreateContractArgs | xdr.CreateContractArgsV2 =
+        fn.type === "sorobanAuthorizedFunctionTypeCreateContractV2HostFn"
+          ? fn.createContractV2HostFn
+          : fn.createContractHostFn;
+      const exec = _invocation.executable;
+      const preimage = _invocation.contractIdPreimage;
 
-      switch (exec.switch().name) {
+      switch (exec.type) {
         case "contractExecutableWasm": {
-          const details = preimage.fromAddress();
+          // A wasm executable must be paired with an address preimage: the
+          // contract id is derived from deployer + salt. The two arms are
+          // independent in XDR, so the invalid pairings are representable.
+          if (preimage.type !== "contractIdPreimageFromAddress") {
+            throw new Error(
+              `creation function appears invalid: a wasm executable is paired with ${preimage.type} (should be wasm+address or token+asset)`,
+            );
+          }
+          const details = preimage.fromAddress;
 
           const contractDetails = {
             type: "wasm",
-            salt: details.salt().toString("hex"),
-            hash: exec.wasmHash().toString("hex"),
-            address: Address.fromScAddress(details.address()).toString(),
+            salt: xdr.encodeBytes(details.salt.toBytes(), "hex"),
+            hash: xdr.encodeBytes(exec.wasmHash.toBytes(), "hex"),
+            address: Address.fromScAddress(details.address).toString(),
           } as FnArgsCreateWasm;
 
           if (isCreateV2) {
             contractDetails.args = (
               _invocation as xdr.CreateContractArgsV2
-            ).constructorArgs();
+            ).constructorArgs;
           }
 
           return contractDetails;
         }
 
         case "contractExecutableStellarAsset": {
+          // A SAC is only ever derived from the asset it wraps.
+          if (preimage.type !== "contractIdPreimageFromAsset") {
+            throw new Error(
+              `creation function appears invalid: a Stellar asset executable is paired with ${preimage.type} (should be wasm+address or token+asset)`,
+            );
+          }
           const sacDetails = {
             type: "sac",
-            asset: Asset.fromOperation(preimage.fromAsset()).toString(),
+            asset: Asset.fromOperation(preimage.fromAsset).toString(),
           } as FnArgsCreateSac;
 
           if (isCreateV2) {
             sacDetails.args = (
               _invocation as xdr.CreateContractArgsV2
-            ).constructorArgs();
+            ).constructorArgs;
           }
 
           return sacDetails;
+        }
+
+        case "contractExecutableExternalRef": {
+          const { executableOwner, tag } = exec.externalRef;
+          const refDetails = {
+            type: "externalRef",
+            owner: Address.fromScAddress(executableOwner).toString(),
+            tag: xdrStringToDisplay(tag),
+          } as FnArgsCreateExternalRef;
+
+          // An external-ref executable derives its contract ID from a deployer
+          // address and salt, so an asset preimage is invalid.
+          if (preimage.type !== "contractIdPreimageFromAddress") {
+            throw new Error(
+              `creation function appears invalid: an external-ref executable is paired with ${preimage.type} (should be external-ref+address)`,
+            );
+          }
+          const details = preimage.fromAddress;
+          refDetails.address = Address.fromScAddress(
+            details.address,
+          ).toString();
+          refDetails.salt = xdr.encodeBytes(details.salt.toBytes(), "hex");
+
+          if (isCreateV2) {
+            refDetails.args = (
+              _invocation as xdr.CreateContractArgsV2
+            ).constructorArgs;
+          }
+
+          return refDetails;
         }
 
         default:
@@ -841,21 +1359,91 @@ export function getInvocationArgs(
 }
 
 export const getCreateContractArgs = (hostFn: xdr.HostFunction) => {
-  if (
-    hostFn.switch() !== xdr.HostFunctionType.hostFunctionTypeCreateContractV2()
-  ) {
-    const args = hostFn.createContract();
+  if (hostFn.type !== "hostFunctionTypeCreateContractV2") {
+    // Pre-v17 the generated `createContract()` arm accessor threw for any
+    // other host function type; keep that contract.
+    const args = xdr.expectUnionVariant(
+      hostFn,
+      "hostFunctionTypeCreateContract",
+    ).createContract;
     return {
-      contractIdPreimage: args.contractIdPreimage(),
-      executable: args.executable(),
+      contractIdPreimage: args.contractIdPreimage,
+      executable: args.executable,
     };
   }
-  const argsV2 = hostFn.createContractV2();
+  const argsV2 = hostFn.createContractV2;
   return {
-    contractIdPreimage: argsV2.contractIdPreimage(),
-    executable: argsV2.executable(),
-    constructorArgs: argsV2.constructorArgs(),
+    contractIdPreimage: argsV2.contractIdPreimage,
+    executable: argsV2.executable,
+    constructorArgs: argsV2.constructorArgs,
   };
+};
+
+/**
+ * The slice of a `Spec.jsonSchema()` payload the wallet actually reads. These
+ * describe the `/contract-spec` response rather than validate it: the payload
+ * is author-controlled JSON, so every field is optional and the runtime guards
+ * below stay responsible for rejecting a shape that only looks right.
+ */
+export interface ContractFnArgsSchema {
+  properties?: Record<string, unknown>;
+  required?: string[];
+}
+
+export interface ContractFnDefinition {
+  properties?: { args?: ContractFnArgsSchema };
+}
+
+export interface ContractSpecSchema {
+  definitions?: Record<string, ContractFnDefinition | undefined>;
+}
+
+// V8 hoists integer-like keys to the front of `Object.keys` and sorts them
+// numerically, so their presence alone means the key order is not insertion
+// order. No Rust identifier looks like this, but the spec section is
+// author-controlled metadata and can hold any string.
+const INTEGER_LIKE_KEY = /^(0|[1-9]\d*)$/;
+
+/**
+ * Argument names for a contract function, in declaration order, or `null` when
+ * the spec does not describe the invocation we were handed.
+ *
+ * The ordered parameter list is `properties.args.properties`, never `required`:
+ * `Spec.jsonSchema()` follows JSON Schema semantics, so an `Option<T>`
+ * parameter is left out of `required` and every name after it would attach to
+ * the wrong value.
+ *
+ * Reading the parameter list off object keys is sound here because nothing in
+ * the path reorders them: `Spec.jsonSchema()` fills `properties` from a single
+ * pass over the function's inputs, and `JSON.stringify` and `JSON.parse` both
+ * preserve insertion order for keys that are not integer-like. The two guards
+ * below cover the cases where that breaks down — an arity mismatch, and keys
+ * `Object.keys` would reorder. A re-serializer that sorted the keys is not
+ * detectable from this payload; the followup is for `/contract-spec` to return
+ * an explicit ordered array derived from `inputs()`, so order is carried rather
+ * than inferred.
+ *
+ * These names come from author-controlled wasm metadata, so they are advisory
+ * either way — the signing view says as much beside them.
+ */
+export const getContractFnArgNames = (
+  spec: ContractSpecSchema | undefined,
+  fnName: string,
+  argCount: number,
+): string[] | null => {
+  const names = Object.keys(
+    spec?.definitions?.[fnName]?.properties?.args?.properties || {},
+  );
+
+  if (names.length !== argCount) {
+    return null;
+  }
+
+  if (names.some((name) => INTEGER_LIKE_KEY.test(name))) {
+    return null;
+  }
+
+  return names;
 };
 
 export const isSacContract = (
@@ -867,9 +1455,10 @@ export const isSacContract = (
   if (name.includes(":")) {
     try {
       return (
-        new Sdk.Asset(...(name.split(":") as [string, string])).contractId(
-          networkPassphrase,
-        ) === contractId
+        new Sdk.Asset(
+          splitCanonical(name).code,
+          splitCanonical(name).issuer,
+        ).contractId(networkPassphrase) === contractId
       );
     } catch (error) {
       return false;
@@ -904,10 +1493,8 @@ export const isAssetSac = ({
     return false;
   }
 
-  const nativeContract = getNativeContractDetails(networkDetails);
-
-  // Check if it's the native XLM contract
-  if (asset.contract === nativeContract.contract) {
+  // Check if it's the native contract
+  if (isNativeContract(asset.contract, networkDetails.networkPassphrase)) {
     return true;
   }
 

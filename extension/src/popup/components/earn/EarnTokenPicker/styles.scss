@@ -76,12 +76,12 @@
     scrollbar-width: none;
     -webkit-mask-image: linear-gradient(
       to bottom,
-      #000 calc(100% - #{pxToRem(16)}),
+      black calc(100% - #{pxToRem(16)}),
       transparent
     );
     mask-image: linear-gradient(
       to bottom,
-      #000 calc(100% - #{pxToRem(16)}),
+      black calc(100% - #{pxToRem(16)}),
       transparent
     );
 

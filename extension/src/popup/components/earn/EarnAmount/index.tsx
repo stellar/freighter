@@ -47,6 +47,7 @@ import {
   setEarnSubmitFailed,
 } from "popup/ducks/earn";
 import { getBlendSuppliedTokens } from "@shared/api/helpers/blend";
+import { isNativeAssetId } from "@shared/helpers/assetIdentity";
 import { formatTokenAmount } from "popup/helpers/soroban";
 
 import { PoolCard } from "./PoolCard";
@@ -181,7 +182,7 @@ export const EarnAmount = ({ goBack, onConfirm }: EarnAmountProps) => {
       })
     : "0";
 
-  const isXlm = asset === "native";
+  const isXlm = isNativeAssetId(asset);
 
   const enteredAmount = new BigNumber(cleanAmount(amount || "0"));
   const isAmountTooHigh = enteredAmount.gt(new BigNumber(availableBalance));
@@ -426,11 +427,7 @@ export const EarnAmount = ({ goBack, onConfirm }: EarnAmountProps) => {
         </div>
       </View.Content>
 
-      <SlideupModal
-        isModalOpen={isReviewOpen}
-        setIsModalOpen={setIsReviewOpen}
-        hasBackdrop
-      >
+      <SlideupModal isModalOpen={isReviewOpen} setIsModalOpen={setIsReviewOpen}>
         <EarnReview
           pool={pool}
           assetCode={selected?.code || ""}
@@ -463,7 +460,6 @@ export const EarnAmount = ({ goBack, onConfirm }: EarnAmountProps) => {
       <SlideupModal
         isModalOpen={isPoolSheetOpen}
         setIsModalOpen={setIsPoolSheetOpen}
-        hasBackdrop
       >
         {pool ? (
           <PoolDetailsSheet
@@ -478,7 +474,6 @@ export const EarnAmount = ({ goBack, onConfirm }: EarnAmountProps) => {
       <SlideupModal
         isModalOpen={isFeeSheetOpen}
         setIsModalOpen={setIsFeeSheetOpen}
-        hasBackdrop
       >
         <NetworkFeeSheet
           canBuyXlm={isMainnet(data.networkDetails)}

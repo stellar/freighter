@@ -21,17 +21,14 @@ node_modules
 .env.development.local
 .env.test.local
 .env.production.local
+# Local backend-switching backups, never committed
+.env.backup*
 .yarn
 .yarn/*
 
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-
-# fastlane output
-Freighter.app/
-Freighter.pkg
-Freighter.app.dSYM.zip
 
 # Agent tools
 .vscode/mcp.json

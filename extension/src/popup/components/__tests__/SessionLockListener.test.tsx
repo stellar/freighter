@@ -2,12 +2,7 @@ import React from "react";
 import { render, act } from "@testing-library/react";
 import { Provider } from "react-redux";
 import { combineReducers, configureStore } from "@reduxjs/toolkit";
-import {
-  MemoryRouter,
-  Routes,
-  Route,
-  useLocation,
-} from "react-router-dom";
+import { MemoryRouter, Routes, Route, useLocation } from "react-router-dom";
 import browser from "webextension-polyfill";
 
 import { loadAccount } from "@shared/api/internal";
@@ -23,8 +18,7 @@ type RuntimeHandler = (message: unknown) => void | Promise<void>;
 
 const listeners: RuntimeHandler[] = [];
 const mockLoadAccount = loadAccount as jest.MockedFunction<typeof loadAccount>;
-const mockResetReconciliation =
-  resetAnalyticsUserIdReconciliation as jest.Mock;
+const mockResetReconciliation = resetAnalyticsUserIdReconciliation as jest.Mock;
 
 jest.mock("webextension-polyfill", () => ({
   runtime: {
@@ -77,10 +71,7 @@ const LocationSpy = () => {
   return null;
 };
 
-const renderListener = (
-  initialEntry: string = "/",
-  store = makeStore(),
-) =>
+const renderListener = (initialEntry: string = "/", store = makeStore()) =>
   render(
     <Provider store={store}>
       <MemoryRouter initialEntries={[initialEntry]}>
@@ -271,7 +262,9 @@ describe("SessionLockListener", () => {
   it("returns undefined synchronously for unrelated messages so it does not claim the response slot", () => {
     renderListener();
 
-    expect(callListenerSync({ type: SERVICE_TYPES.LOAD_ACCOUNT })).toBeUndefined();
+    expect(
+      callListenerSync({ type: SERVICE_TYPES.LOAD_ACCOUNT }),
+    ).toBeUndefined();
     expect(
       callListenerSync({ type: SERVICE_TYPES.GET_IS_ACCOUNT_MISMATCH }),
     ).toBeUndefined();

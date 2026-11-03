@@ -12,6 +12,12 @@ jest.mock("@sentry/browser", () => ({
   captureException: jest.fn(),
 }));
 
+// Real keys: ids without a valid G or C issuer are left out of the scan.
+const ISSUER = "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN";
+const CONTRACT = "CAS3J7GYLGXMF6TDJBBYYSE3HQ6BBSMLNUQ34T6TZMYMW2EVH34XOWMA";
+const USDC_KEY = `USDC:${ISSUER}`;
+const TKN_KEY = `TKN:${CONTRACT}`;
+
 const makeBalances = (): AccountBalancesInterface =>
   ({
     isFunded: true,
@@ -22,18 +28,18 @@ const makeBalances = (): AccountBalancesInterface =>
         total: new BigNumber("100"),
         available: new BigNumber("98"),
       },
-      "USDC:GISSUER": {
+      [USDC_KEY]: {
         token: {
           type: "credit_alphanum4",
           code: "USDC",
-          issuer: { key: "GISSUER" },
+          issuer: { key: ISSUER },
         },
         total: new BigNumber("50"),
         available: new BigNumber("50"),
       },
-      "TKN:CTOKEN456": {
-        token: { code: "TKN", issuer: { key: "CTOKEN456" } },
-        contractId: "CTOKEN456",
+      [TKN_KEY]: {
+        token: { code: "TKN", issuer: { key: CONTRACT } },
+        contractId: CONTRACT,
         total: new BigNumber("5"),
         available: new BigNumber("5"),
       },
@@ -80,7 +86,7 @@ describe("addBlockaidScanResults", () => {
     );
 
     expect(mockFetch).not.toHaveBeenCalled();
-    expect((result.balances!["USDC:GISSUER"] as any).blockaidData).toEqual(
+    expect((result.balances![USDC_KEY] as any).blockaidData).toEqual(
       defaultBlockaidScanAssetResult,
     );
   });
@@ -88,7 +94,7 @@ describe("addBlockaidScanResults", () => {
   it("scans classic + Soroban ids (not native/LP) on PUBLIC and merges results", async () => {
     mockFetch.mockResolvedValueOnce({
       json: async () => ({
-        data: { results: { "USDC-GISSUER": maliciousResult } },
+        data: { results: { [`USDC-${ISSUER}`]: maliciousResult } },
       }),
     });
 
@@ -99,14 +105,14 @@ describe("addBlockaidScanResults", () => {
 
     const [url] = mockFetch.mock.calls[0];
     const requested = new URL(url).searchParams.getAll("asset_ids");
-    expect(requested).toEqual(["USDC-GISSUER", "TKN-CTOKEN456"]);
+    expect(requested).toEqual([`USDC-${ISSUER}`, `TKN-${CONTRACT}`]);
 
     // matched entry overwritten with the scan verdict
-    expect((result.balances!["USDC:GISSUER"] as any).blockaidData).toEqual(
+    expect((result.balances![USDC_KEY] as any).blockaidData).toEqual(
       maliciousResult,
     );
     // unmatched + unscannable entries keep the benign default
-    expect((result.balances!["TKN:CTOKEN456"] as any).blockaidData).toEqual(
+    expect((result.balances![TKN_KEY] as any).blockaidData).toEqual(
       defaultBlockaidScanAssetResult,
     );
     expect((result.balances!.native as any).blockaidData).toEqual(
@@ -125,24 +131,29 @@ describe("addBlockaidScanResults", () => {
       MAINNET_NETWORK_DETAILS,
     );
 
-    expect((result.balances!["USDC:GISSUER"] as any).blockaidData).toEqual(
+    expect((result.balances![USDC_KEY] as any).blockaidData).toEqual(
       defaultBlockaidScanAssetResult,
     );
   });
 
-  // Regression: the verdict used to be matched back by re-parsing the returned
-  // id (`assetId.replace("-", ":")`), which consumed the first hyphen. A symbol
-  // containing one split in the wrong place, the lookup missed, and the verdict
-  // was dropped — and because every entry is pre-stamped benign, that renders a
-  // malicious token as affirmatively safe.
-  it("applies the verdict to a token whose symbol contains a hyphen", async () => {
-    const hyphenated = {
+  // freighter-backend rejects the whole /scan-asset-bulk request when one id's
+  // split("-")[1] isn't a G or C key, so a SEP-41 symbol with a hyphen used to
+  // cost every other balance in its chunk its verdict. It's left out instead
+  // and keeps the benign default, like an LP share.
+  it("leaves out a token whose symbol contains a hyphen so the rest of its chunk keeps its verdicts", async () => {
+    const hyphenatedKey = `MY-TOKEN:${CONTRACT}`;
+    const balances = {
       isFunded: true,
       subentryCount: 0,
       balances: {
-        "MY-TOKEN:CTOKEN456": {
-          token: { code: "MY-TOKEN", issuer: { key: "CTOKEN456" } },
-          contractId: "CTOKEN456",
+        [USDC_KEY]: {
+          token: { code: "USDC", issuer: { key: ISSUER } },
+          total: new BigNumber("1"),
+          available: new BigNumber("1"),
+        },
+        [hyphenatedKey]: {
+          token: { code: "MY-TOKEN", issuer: { key: CONTRACT } },
+          contractId: CONTRACT,
           total: new BigNumber("1"),
           available: new BigNumber("1"),
         },
@@ -151,38 +162,42 @@ describe("addBlockaidScanResults", () => {
 
     mockFetch.mockResolvedValueOnce({
       json: async () => ({
-        data: { results: { "MY-TOKEN-CTOKEN456": maliciousResult } },
+        data: { results: { [`USDC-${ISSUER}`]: maliciousResult } },
       }),
     });
 
     const result = await addBlockaidScanResults(
-      hyphenated,
+      balances,
       MAINNET_NETWORK_DETAILS,
     );
 
     const [url] = mockFetch.mock.calls[0];
     expect(new URL(url).searchParams.getAll("asset_ids")).toEqual([
-      "MY-TOKEN-CTOKEN456",
+      `USDC-${ISSUER}`,
     ]);
-    expect(
-      (result.balances!["MY-TOKEN:CTOKEN456"] as any).blockaidData,
-    ).toEqual(maliciousResult);
+    expect((result.balances![USDC_KEY] as any).blockaidData).toEqual(
+      maliciousResult,
+    );
+    expect((result.balances![hyphenatedKey] as any).blockaidData).toEqual(
+      defaultBlockaidScanAssetResult,
+    );
   });
 
-  // Two distinct keys can produce the same Blockaid id, so the id must map to
-  // every key behind it — otherwise one of them keeps the benign default.
-  it("stamps every balance key that collapses onto the same Blockaid id", async () => {
-    const colliding = {
+  // Blockaid fails the batch the same way on a code it can't take.
+  it("leaves out a token whose symbol Blockaid can't take so the rest of its chunk keeps its verdicts", async () => {
+    const dottedKey = `USDC.e:${CONTRACT}`;
+    const balances = {
       isFunded: true,
       subentryCount: 0,
       balances: {
-        "A-B:C123": {
-          token: { code: "A-B", issuer: { key: "C123" } },
+        [USDC_KEY]: {
+          token: { code: "USDC", issuer: { key: ISSUER } },
           total: new BigNumber("1"),
           available: new BigNumber("1"),
         },
-        "A:B-C123": {
-          token: { code: "A", issuer: { key: "B-C123" } },
+        [dottedKey]: {
+          token: { code: "USDC.e", issuer: { key: CONTRACT } },
+          contractId: CONTRACT,
           total: new BigNumber("1"),
           available: new BigNumber("1"),
         },
@@ -191,21 +206,45 @@ describe("addBlockaidScanResults", () => {
 
     mockFetch.mockResolvedValueOnce({
       json: async () => ({
-        data: { results: { "A-B-C123": maliciousResult } },
+        data: { results: { [`USDC-${ISSUER}`]: maliciousResult } },
       }),
     });
 
     const result = await addBlockaidScanResults(
-      colliding,
+      balances,
       MAINNET_NETWORK_DETAILS,
     );
 
-    expect((result.balances!["A-B:C123"] as any).blockaidData).toEqual(
+    const [url] = mockFetch.mock.calls[0];
+    expect(new URL(url).searchParams.getAll("asset_ids")).toEqual([
+      `USDC-${ISSUER}`,
+    ]);
+    expect((result.balances![USDC_KEY] as any).blockaidData).toEqual(
       maliciousResult,
     );
-    expect((result.balances!["A:B-C123"] as any).blockaidData).toEqual(
-      maliciousResult,
+    expect((result.balances![dottedKey] as any).blockaidData).toEqual(
+      defaultBlockaidScanAssetResult,
     );
+  });
+
+  it("does not fetch when no held token can be bulk scanned", async () => {
+    const balances = {
+      isFunded: true,
+      subentryCount: 0,
+      balances: {
+        native: { total: new BigNumber("1"), available: new BigNumber("1") },
+        [`MY-TOKEN:${CONTRACT}`]: {
+          token: { code: "MY-TOKEN", issuer: { key: CONTRACT } },
+          contractId: CONTRACT,
+          total: new BigNumber("1"),
+          available: new BigNumber("1"),
+        },
+      },
+    } as any;
+
+    await addBlockaidScanResults(balances, MAINNET_NETWORK_DETAILS);
+
+    expect(mockFetch).not.toHaveBeenCalled();
   });
 
   it("does not fetch when there is nothing scannable", async () => {

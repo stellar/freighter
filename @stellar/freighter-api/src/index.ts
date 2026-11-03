@@ -9,6 +9,7 @@ import { getNetworkDetails } from "./getNetworkDetails";
 import { isAllowed } from "./isAllowed";
 import { setAllowed } from "./setAllowed";
 import { requestAccess } from "./requestAccess";
+import { disconnect } from "./disconnect";
 import { WatchWalletChanges } from "./watchWalletChanges";
 
 export const isBrowser = typeof window !== "undefined";
@@ -25,6 +26,7 @@ export {
   isAllowed,
   setAllowed,
   requestAccess,
+  disconnect,
   WatchWalletChanges,
 };
 export default {
@@ -39,5 +41,6 @@ export default {
   isAllowed,
   setAllowed,
   requestAccess,
+  disconnect,
   WatchWalletChanges,
 };

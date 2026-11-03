@@ -36,6 +36,7 @@ export const dataStorage = (
   remove: async (keys: string | string[]) => {
     await storageApi.remove(keys);
   },
+  getAllKeys: async () => Object.keys(await storageApi.get(null)),
 });
 
 export interface DataStorageAccess {
@@ -43,6 +44,7 @@ export interface DataStorageAccess {
   setItem: (key: string, value: any) => Promise<void>;
   clear: () => Promise<void>;
   remove: (keys: string | string[]) => Promise<void>;
+  getAllKeys: () => Promise<string[]>;
 }
 
 export const dataStorageAccess = (
@@ -56,5 +58,6 @@ export const dataStorageAccess = (
     },
     clear: () => store.clear(),
     remove: store.remove,
+    getAllKeys: store.getAllKeys,
   };
 };

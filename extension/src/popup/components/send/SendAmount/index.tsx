@@ -6,17 +6,25 @@ import { useFormik } from "formik";
 import { Button, Icon, Notification } from "@stellar/design-system";
 import { useTranslation } from "react-i18next";
 
-import { LoadingBackground } from "popup/basics/LoadingBackground";
 import { View } from "popup/basics/layout/View";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { AppDispatch } from "popup/App";
+import { isNativeAssetId } from "@shared/helpers/assetIdentity";
 import {
   getAssetFromCanonical,
+  isContractDestination,
   isMainnet,
   isMuxedAccount,
+  isMuxedContract,
 } from "helpers/stellar";
+import { useReviewSettingsHandoff } from "popup/helpers/useReviewSettingsHandoff";
 import { NetworkCongestion } from "popup/helpers/useNetworkFees";
-import { emitMetric } from "helpers/metrics";
+import { emitMetric, emitScreenViewed } from "helpers/metrics";
+import {
+  emitSigningRejected,
+  SigningKind,
+  SigningSource,
+} from "popup/metrics/signing";
 import { trackSendFeeBreakdownOpened } from "popup/metrics/send";
 import {
   getAssetDecimals,
@@ -50,7 +58,7 @@ import { TX_SEND_MAX } from "popup/constants/transaction";
 import { getBalanceByAsset, getBalanceByKey } from "popup/helpers/balance";
 
 import { RequestState, State } from "constants/request";
-import { openTab } from "popup/helpers/navigate";
+import { closeWindow, openTab } from "popup/helpers/navigate";
 import { newTabHref } from "helpers/urls";
 import { AMOUNT_ERROR, InputType } from "helpers/transaction";
 import { reRouteOnboarding } from "popup/helpers/route";
@@ -64,6 +72,7 @@ import { SelectedCollectible } from "popup/components/sendCollectible/SelectedCo
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { useGetSendAmountData } from "./hooks/useSendAmountData";
 import { SimulateTxData, SimulateResult } from "./hooks/useSimulateTxData";
+import { SheetLayout } from "popup/components/SheetLayout";
 import { SlideupModal } from "popup/components/SlideupModal";
 import { MemoEditingContext } from "popup/constants/send-payment";
 import { AmountCard } from "popup/components/amount/AmountCard";
@@ -192,6 +201,47 @@ export const SendAmount = ({
   const [isEditingSettings, setIsEditingSettings] = React.useState(false);
   const [isShowingFeesPane, setIsShowingFeesPane] = React.useState(false);
   const [isReviewingTx, setIsReviewingTx] = React.useState(false);
+  // True while the review is open, so closing it can be told apart from the
+  // first render. True once the user approves, or leaves to edit the memo,
+  // so neither is reported as a rejection.
+  const wasReviewingRef = useRef(false);
+  const skipRejectionRef = useRef(false);
+  const { openSettingsFromReview, closeSettings, returnToReview } =
+    useReviewSettingsHandoff({
+      setIsReviewingTx,
+      setIsEditingSettings,
+      skipRejectionRef,
+    });
+
+  /**
+   * Reports the review stages: the `confirm` stage when the review opens, and
+   * a rejection when the user leaves it without approving.
+   *
+   * Keyed on the review's open state rather than the Cancel button, because
+   * the user can also leave through the modal's backdrop, and that never
+   * reaches a button handler.
+   */
+  useEffect(() => {
+    if (isReviewingTx) {
+      wasReviewingRef.current = true;
+      skipRejectionRef.current = false;
+      emitScreenViewed("send_payment_confirm", {
+        flow: "send",
+        step: "confirm",
+      });
+      return;
+    }
+    if (!wasReviewingRef.current) {
+      return;
+    }
+    wasReviewingRef.current = false;
+    if (skipRejectionRef.current) {
+      return;
+    }
+    emitSigningRejected(SigningKind.Transaction, {
+      source: SigningSource.Internal,
+    });
+  }, [isReviewingTx]);
   const [contractSupportsMuxed, setContractSupportsMuxed] = React.useState<
     boolean | null
   >(null);
@@ -291,6 +341,28 @@ export const SendAmount = ({
       contractSupportsMuxed === false,
     [isRecipientMuxed, isToken, isCollectible, contractSupportsMuxed],
   );
+
+  // A W address (CAP-84) is only valid as the `to` of a Stellar Asset Contract
+  // transfer. Native and classic assets are sent through their SAC; custom
+  // tokens and collectibles are not SACs, so a W destination is blocked.
+  const isMuxedContractWithoutSupport = React.useMemo(
+    () =>
+      !!destination &&
+      isMuxedContract(destination) &&
+      (isToken || isCollectible),
+    [destination, isToken, isCollectible],
+  );
+
+  // The asset cannot be sent to this muxed recipient. The banner already says
+  // so; skip the simulation, which would only fail on the backend.
+  const isRecipientUnsupported =
+    isMuxedAddressWithoutMemoSupport || isMuxedContractWithoutSupport;
+
+  // Same rule as the simulation: any contract destination makes this a
+  // Soroban transfer, whatever the asset, so the fee breakdown must match.
+  const isSorobanSend =
+    isToken || isCollectible || isContractDestination(destination);
+
   const [memoEditingContext, setMemoEditingContext] =
     React.useState<MemoEditingContext | null>(null);
 
@@ -308,6 +380,9 @@ export const SendAmount = ({
   };
 
   const handleContinue = async () => {
+    if (isRecipientUnsupported) {
+      return;
+    }
     if (isToken || isCollectible) {
       // Reset to the inclusion fee before re-simulating. After a prior
       // simulation, saveTransactionFee stored the TOTAL (inclusion + resource).
@@ -399,6 +474,7 @@ export const SendAmount = ({
   useEffect(() => {
     if (!(isToken || isCollectible)) return;
     if (!destination) return;
+    if (isRecipientUnsupported) return;
     // Don't stack concurrent simulations.
     if (simulationState.state === RequestState.LOADING) return;
 
@@ -422,7 +498,14 @@ export const SendAmount = ({
       fetchSimulationData();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [destination, asset, isToken, isCollectible, simulationState.state]);
+  }, [
+    destination,
+    asset,
+    isToken,
+    isCollectible,
+    isRecipientUnsupported,
+    simulationState.state,
+  ]);
 
   // If the user was in fiat mode and current asset no longer has a USD price,
   // force back to crypto mode so the input is still operable.
@@ -477,7 +560,7 @@ export const SendAmount = ({
   if (sendAmountData.data?.type === AppDataType.REROUTE) {
     if (sendAmountData.data.shouldOpenTab) {
       openTab(newTabHref(sendAmountData.data.routeTarget));
-      window.close();
+      closeWindow();
     }
     return (
       <Navigate
@@ -598,6 +681,11 @@ export const SendAmount = ({
     }
   };
 
+  const closeSendSettings = () => {
+    setDraftFeeForDisplay(null);
+    closeSettings();
+  };
+
   return (
     <React.Fragment>
       <SubviewHeader
@@ -679,6 +767,7 @@ export const SendAmount = ({
                   disabled={
                     !destination ||
                     isMuxedAddressWithoutMemoSupport ||
+                    isMuxedContractWithoutSupport ||
                     simulationState.state === RequestState.ERROR
                   }
                   isLoading={simulationState.state === RequestState.LOADING}
@@ -710,6 +799,7 @@ export const SendAmount = ({
                     !isAmountInputValid ||
                     isAmountTooHigh ||
                     isMuxedAddressWithoutMemoSupport ||
+                    isMuxedContractWithoutSupport ||
                     ((isToken || isCollectible) &&
                       simulationState.state === RequestState.ERROR)
                   }
@@ -733,16 +823,24 @@ export const SendAmount = ({
         }
       >
         <div className="SendAmount">
-          {isMuxedAddressWithoutMemoSupport && (
-            <div className="SendAmount__warning-banner">
+          {(isMuxedAddressWithoutMemoSupport ||
+            isMuxedContractWithoutSupport) && (
+            <div
+              className="SendAmount__warning-banner"
+              data-testid="send-amount-muxed-banner"
+            >
               <Notification
                 variant="error"
                 icon={<Icon.AlertCircle />}
                 title={t("Muxed address not supported")}
               >
-                {t(
-                  "This token does not support muxed address (M-) as a target destination.",
-                )}
+                {isMuxedContractWithoutSupport
+                  ? t(
+                      "This token does not support muxed contract address (W-) as a target destination.",
+                    )
+                  : t(
+                      "This token does not support muxed address (M-) as a target destination.",
+                    )}
               </Notification>
             </div>
           )}
@@ -774,7 +872,7 @@ export const SendAmount = ({
                     assetCode={parsedSourceAsset.code}
                     assetIcon={assetIcon}
                     assetIcons={
-                      asset !== "native" ? { [asset]: assetIcon } : {}
+                      !isNativeAssetId(asset) ? { [asset]: assetIcon } : {}
                     }
                     assetIssuerKey={srcAsset.issuer}
                     supportsUsd={Boolean(supportsUsd)}
@@ -836,37 +934,23 @@ export const SendAmount = ({
           </div>
         </div>
       </View.Content>
-      {isEditingMemo ? (
-        <>
-          <div className="EditMemoWrapper">
-            <EditMemo
-              memo={transactionData.memo || ""}
-              memoType={transactionData.memoType}
-              onClose={() => {
-                setIsEditingMemo(false);
-                // Reopen review sheet if user came from review flow
-                if (memoEditingContext === MemoEditingContext.Review) {
-                  setIsReviewingTx(true);
-                }
-                setMemoEditingContext(null);
-              }}
-              onSubmit={async ({ memo }: { memo: string }) => {
-                dispatch(saveMemoAndType({ memo, memoType: "" }));
-                setIsEditingMemo(false);
-                // Regenerate transaction XDR with new memo (now reads memo from Redux state inside fetchData)
-                await fetchSimulationData();
-                // Reopen review sheet after memo is saved and XDR is regenerated only if user came from review flow
-                if (memoEditingContext === MemoEditingContext.Review) {
-                  setIsReviewingTx(true);
-                  setMemoEditingContext(null);
-                }
-              }}
-              disabled={isMemoDisabled}
-              disabledMessage={memoDisabledMessage}
-            />
-          </div>
-          <LoadingBackground
-            onClick={() => {
+      <SlideupModal
+        isModalOpen={isEditingMemo}
+        setIsModalOpen={() => {
+          setIsEditingMemo(false);
+          // Reopen review sheet if user came from review flow
+          if (memoEditingContext === MemoEditingContext.Review) {
+            setIsReviewingTx(true);
+          }
+          setMemoEditingContext(null);
+        }}
+        ariaLabel={t("Memo")}
+      >
+        {isEditingMemo ? (
+          <EditMemo
+            memo={transactionData.memo || ""}
+            memoType={transactionData.memoType}
+            onClose={() => {
               setIsEditingMemo(false);
               // Reopen review sheet if user came from review flow
               if (memoEditingContext === MemoEditingContext.Review) {
@@ -874,92 +958,107 @@ export const SendAmount = ({
               }
               setMemoEditingContext(null);
             }}
-            isActive={isEditingMemo}
+            onSubmit={async ({ memo }: { memo: string }) => {
+              dispatch(saveMemoAndType({ memo, memoType: "" }));
+              setIsEditingMemo(false);
+              // Regenerate transaction XDR with new memo (now reads memo from Redux state inside fetchData)
+              await fetchSimulationData();
+              // Reopen review sheet after memo is saved and XDR is regenerated only if user came from review flow
+              if (memoEditingContext === MemoEditingContext.Review) {
+                setIsReviewingTx(true);
+                setMemoEditingContext(null);
+              }
+            }}
+            disabled={isMemoDisabled}
+            disabledMessage={memoDisabledMessage}
           />
-        </>
-      ) : null}
-      {isEditingSettings && !isShowingFeesPane ? (
-        <>
-          <div className="EditMemoWrapper">
-            <EditSettings
-              fee={draftFeeForDisplay ?? editSettingsFee}
-              defaultFee={recommendedFee}
-              title={t("Send Settings")}
-              timeout={transactionData.transactionTimeout}
-              congestion={networkCongestion}
-              isSoroban={isToken || isCollectible}
-              onFeeChange={(v) => {
-                setDraftFeeForDisplay(v);
-              }}
-              onClose={() => {
-                setIsEditingSettings(false);
-                setDraftFeeForDisplay(null);
-              }}
-              onShowFeesInfo={(currentDraftFee) => {
-                trackSendFeeBreakdownOpened("settings");
-                setDraftFeeForDisplay(currentDraftFee);
-                setIsShowingFeesPane(true);
-              }}
-              onSubmit={async ({
-                fee,
-                timeout,
-              }: {
-                fee: string;
-                timeout: number;
-              }) => {
-                const nextFee = fee.trim() || editSettingsFee;
-                dispatch(saveTransactionFee(nextFee));
-                dispatch(saveTransactionTimeout(timeout));
-                hasManuallySetFeeRef.current = nextFee;
-                dispatch(saveManualTransactionFee(nextFee));
-                setIsEditingSettings(false);
-                setDraftFeeForDisplay(null);
-                if (destination) {
-                  await fetchSimulationData();
-                }
-              }}
-            />
-          </div>
-          <LoadingBackground
-            onClick={() => {
+        ) : (
+          <></>
+        )}
+      </SlideupModal>
+      <SlideupModal
+        isModalOpen={isEditingSettings && !isShowingFeesPane}
+        setIsModalOpen={closeSendSettings}
+        ariaLabel={t("Settings")}
+      >
+        {isEditingSettings ? (
+          <EditSettings
+            fee={draftFeeForDisplay ?? editSettingsFee}
+            defaultFee={recommendedFee}
+            timeout={transactionData.transactionTimeout}
+            congestion={networkCongestion}
+            isSoroban={isSorobanSend}
+            onFeeChange={(v) => {
+              setDraftFeeForDisplay(v);
+            }}
+            onClose={closeSendSettings}
+            onShowFeesInfo={(currentDraftFee) => {
+              trackSendFeeBreakdownOpened("settings");
+              setDraftFeeForDisplay(currentDraftFee);
+              setIsShowingFeesPane(true);
+            }}
+            onSubmit={async ({
+              fee,
+              timeout,
+            }: {
+              fee: string;
+              timeout: number;
+            }) => {
+              const nextFee = fee.trim() || editSettingsFee;
+              dispatch(saveTransactionFee(nextFee));
+              dispatch(saveTransactionTimeout(timeout));
+              hasManuallySetFeeRef.current = nextFee;
+              dispatch(saveManualTransactionFee(nextFee));
               setIsEditingSettings(false);
               setDraftFeeForDisplay(null);
+              // Rebuild the XDR with the new fee before the review comes back,
+              // so Confirm never submits the old one.
+              if (destination) {
+                await fetchSimulationData();
+              }
+              returnToReview();
             }}
-            isActive={isEditingSettings}
           />
-        </>
-      ) : null}
-      {isShowingFeesPane ? (
-        <SlideupModal
-          setIsModalOpen={() => {
-            setIsShowingFeesPane(false);
-            setIsEditingSettings(true);
-          }}
-          isModalOpen={isShowingFeesPane}
-        >
-          <View.Inset>
-            <div className="SendAmount__FeesPane">
-              <FeesPane
-                fee={buildFeesPaneTotal(
-                  feeForFeesPane,
-                  simulationState.state === RequestState.ERROR
-                    ? undefined
-                    : simulationState.data?.resourceFee,
-                )}
-                simulationState={simulationState}
-                isSoroban={isToken || isCollectible}
-                onClose={() => {
-                  setIsShowingFeesPane(false);
-                  setIsEditingSettings(true);
-                }}
-              />
-            </div>
-          </View.Inset>
-        </SlideupModal>
-      ) : null}
+        ) : (
+          <></>
+        )}
+      </SlideupModal>
+      {/* Mounted unconditionally, with only the contents gated -- as the review
+          sheet below already is. An unmount on close would cut the slide-out
+          off, since SlideupModal reports the close as it starts. */}
+      <SlideupModal
+        setIsModalOpen={() => {
+          setIsShowingFeesPane(false);
+          setIsEditingSettings(true);
+        }}
+        isModalOpen={isShowingFeesPane}
+        ariaLabel={t("Fees")}
+      >
+        {isShowingFeesPane ? (
+          <SheetLayout>
+            <FeesPane
+              fee={buildFeesPaneTotal(
+                feeForFeesPane,
+                simulationState.state === RequestState.ERROR
+                  ? undefined
+                  : simulationState.data?.resourceFee,
+              )}
+              simulationState={simulationState}
+              isSoroban={isSorobanSend}
+              onClose={() => {
+                setIsShowingFeesPane(false);
+                setIsEditingSettings(true);
+              }}
+            />
+          </SheetLayout>
+        ) : (
+          <></>
+        )}
+      </SlideupModal>
       <SlideupModal
         setIsModalOpen={() => setIsReviewingTx(false)}
         isModalOpen={isReviewingTx}
+        ariaLabel={t("Review send")}
       >
         {isReviewingTx ? (
           <ReviewTx
@@ -967,8 +1066,14 @@ export const SendAmount = ({
             fee={fee}
             networkDetails={data.networkDetails}
             onCancel={() => setIsReviewingTx(false)}
-            onConfirm={goToNext}
+            onConfirm={() => {
+              skipRejectionRef.current = true;
+              goToNext();
+            }}
+            onEditSettings={openSettingsFromReview}
             onAddMemo={() => {
+              // Leaving to edit the memo is not a decision on the transaction.
+              skipRejectionRef.current = true;
               setIsReviewingTx(false);
               setMemoEditingContext(MemoEditingContext.Review);
               setIsEditingMemo(true);
@@ -983,6 +1088,7 @@ export const SendAmount = ({
             simulationState={simulationState}
             srcAsset={asset}
             title={t("You are sending")}
+            sheetTitle={t("Review send")}
           />
         ) : (
           <></>

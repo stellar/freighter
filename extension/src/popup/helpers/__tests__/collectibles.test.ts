@@ -1,4 +1,4 @@
-import { getUserCollections } from "../collectibles";
+import { filterHiddenCollectibles, getUserCollections } from "../collectibles";
 
 describe("getUserCollections", () => {
   it("should return an empty array if the collections are empty", () => {
@@ -246,5 +246,54 @@ describe("getUserCollections", () => {
         },
       },
     ]);
+  });
+});
+
+describe("filterHiddenCollectibles", () => {
+  const ADDRESS = "CAS3J7GYLGXMF6TDJBBYYSE3HW6BBSMLNUQ34T6TZMYMW2EVH34XOWMA";
+  const OTHER = "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC";
+  const item = (collectionAddress: string, tokenId: string) =>
+    ({ collectionAddress, tokenId }) as any;
+  const collections = [
+    {
+      collection: {
+        address: ADDRESS,
+        collectibles: [item(ADDRESS, "1"), item(ADDRESS, "2")],
+      },
+    },
+    {
+      collection: { address: OTHER, collectibles: [item(OTHER, "9")] },
+    },
+    { error: "boom" },
+  ] as any;
+
+  it("drops hidden collectibles and keeps the rest", () => {
+    const result = filterHiddenCollectibles(
+      collections,
+      (address, tokenId) => address === ADDRESS && tokenId === "1",
+    );
+    expect(result[0].collection!.collectibles.map((c) => c.tokenId)).toEqual([
+      "2",
+    ]);
+    expect(result[1].collection!.collectibles.map((c) => c.tokenId)).toEqual([
+      "9",
+    ]);
+  });
+
+  it("drops a collection once every collectible in it is hidden", () => {
+    const result = filterHiddenCollectibles(
+      collections,
+      (address) => address === ADDRESS,
+    );
+    expect(result.map((entry) => entry.collection?.address)).toEqual([
+      OTHER,
+      undefined,
+    ]);
+  });
+
+  it("passes entries without a collection through untouched", () => {
+    const result = filterHiddenCollectibles(collections, () => false);
+    expect(result[2]).toEqual({ error: "boom" });
+    expect(result).toHaveLength(3);
   });
 });

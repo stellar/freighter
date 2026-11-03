@@ -40,6 +40,7 @@ import {
   normalizeMigratedData,
   migrateSorobanRpcUrlNetworkDetails,
   versionedMigration,
+  markRebrandAnnouncementEligibility,
 } from "./helpers/dataStorage";
 import {
   dataStorageAccess,
@@ -209,6 +210,7 @@ export const initInstalledListener = () => {
   browser?.runtime?.onInstalled.addListener(migrateFriendBotUrlNetworkDetails);
   browser?.runtime?.onInstalled.addListener(migrateSorobanRpcUrlNetworkDetails);
   browser?.runtime?.onInstalled.addListener(versionedMigration);
+  browser?.runtime?.onInstalled.addListener(markRebrandAnnouncementEligibility);
 };
 
 export const initSidebarBehavior = async () => {

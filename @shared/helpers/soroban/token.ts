@@ -10,7 +10,11 @@ import {
 import { buildSorobanServer } from "@shared/helpers/soroban/server";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { INDEXER_URL } from "@shared/constants/mercury";
-import { getSdk, isCustomNetwork } from "@shared/helpers/stellar";
+import {
+  getSdk,
+  isCustomNetwork,
+  splitCanonical,
+} from "@shared/helpers/stellar";
 import { simulateTx } from "./server";
 import { SorobanRpcNotSupportedError } from "../../constants/errors";
 
@@ -118,20 +122,20 @@ export const isSacContractExecutable = async (
     );
 
     const instance = new Contract(contractId).getFootprint();
-    const ledgerKeyContractCode = instance.toXDR("base64");
+    const ledgerKeyContractCode = instance.toXdr("base64");
 
     const { entries } = await server.getLedgerEntries(
-      xdr.LedgerKey.fromXDR(ledgerKeyContractCode, "base64"),
+      xdr.LedgerKey.fromXdr(ledgerKeyContractCode, "base64"),
     );
 
     if (entries && entries.length) {
       const parsed = entries[0].val;
-      const executable = parsed.contractData().val().instance().executable();
+      const executable = xdr.expectUnionVariant(
+        xdr.expectUnionVariant(parsed, "contractData").contractData.val,
+        "scvContractInstance",
+      ).instance.executable;
 
-      return (
-        executable.switch().name ===
-        xdr.ContractExecutableType.contractExecutableStellarAsset().name
-      );
+      return executable.type === "contractExecutableStellarAsset";
     }
     throw new Error("Contract not found in the ledger entries");
   }
@@ -178,7 +182,6 @@ export const getAssetSacAddress = (
   network: Networks,
 ) => {
   const Sdk = getSdk(network);
-  return new Sdk.Asset(
-    ...(canonicalName.split(":") as [string, string]),
-  ).contractId(network);
+  const { code, issuer } = splitCanonical(canonicalName);
+  return new Sdk.Asset(code, issuer).contractId(network);
 };

@@ -33,10 +33,12 @@ import {
 
 const formatBalances = async ({
   publicKey,
+  network,
   balances,
   showHidden,
 }: {
   publicKey: string;
+  network: string;
   balances: NonNullable<BalanceMap>;
   showHidden: boolean;
 }) => {
@@ -44,6 +46,7 @@ const formatBalances = async ({
   if (!showHidden) {
     const hiddenAssets = await getHiddenAssets({
       activePublicKey: publicKey,
+      network,
     });
     return {
       balances: sortBalances(
@@ -116,6 +119,7 @@ function useGetBalances(options: {
 
       const { balances, unfilteredBalances } = await formatBalances({
         publicKey,
+        network: networkDetails.network,
         balances: accountBalances.balances as NonNullable<BalanceMap>,
         showHidden: options.showHidden,
       });

@@ -1,4 +1,8 @@
-import { buildSwapSections, mergeScanResults } from "../useSwapTokenLookup";
+import {
+  buildSwapSections,
+  mergeScanResults,
+  omitHiddenFromSections,
+} from "../useSwapTokenLookup";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { SecurityLevel } from "popup/constants/blockaid";
 
@@ -138,6 +142,80 @@ describe("buildSwapSections — search term", () => {
     expect(result.sections.verified).toEqual([]);
     expect(result.sections.unverified).toEqual([]);
     expect(result.hadSorobanMatches).toBe(true);
+  });
+});
+
+describe("omitHiddenFromSections", () => {
+  // A hidden token is left out of `balances`, so it would otherwise look new
+  const hidden = { "USDC:GUSD": "hidden" } as const;
+
+  it("drops a hidden token from Popular", () => {
+    const result = buildSwapSections({
+      searchTerm: "",
+      balances: [heldXlm],
+      networkDetails: MAINNET,
+      popular: [
+        { code: "USDC", issuer: "GUSD", domain: null, volume7d: 9 },
+        { code: "EURC", issuer: "GEUR", domain: null, volume7d: 9 },
+      ],
+      verifiedAssets: [
+        { code: "USDC", issuer: "GUSD", domain: null },
+        { code: "EURC", issuer: "GEUR", domain: null },
+      ],
+      unverifiedAssets: [],
+    });
+
+    expect(
+      omitHiddenFromSections(result, hidden).sections.popular.map(
+        (r) => r.code,
+      ),
+    ).toEqual(["EURC"]);
+  });
+
+  it("drops a hidden token from the Verified and Unverified results", () => {
+    const result = buildSwapSections({
+      searchTerm: "u",
+      balances: [heldXlm],
+      networkDetails: MAINNET,
+      searchResults: [],
+      verifiedAssets: [{ code: "USDC", issuer: "GUSD", domain: null }],
+      unverifiedAssets: [{ code: "USDT", issuer: "GUSD", domain: null }],
+    });
+
+    const { sections } = omitHiddenFromSections(
+      {
+        ...result,
+        sections: { ...result.sections, unverified: result.sections.verified },
+      },
+      hidden,
+    );
+    expect(sections.verified).toEqual([]);
+    expect(sections.unverified).toEqual([]);
+  });
+
+  it("leaves Your tokens and a token marked visible alone", () => {
+    const result = buildSwapSections({
+      searchTerm: "u",
+      balances: [heldXlm],
+      networkDetails: MAINNET,
+      searchResults: [],
+      verifiedAssets: [{ code: "USDC", issuer: "GUSD", domain: null }],
+      unverifiedAssets: [],
+    });
+
+    const filtered = omitHiddenFromSections(result, { "USDC:GUSD": "visible" });
+    expect(filtered.sections.verified.map((r) => r.code)).toEqual(["USDC"]);
+    expect(filtered.sections.yourTokens).toBe(result.sections.yourTokens);
+  });
+
+  it("returns the same result when nothing is hidden", () => {
+    const result = buildSwapSections({
+      searchTerm: "",
+      balances: [heldXlm],
+      networkDetails: MAINNET,
+    });
+
+    expect(omitHiddenFromSections(result, {})).toBe(result);
   });
 });
 

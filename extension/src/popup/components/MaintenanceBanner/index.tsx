@@ -1,12 +1,14 @@
 import React, { useCallback, useState } from "react";
+import { createPortal } from "react-dom";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
-import { Button, Heading, Icon, Text } from "@stellar/design-system";
+import { Button, Icon, Text } from "@stellar/design-system";
 
 import { maintenanceBannerSelector } from "popup/ducks/remoteConfig";
 import { BannerTheme } from "popup/helpers/maintenance/types";
 import { openTab } from "popup/helpers/navigate";
-import { View } from "popup/basics/layout/View";
+import { SheetHeader } from "popup/components/SheetHeader";
+import { SheetLayout } from "popup/components/SheetLayout";
 import { SlideupModal } from "popup/components/SlideupModal";
 
 import "./styles.scss";
@@ -27,37 +29,6 @@ function getBannerIcon(theme: BannerTheme): React.ReactElement {
     case BannerTheme.Tertiary:
     default:
       return <Icon.InfoCircle />;
-  }
-}
-
-/** CSS color value for each modal icon theme, applied as inline style to override SDS defaults. */
-const MODAL_ICON_COLOR: Record<BannerTheme, string> = {
-  [BannerTheme.Warning]: "var(--sds-clr-amber-09, #ffb224)",
-  [BannerTheme.Error]: "var(--sds-clr-red-09, #e5484d)",
-  [BannerTheme.Primary]: "var(--sds-clr-lilac-09, #6e56cf)",
-  [BannerTheme.Secondary]: "var(--sds-clr-lilac-09, #6e56cf)",
-  [BannerTheme.Tertiary]: "var(--sds-clr-gray-09, #707070)",
-};
-
-/**
- * Maps a `BannerTheme` to the modal header icon (larger, inside the sheet).
- * Matches mobile: AlertOctagon for high-severity, InfoCircle otherwise.
- * Color is applied via inline style to guarantee it overrides any SDS stylesheet.
- *
- * @param theme - The theme from the Amplitude payload
- * @returns An SDS Icon element
- */
-function getModalIcon(theme: BannerTheme): React.ReactElement {
-  const iconStyle = { color: MODAL_ICON_COLOR[theme] };
-  switch (theme) {
-    case BannerTheme.Warning:
-    case BannerTheme.Error:
-      return <Icon.AlertOctagon style={iconStyle} />;
-    case BannerTheme.Primary:
-    case BannerTheme.Secondary:
-    case BannerTheme.Tertiary:
-    default:
-      return <Icon.InfoCircle style={iconStyle} />;
   }
 }
 
@@ -132,65 +103,52 @@ export const MaintenanceBanner: React.FC = () => {
         </Text>
       </div>
 
-      {activeContent.modal && (
-        <SlideupModal
-          isModalOpen={isModalOpen}
-          setIsModalOpen={setIsModalOpen}
-          hasBackdrop
-        >
-          <View.Inset>
-            <div
-              className="MaintenanceBanner__modal"
-              data-testid="maintenance-banner-modal"
-            >
-              <div className="MaintenanceBanner__modal-header">
-                <div
-                  className={`MaintenanceBanner__modal-icon MaintenanceBanner__modal-icon--${activeContent.theme}`}
-                >
-                  {getModalIcon(activeContent.theme)}
-                </div>
-                <button
-                  className="MaintenanceBanner__modal-close"
+      {/* Portaled out of the banner: it renders inside Home's pinned header,
+          which is its own stacking layer below the floating tab bar, so in
+          place the sheet and its backdrop would sit under the tab bar. Into
+          the app's View, like ManageAssetRows' sheet, for the same cascade. */}
+      {activeContent.modal &&
+        createPortal(
+          <SlideupModal
+            isModalOpen={isModalOpen}
+            setIsModalOpen={setIsModalOpen}
+            ariaLabel={activeContent.modal.title}
+          >
+            <SheetLayout data-testid="maintenance-banner-modal">
+              <div className="MaintenanceBanner__modal">
+                <SheetHeader
+                  title={activeContent.modal.title}
+                  onClose={() => setIsModalOpen(false)}
+                  closeTestId="maintenance-banner-close-button"
+                />
+                {activeContent.modal.body.length > 0 && (
+                  <div className="MaintenanceBanner__modal-body">
+                    {activeContent.modal.body.map((paragraph, index) => (
+                      <Text
+                        as="div"
+                        size="sm"
+                        key={`${index}-${paragraph.slice(0, 20)}`}
+                        className="MaintenanceBanner__modal-bodyText"
+                      >
+                        {paragraph}
+                      </Text>
+                    ))}
+                  </div>
+                )}
+                <Button
+                  variant="secondary"
+                  size="md"
+                  isFullWidth
+                  isRounded
                   onClick={() => setIsModalOpen(false)}
-                  aria-label={t("Close")}
                 >
-                  <Icon.X />
-                </button>
+                  {t("Done")}
+                </Button>
               </div>
-              <Heading
-                as="h3"
-                size="xs"
-                addlClassName="MaintenanceBanner__modal-title"
-              >
-                {activeContent.modal.title}
-              </Heading>
-              {activeContent.modal.body.length > 0 && (
-                <div className="MaintenanceBanner__modal-body">
-                  {activeContent.modal.body.map((paragraph, index) => (
-                    <Text
-                      as="div"
-                      size="sm"
-                      key={`${index}-${paragraph.slice(0, 20)}`}
-                      className="MaintenanceBanner__modal-bodyText"
-                    >
-                      {paragraph}
-                    </Text>
-                  ))}
-                </div>
-              )}
-              <Button
-                variant="secondary"
-                size="md"
-                isFullWidth
-                isRounded
-                onClick={() => setIsModalOpen(false)}
-              >
-                {t("Done")}
-              </Button>
-            </div>
-          </View.Inset>
-        </SlideupModal>
-      )}
+            </SheetLayout>
+          </SlideupModal>,
+          document.getElementById("layout-view") ?? document.body,
+        )}
     </>
   );
 };

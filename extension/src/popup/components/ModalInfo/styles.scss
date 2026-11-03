@@ -34,7 +34,7 @@
     font-size: pxToRem(12px);
     gap: 0.5rem;
     padding: 2px 8px;
-    background-color: var(--sds-clr-lilac-02);
+    background-color: var(--sds-clr-lilac-03);
     color: var(--sds-clr-lilac-11);
     border: 1px solid var(--sds-clr-lilac-06);
     border-radius: 100px;
@@ -54,7 +54,6 @@
 
   &__asset {
     align-items: center;
-    color: var(--color-red-70);
     display: flex;
     font-size: 0.875rem;
     font-weight: var(--font-weight-semi-bold);
@@ -65,7 +64,6 @@
 
   &__domain {
     align-items: center;
-    color: var(--color-gray-70);
     display: flex;
     font-size: 0.75rem;
     justify-content: center;

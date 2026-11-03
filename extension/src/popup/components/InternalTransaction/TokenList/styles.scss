@@ -48,13 +48,26 @@
     }
   }
 
+  // Divided like Home's token rows: a Border/Primary line under the text
+  // column (past the 32px icon and its 16px margin) under every row but the
+  // last, where the collectibles section follows (as on mobile's Send picker).
   &__AssetRow {
+    position: relative;
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: pxToRem(12px) 0;
-    margin-bottom: pxToRem(12px);
     cursor: pointer;
+
+    &:not(:last-child)::after {
+      content: "";
+      position: absolute;
+      left: pxToRem(48px);
+      right: 0;
+      bottom: 0;
+      height: 1px;
+      background-color: var(--sds-clr-gray-06);
+    }
 
     &__Body {
       display: flex;

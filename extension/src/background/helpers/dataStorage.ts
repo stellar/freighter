@@ -14,7 +14,10 @@ import {
   IS_HIDE_DUST_ENABLED_ID,
   ALLOWLIST_ID,
   LAST_USED_ACCOUNT,
+  KEY_ID_LIST,
+  REBRAND_ANNOUNCEMENT_STATUS_ID,
 } from "constants/localStorageTypes";
+import { REBRAND_ANNOUNCEMENT_STATUS } from "constants/rebrandAnnouncement";
 import {
   DEFAULT_NETWORKS,
   NetworkDetails,
@@ -375,6 +378,29 @@ export const migratePubnetRpcUrl = async () => {
     }
     await migrateDataStorageVersion("5.33.5");
   }
+};
+
+/**
+ * Decides, once per install, who gets the one-time "Freighter is now Varial"
+ * welcome: a wallet that already exists when the Varial build first runs is
+ * an upgrade and is marked pending; a fresh install has no keys and is marked
+ * seen. Runs on install/update and returns early once a status is recorded.
+ */
+export const markRebrandAnnouncementEligibility = async () => {
+  const localStore = dataStorageAccess(browserLocalStorage);
+
+  if (await localStore.getItem(REBRAND_ANNOUNCEMENT_STATUS_ID)) {
+    return;
+  }
+
+  const keyIdList = ((await localStore.getItem(KEY_ID_LIST)) || []) as string[];
+
+  await localStore.setItem(
+    REBRAND_ANNOUNCEMENT_STATUS_ID,
+    keyIdList.length
+      ? REBRAND_ANNOUNCEMENT_STATUS.PENDING
+      : REBRAND_ANNOUNCEMENT_STATUS.SEEN,
+  );
 };
 
 export const versionedMigration = async () => {

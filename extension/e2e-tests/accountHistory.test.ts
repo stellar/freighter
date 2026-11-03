@@ -17,6 +17,9 @@ import {
 } from "stellar-sdk";
 
 test("View Account History", async ({ page, extensionId, context }) => {
+  // Login walks Settings -> Network for the network switch, which puts this
+  // test past the default budget on CI.
+  test.slow();
   await loginToTestAccount({ page, extensionId, context });
 
   await page.getByTestId("nav-link-account-history").click();
@@ -80,6 +83,71 @@ test("Classifies a payment received to a muxed (M...) address as Received", asyn
   await expect(page.getByText("Received")).toBeVisible();
 });
 
+test("Shows a SAC transfer to a muxed contract (W...) as sent to the W address", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  // Horizon reports a transfer to a muxed contract (W...) with the base
+  // contract (C...) in `to` and the mux id in `destination_muxed_id`.
+  // W_ADDRESS is BASE_CONTRACT with mux id 0.
+  const TEST_ACCOUNT =
+    "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY";
+  const BASE_CONTRACT =
+    "CA7QYNF7SOWQ3GLR2BGMZEHXAVIRZA4KVWLTJJFC7MGXUA74P7UJUWDA";
+  const W_ADDRESS =
+    "WA7QYNF7SOWQ3GLR2BGMZEHXAVIRZA4KVWLTJJFC7MGXUA74P7UJUAAAAAAAAAAAAAWWC";
+
+  const mockAccountHistoryData = [
+    {
+      created_at: "2025-03-21T22:28:46Z",
+      id: "164007621169154",
+      paging_token: "164007621169154",
+      source_account: TEST_ACCOUNT,
+      transaction_hash:
+        "686601028de9ddf40a1c24461a6a9c0415d60a39255c35eccad0b52ac1e700a7",
+      transaction_successful: true,
+      type: "invoke_host_function",
+      type_i: 24,
+      asset_balance_changes: [
+        {
+          asset_type: "native",
+          type: "transfer",
+          from: TEST_ACCOUNT,
+          to: BASE_CONTRACT,
+          amount: "5.0000000",
+          destination_muxed_id: "0",
+        },
+      ],
+      transaction_attr: {
+        memo: null,
+        fee_charged: "100",
+        operation_count: 1,
+      },
+    },
+  ];
+
+  const stubOverrides = async () => {
+    await stubAccountHistoryWith(page, context, mockAccountHistoryData);
+  };
+
+  await loginToTestAccount({ page, extensionId, context, stubOverrides });
+  await page.getByTestId("nav-link-account-history").click();
+
+  const amountCell = page.getByTestId("history-item-amount-component");
+  await expect(amountCell).toContainText("Mar 21", { timeout: 30000 });
+  await expect(amountCell).toContainText("-5");
+
+  await page.getByTestId("history-item").first().click();
+
+  const toAddress = page.getByTestId("AssetDiff__to-from-address");
+  await expect(toAddress).toContainText(W_ADDRESS.slice(0, 4));
+  await expect(toAddress).toContainText(W_ADDRESS.slice(-4));
+
+  // The mux id travels in the W address, so there is no memo row.
+  await expect(page.locator(".Metadata--memo")).not.toBeVisible();
+});
+
 test("View failed transaction", async ({ page, extensionId, context }) => {
   test.slow();
   const mockAccountHistoryData = [
@@ -122,12 +190,97 @@ test("View failed transaction", async ({ page, extensionId, context }) => {
     screenshot: "failed-transaction-history-item.png",
   });
   await page.getByText("Transaction failed").click();
-  await expect(page.getByTestId("AppHeaderPageTitle")).toHaveText("History");
+  await expect(page.getByTestId("AppHeaderPageTitle")).toHaveText("Activity");
   await expectPageToHaveScreenshot({
     page,
     screenshot: "failed-transaction.png",
   });
 });
+test("History detail sheet is legible in light mode", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  test.slow();
+  const payment = {
+    amount: "0.0010000",
+    asset_code: "USDC",
+    asset_issuer: "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
+    asset_type: "credit_alphanum4",
+    from: "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
+    source_account: "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
+    to: "GCKUVXILBNYS4FDNWCGCYSJBY2PBQ4KAW2M5CODRVJPUFM62IJFH67J2",
+    transaction_attr: {},
+    type: "payment",
+    type_i: 1,
+  };
+  const mockAccountHistoryData = [
+    {
+      ...payment,
+      created_at: "2025-03-22T22:28:46Z",
+      id: "164007621169154",
+      paging_token: "164007621169154",
+      transaction_hash:
+        "786601028de9ddf40a1c24461a6a9c0415d60a39255c35eccad0b52ac1e700a5",
+      transaction_successful: true,
+    },
+    {
+      ...payment,
+      created_at: "2025-03-21T22:28:46Z",
+      id: "164007621169153",
+      paging_token: "164007621169153",
+      transaction_hash:
+        "686601028de9ddf40a1c24461a6a9c0415d60a39255c35eccad0b52ac1e700a5",
+      transaction_successful: false,
+    },
+  ];
+
+  const stubOverrides = async () => {
+    await stubAccountHistoryWith(page, context, mockAccountHistoryData);
+  };
+
+  await page.emulateMedia({ colorScheme: "light" });
+  await loginToTestAccount({ page, extensionId, context, stubOverrides });
+  await page.getByTestId("nav-link-account-history").click();
+  await expect(page.getByTestId("history-item")).toHaveCount(2, {
+    timeout: 30000,
+  });
+
+  await page.getByTestId("history-item").first().click();
+  const status = page.getByTestId("TransactionDetailModal__status");
+  await expect(status).toHaveText("Success");
+
+  // "Success" reads like the other metadata values, not white-on-white.
+  const feeValue = page
+    .locator(".TransactionDetailModal__metadata .Metadata__value")
+    .nth(1);
+  const colorOf = (el: Element) => getComputedStyle(el).color;
+  expect(await status.evaluate(colorOf)).toBe(await feeValue.evaluate(colorOf));
+
+  // The failed row's status badge sits under the sheet's scrim rather than
+  // drawing over it: the topmost element at its center is the scrim. Polled
+  // because the scrim's z-index transitions in after the sheet opens.
+  const badge = page
+    .getByTestId("history-item")
+    .nth(1)
+    .locator(".HistoryItem__icon__small");
+  const box = await badge.boundingBox();
+  expect(box).not.toBeNull();
+  await expect
+    .poll(() =>
+      page.evaluate(
+        ({ x, y }) => {
+          const el = document.elementFromPoint(x, y);
+          return el?.closest(".HistoryItem__icon__small")
+            ? "badge"
+            : (el?.getAttribute("class") ?? "");
+        },
+        { x: box!.x + box!.width / 2, y: box!.y + box!.height / 2 },
+      ),
+    )
+    .toContain("LoadingBackground");
+});
+
 test("Orders failed transactions by date alongside successful ones", async ({
   page,
   extensionId,
@@ -220,8 +373,9 @@ test("Orders failed transactions by date alongside successful ones", async ({
   await expect(historyItemLabels.nth(0)).toHaveText("Transaction Failed");
   await expect(historyItemLabels.nth(2)).toHaveText("Transaction Failed");
 
-  // Now verify the same ordering inside the asset (USDC) detail view.
-  await page.getByTestId("BackButton").click();
+  // Now verify the same ordering inside the asset (USDC) detail view. History is
+  // a tab root, so it has no back button -- return via the Home tab.
+  await page.getByTestId("nav-link-account").click();
   await expect(page.getByTestId("account-view")).toBeVisible({
     timeout: 10000,
   });
@@ -339,9 +493,86 @@ test("Hide create claimable balance spam", async ({
 
   await loginToTestAccount({ page, extensionId, context, stubOverrides });
   await page.getByTestId("nav-link-account-history").click();
-  await expect(page.getByTestId("AppHeaderPageTitle")).toHaveText("History");
+  await expect(page.getByTestId("AppHeaderPageTitle")).toHaveText("Activity");
   const historyItems = page.getByTestId("history-item");
   await expect(historyItems).toHaveCount(2);
+});
+
+test("Long token codes fit in the popup", async ({
+  page,
+  extensionId,
+  context,
+}) => {
+  // Token symbols are free-form and have no length limit, e.g. a Soroswap LP
+  // token's symbol is "native-USDC-SOROSWAP-LP". The row shows the symbol in
+  // both the label and the amount. Cover a symbol that can wrap at its hyphens
+  // and one that has no break opportunity at all.
+  const LONG_CODES = [
+    "native-USDC-SOROSWAP-LP",
+    "SUPERLONGMEMECOINNAMEFORTESTING",
+  ];
+
+  const stubOverrides = async () => {
+    await stubAccountHistoryWith(
+      page,
+      context,
+      LONG_CODES.map((code, i) => ({
+        amount: "12.3456789",
+        asset_code: code,
+        asset_issuer:
+          "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
+        asset_type: "credit_alphanum12",
+        created_at: `2025-03-2${i}T22:28:46Z`,
+        from: "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
+        id: `16400762116915${i}`,
+        paging_token: `16400762116915${i}`,
+        source_account:
+          "GDF32CQINROD3E2LMCGZUDVMWTXCJFR5SBYVRJ7WAAIAS3P7DCVWZEFY",
+        to: "GCKUVXILBNYS4FDNWCGCYSJBY2PBQ4KAW2M5CODRVJPUFM62IJFH67J2",
+        transaction_attr: {},
+        transaction_hash: `68660102${i}de9ddf40a1c24461a6a9c0415d60a39255c35eccad0b52ac1e700a5`,
+        transaction_successful: true,
+        type: "payment",
+        type_i: 1,
+      })),
+    );
+  };
+
+  await loginToTestAccount({ page, extensionId, context, stubOverrides });
+  // Onboarding at popup size hands off to a full tab, so only shrink to the
+  // popup's dimensions once logged in.
+  await page.setViewportSize({ width: 360, height: 600 });
+  await page.getByTestId("nav-link-account-history").click();
+  await expect(page.getByTestId("history-item-label")).toHaveText(
+    [...LONG_CODES].reverse(),
+  );
+
+  // Chrome sizes the popup window to the document's min-content width, not
+  // to a fixed width, so a row that can't shrink widens the whole popup.
+  const popupWidth = await page.evaluate(() => {
+    const root = document.documentElement;
+    root.style.width = "min-content";
+    const { width } = root.getBoundingClientRect();
+    root.style.removeProperty("width");
+    return width;
+  });
+  expect(popupWidth).toBe(360);
+
+  // Within the popup's width, each row has to wrap or truncate its content
+  // rather than run off the edge and squeeze the amount out.
+  for (const item of await page.getByTestId("history-item").all()) {
+    const row = await item.evaluate((el) => {
+      const content = el.querySelector(".HistoryItem__row")!;
+      return {
+        overflow: content.scrollWidth - content.clientWidth,
+        amountWidth: el
+          .querySelector("[data-testid=history-item-amount-component]")!
+          .getBoundingClientRect().width,
+      };
+    });
+    expect(row.overflow).toBe(0);
+    expect(row.amountWidth).toBeGreaterThan(0);
+  }
 });
 
 test("History row displays muxed address extracted from XDR for payment", async ({
@@ -380,7 +611,7 @@ test("History row displays muxed address extracted from XDR for payment", async 
       .setTimeout(30)
       .build();
 
-    const envelopeXdr = tx.toXDR();
+    const envelopeXdr = tx.toXdr();
     // Stub account history BEFORE login to ensure it catches all requests
     // (returns both base G address and muxed M address)
     await context.route("**/account-history/**", async (route) => {
@@ -480,7 +711,7 @@ test.skip("History row displays address extracted from XDR for createAccount", a
     .setTimeout(30)
     .build();
 
-  const envelopeXdr = tx.toXDR();
+  const envelopeXdr = tx.toXdr();
 
   await stubAccountBalances(page);
   await loginToTestAccount({ page, extensionId, context });
@@ -562,7 +793,7 @@ test("History row displays regular G address when no muxed address in XDR", asyn
     .setTimeout(30)
     .build();
 
-  const envelopeXdr = tx.toXDR();
+  const envelopeXdr = tx.toXdr();
 
   const stubOverrides = async () => {
     // Stub account history

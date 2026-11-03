@@ -235,42 +235,6 @@
     }
   }
 
-  &__asset-selector-inline {
-    display: flex;
-    align-items: center;
-    gap: pxToRem(4px);
-    cursor: pointer;
-    padding: pxToRem(4px) pxToRem(8px) pxToRem(4px) pxToRem(4px);
-    border-radius: pxToRem(20px);
-    background-color: var(--sds-clr-gray-01);
-    white-space: nowrap;
-    flex-shrink: 0;
-    margin-bottom: 0;
-    border: 0;
-    color: var(--sds-clr-gray-12);
-
-    &:hover {
-      background-color: var(--sds-clr-gray-06);
-    }
-
-    .AccountAssets__asset--logo {
-      width: pxToRem(20px) !important;
-      height: pxToRem(20px) !important;
-      min-width: pxToRem(20px);
-      margin: pxToRem(4px);
-
-      img {
-        width: 100%;
-        height: 100%;
-      }
-    }
-
-    svg:last-child {
-      width: pxToRem(14px);
-      height: pxToRem(14px);
-    }
-  }
-
   &__asset-code {
     font-size: pxToRem(14px);
     font-weight: var(--font-weight-medium);
@@ -394,19 +358,13 @@
     align-items: center;
 
     &__identicon {
+      flex-shrink: 0;
       display: flex;
       justify-content: center;
       align-items: center;
       width: 2rem;
       height: 2rem;
-      border: 1px solid var(--sds-clr-gray-06);
       border-radius: 100px;
-      padding: 0.25rem 0.5rem;
-    }
-
-    img {
-      width: 1rem;
-      height: 1rem;
     }
 
     span {
@@ -420,10 +378,6 @@
 }
 
 .SendSettings {
-  &__input {
-    color: black;
-  }
-
   &__row {
     display: flex;
     justify-content: space-between;
@@ -471,22 +425,4 @@
   flex-direction: column;
 
   text-align: center;
-  &__input {
-    color: black;
-  }
-}
-
-.EditMemoWrapper {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.ReviewTxWrapper {
-  position: absolute;
-  width: 100%;
-  bottom: 0;
 }

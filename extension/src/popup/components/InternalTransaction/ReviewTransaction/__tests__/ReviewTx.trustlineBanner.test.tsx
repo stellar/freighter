@@ -18,6 +18,7 @@ const baseProps = {
     networkUrl: "https://horizon-testnet.stellar.org",
   } as any,
   title: "You are swapping",
+  sheetTitle: "Review swap",
   onConfirm: jest.fn(),
   onCancel: jest.fn(),
   simulationState: {

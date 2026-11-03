@@ -731,7 +731,7 @@ test("completes a swap to a new token and shows the success summary", async ({
       }),
     );
     // Token + transaction both scan clean, so the review shows the normal
-    // "Swap XLM to AQUA" confirm button (no "Confirm anyway").
+    // Confirm button (no "Confirm anyway").
     await page.route("**/scan-asset-bulk**", (route) =>
       route.fulfill({
         json: {
@@ -781,7 +781,7 @@ test("completes a swap to a new token and shows the success summary", async ({
 
   // Confirm and submit the swap. Use an actionability-checked click (not
   // force) so the tap lands after the review sheet settles.
-  await page.getByRole("button", { name: "Swap XLM to AQUA" }).click();
+  await page.getByTestId("SubmitAction").click();
 
   // Land on the success summary and finish.
   await expect(page.getByText("was swapped to")).toBeVisible({
@@ -983,7 +983,7 @@ test("recovers to the amount screen when the swap quote expires at submit", asyn
 
   // Confirm → submit fails with a stale-quote code → recover to the amount
   // screen with the quote-expired toast (not a dead-end submit failure).
-  await page.getByRole("button", { name: "Swap XLM to AQUA" }).click();
+  await page.getByTestId("SubmitAction").click();
 
   await expect(
     page.getByText("Quote has expired, please try again to get a new quote"),

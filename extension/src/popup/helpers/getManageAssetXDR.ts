@@ -67,5 +67,5 @@ export const getManageAssetXDR = async ({
     tx.addMemo(Sdk.Memo.text(memo));
   }
 
-  return tx.build().toXDR();
+  return tx.build().toXdr();
 };

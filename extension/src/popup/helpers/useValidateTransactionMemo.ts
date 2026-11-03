@@ -17,12 +17,12 @@ import { publicKeySelector } from "popup/ducks/accountServices";
 /**
  * Checks if a memo is required by querying cached memo-required accounts
  *
- * @param {ReturnType<typeof TransactionBuilder.fromXDR>} transaction - The transaction to check
+ * @param {ReturnType<typeof TransactionBuilder.fromXdr>} transaction - The transaction to check
  * @param {MemoRequiredAccount[]} memoRequiredAccounts - List of memo-required accounts
  * @returns {boolean} True if a memo is required, false otherwise
  */
 const checkMemoRequiredFromCache = (
-  transaction: ReturnType<typeof TransactionBuilder.fromXDR>,
+  transaction: ReturnType<typeof TransactionBuilder.fromXdr>,
   memoRequiredAccounts: MemoRequiredAccount[],
 ): boolean => {
   // Find destination from any operation that has a destination field
@@ -53,13 +53,13 @@ const checkMemoRequiredFromCache = (
  * Checks if a memo is required using Stellar SDK's built-in validation
  * This is a fallback method when cache validation fails
  *
- * @param {ReturnType<typeof TransactionBuilder.fromXDR>} transaction - The transaction to check
+ * @param {ReturnType<typeof TransactionBuilder.fromXdr>} transaction - The transaction to check
  * @param {string} networkUrl - The network URL for the Stellar server
  * @param {string} networkPassphrase - The network passphrase
  * @returns {Promise<boolean>} True if a memo is required, false otherwise
  */
 const checkMemoRequiredFromStellarSDK = async (
-  transaction: ReturnType<typeof TransactionBuilder.fromXDR>,
+  transaction: ReturnType<typeof TransactionBuilder.fromXdr>,
   networkUrl: string,
   networkPassphrase: string,
 ): Promise<boolean> => {
@@ -186,11 +186,11 @@ export const useValidateTransactionMemo = (incomingXdr?: string | null) => {
       return;
     }
 
-    let transaction: ReturnType<typeof TransactionBuilder.fromXDR> | null =
+    let transaction: ReturnType<typeof TransactionBuilder.fromXdr> | null =
       null;
 
     try {
-      transaction = TransactionBuilder.fromXDR(
+      transaction = TransactionBuilder.fromXdr(
         xdr,
         networkDetails.networkPassphrase,
       );

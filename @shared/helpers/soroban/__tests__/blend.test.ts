@@ -43,9 +43,11 @@ describe("buildBlendRequestScVal", () => {
   it("orders the struct's symbol keys in ascending byte order", () => {
     // Soroban rejects a UDT map whose keys are not sorted. This is the invariant
     // that `nativeToScVal`'s localeCompare sort does not guarantee in general.
-    const keys = buildUsdcSupplyCollateral()
-      .map()!
-      .map((entry) => entry.key().sym().toString());
+    const keys = xdr
+      .expectUnionVariant(buildUsdcSupplyCollateral(), "scvMap")
+      .map!.map((entry) =>
+        xdr.expectUnionVariant(entry.key, "scvSymbol").sym.toString(),
+      );
 
     expect(keys).toEqual(["address", "amount", "request_type"]);
     expect([...keys].sort()).toEqual(keys);
@@ -60,12 +62,15 @@ describe("buildBlendRequestScVal", () => {
   });
 
   it("encodes amount as i128, not u32 or u64", () => {
-    const amount = buildUsdcSupplyCollateral()
-      .map()!
-      .find((entry) => entry.key().sym().toString() === "amount")!
-      .val();
+    const amount = xdr
+      .expectUnionVariant(buildUsdcSupplyCollateral(), "scvMap")
+      .map!.find(
+        (entry) =>
+          xdr.expectUnionVariant(entry.key, "scvSymbol").sym.toString() ===
+          "amount",
+      )!.val;
 
-    expect(amount.switch().name).toBe("scvI128");
+    expect(amount.type).toBe("scvI128");
   });
 
   it("preserves amounts beyond Number.MAX_SAFE_INTEGER", () => {
@@ -107,19 +112,23 @@ describe("buildBlendSubmitOp", () => {
     });
 
   const getInvokeArgs = (op: xdr.Operation) =>
-    op.body().invokeHostFunctionOp().hostFunction().invokeContract();
+    xdr.expectUnionVariant(
+      xdr.expectUnionVariant(op.body, "invokeHostFunction").invokeHostFunctionOp
+        .hostFunction,
+      "hostFunctionTypeInvokeContract",
+    ).invokeContract;
 
   it("invokes submit on the pool contract", () => {
     const invocation = getInvokeArgs(buildOp());
 
-    expect(invocation.functionName().toString()).toBe("submit");
+    expect(invocation.functionName.toString()).toBe("submit");
     expect(
-      scValToNative(xdr.ScVal.scvAddress(invocation.contractAddress())),
+      scValToNative(xdr.ScVal.scvAddress(invocation.contractAddress)),
     ).toBe(POOL_ID);
   });
 
   it("passes the user as from, spender and to", () => {
-    const args = getInvokeArgs(buildOp()).args();
+    const args = getInvokeArgs(buildOp()).args;
 
     // These being equal is what makes simulation emit source-account credentials,
     // which is why no separate auth-entry signature is needed.
@@ -131,10 +140,10 @@ describe("buildBlendSubmitOp", () => {
   });
 
   it("passes requests as a vec", () => {
-    const args = getInvokeArgs(buildOp()).args();
+    const args = getInvokeArgs(buildOp()).args;
 
     expect(args).toHaveLength(4);
-    expect(args[3].switch().name).toBe("scvVec");
+    expect(args[3].type).toBe("scvVec");
     expect(scValToNative(args[3])).toEqual([
       {
         address: XLM_SAC,

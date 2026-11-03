@@ -26,8 +26,16 @@ import { WalletErrorBlock } from "popup/views/AddAccount/connect/DeviceConnect";
 import {
   getWalletPublicKey,
   parseWalletError,
+  isDeviceRefusalError,
   MISMATCHED_HARDWARE_ACCOUNT_ERROR,
 } from "popup/helpers/hardwareConnect";
+import {
+  emitSigningApproved,
+  emitSigningFailed,
+  emitSigningRejected,
+  SigningKind,
+  SigningSource,
+} from "popup/metrics/signing";
 import LedgerSigning from "popup/assets/ledger-signing.png";
 import Ledger from "popup/assets/ledger.png";
 
@@ -41,6 +49,7 @@ export const HardwareSign = ({
   isInternal = false,
   onCancel,
   uuid,
+  url,
 }: {
   walletType: ConfigurableWalletType;
   isSignSorobanAuthorization?: boolean;
@@ -49,6 +58,12 @@ export const HardwareSign = ({
   isInternal?: boolean;
   onCancel?: () => void;
   uuid?: string;
+  /**
+   * The requesting dApp's URL, threaded from the signing views so the signing
+   * events carry the same `origin` the software-key path emits. Absent on the
+   * internal (send/swap/trustline) flows, which have no dApp.
+   */
+  url?: string;
 }) => {
   const dispatch = useDispatch<AppDispatch>();
   const { t } = useTranslation();
@@ -67,6 +82,59 @@ export const HardwareSign = ({
   // attempt that runs on mount — otherwise a device that fails immediately
   // leaves the overlay sitting on "Connect device to computer" with no reason.
   const [connectError, setConnectError] = useState("");
+
+  // The overlay serves both the dApp signing prompts and the internal
+  // send/swap/trustline flows. Both report signing, and `source` separates
+  // them. A dApp request is the one that carries a `uuid` (the pending-request
+  // id) and is not rendered inline as an internal step.
+  const isDappSigningRequest = !isInternal && !!uuid;
+  const signingSource: SigningSource = isDappSigningRequest
+    ? SigningSource.DappApi
+    : SigningSource.Internal;
+  // An internal flow has no dApp, so it carries no origin.
+  const signingProps = {
+    source: signingSource,
+    ...(isDappSigningRequest ? { url } : {}),
+  };
+  const signingKind: SigningKind = isSignMessage
+    ? SigningKind.Message
+    : isSignSorobanAuthorization
+      ? SigningKind.AuthEntry
+      : SigningKind.Transaction;
+
+  // Mirrors the software path's error extraction (`action.error.message`).
+  // Scrubbing and the "unknown" fallback belong to emitSigningFailed, so both
+  // key types derive `reason_code` identically.
+  const errorMessage = (e: unknown): string => {
+    if (typeof e === "string") {
+      // The rejected-thunk branch passes the message directly. Stringifying it
+      // would wrap the reason code in quotes.
+      return e;
+    }
+    if (e instanceof Error) {
+      return e.message;
+    }
+    // `JSON.stringify` returns undefined for a value it cannot represent, so
+    // fall back to the empty string. `emitSigningFailed` turns that into
+    // "unknown".
+    return JSON.stringify(e) ?? "";
+  };
+
+  /**
+   * Reports a hardware signing error as either a rejection or a failure.
+   *
+   * Declining on the device is a user decision, so it lands on the same
+   * `*_rejected` event as pressing reject in the popup — a rejection carries no
+   * `reason_code`, because there is no fault to report. Everything else is a
+   * runtime failure and keeps its scrubbed reason.
+   */
+  const emitSigningError = (e: unknown): void => {
+    if (isDeviceRefusalError(e)) {
+      emitSigningRejected(signingKind, signingProps);
+      return;
+    }
+    emitSigningFailed(signingKind, errorMessage(e), signingProps);
+  };
 
   const closeOverlay = () => {
     if (hardwareConnectRef.current) {
@@ -128,6 +196,11 @@ export const HardwareSign = ({
       // should support saving signed xdr for SubmitTransaction to submit
       if (signWithHardwareWallet.fulfilled.match(res)) {
         if (shouldSubmit && !isSignSorobanAuthorization && !isSignMessage) {
+          // The internal branch: the device produced a signature and the flow
+          // carries it to submission. This is where an internal hardware
+          // signing succeeds — useSubmitTxData only receives the result, so it
+          // cannot report it.
+          emitSigningApproved(signingKind, signingProps);
           dispatch(
             saveSimulation({
               preparedTransaction: res.payload,
@@ -148,6 +221,15 @@ export const HardwareSign = ({
             signerAddress: isSignMessage ? publicKey : undefined,
             uuid,
           });
+
+          // Emitted here, not on signWithHardwareWallet.fulfilled: the software
+          // path's approval event fires once the background has accepted the
+          // signed payload and resolved the dApp's request, and that is what
+          // handleSignedHwPayload just did. Emitting when the device returned a
+          // signature would count an approval that never reached the dApp.
+          if (isDappSigningRequest) {
+            emitSigningApproved(signingKind, signingProps);
+          }
         }
         closeOverlay();
         if (onSubmit) {
@@ -155,6 +237,7 @@ export const HardwareSign = ({
         }
       } else {
         setHardwareConnectSuccessful(false);
+        emitSigningError(res.payload?.errorMessage);
         setConnectError(
           parseWalletError[walletType](res.payload?.errorMessage || ""),
         );
@@ -162,6 +245,11 @@ export const HardwareSign = ({
       setHardwareWalletIsSigning(false);
     } catch (e) {
       setHardwareWalletIsSigning(false);
+      // Covers every throw in the block above: the user declining on the
+      // device, no device attached, the mismatched-account refusal, and a
+      // handleSignedHwPayload failure after a good signature. emitSigningError
+      // splits the decline (a user decision) from the rest (runtime failures).
+      emitSigningError(e);
       setConnectError(parseWalletError[walletType](e));
     }
     setIsDetecting(false);

@@ -1,28 +1,19 @@
 @use "../../../styles/utils.scss" as *;
 
 .CollectibleDetail {
-  background: var(--sds-clr-gray-01);
+  // Hosted inside a SlideupModal, which owns the card's background, radius and
+  // width. `100vw` and a nested full-screen `View` were right when this lived
+  // in a full-bleed Radix sheet; in a floating card they laid the content out
+  // 1280px wide inside an 848px card, so it rendered empty. Same nested-View
+  // trap as Discover and AddWallet.
   position: relative;
-  width: 100vw;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
 
+  // The menu button itself is a SheetHeaderAction; only its popover is
+  // styled here.
   &__header__right-button {
-    cursor: pointer;
-    width: pxToRem(20px);
-    height: pxToRem(20px);
-
-    &__icon {
-      width: pxToRem(20px);
-      height: pxToRem(20px);
-      stroke: var(--sds-clr-gray-11);
-      color: var(--sds-clr-gray-11);
-    }
-
-    &__trigger {
-      cursor: pointer;
-      background: none;
-      border: none;
-    }
-
     &__popover-content {
       background: var(--sds-clr-gray-01);
       border-radius: pxToRem(6px);
@@ -32,6 +23,17 @@
       z-index: calc(var(--z-index-modal) + 1);
 
       &__item {
+        // Native <button> so the menu is reachable by Tab and fires on Enter
+        // and Space without hand-rolled key handling; these resets keep it
+        // looking exactly like the rows it replaced.
+        appearance: none;
+        background: none;
+        border: 0;
+        border-radius: pxToRem(4px);
+        font: inherit;
+        text-align: left;
+        width: 100%;
+
         display: flex;
         gap: pxToRem(8px);
         align-items: center;
@@ -40,6 +42,11 @@
 
         &:hover {
           background: var(--sds-clr-gray-04);
+        }
+
+        &:focus-visible {
+          outline: 2px solid var(--sds-clr-lilac-09);
+          outline-offset: -2px;
         }
 
         &__icon {
@@ -52,19 +59,68 @@
           font-weight: var(--sds-fw-medium);
           line-height: pxToRem(20px);
         }
+
+        // Remove reads red in the designs, icon and label together. Declared
+        // after the base rules so it wins without needing extra specificity.
+        &--destructive {
+          .CollectibleDetail__header__right-button__popover-content__item__icon {
+            stroke: var(--sds-clr-red-09);
+          }
+
+          .CollectibleDetail__header__right-button__popover-content__item__label {
+            color: var(--sds-clr-red-09);
+          }
+        }
       }
     }
   }
 
+  // Figma's Collectible details (1481:20211): the image, the info card, the
+  // description and the traits 16px apart.
   &__content {
     align-items: center;
     display: flex;
     flex-direction: column;
-    gap: pxToRem(12px);
+    gap: pxToRem(16px);
     justify-content: center;
+
+    // Scoped here rather than in CollectibleInfo, which the Send collectible
+    // screen shares: the frame's 32px image corners, no margin of its own
+    // (the gap above spaces it), and Text/SM/500 values that ellipsize on the
+    // right of each row.
+    .CollectibleInfo__image {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      border-radius: pxToRem(32px);
+      margin-bottom: 0;
+    }
+
+    .CollectibleInfo__base-info__row {
+      gap: pxToRem(16px);
+
+      .CollectibleInfo__block__label {
+        flex-shrink: 0;
+      }
+
+      .CollectibleInfo__block__value {
+        min-width: 0;
+        overflow: hidden;
+        text-align: right;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+    }
+
+    .CollectibleInfo__block__value {
+      font-weight: var(--sds-fw-medium);
+      line-height: pxToRem(20px);
+    }
   }
 
+  // The traits card pads 16px all round, unlike the 12px by 16px info cards.
   &__attributes {
+    padding: pxToRem(16px);
+
     &__label {
       color: var(--sds-clr-gray-11);
       font-size: pxToRem(14px);
@@ -72,13 +128,16 @@
       line-height: pxToRem(20px);
     }
 
+    // One full-width tile per trait, 12px apart, as the frame stacks them.
     &__list {
       display: flex;
-      flex-wrap: wrap;
+      flex-direction: column;
       gap: pxToRem(12px);
     }
   }
 
+  // Background/Secondary, padded 16px by 12px, the value over its trait 4px
+  // apart, both Text/SM/500.
   &__attribute {
     align-items: center;
     background: var(--sds-clr-gray-02);
@@ -86,27 +145,31 @@
     display: flex;
     justify-content: center;
     flex-direction: column;
-    padding: pxToRem(12px) pxToRem(24px);
-    width: pxToRem(134px);
+    gap: pxToRem(4px);
+    padding: pxToRem(16px) pxToRem(12px);
+    // `min-width: 0` lets a long trait value ellipsize inside the tile rather
+    // than widening it.
+    min-width: 0;
     text-align: center;
+  }
+
+  &__attribute__trait,
+  &__attribute__value {
+    font-size: pxToRem(14px);
+    font-weight: var(--sds-fw-medium);
+    line-height: pxToRem(20px);
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   &__attribute__trait {
     color: var(--sds-clr-gray-11);
-    font-size: pxToRem(12px);
-    font-weight: var(--sds-fw-semi-bold);
-    line-height: pxToRem(18px);
-    max-width: 100%;
-    overflow: scroll;
   }
 
   &__attribute__value {
     color: var(--sds-clr-gray-12);
-    font-size: pxToRem(12px);
-    font-weight: var(--sds-fw-medium);
-    line-height: pxToRem(18px);
-    max-width: 100%;
-    overflow: scroll;
   }
 
   &__footer__buttons {
@@ -124,7 +187,7 @@
 // Target the Radix popper wrapper globally - it renders via portal at body level
 // This ensures the popover appears above nested sheets (z-index: 100)
 [data-radix-popper-content-wrapper]:has(
-    .CollectibleDetail__header__right-button__popover-content
-  ) {
+  .CollectibleDetail__header__right-button__popover-content
+) {
   z-index: 100 !important;
 }

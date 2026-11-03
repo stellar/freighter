@@ -1,0 +1,11 @@
+{
+  "workspace": ".",
+  "javascript_sast_enabled": true,
+  "javascript_disabled_rules": "js-express-async-no-error-handler,js-sensitive-data-in-logs,js-unhandled-promise-rejection",
+  "sast_ignore_overrides": "js-hardcoded-secret:extension/src/popup/views/IntegrationTest.tsx,js-hardcoded-secret:extension/src/background/messageListener/handlers/addAccount.ts,js-hardcoded-secret:extension/src/background/messageListener/handlers/importAccount.ts,js-hardcoded-secret:extension/src/background/messageListener/handlers/signAuthEntry.ts,js-hardcoded-secret:extension/src/background/messageListener/handlers/signBlob.ts,js-hardcoded-secret:extension/src/background/messageListener/handlers/signFreighterTransaction.ts,js-hardcoded-secret:extension/src/background/messageListener/handlers/signTransaction.ts,js-default-credentials:extension/src/background/ducks/session.ts,js-default-credentials:extension/src/popup/components/EnterPassword/index.tsx,js-default-credentials:extension/src/popup/components/accountCreator/PasswordForm/index.tsx,js-default-credentials:extension/src/popup/views/AddAccount/ImportAccount/index.tsx,js-default-credentials:extension/src/popup/views/DisplayBackupPhrase/index.tsx,js-code-injection-eval:extension/src/popup/views/Account/hooks/useGetAccountData.tsx,js-unsafe-buffer:@shared/api/helpers/xdr/serialization/xdr-writer.ts",
+  "secret_scanning_enabled": true,
+  "console_tabular_enabled": true,
+  "socket_tier_1_enabled": false,
+  "trivy_vuln_enabled": false,
+  "trufflehog_exclude_dir": "node_modules,dist,build,.git,yarn.lock,package-lock.json,pnpm-lock.yaml,Cargo.lock,go.sum,poetry.lock,Gemfile.lock,composer.lock"
+}

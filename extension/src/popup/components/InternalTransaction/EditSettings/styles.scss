@@ -1,13 +1,12 @@
 @use "../../../styles/utils.scss" as *;
 
 .EditTxSettings {
-  z-index: var(--z-index--banner);
-  position: relative;
-
   &__congestion {
     display: flex;
     align-items: baseline;
-    font-size: 12px;
+    font-size: pxToRem(12px);
+    font-weight: var(--sds-fw-medium);
+    line-height: pxToRem(18px);
     color: var(--sds-clr-gray-10);
     margin: #{pxToRem(12px)} 0 #{pxToRem(24px)} 0;
     padding-left: pxToRem(6px);
@@ -55,7 +54,7 @@
 
   &__actions {
     display: flex;
-    margin-top: pxToRem(32px);
+    margin-top: pxToRem(24px);
 
     button {
       flex: 1;

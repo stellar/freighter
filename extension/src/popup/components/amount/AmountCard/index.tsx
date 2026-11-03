@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 
 import { AssetIcon } from "popup/components/account/AccountAssets";
 import { AssetIcons } from "@shared/api/types";
+import { isNativeAssetPair } from "@shared/helpers/assetIdentity";
 import { SecurityLevel } from "popup/constants/blockaid";
 import { InputType } from "helpers/transaction";
 import { formatAmountPreserveCursor } from "popup/helpers/formatters";
@@ -136,7 +137,9 @@ export const AmountCard = ({
   const assetPill = (
     <>
       <AssetIcon
-        assetIcons={assetIssuerKey || assetCode !== "XLM" ? assetIcons : {}}
+        assetIcons={
+          !isNativeAssetPair(assetCode, assetIssuerKey) ? assetIcons : {}
+        }
         code={assetCode}
         issuerKey={assetIssuerKey}
         icon={assetIcon}

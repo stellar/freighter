@@ -143,6 +143,7 @@ export interface Response {
   recentProtocols: RecentProtocolEntry[];
   hasSeenDiscoverWelcome: boolean;
   hasSeenEarnIntro: boolean;
+  shouldShowRebrandAnnouncement: boolean;
   cachedSwapTopTokens: { tokens: TrendingAsset[]; updatedAt: number } | null;
 }
 
@@ -363,6 +364,8 @@ export interface AssetBalanceChange {
   from: string;
   to: string;
   amount: string;
+  // Mux id of the destination when it was muxed; `to` holds the base address.
+  destination_muxed_id?: string;
 }
 
 export type HorizonOperation = Horizon.ServerApi.OperationRecord & {
@@ -430,7 +433,62 @@ export interface ApiTokenPrices {
   [key: string]: ApiTokenPrice | null;
 }
 
+/** Closed set; values go on the wire and into analytics props verbatim. */
+export enum TokenPriceHistoryRange {
+  OneHour = "1H",
+  OneDay = "1D",
+  OneWeek = "1W",
+  OneMonth = "1M",
+  OneYear = "1Y",
+  All = "ALL",
+}
+
+export interface ApiTokenPriceHistoryPoint {
+  /** Bucket start, unix seconds. Plot at t + resolutionSeconds (bucket end). */
+  t: number;
+  /** Bucket close price — a string; BigNumber-parse it, never Number(). */
+  p: string;
+}
+
+export interface ApiTokenPriceHistoryChange {
+  /** String number. Display it; never recompute or derive from percent. */
+  absolute: string;
+  /** String number. Display it; never recompute. */
+  percent: string;
+}
+
+/**
+ * No data is a 200 with `points: []` and `change: null`. `change` may also be
+ * null with points present (server coverage guard).
+ */
+export interface ApiTokenPriceHistory {
+  /** Echoes the client's original token key. */
+  token: string;
+  /** The wire spelling of the closed range enum, echoed from the request. */
+  range: `${TokenPriceHistoryRange}`;
+  /** Derived by the server from the data, never echoed from the request. */
+  resolutionSeconds: number;
+  currency: string;
+  /** Volume verdict: null means unavailable (upstream degraded), not false. */
+  lowVolume: boolean | null;
+  change: ApiTokenPriceHistoryChange | null;
+  points: ApiTokenPriceHistoryPoint[];
+}
+
+/** Fields may be absent per-asset. */
+export interface ApiTokenStats {
+  /** Echoes the client's original token key. */
+  token: string;
+  supplyOnStellar?: string;
+  holders?: number;
+}
+
 export interface ProtocolEntry {
+  /**
+   * Rendered via LinkifiedText (popup/basics/LinkifiedText): supports
+   * markdown-style `[text](https://...)` links and bare `https://` URLs,
+   * which render as clickable links. No other markdown/HTML is parsed.
+   */
   description: string;
   iconUrl: string;
   name: string;

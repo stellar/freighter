@@ -7,7 +7,7 @@ import { Field, Form, Formik } from "formik";
 import { showBackupPhrase } from "@shared/api/internal";
 
 import { ROUTES } from "popup/constants/routes";
-import { navigateTo, openTab } from "popup/helpers/navigate";
+import { closeWindow, navigateTo, openTab } from "popup/helpers/navigate";
 import { emitScreenViewed } from "helpers/metrics";
 
 import { MnemonicDisplay } from "popup/components/mnemonicPhrase/MnemonicDisplay";
@@ -73,7 +73,7 @@ export const DisplayBackupPhrase = () => {
   if (state.data?.type === AppDataType.REROUTE) {
     if (state.data.shouldOpenTab) {
       openTab(newTabHref(state.data.routeTarget));
-      window.close();
+      closeWindow();
     }
     return (
       <Navigate

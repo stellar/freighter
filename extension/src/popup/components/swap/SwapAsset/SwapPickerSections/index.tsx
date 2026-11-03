@@ -102,12 +102,14 @@ export const SwapPickerSections = ({
   const verified = result.verified.filter((r) => !hidden.has(r.canonical));
   const unverified = result.unverified.filter((r) => !hidden.has(r.canonical));
 
-  // Held "Your tokens" rows use BalanceRow, matching the account-home balances list.
+  // Held "Your tokens" rows use BalanceRow, matching the account-home balances
+  // list, divided like it but with no line after the last row, where the next
+  // section's header starts.
   const renderBalanceRows = (
     records: SwapTokenRecord[],
     source: PickerSource,
   ) =>
-    records.map((r) => {
+    records.map((r, index) => {
       const code = r.code ?? "";
       return (
         <BalanceRow
@@ -119,6 +121,7 @@ export const SwapPickerSections = ({
           amount={r.tokenAmount ?? "0"}
           fiatAmount={r.fiatValue ?? null}
           percentChange={r.percentChange24h ?? null}
+          hasDivider={index < records.length - 1}
           onClick={() =>
             onClickAsset(r.canonical, r.isContract, buildSelection(r, source))
           }

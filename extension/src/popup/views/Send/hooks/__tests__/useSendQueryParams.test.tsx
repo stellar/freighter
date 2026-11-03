@@ -267,6 +267,21 @@ describe("useSendQueryParams", () => {
       expect(dispatchSpy).toHaveBeenCalledWith(saveFederationAddress(""));
     });
 
+    it("should save valid muxed contract (W) address as destination", () => {
+      const muxedContract =
+        "WA7QYNF7SOWQ3GLR2BGMZEHXAVIRZA4KVWLTJJFC7MGXUA74P7UJUAAAAAAAAAAAAAWWC";
+      mockUseLocation.mockReturnValue({
+        pathname: "/send",
+        search: `?destination=${muxedContract}`,
+        state: null,
+      });
+
+      const { dispatchSpy } = renderHookWithStore();
+
+      expect(dispatchSpy).toHaveBeenCalledWith(saveDestination(muxedContract));
+      expect(dispatchSpy).toHaveBeenCalledWith(saveFederationAddress(""));
+    });
+
     it("should ignore invalid destination", () => {
       mockUseLocation.mockReturnValue({
         pathname: "/send",

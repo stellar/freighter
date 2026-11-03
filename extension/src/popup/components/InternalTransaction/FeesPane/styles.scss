@@ -11,48 +11,6 @@
     padding: 0;
   }
 
-  &__Header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-
-    &__Icon {
-      display: flex;
-      width: pxToRem(32px);
-      height: pxToRem(32px);
-      justify-content: center;
-      align-items: center;
-      border-radius: pxToRem(8px);
-      background: var(--sds-clr-lilac-03);
-      border: 1px solid var(--sds-clr-lilac-06);
-
-      svg {
-        width: pxToRem(20px);
-        height: pxToRem(20px);
-        color: var(--sds-clr-lilac-09);
-      }
-    }
-
-    &__Close {
-      display: flex;
-      width: pxToRem(32px);
-      height: pxToRem(32px);
-      justify-content: center;
-      align-items: center;
-      border-radius: 1000px;
-      background: var(--sds-clr-gray-03);
-      color: var(--sds-clr-gray-09);
-      cursor: pointer;
-    }
-  }
-
-  &__Title {
-    display: flex;
-    align-items: center;
-    width: 100%;
-    font-size: pxToRem(18px);
-  }
-
   &__Card {
     display: flex;
     flex-direction: column;

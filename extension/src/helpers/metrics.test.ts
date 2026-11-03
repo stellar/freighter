@@ -145,8 +145,8 @@ describe("buildCommonContext (four-bucket property model)", () => {
     );
   });
 
-  it("stamps schema_version '2'", () => {
-    expect(buildCommonContext({} as never).schema_version).toBe("2");
+  it("stamps schema_version '4'", () => {
+    expect(buildCommonContext({} as never).schema_version).toBe("4");
   });
 
   it("emits the reshaped event-level bucket", () => {
@@ -212,7 +212,7 @@ describe("buildCommonContext (four-bucket property model)", () => {
     expect(ctx).not.toHaveProperty("account_funded");
     expect(ctx).not.toHaveProperty("is_hardware_account");
     // non-account context is still present
-    expect(ctx).toMatchObject({ schema_version: "2", network: "TESTNET" });
+    expect(ctx).toMatchObject({ schema_version: "4", network: "TESTNET" });
     expect(ctx.surface).toBeDefined();
   });
 
@@ -524,7 +524,7 @@ describe("emitScreenViewed (screen.viewed consolidation)", () => {
     expect(body).toMatchObject({
       screen_name: "send_payment_amount",
       flow: "send",
-      schema_version: "2",
+      schema_version: "4",
     });
     // surface comes from the Slice-A common context (getSurface()).
     expect(body.surface).toBeDefined();
@@ -610,8 +610,27 @@ describe("app.opened", () => {
     expect(call![1]).toMatchObject({
       connection_type: "wifi",
       effective_type: "4g",
-      schema_version: "2",
+      schema_version: "4",
     });
     expect(call![1].surface).toBeDefined();
+  });
+});
+
+describe("color_scheme common property (#18)", () => {
+  afterEach(() => {
+    document.body.className = "";
+  });
+
+  it("stamps the rendered scheme from the body class", () => {
+    document.body.className = "sds-theme-light";
+    expect(buildCommonContext({} as never).color_scheme).toBe("light");
+
+    document.body.className = "sds-theme-dark";
+    expect(buildCommonContext({} as never).color_scheme).toBe("dark");
+  });
+
+  it("defaults to light when no theme class is applied yet", () => {
+    document.body.className = "";
+    expect(buildCommonContext({} as never).color_scheme).toBe("light");
   });
 });

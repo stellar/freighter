@@ -6,7 +6,9 @@ import { useGetAppData, AppDataType } from "../hooks/useGetAppData";
 import { makeDummyStore } from "popup/__testHelpers__";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
 import { ROUTES } from "popup/constants/routes";
+import { POPUP_WIDTH } from "constants/dimensions";
 import * as ApiInternal from "@shared/api/internal";
+import * as IsSidebarModeHelpers from "popup/helpers/isSidebarMode";
 
 const renderUseGetAppData = (preloadedAuthState: any) => {
   const store = makeDummyStore({
@@ -77,5 +79,103 @@ describe("useGetAppData — cache fast path requires hasPrivateKey (Bug A regres
     expect(loadAccountSpy).not.toHaveBeenCalled();
     expect(payload?.type).toBe(AppDataType.RESOLVED);
     expect(payload?.account?.publicKey).toBe("GCACHED");
+  });
+});
+
+describe("useGetAppData — shouldOpenTab hands onboarding to a full tab", () => {
+  // Wider than the popup, like a side panel the user has dragged out.
+  const NON_POPUP_WIDTH = POPUP_WIDTH + 140;
+  const originalInnerWidth = window.innerWidth;
+
+  const setInnerWidth = (width: number) => {
+    Object.defineProperty(window, "innerWidth", {
+      configurable: true,
+      writable: true,
+      value: width,
+    });
+  };
+
+  const mockSidebarMode = (isSidebarMode: boolean) =>
+    jest
+      .spyOn(IsSidebarModeHelpers, "isSidebarMode")
+      .mockReturnValue(isSidebarMode);
+
+  // A locked or wallet-less account never has a private key loaded, so the
+  // fetch always ends in a re-route.
+  const fetchReRoute = async (applicationState: APPLICATION_STATE) => {
+    jest.spyOn(ApiInternal, "loadAccount").mockResolvedValueOnce({
+      publicKey: "",
+      hasPrivateKey: false,
+      allAccounts: [],
+      applicationState,
+    } as any);
+    jest.spyOn(ApiInternal, "loadSettings").mockResolvedValueOnce({} as any);
+
+    const { result } = renderUseGetAppData({ applicationState });
+
+    let payload: any;
+    await act(async () => {
+      payload = await result.current.fetchData(true);
+    });
+    return payload;
+  };
+
+  afterEach(() => {
+    setInnerWidth(originalInnerWidth);
+    jest.restoreAllMocks();
+  });
+
+  it("opens a tab for a wallet-less sidebar, whatever its width", async () => {
+    setInnerWidth(NON_POPUP_WIDTH);
+    mockSidebarMode(true);
+
+    const payload = await fetchReRoute(APPLICATION_STATE.APPLICATION_STARTED);
+
+    expect(payload).toMatchObject({
+      type: AppDataType.REROUTE,
+      routeTarget: ROUTES.welcome,
+      shouldOpenTab: true,
+    });
+  });
+
+  it("keeps a wallet-less page that is neither the popup nor the sidebar in place", async () => {
+    setInnerWidth(NON_POPUP_WIDTH);
+    mockSidebarMode(false);
+
+    const payload = await fetchReRoute(APPLICATION_STATE.APPLICATION_STARTED);
+
+    expect(payload).toMatchObject({
+      type: AppDataType.REROUTE,
+      routeTarget: ROUTES.welcome,
+      shouldOpenTab: false,
+    });
+  });
+
+  it("opens a tab for a wallet-less popup", async () => {
+    setInnerWidth(POPUP_WIDTH);
+    mockSidebarMode(false);
+
+    const payload = await fetchReRoute(APPLICATION_STATE.APPLICATION_STARTED);
+
+    expect(payload).toMatchObject({
+      type: AppDataType.REROUTE,
+      routeTarget: ROUTES.welcome,
+      shouldOpenTab: true,
+    });
+  });
+
+  it("keeps a locked sidebar on its lock screen", async () => {
+    setInnerWidth(NON_POPUP_WIDTH);
+    mockSidebarMode(true);
+
+    const payload = await fetchReRoute(
+      APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
+    );
+
+    expect(payload).toMatchObject({
+      type: AppDataType.REROUTE,
+      routeTarget: ROUTES.unlockAccount,
+      shouldOpenTab: false,
+    });
   });
 });

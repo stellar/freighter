@@ -3,7 +3,6 @@ import { useReducer } from "react";
 import { initialState, isError, reducer } from "helpers/request";
 import { ApiTokenPrices, AssetIcons, Collectibles } from "@shared/api/types";
 import { ManageAssetCurrency } from "popup/components/manageAssets/ManageAssetRows";
-import { isContractId } from "popup/helpers/soroban";
 import { AccountBalances, useGetBalances } from "helpers/hooks/useGetBalances";
 import {
   AssetDomains,
@@ -12,7 +11,7 @@ import {
 import { getBaseAccount } from "popup/helpers/account";
 import { AppDataType, NeedsReRoute } from "helpers/hooks/useGetAppData";
 import { APPLICATION_STATE } from "@shared/constants/applicationState";
-import { isMainnet } from "helpers/stellar";
+import { isContractDestination, isMainnet } from "helpers/stellar";
 import { NetworkDetails } from "@shared/constants/stellar";
 import { useGetTokenPrices } from "helpers/hooks/useGetTokenPrices";
 import { useGetCollectibles } from "helpers/hooks/useGetCollectibles";
@@ -71,7 +70,7 @@ function useGetSendAmountData(
 
       const _isMainnet = isMainnet(userDomains.networkDetails);
       let destinationBalances = {} as AccountBalances;
-      if (destinationAccount && !isContractId(destinationAccount)) {
+      if (destinationAccount && !isContractDestination(destinationAccount)) {
         const balances = await fetchBalances(
           destinationAccount,
           _isMainnet,

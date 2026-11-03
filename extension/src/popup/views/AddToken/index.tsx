@@ -60,7 +60,7 @@ import {
 import { useIsDomainListedAllowed } from "popup/helpers/useIsDomainListedAllowed";
 import { AppDataType, useGetAppData } from "helpers/hooks/useGetAppData";
 import { RequestState } from "constants/request";
-import { openTab } from "popup/helpers/navigate";
+import { closeWindow, openTab } from "popup/helpers/navigate";
 import { reRouteOnboarding } from "popup/helpers/route";
 import { KeyIdenticon } from "popup/components/identicons/KeyIdenticon";
 import { useMarkQueueActive } from "popup/helpers/useMarkQueueActive";
@@ -140,6 +140,11 @@ export const AddToken = () => {
   const baseFeeXlm = stroopToXlm(BASE_FEE).toString();
   const displayFee = recommendedFee === BASE_FEE ? baseFeeXlm : recommendedFee;
 
+  const hydratedPublicKey =
+    state.state === RequestState.SUCCESS && state.data.type === "resolved"
+      ? state.data.account.publicKey
+      : "";
+
   const {
     isConfirming,
     isPasswordRequired,
@@ -155,12 +160,10 @@ export const AddToken = () => {
     addToken,
     uuid,
     assetCode,
+    contractId,
+    publicKey: hydratedPublicKey,
   });
 
-  const hydratedPublicKey =
-    state.state === RequestState.SUCCESS && state.data.type === "resolved"
-      ? state.data.account.publicKey
-      : "";
   const hydratedNetworkDetails =
     state.state === RequestState.SUCCESS && state.data.type === "resolved"
       ? state.data.settings.networkDetails
@@ -493,7 +496,7 @@ export const AddToken = () => {
   if (state.data?.type === AppDataType.REROUTE) {
     if (state.data.shouldOpenTab) {
       openTab(newTabHref(state.data.routeTarget));
-      window.close();
+      closeWindow();
     }
     return (
       <Navigate
@@ -533,7 +536,7 @@ export const AddToken = () => {
         variant={WarningMessageVariant.warning}
         handleCloseClick={() => window.close()}
         isActive
-        header={`${t("Freighter is set to")} ${networkName}`}
+        header={`${t("Varial is set to")} ${networkName}`}
       >
         <p>
           {t("The token you’re trying to add is on")} {entryNetworkPassphrase}.
@@ -601,7 +604,8 @@ export const AddToken = () => {
         onSuccess={handleTrustlineDone}
         onClose={() => setShowTrustlineReview(false)}
         initialFee={displayFee}
-        isFullHeight
+        isStandalone
+        hideCloseTabHint
       />
     );
   }

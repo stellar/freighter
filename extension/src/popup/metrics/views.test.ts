@@ -32,7 +32,6 @@ import { METRIC_NAMES } from "popup/constants/metricsNames";
 import { ROUTES } from "popup/constants/routes";
 
 // Importing the module registers the navigate handler via registerHandler.
-import "popup/metrics/views";
 import { ROUTES_WITHOUT_SCREEN_VIEW } from "popup/metrics/views";
 
 type NavHandler = (state: unknown, action: unknown) => void;
@@ -77,6 +76,18 @@ describe("views navigate handler → screen.viewed", () => {
     // The send route is a container: its per-step screens are emitted by the
     // Send flow's step effect, so navigating the route itself emits nothing.
     fireNavigate(ROUTES.sendPayment);
+    expect(emitScreenViewed).not.toHaveBeenCalled();
+    expect(emitMetric).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["manage assets", ROUTES.manageAssets],
+    ["connected apps", ROUTES.manageConnectedApps],
+    ["wallets", ROUTES.wallets],
+  ])("does not emit a screen-view for the %s redirect", (_label, route) => {
+    // These paths render `<Navigate to={ROUTES.account} replace />`. Emitting
+    // would report a screen nobody saw, and then report `account` as well.
+    fireNavigate(route);
     expect(emitScreenViewed).not.toHaveBeenCalled();
     expect(emitMetric).not.toHaveBeenCalled();
   });
@@ -143,10 +154,10 @@ describe("views navigate handler → screen.viewed", () => {
     const screenRoutes = Object.values(ROUTES).filter(
       (r) =>
         r !== ROUTES.manageAssetsListsModifyAssetList &&
-        // Container routes (send, earn) intentionally emit nothing (D8) — their
-        // per-step screens come from the flow's own step effect. Read the real
-        // set rather than restating it, so adding a container can't silently
-        // drift this test out of sync.
+        // Derived rather than hardcoded so the two cannot drift: the set covers
+        // the send and earn containers (D8, whose per-step screens are emitted
+        // by their flows' own step effects) and the routes that are now bare
+        // redirects.
         !ROUTES_WITHOUT_SCREEN_VIEW.has(r),
     );
     const names: string[] = [];

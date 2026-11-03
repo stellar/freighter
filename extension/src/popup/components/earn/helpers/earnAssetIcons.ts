@@ -4,6 +4,7 @@ import { getAssetIcons } from "@shared/api/internal";
 import { Balances } from "@shared/api/types/backend-api";
 import { AssetListResponse } from "@shared/constants/soroban/asset-list";
 import { NetworkDetails } from "@shared/constants/stellar";
+import { isNativeAssetId } from "@shared/helpers/assetIdentity";
 import { getCanonicalFromAsset } from "@shared/helpers/stellar";
 
 /**
@@ -109,7 +110,7 @@ export const resolveEarnAssetIcons = async ({
 }) => {
   const lookupBalances = assets.reduce((acc, asset) => {
     const key = getCatalogIconKey({ ...asset, networkDetails });
-    if (!key || key === "native") {
+    if (!key || isNativeAssetId(key)) {
       // Native's icon is bundled, and a keyless asset has nothing to look up.
       return acc;
     }

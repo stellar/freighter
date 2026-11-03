@@ -62,7 +62,6 @@ describe("AccountCollectibles", () => {
       >
         <AccountCollectibles
           collections={mockCollectibles}
-          hasInlineCta={false}
           isLoading={false}
           refreshHiddenCollectibles={mockRefreshHiddenCollectibles}
           isCollectibleHidden={mockIsCollectibleHidden}
@@ -178,7 +177,6 @@ describe("AccountCollectibles", () => {
       >
         <AccountCollectibles
           collections={mockCollectibles}
-          hasInlineCta={false}
           isLoading={false}
           refreshHiddenCollectibles={mockRefreshHiddenCollectibles}
           isCollectibleHidden={mockIsCollectibleHidden}
@@ -244,7 +242,6 @@ describe("AccountCollectibles", () => {
       >
         <AccountCollectibles
           collections={[]}
-          hasInlineCta={false}
           isLoading={false}
           refreshHiddenCollectibles={mockRefreshHiddenCollectibles}
           isCollectibleHidden={mockIsCollectibleHidden}
@@ -253,7 +250,7 @@ describe("AccountCollectibles", () => {
     );
     await waitFor(() => screen.getByTestId("account-collectibles"));
     expect(screen.getByTestId("account-collectibles")).toBeDefined();
-    expect(screen.getByText("No collectibles yet")).toBeDefined();
+    expect(screen.getByText("Collect your first NFT")).toBeDefined();
   });
   it("renders error state", async () => {
     render(
@@ -294,7 +291,6 @@ describe("AccountCollectibles", () => {
           collections={[
             { error: { collectionAddress: "test", errorMessage: "test" } },
           ]}
-          hasInlineCta={false}
           isLoading={false}
           refreshHiddenCollectibles={mockRefreshHiddenCollectibles}
           isCollectibleHidden={mockIsCollectibleHidden}
@@ -303,7 +299,7 @@ describe("AccountCollectibles", () => {
     );
     await waitFor(() => screen.getByTestId("account-collectibles"));
     expect(screen.getByTestId("account-collectibles")).toBeDefined();
-    expect(screen.getByText("No collectibles yet")).toBeDefined();
+    expect(screen.getByText("Collect your first NFT")).toBeDefined();
   });
   it("renders some collectibles and omits the ones with an error", async () => {
     const partialMockCollectibles = [
@@ -415,7 +411,6 @@ describe("AccountCollectibles", () => {
       >
         <AccountCollectibles
           collections={partialMockCollectibles}
-          hasInlineCta={false}
           isLoading={false}
           refreshHiddenCollectibles={mockRefreshHiddenCollectibles}
           isCollectibleHidden={mockIsCollectibleHidden}

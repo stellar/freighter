@@ -1,15 +1,11 @@
 @use "../../styles/utils.scss" as *;
 
+// Renders inside a SlideupModal card: the card scrolls, SheetLayout pads and
+// pins the actions, so the root just stacks its content.
 .SignTransaction {
-  height: 100vh;
-  overflow: hidden;
   position: relative;
-  padding: 1rem;
-  padding-top: 0;
-  background-color: var(--sds-clr-gray-01);
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
 
   .multi-pane-slider__pane--active {
     display: flex;
@@ -56,10 +52,7 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding-top: 2rem;
     width: 100%;
-    flex: 1;
-    overflow-y: auto;
 
     &__Wrapper {
       max-width: 57rem;
@@ -95,7 +88,7 @@
     margin-bottom: -1rem;
 
     &__title {
-      color: rgba(255, 255, 255, 0.6);
+      color: var(--sds-clr-gray-11);
       font-size: 0.875rem;
       line-height: 1.5rem;
     }
@@ -116,10 +109,6 @@
 
   &__modal {
     padding: 0.5rem 0 0.5rem 1.5rem;
-
-    .View__inset--scroll-shadows {
-      --bgRGB: 22, 22, 24;
-    }
   }
 
   &__account-not-found {
@@ -132,11 +121,6 @@
     align-self: flex-end;
     align-items: center;
     width: 100%;
-    position: sticky;
-    bottom: 0;
-    background-color: var(--sds-clr-gray-01);
-    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
-    z-index: 10;
 
     &__PublicKey {
       display: flex;
@@ -354,6 +338,9 @@
 
     svg {
       margin-right: pxToRem(8px);
+      // lilac-09 icon with lilac-11 text matches mobile's trigger
+      // (Icon themeColor resolves to the ramp's step 9 there)
+      color: var(--sds-clr-lilac-09);
     }
   }
 
@@ -361,63 +348,18 @@
     display: flex;
     flex-direction: column;
     width: 100%;
-    overflow-y: scroll;
     max-width: 57rem;
-
-    &__Header {
-      display: flex;
-      justify-content: space-between;
-      margin: pxToRem(12px) 0;
-
-      .DetailsMark {
-        display: flex;
-        width: 40px;
-        height: 40px;
-        padding: 7.5px;
-        justify-content: center;
-        align-items: center;
-        aspect-ratio: 1/1;
-        border-radius: 8px;
-        border: 1px solid var(--sds-clr-lilac-06);
-        background: var(--sds-clr-lilac-03);
-
-        svg {
-          width: 25px;
-          height: 25px;
-          color: var(--sds-clr-lilac-09);
-        }
-      }
-
-      .Close {
-        display: flex;
-        width: 32px;
-        height: 32px;
-        justify-content: center;
-        align-items: center;
-        border-radius: 1000px;
-        background: var(--sds-clr-gray-03);
-        color: var(--sds-clr-gray-09);
-      }
-    }
+    gap: pxToRem(16px);
 
     &__Summary {
       padding: pxToRem(12px) pxToRem(12px);
       border-radius: pxToRem(16px);
       background-color: var(--sds-clr-gray-03);
-      margin-top: pxToRem(12px);
 
       > div:not(:first-child) {
         margin-top: pxToRem(16px);
         color: var(--sds-clr-gray-11);
       }
-    }
-
-    &__Title {
-      display: flex;
-      align-items: center;
-      width: 100%;
-      margin: pxToRem(12px) 0;
-      font-size: pxToRem(20px);
     }
   }
 }

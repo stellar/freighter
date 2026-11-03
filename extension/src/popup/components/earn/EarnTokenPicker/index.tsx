@@ -283,7 +283,6 @@ export const EarnTokenPicker = ({
             setNotEnoughToken(null);
           }
         }}
-        hasBackdrop
       >
         {notEnoughToken && notEnoughVariant ? (
           <NotEnoughTokenSheet

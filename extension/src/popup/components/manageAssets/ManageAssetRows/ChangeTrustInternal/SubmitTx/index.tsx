@@ -24,6 +24,7 @@ import { getStellarExpertUrl } from "popup/helpers/account";
 import { openTab } from "popup/helpers/navigate";
 import { getManageAssetXDR } from "popup/helpers/getManageAssetXDR";
 import { stellarSdkServer } from "@shared/api/helpers/stellarSdkServer";
+import { clearHiddenAssetFlag } from "popup/helpers/useHiddenAssets";
 import { AssetIcons } from "@shared/api/types";
 import { removeTokenId, startHwSign } from "popup/ducks/transactionSubmission";
 import { NETWORKS } from "@shared/constants/stellar";
@@ -188,7 +189,20 @@ export const SubmitTransaction = ({
         { asset_code: asset.code, asset_issuer: asset.issuer },
       );
     }
-    onTransactionSuccess?.();
+    const finish = async () => {
+      // On add, a token the user adds on purpose must show up. On remove, the
+      // hidden map outlives the trustline, so a flag left behind would hide
+      // the asset if the trustline comes back another way (dApp, swap). See
+      // clearHiddenAssetFlag. Awaited because the success callback can close
+      // the popup, which would drop a cleanup still in flight.
+      await clearHiddenAssetFlag({
+        canonicalAsset: getCanonicalFromAsset(asset.code, asset.issuer),
+        activePublicKey: publicKey,
+        network: networkDetails.network,
+      });
+      onTransactionSuccess?.();
+    };
+    finish();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSuccess]);
 

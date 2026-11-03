@@ -102,9 +102,6 @@
       .IdenticonImg {
         width: pxToRem(32px);
         height: pxToRem(32px);
-        padding: pxToRem(6px);
-        border: 1px solid var(--sds-clr-gray-09);
-        border-radius: pxToRem(100px);
 
         &:not(:last-child) {
           margin-right: pxToRem(12px);

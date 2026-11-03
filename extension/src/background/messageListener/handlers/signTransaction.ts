@@ -71,7 +71,7 @@ export const signTransaction = async ({
     const { transaction: transactionToSign } = transactionQueueItem;
     try {
       transactionToSign.sign(sourceKeys);
-      response = transactionToSign.toXDR();
+      response = transactionToSign.toXdr();
     } catch (e) {
       console.error(e);
       return { error: e };

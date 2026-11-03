@@ -7,6 +7,7 @@ import { initialState, reducer } from "helpers/request";
 import { AppDataType, NeedsReRoute } from "helpers/hooks/useGetAppData";
 import { AppDispatch } from "popup/App";
 import { Balances } from "@shared/api/types/backend-api";
+import { isNativeAssetId } from "@shared/helpers/assetIdentity";
 import {
   balancesSelector,
   saveIconsForBalances,
@@ -117,7 +118,7 @@ function useGetIcons() {
         const assetsWithoutIcons = {} as NonNullable<Balances>;
 
         Object.entries(accountBalances).forEach(([asset, balance]) => {
-          if (!icons[asset] && asset !== "native") {
+          if (!icons[asset] && !isNativeAssetId(asset)) {
             assetsWithoutIcons[asset] = balance;
           }
         });

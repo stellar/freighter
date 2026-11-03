@@ -55,9 +55,7 @@ export const SelectHardwareWallet = () => {
       />
       <View.Content>
         <div className="SelectHardwareWallet">
-          <p>
-            {t("Select a hardware wallet you’d like to use with Freighter.")}
-          </p>
+          <p>{t("Select a hardware wallet you’d like to use with Varial.")}</p>
           <ul className="SelectHardwareWallet__options-list">
             {Object.entries(WalletType).map(([_k, v]) =>
               v ? (

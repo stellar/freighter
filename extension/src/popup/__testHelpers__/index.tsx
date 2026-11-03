@@ -20,17 +20,16 @@ import { reducer as earn } from "popup/ducks/earn";
 import { WalletType } from "@shared/constants/hardwareWallet";
 import { Account } from "@shared/api/types";
 
+// §N refs: wallet-eng-monorepo/design-docs/token-price-graphs/token-price-graphs-design.md
+
 export const TEST_PUBLIC_KEY =
   "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF";
 
 export const TEST_CANONICAL =
   "DT:CCXVDIGMR6WTXZQX2OEVD6YM6AYCYPXPQ7YYH6OZMRS7U6VD3AVHNGBJ";
 
-// Classic G-issuer canonical present in `mockBalances`. Use this when a test
-// needs an asset that production `getTokenPrices` would actually price —
-// `TEST_CANONICAL` (DT) has a contract-ID issuer and is filtered out by
-// `isContractId` in `@shared/api/internal.ts`, so it can never carry a real
-// indexer price.
+// Classic G-issuer canonical present in `mockBalances`. `TEST_CANONICAL` (DT)
+// has a contract-ID issuer, so only the v2 price path prices it.
 export const TEST_USDC_CANONICAL =
   "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM";
 
@@ -84,9 +83,8 @@ export const Wrapper: React.FunctionComponent<any> = ({
 };
 
 export const mockPrices = {
-  // `TEST_CANONICAL` (DT) has a contract-ID issuer and is filtered out by
-  // production `getTokenPrices` (`@shared/api/internal.ts` →
-  // `isContractId(asset.issuer)`), so it is intentionally absent here.
+  // `TEST_CANONICAL` (DT) has a contract-ID issuer; these fixtures predate the
+  // predicate split and the legacy path still filters it, so it stays absent.
   [TEST_USDC_CANONICAL]: {
     currentPrice: "1",
     percentagePriceChange24h: "0.50",

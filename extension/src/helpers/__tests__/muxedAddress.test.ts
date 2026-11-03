@@ -23,6 +23,10 @@ const mockGetContractSpec = ApiInternal.getContractSpec as jest.MockedFunction<
 const mockIsMuxedAccount = StellarHelpers.isMuxedAccount as jest.MockedFunction<
   typeof StellarHelpers.isMuxedAccount
 >;
+const mockIsMuxedContract =
+  StellarHelpers.isMuxedContract as jest.MockedFunction<
+    typeof StellarHelpers.isMuxedContract
+  >;
 const mockIsValidStellarAddress =
   StellarHelpers.isValidStellarAddress as jest.MockedFunction<
     typeof StellarHelpers.isValidStellarAddress
@@ -52,6 +56,8 @@ const gAddress = "GDQOFC6SKCNBHPLZ7NXQ6MCKFIYUUFVOWYGNWQCXC2F4AYZ27EUWYWH";
 const mAddress =
   "MBSYFNGOTEFXZW5LXRD6DSRZ5OEARI57YKFNQIZGC3ZG6VGRUSNGMAAAAAAAAAAE2L2IK";
 const contractId = "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB2B";
+const wAddress =
+  "WA7QYNF7SOWQ3GLR2BGMZEHXAVIRZA4KVWLTJJFC7MGXUA74P7UJUAAAAAAAAAAAAAWWC";
 const testContractId = "TEST_CONTRACT_ID";
 
 describe("muxedAddress helpers", () => {
@@ -445,5 +451,38 @@ describe("muxedAddress helpers", () => {
         expect(result).toBe(contractId);
       });
     });
+  });
+
+  describe("muxed contract (W) destinations", () => {
+    beforeEach(() => {
+      mockIsMuxedAccount.mockReturnValue(false);
+      mockIsMuxedContract.mockImplementation((address) => address === wAddress);
+    });
+
+    it("disables memo because the mux id is encoded in the address", () => {
+      const result = getMemoDisabledState({
+        targetAddress: wAddress,
+        t: mockT,
+      });
+
+      expect(result.isMemoDisabled).toBe(true);
+      expect(result.memoDisabledMessage).toBe(
+        "translated:Memo is disabled for this transaction",
+      );
+    });
+
+    it.each([true, false])(
+      "passes the W address through unchanged (contractSupportsMuxed: %s)",
+      (contractSupportsMuxed) => {
+        const result = determineMuxedDestination({
+          recipientAddress: wAddress,
+          transactionMemo: "1234",
+          contractSupportsMuxed,
+        });
+
+        expect(result).toBe(wAddress);
+        expect(mockCreateMuxedAccount).not.toHaveBeenCalled();
+      },
+    );
   });
 });

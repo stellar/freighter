@@ -11,6 +11,17 @@ $base-font-size: 16px;
   @return #{math.div(removePxUnit($pxValue), removePxUnit($base-font-size))}rem;
 }
 
+// SDS icons are drawn on a 24px viewBox and each path carries its own
+// `stroke-width="2"` attribute, which beats a value inherited from the svg.
+// Rendered in a box other than 24px the stroke scales with it, so this sets
+// the path to the user units that draw as `$stroke` px in a `$box` px box.
+// Include it inside the icon's `svg { }` rule; both arguments are unitless px.
+@mixin icon-stroke($box, $stroke: 2) {
+  path {
+    stroke-width: math.div(24 * $stroke, $box);
+  }
+}
+
 @mixin native-like-outline {
   outline-color: rgb(153, 200, 255);
   outline-offset: 1px;

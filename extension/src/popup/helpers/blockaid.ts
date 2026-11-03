@@ -19,6 +19,7 @@ import {
   overriddenBlockaidResponseSelector,
 } from "popup/ducks/settings";
 import { isDev } from "@shared/helpers/dev";
+import { isBulkScannableAssetId } from "@shared/helpers/blockaid";
 import { BlockaidWarning, SecurityLevel } from "popup/constants/blockaid";
 import { fetchJson } from "./fetch";
 import { captureFetchError } from "./captureFetchError";
@@ -872,8 +873,14 @@ export const scanAssetBulk = async (
       /* Scanning assets is only supported on Mainnet */
       return null;
     }
+    // One id the backend or Blockaid can't take fails the whole request, and
+    // a request with no ids is rejected too.
+    const scannableIds = addressList.filter(isBulkScannableAssetId);
+    if (!scannableIds.length) {
+      return { results: {} } as BlockAidBulkScanAssetResult;
+    }
     const url = new URL(`${INDEXER_URL}/scan-asset-bulk`);
-    addressList.forEach((address) => {
+    scannableIds.forEach((address) => {
       url.searchParams.append("asset_ids", address);
     });
     const resJson = await fetchJson<ScanAssetBulkResponse>(url.href, {

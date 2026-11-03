@@ -27,6 +27,7 @@ export const AddressTile = ({
     return (
       <SelectionTile
         icon={<IdenticonImg publicKey={address} />}
+        hasIconFrame={false}
         primaryText={
           recipientName ||
           (federationAddress

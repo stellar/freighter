@@ -56,6 +56,7 @@ function makeStore(overrides?: {
         use_token_prices_v2: true,
         use_balances_v2: true,
         earn_deposit: false,
+        use_token_price_history: true,
         maintenance_screen: overrides?.maintenance_screen ?? {
           enabled: false,
           payload: undefined,
@@ -301,7 +302,7 @@ describe("MaintenanceBanner", () => {
     expect(slideup).toHaveClass("closed");
   });
 
-  it("renders a theme icon box in the modal header", () => {
+  it("opens the modal with a plain header and no theme icon", () => {
     const store = setupBanner({
       theme: BannerTheme.Warning,
       bannerTitle: "Alert",
@@ -312,7 +313,10 @@ describe("MaintenanceBanner", () => {
     fireEvent.click(screen.getByTestId("maintenance-banner"));
 
     expect(
-      container.querySelector(".MaintenanceBanner__modal-icon--warning"),
+      container.querySelector(".MaintenanceBanner__modal-icon"),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByTestId("maintenance-banner-close-button"),
     ).toBeInTheDocument();
   });
 

@@ -1,4 +1,5 @@
 import { Buffer } from "buffer";
+import { xdr } from "stellar-sdk";
 
 import {
   AUTH_SALT,
@@ -37,8 +38,8 @@ describe("deriveAuthKeypair", () => {
     const a = await deriveAuthKeypair(mnemonic);
     const b = await deriveAuthKeypair(mnemonic);
     expect(a.userId).toBe(b.userId);
-    expect(a.keypair.rawPublicKey().equals(b.keypair.rawPublicKey())).toBe(
-      true,
+    expect(xdr.encodeBytes(a.keypair.rawPublicKey(), "hex")).toBe(
+      xdr.encodeBytes(b.keypair.rawPublicKey(), "hex"),
     );
   });
 

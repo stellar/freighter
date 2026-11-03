@@ -1,4 +1,5 @@
 import { AssetBalance, NativeBalance, TokenBalance } from "./types";
+import { AssetType as SdkAssetType } from "stellar-sdk";
 
 export interface BalanceMap {
   [key: string]: AssetBalance | NativeBalance | TokenBalance;
@@ -79,7 +80,11 @@ export interface V2NativeBalance extends V2BalanceBase {
 export interface V2ClassicBalance extends V2BalanceBase {
   token_type: "CLASSIC";
   // `type` is the trustline's asset type verbatim (e.g. credit_alphanum4).
-  token: { type: string; code: string; issuer: V2TokenIssuer };
+  token: {
+    type: Exclude<SdkAssetType, "native">;
+    code: string;
+    issuer: V2TokenIssuer;
+  };
   code?: string;
   issuer?: string;
   type: string;
@@ -94,7 +99,11 @@ export interface V2ClassicBalance extends V2BalanceBase {
 export interface V2SacBalance extends V2BalanceBase {
   token_type: "SAC";
   // `type` is derived server-side from the code length (credit_alphanum4/12).
-  token: { type: string; code: string; issuer: V2TokenIssuer };
+  token: {
+    type: Exclude<SdkAssetType, "native">;
+    code: string;
+    issuer: V2TokenIssuer;
+  };
   code: string;
   issuer: string;
   decimals: number;

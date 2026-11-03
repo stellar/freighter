@@ -1,5 +1,6 @@
 import { NetworkDetails } from "@shared/constants/stellar";
 import { getTokenDetails } from "@shared/api/internal";
+import { isNativeAssetId } from "@shared/helpers/assetIdentity";
 import { getCanonicalFromAsset } from "@shared/helpers/stellar";
 import { DestinationTokenDetails } from "popup/ducks/transactionSubmission";
 import { CLASSIC_ASSET_DECIMALS } from "popup/helpers/soroban";
@@ -58,7 +59,7 @@ export const resolveSwapDestination = async ({
       tokenCode: option.code,
       // The account holds none of it, so if it is a classic asset there is no
       // trustline yet — Swap bundles the changeTrust when this is true.
-      requiresTrustline: canonical !== "native",
+      requiresTrustline: !isNativeAssetId(canonical),
       // `??`, matching the picker: `||` would rewrite a genuine 0-decimal
       // token to 7.
       decimals: option.decimals ?? CLASSIC_ASSET_DECIMALS,

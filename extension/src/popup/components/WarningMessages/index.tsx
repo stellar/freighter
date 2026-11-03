@@ -9,6 +9,7 @@ import {
   Textarea,
   Text,
 } from "@stellar/design-system";
+import { SheetHeader } from "popup/components/SheetHeader";
 import { useTranslation, Trans } from "react-i18next";
 import { Field, FieldProps, Formik, Form } from "formik";
 import { object as YupObject, string as YupString } from "yup";
@@ -147,7 +148,7 @@ export const DomainNotAllowedWarningMessage = ({
           <Icon.InfoSquare className="WarningMessage__icon" />
         </div>
         <p className="Message">
-          {t("{{domain}} is not currently connected to Freighter", { domain })}
+          {t("{{domain}} is not currently connected to Varial", { domain })}
         </p>
       </div>
     </div>
@@ -381,11 +382,14 @@ export const BlockaidByLine = ({
           {t("Powered by ")}
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
             <g clipPath="url(#clip0_5576_70196)">
+              {/* style, not a fill attribute: var() isn't substituted in
+                  presentation attributes, and the path would inherit the
+                  root's fill="none" */}
               <path
                 fillRule="evenodd"
                 clipRule="evenodd"
                 d="M9.76866 2.29851H0.130597V0H9.76866C11.5709 0 13.0336 1.46269 13.0336 3.26493C13.0336 5.06716 11.5709 6.52985 9.76866 6.52985H2.76866C2.50746 6.52985 2.27239 6.73881 2.27239 7C2.27239 7.26119 2.48134 7.47015 2.76866 7.47015H9.76866C11.5709 7.47015 13.0336 8.93284 13.0336 10.7351C13.0336 12.5373 11.5709 14 9.76866 14H0.130597V11.7015H9.76866C10.291 11.7015 10.7351 11.2575 10.7351 10.7351C10.7351 10.2127 10.291 9.76866 9.76866 9.76866H2.76866C1.25373 9.76866 0 8.54105 0 7C0 5.45896 1.25373 4.23134 2.76866 4.23134H9.76866C10.291 4.23134 10.7351 3.78731 10.7351 3.26493C10.7351 2.71642 10.291 2.29851 9.76866 2.29851Z"
-                fill="#707070"
+                style={{ fill: "var(--sds-clr-gray-09)" }}
               />
             </g>
             <defs>
@@ -432,8 +436,6 @@ interface BlockAidAssetScanExpandedProps {
 }
 
 interface BlockaidAssetDetailPaneProps {
-  headerIconClass: string;
-  headerIcon: React.ReactNode;
   title: string;
   subtitle: string;
   detailRows: React.ReactNode;
@@ -441,21 +443,13 @@ interface BlockaidAssetDetailPaneProps {
 }
 
 const BlockaidAssetDetailPane = ({
-  headerIconClass,
-  headerIcon,
   title,
   subtitle,
   detailRows,
   onClose,
 }: BlockaidAssetDetailPaneProps) => (
   <div className="BlockaidDetailsExpanded">
-    <div className="BlockaidDetailsExpanded__Header">
-      <div className={headerIconClass}>{headerIcon}</div>
-      <div className="Close" onClick={onClose}>
-        <Icon.X />
-      </div>
-    </div>
-    <div className="BlockaidDetailsExpanded__Title">{title}</div>
+    <SheetHeader title={title} onClose={onClose} />
     <div className="BlockaidDetailsExpanded__SubTitle">{subtitle}</div>
     <div className="BlockaidDetailsExpanded__Details">
       {detailRows}
@@ -476,8 +470,6 @@ export const BlockAidAssetScanExpanded = ({
   if (blockaidOverrideState === SecurityLevel.MALICIOUS) {
     return (
       <BlockaidAssetDetailPane
-        headerIconClass="WarningMarkError"
-        headerIcon={<Icon.AlertOctagon />}
         title={t("Do not proceed")}
         subtitle={t(
           "This token has been flagged as malicious for the following reasons.",
@@ -498,8 +490,6 @@ export const BlockAidAssetScanExpanded = ({
   if (blockaidOverrideState === SecurityLevel.SUSPICIOUS) {
     return (
       <BlockaidAssetDetailPane
-        headerIconClass="WarningMark"
-        headerIcon={<Icon.AlertTriangle />}
         title={t("Suspicious Request")}
         subtitle={t(
           "This token has been flagged as suspicious for the following reasons.",
@@ -521,8 +511,6 @@ export const BlockAidAssetScanExpanded = ({
   if (shouldTreatAssetAsUnableToScan(scanResult)) {
     return (
       <BlockaidAssetDetailPane
-        headerIconClass="WarningMark"
-        headerIcon={<Icon.AlertTriangle />}
         title={t("Proceed with caution")}
         subtitle={t("We were unable to scan this token for security threats")}
         detailRows={
@@ -559,10 +547,6 @@ export const BlockAidAssetScanExpanded = ({
         ),
       };
 
-  const warningType = isMalicious
-    ? { class: "WarningMarkError", icon: <Icon.AlertOctagon /> }
-    : { class: "WarningMark", icon: <Icon.AlertTriangle /> };
-
   const fallbackMessage = isMalicious
     ? t("This token was flagged as malicious")
     : t("This token was flagged as suspicious");
@@ -587,8 +571,6 @@ export const BlockAidAssetScanExpanded = ({
 
   return (
     <BlockaidAssetDetailPane
-      headerIconClass={warningType.class}
-      headerIcon={warningType.icon}
       title={title}
       subtitle={description}
       detailRows={featureRows}
@@ -614,7 +596,7 @@ export const SSLWarningMessage = ({ url }: { url: string }) => {
           components={[<strong key="0">{url}</strong>]}
           values={{ url }}
         />
-        {` ${t("For additional safety Freighter only works with websites that provide an SSL certificate by default.")} `}
+        {` ${t("For additional safety Varial only works with websites that provide an SSL certificate by default.")} `}
         {`${t("You may enable connection to domains that do not use an SSL certificate in Settings &gt; Security &gt; Advanced settings.")} `}
       </p>
     </WarningMessage>
@@ -931,29 +913,13 @@ export const BlockAidScanExpanded = ({
   const subtitle = isAssetScan
     ? t("This token does not appear safe for the following reasons.")
     : t("This transaction does not appear safe for the following reasons.");
-  const headerIcon = mergedIsMalicious ? (
-    <div className="WarningMarkError">
-      <Icon.AlertOctagon />
-    </div>
-  ) : (
-    <div className="WarningMark">
-      <Icon.AlertTriangle />
-    </div>
-  );
-
   return (
     <div className="BlockaidDetailsExpanded">
-      <div className="BlockaidDetailsExpanded__Header">
-        {headerIcon}
-        <div
-          className="Close"
-          onClick={onClose}
-          data-testid="blockaid-details-close"
-        >
-          <Icon.X />
-        </div>
-      </div>
-      <div className="BlockaidDetailsExpanded__Title">{title}</div>
+      <SheetHeader
+        title={title}
+        onClose={onClose}
+        closeTestId="blockaid-details-close"
+      />
       <div className="BlockaidDetailsExpanded__SubTitle">{subtitle}</div>
       <div className="BlockaidDetailsExpanded__Details">
         {allWarnings.map((warning, index) => (

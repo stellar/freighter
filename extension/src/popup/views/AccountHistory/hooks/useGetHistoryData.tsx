@@ -1,6 +1,11 @@
 import React, { ReactNode, useReducer } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { Horizon, TransactionBuilder } from "stellar-sdk";
+import {
+  encodeMuxedContractAddress,
+  Horizon,
+  StrKey,
+  TransactionBuilder,
+} from "stellar-sdk";
 import { camelCase } from "lodash";
 import BigNumber from "bignumber.js";
 import {
@@ -29,6 +34,7 @@ import {
   useGetAppData,
 } from "helpers/hooks/useGetAppData";
 import {
+  createMuxedAccount,
   getCanonicalFromAsset,
   isMainnet,
   isSameAccount,
@@ -82,6 +88,11 @@ import { getIconFromTokenLists } from "@shared/api/helpers/getIconFromTokenList"
 import IconSoroban from "popup/assets/icon-soroban.svg?react";
 import { batchFetchCollectibles } from "helpers/utils/collectibles/collectiblesBatchFetcher";
 import { ContractIdentifier } from "helpers/utils/collectibles/collectiblesCache";
+import {
+  isNativeAssetId,
+  isNativeAssetPair,
+  isNativeContract,
+} from "@shared/helpers/assetIdentity";
 
 export type HistorySection = {
   monthYear: string; // in format {month}:{year}
@@ -302,7 +313,7 @@ const extractDestinationFromXDR = async (
   }
 
   try {
-    const tx = TransactionBuilder.fromXDR(
+    const tx = TransactionBuilder.fromXdr(
       txEnvelopeXdr,
       networkDetails.networkPassphrase,
     );
@@ -414,6 +425,29 @@ export interface AssetDiffSummary {
 }
 
 /**
+ * Rebuilds a muxed address from the base address and mux id that Horizon
+ * reports separately. Returns null when the pair cannot be encoded, so one
+ * bad record falls back to the base address instead of failing the load.
+ */
+const rebuildMuxedDestination = (
+  baseAddress: string,
+  muxedId: string,
+  operationId: string,
+): string | null => {
+  try {
+    if (StrKey.isValidContract(baseAddress)) {
+      return encodeMuxedContractAddress(baseAddress, muxedId);
+    }
+    if (StrKey.isValidEd25519PublicKey(baseAddress)) {
+      return createMuxedAccount(baseAddress, muxedId);
+    }
+  } catch (error) {
+    captureException(error, { extra: { operationId, baseAddress, muxedId } });
+  }
+  return null;
+};
+
+/**
  * Processes asset_balance_changes for a given public key and returns summaries for each asset
  * @returns Array of asset diff summaries, or empty array if none
  */
@@ -453,7 +487,7 @@ const processAssetBalanceChanges = async (
     let assetCode: string;
     let assetIssuer: string | null = null;
 
-    if (change.asset_type === "native") {
+    if (isNativeAssetId(change.asset_type)) {
       assetCode = "XLM";
       assetIssuer = null;
     } else {
@@ -464,20 +498,29 @@ const processAssetBalanceChanges = async (
     // Determine if this is a credit (receiving) or debit (sending)
     const isCredit = isSameAccount(change.to, publicKey);
     // Destination is the counterparty (from for credits, to for debits)
-    const destination = isCredit ? change.from : change.to;
+    let destination = isCredit ? change.from : change.to;
+    // A muxed destination arrives as the base address plus a mux id. Rebuild
+    // the muxed address for display; matching above stays on the base address.
+    if (!isCredit && change.destination_muxed_id) {
+      destination =
+        rebuildMuxedDestination(
+          change.to,
+          change.destination_muxed_id,
+          operation.id,
+        ) ?? change.to;
+    }
 
     // Get asset icon
-    const icon =
-      assetCode === "XLM"
-        ? StellarLogo
-        : await getIconUrl({
-            key: assetIssuer || "",
-            code: assetCode,
-            networkDetails,
-            homeDomains,
-            icons,
-            cachedTokenLists,
-          });
+    const icon = isNativeAssetPair(assetCode, assetIssuer)
+      ? StellarLogo
+      : await getIconUrl({
+          key: assetIssuer || "",
+          code: assetCode,
+          networkDetails,
+          homeDomains,
+          icons,
+          cachedTokenLists,
+        });
 
     // Fetch decimals based on whether it's a Soroban contract
     let decimals: number;
@@ -635,28 +678,26 @@ export const getRowDataByOpType = async (
       ? formatAmount(new BigNumber(srcAmount).toString())
       : null;
 
-    const destIcon =
-      destAssetCode === "XLM"
-        ? StellarLogo
-        : await getIconUrl({
-            key: assetIssuer || "",
-            code: destAssetCode || "",
-            networkDetails,
-            homeDomains,
-            icons,
-            cachedTokenLists,
-          });
-    const sourceIcon =
-      srcAssetCode === "XLM"
-        ? StellarLogo
-        : await getIconUrl({
-            key: sourceAssetIssuer || "",
-            code: srcAssetCode || "",
-            networkDetails,
-            homeDomains,
-            icons,
-            cachedTokenLists,
-          });
+    const destIcon = isNativeAssetPair(destAssetCode, assetIssuer)
+      ? StellarLogo
+      : await getIconUrl({
+          key: assetIssuer || "",
+          code: destAssetCode || "",
+          networkDetails,
+          homeDomains,
+          icons,
+          cachedTokenLists,
+        });
+    const sourceIcon = isNativeAssetPair(srcAssetCode, sourceAssetIssuer)
+      ? StellarLogo
+      : await getIconUrl({
+          key: sourceAssetIssuer || "",
+          code: srcAssetCode || "",
+          networkDetails,
+          homeDomains,
+          icons,
+          cachedTokenLists,
+        });
 
     return {
       action: "Swapped",
@@ -702,17 +743,16 @@ export const getRowDataByOpType = async (
     const nonLabelAmount = formatAmount(new BigNumber(amount!).toString());
     const formattedAmount = `${paymentDifference}${nonLabelAmount} ${destAssetCode}`;
 
-    const destIcon =
-      destAssetCode === "XLM"
-        ? StellarLogo
-        : await getIconUrl({
-            key: assetIssuer || "",
-            code: destAssetCode || "",
-            networkDetails,
-            homeDomains,
-            icons,
-            cachedTokenLists,
-          });
+    const destIcon = isNativeAssetPair(destAssetCode, assetIssuer)
+      ? StellarLogo
+      : await getIconUrl({
+          key: assetIssuer || "",
+          code: destAssetCode || "",
+          networkDetails,
+          homeDomains,
+          icons,
+          cachedTokenLists,
+        });
 
     return {
       action: isReceiving ? i18n.t("Received") : i18n.t("Sent"),
@@ -864,7 +904,10 @@ export const getRowDataByOpType = async (
           }
 
           const { symbol, decimals } = tokenDetailsResponse!;
-          const isNative = symbol === "native";
+          const isNative = isNativeContract(
+            attrs.contractId,
+            networkDetails.networkPassphrase,
+          );
           const code = isNative ? "XLM" : symbol;
           const formattedTokenAmount = formatTokenAmount(
             new BigNumber(attrs.amount),
@@ -956,12 +999,11 @@ export const getRowDataByOpType = async (
       // receiving some XLM to create(fund) your own account
       const isReceiving = !isCreateExternalAccount;
 
-      // Extract destination from XDR for createAccount (may be muxed if sent to muxed address)
-      const actualDestination = await extractDestinationFromXDR(
-        txEnvelopeXdr,
-        networkDetails,
-        account || "",
-      );
+      // The destination of createAccount is an account ID (G...), never a
+      // muxed address. So Horizon's `account` is correct for this operation.
+      // Do not read it from the envelope: a transaction can have other
+      // payment or createAccount operations with different destinations.
+      const actualDestination = account || "";
 
       const paymentDifference = isReceiving ? "+" : "-";
       const nonLabelAmount = formatAmount(

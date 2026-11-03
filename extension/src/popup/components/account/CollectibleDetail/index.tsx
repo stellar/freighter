@@ -5,9 +5,14 @@ import { Button, Icon, Notification } from "@stellar/design-system";
 import { useNavigate } from "react-router-dom";
 
 import { RequestState } from "constants/request";
-import { SubviewHeader } from "popup/components/SubviewHeader";
+import { SheetLayout } from "popup/components/SheetLayout";
+import {
+  SheetHeader,
+  SheetHeaderAction,
+  SheetHeaderLayout,
+} from "popup/components/SheetHeader";
 import { Loading } from "popup/components/Loading";
-import { View } from "popup/basics/layout/View";
+import { showToast } from "popup/basics/shadcn/Toast";
 import { navigateTo, openTab } from "popup/helpers/navigate";
 import { getStellarExpertUrl } from "popup/helpers/account";
 import {
@@ -36,6 +41,10 @@ export interface SelectedCollectible {
   tokenId: string;
 }
 
+/**
+ * Details for a visible collectible. Hidden collectibles never open here:
+ * they are listed, and unhidden, in the Hidden collectibles sheet.
+ */
 export const CollectibleDetail = ({
   selectedCollectible,
   handleItemClose,
@@ -65,11 +74,9 @@ export const CollectibleDetail = ({
 
   if (!collectible) {
     return (
-      <View>
-        <Notification title={t("Error")} variant="error">
-          {t("Collectible not found")}
-        </Notification>
-      </View>
+      <Notification title={t("Error")} variant="error">
+        {t("Collectible not found")}
+      </Notification>
     );
   }
 
@@ -101,42 +108,82 @@ export const CollectibleDetail = ({
 
   const handleToggleCollectibleVisibility = async () => {
     const collectibleKey = `${selectedCollectible.collectionAddress}:${selectedCollectible.tokenId}`;
-    await changeCollectibleVisibility({
-      collectibleKey,
-      collectibleVisibility: isHidden
-        ? "visible"
-        : ("hidden" as AssetVisibility),
-      activePublicKey: publicKey || "",
-    });
-    setIsPopoverOpen(false);
-    handleItemClose();
+
+    // This used to discard the response entirely, so a failed write closed the
+    // sheet exactly as a successful one did. The catch covers the other failure
+    // shape: `sendMessageToBackground` rejects outright when the send itself
+    // fails, rather than answering with an `error`.
+    try {
+      const { error } = await changeCollectibleVisibility({
+        collectibleKey,
+        collectibleVisibility: isHidden
+          ? "visible"
+          : ("hidden" as AssetVisibility),
+        activePublicKey: publicKey || "",
+        network: networkDetails.network,
+      });
+
+      if (error) {
+        throw new Error(error);
+      }
+
+      handleItemClose();
+      showToast(() => (
+        <Notification
+          variant="success"
+          title={isHidden ? t("Collectible unhidden") : t("Collectible hidden")}
+        />
+      ));
+    } catch (e) {
+      showToast(() => (
+        <Notification
+          variant="error"
+          title={
+            isHidden
+              ? t("Unable to show this collectible")
+              : t("Unable to hide this collectible")
+          }
+        />
+      ));
+    } finally {
+      setIsPopoverOpen(false);
+    }
   };
 
   return (
     <div className="CollectibleDetail" data-testid="CollectibleDetail">
-      <View>
-        <SubviewHeader
-          title={name}
-          customBackAction={handleItemClose}
-          customBackIcon={<Icon.X />}
-          rightButton={
-            <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
-              <div
-                className="CollectibleDetail__header__right-button"
-                data-testid="CollectibleDetail__header__right-button"
+      <SheetLayout
+        header={
+          // Figma's header (1481:20211): the X on the left, the title
+          // centered, the menu on the right.
+          <SheetHeader
+            layout={SheetHeaderLayout.Centered}
+            title={name}
+            leading={
+              <SheetHeaderAction
+                aria-label={t("Close")}
+                onClick={handleItemClose}
+                data-testid="CollectibleDetail__close"
               >
-                <PopoverTrigger
-                  asChild
-                  className="CollectibleDetail__header__right-button__trigger"
-                  onClick={() => setIsPopoverOpen(true)}
-                >
-                  <Icon.DotsHorizontal className="CollectibleDetail__header__right-button__icon" />
+                <Icon.X />
+              </SheetHeaderAction>
+            }
+            trailing={
+              <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
+                <PopoverTrigger asChild>
+                  <SheetHeaderAction
+                    aria-label={t("More options")}
+                    data-testid="CollectibleDetail__header__right-button"
+                  >
+                    <Icon.DotsVertical />
+                  </SheetHeaderAction>
                 </PopoverTrigger>
                 <PopoverContent
                   align="end"
                   className="CollectibleDetail__header__right-button__popover-content"
                 >
-                  <div
+                  <button
+                    type="button"
                     className="CollectibleDetail__header__right-button__popover-content__item"
                     onClick={handleRefreshMetadata}
                   >
@@ -144,21 +191,23 @@ export const CollectibleDetail = ({
                     <div className="CollectibleDetail__header__right-button__popover-content__item__label">
                       {t("Refresh metadata")}
                     </div>
-                  </div>
-                  <div className="CollectibleDetail__header__right-button__popover-content__item">
+                  </button>
+                  <button
+                    type="button"
+                    className="CollectibleDetail__header__right-button__popover-content__item"
+                    onClick={() => {
+                      openTab(
+                        `${stellarExpertUrl}/contract/${collectible.collectionAddress}`,
+                      );
+                    }}
+                  >
                     <Icon.LinkExternal01 className="CollectibleDetail__header__right-button__popover-content__item__icon" />
-                    <div
-                      className="CollectibleDetail__header__right-button__popover-content__item__label"
-                      onClick={() => {
-                        openTab(
-                          `${stellarExpertUrl}/contract/${collectible.collectionAddress}`,
-                        );
-                      }}
-                    >
+                    <div className="CollectibleDetail__header__right-button__popover-content__item__label">
                       {t("View on stellar.expert")}
                     </div>
-                  </div>
-                  <div
+                  </button>
+                  <button
+                    type="button"
                     className="CollectibleDetail__header__right-button__popover-content__item"
                     onClick={handleToggleCollectibleVisibility}
                   >
@@ -170,73 +219,13 @@ export const CollectibleDetail = ({
                     <div className="CollectibleDetail__header__right-button__popover-content__item__label">
                       {isHidden ? t("Show collectible") : t("Hide collectible")}
                     </div>
-                  </div>
+                  </button>
                 </PopoverContent>
-              </div>
-            </Popover>
-          }
-        />
-        {state.state === RequestState.LOADING ? (
-          <Loading />
-        ) : (
-          <View.Content>
-            <div className="CollectibleDetail__content">
-              <CollectibleInfo
-                name={name}
-                collectionName={collectionData?.collection?.name || ""}
-                tokenId={selectedCollectible.tokenId}
-                image={collectible.metadata?.image}
-                dataTestIdBase="CollectibleDetail"
-              />
-              {isHidden && (
-                <Notification
-                  variant="warning"
-                  icon={<Icon.EyeOff />}
-                  title={t("This collectible is hidden")}
-                />
-              )}
-              <CollectibleDescription
-                description={collectible.metadata?.description || ""}
-                dataTestIdBase="CollectibleDetail"
-              />
-              {hasAttributes && (
-                <CollectibleInfoBlock
-                  className="CollectibleDetail__attributes"
-                  data-testid="CollectibleDetail__attributes"
-                >
-                  <div
-                    className="CollectibleDetail__attributes__label"
-                    data-testid="CollectibleDetail__attributes__label"
-                  >
-                    {t("Collectible Traits")}
-                  </div>
-                  <div className="CollectibleDetail__attributes__list">
-                    {attributes.map((attribute) => (
-                      <div
-                        className="CollectibleDetail__attribute"
-                        key={attribute.traitType}
-                      >
-                        <div
-                          className="CollectibleDetail__attribute__value"
-                          data-testid="CollectibleDetail__attribute__value"
-                        >
-                          {attribute.value}
-                        </div>
-                        <div
-                          className="CollectibleDetail__attribute__trait"
-                          data-testid="CollectibleDetail__attribute__trait"
-                        >
-                          {attribute.traitType}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CollectibleInfoBlock>
-              )}
-            </div>
-          </View.Content>
-        )}
-        <View.Footer>
+              </Popover>
+            }
+          />
+        }
+        footer={
           <div className="CollectibleDetail__footer__buttons">
             {collectible.metadata?.externalUrl && (
               <Button
@@ -268,8 +257,67 @@ export const CollectibleDetail = ({
               {t("Send")}
             </Button>
           </div>
-        </View.Footer>
-      </View>
+        }
+      >
+        {state.state === RequestState.LOADING ? (
+          <Loading />
+        ) : (
+          <div className="CollectibleDetail__content">
+            <CollectibleInfo
+              name={name}
+              collectionName={collectionData?.collection?.name || ""}
+              tokenId={selectedCollectible.tokenId}
+              image={collectible.metadata?.image}
+              dataTestIdBase="CollectibleDetail"
+            />
+            {isHidden && (
+              <Notification
+                variant="warning"
+                icon={<Icon.EyeOff />}
+                title={t("This collectible is hidden")}
+              />
+            )}
+            <CollectibleDescription
+              description={collectible.metadata?.description || ""}
+              dataTestIdBase="CollectibleDetail"
+            />
+            {hasAttributes && (
+              <CollectibleInfoBlock
+                className="CollectibleDetail__attributes"
+                data-testid="CollectibleDetail__attributes"
+              >
+                <div
+                  className="CollectibleDetail__attributes__label"
+                  data-testid="CollectibleDetail__attributes__label"
+                >
+                  {t("Collectible Traits")}
+                </div>
+                <div className="CollectibleDetail__attributes__list">
+                  {attributes.map((attribute) => (
+                    <div
+                      className="CollectibleDetail__attribute"
+                      key={attribute.traitType}
+                    >
+                      <div
+                        className="CollectibleDetail__attribute__value"
+                        data-testid="CollectibleDetail__attribute__value"
+                      >
+                        {attribute.value}
+                      </div>
+                      <div
+                        className="CollectibleDetail__attribute__trait"
+                        data-testid="CollectibleDetail__attribute__trait"
+                      >
+                        {attribute.traitType}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CollectibleInfoBlock>
+            )}
+          </div>
+        )}
+      </SheetLayout>
     </div>
   );
 };

@@ -1,0 +1,24 @@
+@use "../../styles/utils.scss" as *;
+
+.RebrandNotice {
+  display: flex;
+  align-items: center;
+  gap: pxToRem(8px);
+  color: var(--sds-clr-gray-11);
+
+  &__icon {
+    flex-shrink: 0;
+    width: pxToRem(16px);
+    height: pxToRem(16px);
+    color: var(--sds-clr-gray-09);
+  }
+
+  // Figma sets the small note on a 20px line, 2px under SDS's sm.
+  &--sm .Text--sm {
+    line-height: pxToRem(20px);
+  }
+
+  &--md {
+    gap: pxToRem(6px);
+  }
+}

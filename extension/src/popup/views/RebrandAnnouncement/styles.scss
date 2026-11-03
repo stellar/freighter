@@ -1,0 +1,152 @@
+@use "sass:math";
+@use "../../styles/utils.scss" as *;
+
+// The illustration is the mobile frame (402x452 canvas, 252px disc centred at
+// 201,226) scaled to the extension frame's 204px disc. The layout box is the
+// disc; the canvas layers bleed around it, so they're sized in canvas units
+// and scale with the box.
+$canvas-width: 402;
+$canvas-height: 452;
+$disc: 252;
+$box: 204;
+$scale: math.div($box, $disc);
+// Where the hard-to-soft blur transition ends: 64 units below the disc's
+// centre line, which is the canvas centre.
+$fade-end: 50% + math.div(64, $canvas-height) * 100%;
+
+.RebrandAnnouncement {
+  &__column {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    width: 100%;
+    // The frame sits the block 22px below centre.
+    padding-top: #{pxToRem(44px)};
+  }
+
+  &__illustration {
+    position: relative;
+    width: min(100%, #{pxToRem($box)});
+    aspect-ratio: 1;
+  }
+
+  // Full-canvas layers, positioned so the canvas centre sits on the box centre.
+  &__glow,
+  &__sparkles,
+  &__tile {
+    position: absolute;
+    width: math.div($canvas-width, $disc) * 100%;
+    height: math.div($canvas-height, $disc) * 100%;
+    left: math.div($canvas-width - $disc, 2 * $disc) * -100%;
+    top: math.div($canvas-height - $disc, 2 * $disc) * -100%;
+    // The layers overflow the box on purpose; undo any global image cap.
+    max-width: none;
+    max-height: none;
+    pointer-events: none;
+  }
+
+  // The design's glow is a progressive blur: hard-edged above the disc's
+  // centre line, blurring toward the bottom. Two discs cross-faded through a
+  // vertical mask reproduce it. Across the crossfade the two masks sum to
+  // one, so the discs are added rather than layered (layering two half-opaque
+  // copies would dip to 75%). The wrapper isolates the addition from the page
+  // and carries the opacity so the pair composites once.
+  &__glow {
+    isolation: isolate;
+    opacity: 0.9;
+  }
+
+  // Each disc is a pseudo-element inside a full-canvas layer, with the mask on
+  // the layer: a mask clips to its element's box, and the blur spreads the
+  // disc beyond its own box, so masking the disc itself would cut the tail.
+  // A mask reads only alpha, so its stops are not theme colours.
+  &__glow-disc {
+    position: absolute;
+    inset: 0;
+    mix-blend-mode: plus-lighter;
+
+    &::before {
+      content: "";
+      position: absolute;
+      width: math.div($disc, $canvas-width) * 100%;
+      aspect-ratio: 1;
+      left: 50%;
+      top: 50%;
+      translate: -50% -50%;
+      border-radius: 50%;
+      background: var(--sds-clr-lilac-03);
+    }
+
+    &--hard {
+      mask-image: linear-gradient(to bottom, black 50%, transparent $fade-end);
+
+      &::before {
+        filter: blur(#{4 * $scale}px);
+      }
+    }
+
+    &--soft {
+      mask-image: linear-gradient(to bottom, transparent 50%, black $fade-end);
+
+      &::before {
+        filter: blur(#{34 * $scale}px);
+      }
+    }
+  }
+
+  &__tile {
+    display: block;
+    color: var(--sds-clr-lilac-09);
+    animation: RebrandAnnouncement-bounce 900ms infinite;
+
+    @media (prefers-reduced-motion: reduce) {
+      animation: none;
+    }
+
+    svg {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+  }
+
+  &__title {
+    font-size: #{pxToRem(24px)};
+    line-height: #{pxToRem(32px)} !important;
+    letter-spacing: -0.04em;
+    text-align: center;
+    color: var(--sds-clr-gray-12);
+  }
+
+  &__description {
+    // Wraps after "with a", as the frame does.
+    max-width: #{pxToRem(240px)};
+    margin-top: 0.5rem;
+    font-size: #{pxToRem(14px)};
+    font-weight: var(--sds-fw-medium);
+    line-height: #{pxToRem(20px)};
+    text-align: center;
+    color: var(--sds-clr-gray-11);
+  }
+}
+
+// From the Figma keyframe export: 2px dip with a slight squash, 405ms down
+// and 495ms back, looping.
+@keyframes RebrandAnnouncement-bounce {
+  0% {
+    translate: 0 0;
+    scale: 1 1;
+    animation-timing-function: cubic-bezier(0.4, 0, 0.7, 1);
+  }
+  45% {
+    translate: 0 2px;
+    scale: 1.008 0.992;
+    animation-timing-function: cubic-bezier(0.2, 0, 0.4, 1);
+  }
+  100% {
+    translate: 0 0;
+    scale: 1 1;
+  }
+}

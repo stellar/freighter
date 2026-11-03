@@ -4,12 +4,16 @@ import { captureException } from "@sentry/browser";
 
 import { getTokenDetails } from "@shared/api/internal";
 import { isSacContractExecutable } from "@shared/helpers/soroban/token";
+import { isNativeContract } from "@shared/helpers/assetIdentity";
 import { INDEXER_URL } from "@shared/constants/mercury";
+import { isBulkScannableAssetId } from "@shared/helpers/blockaid";
 import { BlockAidScanAssetResult } from "@shared/api/types";
 import {
-  getNativeContractDetails,
+  buildNativeAssetRow,
+  mapStellarExpertRecord,
   searchAsset,
   getVerifiedTokens,
+  StellarExpertAssetRecord,
   VerifiedTokenRecord,
 } from "popup/helpers/searchAsset";
 import { splitVerifiedAssetCurrency } from "popup/helpers/assetList";
@@ -30,20 +34,6 @@ import { getIconFromTokenLists } from "@shared/api/helpers/getIconFromTokenList"
 import { tokensListsSelector, saveTokenLists } from "popup/ducks/cache";
 import { AssetListResponse } from "@shared/constants/soroban/asset-list";
 import { AppDispatch, store } from "popup/App";
-
-interface AssetRecord {
-  asset: string;
-  domain?: string;
-  code?: string;
-  token_name?: string;
-  decimals?: number;
-  tomlInfo?: {
-    image?: string;
-    code?: string;
-    issuer?: string;
-    name?: string;
-  };
-}
 
 interface AssetLookupDetails {
   isVerifiedToken: boolean;
@@ -95,16 +85,23 @@ const useAssetLookup = () => {
     // scan the first few assets to see if they are suspicious
     // due to the length of time it takes to scan, we'll do it in consecutive chunks
     for (let i = 0; i < assetRows.length; i += MAX_ASSETS_TO_SCAN) {
-      const url = new URL(`${INDEXER_URL}/scan-asset-bulk`);
-
       const chunk = assetRows.slice(i, i + MAX_ASSETS_TO_SCAN);
-      chunk.forEach((record) => {
-        if (record.code && record.issuer && !isContractId(record.issuer)) {
-          url.searchParams.append(
-            "asset_ids",
-            `${record.code}-${record.issuer}`,
-          );
-        }
+      const assetIds = chunk
+        .filter(
+          (record) =>
+            record.code && record.issuer && !isContractId(record.issuer),
+        )
+        .map((record) => `${record.code}-${record.issuer}`)
+        .filter(isBulkScannableAssetId);
+      // The backend rejects a request with no ids, and that failure would stop
+      // the scan before the chunks after this one (e.g. 10 contract tokens).
+      if (!assetIds.length) {
+        continue;
+      }
+
+      const url = new URL(`${INDEXER_URL}/scan-asset-bulk`);
+      assetIds.forEach((assetId) => {
+        url.searchParams.append("asset_ids", assetId);
       });
       const response = await fetch(url.href, { signal });
       const data = await response.json();
@@ -139,9 +136,12 @@ const useAssetLookup = () => {
         ? "verifiedAssetRows"
         : "unverifiedAssetRows";
 
+      // Both lists are scanned at once into the same payload, so write this
+      // list's rows into it: each update then keeps the other list's verdicts.
+      payload[rowsToUpdate] = assetRows;
       dispatch({
         type: "FETCH_DATA_SUCCESS",
-        payload: { ...payload, [rowsToUpdate]: assetRows },
+        payload: { ...payload },
       });
     }
   };
@@ -165,23 +165,14 @@ const useAssetLookup = () => {
   ) => {
     let assetRows = [] as ManageAssetCurrency[];
 
-    const nativeContractDetails = getNativeContractDetails(networkDetails);
     let verifiedTokens = [] as VerifiedTokenRecord[];
 
     // we already have native contract info, so just load it statically
-    if (nativeContractDetails.contract === contractId) {
+    if (isNativeContract(contractId, networkDetails.networkPassphrase)) {
       // override our rules for verification for XLM
       isVerificationInfoShowing = false;
 
-      assetRows = [
-        {
-          code: nativeContractDetails.code,
-          issuer: nativeContractDetails.issuer,
-          contract: contractId,
-          domain: nativeContractDetails.domain,
-          name: `${nativeContractDetails.code}:${nativeContractDetails.issuer}`,
-        },
-      ];
+      assetRows = [buildNativeAssetRow(networkDetails)];
 
       return assetRows;
     }
@@ -300,27 +291,9 @@ const useAssetLookup = () => {
       throw new Error("Failed to fetch Stellar Expert data");
     });
 
-    return resJson._embedded.records.map((record: AssetRecord) => {
-      if (isContractId(record.asset)) {
-        return {
-          code: record.code || record.tomlInfo?.code || "",
-          issuer: record.asset,
-          contract: record.asset,
-          domain: record.domain ?? null,
-          image: record.tomlInfo?.image,
-          name: record.token_name || record.tomlInfo?.name,
-          decimals: record.decimals,
-          isSuspicious: false,
-        };
-      }
-      return {
-        code: record.asset.split("-")[0],
-        issuer: record.asset.split("-")[1],
-        domain: record.domain ?? null,
-        image: record.tomlInfo?.image,
-        isSuspicious: false,
-      };
-    });
+    return resJson._embedded.records.map((record: StellarExpertAssetRecord) =>
+      mapStellarExpertRecord(record, networkDetails),
+    );
   };
 
   /*
@@ -461,10 +434,12 @@ const useAssetLookup = () => {
     // If we want to gather Blockaid data about our assets, we'll fetch the data and then combine with our
     // asset rows so we have all of our information in one object
     if (isBlockaidEnabled && !isContractId(asset)) {
+      // Shared by both scans below, so neither undoes the other's verdicts.
+      const scannedPayload = { ...payload };
       if (verifiedAssets.length) {
         addBlockaidScanResults({
           assetRows: verifiedAssets,
-          payload,
+          payload: scannedPayload,
           isVerifiedList: true,
           signal,
         }).catch(() => {
@@ -477,7 +452,7 @@ const useAssetLookup = () => {
       if (unverifiedAssets.length) {
         addBlockaidScanResults({
           assetRows: unverifiedAssets,
-          payload,
+          payload: scannedPayload,
           isVerifiedList: false,
           signal,
         }).catch(() => {

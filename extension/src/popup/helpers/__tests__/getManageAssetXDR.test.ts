@@ -13,7 +13,7 @@ describe("buildChangeTrustOperation", () => {
       assetIssuer,
       sdk: StellarSdk,
     });
-    const op = StellarSdk.Operation.fromXDRObject(xdrOp);
+    const op = StellarSdk.Operation.fromXdrObject(xdrOp);
     expect(op.type).toBe("changeTrust");
     // add-trustline: no explicit limit passed — SDK defaults to max trustline
     expect((op as any).line.code).toBe(assetCode);
@@ -28,7 +28,7 @@ describe("buildChangeTrustOperation", () => {
       isRemove: true,
       sdk: StellarSdk,
     });
-    const op = StellarSdk.Operation.fromXDRObject(xdrOp);
+    const op = StellarSdk.Operation.fromXdrObject(xdrOp);
     expect(op.type).toBe("changeTrust");
     // SDK decodes limit "0" as "0.0000000" (7 decimal places)
     expect(parseFloat((op as any).limit)).toBe(0);

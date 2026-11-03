@@ -22,7 +22,46 @@ interface ManageAssetRowButtonProps {
   isRemovable: boolean;
   isLoading: boolean;
   onClick: () => void;
+  /**
+   * The account holds this asset but hid it from the balances view. The row
+   * then offers Unhide in place of Add or the options menu.
+   */
+  isHidden?: boolean;
+  /** Whether this row's unhide is in flight */
+  isUnhiding?: boolean;
+  onUnhide?: () => void;
 }
+
+/**
+ * The Unhide action a hidden asset's row shows in place of Add. Also used by
+ * the Hidden tokens sheet, so the two read as the same control.
+ */
+export const UnhideAssetButton = ({
+  isLoading = false,
+  onClick,
+  "data-testid": dataTestId = "ManageAssetRowButton__unhide",
+}: {
+  isLoading?: boolean;
+  onClick: () => void;
+  "data-testid"?: string;
+}) => {
+  const { t } = useTranslation();
+
+  return (
+    <Button
+      size="md"
+      variant="secondary"
+      disabled={isLoading}
+      isLoading={isLoading}
+      onClick={onClick}
+      type="button"
+      data-testid={dataTestId}
+    >
+      <div className="ManageAssetRowButton__label">{t("Unhide")}</div>
+      {isLoading ? null : <Icon.Eye />}
+    </Button>
+  );
+};
 
 export const ManageAssetRowButton = ({
   code,
@@ -31,6 +70,9 @@ export const ManageAssetRowButton = ({
   isRemovable,
   isLoading,
   onClick,
+  isHidden = false,
+  isUnhiding = false,
+  onUnhide,
 }: ManageAssetRowButtonProps) => {
   const { t } = useTranslation();
   const [rowButtonShowing, setRowButtonShowing] = useState("");
@@ -41,6 +83,14 @@ export const ManageAssetRowButton = ({
     setRowButtonShowing("");
   };
   const canonicalAsset = getCanonicalFromAsset(code, issuer);
+
+  if (isHidden && onUnhide) {
+    return (
+      <div className="ManageAssetRowButton">
+        <UnhideAssetButton isLoading={isUnhiding} onClick={onUnhide} />
+      </div>
+    );
+  }
 
   return (
     <div className="ManageAssetRowButton">

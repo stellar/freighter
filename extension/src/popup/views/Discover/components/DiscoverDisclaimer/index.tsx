@@ -18,7 +18,7 @@ export const DiscoverDisclaimer = ({
   return (
     <Text as={as} size={size} weight="regular" addlClassName={addlClassName}>
       {t(
-        "These services are operated by independent third parties, not by Freighter or SDF. Inclusion here is not an endorsement. DeFi carries risk, including loss of funds. Use at your own risk.",
+        "These services are operated by independent third parties, not by Varial or SDF. Inclusion here is not an endorsement. DeFi carries risk, including loss of funds. Use at your own risk.",
       )}
     </Text>
   );

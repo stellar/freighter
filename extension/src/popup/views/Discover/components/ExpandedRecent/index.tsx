@@ -32,8 +32,9 @@ export const ExpandedRecent = ({
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
 
   return (
-    <View>
+    <>
       <SubviewHeader
+        isFloating
         title={t("Recent")}
         customBackAction={onBack}
         rightButton={
@@ -82,6 +83,6 @@ export const ExpandedRecent = ({
           ))}
         </div>
       </View.Content>
-    </View>
+    </>
   );
 };

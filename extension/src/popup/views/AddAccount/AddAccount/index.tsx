@@ -8,7 +8,7 @@ import { emitMetric } from "helpers/metrics";
 import { AppDispatch } from "popup/App";
 import { ROUTES } from "popup/constants/routes";
 import { METRIC_NAMES } from "popup/constants/metricsNames";
-import { navigateTo, openTab } from "popup/helpers/navigate";
+import { closeWindow, navigateTo, openTab } from "popup/helpers/navigate";
 import { SubviewHeader } from "popup/components/SubviewHeader";
 import { addAccount, clearApiError } from "popup/ducks/accountServices";
 import { EnterPassword } from "popup/components/EnterPassword";
@@ -80,7 +80,7 @@ export const AddAccount = () => {
   if (state.data?.type === AppDataType.REROUTE) {
     if (state.data.shouldOpenTab) {
       openTab(newTabHref(state.data.routeTarget));
-      window.close();
+      closeWindow();
     }
     return (
       <Navigate

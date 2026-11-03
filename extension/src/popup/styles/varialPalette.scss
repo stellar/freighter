@@ -1,0 +1,35 @@
+// Varial brand palette (freighter-private#37): replaces SDS's lilac ramp with
+// Varial Blue, values from design's Varial spec (same values mobile shipped).
+// Keyed to the same .sds-theme-* classes SDS themes with, so #18's theme
+// switching re-themes these tokens by flipping the body class. Must be
+// imported after the SDS stylesheet to win the cascade.
+
+.sds-theme-light {
+  --sds-clr-lilac-01: #fcfdff;
+  --sds-clr-lilac-02: #f5faff;
+  --sds-clr-lilac-03: #eef4ff;
+  --sds-clr-lilac-04: #daeaff;
+  --sds-clr-lilac-05: #c8e0ff;
+  --sds-clr-lilac-06: #a8c6ff;
+  --sds-clr-lilac-07: #98bfff;
+  --sds-clr-lilac-08: #73a5ff;
+  --sds-clr-lilac-09: #0050ff;
+  --sds-clr-lilac-10: #0246df;
+  --sds-clr-lilac-11: #0f53ec;
+  --sds-clr-lilac-12: #0e2b6c;
+}
+
+.sds-theme-dark {
+  --sds-clr-lilac-01: #0e1623;
+  --sds-clr-lilac-02: #101a29;
+  --sds-clr-lilac-03: #0d264d;
+  --sds-clr-lilac-04: #092f69;
+  --sds-clr-lilac-05: #0f3b7c;
+  --sds-clr-lilac-06: #19478d;
+  --sds-clr-lilac-07: #2255a3;
+  --sds-clr-lilac-08: #2865c1;
+  --sds-clr-lilac-09: #1677ff;
+  --sds-clr-lilac-10: #0069f0;
+  --sds-clr-lilac-11: #7eb6ff;
+  --sds-clr-lilac-12: #cde3ff;
+}

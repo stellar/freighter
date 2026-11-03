@@ -39,6 +39,10 @@ export const AccountCreator = () => {
     isRestartingOnboardingParam === "true" ||
     (state.state === RequestState.SUCCESS &&
       state.data.applicationState === APPLICATION_STATE.PASSWORD_CREATED);
+  // The wallet is normally erased by the lock screen's "Reset wallet"
+  // before anyone gets here. If one still exists (a typed URL or a stale
+  // tab), the form warns the user, and creating replaces it rather than
+  // mixing its keys with the new wallet's.
   const isOverWritingAccount =
     state.state === RequestState.SUCCESS &&
     state.data.applicationState === APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED;

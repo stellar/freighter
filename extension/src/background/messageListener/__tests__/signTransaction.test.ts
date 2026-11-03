@@ -67,18 +67,18 @@ describe("signTransaction handler", () => {
   it("finds the correct transaction by uuid and signs it", async () => {
     const mockTransaction = {
       sign: mockSign,
-      toXDR: mockToXDR,
+      toXdr: mockToXDR,
     } as any;
 
     transactionQueue.push(
       {
-        transaction: { sign: jest.fn(), toXDR: jest.fn() } as any,
+        transaction: { sign: jest.fn(), toXdr: jest.fn() } as any,
         uuid: "uuid-1",
         createdAt: Date.now(),
       },
       { transaction: mockTransaction, uuid: "uuid-2", createdAt: Date.now() },
       {
-        transaction: { sign: jest.fn(), toXDR: jest.fn() } as any,
+        transaction: { sign: jest.fn(), toXdr: jest.fn() } as any,
         uuid: "uuid-3",
         createdAt: Date.now(),
       },
@@ -113,7 +113,7 @@ describe("signTransaction handler", () => {
   it("does not sign when uuid is not found in queue", async () => {
     const mockTransaction = {
       sign: mockSign,
-      toXDR: mockToXDR,
+      toXdr: mockToXDR,
     } as any;
 
     transactionQueue.push({
@@ -151,7 +151,7 @@ describe("signTransaction handler", () => {
   it("returns error when uuid is undefined", async () => {
     const mockTransaction = {
       sign: mockSign,
-      toXDR: mockToXDR,
+      toXdr: mockToXDR,
     } as any;
 
     transactionQueue.push({
@@ -186,15 +186,15 @@ describe("signTransaction handler", () => {
   it("removes only the matched item from a multi-item queue", async () => {
     const tx1 = {
       sign: jest.fn(),
-      toXDR: jest.fn().mockReturnValue("xdr-1"),
+      toXdr: jest.fn().mockReturnValue("xdr-1"),
     } as any;
     const tx2 = {
       sign: jest.fn(),
-      toXDR: jest.fn().mockReturnValue("xdr-2"),
+      toXdr: jest.fn().mockReturnValue("xdr-2"),
     } as any;
     const tx3 = {
       sign: jest.fn(),
-      toXDR: jest.fn().mockReturnValue("xdr-3"),
+      toXdr: jest.fn().mockReturnValue("xdr-3"),
     } as any;
 
     transactionQueue.push(

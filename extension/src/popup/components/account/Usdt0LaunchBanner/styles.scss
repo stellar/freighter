@@ -1,0 +1,110 @@
+@use "../../../styles/utils.scss" as *;
+
+.Usdt0LaunchBanner {
+  position: relative;
+  // Its own stacking context, so the dismiss button's z-index stays inside
+  // the banner instead of lifting it over Home's pinned header as the banner
+  // scrolls under it.
+  isolation: isolate;
+  background: #002d19;
+  border-radius: pxToRem(12px);
+  // No margins: this sits in `AccountHeader__account-info`, which spans the
+  // content column and spaces its children 16px apart, so the banner
+  // stretches to match the action tiles and takes the same gap above and
+  // below them as Figma's balance, tiles and tabs.
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: pxToRem(12px);
+  transition: opacity 0.2s ease;
+
+  &:hover {
+    opacity: 0.9;
+  }
+
+  // The launch surface is a real <button> so the sheet is reachable by
+  // keyboard — reset the user-agent button chrome. It carries the card's
+  // padding so the entire card (minus the dismiss button) is a click
+  // target, matching the whole-card hover cue.
+  &__content {
+    background: none;
+    border: none;
+    border-radius: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    gap: pxToRem(12px);
+    max-width: 100%;
+    margin: 0 auto;
+    padding: pxToRem(12px) pxToRem(16px);
+  }
+
+  &__text {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+  }
+
+  // The banner surface is the campaign's fixed dark green, so its text must
+  // not follow the theme — gray-12/11 go near-black in light mode here.
+  &__title {
+    color: var(--sds-clr-white);
+  }
+
+  &__subtitle {
+    color: #a0a0a0;
+  }
+
+  &__logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+
+    img {
+      width: pxToRem(38px);
+      height: pxToRem(38px);
+      object-fit: cover;
+      border-radius: pxToRem(8px);
+      box-shadow: 0 pxToRem(4px) pxToRem(10px) 0 rgba(0, 0, 0, 0.25);
+    }
+  }
+
+  &__dismiss {
+    position: absolute;
+    top: pxToRem(8px);
+    right: pxToRem(8px);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: pxToRem(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--sds-clr-white);
+    border-radius: pxToRem(16px);
+    z-index: 10;
+    pointer-events: auto;
+
+    &:hover {
+      opacity: 1;
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    svg {
+      width: pxToRem(16px);
+      height: pxToRem(16px);
+    }
+  }
+
+  // The floating sheet owns its own background, radius and sizing now; this
+  // only needs to fill the card.
+  &__sheet {
+    height: 100%;
+    width: 100%;
+  }
+}

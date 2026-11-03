@@ -16,9 +16,11 @@ jest.mock("popup/components/SelectionTile", () => ({
     onClick,
     isEmpty,
     testId,
+    hasIconFrame,
   }: any) => (
     <div
       data-testid={testId || "selection-tile"}
+      data-has-icon-frame={String(hasIconFrame)}
       className={`SelectionTile ${isEmpty ? "SelectionTile--empty" : ""}`}
       onClick={onClick}
     >
@@ -54,9 +56,7 @@ describe("AddressTile", () => {
       render(<AddressTile address={mockAddress} onClick={mockOnClick} />);
 
       const identicon = screen.getByTestId("identicon-img");
-      expect(identicon).toHaveAttribute("alt", "account identicon");
-      expect(identicon).toHaveAttribute("src");
-      expect(identicon.getAttribute("src")).toMatch(/^data:image/);
+      expect(identicon).toHaveAttribute("aria-label", "account identicon");
     });
 
     it("calls onClick when clicked", () => {
@@ -120,9 +120,7 @@ describe("AddressTile", () => {
       );
 
       const identicon = screen.getByTestId("identicon-img");
-      expect(identicon).toHaveAttribute("alt", "account identicon");
-      expect(identicon).toHaveAttribute("src");
-      expect(identicon.getAttribute("src")).toMatch(/^data:image/);
+      expect(identicon).toHaveAttribute("aria-label", "account identicon");
     });
   });
 
@@ -158,15 +156,33 @@ describe("AddressTile", () => {
     });
   });
 
+  describe("icon frame", () => {
+    it("shows the account avatar without the tile's icon frame", () => {
+      render(<AddressTile address={mockAddress} onClick={mockOnClick} />);
+
+      expect(screen.getByTestId("address-tile")).toHaveAttribute(
+        "data-has-icon-frame",
+        "false",
+      );
+    });
+
+    it("leaves the empty-state icon on SelectionTile's default frame", () => {
+      render(<AddressTile address="" onClick={mockOnClick} />);
+
+      expect(screen.getByTestId("address-tile")).toHaveAttribute(
+        "data-has-icon-frame",
+        "undefined",
+      );
+    });
+  });
+
   describe("IdenticonImg integration", () => {
-    it("renders IdenticonImg as img element for standard address", () => {
+    it("renders IdenticonImg as svg element for standard address", () => {
       render(<AddressTile address={mockAddress} onClick={mockOnClick} />);
 
       const identicon = screen.getByTestId("identicon-img");
-      expect(identicon.tagName).toBe("IMG");
-      expect(identicon).toHaveAttribute("alt", "account identicon");
-      expect(identicon).toHaveAttribute("src");
-      expect(identicon.getAttribute("src")).toMatch(/^data:image/);
+      expect(identicon.tagName.toLowerCase()).toBe("svg");
+      expect(identicon).toHaveAttribute("aria-label", "account identicon");
     });
 
     it("renders IdenticonImg correctly when federation address exists", () => {
@@ -179,10 +195,8 @@ describe("AddressTile", () => {
       );
 
       const identicon = screen.getByTestId("identicon-img");
-      expect(identicon.tagName).toBe("IMG");
-      expect(identicon).toHaveAttribute("alt", "account identicon");
-      expect(identicon).toHaveAttribute("src");
-      expect(identicon.getAttribute("src")).toMatch(/^data:image/);
+      expect(identicon.tagName.toLowerCase()).toBe("svg");
+      expect(identicon).toHaveAttribute("aria-label", "account identicon");
     });
   });
 

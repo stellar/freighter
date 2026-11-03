@@ -1,7 +1,6 @@
 .NetworkForm {
   &__modal {
     &__title {
-      color: var(--color-white);
       font-weight: var(--font-weight-medium);
       text-transform: uppercase;
     }
@@ -41,8 +40,8 @@
   &__remove-button {
     width: 100%;
     .BasicButton {
-      background: rgba(229, 72, 77, 1);
-      border-color: rgba(229, 72, 77, 1);
+      background: var(--sds-clr-red-09);
+      border-color: var(--sds-clr-red-09);
     }
   }
 

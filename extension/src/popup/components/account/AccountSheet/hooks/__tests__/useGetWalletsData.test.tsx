@@ -1,0 +1,339 @@
+import React from "react";
+import { Provider } from "react-redux";
+import { renderHook, act } from "@testing-library/react";
+import { useGetWalletsData } from "../useGetWalletsData";
+import {
+  makeDummyStore,
+  mockBalances,
+  TEST_CANONICAL,
+  TEST_PUBLIC_KEY,
+  mockAccounts,
+} from "popup/__testHelpers__";
+import { reducer as remoteConfigReducer } from "popup/ducks/remoteConfig";
+
+// Flags settled, as in a running popup once `fetchFeatureFlags` has resolved.
+const SETTLED_REMOTE_CONFIG = {
+  ...remoteConfigReducer(undefined, { type: "@@init" }),
+  isInitialized: true,
+};
+import { RequestState } from "constants/request";
+import * as ApiInternal from "@shared/api/internal";
+import { AssetVisibility } from "@shared/api/types";
+import {
+  MAINNET_NETWORK_DETAILS,
+  TESTNET_NETWORK_DETAILS,
+} from "@shared/constants/stellar";
+import { AppDataType } from "helpers/hooks/useGetAppData";
+import { APPLICATION_STATE } from "@shared/constants/applicationState";
+
+jest.mock("@shared/api/internal", () => ({
+  ...jest.requireActual("@shared/api/internal"),
+  getAccountBalances: jest.fn(),
+  getAssetIcons: jest.fn().mockResolvedValue({}),
+  getHiddenAssets: jest.fn().mockResolvedValue({ hiddenAssets: [] }),
+  getAssetDomains: jest.fn().mockResolvedValue({
+    GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM: "example2.com",
+  }),
+  getTokenPrices: jest.fn().mockResolvedValue({
+    native: {
+      currentPrice: "1",
+      percentagePriceChange24h: ".5",
+    },
+    "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM": {
+      currentPrice: "2",
+      percentagePriceChange24h: ".25",
+    },
+  }),
+}));
+
+describe("useGetWalletsData", () => {
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  afterAll(() => {
+    jest.resetAllMocks();
+  });
+
+  const publicKey = TEST_PUBLIC_KEY;
+
+  const cachedBalanceData = {
+    isFunded: true,
+    subentryCount: 3,
+    error: undefined,
+    balances: mockBalances.balances,
+  };
+
+  const tokenListData = [{ id: "example-token-list" }];
+  const canonicalKey = "XLM:GABCDEF";
+  const cachedIcons = {
+    [canonicalKey]: "https://cached/icon/url.png",
+  };
+
+  const testCanonicalIssuer = TEST_CANONICAL.split(":")[1];
+  const preloadedState = {
+    auth: {
+      publicKey: TEST_PUBLIC_KEY,
+      hasPrivateKey: true,
+      allAccounts: mockAccounts,
+      applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
+    },
+    cache: {
+      balanceData: {
+        [TESTNET_NETWORK_DETAILS.network]: { [publicKey]: cachedBalanceData },
+      },
+      icons: cachedIcons,
+      tokenLists: tokenListData,
+      homeDomains: {
+        [testCanonicalIssuer]: "example.com",
+        GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM: "example.com",
+      },
+    },
+    settings: {
+      assetsLists: [],
+      networkDetails: TESTNET_NETWORK_DETAILS,
+    },
+  };
+
+  it("should return wallets data on Testnet", async () => {
+    const store = makeDummyStore(preloadedState);
+    const Wrapper =
+      (store: ReturnType<typeof makeDummyStore>) =>
+      ({ children }: { children: React.ReactNode }) => (
+        <Provider store={store}>{children}</Provider>
+      );
+
+    const { result } = renderHook(() => useGetWalletsData(), {
+      wrapper: Wrapper(store),
+    });
+    await act(async () => {
+      await result.current.fetchData();
+    });
+    expect(result.current.state.state).toBe<RequestState>(RequestState.SUCCESS);
+    // Nothing is fetched off Mainnet, but every account still gets a label so
+    // the row never has to interpret a missing entry.
+    expect(result.current.state.data).toEqual({
+      publicKey,
+      allAccounts: mockAccounts,
+      accountValue: { G1: "$0.00", G2: "$0.00", L1: "$0.00" },
+      isFetchingTokenPrices: false,
+      type: AppDataType.RESOLVED,
+      applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
+    });
+  });
+  it("should return wallets data and token prices on Mainnet", async () => {
+    const mainnetPreloadedState = {
+      remoteConfig: SETTLED_REMOTE_CONFIG,
+      auth: {
+        publicKey: "G1",
+        hasPrivateKey: true,
+        allAccounts: [{ publicKey: "G1" }],
+        applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
+      },
+      cache: {
+        balanceData: {
+          [MAINNET_NETWORK_DETAILS.network]: {
+            ["G1"]: { ...cachedBalanceData, updatedAt: Date.now() },
+          },
+        },
+        icons: cachedIcons,
+        tokenLists: tokenListData,
+        homeDomains: {
+          [testCanonicalIssuer]: "example.com",
+          GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM:
+            "example.com",
+        },
+        tokenPrices: {},
+      },
+      settings: {
+        assetsLists: [],
+        networkDetails: MAINNET_NETWORK_DETAILS,
+      },
+    };
+    const store = makeDummyStore(mainnetPreloadedState);
+    const Wrapper =
+      (store: ReturnType<typeof makeDummyStore>) =>
+      ({ children }: { children: React.ReactNode }) => (
+        <Provider store={store}>{children}</Provider>
+      );
+
+    const { result } = renderHook(() => useGetWalletsData(), {
+      wrapper: Wrapper(store),
+    });
+    await act(async () => {
+      await result.current.fetchData(true);
+    });
+    expect(result.current.state.state).toBe<RequestState>(RequestState.SUCCESS);
+    expect(result.current.state.data).toEqual({
+      accountValue: {
+        G1: "$250.00",
+      },
+      publicKey: "G1",
+      allAccounts: [{ publicKey: "G1" }],
+      isFetchingTokenPrices: false,
+      type: AppDataType.RESOLVED,
+      applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
+    });
+  });
+  it("leaves each account's own hidden assets out of its total on Mainnet", async () => {
+    // G1 hid USDC, G2 hid nothing. XLM is never hidden.
+    const hiddenAssetsFor = async ({ publicKey }: { publicKey?: string }) => ({
+      hiddenAssets: (publicKey === "G1"
+        ? {
+            "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM":
+              "hidden",
+            native: "hidden",
+          }
+        : {}) as Record<string, AssetVisibility>,
+      error: "",
+    });
+    // Once per account, so other tests keep the default
+    const getHiddenAssetsSpy = jest
+      .spyOn(ApiInternal, "getHiddenAssets")
+      .mockImplementationOnce(hiddenAssetsFor)
+      .mockImplementationOnce(hiddenAssetsFor);
+    const store = makeDummyStore({
+      remoteConfig: SETTLED_REMOTE_CONFIG,
+      auth: {
+        publicKey: "G1",
+        hasPrivateKey: true,
+        allAccounts: [{ publicKey: "G1" }, { publicKey: "G2" }],
+        applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
+      },
+      cache: {
+        balanceData: {
+          [MAINNET_NETWORK_DETAILS.network]: {
+            G1: { ...cachedBalanceData, updatedAt: Date.now() },
+            G2: { ...cachedBalanceData, updatedAt: Date.now() },
+          },
+        },
+        icons: cachedIcons,
+        tokenLists: tokenListData,
+        homeDomains: {},
+        tokenPrices: {},
+      },
+      settings: {
+        assetsLists: [],
+        networkDetails: MAINNET_NETWORK_DETAILS,
+      },
+    });
+    const { result } = renderHook(() => useGetWalletsData(), {
+      wrapper: ({ children }: { children: React.ReactNode }) => (
+        <Provider store={store}>{children}</Provider>
+      ),
+    });
+
+    await act(async () => {
+      await result.current.fetchData(true);
+    });
+
+    // G1: XLM only (50 x $1). G2: XLM + USDC (100 x $2).
+    expect(
+      (result.current.state.data as { accountValue: Record<string, string> })
+        .accountValue,
+    ).toEqual({ G1: "$50.00", G2: "$250.00" });
+    // One read per account
+    expect(getHiddenAssetsSpy).toHaveBeenCalledTimes(2);
+    ["G1", "G2"].forEach((publicKey) =>
+      expect(getHiddenAssetsSpy).toHaveBeenCalledWith({
+        activePublicKey: "G1",
+        publicKey,
+        network: MAINNET_NETWORK_DETAILS.network,
+      }),
+    );
+  });
+
+  it("should return wallets data and token prices on Mainnet in batches", async () => {
+    const getTokenPricesSpy = jest.spyOn(ApiInternal, "getTokenPrices");
+    const mainnetPreloadedState = {
+      remoteConfig: SETTLED_REMOTE_CONFIG,
+      auth: {
+        publicKey: "G1",
+        hasPrivateKey: true,
+        allAccounts: [
+          { publicKey: "G1" },
+          { publicKey: "G2" },
+          { publicKey: "G3" },
+          { publicKey: "G4" },
+          { publicKey: "G5" },
+          { publicKey: "G6" },
+          { publicKey: "G7" },
+        ],
+        applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
+      },
+      cache: {
+        balanceData: {
+          [MAINNET_NETWORK_DETAILS.network]: {
+            ["G1"]: { ...cachedBalanceData, updatedAt: Date.now() },
+            ["G2"]: { ...cachedBalanceData, updatedAt: Date.now() },
+            ["G3"]: { ...cachedBalanceData, updatedAt: Date.now() },
+            ["G4"]: { ...cachedBalanceData, updatedAt: Date.now() },
+            ["G5"]: { ...cachedBalanceData, updatedAt: Date.now() },
+            ["G6"]: { ...cachedBalanceData, updatedAt: Date.now() },
+            ["G7"]: { ...cachedBalanceData, updatedAt: Date.now() },
+          },
+        },
+        icons: cachedIcons,
+        tokenLists: tokenListData,
+        homeDomains: {
+          [testCanonicalIssuer]: "example.com",
+          GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM:
+            "example.com",
+        },
+        tokenPrices: {},
+      },
+      settings: {
+        assetsLists: [],
+        networkDetails: MAINNET_NETWORK_DETAILS,
+      },
+    };
+    const store = makeDummyStore(mainnetPreloadedState);
+    const Wrapper =
+      (store: ReturnType<typeof makeDummyStore>) =>
+      ({ children }: { children: React.ReactNode }) => (
+        <Provider store={store}>{children}</Provider>
+      );
+
+    const { result } = renderHook(() => useGetWalletsData(), {
+      wrapper: Wrapper(store),
+    });
+
+    await act(async () => {
+      await result.current.fetchData(true);
+    });
+    expect(result.current.state.state).toBe<RequestState>(RequestState.SUCCESS);
+    expect(getTokenPricesSpy).toHaveBeenCalledWith(
+      [
+        "native",
+        "DT:CCXVDIGMR6WTXZQX2OEVD6YM6AYCYPXPQ7YYH6OZMRS7U6VD3AVHNGBJ",
+        "USDC:GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM",
+      ],
+      MAINNET_NETWORK_DETAILS,
+      true,
+    );
+    expect(result.current.state.data).toEqual({
+      accountValue: {
+        G1: "$250.00",
+        G2: "$250.00",
+        G3: "$250.00",
+        G4: "$250.00",
+        G5: "$250.00",
+        G6: "$250.00",
+        G7: "$250.00",
+      },
+      publicKey: "G1",
+      allAccounts: [
+        { publicKey: "G1" },
+        { publicKey: "G2" },
+        { publicKey: "G3" },
+        { publicKey: "G4" },
+        { publicKey: "G5" },
+        { publicKey: "G6" },
+        { publicKey: "G7" },
+      ],
+      isFetchingTokenPrices: false,
+      type: AppDataType.RESOLVED,
+      applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
+    });
+  });
+});

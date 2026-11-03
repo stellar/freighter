@@ -183,7 +183,7 @@ export const EarnReview = ({
     (detailTx.operations[0] as Operation.InvokeHostFunction).auth?.length
       ? (detailTx.operations[0] as Operation.InvokeHostFunction).auth!.map(
           (authEntry) => ({
-            invocation: authEntry.rootInvocation(),
+            invocation: authEntry.rootInvocation,
             boundAddress: getAuthEntryBoundAddress(authEntry),
           }),
         )

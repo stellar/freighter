@@ -13,7 +13,6 @@ describe("EditSettings", () => {
     defaultFee: "0.00001",
     timeout: 30,
     congestion: "Low",
-    title: "Send Settings",
     onClose: jest.fn(),
     onSubmit: jest.fn(),
   };
@@ -30,6 +29,17 @@ describe("EditSettings", () => {
     fireEvent.click(screen.getAllByRole("button", { name: "Default" })[0]);
 
     expect(feeInput).toHaveValue("0.00001");
+  });
+
+  it("resets the timeout input to the default timeout, not the saved one", () => {
+    // defaultProps saves a custom 30s timeout
+    render(<EditSettings {...defaultProps} />);
+
+    const timeoutInput = screen.getByLabelText("Timeout (seconds)");
+    fireEvent.change(timeoutInput, { target: { value: "45" } });
+    fireEvent.click(screen.getAllByRole("button", { name: "Default" })[1]);
+
+    expect(timeoutInput).toHaveValue("180");
   });
 
   it("disables save when the fee input is empty", () => {
