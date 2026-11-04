@@ -13,7 +13,9 @@ import BigNumber from "bignumber.js";
 import { AssetDetail } from "popup/components/account/AssetDetail";
 import { ROUTES } from "popup/constants/routes";
 import {
+  FUTURENET_NETWORK_DETAILS,
   MAINNET_NETWORK_DETAILS,
+  NetworkDetails,
   TESTNET_NETWORK_DETAILS,
 } from "@shared/constants/stellar";
 import { APPLICATION_STATE as ApplicationState } from "@shared/constants/applicationState";
@@ -33,6 +35,17 @@ import { resetCacheWriteClaims } from "helpers/cacheWrites";
 import { RANGE_SWITCH_DEBOUNCE_MS } from "popup/components/account/TokenPriceChart/constants";
 import { AppDataType } from "helpers/hooks/useGetAppData";
 import { AccountHistoryData } from "popup/views/Account/hooks/useGetAccountHistoryData";
+
+// CopyText copies through a bundled copy-to-clipboard, which puts the text
+// in a span on <body> and runs execCommand("copy"). jsdom has no
+// execCommand, so record that span's text instead.
+const mockCopy = jest.fn();
+document.execCommand = jest.fn((command: string) => {
+  if (command === "copy") {
+    mockCopy(document.body.lastElementChild?.textContent);
+  }
+  return true;
+});
 
 // jest-fixed-jsdom has no PointerEvent; without this, fireEvent.pointerDown/
 // pointerUp below would silently drop clientX/pointerId.
@@ -383,9 +396,7 @@ describe("AssetDetail", () => {
     expect(
       document.querySelector(".AssetDetail__options-actions"),
     ).toBeInTheDocument();
-    expect(
-      screen.queryByTestId("AssetDetail__hide"),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByTestId("AssetDetail__hide")).not.toBeInTheDocument();
   });
 
   it("never offers to hide the native asset", async () => {
@@ -431,9 +442,73 @@ describe("AssetDetail", () => {
     if (options) {
       fireEvent.click(options);
     }
-    expect(
-      screen.queryByTestId("AssetDetail__hide"),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByTestId("AssetDetail__hide")).not.toBeInTheDocument();
+  });
+
+  describe("Copy address for the native asset", () => {
+    const renderNativeDetail = async (networkDetails: NetworkDetails) => {
+      jest
+        .spyOn(ApiInternal, "getAccountBalances")
+        .mockImplementation(() => Promise.resolve(mockBalances));
+      const props = {
+        handleClose: () => null,
+        accountBalances: {
+          balances: [
+            {
+              available: new BigNumber(10),
+              token: { type: "native", code: "XLM" },
+              total: new BigNumber(10),
+            },
+          ],
+        } as any,
+        selectedAsset: "native",
+        historyData: mockHistoryData,
+      };
+
+      render(
+        <Wrapper
+          routes={[ROUTES.account]}
+          state={{
+            auth: {
+              error: null,
+              applicationState: ApplicationState.PASSWORD_CREATED,
+              publicKey: "G1",
+              allAccounts: mockAccounts,
+            },
+            settings: {
+              networkDetails,
+            },
+          }}
+        >
+          <AssetDetail {...props} />
+        </Wrapper>,
+      );
+      await waitFor(() => screen.getByTestId("AssetDetail"));
+    };
+
+    beforeEach(() => {
+      mockCopy.mockClear();
+    });
+
+    it.each([
+      ["Testnet", TESTNET_NETWORK_DETAILS],
+      // No stellar.expert here, so Copy address is the only menu item.
+      ["Futurenet", FUTURENET_NETWORK_DETAILS],
+    ])(
+      "copies XLM's contract id on %s, not the XLM code",
+      async (_name, networkDetails) => {
+        await renderNativeDetail(networkDetails);
+
+        fireEvent.click(screen.getByAltText("asset options"));
+        fireEvent.click(await screen.findByText("Copy address"));
+
+        const expected = Asset.native().contractId(
+          networkDetails.networkPassphrase,
+        );
+        expect(mockCopy).toHaveBeenCalledWith(expected);
+        expect(mockCopy).not.toHaveBeenCalledWith("XLM");
+      },
+    );
   });
 
   it("should hide dust payment if configured", async () => {
@@ -1932,9 +2007,7 @@ describe("AssetDetail history loading state", () => {
       );
       // Translations resolve to empty strings under test, so the label falls
       // back to the raw key; the interpolated code is not observable here.
-      expect(screen.getByTestId("AssetDetail__hide")).toHaveTextContent(
-        "Hide",
-      );
+      expect(screen.getByTestId("AssetDetail__hide")).toHaveTextContent("Hide");
     });
 
     it("does not offer Hide for native XLM", async () => {
@@ -1956,9 +2029,7 @@ describe("AssetDetail history loading state", () => {
 
       fireEvent.click(await screen.findByAltText("asset options"));
       await screen.findByText("Stellar.expert");
-      expect(
-        screen.queryByTestId("AssetDetail__hide"),
-      ).not.toBeInTheDocument();
+      expect(screen.queryByTestId("AssetDetail__hide")).not.toBeInTheDocument();
     });
 
     it("hides the asset and closes the sheet", async () => {
