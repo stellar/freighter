@@ -445,23 +445,28 @@ describe("AssetDetail", () => {
     expect(screen.queryByTestId("AssetDetail__hide")).not.toBeInTheDocument();
   });
 
-  describe("Copy address for the native asset", () => {
-    const renderNativeDetail = async (networkDetails: NetworkDetails) => {
+  describe("Copy address", () => {
+    const USDC_ISSUER =
+      "GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM";
+    const TOKEN_CONTRACT_ID =
+      "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABSC4";
+
+    const renderDetail = async ({
+      balance,
+      selectedAsset,
+      networkDetails,
+    }: {
+      balance: any;
+      selectedAsset: string;
+      networkDetails: NetworkDetails;
+    }) => {
       jest
         .spyOn(ApiInternal, "getAccountBalances")
         .mockImplementation(() => Promise.resolve(mockBalances));
       const props = {
         handleClose: () => null,
-        accountBalances: {
-          balances: [
-            {
-              available: new BigNumber(10),
-              token: { type: "native", code: "XLM" },
-              total: new BigNumber(10),
-            },
-          ],
-        } as any,
-        selectedAsset: "native",
+        accountBalances: { balances: [balance] } as any,
+        selectedAsset,
         historyData: mockHistoryData,
       };
 
@@ -486,6 +491,11 @@ describe("AssetDetail", () => {
       await waitFor(() => screen.getByTestId("AssetDetail"));
     };
 
+    const clickCopyAddress = async () => {
+      fireEvent.click(screen.getByAltText("asset options"));
+      fireEvent.click(await screen.findByText("Copy address"));
+    };
+
     beforeEach(() => {
       mockCopy.mockClear();
     });
@@ -497,10 +507,17 @@ describe("AssetDetail", () => {
     ])(
       "copies XLM's contract id on %s, not the XLM code",
       async (_name, networkDetails) => {
-        await renderNativeDetail(networkDetails);
+        await renderDetail({
+          balance: {
+            available: new BigNumber(10),
+            token: { type: "native", code: "XLM" },
+            total: new BigNumber(10),
+          },
+          selectedAsset: "native",
+          networkDetails,
+        });
 
-        fireEvent.click(screen.getByAltText("asset options"));
-        fireEvent.click(await screen.findByText("Copy address"));
+        await clickCopyAddress();
 
         const expected = Asset.native().contractId(
           networkDetails.networkPassphrase,
@@ -509,6 +526,51 @@ describe("AssetDetail", () => {
         expect(mockCopy).not.toHaveBeenCalledWith("XLM");
       },
     );
+
+    it.each([
+      ["Testnet", TESTNET_NETWORK_DETAILS],
+      ["Mainnet", MAINNET_NETWORK_DETAILS],
+    ])(
+      "copies a classic asset's contract id on %s, not its issuer",
+      async (_name, networkDetails) => {
+        await renderDetail({
+          balance: {
+            available: new BigNumber(100),
+            token: { code: "USDC", issuer: { key: USDC_ISSUER } },
+            total: new BigNumber(100),
+          },
+          selectedAsset: `USDC:${USDC_ISSUER}`,
+          networkDetails,
+        });
+
+        await clickCopyAddress();
+
+        const expected = new Asset("USDC", USDC_ISSUER).contractId(
+          networkDetails.networkPassphrase,
+        );
+        expect(mockCopy).toHaveBeenCalledWith(expected);
+        expect(mockCopy).not.toHaveBeenCalledWith(USDC_ISSUER);
+      },
+    );
+
+    it("copies a contract token's contract id", async () => {
+      await renderDetail({
+        balance: {
+          token: { code: "TKN", issuer: { key: TOKEN_CONTRACT_ID } },
+          contractId: TOKEN_CONTRACT_ID,
+          total: new BigNumber(100),
+          decimals: 7,
+          name: "Token Name",
+          symbol: "TKN",
+        },
+        selectedAsset: `TKN:${TOKEN_CONTRACT_ID}`,
+        networkDetails: TESTNET_NETWORK_DETAILS,
+      });
+
+      await clickCopyAddress();
+
+      expect(mockCopy).toHaveBeenCalledWith(TOKEN_CONTRACT_ID);
+    });
   });
 
   it("should hide dust payment if configured", async () => {

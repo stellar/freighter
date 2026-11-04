@@ -1,6 +1,7 @@
 import React, { useCallback, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 import { BigNumber } from "bignumber.js";
+import { Asset } from "stellar-sdk";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import {
@@ -293,16 +294,19 @@ export const AssetDetail = ({
   // A classic asset with an issuer, or a contract token. XLM and LP shares
   // are neither, and are never hidden.
   const isIssuedToken = !isNativeBalance(selectedBalance) && !isLpShare;
-  // The address "Copy address" copies. XLM has no issuer, so copy its Stellar
-  // Asset Contract id for this network. A contract token copies its contract
-  // id, and a classic asset copies its issuer. An LP share has no address.
+  // The address "Copy address" copies is always a contract id. XLM and a
+  // classic asset copy their Stellar Asset Contract id for this network, not
+  // the issuer account. A contract token copies its contract id. An LP share
+  // has no contract, so it has no address to copy.
   let copyAddress = "";
   if (isNativeBalance(selectedBalance)) {
     copyAddress = getNativeContractId(networkDetails.networkPassphrase);
   } else if (isSorobanBalance(selectedBalance)) {
     copyAddress = selectedBalance.contractId;
-  } else if (!isLpShare) {
-    copyAddress = getIssuerFromBalance(selectedBalance);
+  } else if (!isLpShare && assetIssuer) {
+    copyAddress = new Asset(selectedBalance.token.code, assetIssuer).contractId(
+      networkDetails.networkPassphrase,
+    );
   }
 
   // Chart + stats are mainnet-only; elsewhere the header keeps its 24h delta.
