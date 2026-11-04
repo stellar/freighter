@@ -25,6 +25,7 @@ import {
   SoroswapToken,
 } from "@shared/api/types";
 
+import { SwapQuotesResponse } from "@shared/api/types/backend-api";
 import { NETWORKS, NetworkDetails } from "@shared/constants/stellar";
 import { ConfigurableWalletType } from "@shared/constants/hardwareWallet";
 import { isCustomNetwork } from "@shared/helpers/stellar";
@@ -538,6 +539,9 @@ interface TransactionData {
   // Analytics-only: where the swap flow was entered from (`source` on
   // swap.completed). Reset with the rest of the submission on Swap mount.
   swapSource: SwapSource | null;
+  // The backend response behind `path`/`destinationAmount`; null on custom
+  // networks and whenever the quote is cleared.
+  swapQuotes: SwapQuotesResponse | null;
 }
 
 interface HardwareWalletData {
@@ -602,6 +606,7 @@ export const initialState: InitialState = {
     isSoroswap: false,
     manualTransactionFee: null,
     swapSource: null,
+    swapQuotes: null,
   },
   transactionSimulation: {
     response: null,
@@ -741,10 +746,18 @@ const transactionSubmissionSlice = createSlice({
     saveBalancesToMigrate: (state, action) => {
       state.transactionData.balancesToMigrate = action.payload;
     },
-    saveSwapBestPath: (state, action) => {
+    saveSwapBestPath: (
+      state,
+      action: PayloadAction<{
+        path: string[];
+        destinationAmount: string;
+        quotes?: SwapQuotesResponse | null;
+      }>,
+    ) => {
       state.transactionData.path = action.payload.path;
       state.transactionData.destinationAmount =
         action.payload.destinationAmount;
+      state.transactionData.swapQuotes = action.payload.quotes ?? null;
     },
     saveDestinationTokenDetails: (
       state,

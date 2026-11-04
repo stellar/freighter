@@ -7,6 +7,7 @@ export type SwapCtaLabelKey =
   | "insufficientBalance"
   | "insufficientXlmFees"
   | "noQuote"
+  | "unavailable"
   | "review";
 
 export interface SwapCtaInputs {
@@ -17,6 +18,7 @@ export interface SwapCtaInputs {
   isAmountTooHigh: boolean;
   insufficientXlmForFees: boolean;
   hasNoSwapPath: boolean;
+  isSwapUnavailable: boolean;
 }
 
 export const getSwapCtaState = ({
@@ -27,6 +29,7 @@ export const getSwapCtaState = ({
   isAmountTooHigh,
   insufficientXlmForFees,
   hasNoSwapPath,
+  isSwapUnavailable,
 }: SwapCtaInputs): { disabled: boolean; labelKey: SwapCtaLabelKey } => {
   // Enabled so the user can tap it to open the picker for the missing side
   // (the screen prefers the sell token when both are missing). Other blocking
@@ -49,6 +52,9 @@ export const getSwapCtaState = ({
   }
   if (insufficientXlmForFees) {
     return { disabled: true, labelKey: "insufficientXlmFees" };
+  }
+  if (hasNoSwapPath && isSwapUnavailable) {
+    return { disabled: true, labelKey: "unavailable" };
   }
   if (hasNoSwapPath) {
     return { disabled: true, labelKey: "noQuote" };

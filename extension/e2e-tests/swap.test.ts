@@ -47,6 +47,7 @@ import {
   stubScanAssetSafe,
   stubScanTxMalicious,
   stubScanTxSafe,
+  stubSwapQuotes,
 } from "./helpers/stubs";
 // Soroban contract address — searching for this should produce the Soroban empty state.
 const SOROBAN_CONTRACT_ADDRESS =
@@ -113,26 +114,7 @@ test("held-to-held swap reaches review screen", async ({
     });
     await stubAccountBalancesV2(page, balancesJson);
     // Path so the held-to-held swap simulates and reaches the review.
-    await page.route("**/paths**", (route) =>
-      route.fulfill({
-        json: {
-          _embedded: {
-            records: [
-              {
-                source_asset_type: "native",
-                source_asset_code: "XLM",
-                source_asset_issuer: "",
-                destination_asset_type: "credit_alphanum4",
-                destination_asset_code: "USDC",
-                destination_asset_issuer: USDC_ISSUER,
-                destination_amount: "0.95",
-                path: [],
-              },
-            ],
-          },
-        },
-      }),
-    );
+    await stubSwapQuotes(context, { toAmount: "0.95" });
   };
 
   await loginToTestAccount({ page, extensionId, context, stubOverrides });
@@ -216,6 +198,8 @@ test("swap to new token shows trustline banner at review", async ({
   };
 
   await loginToTestAccount({ page, extensionId, context, stubOverrides });
+  // Registered after login so it overrides the default no-route stub.
+  await stubSwapQuotes(context, { toAmount: "0.95" });
   await switchToMainnet(page);
 
   await page.getByTestId("nav-link-swap").click();
@@ -320,6 +304,8 @@ test("shows XLM-reserve sheet when balance cannot cover the reserve", async ({
   };
 
   await loginToTestAccount({ page, extensionId, context, stubOverrides });
+  // Registered after login so it overrides the default no-route stub.
+  await stubSwapQuotes(context, { toAmount: "0.95" });
   await switchToMainnet(page);
 
   await page.getByTestId("nav-link-swap").click();
@@ -376,27 +362,7 @@ test("flagged destination surfaces blockaid malicious warning at review", async 
     // Stub a swap path so the simulation succeeds and reaches the review
     // screen (where the transaction scan runs). Without this the swap dies at
     // "No path found for swap" and never reaches the banner.
-    await page.route("**/paths**", (route) =>
-      route.fulfill({
-        json: {
-          _embedded: {
-            records: [
-              {
-                source_asset_type: "native",
-                source_asset_code: "XLM",
-                source_asset_issuer: "",
-                destination_asset_type: "credit_alphanum4",
-                destination_asset_code: "SCAM",
-                destination_asset_issuer:
-                  "GBNZILSTVQZ4R7IKQDGHYGY2QXL5QOFJYQMXPKWRRM5PAV7Y4M67AQUA",
-                destination_amount: "0.95",
-                path: [],
-              },
-            ],
-          },
-        },
-      }),
-    );
+    await stubSwapQuotes(context, { toAmount: "0.95" });
     // Stub scan-tx to return Malicious (stubScanTxMalicious matches "**/scan-tx**")
     await stubScanTxMalicious(page);
   };
@@ -576,27 +542,7 @@ test("flagged non-held destination stacks trustline and Blockaid banners", async
       route.fulfill({ json: { _embedded: { records: [] } } }),
     );
     // Path so the simulation succeeds and reaches review.
-    await page.route("**/paths**", (route) =>
-      route.fulfill({
-        json: {
-          _embedded: {
-            records: [
-              {
-                source_asset_type: "native",
-                source_asset_code: "XLM",
-                source_asset_issuer: "",
-                destination_asset_type: "credit_alphanum4",
-                destination_asset_code: "SCAM",
-                destination_asset_issuer:
-                  "GBNZILSTVQZ4R7IKQDGHYGY2QXL5QOFJYQMXPKWRRM5PAV7Y4M67AQUA",
-                destination_amount: "0.95",
-                path: [],
-              },
-            ],
-          },
-        },
-      }),
-    );
+    await stubSwapQuotes(context, { toAmount: "0.95" });
     // Flag the destination TOKEN malicious via the bulk-scan endpoint. The swap
     // reads data.results["CODE-ISSUER"], so the map MUST be keyed exactly by
     // "SCAM-<issuer>". The transaction scan stays safe, so the review's single
@@ -710,26 +656,7 @@ test("completes a swap to a new token and shows the success summary", async ({
       }),
     );
     // Path so the swap simulates and builds a prepared transaction to submit.
-    await page.route("**/paths**", (route) =>
-      route.fulfill({
-        json: {
-          _embedded: {
-            records: [
-              {
-                source_asset_type: "native",
-                source_asset_code: "XLM",
-                source_asset_issuer: "",
-                destination_asset_type: "credit_alphanum4",
-                destination_asset_code: "AQUA",
-                destination_asset_issuer: AQUA_ISSUER,
-                destination_amount: "0.95",
-                path: [],
-              },
-            ],
-          },
-        },
-      }),
-    );
+    await stubSwapQuotes(context, { toAmount: "0.95" });
     // Token + transaction both scan clean, so the review shows the normal
     // Confirm button (no "Confirm anyway").
     await page.route("**/scan-asset-bulk**", (route) =>
@@ -923,26 +850,7 @@ test("recovers to the amount screen when the swap quote expires at submit", asyn
     await page.route("**/asset?sort=volume7d**", (route) =>
       route.fulfill({ json: { _embedded: { records: [] } } }),
     );
-    await page.route("**/paths**", (route) =>
-      route.fulfill({
-        json: {
-          _embedded: {
-            records: [
-              {
-                source_asset_type: "native",
-                source_asset_code: "XLM",
-                source_asset_issuer: "",
-                destination_asset_type: "credit_alphanum4",
-                destination_asset_code: "AQUA",
-                destination_asset_issuer: AQUA_ISSUER,
-                destination_amount: "0.95",
-                path: [],
-              },
-            ],
-          },
-        },
-      }),
-    );
+    await stubSwapQuotes(context, { toAmount: "0.95" });
     await stubScanTxSafe(page);
     await stubScanAssetSafe(page);
     // Submit fails with a quote-expiry op code → the flow recovers to review.

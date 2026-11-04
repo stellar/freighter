@@ -8,6 +8,7 @@ const base: SwapCtaInputs = {
   isAmountTooHigh: false,
   insufficientXlmForFees: false,
   hasNoSwapPath: false,
+  isSwapUnavailable: false,
 };
 
 describe("getSwapCtaState", () => {
@@ -70,6 +71,19 @@ describe("getSwapCtaState", () => {
     expect(getSwapCtaState({ ...base, hasNoSwapPath: true })).toEqual({
       disabled: true,
       labelKey: "noQuote",
+    });
+  });
+
+  it("flags swaps unavailable when the quote failed for lack of a backend", () => {
+    expect(
+      getSwapCtaState({
+        ...base,
+        hasNoSwapPath: true,
+        isSwapUnavailable: true,
+      }),
+    ).toEqual({
+      disabled: true,
+      labelKey: "unavailable",
     });
   });
 

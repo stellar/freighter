@@ -9,7 +9,7 @@ import { SwapAmount } from "popup/components/swap/SwapAmount";
 import * as UseGetSwapAmountData from "popup/components/swap/SwapAmount/hooks/useGetSwapAmountData";
 import * as UseSimulateSwapData from "popup/components/swap/SwapAmount/hooks/useSimulateSwapData";
 import * as UseNetworkFees from "popup/helpers/useNetworkFees";
-import * as HorizonGetBestPath from "popup/helpers/horizonGetBestPath";
+import * as FetchBackendV2 from "@shared/api/helpers/fetchBackendV2";
 
 const USDC_ISSUER = "GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM";
 const USDC_CANONICAL = `USDC:${USDC_ISSUER}`;
@@ -81,9 +81,10 @@ describe("SwapAmount fiat label", () => {
       isQuoteExpired: false,
       fetchData: jest.fn().mockResolvedValue(undefined),
     } as any);
-    jest
-      .spyOn(HorizonGetBestPath, "horizonGetBestPath")
-      .mockResolvedValue(null as any);
+    jest.spyOn(FetchBackendV2, "fetchBackendV2").mockResolvedValue({
+      status: 200,
+      body: { data: { routes: [], unavailable: [] } },
+    });
   });
   afterEach(() => jest.restoreAllMocks());
 

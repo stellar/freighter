@@ -8,9 +8,9 @@ import {
   stubTokenPrices,
   stubScanAssetSuspicious,
   stubScanTxSuspicious,
-  createAssetObject,
   stubAssetSearch,
   stubMemoRequiredAccounts,
+  stubSwapQuotes,
 } from "./helpers/stubs";
 import { testBlockaidFeedback } from "./helpers/blockaid";
 import { goToAddAsset } from "./helpers/assets";
@@ -219,32 +219,7 @@ test.describe("BlockAid Scan - Suspicious States", () => {
         });
         await stubAccountBalancesV2(page, balancesJson);
 
-        await page.route("**/paths**", async (route) => {
-          const url = new URL(route.request().url());
-          const sourceAsset = url.searchParams.get("source_asset_code");
-          const destAsset = url.searchParams.get("destination_asset_code");
-
-          const source = createAssetObject(sourceAsset, USDC_ISSUER);
-          const destination = createAssetObject(destAsset, USDC_ISSUER);
-
-          const json = {
-            _embedded: {
-              records: [
-                {
-                  source_asset_type: source.asset_type,
-                  source_asset_code: source.asset_code,
-                  source_asset_issuer: source.asset_issuer,
-                  destination_asset_type: destination.asset_type,
-                  destination_asset_code: destination.asset_code,
-                  destination_asset_issuer: destination.asset_issuer,
-                  destination_amount: "0.95",
-                  path: [],
-                },
-              ],
-            },
-          };
-          await route.fulfill({ json });
-        });
+        await stubSwapQuotes(context, { toAmount: "0.95" });
 
         await stubAccountHistory(page);
         await stubTokenDetails(page);

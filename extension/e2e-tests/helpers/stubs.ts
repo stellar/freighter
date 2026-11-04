@@ -1037,6 +1037,51 @@ export const stubTokenStats = async (
   });
 };
 
+/**
+ * freighter-backend-v2 `POST /swap/quotes`. Sent from the background service
+ * worker, so it must be a context route. Echoes the request's assets back as a
+ * direct classic route; `toAmount: null` answers with no route.
+ */
+export const stubSwapQuotes = async (
+  context: BrowserContext,
+  { toAmount }: { toAmount: string | null } = { toAmount: null },
+) => {
+  await context.route("**/swap/quotes**", async (route) => {
+    const { fromAsset, toAsset, amount, mode } =
+      route.request().postDataJSON() ?? {};
+    const routes =
+      toAmount === null
+        ? []
+        : [
+            {
+              source: "classic",
+              fromAmount: mode === "receive" ? toAmount : amount,
+              toAmount: mode === "receive" ? amount : toAmount,
+              paths: [
+                {
+                  share: "1",
+                  hops: [
+                    { venue: "stellar-dex", from: fromAsset, to: toAsset },
+                  ],
+                },
+              ],
+              fees: [],
+            },
+          ];
+    await route.fulfill({
+      json: {
+        data: {
+          routes,
+          unavailable:
+            toAmount === null
+              ? [{ source: "classic", reason: "no_route" }]
+              : [],
+        },
+      },
+    });
+  });
+};
+
 // ---------------------------------------------------------------------------
 // freighter-backend-v2 `POST /accounts/balances` stub.
 //
@@ -3442,6 +3487,8 @@ export const stubAllExternalApis = async (
   // Blockaid scan
   await stubScanTx(page);
   await stubScanDapp(context);
+
+  await stubSwapQuotes(context);
 };
 
 export const stubBackendSettings = async (page: Page) => {

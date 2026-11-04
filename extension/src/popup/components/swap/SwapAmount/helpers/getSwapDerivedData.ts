@@ -53,6 +53,7 @@ interface GetSwapDerivedDataParams {
   networkDetails: NetworkDetails;
   inputType: InputType;
   isLiveQuoteLoading: boolean;
+  isSwapUnavailable: boolean;
   // Balances-derived "this swap adds a trustline", checked against the
   // UNFILTERED balances (a hidden held asset needs no new trustline). Drives
   // the reserve math; distinct from destinationIsNonHeld below, which is a
@@ -80,6 +81,7 @@ export const getSwapDerivedData = ({
   networkDetails,
   inputType,
   isLiveQuoteLoading,
+  isSwapUnavailable,
   destRequiresTrustline,
 }: GetSwapDerivedDataParams) => {
   const sendData = data;
@@ -214,6 +216,7 @@ export const getSwapDerivedData = ({
     isAmountTooHigh,
     insufficientXlmForFees,
     hasNoSwapPath,
+    isSwapUnavailable,
   });
 
   return {

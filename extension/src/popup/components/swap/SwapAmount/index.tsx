@@ -73,7 +73,7 @@ import { SlideupModal } from "popup/components/SlideupModal";
 import { AmountCard } from "popup/components/amount/AmountCard";
 import { PercentageButtons } from "popup/components/amount/PercentageButtons";
 import { shouldShowXlmReservePreflight } from "popup/helpers/xlmReserve";
-import { horizonGetBestReceivePath } from "popup/helpers/horizonGetBestPath";
+import { getSwapQuote } from "popup/helpers/swapQuote";
 import { XlmReserveSheet } from "popup/components/swap/XlmReserveSheet";
 import { useSwapLiveQuote } from "./hooks/useSwapLiveQuote";
 import { EditSlippage } from "./EditSlippage";
@@ -343,12 +343,13 @@ export const SwapAmount = ({
 
   // Live "You receive" quote as the user types (debounced path-only lookup).
   // isLiveQuoteLoading lets the CTA tell "loading a quote" apart from "no path".
-  const { isLiveQuoteLoading } = useSwapLiveQuote({
+  const { isLiveQuoteLoading, isSwapUnavailable } = useSwapLiveQuote({
     amount,
     asset,
     destinationAsset,
     destinationAmount,
     networkDetails,
+    publicKey,
     isReviewingTx,
     swapAmountData,
     dispatch,
@@ -429,6 +430,7 @@ export const SwapAmount = ({
     networkDetails,
     inputType,
     isLiveQuoteLoading,
+    isSwapUnavailable,
     destRequiresTrustline,
   });
 
@@ -468,20 +470,22 @@ export const SwapAmount = ({
       const reserveTarget = new BigNumber(BASE_RESERVE)
         .dividedBy(1 - slippageFraction)
         .toFixed(7);
-      const path = await horizonGetBestReceivePath({
-        destinationAmount: reserveTarget,
+      const { route } = await getSwapQuote({
+        mode: "receive",
+        amount: reserveTarget,
         sourceAsset: sellCanonical,
         destAsset: "native",
         networkDetails,
+        publicKey,
       });
-      if (path?.source_amount) {
+      if (route?.sourceAmount) {
         const sellSpendable = getAvailableBalance({
           assetCanonical: sellCanonical,
           balances: sendData.userBalances.balances,
           recommendedFee: fee,
         });
         const capped = BigNumber.minimum(
-          new BigNumber(path.source_amount),
+          new BigNumber(route.sourceAmount),
           new BigNumber(sellSpendable),
         );
         dispatch(saveAmount(capped.toFixed(7)));
@@ -516,6 +520,7 @@ export const SwapAmount = ({
     insufficientBalance: t("Insufficient balance"),
     insufficientXlmFees: t("Not enough XLM for network fees"),
     noQuote: t("No quote available"),
+    unavailable: t("Swaps are temporarily unavailable"),
     review: t("Review swap"),
   };
 

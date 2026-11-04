@@ -29,7 +29,8 @@ import {
 } from "popup/ducks/transactionSubmission";
 import { useScanTx } from "popup/helpers/blockaid";
 import { BlockAidScanTxResult, ErrorMessage } from "@shared/api/types";
-import { horizonGetBestPath } from "popup/helpers/horizonGetBestPath";
+import { SwapQuotesError } from "@shared/api/helpers/getSwapQuotes";
+import { getSwapQuote } from "popup/helpers/swapQuote";
 import { isQuoteExpiredError } from "popup/helpers/quoteExpiry";
 import { isContractId } from "popup/helpers/soroban";
 import { formatAmount, roundUsdValue } from "popup/helpers/formatters";
@@ -40,6 +41,7 @@ const scanUrlstub = "internal";
 export const ERROR_TO_DISPLAY = {
   NO_PATH_FOUND: "No path found for swap.",
   CUSTOM_TOKEN_NOT_SUPPORTED: "Swapping custom tokens is not supported yet.",
+  SWAPS_UNAVAILABLE: "Swaps are temporarily unavailable",
 };
 
 const UNKNOWN_ERROR_DISPLAY =
@@ -232,6 +234,7 @@ function useSimulateTxData({
     memo,
     path: storedPath,
     destinationAmount: storedDestinationAmount,
+    swapQuotes: storedSwapQuotes,
   } = useSelector(transactionDataSelector);
   const reduxDispatch = useDispatch<AppDispatch>();
 
@@ -271,32 +274,36 @@ function useSimulateTxData({
       // exists yet (path may legitimately be empty for a direct swap).
       let destinationAmount = storedDestinationAmount;
       let path: string[] = storedPath || [];
+      let quotes = storedSwapQuotes;
 
       if (!destinationAmount || new BigNumber(destinationAmount).lte(0)) {
-        const bestPath = await horizonGetBestPath({
-          amount,
-          sourceAsset: getCanonicalFromAsset(
-            sourceAsset.code,
-            sourceAsset.issuer,
-          ),
-          destAsset: getCanonicalFromAsset(destAsset.code, destAsset.issuer),
-          networkDetails,
-        });
+        let result;
+        try {
+          result = await getSwapQuote({
+            mode: "send",
+            amount,
+            sourceAsset: getCanonicalFromAsset(
+              sourceAsset.code,
+              sourceAsset.issuer,
+            ),
+            destAsset: getCanonicalFromAsset(destAsset.code, destAsset.issuer),
+            networkDetails,
+            publicKey,
+          });
+        } catch (e) {
+          if (e instanceof SwapQuotesError && e.kind === "unavailable") {
+            throw new Error(ERROR_TO_DISPLAY.SWAPS_UNAVAILABLE);
+          }
+          throw e;
+        }
 
-        if (!bestPath?.destination_amount) {
+        if (!result.route) {
           throw new Error(ERROR_TO_DISPLAY.NO_PATH_FOUND);
         }
 
-        destinationAmount = bestPath.destination_amount;
-        // store in canonical form for easier use
-        path = [];
-        bestPath.path.forEach((p) => {
-          if (!p.asset_code && !p.asset_issuer) {
-            path.push(p.asset_type);
-          } else {
-            path.push(getCanonicalFromAsset(p.asset_code, p.asset_issuer));
-          }
-        });
+        destinationAmount = result.route.destinationAmount;
+        path = result.route.path;
+        quotes = result.quotes;
       }
       if (destinationRate) {
         payload.dstAmountPriceUsd = formatAmount(
@@ -335,6 +342,7 @@ function useSimulateTxData({
         saveSwapBestPath({
           path,
           destinationAmount,
+          quotes,
         }),
       );
 

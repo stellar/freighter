@@ -1,15 +1,20 @@
 import React from "react";
-import { render, act } from "@testing-library/react";
+import { render, act, screen, within } from "@testing-library/react";
 import BigNumber from "bignumber.js";
 
 import { RequestState } from "constants/request";
+import { MAINNET_NETWORK_DETAILS } from "@shared/constants/stellar";
 import { AppDataType } from "helpers/hooks/useGetAppData";
-import { Wrapper } from "popup/__testHelpers__";
-import { initialState as transactionSubmissionInitialState } from "popup/ducks/transactionSubmission";
+import { Wrapper, getTestStore } from "popup/__testHelpers__";
+import {
+  initialState as transactionSubmissionInitialState,
+  saveAmount,
+} from "popup/ducks/transactionSubmission";
 import { SwapAmount } from "popup/components/swap/SwapAmount";
 import * as UseGetSwapAmountData from "popup/components/swap/SwapAmount/hooks/useGetSwapAmountData";
 import * as UseSimulateSwapData from "popup/components/swap/SwapAmount/hooks/useSimulateSwapData";
 import * as UseNetworkFees from "popup/helpers/useNetworkFees";
+import * as FetchBackendV2 from "@shared/api/helpers/fetchBackendV2";
 import * as HorizonGetBestPath from "popup/helpers/horizonGetBestPath";
 
 const nativeBalance = {
@@ -29,12 +34,36 @@ const swapData = {
 };
 
 const AQUA = "AQUA:GBNZILSTVQZ4R7IKQDGHYGY2QXL5QOFJYQMXPKWRRM5PAV7Y4M67AQUA";
+const USDC = "USDC:GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN";
+
+const classicRoute = {
+  source: "classic",
+  fromAmount: "5",
+  toAmount: "42",
+  paths: [
+    {
+      share: "1",
+      hops: [
+        { venue: "stellar-dex", from: "XLM", to: USDC },
+        { venue: "stellar-dex", from: USDC, to: AQUA },
+      ],
+    },
+  ],
+  fees: [],
+};
+const lifiRoute = { ...classicRoute, source: "lifi", toAmount: "50" };
+
+const quotesReply = (routes: unknown[]) => ({
+  status: 200,
+  body: { data: { routes, unavailable: [] } },
+});
 
 const renderSwapAmount = (transactionData: Record<string, unknown>) =>
   render(
     <Wrapper
       state={
         {
+          settings: { networkDetails: MAINNET_NETWORK_DETAILS },
           transactionSubmission: {
             ...transactionSubmissionInitialState,
             transactionData: {
@@ -71,7 +100,8 @@ const renderSwapAmount = (transactionData: Record<string, unknown>) =>
   );
 
 describe("SwapAmount live receive-amount quote", () => {
-  let getBestPath: jest.SpyInstance;
+  let fetchBackendV2: jest.SpyInstance;
+  let horizonGetBestPath: jest.SpyInstance;
 
   beforeEach(() => {
     jest.useFakeTimers();
@@ -89,9 +119,12 @@ describe("SwapAmount live receive-amount quote", () => {
       isQuoteExpired: false,
       fetchData: jest.fn().mockResolvedValue(undefined),
     } as any);
-    getBestPath = jest
+    fetchBackendV2 = jest
+      .spyOn(FetchBackendV2, "fetchBackendV2")
+      .mockResolvedValue(quotesReply([lifiRoute, classicRoute]));
+    horizonGetBestPath = jest
       .spyOn(HorizonGetBestPath, "horizonGetBestPath")
-      .mockResolvedValue({ destination_amount: "42", path: [] } as any);
+      .mockRejectedValue(new Error("Horizon must not be called"));
   });
 
   afterEach(() => {
@@ -100,33 +133,121 @@ describe("SwapAmount live receive-amount quote", () => {
     jest.restoreAllMocks();
   });
 
-  it("runs a debounced path-only quote when a source amount and destination are set", async () => {
-    renderSwapAmount({ amount: "5", destinationAsset: AQUA });
-
-    // Debounced: nothing fires synchronously.
-    expect(getBestPath).not.toHaveBeenCalled();
-
-    await act(async () => {
+  const settle = () =>
+    act(async () => {
       jest.advanceTimersByTime(600);
     });
 
-    // Lightweight path lookup (not the full simulation) with the typed amount.
-    expect(getBestPath).toHaveBeenCalledWith(
-      expect.objectContaining({
+  const cta = () => screen.getByTestId("swap-amount-btn-continue");
+
+  it("runs a debounced send quote against the backend, not Horizon", async () => {
+    renderSwapAmount({ amount: "5", destinationAsset: AQUA });
+
+    // Debounced: nothing fires synchronously.
+    expect(fetchBackendV2).not.toHaveBeenCalled();
+
+    await settle();
+
+    expect(fetchBackendV2).toHaveBeenCalledTimes(1);
+    expect(fetchBackendV2).toHaveBeenCalledWith({
+      method: "POST",
+      path: "/swap/quotes?network=PUBLIC",
+      body: JSON.stringify({
+        account: "G123",
+        mode: "send",
+        fromAsset: "XLM",
+        toAsset: AQUA,
         amount: "5",
-        sourceAsset: "native",
-        destAsset: AQUA,
       }),
-    );
+    });
+    expect(horizonGetBestPath).not.toHaveBeenCalled();
+  });
+
+  it("stores the classic route's amount and path, and the full response", async () => {
+    renderSwapAmount({ amount: "5", destinationAsset: AQUA });
+
+    await settle();
+
+    const { transactionData } =
+      getTestStore()!.getState().transactionSubmission;
+    expect(transactionData.destinationAmount).toBe("42");
+    expect(transactionData.path).toEqual([USDC]);
+    expect(transactionData.swapQuotes).toEqual({
+      routes: [lifiRoute, classicRoute],
+      unavailable: [],
+    });
+    expect(
+      within(screen.getByTestId("swap-receive-card")).getByDisplayValue("42"),
+    ).toBeInTheDocument();
+    expect(cta()).toHaveTextContent("Review swap");
+  });
+
+  it("shows no quote when the response has no classic route", async () => {
+    fetchBackendV2.mockResolvedValue(quotesReply([lifiRoute]));
+    renderSwapAmount({ amount: "5", destinationAsset: AQUA });
+
+    await settle();
+
+    expect(fetchBackendV2).toHaveBeenCalled();
+    expect(cta()).toHaveTextContent("No quote available");
+    expect(cta()).toBeDisabled();
+  });
+
+  it("shows no quote on empty routes", async () => {
+    fetchBackendV2.mockResolvedValue(quotesReply([]));
+    renderSwapAmount({ amount: "5", destinationAsset: AQUA });
+
+    await settle();
+
+    expect(fetchBackendV2).toHaveBeenCalled();
+    expect(cta()).toHaveTextContent("No quote available");
+  });
+
+  it("treats a 400 as no quote", async () => {
+    fetchBackendV2.mockResolvedValue({
+      status: 400,
+      body: { error: "invalid amount" },
+    });
+    renderSwapAmount({ amount: "5", destinationAsset: AQUA });
+
+    await settle();
+
+    expect(fetchBackendV2).toHaveBeenCalled();
+    expect(cta()).toHaveTextContent("No quote available");
+  });
+
+  it.each([502, 503])(
+    "shows swaps as temporarily unavailable on a %s",
+    async (status) => {
+      fetchBackendV2.mockResolvedValue({ status, body: { error: "x" } });
+      renderSwapAmount({ amount: "5", destinationAsset: AQUA });
+
+      await settle();
+
+      expect(cta()).toHaveTextContent("Swaps are temporarily unavailable");
+      expect(cta()).toBeDisabled();
+    },
+  );
+
+  it("clears the unavailable state once a quote succeeds", async () => {
+    fetchBackendV2.mockResolvedValueOnce({ status: 503, body: {} });
+    renderSwapAmount({ amount: "5", destinationAsset: AQUA });
+    await settle();
+    expect(cta()).toHaveTextContent("Swaps are temporarily unavailable");
+
+    await act(async () => {
+      getTestStore()!.dispatch(saveAmount("6"));
+    });
+    await settle();
+
+    expect(cta()).toHaveTextContent("Review swap");
   });
 
   it("does not quote when there is no destination asset", async () => {
     renderSwapAmount({ amount: "5", destinationAsset: "" });
 
-    await act(async () => {
-      jest.advanceTimersByTime(600);
-    });
+    await settle();
 
-    expect(getBestPath).not.toHaveBeenCalled();
+    expect(fetchBackendV2).not.toHaveBeenCalled();
   });
 });
