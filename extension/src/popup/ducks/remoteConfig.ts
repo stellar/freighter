@@ -94,8 +94,9 @@ const initialState: RemoteConfigState = {
   // can flip it on to opt into the v2 account-balances endpoint without a
   // release.
   use_balances_v2: false,
-  // Defaults to off; Amplitude turns it on to expose the Earn entry point.
-  earn_deposit: false,
+  // Earn entry point on Home. Ships ON; Amplitude can turn it off without a
+  // release.
+  earn_deposit: true,
   // Token price-history chart on AssetDetail. Ships ON — a kill switch, not
   // launch choreography (§11 of the token-price-graphs design).
   use_token_price_history: true,
@@ -275,13 +276,11 @@ export const tokenPriceHistoryEnabledSelector = killSwitchSelector(
 );
 
 /**
- * Returns whether the Earn deposit flow should be exposed. Defaults to false
- * so the entry point stays hidden until Amplitude turns the flag on.
+ * Whether the Earn deposit flow is exposed. Defaults to true and is read
+ * fail-closed, so the Home tile stays hidden until the flags settle rather
+ * than flashing in before Amplitude can turn it off.
  */
-export const earnDepositSelector = createSelector(
-  remoteConfigSelector,
-  (rc) => rc.earn_deposit,
-);
+export const earnDepositSelector = killSwitchSelector("earn_deposit");
 
 /**
  * Returns true once the Experiment flags have been fetched (or failed).

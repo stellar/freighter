@@ -3738,16 +3738,16 @@ export const stubEarnSimulateTx = async (page: Page) => {
 };
 
 /**
- * Turns on the `earn_deposit` Amplitude flag, which gates the Home Earn tile
- * and defaults to off. Call it BEFORE `loginToTestAccount`.
+ * Pins the `earn_deposit` Amplitude flag on, so the Earn specs don't depend on
+ * the flag's default or on the real Experiment endpoint. Call it BEFORE
+ * `loginToTestAccount`.
  *
  * A route cannot do this: neither `page.route` nor `context.route` sees the
  * test page's own flags request, the same blind spot `stubSacViaInitScript`
  * documents for the popup's early fetches. The request reaches the real
- * Experiment endpoint, which rejects the test deployment key, and the flag
- * stays off, hiding the tile from every Earn spec. An init script runs before
- * the bundle, so the SDK, which binds `fetch` when its module loads, picks up
- * this wrapper. It answers only the flags request.
+ * Experiment endpoint, which rejects the test deployment key. An init script
+ * runs before the bundle, so the SDK, which binds `fetch` when its module
+ * loads, picks up this wrapper. It answers only the flags request.
  */
 export const stubEarnDepositFlag = async (context: BrowserContext) => {
   await context.addInitScript(() => {
