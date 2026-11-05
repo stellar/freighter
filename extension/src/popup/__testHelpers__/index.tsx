@@ -69,6 +69,21 @@ export const Wrapper: React.FunctionComponent<any> = ({
       applicationState: APPLICATION_STATE.MNEMONIC_PHRASE_CONFIRMED,
     },
     transactionSubmission: transactionSubmissionInitialState,
+    // A rendered popup has already settled its Amplitude flags: the reducer
+    // sets `isInitialized` on the failure path too, so `false` is a transient
+    // startup state rather than a steady one. Screens that hold their first
+    // load until the flags land (Account, #3032) would otherwise sit on the
+    // loader in every test that doesn't say otherwise. Flag values here match
+    // the duck's defaults; tests exercising flag behavior pass their own
+    // `remoteConfig`, which replaces this whole slice.
+    remoteConfig: {
+      isInitialized: true,
+      use_token_prices_v2: true,
+      use_balances_v2: false,
+      use_token_price_history: true,
+      maintenance_banner: { enabled: false, payload: undefined },
+      maintenance_screen: { enabled: false, payload: undefined },
+    },
     ...state,
   });
   testStore = store;

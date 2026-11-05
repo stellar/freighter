@@ -46,7 +46,9 @@ import {
   TEST_CANONICAL,
   TEST_PUBLIC_KEY,
   TEST_USDC_CANONICAL,
+  getTestStore,
 } from "../../__testHelpers__";
+import { fetchFeatureFlags } from "popup/ducks/remoteConfig";
 import { Account } from "../Account";
 import { ROUTES } from "popup/constants/routes";
 import { DEFAULT_ASSETS_LISTS } from "@shared/constants/soroban/asset-list";
@@ -841,6 +843,72 @@ describe("Account view", () => {
       ).toBeDefined();
       expect(screen.getAllByText("USDC")).toBeDefined();
       expect(screen.queryByTestId("ScamAssetIcon")).toBeNull();
+    });
+  });
+
+  // #3032: `useGetBalances` reads the v2 flag at call time, so a fetch that
+  // starts before the Amplitude round trip lands reads the hardcoded default
+  // and sends an enrolled user to the wrong endpoint for the first request of
+  // the session. The guard is "no request at all until the flags settle" —
+  // asserting on the endpoint would pass for the wrong reason, since the
+  // default happens to match v1.
+  it("does not fetch balances until the remote config flags have settled", async () => {
+    const balancesSpy = jest
+      .spyOn(ApiInternal, "getAccountBalances")
+      .mockImplementation(() => Promise.resolve(mockBalances));
+
+    render(
+      <Wrapper
+        routes={[ROUTES.account]}
+        state={{
+          auth: {
+            error: null,
+            applicationState: ApplicationState.MNEMONIC_PHRASE_CONFIRMED,
+            publicKey: "G1",
+            allAccounts: mockAccounts,
+          },
+          settings: {
+            networkDetails: TESTNET_NETWORK_DETAILS,
+            networksList: DEFAULT_NETWORKS,
+          },
+          remoteConfig: {
+            isInitialized: false,
+            use_token_prices_v2: true,
+            use_balances_v2: false,
+            use_token_price_history: true,
+            maintenance_banner: { enabled: false, payload: undefined },
+            maintenance_screen: { enabled: false, payload: undefined },
+          },
+        }}
+      >
+        <Account />
+      </Wrapper>,
+    );
+
+    // Give the mount effects a tick; the fetch must still not have gone out.
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(balancesSpy).not.toHaveBeenCalled();
+
+    // Flags land (this is also the shape the rejected path produces, which
+    // sets `isInitialized` so a dead Amplitude can't wedge the screen).
+    await act(async () => {
+      getTestStore()?.dispatch({
+        type: fetchFeatureFlags.fulfilled.type,
+        payload: {
+          isInitialized: true,
+          use_token_prices_v2: true,
+          use_balances_v2: true,
+          use_token_price_history: true,
+          maintenance_banner: { enabled: false, payload: undefined },
+          maintenance_screen: { enabled: false, payload: undefined },
+        },
+      });
+    });
+
+    await waitFor(() => {
+      expect(balancesSpy).toHaveBeenCalled();
     });
   });
 

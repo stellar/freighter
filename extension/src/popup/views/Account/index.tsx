@@ -16,6 +16,7 @@ import {
   accountNameSelector,
   publicKeySelector,
 } from "popup/ducks/accountServices";
+import { isRemoteConfigInitializedSelector } from "popup/ducks/remoteConfig";
 import { closeWindow, openTab } from "popup/helpers/navigate";
 import { isFullscreenMode } from "popup/helpers/isFullscreenMode";
 import { useSwapTopTokensPrewarm } from "popup/helpers/useSwapTopTokensPrewarm";
@@ -61,6 +62,9 @@ export const Account = () => {
   const reduxPublicKey = useSelector(publicKeySelector);
   const networkDetails = useSelector(settingsNetworkDetailsSelector);
   const { activeTab } = useContext(AccountTabsContext);
+  const isRemoteConfigInitialized = useSelector(
+    isRemoteConfigInitializedSelector,
+  );
 
   const isFullscreenModeEnabled = isFullscreenMode();
   const {
@@ -89,13 +93,23 @@ export const Account = () => {
   const previousAccountBalancesRef = useRef<AccountBalances | null>(null);
   const sorobanErrorShownRef = useRef(false);
 
+  // Hold the first load until the Amplitude flags have settled. `useGetBalances`
+  // reads `balancesV2Selector` at call time, so firing before the fetch resolves
+  // would read the hardcoded default and send an enrolled user to the v1
+  // endpoint for the first request of every popup session (#3032).
+  // `isInitialized` is set on failure too, so Amplitude being down delays this
+  // by one round trip rather than wedging the screen. `accountData` sits in
+  // `RequestState.IDLE` meanwhile, which already renders as loading.
   useEffect(() => {
+    if (!isRemoteConfigInitialized) {
+      return;
+    }
     const getData = async () => {
       await fetchData({ useAppDataCache: false });
     };
     getData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [isRemoteConfigInitialized]);
 
   useEffect(() => {
     if (!isSorobanSuported && !sorobanErrorShownRef.current) {
