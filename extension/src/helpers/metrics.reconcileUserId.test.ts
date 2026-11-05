@@ -79,7 +79,7 @@ describe("reconcileAnalyticsUserId (canonical id)", () => {
     localStorage.setItem(METRICS_USER_ID, "4873921"); // existing random id
     mockGetAnalyticsUserId.mockResolvedValue({
       analyticsUserId: "a".repeat(64),
-      confirmed: true,
+      isConfirmed: true,
     });
 
     await reconcileAnalyticsUserId();
@@ -93,7 +93,7 @@ describe("reconcileAnalyticsUserId (canonical id)", () => {
     localStorage.setItem(METRICS_USER_ID, "a".repeat(64));
     mockGetAnalyticsUserId.mockResolvedValue({
       analyticsUserId: "a".repeat(64),
-      confirmed: true,
+      isConfirmed: true,
     });
 
     await reconcileAnalyticsUserId();
@@ -106,7 +106,7 @@ describe("reconcileAnalyticsUserId (canonical id)", () => {
     localStorage.setItem(METRICS_USER_ID, "4873921");
     mockGetAnalyticsUserId.mockResolvedValue({
       analyticsUserId: null,
-      confirmed: false,
+      isConfirmed: false,
     });
 
     await reconcileAnalyticsUserId();
@@ -136,7 +136,7 @@ describe("reconcileAnalyticsUserId (canonical id)", () => {
     localStorage.setItem(METRICS_USER_ID, "4873921");
     mockGetAnalyticsUserId.mockResolvedValue({
       analyticsUserId: "b".repeat(64),
-      confirmed: true,
+      isConfirmed: true,
     });
 
     await reconcileAnalyticsUserId();
@@ -157,7 +157,7 @@ describe("reconcileAnalyticsUserId (canonical id)", () => {
     localStorage.setItem(METRICS_USER_ID, "4873921");
     mockGetAnalyticsUserId.mockResolvedValue({
       analyticsUserId: "c".repeat(64),
-      confirmed: true,
+      isConfirmed: true,
     });
 
     await reconcileAnalyticsUserId();
@@ -169,7 +169,7 @@ describe("reconcileAnalyticsUserId (canonical id)", () => {
     localStorage.setItem(METRICS_USER_ID, "4873921");
     mockGetAnalyticsUserId.mockResolvedValue({
       analyticsUserId: "d".repeat(64),
-      confirmed: true,
+      isConfirmed: true,
     });
 
     await reconcileAnalyticsUserId();
@@ -186,7 +186,7 @@ describe("reconcileAnalyticsUserId (canonical id)", () => {
     // Locked: background returns a null auth id.
     mockGetAnalyticsUserId.mockResolvedValueOnce({
       analyticsUserId: null,
-      confirmed: false,
+      isConfirmed: false,
     });
     await reconcileAnalyticsUserId();
     expect(localStorage.getItem(METRICS_USER_ID)).toBe("4873921");
@@ -194,7 +194,7 @@ describe("reconcileAnalyticsUserId (canonical id)", () => {
     // Now unlocked: the auth id resolves and reconciliation proceeds.
     mockGetAnalyticsUserId.mockResolvedValue({
       analyticsUserId: "e".repeat(64),
-      confirmed: true,
+      isConfirmed: true,
     });
     await reconcileAnalyticsUserId();
 
@@ -205,7 +205,7 @@ describe("reconcileAnalyticsUserId (canonical id)", () => {
   it("re-reconciles after the guard is reset on lock", async () => {
     mockGetAnalyticsUserId.mockResolvedValue({
       analyticsUserId: "f".repeat(64),
-      confirmed: true,
+      isConfirmed: true,
     });
 
     await reconcileAnalyticsUserId();
@@ -224,7 +224,7 @@ describe("reconcileAnalyticsUserId (canonical id)", () => {
     localStorage.setItem(METRICS_USER_ID, "4873921");
     mockGetAnalyticsUserId.mockResolvedValue({
       analyticsUserId: "1".repeat(64),
-      confirmed: false,
+      isConfirmed: false,
     });
 
     await reconcileAnalyticsUserId();
@@ -237,7 +237,7 @@ describe("reconcileAnalyticsUserId (canonical id)", () => {
     // that user's id. No event is sent.
     mockGetAnalyticsUserId.mockResolvedValue({
       analyticsUserId: "2".repeat(64),
-      confirmed: true,
+      isConfirmed: true,
     });
     await reconcileAnalyticsUserId();
     await reconcileAnalyticsUserId();
@@ -259,12 +259,12 @@ describe("reconcileAnalyticsUserId (canonical id)", () => {
       )
       .mockResolvedValueOnce({
         analyticsUserId: "5".repeat(64),
-        confirmed: true,
+        isConfirmed: true,
       });
 
     const stale = reconcileAnalyticsUserId();
     await reconcileAnalyticsUserId();
-    resolveStale({ analyticsUserId: "4".repeat(64), confirmed: false });
+    resolveStale({ analyticsUserId: "4".repeat(64), isConfirmed: false });
     await stale;
 
     expect(localStorage.getItem(METRICS_USER_ID)).toBe("5".repeat(64));
@@ -284,7 +284,7 @@ describe("reconcileAnalyticsUserId (canonical id)", () => {
     const stale = reconcileAnalyticsUserId();
     // Locked while the call was in flight; the wallet may be replaced next.
     resetAnalyticsUserIdReconciliation();
-    resolveStale({ analyticsUserId: "6".repeat(64), confirmed: true });
+    resolveStale({ analyticsUserId: "6".repeat(64), isConfirmed: true });
     await stale;
 
     expect(localStorage.getItem(METRICS_USER_ID)).toBe("4873921");
@@ -293,7 +293,7 @@ describe("reconcileAnalyticsUserId (canonical id)", () => {
     // The session was not settled by the stale answer: the next call asks.
     mockGetAnalyticsUserId.mockResolvedValue({
       analyticsUserId: "7".repeat(64),
-      confirmed: true,
+      isConfirmed: true,
     });
     await reconcileAnalyticsUserId();
     expect(mockGetAnalyticsUserId).toHaveBeenCalledTimes(2);
@@ -304,7 +304,7 @@ describe("reconcileAnalyticsUserId (canonical id)", () => {
     localStorage.setItem(METRICS_USER_ID, "4873921");
     mockGetAnalyticsUserId.mockResolvedValue({
       analyticsUserId: "3".repeat(64),
-      confirmed: true,
+      isConfirmed: true,
     });
 
     await reconcileAnalyticsUserId({ settle: false });

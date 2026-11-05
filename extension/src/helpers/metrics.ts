@@ -163,7 +163,7 @@ let sessionUserId: string | null = null;
  * Once-per-session guard for `reconcileAnalyticsUserId`. `fetchData`
  * (useGetAppData) runs on many screens and re-runs on every
  * navigation/refresh. Once the background has returned the server's
- * canonical id (`confirmed`), nothing changes until the wallet is replaced,
+ * canonical id (`isConfirmed`), nothing changes until the wallet is replaced,
  * so short-circuit after that. A provisional id (the pinned source id before
  * the first link) leaves the guard unset, so the next load asks again and
  * picks up the canonical id once the link lands. Reset on lock (see
@@ -245,7 +245,7 @@ export const reconcileAnalyticsUserId = async ({
   // become an unhandled rejection for callers. Catch → return.
   try {
     const generation = reconcileGeneration;
-    const { analyticsUserId: authUserId, confirmed } =
+    const { analyticsUserId: authUserId, isConfirmed } =
       await getAnalyticsUserId();
     // Another call settled the session while this one waited: its answer is
     // the server's, and this one may be stale. Or the session was reset
@@ -257,7 +257,7 @@ export const reconcileAnalyticsUserId = async ({
     if (!authUserId) return;
     // Only the server's id settles the session. Mark it before the
     // already-matching early return so routine reloads short-circuit above.
-    if (confirmed && settle) {
+    if (isConfirmed && settle) {
       hasReconciledUserId = true;
     }
     if (localStorage.getItem(METRICS_USER_ID) === authUserId) return;

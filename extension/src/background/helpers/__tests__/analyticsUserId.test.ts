@@ -58,7 +58,7 @@ describe("getAnalyticsUserId", () => {
 
     expect(await getAnalyticsUserId(sessionStore, store)).toEqual({
       analyticsUserId: ROOT,
-      confirmed: true,
+      isConfirmed: true,
     });
     expect(mockIdentity).not.toHaveBeenCalled();
     expect(mockCall).not.toHaveBeenCalled();
@@ -70,7 +70,7 @@ describe("getAnalyticsUserId", () => {
 
     expect(await getAnalyticsUserId(sessionStore, store)).toEqual({
       analyticsUserId: null,
-      confirmed: false,
+      isConfirmed: false,
     });
     expect(mockCall).not.toHaveBeenCalled();
   });
@@ -81,7 +81,7 @@ describe("getAnalyticsUserId", () => {
 
     expect(await getAnalyticsUserId(sessionStore, store)).toEqual({
       analyticsUserId: ROOT,
-      confirmed: true,
+      isConfirmed: true,
     });
     expect(mockCall).toHaveBeenCalledWith({
       method: "GET",
@@ -102,7 +102,7 @@ describe("getAnalyticsUserId", () => {
 
     expect(await getAnalyticsUserId(sessionStore, store)).toEqual({
       analyticsUserId: PINNED,
-      confirmed: false,
+      isConfirmed: false,
     });
     expect(data[CANONICAL_USER_ID]).toBeUndefined();
   });
@@ -115,7 +115,7 @@ describe("getAnalyticsUserId", () => {
     for (let i = 0; i < 2; i += 1) {
       expect(await getAnalyticsUserId(sessionStore, store)).toEqual({
         analyticsUserId: PINNED,
-        confirmed: false,
+        isConfirmed: false,
       });
     }
     expect(data[CANONICAL_USER_ID]).toBeUndefined();
@@ -127,7 +127,7 @@ describe("getAnalyticsUserId", () => {
 
     expect(await getAnalyticsUserId(sessionStore, store)).toEqual({
       analyticsUserId: PINNED,
-      confirmed: false,
+      isConfirmed: false,
     });
     expect(data[CANONICAL_USER_ID]).toBeUndefined();
   });
@@ -141,7 +141,7 @@ describe("getAnalyticsUserId", () => {
 
     expect(await getAnalyticsUserId(sessionStore, store)).toEqual({
       analyticsUserId: null,
-      confirmed: false,
+      isConfirmed: false,
     });
     expect(data[CANONICAL_USER_ID]).toBeUndefined();
   });
@@ -158,7 +158,7 @@ describe("getAnalyticsUserId", () => {
 
     expect(await getAnalyticsUserId(sessionStore, store)).toEqual({
       analyticsUserId: null,
-      confirmed: false,
+      isConfirmed: false,
     });
     expect(mockCall).not.toHaveBeenCalled();
   });
@@ -176,7 +176,7 @@ describe("getAnalyticsUserId", () => {
 
     expect(await getAnalyticsUserId(sessionStore, store)).toEqual({
       analyticsUserId: null,
-      confirmed: false,
+      isConfirmed: false,
     });
     expect(data[CANONICAL_USER_ID]).toBeUndefined();
   });
@@ -190,7 +190,7 @@ describe("getAnalyticsUserId", () => {
 
     expect(await getAnalyticsUserId(sessionStore, store)).toEqual({
       analyticsUserId: null,
-      confirmed: false,
+      isConfirmed: false,
     });
   });
 
@@ -203,7 +203,7 @@ describe("getAnalyticsUserId", () => {
 
     expect(await getAnalyticsUserId(sessionStore, store)).toEqual({
       analyticsUserId: null,
-      confirmed: false,
+      isConfirmed: false,
     });
   });
 

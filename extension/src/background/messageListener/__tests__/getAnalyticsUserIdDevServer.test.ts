@@ -37,7 +37,7 @@ describe("GET_ANALYTICS_USER_ID dev-server carve-out", () => {
     jest.clearAllMocks();
     mockGetAnalyticsUserId.mockResolvedValue({
       analyticsUserId: "pub123",
-      confirmed: true,
+      isConfirmed: true,
     });
   });
 
@@ -54,7 +54,7 @@ describe("GET_ANALYTICS_USER_ID dev-server carve-out", () => {
       } as any,
     );
 
-    expect(result).toEqual({ analyticsUserId: "pub123", confirmed: true });
+    expect(result).toEqual({ analyticsUserId: "pub123", isConfirmed: true });
     expect(mockGetAnalyticsUserId).toHaveBeenCalledTimes(1);
   });
 

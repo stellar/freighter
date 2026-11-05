@@ -17,7 +17,7 @@ export interface AnalyticsUserId {
    * True when the id is the server's canonical id. False when it is the
    * pinned source id standing in until the first link, or null.
    */
-  confirmed: boolean;
+  isConfirmed: boolean;
 }
 
 /**
@@ -42,15 +42,15 @@ export const getAnalyticsUserId = async (
   const cached = await getCachedCanonicalUserId({ localStore });
   // A wallet replaced during the read: a cached id is the old wallet's.
   if (epoch !== getLinkStatusEpoch()) {
-    return { analyticsUserId: null, confirmed: false };
+    return { analyticsUserId: null, isConfirmed: false };
   }
   if (cached) {
-    return { analyticsUserId: cached, confirmed: true };
+    return { analyticsUserId: cached, isConfirmed: true };
   }
 
   const identity = await getSigningIdentity({ sessionStore, localStore });
   if (!identity) {
-    return { analyticsUserId: null, confirmed: false };
+    return { analyticsUserId: null, isConfirmed: false };
   }
 
   try {
@@ -69,7 +69,7 @@ export const getAnalyticsUserId = async (
       });
       // A wallet replaced mid-request: this id is the old wallet's.
       if (stored) {
-        return { analyticsUserId: userId, confirmed: true };
+        return { analyticsUserId: userId, isConfirmed: true };
       }
     } else if (status !== 404) {
       captureException(`getAnalyticsUserId: /user returned ${status}`);
@@ -81,7 +81,7 @@ export const getAnalyticsUserId = async (
 
   // A wallet replaced mid-request: the pinned source is the old wallet's.
   if (epoch !== getLinkStatusEpoch()) {
-    return { analyticsUserId: null, confirmed: false };
+    return { analyticsUserId: null, isConfirmed: false };
   }
-  return { analyticsUserId: identity.sourceId, confirmed: false };
+  return { analyticsUserId: identity.sourceId, isConfirmed: false };
 };

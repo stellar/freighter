@@ -272,7 +272,7 @@ describe("pre-V2 storage migration", () => {
         await getAnalyticsUserId(mockSessionStore, mockDataStorage),
       ).toEqual({
         analyticsUserId: PRE_UPGRADE_METRICS_USER_ID,
-        confirmed: false,
+        isConfirmed: false,
       });
 
       // After it, the root is the phrase that signed the link, so the
@@ -289,7 +289,7 @@ describe("pre-V2 storage migration", () => {
         await getAnalyticsUserId(mockSessionStore, mockDataStorage),
       ).toEqual({
         analyticsUserId: PRE_UPGRADE_METRICS_USER_ID,
-        confirmed: true,
+        isConfirmed: true,
       });
     });
 
