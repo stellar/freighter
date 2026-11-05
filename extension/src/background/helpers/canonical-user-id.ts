@@ -16,7 +16,14 @@ import { CANONICAL_USER_ID } from "constants/localStorageTypes";
   It shares the link-status epoch. clearLinkStatus removes it with the link
   map whenever the wallet is replaced, and a response that started before
   the replacement is dropped.
+
+  Only a 64-char lowercase hex id is accepted, the shape of every source id.
+  Anything else (a proxy's 200, a server bug) reads as no id, so it is never
+  cached and a bad value already stored is asked again.
 */
+
+const isCanonicalUserId = (value: unknown): value is string =>
+  typeof value === "string" && /^[0-9a-f]{64}$/.test(value);
 
 export const getCachedCanonicalUserId = async ({
   localStore,
@@ -24,7 +31,7 @@ export const getCachedCanonicalUserId = async ({
   localStore: DataStorageAccess;
 }): Promise<string | null> => {
   const id = await localStore.getItem(CANONICAL_USER_ID);
-  return typeof id === "string" && id ? id : null;
+  return isCanonicalUserId(id) ? id : null;
 };
 
 /**
@@ -49,8 +56,11 @@ export const setCachedCanonicalUserId = async ({
   return epoch === getLinkStatusEpoch();
 };
 
-/** The `data.userId` of a /user or /user/link response, or null. */
+/**
+ * The `data.userId` of a /user or /user/link response, or null when it is
+ * missing or not a 64-char lowercase hex id.
+ */
 export const userIdOf = (body: unknown): string | null => {
   const userId = (body as { data?: { userId?: unknown } } | null)?.data?.userId;
-  return typeof userId === "string" && userId ? userId : null;
+  return isCanonicalUserId(userId) ? userId : null;
 };

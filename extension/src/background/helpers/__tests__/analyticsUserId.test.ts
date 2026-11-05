@@ -137,6 +137,35 @@ describe("getAnalyticsUserId", () => {
     expect(data[CANONICAL_USER_ID]).toBeUndefined();
   });
 
+  it.each([
+    ["not hex", "not-an-id"],
+    ["uppercase hex", "B".repeat(64)],
+    ["63 chars", "b".repeat(63)],
+    ["65 chars", "b".repeat(65)],
+  ])("ignores a 200 whose user id is %s", async (_label, userId) => {
+    const { store, data } = makeLocalStore();
+    mockCall.mockResolvedValue(userResponse(userId));
+
+    expect(await getAnalyticsUserId(sessionStore, store)).toEqual({
+      analyticsUserId: PINNED,
+      isConfirmed: false,
+    });
+    expect(data[CANONICAL_USER_ID]).toBeUndefined();
+  });
+
+  it("ignores a malformed cached id and asks GET /user again", async () => {
+    const { store, data } = makeLocalStore();
+    data[CANONICAL_USER_ID] = "garbage";
+    mockCall.mockResolvedValue(userResponse(ROOT));
+
+    expect(await getAnalyticsUserId(sessionStore, store)).toEqual({
+      analyticsUserId: ROOT,
+      isConfirmed: true,
+    });
+    expect(mockCall).toHaveBeenCalledTimes(1);
+    expect(data[CANONICAL_USER_ID]).toBe(ROOT);
+  });
+
   it("drops the answer when the wallet is replaced mid-request", async () => {
     const { store, data } = makeLocalStore();
     mockCall.mockImplementation(async () => {

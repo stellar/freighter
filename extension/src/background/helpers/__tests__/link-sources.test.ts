@@ -205,6 +205,24 @@ describe("linkWalletSources", () => {
     expect(data[CANONICAL_USER_ID]).toBe(root);
   });
 
+  it("caches no id when the response's user id is not 64-char hex", async () => {
+    makeWallet(1);
+    const { store, data } = makeLocalStore();
+    const inner = server();
+    const fetchImpl = jest.fn(
+      async (url: RequestInfo | URL, init?: RequestInit) => {
+        const res = await inner(url, init);
+        const body = await res.json();
+        body.data.userId = "not-an-id";
+        return new Response(JSON.stringify(body), { status: 200 });
+      },
+    );
+
+    await linkWalletSources({ sessionStore, localStore: store, fetchImpl });
+
+    expect(CANONICAL_USER_ID in data).toBe(false);
+  });
+
   it("caches no id when the call fails", async () => {
     makeWallet(1);
     const { store, data } = makeLocalStore();
