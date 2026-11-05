@@ -165,6 +165,20 @@ describe("useSimulateTxData quote when no live quote exists", () => {
     );
   });
 
+  it("shows the live CTA's no-quote message when the re-quote is a 400", async () => {
+    fetchBackendV2.mockResolvedValue({
+      status: 400,
+      body: { error: "account not found" },
+    });
+    const { result } = renderSimulate();
+
+    await act(async () => {
+      await result.current.fetchData({ amount: "10" });
+    });
+
+    expect(result.current.state.error).toBe("No quote available");
+  });
+
   it("reports no path when the response has no classic route", async () => {
     fetchBackendV2.mockResolvedValue({
       status: 200,

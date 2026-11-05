@@ -1,5 +1,5 @@
 import React from "react";
-import { render, act, screen, within } from "@testing-library/react";
+import { render, act, screen, within, fireEvent } from "@testing-library/react";
 import BigNumber from "bignumber.js";
 
 import { RequestState } from "constants/request";
@@ -16,6 +16,7 @@ import * as UseSimulateSwapData from "popup/components/swap/SwapAmount/hooks/use
 import * as UseNetworkFees from "popup/helpers/useNetworkFees";
 import * as FetchBackendV2 from "@shared/api/helpers/fetchBackendV2";
 import * as HorizonGetBestPath from "popup/helpers/horizonGetBestPath";
+import * as XlmReserve from "popup/helpers/xlmReserve";
 
 const nativeBalance = {
   token: { type: "native", code: "XLM" },
@@ -301,6 +302,99 @@ describe("SwapAmount live receive-amount quote", () => {
     await settle();
 
     expect(cta()).toHaveTextContent("Review swap");
+  });
+
+  describe("starting the review with a live quote in flight", () => {
+    const inFlightLiveQuote = () => {
+      let resolve: (v: unknown) => void = () => {};
+      fetchBackendV2.mockReturnValue(
+        new Promise((r) => {
+          resolve = r;
+        }),
+      );
+      return () =>
+        act(async () => {
+          resolve(quotesReply([classicRoute]));
+        });
+    };
+    const storedDestinationAmount = () =>
+      getTestStore()!.getState().transactionSubmission.transactionData
+        .destinationAmount;
+
+    it("drops the live quote while the review is being built", async () => {
+      const resolveLiveQuote = inFlightLiveQuote();
+      jest.spyOn(UseSimulateSwapData, "useSimulateTxData").mockReturnValue({
+        state: { state: RequestState.IDLE, data: null, error: null },
+        isQuoteExpired: false,
+        fetchData: jest.fn(() => new Promise(() => {})),
+      } as any);
+      renderSwapAmount({ amount: "5", destinationAsset: AQUA });
+      await settle();
+
+      await act(async () => {
+        fireEvent.click(cta());
+      });
+      await resolveLiveQuote();
+
+      expect(storedDestinationAmount()).toBe("0");
+    });
+
+    it("drops the live quote when the reserve sheet opens instead", async () => {
+      const resolveLiveQuote = inFlightLiveQuote();
+      jest
+        .spyOn(XlmReserve, "shouldShowXlmReservePreflight")
+        .mockReturnValue(true);
+      renderSwapAmount({ amount: "5", destinationAsset: AQUA });
+      await settle();
+
+      await act(async () => {
+        fireEvent.click(cta());
+      });
+      expect(screen.getByTestId("XlmReserveSheet")).toBeInTheDocument();
+      await resolveLiveQuote();
+
+      expect(storedDestinationAmount()).toBe("0");
+    });
+  });
+
+  it("quotes a percentage of a tiny balance as a plain decimal", async () => {
+    jest.spyOn(UseGetSwapAmountData, "useGetSwapAmountData").mockReturnValue({
+      state: {
+        state: RequestState.SUCCESS,
+        data: {
+          ...swapData,
+          userBalances: {
+            balances: [
+              nativeBalance,
+              {
+                token: {
+                  code: "USDC",
+                  issuer: { key: USDC.split(":")[1] },
+                },
+                total: new BigNumber("0.0000004"),
+                available: new BigNumber("0.0000004"),
+                blockaidData: {},
+              },
+            ],
+          },
+        },
+        error: null,
+      },
+      fetchData: jest.fn().mockResolvedValue(undefined),
+    } as any);
+    renderSwapAmount({ asset: USDC, amount: "0", destinationAsset: AQUA });
+
+    await act(async () => {
+      fireEvent.click(screen.getByText("25%"));
+    });
+    await settle();
+
+    expect(
+      getTestStore()!.getState().transactionSubmission.transactionData.amount,
+    ).toBe("0.0000001");
+    expect(JSON.parse(fetchBackendV2.mock.calls[0][0].body).amount).toBe(
+      "0.0000001",
+    );
   });
 
   it("does not quote when there is no destination asset", async () => {

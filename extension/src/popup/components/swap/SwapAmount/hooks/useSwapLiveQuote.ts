@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { debounce } from "lodash";
 import BigNumber from "bignumber.js";
 
@@ -130,6 +130,11 @@ export const useSwapLiveQuote = ({
     [],
   );
 
+  const cancelLiveQuote = useCallback(() => {
+    debouncedQuote.cancel();
+    liveQuoteReqRef.current += 1;
+  }, [debouncedQuote]);
+
   useEffect(
     () => () => {
       debouncedQuote.cancel();
@@ -168,7 +173,15 @@ export const useSwapLiveQuote = ({
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- debouncedQuote/dispatch are stable and destinationAmount is read via a ref, so quote results don't re-trigger this effect (which would loop)
-  }, [amount, asset, destinationAsset, swapAmountData.state]);
+  }, [
+    amount,
+    asset,
+    destinationAsset,
+    swapAmountData.state,
+    publicKey,
+    networkDetails.network,
+    networkDetails.networkUrl,
+  ]);
 
-  return { isLiveQuoteLoading, isSwapUnavailable };
+  return { isLiveQuoteLoading, isSwapUnavailable, cancelLiveQuote };
 };

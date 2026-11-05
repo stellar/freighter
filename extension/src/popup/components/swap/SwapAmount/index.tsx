@@ -74,6 +74,7 @@ import { AmountCard } from "popup/components/amount/AmountCard";
 import { PercentageButtons } from "popup/components/amount/PercentageButtons";
 import { shouldShowXlmReservePreflight } from "popup/helpers/xlmReserve";
 import { getSwapQuote } from "popup/helpers/swapQuote";
+import { SwapQuotesError } from "@shared/api/helpers/getSwapQuotes";
 import { XlmReserveSheet } from "popup/components/swap/XlmReserveSheet";
 import { useSwapLiveQuote } from "./hooks/useSwapLiveQuote";
 import { EditSlippage } from "./EditSlippage";
@@ -237,6 +238,8 @@ export const SwapAmount = ({
   );
 
   const handleContinue = async (values: { amount: string }) => {
+    // A live quote landing now would overwrite the quote the review builds.
+    cancelLiveQuote();
     // Retrying after a quote-expiry submit failure: dismiss the stale notice
     // before re-simulating against a fresh quote.
     if (isSwapQuoteExpired) {
@@ -343,17 +346,18 @@ export const SwapAmount = ({
 
   // Live "You receive" quote as the user types (debounced path-only lookup).
   // isLiveQuoteLoading lets the CTA tell "loading a quote" apart from "no path".
-  const { isLiveQuoteLoading, isSwapUnavailable } = useSwapLiveQuote({
-    amount,
-    asset,
-    destinationAsset,
-    destinationAmount,
-    networkDetails,
-    publicKey,
-    isReviewingTx,
-    swapAmountData,
-    dispatch,
-  });
+  const { isLiveQuoteLoading, isSwapUnavailable, cancelLiveQuote } =
+    useSwapLiveQuote({
+      amount,
+      asset,
+      destinationAsset,
+      destinationAmount,
+      networkDetails,
+      publicKey,
+      isReviewingTx,
+      swapAmountData,
+      dispatch,
+    });
 
   if (isLoading) {
     return <Loading />;
@@ -508,9 +512,12 @@ export const SwapAmount = ({
       }
     } catch (e) {
       // No path / network error — leave the amount as-is for manual entry.
-      captureException(
-        `Swap-for-reserve prefill failed - ${JSON.stringify(e)}`,
-      );
+      // getSwapQuotes already reported its own failures.
+      if (!(e instanceof SwapQuotesError)) {
+        captureException(
+          `Swap-for-reserve prefill failed - ${JSON.stringify(e)}`,
+        );
+      }
     }
   };
 
@@ -690,7 +697,7 @@ export const SwapAmount = ({
                         ? new BigNumber(cleanAmount(usd))
                             .dividedBy(assetPrice)
                             .decimalPlaces(assetDecimals)
-                            .toString()
+                            .toFixed()
                         : DEFAULT_AMOUNT;
                       formik.setFieldValue("amount", crypto);
                       dispatch(saveAmount(crypto));
@@ -829,7 +836,7 @@ export const SwapAmount = ({
                       )
                         .multipliedBy(new BigNumber(pct).dividedBy(100))
                         .decimalPlaces(assetDecimals)
-                        .toString();
+                        .toFixed();
                       formik.setFieldValue("amount", pctAmount);
                       dispatch(saveAmount(pctAmount));
                       if (inputType === "fiat" && assetPrice) {

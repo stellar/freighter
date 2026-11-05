@@ -101,7 +101,10 @@ describe("SwapAmount swap-for-reserve quote", () => {
         };
       });
   });
-  afterEach(() => jest.restoreAllMocks());
+  afterEach(() => {
+    jest.restoreAllMocks();
+    jest.clearAllMocks();
+  });
 
   const renderAndSwapForReserve = async () => {
     render(
@@ -193,5 +196,21 @@ describe("SwapAmount swap-for-reserve quote", () => {
     expect(
       getTestStore()!.getState().transactionSubmission.transactionData.amount,
     ).toBe("5");
+  });
+
+  it("does not report a rejected receive quote to Sentry again", async () => {
+    fetchBackendV2.mockImplementation(async () => ({
+      status: 400,
+      body: { error: "invalid amount" },
+    }));
+
+    await renderAndSwapForReserve();
+
+    expect(fetchBackendV2).toHaveBeenCalledWith(
+      expect.objectContaining({
+        body: expect.stringContaining('"mode":"receive"'),
+      }),
+    );
+    expect(captureException).not.toHaveBeenCalled();
   });
 });

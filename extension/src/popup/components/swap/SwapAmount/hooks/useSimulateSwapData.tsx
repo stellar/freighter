@@ -46,6 +46,7 @@ export const ERROR_TO_DISPLAY = {
   NO_PATH_FOUND: "No path found for swap.",
   CUSTOM_TOKEN_NOT_SUPPORTED: "Swapping custom tokens is not supported yet.",
   SWAPS_UNAVAILABLE: "Swaps are temporarily unavailable",
+  NO_QUOTE: "No quote available",
 };
 
 const UNKNOWN_ERROR_DISPLAY =
@@ -302,8 +303,12 @@ function useSimulateTxData({
         try {
           result = await getSwapQuote(quoteParams);
         } catch (e) {
-          if (e instanceof SwapQuotesError && e.kind === "unavailable") {
-            throw new Error(ERROR_TO_DISPLAY.SWAPS_UNAVAILABLE);
+          if (e instanceof SwapQuotesError) {
+            throw new Error(
+              e.kind === "unavailable"
+                ? ERROR_TO_DISPLAY.SWAPS_UNAVAILABLE
+                : ERROR_TO_DISPLAY.NO_QUOTE,
+            );
           }
           throw e;
         }

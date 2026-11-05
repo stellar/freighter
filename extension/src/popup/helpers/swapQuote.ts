@@ -72,7 +72,8 @@ export const getSwapQuoteKey = ({
   mode,
   sourceAsset,
   destAsset,
-  amount: cleanAmount(amount),
+  // The backend accepts only plain decimals: no "5.", ".5" or exponent.
+  amount: new BigNumber(cleanAmount(amount)).toFixed(),
 });
 
 export const isSameSwapQuoteKey = (
@@ -146,9 +147,9 @@ const routeFromHorizon = (
 export const getSwapQuote = async (
   params: SwapQuoteParams,
 ): Promise<SwapQuoteResult> => {
-  const { mode, amount, sourceAsset, destAsset, networkDetails, publicKey } =
-    params;
+  const { mode, sourceAsset, destAsset, networkDetails, publicKey } = params;
   const key = getSwapQuoteKey(params);
+  const { amount } = key;
   if (isCustomNetwork(networkDetails)) {
     const record =
       mode === "send"
@@ -173,7 +174,7 @@ export const getSwapQuote = async (
     mode,
     fromAsset: toBackendAsset(sourceAsset),
     toAsset: toBackendAsset(destAsset),
-    amount: cleanAmount(amount),
+    amount,
   });
   const route = pickSwapRoute(quotes);
   if (!route) {

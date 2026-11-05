@@ -85,7 +85,7 @@ describe("getSwapQuotes", () => {
     expect(err.kind).toBe("badRequest");
   });
 
-  it.each([502, 503, 401, 500])(
+  it.each([502, 503, 401, 500, 429])(
     "rejects a %s as swaps unavailable",
     async (status) => {
       mockedFetch.mockResolvedValue({ status, body: { error: "x" } });

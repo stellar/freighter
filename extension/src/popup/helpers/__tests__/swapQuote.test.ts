@@ -188,6 +188,28 @@ describe("getSwapQuote", () => {
     });
   });
 
+  it.each([
+    ["5.", "5"],
+    [".5", "0.5"],
+    ["0.10", "0.1"],
+  ])("sends the amount %s as the plain decimal %s", async (typed, sent) => {
+    getSwapQuotes.mockResolvedValue({ routes: [], unavailable: [] });
+
+    const { key } = await getSwapQuote({
+      mode: "send",
+      amount: typed,
+      sourceAsset: "native",
+      destAsset: USDC,
+      networkDetails: MAINNET_NETWORK_DETAILS,
+      publicKey: ACCOUNT,
+    });
+
+    expect(getSwapQuotes).toHaveBeenCalledWith(
+      expect.objectContaining({ amount: sent }),
+    );
+    expect(key.amount).toBe(sent);
+  });
+
   describe("when classic can't quote", () => {
     const quoteWith = (unavailable: { source: string; reason: string }[]) => {
       getSwapQuotes.mockResolvedValue({ routes: [lifiRoute], unavailable });
