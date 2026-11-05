@@ -1,5 +1,10 @@
 import { SERVICE_TYPES } from "@shared/constants/services";
-import { KEY_ID, TEMPORARY_STORE_ID } from "constants/localStorageTypes";
+import {
+  KEY_ID,
+  PINNED_SOURCE_ID,
+  SECRET_SOURCES_ID,
+  TEMPORARY_STORE_ID,
+} from "constants/localStorageTypes";
 
 import { loginToAllAccounts } from "../helpers/login-all-accounts";
 
@@ -177,6 +182,45 @@ describe("loginToAllAccounts", () => {
     );
 
     expect(mockGetStoredAccounts).toHaveBeenCalledTimes(1);
+  });
+
+  // The request path never writes the pin, so unlock repairs a pin write
+  // that failed after its source record landed.
+  it("pins the earliest registered source when the wallet has records but no pin", async () => {
+    const firstId = "a".repeat(64);
+    const data: Record<string, unknown> = {
+      [KEY_ID]: "key-id-0",
+      [SECRET_SOURCES_ID]: {
+        [firstId]: { id: firstId },
+        ["b".repeat(64)]: { id: "b".repeat(64) },
+      },
+    };
+    const localStore = {
+      getItem: jest.fn(async (key: string) => data[key] ?? null),
+      setItem: jest.fn(async (key: string, value: unknown) => {
+        data[key] = value;
+      }),
+      remove: jest.fn().mockResolvedValue(undefined),
+    } as any;
+    const sessionStore = {
+      dispatch: jest.fn().mockResolvedValue(undefined),
+      getState: jest
+        .fn()
+        .mockReturnValue({ session: { publicKey: "", allAccounts: [] } }),
+    } as any;
+    const sessionTimer = {
+      startSession: jest.fn().mockResolvedValue(undefined),
+    } as any;
+
+    await loginToAllAccounts(
+      "password",
+      localStore,
+      sessionStore,
+      {} as any,
+      sessionTimer,
+    );
+
+    expect(data[PINNED_SOURCE_ID]).toBe(firstId);
   });
 
   // Regression: the two catch blocks call `clearSession()` (which wipes

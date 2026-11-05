@@ -353,7 +353,7 @@ describe("pre-V2 storage migration", () => {
       expect(pinnedWhenDrained).toBe(PRE_UPGRADE_METRICS_USER_ID);
     });
 
-    it("retries the pin on the next unlock when its write fails", async () => {
+    it("repairs the pin in the same unlock and retries the pass on the next when its write fails", async () => {
       // Rejects the first pin write only.
       const setItem = jest.spyOn(mockDataStorage, "setItem");
       setItem.mockImplementation(async (key, value) => {
@@ -366,7 +366,11 @@ describe("pre-V2 storage migration", () => {
 
       expect((await unlock()).error).toBeUndefined();
 
-      expect(await mockDataStorage.getItem(PINNED_SOURCE_ID)).toBeUndefined();
+      // The aborted pass had already registered the identity phrase, so the
+      // unlock's repair pins it from the persisted set.
+      expect(await mockDataStorage.getItem(PINNED_SOURCE_ID)).toBe(
+        PRE_UPGRADE_METRICS_USER_ID,
+      );
       expect(await mockDataStorage.getItem(PENDING_ATTRIBUTION_ID)).toEqual([
         PRE_V2_DERIVED_0_ID,
         PRE_V2_DERIVED_1_ID,

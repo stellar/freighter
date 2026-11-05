@@ -100,12 +100,28 @@ export const clearPinnedSourceId = async ({
 };
 
 /**
+ * The wallet's first source: the earliest record in the persisted set, or
+ * null when nothing is registered. Reads only; pinFirstSource writes it.
+ */
+export const getFirstSourceId = async ({
+  localStore,
+}: {
+  localStore: DataStorageAccess;
+}): Promise<string | null> => {
+  // Source ids are 64-char hex, never integer-like, so key order is
+  // insertion order.
+  const [first] = Object.keys(await getSecretSources({ localStore }));
+  return first || null;
+};
+
+/**
  * Pins the wallet's first source when no pin is set and returns the pin.
  *
  * The first source is the earliest record in the persisted set, not whatever
  * the caller is registering now. The record and the pin are separate writes,
- * so this is what lets any later registration repair a pin write that failed.
- * Returns null when nothing is pinned and nothing is registered.
+ * so this is what lets any later registration, or the next unlock, repair a
+ * pin write that failed. Returns null when nothing is pinned and nothing is
+ * registered.
  */
 export const pinFirstSource = async ({
   localStore,
@@ -117,9 +133,7 @@ export const pinFirstSource = async ({
     return pinned;
   }
 
-  // Source ids are 64-char hex, never integer-like, so key order is
-  // insertion order.
-  const [first] = Object.keys(await getSecretSources({ localStore }));
+  const first = await getFirstSourceId({ localStore });
   if (!first) {
     return null;
   }

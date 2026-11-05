@@ -20,6 +20,7 @@ import {
   storeMnemonics,
 } from "background/helpers/session";
 import { getWalletSources } from "background/helpers/wallet-sources";
+import { pinFirstSource } from "background/helpers/secret-sources";
 import { flushSessionStore } from "background/store";
 import {
   allAccountsSelector,
@@ -75,6 +76,17 @@ export const loginToAllAccounts = async (
     captureException(
       `Error attributing pre-V2 accounts on unlock: ${JSON.stringify(e)}`,
     );
+  }
+
+  // Repairs a pin write that failed after its source record landed. The
+  // request path (getSigningIdentity) never writes the pin, so this and
+  // registration are the only repairs.
+  try {
+    await pinFirstSource({ localStore });
+  } catch (e) {
+    captureException(e, {
+      extra: { context: "loginToAllAccounts: repairing the pinned source" },
+    });
   }
 
   const hashKey = await deriveKeyFromString(password);

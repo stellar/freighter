@@ -2,10 +2,11 @@ import { Store } from "redux";
 import { Keypair } from "stellar-sdk";
 import { captureException } from "@sentry/browser";
 
+import { SecretSourceType } from "@shared/api/types";
 import { DataStorageAccess } from "background/helpers/dataStorageAccess";
 import {
-  pinFirstSource,
-  setPinnedSourceId,
+  getFirstSourceId,
+  getPinnedSourceId,
 } from "background/helpers/secret-sources";
 import { getWalletSources } from "background/helpers/wallet-sources";
 
@@ -19,6 +20,11 @@ import { getWalletSources } from "background/helpers/wallet-sources";
   source it registered (see addSecretSource). It never follows the active
   account, so switching accounts, including to a hardware account, changes
   neither `sub` nor the resolved user.
+
+  This never writes the pin. Only registration (addSecretSource) and unlock
+  (loginToAllAccounts) do, from the persisted source set. A request can
+  overlap a wallet wipe and still derive the old wallet's sources, so a pin
+  written from what one request derived could stick to the wrong wallet.
 */
 
 export interface SigningIdentity {
@@ -33,14 +39,15 @@ export interface SigningIdentity {
  * A null means "send anonymously"; a user-scoped feature must prompt for the
  * password before its first request in that state.
  *
- * - The pinned source is held: sign with it.
- * - A pin is set but not held, as after a restore that recovered only some
+ * - The pinned source is held: sign with it. With no pin, as after a failed
+ *   pin write, the earliest registered source stands in for it (the source
+ *   the next registration or unlock will pin).
+ * - That source is not held, as after a restore that recovered only some
  *   sources: sign with the first held source (phrases first) and leave the
- *   pin alone. The pin moves only from what the server returns (#69), so a
- *   source that failed to derive this unlock cannot move it either.
- * - No pin, as after a failed pin write: pin the earliest registered source
- *   (see pinFirstSource), or the first held source when nothing is
- *   registered.
+ *   pin alone. The pin moves only from what the server returns (#69).
+ * - Nothing pinned and nothing registered, as when a request overlaps a
+ *   wallet wipe: sign with the first held phrase, or return null when no
+ *   phrase is held. Nothing is persisted, so a wrong guess lasts one request.
  */
 export const getSigningIdentity = async ({
   sessionStore,
@@ -58,12 +65,17 @@ export const getSigningIdentity = async ({
       return null;
     }
 
-    const [{ id: firstHeldId }] = sources;
+    const pinned =
+      (await getPinnedSourceId({ localStore })) ??
+      (await getFirstSourceId({ localStore }));
 
-    let pinned = await pinFirstSource({ localStore });
     if (!pinned) {
-      await setPinnedSourceId({ localStore, sourceId: firstHeldId });
-      pinned = firstHeldId;
+      const phrase = sources.find(
+        ({ kind }) => kind === SecretSourceType.PHRASE,
+      );
+      return phrase
+        ? { sourceId: phrase.id, keypair: signers.get(phrase.id)! }
+        : null;
     }
 
     const pinnedSigner = signers.get(pinned);
@@ -72,6 +84,7 @@ export const getSigningIdentity = async ({
     }
 
     captureException("getSigningIdentity: the pinned source is not held");
+    const [{ id: firstHeldId }] = sources;
     return { sourceId: firstHeldId, keypair: signers.get(firstHeldId)! };
   } catch (e) {
     // A locked or empty wallet is handled above, so anything reaching here

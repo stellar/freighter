@@ -19,6 +19,8 @@ import {
 
 import {
   addSecretSource,
+  clearPinnedSourceId,
+  clearSecretSources,
   getPinnedSourceId,
   setPinnedSourceId,
 } from "../secret-sources";
@@ -260,7 +262,7 @@ describe("getSigningIdentity", () => {
     expect((await getSigningIdentity(stores))?.sourceId).toBe(phraseAId);
   });
 
-  it("pins the earliest registered source when the wallet has no pin", async () => {
+  it("signs as the earliest registered source, without pinning it, when the wallet has no pin", async () => {
     // Held sources list phrases first, so the key is not the first held one.
     const stores = await unlock({
       keystores: {
@@ -273,18 +275,58 @@ describe("getSigningIdentity", () => {
     await stores.localStore.remove(PINNED_SOURCE_ID);
 
     expect((await getSigningIdentity(stores))?.sourceId).toBe(importedId);
-    expect(await getPinnedSourceId(stores)).toBe(importedId);
+    expect(await getPinnedSourceId(stores)).toBeNull();
   });
 
-  it("pins the first held source when the wallet has no pin and no records", async () => {
+  it("signs as a held phrase, without pinning it, when the wallet has no pin and no records", async () => {
+    const stores = await unlock({
+      keystores: {
+        "key-imported": importedSecret,
+        "key-a0": phraseA.accounts[0].secret,
+      },
+      mnemonics: { [phraseAId]: phraseA.mnemonic },
+      order: [],
+    });
+
+    expect((await getSigningIdentity(stores))?.sourceId).toBe(phraseAId);
+    expect(await getPinnedSourceId(stores)).toBeNull();
+  });
+
+  it("returns null when the wallet has no pin, no records and no held phrase", async () => {
     const stores = await unlock({
       keystores: { "key-imported": importedSecret },
       order: [],
     });
-    await stores.localStore.remove(PINNED_SOURCE_ID);
 
-    expect((await getSigningIdentity(stores))?.sourceId).toBe(importedId);
-    expect(await getPinnedSourceId(stores)).toBe(importedId);
+    expect(await getSigningIdentity(stores)).toBeNull();
+    expect(await getPinnedSourceId(stores)).toBeNull();
+  });
+
+  it("does not pin the old wallet's source when a request overlaps a wallet wipe", async () => {
+    const stores = await unlock({
+      keystores: { "key-a0": phraseA.accounts[0].secret },
+      mnemonics: { [phraseAId]: phraseA.mnemonic },
+      order: [phrase],
+    });
+    const newPhraseId = "b".repeat(64);
+    const actual = jest.requireActual("background/helpers/wallet-sources");
+    // The wipe (createAccount with isOverwritingAccount) lands mid-derivation
+    // and does not lock, so the derivation still returns the old sources.
+    mockGetWalletSources.mockImplementationOnce(async (args) => {
+      const sources = await actual.getWalletSources(args);
+      await clearSecretSources(stores);
+      await clearPinnedSourceId(stores);
+      return sources;
+    });
+
+    await getSigningIdentity(stores);
+    await addSecretSource({
+      localStore: stores.localStore,
+      id: newPhraseId,
+      type: SecretSourceType.PHRASE,
+    });
+
+    expect(await getPinnedSourceId(stores)).toBe(newPhraseId);
   });
 
   it("returns null while locked", async () => {
