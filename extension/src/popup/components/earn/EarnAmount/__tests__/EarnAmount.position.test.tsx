@@ -8,7 +8,8 @@ import {
 } from "@testing-library/react";
 import BigNumber from "bignumber.js";
 
-import { TESTNET_NETWORK_DETAILS } from "@shared/constants/stellar";
+import { TESTNET_NETWORK_DETAILS, NETWORKS } from "@shared/constants/stellar";
+import { BLEND_FIXED_POOL_IDS } from "@shared/constants/blend";
 import { getBlendSuppliedTokens } from "@shared/api/helpers/blend";
 import { RequestState } from "constants/request";
 import { AppDataType } from "helpers/hooks/useGetAppData";
@@ -34,7 +35,7 @@ jest.mock("helpers/metrics", () => ({
   emitScreenViewed: jest.fn(),
 }));
 
-const POOL_ID = "CAJJZSGMMM3PD7N33TAPHGBUGTB43OC73HVIK2L2G6BNGGGYOSSYBXBD";
+const POOL_ID = BLEND_FIXED_POOL_IDS[NETWORKS.PUBLIC]!;
 const USDC_SAC = "CCW67TSZV3SSS2HXMBQ5JFGCKJNXKZM7UQUWUZPUTHXSTZLEO7SJMI75";
 const USDC_ISSUER = "GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM";
 

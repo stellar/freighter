@@ -3692,13 +3692,13 @@ export const stubVerifiedToken = async (
 };
 
 /**
- * A prepared Soroban envelope for `submit` on the mainnet Fixed pool, sourced by
- * the e2e test account. Generated with the SDK rather than hand-trimmed, so it
- * round-trips through `TransactionBuilder.fromXDR` under both network
- * passphrases.
+ * A prepared Soroban envelope for `submit` on the mainnet Fixed v2.1 pool,
+ * sourced by the e2e test account. Generated with the SDK rather than
+ * hand-trimmed, so it round-trips through `TransactionBuilder.fromXDR` under
+ * both network passphrases.
  */
 const EARN_PREPARED_TX_XDR =
-  "AAAAAgAAAADLvQoIbFw9k0tgjZoOrLTuJJY9kHFYp/YAEAlt/xirbAASM1YAAAAASZYC0wAAAAEAAAAAAAAAAAAAAABqh3mXAAAAAAAAAAEAAAAAAAAAGAAAAAAAAAABEpzIzGM28f273MDzmDQ0w824X9nqhWl6N4LTGNh0pYAAAAAGc3VibWl0AAAAAAAEAAAAEgAAAAAAAAAAy70KCGxcPZNLYI2aDqy07iSWPZBxWKf2ABAJbf8Yq2wAAAASAAAAAAAAAADLvQoIbFw9k0tgjZoOrLTuJJY9kHFYp/YAEAlt/xirbAAAABIAAAAAAAAAAMu9CghsXD2TS2CNmg6stO4klj2QcVin9gAQCW3/GKtsAAAAEAAAAAEAAAABAAAAEQAAAAEAAAADAAAADwAAAAdhZGRyZXNzAAAAABIAAAABJbT82FmuwvpjSEOMSJs8PBDJi20hvk/TyzDLaJU++XcAAAAPAAAABmFtb3VudAAAAAAACgAAAAAAAAAAAAAAADuaygAAAAAPAAAADHJlcXVlc3RfdHlwZQAAAAMAAAACAAAAAAAAAAEAAAAAAAAAAAAAAAAAHoSAAAATiAAAC7gAAAAAAAhWWwAAAAA=";
+  "AAAAAgAAAADLvQoIbFw9k0tgjZoOrLTuJJY9kHFYp/YAEAlt/xirbAASM1YAAAAASZYC0wAAAAEAAAAAAAAAAAAAAABqh3mXAAAAAAAAAAEAAAAAAAAAGAAAAAAAAAABQKBmhEhAUGhiMGMtWUmeytQxITzKv/gY/dgKkQ2DWogAAAAGc3VibWl0AAAAAAAEAAAAEgAAAAAAAAAAy70KCGxcPZNLYI2aDqy07iSWPZBxWKf2ABAJbf8Yq2wAAAASAAAAAAAAAADLvQoIbFw9k0tgjZoOrLTuJJY9kHFYp/YAEAlt/xirbAAAABIAAAAAAAAAAMu9CghsXD2TS2CNmg6stO4klj2QcVin9gAQCW3/GKtsAAAAEAAAAAEAAAABAAAAEQAAAAEAAAADAAAADwAAAAdhZGRyZXNzAAAAABIAAAABJbT82FmuwvpjSEOMSJs8PBDJi20hvk/TyzDLaJU++XcAAAAPAAAABmFtb3VudAAAAAAACgAAAAAAAAAAAAAAADuaygAAAAAPAAAADHJlcXVlc3RfdHlwZQAAAAMAAAACAAAAAAAAAAEAAAAAAAAAAAAAAAAAHoSAAAATiAAAC7gAAAAAAAhWWwAAAAA=";
 
 /**
  * Earn-scoped override for the deposit's simulation.
@@ -3711,13 +3711,14 @@ const EARN_PREPARED_TX_XDR =
  * instead of the submit screen.
  *
  * This returns a real prepared Soroban envelope: `submit` on the mainnet Fixed
- * pool, sourced by the test account, carrying sorobanData. Registered on the
- * PAGE, because /simulate-tx is a backend-v1 endpoint the popup fetches directly
- * — and registered after `stubAllExternalApis` so it wins the route match.
+ * v2.1 pool, sourced by the test account, carrying sorobanData. Registered on
+ * the PAGE, because /simulate-tx is a backend-v1 endpoint the popup fetches
+ * directly — and registered after `stubAllExternalApis` so it wins the route
+ * match.
  *
- * `minResourceFee` is the pool's real ~0.0546 XLM rather than the shared stub's
- * token 100 stroops, so the post-simulation fee guard is exercised at a
- * realistic magnitude.
+ * `minResourceFee` is a deposit's measured resource fee (~0.0546 XLM when this
+ * fixture was made) rather than the shared stub's token 100 stroops, so the
+ * post-simulation fee guard is exercised at a realistic magnitude.
  */
 export const stubEarnSimulateTx = async (page: Page) => {
   await page.route("**/simulate-tx**", async (route) => {
@@ -3813,8 +3814,8 @@ export const stubBlendEarn = async (
 
   const offer = (supplyApy: number) => ({
     id: POOL_ID,
-    // The live pool is named "Fixed", not "Fixed Pool v2".
-    name: "Fixed",
+    // The live pool's own name.
+    name: "Fixed v2.1",
     supply_apy: supplyApy,
     // Null rather than 0 for USDC/EURC: on the live pool only XLM has a
     // supply-side BLND stream, so this mirrors what the backend returns.
@@ -3864,7 +3865,7 @@ export const stubBlendEarn = async (
           pools: [
             {
               id: POOL_ID,
-              name: "Fixed",
+              name: "Fixed v2.1",
               status: "ACTIVE",
               supplied_usd: 50050000,
               borrowed_usd: 16150000,

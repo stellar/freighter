@@ -3,7 +3,8 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { TransactionBuilder, Account } from "stellar-sdk";
 
-import { MAINNET_NETWORK_DETAILS } from "@shared/constants/stellar";
+import { MAINNET_NETWORK_DETAILS, NETWORKS } from "@shared/constants/stellar";
+import { BLEND_FIXED_POOL_IDS } from "@shared/constants/blend";
 import {
   BlendRequestType,
   buildBlendRequestScVal,
@@ -16,7 +17,7 @@ import { Wrapper } from "popup/__testHelpers__";
 
 const TEST_PUBLIC_KEY =
   "GBNZILSTVQZ4R7IKQDGHYGY2QXL5QOFJYQMXPKWRRM5PAV7Y4M67AQUA";
-const POOL_ID = "CAJJZSGMMM3PD7N33TAPHGBUGTB43OC73HVIK2L2G6BNGGGYOSSYBXBD";
+const POOL_ID = BLEND_FIXED_POOL_IDS[NETWORKS.PUBLIC]!;
 const USDC_SAC = "CCW67TSZV3SSS2HXMBQ5JFGCKJNXKZM7UQUWUZPUTHXSTZLEO7SJMI75";
 
 // Mainnet throughout: shouldTreatTxAsUnableToScan gates on isBlockaidEnabled,

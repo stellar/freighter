@@ -3,7 +3,8 @@ import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 import { ActionStatus } from "@shared/api/types";
-import { TESTNET_NETWORK_DETAILS } from "@shared/constants/stellar";
+import { TESTNET_NETWORK_DETAILS, NETWORKS } from "@shared/constants/stellar";
+import { BLEND_FIXED_POOL_IDS } from "@shared/constants/blend";
 import { Earn } from "popup/views/Earn";
 import { initialState as earnInitialState } from "popup/ducks/earn";
 import {
@@ -16,7 +17,7 @@ const TEST_PUBLIC_KEY =
   "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF";
 const USDC_ISSUER = "GCK3D3V2XNLLKRFGFFFDEJXA4O2J4X36HET2FE446AV3M4U7DPHO3PEM";
 const USDC_SAC = "CCW67TSZV3SSS2HXMBQ5JFGCKJNXKZM7UQUWUZPUTHXSTZLEO7SJMI75";
-const POOL_ID = "CAJJZSGMMM3PD7N33TAPHGBUGTB43OC73HVIK2L2G6BNGGGYOSSYBXBD";
+const POOL_ID = BLEND_FIXED_POOL_IDS[NETWORKS.PUBLIC]!;
 
 // Counts mounts, which is the whole point: the deposit terminal submits from a
 // mount effect, so "how many times was it mounted" is "how many times did it

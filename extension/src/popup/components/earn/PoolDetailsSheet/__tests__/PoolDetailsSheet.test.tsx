@@ -1,7 +1,8 @@
 import React from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 
-import { TESTNET_NETWORK_DETAILS } from "@shared/constants/stellar";
+import { TESTNET_NETWORK_DETAILS, NETWORKS } from "@shared/constants/stellar";
+import { BLEND_FIXED_POOL_IDS } from "@shared/constants/blend";
 import { BlendCatalogPool } from "@shared/api/types/blend";
 import { PoolDetailsSheet } from "popup/components/earn/PoolDetailsSheet";
 import { BLEND_LENDING_DOCS_URL } from "popup/constants/externalLinks";
@@ -14,7 +15,7 @@ jest.mock("popup/helpers/navigate", () => ({
 }));
 
 const pool: BlendCatalogPool = {
-  id: "CAJJZSGMMM3PD7N33TAPHGBUGTB43OC73HVIK2L2G6BNGGGYOSSYBXBD",
+  id: BLEND_FIXED_POOL_IDS[NETWORKS.PUBLIC]!,
   name: "Fixed Pool v2",
   status: "ACTIVE",
   suppliedUsd: 50050000,

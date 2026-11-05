@@ -4,7 +4,8 @@ import userEvent from "@testing-library/user-event";
 import { Keypair, TransactionBuilder, Account } from "stellar-sdk";
 
 import { WalletType } from "@shared/constants/hardwareWallet";
-import { TESTNET_NETWORK_DETAILS } from "@shared/constants/stellar";
+import { TESTNET_NETWORK_DETAILS, NETWORKS } from "@shared/constants/stellar";
+import { BLEND_FIXED_POOL_IDS } from "@shared/constants/blend";
 import {
   BlendRequestType,
   buildBlendRequestScVal,
@@ -24,7 +25,7 @@ import { getTestStore, Wrapper } from "popup/__testHelpers__";
 const deviceKeypair = Keypair.fromRawEd25519Seed(Buffer.alloc(32, 7));
 const TEST_PUBLIC_KEY = deviceKeypair.publicKey();
 
-const POOL_ID = "CAJJZSGMMM3PD7N33TAPHGBUGTB43OC73HVIK2L2G6BNGGGYOSSYBXBD";
+const POOL_ID = BLEND_FIXED_POOL_IDS[NETWORKS.PUBLIC]!;
 const USDC_SAC = "CCW67TSZV3SSS2HXMBQ5JFGCKJNXKZM7UQUWUZPUTHXSTZLEO7SJMI75";
 
 const { networkPassphrase } = TESTNET_NETWORK_DETAILS;

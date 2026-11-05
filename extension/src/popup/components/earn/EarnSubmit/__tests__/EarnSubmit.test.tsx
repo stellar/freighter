@@ -9,7 +9,8 @@ import {
 import userEvent from "@testing-library/user-event";
 
 import { WalletType } from "@shared/constants/hardwareWallet";
-import { TESTNET_NETWORK_DETAILS } from "@shared/constants/stellar";
+import { TESTNET_NETWORK_DETAILS, NETWORKS } from "@shared/constants/stellar";
+import { BLEND_FIXED_POOL_IDS } from "@shared/constants/blend";
 import { RequestState } from "constants/request";
 import { EarnSubmit } from "popup/components/earn/EarnSubmit";
 import { useSubmitEarnTxData } from "popup/components/earn/EarnSubmit/hooks/useSubmitEarnTxData";
@@ -23,7 +24,7 @@ import { Wrapper } from "popup/__testHelpers__";
 
 const TEST_PUBLIC_KEY =
   "GBTYAFHGNZSTE4VBWZYAGB3SRGJEPTI5I4Y22KZ4JTVAN56LESB6JZOF";
-const POOL_ID = "CAJJZSGMMM3PD7N33TAPHGBUGTB43OC73HVIK2L2G6BNGGGYOSSYBXBD";
+const POOL_ID = BLEND_FIXED_POOL_IDS[NETWORKS.PUBLIC]!;
 
 // Two distinguishable envelopes, so the assertions can tell "what the flow was
 // handed" apart from "what in-page signing produced".
